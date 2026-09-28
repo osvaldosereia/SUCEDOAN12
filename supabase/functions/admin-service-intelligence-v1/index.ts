@@ -3803,6 +3803,159 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
     external_side_effect:false
   };
 }
+async function blingHubVitrineDispatchFiscalReconcile(sb:any,sourceOrderIdRaw:any){
+  const preview=await blingHubVitrineDispatchFiscalPreview(sb,sourceOrderIdRaw);
+  if(!preview.ok)return preview;
+
+  if(Array.isArray(preview.hard_blockers)&&preview.hard_blockers.length){
+    return {
+      ok:true,reconciled:false,reason:"fiscal_dispatch_not_eligible",
+      blockers:preview.hard_blockers,
+      source_order_id:preview.source_order_id||uuid(sourceOrderIdRaw)||null,
+      canonical_order_id:preview.canonical_order_id||null,
+      external_write:false,external_side_effect:false
+    };
+  }
+
+  const invoice=preview.invoice||null;
+  const invoiceId=Number(preview.invoice_id||invoice?.id||0)||null;
+  if(!invoiceId||!invoice){
+    return {
+      ok:true,reconciled:false,reason:"invoice_not_found",
+      source_order_id:preview.source_order_id,
+      canonical_order_id:preview.canonical_order_id,
+      external_write:false,external_side_effect:false
+    };
+  }
+
+  if(invoice?.situation?.authorized!==true){
+    return {
+      ok:true,reconciled:false,reason:"invoice_not_authorized",
+      source_order_id:preview.source_order_id,
+      canonical_order_id:preview.canonical_order_id,
+      invoice_id:invoiceId,
+      invoice_situation:invoice?.situation||null,
+      external_write:false,external_side_effect:false
+    };
+  }
+
+  const now=new Date().toISOString();
+  const marked=await sb.rpc("mark_order_dispatch_fiscal_authorized_v1",{
+    p_order_id:preview.canonical_order_id,
+    p_source:"bling_nfe_passive_reconcile",
+    p_bling_invoice_id:invoiceId,
+    p_bling_invoice_number:invoice?.numero||null,
+    p_sefaz_status:invoice?.situation?.label||"Autorizada",
+    p_authorized_at:now
+  });
+  if(marked.error)throw marked.error;
+
+  const existing=preview.job||null;
+  if(existing?.id){
+    const updated=await sb.from("dispatch_fiscal_jobs").update({
+      status:"authorized",
+      bling_invoice_id:invoiceId,
+      bling_invoice_number:invoice?.numero||null,
+      access_key:invoice?.chaveAcesso||null,
+      sefaz_status:invoice?.situation?.label||"Autorizada",
+      error_code:null,error_detail:null,
+      finished_at:existing.finished_at||now,
+      updated_at:now
+    }).eq("id",existing.id);
+    if(updated.error)throw updated.error;
+  }else{
+    const inserted=await sb.from("dispatch_fiscal_jobs").upsert({
+      order_id:preview.canonical_order_id,
+      source_order_id:preview.source_order_id,
+      bling_order_id:Number(preview.bling_order_id||0),
+      fiscal_version:1,
+      idempotency_key:"dispatch-fiscal:"+preview.canonical_order_id+":v1",
+      status:"authorized",
+      external_side_effect:false,
+      attempts:0,
+      max_attempts:1,
+      bling_invoice_id:invoiceId,
+      bling_invoice_number:invoice?.numero||null,
+      access_key:invoice?.chaveAcesso||null,
+      sefaz_status:invoice?.situation?.label||"Autorizada",
+      error_code:null,error_detail:null,
+      finished_at:now,
+      updated_at:now
+    },{onConflict:"order_id,fiscal_version"});
+    if(inserted.error)throw inserted.error;
+  }
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"dispatch_nfe_authorized_passive_reconcile",
+    severity:"info",
+    domain:"fiscal",
+    source_system:"bling",
+    source_id:preview.source_order_id,
+    details:{
+      source_order_id:preview.source_order_id,
+      canonical_order_id:preview.canonical_order_id,
+      bling_order_id:preview.bling_order_id,
+      bling_invoice_id:invoiceId,
+      invoice_number:invoice?.numero||null,
+      sefaz_status:invoice?.situation?.label||"Autorizada",
+      external_write:false,
+      make_used:false
+    }
+  });
+
+  return {
+    ok:true,reconciled:true,authorized:true,
+    source_order_id:preview.source_order_id,
+    canonical_order_id:preview.canonical_order_id,
+    bling_order_id:preview.bling_order_id,
+    invoice_id:invoiceId,
+    invoice_number:invoice?.numero||null,
+    sefaz_status:invoice?.situation?.label||"Autorizada",
+    dispatch_gate:marked.data||null,
+    external_write:false,external_side_effect:false
+  };
+}
+
+async function blingHubVitrineDispatchFiscalReconcileBatch(sb:any,limitRaw:any=3){
+  const limit=Math.max(1,Math.min(10,Number(limitRaw||3)||3));
+  const runtime=await sb.from("bling_hub_runtime_v2").select("mode,metadata").eq("id",1).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  const meta=runtime.data?.metadata||{};
+  const cutoverAt=clean(meta?.ops2_live_cutover_at,80);
+  if(runtime.data?.mode!=="live"||meta?.ops2_direct_order_state_enabled!==true||!cutoverAt){
+    return {ok:true,enabled:false,checked:0,reconciled:0,pending:0,errors:0,external_write:false};
+  }
+
+  const q=await sb.from("orders")
+    .select("id,created_at,updated_at")
+    .eq("status","ready")
+    .gte("created_at",cutoverAt)
+    .order("updated_at",{ascending:true})
+    .limit(limit);
+  if(q.error)throw q.error;
+
+  const summary:any={ok:true,enabled:true,checked:0,reconciled:0,pending:0,errors:0,items:[],external_write:false};
+  for(const row of q.data||[]){
+    summary.checked++;
+    try{
+      const r=await blingHubVitrineDispatchFiscalReconcile(sb,row.id);
+      if(r?.reconciled===true)summary.reconciled++;
+      else summary.pending++;
+      summary.items.push({
+        source_order_id:row.id,
+        reconciled:r?.reconciled===true,
+        reason:r?.reason||null,
+        invoice_id:r?.invoice_id||null,
+        sefaz_status:r?.sefaz_status||r?.invoice_situation?.label||null
+      });
+    }catch(e){
+      summary.errors++;
+      summary.items.push({source_order_id:row.id,reconciled:false,error:clean((e as Error)?.message||e,240)});
+    }
+  }
+  return summary;
+}
+
 async function blingHubVitrineDispatchFiscalArm(sb:any,sourceOrderIdRaw:any){
   const preview=await blingHubVitrineDispatchFiscalPreview(sb,sourceOrderIdRaw);
   if(!preview.ok)return preview;
@@ -8781,6 +8934,14 @@ Deno.serve(async(req:Request)=>{
         const result=await blingHubVitrineDispatchFiscalGate(sb,body?.source_order_id);
         return json(result,result.ok?200:Number(result.status||409));
       }
+      if(subaction==="fiscal_dispatch_reconcile"){
+        const result=await blingHubVitrineDispatchFiscalReconcile(sb,body?.source_order_id);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="fiscal_dispatch_reconcile_batch"){
+        const result=await blingHubVitrineDispatchFiscalReconcileBatch(sb,body?.limit);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
       if(subaction==="fiscal_dispatch_preview"){
         const result=await blingHubVitrineDispatchFiscalPreview(sb,body?.source_order_id);
         return json(result,result.ok?200:Number(result.status||409));
@@ -8825,6 +8986,7 @@ Deno.serve(async(req:Request)=>{
         results.customers=await blingHubProcessCustomerJobs(sb,limit);
         results.orders=await blingHubProcessOrderJobs(sb,Math.min(limit,3));
         results.webhooks=await blingHubProcessWebhookInbox(sb,limit);
+        results.fiscal_reconcile=await blingHubVitrineDispatchFiscalReconcileBatch(sb,Math.min(limit,3));
         return json({ok:true,cycle:true,results},200);
       }
       if(subaction==="ops2_order_stock_probe"){
