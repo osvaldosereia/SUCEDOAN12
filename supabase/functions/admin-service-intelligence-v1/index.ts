@@ -8258,7 +8258,8 @@ async function blingHubCategoryUsageReadonly(sb:any,token:string,categoryId:numb
   for(const criterio of [5,4]){
     const q=new URLSearchParams({pagina:"1",limite:"1",criterio:String(criterio),idCategoria:String(categoryId)});
     const r=await blingHubGet(sb,token,"/produtos?"+q.toString());
-    checks.push({criterio,ok:r.ok,status:r.status,count:Array.isArray(r.data?.data)?r.data.data.length:0});
+    const rows=Array.isArray(r.data?.data)?r.data.data:[];
+    checks.push({criterio,ok:r.ok,status:r.status,count:rows.length,sample:rows.slice(0,5).map((x:any)=>({id:Number(x?.id||0)||null,nome:clean(x?.nome,180),codigo:clean(x?.codigo,80),situacao:clean(x?.situacao,20),categoria_id:Number(x?.categoria?.id||0)||null}))});
     if(!r.ok)return {ok:false,status:r.status,error:"category_usage_http_"+r.status,checks};
   }
   return {ok:true,used:checks.some((x:any)=>x.count>0),checks};
