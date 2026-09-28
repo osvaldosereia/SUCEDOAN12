@@ -2666,10 +2666,43 @@
 
 
   function purchaseFinanceLabel(v){
-    const map={blocked_personal:'CPF · fora do financeiro',pending_company_match:'Aguardando fornecedor',eligible:'Elegível',posted:'Financeiro OK',review:'Financeiro pendente',not_applicable:'Não aplicável'};
+    const map={blocked_personal:'CPF · fora do financeiro',pending_company_match:'Aguardando fornecedor',eligible:'Elegível',posted:'Conta no Bling',review:'Financeiro pendente',not_applicable:'Não aplicável'};
     const cls=v==='posted'?'':v==='blocked_personal'?'off':v==='review'||v==='pending_company_match'?'warn':'';
     return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
   }
+  function purchasePaymentSummary(d){
+    return d?.metadata?.payment_summary&&typeof d.metadata.payment_summary==='object'?d.metadata.payment_summary:{};
+  }
+  function purchasePaymentMethodsText(ps){
+    const labels=Array.isArray(ps?.method_labels)?ps.method_labels.filter(Boolean):[];
+    return labels.length?labels.join(' + '):'Forma de pagamento não identificada';
+  }
+  function purchasePaymentAtPurchaseHtml(d){
+    const ps=purchasePaymentSummary(d);
+    if(!ps?.paid_at_purchase_likely)return '';
+    const method=purchasePaymentMethodsText(ps),amount=purchaseMoney(ps.payment_total??d?.total_amount);
+    let guidance='A NF-e indica que o fornecedor provavelmente foi pago no ato da compra.';
+    if(ps.guidance==='credit_card')guidance+=' No Bling, confirme a baixa usando a conta financeira do cartão de crédito; a fatura do cartão deve ser controlada separadamente.';
+    else if(ps.guidance==='debit_card')guidance+=' No Bling, confirme a baixa usando a conta bancária/cartão de débito utilizado.';
+    else if(ps.guidance==='pix')guidance+=' No Bling, confirme a baixa na conta bancária de onde saiu o PIX.';
+    else if(ps.guidance==='cash')guidance+=' No Bling, confirme a baixa usando o caixa/dinheiro correspondente.';
+    else if(ps.guidance==='bank_transfer')guidance+=' No Bling, confirme a baixa na conta bancária utilizada.';
+    else guidance+=' Confirme a baixa na conta financeira correta do Bling.';
+    return '<div class="purchase-safe purchase-danger" style="margin:10px 0 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+
+        '<strong>Pagamento informado na NF-e: '+esc(method)+'</strong>'+
+        '<small>'+amount+' · '+esc(guidance)+'</small>'+
+      '</div><button class="secondary" type="button" data-purchase-open-payables>Ver contas a pagar no Bling</button></div>'+
+    '</div>';
+  }
+  function purchaseFinanceRowLabel(d){
+    const ps=purchasePaymentSummary(d);
+    if(ps?.paid_at_purchase_likely&&d?.finance_status==='posted'){
+      return '<span class="pill warn">Confirmar baixa</span>';
+    }
+    return purchaseFinanceLabel(d?.finance_status);
+  }
+
   function purchaseFinanceReasonLabel(v){
     const map={
       reconciled_existing:'Financeiro já encontrado e confirmado no Bling.',
@@ -2714,14 +2747,20 @@
     const f=d?.finance_reference||{},posted=d?.finance_status==='posted'&&Boolean(d?.finance_reconciled_at);
     const eligible=d?.recipient_kind==='CNPJ'&&d?.financial_eligible===true;
     const reason=purchaseFinanceReasonLabel(f.reason||d?.finance_last_error);
+    const paymentHint=purchasePaymentAtPurchaseHtml(d);
     if(d?.recipient_kind==='CPF'){
-      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Nota em CPF: não gera contas a pagar da empresa.</small></div>';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Nota em CPF: não gera contas a pagar da empresa.</small></div>'+paymentHint;
     }
     if(!eligible){
-      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Esta nota não está marcada para gerar contas a pagar da empresa.</small></div>';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Esta nota não está marcada para gerar contas a pagar da empresa.</small></div>'+paymentHint;
     }
     if(posted){
-      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro confirmado</strong><small>As contas desta NF-e estão conciliadas com o Bling'+(d.finance_reconciled_at?' · conferido em '+esc(dateTime(d.finance_reconciled_at)):'')+'.</small></div>';
+      const ps=purchasePaymentSummary(d);
+      const title=ps?.paid_at_purchase_likely?'Conta registrada no Bling · baixa ainda precisa ser conferida':'Conta a pagar registrada no Bling';
+      const text=ps?.paid_at_purchase_likely
+        ?'A obrigação da compra existe no Bling, mas a NF-e indica pagamento no ato. Confirme a baixa para que ela não permaneça como vencida/atrasada.'
+        :'A conta desta NF-e foi encontrada e conciliada no Bling.';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>'+esc(title)+'</strong><small>'+esc(text)+'</small></div>'+paymentHint;
     }
     return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0">'+
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+
@@ -2732,7 +2771,7 @@
         '<button class="primary" type="button" data-purchase-finance-resolve="'+esc(d.id)+'">Resolver financeiro</button>'+
       '</div></div>'+
       '<details style="margin-top:8px"><summary class="sub" style="cursor:pointer">Detalhes técnicos</summary><small>NF-e Bling #'+esc(d?.bling_nfe_id||'—')+' · tentativas: '+esc(Number(d?.finance_attempt_count||0))+(d?.finance_last_attempt_at?' · última '+esc(dateTime(d.finance_last_attempt_at)):'')+'.</small></details>'+
-    '</div>';
+    '</div>'+paymentHint;
   }
 
   function purchaseStatusLabel(v){
@@ -2962,6 +3001,7 @@
     const recv=host.querySelector('[data-purchase-inline-receive]');if(recv)recv.onclick=()=>receivePurchaseDocument(id);
     const bulk=host.querySelector('[data-purchase-approve-ready]');if(bulk)bulk.onclick=()=>approveReadyPurchaseItems(id);
     const fin=host.querySelector('[data-purchase-finance-resolve]');if(fin)fin.onclick=()=>resolvePurchaseFinance(id);
+    host.querySelectorAll('[data-purchase-open-payables]').forEach(b=>b.onclick=()=>window.open('https://www.bling.com.br/contas.pagar.php','_blank','noopener'));
   }
 
   async function togglePurchaseDocument(id,forceOpen=false){
@@ -3087,7 +3127,8 @@
     const importedKeys=new Set(docs.map(x=>String(x.document_key||'')).filter(Boolean));
     const notImported=blingDocs.filter(x=>!importedIds.has(Number(x.bling_nfe_id||0))&&!(x.access_key&&importedKeys.has(String(x.access_key))));
     const posted=docs.filter(x=>x.finance_status==='posted'&&x.finance_reconciled_at).length;
-    const attentionDocs=docs.filter(x=>x.processing_status==='review_required'||x.processing_status==='failed'||x.finance_status==='review'||x.finance_status==='pending_company_match'||x.receipt_status==='review');
+    const paymentToConfirm=docs.filter(x=>purchasePaymentSummary(x)?.paid_at_purchase_likely&&x.finance_status==='posted').length;
+    const attentionDocs=docs.filter(x=>x.processing_status==='review_required'||x.processing_status==='failed'||x.finance_status==='review'||x.finance_status==='pending_company_match'||x.receipt_status==='review'||(purchasePaymentSummary(x)?.paid_at_purchase_likely&&x.finance_status==='posted'));
     const ready=docs.filter(x=>x.receipt_status==='ready').length;
     const last=runs[0]||null;
     const runSource=last?.source==='bling_daily'?'Rotina automática':last?.source==='bling_manual'?'Importação manual':last?.source==='manual_xml'||last?.source==='bulk_xml'?'XML enviado':'Execução';
@@ -3098,7 +3139,8 @@
         '<div class="bling-card"><small>Já importadas</small><strong>'+docs.length+'</strong><span class="sub">disponíveis para revisão</span></div>'+
         '<div class="bling-card"><small>Ainda não importadas</small><strong class="'+(notImported.length?'warn-text':'ok-text')+'">'+notImported.length+'</strong><span class="sub">encontradas no Bling</span></div>'+
         '<div class="bling-card"><small>Precisam de atenção</small><strong class="'+(attentionDocs.length?'warn-text':'ok-text')+'">'+attentionDocs.length+'</strong><span class="sub">produto, financeiro ou recebimento</span></div>'+
-        '<div class="bling-card"><small>Financeiro confirmado</small><strong class="ok-text">'+posted+'</strong><span class="sub">conciliado com o Bling</span></div>'+
+        '<div class="bling-card"><small>Contas no Bling</small><strong class="ok-text">'+posted+'</strong><span class="sub">lançadas/conciliadas</span></div>'+
+        '<div class="bling-card"><small>Confirmar baixa</small><strong class="'+(paymentToConfirm?'warn-text':'ok-text')+'">'+paymentToConfirm+'</strong><span class="sub">pagamento na hora identificado na NF-e</span></div>'+
         '<div class="bling-card"><small>Prontas para estoque</small><strong>'+ready+'</strong><span class="sub">aguardam sua confirmação</span></div>'+
       '</div>'+
       ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento interrompido corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto a partir dos itens já gravados.':'')+'</small></div>':'')+
@@ -3111,7 +3153,7 @@
             '<div><strong>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</strong><span class="sub">'+esc(String(x.document_key||'').slice(-10))+'</span></div>'+
             '<div class="history-main"><strong><span class="purchase-chevron">'+(state.purchaseExpandedId===x.id?'−':'+')+'</span>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns)</small></div>'+
             '<div><span class="pill '+(x.recipient_kind==='CPF'?'off':'')+'">'+esc(x.recipient_kind||'—')+'</span></div>'+
-            '<div>'+purchaseStatusLabel(x.processing_status)+'</div><div>'+purchaseFinanceLabel(x.finance_status)+'</div><div>'+purchaseReceiptLabel(x.receipt_status)+'</div>'+
+            '<div>'+purchaseStatusLabel(x.processing_status)+'</div><div>'+purchaseFinanceRowLabel(x)+'</div><div>'+purchaseReceiptLabel(x.receipt_status)+'</div>'+
             '<div class="purchase-actions"><button class="text" type="button" data-purchase-open="'+esc(x.id)+'">Abrir</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button></div>'+
           '</div><div class="purchase-doc-expanded" data-purchase-detail="'+esc(x.id)+'" style="display:none"></div></div>').join(''):'<div class="empty">Nenhuma nota importada neste período.</div>')+
       '</section>'+
