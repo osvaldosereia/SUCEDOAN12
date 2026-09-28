@@ -2420,3 +2420,43 @@ Os 11 demais fatores inferidos atuais têm evidência explícita de embalagem co
 ### Próxima rodada
 **R8 — PapoAI/WhatsApp operacional**:
 identidade, link personalizado, Flow, cliente, associação com pedido, histórico, eventos estruturados, idempotência e painel simples de ponte — sem reintroduzir inteligência de atendimento no Admin.
+
+
+## R8 — PapoAI/WhatsApp operacional — fechamento programável — 2026-09-28
+
+A programação da ponte operacional está fechada no limite seguro.
+
+Implementado:
+- emissão idempotente de `catalogo_####`;
+- token ligado a conversa/cliente;
+- Storefront vincula pedido somente após token resgatado;
+- Flow estruturado `customer_flow_v1` cadastra/vincula cliente idempotentemente;
+- Flow pode atualizar pedidos pós-cutover sem cliente, nunca pedidos de outro cliente;
+- texto livre permanece capture-only;
+- painel simples PapoAI/WhatsApp na Central;
+- pedido estruturado automático permanece bloqueado por runtime flag.
+
+Runtimes no fechamento:
+- `papo-external-agent-v1` v108 ACTIVE;
+- `storefront-v2` v18 ACTIVE;
+- `admin-products-live-v1` v69 ACTIVE.
+
+Saúde observada:
+- 411 eventos totais;
+- 223/24h;
+- 411 conversas vinculadas;
+- 112 reconhecimentos de cliente;
+- 0 review;
+- 0 erro;
+- 0 Flow real ainda;
+- 0 token real ainda;
+- 0 draft;
+- 0 pedido criado pela ponte.
+
+Teste sintético completo de Flow/link/order foi aprovado em transação e rollback limpo.
+
+### Gate humano externo
+Configurar no PapoAI o webhook do Flow usando `mode=customer_flow_v1` e homologar 1 caso real.
+Não habilitar `structured_order_commit_enabled` antes disso.
+
+Detalhes: `R8-PAPOAI-WHATSAPP-CHECKPOINT.md`.
