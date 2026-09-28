@@ -1759,3 +1759,27 @@ Validação:
 - consulta read-only de 180 dias ao Bling: **36 NF-e**, sem truncamento;
 - no staging/Admin, **12 XMLs** já processados no recorte de 180 dias;
 - JavaScript do Admin validado sintaticamente após a alteração.
+
+
+## Bling — taxonomia de categorias/subcategorias igual ao Supabase — 2026-09-28
+
+Concluído:
+- fonte adotada: produtos **ativos** do Supabase canônico;
+- 1.610 produtos ativos considerados, todos com `bling_product_id`;
+- taxonomia canônica: **25 categorias principais + 111 subcategorias = 136 categorias**;
+- árvore criada no Bling e verificada sem categorias/subcategorias faltantes;
+- cobertura dos 1.610 produtos por lotes verificados: **1.610/1.610**, `drift=0`;
+- alterações de categoria foram parciais (`PATCH categoria.id`), sem alteração de preço, estoque ou fiscal;
+- verificação pós-escrita usou detalhe do produto e, nos lotes rápidos, webhook assinado `product.updated`, com fallback para leitura direta.
+
+Limpeza:
+- categoria órfã `Higiene e Perfumaria` removida;
+- `GERAL` e `A CLASSIFICAR` inicialmente preservadas por terem produtos legados;
+- 12 produtos legados foram realocados para subcategorias válidas (Fini, Dori, café, Remmus, Diodoro, Lola e um Azeite Allegro duplicado);
+- após a realocação, `GERAL` e `A CLASSIFICAR` ficaram sem uso e foram removidas;
+- verificação final do Bling: **136 categorias totais, 25 raízes, 111 filhas, 0 extras, 0 faltantes, 0 ambiguidades**.
+
+Implementação/auditoria:
+- commits principais: `581faf74`, `d4b0fafa`, `0a6171fa`, `4a02e831`, `30fe6afb`, `41cff1a5`, `62da853a`, `439757a4`, `be7c914f`, `93a2412f`;
+- Edge `admin-service-intelligence-v1` usada em produção controlada até **v181 ACTIVE**;
+- trilhas de auditoria: `catalog_taxonomy_structure_sync`, `catalog_taxonomy_product_sync`, `catalog_taxonomy_product_sync_fast`, `catalog_taxonomy_rehome_legacy_extras`, `catalog_taxonomy_cleanup_extras`.
