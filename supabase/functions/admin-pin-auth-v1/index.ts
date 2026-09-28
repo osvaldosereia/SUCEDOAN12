@@ -27,7 +27,7 @@ Deno.serve(async(req:Request)=>{
   let body:any={};
   try{body=await req.json()}catch{return json(origin,{ok:false,error:"invalid_json"},400)}
   const pin=clean(body?.pin,12);
-  if(!/^\d{7}$/.test(pin))return json(origin,{ok:false,error:"invalid_pin_format"},400);
+  if(!/^\d{6,7}$/.test(pin))return json(origin,{ok:false,error:"invalid_pin_format"},400);
 
   const forwarded=clean(req.headers.get("x-forwarded-for"),200).split(",")[0]?.trim();
   const ip=clean(req.headers.get("cf-connecting-ip")||forwarded||"unknown",120);
