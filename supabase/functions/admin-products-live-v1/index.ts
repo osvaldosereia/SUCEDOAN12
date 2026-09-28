@@ -399,7 +399,51 @@ async function updateOrderCanonical(p:any){
     if(next==="out_for_delivery"&&cur==="ready"){const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).eq("status","returned_review").limit(1).maybeSingle();if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_review_open",status:409,delivery_return_case_id:ret.data.id};const h=await hub("fiscal_dispatch_gate",{source_order_id:oid});if(h.error)return {error:"fiscal_dispatch_gate_unavailable",status:h.status||503,detail:h.detail||null};if(h.data?.allowed!==true)return {error:"fiscal_dispatch_not_authorized",status:409,fiscal_dispatch_gate:h.data};const authority=await stockAuthority();if(authority==="bling"){const snap=await buildSnapshot(oid,"dispatch_physical_stock");const launch=await hub("ops2_launch_physical_stock",{payload:snap});if(launch.error)return {error:launch.error||"physical_stock_launch_failed",status:launch.status||409,detail:launch.detail||launch.data||null}}}
     if(next==="delivered"){if(cur!=="out_for_delivery")return {error:"order_not_in_delivery",status:409};const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).in("status",["returning","returned_review"]).limit(1).maybeSingle();if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_open",status:409,delivery_return_case_id:ret.data.id};const pay=await db.from("order_payment_settlements").select("id,status,source,expected_total_cents,captured_total_cents").eq("order_id",oid).in("status",["captured","synced","needs_review"]).limit(1).maybeSingle();if(pay.error)throw pay.error;if(!pay.data?.id||pay.data.source!=="delivery")return {error:"delivery_payment_required",status:409};const expected=Math.round(Number(o.total||0)*100);if(Number(pay.data.expected_total_cents)!==expected||Number(pay.data.captured_total_cents)!==expected)return {error:"delivery_payment_mismatch",status:409};patch.delivered_at=new Date().toISOString()}patch.status=next;
   }
-  const u=await db.from("orders").update(patch).eq("id",oid).select("id,updated_at").single();if(u.error)throw u.error;if(next&&next!==cur)await opsEvent("order.status_changed","Pedido alterado de "+cur+" para "+next+".","order",oid,{from:cur,to:next,source:o.source||null},tx(p?.operator,80)||"Operação", "human","dona_antonia","order-status:"+oid+":"+next+":"+String(u.data.updated_at));if(next&&next!==cur&&["ready","out_for_delivery","delivered","cancelled"].includes(next)){try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:next})}catch{}}let print_queued:null|boolean=null,bling_sync:any=null;if(next==="confirmed"&&cur==="created"){print_queued=await enqueuePickingPrint(oid,o,String(patch.confirmed_at||u.data.updated_at));try{bling_sync=await syncConfirmedOrderToBling(oid,tx(p?.operator,80)||"Operação")}catch(e){bling_sync={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}}else if((p?.customer_id!==undefined||p?.customer_snapshot!==undefined)&&["confirmed","processing"].includes(next||cur)){try{bling_sync=await syncConfirmedOrderToBling(oid,tx(p?.operator,80)||"Operação")}catch(e){bling_sync={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}}if(next==="cancelled"&&cur!=="cancelled")await cancelPendingPrints(oid);if(next==="delivered"||next==="cancelled"){try{await hub("fiscal_status",{source_order_id:oid})}catch{}}return {order_id:oid,history_synced:true,print_queued,bling_sync};
+  const u=await db.from("orders").update(patch).eq("id",oid).select("id,updated_at").single();if(u.error)throw u.error;
+  if(next&&next!==cur)await opsEvent("order.status_changed","Pedido alterado de "+cur+" para "+next+".","order",oid,{from:cur,to:next,source:o.source||null},tx(p?.operator,80)||"Operação","human","dona_antonia","order-status:"+oid+":"+next+":"+String(u.data.updated_at));
+  if(next&&next!==cur&&["ready","out_for_delivery","delivered","cancelled"].includes(next)){try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:next})}catch{}}
+
+  let print_queued:null|boolean=null,bling_sync:any=null,bling_completion:any=null;
+  if(next==="confirmed"&&cur==="created"){
+    print_queued=await enqueuePickingPrint(oid,o,String(patch.confirmed_at||u.data.updated_at));
+    try{bling_sync=await syncConfirmedOrderToBling(oid,tx(p?.operator,80)||"Operação")}
+    catch(e){bling_sync={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
+  }else if((p?.customer_id!==undefined||p?.customer_snapshot!==undefined)&&["confirmed","processing"].includes(next||cur)){
+    try{bling_sync=await syncConfirmedOrderToBling(oid,tx(p?.operator,80)||"Operação")}
+    catch(e){bling_sync={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
+  }
+
+  if(next==="cancelled"&&cur!=="cancelled")await cancelPendingPrints(oid);
+
+  if(next==="delivered"){
+    try{await hub("fiscal_status",{source_order_id:oid})}catch{}
+    try{
+      const h=await hub("ops2_ensure_delivered_attended",{source_order_id:oid});
+      if(h.error){
+        await db.from("orders").update({sync_status:"review_bling",updated_at:new Date().toISOString()}).eq("id",oid);
+        try{await db.rpc("ops_open_attention_v1",{
+          p_type:"order_bling_attended_failed",
+          p_summary:"Entrega concluída, mas o pedido ainda não foi confirmado como Atendido no Bling.",
+          p_entity_type:"order",p_entity_id:oid,p_correlation_id:oid,p_priority:"high",p_owner_role:"supervisor",
+          p_recommended_action:"Não refaça a baixa de estoque. O sistema tentará novamente automaticamente.",
+          p_evidence:{error:h.error,status:h.status||null,detail:h.data||h.detail||null},
+          p_source_system:"bling",p_idempotency_key:"ops2:order_bling_attended:"+oid,p_due_at:null
+        })}catch{}
+        bling_completion={attempted:true,ok:false,error:h.error,status:h.status||409,recovery_scheduled:true};
+        await opsEvent("order.bling_attended_pending","Entrega concluída; fechamento como Atendido no Bling entrou em recuperação automática.","order",oid,{bling_completion},tx(p?.operator,80)||"Operação","automation","bling","order-bling-attended-pending:"+oid);
+      }else{
+        bling_completion={attempted:true,ok:true,result:h.data};
+        await opsEvent("order.bling_attended","Pedido entregue confirmado como Atendido no Bling.","order",oid,{bling_completion},tx(p?.operator,80)||"Operação","automation","bling","order-bling-attended:"+oid);
+      }
+    }catch(e){
+      await db.from("orders").update({sync_status:"review_bling",updated_at:new Date().toISOString()}).eq("id",oid);
+      bling_completion={attempted:true,ok:false,error:tx((e as Error)?.message||e,300),recovery_scheduled:true};
+    }
+  }else if(next==="cancelled"){
+    try{await hub("fiscal_status",{source_order_id:oid})}catch{}
+  }
+
+  return {order_id:oid,history_synced:true,print_queued,bling_sync,bling_completion};
 }
 async function buildSnapshot(oid:string,reason="first_separation"){
   const oq=await db.from("orders").select("*").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;if(!oq.data)throw new Error("order_not_found");const iq=await db.from("order_items").select("*").eq("order_id",oid).order("created_at");if(iq.error)throw iq.error;const rows=iq.data||[],pids=[...new Set(rows.map((z:any)=>z.product_id).filter(Boolean))],pm=new Map<string,any>();
