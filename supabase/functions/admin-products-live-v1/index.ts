@@ -181,10 +181,33 @@ async function stockReadiness(orderIds:string[]){
   const demand=new Map<string,Map<string,number>>(),pids=new Set<string>();
   for(const r of items.data||[]){if(!demand.has(r.order_id))demand.set(r.order_id,new Map());const d=demand.get(r.order_id)!;const q=Number(r.quantity||0);d.set(r.product_id,(d.get(r.product_id)||0)+q);pids.add(r.product_id)}
   const ids=[...pids];if(!ids.length){for(const oid of orderIds)out.set(oid,{ok:false,shortage_count:0,shortages:[],demand_lines:0,reserved_lines:0,error:"empty_order_stock"});return out}
-  const [pr,rr]=await Promise.all([db.from("products").select("id,name,sku,gtin,stock,is_active,gondola,shelf").in("id",ids),db.from("vitrine_stock_reservations").select("order_id,product_id,quantity,status,expires_at").in("product_id",ids)]);
+  const [pr,rr,sm,authority]=await Promise.all([
+    db.from("products").select("id,name,sku,gtin,is_active,gondola,shelf").in("id",ids),
+    db.from("vitrine_stock_reservations").select("order_id,product_id,quantity,status,expires_at").in("product_id",ids),
+    effectiveStockMap(ids),
+    stockAuthority()
+  ]);
   if(pr.error)throw pr.error;if(rr.error)throw rr.error;
-  const pm=new Map((pr.data||[]).map((p:any)=>[p.id,p])),active=(rr.data||[]).filter((r:any)=>r.status==="reserved"&&(!r.expires_at||Date.parse(r.expires_at)>Date.now()));
-  for(const oid of orderIds){const lines=demand.get(oid)||new Map(),short:any[]=[];let protectedLines=0;for(const [pid,qty] of lines){const own=active.filter((r:any)=>r.order_id===oid&&r.product_id===pid).reduce((s:number,r:any)=>s+Number(r.quantity||0),0),consumed=(rr.data||[]).filter((r:any)=>r.order_id===oid&&r.product_id===pid&&r.status==="consumed").reduce((s:number,r:any)=>s+Number(r.quantity||0),0);if(own+consumed+0.0001>=qty){protectedLines++;continue}const p=pm.get(pid),other=active.filter((r:any)=>r.order_id!==oid&&r.product_id===pid).reduce((s:number,r:any)=>s+Number(r.quantity||0),0),free=Math.max(0,Number(p?.stock||0)-other),need=Math.max(0,qty-own-consumed),lack=Math.max(0,need-free);if(!p||p.is_active===false||lack>0)short.push({product_id:pid,name:p?.name||"Produto indisponível",sku:p?.sku||"",gtin:p?.gtin||"",required:qty,available:p&&p.is_active!==false?free:0,shortage:p&&p.is_active!==false?lack:need,gondola_number:p?.gondola&&/^\d+$/.test(String(p.gondola))?Number(p.gondola):null,shelf_label:p?.shelf||null})}out.set(oid,{ok:short.length===0&&lines.size>0,shortage_count:short.length,shortages:short.slice(0,8),demand_lines:lines.size,reserved_lines:protectedLines,error:lines.size?"":"empty_order_stock"})}
+  const active=(rr.data||[]).filter((r:any)=>r.status==="reserved"&&(!r.expires_at||Date.parse(r.expires_at)>Date.now()));
+  const reservationOrderIds=[...new Set(active.map((r:any)=>r.order_id).filter(Boolean))],syncMap=new Map<string,boolean>();
+  if(reservationOrderIds.length){
+    const oq=await db.from("orders").select("id,sync_status,bling_synced_at").in("id",reservationOrderIds);if(oq.error)throw oq.error;
+    for(const o of oq.data||[])syncMap.set(o.id,Boolean(o.bling_synced_at)&&o.sync_status==="sent_to_bling");
+  }
+  const pm=new Map((pr.data||[]).map((p:any)=>[p.id,p]));
+  for(const oid of orderIds){
+    const lines=demand.get(oid)||new Map(),short:any[]=[];let protectedLines=0;
+    for(const [pid,qty] of lines){
+      const own=active.filter((r:any)=>r.order_id===oid&&r.product_id===pid).reduce((sum:number,r:any)=>sum+Number(r.quantity||0),0);
+      const consumed=(rr.data||[]).filter((r:any)=>r.order_id===oid&&r.product_id===pid&&r.status==="consumed").reduce((sum:number,r:any)=>sum+Number(r.quantity||0),0);
+      if(own+consumed+0.0001>=qty){protectedLines++;continue}
+      const p=pm.get(pid);
+      const pendingOther=active.filter((r:any)=>r.order_id!==oid&&r.product_id===pid&&(authority!=="bling"||syncMap.get(r.order_id)!==true)).reduce((sum:number,r:any)=>sum+Number(r.quantity||0),0);
+      const free=Math.max(0,Number(sm.get(pid)||0)-pendingOther),need=Math.max(0,qty-own-consumed),lack=Math.max(0,need-free);
+      if(!p||p.is_active===false||lack>0)short.push({product_id:pid,name:p?.name||"Produto indisponível",sku:p?.sku||"",gtin:p?.gtin||"",required:qty,available:p&&p.is_active!==false?free:0,shortage:p&&p.is_active!==false?lack:need,gondola_number:p?.gondola&&/^\d+$/.test(String(p.gondola))?Number(p.gondola):null,shelf_label:p?.shelf||null});
+    }
+    out.set(oid,{ok:short.length===0&&lines.size>0,shortage_count:short.length,shortages:short.slice(0,8),demand_lines:lines.size,reserved_lines:protectedLines,error:lines.size?"":"empty_order_stock",stock_authority:authority});
+  }
   return out;
 }
 async function mapOrders(rows:any[]){
