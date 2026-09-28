@@ -113,7 +113,7 @@ async function ops2LiveRuntime(){
   return {mode:String(q.data?.mode||""),hub_enabled:q.data?.hub_enabled===true,orders_enabled:q.data?.orders_enabled===true,stock_enabled:q.data?.stock_enabled===true,webhooks_enabled:q.data?.webhooks_enabled===true,cutover_at:cut,direct_order_state:m.ops2_direct_order_state_enabled===true};
 }
 async function postCutoverOrder(oid:string){
-  const [rt,o]=await Promise.all([ops2LiveRuntime(),db.from("orders").select("id,created_at,status").eq("id",oid).maybeSingle()]);
+  const [rt,o]=await Promise.all([ops2LiveRuntime(),db.from("orders").select("id,created_at,updated_at,status").eq("id",oid).maybeSingle()]);
   if(o.error)throw o.error;if(!o.data)return {enabled:false,reason:"order_not_found"};
   const cut=Date.parse(rt.cutover_at||"");
   const created=Date.parse(o.data.created_at||"");
@@ -127,9 +127,20 @@ async function syncConfirmedOrderToBling(oid:string,operator="Operação"){
   const now=new Date().toISOString();
   if(h.error){
     await db.from("orders").update({sync_status:"review_bling",updated_at:now}).eq("id",oid);
-    try{await db.rpc("ops_open_attention_v1",{p_type:"order_bling_sync_failed",p_summary:"Pedido confirmado ainda não sincronizou com o Bling.",p_entity_type:"order",p_entity_id:oid,p_correlation_id:oid,p_priority:"high",p_owner_role:"supervisor",p_recommended_action:"Abra o pedido, confira cliente/produtos e tente novamente. O sistema também fará nova tentativa automática.",p_evidence:{error:h.error,status:h.status||null,detail:h.data||h.detail||null,cutover_at:gate.runtime?.cutover_at},p_source_system:"bling",p_idempotency_key:"ops2:order_bling_sync:"+oid,p_due_at:null})}catch{}
-    await opsEvent("order.bling_sync_pending","Pedido confirmado; sincronização com Bling ficou pendente.","order",oid,{error:h.error,status:h.status||null},operator,"automation","bling","order-bling-sync-pending:"+oid);
-    return {attempted:true,ok:false,error:h.error,status:h.status||409,detail:h.data||h.detail||null};
+    let retryQueued=false,retryJobId:any=null;
+    try{
+      const revision=String(gate.order?.updated_at||gate.order?.created_at||"").replace(/[^0-9]/g,"").slice(0,18)||"r1";
+      const retry=await hub("enqueue_job",{
+        domain:"order",operation:"sync_order",source_id:oid,
+        idempotency_key:"ops2:live-order-retry:"+oid+":"+revision,
+        payload:snap
+      });
+      retryQueued=!retry.error&&retry.data?.queued!==false;
+      retryJobId=retry.data?.job_id||null;
+    }catch{}
+    try{await db.rpc("ops_open_attention_v1",{p_type:"order_bling_sync_failed",p_summary:"Pedido confirmado ainda não sincronizou com o Bling.",p_entity_type:"order",p_entity_id:oid,p_correlation_id:oid,p_priority:"high",p_owner_role:"supervisor",p_recommended_action:"O sistema tentará novamente a cada ciclo. Se persistir, abra o pedido e confira cliente/produtos.",p_evidence:{error:h.error,status:h.status||null,detail:h.data||h.detail||null,cutover_at:gate.runtime?.cutover_at,retry_queued:retryQueued,retry_job_id:retryJobId},p_source_system:"bling",p_idempotency_key:"ops2:order_bling_sync:"+oid,p_due_at:null})}catch{}
+    await opsEvent("order.bling_sync_pending","Pedido confirmado; sincronização com Bling ficou pendente e entrou na fila de recuperação.","order",oid,{error:h.error,status:h.status||null,retry_queued:retryQueued,retry_job_id:retryJobId},operator,"automation","bling","order-bling-sync-pending:"+oid);
+    return {attempted:true,ok:false,error:h.error,status:h.status||409,detail:h.data||h.detail||null,retry_queued:retryQueued,retry_job_id:retryJobId};
   }
   const blingId=Number(h.data?.bling_order_id||0)||null;
   await db.from("orders").update({bling_order_id:blingId,bling_synced_at:now,sync_status:"sent_to_bling",updated_at:now}).eq("id",oid);
