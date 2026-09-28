@@ -349,6 +349,19 @@ async function updateOrderCanonical(p:any){
   if(p?.customer_id!==undefined){const cid=id(p.customer_id);patch.customer_id=cid||null;if(cid){const c=await db.from("customers").select("id,name,primary_whatsapp_e164").eq("id",cid).maybeSingle();if(c.error)throw c.error;if(!c.data)return {error:"customer_not_found",status:404};patch.customer_snapshot={...(o.customer_snapshot||{}),customer_id:cid,name:c.data.name,phone_e164:c.data.primary_whatsapp_e164||o.phone_e164||null};const a=await db.from("customer_addresses").select("*").eq("customer_id",cid).eq("is_active",true).order("is_default",{ascending:false}).limit(1).maybeSingle();if(a.error)throw a.error;if(a.data)patch.delivery_address={...(o.delivery_address||{}),source_customer_id:cid,customer_name:c.data.name,phone:c.data.primary_whatsapp_e164||o.phone_e164||null,street:a.data.street,number:a.data.number,complement:a.data.complement,district:a.data.neighborhood,city:a.data.city,state:a.data.state,postal_code:a.data.postal_code,google_maps_url:a.data.google_maps_url,block:a.data.block}}}
   if(p?.customer_snapshot!==undefined){const s=p.customer_snapshot&&typeof p.customer_snapshot==="object"?p.customer_snapshot:{},cid=id(s.id);if(cid){patch.customer_id=cid;patch.customer_snapshot={...(o.customer_snapshot||{}),customer_id:cid,name:tx(s.display_name,180),phone_e164:tx(s.phone,40)};const a=s.address&&typeof s.address==="object"?s.address:{};patch.delivery_address={...(o.delivery_address||{}),source_customer_id:cid,customer_name:tx(s.display_name,180),phone:tx(s.phone,40),street:tx(a.street,180)||null,number:tx(a.number,40)||null,complement:tx(a.complement,140)||null,district:tx(a.neighborhood??a.district,140)||null,city:tx(a.city,120)||null,state:tx(a.state,2).toUpperCase()||null,postal_code:tx(a.postal_code,20)||null,google_maps_url:tx(a.google_maps_url,800)||null,block:tx(a.block,80)||null}}}
   const next=p?.status!==undefined?uiStatus(p.status):"";if(next){if(!transitionAllowed(cur,next))return {error:"invalid_status_transition",status:409,current_status:cur,requested_status:next};const effectiveA=patch.delivery_address??o.delivery_address??{},effectiveP=(patch.payment_method??o.payment_method)||"";if(["confirmed","processing","ready","out_for_delivery","delivered"].includes(next)){const blockers=[];if(!tx(effectiveA.customer_name??effectiveA.recipient_name,180))blockers.push("customer_required");if(!tx(effectiveA.street,180))blockers.push("delivery_street_required");if(!tx(effectiveA.number,40))blockers.push("delivery_number_required");if(!tx(effectiveA.city,120))blockers.push("delivery_city_required");if(!tx(effectiveA.state,2))blockers.push("delivery_state_required");if(!tx(effectiveP,80))blockers.push("payment_method_required");if(blockers.length)return {error:"order_operational_data_incomplete",status:409,blockers,current_status:cur,requested_status:next}}
+    if(next==="processing"&&cur==="confirmed"){
+      const authority=await stockAuthority();
+      if(authority==="bling"){
+        let approval:any=null;
+        try{approval=await syncConfirmedOrderToBling(oid,tx(p?.operator,80)||"Operação")}
+        catch(e){approval={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
+        if(!approval?.ok)return {
+          error:"bling_approval_required_before_separation",status:409,
+          current_status:cur,requested_status:next,bling_sync:approval,
+          recommended_action:"O pedido precisa estar em Aprovado / Separar no Bling antes de iniciar a separação."
+        };
+      }
+    }
     if(next==="confirmed"&&cur==="created"){const r=await db.rpc("reserve_vitrine_order_stock_v1",{p_order_id:oid});if(r.error)throw r.error;if(r.data?.ok!==true)return {error:String(r.data?.error||"insufficient_stock"),status:409,...r.data};patch.confirmed_at=new Date().toISOString()}
     if(next==="cancelled"&&cur!=="cancelled"){const r=await db.rpc("release_vitrine_order_stock_v1",{p_order_id:oid});if(r.error)throw r.error;if(r.data?.ok===false)return {error:String(r.data?.error||"stock_release_failed"),status:409};patch.cancelled_at=new Date().toISOString()}
     if(next==="out_for_delivery"&&cur==="ready"){const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).eq("status","returned_review").limit(1).maybeSingle();if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_review_open",status:409,delivery_return_case_id:ret.data.id};const h=await hub("fiscal_dispatch_gate",{source_order_id:oid});if(h.error)return {error:"fiscal_dispatch_gate_unavailable",status:h.status||503,detail:h.detail||null};if(h.data?.allowed!==true)return {error:"fiscal_dispatch_not_authorized",status:409,fiscal_dispatch_gate:h.data};const authority=await stockAuthority();if(authority==="bling"){const snap=await buildSnapshot(oid,"dispatch_physical_stock");const launch=await hub("ops2_launch_physical_stock",{payload:snap});if(launch.error)return {error:launch.error||"physical_stock_launch_failed",status:launch.status||409,detail:launch.detail||launch.data||null}}}
@@ -365,7 +378,69 @@ async function buildSnapshot(oid:string,reason="first_separation"){
 }
 async function previewOrder(oid:string){const s=await buildSnapshot(oid,"first_separation"),h=await hub("preview_order_sync",{payload:s});return h.error?{error:h.error,status:h.status,detail:h.detail}:h.data}
 async function queueOrder(oid:string,reason:string){const s=await buildSnapshot(oid,reason),bytes=new TextEncoder().encode(JSON.stringify(s)),hash=await crypto.subtle.digest("SHA-256",bytes),dig=[...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,24);return await hub("enqueue_job",{domain:"order",operation:"sync_order",source_id:oid,idempotency_key:"vitrine_canonical:order:"+oid+":v1:"+dig,payload:{...s,queue_reason:reason,queued_at:new Date().toISOString()}})}
-async function consumeOrder(p:any){const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};const g=await guardOrder(oid);if(g.error)return g;const o=await db.from("orders").select("status,updated_at").eq("id",oid).maybeSingle();if(o.error)throw o.error;if(!o.data)return {error:"order_not_found",status:404};const st=uiStatus(o.data.status);if(!["confirmed","processing"].includes(st))return {error:"order_not_ready_for_separation",status:409,current_status:st};const x=await db.rpc("consume_vitrine_order_stock_v1",{p_order_id:oid});if(x.error)throw x.error;if(x.data?.ok!==true)return {error:String(x.data?.error||"stock_consume_failed"),status:409,...x.data};const blingAuthority=x.data?.status==="bling_authority"||x.data?.local_consume_skipped===true;let queued=false,bling_sync:any=null;if(blingAuthority){try{bling_sync=await syncConfirmedOrderToBling(oid,tx(p?.operator,80)||"Operação");queued=Boolean(bling_sync?.ok)}catch(e){bling_sync={ok:false,error:tx((e as Error)?.message||e,300)}}}else{try{const q=await queueOrder(oid,"first_separation");queued=!q.error}catch{}}if(blingAuthority)await opsEvent("order.separation_started","Separação iniciada sob autoridade de estoque Bling; nenhuma baixa local foi executada.","order",oid,{stock_status:"bling_authority",bling_order_synced:queued,legacy_stock_model:false,local_consume_skipped:true},tx(p?.operator,80)||"Operação","human","dona_antonia","order-separation:"+oid+":"+String(o.data.updated_at));else if(!x.data?.already_consumed)await opsEvent("order.separation_started","Separação iniciada e estoque local consumido no fluxo legado.","order",oid,{stock_status:"consumed",bling_order_queued:queued,legacy_stock_model:true},tx(p?.operator,80)||"Operação","human","dona_antonia","order-separation:"+oid+":"+String(o.data.updated_at));return {order_id:oid,stock_status:blingAuthority?"bling_authority":"consumed",already_consumed:Boolean(x.data?.already_consumed),local_consume_skipped:Boolean(x.data?.local_consume_skipped),history_synced:true,bling_order_queued:queued,bling_sync}}
+async function consumeOrder(p:any){
+  const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};
+  const g=await guardOrder(oid);if(g.error)return g;
+  const o=await db.from("orders").select("status,updated_at").eq("id",oid).maybeSingle();
+  if(o.error)throw o.error;if(!o.data)return {error:"order_not_found",status:404};
+  const st=uiStatus(o.data.status);
+  if(!["confirmed","processing"].includes(st))return {error:"order_not_ready_for_separation",status:409,current_status:st};
+
+  const authority=await stockAuthority();
+  let bling_sync:any=null;
+  if(authority==="bling"){
+    try{bling_sync=await syncConfirmedOrderToBling(oid,tx(p?.operator,80)||"Operação")}
+    catch(e){bling_sync={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
+    if(!bling_sync?.ok){
+      return {
+        error:"bling_approval_required_before_separation",status:409,
+        current_status:st,bling_sync,
+        recommended_action:"Aguarde a recuperação automática do Bling e tente iniciar a separação novamente."
+      };
+    }
+  }
+
+  const x=await db.rpc("consume_vitrine_order_stock_v1",{p_order_id:oid});
+  if(x.error)throw x.error;
+  if(x.data?.ok!==true)return {error:String(x.data?.error||"stock_consume_failed"),status:409,...x.data};
+
+  const blingAuthority=authority==="bling"||x.data?.status==="bling_authority"||x.data?.local_consume_skipped===true;
+  let queued=false;
+  if(blingAuthority){
+    queued=Boolean(bling_sync?.ok);
+  }else{
+    try{const q=await queueOrder(oid,"first_separation");queued=!q.error}catch{}
+  }
+
+  if(blingAuthority){
+    await opsEvent(
+      "order.separation_started",
+      "Separação iniciada sob autoridade de estoque Bling; nenhuma baixa local foi executada.",
+      "order",oid,
+      {stock_status:"bling_authority",bling_order_synced:queued,legacy_stock_model:false,local_consume_skipped:true},
+      tx(p?.operator,80)||"Operação","human","dona_antonia",
+      "order-separation:"+oid+":"+String(o.data.updated_at)
+    );
+  }else if(!x.data?.already_consumed){
+    await opsEvent(
+      "order.separation_started",
+      "Separação iniciada e estoque local consumido no fluxo legado.",
+      "order",oid,
+      {stock_status:"consumed",bling_order_queued:queued,legacy_stock_model:true},
+      tx(p?.operator,80)||"Operação","human","dona_antonia",
+      "order-separation:"+oid+":"+String(o.data.updated_at)
+    );
+  }
+  return {
+    order_id:oid,
+    stock_status:blingAuthority?"bling_authority":"consumed",
+    already_consumed:Boolean(x.data?.already_consumed),
+    local_consume_skipped:Boolean(x.data?.local_consume_skipped),
+    history_synced:true,
+    bling_order_queued:queued,
+    bling_sync
+  };
+}
 async function orderShortages(){const rows=await ordersList(),open=rows.filter((o:any)=>["created","confirmed","processing"].includes(o.status)&&o.stock_readiness?.ok===false),m=new Map<string,any>();for(const o of open)for(const s of o.stock_readiness?.shortages||[]){const z=m.get(s.product_id)||{...s,pending_orders:0,order_numbers:[],shortage:0};z.pending_orders++;z.order_numbers.push(String(o.order_number||o.id).slice(-8));z.shortage=Math.max(z.shortage,Number(s.shortage||0));m.set(s.product_id,z)}const products=[...m.values()].sort((a:any,b:any)=>b.shortage-a.shortage);return {products,summary:{products:products.length,shortage_units:products.reduce((s:number,z:any)=>s+Number(z.shortage||0),0),pending_orders:open.length}}}
 async function closureOrders(){const c=await cutover(),q=await db.from("orders").select("*").in("source",OP_SOURCES).eq("status","delivered").gte("created_at",c.live_orders_since).order("delivered_at",{ascending:false}).limit(60);if(q.error)throw q.error;const orders=await mapOrders(q.data||[]),h=await hub("fiscal_pending_orders",{limit:5000}),fb:any={};for(const z of h.error?[]:(h.data?.orders||[])){if(z.source_order_id)fb[z.source_order_id]=z}return {orders,fiscal_by_order:fb,pending_count:Object.keys(fb).length,pending_lookup_ok:!h.error,pending_lookup_truncated:Boolean(h.data?.truncated)}}
 async function reconcileCatalog(){const q=await db.from("products").select("id,sku,gtin,name").eq("is_active",true).limit(5000);if(q.error)throw q.error;return await hub("reconcile_product_catalog_readonly",{items:(q.data||[]).map((p:any)=>({source_id:p.id,sku:p.sku||"",gtin:p.gtin||"",name:p.name||""}))})}
