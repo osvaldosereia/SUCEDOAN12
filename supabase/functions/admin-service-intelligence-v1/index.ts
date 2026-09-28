@@ -5380,7 +5380,7 @@ async function blingHubOps2OrderStockProbe(sb:any,sourceOrderIdRaw:any,limitRaw:
 
 async function blingHubOps2CatalogStockCanaryExecute(sb:any,canaryRaw:any){
   const canaryId=uuid(canaryRaw);if(!canaryId)return {ok:false,error:"invalid_canary_id",external_write:false};
-  const cq=await sb.from("ops2_catalog_sync_canaries").select("id,run_id,status,item_count,external_write_enabled").eq("id",canaryId).maybeSingle();if(cq.error)throw cq.error;
+  const cq=await sb.from("ops2_catalog_sync_canaries").select("id,run_id,status,item_count,external_write_enabled,risk_band").eq("id",canaryId).maybeSingle();if(cq.error)throw cq.error;
   const canary=cq.data;if(!canary)return {ok:false,error:"canary_not_found",external_write:false};
   if(canary.status!=="armed"||canary.external_write_enabled!==true)return {ok:false,error:"canary_not_armed",status:canary.status,external_write:false};
   if(Number(canary.item_count)<1||Number(canary.item_count)>5)return {ok:false,error:"invalid_canary_size",external_write:false};
@@ -5391,8 +5391,11 @@ async function blingHubOps2CatalogStockCanaryExecute(sb:any,canaryRaw:any){
   // Fail closed by risk band. Delta 1 keeps the original path. Delta 2 is accepted
   // only when every item is exactly in the separately armed <=2 band; DB arming
   // already enforces live-stock drift and batch-size guards.
-  const deltaBand=maxAbsDelta<=1?1:(maxAbsDelta<=2&&absDeltas.every((d:number)=>d>=1&&d<=2)?2:0);
-  if(items.length!==Number(canary.item_count)||items.some((x:any)=>x.state!=="prepared")||deltaBand===0)return {ok:false,error:"canary_items_invalid",max_abs_delta:maxAbsDelta,external_write:false};
+  const configuredBand=Number(canary.risk_band||0);
+  const legacyBand=maxAbsDelta<=1?1:(maxAbsDelta<=2&&absDeltas.every((d:number)=>d>=1&&d<=2)?2:0);
+  const deltaBand=configuredBand>=2&&configuredBand<=10&&absDeltas.every((d:number)=>d===configuredBand)?configuredBand:legacyBand;
+  const maxItems=deltaBand<=5?5:3;
+  if(items.length!==Number(canary.item_count)||items.some((x:any)=>x.state!=="prepared")||deltaBand===0||Number(canary.item_count)>maxItems)return {ok:false,error:"canary_items_invalid",max_abs_delta:maxAbsDelta,risk_band:configuredBand||null,external_write:false};
   const live=await sb.from("products").select("id,stock").in("id",items.map((x:any)=>x.product_id));if(live.error)throw live.error;
   const lm=new Map((live.data||[]).map((x:any)=>[String(x.id),Number(x.stock)]));
   const drift=items.find((x:any)=>!lm.has(String(x.product_id))||Number(lm.get(String(x.product_id)))!==Number(x.desired_stock));
