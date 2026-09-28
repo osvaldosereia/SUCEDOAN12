@@ -217,3 +217,13 @@ Validação de leitura em 2026-09-28:
 - 0 grupos de EAN duplicados entre ativos;
 - 1.610/1.610 produtos ativos possuem vínculo seguro `matched` com produto no Bling.
 Os 23 sem EAN permanecem identificáveis com segurança por lote + página + posição + REF do manifesto impresso.
+
+
+## Ajuste do seletor de impressão — 2026-09-28
+- impressão do balanço agora permite selecionar uma ou várias categorias OU uma ou várias gôndolas;
+- antes de imprimir, mostra quantidade exata de produtos e páginas A4;
+- seletor usa somente produtos ativos realmente imprimíveis;
+- regra de categoria foi unificada entre contagem, prévia e geração;
+- aliases legados são consolidados (ex.: `Mercearia` + `mercearia`);
+- numeração de gôndola é normalizada para impressão (`01` = `1`, `09` = `9`);
+- backend ativo: `admin-products-live-v1` v67.
