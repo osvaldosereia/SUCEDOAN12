@@ -39,7 +39,7 @@ begin
   select status,coalesce(metadata,'{}'::jsonb)
     into link_status,link_meta
     from public.bling_hub_entity_links_v2
-   where source_system='vitrine_qx' and entity_type='order' and source_id=o.id
+   where source_system='vitrine_qx' and entity_type='order' and source_id=o.id::text
    limit 1;
 
   if coalesce(link_status,'')<>'matched' then blockers:=array_append(blockers,'bling_order_not_linked'); end if;
