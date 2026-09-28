@@ -9003,6 +9003,9 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="purchase_xml_daily_sync"){
         return await handlePurchaseXmlRequest(req,{purchase_action:"daily_sync"},true);
       }
+      if(subaction==="purchase_xml_lot_evidence_backfill"){
+        return await handlePurchaseXmlRequest(req,{purchase_action:"lot_evidence_backfill",limit:body?.limit||100},true);
+      }
       if(subaction==="fiscal_nfe_entry_backfill"){
         const result=await blingHubNfeEntryBackfill(sb,body?.steps);
         return json(result,result.ok?200:Number(result.status||409));
