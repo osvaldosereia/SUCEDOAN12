@@ -2672,40 +2672,69 @@
   }
   function purchaseFinanceReasonLabel(v){
     const map={
-      reconciled_existing:'Contas já encontradas no Bling',
-      native_nfe_accounts_launched:'Contas lançadas pela própria NF-e',
-      native_launch_error_but_reconciled:'Bling respondeu com alerta, mas as contas foram encontradas',
-      payables_missing_or_ambiguous:'Contas ausentes ou ambíguas no Bling',
-      bling_nfe_id_missing_for_native_payables:'NF-e sem ID do Bling para lançamento nativo',
-      supplier_contact_missing:'Fornecedor ainda sem vínculo no Bling',
-      installments_missing:'Parcelas não encontradas no XML',
-      installment_total_mismatch:'Soma das parcelas diferente do total da NF-e',
-      automatic_payables_disabled:'Lançamento automático desativado'
+      reconciled_existing:'Financeiro já encontrado e confirmado no Bling.',
+      native_nfe_accounts_launched:'Contas a pagar lançadas e confirmadas pelo Bling.',
+      native_launch_error_but_reconciled:'O Bling mostrou um aviso, mas as contas foram confirmadas.',
+      payables_missing_or_ambiguous:'Não encontrei uma conta a pagar que corresponda com segurança a esta nota.',
+      bling_nfe_id_missing_for_native_payables:'Esta nota ainda não tem a referência necessária no Bling para lançar o financeiro.',
+      supplier_contact_missing:'O fornecedor desta nota ainda precisa ser vinculado corretamente no Bling.',
+      installments_missing:'A nota não trouxe parcelas/vencimentos suficientes para montar o financeiro com segurança.',
+      installment_total_mismatch:'O total das parcelas é diferente do total da NF-e.',
+      automatic_payables_disabled:'O lançamento automático de contas está desativado.'
     };
     const key=String(v||'');
-    if(/^nfe_lancar_contas_http_/.test(key))return 'Bling recusou o lançamento das contas da NF-e';
-    if(/^payable_reconcile_http_/.test(key))return 'Não foi possível consultar as contas a pagar no Bling';
-    return map[key]||key||'Sem detalhe';
+    if(/^nfe_lancar_contas_http_/.test(key))return 'O Bling não aceitou o lançamento das contas desta NF-e.';
+    if(/^payable_reconcile_http_/.test(key))return 'Não consegui consultar as contas a pagar no Bling agora.';
+    return map[key]||'O financeiro desta nota precisa de conferência.';
+  }
+  function purchaseFinanceProblemHtml(d){
+    const f=d?.finance_reference||{},r=f.reconciliation||{};
+    const reason=String(f.reason||d?.finance_last_error||'');
+    if(reason==='installment_total_mismatch'){
+      const invoice=Number(r.invoice_total??d?.total_amount),parts=Number(r.installment_total);
+      const diff=Number.isFinite(invoice)&&Number.isFinite(parts)?Math.round((parts-invoice)*100)/100:null;
+      return '<div class="purchase-price-grid" style="margin-top:10px">'+
+        '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Total das parcelas</small><strong>'+purchaseMoney(parts)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Diferença</small><strong class="warn-text">'+(diff===null?'—':purchaseMoney(diff))+'</strong></div>'+
+      '</div><small class="warn-text" style="margin-top:7px">Corrija as parcelas no Bling para que a soma fique igual ao total da nota. Depois clique em <b>Resolver financeiro</b> novamente.</small>';
+    }
+    if(reason==='payables_missing_or_ambiguous'){
+      return '<small style="margin-top:7px">Ao clicar em <b>Resolver financeiro</b>, o sistema confere novamente. Se não existir conta correspondente, ele pedirá sua confirmação antes de solicitar o lançamento ao Bling.</small>';
+    }
+    if(reason==='installments_missing'){
+      return '<small class="warn-text" style="margin-top:7px">Confira no Bling os vencimentos e parcelas desta compra. O sistema não cria valores por aproximação.</small>';
+    }
+    if(reason==='supplier_contact_missing'){
+      return '<small class="warn-text" style="margin-top:7px">É preciso corrigir o vínculo do fornecedor no Bling antes de lançar as contas.</small>';
+    }
+    return '';
   }
   function purchaseFinanceBlockHtml(d){
-    const f=d?.finance_reference||{},accounts=Array.isArray(f.accounts)?f.accounts:[],posted=d?.finance_status==='posted';
-    const attempts=Number(d?.finance_attempt_count||0),last=d?.finance_last_attempt_at?dateTime(d.finance_last_attempt_at):'nenhuma tentativa';
+    const f=d?.finance_reference||{},posted=d?.finance_status==='posted'&&Boolean(d?.finance_reconciled_at);
+    const eligible=d?.recipient_kind==='CNPJ'&&d?.financial_eligible===true;
     const reason=purchaseFinanceReasonLabel(f.reason||d?.finance_last_error);
-    const accountText=accounts.length?accounts.map(a=>'#'+String(a.id||'—')+(a.amount!=null?' · '+purchaseMoney(a.amount):'')).join(' · '):'nenhuma conta vinculada no espelho local';
-    const canPost=d?.recipient_kind==='CNPJ'&&d?.financial_eligible===true&&!posted&&Number(d?.bling_nfe_id||0)>0;
-    return '<div class="purchase-safe '+(!posted&&d?.financial_eligible===true?'purchase-danger':'')+'" style="margin:0 0 12px">'+
-      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div>'+
-        '<strong>Financeiro da NF-e · '+purchaseFinanceLabel(d?.finance_status)+'</strong>'+
-        '<small>'+esc(reason)+' · '+attempts+' tentativa(s) · última: '+esc(last)+'</small>'+
-        '<small>Bling NF-e #'+esc(d?.bling_nfe_id||'—')+' · '+esc(accountText)+'</small>'+
+    if(d?.recipient_kind==='CPF'){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Nota em CPF: não gera contas a pagar da empresa.</small></div>';
+    }
+    if(!eligible){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Esta nota não está marcada para gerar contas a pagar da empresa.</small></div>';
+    }
+    if(posted){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro confirmado</strong><small>As contas desta NF-e estão conciliadas com o Bling'+(d.finance_reconciled_at?' · conferido em '+esc(dateTime(d.finance_reconciled_at)):'')+'.</small></div>';
+    }
+    return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+
+        '<strong>Financeiro precisa de atenção</strong>'+
+        '<small>'+esc(reason)+'</small>'+
+        purchaseFinanceProblemHtml(d)+
       '</div><div class="purchase-detail-actions">'+
-        (d?.recipient_kind==='CNPJ'&&d?.financial_eligible===true?'<button class="secondary" type="button" data-purchase-finance-reconcile="'+esc(d.id)+'">Reconciliar com Bling</button>':'')+
-        (canPost?'<button class="primary" type="button" data-purchase-finance-post="'+esc(d.id)+'">'+(attempts?'Tentar lançamento novamente':'Lançar contas no Bling')+'</button>':'')+
+        '<button class="primary" type="button" data-purchase-finance-resolve="'+esc(d.id)+'">Resolver financeiro</button>'+
       '</div></div>'+
-      (d?.finance_last_error?'<small class="warn-text" style="margin-top:7px">Último erro: '+esc(d.finance_last_error)+'</small>':'')+
-      (posted?'<small class="ok-text" style="margin-top:7px">Financeiro confirmado no Bling'+(d.finance_reconciled_at?' · conciliado '+esc(dateTime(d.finance_reconciled_at)):'')+'.</small>':'')+
+      '<details style="margin-top:8px"><summary class="sub" style="cursor:pointer">Detalhes técnicos</summary><small>NF-e Bling #'+esc(d?.bling_nfe_id||'—')+' · tentativas: '+esc(Number(d?.finance_attempt_count||0))+(d?.finance_last_attempt_at?' · última '+esc(dateTime(d.finance_last_attempt_at)):'')+'.</small></details>'+
     '</div>';
   }
+
   function purchaseStatusLabel(v){
     const map={processed:'Processada',review_required:'Revisar',failed:'Falhou',duplicate:'Duplicada',processing:'Processando',pending:'Pendente'};
     const cls=v==='review_required'||v==='failed'?'warn':'';
@@ -2843,16 +2872,27 @@
   function purchaseItemCardHtml(x){
     const p=x.pricing_preview||{},prod=x.products||{},factor=p.suggested_conversion_factor??x.conversion_factor??1;
     const unitCost=p.proposed_unit_cost??purchaseItemUnitCost(x,factor);
-    const suggested=p.suggested_sale_price??(unitCost!==null?Math.round(unitCost*1.4*100)/100:null);
+    const minimum=p.suggested_sale_price??(unitCost!==null?Math.round(unitCost*1.4*100)/100:null);
+    const currentSale=Number(prod?.price),hasCurrent=Number.isFinite(currentSale)&&currentSale>0;
+    const hasMinimum=Number.isFinite(Number(minimum));
+    const saleValue=hasCurrent&&hasMinimum?Math.max(currentSale,Number(minimum)):hasCurrent?currentSale:minimum;
+    const shouldUpdateSale=!hasCurrent||(hasMinimum&&currentSale+0.005<Number(minimum));
+    const saleHint=hasCurrent&&hasMinimum&&currentSale>=Number(minimum)
+      ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
+      :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
     const existing=Boolean(prod?.id),inactive=existing&&prod.is_active===false,newFromXml=Boolean(prod?.metadata?.purchase_xml_created);
     const needsFactor=Boolean(p.requires_conversion_confirmation);
     const evidence=p.conversion_suggestion_evidence?' · leitura: '+esc(p.conversion_suggestion_evidence):'';
     const factorHint=needsFactor
       ?(factor&&Number(factor)>1?'Sugestão detectada: '+esc(fmtQty(factor))+' UN por '+esc(x.purchase_unit||'embalagem')+evidence:'Informe quantas unidades de venda existem em 1 '+esc(x.purchase_unit||'embalagem')+'.')
       :'Venda em unidade · fator '+esc(fmtQty(factor||1))+'.';
+    const qtyText=(factor&&Number(factor)>0)
+      ?esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'')+' × '+esc(fmtQty(factor))+' = '+esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN'
+      :esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'');
     return '<div class="purchase-item-card" data-purchase-item="'+esc(x.id)+'" data-document-id="'+esc(x.document_id)+'">'+
       '<div class="purchase-item-title"><div><strong>'+esc(prod.name||x.description||'Produto')+'</strong>'+
-        '<small>'+esc(x.description||'')+' · EAN '+esc(x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado')+' · compra: '+esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'')+'</small></div>'+
+        '<small>'+esc(x.description||'')+' · EAN '+esc(x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado')+'</small>'+
+        '<small><b>Compra:</b> '+qtyText+'</small></div>'+
         '<div class="purchase-item-badges">'+
           '<span class="pill '+(existing?'':'warn')+'">'+(existing?'Vinculado':'Sem vínculo')+'</span>'+
           (newFromXml?'<span class="pill warn">Novo pelo XML</span>':'')+
@@ -2860,14 +2900,14 @@
           (needsFactor?'<span class="pill warn">Confirmar embalagem</span>':'<span class="pill">UN</span>')+
         '</div></div>'+
       '<div class="purchase-price-grid">'+
-        '<div class="purchase-field"><label>Conversão para unidade (UN)</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'" '+(needsFactor?'':'')+'><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
-        '<div class="purchase-price-box"><small>Qtd. final</small><strong data-purchase-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
+        '<div class="purchase-field"><label>Conversão para unidade (UN)</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
+        '<div class="purchase-price-box"><small>Quantidade final</small><strong data-purchase-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
         '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
-        '<div class="purchase-price-box"><small>Custo desta nota / UN</small><strong class="accent" data-purchase-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
-        '<div class="purchase-price-box"><small>Venda atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
-        '<div class="purchase-field"><label>Preço de venda sugerido (+40%)</label><input type="number" min="0" step="0.01" data-purchase-sale value="'+esc(purchaseNumberInput(suggested))+'"><div class="purchase-factor-hint">Editável antes de autorizar.</div></div>'+
+        '<div class="purchase-price-box"><small>Custo novo / UN</small><strong class="accent" data-purchase-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Preço atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
+        '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-purchase-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint" data-purchase-sale-hint>'+esc(saleHint)+'</div></div>'+
       '</div>'+
-      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale checked> Atualizar preço de venda</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · esta autorização não altera estoque. A entrada física continua separada.</div></div>'+
+      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · autorizar este item não altera o estoque.</div></div>'+
         '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'">Autorizar atualização</button><span class="purchase-approval-result" data-purchase-result></span></div></div>'+
     '</div>';
   }
@@ -2878,30 +2918,52 @@
     const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
     const cost=purchaseItemUnitCost(item,factor);
     const baseQty=Number(item.purchase_quantity||0)*(factor>0?factor:0);
-    const suggested=cost!==null?Math.round(cost*1.4*100)/100:null;
-    const costEl=card.querySelector('[data-purchase-unit-cost]'),qtyEl=card.querySelector('[data-purchase-base-qty]'),sale=card.querySelector('[data-purchase-sale]');
+    const minimum=cost!==null?Math.round(cost*1.4*100)/100:null;
+    const currentSale=Number(item?.products?.price),hasCurrent=Number.isFinite(currentSale)&&currentSale>0;
+    const hasMinimum=Number.isFinite(Number(minimum));
+    const saleValue=hasCurrent&&hasMinimum?Math.max(currentSale,Number(minimum)):hasCurrent?currentSale:minimum;
+    const shouldUpdateSale=!hasCurrent||(hasMinimum&&currentSale+0.005<Number(minimum));
+    const costEl=card.querySelector('[data-purchase-unit-cost]'),qtyEl=card.querySelector('[data-purchase-base-qty]'),sale=card.querySelector('[data-purchase-sale]'),saleCheck=card.querySelector('[data-purchase-update-sale]'),hint=card.querySelector('[data-purchase-sale-hint]');
     if(costEl)costEl.textContent=purchaseMaybeMoney(cost);
     if(qtyEl)qtyEl.textContent=factor>0?fmtQty(baseQty)+' UN':'—';
-    if(resetSale&&sale&&suggested!==null)sale.value=purchaseNumberInput(suggested);
+    if(resetSale&&sale&&saleValue!==null&&saleValue!==undefined)sale.value=purchaseNumberInput(saleValue);
+    if(resetSale&&saleCheck)saleCheck.checked=Boolean(shouldUpdateSale);
+    if(hint){
+      hint.textContent=hasCurrent&&hasMinimum&&currentSale>=Number(minimum)
+        ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
+        :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
+    }
+  }
+
+  function purchaseStockBlockHtml(d){
+    if(d?.receipt_status==='received'){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Entrada no estoque concluída</strong><small>Esta NF-e já teve a entrada física confirmada.</small></div>';
+    }
+    if(d?.receipt_status==='ready'){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Entrada no estoque</strong><small>Os itens estão prontos. Confira as quantidades acima e confirme somente quando a mercadoria tiver sido recebida fisicamente.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Dar entrada no estoque</button></div></div>';
+    }
+    return '<div class="purchase-safe '+(d?.receipt_status==='review'?'purchase-danger':'')+'" style="margin:14px 0 0"><strong>Entrada no estoque</strong><small>'+(d?.receipt_status==='review'?'Finalize primeiro as revisões de embalagem, conversão ou vínculo dos produtos.':'A entrada física ainda não está liberada para esta nota.')+'</small></div>';
   }
   function renderPurchaseDocumentInline(id,data){
     const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(!host)return;
     const d=data?.document||{},items=data?.items||[];
     host.style.display='block';
     host.innerHTML=
-      '<div class="purchase-detail-head"><div><h3>Produtos da NF-e</h3><p>'+esc(d.supplier_name||'Fornecedor')+' · '+items.length+' item(ns) · custo sempre calculado na unidade de venda (UN).</p></div>'+
-      '<div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-inline-xml="'+esc(id)+'">XML</button>'+(d.receipt_status==='ready'?'<button class="secondary" type="button" data-purchase-inline-receive="'+esc(id)+'">Dar entrada no estoque</button>':'')+'<button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Autorizar itens prontos</button></div></div>'+
+      '<div class="purchase-detail-head"><div><h3>Produtos e preços</h3><p>'+esc(d.supplier_name||'Fornecedor')+' · '+items.length+' item(ns) · custos sempre calculados na unidade de venda (UN).</p></div>'+
+      '<div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-inline-xml="'+esc(id)+'">Ver XML</button></div></div>'+
+      '<div class="purchase-safe '+(d.recipient_kind==='CPF'?'purchase-danger':'')+'"><strong>Confira antes de atualizar o produto</strong><small>O custo vem da NF-e convertido para unidade. A margem de 40% é apenas o mínimo sugerido; se o preço atual já for maior, ele é mantido automaticamente.</small></div>'+
+      '<div class="purchase-items">'+(items.length?items.map(purchaseItemCardHtml).join(''):'<div class="empty">Nenhum item encontrado na nota.</div>')+'</div>'+
+      '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Autorizar itens prontos</button></div>'+
       purchaseFinanceBlockHtml(d)+
-      '<div class="purchase-safe '+(d.recipient_kind==='CPF'?'purchase-danger':'')+'"><strong>Cadastro e preço exigem sua autorização</strong><small>O sistema sugere 40% sobre o custo unitário. Caixa, fardo, pacote e display precisam estar convertidos para UN antes da atualização. '+(d.recipient_kind==='CPF'?'Esta nota continua bloqueada para contas a pagar empresariais.':'A entrada de estoque continua sendo uma ação separada.')+'</small></div>'+
-      '<div class="purchase-items">'+(items.length?items.map(purchaseItemCardHtml).join(''):'<div class="empty">Nenhum item encontrado na nota.</div>')+'</div>';
+      purchaseStockBlockHtml(d);
     host.querySelectorAll('[data-purchase-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseItemCard(inp.closest('.purchase-item-card'),true));
     host.querySelectorAll('[data-purchase-approve-item]').forEach(b=>b.onclick=()=>applyPurchaseItemUpdate(b.dataset.purchaseApproveItem));
     const xmlBtn=host.querySelector('[data-purchase-inline-xml]');if(xmlBtn)xmlBtn.onclick=()=>downloadPurchaseXml(id);
     const recv=host.querySelector('[data-purchase-inline-receive]');if(recv)recv.onclick=()=>receivePurchaseDocument(id);
     const bulk=host.querySelector('[data-purchase-approve-ready]');if(bulk)bulk.onclick=()=>approveReadyPurchaseItems(id);
-    const finRec=host.querySelector('[data-purchase-finance-reconcile]');if(finRec)finRec.onclick=()=>reconcilePurchaseFinance(id);
-    const finPost=host.querySelector('[data-purchase-finance-post]');if(finPost)finPost.onclick=()=>postPurchaseFinance(id);
+    const fin=host.querySelector('[data-purchase-finance-resolve]');if(fin)fin.onclick=()=>resolvePurchaseFinance(id);
   }
+
   async function togglePurchaseDocument(id,forceOpen=false){
     if(state.purchaseExpandedId===id&&!forceOpen){
       state.purchaseExpandedId=null;
@@ -2926,26 +2988,50 @@
     state.purchaseExpandedId=id;
     paintPurchases();
   }
-  async function reconcilePurchaseFinance(id){
+  async function resolvePurchaseFinance(id){
     const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');
-    const btn=host?.querySelector('[data-purchase-finance-reconcile]');if(btn){btn.disabled=true;btn.textContent='Reconciliando…'}
+    const btn=host?.querySelector('[data-purchase-finance-resolve]');
+    if(btn){btn.disabled=true;btn.textContent='Verificando…'}
     try{
-      const r=await purchaseApi('finance_reconcile',{document_id:id});
-      toast(r?.finance?.status==='posted'?'Financeiro conciliado com o Bling':'Conciliação concluída: ainda há pendência financeira');
+      const check=await purchaseApi('finance_reconcile',{document_id:id});
+      const finance=check?.finance||{},reason=String(finance.reason||'');
+      if(finance.status==='posted'&&finance.reconciled!==false){
+        toast('Financeiro confirmado no Bling');
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      const rec=finance.reconciliation||{};
+      if(reason==='installment_total_mismatch'){
+        const invoice=Number(rec.invoice_total),parts=Number(rec.installment_total),diff=(Number.isFinite(invoice)&&Number.isFinite(parts))?Math.round((parts-invoice)*100)/100:null;
+        alert('O financeiro não pode ser lançado ainda.\n\nTotal da NF-e: '+purchaseMoney(invoice)+'\nTotal das parcelas: '+purchaseMoney(parts)+(diff===null?'':'\nDiferença: '+purchaseMoney(diff))+'\n\nCorrija as parcelas no Bling e depois clique em “Resolver financeiro” novamente.');
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      if(['installments_missing','supplier_contact_missing','bling_nfe_id_missing_for_native_payables'].includes(reason)){
+        alert(purchaseFinanceReasonLabel(reason)+'\n\nCorrija essa informação no Bling e depois clique em “Resolver financeiro” novamente.');
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      if(reason==='payables_missing_or_ambiguous'||finance.status==='review'){
+        if(!confirm('Não encontrei uma conta a pagar correspondente com segurança.\n\nDeseja pedir ao Bling para lançar as contas desta NF-e agora? O sistema fará uma nova conferência antes da gravação.')){
+          await refreshPurchaseAfterApproval(id);
+          return;
+        }
+        if(btn)btn.textContent='Lançando…';
+        const post=await purchaseApi('finance_post',{document_id:id,confirmation:'CONFIRMAR_CONTAS'});
+        if(post?.finance?.status==='posted'&&post?.finance?.reconciled!==false)toast('Financeiro confirmado no Bling');
+        else toast(purchaseFinanceReasonLabel(post?.finance?.reason||''));
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      toast(purchaseFinanceReasonLabel(reason));
       await refreshPurchaseAfterApproval(id);
-    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Reconciliar com Bling'}}
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Resolver financeiro'}
+    }
   }
-  async function postPurchaseFinance(id){
-    if(!confirm('Lançar as contas a pagar desta NF-e usando o lançamento nativo do Bling? O sistema reconcilia primeiro para evitar duplicidade.'))return;
-    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');
-    const btn=host?.querySelector('[data-purchase-finance-post]');if(btn){btn.disabled=true;btn.textContent='Lançando…'}
-    try{
-      const r=await purchaseApi('finance_post',{document_id:id,confirmation:'CONFIRMAR_CONTAS'});
-      if(r?.finance?.status==='posted')toast('Contas a pagar confirmadas no Bling');
-      else toast('O Bling ainda exige revisão do financeiro desta nota');
-      await refreshPurchaseAfterApproval(id);
-    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Tentar lançamento novamente'}}
-  }
+
   async function applyPurchaseItemUpdate(itemId,quiet=false){
     const card=document.querySelector('[data-purchase-item="'+CSS.escape(itemId)+'"]');if(!card)return false;
     const docId=card.dataset.documentId,operator=requireOperator();if(!operator)return false;
@@ -2976,7 +3062,7 @@
       return factor>=1&&(!updateSale||Number.isFinite(sale));
     });
     if(!ready.length){toast('Nenhum item pronto para autorizar');return}
-    if(!confirm('Autorizar a atualização de custo/preço dos '+ready.length+' item(ns) prontos desta nota? O estoque não será alterado.'))return;
+    if(!confirm('Autorizar a atualização dos '+ready.length+' item(ns) prontos desta nota?\n\nPreços atuais que já estiverem acima da margem mínima de 40% serão mantidos. O estoque não será alterado.'))return;
     const operator=requireOperator();if(!operator)return;
     let ok=0,fail=0;
     for(const card of ready){
@@ -3026,7 +3112,7 @@
             '<div class="history-main"><strong><span class="purchase-chevron">'+(state.purchaseExpandedId===x.id?'−':'+')+'</span>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns)</small></div>'+
             '<div><span class="pill '+(x.recipient_kind==='CPF'?'off':'')+'">'+esc(x.recipient_kind||'—')+'</span></div>'+
             '<div>'+purchaseStatusLabel(x.processing_status)+'</div><div>'+purchaseFinanceLabel(x.finance_status)+'</div><div>'+purchaseReceiptLabel(x.receipt_status)+'</div>'+
-            '<div class="purchase-actions"><button class="text" type="button" data-purchase-open="'+esc(x.id)+'">Abrir</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button>'+(x.receipt_status==='ready'?'<button class="text" type="button" data-purchase-receive="'+esc(x.id)+'">Dar entrada</button>':'')+'</div>'+
+            '<div class="purchase-actions"><button class="text" type="button" data-purchase-open="'+esc(x.id)+'">Abrir</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button></div>'+
           '</div><div class="purchase-doc-expanded" data-purchase-detail="'+esc(x.id)+'" style="display:none"></div></div>').join(''):'<div class="empty">Nenhuma nota importada neste período.</div>')+
       '</section>'+
       '<details class="panel" style="margin-top:14px"><summary class="history-title" style="cursor:pointer;padding:12px 14px"><div><strong>Comparar com as notas do Bling</strong><span>Lista somente para conferência; não é outra fila de trabalho.</span></div><b>'+blingDocs.length+'</b></summary>'+
@@ -3046,7 +3132,6 @@
     host.querySelectorAll('[data-purchase-toggle]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,a,input,label'))return;togglePurchaseDocument(row.dataset.purchaseToggle)});
     host.querySelectorAll('[data-purchase-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();togglePurchaseDocument(b.dataset.purchaseOpen,true)});
     host.querySelectorAll('[data-purchase-xml]').forEach(b=>b.onclick=e=>{e.stopPropagation();downloadPurchaseXml(b.dataset.purchaseXml)});
-    host.querySelectorAll('[data-purchase-receive]').forEach(b=>b.onclick=e=>{e.stopPropagation();receivePurchaseDocument(b.dataset.purchaseReceive)});
     host.querySelectorAll('[data-purchase-conversion]').forEach(b=>b.onclick=()=>setPurchaseConversion(b.dataset.purchaseConversion));
     const expanded=state.purchaseExpandedId;
     if(expanded&&state.purchaseDetailCache?.[expanded]){
