@@ -2971,6 +2971,37 @@
       renderPurchaseDocumentInline(expanded,state.purchaseDetailCache[expanded]);
     }
   }
+  async function runPurchaseBlingSync(){
+    if(!purchaseCustomRangeReady()){toast('Informe um período válido');return}
+    const b=$('#purchaseBlingSync');if(b){b.disabled=true;b.textContent='Importando…'}
+    try{
+      const r=await purchaseApi('bling_sync',purchaseFilterPayload());
+      if(Number(r.documents_seen||0)===0)toast('Bling: nenhuma nota de compra/entrada encontrada em '+String(r.window?.label||purchasePeriodLabel())+'. Confira “Notas recebidas SEFAZ” se houver documentos aguardando importação.');
+      else toast('Bling: '+String(r.processed||0)+' processada(s) · '+String(r.duplicates||0)+' já existente(s) · '+String(r.failed||0)+' falha(s)');
+      state.purchaseDetailCache={};state.purchaseExpandedId=null;
+      await loadPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+    finally{if(b){b.disabled=false;b.textContent='Importar período do Bling'}}
+  }
+  async function importPurchaseXmlFiles(files){
+    if(!files?.length)return;
+    const input=$('#purchaseXmlInput');if(input)input.value='';
+    const valid=files.filter(f=>/\.xml$/i.test(f.name)||/xml/i.test(f.type||''));
+    if(!valid.length){toast('Selecione arquivos XML');return}
+    let ok=0,fail=0;
+    try{
+      for(let i=0;i<valid.length;i+=10){
+        const chunk=valid.slice(i,i+10),payload=[];
+        for(const file of chunk)payload.push({name:file.name,xml:await file.text()});
+        const r=await purchaseApi('manual_import',{files:payload});
+        ok+=Number(r.processed||0)+Number(r.duplicates||0);fail+=Number(r.failed||0);
+      }
+      toast('XML: '+ok+' concluído(s)'+(fail?' · '+fail+' falha(s)':''));
+      state.purchaseDetailCache={};state.purchaseExpandedId=null;
+      await loadPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  async function openPurchaseDocument(id){return togglePurchaseDocument(id,true)}
   async function downloadPurchaseXml(id){
     try{const r=await purchaseApi('xml_url',{id});if(r.url)window.open(r.url,'_blank','noopener')}catch(e){toast(errorMessage(e.message))}
   }
