@@ -1,51 +1,162 @@
-> **Atualização 2026-09-25 — Operations 2.0:** a análise arquitetural foi consolidada em `PROJECT-MASTER.md`, `SOURCE-OF-TRUTH.md` e `IMPLEMENTATION-ROADMAP.md`. Este arquivo descreve o runtime legado/atual; ele não deve ser confundido com o desenho alvo. Nenhuma migração para o novo projeto foi executada ainda.
+> **Atualização 2026-09-28 — R1 LIVE:** o corte produtivo foi executado. Este arquivo descreve o runtime atual após a ativação do Hub/estoque Bling para pedidos novos.
 
 # Dona Antônia Operations 2.0 — Current State
 
-Última atualização: 2026-09-25.
+Última atualização: 2026-09-28.
 
 ## Estado executivo
-A Fase 1 (auditoria) está avançada. Nenhuma função produtiva foi removida nesta rodada.
+
+A R1 de cutover está **LIVE** com política `future_only`.
+
+Marco:
+- `ops2_live_cutover_at = 2026-09-28T14:44:46.627499Z`
+- pedidos anteriores ao marco permanecem fora do novo fluxo automático.
+
+Checkpoint detalhado:
+- `R1-LIVE-CUTOVER-2026-09-28.md`
 
 ## Runtime canônico
+
 - GitHub: `osvaldosereia/SUCEDOAN12`.
 - Supabase: `ssbesxgaijknwsjbsbcz`.
 - Site: `storefront-v2` ativo.
-- Admin: `admin-products-live-v1` ativo e `admin-service-intelligence-v1` ainda muito utilizado.
-- Projeto legado qx: no HTML do Admin foi encontrada apenas uma referência textual `preconnect`; nenhuma outra ocorrência no arquivo. Ainda assim, remoção física do projeto legado depende do gate completo.
+- Admin operacional: `admin-products-live-v1` v50 ACTIVE.
+- Backend/integrações: `admin-service-intelligence-v1` v196 ACTIVE.
+- Bling Hub: `mode=live`, `hub_enabled=true`.
+- Make: fora da arquitetura operacional.
 
-## Fluxo real hoje
-1. Checkout cria pedido local e reserva estoque.
-2. Pedido nasce como `storefront_received` / `sync_status=local`.
-3. Bling não recebe automaticamente na criação do pedido.
-4. Ao iniciar separação, estoque local é consumido e o pedido é enfileirado para sincronização Bling.
-5. Hub de processamento automático está globalmente desabilitado (`hub_enabled=false`), embora jobs e rotinas manuais existam.
-6. Fiscal/expedição possui gates próprios e integração Bling.
+## Domínios do Hub
 
-## XML/compras
-- Rotina diária configurada para 06:00 Cuiabá, lookback de 3 dias.
-- Runtime passa por `admin-service-intelligence-v1`, importando o módulo `purchase-xml-v1` do repositório.
-- CPF: nunca financeiro empresarial.
-- CNPJ da empresa: elegível para contas a pagar quando parcelas passam nas validações.
-- Entrada de estoque exige confirmação humana.
-- Caixa->unidade é persistida por produto/fornecedor/embalagem e requer revisão quando a inferência não é segura.
+Ativos:
+- products;
+- stock;
+- customers;
+- orders;
+- webhooks.
 
-## Dados observados
-- 85 pedidos.
-- 27 possuem `bling_order_id` histórico; 0 possuem `bling_synced_at`.
-- Hub novo: 2 pedidos `matched`.
-- Produtos: 1.668 `matched` no Hub.
-- Clientes: 270 `matched`, 217 em revisão.
+Fiscal do Hub:
+- `fiscal_enabled=false`.
 
-## Decisões consolidadas
-- Não usar Bling Loja Virtual agora.
-- Manter o site atual enquanto a arquitetura é simplificada.
-- Bling será o ERP oficial.
-- Cesta personalizável continuará como regra determinística Dona Antônia.
-- Admin deve virar uma interface operacional fina para funcionários.
-- ChatGPT deve virar a interface gerencial, mas sem inventar um conector Bling inexistente na sessão atual.
+A emissão/expedição continua usando seus gates específicos já existentes; a fila fiscal genérica do Hub não foi ligada nesta R1.
+
+## Estoque
+
+Fonte oficial operacional:
+- **Bling**.
+
+Runtime:
+- `ops2_stock_authority=bling`.
+- depósito selecionado: Geral.
+- storefront/Admin usam `ops2_sellable_stock_v1.effective_sellable_stock`.
+
+Estado validado no corte:
+- 1.610 produtos ativos;
+- 1.610/1.610 com leitura Bling pronta;
+- 1.610/1.610 com leitura fresca após refresh;
+- 0 ativos sem cobertura;
+- 0 ativos com espelho >24h.
+
+Reserva local:
+- continua como proteção transitória de concorrência;
+- não reduz estoque físico local sob autoridade Bling;
+- duração: 48h;
+- depois que o pedido está sincronizado no Bling, sua reserva não é descontada novamente do saldo virtual.
+
+Webhooks live processados nesta R1:
+- order;
+- stock;
+- virtual_stock.
+
+Produto e NF-e permanecem fora deste consumidor R1.
+
+## Fluxo real de pedido novo
+
+1. checkout cria pedido canônico local em `storefront_received`;
+2. ainda não cria pedido no Bling;
+3. confirmação humana:
+   - valida disponibilidade;
+   - cria reserva local de proteção;
+   - cria/atualiza imediatamente o pedido no Bling;
+   - status Bling inicial: `Aprovado / Separar`;
+   - reserva virtual passa a ser responsabilidade do Bling;
+4. se a chamada imediata falhar:
+   - pedido fica `review_bling`;
+   - abre atenção operacional;
+   - job `sync_order` entra na fila;
+   - worker de 2 minutos tenta recuperar;
+5. separação:
+   - não dá baixa física local;
+6. conferência EAN:
+   - fluxo Bling `Verificado` habilitado;
+7. saída para entrega:
+   - baixa física Bling continua protegida pelo gate já homologado;
+8. fiscal/entrega continuam com confirmação de pagamento e controles específicos existentes.
+
+## Histórico pré-corte
+
+Não deve ser reprocessado pela R1.
+
+No cutover:
+- 2.723 webhooks antigos ainda pendentes foram marcados `ignored`;
+- gate de pedido rejeita qualquer `created_at < ops2_live_cutover_at`;
+- teste real de segurança retornou `pre_cutover_order_ignored` e `external_write=false`.
+
+## Primeiro pedido real pós-corte
+
+Foi observado 1 pedido real novo ainda em `storefront_received`.
+
+Preview read-only de confirmação:
+- pronto para escrita;
+- 30 itens resolvidos;
+- 0 produtos não vinculados;
+- cliente já vinculado ao Bling;
+- total produtos R$ 171,28;
+- outras despesas R$ 3,91;
+- total R$ 175,19;
+- payload balanceado.
+
+O pedido não foi confirmado nem criado no Bling durante o teste.
+
+## Worker / cron
+
+`bling-hub-v2-cycle`:
+- schedule `*/2 * * * *`;
+- ativo;
+- execuções observadas como `succeeded`.
+
+Smoke final:
+- HTTP 200;
+- 0 jobs reclamados;
+- 0 retry;
+- 0 falhas.
+
+## XML / compras
+
+Mantém as regras:
+- rotina diária às 06:00 Cuiabá;
+- CNPJ empresarial pode ser elegível a contas a pagar;
+- CPF nunca gera financeiro empresarial;
+- entrada de estoque exige confirmação humana;
+- conversão caixa -> unidade permanece determinística/revisável;
+- financeiro de XML e baixa assistida continuam independentes do cutover R1 de pedidos/estoque.
+
+## Segurança e performance
+
+Advisors após R1:
+- nenhum bloqueador novo causado pelo cutover;
+- permanecem avisos preexistentes de RLS sem policies em tabelas server-only;
+- leaked password protection desativada;
+- 1 FK sem índice em `ops2_bling_orphan_product_reviews`;
+- índices ainda não utilizados.
+
+Tratar em hardening separado.
 
 ## Próximo passo técnico
-Fechar a Fase 1 com a matriz de fonte de verdade por entidade e desenhar o fluxo alvo de pedido:
-`site -> pedido confirmado -> registro precoce no Bling -> impressão de separação -> reserva/baixa -> conferência -> fiscal -> expedição -> entrega`.
-Em seguida, desenhar o gateway mínimo que permitirá ao ChatGPT consultar/administrar o Bling com auditoria e aprovações.
+
+Não reabrir o histórico.
+
+Observar o primeiro pedido **confirmado** criado após o marco percorrer o fluxo real:
+
+`confirmado -> Bling Aprovado/Separar -> separação -> EAN Verificado -> expedição/baixa física`.
+
+Se esse primeiro ciclo real fechar sem divergência, avançar para a próxima rodada de consolidação operacional e alertas.
