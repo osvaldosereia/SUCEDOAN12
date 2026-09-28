@@ -5393,8 +5393,8 @@ async function blingHubOps2CatalogStockCanaryExecute(sb:any,canaryRaw:any){
   // already enforces live-stock drift and batch-size guards.
   const configuredBand=Number(canary.risk_band||0);
   const legacyBand=maxAbsDelta<=1?1:(maxAbsDelta<=2&&absDeltas.every((d:number)=>d>=1&&d<=2)?2:0);
-  const deltaBand=configuredBand>=2&&configuredBand<=10&&absDeltas.every((d:number)=>d===configuredBand)?configuredBand:legacyBand;
-  const maxItems=deltaBand<=5?5:3;
+  const deltaBand=configuredBand>=2&&configuredBand<=20&&absDeltas.every((d:number)=>d===configuredBand)?configuredBand:legacyBand;
+  const maxItems=deltaBand<=5?5:(deltaBand<=10?3:1);
   if(items.length!==Number(canary.item_count)||items.some((x:any)=>x.state!=="prepared")||deltaBand===0||Number(canary.item_count)>maxItems)return {ok:false,error:"canary_items_invalid",max_abs_delta:maxAbsDelta,risk_band:configuredBand||null,external_write:false};
   const live=await sb.from("products").select("id,stock").in("id",items.map((x:any)=>x.product_id));if(live.error)throw live.error;
   const lm=new Map((live.data||[]).map((x:any)=>[String(x.id),Number(x.stock)]));
@@ -5509,6 +5509,121 @@ async function blingHubOps2RunStockRiskBand(sb:any,runRaw:any,bandRaw:any,maxCan
     .eq("run_id",runId).eq("operation","stock_update").eq("state","planned");
   if(remaining.error)throw remaining.error;
   return {ok:true,run_id:runId,risk_band:band,canaries:out.length,items:out.reduce((s:number,x:any)=>s+Number(x.item_count||0),0),exhausted,results:out,planned_stock_remaining:Number(remaining.count||0),external_write:out.length>0,fail_closed:false};
+}
+
+async function blingHubOps2RunHighRiskStockBand(sb:any,runRaw:any,bandRaw:any,maxCanariesRaw:any){
+  const runId=uuid(runRaw),band=Math.trunc(Number(bandRaw||0)),maxCanaries=Math.max(1,Math.min(12,Math.trunc(Number(maxCanariesRaw||5)||5)));
+  if(!runId)return {ok:false,error:"invalid_run_id",external_write:false};
+  if(band<11||band>20)return {ok:false,error:"unsupported_highrisk_band",risk_band:band,external_write:false};
+
+  const results:any[]=[];
+  let exhausted=false,written=0,rebased=0,confirmedReadonly=0;
+  const token=await blingHubOauth(sb);
+  const depositId=await blingHubResolveDepositId(sb,token);
+
+  for(let n=0;n<maxCanaries;n++){
+    const prep=await sb.rpc("ops2_prepare_catalog_stock_canary_highrisk_v1",{p_run:runId,p_abs_delta:band});
+    if(prep.error)throw prep.error;
+    const canaryId=uuid(prep.data);
+    if(!canaryId)return {ok:false,error:"prepare_failed",risk_band:band,results,external_write:written>0};
+
+    const cq=await sb.from("ops2_catalog_sync_canaries").select("id,status,item_count").eq("id",canaryId).maybeSingle();
+    if(cq.error)throw cq.error;
+    if(cq.data?.status==="rolled_back"||Number(cq.data?.item_count||0)===0){exhausted=true;break;}
+
+    const iq=await sb.from("ops2_catalog_sync_canary_items")
+      .select("product_id,bling_product_id,desired_stock,bling_physical_before,delta,state")
+      .eq("canary_id",canaryId).maybeSingle();
+    if(iq.error)throw iq.error;
+    const item=iq.data;
+    if(!item||Math.abs(Number(item.delta))!==band||item.state!=="prepared"){
+      return {ok:false,error:"prepared_highrisk_mismatch",canary_id:canaryId,risk_band:band,results,external_write:written>0,fail_closed:true};
+    }
+
+    const live=await sb.from("products").select("stock").eq("id",item.product_id).maybeSingle();
+    if(live.error)throw live.error;
+    if(!live.data||Number(live.data.stock)!==Number(item.desired_stock)){
+      await sb.from("ops2_catalog_sync_canaries").update({status:"rolled_back",external_write_enabled:false,notes:"high-risk preflight blocked: live Supabase stock drift"}).eq("id",canaryId);
+      return {ok:false,error:"live_supabase_stock_drift",canary_id:canaryId,risk_band:band,product_id:item.product_id,external_write:written>0,fail_closed:true};
+    }
+
+    const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status")
+      .eq("source_system","vitrine_qx").eq("entity_type","product").eq("source_id",item.product_id).maybeSingle();
+    if(link.error)throw link.error;
+    if(link.data?.status!=="matched"||Number(link.data?.bling_id)!==Number(item.bling_product_id)){
+      await sb.from("ops2_catalog_sync_canaries").update({status:"rolled_back",external_write_enabled:false,notes:"high-risk preflight blocked: binding drift"}).eq("id",canaryId);
+      return {ok:false,error:"binding_drift",canary_id:canaryId,risk_band:band,product_id:item.product_id,external_write:written>0,fail_closed:true};
+    }
+
+    const remote=await blingHubReadStock(sb,token,Number(item.bling_product_id),depositId);
+    if(!remote.ok){
+      await sb.from("ops2_catalog_sync_canaries").update({status:"rolled_back",external_write_enabled:false,notes:"high-risk preflight blocked: readonly Bling stock failed"}).eq("id",canaryId);
+      return {ok:false,error:"readonly_failed",http_status:remote.status,canary_id:canaryId,risk_band:band,external_write:written>0,fail_closed:true};
+    }
+
+    const remoteStock=Number(remote.stock),before=Number(item.bling_physical_before),target=Number(item.desired_stock);
+    if(remoteStock!==before){
+      const alreadyTarget=remoteStock===target;
+      await sb.from("ops2_catalog_sync_plan_items").update({
+        current_bling_physical:remoteStock,
+        state:alreadyTarget?"confirmed":"planned",
+        updated_at:new Date().toISOString()
+      }).eq("run_id",runId).eq("product_id",item.product_id);
+
+      if(alreadyTarget){
+        await sb.from("ops2_catalog_sync_canary_items").update({
+          state:"confirmed",verified_bling_physical:remoteStock,verified_at:new Date().toISOString(),error:null
+        }).eq("canary_id",canaryId).eq("product_id",item.product_id);
+        await sb.from("ops2_catalog_sync_canaries").update({
+          status:"verified",external_write_enabled:false,notes:"high-risk readonly preflight found remote already at target; no write"
+        }).eq("id",canaryId);
+        confirmedReadonly++;
+        results.push({canary_id:canaryId,product_id:item.product_id,outcome:"confirmed_readonly",previous_snapshot:before,remote_stock:remoteStock,target_stock:target,external_write:false});
+      }else{
+        await sb.from("ops2_catalog_sync_canaries").update({
+          status:"rolled_back",external_write_enabled:false,notes:"high-risk readonly preflight rebased stale remote snapshot; no write"
+        }).eq("id",canaryId);
+        rebased++;
+        results.push({canary_id:canaryId,product_id:item.product_id,outcome:"snapshot_rebased",previous_snapshot:before,remote_stock:remoteStock,target_stock:target,new_abs_delta:Math.abs(target-remoteStock),external_write:false});
+      }
+      continue;
+    }
+
+    const arm=await sb.rpc("ops2_arm_catalog_stock_canary_highrisk_v1",{
+      p_canary:canaryId,p_band:band,p_confirmation:"ARMAR_CANARIO_ESTOQUE_BLING_ALTO_RISCO_DELTA_"+String(band)
+    });
+    if(arm.error)throw arm.error;
+
+    const au=await sb.from("bling_hub_canary_allowlist_v2").upsert([{
+      domain:"stock",source_system:"vitrine_qx",source_id:String(item.product_id),
+      enabled:true,expires_at:new Date(Date.now()+15*60*1000).toISOString(),
+      note:"Ops2 high-risk singleton "+String(band)+" canary "+canaryId,updated_at:new Date().toISOString()
+    }],{onConflict:"domain,source_system,source_id"});
+    if(au.error)throw au.error;
+
+    const on=await sb.from("bling_hub_runtime_v2").update({hub_enabled:true,updated_at:new Date().toISOString()}).eq("id",1);
+    if(on.error)throw on.error;
+
+    let drained:any=null;
+    try{
+      drained=await blingHubOps2DrainStockCanary(sb,canaryId);
+    }finally{
+      await sb.from("bling_hub_runtime_v2").update({hub_enabled:false,updated_at:new Date().toISOString()}).eq("id",1);
+      await sb.from("bling_hub_canary_allowlist_v2").update({enabled:false,updated_at:new Date().toISOString()})
+        .eq("domain","stock").eq("source_system","vitrine_qx").eq("source_id",String(item.product_id));
+    }
+
+    results.push({canary_id:canaryId,product_id:item.product_id,outcome:drained?.ok?"verified_write":"failed_write",result:drained});
+    if(!drained?.ok){
+      return {ok:false,error:drained?.error||"highrisk_canary_failed",risk_band:band,results,written,rebased,confirmed_readonly:confirmedReadonly,external_write:true,fail_closed:true};
+    }
+    written++;
+  }
+
+  const remainQ=await sb.from("ops2_catalog_sync_plan_items").select("product_id",{count:"exact",head:true})
+    .eq("run_id",runId).eq("operation","stock_update").eq("state","planned");
+  if(remainQ.error)throw remainQ.error;
+  return {ok:true,run_id:runId,risk_band:band,processed:results.length,written,rebased,confirmed_readonly:confirmedReadonly,exhausted,results,planned_stock_remaining:Number(remainQ.count||0),external_write:written>0,fail_closed:false};
 }
 
 async function blingHubOps2RecoverStockJob(sb:any,jobRaw:any){
@@ -8309,6 +8424,7 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="ops2_catalog_stock_canary_execute"){const result=await blingHubOps2CatalogStockCanaryExecute(sb,body?.canary_id);return json(result,result.ok?200:409);}
       if(subaction==="ops2_catalog_stock_canary_drain"){const result=await blingHubOps2DrainStockCanary(sb,body?.canary_id);return json(result,result.ok?200:409);}
       if(subaction==="ops2_catalog_stock_risk_band_run"){const result=await blingHubOps2RunStockRiskBand(sb,body?.run_id,body?.risk_band,body?.max_canaries);return json(result,result.ok?200:409);}
+      if(subaction==="ops2_catalog_stock_highrisk_band_run"){const result=await blingHubOps2RunHighRiskStockBand(sb,body?.run_id,body?.risk_band,body?.max_canaries);return json(result,result.ok?200:409);}
       if(subaction==="ops2_recover_stock_job"){const result=await blingHubOps2RecoverStockJob(sb,body?.job_id);return json(result,result.ok?200:409);}
       if(subaction==="preview_stock_sync"){
         const result=await blingHubPreviewStockSync(sb,body);
