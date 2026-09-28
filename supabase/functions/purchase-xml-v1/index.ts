@@ -325,7 +325,7 @@ function financeDocPayload(d:any){
 async function financeAttention(documentId:string,d:any,finance:any){
   try{
     const key="purchase_finance:"+documentId,now=new Date().toISOString();
-    if(finance?.status==="posted"||finance?.status==="blocked_personal"||finance?.status==="not_applicable"){
+    if((finance?.status==="posted"&&finance?.reconciled===true)||finance?.status==="blocked_personal"||finance?.status==="not_applicable"){
       const q=await sb.from("ops_attention").select("id,status").eq("idempotency_key",key).maybeSingle();
       if(!q.error&&q.data?.id&&["open","acknowledged"].includes(q.data.status)){
         await sb.from("ops_attention").update({status:"resolved",resolved_at:now,updated_at:now,resolution:"Financeiro conciliado com o Bling.",resolution_ref:clean(finance?.method||finance?.reason,180)}).eq("id",q.data.id);
@@ -360,7 +360,7 @@ async function syncFinanceDocument(documentId:string,opts:any={}){
   return {ok:true,document_id:documentId,finance,document:u.data};
 }
 async function reconcilePendingFinance(limit=50){
-  const q=await sb.from("purchase_xml_documents").select("id").eq("financial_eligible",true).neq("finance_status","posted").order("issued_at",{ascending:false}).limit(Math.max(1,Math.min(100,Number(limit||50))));
+  const q=await sb.from("purchase_xml_documents").select("id").eq("financial_eligible",true).or("finance_status.neq.posted,finance_reconciled_at.is.null").order("issued_at",{ascending:false}).limit(Math.max(1,Math.min(100,Number(limit||50))));
   if(q.error)throw q.error;const token=await oauth(),results:any[]=[];
   for(const row of q.data||[]){
     try{const r=await syncFinanceDocument(row.id,{allowWrite:false,source:"purchase_finance_reconcile_batch",token});results.push({id:row.id,ok:true,status:r.finance?.status,reason:r.finance?.reason})}
