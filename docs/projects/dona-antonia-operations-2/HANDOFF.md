@@ -2295,3 +2295,25 @@ Runtime:
 - dispatch gate enforce.
 
 Próxima rodada do plano: **R5 — estoque Bling/cutover readiness e escritores**, agora revisando o estado pós-cutover já ativo, writers, triggers, read models, baixa/reversão idempotente, blockers antigos e SQL canônico/reprodutível, sem reabrir histórico.
+
+
+## R5 — fechamento pós-cutover — 2026-09-28
+
+R5 adaptada ao estado real: o estoque já está oficialmente no Bling desde a R1.
+
+Resultado:
+- `stock_authority=bling`;
+- 1.610/1.610 ativos prontos;
+- mirror fresco;
+- physical/mirror/writer gates verified;
+- nenhuma revisão física crítica aberta;
+- preflight corrigido para `post_cutover_live ready=true`.
+
+Os 14 blockers de recontagem antigos e as reservas locais de proteção continuam registrados para auditoria, mas não são mais tratados como blockers de um cutover que já ocorreu.
+
+Teste em rollback confirmou que reserve/consume/release não alteram `products.stock` sob autoridade Bling.
+
+Commit:
+- `13ec5c66`.
+
+Próxima rodada: **R6 — lotes/validade/FEFO/ofertas**, revisando a regra atual 10%/20%/40%, produto vencido, saldo por lote e evitando desativar produto inteiro quando existir outro lote vendável.
