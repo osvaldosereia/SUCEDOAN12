@@ -2167,11 +2167,8 @@
     $('#cancelEditor').onclick=()=>editor.close();
     editor.showModal();
     try{
-      const [facetsData,gondolaData]=await Promise.all([
-        api('product_facets'),
-        api('gondolas')
-      ]);
-      const cats=facetsData.categories||[],gondolas=(gondolaData.gondolas||[]).filter(g=>Number(g.product_count||0)>0);
+      const options=await api('inventory_sheet_options');
+      const cats=options.categories||[],gondolas=options.gondolas||[];
       const currentCategory=state.productFilters.category||'';
       $('#editorBody').innerHTML=
         '<div class="offer-note" style="margin-bottom:12px"><strong>Imprima somente o que vai contar agora.</strong><br>Escolha uma ou várias categorias, ou uma ou várias gôndolas. A prévia mostra quantas folhas serão geradas.</div>'+
@@ -2180,10 +2177,10 @@
           '<label class="filter-chip" id="printModeGondolaLabel"><input type="radio" name="inventoryPrintMode" value="gondola" style="display:none">Por gôndola</label>'+
         '</div>'+
         '<div id="inventoryPrintCategoryChoices" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px">'+
-          (cats.length?cats.map(x=>'<label class="check" style="border:1px solid #ddd;border-radius:10px;padding:10px 12px;background:#fff"><input type="checkbox" data-print-category value="'+esc(x.value)+'" data-label="'+esc(categoryLabel(x.value))+'" '+(x.value===currentCategory?'checked':'')+'><span><strong>'+esc(categoryLabel(x.value))+'</strong><small>'+esc(x.count)+' produto(s) cadastrados</small></span></label>').join(''):'<div class="history-empty">Nenhuma categoria encontrada.</div>')+
+          (cats.length?cats.map(x=>'<label class="check" style="border:1px solid #ddd;border-radius:10px;padding:10px 12px;background:#fff"><input type="checkbox" data-print-category value="'+esc(x.value)+'" data-label="'+esc(categoryLabel(x.value))+'" '+(x.value===currentCategory?'checked':'')+'><span><strong>'+esc(categoryLabel(x.value))+'</strong><small>'+esc(x.count)+' produto(s) ativos para imprimir</small></span></label>').join(''):'<div class="history-empty">Nenhuma categoria com produto ativo.</div>')+
         '</div>'+
         '<div id="inventoryPrintGondolaChoices" style="display:none;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px">'+
-          (gondolas.length?gondolas.map(g=>'<label class="check" style="border:1px solid #ddd;border-radius:10px;padding:10px 12px;background:#fff"><input type="checkbox" data-print-gondola value="'+esc(g.number)+'"><span><strong>Gôndola '+esc(g.number)+'</strong><small>'+esc(g.product_count)+' produto(s)</small></span></label>').join(''):'<div class="history-empty">Nenhuma gôndola com produtos.</div>')+
+          (gondolas.length?gondolas.map(g=>'<label class="check" style="border:1px solid #ddd;border-radius:10px;padding:10px 12px;background:#fff"><input type="checkbox" data-print-gondola value="'+esc(g.value)+'"><span><strong>Gôndola '+esc(g.value)+'</strong><small>'+esc(g.count)+' produto(s) ativos para imprimir</small></span></label>').join(''):'<div class="history-empty">Nenhuma gôndola com produto ativo.</div>')+
         '</div>'+
         '<div class="bling-banner" id="inventoryPrintSummary" style="margin-top:14px"><strong>Selecione pelo menos uma opção.</strong><small>Você pode marcar uma ou várias.</small></div>';
 
