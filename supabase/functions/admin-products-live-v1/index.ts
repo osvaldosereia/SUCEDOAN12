@@ -14,7 +14,7 @@ async function mappedProduct(p:any){
 }
 const O=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const OP_SOURCES=["vitrine","manual_whatsapp","papoai","reorder"];
-const LOCAL=new Set(["health","products","product_facets","product_save","offer_save","expirations","expiration_save","expiry_alerts","product_lifecycle_audit","ean_lookup","balance_confirm","inventory_incidents","inventory_incident_create","stock_recount_queue","stock_reconciliation_classify","stock_cutover_preflight","order_check","gondolas","gondola","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","orders","order","closure_orders","order_stock_shortages","order_update","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_consume_stock","bling_status","bling_status_catalog_probe","bling_oauth_begin","bling_probe_readonly","bling_reconcile_catalog_readonly","bling_reconcile_customers_readonly","bling_preview_order_sync","bling_reconcile_order_dependencies_readonly","bling_create_order_customer","bling_create_order_products","order_fiscal_status","order_fiscal_dispatch_canary_execute","order_fiscal_document_pdf","order_fiscal_confirm_payment","bling_finance_overview","bling_finance_action","history_sync_retry","order_component_replace","ops_summary","ops_attention","ops_shadow_readiness","ops_print_queue","ops_print_presented","manual_order_create","ops_papoai_capture_status","ops_timeline","ops_delivery_runs","ops_delivery_plan"]);
+const LOCAL=new Set(["health","products","product_facets","product_save","offer_save","expirations","expiration_save","expiry_alerts","product_lifecycle_audit","ean_lookup","balance_confirm","inventory_incidents","inventory_incident_create","stock_recount_queue","stock_reconciliation_classify","stock_cutover_preflight","order_check","gondolas","gondola","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","orders","order","closure_orders","order_stock_shortages","order_update","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_consume_stock","bling_status","bling_status_catalog_probe","bling_oauth_begin","bling_probe_readonly","bling_reconcile_catalog_readonly","bling_reconcile_customers_readonly","bling_preview_order_sync","bling_reconcile_order_dependencies_readonly","bling_create_order_customer","bling_create_order_products","order_fiscal_status","order_fiscal_dispatch_canary_execute","order_fiscal_document_pdf","order_fiscal_confirm_payment","bling_finance_overview","bling_finance_action","history_sync_retry","order_component_replace","ops_summary","ops_attention","ops_shadow_readiness","ops_print_queue","ops_print_presented","manual_order_create","ops_papoai_capture_status","ops_timeline","ops_delivery_runs","ops_delivery_plan","ops2_recover_ean_verified"]);
 const WRITE_ACTIONS=new Set(["product_save","offer_save","expiration_save","balance_confirm","inventory_incident_create","stock_reconciliation_classify","order_check_start","order_check_scan","order_check_finish","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","ops_print_presented","ops_delivery_plan","manual_order_create","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_update","order_consume_stock","bling_create_order_customer","bling_create_order_products","order_fiscal_dispatch_canary_execute","order_fiscal_confirm_payment","bling_finance_action"]);
 const cors=(r:Request)=>{const o=r.headers.get("origin")||"";return {"Access-Control-Allow-Origin":O.has(o)?o:"https://www.donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"content-type,authorization","Access-Control-Allow-Methods":"GET,POST,OPTIONS"}};
 const js=(r:Request,b:any,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{...cors(r),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
@@ -150,6 +150,55 @@ async function syncConfirmedOrderToBling(oid:string,operator="Operação"){
   }catch{}
   await opsEvent("order.bling_synced","Pedido confirmado sincronizado e reservado no Bling.","order",oid,{bling_order_id:blingId,target_key:"approved_separation"},operator,"automation","bling","order-bling-synced:"+oid);
   return {attempted:true,ok:true,bling_order_id:blingId,result:h.data};
+}
+async function recoverPendingEanVerified(limitRaw:any=3){
+  const runtime=await db.from("bling_hub_runtime_v2").select("mode,hub_enabled,orders_enabled,metadata").eq("id",1).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  const m=meta(runtime.data?.metadata),cutoverAt=tx(m.ops2_live_cutover_at,80);
+  if(runtime.data?.mode!=="live"||runtime.data?.hub_enabled!==true||runtime.data?.orders_enabled!==true||m.ops2_direct_order_state_enabled!==true||m.ops2_ean_verified_sync_enabled!==true){
+    return {ok:true,enabled:false,reason:"ops2_live_ean_recovery_disabled",checked:0,recovered:0,pending:0};
+  }
+  if(!cutoverAt||!Number.isFinite(Date.parse(cutoverAt)))return {ok:false,error:"ops2_live_cutover_missing",checked:0,recovered:0,pending:0};
+  const limit=Math.max(1,Math.min(10,Number(limitRaw||3)||3));
+  const q=await db.from("orders")
+    .select("id,created_at,updated_at,status,sync_status")
+    .eq("status","ready")
+    .eq("sync_status","review_bling")
+    .gte("created_at",cutoverAt)
+    .order("updated_at",{ascending:true})
+    .limit(limit);
+  if(q.error)throw q.error;
+  const summary:any={ok:true,enabled:true,checked:0,recovered:0,pending:0,items:[]};
+  for(const o of q.data||[]){
+    summary.checked++;
+    const checked=await db.from("ops_order_check_sessions").select("id,verified_at")
+      .eq("order_id",o.id).eq("status","verified").not("verified_at","is",null)
+      .order("verified_at",{ascending:false}).limit(1).maybeSingle();
+    if(checked.error)throw checked.error;
+    if(!checked.data?.id){
+      summary.pending++;summary.items.push({order_id:o.id,ok:false,reason:"verified_check_session_missing"});continue;
+    }
+    try{
+      const snap=await buildSnapshot(o.id,"ean_verified");
+      const h=await hub("ops2_ensure_order_state",{payload:snap,target_key:"verified",canary:false});
+      if(h.error){
+        summary.pending++;
+        summary.items.push({order_id:o.id,ok:false,error:h.error,status:h.status||null});
+        continue;
+      }
+      try{
+        const a=await db.from("ops_attention").select("id").eq("idempotency_key","ops2:order_bling_verified:"+o.id).in("status",["open","acknowledged"]).maybeSingle();
+        if(!a.error&&a.data?.id)await db.rpc("ops_resolve_attention_v1",{p_attention_id:a.data.id,p_resolution:"Recuperação automática concluiu o status Verificado no Bling.",p_resolution_ref:h.data?.bling_order_id?"bling-order:"+String(h.data.bling_order_id):null});
+      }catch{}
+      await opsEvent("order.bling_verified_recovered","Recuperação automática concluiu o status Verificado no Bling.","order",o.id,{check_session_id:checked.data.id,bling_order_id:h.data?.bling_order_id||null},"Automação","automation","bling","order-bling-verified-recovered:"+o.id);
+      summary.recovered++;
+      summary.items.push({order_id:o.id,ok:true,bling_order_id:h.data?.bling_order_id||null});
+    }catch(e){
+      summary.pending++;
+      summary.items.push({order_id:o.id,ok:false,error:tx((e as Error)?.message||e,240)});
+    }
+  }
+  return summary;
 }
 async function cutover(){const q=await db.from("vitrine_operational_cutover_config").select("live_orders_since,legacy_orders_read_only").eq("id",1).maybeSingle();if(q.error)throw q.error;return {live_orders_since:q.data?.live_orders_since||"2026-09-24T03:19:06.631396Z",legacy_orders_read_only:q.data?.legacy_orders_read_only!==false}}
 const uiStatus=(s:any)=>String(s||"")==="storefront_received"?"created":String(s||"created");
@@ -506,7 +555,17 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:37,legacy_proxy:false});const auth:any=await adminAuth(r);if(!auth.ok)return js(r,{ok:false,error:auth.error},auth.status||401);if(r.method==="POST"&&auth.role==="viewer"&&WRITE_ACTIONS.has(a))return js(r,{ok:false,error:"forbidden"},403);if(r.method==="GET"&&a==="ops_summary")return js(r,{ok:true,summary:await opsSummary()});if(r.method==="GET"&&a==="ops_shadow_readiness")return js(r,{ok:true,readiness:await opsShadowReadiness()});if(r.method==="GET"&&a==="ops_print_queue")return js(r,{ok:true,queue:await opsPrintQueue(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="ops_papoai_capture_status")return js(r,{ok:true,papoai:await opsPapoAiCaptureStatus()});if(r.method==="GET"&&a==="ops_timeline")return js(r,{ok:true,events:await opsTimeline(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="ops_delivery_runs")return js(r,{ok:true,delivery:await opsDeliveryRuns()});if(r.method==="GET"&&a==="ops_attention")return js(r,{ok:true,attention:await opsAttention(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="products")return js(r,{ok:true,...await products(u)});if(r.method==="GET"&&a==="product_facets")return js(r,{ok:true,...await facets(tx(u.searchParams.get("category"),120))});if(r.method==="GET"&&a==="expirations")return js(r,{ok:true,...await exps()});if(r.method==="GET"&&a==="expiry_alerts"){const x=await exps();return js(r,{ok:true,summary:x.summary,products:x.products.slice(0,12),expired_deactivated:x.expired_deactivated})}if(r.method==="GET"&&a==="product_lifecycle_audit")return js(r,{ok:true,audit:await auditList(Math.floor(nm(u.searchParams.get("limit")||40,1,100)))});if(r.method==="GET"&&a==="inventory_incidents")return js(r,{ok:true,inventory:await inventoryIncidents(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="stock_recount_queue")return js(r,{ok:true,recount:await stockRecountQueue()});if(r.method==="GET"&&a==="ean_lookup"){const x:any=await ean(u.searchParams.get("ean"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="gondolas")return js(r,{ok:true,...await glist()});if(r.method==="GET"&&a==="gondola"){const x:any=await gone(u.searchParams.get("id"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="orders")return js(r,{ok:true,orders:await ordersList()});if(r.method==="GET"&&a==="order"){const x:any=await orderDetailCanonical(u.searchParams.get("id"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_stock_shortages")return js(r,{ok:true,...await orderShortages()});if(r.method==="GET"&&a==="closure_orders")return js(r,{ok:true,...await closureOrders()});if(r.method==="GET"&&a==="bling_status"){const h=await hub("readiness");return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,bling:h.data?.readiness??h.data})}if(r.method==="POST"&&a==="bling_status_catalog_probe"){const x:any=await blingStatusCatalogProbe(auth);return x.error?js(r,{ok:false,...x},x.status||502):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_oauth_begin"){const x:any=await blingOauthBegin(auth);return x.error?js(r,{ok:false,...x},x.status||500):js(r,{ok:true,...x})}let p:any={};try{p=await r.json()}catch{}if(r.method==="POST"&&a==="history_sync_retry"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const g:any=await guardOrder(oid);return g.error?js(r,{ok:false,...g},g.status||409):js(r,{ok:true,order_id:oid,history_synced:true,canonical:true})}
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:37,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+  if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
+  const expected=await db.rpc("get_bling_hub_key_v2");
+  if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
+  const provided=tx(r.headers.get("x-dona-antonia-bling-hub-key"),500);
+  if(!provided||provided!==String(expected.data))return js(r,{ok:false,error:"internal_auth_required"},401);
+  let internalBody:any={};try{internalBody=await r.json()}catch{}
+  const out=await recoverPendingEanVerified(internalBody?.limit??3);
+  return js(r,out,out.ok===false?500:200);
+}
+const auth:any=await adminAuth(r);if(!auth.ok)return js(r,{ok:false,error:auth.error},auth.status||401);if(r.method==="POST"&&auth.role==="viewer"&&WRITE_ACTIONS.has(a))return js(r,{ok:false,error:"forbidden"},403);if(r.method==="GET"&&a==="ops_summary")return js(r,{ok:true,summary:await opsSummary()});if(r.method==="GET"&&a==="ops_shadow_readiness")return js(r,{ok:true,readiness:await opsShadowReadiness()});if(r.method==="GET"&&a==="ops_print_queue")return js(r,{ok:true,queue:await opsPrintQueue(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="ops_papoai_capture_status")return js(r,{ok:true,papoai:await opsPapoAiCaptureStatus()});if(r.method==="GET"&&a==="ops_timeline")return js(r,{ok:true,events:await opsTimeline(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="ops_delivery_runs")return js(r,{ok:true,delivery:await opsDeliveryRuns()});if(r.method==="GET"&&a==="ops_attention")return js(r,{ok:true,attention:await opsAttention(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="products")return js(r,{ok:true,...await products(u)});if(r.method==="GET"&&a==="product_facets")return js(r,{ok:true,...await facets(tx(u.searchParams.get("category"),120))});if(r.method==="GET"&&a==="expirations")return js(r,{ok:true,...await exps()});if(r.method==="GET"&&a==="expiry_alerts"){const x=await exps();return js(r,{ok:true,summary:x.summary,products:x.products.slice(0,12),expired_deactivated:x.expired_deactivated})}if(r.method==="GET"&&a==="product_lifecycle_audit")return js(r,{ok:true,audit:await auditList(Math.floor(nm(u.searchParams.get("limit")||40,1,100)))});if(r.method==="GET"&&a==="inventory_incidents")return js(r,{ok:true,inventory:await inventoryIncidents(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="stock_recount_queue")return js(r,{ok:true,recount:await stockRecountQueue()});if(r.method==="GET"&&a==="ean_lookup"){const x:any=await ean(u.searchParams.get("ean"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="gondolas")return js(r,{ok:true,...await glist()});if(r.method==="GET"&&a==="gondola"){const x:any=await gone(u.searchParams.get("id"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="orders")return js(r,{ok:true,orders:await ordersList()});if(r.method==="GET"&&a==="order"){const x:any=await orderDetailCanonical(u.searchParams.get("id"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_stock_shortages")return js(r,{ok:true,...await orderShortages()});if(r.method==="GET"&&a==="closure_orders")return js(r,{ok:true,...await closureOrders()});if(r.method==="GET"&&a==="bling_status"){const h=await hub("readiness");return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,bling:h.data?.readiness??h.data})}if(r.method==="POST"&&a==="bling_status_catalog_probe"){const x:any=await blingStatusCatalogProbe(auth);return x.error?js(r,{ok:false,...x},x.status||502):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_oauth_begin"){const x:any=await blingOauthBegin(auth);return x.error?js(r,{ok:false,...x},x.status||500):js(r,{ok:true,...x})}let p:any={};try{p=await r.json()}catch{}if(r.method==="POST"&&a==="history_sync_retry"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const g:any=await guardOrder(oid);return g.error?js(r,{ok:false,...g},g.status||409):js(r,{ok:true,order_id:oid,history_synced:true,canonical:true})}
   if(r.method==="POST"&&a==="order_component_replace"){const oid=id(p?.order_id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const g:any=await guardOrder(oid);if(g.error)return js(r,{ok:false,...g},g.status||409);return js(r,{ok:false,error:"order_component_edit_requires_unreserved_order",canonical:true},409)}
   if(r.method==="POST"&&a==="ops_print_presented"){const x:any=await opsPrintPresented(p?.id);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="ops_delivery_plan"){const x:any=await opsDeliveryPlan(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="manual_order_create"){const x:any=await createManualWhatsappOrder(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_payment_capture"){const x:any=await captureDeliveryPayment(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="delivery_fail_register"){const x:any=await registerFailedDelivery(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="delivery_return_confirm"){const x:any=await confirmDeliveryReturn(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="delivery_return_resolve"){const x:any=await resolveDeliveryReturnReview(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_check"){const oid=id(new URL(r.url).searchParams.get("id"));if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const z=await db.rpc("ops_get_order_check_v1",{p_order_id:oid});if(z.error)throw z.error;return js(r,{ok:true,check:z.data})}
   if(r.method==="POST"&&a==="order_check_start"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const g:any=await guardOrder(oid);if(g.error)return js(r,{ok:false,...g},g.status||409);const z=await db.rpc("ops_start_order_check_v1",{p_order_id:oid,p_operator_label:tx(p?.operator,80)||"Operação"});if(z.error)return js(r,{ok:false,error:String(z.error.message||"check_start_failed")},409);return js(r,{ok:true,check:z.data})}
@@ -521,7 +580,6 @@ Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{
     const u:any=await updateOrderCanonical({id:oid,status:"ready",operator});
     if(u.error)return js(r,{ok:false,...u},u.status||409);
     await opsEvent("order.check_verified","Conferência por EAN concluída sem divergência.","order",oid,{check_session_id:z.data?.session_id,verified:true},operator,"human","dona_antonia","order-check-verified:"+oid+":"+String(z.data?.session_id));
-
     let bling_verified:any={attempted:false,ok:false,reason:"protected_rollout"};
     const gate=await db.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle();
     if(gate.error)throw gate.error;
@@ -529,27 +587,16 @@ Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{
       const snap=await buildSnapshot(oid,"ean_verified");
       const h=await hub("ops2_ensure_order_state",{payload:snap,target_key:"verified",canary:false});
       if(h.error){
-        let retryQueued=false,retryJobId:any=null;
-        try{
-          const sessionKey=String(z.data?.session_id||"verified").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,80)||"verified";
-          const retry=await hub("enqueue_job",{
-            domain:"order",operation:"sync_order_status",source_id:oid,
-            idempotency_key:"ops2:ean-verified-retry:"+oid+":"+sessionKey,
-            payload:{...snap,source_order_id:oid,local_status:"ready",target_key:"verified",queue_reason:"ean_verified_retry",check_session_id:z.data?.session_id||null}
-          });
-          retryQueued=!retry.error&&retry.data?.queued!==false;
-          retryJobId=retry.data?.job_id||null;
-        }catch{}
         try{await db.from("orders").update({sync_status:"review_bling",updated_at:new Date().toISOString()}).eq("id",oid)}catch{}
         try{await db.rpc("ops_open_attention_v1",{
           p_type:"order_bling_verified_failed",
           p_summary:"Pedido conferido, mas ainda não mudou para Verificado no Bling.",
           p_entity_type:"order",p_entity_id:oid,p_correlation_id:oid,p_priority:"high",p_owner_role:"supervisor",
           p_recommended_action:"O sistema tentará novamente automaticamente. Não libere a expedição enquanto o Bling não estiver como Verificado.",
-          p_evidence:{error:h.error,status:h.status||null,detail:h.data||h.detail||null,check_session_id:z.data?.session_id||null,retry_queued:retryQueued,retry_job_id:retryJobId},
+          p_evidence:{error:h.error,status:h.status||null,detail:h.data||h.detail||null,check_session_id:z.data?.session_id||null,recovery_cycle:"bling-hub-v2-cycle"},
           p_source_system:"bling",p_idempotency_key:"ops2:order_bling_verified:"+oid,p_due_at:null
         })}catch{}
-        bling_verified={attempted:true,ok:false,error:h.error,detail:h.data||h.detail||null,retry_queued:retryQueued,retry_job_id:retryJobId};
+        bling_verified={attempted:true,ok:false,error:h.error,detail:h.data||h.detail||null,recovery_scheduled:true};
       }else{
         try{
           const a=await db.from("ops_attention").select("id").eq("idempotency_key","ops2:order_bling_verified:"+oid).in("status",["open","acknowledged"]).maybeSingle();
