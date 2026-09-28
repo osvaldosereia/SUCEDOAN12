@@ -92,9 +92,46 @@ function preliminaryBaseUnit(item:any,productUnit:any=""){
 function gtin(v:any){const d=digits(v);return [8,12,13,14].includes(d.length)?d:""}
 function validGtin(v:any){const g=digits(v);if(![8,12,13,14].includes(g.length))return false;const e=Number(g.at(-1));let s=0;for(let i=g.length-2,o=0;i>=0;i--,o++)s+=Number(g[i])*(o%2===0?3:1);return (10-s%10)%10===e}
 function day(v:any){const s=clean(v,40),m=s.match(/^(\d{4}-\d{2}-\d{2})/);return m?m[1]:""}
+const PAYMENT_LABELS:any={
+  "01":"Dinheiro","02":"Cheque","03":"Cartão de crédito","04":"Cartão de débito","05":"Crédito da loja",
+  "10":"Vale alimentação","11":"Vale refeição","12":"Vale presente","13":"Vale combustível",
+  "14":"Duplicata mercantil","15":"Boleto bancário","16":"Depósito bancário","17":"PIX",
+  "18":"Transferência bancária / carteira digital","19":"Fidelidade / cashback / crédito virtual",
+  "90":"Sem pagamento","91":"Pagamento posterior","99":"Outros"
+};
+const CARD_BRANDS:any={"01":"Visa","02":"Mastercard","03":"American Express","04":"Sorocred","05":"Diners Club","06":"Elo","07":"Hipercard","08":"Aura","09":"Cabal","99":"Outros"};
+function paymentSummary(payments:any[],invoiceTotal:any,troco:any=0){
+  const rows=Array.isArray(payments)?payments:[];
+  const gross=rows.reduce((a:number,x:any)=>a+Number(x?.amount||0),0);
+  const change=Number(troco||0);
+  const net=Math.round((gross-change)*100)/100;
+  const total=Number(invoiceTotal||0);
+  const difference=Math.round((net-total)*100)/100;
+  const total_matches=Number.isFinite(total)&&Math.abs(difference)<=0.05;
+  const codes=[...new Set(rows.map((x:any)=>clean(x?.code,2)).filter(Boolean))];
+  const immediate=new Set(["01","03","04","10","11","12","13","16","17","18","19"]);
+  const deferred=new Set(["05","14","15","91"]);
+  const has_no_payment=codes.includes("90");
+  const all_immediate=codes.length>0&&codes.every((x:any)=>immediate.has(x));
+  const has_deferred=codes.some((x:any)=>deferred.has(x));
+  const paid_at_purchase_likely=all_immediate&&total_matches&&net>0;
+  let hint="unknown";
+  if(paid_at_purchase_likely)hint="paid_at_purchase_likely";
+  else if(has_no_payment)hint="no_payment";
+  else if(has_deferred)hint="deferred_or_later";
+  else if(rows.length)hint="review";
+  const labels=codes.map((x:any)=>PAYMENT_LABELS[x]||("Código "+x));
+  const guidance=codes.includes("03")?"credit_card":codes.includes("04")?"debit_card":codes.includes("17")?"pix":codes.includes("01")?"cash":codes.includes("18")||codes.includes("16")?"bank_transfer":codes.some((x:any)=>["10","11","12","13"].includes(x))?"voucher":"other";
+  return {
+    hint,paid_at_purchase_likely,total_matches,payment_total:net,gross_payment_total:Math.round(gross*100)/100,
+    change:Math.round(change*100)/100,invoice_total:total,difference,codes,method_labels:labels,guidance,
+    payment_count:rows.length
+  };
+}
 function parseXml(xml:string){
   const inf=block(xml,"infNFe")||xml,ide=block(inf,"ide"),emit=block(inf,"emit"),dest=block(inf,"dest"),prot=block(xml,"protNFe"),ip=block(prot,"infProt")||prot;
-  const ea=block(emit,"enderEmit"),total=block(block(inf,"total"),"ICMSTot"),cobr=block(inf,"cobr");
+  const ea=block(emit,"enderEmit"),total=block(block(inf,"total"),"ICMSTot"),cobr=block(inf,"cobr"),pag=block(inf,"pag");
+  const issuedAt=clean(tag(ide,"dhEmi")||tag(ide,"dEmi"),50)||null,totalAmount=num(tag(total,"vNF"));
   const cnpj=digits(tag(dest,"CNPJ")),cpf=digits(tag(dest,"CPF"));
   const items=blocks(inf,"det").map((d:string)=>{
     const p=block(d,"prod"),icms=block(block(d,"imposto"),"ICMS"),or=tag(icms,"orig"),ncm=digits(tag(p,"NCM")).slice(0,8),cest=digits(tag(p,"CEST")).slice(0,7);
@@ -103,21 +140,61 @@ function parseXml(xml:string){
     const gross=num(tag(p,"vProd"))||0,discount=num(tag(p,"vDesc"))||0,freight=num(tag(p,"vFrete"))||0,insurance=num(tag(p,"vSeg"))||0,other=num(tag(p,"vOutro"))||0,net=gross-discount+freight+insurance+other;return {item_number:Number(attr(d,"nItem"))||0,supplier_item_code:clean(tag(p,"cProd"),120)||null,description:clean(tag(p,"xProd"),500),commercial_gtin:gtin(tag(p,"cEAN"))||null,tax_gtin:gtin(tag(p,"cEANTrib"))||null,ncm:ncm.length===8?ncm:null,cest:cest.length===7?cest:null,cfop:digits(tag(p,"CFOP")).slice(0,4)||null,tax_code:cst?"CST:"+cst:cs?"CSOSN:"+cs:null,origin_code:/^\d$/.test(or)?Number(or):null,purchase_unit:uCom||null,purchase_quantity:qCom,purchase_unit_price:num(tag(p,"vUnCom")),line_total:gross,item_discount:discount,item_freight:freight,item_insurance:insurance,item_other:other,net_line_total:net,tax_unit:uTrib||null,tax_quantity:qTrib};
   }).filter((x:any)=>x.item_number>0&&x.description);
   const installments=blocks(cobr,"dup").map((d:string,i:number)=>({number:clean(tag(d,"nDup"),40)||String(i+1),due_date:day(tag(d,"dVenc")),amount:num(tag(d,"vDup"))})).filter((x:any)=>x.due_date&&Number(x.amount)>0);
+  const payments=blocks(pag,"detPag").map((d:string,i:number)=>{
+    const code=digits(tag(d,"tPag")).slice(0,2),card=block(d,"card"),brand=digits(tag(card,"tBand")).slice(0,2);
+    return {
+      number:i+1,code:code||null,label:PAYMENT_LABELS[code]||null,amount:num(tag(d,"vPag"))||0,
+      payment_date:day(tag(d,"dPag"))||day(issuedAt)||null,description:clean(tag(d,"xPag"),120)||null,
+      integration_type:digits(tag(card,"tpIntegra")).slice(0,1)||null,brand_code:brand||null,brand_label:CARD_BRANDS[brand]||null,
+      authorization:clean(tag(card,"cAut"),80)||null,acquirer_document:digits(tag(card,"CNPJ"))||null
+    };
+  }).filter((x:any)=>x.code||Number(x.amount)>0);
+  const change=num(tag(pag,"vTroco"))||0,payment_summary=paymentSummary(payments,totalAmount,change);
   return {
     document_key:digits(tag(ip,"chNFe")||attr(inf,"Id").replace(/^NFe/i,"")),
     cstat:Number(tag(ip,"cStat")||0),
-    issued_at:clean(tag(ide,"dhEmi")||tag(ide,"dEmi"),50)||null,
+    issued_at:issuedAt,
     invoice_number:clean(tag(ide,"nNF"),40)||null,series:clean(tag(ide,"serie"),20)||null,
     supplier_document:digits(tag(emit,"CNPJ")||tag(emit,"CPF"))||null,supplier_name:clean(tag(emit,"xNome"),180)||null,supplier_trade_name:clean(tag(emit,"xFant"),180)||null,
     supplier_address:{street:clean(tag(ea,"xLgr"),180),number:clean(tag(ea,"nro"),40),district:clean(tag(ea,"xBairro"),120),city:clean(tag(ea,"xMun"),120),state:clean(tag(ea,"UF"),2),zip:digits(tag(ea,"CEP"))},
     recipient_document:cnpj||cpf||null,recipient_kind:cnpj?"CNPJ":cpf?"CPF":"unknown",
-    total_amount:num(tag(total,"vNF")),items,installments
+    total_amount:totalAmount,items,installments,payments,payment_summary
   };
 }
 async function sha256(v:string){const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,"0")).join("")}
 function b64bytes(s:string){const b=atob(s),o=new Uint8Array(b.length);for(let i=0;i<b.length;i++)o[i]=b.charCodeAt(i);return o}
 async function unzipBase64(s:string){const raw=b64bytes(s),ds=new DecompressionStream("gzip");return await new Response(new Blob([raw]).stream().pipeThrough(ds)).text()}
 
+async function enrichPaymentMetadata(documentId:string,documentData:any=null){
+  const q=documentData?{data:documentData,error:null}:await sb.from("purchase_xml_documents").select("id,storage_path,metadata,total_amount").eq("id",documentId).maybeSingle();
+  if(q.error)throw q.error;
+  const d:any=q.data;if(!d?.id||!d?.storage_path)return {ok:false,error:"document_or_xml_missing"};
+  const meta=obj(d.metadata);
+  if(meta.payment_summary&&typeof meta.payment_summary==="object"&&Object.keys(meta.payment_summary).length)return {ok:true,changed:false,metadata:meta};
+  const dl=await sb.storage.from("purchase-xml").download(d.storage_path);
+  if(dl.error)return {ok:false,error:"xml_download_failed",detail:clean(dl.error.message,300)};
+  const xml=await dl.data.text(),parsed:any=parseXml(xml);
+  const next={...meta,payments:parsed.payments||[],payment_summary:parsed.payment_summary||{}};
+  const u=await sb.from("purchase_xml_documents").update({metadata:next,updated_at:new Date().toISOString()}).eq("id",d.id);
+  if(u.error)throw u.error;
+  return {ok:true,changed:true,metadata:next,payment_summary:parsed.payment_summary||{}};
+}
+async function backfillPaymentMetadata(limit=100){
+  const q=await sb.from("purchase_xml_documents").select("id,storage_path,metadata,total_amount").order("created_at",{ascending:false}).limit(Math.max(1,Math.min(500,Number(limit||100))));
+  if(q.error)throw q.error;
+  let changed=0,skipped=0,failed=0,likely=0;const results:any[]=[];
+  for(const d of q.data||[]){
+    const meta=obj(d.metadata);
+    if(meta.payment_summary&&typeof meta.payment_summary==="object"&&Object.keys(meta.payment_summary).length){skipped++;continue}
+    try{
+      const r=await enrichPaymentMetadata(d.id,d);
+      if(r.changed)changed++;
+      if(r.payment_summary?.paid_at_purchase_likely)likely++;
+      results.push({id:d.id,ok:r.ok,changed:Boolean(r.changed),hint:r.payment_summary?.hint||null});
+    }catch(e){failed++;results.push({id:d.id,ok:false,error:clean((e as Error)?.message||e,200)})}
+  }
+  return {ok:true,changed,skipped,failed,paid_at_purchase_likely:likely,results};
+}
 async function companyDocument(token:string){
   const st=await sb.from("purchase_xml_settings").select("*").eq("id",1).single();
   if(st.error)throw st.error;
@@ -390,7 +467,7 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   const upf=await sb.storage.from("purchase-xml").upload(storagePath,new Blob([xml],{type:"application/xml"}),{upsert:true,contentType:"application/xml"});
   if(upf.error)throw new Error("xml_storage_failed:"+upf.error.message);
   const contact=await ensureContact(token,p);
-  const docUp=await sb.from("purchase_xml_documents").upsert({import_run_id:runId,source,source_document_id:sourceId,bling_nfe_id:blingId,document_key:p.document_key,content_sha256:hash,storage_path:storagePath,issued_at:p.issued_at,supplier_document:p.supplier_document,supplier_name:p.supplier_name,supplier_bling_contact_id:contact.id||null,recipient_document:p.recipient_document,recipient_kind:p.recipient_kind,financial_eligible:eligible,finance_status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":p.recipient_kind==="CNPJ"&&!company?"pending_company_match":"not_applicable",receipt_status:"not_received",processing_status:"processing",total_amount:p.total_amount,item_count:p.items.length,metadata:{invoice_number:p.invoice_number,series:p.series,company_document:company||null,contact_created:Boolean(contact.created),installments:p.installments,source_mode:source},updated_at:new Date().toISOString()},{onConflict:"document_key"}).select("id").single();
+  const docUp=await sb.from("purchase_xml_documents").upsert({import_run_id:runId,source,source_document_id:sourceId,bling_nfe_id:blingId,document_key:p.document_key,content_sha256:hash,storage_path:storagePath,issued_at:p.issued_at,supplier_document:p.supplier_document,supplier_name:p.supplier_name,supplier_bling_contact_id:contact.id||null,recipient_document:p.recipient_document,recipient_kind:p.recipient_kind,financial_eligible:eligible,finance_status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":p.recipient_kind==="CNPJ"&&!company?"pending_company_match":"not_applicable",receipt_status:"not_received",processing_status:"processing",total_amount:p.total_amount,item_count:p.items.length,metadata:{invoice_number:p.invoice_number,series:p.series,company_document:company||null,contact_created:Boolean(contact.created),installments:p.installments,payments:p.payments||[],payment_summary:p.payment_summary||{},source_mode:source},updated_at:new Date().toISOString()},{onConflict:"document_key"}).select("id").single();
   if(docUp.error)throw docUp.error;const documentId=docUp.data.id;
   let matched=0,review=0,created=0;
   for(const item of p.items){
@@ -683,7 +760,7 @@ async function summary(windowInput:any=null){
   const stale_cleanup=await closeStalePurchaseRuns();
   const window=purchaseWindow(windowInput,90);
   const docsQ=sb.from("purchase_xml_documents")
-    .select("id,document_key,bling_nfe_id,issued_at,supplier_name,recipient_kind,financial_eligible,finance_status,finance_attempt_count,finance_last_attempt_at,finance_last_error,finance_posted_at,finance_reconciled_at,finance_method,receipt_status,processing_status,total_amount,item_count,matched_item_count,review_item_count,created_at")
+    .select("id,document_key,bling_nfe_id,issued_at,supplier_name,recipient_kind,financial_eligible,finance_status,finance_reference,finance_attempt_count,finance_last_attempt_at,finance_last_error,finance_posted_at,finance_reconciled_at,finance_method,receipt_status,processing_status,total_amount,item_count,matched_item_count,review_item_count,metadata,created_at")
     .gte("issued_at",window.start+"T00:00:00")
     .lte("issued_at",window.end+"T23:59:59.999")
     .order("issued_at",{ascending:false})
@@ -698,11 +775,15 @@ async function summary(windowInput:any=null){
   return {ok:true,filter:window,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data,stale_runs_closed:Number(stale_cleanup?.runs_closed||0),stale_documents_repaired:Number(stale_cleanup?.documents_repaired||0),integration:{manual_max_range_days:365,daily_lookback_days:Number(settings.data?.daily_lookback_days||3),source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,received_notes_url:"https://www.bling.com.br/notas.entrada.php#list",manifestation_automated:false,stock_receipt_requires_human_confirmation:true}};
 }
 async function docDetail(id:string){
-  const [d,it]=await Promise.all([
+  let [d,it]=await Promise.all([
     sb.from("purchase_xml_documents").select("*").eq("id",id).maybeSingle(),
     sb.from("purchase_xml_items").select("*,products(id,name,gtin,bling_product_id,cost,price,stock,unit,is_active,category,subcategory,packaging,metadata)").eq("document_id",id).order("item_number")
   ]);
   if(d.error)throw d.error;if(it.error)throw it.error;if(!d.data)return {ok:false,status:404,error:"document_not_found"};
+  const meta=obj(d.data.metadata);
+  if(!meta.payment_summary||!Object.keys(obj(meta.payment_summary)).length){
+    try{const er=await enrichPaymentMetadata(id,d.data);if(er?.changed){d=await sb.from("purchase_xml_documents").select("*").eq("id",id).maybeSingle()}}catch{}
+  }
   const items=(it.data||[]).map((x:any)=>{
     const prod=Array.isArray(x.products)?x.products[0]:x.products;
     const pack=itemLooksPackaged(x);
@@ -828,8 +909,9 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="daily_sync"){
       if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);
       const sync=await runBlingSync("bling_daily");
+      const payment_backfill=await backfillPaymentMetadata(100);
       const finance_reconcile=await reconcilePendingFinance(50);
-      return js(req,{...sync,finance_reconcile});
+      return js(req,{...sync,payment_backfill,finance_reconcile});
     }
     if(action==="bling_sync")return js(req,await runBlingSync("bling_manual",body));
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
@@ -843,6 +925,7 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
       return js(req,r,r.ok?200:Number(r.status||400));
     }
     if(action==="finance_reconcile_pending"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await reconcilePendingFinance(body?.limit||50))}
+    if(action==="payment_backfill"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await backfillPaymentMetadata(body?.limit||100))}
     if(action==="document"){const r=await docDetail(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="xml_url"){const r=await signedXml(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="set_conversion"){const r=await setConversion(body);return js(req,r,r.ok?200:Number(r.status||400))}
