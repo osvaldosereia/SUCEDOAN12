@@ -173,3 +173,20 @@ Se esse primeiro ciclo real fechar sem divergência, avançar para a próxima ro
 O primeiro pedido real pós-corte já foi confirmado e sincronizado no Bling como **Aprovado / Separar**. Pré-flight EAN está limpo (30 produtos, 33 unidades, zero GTIN ausente/duplicado). Aguardando a separação/conferência humana normal para validar o próximo gate **EAN -> Verificado**.
 
 Checkpoint: `R2-CANARY-PROGRESS-2026-09-28.md`.
+
+
+## Atualização R2 — fechamento programável 2026-09-28
+
+R2 operacional está pronta até o próximo gate físico:
+- confirmação -> Bling Aprovado/Separar;
+- EAN -> Verificado com recuperação automática;
+- fiscal antes da saída com reconciliação passiva de NF-e já autorizada;
+- baixa física Bling idempotente antes de `out_for_delivery`;
+- pagamento real/split como fonte do settlement e do controle fiscal;
+- `delivered -> Atendido` com recuperação automática, sem repetir baixa física.
+
+Runtime:
+- Hub v201 ACTIVE;
+- Admin Edge v56 ACTIVE.
+
+Canário `DA-260928-D6432EB3` continua parado corretamente em `confirmed`, aguardando separação/EAN reais.
