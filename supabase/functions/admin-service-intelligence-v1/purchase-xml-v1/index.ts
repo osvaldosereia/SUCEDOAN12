@@ -391,10 +391,14 @@ async function ensureProduct(token:string,p:any,item:any){
 }
 const PURCHASE_PACK_UNITS=new Set(["CX","FD","PCT","DP"]);
 function isPurchasePackUnit(v:any){return PURCHASE_PACK_UNITS.has(unit(v))}
+const BASE_UNIT_CODES=new Set(["UN","UND","UNID","PC","PCE","PCS","EA"]);
+function isBaseUnitCode(v:any){return BASE_UNIT_CODES.has(unit(v))}
 function suggestedPackFactor(description:any,purchaseUnit:any){
   const s=clean(description,600).toUpperCase().replace(/\s+/g," ");
   const pu=unit(purchaseUnit);
-  let m=s.match(/\b(?:CX|FD|PCT|DP)\s*\/\s*0*(\d{2,4})\b/);
+  let m=s.match(/\b(?:CX|FD|FT|FDO|FARDO|PCT|DP)\s*0*(\d{1,4})\s*X\s*\d+(?:[.,]\d+)?(?:\s*(?:KG|G|GR|L|ML))?\b/);
+  if(m&&Number(m[1])>1)return {factor:Number(m[1]),source:"description_pack_count_x_size",evidence:m[0]};
+  m=s.match(/\b(?:CX|FD|PCT|DP)\s*\/\s*0*(\d{2,4})\b/);
   if(m&&Number(m[1])>1)return {factor:Number(m[1]),source:"description_pack_slash",evidence:m[0]};
   m=s.match(/\b(\d{2,4})\s*(?:UN|UND|PC|PCS|FS)\s*X\s*0*1\s*(?:CX|FD|PCT|DP)\b/);
   if(m&&Number(m[1])>1)return {factor:Number(m[1]),source:"description_units_per_pack",evidence:m[0]};
@@ -413,11 +417,21 @@ async function conversionFor(product:any,p:any,item:any){
   const qc=Number(item.purchase_quantity||0),qt=Number(item.tax_quantity||0),ratio=qc>0&&qt>0?qt/qc:0;
   const pack=itemLooksPackaged(item);
   if(pack.packaged){
-    if(ratio>1&&ratio<=100000&&Math.abs(ratio-Math.round(ratio))<0.000001){
+    if(ratio>1&&ratio<=100000&&Math.abs(ratio-Math.round(ratio))<0.000001&&isBaseUnitCode(tu)){
       const f=Math.round(ratio);
-      return {status:"inferred_xml",factor:f,base_unit:"UN",chain:[{unit:pu||"EMB",contains:f,next_unit:"UN"},{unit:"UN",quantity:1}],confidence:.99,suggested_factor:f,suggestion_source:"xml_qtrib_ratio"};
+      if(pack.suggestion.factor&&Number(pack.suggestion.factor)!==f){
+        return {status:"review_required",factor:null,base_unit:"UN",chain:[],confidence:0,
+          suggested_factor:Number(pack.suggestion.factor),suggestion_source:pack.suggestion.source,
+          suggestion_evidence:pack.suggestion.evidence,conflict:{xml_ratio:f,tax_unit:tu,description_factor:Number(pack.suggestion.factor)}};
+      }
+      return {status:"inferred_xml",factor:f,base_unit:"UN",chain:[{unit:pu||"EMB",contains:f,next_unit:"UN"},{unit:"UN",quantity:1}],confidence:.99,suggested_factor:f,suggestion_source:"xml_qtrib_ratio_unit_safe"};
     }
-    let mq=sb.from("product_supplier_packaging").select("*").eq("product_id",product.id).eq("purchase_unit",pu).in("status",["confirmed","inferred_xml"]);
+    if(pack.suggestion.factor){
+      const f=Number(pack.suggestion.factor);
+      return {status:"inferred_xml",factor:f,base_unit:"UN",chain:[{unit:pu||"EMB",contains:f,next_unit:"UN"},{unit:"UN",quantity:1}],
+        confidence:.97,suggested_factor:f,suggestion_source:pack.suggestion.source,suggestion_evidence:pack.suggestion.evidence};
+    }
+    let mq=sb.from("product_supplier_packaging").select("*").eq("product_id",product.id).eq("purchase_unit",pu).eq("status","confirmed");
     const supplierDoc=digits(p.supplier_document);
     mq=supplierDoc?mq.in("supplier_document",[supplierDoc,""]):mq.eq("supplier_document","");
     const q=await mq.order("confidence",{ascending:false}).limit(3);
@@ -428,8 +442,8 @@ async function conversionFor(product:any,p:any,item:any){
   }
   if(ratio>=1&&ratio<=100000&&Math.abs(ratio-Math.round(ratio))<0.000001){
     const f=Math.round(ratio),base=preliminaryBaseUnit(item,catalog);
-    if(f>1)return {status:"inferred_xml",factor:f,base_unit:base||"UN",chain:[{unit:pu||"EMB",contains:f,next_unit:base||"UN"},{unit:base||"UN",quantity:1}],confidence:.99,suggested_factor:f,suggestion_source:"xml_qtrib_ratio"};
-    if(f===1)return {status:"not_needed",factor:1,base_unit:"UN",chain:[{unit:"UN",quantity:1}],confidence:1,suggested_factor:1,suggestion_source:"same_unit"};
+    if(f>1&&isBaseUnitCode(tu))return {status:"inferred_xml",factor:f,base_unit:"UN",chain:[{unit:pu||"EMB",contains:f,next_unit:"UN"},{unit:"UN",quantity:1}],confidence:.99,suggested_factor:f,suggestion_source:"xml_qtrib_ratio_unit_safe"};
+    if(f===1&&(!tu||isBaseUnitCode(tu)||pu===tu))return {status:"not_needed",factor:1,base_unit:"UN",chain:[{unit:"UN",quantity:1}],confidence:1,suggested_factor:1,suggestion_source:"same_unit"};
   }
   if(pu&&tu&&pu===tu)return {status:"not_needed",factor:1,base_unit:"UN",chain:[{unit:"UN",quantity:1}],confidence:1,suggested_factor:1,suggestion_source:"same_unit"};
   return {status:"review_required",factor:null,base_unit:"UN",chain:[],confidence:0,suggested_factor:null,suggestion_source:null};
@@ -591,7 +605,7 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
       const bq=conv.factor?Number(item.purchase_quantity||0)*Number(conv.factor):null;
       const buc=bq&&bq>0&&Number.isFinite(Number(item.net_line_total))?Number(item.net_line_total)/bq:(conv.factor&&Number.isFinite(Number(item.purchase_unit_price))?Number(item.purchase_unit_price)/Number(conv.factor):null);
       const st=conv.status==="review_required"?"review_required":"matched";
-      const it=await sb.from("purchase_xml_items").upsert({document_id:documentId,item_number:item.item_number,supplier_item_code:item.supplier_item_code,description:item.description,commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,purchase_unit_price:item.purchase_unit_price,line_total:item.line_total,base_unit:conv.base_unit,conversion_status:conv.status,conversion_factor:conv.factor,conversion_chain:conv.chain,converted_quantity:bq,base_unit_cost:buc,product_id:ep.product.id,bling_product_id:ep.bling_id,match_method:ep.created?"created_from_gtin":"gtin_exact",processing_status:st,metadata:{conversion_confidence:conv.confidence,new_product:Boolean(ep.created),net_line_total:item.net_line_total,item_discount:item.item_discount,item_freight:item.item_freight,item_insurance:item.item_insurance,item_other:item.item_other,lot_traces:Array.isArray(item.lot_traces)?item.lot_traces:[]}},{onConflict:"document_id,item_number"}).select("id").single();
+      const it=await sb.from("purchase_xml_items").upsert({document_id:documentId,item_number:item.item_number,supplier_item_code:item.supplier_item_code,description:item.description,commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,purchase_unit_price:item.purchase_unit_price,line_total:item.line_total,base_unit:conv.base_unit,conversion_status:conv.status,conversion_factor:conv.factor,conversion_chain:conv.chain,converted_quantity:bq,base_unit_cost:buc,product_id:ep.product.id,bling_product_id:ep.bling_id,match_method:ep.created?"created_from_gtin":"gtin_exact",processing_status:st,metadata:{conversion_confidence:conv.confidence,new_product:Boolean(ep.created),net_line_total:item.net_line_total,item_discount:item.item_discount,item_freight:item.item_freight,item_insurance:item.item_insurance,item_other:item.item_other,lot_traces:Array.isArray(item.lot_traces)?item.lot_traces:[],tax_unit:item.tax_unit||null,tax_quantity:item.tax_quantity??null,conversion_suggestion_source:conv.suggestion_source||null,conversion_suggestion_evidence:conv.suggestion_evidence||null,conversion_conflict:conv.conflict||null}},{onConflict:"document_id,item_number"}).select("id").single();
       if(it.error)throw it.error;
       if(Array.isArray(item.lot_traces)&&item.lot_traces.length){
         const traceTotal=item.lot_traces.reduce((sum:number,x:any)=>sum+Number(x?.quantity||0),0);
