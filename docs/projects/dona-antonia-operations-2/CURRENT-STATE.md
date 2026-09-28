@@ -204,6 +204,6 @@ Implantado em 2026-09-28:
 - contagem confirmada usa o ledger de inventário existente;
 - com autoridade Bling, saldo físico é enviado pelo Hub `set_stock` e verificado por releitura;
 - repetição/retry não duplica contagem;
-- backend ativo: `admin-products-live-v1` v63.
+- backend ativo: `admin-products-live-v1` v64; `admin-service-intelligence-v1` v206 atualiza o espelho Supabase após a verificação do Bling.
 
 Próxima prova: canário físico com uma folha real, sem reprocessar pedidos/histórico.
