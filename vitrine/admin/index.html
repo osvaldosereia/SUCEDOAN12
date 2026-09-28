@@ -2676,9 +2676,10 @@
     const content=$('#content');
     content.innerHTML=
       '<div class="page-head"><div><h1>Compras e XML</h1><p>Notas de entrada, fornecedores, custos, embalagens e recebimento de estoque.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar</button></div>'+
-      '<div class="purchase-safe"><strong>Proteções ativas</strong><small>Notas em CPF nunca geram contas a pagar. Estoque só entra após confirmação humana e conversão segura da embalagem.</small></div>'+
+      '<div class="purchase-safe"><strong>Proteções ativas</strong><small>Notas em CPF nunca geram contas a pagar. Estoque só entra após confirmação humana e conversão segura da embalagem. O Admin não manifesta NF-e automaticamente.</small></div>'+
       '<div class="bling-actions" style="justify-content:flex-start;margin:0 0 12px">'+
-        '<button class="primary" id="purchaseBlingSync" type="button">Buscar agora no Bling</button>'+
+        '<button class="primary" id="purchaseBlingSync" type="button">Importar do Bling (90 dias)</button>'+
+        '<button class="secondary" id="purchaseBlingReceived" type="button">Abrir notas recebidas SEFAZ</button>'+
         '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar XML</button>'+
         '<button class="secondary" id="purchaseXmlBatch" type="button">Enviar vários XMLs</button>'+
         '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
@@ -2686,6 +2687,7 @@
       '<div id="purchaseBody"><div class="loading">Carregando compras…</div></div>';
     $('#refreshPurchases').onclick=loadPurchases;
     $('#purchaseBlingSync').onclick=runPurchaseBlingSync;
+    $('#purchaseBlingReceived').onclick=()=>window.open('https://www.bling.com.br/notas.entrada.php#list','_blank','noopener');
     $('#purchaseXmlSingle').onclick=()=>{$('#purchaseXmlInput').multiple=false;$('#purchaseXmlInput').click()};
     $('#purchaseXmlBatch').onclick=()=>{$('#purchaseXmlInput').multiple=true;$('#purchaseXmlInput').click()};
     $('#purchaseXmlInput').onchange=e=>importPurchaseXmlFiles([...e.target.files]);
@@ -2704,7 +2706,7 @@
   }
   function paintPurchases(){
     const host=$('#purchaseBody');if(!host)return;
-    const d=state.purchaseXml||{},docs=Array.isArray(d.documents)?d.documents:[],reviews=Array.isArray(d.review_items)?d.review_items:[],runs=Array.isArray(d.runs)?d.runs:[],settings=d.settings||{};
+    const d=state.purchaseXml||{},docs=Array.isArray(d.documents)?d.documents:[],reviews=Array.isArray(d.review_items)?d.review_items:[],runs=Array.isArray(d.runs)?d.runs:[],settings=d.settings||{},integration=d.integration||{};
     const cpf=docs.filter(x=>x.recipient_kind==='CPF').length,posted=docs.filter(x=>x.finance_status==='posted').length,ready=docs.filter(x=>x.receipt_status==='ready').length;
     const last=runs[0]||null;
     host.innerHTML=
@@ -2716,8 +2718,9 @@
         '<div class="bling-card"><small>Revisões</small><strong class="'+(reviews.length?'warn-text':'ok-text')+'">'+reviews.length+'</strong><span class="sub">embalagem ou vínculo pendente</span></div>'+
         '<div class="bling-card"><small>Rotina diária</small><strong>'+esc(settings.daily_enabled===false?'Pausada':'06:00')+'</strong><span class="sub">Cuiabá · olha '+esc(settings.daily_lookback_days||3)+' dia(s)</span></div>'+
       '</div>'+
-      (last?'<div class="bling-banner"><strong>Última execução: '+esc(last.source||'')+' · '+esc(last.status||'')+'</strong><small>'+dateTime(last.started_at)+' · '+esc(last.documents_processed||0)+' processada(s) · '+esc(last.documents_duplicate||0)+' duplicada(s) · '+esc(last.items_review||0)+' revisão(ões)</small></div>':'')+
-      '<section class="panel"><div class="history-title dispatch-head"><div><strong>Notas recebidas</strong><span>XML original privado · sem duplicar pela chave da NF-e</span></div><b>'+docs.length+'</b></div>'+
+      '<div class="bling-banner"><strong>SEFAZ → Bling → Admin</strong><small>As notas ainda na aba “Notas recebidas” ficam no Bling. Pela API oficial, este Admin importa as NF-e que já entraram como nota de compra/entrada no Bling. A busca manual revisa até '+esc(integration.bling_manual_lookback_days||90)+' dias e não faz manifestação fiscal automaticamente.</small></div>'+
+      (last?'<div class="bling-banner"><strong>Última execução: '+esc(last.source||'')+' · '+esc(last.status||'')+'</strong><small>'+dateTime(last.started_at||last.created_at)+' · '+esc(last.documents_processed||0)+' processada(s) · '+esc(last.documents_duplicate||0)+' duplicada(s) · '+esc(last.items_review||0)+' revisão(ões)</small></div>':'')+
+      '<section class="panel"><div class="history-title dispatch-head"><div><strong>Notas importadas</strong><span>XML original privado · sem duplicar pela chave da NF-e</span></div><b>'+docs.length+'</b></div>'+
         (docs.length?docs.map(x=>'<div class="purchase-doc-row">'+
           '<div><strong>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</strong><span class="sub">'+esc(String(x.document_key||'').slice(-10))+'</span></div>'+
           '<div class="history-main"><strong>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns)</small></div>'+
@@ -2740,10 +2743,11 @@
     const b=$('#purchaseBlingSync');if(b){b.disabled=true;b.textContent='Buscando…'}
     try{
       const r=await purchaseApi('bling_sync');
-      toast('Bling: '+String(r.processed||0)+' nota(s) processada(s)');
+      if(Number(r.documents_seen||0)===0)toast('Bling: nenhuma nota de compra/entrada encontrada nos últimos '+String(r.lookback_days||90)+' dias. Confira “Notas recebidas SEFAZ” se houver documentos aguardando importação.');
+      else toast('Bling: '+String(r.processed||0)+' processada(s) · '+String(r.duplicates||0)+' já existente(s) · '+String(r.failed||0)+' falha(s)');
       await loadPurchases();
     }catch(e){toast(errorMessage(e.message))}
-    finally{if(b){b.disabled=false;b.textContent='Buscar agora no Bling'}}
+    finally{if(b){b.disabled=false;b.textContent='Importar do Bling (90 dias)'}}
   }
   async function importPurchaseXmlFiles(files){
     if(!files?.length)return;
