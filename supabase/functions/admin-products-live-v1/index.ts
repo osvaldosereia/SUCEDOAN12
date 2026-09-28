@@ -108,7 +108,9 @@ async function gclear(p:any){
   if(tx(p?.confirmation,80)!==expected)return {error:"gondola_clear_confirmation_required",status:409};
   const r=await db.from("products").update({gondola:null,shelf:null,updated_at:new Date().toISOString()}).eq("gondola",String(g.data.number)).select("id");
   if(r.error)throw r.error;
-  return {gondola:g.data,removed_count:(r.data||[]).length};
+  const removed=(r.data||[]).length;
+  await opsEvent("gondola.cleared","Gôndola "+g.data.number+" foi limpa.","gondola",gid,{gondola_number:g.data.number,removed_count:removed},tx(p?.operator,80)||"Operação","human","dona_antonia",null);
+  return {gondola:g.data,removed_count:removed};
 }
 async function gassignCount(p:any){
   const gid=id(p?.gondola_id),pid=id(p?.product_id),q=Number(p?.quantity);
@@ -660,7 +662,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:38,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:39,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
