@@ -102,17 +102,23 @@ async function products(u:URL){
   const qv=tx(u.searchParams.get("q"),100).replace(/[,%()]/g," "),cat=tx(u.searchParams.get("category"),120),sub=tx(u.searchParams.get("subcategory"),120),act=tx(u.searchParams.get("active"),12);
   let rows:any[]=[];
   if(cat){
-    let q=db.from("products").select("*").order("name").limit(5000);
-    if(sub)q=q.eq("subcategory",sub);
-    if(act==="true")q=q.eq("is_active",true);
-    if(act==="false")q=q.eq("is_active",false);
-    if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
-    const r=await q;if(r.error)throw r.error;
+    const all:any[]=[];
+    for(let pos=0;pos<10000;pos+=1000){
+      let q=db.from("products").select("*").order("id").range(pos,pos+999);
+      if(sub)q=q.eq("subcategory",sub);
+      if(act==="true")q=q.eq("is_active",true);
+      if(act==="false")q=q.eq("is_active",false);
+      if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
+      const r=await q;if(r.error)throw r.error;
+      all.push(...(r.data||[]));
+      if((r.data||[]).length<1000)break;
+    }
     const wanted=inventorySheetCanonicalCategory(cat);
-    const filtered=(r.data||[]).filter((x:any)=>inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category)===wanted);
+    const filtered=all.filter((x:any)=>inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category)===wanted)
+      .sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
     rows=filtered.slice(off,off+lim);
     const sm=await effectiveStockMap(rows.map((x:any)=>x.id));
-    return {products:rows.map((x:any)=>mp({...x,stock:sm.has(String(x.id))?sm.get(String(x.id)):0})),next_offset:off+lim<filtered.length?off+lim:null};
+    return {products:rows.map((x:any)=>mp({...x,stock:sm.has(String(x.id))?sm.get(String(x.id)):0})),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
   }
   let q=db.from("products").select("*").order("name").range(off,off+lim-1);
   if(sub)q=q.eq("subcategory",sub);
@@ -125,12 +131,17 @@ async function products(u:URL){
   return {products:rows.map((x:any)=>mp({...x,stock:sm.has(String(x.id))?sm.get(String(x.id)):0})),next_offset:rows.length===lim?off+lim:null};
 }
 async function facets(c:string,act=""){
-  let q=db.from("products").select("sales_category,storefront_category,category,subcategory,is_active").limit(5000);
-  if(act==="true")q=q.eq("is_active",true);
-  if(act==="false")q=q.eq("is_active",false);
-  const r=await q;if(r.error)throw r.error;
+  const all:any[]=[];
+  for(let pos=0;pos<10000;pos+=1000){
+    let q=db.from("products").select("id,sales_category,storefront_category,category,subcategory,is_active").order("id").range(pos,pos+999);
+    if(act==="true")q=q.eq("is_active",true);
+    if(act==="false")q=q.eq("is_active",false);
+    const r=await q;if(r.error)throw r.error;
+    all.push(...(r.data||[]));
+    if((r.data||[]).length<1000)break;
+  }
   const cm=new Map(),sm=new Map(),wanted=c?inventorySheetCanonicalCategory(c):"";
-  for(const p of r.data||[]){
+  for(const p of all){
     const x=inventorySheetCanonicalCategory(p.sales_category||p.storefront_category||p.category),s=tx(p.subcategory,120);
     if(x)cm.set(x,(cm.get(x)||0)+1);
     if(s&&(!wanted||x===wanted))sm.set(s,(sm.get(s)||0)+1);
@@ -283,7 +294,26 @@ async function createInventoryIncident(p:any,auth:any){
   const product=await one(pid);
   return {incident:r.data,product:product?mp(product):null};
 }
-async function glist(){const g=await db.from("vitrine_gondolas").select("*").eq("active",true).order("number"),p=await db.from("products").select("gondola,is_active").not("gondola","is",null).limit(5000);if(g.error)throw g.error;if(p.error)throw p.error;const c=new Map();for(const x of p.data||[]){if(x.is_active===false)continue;const raw=String(x.gondola||"").trim();if(!/^\d+$/.test(raw))continue;const k=String(Number(raw));c.set(k,(c.get(k)||0)+1)}return {gondolas:(g.data||[]).map((x:any)=>({...x,product_count:c.get(String(Number(x.number)))||0}))}}
+async function glist(){
+  const g=await db.from("vitrine_gondolas").select("*").eq("active",true).order("number");
+  if(g.error)throw g.error;
+  const all:any[]=[];
+  for(let pos=0;pos<10000;pos+=1000){
+    const p=await db.from("products").select("id,gondola,is_active").not("gondola","is",null).order("id").range(pos,pos+999);
+    if(p.error)throw p.error;
+    all.push(...(p.data||[]));
+    if((p.data||[]).length<1000)break;
+  }
+  const counts=new Map();
+  for(const x of all){
+    if(x.is_active===false)continue;
+    const raw=String(x.gondola||"").trim();
+    if(!/^\d+$/.test(raw))continue;
+    const key=String(Number(raw));
+    counts.set(key,(counts.get(key)||0)+1);
+  }
+  return {gondolas:(g.data||[]).map((x:any)=>({...x,product_count:counts.get(String(Number(x.number)))||0}))};
+}
 async function gone(v:any){const gid=id(v);if(!gid)return {error:"invalid_gondola",status:400};const g=await db.from("vitrine_gondolas").select("*").eq("id",gid).eq("active",true).maybeSingle();if(g.error)throw g.error;if(!g.data)return {error:"gondola_not_found",status:404};const p=await db.from("products").select("*").eq("gondola",String(g.data.number)).order("name").limit(5000);if(p.error)throw p.error;return {gondola:g.data,products:(p.data||[]).map(mp)}}
 async function gcreate(p:any){const n=Math.floor(Number(p?.number));if(!Number.isInteger(n)||n<1||n>9999)return {error:"invalid_gondola",status:400};let g=await db.from("vitrine_gondolas").select("*").eq("number",n).maybeSingle();if(g.error)throw g.error;if(g.data){if(!g.data.active)g=await db.from("vitrine_gondolas").update({active:true,updated_at:new Date().toISOString()}).eq("id",g.data.id).select("*").single();return {gondola:g.data,reused:true}}g=await db.from("vitrine_gondolas").insert({number:n}).select("*").single();if(g.error)throw g.error;return {gondola:g.data,reused:false}}
 async function gassign(p:any){const gid=id(p?.gondola_id);if(!gid)return {error:"invalid_gondola",status:400};const g=await db.from("vitrine_gondolas").select("*").eq("id",gid).eq("active",true).maybeSingle();if(g.error)throw g.error;if(!g.data)return {error:"gondola_not_found",status:404};const e:any=await ean(p?.ean);if(e.error)return e;const b=await one(e.product.id),prev=b?.gondola&&/^\d+$/.test(String(b.gondola))?Number(b.gondola):null,r=await db.from("products").update({gondola:String(g.data.number),updated_at:new Date().toISOString()}).eq("id",e.product.id).select("*").single();if(r.error)throw r.error;return {product:mp(r.data),previous_gondola_number:prev}}
@@ -996,10 +1026,15 @@ async function inventorySheetPreview(p:any){
 }
 
 async function inventorySheetOptions(){
-  const p=await db.from("products").select("is_active,sales_category,storefront_category,category,gondola").eq("is_active",true).limit(5000);
-  if(p.error)throw p.error;
+  const all:any[]=[];
+  for(let pos=0;pos<10000;pos+=1000){
+    const p=await db.from("products").select("id,is_active,sales_category,storefront_category,category,gondola").eq("is_active",true).order("id").range(pos,pos+999);
+    if(p.error)throw p.error;
+    all.push(...(p.data||[]));
+    if((p.data||[]).length<1000)break;
+  }
   const categories=new Map<string,number>(),gondolas=new Map<string,number>();
-  for(const x of p.data||[]){
+  for(const x of all){
     const cat=inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category);
     if(cat)categories.set(cat,(categories.get(cat)||0)+1);
     const raw=String(x.gondola||"").trim();
@@ -1009,8 +1044,8 @@ async function inventorySheetOptions(){
     }
   }
   return {
-    categories:[...categories].map(([value,count])=>({value,count})).filter(x=>x.count>0).sort((a,b)=>a.value.localeCompare(b.value,"pt-BR")),
-    gondolas:[...gondolas].map(([value,count])=>({value,count})).filter(x=>x.count>0).sort((a,b)=>Number(a.value)-Number(b.value))
+    categories:[...categories].map(([value,count])=>({value,count,page_count:Math.ceil(count/INVENTORY_SHEET_CARDS_PER_PAGE)})).filter(x=>x.count>0).sort((a,b)=>a.value.localeCompare(b.value,"pt-BR")),
+    gondolas:[...gondolas].map(([value,count])=>({value,count,page_count:Math.ceil(count/INVENTORY_SHEET_CARDS_PER_PAGE)})).filter(x=>x.count>0).sort((a,b)=>Number(a.value)-Number(b.value))
   };
 }
 async function inventorySheetCreate(p:any,auth:any){
@@ -1267,7 +1302,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:48,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:49,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
