@@ -7750,6 +7750,83 @@ async function vitrineAdminAuth(sb:any,req:Request){
   return {ok:true,status:200,user_id:userData.user.id,role:admin.role||"viewer"};
 }
 
+
+function blingHubTaxText(v:any){return clean(v,180).normalize("NFKC").trim()}
+function blingHubTaxFold(v:any){return blingHubTaxText(v).toLocaleLowerCase("pt-BR")}
+async function blingHubListProductCategoriesReadonly(sb:any,tokenOverride:any=null){
+  const token=tokenOverride||await blingHubOauth(sb),rows:any[]=[];
+  for(let page=1;page<=30;page++){
+    const r=await blingHubGet(sb,token,"/categorias/produtos?pagina="+page+"&limite=100");
+    if(!r.ok)return {ok:false,status:r.status,error:"product_categories_http_"+r.status,categories:rows};
+    const batch=Array.isArray(r.data?.data)?r.data.data:[];
+    for(const x of batch){
+      const id=Number(x?.id||0),description=blingHubTaxText(x?.descricao),parentId=Number(x?.categoriaPai?.id||0)||0;
+      if(id>0&&description)rows.push({id,description,parent_id:parentId});
+    }
+    if(batch.length<100)break;
+    if(page===30)return {ok:false,status:409,error:"product_categories_pagination_limit",categories:rows};
+  }
+  return {ok:true,status:200,categories:rows};
+}
+async function blingHubCatalogTaxonomyReadonly(sb:any){
+  const local=await sb.from("products")
+    .select("id,name,category,subcategory,bling_product_id,is_active")
+    .eq("is_active",true)
+    .limit(5000);
+  if(local.error)throw local.error;
+  const products=(local.data||[]).filter((p:any)=>blingHubTaxText(p?.category));
+  const parentNames=[...new Set(products.map((p:any)=>blingHubTaxText(p.category)))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  const children:any[]=[];
+  for(const parent of parentNames){
+    const subs=[...new Set(products.filter((p:any)=>blingHubTaxText(p.category)===parent).map((p:any)=>blingHubTaxText(p.subcategory)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    for(const sub of subs)children.push({parent,description:sub});
+  }
+  const remote=await blingHubListProductCategoriesReadonly(sb);
+  if(!remote.ok)return {...remote,external_write:false};
+  const rows=remote.categories||[],byId=new Map(rows.map((x:any)=>[Number(x.id),x]));
+  const roots=rows.filter((x:any)=>!Number(x.parent_id||0));
+  const expectedRootIds=new Set<number>(),rootMatches:any[]=[];
+  const missingParents:any[]=[],caseParents:any[]=[],ambiguousParents:any[]=[];
+  for(const name of parentNames){
+    const exact=roots.filter((x:any)=>x.description===name);
+    const folded=roots.filter((x:any)=>blingHubTaxFold(x.description)===blingHubTaxFold(name));
+    if(exact.length===1){expectedRootIds.add(Number(exact[0].id));rootMatches.push({name,id:Number(exact[0].id),match:"exact"});}
+    else if(exact.length>1)ambiguousParents.push({name,ids:exact.map((x:any)=>x.id)});
+    else if(folded.length===1){expectedRootIds.add(Number(folded[0].id));rootMatches.push({name,id:Number(folded[0].id),match:"case_mismatch",remote_description:folded[0].description});caseParents.push({expected:name,remote:folded[0].description,id:folded[0].id});}
+    else if(folded.length>1)ambiguousParents.push({name,ids:folded.map((x:any)=>x.id),case_insensitive:true});
+    else missingParents.push({description:name});
+  }
+  const rootByName=new Map(rootMatches.map((x:any)=>[x.name,x]));
+  const missingChildren:any[]=[],caseChildren:any[]=[],ambiguousChildren:any[]=[],childMatches:any[]=[];
+  const expectedChildIds=new Set<number>();
+  for(const e of children){
+    const pr=rootByName.get(e.parent);
+    if(!pr){missingChildren.push({...e,reason:"parent_missing"});continue}
+    const cand=rows.filter((x:any)=>Number(x.parent_id||0)===Number(pr.id));
+    const exact=cand.filter((x:any)=>x.description===e.description);
+    const folded=cand.filter((x:any)=>blingHubTaxFold(x.description)===blingHubTaxFold(e.description));
+    if(exact.length===1){expectedChildIds.add(Number(exact[0].id));childMatches.push({...e,id:Number(exact[0].id),parent_id:Number(pr.id),match:"exact"});}
+    else if(exact.length>1)ambiguousChildren.push({...e,ids:exact.map((x:any)=>x.id)});
+    else if(folded.length===1){expectedChildIds.add(Number(folded[0].id));childMatches.push({...e,id:Number(folded[0].id),parent_id:Number(pr.id),match:"case_mismatch",remote_description:folded[0].description});caseChildren.push({...e,remote:folded[0].description,id:folded[0].id,parent_id:Number(pr.id)});}
+    else if(folded.length>1)ambiguousChildren.push({...e,ids:folded.map((x:any)=>x.id),case_insensitive:true});
+    else missingChildren.push({...e,parent_id:Number(pr.id)});
+  }
+  const extraRoots=roots.filter((x:any)=>!expectedRootIds.has(Number(x.id))).map((x:any)=>({id:x.id,description:x.description}));
+  const extraChildren=rows.filter((x:any)=>Number(x.parent_id||0)>0&&!expectedChildIds.has(Number(x.id))).map((x:any)=>({id:x.id,description:x.description,parent_id:x.parent_id,parent_description:byId.get(Number(x.parent_id))?.description||null}));
+  return {
+    ok:true,readonly:true,external_write:false,
+    source:"supabase_active_products.category+subcategory",
+    local:{active_products:products.length,parents:parentNames.length,children:children.length,products_with_bling_id:products.filter((p:any)=>Number(p.bling_product_id||0)>0).length,products_without_bling_id:products.filter((p:any)=>!Number(p.bling_product_id||0)).length},
+    remote:{categories:rows.length,roots:roots.length,children:rows.length-roots.length},
+    exact:{parents:rootMatches.filter((x:any)=>x.match==="exact").length,children:childMatches.filter((x:any)=>x.match==="exact").length},
+    missing:{parents:missingParents,children:missingChildren},
+    case_mismatch:{parents:caseParents,children:caseChildren},
+    ambiguous:{parents:ambiguousParents,children:ambiguousChildren},
+    extra:{roots:extraRoots,children:extraChildren},
+    matches:{parents:rootMatches,children:childMatches}
+  };
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
   const url=Deno.env.get("SUPABASE_URL"),key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");if(!url||!key)return json({ok:false,error:"server_config"},500);
@@ -7808,6 +7885,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="probe_readonly"){
         const result=await blingHubProbeReadonly(sb);
         return json(result,result.ok?200:207);
+      }
+      if(subaction==="catalog_taxonomy_readonly"){
+        const result=await blingHubCatalogTaxonomyReadonly(sb);
+        return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="finance_overview"){
         const financeUser=await blingHubFinanceAuthorizedUser(sb,req);
