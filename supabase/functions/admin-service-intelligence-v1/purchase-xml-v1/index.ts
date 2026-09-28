@@ -890,6 +890,58 @@ async function browseBlingNfe(windowInput:any=null){
   }
   return {ok:true,readonly:true,window,count:out.length,truncated,documents:out,source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false};
 }
+async function backfillLotEvidence(limitRaw:any=100){
+  const limit=Math.max(1,Math.min(500,Number(limitRaw||100)||100));
+  const docs=await sb.from("purchase_xml_documents")
+    .select("id,document_key,storage_path")
+    .not("storage_path","is",null)
+    .order("issued_at",{ascending:false})
+    .limit(limit);
+  if(docs.error)throw docs.error;
+  let documents=0,items=0,traces=0,failed=0;const results:any[]=[];
+  for(const d of docs.data||[]){
+    try{
+      const existing=await sb.from("purchase_xml_items")
+        .select("id,item_number,purchase_quantity,conversion_factor,conversion_status")
+        .eq("document_id",d.id);
+      if(existing.error)throw existing.error;
+      const byNo=new Map((existing.data||[]).map((x:any)=>[Number(x.item_number),x]));
+      const dl=await sb.storage.from("purchase-xml").download(d.storage_path);
+      if(dl.error)throw new Error("xml_download_failed:"+clean(dl.error.message,300));
+      const parsed:any=parseXml(await dl.data.text());
+      let docTraces=0;
+      for(const item of parsed.items||[]){
+        const stored:any=byNo.get(Number(item.item_number));if(!stored?.id)continue;
+        const list=Array.isArray(item.lot_traces)?item.lot_traces:[];
+        if(!list.length)continue;
+        items++;
+        const factor=Number(stored.conversion_factor||0);
+        const traceTotal=list.reduce((sum:number,x:any)=>sum+Number(x?.quantity||0),0);
+        const traceMatches=Math.abs(traceTotal-Number(stored.purchase_quantity||0))<=0.0001;
+        const del=await sb.from("purchase_xml_item_lot_evidence").delete().eq("purchase_item_id",stored.id);
+        if(del.error)throw del.error;
+        const rows=list.map((x:any)=>({
+          purchase_item_id:stored.id,trace_index:Number(x?.trace_index||1),
+          lot_code:clean(x?.lot_code,120)||null,
+          manufacture_date:day(x?.manufacture_date)||null,
+          expiration_date:day(x?.expiration_date)||null,
+          xml_quantity:Number.isFinite(Number(x?.quantity))?Number(x.quantity):null,
+          base_quantity:factor>0&&Number.isFinite(Number(x?.quantity))?Number(x.quantity)*factor:null,
+          conversion_factor:factor>0?factor:null,
+          status:stored.conversion_status!=="review_required"&&factor>0&&traceMatches&&day(x?.expiration_date)?"ready":"review_required",
+          source:"nfe_rastro",
+          metadata:{trace_quantity_matches_purchase:traceMatches,aggregation_code:clean(x?.aggregation_code,120)||null,document_key:d.document_key,backfilled:true}
+        }));
+        const ins=await sb.from("purchase_xml_item_lot_evidence").insert(rows);
+        if(ins.error)throw ins.error;
+        traces+=rows.length;docTraces+=rows.length;
+      }
+      documents++;results.push({document_id:d.id,document_key:d.document_key,traces:docTraces,ok:true});
+    }catch(e){failed++;results.push({document_id:d.id,ok:false,error:clean((e as Error)?.message||e,300)})}
+  }
+  return {ok:true,write_scope:"lot_evidence_only",documents,items,traces,failed,results};
+}
+
 async function summary(windowInput:any=null){
   const stale_cleanup=await closeStalePurchaseRuns();
   const window=purchaseWindow(windowInput,90);
@@ -1065,6 +1117,7 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     }
     if(action==="finance_reconcile_pending"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await reconcilePendingFinance(body?.limit||50))}
     if(action==="payment_backfill"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await backfillPaymentMetadata(body?.limit||100))}
+    if(action==="lot_evidence_backfill"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await backfillLotEvidence(body?.limit||100))}
     if(action==="payment_accounts"){const token=await oauth();return js(req,await paymentAccountConfig(token))}
     if(action==="payment_accounts_save"){
       if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
