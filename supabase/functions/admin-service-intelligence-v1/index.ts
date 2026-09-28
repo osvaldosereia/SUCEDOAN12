@@ -7491,6 +7491,21 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
               p_result:{local_status:localStatus,target_key:targetKey,bling_order_id:ensured.bling_order_id||null,recovered:true,external_write:Boolean(ensured.external_write)},
               p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:ensured.bling_order_id?String(ensured.bling_order_id):null
             });
+            if(targetKey==="approved_separation"||targetKey==="verified"){
+              try{
+                const attentionKey=targetKey==="verified"?"ops2:order_bling_verified:"+job.source_id:"ops2:order_bling_sync:"+job.source_id;
+                const att=await sb.from("ops_attention").select("id").eq("idempotency_key",attentionKey).in("status",["open","acknowledged"]).maybeSingle();
+                if(!att.error&&att.data?.id){
+                  await sb.rpc("ops_resolve_attention_v1",{
+                    p_attention_id:att.data.id,
+                    p_resolution:targetKey==="verified"
+                      ?"Pedido recuperado automaticamente e confirmado como Verificado no Bling."
+                      :"Pedido recuperado automaticamente e confirmado como Aprovado / Separar no Bling.",
+                    p_resolution_ref:ensured.bling_order_id?"bling-order:"+String(ensured.bling_order_id):null
+                  });
+                }
+              }catch{}
+            }
             summary.synced++;
             continue;
           }
@@ -7801,20 +7816,8 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
           updated_at:now
         }).eq("id",job.source_id);
         if(canonical.error)throw canonical.error;
-        try{
-          const att=await sb.from("ops_attention")
-            .select("id")
-            .eq("idempotency_key","ops2:order_bling_sync:"+job.source_id)
-            .in("status",["open","acknowledged"])
-            .maybeSingle();
-          if(!att.error&&att.data?.id){
-            await sb.rpc("ops_resolve_attention_v1",{
-              p_attention_id:att.data.id,
-              p_resolution:"Pedido recuperado automaticamente e sincronizado com o Bling.",
-              p_resolution_ref:"bling-order:"+String(blingOrderId)
-            });
-          }
-        }catch{}
+        // Generic order reconciliation only confirms identity/content.
+        // Operational attentions are resolved by the explicit target-state recovery job.
       }
 
       await sb.rpc("finish_bling_hub_job_v2",{
