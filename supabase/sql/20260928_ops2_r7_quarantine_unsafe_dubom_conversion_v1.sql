@@ -1,0 +1,16 @@
+-- R7 targeted data correction applied to canonical Supabase on 2026-09-28.
+-- ARROZ DUBOM FT 6X5 had been inferred as factor 30 from tax weight ratio.
+-- It was quarantined for human review; factor 6 is only a suggestion from description,
+-- not an automatically confirmed conversion.
+--
+-- Applied state:
+-- purchase_xml_items 9f815786-5ebb-4b8f-8747-4814a97c0fef:
+--   conversion_status=review_required
+--   conversion_factor/converted_quantity/base_unit_cost=NULL
+-- purchase_xml_documents d7060c6d-cf53-4ed1-a1a8-d428a616bd32:
+--   processing_status=review_required
+--   receipt_status=review
+-- corresponding inferred supplier packaging rule:
+--   status=review_required
+-- product_purchase_history conversion-derived quantity/cost cleared.
+-- Product catalog cost/price were NULL and had not been approved, so no price rollback was needed.
