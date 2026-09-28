@@ -789,3 +789,46 @@ Estado: **PROGRAMADO / BACKEND ATIVO / TESTE DE SINTAXE PASS**.
 - Admin frontend commit `94772f11`; backend commits `142282f9` e `edec2f5a`; Edge `admin-products-live-v1` v55 ACTIVE / health interno v39;
 - nenhum produto/gôndola real foi alterado durante os testes desta implementação.
 
+
+
+## 2026-09-28 — R3: falha de entrega / retorno / reentrega / cancelamento
+Estado: **PROGRAMÁVEL FECHADO / CANÁRIO FÍSICO ADIADO**.
+
+Revisão confirmou que a base já existente cobre:
+- falha de entrega somente em `out_for_delivery`;
+- bloqueio se pagamento já tiver sido capturado;
+- retorno físico sem devolver mercadoria automaticamente ao estoque;
+- reentrega mantendo a mercadoria alocada ao mesmo pedido;
+- retorno de pagamento recusado/desistência/outros em `returned_review`;
+- bloqueio de nova saída e de `delivered` enquanto retorno estiver aberto;
+- cancelamento íntegro bloqueado se existir pagamento capturado;
+- avaria/falta não restaura o pedido inteiro: permanece em revisão e deve seguir Estoque Mobile/incidente.
+
+Hardening desta R3 após cutover Bling:
+- `ops_resolve_delivery_return_review_v1(cancel_intact)` agora é fail-closed sob `ops2_stock_authority=bling`;
+- cancelamento só prossegue se `bling_order_stock_controls_v2.state='reversed'`;
+- evita cancelamento local sem estorno da baixa física oficial;
+- reversão usa o mecanismo idempotente já homologado `claim_bling_order_stock_action_v2/finish_bling_order_stock_action_v2`;
+- Admin v57 aciona primeiro a reversão protegida e só depois conclui o cancelamento;
+- reentrega não estorna estoque e o novo despacho reutiliza `state=launched`, evitando dupla baixa;
+- falha/incerteza no estorno entra em atenção crítica e não deve ser repetida automaticamente.
+
+Restrição de infraestrutura:
+- projeto atingiu o limite de Edge Functions do plano;
+- nenhuma função nova foi criada;
+- o Edge legado sem referências `shopping-room-reset-v1` foi reaproveitado temporariamente como worker interno de estorno R3, protegido por bearer de service role;
+- registrar rename/consolidação para cleanup futuro quando houver capacidade de remover/reorganizar Edge Functions.
+
+Teste transacional:
+- pedido + retorno sintéticos;
+- `cancel_intact` sem `state=reversed` foi bloqueado por `bling_physical_stock_reverse_required_before_cancel`;
+- rollback completo;
+- 0 pedidos e 0 retornos sintéticos residuais.
+
+Deploys/commits:
+- migration aplicada: `ops2_r3_return_cancel_bling_stock_guard_v1`;
+- SQL canônico: `483e4834`;
+- Admin: `38b486c1`, Edge `admin-products-live-v1` v57 ACTIVE;
+- worker interno versionado: `7d5396b5`, Edge `shopping-room-reset-v1` v3 ACTIVE.
+
+Nenhum pedido real, NF-e, pagamento ou estoque real foi alterado durante os testes desta R3.
