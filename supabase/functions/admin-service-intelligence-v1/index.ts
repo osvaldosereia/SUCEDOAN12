@@ -7768,13 +7768,24 @@ async function blingHubListProductCategoriesReadonly(sb:any,tokenOverride:any=nu
   }
   return {ok:true,status:200,categories:rows};
 }
+async function blingHubLoadActiveProductsForTaxonomy(sb:any){
+  const out:any[]=[];
+  for(let from=0;from<10000;from+=1000){
+    const q=await sb.from("products")
+      .select("id,name,category,subcategory,bling_product_id,is_active")
+      .eq("is_active",true)
+      .order("id")
+      .range(from,from+999);
+    if(q.error)throw q.error;
+    const rows=q.data||[];
+    out.push(...rows);
+    if(rows.length<1000)break;
+  }
+  return out;
+}
 async function blingHubCatalogTaxonomyReadonly(sb:any){
-  const local=await sb.from("products")
-    .select("id,name,category,subcategory,bling_product_id,is_active")
-    .eq("is_active",true)
-    .limit(5000);
-  if(local.error)throw local.error;
-  const products=(local.data||[]).filter((p:any)=>blingHubTaxText(p?.category));
+  const localRows=await blingHubLoadActiveProductsForTaxonomy(sb);
+  const products=localRows.filter((p:any)=>blingHubTaxText(p?.category));
   const parentNames=[...new Set(products.map((p:any)=>blingHubTaxText(p.category)))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
   const children:any[]=[];
   for(const parent of parentNames){
