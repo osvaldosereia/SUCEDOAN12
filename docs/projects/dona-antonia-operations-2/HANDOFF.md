@@ -1655,3 +1655,38 @@ R7 iniciou imediatamente por autorização do usuário. Escopo amplo Bling + cat
 
 ### Continuação R7
 Continuar delta2 em blocos controlados usando recovery novo quando necessário. Depois avançar divergências maiores por bandas separadas; só então preço/cadastro/saneamento Bling, sem misturar writes de preço e estoque.
+
+
+## R7 continuidade — delta 2 + verificador por evidência read-after-write — 2026-09-27/28
+Estado: **PASS do canário / hardening aplicado**.
+
+- checkpoint real retomado em 185 produtos confirmados;
+- canário `83b65df1-c814-499b-9dad-01090ce39f90`: 5 produtos, todos delta absoluto 2, live-stock drift=0 e sem reserva concorrente;
+- 5/5 jobs `set_stock` concluíram `synced`;
+- worker confirmou read-after-write `verified=true` nos cinco: 18→16, 8→6, 14→12, 4→6 e 99→101;
+- foi detectada uma falsa divergência no verificador legado: ele dependia de `bling_stock_mirror_v2`, que permanece stale enquanto webhooks globais estão OFF;
+- migration `20260928022300_ops2_catalog_canary_verified_job_evidence_v2` cria verificador v2 que prioriza evidência auditada do read-after-write do próprio job e usa mirror como fallback;
+- migration `20260928022600_ops2_reconcile_verified_stock_canary_evidence_v1` reconciliou genericamente canários com jobs synced+verified, sem hardcode de IDs;
+- canário final = verified, `external_write_enabled=false`;
+- plano agora: 190 confirmed / 1440 planned; dentro dos planned há 1091 noop e 101 delta 2 ainda pendentes;
+- worker health: healthy=true, processing=0, stale_90s=0, retry=0, review_required=0;
+- runtime final: mode=homologation, hub_enabled=false, webhooks_enabled=false, fiscal_enabled=false, write_canary_limit=1;
+- stock authority global não foi alterada; nenhum pedido legado foi tocado.
+
+Commits:
+- `74a504a8` — verificação por evidência read-after-write;
+- `72e9d2b9` — reconciliação genérica de evidência verificada.
+
+Advisors:
+- security: sem novo blocker decorrente das migrations; permanece WARN de leaked-password protection desabilitada e INFO de RLS sem policy em tabelas internas fechadas;
+- performance: somente unused_index INFO.
+
+Rollback:
+- Hub e allowlist do canário foram desligados ao final;
+- não há write pendente/incerto;
+- caso o verificador v2 precise ser revertido, o v1 permanece disponível e as evidências dos jobs são append/auditáveis.
+
+Próximo passo:
+- continuar R7 pelos 101 delta 2 restantes em canários de até 5, usando o verificador v2;
+- após delta 2, abrir delta 3 em amostra pequena com gate separado; não ampliar silenciosamente o limite de risco;
+- manter Hub OFF entre janelas e parar em qualquer processing/retry/review_required ou live-stock drift.
