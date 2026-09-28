@@ -6210,6 +6210,24 @@ async function blingHubPostStockOnce(sb:any,token:string,body:any){
     return {ok:r.ok,status:r.status,data,error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500)};
   }catch(e){return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500)};}
 }
+async function blingHubRefreshStockMirrorAfterWrite(sb:any,token:string,sourceId:string,blingId:number,jobId:string){
+  const snapshot=await blingHubReadStockSnapshotFull(sb,blingId);
+  if(!snapshot.ok)return {ok:false,error:snapshot.error||"stock_snapshot_refresh_failed",status:snapshot.status||502};
+  const observedAt=new Date().toISOString();
+  const apply=await sb.rpc("apply_bling_stock_mirror_event_v2",{
+    p_product_id:sourceId,
+    p_bling_product_id:blingId,
+    p_physical_total:Number(snapshot.physical_total),
+    p_virtual_total:Number(snapshot.virtual_total),
+    p_deposit_balances:snapshot.deposit_balances||{},
+    p_observed_at:observedAt,
+    p_source_event_id:"stock-job-verified:"+jobId,
+    p_source_resource:"stock_job_verified",
+    p_replace_deposits:true
+  });
+  if(apply.error)return {ok:false,error:clean(apply.error.message,300),status:500};
+  return {ok:true,observed_at:observedAt,applied:apply.data?.applied!==false};
+}
 async function blingHubProcessStockJobs(sb:any,limitRaw:any){
   const worker="bling-stock-edge-"+crypto.randomUUID();
   const limit=Math.max(1,Math.min(10,Number(limitRaw||1)||1));
@@ -6244,7 +6262,11 @@ async function blingHubProcessStockJobs(sb:any,limitRaw:any){
         await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:st,p_result:{},p_error_code:"stock_read_http_"+before.status,p_error_message:"Could not read stock",p_http_status:before.status,p_retry_seconds:120,p_provider_id:String(blingId)});summary[st]++;continue;
       }
       if(Number(before.stock)===target){
-        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,deposit_id:depositId,changed:false,stock:target,verified:true},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});summary.synced++;continue;
+        const mirror=await blingHubRefreshStockMirrorAfterWrite(sb,token,String(job.source_id),blingId,String(job.id));
+        if(!mirror.ok){
+          await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"retry",p_result:{bling_id:blingId,deposit_id:depositId,changed:false,stock:target,verified:true,mirror_synced:false},p_error_code:"stock_mirror_refresh_failed",p_error_message:mirror.error||"Verified Bling stock but mirror refresh failed",p_http_status:mirror.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});summary.retry++;continue;
+        }
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,deposit_id:depositId,changed:false,stock:target,verified:true,mirror_synced:true},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});summary.synced++;continue;
       }
       const write=await blingHubPostStockOnce(sb,token,{deposito:{id:depositId},operacao:"B",produto:{id:blingId},quantidade:target,observacoes:"Dona Antônia · saldo operacional Vitrine · "+job.id});
       if(!write.ok){
@@ -6256,7 +6278,11 @@ async function blingHubProcessStockJobs(sb:any,limitRaw:any){
       if(!after.ok||Number(after.stock)!==target){
         await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{write_ok:true,target_stock:target,observed_stock:after.stock},p_error_code:"stock_post_write_mismatch",p_error_message:"Stock write was not verified",p_http_status:after.status||200,p_retry_seconds:120,p_provider_id:String(blingId)});summary.review_required++;continue;
       }
-      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,deposit_id:depositId,changed:true,previous_stock:before.stock,stock:target,verified:true},p_error_code:null,p_error_message:null,p_http_status:write.status,p_retry_seconds:120,p_provider_id:String(blingId)});summary.synced++;
+      const mirror=await blingHubRefreshStockMirrorAfterWrite(sb,token,String(job.source_id),blingId,String(job.id));
+      if(!mirror.ok){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"retry",p_result:{bling_id:blingId,deposit_id:depositId,changed:true,previous_stock:before.stock,stock:target,verified:true,mirror_synced:false},p_error_code:"stock_mirror_refresh_failed",p_error_message:mirror.error||"Verified Bling stock but mirror refresh failed",p_http_status:mirror.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});summary.retry++;continue;
+      }
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,deposit_id:depositId,changed:true,previous_stock:before.stock,stock:target,verified:true,mirror_synced:true},p_error_code:null,p_error_message:null,p_http_status:write.status,p_retry_seconds:120,p_provider_id:String(blingId)});summary.synced++;
     }catch(e){
       const msg=clean((e as Error)?.message||e,500);
       await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"retry",p_result:{},p_error_code:"worker_exception",p_error_message:msg,p_http_status:null,p_retry_seconds:120,p_provider_id:null});summary.retry++;
