@@ -148,7 +148,7 @@
     .confirm-wide{width:100%;height:58px;margin-top:10px;border:0;border-radius:8px;background:#188038;color:#fff;font-size:17px;font-weight:600}.confirm-wide:disabled,.keypad button:disabled{opacity:.4}
     .simple-list{display:grid}.simple-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #eceff1}.simple-row:last-child{border-bottom:0}.simple-main{min-width:0;flex:1}.simple-main strong{display:block;font-size:14px;font-weight:600}.simple-main small{display:block;color:#5f6368;margin-top:3px}.simple-number{font-variant-numeric:tabular-nums;font-weight:600}.shelf-control{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.shelf-control input{width:112px;min-height:38px;padding:7px 9px;border:1px solid #dadce0;border-radius:8px}.shelf-control button{min-height:38px}
     .gondola-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:12px}.gondola-card{border:1px solid #dadce0;background:#fff;border-radius:8px;padding:16px;text-align:left;min-height:112px}.gondola-card:hover{border-color:#a8c7fa;background:#f8fbff}.gondola-card strong{display:block;font-size:22px;font-weight:600}.gondola-card span{display:block;color:#5f6368;margin-top:7px;font-size:12px}
-    .gondola-workspace{margin-bottom:16px}.gondola-badge{display:inline-flex;align-items:center;background:#e8f0fe;color:#1967d2;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;margin-bottom:10px}
+    .gondola-workspace{margin-bottom:16px}.gondola-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.gondola-badge{display:inline-flex;align-items:center;background:#e8f0fe;color:#1967d2;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;margin-bottom:10px}.gondola-toolbar .gondola-badge{margin-bottom:0}.danger-action{color:#b3261e!important;border-color:#f0b7b3!important;background:#fff8f7!important}.danger-action:hover{background:#fce8e6!important}
     .big-number{height:76px;border:1px solid #dadce0;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding:0 22px;font-size:38px;font-weight:500;margin:10px 0 12px}
     .history-empty{padding:26px;text-align:center;color:#5f6368}
     .gondola-title-print{font-weight:900;font-size:13px;border:2px solid #000;padding:1.5mm;margin:2mm 0 1.5mm;text-align:center}.shelf-title-print{font-weight:800;font-size:10px;border-bottom:1px solid #000;padding:1mm 0 .8mm;margin:1.5mm 0 1mm}
@@ -447,7 +447,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -2547,7 +2547,7 @@
 
   async function renderGondolas(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Gôndolas</h1><p>Crie a gôndola e leia em sequência os EANs dos produtos que estão nela.</p></div><button class="primary" id="newGondola">+ Nova gôndola</button></div><div id="gondolaHost"><div class="panel loading">Carregando…</div></div>';
+    content.innerHTML='<div class="page-head"><div><h1>Gôndolas</h1><p>Localize produtos rapidamente ou cadastre a localização já registrando a contagem física.</p></div><button class="primary" id="newGondola">+ Nova gôndola</button></div><div id="gondolaHost"><div class="panel loading">Carregando…</div></div>';
     $('#newGondola').onclick=openGondolaCreator;
     try{
       const data=await api('gondolas');state.gondolas=data.gondolas||[];
@@ -2559,14 +2559,33 @@
     }catch(e){$('#gondolaHost').innerHTML='<div class="panel empty">Não consegui carregar as gôndolas.</div>'}
   }
 
+  function setGondolaMode(mode){
+    state.gondolaMode=mode==='count'?'count':'assign';
+    state.gondolaCountProduct=null;state.gondolaCountQty='';
+    paintGondolas();
+  }
+
+  function gondolaCountWorkspaceHtml(){
+    const p=state.gondolaCountProduct;
+    const scanner=p
+      ? '<div id="gondolaScanner" class="scanner-hero ready"><div class="scan-title"><span class="scan-dot"></span>PRODUTO LIDO · BALANÇO</div><div class="scan-value">'+esc(p.name)+'</div><div class="scan-sub">EAN '+esc(p.gtin||'—')+' · estoque atual '+esc(fmtQty(p.stock_quantity||0))+(p.gondola_number?' · hoje na Gôndola '+esc(p.gondola_number):' · ainda sem gôndola')+'</div></div>'
+      : '<div id="gondolaScanner" class="scanner-hero"><div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">A localização só será salva depois de confirmar a quantidade física.</div></div>';
+    return scanner+
+      '<div class="qty-label">Quantidade física contada</div><div class="qty-display" id="gondolaCountQty">'+(p?esc(state.gondolaCountQty||'0'):'—')+'</div>'+
+      numericPadHtml('gondolacount')+
+      '<button class="confirm-wide" id="gondolaCountConfirm" type="button" '+(!p||state.gondolaCountQty===''?'disabled':'')+'>Salvar localização e balanço</button>';
+  }
+
   function paintGondolas(){
     if(state.tab!=='gondolas')return;
-    const host=$('#gondolaHost');
+    const host=$('#gondolaHost'),countMode=state.gondolaMode==='count';
     const workspace=state.gondola?'<section class="panel gondola-workspace tool-card">'+
-      '<div class="gondola-badge">GÔNDOLA '+esc(state.gondola.number)+'</div>'+
-      '<div class="scanner-hero ready"><div class="scan-title"><span class="scan-dot"></span>LEITOR ATIVO</div><div class="scan-value">Leia os produtos da Gôndola '+esc(state.gondola.number)+'</div><div class="scan-sub">Cada leitura é salva automaticamente. Não precisa confirmar.</div></div>'+
+      '<div class="gondola-toolbar"><div class="gondola-badge">GÔNDOLA '+esc(state.gondola.number)+'</div><button class="secondary danger-action" id="clearGondola" type="button" '+(state.gondolaProducts.length?'':'disabled')+'>Limpar gôndola</button></div>'+
+      '<div class="order-filters" style="margin:12px 0"><button class="filter-chip '+(!countMode?'active':'')+'" id="gondolaModeAssign" type="button">Só localizar</button><button class="filter-chip '+(countMode?'active':'')+'" id="gondolaModeCount" type="button">Localizar + balanço</button></div>'+
+      (countMode?gondolaCountWorkspaceHtml():
+        '<div class="scanner-hero ready" id="gondolaScanner"><div class="scan-title"><span class="scan-dot"></span>LEITOR ATIVO</div><div class="scan-value">Leia os produtos da Gôndola '+esc(state.gondola.number)+'</div><div class="scan-sub">Cada leitura salva somente a localização. Não altera o estoque.</div></div>')+
       '<div class="section-title">Produtos nesta gôndola · '+esc(state.gondolaProducts.length)+'</div>'+
-      '<div class="panel" id="gondolaProducts">'+(state.gondolaProducts.length?state.gondolaProducts.map(gondolaProductRow).join(''):'<div class="history-empty">Nenhum produto lido ainda.</div>')+'</div>'+
+      '<div class="panel" id="gondolaProducts">'+(state.gondolaProducts.length?state.gondolaProducts.map(gondolaProductRow).join(''):'<div class="history-empty">Nenhum produto nesta gôndola.</div>')+'</div>'+
     '</section>':'';
     const cards=state.gondolas.length?'<section class="panel"><div class="gondola-grid">'+state.gondolas.map(g=>
       '<button class="gondola-card" type="button" data-open-gondola="'+esc(g.id)+'"><strong>Gôndola '+esc(g.number)+'</strong><span>'+esc(g.id===state.gondola?.id?state.gondolaProducts.length:g.product_count||0)+' produtos</span></button>'
@@ -2575,6 +2594,15 @@
     host.querySelectorAll('[data-open-gondola]').forEach(b=>b.onclick=()=>openGondola(b.dataset.openGondola));
     host.querySelectorAll('[data-save-gondola-shelf]').forEach(b=>b.onclick=()=>saveGondolaShelf(b.dataset.saveGondolaShelf,b));
     host.querySelectorAll('[data-remove-gondola-product]').forEach(b=>b.onclick=()=>removeGondolaProduct(b.dataset.removeGondolaProduct));
+    if(state.gondola){
+      $('#gondolaModeAssign').onclick=()=>setGondolaMode('assign');
+      $('#gondolaModeCount').onclick=()=>setGondolaMode('count');
+      $('#clearGondola').onclick=clearGondola;
+      if(countMode){
+        host.querySelectorAll('[data-gondolacount-key]').forEach(b=>b.onclick=()=>gondolaCountKey(b.dataset.gondolacountKey));
+        $('#gondolaCountConfirm').onclick=confirmGondolaCount;
+      }
+    }
   }
 
   function gondolaProductRow(p){
@@ -2583,7 +2611,10 @@
 
   async function openGondola(id){
     try{
-      const data=await api('gondola',{id});state.gondola=data.gondola;state.gondolaProducts=data.products||[];paintGondolas();
+      const data=await api('gondola',{id});
+      state.gondola=data.gondola;state.gondolaProducts=data.products||[];
+      state.gondolaCountProduct=null;state.gondolaCountQty='';
+      paintGondolas();
     }catch(e){toast(errorMessage(e.message))}
   }
 
@@ -2613,13 +2644,24 @@
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({number:Number(state.gondolaCreateNumber)})
       });
-      $('#editor').close();state.gondola=data.gondola;state.gondolaProducts=[];toast('Gôndola '+data.gondola.number+' pronta');
+      $('#editor').close();state.gondola=data.gondola;state.gondolaProducts=[];
+      state.gondolaCountProduct=null;state.gondolaCountQty='';
+      toast('Gôndola '+data.gondola.number+' pronta');
       await renderGondolas();
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Criar gôndola'}
   }
 
   async function handleGondolaScan(ean){
     if(state.tab!=='gondolas'||!state.gondola){toast('Abra uma gôndola antes de ler os produtos.');return}
+    if(state.gondolaMode==='count'){
+      if(state.gondolaCountProduct){toast('Confirme a quantidade do produto atual antes de ler o próximo.');return}
+      try{
+        const data=await api('ean_lookup',{ean});
+        state.gondolaCountProduct=data.product;state.gondolaCountQty='';
+        paintGondolas();toast('Produto lido · informe a quantidade física');
+      }catch(e){state.gondolaCountProduct=null;state.gondolaCountQty='';paintGondolas();toast(errorMessage(e.message))}
+      return;
+    }
     try{
       const data=await api('gondola_assign',{},{
         method:'POST',headers:{'Content-Type':'application/json'},
@@ -2627,10 +2669,63 @@
       });
       state.gondolaProducts=state.gondolaProducts.filter(p=>p.id!==data.product.id);
       state.gondolaProducts.unshift(data.product);
-      const moved=data.previous_gondola_number?' · movido da Gôndola '+data.previous_gondola_number:'';
-      toast(data.product.name+moved);
-      paintGondolas();
+      const moved=data.previous_gondola_number&&Number(data.previous_gondola_number)!==Number(state.gondola.number)?' · movido da Gôndola '+data.previous_gondola_number:'';
+      toast(data.product.name+moved);paintGondolas();
     }catch(e){toast(errorMessage(e.message))}
+  }
+
+  function gondolaCountKey(key){
+    if(!state.gondolaCountProduct)return;
+    if(key==='clear')state.gondolaCountQty='';
+    else if(key==='back')state.gondolaCountQty=state.gondolaCountQty.slice(0,-1);
+    else if(/^\d$/.test(key)&&state.gondolaCountQty.length<7)state.gondolaCountQty=(state.gondolaCountQty==='0'?'':state.gondolaCountQty)+key;
+    const display=$('#gondolaCountQty'),btn=$('#gondolaCountConfirm');
+    if(display)display.textContent=state.gondolaCountQty||'0';
+    if(btn)btn.disabled=state.gondolaCountQty==='';
+  }
+
+  async function confirmGondolaCount(){
+    if(!state.gondola||!state.gondolaCountProduct||state.gondolaCountQty==='')return;
+    const operator=requireOperator();if(!operator)return;
+    const btn=$('#gondolaCountConfirm');if(btn){btn.disabled=true;btn.textContent='Salvando…'}
+    const pending=state.gondolaCountProduct;
+    try{
+      const data=await api('gondola_assign_count',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({gondola_id:state.gondola.id,product_id:pending.id,quantity:Number(state.gondolaCountQty),operator})
+      });
+      state.gondolaProducts=state.gondolaProducts.filter(p=>p.id!==data.product.id);
+      state.gondolaProducts.unshift(data.product);
+      const moved=data.previous_gondola_number&&Number(data.previous_gondola_number)!==Number(state.gondola.number)?' · movido da Gôndola '+data.previous_gondola_number:'';
+      const diff=Number(data.count?.difference||0);
+      const countText=diff===0?' · estoque conferido':' · diferença '+fmtQty(diff)+' registrada';
+      state.gondolaCountProduct=null;state.gondolaCountQty='';
+      paintGondolas();toast(data.product.name+countText+moved);
+      loadStockRecountQueue();loadOrderStockShortages();
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='Salvar localização e balanço'}
+    }
+  }
+
+  async function clearGondola(){
+    if(!state.gondola||!state.gondolaProducts.length)return;
+    const number=state.gondola.number,count=state.gondolaProducts.length;
+    const ok=window.confirm('Limpar a Gôndola '+number+'?\n\nIsso vai retirar a gôndola e a prateleira dos '+count+' produto(s) desta gôndola. Os produtos NÃO serão apagados e o estoque NÃO será alterado.');
+    if(!ok)return;
+    const btn=$('#clearGondola');if(btn){btn.disabled=true;btn.textContent='Limpando…'}
+    try{
+      const data=await api('gondola_clear',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({gondola_id:state.gondola.id,confirmation:'LIMPAR_GONDOLA_'+number,operator:currentOperator()||'Operação'})
+      });
+      state.gondolaProducts=[];state.gondolaCountProduct=null;state.gondolaCountQty='';
+      const card=state.gondolas.find(g=>g.id===state.gondola.id);if(card)card.product_count=0;
+      paintGondolas();toast('Gôndola '+number+' limpa · '+Number(data.removed_count||count)+' produto(s) sem localização');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='Limpar gôndola'}
+    }
   }
 
   async function saveGondolaShelf(productId,btn){
@@ -2645,8 +2740,7 @@
       });
       const product=state.gondolaProducts.find(p=>p.id===productId);
       if(product)product.shelf_label=data.shelf_label||null;
-      paintGondolas();
-      toast(data.shelf_label?'Prateleira '+data.shelf_label+' salva':'Prateleira removida');
+      paintGondolas();toast(data.shelf_label?'Prateleira '+data.shelf_label+' salva':'Prateleira removida');
     }catch(e){
       toast(errorMessage(e.message));
       if(btn){btn.disabled=false;btn.textContent='Salvar'}
@@ -2660,7 +2754,9 @@
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({gondola_id:state.gondola.id,product_id:productId})
       });
-      state.gondolaProducts=state.gondolaProducts.filter(p=>p.id!==productId);paintGondolas();toast('Produto removido da gôndola');
+      state.gondolaProducts=state.gondolaProducts.filter(p=>p.id!==productId);
+      const card=state.gondolas.find(g=>g.id===state.gondola.id);if(card)card.product_count=state.gondolaProducts.length;
+      paintGondolas();toast('Produto removido da gôndola');
     }catch(e){toast(errorMessage(e.message))}
   }
 
@@ -5081,7 +5177,7 @@
   }
   function formatCpf(v){const d=String(v||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9):v||''}
   function errorMessage(code){
-    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',product_inactive:'Produto inativo não pode ter oferta ativa.',product_expired:'Produto vencido não pode ter oferta ativa.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',gondola_not_found:'Gôndola não encontrada.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',ean_not_in_order:'Este produto não pertence ao pedido.',checked_quantity_exceeds_expected:'Esta quantidade já foi totalmente conferida.',duplicate_ean_in_order:'EAN duplicado no pedido. Revise o cadastro.',check_incomplete:'Ainda faltam produtos para conferir.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',delivery_payment_required:'Registre o pagamento recebido antes de confirmar a entrega.',delivery_payment_mismatch:'O pagamento registrado não confere com o total do pedido.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.'};
+    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',product_inactive:'Produto inativo não pode ter oferta ativa.',product_expired:'Produto vencido não pode ter oferta ativa.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',invalid_product:'Produto inválido.',gondola_not_found:'Gôndola não encontrada.',gondola_clear_confirmation_required:'Confirme a limpeza da gôndola novamente.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',ean_not_in_order:'Este produto não pertence ao pedido.',checked_quantity_exceeds_expected:'Esta quantidade já foi totalmente conferida.',duplicate_ean_in_order:'EAN duplicado no pedido. Revise o cadastro.',check_incomplete:'Ainda faltam produtos para conferir.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',delivery_payment_required:'Registre o pagamento recebido antes de confirmar a entrega.',delivery_payment_mismatch:'O pagamento registrado não confere com o total do pedido.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.'};
     return map[code]||'Não consegui salvar agora.';
   }
 
