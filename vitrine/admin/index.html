@@ -2024,7 +2024,7 @@
 
   async function renderProducts(q=''){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Produtos</h1><p>Consulte por categoria, subcategoria, nome, EAN ou código.</p></div><button class="primary" id="newProduct">+ Produto</button></div>'+
+    content.innerHTML='<div class="page-head"><div><h1>Produtos</h1><p>Consulte por categoria, subcategoria, nome, EAN ou código.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="secondary" id="printInventorySheet" type="button">Imprimir balanço A4</button><button class="primary" id="newProduct">+ Produto</button></div></div>'+
       '<div class="toolbar">'+
         '<input id="productSearch" type="search" placeholder="Buscar nome, EAN, código…">'+
         '<select id="productCategory" aria-label="Categoria"><option value="">Todas as categorias</option></select>'+
@@ -2034,6 +2034,7 @@
       '</div>'+
       '<div class="panel"><div class="list-head products-layout"><span></span><span>Produto</span><span>Preço</span><span>Estoque</span><span>Status</span><span></span></div><div id="productRows"><div class="loading">Carregando…</div></div><div class="more" id="productMore"></div></div>';
     $('#newProduct').onclick=()=>openProductEditor();
+    $('#printInventorySheet').onclick=printInventorySheet;
     $('#productSearch').value=q;
     await loadProductFacets(state.productFilters.category);
     $('#productSearchBtn').onclick=()=>loadProducts($('#productSearch').value.trim(),false);
@@ -2096,6 +2097,76 @@
       host.innerHTML='<div class="empty">Erro ao carregar produtos. <button class="text" id="retryProducts">Tentar novamente</button></div>';
       if($('#retryProducts'))$('#retryProducts').onclick=()=>loadProducts(q,false);
     }
+  }
+
+  async function productsForInventoryPrint(){
+    const q=$('#productSearch')?.value.trim()||'';
+    const active=state.productFilters.active||'true';
+    const rows=[];let offset=0;
+    for(let page=0;page<60;page++){
+      const data=await api('products',{
+        q,
+        category:state.productFilters.category,
+        subcategory:state.productFilters.subcategory,
+        active,
+        offset,
+        limit:100
+      });
+      rows.push(...(data.products||[]));
+      if(data.next_offset==null)break;
+      offset=data.next_offset;
+    }
+    return rows;
+  }
+
+  function inventoryPrintEscape(v){
+    return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function inventoryPrintCard(p,index){
+    const first=Array.from({length:6},(_,n)=>'<span class="count-box"><b>'+n+'</b></span>').join('');
+    const second=Array.from({length:5},(_,i)=>'<span class="count-box"><b>'+(i+6)+'</b></span>').join('');
+    const validity=p.expiration_date?dateOnly(p.expiration_date):'';
+    const img=inventoryPrintEscape(p.image_url||'/img/logoantonia5.png');
+    return '<article class="count-card">'+
+      '<div class="card-seq">'+String(index+1).padStart(3,'0')+'</div>'+
+      '<div class="product-photo"><img src="'+img+'" alt=""></div>'+
+      '<div class="product-name">'+inventoryPrintEscape(p.name||'')+'</div>'+
+      '<div class="product-ean">EAN '+inventoryPrintEscape(p.gtin||'SEM EAN')+'</div>'+
+      '<div class="product-validity">Validade: <strong>'+inventoryPrintEscape(validity)+'</strong></div>'+
+      '<div class="count-row count-row-first">'+first+'</div>'+
+      '<div class="count-row count-row-second">'+second+'<span class="count-write" title="Quantidade acima de 10"></span></div>'+
+    '</article>';
+  }
+
+  async function printInventorySheet(){
+    const btn=$('#printInventorySheet');if(btn){btn.disabled=true;btn.textContent='Preparando…'}
+    try{
+      const rows=await productsForInventoryPrint();
+      if(!rows.length){toast('Nenhum produto para imprimir com os filtros atuais');return}
+      const printedAt=new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+      const filterBits=[
+        state.productFilters.category?categoryLabel(state.productFilters.category):'',
+        state.productFilters.subcategory||'',
+        state.productFilters.active==='false'?'Inativos':'Ativos'
+      ].filter(Boolean).join(' · ');
+      const w=window.open('','_blank');
+      if(!w){toast('Permita pop-ups para imprimir a folha de balanço');return}
+      const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Balanço Dona Antônia</title>'+
+        '<style>'+
+        '@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box}html,body{margin:0;padding:0;color:#111;font-family:Arial,Helvetica,sans-serif}'+
+        'body{font-size:7pt}.sheet-head{display:flex;align-items:flex-end;justify-content:space-between;gap:5mm;border-bottom:.3mm solid #111;padding-bottom:2mm;margin-bottom:2.4mm}.sheet-head h1{font-size:11pt;margin:0}.sheet-head p{margin:.7mm 0 0;font-size:6.6pt}.sheet-meta{text-align:right;font-size:6.3pt;line-height:1.25}'+
+        '.count-sheet{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.3mm;align-items:start}.count-card{position:relative;border:.25mm solid #222;border-radius:1mm;padding:1mm;break-inside:avoid;page-break-inside:avoid;height:45mm;overflow:hidden;background:#fff}.card-seq{position:absolute;top:.8mm;right:1mm;font-size:5.3pt;font-weight:700;color:#666}.product-photo{height:20mm;display:flex;align-items:center;justify-content:center;margin-bottom:.5mm}.product-photo img{display:block;max-width:100%;max-height:20mm;object-fit:contain}.product-name{height:6mm;overflow:hidden;font-weight:700;font-size:6.4pt;line-height:1.08;text-align:center}.product-ean{text-align:center;font-size:5.7pt;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.2mm}.product-validity{text-align:center;font-size:5.3pt;min-height:2.8mm;margin-top:.2mm}.count-row{display:grid;gap:.35mm;margin-top:.35mm}.count-row-first{grid-template-columns:repeat(6,1fr)}.count-row-second{grid-template-columns:repeat(5,1fr) 1.65fr}.count-box,.count-write{height:3.5mm;border:.25mm solid #111;display:flex;align-items:center;justify-content:center;background:#fff}.count-box b{font-size:5.2pt}.count-write{border-width:.35mm}.count-write:after{content:"";width:78%;border-bottom:.2mm solid #888}'+
+        '.hint{font-size:5.8pt;margin-top:1.5mm}.hint strong{font-weight:700}'+
+        '</style></head><body>'+
+        '<header class="sheet-head"><div><h1>Dona Antônia · Balanço físico</h1><p>Marque X de 0 a 10. Acima de 10, escreva no quadro em branco.</p></div><div class="sheet-meta"><strong>'+inventoryPrintEscape(filterBits||'Ativos')+'</strong><br>'+rows.length+' produtos · '+inventoryPrintEscape(printedAt)+'</div></header>'+
+        '<main class="count-sheet">'+rows.map(inventoryPrintCard).join('')+'</main>'+
+        '<div class="hint">Cada card contém <strong>foto, nome, EAN e validade</strong>. Sem validade cadastrada, o campo fica em branco.</div>'+
+        '<script>window.addEventListener("load",()=>{setTimeout(()=>window.print(),350)});<\/script>'+
+        '</body></html>';
+      w.document.open();w.document.write(html);w.document.close();
+    }catch(e){toast('Não consegui preparar a impressão: '+errorMessage(e.message))}
+    finally{if(btn){btn.disabled=false;btn.textContent='Imprimir balanço A4'}}
   }
 
   function categoryLabel(value){
