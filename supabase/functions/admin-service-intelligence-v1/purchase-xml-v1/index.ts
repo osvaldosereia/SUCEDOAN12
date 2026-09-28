@@ -137,7 +137,16 @@ function parseXml(xml:string){
     const p=block(d,"prod"),icms=block(block(d,"imposto"),"ICMS"),or=tag(icms,"orig"),ncm=digits(tag(p,"NCM")).slice(0,8),cest=digits(tag(p,"CEST")).slice(0,7);
     const qCom=num(tag(p,"qCom"))||0,qTrib=num(tag(p,"qTrib"))||0,uCom=unit(tag(p,"uCom")),uTrib=unit(tag(p,"uTrib"));
     const cst=digits(tag(icms,"CST")).slice(0,3),cs=digits(tag(icms,"CSOSN")).slice(0,4);
-    const gross=num(tag(p,"vProd"))||0,discount=num(tag(p,"vDesc"))||0,freight=num(tag(p,"vFrete"))||0,insurance=num(tag(p,"vSeg"))||0,other=num(tag(p,"vOutro"))||0,net=gross-discount+freight+insurance+other;return {item_number:Number(attr(d,"nItem"))||0,supplier_item_code:clean(tag(p,"cProd"),120)||null,description:clean(tag(p,"xProd"),500),commercial_gtin:gtin(tag(p,"cEAN"))||null,tax_gtin:gtin(tag(p,"cEANTrib"))||null,ncm:ncm.length===8?ncm:null,cest:cest.length===7?cest:null,cfop:digits(tag(p,"CFOP")).slice(0,4)||null,tax_code:cst?"CST:"+cst:cs?"CSOSN:"+cs:null,origin_code:/^\d$/.test(or)?Number(or):null,purchase_unit:uCom||null,purchase_quantity:qCom,purchase_unit_price:num(tag(p,"vUnCom")),line_total:gross,item_discount:discount,item_freight:freight,item_insurance:insurance,item_other:other,net_line_total:net,tax_unit:uTrib||null,tax_quantity:qTrib};
+    const gross=num(tag(p,"vProd"))||0,discount=num(tag(p,"vDesc"))||0,freight=num(tag(p,"vFrete"))||0,insurance=num(tag(p,"vSeg"))||0,other=num(tag(p,"vOutro"))||0,net=gross-discount+freight+insurance+other;
+    const lot_traces=blocks(p,"rastro").map((r:string,i:number)=>({
+      trace_index:i+1,
+      lot_code:clean(tag(r,"nLote"),120)||null,
+      quantity:num(tag(r,"qLote")),
+      manufacture_date:day(tag(r,"dFab"))||null,
+      expiration_date:day(tag(r,"dVal"))||null,
+      aggregation_code:clean(tag(r,"cAgreg"),120)||null
+    })).filter((x:any)=>x.lot_code||x.expiration_date||Number(x.quantity)>0);
+    return {item_number:Number(attr(d,"nItem"))||0,supplier_item_code:clean(tag(p,"cProd"),120)||null,description:clean(tag(p,"xProd"),500),commercial_gtin:gtin(tag(p,"cEAN"))||null,tax_gtin:gtin(tag(p,"cEANTrib"))||null,ncm:ncm.length===8?ncm:null,cest:cest.length===7?cest:null,cfop:digits(tag(p,"CFOP")).slice(0,4)||null,tax_code:cst?"CST:"+cst:cs?"CSOSN:"+cs:null,origin_code:/^\d$/.test(or)?Number(or):null,purchase_unit:uCom||null,purchase_quantity:qCom,purchase_unit_price:num(tag(p,"vUnCom")),line_total:gross,item_discount:discount,item_freight:freight,item_insurance:insurance,item_other:other,net_line_total:net,tax_unit:uTrib||null,tax_quantity:qTrib,lot_traces};
   }).filter((x:any)=>x.item_number>0&&x.description);
   const installments=blocks(cobr,"dup").map((d:string,i:number)=>({number:clean(tag(d,"nDup"),40)||String(i+1),due_date:day(tag(d,"dVenc")),amount:num(tag(d,"vDup"))})).filter((x:any)=>x.due_date&&Number(x.amount)>0);
   const payments=blocks(pag,"detPag").map((d:string,i:number)=>{
@@ -582,8 +591,29 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
       const bq=conv.factor?Number(item.purchase_quantity||0)*Number(conv.factor):null;
       const buc=bq&&bq>0&&Number.isFinite(Number(item.net_line_total))?Number(item.net_line_total)/bq:(conv.factor&&Number.isFinite(Number(item.purchase_unit_price))?Number(item.purchase_unit_price)/Number(conv.factor):null);
       const st=conv.status==="review_required"?"review_required":"matched";
-      const it=await sb.from("purchase_xml_items").upsert({document_id:documentId,item_number:item.item_number,supplier_item_code:item.supplier_item_code,description:item.description,commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,purchase_unit_price:item.purchase_unit_price,line_total:item.line_total,base_unit:conv.base_unit,conversion_status:conv.status,conversion_factor:conv.factor,conversion_chain:conv.chain,converted_quantity:bq,base_unit_cost:buc,product_id:ep.product.id,bling_product_id:ep.bling_id,match_method:ep.created?"created_from_gtin":"gtin_exact",processing_status:st,metadata:{conversion_confidence:conv.confidence,new_product:Boolean(ep.created),net_line_total:item.net_line_total,item_discount:item.item_discount,item_freight:item.item_freight,item_insurance:item.item_insurance,item_other:item.item_other}},{onConflict:"document_id,item_number"}).select("id").single();
+      const it=await sb.from("purchase_xml_items").upsert({document_id:documentId,item_number:item.item_number,supplier_item_code:item.supplier_item_code,description:item.description,commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,purchase_unit_price:item.purchase_unit_price,line_total:item.line_total,base_unit:conv.base_unit,conversion_status:conv.status,conversion_factor:conv.factor,conversion_chain:conv.chain,converted_quantity:bq,base_unit_cost:buc,product_id:ep.product.id,bling_product_id:ep.bling_id,match_method:ep.created?"created_from_gtin":"gtin_exact",processing_status:st,metadata:{conversion_confidence:conv.confidence,new_product:Boolean(ep.created),net_line_total:item.net_line_total,item_discount:item.item_discount,item_freight:item.item_freight,item_insurance:item.item_insurance,item_other:item.item_other,lot_traces:Array.isArray(item.lot_traces)?item.lot_traces:[]}},{onConflict:"document_id,item_number"}).select("id").single();
       if(it.error)throw it.error;
+      if(Array.isArray(item.lot_traces)&&item.lot_traces.length){
+        const traceTotal=item.lot_traces.reduce((sum:number,x:any)=>sum+Number(x?.quantity||0),0);
+        const traceMatches=Math.abs(traceTotal-Number(item.purchase_quantity||0))<=0.0001;
+        const del=await sb.from("purchase_xml_item_lot_evidence").delete().eq("purchase_item_id",it.data.id);
+        if(del.error)throw del.error;
+        const rows=item.lot_traces.map((x:any)=>({
+          purchase_item_id:it.data.id,
+          trace_index:Number(x?.trace_index||1),
+          lot_code:clean(x?.lot_code,120)||null,
+          manufacture_date:day(x?.manufacture_date)||null,
+          expiration_date:day(x?.expiration_date)||null,
+          xml_quantity:Number.isFinite(Number(x?.quantity))?Number(x.quantity):null,
+          base_quantity:conv.factor&&Number.isFinite(Number(x?.quantity))?Number(x.quantity)*Number(conv.factor):null,
+          conversion_factor:conv.factor||null,
+          status:conv.status!=="review_required"&&traceMatches&&day(x?.expiration_date)?"ready":"review_required",
+          source:"nfe_rastro",
+          metadata:{trace_quantity_matches_purchase:traceMatches,aggregation_code:clean(x?.aggregation_code,120)||null,document_key:p.document_key}
+        }));
+        const ins=await sb.from("purchase_xml_item_lot_evidence").insert(rows);
+        if(ins.error)throw ins.error;
+      }
       await evidence(p,item,ep.product.id);
       if(conv.factor){
         const pack=await sb.from("product_supplier_packaging").upsert({product_id:ep.product.id,supplier_document:digits(p.supplier_document)||"",supplier_bling_contact_id:contact.id||null,supplier_item_code:clean(item.supplier_item_code,120)||"",purchase_unit:unit(item.purchase_unit)||conv.base_unit,base_unit:conv.base_unit,conversion_factor:conv.factor,conversion_chain:conv.chain,confidence:conv.confidence,status:conv.status==="inferred_xml"?"inferred_xml":"confirmed",source_document_key:p.document_key,updated_at:new Date().toISOString()},{onConflict:"product_id,supplier_document,supplier_item_code,purchase_unit"});
@@ -888,6 +918,11 @@ async function docDetail(id:string){
   if(!meta.payment_summary||!Object.keys(obj(meta.payment_summary)).length){
     try{const er=await enrichPaymentMetadata(id,d.data);if(er?.changed){d=await sb.from("purchase_xml_documents").select("*").eq("id",id).maybeSingle()}}catch{}
   }
+  const itemIds=(it.data||[]).map((x:any)=>x.id);
+  const lotQ=itemIds.length?await sb.from("purchase_xml_item_lot_evidence").select("*").in("purchase_item_id",itemIds).order("purchase_item_id").order("trace_index"):{data:[],error:null};
+  if(lotQ.error)throw lotQ.error;
+  const lotMap=new Map<string,any[]>();
+  for(const lot of lotQ.data||[]){const k=String(lot.purchase_item_id);if(!lotMap.has(k))lotMap.set(k,[]);lotMap.get(k)!.push(lot)}
   const items=(it.data||[]).map((x:any)=>{
     const prod=Array.isArray(x.products)?x.products[0]:x.products;
     const pack=itemLooksPackaged(x);
@@ -901,7 +936,7 @@ async function docDetail(id:string){
     const baseQty=proposedFactor&&qty>0?qty*Number(proposedFactor):null;
     const proposedCost=baseQty&&baseQty>0&&Number.isFinite(net)?net/baseQty:null;
     const suggestedSale=proposedCost!==null?Math.round(proposedCost*1.40*100)/100:null;
-    return {...x,products:prod||null,pricing_preview:{
+    return {...x,products:prod||null,lot_evidence:lotMap.get(String(x.id))||[],pricing_preview:{
       markup_percent:40,
       current_cost:prod?.cost==null?null:Number(prod.cost),
       current_sale_price:prod?.price==null?null:Number(prod.price),
@@ -1049,10 +1084,40 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="xml_url"){const r=await signedXml(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="set_conversion"){const r=await setConversion(body);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="apply_item_update"){if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);const r=await applyItemUpdate(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
+    if(action==="receipt_preflight"){
+      const q=await sb.rpc("get_purchase_xml_receipt_preflight_v1",{p_document_id:clean(body?.document_id||body?.id,80)});
+      if(q.error)return js(req,{ok:false,error:q.error.message},409);
+      return js(req,{ok:true,preflight:q.data});
+    }
+    if(action==="prepare_receipt_plan"){
+      if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
+      if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      if(clean(body?.confirmation,80)!=="CONFIRMAR_ENTRADA")return js(req,{ok:false,error:"confirmation_required"},409);
+      const q=await sb.rpc("prepare_purchase_stock_receipt_plan_v1",{p_document_id:clean(body?.document_id||body?.id,80)});
+      if(q.error)return js(req,{ok:false,error:q.error.message},409);
+      return js(req,{ok:q.data?.ok!==false,result:q.data},q.data?.ok===false?409:200);
+    }
+    if(action==="verify_receipt_plan"){
+      if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
+      if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      if(clean(body?.confirmation,80)!=="VERIFICAR_ENTRADA_BLING")return js(req,{ok:false,error:"confirmation_required"},409);
+      const q=await sb.rpc("verify_purchase_stock_receipt_plan_v1",{p_document_id:clean(body?.document_id||body?.id,80),p_user_id:a.user_id});
+      if(q.error)return js(req,{ok:false,error:q.error.message},409);
+      return js(req,{ok:true,result:q.data});
+    }
     if(action==="confirm_receipt"){
       if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
       if(clean(body?.confirmation,80)!=="CONFIRMAR_ENTRADA")return js(req,{ok:false,error:"confirmation_required"},409);
-      const q=await sb.rpc("apply_purchase_stock_receipt_v1",{p_document_id:clean(body?.document_id,80),p_user_id:a.user_id});if(q.error)return js(req,{ok:false,error:q.error.message},409);return js(req,{ok:true,result:q.data});
+      const pre=await sb.rpc("get_purchase_xml_receipt_preflight_v1",{p_document_id:clean(body?.document_id,80)});
+      if(pre.error)return js(req,{ok:false,error:pre.error.message},409);
+      if(pre.data?.stock_authority==="bling"){
+        const q=await sb.rpc("prepare_purchase_stock_receipt_plan_v1",{p_document_id:clean(body?.document_id,80)});
+        if(q.error)return js(req,{ok:false,error:q.error.message},409);
+        return js(req,{ok:q.data?.ok!==false,result:q.data,message:"Entrada preparada. Atualize/receba o estoque no Bling e depois use a verificação do recebimento."},q.data?.ok===false?409:200);
+      }
+      const q=await sb.rpc("apply_purchase_stock_receipt_v1",{p_document_id:clean(body?.document_id,80),p_user_id:a.user_id});
+      if(q.error)return js(req,{ok:false,error:q.error.message},409);
+      return js(req,{ok:true,result:q.data});
     }
     return js(req,{ok:false,error:"not_found"},404);
   }catch(e){console.error("purchase_xml_error",String((e as Error)?.message||e));return js(req,{ok:false,error:"service_error",detail:clean((e as Error)?.message||e,800)},500)}
