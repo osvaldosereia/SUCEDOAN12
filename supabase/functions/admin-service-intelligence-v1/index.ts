@@ -8302,6 +8302,35 @@ async function blingHubCatalogTaxonomyCleanupExtras(sb:any){
   });
   return {ok:after.ok&&(after.extra?.roots||[]).length===0&&(after.extra?.children||[]).length===0,status:200,actions,deleted,preserved,after,external_write:deleted>0};
 }
+
+async function blingHubCatalogTaxonomyRehomeLegacyExtras(sb:any){
+  const mappings=[
+    {bling_product_id:16598402343,source_category_id:13947757,target_category_id:14544201,label:"Bala de Gelatina Fini Amoras 15g -> BALAS E CHICLETES / CHICLETES"},
+    {bling_product_id:16678772194,source_category_id:14008462,target_category_id:14544282,label:"Azeite Allegro 500 ml legado -> MOLHOS E CONDIMENTOS / AZEITES"}
+  ];
+  const token=await blingHubOauth(sb),actions:any[]=[];
+  for(const m of mappings){
+    const sourceUsage=await blingHubCategoryUsageReadonly(sb,token,m.source_category_id);
+    if(!sourceUsage.ok){actions.push({...m,ok:false,error:sourceUsage.error});break}
+    const belongs=sourceUsage.checks.some((x:any)=>(x.sample||[]).some((p:any)=>Number(p.id)===m.bling_product_id));
+    if(!belongs){actions.push({...m,ok:false,error:"legacy_product_not_in_expected_extra_category"});break}
+    const targetCat=await blingHubGet(sb,token,"/categorias/produtos/"+m.target_category_id);
+    if(!targetCat.ok){actions.push({...m,ok:false,error:"target_category_missing"});break}
+    const w=await blingHubWriteIdempotent(sb,token,"/produtos/"+m.bling_product_id,"PATCH",{categoria:{id:m.target_category_id}});
+    if(!w.ok){actions.push({...m,ok:false,error:w.error,http_status:w.status});break}
+    const verify=await blingHubGet(sb,token,"/produtos/"+m.bling_product_id);
+    const got=verify.ok?(Number(verify.data?.data?.categoria?.id||0)||0):0;
+    const ok=verify.ok&&got===m.target_category_id;
+    actions.push({...m,ok,after_category_id:got,http_status:w.status,error:ok?null:"postwrite_category_drift"});
+    if(!ok)break;
+  }
+  const ok=actions.length===mappings.length&&actions.every((x:any)=>x.ok);
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"catalog_taxonomy_rehome_legacy_extras",severity:ok?"info":"warning",domain:"catalog",source_system:"canonical",source_id:"legacy_extra_categories",
+    details:{actions,external_write:actions.some((x:any)=>x.http_status&&x.ok)}
+  });
+  return {ok,status:ok?200:409,actions,external_write:actions.some((x:any)=>x.http_status&&x.ok)};
+}
 async function blingHubCatalogTaxonomyReadonly(sb:any){
   const localRows=await blingHubLoadActiveProductsForTaxonomy(sb);
   const products=localRows.filter((p:any)=>blingHubTaxText(p?.category));
@@ -8434,6 +8463,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="catalog_taxonomy_cleanup_extras"){
         const result=await blingHubCatalogTaxonomyCleanupExtras(sb);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="catalog_taxonomy_rehome_legacy_extras"){
+        const result=await blingHubCatalogTaxonomyRehomeLegacyExtras(sb);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="finance_overview"){
