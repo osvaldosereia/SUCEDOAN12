@@ -838,6 +838,56 @@
     return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Central de Controle</strong><span class="muted">visão rápida · sem consultas externas extras</span></div><div class="ops-cards" style="padding:14px">'+cards.map(c=>'<div class="ops-card"><small>'+esc(c[0])+'</small><strong>'+esc(c[1])+'</strong><span>'+esc(c[2])+'</span></div>').join('')+'</div></section>';
   }
 
+  function renderPapoAiBridgePanel(){
+    const p=state.opsPapoAi||{};
+    if(!p.capture_enabled)return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px"><strong>PapoAI / WhatsApp</strong><span class="danger-text">ponte desligada</span></div></section>';
+    const lastFlow=p.last_flow||{},lastLink=p.last_identity_link||{};
+    const stateLabel=p.bridge_state==='attention'?'Atenção':'Online';
+    const stateClass=p.bridge_state==='attention'?'warn-text':'ok-text';
+    const flowText=lastFlow.created_at
+      ? dateTime(lastFlow.created_at)+' · '+(lastFlow.status==='processed'?'processado':'revisar')+(Number(lastFlow.orders_linked||0)?' · '+Number(lastFlow.orders_linked)+' pedido(s) associado(s)':'')
+      :'Nenhum Flow estruturado recebido ainda';
+    const linkText=lastLink.created_at
+      ? (lastLink.catalog_path||'')+' · '+(lastLink.redeemed_at?'aberto pelo cliente':'aguardando abertura')+' · vence '+dateTime(lastLink.expires_at)
+      :'Nenhum link personalizado emitido ainda';
+    return '<section class="panel" style="margin-bottom:14px">'+
+      '<div class="history-title" style="padding:14px 14px 0"><div><strong>PapoAI / WhatsApp</strong><span class="muted">ponte operacional · sem IA de atendimento no Admin</span></div><b class="'+stateClass+'">'+stateLabel+'</b></div>'+
+      '<div class="bling-grid" style="padding:14px;margin-bottom:0">'+
+        '<div class="bling-card"><small>Eventos 24h</small><strong>'+Number(p.events_24h||p.captured_24h||0)+'</strong><span class="sub">'+Number(p.events_conversation_linked||0)+' vinculados a conversa no total</span></div>'+
+        '<div class="bling-card"><small>Clientes reconhecidos</small><strong>'+Number(p.events_customer_linked||0)+'</strong><span class="sub">por telefone exato</span></div>'+
+        '<div class="bling-card"><small>Flows</small><strong>'+Number(p.flow_events_total||0)+'</strong><span class="sub">'+Number(p.flow_events_review||0)+' em revisão</span></div>'+
+        '<div class="bling-card"><small>Links catálogo</small><strong>'+Number(p.identity_tokens_total||0)+'</strong><span class="sub">'+Number(p.identity_tokens_redeemed||0)+' aberto(s) pelo cliente</span></div>'+
+      '</div>'+
+      '<div style="padding:0 14px 14px;display:grid;gap:8px">'+
+        '<div class="purchase-safe" style="margin:0"><strong>Último Flow</strong><small>'+esc(flowText)+'</small></div>'+
+        '<div class="purchase-safe" style="margin:0"><strong>Último link</strong><small>'+esc(linkText)+'</small></div>'+
+        (p.last_error?'<div class="purchase-safe purchase-danger" style="margin:0"><strong>Último erro</strong><small>'+esc(p.last_error)+'</small></div>':'')+
+        '<div class="dispatch-actions" style="justify-content:flex-start"><button class="primary" type="button" data-papoai-create-link>Criar link catálogo</button></div>'+
+        '<small class="muted">Pedido automático vindo de evento estruturado: '+(p.structured_order_commit_enabled?'HABILITADO':'bloqueado até homologação real')+'. Mensagem livre nunca cria pedido.</small>'+
+      '</div>'+
+    '</section>';
+  }
+  async function createPapoAiCatalogLink(){
+    const raw=prompt('Telefone do cliente com DDD:','');
+    if(raw===null)return;
+    const phone=String(raw||'').replace(/\D/g,'');
+    if(phone.length<10){toast('Informe um telefone válido com DDD');return}
+    try{
+      const r=await api('papoai_issue_catalog_link',{},{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({phone})
+      });
+      const url=String(r.url||'');
+      if(url){
+        try{await navigator.clipboard.writeText(url);toast('Link criado e copiado: '+String(r.catalog_path||''))}
+        catch{prompt('Link criado. Copie abaixo:',url)}
+      }else toast('Link criado');
+      const fresh=await api('ops_papoai_capture_status').catch(()=>null);
+      if(fresh?.papoai){state.opsPapoAi=fresh.papoai;const host=$('#papoAiBridgeSlot');if(host)host.innerHTML=renderPapoAiBridgePanel()}
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
   async function renderToday(){
     const content=$('#content');
     content.innerHTML='<div class="page-head"><div><h1>Central</h1><p>O que está acontecendo e o que precisa da sua atenção.</p></div><button class="secondary" id="refreshToday">Atualizar</button></div><div id="integrationOperationalAlert"></div><div id="todayBody"><div class="loading">Carregando operação…</div></div>';
@@ -869,8 +919,9 @@
         state.closurePendingCount=0;
       }
       const host=$('#todayBody');
-      host.innerHTML=renderOps2Summary()+renderOpsAttention()+renderOpsPrintQueue()+renderOpsTimeline()+renderTodayExpiryAlert()+renderTodayCards()+
+      host.innerHTML=renderOps2Summary()+'<div id="papoAiBridgeSlot">'+renderPapoAiBridgePanel()+'</div>'+renderOpsAttention()+renderOpsPrintQueue()+renderOpsTimeline()+renderTodayExpiryAlert()+renderTodayCards()+
         '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
+      const papoLinkBtn=host.querySelector('[data-papoai-create-link]');if(papoLinkBtn)papoLinkBtn.onclick=createPapoAiCatalogLink;
       host.querySelectorAll('[data-retry-bling-status]').forEach(b=>b.onclick=retryBlingStatusCatalog);
       host.querySelectorAll('[data-attention-open]').forEach(b=>b.onclick=()=>setTab(b.dataset.attentionTab||'today'));
       host.querySelectorAll('[data-print-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.printOrder));
