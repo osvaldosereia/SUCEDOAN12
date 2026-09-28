@@ -227,3 +227,28 @@ Os 23 sem EAN permanecem identificáveis com segurança por lote + página + pos
 - aliases legados são consolidados (ex.: `Mercearia` + `mercearia`);
 - numeração de gôndola é normalizada para impressão (`01` = `1`, `09` = `9`);
 - backend ativo: `admin-products-live-v1` v67.
+
+
+## Correção de contagens acima do limite de 1.000 linhas — 2026-09-28
+Causa identificada da divergência entre quantidade mostrada e impressão:
+- consultas de categorias/gôndolas usavam `limit(5000)`, mas a API do Supabase limita a resposta a 1.000 linhas;
+- a impressão já percorria o catálogo em páginas, por isso encontrava mais produtos que o seletor;
+- exemplo confirmado: Limpeza/Lavanderia = 220 ativos = 11 folhas, enquanto a contagem truncada mostrava ~117.
+
+Correção:
+- `products` com filtro por categoria agora pagina o catálogo;
+- `product_facets` agora pagina o catálogo;
+- `inventory_sheet_options` agora pagina o catálogo;
+- `gondolas` agora pagina os produtos usados nas contagens;
+- limite operacional interno: até 10.000 produtos, em blocos de 1.000.
+
+Contagens ativas validadas após correção:
+- limpeza_lavanderia: 220 (11 folhas);
+- mercearia: 555 (28 folhas);
+- higiene_beleza: 671 (34 folhas);
+- casa_pet: 133 (7 folhas);
+- CHINELOS: 24 (2 folhas);
+- Caneca de Porcelana: 5 (1 folha);
+- Canecas de Porcelana: 2 (1 folha).
+
+Backend publicado: `admin-products-live-v1` Supabase v70 ACTIVE.
