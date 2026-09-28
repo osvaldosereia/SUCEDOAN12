@@ -777,3 +777,15 @@ Estado: **TESTE TRANSACIONAL PASS**.
 - teste rollback confirmou `delivered/delivered/completed`;
 - SQL commit `95e43c00`;
 - nenhum pedido/rota real foi usado como mutação.
+
+## 2026-09-28 — Gôndolas: limpeza total + localização com balanço
+Estado: **PROGRAMADO / BACKEND ATIVO / TESTE DE SINTAXE PASS**.
+- Gôndola ganhou ação **Limpar gôndola**, com confirmação forte; remove somente `gondola` e `shelf` dos produtos, sem apagar cadastro ou alterar estoque;
+- limpeza em lote passa pela API administrativa e gera evento operacional `gondola.cleared` com quantidade removida;
+- novo modo **Localizar + balanço**: EAN apenas seleciona o produto; nada é gravado até operador informar e confirmar a quantidade física;
+- confirmação executa o mesmo motor oficial de balanço (`ops_record_inventory_count_v1` + reconciliação) e depois grava a localização da gôndola;
+- autoridade de estoque verificada nesta rodada: `bling`; por isso a contagem física não força `products.stock` fora do ERP e divergências seguem a reconciliação existente;
+- modo **Só localizar** permanece disponível e não altera estoque;
+- Admin frontend commit `94772f11`; backend commits `142282f9` e `edec2f5a`; Edge `admin-products-live-v1` v55 ACTIVE / health interno v39;
+- nenhum produto/gôndola real foi alterado durante os testes desta implementação.
+
