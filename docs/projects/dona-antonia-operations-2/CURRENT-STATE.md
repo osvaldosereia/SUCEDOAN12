@@ -20,8 +20,8 @@ Checkpoint detalhado:
 - GitHub: `osvaldosereia/SUCEDOAN12`.
 - Supabase: `ssbesxgaijknwsjbsbcz`.
 - Site: `storefront-v2` ativo.
-- Admin operacional: `admin-products-live-v1` v50 ACTIVE.
-- Backend/integrações: `admin-service-intelligence-v1` v196 ACTIVE.
+- Admin operacional: `admin-products-live-v1` v53 ACTIVE.
+- Backend/integrações: `admin-service-intelligence-v1` v197 ACTIVE.
 - Bling Hub: `mode=live`, `hub_enabled=true`.
 - Make: fora da arquitetura operacional.
 
@@ -103,19 +103,21 @@ No cutover:
 
 ## Primeiro pedido real pós-corte
 
-Foi observado 1 pedido real novo ainda em `storefront_received`.
+O primeiro pedido real pós-corte já foi confirmado:
+- pedido: `DA-260928-D6432EB3`;
+- total: R$ 175,19;
+- `sync_status=sent_to_bling`;
+- Bling order id `26983249693`;
+- situação Bling comprovada: `Aprovado / Separar` (915902);
+- preflight de estoque: 30 linhas, 0 faltas;
+- postcheck: 30 linhas, 0 saldos negativos;
+- picking apresentado;
+- conferência EAN ainda não iniciada.
 
-Preview read-only de confirmação:
-- pronto para escrita;
-- 30 itens resolvidos;
-- 0 produtos não vinculados;
-- cliente já vinculado ao Bling;
-- total produtos R$ 171,28;
-- outras despesas R$ 3,91;
-- total R$ 175,19;
-- payload balanceado.
+O primeiro ciclo revelou ausência de transição direta `Em aberto -> Aprovado / Separar`. A R2 corrigiu com bridge seguro sem ações `Em aberto -> Aguardando confirmação -> Aprovado / Separar`, retry de estado explícito e gate forte antes da separação.
 
-O pedido não foi confirmado nem criado no Bling durante o teste.
+Checkpoint detalhado:
+- `R2-FIRST-LIVE-ORDER-2026-09-28.md`.
 
 ## Worker / cron
 
