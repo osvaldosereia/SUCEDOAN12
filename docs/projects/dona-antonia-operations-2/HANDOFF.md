@@ -1783,3 +1783,39 @@ Implementação/auditoria:
 - commits principais: `581faf74`, `d4b0fafa`, `0a6171fa`, `4a02e831`, `30fe6afb`, `41cff1a5`, `62da853a`, `439757a4`, `be7c914f`, `93a2412f`;
 - Edge `admin-service-intelligence-v1` usada em produção controlada até **v181 ACTIVE**;
 - trilhas de auditoria: `catalog_taxonomy_structure_sync`, `catalog_taxonomy_product_sync`, `catalog_taxonomy_product_sync_fast`, `catalog_taxonomy_rehome_legacy_extras`, `catalog_taxonomy_cleanup_extras`.
+
+
+## Compras/XML — revisão de produtos, custo unitário e preço autorizado — 2026-09-28
+
+Implementado no Vitrine/Admin:
+- clicar na NF-e abre os produtos **para baixo, dentro da própria lista**;
+- cada item mostra produto/EAN, quantidade e unidade de compra, estoque atual, custo atual do cadastro, custo da nova nota por **UN**, preço de venda atual e sugestão de venda;
+- política de sugestão: **custo unitário x 1,40** (markup padrão de 40%), com preço final editável antes da confirmação;
+- controles separados **Atualizar custo** e **Atualizar preço de venda**;
+- botão por item **Autorizar atualização** e ação em lote **Autorizar itens prontos**;
+- autorização de cadastro/preço **não altera estoque**; recebimento físico permanece no botão separado **Dar entrada**;
+- produto novo/inativo permanece sinalizado; a aprovação de custo/preço não o ativa automaticamente.
+
+Regra obrigatória de embalagem:
+- operação vende produto em **UN**;
+- CX, FD, PCT e DP, além de descrições com evidência de embalagem, não podem mais ser silenciosamente interpretados como fator 1;
+- quando o XML fornece uma relação tributária/comercial segura, ela pode ser inferida;
+- regras já confirmadas por fornecedor/produto podem ser reutilizadas;
+- descrições como CX/0024, 60UN X 01FD ou 10PC X ... geram **sugestão** de fator, mas exigem confirmação humana quando o XML não comprova a conversão;
+- custo unitário é recalculado somente após a conversão para UN.
+
+Proteções adicionadas:
+- processamento do XML deixou de sobrescrever automaticamente products.cost/products.unit;
+- custo/preço do catálogo agora só mudam pela ação humana apply_item_update;
+- constraint purchase_xml_items_pack_factor_guard impede embalagem resolvida com fator <= 1;
+- dados antigos suspeitos foram reabertos para revisão: **21 itens / 2 documentos**;
+- validação pós-migração: **0 itens de embalagem inseguros marcados como resolvidos** e **0 documentos prontos para entrada contendo embalagem sem conversão**;
+- trilha de auditoria: purchase_catalog_item_approved.
+
+Implementação:
+- backend Compras/XML: commits 9d31f002, 2ac1b8c3;
+- Vitrine/Admin: commits dc485bbb, 268fe507;
+- migration versionada: commit bea65ca2, arquivo supabase/sql/20260928_purchase_xml_unit_pricing_approval_v2.sql;
+- migration Supabase aplicada: purchase_xml_unit_pricing_approval_v2;
+- Edge admin-service-intelligence-v1 publicada **v182 ACTIVE**;
+- JavaScript do Admin validado sintaticamente após a alteração.
