@@ -559,7 +559,43 @@ async function closeStalePurchaseRuns(){
       details:{count:ids.length,run_ids:ids}
     });
   }
-  return ids.length;
+
+  const dq=await sb.from("purchase_xml_documents")
+    .select("id,item_count")
+    .eq("processing_status","processing")
+    .lt("updated_at",cutoff)
+    .limit(100);
+  if(dq.error)throw dq.error;
+  let repaired=0;
+  for(const d of dq.data||[]){
+    const iq=await sb.from("purchase_xml_items")
+      .select("id,product_id,processing_status,conversion_status,converted_quantity")
+      .eq("document_id",d.id);
+    if(iq.error)continue;
+    const rows=iq.data||[],matched=rows.filter((x:any)=>Boolean(x.product_id)).length;
+    const pending=rows.filter((x:any)=>!x.product_id||["review_required","failed","pending"].includes(String(x.processing_status||""))||x.conversion_status==="review_required"||Number(x.converted_quantity||0)<=0).length;
+    const noItems=rows.length===0;
+    const update:any={
+      matched_item_count:matched,
+      review_item_count:noItems?Number(d.item_count||0):pending,
+      processing_status:noItems?"failed":pending?"review_required":"processed",
+      receipt_status:noItems||pending?"review":"ready",
+      last_error:noItems?"processamento_interrompido_sem_itens":pending?String(pending)+" item(ns) requer(em) revisão":null,
+      updated_at:now
+    };
+    const u=await sb.from("purchase_xml_documents").update(update).eq("id",d.id);
+    if(!u.error)repaired++;
+  }
+  if(repaired){
+    await sb.from("bling_hub_audit_v2").insert({
+      event_type:"purchase_xml_stale_documents_repaired",
+      severity:"warning",
+      domain:"fiscal",
+      source_system:"purchase_xml_v1",
+      details:{count:repaired}
+    });
+  }
+  return {runs_closed:ids.length,documents_repaired:repaired};
 }
 async function runBlingSync(source="bling_daily",windowInput:any=null){
   await closeStalePurchaseRuns();
@@ -644,7 +680,7 @@ async function browseBlingNfe(windowInput:any=null){
   return {ok:true,readonly:true,window,count:out.length,truncated,documents:out,source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false};
 }
 async function summary(windowInput:any=null){
-  const stale_runs_closed=await closeStalePurchaseRuns();
+  const stale_cleanup=await closeStalePurchaseRuns();
   const window=purchaseWindow(windowInput,90);
   const docsQ=sb.from("purchase_xml_documents")
     .select("id,document_key,bling_nfe_id,issued_at,supplier_name,recipient_kind,financial_eligible,finance_status,finance_attempt_count,finance_last_attempt_at,finance_last_error,finance_posted_at,finance_reconciled_at,finance_method,receipt_status,processing_status,total_amount,item_count,matched_item_count,review_item_count,created_at")
@@ -659,7 +695,7 @@ async function summary(windowInput:any=null){
     sb.from("purchase_xml_settings").select("*").eq("id",1).single()
   ]);
   if(docs.error)throw docs.error;if(runs.error)throw runs.error;if(items.error)throw items.error;if(settings.error)throw settings.error;
-  return {ok:true,filter:window,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data,stale_runs_closed,integration:{manual_max_range_days:365,daily_lookback_days:Number(settings.data?.daily_lookback_days||3),source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,received_notes_url:"https://www.bling.com.br/notas.entrada.php#list",manifestation_automated:false,stock_receipt_requires_human_confirmation:true}};
+  return {ok:true,filter:window,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data,stale_runs_closed:Number(stale_cleanup?.runs_closed||0),stale_documents_repaired:Number(stale_cleanup?.documents_repaired||0),integration:{manual_max_range_days:365,daily_lookback_days:Number(settings.data?.daily_lookback_days||3),source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,received_notes_url:"https://www.bling.com.br/notas.entrada.php#list",manifestation_automated:false,stock_receipt_requires_human_confirmation:true}};
 }
 async function docDetail(id:string){
   const [d,it]=await Promise.all([
