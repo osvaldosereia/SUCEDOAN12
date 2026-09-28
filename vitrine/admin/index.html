@@ -91,6 +91,21 @@
     .closure-grid{display:grid;gap:14px}.closure-row{display:grid;grid-template-columns:90px minmax(0,1.4fr) 130px minmax(180px,.8fr) 90px;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}.closure-row:last-child{border-bottom:0}.closure-status strong{display:block;font-size:12px}.closure-status small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}.quick-link{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#1967d2;text-decoration:none;font-weight:700;font-size:12px}.quick-link:hover{background:#f1f3f4}.quick-link.primary-link{background:#e8f0fe;border-color:#d2e3fc}.age-text{font-size:11px;color:var(--muted);font-weight:600}
     .today-order-row{grid-template-columns:90px minmax(0,1fr) 150px 80px}
     .purchase-doc-row{display:grid;grid-template-columns:105px minmax(180px,1.3fr) 90px 95px 120px 120px 210px;gap:10px;align-items:center;padding:11px 12px;border-bottom:1px solid var(--line)}.purchase-doc-row:last-child{border-bottom:0}.purchase-actions{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap}.purchase-review{display:grid;grid-template-columns:minmax(190px,1.4fr) 90px 90px 110px 130px;gap:10px;align-items:center;padding:11px 12px;border-bottom:1px solid var(--line)}.purchase-review:last-child{border-bottom:0}.purchase-file-note{font-size:11px;color:var(--muted);margin-top:5px}.purchase-safe{border:1px solid #c7dccd;background:#f7fbf8;border-radius:8px;padding:10px 12px;margin-bottom:12px}.purchase-safe strong{display:block}.purchase-safe small{display:block;color:var(--muted);margin-top:3px}.purchase-danger{border-color:#f0b7b3;background:#fff8f7}
+    .purchase-doc-block{border-bottom:1px solid var(--line)}.purchase-doc-block:last-child{border-bottom:0}.purchase-doc-block>.purchase-doc-row{border-bottom:0}
+    .purchase-doc-clickable{cursor:pointer;transition:background .12s ease}.purchase-doc-clickable:hover{background:#f8fbf9}.purchase-doc-clickable.expanded{background:#f3f8f5}
+    .purchase-chevron{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:16px;font-weight:800;color:#196b43;background:#edf7f1;margin-right:4px}
+    .purchase-doc-expanded{background:#fbfdfb;border-top:1px solid #dce8df;padding:14px 16px 18px}
+    .purchase-detail-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;margin-bottom:12px}.purchase-detail-head h3{margin:0;font-size:17px}.purchase-detail-head p{margin:4px 0 0;color:var(--muted);font-size:12px}.purchase-detail-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .purchase-items{display:grid;gap:10px}.purchase-item-card{border:1px solid var(--line);border-radius:10px;background:#fff;padding:13px}
+    .purchase-item-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.purchase-item-title strong{display:block;font-size:14px}.purchase-item-title small{display:block;color:var(--muted);margin-top:3px;line-height:1.35}.purchase-item-badges{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+    .purchase-price-grid{display:grid;grid-template-columns:minmax(160px,1.3fr) 110px 130px 130px 140px minmax(170px,1fr);gap:9px;align-items:end}
+    .purchase-field label,.purchase-price-box small{display:block;color:var(--muted);font-size:11px;font-weight:700;margin-bottom:4px}.purchase-field input{width:100%;min-height:38px;padding:7px 9px}.purchase-price-box{min-height:58px;border:1px solid #e3e7e4;border-radius:8px;background:#fafcfb;padding:8px 10px}.purchase-price-box strong{display:block;font-size:14px}.purchase-price-box .accent{color:#196b43}
+    .purchase-factor-hint{font-size:11px;color:var(--muted);margin-top:5px}.purchase-factor-hint.warn-text{font-weight:700}.purchase-item-controls{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:11px;padding-top:10px;border-top:1px solid #eef1ef}.purchase-checks{display:flex;gap:13px;flex-wrap:wrap}.purchase-checks label{display:flex;gap:6px;align-items:center;font-size:12px;font-weight:700}.purchase-checks input{min-height:auto}
+    .purchase-stock-note{font-size:11px;color:var(--muted)}.purchase-approval-result{font-size:11px;font-weight:700;color:#196b43;margin-left:6px}
+    @media(max-width:1050px){.purchase-price-grid{grid-template-columns:1fr 1fr 1fr}.purchase-detail-head{flex-direction:column}.purchase-detail-actions{justify-content:flex-start}}
+    @media(max-width:780px){.purchase-doc-row{grid-template-columns:82px minmax(0,1fr) auto!important}.purchase-doc-row>:nth-child(3),.purchase-doc-row>:nth-child(4),.purchase-doc-row>:nth-child(5),.purchase-doc-row>:nth-child(6){grid-column:2}.purchase-doc-row>:last-child{grid-column:2/4;justify-content:flex-start}.purchase-doc-expanded{padding:12px 10px}.purchase-price-grid{grid-template-columns:1fr 1fr}.purchase-item-title{flex-direction:column}.purchase-item-badges{justify-content:flex-start}}
+    @media(max-width:520px){.purchase-price-grid{grid-template-columns:1fr}.purchase-item-controls{align-items:stretch}.purchase-item-controls .primary{width:100%}}
+
     .toast{position:fixed;left:50%;bottom:22px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#18221c;color:#fff;border-radius:999px;padding:11px 16px;font-weight:800;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
     @media(max-width:780px){
       .wrap{padding-inline:10px}.top-row{height:58px}.logo{width:72px;height:34px}.store-link{font-size:12px}
@@ -432,7 +447,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -2758,6 +2773,154 @@
       if($('#retryPurchases'))$('#retryPurchases').onclick=loadPurchases;
     }
   }
+  function purchaseMaybeMoney(v){
+    if(v===null||v===undefined||v==='')return '—';
+    const n=Number(v);return Number.isFinite(n)?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—';
+  }
+  function purchaseNumberInput(v){
+    const n=Number(v);return Number.isFinite(n)?String(Math.round(n*1000000)/1000000):'';
+  }
+  function purchaseItemNetTotal(x){
+    const m=x?.metadata||{};
+    let n=Number(m.net_line_total);
+    if(!Number.isFinite(n)||n<=0)n=Number(x?.line_total);
+    if((!Number.isFinite(n)||n<=0)&&Number.isFinite(Number(x?.purchase_unit_price)))n=Number(x.purchase_unit_price)*Number(x.purchase_quantity||0);
+    return Number.isFinite(n)?n:null;
+  }
+  function purchaseItemUnitCost(x,factor){
+    const qty=Number(x?.purchase_quantity||0),f=Number(factor),net=purchaseItemNetTotal(x);
+    return net!==null&&qty>0&&f>0?net/(qty*f):null;
+  }
+  function purchaseItemCardHtml(x){
+    const p=x.pricing_preview||{},prod=x.products||{},factor=p.suggested_conversion_factor??x.conversion_factor??1;
+    const unitCost=p.proposed_unit_cost??purchaseItemUnitCost(x,factor);
+    const suggested=p.suggested_sale_price??(unitCost!==null?Math.round(unitCost*1.4*100)/100:null);
+    const existing=Boolean(prod?.id),inactive=existing&&prod.is_active===false,newFromXml=Boolean(prod?.metadata?.purchase_xml_created);
+    const needsFactor=Boolean(p.requires_conversion_confirmation);
+    const evidence=p.conversion_suggestion_evidence?' · leitura: '+esc(p.conversion_suggestion_evidence):'';
+    const factorHint=needsFactor
+      ?(factor&&Number(factor)>1?'Sugestão detectada: '+esc(fmtQty(factor))+' UN por '+esc(x.purchase_unit||'embalagem')+evidence:'Informe quantas unidades de venda existem em 1 '+esc(x.purchase_unit||'embalagem')+'.')
+      :'Venda em unidade · fator '+esc(fmtQty(factor||1))+'.';
+    return '<div class="purchase-item-card" data-purchase-item="'+esc(x.id)+'" data-document-id="'+esc(x.document_id)+'">'+
+      '<div class="purchase-item-title"><div><strong>'+esc(prod.name||x.description||'Produto')+'</strong>'+
+        '<small>'+esc(x.description||'')+' · EAN '+esc(x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado')+' · compra: '+esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'')+'</small></div>'+
+        '<div class="purchase-item-badges">'+
+          '<span class="pill '+(existing?'':'warn')+'">'+(existing?'Vinculado':'Sem vínculo')+'</span>'+
+          (newFromXml?'<span class="pill warn">Novo pelo XML</span>':'')+
+          (inactive?'<span class="pill off">Inativo</span>':'')+
+          (needsFactor?'<span class="pill warn">Confirmar embalagem</span>':'<span class="pill">UN</span>')+
+        '</div></div>'+
+      '<div class="purchase-price-grid">'+
+        '<div class="purchase-field"><label>Conversão para unidade (UN)</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'" '+(needsFactor?'':'')+'><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
+        '<div class="purchase-price-box"><small>Qtd. final</small><strong data-purchase-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Custo desta nota / UN</small><strong class="accent" data-purchase-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Venda atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
+        '<div class="purchase-field"><label>Preço de venda sugerido (+40%)</label><input type="number" min="0" step="0.01" data-purchase-sale value="'+esc(purchaseNumberInput(suggested))+'"><div class="purchase-factor-hint">Editável antes de autorizar.</div></div>'+
+      '</div>'+
+      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale checked> Atualizar preço de venda</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · esta autorização não altera estoque. A entrada física continua separada.</div></div>'+
+        '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'">Autorizar atualização</button><span class="purchase-approval-result" data-purchase-result></span></div></div>'+
+    '</div>';
+  }
+  function recalcPurchaseItemCard(card,resetSale=true){
+    if(!card)return;
+    const itemId=card.dataset.purchaseItem,detail=state.purchaseDetailCache?.[card.dataset.documentId],item=(detail?.items||[]).find(x=>x.id===itemId);
+    if(!item)return;
+    const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
+    const cost=purchaseItemUnitCost(item,factor);
+    const baseQty=Number(item.purchase_quantity||0)*(factor>0?factor:0);
+    const suggested=cost!==null?Math.round(cost*1.4*100)/100:null;
+    const costEl=card.querySelector('[data-purchase-unit-cost]'),qtyEl=card.querySelector('[data-purchase-base-qty]'),sale=card.querySelector('[data-purchase-sale]');
+    if(costEl)costEl.textContent=purchaseMaybeMoney(cost);
+    if(qtyEl)qtyEl.textContent=factor>0?fmtQty(baseQty)+' UN':'—';
+    if(resetSale&&sale&&suggested!==null)sale.value=purchaseNumberInput(suggested);
+  }
+  function renderPurchaseDocumentInline(id,data){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(!host)return;
+    const d=data?.document||{},items=data?.items||[];
+    host.style.display='block';
+    host.innerHTML=
+      '<div class="purchase-detail-head"><div><h3>Produtos da NF-e</h3><p>'+esc(d.supplier_name||'Fornecedor')+' · '+items.length+' item(ns) · custo sempre calculado na unidade de venda (UN).</p></div>'+
+      '<div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-inline-xml="'+esc(id)+'">XML</button>'+(d.receipt_status==='ready'?'<button class="secondary" type="button" data-purchase-inline-receive="'+esc(id)+'">Dar entrada no estoque</button>':'')+'<button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Autorizar itens prontos</button></div></div>'+
+      '<div class="purchase-safe '+(d.recipient_kind==='CPF'?'purchase-danger':'')+'"><strong>Cadastro e preço exigem sua autorização</strong><small>O sistema sugere 40% sobre o custo unitário. Caixa, fardo, pacote e display precisam estar convertidos para UN antes da atualização. '+(d.recipient_kind==='CPF'?'Esta nota continua bloqueada para contas a pagar empresariais.':'A entrada de estoque continua sendo uma ação separada.')+'</small></div>'+
+      '<div class="purchase-items">'+(items.length?items.map(purchaseItemCardHtml).join(''):'<div class="empty">Nenhum item encontrado na nota.</div>')+'</div>';
+    host.querySelectorAll('[data-purchase-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseItemCard(inp.closest('.purchase-item-card'),true));
+    host.querySelectorAll('[data-purchase-approve-item]').forEach(b=>b.onclick=()=>applyPurchaseItemUpdate(b.dataset.purchaseApproveItem));
+    const xmlBtn=host.querySelector('[data-purchase-inline-xml]');if(xmlBtn)xmlBtn.onclick=()=>downloadPurchaseXml(id);
+    const recv=host.querySelector('[data-purchase-inline-receive]');if(recv)recv.onclick=()=>receivePurchaseDocument(id);
+    const bulk=host.querySelector('[data-purchase-approve-ready]');if(bulk)bulk.onclick=()=>approveReadyPurchaseItems(id);
+  }
+  async function togglePurchaseDocument(id,forceOpen=false){
+    if(state.purchaseExpandedId===id&&!forceOpen){
+      state.purchaseExpandedId=null;
+      const h=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(h)h.style.display='none';
+      const row=document.querySelector('[data-purchase-toggle="'+CSS.escape(id)+'"]');if(row)row.classList.remove('expanded');
+      return;
+    }
+    state.purchaseExpandedId=id;
+    document.querySelectorAll('[data-purchase-detail]').forEach(x=>x.style.display='none');
+    document.querySelectorAll('[data-purchase-toggle]').forEach(x=>x.classList.remove('expanded'));
+    const row=document.querySelector('[data-purchase-toggle="'+CSS.escape(id)+'"]');if(row)row.classList.add('expanded');
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(host)host.innerHTML='<div class="loading">Carregando produtos da nota…</div>';
+    try{
+      const data=state.purchaseDetailCache?.[id]||await purchaseApi('document',{id});
+      state.purchaseDetailCache[id]=data;state.purchaseXmlDetail=data;
+      renderPurchaseDocumentInline(id,data);
+    }catch(e){if(host)host.innerHTML='<div class="empty">Não consegui abrir os produtos desta nota.</div>';toast(errorMessage(e.message))}
+  }
+  async function refreshPurchaseAfterApproval(id){
+    state.purchaseDetailCache[id]=await purchaseApi('document',{id});
+    state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+    state.purchaseExpandedId=id;
+    paintPurchases();
+  }
+  async function applyPurchaseItemUpdate(itemId,quiet=false){
+    const card=document.querySelector('[data-purchase-item="'+CSS.escape(itemId)+'"]');if(!card)return false;
+    const docId=card.dataset.documentId,operator=requireOperator();if(!operator)return false;
+    const factor=Number(String(card.querySelector('[data-purchase-factor]')?.value||'').replace(',','.'));
+    const sale=Number(String(card.querySelector('[data-purchase-sale]')?.value||'').replace(',','.'));
+    const updateCost=Boolean(card.querySelector('[data-purchase-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
+    if(!Number.isFinite(factor)||factor<1){if(!quiet)toast('Informe a conversão para UN');return false}
+    if(updateSale&&(!Number.isFinite(sale)||sale<0)){if(!quiet)toast('Informe um preço de venda válido');return false}
+    const btn=card.querySelector('[data-purchase-approve-item]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+    try{
+      await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+      const result=card.querySelector('[data-purchase-result]');if(result)result.textContent='Atualizado';
+      if(!quiet){toast('Cadastro do produto atualizado');await refreshPurchaseAfterApproval(docId)}
+      return true;
+    }catch(e){
+      if(!quiet)toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Autorizar atualização'}
+      return false;
+    }
+  }
+  async function approveReadyPurchaseItems(id){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(!host)return;
+    const cards=[...host.querySelectorAll('.purchase-item-card')];
+    const ready=cards.filter(card=>{
+      const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
+      const sale=Number(card.querySelector('[data-purchase-sale]')?.value||0);
+      const updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
+      return factor>=1&&(!updateSale||Number.isFinite(sale));
+    });
+    if(!ready.length){toast('Nenhum item pronto para autorizar');return}
+    if(!confirm('Autorizar a atualização de custo/preço dos '+ready.length+' item(ns) prontos desta nota? O estoque não será alterado.'))return;
+    const operator=requireOperator();if(!operator)return;
+    let ok=0,fail=0;
+    for(const card of ready){
+      const itemId=card.dataset.purchaseItem;
+      const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
+      const sale=Number(card.querySelector('[data-purchase-sale]')?.value||0);
+      const updateCost=Boolean(card.querySelector('[data-purchase-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
+      const btn=card.querySelector('[data-purchase-approve-item]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+      try{
+        await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+        ok++;const result=card.querySelector('[data-purchase-result]');if(result)result.textContent='Atualizado';
+      }catch(e){fail++;if(btn){btn.disabled=false;btn.textContent='Autorizar atualização'}}
+    }
+    toast(ok+' item(ns) atualizado(s)'+(fail?' · '+fail+' falha(s)':''));
+    await refreshPurchaseAfterApproval(id);
+  }
   function paintPurchases(){
     const host=$('#purchaseBody');if(!host)return;
     const d=state.purchaseXml||{},docs=Array.isArray(d.documents)?d.documents:[],reviews=Array.isArray(d.review_items)?d.review_items:[],runs=Array.isArray(d.runs)?d.runs:[],settings=d.settings||{},integration=d.integration||{};
@@ -2772,7 +2935,7 @@
         '<div class="bling-card"><small>Financeiro</small><strong>'+posted+'</strong><span class="sub">com contas a pagar registradas</span></div>'+
         '<div class="bling-card"><small>CPF protegido</small><strong>'+cpf+'</strong><span class="sub">sem envio para o financeiro</span></div>'+
         '<div class="bling-card"><small>Prontas para receber</small><strong>'+ready+'</strong><span class="sub">estoque aguarda confirmação</span></div>'+
-        '<div class="bling-card"><small>Revisões</small><strong class="'+(reviews.length?'warn-text':'ok-text')+'">'+reviews.length+'</strong><span class="sub">embalagem ou vínculo pendente</span></div>'+
+        '<div class="bling-card"><small>Revisões</small><strong class="'+(reviews.length?'warn-text':'ok-text')+'">'+reviews.length+'</strong><span class="sub">embalagem, vínculo ou preço pendente</span></div>'+
         '<div class="bling-card"><small>Rotina diária</small><strong>'+esc(settings.daily_enabled===false?'Pausada':'06:00')+'</strong><span class="sub">Cuiabá · olha '+esc(settings.daily_lookback_days||3)+' dia(s)</span></div>'+
       '</div>'+
       '<div class="bling-banner"><strong>SEFAZ → Bling → Admin</strong><small>As notas ainda na aba “Notas recebidas” ficam no Bling. A consulta histórica abaixo mostra as NF-e já registradas no Bling e aceita até '+esc(integration.manual_max_range_days||365)+' dias. O Admin não faz manifestação fiscal automaticamente.</small></div>'+
@@ -2780,73 +2943,33 @@
         (blingDocs.length?blingDocs.map(x=>'<div class="purchase-doc-row">'+
           '<div><strong>'+esc(x.issued_at?dateOnly(String(x.issued_at).slice(0,10)):'—')+'</strong><span class="sub">#'+esc(x.number||x.bling_nfe_id||'—')+'</span></div>'+
           '<div class="history-main"><strong>'+esc(x.contact_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+(x.contact_document?' · '+esc(x.contact_document):'')+'</small></div>'+
-          '<div><span class="pill">'+esc(x.status||'Bling')+'</span></div>'+
-          '<div class="sub">'+esc(x.access_key?String(x.access_key).slice(-10):'—')+'</div>'+
-          '<div class="sub">somente leitura</div><div></div><div></div>'+
+          '<div><span class="pill">'+esc(x.status||'Bling')+'</span></div><div class="sub">'+esc(x.access_key?String(x.access_key).slice(-10):'—')+'</div><div class="sub">somente leitura</div><div></div><div></div>'+
         '</div>').join(''):'<div class="empty">'+(browse.ok===false?'Não consegui consultar o Bling agora.':'Nenhuma nota registrada no Bling nesse período.')+'</div>')+
       '</section>'+
       (last?'<div class="bling-banner"><strong>Última execução: '+esc(last.source||'')+' · '+esc(last.status||'')+'</strong><small>'+dateTime(last.started_at||last.created_at)+' · '+esc(last.documents_processed||0)+' processada(s) · '+esc(last.documents_duplicate||0)+' duplicada(s) · '+esc(last.items_review||0)+' revisão(ões)</small></div>':'')+
-      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Notas processadas no Admin</strong><span>XML original privado · filtrado pelo mesmo período</span></div><b>'+docs.length+'</b></div>'+
-        (docs.length?docs.map(x=>'<div class="purchase-doc-row">'+
-          '<div><strong>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</strong><span class="sub">'+esc(String(x.document_key||'').slice(-10))+'</span></div>'+
-          '<div class="history-main"><strong>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns)</small></div>'+
-          '<div><span class="pill '+(x.recipient_kind==='CPF'?'off':'')+'">'+esc(x.recipient_kind||'—')+'</span></div>'+
-          '<div>'+purchaseStatusLabel(x.processing_status)+'</div>'+
-          '<div>'+purchaseFinanceLabel(x.finance_status)+'</div>'+
-          '<div>'+purchaseReceiptLabel(x.receipt_status)+'</div>'+
-          '<div class="purchase-actions"><button class="text" type="button" data-purchase-open="'+esc(x.id)+'">Abrir</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button>'+(x.receipt_status==='ready'?'<button class="text" type="button" data-purchase-receive="'+esc(x.id)+'">Dar entrada</button>':'')+'</div>'+
-        '</div>').join(''):'<div class="empty">Nenhuma nota importada nesta área ainda.</div>')+
+      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Notas processadas no Admin</strong><span>Clique em uma nota para revisar produtos, conversão, custo e preço de venda</span></div><b>'+docs.length+'</b></div>'+
+        (docs.length?docs.map(x=>'<div class="purchase-doc-block">'+
+          '<div class="purchase-doc-row purchase-doc-clickable '+(state.purchaseExpandedId===x.id?'expanded':'')+'" data-purchase-toggle="'+esc(x.id)+'">'+
+            '<div><strong>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</strong><span class="sub">'+esc(String(x.document_key||'').slice(-10))+'</span></div>'+
+            '<div class="history-main"><strong><span class="purchase-chevron">'+(state.purchaseExpandedId===x.id?'−':'+')+'</span>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns)</small></div>'+
+            '<div><span class="pill '+(x.recipient_kind==='CPF'?'off':'')+'">'+esc(x.recipient_kind||'—')+'</span></div>'+
+            '<div>'+purchaseStatusLabel(x.processing_status)+'</div><div>'+purchaseFinanceLabel(x.finance_status)+'</div><div>'+purchaseReceiptLabel(x.receipt_status)+'</div>'+
+            '<div class="purchase-actions"><button class="text" type="button" data-purchase-open="'+esc(x.id)+'">Produtos</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button>'+(x.receipt_status==='ready'?'<button class="text" type="button" data-purchase-receive="'+esc(x.id)+'">Dar entrada</button>':'')+'</div>'+
+          '</div><div class="purchase-doc-expanded" data-purchase-detail="'+esc(x.id)+'" style="display:none"></div></div>').join(''):'<div class="empty">Nenhuma nota importada nesta área ainda.</div>')+
       '</section>'+
-      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Pendências de embalagem/vínculo</strong><span>Ex.: fardo → display → unidade. Informe o fator total quando o XML não trouxer uma conversão segura.</span></div><b>'+reviews.length+'</b></div>'+
-        (reviews.length?reviews.map(x=>'<div class="purchase-review"><div class="history-main"><strong>'+esc(x.description||'Produto')+'</strong><small>'+esc(x.processing_status||'')+'</small></div><div><strong>'+esc(fmtQty(x.purchase_quantity||0))+'</strong><span class="sub">'+esc(x.purchase_unit||'')+'</span></div><div><strong>'+esc(x.conversion_factor||'—')+'</strong><span class="sub">fator</span></div><div><strong>'+purchaseMoney(x.purchase_unit_price)+'</strong><span class="sub">compra</span></div><div><button class="secondary" type="button" data-purchase-conversion="'+esc(x.id)+'">Definir conversão</button></div></div>').join(''):'<div class="empty">Nenhuma pendência de embalagem.</div>')+
+      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Pendências de embalagem/vínculo</strong><span>Caixa, fardo e pacote não podem mais ser tratados como 1 unidade. Confirme o fator antes de atualizar cadastro ou estoque.</span></div><b>'+reviews.length+'</b></div>'+
+        (reviews.length?reviews.map(x=>'<div class="purchase-review"><div class="history-main"><strong>'+esc(x.description||'Produto')+'</strong><small>'+esc(x.processing_status||'')+'</small></div><div><strong>'+esc(fmtQty(x.purchase_quantity||0))+'</strong><span class="sub">'+esc(x.purchase_unit||'')+'</span></div><div><strong>'+esc(x.conversion_factor||'—')+'</strong><span class="sub">fator</span></div><div><strong>'+purchaseMaybeMoney(x.purchase_unit_price)+'</strong><span class="sub">compra</span></div><div><button class="secondary" type="button" data-purchase-conversion="'+esc(x.id)+'">Definir conversão</button></div></div>').join(''):'<div class="empty">Nenhuma pendência de embalagem.</div>')+
       '</section>';
-    host.querySelectorAll('[data-purchase-open]').forEach(b=>b.onclick=()=>openPurchaseDocument(b.dataset.purchaseOpen));
-    host.querySelectorAll('[data-purchase-xml]').forEach(b=>b.onclick=()=>downloadPurchaseXml(b.dataset.purchaseXml));
-    host.querySelectorAll('[data-purchase-receive]').forEach(b=>b.onclick=()=>receivePurchaseDocument(b.dataset.purchaseReceive));
+    host.querySelectorAll('[data-purchase-toggle]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,a,input,label'))return;togglePurchaseDocument(row.dataset.purchaseToggle)});
+    host.querySelectorAll('[data-purchase-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();togglePurchaseDocument(b.dataset.purchaseOpen,true)});
+    host.querySelectorAll('[data-purchase-xml]').forEach(b=>b.onclick=e=>{e.stopPropagation();downloadPurchaseXml(b.dataset.purchaseXml)});
+    host.querySelectorAll('[data-purchase-receive]').forEach(b=>b.onclick=e=>{e.stopPropagation();receivePurchaseDocument(b.dataset.purchaseReceive)});
     host.querySelectorAll('[data-purchase-conversion]').forEach(b=>b.onclick=()=>setPurchaseConversion(b.dataset.purchaseConversion));
-  }
-  async function runPurchaseBlingSync(){
-    if(!purchaseCustomRangeReady()){toast('Informe um período válido');return}
-    const b=$('#purchaseBlingSync');if(b){b.disabled=true;b.textContent='Importando…'}
-    try{
-      const r=await purchaseApi('bling_sync',purchaseFilterPayload());
-      if(Number(r.documents_seen||0)===0)toast('Bling: nenhuma nota de compra/entrada encontrada em '+String(r.window?.label||purchasePeriodLabel())+'. Confira “Notas recebidas SEFAZ” se houver documentos aguardando importação.');
-      else toast('Bling: '+String(r.processed||0)+' processada(s) · '+String(r.duplicates||0)+' já existente(s) · '+String(r.failed||0)+' falha(s)');
-      await loadPurchases();
-    }catch(e){toast(errorMessage(e.message))}
-    finally{if(b){b.disabled=false;b.textContent='Importar período do Bling'}}
-  }
-  async function importPurchaseXmlFiles(files){
-    if(!files?.length)return;
-    const input=$('#purchaseXmlInput');if(input)input.value='';
-    const valid=files.filter(f=>/\.xml$/i.test(f.name)||/xml/i.test(f.type||''));
-    if(!valid.length){toast('Selecione arquivos XML');return}
-    let ok=0,fail=0;
-    try{
-      for(let i=0;i<valid.length;i+=10){
-        const chunk=valid.slice(i,i+10),payload=[];
-        for(const file of chunk)payload.push({name:file.name,xml:await file.text()});
-        const r=await purchaseApi('manual_import',{files:payload});
-        ok+=Number(r.processed||0)+Number(r.duplicates||0);fail+=Number(r.failed||0);
-      }
-      toast('XML: '+ok+' concluído(s)'+(fail?' · '+fail+' falha(s)':''));
-      await loadPurchases();
-    }catch(e){toast(errorMessage(e.message))}
-  }
-  async function openPurchaseDocument(id){
-    try{
-      const r=await purchaseApi('document',{id});state.purchaseXmlDetail=r;
-      const d=r.document||{},items=r.items||[];
-      $('#editorTitle').textContent='NF-e de compra · '+String(d.document_key||'').slice(-10);
-      $('#editorBody').innerHTML=
-        '<div class="order-summary"><div class="summary-box"><small>Fornecedor</small><strong>'+esc(d.supplier_name||'—')+'</strong></div><div class="summary-box"><small>Total</small><strong>'+purchaseMoney(d.total_amount)+'</strong></div><div class="summary-box"><small>Destinatário</small><strong>'+esc(d.recipient_kind||'—')+'</strong></div></div>'+
-        '<div class="purchase-safe '+(d.recipient_kind==='CPF'?'purchase-danger':'')+'"><strong>'+(d.recipient_kind==='CPF'?'Financeiro bloqueado para CPF':'Financeiro: '+esc(d.finance_status||'—'))+'</strong><small>'+(d.recipient_kind==='CPF'?'Esta nota pode atualizar cadastro, custo e fornecedor, mas nunca cria conta a pagar.':'A NF-e em CNPJ pode alimentar contas a pagar quando houver parcelas válidas.')+'</small></div>'+
-        '<div class="history-list">'+items.map(x=>'<div class="history-item"><div class="history-item-line"><div><strong class="history-item-name">'+esc(x.description||'Produto')+'</strong><div class="history-item-meta">'+esc(x.commercial_gtin||x.tax_gtin||'Sem EAN')+' · '+esc(x.purchase_unit||'')+' '+esc(fmtQty(x.purchase_quantity||0))+'</div></div><strong>'+purchaseMoney(x.base_unit_cost)+'</strong></div><div class="history-item-meta">Conversão: '+esc(x.conversion_factor||'—')+' → '+esc(x.base_unit||'UN')+' · '+esc(x.processing_status||'')+'</div></div>').join('')+'</div>';
-      $('#editorActions').innerHTML='<button class="secondary" id="purchaseDialogXml" type="button">Abrir XML</button>'+(d.receipt_status==='ready'?'<button class="primary" id="purchaseDialogReceive" type="button">Confirmar entrada</button>':'');
-      $('#purchaseDialogXml').onclick=()=>downloadPurchaseXml(id);
-      if($('#purchaseDialogReceive'))$('#purchaseDialogReceive').onclick=()=>receivePurchaseDocument(id);
-      $('#editor').showModal();
-    }catch(e){toast(errorMessage(e.message))}
+    const expanded=state.purchaseExpandedId;
+    if(expanded&&state.purchaseDetailCache?.[expanded]){
+      const row=document.querySelector('[data-purchase-toggle="'+CSS.escape(expanded)+'"]');if(row)row.classList.add('expanded');
+      renderPurchaseDocumentInline(expanded,state.purchaseDetailCache[expanded]);
+    }
   }
   async function downloadPurchaseXml(id){
     try{const r=await purchaseApi('xml_url',{id});if(r.url)window.open(r.url,'_blank','noopener')}catch(e){toast(errorMessage(e.message))}
@@ -2862,16 +2985,18 @@
   }
   async function setPurchaseConversion(id){
     const row=(state.purchaseXml?.review_items||[]).find(x=>x.id===id)||{};
-    const factorRaw=prompt('Quantas unidades de venda existem em 1 '+String(row.purchase_unit||'embalagem')+'? Ex.: fardo com 10 displays de 10 unidades = 100','');
+    const suggested=Number(row?.metadata?.suggested_conversion_factor||0)>1?String(row.metadata.suggested_conversion_factor):'';
+    const factorRaw=prompt('Quantas UNIDADES de venda existem em 1 '+String(row.purchase_unit||'embalagem')+'? Ex.: caixa com 24 unidades = 24.',suggested);
     if(factorRaw===null)return;
     const factor=Number(String(factorRaw).replace(',','.'));
-    if(!Number.isFinite(factor)||factor<1){toast('Fator inválido');return}
-    const base=prompt('Unidade final de venda (ex.: UN, PCT, KG, L):',row.base_unit||'UN');
-    if(base===null)return;
+    if(!Number.isFinite(factor)||factor<=1){toast('Para caixa/fardo/pacote, o fator deve ser maior que 1');return}
     try{
-      await purchaseApi('set_conversion',{item_id:id,conversion_factor:factor,base_unit:base});
-      toast('Conversão salva');
-      await loadPurchases();
+      await purchaseApi('set_conversion',{item_id:id,conversion_factor:factor,base_unit:'UN'});
+      toast('Conversão para UN salva. Revise custo e preço na nota.');
+      const docId=row.document_id;
+      if(docId){state.purchaseDetailCache[docId]=await purchaseApi('document',{id:docId});state.purchaseExpandedId=docId}
+      state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+      paintPurchases();
     }catch(e){toast(errorMessage(e.message))}
   }
 
