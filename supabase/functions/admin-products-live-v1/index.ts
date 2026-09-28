@@ -131,9 +131,9 @@ async function syncConfirmedOrderToBling(oid:string,operator="Operação"){
     try{
       const revision=String(gate.order?.updated_at||gate.order?.created_at||"").replace(/[^0-9]/g,"").slice(0,18)||"r1";
       const retry=await hub("enqueue_job",{
-        domain:"order",operation:"sync_order",source_id:oid,
-        idempotency_key:"ops2:live-order-retry:"+oid+":"+revision,
-        payload:snap
+        domain:"order",operation:"sync_order_status",source_id:oid,
+        idempotency_key:"ops2:live-order-state-retry:"+oid+":"+revision,
+        payload:{...snap,source_order_id:oid,local_status:"confirmed",target_key:"approved_separation",queue_reason:"approved_early_order_retry"}
       });
       retryQueued=!retry.error&&retry.data?.queued!==false;
       retryJobId=retry.data?.job_id||null;
