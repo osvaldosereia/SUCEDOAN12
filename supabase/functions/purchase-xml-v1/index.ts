@@ -378,11 +378,12 @@ async function purchaseXmlPreviewLatest(){
   return {ok:true,readonly:true,company_document_resolved:company.doc.length===14,documents:out};
 }
 
-async function runBlingSync(source="bling_daily"){
+async function runBlingSync(source="bling_daily",lookbackOverride:any=null){
   const token=await oauth(),settings=await sb.from("purchase_xml_settings").select("*").eq("id",1).single();if(settings.error)throw settings.error;
   await companyDocument(token);
   const run=await sb.from("purchase_xml_import_runs").insert({source,status:"running"}).select("id").single();if(run.error)throw run.error;
-  const id=run.data.id,look=Math.max(1,Math.min(31,Number(settings.data.daily_lookback_days||3))),start=cuiabaDate(-(look-1)),end=cuiabaDate(0);
+  const requestedLookback=Number(lookbackOverride),configuredLookback=Number(settings.data.daily_lookback_days||3),look=Math.max(1,Math.min(90,Number.isFinite(requestedLookback)&&requestedLookback>0?requestedLookback:configuredLookback));
+  const id=run.data.id,start=cuiabaDate(-(look-1)),end=cuiabaDate(0);
   let seen=0,processed=0,dup=0,failed=0,items=0,matched=0,review=0;
   try{
     for(let page=1;page<=20;page++){
@@ -408,7 +409,7 @@ async function runBlingSync(source="bling_daily"){
     }
     const status=failed||review?"completed_with_review":"completed";
     await sb.from("purchase_xml_import_runs").update({status,finished_at:new Date().toISOString(),documents_seen:seen,documents_processed:processed,documents_duplicate:dup,documents_failed:failed,items_seen:items,items_matched:matched,items_review:review,metadata:{start,end},updated_at:new Date().toISOString()}).eq("id",id);
-    return {ok:true,run_id:id,status,window:{start,end},documents_seen:seen,processed,duplicates:dup,failed,items,matched,review};
+    return {ok:true,run_id:id,status,window:{start,end},lookback_days:look,source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,documents_seen:seen,processed,duplicates:dup,failed,items,matched,review};
   }catch(e){
     await sb.from("purchase_xml_import_runs").update({status:"failed",finished_at:new Date().toISOString(),documents_seen:seen,documents_processed:processed,documents_duplicate:dup,documents_failed:failed+1,items_seen:items,items_matched:matched,items_review:review,metadata:{start,end,error:clean((e as Error)?.message||e,500)},updated_at:new Date().toISOString()}).eq("id",id);
     throw e;
@@ -442,7 +443,7 @@ async function summary(){
     sb.from("purchase_xml_settings").select("*").eq("id",1).single()
   ]);
   if(docs.error)throw docs.error;if(runs.error)throw runs.error;if(items.error)throw items.error;if(settings.error)throw settings.error;
-  return {ok:true,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data};
+  return {ok:true,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data,integration:{bling_manual_lookback_days:90,daily_lookback_days:Number(settings.data?.daily_lookback_days||3),source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,received_notes_url:"https://www.bling.com.br/notas.entrada.php#list",manifestation_automated:false,stock_receipt_requires_human_confirmation:true}};
 }
 async function docDetail(id:string){
   const [d,it]=await Promise.all([sb.from("purchase_xml_documents").select("*").eq("id",id).maybeSingle(),sb.from("purchase_xml_items").select("*,products(id,name,gtin,bling_product_id,cost,stock,unit,is_active)").eq("document_id",id).order("item_number")]);
@@ -478,7 +479,7 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="probe")return js(req,await purchaseXmlProbe());
     if(action==="preview_latest"){const r=await purchaseXmlPreviewLatest();return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="daily_sync"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await runBlingSync("bling_daily"))}
-    if(action==="bling_sync")return js(req,await runBlingSync("bling_manual"));
+    if(action==="bling_sync")return js(req,await runBlingSync("bling_manual",90));
     if(action==="manual_import"){const r=await manualImport(body?.files);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="summary")return js(req,await summary());
     if(action==="document"){const r=await docDetail(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
