@@ -1900,3 +1900,31 @@ Commits:
 - `63c48a81` — simplificação da tela;
 - `ba8a5efa` — saneamento inicial de runs;
 - `07a7feec` — correção final do saneamento seguro.
+
+
+## Compras do Bling — correção de processamento interrompido — 2026-09-28
+
+Durante a revisão final da UX foi encontrada 1 NF-e que tinha:
+- financeiro já confirmado no Bling;
+- 4 itens gravados no Admin, todos corretamente em revisão de conversão;
+- documento ainda marcado como `processing` porque uma execução anterior foi interrompida antes do fechamento do status.
+
+Correção:
+- o saneamento de execuções abandonadas agora também recompõe documentos presos em `processing` há mais de 5 minutos;
+- o status é reconstruído pelos itens já gravados, sem refazer financeiro, preço ou estoque;
+- documento sem itens vira `failed`;
+- documento com itens pendentes vira `review_required`;
+- documento totalmente resolvido vira `processed/ready`.
+
+Validação real:
+- NF-e de IRMAOS DOMINGOS LTDA, R$ 2.376,50, foi corrigida de `processing` para `review_required`;
+- 4/4 itens preservados e marcados para revisão;
+- financeiro permaneceu `posted`;
+- estoque permaneceu sem entrada automática;
+- 0 execuções de importação permanecem em `running`;
+- JavaScript atual do Admin passou novamente na validação sintática.
+
+Deploy:
+- backend commit `d14c8742`;
+- ajuste visual do aviso `cd8f885a`;
+- Edge `admin-service-intelligence-v1` **v188 ACTIVE**.
