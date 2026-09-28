@@ -832,3 +832,73 @@ Deploys/commits:
 - worker interno versionado: `7d5396b5`, Edge `shopping-room-reset-v1` v3 ACTIVE.
 
 Nenhum pedido real, NF-e, pagamento ou estoque real foi alterado durante os testes desta R3.
+
+
+## 2026-09-28 — R4: fiscal operacional NF-e / DANFE
+Estado: **PROGRAMÁVEL FECHADO / EMISSÃO REAL NÃO EXECUTADA**.
+
+### Hardening aplicado
+- novo preflight `ops2_fiscal_dispatch_preflight_v1(order_id)`;
+- emissão só pode ser armada se:
+  - pedido = `ready`;
+  - vínculo Bling = `matched`;
+  - pedido pós-cutover estiver comprovadamente `Verificado` no Bling;
+  - soma das linhas = `fiscal_subtotal`;
+  - `fiscal_subtotal + other_expenses - discount = total`;
+  - despesas/descontos não forem negativos;
+- trigger em `fiscal_runtime_config` impede armar canário/generação/autorização quando o preflight falha;
+- diferença de cesta permanece representada por `other_expenses`, sem criar item fiscal falso.
+
+### Pagamento
+- rota legada `order_fiscal_confirm_payment` foi desativada no Admin;
+- pagamento real continua vindo do settlement da entrega;
+- evita reintroduzir o antigo ciclo impossível “entrega -> confirmar pagamento -> emitir NF-e” quando a expedição exige NF-e antes da saída.
+
+### Jobs / retry / SEFAZ
+- job `authorized` agora exige:
+  - invoice id;
+  - chave de acesso com 44 dígitos;
+  - status SEFAZ preenchido;
+- write attempts continuam limitados a 1;
+- retry após POST irreversível continua **reconcile-only**, nunca repetição cega;
+- health RPC `get_ops2_fiscal_dispatch_health_v1` adicionada para detectar `generating/authorizing` presos, review/error e documentos autorizados inválidos.
+
+### Estado observado
+- 2 jobs históricos autorizados;
+- 2/2 com chave de 44 dígitos;
+- 0 review_required;
+- 0 error;
+- 0 generating stale;
+- 0 authorizing stale;
+- 0 authorized_invalid_document.
+
+### Canário pós-cutover
+Pedido `DA-260928-D6432EB3`:
+- total produtos/fiscal: R$ 171,28;
+- outras despesas: R$ 3,91;
+- total canônico: R$ 175,19;
+- recomposição fecha exatamente;
+- preflight ainda bloqueia corretamente por:
+  - `order_not_ready`;
+  - `bling_order_not_verified`.
+
+### Testes
+- tentativa transacional de armar emissão para o canário foi bloqueada;
+- runtime permaneceu com geração/autorização/canário OFF;
+- job sintético `authorized` com chave inválida foi recusado;
+- rollback completo, 0 resíduos;
+- advisors sem novo bloqueador; permanecem achados históricos já conhecidos.
+
+### Runtime
+- `admin-products-live-v1` v59 ACTIVE;
+- emissão automática continua OFF;
+- gate de expedição permanece `enforce`;
+- autorização fiscal continua obrigatória antes da expedição.
+
+### Commits
+- `c2d48375` + fix `b8c3520d`: preflight fiscal e guard do runtime;
+- `fbeceb98`: desativa confirmação fiscal antiga de pagamento;
+- `4445de84`: integridade de job fiscal e health;
+- `2099fc20`: Admin mostra bloqueios do preflight antes de emitir.
+
+Nenhuma NF-e nova foi gerada, enviada ou autorizada nesta R4.
