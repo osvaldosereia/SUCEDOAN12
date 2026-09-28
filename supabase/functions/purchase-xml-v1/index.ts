@@ -262,6 +262,43 @@ async function paymentSettlementPreview(documentId:string){
   const payload={data:paymentDate,usarDataVencimento:false,portador:{id:accountId},historico:"Baixa de compra conforme pagamento informado na NF-e "+clean(meta.invoice_number,40),juros:0,desconto:0,acrescimo:0,valorRecebido:Math.round(saldo*100)/100};
   return {ok:true,ready:true,write_external:false,document_id:documentId,payable_id:payableIds[0],payment_method:methods[0]||null,guidance,financial_account:{id:accountId,description:mapping.description||null},payable:{situation,saldo,vencimento:p?.vencimento||null,valor:Number(p?.valor||0)},preview:payload};
 }
+async function executePaymentSettlement(documentId:string,userId:string|null){
+  const preview=await paymentSettlementPreview(documentId);
+  if(!preview.ok)return preview;
+  if(!preview.ready)return {ok:false,status:409,error:"settlement_not_ready",preview};
+  const token=await oauth(),payableId=Number(preview.payable_id||0);
+  const check=await bg(token,"/contas/pagar/"+payableId);
+  if(!check.ok)return {ok:false,status:check.status,error:"payable_recheck_http_"+check.status};
+  const before:any=check.data?.data||{},situation=Number(before?.situacao||0),saldo=Number(before?.saldo??before?.valor??0);
+  if(situation===2||saldo<=0.005){
+    const dq=await sb.from("purchase_xml_documents").select("metadata").eq("id",documentId).maybeSingle();
+    if(!dq.error&&dq.data){
+      const meta={...obj(dq.data.metadata),settlement:{status:"already_settled",verified:true,payable_id:payableId,checked_at:new Date().toISOString()}};
+      await sb.from("purchase_xml_documents").update({metadata:meta,updated_at:new Date().toISOString()}).eq("id",documentId);
+    }
+    return {ok:true,already_settled:true,verified:true,payable_id:payableId};
+  }
+  if(Math.abs(Number(preview.preview?.valorRecebido||0)-saldo)>0.05)return {ok:false,status:409,error:"payable_balance_changed",expected:preview.preview?.valorRecebido,current_balance:saldo};
+  const w=await bw(token,"/contas/pagar/"+payableId+"/baixar","POST",preview.preview);
+  if(!w.ok)return {ok:false,status:w.status,error:"payable_settlement_http_"+w.status,detail:w.error};
+  await sleep(350);
+  const after=await bg(token,"/contas/pagar/"+payableId);
+  const ad:any=after.ok?(after.data?.data||{}):{},afterSituation=Number(ad?.situacao||0),afterSaldo=Number(ad?.saldo??0);
+  const verified=after.ok&&(afterSituation===2||afterSaldo<=0.005),now=new Date().toISOString();
+  const dq=await sb.from("purchase_xml_documents").select("metadata").eq("id",documentId).maybeSingle();
+  if(dq.error)throw dq.error;
+  const meta={...obj(dq.data?.metadata),settlement:{
+    status:verified?"settled":"submitted_unverified",
+    verified,payable_id:payableId,bordero_id:Number(w.data?.bordero?.id||0)||null,
+    financial_account:preview.financial_account,payment_method:preview.payment_method,
+    amount:Number(preview.preview?.valorRecebido||0),payment_date:preview.preview?.data||null,
+    submitted_at:now,verified_at:verified?now:null,user_id:userId
+  }};
+  const u=await sb.from("purchase_xml_documents").update({metadata:meta,updated_at:now}).eq("id",documentId);
+  if(u.error)throw u.error;
+  await sb.from("bling_hub_audit_v2").insert({event_type:"purchase_payable_settled",severity:verified?"info":"warning",domain:"finance",source_system:"vitrine_admin",source_id:documentId,details:{payable_id:payableId,bordero_id:Number(w.data?.bordero?.id||0)||null,financial_account:preview.financial_account,payment_method:preview.payment_method,amount:preview.preview?.valorRecebido,payment_date:preview.preview?.data,verified,user_id:userId}});
+  return {ok:true,verified,payable_id:payableId,bordero_id:Number(w.data?.bordero?.id||0)||null,after:{situation:afterSituation,saldo:afterSaldo},financial_account:preview.financial_account,amount:preview.preview?.valorRecebido,payment_date:preview.preview?.data};
+}
 async function companyDocument(token:string){
   const st=await sb.from("purchase_xml_settings").select("*").eq("id",1).single();
   if(st.error)throw st.error;
@@ -1001,6 +1038,12 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     }
     if(action==="payment_settlement_preview"){
       const r=await paymentSettlementPreview(clean(body?.document_id||body?.id,80));return js(req,r,r.ok?200:Number(r.status||400));
+    }
+    if(action==="payment_settlement_execute"){
+      if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
+      if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      if(clean(body?.confirmation,80)!=="CONFIRMAR_BAIXA")return js(req,{ok:false,error:"confirmation_required"},409);
+      const r=await executePaymentSettlement(clean(body?.document_id||body?.id,80),a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400));
     }
     if(action==="document"){const r=await docDetail(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="xml_url"){const r=await signedXml(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
