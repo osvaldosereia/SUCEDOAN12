@@ -21,7 +21,7 @@ Checkpoint detalhado:
 - Supabase: `ssbesxgaijknwsjbsbcz`.
 - Site: `storefront-v2` ativo.
 - Admin operacional: `admin-products-live-v1` v53 ACTIVE.
-- Backend/integrações: `admin-service-intelligence-v1` v197 ACTIVE.
+- Backend/integrações: `admin-service-intelligence-v1` v198 ACTIVE.
 - Bling Hub: `mode=live`, `hub_enabled=true`.
 - Make: fora da arquitetura operacional.
 
@@ -118,6 +118,10 @@ O primeiro ciclo revelou ausência de transição direta `Em aberto -> Aprovado 
 
 Checkpoint detalhado:
 - `R2-FIRST-LIVE-ORDER-2026-09-28.md`.
+
+Hardening pós-EAN:
+- NF-e de pedido pós-corte exige prova do alvo remoto `Verificado` antes de liberar emissão;
+- separação exige prova de `Aprovado / Separar` no Bling.
 
 ## Worker / cron
 
