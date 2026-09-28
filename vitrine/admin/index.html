@@ -2682,7 +2682,7 @@
       input.value=String(input.value||'').replace(/\D+/g,'').slice(0,30);
       clearTimeout(gondolaScanTimer);
       const digits=input.value.length;
-      if([8,12,13,14].includes(digits))gondolaScanTimer=setTimeout(()=>submitGondolaScannerValue(input.value),220);
+      if(digits>=4)gondolaScanTimer=setTimeout(()=>submitGondolaScannerValue(input.value),700);
     };
     input.onpaste=()=>setTimeout(()=>{const digits=String(input.value||'').replace(/\D+/g,'');if(digits.length>=4)submitGondolaScannerValue(digits)},0);
     input.onblur=()=>{const digits=String(input.value||'').replace(/\D+/g,'');if(digits.length>=4)setTimeout(()=>submitGondolaScannerValue(digits),0)};
