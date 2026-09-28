@@ -1614,8 +1614,9 @@ async function blingHubOps2StockMirrorBackfillBatch(sb:any,afterRaw:any,limitRaw
     .eq("id",1)
     .maybeSingle();
   if(runtime.error)throw runtime.error;
-  if(runtime.data?.mode!=="homologation")return {ok:false,error:"homologation_required",status:409};
-  if(runtime.data?.hub_enabled===true||runtime.data?.webhooks_enabled===true){
+  const mirrorRefreshMode=String(runtime.data?.mode||"");
+  if(!["homologation","live"].includes(mirrorRefreshMode))return {ok:false,error:"hub_mode_not_ready",status:409};
+  if(mirrorRefreshMode==="homologation"&&(runtime.data?.hub_enabled===true||runtime.data?.webhooks_enabled===true)){
     return {ok:false,error:"safe_mode_required",status:409};
   }
 
