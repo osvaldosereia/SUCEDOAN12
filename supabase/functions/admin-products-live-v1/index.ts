@@ -343,10 +343,34 @@ async function confirmDeliveryReturn(p:any,auth:any){
   return {delivery_return:q.data};
 }
 
+async function reverseDeliveryReturnStockIfNeeded(caseId:string){
+  const authority=await stockAuthority();
+  if(authority!=="bling")return {ok:true,skipped:true,reason:"legacy_stock_authority"};
+  const rc=await db.from("order_delivery_return_cases").select("order_id,status").eq("id",caseId).maybeSingle();
+  if(rc.error)throw rc.error;
+  if(!rc.data?.order_id)return {ok:false,error:"delivery_return_case_not_found",status:404};
+  if(rc.data.status!=="returned_review")return {ok:false,error:"delivery_return_not_in_review",status:409};
+  const snap=await buildSnapshot(rc.data.order_id,"delivery_return_cancel_intact");
+  const res=await fetch(U+"/functions/v1/shopping-room-reset-v1",{
+    method:"POST",
+    headers:{Authorization:"Bearer "+K,"Content-Type":"application/json"},
+    body:JSON.stringify({source_order_id:rc.data.order_id,items:snap?.items||[]}),
+    signal:AbortSignal.timeout(30000)
+  });
+  const raw=await res.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+  if(!res.ok||data?.ok!==true)return {ok:false,error:String(data?.error||"physical_stock_reverse_failed"),status:res.status||409,detail:data};
+  return {ok:true,...data};
+}
+
 async function resolveDeliveryReturnReview(p:any,auth:any){
   if(!["owner","supervisor"].includes(String(auth?.role||"")))return {error:"supervisor_required",status:403};
   const cid=id(p?.case_id);if(!cid)return {error:"invalid_delivery_return_case",status:400};
   const action=tx(p?.resolution_action,40).toLowerCase();
+  let stock_reverse:any=null;
+  if(action==="cancel_intact"){
+    stock_reverse=await reverseDeliveryReturnStockIfNeeded(cid);
+    if(stock_reverse?.ok!==true)return {error:stock_reverse?.error||"physical_stock_reverse_failed",status:stock_reverse?.status||409,stock_reverse};
+  }
   const q=await db.rpc("ops_resolve_delivery_return_review_v1",{p_case_id:cid,p_action:action,p_operator_label:tx(p?.operator,80)||"Supervisão"});
   if(q.error){
     const m=String(q.error.message||"");
@@ -354,10 +378,11 @@ async function resolveDeliveryReturnReview(p:any,auth:any){
     if(m.includes("delivery_return_not_in_review"))return {error:"delivery_return_not_in_review",status:409};
     if(m.includes("invalid_return_review_action"))return {error:"invalid_return_review_action",status:400};
     if(m.includes("return_has_captured_payment"))return {error:"return_has_captured_payment",status:409};
+    if(m.includes("bling_physical_stock_reverse_required_before_cancel"))return {error:"physical_stock_reverse_required",status:409};
     if(m.includes("stock_restore_failed"))return {error:"stock_restore_failed",status:409};
     throw q.error;
   }
-  return {resolution:q.data};
+  return {resolution:q.data,stock_reverse};
 }
 
 async function captureDeliveryPayment(p:any,auth:any){
