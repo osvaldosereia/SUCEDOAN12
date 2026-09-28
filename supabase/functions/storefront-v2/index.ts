@@ -109,8 +109,15 @@ async function submit(req:Request,p:any){
   const del=delivery(),created=await db.rpc("create_canonical_cart_order_v2",{p_source:"vitrine",p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:p?.customer_snapshot||{},p_delivery:del});
   if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS}}
   const orderId=created.data?.order_id;
-  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:created.data?.customer_id?"registered":"new",payment_method:pay||null,reservation_on_confirmation:true,stock_reserved:false},"order-received:"+orderId);
-  return {...created.data,phone_attached:true,customer_status:created.data?.customer_id?"registered":"new",minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,history_synced:true,stock_reserved:false,reservation_timing:"on_confirmation"};
+  let papoaiLink:any=null;
+  if(orderId){
+    try{
+      const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});
+      if(!linked.error)papoaiLink=linked.data||null;
+    }catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}
+  }
+  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:created.data?.customer_id?"registered":"new",payment_method:pay||null,reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked)},"order-received:"+orderId);
+  return {...created.data,phone_attached:true,customer_status:created.data?.customer_id?"registered":"new",minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,history_synced:true,stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)};
 }
 async function lookupCustomer(v:any){const ph=phone(v);if(!ph)return {ok:true,found:false};let q=await db.from("customers").select("id,name").eq("primary_whatsapp_e164",ph).limit(1).maybeSingle();if(q.error)throw q.error;if(!q.data){const i=await db.from("customer_phones").select("customer_id").eq("phone_e164",ph).order("is_primary",{ascending:false}).limit(1).maybeSingle();if(i.error)throw i.error;if(i.data?.customer_id)q=await db.from("customers").select("id,name").eq("id",i.data.customer_id).maybeSingle()}return {ok:true,found:Boolean(q.data),first_name:q.data?.name?txt(q.data.name,120).split(/\s+/)[0]:null}}
 
@@ -118,7 +125,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:16},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:18},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home")return json(req,await home(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
