@@ -1616,3 +1616,42 @@ Concluir os 61 delta 1 restantes em blocos controlados com health gate. Se o gru
 
 ### Próximo passo exato — R7/20
 Atualizar de forma estreita o executor interno da Edge para reconhecer explicitamente canário delta2 armado pelo novo gate, mantendo <=5, live-stock guard, binding exato, idempotência, read-before/write/read-after e write_canary_limit=1. Publicar/testar sem write; depois executar primeiro canário real delta2 de 5. Expandir somente após PASS.
+
+
+## Esteira ampla — R7/12 — checkpoint 2026-09-27 — EM PROGRESSO SEGURO
+R7 iniciou imediatamente por autorização do usuário. Escopo amplo Bling + catálogo.
+
+### Delta 2 habilitado fail-closed
+- código commit 3185098: executor aceita faixa delta2 somente para canário previamente armado; delta1 preservado;
+- Edge admin-service-intelligence-v1 publicada v161 ACTIVE com pacote completo e verify_jwt=false preservado por autenticação interna existente;
+- teste negativo: canário prepared não armado retornou 409 canary_not_armed / external_write=false;
+- primeiro canário delta2 real: 5/5 synced e verified.
+
+### Expansão e circuit breaker
+- segundo lote adicional 5/5 PASS;
+- terceiro lote: 4 synced/verified e 1 ficou processing; expansão interrompida automaticamente;
+- Hub desligado antes da recuperação;
+- após lease, preview readonly do produto 155b08fc-614c-4056-9504-17f5641155ff confirmou Bling=10, target=8, portanto write não havia sido aplicado;
+- o MESMO job e4284dd1-55ac-43c2-9e76-fb377a8d90e1 foi liberado para retry, sem criar duplicata;
+- após allowlist temporária e processamento, mesmo job synced/verified, previous_stock=10, stock=8;
+- canário completo reconciliado 5/5.
+
+### Recovery automatizado
+- commit d285920: novo subaction interno ops2_recover_stock_job;
+- Edge publicada v162 ACTIVE;
+- recovery só aceita stock/set_stock processing stale (>95s) ou retry;
+- valida live Supabase stock, binding exato e faz leitura readonly do Bling;
+- se remoto já estiver no target, finaliza synced sem write;
+- se remoto ainda divergir, libera o mesmo job para retry; não cria novo job;
+- teste fail-closed contra job já synced: 409 job_not_recoverable / external_write=false.
+
+### Estado neste checkpoint
+- 185 stock_update confirmed;
+- 354 stock_update planned;
+- delta2 restante 106;
+- drift dos 185 confirmados vs Supabase atual = 0;
+- hub_enabled=false, mode=homologation, write_canary_limit=1;
+- sem cutover global, sem Make, sem alteração de pedidos legados.
+
+### Continuação R7
+Continuar delta2 em blocos controlados usando recovery novo quando necessário. Depois avançar divergências maiores por bandas separadas; só então preço/cadastro/saneamento Bling, sem misturar writes de preço e estoque.
