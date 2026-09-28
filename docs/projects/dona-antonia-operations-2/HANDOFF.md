@@ -2219,3 +2219,51 @@ Conclusão desta revalidação:
 Próximo gate exato:
 `confirmed/Aprovado-Separar -> iniciar separação real -> bipagem EAN real -> ready/Verificado`.
 Depois desse gate, validar fiscal/baixa física/entrega no mesmo pedido real.
+
+
+## R3 — fechamento programável sem etapa física — 2026-09-28
+
+O usuário optou por adiar separação/EAN e demais provas físicas da R2. A R3 avançou somente em lógica segura, sem simular operação real.
+
+### Estado
+Fluxo protegido:
+`out_for_delivery -> falha -> returning -> retorno físico -> redelivery OU returned_review`.
+
+Reentrega:
+- volta a `ready`;
+- estoque permanece alocado;
+- não há estorno físico;
+- nova saída reutiliza o controle Bling já `launched`, evitando dupla baixa.
+
+Cancelamento íntegro após retorno:
+- exige ausência de pagamento capturado;
+- sob autoridade Bling, exige estorno físico oficial comprovado antes do cancelamento;
+- DB rejeita `cancel_intact` se `bling_order_stock_controls_v2.state <> 'reversed'`;
+- Admin v57 chama o worker de estorno antes da RPC de resolução;
+- o worker usa claim/finish idempotentes e endpoint Bling `estornar-estoque`;
+- resultado incerto/falha -> `review_required`/atenção crítica; não repetir automaticamente;
+- após reversão comprovada, o pedido pode ser cancelado comercialmente e abre atenção fiscal para tratar eventual NF-e de retorno/devolução sem apagar a venda original.
+
+Avaria/falta:
+- não usa cancelamento íntegro;
+- permanece em revisão;
+- tratar via Estoque Mobile/incidente, sem restaurar pedido inteiro.
+
+### Teste
+Teste sintético em transação confirmou que cancelamento sem reversão Bling é bloqueado. Rollback: 0 resíduos.
+
+### Runtime
+- `admin-products-live-v1`: v57 ACTIVE;
+- worker interno temporário `shopping-room-reset-v1`: v3 ACTIVE;
+- stock authority: Bling.
+
+### Commits
+- `483e4834` — guard DB da reversão;
+- `38b486c1` — Admin exige reversão antes do cancelamento;
+- `7d5396b5` — worker interno de estorno versionado.
+
+### Limitação conhecida
+O projeto atingiu o limite de Edge Functions. Em vez de aumentar custo, foi reaproveitado um Edge legado sem referências para o worker R3. Consolidar/renomear durante o cleanup técnico.
+
+### Próximo passo
+R3 programável pode ser considerada fechada sem executar etapa física agora. Próxima rodada do plano: **R4 — fiscal operacional NF-e/DANFE**, reforçando gate de expedição, autorização SEFAZ, DANFE, erros/retry, vínculo pedido/NF, pagamento efetivo e representação de cesta/diferença, mantendo emissão automática OFF até homologação.
