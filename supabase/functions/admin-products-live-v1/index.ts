@@ -883,12 +883,12 @@ async function inventorySheetQueryProducts(filters:any){
   const qv=tx(filters?.q,100).replace(/[,()%]/g," ");
   const category=tx(filters?.category,120),subcategory=tx(filters?.subcategory,120),active=String(filters?.active??"true");
   for(let offset=0;offset<5000;offset+=1000){
-    let q=db.from("products").select("id,name,gtin,image_url,validity_date,is_active,sales_category,subcategory").order("name").range(offset,offset+999);
+    let q=db.from("products").select("id,name,sku,gtin,image_url,validity_date,is_active,sales_category,subcategory").order("name").range(offset,offset+999);
     if(category)q=q.eq("sales_category",category);
     if(subcategory)q=q.eq("subcategory",subcategory);
     if(active==="true")q=q.eq("is_active",true);
     if(active==="false")q=q.eq("is_active",false);
-    if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%");
+    if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
     const r=await q;if(r.error)throw r.error;
     rows.push(...(r.data||[]));if((r.data||[]).length<1000)break;
   }
@@ -1149,7 +1149,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:42,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:43,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
