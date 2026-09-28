@@ -2317,3 +2317,29 @@ Commit:
 - `13ec5c66`.
 
 Próxima rodada: **R6 — lotes/validade/FEFO/ofertas**, revisando a regra atual 10%/20%/40%, produto vencido, saldo por lote e evitando desativar produto inteiro quando existir outro lote vendável.
+
+
+## R6 — fechamento programável — 2026-09-28
+
+R6 concluída com adoção gradual e sem conversão automática dos produtos atuais.
+
+Estado:
+- novo modelo de lotes pronto;
+- FEFO pronto;
+- ofertas 40/20/10 validadas nas bordas;
+- produto não desativa se houver outro lote vendável;
+- tracking completo exige soma dos lotes = estoque físico Bling;
+- Admin v60 ACTIVE;
+- nenhum lote real criado nesta rodada.
+
+Fluxo futuro por produto:
+`cadastrar/receber lotes -> conferir quantidades -> soma = físico Bling -> marcar lot_tracking_complete -> validade/oferta passa para FEFO`.
+
+Até essa confirmação, cada produto continua usando sua validade atual de forma compatível.
+
+Commits:
+- `00f5414d`;
+- `6e34c20e`;
+- `8bfe6ced`.
+
+Próxima rodada: **R7 — compras/XML/fornecedores/caixa→unidade**, conectando entrada XML ao cadastro, conversão de embalagem, custo unitário, fornecedor, lotes/validade quando houver evidência, estoque e regras CPF/CNPJ sem duplicidade.
