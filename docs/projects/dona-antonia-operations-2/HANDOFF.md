@@ -2343,3 +2343,37 @@ Commits:
 - `8bfe6ced`.
 
 Próxima rodada: **R7 — compras/XML/fornecedores/caixa→unidade**, conectando entrada XML ao cadastro, conversão de embalagem, custo unitário, fornecedor, lotes/validade quando houver evidência, estoque e regras CPF/CNPJ sem duplicidade.
+
+
+## Balanço A4 por foto — 2026-09-28
+
+Nova operação implantada no Vitrine/Admin:
+- Produtos → **Imprimir balanço A4** cria um lote rastreável;
+- impressão em **A4 vertical**, 5 colunas × 4 linhas, até 20 produtos por página;
+- cada página traz lote `BAL-...`, página X/Y e cada card traz `REF`, foto, nome, EAN, validade, caixas 0–10 e campo largo para quantidade acima de 10;
+- a foto enviada deve mostrar **a folha A4 inteira**;
+- Balanço → **Fotografar folha A4 inteira** envia a página à OpenAI Vision;
+- a leitura cruza lote + página + posição + REF + EAN;
+- leituras confiáveis ficam prontas; qualquer ambiguidade exige confirmação humana;
+- alteração manual de uma quantidade lida pela IA também exige confirmação explícita;
+- aplicação ocorre em blocos de no máximo 5 itens, registra `ops_record_inventory_count_v1` e, como Bling é a autoridade de estoque, enfileira `set_stock` no Hub;
+- o worker lê o saldo do depósito, grava o saldo contado no Bling, relê e só considera concluído quando o valor remoto confere;
+- retry é idempotente: a mesma contagem e o mesmo job são reaproveitados após falha/conexão interrompida.
+
+Persistência:
+- `inventory_sheet_batches`;
+- `inventory_sheet_items`;
+- `inventory_sheet_page_scans`;
+- `inventory_sheet_item_results`.
+
+Backend:
+- `admin-products-live-v1` v63 ACTIVE;
+- ações `inventory_sheet_create`, `inventory_sheet_analyze`, `inventory_sheet_apply`;
+- não foi criada nova Edge Function porque o projeto atingiu o limite de funções; o módulo foi incorporado ao gateway canônico existente, sem upgrade de plano.
+
+Validação pendente exclusivamente física:
+1. imprimir uma página real;
+2. marcar contagens;
+3. fotografar a folha inteira;
+4. conferir a leitura no Admin;
+5. aplicar uma página real e confirmar os saldos resultantes no Bling.
