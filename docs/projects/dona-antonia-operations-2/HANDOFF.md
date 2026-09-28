@@ -1928,3 +1928,52 @@ Deploy:
 - backend commit `d14c8742`;
 - ajuste visual do aviso `cd8f885a`;
 - Edge `admin-service-intelligence-v1` **v188 ACTIVE**.
+
+
+## Compras do Bling — simplificação da nota expandida — 2026-09-28
+
+A revisão visual da NF-e aberta foi simplificada para uso operacional.
+
+### Financeiro
+- os dois botões **Reconciliar com Bling** e **Tentar lançamento novamente** foram substituídos por **Resolver financeiro**;
+- o botão primeiro faz conciliação somente leitura;
+- se o financeiro já existir, apenas confirma;
+- se não existir e for seguro lançar, pede confirmação antes da escrita;
+- divergências de parcela, fornecedor ou dados incompletos continuam bloqueando a escrita;
+- erros técnicos não ficam mais expostos como código cru na tela;
+- `installment_total_mismatch` passa a mostrar **Total da NF-e**, **Total das parcelas** e **Diferença** em linguagem humana;
+- detalhes como ID da NF-e/tentativas foram movidos para uma seção técnica recolhida.
+
+### Produtos e preços
+- ordem da nota expandida: **Produtos e preços → Financeiro → Entrada no estoque**;
+- texto principal mudou para **Confira antes de atualizar o produto**;
+- a margem de 40% passou a ser tratada como **mínimo sugerido**, não como ordem para reduzir preço;
+- quando o preço atual já é maior que o mínimo de 40%, o campo abre com o **preço atual** e a opção **Atualizar preço de venda** fica desmarcada;
+- só há alteração do preço se o operador marcar conscientemente a atualização;
+- mudar a conversão recalcula custo/margem, mas continua preservando preço atual quando ele já estiver acima do mínimo.
+
+### Estoque
+- removido o botão duplicado **Dar entrada** da linha recolhida;
+- entrada de estoque aparece somente dentro da nota aberta, depois da revisão de produtos e do financeiro;
+- nenhuma dessas alterações dá entrada automática no estoque.
+
+### Teste com a NF-e mostrada pelo operador
+NF-e Bling `26980521526`:
+- total da NF-e: **R$ 249,00**;
+- parcela informada: **R$ 250,00**;
+- diferença: **R$ 1,00**;
+- financeiro permanece bloqueado para escrita até correção da divergência;
+- produto Macarrão Espaguete com Ovos QDelícia 500 g: 5 CX × 20 = 100 UN;
+- custo unitário: **R$ 2,49**;
+- mínimo sugerido de 40%: **R$ 3,49**;
+- preço atual: **R$ 3,69**;
+- novo comportamento validado: campo mantém **R$ 3,69** e atualização de preço fica desmarcada.
+
+Validação técnica:
+- JavaScript inline do Admin: sintaxe OK;
+- sem botões antigos `data-purchase-finance-reconcile` / `data-purchase-finance-post`;
+- sem botão de entrada de estoque duplicado na linha recolhida.
+
+Commits:
+- `fa5b3dcb` — simplificação da nota expandida;
+- `d4cc2cd2` — rótulos financeiros em linguagem humana.
