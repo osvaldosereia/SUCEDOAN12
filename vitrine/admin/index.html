@@ -2670,6 +2670,42 @@
     const cls=v==='posted'?'':v==='blocked_personal'?'off':v==='review'||v==='pending_company_match'?'warn':'';
     return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
   }
+  function purchaseFinanceReasonLabel(v){
+    const map={
+      reconciled_existing:'Contas já encontradas no Bling',
+      native_nfe_accounts_launched:'Contas lançadas pela própria NF-e',
+      native_launch_error_but_reconciled:'Bling respondeu com alerta, mas as contas foram encontradas',
+      payables_missing_or_ambiguous:'Contas ausentes ou ambíguas no Bling',
+      bling_nfe_id_missing_for_native_payables:'NF-e sem ID do Bling para lançamento nativo',
+      supplier_contact_missing:'Fornecedor ainda sem vínculo no Bling',
+      installments_missing:'Parcelas não encontradas no XML',
+      installment_total_mismatch:'Soma das parcelas diferente do total da NF-e',
+      automatic_payables_disabled:'Lançamento automático desativado'
+    };
+    const key=String(v||'');
+    if(/^nfe_lancar_contas_http_/.test(key))return 'Bling recusou o lançamento das contas da NF-e';
+    if(/^payable_reconcile_http_/.test(key))return 'Não foi possível consultar as contas a pagar no Bling';
+    return map[key]||key||'Sem detalhe';
+  }
+  function purchaseFinanceBlockHtml(d){
+    const f=d?.finance_reference||{},accounts=Array.isArray(f.accounts)?f.accounts:[],posted=d?.finance_status==='posted';
+    const attempts=Number(d?.finance_attempt_count||0),last=d?.finance_last_attempt_at?dateTime(d.finance_last_attempt_at):'nenhuma tentativa';
+    const reason=purchaseFinanceReasonLabel(f.reason||d?.finance_last_error);
+    const accountText=accounts.length?accounts.map(a=>'#'+String(a.id||'—')+(a.amount!=null?' · '+purchaseMoney(a.amount):'')).join(' · '):'nenhuma conta vinculada no espelho local';
+    const canPost=d?.recipient_kind==='CNPJ'&&d?.financial_eligible===true&&!posted&&Number(d?.bling_nfe_id||0)>0;
+    return '<div class="purchase-safe '+(!posted&&d?.financial_eligible===true?'purchase-danger':'')+'" style="margin:0 0 12px">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div>'+
+        '<strong>Financeiro da NF-e · '+purchaseFinanceLabel(d?.finance_status)+'</strong>'+
+        '<small>'+esc(reason)+' · '+attempts+' tentativa(s) · última: '+esc(last)+'</small>'+
+        '<small>Bling NF-e #'+esc(d?.bling_nfe_id||'—')+' · '+esc(accountText)+'</small>'+
+      '</div><div class="purchase-detail-actions">'+
+        (d?.recipient_kind==='CNPJ'&&d?.financial_eligible===true?'<button class="secondary" type="button" data-purchase-finance-reconcile="'+esc(d.id)+'">Reconciliar com Bling</button>':'')+
+        (canPost?'<button class="primary" type="button" data-purchase-finance-post="'+esc(d.id)+'">'+(attempts?'Tentar lançamento novamente':'Lançar contas no Bling')+'</button>':'')+
+      '</div></div>'+
+      (d?.finance_last_error?'<small class="warn-text" style="margin-top:7px">Último erro: '+esc(d.finance_last_error)+'</small>':'')+
+      (posted?'<small class="ok-text" style="margin-top:7px">Financeiro confirmado no Bling'+(d.finance_reconciled_at?' · conciliado '+esc(dateTime(d.finance_reconciled_at)):'')+'.</small>':'')+
+    '</div>';
+  }
   function purchaseStatusLabel(v){
     const map={processed:'Processada',review_required:'Revisar',failed:'Falhou',duplicate:'Duplicada',processing:'Processando',pending:'Pendente'};
     const cls=v==='review_required'||v==='failed'?'warn':'';
@@ -2842,6 +2878,7 @@
     host.innerHTML=
       '<div class="purchase-detail-head"><div><h3>Produtos da NF-e</h3><p>'+esc(d.supplier_name||'Fornecedor')+' · '+items.length+' item(ns) · custo sempre calculado na unidade de venda (UN).</p></div>'+
       '<div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-inline-xml="'+esc(id)+'">XML</button>'+(d.receipt_status==='ready'?'<button class="secondary" type="button" data-purchase-inline-receive="'+esc(id)+'">Dar entrada no estoque</button>':'')+'<button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Autorizar itens prontos</button></div></div>'+
+      purchaseFinanceBlockHtml(d)+
       '<div class="purchase-safe '+(d.recipient_kind==='CPF'?'purchase-danger':'')+'"><strong>Cadastro e preço exigem sua autorização</strong><small>O sistema sugere 40% sobre o custo unitário. Caixa, fardo, pacote e display precisam estar convertidos para UN antes da atualização. '+(d.recipient_kind==='CPF'?'Esta nota continua bloqueada para contas a pagar empresariais.':'A entrada de estoque continua sendo uma ação separada.')+'</small></div>'+
       '<div class="purchase-items">'+(items.length?items.map(purchaseItemCardHtml).join(''):'<div class="empty">Nenhum item encontrado na nota.</div>')+'</div>';
     host.querySelectorAll('[data-purchase-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseItemCard(inp.closest('.purchase-item-card'),true));
@@ -2849,6 +2886,8 @@
     const xmlBtn=host.querySelector('[data-purchase-inline-xml]');if(xmlBtn)xmlBtn.onclick=()=>downloadPurchaseXml(id);
     const recv=host.querySelector('[data-purchase-inline-receive]');if(recv)recv.onclick=()=>receivePurchaseDocument(id);
     const bulk=host.querySelector('[data-purchase-approve-ready]');if(bulk)bulk.onclick=()=>approveReadyPurchaseItems(id);
+    const finRec=host.querySelector('[data-purchase-finance-reconcile]');if(finRec)finRec.onclick=()=>reconcilePurchaseFinance(id);
+    const finPost=host.querySelector('[data-purchase-finance-post]');if(finPost)finPost.onclick=()=>postPurchaseFinance(id);
   }
   async function togglePurchaseDocument(id,forceOpen=false){
     if(state.purchaseExpandedId===id&&!forceOpen){
@@ -2873,6 +2912,26 @@
     state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
     state.purchaseExpandedId=id;
     paintPurchases();
+  }
+  async function reconcilePurchaseFinance(id){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');
+    const btn=host?.querySelector('[data-purchase-finance-reconcile]');if(btn){btn.disabled=true;btn.textContent='Reconciliando…'}
+    try{
+      const r=await purchaseApi('finance_reconcile',{document_id:id});
+      toast(r?.finance?.status==='posted'?'Financeiro conciliado com o Bling':'Conciliação concluída: ainda há pendência financeira');
+      await refreshPurchaseAfterApproval(id);
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Reconciliar com Bling'}}
+  }
+  async function postPurchaseFinance(id){
+    if(!confirm('Lançar as contas a pagar desta NF-e usando o lançamento nativo do Bling? O sistema reconcilia primeiro para evitar duplicidade.'))return;
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');
+    const btn=host?.querySelector('[data-purchase-finance-post]');if(btn){btn.disabled=true;btn.textContent='Lançando…'}
+    try{
+      const r=await purchaseApi('finance_post',{document_id:id,confirmation:'CONFIRMAR_CONTAS'});
+      if(r?.finance?.status==='posted')toast('Contas a pagar confirmadas no Bling');
+      else toast('O Bling ainda exige revisão do financeiro desta nota');
+      await refreshPurchaseAfterApproval(id);
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Tentar lançamento novamente'}}
   }
   async function applyPurchaseItemUpdate(itemId,quiet=false){
     const card=document.querySelector('[data-purchase-item="'+CSS.escape(itemId)+'"]');if(!card)return false;
@@ -2925,14 +2984,15 @@
     const host=$('#purchaseBody');if(!host)return;
     const d=state.purchaseXml||{},docs=Array.isArray(d.documents)?d.documents:[],reviews=Array.isArray(d.review_items)?d.review_items:[],runs=Array.isArray(d.runs)?d.runs:[],settings=d.settings||{},integration=d.integration||{};
     const browse=state.purchaseBlingBrowse||{},blingDocs=Array.isArray(browse.documents)?browse.documents:[],window=d.filter||browse.window||{};
-    const cpf=docs.filter(x=>x.recipient_kind==='CPF').length,posted=docs.filter(x=>x.finance_status==='posted').length,ready=docs.filter(x=>x.receipt_status==='ready').length;
+    const cpf=docs.filter(x=>x.recipient_kind==='CPF').length,posted=docs.filter(x=>x.finance_status==='posted').length,financePending=docs.filter(x=>x.financial_eligible===true&&x.finance_status!=='posted').length,ready=docs.filter(x=>x.receipt_status==='ready').length;
     const last=runs[0]||null;
     host.innerHTML=
       '<div class="bling-banner"><strong>Período: '+esc(window.label||purchasePeriodLabel())+'</strong><small>'+(window.start&&window.end?esc(dateOnly(window.start))+' até '+esc(dateOnly(window.end))+' · ':'')+'consulta no Bling em modo somente leitura; importar continua sendo uma ação separada.</small></div>'+
       '<div class="bling-grid">'+
         '<div class="bling-card"><small>No Bling</small><strong>'+blingDocs.length+'</strong><span class="sub">nota(s) no período</span></div>'+
         '<div class="bling-card"><small>No Admin</small><strong>'+docs.length+'</strong><span class="sub">XML(s) já processados</span></div>'+
-        '<div class="bling-card"><small>Financeiro</small><strong>'+posted+'</strong><span class="sub">com contas a pagar registradas</span></div>'+
+        '<div class="bling-card"><small>Financeiro OK</small><strong class="ok-text">'+posted+'</strong><span class="sub">conta(s) conciliadas/lançadas</span></div>'+
+        '<div class="bling-card"><small>Financeiro pendente</small><strong class="'+(financePending?'warn-text':'ok-text')+'">'+financePending+'</strong><span class="sub">NF-e empresariais que exigem atenção</span></div>'+
         '<div class="bling-card"><small>CPF protegido</small><strong>'+cpf+'</strong><span class="sub">sem envio para o financeiro</span></div>'+
         '<div class="bling-card"><small>Prontas para receber</small><strong>'+ready+'</strong><span class="sub">estoque aguarda confirmação</span></div>'+
         '<div class="bling-card"><small>Revisões</small><strong class="'+(reviews.length?'warn-text':'ok-text')+'">'+reviews.length+'</strong><span class="sub">embalagem, vínculo ou preço pendente</span></div>'+
