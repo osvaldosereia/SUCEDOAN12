@@ -1050,3 +1050,118 @@ A automação usa o lote FEFO quando tracking completo e a validade legada quand
 - `8bfe6ced` — reconciliação obrigatória com físico Bling.
 
 Nenhum lote real foi criado e nenhum produto real foi alterado permanentemente nesta R6.
+
+
+## 2026-09-28 — R7: compras / XML / fornecedores / caixa→unidade
+Estado: **PROGRAMÁVEL FECHADO / RECEBIMENTO FÍSICO BLING AINDA HUMANO**.
+
+### Estado auditado
+- 33 XMLs armazenados;
+- 65 itens;
+- 23 documentos `processed`;
+- 10 documentos `review_required`;
+- 11 itens `inferred_xml`;
+- 9 `known`;
+- 14 `not_needed`;
+- 31 itens em revisão;
+- rotina diária ativa às 06:00 Cuiabá, lookback 3 dias;
+- `stock_authority=bling`;
+- 0 recebimentos físicos aplicados por este módulo;
+- 0 violações CPF -> financeiro empresarial.
+
+### Recebimento sob autoridade Bling
+O antigo RPC local já bloqueava soma em `products.stock` sob autoridade Bling. A R7 completou o caminho correto:
+1. XML precisa estar processado e todos os itens resolvidos/conversões aprovadas;
+2. `get_purchase_xml_receipt_preflight_v1`;
+3. `prepare_purchase_stock_receipt_plan_v1` grava baseline físico do Bling;
+4. recebimento/check-in permanece no Bling;
+5. `verify_purchase_stock_receipt_plan_v1` exige mirror observado depois do plano e delta físico >= quantidade esperada;
+6. só então a nota vira `received`;
+7. `local_stock_applied=false`.
+
+Linhas repetidas do mesmo produto na NF-e são agregadas antes da comparação, evitando falso delta.
+
+Teste em rollback com nota real pronta:
+- plano criado como `awaiting_bling_receipt`;
+- verificação imediata não aprovou;
+- nenhum `purchase_stock_receipt` foi aplicado;
+- 0 resíduos após rollback.
+
+### Lotes/validade no XML
+O parser agora lê o grupo NF-e `rastro`:
+- `nLote`;
+- `qLote`;
+- `dFab`;
+- `dVal`;
+- `cAgreg`.
+
+Evidência fica em `purchase_xml_item_lot_evidence`; não vira estoque/lote automaticamente.
+Backfill seguro leu os 33 XMLs já armazenados:
+- 33 documentos lidos;
+- 0 falhas;
+- 0 registros `rastro` encontrados.
+
+Portanto nenhum lote/validade histórico foi inventado.
+
+### Caixa/fardo -> unidade
+Foi encontrado um caso real inseguro:
+- item: `ARROZ DUBOM FT 6X5`;
+- o XML havia gerado fator 30 por razão tributária de peso;
+- 20 fardos viraram incorretamente 600 unidades na camada de histórico;
+- custo derivado R$ 3,00;
+- custo/preço do cadastro do produto continuavam NULL, portanto a inferência errada não chegou a ser aprovada no catálogo.
+
+Correção:
+- item passou para `review_required`;
+- fator/quantidade/custo derivados foram limpos;
+- regra de embalagem inferida passou para revisão;
+- documento voltou para `review_required`;
+- fator 6 aparece apenas como **sugestão pela descrição `FT 6X5`**, nunca como confirmação automática.
+
+Regra futura:
+- razão qTrib/qCom só vira fator automático quando a unidade tributável for unitária (`UN/UND/PC/...`);
+- peso/volume não pode virar contagem de unidades;
+- descrição explícita de embalagem pode sugerir fator;
+- regra salva automaticamente só é reutilizada quando estiver `confirmed`.
+
+Auditoria dos outros 11 `inferred_xml` encontrou correspondência explícita entre descrição e fator (FD6, FD10, CX12, CX20, CX24, CX120 etc.); nenhum outro conflito foi identificado.
+
+### CPF/CNPJ
+- constraint DB continua bloqueando CPF com `financial_eligible=true`;
+- teste sintético confirmou o bloqueio e terminou com rollback;
+- CPF continua sem conta a pagar empresarial;
+- tratamento fiscal/contábil de entrada física comprada em CPF continua dependente da política do contador e NÃO foi automatizado;
+- CNPJ mantém conciliação/financeiro existente com deduplicação.
+
+### Admin
+A interface antiga ainda dizia que “somava estoque”. Foi corrigida:
+- `Preparar entrada`: cria baseline/plano, não mexe em estoque;
+- operador recebe/confirma no Bling;
+- `Verificar entrada no Bling`: comprova mirror novo + delta físico;
+- só após prova mostra `Entrada confirmada no Bling`.
+
+Commit UI: `39247fa6`.
+
+### Segurança/observabilidade
+- `get_ops2_purchase_xml_health_v1()` criado;
+- views de lotes R6 agora `security_invoker=true`;
+- acesso anon/auth dessas views revogado; service_role mantém SELECT;
+- tabelas novas R7 têm RLS e são restritas ao service_role;
+- advisors: nenhum novo achado crítico; permanecem achados históricos do projeto.
+
+### Runtime/commits
+Hub observado: `admin-service-intelligence-v1` v207 ACTIVE no fechamento desta rodada.
+O `admin-products-live-v1` foi observado em v64 por trabalho paralelo; a R7 não sobrescreveu esse Edge.
+
+Commits principais:
+- `9e121663` — preflight/plano/evidência de lote;
+- `d8806bf9` — agregação + freshness/delta de recebimento;
+- `9df04d56` / `8e29a3b7` — parser rastro + fluxo protegido;
+- `de6c0f04` / `2b1f4455` / `237b0e72` — backfill seguro;
+- `6eef73a3` / `d6456b81` — conversão segura;
+- `717d74c3` — quarentena DUBOM;
+- `13f7570a` / `e206cb8d` — estado do plano no detalhe;
+- `39247fa6` — UX de recebimento Bling;
+- `7b4e30a3` — health + segurança das views.
+
+Nenhum estoque real foi movimentado e nenhuma nota foi marcada como recebida artificialmente nesta R7.
