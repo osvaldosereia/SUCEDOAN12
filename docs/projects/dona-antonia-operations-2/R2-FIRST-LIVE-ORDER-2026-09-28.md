@@ -168,3 +168,120 @@ Logs recentes:
 
 Estado final seguro:
 `confirmed + Bling Aprovado/Separar -> ação física humana -> processing -> EAN -> ready + Bling Verificado -> emissão fiscal humana -> baixa física/expedição -> pagamento real -> delivered`.
+
+
+## 6. Fechamento programável da R2 — fiscal, pagamento e entrega
+
+A continuação da R2 fechou os elos que podiam ser programados sem forçar a operação humana do canário.
+
+### 6.1 Reconciliação fiscal passiva
+
+O ciclo normal do Hub passou a verificar pedidos pós-corte em `ready` e procurar, por `numeroLoja`, NF-e já existente no Bling.
+
+Quando encontra uma NF-e já autorizada:
+- não gera nova NF-e;
+- não reenvia à SEFAZ;
+- marca localmente o gate de expedição como autorizado;
+- atualiza `dispatch_fiscal_jobs`;
+- registra auditoria `dispatch_nfe_authorized_passive_reconcile`.
+
+Isso cobre inclusive emissão/autorização manual feita diretamente no Bling.
+
+Commit:
+- `6e3a3b5f` — `ops2: passively reconcile authorized NF-e for dispatch`.
+
+Hub:
+- `admin-service-intelligence-v1` v200 nessa etapa.
+
+### 6.2 Pagamento real/split -> plano Bling shadow
+
+`ops_record_delivery_payment_v1` agora prepara automaticamente o plano financeiro shadow após captura de pagamento real.
+
+Regras:
+- valor das partes continua obrigado a fechar exatamente o total do pedido;
+- repetição idempotente reutiliza o settlement;
+- split é preservado por partes;
+- mapeamentos Bling continuam em shadow;
+- nenhuma baixa financeira externa acontece sem homologação.
+
+SQL:
+- `supabase/sql/20260928_ops2_delivery_payment_shadow_prepare_v1.sql`.
+
+Commit:
+- `14b6814e`.
+
+### 6.3 Settlement do entregador vira fonte fiscal do pagamento
+
+Criado sincronismo local automático:
+- settlement `source=delivery`;
+- total exato -> `order_fiscal_controls.payment_status=confirmed`;
+- forma única preserva o método;
+- múltiplas formas -> `payment_method=split`;
+- `settled_amount` vem do settlement real;
+- `payment_source=delivery_settlement`;
+- após a entrega, o readiness fiscal é recalculado automaticamente.
+
+Não existe efeito externo no Bling nesta etapa.
+
+SQL:
+- `supabase/sql/20260928_ops2_delivery_payment_fiscal_sync_v1.sql`.
+
+Commit:
+- `388703e3`.
+
+### 6.4 Entrega concluída -> Atendido no Bling
+
+Foi fechado o último estado operacional da R2.
+
+Após `delivered`, o sistema só tenta mudar o pedido remoto de `Verificado (24)` para `Atendido (9)` quando comprova:
+- pedido local realmente entregue;
+- settlement real da entrega com total exato;
+- autorização fiscal válida;
+- baixa física Bling já em estado `launched`;
+- vínculo do mesmo pedido Bling;
+- transição `24 -> 9` ativa e sem ações automáticas.
+
+Se o Bling falhar:
+- a entrega local não é revertida;
+- nenhuma baixa de estoque é repetida;
+- `sync_status=review_bling`;
+- abre atenção operacional;
+- o ciclo normal de 2 minutos tenta recuperar depois.
+
+A transição atual do Bling foi confirmada:
+- origem: `Verificado (24)`;
+- destino: `Atendido (9)`;
+- `acoes=[]`.
+
+Commits:
+- Hub: `e00c53d4`;
+- Admin: `18e115ad`.
+
+Deploy final desta etapa:
+- `admin-service-intelligence-v1` v201 ACTIVE;
+- `admin-products-live-v1` v56 ACTIVE.
+
+## 7. Estado da R2 agora
+
+Parte autônoma/programável: **CONCLUÍDA**.
+
+O pedido-canário real permanece deliberadamente em:
+- local: `confirmed`;
+- Bling: `Aprovado / Separar`;
+- sem sessão EAN iniciada.
+
+Próxima prova é física/humana e não deve ser simulada:
+
+`processing -> bipagem EAN real -> ready/Verificado -> emitir NF-e -> autorização SEFAZ -> DANFE -> saída/baixa física -> pagamento real/split -> delivered -> Atendido`.
+
+## 8. Advisors após as mudanças
+
+Nenhum bloqueador novo da R2.
+
+Permanecem avisos preexistentes:
+- RLS habilitado sem policies em tabelas internas/server-only;
+- leaked-password protection desativada;
+- uma FK sem índice em `ops2_bling_orphan_product_reviews`;
+- índices ainda não utilizados.
+
+Esses itens ficam para hardening/cleanup e não devem ser misturados com o canário operacional.
