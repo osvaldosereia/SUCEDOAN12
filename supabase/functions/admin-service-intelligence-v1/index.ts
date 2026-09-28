@@ -1122,7 +1122,8 @@ async function blingWebhookReceive(sb:any,req:Request,rawBody:string){
   const processingEnabled=runtime.data?.hub_enabled===true
     && runtime.data?.webhooks_enabled===true
     && ["homologation","live"].includes(String(runtime.data?.mode||""));
-  const initialStatus=recognized?(processingEnabled?"received":"held"):"ignored";
+  const r1Processable=new Set(["order","stock","virtual_stock"]).has(resource);
+  const initialStatus=recognized?(processingEnabled&&r1Processable?"received":"held"):"ignored";
 
   const row={
     event_id:eventId,
