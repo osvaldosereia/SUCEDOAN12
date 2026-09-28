@@ -2267,3 +2267,31 @@ O projeto atingiu o limite de Edge Functions. Em vez de aumentar custo, foi reap
 
 ### Próximo passo
 R3 programável pode ser considerada fechada sem executar etapa física agora. Próxima rodada do plano: **R4 — fiscal operacional NF-e/DANFE**, reforçando gate de expedição, autorização SEFAZ, DANFE, erros/retry, vínculo pedido/NF, pagamento efetivo e representação de cesta/diferença, mantendo emissão automática OFF até homologação.
+
+
+## R4 — fechamento programável sem emissão real — 2026-09-28
+
+R4 fiscal operacional concluída no limite seguro.
+
+Fluxo protegido:
+`ready + Bling Verificado + total fiscal consistente -> confirmação humana EMITIR_NFE -> gerar no máximo uma vez -> autorizar no máximo uma vez -> reconciliar -> authorized -> DANFE -> baixa física -> expedição`.
+
+Regras consolidadas:
+- fiscal automático OFF;
+- emissão humana continua protegida por confirmação explícita;
+- preflight DB impede armar o runtime se pedido/valores/vínculo/Verificado não estiverem corretos;
+- diferença da cesta vai para `other_expenses`;
+- job autorizado exige chave NF-e válida de 44 dígitos;
+- retry de operações fiscais irreversíveis é somente reconciliação;
+- ação antiga de “confirmar pagamento fiscal” foi desativada; settlement real da entrega permanece a fonte de pagamento.
+
+Canário `DA-260928-D6432EB3` continua sem qualquer mutação fiscal e bloqueado corretamente até a etapa física EAN/Verificado.
+
+Runtime:
+- Admin v59 ACTIVE;
+- fiscal generation OFF;
+- fiscal authorization OFF;
+- fiscal canary OFF;
+- dispatch gate enforce.
+
+Próxima rodada do plano: **R5 — estoque Bling/cutover readiness e escritores**, agora revisando o estado pós-cutover já ativo, writers, triggers, read models, baixa/reversão idempotente, blockers antigos e SQL canônico/reprodutível, sem reabrir histórico.
