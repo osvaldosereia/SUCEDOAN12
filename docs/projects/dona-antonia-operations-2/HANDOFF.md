@@ -2377,3 +2377,46 @@ Validação pendente exclusivamente física:
 3. fotografar a folha inteira;
 4. conferir a leitura no Admin;
 5. aplicar uma página real e confirmar os saldos resultantes no Bling.
+
+
+## R7 — fechamento programável — 2026-09-28
+
+R7 concluída no limite seguro.
+
+### Fluxo canônico de compra/entrada
+`Bling/Upload XML -> parse -> vínculo produto -> conversão caixa→UN -> revisão humana quando necessário -> custo/fornecedor -> preflight -> baseline estoque Bling -> recebimento/check-in no Bling -> mirror novo + delta comprovado -> received`.
+
+Sob `stock_authority=bling`:
+- XML não soma `products.stock`;
+- confirmar entrada no Admin não movimenta estoque;
+- o Admin apenas prepara e depois verifica a entrada;
+- confirmação final exige prova física no mirror Bling posterior ao plano.
+
+### Lote
+NF-e `rastro` agora é capturado como evidência.
+Os 33 XMLs antigos foram relidos com segurança e nenhum contém `rastro`, portanto não houve criação automática de lote.
+
+### Conversão
+Erro real encontrado e isolado:
+`ARROZ DUBOM FT 6X5` tinha fator 30 derivado de peso tributável. Agora está em revisão, sem quantidade/custo derivados. Fator 6 é somente sugestão até confirmação humana.
+
+Os 11 demais fatores inferidos atuais têm evidência explícita de embalagem compatível.
+
+### Estado de saúde
+- 33 documentos;
+- 65 itens;
+- 23 processados / 10 documentos em revisão;
+- 31 itens em revisão;
+- 0 violações CPF-financeiro;
+- 0 recebimentos locais aplicados;
+- stock authority Bling;
+- rotina diária 06:00 Cuiabá.
+
+### Runtime
+- Hub v207 ACTIVE no checkpoint;
+- Admin Edge observado v64 por trabalho paralelo;
+- frontend de Compras corrigido no commit `39247fa6`.
+
+### Próxima rodada
+**R8 — PapoAI/WhatsApp operacional**:
+identidade, link personalizado, Flow, cliente, associação com pedido, histórico, eventos estruturados, idempotência e painel simples de ponte — sem reintroduzir inteligência de atendimento no Admin.
