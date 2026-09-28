@@ -1165,3 +1165,20 @@ Commits principais:
 - `7b4e30a3` — health + segurança das views.
 
 Nenhum estoque real foi movimentado e nenhuma nota foi marcada como recebida artificialmente nesta R7.
+
+
+## 2026-09-28 — R8 PapoAI/WhatsApp operacional
+Estado: **PROGRAMÁVEL FECHADO / FLOW REAL PENDENTE DE HOMOLOGAÇÃO**.
+
+- captura livre continua sem efeito comercial;
+- 411 eventos reais observados, todos com conversa vinculada;
+- 112 reconhecimentos exatos de cliente;
+- emissor `catalogo_####` restaurado e idempotente;
+- pedido do site só se liga ao PapoAI mediante token resgatado;
+- Flow `customer_flow_v1` implementado com idempotência, identidade exata e backlink pós-cutover;
+- painel operacional adicionado à Central;
+- `structured_order_commit_enabled=false`;
+- teste sintético ponta a ponta passou e foi revertido;
+- próximo gate: 1 Flow real PapoAI + 1 abertura real do link + 1 pedido controlado.
+
+Nenhum pedido foi criado automaticamente nesta rodada.
