@@ -241,7 +241,7 @@ async function conversionFor(product:any,p:any,item:any){
   if(pu&&tu&&pu===tu)return {status:"not_needed",factor:1,base_unit:"UN",chain:[{unit:"UN",quantity:1}],confidence:1,suggested_factor:1,suggestion_source:"same_unit"};
   return {status:"review_required",factor:null,base_unit:"UN",chain:[],confidence:0,suggested_factor:null,suggestion_source:null};
 }
-async function syncSupplierLinkasync function syncSupplierLink(token:string,blingProductId:number,supplierId:number,item:any,c:any){
+async function syncSupplierLink(token:string,blingProductId:number,supplierId:number,item:any,c:any){
   if(!blingProductId||!supplierId)return {ok:false,skipped:true};
   const q="/produtos/fornecedores?pagina=1&limite=100&idProduto="+blingProductId+"&idFornecedor="+supplierId;
   const r=await bg(token,q);const rows=r.ok&&Array.isArray(r.data?.data)?r.data.data:[];
@@ -575,7 +575,7 @@ async function docDetail(id:string){
   });
   return {ok:true,document:d.data,items,pricing_policy:{default_markup_percent:40,sale_unit:"UN",catalog_updates_require_human_approval:true,stock_receipt_separate:true}};
 }
-async function signedXmlasync function signedXml(id:string){
+async function signedXml(id:string){
   const d=await sb.from("purchase_xml_documents").select("storage_path").eq("id",id).maybeSingle();if(d.error)throw d.error;if(!d.data?.storage_path)return {ok:false,status:404,error:"xml_not_found"};
   const s=await sb.storage.from("purchase-xml").createSignedUrl(d.data.storage_path,300,{download:true});if(s.error)throw s.error;return {ok:true,url:s.data.signedUrl,expires_in:300};
 }
@@ -658,7 +658,7 @@ async function applyItemUpdate(body:any,userId:string|null){
   await sb.from("bling_hub_audit_v2").insert({event_type:"purchase_catalog_item_approved",severity:"info",domain:"catalog",source_system:"vitrine_admin",source_id:id,details:{document_id:item.document_id,document_key:doc.document_key,product_id:item.product_id,operator,user_id:userId,conversion_factor:factor,base_unit_cost:baseCost,old_cost:product.cost,old_price:product.price,new_cost:updateCost?baseCost:product.cost,new_price:updateSale?Math.round(salePrice*100)/100:product.price,update_cost:updateCost,update_sale_price:updateSale,stock_unchanged:true}});
   return {ok:true,item_id:id,document_id:item.document_id,product:pu.data,conversion_factor:factor,base_unit_cost:baseCost,stock_unchanged:true,...readiness};
 }
-export async function handlePurchaseXmlRequestexport async function handlePurchaseXmlRequest(req:Request,body:any={},trustedInternal=false){
+export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedInternal=false){
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   const a:any=trustedInternal?{ok:true,internal:true,user_id:null,role:"system"}:await auth(req);if(!a.ok)return js(req,{ok:false,error:a.error},a.status);
   try{
