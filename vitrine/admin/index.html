@@ -1575,7 +1575,7 @@
       financeOpenDialog('Acesso administrativo',
         '<div class="rule-notice warn"><strong>Confirmação de segurança</strong><div>Para acessar e alterar dados do Admin, confirme o PIN administrativo. A sessão fica restrita a esta aba e expira automaticamente.</div></div>'+
         '<form id="financePinForm" class="form-grid" autocomplete="off">'+
-          '<label class="span-2"><span>PIN administrativo</span><input id="financePinInput" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="••••••" required></label>'+
+          '<label class="span-2"><span>PIN administrativo</span><input id="financePinInput" inputmode="numeric" pattern="[0-9]{7}" maxlength="7" autocomplete="one-time-code" placeholder="••••••" required></label>'+
           '<div class="span-2"><small class="sub" id="financePinStatus">A sessão fica somente nesta aba e expira automaticamente.</small></div>'+
         '</form>',
         '<button class="secondary" id="financePinCancel" type="button">Cancelar</button><button class="primary" id="financePinSubmit" type="button">Liberar Admin</button>'
@@ -1588,7 +1588,7 @@
       $('#financePinCancel').onclick=()=>finish(false,new Error('finance_auth_cancelled'));
       const submit=async()=>{
         const pin=$('#financePinInput').value.trim(),button=$('#financePinSubmit'),status=$('#financePinStatus');
-        if(!/^\d{6}$/.test(pin)){status.textContent='Digite os 6 números do PIN.';return}
+        if(!/^\d{7}$/.test(pin)){status.textContent='Digite os 7 números do PIN.';return}
         button.disabled=true;status.textContent='Validando…';
         try{
           const authRes=await fetch(FINANCE_AUTH_API,{
