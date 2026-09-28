@@ -2678,9 +2678,12 @@
     return labels.length?labels.join(' + '):'Forma de pagamento não identificada';
   }
   function purchasePaymentAtPurchaseHtml(d){
-    const ps=purchasePaymentSummary(d);
+    const ps=purchasePaymentSummary(d),settlement=d?.metadata?.settlement||{};
     if(!ps?.paid_at_purchase_likely)return '';
     const method=purchasePaymentMethodsText(ps),amount=purchaseMoney(ps.payment_total??d?.total_amount);
+    if(settlement?.verified){
+      return '<div class="purchase-safe" style="margin:10px 0 0"><strong>Pagamento baixado no Bling</strong><small>'+esc(method)+' · '+amount+(settlement.payment_date?' · baixa em '+esc(dateOnly(settlement.payment_date)):'')+(settlement.financial_account?.description?' · '+esc(settlement.financial_account.description):'')+'.</small></div>';
+    }
     let guidance='A NF-e indica que o fornecedor provavelmente foi pago no ato da compra.';
     if(ps.guidance==='credit_card')guidance+=' No Bling, confirme a baixa usando a conta financeira do cartão de crédito; a fatura do cartão deve ser controlada separadamente.';
     else if(ps.guidance==='debit_card')guidance+=' No Bling, confirme a baixa usando a conta bancária/cartão de débito utilizado.';
@@ -2696,7 +2699,10 @@
     '</div>';
   }
   function purchaseFinanceRowLabel(d){
-    const ps=purchasePaymentSummary(d);
+    const ps=purchasePaymentSummary(d),settlement=d?.metadata?.settlement||{};
+    if(settlement?.verified){
+      return '<span class="pill">Pago confirmado</span>';
+    }
     if(ps?.paid_at_purchase_likely&&d?.finance_status==='posted'){
       return '<span class="pill warn">Confirmar baixa</span>';
     }
@@ -3191,7 +3197,14 @@
     try{
       const r=await purchaseApi('payment_settlement_preview',{document_id:id});
       if(r.ready){
-        alert('Prévia da baixa pronta.\n\nForma: '+String(r.payment_method||'—')+'\nConta financeira: '+String(r.financial_account?.description||r.financial_account?.id||'—')+'\nValor: '+purchaseMoney(r.preview?.valorRecebido)+'\nData: '+String(r.preview?.data||'—')+'\n\nNenhuma baixa foi executada.');
+        const msg='Prévia da baixa\n\nForma: '+String(r.payment_method||'—')+'\nConta financeira: '+String(r.financial_account?.description||r.financial_account?.id||'—')+'\nValor: '+purchaseMoney(r.preview?.valorRecebido)+'\nData: '+String(r.preview?.data||'—')+'\n\nDeseja confirmar a baixa desta conta no Bling?';
+        if(confirm(msg)){
+          if(b)b.textContent='Confirmando baixa…';
+          const done=await purchaseApi('payment_settlement_execute',{document_id:id,confirmation:'CONFIRMAR_BAIXA'});
+          if(done?.verified)toast('Pagamento baixado e confirmado no Bling');
+          else if(done?.already_settled)toast('Esta conta já estava baixada no Bling');
+          else toast('Baixa enviada ao Bling; confira a confirmação');
+        }else toast('Prévia conferida. Nenhuma baixa foi executada.');
       }else{
         const reasons={
           financial_account_mapping_missing:'Falta escolher a conta financeira para esta forma de pagamento.',
@@ -3218,8 +3231,9 @@
     const importedKeys=new Set(docs.map(x=>String(x.document_key||'')).filter(Boolean));
     const notImported=blingDocs.filter(x=>!importedIds.has(Number(x.bling_nfe_id||0))&&!(x.access_key&&importedKeys.has(String(x.access_key))));
     const posted=docs.filter(x=>x.finance_status==='posted'&&x.finance_reconciled_at).length;
-    const paymentToConfirm=docs.filter(x=>purchasePaymentSummary(x)?.paid_at_purchase_likely&&x.finance_status==='posted').length;
-    const attentionDocs=docs.filter(x=>x.processing_status==='review_required'||x.processing_status==='failed'||x.finance_status==='review'||x.finance_status==='pending_company_match'||x.receipt_status==='review'||(purchasePaymentSummary(x)?.paid_at_purchase_likely&&x.finance_status==='posted'));
+    const paidConfirmed=docs.filter(x=>Boolean(x?.metadata?.settlement?.verified)).length;
+    const paymentToConfirm=docs.filter(x=>purchasePaymentSummary(x)?.paid_at_purchase_likely&&x.finance_status==='posted'&&!x?.metadata?.settlement?.verified).length;
+    const attentionDocs=docs.filter(x=>x.processing_status==='review_required'||x.processing_status==='failed'||x.finance_status==='review'||x.finance_status==='pending_company_match'||x.receipt_status==='review'||(purchasePaymentSummary(x)?.paid_at_purchase_likely&&x.finance_status==='posted'&&!x?.metadata?.settlement?.verified));
     const ready=docs.filter(x=>x.receipt_status==='ready').length;
     const last=runs[0]||null;
     const runSource=last?.source==='bling_daily'?'Rotina automática':last?.source==='bling_manual'?'Importação manual':last?.source==='manual_xml'||last?.source==='bulk_xml'?'XML enviado':'Execução';
@@ -3231,6 +3245,7 @@
         '<div class="bling-card"><small>Ainda não importadas</small><strong class="'+(notImported.length?'warn-text':'ok-text')+'">'+notImported.length+'</strong><span class="sub">encontradas no Bling</span></div>'+
         '<div class="bling-card"><small>Precisam de atenção</small><strong class="'+(attentionDocs.length?'warn-text':'ok-text')+'">'+attentionDocs.length+'</strong><span class="sub">produto, financeiro ou recebimento</span></div>'+
         '<div class="bling-card"><small>Contas no Bling</small><strong class="ok-text">'+posted+'</strong><span class="sub">lançadas/conciliadas</span></div>'+
+        '<div class="bling-card"><small>Pagamentos confirmados</small><strong class="ok-text">'+paidConfirmed+'</strong><span class="sub">baixa verificada no Bling</span></div>'+
         '<div class="bling-card"><small>Confirmar baixa</small><strong class="'+(paymentToConfirm?'warn-text':'ok-text')+'">'+paymentToConfirm+'</strong><span class="sub">pagamento na hora identificado na NF-e</span></div>'+
         '<div class="bling-card"><small>Prontas para estoque</small><strong>'+ready+'</strong><span class="sub">aguardam sua confirmação</span></div>'+
       '</div>'+
