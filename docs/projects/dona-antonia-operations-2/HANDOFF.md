@@ -1724,3 +1724,38 @@ Probe somente-leitura após deploy:
 Sem endpoint público oficial para consumir diretamente a fila pré-importação de **Notas recebidas** do Bling, não implementar scraping, endpoint interno ou segundo consumidor SEFAZ/NSU. Fluxo suportado:
 `SEFAZ -> Bling Notas recebidas -> manifestação/importação no Bling -> Admin reconcilia/importa XML`.
 Upload manual de XML no Admin continua disponível para exceções.
+
+
+## Compras/XML — filtros históricos por data — 2026-09-28
+
+Implementado no Vitrine/Admin:
+- **Este mês**;
+- **Mês passado**;
+- **Últimos 90 dias**;
+- **Últimos 120 dias**;
+- **Últimos 180 dias**;
+- **Escolher datas** (período personalizado, limitado a 365 dias).
+
+Comportamento:
+- o período filtra os XMLs já processados no Admin;
+- o mesmo período consulta, em modo **somente leitura**, as NF-e de entrada já registradas no Bling;
+- a tela separa **Notas no Bling** de **Notas processadas no Admin**;
+- o botão **Importar período do Bling** usa o período escolhido;
+- a fila pré-importação **Notas recebidas SEFAZ** continua separada e sem manifestação automática;
+- estoque continua exigindo confirmação humana.
+
+Implementação:
+- commit `02ead96f`: backend com janelas históricas + `browse_bling` read-only;
+- commit `e439204f`: UI do Vitrine/Admin com filtros e período personalizado;
+- Edge `admin-service-intelligence-v1` publicada **v166 ACTIVE**.
+
+Validação:
+- todos os presets retornaram HTTP 200;
+- Este mês: 2026-09-01 a 2026-09-30;
+- Mês passado: 2026-08-01 a 2026-08-31;
+- 90 dias: 2026-07-01 a 2026-09-28;
+- 120 dias: 2026-06-01 a 2026-09-28;
+- 180 dias: 2026-04-02 a 2026-09-28;
+- consulta read-only de 180 dias ao Bling: **36 NF-e**, sem truncamento;
+- no staging/Admin, **12 XMLs** já processados no recorte de 180 dias;
+- JavaScript do Admin validado sintaticamente após a alteração.
