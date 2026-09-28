@@ -878,6 +878,27 @@ function inventorySheetDayCode(){return new Intl.DateTimeFormat("en-CA",{timeZon
 function inventorySheetOutputText(data:any){return Array.isArray(data?.output)?data.output.flatMap((x:any)=>Array.isArray(x?.content)?x.content:[]).filter((x:any)=>x?.type==="output_text").map((x:any)=>String(x?.text||"")).join("").trim():""}
 async function inventorySheetOpenAiKey(){let key=Deno.env.get("OPENAI_API_KEY")||"";if(!key){try{const q=await db.rpc("get_conversation_worker_provider_secret_v1");if(typeof q.data==="string")key=q.data}catch{}}return key}
 
+function inventorySheetCanonicalCategory(v:any){
+  const raw=tx(v,120);
+  if(!raw)return "";
+  const norm=raw.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+  const aliases:any={
+    "mercearia":"mercearia",
+    "alimentos":"mercearia",
+    "alimentos e bebidas":"mercearia",
+    "bebidas":"mercearia",
+    "higiene e beleza":"higiene_beleza",
+    "higiene_beleza":"higiene_beleza",
+    "limpeza e descartaveis":"limpeza_lavanderia",
+    "limpeza e lavanderia":"limpeza_lavanderia",
+    "limpeza_lavanderia":"limpeza_lavanderia",
+    "casa e pet":"casa_pet",
+    "casa_pet":"casa_pet",
+    "pets":"casa_pet"
+  };
+  return aliases[norm]||raw;
+}
+
 async function inventorySheetQueryProducts(filters:any){
   const rows:any[]=[];
   const qv=tx(filters?.q,100).replace(/[,()%]/g," ");
@@ -896,8 +917,8 @@ async function inventorySheetQueryProducts(filters:any){
   }
   let filtered=rows;
   if(categories.length){
-    const wanted=new Set(categories);
-    filtered=filtered.filter((x:any)=>wanted.has(tx(x.sales_category||x.storefront_category||x.category,120)));
+    const wanted=new Set(categories.map((x:string)=>inventorySheetCanonicalCategory(x)));
+    filtered=filtered.filter((x:any)=>wanted.has(inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category)));
   }
   if(gondolas.length){
     const wanted=new Set(gondolas.map((x:string)=>String(Number(x))));
@@ -916,7 +937,7 @@ async function inventorySheetOptions(){
   if(p.error)throw p.error;
   const categories=new Map<string,number>(),gondolas=new Map<string,number>();
   for(const x of p.data||[]){
-    const cat=tx(x.sales_category||x.storefront_category||x.category,120);
+    const cat=inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category);
     if(cat)categories.set(cat,(categories.get(cat)||0)+1);
     const raw=String(x.gondola||"").trim();
     if(/^\d+$/.test(raw)){
@@ -1183,7 +1204,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:46,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:47,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
