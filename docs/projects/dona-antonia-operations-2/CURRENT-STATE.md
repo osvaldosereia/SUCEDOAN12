@@ -190,3 +190,20 @@ Runtime:
 - Admin Edge v56 ACTIVE.
 
 Canário `DA-260928-D6432EB3` continua parado corretamente em `confirmed`, aguardando separação/EAN reais.
+
+
+## Balanço A4 por foto
+
+Implantado em 2026-09-28:
+- A4 retrato, 5 × 4 cards (20 produtos por folha);
+- lote/página/REF para rastreabilidade;
+- foto sempre da folha inteira;
+- OpenAI extrai as 20 contagens com saída estruturada;
+- página, posição, REF e EAN são cruzados antes da liberação;
+- dúvida da IA ou edição humana exige confirmação;
+- contagem confirmada usa o ledger de inventário existente;
+- com autoridade Bling, saldo físico é enviado pelo Hub `set_stock` e verificado por releitura;
+- repetição/retry não duplica contagem;
+- backend ativo: `admin-products-live-v1` v63.
+
+Próxima prova: canário físico com uma folha real, sem reprocessar pedidos/histórico.
