@@ -5414,6 +5414,30 @@ async function blingHubOps2CatalogStockCanaryExecute(sb:any,canaryRaw:any){
   return {ok:true,canary_id:canaryId,queued:jobIds.length,job_ids:jobIds,processed,external_write:true};
 }
 
+async function blingHubOps2RecoverStockJob(sb:any,jobRaw:any){
+  const jobId=uuid(jobRaw);if(!jobId)return {ok:false,error:"invalid_job_id",external_write:false};
+  const jq=await sb.from("bling_hub_jobs_v2").select("id,domain,operation,source_system,source_id,status,payload,locked_at").eq("id",jobId).maybeSingle();if(jq.error)throw jq.error;
+  const job=jq.data;if(!job||job.domain!=="stock"||job.operation!=="set_stock")return {ok:false,error:"invalid_stock_job",external_write:false};
+  if(job.status!=="processing"&&job.status!=="retry")return {ok:false,error:"job_not_recoverable",status:job.status,external_write:false};
+  if(job.status==="processing"){
+    const locked=job.locked_at?Date.parse(job.locked_at):0;
+    if(!locked||Date.now()-locked<95000)return {ok:false,error:"lease_still_fresh",status:job.status,external_write:false};
+  }
+  const target=Number(job.payload?.stock_quantity);if(!Number.isFinite(target)||target<0)return {ok:false,error:"invalid_stock",external_write:false};
+  const live=await sb.from("products").select("stock").eq("id",job.source_id).maybeSingle();if(live.error)throw live.error;
+  if(!live.data||Number(live.data.stock)!==target)return {ok:false,error:"live_supabase_stock_drift",target_stock:target,live_stock:live.data?.stock??null,external_write:false};
+  const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system",job.source_system).eq("entity_type","product").eq("source_id",job.source_id).maybeSingle();if(link.error)throw link.error;
+  if(link.data?.status!=="matched"||!Number(link.data?.bling_id))return {ok:false,error:"binding_drift",external_write:false};
+  const token=await blingHubOauth(sb),depositId=await blingHubResolveDepositId(sb,token),remote=await blingHubReadStock(sb,token,Number(link.data.bling_id),depositId);
+  if(!remote.ok)return {ok:false,error:"readonly_failed",http_status:remote.status,external_write:false};
+  if(Number(remote.stock)===target){
+    await sb.rpc("finish_bling_hub_job_v2",{p_job_id:jobId,p_status:"synced",p_result:{bling_id:Number(link.data.bling_id),deposit_id:depositId,changed:true,stock:target,verified:true,recovered_by_readonly:true},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(link.data.bling_id)});
+    return {ok:true,recovered:true,remote_already_target:true,job_id:jobId,stock:target,external_write:false};
+  }
+  await sb.rpc("finish_bling_hub_job_v2",{p_job_id:jobId,p_status:"retry",p_result:{readonly_stock:remote.stock,target_stock:target},p_error_code:"stale_processing_readonly_not_applied",p_error_message:"Readonly after lease confirmed remote stock still differs from target",p_http_status:200,p_retry_seconds:0,p_provider_id:String(link.data.bling_id)});
+  return {ok:true,recovered:true,remote_already_target:false,job_id:jobId,current_stock:remote.stock,target_stock:target,status:"retry",external_write:false};
+}
+
 async function blingHubPreviewStockSync(sb:any,item:any){
   const sourceId=uuid(item?.source_id);if(!sourceId)return {ok:false,error:"invalid_product"};
   const target=Number(item?.stock_quantity);if(!Number.isFinite(target)||target<0)return {ok:false,error:"invalid_stock"};
@@ -7952,6 +7976,7 @@ Deno.serve(async(req:Request)=>{
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="ops2_catalog_stock_canary_execute"){const result=await blingHubOps2CatalogStockCanaryExecute(sb,body?.canary_id);return json(result,result.ok?200:409);}
+      if(subaction==="ops2_recover_stock_job"){const result=await blingHubOps2RecoverStockJob(sb,body?.job_id);return json(result,result.ok?200:409);}
       if(subaction==="preview_stock_sync"){
         const result=await blingHubPreviewStockSync(sb,body);
         return json(result,result.ok?200:409);
