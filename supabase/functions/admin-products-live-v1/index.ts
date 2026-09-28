@@ -242,7 +242,7 @@ async function createInventoryIncident(p:any,auth:any){
   const product=await one(pid);
   return {incident:r.data,product:product?mp(product):null};
 }
-async function glist(){const g=await db.from("vitrine_gondolas").select("*").eq("active",true).order("number"),p=await db.from("products").select("gondola").not("gondola","is",null).limit(5000);if(g.error)throw g.error;if(p.error)throw p.error;const c=new Map();for(const x of p.data||[])c.set(String(x.gondola),(c.get(String(x.gondola))||0)+1);return {gondolas:(g.data||[]).map((x:any)=>({...x,product_count:c.get(String(x.number))||0}))}}
+async function glist(){const g=await db.from("vitrine_gondolas").select("*").eq("active",true).order("number"),p=await db.from("products").select("gondola,is_active").not("gondola","is",null).limit(5000);if(g.error)throw g.error;if(p.error)throw p.error;const c=new Map();for(const x of p.data||[]){if(x.is_active===false)continue;const raw=String(x.gondola||"").trim();if(!/^\d+$/.test(raw))continue;const k=String(Number(raw));c.set(k,(c.get(k)||0)+1)}return {gondolas:(g.data||[]).map((x:any)=>({...x,product_count:c.get(String(Number(x.number)))||0}))}}
 async function gone(v:any){const gid=id(v);if(!gid)return {error:"invalid_gondola",status:400};const g=await db.from("vitrine_gondolas").select("*").eq("id",gid).eq("active",true).maybeSingle();if(g.error)throw g.error;if(!g.data)return {error:"gondola_not_found",status:404};const p=await db.from("products").select("*").eq("gondola",String(g.data.number)).order("name").limit(5000);if(p.error)throw p.error;return {gondola:g.data,products:(p.data||[]).map(mp)}}
 async function gcreate(p:any){const n=Math.floor(Number(p?.number));if(!Number.isInteger(n)||n<1||n>9999)return {error:"invalid_gondola",status:400};let g=await db.from("vitrine_gondolas").select("*").eq("number",n).maybeSingle();if(g.error)throw g.error;if(g.data){if(!g.data.active)g=await db.from("vitrine_gondolas").update({active:true,updated_at:new Date().toISOString()}).eq("id",g.data.id).select("*").single();return {gondola:g.data,reused:true}}g=await db.from("vitrine_gondolas").insert({number:n}).select("*").single();if(g.error)throw g.error;return {gondola:g.data,reused:false}}
 async function gassign(p:any){const gid=id(p?.gondola_id);if(!gid)return {error:"invalid_gondola",status:400};const g=await db.from("vitrine_gondolas").select("*").eq("id",gid).eq("active",true).maybeSingle();if(g.error)throw g.error;if(!g.data)return {error:"gondola_not_found",status:404};const e:any=await ean(p?.ean);if(e.error)return e;const b=await one(e.product.id),prev=b?.gondola&&/^\d+$/.test(String(b.gondola))?Number(b.gondola):null,r=await db.from("products").update({gondola:String(g.data.number),updated_at:new Date().toISOString()}).eq("id",e.product.id).select("*").single();if(r.error)throw r.error;return {product:mp(r.data),previous_gondola_number:prev}}
@@ -888,13 +888,16 @@ async function inventorySheetQueryProducts(filters:any){
     let q=db.from("products").select("id,name,sku,gtin,image_url,validity_date,is_active,sales_category,subcategory,gondola").order("name").range(offset,offset+999);
     if(categories.length)q=q.in("sales_category",categories);
     else if(category)q=q.eq("sales_category",category);
-    if(gondolas.length)q=q.in("gondola",gondolas);
     if(subcategory)q=q.eq("subcategory",subcategory);
     if(active==="true")q=q.eq("is_active",true);
     if(active==="false")q=q.eq("is_active",false);
     if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
     const r=await q;if(r.error)throw r.error;
     rows.push(...(r.data||[]));if((r.data||[]).length<1000)break;
+  }
+  if(gondolas.length){
+    const wanted=new Set(gondolas.map((x:string)=>String(Number(x))));
+    return rows.filter((x:any)=>{const raw=String(x.gondola||"").trim();return /^\d+$/.test(raw)&&wanted.has(String(Number(raw)))});
   }
   return rows;
 }
@@ -1158,7 +1161,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:44,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:45,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
