@@ -166,3 +166,10 @@ Observar o primeiro pedido **confirmado** criado após o marco percorrer o fluxo
 `confirmado -> Bling Aprovado/Separar -> separação -> EAN Verificado -> expedição/baixa física`.
 
 Se esse primeiro ciclo real fechar sem divergência, avançar para a próxima rodada de consolidação operacional e alertas.
+
+
+## Atualização R2 — 2026-09-28
+
+O primeiro pedido real pós-corte já foi confirmado e sincronizado no Bling como **Aprovado / Separar**. Pré-flight EAN está limpo (30 produtos, 33 unidades, zero GTIN ausente/duplicado). Aguardando a separação/conferência humana normal para validar o próximo gate **EAN -> Verificado**.
+
+Checkpoint: `R2-CANARY-PROGRESS-2026-09-28.md`.
