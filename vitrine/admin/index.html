@@ -2726,6 +2726,15 @@
     if(reason==='installment_total_mismatch'){
       const invoice=Number(r.invoice_total??d?.total_amount),parts=Number(r.installment_total);
       const diff=Number.isFinite(invoice)&&Number.isFinite(parts)?Math.round((parts-invoice)*100)/100:null;
+      const ps=purchasePaymentSummary(d);
+      if(ps?.paid_at_purchase_likely&&ps?.total_matches){
+        return '<div class="purchase-price-grid" style="margin-top:10px">'+
+          '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
+          '<div class="purchase-price-box"><small>Pagamento efetivo no XML</small><strong class="ok-text">'+purchaseMoney(ps.payment_total)+'</strong></div>'+
+          (Number(ps.change||0)>0?'<div class="purchase-price-box"><small>Troco informado</small><strong>'+purchaseMoney(ps.change)+'</strong></div>':'')+
+          '<div class="purchase-price-box"><small>Parcela/cobrança</small><strong class="warn-text">'+purchaseMoney(parts)+'</strong></div>'+
+        '</div><small class="warn-text" style="margin-top:7px">O pagamento da NF-e fecha corretamente. A divergência está somente na parcela/cobrança do Bling/XML. Confira essa conta antes da baixa.</small>';
+      }
       return '<div class="purchase-price-grid" style="margin-top:10px">'+
         '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
         '<div class="purchase-price-box"><small>Total das parcelas</small><strong>'+purchaseMoney(parts)+'</strong></div>'+
@@ -3043,7 +3052,12 @@
       const rec=finance.reconciliation||{};
       if(reason==='installment_total_mismatch'){
         const invoice=Number(rec.invoice_total),parts=Number(rec.installment_total),diff=(Number.isFinite(invoice)&&Number.isFinite(parts))?Math.round((parts-invoice)*100)/100:null;
-        alert('O financeiro não pode ser lançado ainda.\n\nTotal da NF-e: '+purchaseMoney(invoice)+'\nTotal das parcelas: '+purchaseMoney(parts)+(diff===null?'':'\nDiferença: '+purchaseMoney(diff))+'\n\nCorrija as parcelas no Bling e depois clique em “Resolver financeiro” novamente.');
+        const detail=state.purchaseDetailCache?.[id],ps=purchasePaymentSummary(detail?.document||{});
+        if(ps?.paid_at_purchase_likely&&ps?.total_matches){
+          alert('O pagamento informado na NF-e fecha corretamente.\n\nTotal da NF-e: '+purchaseMoney(invoice)+'\nPagamento efetivo: '+purchaseMoney(ps.payment_total)+(Number(ps.change||0)>0?'\nTroco: '+purchaseMoney(ps.change):'')+'\nParcela/cobrança: '+purchaseMoney(parts)+'\n\nAjuste ou dê baixa na conta correta no Bling; o sistema não criará outra conta enquanto existir essa divergência.');
+        }else{
+          alert('O financeiro não pode ser lançado ainda.\n\nTotal da NF-e: '+purchaseMoney(invoice)+'\nTotal das parcelas: '+purchaseMoney(parts)+(diff===null?'':'\nDiferença: '+purchaseMoney(diff))+'\n\nCorrija as parcelas no Bling e depois clique em “Resolver financeiro” novamente.');
+        }
         await refreshPurchaseAfterApproval(id);
         return;
       }
