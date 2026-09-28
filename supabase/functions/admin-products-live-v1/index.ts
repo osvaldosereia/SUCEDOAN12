@@ -999,52 +999,141 @@ async function inventorySheetResolveCountAttention(countId:string,ref:string){
 
 async function inventorySheetApply(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
-  const scanId=id(p?.scan_id),requested=(Array.isArray(p?.items)?p.items:[]).slice(0,5);if(!scanId||!requested.length)return {error:"invalid_apply_request",status:400};
-  const scan=await db.from("inventory_sheet_page_scans").select("id,batch_id,page_number,status").eq("id",scanId).maybeSingle();if(scan.error)throw scan.error;if(!scan.data)return {error:"scan_not_found",status:404};
-  const ids=requested.map((x:any)=>id(x?.result_id)).filter(Boolean),rr=await db.from("inventory_sheet_item_results").select("*").eq("scan_id",scanId).in("id",ids);if(rr.error)throw rr.error;
-  const resultMap=new Map((rr.data||[]).map((x:any)=>[String(x.id),x])),sheetIds=(rr.data||[]).map((x:any)=>x.sheet_item_id),si=await db.from("inventory_sheet_items").select("*").in("id",sheetIds);if(si.error)throw si.error;
-  const itemMap=new Map((si.data||[]).map((x:any)=>[String(x.id),x])),authority=await stockAuthority(),operator=tx(p?.operator,80)||"Balanço por foto";
-  if(authority==="bling"){const rt=await ops2LiveRuntime();if(rt.mode!=="live"||!rt.hub_enabled||!rt.stock_enabled)return {error:"bling_stock_runtime_not_ready",status:409}}
-  const applied:any[]=[],jobs:any[]=[],jobToResult:any[]=[];
-  for(const req of requested){
-    const rid=id(req?.result_id),row:any=resultMap.get(rid);if(!row){applied.push({result_id:rid||null,ok:false,error:"result_not_found"});continue}
-    if(row.review_state==="applied"){applied.push({result_id:rid,ok:true,already_applied:true});continue}
-    if(row.review_state==="review"&&req?.manual_confirmed!==true){applied.push({result_id:rid,ok:false,error:"manual_confirmation_required"});continue}
-    const quantity=Number(req?.quantity);if(!Number.isInteger(quantity)||quantity<0||quantity>100000){applied.push({result_id:rid,ok:false,error:"invalid_quantity"});continue}
-    const item:any=itemMap.get(String(row.sheet_item_id));if(!item){applied.push({result_id:rid,ok:false,error:"sheet_item_not_found"});continue}
-    const count=await db.rpc("ops_record_inventory_count_v1",{p_product_id:item.product_id,p_counted_quantity:quantity,p_operator_label:operator});if(count.error){applied.push({result_id:rid,ok:false,error:tx(count.error.message,240)});continue}
-    const countId=id(count.data?.count_id);
-    await db.from("inventory_sheet_item_results").update({confirmed_quantity:quantity,confirmed_by:auth.user_id,confirmed_at:new Date().toISOString(),stock_count_id:countId||null,review_state:authority==="bling"?"confirmed":"applied",apply_error:null,updated_at:new Date().toISOString()}).eq("id",rid);
-    if(authority==="bling"){
-      jobs.push({domain:"stock",operation:"set_stock",source_id:item.product_id,idempotency_key:"inventory-sheet:"+scanId+":"+item.id+":"+String(quantity),payload:{stock_quantity:quantity,inventory_sheet_scan_id:scanId,inventory_sheet_result_id:rid,operator_label:operator,count_id:countId||null}});
-      jobToResult.push({rid,countId});
-    }else if(countId)await inventorySheetResolveCountAttention(countId,"inventory-sheet:"+scanId);
-    applied.push({result_id:rid,ok:true,quantity,stock_count_id:countId,queued:authority==="bling"});
+  const scanId=id(p?.scan_id),requested=(Array.isArray(p?.items)?p.items:[]).slice(0,5);
+  if(!scanId||!requested.length)return {error:"invalid_apply_request",status:400};
+
+  const scan=await db.from("inventory_sheet_page_scans").select("id,batch_id,page_number,status").eq("id",scanId).maybeSingle();
+  if(scan.error)throw scan.error;if(!scan.data)return {error:"scan_not_found",status:404};
+
+  const ids=requested.map((x:any)=>id(x?.result_id)).filter(Boolean);
+  const rr=await db.from("inventory_sheet_item_results").select("*").eq("scan_id",scanId).in("id",ids);
+  if(rr.error)throw rr.error;
+  const resultMap=new Map((rr.data||[]).map((x:any)=>[String(x.id),x]));
+  const sheetIds=(rr.data||[]).map((x:any)=>x.sheet_item_id);
+  const si=await db.from("inventory_sheet_items").select("*").in("id",sheetIds);
+  if(si.error)throw si.error;
+  const itemMap=new Map((si.data||[]).map((x:any)=>[String(x.id),x]));
+  const authority=await stockAuthority(),operator=tx(p?.operator,80)||"Balanço por foto";
+  if(authority==="bling"){
+    const rt=await ops2LiveRuntime();
+    if(rt.mode!=="live"||!rt.hub_enabled||!rt.stock_enabled)return {error:"bling_stock_runtime_not_ready",status:409};
   }
-  let worker:any=null;
+
+  const applied:any[]=[],jobs:any[]=[],jobToResult:any[]=[],existingJobIds:string[]=[];
+  for(const req of requested){
+    const rid=id(req?.result_id),row:any=resultMap.get(rid);
+    if(!row){applied.push({result_id:rid||null,ok:false,error:"result_not_found"});continue}
+    if(row.review_state==="applied"){applied.push({result_id:rid,ok:true,already_applied:true,stock_count_id:row.stock_count_id||null,bling_job_id:row.bling_job_id||null});continue}
+    if(row.review_state==="review"&&req?.manual_confirmed!==true){applied.push({result_id:rid,ok:false,error:"manual_confirmation_required"});continue}
+    const quantity=Number(req?.quantity);
+    if(!Number.isInteger(quantity)||quantity<0||quantity>100000){applied.push({result_id:rid,ok:false,error:"invalid_quantity"});continue}
+    const item:any=itemMap.get(String(row.sheet_item_id));
+    if(!item){applied.push({result_id:rid,ok:false,error:"sheet_item_not_found"});continue}
+
+    const previousConfirmed=row.confirmed_quantity==null?null:Number(row.confirmed_quantity);
+    const previousCountId=id(row.stock_count_id);
+    const previousJobId=id(row.bling_job_id);
+    if(previousCountId&&previousConfirmed!==null&&previousConfirmed!==quantity){
+      applied.push({result_id:rid,ok:false,error:"quantity_changed_after_confirmation",confirmed_quantity:previousConfirmed});
+      continue;
+    }
+
+    let countId=previousCountId;
+    if(!countId){
+      const count=await db.rpc("ops_record_inventory_count_v1",{p_product_id:item.product_id,p_counted_quantity:quantity,p_operator_label:operator});
+      if(count.error){applied.push({result_id:rid,ok:false,error:tx(count.error.message,240)});continue}
+      countId=id(count.data?.count_id);
+      await db.from("inventory_sheet_item_results").update({
+        confirmed_quantity:quantity,confirmed_by:auth.user_id,confirmed_at:new Date().toISOString(),
+        stock_count_id:countId||null,review_state:authority==="bling"?"confirmed":"applied",
+        apply_error:null,updated_at:new Date().toISOString()
+      }).eq("id",rid);
+    }
+
+    if(authority==="bling"){
+      if(previousJobId){
+        existingJobIds.push(previousJobId);
+        jobToResult.push({rid,countId,jobId:previousJobId});
+        applied.push({result_id:rid,ok:true,quantity,stock_count_id:countId,bling_job_id:previousJobId,reused:true});
+      }else{
+        jobs.push({
+          domain:"stock",operation:"set_stock",source_id:item.product_id,
+          idempotency_key:"inventory-sheet:"+scanId+":"+item.id+":"+String(quantity),
+          payload:{stock_quantity:quantity,inventory_sheet_scan_id:scanId,inventory_sheet_result_id:rid,operator_label:operator,count_id:countId||null}
+        });
+        jobToResult.push({rid,countId,jobId:null});
+        applied.push({result_id:rid,ok:true,quantity,stock_count_id:countId,queued:true});
+      }
+    }else{
+      await db.from("inventory_sheet_item_results").update({review_state:"applied",updated_at:new Date().toISOString()}).eq("id",rid);
+      if(countId)await inventorySheetResolveCountAttention(countId,"inventory-sheet:"+scanId);
+      applied.push({result_id:rid,ok:true,quantity,stock_count_id:countId,queued:false});
+    }
+  }
+
+  const allJobIds:string[]=[...existingJobIds];
   if(jobs.length){
-    const enq=await hub("enqueue_jobs",{jobs});if(enq.error)return {error:enq.error,status:enq.status||502,applied};
-    const jobIds=(enq.data?.job_ids||[]).map((x:any)=>id(x)).filter(Boolean);
-    for(let i=0;i<jobIds.length;i++){const m=jobToResult[i];if(m)await db.from("inventory_sheet_item_results").update({bling_job_id:jobIds[i],updated_at:new Date().toISOString()}).eq("id",m.rid)}
-    worker=await hub("process_stock_jobs",{limit:Math.max(1,jobs.length)});
-    if(jobIds.length){
-      const jq=await db.from("bling_hub_jobs_v2").select("id,status,error_code,error_message").in("id",jobIds);if(jq.error)throw jq.error;
-      const byId=new Map((jq.data||[]).map((x:any)=>[String(x.id),x]));
-      for(let i=0;i<jobIds.length;i++){
-        const j:any=byId.get(jobIds[i]),m=jobToResult[i];if(!m||!j)continue;
-        if(j.status==="synced"){await db.from("inventory_sheet_item_results").update({review_state:"applied",apply_error:null,updated_at:new Date().toISOString()}).eq("id",m.rid);if(m.countId)await inventorySheetResolveCountAttention(m.countId,"bling-stock-job:"+jobIds[i])}
-        else if(["review_required","failed"].includes(String(j.status)))await db.from("inventory_sheet_item_results").update({review_state:"error",apply_error:tx(j.error_code||j.error_message,300)||"bling_sync_failed",updated_at:new Date().toISOString()}).eq("id",m.rid);
+    const enq=await hub("enqueue_jobs",{jobs});
+    if(enq.error)return {error:enq.error,status:enq.status||502,applied};
+    const newIds=(enq.data?.job_ids||[]).map((x:any)=>id(x)).filter(Boolean);
+    let newPos=0;
+    for(const m of jobToResult){
+      if(m.jobId)continue;
+      const jid=newIds[newPos++]||"";
+      if(jid){
+        m.jobId=jid;allJobIds.push(jid);
+        await db.from("inventory_sheet_item_results").update({bling_job_id:jid,updated_at:new Date().toISOString()}).eq("id",m.rid);
       }
     }
   }
-  const all=await db.from("inventory_sheet_item_results").select("review_state").eq("scan_id",scanId);if(all.error)throw all.error;const states=(all.data||[]).map((x:any)=>String(x.review_state));
+
+  let worker:any=null;
+  if(allJobIds.length){
+    for(let attempt=0;attempt<2;attempt++){
+      const pending=await db.from("bling_hub_jobs_v2").select("id,status").in("id",allJobIds);
+      if(pending.error)throw pending.error;
+      const unresolved=(pending.data||[]).filter((x:any)=>!["synced","review_required","failed"].includes(String(x.status||"")));
+      if(!unresolved.length)break;
+      worker=await hub("process_stock_jobs",{limit:10});
+      if(worker.error)break;
+    }
+
+    const jq=await db.from("bling_hub_jobs_v2").select("id,status,error_code,error_message").in("id",allJobIds);
+    if(jq.error)throw jq.error;
+    const byId=new Map((jq.data||[]).map((x:any)=>[String(x.id),x]));
+    for(const m of jobToResult){
+      if(!m.jobId)continue;
+      const j:any=byId.get(String(m.jobId));
+      if(!j)continue;
+      if(j.status==="synced"){
+        await db.from("inventory_sheet_item_results").update({review_state:"applied",apply_error:null,updated_at:new Date().toISOString()}).eq("id",m.rid);
+        if(m.countId)await inventorySheetResolveCountAttention(m.countId,"bling-stock-job:"+m.jobId);
+      }else if(["review_required","failed"].includes(String(j.status))){
+        await db.from("inventory_sheet_item_results").update({review_state:"error",apply_error:tx(j.error_code||j.error_message,300)||"bling_sync_failed",updated_at:new Date().toISOString()}).eq("id",m.rid);
+      }else{
+        await db.from("inventory_sheet_item_results").update({review_state:"confirmed",apply_error:null,updated_at:new Date().toISOString()}).eq("id",m.rid);
+      }
+    }
+  }
+
+  const all=await db.from("inventory_sheet_item_results").select("review_state").eq("scan_id",scanId);
+  if(all.error)throw all.error;
+  const states=(all.data||[]).map((x:any)=>String(x.review_state));
   const scanStatus=states.length&&states.every((x:string)=>x==="applied")?"applied":states.some((x:string)=>x==="applied")?"partial":"analyzed";
   await db.from("inventory_sheet_page_scans").update({status:scanStatus,applied_at:scanStatus==="applied"?new Date().toISOString():null}).eq("id",scanId);
-  if(scanStatus==="applied"){const b=await db.from("inventory_sheet_batches").select("page_count").eq("id",scan.data.batch_id).maybeSingle(),pages=await db.from("inventory_sheet_page_scans").select("page_number").eq("batch_id",scan.data.batch_id).eq("status","applied");if(!b.error&&!pages.error&&new Set((pages.data||[]).map((x:any)=>Number(x.page_number))).size>=Number(b.data?.page_count||0))await db.from("inventory_sheet_batches").update({status:"completed",completed_at:new Date().toISOString()}).eq("id",scan.data.batch_id)}
-  const final=await db.from("inventory_sheet_item_results").select("id,review_state,confirmed_quantity,stock_count_id,bling_job_id,apply_error").eq("scan_id",scanId);if(final.error)throw final.error;
+
+  if(scanStatus==="applied"){
+    const b=await db.from("inventory_sheet_batches").select("page_count").eq("id",scan.data.batch_id).maybeSingle();
+    const pages=await db.from("inventory_sheet_page_scans").select("page_number").eq("batch_id",scan.data.batch_id).eq("status","applied");
+    if(!b.error&&!pages.error&&new Set((pages.data||[]).map((x:any)=>Number(x.page_number))).size>=Number(b.data?.page_count||0)){
+      await db.from("inventory_sheet_batches").update({status:"completed",completed_at:new Date().toISOString()}).eq("id",scan.data.batch_id);
+    }
+  }
+
+  const final=await db.from("inventory_sheet_item_results").select("id,review_state,confirmed_quantity,stock_count_id,bling_job_id,apply_error").eq("scan_id",scanId);
+  if(final.error)throw final.error;
   return {scan_id:scanId,status:scanStatus,authority,worker:worker?.data||null,rows:final.data||[],applied};
 }
-
 async function adminAuth(r:Request){
   const token=(r.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
   if(!token)return {ok:false,status:401,error:"admin_auth_required"};
@@ -1055,7 +1144,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:40,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:41,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
