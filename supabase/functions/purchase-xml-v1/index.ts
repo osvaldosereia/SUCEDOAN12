@@ -325,6 +325,40 @@ async function blingXml(token:string,key:string){
 function cuiabaDate(offset=0){
   const d=new Date(Date.now()+offset*86400000),p=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d),m:any={};for(const x of p)m[x.type]=x.value;return m.year+"-"+m.month+"-"+m.day;
 }
+function isoDayFromUtc(d:Date){return d.toISOString().slice(0,10)}
+function validIsoDay(v:any){
+  const x=clean(v,20);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(x))return "";
+  const d=new Date(x+"T00:00:00Z");
+  return Number.isFinite(d.getTime())&&isoDayFromUtc(d)===x?x:"";
+}
+function monthRange(offsetMonths=0){
+  const now=cuiabaDate(0),[y,m]=now.split("-").map(Number);
+  const first=new Date(Date.UTC(y,m-1+offsetMonths,1));
+  const last=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth()+1,0));
+  return {start:isoDayFromUtc(first),end:isoDayFromUtc(last)};
+}
+function purchaseWindow(input:any=null,fallbackDays=90){
+  const cfg=obj(input),preset=clean(cfg?.period||cfg?.preset,30).toLowerCase();
+  let start="",end="",label="",key=preset||"";
+  if(preset==="this_month"){const r=monthRange(0);start=r.start;end=r.end;label="Este mês";}
+  else if(preset==="last_month"){const r=monthRange(-1);start=r.start;end=r.end;label="Mês passado";}
+  else if(["days_90","days_120","days_180"].includes(preset)){
+    const days=Number(preset.replace("days_",""));start=cuiabaDate(-(days-1));end=cuiabaDate(0);label="Últimos "+days+" dias";
+  }else if(preset==="custom"){
+    start=validIsoDay(cfg?.start_date);end=validIsoDay(cfg?.end_date);
+    if(!start||!end||start>end)throw new Error("invalid_date_range");
+    const span=Math.floor((Date.parse(end+"T00:00:00Z")-Date.parse(start+"T00:00:00Z"))/86400000)+1;
+    if(span>365)throw new Error("date_range_over_365_days");
+    label=start+" a "+end;
+  }else{
+    const requested=Number(cfg?.lookback_days??input),days=Math.max(1,Math.min(365,Number.isFinite(requested)&&requested>0?requested:fallbackDays));
+    start=cuiabaDate(-(days-1));end=cuiabaDate(0);label="Últimos "+days+" dias";key="days_"+days;
+  }
+  const spanDays=Math.floor((Date.parse(end+"T00:00:00Z")-Date.parse(start+"T00:00:00Z"))/86400000)+1;
+  if(spanDays<1||spanDays>365)throw new Error("invalid_date_range");
+  return {period:key||"custom",label,start,end,span_days:spanDays};
+}
 
 async function purchaseXmlProbe(){
   const token=await oauth();
@@ -378,12 +412,12 @@ async function purchaseXmlPreviewLatest(){
   return {ok:true,readonly:true,company_document_resolved:company.doc.length===14,documents:out};
 }
 
-async function runBlingSync(source="bling_daily",lookbackOverride:any=null){
+async function runBlingSync(source="bling_daily",windowInput:any=null){
   const token=await oauth(),settings=await sb.from("purchase_xml_settings").select("*").eq("id",1).single();if(settings.error)throw settings.error;
   await companyDocument(token);
   const run=await sb.from("purchase_xml_import_runs").insert({source,status:"running"}).select("id").single();if(run.error)throw run.error;
-  const requestedLookback=Number(lookbackOverride),configuredLookback=Number(settings.data.daily_lookback_days||3),look=Math.max(1,Math.min(90,Number.isFinite(requestedLookback)&&requestedLookback>0?requestedLookback:configuredLookback));
-  const id=run.data.id,start=cuiabaDate(-(look-1)),end=cuiabaDate(0);
+  const fallback=source==="bling_daily"?Number(settings.data.daily_lookback_days||3):90,window=purchaseWindow(windowInput,fallback);
+  const id=run.data.id,start=window.start,end=window.end,look=window.span_days;
   let seen=0,processed=0,dup=0,failed=0,items=0,matched=0,review=0;
   try{
     for(let page=1;page<=20;page++){
@@ -408,10 +442,10 @@ async function runBlingSync(source="bling_daily",lookbackOverride:any=null){
       if(rows.length<100)break;
     }
     const status=failed||review?"completed_with_review":"completed";
-    await sb.from("purchase_xml_import_runs").update({status,finished_at:new Date().toISOString(),documents_seen:seen,documents_processed:processed,documents_duplicate:dup,documents_failed:failed,items_seen:items,items_matched:matched,items_review:review,metadata:{start,end},updated_at:new Date().toISOString()}).eq("id",id);
-    return {ok:true,run_id:id,status,window:{start,end},lookback_days:look,source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,documents_seen:seen,processed,duplicates:dup,failed,items,matched,review};
+    await sb.from("purchase_xml_import_runs").update({status,finished_at:new Date().toISOString(),documents_seen:seen,documents_processed:processed,documents_duplicate:dup,documents_failed:failed,items_seen:items,items_matched:matched,items_review:review,metadata:{start,end,period:window.period,label:window.label,span_days:window.span_days},updated_at:new Date().toISOString()}).eq("id",id);
+    return {ok:true,run_id:id,status,window,lookback_days:look,source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,documents_seen:seen,processed,duplicates:dup,failed,items,matched,review};
   }catch(e){
-    await sb.from("purchase_xml_import_runs").update({status:"failed",finished_at:new Date().toISOString(),documents_seen:seen,documents_processed:processed,documents_duplicate:dup,documents_failed:failed+1,items_seen:items,items_matched:matched,items_review:review,metadata:{start,end,error:clean((e as Error)?.message||e,500)},updated_at:new Date().toISOString()}).eq("id",id);
+    await sb.from("purchase_xml_import_runs").update({status:"failed",finished_at:new Date().toISOString(),documents_seen:seen,documents_processed:processed,documents_duplicate:dup,documents_failed:failed+1,items_seen:items,items_matched:matched,items_review:review,metadata:{start,end,period:window.period,label:window.label,span_days:window.span_days,error:clean((e as Error)?.message||e,500)},updated_at:new Date().toISOString()}).eq("id",id);
     throw e;
   }
 }
@@ -435,15 +469,45 @@ async function manualImport(files:any[]){
   await sb.from("purchase_xml_import_runs").update({status,finished_at:new Date().toISOString(),documents_seen:files.length,documents_processed:processed,documents_duplicate:dup,documents_failed:failed,items_seen:items,items_matched:matched,items_review:review,updated_at:new Date().toISOString()}).eq("id",run.data.id);
   return {ok:true,status,run_id:run.data.id,processed,duplicates:dup,failed,items,matched,review,results};
 }
-async function summary(){
+async function browseBlingNfe(windowInput:any=null){
+  const window=purchaseWindow(windowInput,90),token=await oauth(),out:any[]=[];
+  let truncated=false;
+  for(let page=1;page<=20;page++){
+    const q=new URLSearchParams({tipo:"0",pagina:String(page),limite:"100",dataEmissaoInicial:window.start+" 00:00:00",dataEmissaoFinal:window.end+" 23:59:59"});
+    const r=await bg(token,"/nfe?"+q.toString());
+    if(!r.ok)throw new Error("bling_nfe_list_http_"+r.status);
+    const rows=Array.isArray(r.data?.data)?r.data.data:[];
+    for(const x of rows)out.push({
+      bling_nfe_id:Number(x?.id||0)||null,
+      number:clean(x?.numero||x?.numeroNota||"",40)||null,
+      issued_at:clean(x?.dataEmissao||x?.dataOperacao||x?.data||"",50)||null,
+      contact_name:clean(x?.contato?.nome||x?.fornecedor?.nome||x?.nome||"",180)||null,
+      contact_document:digits(x?.contato?.numeroDocumento||x?.contato?.cpfCnpj||x?.fornecedor?.numeroDocumento||"")||null,
+      total_amount:num(x?.valorNota??x?.valor??x?.total??x?.valorTotal),
+      status:clean(x?.situacao?.nome||x?.situacao||x?.status||"",100)||null,
+      access_key:digits(x?.chaveAcesso||"")||null
+    });
+    if(rows.length<100)break;
+    if(page===20)truncated=true;
+  }
+  return {ok:true,readonly:true,window,count:out.length,truncated,documents:out,source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false};
+}
+async function summary(windowInput:any=null){
+  const window=purchaseWindow(windowInput,90);
+  const docsQ=sb.from("purchase_xml_documents")
+    .select("id,document_key,issued_at,supplier_name,recipient_kind,financial_eligible,finance_status,receipt_status,processing_status,total_amount,item_count,matched_item_count,review_item_count,created_at")
+    .gte("issued_at",window.start+"T00:00:00")
+    .lte("issued_at",window.end+"T23:59:59.999")
+    .order("issued_at",{ascending:false})
+    .limit(500);
   const [docs,runs,items,settings]=await Promise.all([
-    sb.from("purchase_xml_documents").select("id,document_key,issued_at,supplier_name,recipient_kind,financial_eligible,finance_status,receipt_status,processing_status,total_amount,item_count,matched_item_count,review_item_count,created_at").order("issued_at",{ascending:false}).limit(40),
+    docsQ,
     sb.from("purchase_xml_import_runs").select("*").order("created_at",{ascending:false}).limit(8),
     sb.from("purchase_xml_items").select("id,document_id,item_number,description,purchase_unit,purchase_quantity,purchase_unit_price,base_unit,conversion_status,conversion_factor,converted_quantity,base_unit_cost,product_id,processing_status,metadata").in("processing_status",["review_required","failed"]).order("created_at",{ascending:false}).limit(100),
     sb.from("purchase_xml_settings").select("*").eq("id",1).single()
   ]);
   if(docs.error)throw docs.error;if(runs.error)throw runs.error;if(items.error)throw items.error;if(settings.error)throw settings.error;
-  return {ok:true,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data,integration:{bling_manual_lookback_days:90,daily_lookback_days:Number(settings.data?.daily_lookback_days||3),source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,received_notes_url:"https://www.bling.com.br/notas.entrada.php#list",manifestation_automated:false,stock_receipt_requires_human_confirmation:true}};
+  return {ok:true,filter:window,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data,integration:{manual_max_range_days:365,daily_lookback_days:Number(settings.data?.daily_lookback_days||3),source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,received_notes_url:"https://www.bling.com.br/notas.entrada.php#list",manifestation_automated:false,stock_receipt_requires_human_confirmation:true}};
 }
 async function docDetail(id:string){
   const [d,it]=await Promise.all([sb.from("purchase_xml_documents").select("*").eq("id",id).maybeSingle(),sb.from("purchase_xml_items").select("*,products(id,name,gtin,bling_product_id,cost,stock,unit,is_active)").eq("document_id",id).order("item_number")]);
@@ -479,9 +543,10 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="probe")return js(req,await purchaseXmlProbe());
     if(action==="preview_latest"){const r=await purchaseXmlPreviewLatest();return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="daily_sync"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await runBlingSync("bling_daily"))}
-    if(action==="bling_sync")return js(req,await runBlingSync("bling_manual",90));
+    if(action==="bling_sync")return js(req,await runBlingSync("bling_manual",body));
+    if(action==="browse_bling")return js(req,await browseBlingNfe(body));
     if(action==="manual_import"){const r=await manualImport(body?.files);return js(req,r,r.ok?200:Number(r.status||400))}
-    if(action==="summary")return js(req,await summary());
+    if(action==="summary")return js(req,await summary(body));
     if(action==="document"){const r=await docDetail(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="xml_url"){const r=await signedXml(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="set_conversion"){const r=await setConversion(body);return js(req,r,r.ok?200:Number(r.status||400))}
