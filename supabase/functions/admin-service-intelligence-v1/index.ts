@@ -1899,7 +1899,7 @@ async function blingHubResolveVitrineFiscalOrder(sb:any,sourceOrderIdRaw:any){
   // Pedidos novos da Vitrine já vivem neste banco canônico.
   // O lookup antigo por idempotency_key permanece só para histórico QX.
   let q=await sb.from("orders")
-    .select("id,status,total,payment_method,delivered_at,idempotency_key,order_number")
+    .select("id,status,total,payment_method,delivered_at,idempotency_key,order_number,created_at")
     .eq("id",sourceOrderId)
     .in("source",["vitrine","manual_whatsapp","papoai","reorder"])
     .maybeSingle();
@@ -1908,7 +1908,7 @@ async function blingHubResolveVitrineFiscalOrder(sb:any,sourceOrderIdRaw:any){
   if(!q.data){
     const key="vitrine:"+sourceOrderId;
     q=await sb.from("orders")
-      .select("id,status,total,payment_method,delivered_at,idempotency_key,order_number")
+      .select("id,status,total,payment_method,delivered_at,idempotency_key,order_number,created_at")
       .eq("idempotency_key",key)
       .maybeSingle();
     if(q.error)throw q.error;
@@ -3673,7 +3673,7 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
   const sourceOrderId=resolved.source_order_id;
   const order=resolved.order;
 
-  const [cfg,link,control,job,dispatchGate]=await Promise.all([
+  const [cfg,link,control,job,dispatchGate,hubRuntime]=await Promise.all([
     sb.from("fiscal_runtime_config")
       .select("enabled,execution_mode,dispatch_gate_mode,require_fiscal_authorization_before_dispatch,dispatch_fiscal_canary_enabled,dispatch_fiscal_canary_armed_at,dispatch_fiscal_human_issue_enabled,dispatch_invoice_generate_enabled,dispatch_invoice_authorize_enabled,dispatch_invoice_canary_source_order_id")
       .eq("id",1).maybeSingle(),
@@ -3686,13 +3686,15 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
     sb.from("dispatch_fiscal_jobs")
       .select("id,status,attempts,external_side_effect,bling_order_id,bling_invoice_id,bling_invoice_number,access_key,sefaz_status,error_code,error_detail,created_at,updated_at,finished_at")
       .eq("order_id",order.id).eq("fiscal_version",1).maybeSingle(),
-    sb.rpc("check_order_dispatch_fiscal_gate_v1",{p_order_id:order.id})
+    sb.rpc("check_order_dispatch_fiscal_gate_v1",{p_order_id:order.id}),
+    sb.from("bling_hub_runtime_v2").select("mode,metadata").eq("id",1).maybeSingle()
   ]);
   if(cfg.error)throw cfg.error;
   if(link.error)throw link.error;
   if(control.error)throw control.error;
   if(job.error)throw job.error;
   if(dispatchGate.error)throw dispatchGate.error;
+  if(hubRuntime.error)throw hubRuntime.error;
 
   const f=cfg.data||{};
   const l=link.data||{};
@@ -3725,8 +3727,23 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
   }
 
   const hardBlockers:string[]=[];
+  const hubMeta=hubRuntime.data?.metadata||{};
+  const cutoverMs=Date.parse(clean(hubMeta?.ops2_live_cutover_at,80));
+  const createdMs=Date.parse(clean(order?.created_at,80));
+  const postCutoverOps2=hubRuntime.data?.mode==="live"
+    && hubMeta?.ops2_direct_order_state_enabled===true
+    && Number.isFinite(cutoverMs)
+    && Number.isFinite(createdMs)
+    && createdMs>=cutoverMs;
+  const verifiedStatusId=Number(hubMeta?.ops2_order_status_mapping?.verified_id||0)||0;
+  const linkTargetKey=clean(l?.metadata?.ops2_target_key,80);
+  const linkTargetStatusId=Number(l?.metadata?.ops2_target_status_id||0)||0;
+
   if(order.status!=="ready")hardBlockers.push("order_not_ready_for_fiscal_dispatch");
   if(l?.status!=="matched"||!blingOrderId)hardBlockers.push("bling_order_not_linked");
+  if(postCutoverOps2&&(linkTargetKey!=="verified"||!verifiedStatusId||linkTargetStatusId!==verifiedStatusId)){
+    hardBlockers.push("bling_order_not_verified");
+  }
   if(!externalKey)hardBlockers.push("external_order_key_missing");
   if(invoiceLookup.performed&&invoiceLookup.match_count>1)hardBlockers.push("multiple_invoices_for_external_key");
   if(invoice?.situation?.failed)hardBlockers.push("invoice_terminal_state");
