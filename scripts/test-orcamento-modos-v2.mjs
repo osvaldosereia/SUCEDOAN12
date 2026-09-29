@@ -7,6 +7,11 @@ const presets = JSON.parse(readFileSync(new URL('../orcamento/presets-bonini.jso
 const inlineScript = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
 
 assert.ok(inlineScript, 'script principal do orçamento não encontrado');
+assert.match(html, /STOREFRONT_API='https:\/\/ssbesxgaijknwsjbsbcz\.supabase\.co\/functions\/v1\/storefront-v2'/, 'orçamento deve usar o catálogo canônico do Supabase');
+assert.doesNotMatch(html, /cedar-chemist-310801-default-rtdb\.firebaseio\.com/, 'orçamento não deve depender do Firebase legado');
+assert.match(html, /fetchCanonicalProducts/, 'catálogo deve paginar os produtos disponíveis do storefront-v2');
+assert.match(html, /raw\.sku/, 'normalização deve preservar SKU para busca por código');
+assert.match(html, /raw\.gtin/, 'normalização deve preservar GTIN para busca por EAN');
 assert.doesNotThrow(() => new Function(inlineScript), 'JavaScript inline do orçamento deve compilar');
 
 assert.match(html, /id="hideUnitPrice"/, 'controle do modo somente com itens ausente');
