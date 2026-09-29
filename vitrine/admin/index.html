@@ -6402,6 +6402,20 @@
       loadCurrentOrderBlingPreview(true);
     }catch(e){$('#editorBody').innerHTML='<div class="empty">Não consegui abrir este pedido.</div>'}
   }
+  function orderKitSeparationHtml(detail){
+    const plan=Array.isArray(detail?.checkout_separation_plan)?detail.checkout_separation_plan:[];
+    if(!plan.length){
+      const refs=(detail?.separation_plan||[]).filter(x=>x.short_code);
+      if(!refs.length)return '';
+      return '<div class="rule-notice"><strong>Separação por lote</strong><div>'+refs.map(x=>(x.role==='hygiene'?'Limpeza/Higiene':'Alimentos')+' · '+esc(x.short_code)+' · '+esc(fmtQty(x.quantity))+' un.').join('<br>')+'</div></div>';
+    }
+    return '<div class="rule-notice"><strong>Como separar esta cesta</strong><div>'+plan.map(x=>{
+      const q=fmtQty(x.quantity||1),food=x.food||{},h=x.hygiene||{};
+      const foodText=food.mode==='lot'?'<b>Alimentos: pegar '+esc(q)+' × '+esc(food.short_code||'lote')+'</b>':'Alimentos: separar os produtos avulsos';
+      const hygieneText=h.mode==='lot'?'<b>Limpeza/Higiene: pegar '+esc(q)+' × '+esc(h.short_code||'lote')+'</b>':h.mode==='loose'?'Limpeza/Higiene: separar os produtos avulsos':'';
+      return '<div style="margin-top:6px"><strong>'+esc(x.basket_name||'Cesta')+'</strong><br>'+foodText+(hygieneText?'<br>'+hygieneText:'')+'</div>';
+    }).join('')+'</div></div>';
+  }
   function paintOrderDetail(){
     const d=state.currentOrder,o=d.order,c=d.customer||{},payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'';
     const currentCustomerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
@@ -6444,6 +6458,7 @@
         '<div class="offer-note">Estas alterações valem para este pedido. O cadastro principal do cliente não é alterado.</div>'+
       '</div></details>'+
       '<div class="section-title">Operação</div>'+
+      orderKitSeparationHtml(d)+
       orderActionButtonsHtml(o)+
       '<div class="section-title">Itens do pedido</div>'+
       '<div id="componentReplacementPanel"></div>'+
@@ -7224,7 +7239,12 @@
     };
     for(const item of detail.items||[]){
       if(item.item_kind==='basket'&&item.components?.length){
-        for(const c of item.components)add(c.product_id||c.name_snapshot,c.name_snapshot,Number(c.quantity)*Number(item.quantity),c.image_url,c.gondola_number,c.shelf_label,c.gtin);
+        for(const comp of item.components){
+          const im=comp.metadata||{};
+          if(im.group_mode==='lot'&&im.kit_lot_short_code)continue;
+          const totalQty=Number(comp.quantity)*Number(item.quantity);
+          if(totalQty>0)add(comp.product_id||comp.name_snapshot,comp.name_snapshot,totalQty,comp.image_url,comp.gondola_number,comp.shelf_label,comp.gtin);
+        }
       }else add(item.product_id||item.name_snapshot,item.name_snapshot,item.quantity,item.image_url,item.gondola_number,item.shelf_label,item.gtin);
     }
     return [...map.values()].sort((a,b)=>{
@@ -7234,6 +7254,18 @@
       const shelfOrder=sa.localeCompare(sb,'pt-BR',{numeric:true,sensitivity:'base'});
       return shelfOrder||a.name.localeCompare(b.name,'pt-BR');
     });
+  }
+  function separationKitRefs(detail){
+    const out=[];
+    for(const plan of detail?.checkout_separation_plan||[]){
+      const qty=Number(plan.quantity||1);
+      if(plan.food?.mode==='lot'&&plan.food.short_code)out.push({label:'ALIMENTOS',code:plan.food.short_code,quantity:qty,basket:plan.basket_name||''});
+      if(plan.hygiene?.mode==='lot'&&plan.hygiene.short_code)out.push({label:'LIMPEZA / HIGIENE',code:plan.hygiene.short_code,quantity:qty,basket:plan.basket_name||''});
+    }
+    if(!out.length){
+      for(const x of detail?.separation_plan||[])if(x.short_code)out.push({label:x.role==='hygiene'?'LIMPEZA / HIGIENE':'ALIMENTOS',code:x.short_code,quantity:Number(x.quantity||1),basket:''});
+    }
+    return out;
   }
   async function validateBlingBeforeSeparation(orderId){
     try{
@@ -7257,7 +7289,7 @@
   }
 
   function separationTicketBody(detail){
-    const o=detail.order,items=separationItems(detail),groups=[];
+    const o=detail.order,items=separationItems(detail),kitRefs=separationKitRefs(detail),groups=[];
     for(const item of items){
       const key=item.gondola_number??'none';
       let group=groups.find(g=>g.key===key);
@@ -7267,9 +7299,10 @@
       if(!shelf){shelf={key:shelfKey,label:item.shelf_label?'PRATELEIRA '+item.shelf_label:'SEM PRATELEIRA',items:[]};group.shelves.push(shelf)}
       shelf.items.push(item);
     }
+    const kitBlock=kitRefs.length?'<div class="block"><b>PEGAR PRONTO</b>'+kitRefs.map(x=>'<div style="border:2px solid #000;padding:1.5mm;margin:1mm 0;font-size:13px;font-weight:900">'+esc(fmtQty(x.quantity))+'× '+esc(x.label)+' · '+esc(x.code)+(x.basket?'<div style="font-size:8px;font-weight:600;margin-top:.5mm">'+esc(x.basket)+'</div>':'')+'</div>').join('')+'</div>':'';
     const sections=groups.map(g=>'<div class="gondola-title">'+esc(g.label)+'</div>'+g.shelves.map(s=>'<div class="shelf-title-print">'+esc(s.label)+'</div><div class="sep-grid">'+s.items.map(i=>'<div class="sep-card"><img src="'+esc(i.image_url||'/img/logoantonia5.png')+'" alt=""><div class="sep-name">'+esc(i.name)+'</div>'+(i.gtin?'<div class="sep-ean">EAN '+esc(i.gtin)+'</div>':'<div class="sep-ean missing">SEM EAN</div>')+'<div class="sep-qty">'+esc(fmtQty(i.quantity))+'×</div></div>').join('')+'</div>').join('')).join('');
-    const units=items.reduce((sum,i)=>sum+Number(i.quantity||0),0);
-    return '<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>SEPARAÇÃO · Pedido #'+esc(shortOrder(o.order_number))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+sections+'<div class="foot">'+items.length+' produtos diferentes · '+esc(fmtQty(units))+' unidades</div>';
+    const units=items.reduce((sum,i)=>sum+Number(i.quantity||0),0),kitUnits=kitRefs.reduce((sum,x)=>sum+Number(x.quantity||0),0);
+    return '<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>SEPARAÇÃO · Pedido #'+esc(shortOrder(o.order_number))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+kitBlock+sections+'<div class="foot">'+kitRefs.length+' referência(s) pronta(s) · '+items.length+' produto(s) avulso(s) · '+esc(fmtQty(kitUnits+units))+' unidades/volumes</div>';
   }
   async function markPickingPresented(orderId){
     try{await api('ops_print_presented',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})})}catch{}
