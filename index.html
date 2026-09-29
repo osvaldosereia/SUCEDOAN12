@@ -1090,7 +1090,7 @@
           food_changed:foodChanged,hygiene_changed:hygieneChanged,uses_hygiene_kit:d.basket.uses_hygiene_kit===true,
           food_lot_id:d.basket.food_lot_id,food_lot_code:d.basket.food_lot_code,
           hygiene_lot_id:d.basket.hygiene_lot_id||null,hygiene_lot_code:d.basket.hygiene_lot_code||'',
-          basket_stock_quantity:Number(d.basket.stock_quantity||0),food_lot_quantity:Number(d.basket.stock_quantity||0),hygiene_lot_quantity:Number(d.basket.stock_quantity||0),
+          basket_stock_quantity:Number(d.basket.stock_quantity||0),food_lot_quantity:Number(d.basket.food_lot_quantity??d.basket.stock_quantity||0),hygiene_lot_quantity:Number(d.basket.hygiene_lot_quantity??d.basket.stock_quantity||0),
           components:d.items.map(x=>({
             product_id:x.product_id,name:x.name,image_url:x.image_url||'',packaging:x.packaging||'',
             stock_quantity:stockNumber(x.extra_stock_quantity??x.stock_quantity),extra_stock_quantity:stockNumber(x.extra_stock_quantity??x.stock_quantity),
@@ -1452,13 +1452,25 @@
       }else{
         lines.push('CESTA: NENHUMA');
       }
-      const lotRefs=[];
+      const lotRefs=new Map();
       for(const plan of saved?.separation_plan||[]){
-        if(plan?.food?.mode==='lot'&&plan.food.short_code)lotRefs.push(plan.food.short_code);
-        if(plan?.hygiene?.mode==='lot'&&plan.hygiene.short_code)lotRefs.push(plan.hygiene.short_code);
+        const q=Math.max(1,Number(plan?.quantity||1));
+        if(plan?.food?.mode==='lot'&&plan.food.short_code){
+          const key='ALIMENTOS|'+plan.food.short_code;
+          lotRefs.set(key,(lotRefs.get(key)||0)+q);
+        }
+        if(plan?.hygiene?.mode==='lot'&&plan.hygiene.short_code){
+          const key='LIMPEZA/HIGIENE|'+plan.hygiene.short_code;
+          lotRefs.set(key,(lotRefs.get(key)||0)+q);
+        }
       }
-      const uniqueLotRefs=[...new Set(lotRefs)];
-      if(uniqueLotRefs.length)lines.push('REF. LOTES: '+uniqueLotRefs.join(' + '));
+      if(lotRefs.size){
+        lines.push('','REF. INTERNA DE SEPARACAO:');
+        for(const [key,q] of lotRefs){
+          const [label,code]=key.split('|');
+          lines.push(formatQty(q)+'x KIT '+label+' '+code);
+        }
+      }
       lines.push('','PRODUTOS:');
       for(const item of state.cart){
         if(item.type==='product'&&Number(item.qty||0)>0){
