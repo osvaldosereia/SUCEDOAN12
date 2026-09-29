@@ -893,6 +893,37 @@
       .bling-actions button,.bling-actions a{min-width:0}
     }
 
+
+    /* Balance V5.3 · explicit numeric field labels */
+    .inventory-field{display:block;min-width:0}
+    .inventory-field>span{
+      display:block;
+      margin:0 0 4px;
+      color:var(--muted);
+      font-size:9px;
+      font-weight:800;
+      line-height:1;
+      letter-spacing:.05em;
+      text-align:center;
+    }
+    .inventory-field>input{
+      width:100%;
+      min-width:0;
+      min-height:40px;
+      padding:6px 8px;
+      text-align:center;
+      font-weight:900;
+      font-variant-numeric:tabular-nums;
+    }
+    @media(max-width:760px){
+      .inventory-field>span{font-size:10px;margin-bottom:5px}
+      .inventory-field>input{
+        min-height:50px!important;
+        font-size:19px!important;
+        border-radius:10px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -3596,8 +3627,8 @@
           ].filter(Boolean).join(' · ');
           return '<div class="simple-row inventory-review-row" data-sheet-row="'+esc(r.result_id)+'">'+
             '<div class="simple-main"><strong>'+esc(r.name)+'</strong><small>'+esc(detail)+'</small></div>'+
-            '<input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque" title="Estoque" placeholder="Est." data-sheet-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'" '+(locked?'disabled':'')+' style="min-height:38px;padding:6px 8px;text-align:center;font-weight:900">'+
-            '<input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola" title="Gôndola" placeholder="Gôn." data-sheet-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'" '+(locked?'disabled':'')+' style="min-height:38px;padding:6px 8px;text-align:center;font-weight:900">'+
+            '<label class="inventory-field"><span>ESTOQUE</span><input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque" title="Estoque" placeholder="0" data-sheet-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'" '+(locked?'disabled':'')+'></label>'+
+            '<label class="inventory-field"><span>GÔNDOLA</span><input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola" title="Gôndola" placeholder="0" data-sheet-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'" '+(locked?'disabled':'')+'></label>'+
             '<div style="display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:wrap"><span data-sheet-label="'+esc(r.result_id)+'">'+inventorySheetReviewLabel(r)+'</span><button class="secondary" type="button" data-sheet-confirm="'+esc(r.result_id)+'" '+(needsConfirm?'':'hidden')+' style="min-height:36px;padding:0 9px">Confirmar</button></div>'+
           '</div>';
         }).join('');
@@ -3766,8 +3797,8 @@
         ].filter(Boolean).join(' · ');
         return '<div class="simple-row inventory-pending-row">'+
           '<div class="simple-main"><strong>'+esc(r.name||'Produto')+'</strong><small>'+esc(detail)+'</small></div>'+
-          '<input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque manual" title="Estoque contado manualmente" placeholder="Est." data-pending-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'" style="min-height:40px;padding:6px;text-align:center;font-weight:900">'+
-          '<input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola manual" title="Gôndola conferida manualmente" placeholder="Gôn." data-pending-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'" style="min-height:40px;padding:6px;text-align:center;font-weight:900">'+
+          '<label class="inventory-field"><span>ESTOQUE</span><input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque manual" title="Estoque contado manualmente" placeholder="0" data-pending-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'"></label>'+
+          '<label class="inventory-field"><span>GÔNDOLA</span><input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola manual" title="Gôndola conferida manualmente" placeholder="0" data-pending-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'"></label>'+
           '<button class="primary" type="button" data-pending-resolve="'+esc(r.result_id)+'" style="min-height:40px;padding:0 10px">Resolver manualmente</button>'+
         '</div>';
       }).join('');
