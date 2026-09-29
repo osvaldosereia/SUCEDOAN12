@@ -361,7 +361,10 @@
     function loadCart(){
       try{
         const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        return Array.isArray(parsed) ? parsed : [];
+        if(!Array.isArray(parsed))return [];
+        const clean=parsed.filter(item=>item?.type!=='basket'||Boolean(item?.lot_id));
+        if(clean.length!==parsed.length)try{localStorage.setItem(STORAGE_KEY,JSON.stringify(clean))}catch{}
+        return clean;
       }catch{return []}
     }
     function readCache(key,maxAge){
@@ -606,6 +609,7 @@
         '<div class="photo"><img src="'+esc(safeImage(b.image_url))+'" alt="'+esc(basketName(b.name))+'" '+imageAttrs(index)+'></div>'+
         '<div class="card-body"><div class="name">'+esc(basketName(b.name))+'</div>'+
         '<div class="price">'+money(b.display_price_cents)+'</div>'+
+        '<div class="sub" style="margin:0 0 7px">'+esc(formatQty(b.stock_quantity||0))+' pronta(s)</div>'+
         '<button type="button" class="add" data-basket="'+esc(b.id)+'">Ver cesta</button></div></article>';
     }
 
@@ -1271,7 +1275,7 @@
         cancelWhatsAppHandoff(handoffWindow);
         if(btn){btn.disabled=false;btn.textContent='Enviar pedido para o WhatsApp'}
         if(e.message==='minimum_order'){const min=Number(e.payload?.minimum_order_cents||MINIMUM_ORDER_CENTS),current=Number(e.payload?.total_cents||cartTotal());toast('Pedido mínimo '+money(min)+'. Faltam '+money(Math.max(0,min-current))+'.')}
-        else if(['insufficient_stock','product_unavailable','basket_unavailable','basket_lot_unavailable','basket_lot_insufficient'].includes(e.message))toast('O estoque mudou. Atualize a cesta e tente novamente.');
+        else if(['insufficient_stock','product_unavailable','basket_unavailable','basket_lot_unavailable','basket_lot_insufficient','basket_component_not_in_lot'].includes(e.message))toast('O estoque mudou. Atualize a cesta e tente novamente.');
         else toast('Não consegui registrar. Tente novamente.');
         return;
       }
