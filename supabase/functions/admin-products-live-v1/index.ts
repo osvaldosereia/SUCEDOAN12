@@ -1702,10 +1702,19 @@ async function inventorySheetApply(p:any,auth:any){
 
 async function basketLooseStockMap(ids:string[]){
   const out=new Map<string,any>();const clean=[...new Set((ids||[]).map(String).filter(Boolean))];if(!clean.length)return out;
-  for(let i=0;i<clean.length;i+=500){
+  const wanted=new Set(clean);
+  if(clean.length>180){
     const q=await db.from("ops2_loose_sellable_stock_v1")
       .select("product_id,effective_sellable_stock,basket_locked_quantity,loose_sellable_stock,bling_stock_ready")
-      .in("product_id",clean.slice(i,i+500));
+      .limit(5000);
+    if(q.error)throw q.error;
+    for(const x of q.data||[])if(wanted.has(String(x.product_id)))out.set(String(x.product_id),x);
+    return out;
+  }
+  for(let i=0;i<clean.length;i+=80){
+    const q=await db.from("ops2_loose_sellable_stock_v1")
+      .select("product_id,effective_sellable_stock,basket_locked_quantity,loose_sellable_stock,bling_stock_ready")
+      .in("product_id",clean.slice(i,i+80));
     if(q.error)throw q.error;
     for(const x of q.data||[])out.set(String(x.product_id),x);
   }
@@ -2034,7 +2043,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:56,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:57,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
