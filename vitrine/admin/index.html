@@ -2851,12 +2851,13 @@
   }
   function basketProductPickerCard(p,attr,label='Usar'){
     const stock=Math.max(0,Number(p?.loose_stock||0));
-    const code=p?.gtin||p?.sku||'Sem código';
+    const code=p?.sku||p?.gtin||'Sem código';
+    const ean=p?.gtin&&String(p.gtin)!==String(code)?String(p.gtin):'';
     const photo=p?.image_url||'/img/sem-foto.svg';
     return '<article class="basket-product-picker-card '+(stock<=0?'zero-stock':'')+'">'+
       '<div class="basket-product-picker-photo"><img loading="lazy" src="'+esc(photo)+'" alt="" onerror="this.onerror=null;this.src=\'/img/sem-foto.svg\'"></div>'+
       '<div class="basket-product-picker-name">'+esc(p?.name||'Produto')+'</div>'+
-      '<div class="basket-product-picker-code">Código: '+esc(code)+'</div>'+
+      '<div class="basket-product-picker-code"><strong>Código: '+esc(code)+'</strong>'+(ean?'<br>EAN: '+esc(ean):'')+'</div>'+
       '<div class="basket-product-picker-stock"><span>Estoque solto</span><strong>'+esc(fmtQty(stock))+'</strong></div>'+
       '<button class="secondary basket-product-picker-action" type="button" '+attr+'="'+esc(p.id)+'">'+esc(label)+'</button>'+
     '</article>';
