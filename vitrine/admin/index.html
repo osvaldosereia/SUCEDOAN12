@@ -2659,20 +2659,24 @@
       const host=$('#basketAdminBody'),ks=state.basketKitSummary;
       const food=state.basketKits.filter(k=>k.kind==='food'),hygiene=state.basketKits.filter(k=>k.kind==='hygiene');
       const readyFood=food.filter(k=>Number(k.ready_quantity||0)>0).length;
+      const readyHygiene=hygiene.some(k=>Number(k.ready_quantity||0)>0);
       const migrationReady=food.filter(k=>k.basket?.split_kits_enabled===true).length;
+      const legacyUnits=(state.baskets||[]).reduce((s,b)=>s+Number(b.ready_quantity||0),0);
+      const missingFood=Math.max(0,food.length-readyFood);
+      const transitionDone=missingFood===0&&readyHygiene&&migrationReady===food.length;
       host.innerHTML=
         '<div class="bling-grid">'+
-          '<div class="bling-card"><small>Modelos de alimentos</small><strong>'+esc(food.length)+'</strong><span class="sub">'+esc(readyFood)+' com lote novo pronto</span></div>'+
-          '<div class="bling-card"><small>Kits prontos</small><strong>'+esc(ks.ready_units||0)+'</strong><span class="sub">unidades na estrutura nova</span></div>'+
-          '<div class="bling-card"><small>Lotes novos</small><strong>'+esc(ks.ready_lots||0)+'</strong><span class="sub">lotes disponíveis</span></div>'+
-          '<div class="bling-card"><small>Migração</small><strong>'+esc(migrationReady)+' / '+esc(food.length)+'</strong><span class="sub">cestas habilitadas para nova estrutura</span></div>'+
+          '<div class="bling-card"><small>Alimentos prontos</small><strong>'+esc(readyFood)+' / '+esc(food.length)+'</strong><span class="sub">'+(missingFood?esc(missingFood)+' modelo(s) ainda sem lote':'todos com lote novo')+'</span></div>'+
+          '<div class="bling-card"><small>Kit LH</small><strong>'+(readyHygiene?'PRONTO':'FALTA')+'</strong><span class="sub">um único modelo para todas as cestas</span></div>'+
+          '<div class="bling-card"><small>Unidades antigas</small><strong>'+esc(legacyUnits)+'</strong><span class="sub">ainda montadas na estrutura anterior</span></div>'+
+          '<div class="bling-card"><small>Virada da vitrine</small><strong>'+(transitionDone?'PRONTA':esc(migrationReady)+' / '+esc(food.length))+'</strong><span class="sub">'+(transitionDone?'nova estrutura habilitada':'ocorre automaticamente quando tudo estiver pronto')+'</span></div>'+
         '</div>'+
-        '<div class="kit-transition"><strong>Troca segura de estrutura</strong><span>Monte os novos lotes sem interromper os atuais. Se o estoque solto estiver baixo, abra “Modelos comerciais e lotes antigos”, escolha a cesta e use “Migrar unidades” somente depois de desmontá-las fisicamente. Durante a transição, mantenha ao menos 1 unidade antiga disponível de cada cesta. A vitrine só muda para Alimentos + Limpeza/Higiene quando todos os modelos tiverem o novo estoque necessário.</span></div>'+
+        '<div class="kit-transition"><strong>'+(transitionDone?'Nova estrutura pronta':'Troca segura de estrutura')+'</strong><span>'+(transitionDone?'Todos os modelos necessários já possuem lote novo. A vitrine pode operar por Alimentos + Limpeza/Higiene e continuará trocando automaticamente para o próximo lote quando o atual zerar.':'Monte os novos lotes sem interromper os atuais. Use “Migrar unidades” somente depois de desmontar fisicamente as cestas antigas. Para cada cesta de alimentos você pode ir direto ao lote antigo pelo botão “Liberar antigas”. Para o LH, libere componentes de qualquer cesta antiga que possua limpeza/higiene. A vitrine só muda quando todos os modelos necessários estiverem prontos.')+'</span></div>'+
         '<div class="kit-section-title"><div><h2>Limpeza e higiene</h2><p>Um único kit padrão serve para todas as cestas que possuem esta parte.</p></div></div>'+
         '<div class="basket-admin-grid">'+hygiene.map(kitAdminCard).join('')+'</div>'+
         '<div class="kit-section-title"><div><h2>Alimentos</h2><p>Cada cesta tem seu próprio lote de alimentos.</p></div></div>'+
         '<div class="basket-admin-grid">'+food.map(kitAdminCard).join('')+'</div>'+
-        '<details style="margin-top:18px"><summary style="cursor:pointer;font-weight:700;color:var(--muted)">Modelos comerciais e lotes antigos da transição</summary>'+
+        '<details id="legacyBasketTransition" style="margin-top:18px"><summary style="cursor:pointer;font-weight:700;color:var(--muted)">Modelos comerciais e lotes antigos da transição</summary>'+
           '<div class="basket-warning"><strong>Somente transição</strong><small>Os lotes completos antigos estão preservados. Novas montagens devem ser feitas pelos kits acima.</small></div>'+
           '<div class="basket-admin-grid">'+state.baskets.map(b=>'<article class="basket-admin-card">'+
             '<div class="basket-admin-head"><img src="'+esc(b.image_url||'/img/sem-foto.svg')+'" alt=""><div><h3>'+esc(b.name)+'</h3><p>'+money(b.base_price_cents)+' · modelo comercial</p></div></div>'+
@@ -2682,6 +2686,8 @@
       host.querySelectorAll('[data-kit-manage]').forEach(btn=>btn.onclick=()=>openBasketKitAdmin(btn.dataset.kitManage));
       host.querySelectorAll('[data-kit-new]').forEach(btn=>btn.onclick=async()=>{await openBasketKitAdmin(btn.dataset.kitNew);startBasketKitLotDraft(null)});
       host.querySelectorAll('[data-kit-duplicate-current]').forEach(btn=>btn.onclick=async()=>{await openBasketKitAdmin(btn.dataset.kitDuplicateCurrent);startBasketKitLotDraft(btn.dataset.sourceLot)});
+      host.querySelectorAll('[data-kit-migrate-basket]').forEach(btn=>btn.onclick=()=>openBasketAdmin(btn.dataset.kitMigrateBasket));
+      host.querySelectorAll('[data-kit-migrate-hygiene]').forEach(btn=>btn.onclick=()=>{const d=$('#legacyBasketTransition');if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});toast('Escolha uma cesta antiga e use “Migrar unidades” depois da desmontagem física.')}});
       host.querySelectorAll('[data-basket-manage]').forEach(btn=>btn.onclick=()=>openBasketAdmin(btn.dataset.basketManage));
     }catch(e){
       $('#basketAdminBody').innerHTML='<div class="empty">Não consegui carregar as cestas. <button class="text" id="retryBaskets">Tentar novamente</button></div>';
@@ -2690,12 +2696,19 @@
   }
   function kitAdminCard(k){
     const label=k.kind==='hygiene'?'Limpeza e Higiene':(k.basket?.name||k.name).replace(/^Alimentos · /,'');
+    const legacy=k.kind==='food'?(state.baskets||[]).find(b=>String(b.id)===String(k.basket_id)):null;
+    const legacyUnits=k.kind==='food'?Number(legacy?.ready_quantity||0):(state.baskets||[]).filter(b=>b.uses_hygiene_kit===true).reduce((s,b)=>s+Number(b.ready_quantity||0),0);
+    const migrateBtn=k.kind==='food'&&k.basket_id&&legacyUnits>0
+      ? '<button class="secondary" type="button" data-kit-migrate-basket="'+esc(k.basket_id)+'">Liberar antigas</button>'
+      : k.kind==='hygiene'&&legacyUnits>0
+        ? '<button class="secondary" type="button" data-kit-migrate-hygiene="1">Ver cestas antigas</button>'
+        : '';
     return '<article class="basket-admin-card">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div><span class="kit-code-badge">'+esc(k.code_prefix)+'#</span></div><span class="pill '+(Number(k.ready_quantity||0)>0?'':'warn')+'">'+(Number(k.ready_quantity||0)>0?'Com estoque':'Sem lote novo')+'</span></div>'+
       '<div><h3 style="margin:0;font-size:16px">'+esc(label)+'</h3><p class="sub">'+esc(k.template_item_count)+' produtos no modelo</p></div>'+
-      '<div class="basket-kpis"><div class="basket-kpi"><small>Prontos</small><strong>'+esc(k.ready_quantity||0)+'</strong></div><div class="basket-kpi"><small>Pode montar</small><strong>'+esc(k.max_build_from_template||0)+'</strong></div><div class="basket-kpi"><small>Próximo código</small><strong>'+esc(k.next_short_code||'—')+'</strong></div></div>'+
-      (k.current_lot?'<div><strong style="font-size:12px">Em uso: '+esc(k.current_lot.short_code||k.current_lot.lot_code)+'</strong><span class="sub">'+esc(k.current_lot.quantity_available)+' unidade(s)</span></div>':'')+
-      '<div class="basket-toolbar"><button class="secondary" type="button" data-kit-manage="'+esc(k.id)+'">Gerenciar lotes</button>'+(k.current_lot?'<button class="secondary" type="button" data-kit-duplicate-current="'+esc(k.id)+'" data-source-lot="'+esc(k.current_lot.id)+'">Duplicar '+esc(k.current_lot.short_code||k.current_lot.lot_code)+'</button>':'')+'<button class="primary" type="button" data-kit-new="'+esc(k.id)+'">+ Novo lote</button></div>'+
+      '<div class="basket-kpis"><div class="basket-kpi"><small>Prontos</small><strong>'+esc(k.ready_quantity||0)+'</strong></div><div class="basket-kpi"><small>Pode montar</small><strong>'+esc(k.max_build_from_template||0)+'</strong></div><div class="basket-kpi"><small>Antigas</small><strong>'+esc(legacyUnits)+'</strong></div><div class="basket-kpi"><small>Próximo código</small><strong>'+esc(k.next_short_code||'—')+'</strong></div></div>'+
+      (k.current_lot?'<div><strong style="font-size:12px">Em uso: '+esc(k.current_lot.short_code||k.current_lot.lot_code)+'</strong><span class="sub">'+esc(k.current_lot.quantity_available)+' unidade(s) · ao zerar entra o próximo lote disponível</span></div>':'')+
+      '<div class="basket-toolbar">'+migrateBtn+'<button class="secondary" type="button" data-kit-manage="'+esc(k.id)+'">Gerenciar lotes</button>'+(k.current_lot?'<button class="secondary" type="button" data-kit-duplicate-current="'+esc(k.id)+'" data-source-lot="'+esc(k.current_lot.id)+'">Duplicar '+esc(k.current_lot.short_code||k.current_lot.lot_code)+'</button>':'')+'<button class="primary" type="button" data-kit-new="'+esc(k.id)+'">+ Novo lote</button></div>'+
     '</article>';
   }
   async function openBasketKitAdmin(id){
