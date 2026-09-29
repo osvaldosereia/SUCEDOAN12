@@ -1781,7 +1781,7 @@ async function basketKitsAdmin(){
 async function basketKitAdminDetail(rawId:any){
   const kid=id(rawId);if(!kid)return {error:"invalid_kit_template",status:400};
   const kq=await db.from("basket_kit_templates")
-    .select("*,basket:basket_templates(id,name,image_url,base_price,uses_hygiene_kit)")
+    .select("*,basket:basket_templates(id,name,image_url,base_price,uses_hygiene_kit,split_kits_enabled)")
     .eq("id",kid).eq("is_active",true).maybeSingle();
   if(kq.error)throw kq.error;if(!kq.data)return {error:"kit_template_not_found",status:404};
   const [iq,lq,pq]=await Promise.all([
@@ -1841,6 +1841,8 @@ async function basketKitLotCreate(p:any,auth:any){
     return {error:code,status:code==="insufficient_loose_stock"||code==="kit_short_code_in_use"?409:400};
   }
   const kit=await db.from("basket_kit_templates").select("kind,basket_id,name").eq("id",kid).maybeSingle();
+  let enabledNow=0;
+  try{const en=await db.rpc("enable_split_baskets_for_ready_kits_v1");enabledNow=Number(en.data||0)}catch{}
   await opsEvent("basket.kit_lot_built","Lote pré-montado criado.","basket",kit.data?.basket_id||kid,
     {kit_template_id:kid,kit_name:kit.data?.name,kind:kit.data?.kind,lot_id:q.data?.lot_id,short_code:q.data?.short_code,quantity,duplicated_from_lot_id:id(p?.duplicated_from_lot_id)||null},
     tx(p?.operator,80)||"Operação","human","dona_antonia","basket-kit-lot:"+String(q.data?.lot_id||""));
