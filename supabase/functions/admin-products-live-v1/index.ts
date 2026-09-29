@@ -4,13 +4,31 @@ const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 async function stockAuthority(){const r=await db.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle();if(r.error)throw r.error;return String((r.data?.metadata||{}).ops2_stock_authority||"legacy_shadow")}
+async function stockBreakdownMap(ids:string[]){
+  const out=new Map<string,any>();const cleanIds=[...new Set((ids||[]).filter(Boolean))];if(!cleanIds.length)return out;
+  for(let i=0;i<cleanIds.length;i+=80){
+    const r=await db.from("ops2_loose_sellable_stock_v1")
+      .select("product_id,effective_sellable_stock,basket_locked_quantity,loose_sellable_stock,bling_stock_ready")
+      .in("product_id",cleanIds.slice(i,i+80));
+    if(r.error)throw r.error;
+    for(const x of r.data||[])out.set(String(x.product_id),{
+      effective_stock:Math.max(0,Number(x.effective_sellable_stock||0)),
+      basket_locked:Math.max(0,Number(x.basket_locked_quantity||0)),
+      loose_stock:Math.max(0,Number(x.loose_sellable_stock||0)),
+      bling_stock_ready:x.bling_stock_ready===true
+    });
+  }
+  return out;
+}
 async function effectiveStockMap(ids:string[]){
-  const out=new Map<string,number>();const cleanIds=[...new Set((ids||[]).filter(Boolean))];if(!cleanIds.length)return out;
-  const r=await db.from("ops2_sellable_stock_v1").select("product_id,effective_sellable_stock").in("product_id",cleanIds);
-  if(r.error)throw r.error;for(const x of r.data||[])out.set(String(x.product_id),Math.max(0,Number(x.effective_sellable_stock||0)));return out;
+  const raw=await stockBreakdownMap(ids),out=new Map<string,number>();
+  for(const [k,v] of raw)out.set(k,Number(v.effective_stock||0));
+  return out;
 }
 async function mappedProduct(p:any){
-  if(!p?.id)return mp(p);const m=await effectiveStockMap([p.id]);return mp({...p,stock:m.has(String(p.id))?m.get(String(p.id)):0});
+  if(!p?.id)return mp(p);
+  const m=await stockBreakdownMap([p.id]),s:any=m.get(String(p.id))||{};
+  return mp({...p,stock:s.effective_stock??0,__stock_breakdown:s});
 }
 const O=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const OP_SOURCES=["vitrine","manual_whatsapp","papoai","reorder"];
@@ -28,7 +46,25 @@ function today(){return new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiab
 function add(d:string,n:number){const x=new Date(d+"T12:00:00Z");x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)}
 function days(a:string,b:string){return Math.round((Date.parse(b+"T12:00:00Z")-Date.parse(a+"T12:00:00Z"))/86400000)}
 function offer(p:any){if(!p.is_offer||p.offer_price==null)return null;const m=meta(p.metadata);return {id:p.id,product_id:p.id,title:p.name,sale_price_cents:Math.round(Number(p.offer_price||0)*100),starts_at:m.offer_starts_at||null,ends_at:m.offer_ends_at||null,active:true,metadata:{source:m.offer_source||"manual",discount_percent:m.offer_discount_percent??null,duration_mode:m.offer_duration_mode||"stock_zero"}}}
-function mp(p:any){const m=meta(p.metadata);return {id:p.id,sku:p.sku||null,gtin:p.gtin||null,name:p.name||"",description:p.description_short||p.description_long||"",active:p.is_active!==false,sale_price_cents:Math.round(Number(p.price||0)*100),stock_quantity:Number(p.stock||0),image_url:p.image_url||"",image_original_url:p.image_original_url||"",image_ai_url:p.image_ai_url||"",image_ai_status:p.image_ai_status||null,image_ai_model:p.image_ai_model||null,image_ai_processed_at:p.image_ai_processed_at||null,image_ai_error:p.image_ai_error||null,image_ai_validation:p.image_ai_validation||null,expiration_date:p.validity_date||null,auto_expiry_offer_enabled:m.auto_expiry_offer_enabled===true,deactivation_reason:m.deactivation_reason||null,deactivated_at:m.deactivated_at||null,updated_at:p.updated_at,packaging:p.packaging||"",subcategory:p.subcategory||"",detailed_subcategory:p.subsubcategory||"",category:p.sales_category||p.storefront_category||p.category||"",gondola_number:p.gondola&&/^\d+$/.test(String(p.gondola))?Number(p.gondola):null,shelf_label:p.shelf||null,offer:offer(p)}}
+function mp(p:any){
+  const m=meta(p.metadata),s=meta(p.__stock_breakdown);
+  const total=Number(p.stock||0),locked=Math.max(0,Number(s.basket_locked||0)),loose=Math.max(0,Number(s.loose_stock??total));
+  return {
+    id:p.id,sku:p.sku||null,gtin:p.gtin||null,name:p.name||"",description:p.description_short||p.description_long||"",
+    active:p.is_active!==false,sale_price_cents:Math.round(Number(p.price||0)*100),
+    stock_quantity:total,physical_stock_quantity:total,loose_stock_quantity:loose,basket_locked_quantity:locked,
+    stock_breakdown_warning:locked>total+0.0001,stock_breakdown_difference:Math.max(0,locked-total),
+    bling_stock_ready:s.bling_stock_ready===true,
+    image_url:p.image_url||"",image_original_url:p.image_original_url||"",image_ai_url:p.image_ai_url||"",
+    image_ai_status:p.image_ai_status||null,image_ai_model:p.image_ai_model||null,image_ai_processed_at:p.image_ai_processed_at||null,
+    image_ai_error:p.image_ai_error||null,image_ai_validation:p.image_ai_validation||null,
+    expiration_date:p.validity_date||null,auto_expiry_offer_enabled:m.auto_expiry_offer_enabled===true,
+    deactivation_reason:m.deactivation_reason||null,deactivated_at:m.deactivated_at||null,updated_at:p.updated_at,
+    packaging:p.packaging||"",subcategory:p.subcategory||"",detailed_subcategory:p.subsubcategory||"",
+    category:p.sales_category||p.storefront_category||p.category||"",
+    gondola_number:p.gondola&&/^\d+$/.test(String(p.gondola))?Number(p.gondola):null,shelf_label:p.shelf||null,offer:offer(p)
+  };
+}
 async function one(pid:string){const r=await db.from("products").select("*").eq("id",pid).maybeSingle();if(r.error)throw r.error;return r.data}
 async function aud(b:any,a:any,p:any,src:string){if(!b||!a)return;const ba=b.is_active!==false,aa=a.is_active!==false,bd=b.validity_date||null,ad=a.validity_date||null;if(ba===aa&&bd===ad)return;let ev="expiration_changed",at="operator",al=tx(p?.operator,80)||"Operador não identificado";if(ba!==aa&&aa)ev="reactivated";else if(ba!==aa&&!aa){if(meta(a.metadata).deactivation_reason==="expired"){ev="auto_expired_deactivation";at="system";al="Sistema · regra de validade"}else ev="manual_deactivated"}await db.from("product_lifecycle_audit").insert({product_id:a.id,event:ev,actor_type:at,actor_label:al,previous_active:ba,new_active:aa,previous_expiration_date:bd,new_expiration_date:ad,details:{source:src}})}
 async function rec(){
@@ -117,8 +153,8 @@ async function products(u:URL){
     const filtered=all.filter((x:any)=>inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category)===wanted)
       .sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
     rows=filtered.slice(off,off+lim);
-    const sm=await effectiveStockMap(rows.map((x:any)=>x.id));
-    return {products:rows.map((x:any)=>mp({...x,stock:sm.has(String(x.id))?sm.get(String(x.id)):0})),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
+    const sm=await stockBreakdownMap(rows.map((x:any)=>x.id));
+    return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s})}),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
   }
   let q=db.from("products").select("*").order("name").range(off,off+lim-1);
   if(sub)q=q.eq("subcategory",sub);
@@ -127,8 +163,8 @@ async function products(u:URL){
   if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
   const r=await q;if(r.error)throw r.error;
   rows=r.data||[];
-  const sm=await effectiveStockMap(rows.map((x:any)=>x.id));
-  return {products:rows.map((x:any)=>mp({...x,stock:sm.has(String(x.id))?sm.get(String(x.id)):0})),next_offset:rows.length===lim?off+lim:null};
+  const sm=await stockBreakdownMap(rows.map((x:any)=>x.id));
+  return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s})}),next_offset:rows.length===lim?off+lim:null};
 }
 async function facets(c:string,act=""){
   const all:any[]=[];
