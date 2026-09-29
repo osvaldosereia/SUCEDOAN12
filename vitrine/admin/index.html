@@ -2686,7 +2686,7 @@
       host.querySelectorAll('[data-kit-manage]').forEach(btn=>btn.onclick=()=>openBasketKitAdmin(btn.dataset.kitManage));
       host.querySelectorAll('[data-kit-new]').forEach(btn=>btn.onclick=async()=>{await openBasketKitAdmin(btn.dataset.kitNew);startBasketKitLotDraft(null)});
       host.querySelectorAll('[data-kit-duplicate-current]').forEach(btn=>btn.onclick=async()=>{await openBasketKitAdmin(btn.dataset.kitDuplicateCurrent);startBasketKitLotDraft(btn.dataset.sourceLot)});
-      host.querySelectorAll('[data-kit-migrate-basket]').forEach(btn=>btn.onclick=()=>openBasketAdmin(btn.dataset.kitMigrateBasket));
+      host.querySelectorAll('[data-kit-migrate-basket]').forEach(btn=>btn.onclick=()=>openBasketAdmin(btn.dataset.kitMigrateBasket,btn.dataset.foodKitId));
       host.querySelectorAll('[data-kit-migrate-hygiene]').forEach(btn=>btn.onclick=()=>{const d=$('#legacyBasketTransition');if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});toast('Escolha uma cesta antiga e use “Migrar unidades” depois da desmontagem física.')}});
       host.querySelectorAll('[data-basket-manage]').forEach(btn=>btn.onclick=()=>openBasketAdmin(btn.dataset.basketManage));
     }catch(e){
@@ -2699,7 +2699,7 @@
     const legacy=k.kind==='food'?(state.baskets||[]).find(b=>String(b.id)===String(k.basket_id)):null;
     const legacyUnits=k.kind==='food'?Number(legacy?.ready_quantity||0):(state.baskets||[]).filter(b=>b.uses_hygiene_kit===true).reduce((s,b)=>s+Number(b.ready_quantity||0),0);
     const migrateBtn=k.kind==='food'&&k.basket_id&&legacyUnits>0
-      ? '<button class="secondary" type="button" data-kit-migrate-basket="'+esc(k.basket_id)+'">Liberar antigas</button>'
+      ? '<button class="secondary" type="button" data-kit-migrate-basket="'+esc(k.basket_id)+'" data-food-kit-id="'+esc(k.id)+'">Liberar antigas</button>'
       : k.kind==='hygiene'&&legacyUnits>0
         ? '<button class="secondary" type="button" data-kit-migrate-hygiene="1">Ver cestas antigas</button>'
         : '';
@@ -2878,11 +2878,12 @@
     catch(e){toast(String(e?.message||'')==='lot_has_allocated_orders'?'Este lote já está ligado a pedido e não pode ser cancelado.':'Não consegui cancelar o lote.')}
   }
 
-  async function openBasketAdmin(id){
+  async function openBasketAdmin(id,migrateKitId=null){
+    state.pendingMigrationFoodKitId=migrateKitId||null;
     const content=$('#content');content.innerHTML='<div class="loading">Abrindo cesta…</div>';
     try{
       const data=await api('basket_admin',{id});state.basketDetail=data;state.basketLotDraft=null;paintBasketAdmin();
-    }catch(e){content.innerHTML='<div class="empty">Não consegui abrir esta cesta. <button class="text" id="backBaskets">Voltar</button></div>';if($('#backBaskets'))$('#backBaskets').onclick=renderBaskets}
+    }catch(e){state.pendingMigrationFoodKitId=null;content.innerHTML='<div class="empty">Não consegui abrir esta cesta. <button class="text" id="backBaskets">Voltar</button></div>';if($('#backBaskets'))$('#backBaskets').onclick=renderBaskets}
   }
   function basketLotHtml(l){
     const gap=Number(l.gap_items||0),dismantled=Number(l.quantity_dismantled||0);
@@ -3098,8 +3099,22 @@
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({lot_id:lotId,quantity,operator:op,note:'Desmontagem física confirmada para migração Alimentos + LH'})
       });
-      toast(quantity+' cesta(s) liberada(s) para remontagem');
-      await openBasketAdmin(d.basket.id);
+      const targetKitId=state.pendingMigrationFoodKitId||null;
+      state.pendingMigrationFoodKitId=null;
+      if(targetKitId){
+        await openBasketKitAdmin(targetKitId);
+        startBasketKitLotDraft(null);
+        if(state.basketKitLotDraft){
+          state.basketKitLotDraft.quantity=quantity;
+          paintBasketKitLotComposer();
+          const cap=basketKitLotDraftCapacity();
+          if(cap<quantity)toast(quantity+' desmontada(s), mas o estoque digital suporta '+cap+' lote(s). Revise os itens em falta.');
+          else toast(quantity+' cesta(s) liberada(s) · lote de Alimentos já preparado para confirmar');
+        }
+      }else{
+        toast(quantity+' cesta(s) liberada(s) para remontagem');
+        await openBasketAdmin(d.basket.id);
+      }
     }catch(e){
       toast(String(e?.message||'')==='release_exceeds_available'?'O saldo deste lote mudou. Atualize e tente novamente.':'Não consegui liberar as unidades.');
     }
