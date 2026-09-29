@@ -1031,7 +1031,7 @@
       let max;
       if(d.basket?.split_mode){
         const wasChanged=d.items.filter(x=>x.component_group===group).some(x=>Number(x.quantity||0)!==Number(x.base_quantity||0));
-        max=item.max_quantity==null?(wasChanged?Math.floor(remaining??30):base+Math.floor(remaining??30)):Number(item.max_quantity);
+        max=item.max_quantity==null?Math.max(base,Math.floor(remaining??30)):Math.max(base,Number(item.max_quantity));
       }else{
         const ruleMax=item.max_quantity==null?base+Math.floor(remaining??30):Number(item.max_quantity);
         max=Math.max(base,Math.min(ruleMax,base+Math.floor(remaining??30)));
