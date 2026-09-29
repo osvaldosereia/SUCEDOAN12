@@ -151,7 +151,112 @@ async function facets(c:string,act=""){
     subcategories:[...sm].map(([value,count])=>({value,label:value,count})).sort((a,b)=>String(a.label).localeCompare(String(b.label),"pt-BR"))
   };
 }
-async function saveProduct(p:any){const authority=await stockAuthority(),pid=id(p?.id),name=tx(p?.name,300);if(!name)return {error:"name_required",status:400};const b=pid?await one(pid):null,m=meta(b?.metadata),exp=Object.prototype.hasOwnProperty.call(p||{},"expiration_date")?dt(p.expiration_date):b?.validity_date||null;if(p?.expiration_date&&!exp)return {error:"invalid_expiration_date",status:400};let active=Object.prototype.hasOwnProperty.call(p||{},"active")?p.active!==false:(b?.is_active!==false),stock=Number(p?.stock_quantity??b?.stock??0),io=b?.is_offer===true,op=b?.offer_price??null,nmeta={...m,auto_expiry_offer_enabled:p?.auto_expiry_offer_enabled===true};if(exp&&days(today(),exp)<0){active=false;stock=0;io=false;op=null;nmeta={...nmeta,deactivation_reason:"expired",deactivated_at:new Date().toISOString(),offer_source:null}}else if(active&&m.deactivation_reason==="expired")nmeta={...nmeta,deactivation_reason:null,deactivated_at:null};const patch:any={name,sku:tx(p?.sku,120)||null,gtin:dg(p?.gtin)||null,price:Number(p?.sale_price_cents||0)/100,...(authority==="bling"&&pid?{}:{stock}),is_active:active,validity_date:exp,sales_category:tx(p?.category,120)||null,storefront_category:tx(p?.category,120)||null,category:tx(p?.category,120)||null,subcategory:tx(p?.subcategory,120)||null,packaging:tx(p?.packaging,120)||null,image_url:tx(p?.image_url,1200)||null,description_short:tx(p?.description,1000)||null,is_offer:io,offer_price:op,metadata:nmeta,updated_at:new Date().toISOString()};let r:any;if(pid)r=await db.from("products").update(patch).eq("id",pid).select("*").single();else r=await db.from("products").insert({...patch,source_system:"admin_registration",sync_status:"local"}).select("*").single();if(r.error)throw r.error;if(b)await aud(b,r.data,p,"product_save");await rec();const fr=await one(r.data.id);return {product_id:r.data.id,product:await mappedProduct(fr)}}
+async function saveProduct(p:any){
+  const authority=await stockAuthority(),pid=id(p?.id),duplicateFromId=!pid?id(p?.duplicate_from_id):"";
+  const name=tx(p?.name,300);if(!name)return {error:"name_required",status:400};
+  const b=pid?await one(pid):null;
+  const source=duplicateFromId?await one(duplicateFromId):null;
+  if(duplicateFromId&&!source)return {error:"duplicate_source_not_found",status:404};
+
+  const sourceMeta=meta(source?.metadata),baseMeta=pid?meta(b?.metadata):duplicateFromId?{...sourceMeta}:{};
+  if(duplicateFromId){
+    for(const k of ["auto_expiry_offer_enabled","deactivation_reason","deactivated_at","offer_source","offer_discount_percent","offer_duration_mode","offer_starts_at","offer_ends_at","offer_effective_expiration","expiry_basis","lot_tracking_complete"]){
+      delete (baseMeta as any)[k];
+    }
+    (baseMeta as any).duplicated_from_product_id=duplicateFromId;
+    (baseMeta as any).duplicated_at=new Date().toISOString();
+    (baseMeta as any).duplicated_by=tx(p?.operator,80)||"Operação";
+  }
+
+  const exp=Object.prototype.hasOwnProperty.call(p||{},"expiration_date")?dt(p.expiration_date):(pid?b?.validity_date:null);
+  if(p?.expiration_date&&!exp)return {error:"invalid_expiration_date",status:400};
+  let active=Object.prototype.hasOwnProperty.call(p||{},"active")?p.active!==false:(pid?b?.is_active!==false:false);
+  let stock=Number(p?.stock_quantity??(pid?b?.stock:0)??0);
+  let io=pid?b?.is_offer===true:false,op=pid?(b?.offer_price??null):null;
+  let nmeta={...baseMeta,auto_expiry_offer_enabled:p?.auto_expiry_offer_enabled===true};
+
+  if(exp&&days(today(),exp)<0){
+    active=false;stock=0;io=false;op=null;
+    nmeta={...nmeta,deactivation_reason:"expired",deactivated_at:new Date().toISOString(),offer_source:null};
+  }else if(active&&meta(b?.metadata).deactivation_reason==="expired"){
+    nmeta={...nmeta,deactivation_reason:null,deactivated_at:null};
+  }
+
+  const inherited:any=duplicateFromId?{
+    ncm:source?.ncm??null,
+    cost:source?.cost??null,
+    brand:source?.brand??null,
+    subsubcategory:source?.subsubcategory??null,
+    supplier:source?.supplier??null,
+    unit:source?.unit??null,
+    tags:Array.isArray(source?.tags)?source.tags:[],
+    min_stock:source?.min_stock??null,
+    sort_order:Number(source?.sort_order||0),
+    desired_bling_status:source?.desired_bling_status||"A",
+    is_whatsapp_active:source?.is_whatsapp_active!==false,
+    whatsapp_category:source?.whatsapp_category??null,
+    storefront_featured:source?.storefront_featured===true,
+    customer_category:source?.customer_category??null,
+    customer_subcategory:source?.customer_subcategory??null,
+    customer_subsubcategory:source?.customer_subsubcategory??null,
+    customer_taxonomy_version:source?.customer_taxonomy_version??null,
+    customer_taxonomy_confidence:source?.customer_taxonomy_confidence??null,
+    customer_taxonomy_review_status:source?.customer_taxonomy_review_status??null
+  }:{};
+
+  const patch:any={
+    ...inherited,
+    name,
+    sku:tx(p?.sku,120)||null,
+    gtin:dg(p?.gtin)||null,
+    price:Number(p?.sale_price_cents||0)/100,
+    ...(authority==="bling"&&pid?{}:{stock}),
+    is_active:active,
+    validity_date:exp,
+    sales_category:tx(p?.category,120)||null,
+    storefront_category:tx(p?.category,120)||null,
+    category:tx(p?.category,120)||null,
+    subcategory:tx(p?.subcategory,120)||null,
+    packaging:tx(p?.packaging,120)||null,
+    image_url:tx(p?.image_url,1200)||null,
+    description_short:tx(p?.description,1000)||null,
+    is_offer:io,
+    offer_price:op,
+    metadata:nmeta,
+    updated_at:new Date().toISOString()
+  };
+
+  let r:any;
+  if(pid){
+    r=await db.from("products").update(patch).eq("id",pid).select("*").single();
+  }else{
+    r=await db.from("products").insert({
+      ...patch,
+      source_system:duplicateFromId?"admin_duplicate":"admin_registration",
+      sync_status:"local",
+      bling_product_id:null,
+      firebase_key:null,
+      physically_verified:false,
+      physically_verified_at:null,
+      physically_verified_by:null,
+      gondola:null,
+      shelf:null,
+      last_counted_at:null,
+      last_bling_sync_at:null,
+      sync_error:null
+    }).select("*").single();
+  }
+  if(r.error){
+    const msg=String(r.error.message||"");
+    if(msg.includes("products_gtin")||msg.includes("gtin"))return {error:"gtin_already_exists",status:409};
+    if(msg.includes("products_sku")||msg.includes("sku"))return {error:"sku_already_exists",status:409};
+    throw r.error;
+  }
+  if(b)await aud(b,r.data,p,"product_save");
+  await rec();
+  const fr=await one(r.data.id);
+  return {product_id:r.data.id,product:await mappedProduct(fr),duplicated_from_product_id:duplicateFromId||null};
+}
 async function saveOffer(p:any){const pid=id(p?.product_id);if(!pid)return {error:"invalid_product",status:400};const x=await one(pid);if(!x)return {error:"product_not_found",status:404};const m=meta(x.metadata),active=p?.active===true,price=Number(x.price||0),sale=Number(p?.sale_price_cents||0)/100,disc=Number(p?.discount_percent||0),dur=tx(p?.duration,20)||"stock_zero";let end:any=null;if(["5","10","15"].includes(dur))end=new Date(Date.now()+Number(dur)*86400000).toISOString();const op=sale>0?sale:(disc>0&&disc<100?Math.round(price*(100-disc))/100:null),nmeta={...m,auto_expiry_offer_enabled:false,offer_source:active?"manual":null,offer_discount_percent:active?disc:null,offer_duration_mode:dur,offer_starts_at:active?new Date().toISOString():null,offer_ends_at:active?end:null};const r=await db.from("products").update({is_offer:active,offer_price:active?op:null,metadata:nmeta,updated_at:new Date().toISOString()}).eq("id",pid).select("*").single();if(r.error)throw r.error;return {product_id:pid,product:mp(r.data),offer:offer(r.data)}}
 async function exps(){
   await rec();
