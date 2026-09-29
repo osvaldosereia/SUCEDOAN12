@@ -960,7 +960,7 @@
     .basket-component-row img{width:46px;height:46px;object-fit:contain;border:1px solid var(--line);border-radius:9px}.basket-component-main{min-width:0}.basket-component-main strong{display:block;font-size:12px}.basket-component-main small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
     .basket-stock-box small{display:block;color:var(--muted);font-size:10px}.basket-stock-box strong{display:block;font-size:13px;margin-top:2px}.basket-stock-box.zero strong{color:var(--danger)}
     .basket-suggestions{display:flex;gap:5px;overflow:auto;padding:2px 0}.basket-suggestion{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 8px;min-width:130px;text-align:left;font-size:10px;color:var(--ink)}.basket-suggestion:hover{border-color:#b7ccbd;background:var(--brand-soft)}.basket-suggestion.saved{border-color:#b7ccbd;background:#f7fbf8}.basket-suggestion strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.basket-suggestion span{display:block;color:var(--muted);margin-top:2px}
-    .basket-lot-list{display:grid;gap:8px}.basket-lot{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}.basket-lot-head{display:grid;grid-template-columns:minmax(150px,1fr) 100px 100px 150px auto;gap:9px;align-items:center;padding:11px 12px}.basket-lot-head strong{font-size:12px}.basket-lot-head small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.basket-lot-items{border-top:1px solid var(--line);background:#fafcfb;padding:9px 12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:5px}.basket-lot-item{font-size:11px;color:#435148}
+    .basket-lot-list{display:grid;gap:8px}.basket-lot{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}.basket-lot-head{display:grid;grid-template-columns:minmax(150px,1fr) 100px 100px 150px auto;gap:9px;align-items:center;padding:11px 12px}.basket-lot-head strong{font-size:12px}.basket-lot-head small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.basket-lot-items{border-top:1px solid var(--line);background:#fafcfb;padding:10px 12px}.basket-lot-component-list{display:grid;gap:8px}.basket-lot-component-card{display:grid;grid-template-columns:48px minmax(190px,1fr) 84px 110px;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}.basket-lot-component-card img{width:46px;height:46px;object-fit:contain;border:1px solid var(--line);border-radius:9px;background:#fff}.basket-lot-component-main{min-width:0}.basket-lot-component-main strong{display:block;font-size:12px;line-height:1.3}.basket-lot-component-main small{display:block;color:var(--muted);font-size:10px;margin-top:3px;white-space:normal}.basket-lot-component-qty strong{display:block;font-size:16px}.basket-lot-component-qty span{display:block;color:var(--muted);font-size:10px;margin-top:2px}.basket-lot-component-stock small{display:block;color:var(--muted);font-size:10px}.basket-lot-component-stock strong{display:block;font-size:14px;margin-top:2px}.basket-lot-component-stock.zero strong{color:var(--danger)}@media(max-width:720px){.basket-lot-component-card{grid-template-columns:46px minmax(0,1fr) 74px}.basket-lot-component-stock{grid-column:2/-1}.basket-lot-component-main strong{font-size:13px}}
     .basket-composer{border:1px solid #b7ccbd;background:#f8fbf9;border-radius:14px;padding:14px;margin:14px 0}.basket-composer-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}.basket-composer-head h2{margin:0;font-size:18px}.basket-composer-head p{margin:4px 0 0;color:var(--muted);font-size:12px}
     .basket-composer-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.basket-composer-line{display:grid;grid-template-columns:minmax(190px,1.3fr) 72px 100px minmax(250px,1.4fr) auto;gap:9px;align-items:start;padding:10px 0;border-top:1px solid #dce8df}.basket-composer-line:first-child{border-top:0}
     .basket-choice strong{display:block;font-size:12px}.basket-choice small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.basket-choice.changed strong{color:var(--brand)}
@@ -2855,6 +2855,20 @@
       if($('#backBasketKits'))$('#backBasketKits').onclick=renderBaskets;
     }
   }
+  function lotCompositionCards(items,qtyField='quantity_per_kit'){
+    return '<div class="basket-lot-component-list">'+(items||[]).map(x=>{
+      const p=x.product||{},qty=Number(x?.[qtyField]??x?.quantity_per_basket??x?.quantity_per_kit??0);
+      const code=[p.sku||'',p.gtin||'',p.packaging||''].filter(Boolean).join(' · ');
+      const changed=x?.metadata?.is_changed===true||x?.metadata?.is_substitution===true||Boolean(x?.substitution_reason);
+      const loose=Number(x?.loose_stock||0);
+      return '<div class="basket-lot-component-card">'+
+        '<img loading="lazy" src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt="" onerror="this.onerror=null;this.src=\'/img/sem-foto.svg\'">'+
+        '<div class="basket-lot-component-main"><strong>'+esc(p.name||'Produto')+(changed?' <span class="pill warn">alterado</span>':'')+'</strong><small>'+esc(code||'Sem código cadastrado')+'</small></div>'+
+        '<div class="basket-lot-component-qty"><strong>'+esc(fmtQty(qty))+'×</strong><span>por kit</span></div>'+
+        '<div class="basket-lot-component-stock '+(loose<=0?'zero':'')+'"><small>Estoque avulso</small><strong>'+esc(fmtQty(loose))+'</strong></div>'+
+      '</div>';
+    }).join('')+'</div>';
+  }
   function kitLotRow(l){
     const code=l.short_code||l.lot_code||'—';
     const isDraft=l.status==='draft';
@@ -2872,7 +2886,7 @@
         )+
       '</div></div>'+
       '<details><summary style="padding:0 12px 10px;cursor:pointer;font-size:11px;color:var(--brand)">Ver composição</summary><div class="basket-lot-items">'+
-        (l.items||[]).map(x=>'<div class="basket-lot-item"><strong>'+esc(fmtQty(x.quantity_per_kit))+'×</strong> '+esc(x.product?.name||'Produto')+'</div>').join('')+
+        lotCompositionCards(l.items||[],'quantity_per_kit')+
       '</div></details></div>';
   }
   function paintBasketKitAdmin(){
@@ -3094,7 +3108,7 @@
         (canToggle?'<button class="'+(l.sale_enabled===true?'secondary':'primary')+'" type="button" data-legacy-lot-sale="'+esc(l.id)+'" data-enabled="'+(l.sale_enabled===true?'0':'1')+'">'+(l.sale_enabled===true?'Desativar no site':'Ativar no site')+'</button>':'')+
         (Number(l.quantity_available||0)>0?'<button class="secondary" type="button" data-basket-legacy-release="'+esc(l.id)+'">Migrar unidades</button>':'')+
       '</div></div>'+
-      '<details><summary style="padding:0 12px 10px;cursor:pointer;font-size:11px;color:var(--brand)">Ver composição real</summary><div class="basket-lot-items">'+(l.items||[]).map(x=>'<div class="basket-lot-item"><strong>'+esc(fmtQty(x.quantity_per_basket))+'×</strong> '+esc(x.product?.name||'Produto')+(x.metadata?.is_substitution?' <span class="pill warn">substituído</span>':'')+'</div>').join('')+'</div></details></div>';
+      '<details><summary style="padding:0 12px 10px;cursor:pointer;font-size:11px;color:var(--brand)">Ver composição real</summary><div class="basket-lot-items">'+lotCompositionCards(l.items||[],'quantity_per_basket')+'</div></details></div>';
   }
   function paintBasketAdmin(){
     const d=state.basketDetail;if(!d)return;const b=d.basket,content=$('#content'),cap=basketModelCapacity(d.items||[]);
