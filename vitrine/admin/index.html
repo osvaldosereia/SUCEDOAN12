@@ -447,7 +447,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -3025,6 +3025,82 @@
     }
   }
 
+
+  function paintInventorySheetPendingManual(){
+    const host=$('#inventorySheetPendingManual');if(!host)return;
+    const rows=state.inventorySheetPendingManual||[],s=state.inventorySheetPendingSummary||{};
+    const badge=$('#inventorySheetPendingBadge');
+    if(badge){
+      badge.textContent=rows.length?rows.length+' pendência(s)':'Sem pendências';
+      badge.className='pill '+(rows.length?'warn':'');
+    }
+    if(!rows.length){
+      host.innerHTML='<div class="history-empty">Nenhum produto aguardando contagem manual. Todas as leituras recebidas foram resolvidas.</div>';
+      return;
+    }
+    host.innerHTML='<div class="bling-banner" style="margin-bottom:10px"><strong>'+esc(s.count||rows.length)+' produto(s) precisam de conferência manual</strong><small>'+
+      esc(s.quantity_missing||0)+' sem estoque legível · '+esc(s.gondola_missing||0)+' sem gôndola legível'+(s.apply_errors?' · '+esc(s.apply_errors)+' falha(s) de atualização':'')+
+      '</small></div>'+
+      rows.map(r=>{
+        const detail=[
+          r.batch_code?String(r.batch_code)+' · pág. '+r.page_number+(r.page_count?'/'+r.page_count:''):'',
+          r.printed_index?'REF '+String(r.printed_index).padStart(4,'0'):'',
+          r.gtin?'EAN '+r.gtin:'SEM EAN',
+          r.operator_label?'enviado por '+r.operator_label:'',
+          r.reason||''
+        ].filter(Boolean).join(' · ');
+        return '<div class="simple-row" style="grid-template-columns:minmax(0,1fr) 86px 82px auto;gap:8px;align-items:center">'+
+          '<div class="simple-main"><strong>'+esc(r.name||'Produto')+'</strong><small>'+esc(detail)+'</small></div>'+
+          '<input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque manual" title="Estoque contado manualmente" placeholder="Est." data-pending-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'" style="min-height:40px;padding:6px;text-align:center;font-weight:900">'+
+          '<input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola manual" title="Gôndola conferida manualmente" placeholder="Gôn." data-pending-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'" style="min-height:40px;padding:6px;text-align:center;font-weight:900">'+
+          '<button class="primary" type="button" data-pending-resolve="'+esc(r.result_id)+'" style="min-height:40px;padding:0 10px">Resolver manualmente</button>'+
+        '</div>';
+      }).join('');
+    host.querySelectorAll('[data-pending-resolve]').forEach(btn=>btn.onclick=async()=>{
+      const row=rows.find(x=>String(x.result_id)===String(btn.dataset.pendingResolve));if(!row)return;
+      const qEl=host.querySelector('[data-pending-qty="'+CSS.escape(String(row.result_id))+'"]');
+      const gEl=host.querySelector('[data-pending-gondola="'+CSS.escape(String(row.result_id))+'"]');
+      const quantity=Number(qEl?.value),gondola=Number(gEl?.value);
+      if(!Number.isInteger(quantity)||quantity<0){toast('Faça a contagem manual e informe o estoque inteiro');return}
+      if(!Number.isInteger(gondola)||gondola<1||gondola>9999){toast('Confira manualmente e informe a gôndola');return}
+      const operator=requireOperator();if(!operator)return;
+      btn.disabled=true;btn.textContent='Salvando…';
+      try{
+        const data=await api('inventory_sheet_apply',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({scan_id:row.scan_id,operator,items:[{
+            result_id:row.result_id,quantity,gondola,manual_confirmed:true
+          }]})
+        });
+        const result=(data.rows||[])[0];
+        if(result?.review_state==='error'||result?.ok===false)throw new Error(result?.apply_error||result?.error||'manual_apply_failed');
+        toast(row.name+' · contagem manual registrada');
+        await loadInventorySheetPendingManual();
+        loadStockRecountQueue();loadOrderStockShortages();
+      }catch(e){
+        toast('Não consegui concluir manualmente: '+errorMessage(e.message));
+        btn.disabled=false;btn.textContent='Resolver manualmente';
+      }
+    });
+  }
+
+  async function loadInventorySheetPendingManual(){
+    const host=$('#inventorySheetPendingManual');
+    if(host)host.innerHTML='<div class="loading">Verificando pendências de leitura…</div>';
+    try{
+      const data=await api('inventory_sheet_pending_manual');
+      state.inventorySheetPendingManual=data.items||[];
+      state.inventorySheetPendingSummary={
+        count:Number(data.count||0),quantity_missing:Number(data.quantity_missing||0),
+        gondola_missing:Number(data.gondola_missing||0),apply_errors:Number(data.apply_errors||0)
+      };
+      paintInventorySheetPendingManual();
+    }catch(e){
+      if(host)host.innerHTML='<div class="history-empty">Não consegui carregar as pendências agora. <button class="text" id="retryInventoryPending" type="button">Tentar novamente</button></div>';
+      if($('#retryInventoryPending'))$('#retryInventoryPending').onclick=loadInventorySheetPendingManual;
+    }
+  }
+
   async function analyzeInventorySheetPhotos(files){
     if(state.inventorySheetProcessing){toast('Já estou processando outro grupo de fotos');return}
     const selected=Array.from(files||[]).filter(f=>String(f?.type||'').startsWith('image/')).slice(0,100);
@@ -3086,7 +3162,7 @@
       if(cameraBtn)cameraBtn.disabled=false;if(chooseBtn)chooseBtn.disabled=false;
       if($('#inventorySheetCamera'))$('#inventorySheetCamera').value='';
       if($('#inventorySheetFile'))$('#inventorySheetFile').value='';
-      paintInventorySheetQueue();paintInventorySheetPhoto();
+      paintInventorySheetQueue();paintInventorySheetPhoto();await loadInventorySheetPendingManual();
     }
   }
 
@@ -3150,7 +3226,7 @@
       }else if(left.some(r=>r.review_state==='error'))toast('Alguns itens precisam de revisão no Bling');
       else toast('Contagens registradas · Bling ainda processando alguns itens');
     }catch(e){toast('Não consegui concluir a folha: '+errorMessage(e.message))}
-    finally{state.inventorySheetBusy=false;paintInventorySheetPhoto();paintInventorySheetQueue()}
+    finally{state.inventorySheetBusy=false;paintInventorySheetPhoto();paintInventorySheetQueue();await loadInventorySheetPendingManual()}
   }
 
   async function applyInventorySheetReadyQueue(){
@@ -3174,7 +3250,7 @@
       if(status)status.textContent='Aplicação em lote concluída · '+s.applied+' enviada(s)/aplicada(s) · '+s.review+' para conferir · '+s.error+' com erro.';
       loadStockRecountQueue();loadOrderStockShortages();
     }finally{
-      state.inventorySheetBusy=false;paintInventorySheetQueue();paintInventorySheetPhoto();
+      state.inventorySheetBusy=false;paintInventorySheetQueue();paintInventorySheetPhoto();await loadInventorySheetPendingManual();
     }
   }
 
@@ -3192,10 +3268,11 @@
   async function renderBalance(){
     const content=$('#content'),incident=state.balanceMode==='incident';
     const photoPanel=!incident?'<section class="panel" style="padding:14px;margin-bottom:14px"><div class="history-title dispatch-head"><div><strong>Balanço por fotos das folhas A4</strong><span>Cada folha é identificada automaticamente pelo QR Code. Várias pessoas podem contar em celulares diferentes e enviar fotos em qualquer ordem.</span></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" id="inventorySheetAnalyzeButton" type="button">Tirar foto agora</button><button class="secondary" id="inventorySheetChooseButton" type="button">Selecionar várias fotos</button><input id="inventorySheetCamera" type="file" accept="image/*" capture="environment" hidden><input id="inventorySheetFile" type="file" accept="image/*" multiple hidden></div><div class="muted" id="inventorySheetPhotoStatus" style="margin-bottom:10px">Não precisa informar lote nem página. O sistema lê o QR da própria folha, corrige a foto e processa cada imagem separadamente.</div><div id="inventorySheetUploadQueue" style="margin-bottom:10px"></div><button class="secondary" id="inventorySheetApplyReady" type="button" disabled style="width:100%;margin-bottom:10px">Nenhuma folha pronta para aplicar</button><div id="inventorySheetReview"></div><button class="confirm-wide" id="inventorySheetApply" type="button" disabled style="margin-top:10px">Aplicar folha aberta</button></section>':'';
+    const manualPendingPanel=!incident?'<section class="panel" style="padding:14px;margin-bottom:14px"><div class="history-title dispatch-head"><div><strong>Pendências para contagem manual</strong><span>Se OCR e IA não conseguirem ler um produto com segurança, ele fica aqui até alguém conferir fisicamente e informar Estoque e Gôndola.</span></div><span class="pill" id="inventorySheetPendingBadge">Verificando…</span></div><div id="inventorySheetPendingManual"><div class="loading">Verificando pendências de leitura…</div></div></section>':'';
     content.innerHTML=
       '<div class="page-head"><div><h1>Estoque mobile</h1><p>'+(incident?'Registre avaria, vencimento, perda ou retorno sem usar o painel completo do ERP.':'Faça o balanço rapidamente com leitor EAN e teclado na tela.')+'</p></div><span class="pill">Leitor ativo</span></div>'+
       '<div class="order-filters" style="margin-bottom:12px"><button class="filter-chip '+(!incident?'active':'')+'" id="balanceModeCount" type="button">Balanço</button><button class="filter-chip '+(incident?'active':'')+'" id="balanceModeIncident" type="button">Avaria / Vencido / Retorno</button></div>'+
-      photoPanel+
+      photoPanel+manualPendingPanel+
       '<div class="tool-grid">'+
         '<section class="panel tool-card">'+
           (incident?'<div class="form-grid" style="margin-bottom:12px"><label><span>Tipo</span><select id="inventoryIncidentType"><option value="damage">Avaria</option><option value="expired">Vencido</option><option value="loss">Perda / extravio</option><option value="return">Retorno para inspeção</option><option value="other">Outro</option></select></label><label><span>Observação opcional</span><input id="inventoryIncidentNote" maxlength="500" placeholder="Ex.: embalagem rasgada"></label></div>':'')+
@@ -3216,7 +3293,7 @@
       $('#inventoryIncidentNote').oninput=e=>state.inventoryIncidentNote=e.currentTarget.value;
     }
     bindBalancePad();paintBalance();
-    if(!incident)bindInventorySheetPhoto();
+    if(!incident){bindInventorySheetPhoto();loadInventorySheetPendingManual();}
     if(!incident){$('#refreshStockRecount').onclick=loadStockRecountQueue;$('#refreshStockShortages').onclick=loadOrderStockShortages;loadStockRecountQueue();loadOrderStockShortages()}else loadInventoryIncidents();
   }
 
