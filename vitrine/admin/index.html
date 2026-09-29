@@ -3029,6 +3029,7 @@
     if(state.inventorySheetProcessing){toast('Já estou processando outro grupo de fotos');return}
     const selected=Array.from(files||[]).filter(f=>String(f?.type||'').startsWith('image/')).slice(0,100);
     if(!selected.length){toast('Selecione uma ou mais fotos das folhas A4');return}
+    const operator=requireOperator();if(!operator)return;
     const entries=selected.map((file,i)=>({
       id:(crypto.randomUUID?crypto.randomUUID():(Date.now()+'-'+i+'-'+Math.random().toString(16).slice(2))),
       file,file_name:file.name||('Foto '+(i+1)),status:'queued',batch_code:'',page_number:null,page_count:null,scan:null,error:''
@@ -3060,7 +3061,7 @@
             method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({
               sheet_token:local.sheet_token,page_confidence:local.page_confidence,page_complete:local.page_complete,
-              local_items:local.local_items,fallback_fields:local.fallback_fields
+              operator,client_upload_id:entry.id,local_items:local.local_items,fallback_fields:local.fallback_fields
             })
           });
           if(data.duplicate){
