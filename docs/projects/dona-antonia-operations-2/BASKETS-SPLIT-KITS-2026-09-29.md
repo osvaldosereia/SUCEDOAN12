@@ -321,3 +321,17 @@ Na validação desta rodada:
 - `vitrine/admin/index.html`, `vitrine/index.html` e `index.html`: JavaScript validado sem erro de sintaxe.
 
 A falha anterior que deixava o Admin sem Produtos/Cestas/Pedidos foi corrigida: havia uma declaração duplicada de `basketProductSearch`, que causava BOOT_ERROR. A abertura de **Gerenciar lotes** também foi corrigida para não enviar milhares de IDs de produto em uma única URL.
+
+
+## Exceção operacional · papel higiênico
+
+Por regra física de montagem da Dona Antônia, o **papel higiênico não pertence ao kit universal Limpeza/Higiene (LH)**, mesmo sendo conceitualmente um item de higiene.
+
+- **Econômica:** não leva papel higiênico.
+- **Mini Bonini / Mini Koblenz:** 1 pacote de Papel Higiênico Soberano 4 x 30 m no kit de **Alimentos**.
+- **Pequena Bonini / Pequena Koblenz:** 1 pacote no kit de **Alimentos**.
+- **Média Bonini / Média Koblenz:** 2 pacotes no kit de **Alimentos**.
+- **Grande Bonini / Grande Koblenz:** 2 pacotes no kit de **Alimentos**.
+- **Kit LH universal:** 0 papel higiênico.
+
+Essa regra é deliberada e deve prevalecer sobre classificação automática por categoria. A migration canônica é `basket_toilet_paper_food_exception_v1`.
