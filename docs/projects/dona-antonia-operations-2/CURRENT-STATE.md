@@ -311,3 +311,26 @@ Detalhes: `BASKETS-SPLIT-KITS-2026-09-29.md`.
 - nenhum estoque físico é criado ou baixado no Bling nessa operação;
 - componentes liberados voltam ao saldo solto e podem ser usados para montar os novos lotes de Alimentos/LH;
 - teste da função foi executado em transação com rollback, sem alterar o estoque real.
+
+
+## Orçamentos integrado ao Vitrine/Admin — 2026-09-29
+
+- ferramenta histórica de orçamentos recuperada do Git após ter sido removida na limpeza de 25/09;
+- mantida também em `/orcamento/` para acesso direto;
+- nova aba **Orçamentos** incorporada ao `/vitrine/admin/`;
+- abertura integrada exige a mesma sessão administrativa/PIN já usada pelo Admin;
+- editor usa `admin-products-live-v1` para carregar todos os produtos ativos do Supabase;
+- preço administrativo normaliza `sale_price_cents`, oferta vigente e `image_url`;
+- cestas não são mais dependentes dos presets Bonini congelados: dentro do Admin, a lista vem de `baskets_admin` e a composição atual vem de `basket_admin`;
+- fallback `presets-bonini.json` foi preservado apenas para contingência/acesso fora do Admin;
+- busca de cliente permite consultar `vitrine_customers_list` na base oficial e preencher automaticamente o orçamento;
+- rascunho local, edição completa dos itens, descontos/acréscimos/frete, modo sem valores e impressão/PDF A4 foram preservados;
+- validação estática: JavaScript do Admin e do editor compila sem erro;
+- base validada no momento da integração: 9 cestas ativas, 222 itens de composição, 1.610 produtos ativos e 490 clientes.
+
+Arquivos principais:
+- `vitrine/admin/index.html`;
+- `orcamento/index.html`;
+- `orcamento/presets-bonini.json` (somente fallback);
+- `scripts/test-orcamento-modos-v2.mjs`;
+- `scripts/test-orcamento-admin-integration.mjs`.
