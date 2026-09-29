@@ -984,6 +984,10 @@
     function addBasketDraft(){
       const d=state.basketDraft;if(!d)return;
       if(!d.items.some(x=>Number(x.quantity)>0)){toast('Esta cesta ficou sem produtos disponíveis em estoque.');return}
+      if(d.basket?.lot_id){
+        const already=state.cart.reduce((sum,x)=>sum+(x.type==='basket'&&x.lot_id===d.basket.lot_id?Number(x.qty||0):0),0);
+        if(already>=Number(d.basket.stock_quantity||0)){toast('Você já colocou no pedido todas as cestas disponíveis deste lote.');return}
+      }
       for(const x of d.items){const base=Number(x.base_quantity||0),remaining=remainingStock(x.product_id,-1,x.extra_stock_quantity??x.stock_quantity),extra=Math.max(0,Number(x.quantity||0)-base);if(remaining!==null&&extra>remaining){toast('O estoque extra mudou. Ajuste a quantidade de '+x.name+'.');return}}
       const changed=d.items.some(x=>Number(x.quantity)!==Number(x.base_quantity));
       state.cart.push({
