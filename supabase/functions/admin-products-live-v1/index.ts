@@ -258,6 +258,78 @@ async function saveProduct(p:any){
   return {product_id:r.data.id,product:await mappedProduct(fr),duplicated_from_product_id:duplicateFromId||null};
 }
 
+async function ensureProductLinkedForStock(pid:string,operator:string){
+  const existing=await db.from("bling_hub_entity_links_v2")
+    .select("bling_id,status")
+    .eq("source_system","vitrine_qx").eq("entity_type","product").eq("source_id",pid).maybeSingle();
+  if(existing.error)throw existing.error;
+  if(existing.data?.status==="matched"&&Number(existing.data?.bling_id)>0){
+    return {ok:true,bling_id:Number(existing.data.bling_id),created:false,linked:true};
+  }
+
+  const local=await one(pid);
+  if(!local)return {ok:false,error:"product_not_found",status:404};
+  const gtin=dg(local.gtin,32);
+  if(!gtin)return {ok:false,error:"valid_gtin_required_for_bling_link",status:409};
+
+  const lookup=await hub("product_gtin_lookup_readonly",{gtin});
+  if(lookup.error)return {ok:false,error:lookup.error,status:lookup.status||409,detail:lookup.data||lookup.detail||null};
+
+  if(lookup.data?.lookup_status==="matched"&&Number(lookup.data?.bling_id)>0){
+    const blingId=Number(lookup.data.bling_id),now=new Date().toISOString();
+    const up=await db.from("bling_hub_entity_links_v2").upsert({
+      source_system:"vitrine_qx",entity_type:"product",source_id:pid,bling_id:blingId,
+      identity_kind:"gtin",identity_value:gtin,status:"matched",last_verified_at:now,updated_at:now,
+      metadata:{method:"admin_stock_gtin_exact",gtin,verified:true,make_used:false,operator}
+    },{onConflict:"source_system,entity_type,source_id"});
+    if(up.error)throw up.error;
+    await db.from("products").update({
+      bling_product_id:blingId,sync_status:"synced",last_bling_sync_at:now,sync_error:null,updated_at:now
+    }).eq("id",pid);
+    return {ok:true,bling_id:blingId,created:false,linked:true};
+  }
+
+  if(lookup.data?.lookup_status!=="not_found"){
+    return {ok:false,error:"bling_product_identity_unsafe",status:409,detail:lookup.data};
+  }
+
+  const idem="admin-stock-auto-link:"+pid+":"+gtin;
+  const enq=await hub("enqueue_job",{
+    domain:"product",operation:"create_product",source_id:pid,idempotency_key:idem,
+    payload:{product:local,source:"admin_product_stock_set",operator_label:operator}
+  });
+  if(enq.error)return {ok:false,error:enq.error,status:enq.status||502,detail:enq.data||enq.detail||null};
+  const jobId=id(enq.data?.job_id);
+  if(!jobId)return {ok:false,error:"product_link_job_missing",status:502};
+
+  let job:any=null;
+  for(let attempt=0;attempt<6;attempt++){
+    const proc=await hub("process_product_jobs",{limit:10});
+    if(proc.error)return {ok:false,error:proc.error,status:proc.status||502,detail:proc.data||proc.detail||null};
+    const jq=await db.from("bling_hub_jobs_v2")
+      .select("id,status,result,error_code,error_message,updated_at")
+      .eq("id",jobId).maybeSingle();
+    if(jq.error)throw jq.error;
+    job=jq.data||null;
+    if(["synced","review_required","failed"].includes(String(job?.status||"")))break;
+  }
+
+  if(job?.status!=="synced"){
+    return {
+      ok:false,error:"product_bling_link_not_synced",status:409,job_id:jobId,
+      job_status:job?.status||"pending",error_code:job?.error_code||null,error_message:job?.error_message||null
+    };
+  }
+
+  const blingId=Number(job?.result?.bling_id||0);
+  if(!blingId)return {ok:false,error:"product_bling_id_missing_after_sync",status:502,job_id:jobId};
+  const now=new Date().toISOString();
+  await db.from("products").update({
+    bling_product_id:blingId,sync_status:"synced",last_bling_sync_at:now,sync_error:null,updated_at:now
+  }).eq("id",pid);
+  return {ok:true,bling_id:blingId,created:job?.result?.created===true,linked:true,job_id:jobId};
+}
+
 async function setProductStockOfficial(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const pid=id(p?.product_id),target=Number(p?.stock_quantity);
@@ -267,11 +339,26 @@ async function setProductStockOfficial(p:any,auth:any){
   const authority=await stockAuthority();
   if(authority!=="bling")return {error:"bling_stock_authority_not_active",status:409};
 
-  const before=await hub("preview_stock_sync",{source_id:pid,stock_quantity:target});
+  let before=await hub("preview_stock_sync",{source_id:pid,stock_quantity:target});
+  let autoLink:any=null;
+  if(before.error==="product_not_linked"){
+    autoLink=await ensureProductLinkedForStock(pid,operator);
+    if(!autoLink.ok)return {
+      error:autoLink.error||"product_not_linked",status:autoLink.status||409,
+      detail:autoLink.detail||null,job_id:autoLink.job_id||null,job_status:autoLink.job_status||null,
+      error_code:autoLink.error_code||null,error_message:autoLink.error_message||null
+    };
+    before=await hub("preview_stock_sync",{source_id:pid,stock_quantity:target});
+  }
   if(before.error)return {error:before.error||"stock_preview_failed",status:before.status||409,detail:before.data||before.detail||null};
+
   if(before.data?.change_required!==true){
     const product=await one(pid);
-    return {stock_updated:false,already_target:true,verified:true,current_stock:Number(before.data?.current_stock??target),target_stock:target,product:product?await mappedProduct(product):null};
+    return {
+      stock_updated:false,already_target:true,verified:true,current_stock:Number(before.data?.current_stock??target),
+      target_stock:target,product:product?await mappedProduct(product):null,
+      product_auto_linked:Boolean(autoLink),bling_product_id:Number(before.data?.bling_id||autoLink?.bling_id||0)||null
+    };
   }
 
   const idem="admin-product-stock:"+pid+":"+String(target)+":"+crypto.randomUUID();
@@ -284,7 +371,7 @@ async function setProductStockOfficial(p:any,auth:any){
   if(!jobId)return {error:"stock_job_missing",status:502};
 
   let job:any=null;
-  for(let attempt=0;attempt<3;attempt++){
+  for(let attempt=0;attempt<5;attempt++){
     const proc=await hub("process_stock_jobs",{limit:10});
     if(proc.error)return {error:proc.error||"stock_process_failed",status:proc.status||502,detail:proc.data||proc.detail||null};
     const jq=await db.from("bling_hub_jobs_v2").select("id,status,result,error_code,error_message,updated_at").eq("id",jobId).maybeSingle();
@@ -303,11 +390,13 @@ async function setProductStockOfficial(p:any,auth:any){
 
   const product=await one(pid);
   await opsEvent("product.stock_set","Estoque ajustado no Bling pelo cadastro do produto.","product",pid,
-    {target_stock:target,previous_stock:Number(before.data?.current_stock??0),job_id:jobId,verified:true},
+    {target_stock:target,previous_stock:Number(before.data?.current_stock??0),job_id:jobId,verified:true,
+     product_auto_linked:Boolean(autoLink),bling_product_id:Number(verify.data?.bling_id||autoLink?.bling_id||0)||null},
     operator,"human","bling","product-stock:"+jobId);
   return {
     stock_updated:true,verified:true,job_id:jobId,
     previous_stock:Number(before.data?.current_stock??0),current_stock:target,target_stock:target,
+    product_auto_linked:Boolean(autoLink),bling_product_id:Number(verify.data?.bling_id||autoLink?.bling_id||0)||null,
     product:product?await mappedProduct(product):null
   };
 }
@@ -2267,7 +2356,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:60,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:58,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
