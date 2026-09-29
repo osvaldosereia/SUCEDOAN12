@@ -2860,7 +2860,7 @@
   async function cancelBasketKitLot(lotId){
     if(!confirm('Cancelar este lote? As unidades restantes voltam a ser tratadas como estoque solto dos produtos.'))return;
     const op=requireOperator();if(!op)return;const d=state.basketKitDetail;
-    try{await api('basket_kit_lot_cancel',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op,reason:'Cancelado no Vitrine/Admin'})});toast('Lote cancelado');await openBasketKitAdmin(d.kit.id)}
+    try{await api('basket_kit_lot_cancel',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op,reason:'Lote antigo desmontado fisicamente para migração'})});toast('Lote antigo liberado para nova montagem');await openBasketKitAdmin(d.kit.id)}
     catch(e){toast(String(e?.message||'')==='lot_has_allocated_orders'?'Este lote já está ligado a pedido e não pode ser cancelado.':'Não consegui cancelar o lote.')}
   }
 
@@ -2877,7 +2877,7 @@
       '<div><strong>'+esc(l.quantity_available)+' / '+esc(l.quantity_built)+'</strong><small>disponível / montado</small></div>'+
       '<div>'+basketGapLabel(gap)+'</div>'+
       '<div><span class="pill '+(l.status==='ready'?'':'off')+'">'+esc(l.status==='ready'?'Disponível':l.status==='depleted'?'Esgotado':l.status==='cancelled'?'Cancelado':'Rascunho')+'</span></div>'+
-      '<div class="basket-row-actions">'+(l.status==='ready'&&Number(l.quantity_available||0)>0?'<button class="text danger" type="button" data-basket-lot-cancel="'+esc(l.id)+'">Cancelar lote</button>':'')+'</div></div>'+
+      '<div class="basket-row-actions">'+(l.status==='ready'&&Number(l.quantity_available||0)>0?'<button class="text danger" type="button" data-basket-lot-cancel="'+esc(l.id)+'">Desmontar / liberar</button>':'')+'</div></div>'+
       '<details><summary style="padding:0 12px 10px;cursor:pointer;font-size:11px;color:var(--brand)">Ver composição real</summary><div class="basket-lot-items">'+(l.items||[]).map(x=>'<div class="basket-lot-item"><strong>'+esc(fmtQty(x.quantity_per_basket))+'×</strong> '+esc(x.product?.name||'Produto')+(x.metadata?.is_substitution?' <span class="pill warn">substituído</span>':'')+'</div>').join('')+'</div></details></div>';
   }
   function paintBasketAdmin(){
@@ -3061,7 +3061,7 @@
     }catch(e){toast(String(e?.message||'')==='insufficient_loose_stock'?'O estoque solto mudou. Atualize e revise as sugestões.':'Não consegui criar o lote.');btn.disabled=false;btn.textContent='Confirmar montagem'}
   }
   async function cancelBasketLot(lotId){
-    if(!confirm('Cancelar este lote? As unidades restantes deixam de ser tratadas como cestas prontas e seus componentes voltam a ficar disponíveis como estoque solto.'))return;const op=requireOperator();if(!op)return;const d=state.basketDetail;
+    if(!confirm('Confirme somente depois de DESMONTAR FISICAMENTE as cestas restantes deste lote.\n\nAo continuar, os componentes deixam de ficar presos neste lote e voltam a ser considerados estoque solto para montar os novos kits.'))return;const op=requireOperator();if(!op)return;const d=state.basketDetail;
     try{await api('basket_lot_cancel',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op,reason:'Cancelado no Vitrine/Admin'})});toast('Lote cancelado');await openBasketAdmin(d.basket.id)}catch(e){toast(String(e?.message||'')==='lot_has_allocated_orders'?'Este lote tem pedido reservado e não pode ser cancelado.':'Não consegui cancelar o lote.')}
   }
 
