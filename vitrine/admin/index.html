@@ -2903,6 +2903,7 @@
   function startBasketKitLotDraft(sourceLotId=null){
     const d=state.basketKitDetail;if(!d)return;
     const source=sourceLotId?(d.lots||[]).find(x=>String(x.id)===String(sourceLotId)):null;
+    const resumeDraft=source?.status==='draft';
     let items;
     if(source){
       items=(source.items||[]).map((x,i)=>{
@@ -2918,8 +2919,15 @@
         product_id:x.product_id,name:x.product?.name||'Produto',sku:x.product?.sku||'',image_url:x.product?.image_url||'',quantity_per_kit:Number(x.quantity||0),
         position_order:Number(x.sort_order??i),loose_stock:Number(x.loose_stock||0),suggestions:x.suggestions||[],is_changed:false}));
     }
-    state.basketKitLotDraft={source_lot_id:source?.id||null,source_code:source?.short_code||null,quantity:source?Number(source.quantity_built||10):10,
-      short_code:d.next_short_code||'',notes:'',items};
+    state.basketKitLotDraft={
+      draft_lot_id:resumeDraft?source.id:null,
+      source_lot_id:resumeDraft?(source.duplicated_from_lot_id||null):(source?.id||null),
+      source_code:source?.short_code||null,
+      quantity:source?Number(source.quantity_built||10):10,
+      short_code:resumeDraft?(source.short_code||d.next_short_code||''):(d.next_short_code||''),
+      notes:resumeDraft?(source.notes||''):'',
+      items
+    };
     paintBasketKitLotComposer();setTimeout(()=>$('#basketKitLotComposer')?.scrollIntoView({behavior:'smooth',block:'start'}),20);
   }
   function basketKitLotDraftCapacity(){
@@ -2931,11 +2939,13 @@
     const used=new Set((d.lots||[]).filter(l=>['ready','draft'].includes(l.status)).map(l=>String(l.short_code||'')));
     const digits=['1','2','3','4','5','6','7','8','9','0'];
     const currentDigit=String(draft.short_code||'').slice(2,3);
-    host.innerHTML='<div class="basket-composer"><div class="basket-composer-head"><div><h2>'+(draft.source_lot_id?'Duplicar '+esc(draft.source_code||'lote'):'Novo lote pelo modelo')+'</h2><p>Altere livremente produtos e quantidades. O lote original nunca é modificado.</p></div><button class="text" id="closeKitLotDraft" type="button">Fechar</button></div>'+
+    const title=draft.draft_lot_id?'Continuar rascunho '+esc(draft.short_code||''):
+      draft.source_lot_id?'Duplicar '+esc(draft.source_code||'lote'):'Novo lote pelo modelo';
+    host.innerHTML='<div class="basket-composer"><div class="basket-composer-head"><div><h2>'+title+'</h2><p>Você pode salvar agora e continuar depois. Rascunho não reserva estoque e não aparece no site.</p></div><button class="text" id="closeKitLotDraft" type="button">Fechar</button></div>'+
       '<div class="basket-composer-summary"><label><span>Código do lote</span><div class="kit-code-editor"><span class="kit-code-prefix">'+esc(prefix)+'</span><select id="kitLotDigit">'+digits.map(x=>'<option value="'+x+'" '+(x===currentDigit?'selected':'')+' '+(used.has(prefix+x)&&prefix+x!==draft.short_code?'disabled':'')+'>'+x+(used.has(prefix+x)&&prefix+x!==draft.short_code?' · em uso':'')+'</option>').join('')+'</select></div></label>'+
         '<label><span>Quantidade de kits</span><input class="basket-inline-input" id="kitLotQty" type="number" min="1" value="'+esc(draft.quantity)+'"></label>'+
         '<div class="basket-kpi"><small>Capacidade desta composição</small><strong>'+esc(cap)+'</strong></div></div>'+
-      (over?'<div class="basket-warning"><strong>Estoque insuficiente para '+esc(draft.quantity)+' kit(s)</strong><small>Reduza a quantidade ou altere os produtos. O sistema não cria lote acima do estoque solto.</small></div>':'')+
+      (over?'<div class="basket-warning"><strong>Estoque insuficiente para concluir '+esc(draft.quantity)+' kit(s)</strong><small>Você ainda pode salvar como rascunho. Para salvar valendo, reduza a quantidade ou altere os produtos.</small></div>':'')+
       '<div>'+draft.items.map((x,i)=>{const per=Math.max(1,Number(x.quantity_per_kit||0)),lineCap=Math.floor(Number(x.loose_stock||0)/per);return '<div class="kit-draft-line">'+
         '<div class="basket-choice '+(x.is_changed?'changed':'')+'"><strong>'+esc(x.name)+'</strong><small>'+esc(x.sku||'')+(x.is_changed?' · alterado neste lote':'')+'</small></div>'+
         '<input class="basket-inline-input" type="number" min="1" step="1" value="'+esc(x.quantity_per_kit)+'" data-kit-line-qty="'+i+'" aria-label="Quantidade por kit">'+
@@ -2945,7 +2955,11 @@
       '</div>'}).join('')+'</div>'+
       '<div class="basket-toolbar" style="margin-top:10px"><button class="secondary" id="kitAddProduct" type="button">+ Adicionar produto</button></div>'+
       '<label style="margin-top:12px"><span>Observação</span><input id="kitLotNotes" value="'+esc(draft.notes||'')+'" placeholder="Opcional"></label>'+
-      '<div class="basket-toolbar" style="justify-content:flex-end;margin-top:12px"><button class="secondary" id="resetKitFromTemplate" type="button">Recomeçar pelo modelo</button><button class="primary" id="createKitLot" type="button" '+(over||cap<=0||!draft.items.length?'disabled':'')+'>Confirmar lote '+esc(draft.short_code||'')+'</button></div></div>';
+      '<div class="basket-toolbar" style="justify-content:flex-end;margin-top:12px">'+
+        '<button class="secondary" id="resetKitFromTemplate" type="button">Recomeçar pelo modelo</button>'+
+        '<button class="secondary" id="saveKitLotDraft" type="button">Salvar rascunho</button>'+
+        '<button class="primary" id="activateKitLotDraft" type="button" '+(over||cap<=0||!draft.items.length?'disabled':'')+'>Salvar valendo '+esc(draft.short_code||'')+'</button>'+
+      '</div></div>';
     $('#closeKitLotDraft').onclick=()=>{state.basketKitLotDraft=null;paintBasketKitLotComposer()};
     $('#kitLotDigit').onchange=e=>{draft.short_code=prefix+e.currentTarget.value;paintBasketKitLotComposer()};
     $('#kitLotQty').oninput=e=>{draft.quantity=Math.max(1,Math.floor(Number(e.currentTarget.value||1)));paintBasketKitLotComposer()};
@@ -2956,9 +2970,10 @@
     host.querySelectorAll('[data-kit-remove]').forEach(btn=>btn.onclick=()=>{draft.items.splice(Number(btn.dataset.kitRemove),1);paintBasketKitLotComposer()});
     $('#kitAddProduct').onclick=()=>openBasketKitProductPicker(null);
     $('#resetKitFromTemplate').onclick=()=>startBasketKitLotDraft(null);
-    $('#createKitLot').onclick=createBasketKitLot;
+    $('#saveKitLotDraft').onclick=()=>saveBasketKitLotDraft(false);
+    $('#activateKitLotDraft').onclick=()=>saveBasketKitLotDraft(true);
   }
-  function setBasketKitDraftProduct(index,p){
+    function setBasketKitDraftProduct(index,p){
     const draft=state.basketKitLotDraft;if(!draft||!p)return;
     if(index===null){
       const existing=draft.items.find(x=>String(x.product_id)===String(p.id));
@@ -3003,25 +3018,49 @@
       host.querySelectorAll('[data-kit-pick]').forEach(btn=>btn.onclick=()=>{const p=(data.products||[]).find(x=>String(x.id)===String(btn.dataset.kitPick));if(!p)return;$('#editor').close();setBasketKitDraftProduct(index,p)});
     }catch{host.innerHTML='<div class="history-empty">Não consegui buscar produtos.</div>'}
   }
-  async function createBasketKitLot(){
+  async function saveBasketKitLotDraft(activateAfter=false){
     const d=state.basketKitDetail,draft=state.basketKitLotDraft,op=requireOperator();if(!d||!draft||!op)return;
-    const cap=basketKitLotDraftCapacity();if(Number(draft.quantity||0)>cap){toast('A quantidade ultrapassa o estoque solto.');return}
     if(!/^[A-Z]{2}[0-9]$/.test(String(draft.short_code||''))){toast('Escolha o código do lote.');return}
-    const btn=$('#createKitLot');if(btn){btn.disabled=true;btn.textContent='Criando lote…'}
+    const saveBtn=$('#saveKitLotDraft'),activateBtn=$('#activateKitLotDraft');
+    if(saveBtn)saveBtn.disabled=true;if(activateBtn)activateBtn.disabled=true;
     try{
-      const data=await api('basket_kit_lot_create',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        kit_template_id:d.kit.id,quantity:Number(draft.quantity||0),short_code:draft.short_code,
+      const saved=await api('basket_kit_lot_draft_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        draft_lot_id:draft.draft_lot_id||null,kit_template_id:d.kit.id,quantity:Number(draft.quantity||0),short_code:draft.short_code,
         duplicated_from_lot_id:draft.source_lot_id||null,operator:op,notes:draft.notes||'',
         items:draft.items.map((x,i)=>({kit_template_item_id:x.kit_template_item_id||null,source_template_item_id:x.source_template_item_id||null,template_product_id:x.template_product_id||null,
           product_id:x.product_id,quantity_per_kit:Number(x.quantity_per_kit||0),position_order:i,is_changed:x.is_changed===true,change_note:x.is_changed?'Alterado na criação/duplicação do lote':null}))
       })});
-      toast('Lote '+(data.lot?.short_code||draft.short_code)+' criado · fora do site até você ativar');state.basketKitLotDraft=null;await openBasketKitAdmin(d.kit.id);
+      const lotId=saved.draft?.lot_id||draft.draft_lot_id;
+      if(!activateAfter){
+        toast('Rascunho '+(saved.draft?.short_code||draft.short_code)+' salvo');
+        await openBasketKitAdmin(d.kit.id);
+        startBasketKitLotDraft(lotId);
+        return;
+      }
+      try{
+        const activated=await api('basket_kit_lot_draft_activate',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op})});
+        toast('Lote '+(activated.lot?.short_code||draft.short_code)+' salvo valendo · ainda fora do site até você ativar');
+        state.basketKitLotDraft=null;await openBasketKitAdmin(d.kit.id);
+      }catch(e){
+        const m=String(e?.message||'');
+        toast(m==='insufficient_loose_stock'?'Rascunho salvo, mas falta estoque para salvar valendo.':m==='lot_product_unavailable'?'Rascunho salvo, mas há produto indisponível.':'Rascunho salvo; não consegui concluir o lote.');
+        await openBasketKitAdmin(d.kit.id);startBasketKitLotDraft(lotId);
+      }
     }catch(e){
-      const m=String(e?.message||'');toast(m==='insufficient_loose_stock'?'O estoque solto mudou. Atualize a composição.':m==='kit_short_code_in_use'?'Esse código já está em uso. Escolha outro número.':'Não consegui criar o lote.');
-      if(btn){btn.disabled=false;btn.textContent='Confirmar lote'}
+      const m=String(e?.message||'');
+      toast(m==='kit_short_code_in_use'?'Esse código já está em uso. Escolha outro número.':'Não consegui salvar o rascunho.');
+      if(saveBtn)saveBtn.disabled=false;if(activateBtn)activateBtn.disabled=false;
     }
   }
-  async function cancelBasketKitLot(lotId){
+  async function deleteBasketKitLotDraft(lotId){
+    if(!confirm('Excluir este rascunho? Nenhum estoque será alterado.'))return;
+    const op=requireOperator();if(!op)return;const d=state.basketKitDetail;
+    try{
+      await api('basket_kit_lot_draft_delete',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op})});
+      toast('Rascunho excluído');await openBasketKitAdmin(d.kit.id);
+    }catch{toast('Não consegui excluir o rascunho.')}
+  }
+    async function cancelBasketKitLot(lotId){
     if(!confirm('Confirme somente depois de DESMONTAR FISICAMENTE as unidades restantes deste lote.\n\nAo continuar, os produtos deixam de ficar presos no kit e voltam a ser considerados estoque solto.'))return;
     const op=requireOperator();if(!op)return;const d=state.basketKitDetail;
     try{await api('basket_kit_lot_cancel',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op,reason:'Lote desmontado fisicamente e liberado no Vitrine/Admin'})});toast('Lote liberado para nova montagem');await openBasketKitAdmin(d.kit.id)}
