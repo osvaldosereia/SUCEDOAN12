@@ -348,4 +348,18 @@ Arquivos principais:
 - o ID/status do orçamento salvo também fica no rascunho local para evitar duplicação após recarregar a página;
 - teste transacional de persistência executado com rollback; nenhum registro de teste permaneceu;
 - revisão mobile: preview A4 deixa de forçar 210 mm na tela, controles de cliente empilham, barra do histórico reorganiza e cards ficam mais compactos;
-- `admin-products-live-v1` v106 foi confirmado ACTIVE com todas as rotas de orçamento preservadas.
+- `admin-products-live-v1` v107 foi confirmado ACTIVE com as rotas de orçamento e consulta CNPJ preservadas.
+
+
+### Consulta CNPJ e padrões comerciais do Orçamento — 2026-09-29
+- campo CPF/CNPJ do cliente ganhou botão **Buscar CNPJ**;
+- consulta roda no backend autenticado existente `admin-products-live-v1`, ação `cnpj_lookup`, sem nova Edge Function e sem custo adicional de infraestrutura;
+- fonte externa: BrasilAPI / Minha Receita; o navegador não consulta o provedor diretamente;
+- preenche razão social, CNPJ, endereço, número, complemento, bairro, CEP, cidade, UF, inscrição estadual quando disponível, telefone e e-mail;
+- snapshot do orçamento preserva também os dados cadastrais retornados (situação, CNAE, natureza jurídica, porte, atividades e quadro societário normalizado);
+- se o CNPJ já existir na base oficial de clientes, o orçamento mantém o vínculo `customer_id`;
+- entrada de CNPJ foi adaptada ao padrão alfanumérico vigente em 2026;
+- novos orçamentos usam **Boleto bancário — 7 dias** como forma de pagamento padrão, permanecendo editável;
+- validade padrão é **7 dias após a emissão**; ao alterar a data de emissão, a validade acompanha +7 dias, mas continua editável;
+- impressão altera temporariamente o título da página para `Orçamento - <empresa cliente> - <número>`, fazendo o navegador sugerir esse nome ao salvar em PDF;
+- validação estática do JavaScript passou após as alterações.
