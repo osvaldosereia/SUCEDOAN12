@@ -867,11 +867,16 @@ async function createManualWhatsappOrder(p:any,auth:any){
   if(!items.length)return {error:"empty_cart",status:400};
   const snapshot=p?.customer_snapshot&&typeof p.customer_snapshot==="object"?p.customer_snapshot:{};
   const delivery=p?.delivery&&typeof p.delivery==="object"?p.delivery:{};
-  const q=await db.rpc("create_canonical_cart_order_v2",{
-    p_source:"manual_whatsapp",p_phone:phone,p_payment_method:payment,p_items:items,
-    p_customer_snapshot:snapshot,p_delivery:delivery
-  });
-  if(q.error){const e=tx(q.error.message,180).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","minimum_order"].includes(e)?409:400}}
+  const splitQ=await db.from("basket_templates").select("id,split_kits_enabled").eq("is_active",true);
+  if(splitQ.error)throw splitQ.error;
+  const splitReady=(splitQ.data||[]).length>0&&(splitQ.data||[]).every((x:any)=>x.split_kits_enabled===true);
+  const q=splitReady
+    ?await db.rpc("create_vitrine_cart_order_v3",{p_phone:phone,p_payment_method:payment,p_items:items,p_customer_snapshot:snapshot,p_delivery:delivery})
+    :await db.rpc("create_canonical_cart_order_v2",{
+      p_source:"manual_whatsapp",p_phone:phone,p_payment_method:payment,p_items:items,
+      p_customer_snapshot:snapshot,p_delivery:delivery
+    });
+  if(q.error){const e=tx(q.error.message,180).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit","minimum_order"].includes(e)?409:400}}
   const oid=id(q.data?.order_id);
   if(oid){
     await opsEvent("order.received","Pedido manual do WhatsApp criado e aguardando confirmação.","order",oid,{source:"manual_whatsapp",payment_method:payment,created_by:auth?.user_id||null,reservation_on_confirmation:true},tx(p?.operator,80)||"Operação","human","dona_antonia","manual-order-received:"+oid);
@@ -2016,7 +2021,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:55,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:56,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
