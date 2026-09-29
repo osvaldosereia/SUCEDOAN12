@@ -1843,10 +1843,10 @@ async function basketLotCreate(p:any,auth:any){
 }
 async function basketLotCancel(p:any,auth:any){
   const lid=id(p?.lot_id);if(!lid)return {error:"invalid_lot",status:400};
-  const l=await db.from("basket_stock_lots").select("id,basket_id,lot_code,status,quantity_available").eq("id",lid).maybeSingle();if(l.error)throw l.error;if(!l.data)return {error:"lot_not_found",status:404};
+  const l=await db.from("basket_stock_lots").select("id,basket_id,lot_code,status,quantity_available,metadata").eq("id",lid).maybeSingle();if(l.error)throw l.error;if(!l.data)return {error:"lot_not_found",status:404};
   const a=await db.from("basket_stock_allocations").select("id",{count:"exact",head:true}).eq("lot_id",lid).eq("status","allocated");if(a.error)throw a.error;if(Number(a.count||0)>0)return {error:"lot_has_allocated_orders",status:409};
   if(l.data.status==="cancelled")return {cancelled:true,already_done:true};
-  const q=await db.from("basket_stock_lots").update({status:"cancelled",quantity_available:0,updated_at:new Date().toISOString(),metadata:{cancelled_reason:tx(p?.reason,500)||"Cancelado no Admin",cancelled_at:new Date().toISOString()}}).eq("id",lid);if(q.error)throw q.error;
+  const q=await db.from("basket_stock_lots").update({status:"cancelled",quantity_available:0,updated_at:new Date().toISOString(),metadata:{...meta(l.data.metadata),cancelled_reason:tx(p?.reason,500)||"Cancelado no Admin",cancelled_at:new Date().toISOString()}}).eq("id",lid);if(q.error)throw q.error;
   await opsEvent("basket.lot_cancelled","Lote de cestas cancelado.","basket",l.data.basket_id,{lot_id:lid,lot_code:l.data.lot_code,remaining_quantity:l.data.quantity_available},tx(p?.operator,80)||"Operação","human","dona_antonia");
   return {cancelled:true};
 }
@@ -1860,7 +1860,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:52,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:53,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
