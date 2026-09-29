@@ -299,6 +299,15 @@ Validação:
 
 Backends publicados:
 - `storefront-v2` v23 ACTIVE;
-- `admin-products-live-v1` v89 ACTIVE.
+- `admin-products-live-v1` v90 ACTIVE.
 
 Detalhes: `BASKETS-SPLIT-KITS-2026-09-29.md`.
+
+
+### Migração parcial dos lotes completos — 2026-09-29
+- nova ação **Migrar unidades** libera somente cestas antigas que já foram desmontadas fisicamente;
+- quantidade é escolhida pelo operador; o Admin sugere preservar ao menos 1 unidade antiga durante a transição;
+- funciona mesmo se outra unidade do mesmo lote estiver alocada a pedido, pois somente o saldo disponível pode ser desmontado;
+- nenhum estoque físico é criado ou baixado no Bling nessa operação;
+- componentes liberados voltam ao saldo solto e podem ser usados para montar os novos lotes de Alimentos/LH;
+- teste da função foi executado em transação com rollback, sem alterar o estoque real.
