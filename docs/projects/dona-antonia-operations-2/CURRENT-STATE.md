@@ -252,3 +252,19 @@ Contagens ativas validadas após correção:
 - Canecas de Porcelana: 2 (1 folha).
 
 Backend publicado: `admin-products-live-v1` Supabase v70 ACTIVE.
+
+
+## Cestas pré-montadas por lote — 2026-09-29
+
+- Nova aba **Cestas** adicionada ao Vitrine/Admin.
+- 9 modelos continuam em `basket_templates`.
+- Implantado estoque de cestas prontas por lote, com composição física congelada.
+- Produtos comprometidos em cestas prontas são retirados do saldo **solto** disponível ao site, sem baixa física antecipada no Bling.
+- Pedido de cesta guarda `basket_lot_id` e os componentes reais; cancelamento devolve a cesta ao lote.
+- Lotes futuros validam saldo solto cumulativo e oferecem sugestões de substituição com estoque/capacidade.
+- Criados 9 lotes iniciais com 10 unidades cada (90 cestas), por informação operacional de estoque físico pré-montado.
+- Divergências entre esses lotes iniciais e o saldo digital foram preservadas para reconciliação no próximo balanço; não houve aumento artificial do estoque Bling.
+- Teste sintético Economica Bonini passou: 10→9 na alocação, 14 componentes gravados, reserva `preassembled_only`, cancelamento 9→10, pedido de teste removido.
+- `storefront-v2` v20 ACTIVE.
+- `admin-products-live-v1` v83 ACTIVE.
+- Detalhes: `BASKET-PREMOUNTED-LOTS-2026-09-29.md`.
