@@ -40,9 +40,9 @@ function pub(p:any,available?:number){
 }
 
 async function splitGlobalReady(){
-  const {data,error}=await db.from("basket_templates").select("id,split_kits_enabled").eq("is_active",true);
-  if(error)throw error;const rows=data||[];
-  return rows.length>0&&rows.every((x:any)=>x.split_kits_enabled===true);
+  const {data,error}=await db.from("basket_sales_runtime_v1").select("sales_mode").eq("id",1).maybeSingle();
+  if(error)throw error;
+  return data?.sales_mode==="split";
 }
 async function home(){
   const split=await splitGlobalReady();
@@ -231,7 +231,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:22},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:23},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home")return json(req,await home(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
