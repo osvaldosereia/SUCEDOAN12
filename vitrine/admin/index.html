@@ -31,6 +31,8 @@
     .tab{min-height:44px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:0 16px;font-weight:850;color:var(--ink);white-space:nowrap}
     .tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
     main{padding-block:16px 80px}
+    .quote-admin-shell{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}.quote-admin-frame{display:block;width:100%;height:calc(100vh - 190px);min-height:720px;border:0;background:#f3f5f8}
+    @media(max-width:760px){.quote-admin-frame{height:calc(100vh - 170px);min-height:640px}}
     .page-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}
     .page-head h1{font-size:24px;margin:0;letter-spacing:-.03em}.page-head p{margin:3px 0 0;color:var(--muted)}
     .toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center}.toolbar input{min-width:0;flex:1}.toolbar select{width:auto;min-width:180px}.filter-count{color:var(--muted);font-size:11px}
@@ -985,6 +987,7 @@
         <button class="tab" data-tab="closure" type="button">Fechamento</button>
         <button class="tab" data-tab="products" type="button">Produtos</button>
         <button class="tab" data-tab="baskets" type="button">Cestas</button>
+        <button class="tab" data-tab="quotes" type="button">Orçamentos</button>
         <button class="tab" data-tab="expiry" type="button">Validades</button>
         <button class="tab" data-tab="purchases" type="button">Compras/XML</button>
         <button class="tab" data-tab="balance" type="button">Balanço</button>
@@ -1106,6 +1109,7 @@
     if(tab==='today')renderToday();
     if(tab==='products')renderProducts();
     if(tab==='baskets')renderBaskets();
+    if(tab==='quotes')renderQuotes();
     if(tab==='expiry')renderExpirations();
     if(tab==='purchases')renderPurchases();
     if(tab==='balance')renderBalance();
@@ -1120,6 +1124,20 @@
     if(tab==='more')renderMore();
   }
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+
+  async function renderQuotes(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Orçamentos</h1><p>Crie propostas usando produtos, clientes e cestas atuais do Supabase.</p></div><a class="store-link" href="/orcamento/" target="_blank" rel="noopener">Abrir em tela inteira ↗</a></div><div class="quote-admin-shell"><div class="loading" id="quoteAdminLoading">Validando sessão administrativa…</div></div>';
+    try{
+      await adminStepUp();
+      const shell=content.querySelector('.quote-admin-shell');
+      if(shell)shell.innerHTML='<iframe class="quote-admin-frame" src="/orcamento/?embedded=1" title="Criador de Orçamentos Dona Antônia"></iframe>';
+    }catch(e){
+      const shell=content.querySelector('.quote-admin-shell');
+      if(shell)shell.innerHTML='<div class="empty">Não foi possível abrir Orçamentos sem uma sessão administrativa válida.<br><button class="text" id="retryQuotes">Tentar novamente</button></div>';
+      if($('#retryQuotes'))$('#retryQuotes').onclick=renderQuotes;
+    }
+  }
 
   function statusPill(status){
     const map={created:'Novo',storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Bling',processing:'Separando',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'};
