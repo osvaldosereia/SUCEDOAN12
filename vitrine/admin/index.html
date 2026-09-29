@@ -2848,16 +2848,19 @@
   }
   function kitLotRow(l){
     const code=l.short_code||l.lot_code||'—';
+    const isDraft=l.status==='draft';
     const canToggle=l.status==='ready'&&Number(l.quantity_available||0)>0;
     return '<div class="basket-lot"><div class="basket-lot-head">'+
-      '<div><span class="kit-code-badge">'+esc(code)+'</span><small>'+esc(dateTime(l.built_at))+' · '+esc(l.built_by||'Operação')+'</small></div>'+
-      '<div><strong>'+esc(l.quantity_available)+' / '+esc(l.quantity_built)+'</strong><small>disponível / montado</small></div>'+
-      '<div><span class="pill '+(l.status==='ready'?'':'off')+'">'+esc(l.status==='ready'?'Disponível':l.status==='depleted'?'Esgotado':l.status==='cancelled'?'Cancelado':'Rascunho')+'</span></div>'+
-      '<div><span class="pill '+(l.sale_enabled===true?'':'off')+'">'+(l.sale_enabled===true?'ATIVO NO SITE':'FORA DO SITE')+'</span></div>'+
+      '<div><span class="kit-code-badge">'+esc(code)+'</span><small>'+(isDraft?'Rascunho salvo':esc(dateTime(l.built_at))+' · '+esc(l.built_by||'Operação'))+'</small></div>'+
+      '<div><strong>'+(isDraft?esc(l.quantity_built):esc(l.quantity_available)+' / '+esc(l.quantity_built))+'</strong><small>'+(isDraft?'quantidade planejada':'disponível / montado')+'</small></div>'+
+      '<div><span class="pill '+(l.status==='ready'?'':isDraft?'warn':'off')+'">'+esc(l.status==='ready'?'Disponível':l.status==='depleted'?'Esgotado':l.status==='cancelled'?'Cancelado':'Rascunho')+'</span></div>'+
+      '<div><span class="pill '+(l.sale_enabled===true?'':'off')+'">'+(isDraft?'NÃO RESERVA ESTOQUE':l.sale_enabled===true?'ATIVO NO SITE':'FORA DO SITE')+'</span></div>'+
       '<div class="basket-row-actions">'+
-        (canToggle?'<button class="'+(l.sale_enabled===true?'secondary':'primary')+'" type="button" data-kit-lot-sale="'+esc(l.id)+'" data-enabled="'+(l.sale_enabled===true?'0':'1')+'">'+(l.sale_enabled===true?'Desativar no site':'Ativar no site')+'</button>':'')+
-        '<button class="secondary" type="button" data-kit-lot-copy="'+esc(l.id)+'">Duplicar</button>'+
-        (canToggle?'<button class="text danger" type="button" data-kit-lot-cancel="'+esc(l.id)+'">Cancelar</button>':'')+
+        (isDraft?'<button class="primary" type="button" data-kit-lot-resume="'+esc(l.id)+'">Continuar editando</button><button class="text danger" type="button" data-kit-lot-draft-delete="'+esc(l.id)+'">Excluir rascunho</button>':
+          (canToggle?'<button class="'+(l.sale_enabled===true?'secondary':'primary')+'" type="button" data-kit-lot-sale="'+esc(l.id)+'" data-enabled="'+(l.sale_enabled===true?'0':'1')+'">'+(l.sale_enabled===true?'Desativar no site':'Ativar no site')+'</button>':'')+
+          '<button class="secondary" type="button" data-kit-lot-copy="'+esc(l.id)+'">Duplicar</button>'+
+          (canToggle?'<button class="text danger" type="button" data-kit-lot-cancel="'+esc(l.id)+'">Cancelar</button>':'')
+        )+
       '</div></div>'+
       '<details><summary style="padding:0 12px 10px;cursor:pointer;font-size:11px;color:var(--brand)">Ver composição</summary><div class="basket-lot-items">'+
         (l.items||[]).map(x=>'<div class="basket-lot-item"><strong>'+esc(fmtQty(x.quantity_per_kit))+'×</strong> '+esc(x.product?.name||'Produto')+'</div>').join('')+
@@ -2883,6 +2886,8 @@
     $('#backToBasketKits').onclick=renderBaskets;
     $('#newKitLot').onclick=()=>startBasketKitLotDraft(null);
     content.querySelectorAll('[data-kit-lot-copy]').forEach(btn=>btn.onclick=()=>startBasketKitLotDraft(btn.dataset.kitLotCopy));
+    content.querySelectorAll('[data-kit-lot-resume]').forEach(btn=>btn.onclick=()=>startBasketKitLotDraft(btn.dataset.kitLotResume));
+    content.querySelectorAll('[data-kit-lot-draft-delete]').forEach(btn=>btn.onclick=()=>deleteBasketKitLotDraft(btn.dataset.kitLotDraftDelete));
     content.querySelectorAll('[data-kit-lot-sale]').forEach(btn=>btn.onclick=()=>toggleBasketLotSale(btn.dataset.kitLotSale,btn.dataset.enabled==='1','kit'));
     content.querySelectorAll('[data-kit-lot-cancel]').forEach(btn=>btn.onclick=()=>cancelBasketKitLot(btn.dataset.kitLotCancel));
   }
