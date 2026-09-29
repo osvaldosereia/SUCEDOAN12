@@ -1084,10 +1084,19 @@ async function inventorySheetManifest(p:any){
     .select("id,status,uploaded_by,created_at,applied_at")
     .eq("batch_id",b.data.id).eq("page_number",token.page_number).maybeSingle();
   if(existing.error)throw existing.error;
+  let canRetry=false,lockedCount=0;
+  if(existing.data){
+    const rr=await db.from("inventory_sheet_item_results")
+      .select("id,review_state,stock_count_id,confirmed_at")
+      .eq("scan_id",existing.data.id);
+    if(rr.error)throw rr.error;
+    lockedCount=(rr.data||[]).filter((x:any)=>["confirmed","applied"].includes(String(x.review_state))||Boolean(x.stock_count_id)||Boolean(x.confirmed_at)).length;
+    canRetry=lockedCount===0;
+  }
   return {
     sheet_token:token.raw,batch_code:token.batch_code,page_number:token.page_number,page_count:Number(b.data.page_count||0),
     product_count:Number(b.data.product_count||0),cards_per_page:cards,slot_count:slotCount,batch_status:b.data.status,
-    already_uploaded:Boolean(existing.data),existing_scan:existing.data||null
+    already_uploaded:Boolean(existing.data),can_retry:canRetry,locked_results:lockedCount,existing_scan:existing.data||null
   };
 }
 
@@ -1353,11 +1362,20 @@ async function inventorySheetAnalyze(p:any,auth:any){
     .eq("batch_id",b.data.id).eq("page_number",pageNumber).maybeSingle();
   if(existing.error)throw existing.error;
   if(existing.data){
-    return {
-      duplicate:true,scan_id:existing.data.id,existing_status:existing.data.status,existing_created_at:existing.data.created_at,
-      batch_code:batchCode,page_number:pageNumber,page_count:b.data.page_count,
-      message:"sheet_page_already_uploaded"
-    };
+    const rr=await db.from("inventory_sheet_item_results")
+      .select("id,review_state,stock_count_id,confirmed_at")
+      .eq("scan_id",existing.data.id);
+    if(rr.error)throw rr.error;
+    const locked=(rr.data||[]).some((x:any)=>["confirmed","applied"].includes(String(x.review_state))||Boolean(x.stock_count_id)||Boolean(x.confirmed_at));
+    if(locked){
+      return {
+        duplicate:true,scan_id:existing.data.id,existing_status:existing.data.status,existing_created_at:existing.data.created_at,
+        batch_code:batchCode,page_number:pageNumber,page_count:b.data.page_count,
+        message:"sheet_page_already_uploaded"
+      };
+    }
+    const del=await db.from("inventory_sheet_page_scans").delete().eq("id",existing.data.id);
+    if(del.error)throw del.error;
   }
 
   const it=await db.from("inventory_sheet_items").select("*").eq("batch_id",b.data.id).eq("page_number",pageNumber).order("slot_number");
