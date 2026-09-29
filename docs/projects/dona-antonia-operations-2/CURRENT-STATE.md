@@ -285,7 +285,8 @@ Nova arquitetura programada:
 - impressão de separação destaca **PEGAR PRONTO**;
 - mensagem WhatsApp leva referência interna dos kits/lotes realmente usados;
 - nova estrutura só entra na vitrine quando todos os modelos ativos tiverem o estoque novo necessário;
-- lotes completos antigos continuam ativos durante a transição.
+- lotes completos antigos continuam ativos durante a transição;
+- estoque antigo validado no fechamento: 90 unidades originalmente registradas = 89 disponíveis + 1 Pequena Bonini alocada legitimamente a pedido recebido ainda não confirmado.
 
 Validação:
 - criação e duplicação NB1 -> NB2 testadas e removidas;
