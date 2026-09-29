@@ -2961,47 +2961,136 @@
     }
   }
 
-  async function analyzeInventorySheetPhoto(file){
-    if(state.inventorySheetBusy)return;
-    const batch=inventorySheetSelectedBatch(),pageNumber=Number($('#inventorySheetPageSelect')?.value||0);
-    if(!batch||!pageNumber){toast('Selecione o lote e a página desta folha');return}
-    state.inventorySheetBusy=true;state.inventorySheetScan=null;
-    const status=$('#inventorySheetPhotoStatus'),btn=$('#inventorySheetAnalyzeButton');
-    if(status)status.textContent='Detectando a folha e corrigindo a perspectiva no aparelho…';
-    if(btn)btn.disabled=true;
-    try{
-      if(state.inventorySheetPreviewUrl)URL.revokeObjectURL(state.inventorySheetPreviewUrl);
-      state.inventorySheetPreviewUrl=URL.createObjectURL(file);
-      const local=await inventorySheetReadLocal(file,batch,pageNumber,status);
-      const unresolved=local.fallback_fields.length;
-      if(status)status.textContent=unresolved
-        ?'OCR local concluído. '+unresolved+' campo(s) ficaram duvidosos; usando IA somente nesses recortes…'
-        :'OCR local concluiu todos os campos. Nenhuma imagem será enviada para IA.';
-      const data=await api('inventory_sheet_analyze',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          batch_code:batch.batch_code,page_number:pageNumber,page_confidence:local.page_confidence,page_complete:local.page_complete,
-          local_items:local.local_items,fallback_fields:local.fallback_fields
-        })
+  function inventorySheetQueueBadge(status){
+    const map={
+      queued:['Aguardando',''],
+      processing:['Lendo','warn'],
+      ready:['Pronta',''],
+      review:['Conferir','warn'],
+      duplicate:['Já enviada','off'],
+      applying:['Aplicando','warn'],
+      submitted:['Bling processando','warn'],
+      applied:['Aplicada',''],
+      error:['Erro','danger']
+    };
+    const x=map[status]||[status||'—','off'];
+    return '<span class="pill '+x[1]+'">'+esc(x[0])+'</span>';
+  }
+
+  function inventorySheetQueueSummary(){
+    const rows=state.inventorySheetQueue||[];
+    const counts={};
+    rows.forEach(x=>counts[x.status]=(counts[x.status]||0)+1);
+    return {total:rows.length,ready:counts.ready||0,review:counts.review||0,duplicate:counts.duplicate||0,error:counts.error||0,applied:(counts.applied||0)+(counts.submitted||0)};
+  }
+
+  function paintInventorySheetQueue(){
+    const host=$('#inventorySheetUploadQueue');if(!host)return;
+    const rows=state.inventorySheetQueue||[];
+    if(!rows.length){
+      host.innerHTML='<div class="history-empty">Você pode selecionar várias fotos de uma vez, mesmo fora de ordem. Cada folha é identificada automaticamente pelo QR Code.</div>';
+    }else{
+      host.innerHTML=rows.map((x,index)=>{
+        const title=x.batch_code?x.batch_code+' · Página '+x.page_number+(x.page_count?'/'+x.page_count:''):(x.file_name||('Foto '+(index+1)));
+        const detail=x.status==='duplicate'
+          ?'Esta folha já foi recebida por outro envio e não será processada novamente.'
+          :x.status==='error'
+            ?(x.error||'Não foi possível processar esta foto.')
+            :x.status==='review'
+              ?'Há números que precisam de conferência humana.'
+              :x.status==='ready'
+                ?'Todos os campos foram lidos e estão prontos para aplicar.'
+                :x.status==='processing'
+                  ?'Identificando QR, corrigindo a foto e lendo os números…'
+                  :x.status==='submitted'
+                    ?'Contagens registradas; sincronização com Bling em andamento.'
+                    :'';
+        return '<div class="simple-row" style="grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center">'+
+          '<div class="simple-main"><strong>'+esc(title)+'</strong><small>'+esc(detail)+'</small></div>'+
+          inventorySheetQueueBadge(x.status)+
+          (x.scan?'<button class="secondary" type="button" data-sheet-open="'+esc(x.id)+'" style="min-height:36px;padding:0 9px">'+(x.status==='review'?'Conferir':'Abrir')+'</button>':'<span></span>')+
+        '</div>';
+      }).join('');
+      host.querySelectorAll('[data-sheet-open]').forEach(b=>b.onclick=()=>{
+        const item=rows.find(x=>x.id===b.dataset.sheetOpen);if(!item?.scan)return;
+        state.inventorySheetScan=item.scan;paintInventorySheetPhoto();
+        $('#inventorySheetReview')?.scrollIntoView({behavior:'smooth',block:'start'});
       });
-      state.inventorySheetScan={...data,rows:(data.rows||[]).map(r=>({...r,gondola:r.gondola??r.ai_gondola??null,manual_confirmed:false,user_edited:false}))};
-      if(status)status.textContent=data.fallback_used
-        ?'Leitura concluída: produtos definidos por lote/página/posição; IA foi usada apenas em números duvidosos.'
-        :'Leitura concluída inteiramente no aparelho, sem IA. Confira somente o que estiver marcado em amarelo.';
-      paintInventorySheetPhoto();
-    }catch(e){
-      if(status)status.textContent='Não consegui ler esta folha: '+errorMessage(e.message);
-      toast('Falha ao ler a folha A4');
-    }finally{
-      state.inventorySheetBusy=false;if(btn)btn.disabled=false;
-      if($('#inventorySheetCamera'))$('#inventorySheetCamera').value='';
-      if($('#inventorySheetFile'))$('#inventorySheetFile').value='';
-      paintInventorySheetPhoto();
+    }
+    const bulk=$('#inventorySheetApplyReady');
+    if(bulk){
+      const s=inventorySheetQueueSummary();
+      bulk.disabled=state.inventorySheetBusy||!s.ready;
+      bulk.textContent=s.ready?'Aplicar '+s.ready+' folha(s) prontas':'Nenhuma folha pronta para aplicar';
     }
   }
 
-  function mergeInventorySheetApplyResponse(data){
-    const scan=state.inventorySheetScan;if(!scan)return;
+  async function analyzeInventorySheetPhotos(files){
+    if(state.inventorySheetProcessing){toast('Já estou processando outro grupo de fotos');return}
+    const selected=Array.from(files||[]).filter(f=>String(f?.type||'').startsWith('image/')).slice(0,100);
+    if(!selected.length){toast('Selecione uma ou mais fotos das folhas A4');return}
+    const entries=selected.map((file,i)=>({
+      id:(crypto.randomUUID?crypto.randomUUID():(Date.now()+'-'+i+'-'+Math.random().toString(16).slice(2))),
+      file,file_name:file.name||('Foto '+(i+1)),status:'queued',batch_code:'',page_number:null,page_count:null,scan:null,error:''
+    }));
+    state.inventorySheetQueue.push(...entries);
+    state.inventorySheetProcessing=true;state.inventorySheetBusy=true;
+    const status=$('#inventorySheetPhotoStatus'),cameraBtn=$('#inventorySheetAnalyzeButton'),chooseBtn=$('#inventorySheetChooseButton');
+    if(cameraBtn)cameraBtn.disabled=true;if(chooseBtn)chooseBtn.disabled=true;
+    paintInventorySheetQueue();paintInventorySheetPhoto();
+
+    try{
+      for(let index=0;index<entries.length;index++){
+        const entry=entries[index];
+        entry.status='processing';paintInventorySheetQueue();
+        if(status)status.textContent='Processando foto '+(index+1)+' de '+entries.length+' · identificando a folha automaticamente…';
+        try{
+          const local=await inventorySheetReadLocal(entry.file,status);
+          const m=local.manifest||{};
+          entry.batch_code=m.batch_code||'';entry.page_number=m.page_number??null;entry.page_count=m.page_count??null;
+          if(local.duplicate){
+            entry.status='duplicate';entry.error='Folha já recebida anteriormente.';
+            continue;
+          }
+          const unresolved=local.fallback_fields.length;
+          if(status)status.textContent=unresolved
+            ?'Foto '+(index+1)+'/'+entries.length+' · '+entry.batch_code+' página '+entry.page_number+' · '+unresolved+' campo(s) duvidosos; IA somente nesses recortes.'
+            :'Foto '+(index+1)+'/'+entries.length+' · '+entry.batch_code+' página '+entry.page_number+' · leitura local concluída sem IA.';
+          const data=await api('inventory_sheet_analyze',{},{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              sheet_token:local.sheet_token,page_confidence:local.page_confidence,page_complete:local.page_complete,
+              local_items:local.local_items,fallback_fields:local.fallback_fields
+            })
+          });
+          if(data.duplicate){
+            entry.status='duplicate';entry.error='Folha já recebida por outro aparelho.';
+            continue;
+          }
+          const scan={...data,rows:(data.rows||[]).map(r=>({...r,gondola:r.gondola??r.ai_gondola??null,manual_confirmed:false,user_edited:false}))};
+          entry.scan=scan;entry.batch_code=data.batch_code||entry.batch_code;entry.page_number=data.page_number??entry.page_number;entry.page_count=data.page_count??entry.page_count;
+          entry.status=(scan.rows||[]).every(inventorySheetRowApproved)?'ready':'review';
+          if(!state.inventorySheetScan||entry.status==='review')state.inventorySheetScan=scan;
+        }catch(e){
+          entry.status='error';entry.error=errorMessage(e.message);
+        }finally{
+          entry.file=null;
+          paintInventorySheetQueue();paintInventorySheetPhoto();
+        }
+      }
+      const s=inventorySheetQueueSummary();
+      if(status)status.textContent='Lote de fotos concluído: '+s.total+' foto(s) · '+s.ready+' pronta(s) · '+s.review+' para conferir · '+s.duplicate+' duplicada(s) · '+s.error+' com erro.';
+    }finally{
+      state.inventorySheetProcessing=false;state.inventorySheetBusy=false;
+      if(cameraBtn)cameraBtn.disabled=false;if(chooseBtn)chooseBtn.disabled=false;
+      if($('#inventorySheetCamera'))$('#inventorySheetCamera').value='';
+      if($('#inventorySheetFile'))$('#inventorySheetFile').value='';
+      paintInventorySheetQueue();paintInventorySheetPhoto();
+    }
+  }
+
+  function mergeInventorySheetApplyResponse(data,scan=state.inventorySheetScan){
+    if(!scan)return;
     const updates=new Map((data.rows||[]).map(x=>[String(x.id),x]));
     scan.rows.forEach(row=>{
       const u=updates.get(String(row.result_id));if(!u)return;
@@ -3012,52 +3101,96 @@
     });
   }
 
+  async function applyInventorySheetScan(scan,operator){
+    const pending=(scan?.rows||[]).filter(r=>r.review_state!=='applied');
+    if(!pending.length)return scan;
+    if(pending.some(r=>!inventorySheetRowApproved(r)))throw new Error('manual_confirmation_required');
+    for(let i=0;i<pending.length;i+=5){
+      const chunk=pending.slice(i,i+5);
+      const data=await api('inventory_sheet_apply',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({scan_id:scan.scan_id,operator,items:chunk.map(r=>({
+          result_id:r.result_id,quantity:Number(r.quantity),gondola:Number(r.gondola),
+          manual_confirmed:r.manual_confirmed===true||r.user_edited===true
+        }))})
+      });
+      mergeInventorySheetApplyResponse(data,scan);
+    }
+    return scan;
+  }
+
+  function inventorySheetQueueSyncScan(scan){
+    const item=(state.inventorySheetQueue||[]).find(x=>x.scan?.scan_id===scan?.scan_id);
+    if(!item)return;
+    const states=(scan.rows||[]).map(r=>r.review_state);
+    if(states.length&&states.every(x=>x==='applied'))item.status='applied';
+    else if(states.some(x=>x==='error'))item.status='error';
+    else if(states.every(x=>['applied','confirmed'].includes(x)))item.status='submitted';
+    else if((scan.rows||[]).every(inventorySheetRowApproved))item.status='ready';
+    else item.status='review';
+  }
+
   async function applyInventorySheetPhoto(){
     const scan=state.inventorySheetScan;if(!scan||state.inventorySheetBusy)return;
     const pending=(scan.rows||[]).filter(r=>r.review_state!=='applied');
     if(!pending.length){toast('Esta folha já foi aplicada');return}
     if(pending.some(r=>!inventorySheetRowApproved(r))){toast('Confirme primeiro os itens destacados em amarelo');return}
     const operator=requireOperator();if(!operator)return;
-    state.inventorySheetBusy=true;paintInventorySheetPhoto();
+    state.inventorySheetBusy=true;paintInventorySheetPhoto();paintInventorySheetQueue();
     const btn=$('#inventorySheetApply');if(btn){btn.disabled=true;btn.textContent='Atualizando estoque…'}
     try{
-      for(let i=0;i<pending.length;i+=5){
-        const chunk=pending.slice(i,i+5);
-        const data=await api('inventory_sheet_apply',{},{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({scan_id:scan.scan_id,operator,items:chunk.map(r=>({result_id:r.result_id,quantity:Number(r.quantity),gondola:Number(r.gondola),manual_confirmed:r.manual_confirmed===true||r.user_edited===true}))})
-        });
-        mergeInventorySheetApplyResponse(data);
-        paintInventorySheetPhoto();
-      }
+      await applyInventorySheetScan(scan,operator);
+      inventorySheetQueueSyncScan(scan);
       const left=scan.rows.filter(r=>r.review_state!=='applied');
       if(!left.length){
         toast('Folha aplicada e conferida no Bling');
-        const status=$('#inventorySheetPhotoStatus');if(status)status.textContent='Concluído: todas as contagens desta folha foram verificadas no Bling.';
+        const status=$('#inventorySheetPhotoStatus');if(status)status.textContent='Concluído: esta folha foi aplicada.';
         loadStockRecountQueue();loadOrderStockShortages();
-      }else if(left.some(r=>r.review_state==='error')){
-        toast('Alguns itens precisam de revisão no Bling');
-      }else{
-        toast('Contagens registradas · Bling ainda processando alguns itens');
-      }
+      }else if(left.some(r=>r.review_state==='error'))toast('Alguns itens precisam de revisão no Bling');
+      else toast('Contagens registradas · Bling ainda processando alguns itens');
     }catch(e){toast('Não consegui concluir a folha: '+errorMessage(e.message))}
-    finally{state.inventorySheetBusy=false;paintInventorySheetPhoto()}
+    finally{state.inventorySheetBusy=false;paintInventorySheetPhoto();paintInventorySheetQueue()}
+  }
+
+  async function applyInventorySheetReadyQueue(){
+    if(state.inventorySheetBusy)return;
+    const ready=(state.inventorySheetQueue||[]).filter(x=>x.status==='ready'&&x.scan);
+    if(!ready.length){toast('Não há folhas prontas para aplicar');return}
+    const operator=requireOperator();if(!operator)return;
+    state.inventorySheetBusy=true;paintInventorySheetQueue();paintInventorySheetPhoto();
+    const status=$('#inventorySheetPhotoStatus');
+    try{
+      for(let i=0;i<ready.length;i++){
+        const item=ready[i];item.status='applying';paintInventorySheetQueue();
+        if(status)status.textContent='Aplicando folha '+(i+1)+' de '+ready.length+' · '+item.batch_code+' página '+item.page_number+'…';
+        try{
+          await applyInventorySheetScan(item.scan,operator);
+          inventorySheetQueueSyncScan(item.scan);
+        }catch(e){item.status='error';item.error=errorMessage(e.message)}
+        paintInventorySheetQueue();
+      }
+      const s=inventorySheetQueueSummary();
+      if(status)status.textContent='Aplicação em lote concluída · '+s.applied+' enviada(s)/aplicada(s) · '+s.review+' para conferir · '+s.error+' com erro.';
+      loadStockRecountQueue();loadOrderStockShortages();
+    }finally{
+      state.inventorySheetBusy=false;paintInventorySheetQueue();paintInventorySheetPhoto();
+    }
   }
 
   function bindInventorySheetPhoto(){
     const camera=$('#inventorySheetCamera'),file=$('#inventorySheetFile');
     if($('#inventorySheetAnalyzeButton'))$('#inventorySheetAnalyzeButton').onclick=()=>camera?.click();
     if($('#inventorySheetChooseButton'))$('#inventorySheetChooseButton').onclick=()=>file?.click();
-    if(camera)camera.onchange=e=>{const f=e.currentTarget.files?.[0];if(f)analyzeInventorySheetPhoto(f)};
-    if(file)file.onchange=e=>{const f=e.currentTarget.files?.[0];if(f)analyzeInventorySheetPhoto(f)};
+    if(camera)camera.onchange=e=>{const files=Array.from(e.currentTarget.files||[]);if(files.length)analyzeInventorySheetPhotos(files)};
+    if(file)file.onchange=e=>{const files=Array.from(e.currentTarget.files||[]);if(files.length)analyzeInventorySheetPhotos(files)};
     if($('#inventorySheetApply'))$('#inventorySheetApply').onclick=applyInventorySheetPhoto;
-    loadInventorySheetBatches();
-    paintInventorySheetPhoto();
+    if($('#inventorySheetApplyReady'))$('#inventorySheetApplyReady').onclick=applyInventorySheetReadyQueue;
+    paintInventorySheetQueue();paintInventorySheetPhoto();
   }
 
   async function renderBalance(){
     const content=$('#content'),incident=state.balanceMode==='incident';
-    const photoPanel=!incident?'<section class="panel" style="padding:14px;margin-bottom:14px"><div class="history-title dispatch-head"><div><strong>Balanço por foto da folha A4</strong><span>O produto é definido pelo lote, página e posição. Estoque e gôndola são lidos localmente no aparelho; IA entra apenas quando algum número ficar duvidoso.</span></div></div><div class="form-grid" style="margin-bottom:10px"><label><span>Lote impresso</span><select id="inventorySheetBatchSelect"><option>Carregando lotes…</option></select></label><label><span>Página fotografada</span><select id="inventorySheetPageSelect"><option value="1">Página 1</option></select></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" id="inventorySheetAnalyzeButton" type="button">Fotografar folha A4 inteira</button><button class="secondary" id="inventorySheetChooseButton" type="button">Escolher foto</button><input id="inventorySheetCamera" type="file" accept="image/*" capture="environment" hidden><input id="inventorySheetFile" type="file" accept="image/*" hidden></div><div class="muted" id="inventorySheetPhotoStatus" style="margin-bottom:10px">Selecione o lote e a página. A foto é corrigida e lida no próprio aparelho; somente recortes numéricos incertos podem ir para a IA.</div><div id="inventorySheetReview"></div><button class="confirm-wide" id="inventorySheetApply" type="button" disabled style="margin-top:10px">Aplicar balanço desta folha</button></section>':'';
+    const photoPanel=!incident?'<section class="panel" style="padding:14px;margin-bottom:14px"><div class="history-title dispatch-head"><div><strong>Balanço por fotos das folhas A4</strong><span>Cada folha é identificada automaticamente pelo QR Code. Várias pessoas podem contar em celulares diferentes e enviar fotos em qualquer ordem.</span></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" id="inventorySheetAnalyzeButton" type="button">Tirar foto agora</button><button class="secondary" id="inventorySheetChooseButton" type="button">Selecionar várias fotos</button><input id="inventorySheetCamera" type="file" accept="image/*" capture="environment" hidden><input id="inventorySheetFile" type="file" accept="image/*" multiple hidden></div><div class="muted" id="inventorySheetPhotoStatus" style="margin-bottom:10px">Não precisa informar lote nem página. O sistema lê o QR da própria folha, corrige a foto e processa cada imagem separadamente.</div><div id="inventorySheetUploadQueue" style="margin-bottom:10px"></div><button class="secondary" id="inventorySheetApplyReady" type="button" disabled style="width:100%;margin-bottom:10px">Nenhuma folha pronta para aplicar</button><div id="inventorySheetReview"></div><button class="confirm-wide" id="inventorySheetApply" type="button" disabled style="margin-top:10px">Aplicar folha aberta</button></section>':'';
     content.innerHTML=
       '<div class="page-head"><div><h1>Estoque mobile</h1><p>'+(incident?'Registre avaria, vencimento, perda ou retorno sem usar o painel completo do ERP.':'Faça o balanço rapidamente com leitor EAN e teclado na tela.')+'</p></div><span class="pill">Leitor ativo</span></div>'+
       '<div class="order-filters" style="margin-bottom:12px"><button class="filter-chip '+(!incident?'active':'')+'" id="balanceModeCount" type="button">Balanço</button><button class="filter-chip '+(incident?'active':'')+'" id="balanceModeIncident" type="button">Avaria / Vencido / Retorno</button></div>'+
