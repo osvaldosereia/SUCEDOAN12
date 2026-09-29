@@ -3526,7 +3526,7 @@
       '<label><span>Código / SKU</span><input name="sku" value="'+esc(isDuplicate?'':(p?.sku||''))+'" placeholder="'+(isDuplicate?'Informe o novo SKU':'')+'"></label>'+
       '<label><span>EAN / GTIN</span><input name="gtin" inputmode="numeric" value="'+esc(isDuplicate?'':(p?.gtin||''))+'" placeholder="'+(isDuplicate?'Informe o novo EAN':'')+'"></label>'+
       '<label><span>Preço de venda</span><input name="price" inputmode="decimal" value="'+esc(((Number(p?.sale_price_cents||0)/100).toFixed(2)).replace('.',','))+'"></label>'+
-      '<label><span>Estoque</span><input name="stock" inputmode="decimal" value="'+esc(isDuplicate?'0':fmtQty(p?.stock_quantity||0))+'"></label>'+
+      '<label><span>Estoque'+(p&&!isDuplicate?' · Bling':'')+'</span><input name="stock" inputmode="decimal" value="'+esc(isDuplicate?'0':fmtQty(p?.stock_quantity||0))+'">'+(p&&!isDuplicate?'<small>Ao salvar, o saldo é ajustado e conferido no Bling.</small>':'')+'</label>'+
       '<label><span>Data de validade</span><input name="expiration_date" type="date" value="'+esc(isDuplicate?'':(p?.expiration_date||''))+'"></label>'+
       '<label><span>Categoria da vitrine</span><select name="category">'+categoryOptions(p?.category||'')+'</select></label>'+
       '<label><span>Subcategoria</span><input name="subcategory" value="'+esc(p?.subcategory||'')+'"></label>'+
@@ -3591,6 +3591,8 @@
   async function saveProduct(id,duplicateFromId=""){
     const form=new FormData($('#productForm')),btn=$('#saveProduct');
     const operator=requireOperator();if(!operator)return;
+    const requestedStock=Number(String(form.get('stock')||0).replace(',','.'))||0;
+    let productSaved=false,stockUpdateStarted=false;
     btn.disabled=true;btn.textContent='Salvando…';
     try{
       const autoExpiry=form.get('auto_expiry_offer_enabled')==='on';
@@ -3599,13 +3601,23 @@
         body:JSON.stringify({
           id,duplicate_from_id:duplicateFromId||null,name:form.get('name'),sku:form.get('sku'),gtin:form.get('gtin'),
           sale_price_cents:centsFromInput(form.get('price')),
-          stock_quantity:Number(String(form.get('stock')||0).replace(',','.'))||0,
+          stock_quantity:requestedStock,
           expiration_date:form.get('expiration_date')||null,
           auto_expiry_offer_enabled:autoExpiry,
           category:form.get('category'),subcategory:form.get('subcategory'),packaging:form.get('packaging'),
           image_url:form.get('image_url'),description:form.get('description'),active:form.get('active')==='on',operator
         })
       });
+      productSaved=true;
+      let stockResult=null;
+      const currentEffective=Number(data.product?.stock_quantity??requestedStock);
+      if(id&&Math.abs(currentEffective-requestedStock)>0.0001){
+        stockUpdateStarted=true;btn.textContent='Atualizando estoque no Bling…';
+        stockResult=await api('product_stock_set',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:data.product_id,stock_quantity:requestedStock,operator})
+        });
+      }
       if(!autoExpiry&&document.querySelector('#productForm [name="offer_active"]')){
         await api('offer_save',{},{
           method:'POST',headers:{'Content-Type':'application/json'},
@@ -3618,9 +3630,14 @@
           })
         });
       }
-      $('#editor').close();toast(duplicateFromId?'Produto duplicado e criado':'Produto salvo');
+      $('#editor').close();
+      toast(stockResult?.verified===true?'Produto salvo · estoque '+fmtQty(requestedStock)+' confirmado no Bling':(duplicateFromId?'Produto duplicado e criado':'Produto salvo'));
       if(state.tab==='expiry')renderExpirations();else renderProducts($('#productSearch')?.value.trim()||'');
-    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar produto'}
+    }catch(e){
+      if(productSaved&&stockUpdateStarted)toast('Produto salvo, mas o estoque não foi confirmado no Bling. Tente novamente.');
+      else toast(errorMessage(e.message));
+      btn.disabled=false;btn.textContent='Salvar produto';
+    }
   }
 
   function expiryDaysText(days){
