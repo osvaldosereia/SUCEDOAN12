@@ -12,6 +12,12 @@ assert.doesNotMatch(html, /cedar-chemist-310801-default-rtdb\.firebaseio\.com/, 
 assert.match(html, /fetchCanonicalProducts/, 'catálogo deve paginar os produtos disponíveis do storefront-v2');
 assert.match(html, /raw\.sku/, 'normalização deve preservar SKU para busca por código');
 assert.match(html, /raw\.gtin/, 'normalização deve preservar GTIN para busca por EAN');
+assert.match(html, /ADMIN_API='https:\/\/ssbesxgaijknwsjbsbcz\.supabase\.co\/functions\/v1\/admin-products-live-v1'/, 'orçamento integrado deve usar a API administrativa');
+assert.match(html, /CUSTOMER_API='https:\/\/ssbesxgaijknwsjbsbcz\.supabase\.co\/functions\/v1\/admin-service-intelligence-v1'/, 'orçamento integrado deve consultar clientes oficiais');
+assert.match(html, /adminGet\('baskets_admin'\)/, 'cestas do orçamento devem vir do Supabase Admin');
+assert.match(html, /adminGet\('basket_admin',\{id:basket\.basketId\}\)/, 'composição da cesta deve ser lida do Supabase');
+assert.match(html, /customerAdmin\('vitrine_customers_list'/, 'orçamento deve buscar clientes da base oficial');
+assert.match(html, /EMBEDDED=new URLSearchParams\(location\.search\)\.get\('embedded'\)==='1'/, 'editor deve suportar modo incorporado no Admin');
 assert.doesNotThrow(() => new Function(inlineScript), 'JavaScript inline do orçamento deve compilar');
 
 assert.match(html, /id="hideUnitPrice"/, 'controle do modo somente com itens ausente');
