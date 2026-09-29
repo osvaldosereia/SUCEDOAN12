@@ -2872,9 +2872,9 @@
     }
   }
   async function cancelBasketKitLot(lotId){
-    if(!confirm('Cancelar este lote? As unidades restantes voltam a ser tratadas como estoque solto dos produtos.'))return;
+    if(!confirm('Confirme somente depois de DESMONTAR FISICAMENTE as unidades restantes deste lote.\n\nAo continuar, os produtos deixam de ficar presos no kit e voltam a ser considerados estoque solto.'))return;
     const op=requireOperator();if(!op)return;const d=state.basketKitDetail;
-    try{await api('basket_kit_lot_cancel',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op,reason:'Lote antigo desmontado fisicamente para migração'})});toast('Lote antigo liberado para nova montagem');await openBasketKitAdmin(d.kit.id)}
+    try{await api('basket_kit_lot_cancel',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op,reason:'Lote desmontado fisicamente e liberado no Vitrine/Admin'})});toast('Lote liberado para nova montagem');await openBasketKitAdmin(d.kit.id)}
     catch(e){toast(String(e?.message||'')==='lot_has_allocated_orders'?'Este lote já está ligado a pedido e não pode ser cancelado.':'Não consegui cancelar o lote.')}
   }
 
