@@ -1390,7 +1390,8 @@ async function inventorySheetAnalyze(p:any,auth:any){
   let pageFallback:any={parsed:{items:[]},model:null,response_id:null};
   const pageImage=String(p?.page_image_data_url||"");
   const catastrophicFieldFailure=fallbackFields.length>=Math.max(10,Math.floor(expectedFieldCount*.6))&&fieldResolved<Math.max(4,Math.floor(expectedFieldCount*.25));
-  if(pageImage&&catastrophicFieldFailure){
+  const forcePageFallback=p?.force_page_fallback===true;
+  if(pageImage&&(forcePageFallback||catastrophicFieldFailure)){
     pageFallback=await inventorySheetPageFallbackVision(pageImage,(it.data||[]).length);
     fallbackItems=inventorySheetMergePageFallback(fallbackItems,pageFallback?.parsed?.items||[]);
   }
@@ -1404,7 +1405,7 @@ async function inventorySheetAnalyze(p:any,auth:any){
     local_engine:"tesseract.js@7.0.0",local_items:localItems,
     fallback_requested:fallbackFields.map((x:any)=>({slot_number:Number(x?.slot_number),field:tx(x?.field,20)})),
     fallback_result:fallbackItems,fallback_error:fallback?.error||null,
-    page_fallback_used:Boolean(pageFallback?.parsed?.items?.length),
+    force_page_fallback:forcePageFallback,page_fallback_used:Boolean(pageFallback?.parsed?.items?.length),
     page_fallback_model:pageFallback?.model||null,
     page_fallback_error:pageFallback?.error||null
   };
