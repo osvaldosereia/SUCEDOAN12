@@ -107,3 +107,44 @@ A validação estrutural foi concluída, mas a experiência real deve ser confer
 - tablet.
 
 Se algum componente específico ainda estiver inadequado, usar screenshot real para ajuste fino sem voltar ao modelo de tabela desktop comprimida.
+
+
+## Continuação da revisão — V5.2/V5.3
+
+### Top bar mobile
+- cabeçalho reorganizado para duas linhas úteis;
+- operador não disputa mais espaço com o nome completo da aplicação;
+- no celular, o prefixo "Operador:" é ocultado e aparece apenas o nome/Identificar;
+- botão de vitrine ocupa uma linha própria;
+- tabs continuam horizontais e a aba ativa passa a rolar automaticamente para o centro da faixa visível;
+- proteção adicional contra overflow horizontal.
+
+### Balanço
+- linhas de upload, conferência e pendência passaram a usar grids próprios em vez de herdar `display:flex` de `.simple-row`;
+- campos de ESTOQUE e GÔNDOLA são maiores no celular;
+- ESTOQUE e GÔNDOLA agora possuem rótulos explícitos acima dos campos;
+- botões principais usam largura total quando necessário;
+- status e textos longos quebram linha sem sobreposição;
+- cards de revisão deixam produto em uma linha e controles em área própria;
+- telas abaixo de 390 px usam uma coluna quando duas colunas ficariam apertadas.
+
+### Demais módulos
+- Produtos: card compacto com foto, nome, dados principais e ação separada;
+- Clientes: dados e ações sem colisão;
+- Pedidos: valor, dados, próxima ação e botões em áreas distintas;
+- Compras/XML: documentos e revisão viram cards de uma coluna;
+- Central/Expedição/Fechamento: linhas largas passam a cards verticais;
+- Validades: campos e ações ocupam linhas legíveis;
+- Gôndolas: toolbar empilha e cards adaptam 2→1 coluna em telas pequenas;
+- modais e ações ficam em uma coluna no celular;
+- cabeçalhos de tabela desktop continuam ocultos em telas pequenas.
+
+### Commits complementares
+- `d0b606efbaadc8d16419757d252f07453eda44fd` — cards mobile por módulo;
+- `d53ded2e8daf544212051055c7ef5b349dc5cec7` — simplificação da top bar e tab ativa visível;
+- `064785371eaf7d2137d9f2168bc618ce0917fd00` — rótulos claros ESTOQUE/GÔNDOLA no Balanço.
+
+### Validação
+- JavaScript inline compilou sem erro após as mudanças;
+- regras mobile finais ficam no fim do stylesheet e, portanto, têm precedência sobre estilos responsivos antigos;
+- alterações são limitadas por media queries para preservar o desktop.
