@@ -37,6 +37,7 @@ create table if not exists public.basket_kit_template_items (
 );
 create index if not exists basket_kit_template_items_kit_idx on public.basket_kit_template_items(kit_template_id,sort_order);
 create index if not exists basket_kit_template_items_product_idx on public.basket_kit_template_items(product_id);
+create index if not exists basket_kit_template_items_source_item_idx on public.basket_kit_template_items(source_template_item_id);
 
 alter table public.basket_templates add column if not exists uses_hygiene_kit boolean not null default false;
 alter table public.basket_templates add column if not exists split_kits_enabled boolean not null default false;
@@ -55,6 +56,7 @@ do $$ begin
 end $$;
 create index if not exists basket_stock_lots_kit_ready_idx on public.basket_stock_lots(kit_template_id,status,built_at,created_at) where kit_template_id is not null;
 create unique index if not exists basket_stock_lots_active_short_code_uidx on public.basket_stock_lots(short_code) where short_code is not null and status in ('draft','ready');
+create index if not exists basket_stock_lots_duplicated_from_idx on public.basket_stock_lots(duplicated_from_lot_id);
 
 alter table public.basket_stock_lot_items add column if not exists kit_template_item_id uuid references public.basket_kit_template_items(id) on delete set null;
 create index if not exists basket_stock_lot_items_kit_item_idx on public.basket_stock_lot_items(kit_template_item_id);
