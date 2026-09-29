@@ -51,3 +51,8 @@ Verificado no código:
 - constraints da nova coluna presentes no banco.
 
 Validação física ainda recomendada: imprimir uma folha real, preencher os 25 cards à mão, fotografar a página inteira e conferir a leitura antes de usar o lote completo.
+
+
+## Refinamento visual — fotos maiores (2026-09-29)
+
+Após validação do layout 5×5, o card foi compactado internamente para privilegiar a identificação visual do produto sem alterar a quantidade de 25 produtos por página. A área da foto passou de 25 mm para 30 mm de altura; paddings e pequenos espaçamentos internos foram reduzidos, enquanto os quadros manuscritos de ESTOQUE e GÔNDOLA permaneceram com 8,4 mm de altura. Nome, EAN e REF continuam presentes. Alteração aplicada em `vitrine/admin/index.html` no commit `9beae71b48bed518b7c708a927f7816693465040`.
