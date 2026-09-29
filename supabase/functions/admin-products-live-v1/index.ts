@@ -1189,7 +1189,7 @@ async function inventorySheetAnalyze(p:any,auth:any){
   const review=inventorySheetDeterministicReview(it.data||[],localItems,fallbackItems,pageConfidence,pageComplete);
   const localReady=review.filter((x:any)=>x.mark_kind==="local_ocr"&&x.review_state==="ready").length;
   const fallbackReady=review.filter((x:any)=>x.mark_kind==="local_ocr+ai_fallback"&&x.review_state==="ready").length;
-  const model=fallbackFields.length?("local:tesseract.js@7.0.0"+(fallback?.model?"+fallback:"+fallback.model:"+")):"local:tesseract.js@7.0.0";
+  const model=fallbackFields.length?("local:tesseract.js@7.0.0"+(fallback?.model?"+fallback:"+fallback.model:"+fallback-unavailable")):"local:tesseract.js@7.0.0";
   const rawResult={
     source:"deterministic_batch_page_slot",batch_code:batchCode,page_number:pageNumber,page_confidence:pageConfidence,page_complete:pageComplete,
     local_engine:"tesseract.js@7.0.0",local_items:localItems,
