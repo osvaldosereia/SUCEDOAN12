@@ -2681,6 +2681,7 @@
           '</div></details>';
       host.querySelectorAll('[data-kit-manage]').forEach(btn=>btn.onclick=()=>openBasketKitAdmin(btn.dataset.kitManage));
       host.querySelectorAll('[data-kit-new]').forEach(btn=>btn.onclick=async()=>{await openBasketKitAdmin(btn.dataset.kitNew);startBasketKitLotDraft(null)});
+      host.querySelectorAll('[data-kit-duplicate-current]').forEach(btn=>btn.onclick=async()=>{await openBasketKitAdmin(btn.dataset.kitDuplicateCurrent);startBasketKitLotDraft(btn.dataset.sourceLot)});
       host.querySelectorAll('[data-basket-manage]').forEach(btn=>btn.onclick=()=>openBasketAdmin(btn.dataset.basketManage));
     }catch(e){
       $('#basketAdminBody').innerHTML='<div class="empty">Não consegui carregar as cestas. <button class="text" id="retryBaskets">Tentar novamente</button></div>';
@@ -2694,7 +2695,7 @@
       '<div><h3 style="margin:0;font-size:16px">'+esc(label)+'</h3><p class="sub">'+esc(k.template_item_count)+' produtos no modelo</p></div>'+
       '<div class="basket-kpis"><div class="basket-kpi"><small>Prontos</small><strong>'+esc(k.ready_quantity||0)+'</strong></div><div class="basket-kpi"><small>Pode montar</small><strong>'+esc(k.max_build_from_template||0)+'</strong></div><div class="basket-kpi"><small>Próximo código</small><strong>'+esc(k.next_short_code||'—')+'</strong></div></div>'+
       (k.current_lot?'<div><strong style="font-size:12px">Em uso: '+esc(k.current_lot.short_code||k.current_lot.lot_code)+'</strong><span class="sub">'+esc(k.current_lot.quantity_available)+' unidade(s)</span></div>':'')+
-      '<div class="basket-toolbar"><button class="secondary" type="button" data-kit-manage="'+esc(k.id)+'">Gerenciar lotes</button><button class="primary" type="button" data-kit-new="'+esc(k.id)+'">+ Novo lote</button></div>'+
+      '<div class="basket-toolbar"><button class="secondary" type="button" data-kit-manage="'+esc(k.id)+'">Gerenciar lotes</button>'+(k.current_lot?'<button class="secondary" type="button" data-kit-duplicate-current="'+esc(k.id)+'" data-source-lot="'+esc(k.current_lot.id)+'">Duplicar '+esc(k.current_lot.short_code||k.current_lot.lot_code)+'</button>':'')+'<button class="primary" type="button" data-kit-new="'+esc(k.id)+'">+ Novo lote</button></div>'+
     '</article>';
   }
   async function openBasketKitAdmin(id){
