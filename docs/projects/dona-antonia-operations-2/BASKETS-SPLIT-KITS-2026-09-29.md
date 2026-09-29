@@ -199,7 +199,7 @@ Resultado:
 ## Estado ao final desta rodada
 
 - Nenhum lote novo real foi criado automaticamente.
-- Os 90 cestos completos antigos permanecem preservados.
+- Os 90 cestos completos antigos permanecem contabilizados: no fechamento desta rodada, 89 estão disponíveis e 1 Pequena Bonini está legitimamente alocada a um pedido recebido e ainda não confirmado.
 - A vitrine continua no modelo antigo até a montagem real dos novos kits.
 - Admin já está preparado para duplicação rápida.
 - `storefront-v2` publicado.
