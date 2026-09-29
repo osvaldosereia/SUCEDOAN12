@@ -205,3 +205,20 @@ Resultado:
 - `storefront-v2` publicado.
 - `admin-products-live-v1` publicado.
 - Migration: `20260929_basket_split_food_hygiene_kits_v1.sql`.
+
+
+## Migração prática dos lotes completos antigos
+
+Como os componentes dos 90 cestos originais ficam corretamente bloqueados enquanto estão dentro das cestas prontas, o estoque solto pode mostrar capacidade zero para alguns kits novos.
+
+Foi adicionada a ação **Migrar unidades** no detalhe dos lotes antigos.
+
+Uso:
+1. desmonte fisicamente a quantidade escolhida de cestas completas;
+2. no Admin, informe exatamente essa mesma quantidade em **Migrar unidades**;
+3. esses componentes deixam de ficar bloqueados no lote antigo e voltam ao saldo solto;
+4. use o saldo liberado para criar/duplicar os lotes de Alimentos e LH.
+
+Durante a transição, o Admin sugere deixar pelo menos 1 cesta completa antiga disponível por modelo até que todos os kits novos estejam prontos. A operação pode ser parcial mesmo quando outra unidade do mesmo lote está alocada a pedido, porque somente `quantity_available` pode ser desmontada.
+
+A operação não altera o estoque físico do Bling; apenas muda a classificação operacional de “dentro de cesta antiga” para “solto para remontagem”. Isso evita criar estoque artificial ou dar baixa duas vezes.
