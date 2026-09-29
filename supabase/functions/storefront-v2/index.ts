@@ -54,8 +54,8 @@ async function home(){
     const baskets=(basketsBase||[]).map((b:any)=>{const a:any=am.get(String(b.id));if(!a||Number(a.split_available||0)<=0)return null;return {
       id:b.id,name:b.name,display_price_cents:cents(b.base_price),image_url:b.image_url||"",
       stock_quantity:Number(a.split_available||0),split_mode:true,
-      food_lot_id:a.food_lot_id,food_lot_code:a.food_short_code||"",
-      hygiene_lot_id:a.hygiene_lot_id||null,hygiene_lot_code:a.hygiene_short_code||"",
+      food_lot_id:a.food_lot_id,food_lot_code:a.food_short_code||"",food_lot_quantity:Number(a.food_available||0),
+      hygiene_lot_id:a.hygiene_lot_id||null,hygiene_lot_code:a.hygiene_short_code||"",hygiene_lot_quantity:Number(a.hygiene_available||0),
       uses_hygiene_kit:a.uses_hygiene_kit===true
     }}).filter(Boolean);
     return {ok:true,version:"canonical-vitrine-v3-split-kits",split_kits:true,baskets,categories:CATEGORIES};
@@ -126,8 +126,8 @@ async function basket(id:string){
     const food=await splitLotItems(String(a.food_lot_id),"food"),hygiene=a.uses_hygiene_kit&&a.hygiene_lot_id?await splitLotItems(String(a.hygiene_lot_id),"hygiene"):[];
     return {basket:{id:b.id,name:b.name,display_price_cents:cents(b.base_price),image_url:b.image_url||"",
       split_mode:true,stock_quantity:Number(a.split_available||0),
-      food_lot_id:a.food_lot_id,food_lot_code:a.food_short_code||"",
-      hygiene_lot_id:a.hygiene_lot_id||null,hygiene_lot_code:a.hygiene_short_code||"",
+      food_lot_id:a.food_lot_id,food_lot_code:a.food_short_code||"",food_lot_quantity:Number(a.food_available||0),
+      hygiene_lot_id:a.hygiene_lot_id||null,hygiene_lot_code:a.hygiene_short_code||"",hygiene_lot_quantity:Number(a.hygiene_available||0),
       uses_hygiene_kit:a.uses_hygiene_kit===true},items:[...food,...hygiene]};
   }
   const {data:lot,error:le}=await db.from("basket_current_lot_v1").select("lot_id,lot_code,quantity_available,built_at").eq("basket_id",id).maybeSingle();if(le)throw le;if(!lot||Number(lot.quantity_available||0)<=0)return null;
@@ -231,7 +231,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:21},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:22},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home")return json(req,await home(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
