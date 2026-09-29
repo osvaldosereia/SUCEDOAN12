@@ -966,7 +966,7 @@ async function opsSummary(){
 }
 
 
-const INVENTORY_SHEET_CARDS_PER_PAGE=20;
+const INVENTORY_SHEET_CARDS_PER_PAGE=25;
 function inventorySheetDayCode(){return new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"2-digit",month:"2-digit",day:"2-digit"}).format(new Date()).replace(/-/g,"")}
 function inventorySheetOutputText(data:any){return Array.isArray(data?.output)?data.output.flatMap((x:any)=>Array.isArray(x?.content)?x.content:[]).filter((x:any)=>x?.type==="output_text").map((x:any)=>String(x?.text||"")).join("").trim():""}
 async function inventorySheetOpenAiKey(){let key=Deno.env.get("OPENAI_API_KEY")||"";if(!key){try{const q=await db.rpc("get_conversation_worker_provider_secret_v1");if(typeof q.data==="string")key=q.data}catch{}}return key}
@@ -1072,11 +1072,12 @@ const INVENTORY_SHEET_SCAN_SCHEMA:any={
   type:"object",additionalProperties:false,
   properties:{
     batch_code:{type:"string"},page_number:{type:["integer","null"]},page_confidence:{type:"number",minimum:0,maximum:1},page_complete:{type:"boolean"},
-    items:{type:"array",maxItems:20,items:{type:"object",additionalProperties:false,properties:{
-      slot_number:{type:"integer",minimum:1,maximum:20},printed_index:{type:["integer","null"],minimum:1},ean:{type:"string"},product_name_visible:{type:"string"},
-      quantity:{type:["integer","null"],minimum:0},marked_box:{type:["integer","null"],minimum:0,maximum:10},written_quantity:{type:["integer","null"],minimum:0},
-      mark_kind:{type:"string",enum:["box","written","none","ambiguous"]},ambiguous:{type:"boolean"},confidence:{type:"number",minimum:0,maximum:1},note:{type:"string"}
-    },required:["slot_number","printed_index","ean","product_name_visible","quantity","marked_box","written_quantity","mark_kind","ambiguous","confidence","note"]}}
+    items:{type:"array",maxItems:25,items:{type:"object",additionalProperties:false,properties:{
+      slot_number:{type:"integer",minimum:1,maximum:25},printed_index:{type:["integer","null"],minimum:1},ean:{type:"string"},product_name_visible:{type:"string"},
+      quantity:{type:["integer","null"],minimum:0},gondola:{type:["integer","null"],minimum:1,maximum:9999},
+      quantity_confidence:{type:"number",minimum:0,maximum:1},gondola_confidence:{type:"number",minimum:0,maximum:1},
+      ambiguous_quantity:{type:"boolean"},ambiguous_gondola:{type:"boolean"},note:{type:"string"}
+    },required:["slot_number","printed_index","ean","product_name_visible","quantity","gondola","quantity_confidence","gondola_confidence","ambiguous_quantity","ambiguous_gondola","note"]}}
   },
   required:["batch_code","page_number","page_confidence","page_complete","items"]
 };
@@ -1094,14 +1095,16 @@ async function inventorySheetVision(imageDataUrl:string){
         model,store:false,max_output_tokens:6000,reasoning:{effort:"low"},
         instructions:[
           "Você lê uma FOTO ÚNICA de uma folha A4 vertical inteira de balanço físico da Dona Antônia.",
-          "A página tem exatamente 5 colunas e no máximo 4 linhas de cards, portanto no máximo 20 produtos.",
+          "A página tem exatamente 5 colunas e no máximo 5 linhas de cards, portanto no máximo 25 produtos.",
           "No cabeçalho existem o código do lote BAL-...... e o número Página X/Y.",
-          "Cada card tem REF (índice impresso), foto, nome, EAN, validade e caixas 0 a 10 mais um campo largo para quantidade escrita.",
-          "Um X claramente marcado em uma caixa 0..10 significa aquela quantidade. Se o campo largo tiver um número manuscrito, use esse número.",
-          "Nunca adivinhe. Se houver duas marcas, rabisco duvidoso, número ilegível, card cortado, reflexo, sombra forte ou dúvida, marque ambiguous=true e quantity=null.",
-          "Leia a página inteira, da esquerda para a direita e de cima para baixo. slot_number é a posição física 1..20 nessa ordem.",
+          "Cada card tem REF (índice impresso), foto, nome, EAN e EXATAMENTE dois quadros manuscritos: ESTOQUE à esquerda e GÔNDOLA à direita.",
+          "O card NÃO mostra validade e NÃO possui caixas numeradas de 0 a 10. Não procure nem invente esses elementos.",
+          "quantity é somente o número manuscrito no quadro ESTOQUE. gondola é somente o número manuscrito no quadro GÔNDOLA.",
+          "Nunca use conhecimento prévio, aparência do produto ou outra linha para inferir estoque ou gôndola.",
+          "Se um dos dois números estiver ilegível, vazio, cortado, com rasura duvidosa, reflexo ou sombra forte, marque a ambiguidade daquele campo e devolva null para ele.",
+          "Leia a página inteira, da esquerda para a direita e de cima para baixo. slot_number é a posição física 1..25 nessa ordem.",
           "Copie EAN e REF visíveis. Não corrija EAN por conhecimento do produto.",
-          "Sem marcação: mark_kind=none, ambiguous=true e quantity=null."
+          "Só use confiança alta quando o número manuscrito estiver claramente legível dentro do quadro correto."
         ].join(" "),
         input:[{role:"user",content:[{type:"input_text",text:"Extraia todas as contagens desta folha A4 inteira. Priorize precisão e sinalize qualquer dúvida."},{type:"input_image",image_url:imageDataUrl,detail:"original"}]}],
         text:{format:{type:"json_schema",name:"inventory_sheet_scan",strict:true,schema:INVENTORY_SHEET_SCAN_SCHEMA}}
@@ -1118,16 +1121,29 @@ async function inventorySheetVision(imageDataUrl:string){
 
 function inventorySheetReview(expected:any[],parsed:any){
   const bySlot=new Map<number,any>();
-  for(const x of Array.isArray(parsed?.items)?parsed.items:[]){const slot=Number(x?.slot_number);if(Number.isInteger(slot)&&slot>=1&&slot<=20&&!bySlot.has(slot))bySlot.set(slot,x)}
+  for(const x of Array.isArray(parsed?.items)?parsed.items:[]){const slot=Number(x?.slot_number);if(Number.isInteger(slot)&&slot>=1&&slot<=25&&!bySlot.has(slot))bySlot.set(slot,x)}
   const pageOk=Number(parsed?.page_confidence||0)>=0.90&&parsed?.page_complete===true;
   return expected.map((item:any)=>{
     const ai=bySlot.get(Number(item.slot_number))||null,expectedEan=dg(item.gtin_snapshot),aiEan=dg(ai?.ean);
     const eanMatch=expectedEan?aiEan===expectedEan:true,indexMatch=Number(ai?.printed_index||0)===Number(item.printed_index);
-    const q=ai?.quantity,validQty=Number.isInteger(q)&&q>=0&&q<=100000,confidence=Number(ai?.confidence||0);
-    const ready=Boolean(ai)&&pageOk&&indexMatch&&eanMatch&&validQty&&ai?.ambiguous===false&&confidence>=0.95;
-    const reasons:string[]=[];if(!ai)reasons.push("card_nao_lido");if(ai&&!indexMatch)reasons.push("ref_nao_confere");if(ai&&expectedEan&&!eanMatch)reasons.push("ean_nao_confere");if(ai&&!validQty)reasons.push("quantidade_duvidosa");if(ai?.ambiguous===true)reasons.push("marcacao_ambigua");if(ai&&confidence<0.95)reasons.push("baixa_confianca");if(!pageOk)reasons.push("pagina_incompleta_ou_duvidosa");
-    return {sheet_item_id:item.id,product_id:item.product_id,page_number:item.page_number,slot_number:item.slot_number,printed_index:item.printed_index,name:item.product_name_snapshot,gtin:expectedEan||"",expiration_date:item.expiration_date_snapshot||null,
-      ai_ean:aiEan||"",ai_quantity:validQty?q:null,quantity:validQty?q:null,confidence,mark_kind:tx(ai?.mark_kind,30)||"none",note:tx(ai?.note,300),review_state:ready?"ready":"review",reason:ready?"":reasons.join(",")};
+    const q=ai?.quantity,g=ai?.gondola;
+    const validQty=Number.isInteger(q)&&q>=0&&q<=100000,validGondola=Number.isInteger(g)&&g>=1&&g<=9999;
+    const quantityConfidence=Number(ai?.quantity_confidence||0),gondolaConfidence=Number(ai?.gondola_confidence||0),confidence=Math.min(quantityConfidence,gondolaConfidence);
+    const ready=Boolean(ai)&&pageOk&&indexMatch&&eanMatch&&validQty&&validGondola&&ai?.ambiguous_quantity===false&&ai?.ambiguous_gondola===false&&quantityConfidence>=0.95&&gondolaConfidence>=0.95;
+    const reasons:string[]=[];
+    if(!ai)reasons.push("card_nao_lido");
+    if(ai&&!indexMatch)reasons.push("ref_nao_confere");
+    if(ai&&expectedEan&&!eanMatch)reasons.push("ean_nao_confere");
+    if(ai&&!validQty)reasons.push("quantidade_duvidosa");
+    if(ai&&!validGondola)reasons.push("gondola_duvidosa");
+    if(ai?.ambiguous_quantity===true)reasons.push("quantidade_ambigua");
+    if(ai?.ambiguous_gondola===true)reasons.push("gondola_ambigua");
+    if(ai&&quantityConfidence<0.95)reasons.push("baixa_confianca_estoque");
+    if(ai&&gondolaConfidence<0.95)reasons.push("baixa_confianca_gondola");
+    if(!pageOk)reasons.push("pagina_incompleta_ou_duvidosa");
+    return {sheet_item_id:item.id,product_id:item.product_id,page_number:item.page_number,slot_number:item.slot_number,printed_index:item.printed_index,name:item.product_name_snapshot,gtin:expectedEan||"",
+      ai_ean:aiEan||"",ai_quantity:validQty?q:null,quantity:validQty?q:null,ai_gondola:validGondola?g:null,gondola:validGondola?g:null,
+      confidence,quantity_confidence:quantityConfidence,gondola_confidence:gondolaConfidence,mark_kind:"written_pair",note:tx(ai?.note,300),review_state:ready?"ready":"review",reason:ready?"":reasons.join(",")};
   });
 }
 
@@ -1141,7 +1157,7 @@ async function inventorySheetAnalyze(p:any,auth:any){
   const review=inventorySheetReview(it.data||[],parsed);
   const s=await db.from("inventory_sheet_page_scans").insert({batch_id:b.data.id,page_number:pageNumber,uploaded_by:auth.user_id,model:ai.model||null,ai_response_id:ai.response_id||null,page_confidence:Number(parsed.page_confidence||0),raw_result:parsed,review_result:{ready:review.filter((x:any)=>x.review_state==="ready").length,review:review.filter((x:any)=>x.review_state!=="ready").length},status:"analyzed"}).select("*").single();
   if(s.error)throw s.error;
-  if(review.length){const ins=await db.from("inventory_sheet_item_results").insert(review.map((r:any)=>({scan_id:s.data.id,sheet_item_id:r.sheet_item_id,ai_ean:r.ai_ean||null,ai_quantity:r.ai_quantity,ai_confidence:r.confidence,ai_mark_kind:r.mark_kind,ai_note:r.note||null,review_state:r.review_state})));if(ins.error)throw ins.error}
+  if(review.length){const ins=await db.from("inventory_sheet_item_results").insert(review.map((r:any)=>({scan_id:s.data.id,sheet_item_id:r.sheet_item_id,ai_ean:r.ai_ean||null,ai_quantity:r.ai_quantity,ai_gondola:r.ai_gondola,ai_confidence:r.confidence,ai_mark_kind:r.mark_kind,ai_note:r.note||null,review_state:r.review_state})));if(ins.error)throw ins.error}
   const dr=await db.from("inventory_sheet_item_results").select("id,sheet_item_id").eq("scan_id",s.data.id);if(dr.error)throw dr.error;const rm=new Map((dr.data||[]).map((x:any)=>[String(x.sheet_item_id),x.id]));
   return {scan_id:s.data.id,batch_code:batchCode,page_number:pageNumber,page_count:b.data.page_count,page_confidence:Number(parsed.page_confidence||0),page_complete:parsed.page_complete===true,model:ai.model,rows:review.map((r:any)=>({...r,result_id:rm.get(String(r.sheet_item_id))||null}))};
 }
@@ -1176,24 +1192,42 @@ async function inventorySheetApply(p:any,auth:any){
   for(const req of requested){
     const rid=id(req?.result_id),row:any=resultMap.get(rid);
     if(!row){applied.push({result_id:rid||null,ok:false,error:"result_not_found"});continue}
-    if(row.review_state==="applied"){applied.push({result_id:rid,ok:true,already_applied:true,stock_count_id:row.stock_count_id||null,bling_job_id:row.bling_job_id||null});continue}
+    if(row.review_state==="applied"){applied.push({result_id:rid,ok:true,already_applied:true,stock_count_id:row.stock_count_id||null,bling_job_id:row.bling_job_id||null,confirmed_gondola:row.confirmed_gondola||null});continue}
     if(row.review_state==="review"&&req?.manual_confirmed!==true){applied.push({result_id:rid,ok:false,error:"manual_confirmation_required"});continue}
-    const quantity=Number(req?.quantity);
+    const quantity=Number(req?.quantity),gondola=Number(req?.gondola);
     if(!Number.isInteger(quantity)||quantity<0||quantity>100000){applied.push({result_id:rid,ok:false,error:"invalid_quantity"});continue}
-    const aiQuantity=row.ai_quantity==null?null:Number(row.ai_quantity);
-    if(row.review_state==="ready"&&aiQuantity!==null&&quantity!==aiQuantity&&req?.manual_confirmed!==true){
-      applied.push({result_id:rid,ok:false,error:"manual_confirmation_required_for_override",ai_quantity:aiQuantity});
+    if(!Number.isInteger(gondola)||gondola<1||gondola>9999){applied.push({result_id:rid,ok:false,error:"invalid_gondola"});continue}
+    const aiQuantity=row.ai_quantity==null?null:Number(row.ai_quantity),aiGondola=row.ai_gondola==null?null:Number(row.ai_gondola);
+    if(row.review_state==="ready"&&((aiQuantity!==null&&quantity!==aiQuantity)||(aiGondola!==null&&gondola!==aiGondola))&&req?.manual_confirmed!==true){
+      applied.push({result_id:rid,ok:false,error:"manual_confirmation_required_for_override",ai_quantity:aiQuantity,ai_gondola:aiGondola});
       continue;
     }
     const item:any=itemMap.get(String(row.sheet_item_id));
     if(!item){applied.push({result_id:rid,ok:false,error:"sheet_item_not_found"});continue}
 
     const previousConfirmed=row.confirmed_quantity==null?null:Number(row.confirmed_quantity);
+    const previousGondola=row.confirmed_gondola==null?null:Number(row.confirmed_gondola);
     const previousCountId=id(row.stock_count_id);
     const previousJobId=id(row.bling_job_id);
-    if(previousCountId&&previousConfirmed!==null&&previousConfirmed!==quantity){
-      applied.push({result_id:rid,ok:false,error:"quantity_changed_after_confirmation",confirmed_quantity:previousConfirmed});
+    if(previousCountId&&((previousConfirmed!==null&&previousConfirmed!==quantity)||(previousGondola!==null&&previousGondola!==gondola))){
+      applied.push({result_id:rid,ok:false,error:"values_changed_after_confirmation",confirmed_quantity:previousConfirmed,confirmed_gondola:previousGondola});
       continue;
+    }
+
+    let vg=await db.from("vitrine_gondolas").select("id,number,active").eq("number",gondola).maybeSingle();
+    if(vg.error){applied.push({result_id:rid,ok:false,error:tx(vg.error.message,240)});continue}
+    if(!vg.data){
+      vg=await db.from("vitrine_gondolas").insert({number:gondola,active:true}).select("id,number,active").single();
+      if(vg.error){applied.push({result_id:rid,ok:false,error:tx(vg.error.message,240)});continue}
+    }else if(vg.data.active!==true){
+      vg=await db.from("vitrine_gondolas").update({active:true,updated_at:new Date().toISOString()}).eq("id",vg.data.id).select("id,number,active").single();
+      if(vg.error){applied.push({result_id:rid,ok:false,error:tx(vg.error.message,240)});continue}
+    }
+    const currentProduct=await one(item.product_id);
+    if(!currentProduct){applied.push({result_id:rid,ok:false,error:"product_not_found"});continue}
+    if(String(currentProduct.gondola||"")!==String(gondola)){
+      const loc=await db.from("products").update({gondola:String(gondola),shelf:null,updated_at:new Date().toISOString()}).eq("id",item.product_id);
+      if(loc.error){applied.push({result_id:rid,ok:false,error:tx(loc.error.message,240)});continue}
     }
 
     let countId=previousCountId;
@@ -1202,7 +1236,7 @@ async function inventorySheetApply(p:any,auth:any){
       if(count.error){applied.push({result_id:rid,ok:false,error:tx(count.error.message,240)});continue}
       countId=id(count.data?.count_id);
       await db.from("inventory_sheet_item_results").update({
-        confirmed_quantity:quantity,confirmed_by:auth.user_id,confirmed_at:new Date().toISOString(),
+        confirmed_quantity:quantity,confirmed_gondola:gondola,confirmed_by:auth.user_id,confirmed_at:new Date().toISOString(),
         stock_count_id:countId||null,review_state:authority==="bling"?"confirmed":"applied",
         apply_error:null,updated_at:new Date().toISOString()
       }).eq("id",rid);
@@ -1212,7 +1246,7 @@ async function inventorySheetApply(p:any,auth:any){
       if(previousJobId){
         existingJobIds.push(previousJobId);
         jobToResult.push({rid,countId,jobId:previousJobId});
-        applied.push({result_id:rid,ok:true,quantity,stock_count_id:countId,bling_job_id:previousJobId,reused:true});
+        applied.push({result_id:rid,ok:true,quantity,gondola,confirmed_gondola:gondola,stock_count_id:countId,bling_job_id:previousJobId,reused:true});
       }else{
         jobs.push({
           domain:"stock",operation:"set_stock",source_id:item.product_id,
@@ -1220,12 +1254,12 @@ async function inventorySheetApply(p:any,auth:any){
           payload:{stock_quantity:quantity,inventory_sheet_scan_id:scanId,inventory_sheet_result_id:rid,operator_label:operator,count_id:countId||null}
         });
         jobToResult.push({rid,countId,jobId:null});
-        applied.push({result_id:rid,ok:true,quantity,stock_count_id:countId,queued:true});
+        applied.push({result_id:rid,ok:true,quantity,gondola,confirmed_gondola:gondola,stock_count_id:countId,queued:true});
       }
     }else{
       await db.from("inventory_sheet_item_results").update({review_state:"applied",updated_at:new Date().toISOString()}).eq("id",rid);
       if(countId)await inventorySheetResolveCountAttention(countId,"inventory-sheet:"+scanId);
-      applied.push({result_id:rid,ok:true,quantity,stock_count_id:countId,queued:false});
+      applied.push({result_id:rid,ok:true,quantity,gondola,confirmed_gondola:gondola,stock_count_id:countId,queued:false});
     }
   }
 
@@ -1288,7 +1322,7 @@ async function inventorySheetApply(p:any,auth:any){
     }
   }
 
-  const final=await db.from("inventory_sheet_item_results").select("id,review_state,confirmed_quantity,stock_count_id,bling_job_id,apply_error").eq("scan_id",scanId);
+  const final=await db.from("inventory_sheet_item_results").select("id,review_state,confirmed_quantity,confirmed_gondola,stock_count_id,bling_job_id,apply_error").eq("scan_id",scanId);
   if(final.error)throw final.error;
   return {scan_id:scanId,status:scanStatus,authority,worker:worker?.data||null,rows:final.data||[],applied};
 }
@@ -1302,7 +1336,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:49,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:50,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
