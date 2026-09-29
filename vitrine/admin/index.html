@@ -447,7 +447,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -2257,6 +2257,18 @@
     }
   }
 
+
+  function inventorySheetQrPayload(batchCode,pageNumber){
+    return 'DA_BAL1|'+String(batchCode||'').toUpperCase()+'|'+String(Number(pageNumber||0));
+  }
+
+  async function inventorySheetQrDataUrl(payload){
+    await inventorySheetLoadScript('inventoryQrGenerator','https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js');
+    if(typeof window.qrcode!=='function')throw new Error('Gerador de QR não iniciou.');
+    const qr=window.qrcode(0,'M');qr.addData(payload);qr.make();
+    return qr.createDataURL(5,2);
+  }
+
   async function printInventorySheet(filters,filterLabel){
     const operator=requireOperator();if(!operator)return;
     const w=window.open('','_blank');
@@ -2273,17 +2285,18 @@
       for(let page=1;page<=Number(batch.page_count||1);page++)pages.push(items.filter(x=>Number(x.page_number)===page));
       const printedAt=new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
       const filterBits=filterLabel||'Produtos selecionados';
+      const qrImages=await Promise.all(pages.map((_,pageIndex)=>inventorySheetQrDataUrl(inventorySheetQrPayload(batch.batch_code,pageIndex+1))));
       const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Balanço '+inventoryPrintEscape(batch.batch_code)+'</title>'+
         '<style>'+
         '@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box}html,body{margin:0;padding:0;color:#111;font-family:Arial,Helvetica,sans-serif;background:#fff}'+
         '.sheet-page{width:200mm;height:287mm;overflow:hidden;break-after:page;page-break-after:always;display:flex;flex-direction:column}.sheet-page:last-child{break-after:auto;page-break-after:auto}'+
-        '.sheet-head{height:18mm;flex:0 0 18mm;display:grid;grid-template-columns:1fr auto;gap:4mm;align-items:end;border-bottom:.35mm solid #111;padding:0 0 2mm;margin:0 0 2mm}.sheet-head h1{font-size:11pt;margin:0}.sheet-head p{margin:.8mm 0 0;font-size:6.5pt}.sheet-code{text-align:right;font-size:7.2pt;line-height:1.35;max-width:92mm}.sheet-code strong{display:block;font-size:9pt;letter-spacing:.4px}'+
+        '.sheet-head{height:18mm;flex:0 0 18mm;display:grid;grid-template-columns:1fr auto;gap:3mm;align-items:end;border-bottom:.35mm solid #111;padding:0 0 2mm;margin:0 0 2mm}.sheet-head h1{font-size:11pt;margin:0}.sheet-head p{margin:.8mm 0 0;font-size:6.5pt}.sheet-code-wrap{display:flex;align-items:center;justify-content:flex-end;gap:2mm}.sheet-qr{width:15mm;height:15mm;object-fit:contain;image-rendering:pixelated}.sheet-code{text-align:right;font-size:7.2pt;line-height:1.35;max-width:68mm}.sheet-code strong{display:block;font-size:9pt;letter-spacing:.4px}'+
         '.count-sheet{height:265mm;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(5,minmax(0,1fr));gap:1.15mm;align-items:stretch}'+
         '.count-card{position:relative;border:.3mm solid #222;border-radius:1mm;padding:.5mm;overflow:hidden;background:#fff;display:flex;flex-direction:column;min-width:0}.card-ref{position:absolute;top:.35mm;right:.55mm;font-size:5pt;font-weight:800;background:#fff;padding-left:.35mm}.product-photo{height:30mm;flex:0 0 30mm;display:flex;align-items:center;justify-content:center;margin-bottom:.1mm}.product-photo img{display:block;max-width:100%;max-height:30mm;object-fit:contain}.product-name{height:6.2mm;flex:0 0 6.2mm;overflow:hidden;font-weight:700;font-size:6pt;line-height:1.02;text-align:center}.product-ean{text-align:center;font-size:5.1pt;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.05mm}.write-pair{display:grid;grid-template-columns:1fr 1fr;gap:.6mm;margin-top:auto;padding-top:.15mm}.write-field{min-width:0}.write-field b{display:block;text-align:center;font-size:4.7pt;line-height:1;margin-bottom:.12mm;letter-spacing:.05px}.write-field span{display:block;height:8.4mm;border:.45mm solid #111;background:#fff}'+
         '</style></head><body>'+
         pages.map((rows,pageIndex)=>'<section class="sheet-page">'+
           '<header class="sheet-head"><div><h1>Dona Antônia · Balanço físico</h1><p>Escreva a quantidade no quadro ESTOQUE e o número da localização no quadro GÔNDOLA. Fotografe a folha A4 inteira.</p></div>'+
-          '<div class="sheet-code"><strong>'+inventoryPrintEscape(batch.batch_code)+'</strong><b>Página '+(pageIndex+1)+'/'+pages.length+'</b><br>'+inventoryPrintEscape(filterBits)+' · '+inventoryPrintEscape(printedAt)+'</div></header>'+
+          '<div class="sheet-code-wrap"><img class="sheet-qr" src="'+inventoryPrintEscape(qrImages[pageIndex])+'" alt="QR da folha"><div class="sheet-code"><strong>'+inventoryPrintEscape(batch.batch_code)+'</strong><b>Página '+(pageIndex+1)+'/'+pages.length+'</b><br>'+inventoryPrintEscape(filterBits)+' · '+inventoryPrintEscape(printedAt)+'</div></div></header>'+
           '<main class="count-sheet">'+rows.map(inventoryPrintCard).join('')+'</main>'+
         '</section>').join('')+
         '<script>async function ready(){const imgs=[...document.images];await Promise.race([Promise.all(imgs.map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=r;i.onerror=r}))),new Promise(r=>setTimeout(r,5000))]);setTimeout(()=>window.print(),200)}window.addEventListener("load",ready);<\/script>'+
@@ -2802,10 +2815,49 @@
     return {value:valid?value:null,confidence:Math.max(0,Math.min(1,Number(confidence||0)/100)),ambiguous:!valid};
   }
 
-  async function inventorySheetReadLocal(file,batch,pageNumber,statusEl){
+
+  function inventorySheetParseQrText(raw){
+    const text=String(raw||'').trim().toUpperCase();
+    const m=text.match(/^DA_BAL1\|(BAL-[A-Z0-9-]{6,40})\|(\d{1,5})$/);
+    if(!m)return null;
+    const page=Number(m[2]);
+    return Number.isInteger(page)&&page>=1?{sheet_token:text,batch_code:m[1],page_number:page}:null;
+  }
+
+  async function inventorySheetDecodeQr(pageCanvas){
+    if('BarcodeDetector' in window){
+      try{
+        const detector=new window.BarcodeDetector({formats:['qr_code']});
+        const found=await detector.detect(pageCanvas);
+        for(const code of found||[]){const parsed=inventorySheetParseQrText(code.rawValue);if(parsed)return parsed}
+      }catch{}
+    }
+    await inventorySheetLoadScript('inventoryJsQr','https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js');
+    if(typeof window.jsQR!=='function')throw new Error('Leitor de QR não iniciou.');
+    const tryCanvas=canvas=>{
+      const ctx=canvas.getContext('2d',{willReadFrequently:true}),im=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const hit=window.jsQR(im.data,canvas.width,canvas.height,{inversionAttempts:'attemptBoth'});
+      return inventorySheetParseQrText(hit?.data);
+    };
+    const head=document.createElement('canvas');head.width=pageCanvas.width;head.height=Math.min(pageCanvas.height,260);
+    head.getContext('2d',{alpha:false}).drawImage(pageCanvas,0,0,head.width,head.height,0,0,head.width,head.height);
+    return tryCanvas(head)||tryCanvas(pageCanvas);
+  }
+
+  async function inventorySheetReadLocal(file,statusEl){
     const warped=await inventorySheetWarpPage(file);
-    const perPage=Number(batch.cards_per_page||25),lastCount=Math.max(0,Number(batch.product_count||0)-(Number(batch.page_count||1)-1)*perPage);
-    const slotCount=pageNumber<Number(batch.page_count||1)?perPage:(lastCount||perPage);
+    if(statusEl)statusEl.textContent='Identificando automaticamente a folha pelo QR Code…';
+    const identity=await inventorySheetDecodeQr(warped.canvas);
+    if(!identity)throw new Error('Não consegui identificar o QR Code desta folha. Fotografe a folha inteira, incluindo o cabeçalho.');
+
+    const manifest=await api('inventory_sheet_manifest',{},{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheet_token:identity.sheet_token})
+    });
+    if(manifest.already_uploaded){
+      return {duplicate:true,sheet_token:identity.sheet_token,manifest,page_confidence:warped.confidence,page_complete:true};
+    }
+
+    const slotCount=Math.max(1,Math.min(25,Number(manifest.slot_count||25)));
     const localItems=Array.from({length:slotCount},(_,i)=>({slot_number:i+1,quantity:null,gondola:null,quantity_confidence:0,gondola_confidence:0,ambiguous_quantity:true,ambiguous_gondola:true,note:''}));
     const tasks=[];
     for(let slot=1;slot<=slotCount;slot++){
@@ -2824,7 +2876,7 @@
           const row=localItems[t.slot-1];
           row[t.field]=parsed.value;row[t.field+'_confidence']=parsed.confidence;
           row['ambiguous_'+t.field]=parsed.ambiguous||parsed.confidence<.88;
-          done++;if(statusEl&&done%5===0)statusEl.textContent='OCR local lendo os números… '+done+'/'+tasks.length;
+          done++;if(statusEl&&done%5===0)statusEl.textContent='OCR local · '+identity.batch_code+' · página '+identity.page_number+' · '+done+'/'+tasks.length+' campos';
         }
       }));
     }
@@ -2835,34 +2887,10 @@
         fallbackFields.push({slot_number:t.slot,field:t.field,image_data_url:t.crop.toDataURL('image/jpeg',.88)});
       }
     }
-    return {local_items:localItems,fallback_fields:fallbackFields,page_confidence:warped.confidence,page_complete:true};
-  }
-
-  function inventorySheetSelectedBatch(){
-    const code=$('#inventorySheetBatchSelect')?.value||'';
-    return (state.inventorySheetBatches||[]).find(x=>x.batch_code===code)||null;
-  }
-
-  function inventorySheetSyncPageSelect(){
-    const batch=inventorySheetSelectedBatch(),sel=$('#inventorySheetPageSelect');if(!sel)return;
-    const previous=Number(sel.value||1),count=Math.max(1,Number(batch?.page_count||1));
-    sel.innerHTML=Array.from({length:count},(_,i)=>'<option value="'+(i+1)+'">Página '+(i+1)+' de '+count+'</option>').join('');
-    sel.value=String(Math.min(previous,count));
-  }
-
-  async function loadInventorySheetBatches(){
-    const batchSel=$('#inventorySheetBatchSelect');if(!batchSel)return;
-    try{
-      const data=await api('inventory_sheet_batches');
-      state.inventorySheetBatches=data.batches||[];
-      batchSel.innerHTML=state.inventorySheetBatches.length
-        ?state.inventorySheetBatches.map((b,i)=>'<option value="'+esc(b.batch_code)+'" '+(i===0?'selected':'')+'>'+esc(b.batch_code)+' · '+esc(b.product_count)+' prod. · '+esc(b.page_count)+' pág.</option>').join('')
-        :'<option value="">Nenhum lote disponível</option>';
-      inventorySheetSyncPageSelect();
-      batchSel.onchange=()=>{inventorySheetSyncPageSelect();state.inventorySheetScan=null;paintInventorySheetPhoto()};
-    }catch(e){
-      batchSel.innerHTML='<option value="">Falha ao carregar lotes</option>';
-    }
+    return {
+      duplicate:false,sheet_token:identity.sheet_token,manifest,local_items:localItems,fallback_fields:fallbackFields,
+      page_confidence:warped.confidence,page_complete:true
+    };
   }
 
   function inventorySheetRowApproved(row){
