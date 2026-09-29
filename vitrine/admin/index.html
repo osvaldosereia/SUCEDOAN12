@@ -447,7 +447,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -2657,6 +2657,214 @@
     return data;
   }
 
+
+  let inventorySheetCvPromise=null,inventorySheetTesseractPromise=null;
+
+  function inventorySheetLoadScript(id,src){
+    const existing=document.getElementById(id);
+    if(existing){
+      if(existing.dataset.ready==='1')return Promise.resolve();
+      return new Promise((resolve,reject)=>{
+        existing.addEventListener('load',()=>resolve(),{once:true});
+        existing.addEventListener('error',()=>reject(new Error('Falha ao carregar '+id)),{once:true});
+      });
+    }
+    return new Promise((resolve,reject)=>{
+      const s=document.createElement('script');s.id=id;s.src=src;s.async=true;
+      s.onload=()=>{s.dataset.ready='1';resolve()};s.onerror=()=>reject(new Error('Falha ao carregar '+id));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function inventorySheetOpenCv(){
+    if(inventorySheetCvPromise)return inventorySheetCvPromise;
+    inventorySheetCvPromise=(async()=>{
+      await inventorySheetLoadScript('inventoryOpenCv','https://docs.opencv.org/4.14.0/opencv.js');
+      let lib=window.cv;
+      if(lib instanceof Promise)lib=await lib;
+      for(let i=0;i<200&&!(lib&&lib.Mat);i++){await new Promise(r=>setTimeout(r,25));lib=window.cv;if(lib instanceof Promise)lib=await lib}
+      if(!(lib&&lib.Mat))throw new Error('OpenCV local não iniciou.');
+      return lib;
+    })();
+    return inventorySheetCvPromise;
+  }
+
+  async function inventorySheetOcrWorkers(){
+    if(state.inventorySheetOcrWorkers)return state.inventorySheetOcrWorkers;
+    if(inventorySheetTesseractPromise)return inventorySheetTesseractPromise;
+    inventorySheetTesseractPromise=(async()=>{
+      await inventorySheetLoadScript('inventoryTesseract','https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js');
+      if(!window.Tesseract?.createWorker)throw new Error('OCR local não iniciou.');
+      const workers=[];
+      for(let i=0;i<2;i++){
+        const w=await window.Tesseract.createWorker('eng',1);
+        await w.setParameters({
+          tessedit_char_whitelist:'0123456789',
+          tessedit_pageseg_mode:window.Tesseract.PSM.SINGLE_WORD,
+          user_defined_dpi:'300'
+        });
+        workers.push(w);
+      }
+      state.inventorySheetOcrWorkers=workers;
+      return workers;
+    })();
+    try{return await inventorySheetTesseractPromise}finally{inventorySheetTesseractPromise=null}
+  }
+
+  function inventorySheetOrderCorners(points){
+    const sums=points.map((p,i)=>({i,v:p.x+p.y})),diffs=points.map((p,i)=>({i,v:p.y-p.x}));
+    const tl=points[sums.reduce((a,b)=>a.v<b.v?a:b).i],br=points[sums.reduce((a,b)=>a.v>b.v?a:b).i];
+    const tr=points[diffs.reduce((a,b)=>a.v<b.v?a:b).i],bl=points[diffs.reduce((a,b)=>a.v>b.v?a:b).i];
+    return [tl,tr,br,bl];
+  }
+
+  async function inventorySheetWarpPage(file){
+    const cv=await inventorySheetOpenCv();
+    let bitmap=null,img=null,url='';
+    try{bitmap=await createImageBitmap(file,{imageOrientation:'from-image'})}catch{}
+    if(!bitmap){
+      url=URL.createObjectURL(file);
+      img=await new Promise((resolve,reject)=>{const el=new Image();el.onload=()=>resolve(el);el.onerror=reject;el.src=url});
+    }
+    const sw=bitmap?.width||img.naturalWidth,sh=bitmap?.height||img.naturalHeight;
+    const scale=Math.min(1,1800/Math.max(sw,sh)),cw=Math.max(1,Math.round(sw*scale)),ch=Math.max(1,Math.round(sh*scale));
+    const input=document.createElement('canvas');input.width=cw;input.height=ch;
+    const ictx=input.getContext('2d',{alpha:false});ictx.fillStyle='#fff';ictx.fillRect(0,0,cw,ch);ictx.drawImage(bitmap||img,0,0,cw,ch);
+    bitmap?.close?.();if(url)URL.revokeObjectURL(url);
+
+    const src=cv.imread(input),gray=new cv.Mat(),blur=new cv.Mat(),edges=new cv.Mat(),contours=new cv.MatVector(),hierarchy=new cv.Mat();
+    let best=null,bestArea=0;
+    try{
+      cv.cvtColor(src,gray,cv.COLOR_RGBA2GRAY,0);
+      cv.GaussianBlur(gray,blur,new cv.Size(5,5),0,0,cv.BORDER_DEFAULT);
+      cv.Canny(blur,edges,45,140,3,false);
+      cv.findContours(edges,contours,hierarchy,cv.RETR_LIST,cv.CHAIN_APPROX_SIMPLE);
+      const imageArea=cw*ch;
+      for(let i=0;i<contours.size();i++){
+        const cnt=contours.get(i),peri=cv.arcLength(cnt,true),approx=new cv.Mat();
+        try{
+          cv.approxPolyDP(cnt,approx,0.02*peri,true);
+          if(approx.rows!==4)continue;
+          const area=Math.abs(cv.contourArea(approx));
+          if(area<imageArea*.28||area<=bestArea)continue;
+          const pts=[];
+          for(let r=0;r<4;r++){const p=approx.intPtr(r,0);pts.push({x:p[0],y:p[1]})}
+          best=inventorySheetOrderCorners(pts);bestArea=area;
+        }finally{approx.delete();cnt.delete()}
+      }
+      if(!best)throw new Error('Não consegui localizar as quatro bordas da folha. Tire a foto com a folha inteira visível e fundo contrastante.');
+      const outW=1260,outH=1782;
+      const srcPts=cv.matFromArray(4,1,cv.CV_32FC2,best.flatMap(p=>[p.x,p.y]));
+      const dstPts=cv.matFromArray(4,1,cv.CV_32FC2,[0,0,outW-1,0,outW-1,outH-1,0,outH-1]);
+      const M=cv.getPerspectiveTransform(srcPts,dstPts),dst=new cv.Mat();
+      try{
+        cv.warpPerspective(src,dst,M,new cv.Size(outW,outH),cv.INTER_CUBIC,cv.BORDER_CONSTANT,new cv.Scalar(255,255,255,255));
+        const canvas=document.createElement('canvas');canvas.width=outW;canvas.height=outH;cv.imshow(canvas,dst);
+        const ratio=bestArea/(cw*ch),confidence=Math.max(.90,Math.min(.99,.90+(ratio-.28)*.12));
+        return {canvas,confidence};
+      }finally{srcPts.delete();dstPts.delete();M.delete();dst.delete()}
+    }finally{src.delete();gray.delete();blur.delete();edges.delete();contours.delete();hierarchy.delete()}
+  }
+
+  function inventorySheetFieldCrop(pageCanvas,slot,field){
+    const row=Math.floor((slot-1)/5),col=(slot-1)%5;
+    const pageW=210,pageH=297,gridLeft=5,gridTop=25,gridW=200,gridH=265,gap=1.15;
+    const cardW=(gridW-gap*4)/5,cardH=(gridH-gap*4)/5;
+    const cardX=gridLeft+col*(cardW+gap),cardY=gridTop+row*(cardH+gap);
+    const contentW=cardW-1,fieldGap=.6,fieldW=(contentW-fieldGap)/2;
+    let x=cardX+.5+(field==='gondola'?fieldW+fieldGap:0),y=cardY+cardH-.5-8.4,w=fieldW,h=8.4;
+    x+=.65;y+=.65;w-=1.3;h-=1.3;
+    const sx=x/pageW*pageCanvas.width,sy=y/pageH*pageCanvas.height,sw=w/pageW*pageCanvas.width,sh=h/pageH*pageCanvas.height;
+    const out=document.createElement('canvas');out.width=420;out.height=170;
+    const ctx=out.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,out.width,out.height);
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    ctx.drawImage(pageCanvas,sx,sy,sw,sh,12,12,out.width-24,out.height-24);
+    return out;
+  }
+
+  function inventorySheetThresholdCanvas(source){
+    const out=document.createElement('canvas');out.width=source.width;out.height=source.height;
+    const ctx=out.getContext('2d',{alpha:false});ctx.drawImage(source,0,0);
+    const im=ctx.getImageData(0,0,out.width,out.height),d=im.data,hist=new Uint32Array(256);
+    for(let i=0;i<d.length;i+=4){const y=Math.max(0,Math.min(255,Math.round(.299*d[i]+.587*d[i+1]+.114*d[i+2])));hist[y]++}
+    const total=out.width*out.height;let sum=0;for(let i=0;i<256;i++)sum+=i*hist[i];
+    let sumB=0,wB=0,maxVar=0,threshold=180;
+    for(let t=0;t<256;t++){wB+=hist[t];if(!wB)continue;const wF=total-wB;if(!wF)break;sumB+=t*hist[t];const mB=sumB/wB,mF=(sum-sumB)/wF,v=wB*wF*(mB-mF)*(mB-mF);if(v>maxVar){maxVar=v;threshold=t}}
+    threshold=Math.max(115,Math.min(215,threshold));
+    for(let i=0;i<d.length;i+=4){const y=.299*d[i]+.587*d[i+1]+.114*d[i+2],v=y<threshold?0:255;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255}
+    ctx.putImageData(im,0,0);return out;
+  }
+
+  function inventorySheetParseDigits(text,field,confidence){
+    const raw=String(text||'').trim(),digits=raw.replace(/\D+/g,'');
+    const value=digits?Number(digits):null,max=field==='quantity'?100000:9999,min=field==='quantity'?0:1;
+    const valid=Number.isInteger(value)&&value>=min&&value<=max;
+    return {value:valid?value:null,confidence:Math.max(0,Math.min(1,Number(confidence||0)/100)),ambiguous:!valid};
+  }
+
+  async function inventorySheetReadLocal(file,batch,pageNumber,statusEl){
+    const warped=await inventorySheetWarpPage(file);
+    const perPage=Number(batch.cards_per_page||25),lastCount=Math.max(0,Number(batch.product_count||0)-(Number(batch.page_count||1)-1)*perPage);
+    const slotCount=pageNumber<Number(batch.page_count||1)?perPage:(lastCount||perPage);
+    const localItems=Array.from({length:slotCount},(_,i)=>({slot_number:i+1,quantity:null,gondola:null,quantity_confidence:0,gondola_confidence:0,ambiguous_quantity:true,ambiguous_gondola:true,note:''}));
+    const tasks=[];
+    for(let slot=1;slot<=slotCount;slot++){
+      for(const field of ['quantity','gondola']){
+        const crop=inventorySheetFieldCrop(warped.canvas,slot,field),processed=inventorySheetThresholdCanvas(crop);
+        tasks.push({slot,field,crop,processed});
+      }
+    }
+    let workers=null;
+    try{workers=await inventorySheetOcrWorkers()}catch{}
+    let done=0;
+    if(workers?.length){
+      await Promise.all(workers.map(async(worker,wi)=>{
+        for(let i=wi;i<tasks.length;i+=workers.length){
+          const t=tasks[i],res=await worker.recognize(t.processed),parsed=inventorySheetParseDigits(res?.data?.text,t.field,res?.data?.confidence);
+          const row=localItems[t.slot-1];
+          row[t.field]=parsed.value;row[t.field+'_confidence']=parsed.confidence;
+          row['ambiguous_'+t.field]=parsed.ambiguous||parsed.confidence<.88;
+          done++;if(statusEl&&done%5===0)statusEl.textContent='OCR local lendo os números… '+done+'/'+tasks.length;
+        }
+      }));
+    }
+    const fallbackFields=[];
+    for(const t of tasks){
+      const row=localItems[t.slot-1];
+      if(row['ambiguous_'+t.field]===true||Number(row[t.field+'_confidence']||0)<.88){
+        fallbackFields.push({slot_number:t.slot,field:t.field,image_data_url:t.crop.toDataURL('image/jpeg',.88)});
+      }
+    }
+    return {local_items:localItems,fallback_fields:fallbackFields,page_confidence:warped.confidence,page_complete:true};
+  }
+
+  function inventorySheetSelectedBatch(){
+    const code=$('#inventorySheetBatchSelect')?.value||'';
+    return (state.inventorySheetBatches||[]).find(x=>x.batch_code===code)||null;
+  }
+
+  function inventorySheetSyncPageSelect(){
+    const batch=inventorySheetSelectedBatch(),sel=$('#inventorySheetPageSelect');if(!sel)return;
+    const previous=Number(sel.value||1),count=Math.max(1,Number(batch?.page_count||1));
+    sel.innerHTML=Array.from({length:count},(_,i)=>'<option value="'+(i+1)+'">Página '+(i+1)+' de '+count+'</option>').join('');
+    sel.value=String(Math.min(previous,count));
+  }
+
+  async function loadInventorySheetBatches(){
+    const batchSel=$('#inventorySheetBatchSelect');if(!batchSel)return;
+    try{
+      const data=await api('inventory_sheet_batches');
+      state.inventorySheetBatches=data.batches||[];
+      batchSel.innerHTML=state.inventorySheetBatches.length
+        ?state.inventorySheetBatches.map((b,i)=>'<option value="'+esc(b.batch_code)+'" '+(i===0?'selected':'')+'>'+esc(b.batch_code)+' · '+esc(b.product_count)+' prod. · '+esc(b.page_count)+' pág.</option>').join('')
+        :'<option value="">Nenhum lote disponível</option>';
+      inventorySheetSyncPageSelect();
+      batchSel.onchange=()=>{inventorySheetSyncPageSelect();state.inventorySheetScan=null;paintInventorySheetPhoto()};
+    }catch(e){
+      batchSel.innerHTML='<option value="">Falha ao carregar lotes</option>';
+    }
+  }
+
   function inventorySheetRowApproved(row){
     const q=Number(row.quantity),g=Number(row.gondola);
     if(!Number.isInteger(q)||q<0||!Number.isInteger(g)||g<1||g>9999)return false;
@@ -2690,6 +2898,7 @@
         const detail=[
           'REF '+String(r.printed_index||'').padStart(4,'0'),
           'EAN '+(r.gtin||'—'),
+          r.mark_kind==='local_ocr'?'OCR local':(r.mark_kind==='local_ocr+ai_fallback'?'OCR local + IA apenas no campo duvidoso':''),
           r.reason?String(r.reason).replaceAll('_',' '):'',
           r.apply_error||''
         ].filter(Boolean).join(' · ');
@@ -2726,21 +2935,31 @@
 
   async function analyzeInventorySheetPhoto(file){
     if(state.inventorySheetBusy)return;
+    const batch=inventorySheetSelectedBatch(),pageNumber=Number($('#inventorySheetPageSelect')?.value||0);
+    if(!batch||!pageNumber){toast('Selecione o lote e a página desta folha');return}
     state.inventorySheetBusy=true;state.inventorySheetScan=null;
     const status=$('#inventorySheetPhotoStatus'),btn=$('#inventorySheetAnalyzeButton');
-    if(status)status.textContent='Preparando a foto da folha inteira…';
+    if(status)status.textContent='Detectando a folha e corrigindo a perspectiva no aparelho…';
     if(btn)btn.disabled=true;
     try{
-      const imageData=await inventorySheetImageData(file);
       if(state.inventorySheetPreviewUrl)URL.revokeObjectURL(state.inventorySheetPreviewUrl);
       state.inventorySheetPreviewUrl=URL.createObjectURL(file);
-      if(status)status.textContent='IA lendo todos os cards da folha A4…';
+      const local=await inventorySheetReadLocal(file,batch,pageNumber,status);
+      const unresolved=local.fallback_fields.length;
+      if(status)status.textContent=unresolved
+        ?'OCR local concluído. '+unresolved+' campo(s) ficaram duvidosos; usando IA somente nesses recortes…'
+        :'OCR local concluiu todos os campos. Nenhuma imagem será enviada para IA.';
       const data=await api('inventory_sheet_analyze',{},{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({image_data_url:imageData})
+        body:JSON.stringify({
+          batch_code:batch.batch_code,page_number:pageNumber,page_confidence:local.page_confidence,page_complete:local.page_complete,
+          local_items:local.local_items,fallback_fields:local.fallback_fields
+        })
       });
       state.inventorySheetScan={...data,rows:(data.rows||[]).map(r=>({...r,gondola:r.gondola??r.ai_gondola??null,manual_confirmed:false,user_edited:false}))};
-      if(status)status.textContent='Leitura concluída. Confira apenas o que estiver marcado em amarelo.';
+      if(status)status.textContent=data.fallback_used
+        ?'Leitura concluída: produtos definidos por lote/página/posição; IA foi usada apenas em números duvidosos.'
+        :'Leitura concluída inteiramente no aparelho, sem IA. Confira somente o que estiver marcado em amarelo.';
       paintInventorySheetPhoto();
     }catch(e){
       if(status)status.textContent='Não consegui ler esta folha: '+errorMessage(e.message);
@@ -2804,12 +3023,13 @@
     if(camera)camera.onchange=e=>{const f=e.currentTarget.files?.[0];if(f)analyzeInventorySheetPhoto(f)};
     if(file)file.onchange=e=>{const f=e.currentTarget.files?.[0];if(f)analyzeInventorySheetPhoto(f)};
     if($('#inventorySheetApply'))$('#inventorySheetApply').onclick=applyInventorySheetPhoto;
+    loadInventorySheetBatches();
     paintInventorySheetPhoto();
   }
 
   async function renderBalance(){
     const content=$('#content'),incident=state.balanceMode==='incident';
-    const photoPanel=!incident?'<section class="panel" style="padding:14px;margin-bottom:14px"><div class="history-title dispatch-head"><div><strong>Balanço por foto da folha A4</strong><span>Uma foto deve mostrar a folha vertical inteira, com as quatro bordas visíveis. A IA lê Estoque e Gôndola dos 25 produtos.</span></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" id="inventorySheetAnalyzeButton" type="button">Fotografar folha A4 inteira</button><button class="secondary" id="inventorySheetChooseButton" type="button">Escolher foto</button><input id="inventorySheetCamera" type="file" accept="image/*" capture="environment" hidden><input id="inventorySheetFile" type="file" accept="image/*" hidden></div><div class="muted" id="inventorySheetPhotoStatus" style="margin-bottom:10px">A IA lê a página inteira e cruza lote, página, REF e EAN antes de liberar qualquer alteração.</div><div id="inventorySheetReview"></div><button class="confirm-wide" id="inventorySheetApply" type="button" disabled style="margin-top:10px">Aplicar balanço desta folha</button></section>':'';
+    const photoPanel=!incident?'<section class="panel" style="padding:14px;margin-bottom:14px"><div class="history-title dispatch-head"><div><strong>Balanço por foto da folha A4</strong><span>O produto é definido pelo lote, página e posição. Estoque e gôndola são lidos localmente no aparelho; IA entra apenas quando algum número ficar duvidoso.</span></div></div><div class="form-grid" style="margin-bottom:10px"><label><span>Lote impresso</span><select id="inventorySheetBatchSelect"><option>Carregando lotes…</option></select></label><label><span>Página fotografada</span><select id="inventorySheetPageSelect"><option value="1">Página 1</option></select></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" id="inventorySheetAnalyzeButton" type="button">Fotografar folha A4 inteira</button><button class="secondary" id="inventorySheetChooseButton" type="button">Escolher foto</button><input id="inventorySheetCamera" type="file" accept="image/*" capture="environment" hidden><input id="inventorySheetFile" type="file" accept="image/*" hidden></div><div class="muted" id="inventorySheetPhotoStatus" style="margin-bottom:10px">Selecione o lote e a página. A foto é corrigida e lida no próprio aparelho; somente recortes numéricos incertos podem ir para a IA.</div><div id="inventorySheetReview"></div><button class="confirm-wide" id="inventorySheetApply" type="button" disabled style="margin-top:10px">Aplicar balanço desta folha</button></section>':'';
     content.innerHTML=
       '<div class="page-head"><div><h1>Estoque mobile</h1><p>'+(incident?'Registre avaria, vencimento, perda ou retorno sem usar o painel completo do ERP.':'Faça o balanço rapidamente com leitor EAN e teclado na tela.')+'</p></div><span class="pill">Leitor ativo</span></div>'+
       '<div class="order-filters" style="margin-bottom:12px"><button class="filter-chip '+(!incident?'active':'')+'" id="balanceModeCount" type="button">Balanço</button><button class="filter-chip '+(incident?'active':'')+'" id="balanceModeIncident" type="button">Avaria / Vencido / Retorno</button></div>'+
