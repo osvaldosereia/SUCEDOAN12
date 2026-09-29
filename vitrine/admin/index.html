@@ -3401,8 +3401,19 @@
     state.inventorySheetBusy=true;paintInventorySheetPhoto();paintInventorySheetQueue();
     const btn=$('#inventorySheetApply');if(btn){btn.disabled=true;btn.textContent='Atualizando estoque…'}
     try{
-      await applyInventorySheetScan(scan,operator);
-      inventorySheetQueueSyncScan(scan);
+      let previousApplied=-1;
+      for(let attempt=1;attempt<=3;attempt++){
+        const status=$('#inventorySheetPhotoStatus');
+        if(status)status.textContent=attempt===1?'Atualizando e verificando no Bling…':'Concluindo sincronização no Bling · tentativa '+attempt+'/3…';
+        await applyInventorySheetScan(scan,operator);
+        inventorySheetQueueSyncScan(scan);
+        const appliedNow=scan.rows.filter(r=>r.review_state==='applied').length;
+        const waitingNow=scan.rows.filter(r=>r.review_state==='confirmed').length;
+        if(!waitingNow||scan.rows.some(r=>r.review_state==='error'))break;
+        if(appliedNow===previousApplied&&attempt>=2)break;
+        previousApplied=appliedNow;
+        await new Promise(r=>setTimeout(r,900));
+      }
       const left=scan.rows.filter(r=>r.review_state!=='applied');
       if(!left.length){
         toast('Concluído · todos os produtos foram verificados no Bling');
@@ -3414,8 +3425,8 @@
         const status=$('#inventorySheetPhotoStatus');if(status)status.textContent='Atenção: '+errors+' item(ns) ainda precisam de revisão. Os concluídos já foram ocultados.';
       }else{
         const waiting=left.filter(r=>r.review_state==='confirmed').length;
-        toast(waiting+' item(ns) aguardando conclusão no Bling');
-        const status=$('#inventorySheetPhotoStatus');if(status)status.textContent='Ainda não terminou: '+waiting+' item(ns) aguardam conclusão no Bling. Toque em “Concluir sincronização com o Bling”.';
+        toast(waiting+' item(ns) ainda aguardam o Bling');
+        const status=$('#inventorySheetPhotoStatus');if(status)status.textContent='Ainda não terminou: '+waiting+' item(ns) aguardam o Bling. Os concluídos já foram ocultados; use “Concluir sincronização com o Bling” somente se esta mensagem permanecer.';
       }
     }catch(e){toast('Não consegui concluir a folha: '+errorMessage(e.message))}
     finally{state.inventorySheetBusy=false;paintInventorySheetPhoto();paintInventorySheetQueue();await loadInventorySheetPendingManual()}
