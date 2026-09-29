@@ -334,3 +334,18 @@ Arquivos principais:
 - `orcamento/presets-bonini.json` (somente fallback);
 - `scripts/test-orcamento-modos-v2.mjs`;
 - `scripts/test-orcamento-admin-integration.mjs`.
+
+
+## Histórico de Orçamentos + revisão visual — 2026-09-29
+
+- criada a tabela `public.sales_quotes` no Supabase canônico, com RLS habilitado;
+- navegador não acessa a tabela diretamente: leitura e escrita passam pelo `admin-products-live-v1` autenticado;
+- ações novas: `quotes`, `quote`, `quote_save` e `quote_status_set`;
+- snapshot completo preserva campos, itens, preços, descontos, frete, observações e opções do PDF;
+- vínculo com cliente oficial é mantido quando o cliente veio da base do Supabase;
+- status suportados: rascunho, enviado, aceito, recusado, vencido e cancelado;
+- editor permite salvar, atualizar, pesquisar, abrir, duplicar e alterar status;
+- o ID/status do orçamento salvo também fica no rascunho local para evitar duplicação após recarregar a página;
+- teste transacional de persistência executado com rollback; nenhum registro de teste permaneceu;
+- revisão mobile: preview A4 deixa de forçar 210 mm na tela, controles de cliente empilham, barra do histórico reorganiza e cards ficam mais compactos;
+- `admin-products-live-v1` v106 foi confirmado ACTIVE com todas as rotas de orçamento preservadas.
