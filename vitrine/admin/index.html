@@ -2667,7 +2667,7 @@
           '<div class="bling-card"><small>Lotes novos</small><strong>'+esc(ks.ready_lots||0)+'</strong><span class="sub">lotes disponíveis</span></div>'+
           '<div class="bling-card"><small>Migração</small><strong>'+esc(migrationReady)+' / '+esc(food.length)+'</strong><span class="sub">cestas habilitadas para nova estrutura</span></div>'+
         '</div>'+
-        '<div class="kit-transition"><strong>Troca segura de estrutura</strong><span>Monte os novos lotes sem interromper os atuais. A vitrine só passa para Alimentos + Limpeza/Higiene quando todas as cestas tiverem o novo estoque necessário. Depois disso, os lotes seguem automaticamente a ordem de montagem.</span></div>'+
+        '<div class="kit-transition"><strong>Troca segura de estrutura</strong><span>Monte os novos lotes sem interromper os atuais. Se o estoque solto estiver baixo, abra “Modelos comerciais e lotes antigos”, escolha a cesta e use “Migrar unidades” somente depois de desmontá-las fisicamente. Durante a transição, mantenha ao menos 1 unidade antiga disponível de cada cesta. A vitrine só muda para Alimentos + Limpeza/Higiene quando todos os modelos tiverem o novo estoque necessário.</span></div>'+
         '<div class="kit-section-title"><div><h2>Limpeza e higiene</h2><p>Um único kit padrão serve para todas as cestas que possuem esta parte.</p></div></div>'+
         '<div class="basket-admin-grid">'+hygiene.map(kitAdminCard).join('')+'</div>'+
         '<div class="kit-section-title"><div><h2>Alimentos</h2><p>Cada cesta tem seu próprio lote de alimentos.</p></div></div>'+
@@ -2872,13 +2872,13 @@
     }catch(e){content.innerHTML='<div class="empty">Não consegui abrir esta cesta. <button class="text" id="backBaskets">Voltar</button></div>';if($('#backBaskets'))$('#backBaskets').onclick=renderBaskets}
   }
   function basketLotHtml(l){
-    const gap=Number(l.gap_items||0);
+    const gap=Number(l.gap_items||0),dismantled=Number(l.quantity_dismantled||0);
     return '<div class="basket-lot"><div class="basket-lot-head">'+
       '<div><strong>'+esc(l.lot_code)+'</strong><small>'+esc(l.source==='bootstrap_existing'?'Estoque inicial informado':l.built_by||'Operação')+' · '+esc(dateTime(l.built_at))+'</small></div>'+
-      '<div><strong>'+esc(l.quantity_available)+' / '+esc(l.quantity_built)+'</strong><small>disponível / montado</small></div>'+
+      '<div><strong>'+esc(l.quantity_available)+' / '+esc(l.quantity_built)+'</strong><small>disponível / montado'+(dismantled?' · '+esc(dismantled)+' desmontada(s)':'')+'</small></div>'+
       '<div>'+basketGapLabel(gap)+'</div>'+
       '<div><span class="pill '+(l.status==='ready'?'':'off')+'">'+esc(l.status==='ready'?'Disponível':l.status==='depleted'?'Esgotado':l.status==='cancelled'?'Cancelado':'Rascunho')+'</span></div>'+
-      '<div class="basket-row-actions">'+(l.status==='ready'&&Number(l.quantity_available||0)>0?'<button class="text danger" type="button" data-basket-lot-cancel="'+esc(l.id)+'">Desmontar / liberar</button>':'')+'</div></div>'+
+      '<div class="basket-row-actions">'+(Number(l.quantity_available||0)>0?'<button class="secondary" type="button" data-basket-legacy-release="'+esc(l.id)+'">Migrar unidades</button>':'')+'</div></div>'+
       '<details><summary style="padding:0 12px 10px;cursor:pointer;font-size:11px;color:var(--brand)">Ver composição real</summary><div class="basket-lot-items">'+(l.items||[]).map(x=>'<div class="basket-lot-item"><strong>'+esc(fmtQty(x.quantity_per_basket))+'×</strong> '+esc(x.product?.name||'Produto')+(x.metadata?.is_substitution?' <span class="pill warn">substituído</span>':'')+'</div>').join('')+'</div></details></div>';
   }
   function paintBasketAdmin(){
@@ -2903,7 +2903,7 @@
       const item=d.items[Number(btn.dataset.basketSuggestionInfo)],s=(item.suggestions||[]).find(x=>String(x.id)===String(btn.dataset.suggestionProduct));
       if(!s)return;toast((s.saved_alternative?'Alternativa cadastrada · ':'Sugestão · ')+s.name+' · '+fmtQty(s.loose_stock)+' disponível');
     });
-    content.querySelectorAll('[data-basket-lot-cancel]').forEach(btn=>btn.onclick=()=>cancelBasketLot(btn.dataset.basketLotCancel));
+    content.querySelectorAll('[data-basket-legacy-release]').forEach(btn=>btn.onclick=()=>releaseLegacyBasketUnits(btn.dataset.basketLegacyRelease));
   }
   function openBasketMetaEditor(){
     const d=state.basketDetail,b=d?.basket;if(!b)return;
@@ -3061,6 +3061,37 @@
       toast('Lote '+(data.lot?.lot_code||'')+' criado');state.basketLotDraft=null;await openBasketAdmin(d.basket.id);
     }catch(e){toast(String(e?.message||'')==='insufficient_loose_stock'?'O estoque solto mudou. Atualize e revise as sugestões.':'Não consegui criar o lote.');btn.disabled=false;btn.textContent='Confirmar montagem'}
   }
+  async function releaseLegacyBasketUnits(lotId){
+    const d=state.basketDetail,lot=(d?.lots||[]).find(x=>String(x.id)===String(lotId));if(!lot)return;
+    const available=Math.max(0,Number(lot.quantity_available||0));if(!available){toast('Este lote não tem unidades disponíveis.');return}
+    const suggested=available>1?available-1:1;
+    const raw=prompt(
+      'Quantas cestas deste lote você JÁ DESMONTOU fisicamente para remontar como Alimentos + Limpeza/Higiene?\n\nDisponíveis agora: '+available+
+      '\nSugestão durante a transição: '+suggested+' (mantém '+Math.max(0,available-suggested)+' cesta(s) completa(s) disponível(is) no site antigo).',
+      String(suggested)
+    );
+    if(raw===null)return;
+    const quantity=Math.floor(Number(raw));
+    if(!Number.isInteger(quantity)||quantity<1||quantity>available){toast('Informe uma quantidade entre 1 e '+available+'.');return}
+    const remaining=available-quantity;
+    if(!confirm(
+      'Confirmar que '+quantity+' cesta(s) foram desmontadas fisicamente?\n\n'+
+      'Esses componentes deixarão de ficar presos no lote antigo e aparecerão como estoque solto para montar os novos kits.'+
+      (remaining===0?'\n\nATENÇÃO: este lote antigo ficará sem unidade disponível.':'\n\nPermanecem '+remaining+' cesta(s) completas disponíveis.')
+    ))return;
+    const op=requireOperator();if(!op)return;
+    try{
+      await api('basket_legacy_lot_release',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({lot_id:lotId,quantity,operator:op,note:'Desmontagem física confirmada para migração Alimentos + LH'})
+      });
+      toast(quantity+' cesta(s) liberada(s) para remontagem');
+      await openBasketAdmin(d.basket.id);
+    }catch(e){
+      toast(String(e?.message||'')==='release_exceeds_available'?'O saldo deste lote mudou. Atualize e tente novamente.':'Não consegui liberar as unidades.');
+    }
+  }
+
   async function cancelBasketLot(lotId){
     if(!confirm('Confirme somente depois de DESMONTAR FISICAMENTE as cestas restantes deste lote.\n\nAo continuar, os componentes deixam de ficar presos neste lote e voltam a ser considerados estoque solto para montar os novos kits.'))return;const op=requireOperator();if(!op)return;const d=state.basketDetail;
     try{await api('basket_lot_cancel',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op,reason:'Cancelado no Vitrine/Admin'})});toast('Lote cancelado');await openBasketAdmin(d.basket.id)}catch(e){toast(String(e?.message||'')==='lot_has_allocated_orders'?'Este lote tem pedido reservado e não pode ser cancelado.':'Não consegui cancelar o lote.')}
