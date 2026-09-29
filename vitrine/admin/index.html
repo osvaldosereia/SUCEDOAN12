@@ -2717,7 +2717,7 @@
   async function inventorySheetOpenCv(){
     if(inventorySheetCvPromise)return inventorySheetCvPromise;
     inventorySheetCvPromise=(async()=>{
-      await inventorySheetLoadScript('inventoryOpenCv','https://docs.opencv.org/4.14.0/opencv.js');
+      await inventorySheetLoadScript('inventoryOpenCv','https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js');
       let lib=window.cv;
       if(lib instanceof Promise)lib=await lib;
       for(let i=0;i<200&&!(lib&&lib.Mat);i++){await new Promise(r=>setTimeout(r,25));lib=window.cv;if(lib instanceof Promise)lib=await lib}
@@ -2889,26 +2889,42 @@
   async function inventorySheetReadLocal(file,statusEl){
     if(statusEl)statusEl.textContent='Abrindo a imagem e procurando o QR Code…';
     const source=await inventorySheetFileCanvas(file,1800);
-
     let identity=await inventorySheetDecodeQr(source);
-    let warped=null;
+    let warped=null,forcePageFallback=false;
 
     if(statusEl)statusEl.textContent=identity
-      ?'QR identificado. Corrigindo a perspectiva da folha…'
-      :'QR ainda não identificado. Corrigindo a perspectiva para tentar novamente…';
+      ?'QR identificado. Preparando a folha…'
+      :'QR ainda não identificado. Tentando preparar a folha…';
 
     try{
       warped=await inventorySheetWarpPage(file,source);
     }catch(e){
-      if(!identity)throw e;
-      // QR já identificou a página. Se a borda não puder ser corrigida,
-      // usamos a própria foto como fallback somente quando ela já estiver próxima de A4 vertical.
-      const ratio=source.width/source.height;
-      if(ratio>.62&&ratio<.82){
-        const canvas=document.createElement('canvas');canvas.width=1260;canvas.height=1782;
-        canvas.getContext('2d',{alpha:false}).drawImage(source,0,0,1260,1782);
-        warped={canvas,confidence:.90};
-      }else throw e;
+      if(identity){
+        forcePageFallback=true;
+        const canvas=document.createElement('canvas');
+        canvas.width=1260;canvas.height=1782;
+        const ctx=canvas.getContext('2d',{alpha:false});
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+        const scale=Math.min(canvas.width/source.width,canvas.height/source.height);
+        const dw=Math.round(source.width*scale),dh=Math.round(source.height*scale);
+        const dx=Math.round((canvas.width-dw)/2),dy=Math.round((canvas.height-dh)/2);
+        ctx.drawImage(source,0,0,source.width,source.height,dx,dy,dw,dh);
+        warped={canvas,confidence:.90,opencv_failed:true};
+        if(statusEl)statusEl.textContent='QR identificado. O leitor local de imagem não abriu neste celular; vou usar a IA de segurança na folha inteira.';
+      }else{
+        // Mesmo sem OpenCV, ainda tentamos o QR diretamente na foto original.
+        identity=await inventorySheetDecodeQr(source);
+        if(!identity)throw new Error('QR Code não encontrado e o leitor local de imagem não abriu neste celular. Tente novamente com a folha inteira visível.');
+        forcePageFallback=true;
+        const canvas=document.createElement('canvas');
+        canvas.width=1260;canvas.height=1782;
+        const ctx=canvas.getContext('2d',{alpha:false});
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+        const scale=Math.min(canvas.width/source.width,canvas.height/source.height);
+        const dw=Math.round(source.width*scale),dh=Math.round(source.height*scale);
+        ctx.drawImage(source,0,0,source.width,source.height,Math.round((canvas.width-dw)/2),Math.round((canvas.height-dh)/2),dw,dh);
+        warped={canvas,confidence:.90,opencv_failed:true};
+      }
     }
 
     if(!identity)identity=await inventorySheetDecodeQr(warped.canvas);
@@ -2922,39 +2938,47 @@
     }
 
     const slotCount=Math.max(1,Math.min(25,Number(manifest.slot_count||25)));
-    const localItems=Array.from({length:slotCount},(_,i)=>({slot_number:i+1,quantity:null,gondola:null,quantity_confidence:0,gondola_confidence:0,ambiguous_quantity:true,ambiguous_gondola:true,note:''}));
-    const tasks=[];
-    for(let slot=1;slot<=slotCount;slot++){
-      for(const field of ['quantity','gondola']){
-        const crop=inventorySheetFieldCrop(warped.canvas,slot,field),processed=inventorySheetThresholdCanvas(crop);
-        tasks.push({slot,field,crop,processed});
-      }
-    }
-    let workers=null;
-    try{workers=await inventorySheetOcrWorkers()}catch{}
-    let done=0;
-    if(workers?.length){
-      await Promise.all(workers.map(async(worker,wi)=>{
-        for(let i=wi;i<tasks.length;i+=workers.length){
-          const t=tasks[i],res=await worker.recognize(t.processed),parsed=inventorySheetParseDigits(res?.data?.text,t.field,res?.data?.confidence);
-          const row=localItems[t.slot-1];
-          row[t.field]=parsed.value;row[t.field+'_confidence']=parsed.confidence;
-          row['ambiguous_'+t.field]=parsed.ambiguous||parsed.confidence<.88;
-          done++;if(statusEl&&done%5===0)statusEl.textContent='OCR local · '+identity.batch_code+' · página '+identity.page_number+' · '+done+'/'+tasks.length+' campos';
-        }
-      }));
-    }
+    const localItems=Array.from({length:slotCount},(_,i)=>({
+      slot_number:i+1,quantity:null,gondola:null,quantity_confidence:0,gondola_confidence:0,
+      ambiguous_quantity:true,ambiguous_gondola:true,note:forcePageFallback?'opencv_unavailable':''
+    }));
     const fallbackFields=[];
-    for(const t of tasks){
-      const row=localItems[t.slot-1];
-      if(row['ambiguous_'+t.field]===true||Number(row[t.field+'_confidence']||0)<.88){
-        fallbackFields.push({slot_number:t.slot,field:t.field,image_data_url:t.crop.toDataURL('image/jpeg',.88)});
+
+    if(!forcePageFallback){
+      const tasks=[];
+      for(let slot=1;slot<=slotCount;slot++){
+        for(const field of ['quantity','gondola']){
+          const crop=inventorySheetFieldCrop(warped.canvas,slot,field),processed=inventorySheetThresholdCanvas(crop);
+          tasks.push({slot,field,crop,processed});
+        }
+      }
+      let workers=null;
+      try{workers=await inventorySheetOcrWorkers()}catch{}
+      let done=0;
+      if(workers?.length){
+        await Promise.all(workers.map(async(worker,wi)=>{
+          for(let i=wi;i<tasks.length;i+=workers.length){
+            const t=tasks[i],res=await worker.recognize(t.processed),parsed=inventorySheetParseDigits(res?.data?.text,t.field,res?.data?.confidence);
+            const row=localItems[t.slot-1];
+            row[t.field]=parsed.value;row[t.field+'_confidence']=parsed.confidence;
+            row['ambiguous_'+t.field]=parsed.ambiguous||parsed.confidence<.88;
+            done++;if(statusEl&&done%5===0)statusEl.textContent='OCR local · '+identity.batch_code+' · página '+identity.page_number+' · '+done+'/'+tasks.length+' campos';
+          }
+        }));
+      }
+      for(const t of tasks){
+        const row=localItems[t.slot-1];
+        if(row['ambiguous_'+t.field]===true||Number(row[t.field+'_confidence']||0)<.88){
+          fallbackFields.push({slot_number:t.slot,field:t.field,image_data_url:t.crop.toDataURL('image/jpeg',.88)});
+        }
       }
     }
+
     const pageImage=source.toDataURL('image/jpeg',.84);
     return {
       duplicate:false,sheet_token:identity.sheet_token,manifest,local_items:localItems,fallback_fields:fallbackFields,
-      page_image_data_url:pageImage,page_confidence:warped.confidence,page_complete:true
+      page_image_data_url:pageImage,force_page_fallback:forcePageFallback,
+      page_confidence:warped.confidence,page_complete:true
     };
   }
 
@@ -3224,7 +3248,7 @@
             body:JSON.stringify({
               sheet_token:local.sheet_token,page_confidence:local.page_confidence,page_complete:local.page_complete,
               operator,client_upload_id:entry.id,local_items:local.local_items,fallback_fields:local.fallback_fields,
-              page_image_data_url:local.page_image_data_url
+              page_image_data_url:local.page_image_data_url,force_page_fallback:local.force_page_fallback===true
             })
           });
           if(data.duplicate){
