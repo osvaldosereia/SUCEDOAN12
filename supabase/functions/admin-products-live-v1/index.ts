@@ -1291,7 +1291,70 @@ function inventorySheetDeterministicReview(expected:any[],localItems:any[],fallb
   });
 }
 
+async function inventorySheetRefreshScanStatus(scanId:string){
+  const scan=await db.from("inventory_sheet_page_scans").select("id,batch_id,status").eq("id",scanId).maybeSingle();
+  if(scan.error)throw scan.error;if(!scan.data)return {status:"missing"};
+  if(scan.data.status==="rejected")return {status:"rejected"};
+  const all=await db.from("inventory_sheet_item_results").select("review_state").eq("scan_id",scanId);
+  if(all.error)throw all.error;
+  const states=(all.data||[]).map((x:any)=>String(x.review_state||""));
+  const status=states.length&&states.every((x:string)=>x==="applied")?"applied":states.some((x:string)=>x==="applied")?"partial":"analyzed";
+  const upd=await db.from("inventory_sheet_page_scans").update({
+    status,applied_at:status==="applied"?new Date().toISOString():null
+  }).eq("id",scanId);
+  if(upd.error)throw upd.error;
+  if(status==="applied"){
+    const b=await db.from("inventory_sheet_batches").select("page_count").eq("id",scan.data.batch_id).maybeSingle();
+    const pages=await db.from("inventory_sheet_page_scans")
+      .select("page_number").eq("batch_id",scan.data.batch_id).eq("status","applied");
+    if(!b.error&&!pages.error&&new Set((pages.data||[]).map((x:any)=>Number(x.page_number))).size>=Number(b.data?.page_count||0)){
+      await db.from("inventory_sheet_batches").update({status:"completed",completed_at:new Date().toISOString()}).eq("id",scan.data.batch_id);
+    }
+  }
+  return {status};
+}
+
+async function inventorySheetReconcileCompletedJobs(scanId?:string){
+  let q:any=db.from("inventory_sheet_item_results")
+    .select("id,scan_id,stock_count_id,bling_job_id,review_state")
+    .eq("review_state","confirmed").not("bling_job_id","is",null)
+    .order("updated_at",{ascending:true}).limit(500);
+  if(scanId)q=q.eq("scan_id",scanId);
+  const rr=await q;if(rr.error)throw rr.error;
+  const rows=rr.data||[];
+  if(!rows.length){
+    if(scanId)await inventorySheetRefreshScanStatus(scanId);
+    return {reconciled:0,scan_ids:scanId?[scanId]:[]};
+  }
+  const jobIds=[...new Set(rows.map((x:any)=>id(x.bling_job_id)).filter(Boolean))];
+  const jq=await db.from("bling_hub_jobs_v2").select("id,status,error_code,error_message").in("id",jobIds);
+  if(jq.error)throw jq.error;
+  const jobs=new Map((jq.data||[]).map((x:any)=>[String(x.id),x]));
+  const touched=new Set<string>();let reconciled=0;
+  for(const row of rows){
+    const job:any=jobs.get(String(row.bling_job_id));if(!job)continue;
+    if(job.status==="synced"){
+      const u=await db.from("inventory_sheet_item_results").update({
+        review_state:"applied",apply_error:null,updated_at:new Date().toISOString()
+      }).eq("id",row.id);
+      if(u.error)throw u.error;
+      if(row.stock_count_id)await inventorySheetResolveCountAttention(String(row.stock_count_id),"bling-stock-job:"+String(row.bling_job_id));
+      touched.add(String(row.scan_id));reconciled++;
+    }else if(["review_required","failed"].includes(String(job.status))){
+      const u=await db.from("inventory_sheet_item_results").update({
+        review_state:"error",apply_error:tx(job.error_code||job.error_message,300)||"bling_sync_failed",updated_at:new Date().toISOString()
+      }).eq("id",row.id);
+      if(u.error)throw u.error;
+      touched.add(String(row.scan_id));reconciled++;
+    }
+  }
+  if(scanId)touched.add(scanId);
+  for(const sid of touched)await inventorySheetRefreshScanStatus(sid);
+  return {reconciled,scan_ids:[...touched]};
+}
+
 async function inventorySheetPendingManual(){
+  await inventorySheetReconcileCompletedJobs();
   const rr=await db.from("inventory_sheet_item_results")
     .select("id,scan_id,sheet_item_id,ai_quantity,ai_gondola,ai_confidence,ai_mark_kind,ai_note,review_state,apply_error,created_at,updated_at")
     .in("review_state",["review","error"]).order("created_at",{ascending:true}).limit(300);
@@ -1314,7 +1377,10 @@ async function inventorySheetPendingManual(){
   if(bq.error)throw bq.error;
   const batches=new Map((bq.data||[]).map((x:any)=>[String(x.id),x]));
 
-  const out=rows.map((r:any)=>{
+  const out=rows.filter((r:any)=>{
+    const scan:any=scans.get(String(r.scan_id))||{};
+    return scan.status!=="rejected";
+  }).map((r:any)=>{
     const scan:any=scans.get(String(r.scan_id))||{},item:any=items.get(String(r.sheet_item_id))||{},batch:any=batches.get(String(scan.batch_id||item.batch_id))||{};
     const raw=meta(scan.raw_result),missing:string[]=[];
     if(r.ai_quantity==null)missing.push("estoque");
@@ -1352,9 +1418,9 @@ async function inventorySheetCancelScan(p:any,auth:any){
   if(rr.error)throw rr.error;
   const touched=(rr.data||[]).some((x:any)=>["confirmed","applied"].includes(String(x.review_state))||Boolean(x.stock_count_id)||Boolean(x.bling_job_id)||Boolean(x.confirmed_at));
   if(touched)return {error:"scan_already_applied_cannot_cancel",status:409,can_read_again:true};
-  const del=await db.from("inventory_sheet_page_scans").delete().eq("id",scanId);
-  if(del.error)throw del.error;
-  return {ok:true,cancelled:true,scan_id:scanId,can_read_again:true};
+  const upd=await db.from("inventory_sheet_page_scans").update({status:"rejected",applied_at:null}).eq("id",scanId);
+  if(upd.error)throw upd.error;
+  return {ok:true,cancelled:true,rejected:true,scan_id:scanId,can_read_again:true};
 }
 
 async function inventorySheetAnalyze(p:any,auth:any){
@@ -1409,6 +1475,11 @@ async function inventorySheetAnalyze(p:any,auth:any){
     status:"analyzed"
   }).select("*").single();
   if(s.error)throw s.error;
+  const supersede=await db.from("inventory_sheet_page_scans")
+    .update({status:"rejected",applied_at:null})
+    .eq("batch_id",b.data.id).eq("page_number",pageNumber)
+    .neq("id",s.data.id).in("status",["analyzed","partial"]);
+  if(supersede.error)throw supersede.error;
   if(review.length){
     const ins=await db.from("inventory_sheet_item_results").insert(review.map((r:any)=>({
       scan_id:s.data.id,sheet_item_id:r.sheet_item_id,ai_ean:null,ai_quantity:r.ai_quantity,ai_gondola:r.ai_gondola,ai_confidence:r.confidence,
@@ -1461,6 +1532,8 @@ async function inventorySheetApply(p:any,auth:any){
 
   const scan=await db.from("inventory_sheet_page_scans").select("id,batch_id,page_number,status").eq("id",scanId).maybeSingle();
   if(scan.error)throw scan.error;if(!scan.data)return {error:"scan_not_found",status:404};
+  if(scan.data.status==="rejected")return {error:"scan_rejected_read_again",status:409};
+  await inventorySheetReconcileCompletedJobs(scanId);
 
   const ids=requested.map((x:any)=>id(x?.result_id)).filter(Boolean);
   const rr=await db.from("inventory_sheet_item_results").select("*").eq("scan_id",scanId).in("id",ids);
@@ -1600,19 +1673,9 @@ async function inventorySheetApply(p:any,auth:any){
     }
   }
 
-  const all=await db.from("inventory_sheet_item_results").select("review_state").eq("scan_id",scanId);
-  if(all.error)throw all.error;
-  const states=(all.data||[]).map((x:any)=>String(x.review_state));
-  const scanStatus=states.length&&states.every((x:string)=>x==="applied")?"applied":states.some((x:string)=>x==="applied")?"partial":"analyzed";
-  await db.from("inventory_sheet_page_scans").update({status:scanStatus,applied_at:scanStatus==="applied"?new Date().toISOString():null}).eq("id",scanId);
-
-  if(scanStatus==="applied"){
-    const b=await db.from("inventory_sheet_batches").select("page_count").eq("id",scan.data.batch_id).maybeSingle();
-    const pages=await db.from("inventory_sheet_page_scans").select("page_number").eq("batch_id",scan.data.batch_id).eq("status","applied");
-    if(!b.error&&!pages.error&&new Set((pages.data||[]).map((x:any)=>Number(x.page_number))).size>=Number(b.data?.page_count||0)){
-      await db.from("inventory_sheet_batches").update({status:"completed",completed_at:new Date().toISOString()}).eq("id",scan.data.batch_id);
-    }
-  }
+  await inventorySheetReconcileCompletedJobs(scanId);
+  const refreshed=await inventorySheetRefreshScanStatus(scanId);
+  const scanStatus=String(refreshed.status||"analyzed");
 
   const final=await db.from("inventory_sheet_item_results").select("id,review_state,confirmed_quantity,confirmed_gondola,stock_count_id,bling_job_id,apply_error").eq("scan_id",scanId);
   if(final.error)throw final.error;
