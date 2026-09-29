@@ -2917,7 +2917,7 @@
     const manifest=await api('inventory_sheet_manifest',{},{
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheet_token:identity.sheet_token})
     });
-    if(manifest.already_uploaded){
+    if(manifest.already_uploaded&&!manifest.can_retry){
       return {duplicate:true,sheet_token:identity.sheet_token,manifest,page_confidence:warped.confidence,page_complete:true};
     }
 
@@ -2951,9 +2951,10 @@
         fallbackFields.push({slot_number:t.slot,field:t.field,image_data_url:t.crop.toDataURL('image/jpeg',.88)});
       }
     }
+    const pageImage=source.toDataURL('image/jpeg',.84);
     return {
       duplicate:false,sheet_token:identity.sheet_token,manifest,local_items:localItems,fallback_fields:fallbackFields,
-      page_confidence:warped.confidence,page_complete:true
+      page_image_data_url:pageImage,page_confidence:warped.confidence,page_complete:true
     };
   }
 
@@ -2990,7 +2991,7 @@
         const detail=[
           'REF '+String(r.printed_index||'').padStart(4,'0'),
           'EAN '+(r.gtin||'—'),
-          r.mark_kind==='local_ocr'?'OCR local':(r.mark_kind==='local_ocr+ai_fallback'?'OCR local + IA apenas no campo duvidoso':''),
+          r.mark_kind==='local_ocr'?'OCR local':(r.mark_kind==='local_ocr+ai_fallback'?'OCR local + IA no campo duvidoso':(r.mark_kind==='page_ai_fallback'?'IA de segurança na folha inteira':'')),
           r.reason?String(r.reason).replaceAll('_',' '):'',
           r.apply_error||''
         ].filter(Boolean).join(' · ');
@@ -3222,7 +3223,8 @@
             method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({
               sheet_token:local.sheet_token,page_confidence:local.page_confidence,page_complete:local.page_complete,
-              operator,client_upload_id:entry.id,local_items:local.local_items,fallback_fields:local.fallback_fields
+              operator,client_upload_id:entry.id,local_items:local.local_items,fallback_fields:local.fallback_fields,
+              page_image_data_url:local.page_image_data_url
             })
           });
           if(data.duplicate){
