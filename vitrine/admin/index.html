@@ -6035,11 +6035,19 @@
     const cfg=state.manualSale?.basketConfig;if(!cfg)return;
     const inputs=[...document.querySelectorAll('[data-manual-basket-qty]')];
     for(const input of inputs){const i=Number(input.dataset.manualBasketQty),x=cfg.items[i];if(x)x.selected_quantity=Math.max(0,Math.floor(Number(input.value||0)))}
-    const components=cfg.items.map(x=>({product_id:x.product_id,quantity:x.selected_quantity}));
+    const components=cfg.items.map(x=>({product_id:x.product_id,quantity:x.selected_quantity,component_group:x.component_group||'legacy'}));
     const btn=$('#manualBasketAdd');if(btn){btn.disabled=true;btn.textContent='Calculando…'}
     try{
-      const quote=await storefrontApi('basket_quote',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:cfg.basket.id,items:components})});
-      state.manualSale.cart.push({type:'basket',id:cfg.basket.id,name:cfg.basket.name,qty:1,price_cents:Number(quote.total_cents||0),components});
+      const payload=cfg.basket.split_mode?{
+        basket_id:cfg.basket.id,food_lot_id:cfg.basket.food_lot_id,hygiene_lot_id:cfg.basket.hygiene_lot_id,
+        food_lot_code:cfg.basket.food_lot_code,hygiene_lot_code:cfg.basket.hygiene_lot_code,items:components
+      }:{basket_id:cfg.basket.id,lot_id:cfg.basket.lot_id,items:components};
+      const quote=await storefrontApi('basket_quote',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      state.manualSale.cart.push({
+        type:'basket',id:cfg.basket.id,name:cfg.basket.name,qty:1,price_cents:Number(quote.total_cents||0),components,
+        split_mode:cfg.basket.split_mode===true,lot_id:cfg.basket.lot_id||null,
+        food_lot_id:cfg.basket.food_lot_id||null,hygiene_lot_id:cfg.basket.hygiene_lot_id||null
+      });
       state.manualSale.basketConfig=null;$('#manualBasketConfig').innerHTML='';paintManualSaleCart();toast('Cesta adicionada');
     }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Adicionar cesta'}}
   }
@@ -6065,7 +6073,10 @@
     if(!name||!phone||!street||!number||!city||uf.length!==2){toast('Preencha nome, WhatsApp e endereço completo');return}
     if(!state.manualSale.cart.length){toast('Adicione pelo menos um item');return}
     if(manualSaleTotalCents()<7500){toast('O pedido mínimo é R$ 75,00');return}
-    const items=state.manualSale.cart.map(x=>({type:x.type,id:x.id,qty:x.qty,...(x.type==='basket'?{components:x.components}: {})}));
+    const items=state.manualSale.cart.map(x=>({type:x.type,id:x.id,qty:x.qty,...(x.type==='basket'?{
+      components:x.components,lot_id:x.lot_id||null,split_mode:x.split_mode===true,
+      food_lot_id:x.food_lot_id||null,hygiene_lot_id:x.hygiene_lot_id||null
+    }: {})}));
     const customer=state.manualSale.customer;
     const customer_snapshot={id:customer?.id||null,display_name:name,phone,address:{street,number,district:manualSaleFormValue('#manualDistrict'),complement:manualSaleFormValue('#manualComplement'),city,state:uf}};
     const btn=$('#manualSaleCreate');if(btn){btn.disabled=true;btn.textContent='Criando…'}
