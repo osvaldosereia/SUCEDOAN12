@@ -6222,7 +6222,7 @@ async function blingHubRefreshStockMirrorAfterWrite(sb:any,token:string,sourceId
     p_deposit_balances:snapshot.deposit_balances||{},
     p_observed_at:observedAt,
     p_source_event_id:"stock-job-verified:"+jobId,
-    p_source_resource:"stock_job_verified",
+    p_source_resource:"stock",
     p_replace_deposits:true
   });
   if(apply.error)return {ok:false,error:clean(apply.error.message,300),status:500};
