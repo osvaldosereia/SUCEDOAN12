@@ -1241,7 +1241,7 @@ async function inventorySheetAnalyze(p:any,auth:any){
   const fallbackReady=review.filter((x:any)=>x.mark_kind==="local_ocr+ai_fallback"&&x.review_state==="ready").length;
   const model=fallbackFields.length?("local:tesseract.js@7.0.0"+(fallback?.model?"+fallback:"+fallback.model:"+fallback-unavailable")):"local:tesseract.js@7.0.0";
   const rawResult={
-    source:"deterministic_qr_batch_page_slot",sheet_token:token.raw,batch_code:batchCode,page_number:pageNumber,page_confidence:pageConfidence,page_complete:pageComplete,
+    source:"deterministic_qr_batch_page_slot",sheet_token:token.raw,batch_code:batchCode,page_number:pageNumber,page_confidence:pageConfidence,page_complete:pageComplete,operator_label:tx(p?.operator,80)||null,client_upload_id:tx(p?.client_upload_id,80)||null,
     local_engine:"tesseract.js@7.0.0",local_items:localItems,
     fallback_requested:fallbackFields.map((x:any)=>({slot_number:Number(x?.slot_number),field:tx(x?.field,20)})),
     fallback_result:fallbackItems,fallback_error:fallback?.error||null
