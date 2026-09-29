@@ -2762,11 +2762,11 @@
   async function searchBasketItemProducts(q){
     const host=$('#basketItemProductResults');if(!host)return;
     try{
-      const data=await api('products',{q,active:'true',limit:12,offset:0});
-      host.innerHTML=(data.products||[]).map(p=>'<button class="replacement-option" type="button" data-basket-pick-product="'+esc(p.id)+'"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.sku||'')+' · '+money(p.sale_price_cents)+' · estoque '+esc(fmtQty(p.stock_quantity||0))+'</small></div><span>Selecionar</span></button>').join('')||'<div class="history-empty">Nenhum produto encontrado.</div>';
+      const data=await api('basket_product_search',{q,limit:12});
+      host.innerHTML=(data.products||[]).map(p=>'<button class="replacement-option" type="button" data-basket-pick-product="'+esc(p.id)+'"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.sku||'')+' · '+money(p.price_cents)+' · solto '+esc(fmtQty(p.loose_stock||0))+'</small></div><span>Selecionar</span></button>').join('')||'<div class="history-empty">Nenhum produto encontrado.</div>';
       host.querySelectorAll('[data-basket-pick-product]').forEach(btn=>btn.onclick=()=>{
         const p=(data.products||[]).find(x=>String(x.id)===String(btn.dataset.basketPickProduct));if(!p)return;
-        state.basketItemSelectedProduct={...p,price:Number(p.sale_price_cents||0)/100};
+        state.basketItemSelectedProduct={...p,price:Number(p.price_cents||0)/100};
         $('#basketItemSelected').innerHTML='<strong>'+esc(p.name)+'</strong><small>'+esc(p.sku||'')+'</small>';
         host.innerHTML='';$('#basketItemProductSearch').value='';
       });
@@ -2840,12 +2840,12 @@
   async function searchBasketLotPicker(index,q){
     const host=$('#basketLotProductResults');host.innerHTML='<div class="loading">Buscando…</div>';
     try{
-      const data=await api('products',{q,active:'true',limit:15,offset:0});
-      host.innerHTML=(data.products||[]).map(p=>'<button class="replacement-option" type="button" data-basket-lot-pick="'+esc(p.id)+'"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.sku||'')+' · estoque '+esc(fmtQty(p.stock_quantity||0))+'</small></div><span>Usar</span></button>').join('')||'<div class="history-empty">Nenhum produto encontrado.</div>';
+      const data=await api('basket_product_search',{q,limit:15});
+      host.innerHTML=(data.products||[]).map(p=>'<button class="replacement-option" type="button" data-basket-lot-pick="'+esc(p.id)+'"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.sku||'')+' · solto '+esc(fmtQty(p.loose_stock||0))+'</small></div><span>Usar</span></button>').join('')||'<div class="history-empty">Nenhum produto encontrado.</div>';
       host.querySelectorAll('[data-basket-lot-pick]').forEach(btn=>btn.onclick=()=>{
         const p=(data.products||[]).find(x=>String(x.id)===String(btn.dataset.basketLotPick));if(!p)return;const line=state.basketLotDraft.items[index];
         // Product search shows ERP sellable stock; detail reload after creating will recalculate the exact loose layer.
-        line.product_id=p.id;line.name=p.name;line.sku=p.sku||'';line.loose_stock=Number(p.stock_quantity||0);line.image_url=p.image_url||'';line.is_substitution=String(p.id)!==String(line.template_product_id);
+        line.product_id=p.id;line.name=p.name;line.sku=p.sku||'';line.loose_stock=Number(p.loose_stock||0);line.image_url=p.image_url||'';line.is_substitution=String(p.id)!==String(line.template_product_id);
         $('#editor').close();paintBasketLotComposer();
       });
     }catch{host.innerHTML='<div class="history-empty">Não consegui buscar produtos.</div>'}
