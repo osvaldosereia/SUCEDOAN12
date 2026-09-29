@@ -491,10 +491,20 @@ async function paymentSettlementMap(orderIds:string[]){
 function paySnap(o:any,rows:any[],settlement:any=null){const consumed=rows.some((r:any)=>r.status==="consumed"),reserved=consumed||rows.some((r:any)=>r.status==="reserved"&&(!r.expires_at||Date.parse(r.expires_at)>Date.now())),released=!reserved&&rows.some((r:any)=>r.status==="released"),method=tx(o?.payment_method,80);return {method,label:paymentLabel(method),timing:"on_delivery",source:tx(o?.source,80)||"vitrine",stock_reserved:reserved,stock_consumed:consumed,stock_released:released,stock_model:"canonical_vitrine_v1",actual:settlement?{...settlement,received:true}:null}}
 async function stockReadiness(orderIds:string[]){
   const out=new Map<string,any>();for(const oid of orderIds)out.set(oid,{ok:true,shortage_count:0,shortages:[],demand_lines:0,reserved_lines:0});if(!orderIds.length)return out;
-  const items=await db.from("order_items").select("order_id,product_id,quantity").in("order_id",orderIds).not("product_id","is",null);if(items.error)throw items.error;
+  const items=await db.from("order_items").select("order_id,product_id,quantity,metadata").in("order_id",orderIds).not("product_id","is",null);if(items.error)throw items.error;
+  const alloc=await db.from("basket_stock_allocations").select("order_id,status").in("order_id",orderIds).in("status",["allocated","consumed"]);if(alloc.error)throw alloc.error;
+  const hasKitAlloc=new Set((alloc.data||[]).map((x:any)=>String(x.order_id)));
   const demand=new Map<string,Map<string,number>>(),pids=new Set<string>();
-  for(const r of items.data||[]){if(!demand.has(r.order_id))demand.set(r.order_id,new Map());const d=demand.get(r.order_id)!;const q=Number(r.quantity||0);d.set(r.product_id,(d.get(r.product_id)||0)+q);pids.add(r.product_id)}
-  const ids=[...pids];if(!ids.length){for(const oid of orderIds)out.set(oid,{ok:false,shortage_count:0,shortages:[],demand_lines:0,reserved_lines:0,error:"empty_order_stock"});return out}
+  for(const r of items.data||[]){
+    const im=meta(r.metadata),raw=Number(r.quantity||0);
+    const q=im.history_kind==="basket_component"
+      ?Math.max(0,raw-Number(im.preassembled_units||0))
+      :raw;
+    if(q<=0)continue;
+    if(!demand.has(r.order_id))demand.set(r.order_id,new Map());
+    const d=demand.get(r.order_id)!;d.set(r.product_id,(d.get(r.product_id)||0)+q);pids.add(r.product_id)
+  }
+  const ids=[...pids];if(!ids.length){for(const oid of orderIds)out.set(oid,{ok:hasKitAlloc.has(oid),shortage_count:0,shortages:[],demand_lines:0,reserved_lines:0,error:hasKitAlloc.has(oid)?null:"empty_order_stock",preassembled_only:hasKitAlloc.has(oid)});return out}
   const [pr,rr,sm,authority]=await Promise.all([
     db.from("products").select("id,name,sku,gtin,is_active,gondola,shelf").in("id",ids),
     db.from("vitrine_stock_reservations").select("order_id,product_id,quantity,status,expires_at").in("product_id",ids),
@@ -542,8 +552,11 @@ async function orderDetailCanonical(orderId:any){
   let customer:any=null;const cid=oq.data.customer_id||oq.data.customer_snapshot?.customer_id||oq.data.delivery_address?.source_customer_id;
   if(id(cid)){const cq=await db.from("customers").select("*").eq("id",cid).maybeSingle();if(cq.error)throw cq.error;if(cq.data){const aq=await db.from("customer_addresses").select("*").eq("customer_id",cid).eq("is_active",true).order("is_default",{ascending:false}).limit(1).maybeSingle();if(aq.error)throw aq.error;customer={id:cq.data.id,display_name:cq.data.name,phone:cq.data.primary_whatsapp_e164||"",cpf:cq.data.cpf_cnpj||"",email:"",status:cq.data.is_active===false?"inactive":"active",address:aq.data||null}}}
   if(!customer){const a=oq.data.delivery_address||{},cs=oq.data.customer_snapshot||{};customer={id:null,source_customer_id:a.source_customer_id||cs.customer_id||null,display_name:cs.name||a.customer_name||a.recipient_name||"",phone:oq.data.phone_e164||a.phone||"",cpf:cs.cpf||a.cpf||"",email:cs.email||a.email||"",status:"active",address:a}}
+  const aq=await db.from("basket_stock_allocations").select("basket_id,lot_id,quantity,status,allocation_role,metadata,lot:basket_stock_lots(short_code,lot_code,lot_kind)").eq("order_id",oid).order("created_at");
+  if(aq.error)throw aq.error;
+  const separation_plan=(aq.data||[]).map((a:any)=>{const lot:any=Array.isArray(a.lot)?a.lot[0]:a.lot;return {basket_id:a.basket_id,lot_id:a.lot_id,quantity:Number(a.quantity||0),status:a.status,role:a.allocation_role,short_code:lot?.short_code||meta(a.metadata).short_code||null,lot_code:lot?.lot_code||null,lot_kind:lot?.lot_kind||a.allocation_role}});
   const mapped=(await mapOrders([oq.data]))[0];let bl:any=null;try{const h=await hub("order_link_status",{source_order_id:oid});if(!h.error)bl=h.data}catch{}
-  return {order:{...mapped,subtotal_cents:Math.round(Number(oq.data.subtotal||0)*100),discount_cents:Math.round(Number(oq.data.discount||0)*100),delivery_cents:0},customer,history_sync:{state:"synced",canonical:true},stock_readiness:mapped.stock_readiness,bling_link:bl,items:result};
+  return {order:{...mapped,subtotal_cents:Math.round(Number(oq.data.subtotal||0)*100),discount_cents:Math.round(Number(oq.data.discount||0)*100),delivery_cents:0},customer,history_sync:{state:"synced",canonical:true},stock_readiness:mapped.stock_readiness,bling_link:bl,items:result,separation_plan,checkout_separation_plan:oq.data.checkout_snapshot?.separation_plan||[]};
 }
 async function guardOrder(oid:string){const c=await cutover(),q=await db.from("orders").select("id,created_at,source").eq("id",oid).maybeSingle();if(q.error)throw q.error;if(!q.data)return {error:"order_not_found",status:404};if(!OP_SOURCES.includes(String(q.data.source||""))||(c.legacy_orders_read_only&&Date.parse(q.data.created_at)<Date.parse(c.live_orders_since)))return {error:"legacy_order_read_only",status:409};return {ok:true}}
 function transitionAllowed(a:string,b:string){if(a===b)return true;const m:any={created:["confirmed","cancelled"],confirmed:["processing","cancelled"],processing:["ready","cancelled"],ready:["out_for_delivery","cancelled"],out_for_delivery:["ready","delivered","cancelled"],delivered:[],cancelled:[]};return (m[a]||[]).includes(b)}
@@ -1826,7 +1839,9 @@ async function basketKitLotCreate(p:any,auth:any){
   await opsEvent("basket.kit_lot_built","Lote pré-montado criado.","basket",kit.data?.basket_id||kid,
     {kit_template_id:kid,kit_name:kit.data?.name,kind:kit.data?.kind,lot_id:q.data?.lot_id,short_code:q.data?.short_code,quantity,duplicated_from_lot_id:id(p?.duplicated_from_lot_id)||null},
     tx(p?.operator,80)||"Operação","human","dona_antonia","basket-kit-lot:"+String(q.data?.lot_id||""));
-  return {lot:q.data};
+  const cutover=await db.rpc("enable_split_baskets_for_ready_kits_v1");
+  if(cutover.error)throw cutover.error;
+  return {lot:q.data,split_baskets_enabled:Number(cutover.data||0)};
 }
 async function basketKitLotCancel(p:any,auth:any){
   const lid=id(p?.lot_id);if(!lid)return {error:"invalid_lot",status:400};
@@ -2001,7 +2016,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:54,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:55,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
