@@ -98,7 +98,7 @@ async function basket(id:string){
       const base=Number(i.quantity_per_basket||0),extra=product?.is_active===false?0:(sm.get(i.product_id)||0);
       const configuredMax=rule?.max_quantity==null?base+Math.floor(extra):Number(rule.max_quantity);
       return {product_id:i.product_id,name:product?.name||"Produto",image_url:product?.image_url||"",packaging:product?.packaging||"",
-        stock_quantity:base+extra,extra_stock_quantity:extra,quantity:base,removable:rule?.removable!==false,
+        stock_quantity:extra,extra_stock_quantity:extra,base_quantity:base,quantity:base,removable:rule?.removable!==false,
         quantity_editable:rule?.quantity_editable!==false,min_quantity:Number(rule?.min_quantity??0),
         max_quantity:Math.max(base,configuredMax),template_item_id:i.source_template_item_id||null,
         preassembled:true};
