@@ -2689,6 +2689,31 @@
     });
   }
 
+
+  async function inventorySheetFileCanvas(file,maxSide=1800){
+    let bitmap=null,img=null,url='';
+    try{bitmap=await createImageBitmap(file,{imageOrientation:'from-image'})}catch{}
+    if(!bitmap){
+      url=URL.createObjectURL(file);
+      img=await new Promise((resolve,reject)=>{
+        const el=new Image();
+        el.onload=()=>resolve(el);
+        el.onerror=()=>reject(new Error('Não consegui abrir esta imagem no celular.'));
+        el.src=url;
+      });
+    }
+    try{
+      const sw=bitmap?.width||img.naturalWidth,sh=bitmap?.height||img.naturalHeight;
+      if(!sw||!sh)throw new Error('A imagem está vazia ou em formato incompatível.');
+      const scale=Math.min(1,maxSide/Math.max(sw,sh)),cw=Math.max(1,Math.round(sw*scale)),ch=Math.max(1,Math.round(sh*scale));
+      const canvas=document.createElement('canvas');canvas.width=cw;canvas.height=ch;
+      const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,cw,ch);ctx.drawImage(bitmap||img,0,0,cw,ch);
+      return canvas;
+    }finally{
+      bitmap?.close?.();if(url)URL.revokeObjectURL(url);
+    }
+  }
+
   async function inventorySheetOpenCv(){
     if(inventorySheetCvPromise)return inventorySheetCvPromise;
     inventorySheetCvPromise=(async()=>{
@@ -2731,20 +2756,10 @@
     return [tl,tr,br,bl];
   }
 
-  async function inventorySheetWarpPage(file){
+  async function inventorySheetWarpPage(file,sourceCanvas=null){
     const cv=await inventorySheetOpenCv();
-    let bitmap=null,img=null,url='';
-    try{bitmap=await createImageBitmap(file,{imageOrientation:'from-image'})}catch{}
-    if(!bitmap){
-      url=URL.createObjectURL(file);
-      img=await new Promise((resolve,reject)=>{const el=new Image();el.onload=()=>resolve(el);el.onerror=reject;el.src=url});
-    }
-    const sw=bitmap?.width||img.naturalWidth,sh=bitmap?.height||img.naturalHeight;
-    const scale=Math.min(1,1800/Math.max(sw,sh)),cw=Math.max(1,Math.round(sw*scale)),ch=Math.max(1,Math.round(sh*scale));
-    const input=document.createElement('canvas');input.width=cw;input.height=ch;
-    const ictx=input.getContext('2d',{alpha:false});ictx.fillStyle='#fff';ictx.fillRect(0,0,cw,ch);ictx.drawImage(bitmap||img,0,0,cw,ch);
-    bitmap?.close?.();if(url)URL.revokeObjectURL(url);
-
+    const input=sourceCanvas||await inventorySheetFileCanvas(file,1800);
+    const cw=input.width,ch=input.height;
     const src=cv.imread(input),gray=new cv.Mat(),blur=new cv.Mat(),edges=new cv.Mat(),contours=new cv.MatVector(),hierarchy=new cv.Mat();
     let best=null,bestArea=0;
     try{
@@ -2825,30 +2840,79 @@
   }
 
   async function inventorySheetDecodeQr(pageCanvas){
+    const canvases=[pageCanvas];
+    const regions=[
+      [0,0,1,.28],
+      [.55,0,.45,.34],
+      [0,0,.45,.34]
+    ];
+    for(const [rx,ry,rw,rh] of regions){
+      const crop=document.createElement('canvas');
+      crop.width=Math.max(320,Math.round(pageCanvas.width*rw));
+      crop.height=Math.max(180,Math.round(pageCanvas.height*rh));
+      crop.getContext('2d',{alpha:false}).drawImage(
+        pageCanvas,
+        Math.round(pageCanvas.width*rx),Math.round(pageCanvas.height*ry),
+        Math.round(pageCanvas.width*rw),Math.round(pageCanvas.height*rh),
+        0,0,crop.width,crop.height
+      );
+      canvases.push(crop);
+    }
+
     if('BarcodeDetector' in window){
       try{
         const detector=new window.BarcodeDetector({formats:['qr_code']});
-        const found=await detector.detect(pageCanvas);
-        for(const code of found||[]){const parsed=inventorySheetParseQrText(code.rawValue);if(parsed)return parsed}
+        for(const canvas of canvases){
+          const found=await detector.detect(canvas);
+          for(const code of found||[]){
+            const parsed=inventorySheetParseQrText(code.rawValue);
+            if(parsed)return parsed;
+          }
+        }
       }catch{}
     }
+
     await inventorySheetLoadScript('inventoryJsQr','https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js');
-    if(typeof window.jsQR!=='function')throw new Error('Leitor de QR não iniciou.');
+    if(typeof window.jsQR!=='function')throw new Error('Leitor de QR não carregou. Verifique a internet do celular e tente novamente.');
     const tryCanvas=canvas=>{
       const ctx=canvas.getContext('2d',{willReadFrequently:true}),im=ctx.getImageData(0,0,canvas.width,canvas.height);
       const hit=window.jsQR(im.data,canvas.width,canvas.height,{inversionAttempts:'attemptBoth'});
       return inventorySheetParseQrText(hit?.data);
     };
-    const head=document.createElement('canvas');head.width=pageCanvas.width;head.height=Math.min(pageCanvas.height,260);
-    head.getContext('2d',{alpha:false}).drawImage(pageCanvas,0,0,head.width,head.height,0,0,head.width,head.height);
-    return tryCanvas(head)||tryCanvas(pageCanvas);
+    for(const canvas of canvases){
+      const parsed=tryCanvas(canvas);
+      if(parsed)return parsed;
+    }
+    return null;
   }
 
   async function inventorySheetReadLocal(file,statusEl){
-    const warped=await inventorySheetWarpPage(file);
-    if(statusEl)statusEl.textContent='Identificando automaticamente a folha pelo QR Code…';
-    const identity=await inventorySheetDecodeQr(warped.canvas);
-    if(!identity)throw new Error('Não consegui identificar o QR Code desta folha. Fotografe a folha inteira, incluindo o cabeçalho.');
+    if(statusEl)statusEl.textContent='Abrindo a imagem e procurando o QR Code…';
+    const source=await inventorySheetFileCanvas(file,1800);
+
+    let identity=await inventorySheetDecodeQr(source);
+    let warped=null;
+
+    if(statusEl)statusEl.textContent=identity
+      ?'QR identificado. Corrigindo a perspectiva da folha…'
+      :'QR ainda não identificado. Corrigindo a perspectiva para tentar novamente…';
+
+    try{
+      warped=await inventorySheetWarpPage(file,source);
+    }catch(e){
+      if(!identity)throw e;
+      // QR já identificou a página. Se a borda não puder ser corrigida,
+      // usamos a própria foto como fallback somente quando ela já estiver próxima de A4 vertical.
+      const ratio=source.width/source.height;
+      if(ratio>.62&&ratio<.82){
+        const canvas=document.createElement('canvas');canvas.width=1260;canvas.height=1782;
+        canvas.getContext('2d',{alpha:false}).drawImage(source,0,0,1260,1782);
+        warped={canvas,confidence:.90};
+      }else throw e;
+    }
+
+    if(!identity)identity=await inventorySheetDecodeQr(warped.canvas);
+    if(!identity)throw new Error('QR Code não encontrado. Esta foto precisa mostrar o cabeçalho inteiro e a folha precisa ser uma impressão nova com QR Code.');
 
     const manifest=await api('inventory_sheet_manifest',{},{
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheet_token:identity.sheet_token})
@@ -2959,6 +3023,21 @@
       apply.disabled=state.inventorySheetBusy||!pending.length||pending.some(r=>!inventorySheetRowApproved(r));
       apply.textContent=pending.some(r=>r.review_state==='confirmed')?'Verificar / concluir no Bling':'Aplicar balanço desta folha';
     }
+  }
+
+
+  function inventorySheetErrorMessage(error){
+    const raw=String(error?.message||error||'').trim();
+    if(!raw)return 'Erro desconhecido ao processar a foto.';
+    const known=errorMessage(raw);
+    if(known!=='Não consegui salvar agora.')return known;
+    if(raw==='Failed to fetch')return 'Sem conexão com o serviço agora. Verifique a internet e tente novamente.';
+    if(raw.includes('OpenCV'))return 'O leitor de imagem não conseguiu iniciar neste celular. Recarregue a página e tente novamente.';
+    if(raw.includes('QR Code'))return raw;
+    if(raw.includes('quatro bordas'))return raw;
+    if(raw.includes('imagem'))return raw;
+    if(raw.includes('Leitor de QR'))return raw;
+    return raw.length<=180?raw:'Não consegui processar esta foto. Tente novamente com a folha inteira visível.';
   }
 
   function inventorySheetQueueBadge(status){
@@ -3149,7 +3228,7 @@
           entry.status=(scan.rows||[]).every(inventorySheetRowApproved)?'ready':'review';
           if(!state.inventorySheetScan||entry.status==='review')state.inventorySheetScan=scan;
         }catch(e){
-          entry.status='error';entry.error=errorMessage(e.message);
+          entry.status='error';entry.error=inventorySheetErrorMessage(e);
         }finally{
           entry.file=null;
           paintInventorySheetQueue();paintInventorySheetPhoto();
