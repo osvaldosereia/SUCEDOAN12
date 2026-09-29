@@ -1166,7 +1166,7 @@
 
   async function renderQuotes(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Orçamentos</h1><p>Crie propostas usando produtos, clientes e cestas atuais do Supabase.</p></div><a class="store-link" href="/orcamento/" target="_blank" rel="noopener">Abrir em tela inteira ↗</a></div><div class="quote-admin-shell"><div class="loading" id="quoteAdminLoading">Validando sessão administrativa…</div></div>';
+    content.innerHTML='<div class="page-head"><div><h1>Orçamentos</h1><p>Crie propostas usando produtos, clientes e cestas atuais do Supabase.</p></div><a class="store-link" href="/orcamento/" title="Abre nesta aba para manter a sessão administrativa">Abrir em tela inteira</a></div><div class="quote-admin-shell"><div class="loading" id="quoteAdminLoading">Validando sessão administrativa…</div></div>';
     try{
       await adminStepUp();
       const shell=content.querySelector('.quote-admin-shell');
