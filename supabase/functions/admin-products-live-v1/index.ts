@@ -1886,7 +1886,7 @@ async function basketProductSearch(u:URL){
 }
 async function basketsAdminList(){
   const [bq,iq,lq]=await Promise.all([
-    db.from("basket_templates").select("id,sku,name,description,image_url,base_price,is_active,sort_order,is_whatsapp_active,is_featured,internal_notes,updated_at").order("sort_order").order("name"),
+    db.from("basket_templates").select("id,sku,name,description,image_url,base_price,is_active,sort_order,is_whatsapp_active,is_featured,internal_notes,uses_hygiene_kit,split_kits_enabled,updated_at").order("sort_order").order("name"),
     db.from("basket_template_items").select("id,basket_id,product_id,quantity").order("sort_order"),
     db.from("basket_stock_lots").select("id,basket_id,lot_code,lot_kind,short_code,status,quantity_built,quantity_available,quantity_dismantled,built_at,built_by,source,metadata").eq("lot_kind","legacy_full").order("built_at",{ascending:true})
   ]);
@@ -2043,7 +2043,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:57,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:58,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
