@@ -967,6 +967,14 @@
     .kit-draft-line{display:grid;grid-template-columns:minmax(210px,1.4fr) 80px 105px minmax(220px,1fr) auto;gap:9px;align-items:start;padding:10px 0;border-top:1px solid #dce8df}.kit-draft-line:first-child{border-top:0}
     @media(max-width:850px){.kit-draft-line{grid-template-columns:minmax(0,1fr) 78px}.kit-draft-line .basket-stock-box,.kit-draft-line .basket-suggestions,.kit-draft-line .basket-row-actions{grid-column:1/-1}}
     @media(max-width:620px){.kit-draft-line{grid-template-columns:1fr}.kit-draft-line>*{grid-column:1!important}}
+
+  .product-image-admin{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start;border:1px solid var(--line,#d9dedb);border-radius:14px;padding:12px;background:#fafbfa}
+  .product-image-preview{width:150px;height:150px;border-radius:12px;overflow:hidden;background:#ececec;border:1px solid #dfe3e0;display:flex;align-items:center;justify-content:center}
+  .product-image-preview img{width:100%;height:100%;object-fit:contain}
+  .product-image-tools{display:flex;flex-direction:column;gap:8px;min-width:0}.product-image-tools>strong{font-size:14px}.product-image-tools>small{color:var(--muted);line-height:1.4}
+  .product-image-actions{display:flex;gap:8px;flex-wrap:wrap}.product-image-status{font-size:12px;color:var(--muted);padding:8px 10px;border-radius:10px;background:#fff;border:1px solid #e6e9e7}
+  .product-image-status.ok{color:#176b43;background:#f1faf5;border-color:#cae7d5}.product-image-status.warn{color:#8a5a00;background:#fff8e6;border-color:#f0dfae}.product-image-status.error{color:#b3261e;background:#fff4f3;border-color:#efceca}
+  @media(max-width:640px){.product-image-admin{grid-template-columns:96px 1fr}.product-image-preview{width:96px;height:96px}.product-image-actions{display:grid;grid-template-columns:1fr}.product-image-actions button{width:100%}}
 </style>
 </head>
 <body>
@@ -1012,6 +1020,7 @@
   const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-products-live-v1';
   const CUSTOMER_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1';
   const STOREFRONT_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
+  const PRODUCT_IMAGE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/product-image-openai-v1';
   const FINANCE_AUTH_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1';
   const FINANCE_VERIFY_API='https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/verify';
   const FINANCE_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
@@ -1062,6 +1071,36 @@
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
     return data;
   }
+  async function productImageApi(event,payload=null){
+    const token=await adminStepUp();
+    let response;
+    if(payload instanceof FormData){
+      response=await fetch(PRODUCT_IMAGE_API,{method:'POST',headers:{'Authorization':'Bearer '+token},body:payload,cache:'no-store'});
+    }else{
+      response=await fetch(PRODUCT_IMAGE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({event,...(payload||{})}),cache:'no-store'});
+    }
+    if(response.status===401){clearFinanceSession();throw new Error('Sessão administrativa expirada. Confirme o PIN novamente.')}
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'product_image_service_error');
+    return data;
+  }
+  function productImageStatusText(p){
+    if(p?.image_ai_status==='completed')return 'Imagem padronizada pela IA'+(p.image_ai_processed_at?' · '+dateTime(p.image_ai_processed_at):'');
+    if(p?.image_ai_status==='processing')return 'Padronização em andamento…';
+    if(p?.image_ai_status==='error')return 'Última padronização falhou. A foto original continua preservada.';
+    if(p?.image_original_url)return 'Foto original salva. Você pode padronizar quando quiser.';
+    return p?.image_url?'Imagem atual do produto. Envie uma foto original para poder padronizar.':'Produto ainda sem foto.';
+  }
+  async function uploadProductImageSource(productId,file){
+    if(!productId)throw new Error('Salve o produto antes de enviar a foto.');
+    if(!file)throw new Error('Escolha uma imagem.');
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('Use JPG, PNG ou WEBP.');
+    if(file.size>6*1024*1024)throw new Error('A imagem deve ter no máximo 6 MB.');
+    const form=new FormData();form.append('product_id',productId);form.append('file',file,file.name||'produto.jpg');
+    return await productImageApi('upload_source',form);
+  }
+  async function standardizeProductImage(productId){return await productImageApi('standardize',{product_id:productId})}
+
   async function customerApi(action,payload={}){
     const token=await adminStepUp();
     const response=await fetch(CUSTOMER_API,{
@@ -3549,7 +3588,12 @@
       '<label><span>Categoria da vitrine</span><select name="category">'+categoryOptions(p?.category||'')+'</select></label>'+
       '<label><span>Subcategoria</span><input name="subcategory" value="'+esc(p?.subcategory||'')+'"></label>'+
       '<label><span>Embalagem</span><input name="packaging" value="'+esc(p?.packaging||'')+'"></label>'+
-      '<label class="span-2"><span>URL da imagem</span><input name="image_url" value="'+esc(p?.image_url||'')+'"></label>'+
+      '<div class="product-image-admin span-2" id="productImagePanel">'+
+        '<div class="product-image-preview"><img id="productImagePreview" src="'+esc(p?.image_url||'/img/sem-foto.svg')+'" alt="Foto do produto" onerror="this.onerror=null;this.src=\'/img/sem-foto.svg\'"></div>'+
+        '<div class="product-image-tools"><strong>Foto do produto</strong><small>Envie a foto original que você encontrou. Ela fica preservada; depois a automação cria e substitui a imagem do site pelo padrão Dona Antônia, com fundo cinza-claro.</small>'+
+          (!isDuplicate&&p?.id?'<input id="productImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="product-image-actions"><button class="secondary" id="chooseProductImage" type="button">'+(p?.image_url?'Trocar foto original':'Adicionar foto')+'</button><button class="primary" id="standardizeProductImage" type="button" '+(!(p?.image_original_url||p?.image_url)?'disabled':'')+'>Padronizar com IA</button></div><div class="product-image-status '+(p?.image_ai_status==='completed'?'ok':p?.image_ai_status==='error'?'error':p?.image_ai_status==='processing'?'warn':'')+'" id="productImageStatus">'+esc(productImageStatusText(p))+'</div>':'<div class="product-image-status">Salve o produto primeiro. Depois você poderá enviar e padronizar a foto aqui.</div>')+
+        '</div></div>'+
+      '<label class="span-2"><span>URL da imagem</span><input name="image_url" value="'+esc(p?.image_url||'')+'"><small>Campo técnico. Normalmente use os botões acima para adicionar ou substituir a imagem.</small></label>'+
       '<label class="span-2"><span>Descrição</span><textarea name="description">'+esc(p?.description||'')+'</textarea></label>'+
       '<label class="check span-2"><input name="active" type="checkbox" '+(!isDuplicate&&p?.active!==false?'checked':'')+'><strong>Produto ativo na vitrine</strong></label>'+
       '<div class="section-title span-2">Oferta por validade</div>'+
@@ -3566,6 +3610,35 @@
     if($('#duplicateFromEditor'))$('#duplicateFromEditor').onclick=()=>openProductEditor(p,true);
     $('#saveProduct').onclick=()=>saveProduct(isDuplicate?'':(p?.id||''),isDuplicate?p.id:'');
     $('#editor').showModal();
+
+    if(!isDuplicate&&p?.id&&$('#chooseProductImage')){
+      $('#chooseProductImage').onclick=()=>$('#productImageFile').click();
+      $('#productImageFile').onchange=async e=>{
+        const file=e.currentTarget.files?.[0];if(!file)return;
+        const choose=$('#chooseProductImage'),std=$('#standardizeProductImage'),status=$('#productImageStatus');
+        choose.disabled=true;if(std)std.disabled=true;status.className='product-image-status warn';status.textContent='Enviando e salvando a foto original…';
+        try{
+          const data=await uploadProductImageSource(p.id,file);
+          p.image_url=data.image_url;p.image_original_url=data.image_original_url;p.image_ai_status=null;p.image_ai_url='';p.image_ai_error=null;
+          $('#productImagePreview').src=data.image_url;$('#productForm [name="image_url"]').value=data.image_url;
+          status.className='product-image-status ok';status.textContent='Foto original salva. Agora você pode padronizar com IA.';
+          choose.textContent='Trocar foto original';if(std)std.disabled=false;toast('Foto original salva');
+        }catch(err){status.className='product-image-status error';status.textContent=errorMessage(err.message);toast(errorMessage(err.message))}
+        finally{choose.disabled=false;e.currentTarget.value=''}
+      };
+      if($('#standardizeProductImage'))$('#standardizeProductImage').onclick=async()=>{
+        const btn=$('#standardizeProductImage'),choose=$('#chooseProductImage'),status=$('#productImageStatus');
+        btn.disabled=true;choose.disabled=true;status.className='product-image-status warn';status.textContent='Padronizando e conferindo fidelidade da embalagem… isso pode levar alguns segundos.';
+        try{
+          const data=await standardizeProductImage(p.id);
+          p.image_url=data.image_url;p.image_ai_url=data.image_url;p.image_ai_status='completed';p.image_original_url=data.image_original_url||p.image_original_url;p.image_ai_validation=data.validation||null;p.image_ai_processed_at=new Date().toISOString();
+          $('#productImagePreview').src=data.image_url;$('#productForm [name="image_url"]').value=data.image_url;
+          const v=data.validation||{};status.className='product-image-status ok';status.textContent='Imagem padronizada e aprovada'+(v.fidelity_score!=null?' · fidelidade '+Math.round(Number(v.fidelity_score)*100)+'%':'')+'.';
+          toast('Imagem padronizada e substituída no produto');
+        }catch(err){status.className='product-image-status error';status.textContent='A automação não substituiu a foto: '+errorMessage(err.message);toast('A imagem original foi mantida. A padronização não passou na validação.')}
+        finally{btn.disabled=false;choose.disabled=false}
+      };
+    }
 
     const form=$('#productForm');
     const auto=form.querySelector('[name="auto_expiry_offer_enabled"]');
