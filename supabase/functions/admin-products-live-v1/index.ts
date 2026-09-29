@@ -1426,6 +1426,30 @@ async function inventorySheetAnalyze(p:any,auth:any){
   };
 }
 
+async function inventorySheetCancelOlderPendingJobs(productId:string,currentScanId:string){
+  const q=await db.from("bling_hub_jobs_v2")
+    .select("id,status,payload")
+    .eq("domain","stock").eq("operation","set_stock")
+    .eq("source_system","vitrine_qx").eq("source_id",productId)
+    .in("status",["queued","retry"]).order("created_at",{ascending:true}).limit(30);
+  if(q.error)throw q.error;
+  let cancelled=0;
+  for(const job of q.data||[]){
+    const oldScan=id(job?.payload?.inventory_sheet_scan_id);
+    if(!oldScan||oldScan===currentScanId)continue;
+    const fin=await db.rpc("finish_bling_hub_job_v2",{
+      p_job_id:job.id,p_status:"cancelled",
+      p_result:{superseded_by_inventory_sheet_scan_id:currentScanId,previous_inventory_sheet_scan_id:oldScan},
+      p_error_code:"inventory_sheet_superseded",
+      p_error_message:"Nova leitura da folha substituiu esta atualização de estoque antes da execução.",
+      p_http_status:null,p_retry_seconds:120,p_provider_id:null
+    });
+    if(fin.error)throw fin.error;
+    cancelled++;
+  }
+  return cancelled;
+}
+
 async function inventorySheetResolveCountAttention(countId:string,ref:string){
   try{const a=await db.from("ops_attention").select("id").eq("idempotency_key","inventory-count-difference:"+countId).in("status",["open","acknowledged"]).maybeSingle();if(!a.error&&a.data?.id)await db.rpc("ops_resolve_attention_v1",{p_attention_id:a.data.id,p_resolution:"Balanço físico confirmado pela folha A4 e sincronizado no Bling.",p_resolution_ref:ref})}catch{}
 }
@@ -1468,6 +1492,10 @@ async function inventorySheetApply(p:any,auth:any){
     }
     const item:any=itemMap.get(String(row.sheet_item_id));
     if(!item){applied.push({result_id:rid,ok:false,error:"sheet_item_not_found"});continue}
+
+    // Uma releitura/correção deve prevalecer sobre tentativas antigas ainda em fila/retry.
+    // Jobs já concluídos ficam preservados como histórico e nunca são apagados.
+    await inventorySheetCancelOlderPendingJobs(String(item.product_id),scanId);
 
     const previousConfirmed=row.confirmed_quantity==null?null:Number(row.confirmed_quantity);
     const previousGondola=row.confirmed_gondola==null?null:Number(row.confirmed_gondola);
