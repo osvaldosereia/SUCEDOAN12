@@ -1082,8 +1082,8 @@
         if(!draftGroupLooseEnough(d,'food')||(d.basket.uses_hygiene_kit&&!draftGroupLooseEnough(d,'hygiene'))){toast('Essa personalização não tem estoque disponível suficiente.');return}
         const foodChanged=d.items.filter(x=>x.component_group==='food').some(x=>Number(x.quantity||0)!==Number(x.base_quantity||0));
         const hygieneChanged=d.items.filter(x=>x.component_group==='hygiene').some(x=>Number(x.quantity||0)!==Number(x.base_quantity||0));
-        if(!foodChanged&&cartLotUsed(d.basket.food_lot_id,-1,'food')>=Number(d.basket.stock_quantity||0)){toast('A quantidade disponível desta cesta mudou.');return}
-        if(d.basket.uses_hygiene_kit&&!hygieneChanged&&cartLotUsed(d.basket.hygiene_lot_id,-1,'hygiene')>=Number(d.basket.stock_quantity||0)){toast('A quantidade disponível desta cesta mudou.');return}
+        if(!foodChanged&&cartLotUsed(d.basket.food_lot_id,-1,'food')>=Number(d.basket.food_lot_quantity??d.basket.stock_quantity??0)){toast('A quantidade disponível dos alimentos desta cesta mudou.');return}
+        if(d.basket.uses_hygiene_kit&&!hygieneChanged&&cartLotUsed(d.basket.hygiene_lot_id,-1,'hygiene')>=Number(d.basket.hygiene_lot_quantity??d.basket.stock_quantity??0)){toast('A quantidade disponível do kit de limpeza e higiene mudou.');return}
         state.cart.push({
           type:'basket',id:d.basket.id,name:basketName(d.basket.name),image_url:d.basket.image_url||'',
           unit_cents:Number(d.total_cents||0),qty:1,changed:foodChanged||hygieneChanged,split_mode:true,
