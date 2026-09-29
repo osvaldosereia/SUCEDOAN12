@@ -1751,7 +1751,7 @@ async function basketKitSuggestions(base:any,products:any[],loose:Map<string,any
 }
 async function basketKitsAdmin(){
   const [kq,iq,lq]=await Promise.all([
-    db.from("basket_kit_templates").select("id,kind,basket_id,name,code_prefix,is_active,sort_order,metadata,basket:basket_templates(id,name,image_url,base_price,uses_hygiene_kit)").eq("is_active",true).order("sort_order").order("name"),
+    db.from("basket_kit_templates").select("id,kind,basket_id,name,code_prefix,is_active,sort_order,metadata,basket:basket_templates(id,name,image_url,base_price,uses_hygiene_kit,split_kits_enabled)").eq("is_active",true).order("sort_order").order("name"),
     db.from("basket_kit_template_items").select("id,kit_template_id,product_id,quantity").order("sort_order"),
     db.from("basket_stock_lots").select("id,kit_template_id,basket_id,lot_kind,short_code,status,quantity_built,quantity_available,built_at,built_by,duplicated_from_lot_id").not("kit_template_id","is",null).order("built_at",{ascending:true})
   ]);
