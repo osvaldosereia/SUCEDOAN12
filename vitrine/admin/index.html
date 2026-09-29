@@ -870,6 +870,29 @@
       .history-row>*{grid-column:1!important;justify-self:stretch!important}
     }
 
+
+    /* Mobile V5.2 · topbar clarity and overflow guard */
+    .operator-name{min-width:0}
+    @media(max-width:760px){
+      .operator-prefix{display:none}
+      .operator-name{
+        display:block;
+        max-width:100%;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+      .top-row>*{min-width:0}
+      .tabs{max-width:100vw}
+      #content,.panel,.tool-card,.order-item,.purchase-item-card,.history-list{min-width:0}
+      .panel>*{max-width:100%}
+      .bling-actions,.purchase-detail-actions,.dispatch-actions,.customer-row-actions{
+        max-width:100%;
+        flex-wrap:wrap;
+      }
+      .bling-actions button,.bling-actions a{min-width:0}
+    }
+
   </style>
 </head>
 <body>
@@ -878,7 +901,7 @@
       <div class="top-row wrap">
         <img class="logo" src="/img/logoantonia5.png" width="88" height="40" alt="Dona Antônia" fetchpriority="high">
         <div class="brand"><strong>Dona Antônia · Operação</strong><small>Pedidos, estoque, expedição e entrega</small></div>
-        <button class="operator-badge unset" id="operatorBadge" type="button" title="Identificação usada no histórico operacional">Operador: identificar</button>
+        <button class="operator-badge unset" id="operatorBadge" type="button" title="Identificação usada no histórico operacional"><span class="operator-prefix">Operador: </span><span class="operator-name">identificar</span></button>
         <a class="store-link" href="/vitrine/" target="_blank" rel="noopener">Abrir vitrine ↗</a>
       </div>
       <nav class="tabs wrap" aria-label="Admin">
@@ -932,7 +955,8 @@
   function paintOperatorBadge(){
     const b=$('#operatorBadge');if(!b)return;
     const name=currentOperator();
-    b.textContent=name?'Operador: '+name:'Operador: identificar';
+    b.innerHTML='<span class="operator-prefix">Operador: </span><span class="operator-name">'+esc(name||'Identificar')+'</span>';
+    b.title=name?'Operador atual: '+name:'Identifique o operador para registrar as alterações';
     b.classList.toggle('unset',!name);
   }
   function changeOperator(){
@@ -1002,6 +1026,10 @@
   function setTab(tab){
     state.tab=tab;
     document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    const activeTab=document.querySelector('[data-tab="'+tab+'"]');
+    if(activeTab&&window.innerWidth<=760){
+      requestAnimationFrame(()=>activeTab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}));
+    }
     if(tab==='today')renderToday();
     if(tab==='products')renderProducts();
     if(tab==='expiry')renderExpirations();
