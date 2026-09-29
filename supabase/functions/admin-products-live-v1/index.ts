@@ -2070,7 +2070,7 @@ async function basketsAdminList(){
     const current=readyLots[0]||null,readyQty=readyLots.reduce((s:number,x:any)=>s+Number(x.quantity_available||0),0);
     const gap=current&&Array.isArray(current.metadata?.stock_gap_at_creation)?current.metadata.stock_gap_at_creation.length:0;
     return {...b,base_price_cents:Math.round(Number(b.base_price||0)*100),template_item_count:items.length,
-      ready_quantity:readyQty,current_lot:current?{id:current.id,lot_code:current.lot_code,quantity_available:Number(current.quantity_available||0),built_at:current.built_at,source:current.source,gap_items:gap}:null,
+      ready_quantity:readyQty,current_lot:current?{id:current.id,lot_code:current.lot_code,sale_enabled:current.sale_enabled===true,quantity_available:Number(current.quantity_available||0),built_at:current.built_at,source:current.source,gap_items:gap}:null,
       ready_lot_count:readyLots.length,max_build_from_template:Math.max(0,capacity)};
   });
   return {baskets,summary:{templates:baskets.length,active:baskets.filter((b:any)=>b.is_active!==false).length,ready_units:baskets.reduce((s:number,b:any)=>s+Number(b.ready_quantity||0),0),attention:baskets.filter((b:any)=>Number(b.current_lot?.gap_items||0)>0).length}};
