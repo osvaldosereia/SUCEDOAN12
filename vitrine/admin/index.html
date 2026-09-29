@@ -61,6 +61,15 @@
     .product-active-toggle{border:0;cursor:pointer;justify-content:center;min-height:30px;padding:5px 10px}
     .product-active-toggle:disabled{opacity:.5;cursor:wait}
     .mobile-product-active{display:none}
+    .product-stock-list{display:flex;flex-direction:column;gap:2px}
+    .product-stock-list strong{font-size:13px}
+    .product-stock-list small{font-size:10px;color:var(--muted);line-height:1.25;white-space:normal}
+    .product-stock-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px}
+    .product-stock-box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
+    .product-stock-box small{display:block;color:var(--muted);font-size:11px;margin-bottom:3px}
+    .product-stock-box strong{font-size:18px}
+    .product-stock-warning{grid-column:1/-1;background:#fff5dd;border:1px solid #efd59b;color:#72520a;border-radius:10px;padding:9px 10px;font-size:12px;line-height:1.4}
+    @media(max-width:620px){.product-stock-breakdown{grid-template-columns:1fr 1fr}.product-stock-breakdown .product-stock-box:first-child{grid-column:1/-1}}
     .empty{padding:32px 18px;text-align:center;color:var(--muted)}
     .loading{padding:24px;text-align:center;color:var(--muted)}
     .more{padding:12px;text-align:center}
@@ -3568,7 +3577,7 @@
       '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
       '<div><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<button class="pill product-active-toggle mobile-product-active '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(mobileStatus)+'</button></div>'+
       '<span class="money mobile-wide">'+money(p.sale_price_cents)+'</span>'+
-      '<span class="desktop-extra">'+esc(fmtQty(p.stock_quantity||0))+'</span>'+
+      '<span class="desktop-extra product-stock-list"><strong>'+esc(fmtQty(p.stock_quantity||0))+' total</strong><small>'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+' avulso · '+esc(fmtQty(p.basket_locked_quantity||0))+' em cestas/kits</small></span>'+
       '<span class="desktop-extra"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(desktopStatus)+'</button></span>'+
       '<div class="product-row-actions"><button class="text" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="text" data-edit-product="'+esc(p.id)+'">Editar</button></div></div>';
   }
@@ -3627,7 +3636,13 @@
       '<label><span>Código / SKU</span><input name="sku" value="'+esc(isDuplicate?'':(p?.sku||''))+'" placeholder="'+(isDuplicate?'Informe o novo SKU':'')+'"></label>'+
       '<label><span>EAN / GTIN</span><input name="gtin" inputmode="numeric" value="'+esc(isDuplicate?'':(p?.gtin||''))+'" placeholder="'+(isDuplicate?'Informe o novo EAN':'')+'"></label>'+
       '<label><span>Preço de venda</span><input name="price" inputmode="decimal" value="'+esc(((Number(p?.sale_price_cents||0)/100).toFixed(2)).replace('.',','))+'"></label>'+
-      '<label><span>Estoque'+(p&&!isDuplicate?' · Bling':'')+'</span><input name="stock" inputmode="decimal" value="'+esc(isDuplicate?'0':fmtQty(p?.stock_quantity||0))+'">'+(p&&!isDuplicate?'<small>Ao salvar, o saldo é ajustado e conferido no Bling.</small>':'')+'</label>'+
+      '<label><span>Estoque físico'+(p&&!isDuplicate?' · Bling':'')+'</span><input name="stock" inputmode="decimal" value="'+esc(isDuplicate?'0':fmtQty(p?.stock_quantity||0))+'">'+(p&&!isDuplicate?'<small>Saldo físico total. Ao salvar, ele é ajustado e conferido no Bling.</small>':'')+'</label>'+
+      (p&&!isDuplicate?'<div class="product-stock-breakdown span-2">'+
+        '<div class="product-stock-box"><small>Estoque físico / Bling</small><strong>'+esc(fmtQty(p.stock_quantity||0))+'</strong></div>'+
+        '<div class="product-stock-box"><small>Estoque avulso vendável</small><strong>'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+'</strong></div>'+
+        '<div class="product-stock-box"><small>Registrado em cestas/kits</small><strong>'+esc(fmtQty(p.basket_locked_quantity||0))+'</strong></div>'+
+        (p.stock_breakdown_warning?'<div class="product-stock-warning"><strong>Atenção: há divergência de montagem.</strong> Os lotes registram '+esc(fmtQty(p.basket_locked_quantity||0))+' unidade(s) deste produto em cestas/kits, mas o Bling informa '+esc(fmtQty(p.stock_quantity||0))+' unidade(s) físicas. Por segurança, o estoque avulso fica em '+esc(fmtQty(p.loose_stock_quantity||0))+' até a reconciliação dos lotes.</div>':'')+
+      '</div>':'')+
       '<label><span>Data de validade</span><input name="expiration_date" type="date" value="'+esc(isDuplicate?'':(p?.expiration_date||''))+'"></label>'+
       '<label><span>Categoria da vitrine</span><select name="category">'+categoryOptions(p?.category||'')+'</select></label>'+
       '<label><span>Subcategoria</span><input name="subcategory" value="'+esc(p?.subcategory||'')+'"></label>'+
