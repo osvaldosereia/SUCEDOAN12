@@ -109,7 +109,10 @@ async function splitLotItems(lotId:string,group:string){
     product_id:i.product_id,name:product?.name||"Produto",image_url:product?.image_url||"",packaging:product?.packaging||"",
     stock_quantity:loose,extra_stock_quantity:loose,loose_stock_quantity:loose,base_quantity:base,quantity:base,
     removable:rule?.removable!==false,quantity_editable:rule?.quantity_editable!==false,min_quantity:Number(rule?.min_quantity??0),
-    max_quantity:rule?.max_quantity==null?null:Number(rule.max_quantity),kit_template_item_id:i.kit_template_item_id||null,
+    max_quantity:rule?.max_quantity==null?null:Number(rule.max_quantity),
+    remove_unit_delta:rule?.remove_unit_delta==null?null:Number(rule.remove_unit_delta),
+    add_unit_delta:rule?.add_unit_delta==null?null:Number(rule.add_unit_delta),
+    kit_template_item_id:i.kit_template_item_id||null,
     component_group:group,preassembled:true,regular_price:Number(product?.price||0)
   }});
 }
