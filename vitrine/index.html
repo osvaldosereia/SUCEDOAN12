@@ -1090,7 +1090,7 @@
           food_changed:foodChanged,hygiene_changed:hygieneChanged,uses_hygiene_kit:d.basket.uses_hygiene_kit===true,
           food_lot_id:d.basket.food_lot_id,food_lot_code:d.basket.food_lot_code,
           hygiene_lot_id:d.basket.hygiene_lot_id||null,hygiene_lot_code:d.basket.hygiene_lot_code||'',
-          basket_stock_quantity:Number(d.basket.stock_quantity||0),food_lot_quantity:Number(d.basket.stock_quantity||0),hygiene_lot_quantity:Number(d.basket.stock_quantity||0),
+          basket_stock_quantity:Number(d.basket.stock_quantity||0),food_lot_quantity:Number(d.basket.food_lot_quantity??d.basket.stock_quantity||0),hygiene_lot_quantity:Number(d.basket.hygiene_lot_quantity??d.basket.stock_quantity||0),
           components:d.items.map(x=>({
             product_id:x.product_id,name:x.name,image_url:x.image_url||'',packaging:x.packaging||'',
             stock_quantity:stockNumber(x.extra_stock_quantity??x.stock_quantity),extra_stock_quantity:stockNumber(x.extra_stock_quantity??x.stock_quantity),
