@@ -1126,6 +1126,86 @@ const INVENTORY_SHEET_FALLBACK_SCHEMA:any={
   required:["items"]
 };
 
+
+const INVENTORY_SHEET_PAGE_FALLBACK_SCHEMA:any={
+  type:"object",additionalProperties:false,
+  properties:{
+    items:{type:"array",maxItems:25,items:{type:"object",additionalProperties:false,properties:{
+      slot_number:{type:"integer",minimum:1,maximum:25},
+      quantity:{type:["integer","null"],minimum:0,maximum:100000},
+      gondola:{type:["integer","null"],minimum:1,maximum:9999},
+      quantity_confidence:{type:"number",minimum:0,maximum:1},
+      gondola_confidence:{type:"number",minimum:0,maximum:1},
+      ambiguous_quantity:{type:"boolean"},
+      ambiguous_gondola:{type:"boolean"},
+      note:{type:"string"}
+    },required:["slot_number","quantity","gondola","quantity_confidence","gondola_confidence","ambiguous_quantity","ambiguous_gondola","note"]}}
+  },
+  required:["items"]
+};
+
+async function inventorySheetPageFallbackVision(imageDataUrl:string,expectedCount:number){
+  const image=String(imageDataUrl||"");
+  if(!/^data:image\/(jpeg|jpg|png|webp);base64,/i.test(image)||image.length>4500000)return {parsed:{items:[]},model:null,response_id:null,error:"invalid_page_image"};
+  const key=await inventorySheetOpenAiKey();
+  if(!key)return {error:"openai_not_configured",status:503,parsed:{items:[]}};
+  const models=[tx(Deno.env.get("INVENTORY_SHEET_FALLBACK_MODEL"),80)||tx(Deno.env.get("INVENTORY_SHEET_VISION_MODEL"),80)||"gpt-6-sol","gpt-5.6-sol"];
+  let last:any=null;
+  for(const model of [...new Set(models)]){
+    try{
+      const res=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({
+        model,store:false,max_output_tokens:5000,reasoning:{effort:"medium"},
+        instructions:[
+          "Você lê somente os números manuscritos de uma folha A4 de balanço físico.",
+          "A folha tem uma grade fixa 5x5, no máximo 25 cards, em ordem esquerda→direita e cima→baixo.",
+          "Cada card possui dois campos manuscritos na parte inferior: ESTOQUE à esquerda e GÔNDOLA à direita.",
+          "Não identifique o produto por nome, foto, EAN ou REF. O produto já é determinado pela posição do card.",
+          "slot_number 1 é o card superior esquerdo; 5 é o superior direito; 6 começa a segunda linha.",
+          "Leia quantity somente do campo ESTOQUE e gondola somente do campo GÔNDOLA.",
+          "Zeros manuscritos são valores válidos. Não confunda bordas impressas com dígitos.",
+          "Se um número estiver realmente ilegível, use null/ambiguous=true. Não invente.",
+          "A imagem pode ter perspectiva, sombra ou leve inclinação. Use a grade impressa como referência.",
+          "Retorne até "+Math.max(1,Math.min(25,Number(expectedCount||25)))+" slots."
+        ].join(" "),
+        input:[{role:"user",content:[
+          {type:"input_text",text:"Leia os campos ESTOQUE e GÔNDOLA de cada card pela posição na grade."},
+          {type:"input_image",image_url:image,detail:"high"}
+        ]}],
+        text:{format:{type:"json_schema",name:"inventory_sheet_page_numeric_fallback",strict:true,schema:INVENTORY_SHEET_PAGE_FALLBACK_SCHEMA}}
+      }),signal:AbortSignal.timeout(120000)});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok){last={error:"openai_page_http_"+res.status,status:502,detail:tx(data?.error?.message||data?.error,500),model,parsed:{items:[]}};if([400,403,404].includes(res.status))continue;return last}
+      const out=inventorySheetOutputText(data);if(!out)return {error:"openai_page_empty_output",status:502,model,parsed:{items:[]}};
+      let parsed:any;try{parsed=JSON.parse(out)}catch{return {error:"openai_page_invalid_json",status:502,model,parsed:{items:[]}}}
+      return {parsed,response_id:data?.id||null,model,usage:data?.usage||null};
+    }catch(e){last={error:"openai_page_request_failed",status:502,detail:tx((e as Error)?.message,300),model,parsed:{items:[]}}}
+  }
+  return last||{error:"openai_page_failed",status:502,parsed:{items:[]}};
+}
+
+function inventorySheetMergePageFallback(fieldItems:any[],pageItems:any[]){
+  const out=[...(Array.isArray(fieldItems)?fieldItems:[])];
+  const byKey=new Map<string,any>();
+  for(const x of out){
+    const slot=Number(x?.slot_number),field=tx(x?.field,20);
+    if(Number.isInteger(slot)&&["quantity","gondola"].includes(field))byKey.set(slot+":"+field,x);
+  }
+  for(const p of Array.isArray(pageItems)?pageItems:[]){
+    const slot=Number(p?.slot_number);if(!Number.isInteger(slot)||slot<1||slot>25)continue;
+    for(const field of ["quantity","gondola"]){
+      const key=slot+":"+field,existing=byKey.get(key);
+      const exValid=existing&&existing.value!=null&&existing.ambiguous!==true&&Number(existing.confidence||0)>=0.92;
+      if(exValid)continue;
+      const value=p?.[field],confidence=Number(p?.[field+"_confidence"]||0),ambiguous=p?.["ambiguous_"+field]===true;
+      const row={slot_number:slot,field,value:value==null?null:Number(value),confidence,ambiguous,note:tx(p?.note,160),source:"page_ai_fallback"};
+      const idx=out.findIndex((x:any)=>Number(x?.slot_number)===slot&&tx(x?.field,20)===field);
+      if(idx>=0)out[idx]=row;else out.push(row);
+      byKey.set(key,row);
+    }
+  }
+  return out;
+}
+
 async function inventorySheetFallbackVision(fields:any[]){
   const safe=(Array.isArray(fields)?fields:[]).slice(0,50).map((x:any)=>({
     slot_number:Number(x?.slot_number),field:tx(x?.field,20),
@@ -1178,8 +1258,8 @@ function inventorySheetDeterministicReview(expected:any[],localItems:any[],fallb
     const localValid=Number.isInteger(lv)&&lv>=min&&lv<=max&&!la&&lc>=0.88;
     if(localValid)return {value:Number(lv),confidence:lc,ambiguous:false,source:"local_ocr",note:""};
     const fb=fallbackByKey.get(slot+":"+field),fv=fb?.value,fc=Number(fb?.confidence||0),fa=fb?.ambiguous===true;
-    const fbValid=Number.isInteger(fv)&&fv>=min&&fv<=max&&!fa&&fc>=0.92;
-    if(fbValid)return {value:Number(fv),confidence:fc,ambiguous:false,source:"ai_fallback",note:tx(fb?.note,160)};
+    const fbValid=Number.isInteger(fv)&&fv>=min&&fv<=max&&!fa&&fc>=0.90;
+    if(fbValid)return {value:Number(fv),confidence:fc,ambiguous:false,source:fb?.source==="page_ai_fallback"?"page_ai_fallback":"ai_fallback",note:tx(fb?.note,160)};
     return {value:Number.isInteger(lv)&&lv>=min&&lv<=max?Number(lv):null,confidence:Math.max(lc,fc),ambiguous:true,source:fb?"fallback_unresolved":"local_unresolved",note:tx(fb?.note||local?.note,160)};
   };
   return expected.map((item:any)=>{
@@ -1191,7 +1271,7 @@ function inventorySheetDeterministicReview(expected:any[],localItems:any[],fallb
     if(!validQty||q.ambiguous)reasons.push("quantidade_duvidosa");
     if(!validGondola||g.ambiguous)reasons.push("gondola_duvidosa");
     const sources=[q.source,g.source];
-    const markKind=sources.every(x=>x==="local_ocr")?"local_ocr":sources.includes("ai_fallback")?"local_ocr+ai_fallback":"local_ocr_review";
+    const markKind=sources.every(x=>x==="local_ocr")?"local_ocr":sources.includes("page_ai_fallback")?"page_ai_fallback":sources.includes("ai_fallback")?"local_ocr+ai_fallback":"local_ocr_review";
     const expectedEan=dg(item.gtin_snapshot);
     return {
       sheet_item_id:item.id,product_id:item.product_id,page_number:item.page_number,slot_number:item.slot_number,printed_index:item.printed_index,
@@ -1285,16 +1365,30 @@ async function inventorySheetAnalyze(p:any,auth:any){
 
   let fallback:any={parsed:{items:[]},model:null,response_id:null};
   if(fallbackFields.length)fallback=await inventorySheetFallbackVision(fallbackFields);
-  const fallbackItems=fallback?.parsed?.items||[];
+  let fallbackItems=fallback?.parsed?.items||[];
+
+  const expectedFieldCount=Math.max(1,(it.data||[]).length*2);
+  const fieldResolved=fallbackItems.filter((x:any)=>x?.value!=null&&x?.ambiguous!==true&&Number(x?.confidence||0)>=0.92).length;
+  let pageFallback:any={parsed:{items:[]},model:null,response_id:null};
+  const pageImage=String(p?.page_image_data_url||"");
+  const catastrophicFieldFailure=fallbackFields.length>=Math.max(10,Math.floor(expectedFieldCount*.6))&&fieldResolved<Math.max(4,Math.floor(expectedFieldCount*.25));
+  if(pageImage&&catastrophicFieldFailure){
+    pageFallback=await inventorySheetPageFallbackVision(pageImage,(it.data||[]).length);
+    fallbackItems=inventorySheetMergePageFallback(fallbackItems,pageFallback?.parsed?.items||[]);
+  }
+
   const review=inventorySheetDeterministicReview(it.data||[],localItems,fallbackItems,pageConfidence,pageComplete);
   const localReady=review.filter((x:any)=>x.mark_kind==="local_ocr"&&x.review_state==="ready").length;
-  const fallbackReady=review.filter((x:any)=>x.mark_kind==="local_ocr+ai_fallback"&&x.review_state==="ready").length;
+  const fallbackReady=review.filter((x:any)=>["local_ocr+ai_fallback","page_ai_fallback"].includes(x.mark_kind)&&x.review_state==="ready").length;
   const model=fallbackFields.length?("local:tesseract.js@7.0.0"+(fallback?.model?"+fallback:"+fallback.model:"+fallback-unavailable")):"local:tesseract.js@7.0.0";
   const rawResult={
     source:"deterministic_qr_batch_page_slot",sheet_token:token.raw,batch_code:batchCode,page_number:pageNumber,page_confidence:pageConfidence,page_complete:pageComplete,operator_label:tx(p?.operator,80)||null,client_upload_id:tx(p?.client_upload_id,80)||null,
     local_engine:"tesseract.js@7.0.0",local_items:localItems,
     fallback_requested:fallbackFields.map((x:any)=>({slot_number:Number(x?.slot_number),field:tx(x?.field,20)})),
-    fallback_result:fallbackItems,fallback_error:fallback?.error||null
+    fallback_result:fallbackItems,fallback_error:fallback?.error||null,
+    page_fallback_used:Boolean(pageFallback?.parsed?.items?.length),
+    page_fallback_model:pageFallback?.model||null,
+    page_fallback_error:pageFallback?.error||null
   };
 
   const s=await db.from("inventory_sheet_page_scans").insert({
@@ -1321,7 +1415,7 @@ async function inventorySheetAnalyze(p:any,auth:any){
   const rm=new Map((dr.data||[]).map((x:any)=>[String(x.sheet_item_id),x.id]));
   return {
     duplicate:false,scan_id:s.data.id,batch_code:batchCode,page_number:pageNumber,page_count:b.data.page_count,page_confidence:pageConfidence,page_complete:pageComplete,model,
-    fallback_used:fallbackReady>0,fallback_requested:fallbackFields.length,fallback_error:fallback?.error||null,
+    fallback_used:fallbackReady>0,fallback_requested:fallbackFields.length,fallback_error:fallback?.error||null,page_fallback_used:Boolean(pageFallback?.parsed?.items?.length),page_fallback_error:pageFallback?.error||null,
     rows:review.map((r:any)=>({...r,result_id:rm.get(String(r.sheet_item_id))||null}))
   };
 }
