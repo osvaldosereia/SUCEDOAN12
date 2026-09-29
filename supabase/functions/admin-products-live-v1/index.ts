@@ -1705,14 +1705,17 @@ function basketCandidateScore(base:any,c:any,saved=false){
   const baseSub=basketNorm(base?.customer_subcategory||base?.subcategory),sub=basketNorm(c?.customer_subcategory||c?.subcategory);
   const baseSub2=basketNorm(base?.customer_subsubcategory||base?.subsubcategory),sub2=basketNorm(c?.customer_subsubcategory||c?.subsubcategory);
   const bm=basketMeasureKey(base),cm=basketMeasureKey(c),bp=Number(base?.price||0),cp=Number(c?.price||0);
-  if(baseSub&&sub&&baseSub===sub){score+=90;reasons.push("mesma subcategoria")}
-  if(baseSub2&&sub2&&baseSub2===sub2){score+=45;reasons.push("mesmo tipo")}
+  const sameSub=Boolean(baseSub&&sub&&baseSub===sub),sameSub2=Boolean(baseSub2&&sub2&&baseSub2===sub2),sameMeasure=Boolean(bm&&cm&&bm===cm);
+  const priceDiff=bp>0&&cp>0?Math.abs(cp-bp)/bp:999,priceClose=priceDiff<=.40;
+  if(sameSub){score+=90;reasons.push("mesma subcategoria")}
+  if(sameSub2){score+=45;reasons.push("mesmo tipo")}
   if(baseCat&&cat&&baseCat===cat){score+=22;reasons.push("mesma categoria")}
-  if(bm&&cm&&bm===cm){score+=65;reasons.push("mesma embalagem")}
+  if(sameMeasure){score+=65;reasons.push("mesma embalagem")}
   if(basketNorm(base?.unit)&&basketNorm(base?.unit)===basketNorm(c?.unit)){score+=8}
-  if(bp>0&&cp>0){const diff=Math.abs(cp-bp)/bp;if(diff<=.1)score+=20;else if(diff<=.25)score+=10}
+  if(priceDiff<=.1)score+=20;else if(priceDiff<=.25)score+=10;
   if(saved)reasons.unshift("alternativa cadastrada");
-  return {score,reasons};
+  const compatible=saved||((sameSub||sameSub2)&&(sameMeasure||priceClose));
+  return {score,reasons,compatible};
 }
 async function basketProductSearch(u:URL){
   const qv=tx(u.searchParams.get("q"),100).replace(/[,()%]/g," "),lim=Math.floor(nm(u.searchParams.get("limit")||15,1,30));
@@ -1780,7 +1783,7 @@ async function basketAdminDetail(rawId:any){
       if(String(cand.id)===String(i.product_id))continue;
       const s:any=loose.get(String(cand.id));const available=Number(s?.loose_sellable_stock||0);if(available<=0&&!saved.has(String(cand.id)))continue;
       const sc=basketCandidateScore(base,cand,saved.has(String(cand.id)));
-      if(sc.score<55&&!saved.has(String(cand.id)))continue;
+      if(!sc.compatible)continue;
       scored.push({id:cand.id,name:cand.name,sku:cand.sku,gtin:cand.gtin,image_url:cand.image_url||"",price_cents:Math.round(Number(cand.price||0)*100),packaging:cand.packaging||"",brand:cand.brand||"",loose_stock:available,basket_locked:Number(s?.basket_locked_quantity||0),score:sc.score,reasons:sc.reasons,saved_alternative:saved.has(String(cand.id)),capacity:Number(i.quantity||0)>0?Math.floor(available/Number(i.quantity||1)):0});
     }
     scored.sort((a,b)=>Number(b.saved_alternative)-Number(a.saved_alternative)||b.score-a.score||b.loose_stock-a.loose_stock||String(a.name).localeCompare(String(b.name),"pt-BR"));
