@@ -82,7 +82,7 @@ assert.match(html, /id="applyBudgetPreset"/, 'botão para aplicar orçamento pr�
 assert.match(html, /PRESET_URL='\.\/presets-bonini\.json'/, 'arquivo de presets Bonini deve ser carregado pela ferramenta');
 assert.match(html, /variant==='food'\?basket\.items\.filter\(i=>i\.food===true\):basket\.items/, 'versão somente alimentos deve filtrar apenas itens alimentares');
 assert.match(html, /resolvePresetProduct/, 'preset deve reconciliar os itens com o catálogo atual');
-assert.match(html, /Substituir os produtos atuais pelos produtos deste modelo/, 'troca de um orçamento preenchido deve pedir confirmação');
+assert.match(html, /Substituir os produtos atuais pelos produtos desta cesta/, 'troca de um orçamento preenchido deve pedir confirmação');
 assert.equal(presets.length, 5, 'devem existir exatamente cinco cestas Bonini pré-prontas');
 assert.deepEqual(presets.map(p=>p.name), ['Economica Bonini','Mini Bonini','Pequena Bonini','Média Bonini','Grande Bonini'], 'presets devem cobrir todas as cestas Bonini ativas');
 assert.ok(presets.every(p=>p.items.some(i=>/Arroz Tio Bonini/i.test(i.name))), 'todas as cestas pré-prontas devem usar Arroz Tio Bonini');
