@@ -268,3 +268,36 @@ Backend publicado: `admin-products-live-v1` Supabase v70 ACTIVE.
 - `storefront-v2` v20 ACTIVE.
 - `admin-products-live-v1` v83 ACTIVE.
 - Detalhes: `BASKET-PREMOUNTED-LOTS-2026-09-29.md`.
+
+
+## Cestas divididas em Alimentos + Limpeza/Higiene — 2026-09-29
+
+Nova arquitetura programada:
+- cesta comercial continua única para o cliente e mantém preço-base/valor oculto;
+- estoque físico passa a usar lote de **Alimentos** por modelo + **Kit Limpeza e Higiene universal**;
+- códigos físicos: EB/NB/NK/PB/PK/MB/MK/GB/GK/LH + 1 dígito;
+- Admin permite criar pelo modelo ou **duplicar qualquer lote**, alterando livremente produto, quantidade, inclusão e remoção;
+- sugestões mostram estoque solto e capacidade de montagem;
+- alteração em Alimentos converte somente Alimentos para avulso;
+- alteração em Limpeza/Higiene converte somente esse grupo para avulso;
+- grupo não alterado continua consumindo kit pronto;
+- pedido grava plano de separação e os códigos dos lotes realmente usados;
+- impressão de separação destaca **PEGAR PRONTO**;
+- mensagem WhatsApp leva referência interna dos kits/lotes realmente usados;
+- nova estrutura só entra na vitrine quando todos os modelos ativos tiverem o estoque novo necessário;
+- lotes completos antigos continuam ativos durante a transição.
+
+Validação:
+- criação e duplicação NB1 -> NB2 testadas e removidas;
+- teste parcial Mini Bonini confirmou Alimentos avulso + LH1 pronto;
+- apenas alimento alterado foi reservado avulso;
+- somente LH1 foi alocado;
+- `hidden_value_preserved=true`;
+- dados temporários removidos;
+- nenhum kit novo real ficou criado ao final do teste.
+
+Backends publicados:
+- `storefront-v2` v23 ACTIVE;
+- `admin-products-live-v1` v89 ACTIVE.
+
+Detalhes: `BASKETS-SPLIT-KITS-2026-09-29.md`.
