@@ -36,7 +36,7 @@ function delivery(){const p=local(),t={year:p.year,month:p.month,day:p.day};let 
 
 function pub(p:any,available?:number){
   const offer=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0;
-  return {id:p.id,name:p.name,image_url:p.image_url||"",price_cents:cents(offer?p.offer_price:p.price),regular_price_cents:offer?cents(p.price):null,packaging:p.packaging||"",subcategory:p.customer_subcategory||p.subcategory||"",stock_quantity:Math.max(0,available??Number(p.stock||0)),brand:p.brand||"",category:p.category||"",subsubcategory:p.customer_subsubcategory||p.subsubcategory||"",unit:p.unit||""};
+  return {id:p.id,sku:p.sku||"",gtin:p.gtin||"",name:p.name,image_url:p.image_url||"",price_cents:cents(offer?p.offer_price:p.price),regular_price_cents:offer?cents(p.price):null,packaging:p.packaging||"",subcategory:p.customer_subcategory||p.subcategory||"",stock_quantity:Math.max(0,available??Number(p.stock||0)),brand:p.brand||"",category:p.category||"",subsubcategory:p.customer_subsubcategory||p.subsubcategory||"",unit:p.unit||""};
 }
 
 async function splitGlobalReady(){
@@ -74,7 +74,7 @@ async function sellableMap(ids:string[]){
   if(error)throw error;for(const r of data||[])out.set(String(r.product_id),Math.max(0,Number(r.loose_sellable_stock||0)));return out;
 }
 async function offerList(){
-  const {data,error}=await db.from("products").select("id,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit").eq("is_active",true).eq("is_offer",true).not("offer_price","is",null).order("name").limit(160);
+  const {data,error}=await db.from("products").select("id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit").eq("is_active",true).eq("is_offer",true).not("offer_price","is",null).order("name").limit(160);
   if(error)throw error;const rows=data||[],sm=await sellableMap(rows.map((p:any)=>p.id));
   return {ok:true,offers:rows.map((p:any)=>({...pub(p,sm.get(p.id)||0),product_id:p.id})).filter((p:any)=>p.stock_quantity>0).slice(0,80)};
 }
@@ -86,7 +86,7 @@ async function subcats(url:URL){
 }
 async function productList(url:URL){
   const c=txt(url.searchParams.get("category"),48),sc=txt(url.searchParams.get("subcategory"),100),q=safeQ(url.searchParams.get("q")),limit=Math.floor(clamp(url.searchParams.get("limit")||24,1,36)),offset=Math.floor(clamp(url.searchParams.get("offset")||0,0,5000));
-  let x=db.from("products").select("id,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit").eq("is_active",true);
+  let x=db.from("products").select("id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit").eq("is_active",true);
   if(c)x=x.eq("sales_category",c);if(sc)x=x.eq("customer_subsubcategory",sc);
   if(q){for(const t of q.split(/\s+/).filter(Boolean).slice(0,4))x=x.or("name.ilike.%"+t+"%,gtin.ilike.%"+t+"%,sku.ilike.%"+t+"%,brand.ilike.%"+t+"%")}
   const {data,error}=await x.order("sort_order").order("name").range(offset,offset+limit-1);if(error)throw error;
