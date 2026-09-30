@@ -1,0 +1,64 @@
+name: One-shot fix balance A4 timeout
+on:
+  push:
+    branches: [fix/balance-a4-stuck-reading]
+    paths:
+      - '.github/workflows/one-shot-fix-balance-a4-timeout.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/test-balance-a4-timeout.mjs
+            .github/workflows/one-shot-fix-balance-a4-timeout.yml
+          sparse-checkout-cone-mode: false
+      - name: RED - reproduce missing timeout contract
+        run: |
+          if node scripts/test-balance-a4-timeout.mjs; then
+            echo 'Test unexpectedly passed before fix'
+            exit 1
+          else
+            echo 'RED confirmed: A4 reader has unbounded waits'
+          fi
+      - name: Apply minimal timeout fix
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('vitrine/admin/index.html')
+          s=p.read_text(encoding='utf-8')
+          pattern=r'''  function inventorySheetLoadScript\(id,src\)\{[\s\S]*?\n  \}\n\n\n  async function inventorySheetFileCanvas'''
+          repl='''  const INVENTORY_SCRIPT_TIMEOUT_MS=6500;\n  const INVENTORY_SHEET_READ_TIMEOUT_MS=45000;\n\n  function inventorySheetWithTimeout(promise,ms,message){\n    let timer=null;\n    const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(message)),ms)});\n    return Promise.race([promise,timeout]).finally(()=>{if(timer)clearTimeout(timer)});\n  }\n\n  function inventorySheetLoadScript(id,src){\n    const existing=document.getElementById(id);\n    if(existing?.dataset?.ready==='1')return Promise.resolve();\n    return new Promise((resolve,reject)=>{\n      let script=existing;\n      let finished=false;\n      const cleanup=()=>{\n        if(timer)clearTimeout(timer);\n        script?.removeEventListener?.('load',onload);\n        script?.removeEventListener?.('error',onerror);\n      };\n      const done=()=>{if(finished)return;finished=true;if(script)script.dataset.ready='1';cleanup();resolve()};\n      const fail=(error)=>{if(finished)return;finished=true;cleanup();if(script&&script.dataset.ready!=='1')script.remove();reject(error)};\n      const onload=()=>done();\n      const onerror=()=>fail(new Error('Falha ao carregar '+id));\n      const timer=setTimeout(()=>fail(new Error('Tempo limite ao carregar '+id)),INVENTORY_SCRIPT_TIMEOUT_MS);\n      if(!script){\n        script=document.createElement('script');script.id=id;script.src=src;script.async=true;\n        document.head.appendChild(script);\n      }\n      script.addEventListener('load',onload,{once:true});\n      script.addEventListener('error',onerror,{once:true});\n      if(script.dataset.ready==='1')done();\n    });\n  }\n\n\n  async function inventorySheetFileCanvas'''
+          out,n=re.subn(pattern,repl,s,count=1)
+          if n!=1: raise SystemExit(f'loader patch matches={n}')
+          old='const local=await inventorySheetReadLocal(entry.file,status);'
+          new="const local=await inventorySheetWithTimeout(inventorySheetReadLocal(entry.file,status),INVENTORY_SHEET_READ_TIMEOUT_MS,'A leitura desta foto demorou demais. Tente novamente; se persistir, atualize a página e repita a foto.');"
+          if out.count(old)!=1: raise SystemExit(f'read patch matches={out.count(old)}')
+          out=out.replace(old,new,1)
+          p.write_text(out,encoding='utf-8')
+          print('A4 timeout fix applied')
+          PY
+      - name: GREEN - verify timeout contract and JS syntax
+        run: |
+          node scripts/test-balance-a4-timeout.mjs
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log(`Admin JS syntax OK (${scripts.length} scripts)`);
+          NODE
+          git diff --check
+      - name: Commit fix
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'fix(balance): stop A4 reader from hanging indefinitely'
+          git push
