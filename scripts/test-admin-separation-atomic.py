@@ -5,11 +5,12 @@ migration = Path('supabase/sql/20260930_order_separation_atomic_v1.sql')
 
 checks = {
     'frontend separation has no explicit consume call': "api('order_consume_stock'" not in admin,
-    'payment pix canonical option': 'value="pix">PIX</option>' in admin,
-    'payment cash canonical option': 'value="cash">Dinheiro</option>' in admin,
-    'payment credit canonical option': 'value="credit_card">Cartão de crédito</option>' in admin,
-    'payment food canonical option': 'value="food_card">Cartão alimentação</option>' in admin,
-    'payment meal canonical option': 'value="meal_card">Cartão refeição</option>' in admin,
+    'payment pix canonical option': "['pix','PIX']" in admin,
+    'payment cash canonical option': "['cash','Dinheiro']" in admin,
+    'payment credit canonical option': "['credit_card','Cartão de crédito']" in admin,
+    'payment food canonical option': "['food_card','Cartão alimentação']" in admin,
+    'payment meal canonical option': "['meal_card','Cartão refeição']" in admin,
+    'payment select emits canonical value': "'<option value=\"'+value+'\" '" in admin,
     'atomic migration exists': migration.exists(),
 }
 if migration.exists():
