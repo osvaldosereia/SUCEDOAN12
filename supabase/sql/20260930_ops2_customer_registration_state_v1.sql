@@ -83,3 +83,78 @@ $$;
 
 revoke all on function public.ops2_customer_registration_state_v1(uuid) from public,anon,authenticated;
 grant execute on function public.ops2_customer_registration_state_v1(uuid) to service_role;
+
+create or replace function public.ops2_customer_registration_summary_v1(p_days integer default 31)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path to ''
+as $$
+declare
+  v_days integer:=greatest(1,least(365,coalesce(p_days,31)));
+  v_since timestamptz:=now()-make_interval(days=>greatest(1,least(365,coalesce(p_days,31))));
+  v_result jsonb;
+begin
+  with recent_orders as (
+    select o.id,o.customer_id
+    from public.orders o
+    where o.created_at>=v_since
+      and o.source in ('vitrine','storefront_v2')
+  ), distinct_customers as (
+    select distinct ro.customer_id
+    from recent_orders ro
+    where ro.customer_id is not null
+  ), customer_states as (
+    select dc.customer_id,public.ops2_customer_registration_state_v1(dc.customer_id) as state
+    from distinct_customers dc
+  ), order_states as (
+    select ro.id,ro.customer_id,cs.state
+    from recent_orders ro
+    left join customer_states cs on cs.customer_id=ro.customer_id
+  )
+  select jsonb_build_object(
+    'generated_at',now(),
+    'days',v_days,
+    'recent_site_orders',(select count(*) from recent_orders),
+    'recent_site_orders_incomplete_registration',(
+      select count(*)
+      from order_states os
+      where os.customer_id is null
+         or coalesce((os.state->>'registration_complete')::boolean,false)=false
+    ),
+    'distinct_customers_incomplete_registration',(
+      select count(*)
+      from customer_states cs
+      where coalesce((cs.state->>'registration_complete')::boolean,false)=false
+    ),
+    'distinct_customers_registration_complete',(
+      select count(*)
+      from customer_states cs
+      where coalesce((cs.state->>'registration_complete')::boolean,false)=true
+    ),
+    'distinct_customers_bling_ready_unlinked',(
+      select count(*)
+      from customer_states cs
+      where coalesce((cs.state->>'bling_ready')::boolean,false)=true
+        and coalesce((cs.state->>'already_linked_bling')::boolean,false)=false
+    ),
+    'flow_events_total',(
+      select count(*)
+      from public.papoai_customer_flow_events_v1 f
+      where f.created_at>=v_since
+    ),
+    'flow_events_review',(
+      select count(*)
+      from public.papoai_customer_flow_events_v1 f
+      where f.created_at>=v_since
+        and f.status<>'processed'
+    )
+  ) into v_result;
+
+  return v_result;
+end;
+$$;
+
+revoke all on function public.ops2_customer_registration_summary_v1(integer) from public,anon,authenticated;
+grant execute on function public.ops2_customer_registration_summary_v1(integer) to service_role;
