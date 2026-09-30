@@ -1,0 +1,89 @@
+name: One-shot balance scan beep
+on:
+  push:
+    branches: [fix/balance-scan-beep]
+    paths:
+      - '.github/workflows/one-shot-balance-scan-beep.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/test-balance-scan-beep.mjs
+            .github/workflows/one-shot-balance-scan-beep.yml
+          sparse-checkout-cone-mode: false
+      - name: RED - prove beep is missing
+        run: |
+          if node scripts/test-balance-scan-beep.mjs; then
+            echo 'Test unexpectedly passed before beep implementation'
+            exit 1
+          else
+            echo 'RED confirmed: camera scan has no loud audio beep yet'
+          fi
+      - name: Add loud scan beep
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('vitrine/admin/index.html')
+          s=p.read_text(encoding='utf-8')
+          marker="  async function startBalanceCamera(){"
+          if s.count(marker)!=1: raise SystemExit(f'startBalanceCamera marker count={s.count(marker)}')
+          helper=r'''  let balanceScanAudioCtx=null;
+  function balanceScanAudioContext(){
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    if(!Ctx)return null;
+    if(!balanceScanAudioCtx)balanceScanAudioCtx=new Ctx();
+    return balanceScanAudioCtx;
+  }
+  async function unlockBalanceScanAudio(){
+    try{const ctx=balanceScanAudioContext();if(ctx?.state==='suspended')await ctx.resume()}catch{}
+  }
+  function playBalanceScanBeep(){
+    try{
+      const ctx=balanceScanAudioContext();if(!ctx)return;
+      const fire=()=>{
+        const now=ctx.currentTime,osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.type='square';osc.frequency.setValueAtTime(1450,now);
+        gain.gain.setValueAtTime(1,now);gain.gain.setValueAtTime(1,now+.12);gain.gain.exponentialRampToValueAtTime(.0001,now+.18);
+        osc.connect(gain);gain.connect(ctx.destination);osc.start(now);osc.stop(now+.19);
+      };
+      if(ctx.state==='suspended')ctx.resume().then(fire).catch(()=>{});else fire();
+    }catch{}
+  }
+'''
+          s=s.replace(marker,helper+marker,1)
+          old="  async function startBalanceCamera(){\n    const video=$('#balanceCameraVideo'),status=$('#balanceCameraStatus');"
+          new="  async function startBalanceCamera(){\n    unlockBalanceScanAudio();\n    const video=$('#balanceCameraVideo'),status=$('#balanceCameraStatus');"
+          if s.count(old)!=1: raise SystemExit(f'start body count={s.count(old)}')
+          s=s.replace(old,new,1)
+          old="if(raw.length>=4){const now=Date.now();if(raw!==state.balanceLastCameraEan||now-state.balanceLastCameraAt>2500){state.balanceLastCameraEan=raw;state.balanceLastCameraAt=now;if(navigator.vibrate)navigator.vibrate(45);await handleBalanceScan(raw)}}"
+          new="if(raw.length>=4){const now=Date.now();if(raw!==state.balanceLastCameraEan||now-state.balanceLastCameraAt>2500){state.balanceLastCameraEan=raw;state.balanceLastCameraAt=now;if(navigator.vibrate)navigator.vibrate(70);playBalanceScanBeep();await handleBalanceScan(raw)}}"
+          if s.count(old)!=1: raise SystemExit(f'scan line count={s.count(old)}')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          print('scan beep patch applied')
+          PY
+      - name: GREEN - verify beep and JS syntax
+        run: |
+          node scripts/test-balance-scan-beep.mjs
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log(`Admin JS syntax OK (${scripts.length} scripts)`);
+          NODE
+          git diff --check
+      - name: Commit beep
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'feat(balance): add loud beep on camera scan'
+          git push
