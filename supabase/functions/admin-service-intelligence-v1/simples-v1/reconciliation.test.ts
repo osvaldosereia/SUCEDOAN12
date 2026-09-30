@@ -19,6 +19,14 @@ test('matched invoice and order produce revenue candidate without reconciliation
   assert.equal(r.issues.length,0);
 });
 
+test('NF-e total above product lines preserves residual revenue for manual tax review',()=>{
+  const r=reconcilePeriod({competenceMonth:'2026-09',invoices:[invoice({total:110,items:[{productId:'p1',amount:100}]})],orders:[order({total:110})],profiles});
+  assert.equal(r.candidates.reduce((sum,x)=>sum+x.recognizedAmount,0),110);
+  const residual=r.candidates.find(x=>x.productId===null&&x.grossAmount===10);
+  assert.ok(residual,'residual fiscal revenue must not disappear');
+  assert.ok(r.issues.some(x=>x.issueType==='other'&&x.title==='Valor fiscal fora das linhas de produto'));
+});
+
 test('invoice without order remains revenue and blocks readiness',()=>{
   const r=reconcilePeriod({competenceMonth:'2026-09',invoices:[invoice({orderId:null})],orders:[],profiles});
   assert.equal(r.candidates.length,1);
