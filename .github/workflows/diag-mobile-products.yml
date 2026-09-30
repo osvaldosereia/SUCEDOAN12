@@ -16,12 +16,13 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           s=Path('vitrine/admin/index.html').read_text()
-          for term in ['renderProducts','product_filters','product_list','product_patch','product_update','data-edit-product','product-active-toggle','productOffset','productNext']:
+          for term in ['renderProducts','loadProducts','productRow','toggleProductActive','saveProduct','product_update','product_active','productOffset','productNext']:
               print('\n###',term)
               pos=0
               while True:
                   i=s.find(term,pos)
                   if i<0: break
-                  print(s[max(0,i-1200):i+2400])
+                  print(s[max(0,i-1800):i+3200])
                   pos=i+len(term)
           PY
+# rerun
