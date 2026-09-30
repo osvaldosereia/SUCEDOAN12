@@ -2507,3 +2507,25 @@ Validação no runtime após implantação:
 - 22 prontos para aprovação segura;
 - 2 exigindo revisão;
 - 2 já aprovados.
+
+
+## Produtos em cestas/kits + regra de lote/validade — 2026-09-29
+### Filtro de produtos
+- Vitrine/Admin > Produtos recebeu filtro **Somente produtos de cestas/kits**.
+- O backend considera componentes dos templates ativos de cesta, componentes dos kits ativos e alternativas ativas.
+- Estado validado na implantação: **30 produtos únicos** participam de cesta/kit ativo.
+- `admin-products-live-v1` publicada como v113.
+
+### Regra profissional de entrada por validade
+Decisão arquitetural: cadastro comercial e recebimento físico são etapas distintas.
+- atualizar produto existente nunca deve sobrescrever a validade do estoque anterior;
+- cada recebimento/validade deve ser registrado em `product_inventory_lots` como lote separado;
+- FEFO usa a validade mais próxima primeiro;
+- XML pode fornecer rastreabilidade em `purchase_xml_item_lot_evidence`; quando não fornecer, a validade deve ser coletada no recebimento;
+- uma mesma linha de NF-e pode ser dividida em vários lotes/validades;
+- Bling permanece autoridade do saldo físico; o ledger de lotes no Admin deve reconciliar com o saldo físico antes de `lot_tracking_complete=true`.
+
+Achado atual:
+- estrutura FEFO e lotes já existe;
+- porém ainda existem **0 lotes materializados** e **0 produtos com lot_tracking_complete=true** no banco;
+- portanto o FEFO ainda não deve ser tratado como operacional até o fluxo de recebimento materializar/reconciliar lotes e a separação consumir/sugerir lotes de forma consistente.
