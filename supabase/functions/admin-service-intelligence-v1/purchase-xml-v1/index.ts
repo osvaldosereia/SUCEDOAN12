@@ -1430,6 +1430,8 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
       if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
       if(clean(body?.confirmation,80)!=="VERIFICAR_ENTRADA_BLING")return js(req,{ok:false,error:"confirmation_required"},409);
       const docId=clean(body?.document_id||body?.id,80);
+      const lotPlan=await receiptLotPlanStatus(docId);
+      if(!lotPlan.complete)return js(req,{ok:false,error:"receipt_lots_required",lot_plan:lotPlan},409);
       const q=await sb.rpc("verify_purchase_stock_receipt_plan_v1",{p_document_id:docId,p_user_id:a.user_id});
       if(q.error)return js(req,{ok:false,error:q.error.message},409);
       let lot_materialization:any=null;
@@ -1441,14 +1443,17 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="confirm_receipt"){
       if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
       if(clean(body?.confirmation,80)!=="CONFIRMAR_ENTRADA")return js(req,{ok:false,error:"confirmation_required"},409);
-      const pre=await sb.rpc("get_purchase_xml_receipt_preflight_v1",{p_document_id:clean(body?.document_id,80)});
+      const docId=clean(body?.document_id,80);
+      const lotPlan=await receiptLotPlanStatus(docId);
+      if(!lotPlan.complete)return js(req,{ok:false,error:"receipt_lots_required",lot_plan:lotPlan},409);
+      const pre=await sb.rpc("get_purchase_xml_receipt_preflight_v1",{p_document_id:docId});
       if(pre.error)return js(req,{ok:false,error:pre.error.message},409);
       if(pre.data?.stock_authority==="bling"){
-        const q=await sb.rpc("prepare_purchase_stock_receipt_plan_v1",{p_document_id:clean(body?.document_id,80)});
+        const q=await sb.rpc("prepare_purchase_stock_receipt_plan_v1",{p_document_id:docId});
         if(q.error)return js(req,{ok:false,error:q.error.message},409);
         return js(req,{ok:q.data?.ok!==false,result:q.data,message:"Entrada preparada. Atualize/receba o estoque no Bling e depois use a verificação do recebimento."},q.data?.ok===false?409:200);
       }
-      const q=await sb.rpc("apply_purchase_stock_receipt_v1",{p_document_id:clean(body?.document_id,80),p_user_id:a.user_id});
+      const q=await sb.rpc("apply_purchase_stock_receipt_v1",{p_document_id:docId,p_user_id:a.user_id});
       if(q.error)return js(req,{ok:false,error:q.error.message},409);
       return js(req,{ok:true,result:q.data});
     }
