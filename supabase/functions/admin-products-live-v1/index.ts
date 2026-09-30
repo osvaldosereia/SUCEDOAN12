@@ -165,7 +165,7 @@ async function products(u:URL){
   const qv=tx(u.searchParams.get("q"),100).replace(/[,%()]/g," "),cat=tx(u.searchParams.get("category"),120),sub=tx(u.searchParams.get("subcategory"),120),act=tx(u.searchParams.get("active"),12),basketKit=tx(u.searchParams.get("basket_kit"),12)==="true",lotStatus=tx(u.searchParams.get("lot_status"),20);
   let rows:any[]=[];
   if(cat||basketKit||lotStatus){
-    const memberIds=basketKit?await basketKitProductIds():null;
+    const memberIds=(basketKit||lotStatus==="pending")?await basketKitProductIds():null;
     const all:any[]=[];
     for(let pos=0;pos<10000;pos+=1000){
       let q=db.from("products").select("*").order("id").range(pos,pos+999);
@@ -180,12 +180,23 @@ async function products(u:URL){
     const wanted=cat?inventorySheetCanonicalCategory(cat):"";
     const filtered=all.filter((x:any)=>{
       if(wanted&&inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category)!==wanted)return false;
-      if(memberIds&&!memberIds.has(String(x.id)))return false;
+      if(basketKit&&memberIds&&!memberIds.has(String(x.id)))return false;
       const complete=meta(x.metadata).lot_tracking_complete===true||meta(x.metadata).lot_tracking_complete==="true";
       if(lotStatus==="complete"&&!complete)return false;
       if(lotStatus==="pending"&&complete)return false;
       return true;
-    }).sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+    }).sort((a:any,b:any)=>{
+      if(lotStatus==="pending"){
+        const ax=Number(a.stock||0)>0?0:1,bx=Number(b.stock||0)>0?0:1;
+        if(ax!==bx)return ax-bx;
+        const aa=memberIds?.has(String(a.id))?0:1,bb=memberIds?.has(String(b.id))?0:1;
+        if(aa!==bb)return aa-bb;
+        const ad=dt(a.validity_date)||"9999-12-31",bd=dt(b.validity_date)||"9999-12-31";
+        if(ad!==bd)return ad.localeCompare(bd);
+        if((a.is_active!==false)!==(b.is_active!==false))return a.is_active!==false?-1:1;
+      }
+      return String(a.name||"").localeCompare(String(b.name||""),"pt-BR");
+    });
     rows=filtered.slice(off,off+lim);
     const sm=await stockBreakdownMap(rows.map((x:any)=>x.id));
     return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s})}),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
