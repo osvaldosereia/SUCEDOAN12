@@ -965,7 +965,7 @@ async function vitrineListCustomers(sb:any,body:any){
   const rows=await sb.from("customers")
     .select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,birthday_day,birthday_month,order_count,lifetime_value,created_at,updated_at")
     .order("updated_at",{ascending:false})
-    .limit(650);
+    .limit(q?650:limit);
   if(rows.error)throw rows.error;
   let items=rows.data||[];
   if(q){
