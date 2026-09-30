@@ -1396,20 +1396,20 @@
   function requireOperator(){return 'Operação'}
   if($('#operatorBadge'))$('#operatorBadge').onclick=changeOperator;
   paintOperatorBadge();
-  async function api(action,params={},options={}){
+  async function api(action,params={},options={},retryAuth=true){
     const token=await adminStepUp();
     const u=new URL(API);u.searchParams.set('action',action);
     Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
     const response=await fetch(u,{...options,headers:{...(options.headers||{}),'Authorization':'Bearer '+token},cache:'no-store'});
-    if(response.status===401){
-      clearFinanceSession();
-      throw new Error('Sessão administrativa expirada. Tente novamente.');
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await api(action,params,options,false);
     }
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
     return data;
   }
-  async function productImageApi(event,payload=null){
+  async function productImageApi(event,payload=null,retryAuth=true){
     const token=await adminStepUp();
     let response;
     if(payload instanceof FormData){
@@ -1417,7 +1417,10 @@
     }else{
       response=await fetch(PRODUCT_IMAGE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({event,...(payload||{})}),cache:'no-store'});
     }
-    if(response.status===401){clearFinanceSession();throw new Error('Sessão administrativa expirada. Tente novamente.')}
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await productImageApi(event,payload,false);
+    }
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(!response.ok||data.ok===false)throw new Error(data.error||'product_image_service_error');
     return data;
@@ -1439,7 +1442,7 @@
   }
   async function standardizeProductImage(productId){return await productImageApi('standardize',{product_id:productId})}
 
-  async function customerApi(action,payload={}){
+  async function customerApi(action,payload={},retryAuth=true){
     const token=await adminStepUp();
     const response=await fetch(CUSTOMER_API,{
       method:'POST',
@@ -1447,9 +1450,9 @@
       body:JSON.stringify({action,...payload}),
       cache:'no-store'
     });
-    if(response.status===401){
-      clearFinanceSession();
-      throw new Error('Sessão administrativa expirada. Tente novamente.');
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await customerApi(action,payload,false);
     }
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
@@ -2659,9 +2662,12 @@
     }
     return token;
   }
-  function clearFinanceSession(){
+  function clearFinanceSession(expectedToken=''){
+    const current=financeSessionToken();
+    if(expectedToken&&current&&current!==expectedToken)return false;
     sessionStorage.removeItem('da_finance_access_token_v1');
     state.financeCatalogs=null;
+    return true;
   }
   async function adminStepUp(){return await financeStepUp()}
   async function financeStepUp(){
@@ -2706,7 +2712,7 @@
     });
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(response.status===401&&retryAuth){
-      clearFinanceSession();
+      clearFinanceSession(token);
       return await financeApi(operation,payload,false);
     }
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
@@ -3052,7 +3058,7 @@
     });
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(response.status===401&&retryAuth){
-      clearFinanceSession();
+      clearFinanceSession(token);
       return await financeOverviewApi(await financeStepUp(),false);
     }
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
