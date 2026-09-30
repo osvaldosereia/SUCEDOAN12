@@ -126,7 +126,7 @@
     .wa-consult{height:42px;border:0;border-radius:9px;background:var(--ink);color:#fff;padding:0 11px;font-size:11px;font-weight:900;white-space:nowrap}
     .wa-fallback{display:flex;align-items:center;justify-content:center;text-decoration:none}
     .rule-notice{border:1px solid #dbe5de;border-radius:12px;background:#f7faf8;padding:10px 11px;margin-top:10px;font-size:12px;line-height:1.35;color:#405047}.rule-notice strong{display:block;color:var(--ink);margin-bottom:2px}.rule-notice.warn{border-color:#efd9a8;background:#fffaf0;color:#72530b}.stock-note{display:block;color:var(--muted);font-size:10px;margin-top:2px}.quick-add:disabled,.checkout-qty button:disabled,.primary:disabled{opacity:.45;cursor:not-allowed}
-    .wa-result{min-height:16px;margin-top:7px;font-size:11px;line-height:1.3;color:var(--muted)}.wa-result.found{color:#135938;font-weight:750}.wa-result.new{color:#7a570c;font-weight:750}
+    .wa-result{min-height:16px;margin-top:7px;font-size:11px;line-height:1.3;color:var(--muted)}.checkout-name-field{display:block;margin-top:8px}.wa-result.found{color:#135938;font-weight:750}.wa-result.new{color:#7a570c;font-weight:750}
     .payments{display:grid;grid-template-columns:1fr 1fr;gap:7px}.pay{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:11px;padding:9px;font-size:12px;min-height:44px}.pay input{width:17px;height:17px;accent-color:var(--brand);flex:0 0 auto}
     .note{font-size:11px;color:var(--muted);margin:9px 0 0}
     .product-open{border:0;background:transparent;padding:0;display:block;width:100%;text-align:inherit;color:inherit}
@@ -253,6 +253,7 @@
       whatsappPhone: '',
       checkoutDdd: '65',
       checkoutPhone: '9',
+      checkoutName: '',
       customerLookup: {status:'idle',phoneKey:'',customer:null},
       categorySubcategories: {},
       subcategoriesExpanded: {}
@@ -296,9 +297,12 @@
     function normalizeWhatsappPhone(value){
       let digits=String(value??'').replace(/\D+/g,'');
       if(digits.startsWith('00'))digits=digits.slice(2);
-      if(digits.startsWith('55')&&(digits.length===12||digits.length===13))return '+'+digits;
-      if(digits.length===10||digits.length===11)return '+55'+digits;
-      return '';
+      let local='';
+      if(digits.startsWith('55')&&(digits.length===12||digits.length===13))local=digits.slice(2);
+      else if(digits.length===10||digits.length===11)local=digits;
+      else return '';
+      if(local.length===10&&/[6-9]/.test(local.charAt(2)))local=local.slice(0,2)+'9'+local.slice(2);
+      return '+55'+local;
     }
     function captureWhatsappPhone(){
       const params=new URLSearchParams(location.search);
@@ -575,7 +579,7 @@
         const location=[a.district,a.city].filter(Boolean).join(' · ');
         return '<span>✓ Cadastro encontrado: '+esc(c.display_name||'Cliente')+(location?' · '+esc(location):'')+'</span>';
       }
-      if(lookup.status==='new')return '<span>Cliente novo — o pedido será identificado assim no WhatsApp.</span>';
+      if(lookup.status==='new')return '<span>Cliente novo — confirme seu nome abaixo. O cadastro será criado junto com o pedido.</span>';
       if(lookup.status==='error')return '<span>Não foi possível consultar. Tente novamente.</span>';
       return '<span>Digite o WhatsApp e consulte o cadastro.</span>';
     }
@@ -596,6 +600,12 @@
         state.customerLookup=data.found
           ? {status:'found',phoneKey:info.key,customer:data.customer}
           : {status:'new',phoneKey:info.key,customer:null};
+        if(data.found&&data.customer?.display_name)state.checkoutName=String(data.customer.display_name).replace(/\s+/g,' ').trim().slice(0,120);
+        const nameInput=$('#checkoutName');
+        if(nameInput){
+          nameInput.value=state.checkoutName;
+          nameInput.readOnly=data.found===true;
+        }
         try{sessionStorage.setItem(WHATSAPP_PHONE_KEY,info.full)}catch{}
         updateCustomerLookupResult();
         return state.customerLookup;
@@ -1220,6 +1230,7 @@
           '<label class="wa-field"><span>WhatsApp</span><input id="checkoutPhone" inputmode="numeric" maxlength="9" value="'+esc(state.checkoutPhone)+'"></label>'+
           '<button class="wa-consult" type="button" id="lookupCustomer">Consultar cadastro</button>'+
         '</div><div class="wa-result" id="customerLookupResult">'+customerLookupResultHtml()+'</div></div>'+
+        '<label class="wa-field checkout-name-field"><span>Nome</span><input id="checkoutName" maxlength="120" autocomplete="name" value="'+esc(state.checkoutName)+'" '+(state.customerLookup.status==='found'?'readonly':'')+' placeholder="Seu nome"></label>'+
         '<h3 class="checkout-title">Como você vai pagar?</h3>'+
         '<div class="payments">'+
           pay('PIX','PIX')+pay('Dinheiro','Dinheiro')+pay('Cartão de crédito','Cartão de crédito')+pay('Cartão alimentação/refeição','Cartão alimentação/refeição')+
@@ -1231,13 +1242,14 @@
       sheetBody.querySelectorAll('[data-checkout-inc]').forEach(btn=>btn.onclick=()=>checkoutItemQty(Number(btn.dataset.checkoutInc),1));
       sheetBody.querySelectorAll('[data-checkout-component-dec]').forEach(btn=>btn.onclick=()=>checkoutComponentQty(btn.dataset.checkoutComponentDec,-1));
       sheetBody.querySelectorAll('[data-checkout-component-inc]').forEach(btn=>btn.onclick=()=>checkoutComponentQty(btn.dataset.checkoutComponentInc,1));
-      const dddInput=$('#checkoutDdd'),phoneInput=$('#checkoutPhone');
+      const dddInput=$('#checkoutDdd'),phoneInput=$('#checkoutPhone'),nameInput=$('#checkoutName');
       if(dddInput)dddInput.oninput=()=>{
         state.checkoutDdd=phoneDigits(dddInput.value,2);dddInput.value=state.checkoutDdd;resetCustomerLookup();
       };
       if(phoneInput)phoneInput.oninput=()=>{
         state.checkoutPhone=phoneDigits(phoneInput.value,9);phoneInput.value=state.checkoutPhone;resetCustomerLookup();
       };
+      if(nameInput)nameInput.oninput=()=>{state.checkoutName=String(nameInput.value||'').replace(/\s+/g,' ').slice(0,120)};
       if($('#lookupCustomer'))$('#lookupCustomer').onclick=lookupCheckoutCustomer;
       updateCustomerLookupResult();
       if(state.whatsappPhone&&state.customerLookup.status==='idle'){
@@ -1334,7 +1346,7 @@
       const a=c?.address||{};
       return {
         status:c?'CADASTRADO':'NOVO',
-        name:c?.display_name||'NAO CADASTRADO',
+        name:c?.display_name||state.checkoutName.trim()||'NAO CADASTRADO',
         address:[a.street,a.number,a.complement].filter(Boolean).join(', ')||'NAO INFORMADO',
         district:a.district||'NAO INFORMADO',
         city:a.city||'NAO INFORMADA'
@@ -1390,9 +1402,18 @@
 
       const lookup=await lookupCheckoutCustomer();
       if(!lookup){
-        // Customer enrichment is optional. A temporary lookup failure must never block checkout.
+        // A lookup outage must not orphan the order; the backend still creates the customer identity.
         state.customerLookup={status:'new',phoneKey:info.key,customer:null};
         updateCustomerLookupResult();
+      }
+      if(state.customerLookup.status==='found'&&state.customerLookup.customer?.display_name){
+        state.checkoutName=String(state.customerLookup.customer.display_name).replace(/\s+/g,' ').trim().slice(0,120);
+      }
+      if(state.customerLookup.status!=='found'&&state.checkoutName.trim().length<2){
+        cancelWhatsAppHandoff(handoffWindow);
+        toast('Informe seu nome para identificar o pedido');
+        const nameInput=$('#checkoutName');if(nameInput){nameInput.focus();nameInput.scrollIntoView({block:'center'})}
+        return;
       }
 
       state.checkoutPayment=selected.value;
@@ -1408,7 +1429,7 @@
             whatsapp_phone:state.whatsappPhone||null,
             customer_snapshot:state.customerLookup.status==='found'
               ? {found:true,id:state.customerLookup.customer.id,display_name:state.customerLookup.customer.display_name,address:state.customerLookup.customer.address||null}
-              : {found:false},
+              : {found:false,display_name:state.checkoutName.trim()},
             items:state.cart.map(item=>({
               type:item.type,
               id:item.id,
