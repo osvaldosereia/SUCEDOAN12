@@ -1675,6 +1675,12 @@
   if(o?.delivery_return?.status==='returned_review')reasons.push('Retorno aguardando revisão');
   return reasons;
 }
+  function isBacklogOrder(o){
+    if(!o||!['created','confirmed','processing','ready','out_for_delivery'].includes(o.status))return false;
+    const orderDay=cuiabaDayKey(o.created_at);
+    const today=cuiabaDayKey(new Date());
+    return Boolean(orderDay&&today&&orderDay<today);
+  }
   function orderIssueMatch(o,key='all'){
     const reasons=orderProblemReasons(o);
     if(key==='all')return reasons.length>0;
