@@ -1,0 +1,49 @@
+name: One-shot balance mobile professional
+on:
+  push:
+    branches: [fix/balance-mobile-professional]
+    paths:
+      - '.github/workflows/one-shot-balance-mobile-professional.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/test-balance-mobile-professional.mjs
+            scripts/patch-balance-mobile-professional.py
+            .github/workflows/one-shot-balance-mobile-professional.yml
+          sparse-checkout-cone-mode: false
+      - name: RED - prove current mobile UX is not compact
+        run: |
+          if node scripts/test-balance-mobile-professional.mjs; then
+            echo 'Test unexpectedly passed before redesign'
+            exit 1
+          else
+            echo 'RED confirmed: current balance is not yet professional mobile layout'
+          fi
+      - name: Apply professional mobile patch
+        run: python3 scripts/patch-balance-mobile-professional.py
+      - name: GREEN - verify mobile contract and JS syntax
+        run: |
+          node scripts/test-balance-mobile-professional.mjs
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log(`Admin JS syntax OK (${scripts.length} scripts)`);
+          NODE
+          git diff --check
+      - name: Commit redesign
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'fix(balance): redesign scanner for fast mobile use'
+          git push
