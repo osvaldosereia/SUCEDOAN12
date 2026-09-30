@@ -19,7 +19,6 @@ css='''    /* Balanço mobile operacional: compacto, uma mão, leitura contínua
 if marker not in s: raise SystemExit('CSS insertion marker missing')
 if 'Balanço mobile operacional: compacto' not in s:s=s.replace(marker,css+marker,1)
 
-# Replace only the cameraPanel declaration, leaving surrounding render code intact.
 pat=r"    const cameraPanel=scanner\?.*?\n    const work="
 new="""    const cameraPanel=scanner?'<section class=\\"panel balance-camera-shell\\"><div class=\\"balance-camera-view\\"><video id=\\"balanceCameraVideo\\" playsinline muted autoplay></video><div class=\\"balance-camera-frame\\"></div></div><div class=\\"balance-camera-status\\" id=\\"balanceCameraStatus\\">Abrindo câmera…</div><details class=\\"balance-manual-search\\"><summary>Buscar manualmente por nome ou EAN</summary><label style=\\"display:block;margin-top:6px\\"><input id=\\"balanceManualSearch\\" type=\\"search\\" inputmode=\\"search\\" autocomplete=\\"off\\" placeholder=\\"Nome ou EAN\\"></label><div id=\\"balanceManualResults\\" class=\\"balance-search-results\\"></div></details></section>':'';
     const work="""
@@ -28,14 +27,14 @@ if n!=1: raise SystemExit(f'cameraPanel patch count={n}')
 
 s=s.replace('<h1>Balanço rápido</h1>','<h1>Balanço</h1>',1)
 
-# Remove the two heavy secondary panels from the count screen.
+# Secondary panels may already have been removed by the previous mobile-only cleanup.
 start="+(!incident?'<section class=\\\"panel\\\" style=\\\"margin-top:14px\\\"><div class=\\\"history-title dispatch-head\\\"><div><strong>Recontagem para Bling</strong>"
 idx=s.find(start)
-if idx<0: raise SystemExit('heavy panel start missing')
-end="':'<div class=\\\"rule-notice\\\" style=\\\"margin-top:14px\\\"><strong>Ocorrências</strong><div>Avaria, vencido e perda seguem para reconciliação operacional/fiscal.</div></div>');"
-j=s.find(end,idx)
-if j<0: raise SystemExit('heavy panel end missing')
-s=s[:idx] + "+(incident?'<div class=\\\"rule-notice\\\" style=\\\"margin-top:10px\\\"><strong>Ocorrências</strong><div>Avaria, vencido e perda seguem para reconciliação operacional/fiscal.</div></div>':'');" + s[j+len(end):]
+if idx>=0:
+    end="':'<div class=\\\"rule-notice\\\" style=\\\"margin-top:14px\\\"><strong>Ocorrências</strong><div>Avaria, vencido e perda seguem para reconciliação operacional/fiscal.</div></div>');"
+    j=s.find(end,idx)
+    if j>=0:
+        s=s[:idx] + "+(incident?'<div class=\\\"rule-notice\\\" style=\\\"margin-top:10px\\\"><strong>Ocorrências</strong><div>Avaria, vencido e perda seguem para reconciliação operacional/fiscal.</div></div>':'');" + s[j+len(end):]
 
 old="    if(scanner){bindBalanceManualSearch();$('#balanceCameraStart').onclick=startBalanceCamera;$('#balanceCameraStop').onclick=stopBalanceCamera;startBalanceCamera()}"
 if old not in s: raise SystemExit('camera bind marker missing')
