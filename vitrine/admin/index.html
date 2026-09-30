@@ -1403,7 +1403,7 @@
     const response=await fetch(u,{...options,headers:{...(options.headers||{}),'Authorization':'Bearer '+token},cache:'no-store'});
     if(response.status===401){
       clearFinanceSession();
-      throw new Error('Sessão administrativa expirada. Confirme o PIN novamente.');
+      throw new Error('Sessão administrativa expirada. Tente novamente.');
     }
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
@@ -1417,7 +1417,7 @@
     }else{
       response=await fetch(PRODUCT_IMAGE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({event,...(payload||{})}),cache:'no-store'});
     }
-    if(response.status===401){clearFinanceSession();throw new Error('Sessão administrativa expirada. Confirme o PIN novamente.')}
+    if(response.status===401){clearFinanceSession();throw new Error('Sessão administrativa expirada. Tente novamente.')}
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(!response.ok||data.ok===false)throw new Error(data.error||'product_image_service_error');
     return data;
@@ -1449,7 +1449,7 @@
     });
     if(response.status===401){
       clearFinanceSession();
-      throw new Error('Sessão administrativa expirada. Confirme o PIN novamente.');
+      throw new Error('Sessão administrativa expirada. Tente novamente.');
     }
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
@@ -2815,7 +2815,7 @@
       validation_failed:'Revise os campos obrigatórios antes de continuar.',
       bling_finance_write_uncertain:'Resultado incerto. Não tente novamente sem revisar o lançamento no Bling.',
       finance_owner_required:'Somente o proprietário pode operar o financeiro.',
-      finance_session_invalid:'A sessão financeira expirou. Informe o PIN novamente.'
+      finance_session_invalid:'A sessão financeira expirou. Tente novamente.'
     };
     return map[code]||code||'Não foi possível concluir a operação.';
   }
