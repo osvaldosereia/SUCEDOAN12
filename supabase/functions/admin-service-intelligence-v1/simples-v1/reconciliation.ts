@@ -16,7 +16,7 @@ export function competenceInCuiaba(iso:string):string{
 const validKey=(v?:string|null)=>!!v&&/^\d{44}$/.test(v);
 const docIdentity=(x:FiscalInvoice)=>validKey(x.accessKey)?`key:${x.accessKey}`:(x.blingInvoiceId?`bling:${x.blingInvoiceId}`:`source:${x.sourceDocumentId}`);
 const unresolved=(v?:string)=>['candidate','unknown','conflict','pending','blocked'].includes(String(v||''));
-const round2=(n:number)=>Math.round((n+Number.EPSILON)*100)/100;
+const round2=(n:number)=>Math.round((Number(n||0)+Number.EPSILON)*100)/100;
 
 export function reconcilePeriod(input:ReconciliationInput):ReconciliationResult{
   const issues:ReconciliationIssue[]=[];
@@ -43,12 +43,19 @@ export function reconcilePeriod(input:ReconciliationInput):ReconciliationResult{
     }
 
     const kind=inv.status==='cancelled'?'cancellation':inv.status==='returned'?'return':'sale';
-    const sourceItems=inv.items?.length?inv.items:[{productId:null,amount:inv.total}];
-    const items=sourceItems.map(item=>({...item,amount:Math.abs(Number(item.amount)||0)}));
-    const itemTotal=round2(items.reduce((sum,item)=>sum+item.amount,0));
-    const residual=round2(Math.abs(Number(inv.total)||0)-itemTotal);
-    for(const item of items){
-      const amount=item.amount;
+    const items=inv.items?.length?inv.items:[{productId:null,amount:inv.total}];
+    const rawAmounts=items.map(item=>Math.abs(Number(item.amount)||0));
+    const rawTotal=round2(rawAmounts.reduce((s,n)=>s+n,0)),documentTotal=round2(Math.abs(Number(inv.total)||0));
+    const allocatedAmounts=rawTotal>0&&Math.abs(documentTotal-rawTotal)>0.01
+      ?rawAmounts.map((amount,index,all)=>index===all.length-1?0:round2(documentTotal*(amount/rawTotal)))
+      :rawAmounts.map(round2);
+    if(rawTotal>0&&Math.abs(documentTotal-rawTotal)>0.01){
+      const allocatedBeforeLast=allocatedAmounts.slice(0,-1).reduce((s,n)=>s+n,0);
+      allocatedAmounts[allocatedAmounts.length-1]=round2(documentTotal-allocatedBeforeLast);
+      issues.push({issueType:'other',severity:'warning',title:'Despesas/descontos rateados entre os itens',explanation:'O total da NF-e difere da soma dos itens; a diferença foi rateada proporcionalmente para preservar a segregacao fiscal.',sourceDocumentId:inv.sourceDocumentId,orderId:order?.id||inv.orderId,amount:round2(documentTotal-rawTotal),evidence:{invoiceTotal:documentTotal,itemTotal:rawTotal,allocation:'proportional_by_item_value'}});
+    }
+    for(let itemIndex=0;itemIndex<items.length;itemIndex++){
+      const item=items[itemIndex],amount=allocatedAmounts[itemIndex]??0;
       candidates.push({sourceDocumentId:inv.sourceDocumentId,accessKey:inv.accessKey,blingInvoiceId:inv.blingInvoiceId,orderId:order?.id||inv.orderId,productId:item.productId,issuedAt:inv.issuedAt,grossAmount:amount,recognizedAmount:kind==='cancellation'?0:kind==='return'?-amount:amount,transactionKind:kind});
       if(item.productId){
         const p=input.profiles[item.productId];
@@ -57,16 +64,6 @@ export function reconcilePeriod(input:ReconciliationInput):ReconciliationResult{
         if(unresolved(p.stStatus)) issues.push({issueType:'st_unresolved',severity:'blocking',title:'ICMS-ST pendente',explanation:`Situacao ST ${p.stStatus} exige revisao.`,sourceDocumentId:inv.sourceDocumentId,orderId:order?.id,productId:item.productId,amount});
         if(unresolved(p.monophaseStatus)) issues.push({issueType:'monophase_unresolved',severity:'blocking',title:'Monofasico pendente',explanation:`Situacao monofasica ${p.monophaseStatus} exige revisao.`,sourceDocumentId:inv.sourceDocumentId,orderId:order?.id,productId:item.productId,amount});
       }
-    }
-    if(Math.abs(residual)>0.01){
-      const recognized=kind==='cancellation'?0:kind==='return'?-residual:residual;
-      candidates.push({sourceDocumentId:inv.sourceDocumentId,accessKey:inv.accessKey,blingInvoiceId:inv.blingInvoiceId,orderId:order?.id||inv.orderId,productId:null,issuedAt:inv.issuedAt,grossAmount:Math.abs(residual),recognizedAmount:recognized,transactionKind:kind});
-      issues.push({
-        issueType:'other',severity:'blocking',title:'Valor fiscal fora das linhas de produto',
-        explanation:'A NF-e possui valor adicional ou desconto fora das linhas de produto. O valor foi preservado na receita e precisa ter o tratamento tributario confirmado.',
-        sourceDocumentId:inv.sourceDocumentId,orderId:order?.id||inv.orderId,amount:residual,
-        evidence:{invoiceTotal:round2(Math.abs(Number(inv.total)||0)),itemTotal,residual}
-      });
     }
   }
   for(const order of input.orders){
