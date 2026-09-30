@@ -21,7 +21,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           s=Path('vitrine/admin/index.html').read_text()
-          assert '.wrap{max-width:100%;overflow-x:hidden}' in s
+          assert '\n      .wrap{max-width:100%;overflow-x:hidden}' in s
           assert '.top .wrap,.admin-nav{overflow:visible!important}' not in s
           print('RED confirmed: nav can be clipped by wrap overflow')
           PY
@@ -32,7 +32,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           s=Path('vitrine/admin/index.html').read_text()
-          assert '.wrap{max-width:100%;overflow-x:hidden}' not in s
+          assert '\n      .wrap{max-width:100%;overflow-x:hidden}' not in s
           assert '#content.wrap{max-width:100%;overflow-x:hidden}' in s
           assert '.top .wrap,.admin-nav{overflow:visible!important}' in s
           assert "document.querySelectorAll('.nav-group-toggle')" in s
