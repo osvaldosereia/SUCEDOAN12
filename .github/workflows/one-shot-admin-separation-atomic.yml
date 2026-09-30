@@ -1,0 +1,25 @@
+name: One-shot admin separation atomic
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-admin-separation-atomic.yml'
+      - 'scripts/test-admin-separation-atomic.py'
+      - 'scripts/patch-admin-separation-atomic.py'
+      - 'supabase/sql/20260930_order_separation_atomic_v1.sql'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/test-admin-separation-atomic.py
+            supabase/sql/20260930_order_separation_atomic_v1.sql
+          sparse-checkout-cone-mode: false
+      - name: Regression test
+        run: python3 scripts/test-admin-separation-atomic.py
