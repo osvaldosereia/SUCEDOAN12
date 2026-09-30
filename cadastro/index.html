@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Cadastro · Dona Antônia</title>
+  <style>
+    :root{--ink:#18221c;--muted:#66716a;--line:#e4e9e5;--soft:#f6f8f6;--brand:#176b43;--danger:#9d2235}
+    *{box-sizing:border-box}body{margin:0;background:#f6f8f6;color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}.wrap{width:min(100% - 28px,680px);margin:0 auto;padding:24px 0 60px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(16,40,25,.06)}.logo{width:150px;max-height:54px;object-fit:contain;margin-bottom:14px}h1{font-size:25px;margin:0 0 5px}p{color:var(--muted);margin:0 0 18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.span2{grid-column:1/-1}label span{display:block;font-size:12px;font-weight:800;margin-bottom:5px}input,select{width:100%;min-height:48px;border:1px solid #d8dfda;border-radius:12px;padding:10px 12px;font:inherit;background:#fff}input:focus,select:focus{outline:0;border-color:#86a996;box-shadow:0 0 0 3px #eaf3ed}.check{display:flex;gap:9px;align-items:flex-start}.check input{width:20px;min-height:20px;margin-top:2px}.check span{font-weight:500}.notice{margin:14px 0;border-radius:12px;padding:11px 12px;background:var(--soft);color:var(--muted);font-size:13px}.notice.ok{background:#edf6f0;color:#135938}.notice.err{background:#fff0f2;color:var(--danger)}button,.button{width:100%;min-height:50px;border:0;border-radius:13px;background:var(--brand);color:#fff;font-weight:900;font:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center;padding:10px 15px}button:disabled{opacity:.6}.secondary{margin-top:9px;background:#fff;color:var(--brand);border:1px solid var(--line)}.hidden{display:none}@media(max-width:560px){.grid{grid-template-columns:1fr}.span2{grid-column:auto}.wrap{padding-top:14px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <img class="logo" src="/img/logoantonia5.png" alt="Dona Antônia">
+      <h1>Cadastro de cliente</h1>
+      <p>Preencha seu cadastro para que a Dona Antônia consiga localizar você pelo WhatsApp e fazer seu pedido pelo sistema.</p>
+      <div id="status" class="notice">Informe seu WhatsApp. Se você veio por um link personalizado, vamos tentar reconhecê-lo automaticamente.</div>
+      <form id="form" class="grid" novalidate>
+        <label class="span2"><span>Nome completo</span><input id="name" autocomplete="name" maxlength="180" required></label>
+        <label><span>CPF/CNPJ</span><input id="document" inputmode="numeric" autocomplete="off" maxlength="18" required></label>
+        <label><span>WhatsApp</span><input id="phone" inputmode="tel" autocomplete="tel" maxlength="20" required></label>
+        <label class="span2"><span>Rua</span><input id="street" autocomplete="street-address" maxlength="180" required></label>
+        <label><span>Número</span><input id="number" maxlength="40" required></label>
+        <label><span>Bairro</span><input id="neighborhood" maxlength="120" required></label>
+        <label><span>Cidade</span><select id="city" required><option value="">Selecione</option><option>Cuiabá</option><option>Várzea Grande</option></select></label>
+        <label><span>CEP (opcional)</span><input id="postal" inputmode="numeric" maxlength="9"></label>
+        <label class="span2"><span>Complemento (opcional)</span><input id="complement" maxlength="180"></label>
+        <label class="span2"><span>Referência (opcional)</span><input id="reference" maxlength="220"></label>
+        <label class="check span2"><input id="marketing" type="checkbox"><span>Quero receber ofertas e novidades da Dona Antônia pelo WhatsApp.</span></label>
+        <div class="span2"><button id="save" type="submit">Concluir cadastro</button></div>
+      </form>
+      <div id="success" class="hidden">
+        <div class="notice ok"><strong>Cadastro concluído.</strong><br>Agora a Dona Antônia já consegue localizar você pelo seu WhatsApp.</div>
+        <a class="button" href="/">Ver cestas no site</a>
+      </div>
+    </section>
+  </main>
+<script>
+(()=>{
+  const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
+  const $=s=>document.querySelector(s),status=$('#status'),form=$('#form'),success=$('#success'),save=$('#save');
+  const digits=v=>String(v||'').replace(/\D+/g,'');
+  const normalizePhone=v=>{let d=digits(v);if(d.startsWith('55')&&d.length>=12)d=d.slice(2);if(d.length===10&&/[6-9]/.test(d[2]))d=d.slice(0,2)+'9'+d.slice(2);return d.length===11?'+55'+d:''};
+  const setStatus=(msg,kind='')=>{status.className='notice '+kind;status.textContent=msg};
+  async function api(action,params={},options={}){const u=new URL(API);u.searchParams.set('action',action);for(const[k,v]of Object.entries(params))if(v!=null&&v!=='')u.searchParams.set(k,String(v));const r=await fetch(u,{cache:'no-store',...options});const data=await r.json().catch(()=>({ok:false,error:'invalid_response'}));if(!r.ok||data.ok===false){const e=new Error(data.error||'request_failed');e.payload=data;throw e}return data}
+  function fillCustomer(c){if(!c)return;$('#name').value=c.display_name||'';$('#phone').value=c.phone||$('#phone').value;const a=c.address||{};$('#street').value=a.street||'';$('#number').value=a.number||'';$('#neighborhood').value=a.neighborhood||a.district||'';$('#city').value=a.city||'';$('#postal').value=a.postal_code||'';$('#complement').value=a.complement||'';$('#reference').value=a.reference||a.raw_text||'';$('#marketing').checked=c.marketing_opt_in===true;if(c.document_present)setStatus('Cadastro encontrado. Confira seus dados. Para alterar, informe seu CPF/CNPJ para confirmação.','ok')}
+  async function lookup(phone){const ph=normalizePhone(phone);if(!ph)return;try{const d=await api('customer_lookup',{phone:ph});if(d.found)fillCustomer(d.customer);else setStatus('WhatsApp ainda não cadastrado. Preencha os dados abaixo.')}catch{setStatus('Não consegui consultar agora. Você ainda pode preencher o cadastro e tentar salvar.','err')}}
+  async function resolveIdentity(){const q=new URLSearchParams(location.search);try{let d=null;if(q.get('token'))d=await api('resolve_identity_token',{token:q.get('token')});else if(q.get('code'))d=await api('resolve_identity_code',{code:q.get('code')});if(d?.phone_e164){$('#phone').value=d.phone_e164;$('#phone').readOnly=true;await lookup(d.phone_e164);return true}}catch{}return false}
+  $('#phone').addEventListener('blur',()=>lookup($('#phone').value));
+  form.addEventListener('submit',async e=>{e.preventDefault();const ph=normalizePhone($('#phone').value),payload={phone:ph,name:$('#name').value.trim(),document:$('#document').value,street:$('#street').value.trim(),number:$('#number').value.trim(),neighborhood:$('#neighborhood').value.trim(),city:$('#city').value,postal_code:$('#postal').value,complement:$('#complement').value.trim(),reference:$('#reference').value.trim(),marketing_opt_in:$('#marketing').checked};if(!ph){setStatus('Informe um WhatsApp válido com DDD.','err');return}for(const k of ['name','document','street','number','neighborhood','city'])if(!String(payload[k]||'').trim()){setStatus('Preencha todos os campos obrigatórios.','err');return}save.disabled=true;save.textContent='Salvando…';try{await api('customer_register',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});form.classList.add('hidden');status.classList.add('hidden');success.classList.remove('hidden')}catch(err){const map={invalid_document:'CPF/CNPJ inválido.',unsupported_city:'Atendemos somente Cuiabá e Várzea Grande.',document_already_in_use:'Este CPF/CNPJ já está vinculado a outro cadastro.',identity_mismatch:'Os dados não conferem com o cadastro existente.'};setStatus(map[err.message]||'Não consegui concluir o cadastro. Confira os dados e tente novamente.','err');save.disabled=false;save.textContent='Concluir cadastro'}});
+  resolveIdentity().then(ok=>{if(!ok){const q=new URLSearchParams(location.search),p=q.get('phone');if(p){$('#phone').value=p;lookup(p)}}});
+})();
+</script>
+</body>
+</html>
