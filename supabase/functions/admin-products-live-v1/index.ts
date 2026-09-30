@@ -2075,16 +2075,26 @@ async function basketKitAdminDetail(rawId:any){
   const [iq,lq,pq]=await Promise.all([
     db.from("basket_kit_template_items").select("*,product:products(id,name,sku,gtin,image_url,price,packaging,unit,brand,category,sales_category,storefront_category,subcategory,customer_subcategory,subsubcategory,customer_subsubcategory,is_active)").eq("kit_template_id",kid).order("sort_order").order("created_at"),
     db.from("basket_stock_lots").select("id,basket_id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,composition_hash,built_at,built_by,notes,source,duplicated_from_lot_id,metadata,created_at").eq("kit_template_id",kid).order("built_at",{ascending:false}).limit(40),
-    db.from("products").select("id,name,sku,gtin,image_url,price,packaging,unit,brand,category,sales_category,storefront_category,subcategory,customer_subcategory,subsubcategory,customer_subsubcategory,is_active").eq("is_active",true).limit(5000)
+    db.from("products").select("id,name,sku,gtin,image_url,price,packaging,unit,brand,category,sales_category,storefront_category,subcategory,customer_subcategory,subsubcategory,customer_subsubcategory,is_active").eq("is_active",true).range(0,999)
   ]);
   if(iq.error)throw iq.error;if(lq.error)throw lq.error;if(pq.error)throw pq.error;
-  const products=pq.data||[],lots=lq.data||[],templateItems=iq.data||[];
+  let products=pq.data||[];
+  if(products.length===1000){
+    const pq2=await db.from("products").select("id,name,sku,gtin,image_url,price,packaging,unit,brand,category,sales_category,storefront_category,subcategory,customer_subcategory,subsubcategory,customer_subsubcategory,is_active").eq("is_active",true).range(1000,1999);
+    if(pq2.error)throw pq2.error;
+    products=products.concat(pq2.data||[]);
+  }
+  const lots=lq.data||[],templateItems=iq.data||[];
   const lotIds=lots.map((x:any)=>x.id);
   const liq=lotIds.length?await db.from("basket_stock_lot_items")
     .select("id,lot_id,kit_template_item_id,source_template_item_id,product_id,quantity_per_basket,position_order,substitution_reason,metadata,product:products(id,name,sku,gtin,image_url,price,packaging,unit,brand)")
     .in("lot_id",lotIds).order("position_order"):{data:[],error:null} as any;
   if(liq.error)throw liq.error;
-  const loose=await basketLooseStockMap([...products.map((x:any)=>x.id),...(liq.data||[]).map((x:any)=>x.product_id)]);
+  const loose=await basketLooseStockMap([
+    ...products.map((x:any)=>x.id),
+    ...templateItems.map((x:any)=>x.product_id),
+    ...(liq.data||[]).map((x:any)=>x.product_id)
+  ]);
   const items=[];
   for(const i of templateItems){
     const base:any=Array.isArray(i.product)?i.product[0]:i.product,ss:any=loose.get(String(i.product_id))||{};
