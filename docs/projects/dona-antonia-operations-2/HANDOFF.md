@@ -2550,3 +2550,25 @@ Runtime:
 - `admin-service-intelligence-v1` publicado como v214;
 - teste read-only de documento retornou `receipt_lot_plan` e `current_inventory_lots` corretamente;
 - no estado atual ainda não há lotes históricos materializados; a primeira entrada validada passará a criar o ledger de lotes novos.
+
+
+## Migração progressiva de lotes/FEFO por produto — 2026-09-29
+Decisão operacional: não exigir inventário geral de validades antes de usar o módulo.
+
+Modelo híbrido por produto:
+- enquanto `lot_tracking_complete=false`, o produto continua usando a validade legada e os lotes cadastrados são referência parcial;
+- novas compras já podem registrar lotes/validades normalmente;
+- o operador pode abrir **Produtos > Lotes** e distribuir o estoque daquele produto por validade aos poucos;
+- o Admin mostra estoque físico Bling, quantidade já distribuída em lotes e quantidade ainda faltante;
+- o botão **Ativar FEFO neste produto** somente conclui quando os lotes quantificados fecham com o estoque físico do Bling;
+- depois de concluído, o produto usa validade efetiva por lotes e FEFO;
+- não existe ativação global: cada produto migra no seu próprio ritmo.
+
+UX adicionada em Produtos:
+- badge por produto: **Lotes pendentes** ou **FEFO completo**;
+- ação rápida **Lotes**;
+- filtro: **Lotes/FEFO pendente** / **Lotes/FEFO completo**;
+- dentro do editor, botão **Lotes/validades**;
+- formulário simples para lote, validade e quantidade.
+
+Runtime: `admin-products-live-v1` publicado como v114. JavaScript do Admin validado sem erro de sintaxe.
