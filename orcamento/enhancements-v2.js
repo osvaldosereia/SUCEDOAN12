@@ -63,6 +63,10 @@ function renderMultiplierView(){
   const totalLabel=totalRow?.querySelector('span:first-child');
   if(totalLabel)totalLabel.textContent=generalMultiplier===1?'Total de 1 cesta':`Total das ${generalMultiplier} cestas`;
 
+  const subtotalRow=$('summarySubtotalRow');
+  const subtotalLabel=subtotalRow?.querySelector('span:first-child');
+  if(subtotalLabel)subtotalLabel.textContent=generalMultiplier===1?'Subtotal':'Subtotal de 1 cesta';
+
   const productsTitle=$('productsSectionTitle');
   if(productsTitle){
     productsTitle.textContent=generalMultiplier===1
@@ -199,7 +203,7 @@ function bindRefreshTracking(){
   document.addEventListener('click',event=>{
     const target=event.target;
     if(!(target instanceof Element))return;
-    if(target.closest('[data-open-quote],[data-add-product],[data-remove-product],#applyBudgetPreset,#useCalculatedTotal')){
+    if(target.closest('[data-open-quote],[data-add-product],[data-remove-product],#applyBudgetPreset,#useCalculatedTotal,[data-load-client],[data-use-db-client],#clearClient')){
       setTimeout(queueRender,0);
     }
   });
@@ -251,8 +255,17 @@ function interceptPersistence(){
   };
 }
 
+function interceptPrint(){
+  const nativePrint=window.print.bind(window);
+  window.print=()=>{
+    renderMultiplierView();
+    nativePrint();
+  };
+}
+
 function install(){
   interceptPersistence();
+  interceptPrint();
   installMultiplier();
   installPreviewSummary();
   installSaveUi();
