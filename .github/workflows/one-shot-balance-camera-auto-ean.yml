@@ -36,6 +36,13 @@ jobs:
           fi
       - name: Apply canonical balance implementation
         run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ['tools/patch_balance_camera_auto_ean.py','tools/patch_balance_camera_auto_ean_fixups.py']:
+              p=Path(name); s=p.read_text()
+              s=s.replace('re.subn(pattern,repl,text,count=1,flags=re.S)','re.subn(pattern,lambda _m: repl,text,count=1,flags=re.S)')
+              p.write_text(s)
+          PY
           set +e
           {
             python3 tools/patch_balance_camera_auto_ean.py
