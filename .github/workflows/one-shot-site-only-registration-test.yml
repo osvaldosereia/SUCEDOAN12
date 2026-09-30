@@ -1,0 +1,21 @@
+name: One-shot site-only registration contract
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-site-only-registration-test.yml'
+      - 'scripts/test-site-only-order-registration.mjs'
+      - 'supabase/sql/20260930_site_only_registration_checkout_v1.sql'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'cadastro/index.html'
+      - 'docs/projects/dona-antonia-operations-2/PAPOAI-SITE-ONLY-HANDOFF-2026-09-30.md'
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run site-only registration contract
+        run: node scripts/test-site-only-order-registration.mjs
