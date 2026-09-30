@@ -5,6 +5,7 @@ const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const db=createClient(SUPABASE_URL,KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const MINIMUM_ORDER_CENTS=7500;
+const CUTOFF_HOUR=11;
 const TZ="America/Cuiaba";
 const CATEGORIES=[
   {key:"mercearia",label:"Mercearia"},
@@ -32,7 +33,22 @@ function iso(d:D){return String(d.year).padStart(4,"0")+"-"+String(d.month).padS
 function easter(y:number):D{const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),z=h+l-7*m+114;return {year:y,month:Math.floor(z/31),day:z%31+1}}
 function closed(d:D){const k=String(d.month).padStart(2,"0")+"-"+String(d.day).padStart(2,"0");const fixed=new Set(["01-01","04-21","05-01","09-07","10-12","11-02","11-15","11-20","12-25"]);if(fixed.has(k))return true;const sun=new Date(Date.UTC(d.year,d.month-1,d.day,12)).getUTCDay()===0;return sun||iso(add(easter(d.year),-2))===iso(d)}
 function nextOpen(d:D){let x=d;for(let i=0;i<14;i++){if(!closed(x))return x;x=add(x,1)}return x}
-function delivery(){const p=local(),t={year:p.year,month:p.month,day:p.day};let target=t,reason="same_day";if(closed(t)){target=nextOpen(add(t,1));reason="closed_day"}else if(p.hour>=12){target=nextOpen(add(t,1));reason="after_cutoff"}const label=new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC",weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(Date.UTC(target.year,target.month-1,target.day,12)));return {date:iso(target),label,reason,time_zone:TZ,cutoff_hour:12}}
+function deliveryLabel(d:D){return new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC",weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(Date.UTC(d.year,d.month-1,d.day,12)))}
+function deliveryOptions(now=new Date()){
+  const p=local(now),today={year:p.year,month:p.month,day:p.day};let start=today,baseReason="same_day";
+  if(closed(today)){start=nextOpen(add(today,1));baseReason="closed_day"}
+  else if(p.hour>=CUTOFF_HOUR){start=nextOpen(add(today,1));baseReason="after_cutoff"}
+  const options:any[]=[];let cursor=start;
+  for(let guard=0;guard<21&&options.length<3;guard++){
+    if(!closed(cursor))options.push({date:iso(cursor),label:deliveryLabel(cursor),reason:options.length===0?baseReason:"scheduled",time_zone:TZ,cutoff_hour:CUTOFF_HOUR});
+    cursor=add(cursor,1);
+  }
+  return options;
+}
+function selectedDelivery(value:any,now=new Date()){
+  const requested=txt(value,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(requested))return null;
+  return deliveryOptions(now).find((x:any)=>x.date===requested)||null;
+}
 
 function pub(p:any,available?:number){
   const offer=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0;
@@ -209,41 +225,68 @@ async function recordOpsEvent(eventType:string,summary:string,orderId:any,payloa
   })}catch(e){console.error("ops_event_failed",eventType,txt((e as any)?.message,120))}
 }
 
-async function submit(req:Request,p:any){
-  const pay=txt(p?.payment_method,80),ph=phone(p?.whatsapp_phone),items=Array.isArray(p?.items)?p.items.slice(0,80):[];if(!ph)return {error:"invalid_phone",status:400};if(!items.length)return {error:"empty_cart",status:400};
-  const ik=await sha(ip(req)||"unknown"),pk=await sha(ph),[a,b]=await Promise.all([db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600}),db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:phone:"+pk,p_bucket:"create_order",p_limit:5,p_window_seconds:600})]);if(a.error||b.error)return {error:"rate_limit_unavailable",status:503};if(a.data!==true||b.data!==true)return {error:"rate_limited",status:429};
-  const incoming=p?.customer_snapshot&&typeof p.customer_snapshot==="object"?{...p.customer_snapshot}:{};
-  const requestedName=txt(incoming?.display_name||incoming?.name,180)||null;
-  const ensured=await db.rpc("ensure_storefront_customer_v2",{p_phone:ph,p_name:requestedName,p_source_key:"storefront-v2-submit"});
-  if(ensured.error)return {error:"customer_identity_unavailable",status:503};
-  if(ensured.data?.ok!==true||!uid(ensured.data?.customer_id))return {error:txt(ensured.data?.error,100)||"customer_identity_failed",status:409};
-  let registrationComplete=false;
-  try{
-    const registration=await db.rpc("ops2_customer_registration_state_v1",{p_customer_id:ensured.data.customer_id});
-    registrationComplete=!registration.error&&registration.data?.ok===true&&registration.data?.registration_complete===true;
-    if(registration.error)console.error("customer_registration_state",txt(registration.error.message,180));
-  }catch(e){console.error("customer_registration_state",txt((e as any)?.message,180))}
-  const customerSnapshot={...incoming,id:ensured.data.customer_id,display_name:requestedName||incoming?.display_name||null,identity_status:ensured.data.status||null};
-  const del=delivery(),split=await splitGlobalReady(),created=split?await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del}):await db.rpc("create_canonical_cart_order_v2",{p_source:"vitrine",p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del});
-  if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS}}
-  const orderId=created.data?.order_id;
-  let papoaiLink:any=null;
-  if(orderId){
-    try{
-      const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});
-      if(!linked.error)papoaiLink=linked.data||null;
-    }catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}
-  }
-  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:registrationComplete?"registered":"new",payment_method:pay||null,reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked)},"order-received:"+orderId);
-  return {...created.data,phone_attached:true,customer_status:registrationComplete?"registered":"new",registration_complete:registrationComplete,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,history_synced:true,stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)};
+async function customerIdByPhone(v:any){
+  const ph=phone(v);if(!ph)return null;
+  const r=await db.rpc("lookup_customer_by_phone",{p_phone:ph});if(r.error)throw r.error;
+  return uid(r.data?.[0]?.customer_id)||null;
 }
-async function lookupCustomer(v:any){const ph=phone(v);if(!ph)return {ok:true,found:false};const r=await db.rpc("lookup_customer_by_phone",{p_phone:ph});if(r.error)throw r.error;const id=uid(r.data?.[0]?.customer_id);if(!id)return {ok:true,found:false};const q=await db.from("customers").select("id,name").eq("id",id).maybeSingle();if(q.error)throw q.error;return {ok:true,found:Boolean(q.data),first_name:q.data?.name?txt(q.data.name,120).split(/\s+/)[0]:null}}
+async function loadCustomerForCheckout(customerId:string){
+  const id=uid(customerId);if(!id)return null;
+  const [cq,aq,sq]=await Promise.all([
+    db.from("customers").select("id,name,cpf_cnpj,primary_whatsapp_e164,marketing_opt_in").eq("id",id).maybeSingle(),
+    db.from("customer_addresses").select("id,street,number,complement,neighborhood,city,state,postal_code,reference,is_default,updated_at").eq("customer_id",id).eq("is_active",true).order("is_default",{ascending:false}).order("updated_at",{ascending:false}).limit(1).maybeSingle(),
+    db.rpc("ops2_customer_registration_state_v1",{p_customer_id:id})
+  ]);
+  if(cq.error)throw cq.error;if(aq.error)throw aq.error;if(sq.error)throw sq.error;if(!cq.data)return null;
+  const doc=String(cq.data.cpf_cnpj||"").replace(/\D+/g,"");
+  const a=aq.data?{id:aq.data.id,street:aq.data.street||"",number:aq.data.number||"",complement:aq.data.complement||"",neighborhood:aq.data.neighborhood||"",district:aq.data.neighborhood||"",city:aq.data.city||"",state:aq.data.state||"MT",postal_code:aq.data.postal_code||"",reference:aq.data.reference||""}:null;
+  return {id:cq.data.id,display_name:cq.data.name||"",phone:cq.data.primary_whatsapp_e164||"",document_present:doc.length===11||doc.length===14,document_last4:doc?doc.slice(-4):"",marketing_opt_in:cq.data.marketing_opt_in===true,registration_complete:sq.data?.registration_complete===true,missing_fields:Array.isArray(sq.data?.missing_fields)?sq.data.missing_fields:[],address:a};
+}
+async function lookupCustomer(v:any){
+  const ph=phone(v);if(!ph)return {ok:true,found:false};const id=await customerIdByPhone(ph);if(!id)return {ok:true,found:false};const customer=await loadCustomerForCheckout(id);return {ok:true,found:Boolean(customer),customer};
+}
+async function registerCustomer(req:Request,p:any){
+  const ph=phone(p?.phone);if(!ph)return {error:"invalid_phone",status:400};
+  const [ipKey,phoneKey]=await Promise.all([sha(ip(req)||"unknown"),sha(ph)]);
+  const [a,b]=await Promise.all([
+    db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-register:ip:"+ipKey,p_bucket:"register_customer",p_limit:20,p_window_seconds:600}),
+    db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-register:phone:"+phoneKey,p_bucket:"register_customer",p_limit:8,p_window_seconds:600})
+  ]);
+  if(a.error||b.error)return {error:"rate_limit_unavailable",status:503};if(a.data!==true||b.data!==true)return {error:"rate_limited",status:429};
+  const r=await db.rpc("ops2_upsert_storefront_registration_v1",{
+    p_phone:ph,p_name:txt(p?.name,180),p_document:txt(p?.document,30),p_street:txt(p?.street,180),p_number:txt(p?.number,40),
+    p_neighborhood:txt(p?.neighborhood,120),p_city:txt(p?.city,100),p_complement:txt(p?.complement,180)||null,
+    p_reference:txt(p?.reference,220)||null,p_postal_code:txt(p?.postal_code,12)||null,
+    p_marketing_opt_in:typeof p?.marketing_opt_in==="boolean"?p.marketing_opt_in:null,
+    p_source_key:p?.source==="checkout"?"site_checkout":"site_registration_page"
+  });
+  if(r.error)return {error:"registration_unavailable",status:503};
+  if(r.data?.ok!==true){const e=txt(r.data?.error,100)||"registration_failed";return {error:e,status:["document_already_in_use","document_mismatch","identity_mismatch"].includes(e)?409:400};}
+  const customer=await loadCustomerForCheckout(r.data.customer_id);return {ok:true,registration_complete:true,customer,bling_job_id:r.data.bling_job_id||null};
+}
+
+async function submit(req:Request,p:any){
+  const pay=txt(p?.payment_method,80),ph=phone(p?.whatsapp_phone),items=Array.isArray(p?.items)?p.items.slice(0,80):[];
+  if(!ph)return {error:"invalid_phone",status:400};if(!items.length)return {error:"empty_cart",status:400};
+  const deliveryDate=txt(p?.delivery_date,10);if(!deliveryDate)return {error:"delivery_date_required",status:400};
+  const del=selectedDelivery(deliveryDate);if(!del)return {error:"invalid_delivery_date",status:409,delivery_options:deliveryOptions()};
+  const ik=await sha(ip(req)||"unknown"),pk=await sha(ph),[a,b]=await Promise.all([db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600}),db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:phone:"+pk,p_bucket:"create_order",p_limit:5,p_window_seconds:600})]);if(a.error||b.error)return {error:"rate_limit_unavailable",status:503};if(a.data!==true||b.data!==true)return {error:"rate_limited",status:429};
+  const found=await lookupCustomer(ph);if(!found.found||!found.customer)return {error:"registration_required",status:409,missing_fields:["name","document","address","number","neighborhood","city"]};
+  const customer=found.customer;if(customer.registration_complete!==true)return {error:"registration_required",status:409,missing_fields:customer.missing_fields||[]};
+  const customerSnapshot={found:true,id:customer.id,display_name:customer.display_name,address:customer.address||null,identity_status:"verified_existing"};
+  const split=await splitGlobalReady(),created=split?await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del}):await db.rpc("create_canonical_cart_order_v2",{p_source:"vitrine",p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del});
+  if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS}}
+  const orderId=created.data?.order_id;let papoaiLink:any=null;
+  if(orderId){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
+  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:"registered",payment_method:pay||null,delivery_date:deliveryDate,reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked)},"order-received:"+orderId);
+  return {...created.data,phone_attached:true,customer_status:"registered",registration_complete:true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer,history_synced:true,stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)};
+}
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:24},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:25},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home")return json(req,await home(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
@@ -252,8 +295,11 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="GET"&&action==="basket"){const id=uid(u.searchParams.get("basket_id"));if(!id)return json(req,{ok:false,error:"invalid_basket"},400);const b=await basket(id);return b?json(req,{ok:true,...b},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"basket_not_found"},404)}
     if(req.method==="GET"&&action==="resolve_identity_code"){const r=await resolveCode(req,u.searchParams.get("code"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="resolve_identity_token"){const r=await resolveToken(u.searchParams.get("token"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
+    if(req.method==="GET"&&action==="delivery_options")return json(req,{ok:true,options:deliveryOptions(),cutoff_hour:CUTOFF_HOUR,time_zone:TZ},200,{"Cache-Control":"no-store"});
+    if(req.method==="GET"&&action==="customer_lookup"){const ph=phone(u.searchParams.get("phone")),rk=await sha(ph||ip(req)||"unknown"),gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:customer-lookup:"+rk,p_bucket:"lookup_customer",p_limit:20,p_window_seconds:300});if(gate.error)return json(req,{ok:false,error:"rate_limit_unavailable"},503);if(gate.data!==true)return json(req,{ok:false,error:"rate_limited"},429);return json(req,await lookupCustomer(ph),200,{"Cache-Control":"no-store"})}
 
     const body=req.method==="POST"?await req.json().catch(()=>({})):{};
+    if(req.method==="POST"&&action==="customer_register"){const r=await registerCustomer(req,body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="basket_quote"){const r=await quote(body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="submit_order"){const r=await submit(req,body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="issue_identity_link")return json(req,{ok:false,error:"retired"},410)
