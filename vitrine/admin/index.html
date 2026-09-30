@@ -993,6 +993,12 @@
   .product-image-status.ok{color:#176b43;background:#f1faf5;border-color:#cae7d5}.product-image-status.warn{color:#8a5a00;background:#fff8e6;border-color:#f0dfae}.product-image-status.error{color:#b3261e;background:#fff4f3;border-color:#efceca}
   @media(max-width:640px){.product-image-admin{grid-template-columns:96px 1fr}.product-image-preview{width:96px;height:96px}.product-image-actions{display:grid;grid-template-columns:1fr}.product-image-actions button{width:100%}}
 
+
+    .balance-subtabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+    .balance-subtabs button{min-height:46px;border:1px solid var(--line);border-radius:11px;background:#fff;font-weight:900}.balance-subtabs button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .balance-camera-shell{padding:12px;margin-bottom:12px}.balance-camera-view{position:relative;border-radius:14px;overflow:hidden;background:#111;min-height:220px;display:flex;align-items:center;justify-content:center}.balance-camera-view video{width:100%;max-height:52vh;object-fit:cover;background:#111}.balance-camera-frame{position:absolute;inset:25% 8%;border:2px solid rgba(255,255,255,.9);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.18);pointer-events:none}.balance-camera-status{font-size:12px;color:var(--muted);margin:8px 0}.balance-search-results{display:grid;gap:6px;margin-top:8px}.balance-search-result{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;align-items:center;width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;text-align:left}.balance-search-result img{width:42px;height:42px;object-fit:contain;border:1px solid var(--line);border-radius:8px}.balance-product-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.balance-photo-callout{border:1px solid #efd59b;background:#fffaf0;border-radius:12px;padding:10px;margin:10px 0}.balance-readiness{font-size:11px;color:var(--muted);margin-top:5px}.balance-readiness.ok{color:#176b43}.balance-camera-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    @media(max-width:640px){.balance-camera-shell{padding:9px}.balance-camera-view{min-height:190px}.balance-product-fields{grid-template-columns:1fr}.balance-camera-actions{display:grid;grid-template-columns:1fr 1fr}.balance-camera-actions button{width:100%}}
+
     /* Admin Navigation V6.1 · desktop + mobile sem overflow horizontal */
     .admin-nav{
       display:flex;
@@ -1295,7 +1301,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -1445,6 +1451,7 @@
   });
 
   function setTab(tab){
+    if(state.tab==='balance'&&tab!=='balance')stopBalanceCamera();
     state.tab=tab;
     document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
     syncNavGroups();
@@ -4347,6 +4354,7 @@
     return ({damage:'Avaria',expired:'Vencido',loss:'Perda / extravio',return:'Retorno',other:'Outro'})[v]||v||'Ocorrência';
   }
   function setBalanceMode(mode){
+    stopBalanceCamera();
     state.balanceMode=mode==='incident'?'incident':'count';
     state.balanceProduct=null;state.balanceQty='';
     renderBalance();
@@ -5240,35 +5248,87 @@
     paintInventorySheetQueue();paintInventorySheetPhoto();
   }
 
-  async function renderBalance(){
-    const content=$('#content'),incident=state.balanceMode==='incident';
-    const photoPanel=!incident?'<section class="panel balance-photo-panel"><div class="history-title dispatch-head"><div><strong>Balanço por fotos das folhas A4</strong><span>Cada folha é identificada automaticamente pelo QR Code. A mesma folha pode ser lida novamente para corrigir uma leitura, mesmo depois de concluída.</span></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" id="inventorySheetAnalyzeButton" type="button">Tirar foto agora</button><button class="secondary" id="inventorySheetChooseButton" type="button">Selecionar várias fotos</button><input id="inventorySheetCamera" type="file" accept="image/*" capture="environment" hidden><input id="inventorySheetFile" type="file" accept="image/*" multiple hidden></div><div class="muted" id="inventorySheetPhotoStatus" style="margin-bottom:10px">Não precisa informar lote nem página. O sistema lê o QR da própria folha, corrige a foto e processa cada imagem separadamente.</div><div id="inventorySheetUploadQueue" style="margin-bottom:10px"></div><button class="secondary" id="inventorySheetRetryErrors" type="button" hidden style="width:100%;margin-bottom:8px">Reenviar fotos com erro</button><button class="secondary" id="inventorySheetApplyReady" type="button" disabled style="width:100%;margin-bottom:10px">Nenhuma folha pronta para aplicar</button><div id="inventorySheetReview"></div><button class="secondary" id="inventorySheetCancelRead" type="button" hidden style="width:100%;margin-top:10px">Cancelar esta leitura e ler novamente</button><button class="confirm-wide" id="inventorySheetApply" type="button" disabled style="margin-top:8px">Aplicar folha aberta</button></section>':'';
-    const manualPendingPanel=!incident?'<section class="panel balance-pending-panel"><div class="history-title dispatch-head"><div><strong>Pendências para contagem manual</strong><span>Se OCR e IA não conseguirem ler um produto com segurança, ele fica aqui até alguém conferir fisicamente e informar Estoque e Gôndola.</span></div><span class="pill" id="inventorySheetPendingBadge">Verificando…</span></div><div id="inventorySheetPendingManual"><div class="loading">Verificando pendências de leitura…</div></div></section>':'';
-    content.innerHTML=
-      '<div class="page-head"><div><h1>Estoque mobile</h1><p>'+(incident?'Registre avaria, vencimento, perda ou retorno sem usar o painel completo do ERP.':'Faça o balanço rapidamente com leitor EAN e teclado na tela.')+'</p></div><span class="pill">Leitor ativo</span></div>'+
-      '<div class="order-filters" style="margin-bottom:12px"><button class="filter-chip '+(!incident?'active':'')+'" id="balanceModeCount" type="button">Balanço</button><button class="filter-chip '+(incident?'active':'')+'" id="balanceModeIncident" type="button">Avaria / Vencido / Retorno</button></div>'+
-      photoPanel+manualPendingPanel+
-      '<div class="tool-grid balance-tool-grid">'+
-        '<section class="panel tool-card">'+
-          (incident?'<div class="form-grid" style="margin-bottom:12px"><label><span>Tipo</span><select id="inventoryIncidentType"><option value="damage">Avaria</option><option value="expired">Vencido</option><option value="loss">Perda / extravio</option><option value="return">Retorno para inspeção</option><option value="other">Outro</option></select></label><label><span>Observação opcional</span><input id="inventoryIncidentNote" maxlength="500" placeholder="Ex.: embalagem rasgada"></label></div>':'')+
-          '<div id="balanceScanner" class="scanner-hero"><div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">'+(incident?'Depois informe a quantidade afetada.':'O teclado do tablet não será aberto.')+'</div></div>'+
-          '<div class="qty-label">'+(incident?'Quantidade afetada':'Quantidade contada')+'</div><div class="qty-display" id="balanceQty">—</div>'+
-          numericPadHtml('balance')+
-          '<button class="confirm-wide" id="balanceConfirm" type="button" disabled>'+(incident?'Registrar ocorrência':'Confirmar e ler próximo')+'</button>'+
-        '</section>'+
-        '<section class="panel"><div class="list-head" style="display:block">'+(incident?'Ocorrências abertas':'Contagens desta sessão')+'</div><div id="balanceHistory"></div></section>'+
-      '</div>'+
-      (!incident?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Recontagem para Bling</strong><span>Confirme fisicamente estes itens antes de qualquer regularização no ERP</span></div><button class="secondary" id="refreshStockRecount" type="button">Atualizar</button></div><div id="stockRecountRows"><div class="loading">Carregando recontagens…</div></div></section><section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Faltas dos pedidos</strong><span>Priorize o que está travando pedidos confirmáveis</span></div><button class="secondary" id="refreshStockShortages" type="button">Atualizar</button></div><div id="stockShortageRows"><div class="loading">Calculando faltas…</div></div></section>':'<div class="rule-notice" style="margin-top:14px"><strong>Como funciona agora</strong><div>Avaria, vencido e perda saem imediatamente do estoque vendável local. O sistema abre uma reconciliação para Bling/fiscal. Retorno não volta a vender até ser inspecionado.</div></div>');
-    $('#balanceModeCount').onclick=()=>setBalanceMode('count');
-    $('#balanceModeIncident').onclick=()=>setBalanceMode('incident');
-    if(incident){
-      $('#inventoryIncidentType').value=state.inventoryIncidentType||'damage';
-      $('#inventoryIncidentType').onchange=e=>state.inventoryIncidentType=e.currentTarget.value;
-      $('#inventoryIncidentNote').value=state.inventoryIncidentNote||'';
-      $('#inventoryIncidentNote').oninput=e=>state.inventoryIncidentNote=e.currentTarget.value;
+
+  function setBalanceSubtab(tab){
+    state.balanceSubtab=tab==='a4'?'a4':'scanner';state.balanceProduct=null;state.balanceQty='';state.balanceNeedsPhoto=false;state.balanceReadiness=null;
+    if(state.balanceSubtab==='a4')stopBalanceCamera();renderBalance();
+  }
+  function stopBalanceCamera(){
+    state.balanceCameraRunning=false;
+    if(state.balanceCameraStream){for(const t of state.balanceCameraStream.getTracks?.()||[])try{t.stop()}catch{}state.balanceCameraStream=null}
+    state.balanceCameraDetector=null;
+    const v=$('#balanceCameraVideo');if(v)try{v.srcObject=null}catch{}
+  }
+  async function startBalanceCamera(){
+    if(state.tab!=='balance'||state.balanceMode==='incident'||state.balanceSubtab!=='scanner')return;
+    const status=$('#balanceCameraStatus'),video=$('#balanceCameraVideo');if(!video)return;
+    if(!navigator.mediaDevices?.getUserMedia){if(status)status.textContent='Este navegador não liberou câmera. Use a busca por nome/EAN abaixo.';return}
+    stopBalanceCamera();
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+      state.balanceCameraStream=stream;video.srcObject=stream;await video.play();state.balanceCameraRunning=true;
+      if('BarcodeDetector' in window){state.balanceCameraDetector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});if(status)status.textContent='Câmera ativa · aponte o código de barras para o quadro.';balanceCameraTick()}
+      else{if(status)status.textContent='Câmera ativa, mas leitura automática de código não é suportada neste navegador. Digite o EAN ou busque pelo nome.'}
+    }catch(e){if(status)status.textContent='Não consegui abrir a câmera. Libere a permissão ou use a busca manual.'}
+  }
+  async function balanceCameraTick(){
+    if(!state.balanceCameraRunning||state.tab!=='balance'||state.balanceSubtab!=='scanner')return;
+    const detector=state.balanceCameraDetector,video=$('#balanceCameraVideo');
+    if(detector&&video&&video.readyState>=2&&!state.balanceProduct){
+      try{
+        const codes=await detector.detect(video);const raw=String(codes?.[0]?.rawValue||'').replace(/\D+/g,'');
+        if(raw.length>=4){const now=Date.now();if(raw!==state.balanceLastCameraEan||now-state.balanceLastCameraAt>2500){state.balanceLastCameraEan=raw;state.balanceLastCameraAt=now;if(navigator.vibrate)navigator.vibrate(45);await handleBalanceScan(raw)}}
+      }catch{}
     }
-    bindBalancePad();paintBalance();
-    if(!incident){bindInventorySheetPhoto();loadInventorySheetPendingManual();}
+    if(state.balanceCameraRunning)setTimeout(balanceCameraTick,180);
+  }
+  function bindBalanceManualSearch(){
+    const input=$('#balanceManualSearch'),host=$('#balanceManualResults');if(!input||!host)return;
+    input.oninput=()=>{clearTimeout(state.balanceManualSearchTimer);const q=String(input.value||'').trim();if(q.length<2){host.innerHTML='';return}state.balanceManualSearchTimer=setTimeout(()=>searchBalanceProducts(q),220)};
+  }
+  async function searchBalanceProducts(q){
+    const host=$('#balanceManualResults');if(!host)return;host.innerHTML='<div class="loading">Buscando…</div>';
+    try{const data=await api('products',{q,limit:10});const rows=data.products||[];host.innerHTML=rows.length?rows.map(p=>'<button class="balance-search-result" type="button" data-balance-pick="'+esc(p.id)+'"><img src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt=""><span><strong>'+esc(p.name)+'</strong><small class="sub">EAN '+esc(p.gtin||'—')+' · '+(p.is_active===false?'inativo':'ativo')+'</small></span></button>').join(''):'<div class="history-empty">Nenhum produto encontrado.</div>';host.querySelectorAll('[data-balance-pick]').forEach(b=>b.onclick=()=>{const p=rows.find(x=>x.id===b.dataset.balancePick);if(p)selectBalanceProduct(p,{photo_required:!p.image_url,readiness:null})})}catch{host.innerHTML='<div class="history-empty">Não consegui buscar agora.</div>'}
+  }
+  function selectBalanceProduct(p,metaInfo={}){
+    const same=state.balanceProduct?.id===p?.id;
+    const keepQty=same?state.balanceQty:'';
+    const keepGondola=same?state.balanceGondola:'';
+    const keepValidity=same?state.balanceValidity:'';
+    const keepLot=same?state.balanceLotId:'';
+    state.balanceProduct=p;
+    state.balanceQty=keepQty;
+    state.balanceGondola=keepGondola||String(p.gondola_number??p.gondola??'').replace(/\D+/g,'');
+    state.balanceValidity=keepValidity||p.expiration_date||p.validity_date||'';
+    state.balanceLotId=keepLot;
+    state.balanceNeedsPhoto=metaInfo.photo_required===true;
+    state.balanceReadiness=metaInfo.readiness||metaInfo.commercial_readiness||null;
+    paintBalance();
+  }
+  async function uploadBalanceProductPhoto(file){
+    const p=state.balanceProduct;if(!p||!file)return;const status=$('#balancePhotoStatus');if(status)status.textContent='Enviando foto real…';
+    try{
+      await uploadProductImageSource(p.id,file);if(status)status.textContent='Foto salva · identificando produto…';
+      try{await productImageApi('identify',{product_id:p.id})}catch{}
+      try{const fresh=await api('inventory_balance_status',{product_id:p.id});if(fresh.product)selectBalanceProduct(fresh.product,{photo_required:false,readiness:fresh.readiness})}catch{}
+      state.balanceNeedsPhoto=false;if(status)status.textContent='Foto salva. A imagem de catálogo está sendo preparada.';
+      standardizeProductImage(p.id).then(()=>api('inventory_balance_status',{product_id:p.id})).then(f=>{if(f?.product&&state.balanceProduct?.id===p.id)selectBalanceProduct(f.product,{photo_required:false,readiness:f.readiness})}).catch(()=>{});
+    }catch(e){if(status)status.textContent='Não consegui salvar a foto: '+errorMessage(e.message)}
+  }
+
+  async function renderBalance(){
+    const content=$('#content'),incident=state.balanceMode==='incident',scanner=!incident&&state.balanceSubtab!=='a4';
+    const photoPanel=!incident&&state.balanceSubtab==='a4'?'<section class="panel balance-photo-panel"><div class="history-title dispatch-head"><div><strong>Balanço por fotos das folhas A4</strong><span>Cada folha é identificada automaticamente pelo QR Code. A mesma folha pode ser lida novamente para corrigir uma leitura, mesmo depois de concluída.</span></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" id="inventorySheetAnalyzeButton" type="button">Tirar foto agora</button><button class="secondary" id="inventorySheetChooseButton" type="button">Selecionar várias fotos</button><input id="inventorySheetCamera" type="file" accept="image/*" capture="environment" hidden><input id="inventorySheetFile" type="file" accept="image/*" multiple hidden></div><div class="muted" id="inventorySheetPhotoStatus" style="margin-bottom:10px">Não precisa informar lote nem página. O sistema lê o QR da própria folha, corrige a foto e processa cada imagem separadamente.</div><div id="inventorySheetUploadQueue" style="margin-bottom:10px"></div><button class="secondary" id="inventorySheetRetryErrors" type="button" hidden style="width:100%;margin-bottom:8px">Reenviar fotos com erro</button><button class="secondary" id="inventorySheetApplyReady" type="button" disabled style="width:100%;margin-bottom:10px">Nenhuma folha pronta para aplicar</button><div id="inventorySheetReview"></div><button class="secondary" id="inventorySheetCancelRead" type="button" hidden style="width:100%;margin-top:10px">Cancelar esta leitura e ler novamente</button><button class="confirm-wide" id="inventorySheetApply" type="button" disabled style="margin-top:8px">Aplicar folha aberta</button></section>':'';
+    const manualPendingPanel=!incident&&state.balanceSubtab==='a4'?'<section class="panel balance-pending-panel"><div class="history-title dispatch-head"><div><strong>Pendências para contagem manual</strong><span>Se OCR e IA não conseguirem ler um produto com segurança, ele fica aqui até alguém conferir fisicamente e informar Estoque e Gôndola.</span></div><span class="pill" id="inventorySheetPendingBadge">Verificando…</span></div><div id="inventorySheetPendingManual"><div class="loading">Verificando pendências de leitura…</div></div></section>':'';
+    const cameraPanel=scanner?'<section class="panel balance-camera-shell"><div class="balance-camera-view"><video id="balanceCameraVideo" playsinline muted autoplay></video><div class="balance-camera-frame"></div></div><div class="balance-camera-status" id="balanceCameraStatus">Abrindo câmera traseira…</div><div class="balance-camera-actions"><button class="secondary" id="balanceCameraStart" type="button">Ligar câmera</button><button class="secondary" id="balanceCameraStop" type="button">Desligar câmera</button></div><label style="display:block;margin-top:10px"><span>Buscar por nome ou EAN</span><input id="balanceManualSearch" type="search" autocomplete="off" placeholder="Digite nome, EAN ou código"></label><div id="balanceManualResults" class="balance-search-results"></div></section>':'';
+    const work=(incident||scanner)?'<div class="tool-grid balance-tool-grid"><section class="panel tool-card">'+(incident?'<div class="form-grid" style="margin-bottom:12px"><label><span>Tipo</span><select id="inventoryIncidentType"><option value="damage">Avaria</option><option value="expired">Vencido</option><option value="loss">Perda / extravio</option><option value="return">Retorno para inspeção</option><option value="other">Outro</option></select></label><label><span>Observação opcional</span><input id="inventoryIncidentNote" maxlength="500" placeholder="Ex.: embalagem rasgada"></label></div>':'')+'<div id="balanceScanner" class="scanner-hero"><div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">'+(incident?'Depois informe a quantidade afetada.':'A câmera fica pronta para o próximo produto.')+'</div></div><div id="balanceProductExtras"></div><div class="qty-label">'+(incident?'Quantidade afetada':'Quantidade contada')+'</div><div class="qty-display" id="balanceQty">—</div>'+numericPadHtml('balance')+'<button class="confirm-wide" id="balanceConfirm" type="button" disabled>'+(incident?'Registrar ocorrência':'Salvar e próximo')+'</button></section><section class="panel"><div class="list-head" style="display:block">'+(incident?'Ocorrências abertas':'Contagens desta sessão')+'</div><div id="balanceHistory"></div></section></div>':'';
+    content.innerHTML='<div class="page-head"><div><h1>Estoque mobile</h1><p>'+(incident?'Registre avaria, vencimento, perda ou retorno.':'Conte estoque, localização e validade usando a câmera do celular.')+'</p></div><span class="pill">'+(scanner?'Câmera':'Balanço')+'</span></div><div class="order-filters" style="margin-bottom:12px"><button class="filter-chip '+(!incident?'active':'')+'" id="balanceModeCount" type="button">Balanço</button><button class="filter-chip '+(incident?'active':'')+'" id="balanceModeIncident" type="button">Avaria / Vencido / Retorno</button></div>'+(!incident?'<div class="balance-subtabs"><button type="button" id="balanceTabScanner" class="'+(scanner?'active':'')+'">Leitor EAN</button><button type="button" id="balanceTabA4" class="'+(!scanner?'active':'')+'">Folhas A4</button></div>':'')+cameraPanel+photoPanel+manualPendingPanel+work+(!incident?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Recontagem para Bling</strong><span>Itens que precisam de conferência física</span></div><button class="secondary" id="refreshStockRecount" type="button">Atualizar</button></div><div id="stockRecountRows"><div class="loading">Carregando recontagens…</div></div></section><section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Faltas dos pedidos</strong><span>Priorize o que está travando pedidos</span></div><button class="secondary" id="refreshStockShortages" type="button">Atualizar</button></div><div id="stockShortageRows"><div class="loading">Calculando faltas…</div></div></section>':'<div class="rule-notice" style="margin-top:14px"><strong>Ocorrências</strong><div>Avaria, vencido e perda seguem para reconciliação operacional/fiscal.</div></div>');
+    $('#balanceModeCount').onclick=()=>setBalanceMode('count');$('#balanceModeIncident').onclick=()=>setBalanceMode('incident');
+    if(!incident){$('#balanceTabScanner').onclick=()=>setBalanceSubtab('scanner');$('#balanceTabA4').onclick=()=>setBalanceSubtab('a4')}
+    if(incident){$('#inventoryIncidentType').value=state.inventoryIncidentType||'damage';$('#inventoryIncidentType').onchange=e=>state.inventoryIncidentType=e.currentTarget.value;$('#inventoryIncidentNote').value=state.inventoryIncidentNote||'';$('#inventoryIncidentNote').oninput=e=>state.inventoryIncidentNote=e.currentTarget.value}
+    if(incident||scanner){bindBalancePad();paintBalance()}
+    if(scanner){bindBalanceManualSearch();$('#balanceCameraStart').onclick=startBalanceCamera;$('#balanceCameraStop').onclick=stopBalanceCamera;startBalanceCamera()}
+    if(!incident&&!scanner){bindInventorySheetPhoto();loadInventorySheetPendingManual()}
     if(!incident){$('#refreshStockRecount').onclick=loadStockRecountQueue;$('#refreshStockShortages').onclick=loadOrderStockShortages;loadStockRecountQueue();loadOrderStockShortages()}else loadInventoryIncidents();
   }
 
@@ -5317,20 +5377,19 @@
   function paintBalance(){
     if(state.tab!=='balance')return;
     const hero=$('#balanceScanner'),qty=$('#balanceQty'),confirm=$('#balanceConfirm'),history=$('#balanceHistory');if(!hero||!qty||!confirm||!history)return;
-    const incident=state.balanceMode==='incident';
+    const incident=state.balanceMode==='incident',extras=$('#balanceProductExtras');
     if(state.balanceProduct){
-      hero.className='scanner-hero ready';hero.innerHTML='<div class="scan-title"><span class="scan-dot"></span>PRODUTO LIDO</div><div class="scan-value">'+esc(state.balanceProduct.name)+'</div><div class="scan-sub">EAN '+esc(state.balanceProduct.gtin||'—')+' · estoque atual '+esc(fmtQty(state.balanceProduct.stock_quantity||0))+(state.balanceProduct.gondola_number?' · Gôndola '+esc(state.balanceProduct.gondola_number):'')+'</div>';qty.textContent=state.balanceQty||'0';confirm.disabled=state.balanceQty==='';
-    }else{hero.className='scanner-hero';hero.innerHTML='<div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">'+(incident?'Depois informe a quantidade afetada.':'Depois use somente o teclado numérico abaixo.')+'</div>';qty.textContent='—';confirm.disabled=true}
-    if(incident){
-      const rows=state.inventoryIncidents||[];
-      history.innerHTML=rows.length?rows.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.product_name)+'</strong><small>'+esc(inventoryIncidentLabel(x.incident_type))+' · '+esc(dateTime(x.created_at))+(x.note?' · '+esc(x.note):'')+'</small></div><div class="simple-number">'+esc(fmtQty(x.quantity))+'</div></div>').join(''):'<div class="history-empty">Nenhuma ocorrência aberta.</div>';
-    }else{
-      history.innerHTML=state.balanceHistory.length?state.balanceHistory.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.name)+'</strong><small>'+esc(x.gtin||'')+(x.gondola_number?' · Gôndola '+esc(x.gondola_number):'')+(x.difference!=null&&Number(x.difference)!==0?' · diferença '+esc(fmtQty(x.difference)):'')+'</small></div><div class="simple-number">'+esc(fmtQty(x.stock_quantity))+'</div></div>').join(''):'<div class="history-empty">Nenhum produto contado nesta sessão.</div>';
-    }
+      const p=state.balanceProduct;hero.className='scanner-hero ready';hero.innerHTML='<div class="scan-title"><span class="scan-dot"></span>PRODUTO LIDO</div><div class="scan-value">'+esc(p.name)+'</div><div class="scan-sub">EAN '+esc(p.gtin||'—')+' · estoque atual '+esc(fmtQty(p.stock_quantity||0))+(p.is_active===false?' · INATIVO':'')+'</div>';qty.textContent=state.balanceQty||'0';confirm.disabled=state.balanceQty==='';
+      if(extras&&!incident){const blockers=state.balanceReadiness?.blockers||[];extras.innerHTML='<div class="balance-product-fields"><label><span>Gôndola</span><input id="balanceGondola" type="number" min="1" max="9999" inputmode="numeric" value="'+esc(state.balanceGondola||'')+'" placeholder="Ex.: 12"></label><label><span>Validade</span><input id="balanceValidity" type="date" value="'+esc(state.balanceValidity||'')+'"></label></div>'+(state.balanceNeedsPhoto?'<div class="balance-photo-callout"><strong>Produto sem foto adequada</strong><div class="sub">Se for produto novo, tire uma foto frontal da embalagem para completar o cadastro automaticamente.</div><button class="primary" id="balanceTakeProductPhoto" type="button" style="margin-top:8px">Tirar foto do produto</button><input id="balanceProductPhotoInput" type="file" accept="image/*" capture="environment" hidden><div id="balancePhotoStatus" class="balance-readiness"></div></div>':'')+'<div class="balance-readiness '+(state.balanceReadiness?.ready?'ok':'')+'">'+(state.balanceReadiness?.ready?'Cadastro comercial completo':(blockers.length?'Cadastro operacional pronto · pendente para o site: '+blockers.join(', '):'Cadastro pronto para balanço'))+'</div>';$('#balanceGondola').oninput=e=>state.balanceGondola=String(e.currentTarget.value||'').replace(/\D+/g,'').slice(0,4);$('#balanceValidity').onchange=e=>state.balanceValidity=e.currentTarget.value||'';const photoBtn=$('#balanceTakeProductPhoto'),photoInput=$('#balanceProductPhotoInput');if(photoBtn&&photoInput){photoBtn.onclick=()=>photoInput.click();photoInput.onchange=e=>{const file=e.currentTarget.files?.[0];if(file)uploadBalanceProductPhoto(file)}}}
+    }else{hero.className='scanner-hero';hero.innerHTML='<div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">'+(incident?'Depois informe a quantidade afetada.':'Aponte a câmera para o código de barras.')+'</div>';qty.textContent='—';confirm.disabled=true;if(extras)extras.innerHTML=''}
+    if(incident){const rows=state.inventoryIncidents||[];history.innerHTML=rows.length?rows.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.product_name)+'</strong><small>'+esc(inventoryIncidentLabel(x.incident_type))+' · '+esc(dateTime(x.created_at))+(x.note?' · '+esc(x.note):'')+'</small></div><div class="simple-number">'+esc(fmtQty(x.quantity))+'</div></div>').join(''):'<div class="history-empty">Nenhuma ocorrência aberta.</div>'}
+    else history.innerHTML=state.balanceHistory.length?state.balanceHistory.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.name)+'</strong><small>'+esc(x.gtin||'')+(x.gondola_number?' · Gôndola '+esc(x.gondola_number):'')+(x.difference!=null&&Number(x.difference)!==0?' · diferença '+esc(fmtQty(x.difference)):'')+'</small></div><div class="simple-number">'+esc(fmtQty(x.stock_quantity))+'</div></div>').join(''):'<div class="history-empty">Nenhum produto contado nesta sessão.</div>';
   }
+
   async function handleBalanceScan(ean){
     if(state.tab!=='balance')return;
-    try{const data=await api('ean_lookup',{ean});state.balanceProduct=data.product;state.balanceQty='';paintBalance()}catch(e){state.balanceProduct=null;state.balanceQty='';paintBalance();toast(errorMessage(e.message))}
+    if(state.balanceProduct){toast('Salve o produto atual antes de ler o próximo.');return}
+    try{const data=await api('inventory_balance_resolve_ean',{ean,operator:currentOperator()||'Operação'});if(!data.product)throw new Error('product_not_found');selectBalanceProduct(data.product,{photo_required:data.photo_required===true,readiness:data.readiness||data.commercial_readiness});const status=$('#balanceCameraStatus');if(status)status.textContent=data.state==='photo_required'?'Produto novo cadastrado · tire uma foto se possível.':'Produto encontrado · informe quantidade, gôndola e validade.'}catch(e){state.balanceProduct=null;state.balanceQty='';paintBalance();toast(errorMessage(e.message))}
   }
   async function confirmBalance(){
     if(!state.balanceProduct||state.balanceQty==='')return;
@@ -5342,11 +5401,12 @@
         toast(inventoryIncidentLabel(data.incident?.incident_type)+' registrada'+(applied?' · fora do estoque vendável':' · aguardando inspeção'));
         state.balanceProduct=null;state.balanceQty='';state.inventoryIncidentNote='';paintBalance();await loadInventoryIncidents();loadOrderStockShortages();
       }else{
-        const data=await api('balance_confirm',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:state.balanceProduct.id,ean:state.balanceProduct.gtin,quantity:Number(state.balanceQty),operator})});
-        const item={...data.product,difference:data.count?.difference??0,reconciliation_state:data.count?.reconciliation_state||'matched'};
+        if(!/^\d{1,4}$/.test(String(state.balanceGondola||''))||Number(state.balanceGondola)<1){toast('Informe a gôndola antes de salvar');btn.disabled=false;btn.textContent='Salvar e próximo';return}
+        const data=await api('inventory_balance_commit',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:state.balanceProduct.id,ean:state.balanceProduct.gtin,counted_quantity:Number(state.balanceQty),gondola_number:Number(state.balanceGondola),expiration_date:state.balanceValidity||null,lot_id:state.balanceLotId||null,operator,source:'scanner_ean'})});
+        const item={...data.product,difference:data.count?.difference??0,reconciliation_state:data.stock?.state||data.count?.reconciliation_state||'matched'};
         state.balanceHistory.unshift(item);state.balanceHistory=state.balanceHistory.slice(0,40);
         const diff=Number(data.count?.difference||0);toast(diff===0?data.product.name+' · conferido':data.product.name+' · diferença '+fmtQty(diff)+' registrada para revisão');
-        state.balanceProduct=null;state.balanceQty='';paintBalance();loadStockRecountQueue();loadOrderStockShortages();
+        state.balanceProduct=null;state.balanceQty='';state.balanceGondola='';state.balanceValidity='';state.balanceLotId='';state.balanceNeedsPhoto=false;state.balanceReadiness=null;paintBalance();loadStockRecountQueue();loadOrderStockShortages();if(state.balanceSubtab==='scanner')startBalanceCamera();
       }
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent=state.balanceMode==='incident'?'Registrar ocorrência':'Confirmar e ler próximo'}
   }
