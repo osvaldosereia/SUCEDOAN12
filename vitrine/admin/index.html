@@ -5712,7 +5712,84 @@
     paintPurchaseCatalogList();
   }
 
-  function purchaseStockBlockHtml(d,plan=null){
+
+  function purchaseLotRowsForItem(item){
+    const rows=(item?.lot_evidence||[]).filter(x=>x.status!=='ignored');
+    if(rows.length)return rows;
+    const qty=Number(item?.converted_quantity||item?.pricing_preview?.proposed_base_quantity||0);
+    return [{lot_code:'',expiration_date:'',base_quantity:qty||''}];
+  }
+  function purchaseReceiptLotsHtml(d,items,lotPlan){
+    if(!Array.isArray(items)||!items.length)return '';
+    const received=d?.receipt_status==='received';
+    const complete=lotPlan?.complete===true;
+    return '<div class="purchase-safe '+(complete?'':'purchase-danger')+'" style="margin:14px 0 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">'+
+        '<div><strong>Lotes e validades desta entrada</strong><small>'+(complete?'Validades fechadas com as quantidades recebidas.':'Informe a validade de cada quantidade recebida antes de preparar a entrada. Se o XML trouxe rastreabilidade, os campos já vêm preenchidos.')+'</small></div>'+
+        '<span class="pill '+(complete?'':'warn')+'">'+(complete?'Pronto':'Pendente')+'</span>'+
+      '</div>'+
+      '<div class="purchase-items" style="margin-top:10px">'+items.map((item,idx)=>{
+        const ev=item.lot_evidence||[],ignored=ev.some(x=>x.status==='ignored'&&x?.metadata?.no_expiry===true);
+        const rows=purchaseLotRowsForItem(item);
+        const expected=Number(item.converted_quantity||item?.pricing_preview?.proposed_base_quantity||0);
+        return '<div class="purchase-item-card" data-receipt-lot-item="'+esc(item.id)+'" data-expected-qty="'+esc(expected)+'">'+
+          '<div class="purchase-item-title"><div><strong>'+esc(item?.products?.name||item.description||('Item '+(idx+1)))+'</strong><small>Recebido: '+esc(fmtQty(expected))+' UN</small></div><span class="pill">'+esc(item.purchase_unit||'UN')+'</span></div>'+
+          '<label class="purchase-checks" style="margin:8px 0"><input type="checkbox" data-receipt-no-expiry '+(ignored?'checked':'')+' '+(received?'disabled':'')+'> Sem controle de validade para este item</label>'+
+          '<div data-receipt-lot-rows style="'+(ignored?'display:none':'display:grid')+';gap:8px">'+
+            rows.map((r,ri)=>'<div class="purchase-price-grid" data-receipt-lot-row>'+
+              '<div class="purchase-field"><label>Lote</label><input data-receipt-lot-code value="'+esc(r.lot_code||'')+'" placeholder="Opcional"></div>'+
+              '<div class="purchase-field"><label>Validade</label><input type="date" data-receipt-lot-exp value="'+esc(r.expiration_date||'')+'" '+(received?'disabled':'')+'></div>'+
+              '<div class="purchase-field"><label>Quantidade UN</label><input type="number" min="0.001" step="0.001" data-receipt-lot-qty value="'+esc(purchaseNumberInput(r.base_quantity??''))+'" '+(received?'disabled':'')+'></div>'+
+              '<div class="purchase-field"><label>&nbsp;</label><button class="secondary" type="button" data-receipt-lot-remove '+(received?'disabled':'')+'>Remover</button></div>'+
+            '</div>').join('')+
+          '</div>'+
+          (!received?'<button class="text" type="button" data-receipt-lot-add style="margin-top:8px">+ Outra validade</button>':'')+
+        '</div>';
+      }).join('')+'</div>'+
+      (!received?'<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="primary" type="button" data-save-receipt-lots="'+esc(d.id)+'">Salvar lotes e validades</button></div>':'')+
+      '<small class="sub" style="display:block;margin-top:8px">A soma das validades de cada item deve fechar com a quantidade recebida. Salvar aqui não altera o estoque físico do Bling.</small>'+
+    '</div>';
+  }
+  function addPurchaseReceiptLotRow(itemEl){
+    const rows=itemEl?.querySelector('[data-receipt-lot-rows]');if(!rows)return;
+    const wrap=document.createElement('div');wrap.className='purchase-price-grid';wrap.setAttribute('data-receipt-lot-row','');
+    wrap.innerHTML='<div class="purchase-field"><label>Lote</label><input data-receipt-lot-code placeholder="Opcional"></div>'+
+      '<div class="purchase-field"><label>Validade</label><input type="date" data-receipt-lot-exp></div>'+
+      '<div class="purchase-field"><label>Quantidade UN</label><input type="number" min="0.001" step="0.001" data-receipt-lot-qty></div>'+
+      '<div class="purchase-field"><label>&nbsp;</label><button class="secondary" type="button" data-receipt-lot-remove>Remover</button></div>';
+    rows.appendChild(wrap);
+    const rm=wrap.querySelector('[data-receipt-lot-remove]');if(rm)rm.onclick=()=>wrap.remove();
+  }
+  function bindPurchaseReceiptLots(docId){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(docId)+'"]');if(!host)return;
+    host.querySelectorAll('[data-receipt-lot-add]').forEach(b=>b.onclick=()=>addPurchaseReceiptLotRow(b.closest('[data-receipt-lot-item]')));
+    host.querySelectorAll('[data-receipt-lot-remove]').forEach(b=>b.onclick=()=>{const row=b.closest('[data-receipt-lot-row]');if(row)row.remove()});
+    host.querySelectorAll('[data-receipt-no-expiry]').forEach(ch=>ch.onchange=()=>{
+      const item=ch.closest('[data-receipt-lot-item]'),rows=item?.querySelector('[data-receipt-lot-rows]'),add=item?.querySelector('[data-receipt-lot-add]');
+      if(rows)rows.style.display=ch.checked?'none':'grid';if(add)add.style.display=ch.checked?'none':'inline-flex';
+    });
+    const save=host.querySelector('[data-save-receipt-lots]');if(save)save.onclick=()=>savePurchaseReceiptLots(docId);
+  }
+  async function savePurchaseReceiptLots(docId){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(docId)+'"]');if(!host)return;
+    const items=[...host.querySelectorAll('[data-receipt-lot-item]')].map(item=>{
+      const noExpiry=Boolean(item.querySelector('[data-receipt-no-expiry]')?.checked);
+      const lots=noExpiry?[]:[...item.querySelectorAll('[data-receipt-lot-row]')].map(row=>({
+        lot_code:String(row.querySelector('[data-receipt-lot-code]')?.value||'').trim(),
+        expiration_date:String(row.querySelector('[data-receipt-lot-exp]')?.value||'').trim(),
+        base_quantity:Number(String(row.querySelector('[data-receipt-lot-qty]')?.value||'').replace(',','.'))
+      }));
+      return {item_id:item.dataset.receiptLotItem,no_expiry:noExpiry,lots};
+    });
+    const btn=host.querySelector('[data-save-receipt-lots]');if(btn){btn.disabled=true;btn.textContent='Salvando…'}
+    try{
+      await purchaseApi('save_receipt_lots',{document_id:docId,items});
+      toast('Lotes e validades salvos');
+      await refreshPurchaseAfterApproval(docId);
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Salvar lotes e validades'}}
+  }
+
+  function purchaseStockBlockHtml(d,plan=null,lotPlan=null){
     if(d?.receipt_status==='received'||plan?.status==='verified'){
       return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Entrada confirmada no Bling</strong><small>O aumento do estoque físico foi verificado depois da preparação desta NF-e. O Admin não alterou o estoque local.</small></div>';
     }
@@ -5727,7 +5804,8 @@
       return '<div class="purchase-safe '+(review?'purchase-danger':'')+'" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>'+(review?'Entrada ainda não confirmada':'Aguardando entrada no Bling')+'</strong><small>'+esc(detail)+'</small></div><button class="primary" type="button" data-purchase-verify-receipt="'+esc(d.id)+'">Verificar entrada no Bling</button></div></div>';
     }
     if(d?.receipt_status==='ready'){
-      return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Recebimento físico</strong><small>Os itens estão prontos. Preparar cria um marco de conferência; não soma estoque local. O recebimento deve aparecer no estoque físico do Bling antes de ser concluído.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Preparar entrada</button></div></div>';
+      if(lotPlan?.complete!==true)return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>Antes de preparar a entrada, salve os lotes e validades de todos os itens acima.</small></div>';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Recebimento físico</strong><small>Produtos e validades estão prontos. Preparar cria um marco de conferência; não soma estoque local. O recebimento deve aparecer no estoque físico do Bling antes de ser concluído.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Preparar entrada</button></div></div>';
     }
     return '<div class="purchase-safe '+(d?.receipt_status==='review'?'purchase-danger':'')+'" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>'+(d?.receipt_status==='review'?'Finalize primeiro as revisões de embalagem, conversão ou vínculo dos produtos.':'A entrada física ainda não está liberada para esta nota.')+'</small></div>';
   }
@@ -5742,7 +5820,9 @@
       '<div class="purchase-items">'+(items.length?items.map(purchaseItemCardHtml).join(''):'<div class="empty">Nenhum item encontrado na nota.</div>')+'</div>'+
       '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Autorizar itens prontos</button></div>'+
       purchaseFinanceBlockHtml(d)+
-      purchaseStockBlockHtml(d,data?.receipt_plan||null);
+      purchaseReceiptLotsHtml(d,items,data?.receipt_lot_plan||null)+
+      purchaseStockBlockHtml(d,data?.receipt_plan||null,data?.receipt_lot_plan||null);
+    bindPurchaseReceiptLots(id);
     host.querySelectorAll('[data-purchase-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseItemCard(inp.closest('.purchase-item-card'),true));
     host.querySelectorAll('[data-purchase-approve-item]').forEach(b=>b.onclick=()=>applyPurchaseItemUpdate(b.dataset.purchaseApproveItem));
     const xmlBtn=host.querySelector('[data-purchase-inline-xml]');if(xmlBtn)xmlBtn.onclick=()=>downloadPurchaseXml(id);
@@ -6055,7 +6135,7 @@
     try{const r=await purchaseApi('xml_url',{id});if(r.url)window.open(r.url,'_blank','noopener')}catch(e){toast(errorMessage(e.message))}
   }
   async function receivePurchaseDocument(id){
-    if(!confirm('Preparar esta nota para conferência de entrada no Bling? O Admin não soma estoque local. Confirme somente depois de revisar produtos, embalagens e quantidades.'))return;
+    if(!confirm('Preparar esta nota para conferência de entrada no Bling? O Admin não soma estoque local. Confirme somente depois de revisar produtos, quantidades, lotes e validades.'))return;
     try{
       const r=await purchaseApi('confirm_receipt',{document_id:id,confirmation:'CONFIRMAR_ENTRADA'});
       if(r?.result?.status==='awaiting_bling_receipt'){
@@ -6075,7 +6155,7 @@
     try{
       const r=await purchaseApi('verify_receipt_plan',{document_id:id,confirmation:'VERIFICAR_ENTRADA_BLING'});
       if(r?.result?.verified===true){
-        toast('Entrada confirmada pelo estoque físico do Bling');
+        toast(r?.lot_materialization?.materialized_lots!=null?'Entrada confirmada · '+r.lot_materialization.materialized_lots+' lote(s) registrado(s)':'Entrada confirmada pelo estoque físico do Bling');
       }else if(Number(r?.result?.stale_items||0)>0){
         toast('O Bling ainda não atualizou o saldo depois da preparação. Atualize novamente após o recebimento.');
       }else{
@@ -7880,7 +7960,7 @@
   }
   function formatCpf(v){const d=String(v||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9):v||''}
   function errorMessage(code){
-    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',gtin_already_exists:'Este EAN já pertence a outro produto.',sku_already_exists:'Este SKU já pertence a outro produto.',duplicate_source_not_found:'O produto original não foi encontrado.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',product_inactive:'Produto inativo não pode ter oferta ativa.',product_expired:'Produto vencido não pode ter oferta ativa.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',invalid_product:'Produto inválido.',gondola_not_found:'Gôndola não encontrada.',gondola_clear_confirmation_required:'Confirme a limpeza da gôndola novamente.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',ean_not_in_order:'Este produto não pertence ao pedido.',checked_quantity_exceeds_expected:'Esta quantidade já foi totalmente conferida.',duplicate_ean_in_order:'EAN duplicado no pedido. Revise o cadastro.',check_incomplete:'Ainda faltam produtos para conferir.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',delivery_payment_required:'Registre o pagamento recebido antes de confirmar a entrega.',delivery_payment_mismatch:'O pagamento registrado não confere com o total do pedido.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.'};
+    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',gtin_already_exists:'Este EAN já pertence a outro produto.',sku_already_exists:'Este SKU já pertence a outro produto.',duplicate_source_not_found:'O produto original não foi encontrado.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',receipt_lots_required:'Defina e salve as validades/lotes de todos os itens antes de preparar a entrada.',expiration_lot_required:'Informe ao menos uma validade para este produto.',expiration_date_required:'Informe a data de validade.',lot_quantity_required:'Informe a quantidade deste lote.',lot_quantity_mismatch:'A soma das quantidades dos lotes precisa ser igual à quantidade recebida.',all_receipt_items_required:'Revise os lotes de todos os itens da nota.',product_inactive:'Produto inativo não pode ter oferta ativa.',product_expired:'Produto vencido não pode ter oferta ativa.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',invalid_product:'Produto inválido.',gondola_not_found:'Gôndola não encontrada.',gondola_clear_confirmation_required:'Confirme a limpeza da gôndola novamente.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',ean_not_in_order:'Este produto não pertence ao pedido.',checked_quantity_exceeds_expected:'Esta quantidade já foi totalmente conferida.',duplicate_ean_in_order:'EAN duplicado no pedido. Revise o cadastro.',check_incomplete:'Ainda faltam produtos para conferir.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',delivery_payment_required:'Registre o pagamento recebido antes de confirmar a entrega.',delivery_payment_mismatch:'O pagamento registrado não confere com o total do pedido.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.'};
     return map[code]||'Não consegui salvar agora.';
   }
 
