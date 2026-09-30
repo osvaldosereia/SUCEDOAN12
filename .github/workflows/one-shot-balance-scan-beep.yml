@@ -56,7 +56,7 @@ jobs:
       if(ctx.state==='suspended')ctx.resume().then(fire).catch(()=>{});else fire();
     }catch{}
   }
-'''
+          '''
           s=s.replace(marker,helper+marker,1)
           old="  async function startBalanceCamera(){\n    const video=$('#balanceCameraVideo'),status=$('#balanceCameraStatus');"
           new="  async function startBalanceCamera(){\n    unlockBalanceScanAudio();\n    const video=$('#balanceCameraVideo'),status=$('#balanceCameraStatus');"
