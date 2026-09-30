@@ -15,41 +15,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Patch admin order sorting
+      - name: Patch latest admin safely
         run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin main
           python - <<'PY'
           from pathlib import Path
           p = Path('vitrine/admin/index.html')
           s = p.read_text(encoding='utf-8')
-          old = """function sortOperationalOrders(rows){
-              return [...rows].sort((a,b)=>{
-                const p=orderOperationalPriority(a)-orderOperationalPriority(b);
-                if(p!==0)return p;
-                const at=Date.parse(a?.created_at||0)||0,bt=Date.parse(b?.created_at||0)||0;
-                return at-bt;
-              });
-            }"""
-          new = """function sortOperationalOrders(rows){
-              return [...rows].sort((a,b)=>{
-                const p=orderOperationalPriority(a)-orderOperationalPriority(b);
-                if(p!==0)return p;
-                const at=Date.parse(a?.created_at||0)||0,bt=Date.parse(b?.created_at||0)||0;
-                return bt-at;
-              });
-            }"""
+          old = "return at-bt;"
+          new = "return bt-at;"
           count = s.count(old)
           if count != 1:
-              raise SystemExit(f'Expected exactly 1 sort block, found {count}')
-          p.write_text(s.replace(old, new), encoding='utf-8')
+              if s.count(new) >= 1:
+                  print('Newest-first ordering is already present.')
+                  raise SystemExit(0)
+              raise SystemExit(f'Expected exactly 1 oldest-first return, found {count}')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
           PY
-      - name: Commit patch
-        run: |
           if git diff --quiet -- vitrine/admin/index.html; then
-            echo 'No change needed.'
             exit 0
           fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add vitrine/admin/index.html
           git commit -m 'fix: show newest orders first in admin'
-          git push
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && exit 0
+            sleep 2
+          done
+          exit 1
