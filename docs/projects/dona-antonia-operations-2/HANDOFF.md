@@ -2529,3 +2529,24 @@ Achado atual:
 - estrutura FEFO e lotes já existe;
 - porém ainda existem **0 lotes materializados** e **0 produtos com lot_tracking_complete=true** no banco;
 - portanto o FEFO ainda não deve ser tratado como operacional até o fluxo de recebimento materializar/reconciliar lotes e a separação consumir/sugerir lotes de forma consistente.
+
+
+## Recebimento por lote/validade + FEFO seguro — 2026-09-29
+Implementado no Vitrine/Admin > Compras/XML:
+- cada item de NF-e agora possui seção **Lotes e validades desta entrada**;
+- XML com rastro pré-preenche lote/validade; sem rastro, operador informa;
+- uma linha pode ser dividida em várias validades;
+- soma dos lotes deve fechar exatamente com a quantidade convertida em UN;
+- opção explícita **Sem controle de validade** para itens em que realmente não se aplica;
+- entrada não pode ser preparada/verificada enquanto o plano de lotes estiver incompleto;
+- salvar lotes/validade não altera estoque físico;
+- após o aumento de estoque ser verificado no Bling, os lotes da compra são materializados em `product_inventory_lots` de forma idempotente;
+- o Admin mostra lotes já cadastrados do produto ao lado da nova entrada;
+- com `lot_tracking_complete=true`, o menor vencimento é marcado **FEFO: sair primeiro**;
+- sem tracking completo, a menor validade é apenas referência provisória, com aviso de que o estoque legado ainda não foi reconciliado;
+- FEFO de separação não será tratado como autoritativo até o levantamento inicial de lotes/validades do estoque antigo fechar com o físico do Bling.
+
+Runtime:
+- `admin-service-intelligence-v1` publicado como v214;
+- teste read-only de documento retornou `receipt_lot_plan` e `current_inventory_lots` corretamente;
+- no estado atual ainda não há lotes históricos materializados; a primeira entrada validada passará a criar o ledger de lotes novos.
