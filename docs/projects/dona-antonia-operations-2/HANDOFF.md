@@ -2486,3 +2486,24 @@ Decisão:
 - após a desativação, repetir o `probe_readonly` e confirmar que todos os cinco canais estão com situação 2/desabilitado.
 - sincronização `purchase-xml-daily-v1` ajustada para **06:00 e 18:00 de Cuiabá** (cron `0 10,22 * * *` em UTC);
 - `purchase_xml_settings.auto_create_payables=false` enquanto o financeiro automático de compras permanecer suspenso.
+
+
+## Compras/XML — fila profissional de catálogo 31 dias — 2026-09-29
+Implementado o modelo de automação por confiança para produtos vindos de NF-e:
+- backend `catalog_queue` agrupa por produto/GTIN os itens das NF-e emitidas nos últimos 31 dias;
+- fila única no Vitrine/Admin mostra produto novo ou existente, EAN, NCM, fornecedor, NF mais recente, conversão embalagem→UN, custo atual x novo, preço atual x sugerido e status;
+- filtros: Pendentes, Novos, Já cadastrados, Revisar, Prontos, Aprovados e Todos;
+- busca por produto, EAN, fornecedor, NF e NCM;
+- botão **Autorizar seguros** aprova em lote somente itens com vínculo/custo/conversão determinísticos;
+- itens ambíguos ficam fora do lote e exigem revisão humana;
+- aprovação em lote atualiza custo unitário; preço só é elevado automaticamente quando está abaixo da sugestão mínima de 40%; estoque permanece inalterado;
+- cadastro automático de produto novo continua habilitado; produto novo local nasce inativo e entra na fila para revisão comercial;
+- janela automática operacional permanece em 31 dias.
+
+Validação no runtime após implantação:
+- 26 produtos únicos na janela de 31 dias;
+- 11 novos;
+- 15 já existentes;
+- 22 prontos para aprovação segura;
+- 2 exigindo revisão;
+- 2 já aprovados.
