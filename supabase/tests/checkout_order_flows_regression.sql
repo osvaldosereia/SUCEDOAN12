@@ -1,5 +1,6 @@
 -- Checkout regression tests. Safe to run against a database because the whole test is rolled back.
--- Covers legacy basket checkout, product-only checkout, mixed cart and the new allocation uniqueness key.
+-- Covers legacy basket checkout, product-only checkout, mixed cart, allocation uniqueness,
+-- and canonical manual_whatsapp / papoai / reorder metadata updates.
 
 begin;
 
@@ -10,6 +11,8 @@ declare
   v_product_id uuid;
   v_result jsonb;
   v_order_id uuid;
+  v_source text;
+  v_source_idx integer := 0;
 begin
   select l.basket_id,l.id
     into v_basket_id,v_lot_id
@@ -91,6 +94,36 @@ begin
   if (select count(*) from public.order_items where order_id=v_order_id)<2 then
     raise exception 'TEST_FAIL mixed cart items missing';
   end if;
+
+  -- Non-vitrine canonical sources update order_items metadata after creation.
+  foreach v_source in array array['manual_whatsapp','papoai','reorder'] loop
+    v_source_idx := v_source_idx + 1;
+    v_result := public.create_canonical_cart_order_v2(
+      v_source,
+      '+55659999902'||v_source_idx::text,
+      case v_source
+        when 'manual_whatsapp' then 'PIX'
+        when 'papoai' then 'Dinheiro'
+        else 'Cartão alimentação/refeição'
+      end,
+      jsonb_build_array(jsonb_build_object('type','basket','id',v_basket_id,'qty',1,'lot_id',v_lot_id)),
+      jsonb_build_object('display_name','REGRESSION '||upper(v_source)),
+      '{}'::jsonb
+    );
+    v_order_id := (v_result->>'order_id')::uuid;
+
+    if not exists(select 1 from public.orders where id=v_order_id and source=v_source) then
+      raise exception 'TEST_FAIL canonical source % missing',v_source;
+    end if;
+    if not exists(
+      select 1 from public.order_items
+      where order_id=v_order_id
+        and updated_at is not null
+        and metadata->>'source'=v_source
+    ) then
+      raise exception 'TEST_FAIL canonical source % item update missing',v_source;
+    end if;
+  end loop;
 end
 $$;
 
