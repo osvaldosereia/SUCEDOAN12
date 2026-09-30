@@ -129,6 +129,14 @@
     @media(max-width:780px){.purchase-doc-row{grid-template-columns:82px minmax(0,1fr) auto!important}.purchase-doc-row>:nth-child(3),.purchase-doc-row>:nth-child(4),.purchase-doc-row>:nth-child(5),.purchase-doc-row>:nth-child(6){grid-column:2}.purchase-doc-row>:last-child{grid-column:2/4;justify-content:flex-start}.purchase-doc-expanded{padding:12px 10px}.purchase-price-grid{grid-template-columns:1fr 1fr}.purchase-item-title{flex-direction:column}.purchase-item-badges{justify-content:flex-start}}
     @media(max-width:520px){.purchase-price-grid{grid-template-columns:1fr}.purchase-item-controls{align-items:stretch}.purchase-item-controls .primary{width:100%}}
 
+
+    .purchase-catalog-panel{margin-bottom:14px;overflow:hidden}.purchase-catalog-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fbfcfb}
+    .purchase-catalog-search{flex:1 1 260px;max-width:420px}.purchase-catalog-search input{width:100%}.purchase-catalog-filters{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px}.purchase-catalog-filters button{min-height:34px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-weight:700;color:var(--muted)}.purchase-catalog-filters button.active{background:#e8f0fe;border-color:#d2e3fc;color:#1967d2}
+    .purchase-catalog-summary{display:flex;gap:12px;flex-wrap:wrap;padding:0 14px 12px;color:var(--muted);font-size:12px}.purchase-catalog-summary b{color:var(--text)}.purchase-catalog-list{display:grid;gap:10px;padding:0 14px 14px}
+    .purchase-catalog-card{border:1px solid var(--line);border-radius:10px;background:#fff;padding:13px}.purchase-catalog-card.review{border-color:#ead49b;background:#fffdf7}.purchase-catalog-card.approved{background:#f8fbf9}
+    .purchase-catalog-meta{display:flex;gap:8px 14px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-top:5px}.purchase-catalog-meta b{color:var(--text)}.purchase-catalog-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:11px;padding-top:10px;border-top:1px solid #eef1ef}
+    @media(max-width:780px){.purchase-catalog-toolbar{align-items:stretch}.purchase-catalog-search{max-width:none;flex-basis:100%}.purchase-catalog-toolbar .primary{width:100%}.purchase-catalog-filters{overflow-x:auto;flex-wrap:nowrap;padding-bottom:12px}.purchase-catalog-filters button{white-space:nowrap}.purchase-catalog-actions{align-items:stretch}.purchase-catalog-actions .primary{width:100%}}
+
     .toast{position:fixed;left:50%;bottom:22px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#18221c;color:#fff;border-radius:999px;padding:11px 16px;font-weight:800;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
     @media(max-width:780px){
       .wrap{padding-inline:10px}.top-row{height:58px}.logo{width:72px;height:34px}.store-link{font-size:12px}
@@ -1040,7 +1048,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -5387,7 +5395,7 @@
     if(!state.purchaseFilter)state.purchaseFilter={period:'this_month',start_date:'',end_date:''};
     const pf=state.purchaseFilter;
     content.innerHTML=
-      '<div class="page-head"><div><h1>Compras do Bling</h1><p>Busque as notas de entrada já registradas no Bling, importe para o Admin e revise o que precisa de atenção.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar tela</button></div>'+
+      '<div class="page-head"><div><h1>Compras do Bling</h1><p>Importe as notas e use a fila de produtos dos últimos 31 dias para cadastrar, conferir e aprovar alterações com rapidez.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar tela</button></div>'+
       '<div class="purchase-safe"><strong>Importação segura</strong><small>Importar não dá entrada no estoque. Notas em CPF nunca geram contas a pagar. Para notas da empresa, o financeiro é conciliado com o Bling e qualquer dúvida fica marcada para revisão.</small></div>'+
       '<section class="panel" style="margin:0 0 12px;padding:12px">'+
         '<div style="display:flex;gap:12px;align-items:end;justify-content:space-between;flex-wrap:wrap">'+
@@ -5455,12 +5463,14 @@
       const results=await Promise.allSettled([
         purchaseApi('summary',filter),
         purchaseApi('browse_bling',filter),
-        purchaseApi('payment_accounts',{})
+        purchaseApi('payment_accounts',{}),
+        purchaseApi('catalog_queue',{lookback_days:31})
       ]);
       if(results[0].status!=='fulfilled')throw results[0].reason;
       state.purchaseXml=results[0].value;
       state.purchaseBlingBrowse=results[1].status==='fulfilled'?results[1].value:{ok:false,error:results[1].reason?.message,documents:[],count:0};
       state.purchasePaymentAccounts=results[2].status==='fulfilled'?results[2].value:{ok:false,accounts:[],mappings:{},error:results[2].reason?.message};
+      state.purchaseCatalogQueue=results[3].status==='fulfilled'?results[3].value:{ok:false,items:[],counts:{},error:results[3].reason?.message};
       paintPurchases();
     }catch(e){
       host.innerHTML='<div class="empty">Não consegui carregar Compras/XML. <button class="text" id="retryPurchases">Tentar novamente</button></div>';
@@ -5549,6 +5559,150 @@
         ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
         :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
     }
+  }
+
+
+  function purchaseCatalogReasonLabel(v){
+    const map={product_match_required:'Produto sem vínculo',processing_failed:'Falha no processamento',item_review_required:'Item precisa de revisão',conversion_review_required:'Conversão precisa de revisão',packaging_factor_required:'Informe unidades por embalagem',unit_cost_unavailable:'Custo unitário indisponível'};
+    return map[v]||v||'Revisar';
+  }
+  function purchaseCatalogFilteredItems(){
+    const q=state.purchaseCatalogQueue||{},items=Array.isArray(q.items)?q.items:[],filter=state.purchaseCatalogFilter||'pending',term=normalize(state.purchaseCatalogSearch||'');
+    return items.filter(x=>{
+      const f=x.flags||{};
+      let ok=true;
+      if(filter==='pending')ok=Boolean(f.needs_review||(f.needs_approval&&!f.approved));
+      else if(filter==='new')ok=Boolean(f.is_new);
+      else if(filter==='existing')ok=Boolean(f.is_existing);
+      else if(filter==='review')ok=Boolean(f.needs_review);
+      else if(filter==='ready')ok=Boolean(f.safe_to_approve&&f.needs_approval&&!f.approved);
+      else if(filter==='approved')ok=Boolean(f.approved&&!f.needs_approval);
+      if(!ok)return false;
+      if(!term)return true;
+      const hay=[x?.products?.name,x.description,x.commercial_gtin,x.tax_gtin,x?.document?.supplier_name,x?.document?.metadata?.invoice_number,x.ncm].map(normalize).join(' ');
+      return hay.includes(term);
+    });
+  }
+  function purchaseCatalogCardHtml(x){
+    const p=x.pricing_preview||{},prod=x.products||{},flags=x.flags||{};
+    const factor=p.suggested_conversion_factor??x.conversion_factor??(p.requires_conversion_confirmation?'':1);
+    const unitCost=p.proposed_unit_cost??purchaseItemUnitCost(x,factor);
+    const saleValue=p.recommended_sale_price??prod.price??p.suggested_sale_price??'';
+    const updateSale=Boolean(p.update_sale_recommended);
+    const invoice=x?.document?.metadata?.invoice_number||String(x?.document?.document_key||'').slice(-10)||'—';
+    const gtin=x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado';
+    const status=flags.needs_review?'Revisar':flags.approved&&!flags.needs_approval?'Aprovado':flags.safe_to_approve?'Pronto':'Pendente';
+    const statusCls=flags.needs_review?'warn':flags.approved&&!flags.needs_approval?'':'';
+    const cardCls=flags.needs_review?'review':flags.approved&&!flags.needs_approval?'approved':'';
+    const reason=(flags.review_reasons||[]).map(purchaseCatalogReasonLabel).join(' · ');
+    const qtyText=(factor&&Number(factor)>0)?fmtQty(x.purchase_quantity||0)+' '+esc(x.purchase_unit||'')+' × '+fmtQty(factor)+' = '+fmtQty(Number(x.purchase_quantity||0)*Number(factor))+' UN':fmtQty(x.purchase_quantity||0)+' '+esc(x.purchase_unit||'');
+    return '<div class="purchase-catalog-card '+cardCls+'" data-purchase-catalog-item="'+esc(x.id)+'">'+
+      '<div class="purchase-item-title"><div><strong>'+esc(prod.name||x.description||'Produto')+'</strong>'+
+        '<small>'+esc(x.description||'')+'</small>'+
+        '<div class="purchase-catalog-meta"><span><b>EAN</b> '+esc(gtin)+'</span><span><b>NCM</b> '+esc(x.ncm||'—')+'</span><span><b>Última NF</b> '+esc(invoice)+' · '+esc(dateOnly(String(x?.document?.issued_at||'').slice(0,10)))+'</span><span><b>Fornecedor</b> '+esc(x?.document?.supplier_name||'—')+'</span>'+(Number(x.occurrence_count||0)>1?'<span><b>'+esc(x.occurrence_count)+'</b> compras no período</span>':'')+'</div>'+
+      '</div><div class="purchase-item-badges">'+
+        '<span class="pill '+(flags.is_new?'warn':'')+'">'+(flags.is_new?'Produto novo':'Já cadastrado')+'</span>'+
+        (prod.is_active===false?'<span class="pill off">Inativo</span>':'')+
+        '<span class="pill '+statusCls+'">'+esc(status)+'</span>'+
+      '</div></div>'+
+      (reason?'<div class="purchase-factor-hint warn-text" style="margin-bottom:8px">'+esc(reason)+'</div>':'')+
+      '<div class="purchase-price-grid">'+
+        '<div class="purchase-field"><label>Conversão para UN</label><input type="number" min="1" step="1" data-catalog-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint">'+(p.requires_conversion_confirmation?'Confira quantas UN existem em 1 '+esc(x.purchase_unit||'embalagem')+'.':'Compra: '+qtyText)+'</div></div>'+
+        '<div class="purchase-price-box"><small>Quantidade final</small><strong data-catalog-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Custo novo / UN</small><strong class="accent" data-catalog-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Preço atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
+        '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-catalog-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint">'+(p.suggested_sale_price!=null?'Mínimo 40%: '+purchaseMoney(p.suggested_sale_price):'Defina após corrigir a conversão.')+'</div></div>'+
+      '</div>'+
+      '<div class="purchase-catalog-actions"><div><div class="purchase-checks"><label><input type="checkbox" data-catalog-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-catalog-update-sale '+(updateSale?'checked':'')+'> Atualizar preço</label></div><div class="purchase-stock-note">Estoque não é alterado nesta etapa.</div></div>'+
+        '<div><button class="primary" type="button" data-catalog-approve="'+esc(x.id)+'" '+(!x.product_id?'disabled':'')+'>'+(flags.approved&&!flags.needs_approval?'Revisar novamente':flags.needs_review?'Revisar e autorizar':'Autorizar')+'</button><span class="purchase-approval-result" data-catalog-result></span></div></div>'+
+    '</div>';
+  }
+  function purchaseCatalogListHtml(){
+    const items=purchaseCatalogFilteredItems();
+    return items.length?items.map(purchaseCatalogCardHtml).join(''):'<div class="empty">Nenhum produto neste filtro.</div>';
+  }
+  function recalcPurchaseCatalogCard(card){
+    if(!card)return;
+    const itemId=card.dataset.purchaseCatalogItem,item=(state.purchaseCatalogQueue?.items||[]).find(x=>x.id===itemId);if(!item)return;
+    const factor=Number(card.querySelector('[data-catalog-factor]')?.value||0),cost=purchaseItemUnitCost(item,factor),baseQty=Number(item.purchase_quantity||0)*(factor>0?factor:0);
+    const minimum=cost!==null?Math.round(cost*1.4*100)/100:null,current=Number(item?.products?.price),hasCurrent=Number.isFinite(current)&&current>0;
+    const saleValue=minimum===null?(hasCurrent?current:''):(hasCurrent?Math.max(current,minimum):minimum);
+    const costEl=card.querySelector('[data-catalog-unit-cost]'),qtyEl=card.querySelector('[data-catalog-base-qty]'),sale=card.querySelector('[data-catalog-sale]'),saleCheck=card.querySelector('[data-catalog-update-sale]');
+    if(costEl)costEl.textContent=purchaseMaybeMoney(cost);
+    if(qtyEl)qtyEl.textContent=factor>0?fmtQty(baseQty)+' UN':'—';
+    if(sale&&saleValue!=='')sale.value=purchaseNumberInput(saleValue);
+    if(saleCheck)saleCheck.checked=Boolean(!hasCurrent||(minimum!==null&&current+0.005<minimum));
+  }
+  async function applyPurchaseCatalogItemUpdate(itemId,quiet=false,operatorOverride=''){
+    const card=document.querySelector('[data-purchase-catalog-item="'+CSS.escape(itemId)+'"]');if(!card)return false;
+    const operator=operatorOverride||requireOperator();if(!operator)return false;
+    const factor=Number(String(card.querySelector('[data-catalog-factor]')?.value||'').replace(',','.'));
+    const sale=Number(String(card.querySelector('[data-catalog-sale]')?.value||'').replace(',','.'));
+    const updateCost=Boolean(card.querySelector('[data-catalog-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-catalog-update-sale]')?.checked);
+    if(!Number.isFinite(factor)||factor<1){if(!quiet)toast('Informe a conversão para UN');return false}
+    if(updateSale&&(!Number.isFinite(sale)||sale<0)){if(!quiet)toast('Informe um preço de venda válido');return false}
+    const btn=card.querySelector('[data-catalog-approve]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+    try{
+      await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+      const result=card.querySelector('[data-catalog-result]');if(result)result.textContent='Atualizado';
+      if(!quiet){
+        toast('Cadastro atualizado');
+        state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
+        state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+        paintPurchases();
+      }
+      return true;
+    }catch(e){
+      if(!quiet)toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Autorizar'}
+      return false;
+    }
+  }
+  async function approveSafeCatalogItems(){
+    const items=(state.purchaseCatalogQueue?.items||[]).filter(x=>x?.flags?.safe_to_approve&&x?.flags?.needs_approval&&!x?.flags?.approved);
+    if(!items.length){toast('Nenhum produto seguro aguardando aprovação');return}
+    if(!confirm('Autorizar '+items.length+' produto(s) seguros dos últimos 31 dias?\n\nO custo será atualizado pelo custo unitário da NF-e. O preço só será alterado quando estiver abaixo da sugestão mínima de 40%. O estoque não será alterado.'))return;
+    const operator=requireOperator();if(!operator)return;
+    const b=$('#purchaseCatalogApproveSafe');if(b){b.disabled=true;b.textContent='Aprovando 0 / '+items.length}
+    let ok=0,fail=0;
+    for(let i=0;i<items.length;i++){
+      const x=items[i],p=x.pricing_preview||{},factor=Number(p.suggested_conversion_factor||x.conversion_factor||1),sale=Number(p.recommended_sale_price??x?.products?.price??p.suggested_sale_price??0);
+      try{
+        await purchaseApi('apply_item_update',{item_id:x.id,conversion_factor:factor,sale_price:sale,update_cost:true,update_sale_price:Boolean(p.update_sale_recommended),operator_name:operator});
+        ok++;
+      }catch(e){fail++}
+      if(b)b.textContent='Aprovando '+(i+1)+' / '+items.length;
+    }
+    toast(ok+' produto(s) aprovado(s)'+(fail?' · '+fail+' falha(s)':''));
+    state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
+    state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+    paintPurchases();
+  }
+  function paintPurchaseCatalogList(){
+    const host=$('#purchaseCatalogList');if(!host)return;
+    host.innerHTML=purchaseCatalogListHtml();
+    const count=$('#purchaseCatalogVisibleCount');if(count)count.textContent=String(purchaseCatalogFilteredItems().length);
+    host.querySelectorAll('[data-catalog-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseCatalogCard(inp.closest('.purchase-catalog-card')));
+    host.querySelectorAll('[data-catalog-approve]').forEach(b=>b.onclick=()=>applyPurchaseCatalogItemUpdate(b.dataset.catalogApprove));
+  }
+  function purchaseCatalogQueueHtml(){
+    const q=state.purchaseCatalogQueue||{},counts=q.counts||{},filter=state.purchaseCatalogFilter||'pending';
+    const filters=[['pending','Pendentes'],['new','Novos'],['existing','Já cadastrados'],['review','Revisar'],['ready','Prontos'],['approved','Aprovados'],['all','Todos']];
+    const pending=Number(counts.ready_for_approval||0)+Number(counts.needs_review||0);
+    return '<section class="panel purchase-catalog-panel">'+
+      '<div class="history-title dispatch-head"><div><strong>3. Produtos recebidos · últimos 31 dias</strong><span>Fila única para cadastrar, conferir e aprovar produtos sem abrir NF-e por NF-e.</span></div><b id="purchaseCatalogVisibleCount">'+esc(purchaseCatalogFilteredItems().length)+'</b></div>'+
+      '<div class="purchase-catalog-toolbar"><div class="purchase-catalog-search"><input id="purchaseCatalogSearch" type="search" placeholder="Buscar produto, EAN, fornecedor, NF ou NCM" value="'+esc(state.purchaseCatalogSearch||'')+'"></div><button class="primary" id="purchaseCatalogApproveSafe" type="button" '+(!Number(counts.ready_for_approval||0)?'disabled':'')+'>Autorizar seguros ('+esc(counts.ready_for_approval||0)+')</button></div>'+
+      '<div class="purchase-catalog-filters">'+filters.map(([key,label])=>'<button type="button" class="'+(filter===key?'active':'')+'" data-catalog-filter="'+key+'">'+label+'</button>').join('')+'</div>'+
+      '<div class="purchase-catalog-summary"><span><b>'+esc(counts.total||0)+'</b> produtos</span><span><b>'+esc(counts.new_products||0)+'</b> novos</span><span><b>'+esc(counts.existing_products||0)+'</b> existentes</span><span><b>'+esc(counts.ready_for_approval||0)+'</b> prontos</span><span><b>'+esc(counts.needs_review||0)+'</b> revisar</span><span><b>'+esc(counts.approved||0)+'</b> aprovados</span><span><b>'+esc(pending)+'</b> pendências operacionais</span></div>'+
+      '<div class="purchase-catalog-list" id="purchaseCatalogList">'+purchaseCatalogListHtml()+'</div>'+
+    '</section>';
+  }
+  function bindPurchaseCatalogQueue(){
+    document.querySelectorAll('[data-catalog-filter]').forEach(b=>b.onclick=()=>{state.purchaseCatalogFilter=b.dataset.catalogFilter;paintPurchases()});
+    const search=$('#purchaseCatalogSearch');if(search)search.oninput=e=>{state.purchaseCatalogSearch=e.target.value;paintPurchaseCatalogList()};
+    const bulk=$('#purchaseCatalogApproveSafe');if(bulk)bulk.onclick=approveSafeCatalogItems;
+    paintPurchaseCatalogList();
   }
 
   function purchaseStockBlockHtml(d,plan=null){
@@ -5816,12 +5970,13 @@
         '<div class="bling-card"><small>Confirmar baixa</small><strong class="'+(paymentToConfirm?'warn-text':'ok-text')+'">'+paymentToConfirm+'</strong><span class="sub">pagamento na hora identificado na NF-e</span></div>'+
         '<div class="bling-card"><small>Prontas para estoque</small><strong>'+ready+'</strong><span class="sub">aguardam sua confirmação</span></div>'+
       '</div>'+
+      purchaseCatalogQueueHtml()+
       purchasePaymentConfigHtml()+
       ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento interrompido corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto a partir dos itens já gravados.':'')+'</small></div>':'')+
       (last?'<div class="bling-banner"><strong>'+esc(runSource)+' · '+esc(runStatus)+'</strong><small>'+dateTime(last.started_at||last.created_at)+' · '+esc(last.documents_processed||0)+' nova(s) · '+esc(last.documents_duplicate||0)+' já existente(s) · '+esc(last.documents_failed||0)+' falha(s)'+(last.items_review?' · '+esc(last.items_review)+' item(ns) para revisar':'')+'</small></div>':'')+
       (notImported.length?'<div class="purchase-safe purchase-danger"><strong>'+notImported.length+' nota(s) do Bling ainda não estão no Admin</strong><small>Clique em <b>Buscar e importar notas</b>. A mesma NF-e não é duplicada. Se a nota estiver apenas em “Notas recebidas” no Bling, primeiro ela precisa entrar como nota de compra/entrada no próprio Bling.</small></div>':
         '<div class="purchase-safe"><strong>Período sincronizado</strong><small>Todas as notas que a API do Bling retornou neste período já aparecem no Admin.</small></div>')+
-      '<section class="panel"><div class="history-title dispatch-head"><div><strong>3. Revise as notas importadas</strong><span>Clique em uma nota para ver produtos, custo, preço, financeiro e recebimento.</span></div><b>'+docs.length+'</b></div>'+
+      '<section class="panel"><div class="history-title dispatch-head"><div><strong>4. Revise as notas importadas</strong><span>Clique em uma nota para ver produtos, custo, preço, financeiro e recebimento.</span></div><b>'+docs.length+'</b></div>'+
         (docs.length?docs.map(x=>'<div class="purchase-doc-block">'+
           '<div class="purchase-doc-row purchase-doc-clickable '+(state.purchaseExpandedId===x.id?'expanded':'')+'" data-purchase-toggle="'+esc(x.id)+'">'+
             '<div><strong>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</strong><span class="sub">'+esc(String(x.document_key||'').slice(-10))+'</span></div>'+
@@ -5845,6 +6000,7 @@
       (reviews.length?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Itens que ainda precisam de conversão/vínculo</strong><span>Caixa, fardo e pacote precisam estar convertidos para unidade antes de atualizar cadastro ou estoque.</span></div><b>'+reviews.length+'</b></div>'+
         reviews.map(x=>'<div class="purchase-review"><div class="history-main"><strong>'+esc(x.description||'Produto')+'</strong><small>'+esc(x.processing_status||'')+'</small></div><div><strong>'+esc(fmtQty(x.purchase_quantity||0))+'</strong><span class="sub">'+esc(x.purchase_unit||'')+'</span></div><div><strong>'+esc(x.conversion_factor||'—')+'</strong><span class="sub">fator</span></div><div><strong>'+purchaseMaybeMoney(x.purchase_unit_price)+'</strong><span class="sub">compra</span></div><div><button class="secondary" type="button" data-purchase-conversion="'+esc(x.id)+'">Definir conversão</button></div></div>').join('')+
       '</section>':'');
+    bindPurchaseCatalogQueue();
     host.querySelectorAll('[data-purchase-toggle]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,a,input,label'))return;togglePurchaseDocument(row.dataset.purchaseToggle)});
     host.querySelectorAll('[data-purchase-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();togglePurchaseDocument(b.dataset.purchaseOpen,true)});
     host.querySelectorAll('[data-purchase-xml]').forEach(b=>b.onclick=e=>{e.stopPropagation();downloadPurchaseXml(b.dataset.purchaseXml)});
