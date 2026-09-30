@@ -1759,7 +1759,7 @@
     const s=state.opsSummary||{};
     const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{},pr=s.printing||{},pay=s.payments||{},del=s.delivery||{},pa=state.opsPapoAi||{};
     const printNeeds=Number(pr.pending||0)+Number(pr.failed||0);
-    const papoSeen=Number(pa.captured_24h||0);
+    const papoSeen=Number(pa.captured_24h||0),identity=pa.identity||{};
     const cards=[
       ['Precisa de humano',Number(w.human_required||0),'Conversas WhatsApp'],
       ['Atenções',Number(a.open||0),'Fila da Central'],
@@ -1770,6 +1770,7 @@
       ['Retornando',Number(del.returning||0),'Mercadoria voltando ao depósito'],
       ['Retorno em revisão',Number(del.return_review||0),'Bloqueado para nova saída'],
       ['PapoAI',papoSeen,pa.capture_enabled?(Number(pa.review_required||0)?Number(pa.review_required||0)+' precisa(m) revisão':Number(pa.conversation_unlinked_24h||0)?Number(pa.conversation_unlinked_24h||0)+' sem conversa':'ponte ok · '+Number(pa.conversation_linked_24h||0)+' vinculado(s)'):'captura desligada'],
+      ['Cadastros pendentes',Number(identity.provisional_without_name||0),Number(identity.site_orders_without_customer_with_phone_31d||0)?Number(identity.site_orders_without_customer_with_phone_31d||0)+' pedido(s) sem cliente':'todos os pedidos com telefone têm cliente'],
       ['Impressões',printNeeds,printNeeds?'Fila de separação':'Fila em dia'],
       ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
       ['Vencem em 90 dias',Number(i.expires_90d||0),'Revisar lotes/validade']
@@ -1780,7 +1781,7 @@
   function renderPapoAiBridgePanel(){
     const p=state.opsPapoAi||{};
     if(!p.capture_enabled)return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px"><strong>PapoAI / WhatsApp</strong><span class="danger-text">ponte desligada</span></div></section>';
-    const lastFlow=p.last_flow||{},lastLink=p.last_identity_link||{};
+    const lastFlow=p.last_flow||{},lastLink=p.last_identity_link||{},identity=p.identity||{};
     const stateLabel=p.bridge_state==='attention'?'Atenção':'Online';
     const stateClass=p.bridge_state==='attention'?'warn-text':'ok-text';
     const flowText=lastFlow.created_at
@@ -1793,14 +1794,16 @@
       '<div class="history-title" style="padding:14px 14px 0"><div><strong>PapoAI / WhatsApp</strong><span class="muted">ponte operacional · sem IA de atendimento no Admin</span></div><b class="'+stateClass+'">'+stateLabel+'</b></div>'+
       '<div class="bling-grid" style="padding:14px;margin-bottom:0">'+
         '<div class="bling-card"><small>Eventos 24h</small><strong>'+Number(p.events_24h||p.captured_24h||0)+'</strong><span class="sub">'+Number(p.events_conversation_linked||0)+' vinculados a conversa no total</span></div>'+
-        '<div class="bling-card"><small>Clientes reconhecidos</small><strong>'+Number(p.events_customer_linked||0)+'</strong><span class="sub">por telefone exato</span></div>'+
-        '<div class="bling-card"><small>Flows</small><strong>'+Number(p.flow_events_total||0)+'</strong><span class="sub">'+Number(p.flow_events_review||0)+' em revisão</span></div>'+
+        '<div class="bling-card"><small>Clientes reconhecidos</small><strong>'+Number(p.events_customer_linked||0)+'</strong><span class="sub">por identidade telefônica canônica</span></div>'+
+        '<div class="bling-card"><small>Flows</small><strong>'+Number(identity.flow_events_total||p.flow_events_total||0)+'</strong><span class="sub">'+Number(identity.flow_events_review||p.flow_events_review||0)+' em revisão</span></div>'+
+        '<div class="bling-card"><small>Cadastros provisórios</small><strong>'+Number(identity.provisional_customers||0)+'</strong><span class="sub">'+Number(identity.provisional_without_name||0)+' ainda sem nome · '+Number(identity.verified_flow_customers||0)+' confirmado(s) pelo Flow</span></div>'+
         '<div class="bling-card"><small>Links catálogo</small><strong>'+Number(p.identity_tokens_total||0)+'</strong><span class="sub">'+Number(p.identity_tokens_redeemed||0)+' aberto(s) pelo cliente</span></div>'+
       '</div>'+
       '<div style="padding:0 14px 14px;display:grid;gap:8px">'+
         '<div class="purchase-safe" style="margin:0"><strong>Último Flow</strong><small>'+esc(flowText)+'</small></div>'+
         '<div class="purchase-safe" style="margin:0"><strong>Último link</strong><small>'+esc(linkText)+'</small></div>'+
         (p.last_error?'<div class="purchase-safe purchase-danger" style="margin:0"><strong>Último erro</strong><small>'+esc(p.last_error)+'</small></div>':'')+
+        (Number(identity.site_orders_without_customer_31d||0)?'<div class="purchase-safe '+(Number(identity.site_orders_without_customer_with_phone_31d||0)?'purchase-danger':'')+'" style="margin:0"><strong>Pedidos sem cliente</strong><small>'+Number(identity.site_orders_without_customer_31d||0)+' pedido(s) nos últimos 31 dias · '+(Number(identity.site_orders_without_customer_with_phone_31d||0)?'há telefone disponível para revisar':'sem telefone disponível; legado não pode ser vinculado com segurança')+'</small></div>':'')+
         '<div class="dispatch-actions" style="justify-content:flex-start"><button class="primary" type="button" data-papoai-create-link>Criar link catálogo</button></div>'+
         '<small class="muted">Pedido automático vindo de evento estruturado: '+(p.structured_order_commit_enabled?'HABILITADO':'bloqueado até homologação real')+'. Mensagem livre nunca cria pedido.</small>'+
       '</div>'+
