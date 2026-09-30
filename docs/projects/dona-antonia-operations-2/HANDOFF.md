@@ -2484,3 +2484,5 @@ Decisão:
 - **não excluir** histórico/vínculos nesta etapa; apenas desativar;
 - a API pública do Bling expõe esses canais somente para leitura (`GET /canais-venda` e `GET /canais-venda/{id}`), então a desativação deve ser feita em **Central de Extensões > Minhas instalações > ⋮ > Desativar**;
 - após a desativação, repetir o `probe_readonly` e confirmar que todos os cinco canais estão com situação 2/desabilitado.
+- sincronização `purchase-xml-daily-v1` ajustada para **06:00 e 18:00 de Cuiabá** (cron `0 10,22 * * *` em UTC);
+- `purchase_xml_settings.auto_create_payables=false` enquanto o financeiro automático de compras permanecer suspenso.
