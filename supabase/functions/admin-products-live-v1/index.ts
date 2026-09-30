@@ -32,8 +32,8 @@ async function mappedProduct(p:any){
 }
 const O=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const OP_SOURCES=["vitrine","manual_whatsapp","papoai","reorder"];
-const LOCAL=new Set(["health","products","product_facets","product_save","product_stock_set","offer_save","expirations","expiration_save","expiry_alerts","product_lots","product_fefo_preview","product_lifecycle_audit","ean_lookup","inventory_balance_resolve_ean","inventory_balance_status","balance_confirm","inventory_balance_prepare_unknown","inventory_balance_commit","inventory_incidents","inventory_incident_create","stock_recount_queue","stock_reconciliation_classify","stock_cutover_preflight","order_check","gondolas","gondola","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","gondola_clear","gondola_assign_count","orders","order","closure_orders","order_stock_shortages","order_update","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_consume_stock","bling_status","bling_status_catalog_probe","bling_oauth_begin","bling_probe_readonly","bling_reconcile_catalog_readonly","bling_reconcile_customers_readonly","bling_preview_order_sync","bling_reconcile_order_dependencies_readonly","bling_create_order_customer","bling_create_order_products","order_fiscal_status","order_fiscal_dispatch_canary_execute","order_fiscal_document_pdf","order_fiscal_confirm_payment","bling_finance_overview","bling_finance_action","history_sync_retry","order_component_replace","ops_summary","ops_attention","ops_shadow_readiness","ops_print_queue","ops_print_presented","manual_order_create","ops_papoai_capture_status","papoai_issue_catalog_link","ops_timeline","ops_delivery_runs","ops_delivery_plan","ops2_recover_ean_verified","inventory_sheet_create","inventory_sheet_preview","inventory_sheet_options","inventory_sheet_batches","inventory_sheet_manifest","inventory_sheet_pending_manual","inventory_sheet_cancel_scan","inventory_sheet_analyze","inventory_sheet_apply","baskets_admin","basket_admin","basket_product_search","basket_save","basket_item_save","basket_item_delete","basket_alternative_save","basket_alternative_delete","basket_lot_create","basket_lot_cancel","basket_product_search","basket_kits_admin","basket_kit_admin","basket_kit_lot_create","basket_kit_lot_cancel","basket_kit_lot_draft_save","basket_kit_lot_draft_delete","basket_kit_lot_draft_activate","basket_legacy_lot_release","basket_lot_sale_toggle","basket_lots_sale_bulk","basket_sales_runtime","basket_sales_mode_set","quotes","quote","quote_save","quote_status_set","cnpj_lookup"]);
-const WRITE_ACTIONS=new Set(["product_save","product_stock_set","offer_save","expiration_save","product_lot_save","product_lot_tracking_complete","balance_confirm","inventory_balance_prepare_unknown","inventory_balance_commit","inventory_incident_create","stock_reconciliation_classify","order_check_start","order_check_scan","order_check_finish","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","gondola_clear","gondola_assign_count","ops_print_presented","ops_delivery_plan","manual_order_create","papoai_issue_catalog_link","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_update","order_consume_stock","bling_create_order_customer","bling_create_order_products","order_fiscal_dispatch_canary_execute","order_fiscal_confirm_payment","bling_finance_action","inventory_sheet_create","inventory_sheet_cancel_scan","inventory_sheet_analyze","inventory_sheet_apply","basket_save","basket_item_save","basket_item_delete","basket_alternative_save","basket_alternative_delete","basket_lot_create","basket_lot_cancel","basket_kit_lot_create","basket_kit_lot_cancel","basket_kit_lot_draft_save","basket_kit_lot_draft_delete","basket_kit_lot_draft_activate","basket_legacy_lot_release","basket_lot_sale_toggle","basket_lots_sale_bulk","basket_sales_mode_set","quote_save","quote_status_set"]);
+const LOCAL=new Set(["health","products","product_facets","product_save","product_quick_save","product_stock_set","offer_save","expirations","expiration_save","expiry_alerts","product_lots","product_fefo_preview","product_lifecycle_audit","ean_lookup","inventory_balance_resolve_ean","inventory_balance_status","balance_confirm","inventory_balance_prepare_unknown","inventory_balance_commit","inventory_incidents","inventory_incident_create","stock_recount_queue","stock_reconciliation_classify","stock_cutover_preflight","order_check","gondolas","gondola","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","gondola_clear","gondola_assign_count","orders","order","closure_orders","order_stock_shortages","order_update","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_consume_stock","bling_status","bling_status_catalog_probe","bling_oauth_begin","bling_probe_readonly","bling_reconcile_catalog_readonly","bling_reconcile_customers_readonly","bling_preview_order_sync","bling_reconcile_order_dependencies_readonly","bling_create_order_customer","bling_create_order_products","order_fiscal_status","order_fiscal_dispatch_canary_execute","order_fiscal_document_pdf","order_fiscal_confirm_payment","bling_finance_overview","bling_finance_action","history_sync_retry","order_component_replace","ops_summary","ops_attention","ops_shadow_readiness","ops_print_queue","ops_print_presented","manual_order_create","ops_papoai_capture_status","papoai_issue_catalog_link","ops_timeline","ops_delivery_runs","ops_delivery_plan","ops2_recover_ean_verified","inventory_sheet_create","inventory_sheet_preview","inventory_sheet_options","inventory_sheet_batches","inventory_sheet_manifest","inventory_sheet_pending_manual","inventory_sheet_cancel_scan","inventory_sheet_analyze","inventory_sheet_apply","baskets_admin","basket_admin","basket_product_search","basket_save","basket_item_save","basket_item_delete","basket_alternative_save","basket_alternative_delete","basket_lot_create","basket_lot_cancel","basket_product_search","basket_kits_admin","basket_kit_admin","basket_kit_lot_create","basket_kit_lot_cancel","basket_kit_lot_draft_save","basket_kit_lot_draft_delete","basket_kit_lot_draft_activate","basket_legacy_lot_release","basket_lot_sale_toggle","basket_lots_sale_bulk","basket_sales_runtime","basket_sales_mode_set","quotes","quote","quote_save","quote_status_set","cnpj_lookup"]);
+const WRITE_ACTIONS=new Set(["product_save","product_quick_save","product_stock_set","offer_save","expiration_save","product_lot_save","product_lot_tracking_complete","balance_confirm","inventory_balance_prepare_unknown","inventory_balance_commit","inventory_incident_create","stock_reconciliation_classify","order_check_start","order_check_scan","order_check_finish","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","gondola_clear","gondola_assign_count","ops_print_presented","ops_delivery_plan","manual_order_create","papoai_issue_catalog_link","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_update","order_consume_stock","bling_create_order_customer","bling_create_order_products","order_fiscal_dispatch_canary_execute","order_fiscal_confirm_payment","bling_finance_action","inventory_sheet_create","inventory_sheet_cancel_scan","inventory_sheet_analyze","inventory_sheet_apply","basket_save","basket_item_save","basket_item_delete","basket_alternative_save","basket_alternative_delete","basket_lot_create","basket_lot_cancel","basket_kit_lot_create","basket_kit_lot_cancel","basket_kit_lot_draft_save","basket_kit_lot_draft_delete","basket_kit_lot_draft_activate","basket_legacy_lot_release","basket_lot_sale_toggle","basket_lots_sale_bulk","basket_sales_mode_set","quote_save","quote_status_set"]);
 const cors=(r:Request)=>{const o=r.headers.get("origin")||"";return {"Access-Control-Allow-Origin":O.has(o)?o:"https://www.donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"content-type,authorization","Access-Control-Allow-Methods":"GET,POST,OPTIONS"}};
 const js=(r:Request,b:any,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{...cors(r),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const tx=(v:any,n=500)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
@@ -160,55 +160,63 @@ async function basketKitProductIds(){
   }
   return out;
 }
+function productSortKey(v:any){
+  const x=tx(v,30);return new Set(["name_asc","name_desc","updated_desc","updated_asc","expiry_asc","expiry_desc","gondola_asc","gondola_desc"]).has(x)?x:"";
+}
+function productRowsSort(rows:any[],sort:string,lotStatus:string,memberIds:Set<string>|null){
+  return rows.sort((a:any,b:any)=>{
+    if(!sort&&lotStatus==="pending"){
+      const ax=Number(a.stock||0)>0?0:1,bx=Number(b.stock||0)>0?0:1;if(ax!==bx)return ax-bx;
+      const aa=memberIds?.has(String(a.id))?0:1,bb=memberIds?.has(String(b.id))?0:1;if(aa!==bb)return aa-bb;
+      const ad=dt(a.validity_date)||"9999-12-31",bd=dt(b.validity_date)||"9999-12-31";if(ad!==bd)return ad.localeCompare(bd);
+      if((a.is_active!==false)!==(b.is_active!==false))return a.is_active!==false?-1:1;
+    }
+    if(sort==="updated_desc"||sort==="updated_asc"){
+      const av=String(a.updated_at||""),bv=String(b.updated_at||"");if(av!==bv)return sort==="updated_desc"?bv.localeCompare(av):av.localeCompare(bv);
+    }
+    if(sort==="expiry_asc"||sort==="expiry_desc"){
+      const av=dt(a.validity_date),bv=dt(b.validity_date);if(av!==bv){if(!av)return 1;if(!bv)return -1;return sort==="expiry_desc"?bv.localeCompare(av):av.localeCompare(bv)}
+    }
+    if(sort==="gondola_asc"||sort==="gondola_desc"){
+      const av=/^\d+$/.test(String(a.gondola||""))?Number(a.gondola):null,bv=/^\d+$/.test(String(b.gondola||""))?Number(b.gondola):null;
+      if(av!==bv){if(av===null)return 1;if(bv===null)return -1;return sort==="gondola_desc"?bv-av:av-bv}
+    }
+    const c=String(a.name||"").localeCompare(String(b.name||""),"pt-BR");return sort==="name_desc"?-c:c;
+  });
+}
 async function products(u:URL){
   const off=Math.floor(nm(u.searchParams.get("offset"),0,100000)),lim=Math.floor(nm(u.searchParams.get("limit")||60,1,100));
-  const qv=tx(u.searchParams.get("q"),100).replace(/[,%()]/g," "),cat=tx(u.searchParams.get("category"),120),sub=tx(u.searchParams.get("subcategory"),120),act=tx(u.searchParams.get("active"),12),basketKit=tx(u.searchParams.get("basket_kit"),12)==="true",lotStatus=tx(u.searchParams.get("lot_status"),20);
+  const qv=tx(u.searchParams.get("q"),100).replace(/[,%()]/g," "),cat=tx(u.searchParams.get("category"),120),sub=tx(u.searchParams.get("subcategory"),120),act=tx(u.searchParams.get("active"),12),basketKit=tx(u.searchParams.get("basket_kit"),12)==="true",lotStatus=tx(u.searchParams.get("lot_status"),20),sort=productSortKey(u.searchParams.get("sort"));
   let rows:any[]=[];
-  if(cat||basketKit||lotStatus){
+  const manual=Boolean(cat||basketKit||lotStatus||sort==="gondola_asc"||sort==="gondola_desc");
+  if(manual){
     const memberIds=(basketKit||lotStatus==="pending")?await basketKitProductIds():null;
     const all:any[]=[];
     for(let pos=0;pos<10000;pos+=1000){
       let q=db.from("products").select("*").order("id").range(pos,pos+999);
-      if(sub)q=q.eq("subcategory",sub);
-      if(act==="true")q=q.eq("is_active",true);
-      if(act==="false")q=q.eq("is_active",false);
+      if(sub)q=q.eq("subcategory",sub);if(act==="true")q=q.eq("is_active",true);if(act==="false")q=q.eq("is_active",false);
       if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
-      const r=await q;if(r.error)throw r.error;
-      all.push(...(r.data||[]));
-      if((r.data||[]).length<1000)break;
+      const r=await q;if(r.error)throw r.error;all.push(...(r.data||[]));if((r.data||[]).length<1000)break;
     }
     const wanted=cat?inventorySheetCanonicalCategory(cat):"";
-    const filtered=all.filter((x:any)=>{
+    const filtered=productRowsSort(all.filter((x:any)=>{
       if(wanted&&inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category)!==wanted)return false;
       if(basketKit&&memberIds&&!memberIds.has(String(x.id)))return false;
       const complete=meta(x.metadata).lot_tracking_complete===true||meta(x.metadata).lot_tracking_complete==="true";
-      if(lotStatus==="complete"&&!complete)return false;
-      if(lotStatus==="pending"&&complete)return false;
-      return true;
-    }).sort((a:any,b:any)=>{
-      if(lotStatus==="pending"){
-        const ax=Number(a.stock||0)>0?0:1,bx=Number(b.stock||0)>0?0:1;
-        if(ax!==bx)return ax-bx;
-        const aa=memberIds?.has(String(a.id))?0:1,bb=memberIds?.has(String(b.id))?0:1;
-        if(aa!==bb)return aa-bb;
-        const ad=dt(a.validity_date)||"9999-12-31",bd=dt(b.validity_date)||"9999-12-31";
-        if(ad!==bd)return ad.localeCompare(bd);
-        if((a.is_active!==false)!==(b.is_active!==false))return a.is_active!==false?-1:1;
-      }
-      return String(a.name||"").localeCompare(String(b.name||""),"pt-BR");
-    });
-    rows=filtered.slice(off,off+lim);
-    const sm=await stockBreakdownMap(rows.map((x:any)=>x.id));
+      if(lotStatus==="complete"&&!complete)return false;if(lotStatus==="pending"&&complete)return false;return true;
+    }),sort,lotStatus,memberIds);
+    rows=filtered.slice(off,off+lim);const sm=await stockBreakdownMap(rows.map((x:any)=>x.id));
     return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s})}),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
   }
-  let q=db.from("products").select("*").order("name").range(off,off+lim-1);
-  if(sub)q=q.eq("subcategory",sub);
-  if(act==="true")q=q.eq("is_active",true);
-  if(act==="false")q=q.eq("is_active",false);
+  let q=db.from("products").select("*");
+  if(sort==="updated_desc")q=q.order("updated_at",{ascending:false}).order("name");
+  else if(sort==="updated_asc")q=q.order("updated_at",{ascending:true}).order("name");
+  else if(sort==="expiry_asc")q=q.order("validity_date",{ascending:true,nullsFirst:false}).order("name");
+  else if(sort==="expiry_desc")q=q.order("validity_date",{ascending:false,nullsFirst:false}).order("name");
+  else q=q.order("name",{ascending:sort!=="name_desc"});
+  q=q.range(off,off+lim-1);if(sub)q=q.eq("subcategory",sub);if(act==="true")q=q.eq("is_active",true);if(act==="false")q=q.eq("is_active",false);
   if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
-  const r=await q;if(r.error)throw r.error;
-  rows=r.data||[];
-  const sm=await stockBreakdownMap(rows.map((x:any)=>x.id));
+  const r=await q;if(r.error)throw r.error;rows=r.data||[];const sm=await stockBreakdownMap(rows.map((x:any)=>x.id));
   return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s})}),next_offset:rows.length===lim?off+lim:null};
 }
 async function facets(c:string,act=""){
@@ -337,6 +345,39 @@ async function saveProduct(p:any){
   await rec();
   const fr=await one(r.data.id);
   return {product_id:r.data.id,product:await mappedProduct(fr),duplicated_from_product_id:duplicateFromId||null};
+}
+
+async function quickProductSave(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const pid=id(p?.product_id);if(!pid)return {error:"invalid_product",status:400};
+  const before=await one(pid);if(!before)return {error:"product_not_found",status:404};
+  const patch:any={},m={...meta(before.metadata)},now=new Date().toISOString();let metaChanged=false;
+  if(Object.prototype.hasOwnProperty.call(p||{},"sale_price_cents")){
+    const cents=Number(p.sale_price_cents);if(!Number.isFinite(cents)||cents<0)return {error:"invalid_price",status:400};patch.price=Math.round(cents)/100;
+  }
+  if(Object.prototype.hasOwnProperty.call(p||{},"gondola_number")){
+    if(p.gondola_number===null||p.gondola_number==="")patch.gondola=null;
+    else{const g=Number(p.gondola_number);if(!Number.isInteger(g)||g<1||g>30)return {error:"invalid_gondola",status:400};patch.gondola=String(g)}
+  }
+  if(Object.prototype.hasOwnProperty.call(p||{},"expiration_date")){
+    const exp=p.expiration_date?dt(p.expiration_date):null;if(p.expiration_date&&!exp)return {error:"invalid_expiration_date",status:400};patch.validity_date=exp;
+    if(exp&&days(today(),exp)<0){patch.is_active=false;patch.is_offer=false;patch.offer_price=null;m.deactivation_reason="expired";m.deactivated_at=now;m.offer_source=null;metaChanged=true}
+  }
+  const effectiveExp=Object.prototype.hasOwnProperty.call(patch,"validity_date")?patch.validity_date:(before.validity_date||null);
+  if(Object.prototype.hasOwnProperty.call(p||{},"active")){
+    const next=p.active!==false;if(next&&effectiveExp&&days(today(),effectiveExp)<0)return {error:"expired_product_cannot_activate",status:409};patch.is_active=next;
+    if(next&&m.deactivation_reason==="expired"){m.deactivation_reason=null;m.deactivated_at=null;metaChanged=true}
+  }
+  const nextPrice=Object.prototype.hasOwnProperty.call(patch,"price")?Number(patch.price):Number(before.price||0),nextActive=Object.prototype.hasOwnProperty.call(patch,"is_active")?patch.is_active:before.is_active!==false;
+  if((Object.prototype.hasOwnProperty.call(patch,"price")||Object.prototype.hasOwnProperty.call(patch,"validity_date"))&&m.auto_expiry_offer_enabled===true){
+    const d=effectiveExp?days(today(),effectiveExp):null,pc=nextActive&&d!==null&&d>=0&&d<=90?(d<30?40:d<60?20:10):null;
+    if(pc){patch.is_offer=true;patch.offer_price=Math.round(nextPrice*(100-pc))/100;m.offer_source="expiry_auto";m.offer_discount_percent=pc;metaChanged=true}
+    else if(m.offer_source==="expiry_auto"){patch.is_offer=false;patch.offer_price=null;m.offer_source=null;m.offer_discount_percent=null;metaChanged=true}
+  }
+  if(!Object.keys(patch).length&&!metaChanged)return {product:await mappedProduct(before)};
+  if(metaChanged)patch.metadata=m;patch.updated_at=now;
+  const r=await db.from("products").update(patch).eq("id",pid).select("*").single();if(r.error)throw r.error;
+  await aud(before,r.data,p,"product_quick_save");return {product:await mappedProduct(r.data)};
 }
 
 async function ensureProductLinkedForStock(pid:string,operator:string){
@@ -2794,4 +2835,4 @@ const auth:any=await adminAuth(r);if(!auth.ok)return js(r,{ok:false,error:auth.e
     }
     return js(r,{ok:true,verified:true,order_id:oid,check:z.data,bling_verified});
   }
-  if(r.method==="POST"&&a==="order_update"){const x:any=await updateOrderCanonical(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_consume_stock"){const x:any=await consumeOrder(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_probe_readonly"){const h=await hub("probe_readonly");return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,probe:h.data})}if(r.method==="POST"&&a==="bling_reconcile_catalog_readonly"){const h=await reconcileCatalog();return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_reconcile_customers_readonly"){const h=await hub("reconcile_customers_readonly",{limit:p?.limit??650});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_preview_order_sync"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await previewOrder(oid);return x.error?js(r,{ok:false,error:x.error,detail:x.detail},x.status||502):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_reconcile_order_dependencies_readonly"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);return js(r,{ok:true,...await reconcileDeps(oid)})}if(r.method==="POST"&&a==="bling_create_order_customer"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await ensureOrderCustomer(oid);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_create_order_products"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await createOrderProducts(oid);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_fiscal_status"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const h=await hub("fiscal_status",{source_order_id:oid});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_dispatch_canary_execute"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);if(tx(p?.confirmation,40)!=="EMITIR_NFE")return js(r,{ok:false,error:"fiscal_human_confirmation_required"},409);const pf=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});if(pf.error)throw pf.error;if(pf.data?.ready!==true)return js(r,{ok:false,error:"fiscal_dispatch_preflight_failed",preflight:pf.data,detail:"Pedido ainda não está pronto para emissão fiscal."},409);const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_document_pdf"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const h=await hub("fiscal_document_pdf",{source_order_id:oid});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_confirm_payment"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);return js(r,{ok:false,error:"fiscal_payment_confirmation_deprecated",detail:"O pagamento fiscal agora vem do settlement real da entrega. Esta ação antiga foi desativada para evitar conflito com o gate de NF-e antes da expedição."},409)}if(r.method==="POST"&&a==="bling_finance_overview"){const auth=r.headers.get("Authorization")||"",h=await hub("finance_overview",{},auth);return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_finance_action"){const auth=r.headers.get("Authorization")||"",h=await hub("finance_action",p||{},auth);return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="GET"&&a==="stock_cutover_preflight"){const z=await db.rpc("get_ops2_stock_cutover_preflight_v1");if(z.error)throw z.error;return js(r,{ok:true,preflight:z.data})}if(r.method==="POST"&&a==="stock_reconciliation_classify"){const z:any=await classifyStockReconciliation(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_incident_create"){const z:any=await createInventoryIncident(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_balance_prepare_unknown"){const z:any=await prepareInventoryBalanceUnknown(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_balance_commit"){const z:any=await commitInventoryBalance(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}let x:any;if(a==="product_save")x=await saveProduct(p);else if(a==="product_stock_set")x=await setProductStockOfficial(p,auth);else if(a==="offer_save")x=await saveOffer(p);else if(a==="expiration_save")x=await expSave(p);else if(a==="balance_confirm")x=await bal(p);else if(a==="gondola_create")x=await gcreate(p);else if(a==="gondola_assign")x=await gassign(p);else if(a==="gondola_shelf_update")x=await gshelf(p);else if(a==="gondola_remove")x=await grem(p);else if(a==="gondola_clear")x=await gclear(p);else if(a==="gondola_assign_count")x=await gassignCount(p);else return js(r,{ok:false,error:"method_not_allowed"},405);return x?.error?js(r,{ok:false,error:x.error},x.status||400):js(r,{ok:true,...x})}catch(e){console.error("canonical_admin_error",a,String(e?.message||e));return js(r,{ok:false,error:"service_error",detail:String(e?.message||e)},500)}});
+  if(r.method==="POST"&&a==="order_update"){const x:any=await updateOrderCanonical(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_consume_stock"){const x:any=await consumeOrder(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_probe_readonly"){const h=await hub("probe_readonly");return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,probe:h.data})}if(r.method==="POST"&&a==="bling_reconcile_catalog_readonly"){const h=await reconcileCatalog();return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_reconcile_customers_readonly"){const h=await hub("reconcile_customers_readonly",{limit:p?.limit??650});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_preview_order_sync"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await previewOrder(oid);return x.error?js(r,{ok:false,error:x.error,detail:x.detail},x.status||502):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_reconcile_order_dependencies_readonly"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);return js(r,{ok:true,...await reconcileDeps(oid)})}if(r.method==="POST"&&a==="bling_create_order_customer"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await ensureOrderCustomer(oid);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_create_order_products"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await createOrderProducts(oid);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_fiscal_status"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const h=await hub("fiscal_status",{source_order_id:oid});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_dispatch_canary_execute"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);if(tx(p?.confirmation,40)!=="EMITIR_NFE")return js(r,{ok:false,error:"fiscal_human_confirmation_required"},409);const pf=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});if(pf.error)throw pf.error;if(pf.data?.ready!==true)return js(r,{ok:false,error:"fiscal_dispatch_preflight_failed",preflight:pf.data,detail:"Pedido ainda não está pronto para emissão fiscal."},409);const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_document_pdf"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const h=await hub("fiscal_document_pdf",{source_order_id:oid});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_confirm_payment"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);return js(r,{ok:false,error:"fiscal_payment_confirmation_deprecated",detail:"O pagamento fiscal agora vem do settlement real da entrega. Esta ação antiga foi desativada para evitar conflito com o gate de NF-e antes da expedição."},409)}if(r.method==="POST"&&a==="bling_finance_overview"){const auth=r.headers.get("Authorization")||"",h=await hub("finance_overview",{},auth);return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_finance_action"){const auth=r.headers.get("Authorization")||"",h=await hub("finance_action",p||{},auth);return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="GET"&&a==="stock_cutover_preflight"){const z=await db.rpc("get_ops2_stock_cutover_preflight_v1");if(z.error)throw z.error;return js(r,{ok:true,preflight:z.data})}if(r.method==="POST"&&a==="stock_reconciliation_classify"){const z:any=await classifyStockReconciliation(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_incident_create"){const z:any=await createInventoryIncident(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_balance_prepare_unknown"){const z:any=await prepareInventoryBalanceUnknown(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_balance_commit"){const z:any=await commitInventoryBalance(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}let x:any;if(a==="product_save")x=await saveProduct(p);else if(a==="product_quick_save")x=await quickProductSave(p,auth);else if(a==="product_stock_set")x=await setProductStockOfficial(p,auth);else if(a==="offer_save")x=await saveOffer(p);else if(a==="expiration_save")x=await expSave(p);else if(a==="balance_confirm")x=await bal(p);else if(a==="gondola_create")x=await gcreate(p);else if(a==="gondola_assign")x=await gassign(p);else if(a==="gondola_shelf_update")x=await gshelf(p);else if(a==="gondola_remove")x=await grem(p);else if(a==="gondola_clear")x=await gclear(p);else if(a==="gondola_assign_count")x=await gassignCount(p);else return js(r,{ok:false,error:"method_not_allowed"},405);return x?.error?js(r,{ok:false,error:x.error},x.status||400):js(r,{ok:true,...x})}catch(e){console.error("canonical_admin_error",a,String(e?.message||e));return js(r,{ok:false,error:"service_error",detail:String(e?.message||e)},500)}});
