@@ -1,0 +1,60 @@
+name: One-shot products mobile detail
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-products-mobile-detail.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/patch-products-mobile-detail.py
+          sparse-checkout-cone-mode: false
+      - name: RED contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('vitrine/admin/index.html').read_text()
+          if 'PRODUCTS_MOBILE_DETAIL_V2' in s:
+              raise SystemExit('Expected RED but patch marker already exists')
+          print('RED confirmed: mobile product detail fix absent')
+          PY
+      - name: Apply patch
+        run: python3 scripts/patch-products-mobile-detail.py
+      - name: GREEN verify
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('vitrine/admin/index.html').read_text()
+          checks=[
+            'PRODUCTS_MOBILE_DETAIL_V2',
+            'dialog.product-editor-dialog{position:fixed!important;inset:0!important;',
+            '#productForm{display:grid!important;grid-template-columns:minmax(0,1fr)!important;',
+            '.product-image-preview{width:100%!important;max-width:100%!important;height:220px!important;',
+            '.mobile-product-card{height:420px!important;min-height:420px!important;',
+            "productEditor.classList.add('product-editor-dialog')"
+          ]
+          miss=[x for x in checks if x not in s]
+          if miss: raise SystemExit('missing '+repr(miss))
+          print('GREEN contract OK')
+          PY
+          node <<'NODE'
+          const fs=require('fs');const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log('Admin JS syntax OK');
+          NODE
+          git diff --check
+      - name: Commit
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'fix(admin): corrige produtos mobile e detalhes'
+          git push origin HEAD:main
