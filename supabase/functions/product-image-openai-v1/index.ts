@@ -101,7 +101,7 @@ async function validateGenerated(key:string,sourceUrl:string,generated:Uint8Arra
   return {accepted,validation,usage:obj(data?.usage),responseId:clean(data?.id,180)};
 }
 async function productRow(sb:any,productId:string){
-  const q=await sb.from("products").select("id,name,brand,packaging,gtin,image_url,image_original_url,image_ai_url,image_ai_status,image_ai_attempts").eq("id",productId).maybeSingle();
+  const q=await sb.from("products").select("id,name,brand,packaging,gtin,price,cost,category,sales_category,storefront_category,image_url,image_original_url,image_ai_url,image_ai_status,image_ai_attempts,metadata").eq("id",productId).maybeSingle();
   if(q.error||!q.data)throw new Error("product_not_found");return q.data;
 }
 async function uploadSource(req:Request,sb:any,auth:any){
@@ -161,6 +161,34 @@ async function standardize(req:Request,sb:any,auth:any,body:any){
   }
 }
 
+const identitySchema={type:"object",additionalProperties:false,properties:{
+  name:{type:"string",maxLength:240},brand:{type:"string",maxLength:120},packaging:{type:"string",maxLength:120},
+  sales_category:{type:"string",enum:["mercearia","limpeza_lavanderia","higiene_beleza","casa_pet"]},
+  confidence:{type:"number",minimum:0,maximum:1},notes:{type:"string",maxLength:240}
+},required:["name","brand","packaging","sales_category","confidence","notes"]};
+async function identifyProduct(req:Request,sb:any,body:any){
+  const productId=uuid(body?.product_id);if(!productId)return json(req,{ok:false,error:"product_id_required"},400);
+  const product=await productRow(sb,productId);const sourceUrl=clean(product.image_original_url||product.image_url,1800);if(!sourceUrl)return json(req,{ok:false,error:"product_image_missing"},409);
+  const key=await openaiKey(sb);if(!key)return json(req,{ok:false,error:"openai_key_missing"},503);
+  // fiscal fields are not inferred: NCM, CEST, custo e preco nunca saem desta analise visual.
+  const request={model:VALIDATOR_MODEL,store:false,max_output_tokens:420,reasoning:{effort:"low"},input:[{role:"user",content:[
+    {type:"input_text",text:"Identifique somente o que e visivel nesta foto real de produto de supermercado. Retorne o nome comercial completo, marca, embalagem/conteudo visivel e classifique em exatamente uma das categorias: mercearia, limpeza_lavanderia, higiene_beleza, casa_pet. Nao invente NCM, CEST, custo, preco, peso ou variante que nao estejam visiveis. Se houver duvida, use confidence baixa e explique em notes."},
+    {type:"input_image",image_url:sourceUrl,detail:"high"}
+  ]}],text:{format:{type:"json_schema",name:"product_visual_identity",strict:true,schema:identitySchema}}};
+  const r=await fetch(OPENAI_RESPONSES_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify(request),signal:AbortSignal.timeout(60000)});
+  const data=await r.json().catch(()=>({}));if(!r.ok)return json(req,{ok:false,error:"identify_http_"+r.status+"_"+clean(data?.error?.message||"error",120)},502);
+  const t=finalText(data);let parsed:any;try{parsed=JSON.parse(t)}catch{return json(req,{ok:false,error:"identify_invalid_json"},502)}
+  const name=clean(parsed?.name,240),brand=clean(parsed?.brand,120),packaging=clean(parsed?.packaging,120),cat=clean(parsed?.sales_category,40),confidence=score(parsed?.confidence);
+  if(!name||!["mercearia","limpeza_lavanderia","higiene_beleza","casa_pet"].includes(cat))return json(req,{ok:false,error:"identify_incomplete"},409);
+  const labels:any={mercearia:"Mercearia",limpeza_lavanderia:"Limpeza/Lavanderia",higiene_beleza:"Higiene/Beleza",casa_pet:"Casa/Pet"};
+  const placeholder=/^(Produto EAN|EAN)\s+\d+$/i.test(clean(product.name,240));
+  const patch:any={sales_category:cat,storefront_category:cat,updated_at:new Date().toISOString(),metadata:{...obj(product.metadata),visual_identity:{confidence,notes:clean(parsed?.notes,240),model:VALIDATOR_MODEL,identified_at:new Date().toISOString()}}};
+  if(placeholder||!clean(product.name,240))patch.name=name;if(!clean(product.brand,120)&&brand)patch.brand=brand;if(!clean(product.packaging,120)&&packaging)patch.packaging=packaging;if(!clean(product.category,120))patch.category=labels[cat];
+  const u=await sb.from("products").update(patch).eq("id",productId).select("id,name,brand,packaging,gtin,price,cost,category,sales_category,storefront_category,image_url,image_original_url,image_ai_status").single();
+  if(u.error)return json(req,{ok:false,error:"product_update_"+clean(u.error.message,160)},500);
+  return json(req,{ok:true,event:"identify",product:u.data,identity:{name,brand,packaging,sales_category:cat,confidence,notes:clean(parsed?.notes,240)},response_id:clean(data?.id,180)});
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   if(req.method!=="POST")return json(req,{ok:false,error:"method_not_allowed"},405);
@@ -180,6 +208,7 @@ Deno.serve(async(req:Request)=>{
     return json(req,{ok:true,event:"healthcheck",provider_configured:Boolean(key),model:MODEL,validator_model:VALIDATOR_MODEL,bucket:BUCKET,manual_only:true});
   }
   const auth=await adminAuth(req,sb);if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);
+  if(event==="identify"){try{return await identifyProduct(req,sb,body)}catch(e){return json(req,{ok:false,error:clean(e instanceof Error?e.message:e,300)},500)}}
   if(event==="standardize"){
     try{return await standardize(req,sb,auth,body)}catch(e){return json(req,{ok:false,error:clean(e instanceof Error?e.message:e,300)},500)}
   }
