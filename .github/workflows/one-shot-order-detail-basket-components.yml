@@ -25,7 +25,7 @@ jobs:
       - name: Regression test
         run: python3 scripts/test-order-detail-basket-components.py
       - name: Validate TypeScript syntax
-        run: npx -y esbuild supabase/functions/admin-products-live-v1/index.ts --format=esm --platform=neutral --external:* --outfile=/tmp/admin-products-live-v1.js
+        run: npx -y esbuild supabase/functions/admin-products-live-v1/index.ts --bundle --format=esm --platform=neutral --external:* --outfile=/tmp/admin-products-live-v1.js
       - name: Verify diff
         run: git diff --check
       - name: Commit fix
