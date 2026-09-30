@@ -1,0 +1,22 @@
+name: One-shot order detail basket components
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-order-detail-basket-components.yml'
+      - 'scripts/test-order-detail-basket-components.py'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            supabase/functions/admin-products-live-v1/index.ts
+            scripts/test-order-detail-basket-components.py
+          sparse-checkout-cone-mode: false
+      - name: Regression test
+        run: python3 scripts/test-order-detail-basket-components.py
