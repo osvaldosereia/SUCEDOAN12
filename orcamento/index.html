@@ -4,49 +4,13 @@
 <body>
 <script>
 (async()=>{
-  const r=await fetch('./app-original.html?v=20260930-1',{cache:'no-store'});
-  if(!r.ok) throw new Error('quote_app_load_failed');
+  const r=await fetch('./app-original.html?v=20260930-2',{cache:'no-store'});
+  if(!r.ok)throw new Error('quote_app_load_failed');
   let src=await r.text();
-  const css=`
-  /* UX patch 2026-09-30: editor embedded sem campos cortados */
-  html,body{max-width:100%;overflow-x:hidden}
-  body.embedded .layout{grid-template-columns:minmax(390px,520px) minmax(0,1fr)!important;width:calc(100% - 20px)!important;max-width:1500px!important;overflow:visible!important}
-  body.embedded .preview-wrap{min-width:0!important;overflow:hidden!important}
-  body.embedded .paper{width:100%!important;min-height:auto!important;max-width:210mm!important}
-  .edit-item{grid-template-columns:repeat(3,minmax(0,1fr)) 36px!important;align-items:end!important;gap:8px!important;overflow:visible!important}
-  .edit-item .item-name-field{grid-column:1/3!important}
-  .edit-item .item-code-field{grid-column:3/5!important}
-  .edit-item>div:nth-child(3){grid-column:1!important}
-  .edit-item>div:nth-child(4){grid-column:2!important}
-  .edit-item>div:nth-child(5){grid-column:3!important}
-  .edit-item .remove-item{grid-column:4!important;grid-row:2!important;align-self:end!important}
-  .quote-inline-save-wrap{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid #e9ecf1}
-  .quote-inline-save-wrap .btn{min-width:190px}
-  @media(max-width:620px){.edit-item{grid-template-columns:repeat(2,minmax(0,1fr))!important}.edit-item .item-name-field,.edit-item .item-code-field{grid-column:1/-1!important}.edit-item>div:nth-child(3),.edit-item>div:nth-child(4),.edit-item>div:nth-child(5){grid-column:auto!important}.edit-item .remove-item{grid-column:auto!important;grid-row:auto!important}.quote-inline-save-wrap{position:sticky;bottom:8px;z-index:12;background:#fff;padding:10px 0 0}.quote-inline-save-wrap .btn{width:100%;min-width:0}}
-  `;
-  const js=`<script>
-  (()=>{
-    const install=()=>{
-      const itemEditor=document.getElementById('itemEditor');
-      const topSave=document.getElementById('saveCloudQuote');
-      if(!itemEditor||!topSave||document.getElementById('saveCloudQuoteBottom')) return;
-      const panelBody=itemEditor.closest('.panel-body');
-      if(!panelBody) return;
-      const wrap=document.createElement('div');
-      wrap.className='quote-inline-save-wrap';
-      const btn=document.createElement('button');
-      btn.type='button'; btn.id='saveCloudQuoteBottom'; btn.className='btn btn-primary';
-      const sync=()=>{btn.textContent=topSave.textContent||'Salvar / atualizar orçamento';btn.disabled=topSave.disabled;};
-      btn.addEventListener('click',()=>topSave.click());
-      wrap.appendChild(btn); panelBody.appendChild(wrap); sync();
-      new MutationObserver(sync).observe(topSave,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['disabled']});
-    };
-    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install); else install();
-  })();
-<\/script>`;
-  src=src.replace('</style>',css+'\n</style>').replace('</body>',js+'\n</body>');
-  document.open(); document.write(src); document.close();
+  src=src.replace('</head>','<link rel="stylesheet" href="./enhancements-v2.css?v=20260930-1"></head>');
+  src=src.replace('</body>','<script src="./enhancements-v2.js?v=20260930-1"><\/script></body>');
+  document.open();document.write(src);document.close();
 })().catch(()=>{document.body.innerHTML='<div style="padding:24px;font:16px system-ui">Não foi possível carregar a ferramenta de orçamento. Atualize a página.</div>'});
 </script>
-<!-- compatibility assertions retained: id="saveCloudQuote" id="quoteHistoryPanel" id="duplicateQuote" id="quoteStatus" currentQuoteId:state.currentQuoteId adminPost('quote_save' adminGet('quotes' adminGet('quote' .preview-wrap{position:static;overflow:hidden}.paper{width:100%;min-height:auto} .client-tools{grid-template-columns:1fr} id="lookupCnpj" adminGet('cnpj_lookup' onlyCnpjChars value="Boleto bancário — 7 dias" addDaysISO($('issueDate').value,7) document.title='Orçamento - '+client+' - '+number -->
+<!-- compatibility: id="saveCloudQuote" id="quoteHistoryPanel" id="duplicateQuote" id="quoteStatus" currentQuoteId:state.currentQuoteId adminPost('quote_save' adminGet('quotes' adminGet('quote' id="lookupCnpj" adminGet('cnpj_lookup' onlyCnpjChars value="Boleto bancário — 7 dias" addDaysISO($('issueDate').value,7) document.title='Orçamento - '+client+' - '+number enhancements-v2.css enhancements-v2.js -->
 </body></html>
