@@ -1,0 +1,51 @@
+name: One-shot mobile products stable operator
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-mobile-products-stable-operator.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/patch-mobile-products-stable-operator.py
+          sparse-checkout-cone-mode: false
+      - name: Apply
+        run: python3 scripts/patch-mobile-products-stable-operator.py
+      - name: Verify syntax and contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('vitrine/admin/index.html').read_text()
+          checks=[
+            "function currentOperator(){return 'Operação'}",
+            "function requireOperator(){return 'Operação'}",
+            '.operator-badge{display:none!important}',
+            '.mobile-product-card .mobile-product-thumb{width:100%;height:132px;',
+            'height:372px;overflow:hidden;overflow-anchor:none',
+            'overflow-anchor:none'
+          ]
+          missing=[x for x in checks if x not in s]
+          if missing: raise SystemExit('missing: '+repr(missing))
+          print('contract OK')
+          PY
+          node <<'NODE'
+          const fs=require('fs');const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log('syntax OK');
+          NODE
+          git diff --check
+      - name: Commit
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'fix(admin): estabiliza produtos mobile e remove operador manual'
+          git push origin HEAD:main
