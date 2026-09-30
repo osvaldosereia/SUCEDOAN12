@@ -1,0 +1,147 @@
+name: One-shot canonical customer registration fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-canonical-registration-fix.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-canonical-registration-fix
+  cancel-in-progress: true
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Refresh main
+        run: git pull --rebase origin main
+      - name: Apply canonical registration projection
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          backend = Path('supabase/functions/admin-products-live-v1/index.ts')
+          s = backend.read_text(encoding='utf-8')
+          s = s.replace('const OP_SOURCES=["vitrine","manual_whatsapp","papoai","reorder"];', 'const OP_SOURCES=["vitrine","storefront_v2","manual_whatsapp","papoai","reorder"];')
+
+          new_map = r'''async function mapOrders(rows:any[]){
+            const ids=rows.map((o:any)=>o.id);
+            const [rmap,ready,smap,dmap]=await Promise.all([reservationRows(ids),stockReadiness(ids),paymentSettlementMap(ids),deliveryReturnMap(ids)]);
+            const cids=[...new Set(rows.map((o:any)=>o.customer_id).filter(Boolean))],cm=new Map<string,any>();
+            if(cids.length){
+              const cq=await db.from("ops2_admin_customer_registration_v1")
+                .select("customer_id,customer_name,primary_whatsapp_e164,bling_contact_id,registration_complete,flow_required,document_only_pending,bling_ready,bling_linked,missing_fields,current_address")
+                .in("customer_id",cids);
+              if(cq.error)throw cq.error;
+              for(const c of cq.data||[])cm.set(c.customer_id,c);
+            }
+            return rows.map((o:any)=>{
+              const c=cm.get(o.customer_id)||{},orderAddress=meta(o.delivery_address),currentAddress=meta(c.current_address),address:any={...currentAddress};
+              for(const [k,v] of Object.entries(orderAddress)){
+                if(v!==null&&v!==undefined&&(typeof v!=="string"||v.trim()!==""))address[k]=v;
+              }
+              return {
+                id:o.id,order_number:o.order_number,status:uiStatus(o.status),total_cents:Math.round(Number(o.total||0)*100),
+                payment_method_snapshot:paySnap(o,rmap.get(o.id)||[],smap.get(o.id)||null),delivery_return:dmap.get(o.id)||null,
+                delivery_address_snapshot:address,
+                whatsapp_phone_e164:o.phone_e164||address.phone||c.primary_whatsapp_e164||"",
+                customer_id:o.customer_id,created_at:o.created_at,confirmed_at:o.confirmed_at,delivered_at:o.delivered_at,cancelled_at:o.cancelled_at,
+                customer_name:c.customer_name||o.customer_snapshot?.name||address.customer_name||address.recipient_name||"",
+                registration_complete:c.registration_complete===true,
+                registration_missing_fields:Array.isArray(c.missing_fields)?c.missing_fields:[],
+                flow_required:c.flow_required===true,
+                document_only_pending:c.document_only_pending===true,
+                bling_ready:c.bling_ready===true,
+                bling_linked:c.bling_linked===true,
+                bling_contact_id:c.bling_contact_id||null,
+                history_sync:{state:"synced",canonical:true},stock_readiness:ready.get(o.id)||null,source:o.source
+              };
+            });
+          }
+          '''
+          pattern = re.compile(r'async function mapOrders\(rows:any\[\]\)\{.*?\n\}\nasync function ordersList\(\)', re.S)
+          m = pattern.search(s)
+          if not m:
+              raise SystemExit('mapOrders block not found')
+          s = s[:m.start()] + new_map + 'async function ordersList()' + s[m.end():]
+          backend.write_text(s, encoding='utf-8')
+
+          admin = Path('vitrine/admin/index.html')
+          a = admin.read_text(encoding='utf-8')
+          new_problem = r'''function orderProblemReasons(o){
+            const reasons=[];
+            if(o?.history_sync?.state==='failed')reasons.push('Histórico pendente do cliente');
+            if(['delivered','cancelled'].includes(o?.status))return reasons;
+            const a=o?.delivery_address_snapshot||{};
+            const canonicalKnown=typeof o?.registration_complete==='boolean';
+            if(canonicalKnown){
+              const missing=Array.isArray(o?.registration_missing_fields)?o.registration_missing_fields:[];
+              if(missing.includes('name'))reasons.push('Cliente não identificado');
+              if(missing.includes('phone'))reasons.push('Telefone pendente');
+              if(missing.includes('address')||missing.includes('city'))reasons.push('Endereço incompleto');
+              if(o?.document_only_pending===true)reasons.push('CPF/CNPJ pendente');
+            }else{
+              const customerName=o?.customer_name||a.customer_name||a.recipient_name||'';
+              if(!String(customerName).trim())reasons.push('Cliente não identificado');
+              if(!String(a.street||'').trim()||!String(a.city||'').trim())reasons.push('Endereço incompleto');
+            }
+            const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
+            if(!String(payment).trim())reasons.push('Pagamento não informado');
+            if(o?.stock_readiness?.ok===false)reasons.push('Estoque insuficiente');
+            if(o?.delivery_return?.status==='returned_review')reasons.push('Retorno aguardando revisão');
+            return reasons;
+          }
+          '''
+          p1 = re.compile(r'function orderProblemReasons\(o\)\{.*?\n  \}\n  function orderIssueMatch', re.S)
+          m1=p1.search(a)
+          if not m1:
+              raise SystemExit('orderProblemReasons block not found')
+          a=a[:m1.start()]+'  '+new_problem+'  function orderIssueMatch'+a[m1.end():]
+
+          new_sort = r'''function sortOperationalOrders(rows){
+            return [...rows].sort((a,b)=>{
+              const at=Date.parse(a?.created_at||0)||0,bt=Date.parse(b?.created_at||0)||0;
+              return bt-at;
+            });
+          }
+          '''
+          p2 = re.compile(r'function sortOperationalOrders\(rows\)\{.*?\n  \}', re.S)
+          m2=p2.search(a)
+          if not m2:
+              raise SystemExit('sortOperationalOrders block not found')
+          a=a[:m2.start()]+'  '+new_sort.rstrip()+a[m2.end():]
+          admin.write_text(a, encoding='utf-8')
+          PY
+      - name: Verify patch invariants
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('supabase/functions/admin-products-live-v1/index.ts').read_text(encoding='utf-8')
+          a=Path('vitrine/admin/index.html').read_text(encoding='utf-8')
+          assert 'ops2_admin_customer_registration_v1' in b
+          assert 'registration_missing_fields' in b
+          assert '"storefront_v2"' in b
+          assert "document_only_pending:c.document_only_pending===true" in b
+          assert "if(!String(a.street||'').trim()||!String(a.city||'').trim())reasons.push('Endereço incompleto');" in a
+          assert "if(p!==0)return p;" not in a[a.index('function sortOperationalOrders'):a.index('function sortOperationalOrders')+500]
+          assert "return bt-at;" in a[a.index('function sortOperationalOrders'):a.index('function sortOperationalOrders')+500]
+          print('canonical registration patch verified')
+          PY
+      - name: Commit and push safely
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/functions/admin-products-live-v1/index.ts vitrine/admin/index.html
+          git commit -m 'fix: unify customer registration state across admin and Bling'
+          git pull --rebase origin main
+          git push origin HEAD:main
