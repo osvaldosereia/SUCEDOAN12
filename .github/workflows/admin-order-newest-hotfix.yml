@@ -8,18 +8,23 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: admin-newest-hotfix
+  cancel-in-progress: true
+
 jobs:
   patch-admin:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
       - name: Patch latest admin safely
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git pull --rebase origin main
+          git fetch origin main
+          git reset --hard origin/main
           python - <<'PY'
           from pathlib import Path
           p = Path('vitrine/admin/index.html')
@@ -40,7 +45,9 @@ jobs:
           git add vitrine/admin/index.html
           git commit -m 'fix: show newest orders first in admin'
           for i in 1 2 3; do
-            git pull --rebase origin main && git push && exit 0
+            git fetch origin main
+            git rebase origin/main && git push && exit 0
+            git rebase --abort || true
             sleep 2
           done
           exit 1
