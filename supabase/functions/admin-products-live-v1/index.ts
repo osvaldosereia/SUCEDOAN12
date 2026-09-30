@@ -133,11 +133,38 @@ async function rec(){
     }
   }
 }
+async function basketKitProductIds(){
+  const [b,k]=await Promise.all([
+    db.from("basket_templates").select("id").eq("is_active",true),
+    db.from("basket_kit_templates").select("id").eq("is_active",true)
+  ]);
+  if(b.error)throw b.error;if(k.error)throw k.error;
+  const basketIds=(b.data||[]).map((x:any)=>x.id),kitIds=(k.data||[]).map((x:any)=>x.id);
+  const out=new Set<string>();
+  if(basketIds.length){
+    const bi=await db.from("basket_template_items").select("id,product_id").in("basket_id",basketIds).limit(10000);
+    if(bi.error)throw bi.error;
+    for(const x of bi.data||[])if(x.product_id)out.add(String(x.product_id));
+    const itemIds=(bi.data||[]).map((x:any)=>x.id);
+    if(itemIds.length){
+      const al=await db.from("basket_template_item_alternatives").select("product_id").in("template_item_id",itemIds).eq("is_active",true).limit(10000);
+      if(al.error)throw al.error;
+      for(const x of al.data||[])if(x.product_id)out.add(String(x.product_id));
+    }
+  }
+  if(kitIds.length){
+    const ki=await db.from("basket_kit_template_items").select("product_id").in("kit_template_id",kitIds).limit(10000);
+    if(ki.error)throw ki.error;
+    for(const x of ki.data||[])if(x.product_id)out.add(String(x.product_id));
+  }
+  return out;
+}
 async function products(u:URL){
   const off=Math.floor(nm(u.searchParams.get("offset"),0,100000)),lim=Math.floor(nm(u.searchParams.get("limit")||60,1,100));
-  const qv=tx(u.searchParams.get("q"),100).replace(/[,%()]/g," "),cat=tx(u.searchParams.get("category"),120),sub=tx(u.searchParams.get("subcategory"),120),act=tx(u.searchParams.get("active"),12);
+  const qv=tx(u.searchParams.get("q"),100).replace(/[,%()]/g," "),cat=tx(u.searchParams.get("category"),120),sub=tx(u.searchParams.get("subcategory"),120),act=tx(u.searchParams.get("active"),12),basketKit=tx(u.searchParams.get("basket_kit"),12)==="true";
   let rows:any[]=[];
-  if(cat){
+  if(cat||basketKit){
+    const memberIds=basketKit?await basketKitProductIds():null;
     const all:any[]=[];
     for(let pos=0;pos<10000;pos+=1000){
       let q=db.from("products").select("*").order("id").range(pos,pos+999);
@@ -149,9 +176,12 @@ async function products(u:URL){
       all.push(...(r.data||[]));
       if((r.data||[]).length<1000)break;
     }
-    const wanted=inventorySheetCanonicalCategory(cat);
-    const filtered=all.filter((x:any)=>inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category)===wanted)
-      .sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+    const wanted=cat?inventorySheetCanonicalCategory(cat):"";
+    const filtered=all.filter((x:any)=>{
+      if(wanted&&inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category)!==wanted)return false;
+      if(memberIds&&!memberIds.has(String(x.id)))return false;
+      return true;
+    }).sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
     rows=filtered.slice(off,off+lim);
     const sm=await stockBreakdownMap(rows.map((x:any)=>x.id));
     return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s})}),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
