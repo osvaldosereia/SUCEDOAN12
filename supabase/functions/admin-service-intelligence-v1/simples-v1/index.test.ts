@@ -15,6 +15,8 @@ function fake(overrides:any={}){
     lockPeriod:async()=>({...basePeriod,status:'locked'}),
     saveHomologation:async(input:any)=>({id:'h1',...input}),
     getExportSnapshot:async()=>({period:basePeriod,ruleSet:{code:'r',name:'R'},totals:{},issues:{blocking:0,warnings:0,total:0},memory:{},lines:[]}),
+    getHistoryStatus:async(competence:string)=>({target:competence,complete:false,rbt12:null,missingMonths:['2026-08'],months:[]}),
+    collectHistoryMonth:async(competence:string)=>({competenceMonth:competence,collectionStatus:'complete',netRevenue:1234.56}),
     ...overrides,
   };
   for(const k of Object.keys(deps)) if(typeof deps[k]==='function'){
@@ -28,6 +30,29 @@ test('invalid competence returns 400',async()=>{
   const r=await service.dispatch({action:'simples_summary',method:'GET',query:{competence:'09/2026'},body:{},actor:{userId:'u1',role:'owner'}});
   assert.equal(r.status,400);
   assert.equal(r.body.error,'invalid_competence');
+});
+
+test('history status validates target competence and returns deterministic missing months',async()=>{
+  const {service,calls}=fake();
+  const bad=await service.dispatch({action:'simples_history_status',method:'GET',query:{competence:'09/2026'},body:{},actor:{userId:'u1',role:'owner'}});
+  assert.equal(bad.status,400);
+  assert.equal(bad.body.error,'invalid_competence');
+  const r=await service.dispatch({action:'simples_history_status',method:'GET',query:{competence:'2026-09'},body:{},actor:{userId:'u1',role:'owner'}});
+  assert.equal(r.status,200);
+  assert.equal(r.body.history.target,'2026-09');
+  assert.deepEqual(r.body.history.missingMonths,['2026-08']);
+  assert.ok(calls.some(x=>x[0]==='getHistoryStatus'&&x[1]==='2026-09'));
+});
+
+test('history collection requires editor and collects exactly one requested competence',async()=>{
+  const {service,calls}=fake();
+  const denied=await service.dispatch({action:'simples_history_collect_month',method:'POST',query:{},body:{competence_month:'2026-08'},actor:{userId:'u2',role:'viewer'}});
+  assert.equal(denied.status,403);
+  assert.equal(denied.body.error,'editor_required');
+  const r=await service.dispatch({action:'simples_history_collect_month',method:'POST',query:{},body:{competence_month:'2026-08'},actor:{userId:'u1',role:'owner'}});
+  assert.equal(r.status,200);
+  assert.equal(r.body.history_month.competenceMonth,'2026-08');
+  assert.ok(calls.some(x=>x[0]==='collectHistoryMonth'&&x[1]==='2026-08'));
 });
 
 test('recalculate locked period returns 409 without recalculation',async()=>{
