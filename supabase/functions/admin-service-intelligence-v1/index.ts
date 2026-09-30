@@ -7136,14 +7136,16 @@ async function blingHubProbeReadonly(sb:any){
   const probes=[
     {key:"products",path:"/produtos?pagina=1&limite=1"},
     {key:"contacts",path:"/contatos?pagina=1&limite=1"},
-    {key:"sales_orders",path:"/pedidos/vendas?pagina=1&limite=1"},
+    {key:"sales_orders",path:"/pedidos/vendas?pagina=1&limite=100"},
     {key:"deposits",path:"/depositos?pagina=1&limite=100&situacao=1"},
+    {key:"company",path:"/empresas/me/dados-basicos"},
+    {key:"sales_channels",path:"/canais-venda?pagina=1&limite=100"},
     {key:"invoice",path:"/nfe?pagina=1&limite=1"},
     {key:"finance_receivables",path:"/contas/receber?pagina=1&limite=1&situacoes%5B%5D=1"},
     {key:"finance_payables",path:"/contas/pagar?pagina=1&limite=1&situacao=1"},
     {key:"finance_accounts",path:"/contas-contabeis?pagina=1&limite=1&ocultarInvisiveis=true"}
   ];
-  const results:any={};let allCore=true;let deposits:any[]=[];
+  const results:any={};let allCore=true;let deposits:any[]=[];let companySummary:any=null;let salesChannels:any[]=[];let salesOrderChannelUsage:any={};
   for(const probe of probes){
     const r=await blingHubGet(sb,token,probe.path);
     results[probe.key]={ok:r.ok,http_status:r.status,insufficient_scope:r.status===403};
@@ -7152,6 +7154,54 @@ async function blingHubProbeReadonly(sb:any){
       const rows=Array.isArray(r.data?.data)?r.data.data:[];
       deposits=rows.slice(0,20).map((d:any)=>({id:Number(d?.id||0)||null,name:clean(d?.descricao||d?.nome,120)||null,default:d?.padrao===true||d?.padrao===1||d?.padrao==="true"})).filter((d:any)=>d.id);
     }
+    if(probe.key==="sales_orders"&&r.ok){
+      const rows=Array.isArray(r.data?.data)?r.data.data:[];
+      const usage:any={};
+      for(const o of rows){
+        const storeId=Number(o?.loja?.id||0)||0;
+        const key=storeId?String(storeId):"none";
+        if(!usage[key])usage[key]={store_id:storeId||null,count:0,sample_numbers:[],sample_external_numbers:[]};
+        usage[key].count++;
+        if(usage[key].sample_numbers.length<5&&o?.numero!=null)usage[key].sample_numbers.push(o.numero);
+        if(usage[key].sample_external_numbers.length<5&&o?.numeroLoja)usage[key].sample_external_numbers.push(clean(o.numeroLoja,120));
+      }
+      salesOrderChannelUsage={sample_size:rows.length,by_store:Object.values(usage)};
+    }
+    if(probe.key==="company"&&r.ok){
+      const d=r.data?.data||r.data||{};
+      companySummary={
+        id:Number(d?.id||0)||null,
+        name:clean(d?.nome||d?.razaoSocial||d?.nomeFantasia||d?.fantasia,180)||null,
+        trade_name:clean(d?.nomeFantasia||d?.fantasia,180)||null,
+        document:blingHubDigits(d?.cnpj||d?.cpfCnpj||d?.numeroDocumento||d?.documento||"")||null
+      };
+    }
+    if(probe.key==="sales_channels"&&r.ok){
+      const rows=Array.isArray(r.data?.data)?r.data.data:[];
+      salesChannels=rows.slice(0,100).map((d:any)=>({
+        id:Number(d?.id||0)||null,
+        name:clean(d?.descricao||d?.nome||d?.nomeLoja,180)||null,
+        type:clean(d?.tipoIntegracao?.descricao||d?.tipoIntegracao||d?.tipo?.descricao||d?.tipo||d?.canal,160)||null,
+        active:d?.situacao===true||d?.situacao===1||d?.situacao==="1"||d?.ativo===true||d?.habilitado===true,
+        raw_status:d?.situacao??d?.ativo??d?.habilitado??null
+      })).filter((d:any)=>d.id||d.name);
+    }
+  }
+  for(const ch of salesChannels){
+    if(!ch?.id)continue;
+    const det=await blingHubGet(sb,token,"/canais-venda/"+ch.id);
+    ch.detail_http_status=det.status;
+    if(det.ok){
+      const d=det.data?.data||{};
+      const filiais=Array.isArray(d?.filiais)?d.filiais:[];
+      ch.filiais=filiais.map((f:any)=>({
+        cnpj:blingHubDigits(f?.cnpj||"")||null,
+        business_unit_id:Number(f?.idUnidadeNegocio||0)||null,
+        business_unit:clean(f?.unidadeNegocio,180)||null,
+        deposit_id:Number(f?.deposito?.id||0)||null,
+        default:f?.padrao===true
+      }));
+    }else ch.filiais=[];
   }
   const now=new Date().toISOString();
   const runtimeUpdate=await sb.from("bling_hub_runtime_v2").update({
@@ -7166,7 +7216,7 @@ async function blingHubProbeReadonly(sb:any){
   if(metaUpdate.error)throw metaUpdate.error;
   await sb.from("bling_hub_audit_v2").insert({event_type:"readonly_probe",severity:allCore?"info":"warning",details:{probes:results,deposit_candidates:deposits,external_write:false,make_used:false}});
   const readiness=await blingHubReadinessExtended(sb);
-  return {ok:allCore,readonly:true,external_write:false,probes:results,deposit_candidates:deposits,readiness};
+  return {ok:allCore,readonly:true,external_write:false,probes:results,deposit_candidates:deposits,company_summary:companySummary,sales_channels:salesChannels,sales_order_channel_usage:salesOrderChannelUsage,readiness};
 }
 
 async function vitrineCustomerHistory(sb:any,body:any){
