@@ -1,0 +1,27 @@
+name: diag mobile products
+on:
+  push:
+    branches: [feat/mobile-products-quick-edit]
+    paths: ['.github/workflows/diag-mobile-products.yml']
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            vitrine/admin/index.html
+          sparse-checkout-cone-mode: false
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('vitrine/admin/index.html').read_text()
+          for term in ['renderProducts','product_filters','product_list','product_patch','product_update','data-edit-product','product-active-toggle','productOffset','productNext']:
+              print('\n###',term)
+              pos=0
+              while True:
+                  i=s.find(term,pos)
+                  if i<0: break
+                  print(s[max(0,i-1200):i+2400])
+                  pos=i+len(term)
+          PY
