@@ -1133,10 +1133,15 @@ async function docDetail(id:string){
     try{const er=await enrichPaymentMetadata(id,d.data);if(er?.changed){d=await sb.from("purchase_xml_documents").select("*").eq("id",id).maybeSingle()}}catch{}
   }
   const itemIds=(it.data||[]).map((x:any)=>x.id);
-  const lotQ=itemIds.length?await sb.from("purchase_xml_item_lot_evidence").select("*").in("purchase_item_id",itemIds).order("purchase_item_id").order("trace_index"):{data:[],error:null};
-  if(lotQ.error)throw lotQ.error;
-  const lotMap=new Map<string,any[]>();
+  const productIds=[...new Set((it.data||[]).map((x:any)=>x.product_id).filter(Boolean))];
+  const [lotQ,currentLotQ]=await Promise.all([
+    itemIds.length?sb.from("purchase_xml_item_lot_evidence").select("*").in("purchase_item_id",itemIds).order("purchase_item_id").order("trace_index"):Promise.resolve({data:[],error:null}),
+    productIds.length?sb.from("product_inventory_lots").select("id,product_id,lot_code,expiration_date,quantity_on_hand,quantity_reserved,status,source,source_ref,received_at,metadata").in("product_id",productIds).in("status",["active","expired"]).order("expiration_date",{ascending:true}):Promise.resolve({data:[],error:null})
+  ]);
+  if(lotQ.error)throw lotQ.error;if(currentLotQ.error)throw currentLotQ.error;
+  const lotMap=new Map<string,any[]>(),currentLotMap=new Map<string,any[]>();
   for(const lot of lotQ.data||[]){const k=String(lot.purchase_item_id);if(!lotMap.has(k))lotMap.set(k,[]);lotMap.get(k)!.push(lot)}
+  for(const lot of currentLotQ.data||[]){const k=String(lot.product_id);if(!currentLotMap.has(k))currentLotMap.set(k,[]);currentLotMap.get(k)!.push(lot)}
   const items=(it.data||[]).map((x:any)=>{
     const prod=Array.isArray(x.products)?x.products[0]:x.products;
     const pack=itemLooksPackaged(x);
@@ -1150,7 +1155,7 @@ async function docDetail(id:string){
     const baseQty=proposedFactor&&qty>0?qty*Number(proposedFactor):null;
     const proposedCost=baseQty&&baseQty>0&&Number.isFinite(net)?net/baseQty:null;
     const suggestedSale=proposedCost!==null?Math.round(proposedCost*1.40*100)/100:null;
-    return {...x,products:prod||null,lot_evidence:lotMap.get(String(x.id))||[],pricing_preview:{
+    return {...x,products:prod||null,lot_evidence:lotMap.get(String(x.id))||[],current_inventory_lots:currentLotMap.get(String(x.product_id))||[],pricing_preview:{
       markup_percent:40,
       current_cost:prod?.cost==null?null:Number(prod.cost),
       current_sale_price:prod?.price==null?null:Number(prod.price),
