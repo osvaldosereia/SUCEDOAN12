@@ -1284,6 +1284,9 @@
       dialog.product-editor-dialog .section-title{margin-top:8px!important}
     }
 
+    /* GOOGLE_IMAGES_PRODUCT_BUTTON_V1 */
+    .product-google-images-link{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:11px;min-height:44px;padding:0 14px;font-weight:850;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+    .product-google-images-link:hover{background:var(--soft)}
   </style>
 </head>
 <body>
@@ -4159,7 +4162,7 @@
       '<div class="product-image-admin span-2" id="productImagePanel">'+
         '<div class="product-image-preview"><img id="productImagePreview" src="'+esc(p?.image_url||'/img/sem-foto.svg')+'" alt="Foto do produto" onerror="this.onerror=null;this.src=\'/img/sem-foto.svg\'"></div>'+
         '<div class="product-image-tools"><strong>Foto do produto</strong><small>Envie a foto original que você encontrou. Ela fica preservada; depois a automação cria e substitui a imagem do site pelo padrão Dona Antônia, com fundo cinza-claro.</small>'+
-          (!isDuplicate&&p?.id?'<input id="productImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="product-image-actions"><button class="secondary" id="chooseProductImage" type="button">'+(p?.image_url?'Trocar foto original':'Adicionar foto')+'</button><button class="primary" id="standardizeProductImage" type="button" '+(!(p?.image_original_url||p?.image_url)?'disabled':'')+'>Padronizar com IA</button></div><div class="product-image-status '+(p?.image_ai_status==='completed'?'ok':p?.image_ai_status==='error'?'error':p?.image_ai_status==='processing'?'warn':'')+'" id="productImageStatus">'+esc(productImageStatusText(p))+'</div>':'<div class="product-image-status">Salve o produto primeiro. Depois você poderá enviar e padronizar a foto aqui.</div>')+
+          (!isDuplicate&&p?.id?'<input id="productImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="product-image-actions"><button class="secondary" id="chooseProductImage" type="button">'+(p?.image_url?'Trocar foto original':'Adicionar foto')+'</button><a class="secondary product-google-images-link" id="productGoogleImages" data-google-product-name="'+esc(p?.name||'')+'" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(p?.name||'')+'">Google Imagens ↗</a><button class="primary" id="standardizeProductImage" type="button" '+(!(p?.image_original_url||p?.image_url)?'disabled':'')+'>Padronizar com IA</button></div><div class="product-image-status '+(p?.image_ai_status==='completed'?'ok':p?.image_ai_status==='error'?'error':p?.image_ai_status==='processing'?'warn':'')+'" id="productImageStatus">'+esc(productImageStatusText(p))+'</div>':'<div class="product-image-status">Salve o produto primeiro. Depois você poderá enviar e padronizar a foto aqui.</div>')+
         '</div></div>'+
       '<label class="span-2"><span>URL da imagem</span><input name="image_url" value="'+esc(p?.image_url||'')+'"><small>Campo técnico. Normalmente use os botões acima para adicionar ou substituir a imagem.</small></label>'+
       '<label class="span-2"><span>Descrição</span><textarea name="description">'+esc(p?.description||'')+'</textarea></label>'+
