@@ -43,7 +43,7 @@ jobs:
           s,n=re.subn(pat,"    const photoPanel='',manualPendingPanel='';\n    const cameraPanel=",s,count=1,flags=re.S)
           if n!=1: raise SystemExit(f'A4 panel patch count={n}')
 
-          pat=r"\+\(!incident\?'<div class=\\\"balance-subtabs\\\">.*?</div>':''\)\+cameraPanel"
+          pat=r"\+\(!incident\?'<div class=\"balance-subtabs\">.*?</div>':''\)\+cameraPanel"
           s,n=re.subn(pat,"+cameraPanel",s,count=1)
           if n!=1: raise SystemExit(f'subtab html patch count={n}')
 
