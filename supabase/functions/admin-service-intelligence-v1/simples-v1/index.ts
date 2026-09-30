@@ -13,6 +13,8 @@ export interface SimplesServiceDeps {
   lockPeriod:(periodId:string,actor:SimplesActor)=>Promise<any>;
   saveHomologation:(input:any,actor:SimplesActor)=>Promise<any>;
   getExportSnapshot:(periodId:string)=>Promise<any>;
+  getHistoryStatus:(competence:string)=>Promise<any>;
+  collectHistoryMonth:(competence:string,actor:SimplesActor)=>Promise<any>;
 }
 
 export const isValidCompetence=(v:any)=>/^\d{4}-(0[1-9]|1[0-2])$/.test(String(v??''));
@@ -35,6 +37,19 @@ export function createSimplesService(deps:SimplesServiceDeps){
         if(!period)return ok({competence,period:null,issues:[],gate:null});
         const [issues,gate]=await Promise.all([deps.listIssues(period.id),deps.getGate(period.id)]);
         return ok({competence,period,issues,gate});
+      }
+
+      if(action==='simples_history_status'){
+        const competence=String(q.competence||body.competence_month||'');
+        if(!isValidCompetence(competence))return err('invalid_competence',400);
+        return ok({history:await deps.getHistoryStatus(competence)});
+      }
+
+      if(action==='simples_history_collect_month'){
+        if(!isEditor(input.actor.role))return err('editor_required',403);
+        const competence=String(body.competence_month||q.competence||'');
+        if(!isValidCompetence(competence))return err('invalid_competence',400);
+        return ok({history_month:await deps.collectHistoryMonth(competence,input.actor)});
       }
 
       if(action==='simples_recalculate'){
