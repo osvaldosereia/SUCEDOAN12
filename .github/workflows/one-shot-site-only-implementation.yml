@@ -18,6 +18,17 @@ jobs:
           fetch-depth: 1
       - name: Refresh main
         run: git pull --rebase origin main
+      - name: Fix temporary patcher escaping
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/patch-site-only-implementation.py')
+          lines=p.read_text(encoding='utf-8').splitlines()
+          for i,line in enumerate(lines):
+              if line.startswith("s,n=re.subn(r'function delivery"):
+                  lines[i]="s,n=re.subn(r'function delivery\\(\\)\\{.*?\\}\\n\\nfunction pub',(lambda _m: delivery+'\\n\\nfunction pub'),s,count=1,flags=re.S)"
+          p.write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          PY
       - name: Apply patch
         run: python3 scripts/patch-site-only-implementation.py
       - name: Verify contract
