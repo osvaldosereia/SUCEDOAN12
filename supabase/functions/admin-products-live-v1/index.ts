@@ -1986,19 +1986,12 @@ async function inventorySheetApply(p:any,auth:any){
 
 async function basketLooseStockMap(ids:string[]){
   const out=new Map<string,any>();const clean=[...new Set((ids||[]).map(String).filter(Boolean))];if(!clean.length)return out;
-  const wanted=new Set(clean);
-  if(clean.length>180){
+  // Consulta somente os IDs pedidos em blocos pequenos. Evita tanto URL excessiva
+  // quanto truncamento pelo limite máximo de linhas do Data API.
+  for(let i=0;i<clean.length;i+=60){
     const q=await db.from("ops2_loose_sellable_stock_v1")
       .select("product_id,effective_sellable_stock,basket_locked_quantity,loose_sellable_stock,bling_stock_ready")
-      .limit(5000);
-    if(q.error)throw q.error;
-    for(const x of q.data||[])if(wanted.has(String(x.product_id)))out.set(String(x.product_id),x);
-    return out;
-  }
-  for(let i=0;i<clean.length;i+=80){
-    const q=await db.from("ops2_loose_sellable_stock_v1")
-      .select("product_id,effective_sellable_stock,basket_locked_quantity,loose_sellable_stock,bling_stock_ready")
-      .in("product_id",clean.slice(i,i+80));
+      .in("product_id",clean.slice(i,i+60));
     if(q.error)throw q.error;
     for(const x of q.data||[])out.set(String(x.product_id),x);
   }
