@@ -1048,7 +1048,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -3358,6 +3358,7 @@
         '<select id="productSubcategory" aria-label="Subcategoria"><option value="">Todas as subcategorias</option></select>'+
         '<select id="productActive" aria-label="Status"><option value="">Todos os status</option><option value="true">Ativos</option><option value="false">Inativos</option></select>'+
         '<select id="productBasketKit" aria-label="Cestas e kits"><option value="">Todos os produtos</option><option value="true">Somente produtos de cestas/kits</option></select>'+
+        '<select id="productLotStatus" aria-label="Controle de validade"><option value="">Todos os controles de validade</option><option value="pending">Lotes/FEFO pendente</option><option value="complete">Lotes/FEFO completo</option></select>'+
         '<button class="secondary" id="productSearchBtn">Buscar</button>'+
       '</div>'+
       '<div class="panel"><div class="list-head products-layout"><span></span><span>Produto</span><span>Preço</span><span>Estoque</span><span>Status</span><span></span></div><div id="productRows"><div class="loading">Carregando…</div></div><div class="more" id="productMore"></div></div>';
@@ -3386,6 +3387,11 @@
     $('#productBasketKit').value=state.productFilters.basketKit||'';
     $('#productBasketKit').onchange=e=>{
       state.productFilters.basketKit=e.currentTarget.value;
+      loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productLotStatus').value=state.productFilters.lotStatus||'';
+    $('#productLotStatus').onchange=e=>{
+      state.productFilters.lotStatus=e.currentTarget.value;
       loadProducts($('#productSearch').value.trim(),false);
     };
     await loadProducts(q,false);
@@ -3419,12 +3425,14 @@
         subcategory:state.productFilters.subcategory,
         active:state.productFilters.active,
         basket_kit:state.productFilters.basketKit,
+        lot_status:state.productFilters.lotStatus,
         offset,limit:60
       });
       state.products=append?[...state.products,...data.products]:data.products;
       state.productNext=data.next_offset;
       host.innerHTML=state.products.length?state.products.map(productRow).join(''):'<div class="empty">Nenhum produto encontrado com esses filtros.</div>';
       host.querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>openProductEditor(state.products.find(p=>p.id===b.dataset.editProduct)));
+      host.querySelectorAll('[data-product-lots]').forEach(b=>b.onclick=()=>openProductLotsEditor(state.products.find(p=>p.id===b.dataset.productLots)));
       host.querySelectorAll('[data-duplicate-product]').forEach(b=>b.onclick=()=>openProductEditor(state.products.find(p=>p.id===b.dataset.duplicateProduct),true));
       host.querySelectorAll('[data-product-active]').forEach(b=>b.onclick=()=>toggleProductActive(b.dataset.productActive,b));
       const more=$('#productMore');more.innerHTML=state.productNext!=null?'<button class="secondary" id="moreProducts">Mostrar mais</button>':'';
@@ -3604,11 +3612,11 @@
     const mobileStatus=p.active?'Ativo · desativar':expiredInactive?'Vencido · corrigir validade':'Inativo · ativar';
     return '<div class="list-row products-layout">'+
       '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
-      '<div><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<button class="pill product-active-toggle mobile-product-active '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(mobileStatus)+'</button></div>'+
+      '<div><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<span class="sub"><span class="pill '+(p.lot_tracking_complete?'':'warn')+'">'+(p.lot_tracking_complete?'FEFO completo':'Lotes pendentes')+'</span></span><button class="pill product-active-toggle mobile-product-active '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(mobileStatus)+'</button></div>'+
       '<span class="money mobile-wide">'+money(p.sale_price_cents)+'</span>'+
       '<span class="desktop-extra product-stock-list"><strong>'+esc(fmtQty(p.stock_quantity||0))+' total</strong><small>'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+' avulso · '+esc(fmtQty(p.basket_locked_quantity||0))+' em cestas/kits</small></span>'+
       '<span class="desktop-extra"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(desktopStatus)+'</button></span>'+
-      '<div class="product-row-actions"><button class="text" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="text" data-edit-product="'+esc(p.id)+'">Editar</button></div></div>';
+      '<div class="product-row-actions"><button class="text" data-product-lots="'+esc(p.id)+'">Lotes</button><button class="text" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="text" data-edit-product="'+esc(p.id)+'">Editar</button></div></div>';
   }
 
   async function toggleProductActive(id,btn){
@@ -3644,6 +3652,76 @@
       toast(errorMessage(e.message));
       btn.disabled=false;
     }
+  }
+
+  async function openProductLotsEditor(p){
+    if(!p?.id)return;
+    $('#editorTitle').textContent='Lotes e validades · '+(p.name||'Produto');
+    $('#editorBody').innerHTML='<div class="loading">Carregando lotes…</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="closeLotsEditor">Fechar</button>';
+    $('#closeLotsEditor').onclick=()=>$('#editor').close();
+    $('#editor').showModal();
+    try{
+      const data=await api('product_lots',{id:p.id});
+      paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
+    }catch(e){
+      $('#editorBody').innerHTML='<div class="empty">Não consegui carregar os lotes.<br><small>'+esc(errorMessage(e.message))+'</small></div>';
+    }
+  }
+  function paintProductLotsEditor(p,lots,summary){
+    const complete=p?.lot_tracking_complete===true||summary?.lot_tracking_complete===true;
+    const physical=summary?.bling_physical_qty??p?.stock_quantity??0;
+    const tracked=summary?.tracked_physical_qty??lots.reduce((s,x)=>s+Number(x.quantity_on_hand||0),0);
+    const diff=Number(physical||0)-Number(tracked||0);
+    $('#editorBody').innerHTML=
+      '<div class="offer-note" style="margin-bottom:12px"><strong>'+(complete?'FEFO completo neste produto':'Migração progressiva')+'</strong><br>'+
+      (complete?'A separação pode usar os lotes deste produto pela validade mais próxima.':'Cadastre os lotes quando for conveniente. Só ative o FEFO quando a soma dos lotes bater com o estoque físico do Bling.')+'</div>'+
+      '<div class="product-stock-breakdown" style="margin-bottom:12px">'+
+        '<div class="product-stock-box"><small>Estoque físico / Bling</small><strong>'+esc(fmtQty(physical))+'</strong></div>'+
+        '<div class="product-stock-box"><small>Somado em lotes</small><strong>'+esc(fmtQty(tracked))+'</strong></div>'+
+        '<div class="product-stock-box"><small>Falta distribuir</small><strong>'+esc(fmtQty(Math.max(0,diff)))+'</strong></div>'+
+      '</div>'+
+      '<div class="panel" style="padding:12px;margin-bottom:12px">'+
+        '<strong>Adicionar ou ajustar lote</strong>'+
+        '<div class="purchase-price-grid" style="margin-top:10px">'+
+          '<div class="purchase-field"><label>Lote</label><input id="lotCode" placeholder="Opcional"></div>'+
+          '<div class="purchase-field"><label>Validade</label><input id="lotExpiry" type="date"></div>'+
+          '<div class="purchase-field"><label>Quantidade UN</label><input id="lotQty" type="number" min="0" step="0.001"></div>'+
+        '</div>'+
+        '<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="primary" id="saveProductLot" type="button">Salvar lote</button></div>'+
+      '</div>'+
+      '<div class="history-title"><div><strong>Lotes cadastrados</strong><span class="sub">Mais próxima primeiro.</span></div><b>'+esc(lots.length)+'</b></div>'+
+      '<div class="history-list">'+(lots.length?lots.map((l,i)=>'<div class="history-row"><div><span class="pill '+(i===0&&l.status==="active"?'warn':'')+'">'+esc(l.status||'')+'</span></div><div class="history-main"><strong>Validade '+esc(dateOnly(l.expiration_date))+'</strong><small>Lote '+esc(l.lot_code||'sem código')+' · '+esc(fmtQty(l.quantity_on_hand||0))+' UN'+(i===0&&l.status==="active"?' · sair primeiro quando FEFO estiver ativo':'')+'</small></div></div>').join(''):'<div class="history-empty">Nenhum lote cadastrado ainda.</div>')+'</div>'+
+      '<div class="bling-banner '+(complete?'':'')+'" style="margin-top:12px"><strong>'+(complete?'Controle por lotes ativo':'Ativar quando terminar este produto')+'</strong><small>'+(complete?'Este produto já está no modo FEFO.':'O botão só funciona quando todos os lotes têm quantidade e a soma fecha com o estoque físico do Bling.')+'</small><div class="bling-actions"><button class="primary" id="activateProductFefo" type="button" '+(complete?'disabled':'')+'>'+(complete?'FEFO ativo':'Ativar FEFO neste produto')+'</button></div></div>';
+    $('#saveProductLot').onclick=async()=>{
+      const code=$('#lotCode').value.trim(),exp=$('#lotExpiry').value,qty=Number(String($('#lotQty').value||'').replace(',','.'));
+      if(!exp){toast('Informe a validade');return}
+      if(!Number.isFinite(qty)||qty<0){toast('Informe uma quantidade válida');return}
+      const btn=$('#saveProductLot');btn.disabled=true;btn.textContent='Salvando…';
+      try{
+        const sourceRef='manual-ui:'+p.id+':'+(code||'sem-lote')+':'+exp;
+        const data=await api('product_lot_save',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:p.id,lot_code:code||null,expiration_date:exp,quantity_on_hand:qty,source:'manual',source_ref:sourceRef,received_at:null,metadata:{source_ui:'product_editor'}})
+        });
+        toast('Lote salvo');
+        paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar lote'}
+    };
+    $('#activateProductFefo').onclick=async()=>{
+      if(complete)return;
+      const op=requireOperator();if(!op)return;
+      const btn=$('#activateProductFefo');btn.disabled=true;btn.textContent='Conferindo…';
+      try{
+        const data=await api('product_lot_tracking_complete',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:p.id,complete:true,operator:op})
+        });
+        toast('FEFO ativado neste produto');
+        paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
+        await loadProducts($('#productSearch')?.value.trim()||'',false);
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Ativar FEFO neste produto'}
+    };
   }
 
   function openProductEditor(p=null,duplicate=false){
@@ -3693,8 +3771,9 @@
       '<label><span>Valor da oferta</span><input name="offer_price" inputmode="decimal" value="'+esc(offerPrice)+'"></label>'+
       '<label class="span-2"><span>Validade da oferta</span><select name="offer_duration">'+offerDurationOptions(offerDuration)+'</select></label>'+
       '</form>';
-    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button>'+(p&&!isDuplicate?'<button class="secondary" id="duplicateFromEditor">Duplicar</button>':'')+'<button class="primary" id="saveProduct">'+(isDuplicate?'Criar produto duplicado':'Salvar produto')+'</button>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button>'+(p&&!isDuplicate?'<button class="secondary" id="manageProductLots">Lotes/validades</button><button class="secondary" id="duplicateFromEditor">Duplicar</button>':'')+'<button class="primary" id="saveProduct">'+(isDuplicate?'Criar produto duplicado':'Salvar produto')+'</button>';
     $('#cancelEditor').onclick=()=>$('#editor').close();
+    if($('#manageProductLots'))$('#manageProductLots').onclick=()=>openProductLotsEditor(p);
     if($('#duplicateFromEditor'))$('#duplicateFromEditor').onclick=()=>openProductEditor(p,true);
     $('#saveProduct').onclick=()=>saveProduct(isDuplicate?'':(p?.id||''),isDuplicate?p.id:'');
     $('#editor').showModal();
@@ -7981,7 +8060,7 @@
   }
   function formatCpf(v){const d=String(v||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9):v||''}
   function errorMessage(code){
-    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',gtin_already_exists:'Este EAN já pertence a outro produto.',sku_already_exists:'Este SKU já pertence a outro produto.',duplicate_source_not_found:'O produto original não foi encontrado.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',receipt_lots_required:'Defina e salve as validades/lotes de todos os itens antes de preparar a entrada.',expiration_lot_required:'Informe ao menos uma validade para este produto.',expiration_date_required:'Informe a data de validade.',lot_quantity_required:'Informe a quantidade deste lote.',lot_quantity_mismatch:'A soma das quantidades dos lotes precisa ser igual à quantidade recebida.',all_receipt_items_required:'Revise os lotes de todos os itens da nota.',product_inactive:'Produto inativo não pode ter oferta ativa.',product_expired:'Produto vencido não pode ter oferta ativa.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',invalid_product:'Produto inválido.',gondola_not_found:'Gôndola não encontrada.',gondola_clear_confirmation_required:'Confirme a limpeza da gôndola novamente.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',ean_not_in_order:'Este produto não pertence ao pedido.',checked_quantity_exceeds_expected:'Esta quantidade já foi totalmente conferida.',duplicate_ean_in_order:'EAN duplicado no pedido. Revise o cadastro.',check_incomplete:'Ainda faltam produtos para conferir.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',delivery_payment_required:'Registre o pagamento recebido antes de confirmar a entrega.',delivery_payment_mismatch:'O pagamento registrado não confere com o total do pedido.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.'};
+    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',gtin_already_exists:'Este EAN já pertence a outro produto.',sku_already_exists:'Este SKU já pertence a outro produto.',duplicate_source_not_found:'O produto original não foi encontrado.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',lot_tracking_requires_lot:'Cadastre pelo menos um lote antes de ativar o FEFO.',lot_tracking_has_unquantified_lot:'Todos os lotes precisam ter quantidade informada.',lot_tracking_bling_physical_missing:'Ainda não consegui conferir o estoque físico deste produto no Bling.',lot_tracking_physical_mismatch:'A soma dos lotes ainda não confere com o estoque físico do Bling.',receipt_lots_required:'Defina e salve as validades/lotes de todos os itens antes de preparar a entrada.',expiration_lot_required:'Informe ao menos uma validade para este produto.',expiration_date_required:'Informe a data de validade.',lot_quantity_required:'Informe a quantidade deste lote.',lot_quantity_mismatch:'A soma das quantidades dos lotes precisa ser igual à quantidade recebida.',all_receipt_items_required:'Revise os lotes de todos os itens da nota.',product_inactive:'Produto inativo não pode ter oferta ativa.',product_expired:'Produto vencido não pode ter oferta ativa.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',invalid_product:'Produto inválido.',gondola_not_found:'Gôndola não encontrada.',gondola_clear_confirmation_required:'Confirme a limpeza da gôndola novamente.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',ean_not_in_order:'Este produto não pertence ao pedido.',checked_quantity_exceeds_expected:'Esta quantidade já foi totalmente conferida.',duplicate_ean_in_order:'EAN duplicado no pedido. Revise o cadastro.',check_incomplete:'Ainda faltam produtos para conferir.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',delivery_payment_required:'Registre o pagamento recebido antes de confirmar a entrega.',delivery_payment_mismatch:'O pagamento registrado não confere com o total do pedido.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.'};
     return map[code]||'Não consegui salvar agora.';
   }
 
