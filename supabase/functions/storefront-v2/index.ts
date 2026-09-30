@@ -217,6 +217,12 @@ async function submit(req:Request,p:any){
   const ensured=await db.rpc("ensure_storefront_customer_v2",{p_phone:ph,p_name:requestedName,p_source_key:"storefront-v2-submit"});
   if(ensured.error)return {error:"customer_identity_unavailable",status:503};
   if(ensured.data?.ok!==true||!uid(ensured.data?.customer_id))return {error:txt(ensured.data?.error,100)||"customer_identity_failed",status:409};
+  let registrationComplete=false;
+  try{
+    const registration=await db.rpc("ops2_customer_registration_state_v1",{p_customer_id:ensured.data.customer_id});
+    registrationComplete=!registration.error&&registration.data?.ok===true&&registration.data?.registration_complete===true;
+    if(registration.error)console.error("customer_registration_state",txt(registration.error.message,180));
+  }catch(e){console.error("customer_registration_state",txt((e as any)?.message,180))}
   const customerSnapshot={...incoming,id:ensured.data.customer_id,display_name:requestedName||incoming?.display_name||null,identity_status:ensured.data.status||null};
   const del=delivery(),split=await splitGlobalReady(),created=split?await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del}):await db.rpc("create_canonical_cart_order_v2",{p_source:"vitrine",p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del});
   if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS}}
@@ -228,8 +234,8 @@ async function submit(req:Request,p:any){
       if(!linked.error)papoaiLink=linked.data||null;
     }catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}
   }
-  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:created.data?.customer_id?"registered":"new",payment_method:pay||null,reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked)},"order-received:"+orderId);
-  return {...created.data,phone_attached:true,customer_status:created.data?.customer_id?"registered":"new",minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,history_synced:true,stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)};
+  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:registrationComplete?"registered":"new",payment_method:pay||null,reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked)},"order-received:"+orderId);
+  return {...created.data,phone_attached:true,customer_status:registrationComplete?"registered":"new",registration_complete:registrationComplete,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,history_synced:true,stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)};
 }
 async function lookupCustomer(v:any){const ph=phone(v);if(!ph)return {ok:true,found:false};const r=await db.rpc("lookup_customer_by_phone",{p_phone:ph});if(r.error)throw r.error;const id=uid(r.data?.[0]?.customer_id);if(!id)return {ok:true,found:false};const q=await db.from("customers").select("id,name").eq("id",id).maybeSingle();if(q.error)throw q.error;return {ok:true,found:Boolean(q.data),first_name:q.data?.name?txt(q.data.name,120).split(/\s+/)[0]:null}}
 
