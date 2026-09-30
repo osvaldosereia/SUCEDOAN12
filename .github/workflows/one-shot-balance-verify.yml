@@ -7,7 +7,7 @@ on:
       - ".github/workflows/one-shot-balance-verify.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -21,16 +21,32 @@ jobs:
             supabase/functions/admin-products-live-v1/index.ts
             supabase/functions/product-image-openai-v1/index.ts
             scripts/test-balance-camera-auto-ean.mjs
+            .github/workflows/one-shot-balance-verify.yml
+            balance-runtime-check.txt
           sparse-checkout-cone-mode: false
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
       - name: Contract
         run: node scripts/test-balance-camera-auto-ean.mjs
-      - name: Deno type and syntax check
+      - name: Runtime syntax and type diagnostics
         run: |
-          deno check supabase/functions/admin-products-live-v1/index.ts
-          deno check supabase/functions/product-image-openai-v1/index.ts
+          set +e
+          deno check supabase/functions/admin-products-live-v1/index.ts > /tmp/edge.log 2>&1
+          edge_code=$?
+          deno check supabase/functions/product-image-openai-v1/index.ts > /tmp/image.log 2>&1
+          image_code=$?
+          set -e
+          {
+            echo '=== admin-products-live-v1 ==='
+            cat /tmp/edge.log
+            echo
+            echo '=== product-image-openai-v1 ==='
+            cat /tmp/image.log
+            echo
+            echo "edge_code=$edge_code image_code=$image_code"
+          } > balance-runtime-check.txt
+          cat balance-runtime-check.txt
       - name: Browser JavaScript syntax check
         run: |
           node <<'NODE'
@@ -49,3 +65,15 @@ jobs:
           ! grep -q 'inventory-fast-balance-v3' supabase/functions/admin-products-live-v1/index.ts
           grep -q 'setProductStockOfficial' supabase/functions/admin-products-live-v1/index.ts
           grep -q 'lot_selection_required' supabase/functions/admin-products-live-v1/index.ts
+      - name: Persist diagnostics when Deno reports issues
+        run: |
+          if grep -q 'edge_code=0 image_code=0' balance-runtime-check.txt; then
+            echo 'Deno checks clean'
+            exit 0
+          fi
+          git config user.name "Dona Antonia Ops"
+          git config user.email "actions@users.noreply.github.com"
+          git add --sparse balance-runtime-check.txt
+          git commit -m "chore(balance): capture runtime check diagnostic"
+          git push
+          exit 1
