@@ -35,8 +35,22 @@ jobs:
           fi
       - name: Apply canonical balance implementation
         run: |
-          python3 tools/patch_balance_camera_auto_ean.py
-          python3 tools/patch_balance_camera_auto_ean_fixups.py
+          set +e
+          {
+            python3 tools/patch_balance_camera_auto_ean.py
+            python3 tools/patch_balance_camera_auto_ean_fixups.py
+          } > /tmp/balance-patch.log 2>&1
+          code=$?
+          cat /tmp/balance-patch.log
+          if [ "$code" -ne 0 ]; then
+            cp /tmp/balance-patch.log balance-patch-error.txt
+            git config user.name "Dona Antonia Ops"
+            git config user.email "actions@users.noreply.github.com"
+            git add balance-patch-error.txt
+            git commit -m "chore(balance): capture patch failure"
+            git push
+            exit "$code"
+          fi
       - name: GREEN - verify implementation contract
         run: |
           node scripts/test-balance-camera-auto-ean.mjs
