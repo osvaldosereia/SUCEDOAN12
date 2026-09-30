@@ -5719,6 +5719,25 @@
     const qty=Number(item?.converted_quantity||item?.pricing_preview?.proposed_base_quantity||0);
     return [{lot_code:'',expiration_date:'',base_quantity:qty||''}];
   }
+  function purchaseCurrentInventoryLotsHtml(item){
+    const lots=(item?.current_inventory_lots||[]).filter(x=>Number(x.quantity_on_hand||0)>Number(x.quantity_reserved||0));
+    const tracking=item?.products?.metadata?.lot_tracking_complete===true||item?.products?.metadata?.lot_tracking_complete==='true';
+    if(!lots.length){
+      return '<div class="purchase-factor-hint '+(tracking?'':'warn-text')+'" style="margin:6px 0 10px">'+
+        (tracking?'Nenhum lote anterior com saldo disponível.':'Estoque anterior ainda não foi reconciliado por validade. O FEFO definitivo será ativado após o levantamento inicial dos lotes.')+
+      '</div>';
+    }
+    const active=lots.filter(x=>x.status==='active'&&x.expiration_date).sort((a,b)=>String(a.expiration_date).localeCompare(String(b.expiration_date)));
+    const first=active[0]?.id||null;
+    return '<div style="margin:8px 0 10px"><small class="sub" style="display:block;margin-bottom:6px">Estoque já cadastrado por validade</small><div style="display:flex;gap:6px;flex-wrap:wrap">'+
+      lots.map(x=>{
+        const available=Math.max(0,Number(x.quantity_on_hand||0)-Number(x.quantity_reserved||0));
+        const isFirst=x.id===first;
+        const label=dateOnly(String(x.expiration_date||''))+' · '+fmtQty(available)+' UN';
+        return '<span class="pill '+(isFirst?'warn':'')+'" title="'+esc(x.lot_code||'Sem código de lote')+'">'+esc(label)+(isFirst?' · '+(tracking?'FEFO: sair primeiro':'mais próxima cadastrada'):'')+'</span>';
+      }).join('')+
+      '</div>'+(tracking?'':'<small class="sub" style="display:block;margin-top:6px">Referência provisória: ainda pode existir estoque antigo sem lote cadastrado.</small>')+'</div>';
+  }
   function purchaseReceiptLotsHtml(d,items,lotPlan){
     if(!Array.isArray(items)||!items.length)return '';
     const received=d?.receipt_status==='received';
@@ -5732,13 +5751,15 @@
         const ev=item.lot_evidence||[],ignored=ev.some(x=>x.status==='ignored'&&x?.metadata?.no_expiry===true);
         const rows=purchaseLotRowsForItem(item);
         const expected=Number(item.converted_quantity||item?.pricing_preview?.proposed_base_quantity||0);
+        const nearestNew=rows.filter(r=>r.expiration_date).map(r=>String(r.expiration_date)).sort()[0]||'';
         return '<div class="purchase-item-card" data-receipt-lot-item="'+esc(item.id)+'" data-expected-qty="'+esc(expected)+'">'+
           '<div class="purchase-item-title"><div><strong>'+esc(item?.products?.name||item.description||('Item '+(idx+1)))+'</strong><small>Recebido: '+esc(fmtQty(expected))+' UN</small></div><span class="pill">'+esc(item.purchase_unit||'UN')+'</span></div>'+
+          purchaseCurrentInventoryLotsHtml(item)+
           '<label class="purchase-checks" style="margin:8px 0"><input type="checkbox" data-receipt-no-expiry '+(ignored?'checked':'')+' '+(received?'disabled':'')+'> Sem controle de validade para este item</label>'+
           '<div data-receipt-lot-rows style="'+(ignored?'display:none':'display:grid')+';gap:8px">'+
             rows.map((r,ri)=>'<div class="purchase-price-grid" data-receipt-lot-row>'+
               '<div class="purchase-field"><label>Lote</label><input data-receipt-lot-code value="'+esc(r.lot_code||'')+'" placeholder="Opcional"></div>'+
-              '<div class="purchase-field"><label>Validade</label><input type="date" data-receipt-lot-exp value="'+esc(r.expiration_date||'')+'" '+(received?'disabled':'')+'></div>'+
+              '<div class="purchase-field"><label>Validade'+(nearestNew&&String(r.expiration_date||'')===nearestNew?' · mais próxima desta entrada':'')+'</label><input type="date" data-receipt-lot-exp value="'+esc(r.expiration_date||'')+'" '+(received?'disabled':'')+'></div>'+
               '<div class="purchase-field"><label>Quantidade UN</label><input type="number" min="0.001" step="0.001" data-receipt-lot-qty value="'+esc(purchaseNumberInput(r.base_quantity??''))+'" '+(received?'disabled':'')+'></div>'+
               '<div class="purchase-field"><label>&nbsp;</label><button class="secondary" type="button" data-receipt-lot-remove '+(received?'disabled':'')+'>Remover</button></div>'+
             '</div>').join('')+
