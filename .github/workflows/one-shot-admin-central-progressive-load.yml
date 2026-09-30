@@ -1,0 +1,47 @@
+name: One-shot admin central progressive load
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-admin-central-progressive-load.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/test-admin-central-progressive-load.py
+            scripts/patch-admin-central-progressive-load.py
+          sparse-checkout-cone-mode: false
+      - name: RED - confirm regression test fails first
+        run: |
+          if python3 scripts/test-admin-central-progressive-load.py; then
+            echo 'Expected regression test to fail before patch, but it passed.'
+            exit 1
+          else
+            echo 'RED confirmed: current Central still has blocking startup.'
+          fi
+      - name: Apply minimal performance fix
+        run: python3 scripts/patch-admin-central-progressive-load.py
+      - name: GREEN - verify contract and syntax
+        run: |
+          python3 scripts/test-admin-central-progressive-load.py
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log('syntax OK');
+          NODE
+          git diff --check
+      - name: Commit fix
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'perf(admin): carrega Central em etapas sem rajada de consultas'
+          git push origin HEAD:main
