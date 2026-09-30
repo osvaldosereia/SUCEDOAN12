@@ -7305,10 +7305,9 @@
       const preview=await api('bling_preview_order_sync',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
       const blockers=blingPreflightOperationalBlockers(preview);
       if(blockers.length){try{w.close()}catch{};toast('Pedido precisa de revisão antes da separação');openOrder(id);return}
-      const consumed=await api('order_consume_stock',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Operação'})});
       await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'processing',operator:currentOperator()||'Operação'})});
       printSeparationOnly(detail,w);
-      toast(consumed.already_consumed?'Separação retomada':'Separação iniciada');
+      toast('Separação iniciada');
       await loadSeparationTabletQueue();
     }catch(e){try{w.close()}catch{};toast(errorMessage(e.message))}
     finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='INICIAR SEPARAÇÃO'}}
@@ -8312,10 +8311,15 @@
       if(hint)hint.textContent='Não consegui buscar agora. Tente novamente.';
     }
   }
+  function canonicalOrderPayment(value){
+    const raw=String(value||'').trim(),key=normalize(raw);
+    const map={pix:'pix',dinheiro:'cash',cash:'cash','cartao de credito':'credit_card',credit:'credit_card',credit_card:'credit_card','cartao alimentacao':'food_card','cartao alimentacao/refeicao':'food_card',food_card:'food_card','cartao refeicao':'meal_card',meal_card:'meal_card'};
+    return map[key]||map[raw]||'';
+  }
   function paymentOptions(current){
-    const standard=['PIX','Dinheiro','Cartão de crédito','Cartão alimentação/refeição'];
-    const values=current&&!standard.includes(current)?[current,...standard]:standard;
-    return values.map(v=>'<option value="'+esc(v)+'" '+(v===current?'selected':'')+'>'+esc(v)+'</option>').join('');
+    const selected=canonicalOrderPayment(current);
+    const standard=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição']];
+    return standard.map(([value,label])=>'<option value="'+value+'" '+(value===selected?'selected':'')+'>'+esc(label)+'</option>').join('');
   }
   function currentOrderEditablePayload(status){
     const order=state.currentOrder?.order||{};
@@ -8508,10 +8512,9 @@
       await persistCurrentOrder();
       const blingReady=await validateBlingBeforeSeparation(o.id);
       if(!blingReady){try{w.close()}catch{};return}
-      const consumed=await api('order_consume_stock',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,operator:currentOperator()||'Operação'})});
       await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'processing',operator:currentOperator()||'Operação'})});
       printSeparationOnly(detail,w);
-      toast(consumed.already_consumed?'Separação retomada · estoque já estava atualizado':'Separação iniciada · estoque atualizado');
+      toast('Separação iniciada · estoque e status atualizados juntos');
       const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
       await loadCurrentOrderFiscal(false);
       paintOrderDetail();loadOrders();
