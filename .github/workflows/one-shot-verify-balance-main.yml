@@ -1,0 +1,43 @@
+name: One-shot verify balance main
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-verify-balance-main.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            supabase/functions/admin-products-live-v1/index.ts
+            supabase/functions/product-image-openai-v1/index.ts
+            scripts/test-balance-camera-auto-ean.mjs
+            .github/workflows/one-shot-verify-balance-main.yml
+          sparse-checkout-cone-mode: false
+      - name: Contract
+        run: node scripts/test-balance-camera-auto-ean.mjs
+      - name: Admin JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          if(!scripts.length)throw new Error('no inline scripts found');
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log(`Admin JS syntax OK (${scripts.length} inline scripts)`);
+          NODE
+      - name: Canonical safety markers
+        run: |
+          grep -q 'inventory_balance_resolve_ean' supabase/functions/admin-products-live-v1/index.ts
+          grep -q 'inventory_balance_commit' supabase/functions/admin-products-live-v1/index.ts
+          grep -q 'setProductStockOfficial' supabase/functions/admin-products-live-v1/index.ts
+          grep -q 'lot_selection_required' supabase/functions/admin-products-live-v1/index.ts
+          grep -q 'event==="identify"' supabase/functions/product-image-openai-v1/index.ts
+          grep -q 'id="balanceCameraVideo"' vitrine/admin/index.html
+          grep -q 'Folhas A4' vitrine/admin/index.html
