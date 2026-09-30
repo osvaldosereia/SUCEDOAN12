@@ -113,7 +113,7 @@ function interceptPersistence(){
     const response=await nativeFetch(input,nextInit);
     if(action==='quote_save'&&response.ok)setTimeout(()=>setDirty(false),0);
     if(action==='quote'&&response.ok){
-      response.clone().json().then(data=>{const saved=Number(data?.quote?.snapshot?.options?.generalMultiplier);setTimeout(()=>{if(Number.isFinite(saved)&&saved>=1)setMultiplierDisplay(saved);setDirty(false);updateMultiplierValues()},0)}).catch(()=>{});
+      response.clone().json().then(data=>{const saved=Number(data?.quote?.snapshot?.options?.generalMultiplier);setTimeout(()=>{setMultiplierDisplay(Number.isFinite(saved)&&saved>=1?saved:1);setDirty(false);updateMultiplierValues()},0)}).catch(()=>{});
     }
     return response;
   };
