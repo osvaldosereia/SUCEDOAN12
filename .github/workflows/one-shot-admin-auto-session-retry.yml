@@ -1,0 +1,23 @@
+name: One-shot admin auto session retry
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-admin-auto-session-retry.yml'
+      - 'scripts/test-admin-auto-session-retry.py'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            orcamento/app-original.html
+            scripts/test-admin-auto-session-retry.py
+          sparse-checkout-cone-mode: false
+      - name: Regression test
+        run: python3 scripts/test-admin-auto-session-retry.py
