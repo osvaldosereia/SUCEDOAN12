@@ -8570,15 +8570,7 @@
   $('#closeEditor').onclick=()=>$('#editor').close();
   $('#editor').addEventListener('click',e=>{if(e.target===$('#editor'))$('#editor').close()});
 
-  async function start(){
-    try{
-      await api('health');
-      setTab('today');
-    }catch(e){
-      $('#content').innerHTML='<div class="empty">Não consegui abrir o Admin agora. <button class="text" id="retryAdmin">Tentar novamente</button></div>';
-      if($('#retryAdmin'))$('#retryAdmin').onclick=()=>location.reload();
-    }
-  }
+  function start(){setTab('today')}
   start();
 })();
 </script>
