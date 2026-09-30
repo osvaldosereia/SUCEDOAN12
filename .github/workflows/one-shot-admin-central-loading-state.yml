@@ -1,0 +1,40 @@
+name: One-shot admin central loading state
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-admin-central-loading-state.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: RED - verify regression exists
+        run: |
+          if python3 scripts/test_admin_central_loading_state.py; then
+            echo 'Test unexpectedly passed before patch'
+            exit 1
+          fi
+      - name: Apply minimal loading-state fix
+        run: python3 scripts/patch_admin_central_loading_state.py
+      - name: GREEN - verify behavior and syntax
+        run: |
+          python3 scripts/test_admin_central_loading_state.py
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{new Function(src)});
+          console.log('syntax OK');
+          NODE
+          git diff --check
+      - name: Commit fix
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'fix(admin): estabiliza estados de carregamento da Central'
+          git push origin HEAD:main
