@@ -1,17 +1,14 @@
-# rerun-v2
-name: One-shot admin separation atomic
+name: Verify admin separation atomic
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/one-shot-admin-separation-atomic.yml'
       - 'scripts/test-admin-separation-atomic.py'
-      - 'scripts/patch-admin-separation-atomic.py'
+      - 'vitrine/admin/index.html'
       - 'supabase/sql/20260930_order_separation_atomic_v1.sql'
-permissions:
-  contents: write
 jobs:
-  patch-and-verify:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,12 +17,9 @@ jobs:
           sparse-checkout: |
             vitrine/admin/index.html
             scripts/test-admin-separation-atomic.py
-            scripts/patch-admin-separation-atomic.py
             supabase/sql/20260930_order_separation_atomic_v1.sql
           sparse-checkout-cone-mode: false
-      - name: Apply frontend fix
-        run: python3 scripts/patch-admin-separation-atomic.py
-      - name: Regression test
+      - name: Regression contract
         run: python3 scripts/test-admin-separation-atomic.py
       - name: Validate admin JavaScript
         run: |
@@ -37,12 +31,5 @@ jobs:
           Path('/tmp/admin.js').write_text('\n'.join(blocks),encoding='utf-8')
           PY
           node --check /tmp/admin.js
-      - name: Verify diff
+      - name: Verify working tree
         run: git diff --check
-      - name: Commit frontend fix
-        run: |
-          git config user.name 'Dona Antonia Ops'
-          git config user.email 'actions@users.noreply.github.com'
-          git add vitrine/admin/index.html
-          git commit -m 'fix(admin): make separation atomic and payments canonical'
-          git push origin HEAD:main
