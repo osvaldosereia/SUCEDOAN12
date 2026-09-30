@@ -18,27 +18,28 @@ s,n = re.subn(r"  function paymentOptions\(current\)\{\n.*?\n  \}", new_payment,
 if n != 1:
     raise SystemExit(f'paymentOptions marker count={n}')
 
-old1 = '''      const consumed=await api('order_consume_stock',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,operator:currentOperator()||'Operação'})});
-      await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'processing',operator:currentOperator()||'Operação'})});
-      printSeparationOnly(detail,w);
-      toast(consumed.already_consumed?'Separação retomada · estoque já estava atualizado':'Separação iniciada · estoque atualizado');'''
-new1 = '''      await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'processing',operator:currentOperator()||'Operação'})});
-      printSeparationOnly(detail,w);
-      toast('Separação iniciada · estoque e status atualizados juntos');'''
-if old1 not in s:
-    raise SystemExit('main separation consume marker not found')
-s=s.replace(old1,new1,1)
-
-old2 = '''      const consumed=await api('order_consume_stock',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Operação'})});
-      await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'processing',operator:currentOperator()||'Operação'})});
-      printSeparationOnly(detail,w);
-      toast(consumed.already_consumed?'Separação retomada':'Separação iniciada');'''
-new2 = '''      await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'processing',operator:currentOperator()||'Operação'})});
-      printSeparationOnly(detail,w);
-      toast('Separação iniciada');'''
-if old2 not in s:
-    raise SystemExit('tablet separation consume marker not found')
-s=s.replace(old2,new2,1)
+lines=s.splitlines()
+out=[]
+removed=0
+toasts=0
+for line in lines:
+    if "const consumed=await api('order_consume_stock'" in line:
+        removed += 1
+        continue
+    if "toast(consumed.already_consumed?" in line:
+        indent=line[:len(line)-len(line.lstrip())]
+        if 'estoque já estava atualizado' in line:
+            out.append(indent+"toast('Separação iniciada · estoque e status atualizados juntos');")
+        else:
+            out.append(indent+"toast('Separação iniciada');")
+        toasts += 1
+        continue
+    out.append(line)
+if removed != 2:
+    raise SystemExit(f'expected 2 explicit consume calls, found {removed}')
+if toasts != 2:
+    raise SystemExit(f'expected 2 consumed toasts, found {toasts}')
+s='\n'.join(out)+'\n'
 
 path.write_text(s,encoding='utf-8')
 print('admin atomic separation and canonical payment applied')
