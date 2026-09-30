@@ -23,15 +23,17 @@ The RPC returns no customer PII other than the customer UUID supplied as input.
 
 `ops2_customer_registration_summary_v1(p_days integer default 31)` exposes aggregate counts only.
 
-Verification snapshot for 31 days immediately after deployment:
+Final verification snapshot for 31 days at 2026-09-30 07:58 Cuiabá:
 
-- recent site orders: 43;
-- site orders with incomplete registration: 16;
-- distinct customers with incomplete registration: 13;
+- recent site orders: 44;
+- site orders with incomplete registration: 17;
+- distinct customers with incomplete registration: 14;
 - distinct customers registration-complete: 15;
 - distinct customers Bling-ready but not linked: 4;
 - Flow events in window: 7;
 - Flow events requiring review: 0.
+
+The aggregate is live. During this implementation one new site order arrived, so the earlier 43/16/13 snapshot advanced to 44/17/14 without any migration data mutation.
 
 No names, phones, CPF/CNPJ, addresses, streets or customer UUID lists are returned by the aggregate RPC.
 
@@ -49,6 +51,8 @@ TDD/production-safe verification covered:
 
 Synthetic customer/address tests ran inside a transaction followed by `ROLLBACK`. Final residue check: 0 synthetic customers and 0 synthetic addresses.
 
+A final review considered the hypothetical case where street and city exist only on different active address rows. No such production record currently exists. A synthetic RED test for that extra edge case was blocked by the connector safety layer, so no untested behavior change was introduced. This remains a future test case, not a Phase 1 blocker.
+
 ## Security
 
 Both RPCs:
@@ -57,13 +61,15 @@ Both RPCs:
 - revoke execute from `public`, `anon`, and `authenticated`;
 - grant execute only to `service_role`.
 
-Verified:
+Verified for both RPCs:
 
 - `anon` execute: false;
 - `authenticated` execute: false;
 - `service_role` execute: true.
 
 Supabase security advisor produced no new finding attributable to these RPCs. Pre-existing project advisories remain, chiefly RLS-enabled tables without explicit policies and leaked-password protection disabled in Auth; they are outside this Phase 1 scope.
+
+Performance advisor also reports pre-existing unindexed foreign keys and unused indexes. No index was added or removed in this phase.
 
 ## PapoAI invariants preserved
 
