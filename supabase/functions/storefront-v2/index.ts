@@ -19,7 +19,7 @@ const txt=(v:any,n=180)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").rep
 const uid=(v:any)=>{const s=txt(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""};
 const clamp=(v:any,min:number,max:number)=>{const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):min};
 const cents=(v:any)=>Math.round(Number(v||0)*100);
-const phone=(v:any)=>{let d=String(v??"").replace(/\D+/g,"");if(d.startsWith("00"))d=d.slice(2);if(d.startsWith("55")&&(d.length===12||d.length===13))return "+"+d;if(d.length===10||d.length===11)return "+55"+d;return ""};
+const phone=(v:any)=>{let d=String(v??"").replace(/\D+/g,"");if(d.startsWith("00"))d=d.slice(2);let local="";if(d.startsWith("55")&&(d.length===12||d.length===13))local=d.slice(2);else if(d.length===10||d.length===11)local=d;else return "";if(local.length===10&&/[6-9]/.test(local.charAt(2)))local=local.slice(0,2)+"9"+local.slice(2);return "+55"+local};
 const safeQ=(v:any)=>txt(v,100).replace(/[,%()]/g," ").trim();
 async function sha(v:string){const x=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return [...new Uint8Array(x)].map(b=>b.toString(16).padStart(2,"0")).join("")}
 function ip(req:Request){for(const v of [req.headers.get("cf-connecting-ip"),String(req.headers.get("x-forwarded-for")||"").split(",")[0],req.headers.get("x-real-ip")]){const s=String(v||"").trim();if(s)return s.slice(0,120)}return ""}
@@ -212,7 +212,13 @@ async function recordOpsEvent(eventType:string,summary:string,orderId:any,payloa
 async function submit(req:Request,p:any){
   const pay=txt(p?.payment_method,80),ph=phone(p?.whatsapp_phone),items=Array.isArray(p?.items)?p.items.slice(0,80):[];if(!ph)return {error:"invalid_phone",status:400};if(!items.length)return {error:"empty_cart",status:400};
   const ik=await sha(ip(req)||"unknown"),pk=await sha(ph),[a,b]=await Promise.all([db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600}),db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:phone:"+pk,p_bucket:"create_order",p_limit:5,p_window_seconds:600})]);if(a.error||b.error)return {error:"rate_limit_unavailable",status:503};if(a.data!==true||b.data!==true)return {error:"rate_limited",status:429};
-  const del=delivery(),split=await splitGlobalReady(),created=split?await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:p?.customer_snapshot||{},p_delivery:del}):await db.rpc("create_canonical_cart_order_v2",{p_source:"vitrine",p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:p?.customer_snapshot||{},p_delivery:del});
+  const incoming=p?.customer_snapshot&&typeof p.customer_snapshot==="object"?{...p.customer_snapshot}:{};
+  const requestedName=txt(incoming?.display_name||incoming?.name,180)||null;
+  const ensured=await db.rpc("ensure_storefront_customer_v2",{p_phone:ph,p_name:requestedName,p_source_key:"storefront-v2-submit"});
+  if(ensured.error)return {error:"customer_identity_unavailable",status:503};
+  if(ensured.data?.ok!==true||!uid(ensured.data?.customer_id))return {error:txt(ensured.data?.error,100)||"customer_identity_failed",status:409};
+  const customerSnapshot={...incoming,id:ensured.data.customer_id,display_name:requestedName||incoming?.display_name||null,identity_status:ensured.data.status||null};
+  const del=delivery(),split=await splitGlobalReady(),created=split?await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del}):await db.rpc("create_canonical_cart_order_v2",{p_source:"vitrine",p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del});
   if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS}}
   const orderId=created.data?.order_id;
   let papoaiLink:any=null;
@@ -225,13 +231,13 @@ async function submit(req:Request,p:any){
   await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:created.data?.customer_id?"registered":"new",payment_method:pay||null,reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked)},"order-received:"+orderId);
   return {...created.data,phone_attached:true,customer_status:created.data?.customer_id?"registered":"new",minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,history_synced:true,stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)};
 }
-async function lookupCustomer(v:any){const ph=phone(v);if(!ph)return {ok:true,found:false};let q=await db.from("customers").select("id,name").eq("primary_whatsapp_e164",ph).limit(1).maybeSingle();if(q.error)throw q.error;if(!q.data){const i=await db.from("customer_phones").select("customer_id").eq("phone_e164",ph).order("is_primary",{ascending:false}).limit(1).maybeSingle();if(i.error)throw i.error;if(i.data?.customer_id)q=await db.from("customers").select("id,name").eq("id",i.data.customer_id).maybeSingle()}return {ok:true,found:Boolean(q.data),first_name:q.data?.name?txt(q.data.name,120).split(/\s+/)[0]:null}}
+async function lookupCustomer(v:any){const ph=phone(v);if(!ph)return {ok:true,found:false};const r=await db.rpc("lookup_customer_by_phone",{p_phone:ph});if(r.error)throw r.error;const id=uid(r.data?.[0]?.customer_id);if(!id)return {ok:true,found:false};const q=await db.from("customers").select("id,name").eq("id",id).maybeSingle();if(q.error)throw q.error;return {ok:true,found:Boolean(q.data),first_name:q.data?.name?txt(q.data.name,120).split(/\s+/)[0]:null}}
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:23},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:24},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home")return json(req,await home(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
