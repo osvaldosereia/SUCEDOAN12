@@ -65,6 +65,7 @@ Garantir que pedido feito no site não permaneça órfão de cliente e que os do
 - 1 legado sem cliente porque foi originalmente gravado sem telefone e sem identidade recuperável.
 - 0 pedido com telefone disponível e sem cliente.
 - 0 erro de captura PapoAI.
+- 327 eventos históricos agora carregam `customer_id` reconhecido no metadata; 807/807 estão ligados a conversa.
 - smoke tests: criação automática de cliente em pedido do site PASS; auto-processamento de Flow no 0975 PASS; separação do canal PASS; nenhum resíduo de teste.
 - JavaScript de `index.html`, `vitrine/index.html` e `vitrine/admin/index.html`: sintaxe PASS.
 - `storefront-v2` publicado v27.
@@ -83,6 +84,7 @@ Garantir que pedido feito no site não permaneça órfão de cliente e que os do
 - `20260930022906_ops2_papoai_flow_address_guard_v1`
 - `20260930023147_ops2_customer_identity_observability_v1`
 - `20260930023355_ops2_customer_identity_trigger_security_fix`
+- `20260930023803_ops2_papoai_bridge_customer_metadata_v1`
 
 ## Commits principais
 - Site/Vitrine checkout: `6326faf4`, `429fb99e`.
