@@ -2,9 +2,10 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createSimplesService } from "../admin-service-intelligence-v1/simples-v1/index.ts";
 import { collectFiscalEvidence, type FiscalInvoice, type FiscalSourceSnapshot } from "../admin-service-intelligence-v1/simples-v1/source.ts";
-import { reconcilePeriod, competenceInCuiaba } from "../admin-service-intelligence-v1/simples-v1/reconciliation.ts";
+import { reconcilePeriod } from "../admin-service-intelligence-v1/simples-v1/reconciliation.ts";
 import { classifyRevenueLine } from "../admin-service-intelligence-v1/simples-v1/classifier.ts";
-import { calculateRbt12, calculateEffectiveRate } from "../admin-service-intelligence-v1/simples-v1/calculator.ts";
+import { calculateEffectiveRate } from "../admin-service-intelligence-v1/simples-v1/calculator.ts";
+import { collectMonthlyRevenueEvidence, priorTwelveCompetences, buildRbt12FromHistory } from "../admin-service-intelligence-v1/simples-v1/history.ts";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -17,6 +18,7 @@ const clean=(v:any,n=500)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").t
 const digits=(v:any)=>String(v??"").replace(/\D/g,"");
 const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 const round2=(n:number)=>Math.round((Number(n||0)+Number.EPSILON)*100)/100;
+async function sha256Text(v:string){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
 function cors(r:Request){const o=r.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ORIGINS.has(o)?o:"https://www.donaantonia.com.br","Access-Control-Allow-Headers":"authorization,content-type,apikey,x-client-info","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Vary":"Origin","Cache-Control":"no-store"}}
 function json(r:Request,b:any,s=200){return new Response(JSON.stringify(b),{status:s,headers:{...cors(r),"Content-Type":"application/json; charset=utf-8"}})}
 async function auth(r:Request){
@@ -113,6 +115,29 @@ async function listNfeRows(token:string,c:string,tipo:'0'|'1',situacao:2|5){
   }
   return {ok:false,rows,error:"bling_nfe_pagination_limit"};
 }
+async function getHistoryStatus(c:string){
+  const expected=priorTwelveCompetences(c),dates=expected.map(x=>x+"-01");
+  const q=await sb.from("simples_monthly_revenue_history").select("competence_month,gross_sales,returns_amount,net_revenue,document_count,return_document_count,collection_status,review_reason,collected_at,evidence").in("competence_month",dates).order("competence_month");
+  if(q.error)throw q.error;
+  const rows=(q.data||[]).map((x:any)=>({competenceMonth:String(x.competence_month).slice(0,7),grossSales:Number(x.gross_sales||0),returnsAmount:Number(x.returns_amount||0),netRevenue:Number(x.net_revenue||0),documentCount:Number(x.document_count||0),returnDocumentCount:Number(x.return_document_count||0),collectionStatus:String(x.collection_status||'incomplete'),reviewReason:x.review_reason||null,collectedAt:x.collected_at||null,evidence:x.evidence||{}}));
+  const rbt=buildRbt12FromHistory(c,rows);
+  const by=new Map(rows.map((x:any)=>[x.competenceMonth,x]));
+  return {target:c,...rbt,rows:expected.map(month=>by.get(month)||{competenceMonth:month,collectionStatus:'missing',netRevenue:null})};
+}
+async function collectHistoryMonth(c:string,actor:any){
+  const token=await oauth();
+  const result=await collectMonthlyRevenueEvidence(c,{
+    listAuthorizedSales:(month:string)=>listNfeRows(token,month,'1',5),
+    listAuthorizedIncoming:(month:string)=>listNfeRows(token,month,'0',5),
+    getInvoiceDetail:(id:string|number)=>bg(token,"/nfe/"+id),
+  });
+  const evidence={...result.evidence,source_errors:result.sourceErrors,actor_id:actor?.userId||null};
+  const sourceHash=await sha256Text(JSON.stringify({competence:c,gross_sales:result.grossSales,returns_amount:result.returnsAmount,net_revenue:result.netRevenue,document_count:result.documentCount,return_document_count:result.returnDocumentCount,collection_status:result.collectionStatus,review_reason:result.reviewReason,evidence}));
+  const row={competence_month:c+"-01",gross_sales:result.grossSales,returns_amount:result.returnsAmount,net_revenue:result.netRevenue,document_count:result.documentCount,return_document_count:result.returnDocumentCount,source:'bling_nfe',source_hash:sourceHash,collection_status:result.collectionStatus,review_reason:result.reviewReason,evidence,collected_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  const q=await sb.from("simples_monthly_revenue_history").upsert(row,{onConflict:'competence_month'}).select("*").single();
+  if(q.error)throw q.error;
+  return {competenceMonth:c,grossSales:Number(q.data.gross_sales||0),returnsAmount:Number(q.data.returns_amount||0),netRevenue:Number(q.data.net_revenue||0),documentCount:Number(q.data.document_count||0),returnDocumentCount:Number(q.data.return_document_count||0),collectionStatus:q.data.collection_status,reviewReason:q.data.review_reason||null,sourceErrors:result.sourceErrors,collectedAt:q.data.collected_at};
+}
 async function loadBlingInvoices(input:{competenceMonth:string}):Promise<FiscalSourceSnapshot>{
   const token=await oauth(),errors:string[]=[];
   const [authOut,cancelOut,authIn]=await Promise.all([
@@ -180,15 +205,6 @@ async function loadProfiles(productIds:string[],date:string){
   }
   return {profiles,detail,monoRules};
 }
-async function rbt12History(c:string){
-  const [y,m]=c.split('-').map(Number),expected:string[]=[];
-  for(let i=12;i>=1;i--){const d=new Date(Date.UTC(y,m-1-i,1));expected.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`)}
-  const from=expected[0]+"-01",to=expected.at(-1)!+"-01";
-  const q=await sb.from("simples_periods").select("competence_month,version,gross_revenue_month,collection_status,status").gte("competence_month",from).lte("competence_month",to).in("collection_status",['complete']).order("competence_month").order("version",{ascending:false});
-  if(q.error)throw q.error;
-  const latest=new Map<string,any>();for(const x of q.data||[]){const k=String(x.competence_month).slice(0,7);if(!latest.has(k))latest.set(k,x)}
-  return expected.filter(k=>latest.has(k)).map(k=>({month:k,amount:Number(latest.get(k).gross_revenue_month||0)}));
-}
 async function currentRuleSet(date:string){
   const q=await sb.from("simples_rule_sets").select("*").eq("status","active").lte("effective_from",date).or(`effective_to.is.null,effective_to.gte.${date}`).order("effective_from",{ascending:false}).limit(2);if(q.error)throw q.error;
   return (q.data||[]).length===1?q.data![0]:null;
@@ -217,8 +233,8 @@ async function recalculatePeriod(c:string,actor:any){
       if(x.transactionKind==='return')issues.push({issueType:'return_status_mismatch',severity:'blocking',title:'Devolucao requer conciliacao com a venda original',explanation:'A devolucao foi identificada, mas o tratamento tributario original deve ser confirmado antes do fechamento.',sourceDocumentId:x.sourceDocumentId,orderId:x.orderId,productId:x.productId,amount:x.recognizedAmount});
       dbLines.push({period_id:period.id,source_type:'bling_nfe',source_document_id:x.sourceDocumentId,access_key:x.accessKey||null,bling_invoice_id:x.blingInvoiceId||null,order_id:x.orderId||null,product_id:x.productId||null,issued_at:x.issuedAt,gross_amount:x.grossAmount,recognized_amount:x.recognizedAmount,tax_bucket:cls.taxBucket,classification_status:cls.status,classification_rule_id:cls.taxBucket==='monophase'&&cls.ruleId?cls.ruleId:null,classification_rule_version:cls.ruleVersion||null,confidence:cls.confidence??null,evidence:{...cls.evidence,relief_components:cls.reliefComponents,tags:cls.tags,additional_rules:cls.additionalRules||[]},blocking_reason:cls.status==='classified'?null:cls.reason||'manual_review'});
     }
-    const history=await rbt12History(c),rbt=calculateRbt12(history);
-    if(!rbt.complete)issues.push({issueType:'rbt12_history_incomplete',severity:'blocking',title:'Historico RBT12 incompleto',explanation:'Faltam competencias anteriores completas para calcular a aliquota do Simples.',evidence:{missing_months:rbt.missingMonths,months:history.map(x=>x.month)}});
+    const rbt=await getHistoryStatus(c);
+    if(!rbt.complete)issues.push({issueType:'rbt12_history_incomplete',severity:'blocking',title:'Historico RBT12 incompleto',explanation:'Faltam competencias anteriores completas para calcular a aliquota do Simples.',evidence:{missing_months:rbt.missingMonths,months:rbt.months.map((x:any)=>x.month)}});
     if(!ruleSet)issues.push({issueType:'rule_not_effective_for_date',severity:'blocking',title:'Regra do Simples nao encontrada',explanation:'Nao existe um unico conjunto de regras ativo para esta competencia.',evidence:{competence:c}});
     if(dbLines.length){const ins=await sb.from("simples_revenue_lines").insert(dbLines);if(ins.error)throw ins.error}
     if(issues.length){const rows=issues.map((x:any)=>({period_id:period.id,issue_type:x.issueType||'other',severity:x.severity||'blocking',status:'open',source_document_id:x.sourceDocumentId||null,access_key:x.accessKey||null,order_id:x.orderId||null,product_id:x.productId||null,amount:x.amount??null,title:x.title||'Pendencia',explanation:x.explanation||'Revisao necessaria',evidence:x.evidence||{}}));const ins=await sb.from("simples_reconciliation_issues").insert(rows);if(ins.error)throw ins.error}
@@ -233,7 +249,7 @@ async function recalculatePeriod(c:string,actor:any){
     const segregated:any={};for(const l of dbLines)segregated[l.tax_bucket]=round2(Number(segregated[l.tax_bucket]||0)+Number(l.recognized_amount||0));
     const blocking=issues.filter((x:any)=>x.severity!=='warning').length,warnings=issues.filter((x:any)=>x.severity==='warning').length;
     const status=blocking===0&&fiscal.collectionStatus==='complete'&&rbt.complete&&ruleSet&&calc?'ready':'review_required';
-    const meta:any={source:'bling_nfe',fiscal_document_count:fiscal.invoices.length,order_count:orders.length,source_errors:fiscal.errors||[]};if(!rbt.complete)meta.block_reason='rbt12_history_incomplete';
+    const meta:any={source:'bling_nfe',fiscal_document_count:fiscal.invoices.length,order_count:orders.length,source_errors:fiscal.errors||[],rbt12_source:'simples_monthly_revenue_history'};if(!rbt.complete)meta.block_reason='rbt12_history_incomplete';
     const upd=await sb.from("simples_periods").update({status,rule_set_id:ruleSet?.id||null,collection_status:fiscal.collectionStatus,gross_revenue_month:gross,segregated_revenue:segregated,rbt12:rbt.rbt12,nominal_rate:calc?.nominalRate??null,deduction_amount:calc?.deduction??null,effective_rate:calc?.effectiveRate??null,estimated_das_amount:calc?.estimatedDas??null,blocking_issue_count:blocking,warning_count:warnings,calculation_memory:calc||{},calculated_at:new Date().toISOString(),metadata:meta,updated_at:new Date().toISOString()}).eq("id",period.id).select("*").single();if(upd.error)throw upd.error;period=upd.data;
     await sb.from("simples_validation_runs").update({status:status==='ready'?'succeeded':'blocked',result_summary:{period_status:status,documents:fiscal.invoices.length,lines:dbLines.length,blocking,warnings,rbt12:rbt.rbt12,estimated_das:calc?.estimatedDas??null},finished_at:new Date().toISOString(),duration_ms:Date.now()-started}).eq("id",run.data.id);
     return period;
@@ -249,7 +265,7 @@ async function getExportSnapshot(id:string){
   if(rule.error)throw rule.error;if(lines.error)throw lines.error;if(issues.error)throw issues.error;
   const open=(issues.data||[]).filter((x:any)=>x.status==='open');return {period:p,ruleSet:rule.data||{},totals:p.segregated_revenue||{},issues:{blocking:open.filter((x:any)=>x.severity==='blocking').length,warnings:open.filter((x:any)=>x.severity==='warning').length,total:open.length},memory:p.calculation_memory||{},lines:lines.data||[]};
 }
-const service=createSimplesService({findPeriodByCompetence,getPeriod,recalculatePeriod,listIssues,resolveIssue,getGate,lockPeriod,saveHomologation,getExportSnapshot});
+const service=createSimplesService({findPeriodByCompetence,getPeriod,recalculatePeriod,listIssues,resolveIssue,getGate,lockPeriod,saveHomologation,getExportSnapshot,getHistoryStatus,collectHistoryMonth});
 
 Deno.serve(async(req:Request)=>{
   if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors(req)});
