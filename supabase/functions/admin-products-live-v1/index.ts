@@ -1241,18 +1241,22 @@ async function opsTimeline(limitRaw:any){
 }
 
 async function opsPapoAiCaptureStatus(){
-  const [legacy,bridge]=await Promise.all([
+  const [legacy,bridge,identity]=await Promise.all([
     db.rpc("get_papoai_webhook_capture_status_v2"),
-    db.rpc("get_ops2_papoai_bridge_health_v1")
+    db.rpc("get_ops2_papoai_bridge_health_v1"),
+    db.rpc("ops2_customer_identity_summary_v1")
   ]);
   if(legacy.error)throw legacy.error;
   if(bridge.error)throw bridge.error;
-  const a=legacy.data||{},b=bridge.data||{};
+  if(identity.error)throw identity.error;
+  const a=legacy.data||{},b=bridge.data||{},i=identity.data||{};
+  const identityAttention=Number(i.site_orders_without_customer_with_phone_31d||0)>0;
   return {
     ...a,...b,
+    identity:i,
     captured_24h:Number(b.events_24h??a.captured_24h??0),
     review_required:Number(b.events_review??a.review_required??0),
-    bridge_state:b.capture_enabled===true?(b.last_error?"attention":"online"):"offline"
+    bridge_state:b.capture_enabled===true?(b.last_error||identityAttention?"attention":"online"):"offline"
   };
 }
 async function opsPapoAiIssueCatalogLink(p:any,auth:any){
