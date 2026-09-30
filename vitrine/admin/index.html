@@ -999,6 +999,17 @@
     .balance-camera-shell{padding:12px;margin-bottom:12px}.balance-camera-view{position:relative;border-radius:14px;overflow:hidden;background:#111;min-height:220px;display:flex;align-items:center;justify-content:center}.balance-camera-view video{width:100%;max-height:52vh;object-fit:cover;background:#111}.balance-camera-frame{position:absolute;inset:25% 8%;border:2px solid rgba(255,255,255,.9);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.18);pointer-events:none}.balance-camera-status{font-size:12px;color:var(--muted);margin:8px 0}.balance-search-results{display:grid;gap:6px;margin-top:8px}.balance-search-result{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;align-items:center;width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;text-align:left}.balance-search-result img{width:42px;height:42px;object-fit:contain;border:1px solid var(--line);border-radius:8px}.balance-product-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.balance-photo-callout{border:1px solid #efd59b;background:#fffaf0;border-radius:12px;padding:10px;margin:10px 0}.balance-readiness{font-size:11px;color:var(--muted);margin-top:5px}.balance-readiness.ok{color:#176b43}.balance-camera-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     @media(max-width:640px){.balance-camera-shell{padding:9px}.balance-camera-view{min-height:190px}.balance-product-fields{grid-template-columns:1fr}.balance-camera-actions{display:grid;grid-template-columns:1fr 1fr}.balance-camera-actions button{width:100%}}
 
+    /* Balanço mobile operacional: compacto, uma mão, leitura contínua */
+    .balance-manual-search{margin-top:6px;border-top:1px solid var(--line);padding-top:6px}
+    .balance-manual-search summary{cursor:pointer;font-weight:850;color:var(--brand);list-style:none;padding:7px 2px}
+    .balance-manual-search summary::-webkit-details-marker{display:none}
+    .balance-camera-shell{padding:8px;margin-bottom:8px}
+    .balance-camera-view{height:150px;min-height:0;border-radius:10px}
+    .balance-camera-view video{width:100%;height:100%;max-height:none;object-fit:cover}
+    .balance-camera-frame{inset:26% 6%;border-radius:8px}
+    .balance-camera-status{margin:5px 0 0;font-size:11px;line-height:1.25;text-align:center}
+    @media(max-width:640px){.balance-camera-shell{padding:6px;margin-bottom:7px}.balance-camera-view{height:136px;min-height:0}.balance-camera-status{margin:4px 0 0}.balance-tool-grid{gap:7px}.balance-tool-grid .tool-card{padding:9px}.scanner-hero{padding:9px}.scan-title{font-size:10px}.scan-value{font-size:17px}.scan-sub{font-size:10px}.qty-label{margin-top:8px}.balance-product-fields{grid-template-columns:1fr 1fr;gap:6px;margin:7px 0}.balance-product-fields input{min-height:40px;padding:7px 8px}.confirm-wide{min-height:48px}.page-head{margin-bottom:7px}.page-head h1{font-size:20px}.page-head p{display:none}.order-filters{margin-bottom:7px!important}.filter-chip{min-height:38px}}
+
     /* Admin Navigation V6.1 · desktop + mobile sem overflow horizontal */
     .admin-nav{
       display:flex;
@@ -5278,13 +5289,23 @@
     state.balanceCameraDetector=null;
     const v=$('#balanceCameraVideo');if(v)try{v.srcObject=null}catch{}
   }
+  let balanceScanAudioCtx=null;
+  function balanceScanAudioContext(){
+    const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return null;
+    if(!balanceScanAudioCtx)balanceScanAudioCtx=new Ctx();return balanceScanAudioCtx;
+  }
+  async function unlockBalanceScanAudio(){try{const ctx=balanceScanAudioContext();if(ctx?.state==='suspended')await ctx.resume()}catch{}}
+  function playBalanceScanBeep(){
+    try{const ctx=balanceScanAudioContext();if(!ctx)return;const fire=()=>{const now=ctx.currentTime,osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='square';osc.frequency.setValueAtTime(1500,now);gain.gain.setValueAtTime(1,now);gain.gain.setValueAtTime(1,now+.10);gain.gain.exponentialRampToValueAtTime(.0001,now+.18);osc.connect(gain);gain.connect(ctx.destination);osc.start(now);osc.stop(now+.19)};if(ctx.state==='suspended')ctx.resume().then(fire).catch(()=>{});else fire()}catch{}
+  }
   async function startBalanceCamera(){
+    unlockBalanceScanAudio();
     if(state.tab!=='balance'||state.balanceMode==='incident'||state.balanceSubtab!=='scanner')return;
     const status=$('#balanceCameraStatus'),video=$('#balanceCameraVideo');if(!video)return;
     if(!navigator.mediaDevices?.getUserMedia){if(status)status.textContent='Este navegador não liberou câmera. Use a busca por nome/EAN abaixo.';return}
     stopBalanceCamera();
     try{
-      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:960},height:{ideal:540}},audio:false});
       state.balanceCameraStream=stream;video.srcObject=stream;await video.play();state.balanceCameraRunning=true;
       if('BarcodeDetector' in window){state.balanceCameraDetector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});if(status)status.textContent='Câmera ativa · aponte o código de barras para o quadro.';balanceCameraTick()}
       else{if(status)status.textContent='Câmera ativa, mas leitura automática de código não é suportada neste navegador. Digite o EAN ou busque pelo nome.'}
@@ -5296,10 +5317,10 @@
     if(detector&&video&&video.readyState>=2&&!state.balanceProduct){
       try{
         const codes=await detector.detect(video);const raw=String(codes?.[0]?.rawValue||'').replace(/\D+/g,'');
-        if(raw.length>=4){const now=Date.now();if(raw!==state.balanceLastCameraEan||now-state.balanceLastCameraAt>2500){state.balanceLastCameraEan=raw;state.balanceLastCameraAt=now;if(navigator.vibrate)navigator.vibrate(45);await handleBalanceScan(raw)}}
+        if(raw.length>=4){const now=Date.now();if(raw!==state.balanceLastCameraEan||now-state.balanceLastCameraAt>2500){state.balanceLastCameraEan=raw;state.balanceLastCameraAt=now;if(navigator.vibrate)navigator.vibrate(70);playBalanceScanBeep();await handleBalanceScan(raw)}}
       }catch{}
     }
-    if(state.balanceCameraRunning)setTimeout(balanceCameraTick,180);
+    if(state.balanceCameraRunning)setTimeout(balanceCameraTick,120);
   }
   function bindBalanceManualSearch(){
     const input=$('#balanceManualSearch'),host=$('#balanceManualResults');if(!input||!host)return;
@@ -5338,14 +5359,14 @@
   async function renderBalance(){
     const content=$('#content'),incident=state.balanceMode==='incident',scanner=!incident;
     const photoPanel='',manualPendingPanel='';
-    const cameraPanel=scanner?'<section class="panel balance-camera-shell"><div class="balance-camera-view"><video id="balanceCameraVideo" playsinline muted autoplay></video><div class="balance-camera-frame"></div></div><div class="balance-camera-status" id="balanceCameraStatus">Abrindo câmera traseira…</div><div class="balance-camera-actions"><button class="secondary" id="balanceCameraStart" type="button">Ligar câmera</button><button class="secondary" id="balanceCameraStop" type="button">Desligar câmera</button></div><label style="display:block;margin-top:10px"><span>Buscar por nome ou EAN</span><input id="balanceManualSearch" type="search" autocomplete="off" placeholder="Digite nome, EAN ou código"></label><div id="balanceManualResults" class="balance-search-results"></div></section>':'';
+    const cameraPanel=scanner?'<section class=\"panel balance-camera-shell\"><div class=\"balance-camera-view\"><video id=\"balanceCameraVideo\" playsinline muted autoplay></video><div class=\"balance-camera-frame\"></div></div><div class=\"balance-camera-status\" id=\"balanceCameraStatus\">Abrindo câmera…</div><details class=\"balance-manual-search\"><summary>Buscar manualmente por nome ou EAN</summary><label style=\"display:block;margin-top:6px\"><input id=\"balanceManualSearch\" type=\"search\" inputmode=\"search\" autocomplete=\"off\" placeholder=\"Nome ou EAN\"></label><div id=\"balanceManualResults\" class=\"balance-search-results\"></div></details></section>':'';
     const work=(incident||scanner)?'<div class="tool-grid balance-tool-grid"><section class="panel tool-card">'+(incident?'<div class="form-grid" style="margin-bottom:12px"><label><span>Tipo</span><select id="inventoryIncidentType"><option value="damage">Avaria</option><option value="expired">Vencido</option><option value="loss">Perda / extravio</option><option value="return">Retorno para inspeção</option><option value="other">Outro</option></select></label><label><span>Observação opcional</span><input id="inventoryIncidentNote" maxlength="500" placeholder="Ex.: embalagem rasgada"></label></div>':'')+'<div id="balanceScanner" class="scanner-hero"><div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">'+(incident?'Depois informe a quantidade afetada.':'A câmera fica pronta para o próximo produto.')+'</div></div><div id="balanceProductExtras"></div><div class="qty-label">'+(incident?'Quantidade afetada':'Quantidade contada')+'</div><div class="qty-display" id="balanceQty">—</div>'+numericPadHtml('balance')+'<button class="confirm-wide" id="balanceConfirm" type="button" disabled>'+(incident?'Registrar ocorrência':'Salvar e próximo')+'</button></section><section class="panel"><div class="list-head" style="display:block">'+(incident?'Ocorrências abertas':'Contagens desta sessão')+'</div><div id="balanceHistory"></div></section></div>':'';
-    content.innerHTML='<div class="page-head"><div><h1>Balanço rápido</h1><p>'+(incident?'Registre avaria, vencimento, perda ou retorno.':'Conte estoque, localização e validade usando a câmera do celular.')+'</p></div><span class="pill">'+(scanner?'Câmera':'Balanço')+'</span></div><div class="order-filters" style="margin-bottom:12px"><button class="filter-chip '+(!incident?'active':'')+'" id="balanceModeCount" type="button">Balanço</button><button class="filter-chip '+(incident?'active':'')+'" id="balanceModeIncident" type="button">Avaria / Vencido / Retorno</button></div>'+cameraPanel+photoPanel+manualPendingPanel+work+(!incident?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Recontagem para Bling</strong><span>Itens que precisam de conferência física</span></div><button class="secondary" id="refreshStockRecount" type="button">Atualizar</button></div><div id="stockRecountRows"><div class="loading">Carregando recontagens…</div></div></section><section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Faltas dos pedidos</strong><span>Priorize o que está travando pedidos</span></div><button class="secondary" id="refreshStockShortages" type="button">Atualizar</button></div><div id="stockShortageRows"><div class="loading">Calculando faltas…</div></div></section>':'<div class="rule-notice" style="margin-top:14px"><strong>Ocorrências</strong><div>Avaria, vencido e perda seguem para reconciliação operacional/fiscal.</div></div>');
+    content.innerHTML='<div class="page-head"><div><h1>Balanço</h1><p>'+(incident?'Registre avaria, vencimento, perda ou retorno.':'Conte estoque, localização e validade usando a câmera do celular.')+'</p></div><span class="pill">'+(scanner?'Câmera':'Balanço')+'</span></div><div class="order-filters" style="margin-bottom:12px"><button class="filter-chip '+(!incident?'active':'')+'" id="balanceModeCount" type="button">Balanço</button><button class="filter-chip '+(incident?'active':'')+'" id="balanceModeIncident" type="button">Avaria / Vencido / Retorno</button></div>'+cameraPanel+photoPanel+manualPendingPanel+work+(!incident?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Recontagem para Bling</strong><span>Itens que precisam de conferência física</span></div><button class="secondary" id="refreshStockRecount" type="button">Atualizar</button></div><div id="stockRecountRows"><div class="loading">Carregando recontagens…</div></div></section><section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Faltas dos pedidos</strong><span>Priorize o que está travando pedidos</span></div><button class="secondary" id="refreshStockShortages" type="button">Atualizar</button></div><div id="stockShortageRows"><div class="loading">Calculando faltas…</div></div></section>':'<div class="rule-notice" style="margin-top:14px"><strong>Ocorrências</strong><div>Avaria, vencido e perda seguem para reconciliação operacional/fiscal.</div></div>');
     $('#balanceModeCount').onclick=()=>setBalanceMode('count');$('#balanceModeIncident').onclick=()=>setBalanceMode('incident');
     if(incident){$('#inventoryIncidentType').value=state.inventoryIncidentType||'damage';$('#inventoryIncidentType').onchange=e=>state.inventoryIncidentType=e.currentTarget.value;$('#inventoryIncidentNote').value=state.inventoryIncidentNote||'';$('#inventoryIncidentNote').oninput=e=>state.inventoryIncidentNote=e.currentTarget.value}
     if(incident||scanner){bindBalancePad();paintBalance()}
-    if(scanner){bindBalanceManualSearch();$('#balanceCameraStart').onclick=startBalanceCamera;$('#balanceCameraStop').onclick=stopBalanceCamera;startBalanceCamera()}
-    if(!incident){$('#refreshStockRecount').onclick=loadStockRecountQueue;$('#refreshStockShortages').onclick=loadOrderStockShortages;loadStockRecountQueue();loadOrderStockShortages()}else loadInventoryIncidents();
+    if(scanner){bindBalanceManualSearch();startBalanceCamera()}
+    if(incident)loadInventoryIncidents();
   }
 
   async function loadStockRecountQueue(){
