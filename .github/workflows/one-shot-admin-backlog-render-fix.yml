@@ -1,0 +1,23 @@
+name: One-shot admin backlog render fix
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-admin-backlog-render-fix.yml'
+      - 'scripts/test-admin-backlog-order.py'
+      - 'scripts/patch-admin-backlog-order.py'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/test-admin-backlog-order.py
+          sparse-checkout-cone-mode: false
+      - name: Regression test
+        run: python3 scripts/test-admin-backlog-order.py
