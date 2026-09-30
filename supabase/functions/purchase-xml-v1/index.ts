@@ -974,6 +974,153 @@ async function summary(windowInput:any=null){
   if(docs.error)throw docs.error;if(runs.error)throw runs.error;if(items.error)throw items.error;if(settings.error)throw settings.error;
   return {ok:true,filter:window,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data,stale_runs_closed:Number(stale_cleanup?.runs_closed||0),stale_documents_repaired:Number(stale_cleanup?.documents_repaired||0),integration:{manual_max_range_days:365,daily_lookback_days:Number(settings.data?.daily_lookback_days||3),source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,received_notes_url:"https://www.bling.com.br/notas.entrada.php#list",manifestation_automated:false,stock_receipt_requires_human_confirmation:true}};
 }
+
+async function receiptLotPlanStatus(documentId:string){
+  const iq=await sb.from("purchase_xml_items")
+    .select("id,document_id,product_id,description,converted_quantity,conversion_factor,purchase_quantity,purchase_unit")
+    .eq("document_id",documentId).order("item_number");
+  if(iq.error)throw iq.error;
+  const items=iq.data||[];
+  const ids=items.map((x:any)=>x.id);
+  const eq=ids.length
+    ?await sb.from("purchase_xml_item_lot_evidence").select("*").in("purchase_item_id",ids).order("purchase_item_id").order("trace_index")
+    :{data:[],error:null};
+  if(eq.error)throw eq.error;
+  const map=new Map<string,any[]>();
+  for(const e of eq.data||[]){const k=String(e.purchase_item_id);if(!map.has(k))map.set(k,[]);map.get(k)!.push(e)}
+  const detail=items.map((it:any)=>{
+    const evidence=map.get(String(it.id))||[];
+    const ignored=evidence.some((e:any)=>e.status==="ignored"&&obj(e.metadata).no_expiry===true);
+    const usable=evidence.filter((e:any)=>e.status!=="ignored");
+    const expected=Number(it.converted_quantity||0);
+    const total=usable.reduce((s:number,e:any)=>s+Number(e.base_quantity||0),0);
+    const valid=ignored||(
+      expected>0&&usable.length>0&&
+      usable.every((e:any)=>Boolean(day(e.expiration_date))&&Number(e.base_quantity||0)>0&&["ready","materialized"].includes(String(e.status)))&&
+      Math.abs(total-expected)<=0.001
+    );
+    return {
+      item_id:it.id,product_id:it.product_id||null,description:it.description||"",
+      expected_base_quantity:expected,planned_base_quantity:ignored?expected:total,
+      no_expiry:ignored,valid,evidence
+    };
+  });
+  return {
+    complete:detail.length>0&&detail.every((x:any)=>x.valid),
+    item_count:detail.length,
+    ready_count:detail.filter((x:any)=>x.valid).length,
+    pending_count:detail.filter((x:any)=>!x.valid).length,
+    items:detail
+  };
+}
+
+async function saveReceiptLotPlan(body:any,userId:string|null){
+  const documentId=clean(body?.document_id||body?.id,80);
+  if(!/^[0-9a-f-]{36}$/i.test(documentId))return {ok:false,status:400,error:"invalid_document"};
+  const requested=Array.isArray(body?.items)?body.items:[];
+  const iq=await sb.from("purchase_xml_items")
+    .select("id,document_id,product_id,description,converted_quantity,conversion_factor,purchase_quantity,purchase_unit")
+    .eq("document_id",documentId).order("item_number");
+  if(iq.error)throw iq.error;
+  const items=iq.data||[];
+  if(!items.length)return {ok:false,status:404,error:"document_without_items"};
+  const byId=new Map(items.map((x:any)=>[String(x.id),x]));
+  if(requested.length!==items.length)return {ok:false,status:409,error:"all_receipt_items_required"};
+
+  const prepared:any[]=[];
+  for(const entry of requested){
+    const item=byId.get(String(entry?.item_id||""));
+    if(!item)return {ok:false,status:409,error:"invalid_receipt_item"};
+    if(!item.product_id)return {ok:false,status:409,error:"product_match_required",item_id:item.id};
+    const expected=Number(item.converted_quantity||0);
+    if(!(expected>0))return {ok:false,status:409,error:"converted_quantity_required",item_id:item.id};
+    const noExpiry=entry?.no_expiry===true;
+    if(noExpiry){
+      prepared.push({item,rows:[{
+        purchase_item_id:item.id,trace_index:1,lot_code:null,manufacture_date:null,expiration_date:null,
+        xml_quantity:Number(item.purchase_quantity||0)||null,base_quantity:expected,
+        conversion_factor:Number(item.conversion_factor||0)||null,status:"ignored",source:"manual_receipt",
+        metadata:{no_expiry:true,operator_user_id:userId||null,document_id:documentId}
+      }]});
+      continue;
+    }
+    const lots=Array.isArray(entry?.lots)?entry.lots:[];
+    if(!lots.length)return {ok:false,status:409,error:"expiration_lot_required",item_id:item.id};
+    let total=0;const rows:any[]=[];
+    for(let j=0;j<lots.length;j++){
+      const l=lots[j]||{},exp=day(l.expiration_date),qty=Number(l.base_quantity);
+      if(!exp)return {ok:false,status:409,error:"expiration_date_required",item_id:item.id,lot_index:j+1};
+      if(!Number.isFinite(qty)||qty<=0)return {ok:false,status:409,error:"lot_quantity_required",item_id:item.id,lot_index:j+1};
+      total+=qty;
+      const factor=Number(item.conversion_factor||0);
+      rows.push({
+        purchase_item_id:item.id,trace_index:j+1,
+        lot_code:clean(l.lot_code,120)||null,manufacture_date:null,expiration_date:exp,
+        xml_quantity:factor>0?qty/factor:null,base_quantity:qty,
+        conversion_factor:factor>0?factor:null,status:"ready",source:"manual_receipt",
+        metadata:{operator_user_id:userId||null,document_id:documentId,manual_receipt:true}
+      });
+    }
+    if(Math.abs(total-expected)>0.001)return {ok:false,status:409,error:"lot_quantity_mismatch",item_id:item.id,expected,planned:total};
+    prepared.push({item,rows});
+  }
+
+  for(const p of prepared){
+    const del=await sb.from("purchase_xml_item_lot_evidence").delete().eq("purchase_item_id",p.item.id);
+    if(del.error)throw del.error;
+    const ins=await sb.from("purchase_xml_item_lot_evidence").insert(p.rows);
+    if(ins.error)throw ins.error;
+  }
+  const status=await receiptLotPlanStatus(documentId);
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"purchase_receipt_lots_planned",severity:"info",domain:"stock",source_system:"canonical",source_id:documentId,
+    details:{item_count:status.item_count,ready_count:status.ready_count,pending_count:status.pending_count,complete:status.complete,user_id:userId||null,stock_changed:false}
+  });
+  return {ok:true,document_id:documentId,lot_plan:status,stock_changed:false};
+}
+
+async function materializeReceiptLots(documentId:string,userId:string|null){
+  const status=await receiptLotPlanStatus(documentId);
+  if(!status.complete)return {ok:false,error:"receipt_lot_plan_incomplete",lot_plan:status};
+  const dq=await sb.from("purchase_xml_documents").select("document_key,issued_at,supplier_name,metadata").eq("id",documentId).maybeSingle();
+  if(dq.error)throw dq.error;
+  const invoiceNo=clean(obj(dq.data?.metadata).invoice_number,80)||null;
+  let count=0;
+  for(const it of status.items){
+    if(it.no_expiry)continue;
+    for(const e of it.evidence||[]){
+      if(e.status==="ignored")continue;
+      const fallbackLot="NF-"+(invoiceNo||String(dq.data?.document_key||"").slice(-8))+"-"+String(e.trace_index||1);
+      const q=await sb.rpc("ops2_upsert_product_lot_v1",{
+        p_product_id:it.product_id,
+        p_lot_code:clean(e.lot_code,120)||fallbackLot,
+        p_expiration_date:day(e.expiration_date),
+        p_quantity_on_hand:Number(e.base_quantity||0),
+        p_source:"purchase_xml",
+        p_source_ref:documentId+":"+it.item_id+":"+String(e.trace_index||1),
+        p_received_at:new Date().toISOString(),
+        p_metadata:{
+          document_id:documentId,document_key:dq.data?.document_key||null,invoice_number:invoiceNo,
+          supplier_name:dq.data?.supplier_name||null,purchase_item_id:it.item_id,
+          evidence_id:e.id||null,operator_user_id:userId||null,partial_tracking:true
+        }
+      });
+      if(q.error)throw q.error;
+      const up=await sb.from("purchase_xml_item_lot_evidence").update({
+        status:"materialized",updated_at:new Date().toISOString(),
+        metadata:{...obj(e.metadata),materialized_at:new Date().toISOString(),materialized_by:userId||null}
+      }).eq("id",e.id);
+      if(up.error)throw up.error;
+      count++;
+    }
+  }
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"purchase_receipt_lots_materialized",severity:"info",domain:"stock",source_system:"canonical",source_id:documentId,
+    details:{lot_count:count,user_id:userId||null,physical_stock_changed:false,lot_tracking_complete_changed:false}
+  });
+  return {ok:true,materialized_lots:count,physical_stock_changed:false,lot_tracking_complete_changed:false};
+}
+
 async function docDetail(id:string){
   let [d,it,plan]=await Promise.all([
     sb.from("purchase_xml_documents").select("*").eq("id",id).maybeSingle(),
@@ -1018,7 +1165,8 @@ async function docDetail(id:string){
       can_apply:Boolean(x.product_id&&proposedCost!==null&&(!pack.packaged||Number(proposedFactor)>1))
     }};
   });
-  return {ok:true,document:d.data,items,receipt_plan:plan.data||null,pricing_policy:{default_markup_percent:40,sale_unit:"UN",catalog_updates_require_human_approval:true,stock_receipt_separate:true,stock_authority:"bling",receipt_requires_bling_verification:true}};
+  const receiptLotPlan=await receiptLotPlanStatus(id);
+  return {ok:true,document:d.data,items,receipt_plan:plan.data||null,receipt_lot_plan:receiptLotPlan,pricing_policy:{default_markup_percent:40,sale_unit:"UN",catalog_updates_require_human_approval:true,stock_receipt_separate:true,stock_authority:"bling",receipt_requires_bling_verification:true,receipt_lots_required:true}};
 }
 
 async function catalogQueue(windowInput:any=null){
@@ -1256,6 +1404,11 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="xml_url"){const r=await signedXml(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="set_conversion"){const r=await setConversion(body);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="apply_item_update"){if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);const r=await applyItemUpdate(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
+    if(action==="save_receipt_lots"){
+      if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
+      if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      const r=await saveReceiptLotPlan(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400));
+    }
     if(action==="receipt_preflight"){
       const q=await sb.rpc("get_purchase_xml_receipt_preflight_v1",{p_document_id:clean(body?.document_id||body?.id,80)});
       if(q.error)return js(req,{ok:false,error:q.error.message},409);
@@ -1265,7 +1418,10 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
       if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
       if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
       if(clean(body?.confirmation,80)!=="CONFIRMAR_ENTRADA")return js(req,{ok:false,error:"confirmation_required"},409);
-      const q=await sb.rpc("prepare_purchase_stock_receipt_plan_v1",{p_document_id:clean(body?.document_id||body?.id,80)});
+      const docId=clean(body?.document_id||body?.id,80);
+      const lotPlan=await receiptLotPlanStatus(docId);
+      if(!lotPlan.complete)return js(req,{ok:false,error:"receipt_lots_required",lot_plan:lotPlan},409);
+      const q=await sb.rpc("prepare_purchase_stock_receipt_plan_v1",{p_document_id:docId});
       if(q.error)return js(req,{ok:false,error:q.error.message},409);
       return js(req,{ok:q.data?.ok!==false,result:q.data},q.data?.ok===false?409:200);
     }
@@ -1273,9 +1429,14 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
       if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
       if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
       if(clean(body?.confirmation,80)!=="VERIFICAR_ENTRADA_BLING")return js(req,{ok:false,error:"confirmation_required"},409);
-      const q=await sb.rpc("verify_purchase_stock_receipt_plan_v1",{p_document_id:clean(body?.document_id||body?.id,80),p_user_id:a.user_id});
+      const docId=clean(body?.document_id||body?.id,80);
+      const q=await sb.rpc("verify_purchase_stock_receipt_plan_v1",{p_document_id:docId,p_user_id:a.user_id});
       if(q.error)return js(req,{ok:false,error:q.error.message},409);
-      return js(req,{ok:true,result:q.data});
+      let lot_materialization:any=null;
+      if(q.data?.verified===true){
+        lot_materialization=await materializeReceiptLots(docId,a.user_id||null);
+      }
+      return js(req,{ok:true,result:q.data,lot_materialization});
     }
     if(action==="confirm_receipt"){
       if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
