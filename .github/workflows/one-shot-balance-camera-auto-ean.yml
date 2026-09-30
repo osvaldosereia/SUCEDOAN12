@@ -24,6 +24,7 @@ jobs:
             tools/patch_balance_camera_auto_ean.py
             tools/patch_balance_camera_auto_ean_fixups.py
             .github/workflows/one-shot-balance-camera-auto-ean.yml
+            balance-patch-error.txt
           sparse-checkout-cone-mode: false
       - name: RED - contract must fail before implementation
         run: |
@@ -46,7 +47,7 @@ jobs:
             cp /tmp/balance-patch.log balance-patch-error.txt
             git config user.name "Dona Antonia Ops"
             git config user.email "actions@users.noreply.github.com"
-            git add balance-patch-error.txt
+            git add --sparse balance-patch-error.txt
             git commit -m "chore(balance): capture patch failure"
             git push
             exit "$code"
