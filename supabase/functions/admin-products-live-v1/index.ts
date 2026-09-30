@@ -59,6 +59,7 @@ function mp(p:any){
     image_ai_status:p.image_ai_status||null,image_ai_model:p.image_ai_model||null,image_ai_processed_at:p.image_ai_processed_at||null,
     image_ai_error:p.image_ai_error||null,image_ai_validation:p.image_ai_validation||null,
     expiration_date:p.validity_date||null,auto_expiry_offer_enabled:m.auto_expiry_offer_enabled===true,
+    lot_tracking_complete:m.lot_tracking_complete===true||m.lot_tracking_complete==="true",
     deactivation_reason:m.deactivation_reason||null,deactivated_at:m.deactivated_at||null,updated_at:p.updated_at,
     packaging:p.packaging||"",subcategory:p.subcategory||"",detailed_subcategory:p.subsubcategory||"",
     category:p.sales_category||p.storefront_category||p.category||"",
@@ -161,9 +162,9 @@ async function basketKitProductIds(){
 }
 async function products(u:URL){
   const off=Math.floor(nm(u.searchParams.get("offset"),0,100000)),lim=Math.floor(nm(u.searchParams.get("limit")||60,1,100));
-  const qv=tx(u.searchParams.get("q"),100).replace(/[,%()]/g," "),cat=tx(u.searchParams.get("category"),120),sub=tx(u.searchParams.get("subcategory"),120),act=tx(u.searchParams.get("active"),12),basketKit=tx(u.searchParams.get("basket_kit"),12)==="true";
+  const qv=tx(u.searchParams.get("q"),100).replace(/[,%()]/g," "),cat=tx(u.searchParams.get("category"),120),sub=tx(u.searchParams.get("subcategory"),120),act=tx(u.searchParams.get("active"),12),basketKit=tx(u.searchParams.get("basket_kit"),12)==="true",lotStatus=tx(u.searchParams.get("lot_status"),20);
   let rows:any[]=[];
-  if(cat||basketKit){
+  if(cat||basketKit||lotStatus){
     const memberIds=basketKit?await basketKitProductIds():null;
     const all:any[]=[];
     for(let pos=0;pos<10000;pos+=1000){
@@ -180,6 +181,9 @@ async function products(u:URL){
     const filtered=all.filter((x:any)=>{
       if(wanted&&inventorySheetCanonicalCategory(x.sales_category||x.storefront_category||x.category)!==wanted)return false;
       if(memberIds&&!memberIds.has(String(x.id)))return false;
+      const complete=meta(x.metadata).lot_tracking_complete===true||meta(x.metadata).lot_tracking_complete==="true";
+      if(lotStatus==="complete"&&!complete)return false;
+      if(lotStatus==="pending"&&complete)return false;
       return true;
     }).sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
     rows=filtered.slice(off,off+lim);
