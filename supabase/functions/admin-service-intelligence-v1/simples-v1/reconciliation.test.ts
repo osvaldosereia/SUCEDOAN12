@@ -19,12 +19,16 @@ test('matched invoice and order produce revenue candidate without reconciliation
   assert.equal(r.issues.length,0);
 });
 
-test('NF-e total above product lines preserves residual revenue for manual tax review',()=>{
-  const r=reconcilePeriod({competenceMonth:'2026-09',invoices:[invoice({total:110,items:[{productId:'p1',amount:100}]})],orders:[order({total:110})],profiles});
-  assert.equal(r.candidates.reduce((sum,x)=>sum+x.recognizedAmount,0),110);
-  const residual=r.candidates.find(x=>x.productId===null&&x.grossAmount===10);
-  assert.ok(residual,'residual fiscal revenue must not disappear');
-  assert.ok(r.issues.some(x=>x.issueType==='other'&&x.title==='Valor fiscal fora das linhas de produto'));
+test('NF-e total above product lines is proportionally allocated across the same fiscal items',()=>{
+  const r=reconcilePeriod({competenceMonth:'2026-09',invoices:[invoice({total:110,items:[{productId:'p1',amount:60},{productId:'p2',amount:40}]})],orders:[order({total:110})],profiles:{...profiles,p2:{reviewStatus:'auto_validated',stStatus:'not_applicable',monophaseStatus:'not_applicable'}}});
+  assert.equal(Math.round(r.candidates.reduce((sum,x)=>sum+x.recognizedAmount,0)*100),11000);
+  assert.equal(r.candidates.length,2,'rateio deve permanecer nas linhas de produto da NF-e');
+  assert.equal(r.candidates[0].productId,'p1');
+  assert.equal(r.candidates[1].productId,'p2');
+  assert.equal(r.candidates[0].recognizedAmount,66);
+  assert.equal(r.candidates[1].recognizedAmount,44);
+  assert.ok(!r.issues.some(x=>x.severity==='blocking'&&x.issueType==='other'));
+  assert.ok(r.issues.some(x=>x.severity==='warning'&&x.issueType==='other'&&x.evidence?.allocation==='proportional_by_item_value'));
 });
 
 test('invoice without order remains revenue and blocks readiness',()=>{
