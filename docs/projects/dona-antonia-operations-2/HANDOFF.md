@@ -2572,3 +2572,7 @@ UX adicionada em Produtos:
 - formulário simples para lote, validade e quantidade.
 
 Runtime: `admin-products-live-v1` publicado como v114. JavaScript do Admin validado sem erro de sintaxe.
+
+
+## Identidade cliente / PapoAI multicanal — 2026-09-29
+Correção estrutural implantada para impedir pedidos do site órfãos de cliente. O checkout cria/resolve identidade antes do pedido e há trigger de defesa no banco; telefone brasileiro é canonizado com equivalência segura do nono dígito; 1018 e 0975 são contas distintas; o Flow real do PapoAI (mensagem com `flow_token` + `custom_1..custom_5`) é processado automaticamente e enriquece cliente/endereço/documento válido. Backfill deixou 0 pedidos recentes com telefone e sem cliente. Restou somente 1 pedido legado de 22/09 sem telefone, que não deve ser vinculado por aproximação. Detalhes e evidências em `PAPOAI-CUSTOMER-IDENTITY-FIX-2026-09-29.md`.
