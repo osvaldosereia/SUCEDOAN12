@@ -39,5 +39,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add supabase/functions/storefront-v2/index.ts index.html vitrine/index.html
           git commit -m 'feat: require site registration and delivery date at checkout'
+          git restore scripts/patch-site-only-implementation.py
           git pull --rebase origin main
           git push origin HEAD:main
