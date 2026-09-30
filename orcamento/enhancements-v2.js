@@ -1,123 +1,27 @@
 (()=>{
 'use strict';
-const MULTIPLIER_KEY='dona_antonia_orcamento_multiplier_v2';
-let generalMultiplier=Math.max(1,Number(localStorage.getItem(MULTIPLIER_KEY))||1);
+const MULTIPLIER_KEY='dona_antonia_orcamento_multiplier_v3';
+let generalMultiplier=Math.max(1,Math.round(Number(localStorage.getItem(MULTIPLIER_KEY))||1));
 let dirty=false;
-let suppressDirty=false;
-let topSave=null,bottomSave=null,badge=null,multiplierInput=null;
-let multiplierUnitValue=null,multiplierTotalValue=null,summaryBasketCountRow=null,summaryBasketUnitRow=null;
+let topSave=null,bottomSave=null,badge=null,multiplierInput=null,multiplierUnitValue=null,multiplierTotalValue=null;
+let summaryBasketCountRow=null,summaryBasketUnitRow=null,renderQueued=false;
 const $=id=>document.getElementById(id);
+const parseMoney=value=>{let t=String(value||'').replace(/R\$/gi,'').replace(/\s/g,'').trim();if(!t)return 0;if(t.includes(',')&&t.includes('.'))t=t.replace(/\./g,'').replace(',','.');else if(t.includes(','))t=t.replace(',','.');const n=Number(t.replace(/[^0-9.-]/g,''));return Number.isFinite(n)?Math.max(0,n):0};
+const formatBRL=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Math.max(0,Number(value)||0));
 const isSavedQuote=()=>String($('quoteCloudState')?.textContent||'').includes('Editando orçamento salvo');
-function parseDisplayedMoney(value){
-  let text=String(value||'').replace(/R\$/gi,'').replace(/\s/g,'').trim();
-  if(!text)return 0;
-  if(text.includes(',')&&text.includes('.'))text=text.replace(/\./g,'').replace(',','.');
-  else if(text.includes(','))text=text.replace(',','.');
-  const n=Number(text.replace(/[^0-9.-]/g,''));return Number.isFinite(n)?Math.max(0,n):0;
-}
-function formatBRL(value){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Math.max(0,Number(value)||0))}
-function currentFinalTotal(){return parseDisplayedMoney($('editorTotal')?.textContent||$('viewTotal')?.textContent||'0')}
-function updateMultiplierValues(){
-  const total=currentFinalTotal();
-  const unit=generalMultiplier>0?total/generalMultiplier:total;
-  if(multiplierUnitValue)multiplierUnitValue.textContent=formatBRL(unit);
-  if(multiplierTotalValue)multiplierTotalValue.textContent=formatBRL(total);
-  if(summaryBasketCountRow){summaryBasketCountRow.querySelector('strong').textContent=String(generalMultiplier);summaryBasketCountRow.hidden=false}
-  if(summaryBasketUnitRow){summaryBasketUnitRow.querySelector('strong').textContent=formatBRL(unit);summaryBasketUnitRow.hidden=false}
-  const totalRow=$('viewTotal')?.closest('.summary-row.total');
-  const totalLabel=totalRow?.querySelector('span:first-child');
-  if(totalLabel)totalLabel.textContent=generalMultiplier===1?'Total de 1 cesta':`Total das ${generalMultiplier} cestas`;
-}
-function syncSaveUi(){
-  if(!topSave)return;
-  if(dirty&&isSavedQuote()&&!topSave.disabled&&topSave.textContent!=='Salvando…')topSave.textContent='Salvar alterações';
-  if(badge)badge.hidden=!dirty;
-  if(bottomSave){bottomSave.disabled=topSave.disabled;bottomSave.textContent=dirty&&isSavedQuote()?'Salvar alterações':(topSave.textContent||'Salvar orçamento');}
-}
-function setDirty(value=true){if(suppressDirty)return;dirty=value;syncSaveUi()}
-function resetCalculatedTotalIfNeeded(){const hint=$('calculatedTotalHint');if(hint&&hint.textContent.includes('total manual ativo'))$('useCalculatedTotal')?.click()}
-function setMultiplierDisplay(value,{persist=true}={}){
-  generalMultiplier=Math.max(1,Math.round(Number(value)||1));
-  if(multiplierInput)multiplierInput.value=String(generalMultiplier);
-  if(persist)localStorage.setItem(MULTIPLIER_KEY,String(generalMultiplier));
-  updateMultiplierValues();
-}
-function applyGeneralMultiplier(){
-  const next=Math.max(1,Math.round(Number(multiplierInput?.value)||1));
-  if(next===generalMultiplier){updateMultiplierValues();return}
-  const ratio=next/generalMultiplier;
-  const qtyInputs=[...document.querySelectorAll('#itemEditor [data-item-qty]')];
-  suppressDirty=true;
-  try{
-    qtyInputs.forEach(input=>{
-      const current=Math.max(.01,Number(input.value)||.01);
-      const value=Math.max(.01,Math.round((current*ratio+Number.EPSILON)*100)/100);
-      input.value=String(value);
-      input.dispatchEvent(new Event('input',{bubbles:true}));
-      input.dispatchEvent(new Event('change',{bubbles:true}));
-    });
-  }finally{suppressDirty=false}
-  setMultiplierDisplay(next);
-  resetCalculatedTotalIfNeeded();
-  setTimeout(updateMultiplierValues,0);
-  setDirty(true);
-}
-function installMultiplier(){
-  const itemEditor=$('itemEditor');
-  if(!itemEditor||$('quoteGeneralMultiplier'))return;
-  const box=document.createElement('div');box.className='quote-multiplier-box';
-  box.innerHTML='<div><strong>Multiplicador geral</strong><div class="quote-multiplier-help">Use 1 para uma cesta. Ex.: use 10 para transformar todas as quantidades do orçamento em 10 cestas iguais.</div></div><div class="field"><label for="quoteGeneralMultiplier">Quantidade de cestas</label><input id="quoteGeneralMultiplier" type="number" min="1" step="1" inputmode="numeric"></div><button class="btn btn-primary" type="button" id="applyGeneralMultiplier">Aplicar em todos</button><div class="quote-multiplier-values"><div><span>Valor de 1 cesta</span><strong id="quoteMultiplierUnitValue">R$ 0,00</strong></div><div><span>Total do multiplicador</span><strong id="quoteMultiplierTotalValue">R$ 0,00</strong></div></div>';
-  itemEditor.parentElement.insertBefore(box,itemEditor);
-  multiplierInput=$('quoteGeneralMultiplier');multiplierUnitValue=$('quoteMultiplierUnitValue');multiplierTotalValue=$('quoteMultiplierTotalValue');
-  setMultiplierDisplay(generalMultiplier,{persist:false});
-  $('applyGeneralMultiplier').addEventListener('click',applyGeneralMultiplier);
-  multiplierInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyGeneralMultiplier()}});
-}
-function installPreviewSummary(){
-  const summary=$('viewTotal')?.closest('.summary');
-  const totalRow=$('viewTotal')?.closest('.summary-row.total');
-  if(!summary||!totalRow||$('summaryBasketCountRow'))return;
-  summaryBasketCountRow=document.createElement('div');summaryBasketCountRow.className='summary-row';summaryBasketCountRow.id='summaryBasketCountRow';summaryBasketCountRow.innerHTML='<span>Quantidade de cestas</span><strong>1</strong>';
-  summaryBasketUnitRow=document.createElement('div');summaryBasketUnitRow.className='summary-row';summaryBasketUnitRow.id='summaryBasketUnitRow';summaryBasketUnitRow.innerHTML='<span>Valor de 1 cesta</span><strong>R$ 0,00</strong>';
-  summary.insertBefore(summaryBasketCountRow,totalRow);summary.insertBefore(summaryBasketUnitRow,totalRow);updateMultiplierValues();
-  const editorTotal=$('editorTotal');if(editorTotal)new MutationObserver(updateMultiplierValues).observe(editorTotal,{childList:true,subtree:true,characterData:true});
-  const viewTotal=$('viewTotal');if(viewTotal)new MutationObserver(updateMultiplierValues).observe(viewTotal,{childList:true,subtree:true,characterData:true});
-}
-function installSaveUi(){
-  topSave=$('saveCloudQuote');const itemEditor=$('itemEditor');if(!topSave||!itemEditor)return;
-  badge=document.createElement('span');badge.className='quote-unsaved-badge';badge.textContent='Alterações não salvas';badge.hidden=true;$('quoteCloudState')?.appendChild(badge);
-  const wrap=document.createElement('div');wrap.className='quote-inline-save-wrap';bottomSave=document.createElement('button');bottomSave.type='button';bottomSave.id='saveCloudQuoteBottom';bottomSave.className='btn btn-primary';bottomSave.addEventListener('click',()=>topSave.click());wrap.appendChild(bottomSave);itemEditor.closest('.panel-body')?.appendChild(wrap);
-  new MutationObserver(syncSaveUi).observe(topSave,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});syncSaveUi();
-}
-function bindDirtyTracking(){
-  const editor=document.querySelector('.editor');if(!editor)return;
-  editor.addEventListener('input',e=>{
-    const el=e.target;if(!(el instanceof HTMLElement))return;
-    if(el.matches('#productSearch,#clientSearch,#quoteHistorySearch,#quoteGeneralMultiplier'))return;
-    if(el.matches('[data-item-qty],[data-item-price],[data-item-total]'))resetCalculatedTotalIfNeeded();
-    setDirty(true);setTimeout(updateMultiplierValues,0);
-  });
-  editor.addEventListener('change',e=>{
-    const el=e.target;if(!(el instanceof HTMLElement)||el.matches('#quoteGeneralMultiplier'))return;setDirty(true);setTimeout(updateMultiplierValues,0);
-  });
-  $('newQuote')?.addEventListener('click',()=>setTimeout(()=>{setMultiplierDisplay(1);setDirty(false)},0));
-}
-function interceptPersistence(){
-  const nativeFetch=window.fetch.bind(window);
-  window.fetch=async(input,init={})=>{
-    let action='';try{action=new URL(typeof input==='string'?input:input.url,location.href).searchParams.get('action')||''}catch{}
-    let nextInit=init;
-    if(action==='quote_save'&&String(init.method||'GET').toUpperCase()==='POST'&&typeof init.body==='string'){
-      try{const payload=JSON.parse(init.body);payload.snapshot=payload.snapshot||{};payload.snapshot.options=payload.snapshot.options||{};payload.snapshot.options.generalMultiplier=generalMultiplier;nextInit={...init,body:JSON.stringify(payload)}}catch{}
-    }
-    const response=await nativeFetch(input,nextInit);
-    if(action==='quote_save'&&response.ok)setTimeout(()=>setDirty(false),0);
-    if(action==='quote'&&response.ok){
-      response.clone().json().then(data=>{const saved=Number(data?.quote?.snapshot?.options?.generalMultiplier);setTimeout(()=>{setMultiplierDisplay(Number.isFinite(saved)&&saved>=1?saved:1);setDirty(false);updateMultiplierValues()},0)}).catch(()=>{});
-    }
-    return response;
-  };
-}
-function install(){interceptPersistence();installMultiplier();installPreviewSummary();installSaveUi();bindDirtyTracking();setDirty(false);updateMultiplierValues()}
+function baseFinalTotal(){return parseMoney($('editorTotal')?.textContent||'0')}
+function setDirty(value=true){dirty=value;syncSaveUi()}
+function syncSaveUi(){if(!topSave)return;if(dirty&&isSavedQuote()&&!topSave.disabled&&topSave.textContent!=='Salvando…')topSave.textContent='Salvar alterações';if(badge)badge.hidden=!dirty;if(bottomSave){bottomSave.disabled=topSave.disabled;bottomSave.textContent=dirty&&isSavedQuote()?'Salvar alterações':(topSave.textContent||'Salvar orçamento')}}
+function setMultiplier(value,{persist=true,markDirty=false}={}){generalMultiplier=Math.max(1,Math.round(Number(value)||1));if(multiplierInput)multiplierInput.value=String(generalMultiplier);if(persist)localStorage.setItem(MULTIPLIER_KEY,String(generalMultiplier));renderMultiplierView();if(markDirty)setDirty(true)}
+function installMultiplier(){const itemEditor=$('itemEditor');if(!itemEditor||$('quoteGeneralMultiplier'))return;const box=document.createElement('div');box.className='quote-multiplier-box';box.innerHTML='<div><strong>Multiplicador geral</strong><div class="quote-multiplier-help">A composição-base permanece intacta. Use 1 para uma cesta; 10 gera orçamento de 10 cestas iguais sem recalcular item por item.</div></div><div class="field"><label for="quoteGeneralMultiplier">Quantidade de cestas</label><input id="quoteGeneralMultiplier" type="number" min="1" step="1" inputmode="numeric"></div><button class="btn btn-primary" type="button" id="applyGeneralMultiplier">Aplicar</button><div class="quote-multiplier-values"><div><span>Valor de 1 cesta</span><strong id="quoteMultiplierUnitValue">R$ 0,00</strong></div><div><span>Total do multiplicador</span><strong id="quoteMultiplierTotalValue">R$ 0,00</strong></div></div>';itemEditor.parentElement.insertBefore(box,itemEditor);multiplierInput=$('quoteGeneralMultiplier');multiplierUnitValue=$('quoteMultiplierUnitValue');multiplierTotalValue=$('quoteMultiplierTotalValue');multiplierInput.value=String(generalMultiplier);$('applyGeneralMultiplier').addEventListener('click',()=>setMultiplier(multiplierInput.value,{markDirty:true}));multiplierInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();setMultiplier(multiplierInput.value,{markDirty:true})}})}
+function installPreviewSummary(){const summary=$('viewTotal')?.closest('.summary'),totalRow=$('viewTotal')?.closest('.summary-row.total');if(!summary||!totalRow||$('summaryBasketCountRow'))return;summaryBasketCountRow=document.createElement('div');summaryBasketCountRow.className='summary-row';summaryBasketCountRow.id='summaryBasketCountRow';summaryBasketCountRow.innerHTML='<span>Quantidade de cestas</span><strong>1</strong>';summaryBasketUnitRow=document.createElement('div');summaryBasketUnitRow.className='summary-row';summaryBasketUnitRow.id='summaryBasketUnitRow';summaryBasketUnitRow.innerHTML='<span>Valor de 1 cesta</span><strong>R$ 0,00</strong>';summary.insertBefore(summaryBasketCountRow,totalRow);summary.insertBefore(summaryBasketUnitRow,totalRow)}
+function multiplyPreviewItems(){const editorRows=[...document.querySelectorAll('#itemEditor .edit-item')];const previewRows=[...document.querySelectorAll('#quoteItems tr')].filter(r=>r.querySelectorAll('td').length>=5);previewRows.forEach((row,index)=>{const source=editorRows[index];if(!source)return;const qty=Math.max(.01,Number(source.querySelector('[data-item-qty]')?.value)||.01);const price=parseMoney(source.querySelector('[data-item-price]')?.value||'0');const cells=row.querySelectorAll('td');cells[2].textContent=String(Math.round(qty*generalMultiplier*100)/100).replace('.',',');cells[4].innerHTML='<strong>'+formatBRL(qty*generalMultiplier*price)+'</strong>'});const plain=[...document.querySelectorAll('#quoteItemsPlain .items-only-card')];plain.forEach((card,index)=>{const source=editorRows[index];if(!source)return;const qty=Math.max(.01,Number(source.querySelector('[data-item-qty]')?.value)||.01);const q=card.querySelector('.item-qty');if(q)q.textContent=String(Math.round(qty*generalMultiplier*100)/100).replace('.',',')+' ×'})}
+function renderMultiplierView(){if(!document.body)return;const unit=baseFinalTotal(),total=unit*generalMultiplier;if(multiplierUnitValue)multiplierUnitValue.textContent=formatBRL(unit);if(multiplierTotalValue)multiplierTotalValue.textContent=formatBRL(total);if(summaryBasketCountRow)summaryBasketCountRow.querySelector('strong').textContent=String(generalMultiplier);if(summaryBasketUnitRow)summaryBasketUnitRow.querySelector('strong').textContent=formatBRL(unit);const totalNode=$('viewTotal');if(totalNode)totalNode.textContent=formatBRL(total);const totalRow=totalNode?.closest('.summary-row.total');const label=totalRow?.querySelector('span:first-child');if(label)label.textContent=generalMultiplier===1?'Total de 1 cesta':`Total das ${generalMultiplier} cestas`;const subtotalRow=$('summarySubtotalRow');if(subtotalRow){const s=subtotalRow.querySelector('span');if(s)s.textContent=generalMultiplier===1?'Subtotal calculado':'Subtotal de 1 cesta'}multiplyPreviewItems()}
+function queueRender(){if(renderQueued)return;renderQueued=true;requestAnimationFrame(()=>{renderQueued=false;renderMultiplierView()})}
+function installSaveUi(){topSave=$('saveCloudQuote');const itemEditor=$('itemEditor');if(!topSave||!itemEditor)return;badge=document.createElement('span');badge.className='quote-unsaved-badge';badge.textContent='Alterações não salvas';badge.hidden=true;$('quoteCloudState')?.appendChild(badge);const wrap=document.createElement('div');wrap.className='quote-inline-save-wrap';bottomSave=document.createElement('button');bottomSave.type='button';bottomSave.id='saveCloudQuoteBottom';bottomSave.className='btn btn-primary';bottomSave.addEventListener('click',()=>topSave.click());wrap.appendChild(bottomSave);itemEditor.closest('.panel-body')?.appendChild(wrap);new MutationObserver(syncSaveUi).observe(topSave,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});syncSaveUi()}
+function bindRefreshTracking(){const editor=document.querySelector('.editor');if(editor){editor.addEventListener('input',e=>{const el=e.target;if(!(el instanceof HTMLElement))return;if(!el.matches('#productSearch,#clientSearch,#quoteHistorySearch,#quoteGeneralMultiplier'))setDirty(true);queueRender()});editor.addEventListener('change',e=>{const el=e.target;if(!(el instanceof HTMLElement))return;if(!el.matches('#quoteGeneralMultiplier'))setDirty(true);queueRender()});editor.addEventListener('click',()=>setTimeout(queueRender,0))}$('newQuote')?.addEventListener('click',()=>setTimeout(()=>{setMultiplier(1,{markDirty:false});setDirty(false)},0));document.addEventListener('click',e=>{if(e.target.closest('[data-open-quote],[data-add-product],[data-remove-product],#applyBudgetPreset,#useCalculatedTotal'))setTimeout(queueRender,0)})}
+function interceptPersistence(){const nativeFetch=window.fetch.bind(window);window.fetch=async(input,init={})=>{let action='';try{action=new URL(typeof input==='string'?input:input.url,location.href).searchParams.get('action')||''}catch{}let nextInit=init;if(action==='quote_save'&&String(init.method||'GET').toUpperCase()==='POST'&&typeof init.body==='string'){try{const payload=JSON.parse(init.body);payload.snapshot=payload.snapshot||{};payload.snapshot.options=payload.snapshot.options||{};payload.snapshot.options.generalMultiplier=generalMultiplier;payload.subtotal_cents=Math.round(Number(payload.subtotal_cents||0)*generalMultiplier);payload.total_cents=Math.round(Number(payload.total_cents||0)*generalMultiplier);nextInit={...init,body:JSON.stringify(payload)}}catch{}}const response=await nativeFetch(input,nextInit);if(action==='quote_save'&&response.ok)setTimeout(()=>setDirty(false),0);if(action==='quote'&&response.ok){response.clone().json().then(data=>{const saved=Number(data?.quote?.snapshot?.options?.generalMultiplier);setTimeout(()=>{setMultiplier(Number.isFinite(saved)&&saved>=1?saved:1,{markDirty:false});setDirty(false);queueRender()},0)}).catch(()=>{})}return response}}
+function interceptPrint(){const nativePrint=window.print.bind(window);window.print=()=>{renderMultiplierView();nativePrint()}}
+function install(){interceptPersistence();interceptPrint();installMultiplier();installPreviewSummary();installSaveUi();bindRefreshTracking();setDirty(false);setTimeout(renderMultiplierView,0)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
