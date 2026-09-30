@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Entregar no Vitrine/Admin um modulo Fiscal -> Simples Nacional que consolida a competencia mensal, reconcilia documentos fiscais com pedidos, segrega receitas com evidencia suficiente, calcula uma previa auditavel do DAS e permite homologacao contra o contador sem transmitir PGDAS-D nem efetuar pagamento.
+**Goal:** Entregar no Vitrine/Admin um modulo Fiscal -> Simples Nacional que consolida a competencia mensal, coleta e reconcilia evidencias fiscais, segrega receitas somente com base segura, calcula uma previa auditavel do DAS, exporta a memoria de conferencia e permite homologacao contra o contador sem transmitir PGDAS-D nem efetuar pagamento.
 
-**Architecture:** O modulo sera uma camada de fechamento sobre as fontes canonicas ja existentes no Supabase e sobre evidencias fiscais do Bling. Regras e memoria de calculo ficam versionadas no banco; classificacao e calculo ficam em codigo TypeScript testavel e sem side effects; o gateway administrativo existente expoe somente operacoes autenticadas de leitura/recalculo/fechamento; a UI entra no Admin atual sem criar um segundo painel.
+**Architecture:** O modulo sera uma camada de fechamento sobre o Supabase canonico e o Bling. Regras e snapshots ficam versionados no banco; coleta, reconciliacao, classificacao e calculo ficam em modulos TypeScript pequenos/testaveis; o gateway administrativo existente expoe somente operacoes autenticadas; a UI entra no Admin atual sem criar painel ou ERP paralelo.
 
-**Tech Stack:** PostgreSQL 17 / Supabase, Supabase Edge Functions em Deno + TypeScript, `@supabase/supabase-js`, Vitrine/Admin HTML/CSS/JS existente, Bling v3 via infraestrutura OAuth atual, scripts Node `.mjs` para smoke/integration checks.
+**Tech Stack:** PostgreSQL 17 / Supabase, Supabase Edge Functions em Deno + TypeScript, `@supabase/supabase-js`, Vitrine/Admin HTML/CSS/JS existente, Bling v3 via infraestrutura OAuth atual, scripts Node `.mjs` para smoke/contract tests.
 
 **Spec:** `docs/superpowers/specs/2026-09-30-simples-nacional-pre-apuracao-design.md`
 
@@ -14,257 +14,262 @@
 
 - Supabase canonico: `ssbesxgaijknwsjbsbcz`; nao criar projeto paralelo.
 - Bling continua ERP operacional e principal evidencia externa das NF-e de saida.
-- Pedidos locais servem para conciliacao e nunca substituem documento fiscal autorizado.
+- Pedidos locais servem para conciliacao; nunca substituem documento fiscal autorizado.
 - Nenhuma classificacao incerta entra silenciosamente como segregacao fiscal.
-- Primeira fase nao transmite PGDAS-D, nao gera DAS por side effect externo e nao efetua pagamento.
-- Competencia `locked` e imutavel; correcao posterior cria nova versao.
+- V1 nao transmite PGDAS-D, nao gera DAS por side effect externo e nao efetua pagamento.
+- Competencia `locked` e imutavel; correcao posterior cria nova versao `superseded`/nova versao ativa.
 - Regras tributarias e parametros de calculo sao versionados por vigencia.
-- Nenhuma chave secreta vai para o frontend; novas tabelas expostas usam RLS.
-- Nao criar novo cron/polling para este modulo; recalculo e coleta sao sob demanda na primeira fase.
-- Nao reprocessar historico operacional antigo como se fosse fluxo live; historico fiscal pode ser consultado apenas quando necessario para RBT12 e homologacao.
-- Nao fazer refatoracao geral do `vitrine/admin/index.html` nem do gateway monolitico nesta entrega; novos dominios devem ser isolados em modulos pequenos e ligados ao runtime existente.
+- Nenhuma credencial fiscal/service-role vai para o frontend.
+- Novas tabelas publicas usam RLS e seguem o padrao server-only do projeto; nenhuma policy permissiva e criada apenas para silenciar advisor.
+- Nao criar novo cron/polling; coleta/recalculo sao sob demanda em V1.
+- Nao refatorar em massa `vitrine/admin/index.html` ou o gateway monolitico nesta entrega.
+- Timezone operacional/fiscal para fronteiras mensais: `America/Cuiaba`.
 
 ## File Structure
 
-- Create `supabase/migrations/20260930133000_simples_nacional_pre_apuracao_v1.sql` — tabelas, constraints, RLS, indexes e funcoes SQL puramente de leitura/gates.
+- Create `supabase/migrations/20260930133000_simples_nacional_pre_apuracao_v1.sql` — tabelas, constraints, indexes, RLS e gates.
 - Create `supabase/functions/admin-service-intelligence-v1/simples-v1/types.ts` — contratos do dominio.
-- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/calculator.ts` — RBT12, faixa, aliquota efetiva e memoria de calculo.
-- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/classifier.ts` — classificacao de linhas por regra vigente/evidencia.
-- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/reconciliation.ts` — deteccao de divergencias entre NF-e, pedidos, cancelamentos e perfis fiscais.
-- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/index.ts` — servico HTTP interno do dominio Simples.
-- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/*.test.ts` — testes Deno unitarios do dominio.
-- Modify `supabase/functions/admin-service-intelligence-v1/index.ts` — rotear somente as novas acoes `simples_*` ao modulo isolado.
-- Modify `vitrine/admin/index.html` — menu, pagina, cards, pendencias, memoria de calculo e homologacao.
-- Create `scripts/test-simples-admin-integration.mjs` — smoke estrutural do frontend/gateway.
-- Create `scripts/test-simples-period-contract.mjs` — checagens de contrato e invariantes da API/DDL versionado.
-- Create `docs/projects/dona-antonia-operations-2/SIMPLES-NACIONAL-HOMOLOGATION-RUNBOOK.md` — procedimento humano de homologacao e criterio para futuro cutover.
+- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/source.ts` — adaptador de evidencias fiscais/Bling.
+- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/reconciliation.ts` — conciliacao de NF-e/pedidos/cancelamentos/devolucoes.
+- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/classifier.ts` — classificacao normal/ST/monofasico/revisao.
+- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/calculator.ts` — RBT12, faixa, aliquota efetiva e memoria.
+- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/export.ts` — CSV + HTML imprimivel da memoria de conferencia, sem side effect externo.
+- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/index.ts` — servico HTTP interno do dominio.
+- Create `supabase/functions/admin-service-intelligence-v1/simples-v1/*.test.ts` — testes Deno.
+- Modify `supabase/functions/admin-service-intelligence-v1/index.ts` — roteamento estreito das acoes `simples_*`.
+- Modify `vitrine/admin/index.html` — menu, tela, cards, pendencias, memoria, exportacao e homologacao.
+- Create `scripts/test-simples-period-contract.mjs` — contrato DDL/API.
+- Create `scripts/test-simples-admin-integration.mjs` — smoke estrutural da UI/gateway.
+- Create `docs/projects/dona-antonia-operations-2/SIMPLES-NACIONAL-HOMOLOGATION-RUNBOOK.md` — rotina mensal e criterio de cutover futuro.
 
 ## Review Focus
 
-- NF-e autorizada no ultimo dia do mes com timezone Cuiaba deve pertencer a competencia correta; teste em Task 3.
-- Pedido sem NF-e ou NF-e sem pedido deve bloquear `ready`, sem excluir receita/documento; teste em Task 3.
-- Produto `candidate`, `unknown`, `conflict`, `pending` ou `blocked` nao pode receber segregacao ST/monofasica automatica; teste em Task 2.
-- Competencia ja `locked` nao pode ser recalculada ou sobrescrita; teste em Task 1 e Task 4.
-- Historico insuficiente para RBT12 nao pode produzir aliquota silenciosamente; deve abrir bloqueio explicito; teste em Task 2 e Task 4.
+- NF-e autorizada na virada do mes deve cair na competencia correta em `America/Cuiaba`; Task 3.
+- Pedido sem NF-e ou NF-e sem pedido deve bloquear `ready`, sem excluir a evidencia; Task 3.
+- Perfil `candidate|unknown|conflict|pending|blocked` nao pode receber ST/monofasico automatico; Task 2.
+- Periodo `locked` nao pode ser recalculado/sobrescrito; Tasks 1 e 4.
+- Historico insuficiente para RBT12 nao pode produzir aliquota silenciosamente; Tasks 2 e 4.
 
 ---
 
-### Task 1: Persistencia, versionamento e gates da competencia
+### Task 1: Persistencia, versionamento e gates
 
 **Files:**
 - Create: `supabase/migrations/20260930133000_simples_nacional_pre_apuracao_v1.sql`
 - Create: `scripts/test-simples-period-contract.mjs`
 
 **Interfaces:**
-- Produces tables: `simples_rule_sets`, `simples_tax_classification_rules`, `simples_periods`, `simples_revenue_lines`, `simples_reconciliation_issues`, `simples_validation_runs`, `simples_homologation_checks`.
-- Produces SQL function: `get_simples_period_gate_v1(p_period_id uuid) returns jsonb`.
-- Produces statuses: period `draft|review_required|ready|locked|superseded`; line `classified|manual_review|blocked`; issue `open|resolved|ignored_with_reason`.
+- Tables: `simples_rule_sets`, `simples_tax_classification_rules`, `simples_periods`, `simples_revenue_lines`, `simples_reconciliation_issues`, `simples_validation_runs`, `simples_homologation_checks`.
+- SQL function: `get_simples_period_gate_v1(p_period_id uuid) returns jsonb`.
+- Period statuses: `draft|review_required|ready|locked|superseded`.
+- Line statuses: `classified|manual_review|blocked`.
+- Issue statuses: `open|resolved|ignored_with_reason`.
 
-- [ ] **Step 1: Write the failing contract test**
+- [ ] **Step 1: Write failing contract test**
 
-Create `scripts/test-simples-period-contract.mjs` asserting the migration contains all seven tables, unique `(competence_month,version)`, valid period status constraint, RLS enablement on every new public table, the gate function name and a lock guard that rejects mutation of `locked` periods.
+`test-simples-period-contract.mjs` must assert all seven tables, unique `(competence_month,version)`, valid status constraints, RLS enabled, key indexes, gate function and lock guard.
 
-- [ ] **Step 2: Run the test and verify failure**
+- [ ] **Step 2: Run and verify failure**
 
 Run: `node scripts/test-simples-period-contract.mjs`
-Expected: FAIL because the migration does not exist.
+Expected: FAIL because migration is absent.
 
-- [ ] **Step 3: Implement the migration**
+- [ ] **Step 3: Implement migration**
 
-Define UUID PKs, timestamps, FKs to existing fiscal/product/order entities where stable, JSONB evidence/metadata fields, indexes for competence/status/document/product, RLS enabled, and server-only access model consistent with existing admin services. `get_simples_period_gate_v1` must return at least `ready`, `blocking_issue_count`, `warning_count`, `reasons`.
+Use UUID PKs, timestamps, FKs to stable existing entities, JSONB evidence/metadata, indexes on competence/status/document/product. `get_simples_period_gate_v1` returns at least `{ready,blocking_issue_count,warning_count,reasons}`. Trigger/guard rejects update/delete that mutates a `locked` snapshot except explicit creation of a new version.
 
-- [ ] **Step 4: Apply in a transaction-safe verification path and inspect advisors**
+- [ ] **Step 4: Apply DDL and verify**
 
-Use Supabase DDL migration tooling for project `ssbesxgaijknwsjbsbcz`; then query `pg_tables`, `pg_constraint`, `pg_indexes` and RLS flags. Run security and performance advisors after DDL.
-Expected: all new tables exist, RLS=true, constraints/indexes present, no new critical security advisor.
+Apply with Supabase migration tooling to `ssbesxgaijknwsjbsbcz`; query tables/constraints/indexes/RLS and run security/performance advisors.
+Expected: schema valid, RLS=true, no new critical advisor.
 
 - [ ] **Step 5: Re-run contract test**
 
-Run: `node scripts/test-simples-period-contract.mjs`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
-Commit message: `feat: add Simples Nacional period model and gates`.
+`feat: add Simples Nacional period model and gates`
 
 ---
 
 ### Task 2: Motor puro de classificacao e calculo
 
 **Files:**
-- Create: `supabase/functions/admin-service-intelligence-v1/simples-v1/types.ts`
-- Create: `supabase/functions/admin-service-intelligence-v1/simples-v1/calculator.ts`
-- Create: `supabase/functions/admin-service-intelligence-v1/simples-v1/classifier.ts`
-- Create: `supabase/functions/admin-service-intelligence-v1/simples-v1/calculator.test.ts`
-- Create: `supabase/functions/admin-service-intelligence-v1/simples-v1/classifier.test.ts`
+- Create: `simples-v1/types.ts`
+- Create: `simples-v1/classifier.ts`
+- Create: `simples-v1/calculator.ts`
+- Create: `simples-v1/classifier.test.ts`
+- Create: `simples-v1/calculator.test.ts`
+
+(Os caminhos acima sao relativos a `supabase/functions/admin-service-intelligence-v1/`.)
 
 **Interfaces:**
+- `classifyRevenueLine(input: RevenueClassificationInput): RevenueClassificationResult`
 - `calculateRbt12(months: MonthlyRevenue[]): Rbt12Result`
 - `calculateEffectiveRate(input: EffectiveRateInput): EffectiveRateResult`
-- `classifyRevenueLine(input: RevenueClassificationInput): RevenueClassificationResult`
-- `RevenueClassificationResult.taxBucket` values initially: `normal_resale|icms_st|monophase|cancellation|return|manual_review`.
-- Every automatic special bucket must include `ruleId`, `ruleVersion`, `evidence` and `confidence`.
+- Tax buckets: `normal_resale|icms_st|monophase|cancellation|return|manual_review`.
+- Special bucket automatico exige `ruleId`, `ruleVersion`, `evidence`, `confidence`.
 
 - [ ] **Step 1: Write failing calculator tests**
 
-Cover exact 12-month summation, missing-month/history block, bracket boundary, effective-rate formula parameters from the supplied rule set, zero/negative recognized revenue behavior and deterministic cent rounding.
+Cover 12-month sum, missing history block, bracket boundary, effective-rate formula using supplied rule-set values, zero/negative recognized revenue and deterministic cent rounding.
 
-- [ ] **Step 2: Run calculator tests to verify failure**
+- [ ] **Step 2: Run calculator test**
 
 Run: `deno test supabase/functions/admin-service-intelligence-v1/simples-v1/calculator.test.ts`
-Expected: FAIL because calculator module is absent.
+Expected: FAIL.
 
-- [ ] **Step 3: Implement `types.ts` and `calculator.ts`**
+- [ ] **Step 3: Implement types + calculator**
 
-The calculator receives all bracket/rule values as input; it must not hardcode future tax tables in frontend code. Return a full memory object containing inputs, selected bracket, nominal rate, deduction, effective rate, segregated base and estimated DAS.
+No tax bracket hardcoded in frontend; calculator receives all rule parameters and returns full memory `{inputs,bracket,nominalRate,deduction,effectiveRate,segregatedBases,estimatedDas}`.
 
-- [ ] **Step 4: Run calculator tests**
+- [ ] **Step 4: Write failing classifier tests**
 
+Assert validated normal -> `normal_resale`; proven ST -> `icms_st`; proven monophase -> `monophase`; unresolved states -> `manual_review`; rule outside vigencia -> `manual_review`; cancellation/return evidence overrides ordinary classification.
+
+- [ ] **Step 5: Implement classifier and run all tests**
+
+Run: `deno test supabase/functions/admin-service-intelligence-v1/simples-v1/{calculator,classifier}.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Write failing classifier tests**
+- [ ] **Step 6: Commit**
 
-Assert: validated normal item -> `normal_resale`; proven ST rule -> `icms_st`; proven monophase rule -> `monophase`; `candidate|unknown|conflict|pending|blocked` -> `manual_review`; rule outside effective dates -> `manual_review`; cancellation/return evidence overrides ordinary sale classification.
-
-- [ ] **Step 6: Implement `classifier.ts`**
-
-Classification must be deterministic and evidence-driven. Name/category similarity alone must never produce `icms_st` or `monophase`.
-
-- [ ] **Step 7: Run all domain tests**
-
-Run: `deno test supabase/functions/admin-service-intelligence-v1/simples-v1/*.test.ts`
-Expected: PASS.
-
-- [ ] **Step 8: Commit**
-
-Commit message: `feat: add auditable Simples calculation engine`.
+`feat: add auditable Simples calculation engine`
 
 ---
 
-### Task 3: Coleta fiscal e reconciliacao da competencia
+### Task 3: Coleta fiscal e reconciliacao
 
 **Files:**
-- Create: `supabase/functions/admin-service-intelligence-v1/simples-v1/reconciliation.ts`
-- Create: `supabase/functions/admin-service-intelligence-v1/simples-v1/reconciliation.test.ts`
-- Modify: `supabase/functions/admin-service-intelligence-v1/simples-v1/types.ts`
+- Create: `simples-v1/source.ts`
+- Create: `simples-v1/source.test.ts`
+- Create: `simples-v1/reconciliation.ts`
+- Create: `simples-v1/reconciliation.test.ts`
+- Modify: `simples-v1/types.ts`
 
 **Interfaces:**
-- `reconcilePeriod(input: ReconciliationInput): ReconciliationResult`
-- `ReconciliationResult` produces normalized revenue candidates plus issues with types from the spec.
-- Timezone boundary is always `America/Cuiaba` for competence selection.
+- `collectFiscalEvidence(input: FiscalEvidenceRequest, deps: FiscalSourceDeps): Promise<FiscalEvidenceResult>`
+- `FiscalEvidenceResult.collectionStatus`: `complete|incomplete|failed|stale`.
+- `reconcilePeriod(input: ReconciliationInput): ReconciliationResult`.
+- Access key is primary document identity; stable Bling NF-e id is fallback.
 
-- [ ] **Step 1: Write failing reconciliation tests**
+- [ ] **Step 1: Write failing source tests**
 
-Cover: authorized invoice matched to order; invoice without order; order without invoice; duplicate access key; total mismatch; cancellation mismatch; return mismatch; invoice at month boundary in Cuiaba; missing fiscal profile; unresolved ST/monophase evidence.
+Mock Bling/current fiscal tables; test authorized NF-e, cancelled NF-e, stale/incomplete response, dedupe by 44-digit access key and preservation of source identifiers.
 
-- [ ] **Step 2: Run test to verify failure**
+- [ ] **Step 2: Implement source adapter**
 
-Run: `deno test supabase/functions/admin-service-intelligence-v1/simples-v1/reconciliation.test.ts`
-Expected: FAIL because reconciliation module is absent.
+Reuse existing Bling OAuth/rate-limit conventions and local `order_fiscal_controls`/`dispatch_fiscal_jobs` evidence. Do not create/update operational NF-e while collecting.
 
-- [ ] **Step 3: Implement normalized reconciliation**
+- [ ] **Step 3: Write failing reconciliation tests**
 
-Use access key as primary fiscal document identity when present, fall back only to stable Bling invoice identifier; never deduplicate by customer/name/amount. Preserve unmatched authorized invoices as revenue candidates plus blocking issue instead of discarding them.
+Cover matched invoice/order; invoice without order; order without invoice; duplicate access key; total mismatch; cancel mismatch; return mismatch; timezone boundary; missing profile; unresolved ST/monophase.
 
-- [ ] **Step 4: Run reconciliation tests**
+- [ ] **Step 4: Implement reconciliation**
 
+Unmatched authorized NF-e remains a revenue candidate plus blocking issue. Never dedupe by customer/name/value.
+
+- [ ] **Step 5: Run tests**
+
+Run: `deno test supabase/functions/admin-service-intelligence-v1/simples-v1/{source,reconciliation}.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
-Commit message: `feat: reconcile fiscal documents for Simples periods`.
+`feat: collect and reconcile fiscal evidence for Simples`
 
 ---
 
-### Task 4: Servico administrativo de pre-apuracao
+### Task 4: Servico administrativo de pre-apuracao e exportacao
 
 **Files:**
-- Create: `supabase/functions/admin-service-intelligence-v1/simples-v1/index.ts`
-- Create: `supabase/functions/admin-service-intelligence-v1/simples-v1/index.test.ts`
+- Create: `simples-v1/export.ts`
+- Create: `simples-v1/export.test.ts`
+- Create: `simples-v1/index.ts`
+- Create: `simples-v1/index.test.ts`
 - Modify: `supabase/functions/admin-service-intelligence-v1/index.ts`
 
 **Interfaces:**
-- GET/action `simples_summary&competence=YYYY-MM` -> current version, totals, statuses, issue counts, memory summary.
-- POST/action `simples_recalculate` body `{competence_month:"YYYY-MM"}` -> recalculated draft/review period snapshot.
-- GET/action `simples_issues&period_id=<uuid>` -> issues.
-- POST/action `simples_resolve_issue` -> explicit resolution metadata; no silent ignore.
-- POST/action `simples_lock` body `{period_id:<uuid>}` -> locks only when `get_simples_period_gate_v1.ready=true`.
-- POST/action `simples_homologation_save` -> records accountant comparison values and notes.
-- No endpoint for PGDAS transmission, DAS issuance or payment in v1.
+- GET `simples_summary&competence=YYYY-MM` -> current version/totals/status/issues/memory.
+- POST `simples_recalculate` `{competence_month}` -> draft/review snapshot.
+- GET `simples_issues&period_id=<uuid>` -> issues.
+- POST `simples_resolve_issue` -> audited resolution.
+- POST `simples_lock` `{period_id}` -> only if gate ready.
+- POST `simples_homologation_save` -> accountant comparison.
+- GET `simples_export&period_id=<uuid>&format=csv|html` -> deterministic report body/download metadata.
+- No PGDAS/DAS/payment action in V1.
 
-- [ ] **Step 1: Write failing service tests with mocked Supabase/Bling dependencies**
+- [ ] **Step 1: Write failing export tests**
 
-Assert invalid competence -> 400; unauthenticated/non-admin -> existing gateway rejection; locked period recalc -> 409; incomplete Bling collection -> `review_required`; blocking issue -> lock rejected; clean gate -> lock succeeds; insufficient RBT12 -> explicit block.
+Assert CSV and HTML contain competence, rule version, RBT12, segregated totals, estimated DAS, issue summary and calculation timestamp; locked export is reproducible from snapshot.
 
-- [ ] **Step 2: Run tests to verify failure**
+- [ ] **Step 2: Write failing service tests**
 
-Run: `deno test supabase/functions/admin-service-intelligence-v1/simples-v1/index.test.ts`
-Expected: FAIL.
+Assert invalid competence -> 400; locked recalc -> 409; incomplete collection -> review; blocking issue -> lock rejected; clean gate -> lock succeeds; insufficient RBT12 -> explicit block; export unknown period -> 404.
 
-- [ ] **Step 3: Implement the domain service**
+- [ ] **Step 3: Implement export + domain service**
 
-Reuse current Bling OAuth/client infrastructure and existing fiscal evidence first. Collection must mark itself `complete|incomplete|failed|stale`; only `complete` can progress toward `ready`. Persist every validation run and hash/summary of the inputs used.
+Recalculation persists validation run/hash and never mutates operational orders/NF-e. Collection must be `complete` before `ready`.
 
-- [ ] **Step 4: Add narrow routing in the existing gateway**
+- [ ] **Step 4: Route `simples_*` narrowly in gateway**
 
-Modify `admin-service-intelligence-v1/index.ts` only enough to route `simples_*` actions to `simples-v1/index.ts`, preserving current auth/CORS conventions and avoiding duplication of the domain implementation in the monolith.
+Preserve current admin auth/CORS. Keep implementation in `simples-v1`, not copied into monolith.
 
-- [ ] **Step 5: Run all Simples service/domain tests**
+- [ ] **Step 5: Run tests**
 
 Run: `deno test supabase/functions/admin-service-intelligence-v1/simples-v1/*.test.ts`
 Expected: PASS.
 
-- [ ] **Step 6: Deploy Edge Function and run read-only smoke**
+- [ ] **Step 6: Deploy and read-only smoke**
 
-Deploy updated `admin-service-intelligence-v1`; call `simples_summary` for a test/current competence with no lock/write side effect first. Verify 200, structured response, and no errors in Edge/Postgres logs.
+Deploy updated `admin-service-intelligence-v1`; call `simples_summary` first with no lock/write; inspect Edge/Postgres logs.
 
 - [ ] **Step 7: Commit**
 
-Commit message: `feat: expose Simples pre-calculation admin service`.
+`feat: expose Simples pre-calculation admin service`
 
 ---
 
-### Task 5: Tela Fiscal -> Simples Nacional no Vitrine/Admin
+### Task 5: Tela Fiscal -> Simples Nacional
 
 **Files:**
 - Modify: `vitrine/admin/index.html`
 - Create: `scripts/test-simples-admin-integration.mjs`
 
 **Interfaces:**
-- UI consumes Task 4 actions only.
-- New route/view key: `simples_nacional`.
-- No browser access to service-role credentials or direct fiscal table writes.
+- UI consumes only Task 4 actions.
+- View key: `simples_nacional`.
+- No direct fiscal table writes from browser.
 
-- [ ] **Step 1: Write failing structural integration test**
+- [ ] **Step 1: Write failing integration smoke**
 
-Create `scripts/test-simples-admin-integration.mjs` asserting: menu item `Fiscal -> Simples Nacional`; view container; competence selector; status banner; cards for receita/NF-e/ST/monofasica/DAS estimado/bloqueios; issue table; memory panel; homologation form; calls to `simples_summary`, `simples_recalculate`, `simples_issues`, `simples_lock`, `simples_homologation_save`; absence of any `transmit_pgdas`, `pay_das` or equivalent action.
+Assert menu/submenu, competence selector, status banner, cards (receita, NF-e, ST, monofasica, DAS estimado, bloqueios), issues table, memory panel, export buttons, homologation form; API calls to all supported `simples_*`; explicit absence of transmission/payment actions.
 
-- [ ] **Step 2: Run test to verify failure**
+- [ ] **Step 2: Run and verify failure**
 
 Run: `node scripts/test-simples-admin-integration.mjs`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement navigation and responsive view**
+- [ ] **Step 3: Implement responsive screen**
 
-Follow the Admin's current menu/submenu pattern. Default to current/previous competence selection, with explicit status copy: `Ainda nao pode fechar` / `Pronto para conferir no PGDAS-D` / `Fechado para homologacao`.
+Use current menu pattern. Status copy: `Ainda nao pode fechar`, `Pronto para conferir no PGDAS-D`, `Fechado para homologacao`.
 
-- [ ] **Step 4: Implement issue drill-down and memory display**
+- [ ] **Step 4: Implement pendencias + memoria + exportacao**
 
-Every blocking row shows plain-language reason plus technical evidence. Do not expose an `ignorar` action without reason/audit. Memory shows RBT12, bracket/rule version, calculation components and version comparison.
+Every issue shows plain-language reason and evidence. Export buttons call `simples_export` for CSV and print-friendly HTML/PDF-via-browser.
 
 - [ ] **Step 5: Implement accountant comparison**
 
-Fields: accountant total DAS, optional segregated values JSON/form fields, observation; show absolute and percentage difference to system calculation.
+Fields: contador DAS total, optional segregated comparison values, observation; show absolute and percentage difference without changing system result.
 
-- [ ] **Step 6: Run structural test and manual responsive smoke**
+- [ ] **Step 6: Verify UI**
 
-Run: `node scripts/test-simples-admin-integration.mjs`
-Expected: PASS.
-Manual: desktop + mobile, menu accessible, no horizontal overflow, no unrelated Admin regression.
+Run `node scripts/test-simples-admin-integration.mjs` -> PASS. Manual desktop/mobile smoke: menu reachable, no horizontal overflow, no unrelated regression.
 
 - [ ] **Step 7: Commit**
 
-Commit message: `feat: add Simples Nacional closing screen to admin`.
+`feat: add Simples Nacional closing screen to admin`
 
 ---
 
@@ -272,27 +277,27 @@ Commit message: `feat: add Simples Nacional closing screen to admin`.
 
 **Files:**
 - Create: `docs/projects/dona-antonia-operations-2/SIMPLES-NACIONAL-HOMOLOGATION-RUNBOOK.md`
-- Modify only if evidence requires fixes: files from Tasks 1-5.
+- Modify previous files only if homologation evidence requires a fix.
 
 **Interfaces:**
-- Produces an operational checklist and explicit future cutover gate.
-- Does not enable automated filing/payment.
+- Produces monthly operator checklist and future cutover gate.
+- Does not enable official filing/payment.
 
-- [ ] **Step 1: Seed/configure only a verified 2026 rule set**
+- [ ] **Step 1: Load only verified 2026 rule set**
 
-Insert/activate tax calculation rules only from verified official parameters for the company's actual Simples activity/regime. Special classification rules (ST/monophase) start `manual_only` unless their legal evidence and product identity are sufficient for automatic application.
+Activate calculation rules only from verified official parameters applicable to the company's actual Simples activity. ST/monophase starts `manual_only` unless legal/product evidence is sufficient.
 
-- [ ] **Step 2: Recalculate one historical/current competence in homologation mode**
+- [ ] **Step 2: Recalculate one competence in homologation mode**
 
-Use fiscal documents already available, without changing operational orders/NF-e. Record counts of documents, unmatched records, unresolved fiscal profiles and calculated totals.
+Use fiscal evidence already available; record documents, unmatched records, unresolved profiles, segregations and estimated DAS without changing orders/NF-e.
 
-- [ ] **Step 3: Compare against accountant output for the same competence**
+- [ ] **Step 3: Compare with accountant output**
 
-Persist the accountant values through `simples_homologation_save`; investigate every difference before accepting the month. A difference must never be hidden by manual adjustment to make totals match.
+Persist accountant values using `simples_homologation_save`; investigate every difference. Never alter system calculation merely to force equality.
 
-- [ ] **Step 4: Run database and runtime verification**
+- [ ] **Step 4: Run security/runtime verification**
 
-Run Supabase security/performance advisors; inspect Edge/Postgres logs after recalculation; verify no new cron; verify no API/action for transmission/payment; verify locked-period mutation protection.
+Run Supabase security/performance advisors; inspect Edge/Postgres logs; confirm no new cron; confirm no filing/payment endpoint; confirm lock protection.
 
 - [ ] **Step 5: Run complete regression suite**
 
@@ -300,28 +305,29 @@ Run:
 - `deno test supabase/functions/admin-service-intelligence-v1/simples-v1/*.test.ts`
 - `node scripts/test-simples-period-contract.mjs`
 - `node scripts/test-simples-admin-integration.mjs`
-- existing relevant smoke scripts under `scripts/`.
+- existing relevant scripts under `scripts/`.
 Expected: all PASS.
 
 - [ ] **Step 6: Write runbook**
 
-Document: monthly workflow; meaning of each status; how to resolve pendencies; how to compare with accountant; what evidence must be retained; recovery from Bling/API failure; prohibition on transmission in v1; future enablement criteria requiring explicit user authorization after consecutive homologated periods.
+Document monthly workflow, statuses, resolving pendencies, accountant comparison, retained evidence, Bling/API failure recovery, exports, V1 prohibition on transmission/payment and future enablement criteria requiring explicit authorization after consecutive homologated periods.
 
 - [ ] **Step 7: Commit**
 
-Commit message: `docs: add Simples Nacional homologation runbook`.
+`docs: add Simples Nacional homologation runbook`
 
 ---
 
 ## Acceptance Criteria
 
-1. Admin opens a competence and shows the fiscal revenue evidence and reconciliation status.
-2. Unmatched/uncertain documents and fiscal classifications block readiness visibly.
-3. ST or monophase segregation happens only with a valid, effective, evidenced rule.
-4. RBT12 and estimated DAS are reproducible from the stored rule/version and revenue snapshot.
-5. A clean period can be marked `ready` and then `locked`; locked data is immutable.
-6. Accountant values can be recorded and differences shown without rewriting the system calculation.
-7. No action transmits PGDAS-D, issues/pays DAS, or creates a fiscal side effect outside the existing evidence collection.
-8. RLS/security advisors show no new critical finding introduced by the module.
-9. Existing storefront, order, Bling, purchase XML and inventory flows continue unaffected.
-10. The runbook explains the exact monthly human workflow and the gate required before any future automation of official filing.
+1. Admin opens a competence and shows fiscal evidence and reconciliation status.
+2. Unmatched/uncertain documents and fiscal classifications visibly block readiness.
+3. ST/monophase segregation occurs only with valid, effective, evidenced rule.
+4. RBT12 and estimated DAS are reproducible from stored rule/version and snapshot.
+5. Clean period can become `ready` then `locked`; locked data is immutable.
+6. Accountant values can be stored and differences shown without rewriting system calculation.
+7. CSV and print-friendly report reproduce the period memory and values for PGDAS-D conference.
+8. No action transmits PGDAS-D, issues/pays DAS or mutates external fiscal documents.
+9. Supabase advisors show no new critical finding introduced by the module.
+10. Existing storefront, order, Bling, purchase XML and inventory flows remain unaffected.
+11. Runbook documents the monthly human workflow and future filing-automation gate.
