@@ -2460,3 +2460,27 @@ Configurar no PapoAI o webhook do Flow usando `mode=customer_flow_v1` e homologa
 Não habilitar `structured_order_commit_enabled` antes disso.
 
 Detalhes: `R8-PAPOAI-WHATSAPP-CHECKPOINT.md`.
+
+
+## Auditoria Bling — empresa fiscal x canais de venda — 2026-09-29
+Auditoria read-only feita pela API oficial do Bling, incorporada ao `probe_readonly` do `admin-service-intelligence-v1`.
+
+Estado confirmado:
+- empresa fiscal conectada: **SUPER CESTAS DONA ANTONIA LTDA**, CNPJ **51.385.335/0001-06**;
+- depósito ativo/padrão: **Geral**;
+- canais de venda cadastrados:
+  - `Loja Nuvem` — Nuvemshop — **habilitado**;
+  - `Super Cestas Dona Antonia` — Google Shopping — **desabilitado**;
+  - `Dona Antonia Google Shopping` — Google Shopping — **habilitado**;
+  - `Loja Mercado Livre - 01` — Mercado Livre — **habilitado**;
+  - `Bling Loja Virtual` — Bling Loja Virtual — **habilitado**;
+- amostra dos 100 pedidos de venda mais recentes no Bling: todos vieram sem `loja.id`; exemplos de `numeroLoja` são `VITRINE-...` e `SITE-...`. Portanto os canais acima **não fazem parte do fluxo atual de pedidos Dona Antônia**;
+- a importação de XML/NF-e de entrada continua usando `/nfe?tipo=0`, sem filtro de canal de venda, e valida o CNPJ da empresa. Esses canais antigos não são a causa direta de NF-e recebidas não aparecerem no Admin;
+- porém canais habilitados podem manter automações próprias de pedidos/estoque/preço no Bling e são ruído/risko desnecessário para a arquitetura de operação única.
+
+Decisão:
+- desativar no Bling os quatro canais sem uso: `Loja Nuvem`, `Dona Antonia Google Shopping`, `Loja Mercado Livre - 01` e `Bling Loja Virtual`;
+- manter `Super Cestas Dona Antonia` desabilitado;
+- **não excluir** histórico/vínculos nesta etapa; apenas desativar;
+- a API pública do Bling expõe esses canais somente para leitura (`GET /canais-venda` e `GET /canais-venda/{id}`), então a desativação deve ser feita em **Central de Extensões > Minhas instalações > ⋮ > Desativar**;
+- após a desativação, repetir o `probe_readonly` e confirmar que todos os cinco canais estão com situação 2/desabilitado.
