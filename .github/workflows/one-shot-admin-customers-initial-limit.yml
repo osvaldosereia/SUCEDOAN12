@@ -1,0 +1,37 @@
+name: One-shot admin customers initial limit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-admin-customers-initial-limit.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: RED - verify regression exists
+        run: |
+          if node scripts/test-admin-customers-initial-limit.mjs; then
+            echo 'Regression test unexpectedly passed before patch' >&2
+            exit 1
+          fi
+      - name: Apply minimal customer load fix
+        run: python3 scripts/patch-admin-customers-initial-limit.py
+      - name: GREEN - verify behavior
+        run: node scripts/test-admin-customers-initial-limit.mjs
+      - name: Commit fix
+        run: |
+          git config user.name 'OSSJU'
+          git config user.email 'Junior.sereia@hotmail.com'
+          git add supabase/functions/admin-service-intelligence-v1/index.ts
+          git diff --cached --check
+          git commit -m 'perf(customers): limitar carga inicial'
+          git pull --rebase origin main
+          git push origin main
