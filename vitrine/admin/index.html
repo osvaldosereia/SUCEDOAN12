@@ -1652,25 +1652,29 @@
     '</div>';
   }
 
-  function orderProblemReasons(o){
-    const reasons=[];
-    if(o?.history_sync?.state==='failed')reasons.push('Histórico pendente do cliente');
-    if(['delivered','cancelled'].includes(o?.status))return reasons;
-    const a=o?.delivery_address_snapshot||{};
+    function orderProblemReasons(o){
+  const reasons=[];
+  if(o?.history_sync?.state==='failed')reasons.push('Histórico pendente do cliente');
+  if(['delivered','cancelled'].includes(o?.status))return reasons;
+  const a=o?.delivery_address_snapshot||{};
+  const canonicalKnown=typeof o?.registration_complete==='boolean';
+  if(canonicalKnown){
+    const missing=Array.isArray(o?.registration_missing_fields)?o.registration_missing_fields:[];
+    if(missing.includes('name'))reasons.push('Cliente não identificado');
+    if(missing.includes('phone'))reasons.push('Telefone pendente');
+    if(missing.includes('address')||missing.includes('city'))reasons.push('Endereço incompleto');
+    if(o?.document_only_pending===true)reasons.push('CPF/CNPJ pendente');
+  }else{
     const customerName=o?.customer_name||a.customer_name||a.recipient_name||'';
     if(!String(customerName).trim())reasons.push('Cliente não identificado');
-    if(!String(a.street||'').trim()||!String(a.number||'').trim()||!String(a.city||'').trim()||!String(a.state||'').trim())reasons.push('Endereço incompleto');
-    const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
-    if(!String(payment).trim())reasons.push('Pagamento não informado');
-    if(o?.stock_readiness?.ok===false)reasons.push('Estoque insuficiente');
-    if(o?.delivery_return?.status==='returned_review')reasons.push('Retorno aguardando revisão');
-    return reasons;
+    if(!String(a.street||'').trim()||!String(a.city||'').trim())reasons.push('Endereço incompleto');
   }
-  function isBacklogOrder(o){
-    if(!o||['delivered','cancelled'].includes(o.status))return false;
-    const created=cuiabaDayKey(o.created_at),today=cuiabaDayKey(new Date());
-    return Boolean(created&&today&&created<today);
-  }
+  const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
+  if(!String(payment).trim())reasons.push('Pagamento não informado');
+  if(o?.stock_readiness?.ok===false)reasons.push('Estoque insuficiente');
+  if(o?.delivery_return?.status==='returned_review')reasons.push('Retorno aguardando revisão');
+  return reasons;
+}
   function orderIssueMatch(o,key='all'){
     const reasons=orderProblemReasons(o);
     if(key==='all')return reasons.length>0;
@@ -1690,14 +1694,12 @@
     const rank={created:2,confirmed:3,processing:4,ready:5,out_for_delivery:6,delivered:7,cancelled:8};
     return rank[o?.status]??8;
   }
-  function sortOperationalOrders(rows){
-    return [...rows].sort((a,b)=>{
-      const p=orderOperationalPriority(a)-orderOperationalPriority(b);
-      if(p!==0)return p;
-      const at=Date.parse(a?.created_at||0)||0,bt=Date.parse(b?.created_at||0)||0;
-      return bt-at;
-    });
-  }
+    function sortOperationalOrders(rows){
+  return [...rows].sort((a,b)=>{
+    const at=Date.parse(a?.created_at||0)||0,bt=Date.parse(b?.created_at||0)||0;
+    return bt-at;
+  });
+}
   function orderNextAction(o){
     const problems=orderProblemReasons(o);
     if(problems.length)return 'Corrigir: '+problems[0];

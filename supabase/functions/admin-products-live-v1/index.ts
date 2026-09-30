@@ -31,7 +31,7 @@ async function mappedProduct(p:any){
   return mp({...p,stock:s.effective_stock??0,__stock_breakdown:s});
 }
 const O=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
-const OP_SOURCES=["vitrine","manual_whatsapp","papoai","reorder"];
+const OP_SOURCES=["vitrine","storefront_v2","manual_whatsapp","papoai","reorder"];
 const LOCAL=new Set(["health","products","product_facets","product_save","product_quick_save","product_stock_set","offer_save","expirations","expiration_save","expiry_alerts","product_lots","product_fefo_preview","product_lifecycle_audit","ean_lookup","inventory_balance_resolve_ean","inventory_balance_status","balance_confirm","inventory_balance_prepare_unknown","inventory_balance_commit","inventory_incidents","inventory_incident_create","stock_recount_queue","stock_reconciliation_classify","stock_cutover_preflight","order_check","gondolas","gondola","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","gondola_clear","gondola_assign_count","orders","order","closure_orders","order_stock_shortages","order_update","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_consume_stock","bling_status","bling_status_catalog_probe","bling_oauth_begin","bling_probe_readonly","bling_reconcile_catalog_readonly","bling_reconcile_customers_readonly","bling_preview_order_sync","bling_reconcile_order_dependencies_readonly","bling_create_order_customer","bling_create_order_products","order_fiscal_status","order_fiscal_dispatch_canary_execute","order_fiscal_document_pdf","order_fiscal_confirm_payment","bling_finance_overview","bling_finance_action","history_sync_retry","order_component_replace","ops_summary","ops_attention","ops_shadow_readiness","ops_print_queue","ops_print_presented","manual_order_create","ops_papoai_capture_status","papoai_issue_catalog_link","ops_timeline","ops_delivery_runs","ops_delivery_plan","ops2_recover_ean_verified","inventory_sheet_create","inventory_sheet_preview","inventory_sheet_options","inventory_sheet_batches","inventory_sheet_manifest","inventory_sheet_pending_manual","inventory_sheet_cancel_scan","inventory_sheet_analyze","inventory_sheet_apply","baskets_admin","basket_admin","basket_product_search","basket_save","basket_item_save","basket_item_delete","basket_alternative_save","basket_alternative_delete","basket_lot_create","basket_lot_cancel","basket_product_search","basket_kits_admin","basket_kit_admin","basket_kit_lot_create","basket_kit_lot_cancel","basket_kit_lot_draft_save","basket_kit_lot_draft_delete","basket_kit_lot_draft_activate","basket_legacy_lot_release","basket_lot_sale_toggle","basket_lots_sale_bulk","basket_sales_runtime","basket_sales_mode_set","quotes","quote","quote_save","quote_status_set","cnpj_lookup"]);
 const WRITE_ACTIONS=new Set(["product_save","product_quick_save","product_stock_set","offer_save","expiration_save","product_lot_save","product_lot_tracking_complete","balance_confirm","inventory_balance_prepare_unknown","inventory_balance_commit","inventory_incident_create","stock_reconciliation_classify","order_check_start","order_check_scan","order_check_finish","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","gondola_clear","gondola_assign_count","ops_print_presented","ops_delivery_plan","manual_order_create","papoai_issue_catalog_link","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_update","order_consume_stock","bling_create_order_customer","bling_create_order_products","order_fiscal_dispatch_canary_execute","order_fiscal_confirm_payment","bling_finance_action","inventory_sheet_create","inventory_sheet_cancel_scan","inventory_sheet_analyze","inventory_sheet_apply","basket_save","basket_item_save","basket_item_delete","basket_alternative_save","basket_alternative_delete","basket_lot_create","basket_lot_cancel","basket_kit_lot_create","basket_kit_lot_cancel","basket_kit_lot_draft_save","basket_kit_lot_draft_delete","basket_kit_lot_draft_activate","basket_legacy_lot_release","basket_lot_sale_toggle","basket_lots_sale_bulk","basket_sales_mode_set","quote_save","quote_status_set"]);
 const cors=(r:Request)=>{const o=r.headers.get("origin")||"";return {"Access-Control-Allow-Origin":O.has(o)?o:"https://www.donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"content-type,authorization","Access-Control-Allow-Methods":"GET,POST,OPTIONS"}};
@@ -1033,8 +1033,35 @@ async function mapOrders(rows:any[]){
   const ids=rows.map((o:any)=>o.id);
   const [rmap,ready,smap,dmap]=await Promise.all([reservationRows(ids),stockReadiness(ids),paymentSettlementMap(ids),deliveryReturnMap(ids)]);
   const cids=[...new Set(rows.map((o:any)=>o.customer_id).filter(Boolean))],cm=new Map<string,any>();
-  if(cids.length){const cq=await db.from("customers").select("id,name").in("id",cids);if(cq.error)throw cq.error;for(const c of cq.data||[])cm.set(c.id,c)}
-  return rows.map((o:any)=>({id:o.id,order_number:o.order_number,status:uiStatus(o.status),total_cents:Math.round(Number(o.total||0)*100),payment_method_snapshot:paySnap(o,rmap.get(o.id)||[],smap.get(o.id)||null),delivery_return:dmap.get(o.id)||null,delivery_address_snapshot:o.delivery_address||{},whatsapp_phone_e164:o.phone_e164||o.delivery_address?.phone||"",customer_id:o.customer_id,created_at:o.created_at,confirmed_at:o.confirmed_at,delivered_at:o.delivered_at,cancelled_at:o.cancelled_at,customer_name:cm.get(o.customer_id)?.name||o.customer_snapshot?.name||o.delivery_address?.customer_name||o.delivery_address?.recipient_name||"",history_sync:{state:"synced",canonical:true},stock_readiness:ready.get(o.id)||null,source:o.source}));
+  if(cids.length){
+    const cq=await db.from("ops2_admin_customer_registration_v1")
+      .select("customer_id,customer_name,primary_whatsapp_e164,bling_contact_id,registration_complete,flow_required,document_only_pending,bling_ready,bling_linked,missing_fields,current_address")
+      .in("customer_id",cids);
+    if(cq.error)throw cq.error;
+    for(const c of cq.data||[])cm.set(c.customer_id,c);
+  }
+  return rows.map((o:any)=>{
+    const c=cm.get(o.customer_id)||{},orderAddress=meta(o.delivery_address),currentAddress=meta(c.current_address),address:any={...currentAddress};
+    for(const [k,v] of Object.entries(orderAddress)){
+      if(v!==null&&v!==undefined&&(typeof v!=="string"||v.trim()!==""))address[k]=v;
+    }
+    return {
+      id:o.id,order_number:o.order_number,status:uiStatus(o.status),total_cents:Math.round(Number(o.total||0)*100),
+      payment_method_snapshot:paySnap(o,rmap.get(o.id)||[],smap.get(o.id)||null),delivery_return:dmap.get(o.id)||null,
+      delivery_address_snapshot:address,
+      whatsapp_phone_e164:o.phone_e164||address.phone||c.primary_whatsapp_e164||"",
+      customer_id:o.customer_id,created_at:o.created_at,confirmed_at:o.confirmed_at,delivered_at:o.delivered_at,cancelled_at:o.cancelled_at,
+      customer_name:c.customer_name||o.customer_snapshot?.name||address.customer_name||address.recipient_name||"",
+      registration_complete:c.registration_complete===true,
+      registration_missing_fields:Array.isArray(c.missing_fields)?c.missing_fields:[],
+      flow_required:c.flow_required===true,
+      document_only_pending:c.document_only_pending===true,
+      bling_ready:c.bling_ready===true,
+      bling_linked:c.bling_linked===true,
+      bling_contact_id:c.bling_contact_id||null,
+      history_sync:{state:"synced",canonical:true},stock_readiness:ready.get(o.id)||null,source:o.source
+    };
+  });
 }
 async function ordersList(){const c=await cutover(),q=await db.from("orders").select("*").in("source",OP_SOURCES).gte("created_at",c.live_orders_since).order("created_at",{ascending:false}).limit(250);if(q.error)throw q.error;return await mapOrders(q.data||[])}
 async function orderDetailCanonical(orderId:any){
