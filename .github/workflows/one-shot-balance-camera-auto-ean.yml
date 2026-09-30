@@ -15,7 +15,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            supabase/functions/admin-products-live-v1/index.ts
+            supabase/functions/product-image-openai-v1/index.ts
+            scripts/test-balance-camera-auto-ean.mjs
+            tools/patch_balance_camera_auto_ean.py
+            tools/patch_balance_camera_auto_ean_fixups.py
+            .github/workflows/one-shot-balance-camera-auto-ean.yml
+          sparse-checkout-cone-mode: false
       - name: RED - contract must fail before implementation
         run: |
           if node scripts/test-balance-camera-auto-ean.mjs; then
