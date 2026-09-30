@@ -992,6 +992,141 @@
   .product-image-actions{display:flex;gap:8px;flex-wrap:wrap}.product-image-status{font-size:12px;color:var(--muted);padding:8px 10px;border-radius:10px;background:#fff;border:1px solid #e6e9e7}
   .product-image-status.ok{color:#176b43;background:#f1faf5;border-color:#cae7d5}.product-image-status.warn{color:#8a5a00;background:#fff8e6;border-color:#f0dfae}.product-image-status.error{color:#b3261e;background:#fff4f3;border-color:#efceca}
   @media(max-width:640px){.product-image-admin{grid-template-columns:96px 1fr}.product-image-preview{width:96px;height:96px}.product-image-actions{display:grid;grid-template-columns:1fr}.product-image-actions button{width:100%}}
+
+    /* Admin Navigation V6 · grupos profissionais sem overflow horizontal */
+    .admin-nav{
+      display:flex;
+      align-items:flex-start;
+      flex-wrap:wrap;
+      gap:7px;
+      overflow:visible;
+      position:relative;
+      padding:0 20px 10px;
+    }
+    .admin-nav .nav-group{position:relative;min-width:0}
+    .admin-nav .nav-group-toggle{
+      min-height:42px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      border:1px solid transparent;
+      border-radius:10px;
+      padding:0 13px;
+      background:transparent;
+      color:#48554d;
+      font-size:13px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .admin-nav .nav-group-toggle:hover,
+    .admin-nav .nav-group.open>.nav-group-toggle{
+      background:var(--soft);
+      color:var(--ink);
+    }
+    .admin-nav .nav-group.active>.nav-group-toggle{
+      background:var(--brand-soft);
+      border-color:#cfe1d5;
+      color:var(--brand2);
+      box-shadow:inset 0 -2px 0 var(--brand);
+    }
+    .admin-nav .nav-chevron{
+      display:inline-block;
+      font-size:12px;
+      line-height:1;
+      transition:transform .14s ease;
+    }
+    .admin-nav .nav-group.open .nav-chevron{transform:rotate(180deg)}
+    .admin-nav .nav-submenu{
+      position:absolute;
+      z-index:80;
+      top:calc(100% + 7px);
+      left:0;
+      width:max-content;
+      min-width:220px;
+      max-width:min(320px,calc(100vw - 24px));
+      display:grid;
+      gap:3px;
+      padding:7px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+      box-shadow:0 16px 38px rgba(16,35,23,.16);
+    }
+    .admin-nav .nav-submenu-right{left:auto;right:0}
+    .admin-nav .nav-submenu[hidden]{display:none!important}
+    .admin-nav .nav-submenu .tab{
+      width:100%;
+      min-height:40px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      padding:0 11px;
+      border:1px solid transparent;
+      border-radius:8px;
+      background:transparent;
+      color:#3f4d44;
+      font-size:13px;
+      font-weight:700;
+      text-align:left;
+      box-shadow:none;
+    }
+    .admin-nav .nav-submenu .tab:hover{background:var(--soft);color:var(--ink)}
+    .admin-nav .nav-submenu .tab.active{
+      background:var(--brand-soft);
+      border-color:#cfe1d5;
+      color:var(--brand2);
+      box-shadow:none;
+    }
+    @media(max-width:900px){
+      .admin-nav{padding-inline:14px}
+    }
+    @media(max-width:760px){
+      .admin-nav{
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:6px;
+        padding:6px 12px 9px;
+        overflow:visible;
+      }
+      .admin-nav .nav-group{position:static;min-width:0}
+      .admin-nav .nav-group-toggle{
+        width:100%;
+        min-width:0;
+        min-height:40px;
+        justify-content:space-between;
+        padding:0 10px;
+        font-size:12px;
+      }
+      .admin-nav .nav-submenu,
+      .admin-nav .nav-submenu-right{
+        left:12px;
+        right:12px;
+        top:calc(100% + 1px);
+        width:auto;
+        min-width:0;
+        max-width:none;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        max-height:min(65vh,480px);
+        overflow:auto;
+        overscroll-behavior:contain;
+      }
+      .admin-nav .nav-submenu .tab{
+        min-height:44px;
+        white-space:normal;
+        line-height:1.2;
+      }
+    }
+    @media(max-width:390px){
+      .admin-nav{grid-template-columns:repeat(2,minmax(0,1fr));padding-inline:9px}
+      .admin-nav .nav-submenu,
+      .admin-nav .nav-submenu-right{
+        left:9px;
+        right:9px;
+        grid-template-columns:1fr;
+      }
+    }
+
 </style>
 </head>
 <body>
@@ -1003,22 +1138,57 @@
         <button class="operator-badge unset" id="operatorBadge" type="button" title="Identificação usada no histórico operacional"><span class="operator-prefix">Operador: </span><span class="operator-name">identificar</span></button>
         <a class="store-link" href="/vitrine/" target="_blank" rel="noopener">Abrir vitrine ↗</a>
       </div>
-      <nav class="tabs wrap" aria-label="Admin">
-        <button class="tab" data-tab="today" type="button">Central</button>
-        <button class="tab" data-tab="orders" type="button">Pedidos</button>
-        <button class="tab" data-tab="separation" type="button">Separação</button>
-        <button class="tab" data-tab="expedition" type="button">Expedição</button>
-        <button class="tab" data-tab="driver" type="button">Entregador</button>
-        <button class="tab" data-tab="closure" type="button">Fechamento</button>
-        <button class="tab" data-tab="products" type="button">Produtos</button>
-        <button class="tab" data-tab="baskets" type="button">Cestas</button>
-        <button class="tab" data-tab="quotes" type="button">Orçamentos</button>
-        <button class="tab" data-tab="expiry" type="button">Validades</button>
-        <button class="tab" data-tab="purchases" type="button">Compras/XML</button>
-        <button class="tab" data-tab="balance" type="button">Balanço</button>
-        <button class="tab" data-tab="gondolas" type="button">Gôndolas</button>
-        <button class="tab" data-tab="customers" type="button">Clientes</button>
-        <button class="tab" data-tab="more" type="button">Mais</button>
+      <nav class="tabs wrap admin-nav" aria-label="Admin">
+        <div class="nav-group" data-nav-group="operation">
+          <button class="nav-group-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+            <span>Operação</span><span class="nav-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-submenu" hidden>
+            <button class="tab nav-subtab" data-tab="today" type="button">Central</button>
+            <button class="tab nav-subtab" data-tab="orders" type="button">Pedidos</button>
+            <button class="tab nav-subtab" data-tab="separation" type="button">Separação</button>
+            <button class="tab nav-subtab" data-tab="expedition" type="button">Expedição</button>
+            <button class="tab nav-subtab" data-tab="driver" type="button">Entregador</button>
+            <button class="tab nav-subtab" data-tab="closure" type="button">Fechamento</button>
+          </div>
+        </div>
+        <div class="nav-group" data-nav-group="catalog">
+          <button class="nav-group-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+            <span>Catálogo</span><span class="nav-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-submenu" hidden>
+            <button class="tab nav-subtab" data-tab="products" type="button">Produtos</button>
+            <button class="tab nav-subtab" data-tab="baskets" type="button">Cestas</button>
+            <button class="tab nav-subtab" data-tab="expiry" type="button">Validades</button>
+          </div>
+        </div>
+        <div class="nav-group" data-nav-group="commercial">
+          <button class="nav-group-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+            <span>Comercial</span><span class="nav-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-submenu" hidden>
+            <button class="tab nav-subtab" data-tab="quotes" type="button">Orçamentos</button>
+            <button class="tab nav-subtab" data-tab="customers" type="button">Clientes</button>
+          </div>
+        </div>
+        <div class="nav-group" data-nav-group="inventory">
+          <button class="nav-group-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+            <span>Estoque</span><span class="nav-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-submenu" hidden>
+            <button class="tab nav-subtab" data-tab="purchases" type="button">Compras/XML</button>
+            <button class="tab nav-subtab" data-tab="balance" type="button">Balanço</button>
+            <button class="tab nav-subtab" data-tab="gondolas" type="button">Gôndolas</button>
+          </div>
+        </div>
+        <div class="nav-group" data-nav-group="system">
+          <button class="nav-group-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+            <span>Sistema</span><span class="nav-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-submenu nav-submenu-right" hidden>
+            <button class="tab nav-subtab" data-tab="more" type="button">Mais</button>
+          </div>
+        </div>
       </nav>
     </header>
     <main class="wrap" id="content"></main>
@@ -1155,13 +1325,53 @@
   }
   if(OAUTH_RESULT==='error'){const d=OAUTH_DETAIL||'erro';history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Falha ao reconectar Bling: '+d),500)}
 
+  function closeNavMenus(exceptGroup=null){
+    document.querySelectorAll('.nav-group').forEach(group=>{
+      if(group===exceptGroup)return;
+      group.classList.remove('open');
+      const toggle=group.querySelector('.nav-group-toggle');
+      const menu=group.querySelector('.nav-submenu');
+      if(toggle)toggle.setAttribute('aria-expanded','false');
+      if(menu)menu.hidden=true;
+    });
+  }
+  function syncNavGroups(){
+    document.querySelectorAll('.nav-group').forEach(group=>{
+      const active=Boolean(group.querySelector('[data-tab="'+state.tab+'"]'));
+      group.classList.toggle('active',active);
+      const toggle=group.querySelector('.nav-group-toggle');
+      const activeItem=group.querySelector('[data-tab="'+state.tab+'"]');
+      if(toggle){
+        const label=activeItem?.textContent?.trim()||'';
+        toggle.title=active?('Seção atual: '+label):'Abrir submenu';
+      }
+    });
+  }
+  document.querySelectorAll('.nav-group-toggle').forEach(toggle=>{
+    toggle.onclick=event=>{
+      event.stopPropagation();
+      const group=toggle.closest('.nav-group');
+      if(!group)return;
+      const willOpen=!group.classList.contains('open');
+      closeNavMenus(group);
+      group.classList.toggle('open',willOpen);
+      toggle.setAttribute('aria-expanded',willOpen?'true':'false');
+      const menu=group.querySelector('.nav-submenu');
+      if(menu)menu.hidden=!willOpen;
+    };
+  });
+  document.addEventListener('click',event=>{
+    if(!event.target.closest('.admin-nav'))closeNavMenus();
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape')closeNavMenus();
+  });
+
   function setTab(tab){
     state.tab=tab;
     document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-    const activeTab=document.querySelector('[data-tab="'+tab+'"]');
-    if(activeTab&&window.innerWidth<=760){
-      requestAnimationFrame(()=>activeTab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}));
-    }
+    syncNavGroups();
+    closeNavMenus();
     if(tab==='today')renderToday();
     if(tab==='products')renderProducts();
     if(tab==='baskets')renderBaskets();
