@@ -12,6 +12,7 @@ create table if not exists public.ops2_whatsapp_outbox_v1 (
   phone_e164 text not null,
   channel_origin text not null check (channel_origin in ('0975','1018')),
   channel_phone_e164 text not null,
+  delivery_mode text not null default 'utility_template' check (delivery_mode in ('session_text','utility_template')),
   message_kind text not null default 'order_received',
   payload jsonb not null default '{}'::jsonb,
   status text not null default 'pending' check (status in ('pending','sending','sent','retry','failed','suppressed')),
@@ -27,7 +28,7 @@ create table if not exists public.ops2_whatsapp_outbox_v1 (
 );
 
 create index if not exists ops2_whatsapp_outbox_v1_dispatch_idx
-  on public.ops2_whatsapp_outbox_v1(status, available_at, created_at)
+  on public.ops2_whatsapp_outbox_v1(status, delivery_mode, channel_origin, available_at, created_at)
   where status in ('pending','retry');
 
 alter table public.ops2_whatsapp_outbox_v1 enable row level security;
@@ -52,6 +53,7 @@ declare
   v_kind text:=coalesce(nullif(btrim(p_message_kind),''),'order_received');
   v_channel_origin text;
   v_channel_phone_e164 text;
+  v_delivery_mode text:='utility_template';
   v_payload jsonb;
   v_outbox public.ops2_whatsapp_outbox_v1%rowtype;
   v_reused boolean:=false;
@@ -86,30 +88,15 @@ begin
     return jsonb_build_object('ok',false,'error','customer_phone_missing');
   end if;
 
-  if v_order.whatsapp_account_id is not null then
-    select wa.* into v_account
-    from public.whatsapp_accounts wa
-    where wa.id=v_order.whatsapp_account_id
-      and wa.is_active=true
-    limit 1;
-  end if;
-
-  if v_account.id is null and v_order.conversation_id is not null then
+  -- A conversa define tanto o canal quanto a janela de 24h da Meta.
+  if v_order.conversation_id is not null then
     select c.* into v_conversation
     from public.conversations c
     where c.id=v_order.conversation_id
     limit 1;
-
-    if v_conversation.whatsapp_account_id is not null then
-      select wa.* into v_account
-      from public.whatsapp_accounts wa
-      where wa.id=v_conversation.whatsapp_account_id
-        and wa.is_active=true
-      limit 1;
-    end if;
   end if;
 
-  if v_account.id is null then
+  if v_conversation.id is null then
     select c.* into v_conversation
     from public.conversations c
     where c.whatsapp_account_id is not null
@@ -124,14 +111,22 @@ begin
       coalesce(c.created_at,'epoch'::timestamptz)
     ) desc
     limit 1;
+  end if;
 
-    if v_conversation.whatsapp_account_id is not null then
-      select wa.* into v_account
-      from public.whatsapp_accounts wa
-      where wa.id=v_conversation.whatsapp_account_id
-        and wa.is_active=true
-      limit 1;
-    end if;
+  if v_order.whatsapp_account_id is not null then
+    select wa.* into v_account
+    from public.whatsapp_accounts wa
+    where wa.id=v_order.whatsapp_account_id
+      and wa.is_active=true
+    limit 1;
+  end if;
+
+  if v_account.id is null and v_conversation.whatsapp_account_id is not null then
+    select wa.* into v_account
+    from public.whatsapp_accounts wa
+    where wa.id=v_conversation.whatsapp_account_id
+      and wa.is_active=true
+    limit 1;
   end if;
 
   v_channel_phone_e164:=public.canonical_whatsapp_e164_br_v2(v_account.phone_e164);
@@ -141,6 +136,7 @@ begin
   elsif right(coalesce(v_channel_phone_e164,''),4)='0975' then
     v_channel_origin:='0975';
   else
+    -- Entrada direta no site usa o 0975 como canal operacional padrão.
     v_channel_origin:='0975';
     select public.canonical_whatsapp_e164_br_v2(wa.phone_e164)
       into v_channel_phone_e164
@@ -152,6 +148,14 @@ begin
     v_channel_phone_e164:=coalesce(v_channel_phone_e164,'+5565998150975');
   end if;
 
+  -- Margem de 10 minutos evita tentar texto livre quando a janela está prestes a fechar.
+  if v_conversation.last_inbound_at is not null
+     and v_conversation.last_inbound_at >= now()-interval '23 hours 50 minutes' then
+    v_delivery_mode:='session_text';
+  else
+    v_delivery_mode:='utility_template';
+  end if;
+
   v_payload:=jsonb_build_object(
     'kind',v_kind,
     'order_id',v_order.id,
@@ -159,6 +163,7 @@ begin
     'phone_e164',v_phone,
     'channel_origin',v_channel_origin,
     'channel_phone_e164',v_channel_phone_e164,
+    'delivery_mode',v_delivery_mode,
     'order',jsonb_build_object(
       'id',v_order.id,
       'order_number',v_order.order_number,
@@ -177,11 +182,11 @@ begin
 
   insert into public.ops2_whatsapp_outbox_v1 as q(
     order_id,customer_id,conversation_id,whatsapp_account_id,
-    phone_e164,channel_origin,channel_phone_e164,message_kind,payload,status
+    phone_e164,channel_origin,channel_phone_e164,delivery_mode,message_kind,payload,status
   ) values (
     v_order.id,v_order.customer_id,coalesce(v_order.conversation_id,v_conversation.id),
     coalesce(v_order.whatsapp_account_id,v_account.id),
-    v_phone,v_channel_origin,v_channel_phone_e164,v_kind,v_payload,'pending'
+    v_phone,v_channel_origin,v_channel_phone_e164,v_delivery_mode,v_kind,v_payload,'pending'
   )
   on conflict (order_id,message_kind) do update
      set customer_id=excluded.customer_id,
@@ -190,6 +195,7 @@ begin
          phone_e164=excluded.phone_e164,
          channel_origin=excluded.channel_origin,
          channel_phone_e164=excluded.channel_phone_e164,
+         delivery_mode=excluded.delivery_mode,
          payload=excluded.payload,
          updated_at=now()
    where q.status in ('pending','retry')
@@ -206,6 +212,7 @@ begin
     'ok',true,
     'outbox_id',v_outbox.id,
     'status',v_outbox.status,
+    'delivery_mode',v_outbox.delivery_mode,
     'channel_origin',v_outbox.channel_origin,
     'channel_phone_e164',v_outbox.channel_phone_e164,
     'phone_e164',v_outbox.phone_e164,
@@ -283,7 +290,10 @@ after update of conversation_id,whatsapp_account_id,customer_id,phone_e164 on pu
 for each row
 execute function public.ops2_refresh_storefront_order_whatsapp_v1();
 
-create or replace function public.ops2_claim_whatsapp_outbox_v1()
+create or replace function public.ops2_claim_whatsapp_outbox_v1(
+  p_delivery_mode text default null,
+  p_channel_origin text default null
+)
 returns jsonb
 language plpgsql
 security definer
@@ -291,7 +301,22 @@ set search_path to ''
 as $$
 declare
   v_item public.ops2_whatsapp_outbox_v1%rowtype;
+  v_mode text:=nullif(btrim(coalesce(p_delivery_mode,'')),'');
+  v_channel text:=nullif(btrim(coalesce(p_channel_origin,'')),'');
 begin
+  -- Se o cliente falou depois da compra, a fila pode usar texto dentro da janela.
+  update public.ops2_whatsapp_outbox_v1 q
+     set delivery_mode='session_text',
+         payload=jsonb_set(q.payload,'{delivery_mode}','"session_text"'::jsonb,true),
+         updated_at=now()
+    from public.conversations c
+   where q.status in ('pending','retry')
+     and q.delivery_mode='utility_template'
+     and q.phone_e164=public.canonical_whatsapp_e164_br_v2(c.wa_contact_e164)
+     and (q.whatsapp_account_id is null or q.whatsapp_account_id=c.whatsapp_account_id)
+     and c.last_inbound_at is not null
+     and c.last_inbound_at >= now()-interval '23 hours 50 minutes';
+
   update public.ops2_whatsapp_outbox_v1
      set status='retry',locked_at=null,updated_at=now(),last_error=coalesce(last_error,'stale_sending_recovered')
    where status='sending'
@@ -304,6 +329,8 @@ begin
     where q.status in ('pending','retry')
       and q.available_at <= now()
       and q.attempt_count < 5
+      and (v_mode is null or q.delivery_mode=v_mode)
+      and (v_channel is null or q.channel_origin=v_channel)
     order by q.available_at,q.created_at
     for update skip locked
     limit 1
@@ -326,8 +353,8 @@ begin
 end;
 $$;
 
-revoke all on function public.ops2_claim_whatsapp_outbox_v1() from public,anon,authenticated;
-grant execute on function public.ops2_claim_whatsapp_outbox_v1() to service_role;
+revoke all on function public.ops2_claim_whatsapp_outbox_v1(text,text) from public,anon,authenticated;
+grant execute on function public.ops2_claim_whatsapp_outbox_v1(text,text) to service_role;
 
 create or replace function public.ops2_finish_whatsapp_outbox_v1(
   p_outbox_id uuid,
