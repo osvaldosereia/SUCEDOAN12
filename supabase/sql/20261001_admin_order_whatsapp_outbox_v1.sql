@@ -160,6 +160,10 @@ begin
          channel_origin=excluded.channel_origin,
          channel_phone_e164=excluded.channel_phone_e164,
          payload=excluded.payload,
+         status=case when q.status='failed' then 'pending' else q.status end,
+         available_at=case when q.status='failed' then now() else q.available_at end,
+         locked_at=case when q.status='failed' then null else q.locked_at end,
+         last_error=case when q.status='failed' then null else q.last_error end,
          updated_at=now()
    where q.status in ('pending','retry','failed')
   returning * into v_customer_row;
@@ -185,6 +189,10 @@ begin
          channel_origin='1018',
          channel_phone_e164=excluded.channel_phone_e164,
          payload=excluded.payload,
+         status=case when q.status='failed' then 'pending' else q.status end,
+         available_at=case when q.status='failed' then now() else q.available_at end,
+         locked_at=case when q.status='failed' then null else q.locked_at end,
+         last_error=case when q.status='failed' then null else q.last_error end,
          updated_at=now()
    where q.status in ('pending','retry','failed')
   returning * into v_ops_row;
