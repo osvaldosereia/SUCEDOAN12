@@ -2808,6 +2808,15 @@ async function cnpjLookup(u:URL){
   }
 }
 
+async function orderWhatsappGatewayReadiness(){
+  try{
+    const res=await fetch(U+"/functions/v1/whatsapp-order-outbound-v1",{
+      method:"GET",headers:{"apikey":K,"x-internal-key":K},signal:AbortSignal.timeout(8000)
+    });
+    const data=await res.json().catch(()=>({ok:false,error:"invalid_gateway_response"}));
+    return {ready:res.ok&&data?.ready===true,providers:data?.providers||{},error:res.ok?null:(data?.error||"gateway_unavailable")};
+  }catch(e){return {ready:false,providers:{},error:"gateway_unreachable"}}
+}
 async function orderWhatsappRegistrationStatus(rawId:any){
   const oid=id(rawId);if(!oid)return {error:"invalid_order",status:400};
   const oq=await db.from("orders").select("id,customer_id,phone_e164,conversation_id").eq("id",oid).maybeSingle();
@@ -2817,9 +2826,10 @@ async function orderWhatsappRegistrationStatus(rawId:any){
     const cq=await db.from("ops2_admin_customer_registration_v1").select("primary_whatsapp_e164,registration_complete").eq("customer_id",oq.data.customer_id).maybeSingle();
     if(cq.error)throw cq.error;phone=phone||tx(cq.data?.primary_whatsapp_e164,40);registrationComplete=cq.data?.registration_complete===true;
   }
-  const [wq,lq]=await Promise.all([
+  const [wq,lq,gateway]=await Promise.all([
     db.from("ops2_whatsapp_outbox_v1").select("recipient_kind,status,attempt_count,sent_at,last_error,channel_origin,phone_e164,updated_at").eq("order_id",oid).eq("message_kind","order_received").order("created_at",{ascending:false}),
-    db.from("ops2_order_registration_links_v1").select("id,phone_e164,expires_at,consumed_at,consumed_customer_id,revoked_at,created_at").eq("order_id",oid).order("created_at",{ascending:false}).limit(1)
+    db.from("ops2_order_registration_links_v1").select("id,phone_e164,expires_at,consumed_at,consumed_customer_id,revoked_at,created_at").eq("order_id",oid).order("created_at",{ascending:false}).limit(1),
+    orderWhatsappGatewayReadiness()
   ]);
   if(wq.error)throw wq.error;if(lq.error)throw lq.error;
   const whatsapp:any={};for(const row of wq.data||[])if(!whatsapp[row.recipient_kind])whatsapp[row.recipient_kind]=row;
@@ -2831,7 +2841,7 @@ async function orderWhatsappRegistrationStatus(rawId:any){
     else if(Date.parse(link.expires_at)<=Date.now())linkState="expired";
     else linkState="active";
   }
-  return {order_id:oid,phone_e164:phone,registration_complete:registrationComplete,whatsapp,registration_link:link?{...link,state:linkState}:null};
+  return {order_id:oid,phone_e164:phone,registration_complete:registrationComplete,whatsapp_ready:gateway.ready===true,whatsapp_provider:gateway,whatsapp,registration_link:link?{...link,state:linkState}:null};
 }
 async function dispatchOrderWhatsapp(oid:string){
   const deliveries:any[]=[];
@@ -2849,6 +2859,8 @@ async function dispatchOrderWhatsapp(oid:string){
 }
 async function orderWhatsappSend(p:any){
   const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};
+  const gateway=await orderWhatsappGatewayReadiness();
+  if(gateway.ready!==true)return {error:"order_whatsapp_provider_not_configured",status:409,provider:gateway};
   const q=await db.rpc("ops2_enqueue_admin_order_whatsapp_v1",{p_order_id:oid});
   if(q.error)throw q.error;if(q.data?.ok!==true)return {error:q.data?.error||"whatsapp_enqueue_failed",status:409};
   const deliveries=await dispatchOrderWhatsapp(oid),current:any=await orderWhatsappRegistrationStatus(oid);

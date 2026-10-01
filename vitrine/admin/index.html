@@ -7636,15 +7636,17 @@
     return '<div class="section-title">WhatsApp e cadastro</div><div class="rule-notice" id="orderWhatsappRegistrationPanel">'+
       '<strong>'+esc(phone?formatPhone(phone):'Pedido sem WhatsApp')+'</strong><div id="orderWhatsappRegistrationStatus" class="sub">'+(registered?'Cadastro concluído':'Cadastro pendente')+'</div>'+
       '<div class="print-actions" style="margin-top:10px">'+
-        '<button class="primary" id="sendOrderWhatsApp" type="button" '+(phone?'':'disabled')+'>Enviar pedido no WhatsApp</button>'+
-        '<button class="secondary" id="issueOrderRegistrationLink" type="button" '+(phone||registered?'':'disabled')+'>'+(registered?'Cadastro concluído':'Gerar link de cadastro')+'</button>'+
+        '<button class="primary" id="sendOrderWhatsApp" type="button" disabled>Enviar pedido no WhatsApp</button>'+
+        '<button class="secondary" id="issueOrderRegistrationLink" type="button" '+(phone&&!registered?'':'disabled')+'>'+(registered?'Cadastro concluído':'Gerar link de cadastro')+'</button>'+
       '</div><div id="orderRegistrationLinkActions" class="hidden" style="margin-top:10px"><div class="sub" id="orderRegistrationLinkValue"></div><div class="print-actions" style="margin-top:8px"><button class="secondary" id="openOrderRegistrationWhatsApp" type="button">Abrir WhatsApp com link</button><button class="secondary" id="copyOrderRegistrationLink" type="button">Copiar link</button></div></div></div>';
   }
   function renderCurrentOrderWhatsappStatus(data){
     const host=$('#orderWhatsappRegistrationStatus');if(!host)return;
-    const customer=data?.whatsapp?.customer,ops=data?.whatsapp?.ops_0975,link=data?.registration_link;
+    const customer=data?.whatsapp?.customer,ops=data?.whatsapp?.ops_0975,link=data?.registration_link,sendBtn=$('#sendOrderWhatsApp');
     const lines=[];
     lines.push(data?.registration_complete?'Cadastro concluído':'Cadastro pendente');
+    if(sendBtn)sendBtn.disabled=!(data?.phone_e164&&data?.whatsapp_ready===true);
+    if(data?.whatsapp_ready!==true)lines.push('Envio do pedido aguardando configuração PapoAI');
     if(customer?.status)lines.push('Cliente: '+(customer.status==='sent'?'pedido enviado':customer.status));
     if(ops?.status)lines.push('Cópia 0975: '+(ops.status==='sent'?'enviada':ops.status));
     if(link?.state==='active')lines.push('Link de cadastro ativo');
