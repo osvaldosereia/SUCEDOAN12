@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Atendimento · Dona Antônia</title>
+  <link rel="stylesheet" href="./attendance.css">
+</head>
+<body>
+  <main class="attendance-app" id="attendanceApp">
+    <header class="attendance-topbar">
+      <div>
+        <strong>Atendimento</strong>
+        <span id="connectionStatus">Carregando canais…</span>
+      </div>
+      <label class="global-search">🔎 <input id="globalSearch" type="search" placeholder="Buscar cliente ou telefone" autocomplete="off"></label>
+    </header>
+
+    <nav class="mobile-channel-tabs" aria-label="Canais">
+      <button type="button" data-mobile-channel="0975" class="active">0975</button>
+      <button type="button" data-mobile-channel="1018">1018</button>
+    </nav>
+
+    <section class="attendance-grid">
+      <aside class="queue-column active-mobile" data-channel="0975" aria-label="Conversas 0975">
+        <header class="queue-head"><div><strong>0975</strong><small id="status0975">Conectando…</small></div><span class="attention-count" id="count0975">0</span></header>
+        <div class="queue-filters" data-filter-channel="0975"><button class="active" data-filter="all">Todos</button><button data-filter="unread">Não lidos</button><button data-filter="human">Humano</button></div>
+        <div class="queue-list" id="queue0975"></div>
+      </aside>
+
+      <aside class="queue-column" data-channel="1018" aria-label="Conversas 1018">
+        <header class="queue-head"><div><strong>1018</strong><small id="status1018">Conectando…</small></div><span class="attention-count" id="count1018">0</span></header>
+        <div class="queue-filters" data-filter-channel="1018"><button class="active" data-filter="all">Todos</button><button data-filter="unread">Não lidos</button><button data-filter="human">Humano</button></div>
+        <div class="queue-list" id="queue1018"></div>
+      </aside>
+
+      <section class="conversation-pane" id="conversationPane">
+        <header class="conversation-head" id="conversationHead">
+          <div><strong>Selecione uma conversa</strong><small>0975 e 1018 permanecem separados.</small></div>
+          <button type="button" class="context-open" id="openContextBtn" disabled>Cliente</button>
+        </header>
+        <div class="conversation-empty" id="conversationEmpty">Escolha uma conversa em uma das duas filas.</div>
+        <div class="messages" id="messages" hidden></div>
+        <div class="composer" id="composer">
+          <div class="service-window neutral" id="serviceWindow">Nenhuma conversa selecionada</div>
+          <textarea id="messageDraft" rows="2" placeholder="Envio humano em homologação" disabled></textarea>
+          <div class="composer-actions"><button type="button" id="quickRepliesBtn" disabled>Respostas rápidas</button><button type="button" id="catalogBtn" disabled>Catálogo</button><button type="button" class="primary" id="sendBtn" disabled>Enviar</button></div>
+          <small>Envio humano em homologação</small>
+        </div>
+      </section>
+
+      <aside class="context-pane" id="contextPane" aria-label="Contexto do cliente">
+        <header class="context-tabs">
+          <button type="button" class="active" data-context-tab="customer">Cliente</button>
+          <button type="button" data-context-tab="orders">Pedidos</button>
+          <button type="button" data-context-tab="products">Produtos</button>
+          <button type="button" data-context-tab="assistant">Assistente</button>
+          <button type="button" class="context-close" id="closeContextBtn" aria-label="Fechar">×</button>
+        </header>
+        <div class="context-body" id="contextBody"><div class="context-empty">Selecione uma conversa.</div></div>
+      </aside>
+    </section>
+  </main>
+  <script type="module" src="./attendance.js"></script>
+</body>
+</html>
