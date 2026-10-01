@@ -41,6 +41,15 @@ test('normalizes a PapoAI inbound text message', () => {
   assert.equal(out.message.sender_kind,'customer');
 });
 
+test('normalizes the current PapoAI webhook shape used in production', () => {
+  const payload={event:'message.received',data:{message:{id:'internal-1',external_id:'wamid.real',type:'text',content:'Olá',phone_number_from:'5565993426299',phone_number_to:'5565998150975',timestamp:'1790816400'},contact:{id:'contact-1',name:'Cliente'},session:{uid:'session-1',agentbot_id:'2796'}}};
+  const out=canonicalMessageFromPapoAi(payload,{whatsappAccountId:'acct-0975',receivedAt:'2026-10-01T01:00:00.000Z'});
+  assert.equal(out.associable,true);
+  assert.equal(out.provider_message_id,'wamid.real');
+  assert.equal(out.phone_e164,'+5565993426299');
+  assert.equal(out.message.provider_conversation_id,'session-1');
+});
+
 const metaBase=(message)=>({object:'whatsapp_business_account',entry:[{id:'waba-1',changes:[{field:'messages',value:{messaging_product:'whatsapp',metadata:{display_phone_number:'5565984491018',phone_number_id:'pn-1018'},contacts:[{profile:{name:'Cliente'},wa_id:'5565999991111'}],messages:[message]}}]}]});
 
 test('normalizes Meta text, audio, image and interactive messages to the resolved account', () => {
