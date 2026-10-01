@@ -8,28 +8,35 @@ const sqlPath = 'supabase/sql/20260930_site_only_registration_checkout_v1.sql';
 assert.ok(exists(sqlPath), 'migration SQL must exist');
 const sql = read(sqlPath);
 assert.match(sql, /ops2_upsert_storefront_registration_v1/i, 'canonical registration RPC required');
-assert.match(sql, /ops2_valid_cpf_cnpj_v1/i, 'CPF\/CNPJ validation required');
-assert.match(sql, /Cuiab|Varzea|Várzea/i, 'delivery city restriction required');
+assert.match(sql, /ops2_valid_cpf_cnpj_v1/i, 'CPF\/CNPJ validation required when registration data is provided');
+assert.match(sql, /Cuiab|Varzea|Várzea/i, 'delivery city restriction required for saved addresses');
 assert.match(sql, /DISABLE TRIGGER\s+trg_ops2_auto_process_papoai_flow_v2/i, 'Flow auto-processing trigger must be disabled');
 assert.match(sql, /DISABLE TRIGGER\s+trg_ops2_registration_journey_outbound_intent_v1/i, 'Flow outbound intent trigger must be disabled');
 
 const sf = read('supabase/functions/storefront-v2/index.ts');
 for (const action of ['customer_lookup','customer_register','delivery_options']) {
-  assert.ok(sf.includes(action), `storefront-v2 must expose ${action}`);
+  assert.ok(sf.includes(action), `storefront-v2 must expose optional helper action ${action}`);
 }
 assert.match(sf, /CUTOFF_HOUR\s*=\s*11/, 'cutoff must be 11:00 Cuiaba');
-assert.match(sf, /delivery_date/i, 'submit_order must accept selected delivery date');
-assert.match(sf, /invalid_delivery_date|delivery_date_required/i, 'backend must reject invalid/missing delivery date');
-assert.match(sf, /registration_complete/i, 'backend must require canonical registration state');
+assert.match(sf, /const deliveryDate=txt\(p\?\.delivery_date,10\),del=deliveryDate\?selectedDelivery\(deliveryDate\):null/, 'delivery date must be optional at submit');
+assert.match(sf, /p_phone:ph\|\|null/, 'phone must be optional at submit');
+assert.match(sf, /p_payment_method:pay\|\|null/, 'payment method must be optional at submit');
+assert.match(sf, /p_delivery:del\|\|\{\}/, 'delivery selection must be optional at submit');
+const submit = sf.match(/async function submit\(req:Request,p:any\)\{[\s\S]*?\n\}/)?.[0] || '';
+assert.ok(submit, 'submit_order implementation must exist');
+assert.doesNotMatch(submit, /delivery_date_required|registration_required|payment_required|invalid_phone/, 'optional checkout fields must not block order creation');
+assert.match(sf, /registration_complete/i, 'registration state may still be returned for CRM context');
 
 for (const page of ['index.html','vitrine/index.html']) {
   const html = read(page);
-  assert.ok(html.includes('Confirmar este endereço'), `${page}: existing address confirmation required`);
-  assert.ok(html.includes('Alterar endereço'), `${page}: address edit required`);
-  assert.ok(html.includes('CPF'), `${page}: CPF field required`);
-  assert.ok(html.includes('Data de entrega'), `${page}: delivery date selector required`);
-  assert.ok(html.includes('customer_register'), `${page}: canonical registration endpoint required`);
-  assert.ok(html.includes('delivery_options'), `${page}: delivery options endpoint required`);
+  assert.ok(html.includes('Confirmar este endereço'), `${page}: optional saved-address confirmation UI must remain available`);
+  assert.ok(html.includes('Alterar endereço'), `${page}: optional address edit UI must remain available`);
+  assert.ok(html.includes('CPF'), `${page}: optional registration CPF field must remain available`);
+  assert.match(html, /Seu WhatsApp <span class="muted">\(opcional\)<\/span>/, `${page}: WhatsApp must remain optional`);
+  assert.match(html, /Data de entrega <span class="muted">\(opcional\)<\/span>/, `${page}: delivery date must remain optional`);
+  assert.match(html, /Como você vai pagar\? <span class="muted">\(opcional\)<\/span>/, `${page}: payment must remain optional`);
+  assert.ok(html.includes('customer_register'), `${page}: optional canonical registration endpoint required`);
+  assert.ok(html.includes('delivery_options'), `${page}: optional delivery choices endpoint required`);
 }
 
 assert.ok(exists('cadastro/index.html'), '/cadastro page must exist');
