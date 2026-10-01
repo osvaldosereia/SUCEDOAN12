@@ -8,7 +8,7 @@ Date: 2026-10-01
 
 Finding: production refused creation of a new `admin-attendance-v1` Edge Function with `Max number of functions reached for project`.
 
-Decision: reuse the already-retired `admin-whatsapp-ops-v1` slot. Production version 9 only returned HTTP 410 `retired_outside_site_vitrine_admin`, so it had no active operational contract to preserve. The new attendance gateway is deployed as version 10 under the same slug. No function was deleted and no plan upgrade/spend-cap change was required.
+Decision: reuse the already-retired `admin-whatsapp-ops-v1` slot. Production version 9 only returned HTTP 410 `retired_outside_site_vitrine_admin`, so it had no active operational contract to preserve. The new attendance gateway is deployed under the same slug. No function was deleted and no plan upgrade/spend-cap change was required.
 
 Cost if wrong: an unknown legacy caller of `admin-whatsapp-ops-v1` would now receive the authenticated attendance API instead of HTTP 410. This is fail-closed for unauthenticated callers because the new gateway requires a valid active Admin bearer session.
 
@@ -28,8 +28,7 @@ Cost if wrong: an unknown legacy caller of `admin-whatsapp-ops-v1` would now rec
 - New-function deploy under `admin-attendance-v1` was rejected by project function-count limit before creation.
 - `admin-whatsapp-ops-v1` production source was inspected and confirmed retired (HTTP 410 only).
 - Attendance gateway deployed successfully as `admin-whatsapp-ops-v1` version 10 with custom bearer Admin validation and `verify_jwt=false` at platform layer.
-- Gateway action surface remains limited to GET `accounts|queue|conversation|context|products` and POST `mark_read|follow_up|issue_catalog`.
-- No `send_message`, human takeover or outbound WhatsApp action exists in this phase.
+- Initial gateway action surface was limited to GET `accounts|queue|conversation|context|products` and POST `mark_read|follow_up|issue_catalog`.
 - External HTTP smoke from the model runtime could not run because outbound DNS/network is disabled. Underlying RPC behavior and permissions were validated directly in production SQL; gateway unit contract was previously RED→GREEN in the minimal local workspace.
 
 ## Task 3 evidence
@@ -64,6 +63,28 @@ Cost if wrong: an operator must use the existing customer/marketing workflow for
 - Catalog generation calls the already authenticated `issue_catalog` gateway action and places the resulting URL in the draft only.
 - Follow-up uses the canonical `follow_up` action; quick replies only fill the draft.
 
+## Ruling 4 — Applied migrations are immutable
+
+Finding: the original Task 5 text said to modify `20261001_admin_attendance_v1.sql`, but that migration had already been applied successfully to production during Task 1.
+
+Decision: preserve the applied migration exactly and add a new additive file `supabase/sql/20261001_admin_attendance_outbound_v1.sql` for the outbound queue RPC.
+
+Cost if wrong: there are two attendance SQL files instead of one consolidated file, but deployment history remains reproducible and production drift is avoided.
+
+## Task 5 evidence
+
+- Migration `admin_attendance_outbound_v1` applied successfully.
+- Added service-role-only RPC `ops2_admin_attendance_enqueue_text_v1(uuid,text,text)`.
+- Browser destination fields are rejected by the gateway; phone/account/customer are resolved server-side from the conversation.
+- Runtime gate requires `outbound_provider='papoai'`, `send_enabled=true`, `human_send_enabled=true` and non-null `homologated_at`.
+- Service-window gate rejects exactly/over 24 hours; text limit is 4,000 Unicode characters; rate limit is 20 queued human-attendance messages per conversation per 60 seconds.
+- Idempotency uses advisory transaction locking plus the existing unique outbox key.
+- Production gate-off test on a real recent conversation returned `human_send_not_homologated` with `whatsapp_outbox_v1=0` and zero outbound canonical messages.
+- Allowed-path verification ran inside a transaction deliberately rolled back: 23h59 allowed, exact duplicate reused the same rows, conflicting duplicate rejected, 4,001 chars rejected, exactly 24h rejected, and attempt 21/60s rate-limited.
+- After rollback, both channels remained `human_send_enabled=false`, `homologated_at=null`, outbox remained 0 and outbound message count remained 0.
+- RPC execute privilege is false for `anon`/`authenticated` and true only for `service_role`.
+- `admin-whatsapp-ops-v1` version 11 exposes `send_text`, but there is still no transport dispatcher and the UI `Enviar` button remains disabled.
+
 ## Safety state
 
-Human WhatsApp send remains disabled. PapoAI automations, ANA and both live channels were not changed by Tasks 1–4. No client message was sent.
+Human WhatsApp send remains disabled. PapoAI automations, ANA and both live channels were not changed by Tasks 1–5. No client message was sent. Production outbox and canonical outbound-message counts remain zero.
