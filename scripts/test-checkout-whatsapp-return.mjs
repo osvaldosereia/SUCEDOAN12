@@ -22,7 +22,7 @@ assert.ok(savePos>=0&&clearPos>savePos,'cart may clear only after submit_order s
 assert.ok(renderPos>clearPos&&timerPos>renderPos,'success screen must render before scheduled WhatsApp return');
 assert.match(send,/const url='https:\/\/wa\.me\/'\+resolveWhatsappDestination\(\);/,'return URL must open conversation without requiring prefilled order send');
 assert.doesNotMatch(send,/\?text=/,'checkout must not depend on customer sending prefilled text');
-for(const signal of ['INTERESSES_MKT','MARCAS_MKT']){
-  assert.ok(root.includes(signal),`${signal} generation must remain available until marketing migration is completed`);
-}
+assert.doesNotMatch(send,/const\s+lines\s*=|PEDIDO DONA ANTONIA|INTERESSES_MKT|MARCAS_MKT/,'successful order path must not build an obsolete free-form WhatsApp message after persistence');
+assert.doesNotMatch(send,/const\s+marketingSignals\s*=\s*buildMarketingSignals\(\)/,'successful order path must not perform unused marketing work before showing success');
+assert.match(root,/function buildMarketingSignals\(\)/,'marketing signal helper remains available for the dedicated marketing migration');
 console.log('checkout WhatsApp return contract: ok');
