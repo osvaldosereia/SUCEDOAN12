@@ -9,6 +9,7 @@ migration = Path('supabase/migrations/20260930_marketing_campaign_brand_rules_v1
 
 required_site_markers = [
     "const WHATSAPP_CHANNELS=",
+    "const CAMPAIGN_BRANDS=",
     "function captureMarketingEntryContext()",
     "function resolveWhatsappDestination()",
     "function buildMarketingSignals()",
@@ -19,7 +20,6 @@ required_site_markers = [
     "CTA_POS_PEDIDO:",
     "CAMPANHA_ORIGEM:",
     "checkoutMarketingPreferenceHtml",
-    "STOREFRONT_MARKETING_API",
 ]
 for marker in required_site_markers:
     assert marker in site, f'missing site marker: {marker}'
@@ -32,21 +32,22 @@ assert "item.components" not in signal_block, 'basket components must not feed m
 assert "resolveWhatsappDestination()" in site[site.index('async function sendWhatsApp()'):], 'checkout must return to origin channel'
 
 required_admin_markers = [
-    "Marketing",
+    "data-tab=\"marketing\"",
     "function renderMarketing()",
     "Radar de Marketing",
     "Segmentação",
     "Links / Campanhas",
     "Marcas autorizadas",
-    "MARKETING_API",
+    "MARKETING_BRANDS",
 ]
 for marker in required_admin_markers:
     assert marker in admin, f'missing admin marker: {marker}'
 
+# Backend sources are prepared for a future consolidation into existing deployed functions.
 for marker in ["marketing_campaign_brand_rules_v1", "brand_rule_save", "overview"]:
-    assert marker in marketing_admin_fn, f'missing admin backend marker: {marker}'
+    assert marker in marketing_admin_fn, f'missing admin backend source marker: {marker}'
 for marker in ["marketing_campaign_brand_rules_v1", "segment", "brand", "products"]:
-    assert marker in marketing_store_fn, f'missing storefront backend marker: {marker}'
+    assert marker in marketing_store_fn, f'missing storefront backend source marker: {marker}'
 for marker in ["create table if not exists public.marketing_campaign_brand_rules_v1", "enable row level security"]:
     assert marker.lower() in migration.lower(), f'missing migration marker: {marker}'
 
