@@ -1,0 +1,287 @@
+-- Dona Antônia — envio manual do pedido pelo Admin para cliente + cópia operacional
+-- 2026-10-01
+
+create table if not exists public.ops2_whatsapp_outbox_v1 (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references public.orders(id) on delete cascade,
+  customer_id uuid references public.customers(id) on delete set null,
+  conversation_id uuid references public.conversations(id) on delete set null,
+  whatsapp_account_id uuid references public.whatsapp_accounts(id) on delete set null,
+  recipient_kind text not null check (recipient_kind in ('customer','ops_0975')),
+  phone_e164 text not null,
+  channel_origin text not null check (channel_origin in ('0975','1018')),
+  channel_phone_e164 text not null,
+  delivery_mode text not null default 'utility_template' check (delivery_mode='utility_template'),
+  message_kind text not null default 'order_received',
+  payload jsonb not null default '{}'::jsonb,
+  status text not null default 'pending' check (status in ('pending','sending','sent','retry','failed','suppressed')),
+  attempt_count integer not null default 0 check (attempt_count>=0),
+  external_message_id text,
+  last_error text,
+  available_at timestamptz not null default now(),
+  locked_at timestamptz,
+  sent_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (order_id,message_kind,recipient_kind)
+);
+
+create index if not exists ops2_whatsapp_outbox_v1_dispatch_idx
+  on public.ops2_whatsapp_outbox_v1(status,channel_origin,available_at,created_at)
+  where status in ('pending','retry');
+
+alter table public.ops2_whatsapp_outbox_v1 enable row level security;
+revoke all on table public.ops2_whatsapp_outbox_v1 from public,anon,authenticated;
+grant all on table public.ops2_whatsapp_outbox_v1 to service_role;
+
+create or replace function public.ops2_enqueue_admin_order_whatsapp_v1(p_order_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $$
+declare
+  v_order public.orders%rowtype;
+  v_customer public.customers%rowtype;
+  v_conversation public.conversations%rowtype;
+  v_customer_account public.whatsapp_accounts%rowtype;
+  v_ops_account public.whatsapp_accounts%rowtype;
+  v_customer_phone text;
+  v_customer_channel text;
+  v_customer_channel_phone text;
+  v_payload jsonb;
+  v_customer_row public.ops2_whatsapp_outbox_v1%rowtype;
+  v_ops_row public.ops2_whatsapp_outbox_v1%rowtype;
+begin
+  if p_order_id is null then
+    return jsonb_build_object('ok',false,'error','order_id_required');
+  end if;
+
+  select o.* into v_order from public.orders o where o.id=p_order_id;
+  if not found then
+    return jsonb_build_object('ok',false,'error','order_not_found');
+  end if;
+
+  if v_order.customer_id is not null then
+    select c.* into v_customer from public.customers c where c.id=v_order.customer_id;
+  end if;
+  v_customer_phone:=public.canonical_whatsapp_e164_br_v2(coalesce(v_order.phone_e164,v_customer.primary_whatsapp_e164));
+  if v_customer_phone is null then
+    return jsonb_build_object('ok',false,'error','customer_phone_missing');
+  end if;
+
+  if v_order.conversation_id is not null then
+    select c.* into v_conversation from public.conversations c where c.id=v_order.conversation_id limit 1;
+  end if;
+  if v_conversation.id is null then
+    select c.* into v_conversation
+    from public.conversations c
+    where c.whatsapp_account_id is not null
+      and (
+        (v_order.customer_id is not null and c.customer_id=v_order.customer_id)
+        or public.canonical_whatsapp_e164_br_v2(c.wa_contact_e164)=v_customer_phone
+      )
+    order by greatest(
+      coalesce(c.last_inbound_at,'epoch'::timestamptz),
+      coalesce(c.last_outbound_at,'epoch'::timestamptz),
+      coalesce(c.updated_at,'epoch'::timestamptz),
+      coalesce(c.created_at,'epoch'::timestamptz)
+    ) desc
+    limit 1;
+  end if;
+
+  if v_order.whatsapp_account_id is not null then
+    select wa.* into v_customer_account
+    from public.whatsapp_accounts wa
+    where wa.id=v_order.whatsapp_account_id and wa.is_active=true limit 1;
+  end if;
+  if v_customer_account.id is null and v_conversation.whatsapp_account_id is not null then
+    select wa.* into v_customer_account
+    from public.whatsapp_accounts wa
+    where wa.id=v_conversation.whatsapp_account_id and wa.is_active=true limit 1;
+  end if;
+
+  v_customer_channel_phone:=public.canonical_whatsapp_e164_br_v2(v_customer_account.phone_e164);
+  if right(coalesce(v_customer_channel_phone,''),4)='1018' then
+    v_customer_channel:='1018';
+  elsif right(coalesce(v_customer_channel_phone,''),4)='0975' then
+    v_customer_channel:='0975';
+  else
+    v_customer_channel:='0975';
+    select wa.* into v_customer_account
+    from public.whatsapp_accounts wa
+    where wa.is_active=true
+      and right(regexp_replace(coalesce(wa.phone_e164,''),'\D','','g'),4)='0975'
+    order by wa.updated_at desc nulls last,wa.created_at desc nulls last
+    limit 1;
+    v_customer_channel_phone:=coalesce(public.canonical_whatsapp_e164_br_v2(v_customer_account.phone_e164),'+5565998150975');
+  end if;
+
+  -- A cópia operacional nunca tenta sair do 0975 para ele próprio.
+  select wa.* into v_ops_account
+  from public.whatsapp_accounts wa
+  where wa.is_active=true
+    and right(regexp_replace(coalesce(wa.phone_e164,''),'\D','','g'),4)='1018'
+  order by wa.updated_at desc nulls last,wa.created_at desc nulls last
+  limit 1;
+  if v_ops_account.id is null then
+    return jsonb_build_object('ok',false,'error','ops_1018_channel_unavailable');
+  end if;
+
+  v_payload:=jsonb_build_object(
+    'kind','order_received',
+    'order_id',v_order.id,
+    'order_number',v_order.order_number,
+    'order',jsonb_build_object(
+      'id',v_order.id,
+      'order_number',v_order.order_number,
+      'status',v_order.status,
+      'total',v_order.total,
+      'currency',v_order.currency,
+      'payment_method',v_order.payment_method,
+      'delivery',coalesce(v_order.checkout_snapshot->'delivery','{}'::jsonb)
+    )
+  );
+
+  insert into public.ops2_whatsapp_outbox_v1 as q(
+    order_id,customer_id,conversation_id,whatsapp_account_id,recipient_kind,
+    phone_e164,channel_origin,channel_phone_e164,delivery_mode,message_kind,payload,status
+  ) values (
+    v_order.id,v_order.customer_id,coalesce(v_order.conversation_id,v_conversation.id),v_customer_account.id,'customer',
+    v_customer_phone,v_customer_channel,v_customer_channel_phone,'utility_template','order_received',
+    v_payload||jsonb_build_object('recipient_kind','customer','phone_e164',v_customer_phone,'channel_origin',v_customer_channel),
+    'pending'
+  )
+  on conflict (order_id,message_kind,recipient_kind) do update
+     set customer_id=excluded.customer_id,
+         conversation_id=coalesce(excluded.conversation_id,q.conversation_id),
+         whatsapp_account_id=coalesce(excluded.whatsapp_account_id,q.whatsapp_account_id),
+         phone_e164=excluded.phone_e164,
+         channel_origin=excluded.channel_origin,
+         channel_phone_e164=excluded.channel_phone_e164,
+         payload=excluded.payload,
+         status=case when q.status='failed' then 'pending' else q.status end,
+         available_at=case when q.status='failed' then now() else q.available_at end,
+         locked_at=case when q.status='failed' then null else q.locked_at end,
+         last_error=case when q.status='failed' then null else q.last_error end,
+         updated_at=now()
+   where q.status in ('pending','retry','failed')
+  returning * into v_customer_row;
+  if not found then
+    select * into v_customer_row from public.ops2_whatsapp_outbox_v1
+    where order_id=v_order.id and message_kind='order_received' and recipient_kind='customer';
+  end if;
+
+  insert into public.ops2_whatsapp_outbox_v1 as q(
+    order_id,customer_id,conversation_id,whatsapp_account_id,recipient_kind,
+    phone_e164,channel_origin,channel_phone_e164,delivery_mode,message_kind,payload,status
+  ) values (
+    v_order.id,v_order.customer_id,null,v_ops_account.id,'ops_0975',
+    '+5565998150975','1018',coalesce(public.canonical_whatsapp_e164_br_v2(v_ops_account.phone_e164),'+5565984491018'),
+    'utility_template','order_received',
+    v_payload||jsonb_build_object('recipient_kind','ops_0975','phone_e164','+5565998150975','channel_origin','1018'),
+    'pending'
+  )
+  on conflict (order_id,message_kind,recipient_kind) do update
+     set customer_id=excluded.customer_id,
+         whatsapp_account_id=excluded.whatsapp_account_id,
+         phone_e164=excluded.phone_e164,
+         channel_origin='1018',
+         channel_phone_e164=excluded.channel_phone_e164,
+         payload=excluded.payload,
+         status=case when q.status='failed' then 'pending' else q.status end,
+         available_at=case when q.status='failed' then now() else q.available_at end,
+         locked_at=case when q.status='failed' then null else q.locked_at end,
+         last_error=case when q.status='failed' then null else q.last_error end,
+         updated_at=now()
+   where q.status in ('pending','retry','failed')
+  returning * into v_ops_row;
+  if not found then
+    select * into v_ops_row from public.ops2_whatsapp_outbox_v1
+    where order_id=v_order.id and message_kind='order_received' and recipient_kind='ops_0975';
+  end if;
+
+  return jsonb_build_object(
+    'ok',true,
+    'order_id',v_order.id,
+    'customer',jsonb_build_object('outbox_id',v_customer_row.id,'status',v_customer_row.status,'phone_e164',v_customer_row.phone_e164,'channel_origin',v_customer_row.channel_origin),
+    'ops_0975',jsonb_build_object('outbox_id',v_ops_row.id,'status',v_ops_row.status,'phone_e164',v_ops_row.phone_e164,'channel_origin',v_ops_row.channel_origin)
+  );
+end;
+$$;
+
+create or replace function public.ops2_claim_whatsapp_outbox_v1(p_channel_origin text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $$
+declare
+  v_item public.ops2_whatsapp_outbox_v1%rowtype;
+  v_channel text:=nullif(btrim(coalesce(p_channel_origin,'')),'');
+begin
+  update public.ops2_whatsapp_outbox_v1
+     set status='retry',locked_at=null,updated_at=now(),last_error=coalesce(last_error,'stale_sending_recovered')
+   where status='sending' and locked_at<now()-interval '15 minutes' and attempt_count<5;
+
+  with next_item as (
+    select q.id from public.ops2_whatsapp_outbox_v1 q
+    where q.status in ('pending','retry')
+      and q.delivery_mode='utility_template'
+      and q.available_at<=now()
+      and q.attempt_count<5
+      and (v_channel is null or q.channel_origin=v_channel)
+    order by q.available_at,q.created_at
+    for update skip locked
+    limit 1
+  )
+  update public.ops2_whatsapp_outbox_v1 q
+     set status='sending',attempt_count=q.attempt_count+1,locked_at=now(),updated_at=now(),last_error=null
+    from next_item n
+   where q.id=n.id
+  returning q.* into v_item;
+
+  if not found then return jsonb_build_object('ok',true,'found',false); end if;
+  return jsonb_build_object('ok',true,'found',true,'item',to_jsonb(v_item));
+end;
+$$;
+
+create or replace function public.ops2_finish_whatsapp_outbox_v1(
+  p_outbox_id uuid,
+  p_status text,
+  p_external_message_id text default null,
+  p_last_error text default null,
+  p_retry_after_seconds integer default 300
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $$
+declare
+  v_status text:=lower(coalesce(btrim(p_status),''));
+  v_item public.ops2_whatsapp_outbox_v1%rowtype;
+begin
+  if p_outbox_id is null then return jsonb_build_object('ok',false,'error','outbox_id_required'); end if;
+  if v_status not in ('sent','retry','failed','suppressed') then return jsonb_build_object('ok',false,'error','invalid_finish_status'); end if;
+
+  update public.ops2_whatsapp_outbox_v1
+     set status=v_status,
+         external_message_id=case when v_status='sent' then nullif(btrim(p_external_message_id),'') else external_message_id end,
+         last_error=case when v_status='sent' then null else nullif(left(coalesce(p_last_error,''),500),'') end,
+         sent_at=case when v_status='sent' then now() else sent_at end,
+         available_at=case when v_status='retry' then now()+make_interval(secs=>greatest(60,least(coalesce(p_retry_after_seconds,300),3600))) else available_at end,
+         locked_at=null,updated_at=now()
+   where id=p_outbox_id and status='sending'
+  returning * into v_item;
+  if not found then return jsonb_build_object('ok',false,'error','outbox_not_sending'); end if;
+  return jsonb_build_object('ok',true,'outbox_id',v_item.id,'status',v_item.status,'attempt_count',v_item.attempt_count,'external_message_id',v_item.external_message_id);
+end;
+$$;
+
+revoke all on function public.ops2_enqueue_admin_order_whatsapp_v1(uuid) from public,anon,authenticated;
+revoke all on function public.ops2_claim_whatsapp_outbox_v1(text) from public,anon,authenticated;
+revoke all on function public.ops2_finish_whatsapp_outbox_v1(uuid,text,text,text,integer) from public,anon,authenticated;
+grant execute on function public.ops2_enqueue_admin_order_whatsapp_v1(uuid) to service_role;
+grant execute on function public.ops2_claim_whatsapp_outbox_v1(text) to service_role;
+grant execute on function public.ops2_finish_whatsapp_outbox_v1(uuid,text,text,text,integer) to service_role;
