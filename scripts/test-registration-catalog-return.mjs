@@ -18,7 +18,7 @@ assert.match(sql, /registration_complete/i, 'must refuse incomplete registration
 assert.match(sql, /consume_public_rate_limit/i, 'rate limit must live inside the protected RPC');
 
 const hardening = read('supabase/sql/20261001_registration_catalog_return_service_role_v3.sql');
-assert.match(hardening, /revoke\s+all[\s\S]*from\s+anon/i, 'anon must not execute the SECURITY DEFINER RPC directly');
+assert.match(hardening, /revoke\s+all[\s\S]*from\s+[^;\n]*\banon\b/i, 'anon must not execute the SECURITY DEFINER RPC directly');
 assert.match(hardening, /grant\s+execute[\s\S]*to\s+service_role/i, 'service_role must be the only public-edge caller');
 
 const edgePath = 'supabase/functions/whatsapp-outbound-v1/index.ts';
