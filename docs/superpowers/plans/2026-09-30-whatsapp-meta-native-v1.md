@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implementar um núcleo WhatsApp próprio e provider-neutral dentro do Vitrine/Admin, capaz de coexistir com o PapoAI, operar 0975 e 1018, registrar mensagens/status/mídia, executar ANA V1/automações/campanhas e migrar para Meta Cloud API somente após homologação por número.
+**Goal:** Implementar um núcleo WhatsApp próprio e provider-neutral dentro do Vitrine/Admin, capaz de coexistir com o PapoAI, operar 0975 e 1018, registrar mensagens/status/mídia, executar ANA V1/Flows/automações/campanhas e migrar para Meta Cloud API somente após homologação por número.
 
-**Architecture:** O Supabase canônico recebe um núcleo de dados e serviços independente do provedor. PapoAI e Meta entram como adaptadores de entrada/saída; qualquer envio passa por uma outbox única e idempotente. A interface WhatsApp nasce separada do `vitrine/admin/index.html` monolítico e é incorporada ao Admin por uma superfície isolada, preservando o PapoAI até o cutover.
+**Architecture:** O Supabase canônico recebe um núcleo de dados e serviços independente do provedor. PapoAI e Meta entram como adaptadores de entrada/saída; qualquer envio passa por uma outbox única e idempotente. Eventos estruturados de cadastro/Flow convergem em um contrato canônico, e campanhas/recompra usam um único scheduler pequeno. A interface WhatsApp nasce separada do `vitrine/admin/index.html` monolítico e é incorporada ao Admin por uma superfície isolada.
 
 **Tech Stack:** PostgreSQL/Supabase, Supabase Edge Functions em Deno/TypeScript, JavaScript/HTML/CSS sem bundler, Supabase Storage privado, Meta WhatsApp Cloud API, OpenAI somente para transcrição/fallback ANA quando habilitado.
 
@@ -13,19 +13,20 @@
 ## Global Constraints
 
 - Supabase único: `ssbesxgaijknwsjbsbcz`.
-- PapoAI permanece em produção durante toda a construção e homologação.
-- Nenhum número é desconectado antecipadamente.
-- 0975 e 1018 migram independentemente.
+- PapoAI permanece em produção durante construção e homologação.
+- Nenhum número é desconectado antecipadamente; 0975 e 1018 migram independentemente.
 - Meta outbound começa bloqueado: `send_enabled=false`.
 - Nenhum token Meta fica no navegador ou em tabela pública.
 - Todo webhook é persistido antes de qualquer regra de negócio.
 - Todo envio externo passa por `whatsapp_outbox_v1`.
 - Texto livre nunca cria pedido automaticamente.
 - Clientes, pedidos, conversas e `catalogo_####` existentes são reaproveitados.
-- Opt-out bloqueia marketing no momento do snapshot da campanha e novamente antes do envio.
+- Flow/evento estruturado pode cadastrar/atualizar cliente apenas pelo contrato canônico e idempotente; nunca por parsing de texto livre.
+- Opt-out bloqueia marketing no snapshot e novamente antes do envio.
 - Não usar Make/n8n.
+- Conversas são event-driven; marketing/recompra podem usar somente um scheduler, com cadência máxima inicial de 5 minutos.
 - Não criar microserviços, cron ou tabela sem necessidade comprovada.
-- Tabelas WhatsApp novas ficam com RLS habilitado e sem acesso `anon`/`authenticated`, salvo necessidade explicitamente testada.
+- Tabelas WhatsApp novas: RLS habilitado e sem grants `anon`/`authenticated`, salvo necessidade explicitamente testada.
 - Funções antigas `whatsapp-meta-direct-v1` e `admin-whatsapp-direct-v1` permanecem aposentadas.
 - A primeira implementação não remove campos/tabelas PapoAI legados.
 
@@ -33,7 +34,7 @@
 
 - Webhook repetido ou fora de ordem não pode duplicar mensagem nem regredir `status_current`.
 - Um evento do 0975 nunca pode ser associado ao 1018 apenas pelo telefone do cliente.
-- Opt-out ocorrido entre a criação da campanha e o despacho precisa cancelar aquele destinatário.
+- Opt-out entre criação da campanha e despacho precisa cancelar aquele destinatário.
 - Falha de mídia/transcrição não pode perder a mensagem original nem travar a conversa.
 - Rollback de um número para PapoAI deve ser possível sem apagar histórico Meta nem afetar o outro número.
 
@@ -57,6 +58,7 @@
 - Create: `supabase/functions/whatsapp-outbox-dispatch-v1/index.ts`
 - Create: `supabase/functions/whatsapp-media-worker-v1/index.ts`
 - Create: `supabase/functions/whatsapp-ana-worker-v1/index.ts`
+- Create: `supabase/functions/whatsapp-scheduler-v1/index.ts`
 - Create: `supabase/functions/admin-whatsapp-v1/index.ts`
 - Modify: `supabase/functions/papo-external-agent-v1/index.ts`
 - Modify: `supabase/config.toml`
@@ -85,43 +87,17 @@
 **Interfaces:**
 - Consumes: `whatsapp_accounts`, `customers`, `customer_phones`, `conversations`, `storefront_identity_tokens`.
 - Produces: `whatsapp_channel_runtime_v1`, `whatsapp_webhook_events_v1`, `whatsapp_messages_v1`, `whatsapp_message_status_events_v1`, `whatsapp_media_v1`, `whatsapp_templates_v1`, `whatsapp_outbox_v1`, `marketing_optout_events_v2`.
-- Produces RPCs: `whatsapp_resolve_conversation_v1(...) -> jsonb`, `whatsapp_ingest_event_v1(...) -> jsonb`, `whatsapp_record_status_v1(...) -> jsonb`, `whatsapp_enqueue_outbound_v1(...) -> jsonb`.
+- RPCs: `whatsapp_resolve_conversation_v1(...) -> jsonb`, `whatsapp_ingest_event_v1(...) -> jsonb`, `whatsapp_record_status_v1(...) -> jsonb`, `whatsapp_enqueue_outbound_v1(...) -> jsonb`.
 
-- [ ] **Step 1: Write failing structural test**
-
-`node scripts/test-whatsapp-core-v1.mjs` deve exigir todas as tabelas, índices de idempotência, constraints de provider/status, RLS e revogação de `anon/authenticated`.
-
-- [ ] **Step 2: Run and verify failure**
-
-Run: `node scripts/test-whatsapp-core-v1.mjs`
-Expected: FAIL indicando SQL/estruturas ausentes.
-
-- [ ] **Step 3: Implement core SQL**
-
-Criar as tabelas e RPCs do spec. `whatsapp_channel_runtime_v1` deve iniciar ambos os números com `inbound_provider='papoai'`, `outbound_provider='papoai'`, `capture_enabled=true` e todos os gates Meta novos desligados.
-
-- [ ] **Step 4: Add status projection guard**
-
-`whatsapp_record_status_v1` grava sempre o evento append-only, mas só atualiza `whatsapp_messages_v1.status_current` quando o evento for semanticamente mais avançado ou representar `failed/cancelled` válido para o estado atual; timestamp externo não pode fazer `read -> delivered`.
-
-- [ ] **Step 5: Run structural tests**
-
-Run: `node scripts/test-whatsapp-core-v1.mjs`
-Expected: PASS.
-
-- [ ] **Step 6: Apply migration and verify read-only**
-
-Aplicar no Supabase canônico. Consultar contagens e runtime; não criar mensagens/outbox reais nesta etapa.
-
-- [ ] **Step 7: Run Supabase security/performance advisors**
-
-Esperado: nenhum novo achado crítico causado pelas tabelas/funções desta task.
-
-- [ ] **Step 8: Commit**
-
-Commit: `feat(whatsapp): add canonical core schema`
-
----
+- [ ] Escrever `scripts/test-whatsapp-core-v1.mjs` exigindo tabelas, FKs, índices de idempotência, constraints, RLS e grants privados.
+- [ ] Rodar `node scripts/test-whatsapp-core-v1.mjs`; esperado FAIL.
+- [ ] Implementar SQL mínimo do core.
+- [ ] Inicializar runtime dos dois números com PapoAI como provider oficial e gates Meta desligados.
+- [ ] Implementar projeção de status que nunca permita `read -> delivered/sent` por webhook atrasado; eventos continuam append-only.
+- [ ] Rodar teste; esperado PASS.
+- [ ] Aplicar migration no Supabase canônico e fazer apenas consultas de verificação.
+- [ ] Rodar advisors de segurança/performance; nenhum novo achado crítico.
+- [ ] Commit: `feat(whatsapp): add canonical core schema`.
 
 ### Task 2: Provider-neutral normalization library
 
@@ -130,127 +106,99 @@ Commit: `feat(whatsapp): add canonical core schema`
 - Create: `supabase/functions/_shared/whatsapp-core-v1.test.ts`
 
 **Interfaces:**
-- Produces: `normalizePhone(value) -> string|null`; `hashPayload(raw) -> Promise<string>`; `canonicalMessageFromPapoAi(payload, context) -> CanonicalInbound|null`; `canonicalMessagesFromMeta(payload, accountResolver) -> CanonicalEvent[]`; `statusEventsFromMeta(payload) -> CanonicalStatus[]`; `redactWebhookPayload(value) -> object`.
-- Consumes: nenhuma escrita no banco; módulo puro/testável.
+- Produces: `normalizePhone(value)`, `hashPayload(raw)`, `canonicalMessageFromPapoAi(payload, context)`, `canonicalEventsFromMeta(payload, accountResolver)`, `statusEventsFromMeta(payload)`, `redactWebhookPayload(value)`.
 
-- [ ] Escrever testes para E.164 brasileiro, payload duplicado, texto, áudio, imagem, interactive/template e status Meta.
-- [ ] Rodar `deno test supabase/functions/_shared/whatsapp-core-v1.test.ts` e confirmar FAIL.
-- [ ] Implementar funções puras sem dependência de Supabase client.
-- [ ] Testar payload com campos secretos e confirmar `redactWebhookPayload` remove token/authorization/secret.
-- [ ] Testar que account/phone-number-id ausente retorna evento não associável, nunca escolhe 0975/1018 por aproximação.
-- [ ] Rodar Deno test e confirmar PASS.
+- [ ] Escrever testes de telefone BR/E.164, texto, áudio, imagem, documento, interactive/template, Flow response, status Meta e redaction.
+- [ ] Rodar `deno test supabase/functions/_shared/whatsapp-core-v1.test.ts`; esperado FAIL.
+- [ ] Implementar módulo puro, sem Supabase client.
+- [ ] Testar ausência de account/`phone_number_id`: resultado precisa ser `unresolved`, nunca escolher 0975/1018 por aproximação.
+- [ ] Rodar Deno test; esperado PASS.
 - [ ] Commit: `feat(whatsapp): add canonical normalization library`.
 
----
-
-### Task 3: Mirror PapoAI into the canonical core without changing production behavior
+### Task 3: Mirror PapoAI into the canonical core
 
 **Files:**
 - Modify: `supabase/functions/papo-external-agent-v1/index.ts`
 - Modify: `scripts/test-whatsapp-core-v1.mjs`
 
 **Interfaces:**
-- Consumes: library Task 2 + RPCs Task 1.
-- Produces: shadow rows `provider='papoai'` em webhook/message canônicos.
-- Existing PapoAI response contract must remain unchanged.
+- Consumes Tasks 1–2.
+- Produces shadow rows `provider='papoai'`; contrato de resposta PapoAI atual permanece igual.
 
-- [ ] Adicionar teste estático exigindo chamada canônica após captura PapoAI e proibindo qualquer alteração do retorno operacional atual.
-- [ ] Rodar teste e confirmar FAIL.
-- [ ] Integrar mirror depois da persistência PapoAI atual; falha do mirror deve ser logada e não derrubar o webhook PapoAI.
-- [ ] Garantir idempotência pela chave externa/event hash já capturada.
-- [ ] Implementar backfill SQL idempotente somente para eventos históricos que possam ser normalizados com segurança; registros ambíguos ficam como evento canônico `review_required`, não inventam mensagem.
-- [ ] Deploy da função mantendo PapoAI como provider oficial de entrada/saída.
-- [ ] Observar somente contagens/erros; nenhum envio é acionado.
+- [ ] Testar que captura PapoAI chama core após a persistência existente e não altera response/status externo.
+- [ ] Integrar mirror fail-open: erro no core é logado, mas não derruba operação PapoAI.
+- [ ] Backfill idempotente apenas do que for seguro; ambiguidades viram `review_required`.
+- [ ] Deploy mantendo PapoAI oficial de entrada/saída.
+- [ ] Confirmar zero outbox nova causada pelo mirror.
 - [ ] Commit: `feat(whatsapp): mirror PapoAI into canonical core`.
 
----
-
-### Task 4: Meta webhook receiver in shadow mode
+### Task 4: Meta webhook receiver em shadow
 
 **Files:**
 - Create: `supabase/functions/whatsapp-meta-webhook-v1/index.ts`
 - Modify: `supabase/config.toml`
-- Create/extend: `scripts/test-whatsapp-meta-transport-v1.mjs`
+- Create: `scripts/test-whatsapp-meta-transport-v1.mjs`
 
-**Interfaces:**
-- Consumes: Task 1 core RPCs + Task 2 normalizer.
-- Produces: GET verification endpoint + POST webhook Meta; never sends outbound.
+**Interfaces:** GET verification + POST webhook; nunca envia outbound.
 
-- [ ] Testar GET challenge correto/incorreto e POST com assinatura inválida.
-- [ ] Testar mensagem inbound, status `sent/delivered/read/failed` e payload repetido.
-- [ ] Implementar validação de verify token e `X-Hub-Signature-256` usando segredo somente server-side.
-- [ ] Persistir evento bruto redigido antes de normalizar.
-- [ ] Resolver conta exclusivamente por `phone_number_id`/binding canônico.
-- [ ] Manter `whatsapp_channel_runtime_v1.inbound_provider='papoai'`: Meta recebido nesta fase é `shadow`, não aciona ANA nem altera atendimento oficial.
-- [ ] Rodar `node scripts/test-whatsapp-meta-transport-v1.mjs` e Deno tests.
-- [ ] Deploy sem configurar webhook produtivo dos números ainda.
+- [ ] Testar challenge correto/incorreto e assinatura POST inválida.
+- [ ] Testar inbound, Flow response, `sent/delivered/read/failed` e duplicata.
+- [ ] Implementar verify token e `X-Hub-Signature-256` server-side.
+- [ ] Persistir evento bruto redigido antes da normalização.
+- [ ] Resolver conta somente por `phone_number_id`/binding canônico.
+- [ ] Enquanto runtime oficial for PapoAI, Meta recebido é shadow: não aciona ANA.
+- [ ] Rodar Node + Deno tests e deploy sem trocar webhook produtivo dos números.
 - [ ] Commit: `feat(whatsapp): add Meta webhook shadow receiver`.
 
----
-
-### Task 5: Outbox claiming, retries and status correlation
+### Task 5: Outbox claiming, retry and status correlation
 
 **Files:**
-- Extend: `supabase/sql/20260930_whatsapp_meta_native_core_v1.sql` only before migration commit; otherwise create follow-up migration `20260930_whatsapp_meta_native_outbox_v1.sql`.
+- Extend core migration antes de aplicar; se já aplicada, Create: `supabase/sql/20260930_whatsapp_meta_native_outbox_v1.sql`
 - Create: `supabase/functions/whatsapp-outbox-dispatch-v1/index.ts`
 - Extend: `scripts/test-whatsapp-meta-transport-v1.mjs`
 
-**Interfaces:**
-- Produces RPCs: `whatsapp_claim_outbox_v1(p_limit int) -> setof`; `whatsapp_finish_outbox_v1(...) -> jsonb`; `whatsapp_cancel_outbox_v1(...) -> jsonb`.
-- Dispatcher routes by `whatsapp_channel_runtime_v1.outbound_provider` and gates.
+**Interfaces:** `whatsapp_claim_outbox_v1(p_limit int)`, `whatsapp_finish_outbox_v1(...)`, `whatsapp_cancel_outbox_v1(...)`; adapters `sendViaPapoAi()` e `sendViaMeta()`.
 
-- [ ] Testar dois workers tentando claim simultâneo: um item só pode ser claimed uma vez.
-- [ ] Testar retry com `available_at` e limite de tentativas configurado.
-- [ ] Testar `send_enabled=false`: dispatcher deve retornar bloqueado sem chamada externa.
-- [ ] Implementar dispatcher com transport adapters internos `sendViaPapoAi()` e `sendViaMeta()`, mantendo Meta bloqueado por runtime.
-- [ ] Ao receber `wamid`, gravar `provider_message_id` na outbox e mensagem canônica.
-- [ ] Reprocessamento com mesma `idempotency_key` deve reutilizar item, nunca criar segundo envio.
-- [ ] Testar falha definitiva e status/códigos de erro.
+- [ ] Testar claim concorrente: um item só pode ser claimed uma vez.
+- [ ] Testar retry/`available_at`/limite de tentativa.
+- [ ] Testar Meta com `send_enabled=false`: zero HTTP externo.
+- [ ] Implementar dispatcher por provider/gate.
+- [ ] Correlacionar `wamid` com outbox e mensagem.
+- [ ] Mesma `idempotency_key` nunca cria segundo envio.
 - [ ] Commit: `feat(whatsapp): add idempotent outbound dispatcher`.
 
----
-
-### Task 6: Meta template synchronization and controlled outbound
+### Task 6: Templates Meta controlados
 
 **Files:**
 - Create/extend: `supabase/functions/admin-whatsapp-v1/index.ts`
 - Extend: `scripts/test-whatsapp-meta-transport-v1.mjs`
 
-**Interfaces:**
-- Admin actions: `templates_list`, `templates_sync`, `template_create`, `template_update`, `template_send_test_prepare`.
-- No action sends directly; `template_send_test_prepare` creates outbox only when channel gate permits a test recipient.
+**Interfaces:** `templates_list`, `templates_sync`, `template_create`, `template_update`, `template_send_test_prepare`.
 
-- [ ] Testar que template não aprovado não gera outbox.
-- [ ] Testar sincronização idempotente por `waba_id + meta_template_id/name/language`.
-- [ ] Implementar leitura/sync Meta e persistência em `whatsapp_templates_v1`.
-- [ ] Implementar create/update com resposta Meta preservada em metadata sem gravar token.
-- [ ] Testar conta sem WABA/phone_number_id: erro operacional claro, sem fallback para outro número.
-- [ ] Manter 0975 sem envio Meta até dados e homologação próprios existirem.
+- [ ] Testar template não aprovado => nenhuma outbox.
+- [ ] Sincronização idempotente por WABA + ID/nome/idioma.
+- [ ] Implementar sync/create/update sem persistir access token.
+- [ ] Conta sem WABA/phone_number_id retorna erro da própria conta, sem fallback.
+- [ ] `template_send_test_prepare` somente enfileira quando gate canary permitir.
 - [ ] Commit: `feat(whatsapp): manage Meta templates safely`.
 
----
-
-### Task 7: Media download, private storage and audio transcription
+### Task 7: Mídia privada e transcrição
 
 **Files:**
 - Create: `supabase/functions/whatsapp-media-worker-v1/index.ts`
 - Extend: `scripts/test-whatsapp-meta-transport-v1.mjs`
 
-**Interfaces:**
-- Consumes: `whatsapp_media_v1` pending rows.
-- Produces: private Storage object, hash, size, transcription/status.
+**Interfaces:** pending `whatsapp_media_v1` -> Storage privado `whatsapp-media` + hash/size/transcrição.
 
-- [ ] Testar mídia sem ID, download HTTP falho, MIME inesperado e arquivo acima do limite configurado.
-- [ ] Implementar fetch server-side da mídia Meta/PapoAI quando suportado.
-- [ ] Salvar em bucket privado `whatsapp-media` usando caminho `account/YYYY/MM/message/media`.
-- [ ] Para áudio, transcrever apenas se setting ANA permitir; transcrição nunca substitui o arquivo/original message.
-- [ ] Em falha, marcar `transcription_status='failed'` e preservar mensagem/conversa.
-- [ ] Testar que frontend nunca recebe Storage path público permanente; Admin API gera signed URL temporária.
+- [ ] Testar media ID ausente, download falho, MIME inesperado e limite de tamanho.
+- [ ] Fetch de mídia somente server-side.
+- [ ] Salvar em `account/YYYY/MM/message/media` no bucket privado.
+- [ ] Áudio transcreve somente quando setting permitir; original permanece preservado.
+- [ ] Falha marca status e não perde mensagem/conversa.
+- [ ] Admin recebe somente signed URL temporária.
 - [ ] Commit: `feat(whatsapp): add private media and transcription pipeline`.
 
----
-
-### Task 8: ANA V1 deterministic engine and AI fallback gate
+### Task 8: ANA V1 + Flow canônico + handoff
 
 **Files:**
 - Create: `supabase/sql/20260930_whatsapp_meta_native_automation_v1.sql`
@@ -260,67 +208,62 @@ Commit: `feat(whatsapp): add canonical core schema`
 - Create: `scripts/test-whatsapp-automation-v1.mjs`
 
 **Interfaces:**
-- Produces tables: `whatsapp_ana_settings_v1`, `whatsapp_automation_rules_v1`, `whatsapp_automation_runs_v1`.
-- Produces pure function `decideAnaAction(context) -> AnaDecision`.
-- Worker consumes inbound canonical messages only when account runtime says `ana_enabled=true` and provider is official inbound provider.
+- Tables: `whatsapp_ana_settings_v1`, `whatsapp_automation_rules_v1`, `whatsapp_automation_runs_v1`.
+- Pure decision: `decideAnaAction(context) -> AnaDecision`.
+- RPC neutra de cadastro estruturado: `whatsapp_apply_customer_flow_v1(p_event_key text, p_account_id uuid, p_phone text, p_name text, p_payload jsonb) -> jsonb`.
 
-- [ ] Testar regras: saudação, catálogo, cesta, pagamento, entrega/cidades, mínimo R$75, cadastro, atendente, opt-out e áudio transcrito.
-- [ ] Testar que pergunta fora de escopo retorna `handoff` quando AI fallback desligado.
-- [ ] Testar que mensagem em conversa `human/paused` não recebe resposta automática.
-- [ ] Implementar rule-first com resposta curta e no máximo uma pergunta.
-- [ ] Implementar geração/reuso de `catalogo_####` via mecanismo existente, nunca por token novo paralelo.
-- [ ] Implementar AI fallback atrás de `ai_fallback_enabled`; saída IA só pode selecionar intenção/resposta permitida, nunca criar pedido/conceder condição comercial.
-- [ ] Toda resposta ANA vira `whatsapp_outbox_v1`, nunca chamada direta ao provider.
+- [ ] Testar saudação, catálogo, cesta, pagamento, entrega/cidades, mínimo R$75, cadastro, atendente, opt-out e áudio transcrito.
+- [ ] Testar conversa `human/paused`: zero resposta automática.
+- [ ] Testar Flow PapoAI e Flow Meta com mesma chave lógica: cliente/conversa só processados uma vez.
+- [ ] Implementar `whatsapp_apply_customer_flow_v1` reaproveitando customers/phones/addresses e emitindo/reutilizando `catalogo_####`; não criar sistema de clientes paralelo.
+- [ ] Eventos estruturados usam essa RPC; texto livre nunca chama cadastro estruturado.
+- [ ] Implementar rule-first; AI fallback atrás de `ai_fallback_enabled` e limitado a intenção/resposta permitida.
+- [ ] Pedido explícito de humano ou erro repetido muda conversa para `human`; mensagem humana pausa ANA pela janela configurada.
+- [ ] Toda resposta ANA entra na outbox.
 - [ ] Rodar Deno + Node tests.
-- [ ] Commit: `feat(whatsapp): add ANA V1 rules and safe fallback`.
+- [ ] Commit: `feat(whatsapp): add ANA V1 and canonical Flow`.
 
----
-
-### Task 9: Canonical opt-out, recompra and dynamic campaigns
+### Task 9: Opt-out, campanhas, recompra e scheduler único
 
 **Files:**
-- Extend: `supabase/sql/20260930_whatsapp_meta_native_automation_v1.sql` before apply or follow-up migration.
+- Extend automation migration antes de aplicar; se já aplicada, migration follow-up.
+- Create: `supabase/functions/whatsapp-scheduler-v1/index.ts`
 - Extend: `scripts/test-whatsapp-automation-v1.mjs`
 
 **Interfaces:**
-- Produces: `whatsapp_campaigns_v1`, `whatsapp_campaign_recipients_v1`.
-- Produces RPCs: `whatsapp_capture_optout_v2(...)`, `whatsapp_campaign_snapshot_v1(p_campaign_id uuid)`, `whatsapp_campaign_enqueue_v1(p_campaign_id uuid)`.
-- Consumes: `marketing_repurchase_state_v1`, `customers.marketing_opt_in`.
+- Tables: `whatsapp_campaigns_v1`, `whatsapp_campaign_recipients_v1`.
+- RPCs: `whatsapp_capture_optout_v2(...)`, `whatsapp_campaign_snapshot_v1(uuid)`, `whatsapp_campaign_enqueue_v1(uuid)`, `whatsapp_campaign_tick_v1() -> jsonb`.
+- Scheduler chama somente `whatsapp_campaign_tick_v1`/recompra vencida; não executa IA nem varre conversas.
 
-- [ ] Testar opt-out por mensagem canônica e migração idempotente de evidência PapoAI v1 quando segura.
-- [ ] Testar campanha criada hoje e mudança de opt-in antes do horário: snapshot deve refletir estado novo.
-- [ ] Testar mudança para opt-out depois do snapshot e antes do claim: outbox deve cancelar destinatário.
-- [ ] Testar recompra +10 dias gerando campanha/outbox uma única vez por pedido elegível.
-- [ ] Implementar audience_definition V1 somente com filtros necessários: lista/segmento, cidade, histórico/recompra e inclusão/exclusão explícita; não criar query builder genérico.
-- [ ] Persistir motivo de bloqueio em recipients.
-- [ ] Commit: `feat(whatsapp): add canonical campaigns and opt-out`.
-
----
+- [ ] Testar opt-out canônico e migração segura de evidência PapoAI v1.
+- [ ] Campanha salva definição de público; destinatários são congelados apenas na execução.
+- [ ] Opt-out após snapshot e antes do claim cancela recipient/outbox.
+- [ ] Recompra +10 dias gera uma única outbox por pedido elegível.
+- [ ] Implementar scheduler com uma única cadência de até 5 minutos, sem cron adicional por campanha/regra.
+- [ ] Com `campaigns_enabled=false`, tick não cria envio naquela conta.
+- [ ] Scheduler não processa ANA/chat e não chama OpenAI.
+- [ ] Commit: `feat(whatsapp): add campaigns repurchase and single scheduler`.
 
 ### Task 10: Admin WhatsApp API
 
 **Files:**
-- Create/complete: `supabase/functions/admin-whatsapp-v1/index.ts`
+- Complete: `supabase/functions/admin-whatsapp-v1/index.ts`
 - Create: `supabase/sql/20260930_whatsapp_meta_native_admin_v1.sql`
 - Create: `scripts/test-whatsapp-admin-v1.mjs`
 
 **Interfaces:**
-- Read actions: `overview`, `accounts`, `conversations`, `conversation`, `templates`, `automations`, `campaigns`, `campaign`, `settings`.
-- Write actions: `conversation_takeover`, `conversation_resume`, `human_send`, `template_*`, `automation_save`, `campaign_save`, `campaign_cancel`, `settings_save`, `channel_gate_prepare`.
-- `channel_gate_prepare` may validate but must not silently cut over a number.
+- Reads: `overview`, `accounts`, `conversations`, `conversation`, `templates`, `automations`, `campaigns`, `campaign`, `settings`.
+- Writes: `conversation_takeover`, `conversation_resume`, `human_send`, template actions, `automation_save`, `campaign_save`, `campaign_cancel`, `settings_save`, `channel_gate_prepare`.
 
-- [ ] Testar paginação de conversas e mensagens mais recentes.
+- [ ] Testar paginação por recentes e histórico cronológico.
 - [ ] Testar signed media URL.
-- [ ] Testar envio humano sempre via outbox e bloqueado quando `human_send_enabled=false`.
-- [ ] Implementar overview com saúde 0975/1018 separada, últimos webhooks, fila/erros e provider oficial atual.
-- [ ] Implementar gate validation que lista pendências de Meta IDs, webhook, template, status e canary.
-- [ ] Não adicionar senha/identificação de operador nova ao Admin; respeitar padrão atual do Vitrine/Admin.
-- [ ] Rodar testes.
+- [ ] Envio humano sempre via outbox; gate false bloqueia.
+- [ ] Overview mostra 0975/1018 separadamente, provider oficial, webhook, fila e erros.
+- [ ] Gate validation lista IDs Meta, webhook, template, canary e status; nunca efetua cutover silencioso.
+- [ ] Não adicionar senha/identificação de operador nova.
 - [ ] Commit: `feat(whatsapp): add admin API`.
 
----
-
-### Task 11: Modular WhatsApp UI inside Vitrine/Admin
+### Task 11: UI modular WhatsApp no Vitrine/Admin
 
 **Files:**
 - Create: `vitrine/admin/whatsapp/index.html`
@@ -329,82 +272,62 @@ Commit: `feat(whatsapp): add canonical core schema`
 - Modify: `vitrine/admin/index.html`
 - Extend: `scripts/test-whatsapp-admin-v1.mjs`
 
-**Interfaces:**
-- Consumes: `admin-whatsapp-v1` only.
-- Produces Admin tabs: Visão Geral, Conversas, Templates, Automações, Campanhas, Configurações.
+**Interfaces:** consome somente `admin-whatsapp-v1`.
 
-- [ ] Testar presença da rota modular e que o monólito não recebe implementação do chat internamente.
-- [ ] Adicionar item `WhatsApp` no menu do Admin e carregar `/vitrine/admin/whatsapp/` em shell/iframe isolado seguindo padrão já usado para ferramentas independentes.
-- [ ] Implementar Overview com cards separados 0975/1018 e aviso visual explícito de provider atual/gates.
-- [ ] Implementar conversas com lista + painel de mensagens, mídia, transcrição, handoff e envio humano.
-- [ ] Implementar templates, automações e campanhas com formulários V1 deliberadamente simples.
-- [ ] Implementar Configurações ANA sem prompt gigante como configuração principal.
-- [ ] Validar mobile: sem textos sobrepostos, botões com 44px mínimos, lista/painel adaptável.
+- [ ] Testar rota modular e impedir implementação do chat dentro do monólito.
+- [ ] Adicionar menu `WhatsApp` e shell/iframe isolado.
+- [ ] Implementar Visão Geral, Conversas, Templates, Automações, Campanhas e Configurações.
+- [ ] Conversa mostra áudio/transcrição, mídia, status, cliente, pedidos e handoff.
+- [ ] Automação mostra cards de cadastro/Flow, pós-venda, recompra, opt-out, catálogo e handoff com último uso/erro.
+- [ ] Campanha mostra resolvidos, bloqueados, enviados, entregues, lidos e falhas.
+- [ ] Mobile: sem sobreposição; controles de toque >=44px; lista/painel adaptável.
 - [ ] Rodar `node scripts/test-whatsapp-admin-v1.mjs`.
 - [ ] Commit: `feat(admin): add modular WhatsApp workspace`.
 
----
-
-### Task 12: Shadow verification and synthetic tests
+### Task 12: Shadow verification + security
 
 **Files:**
 - Create: `docs/projects/dona-antonia-operations-2/WHATSAPP-META-NATIVE-HOMOLOGATION.md`
-- Extend all four test scripts.
+- Extend quatro scripts de teste.
 
-**Interfaces:**
-- Produces: checklist de evidência por conta e decisão GO/NO-GO sem cutover automático.
-
-- [ ] Comparar amostra de eventos PapoAI com canonical shadow: conta, telefone, conversa, direção e conteúdo devem coincidir.
-- [ ] Reenviar fixtures duplicadas e confirmar zero duplicatas canônicas.
-- [ ] Simular status fora de ordem e confirmar projeção correta.
-- [ ] Criar outbox sintética com Meta gate desligado e confirmar zero chamada externa.
-- [ ] Simular campanha com opt-out concorrente e confirmar cancelamento.
-- [ ] Executar advisors Supabase e registrar achados novos/antigos separadamente.
-- [ ] Documentar rollback por conta: alterar runtime de volta para PapoAI; nenhum drop/delete faz parte do rollback.
+- [ ] Comparar amostra PapoAI x canonical shadow: conta, telefone, conversa, direção e conteúdo.
+- [ ] Repetir fixtures => zero duplicatas.
+- [ ] Status fora de ordem => projeção correta.
+- [ ] Outbox Meta com gate false => zero chamada externa.
+- [ ] Campanha com opt-out concorrente => cancelada.
+- [ ] Flow repetido => zero cliente/conversa duplicada.
+- [ ] Rodar advisors de segurança/performance e separar achados prévios dos novos.
+- [ ] Documentar rollback por conta sem drop/delete.
 - [ ] Commit: `test(whatsapp): add shadow homologation suite`.
 
----
-
-### Task 13: Meta canary homologation per number
+### Task 13: Canary Meta por número
 
 **Files:**
 - Update: `docs/projects/dona-antonia-operations-2/WHATSAPP-META-NATIVE-HOMOLOGATION.md`
 
-**Interfaces:**
-- Consumes sistema completo das Tasks 1–12.
-- Produces homologation evidence only; no automatic PapoAI disconnect.
+- [ ] Confirmar IDs, WABA, webhook e credenciais de um número canary.
+- [ ] Ativar captura Meta shadow e confirmar inbound real de contato de teste.
+- [ ] Habilitar somente canary de envio para contato autorizado; confirmar `wamid` e estados observáveis.
+- [ ] Testar template, mídia/áudio, Flow e ANA com contato controlado; nenhum cliente real.
+- [ ] Falhou qualquer gate => PapoAI continua oficial e registrar NO-GO.
+- [ ] Segundo número só depois do primeiro estável.
 
-- [ ] Confirmar `phone_number_id`, WABA, webhook e credenciais de **um** número de teste/canary.
-- [ ] Ativar somente captura Meta shadow para esse número e confirmar eventos reais.
-- [ ] Enviar somente para contato de teste autorizado via outbox canary; confirmar `wamid -> sent -> delivered -> read` ou registrar limitação observada.
-- [ ] Testar template aprovado, texto dentro de janela quando aplicável e mídia/áudio.
-- [ ] Testar ANA com contato controlado; sem cliente real.
-- [ ] Se qualquer gate falhar, manter PapoAI como oficial e registrar NO-GO.
-- [ ] Repetir para o segundo número somente depois do primeiro estar estável.
-
----
-
-### Task 14: Controlled cutover and rollback readiness
+### Task 14: Cutover controlado e rollback
 
 **Files:**
-- Update: `docs/projects/dona-antonia-operations-2/WHATSAPP-META-NATIVE-HOMOLOGATION.md`
-- Update runtime rows only after explicit operational approval.
+- Update homologation doc.
+- Runtime rows somente após autorização operacional explícita.
 
-**Interfaces:**
-- Runtime change per account only: `inbound_provider`, `outbound_provider`, `send_enabled`, `ana_enabled`, `campaigns_enabled`, `human_send_enabled`, `homologated_at`.
-
-- [ ] Antes do corte, confirmar fila vazia/entendida e nenhum envio duplicado entre providers.
-- [ ] Migrar um número por vez.
-- [ ] Manter o outro número no PapoAI como fallback operacional durante observação inicial.
-- [ ] Validar inbound, humano, ANA, template, status e `catalogo_####` no número migrado.
-- [ ] Rollback precisa exigir apenas mudar runtime para `papoai`; não deletar dados nem redeploy emergencial.
-- [ ] Só após os dois números estáveis planejar remoção de funções/tabelas PapoAI legadas em projeto separado.
+- [ ] Confirmar fila sem duplicidade entre providers.
+- [ ] Migrar um número por vez alterando apenas runtime/gates.
+- [ ] Manter outro número no PapoAI durante observação inicial.
+- [ ] Validar inbound, humano, ANA, Flow, template, status e `catalogo_####`.
+- [ ] Rollback = runtime volta para `papoai`; não deletar dados e não depender de deploy emergencial.
+- [ ] Remoção de legado PapoAI vira projeto separado somente após os dois números estáveis.
 
 ---
 
 ## Full verification before completion
-
-Run locally/static where available:
 
 ```bash
 node scripts/test-whatsapp-core-v1.mjs
@@ -415,28 +338,23 @@ node scripts/test-whatsapp-automation-v1.mjs
 node scripts/test-whatsapp-admin-v1.mjs
 ```
 
-Then on Supabase canônico:
-
-- verify counts and constraints;
-- verify RLS/grants;
-- run security advisors;
-- run performance advisors;
-- inspect Edge Function logs for new errors;
-- verify `whatsapp_channel_runtime_v1` shows explicit provider/gates for 0975 and 1018;
-- confirm no production Meta outbound occurred before Task 13.
+No Supabase canônico:
+- validar constraints/índices/RLS/grants;
+- security advisor + performance advisor;
+- logs das novas Edge Functions;
+- runtime explícito de 0975 e 1018;
+- confirmar que não houve outbound Meta de produção antes da Task 13.
 
 ## Execution strategy
 
-Use **Native / executing-plans** in this ChatGPT session. The tasks are strongly sequential and share database/API contracts, and this environment does not expose a separate subagent execution harness. Execute in medium rounds, stopping at safe gates rather than after every tiny code edit.
+Usar **Native / executing-plans** nesta sessão. As tarefas são sequenciais e compartilham contratos de banco/API, e este ambiente não expõe harness separado de subagentes. Executar em rodadas médias e parar em gates seguros.
 
-Recommended round grouping:
-
-1. **R1 — Foundation:** Tasks 1–3.
+1. **R1 — Fundação:** Tasks 1–3.
 2. **R2 — Meta transport shadow:** Tasks 4–7.
-3. **R3 — ANA/marketing:** Tasks 8–9.
+3. **R3 — ANA/Flow/marketing:** Tasks 8–9.
 4. **R4 — Admin:** Tasks 10–11.
-5. **R5 — Verification:** Task 12.
-6. **R6 — External homologation:** Task 13.
-7. **R7 — Cutover:** Task 14, only after explicit operational authorization.
+5. **R5 — Verificação:** Task 12.
+6. **R6 — Homologação externa:** Task 13.
+7. **R7 — Cutover:** Task 14, somente com autorização operacional explícita.
 
-R1–R5 can be implemented without disconnecting PapoAI. R6 may require Meta/PapoAI configuration or credentials not currently present. R7 is intentionally separated because it changes live transport.
+R1–R5 não desconectam o PapoAI. R6 pode exigir configuração/credenciais externas ainda não disponíveis. R7 muda transporte ao vivo e fica deliberadamente separado.
