@@ -2810,7 +2810,7 @@ async function cnpjLookup(u:URL){
 
 async function orderWhatsappGatewayReadiness(){
   try{
-    const res=await fetch(U+"/functions/v1/whatsapp-order-outbound-v1",{
+    const res=await fetch(U+"/functions/v1/admin-orders-v1",{
       method:"GET",headers:{"apikey":K,"x-internal-key":K},signal:AbortSignal.timeout(8000)
     });
     const data=await res.json().catch(()=>({ok:false,error:"invalid_gateway_response"}));
@@ -2847,7 +2847,7 @@ async function dispatchOrderWhatsapp(oid:string){
   const deliveries:any[]=[];
   for(let i=0;i<2;i++){
     try{
-      const res=await fetch(U+"/functions/v1/whatsapp-order-outbound-v1",{
+      const res=await fetch(U+"/functions/v1/admin-orders-v1",{
         method:"POST",headers:{"Content-Type":"application/json","apikey":K,"x-internal-key":K},
         body:JSON.stringify({order_id:oid}),signal:AbortSignal.timeout(20000)
       });
