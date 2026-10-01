@@ -1,0 +1,15 @@
+PAPOAI CONTRACT DIAGNOSTIC
+--- contract test ---
+Traceback (most recent call last):
+  File "/home/runner/work/SUCEDOAN12/SUCEDOAN12/scripts/test-marketing-intelligence-contract.py", line 49, in <module>
+    assert unsupported_cta not in site[site.index('const MARKETING_CTA_PRIORITY='):site.index('function money')], f'unsupported CTA: {unsupported_cta}'
+                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: substring not found
+contract_exit=1
+--- javascript syntax ---
+index.html JS syntax OK
+vitrine/index.html JS syntax OK
+vitrine/admin/index.html JS syntax OK
+js_exit=0
+copies_exit=0
+diffcheck_exit=0
