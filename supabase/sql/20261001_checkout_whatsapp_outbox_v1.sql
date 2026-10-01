@@ -156,11 +156,18 @@ begin
     'kind',v_kind,
     'order_id',v_order.id,
     'order_number',v_order.order_number,
-    'customer_id',v_order.customer_id,
     'phone_e164',v_phone,
     'channel_origin',v_channel_origin,
     'channel_phone_e164',v_channel_phone_e164,
-    'order_snapshot',to_jsonb(v_order)
+    'order',jsonb_build_object(
+      'id',v_order.id,
+      'order_number',v_order.order_number,
+      'status',v_order.status,
+      'total',v_order.total,
+      'currency',v_order.currency,
+      'payment_method',v_order.payment_method,
+      'delivery',coalesce(v_order.checkout_snapshot->'delivery','{}'::jsonb)
+    )
   );
 
   select exists(
