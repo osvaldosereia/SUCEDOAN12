@@ -1,0 +1,13 @@
+name: Test admin sidebar visual v8
+on:
+  push:
+    branches: [feat/admin-sidebar-visual-v8-20261001]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify visual sidebar contract
+        run: python3 scripts/test-admin-sidebar-visual-v8.py
