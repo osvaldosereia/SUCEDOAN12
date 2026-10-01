@@ -9,8 +9,9 @@ verify_jwt = false
 [functions.admin-pin-auth-v1]
 verify_jwt = false
 
-
-
 # Gateway canônico do vitrine/admin; sem dependência do projeto legado.
 [functions.admin-products-live-v1]
 verify_jwt = false
+
+[functions.whatsapp-order-outbound-v1]
+verify_jwt = true
