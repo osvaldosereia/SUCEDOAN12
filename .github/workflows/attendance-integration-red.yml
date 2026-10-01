@@ -1,0 +1,23 @@
+name: Attendance integration RED proof
+
+on:
+  push:
+    branches:
+      - feat/admin-attendance-papoai-v1
+    paths:
+      - scripts/test-admin-attendance-integration-v1.mjs
+      - .github/workflows/attendance-integration-red.yml
+
+permissions:
+  contents: read
+
+jobs:
+  red-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run integration contract before implementation
+        run: node scripts/test-admin-attendance-integration-v1.mjs
