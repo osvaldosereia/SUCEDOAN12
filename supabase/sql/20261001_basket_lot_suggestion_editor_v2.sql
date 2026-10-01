@@ -75,7 +75,6 @@ begin
     select * into p from public.products where id=pid and is_active=true;
     if not found then raise exception 'product_unavailable'; end if;
 
-    existing:=null;
     manual_added:=false;
     if item_id is not null then
       select * into existing from public.basket_lot_suggestion_items where id=item_id and suggestion_id=s.id;
@@ -258,18 +257,22 @@ declare
   v_new text;
 begin
   select pg_get_functiondef('public.create_vitrine_cart_order_v1(text,text,jsonb,jsonb,jsonb)'::regprocedure) into v_def;
+  if position('v_basket_unit:=coalesce(v_lot.sale_price_override,v_basket.base_price,0);' in v_def)>0
+     and position('sale_enabled=true' in v_def)>0 then
+    return;
+  end if;
   v_new:=v_def;
   v_new:=replace(v_new,
-    "where id=v_lot_id and basket_id=v_basket_id and status='ready' and quantity_available>0",
-    "where id=v_lot_id and basket_id=v_basket_id and status='ready' and quantity_available>0 and lot_kind='legacy_full' and sale_enabled=true");
+    $a$where id=v_lot_id and basket_id=v_basket_id and status='ready' and quantity_available>0$a$,
+    $a$where id=v_lot_id and basket_id=v_basket_id and status='ready' and quantity_available>0 and lot_kind='legacy_full' and sale_enabled=true$a$);
   v_new:=replace(v_new,
-    "where basket_id=v_basket_id and status='ready' and quantity_available>0",
-    "where basket_id=v_basket_id and status='ready' and quantity_available>0 and lot_kind='legacy_full' and sale_enabled=true");
+    $a$where basket_id=v_basket_id and status='ready' and quantity_available>0$a$,
+    $a$where basket_id=v_basket_id and status='ready' and quantity_available>0 and lot_kind='legacy_full' and sale_enabled=true$a$);
   v_new:=replace(v_new,
     'v_basket_unit:=coalesce(v_basket.base_price,0);',
     'v_basket_unit:=coalesce(v_lot.sale_price_override,v_basket.base_price,0);');
   if v_new=v_def then raise exception 'create_vitrine_cart_order_v1 patch anchors not found'; end if;
-  if position('sale_price_override' in v_new)=0 or position("sale_enabled=true" in v_new)=0 then raise exception 'create_vitrine_cart_order_v1 patch incomplete'; end if;
+  if position('sale_price_override' in v_new)=0 or position('sale_enabled=true' in v_new)=0 then raise exception 'create_vitrine_cart_order_v1 patch incomplete'; end if;
   execute v_new;
 end $$;
 
