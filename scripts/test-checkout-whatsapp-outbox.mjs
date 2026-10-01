@@ -19,8 +19,10 @@ assert.match(sql,/from\s+public\.conversations/i,'enqueue must inspect conversat
 assert.match(sql,/whatsapp_account_id/i,'enqueue must use whatsapp_account_id');
 assert.match(sql,/public\.whatsapp_accounts/i,'enqueue must resolve active WhatsApp account');
 assert.match(sql,/wa\.phone_e164/i,'enqueue must resolve channel phone from WhatsApp account');
-assert.match(sql,/right\([^\n]*0975|0975[^\n]*channel_origin/i,'0975 channel must be recognized');
-assert.match(sql,/right\([^\n]*1018|1018[^\n]*channel_origin/i,'1018 channel must be recognized');
+assert.match(sql,/checkout_snapshot#>>'\{customer,whatsapp_origin\}'/i,'outbox must read the validated checkout channel snapshot as fallback');
+assert.match(sql,/right\([^\n]*1018[\s\S]*v_channel_origin:='1018'[\s\S]*elsif right\([^\n]*0975[\s\S]*v_channel_origin:='0975'/i,'linked account must have priority over snapshot fallback');
+assert.match(sql,/v_checkout_origin='1018'[\s\S]*right\(regexp_replace\([^\n]*1018/i,'1018 checkout fallback must resolve the active 1018 account');
+assert.match(sql,/v_checkout_origin='0975'[\s\S]*right\(regexp_replace\([^\n]*0975/i,'0975 checkout fallback must resolve the active 0975 account');
 assert.match(sql,/on\s+conflict\s*\(\s*order_id\s*,\s*message_kind\s*\)\s+do\s+update/i,'enqueue must be idempotent and refresh pending routing');
 assert.match(sql,/where\s+q\.status\s+in\s*\(\s*'pending'\s*,\s*'retry'\s*\)/i,'routing refresh must never rewrite sent rows');
 assert.match(sql,/canonical_whatsapp_e164_br_v2/i,'customer/order phone must be canonicalized');
@@ -69,6 +71,8 @@ assert.match(storefront,/Authorization:\s*`Bearer \$\{KEY\}`/,'storefront kick m
 assert.match(storefront,/EdgeRuntime[\s\S]*waitUntil/,'dispatcher kick must run in background instead of delaying checkout success');
 const submit=storefront.match(/async function submit\(req:Request,p:any\)\{[\s\S]*?\n\}/)?.[0]||'';
 assert.ok(submit,'storefront submit function must exist');
+assert.match(submit,/whatsappOriginRaw=txt\(p\?\.whatsapp_origin,4\)[\s\S]*whatsappOrigin=\['0975','1018'\]\.includes\(whatsappOriginRaw\)\?whatsappOriginRaw:''/,'storefront must whitelist checkout channel origin');
+assert.match(submit,/whatsapp_origin:whatsappOrigin/, 'validated channel origin must be stored in the customer/order snapshot');
 assert.match(submit,/ops2_link_storefront_order_from_identity_v1[\s\S]*kickWhatsappOrderOutbound\(\)/,'dispatcher must kick only after the PapoAI identity/channel link attempt');
 assert.doesNotMatch(submit,/await\s+kickWhatsappOrderOutbound/,'checkout must not wait for provider delivery');
 
