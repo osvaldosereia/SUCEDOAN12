@@ -163,7 +163,12 @@ begin
     'order_snapshot',to_jsonb(v_order)
   );
 
-  insert into public.ops2_whatsapp_outbox_v1(
+  select exists(
+    select 1 from public.ops2_whatsapp_outbox_v1 q
+    where q.order_id=v_order.id and q.message_kind=v_kind
+  ) into v_reused;
+
+  insert into public.ops2_whatsapp_outbox_v1 as q(
     order_id,customer_id,conversation_id,whatsapp_account_id,
     phone_e164,channel_origin,channel_phone_e164,message_kind,payload,status
   ) values (
@@ -171,15 +176,23 @@ begin
     coalesce(v_order.whatsapp_account_id,v_account.id),
     v_phone,v_channel_origin,v_channel_phone_e164,v_kind,v_payload,'pending'
   )
-  on conflict (order_id,message_kind) do nothing
+  on conflict (order_id,message_kind) do update
+     set customer_id=excluded.customer_id,
+         conversation_id=coalesce(excluded.conversation_id,q.conversation_id),
+         whatsapp_account_id=coalesce(excluded.whatsapp_account_id,q.whatsapp_account_id),
+         phone_e164=excluded.phone_e164,
+         channel_origin=excluded.channel_origin,
+         channel_phone_e164=excluded.channel_phone_e164,
+         payload=excluded.payload,
+         updated_at=now()
+   where q.status in ('pending','retry')
   returning * into v_outbox;
 
   if not found then
-    v_reused:=true;
-    select q.* into v_outbox
-    from public.ops2_whatsapp_outbox_v1 q
-    where q.order_id=v_order.id
-      and q.message_kind=v_kind;
+    select existing.* into v_outbox
+    from public.ops2_whatsapp_outbox_v1 existing
+    where existing.order_id=v_order.id
+      and existing.message_kind=v_kind;
   end if;
 
   return jsonb_build_object(
@@ -226,6 +239,42 @@ create trigger trg_ops2_enqueue_storefront_order_whatsapp_v1
 after insert on public.orders
 for each row
 execute function public.ops2_enqueue_storefront_order_whatsapp_v1();
+
+create or replace function public.ops2_refresh_storefront_order_whatsapp_v1()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $$
+begin
+  if new.source not in ('vitrine','storefront_v2') then
+    return new;
+  end if;
+
+  if new.conversation_id is not distinct from old.conversation_id
+     and new.whatsapp_account_id is not distinct from old.whatsapp_account_id
+     and new.customer_id is not distinct from old.customer_id
+     and new.phone_e164 is not distinct from old.phone_e164 then
+    return new;
+  end if;
+
+  begin
+    perform public.ops2_enqueue_order_whatsapp_v1(new.id,'order_received');
+  exception when others then
+    raise warning 'ops2_refresh_storefront_order_whatsapp_v1 failed for order %: %',new.id,sqlerrm;
+  end;
+  return new;
+end;
+$$;
+
+revoke all on function public.ops2_refresh_storefront_order_whatsapp_v1() from public,anon,authenticated;
+grant execute on function public.ops2_refresh_storefront_order_whatsapp_v1() to service_role;
+
+drop trigger if exists trg_ops2_refresh_storefront_order_whatsapp_v1 on public.orders;
+create trigger trg_ops2_refresh_storefront_order_whatsapp_v1
+after update of conversation_id,whatsapp_account_id,customer_id,phone_e164 on public.orders
+for each row
+execute function public.ops2_refresh_storefront_order_whatsapp_v1();
 
 create or replace function public.ops2_claim_whatsapp_outbox_v1()
 returns jsonb
