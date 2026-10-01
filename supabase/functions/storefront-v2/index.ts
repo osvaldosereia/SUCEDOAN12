@@ -76,10 +76,10 @@ async function home(){
     }}).filter(Boolean);
     return {ok:true,version:"canonical-vitrine-v3-split-kits",split_kits:true,baskets,categories:CATEGORIES};
   }
-  const {data:lq,error:le}=await db.from("basket_current_lot_v1").select("basket_id,lot_id,lot_code,quantity_available,built_at");
+  const {data:lq,error:le}=await db.from("basket_current_lot_v1").select("basket_id,lot_id,lot_code,quantity_available,built_at,sale_price_override");
   if(le)throw le;const lm=new Map((lq||[]).map((x:any)=>[String(x.basket_id),x]));
   const baskets=(basketsBase||[]).map((b:any)=>{const lot:any=lm.get(String(b.id));if(!lot||Number(lot.quantity_available||0)<=0)return null;return {
-    id:b.id,name:b.name,display_price_cents:cents(b.base_price),image_url:b.image_url||"",
+    id:b.id,name:b.name,display_price_cents:cents(lot.sale_price_override??b.base_price),image_url:b.image_url||"",
     stock_quantity:Number(lot.quantity_available||0),lot_id:lot.lot_id,lot_code:lot.lot_code,split_mode:false
   }}).filter(Boolean);
   return {ok:true,version:"canonical-vitrine-v2-premounted",split_kits:false,baskets,categories:CATEGORIES};
@@ -146,12 +146,12 @@ async function basket(id:string){
       hygiene_lot_id:a.hygiene_lot_id||null,hygiene_lot_code:a.hygiene_short_code||"",hygiene_lot_quantity:Number(a.hygiene_available||0),
       uses_hygiene_kit:a.uses_hygiene_kit===true},items:[...food,...hygiene]};
   }
-  const {data:lot,error:le}=await db.from("basket_current_lot_v1").select("lot_id,lot_code,quantity_available,built_at").eq("basket_id",id).maybeSingle();if(le)throw le;if(!lot||Number(lot.quantity_available||0)<=0)return null;
+  const {data:lot,error:le}=await db.from("basket_current_lot_v1").select("lot_id,lot_code,quantity_available,built_at,sale_price_override").eq("basket_id",id).maybeSingle();if(le)throw le;if(!lot||Number(lot.quantity_available||0)<=0)return null;
   const {data:items,error:ie}=await db.from("basket_stock_lot_items")
     .select("id,product_id,quantity_per_basket,position_order,source_template_item_id,product:products(id,name,image_url,packaging,is_active),rule:basket_template_items(id,removable,quantity_editable,min_quantity,max_quantity,remove_unit_delta,add_unit_delta)")
     .eq("lot_id",lot.lot_id).order("position_order");if(ie)throw ie;
   const ids=(items||[]).map((i:any)=>i.product_id),sm=await sellableMap(ids);
-  return {basket:{id:b.id,name:b.name,display_price_cents:cents(b.base_price),image_url:b.image_url||"",
+  return {basket:{id:b.id,name:b.name,display_price_cents:cents(lot.sale_price_override??b.base_price),image_url:b.image_url||"",
       split_mode:false,lot_id:lot.lot_id,lot_code:lot.lot_code,stock_quantity:Number(lot.quantity_available||0)},
     items:(items||[]).map((i:any)=>{const product:any=Array.isArray(i.product)?i.product[0]:i.product,rule:any=Array.isArray(i.rule)?i.rule[0]:i.rule,base=Number(i.quantity_per_basket||0),extra=product?.is_active===false?0:(sm.get(i.product_id)||0),configuredMax=rule?.max_quantity==null?base+Math.floor(extra):Number(rule.max_quantity);return {
       product_id:i.product_id,name:product?.name||"Produto",image_url:product?.image_url||"",packaging:product?.packaging||"",
@@ -197,7 +197,7 @@ async function quote(payload:any){
 
   const {data:b,error:be}=await db.from("basket_templates").select("id,base_price").eq("id",id).eq("is_active",true).maybeSingle();if(be)throw be;if(!b)return {error:"basket_not_found",status:404};
   const requestedLot=uid(payload?.lot_id);
-  let lotQuery=db.from("basket_stock_lots").select("id,lot_code,quantity_available").eq("basket_id",id).eq("lot_kind","legacy_full").eq("status","ready").gt("quantity_available",0);
+  let lotQuery=db.from("basket_stock_lots").select("id,lot_code,quantity_available,sale_price_override").eq("basket_id",id).eq("lot_kind","legacy_full").eq("sale_enabled",true).eq("status","ready").gt("quantity_available",0);
   if(requestedLot)lotQuery=lotQuery.eq("id",requestedLot);
   const {data:lots,error:le}=await lotQuery.order("built_at").order("created_at").limit(1);if(le)throw le;
   const lot:any=(lots||[])[0];if(!lot)return {error:"basket_lot_unavailable",status:409};
@@ -205,7 +205,7 @@ async function quote(payload:any){
     .select("product_id,quantity_per_basket,source_template_item_id,product:products(id,price,is_active),rule:basket_template_items(id,removable,quantity_editable,min_quantity,max_quantity,remove_unit_delta,add_unit_delta)")
     .eq("lot_id",lot.id);if(error)throw error;
   const ids=(rules||[]).map((r:any)=>r.product_id),sm=await sellableMap(ids),req=new Map<string,number>((Array.isArray(payload?.items)?payload.items:[]).map((x:any)=>[uid(x?.product_id),Number(x?.quantity||0)]).filter((x:any)=>x[0]));
-  let total=Number(b.base_price||0);
+  let total=Number(lot.sale_price_override??b.base_price??0);
   for(const r of rules||[]){const product:any=Array.isArray(r.product)?r.product[0]:r.product,rule:any=Array.isArray(r.rule)?r.rule[0]:r.rule,base=Number(r.quantity_per_basket||0),qty=req.has(r.product_id)?Number(req.get(r.product_id)):base,loose=product?.is_active===false?0:(sm.get(r.product_id)||0),min=Math.max(0,Number(rule?.min_quantity??(rule?.removable===false?base:0))),max=Math.min(base+Math.floor(loose),Number(rule?.max_quantity??(base+Math.floor(loose))));if(!Number.isFinite(qty)||qty<0||Math.trunc(qty)!==qty)return {error:"invalid_basket_quantity",status:400};if(qty===0&&rule?.removable===false)return {error:"item_not_removable",status:409};if(qty<min||qty>max)return {error:"basket_quantity_out_of_range",status:409};const price=Number(product?.price||0);if(qty<base)total+=Math.abs(qty-base)*Number(rule?.remove_unit_delta??-price);else if(qty>base)total+=(qty-base)*Number(rule?.add_unit_delta??price)}
   for(const [pid] of req)if(!(rules||[]).some((r:any)=>String(r.product_id)===pid))return {error:"basket_component_not_in_lot",status:409};
   return {ok:true,total_cents:Math.max(0,cents(total)),lot_id:lot.id,lot_code:lot.lot_code,split_mode:false};
@@ -286,7 +286,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:25},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:26},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home")return json(req,await home(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
