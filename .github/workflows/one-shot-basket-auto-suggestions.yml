@@ -33,7 +33,7 @@ jobs:
           p=Path('scripts/patch-basket-auto-suggestions.py')
           s=p.read_text(encoding='utf-8')
           old="s=s.replace('</style>',CSS+'  </style>',1)"
-          new="s=s.replace('</style>',CSS+'</style>',1)"
+          new="s=s.replace('  </style>',CSS+'  </style>',1)"
           assert old in s
           p.write_text(s.replace(old,new,1),encoding='utf-8')
           PY
