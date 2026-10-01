@@ -1,0 +1,36 @@
+name: Verify admin order WhatsApp registration
+on:
+  push:
+    branches: [feat/admin-order-whatsapp-registration]
+    paths:
+      - 'scripts/test-admin-order-whatsapp-registration.mjs'
+      - 'supabase/sql/20261001_order_registration_link_v1.sql'
+      - 'supabase/sql/20261001_admin_order_whatsapp_outbox_v1.sql'
+      - 'supabase/functions/whatsapp-order-outbound-v1/**'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'vitrine/admin/index.html'
+      - 'cadastro/index.html'
+      - '.github/workflows/verify-admin-order-whatsapp-registration.yml'
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Contract
+        run: node scripts/test-admin-order-whatsapp-registration.mjs
+      - name: Inline JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          for(const file of ['vitrine/admin/index.html','cadastro/index.html']){
+            const html=fs.readFileSync(file,'utf8');
+            const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+            scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`${file} inline script ${i+1}: ${e.message}`)}});
+          }
+          console.log('syntax OK');
+          NODE
+      - name: Diff check
+        run: git diff --check HEAD^ HEAD
