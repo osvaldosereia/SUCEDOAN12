@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 jobs:
-  contract:
+  patch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +17,38 @@ jobs:
             vitrine/index.html
             vitrine/admin/index.html
             scripts/test-marketing-intelligence-contract.py
+            scripts/patch-marketing-intelligence-v1.py
+            supabase/functions/marketing-intelligence-v1/index.ts
+            supabase/functions/storefront-marketing-v1/index.ts
+            supabase/migrations/20260930_marketing_campaign_brand_rules_v1.sql
           sparse-checkout-cone-mode: false
-      - name: RED marketing intelligence contract
-        run: python3 scripts/test-marketing-intelligence-contract.py
+      - name: RED confirm contract is not implemented yet
+        run: |
+          if python3 scripts/test-marketing-intelligence-contract.py; then
+            echo 'Contract unexpectedly green before patch' >&2
+            exit 1
+          fi
+          echo 'RED confirmed: marketing intelligence markers are absent before patch'
+      - name: Apply marketing intelligence patch
+        run: python3 scripts/patch-marketing-intelligence-v1.py
+      - name: GREEN verify contract and JavaScript syntax
+        run: |
+          python3 scripts/test-marketing-intelligence-contract.py
+          node <<'NODE'
+          const fs=require('fs');
+          for(const file of ['index.html','vitrine/index.html','vitrine/admin/index.html']){
+            const html=fs.readFileSync(file,'utf8');
+            const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+            scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`${file} inline script ${i+1}: ${e.message}`)}});
+            console.log(file+' JS syntax OK');
+          }
+          NODE
+          cmp -s index.html vitrine/index.html
+          git diff --check
+      - name: Commit live storefront and admin
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add index.html vitrine/index.html vitrine/admin/index.html
+          git commit -m 'feat(marketing): ativa inteligencia de campanha no site e admin'
+          git push origin HEAD:main
