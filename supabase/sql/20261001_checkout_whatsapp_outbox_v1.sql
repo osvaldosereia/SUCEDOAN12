@@ -226,3 +226,95 @@ create trigger trg_ops2_enqueue_storefront_order_whatsapp_v1
 after insert on public.orders
 for each row
 execute function public.ops2_enqueue_storefront_order_whatsapp_v1();
+
+create or replace function public.ops2_claim_whatsapp_outbox_v1()
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $$
+declare
+  v_item public.ops2_whatsapp_outbox_v1%rowtype;
+begin
+  update public.ops2_whatsapp_outbox_v1
+     set status='retry',locked_at=null,updated_at=now(),last_error=coalesce(last_error,'stale_sending_recovered')
+   where status='sending'
+     and locked_at < now()-interval '15 minutes'
+     and attempt_count < 5;
+
+  with next_item as (
+    select q.id
+    from public.ops2_whatsapp_outbox_v1 q
+    where q.status in ('pending','retry')
+      and q.available_at <= now()
+      and q.attempt_count < 5
+    order by q.available_at,q.created_at
+    for update skip locked
+    limit 1
+  )
+  update public.ops2_whatsapp_outbox_v1 q
+     set status='sending',
+         attempt_count=q.attempt_count+1,
+         locked_at=now(),
+         updated_at=now(),
+         last_error=null
+    from next_item n
+   where q.id=n.id
+  returning q.* into v_item;
+
+  if not found then
+    return jsonb_build_object('ok',true,'found',false);
+  end if;
+
+  return jsonb_build_object('ok',true,'found',true,'item',to_jsonb(v_item));
+end;
+$$;
+
+revoke all on function public.ops2_claim_whatsapp_outbox_v1() from public,anon,authenticated;
+grant execute on function public.ops2_claim_whatsapp_outbox_v1() to service_role;
+
+create or replace function public.ops2_finish_whatsapp_outbox_v1(
+  p_outbox_id uuid,
+  p_status text,
+  p_external_message_id text default null,
+  p_last_error text default null,
+  p_retry_after_seconds integer default 300
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $$
+declare
+  v_status text:=lower(coalesce(btrim(p_status),''));
+  v_item public.ops2_whatsapp_outbox_v1%rowtype;
+begin
+  if p_outbox_id is null then
+    return jsonb_build_object('ok',false,'error','outbox_id_required');
+  end if;
+  if v_status not in ('sent','retry','failed','suppressed') then
+    return jsonb_build_object('ok',false,'error','invalid_finish_status');
+  end if;
+
+  update public.ops2_whatsapp_outbox_v1
+     set status=v_status,
+         external_message_id=case when v_status='sent' then nullif(btrim(p_external_message_id),'') else external_message_id end,
+         last_error=case when v_status='sent' then null else nullif(left(coalesce(p_last_error,''),500),'') end,
+         sent_at=case when v_status='sent' then now() else sent_at end,
+         available_at=case when v_status='retry' then now()+make_interval(secs=>greatest(60,least(coalesce(p_retry_after_seconds,300),3600))) else available_at end,
+         locked_at=null,
+         updated_at=now()
+   where id=p_outbox_id
+     and status='sending'
+  returning * into v_item;
+
+  if not found then
+    return jsonb_build_object('ok',false,'error','outbox_not_sending');
+  end if;
+
+  return jsonb_build_object('ok',true,'outbox_id',v_item.id,'status',v_item.status,'attempt_count',v_item.attempt_count,'external_message_id',v_item.external_message_id);
+end;
+$$;
+
+revoke all on function public.ops2_finish_whatsapp_outbox_v1(uuid,text,text,text,integer) from public,anon,authenticated;
+grant execute on function public.ops2_finish_whatsapp_outbox_v1(uuid,text,text,text,integer) to service_role;
