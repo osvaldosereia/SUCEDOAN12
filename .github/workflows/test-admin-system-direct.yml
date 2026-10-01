@@ -1,0 +1,12 @@
+name: Test admin system direct buttons
+on:
+  push:
+    branches:
+      - fix/admin-system-buttons-direct-20261001
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run sidebar contract
+        run: python scripts/test-admin-sidebar-v9.py
