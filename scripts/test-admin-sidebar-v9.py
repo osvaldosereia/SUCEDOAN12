@@ -8,6 +8,8 @@ assert 'Admin Navigation V6.1' not in html, 'legacy V6 navigation CSS still pres
 assert 'ADMIN_SIDEBAR_NAV_V7' not in html, 'legacy V7 sidebar CSS still present'
 assert 'ADMIN_SIDEBAR_VISUAL_V8' not in html, 'legacy V8 sidebar CSS still present'
 assert '.admin-nav .nav-submenu[hidden]' not in html, 'legacy hidden/dropdown rule still present'
+assert 'MOBILE_GLOBAL_GUARDS_V9' in html, 'mobile width guards were lost during refactor'
+assert '#app,#content,main,.wrap,.panel,.page-head,.toolbar,.history-title,.dispatch-head' in html, 'global mobile min-width guard missing'
 
 m = re.search(r'<nav[^>]*id="adminNav"[^>]*>(.*?)</nav>', html, re.S)
 assert m, 'adminNav not found'
