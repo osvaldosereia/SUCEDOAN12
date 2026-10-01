@@ -20,11 +20,12 @@ elif 'PEDIDO DONA ANTONIA' in site[site.index('async function sendWhatsApp()'):s
     raise SystemExit('legacy post-order message block marker not found')
 
 helper="""    function buildMarketingSignalLines(marketingSignals){
-      const signals=marketingSignals||buildMarketingSignals(),lines=['OFERTAS_WHATSAPP: '+(signals.optIn?'SIM':'NAO')];
-      for(const interest of signals.interests)lines.push('INTERESSES_MKT: '+interest);
-      for(const brand of signals.brands)lines.push('MARCAS_MKT: '+brand);
-      lines.push('CTA_POS_PEDIDO: '+signals.cta);
-      if(signals.campaign)lines.push('CAMPANHA_ORIGEM: '+signals.campaign);
+      marketingSignals=marketingSignals||buildMarketingSignals();
+      const lines=['OFERTAS_WHATSAPP: '+(marketingSignals.optIn?'SIM':'NAO')];
+      for(const interest of marketingSignals.interests)lines.push('INTERESSES_MKT: '+interest);
+      for(const brand of marketingSignals.brands)lines.push('MARCAS_MKT: '+brand);
+      lines.push('CTA_POS_PEDIDO: '+marketingSignals.cta);
+      if(marketingSignals.campaign)lines.push('CAMPANHA_ORIGEM: '+marketingSignals.campaign);
       return lines;
     }
 """
