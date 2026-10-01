@@ -1,0 +1,41 @@
+name: One-shot basket substitution catalog UI v3
+on:
+  push:
+    branches: [feat/basket-substitution-catalog-v3-20261001]
+    paths: ['.github/workflows/one-shot-basket-substitution-catalog-ui-v3.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/patch-basket-substitution-catalog-ui-v3.py
+            scripts/test-basket-substitution-catalog-ui-v3.py
+            .github/workflows/one-shot-basket-substitution-catalog-ui-v3.yml
+          sparse-checkout-cone-mode: false
+      - name: Apply patch
+        run: python3 scripts/patch-basket-substitution-catalog-ui-v3.py
+      - name: Verify UI
+        run: |
+          python3 scripts/test-basket-substitution-catalog-ui-v3.py
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log('Admin JS syntax OK');
+          NODE
+          git diff --check
+      - name: Commit patch and clean one-shot
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git rm -f scripts/patch-basket-substitution-catalog-ui-v3.py .github/workflows/one-shot-basket-substitution-catalog-ui-v3.yml
+          git commit -m 'feat(admin): gerencia famílias e produtos substituíveis'
+          git push origin HEAD:feat/basket-substitution-catalog-v3-20261001
