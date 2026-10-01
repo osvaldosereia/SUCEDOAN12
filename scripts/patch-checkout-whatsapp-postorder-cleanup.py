@@ -19,12 +19,27 @@ if start in site:
 elif 'PEDIDO DONA ANTONIA' in site[site.index('async function sendWhatsApp()'):site.index("$('#globalSearchForm')")]:
     raise SystemExit('legacy post-order message block marker not found')
 
+helper="""    function buildMarketingSignalLines(marketingSignals){
+      const signals=marketingSignals||buildMarketingSignals(),lines=['OFERTAS_WHATSAPP: '+(signals.optIn?'SIM':'NAO')];
+      for(const interest of signals.interests)lines.push('INTERESSES_MKT: '+interest);
+      for(const brand of signals.brands)lines.push('MARCAS_MKT: '+brand);
+      lines.push('CTA_POS_PEDIDO: '+signals.cta);
+      if(signals.campaign)lines.push('CAMPANHA_ORIGEM: '+signals.campaign);
+      return lines;
+    }
+"""
+if 'function buildMarketingSignalLines(marketingSignals)' not in site:
+    marker='    function applyMarketingEntryContext(){\n'
+    if marker not in site:
+        raise SystemExit('marketing entry helper marker not found')
+    site=site.replace(marker,helper+marker,1)
+
 send=site[site.index('async function sendWhatsApp()'):site.index("$('#globalSearchForm')")]
-for forbidden in ['const marketingSignals=buildMarketingSignals();','const lines=','PEDIDO DONA ANTONIA','INTERESSES_MKT','MARCAS_MKT']:
+for forbidden in ['const marketingSignals=buildMarketingSignals();','const lines=','PEDIDO DONA ANTONIA','INTERESSES_MKT','MARCAS_MKT','buildMarketingSignalLines(']:
     if forbidden in send:
         raise SystemExit(f'obsolete post-order fragment still present: {forbidden}')
-if 'function buildMarketingSignals()' not in site:
-    raise SystemExit('marketing signal helper must remain available')
+if 'function buildMarketingSignals()' not in site or 'function buildMarketingSignalLines(marketingSignals)' not in site:
+    raise SystemExit('marketing signal helpers must remain available')
 if "saved=await api('submit_order'" not in send or 'renderOrderSuccess(url,saved)' not in send:
     raise SystemExit('canonical submit/success flow missing')
 
