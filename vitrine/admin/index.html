@@ -1039,222 +1039,11 @@
       #productMore .secondary{width:100%}
     }
 
-    /* Admin Navigation V6.1 · desktop + mobile sem overflow horizontal */
-    .admin-nav{
-      display:flex;
-      align-items:flex-start;
-      flex-wrap:wrap;
-      gap:7px;
-      overflow:visible;
-      position:relative;
-      padding:0 20px 10px;
-    }
-    .admin-nav .nav-group{position:relative;min-width:0}
-    .admin-nav .nav-group-toggle{
-      min-height:42px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:7px;
-      border:1px solid transparent;
-      border-radius:10px;
-      padding:0 13px;
-      background:transparent;
-      color:#48554d;
-      font-size:13px;
-      font-weight:700;
-      white-space:nowrap;
-    }
-    .admin-nav .nav-group-toggle:hover,
-    .admin-nav .nav-group.open>.nav-group-toggle{
-      background:var(--soft);
-      color:var(--ink);
-    }
-    .admin-nav .nav-group.active>.nav-group-toggle{
-      background:var(--brand-soft);
-      border-color:#cfe1d5;
-      color:var(--brand2);
-      box-shadow:inset 0 -2px 0 var(--brand);
-    }
-    .admin-nav .nav-chevron{
-      display:inline-block;
-      font-size:12px;
-      line-height:1;
-      transition:transform .14s ease;
-    }
-    .admin-nav .nav-group.open .nav-chevron{transform:rotate(180deg)}
-    .admin-nav .nav-submenu{
-      position:absolute;
-      z-index:80;
-      top:calc(100% + 7px);
-      left:0;
-      width:max-content;
-      min-width:220px;
-      max-width:min(320px,calc(100vw - 24px));
-      display:grid;
-      gap:3px;
-      padding:7px;
-      border:1px solid var(--line);
-      border-radius:12px;
-      background:#fff;
-      box-shadow:0 16px 38px rgba(16,35,23,.16);
-    }
-    .admin-nav .nav-submenu-right{left:auto;right:0}
-    .admin-nav .nav-submenu[hidden]{display:none!important}
-    .admin-nav .nav-submenu .tab,
-    .admin-nav .nav-mobile-store-link{
-      width:100%;
-      min-height:40px;
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-      padding:0 11px;
-      border:1px solid transparent;
-      border-radius:8px;
-      background:transparent;
-      color:#3f4d44;
-      font-size:13px;
-      font-weight:700;
-      text-align:left;
-      text-decoration:none;
-      box-shadow:none;
-    }
-    .admin-nav .nav-submenu .tab:hover,
-    .admin-nav .nav-mobile-store-link:hover{background:var(--soft);color:var(--ink)}
-    .admin-nav .nav-submenu .tab.active{
-      background:var(--brand-soft);
-      border-color:#cfe1d5;
-      color:var(--brand2);
-      box-shadow:none;
-    }
-    .nav-mobile-store-link{display:none!important}
-
-    @media(max-width:900px){
-      .admin-nav{padding-inline:14px}
-    }
-
-    @media(max-width:760px){
-      html,body{max-width:100%;overflow-x:hidden}
-      .top{
-        position:sticky;
-        top:0;
-        z-index:40;
-        box-shadow:0 2px 12px rgba(16,35,23,.07);
-      }
-      .top-row{
-        min-height:52px;
-        padding-top:max(6px,env(safe-area-inset-top));
-        padding-bottom:6px;
-        grid-template-columns:52px minmax(0,1fr) minmax(76px,96px);
-        grid-template-areas:"logo brand operator";
-        gap:7px;
-      }
-      .top-row>.store-link{display:none}
-      .logo{width:52px;height:30px}
-      .brand strong{
-        font-size:14px;
-        line-height:1.15;
-        white-space:normal;
-        overflow-wrap:anywhere;
-      }
-      .brand small{display:none}
-      .operator-badge{
-        max-width:96px;
-        min-width:0;
-        min-height:36px;
-        padding:5px 8px;
-        font-size:10px;
-        line-height:1.1;
-      }
-
-      .admin-nav{
-        display:grid;
-        grid-template-columns:repeat(3,minmax(0,1fr));
-        gap:6px;
-        padding:5px 10px 8px;
-        overflow:visible;
-        max-width:100%;
-      }
-      .admin-nav .nav-group{position:static;min-width:0}
-      .admin-nav .nav-group-toggle{
-        width:100%;
-        min-width:0;
-        min-height:38px;
-        justify-content:space-between;
-        gap:5px;
-        padding:0 9px;
-        font-size:11px;
-        line-height:1.05;
-        overflow:hidden;
-      }
-      .admin-nav .nav-group-toggle>span:first-child{
-        min-width:0;
-        overflow:hidden;
-        text-overflow:ellipsis;
-        white-space:nowrap;
-      }
-      .admin-nav .nav-chevron{flex:0 0 auto;font-size:11px}
-
-      .admin-nav .nav-submenu,
-      .admin-nav .nav-submenu-right{
-        left:10px;
-        right:10px;
-        top:calc(100% + 1px);
-        width:auto;
-        min-width:0;
-        max-width:none;
-        grid-template-columns:repeat(2,minmax(0,1fr));
-        gap:5px;
-        padding:8px;
-        max-height:min(62dvh,460px);
-        overflow-y:auto;
-        overflow-x:hidden;
-        overscroll-behavior:contain;
-        border-radius:13px;
-        box-shadow:0 18px 42px rgba(16,35,23,.22);
-      }
-      .admin-nav .nav-submenu .tab,
-      .admin-nav .nav-mobile-store-link{
-        min-width:0;
-        min-height:46px;
-        padding:8px 10px;
-        white-space:normal;
-        overflow-wrap:anywhere;
-        line-height:1.2;
-        font-size:12px;
-      }
-      .nav-mobile-store-link{display:flex!important}
-
-      /* Mobile global guards: no accidental page-width growth. */
-      #app,#content,main,.wrap,.panel,.page-head,.toolbar,.history-title,.dispatch-head,
-      .product-stock-breakdown,.basket-admin-card,.basket-composer,.purchase-doc-expanded,
-      .quote-admin-shell,.customer-profile-head,.history-detail-head{min-width:0;max-width:100%}
-      #content img,.panel img{max-width:100%;height:auto}
-      .page-head>*,.toolbar>*,.history-title>*,.dispatch-head>*{min-width:0}
-      input,select,textarea{max-width:100%}
-      button,a{max-width:100%}
-    }
-
-    @media(max-width:360px){
-      .top-row{
-        grid-template-columns:46px minmax(0,1fr) 82px;
-        gap:6px;
-      }
-      .logo{width:46px;height:28px}
-      .brand strong{font-size:13px}
-      .operator-badge{max-width:82px;padding-inline:6px;font-size:9px}
-      .admin-nav{grid-template-columns:repeat(3,minmax(0,1fr));padding-inline:8px;gap:5px}
-      .admin-nav .nav-group-toggle{padding-inline:7px;font-size:10px}
-      .admin-nav .nav-submenu,
-      .admin-nav .nav-submenu-right{left:8px;right:8px;grid-template-columns:1fr}
-    }
-
-
     /* PRODUCTS_MOBILE_DETAIL_V2 */
     @media(max-width:640px){
       html,body{width:100%;max-width:100%;overflow-x:hidden!important}
       #content.wrap{max-width:100%;overflow-x:hidden}
-      .top .wrap,.admin-nav{overflow:visible!important}
+      .top .wrap{overflow:visible!important}
       #productRows.mobile-product-grid{width:100%;max-width:100%;overflow-x:hidden;align-items:start}
       .mobile-product-card{height:420px!important;min-height:420px!important;max-width:100%;overflow:hidden!important;contain:layout paint;overflow-anchor:none}
       .mobile-product-card .mobile-product-thumb{width:100%!important;height:138px!important;max-height:138px!important;object-fit:contain}
@@ -1305,261 +1094,88 @@
     .basket-family-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.basket-family-card{border:1px solid var(--line);border-radius:13px;padding:12px;background:#fff}.basket-family-card.off{opacity:.68}.basket-family-card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.basket-family-products{display:grid;gap:7px;margin-top:10px}.basket-family-product{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:7px}.basket-family-product img{width:42px;height:42px;object-fit:contain;border-radius:8px;background:#fff}.basket-family-product strong,.basket-family-product small{display:block}.basket-family-product small{color:var(--muted);font-size:10px;margin-top:2px}.basket-family-search-results{display:grid;gap:7px;margin-top:8px}.basket-family-note{font-size:11px;color:var(--muted);line-height:1.45;margin:8px 0}.basket-family-editor-head{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:10px}
     @media(max-width:700px){.basket-family-grid{grid-template-columns:1fr}.basket-family-editor-head{grid-template-columns:1fr}.basket-family-product{grid-template-columns:38px minmax(0,1fr)}.basket-family-product>button{grid-column:1/-1}}
 
-    /* ADMIN_SIDEBAR_NAV_V7 */
-    .admin-nav-toggle{display:none;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;width:42px;height:42px;align-items:center;justify-content:center;font-weight:900;flex:none}
-    .admin-nav-toggle-glyph{font-size:22px;line-height:1}
+
+    /* ADMIN_SIDEBAR_V9 · única implementação de navegação do Admin */
+    :root{--admin-sidebar-width:224px}
+    .admin-nav-toggle{
+      display:none;width:42px;height:42px;flex:0 0 42px;align-items:center;justify-content:center;
+      border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font-size:22px;font-weight:900
+    }
+    .admin-sidebar{
+      background:#fff;border-right:1px solid var(--line);color:var(--ink);overscroll-behavior:contain
+    }
+    .admin-sidebar-section{padding:0 0 8px;margin:0 0 7px;border-bottom:1px solid #eef1ef}
+    .admin-sidebar-section:last-child{border-bottom:0;margin-bottom:0}
+    .admin-sidebar-title{
+      min-height:25px;display:flex;align-items:center;padding:0 8px;color:#68736c;
+      font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase
+    }
+    .admin-sidebar-section.active>.admin-sidebar-title{color:var(--brand2)}
+    .admin-sidebar-list{display:grid;grid-template-columns:1fr;gap:2px}
+    .admin-sidebar-item,.admin-sidebar-store{
+      width:100%;min-width:0;min-height:38px;padding:5px 8px;display:flex;align-items:center;gap:9px;
+      border:1px solid transparent;border-radius:9px;background:transparent;color:#3f4d44;
+      font:inherit;font-size:13px;font-weight:750;line-height:1.2;text-align:left;text-decoration:none;cursor:pointer
+    }
+    .admin-sidebar-item:hover,.admin-sidebar-store:hover{background:var(--soft);color:var(--ink)}
+    .admin-sidebar-item.active{
+      background:#edf6f0;border-color:#d7e8dc;color:var(--brand2);font-weight:900;
+      box-shadow:inset 3px 0 0 var(--brand)
+    }
+    .nav-item-icon{
+      width:26px;height:26px;flex:0 0 26px;display:inline-flex;align-items:center;justify-content:center;
+      border-radius:8px;background:#f2f5f3;color:#536159;font-size:14px;font-weight:900;line-height:1
+    }
+    .admin-sidebar-item.active .nav-item-icon{background:#fff;color:var(--brand2);box-shadow:0 0 0 1px #cfe1d5}
+    .admin-sidebar-store{display:none;margin-top:4px}
     .admin-nav-backdrop{display:none}
 
     @media(min-width:761px){
-      .top{position:sticky;top:0;z-index:50}
+      .top{position:sticky;top:0;z-index:60}
       .top-row.wrap{width:100%;max-width:none;padding-inline:18px}
-      .admin-nav{
-        position:fixed!important;
-        left:0!important;
-        top:64px!important;
-        bottom:0!important;
-        z-index:45!important;
-        width:248px!important;
-        max-width:248px!important;
-        height:auto!important;
-        margin:0!important;
-        padding:14px 12px 24px!important;
-        display:flex!important;
-        flex-direction:column!important;
-        align-items:stretch!important;
-        flex-wrap:nowrap!important;
-        gap:12px!important;
-        overflow-x:hidden!important;
-        overflow-y:auto!important;
-        background:#fff!important;
-        border-right:1px solid var(--line)!important;
-        box-shadow:4px 0 18px rgba(16,35,23,.04)!important;
+      .admin-sidebar{
+        position:fixed;left:0;top:60px;bottom:0;z-index:50;width:var(--admin-sidebar-width);
+        padding:12px 10px 20px;overflow-x:hidden;overflow-y:auto;box-shadow:4px 0 18px rgba(16,35,23,.04)
       }
-      .admin-nav .nav-group{position:static!important;width:100%;min-width:0!important}
-      .admin-nav .nav-group-toggle{
-        width:100%!important;
-        min-height:28px!important;
-        padding:0 9px!important;
-        justify-content:flex-start!important;
-        border:0!important;
-        background:transparent!important;
-        color:var(--muted)!important;
-        font-size:11px!important;
-        font-weight:900!important;
-        letter-spacing:.06em!important;
-        text-transform:uppercase!important;
-        pointer-events:none!important;
-        box-shadow:none!important;
-      }
-      .admin-nav .nav-group.active>.nav-group-toggle{color:var(--brand)!important}
-      .admin-nav .nav-chevron{display:none!important}
-      html body .admin-nav .nav-submenu,
-      html body .admin-nav .nav-submenu[hidden],
-      html body .admin-nav .nav-submenu-right{
-        position:static!important;
-        inset:auto!important;
-        width:100%!important;
-        min-width:0!important;
-        max-width:none!important;
-        display:grid!important;
-        grid-template-columns:1fr!important;
-        gap:3px!important;
-        padding:2px 0 0!important;
-        border:0!important;
-        border-radius:0!important;
-        background:transparent!important;
-        box-shadow:none!important;
-        overflow:visible!important;
-      }
-      .admin-nav .nav-submenu .tab,
-      .admin-nav .nav-mobile-store-link{
-        width:100%!important;
-        min-height:40px!important;
-        padding:8px 11px!important;
-        border:1px solid transparent!important;
-        border-radius:9px!important;
-        display:flex!important;
-        justify-content:flex-start!important;
-        align-items:center!important;
-        background:transparent!important;
-        color:#3f4d44!important;
-        font-size:13px!important;
-        font-weight:750!important;
-        text-align:left!important;
-        white-space:normal!important;
-      }
-      .admin-nav .nav-submenu .tab:hover,
-      .admin-nav .nav-mobile-store-link:hover{background:var(--soft)!important;color:var(--ink)!important}
-      .admin-nav .nav-submenu .tab.active{
-        background:#eaf3ed!important;
-        border-color:#cfe1d5!important;
-        color:var(--brand2)!important;
-        box-shadow:inset 3px 0 0 var(--brand)!important;
-      }
-      .nav-mobile-store-link{display:flex!important;margin-top:4px}
       #content.wrap{
-        width:auto!important;
-        max-width:none!important;
-        margin:0 22px 0 270px!important;
-        padding:18px 0 80px!important;
+        width:auto;max-width:none;margin:0 20px 0 calc(var(--admin-sidebar-width) + 20px);padding:18px 0 80px
       }
     }
 
     @media(max-width:760px){
-      .top{position:sticky;top:0;z-index:100!important}
-      .top-row{
-        display:grid!important;
-        grid-template-columns:42px 48px minmax(0,1fr)!important;
-        grid-template-areas:'menu logo brand'!important;
-        gap:7px!important;
-        min-height:56px!important;
-        height:auto!important;
-        padding:7px 10px!important;
+      html,body{max-width:100%;overflow-x:hidden}
+      .top{position:sticky;top:0;z-index:140}
+      .top .top-row{
+        display:grid;grid-template-columns:42px 48px minmax(0,1fr);grid-template-areas:'menu logo brand';
+        align-items:center;gap:7px;min-height:56px;height:auto;padding:7px 10px
       }
-      .admin-nav-toggle{display:inline-flex!important;grid-area:menu;position:relative;z-index:140}
-      .logo{grid-area:logo!important;width:48px!important;height:32px!important}
-      .brand{grid-area:brand!important;min-width:0!important}
-      .brand strong{font-size:14px!important;line-height:1.15!important}
-      .brand small{display:none!important}
-      .top-row>.store-link,.operator-badge{display:none!important}
-
-      .admin-nav{
-        position:fixed!important;
-        top:0!important;
-        bottom:0!important;
-        left:0!important;
-        z-index:125!important;
-        width:min(86vw,310px)!important;
-        max-width:310px!important;
-        height:100dvh!important;
-        margin:0!important;
-        padding:64px 12px max(24px,env(safe-area-inset-bottom))!important;
-        display:block!important;
-        overflow-x:hidden!important;
-        overflow-y:auto!important;
-        background:#fff!important;
-        border-right:1px solid var(--line)!important;
-        box-shadow:18px 0 48px rgba(16,35,23,.18)!important;
-        transform:translateX(-104%)!important;
-        transition:transform .2s ease!important;
-        overscroll-behavior:contain;
+      .admin-nav-toggle{display:inline-flex;grid-area:menu;position:relative;z-index:160}
+      .admin-nav-toggle-glyph{font-size:22px;line-height:1}
+      .top .logo{grid-area:logo;width:48px;height:32px}
+      .top .brand{grid-area:brand;min-width:0}
+      .top .brand strong{font-size:14px;line-height:1.15}
+      .top .brand small{display:none}
+      .top-row>.store-link,.top-row>.operator-badge{display:none}
+      .admin-sidebar{
+        position:fixed;left:0;top:0;bottom:0;z-index:130;width:min(88vw,320px);height:100dvh;
+        padding:66px 10px max(24px,env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto;
+        box-shadow:18px 0 48px rgba(16,35,23,.18);transform:translateX(-104%);transition:transform .2s ease
       }
-      body.admin-nav-open .admin-nav{transform:translateX(0)!important}
-      .admin-nav-backdrop{
-        display:block!important;
-        position:fixed;
-        inset:0;
-        z-index:115;
-        border:0;
-        padding:0;
-        background:rgba(15,23,18,.42);
-        opacity:0;
-        pointer-events:none;
-        transition:opacity .2s ease;
-      }
-      body.admin-nav-open .admin-nav-backdrop{opacity:1;pointer-events:auto}
-      body.admin-nav-open{overflow:hidden!important}
+      body.admin-nav-open .admin-sidebar{transform:translateX(0)}
+      body.admin-nav-open{overflow:hidden}
       body.admin-nav-open .admin-nav-toggle-glyph{font-size:0}
       body.admin-nav-open .admin-nav-toggle-glyph::after{content:'×';font-size:28px;line-height:1}
-      .admin-nav .nav-group{position:static!important;width:100%!important;margin:0 0 12px!important}
-      .admin-nav .nav-group-toggle{
-        width:100%!important;
-        min-height:28px!important;
-        padding:0 9px!important;
-        justify-content:flex-start!important;
-        border:0!important;
-        background:transparent!important;
-        color:var(--muted)!important;
-        font-size:11px!important;
-        font-weight:900!important;
-        letter-spacing:.06em!important;
-        text-transform:uppercase!important;
-        pointer-events:none!important;
-        box-shadow:none!important;
-      }
-      .admin-nav .nav-group.active>.nav-group-toggle{color:var(--brand)!important}
-      .admin-nav .nav-chevron{display:none!important}
-      html body .admin-nav .nav-submenu,
-      html body .admin-nav .nav-submenu[hidden],
-      html body .admin-nav .nav-submenu-right{
-        position:static!important;
-        inset:auto!important;
-        width:100%!important;
-        min-width:0!important;
-        max-width:none!important;
-        max-height:none!important;
-        display:grid!important;
-        grid-template-columns:1fr!important;
-        gap:4px!important;
-        padding:2px 0 0!important;
-        border:0!important;
-        border-radius:0!important;
-        background:transparent!important;
-        box-shadow:none!important;
-        overflow:visible!important;
-      }
-      .admin-nav .nav-submenu .tab,
-      .admin-nav .nav-mobile-store-link{
-        width:100%!important;
-        min-width:0!important;
-        min-height:44px!important;
-        padding:9px 11px!important;
-        display:flex!important;
-        align-items:center!important;
-        justify-content:flex-start!important;
-        border:1px solid transparent!important;
-        border-radius:10px!important;
-        background:transparent!important;
-        color:#344139!important;
-        font-size:13px!important;
-        font-weight:750!important;
-        line-height:1.2!important;
-        white-space:normal!important;
-        text-align:left!important;
-      }
-      .admin-nav .nav-submenu .tab.active{
-        background:#eaf3ed!important;
-        border-color:#cfe1d5!important;
-        color:var(--brand2)!important;
-        box-shadow:inset 3px 0 0 var(--brand)!important;
-      }
-      .nav-mobile-store-link{display:flex!important;margin-top:4px}
-      #content.wrap{width:100%!important;max-width:100%!important;margin:0!important;padding:12px 10px 80px!important}
-    }
-
-
-    /* ADMIN_SIDEBAR_VISUAL_V8 */
-    .admin-nav .nav-submenu .tab{gap:9px}
-    .nav-item-icon{
-      width:26px;height:26px;flex:0 0 26px;display:inline-flex;align-items:center;justify-content:center;
-      border-radius:8px;background:#f2f5f3;color:#536159;font-size:14px;font-weight:900;line-height:1;
-      transition:background .15s ease,color .15s ease,transform .15s ease
-    }
-    .admin-nav .nav-submenu .tab:hover .nav-item-icon{background:#e8eeea;color:var(--ink);transform:translateX(1px)}
-    .admin-nav .nav-submenu .tab.active .nav-item-icon{background:#fff;color:var(--brand2);box-shadow:0 0 0 1px #cfe1d5}
-
-    @media(min-width:761px){
-      .admin-nav{width:224px!important;max-width:224px!important;padding:12px 10px 20px!important;gap:6px!important}
-      .admin-nav .nav-group{padding:0 0 7px!important;margin:0 0 6px!important;border-bottom:1px solid #eef1ef}
-      .admin-nav .nav-group:last-child{border-bottom:0;margin-bottom:0!important}
-      .admin-nav .nav-group-toggle{min-height:24px!important;padding:0 8px!important;font-size:9.5px!important;letter-spacing:.08em!important}
-      .admin-nav .nav-submenu{gap:2px!important;padding-top:1px!important}
-      .admin-nav .nav-submenu .tab{min-height:36px!important;padding:5px 8px!important;border-radius:8px!important;font-size:12.5px!important;font-weight:760!important}
-      .admin-nav .nav-submenu .tab.active{background:#edf6f0!important;border-color:#d7e8dc!important;box-shadow:inset 3px 0 0 var(--brand)!important;font-weight:900!important}
-      .nav-item-icon{width:24px;height:24px;flex-basis:24px;border-radius:7px;font-size:13px}
-      .nav-mobile-store-link{display:none!important}
-      #content.wrap{margin:0 20px 0 244px!important;padding-top:18px!important}
-    }
-
-    @media(max-width:760px){
-      .admin-nav{width:min(88vw,320px)!important;max-width:320px!important;padding-left:10px!important;padding-right:10px!important}
-      .admin-nav .nav-group{padding-bottom:8px!important;margin-bottom:8px!important;border-bottom:1px solid #eef1ef}
-      .admin-nav .nav-group:last-child{border-bottom:0}
-      .admin-nav .nav-group-toggle{font-size:10px!important;letter-spacing:.08em!important;padding-left:8px!important}
-      .admin-nav .nav-submenu .tab,.admin-nav .nav-mobile-store-link{min-height:48px!important;padding:8px 9px!important;border-radius:11px!important;font-size:14px!important;gap:10px!important}
+      .admin-sidebar-section{padding-bottom:9px;margin-bottom:9px}
+      .admin-sidebar-title{font-size:10px;padding-left:8px}
+      .admin-sidebar-item,.admin-sidebar-store{min-height:48px;padding:8px 9px;border-radius:11px;font-size:14px;gap:10px}
       .nav-item-icon{width:30px;height:30px;flex-basis:30px;border-radius:9px;font-size:15px}
-      .admin-nav .nav-submenu .tab.active{font-weight:900!important;background:#edf6f0!important}
-      .nav-mobile-store-link::before{content:'↗';width:30px;height:30px;flex:0 0 30px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;background:#f2f5f3;color:#536159;font-size:15px;font-weight:900}
+      .admin-sidebar-store{display:flex}
+      .admin-nav-backdrop{
+        display:block;position:fixed;inset:0;z-index:120;border:0;padding:0;background:rgba(15,23,18,.42);
+        opacity:0;pointer-events:none;transition:opacity .2s ease
+      }
+      body.admin-nav-open .admin-nav-backdrop{opacity:1;pointer-events:auto}
+      #content.wrap{width:100%;max-width:100%;margin:0;padding:12px 10px 80px}
     }
 
   </style>
@@ -1574,62 +1190,52 @@
         <button class="operator-badge unset" id="operatorBadge" type="button" title="Identificação usada no histórico operacional"><span class="operator-prefix">Operador: </span><span class="operator-name">identificar</span></button>
         <a class="store-link" href="/vitrine/" target="_blank" rel="noopener">Abrir vitrine ↗</a>
       </div>
-      <nav class="tabs admin-nav" id="adminNav" aria-label="Admin">
-        <div class="nav-group" data-nav-group="operation">
-          <button class="nav-group-toggle" type="button" aria-haspopup="true" aria-expanded="false">
-            <span>Operação</span><span class="nav-chevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="nav-submenu" hidden>
-            <button class="tab nav-subtab" data-tab="today" type="button">Central</button>
-            <button class="tab nav-subtab" data-tab="orders" type="button">Pedidos</button>
-            <button class="tab nav-subtab" data-tab="separation" type="button">Separação</button>
-            <button class="tab nav-subtab" data-tab="expedition" type="button">Expedição</button>
-            <button class="tab nav-subtab" data-tab="driver" type="button">Entregador</button>
-            <button class="tab nav-subtab" data-tab="closure" type="button">Fechamento</button>
+    </header>
+      <nav class="admin-sidebar" id="adminNav" aria-label="Admin">
+        <section class="admin-sidebar-section">
+          <div class="admin-sidebar-title">Operação</div>
+          <div class="admin-sidebar-list">
+            <button class="admin-sidebar-item" data-tab="today" type="button"><span class="nav-item-icon" aria-hidden="true">⌂</span><span>Central</span></button>
+            <button class="admin-sidebar-item" data-tab="orders" type="button"><span class="nav-item-icon" aria-hidden="true">▤</span><span>Pedidos</span></button>
+            <button class="admin-sidebar-item" data-tab="separation" type="button"><span class="nav-item-icon" aria-hidden="true">✓</span><span>Separação</span></button>
+            <button class="admin-sidebar-item" data-tab="expedition" type="button"><span class="nav-item-icon" aria-hidden="true">↗</span><span>Expedição</span></button>
+            <button class="admin-sidebar-item" data-tab="driver" type="button"><span class="nav-item-icon" aria-hidden="true">◆</span><span>Entregador</span></button>
+            <button class="admin-sidebar-item" data-tab="closure" type="button"><span class="nav-item-icon" aria-hidden="true">◎</span><span>Fechamento</span></button>
           </div>
-        </div>
-        <div class="nav-group" data-nav-group="catalog">
-          <button class="nav-group-toggle" type="button" aria-haspopup="true" aria-expanded="false">
-            <span>Catálogo</span><span class="nav-chevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="nav-submenu" hidden>
-            <button class="tab nav-subtab" data-tab="products" type="button">Produtos</button>
-            <button class="tab nav-subtab" data-tab="baskets" type="button">Cestas</button>
-            <button class="tab nav-subtab" data-tab="expiry" type="button">Validades</button>
+        </section>
+        <section class="admin-sidebar-section">
+          <div class="admin-sidebar-title">Catálogo</div>
+          <div class="admin-sidebar-list">
+            <button class="admin-sidebar-item" data-tab="products" type="button"><span class="nav-item-icon" aria-hidden="true">□</span><span>Produtos</span></button>
+            <button class="admin-sidebar-item" data-tab="baskets" type="button"><span class="nav-item-icon" aria-hidden="true">◇</span><span>Cestas</span></button>
+            <button class="admin-sidebar-item" data-tab="expiry" type="button"><span class="nav-item-icon" aria-hidden="true">◷</span><span>Validades</span></button>
           </div>
-        </div>
-        <div class="nav-group" data-nav-group="commercial">
-          <button class="nav-group-toggle" type="button" aria-haspopup="true" aria-expanded="false">
-            <span>Comercial</span><span class="nav-chevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="nav-submenu" hidden>
-            <button class="tab nav-subtab" data-tab="quotes" type="button">Orçamentos</button>
-            <button class="tab nav-subtab" data-tab="customers" type="button">Clientes</button>
-            <button class="tab nav-subtab" data-tab="marketing" type="button">Marketing</button>
+        </section>
+        <section class="admin-sidebar-section">
+          <div class="admin-sidebar-title">Comercial</div>
+          <div class="admin-sidebar-list">
+            <button class="admin-sidebar-item" data-tab="quotes" type="button"><span class="nav-item-icon" aria-hidden="true">$</span><span>Orçamentos</span></button>
+            <button class="admin-sidebar-item" data-tab="customers" type="button"><span class="nav-item-icon" aria-hidden="true">♙</span><span>Clientes</span></button>
+            <button class="admin-sidebar-item" data-tab="marketing" type="button"><span class="nav-item-icon" aria-hidden="true">◉</span><span>Marketing</span></button>
           </div>
-        </div>
-        <div class="nav-group" data-nav-group="inventory">
-          <button class="nav-group-toggle" type="button" aria-haspopup="true" aria-expanded="false">
-            <span>Estoque</span><span class="nav-chevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="nav-submenu" hidden>
-            <button class="tab nav-subtab" data-tab="purchases" type="button">Compras/XML</button>
-            <button class="tab nav-subtab" data-tab="balance" type="button">Balanço</button>
-            <button class="tab nav-subtab" data-tab="gondolas" type="button">Gôndolas</button>
+        </section>
+        <section class="admin-sidebar-section">
+          <div class="admin-sidebar-title">Estoque</div>
+          <div class="admin-sidebar-list">
+            <button class="admin-sidebar-item" data-tab="purchases" type="button"><span class="nav-item-icon" aria-hidden="true">↓</span><span>Compras/XML</span></button>
+            <button class="admin-sidebar-item" data-tab="balance" type="button"><span class="nav-item-icon" aria-hidden="true">⌗</span><span>Balanço</span></button>
+            <button class="admin-sidebar-item" data-tab="gondolas" type="button"><span class="nav-item-icon" aria-hidden="true">▦</span><span>Gôndolas</span></button>
           </div>
-        </div>
-        <div class="nav-group" data-nav-group="system">
-          <button class="nav-group-toggle" type="button" aria-haspopup="true" aria-expanded="false">
-            <span>Sistema</span><span class="nav-chevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="nav-submenu nav-submenu-right" hidden>
-            <button class="tab nav-subtab" data-tab="more" type="button">Mais</button>
-            <a class="nav-mobile-store-link" href="/vitrine/" target="_blank" rel="noopener">Abrir vitrine ↗</a>
+        </section>
+        <section class="admin-sidebar-section">
+          <div class="admin-sidebar-title">Sistema</div>
+          <div class="admin-sidebar-list">
+            <button class="admin-sidebar-item" data-tab="more" type="button"><span class="nav-item-icon" aria-hidden="true">⋯</span><span>Mais</span></button>
+            <a class="admin-sidebar-store" href="/vitrine/" target="_blank" rel="noopener"><span class="nav-item-icon" aria-hidden="true">↗</span><span>Abrir vitrine</span></a>
           </div>
-        </div>
+        </section>
       </nav>
       <button class="admin-nav-backdrop" id="adminNavBackdrop" type="button" aria-label="Fechar menu" tabindex="-1"></button>
-    </header>
     <main class="wrap" id="content"></main>
   </div>
 
@@ -1762,6 +1368,7 @@
   }
   if(OAUTH_RESULT==='error'){const d=OAUTH_DETAIL||'erro';history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Falha ao reconectar Bling: '+d),500)}
 
+
   const adminNavIsMobile=()=>window.matchMedia('(max-width:760px)').matches;
   function setAdminNavOpen(open){
     const shouldOpen=Boolean(open&&adminNavIsMobile());
@@ -1772,55 +1379,21 @@
       toggle.setAttribute('aria-label',shouldOpen?'Fechar menu':'Abrir menu');
     }
   }
-  function expandSidebarGroups(){
-    document.querySelectorAll('.nav-group').forEach(group=>{
-      group.classList.remove('open');
-      const toggle=group.querySelector('.nav-group-toggle');
-      const menu=group.querySelector('.nav-submenu');
-      if(toggle)toggle.setAttribute('aria-expanded','true');
-      if(menu)menu.hidden=false;
-    });
-  }
   function closeNavMenus(){setAdminNavOpen(false)}
   function syncNavGroups(){
-    document.querySelectorAll('.nav-group').forEach(group=>{
-      const active=Boolean(group.querySelector('[data-tab="'+state.tab+'"]'));
-      group.classList.toggle('active',active);
-      const toggle=group.querySelector('.nav-group-toggle');
-      const activeItem=group.querySelector('[data-tab="'+state.tab+'"]');
-      if(toggle){
-        const label=activeItem?.textContent?.trim()||'';
-        toggle.title=active?('Seção atual: '+label):'Seção de navegação';
-        toggle.setAttribute('aria-expanded','true');
-      }
-      const menu=group.querySelector('.nav-submenu');
-      if(menu)menu.hidden=false;
+    document.querySelectorAll('.admin-sidebar-section').forEach(section=>{
+      section.classList.toggle('active',Boolean(section.querySelector('[data-tab="'+state.tab+'"]')));
+    });
+    document.querySelectorAll('#adminNav [data-tab]').forEach(item=>{
+      if(item.dataset.tab===state.tab)item.setAttribute('aria-current','page');
+      else item.removeAttribute('aria-current');
     });
   }
-  document.querySelectorAll('.nav-group-toggle').forEach(toggle=>{
-    toggle.onclick=event=>event.preventDefault();
-  });
   if($('#adminNavToggle'))$('#adminNavToggle').onclick=()=>setAdminNavOpen(!document.body.classList.contains('admin-nav-open'));
   if($('#adminNavBackdrop'))$('#adminNavBackdrop').onclick=()=>setAdminNavOpen(false);
   document.addEventListener('keydown',event=>{if(event.key==='Escape')setAdminNavOpen(false)});
-  window.addEventListener('resize',()=>{if(!adminNavIsMobile())setAdminNavOpen(false);expandSidebarGroups()});
-  expandSidebarGroups();
-  const NAV_ITEM_ICONS={
-    'today':'⌂','orders':'▤','separation':'✓','expedition':'↗','driver':'◆','closure':'◎',
-    'products':'□','baskets':'◇','expiry':'◷','quotes':'$','customers':'♙','marketing':'◉',
-    'purchases':'↓','balance':'⌗','gondolas':'▦','more':'⋯'
-  };
-  function decorateAdminNav(){
-    document.querySelectorAll('.admin-nav [data-tab]').forEach(item=>{
-      if(item.querySelector('.nav-item-icon'))return;
-      const icon=document.createElement('span');
-      icon.className='nav-item-icon';
-      icon.setAttribute('aria-hidden','true');
-      icon.textContent=NAV_ITEM_ICONS[item.dataset.tab]||'•';
-      item.prepend(icon);
-    });
-  }
-  decorateAdminNav();
+  window.addEventListener('resize',()=>{if(!adminNavIsMobile())setAdminNavOpen(false)});
+
 
   function setTab(tab){
     if(state.tab==='balance'&&tab!=='balance')stopBalanceCamera();
