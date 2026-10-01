@@ -24,24 +24,14 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require('fs');
-          const files = [
-            'vitrine/admin/index.html',
-            'scripts/patch-purchase-identity-ui-v1.mjs'
-          ];
-          let changed = 0;
-          for (const path of files) {
-            let src = fs.readFileSync(path, 'utf8');
-            const before = (src.match(/escapeHtml\(/g) || []).length;
-            if (before) {
-              src = src.replaceAll('escapeHtml(', 'esc(');
-              fs.writeFileSync(path, src);
-              changed += before;
-              console.log(`${path}: replaced ${before} broken helper call(s)`);
-            }
-          }
-          if (!changed) throw new Error('Expected broken escapeHtml calls were not found');
+          const path = 'vitrine/admin/index.html';
+          let html = fs.readFileSync(path, 'utf8');
+          const before = (html.match(/escapeHtml\(/g) || []).length;
+          if (!before) throw new Error('Expected broken escapeHtml calls were not found');
+          html = html.replaceAll('escapeHtml(', 'esc(');
+          fs.writeFileSync(path, html);
+          console.log(`${path}: replaced ${before} broken helper call(s)`);
 
-          const html = fs.readFileSync('vitrine/admin/index.html', 'utf8');
           if (!html.includes('purchase-identity-ui-v1-style')) throw new Error('Purchase identity UI marker missing');
           if (/escapeHtml\(/.test(html)) throw new Error('Broken escapeHtml call still present in admin HTML');
           if (!/\bfunction\s+esc\s*\(|\bconst\s+esc\s*=|\blet\s+esc\s*=|\bvar\s+esc\s*=/.test(html)) {
@@ -62,6 +52,6 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add vitrine/admin/index.html scripts/patch-purchase-identity-ui-v1.mjs
+          git add vitrine/admin/index.html
           git commit -m 'fix(admin): render purchase identity panel'
           git push
