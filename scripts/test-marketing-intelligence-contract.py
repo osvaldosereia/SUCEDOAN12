@@ -45,8 +45,9 @@ assert "marketingSignals.brands.join(' | ')" not in send_block
 # Only subjects with prepared PapoAI quick responses may become automatic post-order CTA.
 assert "const MARKETING_CTA_PRIORITY=['BEBE','CABELOS','BELEZA','LIMPEZA','LAVANDERIA','PET'];" in site
 assert "interests.has('CESTAS')?'OFERTAS':'NENHUM'" in signal_block
+priority_block = site[site.index('const MARKETING_CTA_PRIORITY='):site.index('const MINIMUM_ORDER_CENTS')]
 for unsupported_cta in ["'HIGIENE'", "'CASA'", "'DOCES_LANCHES'"]:
-    assert unsupported_cta not in site[site.index('const MARKETING_CTA_PRIORITY='):site.index('function money')], f'unsupported CTA: {unsupported_cta}'
+    assert unsupported_cta not in priority_block, f'unsupported CTA: {unsupported_cta}'
 
 required_admin_markers = [
     "data-tab=\"marketing\"",
