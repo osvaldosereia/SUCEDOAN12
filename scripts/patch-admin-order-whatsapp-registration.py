@@ -9,10 +9,8 @@ def replace_once(path, old, new, label):
         raise SystemExit(f'{label}: expected 1 anchor, found {count}')
     p.write_text(s.replace(old,new,1))
 
-# Second-pass safety patch after the initial feature patch.
 path='supabase/functions/admin-products-live-v1/index.ts'
 s=Path(path).read_text()
-# The project is at the Edge Function limit. Reuse the retired admin-orders-v1 slot.
 s=s.replace('/functions/v1/whatsapp-order-outbound-v1','/functions/v1/admin-orders-v1')
 
 anchor='async function orderWhatsappRegistrationStatus(rawId:any){'
@@ -82,11 +80,13 @@ new="""    const customer=data?.whatsapp?.customer,ops=data?.whatsapp?.ops_0975,
 if old in s:s=s.replace(old,new,1)
 elif new not in s: raise SystemExit('UI readiness status anchor missing')
 
-old="""    if(link?.state==='active')lines.push('Link de cadastro ativo');
+registration_guard="const registrationBtn=$('#issueOrderRegistrationLink');"
+if registration_guard not in s:
+    old="""    if(link?.state==='active')lines.push('Link de cadastro ativo');
     if(link?.state==='consumed')lines.push('Link de cadastro concluído');
     if(link?.state==='expired')lines.push('Último link expirou');
     host.textContent=lines.join(' · ');"""
-new="""    const registrationBtn=$('#issueOrderRegistrationLink');
+    new="""    const registrationBtn=$('#issueOrderRegistrationLink');
     if(registrationBtn){
       const activeLink=link?.state==='active';
       registrationBtn.disabled=data?.registration_complete===true||activeLink||!data?.phone_e164;
@@ -96,8 +96,8 @@ new="""    const registrationBtn=$('#issueOrderRegistrationLink');
     if(link?.state==='consumed')lines.push('Link de cadastro concluído');
     if(link?.state==='expired')lines.push('Último link expirou');
     host.textContent=lines.join(' · ');"""
-if old in s:s=s.replace(old,new,1)
-elif new not in s: raise SystemExit('active registration link guard anchor missing')
+    if s.count(old)!=1: raise SystemExit('active registration link guard anchor missing')
+    s=s.replace(old,new,1)
 Path(path).write_text(s)
 
 print('provider readiness and registration-link safety patch applied')
