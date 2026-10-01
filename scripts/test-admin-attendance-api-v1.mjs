@@ -25,15 +25,18 @@ assert.equal(normalizeProductQuery(' Omo '),'Omo');
 
 const api=fs.readFileSync(apiPath,'utf8');
 assert.match(api,/const\s+READ_ACTIONS\s*=\s*new Set\(\["accounts","queue","conversation","context","products"\]\)/);
-assert.match(api,/const\s+SAFE_POST_ACTIONS\s*=\s*new Set\(\["mark_read","follow_up","issue_catalog"\]\)/);
-assert.doesNotMatch(api,/send_message|takeover|human_send/i);
+for(const action of ['mark_read','follow_up','issue_catalog','marketing_opt_out','send_text'])assert.match(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${action}`));
 assert.match(api,/admin_users/);
 assert.match(api,/ops2_admin_attendance_queue_v1/);
 assert.match(api,/ops2_admin_attendance_conversation_v1/);
 assert.match(api,/ops2_admin_attendance_context_v1/);
 assert.match(api,/ops2_issue_papoai_catalog_link_v1/);
+assert.match(api,/ops2_admin_attendance_marketing_optout_v1/);
+assert.match(api,/ops2_admin_attendance_enqueue_text_v1/);
+assert.doesNotMatch(api,/PAPOAI_ATTENDANCE_SEND_|fetch\([^\n]*papoai/i,'gateway não deve conter transporte PapoAI antes da homologação');
+assert.doesNotMatch(api,/action===['"]takeover['"]|action===['"]release['"]/,'takeover/release ainda não pertencem a esta fase');
 
 const config=fs.readFileSync(configPath,'utf8');
 assert.match(config,/\[functions\.admin-whatsapp-ops-v1\][\s\S]*?verify_jwt\s*=\s*false/);
 assert.doesNotMatch(config,/\[functions\.admin-attendance-v1\]/);
-console.log('OK · gateway read-only da Central de Atendimento reutiliza slot aposentado e está fechado/testável.');
+console.log('OK · gateway da Central usa slot aposentado, autenticação Admin e outbound ainda sem transporte.');
