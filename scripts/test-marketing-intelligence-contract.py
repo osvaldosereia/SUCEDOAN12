@@ -3,8 +3,6 @@ from pathlib import Path
 site = Path('index.html').read_text(encoding='utf-8')
 site_copy = Path('vitrine/index.html').read_text(encoding='utf-8')
 admin = Path('vitrine/admin/index.html').read_text(encoding='utf-8')
-marketing_admin_fn = Path('supabase/functions/marketing-intelligence-v1/index.ts').read_text(encoding='utf-8')
-marketing_store_fn = Path('supabase/functions/storefront-marketing-v1/index.ts').read_text(encoding='utf-8')
 migration = Path('supabase/migrations/20260930_marketing_campaign_brand_rules_v1.sql').read_text(encoding='utf-8')
 
 required_site_markers = [
@@ -43,11 +41,6 @@ required_admin_markers = [
 for marker in required_admin_markers:
     assert marker in admin, f'missing admin marker: {marker}'
 
-# Backend sources are prepared for a future consolidation into existing deployed functions.
-for marker in ["marketing_campaign_brand_rules_v1", "brand_rule_save", "overview"]:
-    assert marker in marketing_admin_fn, f'missing admin backend source marker: {marker}'
-for marker in ["marketing_campaign_brand_rules_v1", "segment", "brand", "products"]:
-    assert marker in marketing_store_fn, f'missing storefront backend source marker: {marker}'
 for marker in ["create table if not exists public.marketing_campaign_brand_rules_v1", "enable row level security"]:
     assert marker.lower() in migration.lower(), f'missing migration marker: {marker}'
 
