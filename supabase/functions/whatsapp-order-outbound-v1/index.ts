@@ -10,6 +10,11 @@ type Channel="0975"|"1018";
 const providerUrl=(channel:Channel)=>channel==="1018"
   ? (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL")||"")
   : (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_0975_URL")||"");
+const providerReadiness=()=>{
+  const p0975=Boolean(providerUrl("0975"));
+  const p1018=Boolean(providerUrl("1018"));
+  return {ready:p0975&&p1018,providers:{"0975":p0975,"1018":p1018}};
+};
 
 const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
   status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}
@@ -38,9 +43,13 @@ async function finish(outboxId:string,status:"sent"|"retry"|"failed"|"suppressed
 }
 
 Deno.serve(async(req:Request)=>{
-  if(req.method!=="POST")return respond({ok:false,error:"method_not_allowed"},405);
   if(!U||!K)return respond({ok:false,error:"server_config"},500);
   if(req.headers.get("x-internal-key")!==K)return respond({ok:false,error:"forbidden"},403);
+  if(req.method==="GET")return respond({ok:true,service:"whatsapp-order-outbound-v1",...providerReadiness()});
+  if(req.method!=="POST")return respond({ok:false,error:"method_not_allowed"},405);
+
+  const readiness=providerReadiness();
+  if(!readiness.ready)return respond({ok:false,error:"provider_not_configured",...readiness},503);
 
   const body=await req.json().catch(()=>({}));
   const orderId=uid(body?.order_id);
