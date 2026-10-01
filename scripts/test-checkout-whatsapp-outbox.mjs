@@ -27,4 +27,15 @@ assert.match(sql,/canonical_whatsapp_e164_br_v2/i,'customer/order phone must be 
 assert.match(sql,/revoke\s+all\s+on\s+function\s+public\.ops2_enqueue_order_whatsapp_v1[^;]*from\s+public\s*,\s*anon\s*,\s*authenticated/i,'enqueue RPC must not be public');
 assert.match(sql,/grant\s+execute\s+on\s+function\s+public\.ops2_enqueue_order_whatsapp_v1[^;]*to\s+service_role/i,'service role must be authorized');
 
+const sfPath='supabase/functions/storefront-v2/index.ts';
+assert.ok(fs.existsSync(sfPath),'storefront-v2 source must exist');
+const sf=fs.readFileSync(sfPath,'utf8');
+const orderIdPos=sf.indexOf('const orderId=created.data?.order_id');
+const enqueuePos=sf.indexOf('ops2_enqueue_order_whatsapp_v1');
+assert.ok(orderIdPos>=0&&enqueuePos>orderIdPos,'WhatsApp confirmation must enqueue only after canonical order id exists');
+assert.match(sf,/db\.rpc\("ops2_enqueue_order_whatsapp_v1",\{p_order_id:orderId,p_message_kind:"order_received"\}\)/,'storefront must enqueue order_received confirmation');
+assert.match(sf,/whatsappConfirmation[^;]*status[^;]*unavailable|whatsapp_confirmation/,'storefront must expose informational WhatsApp confirmation state');
+assert.match(sf,/catch\(e\)\{console\.error\("whatsapp_confirmation_enqueue"/,'enqueue failure must be caught and logged');
+assert.match(sf,/whatsapp_confirmation:whatsappConfirmation/,'order response must include confirmation status without failing the order');
+
 console.log('checkout WhatsApp outbox contract: ok');
