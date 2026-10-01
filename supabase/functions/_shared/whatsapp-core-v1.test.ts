@@ -34,6 +34,12 @@ Deno.test('normalizes PapoAI inbound text',()=>{
   eq(out.associable,true);eq(out.whatsapp_account_id,'acct-0975');eq(out.provider_message_id,'papo-msg-1');eq(out.phone_e164,'+5565998150975');eq(out.message.message_type,'text');eq(out.message.text_body,'Quero uma cesta');
 });
 
+Deno.test('normalizes current production PapoAI webhook fields',()=>{
+  const payload={event:'message.received',data:{message:{id:'internal-1',external_id:'wamid.real',type:'text',content:'Olá',phone_number_from:'5565993426299',phone_number_to:'5565998150975',timestamp:'1790816400'},contact:{id:'contact-1',name:'Cliente'},session:{uid:'session-1',agentbot_id:'2796'}}};
+  const out:any=canonicalMessageFromPapoAi(payload,{whatsappAccountId:'acct-0975',receivedAt:'2026-10-01T01:00:00.000Z'});
+  eq(out.associable,true);eq(out.provider_message_id,'wamid.real');eq(out.phone_e164,'+5565993426299');eq(out.message.provider_conversation_id,'session-1');
+});
+
 const metaBase=(message:any)=>({object:'whatsapp_business_account',entry:[{id:'waba-1',changes:[{field:'messages',value:{metadata:{phone_number_id:'pn-1018'},contacts:[{profile:{name:'Cliente'}}],messages:[message]}}]}]});
 
 Deno.test('normalizes Meta text/audio/image/interactive and resolves account only by phone_number_id',()=>{
