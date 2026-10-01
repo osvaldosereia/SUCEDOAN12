@@ -10,14 +10,23 @@ on:
       - 'scripts/test-checkout-whatsapp-return.mjs'
       - 'scripts/test-checkout-whatsapp-outbox.mjs'
       - 'scripts/test-checkout-whatsapp-runtime-gate.mjs'
+      - 'scripts/patch-checkout-whatsapp-postorder-cleanup.py'
       - 'supabase/**'
       - '.github/workflows/checkout-whatsapp-postorder-cleanup-verify.yml'
+
+permissions:
+  contents: write
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: fix/checkout-whatsapp-postorder-cleanup
+          fetch-depth: 1
+      - name: Apply cleanup
+        run: python3 scripts/patch-checkout-whatsapp-postorder-cleanup.py
       - name: Run checkout contracts
         run: |
           node scripts/test-checkout-whatsapp-return.mjs
@@ -28,3 +37,14 @@ jobs:
           python3 scripts/test-marketing-intelligence-contract.py
           cmp -s index.html vitrine/index.html
           git diff --check
+      - name: Commit verified cleanup
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html vitrine/index.html
+          git commit -m "fix(checkout): remove obsolete post-order WhatsApp assembly"
+          git pull --rebase origin fix/checkout-whatsapp-postorder-cleanup
+          git push origin HEAD:fix/checkout-whatsapp-postorder-cleanup
