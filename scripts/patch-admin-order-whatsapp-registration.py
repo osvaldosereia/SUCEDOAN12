@@ -12,11 +12,13 @@ def replace_once(path, old, new, label):
 # Second-pass safety patch after the initial feature patch.
 path='supabase/functions/admin-products-live-v1/index.ts'
 s=Path(path).read_text()
+# The project is at the Edge Function limit. Reuse the retired admin-orders-v1 slot.
+s=s.replace('/functions/v1/whatsapp-order-outbound-v1','/functions/v1/admin-orders-v1')
 
 anchor='async function orderWhatsappRegistrationStatus(rawId:any){'
 helper='''async function orderWhatsappGatewayReadiness(){
   try{
-    const res=await fetch(U+"/functions/v1/whatsapp-order-outbound-v1",{
+    const res=await fetch(U+"/functions/v1/admin-orders-v1",{
       method:"GET",headers:{"apikey":K,"x-internal-key":K},signal:AbortSignal.timeout(8000)
     });
     const data=await res.json().catch(()=>({ok:false,error:"invalid_gateway_response"}));
