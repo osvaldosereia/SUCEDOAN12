@@ -7649,6 +7649,12 @@
     if(data?.whatsapp_ready!==true)lines.push('Envio do pedido aguardando configuração PapoAI');
     if(customer?.status)lines.push('Cliente: '+(customer.status==='sent'?'pedido enviado':customer.status));
     if(ops?.status)lines.push('Cópia 0975: '+(ops.status==='sent'?'enviada':ops.status));
+    const registrationBtn=$('#issueOrderRegistrationLink');
+    if(registrationBtn){
+      const activeLink=link?.state==='active';
+      registrationBtn.disabled=data?.registration_complete===true||activeLink||!data?.phone_e164;
+      registrationBtn.textContent=data?.registration_complete===true?'Cadastro concluído':activeLink?'Link de cadastro ativo':'Gerar link de cadastro';
+    }
     if(link?.state==='active')lines.push('Link de cadastro ativo');
     if(link?.state==='consumed')lines.push('Link de cadastro concluído');
     if(link?.state==='expired')lines.push('Último link expirou');
