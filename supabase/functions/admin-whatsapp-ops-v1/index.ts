@@ -7,7 +7,7 @@ const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const READ_ACTIONS=new Set(["accounts","queue","conversation","context","products"]);
-const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","send_text"]);
+const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","marketing_opt_out","send_text"]);
 
 const clean=(v:unknown,max=200)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const num=(v:unknown,fallback:number,min:number,max:number)=>{const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,Math.trunc(n))):fallback};
@@ -149,6 +149,15 @@ Deno.serve(async(req:Request)=>{
       if(followRaw!=null&&String(followRaw).trim()!==''&&!follow)return json(req,{ok:false,error:"invalid_follow_up_at"},400);
       const r=await db.rpc("ops2_admin_attendance_follow_up_v1",{p_conversation_id:conversationId,p_follow_up_at:follow});
       if(r.error)throw r.error;return json(req,r.data||{ok:false,error:"follow_up_failed"},r.data?.ok===false?400:200);
+    }
+
+    if(action==="marketing_opt_out"){
+      const r=await db.rpc("ops2_admin_attendance_marketing_optout_v1",{p_conversation_id:conversationId});
+      if(r.error)throw r.error;
+      const data=r.data||{ok:false,error:"marketing_optout_failed"};
+      if(data?.ok===true)return json(req,data,200);
+      const error=String(data?.error||"marketing_optout_failed");
+      return json(req,data,error==="customer_not_linked"?409:error==="conversation_not_found"?404:400);
     }
 
     if(action==="issue_catalog"){
