@@ -11,14 +11,17 @@ const registrationHtml=read('cadastro/index.html');
 
 const tokenSql='supabase/sql/20261001_order_registration_link_v1.sql';
 const outboxSql='supabase/sql/20261001_admin_order_whatsapp_outbox_v1.sql';
+const claimSql='supabase/sql/20261001_admin_order_whatsapp_claim_order_v1.sql';
 const outbound='supabase/functions/whatsapp-order-outbound-v1/index.ts';
 
 assert.ok(exists(tokenSql),'missing order registration token migration');
 assert.ok(exists(outboxSql),'missing admin order whatsapp outbox migration');
+assert.ok(exists(claimSql),'missing order-scoped outbox claim migration');
 assert.ok(exists(outbound),'missing whatsapp order outbound function');
 
 const token=read(tokenSql);
 const outbox=read(outboxSql);
+const claim=read(claimSql);
 const gateway=read(outbound);
 
 for(const name of [
@@ -46,23 +49,30 @@ assert.ok(outbox.includes('ops2_enqueue_admin_order_whatsapp_v1'),'missing manua
 assert.ok(outbox.includes('ops_0975'),'missing operational recipient');
 assert.ok(outbox.includes('+5565998150975'),'missing operational phone');
 assert.match(outbox,/channel_origin[^\n]*1018|['"]1018['"]/i,'operational copy must use 1018');
+assert.match(outbox,/q\.status='failed'\s+then\s+'pending'/i,'failed messages must be safely requeued');
+assert.ok(claim.includes('ops2_claim_order_whatsapp_outbox_v1'),'gateway must claim only the requested order');
 
 assert.ok(gateway.includes('PAPOAI_ORDER_TEMPLATE_WEBHOOK_0975_URL'),'missing provider slot 0975');
 assert.ok(gateway.includes('PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL'),'missing provider slot 1018');
 assert.ok(!gateway.includes('https://app.papoai.net/'),'must not hardcode PapoAI webhook URL');
 assert.ok(gateway.includes('provider_ambiguous_failure'),'gateway must mark ambiguous provider failure');
+assert.ok(gateway.includes('providerReadiness'),'gateway must expose provider readiness');
+assert.match(gateway,/if\(!readiness\.ready\)return respond\(\{ok:false,error:"provider_not_configured"/,'gateway must fail closed before claiming queue items');
 
 for(const action of ['order_whatsapp_send','order_registration_link_issue','order_registration_link_status']){
   assert.ok(adminApi.includes(action),`admin API missing ${action}`);
 }
 assert.ok(adminApi.includes('ops2_enqueue_admin_order_whatsapp_v1'),'admin send action must call enqueue RPC');
 assert.ok(adminApi.includes('ops2_issue_order_registration_link_v1'),'admin link issue action must call token RPC');
+assert.ok(adminApi.includes('orderWhatsappGatewayReadiness'),'admin must check gateway readiness');
+assert.ok(adminApi.includes('order_whatsapp_provider_not_configured'),'admin must fail closed when template providers are missing');
 
 for(const copy of ['WhatsApp e cadastro','Enviar pedido no WhatsApp','Gerar link de cadastro','Abrir WhatsApp com link','Copiar link']){
   assert.ok(adminHtml.includes(copy),`admin UI missing: ${copy}`);
 }
 assert.ok(adminHtml.includes("api('order_whatsapp_send'"),'admin UI must call order_whatsapp_send');
 assert.ok(adminHtml.includes("api('order_registration_link_issue'"),'admin UI must call order_registration_link_issue');
+assert.ok(adminHtml.includes('Envio do pedido aguardando configuração PapoAI'),'UI must explain disabled order sending');
 assert.ok(!adminHtml.includes('/cadastro/?order_id='),'public link must not expose order_id');
 
 assert.ok(registrationHtml.includes('order_token'),'registration page must preserve order_token');
