@@ -8,6 +8,7 @@ on:
       - 'scripts/test-checkout-whatsapp-runtime-gate.mjs'
       - 'scripts/test-checkout-whatsapp-outbox.mjs'
       - 'supabase/sql/20261001_checkout_whatsapp_outbox_v1.sql'
+      - 'supabase/sql/20261001_checkout_whatsapp_activation_gate_v1.sql'
       - '.github/workflows/checkout-whatsapp-runtime-gate-verify.yml'
 
 jobs:
