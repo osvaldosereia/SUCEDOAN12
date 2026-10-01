@@ -45,4 +45,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html vitrine/index.html supabase/functions/storefront-v2/index.ts
           git commit -m "feat(checkout): sync optional checkout with automatic WhatsApp confirmation"
+          git pull --rebase origin feat/checkout-whatsapp-confirmation-sync
           git push origin HEAD:feat/checkout-whatsapp-confirmation-sync
