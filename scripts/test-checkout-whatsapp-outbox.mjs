@@ -62,4 +62,14 @@ assert.doesNotMatch(gateway,/message_text/,'webhook action does not accept free-
 assert.match(gateway,/external_message_id|message_id/,'gateway must capture provider message id when available');
 assert.match(config,/\[functions\.whatsapp-order-outbound-v1\][\s\S]*verify_jwt\s*=\s*true/i,'outbound gateway must require JWT');
 
+const storefront=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
+assert.match(storefront,/function\s+kickWhatsappOrderOutbound\s*\(\s*\)/,'storefront must kick the dispatcher after a confirmed order');
+assert.match(storefront,/\/functions\/v1\/whatsapp-order-outbound-v1/,'storefront kick must target the internal outbound edge function');
+assert.match(storefront,/Authorization:\s*`Bearer \$\{KEY\}`/,'storefront kick must authenticate server-side with service role');
+assert.match(storefront,/EdgeRuntime[\s\S]*waitUntil/,'dispatcher kick must run in background instead of delaying checkout success');
+const submit=storefront.match(/async function submit\(req:Request,p:any\)\{[\s\S]*?\n\}/)?.[0]||'';
+assert.ok(submit,'storefront submit function must exist');
+assert.match(submit,/ops2_link_storefront_order_from_identity_v1[\s\S]*kickWhatsappOrderOutbound\(\)/,'dispatcher must kick only after the PapoAI identity/channel link attempt');
+assert.doesNotMatch(submit,/await\s+kickWhatsappOrderOutbound/,'checkout must not wait for provider delivery');
+
 console.log('checkout WhatsApp outbox contract: ok');
