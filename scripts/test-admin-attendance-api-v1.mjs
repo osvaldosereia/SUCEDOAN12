@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const domainUrl=new URL('../supabase/functions/_shared/admin-attendance-domain-v1.mjs',import.meta.url);
-const apiPath=new URL('../supabase/functions/admin-attendance-v1/index.ts',import.meta.url);
+const apiPath=new URL('../supabase/functions/admin-whatsapp-ops-v1/index.ts',import.meta.url);
 const configPath=new URL('../supabase/config.toml',import.meta.url);
 
 const domain=await import(domainUrl);
@@ -34,5 +34,6 @@ assert.match(api,/ops2_admin_attendance_context_v1/);
 assert.match(api,/ops2_issue_papoai_catalog_link_v1/);
 
 const config=fs.readFileSync(configPath,'utf8');
-assert.match(config,/\[functions\.admin-attendance-v1\][\s\S]*?verify_jwt\s*=\s*false/);
-console.log('OK · gateway read-only da Central de Atendimento está fechado e testável.');
+assert.match(config,/\[functions\.admin-whatsapp-ops-v1\][\s\S]*?verify_jwt\s*=\s*false/);
+assert.doesNotMatch(config,/\[functions\.admin-attendance-v1\]/);
+console.log('OK · gateway read-only da Central de Atendimento reutiliza slot aposentado e está fechado/testável.');
