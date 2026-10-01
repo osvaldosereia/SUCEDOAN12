@@ -21,15 +21,21 @@ for forbidden in ('tabs admin-nav', 'nav-submenu', 'nav-group-toggle', ' hidden'
 expected = [
     'today','orders','separation','expedition','driver','closure',
     'products','baskets','expiry','quotes','customers','marketing',
-    'purchases','balance','gondolas','more'
+    'purchases','balance','gondolas','finance','bling'
 ]
 for tab in expected:
     assert nav.count(f'data-tab="{tab}"') == 1, f'missing/duplicate tab: {tab}'
 
+assert 'data-tab="more"' not in nav, 'Mais must not remain in sidebar'
+assert '>Mais<' not in nav, 'Mais label must not remain in sidebar'
 assert nav.count('admin-sidebar-section') == 5, 'expected five sidebar sections'
-assert nav.count('nav-item-icon') >= 16, 'icons must be explicit in markup, not injected by JS'
+assert nav.count('nav-item-icon') >= 17, 'icons must be explicit in markup, not injected by JS'
 assert 'function expandSidebarGroups' not in html, 'legacy submenu expansion JS still present'
 assert 'decorateAdminNav' not in html, 'legacy icon decoration JS still present'
 assert 'setAdminNavOpen' in html, 'mobile drawer controller missing'
+assert "if(tab==='finance')renderFinance();" in html, 'finance tab must render directly'
+assert "if(tab==='bling')renderBling();" in html, 'bling tab must render directly'
+assert "if(tab==='more')renderMore();" not in html, 'legacy Mais routing must be removed'
+assert 'function renderMore()' not in html, 'legacy Mais screen must be removed'
 
 print('ADMIN_SIDEBAR_V9_CONTRACT_OK')
