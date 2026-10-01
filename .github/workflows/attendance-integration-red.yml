@@ -6,10 +6,12 @@ on:
       - feat/admin-attendance-papoai-v1
     paths:
       - scripts/test-admin-attendance-*.mjs
+      - scripts/test-papoai-attendance-transport-v1.mjs
       - vitrine/admin/atendimento/**
       - vitrine/admin/index.html
       - supabase/functions/admin-whatsapp-ops-v1/**
       - supabase/functions/_shared/admin-attendance-domain-v1.mjs
+      - supabase/functions/_shared/papoai-attendance-transport-v1.mjs
       - supabase/sql/20261001_admin_attendance*.sql
       - .github/workflows/attendance-integration-red.yml
 
@@ -34,4 +36,5 @@ jobs:
           node scripts/test-admin-attendance-integration-v1.mjs
           node scripts/test-admin-attendance-realtime-v1.mjs
           node scripts/test-admin-attendance-outbound-v1.mjs
+          node scripts/test-papoai-attendance-transport-v1.mjs
           node --check vitrine/admin/atendimento/attendance.js
