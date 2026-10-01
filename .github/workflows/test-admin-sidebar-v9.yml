@@ -1,0 +1,13 @@
+name: Test admin sidebar v9
+on:
+  push:
+    branches: [fix/admin-sidebar-architecture-v9-20261001]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify sidebar v9 contract
+        run: python3 scripts/test-admin-sidebar-v9.py
