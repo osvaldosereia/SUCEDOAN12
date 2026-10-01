@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { canonicalMessageFromPapoAi } from "../_shared/whatsapp-core-v1.mjs";
 
 const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -73,6 +74,78 @@ async function authorized(req:Request,url:URL){
   if(!/^[0-9a-f]{64}$/.test(expected))return false;
   return ctEqual(await sha256(supplied),expected);
 }
+
+async function mirrorCanonicalPapoAi(captureId:string,parsed:any,eventKey:string){
+  const q=await db.from("papoai_webhook_inbox_v2")
+    .select("id,event_key,body_hash,event_name,external_message_id,conversation_ref,phone_candidate,payload,metadata,received_at,status")
+    .eq("id",captureId).maybeSingle();
+  if(q.error)throw q.error;
+  if(!q.data)return {ok:false,skipped:true,reason:"capture_missing"};
+  const capture:any=q.data,meta:any=capture.metadata&&typeof capture.metadata==="object"?capture.metadata:{};
+  let conversationId=clean(meta.conversation_id,80)||null;
+  let accountId=clean(meta.whatsapp_account_id,80)||null;
+  let customerId=clean(meta.customer_id,80)||null;
+  let phoneE164=clean(meta.canonical_phone_e164,40)||null;
+  let source="unknown";
+
+  if(conversationId){
+    const c=await db.from("conversations").select("id,whatsapp_account_id,customer_id,wa_contact_e164,source").eq("id",conversationId).maybeSingle();
+    if(!c.error&&c.data){
+      accountId=accountId||clean(c.data.whatsapp_account_id,80)||null;
+      customerId=customerId||clean(c.data.customer_id,80)||null;
+      phoneE164=phoneE164||clean(c.data.wa_contact_e164,40)||null;
+      source=clean(c.data.source,40)||"unknown";
+    }
+  }
+  if(!accountId)return {ok:false,skipped:true,reason:"account_unresolved"};
+
+  const normalized:any=canonicalMessageFromPapoAi(capture.payload||parsed,{
+    whatsappAccountId:accountId,providerEventId:eventKey,receivedAt:capture.received_at
+  });
+  const isMessage=String(capture.event_name||"")==="message.received";
+  let message:any=null;
+  let providerMessageId=clean(meta.whatsapp_message_id,260)||clean(capture.external_message_id,260)||normalized?.provider_message_id||null;
+  let phone=phoneE164||normalized?.phone_e164||null;
+
+  if(isMessage){
+    if(!normalized||!phone||!providerMessageId)return {ok:false,skipped:true,reason:"message_identity_incomplete"};
+    message={
+      ...normalized.message,
+      customer_id:customerId,
+      source,
+      provider_conversation_id:normalized.message?.provider_conversation_id||clean(capture.conversation_ref,180)||null,
+      metadata:{
+        ...(normalized.message?.metadata||{}),
+        legacy_capture_id:capture.id,
+        legacy_event_key:capture.event_key,
+        legacy_conversation_id:conversationId
+      }
+    };
+  }
+
+  const mirrored=await db.rpc("whatsapp_ingest_event_v1",{
+    p_whatsapp_account_id:accountId,
+    p_provider:"papoai",
+    p_provider_event_id:capture.event_key||eventKey,
+    p_event_type:capture.event_name||"unknown",
+    p_provider_message_id:providerMessageId,
+    p_phone_e164:phone,
+    p_received_at:capture.received_at,
+    p_payload_hash:capture.body_hash,
+    p_payload:capture.payload||redact(parsed),
+    p_message:message
+  });
+  if(mirrored.error)throw mirrored.error;
+  const result:any=mirrored.data||{};
+  const mirrorMeta={
+    ...meta,canonical_mirror:true,canonical_mirrored_at:new Date().toISOString(),
+    canonical_event_id:result?.event_id||null,canonical_message_id:result?.message_id||null
+  };
+  const saved=await db.from("papoai_webhook_inbox_v2").update({metadata:mirrorMeta}).eq("id",captureId);
+  if(saved.error)console.error("papoai_canonical_mirror_metadata",clean(saved.error.message,240));
+  return {ok:true,skipped:false,event_id:result?.event_id||null,message_id:result?.message_id||null,duplicate:Boolean(result?.duplicate)};
+}
+
 async function capture(req:Request,url:URL){
   const length=Number(req.headers.get("content-length")||0);
   if(Number.isFinite(length)&&length>MAX_BODY_BYTES)return json({ok:false,error:"payload_too_large"},413);
@@ -189,6 +262,11 @@ async function capture(req:Request,url:URL){
         console.error("papoai_conversation_bridge",clean((e as Error)?.message||e,240));
       }
     }
+  }
+
+  if(id){
+    try{await mirrorCanonicalPapoAi(id,parsed,eventKey)}
+    catch(e){console.error("papoai_canonical_mirror",clean((e as Error)?.message||e,300))}
   }
 
   await db.from("papoai_webhook_runtime_v2").update({
