@@ -22,7 +22,8 @@ assert.match(sql,/public\.whatsapp_accounts/i,'enqueue must resolve active Whats
 assert.match(sql,/wa\.phone_e164/i,'enqueue must resolve channel phone from WhatsApp account');
 assert.match(sql,/right\([^\n]*0975|0975[^\n]*channel_origin/i,'0975 channel must be recognized');
 assert.match(sql,/right\([^\n]*1018|1018[^\n]*channel_origin/i,'1018 channel must be recognized');
-assert.match(sql,/on\s+conflict\s*\(\s*order_id\s*,\s*message_kind\s*\)/i,'enqueue must be idempotent');
+assert.match(sql,/on\s+conflict\s*\(\s*order_id\s*,\s*message_kind\s*\)\s+do\s+update/i,'enqueue must be idempotent and refresh pending routing');
+assert.match(sql,/where\s+q\.status\s+in\s*\(\s*'pending'\s*,\s*'retry'\s*\)/i,'routing refresh must never rewrite sent rows');
 assert.match(sql,/canonical_whatsapp_e164_br_v2/i,'customer/order phone must be canonicalized');
 assert.match(sql,/revoke\s+all\s+on\s+function\s+public\.ops2_enqueue_order_whatsapp_v1[^;]*from\s+public\s*,\s*anon\s*,\s*authenticated/i,'enqueue RPC must not be public');
 assert.match(sql,/grant\s+execute\s+on\s+function\s+public\.ops2_enqueue_order_whatsapp_v1[^;]*to\s+service_role/i,'service role must be authorized');
@@ -32,6 +33,7 @@ assert.match(sql,/new\.source\s+not\s+in\s*\(\s*'vitrine'\s*,\s*'storefront_v2'\
 assert.match(sql,/perform\s+public\.ops2_enqueue_order_whatsapp_v1\(new\.id\s*,\s*'order_received'\)/i,'trigger must enqueue the created site order');
 assert.match(sql,/exception\s+when\s+others[\s\S]*return\s+new/i,'WhatsApp enqueue trigger must fail open');
 assert.match(sql,/create\s+trigger\s+trg_ops2_enqueue_storefront_order_whatsapp_v1[\s\S]*after\s+insert\s+on\s+public\.orders/i,'orders insert trigger must exist');
+assert.match(sql,/create\s+trigger\s+trg_ops2_refresh_storefront_order_whatsapp_v1[\s\S]*after\s+update\s+of\s+conversation_id\s*,\s*whatsapp_account_id\s*,\s*customer_id\s*,\s*phone_e164\s+on\s+public\.orders/i,'PapoAI channel link must refresh pending outbox routing');
 
 const gatewayPath='supabase/functions/whatsapp-order-outbound-v1/index.ts';
 assert.ok(fs.existsSync(gatewayPath),'WhatsApp outbound gateway must exist');
