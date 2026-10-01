@@ -35,7 +35,7 @@
       <div id="success" class="hidden">
         <div class="notice ok"><strong>Cadastro concluído.</strong><br>Seu cadastro foi salvo. Agora você pode enviar à Dona Antônia um link do catálogo já identificado para a equipe fazer seu pedido.</div>
         <a id="whatsappBtn" class="button hidden" href="#" rel="noopener">Enviar link no WhatsApp</a>
-        <a id="catalogBtn" class="button secondary" href="/" rel="noopener">Abrir catálogo</a>
+        <a id="catalogBtn" class="button secondary hidden" href="/" rel="noopener">Abrir catálogo</a>
         <div id="returnStatus" class="notice hidden"></div>
       </div>
     </section>
@@ -57,9 +57,7 @@
   async function prepareCatalogReturn(saved){
     try{
       const ret=await registrationReturn(saved?.customer?.id,saved?.bling_job_id);
-      if(!ret?.catalog_url)return;
-      $('#catalogBtn').href=ret.catalog_url;
-      $('#catalogBtn').textContent='Abrir catálogo identificado';
+      if(!ret?.catalog_url)throw new Error('catalog_return_missing');
       const business=digits(ret.whatsapp_return_phone);
       if(business){
         const text='Cadastro concluído ✅\nMeu link para pedido: '+ret.catalog_url;
@@ -67,9 +65,15 @@
         $('#whatsappBtn').classList.remove('hidden');
         setReturnStatus('Toque em “Enviar link no WhatsApp” e depois em enviar. A equipe poderá abrir seu catálogo já identificado.','ok');
       }else{
-        setReturnStatus('Seu catálogo identificado está pronto. Você pode abri-lo pelo botão acima.','ok');
+        $('#catalogBtn').href=ret.catalog_url;
+        $('#catalogBtn').textContent='Abrir catálogo identificado';
+        $('#catalogBtn').classList.remove('hidden');
+        setReturnStatus('Seu catálogo identificado está pronto. Este link é de uso único.','ok');
       }
     }catch{
+      $('#catalogBtn').href='/';
+      $('#catalogBtn').textContent='Abrir site';
+      $('#catalogBtn').classList.remove('hidden');
       setReturnStatus('Seu cadastro foi concluído. Se o link identificado não aparecer, nossa equipe ainda consegue localizar você pelo WhatsApp.','');
     }
   }
