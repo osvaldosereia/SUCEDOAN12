@@ -25,6 +25,8 @@ assert.match(sql,/right\([^\n]*1018|1018[^\n]*channel_origin/i,'1018 channel mus
 assert.match(sql,/on\s+conflict\s*\(\s*order_id\s*,\s*message_kind\s*\)\s+do\s+update/i,'enqueue must be idempotent and refresh pending routing');
 assert.match(sql,/where\s+q\.status\s+in\s*\(\s*'pending'\s*,\s*'retry'\s*\)/i,'routing refresh must never rewrite sent rows');
 assert.match(sql,/canonical_whatsapp_e164_br_v2/i,'customer/order phone must be canonicalized');
+assert.doesNotMatch(sql,/order_snapshot'\s*,\s*to_jsonb\(v_order\)/i,'outbox must not expose the full internal order row to the provider');
+assert.match(sql,/'delivery'\s*,\s*coalesce\(v_order\.checkout_snapshot->'delivery'/i,'outbox must include only the delivery slice needed for confirmation');
 assert.match(sql,/revoke\s+all\s+on\s+function\s+public\.ops2_enqueue_order_whatsapp_v1[^;]*from\s+public\s*,\s*anon\s*,\s*authenticated/i,'enqueue RPC must not be public');
 assert.match(sql,/grant\s+execute\s+on\s+function\s+public\.ops2_enqueue_order_whatsapp_v1[^;]*to\s+service_role/i,'service role must be authorized');
 
