@@ -79,6 +79,23 @@ new="""    const customer=data?.whatsapp?.customer,ops=data?.whatsapp?.ops_0975,
     if(data?.whatsapp_ready!==true)lines.push('Envio do pedido aguardando configuração PapoAI');"""
 if old in s:s=s.replace(old,new,1)
 elif new not in s: raise SystemExit('UI readiness status anchor missing')
+
+old="""    if(link?.state==='active')lines.push('Link de cadastro ativo');
+    if(link?.state==='consumed')lines.push('Link de cadastro concluído');
+    if(link?.state==='expired')lines.push('Último link expirou');
+    host.textContent=lines.join(' · ');"""
+new="""    const registrationBtn=$('#issueOrderRegistrationLink');
+    if(registrationBtn){
+      const activeLink=link?.state==='active';
+      registrationBtn.disabled=data?.registration_complete===true||activeLink||!data?.phone_e164;
+      registrationBtn.textContent=data?.registration_complete===true?'Cadastro concluído':activeLink?'Link de cadastro ativo':'Gerar link de cadastro';
+    }
+    if(link?.state==='active')lines.push('Link de cadastro ativo');
+    if(link?.state==='consumed')lines.push('Link de cadastro concluído');
+    if(link?.state==='expired')lines.push('Último link expirou');
+    host.textContent=lines.join(' · ');"""
+if old in s:s=s.replace(old,new,1)
+elif new not in s: raise SystemExit('active registration link guard anchor missing')
 Path(path).write_text(s)
 
-print('provider readiness safety patch applied')
+print('provider readiness and registration-link safety patch applied')
