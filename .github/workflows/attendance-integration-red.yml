@@ -1,18 +1,23 @@
-name: Attendance Task 4 RED proof
+name: Attendance contracts
 
 on:
   push:
     branches:
       - feat/admin-attendance-papoai-v1
     paths:
-      - scripts/test-admin-attendance-realtime-v1.mjs
+      - scripts/test-admin-attendance-*.mjs
+      - vitrine/admin/atendimento/**
+      - vitrine/admin/index.html
+      - supabase/functions/admin-whatsapp-ops-v1/**
+      - supabase/functions/_shared/admin-attendance-domain-v1.mjs
+      - supabase/sql/20261001_admin_attendance*.sql
       - .github/workflows/attendance-integration-red.yml
 
 permissions:
   contents: read
 
 jobs:
-  red-proof:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,5 +26,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run Task 4 contract before implementation
-        run: node scripts/test-admin-attendance-realtime-v1.mjs
+      - name: Verify attendance contracts
+        run: |
+          node scripts/test-admin-attendance-sql-v1.mjs
+          node scripts/test-admin-attendance-api-v1.mjs
+          node scripts/test-admin-attendance-ui-v1.mjs
+          node scripts/test-admin-attendance-integration-v1.mjs
+          node scripts/test-admin-attendance-realtime-v1.mjs
+          node scripts/test-admin-attendance-outbound-v1.mjs
+          node --check vitrine/admin/atendimento/attendance.js
