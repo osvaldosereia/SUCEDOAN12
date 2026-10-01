@@ -1,0 +1,30 @@
+name: Checkout WhatsApp post-order cleanup verify
+
+on:
+  push:
+    branches:
+      - fix/checkout-whatsapp-postorder-cleanup
+    paths:
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'scripts/test-checkout-whatsapp-return.mjs'
+      - 'scripts/test-checkout-whatsapp-outbox.mjs'
+      - 'scripts/test-checkout-whatsapp-runtime-gate.mjs'
+      - 'supabase/**'
+      - '.github/workflows/checkout-whatsapp-postorder-cleanup-verify.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run checkout contracts
+        run: |
+          node scripts/test-checkout-whatsapp-return.mjs
+          node scripts/test-checkout-whatsapp-outbox.mjs
+          node scripts/test-checkout-whatsapp-runtime-gate.mjs
+          node scripts/test-checkout-whatsapp-observability.mjs
+          node scripts/test-site-only-order-registration.mjs
+          python3 scripts/test-marketing-intelligence-contract.py
+          cmp -s index.html vitrine/index.html
+          git diff --check
