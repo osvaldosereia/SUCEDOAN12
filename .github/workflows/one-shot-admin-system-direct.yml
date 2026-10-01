@@ -1,0 +1,62 @@
+name: One-shot admin system direct buttons
+on:
+  push:
+    branches:
+      - fix/admin-system-buttons-direct-20261001
+    paths:
+      - .github/workflows/one-shot-admin-system-direct.yml
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/admin-system-buttons-direct-20261001
+      - name: Patch direct System buttons
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('vitrine/admin/index.html')
+          s=p.read_text(encoding='utf-8')
+
+          old='''            <button class="admin-sidebar-item" data-tab="more" type="button"><span class="nav-item-icon" aria-hidden="true">⋯</span><span>Mais</span></button>'''
+          new='''            <button class="admin-sidebar-item" data-tab="finance" type="button"><span class="nav-item-icon" aria-hidden="true">$</span><span>Financeiro</span></button>\n            <button class="admin-sidebar-item" data-tab="bling" type="button"><span class="nav-item-icon" aria-hidden="true">⚙</span><span>Bling técnico</span></button>'''
+          assert old in s, 'Mais sidebar button not found'
+          s=s.replace(old,new,1)
+
+          old_route="""    if(tab==='customers')renderCustomers();\n    if(tab==='bling')renderBling();"""
+          new_route="""    if(tab==='customers')renderCustomers();\n    if(tab==='finance')renderFinance();\n    if(tab==='bling')renderBling();"""
+          assert old_route in s, 'Bling route anchor not found'
+          s=s.replace(old_route,new_route,1)
+          assert "    if(tab==='more')renderMore();\n" in s, 'Mais route not found'
+          s=s.replace("    if(tab==='more')renderMore();\n",'',1)
+
+          s2,n=re.subn(r'\n  function renderMore\(\)\{.*?\n  \}\n\n  function financeSummaryCard', '\n  function financeSummaryCard', s, count=1, flags=re.S)
+          assert n==1, f'renderMore removal count={n}'
+          p.write_text(s2,encoding='utf-8')
+          PY
+      - name: Verify sidebar contract
+        run: python scripts/test-admin-sidebar-v9.py
+      - name: Verify inline JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('vitrine/admin/index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          Path('/tmp/admin-inline.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/admin-inline.js
+      - name: Verify diff
+        run: git diff --check
+      - name: Commit patch and remove temporary workflows
+        run: |
+          rm -f .github/workflows/one-shot-admin-system-direct.yml .github/workflows/test-admin-system-direct.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vitrine/admin/index.html scripts/test-admin-sidebar-v9.py .github/workflows/one-shot-admin-system-direct.yml .github/workflows/test-admin-system-direct.yml
+          git commit -m "fix(admin): move Financeiro e Bling para menu lateral"
+          git push origin HEAD:fix/admin-system-buttons-direct-20261001
