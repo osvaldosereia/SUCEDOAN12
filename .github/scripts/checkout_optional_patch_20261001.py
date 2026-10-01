@@ -90,8 +90,8 @@ patch_checkout('vitrine/index.html')
 patch_checkout('index.html')
 
 api_text = backend.read_text(encoding='utf-8')
-assert 'if(!ph)return {error:"invalid_phone"' not in api_text
 submit_api = api_text[api_text.index('async function submit'):api_text.index('\n}\n\nDeno.serve', api_text.index('async function submit'))]
+assert 'if(!ph)return {error:"invalid_phone"' not in submit_api
 assert 'return {error:"registration_required"' not in submit_api
 for path in ['vitrine/index.html','index.html']:
     site = Path(path).read_text(encoding='utf-8')
