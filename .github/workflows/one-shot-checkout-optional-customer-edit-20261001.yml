@@ -1,0 +1,137 @@
+name: One-shot checkout optional fields 2026-10-01
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-checkout-optional-customer-edit-20261001.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch storefront API and checkout
+        shell: python
+        run: |
+          from pathlib import Path
+
+          backend = Path('supabase/functions/storefront-v2/index.ts')
+          text = backend.read_text(encoding='utf-8')
+          start = text.index('async function submit(req:Request,p:any){')
+          end = text.index('\n}\n\nDeno.serve', start) + 2
+          new_submit = r'''async function submit(req:Request,p:any){
+            const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),items=Array.isArray(p?.items)?p.items.slice(0,80):[];
+            if(!items.length)return {error:"empty_cart",status:400};
+            const deliveryDate=txt(p?.delivery_date,10),del=deliveryDate?selectedDelivery(deliveryDate):null;
+            const ik=await sha(ip(req)||"unknown"),ipLimit=await db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600});
+            if(ipLimit.error)return {error:"rate_limit_unavailable",status:503};
+            if(ipLimit.data!==true)return {error:"rate_limited",status:429};
+            if(ph){
+              const pk=await sha(ph),phoneLimit=await db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:phone:"+pk,p_bucket:"create_order",p_limit:5,p_window_seconds:600});
+              if(phoneLimit.error)return {error:"rate_limit_unavailable",status:503};
+              if(phoneLimit.data!==true)return {error:"rate_limited",status:429};
+            }
+            let customer:any=null;
+            if(ph){
+              try{const found=await lookupCustomer(ph);if(found?.found&&found?.customer)customer=found.customer}catch(e){console.error("optional_customer_lookup",txt((e as any)?.message,180))}
+            }
+            const customerSnapshot=customer?{found:true,id:customer.id,display_name:customer.display_name||null,address:customer.address||null,identity_status:"existing_optional"}:{};
+            const split=await splitGlobalReady(),created=split?await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}}):await db.rpc("create_canonical_cart_order_v2",{p_source:"vitrine",p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}});
+            if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS}}
+            const orderId=created.data?.order_id;let papoaiLink:any=null;
+            if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
+            const customerStatus=customer?"registered":"pending_registration";
+            await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked)},"order-received:"+orderId);
+            return {...created.data,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)};
+          }'''
+          text = text[:start] + new_submit + text[end:]
+          backend.write_text(text, encoding='utf-8')
+
+          def patch_checkout(path):
+            p = Path(path)
+            s = p.read_text(encoding='utf-8')
+
+            start = s.index('    function updateCheckoutSubmitState(){')
+            end = s.index('\n    function formatValidityDate', start)
+            s = s[:start] + '''    function updateCheckoutSubmitState(){const btn=$('#sendWhats');if(!btn)return;const ready=cartTotal()>=MINIMUM_ORDER_CENTS;btn.disabled=!ready;btn.textContent=ready?'Enviar pedido para o WhatsApp':'Complete o valor mínimo do pedido'}''' + s[end:]
+
+            start = s.index('    async function sendWhatsApp(){')
+            end = s.index("\n    $('#globalSearchForm')", start)
+            send = r'''    async function sendWhatsApp(){
+              const total=cartTotal();
+              if(total<MINIMUM_ORDER_CENTS){toast('O pedido mínimo é '+money(MINIMUM_ORDER_CENTS)+'.');return}
+              const selected=document.querySelector('input[name="payment"]:checked');
+              const info=checkoutPhoneData(),checkoutPhone=info.valid?info.full:'';
+              const marketingSignals=buildMarketingSignals();
+              const handoffWindow=reserveWhatsAppHandoff(),btn=$('#sendWhats');
+              if(btn){btn.disabled=true;btn.textContent='Registrando pedido…'}
+              let saved=null;
+              try{
+                saved=await api('submit_order',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payment_method:selected?.value||'',whatsapp_phone:checkoutPhone,delivery_date:state.checkoutDeliveryDate||'',whatsapp_origin:state.whatsappOrigin,marketing_context:state.marketingContext||null,items:state.cart.map(item=>({type:item.type,id:item.id,qty:Number(item.qty||1),lot_id:item.type==='basket'?(item.lot_id||null):null,split_mode:item.type==='basket'&&item.split_mode===true,food_lot_id:item.type==='basket'?(item.food_lot_id||null):null,hygiene_lot_id:item.type==='basket'?(item.hygiene_lot_id||null):null,components:item.type==='basket'?(item.components||[]):[]}))})})
+              }catch(e){
+                cancelWhatsAppHandoff(handoffWindow);
+                if(btn){btn.disabled=false;btn.textContent='Enviar pedido para o WhatsApp'}
+                if(['insufficient_stock','product_unavailable','basket_unavailable','basket_lot_unavailable','basket_lot_insufficient','basket_component_not_in_lot','basket_kit_lot_unavailable','basket_kit_lot_insufficient','basket_component_not_in_selected_kit'].includes(e.message))toast('O estoque mudou. Atualize a cesta e tente novamente.');else toast('Não consegui registrar. Tente novamente.');
+                return
+              }
+              const customer=saved?.customer||state.customerLookup.customer||{},a=customer.address||{},date=orderDatePartsCuiaba();
+              const clientStatus=(customer?.id||saved?.customer_id)?'CADASTRADO':'NOVO';
+              const lines=['PEDIDO DONA ANTONIA','Pedido: "'+date.long+'"',saved?.order_number?'NUMERO: '+String(saved.order_number).slice(-8):'','CLIENTE: '+clientStatus,'NOME: '+(customer.display_name||state.checkoutName.trim()||'NAO INFORMADO'),'WHATSAPP: '+(checkoutPhone?formatPhoneBr(checkoutPhone):'NAO INFORMADO'),'ENDERECO: '+([a.street,a.number,a.complement].filter(Boolean).join(', ')||'NAO INFORMADO'),'BAIRRO: '+(a.neighborhood||a.district||'NAO INFORMADO'),'CIDADE: '+(a.city||'NAO INFORMADA'),'ENTREGA: '+(saved?.delivery?.label||state.checkoutDeliveryDate||'NAO INFORMADA'),''].filter(Boolean);
+              const baskets=state.cart.filter(item=>item.type==='basket'&&Number(item.qty||0)>0);
+              if(baskets.length){for(const item of baskets)lines.push('CESTA: '+formatQty(item.qty)+'x '+item.name)}else lines.push('CESTA: NENHUMA');
+              lines.push('','PRODUTOS:');
+              for(const item of state.cart){if(item.type==='product'&&Number(item.qty||0)>0)lines.push(formatQty(item.qty)+'x '+item.name);if(item.type==='basket'&&item.components?.length){for(const c of item.components){const qty=Number(c.quantity)*Number(item.qty||1);if(qty>0)lines.push(formatQty(qty)+'x '+c.name)}}}
+              lines.push('','TOTAL: '+money(saved?.total_cents??cartTotal()),'PAGAMENTO: '+(selected?.value||'NAO INFORMADO'));
+              lines.push('','OFERTAS_WHATSAPP: '+(marketingSignals.optIn?'SIM':'NAO'));
+              for(const interest of marketingSignals.interests)lines.push('INTERESSES_MKT: '+interest);
+              for(const brand of marketingSignals.brands)lines.push('MARCAS_MKT: '+brand);
+              lines.push('CTA_POS_PEDIDO: '+marketingSignals.cta);
+              if(marketingSignals.campaign)lines.push('CAMPANHA_ORIGEM: '+marketingSignals.campaign);
+              if(saved?.delivery?.reason==='after_cutoff')lines.push('OBS: pedido realizado a partir das 11h de Cuiabá.');
+              const url='https://wa.me/'+resolveWhatsappDestination()+'?text='+encodeURIComponent(lines.join('\n'));
+              state.cart=[];state.addressConfirmed=false;state.checkoutDeliveryDate='';saveCart();paintCart();renderWhatsAppHandoffSuccess(url,saved);
+              const handoffMode=completeWhatsAppHandoff(url,handoffWindow);if(handoffMode)toast('Pedido registrado. Abrindo WhatsApp…');else toast('Pedido registrado. Toque em “Abrir WhatsApp”.')
+            }'''
+            s = s[:start] + send + s[end:]
+
+            s = s.replace("<strong>'+(state.customerLookup.status==='new'?'Faça seu cadastro':'Confira/complete seu cadastro')+'</strong>Os campos abaixo são necessários para registrar o pedido corretamente.", "<strong>'+(state.customerLookup.status==='new'?'Cadastro opcional':'Cadastro do cliente')+'</strong>Se quiser, preencha ou atualize os dados. O pedido pode ser finalizado mesmo sem cadastro completo.")
+            s = s.replace("<h3 class=\"checkout-title\">Seu WhatsApp</h3>", "<h3 class=\"checkout-title\">Seu WhatsApp <span class=\"muted\">(opcional)</span></h3>")
+            s = s.replace("<h3 class=\"checkout-title\">Data de entrega</h3>", "<h3 class=\"checkout-title\">Data de entrega <span class=\"muted\">(opcional)</span></h3>")
+            s = s.replace("<h3 class=\"checkout-title\">Como você vai pagar?</h3>", "<h3 class=\"checkout-title\">Como você vai pagar? <span class=\"muted\">(opcional)</span></h3>")
+            s = s.replace('<button class="primary" type="button" id="sendWhats" disabled>Complete cadastro, entrega e pagamento</button>', '<button class="primary" type="button" id="sendWhats">Enviar pedido para o WhatsApp</button>')
+            p.write_text(s, encoding='utf-8')
+
+          patch_checkout('vitrine/index.html')
+          patch_checkout('index.html')
+
+          # Sanity checks: required customer/payment gates must be gone from submit path.
+          api_text = backend.read_text(encoding='utf-8')
+          assert 'if(!ph)return {error:"invalid_phone"' not in api_text
+          assert 'return {error:"registration_required"' not in api_text[api_text.index('async function submit'):api_text.index('\n}\n\nDeno.serve', api_text.index('async function submit'))]
+          for path in ['vitrine/index.html','index.html']:
+            site = Path(path).read_text(encoding='utf-8')
+            submit = site[site.index('    async function sendWhatsApp(){'):site.index("\n    $('#globalSearchForm')")]
+            assert "toast('Escolha a forma de pagamento')" not in submit
+            assert "toast('Escolha a data de entrega')" not in submit
+            assert "toast('Informe seu WhatsApp')" not in submit
+            assert 'Confirme seu cadastro e endereço antes de finalizar' not in submit
+            assert '(opcional)' in site
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add supabase/functions/storefront-v2/index.ts vitrine/index.html index.html
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git commit -m "fix: allow checkout with optional customer fields"
+          git push origin HEAD:main
