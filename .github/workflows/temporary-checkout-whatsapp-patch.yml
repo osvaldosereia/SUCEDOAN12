@@ -1,0 +1,39 @@
+name: Temporary checkout WhatsApp patch
+
+on:
+  push:
+    branches:
+      - feat/checkout-whatsapp-confirmation
+    paths:
+      - .github/workflows/temporary-checkout-whatsapp-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/checkout-whatsapp-confirmation
+          fetch-depth: 0
+      - name: Patch checkout safely
+        run: python3 scripts/patch-checkout-whatsapp-return.py
+      - name: Verify checkout contracts
+        run: |
+          node scripts/test-checkout-whatsapp-return.mjs
+          node scripts/test-checkout-whatsapp-outbox.mjs
+          node scripts/test-site-only-order-registration.mjs
+          git diff --check
+      - name: Commit patched storefronts
+        run: |
+          if git diff --quiet -- index.html vitrine/index.html; then
+            echo "No storefront changes required"
+            exit 0
+          fi
+          git config user.name "Dona Antonia CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html vitrine/index.html
+          git commit -m "feat(checkout): finalize order before WhatsApp return"
+          git push origin HEAD:feat/checkout-whatsapp-confirmation
