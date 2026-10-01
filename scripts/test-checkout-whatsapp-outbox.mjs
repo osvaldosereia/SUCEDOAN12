@@ -65,15 +65,15 @@ assert.match(gateway,/external_message_id|message_id/,'gateway must capture prov
 assert.match(config,/\[functions\.whatsapp-order-outbound-v1\][\s\S]*verify_jwt\s*=\s*true/i,'outbound gateway must require JWT');
 
 const storefront=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
-assert.match(storefront,/function\s+kickWhatsappOrderOutbound\s*\(\s*\)/,'storefront must kick the dispatcher after a confirmed order');
-assert.match(storefront,/\/functions\/v1\/whatsapp-order-outbound-v1/,'storefront kick must target the internal outbound edge function');
-assert.match(storefront,/Authorization:\s*`Bearer \$\{KEY\}`/,'storefront kick must authenticate server-side with service role');
+assert.match(storefront,/function\s+kickWhatsappOrderOutbound\s*\(\s*orderId:string\s*\)/,'storefront must target the persisted order when kicking the dispatcher');
+assert.match(storefront,/\/functions\/v1\/admin-orders-v1/,'storefront kick must reuse the existing internal order dispatcher');
+assert.match(storefront,/["']x-internal-key["']\s*:\s*KEY/,'storefront kick must authenticate server-side with the internal key');
 assert.match(storefront,/EdgeRuntime[\s\S]*waitUntil/,'dispatcher kick must run in background instead of delaying checkout success');
 const submit=storefront.match(/async function submit\(req:Request,p:any\)\{[\s\S]*?\n\}/)?.[0]||'';
 assert.ok(submit,'storefront submit function must exist');
 assert.match(submit,/whatsappOriginRaw=txt\(p\?\.whatsapp_origin,4\)[\s\S]*whatsappOrigin=\['0975','1018'\]\.includes\(whatsappOriginRaw\)\?whatsappOriginRaw:''/,'storefront must whitelist checkout channel origin');
 assert.match(submit,/whatsapp_origin:whatsappOrigin/, 'validated channel origin must be stored in the customer/order snapshot');
-assert.match(submit,/ops2_link_storefront_order_from_identity_v1[\s\S]*kickWhatsappOrderOutbound\(\)/,'dispatcher must kick only after the PapoAI identity/channel link attempt');
+assert.match(submit,/ops2_link_storefront_order_from_identity_v1[\s\S]*kickWhatsappOrderOutbound\(orderId\)/,'dispatcher must kick the persisted order only after the PapoAI identity/channel link attempt');
 assert.doesNotMatch(submit,/await\s+kickWhatsappOrderOutbound/,'checkout must not wait for provider delivery');
 
 console.log('checkout WhatsApp outbox contract: ok');

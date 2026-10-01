@@ -265,11 +265,12 @@ async function registerCustomer(req:Request,p:any){
   const customer=await loadCustomerForCheckout(r.data.customer_id);return {ok:true,registration_complete:true,customer,bling_job_id:r.data.bling_job_id||null};
 }
 
-function kickWhatsappOrderOutbound(){
-  const task=fetch(`${SUPABASE_URL}/functions/v1/whatsapp-order-outbound-v1`,{
+function kickWhatsappOrderOutbound(orderId:string){
+  if(!orderId)return;
+  const task=fetch(`${SUPABASE_URL}/functions/v1/admin-orders-v1`,{
     method:"POST",
-    headers:{Authorization:`Bearer ${KEY}`,"Content-Type":"application/json"},
-    body:"{}"
+    headers:{"x-internal-key":KEY,"Content-Type":"application/json"},
+    body:JSON.stringify({order_id:orderId,dispatch_scope:"checkout_auto"})
   }).then(async response=>{
     if(!response.ok)console.error("whatsapp_order_outbound_kick",response.status,txt(await response.text().catch(()=>""),180));
   }).catch(error=>console.error("whatsapp_order_outbound_kick",txt((error as any)?.message,180)));
@@ -298,7 +299,7 @@ async function submit(req:Request,p:any){
   if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS}}
   const orderId=created.data?.order_id;let papoaiLink:any=null;
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
-  if(orderId&&ph)kickWhatsappOrderOutbound();
+  if(orderId&&ph)kickWhatsappOrderOutbound(orderId);
   const customerStatus=customer?"registered":"pending_registration";
   await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked)},"order-received:"+orderId);
   return {...created.data,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)};
