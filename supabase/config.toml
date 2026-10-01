@@ -14,3 +14,8 @@ verify_jwt = false
 # Gateway canônico do vitrine/admin; sem dependência do projeto legado.
 [functions.admin-products-live-v1]
 verify_jwt = false
+
+# Gateway interno de confirmação utilitária de pedidos via PapoAI.
+# A função valida x-internal-key no próprio código.
+[functions.whatsapp-order-outbound-v1]
+verify_jwt = false
