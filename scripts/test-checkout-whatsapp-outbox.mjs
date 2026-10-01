@@ -59,7 +59,7 @@ assert.ok(!/Access-Control-Allow-Origin/i.test(gateway),'internal gateway must n
 assert.match(gateway,/ops2_claim_whatsapp_outbox_v1/,'gateway must claim one outbox item');
 assert.match(gateway,/p_delivery_mode:provider\.deliveryMode/,'claim must be constrained to configured provider mode');
 assert.match(gateway,/p_channel_origin:provider\.channelOrigin/,'claim must be constrained to configured provider channel');
-assert.match(gateway,/providers\.filter\(p=>p\.url\)/,'gateway must only claim routes that actually have a provider configured');
+assert.match(gateway,/const providers:Provider\[\]=\[[\s\S]*?\]\.filter\(p=>p\.url\);/,'gateway must only claim routes that actually have a provider configured');
 assert.match(gateway,/provider_not_configured/,'missing provider configuration must be explicit');
 assert.match(gateway,/message_text/,'PapoAI text webhook payload must contain the confirmation text');
 assert.match(gateway,/external_message_id|message_id/,'gateway must capture provider message id when available');

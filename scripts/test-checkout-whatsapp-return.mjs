@@ -20,7 +20,7 @@ const renderPos=send.indexOf('renderOrderSuccess(url,saved)');
 const timerPos=send.indexOf('scheduleWhatsAppReturn(url,3000)');
 assert.ok(savePos>=0&&clearPos>savePos,'cart may clear only after submit_order succeeds');
 assert.ok(renderPos>clearPos&&timerPos>renderPos,'success screen must render before scheduled WhatsApp return');
-assert.match(send,/const url='https:\/\/wa\.me\/'+resolveWhatsappDestination\(\);/,'return URL must open conversation without requiring prefilled order send');
+assert.match(send,/const url='https:\/\/wa\.me\/'\+resolveWhatsappDestination\(\);/,'return URL must open conversation without requiring prefilled order send');
 assert.doesNotMatch(send,/\?text=/,'checkout must not depend on customer sending prefilled text');
 for(const signal of ['INTERESSES_MKT','MARCAS_MKT']){
   assert.ok(root.includes(signal),`${signal} generation must remain available until marketing migration is completed`);
