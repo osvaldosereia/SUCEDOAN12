@@ -11,6 +11,7 @@ required_site_markers = [
     "function captureMarketingEntryContext()",
     "function resolveWhatsappDestination()",
     "function buildMarketingSignals()",
+    "function buildMarketingSignalLines(marketingSignals)",
     "function applyMarketingEntryContext()",
     "INTERESSES_MKT:",
     "MARCAS_MKT:",
@@ -25,7 +26,7 @@ for marker in required_site_markers:
 
 assert "item.type==='product'" in site
 assert "item.components" in site
-signal_block = site[site.index('function buildMarketingSignals()'):site.index('function applyMarketingEntryContext()')]
+signal_block = site[site.index('function buildMarketingSignals()'):site.index('function buildMarketingSignalLines(marketingSignals)')]
 assert "item.components" not in signal_block, 'basket components must not feed marketing signals'
 assert "resolveWhatsappDestination()" in site[site.index('async function sendWhatsApp()'):], 'checkout must return to origin channel'
 
@@ -35,12 +36,15 @@ assert "'nivea'" in brand_block and "'elseve'" in brand_block
 for unsupported in ["'seda'", "'monange'", "'lola-cosmetics'", "'skala'", "'dove'", "'omo'", "'ype'", "'downy'"]:
     assert unsupported not in brand_block, f'unsupported active PapoAI brand in site contract: {unsupported}'
 
-# PapoAI conditions use Contém; interests/brands must be emitted one line per signal.
-send_block = site[site.index('async function sendWhatsApp()'):]
-assert "for(const interest of marketingSignals.interests)lines.push('INTERESSES_MKT: '+interest)" in send_block
-assert "for(const brand of marketingSignals.brands)lines.push('MARCAS_MKT: '+brand)" in send_block
-assert "marketingSignals.interests.join(' | ')" not in send_block
-assert "marketingSignals.brands.join(' | ')" not in send_block
+# Marketing signals remain available, but are no longer assembled inside the successful checkout path.
+line_block = site[site.index('function buildMarketingSignalLines(marketingSignals)'):site.index('function applyMarketingEntryContext()')]
+assert "for(const interest of marketingSignals.interests)lines.push('INTERESSES_MKT: '+interest)" in line_block
+assert "for(const brand of marketingSignals.brands)lines.push('MARCAS_MKT: '+brand)" in line_block
+assert "marketingSignals.interests.join(' | ')" not in line_block
+assert "marketingSignals.brands.join(' | ')" not in line_block
+send_block = site[site.index('async function sendWhatsApp()'):site.index("$('#globalSearchForm')")]
+assert "buildMarketingSignalLines(" not in send_block, 'checkout success path must not assemble marketing text'
+assert "buildMarketingSignals()" not in send_block, 'checkout success path must not perform unused marketing signal work'
 
 # Only subjects with prepared PapoAI quick responses may become automatic post-order CTA.
 assert "const MARKETING_CTA_PRIORITY=['BEBE','CABELOS','BELEZA','LIMPEZA','LAVANDERIA','PET'];" in site
