@@ -262,7 +262,13 @@ async function registerCustomer(req:Request,p:any){
   });
   if(r.error)return {error:"registration_unavailable",status:503};
   if(r.data?.ok!==true){const e=txt(r.data?.error,100)||"registration_failed";return {error:e,status:["document_already_in_use","document_mismatch","identity_mismatch"].includes(e)?409:400};}
-  const customer=await loadCustomerForCheckout(r.data.customer_id);return {ok:true,registration_complete:true,customer,bling_job_id:r.data.bling_job_id||null};
+  const customer=await loadCustomerForCheckout(r.data.customer_id);
+  let order_link:any=null;const orderToken=txt(p?.order_token,200);
+  if(orderToken){
+    const linked=await db.rpc("ops2_consume_order_registration_link_v1",{p_token:orderToken,p_customer_id:r.data.customer_id,p_phone:ph});
+    order_link=linked.error?{ok:false,error:"order_link_unavailable"}:(linked.data||{ok:false,error:"order_link_failed"});
+  }
+  return {ok:true,registration_complete:true,customer,bling_job_id:r.data.bling_job_id||null,order_link};
 }
 
 async function submit(req:Request,p:any){
@@ -304,6 +310,7 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="GET"&&action==="basket"){const id=uid(u.searchParams.get("basket_id"));if(!id)return json(req,{ok:false,error:"invalid_basket"},400);const b=await basket(id);return b?json(req,{ok:true,...b},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"basket_not_found"},404)}
     if(req.method==="GET"&&action==="resolve_identity_code"){const r=await resolveCode(req,u.searchParams.get("code"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="resolve_identity_token"){const r=await resolveToken(u.searchParams.get("token"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
+    if(req.method==="GET"&&action==="resolve_order_token"){const token=txt(u.searchParams.get("order_token"),200),r=await db.rpc("ops2_resolve_order_registration_link_v1",{p_token:token});if(r.error)return json(req,{ok:false,error:"order_link_unavailable"},503,{"Cache-Control":"no-store"});const data=r.data||{};return data.ok===true?json(req,{ok:true,...data},200,{"Cache-Control":"no-store"}):json(req,{ok:false,...data},["token_expired","token_already_used"].includes(data.error)?410:400,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="delivery_options")return json(req,{ok:true,options:deliveryOptions(),cutoff_hour:CUTOFF_HOUR,time_zone:TZ},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="customer_lookup"){const ph=phone(u.searchParams.get("phone")),rk=await sha(ph||ip(req)||"unknown"),gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:customer-lookup:"+rk,p_bucket:"lookup_customer",p_limit:20,p_window_seconds:300});if(gate.error)return json(req,{ok:false,error:"rate_limit_unavailable"},503);if(gate.data!==true)return json(req,{ok:false,error:"rate_limited"},429);return json(req,await lookupCustomer(ph),200,{"Cache-Control":"no-store"})}
 
