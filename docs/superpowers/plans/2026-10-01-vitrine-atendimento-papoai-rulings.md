@@ -32,6 +32,38 @@ Cost if wrong: an unknown legacy caller of `admin-whatsapp-ops-v1` would now rec
 - No `send_message`, human takeover or outbound WhatsApp action exists in this phase.
 - External HTTP smoke from the model runtime could not run because outbound DNS/network is disabled. Underlying RPC behavior and permissions were validated directly in production SQL; gateway unit contract was previously RED→GREEN in the minimal local workspace.
 
+## Task 3 evidence
+
+- Admin navigation now contains `Atendimento` inside Operação, immediately after Central.
+- Attendance iframe is created only when `setTab('attendance')` executes; the Admin boot does not load attendance data.
+- The same-origin bridge accepts only `da-attendance` messages and validates UUIDs before opening existing customer/order/quote tools.
+- GitHub Actions run `36909468061` finished GREEN with integration, UI, API and SQL contracts plus `node --check` for `attendance.js`.
+
+## Ruling 2 — Task 4 refresh strategy
+
+Finding: direct Supabase Realtime from the browser would require widening access to protected canonical conversation/message tables or adding another public read surface. The initial operation has one Admin surface and only two queues.
+
+Decision: use a visibility-aware gateway refresh every 8 seconds. It refreshes the two lightweight queues and the currently selected conversation only while the browser tab is visible. No `postgres_changes` subscription or direct table access is opened.
+
+Cost if wrong: updates can appear up to about 8 seconds after receipt instead of instant websocket delivery. For the current single-operator use case this is preferable to extra security/configuration complexity and can be revisited if real usage proves the delay material.
+
+## Ruling 3 — Marketing opt-out shortcut deferred
+
+Finding: the project already has unresolved RLS/policy findings around `marketing_optout_events_v1` / related marketing state. Adding a new chat-side mutation before that policy is reviewed would couple the attendance module to a known security debt.
+
+Decision: do not add a marketing opt-out mutation in Task 4. The customer card continues to display current consent state. The shortcut will be added only after the canonical marketing policy is hardened or an already-hardened dispatcher is confirmed.
+
+Cost if wrong: an operator must use the existing customer/marketing workflow for opt-out in the meantime. This is safer than creating an unreviewed alternate mutation path.
+
+## Task 4 evidence
+
+- RED observed locally against the pre-Task-4 HTML: contract failed on missing `Enviar catálogo` quick tool.
+- GREEN observed locally after implementation: `test-admin-attendance-realtime-v1.mjs` passed and `node --check vitrine/admin/atendimento/attendance.js` passed.
+- Quick tools now prepare, but never send: catalog link, quick replies, quote, new sale and follow-up reminder.
+- The draft textarea is editable; the actual `Enviar` button remains disabled.
+- Catalog generation calls the already authenticated `issue_catalog` gateway action and places the resulting URL in the draft only.
+- Follow-up uses the canonical `follow_up` action; quick replies only fill the draft.
+
 ## Safety state
 
-Human WhatsApp send remains disabled. PapoAI automations, ANA and both live channels were not changed by Tasks 1–3. No client message was sent.
+Human WhatsApp send remains disabled. PapoAI automations, ANA and both live channels were not changed by Tasks 1–4. No client message was sent.
