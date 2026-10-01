@@ -1176,6 +1176,15 @@
       }
       body.admin-nav-open .admin-nav-backdrop{opacity:1;pointer-events:auto}
       #content.wrap{width:100%;max-width:100%;margin:0;padding:12px 10px 80px}
+
+      /* MOBILE_GLOBAL_GUARDS_V9 · proteção de largura das telas, independente da navegação */
+      #app,#content,main,.wrap,.panel,.page-head,.toolbar,.history-title,.dispatch-head,
+      .product-stock-breakdown,.basket-admin-card,.basket-composer,.purchase-doc-expanded,
+      .quote-admin-shell,.customer-profile-head,.history-detail-head{min-width:0;max-width:100%}
+      #content img,.panel img{max-width:100%;height:auto}
+      .page-head>*,.toolbar>*,.history-title>*,.dispatch-head>*{min-width:0}
+      input,select,textarea{max-width:100%}
+      button,a{max-width:100%}
     }
 
   </style>
