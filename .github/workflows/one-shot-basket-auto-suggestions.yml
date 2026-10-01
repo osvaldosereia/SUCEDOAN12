@@ -26,6 +26,17 @@ jobs:
           assert 'id="basketAutoSuggestions"' not in s
           print('RED confirmed: basket automatic suggestions UI is absent')
           PY
+      - name: Fix patcher whitespace regression
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/patch-basket-auto-suggestions.py')
+          s=p.read_text(encoding='utf-8')
+          old="s=s.replace('</style>',CSS+'  </style>',1)"
+          new="s=s.replace('</style>',CSS+'</style>',1)"
+          assert old in s
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
       - name: Apply patch
         run: python3 scripts/patch-basket-auto-suggestions.py
       - name: GREEN verify
