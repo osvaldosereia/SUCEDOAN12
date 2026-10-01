@@ -1,0 +1,22 @@
+name: One-shot marketing intelligence v1
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-marketing-intelligence-v1.yml']
+permissions:
+  contents: write
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            index.html
+            vitrine/index.html
+            vitrine/admin/index.html
+            scripts/test-marketing-intelligence-contract.py
+          sparse-checkout-cone-mode: false
+      - name: RED marketing intelligence contract
+        run: python3 scripts/test-marketing-intelligence-contract.py
