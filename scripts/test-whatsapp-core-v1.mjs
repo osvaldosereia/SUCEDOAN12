@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 const root = path.resolve(import.meta.dirname, '..');
 const sqlPath = path.join(root, 'supabase/sql/20260930_whatsapp_meta_native_core_v1.sql');
 assert.ok(fs.existsSync(sqlPath), 'core SQL migration must exist');
-const sql = fs.readFileSync(sqlPath, 'utf8');
+const indexPath = path.join(root, 'supabase/sql/20261001_whatsapp_meta_native_core_indexes_v1.sql');
+const sql = fs.readFileSync(sqlPath, 'utf8') + '\n' + (fs.existsSync(indexPath) ? fs.readFileSync(indexPath, 'utf8') : '');
 
 const tables = [
   'whatsapp_channel_runtime_v1',
@@ -47,5 +48,18 @@ assert.match(sql, /outbound_provider\s*=\s*'meta'[\s\S]{0,200}homologated_at\s+i
 assert.match(sql, /status_rank/i, 'status projection must use semantic rank');
 assert.match(sql, /when\s+v_current_status\s*=\s*'read'[\s\S]*then\s+false/i, 'read must not regress');
 assert.match(sql, /marketing_optout_events_v2/i, 'provider-neutral opt-out trail required');
+
+for (const indexName of [
+  'whatsapp_messages_reply_to_idx',
+  'whatsapp_templates_account_idx',
+  'whatsapp_outbox_account_idx',
+  'whatsapp_outbox_conversation_idx',
+  'whatsapp_outbox_customer_idx',
+  'whatsapp_outbox_message_idx',
+  'whatsapp_outbox_template_idx',
+  'marketing_optout_events_v2_message_idx',
+]) {
+  assert.match(sql, new RegExp(`create\\s+index\\s+if\\s+not\\s+exists\\s+${indexName}`, 'i'), `${indexName} must cover foreign key`);
+}
 
 console.log('PASS whatsapp core structural contract');
