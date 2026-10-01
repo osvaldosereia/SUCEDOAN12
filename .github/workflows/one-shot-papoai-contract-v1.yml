@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 jobs:
-  align:
+  diagnose:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,34 +19,43 @@ jobs:
             scripts/test-marketing-intelligence-contract.py
             scripts/patch-papoai-contract-v1.py
             supabase/migrations/20260930_marketing_campaign_brand_rules_v1.sql
+            docs
           sparse-checkout-cone-mode: false
-      - name: RED verify final PapoAI contract is not yet aligned
-        run: |
-          if python3 scripts/test-marketing-intelligence-contract.py; then
-            echo 'Final contract unexpectedly green before alignment' >&2
-            exit 1
-          fi
-          echo 'RED confirmed'
-      - name: Apply final PapoAI contract alignment
+      - name: Apply patch in runner only
         run: python3 scripts/patch-papoai-contract-v1.py
-      - name: GREEN verify contract and JS syntax
+      - name: Persist diagnostic only
+        shell: bash
         run: |
-          python3 scripts/test-marketing-intelligence-contract.py
-          node <<'NODE'
+          set +e
+          mkdir -p docs
+          {
+            echo 'PAPOAI CONTRACT DIAGNOSTIC'
+            echo '--- contract test ---'
+            python3 scripts/test-marketing-intelligence-contract.py
+            echo "contract_exit=$?"
+            echo '--- javascript syntax ---'
+            node <<'NODE'
           const fs=require('fs');
+          let code=0;
           for(const file of ['index.html','vitrine/index.html','vitrine/admin/index.html']){
-            const html=fs.readFileSync(file,'utf8');
-            const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
-            scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`${file} inline script ${i+1}: ${e.message}`)}});
-            console.log(file+' JS syntax OK');
+            try{
+              const html=fs.readFileSync(file,'utf8');
+              const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+              scripts.forEach((src,i)=>new Function(src));
+              console.log(file+' JS syntax OK');
+            }catch(e){console.log(file+' JS syntax FAIL: '+e.message);code=1}
           }
+          process.exitCode=code;
           NODE
-          cmp -s index.html vitrine/index.html
-          git diff --check
-      - name: Commit aligned live files
-        run: |
+            echo "js_exit=$?"
+            cmp -s index.html vitrine/index.html
+            echo "copies_exit=$?"
+            git diff --check
+            echo "diffcheck_exit=$?"
+          } > docs/tmp-papoai-contract-diagnostic.txt 2>&1
+          git restore index.html vitrine/index.html vitrine/admin/index.html
           git config user.name 'Dona Antonia Ops'
           git config user.email 'actions@users.noreply.github.com'
-          git add index.html vitrine/index.html vitrine/admin/index.html
-          git commit -m 'fix(marketing): alinha sinais ao contrato final do PapoAI'
+          git add docs/tmp-papoai-contract-diagnostic.txt
+          git commit -m 'test(marketing): salva diagnostico temporario do contrato PapoAI'
           git push origin HEAD:main
