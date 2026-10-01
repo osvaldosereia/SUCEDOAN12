@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/one-shot-checkout-optional-customer-edit-20261001.yml'
+      - '.github/scripts/checkout_optional_patch_20261001.py'
   workflow_dispatch:
 
 permissions:
@@ -15,8 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Apply deterministic patch
         run: python .github/scripts/checkout_optional_patch_20261001.py
       - name: Commit patch
