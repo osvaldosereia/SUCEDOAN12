@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           sparse-checkout: |
             index.html
             vitrine/index.html
@@ -43,10 +43,22 @@ jobs:
           NODE
           cmp -s index.html vitrine/index.html
           git diff --check
-      - name: Commit aligned live files
+      - name: Commit, rebase latest main and reverify
         run: |
           git config user.name 'Dona Antonia Ops'
           git config user.email 'actions@users.noreply.github.com'
           git add index.html vitrine/index.html vitrine/admin/index.html
           git commit -m 'fix(marketing): alinha sinais ao contrato final do PapoAI'
+          git fetch origin main
+          git rebase origin/main
+          python3 scripts/test-marketing-intelligence-contract.py
+          node <<'NODE'
+          const fs=require('fs');
+          for(const file of ['index.html','vitrine/index.html','vitrine/admin/index.html']){
+            const html=fs.readFileSync(file,'utf8');
+            const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+            scripts.forEach((src,i)=>new Function(src));
+          }
+          NODE
+          cmp -s index.html vitrine/index.html
           git push origin HEAD:main
