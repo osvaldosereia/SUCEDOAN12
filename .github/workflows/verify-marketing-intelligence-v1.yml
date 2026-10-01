@@ -1,0 +1,35 @@
+name: Verify marketing intelligence v1
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-marketing-intelligence-v1.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            index.html
+            vitrine/index.html
+            vitrine/admin/index.html
+            scripts/test-marketing-intelligence-contract.py
+            supabase/migrations/20260930_marketing_campaign_brand_rules_v1.sql
+          sparse-checkout-cone-mode: false
+      - name: Verify marketing contract
+        run: python3 scripts/test-marketing-intelligence-contract.py
+      - name: Verify inline JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          for(const file of ['index.html','vitrine/index.html','vitrine/admin/index.html']){
+            const html=fs.readFileSync(file,'utf8');
+            const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+            scripts.forEach((src,i)=>new Function(src));
+            console.log(file+' JS syntax OK');
+          }
+          NODE
+          cmp -s index.html vitrine/index.html
