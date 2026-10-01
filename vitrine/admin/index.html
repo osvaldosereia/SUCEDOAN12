@@ -1239,7 +1239,8 @@
         <section class="admin-sidebar-section">
           <div class="admin-sidebar-title">Sistema</div>
           <div class="admin-sidebar-list">
-            <button class="admin-sidebar-item" data-tab="more" type="button"><span class="nav-item-icon" aria-hidden="true">⋯</span><span>Mais</span></button>
+            <button class="admin-sidebar-item" data-tab="finance" type="button"><span class="nav-item-icon" aria-hidden="true">$</span><span>Financeiro</span></button>
+            <button class="admin-sidebar-item" data-tab="bling" type="button"><span class="nav-item-icon" aria-hidden="true">⚙</span><span>Bling técnico</span></button>
             <a class="admin-sidebar-store" href="/vitrine/" target="_blank" rel="noopener"><span class="nav-item-icon" aria-hidden="true">↗</span><span>Abrir vitrine</span></a>
           </div>
         </section>
@@ -1420,13 +1421,13 @@
     if(tab==='balance')renderBalance();
     if(tab==='gondolas')renderGondolas();
     if(tab==='customers')renderCustomers();
+    if(tab==='finance')renderFinance();
     if(tab==='bling')renderBling();
     if(tab==='orders')renderOrders();
     if(tab==='separation')renderSeparationTablet();
     if(tab==='expedition')renderExpedition();
     if(tab==='driver')renderDriver();
     if(tab==='closure')renderClosure();
-    if(tab==='more')renderMore();
   }
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 
@@ -2471,17 +2472,6 @@
       host.innerHTML='<div class="operational-alert"><div><strong>Não consegui verificar a integração</strong><small>Os pedidos continuam visíveis. Abra o diagnóstico para conferir o Bling.</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
       $('#openIntegrationIssue').onclick=renderBling;
     }
-  }
-
-  function renderMore(){
-    const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Mais</h1><p>Configurações e ferramentas que não fazem parte da rotina principal.</p></div></div>'+
-      '<div class="ops-cards">'+
-        '<button class="ops-card" id="openFinanceAdmin" type="button"><small>Bling</small><strong style="font-size:18px">Financeiro</strong><span>Contas a pagar, receber, vencimentos e caixa projetado.</span></button>'+
-        '<button class="ops-card" id="openBlingAdmin" type="button"><small>Integrações</small><strong style="font-size:18px">Bling técnico</strong><span>Saúde, vínculos, filas e diagnóstico técnico.</span></button>'+
-      '</div>';
-    $('#openFinanceAdmin').onclick=renderFinance;
-    $('#openBlingAdmin').onclick=renderBling;
   }
 
   function financeSummaryCard(label,value,detail,kind=''){
