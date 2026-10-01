@@ -86,7 +86,6 @@ begin
     return jsonb_build_object('ok',false,'error','customer_phone_missing');
   end if;
 
-  -- 1) Preferir a conta já snapshotada no próprio pedido.
   if v_order.whatsapp_account_id is not null then
     select wa.* into v_account
     from public.whatsapp_accounts wa
@@ -95,7 +94,6 @@ begin
     limit 1;
   end if;
 
-  -- 2) Se o pedido está ligado a uma conversa, essa conversa define o canal.
   if v_account.id is null and v_order.conversation_id is not null then
     select c.* into v_conversation
     from public.conversations c
@@ -111,7 +109,6 @@ begin
     end if;
   end if;
 
-  -- 3) Última conversa compatível do cliente/telefone, sem inferência aproximada.
   if v_account.id is null then
     select c.* into v_conversation
     from public.conversations c
@@ -144,7 +141,6 @@ begin
   elsif right(coalesce(v_channel_phone_e164,''),4)='0975' then
     v_channel_origin:='0975';
   else
-    -- Site direto ou conta antiga sem origem operacional reconhecida: 0975 é o padrão.
     v_channel_origin:='0975';
     select public.canonical_whatsapp_e164_br_v2(wa.phone_e164)
       into v_channel_phone_e164
@@ -200,3 +196,33 @@ $$;
 
 revoke all on function public.ops2_enqueue_order_whatsapp_v1(uuid,text) from public,anon,authenticated;
 grant execute on function public.ops2_enqueue_order_whatsapp_v1(uuid,text) to service_role;
+
+create or replace function public.ops2_enqueue_storefront_order_whatsapp_v1()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $$
+begin
+  if new.source not in ('vitrine','storefront_v2') then
+    return new;
+  end if;
+
+  begin
+    perform public.ops2_enqueue_order_whatsapp_v1(new.id,'order_received');
+  exception when others then
+    raise warning 'ops2_enqueue_storefront_order_whatsapp_v1 failed for order %: %',new.id,sqlerrm;
+  end;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.ops2_enqueue_storefront_order_whatsapp_v1() from public,anon,authenticated;
+grant execute on function public.ops2_enqueue_storefront_order_whatsapp_v1() to service_role;
+
+drop trigger if exists trg_ops2_enqueue_storefront_order_whatsapp_v1 on public.orders;
+create trigger trg_ops2_enqueue_storefront_order_whatsapp_v1
+after insert on public.orders
+for each row
+execute function public.ops2_enqueue_storefront_order_whatsapp_v1();
