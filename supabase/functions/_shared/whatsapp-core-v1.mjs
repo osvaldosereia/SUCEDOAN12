@@ -55,8 +55,10 @@ function epochIso(value,fallback=null){
 function canonicalType(value){
   const t=clean(value,40).toLowerCase();
   if(['text','audio','image','document','location','interactive','template','reaction'].includes(t))return t;
-  if(t==='voice'||t==='ptt')return 'audio';
-  if(t==='file')return 'document';
+  if(t==='voice'||t==='ptt'||t.startsWith('audio/'))return 'audio';
+  if(t.startsWith('image/'))return 'image';
+  if(t.startsWith('video/'))return 'unknown';
+  if(t==='file'||t.startsWith('application/')||t.startsWith('text/'))return 'document';
   return 'unknown';
 }
 
@@ -71,14 +73,14 @@ function textFromPapoMessage(message){
 
 export function canonicalMessageFromPapoAi(payload,context={}){
   const root=obj(payload),data=obj(root.data),message=obj(data.message&&typeof data.message==='object'?data.message:root.message);
-  const contact=obj(data.contact),conversation=obj(data.conversation);
+  const contact=obj(data.contact),conversation=obj(data.conversation),session=obj(data.session);
   const eventName=clean(root.event??root.event_name??root.eventName??root.type??data.event,120)||'message.received';
   if(!/message[._-]?received/i.test(eventName)&&eventName!=='message.received')return null;
 
   const accountId=clean(context.whatsappAccountId,80)||null;
-  const phone=normalizePhone(contact.phone??contact.telefone??data.phone??message.from??root.phone??root.telefone);
-  const providerMessageId=clean(message.id??message.message_id??data.message_id??root.message_id,180)||null;
-  const providerConversationId=clean(conversation.id??data.conversation_id??root.conversation_id,180)||null;
+  const phone=normalizePhone(message.phone_number_from??contact.phone??contact.telefone??data.phone??message.from??root.phone??root.telefone);
+  const providerMessageId=clean(message.external_id??message.id??message.message_id??data.message_id??root.message_id,240)||null;
+  const providerConversationId=clean(session.uid??conversation.id??data.conversation_id??root.conversation_id,180)||null;
   const messageType=canonicalType(message.type??data.message_type??root.message_type??(textFromPapoMessage(message)?'text':'unknown'));
   const receivedAt=epochIso(message.timestamp??data.timestamp??root.timestamp,context.receivedAt??new Date().toISOString());
   const associable=Boolean(accountId&&phone);
