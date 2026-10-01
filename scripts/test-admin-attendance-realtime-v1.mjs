@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
+// Task 4 RED→GREEN contract: useful operator tools without enabling WhatsApp send.
 const html=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
 const js=fs.readFileSync('vitrine/admin/atendimento/attendance.js','utf8');
 
