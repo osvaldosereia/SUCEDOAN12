@@ -5,7 +5,7 @@ const ADMIN_VERIFY_API='https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/verify'
 const ADMIN_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
 const QUEUE_PAGE_SIZE=50;
 const MESSAGE_PAGE_SIZE=30;
-const QUEUE_REFRESH_MS=8000;
+const QUEUE_REFRESH_MS=15000;
 const SEND_LOCK_STATUS='Envio humano em homologação';
 const QUICK_REPLIES=[
   ['Pagamento','O pagamento é feito na entrega. Aceitamos PIX, dinheiro, cartão de crédito e cartão alimentação/refeição. 😊'],
@@ -83,7 +83,7 @@ function renderConversationHead(){const c=state.conversation?.conversation;if(!c
 function renderServiceWindow(){const box=$('#serviceWindow'),w=state.conversation?.service_window;if(!w){box.className='service-window neutral';box.textContent='Janela não disponível';return}if(w.open){const h=Math.floor(w.remaining_seconds/3600),m=Math.floor((w.remaining_seconds%3600)/60);box.className='service-window open';box.textContent=`● Janela de atendimento aberta · ${h}h ${m}min restantes`}else{box.className='service-window closed';box.textContent='● Janela encerrada · use template aprovado quando homologado'}}
 function renderMessage(msg){const row=document.createElement('div');row.className=`message-row ${msg.direction==='outbound'?'outbound':'inbound'}`;const bubble=document.createElement('div');bubble.className='bubble';if(msg.message_type==='text'&&msg.text_body)bubble.textContent=msg.text_body;else{const holder=document.createElement('span');holder.className='media-placeholder';holder.textContent={audio:'🎤 Áudio',image:'🖼 Imagem',document:'📄 Documento'}[msg.message_type]||`Mensagem ${msg.message_type||'não suportada'}`;bubble.append(holder)}const meta=document.createElement('span');meta.className='message-meta';meta.textContent=fmtTime(msg.message_at);bubble.append(meta);row.append(bubble);return row}
 function renderMessages({scrollToBottom=true,preserveOffset=0}={}){const box=$('#messages');box.replaceChildren();for(const msg of state.conversation?.messages||[])box.append(renderMessage(msg));box.hidden=false;$('#conversationEmpty').hidden=true;if(scrollToBottom)box.scrollTop=box.scrollHeight;else box.scrollTop=Math.max(0,preserveOffset);renderConversationHead();renderServiceWindow()}
-function enableConversationTools(){for(const id of ['catalogBtn','quickRepliesBtn','followUpBtn'])$(`#${id}`).disabled=false;const hasCustomer=Boolean(state.context?.customer?.id);$('#quoteBtn').disabled=!hasCustomer;$('#saleBtn').disabled=!hasCustomer}
+function enableConversationTools(){for(const id of ['catalogBtn','quickRepliesBtn','followUpBtn'])$(`#${id}`).disabled=false;const hasCustomer=Boolean(state.context?.customer?.id);for(const id of ['quoteBtn','saleBtn','optOutBtn'])$(`#${id}`).disabled=!hasCustomer}
 
 async function selectConversation(id,channel){
   state.selected=id;$('#conversationPane').classList.add('mobile-open');closeComposerPanels();
@@ -115,6 +115,15 @@ async function prepareCatalog(){if(!state.selected?.id)return;$('#catalogBtn').d
 function openFollowUpPanel(){const panel=$('#followUpPanel'),input=$('#followUpAt');$('#quickRepliesMenu').hidden=true;panel.hidden=false;if(!input.value){const d=new Date(Date.now()+60*60*1000);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());input.value=d.toISOString().slice(0,16)}input.focus()}
 async function saveFollowUp(){if(!state.selected?.id)return;const raw=$('#followUpAt').value;if(!raw){showNote('Escolha a data e hora do retorno','error');return}const iso=new Date(raw).toISOString();if(Date.parse(iso)<=Date.now()){showNote('O retorno precisa ficar no futuro','error');return}try{await api('follow_up',{conversation_id:state.selected.id,follow_up_at:iso},'POST');$('#followUpPanel').hidden=true;showNote(`Retorno marcado para ${fmtDate(iso)} às ${fmtTime(iso)}`,'success');await loadQueues()}catch{showNote('Não consegui marcar o retorno','error')}}
 async function clearFollowUp(){if(!state.selected?.id)return;try{await api('follow_up',{conversation_id:state.selected.id,follow_up_at:null},'POST');$('#followUpPanel').hidden=true;$('#followUpAt').value='';showNote('Lembrete de retorno removido');await loadQueues()}catch{showNote('Não consegui limpar o retorno','error')}}
+async function disableMarketingOffers(){
+  if(!state.selected?.id||!state.context?.customer?.id){showNote('Esta conversa ainda não tem cliente vinculado','error');return}
+  if(state.context.customer.marketing_opt_in!==true){showNote('Este cliente já está sem ofertas de marketing');return}
+  if(!window.confirm('Parar de enviar ofertas para este cliente?'))return;
+  const button=$('#optOutBtn');button.disabled=true;showNote('Atualizando preferência de marketing…');
+  try{await api('marketing_opt_out',{conversation_id:state.selected.id},'POST');state.context.customer.marketing_opt_in=false;renderContext();showNote('Ofertas desativadas para este cliente','success')}
+  catch{showNote('Não consegui atualizar a preferência agora','error')}
+  finally{button.disabled=!state.context?.customer?.id}
+}
 
 function bind(){
   $('#messages').addEventListener('scroll',e=>{if(e.currentTarget.scrollTop<36)loadOlder()});
@@ -128,6 +137,7 @@ function bind(){
   $('#quoteBtn').addEventListener('click',()=>{const id=state.context?.customer?.id;if(id)emitParent('open_quote',{customer_id:id})});
   $('#saleBtn').addEventListener('click',()=>{const id=state.context?.customer?.id;if(id)emitParent('new_sale',{customer_id:id})});
   $('#followUpBtn').addEventListener('click',openFollowUpPanel);$('#saveFollowUpBtn').addEventListener('click',saveFollowUp);$('#clearFollowUpBtn').addEventListener('click',clearFollowUp);$('#cancelFollowUpBtn').addEventListener('click',()=>$('#followUpPanel').hidden=true);
+  $('#optOutBtn').addEventListener('click',disableMarketingOffers);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)backgroundRefresh().catch(()=>{})});
 }
 
