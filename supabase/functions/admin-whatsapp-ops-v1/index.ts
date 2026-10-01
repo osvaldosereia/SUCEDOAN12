@@ -1,13 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
-import {validUuid,attendanceFilter,serviceWindowState,normalizeProductQuery} from "../_shared/admin-attendance-domain-v1.mjs";
+import {validUuid,attendanceFilter,serviceWindowState,normalizeProductQuery,normalizeOutboundText,normalizeIdempotencyKey} from "../_shared/admin-attendance-domain-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const READ_ACTIONS=new Set(["accounts","queue","conversation","context","products"]);
-const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog"]);
+const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","send_text"]);
 
 const clean=(v:unknown,max=200)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const num=(v:unknown,fallback:number,min:number,max:number)=>{const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,Math.trunc(n))):fallback};
@@ -51,12 +51,8 @@ async function productSearch(q:string,limit:number){
     for(const x of sr.data||[])stock.set(String(x.product_id),Math.max(0,Number(x.effective_sellable_stock||0)));
   }
   return rows.map((p:any)=>({
-    id:p.id,
-    name:p.name||"",
-    gtin:p.gtin||null,
-    image_url:p.image_ai_url||p.image_url||null,
-    sale_price:Number(p.price||0),
-    sellable_stock:stock.get(String(p.id))??0,
+    id:p.id,name:p.name||"",gtin:p.gtin||null,image_url:p.image_ai_url||p.image_url||null,
+    sale_price:Number(p.price||0),sellable_stock:stock.get(String(p.id))??0,
     offer:p.is_offer===true&&p.offer_price!=null?{active:true,price:Number(p.offer_price)}:null
   }));
 }
@@ -84,10 +80,8 @@ Deno.serve(async(req:Request)=>{
       const accountId=validUuid(url.searchParams.get("account_id"));
       if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
       const r=await db.rpc("ops2_admin_attendance_queue_v1",{
-        p_whatsapp_account_id:accountId,
-        p_limit:num(url.searchParams.get("limit"),50,1,50),
-        p_search:clean(url.searchParams.get("search"),80)||null,
-        p_filter:attendanceFilter(url.searchParams.get("filter"))
+        p_whatsapp_account_id:accountId,p_limit:num(url.searchParams.get("limit"),50,1,50),
+        p_search:clean(url.searchParams.get("search"),80)||null,p_filter:attendanceFilter(url.searchParams.get("filter"))
       });
       if(r.error)throw r.error;
       return json(req,r.data||{ok:false,error:"queue_unavailable"},r.data?.ok===false?400:200);
@@ -96,14 +90,9 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="GET"&&action==="conversation"){
       const conversationId=validUuid(url.searchParams.get("conversation_id"));
       if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
-      const beforeRaw=url.searchParams.get("before");
-      const before=beforeRaw?isoOrNull(beforeRaw):null;
+      const beforeRaw=url.searchParams.get("before");const before=beforeRaw?isoOrNull(beforeRaw):null;
       if(beforeRaw&&!before)return json(req,{ok:false,error:"invalid_before"},400);
-      const r=await db.rpc("ops2_admin_attendance_conversation_v1",{
-        p_conversation_id:conversationId,
-        p_before:before,
-        p_limit:num(url.searchParams.get("limit"),30,1,50)
-      });
+      const r=await db.rpc("ops2_admin_attendance_conversation_v1",{p_conversation_id:conversationId,p_before:before,p_limit:num(url.searchParams.get("limit"),30,1,50)});
       if(r.error)throw r.error;
       const data=r.data||{ok:false,error:"conversation_unavailable"};
       if(data?.conversation)data.service_window=serviceWindowState(data.conversation.last_inbound_at,new Date().toISOString());
@@ -121,43 +110,54 @@ Deno.serve(async(req:Request)=>{
     }
 
     if(req.method==="GET"&&action==="products"){
-      const q=normalizeProductQuery(url.searchParams.get("q"));
-      const limit=num(url.searchParams.get("limit"),12,1,12);
+      const q=normalizeProductQuery(url.searchParams.get("q"));const limit=num(url.searchParams.get("limit"),12,1,12);
       if(!q)return json(req,{ok:true,query:null,items:[]});
-      const items=await productSearch(q,limit);
-      return json(req,{ok:true,query:q,items});
+      return json(req,{ok:true,query:q,items:await productSearch(q,limit)});
     }
 
     const body=await req.json().catch(()=>({}));
     const conversationId=validUuid(body?.conversation_id);
     if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
 
-    if(action==="mark_read"){
-      const messageId=validUuid(body?.message_id);
-      if(!messageId)return json(req,{ok:false,error:"invalid_message_id"},400);
-      const r=await db.rpc("ops2_admin_attendance_mark_read_v1",{p_conversation_id:conversationId,p_message_id:messageId});
+    if(action==="send_text"){
+      if(body?.to_phone_e164!==undefined||body?.whatsapp_account_id!==undefined||body?.account_id!==undefined||body?.customer_id!==undefined){
+        return json(req,{ok:false,error:"destination_fields_not_allowed"},400);
+      }
+      const normalized=normalizeOutboundText(body?.text);
+      if(!normalized.ok)return json(req,{ok:false,error:normalized.error},400);
+      const idempotencyKey=normalizeIdempotencyKey(body?.idempotency_key);
+      if(!idempotencyKey)return json(req,{ok:false,error:"invalid_idempotency_key"},400);
+      const r=await db.rpc("ops2_admin_attendance_enqueue_text_v1",{
+        p_conversation_id:conversationId,p_text:normalized.text,p_idempotency_key:idempotencyKey
+      });
       if(r.error)throw r.error;
-      return json(req,r.data||{ok:false,error:"mark_read_failed"},r.data?.ok===false?400:200);
+      const data=r.data||{ok:false,error:"enqueue_failed"};
+      if(data?.ok===true)return json(req,data,200);
+      const error=String(data?.error||'enqueue_failed');
+      const status=error==='rate_limited'?429:['service_window_closed','human_send_not_homologated'].includes(error)?409:400;
+      return json(req,data,status);
+    }
+
+    if(action==="mark_read"){
+      const messageId=validUuid(body?.message_id);if(!messageId)return json(req,{ok:false,error:"invalid_message_id"},400);
+      const r=await db.rpc("ops2_admin_attendance_mark_read_v1",{p_conversation_id:conversationId,p_message_id:messageId});
+      if(r.error)throw r.error;return json(req,r.data||{ok:false,error:"mark_read_failed"},r.data?.ok===false?400:200);
     }
 
     if(action==="follow_up"){
-      const followRaw=body?.follow_up_at;
-      const follow=followRaw==null||String(followRaw).trim()===''?null:isoOrNull(followRaw);
+      const followRaw=body?.follow_up_at;const follow=followRaw==null||String(followRaw).trim()===''?null:isoOrNull(followRaw);
       if(followRaw!=null&&String(followRaw).trim()!==''&&!follow)return json(req,{ok:false,error:"invalid_follow_up_at"},400);
       const r=await db.rpc("ops2_admin_attendance_follow_up_v1",{p_conversation_id:conversationId,p_follow_up_at:follow});
-      if(r.error)throw r.error;
-      return json(req,r.data||{ok:false,error:"follow_up_failed"},r.data?.ok===false?400:200);
+      if(r.error)throw r.error;return json(req,r.data||{ok:false,error:"follow_up_failed"},r.data?.ok===false?400:200);
     }
 
     if(action==="issue_catalog"){
       const ctx=await db.rpc("ops2_admin_attendance_context_v1",{p_conversation_id:conversationId});
-      if(ctx.error)throw ctx.error;
-      const phone=clean(ctx.data?.conversation?.phone_e164,30);
+      if(ctx.error)throw ctx.error;const phone=clean(ctx.data?.conversation?.phone_e164,30);
       if(ctx.data?.ok!==true||!phone)return json(req,{ok:false,error:"conversation_phone_unavailable"},409);
       const sourceKey=`attendance:${conversationId}:${Date.now()}`;
       const r=await db.rpc("ops2_issue_papoai_catalog_link_v1",{p_phone:phone,p_conversation_id:conversationId,p_source_event_key:sourceKey});
-      if(r.error)throw r.error;
-      return json(req,r.data||{ok:false,error:"catalog_link_failed"},r.data?.ok===false?400:200);
+      if(r.error)throw r.error;return json(req,r.data||{ok:false,error:"catalog_link_failed"},r.data?.ok===false?400:200);
     }
 
     return json(req,{ok:false,error:"action_not_allowed"},404);
