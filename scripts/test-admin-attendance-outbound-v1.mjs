@@ -12,7 +12,7 @@ assert.equal(domain.normalizeOutboundText('😀'.repeat(4001)).error,'message_to
 assert.equal(domain.normalizeIdempotencyKey('x'),null);
 assert.equal(domain.normalizeIdempotencyKey('attendance-test-123'),'attendance-test-123');
 
-const sql=fs.readFileSync('supabase/sql/20261001_admin_attendance_v1.sql','utf8');
+const sql=fs.readFileSync('supabase/sql/20261001_admin_attendance_outbound_v1.sql','utf8');
 assert.match(sql,/create or replace function public\.ops2_admin_attendance_enqueue_text_v1\s*\(/i);
 assert.match(sql,/char_length\s*\(\s*v_text\s*\)\s*>\s*4000/i);
 assert.match(sql,/service_window_closed/i);
