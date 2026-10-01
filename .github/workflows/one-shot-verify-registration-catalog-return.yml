@@ -38,3 +38,5 @@ jobs:
           if (html.includes('submit_order')) throw new Error('/cadastro must not create orders');
           console.log(`cadastro runtime syntax OK (${scripts.length} inline script(s))`);
           NODE
+
+# rerun after service-role hardening
