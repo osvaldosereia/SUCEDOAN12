@@ -1,0 +1,42 @@
+name: one-shot-purchase-product-identification
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-purchase-product-identification.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Confirm RED before implementation
+        run: |
+          if python scripts/verify_purchase_product_identification.py; then
+            echo 'Verifier unexpectedly passed before implementation.'
+            exit 1
+          else
+            echo 'RED confirmed: purchase identity implementation is absent.'
+          fi
+      - name: Apply atomic implementation patch
+        run: python scripts/patch_purchase_product_identification.py
+      - name: Confirm GREEN after implementation
+        run: python scripts/verify_purchase_product_identification.py
+      - name: Commit implementation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/functions/purchase-xml-v1/index.ts \
+                  supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts \
+                  vitrine/admin/index.html
+          if git diff --cached --quiet; then
+            echo 'No changes to commit.'
+          else
+            git commit -m 'feat: improve purchase product identification'
+            git push origin HEAD:main
+          fi
