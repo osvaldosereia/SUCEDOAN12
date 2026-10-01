@@ -2,8 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
 const U=Deno.env.get("SUPABASE_URL")||"";
-const A=Deno.env.get("SUPABASE_ANON_KEY")||"";
-const db=createClient(U,A,{auth:{persistSession:false,autoRefreshToken:false}});
+const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
+const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {
   "Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://donaantonia.com.br",
@@ -17,7 +17,7 @@ const uid=(v:any)=>{const s=String(v??"").trim();return /^[0-9a-f]{8}-[0-9a-f]{4
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   if(req.method!=="POST")return json(req,{ok:false,error:"method_not_allowed"},405);
-  if(!U||!A)return json(req,{ok:false,error:"server_config"},500);
+  if(!U||!K)return json(req,{ok:false,error:"server_config"},500);
 
   const body=await req.json().catch(()=>({}));
   const customerId=uid(body?.customer_id),registrationJobId=uid(body?.registration_job_id);
