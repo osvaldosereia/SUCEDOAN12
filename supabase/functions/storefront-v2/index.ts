@@ -266,20 +266,29 @@ async function registerCustomer(req:Request,p:any){
 }
 
 async function submit(req:Request,p:any){
-  const pay=txt(p?.payment_method,80),ph=phone(p?.whatsapp_phone),items=Array.isArray(p?.items)?p.items.slice(0,80):[];
-  if(!ph)return {error:"invalid_phone",status:400};if(!items.length)return {error:"empty_cart",status:400};
-  const deliveryDate=txt(p?.delivery_date,10);if(!deliveryDate)return {error:"delivery_date_required",status:400};
-  const del=selectedDelivery(deliveryDate);if(!del)return {error:"invalid_delivery_date",status:409,delivery_options:deliveryOptions()};
-  const ik=await sha(ip(req)||"unknown"),pk=await sha(ph),[a,b]=await Promise.all([db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600}),db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:phone:"+pk,p_bucket:"create_order",p_limit:5,p_window_seconds:600})]);if(a.error||b.error)return {error:"rate_limit_unavailable",status:503};if(a.data!==true||b.data!==true)return {error:"rate_limited",status:429};
-  const found=await lookupCustomer(ph);if(!found.found||!found.customer)return {error:"registration_required",status:409,missing_fields:["name","document","address","number","neighborhood","city"]};
-  const customer=found.customer;if(customer.registration_complete!==true)return {error:"registration_required",status:409,missing_fields:customer.missing_fields||[]};
-  const customerSnapshot={found:true,id:customer.id,display_name:customer.display_name,address:customer.address||null,identity_status:"verified_existing"};
-  const split=await splitGlobalReady(),created=split?await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del}):await db.rpc("create_canonical_cart_order_v2",{p_source:"vitrine",p_phone:ph,p_payment_method:pay,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del});
+  const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),items=Array.isArray(p?.items)?p.items.slice(0,80):[];
+  if(!items.length)return {error:"empty_cart",status:400};
+  const deliveryDate=txt(p?.delivery_date,10),del=deliveryDate?selectedDelivery(deliveryDate):null;
+  const ik=await sha(ip(req)||"unknown"),ipLimit=await db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600});
+  if(ipLimit.error)return {error:"rate_limit_unavailable",status:503};
+  if(ipLimit.data!==true)return {error:"rate_limited",status:429};
+  if(ph){
+    const pk=await sha(ph),phoneLimit=await db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:phone:"+pk,p_bucket:"create_order",p_limit:5,p_window_seconds:600});
+    if(phoneLimit.error)return {error:"rate_limit_unavailable",status:503};
+    if(phoneLimit.data!==true)return {error:"rate_limited",status:429};
+  }
+  let customer:any=null;
+  if(ph){
+    try{const found=await lookupCustomer(ph);if(found?.found&&found?.customer)customer=found.customer}catch(e){console.error("optional_customer_lookup",txt((e as any)?.message,180))}
+  }
+  const customerSnapshot=customer?{found:true,id:customer.id,display_name:customer.display_name||null,address:customer.address||null,identity_status:"existing_optional"}:{};
+  const split=await splitGlobalReady(),created=split?await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}}):await db.rpc("create_canonical_cart_order_v2",{p_source:"vitrine",p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}});
   if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS}}
   const orderId=created.data?.order_id;let papoaiLink:any=null;
-  if(orderId){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
-  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:"registered",payment_method:pay||null,delivery_date:deliveryDate,reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked)},"order-received:"+orderId);
-  return {...created.data,phone_attached:true,customer_status:"registered",registration_complete:true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer,history_synced:true,stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)};
+  if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
+  const customerStatus=customer?"registered":"pending_registration";
+  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked)},"order-received:"+orderId);
+  return {...created.data,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)};
 }
 
 Deno.serve(async(req:Request)=>{
