@@ -27,3 +27,16 @@ export function normalizeProductQuery(value){
   const q=String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,80);
   return q.length>=2?q:null;
 }
+
+export function normalizeOutboundText(value){
+  const text=String(value??'').replace(/\r\n?/g,'\n').trim();
+  if(!text)return {ok:false,error:'message_empty'};
+  if([...text].length>4000)return {ok:false,error:'message_too_long'};
+  return {ok:true,text};
+}
+
+export function normalizeIdempotencyKey(value){
+  const key=String(value??'').trim();
+  if(key.length<8||key.length>120)return null;
+  return /^[A-Za-z0-9._:-]+$/.test(key)?key:null;
+}
