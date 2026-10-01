@@ -1,18 +1,18 @@
-name: Attendance Admin integration apply
+name: Attendance Task 4 RED proof
 
 on:
   push:
     branches:
       - feat/admin-attendance-papoai-v1
     paths:
-      - scripts/patch-admin-attendance-entry-v1.py
+      - scripts/test-admin-attendance-realtime-v1.mjs
       - .github/workflows/attendance-integration-red.yml
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply-and-test:
+  red-proof:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,23 +21,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Patch Admin entry
-        run: python3 scripts/patch-admin-attendance-entry-v1.py
-      - name: Verify attendance contracts
-        run: |
-          node scripts/test-admin-attendance-integration-v1.mjs
-          node scripts/test-admin-attendance-ui-v1.mjs
-          node scripts/test-admin-attendance-api-v1.mjs
-          node scripts/test-admin-attendance-sql-v1.mjs
-          node --check vitrine/admin/atendimento/attendance.js
-      - name: Commit generated Admin integration
-        run: |
-          if git diff --quiet -- vitrine/admin/index.html; then
-            echo "Admin already patched"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add vitrine/admin/index.html
-          git commit -m "feat: integrate attendance workspace into Admin"
-          git push origin HEAD:feat/admin-attendance-papoai-v1
+      - name: Run Task 4 contract before implementation
+        run: node scripts/test-admin-attendance-realtime-v1.mjs
