@@ -105,7 +105,8 @@ async function orderDetails(orderId:string){
     const qty=quantityLabel(row.quantity)||"1";
     return `${qty}x ${name}`;
   });
-  const productsText=lines.join("\n");
+  const productLines=lines.map(line=>`• ${line}`);
+  const productsText=productLines.join("\n");
   const itemsText=lines.join(" • ").replace(/[\r\n\t]+/g," ").replace(/ {4,}/g,"   ").trim();
 
   const cartBaskets=arr(checkout.cart).map(obj).filter(item=>text(item.type,30)==="basket");
