@@ -207,7 +207,7 @@ async function finish(outboxId:string,status:"sent"|"retry"|"failed"|"suppressed
   return r.data;
 }
 async function enqueuePapoAiOrderSignals(orderId:string,channel:Channel,phone:unknown,details:Awaited<ReturnType<typeof orderDetails>>){
-  const keys=[...details.marketingInterests.map((v:string)=>`INT_${v}`),...details.marketingBrands.map((v:string)=>`BR_${v}`)];
+  const keys=["PEDIDO_SITE",...details.marketingInterests.map((v:string)=>`INT_${v}`),...details.marketingBrands.map((v:string)=>`BR_${v}`)];
   if(details.marketingCta&&details.marketingCta!=="NENHUM")keys.push(`CTA_${details.marketingCta}`);
   if(!keys.length)return;
   try{
