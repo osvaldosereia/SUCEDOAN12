@@ -20,7 +20,7 @@ assert.equal(out.message.message_type,'text');
 assert.equal(out.message.provider_conversation_id,'session-redacted');
 assert.equal(out.message.text_body,'CAPTURA-CENTRAL-V2-OUTBOUND-20261002 — mensagem técnica autorizada, sem novo pedido.');
 assert.equal(out.message.status_current,'sent');
-assert.equal(out.message.sender_kind,'unknown','autoria não pode ser inferida como IA ou humano');
+assert.equal(out.message.sender_kind,'system','quando o PapoAI não prova autoria, usar categoria técnica permitida pelo banco sem inferir IA/humano');
 assert.equal(out.message.sender_ref,null);
 assert.equal(out.message.sent_at,'2026-10-02T05:05:38.978Z','timestamp em milissegundos deve ser interpretado corretamente');
 assert.equal(out.received_at,'2026-10-02T05:05:38.978Z');
@@ -28,4 +28,4 @@ assert.equal(out.message.metadata.agentbot_id,2796);
 assert.equal(out.message.metadata.session_user_id,0);
 assert.equal(out.message.metadata.authorship_reliable,false);
 
-console.log('OK · payload real message.sent normaliza outbound sem inferir autoria.');
+console.log('OK · payload real message.sent normaliza outbound sem inferir autoria e respeita sender_kind do banco.');
