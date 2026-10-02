@@ -9,55 +9,55 @@ Evoluir a Central de Atendimento do `Vitrine/Admin` para ser a estação operaci
 
 A Central deve reduzir troca de telas, leitura confusa de histórico e operações repetitivas. Ela deve integrar conversa, cliente, pedidos, produtos e ferramentas de atendimento sem virar um CRM genérico.
 
-A arquitetura aprovada é híbrida:
+Arquitetura aprovada:
 
-- **Vitrine Admin / Supabase**: interface do atendente, organização, histórico canônico, etiquetas internas, respostas rápidas, contexto do cliente, pedidos, produtos, copiloto e estados operacionais locais.
+- **Vitrine Admin / Supabase**: interface do atendente, organização, histórico canônico, etiquetas internas, respostas rápidas, cliente, pedidos, produtos, copiloto e estados operacionais locais.
 - **PapoAI**: conexão atual dos números oficiais, ANA e recursos específicos do provedor.
-- **Meta / WhatsApp Business Platform**: plataforma subjacente; não introduzir transporte paralelo direto pela Meta enquanto o PapoAI continuar como provedor dos dois canais, salvo decisão futura explícita e homologada.
+- **Meta / WhatsApp Business Platform**: plataforma subjacente. Não introduzir transporte paralelo direto pela Meta enquanto o PapoAI continuar como provedor dos dois canais, salvo decisão futura explícita e homologada.
 
 ## 2. Princípios e restrições
 
 1. Supabase permanece fonte canônica da operação interna do Admin.
-2. Não criar uma segunda base de clientes, pedidos ou conversas.
-3. Etiquetas da Central são **internas da Dona Antônia** e não têm relação com tags do PapoAI.
+2. Não criar segunda base de clientes, pedidos ou conversas.
+3. Etiquetas da Central são internas da Dona Antônia e não têm relação com tags do PapoAI.
 4. Não usar Make.
 5. Não expor segredo, token ou URL sensível no navegador.
 6. Não afirmar envio, leitura, autoria ou estado da IA sem evento/contrato confiável.
 7. Respeitar janela de atendimento e regras oficiais da Meta.
-8. Não permitir que uma ação visual local finja ter pausado/reativado a ANA.
+8. Não permitir que ação visual local finja ter pausado ou reativado a ANA.
 9. Não criar transporte humano direto pelo Admin enquanto não houver contrato oficial homologado para os dois canais.
-10. A interface deve evitar scroll horizontal escondido para ações principais.
-11. A lista de conversas deve se comportar como WhatsApp: atividade real mais recente no topo.
-12. Recursos de IA internos são sempre copiloto; nunca enviam ou alteram pedido/cadastro automaticamente.
+10. A interface não deve depender de scroll horizontal escondido para ações principais.
+11. A lista de conversas deve se comportar como WhatsApp: atividade real de mensagem mais recente no topo.
+12. IA interna funciona como copiloto; nunca envia nem altera pedido/cadastro automaticamente.
 
 ## 3. Estado atual observado
 
-O sistema já possui:
+Já existem:
 
 - `whatsapp_accounts` com os dois números oficiais;
-- `conversations` com canal, cliente, telefone, modo e timestamps operacionais;
+- `conversations` com canal, cliente, telefone, modo e timestamps;
 - `whatsapp_messages_v1` como histórico canônico local;
 - `customers`, `customer_addresses`, `orders`, `order_items`;
 - `papoai_webhook_inbox_v2` para captura do PapoAI;
 - `admin-whatsapp-ops-v1` como gateway privado da Central;
 - busca de produtos com foto, preço, oferta e estoque vendável;
 - emissão de link de catálogo personalizado;
-- pontes do iframe para abrir cliente, pedido, orçamento e nova venda no Admin;
+- pontes do iframe para abrir cliente, pedido, orçamento e nova venda;
 - cálculo local da janela de atendimento;
 - interface atual com duas filas lado a lado, conversa central e painel contextual.
 
 Limitações confirmadas:
 
-- o histórico local recente contém principalmente mensagens **inbound**;
-- o webhook de saída atual do PapoAI está configurado somente para `Mensagem recebida`;
-- PapoAI expõe também eventos `Mensagem enviada` e `Mensagem atualizada`, mas o payload outbound ainda não foi homologado;
-- `Parar resposta do assistente` existe no PapoAI, porém o isolamento exato por sessão/canal ainda não foi comprovado;
-- ação oficial para **reativar** a IA daquela conversa não foi confirmada;
+- histórico local recente contém principalmente mensagens inbound;
+- webhook de saída atual do PapoAI está configurado somente para `Mensagem recebida`;
+- PapoAI expõe também `Mensagem enviada` e `Mensagem atualizada`, mas payload outbound ainda não foi homologado;
+- `Parar resposta do assistente` existe, porém isolamento exato por sessão/canal ainda não foi comprovado;
+- ação oficial para reativar a IA daquela conversa não foi confirmada;
 - API pública de histórico do PapoAI não foi confirmada;
-- listagem de templates é visível na interface, mas o contrato de API do PapoAI para carga inicial não foi confirmado;
-- `whatsapp_templates_v1` existe no Supabase e está atualmente sem carga útil para esta Central;
-- mídia recebida do PapoAI pode incluir URL temporária, MIME, filename e dados de localização;
-- algumas URLs de mídia observadas são temporárias e não devem ser tratadas como armazenamento permanente.
+- listagem de templates é visível na interface, mas contrato de API do PapoAI para carga inicial não foi confirmado;
+- `whatsapp_templates_v1` existe no Supabase e está sem carga útil para esta Central;
+- mídia recebida pode incluir URL temporária, MIME, filename e dados de localização;
+- URLs de mídia observadas podem expirar e não servem como armazenamento permanente.
 
 ## 4. Arquitetura-alvo
 
@@ -74,27 +74,27 @@ Cliente WhatsApp
 → Central Vitrine/Admin
 ```
 
-A captura deve evoluir para aceitar com segurança:
+A captura evolui para aceitar com segurança:
 
 - mensagem recebida;
 - mensagem enviada;
-- mensagem atualizada, somente quando necessária para status/atualização confiável.
+- mensagem atualizada, somente quando necessária para status confiável.
 
-A implementação não deve assumir formato outbound igual ao inbound antes de observar payload real.
+Não assumir que payload outbound tem o mesmo formato do inbound antes de observar payload real.
 
 ### 4.2 Saída humana
 
-Enquanto não houver transporte humano homologado:
+Enquanto não houver transporte homologado:
 
 ```text
 Central
-→ prepara resposta / produto / template
+→ prepara resposta/produto/template
 → copiar conteúdo
 → abrir PapoAI
 → atendente envia no PapoAI
 ```
 
-O botão de envio direto no Admin permanece bloqueado.
+Envio direto no Admin permanece bloqueado.
 
 ### 4.3 Contexto operacional
 
@@ -107,7 +107,7 @@ Central
 
 ### 4.4 Controle da ANA
 
-Só haverá controle ativo depois de homologação de contrato por conversa:
+Takeover somente após homologação por conversa:
 
 ```text
 Admin: Assumir conversa
@@ -117,7 +117,7 @@ Admin: Assumir conversa
 → somente então Supabase grava estado manual
 ```
 
-Para devolução:
+Release somente após existir ação oficial comprovada:
 
 ```text
 Admin: Devolver para ANA
@@ -126,22 +126,19 @@ Admin: Devolver para ANA
 → somente então Supabase grava estado IA
 ```
 
-Como a ação de retomada não foi confirmada, **Release fica fora da implementação funcional inicial**.
+Como a retomada não foi confirmada, Release fica fora da implementação funcional inicial.
 
 ## 5. Layout desktop v2
 
-Substituir o layout de quatro áreas por três áreas principais:
+Substituir quatro áreas por três:
 
 ```text
 ┌──────────────────┬────────────────────────────┬──────────────────────┐
 │ CONVERSAS        │ CONVERSA                   │ CONTEXTO             │
-│                  │                            │                      │
 │ [0975]  [1018]   │ Cliente        ANA ATIVA   │ Cliente              │
-│ Buscar           │                            │ Pedidos              │
-│ Etiquetas        │ timeline                   │ Produtos             │
-│                  │                            │ Assistente           │
-│ lista            │ texto / mídia / localização│                      │
-│                  │                            │                      │
+│ Buscar           │ timeline                   │ Pedidos              │
+│ Etiquetas        │ texto / mídia / localização│ Produtos             │
+│ lista            │                            │ Assistente           │
 │                  ├────────────────────────────┤                      │
 │                  │ ações + rascunho           │                      │
 └──────────────────┴────────────────────────────┴──────────────────────┘
@@ -149,7 +146,7 @@ Substituir o layout de quatro áreas por três áreas principais:
 
 ### 5.1 Coluna de conversas
 
-Uma única coluna, mesma largura aproximada de uma das filas atuais.
+Uma única coluna, aproximadamente da largura de uma fila atual.
 
 Topo:
 
@@ -158,52 +155,50 @@ Topo:
 - busca por nome/telefone;
 - filtro por etiqueta.
 
-Remover os filtros atuais:
+Remover filtros `Todos`, `Não lidos` e `Humano`.
 
-- Todos;
-- Não lidos;
-- Humano.
-
-O contador de não lidas continua no card, mas não altera o critério cronológico.
+Não lidas continuam como contador visual no card, sem alterar ordenação.
 
 ### 5.2 Ordenação
 
-Regra padrão:
+Definir `canonical_last_message_at` como a maior data entre mensagens canônicas persistidas da conversa, usando `received_at`, `sent_at` ou `created_at` conforme direção/fonte.
 
-1. `last_message_at` real mais recente desc;
-2. empate por ID/timestamp estável.
+Ordenação:
 
-Não usar `updated_at` administrativo para recência.
-Não elevar artificialmente conversa somente porque está marcada como humana ou não lida.
+1. `canonical_last_message_at desc`;
+2. ID como desempate estável.
 
-Quando o outbound passar a ser capturado, tanto mensagem recebida quanto enviada atualizam a posição da conversa.
+Não usar `conversations.updated_at` administrativo.
+Não elevar conversa por modo humano ou contador não lido.
 
-### 5.3 Data no card
+Quando outbound for persistido, mensagens recebidas e enviadas passam a mover a conversa.
+
+### 5.3 Datas
+
+Card:
 
 - hoje: `HH:mm`;
 - ontem: `Ontem`;
 - mesmo ano: `dd/mm`;
 - outro ano: `dd/mm/aa`.
 
-Tooltip pode mostrar data/hora completa.
+Tooltip mostra data/hora completa.
 
-## 6. Timeline da conversa
+## 6. Timeline
 
 ### 6.1 Texto
 
-Mostrar bolhas inbound e outbound em lados distintos.
+Inbound e outbound em lados distintos.
 
-Quando autoria outbound estiver comprovada:
+Autoria outbound somente quando comprovada:
 
 - ANA;
 - humano;
-- template/sistema, quando identificável.
+- template/sistema.
 
-Se a origem não for confiável, mostrar apenas `Enviado`, sem inventar autor.
+Sem autoria confiável, mostrar apenas `Enviado`.
 
 ### 6.2 Separadores de data
-
-Usar separadores visíveis:
 
 - Hoje;
 - Ontem;
@@ -211,61 +206,59 @@ Usar separadores visíveis:
 
 ### 6.3 Paginação
 
-Carregar lote recente e buscar lotes anteriores ao chegar ao topo, preservando a posição de scroll.
+Carregar lote recente e buscar anteriores ao chegar ao topo, preservando scroll.
 
 ### 6.4 Imagem
 
-Quando a mídia estiver disponível:
-
-- miniatura dentro da bolha;
-- clique abre visualização maior;
-- legenda/conteúdo, se houver;
-- fallback claro se o arquivo expirou ou não estiver disponível.
+- miniatura na bolha;
+- clique amplia;
+- legenda quando existir;
+- fallback se indisponível/expirada.
 
 ### 6.5 Áudio
 
 - player HTML nativo;
-- botão play/pause;
-- duração se disponível;
-- texto/transcrição somente quando vier de fonte confiável; não gerar transcrição contínua por padrão.
+- duração quando disponível;
+- transcrição somente quando já vier de fonte confiável;
+- não transcrever continuamente por padrão.
 
 ### 6.6 Documento
 
 - ícone;
 - filename;
-- MIME/tipo amigável;
-- ação `Abrir`/`Baixar` quando houver URL válida.
+- tipo amigável;
+- abrir/baixar quando houver mídia válida.
 
 ### 6.7 Localização
 
-Reconhecer payload de localização e renderizar:
+Renderizar:
 
-- nome do local, quando disponível;
-- endereço, quando disponível;
+- nome, quando houver;
+- endereço, quando houver;
 - latitude/longitude;
 - `Abrir no mapa`;
 - `Copiar localização`;
-- `Compartilhar link` usando URL de mapa gerada a partir das coordenadas.
+- `Compartilhar link` gerado pelas coordenadas.
 
 ### 6.8 Retenção de mídia
 
-URLs temporárias do PapoAI não podem ser persistidas como solução permanente.
+Não persistir URL temporária do PapoAI como solução permanente.
 
-Desenho:
+Quando a mídia for necessária para histórico operacional:
 
-1. receber metadata/URL temporária;
-2. backend decide se materializa a mídia em armazenamento próprio;
-3. armazenar somente o necessário à operação/histórico;
-4. guardar metadata canônica e referência interna;
-5. nunca expor credenciais do provedor.
+1. backend baixa por URL validada/allowlist;
+2. salva em armazenamento próprio privado;
+3. guarda referência interna e metadata canônica;
+4. gera acesso temporário ao Admin;
+5. arquivo é retido por **30 dias por padrão**;
+6. metadata textual da mensagem permanece no histórico depois da remoção do arquivo;
+7. período deve ficar configurável no backend para futura mudança sem migration.
 
-Política de retenção deve ser pequena e operacional, evitando crescimento ilimitado.
+A primeira implementação não fará backfill de mídia antiga cuja URL já expirou.
 
 ## 7. Etiquetas internas
 
-Criar módulo próprio no Supabase.
-
-### 7.1 Entidades
+Criar:
 
 `attendance_labels_v1`
 
@@ -284,30 +277,21 @@ Criar módulo próprio no Supabase.
 - assigned_at;
 - assigned_by.
 
-### 7.2 Operações
+Regras:
 
-O Admin permite:
-
-- criar;
-- renomear;
-- alterar cor;
-- ativar/desativar;
-- excluir quando seguro;
-- atribuir várias etiquetas a uma conversa;
-- remover;
-- filtrar fila por uma ou mais etiquetas.
-
-### 7.3 Regra de isolamento
-
-Etiquetas internas não são sincronizadas para PapoAI e nunca são usadas para controlar ANA.
+- cores vêm de pequena paleta predefinida, não hex livre;
+- uma conversa aceita várias etiquetas;
+- filtro aceita uma ou mais etiquetas;
+- excluir na UI significa **desativar** (`is_active=false`), preservando histórico;
+- etiqueta desativada sai dos seletores, mas vínculos antigos permanecem auditáveis;
+- não sincronizar com tags PapoAI;
+- nunca usar etiqueta para controlar ANA.
 
 ## 8. Respostas rápidas
 
-Remover `QUICK_REPLIES` fixo do JavaScript.
+Remover `QUICK_REPLIES` hardcoded.
 
-Criar armazenamento editável:
-
-`attendance_quick_replies_v1`
+Criar `attendance_quick_replies_v1`:
 
 - id;
 - title;
@@ -318,48 +302,47 @@ Criar armazenamento editável:
 - created_at;
 - updated_at.
 
-Admin simples para:
+Operações:
 
 - criar;
 - editar;
-- excluir/desativar;
+- desativar;
+- reativar;
 - ordenar;
-- marcar favoritas.
+- marcar favorita.
+
+Não fazer hard delete na primeira versão.
 
 Na conversa:
 
-- favoritas aparecem como acesso rápido;
-- `Mais respostas` abre a lista completa;
-- selecionar sempre preenche o rascunho, nunca envia automaticamente.
+- favoritas em acesso rápido;
+- `Mais respostas` abre todas ativas;
+- seleção apenas preenche rascunho.
 
 ## 9. Barra de ações
 
-Evitar sequência longa de chips/botões com scroll horizontal escondido.
-
-Ações principais sempre visíveis:
+Ações sempre visíveis:
 
 - Catálogo;
 - Respostas;
 - Produtos;
 - Mais `…`.
 
-Menu `Mais` contém ações menos frequentes:
+`Mais`:
 
 - Criar orçamento;
 - Nova venda;
 - Marcar retorno;
 - Preferência de marketing;
-- outras operações futuras aprovadas.
+- futuras ações aprovadas.
 
-Em desktop, controles principais devem caber sem depender de scroll horizontal.
+No desktop, ações principais devem caber sem scroll horizontal.
 
 ## 10. Templates WhatsApp
 
-### 10.1 Fonte local
+### 10.1 Cache local
 
-Reutilizar `whatsapp_templates_v1` como cache canônico local.
-
-Campos existentes permitem guardar:
+Reutilizar `whatsapp_templates_v1` para:
 
 - conta/canal;
 - WABA;
@@ -368,58 +351,63 @@ Campos existentes permitem guardar:
 - idioma;
 - categoria;
 - status;
-- componentes;
+- components;
 - quality rating;
 - last_synced_at;
 - metadata.
 
-Adicionar configuração de atendimento em metadata ou tabela própria, por exemplo:
+Preferência de atendimento será armazenada em `metadata.attendance`:
 
-- `show_in_attendance`;
-- `favorite_order`.
+```json
+{
+  "show_in_attendance": true,
+  "favorite_order": 10
+}
+```
+
+Não criar tabela extra só para esta preferência.
 
 ### 10.2 Sincronização
 
-Não afirmar sync automático via PapoAI enquanto o contrato não estiver homologado.
+Não afirmar sync automático via PapoAI enquanto contrato não estiver homologado.
 
-Estratégia:
+Preparar consumo futuro de:
 
-- suportar cadastro/cache local;
-- preparar consumo futuro dos eventos `Modelo de mensagem criado` e `Modelo de mensagem alterado`;
-- carga inicial automatizada somente quando houver API/contrato confiável para os dois canais.
+- `Modelo de mensagem criado`;
+- `Modelo de mensagem alterado`.
 
-A plataforma oficial da Meta possui APIs de listagem de templates por WABA e envio de templates por `Phone-Number-ID`, mas não usar integração direta parcial enquanto os dois canais não estiverem igualmente configurados/provisionados e a decisão de arquitetura continuar sendo PapoAI como provedor.
+Carga inicial automatizada somente quando houver contrato confiável para os dois canais.
 
-### 10.3 Uso na conversa
+A Meta possui APIs oficiais de listagem de templates por WABA e envio por `Phone-Number-ID`, mas não usar integração direta parcial enquanto os dois canais não estiverem igualmente provisionados e o PapoAI continuar como provedor definido.
 
-Gerenciador permite escolher quais templates aparecem no atendimento.
+### 10.3 Uso
 
-Enquanto transporte externo não estiver homologado:
+Gerenciador permite escolher templates exibidos no atendimento.
+
+Enquanto não houver transporte externo homologado:
 
 - mostrar prévia;
 - preparar parâmetros;
 - abrir PapoAI para envio manual.
 
-## 11. Produtos no atendimento
+## 11. Produtos
 
 ### 11.1 Busca
 
-Reutilizar busca atual por nome/EAN e dados do Supabase.
+Reutilizar busca por nome/EAN.
 
 Resultado:
 
 - foto;
 - nome;
-- preço atual;
-- oferta, se ativa;
+- preço;
+- oferta ativa;
 - estoque vendável;
-- seletor de quantidade.
+- quantidade.
 
 ### 11.2 Seleção múltipla
 
-Permitir selecionar vários produtos antes de executar ação.
-
-Exemplo:
+Permitir vários produtos e quantidades antes da ação.
 
 ```text
 [x] Arroz 5kg      qtd 2
@@ -429,46 +417,41 @@ Exemplo:
 
 ### 11.3 Preparar para cliente
 
-Enquanto o envio direto estiver bloqueado:
+Enquanto envio direto estiver bloqueado:
 
-- gerar rascunho organizado com nomes, quantidades e preços;
-- disponibilizar fotos/links quando apropriado;
-- copiar/abrir PapoAI.
+- gerar rascunho organizado com produtos, quantidades e preços;
+- disponibilizar foto/link quando apropriado;
+- copiar e abrir PapoAI.
 
-Quando transporte homologado existir, avaliar envio de mídia/produtos sem quebrar as regras do provedor.
+### 11.4 Venda/orçamento
 
-### 11.4 Adicionar a venda/orçamento
+Nunca alterar silenciosamente pedido confirmado.
 
-Não alterar silenciosamente pedido confirmado.
+- orçamento/venda editável: adicionar itens após ação explícita;
+- sem operação editável: criar nova venda/orçamento pré-preenchido com cliente e itens;
+- pedido em separação/faturamento mantém regras atuais e não é mutado diretamente pelo chat.
 
-Fluxo:
-
-- se existe orçamento/venda editável: adicionar itens após ação explícita;
-- se não existe: `Criar nova venda` ou `Criar orçamento` já com cliente e produtos selecionados;
-- pedidos em separação/faturamento seguem regras existentes e não são mutados diretamente pelo chat.
-
-A implementação deve reutilizar as pontes já existentes do Admin em vez de duplicar o módulo de pedidos.
+Reutilizar pontes existentes do Admin.
 
 ## 12. Painel contextual
 
-Manter quatro abas principais:
+Quatro abas:
 
-### 12.1 Cliente
+### Cliente
 
 - nome;
 - telefone;
-- endereço;
-- cidade;
+- endereço/cidade;
 - cadastro completo/incompleto;
 - documento mascarado;
-- total de pedidos;
+- pedidos;
 - valor comprado;
-- consentimento de marketing;
-- etiquetas da conversa em área dedicada.
+- consentimento marketing;
+- etiquetas da conversa.
 
-### 12.2 Pedidos
+### Pedidos
 
-- pedidos mais recentes do cliente;
+- pedidos recentes;
 - data;
 - status;
 - total;
@@ -476,15 +459,13 @@ Manter quatro abas principais:
 - abrir pedido;
 - criar orçamento/venda.
 
-### 12.3 Produtos
+### Produtos
 
 Conforme seção 11.
 
-### 12.4 Assistente
+### Assistente
 
-Copiloto manual.
-
-Ações iniciais:
+Ações:
 
 - Resumir conversa;
 - Sugerir resposta;
@@ -498,67 +479,60 @@ Regras:
 - sugestão preenche rascunho editável;
 - não alterar pedido/cadastro sem ação explícita;
 - preço/estoque sempre vêm da fonte operacional;
-- não inventar estado de entrega, pagamento ou cadastro;
+- não inventar estado de entrega/pagamento/cadastro;
 - não rodar continuamente em todas as conversas.
 
-Automação útil aprovada em desenho:
-
-- ao assumir manualmente uma conversa longa, gerar um resumo curto uma única vez, somente quando o takeover estiver homologado.
+Automação futura útil: ao assumir manualmente conversa longa, gerar resumo curto uma única vez, mas somente depois de takeover homologado.
 
 ## 13. Controle ANA / humano
 
-### 13.1 Estado visual desejado
+### 13.1 Estado visual
 
-Cabeçalho da conversa:
+Cabeçalho mostra um destes estados:
 
 - `ANA ativa`;
 - `Atendimento manual`;
-- `Estado desconhecido`, quando não houver confirmação suficiente.
+- `Estado desconhecido`.
 
 ### 13.2 Takeover
 
-PapoAI possui ação `Parar resposta do assistente`, mas ainda falta comprovar isolamento por sessão/canal.
+`Parar resposta do assistente` existe no PapoAI, mas isolamento por sessão/canal ainda não foi comprovado.
 
-Enquanto isso:
+Até homologação:
 
-- botão `Assumir atendimento` permanece desabilitado ou marcado como indisponível;
-- não mudar `mode` localmente como se a IA tivesse parado.
+- exibir `Assumir atendimento` **desabilitado** com tooltip `Aguardando homologação do PapoAI`;
+- não alterar `mode` local como se a IA tivesse parado.
 
-Critério para habilitar:
+Para habilitar:
 
-1. endpoint/automação recebe identificador suficiente;
+1. adapter recebe identificador suficiente;
 2. conversa correta é afetada;
 3. canal correto é preservado;
-4. teste controlado comprova que outra conversa/canal não é afetado;
-5. confirmação do PapoAI chega ao backend.
+4. teste controlado comprova isolamento;
+5. confirmação real chega ao backend.
 
 ### 13.3 Release
 
 Nenhuma ação oficial de retomada foi confirmada.
 
-Portanto:
+Na primeira entrega:
 
-- `Devolver para ANA` não será funcional na primeira entrega;
-- `Concluir atendimento` do PapoAI não será tratado como sinônimo sem evidência;
-- não implementar workaround por tag, etiqueta ou flag local.
+- não mostrar botão ativo `Devolver para ANA`;
+- pode existir indicador informativo de que a função aguarda homologação;
+- não usar `Concluir atendimento` como sinônimo;
+- não criar workaround por tag, etiqueta ou flag local.
 
-## 14. Outbound / histórico completo
+## 14. Outbound e histórico completo
 
-### 14.1 PapoAI
-
-A interface do PapoAI confirma eventos:
+PapoAI expõe na interface:
 
 - `Mensagem recebida`;
 - `Mensagem enviada`;
 - `Mensagem atualizada`.
 
-O atual webhook usa apenas mensagem recebida.
+Antes de ativar outbound em produção:
 
-### 14.2 Regra de implementação
-
-Antes de habilitar captura outbound em produção:
-
-1. obter payload real de teste controlado;
+1. capturar payload real em teste controlado;
 2. validar canal;
 3. validar sessão/conversa;
 4. validar ID externo;
@@ -568,124 +542,133 @@ Antes de habilitar captura outbound em produção:
 8. validar mídia se existir;
 9. garantir idempotência.
 
-Se autoria não existir no payload, não inferir ANA/humano por heurística frágil.
+Sem autoria no payload, não inferir ANA/humano por heurística.
 
-### 14.3 Fila
-
-Somente após persistir outbound de forma confiável, qualquer mensagem enviada também passa a atualizar `last_message_at` e a subir a conversa para o topo.
+Após persistência confiável, outbound passa a atualizar `canonical_last_message_at` e a posição na fila.
 
 ## 15. Backend
 
-Manter `admin-whatsapp-ops-v1` como gateway fino da Central, mas evitar transformá-lo em monólito.
+Manter `admin-whatsapp-ops-v1` como gateway fino.
 
-Separar responsabilidades em RPCs/tabelas específicas:
+Separar responsabilidades em RPCs/tabelas/serviços específicos:
 
 - fila e conversa;
 - etiquetas;
 - respostas rápidas;
 - templates/cache;
-- produtos selecionados / handoff para venda-orçamento;
+- produtos selecionados e handoff;
 - copiloto;
 - mídia.
 
-Ações que dependem do PapoAI devem ficar em adapters próprios e atrás de feature gates.
+Integrações PapoAI ficam em adapters próprios atrás de feature gates.
 
 ## 16. Segurança
 
-1. Todas as APIs da Central exigem autenticação Admin válida.
+1. APIs da Central exigem autenticação Admin.
 2. Browser nunca recebe service role ou segredo PapoAI.
-3. IDs de cliente/canal/destino sensíveis são resolvidos server-side a partir da conversa.
-4. Mídia externa deve passar por validação/allowlist antes de proxy/cache.
-5. Ações mutáveis registram auditoria mínima de usuário e horário.
-6. Operações de pedido continuam usando regras canônicas de estoque/status.
-7. Etiquetas e respostas rápidas não podem conceder permissões nem alterar estado PapoAI.
+3. IDs de cliente/canal/destino são resolvidos server-side a partir da conversa.
+4. Mídia externa passa por allowlist e validação de tamanho/MIME antes de cache.
+5. Mídia armazenada é privada; acesso por URL temporária.
+6. Ações mutáveis registram usuário e horário.
+7. Pedido continua obedecendo estoque/status canônicos.
+8. Etiquetas/respostas rápidas não alteram estado do PapoAI.
 
-## 17. Responsividade e usabilidade
+## 17. Responsividade
 
-### Desktop
+Desktop:
 
 - três colunas;
-- sem scroll horizontal escondido nas ações principais;
-- scroll vertical independente para lista, timeline e contexto;
-- conversa ocupa a maior área útil.
+- scroll vertical independente em lista, timeline e contexto;
+- sem scroll horizontal ocultando ações principais;
+- conversa ocupa maior área útil.
 
-### Tablet
+Tablet:
 
 - lista + conversa;
-- contexto abre em drawer.
+- contexto em drawer.
 
-### Mobile
+Mobile:
 
 - lista → conversa;
-- botão voltar claro;
-- contexto abre em drawer/tela sobreposta;
-- seletor 0975/1018 permanece acessível na lista.
+- botão voltar explícito;
+- contexto em drawer/tela sobreposta;
+- seletor 0975/1018 disponível na lista.
 
 ## 18. Testes obrigatórios
 
-### Fila
+Fila:
 
-- troca 0975/1018 não mistura conversas;
+- troca de canal não mistura conversas;
 - última mensagem real define ordem;
-- outbound novo sobe conversa após homologação;
-- busca e etiqueta preservam canal selecionado;
-- datas `Hoje/Ontem/dd/mm` corretas.
+- outbound homologado sobe conversa;
+- busca/etiqueta preservam canal;
+- datas corretas.
 
-### Timeline
+Timeline:
 
 - inbound/outbound em lados distintos;
 - paginação preserva scroll;
-- imagem, áudio, documento e localização possuem fallback;
-- URL de mídia expirada não quebra a conversa;
-- mensagem duplicada não aparece duas vezes.
+- mídia/localização possuem fallback;
+- URL expirada não quebra conversa;
+- duplicata não aparece duas vezes.
 
-### Etiquetas
+Etiquetas:
 
-- CRUD;
+- CRUD lógico;
 - várias por conversa;
 - filtro;
-- nenhuma chamada/tag PapoAI.
+- nenhuma integração PapoAI.
 
-### Respostas rápidas
+Respostas rápidas:
 
-- CRUD;
+- CRUD lógico;
 - favoritas;
-- inserção no rascunho;
-- nenhuma resposta é enviada sozinha.
+- rascunho;
+- nenhum autoenvio.
 
-### Produtos
+Produtos:
 
 - busca nome/EAN;
 - seleção múltipla;
-- quantidades;
-- preço/estoque atuais;
-- handoff para orçamento/venda sem alterar pedido confirmado indevidamente.
+- quantidade;
+- preço/estoque atual;
+- handoff sem mutação indevida de pedido confirmado.
 
-### Assistente
+Assistente:
 
-- saída somente como sugestão;
+- somente sugestão;
 - não envia;
 - não muta dados;
-- não inventa estoque/preço.
+- não inventa preço/estoque.
 
-### PapoAI gates
+Gates PapoAI:
 
 - takeover indisponível sem homologação;
 - release indisponível sem contrato;
-- transporte humano direto indisponível sem homologação;
-- templates não são marcados como sincronizados sem origem confiável.
+- transporte humano indisponível sem homologação;
+- templates não aparecem como sincronizados sem origem confiável.
 
 ## 19. Fases de entrega
 
-### Fase 1 — Base do chat
+### Fase 1A — Base independente do PapoAI outbound
 
 - fila única;
 - seletor 0975/1018;
-- ordenação cronológica correta;
+- ordenação usando mensagens canônicas já existentes;
 - datas;
-- outbound canônico após homologação de payload;
-- mídia/localização;
-- correção completa de scroll/layout.
+- layout/scroll;
+- renderização de mídia e localização já capturadas;
+- preparação do pipeline de mídia.
+
+### Fase 1B — Histórico outbound
+
+Executar somente após payload controlado de `Mensagem enviada`:
+
+- normalização outbound;
+- idempotência;
+- persistência;
+- autoria quando comprovada;
+- recência bidirecional na fila.
 
 ### Fase 2 — Organização
 
@@ -697,52 +680,50 @@ Ações que dependem do PapoAI devem ficar em adapters próprios e atrás de fea
 
 - produtos múltiplos;
 - quantidades;
-- preparar envio;
+- preparar conteúdo;
 - handoff para orçamento/venda;
 - gerenciador/cache de templates.
 
-### Fase 4 — Inteligência e controle de IA
+### Fase 4 — Inteligência e controle da IA
 
 - copiloto;
 - resumo sob demanda;
-- identificação de produtos;
+- produtos mencionados;
 - takeover somente após homologação;
-- release somente após descobrir e homologar ação oficial.
+- release somente após ação oficial comprovada.
 
-## 20. Itens explicitamente fora do escopo inicial
+## 20. Fora do escopo inicial
 
 - CRM genérico;
-- kanban comercial;
-- pipeline de lead;
+- kanban/pipeline comercial;
 - departamentos complexos;
-- campanhas dentro da tela de chat;
+- campanhas dentro do chat;
 - sincronização de tags PapoAI com etiquetas internas;
-- automações genéricas criadas pelo atendente;
-- transcrição contínua de todos os áudios;
+- automações genéricas configuráveis pelo atendente;
+- transcrição contínua de áudio;
 - transporte humano paralelo direto pela Meta;
-- ativar/desativar IA apenas por flag local;
-- alterar pedido confirmado automaticamente a partir de mensagens;
-- armazenar mídia ilimitadamente sem política de retenção.
+- ativar/desativar ANA somente por flag local;
+- alterar pedido confirmado automaticamente;
+- armazenamento ilimitado de mídia;
+- backfill de mídia antiga já expirada.
 
 ## 21. Critérios de sucesso
 
-A v2 será considerada bem-sucedida quando:
-
-1. o atendente conseguir trabalhar normalmente sem manter duas filas simultâneas;
-2. a conversa mais recente sempre aparecer no topo pelo evento real de mensagem;
-3. datas forem claras;
-4. histórico mostrar os dois lados quando outbound estiver homologado;
-5. mídias e localização forem úteis diretamente na timeline;
-6. etiquetas e respostas rápidas forem administráveis sem código;
-7. produtos puderem ser selecionados em grupo e levados para venda/orçamento;
-8. nenhuma ação importante desaparecer lateralmente;
-9. o copiloto reduzir leitura/retrabalho sem agir sozinho;
-10. controles de ANA só aparecerem como funcionais quando houver confirmação real do PapoAI.
+1. Um único painel de conversas com troca rápida 0975/1018.
+2. Conversa mais recente no topo pelo evento real de mensagem.
+3. Datas claras.
+4. Histórico bidirecional quando outbound estiver homologado.
+5. Imagem, áudio, documento e localização úteis na timeline.
+6. Etiquetas e respostas rápidas administráveis sem código.
+7. Produtos selecionáveis em grupo e encaminháveis para venda/orçamento.
+8. Nenhuma ação importante escondida lateralmente.
+9. Copiloto reduz leitura/retrabalho sem agir sozinho.
+10. Controle da ANA só aparece funcional com confirmação real do PapoAI.
 
 ## 22. Decisão arquitetural final
 
-A Central v2 **não espera o PapoAI ficar perfeito para evoluir**.
+A Central v2 não espera todas as integrações do PapoAI para evoluir.
 
-Tudo que é interno ao Vitrine Admin deve ser implementado de forma independente e confiável. Integrações externas entram por adapters e gates, somente quando seus contratos forem comprovados.
+Tudo que é interno ao Vitrine Admin deve funcionar de forma independente e confiável. Integrações externas entram por adapters e feature gates somente depois de seus contratos serem comprovados.
 
-A prioridade técnica antes de qualquer recurso cosmético é tornar o histórico canônico fiel à conversa real: inbound, outbound, timestamps, tipo e mídia quando disponíveis.
+Prioridade técnica antes de recursos cosméticos: histórico canônico fiel à conversa real — inbound, outbound, timestamps, tipo, mídia e autoria somente quando comprovada.
