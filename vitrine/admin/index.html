@@ -7696,9 +7696,10 @@ window.addEventListener('message',event=>{
     return '<div class="section-title">WhatsApp e cadastro</div><div class="rule-notice" id="orderWhatsappRegistrationPanel">'+
       '<strong>'+esc(phone?formatPhone(phone):'Pedido sem WhatsApp')+'</strong><div id="orderWhatsappRegistrationStatus" class="sub">'+(registered?'Cadastro concluído':'Cadastro pendente')+'</div>'+
       '<div class="print-actions" style="margin-top:10px">'+
-        '<button class="primary" id="sendOrderWhatsApp" type="button" disabled>Enviar pedido no WhatsApp</button>'+
+        '<button class="primary" id="sendOrderWhatsApp" type="button" disabled>Enviar pedido para WhatsApp da empresa</button>'+
+        '<button class="secondary" id="openOrderCustomerWhatsApp" type="button" '+(phone?'':'disabled')+'>Abrir WhatsApp do cliente</button>'+
         '<button class="secondary" id="issueOrderRegistrationLink" type="button" '+(phone&&!registered?'':'disabled')+'>'+(registered?'Cadastro concluído':'Gerar link de cadastro')+'</button>'+
-      '</div><div id="orderRegistrationLinkActions" class="hidden" style="margin-top:10px"><div class="sub" id="orderRegistrationLinkValue"></div><div class="print-actions" style="margin-top:8px"><button class="secondary" id="openOrderRegistrationWhatsApp" type="button">Abrir WhatsApp com link</button><button class="secondary" id="copyOrderRegistrationLink" type="button">Copiar link</button></div></div></div>';
+      '</div><div id="orderRegistrationLinkActions" class="hidden" style="display:none!important;margin-top:10px"><div class="sub" id="orderRegistrationLinkValue"></div><div class="print-actions" style="margin-top:8px"><button class="secondary" id="openOrderRegistrationWhatsApp" type="button">Abrir WhatsApp do cliente com link de cadastro</button><button class="secondary" id="copyOrderRegistrationLink" type="button">Copiar link de cadastro</button></div></div></div>';
   }
   function renderCurrentOrderWhatsappStatus(data){
     const host=$('#orderWhatsappRegistrationStatus');if(!host)return;
@@ -7708,8 +7709,9 @@ window.addEventListener('message',event=>{
     if(sendBtn)sendBtn.disabled=!(data?.phone_e164&&data?.whatsapp_ready===true);
     if(data?.whatsapp_ready!==true)lines.push('Envio do pedido aguardando configuração PapoAI');
     if(customer?.status)lines.push('Cliente: '+(customer.status==='sent'?'pedido enviado':customer.status));
-    if(ops?.status)lines.push('Cópia 0975: '+(ops.status==='sent'?'enviada':ops.status));
+    if(ops?.status)lines.push('Empresa 0975: '+(ops.status==='sent'?'enviada':ops.status));
     const registrationBtn=$('#issueOrderRegistrationLink');
+    const linkActions=$('#orderRegistrationLinkActions');if(linkActions&&data?.registration_complete===true){linkActions.style.setProperty('display','none','important');delete linkActions.dataset.url}
     if(registrationBtn){
       const activeLink=link?.state==='active';
       registrationBtn.disabled=data?.registration_complete===true||activeLink||!data?.phone_e164;
@@ -7721,26 +7723,38 @@ window.addEventListener('message',event=>{
     host.textContent=lines.join(' · ');
   }
   async function refreshCurrentOrderWhatsappRegistration(){
-    const oid=state.currentOrder?.order?.id;if(!oid)return;
-    try{const data=await api('order_registration_link_status',{id:oid});renderCurrentOrderWhatsappStatus(data)}catch{}
+    const oid=state.currentOrder?.order?.id;if(!oid)return false;
+    try{const data=await api('order_registration_link_status',{id:oid});renderCurrentOrderWhatsappStatus(data);return true}catch(e){console.warn('Falha ao atualizar status do WhatsApp do pedido',e);return false}
   }
   async function sendCurrentOrderWhatsapp(){
     const oid=state.currentOrder?.order?.id,btn=$('#sendOrderWhatsApp');if(!oid||!btn)return;
+    const idle='Enviar pedido para WhatsApp da empresa',wasDisabled=btn.disabled;let sent=false;
     btn.disabled=true;btn.textContent='Enviando…';
-    try{const data=await api('order_whatsapp_send',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:oid})});renderCurrentOrderWhatsappStatus(data.status_snapshot||{});toast(data.delivery_ok?'Pedido enviado ao cliente e cópia 0975 registrada':'Envio preparado; revise o status do WhatsApp')}catch(e){toast(errorMessage(e.message))}
-    finally{if(document.contains(btn))btn.textContent='Atualizando…';await refreshCurrentOrderWhatsappRegistration()}
+    try{const data=await api('order_whatsapp_send',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:oid})});sent=true;renderCurrentOrderWhatsappStatus(data.status_snapshot||{});toast(data.delivery_ok?'Pedido enviado para o WhatsApp da empresa':'Envio preparado; revise o status do WhatsApp')}catch(e){toast(errorMessage(e.message))}
+    finally{if(document.contains(btn))btn.textContent='Atualizando…';const refreshed=await refreshCurrentOrderWhatsappRegistration();if(document.contains(btn)){btn.textContent=idle;if(!refreshed)btn.disabled=wasDisabled}if(sent&&!refreshed)toast('Pedido enviado, mas o status não atualizou. Clique em Atualizar para conferir.')}
   }
   function showCurrentOrderRegistrationLink(data){
     const box=$('#orderRegistrationLinkActions'),value=$('#orderRegistrationLinkValue');if(!box||!value||!data?.registration_url)return;
-    box.dataset.url=data.registration_url;box.classList.remove('hidden');
+    box.dataset.url=data.registration_url;box.classList.remove('hidden');box.style.setProperty('display','block','important');
     const sent=data?.papoai_send?.ok===true;
-    value.textContent=sent?'Link enviado pelo PapoAI. Também deixei as opções abaixo disponíveis.':'Link criado. Se a janela do PapoAI estiver fechada, use uma das opções abaixo.';
+    value.textContent=sent?'Link de cadastro enviado ao cliente. As opções abaixo também ficam disponíveis.':'Link de cadastro criado. Use as opções abaixo para enviar ao cliente ou copiar o link.';
   }
   async function issueCurrentOrderRegistrationLink(){
     const oid=state.currentOrder?.order?.id,btn=$('#issueOrderRegistrationLink');if(!oid||!btn||state.currentOrder?.order?.registration_complete===true)return;
     btn.disabled=true;btn.textContent='Criando…';
     try{const data=await api('order_registration_link_issue',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:oid})});showCurrentOrderRegistrationLink(data);toast(data?.papoai_send?.ok===true?'Link de cadastro enviado pelo PapoAI':'Link criado; envio automático indisponível nesta conversa')}catch(e){toast(errorMessage(e.message))}
     finally{if(document.contains(btn))btn.textContent='Atualizando…';await refreshCurrentOrderWhatsappRegistration()}
+  }
+  function currentOrderCustomerWhatsappMessage(){
+    const d=state.currentOrder||{},o=d.order||{},items=Array.isArray(d.items)?d.items:[],code=o.order_number||o.id||'';
+    const lines=['Olá! Segue o seu pedido da Dona Antônia'+(code?' '+code:'')+'.'];
+    if(items.length){lines.push('');items.forEach(item=>{const qty=Number(item.quantity||item.qty||1)||1,name=item.name_snapshot||item.product_name||item.name||item.title||'Item';lines.push('• '+qty+'x '+name)})}
+    const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('','Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+    return lines.join('\n')
+  }
+  function openCurrentOrderCustomerWhatsapp(){
+    const o=state.currentOrder?.order||{},phone=phoneDigits(o.whatsapp_phone_e164||o.delivery_address_snapshot?.phone||'');if(!phone){toast('Pedido sem WhatsApp do cliente');return}
+    const popup=window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(currentOrderCustomerWhatsappMessage()),'_blank','noopener');if(!popup)toast('O navegador bloqueou a abertura do WhatsApp')
   }
   function currentOrderRegistrationUrl(){return $('#orderRegistrationLinkActions')?.dataset?.url||''}
   function openCurrentOrderRegistrationWhatsapp(){
@@ -7863,6 +7877,7 @@ window.addEventListener('message',event=>{
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#saveOrder').onclick=saveOrder;
     if($('#sendOrderWhatsApp'))$('#sendOrderWhatsApp').onclick=sendCurrentOrderWhatsapp;
+    if($('#openOrderCustomerWhatsApp'))$('#openOrderCustomerWhatsApp').onclick=openCurrentOrderCustomerWhatsapp;
     if($('#issueOrderRegistrationLink'))$('#issueOrderRegistrationLink').onclick=issueCurrentOrderRegistrationLink;
     if($('#openOrderRegistrationWhatsApp'))$('#openOrderRegistrationWhatsApp').onclick=openCurrentOrderRegistrationWhatsapp;
     if($('#copyOrderRegistrationLink'))$('#copyOrderRegistrationLink').onclick=copyCurrentOrderRegistrationLink;
@@ -8149,10 +8164,11 @@ window.addEventListener('message',event=>{
   }
 
   function orderStockAlertHtml(readiness){
-    if(!readiness||readiness.ok!==false)return '';
+    if(!readiness)return state.orderFocusIssue==='stock'?'<div class="rule-notice" id="orderStockAlert"><strong>Conferência de estoque indisponível</strong><div class="sub">Não foi possível carregar a conferência de estoque agora. Feche o pedido, clique em Atualizar e tente novamente.</div></div>':'';
+    if(readiness.ok!==false)return state.orderFocusIssue==='stock'?'<div class="rule-notice" id="orderStockAlert"><strong>Estoque conferido</strong><div class="sub">Nenhuma falta de estoque foi encontrada agora. A lista pode estar desatualizada; ao fechar este pedido, clique em Atualizar.</div></div>':'';
     const rows=Array.isArray(readiness.shortages)?readiness.shortages:[];
     const detail=rows.length
-      ? rows.slice(0,4).map(x=>esc(x.name||'Produto')+' · precisa '+esc(fmtQty(x.requested||0))+' · disponível '+esc(fmtQty(x.available||0))).join('<br>')
+      ? rows.slice(0,4).map(x=>esc(x.name||'Produto')+' · precisa '+esc(fmtQty(x.required??x.requested??0))+' · disponível '+esc(fmtQty(x.available||0))).join('<br>')
       : 'Não há estoque disponível suficiente para este pedido.';
     return '<div class="sync-alert" id="orderStockAlert"><div><strong style="color:#b3261e">Estoque insuficiente</strong><small>'+detail+(Number(readiness.shortage_count||0)>4?'<br>+'+(Number(readiness.shortage_count)-4)+' item(ns)':'')+'</small></div><button class="secondary" id="openBalanceFromOrder" type="button">Abrir Balanço</button></div>';
   }
