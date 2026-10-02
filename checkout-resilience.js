@@ -7,6 +7,45 @@
   let pendingAdjustment=null;
   let pendingSubmitError=null;
 
+  function byId(id){return document.getElementById(id)}
+  function digits(value,max=20){return String(value??'').replace(/\D+/g,'').slice(0,max)}
+  function field(id){const el=byId(id);return el?String(el.value??'').trim():''}
+  function liveCheckoutPhone(){
+    const ddd=digits(field('checkoutDdd'),2);
+    let mobile=digits(field('checkoutPhone'),9);
+    if(mobile.length===8)mobile='9'+mobile;
+    const valid=ddd.length===2&&mobile.length===9&&mobile.startsWith('9');
+    return {ddd,mobile,valid,full:valid?'+55'+ddd+mobile:''};
+  }
+  function checkoutRegistrationDraft(){
+    return {
+      name:field('checkoutName'),
+      document:field('checkoutDocument'),
+      street:field('checkoutStreet'),
+      number:field('checkoutNumber'),
+      neighborhood:field('checkoutNeighborhood'),
+      city:field('checkoutCity'),
+      postal_code:field('checkoutPostal'),
+      complement:field('checkoutComplement'),
+      reference:field('checkoutReference'),
+      marketing_opt_in:byId('checkoutMarketing')?.checked===true
+    };
+  }
+  function registrationDraftComplete(draft){
+    const doc=digits(draft?.document,14);
+    return Boolean(draft?.name&&[11,14].includes(doc.length)&&draft?.street&&draft?.number&&draft?.neighborhood&&draft?.city);
+  }
+  async function persistRegistrationBeforeOrder(requestUrl,phone,draft){
+    if(!phone.valid||!registrationDraftComplete(draft))return null;
+    try{
+      const url=new URL(requestUrl);
+      url.searchParams.set('action','customer_register');
+      const response=await originalFetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'checkout',phone:phone.full,...draft}),cache:'no-store'});
+      const data=await response.json().catch(()=>null);
+      return response.ok&&data?.ok!==false?data:null;
+    }catch{return null}
+  }
+
   function adjustmentLine(item){
     const name=String(item?.name||'Item');
     const requested=Number(item?.requested||0);
@@ -54,9 +93,24 @@
   }
 
   window.fetch=async(...args)=>{
+    let [input,options]=args;
+    const requestUrl=String(input?.url||input||'');
+    if(requestUrl.includes('/functions/v1/storefront-v2')&&requestUrl.includes('action=submit_order')&&String(options?.method||'GET').toUpperCase()==='POST'){
+      try{
+        const body=typeof options?.body==='string'?JSON.parse(options.body):null;
+        if(body&&typeof body==='object'){
+          const phone=liveCheckoutPhone();
+          const draft=checkoutRegistrationDraft();
+          if(phone.valid)body.whatsapp_phone=phone.full;
+          await persistRegistrationBeforeOrder(requestUrl,phone,draft);
+          options={...options,body:JSON.stringify(body)};
+          args=[input,options];
+        }
+      }catch{}
+    }
+
     const response=await originalFetch(...args);
     try{
-      const requestUrl=String(args[0]?.url||args[0]||'');
       if(requestUrl.includes('/functions/v1/storefront-v2')&&requestUrl.includes('action=submit_order')){
         const data=await response.clone().json();
         if(response.ok&&data?.stock_adjustment===true&&applyStockAdjustment(data).length){
@@ -89,5 +143,5 @@
   });
   observer.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
 
-  window.__DA_CHECKOUT_RESILIENCE__={CUTOFF_HOUR,applyStockAdjustment,confirmStockAdjustment};
+  window.__DA_CHECKOUT_RESILIENCE__={CUTOFF_HOUR,applyStockAdjustment,confirmStockAdjustment,liveCheckoutPhone,checkoutRegistrationDraft,registrationDraftComplete};
 })();

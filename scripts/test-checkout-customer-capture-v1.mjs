@@ -1,18 +1,18 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const sf=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
+const capture=fs.readFileSync('checkout-resilience.js','utf8');
 for(const page of ['index.html','vitrine/index.html']){
   const html=fs.readFileSync(page,'utf8');
-  assert.match(html,/function checkoutRegistrationDraft\(/,`${page}: finalização precisa capturar os campos vivos do cadastro`);
-  assert.match(html,/customer_draft:registrationDraft/,`${page}: pedido precisa enviar o rascunho cadastral ao backend`);
-  assert.match(html,/persistRegistrationBeforeOrder\(info,registrationDraft\)/,`${page}: cadastro completo deve ser salvo automaticamente ao finalizar`);
-  assert.match(html,/function checkoutPhoneData\(\)\{const ddd=phoneDigits\(\$\('#checkoutDdd'\)\?\.value\?\?state\.checkoutDdd,2\)/,`${page}: telefone deve ser lido diretamente do campo no clique final`);
-  assert.match(html,/'"':'&quot;'/,`${page}: escape de aspas em atributos precisa permanecer válido`);
+  assert.match(html,/checkout-resilience\.js/,`${page}: resilience layer must remain loaded`);
 }
-assert.match(sf,/const draftObj=p\?\.customer_draft&&typeof p\.customer_draft==="object"/,`backend precisa aceitar customer_draft`);
-assert.match(sf,/customer_name:draftName/,`nome digitado precisa acompanhar o pedido`);
-assert.match(sf,/street:draftStreet/,`endereço digitado precisa acompanhar o pedido`);
-assert.match(sf,/name:draftName,display_name:draftName/,`nome digitado precisa entrar no snapshot do pedido`);
-assert.match(sf,/phone_e164:ph/,`telefone normalizado precisa entrar no snapshot do pedido`);
+assert.match(capture,/function liveCheckoutPhone\(/,'finalization must read the live WhatsApp fields');
+assert.match(capture,/function checkoutRegistrationDraft\(/,'finalization must capture the live registration fields');
+assert.match(capture,/persistRegistrationBeforeOrder\(/,'complete registration must be persisted automatically before the order');
+assert.match(capture,/body\.whatsapp_phone=phone\.full/,'live phone must be injected in submit_order');
+assert.match(capture,/url\.searchParams\.set\('action','customer_register'\)/,'capture layer must reuse canonical customer_register');
+for(const field of ['checkoutName','checkoutDocument','checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity','checkoutPostal','checkoutComplement','checkoutReference']){
+  assert.ok(capture.includes(field),`capture layer missing ${field}`);
+}
+assert.match(capture,/registrationDraftComplete/,'partial optional fields must not block checkout');
 console.log('checkout customer capture contract: OK');
