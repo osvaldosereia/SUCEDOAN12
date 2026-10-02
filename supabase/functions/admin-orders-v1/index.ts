@@ -118,7 +118,8 @@ async function orderDetails(orderId:string){
   const districtLabel=text(address.district||address.neighborhood,140)||"NAO INFORMADO";
   const cityLabel=text(address.city,140)||"NAO INFORMADA";
   const deliveryDate=deliveryLabel(delivery,checkoutDelivery);
-  const deliverySummary=text([deliveryDate,addressLabel,districtLabel,cityLabel].filter(v=>v&&v!=="NAO INFORMADO"&&v!=="NAO INFORMADA").join(" • "),500)||"A confirmar";
+  const deliveryAddressFull=text([addressLabel,districtLabel,cityLabel].filter(v=>v&&v!=="NAO INFORMADO"&&v!=="NAO INFORMADA").join(" • "),500)||"A confirmar";
+  const deliverySummary=text([deliveryDate,deliveryAddressFull].filter(Boolean).join(" • "),500)||"A confirmar";
   const fullNumber=text(order.order_number,80);
   const customerRegistered=Boolean(text(order.customer_id,80)||text(customer.customer_id,80));
   const customerName=text(customer.name||customer.display_name||checkoutCustomer.name||checkoutCustomer.display_name||delivery.customer_name,180)||"NAO INFORMADO";
@@ -137,6 +138,7 @@ async function orderDetails(orderId:string){
     districtLabel,
     cityLabel,
     deliveryLabel:deliveryDate,
+    deliveryAddressFull,
     deliverySummary,
     basketText,
     productsText,
@@ -226,6 +228,8 @@ Deno.serve(async(req:Request)=>{
     district_label:details.districtLabel,
     city_label:details.cityLabel,
     delivery_label:details.deliverySummary,
+    delivery_date_label:details.deliveryLabel,
+    delivery_address_full:details.deliveryAddressFull,
     basket_text:details.basketText,
     products_text:details.productsText,
     total_formatted:details.totalFormatted,
