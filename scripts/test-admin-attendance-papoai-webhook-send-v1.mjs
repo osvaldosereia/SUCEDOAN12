@@ -3,10 +3,12 @@ import fs from 'node:fs';
 
 const apiPath=new URL('../supabase/functions/admin-whatsapp-ops-v1/index.ts',import.meta.url);
 const sqlPath=new URL('../supabase/sql/20261002_admin_attendance_papoai_webhook_send_v1.sql',import.meta.url);
+const hostGuardPath=new URL('../supabase/sql/20261002143000_admin_attendance_papoai_webhook_host_guard_v1.sql',import.meta.url);
 
 assert.equal(fs.existsSync(sqlPath),true,'migration do transporte oficial deve existir');
+assert.equal(fs.existsSync(hostGuardPath),true,'guard do host oficial PapoAI deve existir');
 const api=fs.readFileSync(apiPath,'utf8');
-const sql=fs.readFileSync(sqlPath,'utf8');
+const sql=fs.readFileSync(sqlPath,'utf8')+'\n'+fs.readFileSync(hostGuardPath,'utf8');
 
 assert.match(api,/normalizeOutboundText/);
 assert.match(api,/normalizeIdempotencyKey/);
