@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const admin = fs.readFileSync('vitrine/admin/index.html', 'utf8');
 const adminApi = fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts', 'utf8');
+const orderTransport = fs.readFileSync('supabase/functions/admin-orders-v1/index.ts', 'utf8');
 
 for (const copy of [
   'WhatsApp e cadastro',
@@ -58,4 +59,11 @@ assert.ok(adminApi.includes('if(r.method===\"GET\"&&a===\"order_registration_lin
 assert.ok(adminApi.includes('if(r.method===\"POST\"&&a===\"order_whatsapp_send\")'), 'send action must be routed');
 assert.ok(adminApi.includes('if(r.method===\"POST\"&&a===\"order_registration_link_issue\")'), 'registration action must be routed');
 
-console.log('admin order WhatsApp UI + gateway integration contract: ok');
+assert.ok(orderTransport.includes('async function orderItemsSummary'), 'order transport must build a complete item summary');
+assert.ok(orderTransport.includes('.from("order_items")'), 'order transport must load the persisted order items');
+assert.ok(orderTransport.includes('items_count:items.count'), 'provider payload must expose items_count');
+assert.ok(orderTransport.includes('items_text:items.text'), 'provider payload must expose items_text');
+assert.ok(orderTransport.includes('order_items_not_ready'), 'checkout must fail closed/retry instead of sending an incomplete order');
+assert.ok(orderTransport.includes('scope==="checkout_auto"?"retry":"failed"'), 'checkout must retry when order items are not ready');
+
+console.log('admin order WhatsApp UI + gateway + full-order payload contract: ok');

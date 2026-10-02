@@ -8,6 +8,7 @@ const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 
 type Channel="0975"|"1018";
 type DispatchScope="admin_manual"|"checkout_auto";
+type OrderItem={name_snapshot?:unknown;quantity?:unknown;unit_price?:unknown;line_total?:unknown;created_at?:unknown};
 const providerUrl=async(channel:Channel)=>{
   const envUrl=channel==="1018"
     ? (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL")||"")
@@ -29,12 +30,31 @@ const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
 const text=(v:unknown,n=500)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
 const uid=(v:unknown)=>{const s=text(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""};
 const money=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(n):""};
+const quantityLabel=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3}).format(n):""};
 const paymentLabel=(v:unknown)=>{
   const raw=text(v,80),key=raw.toLowerCase();
   const labels:Record<string,string>={pix:"PIX",dinheiro:"Dinheiro",cash:"Dinheiro",credito:"Cartão de crédito",credit_card:"Cartão de crédito",alimentacao:"Cartão alimentação",refeicao:"Cartão refeição"};
   return labels[key]||raw||"A confirmar";
 };
 const deliveryLabel=(v:any)=>text(v?.label||v?.date||v?.delivery_date||"A confirmar",120);
+
+async function orderItemsSummary(orderId:string){
+  const r=await db.from("order_items")
+    .select("name_snapshot,quantity,unit_price,line_total,created_at")
+    .eq("order_id",orderId)
+    .order("created_at",{ascending:true});
+  if(r.error)throw new Error(`order_items_query_failed: ${text(r.error.message,240)}`);
+  const rows=(r.data||[]) as OrderItem[];
+  const lines=rows.map((row)=>{
+    const name=text(row.name_snapshot,160)||"Item";
+    const qty=quantityLabel(row.quantity)||"1";
+    const lineTotal=money(row.line_total);
+    const unitPrice=money(row.unit_price);
+    const price=lineTotal||unitPrice;
+    return `${qty}x ${name}${price?` — ${price}`:""}`;
+  });
+  return {count:rows.length,text:lines.join("\n")};
+}
 
 async function claim(orderId:string,scope:DispatchScope){
   const rpc=scope==="checkout_auto"?"ops2_claim_checkout_order_whatsapp_v1":"ops2_claim_order_whatsapp_outbox_v1";
@@ -80,6 +100,22 @@ Deno.serve(async(req:Request)=>{
     return respond({ok:false,error:"provider_not_configured",status:nextStatus,channel_origin:channel,recipient_kind:item.recipient_kind||null,outbox_id:outboxId},503);
   }
 
+  let items:{count:number;text:string};
+  try{
+    items=await orderItemsSummary(orderId);
+  }catch(error){
+    const errorText=text((error as Error)?.message||error,300);
+    const nextStatus=scope==="checkout_auto"?"retry":"failed";
+    try{await finish(outboxId,nextStatus,null,errorText,scope==="checkout_auto"?30:0)}catch{}
+    return respond({ok:false,error:"order_items_unavailable",status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:422);
+  }
+  if(items.count===0){
+    const errorText="order_items_not_ready";
+    const nextStatus=scope==="checkout_auto"?"retry":"failed";
+    try{await finish(outboxId,nextStatus,null,errorText,scope==="checkout_auto"?30:0)}catch{}
+    return respond({ok:false,error:errorText,status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:422);
+  }
+
   const order=item?.payload?.order||{};
   const providerPayload={
     event:"order_received",
@@ -94,7 +130,9 @@ Deno.serve(async(req:Request)=>{
     delivery_mode:"utility_template",
     total_formatted:money(order.total),
     payment_label:paymentLabel(order.payment_method),
-    delivery_label:deliveryLabel(order.delivery)
+    delivery_label:deliveryLabel(order.delivery),
+    items_count:items.count,
+    items_text:items.text
   };
 
   const headers:Record<string,string>={"Content-Type":"application/json"};
