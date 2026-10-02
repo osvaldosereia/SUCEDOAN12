@@ -1,0 +1,31 @@
+name: Apply attendance recent order fix v2
+on:
+  push:
+    branches: [fix/attendance-recent-order-dates]
+    paths:
+      - '.github/workflows/apply-attendance-recent-order-fix-v2.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/attendance-recent-order-dates
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python scripts/apply-attendance-recent-order-fix.py
+      - run: node scripts/test-admin-attendance-sql-v1.mjs
+      - run: node scripts/test-admin-attendance-ui-v1.mjs
+      - run: node --check vitrine/admin/atendimento/attendance.js
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/sql/20261001_admin_attendance_v1.sql vitrine/admin/atendimento/attendance.js vitrine/admin/atendimento/attendance.css
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix: ordenar atendimento por conversas recentes'
+          git push origin HEAD:fix/attendance-recent-order-dates
