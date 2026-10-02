@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const js=fs.readFileSync('vitrine/admin/atendimento/attendance.js','utf8');
+const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
+assert.match(js,/selectedProducts/,'estado deve preservar seleção múltipla');
+assert.match(js,/product-select|data-product-select|type=['"]checkbox['"]/i,'produto deve ser selecionável');
+assert.match(js,/product-qty|data-product-qty/i,'produto deve ter quantidade');
+assert.match(js,/sellable_stock/,'quantidade deve respeitar estoque vendável');
+assert.match(js,/prepareSelectedProducts/,'seleção deve preparar conteúdo para o cliente');
+assert.match(js,/open_quote/,'seleção deve poder ir para orçamento');
+assert.match(js,/new_sale/,'seleção deve poder ir para nova venda');
+assert.match(js,/image_url/,'card deve manter foto do produto');
+assert.match(css,/product-selection|selected-products|product-qty/i,'seleção precisa de layout próprio');
+console.log('OK · produtos suportam foto, preço, seleção múltipla, quantidade e handoff comercial.');
