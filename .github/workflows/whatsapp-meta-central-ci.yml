@@ -8,9 +8,12 @@ on:
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
       - 'vitrine/admin/atendimento/attendance-send.js'
+      - 'vitrine/admin/atendimento/attendance-templates.js'
+      - 'vitrine/admin/atendimento/index.html'
       - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
       - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
       - 'scripts/test-attendance-meta-*.mjs'
+      - 'scripts/test-attendance-template-picker-v1.mjs'
       - 'scripts/test-admin-attendance-meta-send-ui-v1.mjs'
       - 'scripts/test-attendance-provider-neutral-v3.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
@@ -30,6 +33,8 @@ jobs:
           node-version: '22'
       - name: Provider-neutral outbox contract
         run: node scripts/test-attendance-provider-neutral-v3.mjs
+      - name: Attendance template picker contract
+        run: node scripts/test-attendance-template-picker-v1.mjs
       - name: Meta templates contract
         run: node scripts/test-whatsapp-meta-templates-v1.mjs
       - name: Meta templates admin sync contract
@@ -54,5 +59,7 @@ jobs:
         run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts
       - name: Admin composer JavaScript syntax
         run: node --check vitrine/admin/atendimento/attendance-send.js
+      - name: Attendance templates JavaScript syntax
+        run: node --check vitrine/admin/atendimento/attendance-templates.js
       - name: Meta secrets guard
         run: node scripts/test-whatsapp-meta-no-secrets-v1.mjs
