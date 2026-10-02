@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const api=fs.readFileSync('supabase/functions/admin-whatsapp-ops-v1/index.ts','utf8');
+assert.match(api,/READ_ACTIONS[^\n]*templates/,'templates deve ser leitura autenticada');
+for(const action of ['template_save','template_deactivate','template_attendance_toggle']) assert.match(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${action}`),`ação ausente: ${action}`);
+assert.match(api,/whatsapp_templates_v1/);
+assert.match(api,/attendance[\s\S]*show|show[\s\S]*attendance/i,'visibilidade no Atendimento deve ficar em metadata');
+assert.doesNotMatch(api,/papoai.*template|template.*papoai/i,'cache local não deve chamar PapoAI');
+assert.doesNotMatch(api,/"send_text"|"takeover"|"release"/,'transporte humano continua bloqueado');
+console.log('OK · gateway comercial administra cache local de templates sem transporte PapoAI.');
