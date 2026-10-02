@@ -53,7 +53,7 @@ async function orderItemsSummary(orderId:string){
     const price=lineTotal||unitPrice;
     return `${qty}x ${name}${price?` — ${price}`:""}`;
   });
-  return {count:rows.length,text:lines.join("\n")};
+  return {count:rows.length,text:lines.join(" • ")};
 }
 
 async function claim(orderId:string,scope:DispatchScope){
