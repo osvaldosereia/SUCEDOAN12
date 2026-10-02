@@ -108,6 +108,10 @@ assert.match(edge, /whatsapp_record_status_v1/);
 assert.match(edge, /hasMetaMessageOrStatusEvents/);
 assert.match(edge, /meta_account_unresolved/);
 assert.match(edge, /phone_number_id/);
+assert.match(edge, /ok:\s*true,\s*ignored:\s*true,\s*reason:\s*"meta_account_unresolved"[\s\S]{0,220}unknown_phone_number_ids/i,
+  'payload Meta assinado de conta não mapeada deve ser reconhecido com 200/ignore para evitar retry storm');
+assert.doesNotMatch(edge, /ok:\s*false,\s*error:\s*"meta_account_unresolved"[\s\S]{0,180},\s*422/i,
+  'conta Meta desconhecida autenticada não deve devolver 422 e provocar retries');
 assert.doesNotMatch(edge, /EAA[A-Za-z0-9_-]{30,}/, 'Edge Function não pode conter token literal');
 assert.doesNotMatch(edge, /TESTE META DIRETO|998150975|984491018/, 'webhook não pode hardcodar destinatários de homologação');
 assert.doesNotMatch(edge, /dona-antonia-agent|conversation-worker/i, 'webhook não deve executar IA sincronicamente');
@@ -116,4 +120,4 @@ const statusSection = edge.split('async function persistStatus')[1]?.split('Deno
 assert.ok(statusSection.indexOf('whatsapp_ingest_event_v1') >= 0, 'status deve ser capturado duravelmente');
 assert.ok(statusSection.indexOf('whatsapp_ingest_event_v1') < statusSection.indexOf('whatsapp_record_status_v1'), 'status bruto deve ser persistido antes da reconciliação');
 
-console.log('OK · webhook Meta valida assinatura/canal, normaliza fixtures e falha fechado para Phone Number ID inválido.');
+console.log('OK · webhook Meta valida assinatura/canal, normaliza fixtures e reconhece com 200 eventos assinados de contas não mapeadas.');
