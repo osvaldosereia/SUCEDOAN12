@@ -26,7 +26,7 @@ jobs:
           else
             echo 'RED confirmed: template v2 fields are missing'
           fi
-      - name: GREEN - add separate fields for organized template
+      - name: GREEN - add separate fields and update contract
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -39,6 +39,13 @@ jobs:
           s=s.replace('''    deliveryLabel:deliveryDate,\n    deliverySummary,''','''    deliveryLabel:deliveryDate,\n    deliveryAddressFull,\n    deliverySummary,''',1)
           s=s.replace('''    delivery_label:details.deliverySummary,''','''    delivery_label:details.deliverySummary,\n    delivery_date_label:details.deliveryLabel,\n    delivery_address_full:details.deliveryAddressFull,''',1)
           p.write_text(s)
+
+          t=Path('scripts/test-checkout-whatsapp-outbox.mjs')
+          q=t.read_text()
+          old_test="assert.match(adminOrders,/const deliverySummary=text\\(\\[deliveryDate,addressLabel,districtLabel,cityLabel\\]/,'template delivery variable must combine date and complete address');"
+          new_test="assert.match(adminOrders,/const deliveryAddressFull=text\\(\\[addressLabel,districtLabel,cityLabel\\]/,'dispatcher must build complete delivery address separately');\nassert.match(adminOrders,/const deliverySummary=text\\(\\[deliveryDate,deliveryAddressFull\\]/,'legacy delivery summary must still combine date and address');"
+          if old_test not in q: raise SystemExit('legacy delivery-summary test not found')
+          t.write_text(q.replace(old_test,new_test,1))
           PY
       - name: GREEN - verify contracts
         run: |
