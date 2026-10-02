@@ -1,7 +1,7 @@
 # RETOMADA — Central WhatsApp Própria via Meta Cloud API
 
 **Última atualização:** 2026-10-02  
-**Status:** Task 0 e Task 1 programados e testados no branch; migration v3 ainda NÃO aplicada no Supabase produtivo.  
+**Status:** Tasks 0, 1 e 2 concluídos em código/testes; migration v3 aplicada no Supabase produtivo com gates OFF; adapter Meta ainda NÃO conectado ao gateway.  
 **Branch atual:** `feat/whatsapp-meta-central-task0-task1`
 
 ## 1. Leia antes de continuar
@@ -67,36 +67,33 @@ Resultado:
 
 Decisão: envio próprio deverá ser persistido pelo nosso backend assim que a Meta devolver `wamid`; não depender de `message.sent` do PapoAI.
 
-## 5. Baseline de produção observado no início do Task 0
+## 5. Runtime produtivo — permanece fail-closed
 
-Runtime:
+Última verificação após aplicar a migration v3:
 
-| Canal | send_enabled | human_send_enabled | homologated_at | inbound_provider | outbound_provider |
-| --- | --- | --- | --- | --- | --- |
-| 0975 | true | false | null | papoai | papoai |
-| 1018 | true | false | null | papoai | papoai |
+| Canal | human_send_enabled | homologated_at | outbound_provider |
+| --- | --- | --- | --- |
+| 0975 | false | null | papoai |
+| 1018 | false | null | papoai |
 
-Histórico observado:
+Teste de segurança em produção executado usando conversa recente do 1018:
 
-| Canal | Direção | Contagem |
-| --- | --- | ---: |
-| 0975 | inbound | 1531 |
-| 0975 | outbound | 146 |
-| 1018 | inbound | 328 |
-| 1018 | outbound | 23 |
+```text
+ops2_admin_attendance_enqueue_text_v3(...)
+=> { ok:false, error:"human_send_not_homologated" }
+```
 
-`whatsapp_outbox_v1` com `purpose='human_attendance'`: **0 linhas**.
+Depois do teste:
 
-Constraints verificadas no banco:
+```text
+rows_created na whatsapp_outbox_v1 para a idempotency key do teste = 0
+```
 
-- runtime outbound provider aceita `papoai`, `meta`, `disabled`;
-- runtime inbound provider aceita `papoai`, `meta`;
-- outbox provider aceita `papoai`, `meta`;
-- portanto Task 1 não precisa alterar constraints.
+Portanto a migration entrou sem liberar envio nem criar outbox.
 
 ## 6. Task 0 — Safeguard/baseline/secrets
 
-**Status:** código/documentação concluídos no branch.
+**Status:** concluída.
 
 Arquivos:
 
@@ -104,48 +101,40 @@ Arquivos:
 - `docs/runbooks/whatsapp-meta-central-runbook.md`
 - `docs/checklists/whatsapp-meta-preflight.md`
 
-Commits relevantes:
-
-- `c5acc5c956207c0d903a85cd77f340cc7d0f5c50` — guard anti-segredo
-- `7fcbe7f2703e27272b3a722d75fc32cf027d22a1` — runbook
-- `be81dbf5896fc0799bc512e49d67eb9025e3293e` — preflight
-
-Teste executado:
+Validação executada:
 
 1. token sintético inserido em workspace local -> teste FALHOU como esperado;
 2. token sintético removido -> teste PASSOU.
 
-Pendência operacional antes de qualquer canário real:
+Pendência operacional antes de canário real:
 
 - revogar tokens temporários que apareceram em capturas;
 - gerar token de usuário de sistema de produção;
 - armazenar token/App Secret/verify token somente server-side.
 
-Essas ações de credencial não foram executadas por este branch.
-
 ## 7. Task 1 — Outbox provider-neutral v3
 
-**Status:** programada e teste estático GREEN; ainda NÃO aplicada no Supabase produtivo.
+**Status:** código concluído e migration aplicada no Supabase produtivo.
 
 Arquivos:
 
 - `scripts/test-attendance-provider-neutral-v3.mjs`
 - `supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql`
 
-Commits:
-
-- `383e6af48c92a13d08eef7545200853d12fd6706` — teste RED
-- `661fb55748db35870da85de7b40cbe3c9676581e` — migration v3
-
 TDD observado:
 
-- RED: teste falhou especificamente com `migration provider-neutral v3 deve existir`.
-- GREEN: após criar a migration, teste passou com `OK · outbox v3 é provider-neutral, fail-closed, idempotente e preserva janela/gates.`
+- RED: `migration provider-neutral v3 deve existir`;
+- GREEN: `OK · outbox v3 é provider-neutral, fail-closed, idempotente e preserva janela/gates.`
 
-Contrato implementado:
+Migration aplicada:
 
-- `ops2_admin_attendance_enqueue_text_v3(uuid,text,text)`
-- `ops2_admin_attendance_claim_outbox_v3(uuid)`
+- nome Supabase: `admin_attendance_provider_neutral_v3`
+- funções presentes:
+  - `ops2_admin_attendance_enqueue_text_v3(uuid,text,text)`
+  - `ops2_admin_attendance_claim_outbox_v3(uuid)`
+
+Contrato:
+
 - provider resolvido pelo `whatsapp_channel_runtime_v1.outbound_provider`;
 - somente `papoai` ou `meta` são dispatcháveis;
 - janela de 24h preservada;
@@ -153,16 +142,85 @@ Contrato implementado:
 - rate limit de 20/60s preservado;
 - destino resolvido server-side pela conversa;
 - idempotência usa namespace `attendance-v3:`;
-- claim valida que provider da outbox ainda é igual ao runtime;
+- claim valida provider da outbox contra runtime;
 - claim devolve provider, `phone_number_id` e `waba_id` server-side;
-- nenhuma dependência de URL PapoAI no v3;
-- nenhuma criação otimista de `whatsapp_messages_v1` nesta Task.
+- nenhuma URL secreta PapoAI no v3;
+- nenhuma criação otimista de `whatsapp_messages_v1`.
 
-### Ruling importante
+Rollback operacional continua sendo gate OFF; v2 permanece intacto.
 
-A migration v3 **não foi aplicada em produção nesta rodada** porque o Task 1 pode ser concluído e revisado como código isolado antes de qualquer DDL externo. Os gates produtivos permanecem totalmente OFF. A aplicação da migration deve ocorrer somente após revisão do branch/PR e imediatamente antes do Task 2/integração que a consuma.
+## 8. Task 2 — Adapter oficial Meta
 
-## 8. Isolamento do checkout
+**Status:** código/testes concluídos; adapter NÃO está conectado ao `admin-whatsapp-ops-v1` e não foi usado para enviar mensagem real nesta Task.
+
+Arquivos:
+
+- `supabase/functions/_shared/whatsapp-meta-transport-v1.mjs`
+- `scripts/test-attendance-meta-send-v1.mjs`
+- `scripts/test-attendance-meta-phone-id-v1.mjs`
+- `scripts/test-attendance-meta-body-timeout-v1.mjs`
+- `scripts/fixtures/meta-send-text-success.redacted.json`
+- `scripts/fixtures/meta-send-error.redacted.json`
+
+Contrato implementado:
+
+- `sendTextViaMeta(...)` recebe token server-side, Phone Number ID, destino, texto e Graph version;
+- endpoint montado como `https://graph.facebook.com/{version}/{phone_number_id}/messages`;
+- `messaging_product='whatsapp'`;
+- `recipient_type='individual'`;
+- texto livre enviado como `type='text'`;
+- `preview_url=false`;
+- sucesso só existe se a Meta retornar `messages[0].id` (`wamid`);
+- retorno normalizado contém `provider='meta'`, `providerMessageId` e HTTP status;
+- timeout usa `AbortController` e permanece ativo até terminar leitura do corpo;
+- `phone_number_id` aceita somente dígitos puros;
+- telefone de destino é normalizado para dígitos;
+- token não é logado nem incluído em mensagens de erro;
+- nenhum token literal foi versionado.
+
+Erros normalizados:
+
+- `meta_invalid_request` — falha antes da rede;
+- `meta_http_error`;
+- `meta_network_error` — `uncertain=true`;
+- `meta_timeout` — `uncertain=true`;
+- `meta_invalid_response` — `uncertain=true` se não houver `wamid` confiável.
+
+Regra de retry:
+
+- 408/429: marcados retryable;
+- 5xx: `uncertain=true` e sem retry automático cego;
+- network/timeout: `uncertain=true` e sem retry automático cego.
+
+TDD observado:
+
+1. adapter inexistente -> RED;
+2. adapter inicial -> testes principais GREEN;
+3. novo teste mostrou que `phone_number_id` malformado era normalizado silenciosamente -> RED;
+4. correção para dígitos puros -> GREEN;
+5. novo teste mostrou timeout encerrando antes da leitura do corpo -> RED;
+6. timeout estendido até o JSON terminar -> GREEN.
+
+Última execução local:
+
+```text
+OK · adapter Meta monta Graph request, exige wamid e classifica erros/uncertainty sem vazar token.
+OK · Phone Number ID aceita somente dígitos puros e falha fechado antes da rede.
+OK · timeout cobre fetch e leitura do corpo da resposta Meta.
+```
+
+## 9. O que ainda NÃO foi feito
+
+- adapter Meta não está importado pelo gateway;
+- `admin-whatsapp-ops-v1` ainda usa contrato antigo para envio;
+- botão Enviar continua bloqueado;
+- nenhum secret Meta de produção foi configurado pelo código desta Task;
+- nenhum webhook Meta próprio foi criado ainda;
+- nenhum outbound Meta foi persistido automaticamente no histórico próprio ainda;
+- 0975 ainda não tem app próprio inscrito;
+- PapoAI não foi removido nem alterado.
+
+## 10. Isolamento do checkout
 
 Nenhum destes componentes foi alterado:
 
@@ -174,18 +232,7 @@ Nenhum destes componentes foi alterado:
 - estoque
 - Bling
 
-## 9. Gates — continuam OFF
-
-Não alterar ainda:
-
-```text
-0975: human_send_enabled=false, homologated_at=null, outbound_provider=papoai
-1018: human_send_enabled=false, homologated_at=null, outbound_provider=papoai
-```
-
-Não liberar botão Enviar apenas mudando booleans.
-
-## 10. Legado que não deve ser reativado
+## 11. Legado que não deve ser reativado
 
 - `whatsapp-meta-direct-v1`
 - `admin-whatsapp-direct-v1`
@@ -194,15 +241,22 @@ Não liberar botão Enviar apenas mudando booleans.
 - `conversation-worker-v3`
 - `dona-antonia-agent-core-v1`
 
-## 11. Próxima ação exata
+## 12. Próxima ação exata
 
-1. revisar diff/PR de Task 0 + Task 1;
-2. aplicar migration v3 somente após revisão;
-3. iniciar **Task 2 — Adapter de envio Meta** em novo ciclo TDD;
-4. ainda sem ligar gates e sem cliente real;
-5. depois Task 3 — webhook Meta próprio.
+Executar **Task 3 — webhook Meta próprio**:
 
-## 12. Rollback resumido
+1. escrever testes RED para challenge GET e assinatura POST;
+2. criar `supabase/functions/whatsapp-meta-webhook-v1/index.ts`;
+3. reusar `canonicalMessagesFromMeta(...)` e `statusEventsFromMeta(...)` de `_shared/whatsapp-core-v1.mjs`;
+4. resolver canal por `phone_number_id`;
+5. persistir inbound/status idempotentemente;
+6. não executar ANA dentro da request do webhook;
+7. deploy do endpoint sem mexer no 0975 ainda;
+8. gates de envio continuam OFF.
+
+Depois da Task 3 vem Task 4 — outbound canônico/status/dedupe; só depois Task 5 conecta o gateway/botão ao provider adapter.
+
+## 13. Rollback resumido
 
 Enquanto PapoAI estiver em sombra:
 
