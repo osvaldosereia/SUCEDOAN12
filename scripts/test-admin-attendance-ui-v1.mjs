@@ -35,6 +35,9 @@ assert.match(js,/function\s+syncConversationVisibility\s*\(/,'layout deve ser de
 assert.match(js,/state\.conversationOpen\s*=\s*true/,'selecionar conversa deve persistir estado aberto');
 assert.match(js,/async function loadQueues\(\)[^{]*\{[\s\S]*syncConversationVisibility\(\)/,'refresh das filas deve reaplicar visibilidade da conversa');
 assert.match(js,/state\.conversationOpen\s*=\s*false/,'troca explícita de canal pode fechar a conversa');
+assert.match(css,/\.attendance-app\{[^}]*height:100vh[^}]*min-height:0[^}]*overflow:hidden/,'central deve ficar contida na altura do iframe');
+assert.match(css,/\.attendance-grid\{[^}]*min-height:0[^}]*overflow:hidden/,'grid não pode crescer com as filas e criar scroll externo');
+assert.match(css,/\.messages\{[^}]*min-height:0[^}]*overflow:auto/,'histórico deve rolar dentro do painel central');
 assert.match(css,/@media\s*\(max-width:\s*759px\)/);
 assert.match(css,/@media\s*\(min-width:\s*1180px\)/);
-console.log('OK · workspace preserva duas filas, contexto, conversa aberta durante refresh e fallback manual seguro.');
+console.log('OK · workspace preserva duas filas, contexto, histórico visível e viewport contido.');
