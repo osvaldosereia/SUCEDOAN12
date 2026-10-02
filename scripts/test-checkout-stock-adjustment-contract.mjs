@@ -28,8 +28,10 @@ assert.ok(storefront.includes('stock_adjustment'), 'backend must return structur
 assert.ok(storefront.includes('adjusted_items'), 'backend must identify exact affected items');
 assert.ok(storefront.includes('stock_adjusted_retry:true'), 'stock-adjusted order must be marked for minimum-order exception');
 
-assert.ok(orders.includes('items_count:items.count'), 'WhatsApp payload must include item count');
-assert.ok(orders.includes('items_text:items.text'), 'WhatsApp payload must include complete item lines');
+assert.ok(orders.includes('items_count:details.itemCount'), 'WhatsApp payload must include item count from persisted order details');
+assert.ok(orders.includes('items_text:details.itemsText'), 'WhatsApp payload must include the template-safe complete item text');
+assert.ok(orders.includes('products_text:details.productsText'), 'WhatsApp payload must also expose the multiline product text');
+assert.ok(orders.includes('const productLines=lines.map(line=>`• ${line}`);'), 'multiline product text must mark every product line');
 assert.ok(orders.includes('order_items_not_ready'), 'WhatsApp must retry instead of sending an incomplete order');
 
 console.log('checkout resilient stock adjustment + 11h cutoff + complete WhatsApp contract: ok');

@@ -62,9 +62,10 @@ assert.ok(adminApi.includes('if(r.method===\"POST\"&&a===\"order_registration_li
 assert.ok(orderTransport.includes('async function orderDetails'), 'order transport must load the complete persisted checkout order');
 assert.ok(orderTransport.includes('.from("orders")'), 'order transport must load the order row');
 assert.ok(orderTransport.includes('.from("order_items")'), 'order transport must load persisted order items');
-assert.ok(orderTransport.includes('lines.join("\\n")'), 'products must be one item per line');
+assert.ok(orderTransport.includes('const productLines=lines.map(line=>`• ${line}`);'), 'visual products must carry a bullet marker');
+assert.ok(orderTransport.includes('productLines.join("\\n")'), 'visual products must be one item per line');
 assert.ok(orderTransport.includes('basketLines.join("\\n")'), 'multiple baskets must also remain one basket per line');
-assert.ok(!orderTransport.includes('lines.join(" • ")'), 'products must not be flattened with bullet separators');
+assert.ok(orderTransport.includes('const itemsText=lines.join(" • ")'), 'template-safe item text must remain single-line');
 for (const field of [
   'order_date',
   'order_number_short',
@@ -82,7 +83,7 @@ for (const field of [
 ]) {
   assert.ok(orderTransport.includes(`${field}:`), `provider payload must expose ${field}`);
 }
-assert.ok(orderTransport.includes('items_text:details.productsText'), 'legacy template items_text must also become multiline');
+assert.ok(orderTransport.includes('items_text:details.itemsText'), 'legacy template items_text must stay Meta-safe');
 assert.ok(orderTransport.includes('order_items_not_ready'), 'checkout must retry instead of sending an incomplete order');
 assert.ok(orderTransport.includes('scope==="checkout_auto"?"retry":"failed"'), 'checkout must retry when order items are not ready');
 
