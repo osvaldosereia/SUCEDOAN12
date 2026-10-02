@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const helperUrl=new URL('../supabase/functions/_shared/whatsapp-meta-templates-v1.mjs',import.meta.url);
+const edgeUrl=new URL('../supabase/functions/admin-whatsapp-templates-v1/index.ts',import.meta.url);
+
+const {buildTemplateCacheRows}=await import(helperUrl.href);
+
+const syncedAt='2026-10-02T22:10:00.000Z';
+const account={id:'11111111-1111-4111-8111-111111111111',waba_id:'1497253794754816',slug:'dona-antonia-0975'};
+const items=[{
+  meta_template_id:'123',name:'pedido_confirmado',language:'pt_BR',category:'UTILITY',status:'APPROVED',
+  components:[{type:'BODY',text:'Pedido {{1}} confirmado.'}],quality_rating:'GREEN',rejected_reason:null,
+  last_updated_time:'2026-10-02T20:00:00+0000',meta_quality_score:{score:'GREEN'}
+}];
+const existingByKey=new Map([['pedido_confirmado\u0000pt_BR',{
+  metadata:{attendance:{show_in_attendance:true,favorite_order:7},local_note:'preservar'}
+}]]);
+const rows=buildTemplateCacheRows({items,account,existingByKey,syncedAt});
+assert.equal(rows.length,1);
+assert.equal(rows[0].whatsapp_account_id,account.id);
+assert.equal(rows[0].waba_id,account.waba_id);
+assert.equal(rows[0].meta_template_id,'123');
+assert.equal(rows[0].status,'APPROVED');
+assert.equal(rows[0].quality_rating,'GREEN');
+assert.equal(rows[0].last_synced_at,syncedAt);
+assert.deepEqual(rows[0].metadata.attendance,{show_in_attendance:true,favorite_order:7});
+assert.equal(rows[0].metadata.local_note,'preservar');
+assert.equal(rows[0].metadata.sync_source,'meta_cloud_api');
+assert.equal(rows[0].metadata.rejected_reason,null);
+
+assert.equal(fs.existsSync(edgeUrl),true,'Edge Function administrativa de templates deve existir');
+const edge=fs.readFileSync(edgeUrl,'utf8');
+assert.match(edge,/adminAuth/);
+assert.match(edge,/META_WHATSAPP_ACCESS_TOKEN/);
+assert.match(edge,/META_WHATSAPP_GRAPH_VERSION/);
+assert.match(edge,/listTemplatesViaMeta/);
+assert.match(edge,/whatsapp_templates_v1/);
+assert.match(edge,/onConflict:\s*["']waba_id,name,language["']/);
+assert.match(edge,/action===?["']sync["']/);
+assert.match(edge,/action===?["']list["']/);
+assert.doesNotMatch(edge,/EAA[A-Za-z0-9_-]{30,}/,'não pode conter token literal');
+assert.doesNotMatch(edge,/shopping-checkout|shopping-chat-checkout|bling/i,'sync de templates não pode depender do checkout/Bling');
+
+console.log('PASS test-whatsapp-meta-template-admin-v1');
