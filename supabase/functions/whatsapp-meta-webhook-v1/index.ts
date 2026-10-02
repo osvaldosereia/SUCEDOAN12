@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { redactWebhookPayload } from "../_shared/whatsapp-core-v1.mjs";
 import {
   extractMetaPhoneNumberIds,
+  hasMetaMessageOrStatusEvents,
   normalizeMetaWebhook,
   verifyMetaChallenge,
   verifyMetaSignature,
@@ -21,6 +22,7 @@ const VERIFY_TOKEN = Deno.env.get("META_WHATSAPP_VERIFY_TOKEN") || "";
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
+const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
@@ -138,7 +140,7 @@ Deno.serve(async (req: Request) => {
 
     let rawBody = "";
     try { rawBody = await readBodyLimited(req); } catch (error) {
-      if (String(error?.message || error) === "payload_too_large") return json({ ok: false, error: "payload_too_large" }, 413);
+      if (errorText(error) === "payload_too_large") return json({ ok: false, error: "payload_too_large" }, 413);
       throw error;
     }
 
@@ -150,7 +152,10 @@ Deno.serve(async (req: Request) => {
     if (payload?.object !== "whatsapp_business_account") return json({ ok: false, error: "unsupported_object" }, 400);
 
     const phoneNumberIds = extractMetaPhoneNumberIds(payload);
-    if (!phoneNumberIds.length) return json({ ok: true, ignored: true, reason: "no_message_phone_number_id" });
+    if (!phoneNumberIds.length) {
+      if (hasMetaMessageOrStatusEvents(payload)) return json({ ok: false, error: "meta_account_unresolved", unknown_phone_number_ids: [] }, 422);
+      return json({ ok: true, ignored: true, reason: "no_message_phone_number_id" });
+    }
 
     const accounts = await accountMap(phoneNumberIds);
     const normalized = await normalizeMetaWebhook({ payload, rawBody, accountByPhoneNumberId: accounts });
@@ -186,7 +191,7 @@ Deno.serve(async (req: Request) => {
       statuses_pending: statusesPending,
     });
   } catch (error) {
-    console.error("whatsapp-meta-webhook-v1", String(error?.message || error).slice(0, 500));
+    console.error("whatsapp-meta-webhook-v1", errorText(error).slice(0, 500));
     return json({ ok: false, error: "webhook_internal_error" }, 500);
   }
 });
