@@ -35,9 +35,14 @@ assert.match(js,/function\s+syncConversationVisibility\s*\(/,'layout deve ser de
 assert.match(js,/state\.conversationOpen\s*=\s*true/,'selecionar conversa deve persistir estado aberto');
 assert.match(js,/async function loadQueues\(\)[^{]*\{[\s\S]*syncConversationVisibility\(\)/,'refresh das filas deve reaplicar visibilidade da conversa');
 assert.match(js,/state\.conversationOpen\s*=\s*false/,'troca explícita de canal pode fechar a conversa');
+assert.match(js,/function\s+fmtQueueStamp\s*\(/,'fila deve ter data/hora legível no padrão de conversa');
+assert.match(js,/Hoje|Ontem/,'histórico deve reconhecer dias recentes');
+assert.match(js,/message-date-separator/,'histórico deve inserir separadores de data');
+assert.match(js,/last_activity_at\s*\|\|\s*item\.last_message_at/,'card deve exibir a data da atividade efetiva');
+assert.match(css,/\.message-date-separator\{/,'separador de data precisa de estilo próprio');
 assert.match(css,/\.attendance-app\{[^}]*height:100vh[^}]*min-height:0[^}]*overflow:hidden/,'central deve ficar contida na altura do iframe');
 assert.match(css,/\.attendance-grid\{[^}]*min-height:0[^}]*overflow:hidden/,'grid não pode crescer com as filas e criar scroll externo');
 assert.match(css,/\.messages\{[^}]*min-height:0[^}]*overflow:auto/,'histórico deve rolar dentro do painel central');
 assert.match(css,/@media\s*\(max-width:\s*759px\)/);
 assert.match(css,/@media\s*\(min-width:\s*1180px\)/);
-console.log('OK · workspace preserva duas filas, contexto, histórico visível e viewport contido.');
+console.log('OK · workspace preserva filas recentes, datas legíveis, contexto, histórico e viewport contido.');
