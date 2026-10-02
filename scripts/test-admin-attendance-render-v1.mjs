@@ -47,3 +47,4 @@ assert.match(box.textContent,/Mensagem 1/);
 assert.match(box.textContent,/Mensagem 14/);
 assert.equal(document.querySelector('#conversationEmpty').hidden,true,'estado vazio deve permanecer oculto');
 console.log('OK · conversa com 14 mensagens renderiza o histórico no DOM.');
+process.exit(0);
