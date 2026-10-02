@@ -52,7 +52,8 @@ function validateRequest({ accessToken, phoneNumberId, toE164, text, graphVersio
 async function readJsonSafely(response) {
   try {
     return await response.json();
-  } catch {
+  } catch (error) {
+    if (error?.name === 'AbortError') throw error;
     return null;
   }
 }
@@ -91,6 +92,7 @@ export async function sendTextViaMeta({
   };
 
   let response;
+  let responsePayload;
   try {
     response = await fetchImpl(url, {
       method: 'POST',
@@ -101,6 +103,7 @@ export async function sendTextViaMeta({
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
+    responsePayload = await readJsonSafely(response);
   } catch (error) {
     if (controller.signal.aborted || error?.name === 'AbortError') {
       throw new MetaTransportError('meta_timeout', {
@@ -116,7 +119,6 @@ export async function sendTextViaMeta({
     clearTimeout(timeout);
   }
 
-  const responsePayload = await readJsonSafely(response);
   if (!response.ok) {
     const providerError = responsePayload?.error ?? {};
     const status = Number(response.status) || null;
