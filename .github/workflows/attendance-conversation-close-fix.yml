@@ -1,0 +1,20 @@
+name: Attendance conversation close regression
+on:
+  push:
+    branches: [fix/attendance-conversation-closes]
+    paths:
+      - 'scripts/test-admin-attendance-ui-v1.mjs'
+      - 'vitrine/admin/atendimento/attendance.js'
+      - '.github/workflows/attendance-conversation-close-fix.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-admin-attendance-ui-v1.mjs
+      - run: node --check vitrine/admin/atendimento/attendance.js
