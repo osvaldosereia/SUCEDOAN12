@@ -29,6 +29,8 @@ jobs:
           node-version: '22'
       - name: Provider-neutral outbox contract
         run: node scripts/test-attendance-provider-neutral-v3.mjs
+      - name: Meta templates contract
+        run: node scripts/test-whatsapp-meta-templates-v1.mjs
       - name: Meta transport contract
         run: node scripts/test-attendance-meta-send-v1.mjs
       - name: Meta Phone Number ID strictness
