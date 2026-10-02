@@ -59,9 +59,14 @@
             <div><button type="button" id="saveFollowUpBtn">Salvar</button><button type="button" id="clearFollowUpBtn">Limpar</button><button type="button" id="cancelFollowUpBtn">Cancelar</button></div>
           </div>
 
-          <textarea id="messageDraft" rows="2" placeholder="Escreva ou prepare a resposta aqui. O envio ainda está bloqueado."></textarea>
-          <div class="composer-actions"><span id="composerNote">Rascunho habilitado · envio humano em homologação</span><button type="button" class="primary" id="sendBtn" disabled>Enviar</button></div>
-          <small>Envio humano em homologação</small>
+          <textarea id="messageDraft" rows="2" placeholder="Prepare a resposta aqui. Depois copie e envie pelo PapoAI."></textarea>
+          <div class="composer-actions">
+            <span id="composerNote">Envio pelo Admin indisponível · use o fallback seguro</span>
+            <button type="button" id="copyReplyBtn" disabled>Copiar resposta</button>
+            <button type="button" id="openPapoAiBtn" disabled>Abrir PapoAI</button>
+            <button type="button" class="primary" id="sendBtn" disabled>Enviar</button>
+          </div>
+          <small>Envio pelo Admin indisponível até existir transporte oficial homologado para os dois canais.</small>
         </div>
       </section>
 
