@@ -8,7 +8,12 @@ const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 
 type Channel="0975"|"1018";
 type DispatchScope="admin_manual"|"checkout_auto";
-type OrderItem={name_snapshot?:unknown;quantity?:unknown;created_at?:unknown};
+type JsonRecord=Record<string,unknown>;
+type OrderItem={name_snapshot?:unknown;quantity?:unknown;metadata?:unknown;created_at?:unknown};
+type OrderRow={
+  id?:unknown;order_number?:unknown;customer_id?:unknown;phone_e164?:unknown;total?:unknown;payment_method?:unknown;
+  created_at?:unknown;customer_snapshot?:unknown;delivery_address?:unknown;checkout_snapshot?:unknown;basket_name_snapshot?:unknown;
+};
 const providerUrl=async(channel:Channel)=>{
   const envUrl=channel==="1018"
     ? (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL")||"")
@@ -31,26 +36,104 @@ const text=(v:unknown,n=500)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," "
 const uid=(v:unknown)=>{const s=text(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""};
 const money=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(n):""};
 const quantityLabel=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3}).format(n):""};
+const obj=(v:unknown):JsonRecord=>v&&typeof v==="object"&&!Array.isArray(v)?v as JsonRecord:{};
+const arr=(v:unknown):unknown[]=>Array.isArray(v)?v:[];
 const paymentLabel=(v:unknown)=>{
   const raw=text(v,80),key=raw.toLowerCase();
   const labels:Record<string,string>={pix:"PIX",dinheiro:"Dinheiro",cash:"Dinheiro",credito:"Cartão de crédito",credit_card:"Cartão de crédito",alimentacao:"Cartão alimentação",refeicao:"Cartão refeição"};
   return labels[key]||raw||"A confirmar";
 };
-const deliveryLabel=(v:any)=>text(v?.label||v?.date||v?.delivery_date||"A confirmar",120);
+const formatPhoneBr=(v:unknown)=>{
+  let digits=String(v??"").replace(/\D/g,"");
+  if(digits.startsWith("55")&&(digits.length===12||digits.length===13))digits=digits.slice(2);
+  if(digits.length===11)return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
+  if(digits.length===10)return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6)}`;
+  return text(v,40)||"NAO INFORMADO";
+};
+const formatOrderDateCuiaba=(v:unknown)=>{
+  const d=new Date(String(v??""));
+  if(Number.isNaN(d.getTime()))return "NAO INFORMADA";
+  const parts=new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Cuiaba",day:"numeric",month:"long",year:"numeric"}).formatToParts(d);
+  const get=(kind:string)=>parts.find(p=>p.type===kind)?.value||"";
+  const month=get("month");
+  const monthTitle=month?month.charAt(0).toUpperCase()+month.slice(1):"";
+  return `${get("day")} de ${monthTitle} de ${get("year")}`;
+};
+const deliveryLabel=(delivery:JsonRecord,checkoutDelivery:JsonRecord)=>text(
+  delivery.delivery_label||delivery.label||checkoutDelivery.label||checkoutDelivery.delivery_label||checkoutDelivery.delivery_date||delivery.delivery_date||"NAO INFORMADA",
+  160
+);
 
-async function orderItemsSummary(orderId:string){
-  const r=await db.from("order_items")
-    .select("name_snapshot,quantity,created_at")
-    .eq("order_id",orderId)
-    .order("created_at",{ascending:true});
-  if(r.error)throw new Error(`order_items_query_failed: ${text(r.error.message,240)}`);
-  const rows=(r.data||[]) as OrderItem[];
+async function orderDetails(orderId:string){
+  const [orderResult,itemsResult]=await Promise.all([
+    db.from("orders")
+      .select("id,order_number,customer_id,phone_e164,total,payment_method,created_at,customer_snapshot,delivery_address,checkout_snapshot,basket_name_snapshot")
+      .eq("id",orderId)
+      .maybeSingle(),
+    db.from("order_items")
+      .select("name_snapshot,quantity,metadata,created_at")
+      .eq("order_id",orderId)
+      .order("created_at",{ascending:true})
+  ]);
+  if(orderResult.error)throw new Error(`order_query_failed: ${text(orderResult.error.message,240)}`);
+  if(!orderResult.data)throw new Error("order_not_found");
+  if(itemsResult.error)throw new Error(`order_items_query_failed: ${text(itemsResult.error.message,240)}`);
+
+  const order=orderResult.data as OrderRow;
+  const rows=(itemsResult.data||[]) as OrderItem[];
+  const customer=obj(order.customer_snapshot),delivery=obj(order.delivery_address),checkout=obj(order.checkout_snapshot),checkoutDelivery=obj(checkout.delivery),checkoutCustomer=obj(checkout.customer);
   const lines=rows.map((row)=>{
-    const name=text(row.name_snapshot,160)||"Item";
+    const name=text(row.name_snapshot,180)||"Item";
     const qty=quantityLabel(row.quantity)||"1";
     return `${qty}x ${name}`;
   });
-  return {count:rows.length,text:lines.join(" • ")};
+  const productsText=lines.join("\n");
+
+  const cartBaskets=arr(checkout.cart).map(obj).filter(item=>text(item.type,30)==="basket");
+  const basketNames=arr(checkout.basket_names).map(v=>text(v,180)).filter(Boolean);
+  let basketLines:string[]=[];
+  if(basketNames.length){
+    basketLines=basketNames.map((name,index)=>`${quantityLabel(cartBaskets[index]?.qty)||"1"}x ${name}`);
+  }else{
+    const seen=new Set<string>();
+    for(const row of rows){
+      const meta=obj(row.metadata),name=text(meta.basket_name,180);
+      if(!name)continue;
+      const qty=quantityLabel(meta.basket_quantity)||"1";
+      const line=`${qty}x ${name}`;
+      if(!seen.has(line)){seen.add(line);basketLines.push(line)}
+    }
+  }
+  if(!basketLines.length){
+    const fallbackBasket=text(order.basket_name_snapshot,180);
+    if(fallbackBasket)basketLines=[`1x ${fallbackBasket}`];
+  }
+  const basketText=basketLines.length?basketLines.join("\n"):"NENHUMA";
+
+  const addressParts=[delivery.street,delivery.number,delivery.complement].map(v=>text(v,180)).filter(Boolean);
+  const fullNumber=text(order.order_number,80);
+  const customerRegistered=Boolean(text(order.customer_id,80)||text(customer.customer_id,80));
+  const customerName=text(customer.name||customer.display_name||checkoutCustomer.name||checkoutCustomer.display_name||delivery.customer_name,180)||"NAO INFORMADO";
+  const customerPhone=formatPhoneBr(order.phone_e164||customer.phone_e164||checkoutCustomer.phone_e164||delivery.phone);
+
+  return {
+    order,
+    itemCount:rows.length,
+    orderDate:formatOrderDateCuiaba(order.created_at),
+    orderNumber:fullNumber,
+    orderNumberShort:fullNumber?fullNumber.slice(-8):"NAO INFORMADO",
+    customerStatus:customerRegistered?"CADASTRADO":"NOVO",
+    customerName,
+    customerPhone,
+    addressLabel:addressParts.join(", ")||"NAO INFORMADO",
+    districtLabel:text(delivery.district||delivery.neighborhood,140)||"NAO INFORMADO",
+    cityLabel:text(delivery.city,140)||"NAO INFORMADA",
+    deliveryLabel:deliveryLabel(delivery,checkoutDelivery),
+    basketText,
+    productsText,
+    totalFormatted:money(order.total),
+    paymentLabel:paymentLabel(order.payment_method||checkout.payment_label)
+  };
 }
 
 async function claim(orderId:string,scope:DispatchScope){
@@ -97,23 +180,22 @@ Deno.serve(async(req:Request)=>{
     return respond({ok:false,error:"provider_not_configured",status:nextStatus,channel_origin:channel,recipient_kind:item.recipient_kind||null,outbox_id:outboxId},503);
   }
 
-  let items:{count:number;text:string};
+  let details:Awaited<ReturnType<typeof orderDetails>>;
   try{
-    items=await orderItemsSummary(orderId);
+    details=await orderDetails(orderId);
   }catch(error){
     const errorText=text((error as Error)?.message||error,300);
     const nextStatus=scope==="checkout_auto"?"retry":"failed";
     try{await finish(outboxId,nextStatus,null,errorText,scope==="checkout_auto"?30:0)}catch{}
-    return respond({ok:false,error:"order_items_unavailable",status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:422);
+    return respond({ok:false,error:"order_details_unavailable",status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:422);
   }
-  if(items.count===0){
+  if(details.itemCount===0){
     const errorText="order_items_not_ready";
     const nextStatus=scope==="checkout_auto"?"retry":"failed";
     try{await finish(outboxId,nextStatus,null,errorText,scope==="checkout_auto"?30:0)}catch{}
     return respond({ok:false,error:errorText,status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:422);
   }
 
-  const order=item?.payload?.order||{};
   const providerPayload={
     event:"order_received",
     source:scope==="checkout_auto"?"dona_antonia_supabase":"dona_antonia_admin",
@@ -121,15 +203,25 @@ Deno.serve(async(req:Request)=>{
     order_id:item.order_id,
     recipient_kind:text(item.recipient_kind,30),
     phone_e164:item.phone_e164,
-    order_number:text(order.order_number||item?.payload?.order_number||"",60),
+    order_number:details.orderNumber,
     purchased_at:item.created_at,
     channel_origin:channel,
     delivery_mode:"utility_template",
-    total_formatted:money(order.total),
-    payment_label:paymentLabel(order.payment_method),
-    delivery_label:deliveryLabel(order.delivery),
-    items_count:items.count,
-    items_text:items.text
+    order_date:details.orderDate,
+    order_number_short:details.orderNumberShort,
+    customer_status:details.customerStatus,
+    customer_name:details.customerName,
+    customer_phone_formatted:details.customerPhone,
+    address_label:details.addressLabel,
+    district_label:details.districtLabel,
+    city_label:details.cityLabel,
+    delivery_label:details.deliveryLabel,
+    basket_text:details.basketText,
+    products_text:details.productsText,
+    total_formatted:details.totalFormatted,
+    payment_label:details.paymentLabel,
+    items_count:details.itemCount,
+    items_text:details.productsText
   };
 
   const headers:Record<string,string>={"Content-Type":"application/json"};
