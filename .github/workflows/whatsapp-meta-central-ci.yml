@@ -33,5 +33,7 @@ jobs:
         run: node scripts/test-attendance-meta-body-timeout-v1.mjs
       - name: Meta webhook contract
         run: node scripts/test-whatsapp-meta-webhook-v1.mjs
+      - name: Meta webhook TypeScript syntax
+        run: node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts
       - name: Meta secrets guard
         run: node scripts/test-whatsapp-meta-no-secrets-v1.mjs
