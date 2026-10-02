@@ -49,7 +49,7 @@ for (const fn of [
   'async function orderWhatsappSend',
   'async function orderRegistrationLinkIssue'
 ]) {
-  assert.ok(adminApi.includes(fn), `admin UI missing handler: ${fn}`);
+  assert.ok(adminApi.includes(fn), `admin backend missing handler: ${fn}`);
 }
 assert.ok(adminApi.includes('/functions/v1/admin-orders-v1'), 'admin backend must reuse current admin-orders-v1 transport');
 assert.ok(adminApi.includes('ops2_enqueue_admin_order_whatsapp_v1'), 'admin backend must enqueue the order idempotently');
