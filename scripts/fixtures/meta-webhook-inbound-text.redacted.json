@@ -1,0 +1,30 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "840102181903253",
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "+55 65 8449-1018",
+              "phone_number_id": "1218939807961094"
+            },
+            "contacts": [{ "profile": { "name": "Cliente Teste" }, "wa_id": "5565999999999" }],
+            "messages": [
+              {
+                "from": "5565999999999",
+                "id": "wamid.REDACTED_INBOUND_TEXT",
+                "timestamp": "1790968000",
+                "type": "text",
+                "text": { "body": "Mensagem de teste" }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
