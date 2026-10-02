@@ -49,6 +49,7 @@
           <div class="quick-tools" aria-label="Ferramentas rápidas">
             <button type="button" id="catalogBtn" disabled title="Gera o link no rascunho; não envia automaticamente">Catálogo</button>
             <button type="button" id="quickRepliesBtn" disabled>Respostas</button>
+            <button type="button" id="templatesBtn">Templates</button>
             <button type="button" id="productsBtn" disabled>Produtos</button>
             <button type="button" id="moreToolsBtn" disabled>Mais ⋯</button>
           </div>
@@ -56,6 +57,14 @@
           <div class="composer-panel" id="quickRepliesMenu" hidden aria-label="Respostas rápidas">
             <div id="quickRepliesList" class="quick-replies-list"></div>
             <button type="button" id="manageQuickRepliesBtn" class="panel-manage">Gerenciar respostas</button>
+          </div>
+          <div class="composer-panel" id="templatesMenu" hidden aria-label="Templates do WhatsApp">
+            <div class="composer-actions">
+              <strong>Templates aprovados do canal</strong>
+              <button type="button" id="templateSyncBtn">Atualizar</button>
+            </div>
+            <small id="templatesStatus">Abra para sincronizar com a Meta.</small>
+            <div id="templatesList" class="quick-replies-list"></div>
           </div>
           <div class="composer-panel more-tools-menu" id="moreToolsMenu" hidden>
             <button type="button" id="quoteBtn" disabled>Criar orçamento</button>
@@ -127,5 +136,6 @@
   </main>
   <script type="module" src="./attendance.js"></script>
   <script type="module" src="./attendance-send.js"></script>
+  <script type="module" src="./attendance-templates.js"></script>
 </body>
 </html>
