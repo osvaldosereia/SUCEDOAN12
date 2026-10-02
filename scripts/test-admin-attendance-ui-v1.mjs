@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const htmlPath=new URL('../vitrine/admin/atendimento/index.html',import.meta.url);
+const cssPath=new URL('../vitrine/admin/atendimento/attendance.css',import.meta.url);
+const jsPath=new URL('../vitrine/admin/atendimento/attendance.js',import.meta.url);
+for(const p of [htmlPath,cssPath,jsPath])assert.ok(fs.existsSync(p),`${p.pathname} deve existir`);
+const html=fs.readFileSync(htmlPath,'utf8');
+const css=fs.readFileSync(cssPath,'utf8');
+const js=fs.readFileSync(jsPath,'utf8');
+
+assert.match(html,/data-channel="0975"/);
+assert.match(html,/data-channel="1018"/);
+assert.match(html,/id="conversationPane"/);
+assert.match(html,/id="contextPane"/);
+for(const tab of ['Cliente','Pedidos','Produtos','Assistente'])assert.match(html,new RegExp(`>${tab}<`));
+assert.doesNotMatch(html,/Kanban|pipeline|campanha/i);
+assert.match(html,/id="copyReplyBtn"/);
+assert.match(html,/id="openPapoAiBtn"/);
+assert.match(html,/id="sendBtn"[^>]*disabled/);
+assert.match(js,/ADMIN_ATTENDANCE_API/);
+assert.match(js,/da_finance_access_token_v1/);
+assert.match(js,/QUEUE_PAGE_SIZE\s*=\s*50/);
+assert.match(js,/MESSAGE_PAGE_SIZE\s*=\s*30/);
+assert.match(js,/endsWith\('0975'\)/);
+assert.match(js,/endsWith\('1018'\)/);
+assert.match(js,/Promise\.all/);
+assert.match(js,/textContent/);
+assert.match(js,/Envio pelo Admin indisponível/);
+assert.match(js,/copyDraftToClipboard/);
+assert.match(js,/openPapoAi/);
+assert.match(js,/250/);
+assert.match(css,/@media\s*\(max-width:\s*759px\)/);
+assert.match(css,/@media\s*\(min-width:\s*1180px\)/);
+console.log('OK · workspace preserva duas filas, contexto e fallback manual sem expor envio não homologado.');
