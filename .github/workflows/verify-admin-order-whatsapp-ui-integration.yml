@@ -1,0 +1,39 @@
+name: Verify admin order WhatsApp UI integration
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
+      - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
+  push:
+    branches: [main, feat/admin-order-whatsapp-main-integration-20261001]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
+      - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Contract
+        run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
+      - name: Inline JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`vitrine/admin/index.html inline script ${i+1}: ${e.message}`)}});
+          console.log(`inline syntax OK (${scripts.length} script blocks)`);
+          NODE
+      - name: Diff check
+        run: git diff --check HEAD^ HEAD || git diff --check
