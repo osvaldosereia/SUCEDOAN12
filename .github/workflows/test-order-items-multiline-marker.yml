@@ -5,13 +5,38 @@ on:
     branches:
       - fix/order-items-multiline-whatsapp
 
+permissions:
+  contents: write
+
 jobs:
   contract:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: fix/order-items-multiline-whatsapp
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Apply minimal multiline marker fix
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('supabase/functions/admin-orders-v1/index.ts')
+          s=p.read_text()
+          old='''  const productsText=lines.join("\\n");\n  const itemsText=lines.join(" • ").replace(/[\\r\\n\\t]+/g," ").replace(/ {4,}/g,"   ").trim();'''
+          new='''  const productLines=lines.map(line=>`• ${line}`);\n  const productsText=productLines.join("\\n");\n  const itemsText=lines.join(" • ").replace(/[\\r\\n\\t]+/g," ").replace(/ {4,}/g,"   ").trim();'''
+          if old not in s:
+              raise SystemExit('expected source block not found')
+          p.write_text(s.replace(old,new,1))
+          PY
       - run: node scripts/test-order-items-multiline-marker.mjs
       - run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
+      - name: Commit tested fix
+        run: |
+          git config user.name "Dona Antonia Ops"
+          git config user.email "actions@users.noreply.github.com"
+          git add supabase/functions/admin-orders-v1/index.ts
+          git commit -m "fix(whatsapp): formatar produtos um por linha com marcador"
+          git push origin HEAD:fix/order-items-multiline-whatsapp
