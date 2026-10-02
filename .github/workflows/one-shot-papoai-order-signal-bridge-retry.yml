@@ -1,0 +1,47 @@
+name: One-shot PapoAI order signal bridge retry
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-papoai-order-signal-bridge-retry.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reuse GREEN generator from first run
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/one-shot-papoai-order-signal-bridge.yml')
+          lines=p.read_text().splitlines()
+          start=next(i for i,l in enumerate(lines) if l.strip()=='- name: GREEN - add idempotent signal bridge behind off gate')
+          run_i=start+1
+          assert lines[run_i].strip()=='run: |'
+          end=next(i for i in range(run_i+1,len(lines)) if lines[i].strip()=='- name: Verify contracts')
+          body=[]
+          for l in lines[run_i+1:end]:
+              body.append(l[10:] if l.startswith('          ') else l)
+          Path('/tmp/green.sh').write_text('\n'.join(body)+'\n')
+          PY
+          bash /tmp/green.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('supabase/config.toml')
+          p.write_text(p.read_text().rstrip()+'\n')
+          PY
+      - name: Verify contracts
+        run: |
+          node scripts/test-papoai-order-signal-bridge-v1.mjs
+          node scripts/test-checkout-whatsapp-outbox.mjs
+          git diff --check
+      - name: Commit and cleanup
+        run: |
+          git config user.name "Dona Antonia Ops"
+          git config user.email "actions@users.noreply.github.com"
+          git add supabase/sql/20261002_papoai_order_signal_bridge_v1.sql supabase/functions/papoai-order-signals-v1/index.ts supabase/functions/admin-orders-v1/index.ts supabase/config.toml scripts/test-papoai-order-signal-bridge-v1.mjs
+          git commit -m "feat(papoai): prepara ponte idempotente de sinais do pedido"
+          git rm .github/workflows/one-shot-papoai-order-signal-bridge.yml .github/workflows/one-shot-papoai-order-signal-bridge-retry.yml
+          git commit -m "chore: remove one-shots de sinais PapoAI"
+          git push
