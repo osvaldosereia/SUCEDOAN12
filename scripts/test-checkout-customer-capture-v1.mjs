@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
+// Mantém a suíte principal do checkout acionada neste PR de retorno ao WhatsApp.
 const capture=fs.readFileSync('checkout-resilience.js','utf8');
 const backendGuard=fs.readFileSync('supabase/migrations/20261002143000_require_storefront_checkout_basics.sql','utf8');
 for(const page of ['index.html','vitrine/index.html']){
