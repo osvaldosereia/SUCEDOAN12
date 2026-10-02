@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const path='supabase/sql/20261002_admin_attendance_organization_v1.sql';
+const setLabelsPath='supabase/sql/20261002_admin_attendance_set_labels_v1.sql';
 assert.ok(fs.existsSync(path),'migration de organização deve existir');
-const sql=fs.readFileSync(path,'utf8');
+assert.ok(fs.existsSync(setLabelsPath),'migration de atribuição atômica deve existir');
+const sql=fs.readFileSync(path,'utf8')+'\n'+fs.readFileSync(setLabelsPath,'utf8');
 
 for(const table of ['attendance_labels_v1','attendance_conversation_labels_v1','attendance_quick_replies_v1']) assert.match(sql,new RegExp(`create\\s+table[\\s\\S]*${table}`,'i'),`missing ${table}`);
 assert.match(sql,/attendance_conversation_labels_v1[\s\S]*foreign key[\s\S]*conversations/i,'vínculo deve referenciar conversa');
