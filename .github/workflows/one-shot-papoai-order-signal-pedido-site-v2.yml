@@ -1,0 +1,69 @@
+name: One-shot PapoAI PEDIDO_SITE signal
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-papoai-order-signal-pedido-site-v2.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: RED
+        run: |
+          node - <<'JS'
+          const fs=require('fs'),assert=require('assert');
+          const admin=fs.readFileSync('supabase/functions/admin-orders-v1/index.ts','utf8');
+          const test=fs.readFileSync('scripts/test-papoai-order-signal-bridge-v1.mjs','utf8');
+          let failed=false;
+          try{assert.match(admin,/const keys=\["PEDIDO_SITE",/)}catch{failed=true}
+          try{assert.match(test,/PEDIDO_SITE/)}catch{failed=true}
+          if(!failed)throw new Error('RED failed: PEDIDO_SITE already wired');
+          console.log('RED confirmed: PEDIDO_SITE missing from bridge contract');
+          JS
+      - name: GREEN
+        run: |
+          cat > supabase/sql/20261002_papoai_order_signal_pedido_site_v2.sql <<'SQL'
+          -- Restaura o sinal transacional PEDIDO_SITE na ponte interna PapoAI.
+          create or replace function public.ops2_papoai_signal_allowed_v1(p_signal text)
+          returns boolean language sql immutable set search_path to '' as $$
+            select upper(btrim(coalesce(p_signal,''))) = any(array[
+              'PEDIDO_SITE',
+              'INT_CESTAS','INT_BEBE','INT_CABELOS','INT_BELEZA','INT_HIGIENE','INT_LIMPEZA','INT_LAVANDERIA','INT_PET','INT_CASA','INT_DOCES_LANCHES',
+              'BR_NIVEA','BR_ELSEVE',
+              'CTA_OFERTAS','CTA_BEBE','CTA_CABELOS','CTA_BELEZA','CTA_LIMPEZA','CTA_LAVANDERIA','CTA_PET'
+            ]::text[])
+          $$;
+          revoke all on function public.ops2_papoai_signal_allowed_v1(text) from public,anon,authenticated;
+          grant execute on function public.ops2_papoai_signal_allowed_v1(text) to service_role;
+          SQL
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('supabase/functions/admin-orders-v1/index.ts')
+          s=p.read_text()
+          old='const keys=[...details.marketingInterests.map((v:string)=>`INT_${v}`),...details.marketingBrands.map((v:string)=>`BR_${v}`)];'
+          new='const keys=["PEDIDO_SITE",...details.marketingInterests.map((v:string)=>`INT_${v}`),...details.marketingBrands.map((v:string)=>`BR_${v}`)];'
+          if old not in s: raise SystemExit('bridge keys marker not found')
+          p.write_text(s.replace(old,new,1))
+
+          t=Path('scripts/test-papoai-order-signal-bridge-v1.mjs')
+          x=t.read_text()
+          x=x.replace("for(const key of ['INT_CESTAS'","for(const key of ['PEDIDO_SITE','INT_CESTAS'",1)
+          x=x.replace("assert.match(admin,/details\\.marketingInterests\\.map/","assert.match(admin,/const keys=\\[\"PEDIDO_SITE\",/,'dispatcher must always emit PEDIDO_SITE');\nassert.match(admin,/details\\.marketingInterests\\.map/",1)
+          t.write_text(x)
+          PY
+      - name: Verify
+        run: |
+          node scripts/test-papoai-order-signal-bridge-v1.mjs
+          node scripts/test-checkout-whatsapp-outbox.mjs
+          git diff --check
+      - name: Commit and cleanup
+        run: |
+          git config user.name "Dona Antonia Ops"
+          git config user.email "actions@users.noreply.github.com"
+          git add supabase/sql/20261002_papoai_order_signal_pedido_site_v2.sql supabase/functions/admin-orders-v1/index.ts scripts/test-papoai-order-signal-bridge-v1.mjs
+          git commit -m "fix(papoai): restaura sinal PEDIDO_SITE na ponte"
+          git rm .github/workflows/one-shot-papoai-order-signal-pedido-site-v2.yml
+          git commit -m "chore: remove one-shot PEDIDO_SITE"
+          git push
