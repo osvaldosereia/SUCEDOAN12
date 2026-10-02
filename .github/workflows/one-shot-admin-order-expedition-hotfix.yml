@@ -1,0 +1,144 @@
+name: one-shot-admin-order-expedition-hotfix
+
+on:
+  push:
+    branches:
+      - fix/admin-order-expedition-ui-20261002
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/admin-order-expedition-ui-20261002
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Confirm RED before patch
+        shell: bash
+        run: |
+          if node scripts/test-admin-order-expedition-ui-hotfix.mjs; then
+            echo 'Expected the new regression test to fail before the patch.' >&2
+            exit 1
+          fi
+          echo 'RED confirmed: current admin still has the reported regression.'
+      - name: Patch admin order expedition UI
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          admin_path = Path('vitrine/admin/index.html')
+          s = admin_path.read_text(encoding='utf-8')
+
+          def replace_one(old, new, label):
+              global s
+              count = s.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly 1 match, found {count}')
+              s = s.replace(old, new, 1)
+
+          replace_one(
+              "  function orderStockAlertHtml(readiness){\n    if(!readiness||readiness.ok!==false)return '';",
+              "  function orderStockAlertHtml(readiness){\n    if(!readiness)return state.orderFocusIssue==='stock'?'<div class=\"rule-notice\" id=\"orderStockAlert\"><strong>Conferência de estoque indisponível</strong><div class=\"sub\">Não foi possível carregar a conferência de estoque agora. Feche o pedido, clique em Atualizar e tente novamente.</div></div>':'';\n    if(readiness.ok!==false)return state.orderFocusIssue==='stock'?'<div class=\"rule-notice\" id=\"orderStockAlert\"><strong>Estoque conferido</strong><div class=\"sub\">Nenhuma falta de estoque foi encontrada agora. A lista pode estar desatualizada; ao fechar este pedido, clique em Atualizar.</div></div>':'';",
+              'stock focused-state feedback'
+          )
+          replace_one("x.requested||0", "x.required??x.requested??0", 'stock required quantity')
+
+          replace_one(
+              "        '<button class=\"primary\" id=\"sendOrderWhatsApp\" type=\"button\" disabled>Enviar pedido no WhatsApp</button>'+\n        '<button class=\"secondary\" id=\"issueOrderRegistrationLink\" type=\"button\" '+(phone&&!registered?'':'disabled')+'>'+(registered?'Cadastro concluído':'Gerar link de cadastro')+'</button>'+",
+              "        '<button class=\"primary\" id=\"sendOrderWhatsApp\" type=\"button\" disabled>Enviar pedido para WhatsApp da empresa</button>'+\n        '<button class=\"secondary\" id=\"openOrderCustomerWhatsApp\" type=\"button\" '+(phone?'':'disabled')+'>Abrir WhatsApp do cliente</button>'+\n        '<button class=\"secondary\" id=\"issueOrderRegistrationLink\" type=\"button\" '+(phone&&!registered?'':'disabled')+'>'+(registered?'Cadastro concluído':'Gerar link de cadastro')+'</button>'+",
+              'WhatsApp action buttons'
+          )
+          replace_one(
+              "id=\"orderRegistrationLinkActions\" class=\"hidden\" style=\"margin-top:10px\"",
+              "id=\"orderRegistrationLinkActions\" class=\"hidden\" style=\"display:none!important;margin-top:10px\"",
+              'registration link default hidden state'
+          )
+          replace_one("Abrir WhatsApp com link", "Abrir WhatsApp do cliente com link de cadastro", 'registration link WhatsApp label')
+          replace_one(">Copiar link</button>", ">Copiar link de cadastro</button>", 'registration copy label')
+          replace_one("'Cópia 0975: '", "'Empresa 0975: '", 'business WhatsApp status label')
+          replace_one(
+              "    const registrationBtn=$('#issueOrderRegistrationLink');",
+              "    const registrationBtn=$('#issueOrderRegistrationLink');\n    const linkActions=$('#orderRegistrationLinkActions');if(linkActions&&data?.registration_complete===true){linkActions.style.setProperty('display','none','important');delete linkActions.dataset.url}",
+              'hide registration link after completed registration'
+          )
+
+          replace_one(
+              "  async function refreshCurrentOrderWhatsappRegistration(){\n    const oid=state.currentOrder?.order?.id;if(!oid)return;\n    try{const data=await api('order_registration_link_status',{id:oid});renderCurrentOrderWhatsappStatus(data)}catch{}\n  }",
+              "  async function refreshCurrentOrderWhatsappRegistration(){\n    const oid=state.currentOrder?.order?.id;if(!oid)return false;\n    try{const data=await api('order_registration_link_status',{id:oid});renderCurrentOrderWhatsappStatus(data);return true}catch(e){console.warn('Falha ao atualizar status do WhatsApp do pedido',e);return false}\n  }",
+              'WhatsApp status refresh result'
+          )
+          replace_one(
+              "  async function sendCurrentOrderWhatsapp(){\n    const oid=state.currentOrder?.order?.id,btn=$('#sendOrderWhatsApp');if(!oid||!btn)return;\n    btn.disabled=true;btn.textContent='Enviando…';\n    try{const data=await api('order_whatsapp_send',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:oid})});renderCurrentOrderWhatsappStatus(data.status_snapshot||{});toast(data.delivery_ok?'Pedido enviado ao cliente e cópia 0975 registrada':'Envio preparado; revise o status do WhatsApp')}catch(e){toast(errorMessage(e.message))}\n    finally{if(document.contains(btn))btn.textContent='Atualizando…';await refreshCurrentOrderWhatsappRegistration()}\n  }",
+              "  async function sendCurrentOrderWhatsapp(){\n    const oid=state.currentOrder?.order?.id,btn=$('#sendOrderWhatsApp');if(!oid||!btn)return;\n    const idle='Enviar pedido para WhatsApp da empresa',wasDisabled=btn.disabled;let sent=false;\n    btn.disabled=true;btn.textContent='Enviando…';\n    try{const data=await api('order_whatsapp_send',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:oid})});sent=true;renderCurrentOrderWhatsappStatus(data.status_snapshot||{});toast(data.delivery_ok?'Pedido enviado para o WhatsApp da empresa':'Envio preparado; revise o status do WhatsApp')}catch(e){toast(errorMessage(e.message))}\n    finally{if(document.contains(btn))btn.textContent='Atualizando…';const refreshed=await refreshCurrentOrderWhatsappRegistration();if(document.contains(btn)){btn.textContent=idle;if(!refreshed)btn.disabled=wasDisabled}if(sent&&!refreshed)toast('Pedido enviado, mas o status não atualizou. Clique em Atualizar para conferir.')}\n  }",
+              'company WhatsApp button lifecycle'
+          )
+          replace_one(
+              "    box.dataset.url=data.registration_url;box.classList.remove('hidden');",
+              "    box.dataset.url=data.registration_url;box.classList.remove('hidden');box.style.setProperty('display','block','important');",
+              'show registration link actions only after issuance'
+          )
+          replace_one(
+              "    value.textContent=sent?'Link enviado pelo PapoAI. Também deixei as opções abaixo disponíveis.':'Link criado. Se a janela do PapoAI estiver fechada, use uma das opções abaixo.';",
+              "    value.textContent=sent?'Link de cadastro enviado ao cliente. As opções abaixo também ficam disponíveis.':'Link de cadastro criado. Use as opções abaixo para enviar ao cliente ou copiar o link.';",
+              'registration link explanation'
+          )
+
+          customer_functions = r'''  function currentOrderCustomerWhatsappMessage(){
+    const d=state.currentOrder||{},o=d.order||{},items=Array.isArray(d.items)?d.items:[],code=o.order_number||o.id||'';
+    const lines=['Olá! Segue o seu pedido da Dona Antônia'+(code?' '+code:'')+'.'];
+    if(items.length){lines.push('');items.forEach(item=>{const qty=Number(item.quantity||item.qty||1)||1,name=item.name_snapshot||item.product_name||item.name||item.title||'Item';lines.push('• '+qty+'x '+name)})}
+    const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('','Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+    return lines.join('\n')
+  }
+  function openCurrentOrderCustomerWhatsapp(){
+    const o=state.currentOrder?.order||{},phone=phoneDigits(o.whatsapp_phone_e164||o.delivery_address_snapshot?.phone||'');if(!phone){toast('Pedido sem WhatsApp do cliente');return}
+    const popup=window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(currentOrderCustomerWhatsappMessage()),'_blank','noopener');if(!popup)toast('O navegador bloqueou a abertura do WhatsApp')
+  }
+'''
+          replace_one("  function currentOrderRegistrationUrl(){", customer_functions + "  function currentOrderRegistrationUrl(){", 'customer WhatsApp functions')
+          replace_one(
+              "    if($('#sendOrderWhatsApp'))$('#sendOrderWhatsApp').onclick=sendCurrentOrderWhatsapp;",
+              "    if($('#sendOrderWhatsApp'))$('#sendOrderWhatsApp').onclick=sendCurrentOrderWhatsapp;\n    if($('#openOrderCustomerWhatsApp'))$('#openOrderCustomerWhatsApp').onclick=openCurrentOrderCustomerWhatsapp;",
+              'customer WhatsApp binding'
+          )
+
+          admin_path.write_text(s, encoding='utf-8')
+
+          test_path = Path('scripts/test-admin-order-whatsapp-ui-integration.mjs')
+          t = test_path.read_text(encoding='utf-8')
+          replacements = {
+              "  'Enviar pedido no WhatsApp',": "  'Enviar pedido para WhatsApp da empresa',\n  'Abrir WhatsApp do cliente',",
+              "  'Abrir WhatsApp com link',": "  'Abrir WhatsApp do cliente com link de cadastro',",
+              "  'Copiar link'": "  'Copiar link de cadastro'",
+              "  'function openCurrentOrderRegistrationWhatsapp',": "  'function openCurrentOrderCustomerWhatsapp',\n  'function openCurrentOrderRegistrationWhatsapp',",
+              "finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Enviar pedido no WhatsApp'}await refreshCurrentOrderWhatsappRegistration()}": "finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Enviar pedido para WhatsApp da empresa'}await refreshCurrentOrderWhatsappRegistration()}"
+          }
+          for old, new in replacements.items():
+              if old not in t:
+                  raise SystemExit(f'integration test patch missing: {old}')
+              t = t.replace(old, new, 1)
+          test_path.write_text(t, encoding='utf-8')
+          PY
+      - name: Run GREEN regression checks
+        shell: bash
+        run: |
+          node scripts/test-admin-order-expedition-ui-hotfix.mjs
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          git diff --check
+      - name: Commit tested patch and remove one-shot workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/one-shot-admin-order-expedition-hotfix.yml
+          git add vitrine/admin/index.html scripts/test-admin-order-whatsapp-ui-integration.mjs scripts/test-admin-order-expedition-ui-hotfix.mjs
+          git commit -m 'fix(admin): clarify stock and WhatsApp expedition actions'
+          git push origin HEAD:fix/admin-order-expedition-ui-20261002
