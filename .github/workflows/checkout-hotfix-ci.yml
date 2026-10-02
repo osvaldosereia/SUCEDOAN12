@@ -14,6 +14,8 @@ on:
     paths:
       - 'checkout-resilience.js'
       - 'scripts/test-checkout-customer-capture-v1.mjs'
+      - 'scripts/test-checkout-whatsapp-return.mjs'
+      - 'supabase/migrations/20261002150000_checkout_whatsapp_return_channel.sql'
       - 'index.html'
       - 'vitrine/index.html'
       - 'supabase/functions/storefront-v2/index.ts'
