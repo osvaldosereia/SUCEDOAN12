@@ -27,8 +27,12 @@ assert.match(acceptanceSection, /idempotent|already_accepted/i);
 
 // O mesmo wamid pode chegar pelo PapoAI durante coexistência. Deve existir uma única
 // mensagem canônica por conta para wamid, independentemente do provider que ecoou primeiro.
-assert.match(sql, /create\s+unique\s+index[\s\S]+whatsapp_account_id\s*,\s*provider_message_id[\s\S]+provider_message_id\s+like\s+'wamid\\\.%'/i,
-  'wamid precisa de unicidade cross-provider por conta');
+assert.match(sql, /create\s+unique\s+index\s+if\s+not\s+exists\s+whatsapp_messages_wamid_account_uidx/i,
+  'índice canônico de wamid deve existir');
+assert.match(sql, /on\s+public\.whatsapp_messages_v1\s*\(\s*whatsapp_account_id\s*,\s*provider_message_id\s*\)/i,
+  'índice wamid deve ser por conta + provider_message_id');
+assert.match(sql, /where\s+provider_message_id\s+like\s+'wamid\.%'/i,
+  'índice cross-provider deve se limitar a IDs oficiais wamid');
 assert.match(sql, /create\s+or\s+replace\s+function\s+public\.whatsapp_ingest_event_v1/i,
   'ingest precisa reconciliar shadow PapoAI sem depender apenas do índice provider-specific');
 assert.match(sql, /v_existing_wamid_message_id/i,
