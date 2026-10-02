@@ -25,8 +25,8 @@ assert.equal(normalizeProductQuery(' Omo '),'Omo');
 
 const api=fs.readFileSync(apiPath,'utf8');
 for(const action of ['accounts','queue','conversation','context','products','media','labels','conversation_labels','quick_replies'])assert.match(api,new RegExp(`READ_ACTIONS[^\\n]*${action}`));
-for(const action of ['mark_read','follow_up','issue_catalog','marketing_opt_out','label_save','label_deactivate','conversation_labels_set','quick_reply_save','quick_reply_deactivate'])assert.match(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${action}`));
-for(const unsupported of ['send_text','takeover','release'])assert.doesNotMatch(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${unsupported}`),`${unsupported} não pode ficar exposto enquanto PapoAI não estiver homologado`);
+for(const action of ['mark_read','follow_up','issue_catalog','marketing_opt_out','label_save','label_deactivate','conversation_labels_set','quick_reply_save','quick_reply_deactivate','send_text'])assert.match(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${action}`));
+for(const unsupported of ['takeover','release'])assert.doesNotMatch(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${unsupported}`),`${unsupported} não pode ficar exposto enquanto controle da ANA não estiver homologado`);
 assert.match(api,/admin_users/);
 assert.match(api,/ops2_admin_attendance_queue_v3/);
 assert.doesNotMatch(api,/ops2_admin_attendance_queue_v1/,'gateway v3 não deve voltar à fila legada');
@@ -34,11 +34,14 @@ assert.match(api,/ops2_admin_attendance_conversation_v1/);
 assert.match(api,/ops2_admin_attendance_context_v1/);
 assert.match(api,/ops2_issue_papoai_catalog_link_v1/);
 assert.match(api,/ops2_admin_attendance_marketing_optout_v1/);
+assert.match(api,/ops2_admin_attendance_enqueue_text_v2/);
+assert.match(api,/ops2_admin_attendance_claim_outbox_v2/);
+assert.match(api,/ops2_papoai_attendance_provider_url_v1/);
 assert.match(api,/action===['"]media['"]|action===["']media["']/);
-assert.doesNotMatch(api,/dispatchQueuedOutbox|callControlWebhook|PAPOAI_ATTENDANCE_CONTROL_ENABLED/,'transporte não homologado não deve permanecer ativo no gateway');
+assert.doesNotMatch(api,/callControlWebhook|PAPOAI_ATTENDANCE_CONTROL_ENABLED/,'controle da ANA continua bloqueado');
 assert.doesNotMatch(api,/https:\/\/webpublic\.papoai|webhooks\/in\//i,'URLs PapoAI não podem ser gravadas no código');
 
 const config=fs.readFileSync(configPath,'utf8');
 assert.match(config,/\[functions\.admin-whatsapp-ops-v1\][\s\S]*?verify_jwt\s*=\s*false/);
 assert.doesNotMatch(config,/\[functions\.admin-attendance-v1\]/);
-console.log('OK · gateway da Central v3 usa autenticação Admin, organização interna, mídia privada e bloqueia transporte humano não homologado.');
+console.log('OK · gateway da Central v3 usa autenticação Admin, mídia privada e envio humano oficial atrás de gates.');

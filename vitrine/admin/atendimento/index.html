@@ -73,14 +73,14 @@
             <div><button type="button" id="saveFollowUpBtn">Salvar</button><button type="button" id="clearFollowUpBtn">Limpar</button><button type="button" id="cancelFollowUpBtn">Cancelar</button></div>
           </div>
 
-          <textarea id="messageDraft" rows="2" placeholder="Prepare a resposta aqui. Depois copie e envie pelo PapoAI."></textarea>
+          <textarea id="messageDraft" rows="2" placeholder="Digite sua resposta…"></textarea>
           <div class="composer-actions">
-            <span id="composerNote">Envio pelo Admin indisponível · use o fallback seguro</span>
+            <span id="composerNote">Selecione uma conversa</span>
             <button type="button" id="copyReplyBtn" disabled>Copiar resposta</button>
             <button type="button" id="openPapoAiBtn" disabled>Abrir PapoAI</button>
             <button type="button" class="primary" id="sendBtn" disabled>Enviar</button>
           </div>
-          <small>Envio pelo Admin indisponível até existir transporte oficial homologado para os dois canais.</small>
+          <small>Texto livre é enviado somente dentro da janela de 24h e quando o canal estiver homologado. Enter envia; Shift+Enter quebra a linha.</small>
         </div>
       </section>
 
@@ -126,5 +126,6 @@
     </div>
   </main>
   <script type="module" src="./attendance.js"></script>
+  <script type="module" src="./attendance-send.js"></script>
 </body>
 </html>
