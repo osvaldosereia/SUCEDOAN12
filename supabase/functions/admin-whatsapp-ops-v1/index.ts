@@ -1,13 +1,18 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {validUuid,serviceWindowState,normalizeProductQuery} from "../_shared/admin-attendance-domain-v1.mjs";
+import {findProviderMediaDescriptor,isAllowedProviderMediaUrl,isAllowedAttendanceMime,normalizedAttendanceMime,safeAttendanceFilename,readBodyLimited} from "../_shared/attendance-media-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
-const READ_ACTIONS=new Set(["accounts","queue","conversation","context","products"]);
+const READ_ACTIONS=new Set(["accounts","queue","conversation","context","products","media"]);
 const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","marketing_opt_out"]);
+const MEDIA_BUCKET="attendance-media-v1";
+const MEDIA_RETENTION_DAYS=30;
+const MEDIA_SIGNED_URL_SECONDS=600;
+const MEDIA_MAX_BYTES=20*1024*1024;
 
 const clean=(v:unknown,max=200)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const num=(v:unknown,fallback:number,min:number,max:number)=>{const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,Math.trunc(n))):fallback};
@@ -57,6 +62,60 @@ async function productSearch(q:string,limit:number){
   }));
 }
 
+async function signedMedia(objectPath:string,mimeType:string|null,filename:string|null){
+  const signed=await db.storage.from(MEDIA_BUCKET).createSignedUrl(objectPath,MEDIA_SIGNED_URL_SECONDS,{download:false});
+  if(signed.error||!signed.data?.signedUrl)throw signed.error||new Error("media_sign_failed");
+  return {ok:true,url:signed.data.signedUrl,mime_type:mimeType,filename,expires_at:new Date(Date.now()+MEDIA_SIGNED_URL_SECONDS*1000).toISOString()};
+}
+
+async function cleanupExpiredMediaCache(){
+  const now=new Date().toISOString();
+  const old=await db.from("attendance_media_cache_v1").select("message_id,object_path").lt("expires_at",now).limit(10);
+  if(old.error||!(old.data||[]).length)return;
+  const paths=(old.data||[]).map((x:any)=>String(x.object_path||"")).filter(Boolean);
+  if(paths.length)await db.storage.from(MEDIA_BUCKET).remove(paths);
+  const ids=(old.data||[]).map((x:any)=>x.message_id).filter(Boolean);
+  if(ids.length)await db.from("attendance_media_cache_v1").delete().in("message_id",ids);
+}
+
+async function resolveAttendanceMedia(messageId:string){
+  cleanupExpiredMediaCache().catch(()=>{});
+  const existing=await db.from("attendance_media_cache_v1").select("message_id,object_path,mime_type,filename,expires_at").eq("message_id",messageId).maybeSingle();
+  if(existing.error)throw existing.error;
+  if(existing.data&&Date.parse(existing.data.expires_at)>Date.now())return await signedMedia(existing.data.object_path,existing.data.mime_type,existing.data.filename);
+  if(existing.data){
+    await db.storage.from(MEDIA_BUCKET).remove([existing.data.object_path]);
+    await db.from("attendance_media_cache_v1").delete().eq("message_id",messageId);
+  }
+
+  const message=await db.from("whatsapp_messages_v1").select("id,provider,message_type,metadata").eq("id",messageId).maybeSingle();
+  if(message.error)throw message.error;
+  if(!message.data)return {ok:false,error:"message_not_found"};
+  if(String(message.data.provider||"")!=="papoai")return {ok:false,error:"media_provider_unsupported"};
+  const metadata:any=message.data.metadata&&typeof message.data.metadata==="object"?message.data.metadata:{};
+  const captureId=validUuid(metadata.legacy_capture_id);
+  if(!captureId)return {ok:false,error:"media_capture_unavailable"};
+  const capture=await db.from("papoai_webhook_inbox_v2").select("payload").eq("id",captureId).maybeSingle();
+  if(capture.error)throw capture.error;
+  const descriptor=findProviderMediaDescriptor(capture.data?.payload);
+  if(!descriptor||!isAllowedProviderMediaUrl(descriptor.provider_url))return {ok:false,error:"media_unavailable"};
+
+  const upstream=await fetch(descriptor.provider_url,{method:"GET",redirect:"error",headers:{"Accept":"*/*"}});
+  if(!upstream.ok)return {ok:false,error:"media_provider_fetch_failed"};
+  const upstreamMime=normalizedAttendanceMime(upstream.headers.get("content-type"));
+  const mimeType=isAllowedAttendanceMime(upstreamMime)?upstreamMime:descriptor.mime_type;
+  if(!isAllowedAttendanceMime(mimeType))return {ok:false,error:"media_type_not_allowed"};
+  const bytes=await readBodyLimited(upstream,MEDIA_MAX_BYTES);
+  const filename=safeAttendanceFilename(descriptor.filename||`arquivo-${messageId}`);
+  const objectPath=`${messageId}/${Date.now()}-${filename}`;
+  const uploaded=await db.storage.from(MEDIA_BUCKET).upload(objectPath,bytes,{contentType:mimeType,upsert:false,cacheControl:"3600"});
+  if(uploaded.error)throw uploaded.error;
+  const cacheExpiresAt=new Date(Date.now()+MEDIA_RETENTION_DAYS*86400000).toISOString();
+  const cached=await db.from("attendance_media_cache_v1").upsert({message_id:messageId,object_path:objectPath,mime_type:mimeType,filename,cached_at:new Date().toISOString(),expires_at:cacheExpiresAt},{onConflict:"message_id"});
+  if(cached.error){await db.storage.from(MEDIA_BUCKET).remove([objectPath]);throw cached.error}
+  return await signedMedia(objectPath,mimeType,filename);
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   if(!SUPABASE_URL||!SERVICE_KEY)return json(req,{ok:false,error:"server_config"},500);
@@ -86,6 +145,13 @@ Deno.serve(async(req:Request)=>{
       });
       if(r.error)throw r.error;
       return json(req,r.data||{ok:false,error:"queue_unavailable"},r.data?.ok===false?400:200);
+    }
+
+    if(req.method==="GET"&&action==="media"){
+      const messageId=validUuid(url.searchParams.get("message_id"));
+      if(!messageId)return json(req,{ok:false,error:"invalid_message_id"},400);
+      const data=await resolveAttendanceMedia(messageId);
+      return json(req,data,data?.ok===false?404:200);
     }
 
     if(req.method==="GET"&&action==="conversation"){
