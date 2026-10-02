@@ -16,3 +16,5 @@ jobs:
         run: node scripts/test-papoai-canonical-baseline-v1.mjs
       - name: PapoAI canonical messages
         run: node scripts/test-papoai-canonical-message-v1.mjs
+      - name: Attendance queue v2
+        run: node scripts/test-admin-attendance-queue-v2.mjs
