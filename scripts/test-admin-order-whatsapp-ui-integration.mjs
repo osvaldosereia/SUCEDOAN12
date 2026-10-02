@@ -63,6 +63,7 @@ assert.ok(orderTransport.includes('async function orderDetails'), 'order transpo
 assert.ok(orderTransport.includes('.from("orders")'), 'order transport must load the order row');
 assert.ok(orderTransport.includes('.from("order_items")'), 'order transport must load persisted order items');
 assert.ok(orderTransport.includes('lines.join("\\n")'), 'products must be one item per line');
+assert.ok(orderTransport.includes('basketLines.join("\\n")'), 'multiple baskets must also remain one basket per line');
 assert.ok(!orderTransport.includes('lines.join(" • ")'), 'products must not be flattened with bullet separators');
 for (const field of [
   'order_date',
