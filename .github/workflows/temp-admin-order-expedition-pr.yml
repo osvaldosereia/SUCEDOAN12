@@ -1,0 +1,40 @@
+name: temp-admin-order-expedition-pr
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    if: github.head_ref == 'fix/admin-order-expedition-ui-20261002'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply guarded patch and verify
+        shell: bash
+        run: |
+          if node scripts/test-admin-order-expedition-ui-hotfix.mjs; then
+            echo 'Hotfix already green; nothing to patch.'
+            exit 0
+          fi
+          echo 'RED confirmed.'
+          python scripts/patch-admin-order-expedition-ui-hotfix.py
+          node scripts/test-admin-order-expedition-ui-hotfix.mjs
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/one-shot-admin-order-expedition-hotfix.yml scripts/patch-admin-order-expedition-ui-hotfix.py
+          git add vitrine/admin/index.html scripts/test-admin-order-whatsapp-ui-integration.mjs scripts/test-admin-order-expedition-ui-hotfix.mjs
+          git commit -m 'fix(admin): clarify stock and WhatsApp expedition actions'
+          git push origin HEAD:${{ github.head_ref }}
