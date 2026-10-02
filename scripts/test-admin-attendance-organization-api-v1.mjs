@@ -6,6 +6,7 @@ for(const action of ['labels','conversation_labels','quick_replies']) assert.mat
 for(const action of ['label_save','label_deactivate','conversation_labels_set','quick_reply_save','quick_reply_deactivate']) assert.match(api,new RegExp(`SAFE_POST_ACTIONS[\\s\\S]*${action}`),`POST action ausente: ${action}`);
 assert.match(api,/ops2_admin_attendance_queue_v3/,'gateway deve usar fila v3');
 assert.match(api,/p_label_id/,'gateway deve passar filtro de etiqueta');
+assert.match(api,/ops2_admin_attendance_set_labels_v1/,'atribuição deve usar RPC atômica');
 assert.match(api,/attendance_labels_v1/);
 assert.match(api,/attendance_conversation_labels_v1/);
 assert.match(api,/attendance_quick_replies_v1/);
