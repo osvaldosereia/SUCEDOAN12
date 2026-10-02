@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
-import {validUuid,attendanceFilter,serviceWindowState,normalizeProductQuery} from "../_shared/admin-attendance-domain-v1.mjs";
+import {validUuid,serviceWindowState,normalizeProductQuery} from "../_shared/admin-attendance-domain-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -79,9 +79,10 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="GET"&&action==="queue"){
       const accountId=validUuid(url.searchParams.get("account_id"));
       if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
-      const r=await db.rpc("ops2_admin_attendance_queue_v1",{
-        p_whatsapp_account_id:accountId,p_limit:num(url.searchParams.get("limit"),50,1,50),
-        p_search:clean(url.searchParams.get("search"),80)||null,p_filter:attendanceFilter(url.searchParams.get("filter"))
+      const r=await db.rpc("ops2_admin_attendance_queue_v2",{
+        p_whatsapp_account_id:accountId,
+        p_limit:num(url.searchParams.get("limit"),50,1,50),
+        p_search:clean(url.searchParams.get("search"),80)||null
       });
       if(r.error)throw r.error;
       return json(req,r.data||{ok:false,error:"queue_unavailable"},r.data?.ok===false?400:200);
