@@ -8,7 +8,7 @@ on:
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
   push:
-    branches: [feat/admin-order-whatsapp-main-integration-20261001]
+    branches: [main, feat/admin-order-whatsapp-main-integration-20261001]
     paths:
       - 'vitrine/admin/index.html'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
