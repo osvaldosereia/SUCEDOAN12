@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const quote=fs.readFileSync('orcamento/app-original.html','utf8');
+const attendance=fs.readFileSync('vitrine/admin/atendimento/attendance.js','utf8');
+assert.match(attendance,/emitParent\(['"]open_quote['"][\s\S]*items/i,'orçamento deve receber itens selecionados');
+assert.match(attendance,/emitParent\(['"]new_sale['"][\s\S]*items/i,'nova venda deve receber itens selecionados');
+assert.match(admin,/function\s+attendanceCommerceItems|attendanceCommerceItems\s*=/,'parent deve validar itens comerciais');
+assert.match(admin,/attendanceQuoteDraft[\s\S]*items/,'draft de orçamento deve receber itens');
+assert.match(admin,/localStorage\.setItem\(['"]dona_antonia_orcamento_draft_v1['"]/,'draft deve usar o mesmo storage do editor de orçamento');
+assert.match(admin,/openManualSale\([^)]*prefill|openManualSale\(\{[\s\S]*items/i,'nova venda deve aceitar prefill seguro');
+assert.match(admin,/state\.manualSale\.cart[\s\S]*price_cents/i,'itens devem entrar no carrinho da nova venda');
+assert.match(quote,/DRAFT_KEY=['"]dona_antonia_orcamento_draft_v1['"]/,'editor existente deve continuar sendo o consumidor do draft');
+assert.doesNotMatch(attendance,/update_order|order_update|confirmed_order/i,'Atendimento não pode alterar pedido confirmado silenciosamente');
+console.log('OK · handoff comercial reaproveita Orçamento/Nova venda sem editar pedidos confirmados.');
