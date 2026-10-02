@@ -7,6 +7,8 @@ on:
       - 'scripts/test-checkout*.mjs'
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/functions/admin-orders-v1/index.ts'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'scripts/test-admin-stock-readiness-pagination.mjs'
   pull_request:
     branches: [main]
     paths:
@@ -31,6 +33,8 @@ jobs:
           node scripts/test-checkout-customer-capture-v1.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-existing-registration.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-whatsapp-payload-audit.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-address-reference.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-admin-stock-readiness-pagination.mjs
           node scripts/test-site-only-order-registration.mjs
           node scripts/test-checkout-whatsapp-return.mjs
           node scripts/test-checkout-stock-adjustment-contract.mjs

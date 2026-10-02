@@ -986,7 +986,15 @@ async function paymentSettlementMap(orderIds:string[]){
 function paySnap(o:any,rows:any[],settlement:any=null){const consumed=rows.some((r:any)=>r.status==="consumed"),reserved=consumed||rows.some((r:any)=>r.status==="reserved"&&(!r.expires_at||Date.parse(r.expires_at)>Date.now())),released=!reserved&&rows.some((r:any)=>r.status==="released"),method=tx(o?.payment_method,80);return {method,label:paymentLabel(method),timing:"on_delivery",source:tx(o?.source,80)||"vitrine",stock_reserved:reserved,stock_consumed:consumed,stock_released:released,stock_model:"canonical_vitrine_v1",actual:settlement?{...settlement,received:true}:null}}
 async function stockReadiness(orderIds:string[]){
   const out=new Map<string,any>();for(const oid of orderIds)out.set(oid,{ok:true,shortage_count:0,shortages:[],demand_lines:0,reserved_lines:0});if(!orderIds.length)return out;
-  const items=await db.from("order_items").select("order_id,product_id,quantity,metadata").in("order_id",orderIds).not("product_id","is",null);if(items.error)throw items.error;
+  const itemRows:any[]=[];
+  for(let offset=0;;offset+=1000){
+    const page=await db.from("order_items").select("order_id,product_id,quantity,metadata")
+      .in("order_id",orderIds).not("product_id","is",null).order("id",{ascending:true}).range(offset,offset+999);
+    if(page.error)throw page.error;
+    itemRows.push(...(page.data||[]));
+    if((page.data||[]).length<1000)break;
+  }
+  const items={data:itemRows};
   const alloc=await db.from("basket_stock_allocations").select("order_id,status").in("order_id",orderIds).in("status",["allocated","consumed"]);if(alloc.error)throw alloc.error;
   const hasKitAlloc=new Set((alloc.data||[]).map((x:any)=>String(x.order_id)));
   const demand=new Map<string,Map<string,number>>(),pids=new Set<string>();

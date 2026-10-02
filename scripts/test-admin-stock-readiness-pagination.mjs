@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {stripTypeScriptTypes} from 'node:module';
+const source=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
+const code=source.slice(source.indexOf('async function stockReadiness('),source.indexOf('async function mapOrders('));
+const itemRows=Array.from({length:1001},(_,i)=>({id:String(i).padStart(5,'0'),order_id:i===1000?'new-order':'old-order',product_id:'product',quantity:1,metadata:{}}));
+const db={from:table=>{let start=0,end=999;return {select(){return this},in(){return this},not(){return this},order(){return this},range(a,b){start=a;end=b;return this},then(resolve){resolve({data:table==='order_items'?itemRows.slice(start,end+1):table==='products'?[{id:'product',name:'Available',is_active:true}]:[]})}}}};
+const sandbox={db,Map,Set,Date,meta:v=>v||{},effectiveStockMap:async()=>new Map([['product',2000]]),stockAuthority:async()=> 'bling'};
+vm.runInNewContext(stripTypeScriptTypes(code)+';this.stockReadiness=stockReadiness;',sandbox);
+const result=await sandbox.stockReadiness(['old-order','new-order']);
+assert.equal(result.get('new-order').ok,true,'a valid recent order after the first 1000 item rows must not be flagged out of stock');
+assert.equal(result.get('new-order').demand_lines,1);
+assert.equal(result.get('old-order').ok,true);
+console.log('Admin stock readiness across all item pages: OK');
