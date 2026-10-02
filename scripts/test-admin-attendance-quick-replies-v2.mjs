@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const html=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
+const js=fs.readFileSync('vitrine/admin/atendimento/attendance.js','utf8');
+const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
+assert.doesNotMatch(js,/const\s+QUICK_REPLIES\s*=/,'respostas rápidas não podem ficar hardcoded');
+assert.match(js,/quick_replies/,'respostas devem vir da API');
+assert.match(js,/quick_reply_save/);
+assert.match(js,/quick_reply_deactivate/);
+for(const id of ['catalogBtn','quickRepliesBtn','productsBtn','moreToolsBtn','moreToolsMenu','quickRepliesManager','manageQuickRepliesBtn']) assert.match(html,new RegExp(`id=["']${id}["']`),`toolbar/editor sem ${id}`);
+assert.match(html,/Criar orçamento/);assert.match(html,/Nova venda/);assert.match(html,/Marcar retorno/);assert.match(html,/Não receber ofertas/);
+assert.match(css,/\.more-tools-menu|\.quick-replies-manager/i);
+assert.doesNotMatch(css,/\.quick-tools[^}]*overflow-x\s*:\s*auto/is,'toolbar principal não deve esconder ações em scroll horizontal');
+assert.match(css,/\.quick-tools[^}]*overflow-x\s*:\s*hidden/is,'toolbar principal deve conter overflow horizontal explicitamente');
+console.log('OK · respostas rápidas são editáveis e toolbar usa Catálogo/Respostas/Produtos/Mais.');
