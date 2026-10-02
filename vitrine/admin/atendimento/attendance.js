@@ -107,7 +107,40 @@ async function switchChannel(channel){
 
 function renderConversationHead(){const c=state.conversation?.conversation;if(!c)return;const head=$('#conversationHead');head.querySelector('strong').textContent=state.selected?.display_name||state.context?.customer?.name||c.phone_e164||'Conversa';head.querySelector('small').textContent=`${channelByPhone(state.conversation?.account?.phone_e164)||''} · ${c.mode==='human'||c.mode==='human_copilot'?'Atendimento humano':'ANA atendendo'}`;$('#openContextBtn').disabled=false}
 function renderServiceWindow(){const box=$('#serviceWindow'),w=state.conversation?.service_window;if(!w){box.className='service-window neutral';box.textContent='Janela não disponível';return}if(w.open){const h=Math.floor(w.remaining_seconds/3600),m=Math.floor((w.remaining_seconds%3600)/60);box.className='service-window open';box.textContent=`● Janela de atendimento aberta · ${h}h ${m}min restantes`}else{box.className='service-window closed';box.textContent='● Janela encerrada · responda no PapoAI somente com template aprovado quando aplicável'}}
-function renderMessage(msg){const row=document.createElement('div');row.className=`message-row ${msg.direction==='outbound'?'outbound':'inbound'}`;const bubble=document.createElement('div');bubble.className='bubble';if(msg.message_type==='text'&&msg.text_body)bubble.textContent=msg.text_body;else{const holder=document.createElement('span');holder.className='media-placeholder';holder.textContent={audio:'🎤 Áudio',image:'🖼 Imagem',document:'📄 Documento'}[msg.message_type]||`Mensagem ${msg.message_type||'não suportada'}`;bubble.append(holder)}const meta=document.createElement('span');meta.className='message-meta';meta.textContent=fmtTime(msg.message_at);bubble.append(meta);row.append(bubble);return row}
+async function resolveMedia(messageId){return await api('media',{message_id:messageId})}
+function openImageViewer(url,alt='Imagem recebida'){
+  const viewer=document.createElement('div');viewer.className='media-viewer';viewer.setAttribute('role','dialog');viewer.setAttribute('aria-modal','true');
+  const frame=document.createElement('div');frame.className='media-viewer-frame';const close=document.createElement('button');close.type='button';close.className='media-viewer-close';close.textContent='×';close.setAttribute('aria-label','Fechar imagem');
+  const img=document.createElement('img');img.src=url;img.alt=alt;frame.append(close,img);viewer.append(frame);document.body.append(viewer);
+  const finish=()=>viewer.remove();close.addEventListener('click',finish);viewer.addEventListener('click',e=>{if(e.target===viewer)finish()});
+}
+function mediaUnavailable(holder){holder.className='media-unavailable';holder.textContent='Mídia indisponível'}
+function renderMediaMessage(msg){
+  const holder=document.createElement('div');holder.className='media-content';holder.textContent='Carregando mídia…';const conversationId=state.selected?.id;
+  resolveMedia(msg.id).then(data=>{
+    if(!holder.isConnected||state.selected?.id!==conversationId)return;holder.replaceChildren();
+    if(msg.message_type==='image'){
+      const img=document.createElement('img');img.className='message-media-image';img.src=data.url;img.alt=msg.text_body||'Imagem recebida';img.loading='lazy';img.addEventListener('click',()=>openImageViewer(data.url,img.alt));holder.append(img);
+    }else if(msg.message_type==='audio'){
+      const audio=document.createElement('audio');audio.className='message-audio';audio.controls=true;audio.preload='none';audio.src=data.url;holder.append(audio);
+    }else if(msg.message_type==='document'){
+      const file=document.createElement('div');file.className='media-file';const name=document.createElement('span');name.className='media-file-name';name.textContent=data.filename||msg.metadata?.media?.filename||'Arquivo';
+      const actions=document.createElement('span');actions.className='media-file-actions';const open=document.createElement('a');open.href=data.url;open.target='_blank';open.rel='noopener noreferrer';open.textContent='Abrir';const download=document.createElement('a');download.href=data.url;download.download=data.filename||'arquivo';download.textContent='Baixar';actions.append(open,download);file.append(name,actions);holder.append(file);
+    }else mediaUnavailable(holder);
+    if(msg.text_body&&msg.message_type!=='audio'){const caption=document.createElement('div');caption.className='media-caption';caption.textContent=msg.text_body;holder.append(caption)}
+  }).catch(()=>{if(holder.isConnected&&state.selected?.id===conversationId)mediaUnavailable(holder)});
+  return holder;
+}
+function renderLocationMessage(msg){
+  const loc=msg.metadata?.location||{};const latitude=Number(loc.latitude),longitude=Number(loc.longitude);const card=document.createElement('div');card.className='location-card';
+  if(!Number.isFinite(latitude)||!Number.isFinite(longitude)){mediaUnavailable(card);return card}
+  const mapUrl=`https://www.google.com/maps?q=${latitude},${longitude}`;const title=document.createElement('strong');title.textContent=loc.name||'Localização compartilhada';card.append(title);
+  if(loc.address){const address=document.createElement('span');address.textContent=loc.address;card.append(address)}const coords=document.createElement('small');coords.textContent=`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;card.append(coords);
+  const actions=document.createElement('div');actions.className='location-actions';const open=document.createElement('a');open.href=mapUrl;open.target='_blank';open.rel='noopener noreferrer';open.textContent='Abrir no mapa';
+  const copy=document.createElement('button');copy.type='button';copy.textContent='Copiar localização';copy.addEventListener('click',()=>navigator.clipboard?.writeText(`${latitude},${longitude}`).catch(()=>{}));
+  const share=document.createElement('button');share.type='button';share.textContent='Compartilhar link';share.addEventListener('click',async()=>{try{if(navigator.share)await navigator.share({url:mapUrl,title:loc.name||'Localização'});else await navigator.clipboard?.writeText(mapUrl)}catch{}});actions.append(open,copy,share);card.append(actions);return card;
+}
+function renderMessage(msg){const row=document.createElement('div');row.className=`message-row ${msg.direction==='outbound'?'outbound':'inbound'}`;const bubble=document.createElement('div');bubble.className='bubble';if(msg.message_type==='text'&&msg.text_body)bubble.textContent=msg.text_body;else if(msg.message_type==='location')bubble.append(renderLocationMessage(msg));else if(['image','audio','document'].includes(msg.message_type))bubble.append(renderMediaMessage(msg));else{const holder=document.createElement('span');holder.className='media-placeholder';holder.textContent=`Mensagem ${msg.message_type||'não suportada'}`;bubble.append(holder)}const meta=document.createElement('span');meta.className='message-meta';meta.textContent=fmtTime(msg.message_at);bubble.append(meta);row.append(bubble);return row}
 function renderMessageList(box,messages){box.replaceChildren();let lastDay='';for(const msg of messages||[]){const day=messageDayKey(msg.message_at);if(day&&day!==lastDay){const sep=document.createElement('div');sep.className='message-date-separator';sep.textContent=fmtMessageDay(msg.message_at);box.append(sep);lastDay=day}box.append(renderMessage(msg))}}
 function renderMessages({scrollToBottom=true,preserveOffset=0}={}){const box=$('#messages');renderMessageList(box,state.conversation?.messages||[]);box.hidden=false;$('#conversationEmpty').hidden=true;if(scrollToBottom)box.scrollTop=box.scrollHeight;else box.scrollTop=Math.max(0,preserveOffset);renderConversationHead();renderServiceWindow()}
 function enableConversationTools(){for(const id of ['catalogBtn','quickRepliesBtn','followUpBtn'])$(`#${id}`).disabled=false;const hasCustomer=Boolean(state.context?.customer?.id);for(const id of ['quoteBtn','saleBtn','optOutBtn'])$(`#${id}`).disabled=!hasCustomer;syncFallbackButtons()}
