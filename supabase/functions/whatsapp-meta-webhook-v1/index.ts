@@ -1,0 +1,192 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { redactWebhookPayload } from "../_shared/whatsapp-core-v1.mjs";
+import {
+  extractMetaPhoneNumberIds,
+  normalizeMetaWebhook,
+  verifyMetaChallenge,
+  verifyMetaSignature,
+} from "../_shared/whatsapp-meta-webhook-v1.mjs";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SERVICE_KEY = (() => {
+  try {
+    return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}").default || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  } catch {
+    return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  }
+})();
+const APP_SECRET = Deno.env.get("META_WHATSAPP_APP_SECRET") || "";
+const VERIFY_TOKEN = Deno.env.get("META_WHATSAPP_VERIFY_TOKEN") || "";
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
+const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+  status,
+  headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+});
+
+async function readBodyLimited(req: Request, maxBytes = MAX_BODY_BYTES) {
+  const declared = Number(req.headers.get("content-length") || 0);
+  if (Number.isFinite(declared) && declared > maxBytes) throw new Error("payload_too_large");
+  const reader = req.body?.getReader();
+  if (!reader) return "";
+  const decoder = new TextDecoder();
+  let total = 0;
+  let text = "";
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      total += value?.byteLength || 0;
+      if (total > maxBytes) throw new Error("payload_too_large");
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
+    return text;
+  } finally {
+    try { reader.releaseLock(); } catch { /* no-op */ }
+  }
+}
+
+async function accountMap(phoneNumberIds: string[]) {
+  if (!phoneNumberIds.length) return new Map<string, string>();
+  const q = await db.from("whatsapp_accounts")
+    .select("id,phone_number_id,is_active")
+    .in("phone_number_id", phoneNumberIds)
+    .eq("is_active", true);
+  if (q.error) throw q.error;
+  return new Map((q.data || []).map((row: any) => [String(row.phone_number_id), String(row.id)]));
+}
+
+async function persistInbound(message: any, payloadHash: string, safePayload: unknown) {
+  const result = await db.rpc("whatsapp_ingest_event_v1", {
+    p_whatsapp_account_id: message.whatsapp_account_id,
+    p_provider: "meta",
+    p_provider_event_id: message.provider_event_id,
+    p_event_type: message.event_type,
+    p_provider_message_id: message.provider_message_id,
+    p_phone_e164: message.phone_e164,
+    p_received_at: message.received_at,
+    p_payload_hash: payloadHash,
+    p_payload: safePayload,
+    p_message: message.message,
+  });
+  if (result.error) throw result.error;
+  if (result.data?.ok !== true) throw new Error(String(result.data?.error || "meta_ingest_failed"));
+  return result.data;
+}
+
+async function persistStatus(status: any, payloadHash: string) {
+  const eventKey = `status:${status.provider_message_id}:${status.status}:${status.occurred_at || "unknown"}`;
+  const capture = await db.rpc("whatsapp_ingest_event_v1", {
+    p_whatsapp_account_id: status.whatsapp_account_id,
+    p_provider: "meta",
+    p_provider_event_id: eventKey,
+    p_event_type: `message.status.${status.status}`,
+    p_provider_message_id: status.provider_message_id,
+    p_phone_e164: status.recipient_phone_e164,
+    p_received_at: status.occurred_at,
+    p_payload_hash: payloadHash,
+    p_payload: status.payload || {},
+    p_message: null,
+  });
+  if (capture.error) throw capture.error;
+  if (capture.data?.ok !== true) throw new Error(String(capture.data?.error || "meta_status_capture_failed"));
+
+  const recorded = await db.rpc("whatsapp_record_status_v1", {
+    p_whatsapp_account_id: status.whatsapp_account_id,
+    p_provider: "meta",
+    p_provider_message_id: status.provider_message_id,
+    p_status: status.status,
+    p_occurred_at: status.occurred_at,
+    p_received_at: new Date().toISOString(),
+    p_error_code: status.error_code,
+    p_error_title: status.error_title,
+    p_error_detail: status.error_detail,
+    p_payload: status.payload || {},
+  });
+  if (recorded.error) throw recorded.error;
+
+  const eventId = capture.data?.event_id || null;
+  if (recorded.data?.ok === true && eventId) {
+    const normalized = await db.from("whatsapp_webhook_events_v1")
+      .update({ status: "normalized", processed_at: new Date().toISOString(), last_error: null })
+      .eq("id", eventId);
+    if (normalized.error) throw normalized.error;
+  }
+
+  return {
+    captured: true,
+    duplicate: capture.data?.duplicate === true,
+    recorded: recorded.data?.ok === true,
+    pendingReason: recorded.data?.ok === true ? null : String(recorded.data?.error || "status_not_reconciled"),
+  };
+}
+
+Deno.serve(async (req: Request) => {
+  try {
+    if (req.method === "GET") {
+      if (!VERIFY_TOKEN) return json({ ok: false, error: "verify_token_not_configured" }, 503);
+      const challenge = verifyMetaChallenge(new URL(req.url), VERIFY_TOKEN);
+      if (!challenge.ok) return json({ ok: false, error: challenge.error }, 403);
+      return new Response(challenge.challenge, { status: 200, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+    }
+
+    if (req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
+    if (!APP_SECRET || !VERIFY_TOKEN || !SUPABASE_URL || !SERVICE_KEY) return json({ ok: false, error: "webhook_not_configured" }, 503);
+
+    let rawBody = "";
+    try { rawBody = await readBodyLimited(req); } catch (error) {
+      if (String(error?.message || error) === "payload_too_large") return json({ ok: false, error: "payload_too_large" }, 413);
+      throw error;
+    }
+
+    const signature = req.headers.get("x-hub-signature-256");
+    if (!await verifyMetaSignature(rawBody, signature, APP_SECRET)) return json({ ok: false, error: "invalid_signature" }, 401);
+
+    let payload: any;
+    try { payload = JSON.parse(rawBody); } catch { return json({ ok: false, error: "invalid_json" }, 400); }
+    if (payload?.object !== "whatsapp_business_account") return json({ ok: false, error: "unsupported_object" }, 400);
+
+    const phoneNumberIds = extractMetaPhoneNumberIds(payload);
+    if (!phoneNumberIds.length) return json({ ok: true, ignored: true, reason: "no_message_phone_number_id" });
+
+    const accounts = await accountMap(phoneNumberIds);
+    const normalized = await normalizeMetaWebhook({ payload, rawBody, accountByPhoneNumberId: accounts });
+    if (normalized.unknownPhoneNumberIds.length || normalized.messages.some((m: any) => !m.associable) || normalized.statuses.some((s: any) => !s.associable)) {
+      return json({ ok: false, error: "meta_account_unresolved", unknown_phone_number_ids: normalized.unknownPhoneNumberIds }, 422);
+    }
+
+    const safePayload = redactWebhookPayload(payload);
+    let inboundNormalized = 0;
+    let inboundDuplicates = 0;
+    for (const message of normalized.messages) {
+      const result = await persistInbound(message, normalized.payloadHash, safePayload);
+      if (result?.duplicate === true) inboundDuplicates += 1;
+      else inboundNormalized += 1;
+    }
+
+    let statusesCaptured = 0;
+    let statusesRecorded = 0;
+    let statusesPending = 0;
+    for (const status of normalized.statuses) {
+      const result = await persistStatus(status, normalized.payloadHash);
+      statusesCaptured += 1;
+      if (result.recorded) statusesRecorded += 1;
+      else statusesPending += 1;
+    }
+
+    return json({
+      ok: true,
+      inbound_normalized: inboundNormalized,
+      inbound_duplicates: inboundDuplicates,
+      statuses_captured: statusesCaptured,
+      statuses_recorded: statusesRecorded,
+      statuses_pending: statusesPending,
+    });
+  } catch (error) {
+    console.error("whatsapp-meta-webhook-v1", String(error?.message || error).slice(0, 500));
+    return json({ ok: false, error: "webhook_internal_error" }, 500);
+  }
+});
