@@ -77,3 +77,8 @@ assert.match(submit,/ops2_link_storefront_order_from_identity_v1[\s\S]*kickWhats
 assert.doesNotMatch(submit,/await\s+kickWhatsappOrderOutbound/,'checkout must not wait for provider delivery');
 
 console.log('checkout WhatsApp outbox contract: ok');
+const adminOrders=fs.readFileSync('supabase/functions/admin-orders-v1/index.ts','utf8');
+assert.match(adminOrders,/const checkoutCustomerAddress=obj\(checkoutCustomer\.address\)/,'dispatcher must read registered customer address from checkout snapshot');
+assert.match(adminOrders,/const address=\{\.\.\.checkoutCustomerAddress,\.\.\.delivery\}/,'delivery address must override checkout customer address while retaining fallback fields');
+assert.match(adminOrders,/const deliverySummary=text\(\[deliveryDate,addressLabel,districtLabel,cityLabel\]/,'template delivery variable must combine date and complete address');
+assert.match(adminOrders,/delivery_label:details\.deliverySummary/,'provider must send the complete delivery summary to the approved template');

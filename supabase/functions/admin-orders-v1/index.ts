@@ -82,6 +82,8 @@ async function orderDetails(orderId:string){
   const order=orderResult.data as OrderRow;
   const rows=(itemsResult.data||[]) as OrderItem[];
   const customer=obj(order.customer_snapshot),delivery=obj(order.delivery_address),checkout=obj(order.checkout_snapshot),checkoutDelivery=obj(checkout.delivery),checkoutCustomer=obj(checkout.customer);
+  const checkoutCustomerAddress=obj(checkoutCustomer.address);
+  const address={...checkoutCustomerAddress,...delivery};
   const lines=rows.map((row)=>{
     const name=text(row.name_snapshot,180)||"Item";
     const qty=quantityLabel(row.quantity)||"1";
@@ -111,7 +113,12 @@ async function orderDetails(orderId:string){
   }
   const basketText=basketLines.length?basketLines.join("\n"):"NENHUMA";
 
-  const addressParts=[delivery.street,delivery.number,delivery.complement].map(v=>text(v,180)).filter(Boolean);
+  const addressParts=[address.street,address.number,address.complement].map(v=>text(v,180)).filter(Boolean);
+  const addressLabel=addressParts.join(", ")||"NAO INFORMADO";
+  const districtLabel=text(address.district||address.neighborhood,140)||"NAO INFORMADO";
+  const cityLabel=text(address.city,140)||"NAO INFORMADA";
+  const deliveryDate=deliveryLabel(delivery,checkoutDelivery);
+  const deliverySummary=text([deliveryDate,addressLabel,districtLabel,cityLabel].filter(v=>v&&v!=="NAO INFORMADO"&&v!=="NAO INFORMADA").join(" • "),500)||"A confirmar";
   const fullNumber=text(order.order_number,80);
   const customerRegistered=Boolean(text(order.customer_id,80)||text(customer.customer_id,80));
   const customerName=text(customer.name||customer.display_name||checkoutCustomer.name||checkoutCustomer.display_name||delivery.customer_name,180)||"NAO INFORMADO";
@@ -126,10 +133,11 @@ async function orderDetails(orderId:string){
     customerStatus:customerRegistered?"CADASTRADO":"NOVO",
     customerName,
     customerPhone,
-    addressLabel:addressParts.join(", ")||"NAO INFORMADO",
-    districtLabel:text(delivery.district||delivery.neighborhood,140)||"NAO INFORMADO",
-    cityLabel:text(delivery.city,140)||"NAO INFORMADA",
-    deliveryLabel:deliveryLabel(delivery,checkoutDelivery),
+    addressLabel,
+    districtLabel,
+    cityLabel,
+    deliveryLabel:deliveryDate,
+    deliverySummary,
     basketText,
     productsText,
     itemsText,
@@ -217,7 +225,7 @@ Deno.serve(async(req:Request)=>{
     address_label:details.addressLabel,
     district_label:details.districtLabel,
     city_label:details.cityLabel,
-    delivery_label:details.deliveryLabel,
+    delivery_label:details.deliverySummary,
     basket_text:details.basketText,
     products_text:details.productsText,
     total_formatted:details.totalFormatted,
