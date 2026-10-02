@@ -24,12 +24,16 @@ replace_one(
     'WhatsApp action buttons',
 )
 replace_one(
-    'id=\"orderRegistrationLinkActions\" class=\"hidden\" style=\"margin-top:10px\"',
-    'id=\"orderRegistrationLinkActions\" class=\"hidden\" style=\"display:none!important;margin-top:10px\"',
+    'id="orderRegistrationLinkActions" class="hidden" style="margin-top:10px"',
+    'id="orderRegistrationLinkActions" class="hidden" style="display:none!important;margin-top:10px"',
     'registration link default hidden state',
 )
 replace_one('Abrir WhatsApp com link', 'Abrir WhatsApp do cliente com link de cadastro', 'registration link WhatsApp label')
-replace_one('>Copiar link</button>', '>Copiar link de cadastro</button>', 'registration copy label')
+replace_one(
+    '<button class="secondary" id="copyOrderRegistrationLink" type="button">Copiar link</button>',
+    '<button class="secondary" id="copyOrderRegistrationLink" type="button">Copiar link de cadastro</button>',
+    'registration copy label',
+)
 replace_one("'Cópia 0975: '", "'Empresa 0975: '", 'business WhatsApp status label')
 replace_one(
     "    const registrationBtn=$('#issueOrderRegistrationLink');",
