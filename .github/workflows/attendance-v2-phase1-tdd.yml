@@ -12,17 +12,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Canonical bridge baseline
-        run: node scripts/test-papoai-canonical-baseline-v1.mjs
-      - name: PapoAI canonical messages
-        run: node scripts/test-papoai-canonical-message-v1.mjs
-      - name: Attendance queue v2
-        run: node scripts/test-admin-attendance-queue-v2.mjs
-      - name: Attendance single queue UI
-        run: node scripts/test-admin-attendance-ui-v1.mjs
-      - name: Attendance private media API
-        run: node scripts/test-admin-attendance-media-api-v1.mjs
-      - name: Attendance media UI
-        run: node scripts/test-admin-attendance-media-ui-v1.mjs
-      - name: PapoAI inbound reconciliation
-        run: node scripts/test-papoai-inbound-reconcile-v1.mjs
+      - name: New Phase 1 contracts
+        run: |
+          node scripts/test-papoai-canonical-baseline-v1.mjs
+          node scripts/test-papoai-canonical-message-v1.mjs
+          node scripts/test-admin-attendance-queue-v2.mjs
+          node scripts/test-admin-attendance-ui-v1.mjs
+          node scripts/test-admin-attendance-media-api-v1.mjs
+          node scripts/test-admin-attendance-media-ui-v1.mjs
+          node scripts/test-papoai-inbound-reconcile-v1.mjs
+      - name: Existing attendance regression suite
+        run: |
+          set -euo pipefail
+          for f in scripts/test-admin-attendance-*.mjs; do
+            echo "==> $f"
+            node "$f"
+          done
+          if [ -f scripts/test-papoai-attendance-transport-v1.mjs ]; then node scripts/test-papoai-attendance-transport-v1.mjs; fi
+      - name: Admin integration and syntax
+        run: |
+          node scripts/test-admin-attendance-integration-v1.mjs
+          node --check vitrine/admin/atendimento/attendance.js
