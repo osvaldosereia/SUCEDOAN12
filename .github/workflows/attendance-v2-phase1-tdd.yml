@@ -1,0 +1,16 @@
+name: Attendance v2 Phase 1 TDD
+on:
+  push:
+    branches: [feat/attendance-central-v2-phase1]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Canonical bridge baseline
+        run: node scripts/test-papoai-canonical-baseline-v1.mjs
