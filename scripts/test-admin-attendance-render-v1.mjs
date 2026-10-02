@@ -5,7 +5,7 @@ import {JSDOM} from 'jsdom';
 const html=fs.readFileSync(new URL('../vitrine/admin/atendimento/index.html',import.meta.url),'utf8');
 const dom=new JSDOM(html,{url:'https://donaantonia.com.br/vitrine/admin/atendimento/?embedded=1',pretendToBeVisual:true});
 const {window}=dom;
-for(const key of ['window','document','navigator','sessionStorage','location','HTMLElement','HTMLButtonElement','HTMLInputElement','HTMLTextAreaElement'])globalThis[key]=window[key];
+for(const key of ['window','document','sessionStorage','location','HTMLElement','HTMLButtonElement','HTMLInputElement','HTMLTextAreaElement'])globalThis[key]=window[key];
 globalThis.parent=window;
 window.sessionStorage.setItem('da_finance_access_token_v1','test-token');
 window.open=()=>null;
