@@ -275,7 +275,7 @@
       subcategoriesExpanded: {}
     };
 
-    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
     const money = cents => (Number(cents || 0) / 100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const basketName = name => name === 'Economica Bonini' ? 'Econômica com Arroz Tio Bonini' : String(name || 'Cesta básica');
     const safeImage = url => url || '/img/logoantonia5.png';
@@ -567,5 +567,6 @@
     start();
   })();
   </script>
+  <script src="/checkout-resilience.js?v=20261001" defer></script>
 </body>
 </html>
