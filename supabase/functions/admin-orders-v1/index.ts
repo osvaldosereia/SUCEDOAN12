@@ -108,6 +108,10 @@ async function orderDetails(orderId:string){
   const productLines=lines.map(line=>`• ${line}`);
   const productsText=productLines.join("\n");
   const itemsText=lines.join(" • ").replace(/[\r\n\t]+/g," ").replace(/ {4,}/g,"   ").trim();
+  const productSlots=Object.fromEntries(Array.from({length:60},(_,index)=>[
+    `product_${String(index+1).padStart(2,"0")}`,
+    lines[index]||""
+  ] as const).filter(([,value])=>Boolean(value)));
 
   const cartBaskets=arr(checkout.cart).map(obj).filter(item=>text(item.type,30)==="basket");
   const basketNames=arr(checkout.basket_names).map(v=>text(v,180)).filter(Boolean);
@@ -189,6 +193,7 @@ async function orderDetails(orderId:string){
     marketingCampaign,
     productsText,
     itemsText,
+    productSlots,
     totalFormatted:money(order.total),
     paymentLabel:paymentLabel(order.payment_method||checkout.payment_label)
   };
@@ -309,6 +314,8 @@ Deno.serve(async(req:Request)=>{
     products_text:details.productsText,
     total_formatted:details.totalFormatted,
     payment_label:details.paymentLabel,
+    product_count:details.itemCount,
+    ...details.productSlots,
     items_count:details.itemCount,
     items_text:details.itemsText
   };

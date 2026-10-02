@@ -66,6 +66,10 @@ assert.ok(orderTransport.includes('const productLines=lines.map(line=>`• ${lin
 assert.ok(orderTransport.includes('productLines.join("\\n")'), 'visual products must be one item per line');
 assert.ok(orderTransport.includes('basketLines.join("\\n")'), 'multiple baskets must also remain one basket per line');
 assert.ok(orderTransport.includes('const itemsText=lines.join(" • ")'), 'template-safe item text must remain single-line');
+assert.ok(orderTransport.includes('const productSlots=Object.fromEntries(Array.from({length:60}'), 'transport must expose up to 60 individual product slots');
+assert.ok(orderTransport.includes('`product_${String(index+1).padStart(2,"0")}`'), 'individual product slots must be named product_01...product_60');
+assert.ok(orderTransport.includes('product_count:details.itemCount'), 'provider payload must expose product_count for template routing');
+assert.ok(orderTransport.includes('...details.productSlots'), 'provider payload must expose individual product fields at top level');
 for (const field of [
   'order_date',
   'order_number_short',
