@@ -46,7 +46,10 @@ assert.match(sql,/p_filter\s+text\s+default\s+'all'/i);
 assert.match(sql,/p_limit\s+integer\s+default\s+30/i);
 assert.match(sql,/least\s*\(\s*50\s*,\s*greatest\s*\(\s*1\s*,/i);
 assert.match(sql,/direction\s*=\s*'inbound'/i);
-assert.match(sql,/order\s+by[\s\S]{0,180}unread_count[\s\S]{0,180}last_activity_at\s+desc/i);
+assert.doesNotMatch(sql,/coalesce\(c\.updated_at\s*,\s*'epoch'::timestamptz\)/i,'updated_at administrativo não pode definir recência da conversa');
+assert.match(sql,/coalesce\(lm\.message_at\s*,\s*'epoch'::timestamptz\)/i,'última mensagem real deve participar da atividade da conversa');
+assert.match(sql,/from\s+filtered\s+q\s+order\s+by\s+q\.last_activity_at\s+desc/i,'fila deve ordenar primeiro pela atividade mais recente');
+assert.doesNotMatch(sql,/order\s+by\s+\(q\.unread_count>0\s+or\s+q\.human_required/i,'não lidas/humano não podem furar a ordem cronológica da fila');
 assert.match(sql,/p_before\s+is\s+null\s+or/i);
 assert.match(sql,/order\s+by[\s\S]{0,180}message_at\s+asc/i);
 assert.match(sql,/ops2_customer_registration_state_v1/i);
@@ -55,4 +58,4 @@ assert.match(sql,/limit\s+10/i);
 assert.match(sql,/message_not_in_conversation/i);
 assert.match(sql,/follow_up_must_be_future/i);
 
-console.log('OK · contrato SQL da Central de Atendimento está versionado com escopo, RLS e permissões.');
+console.log('OK · fila da Central usa atividade real mais recente, sem prioridade artificial de não lidas.');
