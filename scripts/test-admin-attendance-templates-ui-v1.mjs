@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const html=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
+const js=fs.readFileSync('vitrine/admin/atendimento/attendance.js','utf8');
+const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
+for(const id of ['templatesBtn','templateShortcuts','templatesManager','templateManagerList','templateForm']) assert.match(html,new RegExp(`id=["']${id}["']`),`UI de templates sem ${id}`);
+assert.match(js,/loadTemplates/);
+assert.match(js,/template_attendance_toggle/);
+assert.match(js,/template_save/);
+assert.match(js,/template_deactivate/);
+assert.match(js,/attendance.*show|show.*attendance/i);
+assert.match(js,/PAPOAI_APP_URL/,'atalho de template continua abrindo PapoAI, não envia por API');
+assert.match(css,/template-shortcuts|templates-manager/i);
+console.log('OK · templates possuem cache/gerenciador e atalhos honestos sem simular envio.');
