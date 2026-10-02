@@ -6,10 +6,10 @@ const js=fs.readFileSync('vitrine/admin/atendimento/attendance.js','utf8');
 const api=fs.readFileSync('supabase/functions/admin-whatsapp-ops-v1/index.ts','utf8');
 const sqlPath='supabase/sql/20261001_admin_attendance_marketing_optout_v1.sql';
 
-for(const label of ['Enviar catálogo','Respostas rápidas','Criar orçamento','Nova venda','Marcar retorno','Não receber ofertas']){
+for(const label of ['Catálogo','Respostas','Produtos','Mais','Criar orçamento','Nova venda','Marcar retorno','Não receber ofertas']){
   assert.match(html,new RegExp(label),`ferramenta rápida ausente: ${label}`);
 }
-assert.doesNotMatch(html,/campanha|pipeline|kanban/i,'Atendimento v1 não deve incluir CRM/campanhas');
+assert.doesNotMatch(html,/campanha|pipeline|kanban/i,'Atendimento não deve incluir CRM/campanhas');
 
 assert.match(html,/id="messageDraft"(?![^>]*\sdisabled)/,'rascunho deve ser editável mesmo com envio bloqueado');
 assert.match(html,/id="sendBtn"[^>]*\sdisabled/,'botão Enviar deve continuar bloqueado');
@@ -23,10 +23,11 @@ assert.match(js,/document\.hidden/,'refresh deve pausar quando a aba não está 
 assert.match(js,/api\(['"]issue_catalog['"]/,'catálogo deve usar o gateway seguro');
 assert.match(js,/api\(['"]follow_up['"]/,'lembrete deve usar o estado canônico');
 assert.match(js,/api\(['"]marketing_opt_out['"]/,'opt-out deve usar gateway autenticado');
-assert.match(js,/QUICK_REPLIES/,'respostas rápidas devem ser configuração pequena no cliente');
+assert.match(js,/api\(['"]quick_replies['"]/,'respostas rápidas devem vir da configuração canônica do backend');
+assert.doesNotMatch(js,/const\s+QUICK_REPLIES\s*=/,'respostas rápidas não devem voltar a ficar hardcoded');
 assert.match(js,/emitParent\(['"]open_quote['"]/,'orçamento deve reaproveitar ferramenta do Admin');
 assert.match(js,/emitParent\(['"]new_sale['"]/,'nova venda deve reaproveitar ferramenta do Admin');
-assert.doesNotMatch(js,/supabase\.channel|postgres_changes/i,'Task 4 não deve abrir assinatura direta às tabelas protegidas');
+assert.doesNotMatch(js,/supabase\.channel|postgres_changes/i,'Atendimento não deve abrir assinatura direta às tabelas protegidas');
 
 assert.ok(fs.existsSync(sqlPath),'RPC estreita de opt-out deve existir');
 const sql=fs.readFileSync(sqlPath,'utf8');
@@ -40,4 +41,4 @@ assert.match(api,/SAFE_POST_ACTIONS[^\n]*marketing_opt_out/);
 assert.match(api,/action===['"]marketing_opt_out['"]/);
 assert.match(api,/ops2_admin_attendance_marketing_optout_v1/);
 
-console.log('OK · refresh leve e ferramentas operacionais seguras, sem liberar transporte humano.');
+console.log('OK · refresh leve e ferramentas operacionais seguras, com organização editável e sem liberar transporte humano.');
