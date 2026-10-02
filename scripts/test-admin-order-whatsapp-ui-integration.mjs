@@ -65,7 +65,9 @@ assert.ok(orderTransport.includes('items_count:items.count'), 'provider payload 
 assert.ok(orderTransport.includes('items_text:items.text'), 'provider payload must expose items_text');
 assert.ok(orderTransport.includes('lines.join(" • ")'), 'PapoAI item summary must stay on one line with visible separators');
 assert.ok(!orderTransport.includes('lines.join("\\n")'), 'PapoAI item summary must not depend on line breaks');
+assert.ok(orderTransport.includes('return `${qty}x ${name}`;'), 'items_text must prioritize complete quantities and product names');
+assert.ok(!orderTransport.includes('select("name_snapshot,quantity,unit_price,line_total,created_at")'), 'items_text must not waste template space on line prices');
 assert.ok(orderTransport.includes('order_items_not_ready'), 'checkout must fail closed/retry instead of sending an incomplete order');
 assert.ok(orderTransport.includes('scope==="checkout_auto"?"retry":"failed"'), 'checkout must retry when order items are not ready');
 
-console.log('admin order WhatsApp UI + gateway + full-order single-line payload contract: ok');
+console.log('admin order WhatsApp UI + gateway + compact full-order payload contract: ok');
