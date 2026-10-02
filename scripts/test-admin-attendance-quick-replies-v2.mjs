@@ -11,4 +11,5 @@ for(const id of ['catalogBtn','quickRepliesBtn','productsBtn','moreToolsBtn','mo
 assert.match(html,/Criar orçamento/);assert.match(html,/Nova venda/);assert.match(html,/Marcar retorno/);assert.match(html,/Não receber ofertas/);
 assert.match(css,/\.more-tools-menu|\.quick-replies-manager/i);
 assert.doesNotMatch(css,/\.quick-tools[^}]*overflow-x\s*:\s*auto/is,'toolbar principal não deve esconder ações em scroll horizontal');
+assert.match(css,/\.quick-tools[^}]*overflow-x\s*:\s*hidden/is,'toolbar principal deve conter overflow horizontal explicitamente');
 console.log('OK · respostas rápidas são editáveis e toolbar usa Catálogo/Respostas/Produtos/Mais.');
