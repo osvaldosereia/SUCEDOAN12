@@ -1,0 +1,49 @@
+name: Final attendance integration verification
+
+on:
+  push:
+    branches:
+      - feat/admin-attendance-papoai-v2
+    paths:
+      - .github/workflows/attendance-final-verify-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Attendance contracts
+        run: |
+          node scripts/test-admin-attendance-sql-v1.mjs
+          node scripts/test-admin-attendance-api-v1.mjs
+          node scripts/test-admin-attendance-ui-v1.mjs
+          node scripts/test-admin-attendance-integration-v1.mjs
+          node scripts/test-admin-attendance-realtime-v1.mjs
+          node scripts/test-admin-attendance-outbound-v1.mjs
+          node scripts/test-papoai-attendance-transport-v1.mjs
+          node --check vitrine/admin/atendimento/attendance.js
+      - name: Current WhatsApp order contracts
+        run: |
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          node scripts/test-checkout-whatsapp-provider-vault.mjs
+      - name: Admin inline JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`vitrine/admin/index.html inline script ${i+1}: ${e.message}`)}});
+          console.log(`inline syntax OK (${scripts.length} script blocks)`);
+          NODE
+      - name: Required coexistence markers
+        run: |
+          grep -q 'data-tab="attendance"' vitrine/admin/index.html
+          grep -q 'function renderAttendance()' vitrine/admin/index.html
+          grep -q 'WhatsApp e cadastro' vitrine/admin/index.html
+          grep -q 'function orderWhatsappRegistrationHtml' vitrine/admin/index.html
