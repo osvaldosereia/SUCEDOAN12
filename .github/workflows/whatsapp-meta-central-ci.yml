@@ -10,7 +10,7 @@ on:
       - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
       - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
       - 'scripts/test-attendance-meta-*.mjs'
-      - 'scripts/test-admin-attendance-meta-send-ui-v1.mjs'
+      - 'scripts/test-admin-attendance-meta-*.mjs'
       - 'scripts/test-attendance-provider-neutral-v3.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
       - '.github/workflows/whatsapp-meta-central-ci.yml'
@@ -43,6 +43,8 @@ jobs:
         run: node scripts/test-attendance-meta-dedupe-v1.mjs
       - name: Admin Meta gateway contract
         run: node scripts/test-admin-attendance-meta-send-ui-v1.mjs
+      - name: Admin Meta canary capability guard
+        run: node scripts/test-admin-attendance-meta-canary-capability-v1.mjs
       - name: Admin Meta gateway TypeScript syntax
         run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts
       - name: Admin composer JavaScript syntax
