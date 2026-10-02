@@ -304,9 +304,9 @@
       const local=localDateTimeCuiaba(now),today={year:local.year,month:local.month,day:local.day},holiday=nationalHolidayName(today);
       let reason='same_day',target=today;
       if(isSunday(today)||holiday){reason='closed_day';target=nextOpenDeliveryDate(addCalendarDays(today,1))}
-      else if(local.hour>=12){reason='after_cutoff';target=nextOpenDeliveryDate(addCalendarDays(today,1))}
+      else if(local.hour>=11){reason='after_cutoff';target=nextOpenDeliveryDate(addCalendarDays(today,1))}
       const label=deliveryDateLabel(target);
-      const notice=reason==='after_cutoff'?'Pedido após 12h de Cuiabá. Entrega prevista '+label+'.':reason==='closed_day'?'Hoje não realizamos entregas'+(holiday?' ('+holiday+')':' (domingo)')+'. Entrega prevista '+label+'.':'Entrega prevista hoje, '+label+'.';
+      const notice=reason==='after_cutoff'?'Pedido a partir das 11h de Cuiabá. Entrega prevista '+label+'.':reason==='closed_day'?'Hoje não realizamos entregas'+(holiday?' ('+holiday+')':' (domingo)')+'. Entrega prevista '+label+'.':'Entrega prevista hoje, '+label+'.';
       return {date:isoLocalDate(target),label,notice,reason};
     }
 
