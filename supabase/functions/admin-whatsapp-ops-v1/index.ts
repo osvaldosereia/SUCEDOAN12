@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
-import {validUuid,serviceWindowState,normalizeProductQuery} from "../_shared/admin-attendance-domain-v1.mjs";
+import {validUuid,serviceWindowState,normalizeProductQuery,normalizeOutboundText,normalizeIdempotencyKey} from "../_shared/admin-attendance-domain-v1.mjs";
 import {findProviderMediaDescriptor,isAllowedProviderMediaUrl,isAllowedAttendanceMime,normalizedAttendanceMime,safeAttendanceFilename,readBodyLimited} from "../_shared/attendance-media-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
@@ -8,7 +8,7 @@ const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const READ_ACTIONS=new Set(["accounts","queue","conversation","context","products","media","labels","conversation_labels","quick_replies"]);
-const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","marketing_opt_out","label_save","label_deactivate","conversation_labels_set","quick_reply_save","quick_reply_deactivate"]);
+const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","marketing_opt_out","label_save","label_deactivate","conversation_labels_set","quick_reply_save","quick_reply_deactivate","send_text"]);
 const MEDIA_BUCKET="attendance-media-v1";
 const MEDIA_RETENTION_DAYS=30;
 const MEDIA_SIGNED_URL_SECONDS=600;
@@ -17,6 +17,7 @@ const MEDIA_MAX_BYTES=20*1024*1024;
 const clean=(v:unknown,max=200)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const num=(v:unknown,fallback:number,min:number,max:number)=>{const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,Math.trunc(n))):fallback};
 const isoOrNull=(v:unknown)=>{const s=clean(v,50);if(!s)return null;const t=Date.parse(s);return Number.isFinite(t)?new Date(t).toISOString():null};
+const channelKeyFromPhone=(value:unknown)=>{const d=String(value??"").replace(/\D+/g,"");if(d.endsWith("0975"))return "0975";if(d.endsWith("1018"))return "1018";return null};
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {
   "Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br",
   "Vary":"Origin",
@@ -60,6 +61,65 @@ async function productSearch(q:string,limit:number){
     sale_price:Number(p.price||0),sellable_stock:stock.get(String(p.id))??0,
     offer:p.is_offer===true&&p.offer_price!=null?{active:true,price:Number(p.offer_price)}:null
   }));
+}
+
+async function attendanceSendCapability(accountId:string|null,windowOpen:boolean){
+  if(!accountId||!windowOpen)return {enabled:false,reason:windowOpen?"account_unavailable":"service_window_closed"};
+  const runtime=await db.from("whatsapp_channel_runtime_v1").select("send_enabled,human_send_enabled,homologated_at,outbound_provider").eq("whatsapp_account_id",accountId).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  const ready=runtime.data?.outbound_provider==="papoai"&&runtime.data?.send_enabled===true&&runtime.data?.human_send_enabled===true&&Boolean(runtime.data?.homologated_at);
+  return {enabled:ready,reason:ready?null:"human_send_not_homologated"};
+}
+
+async function attendanceProviderUrl(channel:string|null){
+  if(!channel)return null;
+  const r=await db.rpc("ops2_papoai_attendance_provider_url_v1",{p_channel:channel});
+  if(r.error)throw r.error;
+  return clean(r.data,2048)||null;
+}
+
+async function markTransportFailure(claim:any,error:unknown){
+  const message=clean(error instanceof Error?error.message:error,180)||"transport_error";
+  const now=new Date().toISOString();
+  await db.from("whatsapp_outbox_v1").update({status:"failed",last_error:message,updated_at:now}).eq("id",claim?.outbox_id).eq("status","claimed");
+  return {ok:false,error:"papoai_transport_failed"};
+}
+
+async function dispatchQueuedOutbox(outboxId:string){
+  const id=validUuid(outboxId);
+  if(!id)return {ok:false,error:"invalid_outbox_id"};
+  const claimed=await db.rpc("ops2_admin_attendance_claim_outbox_v2",{p_outbox_id:id});
+  if(claimed.error)throw claimed.error;
+  const claim=claimed.data||{ok:false,error:"outbox_claim_failed"};
+  if(claim?.already_sent===true)return {ok:true,status:"accepted",outbox_status:"sent",duplicate:true};
+  if(claim?.ok!==true)return claim;
+
+  const channel=channelKeyFromPhone(claim.account_phone_e164);
+  const webhookUrl=await attendanceProviderUrl(channel);
+  if(!channel||!webhookUrl){await markTransportFailure(claim,"transport_config_missing");return {ok:false,error:"transport_config_missing"};}
+
+  try{
+    const response=await fetch(webhookUrl,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        phone_e164:claim.to_phone_e164,
+        message_text:claim.text,
+        event_id:claim.idempotency_key,
+        conversation_id:claim.conversation_id,
+        source:"vitrine_admin_attendance"
+      }),
+      signal:AbortSignal.timeout(15000)
+    });
+    if(!response.ok)throw new Error(`papoai_http_${response.status}`);
+    const acceptedAt=new Date().toISOString();
+    const updated=await db.from("whatsapp_outbox_v1").update({status:"sent",sent_at:acceptedAt,last_error:null,updated_at:acceptedAt}).eq("id",claim.outbox_id).eq("status","claimed");
+    if(updated.error)throw updated.error;
+    return {ok:true,status:"accepted",outbox_status:"sent",channel};
+  }catch(error){
+    await markTransportFailure(claim,error);
+    return {ok:false,error:"papoai_transport_failed"};
+  }
 }
 
 async function signedMedia(objectPath:string,mimeType:string|null,filename:string|null){
@@ -163,7 +223,10 @@ Deno.serve(async(req:Request)=>{
       const r=await db.rpc("ops2_admin_attendance_conversation_v1",{p_conversation_id:conversationId,p_before:before,p_limit:num(url.searchParams.get("limit"),30,1,50)});
       if(r.error)throw r.error;
       const data=r.data||{ok:false,error:"conversation_unavailable"};
-      if(data?.conversation)data.service_window=serviceWindowState(data.conversation.last_inbound_at,new Date().toISOString());
+      if(data?.conversation){
+        data.service_window=serviceWindowState(data.conversation.last_inbound_at,new Date().toISOString());
+        data.send_capability=await attendanceSendCapability(data.conversation.whatsapp_account_id,data.service_window.open);
+      }
       return json(req,data,data?.ok===false?404:200);
     }
 
@@ -240,6 +303,30 @@ Deno.serve(async(req:Request)=>{
 
     const conversationId=validUuid(body?.conversation_id);
     if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
+
+    if(action==="send_text"){
+      if(body?.to_phone_e164!==undefined||body?.whatsapp_account_id!==undefined||body?.account_id!==undefined||body?.customer_id!==undefined){
+        return json(req,{ok:false,error:"destination_fields_not_allowed"},400);
+      }
+      const normalized=normalizeOutboundText(body?.text);
+      if(!normalized.ok)return json(req,{ok:false,error:normalized.error},400);
+      const idempotencyKey=normalizeIdempotencyKey(body?.idempotency_key);
+      if(!idempotencyKey)return json(req,{ok:false,error:"invalid_idempotency_key"},400);
+      const queued=await db.rpc("ops2_admin_attendance_enqueue_text_v2",{p_conversation_id:conversationId,p_text:normalized.text,p_idempotency_key:idempotencyKey});
+      if(queued.error)throw queued.error;
+      const data=queued.data||{ok:false,error:"enqueue_failed"};
+      if(data?.ok!==true){
+        const error=String(data?.error||"enqueue_failed");
+        const status=error==="rate_limited"?429:["service_window_closed","human_send_not_homologated"].includes(error)?409:400;
+        return json(req,data,status);
+      }
+      if(data?.duplicate===true){
+        if(data?.status==="sent")return json(req,{ok:true,status:"accepted",duplicate:true,outbox_id:data.outbox_id},200);
+        if(data?.status!=="queued")return json(req,{ok:false,error:"duplicate_not_dispatchable",outbox_id:data.outbox_id,status:data.status},409);
+      }
+      const dispatched=await dispatchQueuedOutbox(data.outbox_id);
+      return json(req,dispatched,dispatched?.ok===true?200:502);
+    }
 
     if(action==="conversation_labels_set"){
       if(!Array.isArray(body?.label_ids))return json(req,{ok:false,error:"invalid_label_ids"},400);
