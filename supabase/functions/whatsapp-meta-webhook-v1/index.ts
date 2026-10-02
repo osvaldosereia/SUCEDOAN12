@@ -160,7 +160,8 @@ Deno.serve(async (req: Request) => {
     const accounts = await accountMap(phoneNumberIds);
     const normalized = await normalizeMetaWebhook({ payload, rawBody, accountByPhoneNumberId: accounts });
     if (normalized.unknownPhoneNumberIds.length || normalized.messages.some((m: any) => !m.associable) || normalized.statuses.some((s: any) => !s.associable)) {
-      return json({ ok: false, error: "meta_account_unresolved", unknown_phone_number_ids: normalized.unknownPhoneNumberIds }, 422);
+      console.warn("whatsapp-meta-webhook-v1 unmapped account", normalized.unknownPhoneNumberIds.join(",").slice(0, 300));
+      return json({ ok: true, ignored: true, reason: "meta_account_unresolved", unknown_phone_number_ids: normalized.unknownPhoneNumberIds }, 200);
     }
 
     const safePayload = redactWebhookPayload(payload);
