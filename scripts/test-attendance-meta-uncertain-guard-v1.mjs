@@ -10,7 +10,7 @@ assert.match(sql,/attendance-v3-conversation:/i,'enqueue deve serializar por con
 assert.match(sql,/pg_advisory_xact_lock/i);
 assert.match(sql,/provider\s*=\s*'meta'/i);
 assert.match(sql,/status\s*=\s*'claimed'/i);
-assert.match(sql,/last_error\s+like\s+'meta_send_uncertain:%'/i);
+assert.match(sql,/coalesce\(o\.last_error\s*,\s*''\)\s+like\s+'meta_send_uncertain:%'/i,'guard deve ser null-safe');
 assert.match(sql,/meta_send_uncertain/i);
 assert.match(sql,/last_inbound_at\s*\+\s*interval\s+'24 hours'/i);
 assert.match(sql,/human_send_enabled\s*=\s*true/i);
