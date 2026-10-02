@@ -1,0 +1,24 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [{
+    "id": "840102181903253",
+    "changes": [{
+      "field": "messages",
+      "value": {
+        "messaging_product": "whatsapp",
+        "metadata": { "phone_number_id": "1218939807961094" },
+        "statuses": [{
+          "id": "wamid.REDACTED_OUTBOUND",
+          "status": "failed",
+          "timestamp": "1790968040",
+          "recipient_id": "5565999999999",
+          "errors": [{
+            "code": 131000,
+            "title": "Generic test failure",
+            "message": "Redacted provider failure"
+          }]
+        }]
+      }
+    }]
+  }]
+}

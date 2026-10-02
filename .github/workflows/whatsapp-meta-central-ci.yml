@@ -1,0 +1,51 @@
+name: WhatsApp Meta Central CI
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/whatsapp-meta-*.mjs'
+      - 'supabase/functions/whatsapp-meta-webhook-v1/**'
+      - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
+      - 'vitrine/admin/atendimento/attendance-send.js'
+      - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
+      - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
+      - 'scripts/test-attendance-meta-*.mjs'
+      - 'scripts/test-admin-attendance-meta-send-ui-v1.mjs'
+      - 'scripts/test-attendance-provider-neutral-v3.mjs'
+      - 'scripts/test-whatsapp-meta-*.mjs'
+      - '.github/workflows/whatsapp-meta-central-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Provider-neutral outbox contract
+        run: node scripts/test-attendance-provider-neutral-v3.mjs
+      - name: Meta transport contract
+        run: node scripts/test-attendance-meta-send-v1.mjs
+      - name: Meta Phone Number ID strictness
+        run: node scripts/test-attendance-meta-phone-id-v1.mjs
+      - name: Meta response-body timeout
+        run: node scripts/test-attendance-meta-body-timeout-v1.mjs
+      - name: Meta webhook contract
+        run: node scripts/test-whatsapp-meta-webhook-v1.mjs
+      - name: Meta webhook TypeScript syntax
+        run: node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts
+      - name: Meta canonical outbound contract
+        run: node scripts/test-attendance-meta-dedupe-v1.mjs
+      - name: Admin Meta gateway contract
+        run: node scripts/test-admin-attendance-meta-send-ui-v1.mjs
+      - name: Admin Meta gateway TypeScript syntax
+        run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts
+      - name: Admin composer JavaScript syntax
+        run: node --check vitrine/admin/atendimento/attendance-send.js
+      - name: Meta secrets guard
+        run: node scripts/test-whatsapp-meta-no-secrets-v1.mjs
