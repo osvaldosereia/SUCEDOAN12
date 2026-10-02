@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const html=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
+const js=fs.readFileSync('vitrine/admin/atendimento/attendance.js','utf8');
+const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
+for(const id of ['labelFilter','manageLabelsBtn','conversationLabelsBtn','labelManager','conversationLabelsMenu']) assert.match(html,new RegExp(`id=["']${id}["']`),`UI de etiquetas sem ${id}`);
+assert.match(js,/state=.*labels|labels:/s,'estado deve carregar etiquetas');
+assert.match(js,/loadLabels/);
+assert.match(js,/conversation_labels_set/);
+assert.match(js,/label_id/,'fila deve enviar filtro por etiqueta');
+assert.match(js,/item\.labels|labels\|\|\[\]/,'cards devem renderizar etiquetas');
+assert.match(css,/\.label-chip|\.conversation-label/i);
+assert.match(css,/overflow-x\s*:\s*hidden|overflow-wrap/i,'layout deve conter overflow horizontal');
+console.log('OK · UI da Central oferece etiquetas internas, filtro e atribuição por conversa.');
