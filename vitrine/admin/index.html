@@ -8196,13 +8196,30 @@ window.addEventListener('message',event=>{
   }
 
   function orderStockAlertHtml(readiness){
-    if(!readiness)return state.orderFocusIssue==='stock'?'<div class="rule-notice" id="orderStockAlert"><strong>Conferência de estoque indisponível</strong><div class="sub">Não foi possível carregar a conferência de estoque agora. Feche o pedido, clique em Atualizar e tente novamente.</div></div>':'';
-    if(readiness.ok!==false)return state.orderFocusIssue==='stock'?'<div class="rule-notice" id="orderStockAlert"><strong>Estoque conferido</strong><div class="sub">Nenhuma falta de estoque foi encontrada agora. A lista pode estar desatualizada; ao fechar este pedido, clique em Atualizar.</div></div>':'';
+    const focused=state.orderFocusIssue==='stock';
+    if(!readiness)return focused?'<div class="rule-notice warn" id="orderStockAlert" tabindex="-1"><strong>⚠️ Não consegui conferir o estoque agora</strong><div>Feche o pedido, clique em Atualizar e tente novamente.</div></div>':'';
+    if(readiness.ok!==false)return focused?'<div class="rule-notice" id="orderStockAlert" tabindex="-1" style="border-color:#b9dec9;background:#f2fbf5"><strong style="color:#176b43">✓ Estoque conferido agora</strong><div>Nenhuma falta de estoque foi encontrada neste momento. O aviso da lista estava desatualizado; ao fechar este pedido, clique em Atualizar.</div></div>':'';
     const rows=Array.isArray(readiness.shortages)?readiness.shortages:[];
-    const detail=rows.length
-      ? rows.slice(0,4).map(x=>esc(x.name||'Produto')+' · precisa '+esc(fmtQty(x.required??x.requested??0))+' · disponível '+esc(fmtQty(x.available||0))).join('<br>')
-      : 'Não há estoque disponível suficiente para este pedido.';
-    return '<div class="sync-alert" id="orderStockAlert"><div><strong style="color:#b3261e">Estoque insuficiente</strong><small>'+detail+(Number(readiness.shortage_count||0)>4?'<br>+'+(Number(readiness.shortage_count)-4)+' item(ns)':'')+'</small></div><button class="secondary" id="openBalanceFromOrder" type="button">Abrir Balanço</button></div>';
+    const cards=rows.map(x=>{
+      const required=Number(x.required??x.requested??0)||0;
+      const available=Number(x.available||0)||0;
+      const shortage=Number(x.shortage??Math.max(0,required-available))||0;
+      const locator=[x.gondola_number!=null?'Gôndola '+x.gondola_number:'',x.shelf_label?'Prateleira '+x.shelf_label:''].filter(Boolean).join(' · ');
+      const code=x.gtin||x.sku||'';
+      return '<div style="border:1px solid #f0c8c3;background:#fff;border-radius:10px;padding:10px 12px;margin-top:8px">'+
+        '<strong style="display:block;color:#18221c;font-size:13px">'+esc(x.name||'Produto')+'</strong>'+
+        '<div style="margin-top:4px;color:#5f6962;font-size:12px">Precisa <b>'+esc(fmtQty(required))+'</b> · Disponível <b>'+esc(fmtQty(available))+'</b> · <b style="color:#b3261e">Faltam '+esc(fmtQty(shortage))+'</b></div>'+
+        ((code||locator)?'<div style="margin-top:3px;color:#66716a;font-size:11px">'+(code?'Código '+esc(code):'')+(code&&locator?' · ':'')+esc(locator)+'</div>':'')+
+      '</div>';
+    }).join('');
+    const total=Number(readiness.shortage_count||rows.length||0);
+    const extra=total>rows.length?'<div style="margin-top:7px;font-size:11px;color:#66716a">Há mais '+esc(String(total-rows.length))+' item(ns) com falta além dos exibidos.</div>':'';
+    return '<div class="rule-notice warn" id="orderStockAlert" tabindex="-1" style="border-color:#e6a9a2;background:#fff8f7">'+
+      '<strong style="display:block;color:#b3261e;font-size:14px">⚠️ Revisar estoque antes de confirmar</strong>'+
+      '<div style="margin-top:3px">O pedido está bloqueado porque o estoque disponível não cobre todos os itens abaixo.</div>'+
+      (cards||'<div style="margin-top:8px">Não há estoque disponível suficiente para este pedido.</div>')+extra+
+      '<div class="print-actions" style="margin-top:10px"><button class="secondary" id="openBalanceFromOrder" type="button">Abrir Balanço para corrigir estoque</button></div>'+
+    '</div>';
   }
 
   function orderBlingLinkHtml(link){
