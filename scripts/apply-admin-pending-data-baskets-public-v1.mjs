@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// One-shot patch: mantém mudanças grandes do HTML precisas e auditáveis.
 function replaceOnce(text, from, to, label){
   const count=text.split(from).length-1;
   if(count!==1)throw new Error(`${label}: esperado 1 match, encontrado ${count}`);
