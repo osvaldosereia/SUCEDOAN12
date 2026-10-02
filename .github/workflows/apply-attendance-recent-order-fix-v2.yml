@@ -4,6 +4,7 @@ on:
     branches: [fix/attendance-recent-order-dates]
     paths:
       - '.github/workflows/apply-attendance-recent-order-fix-v2.yml'
+      - 'scripts/apply-attendance-recent-order-fix.py'
 permissions:
   contents: write
 jobs:
