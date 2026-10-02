@@ -7,7 +7,7 @@ const orderTransport = fs.readFileSync('supabase/functions/admin-orders-v1/index
 
 for (const copy of [
   'WhatsApp e cadastro',
-  'Enviar pedido para WhatsApp da empresa',
+  'Abrir pedido no WhatsApp da empresa',
   'Abrir WhatsApp do cliente',
   'Gerar link de cadastro',
   'Abrir WhatsApp do cliente com link de cadastro',
@@ -22,6 +22,8 @@ for (const fn of [
   'async function refreshCurrentOrderWhatsappRegistration',
   'async function sendCurrentOrderWhatsapp',
   'async function issueCurrentOrderRegistrationLink',
+  'function currentOrderCompanyWhatsappMessage',
+  'function openCurrentOrderCompanyWhatsapp',
   'function openCurrentOrderCustomerWhatsapp',
   'function openCurrentOrderRegistrationWhatsapp',
   'async function copyCurrentOrderRegistrationLink'
@@ -29,15 +31,19 @@ for (const fn of [
   assert.ok(admin.includes(fn), `admin UI missing handler: ${fn}`);
 }
 
-assert.ok(admin.includes("api('order_whatsapp_send'"), 'send button must use existing order_whatsapp_send action');
+assert.ok(admin.includes('const COMPANY_WHATSAPP_E164="5565998150975"'), 'company WhatsApp target must be the operational 0975 number');
+assert.ok(admin.includes("window.open('https://wa.me/'+COMPANY_WHATSAPP_E164+'?text='"), 'company action must use a direct WhatsApp deep link');
+assert.ok(admin.includes("$('#sendOrderWhatsApp').onclick=openCurrentOrderCompanyWhatsapp"), 'company WhatsApp button must open the direct readable handoff');
+assert.ok(!admin.includes("$('#sendOrderWhatsApp').onclick=sendCurrentOrderWhatsapp"), 'company WhatsApp button must not use the PapoAI template cross-send');
+assert.ok(admin.includes("lines.push('','📦 PRODUTOS')"), 'company WhatsApp text must contain a products section');
+assert.ok(admin.includes("lines.push('• '+qty+'x '+name)"), 'company WhatsApp text must put every product on its own bullet line');
 assert.ok(admin.includes("api('order_registration_link_issue'"), 'registration button must use existing order_registration_link_issue action');
 assert.ok(admin.includes("api('order_registration_link_status'"), 'UI must refresh registration/send status');
 assert.ok(admin.includes("orderWhatsappRegistrationHtml(o)+"), 'order editor must render WhatsApp/registration panel');
-assert.ok(admin.includes("$('#sendOrderWhatsApp').onclick=sendCurrentOrderWhatsapp"), 'send button must be bound');
 assert.ok(admin.includes("$('#issueOrderRegistrationLink').onclick=issueCurrentOrderRegistrationLink"), 'registration button must be bound');
 assert.ok(admin.includes("activeLink=link?.state==='active'"), 'active registration link must block accidental replacement');
 assert.ok(admin.includes('Envio do pedido aguardando configuração PapoAI'), 'provider-not-ready state must be visible');
-assert.ok(!admin.includes("finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Enviar pedido para WhatsApp da empresa'}await refreshCurrentOrderWhatsappRegistration()}"), 'send handler must stay disabled until readiness refresh decides it is safe');
+assert.ok(!admin.includes("finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Enviar pedido para WhatsApp da empresa'}await refreshCurrentOrderWhatsappRegistration()}"), 'legacy PapoAI company-send lifecycle must not be reintroduced');
 assert.ok(!admin.includes("finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Gerar link de cadastro'}}"), 'issue handler must not blindly re-enable an active registration link');
 assert.ok(!admin.includes('/cadastro/?order_id='), 'public registration link must not expose order_id');
 
@@ -95,4 +101,4 @@ assert.ok(orderTransport.includes('items_text:details.itemsText'), 'legacy templ
 assert.ok(orderTransport.includes('order_items_not_ready'), 'checkout must retry instead of sending an incomplete order');
 assert.ok(orderTransport.includes('scope==="checkout_auto"?"retry":"failed"'), 'checkout must retry when order items are not ready');
 
-console.log('admin order WhatsApp UI + gateway + full storefront order contract: ok');
+console.log('admin direct company WhatsApp + customer gateway + full storefront order contract: ok');
