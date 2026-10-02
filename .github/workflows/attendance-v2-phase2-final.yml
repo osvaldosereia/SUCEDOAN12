@@ -1,0 +1,18 @@
+name: Attendance v2 Phase 2 Final
+on:
+  push:
+    branches: [feat/attendance-central-v2-phase2]
+    paths: ['.github/workflows/attendance-v2-phase2-final.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: |
+          set -euo pipefail
+          for f in scripts/test-admin-attendance-*.mjs; do node "$f"; done
+          node --check vitrine/admin/atendimento/attendance.js
