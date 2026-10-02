@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
+// Verification branch: exercise the complete direct-send contract in GitHub Actions.
 const htmlPath=new URL('../vitrine/admin/atendimento/index.html',import.meta.url);
 const sendPath=new URL('../vitrine/admin/atendimento/attendance-send.js',import.meta.url);
 const html=fs.readFileSync(htmlPath,'utf8');
