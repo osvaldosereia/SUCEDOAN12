@@ -3,6 +3,7 @@ import fs from 'node:fs';
 
 const helperPath = new URL('../supabase/functions/_shared/whatsapp-meta-webhook-v1.mjs', import.meta.url);
 const edgePath = new URL('../supabase/functions/whatsapp-meta-webhook-v1/index.ts', import.meta.url);
+const fixturePath = (name) => new URL(`./fixtures/${name}`, import.meta.url);
 
 assert.equal(fs.existsSync(helperPath), true, 'helper do webhook Meta deve existir');
 assert.equal(fs.existsSync(edgePath), true, 'Edge Function do webhook Meta deve existir');
@@ -63,14 +64,48 @@ const unknown = await normalizeMetaWebhook({ payload: fixture, rawBody: JSON.str
 assert.deepEqual(unknown.unknownPhoneNumberIds, ['1218939807961094']);
 assert.equal(unknown.messages[0].associable, false);
 
+for (const [file, expected] of [
+  ['meta-webhook-status-sent.redacted.json', 'sent'],
+  ['meta-webhook-status-delivered.redacted.json', 'delivered'],
+  ['meta-webhook-status-read.redacted.json', 'read'],
+  ['meta-webhook-status-failed.redacted.json', 'failed'],
+]) {
+  const payload = JSON.parse(fs.readFileSync(fixturePath(file), 'utf8'));
+  const result = await normalizeMetaWebhook({
+    payload,
+    rawBody: JSON.stringify(payload),
+    accountByPhoneNumberId: new Map([['1218939807961094', '00000000-0000-0000-0000-000000000018']]),
+  });
+  assert.equal(result.statuses.length, 1, `${file} deve normalizar um status`);
+  assert.equal(result.statuses[0].status, expected, `${file} deve preservar status ${expected}`);
+  assert.equal(result.statuses[0].associable, true);
+}
+
+const inboundFixture = JSON.parse(fs.readFileSync(fixturePath('meta-webhook-inbound-text.redacted.json'), 'utf8'));
+const inbound = await normalizeMetaWebhook({
+  payload: inboundFixture,
+  rawBody: JSON.stringify(inboundFixture),
+  accountByPhoneNumberId: new Map([['1218939807961094', '00000000-0000-0000-0000-000000000018']]),
+});
+assert.equal(inbound.messages.length, 1);
+assert.equal(inbound.messages[0].message.direction, 'inbound');
+assert.equal(inbound.messages[0].message.text_body, 'Mensagem de teste');
+
 const edge = fs.readFileSync(edgePath, 'utf8');
 assert.match(edge, /META_WHATSAPP_APP_SECRET/);
 assert.match(edge, /META_WHATSAPP_VERIFY_TOKEN/);
 assert.match(edge, /x-hub-signature-256/i);
+assert.match(edge, /MAX_BODY_BYTES/);
 assert.match(edge, /whatsapp_ingest_event_v1/);
 assert.match(edge, /whatsapp_record_status_v1/);
+assert.match(edge, /meta_account_unresolved/);
 assert.match(edge, /phone_number_id/);
 assert.doesNotMatch(edge, /EAA[A-Za-z0-9_-]{30,}/, 'Edge Function não pode conter token literal');
 assert.doesNotMatch(edge, /TESTE META DIRETO|998150975|984491018/, 'webhook não pode hardcodar destinatários de homologação');
+assert.doesNotMatch(edge, /dona-antonia-agent|conversation-worker/i, 'webhook não deve executar IA sincronicamente');
 
-console.log('OK · webhook Meta valida challenge/assinatura, resolve canal por Phone Number ID e reutiliza ingest/status canônicos.');
+const statusSection = edge.split('async function persistStatus')[1]?.split('Deno.serve')[0] || '';
+assert.ok(statusSection.indexOf('whatsapp_ingest_event_v1') >= 0, 'status deve ser capturado duravelmente');
+assert.ok(statusSection.indexOf('whatsapp_ingest_event_v1') < statusSection.indexOf('whatsapp_record_status_v1'), 'status bruto deve ser persistido antes da reconciliação');
+
+console.log('OK · webhook Meta valida challenge/assinatura, resolve canal, normaliza fixtures e persiste status de forma durável.');
