@@ -59,15 +59,30 @@ assert.ok(adminApi.includes('if(r.method===\"GET\"&&a===\"order_registration_lin
 assert.ok(adminApi.includes('if(r.method===\"POST\"&&a===\"order_whatsapp_send\")'), 'send action must be routed');
 assert.ok(adminApi.includes('if(r.method===\"POST\"&&a===\"order_registration_link_issue\")'), 'registration action must be routed');
 
-assert.ok(orderTransport.includes('async function orderItemsSummary'), 'order transport must build a complete item summary');
-assert.ok(orderTransport.includes('.from("order_items")'), 'order transport must load the persisted order items');
-assert.ok(orderTransport.includes('items_count:items.count'), 'provider payload must expose items_count');
-assert.ok(orderTransport.includes('items_text:items.text'), 'provider payload must expose items_text');
-assert.ok(orderTransport.includes('lines.join(" • ")'), 'PapoAI item summary must stay on one line with visible separators');
-assert.ok(!orderTransport.includes('lines.join("\\n")'), 'PapoAI item summary must not depend on line breaks');
-assert.ok(orderTransport.includes('return `${qty}x ${name}`;'), 'items_text must prioritize complete quantities and product names');
-assert.ok(!orderTransport.includes('select("name_snapshot,quantity,unit_price,line_total,created_at")'), 'items_text must not waste template space on line prices');
-assert.ok(orderTransport.includes('order_items_not_ready'), 'checkout must fail closed/retry instead of sending an incomplete order');
+assert.ok(orderTransport.includes('async function orderDetails'), 'order transport must load the complete persisted checkout order');
+assert.ok(orderTransport.includes('.from("orders")'), 'order transport must load the order row');
+assert.ok(orderTransport.includes('.from("order_items")'), 'order transport must load persisted order items');
+assert.ok(orderTransport.includes('lines.join("\\n")'), 'products must be one item per line');
+assert.ok(!orderTransport.includes('lines.join(" • ")'), 'products must not be flattened with bullet separators');
+for (const field of [
+  'order_date',
+  'order_number_short',
+  'customer_status',
+  'customer_name',
+  'customer_phone_formatted',
+  'address_label',
+  'district_label',
+  'city_label',
+  'delivery_label',
+  'basket_text',
+  'products_text',
+  'total_formatted',
+  'payment_label'
+]) {
+  assert.ok(orderTransport.includes(`${field}:`), `provider payload must expose ${field}`);
+}
+assert.ok(orderTransport.includes('items_text:details.productsText'), 'legacy template items_text must also become multiline');
+assert.ok(orderTransport.includes('order_items_not_ready'), 'checkout must retry instead of sending an incomplete order');
 assert.ok(orderTransport.includes('scope==="checkout_auto"?"retry":"failed"'), 'checkout must retry when order items are not ready');
 
-console.log('admin order WhatsApp UI + gateway + compact full-order payload contract: ok');
+console.log('admin order WhatsApp UI + gateway + full storefront order contract: ok');
