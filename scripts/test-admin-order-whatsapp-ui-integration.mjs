@@ -33,6 +33,7 @@ assert.ok(admin.includes("$('#sendOrderWhatsApp').onclick=sendCurrentOrderWhatsa
 assert.ok(admin.includes("$('#issueOrderRegistrationLink').onclick=issueCurrentOrderRegistrationLink"), 'registration button must be bound');
 assert.ok(admin.includes("activeLink=link?.state==='active'"), 'active registration link must block accidental replacement');
 assert.ok(admin.includes('Envio do pedido aguardando configuração PapoAI'), 'provider-not-ready state must be visible');
+assert.ok(!admin.includes("finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Enviar pedido no WhatsApp'}await refreshCurrentOrderWhatsappRegistration()}"), 'send handler must stay disabled until readiness refresh decides it is safe');
 assert.ok(!admin.includes("finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Gerar link de cadastro'}}"), 'issue handler must not blindly re-enable an active registration link');
 assert.ok(!admin.includes('/cadastro/?order_id='), 'public registration link must not expose order_id');
 
