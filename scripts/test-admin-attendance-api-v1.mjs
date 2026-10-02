@@ -25,20 +25,18 @@ assert.equal(normalizeProductQuery(' Omo '),'Omo');
 
 const api=fs.readFileSync(apiPath,'utf8');
 assert.match(api,/const\s+READ_ACTIONS\s*=\s*new Set\(\["accounts","queue","conversation","context","products"\]\)/);
-for(const action of ['mark_read','follow_up','issue_catalog','marketing_opt_out','send_text','takeover','release'])assert.match(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${action}`));
+for(const action of ['mark_read','follow_up','issue_catalog','marketing_opt_out'])assert.match(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${action}`));
+for(const unsupported of ['send_text','takeover','release'])assert.doesNotMatch(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${unsupported}`),`${unsupported} não pode ficar exposto enquanto PapoAI não estiver homologado`);
 assert.match(api,/admin_users/);
 assert.match(api,/ops2_admin_attendance_queue_v1/);
 assert.match(api,/ops2_admin_attendance_conversation_v1/);
 assert.match(api,/ops2_admin_attendance_context_v1/);
 assert.match(api,/ops2_issue_papoai_catalog_link_v1/);
 assert.match(api,/ops2_admin_attendance_marketing_optout_v1/);
-assert.match(api,/ops2_admin_attendance_enqueue_text_v1/);
-assert.match(api,/ops2_admin_attendance_claim_outbox_v1/);
-assert.match(api,/PAPOAI_ATTENDANCE_CONTROL_ENABLED/,'takeover/release devem ficar atrás de gate de homologação');
-assert.match(api,/control_not_homologated/);
+assert.doesNotMatch(api,/dispatchQueuedOutbox|callControlWebhook|PAPOAI_ATTENDANCE_CONTROL_ENABLED/,'transporte não homologado não deve permanecer ativo no gateway');
 assert.doesNotMatch(api,/https:\/\/webpublic\.papoai|webhooks\/in\//i,'URLs PapoAI não podem ser gravadas no código');
 
 const config=fs.readFileSync(configPath,'utf8');
 assert.match(config,/\[functions\.admin-whatsapp-ops-v1\][\s\S]*?verify_jwt\s*=\s*false/);
 assert.doesNotMatch(config,/\[functions\.admin-attendance-v1\]/);
-console.log('OK · gateway da Central usa autenticação Admin, transporte server-only e controles fail-closed.');
+console.log('OK · gateway da Central usa autenticação Admin e bloqueia transporte humano não homologado.');
