@@ -9,7 +9,7 @@ const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 type Channel="0975"|"1018";
 type DispatchScope="admin_manual"|"checkout_auto";
 type JsonRecord=Record<string,unknown>;
-type OrderItem={name_snapshot?:unknown;quantity?:unknown;metadata?:unknown;created_at?:unknown};
+type OrderItem={product_id?:unknown;name_snapshot?:unknown;quantity?:unknown;metadata?:unknown;created_at?:unknown};
 type OrderRow={
   id?:unknown;order_number?:unknown;customer_id?:unknown;phone_e164?:unknown;total?:unknown;payment_method?:unknown;
   created_at?:unknown;customer_snapshot?:unknown;delivery_address?:unknown;checkout_snapshot?:unknown;basket_name_snapshot?:unknown;
@@ -64,6 +64,22 @@ const deliveryLabel=(delivery:JsonRecord,checkoutDelivery:JsonRecord)=>text(
   160
 );
 
+const marketingSlug=(v:unknown)=>text(v,220).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+const MARKETING_CTA_PRIORITY=["BEBE","CABELOS","BELEZA","LIMPEZA","LAVANDERIA","PET"];
+const marketingInterestForProduct=(product:JsonRecord)=>{
+  const sub=marketingSlug(product.customer_subcategory||product.subcategory),leaf=marketingSlug(product.customer_subsubcategory||product.subsubcategory);
+  if(sub==="bebe"||leaf.includes("fralda")||leaf.includes("bebe"))return "BEBE";
+  if(sub==="cabelos"||["shampoo","condicionador","creme-de-pentear","tratamentos-capilares","coloracao-capilar","oleos-e-seruns-capilares","acessorios-de-cabelo","escovas-e-pentes","kits-de-shampoo-e-condicionador"].includes(leaf))return "CABELOS";
+  if(sub==="beleza-e-cuidados"||["unhas","labios","cuidados-corporais","cuidados-com-o-rosto","protecao-da-pele","acessorios-de-beleza"].includes(leaf))return "BELEZA";
+  if(sub==="higiene-pessoal")return "HIGIENE";
+  if(sub==="limpeza")return "LIMPEZA";
+  if(sub==="lavanderia")return "LAVANDERIA";
+  if(sub==="pets"||["caes","gatos","petiscos-para-pets","higiene-pet"].includes(leaf))return "PET";
+  if(sub==="casa-e-utilidades")return "CASA";
+  if(["biscoitos","chocolates-e-doces","balas-e-chicletes","salgadinhos-e-petiscos","bebidas","cereais-e-barras"].includes(leaf))return "DOCES_LANCHES";
+  return "";
+};
+
 async function orderDetails(orderId:string){
   const [orderResult,itemsResult]=await Promise.all([
     db.from("orders")
@@ -71,7 +87,7 @@ async function orderDetails(orderId:string){
       .eq("id",orderId)
       .maybeSingle(),
     db.from("order_items")
-      .select("name_snapshot,quantity,metadata,created_at")
+      .select("product_id,name_snapshot,quantity,metadata,created_at")
       .eq("order_id",orderId)
       .order("created_at",{ascending:true})
   ]);
@@ -112,6 +128,29 @@ async function orderDetails(orderId:string){
     if(fallbackBasket)basketLines=[`1x ${fallbackBasket}`];
   }
   const basketText=basketLines.length?basketLines.join("\n"):"NENHUMA";
+  const basketTextTemplate=basketLines.length?basketLines.join(" • "):"NENHUMA";
+
+  const checkoutProducts=arr(checkout.cart).map(obj).filter(item=>text(item.type,30)==="product");
+  let standaloneIds=[...new Set(checkoutProducts.map(item=>uid(item.id||item.product_id)).filter(Boolean))];
+  if(!standaloneIds.length){
+    standaloneIds=[...new Set(rows.filter(row=>!text(obj(row.metadata).basket_name,180)).map(row=>uid(row.product_id)).filter(Boolean))];
+  }
+  let marketingProducts:JsonRecord[]=[];
+  if(standaloneIds.length){
+    const productsResult=await db.from("products").select("id,brand,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory").in("id",standaloneIds);
+    if(productsResult.error)throw new Error(`marketing_products_query_failed: ${text(productsResult.error.message,240)}`);
+    marketingProducts=(productsResult.data||[]).map(obj);
+  }
+  const marketingInterests=new Set<string>();
+  if(cartBaskets.length||basketLines.length)marketingInterests.add("CESTAS");
+  const marketingBrands=new Set<string>();
+  for(const product of marketingProducts){
+    const interest=marketingInterestForProduct(product);if(interest)marketingInterests.add(interest);
+    const brand=marketingSlug(product.brand);if(brand==="nivea")marketingBrands.add("NIVEA");else if(brand==="elseve")marketingBrands.add("ELSEVE");
+  }
+  const marketingOptIn=customer.marketing_opt_in===true||checkoutCustomer.marketing_opt_in===true;
+  const marketingCta=marketingOptIn?(MARKETING_CTA_PRIORITY.find(value=>marketingInterests.has(value))||(marketingInterests.has("CESTAS")?"OFERTAS":"NENHUM")):"NENHUM";
+  const marketingCampaign=text(customer.marketing_campaign||checkoutCustomer.marketing_campaign||checkout.marketing_campaign,80)||"NENHUM";
 
   const addressParts=[address.street,address.number,address.complement].map(v=>text(v,180)).filter(Boolean);
   const addressLabel=addressParts.join(", ")||"NAO INFORMADO";
@@ -141,6 +180,12 @@ async function orderDetails(orderId:string){
     deliveryAddressFull,
     deliverySummary,
     basketText,
+    basketTextTemplate,
+    marketingOptIn,
+    marketingInterests:[...marketingInterests],
+    marketingBrands:[...marketingBrands],
+    marketingCta,
+    marketingCampaign,
     productsText,
     itemsText,
     totalFormatted:money(order.total),
@@ -231,6 +276,24 @@ Deno.serve(async(req:Request)=>{
     delivery_date_label:details.deliveryLabel,
     delivery_address_full:details.deliveryAddressFull,
     basket_text:details.basketText,
+    basket_text_template:details.basketTextTemplate,
+    marketing_opt_in:details.marketingOptIn?"SIM":"NAO",
+    marketing_interests:details.marketingInterests.join("|"),
+    marketing_brands:details.marketingBrands.join("|"),
+    cta_pos_pedido:details.marketingCta,
+    campaign_origin:details.marketingCampaign,
+    interest_cestas:details.marketingInterests.includes("CESTAS")?"SIM":"NAO",
+    interest_bebe:details.marketingInterests.includes("BEBE")?"SIM":"NAO",
+    interest_cabelos:details.marketingInterests.includes("CABELOS")?"SIM":"NAO",
+    interest_beleza:details.marketingInterests.includes("BELEZA")?"SIM":"NAO",
+    interest_higiene:details.marketingInterests.includes("HIGIENE")?"SIM":"NAO",
+    interest_limpeza:details.marketingInterests.includes("LIMPEZA")?"SIM":"NAO",
+    interest_lavanderia:details.marketingInterests.includes("LAVANDERIA")?"SIM":"NAO",
+    interest_pet:details.marketingInterests.includes("PET")?"SIM":"NAO",
+    interest_casa:details.marketingInterests.includes("CASA")?"SIM":"NAO",
+    interest_doces_lanches:details.marketingInterests.includes("DOCES_LANCHES")?"SIM":"NAO",
+    brand_nivea:details.marketingBrands.includes("NIVEA")?"SIM":"NAO",
+    brand_elseve:details.marketingBrands.includes("ELSEVE")?"SIM":"NAO",
     products_text:details.productsText,
     total_formatted:details.totalFormatted,
     payment_label:details.paymentLabel,

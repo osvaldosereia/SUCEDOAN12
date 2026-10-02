@@ -89,3 +89,9 @@ assert.match(adminOrdersV2,/delivery_date_label:details\.deliveryLabel/,'provide
 assert.match(adminOrdersV2,/delivery_address_full:details\.deliveryAddressFull/,'provider payload must expose complete address separately');
 assert.match(adminOrdersV2,/customer_name:details\.customerName/,'provider payload must keep customer name');
 assert.match(adminOrdersV2,/customer_phone_formatted:details\.customerPhone/,'provider payload must keep formatted customer phone');
+
+assert.match(storefront,/marketing_opt_in:customer\.marketing_opt_in===true/,'checkout order snapshot must retain marketing consent');
+assert.match(storefront,/marketing_campaign:marketingCampaign/,'checkout order snapshot must retain campaign origin when present');
+assert.match(adminOrders,/filter\(item=>text\(item\.type,30\)==="product"\)/,'marketing interests must derive only from standalone cart products');
+assert.match(adminOrders,/if\(cartBaskets\.length\|\|basketLines\.length\)marketingInterests\.add\("CESTAS"\)/,'basket purchase must emit CESTAS without classifying basket components');
+for(const field of ['basket_text_template','marketing_opt_in','marketing_interests','marketing_brands','cta_pos_pedido','campaign_origin','interest_cestas','interest_bebe','interest_cabelos','interest_beleza','interest_higiene','interest_limpeza','interest_lavanderia','interest_pet','interest_casa','interest_doces_lanches','brand_nivea','brand_elseve']) assert.match(adminOrders,new RegExp(`\\b${field}\\b`),`${field} must be exposed to PapoAI webhook payload`);
