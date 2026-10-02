@@ -67,9 +67,9 @@ begin
       c.last_outbound_at,
       c.service_window_expires_at,
       greatest(
+        coalesce(lm.message_at,'epoch'::timestamptz),
         coalesce(c.last_inbound_at,'epoch'::timestamptz),
         coalesce(c.last_outbound_at,'epoch'::timestamptz),
-        coalesce(c.updated_at,'epoch'::timestamptz),
         coalesce(c.created_at,'epoch'::timestamptz)
       ) as last_activity_at,
       coalesce(st.follow_up_at,null) as follow_up_at,
@@ -126,8 +126,6 @@ begin
     select q.*
     from filtered q
     order by
-      (q.unread_count>0 or q.human_required or q.status='needs_human') desc,
-      q.unread_count desc,
       q.last_activity_at desc,
       q.conversation_id
     limit v_limit
@@ -155,8 +153,6 @@ begin
     'has_order',q.has_order,
     'registration_incomplete',q.registration_incomplete
   ) order by
-    (q.unread_count>0 or q.human_required or q.status='needs_human') desc,
-    q.unread_count desc,
     q.last_activity_at desc,
     q.conversation_id
   ),'[]'::jsonb)
