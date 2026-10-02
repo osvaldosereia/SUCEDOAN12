@@ -20,3 +20,5 @@ jobs:
         run: node scripts/test-admin-attendance-queue-v2.mjs
       - name: Attendance single queue UI
         run: node scripts/test-admin-attendance-ui-v1.mjs
+      - name: Attendance private media API
+        run: node scripts/test-admin-attendance-media-api-v1.mjs
