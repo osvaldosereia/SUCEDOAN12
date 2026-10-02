@@ -11,9 +11,13 @@ assert.match(fn,/PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL/,'1018 env secret remain
 assert.doesNotMatch(fn,/canary_dispatch/,'temporary public canary endpoint must not remain');
 
 assert.match(sql,/vault\.decrypted_secrets/,'provider RPC must read encrypted Vault secrets');
+assert.match(sql,/ops2_papoai_order_provider_store_v1/,'Vault rotation RPC must exist');
+assert.match(sql,/vault\.create_secret/,'rotation RPC must create a missing Vault secret');
+assert.match(sql,/vault\.update_secret/,'rotation RPC must rotate an existing Vault secret');
+assert.match(sql,/\^https:\/\//,'rotation RPC must only accept HTTPS URLs');
 assert.match(sql,/papoai_order_template_webhook_0975_url_v1/,'0975 Vault secret name must be fixed');
 assert.match(sql,/papoai_order_template_webhook_1018_url_v1/,'1018 Vault secret name must be fixed');
-assert.match(sql,/revoke all[\s\S]*anon,authenticated/i,'RPC must not be executable by client roles');
-assert.match(sql,/grant execute[\s\S]*service_role/i,'RPC must be service-role only');
+assert.match(sql,/revoke all[\s\S]*anon,authenticated/i,'RPCs must not be executable by client roles');
+assert.match(sql,/grant execute[\s\S]*service_role/i,'RPCs must be service-role only');
 
 console.log('checkout WhatsApp provider Vault contract: OK');
