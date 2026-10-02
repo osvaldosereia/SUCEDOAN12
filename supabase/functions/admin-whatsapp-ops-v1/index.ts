@@ -380,7 +380,7 @@ Deno.serve(async(req:Request)=>{
       const data=queued.data||{ok:false,error:"enqueue_failed"};
       if(data?.ok!==true){
         const error=String(data?.error||"enqueue_failed");
-        const status=error==="rate_limited"?429:["service_window_closed","human_send_not_homologated","meta_transport_not_configured"].includes(error)?409:400;
+        const status=error==="rate_limited"?429:["service_window_closed","human_send_not_homologated","meta_transport_not_configured","meta_send_uncertain"].includes(error)?409:400;
         return json(req,data,status);
       }
       if(data?.duplicate===true){
