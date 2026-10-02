@@ -96,6 +96,13 @@ async function sendDraft(){
   }
 }
 
+function resetChannelSelection(){
+  selectedConversationId=null;
+  currentCapability={enabled:false,reason:'conversation_required'};
+  clearTimeout(refreshDebounce);
+  syncSendButton({updateNote:true});
+}
+
 function bind(){
   const draft=$('#messageDraft'),send=$('#sendBtn'),queue=$('#queueList');
   if(!draft||!send||!queue)return;
@@ -107,6 +114,7 @@ function bind(){
     }
   });
   send.addEventListener('click',()=>sendDraft().catch(()=>{}));
+  document.querySelectorAll('[data-channel-switch]').forEach(button=>button.addEventListener('click',()=>resetChannelSelection()));
   queue.addEventListener('click',event=>{
     const card=event.target.closest?.('.queue-card');if(!card)return;
     selectedConversationId=String(card.dataset.conversationId||'')||null;
