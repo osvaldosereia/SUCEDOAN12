@@ -17,7 +17,7 @@ const QUICK_REPLIES=[
   ['Pedido recebido','Recebemos seu pedido 😊 Vou acompanhar por aqui.']
 ];
 
-const state={accounts:{},filters:{'0975':'all','1018':'all'},search:'',selected:null,conversation:null,context:null,contextTab:'customer',conversationOpen:false,loadingOlder:false,refreshing:false};
+const state={accounts:{},activeChannel:'0975',search:'',selected:null,conversation:null,context:null,contextTab:'customer',conversationOpen:false,loadingOlder:false,refreshing:false};
 const $=sel=>document.querySelector(sel);
 const $$=sel=>[...document.querySelectorAll(sel)];
 const fmtTime=value=>{if(!value)return '';const d=new Date(value);return Number.isNaN(+d)?'':new Intl.DateTimeFormat('pt-BR',{hour:'2-digit',minute:'2-digit'}).format(d)};
@@ -70,7 +70,7 @@ function syncConversationVisibility(){const pane=$('#conversationPane');if(!pane
 function queueCard(item,channel){
   const btn=document.createElement('button');btn.type='button';btn.className='queue-card';btn.dataset.conversationId=item.conversation_id;
   if((typeof state.selected==='string'?state.selected:state.selected?.id)===item.conversation_id)btn.classList.add('selected');
-  const title=document.createElement('div');title.className='queue-title';const name=document.createElement('span');name.textContent=item.display_name||item.phone_e164||'Contato';const time=document.createElement('span');time.className='queue-time';time.textContent=fmtQueueStamp(item.last_activity_at||item.last_message_at);time.title=fmtDateTime(item.last_activity_at||item.last_message_at);title.append(name,time);
+  const title=document.createElement('div');title.className='queue-title';const name=document.createElement('span');name.textContent=item.display_name||item.phone_e164||'Contato';const time=document.createElement('span');time.className='queue-time';time.textContent=fmtQueueStamp(item.canonical_last_message_at||item.last_message_at);time.title=fmtDateTime(item.canonical_last_message_at||item.last_message_at);title.append(name,time);
   const preview=document.createElement('div');preview.className='queue-preview';const text=document.createElement('span');text.textContent=escapePreview(item);preview.append(text);if(item.unread_count>0){const badge=document.createElement('span');badge.className='unread-badge';badge.textContent=String(Math.min(99,item.unread_count));preview.append(badge)}
   const chips=document.createElement('div');chips.className='chips';if(item.human_required||item.mode==='human'||item.mode==='human_copilot'){const c=document.createElement('span');c.className='chip human';c.textContent='Humano';chips.append(c)}if(item.has_order){const c=document.createElement('span');c.className='chip order';c.textContent='Pedido';chips.append(c)}if(item.registration_incomplete){const c=document.createElement('span');c.className='chip pending';c.textContent='Cadastro pendente';chips.append(c)}
   btn.append(title,preview,chips);btn.addEventListener('click',()=>selectConversation(item.conversation_id,channel));return btn;
@@ -79,14 +79,31 @@ function queueCard(item,channel){
 async function loadAccounts(){
   const data=await api('accounts');state.accounts={};
   for(const account of data.items||[]){const ch=channelByPhone(account.phone_e164);if(ch)state.accounts[ch]=account}
-  for(const ch of ['0975','1018'])$(`#status${ch}`).textContent=state.accounts[ch]?'Conectado':'Canal não localizado';
   $('#connectionStatus').textContent=Object.keys(state.accounts).length===2?'2 canais conectados · envio manual pelo PapoAI':'Verifique os canais';
+  syncChannelSwitcher();
 }
-async function loadQueue(channel){
-  const account=state.accounts[channel],box=$(`#queue${channel}`);if(!box)return;box.replaceChildren();if(!account)return;
-  try{const data=await api('queue',{account_id:account.id,limit:QUEUE_PAGE_SIZE,filter:state.filters[channel],search:state.search});const items=data.items||[];for(const item of items)box.append(queueCard(item,channel));$(`#count${channel}`).textContent=String(items.filter(i=>i.unread_count>0||i.human_required||i.status==='needs_human').length);if(!items.length){const empty=document.createElement('div');empty.className='context-empty';empty.textContent='Nenhuma conversa.';box.append(empty)}}catch{const empty=document.createElement('div');empty.className='context-empty';empty.textContent='Não foi possível carregar esta fila.';box.append(empty)}
+function syncChannelSwitcher(){
+  $$('[data-channel-switch]').forEach(button=>{const active=button.dataset.channelSwitch===state.activeChannel;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));button.disabled=!state.accounts[button.dataset.channelSwitch]});
+  const status=$('#activeChannelStatus');if(status)status.textContent=state.accounts[state.activeChannel]?`Canal ${state.activeChannel} conectado`:`Canal ${state.activeChannel} não localizado`;
 }
-async function loadQueues(){await Promise.all([loadQueue('0975'),loadQueue('1018')]);syncConversationVisibility()}
+async function loadQueue(){
+  const channel=state.activeChannel,account=state.accounts[channel],box=$('#queueList');if(!box)return;box.replaceChildren();if(!account){syncChannelSwitcher();return}
+  try{const data=await api('queue',{account_id:account.id,limit:QUEUE_PAGE_SIZE,search:state.search});const items=data.items||[];for(const item of items)box.append(queueCard(item,channel));$('#activeChannelCount').textContent=String(items.filter(i=>i.unread_count>0).length);if(!items.length){const empty=document.createElement('div');empty.className='context-empty';empty.textContent='Nenhuma conversa.';box.append(empty)}}catch{const empty=document.createElement('div');empty.className='context-empty';empty.textContent='Não foi possível carregar esta fila.';box.append(empty)}
+  syncChannelSwitcher();syncConversationVisibility();
+}
+function resetConversationView(){
+  state.selected=null;state.conversation=null;state.context=null;state.conversationOpen=false;syncConversationVisibility();closeComposerPanels();
+  const messages=$('#messages');messages.replaceChildren();messages.hidden=true;const empty=$('#conversationEmpty');empty.hidden=false;empty.textContent='Escolha uma conversa na lista ao lado.';
+  const head=$('#conversationHead');head.querySelector('strong').textContent='Selecione uma conversa';head.querySelector('small').textContent=`Canal ${state.activeChannel}`;$('#openContextBtn').disabled=true;
+  $('#serviceWindow').className='service-window neutral';$('#serviceWindow').textContent='Nenhuma conversa selecionada';
+  for(const id of ['catalogBtn','quickRepliesBtn','quoteBtn','saleBtn','followUpBtn','optOutBtn'])$(`#${id}`).disabled=true;
+  renderContext();syncFallbackButtons();
+}
+async function switchChannel(channel){
+  if(!['0975','1018'].includes(channel)||!state.accounts[channel])return;
+  if(state.activeChannel===channel){syncChannelSwitcher();return}
+  state.activeChannel=channel;resetConversationView();syncChannelSwitcher();await loadQueue();
+}
 
 function renderConversationHead(){const c=state.conversation?.conversation;if(!c)return;const head=$('#conversationHead');head.querySelector('strong').textContent=state.selected?.display_name||state.context?.customer?.name||c.phone_e164||'Conversa';head.querySelector('small').textContent=`${channelByPhone(state.conversation?.account?.phone_e164)||''} · ${c.mode==='human'||c.mode==='human_copilot'?'Atendimento humano':'ANA atendendo'}`;$('#openContextBtn').disabled=false}
 function renderServiceWindow(){const box=$('#serviceWindow'),w=state.conversation?.service_window;if(!w){box.className='service-window neutral';box.textContent='Janela não disponível';return}if(w.open){const h=Math.floor(w.remaining_seconds/3600),m=Math.floor((w.remaining_seconds%3600)/60);box.className='service-window open';box.textContent=`● Janela de atendimento aberta · ${h}h ${m}min restantes`}else{box.className='service-window closed';box.textContent='● Janela encerrada · responda no PapoAI somente com template aprovado quando aplicável'}}
@@ -97,7 +114,7 @@ function enableConversationTools(){for(const id of ['catalogBtn','quickRepliesBt
 
 async function selectConversation(id,channel){
   state.selected=id;state.conversationOpen=true;syncConversationVisibility();closeComposerPanels();
-  try{const [conversation,context]=await Promise.all([api('conversation',{conversation_id:id,limit:MESSAGE_PAGE_SIZE}),api('context',{conversation_id:id})]);state.conversation=conversation;state.context=context;state.selected={id,channel,display_name:context?.customer?.name||conversation?.conversation?.phone_e164};renderMessages();renderContext();enableConversationTools();showNote(`${SEND_LOCK_STATUS} · prepare e copie a resposta`);await loadQueues();const inbound=[...(conversation.messages||[])].reverse().find(m=>m.direction==='inbound');if(inbound)api('mark_read',{conversation_id:id,message_id:inbound.id},'POST').catch(()=>{})}catch{$('#conversationEmpty').hidden=false;$('#conversationEmpty').textContent='Não foi possível abrir esta conversa.'}
+  try{const [conversation,context]=await Promise.all([api('conversation',{conversation_id:id,limit:MESSAGE_PAGE_SIZE}),api('context',{conversation_id:id})]);state.conversation=conversation;state.context=context;state.selected={id,channel,display_name:context?.customer?.name||conversation?.conversation?.phone_e164};renderMessages();renderContext();enableConversationTools();showNote(`${SEND_LOCK_STATUS} · prepare e copie a resposta`);await loadQueue();const inbound=[...(conversation.messages||[])].reverse().find(m=>m.direction==='inbound');if(inbound)api('mark_read',{conversation_id:id,message_id:inbound.id},'POST').catch(()=>{})}catch{$('#conversationEmpty').hidden=false;$('#conversationEmpty').textContent='Não foi possível abrir esta conversa.'}
 }
 async function loadOlder(){if(state.loadingOlder||!state.conversation?.next_before||!state.selected?.id)return;state.loadingOlder=true;const box=$('#messages'),beforeHeight=box.scrollHeight;try{const older=await api('conversation',{conversation_id:state.selected.id,before:state.conversation.next_before,limit:MESSAGE_PAGE_SIZE});state.conversation.messages=[...(older.messages||[]),...(state.conversation.messages||[])];state.conversation.next_before=older.next_before;const oldTop=box.scrollTop;renderMessageList(box,state.conversation.messages);box.scrollTop=box.scrollHeight-beforeHeight+oldTop}catch{}finally{state.loadingOlder=false}}
 
@@ -105,7 +122,7 @@ async function refreshSelectedConversation(){
   if(document.hidden||state.refreshing||!state.selected?.id)return;state.refreshing=true;
   try{const previousId=latestMessageId(state.conversation);const box=$('#messages');const nearBottom=box&&!box.hidden?(box.scrollHeight-box.scrollTop-box.clientHeight)<100:true;const current=await api('conversation',{conversation_id:state.selected.id,limit:MESSAGE_PAGE_SIZE});const currentId=latestMessageId(current);state.conversation=current;if(currentId!==previousId){renderMessages({scrollToBottom:nearBottom,preserveOffset:box?.scrollTop||0});const inbound=[...(current.messages||[])].reverse().find(m=>m.direction==='inbound');if(inbound)api('mark_read',{conversation_id:state.selected.id,message_id:inbound.id},'POST').catch(()=>{})}else renderServiceWindow()}catch{}finally{state.refreshing=false}
 }
-async function backgroundRefresh(){if(document.hidden)return;await loadQueues();await refreshSelectedConversation()}
+async function backgroundRefresh(){if(document.hidden)return;await loadQueue();await refreshSelectedConversation()}
 let refreshTimer=null;
 function startRefresh(){if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(()=>{backgroundRefresh().catch(()=>{})},QUEUE_REFRESH_MS)}
 
@@ -123,8 +140,8 @@ function closeComposerPanels(){$('#quickRepliesMenu').hidden=true;$('#followUpPa
 function renderQuickReplies(){const box=$('#quickRepliesMenu');box.replaceChildren();for(const [label,text] of QUICK_REPLIES){const b=document.createElement('button');b.type='button';b.className='quick-reply';b.textContent=label;b.addEventListener('click',()=>{setDraft(text);box.hidden=true;showNote('Resposta rápida preparada · copie para enviar no PapoAI')});box.append(b)}}
 async function prepareCatalog(){if(!state.selected?.id)return;$('#catalogBtn').disabled=true;showNote('Gerando link do catálogo…');try{const data=await api('issue_catalog',{conversation_id:state.selected.id},'POST');const url=data.catalog_url||(data.catalog_path?`https://www.donaantonia.com.br${data.catalog_path}`:null);if(!url)throw new Error('catalog_url_missing');setDraft(`Segue o seu catálogo da Dona Antônia 😊\n${url}`);showNote('Catálogo preparado · copie para enviar no PapoAI','success')}catch{showNote('Não consegui gerar o catálogo agora','error')}finally{$('#catalogBtn').disabled=false}}
 function openFollowUpPanel(){const panel=$('#followUpPanel'),input=$('#followUpAt');$('#quickRepliesMenu').hidden=true;panel.hidden=false;if(!input.value){const d=new Date(Date.now()+60*60*1000);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());input.value=d.toISOString().slice(0,16)}input.focus()}
-async function saveFollowUp(){if(!state.selected?.id)return;const raw=$('#followUpAt').value;if(!raw){showNote('Escolha a data e hora do retorno','error');return}const iso=new Date(raw).toISOString();if(Date.parse(iso)<=Date.now()){showNote('O retorno precisa ficar no futuro','error');return}try{await api('follow_up',{conversation_id:state.selected.id,follow_up_at:iso},'POST');$('#followUpPanel').hidden=true;showNote(`Retorno marcado para ${fmtDate(iso)} às ${fmtTime(iso)}`,'success');await loadQueues()}catch{showNote('Não consegui marcar o retorno','error')}}
-async function clearFollowUp(){if(!state.selected?.id)return;try{await api('follow_up',{conversation_id:state.selected.id,follow_up_at:null},'POST');$('#followUpPanel').hidden=true;$('#followUpAt').value='';showNote('Lembrete de retorno removido');await loadQueues()}catch{showNote('Não consegui limpar o retorno','error')}}
+async function saveFollowUp(){if(!state.selected?.id)return;const raw=$('#followUpAt').value;if(!raw){showNote('Escolha a data e hora do retorno','error');return}const iso=new Date(raw).toISOString();if(Date.parse(iso)<=Date.now()){showNote('O retorno precisa ficar no futuro','error');return}try{await api('follow_up',{conversation_id:state.selected.id,follow_up_at:iso},'POST');$('#followUpPanel').hidden=true;showNote(`Retorno marcado para ${fmtDate(iso)} às ${fmtTime(iso)}`,'success');await loadQueue()}catch{showNote('Não consegui marcar o retorno','error')}}
+async function clearFollowUp(){if(!state.selected?.id)return;try{await api('follow_up',{conversation_id:state.selected.id,follow_up_at:null},'POST');$('#followUpPanel').hidden=true;$('#followUpAt').value='';showNote('Lembrete de retorno removido');await loadQueue()}catch{showNote('Não consegui limpar o retorno','error')}}
 async function disableMarketingOffers(){
   if(!state.selected?.id||!state.context?.customer?.id){showNote('Esta conversa ainda não tem cliente vinculado','error');return}
   if(state.context.customer.marketing_opt_in!==true){showNote('Este cliente já está sem ofertas de marketing');return}
@@ -150,11 +167,10 @@ function openPapoAi(){
 
 function bind(){
   $('#messages').addEventListener('scroll',e=>{if(e.currentTarget.scrollTop<36)loadOlder()});
-  let searchTimer=null;$('#globalSearch').addEventListener('input',e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{state.search=e.target.value.trim();loadQueues()},250)});
-  $$('.queue-filters button').forEach(b=>b.addEventListener('click',()=>{const group=b.closest('.queue-filters'),ch=group.dataset.filterChannel;group.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.filters[ch]=b.dataset.filter;loadQueue(ch)}));
+  let searchTimer=null;$('#globalSearch').addEventListener('input',e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{state.search=e.target.value.trim();loadQueue()},250)});
+  $$('[data-channel-switch]').forEach(b=>b.addEventListener('click',()=>switchChannel(b.dataset.channelSwitch).catch(()=>{})));
   $$('.context-tabs [data-context-tab]').forEach(b=>b.addEventListener('click',()=>{$$('.context-tabs [data-context-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.contextTab=b.dataset.contextTab;renderContext()}));
   $('#openContextBtn').addEventListener('click',()=>$('#contextPane').classList.add('open'));$('#closeContextBtn').addEventListener('click',()=>$('#contextPane').classList.remove('open'));
-  $$('[data-mobile-channel]').forEach(b=>b.addEventListener('click',()=>{$$('[data-mobile-channel]').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('.queue-column').forEach(x=>x.classList.toggle('active-mobile',x.dataset.channel===b.dataset.mobileChannel));state.conversationOpen=false;syncConversationVisibility()}));
   $('#quickRepliesBtn').addEventListener('click',()=>{const box=$('#quickRepliesMenu');$('#followUpPanel').hidden=true;box.hidden=!box.hidden});
   $('#catalogBtn').addEventListener('click',prepareCatalog);
   $('#quoteBtn').addEventListener('click',()=>{const id=state.context?.customer?.id;if(id)emitParent('open_quote',{customer_id:id})});
@@ -167,5 +183,5 @@ function bind(){
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)backgroundRefresh().catch(()=>{})});
 }
 
-async function boot(){bind();renderQuickReplies();syncFallbackButtons();try{await loadAccounts();await loadQueues();startRefresh()}catch{$('#connectionStatus').textContent='Não foi possível iniciar o atendimento'}}
+async function boot(){bind();renderQuickReplies();syncFallbackButtons();try{await loadAccounts();await loadQueue();startRefresh()}catch{$('#connectionStatus').textContent='Não foi possível iniciar o atendimento'}}
 boot();
