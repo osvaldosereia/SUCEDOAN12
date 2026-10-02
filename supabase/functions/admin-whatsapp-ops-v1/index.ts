@@ -7,8 +7,8 @@ const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
-const READ_ACTIONS=new Set(["accounts","queue","conversation","context","products","media","labels","conversation_labels","quick_replies"]);
-const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","marketing_opt_out","label_save","label_deactivate","conversation_labels_set","quick_reply_save","quick_reply_deactivate"]);
+const READ_ACTIONS=new Set(["accounts","queue","conversation","context","products","media","labels","conversation_labels","quick_replies","templates"]);
+const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","marketing_opt_out","label_save","label_deactivate","conversation_labels_set","quick_reply_save","quick_reply_deactivate","template_save","template_deactivate","template_attendance_toggle"]);
 const MEDIA_BUCKET="attendance-media-v1";
 const MEDIA_RETENTION_DAYS=30;
 const MEDIA_SIGNED_URL_SECONDS=600;
@@ -198,7 +198,15 @@ Deno.serve(async(req:Request)=>{
       const r=await q;if(r.error)throw r.error;return json(req,{ok:true,items:r.data||[]});
     }
 
-    if(req.method==="GET"&&action==="products"){
+    if(req.method==="GET"&&action==="templates"){
+  const accountIdRaw=url.searchParams.get("account_id");const accountId=accountIdRaw?validUuid(accountIdRaw):null;
+  if(accountIdRaw&&!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
+  let q=db.from("whatsapp_templates_v1").select("id,whatsapp_account_id,waba_id,meta_template_id,name,language,category,status,components,quality_rating,last_synced_at,metadata,created_at,updated_at").order("name").order("language");
+  if(accountId)q=q.eq("whatsapp_account_id",accountId);
+  const r=await q;if(r.error)throw r.error;
+  return json(req,{ok:true,source:"local_cache",items:(r.data||[]).map((x:any)=>({...x,attendance_show:x?.metadata?.attendance?.show===true}))});
+}
+if(req.method==="GET"&&action==="products"){
       const q=normalizeProductQuery(url.searchParams.get("q"));const limit=num(url.searchParams.get("limit"),12,1,12);
       if(!q)return json(req,{ok:true,query:null,items:[]});
       return json(req,{ok:true,query:q,items:await productSearch(q,limit)});
@@ -206,7 +214,30 @@ Deno.serve(async(req:Request)=>{
 
     const body=await req.json().catch(()=>({}));
 
-    if(action==="label_save"){
+    if(action==="template_save"){
+  const id=body?.id?validUuid(body.id):null;const accountId=validUuid(body?.whatsapp_account_id);const name=clean(body?.name,180);const language=clean(body?.language,20)||"pt_BR";const category=clean(body?.category,40)||null;const statusRaw=clean(body?.status,30).toUpperCase()||"LOCAL_DRAFT";const allowedStatus=new Set(["ACTIVE","PAUSED","REJECTED","PENDING","INACTIVE","LOCAL_DRAFT"]);const status=allowedStatus.has(statusRaw)?statusRaw:"LOCAL_DRAFT";
+  if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);if(!name)return json(req,{ok:false,error:"template_name_required"},400);
+  const account=await db.from("whatsapp_accounts").select("id").eq("id",accountId).eq("is_active",true).maybeSingle();if(account.error)throw account.error;if(!account.data)return json(req,{ok:false,error:"whatsapp_account_not_found"},404);
+  let existing:any=null;if(id){const q=await db.from("whatsapp_templates_v1").select("id,metadata").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)return json(req,{ok:false,error:"template_not_found"},404);existing=q.data}
+  const previousMeta:any=existing?.metadata&&typeof existing.metadata==="object"?existing.metadata:{};const show=body?.attendance_show===true;const metadata={...previousMeta,source:previousMeta.source||"admin_manual_cache",attendance:{...(previousMeta.attendance||{}),show}};
+  const payload:any={whatsapp_account_id:accountId,waba_id:clean(body?.waba_id,80)||null,meta_template_id:clean(body?.meta_template_id,100)||null,name,language,category,status,components:Array.isArray(body?.components)?body.components:[],metadata,updated_at:new Date().toISOString()};
+  const r=id?await db.from("whatsapp_templates_v1").update(payload).eq("id",id).select("*").maybeSingle():await db.from("whatsapp_templates_v1").insert(payload).select("*").single();
+  if(r.error){if(String(r.error.code)==="23505")return json(req,{ok:false,error:"template_name_conflict"},409);throw r.error}return json(req,{ok:true,item:r.data});
+}
+if(action==="template_attendance_toggle"){
+  const id=validUuid(body?.id??body?.template_id);if(!id)return json(req,{ok:false,error:"invalid_template_id"},400);const show=body?.show===true;
+  const current=await db.from("whatsapp_templates_v1").select("id,metadata,status").eq("id",id).maybeSingle();if(current.error)throw current.error;if(!current.data)return json(req,{ok:false,error:"template_not_found"},404);
+  if(show&&String(current.data.status||'').toUpperCase()!=="ACTIVE")return json(req,{ok:false,error:"template_not_active"},409);
+  const meta:any=current.data.metadata&&typeof current.data.metadata==="object"?current.data.metadata:{};const metadata={...meta,attendance:{...(meta.attendance||{}),show}};
+  const r=await db.from("whatsapp_templates_v1").update({metadata,updated_at:new Date().toISOString()}).eq("id",id).select("*").maybeSingle();if(r.error)throw r.error;return json(req,{ok:true,item:r.data});
+}
+if(action==="template_deactivate"){
+  const id=validUuid(body?.id??body?.template_id);if(!id)return json(req,{ok:false,error:"invalid_template_id"},400);
+  const current=await db.from("whatsapp_templates_v1").select("id,metadata").eq("id",id).maybeSingle();if(current.error)throw current.error;if(!current.data)return json(req,{ok:false,error:"template_not_found"},404);
+  const meta:any=current.data.metadata&&typeof current.data.metadata==="object"?current.data.metadata:{};const metadata={...meta,attendance:{...(meta.attendance||{}),show:false}};
+  const r=await db.from("whatsapp_templates_v1").update({status:"INACTIVE",metadata,updated_at:new Date().toISOString()}).eq("id",id).select("id,status,metadata").maybeSingle();if(r.error)throw r.error;return json(req,{ok:true,item:r.data});
+}
+if(action==="label_save"){
       const id=body?.id?validUuid(body.id):null;const name=clean(body?.name,60);const color=clean(body?.color,7)||"#5f6368";const sortOrder=num(body?.sort_order,0,-9999,9999);
       if(!name)return json(req,{ok:false,error:"label_name_required"},400);
       if(!/^#[0-9a-fA-F]{6}$/.test(color))return json(req,{ok:false,error:"invalid_label_color"},400);
