@@ -12,6 +12,7 @@ const {
   verifyMetaSignature,
   verifyMetaChallenge,
   extractMetaPhoneNumberIds,
+  hasMetaMessageOrStatusEvents,
   normalizeMetaWebhook,
 } = await import(helperPath.href);
 
@@ -46,6 +47,7 @@ const fixture = {
   }],
 };
 
+assert.equal(hasMetaMessageOrStatusEvents(fixture), true);
 assert.deepEqual(extractMetaPhoneNumberIds(fixture), ['1218939807961094']);
 const normalized = await normalizeMetaWebhook({
   payload: fixture,
@@ -59,6 +61,11 @@ assert.equal(normalized.statuses.length, 1);
 assert.equal(normalized.statuses[0].provider_message_id, 'wamid.OUTBOUND1');
 assert.equal(normalized.payloadHash.length, 64);
 assert.deepEqual(normalized.unknownPhoneNumberIds, []);
+
+const malformed = structuredClone(fixture);
+malformed.entry[0].changes[0].value.metadata.phone_number_id = 'bad-1218939807961094';
+assert.equal(hasMetaMessageOrStatusEvents(malformed), true);
+assert.deepEqual(extractMetaPhoneNumberIds(malformed), [], 'Phone Number ID malformado não pode ser saneado silenciosamente');
 
 const unknown = await normalizeMetaWebhook({ payload: fixture, rawBody: JSON.stringify(fixture), accountByPhoneNumberId: new Map() });
 assert.deepEqual(unknown.unknownPhoneNumberIds, ['1218939807961094']);
@@ -98,6 +105,7 @@ assert.match(edge, /x-hub-signature-256/i);
 assert.match(edge, /MAX_BODY_BYTES/);
 assert.match(edge, /whatsapp_ingest_event_v1/);
 assert.match(edge, /whatsapp_record_status_v1/);
+assert.match(edge, /hasMetaMessageOrStatusEvents/);
 assert.match(edge, /meta_account_unresolved/);
 assert.match(edge, /phone_number_id/);
 assert.doesNotMatch(edge, /EAA[A-Za-z0-9_-]{30,}/, 'Edge Function não pode conter token literal');
@@ -108,4 +116,4 @@ const statusSection = edge.split('async function persistStatus')[1]?.split('Deno
 assert.ok(statusSection.indexOf('whatsapp_ingest_event_v1') >= 0, 'status deve ser capturado duravelmente');
 assert.ok(statusSection.indexOf('whatsapp_ingest_event_v1') < statusSection.indexOf('whatsapp_record_status_v1'), 'status bruto deve ser persistido antes da reconciliação');
 
-console.log('OK · webhook Meta valida challenge/assinatura, resolve canal, normaliza fixtures e persiste status de forma durável.');
+console.log('OK · webhook Meta valida assinatura/canal, normaliza fixtures e falha fechado para Phone Number ID inválido.');
