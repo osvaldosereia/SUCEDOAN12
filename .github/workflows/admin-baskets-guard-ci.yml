@@ -1,7 +1,12 @@
 name: Admin and Baskets Guard CI
 on:
   push:
-    branches: [fix/admin-pending-data-baskets-30-20261002]
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'scripts/test-admin-pending-data-baskets-public-v1.mjs'
   pull_request:
     branches: [main]
     paths:
