@@ -30,11 +30,17 @@ assert.match(api, /human_send_enabled/);
 assert.match(api, /homologated_at/);
 assert.doesNotMatch(api, /EAA[A-Za-z0-9_-]{30,}/, 'gateway não pode conter token literal');
 
-assert.doesNotMatch(ui, /graph\.facebook\.com|META_WHATSAPP_ACCESS_TOKEN|Authorization\s*:\s*[`"']Bearer/i, 'browser nunca chama Graph nem conhece token Meta');
+// O browser usa Bearer apenas para autenticar a sessão administrativa no Supabase.
+// Token/endpoint da Meta devem existir exclusivamente no backend.
+assert.doesNotMatch(ui, /graph\.facebook\.com/i, 'browser nunca chama Graph diretamente');
+assert.doesNotMatch(ui, /META_WHATSAPP_ACCESS_TOKEN/i, 'browser nunca conhece o secret Meta');
+assert.doesNotMatch(ui, /EAA[A-Za-z0-9_-]{30,}/, 'browser não pode conter token Meta literal');
+assert.match(ui, /ADMIN_ATTENDANCE_API/);
+assert.match(ui, /Authorization:\s*`Bearer \$\{token\}`/, 'Bearer do browser deve ser somente a sessão Admin para o backend');
 assert.match(ui, /currentCapability\.provider|send_capability/);
 assert.match(ui, /meta_send_uncertain/);
 assert.match(ui, /Meta|meta/i);
 assert.match(ui, /PapoAI/);
 assert.match(ui, /finally[\s\S]{0,120}sending=false/, 'loading deve sempre destravar');
 
-console.log('OK · gateway usa outbox v3 e provider switch server-side; UI permanece sem segredo/Graph e provider-aware.');
+console.log('OK · gateway usa outbox v3 e provider switch server-side; UI usa apenas sessão Admin e permanece sem segredo/Graph Meta.');
