@@ -8,7 +8,7 @@ const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 
 type Channel="0975"|"1018";
 type DispatchScope="admin_manual"|"checkout_auto";
-type OrderItem={name_snapshot?:unknown;quantity?:unknown;unit_price?:unknown;line_total?:unknown;created_at?:unknown};
+type OrderItem={name_snapshot?:unknown;quantity?:unknown;created_at?:unknown};
 const providerUrl=async(channel:Channel)=>{
   const envUrl=channel==="1018"
     ? (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL")||"")
@@ -40,7 +40,7 @@ const deliveryLabel=(v:any)=>text(v?.label||v?.date||v?.delivery_date||"A confir
 
 async function orderItemsSummary(orderId:string){
   const r=await db.from("order_items")
-    .select("name_snapshot,quantity,unit_price,line_total,created_at")
+    .select("name_snapshot,quantity,created_at")
     .eq("order_id",orderId)
     .order("created_at",{ascending:true});
   if(r.error)throw new Error(`order_items_query_failed: ${text(r.error.message,240)}`);
@@ -48,10 +48,7 @@ async function orderItemsSummary(orderId:string){
   const lines=rows.map((row)=>{
     const name=text(row.name_snapshot,160)||"Item";
     const qty=quantityLabel(row.quantity)||"1";
-    const lineTotal=money(row.line_total);
-    const unitPrice=money(row.unit_price);
-    const price=lineTotal||unitPrice;
-    return `${qty}x ${name}${price?` — ${price}`:""}`;
+    return `${qty}x ${name}`;
   });
   return {count:rows.length,text:lines.join(" • ")};
 }
