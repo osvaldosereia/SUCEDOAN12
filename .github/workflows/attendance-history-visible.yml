@@ -1,0 +1,23 @@
+name: Attendance history visibility
+on:
+  push:
+    branches: [fix/attendance-history-visible]
+    paths:
+      - 'vitrine/admin/atendimento/**'
+      - 'scripts/test-admin-attendance-render-v1.mjs'
+      - 'scripts/test-admin-attendance-ui-v1.mjs'
+      - '.github/workflows/attendance-history-visible.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save jsdom@24
+      - run: node scripts/test-admin-attendance-render-v1.mjs
+      - run: node scripts/test-admin-attendance-ui-v1.mjs
+      - run: node --check vitrine/admin/atendimento/attendance.js
