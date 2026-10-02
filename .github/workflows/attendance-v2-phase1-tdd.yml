@@ -22,3 +22,5 @@ jobs:
         run: node scripts/test-admin-attendance-ui-v1.mjs
       - name: Attendance private media API
         run: node scripts/test-admin-attendance-media-api-v1.mjs
+      - name: Attendance media UI
+        run: node scripts/test-admin-attendance-media-ui-v1.mjs
