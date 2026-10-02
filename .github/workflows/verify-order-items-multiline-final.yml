@@ -1,0 +1,19 @@
+name: verify-order-items-multiline-final
+
+on:
+  push:
+    branches:
+      - fix/order-items-multiline-whatsapp-final
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/test-order-items-multiline-marker.mjs
+      - run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
+      - run: node scripts/test-checkout-stock-adjustment-contract.mjs
+      - run: node scripts/test-checkout-whatsapp-return.mjs
