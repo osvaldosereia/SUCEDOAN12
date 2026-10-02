@@ -7,7 +7,7 @@ for(const id of ['labelFilter','manageLabelsBtn','conversationLabelsBtn','labelM
 assert.match(js,/state=.*labels|labels:/s,'estado deve carregar etiquetas');
 assert.match(js,/loadLabels/);
 assert.match(js,/conversation_labels_set/);
-assert.match(js,/label_id/,'fila deve enviar filtro por etiqueta');
+assert.match(js,/label_id\s*:\s*state\.labelFilter/,'fila deve enviar o filtro de etiqueta selecionado');
 assert.match(js,/item\.labels|labels\|\|\[\]/,'cards devem renderizar etiquetas');
 assert.match(css,/\.label-chip|\.conversation-label/i);
 assert.match(css,/overflow-x\s*:\s*hidden|overflow-wrap/i,'layout deve conter overflow horizontal');
