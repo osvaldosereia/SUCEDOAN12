@@ -5,12 +5,14 @@ on:
     branches: [main]
     paths:
       - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
   push:
     branches: [main, feat/admin-order-whatsapp-main-integration-20261001]
     paths:
       - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
 
