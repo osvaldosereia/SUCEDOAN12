@@ -32,7 +32,7 @@ function normalizeDigits(value) {
 
 function validateRequest({ accessToken, phoneNumberId, toE164, text, graphVersion, timeoutMs, fetchImpl }) {
   const token = typeof accessToken === 'string' ? accessToken.trim() : '';
-  const phoneId = normalizeDigits(phoneNumberId);
+  const phoneId = String(phoneNumberId ?? '').trim();
   const to = normalizeDigits(toE164);
   const body = typeof text === 'string' ? text : '';
   const version = typeof graphVersion === 'string' ? graphVersion.trim() : '';
