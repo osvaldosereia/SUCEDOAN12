@@ -1,27 +1,24 @@
 # RETOMADA — Central WhatsApp Própria via Meta Cloud API
 
 **Última atualização:** 2026-10-02  
-**Status:** planejamento técnico concluído; implementação ainda não iniciada  
-**Objetivo:** permitir atendimento 0975/1018 diretamente no Admin Dona Antônia via Meta Cloud API, com Supabase como verdade canônica e retirada futura do PapoAI sem big-bang.
+**Status:** Task 0 e Task 1 programados e testados no branch; migration v3 ainda NÃO aplicada no Supabase produtivo.  
+**Branch atual:** `feat/whatsapp-meta-central-task0-task1`
 
-## 1. Leia estes arquivos antes de continuar
+## 1. Leia antes de continuar
 
 1. `docs/superpowers/specs/2026-10-02-whatsapp-central-propria-meta-design.md`
 2. `docs/superpowers/plans/2026-10-02-whatsapp-central-propria-meta.md`
-3. este arquivo
+3. `docs/runbooks/whatsapp-meta-central-runbook.md`
+4. `docs/checklists/whatsapp-meta-preflight.md`
+5. este arquivo
 
-Não continuar apenas pela memória de conversa.
+Não continuar apenas pela memória da conversa.
 
-## 2. Baseline de planejamento
+## 2. Objetivo
 
-- Repositório: `osvaldosereia/SUCEDOAN12`
-- Main observado ao iniciar documentação: `c2ddc61715c44051ce15c389cc7df70baec548dc`
-- Supabase canônico: `ssbesxgaijknwsjbsbcz`
-- Branch de documentação: `docs/whatsapp-central-propria-20261002`
+Permitir atendimento dos canais 0975/1018 diretamente no Admin Dona Antônia pela Meta Cloud API, com Supabase como verdade canônica, migração gradual, rollback por canal e retirada do PapoAI somente no final.
 
-Se `main` avançou, rebase/merge com cuidado antes da implementação. Não presumir que paths/runtime permaneceram iguais.
-
-## 3. Identificadores Meta confirmados
+## 3. Identificadores confirmados — não secretos
 
 ### Business
 
@@ -33,14 +30,14 @@ Se `main` avançou, rebase/merge com cuidado antes da implementação. Não pres
 - Número: `+5565998150975`
 - WABA ID: `1497253794754816`
 - Phone Number ID: `945659128620084`
-- Plataforma: Cloud API
+- PapoAI agentbot: `2796`
 
 ### 1018
 
 - Número: `+5565984491018`
 - WABA ID: `840102181903253`
 - Phone Number ID: `1218939807961094`
-- Plataforma: Cloud API
+- PapoAI agentbot: `2501`
 
 ### App próprio
 
@@ -48,26 +45,11 @@ Se `main` avançou, rebase/merge com cuidado antes da implementação. Não pres
 - App ID: `1547249776748513`
 - Permissões confirmadas: `whatsapp_business_management`, `whatsapp_business_messaging`
 
-### PapoAI
+**Nunca adicionar access token, App Secret ou verify token a este arquivo, issue, PR ou frontend.**
 
-- Meta App ID observado: `469378005718636`
-- 0975 agentbot PapoAI: `2796`
-- 1018 agentbot PapoAI: `2501`
+## 4. Prova Meta direta já realizada
 
-**Nunca adicionar tokens, App Secret ou verify token neste arquivo.**
-
-## 4. Estado atual dos apps inscritos
-
-Na investigação de 2026-10-02:
-
-- WABA 1018: Papo AI + `cell principal`
-- WABA 0975: somente Papo AI
-
-Portanto, a inscrição do app próprio no 0975 faz parte do Task 7, **depois** de webhook próprio estar pronto e 1018 estar estável.
-
-## 5. Prova Meta direta já realizada
-
-Teste controlado:
+Teste controlado anterior:
 
 ```text
 1018 (Meta Cloud API própria) -> 0975
@@ -76,180 +58,160 @@ Mensagem: TESTE META DIRETO 1018
 
 Resultado:
 
-- Meta aceitou o POST e devolveu `wamid`: SIM
-- mensagem chegou no 0975: SIM
+- Meta aceitou e retornou `wamid`: SIM
+- chegou no 0975: SIM
 - PapoAI receptor 0975 exibiu inbound: SIM
-- Admin receptor 0975 exibiu inbound: SIM
-- Supabase receptor registrou inbound: SIM
-- PapoAI emissor 1018 exibiu o outbound próprio: NÃO
-- Supabase emissor 1018 criou outbound próprio automaticamente: NÃO
+- Admin/Supabase receptor exibiu inbound: SIM
+- PapoAI emissor 1018 exibiu outbound próprio: NÃO
+- Supabase emissor criou outbound automaticamente: NÃO
 
-**Decisão derivada:** toda mensagem enviada pelo nosso backend deve ser gravada canonicamente no Supabase no momento em que a Meta retornar o `wamid`. Não depender de `message.sent` do PapoAI para outbound próprio.
+Decisão: envio próprio deverá ser persistido pelo nosso backend assim que a Meta devolver `wamid`; não depender de `message.sent` do PapoAI.
 
-## 6. Gates atuais — devem permanecer OFF até canário
+## 5. Baseline de produção observado no início do Task 0
 
-Último estado confirmado:
+Runtime:
 
-- `dona-antonia-0975`
-  - `send_enabled=true`
-  - `human_send_enabled=false`
-  - `homologated_at=null`
-  - `outbound_provider='papoai'`
+| Canal | send_enabled | human_send_enabled | homologated_at | inbound_provider | outbound_provider |
+| --- | --- | --- | --- | --- | --- |
+| 0975 | true | false | null | papoai | papoai |
+| 1018 | true | false | null | papoai | papoai |
 
-- `dona-antonia-1018`
-  - `send_enabled=true`
-  - `human_send_enabled=false`
-  - `homologated_at=null`
-  - `outbound_provider='papoai'`
+Histórico observado:
 
-**Não liberar botão apenas mudando esses booleans.** O backend v2 ainda é PapoAI-hardcoded.
+| Canal | Direção | Contagem |
+| --- | --- | ---: |
+| 0975 | inbound | 1531 |
+| 0975 | outbound | 146 |
+| 1018 | inbound | 328 |
+| 1018 | outbound | 23 |
 
-## 7. Código atual relevante
+`whatsapp_outbox_v1` com `purpose='human_attendance'`: **0 linhas**.
 
-Reaproveitar:
+Constraints verificadas no banco:
 
-- `vitrine/admin/atendimento/attendance-send.js`
-- demais arquivos de `vitrine/admin/atendimento/`
-- `supabase/functions/admin-whatsapp-ops-v1/index.ts`
-- `supabase/functions/_shared/whatsapp-core-v1.mjs`
-- tabelas `conversations`, `whatsapp_messages_v1`, `whatsapp_accounts`, `whatsapp_outbox_v1`, `whatsapp_channel_runtime_v1`
+- runtime outbound provider aceita `papoai`, `meta`, `disabled`;
+- runtime inbound provider aceita `papoai`, `meta`;
+- outbox provider aceita `papoai`, `meta`;
+- portanto Task 1 não precisa alterar constraints.
 
-`whatsapp-core-v1.mjs` já contém normalizadores Meta importantes:
+## 6. Task 0 — Safeguard/baseline/secrets
 
-- `canonicalMessagesFromMeta(...)`
-- `statusEventsFromMeta(...)`
+**Status:** código/documentação concluídos no branch.
 
-RPCs atuais que NÃO devem ser o contrato final:
+Arquivos:
 
-- `ops2_admin_attendance_enqueue_text_v2`
-- `ops2_admin_attendance_claim_outbox_v2`
+- `scripts/test-whatsapp-meta-no-secrets-v1.mjs`
+- `docs/runbooks/whatsapp-meta-central-runbook.md`
+- `docs/checklists/whatsapp-meta-preflight.md`
 
-Eles exigem provider PapoAI. Criar v3 provider-neutral.
+Commits relevantes:
 
-## 8. Legado que não deve ser reativado
+- `c5acc5c956207c0d903a85cd77f340cc7d0f5c50` — guard anti-segredo
+- `7fcbe7f2703e27272b3a722d75fc32cf027d22a1` — runbook
+- `be81dbf5896fc0799bc512e49d67eb9025e3293e` — preflight
 
-Apesar de algumas funções aparecerem como `ACTIVE` no painel do Supabase, o código implantado pode estar deliberadamente aposentado e retornar HTTP 410.
+Teste executado:
 
-Não reativar:
+1. token sintético inserido em workspace local -> teste FALHOU como esperado;
+2. token sintético removido -> teste PASSOU.
 
-- `whatsapp-meta-direct-v1` — retired direct Meta transport
-- `admin-whatsapp-direct-v1` — retired outside site/vitrine/admin
-- `whatsapp-ingest` — legado aposentado
-- `whatsapp-ingest-make-v1` — legado aposentado
-- `conversation-worker-v3` — legacy AI worker retired
-- `dona-antonia-agent-core-v1` — retired operator agent
+Pendência operacional antes de qualquer canário real:
 
-**Regra:** ler o código da função, não confiar apenas no status `ACTIVE` do deploy.
+- revogar tokens temporários que apareceram em capturas;
+- gerar token de usuário de sistema de produção;
+- armazenar token/App Secret/verify token somente server-side.
 
-## 9. IA atual
+Essas ações de credencial não foram executadas por este branch.
 
-- `admin-service-intelligence-simple-v1`: útil como inteligência/copiloto do Admin
-- `admin-service-intelligence-v1`: inteligência operacional/admin
-- nenhum dos dois deve ser tratado como substituto direto da ANA de WhatsApp
+## 7. Task 1 — Outbox provider-neutral v3
 
-ANA própria será uma nova camada conversacional no Task 11.
+**Status:** programada e teste estático GREEN; ainda NÃO aplicada no Supabase produtivo.
 
-## 10. DO NOT TOUCH — isolamento do checkout
+Arquivos:
 
-Até fase explicitamente aprovada, não modificar:
+- `scripts/test-attendance-provider-neutral-v3.mjs`
+- `supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql`
+
+Commits:
+
+- `383e6af48c92a13d08eef7545200853d12fd6706` — teste RED
+- `661fb55748db35870da85de7b40cbe3c9676581e` — migration v3
+
+TDD observado:
+
+- RED: teste falhou especificamente com `migration provider-neutral v3 deve existir`.
+- GREEN: após criar a migration, teste passou com `OK · outbox v3 é provider-neutral, fail-closed, idempotente e preserva janela/gates.`
+
+Contrato implementado:
+
+- `ops2_admin_attendance_enqueue_text_v3(uuid,text,text)`
+- `ops2_admin_attendance_claim_outbox_v3(uuid)`
+- provider resolvido pelo `whatsapp_channel_runtime_v1.outbound_provider`;
+- somente `papoai` ou `meta` são dispatcháveis;
+- janela de 24h preservada;
+- `human_send_enabled=true` e `homologated_at is not null` continuam obrigatórios;
+- rate limit de 20/60s preservado;
+- destino resolvido server-side pela conversa;
+- idempotência usa namespace `attendance-v3:`;
+- claim valida que provider da outbox ainda é igual ao runtime;
+- claim devolve provider, `phone_number_id` e `waba_id` server-side;
+- nenhuma dependência de URL PapoAI no v3;
+- nenhuma criação otimista de `whatsapp_messages_v1` nesta Task.
+
+### Ruling importante
+
+A migration v3 **não foi aplicada em produção nesta rodada** porque o Task 1 pode ser concluído e revisado como código isolado antes de qualquer DDL externo. Os gates produtivos permanecem totalmente OFF. A aplicação da migration deve ocorrer somente após revisão do branch/PR e imediatamente antes do Task 2/integração que a consuma.
+
+## 8. Isolamento do checkout
+
+Nenhum destes componentes foi alterado:
 
 - `shopping-checkout-v2`
 - `shopping-chat-checkout-v2`
 - `storefront-v2`
 - frontend público do checkout
 - criação/registro de pedido
-- confirmação de pedido
 - estoque
-- integração Bling do pedido
+- Bling
 
-A Central não deve virar dependência síncrona do checkout.
+## 9. Gates — continuam OFF
 
-## 11. Segurança pendente antes da implementação
-
-Tokens temporários Meta apareceram em capturas durante a investigação.
-
-Primeira ação operacional do Task 0:
-
-1. revogar/invalidar tokens temporários expostos;
-2. gerar token de usuário de sistema de produção;
-3. armazenar somente server-side;
-4. configurar App Secret e webhook verify token server-side;
-5. confirmar que frontend e Git não contêm segredo.
-
-Não copiar valor de token para documentação, chat, issue ou PR.
-
-## 12. Próxima ação exata
-
-**NÃO começar pelo botão Enviar.**
-
-Executar nesta ordem:
-
-### Próximo lote
-
-1. criar branch/worktree de implementação a partir do `main` mais recente;
-2. executar **Task 0 — Safeguard, baseline e secrets**;
-3. executar **Task 1 — Outbox provider-neutral v3**;
-4. parar e verificar testes/estado antes de Task 2.
-
-Não ativar runtime/gates nesse primeiro lote.
-
-## 13. Como retomar em outra sessão
-
-Use este checklist:
+Não alterar ainda:
 
 ```text
-[ ] buscar main atual
-[ ] ler design
-[ ] ler implementation plan
-[ ] ler RETOMADA
-[ ] verificar se gates 0975/1018 continuam OFF
-[ ] verificar se checkout está saudável
-[ ] confirmar tokens temporários expostos foram revogados
-[ ] criar branch/worktree isolado
-[ ] executar Task 0 com testes
-[ ] executar Task 1 com testes
-[ ] atualizar este RETOMADA com commit SHA e resultados
-[ ] atualizar issue principal
+0975: human_send_enabled=false, homologated_at=null, outbound_provider=papoai
+1018: human_send_enabled=false, homologated_at=null, outbound_provider=papoai
 ```
 
-Ao final de cada Task, este arquivo deve ser atualizado com:
+Não liberar botão Enviar apenas mudando booleans.
 
-- último task concluído;
-- commit SHA;
-- testes executados;
-- mudanças de runtime;
-- riscos/pendências;
-- próxima ação exata.
+## 10. Legado que não deve ser reativado
 
-## 14. Rollback resumido
+- `whatsapp-meta-direct-v1`
+- `admin-whatsapp-direct-v1`
+- `whatsapp-ingest`
+- `whatsapp-ingest-make-v1`
+- `conversation-worker-v3`
+- `dona-antonia-agent-core-v1`
 
-Enquanto PapoAI estiver em migração/sombra:
+## 11. Próxima ação exata
+
+1. revisar diff/PR de Task 0 + Task 1;
+2. aplicar migration v3 somente após revisão;
+3. iniciar **Task 2 — Adapter de envio Meta** em novo ciclo TDD;
+4. ainda sem ligar gates e sem cliente real;
+5. depois Task 3 — webhook Meta próprio.
+
+## 12. Rollback resumido
+
+Enquanto PapoAI estiver em sombra:
 
 ```text
-1. human_send_enabled=false no canal afetado
-2. parar novos claims Meta
-3. preservar outbox/mensagens/logs
-4. usar fallback Copiar resposta + Abrir PapoAI
-5. não reenviar automaticamente eventos uncertain
-6. investigar com correlation ID/wamid
+human_send_enabled=false
+-> parar novos claims
+-> preservar outbox/mensagens/logs
+-> fallback Copiar resposta + Abrir PapoAI
+-> nunca retry cego de envio uncertain
 ```
 
 Rollback da Central nunca deve exigir rollback do checkout.
-
-## 15. Definição de pronto do projeto
-
-Só considerar PapoAI dispensável quando ambos 0975 e 1018 tiverem, pelo sistema próprio:
-
-- inbound;
-- outbound humano;
-- histórico canônico;
-- status;
-- templates;
-- mídia essencial;
-- takeover humano;
-- ANA própria ou decisão formal de atendimento exclusivamente humano;
-- observabilidade;
-- token rotation;
-- rollback testado.
-
-Até lá, retirar PapoAI é proibido.
