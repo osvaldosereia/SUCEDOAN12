@@ -10,7 +10,7 @@
 - Task 0 — safeguard/baseline/secrets: **concluída**.
 - Task 1 — outbox provider-neutral v3: **concluída e aplicada em produção com gates OFF**.
 - Task 2 — adapter de envio Meta: **concluída em código/testes e incluída no gateway v18**.
-- Task 3 — webhook Meta próprio: **código/testes concluídos e Edge Function implantada (`whatsapp-meta-webhook-v1` ACTIVE v2)**. Falta configurar secrets e callback/subscription Meta.
+- Task 3 — webhook Meta próprio: **implantado, secrets configurados, challenge validado HTTP 200 e HMAC funcionando; falta assinar/validar `messages` no 1018**.
 - Task 4 — canonical outbound/status/dedupe: **concluída e aplicada em produção**.
 - Task 5 — gateway/botão Admin: **backend `admin-whatsapp-ops-v1` v18 ACTIVE e fail-closed; UI provider-aware permanece no branch**.
 - Task 6 — canário 1018: **não iniciado**.
@@ -33,7 +33,6 @@ Verificado nesta fase:
 - botão Enviar continua bloqueado pelos gates;
 - PapoAI continua provider runtime dos dois canais;
 - nenhuma mensagem real foi enviada pela nova implementação nesta fase;
-- nenhuma subscription/callback Meta foi alterada ainda;
 - checkout, estoque, Bling e criação de pedido não foram tocados.
 
 ## Ativos Meta não secretos
@@ -80,12 +79,12 @@ Garantias:
 
 ## Task 3 — webhook Meta próprio
 
-Edge Function implantada:
+Edge Function implantada e validada:
 
 ```text
 slug: whatsapp-meta-webhook-v1
 status: ACTIVE
-version: 2
+version: 6
 verify_jwt: false
 ```
 
@@ -104,26 +103,40 @@ Contrato:
 - App Secret e verify token somente por env;
 - limite de payload 2 MiB;
 - canal resolvido exclusivamente por `phone_number_id`;
-- `phone_number_id` malformado/desconhecido falha fechado;
+- `phone_number_id` conhecido é associado à conta canônica;
 - inbound reutiliza `whatsapp_ingest_event_v1`;
 - status bruto é capturado antes da reconciliação;
 - status antecipado fica pendente e Task 4 reaplica quando outbound existe;
 - nenhuma IA roda sincronicamente no webhook;
 - fixtures cobrem inbound + sent + delivered + read + failed.
 
-### Secrets ainda pendentes
+### Secrets e challenge
 
-Não colocar valores em GitHub/chat. Configurar server-side no Supabase:
-
+Configurados server-side no Supabase, sem valores no GitHub/chat:
 - `META_WHATSAPP_APP_SECRET`
 - `META_WHATSAPP_VERIFY_TOKEN`
 
-Para o envio futuro pelo gateway também serão necessários:
+Em 2026-10-02 a Meta realizou o challenge GET contra:
 
-- `META_WHATSAPP_ACCESS_TOKEN`
-- `META_WHATSAPP_GRAPH_VERSION`
+`https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/whatsapp-meta-webhook-v1`
 
-Tokens expostos anteriormente em screenshots devem ser considerados comprometidos e não reutilizados.
+Resultado confirmado nos logs:
+- primeira tentativa com token divergente: HTTP 403;
+- token corrigido no Supabase/Meta;
+- tentativa seguinte: **HTTP 200**;
+- em seguida a Meta começou a fazer POSTs assinados que passaram a validação HMAC e responderam majoritariamente HTTP 200.
+
+### Hardening após validação
+
+Um payload de teste autenticado da Meta usou um `phone_number_id` não mapeado e recebeu 422; a Meta repetiu esse evento depois, confirmando risco de retry desnecessário.
+
+TDD aplicado:
+1. RED: teste novo exigindo acknowledge 200 para evento assinado de conta não mapeada falhou contra o código 422;
+2. GREEN: webhook alterado para retornar `{ok:true, ignored:true, reason:'meta_account_unresolved'}` com HTTP 200 para conta autenticada não mapeada;
+3. nenhum evento é persistido para conta desconhecida;
+4. versão endurecida implantada como **v6**.
+
+Eventos sem `phone_number_id` válido mas contendo `messages/statuses` continuam tratados de forma estrita.
 
 ## Task 4 — outbound canônico/status/dedupe
 
@@ -169,24 +182,22 @@ UI no branch:
 
 ## Segurança pendente antes do canário
 
-1. revogar tokens Meta que apareceram em screenshots;
-2. gerar credencial de produção nova;
-3. configurar `META_WHATSAPP_APP_SECRET` e `META_WHATSAPP_VERIFY_TOKEN` no Supabase sem expor valores;
-4. configurar `META_WHATSAPP_ACCESS_TOKEN` e a versão Graph quando formos habilitar outbound;
-5. validar challenge do webhook;
-6. configurar callback/subscription no app `cell principal`, primeiro no 1018;
-7. manter PapoAI em sombra;
-8. manter gates de envio humano OFF até homologação completa.
+1. revogar tokens Meta de envio que apareceram em screenshots;
+2. gerar credencial de produção nova para outbound;
+3. configurar `META_WHATSAPP_ACCESS_TOKEN` e `META_WHATSAPP_GRAPH_VERSION` somente quando formos habilitar outbound;
+4. assinar o campo `messages` do webhook no app Meta;
+5. confirmar o app próprio inscrito na WABA 1018 mantendo PapoAI em sombra;
+6. validar inbound/status/dedupe reais no 1018;
+7. manter gates de envio humano OFF até homologação completa.
 
 ## Próxima ação exata
 
-1. no Supabase, cadastrar os secrets do webhook (`META_WHATSAPP_APP_SECRET` e `META_WHATSAPP_VERIFY_TOKEN`);
-2. validar o challenge GET da Edge Function;
-3. configurar o callback do app Meta `cell principal` apontando para `whatsapp-meta-webhook-v1`;
-4. validar assinatura e inbound/status no 1018, mantendo PapoAI em paralelo;
-5. confirmar dedupe no Admin/Supabase;
-6. somente então preparar Task 6 — canário 1018;
-7. depois configurar credencial de outbound e habilitar o 1018 de forma controlada.
+1. no App Dashboard Meta `cell principal`, em Webhooks/WhatsApp, assinar o campo **`messages`**;
+2. manter os demais campos sem alteração nesta fase;
+3. confirmar que `cell principal` continua inscrito na WABA `840102181903253` (1018);
+4. fazer um inbound controlado 0975 -> 1018 para validar Meta + PapoAI em sombra sem duplicar no Admin;
+5. validar status/dedupe no Supabase;
+6. somente então preparar Task 6 — canário outbound 1018.
 
 ## Rollback operacional
 
