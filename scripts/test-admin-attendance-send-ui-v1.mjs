@@ -17,9 +17,10 @@ assert.match(js,/idempotency_key/);
 assert.match(js,/event\.key===['"]Enter['"][\s\S]*!event\.shiftKey/,'Enter envia e Shift+Enter preserva quebra de linha');
 assert.match(js,/service_window_closed/,'janela encerrada deve manter envio livre bloqueado');
 assert.match(js,/human_send_not_homologated/,'canal não homologado deve manter fallback');
+assert.match(js,/data-channel-switch[\s\S]*selectedConversationId=null/,'trocar 0975/1018 deve zerar a seleção de envio');
 assert.match(js,/copyReplyBtn|openPapoAiBtn/,'fallback atual deve permanecer disponível');
 assert.doesNotMatch(js,/to_phone_e164\s*:/,'browser não pode escolher destino');
 assert.doesNotMatch(js,/whatsapp_account_id\s*:/,'browser não pode escolher conta');
 assert.doesNotMatch(js,/takeover|release/,'módulo de envio não controla ANA');
 
-console.log('OK · UI de envio direto é fail-closed, usa gateway e mantém fallback PapoAI.');
+console.log('OK · UI de envio direto é fail-closed, isola troca de canal, usa gateway e mantém fallback PapoAI.');
