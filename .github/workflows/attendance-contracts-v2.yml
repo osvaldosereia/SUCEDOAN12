@@ -1,6 +1,7 @@
 name: Attendance contracts v2
 
 # Validates the attendance module against the current Vitrine Admin mainline.
+# Final verification also runs after the one-shot port workflow has been removed.
 on:
   push:
     branches:
