@@ -6,6 +6,7 @@ on:
       - 'supabase/functions/_shared/whatsapp-meta-*.mjs'
       - 'supabase/functions/whatsapp-meta-webhook-v1/**'
       - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
+      - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
       - 'scripts/test-attendance-meta-*.mjs'
       - 'scripts/test-attendance-provider-neutral-v3.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
@@ -35,5 +36,7 @@ jobs:
         run: node scripts/test-whatsapp-meta-webhook-v1.mjs
       - name: Meta webhook TypeScript syntax
         run: node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts
+      - name: Meta canonical outbound contract
+        run: node scripts/test-attendance-meta-dedupe-v1.mjs
       - name: Meta secrets guard
         run: node scripts/test-whatsapp-meta-no-secrets-v1.mjs
