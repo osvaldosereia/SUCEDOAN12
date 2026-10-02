@@ -1,0 +1,57 @@
+name: One-shot checkout cutoff 11h
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-checkout-cutoff-11h.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: RED confirm legacy 12h exists
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          files=[Path('index.html'),Path('vitrine/index.html')]
+          for p in files:
+              s=p.read_text()
+              assert "local.hour>=12" in s, f'legacy cutoff missing in {p}'
+              assert "Pedido após 12h de Cuiabá" in s, f'legacy copy missing in {p}'
+          print('RED confirmed: legacy 12h cutoff exists in both public routes')
+          PY
+      - name: Replace legacy cutoff with 11h
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in [Path('index.html'),Path('vitrine/index.html')]:
+              s=p.read_text()
+              s=s.replace("local.hour>=12", "local.hour>=11")
+              s=s.replace("Pedido após 12h de Cuiabá", "Pedido a partir das 11h de Cuiabá")
+              p.write_text(s)
+          PY
+      - name: GREEN verify public checkout cutoff
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in [Path('index.html'),Path('vitrine/index.html')]:
+              s=p.read_text()
+              assert "local.hour>=12" not in s, f'12h logic remains in {p}'
+              assert "Pedido após 12h de Cuiabá" not in s, f'12h copy remains in {p}'
+              assert "local.hour>=11" in s, f'11h cutoff missing in {p}'
+              assert "Pedido a partir das 11h de Cuiabá" in s, f'11h copy missing in {p}'
+              assert "Até 10:59" in s and "A partir das 11h" in s, f'visible checkout rule inconsistent in {p}'
+          print('GREEN: both public checkout routes use 11h Cuiaba cutoff')
+          PY
+          git diff --check
+      - name: Commit patch and remove one-shot workflow
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git rm .github/workflows/one-shot-checkout-cutoff-11h.yml
+          git add index.html vitrine/index.html
+          git commit -m 'fix(checkout): unifica corte de entrega em 11h de Cuiaba'
+          git push origin HEAD:main
