@@ -206,6 +206,17 @@ async function finish(outboxId:string,status:"sent"|"retry"|"failed"|"suppressed
   if(r.error||r.data?.ok!==true)throw new Error(`finish_failed: ${text(r.error?.message||r.data?.error)}`);
   return r.data;
 }
+async function enqueuePapoAiOrderSignals(orderId:string,channel:Channel,phone:unknown,details:Awaited<ReturnType<typeof orderDetails>>){
+  const keys=[...details.marketingInterests.map((v:string)=>`INT_${v}`),...details.marketingBrands.map((v:string)=>`BR_${v}`)];
+  if(details.marketingCta&&details.marketingCta!=="NENHUM")keys.push(`CTA_${details.marketingCta}`);
+  if(!keys.length)return;
+  try{
+    const r=await db.rpc("ops2_enqueue_papoai_order_signals_v1",{p_order_id:orderId,p_channel_origin:channel,p_phone_e164:text(phone,40),p_signal_keys:[...new Set(keys)]});
+    if(r.error||Number(r.data?.enqueued||0)<=0)return;
+    const task=fetch(`${U}/functions/v1/papoai-order-signals-v1`,{method:"POST",headers:{"Content-Type":"application/json","x-internal-key":K},body:"{}"}).catch(error=>console.error("papoai_signal_worker_kick",text((error as Error)?.message||error,180)));
+    const runtime=(globalThis as any).EdgeRuntime;if(runtime?.waitUntil)runtime.waitUntil(task);
+  }catch(error){console.error("papoai_signal_enqueue",text((error as Error)?.message||error,180))}
+}
 
 Deno.serve(async(req:Request)=>{
   if(!U||!K)return respond({ok:false,error:"server_config"},500);
@@ -310,6 +321,7 @@ Deno.serve(async(req:Request)=>{
     if(response.ok){
       const externalId=text(data?.external_message_id||data?.message_id||data?.id||"",200)||null;
       await finish(outboxId,"sent",externalId,null);
+      void enqueuePapoAiOrderSignals(orderId,channel,item.phone_e164,details);
       return respond({ok:true,status:"sent",outbox_id:outboxId,recipient_kind:item.recipient_kind,channel_origin:channel,dispatch_scope:scope,external_message_id:externalId});
     }
 
