@@ -1,0 +1,22 @@
+name: attendance-papoai-send-ci
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/test-admin-attendance-papoai-webhook-send-v1.mjs'
+      - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
+      - 'supabase/sql/20261002_admin_attendance_papoai_webhook_send_v1.sql'
+      - 'vitrine/admin/atendimento/**'
+      - '.github/workflows/attendance-papoai-send-ci.yml'
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-admin-attendance-papoai-webhook-send-v1.mjs
+      - run: node scripts/test-admin-attendance-api-v1.mjs
+      - run: node --check vitrine/admin/atendimento/attendance.js
