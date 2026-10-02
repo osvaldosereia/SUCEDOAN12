@@ -76,9 +76,14 @@ assert.ok(orderTransport.includes('basketLines.join("\\n")'), 'multiple baskets 
 assert.ok(orderTransport.includes('const itemsText=lines.join(" • ")'), 'template-safe item text must remain single-line');
 assert.ok(orderTransport.includes('const itemsTextLineSeparator=lines.join("\\u2028")'), 'experimental template text must use Unicode line separator instead of LF');
 assert.ok(orderTransport.includes('items_text_line_separator:details.itemsTextLineSeparator'), 'provider payload must expose Unicode line-separated item text without changing items_text');
-assert.ok(orderTransport.includes('const productSlots=Object.fromEntries(Array.from({length:60}'), 'transport must expose up to 60 individual product slots');
+assert.ok(orderTransport.includes('const productBucket=Math.min(60,Math.max(5,Math.ceil(lines.length/5)*5));'), 'transport must bucket product templates in groups of five');
+assert.ok(orderTransport.includes('Array.from({length:productBucket}'), 'template product slots must stop at the selected bucket');
+assert.ok(orderTransport.includes('lines[index]||"\\u200B"'), 'unused bucket slots must receive an invisible non-empty filler');
+assert.ok(orderTransport.includes('const productPaddingCount=productBucket-lines.length;'), 'transport must expose how many template lines are padding');
 assert.ok(orderTransport.includes('`product_${String(index+1).padStart(2,"0")}`'), 'individual product slots must be named product_01...product_60');
 assert.ok(orderTransport.includes('product_count:details.itemCount'), 'provider payload must expose product_count for template routing');
+assert.ok(orderTransport.includes('product_bucket:details.productBucket'), 'provider payload must expose selected five-item bucket');
+assert.ok(orderTransport.includes('product_padding_count:details.productPaddingCount'), 'provider payload must expose padding count for audit');
 assert.ok(orderTransport.includes('...details.productSlots'), 'provider payload must expose individual product fields at top level');
 for (const field of [
   'order_date',

@@ -109,10 +109,12 @@ async function orderDetails(orderId:string){
   const productsText=productLines.join("\n");
   const itemsText=lines.join(" • ").replace(/[\r\n\t]+/g," ").replace(/ {4,}/g,"   ").trim();
   const itemsTextLineSeparator=lines.join("\u2028").trim();
-  const productSlots=Object.fromEntries(Array.from({length:60},(_,index)=>[
+  const productBucket=Math.min(60,Math.max(5,Math.ceil(lines.length/5)*5));
+  const productPaddingCount=productBucket-lines.length;
+  const productSlots=Object.fromEntries(Array.from({length:productBucket},(_,index)=>[
     `product_${String(index+1).padStart(2,"0")}`,
-    lines[index]||""
-  ] as const).filter(([,value])=>Boolean(value)));
+    lines[index]||"\u200B"
+  ] as const));
 
   const cartBaskets=arr(checkout.cart).map(obj).filter(item=>text(item.type,30)==="basket");
   const basketNames=arr(checkout.basket_names).map(v=>text(v,180)).filter(Boolean);
@@ -195,6 +197,8 @@ async function orderDetails(orderId:string){
     productsText,
     itemsText,
     itemsTextLineSeparator,
+    productBucket,
+    productPaddingCount,
     productSlots,
     totalFormatted:money(order.total),
     paymentLabel:paymentLabel(order.payment_method||checkout.payment_label)
@@ -317,6 +321,8 @@ Deno.serve(async(req:Request)=>{
     total_formatted:details.totalFormatted,
     payment_label:details.paymentLabel,
     product_count:details.itemCount,
+    product_bucket:details.productBucket,
+    product_padding_count:details.productPaddingCount,
     ...details.productSlots,
     items_count:details.itemCount,
     items_text_line_separator:details.itemsTextLineSeparator,
