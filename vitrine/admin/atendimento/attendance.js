@@ -17,7 +17,7 @@ const QUICK_REPLIES=[
   ['Pedido recebido','Recebemos seu pedido 😊 Vou acompanhar por aqui.']
 ];
 
-const state={accounts:{},filters:{'0975':'all','1018':'all'},search:'',selected:null,conversation:null,context:null,contextTab:'customer',loadingOlder:false,refreshing:false};
+const state={accounts:{},filters:{'0975':'all','1018':'all'},search:'',selected:null,conversation:null,context:null,contextTab:'customer',conversationOpen:false,loadingOlder:false,refreshing:false};
 const $=sel=>document.querySelector(sel);
 const $$=sel=>[...document.querySelectorAll(sel)];
 const fmtTime=value=>{if(!value)return '';const d=new Date(value);return Number.isNaN(+d)?'':new Intl.DateTimeFormat('pt-BR',{hour:'2-digit',minute:'2-digit'}).format(d)};
@@ -59,6 +59,7 @@ function escapePreview(item){return item.last_message_text||({audio:'Áudio',ima
 function showNote(text,tone='neutral'){const note=$('#composerNote');if(!note)return;note.textContent=text;note.dataset.tone=tone}
 function syncFallbackButtons(){const hasConversation=Boolean(state.selected?.id);const hasDraft=Boolean($('#messageDraft')?.value.trim());$('#openPapoAiBtn').disabled=!hasConversation;$('#copyReplyBtn').disabled=!hasConversation||!hasDraft}
 function setDraft(text,{append=false}={}){const draft=$('#messageDraft');if(!draft)return;draft.value=append&&draft.value.trim()?`${draft.value.trim()}\n${text}`:text;syncFallbackButtons();draft.focus();draft.setSelectionRange(draft.value.length,draft.value.length)}
+function syncConversationVisibility(){const pane=$('#conversationPane');if(!pane)return;const selectedId=typeof state.selected==='string'?state.selected:state.selected?.id;pane.classList.toggle('mobile-open',Boolean(state.conversationOpen&&selectedId))}
 
 function queueCard(item,channel){
   const btn=document.createElement('button');btn.type='button';btn.className='queue-card';btn.dataset.conversationId=item.conversation_id;
@@ -79,7 +80,7 @@ async function loadQueue(channel){
   const account=state.accounts[channel],box=$(`#queue${channel}`);if(!box)return;box.replaceChildren();if(!account)return;
   try{const data=await api('queue',{account_id:account.id,limit:QUEUE_PAGE_SIZE,filter:state.filters[channel],search:state.search});const items=data.items||[];for(const item of items)box.append(queueCard(item,channel));$(`#count${channel}`).textContent=String(items.filter(i=>i.unread_count>0||i.human_required||i.status==='needs_human').length);if(!items.length){const empty=document.createElement('div');empty.className='context-empty';empty.textContent='Nenhuma conversa.';box.append(empty)}}catch{const empty=document.createElement('div');empty.className='context-empty';empty.textContent='Não foi possível carregar esta fila.';box.append(empty)}
 }
-async function loadQueues(){await Promise.all([loadQueue('0975'),loadQueue('1018')])}
+async function loadQueues(){await Promise.all([loadQueue('0975'),loadQueue('1018')]);syncConversationVisibility()}
 
 function renderConversationHead(){const c=state.conversation?.conversation;if(!c)return;const head=$('#conversationHead');head.querySelector('strong').textContent=state.selected?.display_name||state.context?.customer?.name||c.phone_e164||'Conversa';head.querySelector('small').textContent=`${channelByPhone(state.conversation?.account?.phone_e164)||''} · ${c.mode==='human'||c.mode==='human_copilot'?'Atendimento humano':'ANA atendendo'}`;$('#openContextBtn').disabled=false}
 function renderServiceWindow(){const box=$('#serviceWindow'),w=state.conversation?.service_window;if(!w){box.className='service-window neutral';box.textContent='Janela não disponível';return}if(w.open){const h=Math.floor(w.remaining_seconds/3600),m=Math.floor((w.remaining_seconds%3600)/60);box.className='service-window open';box.textContent=`● Janela de atendimento aberta · ${h}h ${m}min restantes`}else{box.className='service-window closed';box.textContent='● Janela encerrada · responda no PapoAI somente com template aprovado quando aplicável'}}
@@ -88,7 +89,7 @@ function renderMessages({scrollToBottom=true,preserveOffset=0}={}){const box=$('
 function enableConversationTools(){for(const id of ['catalogBtn','quickRepliesBtn','followUpBtn'])$(`#${id}`).disabled=false;const hasCustomer=Boolean(state.context?.customer?.id);for(const id of ['quoteBtn','saleBtn','optOutBtn'])$(`#${id}`).disabled=!hasCustomer;syncFallbackButtons()}
 
 async function selectConversation(id,channel){
-  state.selected=id;$('#conversationPane').classList.add('mobile-open');closeComposerPanels();
+  state.selected=id;state.conversationOpen=true;syncConversationVisibility();closeComposerPanels();
   try{const [conversation,context]=await Promise.all([api('conversation',{conversation_id:id,limit:MESSAGE_PAGE_SIZE}),api('context',{conversation_id:id})]);state.conversation=conversation;state.context=context;state.selected={id,channel,display_name:context?.customer?.name||conversation?.conversation?.phone_e164};renderMessages();renderContext();enableConversationTools();showNote(`${SEND_LOCK_STATUS} · prepare e copie a resposta`);await loadQueues();const inbound=[...(conversation.messages||[])].reverse().find(m=>m.direction==='inbound');if(inbound)api('mark_read',{conversation_id:id,message_id:inbound.id},'POST').catch(()=>{})}catch{$('#conversationEmpty').hidden=false;$('#conversationEmpty').textContent='Não foi possível abrir esta conversa.'}
 }
 async function loadOlder(){if(state.loadingOlder||!state.conversation?.next_before||!state.selected?.id)return;state.loadingOlder=true;const box=$('#messages'),beforeHeight=box.scrollHeight;try{const older=await api('conversation',{conversation_id:state.selected.id,before:state.conversation.next_before,limit:MESSAGE_PAGE_SIZE});state.conversation.messages=[...(older.messages||[]),...(state.conversation.messages||[])];state.conversation.next_before=older.next_before;const oldTop=box.scrollTop;box.replaceChildren();for(const msg of state.conversation.messages)box.append(renderMessage(msg));box.scrollTop=box.scrollHeight-beforeHeight+oldTop}catch{}finally{state.loadingOlder=false}}
@@ -146,7 +147,7 @@ function bind(){
   $$('.queue-filters button').forEach(b=>b.addEventListener('click',()=>{const group=b.closest('.queue-filters'),ch=group.dataset.filterChannel;group.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.filters[ch]=b.dataset.filter;loadQueue(ch)}));
   $$('.context-tabs [data-context-tab]').forEach(b=>b.addEventListener('click',()=>{$$('.context-tabs [data-context-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.contextTab=b.dataset.contextTab;renderContext()}));
   $('#openContextBtn').addEventListener('click',()=>$('#contextPane').classList.add('open'));$('#closeContextBtn').addEventListener('click',()=>$('#contextPane').classList.remove('open'));
-  $$('[data-mobile-channel]').forEach(b=>b.addEventListener('click',()=>{$$('[data-mobile-channel]').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('.queue-column').forEach(x=>x.classList.toggle('active-mobile',x.dataset.channel===b.dataset.mobileChannel));$('#conversationPane').classList.remove('mobile-open')}));
+  $$('[data-mobile-channel]').forEach(b=>b.addEventListener('click',()=>{$$('[data-mobile-channel]').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('.queue-column').forEach(x=>x.classList.toggle('active-mobile',x.dataset.channel===b.dataset.mobileChannel));state.conversationOpen=false;syncConversationVisibility()}));
   $('#quickRepliesBtn').addEventListener('click',()=>{const box=$('#quickRepliesMenu');$('#followUpPanel').hidden=true;box.hidden=!box.hidden});
   $('#catalogBtn').addEventListener('click',prepareCatalog);
   $('#quoteBtn').addEventListener('click',()=>{const id=state.context?.customer?.id;if(id)emitParent('open_quote',{customer_id:id})});
