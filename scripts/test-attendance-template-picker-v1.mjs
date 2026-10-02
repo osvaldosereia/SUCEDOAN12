@@ -10,7 +10,7 @@ const js=fs.readFileSync(jsPath,'utf8');
 for(const id of ['templatesBtn','templatesMenu','templatesList','templateSyncBtn'])assert.match(html,new RegExp(`id=["']${id}["']`));
 assert.match(html,/attendance-templates\.js/);
 assert.match(js,/admin-whatsapp-templates-v1/);
-assert.match(js,/action["']?\s*,?\s*["']sync["']|searchParams\.set\(["']action["'],["']sync["']\)/);
+assert.match(js,/action\s*:\s*["']sync["']|searchParams\.set\(["']action["']\s*,\s*["']sync["']\)/);
 assert.match(js,/data-channel-switch/);
 assert.match(js,/account_id/);
 assert.match(js,/APPROVED/);
