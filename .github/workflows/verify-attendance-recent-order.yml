@@ -1,0 +1,18 @@
+name: Verify attendance recent order
+on:
+  push:
+    branches: [fix/attendance-recent-order-dates]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-admin-attendance-sql-v1.mjs
+      - run: node scripts/test-admin-attendance-ui-v1.mjs
+      - run: node --check vitrine/admin/atendimento/attendance.js
