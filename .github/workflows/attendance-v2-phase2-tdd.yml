@@ -1,0 +1,26 @@
+name: Attendance v2 Phase 2 TDD
+on:
+  push:
+    branches: [feat/attendance-central-v2-phase2]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 2 contracts
+        run: |
+          set -euo pipefail
+          node scripts/test-admin-attendance-organization-sql-v1.mjs
+          if [ -f scripts/test-admin-attendance-organization-api-v1.mjs ]; then node scripts/test-admin-attendance-organization-api-v1.mjs; fi
+          if [ -f scripts/test-admin-attendance-labels-ui-v1.mjs ]; then node scripts/test-admin-attendance-labels-ui-v1.mjs; fi
+          if [ -f scripts/test-admin-attendance-quick-replies-v2.mjs ]; then node scripts/test-admin-attendance-quick-replies-v2.mjs; fi
+      - name: Existing attendance regression
+        run: |
+          set -euo pipefail
+          for f in scripts/test-admin-attendance-*.mjs; do node "$f"; done
+          node --check vitrine/admin/atendimento/attendance.js
