@@ -3,8 +3,18 @@ from pathlib import Path
 path = Path('vitrine/admin/index.html')
 s = path.read_text()
 
+unsafe_send = "finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Enviar pedido no WhatsApp'}await refreshCurrentOrderWhatsappRegistration()}"
+safe_send = "finally{if(document.contains(btn))btn.textContent='Atualizando…';await refreshCurrentOrderWhatsappRegistration()}"
+
 if 'function orderWhatsappRegistrationHtml(o)' in s:
-    print('admin WhatsApp UI already present; nothing to patch')
+    if unsafe_send in s:
+        s = s.replace(unsafe_send, safe_send, 1)
+        path.write_text(s)
+        print('admin WhatsApp UI send safety patch applied')
+    elif safe_send in s:
+        print('admin WhatsApp UI already present and safe; nothing to patch')
+    else:
+        raise SystemExit('existing admin WhatsApp UI has an unknown send-finally shape')
     raise SystemExit(0)
 
 helpers_anchor = "  async function openOrder(id){"
@@ -46,7 +56,7 @@ helpers = r'''  function orderWhatsappRegistrationHtml(o){
     const oid=state.currentOrder?.order?.id,btn=$('#sendOrderWhatsApp');if(!oid||!btn)return;
     btn.disabled=true;btn.textContent='Enviando…';
     try{const data=await api('order_whatsapp_send',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:oid})});renderCurrentOrderWhatsappStatus(data.status_snapshot||{});toast(data.delivery_ok?'Pedido enviado ao cliente e cópia 0975 registrada':'Envio preparado; revise o status do WhatsApp')}catch(e){toast(errorMessage(e.message))}
-    finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Enviar pedido no WhatsApp'}await refreshCurrentOrderWhatsappRegistration()}
+    finally{if(document.contains(btn))btn.textContent='Atualizando…';await refreshCurrentOrderWhatsappRegistration()}
   }
   function showCurrentOrderRegistrationLink(data){
     const box=$('#orderRegistrationLinkActions'),value=$('#orderRegistrationLinkValue');if(!box||!value||!data?.registration_url)return;
