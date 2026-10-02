@@ -1,0 +1,21 @@
+name: Attendance v2 Phase 3 API Apply
+on:
+  push:
+    branches: [feat/attendance-central-v2-phase3]
+    paths: ['scripts/patch-attendance-phase3-api.py','.github/workflows/attendance-v2-phase3-api-apply.yml']
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: feat/attendance-central-v2-phase3}
+      - run: python scripts/patch-attendance-phase3-api.py
+      - run: |
+          git config user.name "Dona Antonia Ops"
+          git config user.email "actions@users.noreply.github.com"
+          git add supabase/functions/admin-whatsapp-ops-v1/index.ts
+          git diff --cached --quiet || git commit -m "feat: add local template cache API"
+          git push origin HEAD:feat/attendance-central-v2-phase3
