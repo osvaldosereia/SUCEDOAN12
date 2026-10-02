@@ -101,4 +101,4 @@ assert.ok(orderTransport.includes('items_text:details.itemsText'), 'legacy templ
 assert.ok(orderTransport.includes('order_items_not_ready'), 'checkout must retry instead of sending an incomplete order');
 assert.ok(orderTransport.includes('scope==="checkout_auto"?"retry":"failed"'), 'checkout must retry when order items are not ready');
 
-console.log('admin order WhatsApp UI + gateway + full storefront order contract: ok');
+console.log('admin direct company WhatsApp + customer gateway + full storefront order contract: ok');
