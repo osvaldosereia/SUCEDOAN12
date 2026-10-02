@@ -8,12 +8,18 @@ const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 
 type Channel="0975"|"1018";
 type DispatchScope="admin_manual"|"checkout_auto";
-const providerUrl=(channel:Channel)=>channel==="1018"
-  ? (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL")||"")
-  : (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_0975_URL")||"");
-const providerReadiness=()=>{
-  const p0975=Boolean(providerUrl("0975"));
-  const p1018=Boolean(providerUrl("1018"));
+const providerUrl=async(channel:Channel)=>{
+  const envUrl=channel==="1018"
+    ? (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL")||"")
+    : (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_0975_URL")||"");
+  if(envUrl)return envUrl;
+  const r=await db.rpc("ops2_papoai_order_provider_url_v1",{p_channel:channel});
+  if(r.error)return "";
+  return text(r.data,2000);
+};
+const providerReadiness=async()=>{
+  const [u0975,u1018]=await Promise.all([providerUrl("0975"),providerUrl("1018")]);
+  const p0975=Boolean(u0975),p1018=Boolean(u1018);
   return {ready:p0975&&p1018,providers:{"0975":p0975,"1018":p1018}};
 };
 
@@ -48,7 +54,7 @@ Deno.serve(async(req:Request)=>{
   if(!U||!K)return respond({ok:false,error:"server_config"},500);
   const internalKey=req.headers.get("x-internal-key")||"",serviceRole=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
   if(internalKey!==K&&internalKey!==serviceRole)return respond({ok:false,error:"forbidden"},403);
-  if(req.method==="GET")return respond({ok:true,service:"admin-orders-v1",...providerReadiness()});
+  if(req.method==="GET")return respond({ok:true,service:"admin-orders-v1",...(await providerReadiness())});
   if(req.method!=="POST")return respond({ok:false,error:"method_not_allowed"},405);
 
   const body=await req.json().catch(()=>({}));
@@ -57,7 +63,7 @@ Deno.serve(async(req:Request)=>{
   const scope:DispatchScope=text(body?.dispatch_scope,30)==="checkout_auto"?"checkout_auto":"admin_manual";
 
   if(scope==="admin_manual"){
-    const readiness=providerReadiness();
+    const readiness=await providerReadiness();
     if(!readiness.ready)return respond({ok:false,error:"provider_not_configured",...readiness},503);
   }
 
@@ -66,7 +72,7 @@ Deno.serve(async(req:Request)=>{
   if(!item)return respond({ok:true,status:"idle",sent:false,order_id:orderId,dispatch_scope:scope});
 
   const outboxId=uid(item.id),channel=(text(item.channel_origin,4)==="1018"?"1018":"0975") as Channel;
-  const url=providerUrl(channel);
+  const url=await providerUrl(channel);
   if(!url){
     const errorText=`provider_not_configured_${channel}`;
     const nextStatus=scope==="checkout_auto"?"retry":"failed";
