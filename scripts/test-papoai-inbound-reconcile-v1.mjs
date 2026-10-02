@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
+// Regression contract for the Phase 1A inbound reconciliation path.
 const path='supabase/sql/20261002_papoai_inbound_reconcile_v1.sql';
 assert.ok(fs.existsSync(path),`${path} deve existir`);
 const sql=fs.readFileSync(path,'utf8');
