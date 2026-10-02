@@ -1,0 +1,58 @@
+name: One-shot WhatsApp complete delivery
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-whatsapp-complete-delivery.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: RED - require customer address fallback in WhatsApp confirmation
+        run: |
+          cat >> scripts/test-checkout-whatsapp-outbox.mjs <<'NODE'
+          const adminOrders=fs.readFileSync('supabase/functions/admin-orders-v1/index.ts','utf8');
+          assert.match(adminOrders,/const checkoutCustomerAddress=obj\(checkoutCustomer\.address\)/,'dispatcher must read registered customer address from checkout snapshot');
+          assert.match(adminOrders,/const address=\{\.\.\.checkoutCustomerAddress,\.\.\.delivery\}/,'delivery address must override checkout customer address while retaining fallback fields');
+          assert.match(adminOrders,/const deliverySummary=text\(\[deliveryDate,addressLabel,districtLabel,cityLabel\]/,'template delivery variable must combine date and complete address');
+          assert.match(adminOrders,/delivery_label:details\.deliverySummary/,'provider must send the complete delivery summary to the approved template');
+          NODE
+          if node scripts/test-checkout-whatsapp-outbox.mjs; then
+            echo 'RED failed: new address contract unexpectedly passed'
+            exit 1
+          else
+            echo 'RED confirmed: current dispatcher can omit registered customer address'
+          fi
+      - name: GREEN - add complete delivery summary
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('supabase/functions/admin-orders-v1/index.ts')
+          s=p.read_text()
+          old='''  const customer=obj(order.customer_snapshot),delivery=obj(order.delivery_address),checkout=obj(order.checkout_snapshot),checkoutDelivery=obj(checkout.delivery),checkoutCustomer=obj(checkout.customer);'''
+          new='''  const customer=obj(order.customer_snapshot),delivery=obj(order.delivery_address),checkout=obj(order.checkout_snapshot),checkoutDelivery=obj(checkout.delivery),checkoutCustomer=obj(checkout.customer);\n  const checkoutCustomerAddress=obj(checkoutCustomer.address);\n  const address={...checkoutCustomerAddress,...delivery};'''
+          if old not in s: raise SystemExit('order detail context line not found')
+          s=s.replace(old,new,1)
+          old2='''  const addressParts=[delivery.street,delivery.number,delivery.complement].map(v=>text(v,180)).filter(Boolean);\n  const fullNumber=text(order.order_number,80);'''
+          new2='''  const addressParts=[address.street,address.number,address.complement].map(v=>text(v,180)).filter(Boolean);\n  const addressLabel=addressParts.join(", ")||"NAO INFORMADO";\n  const districtLabel=text(address.district||address.neighborhood,140)||"NAO INFORMADO";\n  const cityLabel=text(address.city,140)||"NAO INFORMADA";\n  const deliveryDate=deliveryLabel(delivery,checkoutDelivery);\n  const deliverySummary=text([deliveryDate,addressLabel,districtLabel,cityLabel].filter(v=>v&&v!=="NAO INFORMADO"&&v!=="NAO INFORMADA").join(" • "),500)||"A confirmar";\n  const fullNumber=text(order.order_number,80);'''
+          if old2 not in s: raise SystemExit('legacy address block not found')
+          s=s.replace(old2,new2,1)
+          s=s.replace('''    addressLabel:addressParts.join(", ")||"NAO INFORMADO",\n    districtLabel:text(delivery.district||delivery.neighborhood,140)||"NAO INFORMADO",\n    cityLabel:text(delivery.city,140)||"NAO INFORMADA",\n    deliveryLabel:deliveryLabel(delivery,checkoutDelivery),''','''    addressLabel,\n    districtLabel,\n    cityLabel,\n    deliveryLabel:deliveryDate,\n    deliverySummary,''',1)
+          s=s.replace('''    delivery_label:details.deliveryLabel,''','''    delivery_label:details.deliverySummary,''',1)
+          p.write_text(s)
+          PY
+      - name: GREEN - verify contracts
+        run: |
+          node scripts/test-checkout-whatsapp-outbox.mjs
+          node scripts/test-checkout-whatsapp-return.mjs
+          git diff --check
+      - name: Commit and self-remove
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git rm .github/workflows/one-shot-whatsapp-complete-delivery.yml
+          git add supabase/functions/admin-orders-v1/index.ts scripts/test-checkout-whatsapp-outbox.mjs
+          git commit -m 'fix(whatsapp): inclui endereço completo na confirmação do pedido'
+          git push origin HEAD:main
