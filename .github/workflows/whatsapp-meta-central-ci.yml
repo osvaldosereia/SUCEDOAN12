@@ -29,6 +29,8 @@ jobs:
           node-version: '22'
       - name: Provider-neutral outbox contract
         run: node scripts/test-attendance-provider-neutral-v3.mjs
+      - name: Admin Meta canary capability guard
+        run: node scripts/test-admin-attendance-meta-canary-capability-v1.mjs
       - name: Meta transport contract
         run: node scripts/test-attendance-meta-send-v1.mjs
       - name: Meta Phone Number ID strictness
@@ -43,8 +45,6 @@ jobs:
         run: node scripts/test-attendance-meta-dedupe-v1.mjs
       - name: Admin Meta gateway contract
         run: node scripts/test-admin-attendance-meta-send-ui-v1.mjs
-      - name: Admin Meta canary capability guard
-        run: node scripts/test-admin-attendance-meta-canary-capability-v1.mjs
       - name: Admin Meta gateway TypeScript syntax
         run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts
       - name: Admin composer JavaScript syntax
