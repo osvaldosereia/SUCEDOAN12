@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const path='supabase/sql/20261002_admin_attendance_templates_cache_v1.sql';
+assert.ok(fs.existsSync(path),'migration de cache de templates deve existir');
+const sql=fs.readFileSync(path,'utf8');
+assert.match(sql,/alter\s+table\s+public\.whatsapp_templates_v1[\s\S]*waba_id\s+drop\s+not\s+null/i,'0975 deve poder existir sem WABA conhecido');
+assert.match(sql,/whatsapp_templates_account_name_language_uidx/i,'cache deve ser único por conta/nome/idioma');
+assert.ok(sql.includes('pedidoorganizadosite0975v1'));
+assert.ok(sql.includes('pedidoorganizadosite1018v1'));
+assert.match(sql,/papoai_verified_manual/i,'seed deve deixar explícito que é cache verificado manualmente');
+assert.match(sql,/"show"\s*:\s*false|"show",false/i,'templates não devem aparecer como atalho sem escolha do usuário');
+assert.doesNotMatch(sql,/webhook|http|fetch/i,'migration não deve tentar sincronizar PapoAI');
+console.log('OK · cache local de templates é explícito e não finge sincronização PapoAI.');
