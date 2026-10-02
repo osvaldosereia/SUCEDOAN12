@@ -7613,7 +7613,12 @@ window.addEventListener('message',event=>{
       paintOrderFilters();paintOrderRows();paintConfirmableOrdersButton();
     }catch(e){host.innerHTML='<div class="empty">Erro ao carregar pedidos. <button class="text" id="retryOrders">Tentar novamente</button></div>';if($('#retryOrders'))$('#retryOrders').onclick=loadOrders}
   }
+  function orderCustomerDataPending(o){
+    const reasons=orderProblemReasons(o);
+    return reasons.some(reason=>['Cliente não identificado','Telefone pendente','Endereço incompleto','CPF/CNPJ pendente'].includes(reason));
+  }
   function orderIssueShortcut(problems){
+    if(problems.includes('Telefone pendente')||problems.includes('CPF/CNPJ pendente'))return ['customer','Completar dados'];
     if(problems.includes('Endereço incompleto'))return ['address','Corrigir endereço'];
     if(problems.includes('Cliente não identificado'))return ['customer','Vincular cliente'];
     if(problems.includes('Pagamento não informado'))return ['payment','Corrigir pagamento'];
@@ -7623,6 +7628,10 @@ window.addEventListener('message',event=>{
   }
   function orderRowPrimaryActionHtml(o,problems,shortcut){
     const next=orderNextAction(o);
+    if(orderCustomerDataPending(o)){
+      const kind=shortcut?.[0]||'customer';
+      return '<button class="row-next-action issue" type="button" data-order-issue-open="'+esc(o.id)+'" data-order-issue-kind="'+esc(kind)+'">Completar dados do cliente</button>';
+    }
     const consumed=o?.payment_method_snapshot?.stock_consumed===true;
     if(problems.length&&shortcut){
       return '<button class="row-next-action issue" type="button" data-order-issue-open="'+esc(o.id)+'" data-order-issue-kind="'+esc(shortcut[0])+'">'+esc(shortcut[1])+'</button>';
@@ -7645,7 +7654,7 @@ window.addEventListener('message',event=>{
     const shortcut=orderIssueShortcut(problems);
     const next=orderNextAction(o);
     return '<div class="list-row orders-layout">'+
-      '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(problems.length?'<span class="sub" style="color:#b3261e">'+esc(problems[0])+(problems.length>1?' · +'+(problems.length-1):'')+'</span>':'')+'</div>'+
+      '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(orderCustomerDataPending(o)?'<span class="pill danger" style="margin-top:5px">AGUARDANDO DADOS DO CLIENTE</span>':'')+(problems.length?'<span class="sub" style="color:#b3261e">'+esc(problems[0])+(problems.length>1?' · +'+(problems.length-1):'')+'</span>':'')+'</div>'+
       '<div class="desktop-extra"><span>'+esc(dateTime(o.created_at))+'</span><span class="sub age-text">'+esc(relativeAge(o.created_at))+'</span></div>'+
       '<div class="mobile-wide"><span class="row-title">'+esc(o.customer_name||'Sem cliente')+'</span><span class="sub">'+esc(payment)+' · '+esc(next)+' · '+esc(relativeAge(o.created_at))+'</span></div>'+
       '<span class="money">'+money(o.total_cents)+'</span>'+
@@ -7794,7 +7803,7 @@ window.addEventListener('message',event=>{
     const consumed=o.payment_method_snapshot?.stock_consumed===true;
     const linked=d.bling_link?.linked===true;
     const delivery=o.delivery_address_snapshot||c.address||{};
-    const deliveryProblems=orderProblemReasons(o).some(x=>['Cliente não identificado','Endereço incompleto'].includes(x));
+    const deliveryProblems=orderCustomerDataPending(o);
     const cancellation=o.payment_method_snapshot?.cancellation||null;
     const deliveryFailure=o.payment_method_snapshot?.last_delivery_failure||null;
     const deliveryFailureAlert=deliveryFailure&&o.status==='ready'

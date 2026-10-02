@@ -1,0 +1,27 @@
+name: Admin and Baskets Guard CI
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'scripts/test-admin-pending-data-baskets-public-v1.mjs'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'scripts/test-admin-pending-data-baskets-public-v1.mjs'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-admin-pending-data-baskets-public-v1.mjs
