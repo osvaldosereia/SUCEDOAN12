@@ -6,11 +6,13 @@ assert.equal(fs.existsSync(migrationPath), true, 'migration de canonical outboun
 const sql = fs.readFileSync(migrationPath, 'utf8');
 
 assert.match(sql, /ops2_admin_attendance_accept_meta_outbound_v1/i);
-assert.match(sql, /provider\s*=\s*'meta'|v_outbox\.provider\s*<>\s*'meta'/i);
-assert.match(sql, /direction[^\n]*'outbound'|'outbound'[^\n]*direction/i);
-assert.match(sql, /status_current[^\n]*accepted|'accepted'[^\n]*status_current/i);
-assert.match(sql, /sender_kind[^\n]*human|'human'[^\n]*sender_kind/i);
-assert.match(sql, /provider_message_id/i);
+assert.match(sql, /v_outbox\.provider\s*<>\s*'meta'/i);
+
+const insertSection = sql.split('insert into public.whatsapp_messages_v1')[1]?.split('on conflict')[0] || '';
+assert.match(insertSection, /direction[\s\S]{0,600}'outbound'/i, 'mensagem canônica deve ser outbound');
+assert.match(insertSection, /status_current[\s\S]{0,600}'accepted'/i, 'Graph accepted deve criar status accepted');
+assert.match(insertSection, /sender_kind[\s\S]{0,600}'human'/i, 'envio do Admin deve ter autoria humana');
+assert.match(insertSection, /provider_message_id/i);
 assert.match(sql, /on conflict\s*\(\s*whatsapp_account_id\s*,\s*provider\s*,\s*provider_message_id\s*\)/i, 'wamid deve ser idempotente no histórico');
 assert.match(sql, /whatsapp_record_status_v1/i, 'aceite e replay de status devem usar contrato canônico');
 assert.match(sql, /whatsapp_webhook_events_v1/i, 'status capturado antes do send deve ser reconciliado');
