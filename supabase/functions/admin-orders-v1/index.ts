@@ -88,6 +88,7 @@ async function orderDetails(orderId:string){
     return `${qty}x ${name}`;
   });
   const productsText=lines.join("\n");
+  const itemsText=lines.join(" • ").replace(/[\r\n\t]+/g," ").replace(/ {4,}/g,"   ").trim();
 
   const cartBaskets=arr(checkout.cart).map(obj).filter(item=>text(item.type,30)==="basket");
   const basketNames=arr(checkout.basket_names).map(v=>text(v,180)).filter(Boolean);
@@ -131,6 +132,7 @@ async function orderDetails(orderId:string){
     deliveryLabel:deliveryLabel(delivery,checkoutDelivery),
     basketText,
     productsText,
+    itemsText,
     totalFormatted:money(order.total),
     paymentLabel:paymentLabel(order.payment_method||checkout.payment_label)
   };
@@ -221,7 +223,7 @@ Deno.serve(async(req:Request)=>{
     total_formatted:details.totalFormatted,
     payment_label:details.paymentLabel,
     items_count:details.itemCount,
-    items_text:details.productsText
+    items_text:details.itemsText
   };
 
   const headers:Record<string,string>={"Content-Type":"application/json"};
