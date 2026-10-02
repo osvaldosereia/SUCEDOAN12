@@ -1,0 +1,23 @@
+name: One-shot PapoAI health v110
+on:
+  push:
+    branches: [feat/attendance-central-v2-phase1]
+    paths:
+      - scripts/patch-papo-external-health-v110.py
+      - .github/workflows/one-shot-papo-health-v110.yml
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/attendance-central-v2-phase1
+      - run: python scripts/patch-papo-external-health-v110.py
+      - run: |
+          git config user.name "Dona Antonia Ops"
+          git config user.email "actions@users.noreply.github.com"
+          git add supabase/functions/papo-external-agent-v1/index.ts
+          git commit -m "chore: bump PapoAI bridge health version to 110"
+          git push origin HEAD:feat/attendance-central-v2-phase1
