@@ -20,7 +20,7 @@ assert.equal(out.message.message_type,'text');
 assert.equal(out.message.provider_conversation_id,'session-redacted');
 assert.equal(out.message.text_body,'CAPTURA-CENTRAL-V2-OUTBOUND-20261002 — mensagem técnica autorizada, sem novo pedido.');
 assert.equal(out.message.status_current,'sent');
-assert.equal(out.message.sender_kind,'unknown','autoria não pode ser inferida como IA ou humano');
+assert.equal(out.message.sender_kind,'unknown','autoria não pode ser inferida como IA, humano ou sistema');
 assert.equal(out.message.sender_ref,null);
 assert.equal(out.message.sent_at,'2026-10-02T05:05:38.978Z','timestamp em milissegundos deve ser interpretado corretamente');
 assert.equal(out.received_at,'2026-10-02T05:05:38.978Z');
