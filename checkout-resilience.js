@@ -32,8 +32,9 @@
     };
   }
   function registrationDraftComplete(draft){
-    const doc=digits(draft?.document,14);
-    return Boolean(draft?.name&&[11,14].includes(doc.length)&&draft?.street&&draft?.number&&draft?.neighborhood&&draft?.city);
+    // Existing customers do not receive their private document in the public lookup.
+    // The backend can reuse it after checking that the existing name matches.
+    return Boolean(draft?.name&&draft?.street&&draft?.number&&draft?.neighborhood&&draft?.city);
   }
   async function persistRegistrationBeforeOrder(requestUrl,phone,draft){
     if(!phone.valid||!registrationDraftComplete(draft))return null;

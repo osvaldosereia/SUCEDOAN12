@@ -153,7 +153,7 @@ async function orderDetails(orderId:string){
   const marketingCta=marketingOptIn?(MARKETING_CTA_PRIORITY.find(value=>marketingInterests.has(value))||(marketingInterests.has("CESTAS")?"OFERTAS":"NENHUM")):"NENHUM";
   const marketingCampaign=text(customer.marketing_campaign||checkoutCustomer.marketing_campaign||checkout.marketing_campaign,80)||"NENHUM";
 
-  const addressParts=[address.street,address.number,address.complement].map(v=>text(v,180)).filter(Boolean);
+  const addressParts=[address.street,address.number,address.complement,address.reference].map(v=>text(v,220)).filter(Boolean);
   const addressLabel=addressParts.join(", ")||"NAO INFORMADO";
   const districtLabel=text(address.district||address.neighborhood,140)||"NAO INFORMADO";
   const cityLabel=text(address.city,140)||"NAO INFORMADA";
@@ -317,6 +317,10 @@ Deno.serve(async(req:Request)=>{
   if(PROVIDER_TOKEN)headers.Authorization=`Bearer ${PROVIDER_TOKEN}`;
 
   try{
+    const audit=await db.from("ops2_whatsapp_outbox_v1")
+      .update({payload:{...obj(item.payload),provider_request:providerPayload}})
+      .eq("id",outboxId).eq("status","sending");
+    if(audit.error)throw new Error(`provider_payload_audit_failed: ${text(audit.error.message,240)}`);
     const response=await fetch(url,{method:"POST",headers,body:JSON.stringify(providerPayload)});
     const data=await response.json().catch(()=>({}));
     if(response.ok){

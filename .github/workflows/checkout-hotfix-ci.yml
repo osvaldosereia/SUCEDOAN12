@@ -1,5 +1,12 @@
 name: Checkout Hotfix CI
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'checkout-resilience.js'
+      - 'scripts/test-checkout*.mjs'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/functions/admin-orders-v1/index.ts'
   pull_request:
     branches: [main]
     paths:
@@ -22,6 +29,8 @@ jobs:
       - name: Checkout regression contracts
         run: |
           node scripts/test-checkout-customer-capture-v1.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-existing-registration.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-whatsapp-payload-audit.mjs
           node scripts/test-site-only-order-registration.mjs
           node scripts/test-checkout-whatsapp-return.mjs
           node scripts/test-checkout-stock-adjustment-contract.mjs

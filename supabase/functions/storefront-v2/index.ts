@@ -253,8 +253,21 @@ async function registerCustomer(req:Request,p:any){
     db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-register:phone:"+phoneKey,p_bucket:"register_customer",p_limit:8,p_window_seconds:600})
   ]);
   if(a.error||b.error)return {error:"rate_limit_unavailable",status:503};if(a.data!==true||b.data!==true)return {error:"rate_limited",status:429};
+  let document=txt(p?.document,30);
+  if(!document&&p?.source==="checkout"){
+    const existingId=await customerIdByPhone(ph);
+    if(existingId){
+      const existing=await db.from("customers").select("name,cpf_cnpj").eq("id",existingId).maybeSingle();
+      if(existing.error)return {error:"registration_unavailable",status:503};
+      if(existing.data){
+        const normalizedName=(value:any)=>txt(value,180).replace(/\s+/g," ").toLocaleLowerCase("pt-BR");
+        if(normalizedName(existing.data.name)!==normalizedName(p?.name))return {error:"identity_mismatch",status:409};
+        document=txt(existing.data.cpf_cnpj,30);
+      }
+    }
+  }
   const r=await db.rpc("ops2_upsert_storefront_registration_v1",{
-    p_phone:ph,p_name:txt(p?.name,180),p_document:txt(p?.document,30),p_street:txt(p?.street,180),p_number:txt(p?.number,40),
+    p_phone:ph,p_name:txt(p?.name,180),p_document:document,p_street:txt(p?.street,180),p_number:txt(p?.number,40),
     p_neighborhood:txt(p?.neighborhood,120),p_city:txt(p?.city,100),p_complement:txt(p?.complement,180)||null,
     p_reference:txt(p?.reference,220)||null,p_postal_code:txt(p?.postal_code,12)||null,
     p_marketing_opt_in:typeof p?.marketing_opt_in==="boolean"?p.marketing_opt_in:null,
