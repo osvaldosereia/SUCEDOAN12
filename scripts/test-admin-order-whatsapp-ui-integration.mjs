@@ -35,7 +35,7 @@ assert.ok(admin.includes('const COMPANY_WHATSAPP_E164="5565998150975"'), 'compan
 assert.ok(admin.includes("window.open('https://wa.me/'+COMPANY_WHATSAPP_E164+'?text='"), 'company action must use a direct WhatsApp deep link');
 assert.ok(admin.includes("$('#sendOrderWhatsApp').onclick=openCurrentOrderCompanyWhatsapp"), 'company WhatsApp button must open the direct readable handoff');
 assert.ok(!admin.includes("$('#sendOrderWhatsApp').onclick=sendCurrentOrderWhatsapp"), 'company WhatsApp button must not use the PapoAI template cross-send');
-assert.ok(admin.includes("lines.push('📦 PRODUTOS')"), 'company WhatsApp text must contain a products section');
+assert.ok(admin.includes("lines.push('','📦 PRODUTOS')"), 'company WhatsApp text must contain a products section');
 assert.ok(admin.includes("lines.push('• '+qty+'x '+name)"), 'company WhatsApp text must put every product on its own bullet line');
 assert.ok(admin.includes("api('order_registration_link_issue'"), 'registration button must use existing order_registration_link_issue action');
 assert.ok(admin.includes("api('order_registration_link_status'"), 'UI must refresh registration/send status');
