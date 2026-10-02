@@ -11,6 +11,7 @@ export class MetaTemplatesError extends Error {
 
 const fail=(code,opts)=>new MetaTemplatesError(code,opts);
 const clean=(value,max=500)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,max);
+const plainObject=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 
 export function normalizeMetaTemplate(raw){
   const item=raw&&typeof raw==='object'?raw:{};
@@ -29,6 +30,39 @@ export function normalizeMetaTemplate(raw){
     last_updated_time:clean(item.last_updated_time,80)||null,
     meta_quality_score:qualityRaw??(item.quality_score??null),
   };
+}
+
+export function buildTemplateCacheRows({items,account,existingByKey=new Map(),syncedAt=new Date().toISOString()}={}){
+  if(!Array.isArray(items)||!account||typeof account!=='object')throw fail('meta_templates_invalid_cache_input');
+  const accountId=clean(account.id,80);
+  const wabaId=clean(account.waba_id,80);
+  if(!/^[0-9a-f-]{36}$/i.test(accountId)||!/^\d{5,30}$/.test(wabaId))throw fail('meta_templates_invalid_cache_input');
+  return items.map(item=>{
+    const key=`${item.name}\u0000${item.language}`;
+    const existing=existingByKey instanceof Map?existingByKey.get(key):null;
+    const priorMetadata=plainObject(existing?.metadata);
+    return {
+      whatsapp_account_id:accountId,
+      waba_id:wabaId,
+      meta_template_id:item.meta_template_id,
+      name:item.name,
+      language:item.language,
+      category:item.category||null,
+      status:item.status||'UNKNOWN',
+      components:Array.isArray(item.components)?item.components:[],
+      quality_rating:item.quality_rating||null,
+      last_synced_at:syncedAt,
+      updated_at:syncedAt,
+      metadata:{
+        ...priorMetadata,
+        sync_source:'meta_cloud_api',
+        rejected_reason:item.rejected_reason??null,
+        last_updated_time:item.last_updated_time??null,
+        meta_quality_score:item.meta_quality_score??null,
+        meta_missing:false,
+      },
+    };
+  });
 }
 
 function validateConfig({accessToken,wabaId,graphVersion,fetchImpl,timeoutMs,maxPages}){
