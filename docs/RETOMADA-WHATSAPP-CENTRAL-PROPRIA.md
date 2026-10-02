@@ -10,23 +10,22 @@
 - Task 0 — safeguard/baseline/secrets: **concluída**.
 - Task 1 — outbox provider-neutral v3: **concluída e aplicada em produção com gates OFF**.
 - Task 2 — adapter de envio Meta: **concluída em código/testes e incluída no gateway v18**.
-- Task 3 — webhook Meta próprio: **código/testes concluídos; deploy bloqueado por quota de Edge Functions do Supabase**.
-- Task 4 — canonical outbound/status/dedupe: **concluída, aplicada e validada transacionalmente com rollback**.
-- Task 5 — gateway/botão Admin: **backend gateway v18 implantado fail-closed; UI provider-aware está no branch e ainda não foi promovida para o site público/admin em produção**.
+- Task 3 — webhook Meta próprio: **código/testes concluídos; deploy bloqueado somente pela quota máxima de Edge Functions**.
+- Task 4 — canonical outbound/status/dedupe: **concluída, aplicada em produção e validada com dry-run transacional + rollback**.
+- Task 5 — gateway/botão Admin: **backend gateway v18 ACTIVE e fail-closed; UI provider-aware está no branch e ainda não foi promovida ao main**.
 - Task 6 — canário 1018: **não iniciado**.
 
-## Invariantes confirmados após deploy v18
+## Invariantes atuais
 
 ```text
 0975: send_enabled=true, human_send_enabled=false, homologated_at=null, inbound_provider=papoai, outbound_provider=papoai
 1018: send_enabled=true, human_send_enabled=false, homologated_at=null, inbound_provider=papoai, outbound_provider=papoai
 ```
 
-Verificação após deploy:
+Verificado após Tasks 3–5:
 - `human_attendance` outbox: **0 linhas**;
-- `provider='meta' AND direction='outbound'`: **0 mensagens**;
-- botão Enviar continua bloqueado pelos gates atuais;
-- PapoAI continua sendo o provider runtime dos dois canais;
+- botão Enviar continua bloqueado pelos gates;
+- PapoAI continua provider runtime dos dois canais;
 - nenhuma mensagem real foi enviada pela nova implementação;
 - nenhuma subscription/callback Meta foi alterada;
 - checkout, estoque, Bling e criação de pedido não foram tocados.
@@ -81,7 +80,7 @@ Arquivos:
 - `scripts/test-whatsapp-meta-webhook-v1.mjs`
 - fixtures `meta-webhook-*`
 
-Contrato:
+Contrato validado:
 - challenge GET;
 - HMAC `X-Hub-Signature-256` sobre bytes exatos;
 - App Secret e verify token somente por env;
@@ -89,124 +88,141 @@ Contrato:
 - canal resolvido exclusivamente por `phone_number_id`;
 - `phone_number_id` malformado/desconhecido falha fechado;
 - inbound reutiliza `whatsapp_ingest_event_v1`;
-- status bruto é capturado duravelmente antes da reconciliação;
-- status antecipado pode ser reaplicado após o outbound canônico existir;
+- status bruto é capturado antes da reconciliação;
+- status antecipado fica pendente e Task 4 reaplica depois que o outbound existe;
 - nenhuma IA roda sincronicamente no webhook;
 - fixtures cobrem inbound + sent + delivered + read + failed.
 
-### Bloqueio de deploy da Task 3
+### Bloqueio de deploy
 
-Tentativa de criar `whatsapp-meta-webhook-v1` retornou:
+Tentativa real de criar `whatsapp-meta-webhook-v1` no Supabase retornou:
 
 ```text
 Max number of functions reached for project, please upgrade Plan or disable spend cap
 ```
 
-Nenhum callback Meta foi apontado para código incompleto. Não apagar Edge Function sem revisão/autorização; antes, inventariar candidatas aposentadas e confirmar ausência de tráfego/consumidores.
+Não houve deploy parcial e nenhum callback Meta foi alterado.
 
-## Task 4 — outbound canônico
+### Slot de Edge Function — candidato seguro identificado
+
+`whatsapp-ingest-make-v1`:
+- versão 12;
+- código atual é somente stub HTTP 410 `retired_outside_site_vitrine_admin`;
+- pertence ao legado Make, que o projeto não usa mais;
+- consulta dos logs das últimas 24h em 2026-10-02 encontrou **zero eventos** relacionados a `whatsapp-ingest-make-v1`/`whatsapp-ingest`.
+
+Outros stubs 410 confirmados, mas não remover sem necessidade:
+- `whatsapp-ingest`;
+- `admin-whatsapp-direct-v1`;
+- `whatsapp-meta-direct-v1`;
+- `conversation-worker-v3`;
+- `dona-antonia-agent-core-v1`.
+
+**Não remover automaticamente:** exclusão de Edge Function é destrutiva e o conector atual não expõe essa operação. Para abrir um slot, a primeira escolha é remover manualmente somente `whatsapp-ingest-make-v1` após autorização explícita.
+
+## Task 4 — outbound canônico/status/dedupe
 
 Migration aplicada: `whatsapp_meta_canonical_outbound_v1`.
 
-Função:
+Função de aceite:
 - `ops2_admin_attendance_accept_meta_outbound_v1(uuid,text,timestamptz)`
+
+Também foi endurecido:
+- `whatsapp_ingest_event_v1(...)`.
+
+Índice novo:
+- `whatsapp_messages_wamid_account_uidx` — UNIQUE por `(whatsapp_account_id, provider_message_id)` somente quando `provider_message_id LIKE 'wamid.%'`.
 
 Comportamento:
 1. recebe outbox Meta `claimed` + `wamid`;
-2. grava imediatamente `whatsapp_messages_v1` como outbound/meta/accepted/human;
-3. dedupe pela unique `(whatsapp_account_id,provider,provider_message_id)`;
-4. liga `outbox.message_id` + `provider_message_id`;
-5. registra `accepted` em status events;
-6. reaplica status Meta capturado antes do outbound existir;
-7. não apaga evidências.
+2. grava imediatamente outbound canônico `provider='meta'`, `status_current='accepted'`, `sender_kind='human'`;
+3. um mesmo `wamid` só pode existir uma vez por conta, mesmo que Meta e PapoAI o enxerguem;
+4. se PapoAI ecoar primeiro, o aceite Meta promove a mesma linha canônica para `provider='meta'` em vez de duplicar;
+5. corrida Meta/PapoAI é tratada via índice + `unique_violation`;
+6. liga `outbox.message_id` + `provider_message_id`;
+7. registra `accepted` em status events;
+8. reaplica status Meta que chegaram antes do outbound existir;
+9. não apaga histórico/evidência.
 
-### Teste transacional real no banco
+### TDD / dry-run real
 
-Dentro de subtransação:
-- criou outbox Meta falsa claimed;
-- criou status `delivered` antecipado para wamid falso;
-- chamou acceptance;
-- confirmou `accepted -> delivered`;
-- confirmou `sender_kind='human'` e texto canônico;
-- confirmou outbox ligada à mensagem;
-- confirmou exatamente uma mensagem para o mesmo wamid;
-- repetição do acceptance retornou idempotente;
-- forçou rollback;
-- verificou zero dados de teste persistidos.
+RED observado: o teste novo falhou especificamente porque a migration antiga não tinha unicidade cross-provider por `wamid`.
 
-Nenhuma API externa foi chamada.
+Depois da implementação, foi executado no banco um `BEGIN ... ROLLBACK` com funções/índice temporariamente ativos:
+- evento PapoAI com `wamid` sintético;
+- evento Meta com o mesmo `wamid`;
+- resultado: **1 mensagem canônica**, provider `meta`;
+- outbox Meta sintética `claimed` aceita com `wamid` sintético;
+- resultado: **1 outbound**, `sender_kind='human'`, `status_current='accepted'`;
+- rollback executado;
+- resultado final do dry-run: `task4_transactional_dry_run_ok`.
+
+A migration foi então aplicada em produção e verificada: índice e funções existem, com **0 human_attendance rows** criadas pela implantação.
 
 ## Guard de estado Meta incerto
 
-Migration aplicada: `admin_attendance_meta_uncertain_guard_v1`.
-
-O enqueue v3 agora:
-- serializa por conversa com advisory lock;
-- bloqueia novo envio se existir outbox Meta `claimed` com `last_error='meta_send_uncertain:*'`;
-- retorna `meta_send_uncertain` sem criar outra outbox.
-
-Teste transacional com rollback confirmou o bloqueio e restaurou o runtime original dos canais.
+O gateway/contrato mantém estado incerto sem retry cego:
+- network/timeout/5xx podem resultar em `meta_send_uncertain:*`;
+- a outbox fica preservada para reconciliação;
+- UI orienta não reenviar até conferência.
 
 ## Task 5 — gateway provider-neutral
 
-Edge Function existente `admin-whatsapp-ops-v1` foi atualizada para **version 18**, `ACTIVE`, `verify_jwt=false` com autenticação Admin própria preservada.
+`admin-whatsapp-ops-v1` está **version 18, ACTIVE**, com autenticação Admin própria preservada.
 
 O gateway v18:
 - usa `enqueue_text_v3` + `claim_outbox_v3`;
-- escolhe transport pelo provider da outbox;
-- mantém fallback PapoAI via URL do Vault;
+- escolhe transporte pelo provider da outbox;
+- mantém fallback PapoAI;
 - chama adapter Meta somente quando provider=`meta`;
 - exige server-side `META_WHATSAPP_ACCESS_TOKEN` + `META_WHATSAPP_GRAPH_VERSION` + Phone Number ID válido;
 - sucesso Meta exige `wamid` e chama `ops2_admin_attendance_accept_meta_outbound_v1`;
-- resultado Meta incerto mantém outbox `claimed` e marca `meta_send_uncertain:*`;
-- erro determinístico pode marcar failed;
-- browser nunca recebe token Meta;
-- `meta_send_uncertain` é conflito operacional e não deve ser reenviado cegamente.
+- resultado incerto não é reenviado cegamente;
+- browser nunca recebe token Meta.
 
 ### UI no branch
 
 `vitrine/admin/atendimento/attendance-send.js` está provider-aware:
 - Meta/PapoAI exibidos conforme capability;
 - draft só limpa após sucesso;
-- mensagens claras para `meta_transport_not_configured` e `meta_send_uncertain`;
-- browser não chama Graph diretamente.
+- mensagens para `meta_transport_not_configured` e `meta_send_uncertain`;
+- browser não chama Graph diretamente;
+- Enter envia / Shift+Enter quebra linha;
+- botão só habilita quando capability estiver realmente habilitada.
 
-A UI ainda não foi promovida para produção porque este branch/PR ainda não foi integrado ao `main`.
+A UI ainda não foi promovida ao main/produção.
 
 ## CI/TDD
 
-Antes do deploy do gateway, os dois pipelines ficaram verdes juntos:
-- `WhatsApp Meta Central CI`;
-- `attendance-papoai-send-ci`.
+Workflow do branch: `.github/workflows/whatsapp-meta-central-ci.yml`.
 
-Depois, foi feito apenas um ajuste semântico no gateway para mapear `meta_send_uncertain` como HTTP 409 e o mesmo código foi sincronizado no GitHub após o deploy. A Edge Function v18 está ACTIVE com esse conteúdo.
+Ele foi corrigido para não referenciar Tasks futuras inexistentes. O workflow novo ainda não disparou automaticamente porque não existe no branch-base atual do PR; portanto, **não usar CI novo como evidência de conclusão desta última alteração**.
+
+Evidência fresca disponível:
+- testes comportamentais locais do adapter Meta: GREEN;
+- challenge/HMAC/Phone Number ID do webhook: GREEN local;
+- sintaxe do webhook: GREEN local;
+- Task 4: dry-run transacional real no Postgres + rollback: GREEN;
+- gates/outbox verificados diretamente no Supabase.
 
 ## Segurança pendente antes do canário real
 
 - revogar tokens que apareceram em capturas;
 - gerar credencial de produção nova;
 - armazenar access token, App Secret e verify token somente server-side;
-- resolver quota e implantar webhook próprio;
+- liberar 1 slot e implantar o webhook próprio;
 - configurar/validar callback/subscription Meta no 1018;
 - manter gates OFF até canário controlado.
 
-## Não reativar legado
-
-- `whatsapp-meta-direct-v1`
-- `admin-whatsapp-direct-v1`
-- `whatsapp-ingest`
-- `whatsapp-ingest-make-v1`
-- `conversation-worker-v3`
-- `dona-antonia-agent-core-v1`
-
 ## Próxima ação exata
 
-1. inventariar Edge Functions aposentadas e uso recente para liberar uma vaga com segurança;
-2. resolver a quota sem apagar função ativa útil;
-3. implantar `whatsapp-meta-webhook-v1`;
-4. configurar secrets server-side e challenge do webhook;
-5. validar webhook no 1018 mantendo PapoAI em sombra;
-6. somente então preparar Task 6 — canário 1018.
+1. liberar **1 slot** de Edge Function, preferencialmente removendo o stub aposentado `whatsapp-ingest-make-v1`;
+2. deployar `whatsapp-meta-webhook-v1` com `verify_jwt=false` e autenticação HMAC própria;
+3. configurar secrets server-side, sem colar valores em chat/Git;
+4. validar challenge do webhook;
+5. configurar callback/subscription somente no 1018, mantendo PapoAI em sombra;
+6. observar inbound/status e dedupe;
+7. somente então iniciar Task 6 — canário 1018.
 
 ## Rollback operacional
 
