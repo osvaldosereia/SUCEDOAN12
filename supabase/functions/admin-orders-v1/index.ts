@@ -108,6 +108,7 @@ async function orderDetails(orderId:string){
   const productLines=lines.map(line=>`• ${line}`);
   const productsText=productLines.join("\n");
   const itemsText=lines.join(" • ").replace(/[\r\n\t]+/g," ").replace(/ {4,}/g,"   ").trim();
+  const itemsTextLineSeparator=lines.join("\u2028").trim();
   const productSlots=Object.fromEntries(Array.from({length:60},(_,index)=>[
     `product_${String(index+1).padStart(2,"0")}`,
     lines[index]||""
@@ -193,6 +194,7 @@ async function orderDetails(orderId:string){
     marketingCampaign,
     productsText,
     itemsText,
+    itemsTextLineSeparator,
     productSlots,
     totalFormatted:money(order.total),
     paymentLabel:paymentLabel(order.payment_method||checkout.payment_label)
@@ -317,6 +319,7 @@ Deno.serve(async(req:Request)=>{
     product_count:details.itemCount,
     ...details.productSlots,
     items_count:details.itemCount,
+    items_text_line_separator:details.itemsTextLineSeparator,
     items_text:details.itemsText
   };
 
