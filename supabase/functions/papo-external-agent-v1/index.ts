@@ -1,231 +1,55 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { canonicalMessageFromPapoAi } from "../_shared/whatsapp-core-v1.mjs";
 
 const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"content-type","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const MAX_BODY_BYTES=256*1024;
-
 const clean=(v:any,n=500)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
 const digits=(v:any,n=20)=>String(v??"").replace(/\D+/g,"").slice(0,n);
 const json=(body:any,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
-
-async function sha256(value:string){
-  const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
-  return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join("");
-}
-function ctEqual(a:string,b:string){
-  if(a.length!==b.length)return false;
-  let diff=0;for(let i=0;i<a.length;i++)diff|=a.charCodeAt(i)^b.charCodeAt(i);
-  return diff===0;
-}
-const SECRET_KEYS=new Set([
-  "token","access_token","refresh_token","authorization","apikey","api_key","secret",
-  "client_secret","password","senha","key","webhook_key","signature","cookie","set-cookie"
-]);
-function redact(value:any,depth=0):any{
-  if(depth>8)return "[depth_limit]";
-  if(value===null||value===undefined)return value;
-  if(Array.isArray(value))return value.slice(0,200).map(x=>redact(x,depth+1));
-  if(typeof value==="object"){
-    const out:any={};let count=0;
-    for(const [k,v] of Object.entries(value)){
-      if(count++>=200){out.__truncated__=true;break}
-      const key=String(k).toLowerCase().replace(/[^a-z0-9_\-]/g,"");
-      out[k]=SECRET_KEYS.has(key)||key.includes("password")||key.includes("secret")||key.includes("authorization")
-        ? "[redacted]"
-        : redact(v,depth+1);
-    }
-    return out;
-  }
-  if(typeof value==="string")return value.slice(0,8000);
-  return value;
-}
-function findFirst(root:any,names:string[],depth=0):any{
-  if(depth>6||root===null||root===undefined)return null;
-  if(Array.isArray(root)){
-    for(const x of root.slice(0,40)){const v=findFirst(x,names,depth+1);if(v!==null&&v!==undefined&&String(v)!=="")return v}
-    return null;
-  }
-  if(typeof root!=="object")return null;
-  const wanted=new Set(names.map(x=>x.toLowerCase()));
-  for(const [k,v] of Object.entries(root)){
-    if(wanted.has(String(k).toLowerCase())&&v!==null&&v!==undefined&&typeof v!=="object"&&String(v)!=="")return v;
-  }
-  for(const v of Object.values(root)){
-    const found=findFirst(v,names,depth+1);
-    if(found!==null&&found!==undefined&&String(found)!=="")return found;
-  }
-  return null;
-}
-function phoneCandidate(payload:any){
-  const raw=findFirst(payload,["phone","telefone","whatsapp","phone_e164","from","sender_phone","contact_phone"]);
-  const d=digits(raw,20);
-  return d.length>=10?d:null;
-}
-async function authorized(req:Request,url:URL){
-  const supplied=clean(url.searchParams.get("key"),500);
-  if(!supplied)return false;
-  const q=await db.from("papoai_webhook_runtime_v2").select("capture_enabled,key_sha256").eq("id",1).maybeSingle();
-  if(q.error||q.data?.capture_enabled!==true)return false;
-  const expected=clean(q.data?.key_sha256,128).toLowerCase();
-  if(!/^[0-9a-f]{64}$/.test(expected))return false;
-  return ctEqual(await sha256(supplied),expected);
+async function sha256(value:string){const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join("")}
+function ctEqual(a:string,b:string){if(a.length!==b.length)return false;let diff=0;for(let i=0;i<a.length;i++)diff|=a.charCodeAt(i)^b.charCodeAt(i);return diff===0}
+const SECRET_KEYS=new Set(["token","access_token","refresh_token","authorization","apikey","api_key","secret","client_secret","password","senha","key","webhook_key","signature","cookie","set-cookie"]);
+function redact(value:any,depth=0):any{if(depth>8)return "[depth_limit]";if(value===null||value===undefined)return value;if(Array.isArray(value))return value.slice(0,200).map(x=>redact(x,depth+1));if(typeof value==="object"){const out:any={};let count=0;for(const [k,v] of Object.entries(value)){if(count++>=200){out.__truncated__=true;break}const key=String(k).toLowerCase().replace(/[^a-z0-9_\-]/g,"");out[k]=SECRET_KEYS.has(key)||key.includes("password")||key.includes("secret")||key.includes("authorization")?"[redacted]":redact(v,depth+1)}return out}if(typeof value==="string")return value.slice(0,8000);return value}
+function findFirst(root:any,names:string[],depth=0):any{if(depth>6||root===null||root===undefined)return null;if(Array.isArray(root)){for(const x of root.slice(0,40)){const v=findFirst(x,names,depth+1);if(v!==null&&v!==undefined&&String(v)!=="")return v}return null}if(typeof root!=="object")return null;const wanted=new Set(names.map(x=>x.toLowerCase()));for(const [k,v] of Object.entries(root)){if(wanted.has(String(k).toLowerCase())&&v!==null&&v!==undefined&&typeof v!=="object"&&String(v)!=="")return v}for(const v of Object.values(root)){const found=findFirst(v,names,depth+1);if(found!==null&&found!==undefined&&String(found)!=="")return found}return null}
+function phoneCandidate(payload:any){const raw=findFirst(payload,["phone","telefone","whatsapp","phone_e164","from","sender_phone","contact_phone"]);const d=digits(raw,20);return d.length>=10?d:null}
+async function authorized(req:Request,url:URL){const supplied=clean(url.searchParams.get("key"),500);if(!supplied)return false;const q=await db.from("papoai_webhook_runtime_v2").select("capture_enabled,key_sha256").eq("id",1).maybeSingle();if(q.error||q.data?.capture_enabled!==true)return false;const expected=clean(q.data?.key_sha256,128).toLowerCase();if(!/^[0-9a-f]{64}$/.test(expected))return false;return ctEqual(await sha256(supplied),expected)}
+async function mirrorCanonicalPapoAi(captureId:string,parsed:any,eventKey:string){
+  const q=await db.from("papoai_webhook_inbox_v2").select("id,event_key,body_hash,event_name,external_message_id,conversation_ref,phone_candidate,payload,metadata,received_at,status").eq("id",captureId).maybeSingle();
+  if(q.error)throw q.error;if(!q.data)return {ok:false,skipped:true,reason:"capture_missing"};
+  const capture:any=q.data,meta:any=capture.metadata&&typeof capture.metadata==="object"?capture.metadata:{};
+  let conversationId=clean(meta.conversation_id,80)||null;let accountId=clean(meta.whatsapp_account_id,80)||null;let customerId=clean(meta.customer_id,80)||null;let phoneE164=clean(meta.canonical_phone_e164,40)||null;let source="unknown";
+  if(conversationId){const c=await db.from("conversations").select("id,whatsapp_account_id,customer_id,wa_contact_e164,source").eq("id",conversationId).maybeSingle();if(!c.error&&c.data){accountId=accountId||clean(c.data.whatsapp_account_id,80)||null;customerId=customerId||clean(c.data.customer_id,80)||null;phoneE164=phoneE164||clean(c.data.wa_contact_e164,40)||null;source=clean(c.data.source,40)||"unknown"}}
+  if(!accountId)return {ok:false,skipped:true,reason:"account_unresolved"};
+  const normalized:any=canonicalMessageFromPapoAi(capture.payload||parsed,{whatsappAccountId:accountId,providerEventId:eventKey,receivedAt:capture.received_at});
+  const isMessage=String(capture.event_name||"")==="message.received";let message:any=null;let providerMessageId=clean(meta.whatsapp_message_id,260)||clean(capture.external_message_id,260)||normalized?.provider_message_id||null;let phone=phoneE164||normalized?.phone_e164||null;
+  if(isMessage){if(!normalized||!phone||!providerMessageId)return {ok:false,skipped:true,reason:"message_identity_incomplete"};message={...normalized.message,customer_id:customerId,source,provider_conversation_id:normalized.message?.provider_conversation_id||clean(capture.conversation_ref,180)||null,metadata:{...(normalized.message?.metadata||{}),legacy_capture_id:capture.id,legacy_event_key:capture.event_key,legacy_conversation_id:conversationId}}}
+  const mirrored=await db.rpc("whatsapp_ingest_event_v1",{p_whatsapp_account_id:accountId,p_provider:"papoai",p_provider_event_id:capture.event_key||eventKey,p_event_type:capture.event_name||"unknown",p_provider_message_id:providerMessageId,p_phone_e164:phone,p_received_at:capture.received_at,p_payload_hash:capture.body_hash,p_payload:capture.payload||redact(parsed),p_message:message});
+  if(mirrored.error)throw mirrored.error;const result:any=mirrored.data||{};
+  const mirrorMeta={...meta,canonical_mirror:true,canonical_mirrored_at:new Date().toISOString(),canonical_event_id:result?.event_id||null,canonical_message_id:result?.message_id||null};
+  const saved=await db.from("papoai_webhook_inbox_v2").update({metadata:mirrorMeta}).eq("id",captureId);if(saved.error)console.error("papoai_canonical_mirror_metadata",clean(saved.error.message,240));
+  return {ok:true,skipped:false,event_id:result?.event_id||null,message_id:result?.message_id||null,duplicate:Boolean(result?.duplicate)};
 }
 async function capture(req:Request,url:URL){
-  const length=Number(req.headers.get("content-length")||0);
-  if(Number.isFinite(length)&&length>MAX_BODY_BYTES)return json({ok:false,error:"payload_too_large"},413);
-
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).length>MAX_BODY_BYTES)return json({ok:false,error:"payload_too_large"},413);
-
-  let parsed:any={};
-  if(raw.trim()){
-    try{parsed=JSON.parse(raw)}catch{return json({ok:false,error:"invalid_json"},400)}
-  }
-
-  const bodyHash=await sha256(raw||"{}");
-  const mode=clean(url.searchParams.get("mode"),80)||null;
-  const externalEventId=clean(findFirst(parsed,["event_id","eventId","webhook_id","webhookId"]),180)||null;
-  const externalMessageId=clean(findFirst(parsed,["message_id","messageId","idMessage","id_mensagem"]),180)||null;
-  const conversationRef=clean(findFirst(parsed,["conversation_id","conversationId","chat_id","chatId","thread_id","threadId"]),180)||null;
-  const eventName=clean(findFirst(parsed,["event","event_name","eventName","type","event_type","eventType"]),120)||null;
-  const phone=phoneCandidate(parsed);
-  const primary=externalEventId||externalMessageId||null;
-  const eventKey=await sha256([mode||"unknown",primary||bodyHash,bodyHash].join("|"));
-  const payload=redact(parsed);
-  const userAgent=clean(req.headers.get("user-agent"),180)||null;
-  const row={
-    event_key:eventKey,
-    body_hash:bodyHash,
-    mode,
-    event_name:eventName,
-    external_event_id:externalEventId,
-    external_message_id:externalMessageId,
-    conversation_ref:conversationRef,
-    phone_candidate:phone,
-    payload_bytes:new TextEncoder().encode(raw).length,
-    user_agent:userAgent,
-    payload,
-    metadata:{capture_only:mode!=="customer_flow_v1",source:"papoai",adapter_version:3},
-    status:"captured",
-    adapter_version:3
-  };
-
-  const inserted=await db.from("papoai_webhook_inbox_v2").insert(row).select("id,event_key").single();
-  let duplicate=false,id:string|null=null;
-  if(inserted.error){
-    if(String(inserted.error.code)==="23505"){
-      duplicate=true;
-      const q=await db.from("papoai_webhook_inbox_v2").select("id").eq("event_key",eventKey).maybeSingle();
-      if(!q.error)id=q.data?.id||null;
-    }else{
-      await db.from("papoai_webhook_runtime_v2").update({last_error:clean(inserted.error.message,400),updated_at:new Date().toISOString()}).eq("id",1);
-      return json({ok:false,error:"capture_failed"},500);
-    }
-  }else id=inserted.data?.id||null;
-
+  const length=Number(req.headers.get("content-length")||0);if(Number.isFinite(length)&&length>MAX_BODY_BYTES)return json({ok:false,error:"payload_too_large"},413);
+  const raw=await req.text();if(new TextEncoder().encode(raw).length>MAX_BODY_BYTES)return json({ok:false,error:"payload_too_large"},413);
+  let parsed:any={};if(raw.trim()){try{parsed=JSON.parse(raw)}catch{return json({ok:false,error:"invalid_json"},400)}}
+  const bodyHash=await sha256(raw||"{}");const mode=clean(url.searchParams.get("mode"),80)||null;const externalEventId=clean(findFirst(parsed,["event_id","eventId","webhook_id","webhookId"]),180)||null;const externalMessageId=clean(findFirst(parsed,["message_id","messageId","idMessage","id_mensagem"]),180)||null;const conversationRef=clean(findFirst(parsed,["conversation_id","conversationId","chat_id","chatId","thread_id","threadId"]),180)||null;const eventName=clean(findFirst(parsed,["event","event_name","eventName","type","event_type","eventType"]),120)||null;const phone=phoneCandidate(parsed);const primary=externalEventId||externalMessageId||null;const eventKey=await sha256([mode||"unknown",primary||bodyHash,bodyHash].join("|"));const payload=redact(parsed);const userAgent=clean(req.headers.get("user-agent"),180)||null;
+  const row={event_key:eventKey,body_hash:bodyHash,mode,event_name:eventName,external_event_id:externalEventId,external_message_id:externalMessageId,conversation_ref:conversationRef,phone_candidate:phone,payload_bytes:new TextEncoder().encode(raw).length,user_agent:userAgent,payload,metadata:{capture_only:mode!=="customer_flow_v1",source:"papoai",adapter_version:3},status:"captured",adapter_version:3};
+  const inserted=await db.from("papoai_webhook_inbox_v2").insert(row).select("id,event_key").single();let duplicate=false,id:string|null=null;
+  if(inserted.error){if(String(inserted.error.code)==="23505"){duplicate=true;const q=await db.from("papoai_webhook_inbox_v2").select("id").eq("event_key",eventKey).maybeSingle();if(!q.error)id=q.data?.id||null}else{await db.from("papoai_webhook_runtime_v2").update({last_error:clean(inserted.error.message,400),updated_at:new Date().toISOString()}).eq("id",1);return json({ok:false,error:"capture_failed"},500)}}else id=inserted.data?.id||null;
   let normalized:any=null,conversation:any=null,structured:any=null,identityLink:any=null;
   if(id&&mode==="customer_flow_v1"){
-    const flowName=clean(findFirst(parsed,["name","nome","full_name","customer_name","contact_name"]),180);
-    const flowPhone=phoneCandidate(parsed);
-    const flowConversation=clean(findFirst(parsed,["conversation_id","conversationId","session_uid","sessionUid","chat_id","chatId"]),180)||conversationRef;
-    if(!flowPhone||!flowName){
-      await db.from("papoai_webhook_inbox_v2").update({
-        status:"review_required",last_error:"customer_flow_name_or_phone_missing",
-        metadata:{...row.metadata,structured_mode:"customer_flow_v1",structured_processed:false},
-        processed_at:new Date().toISOString()
-      }).eq("id",id);
-      structured={ok:false,error:"customer_flow_name_or_phone_missing"};
-    }else{
-      const flow=await db.rpc("ops2_apply_papoai_customer_flow_v1",{
-        p_event_key:eventKey,p_phone:flowPhone,p_name:flowName,p_conversation_ref:flowConversation||null
-      });
-      if(flow.error){
-        await db.from("papoai_webhook_inbox_v2").update({
-          status:"review_required",last_error:clean(flow.error.message,400),
-          metadata:{...row.metadata,structured_mode:"customer_flow_v1",structured_processed:false},
-          processed_at:new Date().toISOString()
-        }).eq("id",id);
-        structured={ok:false,error:"customer_flow_failed"};
-      }else{
-        structured=flow.data||{};
-        if(structured?.ok===true){
-          const link=await db.rpc("ops2_issue_papoai_catalog_link_v1",{
-            p_phone:flowPhone,
-            p_conversation_id:structured?.conversation_id||null,
-            p_source_event_key:eventKey
-          });
-          if(!link.error)identityLink=link.data||null;
-        }
-        await db.from("papoai_webhook_inbox_v2").update({
-          status:structured?.ok===true?"processed":"review_required",
-          last_error:structured?.ok===true?null:clean(structured?.error||"customer_flow_review_required",400),
-          metadata:{
-            ...row.metadata,structured_mode:"customer_flow_v1",structured_processed:structured?.ok===true,
-            customer_id:structured?.customer_id||null,conversation_id:structured?.conversation_id||null,
-            customer_created:Boolean(structured?.customer_created),orders_linked:Number(structured?.orders_linked||0),
-            catalog_token_id:identityLink?.token_id||null,catalog_short_code:identityLink?.short_code||null,
-            catalog_path:identityLink?.catalog_path||null
-          },
-          processed_at:new Date().toISOString()
-        }).eq("id",id);
-      }
-    }
+    const flowName=clean(findFirst(parsed,["name","nome","full_name","customer_name","contact_name"]),180);const flowPhone=phoneCandidate(parsed);const flowConversation=clean(findFirst(parsed,["conversation_id","conversationId","session_uid","sessionUid","chat_id","chatId"]),180)||conversationRef;
+    if(!flowPhone||!flowName){await db.from("papoai_webhook_inbox_v2").update({status:"review_required",last_error:"customer_flow_name_or_phone_missing",metadata:{...row.metadata,structured_mode:"customer_flow_v1",structured_processed:false},processed_at:new Date().toISOString()}).eq("id",id);structured={ok:false,error:"customer_flow_name_or_phone_missing"}}
+    else{const flow=await db.rpc("ops2_apply_papoai_customer_flow_v1",{p_event_key:eventKey,p_phone:flowPhone,p_name:flowName,p_conversation_ref:flowConversation||null});if(flow.error){await db.from("papoai_webhook_inbox_v2").update({status:"review_required",last_error:clean(flow.error.message,400),metadata:{...row.metadata,structured_mode:"customer_flow_v1",structured_processed:false},processed_at:new Date().toISOString()}).eq("id",id);structured={ok:false,error:"customer_flow_failed"}}else{structured=flow.data||{};if(structured?.ok===true){const link=await db.rpc("ops2_issue_papoai_catalog_link_v1",{p_phone:flowPhone,p_conversation_id:structured?.conversation_id||null,p_source_event_key:eventKey});if(!link.error)identityLink=link.data||null}await db.from("papoai_webhook_inbox_v2").update({status:structured?.ok===true?"processed":"review_required",last_error:structured?.ok===true?null:clean(structured?.error||"customer_flow_review_required",400),metadata:{...row.metadata,structured_mode:"customer_flow_v1",structured_processed:structured?.ok===true,customer_id:structured?.customer_id||null,conversation_id:structured?.conversation_id||null,customer_created:Boolean(structured?.customer_created),orders_linked:Number(structured?.orders_linked||0),catalog_token_id:identityLink?.token_id||null,catalog_short_code:identityLink?.short_code||null,catalog_path:identityLink?.catalog_path||null},processed_at:new Date().toISOString()}).eq("id",id)}}
   }
-  if(id&&mode!=="customer_flow_v1"){
-    try{
-      const n=await db.rpc("papoai_normalize_capture_v2",{p_capture_id:id});
-      if(!n.error)normalized=n.data||null;
-    }catch(e){
-      console.error("papoai_normalize",clean((e as Error)?.message||e,240));
-    }
-    if(normalized?.status==="normalized"){
-      try{
-        const b=await db.rpc("papoai_ensure_conversation_v2",{p_capture_id:id});
-        if(!b.error)conversation=b.data||null;
-      }catch(e){
-        console.error("papoai_conversation_bridge",clean((e as Error)?.message||e,240));
-      }
-    }
-  }
-
-  await db.from("papoai_webhook_runtime_v2").update({
-    last_seen_at:new Date().toISOString(),last_event_key:eventKey,last_error:null,updated_at:new Date().toISOString()
-  }).eq("id",1);
-
-  return json({
-    ok:true,accepted:true,capture_only:mode!=="customer_flow_v1",duplicate,
-    event_ref:id?String(id).slice(0,8):null,
-    normalized:normalized?.status==="normalized",
-    conversation_linked:Boolean(conversation?.conversation_id||structured?.conversation_id),
-    conversation_created:Boolean(conversation?.created),
-    structured_mode:mode==="customer_flow_v1"?"customer_flow_v1":null,
-    structured_processed:Boolean(structured?.ok),
-    customer_id:mode==="customer_flow_v1"?(structured?.customer_id||null):undefined,
-    orders_linked:mode==="customer_flow_v1"?Number(structured?.orders_linked||0):undefined,
-    catalog_path:mode==="customer_flow_v1"?(identityLink?.catalog_path||null):undefined,
-    catalog_short_code:mode==="customer_flow_v1"?(identityLink?.short_code||null):undefined,
-    catalog_expires_at:mode==="customer_flow_v1"?(identityLink?.expires_at||null):undefined,
-    adapter_version:3
-  },200);
+  if(id&&mode!=="customer_flow_v1"){try{const n=await db.rpc("papoai_normalize_capture_v2",{p_capture_id:id});if(!n.error)normalized=n.data||null}catch(e){console.error("papoai_normalize",clean((e as Error)?.message||e,240))}if(normalized?.status==="normalized"){try{const b=await db.rpc("papoai_ensure_conversation_v2",{p_capture_id:id});if(!b.error)conversation=b.data||null}catch(e){console.error("papoai_conversation_bridge",clean((e as Error)?.message||e,240))}}}
+  if(id){try{await mirrorCanonicalPapoAi(id,parsed,eventKey)}catch(e){console.error("papoai_canonical_mirror",clean((e as Error)?.message||e,300))}}
+  await db.from("papoai_webhook_runtime_v2").update({last_seen_at:new Date().toISOString(),last_event_key:eventKey,last_error:null,updated_at:new Date().toISOString()}).eq("id",1);
+  return json({ok:true,accepted:true,capture_only:mode!=="customer_flow_v1",duplicate,event_ref:id?String(id).slice(0,8):null,normalized:normalized?.status==="normalized",conversation_linked:Boolean(conversation?.conversation_id||structured?.conversation_id),conversation_created:Boolean(conversation?.created),structured_mode:mode==="customer_flow_v1"?"customer_flow_v1":null,structured_processed:Boolean(structured?.ok),customer_id:mode==="customer_flow_v1"?(structured?.customer_id||null):undefined,orders_linked:mode==="customer_flow_v1"?Number(structured?.orders_linked||0):undefined,catalog_path:mode==="customer_flow_v1"?(identityLink?.catalog_path||null):undefined,catalog_short_code:mode==="customer_flow_v1"?(identityLink?.short_code||null):undefined,catalog_expires_at:mode==="customer_flow_v1"?(identityLink?.expires_at||null):undefined,adapter_version:3},200);
 }
-
-Deno.serve(async(req:Request)=>{
-  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:CORS});
-  const url=new URL(req.url);
-  if(req.method==="GET"){
-    if(url.searchParams.get("health")==="1")return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:108});
-    return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:108},200);
-  }
-  if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
-  if(!U||!K)return json({ok:false,error:"server_config"},500);
-  if(!(await authorized(req,url)))return json({ok:false,error:"unauthorized"},401);
-  try{return await capture(req,url)}
-  catch(e){
-    console.error("papoai_capture",clean((e as Error)?.message||e,300));
-    try{await db.from("papoai_webhook_runtime_v2").update({last_error:"capture_exception",updated_at:new Date().toISOString()}).eq("id",1)}catch{}
-    return json({ok:false,error:"capture_exception"},500);
-  }
-});
+Deno.serve(async(req:Request)=>{if(req.method==="OPTIONS")return new Response(null,{status:204,headers:CORS});const url=new URL(req.url);if(req.method==="GET"){if(url.searchParams.get("health")==="1")return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:110});return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:110},200)}if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);if(!U||!K)return json({ok:false,error:"server_config"},500);if(!(await authorized(req,url)))return json({ok:false,error:"unauthorized"},401);try{return await capture(req,url)}catch(e){console.error("papoai_capture",clean((e as Error)?.message||e,300));try{await db.from("papoai_webhook_runtime_v2").update({last_error:"capture_exception",updated_at:new Date().toISOString()}).eq("id",1)}catch{}return json({ok:false,error:"capture_exception"},500)}});
