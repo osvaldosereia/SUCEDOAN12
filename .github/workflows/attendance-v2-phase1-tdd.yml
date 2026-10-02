@@ -24,3 +24,5 @@ jobs:
         run: node scripts/test-admin-attendance-media-api-v1.mjs
       - name: Attendance media UI
         run: node scripts/test-admin-attendance-media-ui-v1.mjs
+      - name: PapoAI inbound reconciliation
+        run: node scripts/test-papoai-inbound-reconcile-v1.mjs
