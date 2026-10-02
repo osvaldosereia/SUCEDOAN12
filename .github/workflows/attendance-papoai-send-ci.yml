@@ -1,6 +1,9 @@
 name: attendance-papoai-send-ci
 
 on:
+  push:
+    branches:
+      - 'feat/attendance-papoai-webhook-send'
   pull_request:
     paths:
       - 'scripts/test-admin-attendance-papoai-webhook-send-v1.mjs'
