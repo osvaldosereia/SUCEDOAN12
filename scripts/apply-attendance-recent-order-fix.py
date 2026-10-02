@@ -17,17 +17,28 @@ new_activity="""      greatest(
 if old_activity not in sql:
     raise SystemExit('activity pattern not found')
 sql=sql.replace(old_activity,new_activity,1)
-old_order="""    order by
+old_limited="""    order by
       (q.unread_count>0 or q.human_required or q.status='needs_human') desc,
       q.unread_count desc,
       q.last_activity_at desc,
       q.conversation_id"""
-new_order="""    order by
+new_limited="""    order by
       q.last_activity_at desc,
       q.conversation_id"""
-if sql.count(old_order)!=2:
-    raise SystemExit(f'expected 2 queue ordering blocks, found {sql.count(old_order)}')
-sql=sql.replace(old_order,new_order)
+if old_limited not in sql:
+    raise SystemExit('limited ordering block not found')
+sql=sql.replace(old_limited,new_limited,1)
+old_agg="""  ) order by
+    (q.unread_count>0 or q.human_required or q.status='needs_human') desc,
+    q.unread_count desc,
+    q.last_activity_at desc,
+    q.conversation_id"""
+new_agg="""  ) order by
+    q.last_activity_at desc,
+    q.conversation_id"""
+if old_agg not in sql:
+    raise SystemExit('aggregate ordering block not found')
+sql=sql.replace(old_agg,new_agg,1)
 sqlp.write_text(sql)
 
 jsp=Path('vitrine/admin/atendimento/attendance.js')
