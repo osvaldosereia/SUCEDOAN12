@@ -20,11 +20,24 @@ const renderPos=send.indexOf('renderOrderSuccess(url,saved)');
 const timerPos=send.indexOf('scheduleWhatsAppReturn(url,0)');
 assert.ok(savePos>=0&&clearPos>savePos,'cart may clear only after submit_order succeeds');
 assert.ok(renderPos>clearPos&&timerPos>renderPos,'success state must be prepared before immediate WhatsApp return');
-assert.match(send,/const url='https:\/\/wa\.me\/'\+resolveWhatsappDestination\(\);/,'return URL must open conversation without requiring prefilled order send');
+assert.match(send,/const url='https:\/\/wa\.me\/'\+resolveWhatsappDestination\(\);/,'legacy handler may keep its fallback return URL');
 assert.doesNotMatch(send,/\?text=/,'checkout must not depend on customer sending prefilled text');
 assert.doesNotMatch(send,/const\s+lines\s*=|PEDIDO DONA ANTONIA|INTERESSES_MKT|MARCAS_MKT/,'successful order path must not build an obsolete free-form WhatsApp message after persistence');
 assert.doesNotMatch(send,/const\s+marketingSignals\s*=\s*buildMarketingSignals\(\)/,'successful order path must not perform unused marketing work before showing success');
 assert.match(root,/function buildMarketingSignals\(\)/,'marketing signal helper remains available for the dedicated marketing migration');
+
+const resilience=read('checkout-resilience.js');
+assert.match(resilience,/whatsapp_return_phone/,'resilience layer must consume the authoritative WhatsApp return phone from submit_order');
+assert.match(resilience,/pendingWhatsappReturnUrl/,'resilience layer must hold the authoritative return URL until navigation');
+assert.match(resilience,/location\.assign/,'resilience layer must redirect to the authoritative WhatsApp conversation');
+assert.match(resilience,/wa-fallback/,'manual fallback link must be corrected to the authoritative WhatsApp conversation');
+
+const migration=read('supabase/migrations/20261002150000_checkout_whatsapp_return_channel.sql');
+assert.match(migration,/whatsapp_return_phone/,'order result must expose the phone of the channel chosen for the confirmation');
+assert.match(migration,/whatsapp_return_origin/,'order result must expose the origin chosen for the confirmation');
+assert.match(migration,/ops2_whatsapp_outbox_v1/,'return channel must come from the same customer outbox used by the confirmation');
+assert.match(migration,/recipient_kind\s*=\s*'customer'/i,'return channel lookup must use the customer confirmation row');
+
 console.log('checkout WhatsApp return contract: ok');
 
 assert.doesNotMatch(root,/Voltando para a conversa em 3 segundos/i,'legacy 3-second copy must be removed');

@@ -6,6 +6,7 @@
   const originalSetTimeout=window.setTimeout.bind(window);
   let pendingAdjustment=null;
   let pendingSubmitError=null;
+  let pendingWhatsappReturnUrl=null;
 
   function byId(id){return document.getElementById(id)}
   function digits(value,max=20){return String(value??'').replace(/\D+/g,'').slice(0,max)}
@@ -245,7 +246,7 @@
   function confirmStockAdjustment(saved){
     const items=applyStockAdjustment(saved);if(!items.length)return false;
     const title=document.querySelector('#sheetTitle'),body=document.querySelector('#sheetBody'),action=document.querySelector('#sheetAction');if(!title||!body||!action)return false;
-    const previousLink=document.querySelector('.wa-fallback'),whatsappUrl=previousLink?.href||'https://wa.me/5565998150975',total=Number(saved?.total_cents||0)/100;
+    const previousLink=document.querySelector('.wa-fallback'),whatsappUrl=pendingWhatsappReturnUrl||previousLink?.href||'https://wa.me/5565998150975',total=Number(saved?.total_cents||0)/100;
     title.textContent='Pedido ajustado e recebido';
     body.innerHTML=`<div class="rule-notice warn"><strong>O estoque mudou enquanto você finalizava.</strong>${items.map(x=>`<div style="margin-top:7px">${escapeHtml(adjustmentLine(x))}</div>`).join('')}<div style="margin-top:10px"><b>Novo total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</b></div><div style="margin-top:6px">O pedido continuou normalmente com os itens disponíveis.</div></div>`;
     action.innerHTML='<div class="action-stack"><button type="button" class="primary" id="stockAdjustmentOk">OK, ir para o WhatsApp</button><button type="button" class="secondary" id="stockAdjustmentStore">Voltar à vitrine</button></div>';
@@ -293,6 +294,9 @@
     try{
       if(requestUrl.includes('/functions/v1/storefront-v2')&&requestUrl.includes('action=submit_order')){
         const data=await response.clone().json();
+        const returnPhone=digits(data?.whatsapp_return_phone,15);
+        if(response.ok&&/^55\d{10,11}$/.test(returnPhone))pendingWhatsappReturnUrl='https://wa.me/'+returnPhone;
+        else if(response.ok)pendingWhatsappReturnUrl=null;
         if(response.ok&&data?.stock_adjustment===true&&applyStockAdjustment(data).length){pendingAdjustment=data;pendingSubmitError=null;originalSetTimeout(()=>confirmStockAdjustment(data),0)}
         else if(!response.ok){pendingSubmitError=data;if(['required_checkout_data','registration_incomplete','invalid_document','unsupported_city','identity_mismatch','document_mismatch','document_already_in_use'].includes(String(data?.error||'')))originalSetTimeout(()=>showRegistrationServerError(data.error),0)}
         else{pendingAdjustment=null;pendingSubmitError=null}
@@ -302,12 +306,21 @@
   };
 
   window.setTimeout=(fn,delay,...rest)=>{
+    if(Number(delay)===0&&pendingWhatsappReturnUrl&&typeof fn==='function'){
+      try{
+        if(Function.prototype.toString.call(fn).includes('location.assign')){
+          const target=pendingWhatsappReturnUrl;
+          return originalSetTimeout(()=>window.location.assign(target),0);
+        }
+      }catch{}
+    }
     if(Number(delay)===3000&&pendingAdjustment&&typeof fn==='function'){try{if(Function.prototype.toString.call(fn).includes('location.assign'))return 0}catch{}}
     return originalSetTimeout(fn,delay,...rest);
   };
 
   const observer=new MutationObserver(()=>{
     organizeCheckoutSections();
+    const fallback=document.querySelector?.('.wa-fallback');if(fallback&&pendingWhatsappReturnUrl)fallback.href=pendingWhatsappReturnUrl;
     const toast=document.querySelector?.('#toast');if(!toast||!pendingSubmitError)return;
     const text=String(toast.textContent||'');if(text.includes('Não consegui registrar')||text.includes('O estoque mudou. Atualize a cesta'))toast.textContent=humanError(pendingSubmitError);
   });
