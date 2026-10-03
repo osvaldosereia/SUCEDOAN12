@@ -27,6 +27,7 @@ jobs:
       - run: node scripts/test-admin-attendance-api-v1.mjs
       - run: node scripts/test-admin-attendance-ui-v1.mjs
       - run: node scripts/test-admin-attendance-native-v1.mjs
+      - run: node scripts/test-admin-attendance-scroll-layout-v1.mjs
       - run: node scripts/test-admin-attendance-native-channel-v1.mjs
       - run: node scripts/test-admin-attendance-unsupported-display-v1.mjs
       - run: node --check vitrine/admin/atendimento/attendance-app.js
