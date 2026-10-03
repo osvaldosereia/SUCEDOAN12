@@ -246,11 +246,11 @@
   function confirmStockAdjustment(saved){
     const items=applyStockAdjustment(saved);if(!items.length)return false;
     const title=document.querySelector('#sheetTitle'),body=document.querySelector('#sheetBody'),action=document.querySelector('#sheetAction');if(!title||!body||!action)return false;
-    const previousLink=document.querySelector('.wa-fallback'),whatsappUrl=pendingWhatsappReturnUrl||previousLink?.href||'https://wa.me/5565998150975',total=Number(saved?.total_cents||0)/100;
+    const orderId=String(saved?.order_id||'').trim(),orderUrl=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(orderId):'',total=Number(saved?.total_cents||0)/100;
     title.textContent='Pedido ajustado e recebido';
     body.innerHTML=`<div class="rule-notice warn"><strong>O estoque mudou enquanto você finalizava.</strong>${items.map(x=>`<div style="margin-top:7px">${escapeHtml(adjustmentLine(x))}</div>`).join('')}<div style="margin-top:10px"><b>Novo total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</b></div><div style="margin-top:6px">O pedido continuou normalmente com os itens disponíveis.</div></div>`;
-    action.innerHTML='<div class="action-stack"><button type="button" class="primary" id="stockAdjustmentOk">OK, ir para o WhatsApp</button><button type="button" class="secondary" id="stockAdjustmentStore">Voltar à vitrine</button></div>';
-    document.querySelector('#stockAdjustmentOk')?.addEventListener('click',()=>{pendingAdjustment=null;window.location.assign(whatsappUrl)});
+    action.innerHTML='<div class="action-stack">'+(orderUrl?'<button type="button" class="primary" id="stockAdjustmentOrder">Ver meu pedido</button>':'')+'<button type="button" class="secondary" id="stockAdjustmentStore">Voltar à vitrine</button></div>';
+    document.querySelector('#stockAdjustmentOrder')?.addEventListener('click',()=>{pendingAdjustment=null;window.location.assign(orderUrl)});
     document.querySelector('#stockAdjustmentStore')?.addEventListener('click',()=>{pendingAdjustment=null;document.querySelector('#closeSheet')?.click()});return true;
   }
   function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}

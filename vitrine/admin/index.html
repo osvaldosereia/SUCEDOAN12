@@ -7779,31 +7779,13 @@ window.addEventListener('message',event=>{
       }
     });
   }
+  function publicOrderUrlFor(o){const id=String(o?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}
   function currentOrderCompanyWhatsappMessage(){
-    const d=state.currentOrder||{},o=d.order||{},items=Array.isArray(d.items)?d.items:[];
-    const customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{};
-    const delivery=(o.delivery_address_snapshot&&typeof o.delivery_address_snapshot==='object'?o.delivery_address_snapshot:(o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:{}));
-    const code=o.order_number||o.id||'';
-    const lines=['PEDIDO DONA ANTONIA'];
+    const d=state.currentOrder||{},o=d.order||{},customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{},delivery=o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:{},code=o.order_number||o.id||'',url=publicOrderUrlFor(o),lines=['PEDIDO DONA ANTONIA'];
     if(code)lines.push('','Pedido: '+code);
-    const customerName=o.customer_name||customer.name||customer.display_name||delivery.customer_name||'';
-    const customerPhone=o.phone_e164||o.whatsapp_phone_e164||customer.phone_e164||delivery.phone||'';
-    lines.push('','CLIENTE');
-    if(customerName)lines.push('Nome: '+customerName);
-    if(customerPhone)lines.push('WhatsApp: '+formatPhone(customerPhone));
-    const address=[delivery.street,delivery.number,delivery.complement].filter(Boolean).join(', ');
-    const district=delivery.district||delivery.neighborhood||'';
-    const city=delivery.city||'';
-    if(address||district||city){
-      lines.push('','ENTREGA');
-      if(address)lines.push('Endereco: '+address);
-      if(district)lines.push('Bairro: '+district);
-      if(city)lines.push('Cidade: '+city);
-    }
-    lines.push('','PRODUTOS');
-    appendCurrentOrderWhatsappItems(lines,items);
-    const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('','TOTAL: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
-    const payment=o.payment_method||o.payment_label||'';if(payment)lines.push('PAGAMENTO: '+payment);
+    const customerName=o.customer_name||customer.name||customer.display_name||delivery.customer_name||'';if(customerName)lines.push('Cliente: '+customerName);
+    const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+    if(url)lines.push('','Conferir pedido completo:',''+url);
     return lines.join('\n')
   }
   function openNativeWhatsapp(phone,message){
@@ -7814,10 +7796,10 @@ window.addEventListener('message',event=>{
     openNativeWhatsapp(COMPANY_WHATSAPP_E164,currentOrderCompanyWhatsappMessage())
   }
   function currentOrderCustomerWhatsappMessage(){
-    const d=state.currentOrder||{},o=d.order||{},items=Array.isArray(d.items)?d.items:[],code=o.order_number||o.id||'';
-    const lines=['Ola! Segue o seu pedido da Dona Antonia'+(code?' '+code:'')+'.'];
-    if(items.length){lines.push('','PRODUTOS');appendCurrentOrderWhatsappItems(lines,items)}
-    const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('','Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+    const d=state.currentOrder||{},o=d.order||{},code=o.order_number||o.id||'',url=publicOrderUrlFor(o),lines=['Ola! Seu pedido da Dona Antonia foi recebido.'];
+    if(code)lines.push('Pedido: '+code);
+    const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+    if(url)lines.push('','Confira produtos, fotos, quantidades e entrega:',''+url);
     return lines.join('\n')
   }
   function openCurrentOrderCustomerWhatsapp(){
