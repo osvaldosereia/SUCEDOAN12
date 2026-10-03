@@ -20,8 +20,8 @@ new, count = re.subn(pattern, replacement, text, count=1)
 if count != 1:
     raise SystemExit(f'expected one legacy attendance block, found {count}')
 
-# Guardas pós-patch: remover somente a bridge/iframe e preservar Pedidos.
-for forbidden in ('attendanceFrame', "data?.type!=='da-attendance'", '?embedded=1'):
+# Guardas pós-patch: remover somente a bridge/iframe do Atendimento e preservar Pedidos.
+for forbidden in ('attendanceFrame', "data?.type!=='da-attendance'", './atendimento/?embedded=1'):
     if forbidden in new:
         raise SystemExit(f'legacy Attendance marker survived patch: {forbidden}')
 for marker in ('Enviar pedido:', '65 99815-0975', '65 99688-4599'):
