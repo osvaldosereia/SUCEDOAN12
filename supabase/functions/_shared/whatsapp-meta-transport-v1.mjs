@@ -30,43 +30,36 @@ function normalizeDigits(value) {
   return String(value ?? '').replace(/\D+/g, '');
 }
 
-function validateRequest({ accessToken, phoneNumberId, toE164, text, graphVersion, timeoutMs, fetchImpl }) {
+function validateCommonRequest({ accessToken, phoneNumberId, toE164, graphVersion, timeoutMs, fetchImpl }) {
   const token = typeof accessToken === 'string' ? accessToken.trim() : '';
   const phoneId = String(phoneNumberId ?? '').trim();
   const to = normalizeDigits(toE164);
-  const body = typeof text === 'string' ? text : '';
   const version = typeof graphVersion === 'string' ? graphVersion.trim() : '';
   const timeout = Number(timeoutMs ?? 10000);
-
   if (!token) throw invalidRequest();
   if (!/^\d{5,30}$/.test(phoneId)) throw invalidRequest();
   if (!/^\d{8,20}$/.test(to)) throw invalidRequest();
-  if (!body.trim() || body.length > 4096) throw invalidRequest();
   if (!/^v\d+\.\d+$/.test(version)) throw invalidRequest();
   if (!Number.isFinite(timeout) || timeout < 1 || timeout > 60000) throw invalidRequest();
   if (typeof fetchImpl !== 'function') throw invalidRequest();
+  return { token, phoneId, to, version, timeout };
+}
 
-  return { token, phoneId, to, body, version, timeout };
+function validateRequest({ accessToken, phoneNumberId, toE164, text, graphVersion, timeoutMs, fetchImpl }) {
+  const common = validateCommonRequest({ accessToken, phoneNumberId, toE164, graphVersion, timeoutMs, fetchImpl });
+  const body = typeof text === 'string' ? text : '';
+  if (!body.trim() || body.length > 4096) throw invalidRequest();
+  return { ...common, body };
 }
 
 function validateTemplateRequest({ accessToken, phoneNumberId, toE164, templateName, languageCode, components, graphVersion, timeoutMs, fetchImpl }) {
-  const token = typeof accessToken === 'string' ? accessToken.trim() : '';
-  const phoneId = String(phoneNumberId ?? '').trim();
-  const to = normalizeDigits(toE164);
+  const common = validateCommonRequest({ accessToken, phoneNumberId, toE164, graphVersion, timeoutMs, fetchImpl });
   const name = typeof templateName === 'string' ? templateName.trim() : '';
   const language = typeof languageCode === 'string' ? languageCode.trim() : '';
-  const version = typeof graphVersion === 'string' ? graphVersion.trim() : '';
-  const timeout = Number(timeoutMs ?? 10000);
   const normalizedComponents = components == null ? [] : components;
 
-  if (!token) throw invalidRequest();
-  if (!/^\d{5,30}$/.test(phoneId)) throw invalidRequest();
-  if (!/^\d{8,20}$/.test(to)) throw invalidRequest();
   if (!/^[a-z0-9_]{1,512}$/.test(name)) throw invalidRequest();
   if (!/^[A-Za-z]{2,3}(?:_[A-Za-z]{2,4})?$/.test(language)) throw invalidRequest();
-  if (!/^v\d+\.\d+$/.test(version)) throw invalidRequest();
-  if (!Number.isFinite(timeout) || timeout < 1 || timeout > 60000) throw invalidRequest();
-  if (typeof fetchImpl !== 'function') throw invalidRequest();
   if (!Array.isArray(normalizedComponents) || normalizedComponents.length > 10) throw invalidRequest();
 
   const safeComponents = normalizedComponents.map((component) => {
@@ -84,7 +77,20 @@ function validateTemplateRequest({ accessToken, phoneNumberId, toE164, templateN
     };
   });
 
-  return { token, phoneId, to, name, language, components: safeComponents, version, timeout };
+  return { ...common, name, language, components: safeComponents };
+}
+
+function validateMediaRequest({ accessToken, phoneNumberId, toE164, mediaType, mediaId, caption, filename, graphVersion, timeoutMs, fetchImpl }) {
+  const common = validateCommonRequest({ accessToken, phoneNumberId, toE164, graphVersion, timeoutMs, fetchImpl });
+  const type = String(mediaType ?? '').trim().toLowerCase();
+  const id = String(mediaId ?? '').trim();
+  const normalizedCaption = typeof caption === 'string' ? caption.trim() : '';
+  const normalizedFilename = typeof filename === 'string' ? filename.trim() : '';
+  if (!['image','audio','document'].includes(type)) throw invalidRequest();
+  if (!/^[A-Za-z0-9._:-]{3,240}$/.test(id)) throw invalidRequest();
+  if (normalizedCaption.length > 1024) throw invalidRequest();
+  if (normalizedFilename.length > 240 || /[\u0000-\u001f\u007f\\/]/.test(normalizedFilename)) throw invalidRequest();
+  return { ...common, type, id, caption: normalizedCaption, filename: normalizedFilename };
 }
 
 async function readJsonSafely(response) {
@@ -214,5 +220,33 @@ export async function sendTemplateViaMeta({
       language: { code: request.language },
       components: request.components,
     },
+  }, fetchImpl);
+}
+
+export async function sendMediaViaMeta({
+  accessToken,
+  phoneNumberId,
+  toE164,
+  mediaType,
+  mediaId,
+  caption = '',
+  filename = '',
+  graphVersion,
+  timeoutMs = 10000,
+  fetchImpl = globalThis.fetch,
+} = {}) {
+  const request = validateMediaRequest({
+    accessToken, phoneNumberId, toE164, mediaType, mediaId, caption, filename,
+    graphVersion, timeoutMs, fetchImpl,
+  });
+  const media = { id: request.id };
+  if (request.type !== 'audio' && request.caption) media.caption = request.caption;
+  if (request.type === 'document' && request.filename) media.filename = request.filename;
+  return await postMetaMessage(request, {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: request.to,
+    type: request.type,
+    [request.type]: media,
   }, fetchImpl);
 }
