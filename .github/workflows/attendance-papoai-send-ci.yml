@@ -13,6 +13,7 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/sql/20261002_admin_attendance_papoai_webhook_send_v1.sql'
       - 'supabase/sql/20261003_admin_attendance_unsupported_display_v1.sql'
+      - 'supabase/sql/20261003_attendance_library_v1.sql'
       - '.github/workflows/attendance-papoai-send-ci.yml'
 
 jobs:
@@ -33,6 +34,7 @@ jobs:
       - run: node scripts/test-admin-attendance-filter-menu-v1.mjs
       - run: node scripts/test-admin-attendance-native-channel-v1.mjs
       - run: node scripts/test-admin-attendance-unsupported-display-v1.mjs
+      - run: node scripts/test-admin-attendance-library-schema-v1.mjs
       - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
       - run: node --check vitrine/admin/atendimento/attendance-media-send.js
