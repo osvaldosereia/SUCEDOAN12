@@ -3,11 +3,13 @@ import fs from 'node:fs';
 
 const sqlPath='supabase/sql/20261003_attendance_human_ai_state_v1.sql';
 const uiPath='vitrine/admin/atendimento/attendance-human-ai.js';
+const attendancePath='vitrine/admin/atendimento/attendance.js';
 const htmlPath='vitrine/admin/atendimento/index.html';
 assert.equal(fs.existsSync(sqlPath),true,'migration da Task 10 deve existir');
 assert.equal(fs.existsSync(uiPath),true,'controle Humano × IA da Central deve existir');
 const sql=fs.readFileSync(sqlPath,'utf8');
 const ui=fs.readFileSync(uiPath,'utf8');
+const attendance=fs.readFileSync(attendancePath,'utf8');
 const html=fs.readFileSync(htmlPath,'utf8');
 
 assert.match(sql,/create table if not exists public\.attendance_human_ai_audit_v1/i,'deve existir auditoria de estado humano/IA');
@@ -31,7 +33,11 @@ assert.match(ui,/ops2_admin_attendance_resume_ai_v1/,'UI deve expor retorno expl
 assert.match(ui,/Assumir atendimento/,'operador deve entender a ação de takeover');
 assert.match(ui,/Liberar para IA/,'operador deve entender a retomada da IA');
 assert.match(ui,/Authorization:`Bearer \$\{access\}`/,'RPC deve usar a sessão real do Admin');
+assert.match(ui,/attendance:human-ai-state-changed/,'módulo deve publicar mudança de estado imediatamente');
 assert.doesNotMatch(ui,/graph\.facebook\.com/i,'controle de estado não pode falar diretamente com a Meta');
+assert.match(attendance,/attendance:human-ai-state-changed/,'tela principal deve consumir mudança de estado sem exigir reload');
+assert.match(attendance,/detail\?\.conversationId[\s\S]{0,500}state\.conversation\.conversation\.mode\s*=\s*mode/,'estado local da conversa deve ser atualizado após takeover/resume');
+assert.match(attendance,/renderConversationHead\(\)/,'subtítulo Humano/ANA deve ser renderizado após mudança');
 assert.match(html,/attendance-human-ai\.js/,'módulo de estado deve ser carregado pela Central');
 
 console.log('PASS test-attendance-human-ai-state-v1');
