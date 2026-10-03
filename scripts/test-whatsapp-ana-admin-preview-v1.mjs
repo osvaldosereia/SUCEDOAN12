@@ -32,6 +32,8 @@ assert.match(api,/ops2_admin_ana_preview_finish_v1/,'preview deve persistir resu
 assert.match(api,/https:\/\/api\.openai\.com\/v1\/responses/,'preview deve usar Responses API server-side');
 assert.match(api,/type:'json_schema'|type:"json_schema"/,'preview deve usar Structured Outputs');
 assert.match(api,/store:false/,'preview não deve armazenar resposta no provedor por padrão');
+assert.match(api,/gpt-6-luna/,'fallback da ANA deve usar um model ID atual da API');
+assert.doesNotMatch(api,/gpt-5\.6-luna/,'preview não deve usar nome do produto ChatGPT como model ID da API');
 assert.match(api,/dry_run_not_sendable:true/,'preview deve declarar que não envia mensagem');
 assert.doesNotMatch(api,/whatsapp_outbox_v1|ops2_admin_attendance_enqueue|sendMeta|graph\.facebook\.com|whatsapp-ana-worker-v1/i,'preview não pode enviar WhatsApp nem depender do worker batch');
 
