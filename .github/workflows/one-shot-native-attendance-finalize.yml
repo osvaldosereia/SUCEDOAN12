@@ -1,0 +1,71 @@
+name: One-shot finalize native Attendance
+
+on:
+  push:
+    branches:
+      - 'refactor/attendance-native-admin-20261003'
+    paths:
+      - '.github/workflows/one-shot-native-attendance-finalize.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Replace only legacy Attendance block
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          path=Path('vitrine/admin/index.html')
+          text=path.read_text(encoding='utf-8')
+          assert 'Enviar pedido:' in text, 'latest Orders UI must exist before Attendance migration'
+          pattern=r"\n  function attendanceUuid\(value\)\{[\s\S]*?\n\s*function setTab\(tab\)\{"
+          replacement="""
+  function renderAttendance(){
+    location.assign('/vitrine/admin/atendimento/');
+  }
+
+  function setTab(tab){"""
+          updated,count=re.subn(pattern,replacement,text,count=1)
+          assert count == 1, f'expected exactly one legacy Attendance block, found {count}'
+          assert 'Enviar pedido:' in updated, 'Orders UI was altered by Attendance migration'
+          assert "location.assign('/vitrine/admin/atendimento/');" in updated
+          for forbidden in ('attendanceFrame','attendanceUuid','da-attendance'):
+              assert forbidden not in updated, f'legacy Attendance token remains: {forbidden}'
+          path.write_text(updated,encoding='utf-8')
+          PY
+      - name: Verify Orders and native Attendance contracts
+        run: |
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          node scripts/test-admin-attendance-native-v1.mjs
+          node scripts/test-admin-attendance-native-channel-v1.mjs
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          if(!html.includes('Enviar pedido:')) throw new Error('Orders UI marker missing');
+          if(!html.includes("location.assign('/vitrine/admin/atendimento/');")) throw new Error('native Attendance route missing');
+          for(const token of ['attendanceFrame','attendanceUuid','da-attendance']) if(html.includes(token)) throw new Error(`legacy Attendance token remains: ${token}`);
+          console.log('Admin syntax and architecture checks OK');
+          NODE
+          git diff --check
+      - name: Commit permanent result and remove migration workflow
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git rm .github/workflows/one-shot-native-attendance-finalize.yml
+          git add vitrine/admin/index.html
+          git commit -m 'fix(admin): preserve latest Orders UI and route Attendance natively'
+          git pull --rebase origin refactor/attendance-native-admin-20261003
+          git push origin HEAD:refactor/attendance-native-admin-20261003
