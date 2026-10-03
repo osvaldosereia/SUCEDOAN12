@@ -5,24 +5,30 @@ on:
     branches: [main]
     paths:
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/separacao/**'
       - 'pedido/index.html'
       - 'p/index.html'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
       - 'scripts/test-public-order-triple-tap-separation-v1.mjs'
+      - 'scripts/test-order-separation-v2-*.mjs'
+      - 'supabase/migrations/20261003193000_order_separation_v2.sql'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
   push:
-    branches: [main, feat/admin-order-whatsapp-main-integration-20261001, feat/admin-order-storefront-link-20261003]
+    branches: [main, feat/admin-order-whatsapp-main-integration-20261001, feat/admin-order-storefront-link-20261003, feat/order-separation-v2]
     paths:
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/separacao/**'
       - 'pedido/index.html'
       - 'p/index.html'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
       - 'scripts/test-public-order-triple-tap-separation-v1.mjs'
+      - 'scripts/test-order-separation-v2-*.mjs'
+      - 'supabase/migrations/20261003193000_order_separation_v2.sql'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
@@ -38,6 +44,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
+      - name: Separation v2 schema
+        run: node scripts/test-order-separation-v2-schema.mjs
       - name: Public order storefront and printing
         run: |
           node scripts/test-order-public-summary.mjs
