@@ -9,7 +9,9 @@ on:
       - 'p/index.html'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
+      - 'scripts/test-public-order-triple-tap-separation-v1.mjs'
       - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/order-public-view-v1/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
   push:
@@ -20,7 +22,9 @@ on:
       - 'p/index.html'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
+      - 'scripts/test-public-order-triple-tap-separation-v1.mjs'
       - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/order-public-view-v1/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
 
@@ -39,6 +43,7 @@ jobs:
           node scripts/test-order-public-summary.mjs
           node scripts/test-admin-order-public-vitrine.mjs
           node scripts/test-order-public-vitrine-print.mjs
+          node scripts/test-public-order-triple-tap-separation-v1.mjs
       - name: Inline JavaScript syntax
         run: |
           node <<'NODE'
