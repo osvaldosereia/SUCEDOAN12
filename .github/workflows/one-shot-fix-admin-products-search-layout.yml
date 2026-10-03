@@ -1,0 +1,45 @@
+name: One-shot fix admin products search layout
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-fix-admin-products-search-layout.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/patch-admin-products-search-layout.py
+            scripts/test-admin-products-search-layout.mjs
+          sparse-checkout-cone-mode: false
+      - name: RED confirm regression exists
+        run: |
+          if node scripts/test-admin-products-search-layout.mjs; then
+            echo 'RED expected the current layout test to fail, but it passed'
+            exit 1
+          fi
+          echo 'RED confirmed: product search can collapse to an unusable width'
+      - name: Apply patch
+        run: python3 scripts/patch-admin-products-search-layout.py
+      - name: GREEN verify
+        run: |
+          node scripts/test-admin-products-search-layout.mjs
+          node <<'NODE'
+          const fs=require('fs');const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log('Admin JS syntax OK');
+          NODE
+          git diff --check
+      - name: Commit
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'fix(admin): restaura busca de produtos utilizavel'
+          git push origin HEAD:main
