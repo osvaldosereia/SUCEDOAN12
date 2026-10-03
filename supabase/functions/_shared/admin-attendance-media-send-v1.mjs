@@ -18,10 +18,14 @@ async function sha256Hex(bytes){
 }
 
 export async function sendAttendanceMediaViaMeta({
-  db,form,accessToken,graphVersion,adminUserId,
+  db,form,accessToken,graphVersion,
   markClaimFailed,markMetaUncertain,
 }={}){
   if(!db||!(form instanceof FormData))return {ok:false,error:'media_request_invalid'};
+  const token=String(accessToken??'').trim();
+  const version=String(graphVersion??'').trim();
+  if(!token||!/^v\d+\.\d+$/.test(version))return {ok:false,error:'meta_transport_not_configured'};
+
   for(const key of ['to_phone_e164','whatsapp_account_id','account_id','phone_number_id','waba_id','customer_id']){
     if(form.has(key))return {ok:false,error:'destination_fields_not_allowed'};
   }
@@ -70,8 +74,8 @@ export async function sendAttendanceMediaViaMeta({
 
   try{
     const uploaded=await uploadMetaMedia({
-      accessToken,
-      graphVersion,
+      accessToken:token,
+      graphVersion:version,
       phoneNumberId:claim.phone_number_id,
       mimeType,
       filename,
@@ -79,14 +83,14 @@ export async function sendAttendanceMediaViaMeta({
       timeoutMs:20000,
     });
     const sent=await sendMediaViaMeta({
-      accessToken,
+      accessToken:token,
       phoneNumberId:claim.phone_number_id,
       toE164:claim.to_phone_e164,
       mediaType,
       mediaId:uploaded.mediaId,
       caption:mediaType==='audio'?'':caption,
       filename:mediaType==='document'?filename:'',
-      graphVersion,
+      graphVersion:version,
       timeoutMs:15000,
     });
     const acceptedAt=new Date().toISOString();
@@ -98,9 +102,6 @@ export async function sendAttendanceMediaViaMeta({
     });
     if(accepted.error||accepted.data?.ok!==true){
       return await markMetaUncertain(claim,accepted.error?.message||accepted.data?.error||'canonical_persist_failed');
-    }
-    if(adminUserId){
-      await db.from('whatsapp_outbox_v1').update({updated_at:acceptedAt}).eq('id',claim.outbox_id);
     }
     return {
       ok:true,status:'accepted',outbox_status:'sent',provider:'meta',
