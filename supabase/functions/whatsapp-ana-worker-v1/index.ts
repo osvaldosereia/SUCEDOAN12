@@ -3,12 +3,13 @@ import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normaliz
 
 const cors={
   'Access-Control-Allow-Origin':'*',
-  'Access-Control-Allow-Headers':'authorization, content-type',
+  'Access-Control-Allow-Headers':'authorization, apikey, content-type',
   'Access-Control-Allow-Methods':'POST, OPTIONS'
 };
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
 const clean=(value:unknown,max=500)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const validUuid=(value:unknown)=>{const s=String(value??'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:null};
+const serverSecret=()=>{try{return JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}').default||Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}catch{return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}};
 
 function outputText(data:any){
   return (Array.isArray(data?.output)?data.output:[])
@@ -106,9 +107,9 @@ Deno.serve(async(req:Request)=>{
   if(req.method==='OPTIONS')return new Response('',{status:204,headers:cors});
   if(req.method!=='POST')return json({ok:false,error:'method_not_allowed'},405);
 
-  const serviceKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
-  const authorization=req.headers.get('authorization')||'';
-  if(!serviceKey||authorization!==`Bearer ${serviceKey}`)return json({ok:false,error:'worker_not_authorized'},401);
+  const serviceKey=serverSecret();
+  const secretHeader=req.headers.get('apikey')||'';
+  if(!serviceKey||secretHeader!==serviceKey)return json({ok:false,error:'worker_not_authorized'},401);
 
   const supabaseUrl=Deno.env.get('SUPABASE_URL')||'';
   const apiKey=Deno.env.get('OPENAI_API_KEY')||'';
