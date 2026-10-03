@@ -1,0 +1,59 @@
+name: Temporary align separation v2 migrations
+
+on:
+  push:
+    branches: [feat/order-separation-v2]
+    paths:
+      - '.github/workflows/tmp-align-order-separation-v2-migrations.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  align-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/order-separation-v2
+          fetch-depth: 2
+      - name: Align migration filenames to canonical remote history
+        run: |
+          git mv supabase/migrations/20261003193000_order_separation_v2.sql supabase/migrations/20261003201103_order_separation_v2.sql
+          git mv supabase/migrations/20261003193500_order_separation_v2_completion.sql supabase/migrations/20261003201158_order_separation_v2_completion.sql
+          git grep -l '20261003193000_order_separation_v2.sql' -- ':!supabase/migrations/20261003201103_order_separation_v2.sql' | xargs -r sed -i 's/20261003193000_order_separation_v2.sql/20261003201103_order_separation_v2.sql/g'
+          git grep -l '20261003193500_order_separation_v2_completion.sql' -- ':!supabase/migrations/20261003201158_order_separation_v2_completion.sql' | xargs -r sed -i 's/20261003193500_order_separation_v2_completion.sql/20261003201158_order_separation_v2_completion.sql/g'
+          sed -i 's/20261003193000_order_separation_v2.sql/20261003201103_order_separation_v2.sql/g' supabase/migrations/20261003201158_order_separation_v2_completion.sql
+          cat > supabase/migrations/20261003201432_order_separation_v2_order_item_index.sql <<'SQL'
+          -- Dona Antônia · Order Separation V2 FK index
+          -- Mirrors the canonical Supabase migration applied during controlled rollout.
+          create index if not exists order_separation_items_order_item_idx
+            on public.order_separation_items_v1(order_item_id);
+          SQL
+      - name: Verify migration history contracts
+        run: |
+          node scripts/test-order-separation-v2-schema.mjs
+          node scripts/test-order-separation-v2-indexes.mjs
+          node scripts/test-order-separation-v2-completion.mjs
+      - name: Verify complete V2 regressions
+        run: |
+          node scripts/test-order-separation-v2-admin-api.mjs
+          node scripts/test-order-separation-v2-customer.mjs
+          node scripts/test-order-separation-v2-admin-ui.mjs
+          node scripts/test-admin-order-separation-v2-list.mjs
+          node scripts/test-admin-orders-four-stages-v2.mjs
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          node scripts/test-order-public-summary.mjs
+          node scripts/test-admin-order-public-vitrine.mjs
+          node scripts/test-order-public-vitrine-print.mjs
+          node scripts/test-public-order-triple-tap-separation-v1.mjs
+      - name: Diff check
+        run: git diff --check
+      - name: Commit verified alignment and remove helper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git rm .github/workflows/tmp-align-order-separation-v2-migrations.yml
+          git commit -m "fix(db): align separation migration history"
+          git push origin HEAD:feat/order-separation-v2
