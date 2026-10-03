@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const admin = fs.readFileSync('vitrine/admin/index.html','utf8');
 const edge = fs.readFileSync('supabase/functions/admin-service-intelligence-v1/index.ts','utf8');
 const sql = fs.readFileSync('supabase/sql/20261003_customer_identity_admin_phone_fix.sql','utf8');
+const emailFix = fs.readFileSync('supabase/sql/20261003_customer_admin_email_generated_fix.sql','utf8');
 
 assert.match(admin, /data-delete-customer=/, 'lista de clientes precisa oferecer exclusão');
 assert.match(admin, /async function deleteCustomer\(/, 'admin precisa de handler de exclusão');
@@ -23,5 +24,7 @@ assert.match(sql, /ops2_admin_customer_save_v2/, 'migração precisa salvar clie
 assert.match(sql, /ops2_admin_customer_delete_v1/, 'migração precisa excluir cliente atomicamente');
 assert.match(sql, /update public\.orders set customer_id=null/, 'exclusão precisa preservar pedidos');
 assert.match(sql, /document_already_in_use/, 'CPF realmente pertencente a outra identidade continua protegido');
+assert.match(emailFix, /email=v_email,is_primary=true/, 'correção precisa deixar email_normalized para o PostgreSQL gerar');
+assert.match(emailFix, /customer_id,email,is_primary,source,updated_at/, 'insert corrigido não pode fornecer email_normalized');
 
 console.log('customer identity/admin v2 regression contracts: OK');
