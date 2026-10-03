@@ -23,6 +23,7 @@ on:
       - 'supabase/sql/20261003_admin_attendance_meta_media_safety_v2.sql'
       - 'supabase/sql/20261003_attendance_human_ai_state_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_jobs_v1.sql'
+      - 'supabase/sql/20261003_whatsapp_meta_shadow_media_preserve_v1.sql'
       - 'scripts/test-attendance-meta-*.mjs'
       - 'scripts/test-attendance-human-ai-state-v1.mjs'
       - 'scripts/test-whatsapp-ana-worker-v1.mjs'
@@ -82,6 +83,8 @@ jobs:
         run: node scripts/test-attendance-meta-body-timeout-v1.mjs
       - name: Meta webhook contract
         run: node scripts/test-whatsapp-meta-webhook-v1.mjs
+      - name: Meta shadow media preservation regression
+        run: node scripts/test-whatsapp-meta-shadow-media-preserve-v1.mjs
       - name: Meta webhook TypeScript syntax
         run: node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts
       - name: ANA worker TypeScript syntax
