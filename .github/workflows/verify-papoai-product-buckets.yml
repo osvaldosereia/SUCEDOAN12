@@ -1,0 +1,21 @@
+name: Verify final PapoAI product buckets
+
+on:
+  push:
+    branches:
+      - fix/papoai-product-lines-buckets-20261002
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bucket contract
+        run: node scripts/test-papoai-product-template-buckets.mjs
+      - name: Existing WhatsApp contract
+        run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
+      - name: Diff check
+        run: git diff --check
