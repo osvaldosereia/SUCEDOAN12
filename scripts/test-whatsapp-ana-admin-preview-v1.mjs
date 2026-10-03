@@ -3,12 +3,14 @@ import fs from 'node:fs';
 
 const sqlPath='supabase/sql/20261003_whatsapp_ana_admin_preview_direct_v2.sql';
 const previewApiPath='supabase/functions/admin-whatsapp-ana-preview-v1/index.ts';
+const policyPath='supabase/functions/_shared/ana-policy-v1.mjs';
 const uiPath='vitrine/admin/atendimento/attendance-ana-preview.js';
 const htmlPath='vitrine/admin/atendimento/index.html';
 
-for(const path of [sqlPath,previewApiPath,uiPath,htmlPath])assert.equal(fs.existsSync(path),true,`${path} deve existir`);
+for(const path of [sqlPath,previewApiPath,policyPath,uiPath,htmlPath])assert.equal(fs.existsSync(path),true,`${path} deve existir`);
 const sql=fs.readFileSync(sqlPath,'utf8');
 const api=fs.readFileSync(previewApiPath,'utf8');
+const policy=fs.readFileSync(policyPath,'utf8');
 const ui=fs.readFileSync(uiPath,'utf8');
 const html=fs.readFileSync(htmlPath,'utf8');
 
@@ -37,6 +39,15 @@ assert.doesNotMatch(api,/gpt-5\.6-luna/,'preview não deve usar nome do produto 
 assert.match(api,/dry_run_not_sendable:true/,'preview deve declarar que não envia mensagem');
 assert.doesNotMatch(api,/whatsapp_outbox_v1|ops2_admin_attendance_enqueue|sendMeta|graph\.facebook\.com|whatsapp-ana-worker-v1/i,'preview não pode enviar WhatsApp nem depender do worker batch');
 
+// Task 11: contexto operacional controlado e observabilidade da prévia.
+assert.match(policy,/operational_context/,'input da ANA deve separar contexto operacional do histórico textual');
+assert.match(policy,/catalog_ordering/,'contexto deve ensinar o fluxo oficial de catálogo/pedido sem inventar dados dinâmicos');
+assert.match(policy,/human_support/,'contexto deve permitir encaminhamento humano explícito');
+assert.match(policy,/never_collect_in_chat/,'contexto deve impedir coleta de CPF e endereço pelo chat');
+assert.match(api,/operationalContext/,'API deve montar contexto operacional controlado server-side');
+assert.match(api,/latency_ms/,'API deve medir latência da geração');
+assert.match(api,/model:ANA_MODEL/,'API deve devolver o modelo efetivamente usado para auditoria visual');
+
 assert.match(ui,/Gerar sugestão da ANA/,'aba Assistente deve permitir gerar sugestão manual');
 assert.match(ui,/admin-whatsapp-ana-preview-v1/,'UI deve usar API administrativa dedicada');
 assert.match(ui,/conversation_id/,'UI deve pedir sugestão para a conversa selecionada');
@@ -45,6 +56,10 @@ assert.match(ui,/messageDraft/,'uso da sugestão deve preencher rascunho, não e
 assert.match(ui,/Não envia ao cliente/i,'UI deve explicar explicitamente o dry-run');
 assert.match(ui,/confidence/,'UI deve mostrar confiança');
 assert.match(ui,/decision/,'UI deve mostrar decisão');
+assert.match(ui,/job\?\.model|job\.model/,'UI deve mostrar o modelo usado na avaliação');
+assert.match(ui,/latency_ms/,'UI deve mostrar latência para observabilidade');
+assert.match(ui,/cached/,'UI deve indicar quando a prévia veio do cache');
+assert.match(ui,/aria-live/,'estados de carregamento/erro devem ser anunciáveis por leitor de tela');
 assert.doesNotMatch(ui,/sendBtn\.click|send_text|send_media/i,'preview não pode disparar envio');
 assert.match(html,/attendance-ana-preview\.js/,'módulo do preview ANA deve ser carregado pela Central');
 
