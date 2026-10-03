@@ -14,9 +14,10 @@ assert.match(ux,/lookup\.hidden=true|lookup\.style\.display='none'/,'legacy look
 assert.match(ux,/!known&&!digits\(draft\.document,14\)/,'new customers must still provide CPF/CNPJ');
 assert.match(ux,/Digite seu CPF ou CNPJ\./,'new customer must get a direct CPF/CNPJ validation message');
 
-// Carrinho deixa o formulario comecar cedo, mas continua editavel.
-assert.match(ux,/da-checkout-cart-summary/,'order items must be collapsible behind a compact summary');
-assert.match(ux,/Ver ou alterar produtos/,'collapsed order summary must clearly offer product editing');
+// Produtos precisam ficar sempre visiveis para o cliente conferir antes de confirmar.
+assert.doesNotMatch(ux,/function collapseOrderSummary\(/,'order items must not be hidden behind a collapsible summary');
+assert.doesNotMatch(ux,/da-checkout-cart-summary/,'checkout must not hide product list inside details');
+assert.doesNotMatch(ux,/Ver ou alterar produtos/,'product list must already be visible without an extra disclosure action');
 
 // Data deixa de depender de um select pequeno.
 assert.match(ux,/da-date-options/,'delivery dates must be rendered as large choice cards');
