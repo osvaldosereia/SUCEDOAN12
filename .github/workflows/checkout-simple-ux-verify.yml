@@ -1,0 +1,17 @@
+name: checkout-simple-ux-verify
+on:
+  push:
+    branches:
+      - feat/checkout-ux-simple-public
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout simple UX contract
+        run: node scripts/test-checkout-simple-ux.mjs
+      - name: Existing checkout capture contract
+        run: node scripts/test-checkout-customer-capture-v1.mjs
