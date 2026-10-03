@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const ui=fs.readFileSync('vitrine/admin/atendimento/attendance-media-send.js','utf8');
+const textUi=fs.readFileSync('vitrine/admin/atendimento/attendance-send.js','utf8');
 const mediaGateway=fs.readFileSync('supabase/functions/_shared/admin-attendance-media-send-v1.mjs','utf8');
 
+assert.doesNotMatch(textUi,/send_media|mediaFile|apiForm/,'mídia deve ficar isolada do sender de texto para evitar dois fluxos concorrentes');
 assert.match(ui,/let\s+pendingMediaIdempotencyKey\s*=\s*null/,'retry do mesmo arquivo deve reutilizar a mesma chave');
 assert.match(ui,/pendingMediaIdempotencyKey\s*\|\|=\s*idempotencyKey\(\)/,'chave deve nascer uma vez por seleção');
 assert.match(ui,/input\.addEventListener\(['"]change['"][\s\S]{0,220}pendingMediaIdempotencyKey\s*=\s*null/,'trocar arquivo deve iniciar nova operação idempotente');
