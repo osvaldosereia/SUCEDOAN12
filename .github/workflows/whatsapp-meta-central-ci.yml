@@ -53,6 +53,8 @@ jobs:
         run: node scripts/test-whatsapp-meta-template-admin-v1.mjs
       - name: Meta transport contract
         run: node scripts/test-attendance-meta-send-v1.mjs
+      - name: Meta inbound media contract
+        run: node scripts/test-attendance-meta-media-v1.mjs
       - name: Meta Phone Number ID strictness
         run: node scripts/test-attendance-meta-phone-id-v1.mjs
       - name: Meta response-body timeout
