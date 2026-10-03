@@ -11,7 +11,7 @@ function strictMediaId(value){const id=clean(value,240);if(!/^[A-Za-z0-9._:-]{3,
 export function isAllowedMetaMediaUrl(value){
   try{
     const url=new URL(String(value||''));
-    if(url.protocol!=='https:')return false;
+    if(url.protocol!=='https:'||url.username!==''||url.password!=='')return false;
     const host=url.hostname.toLowerCase();
     return host==='graph.facebook.com'||host.endsWith('.facebook.com')||host==='lookaside.fbsbx.com'||host.endsWith('.fbsbx.com')||host.endsWith('.fbcdn.net')||host==='whatsapp.net'||host.endsWith('.whatsapp.net');
   }catch{return false}
