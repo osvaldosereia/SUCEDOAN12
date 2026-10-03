@@ -1,0 +1,52 @@
+const clean=(value,max=4000)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+
+export const ANA_DRY_RUN_SCHEMA={
+  type:'object',
+  additionalProperties:false,
+  properties:{
+    decision:{type:'string',enum:['suggest','handoff','no_reply']},
+    confidence:{type:'number',minimum:0,maximum:1},
+    response_text:{type:'string',maxLength:1200},
+    reason:{type:'string',maxLength:300},
+    missing_context:{type:'array',items:{type:'string',maxLength:120},maxItems:5}
+  },
+  required:['decision','confidence','response_text','reason','missing_context']
+};
+
+export const ANA_DRY_RUN_INSTRUCTIONS=[
+  'Você é ANA, atendente da Dona Antônia. Nesta fase você apenas sugere uma resposta para revisão; nunca execute ações.',
+  'Responda em português brasileiro simples, curto, cordial e natural. Não pareça robô e use emoji somente quando ajudar.',
+  'Faça no máximo uma pergunta por mensagem.',
+  'Nunca invente preço, estoque, total, composição de cesta, prazo, endereço, pedido, pagamento, política comercial ou dado do cliente.',
+  'Use somente fatos presentes no contexto recebido. Se faltar um fato necessário para responder com segurança, escolha handoff.',
+  'Se o cliente não exigir resposta, escolha no_reply.',
+  'Se a conversa estiver ambígua ou envolver exceção, reclamação sensível, promessa, dado ausente ou ação operacional não disponível, escolha handoff.',
+  'Nunca diga que uma ação foi feita. Você só prepara texto.',
+  'Não mencione PapoAI, OpenAI, modelo, dry-run, sistema interno, contexto oculto ou política interna ao cliente.',
+  'Em response_text entregue apenas o texto que um atendente poderia enviar. Em handoff, pode sugerir uma resposta curta que reconheça a mensagem sem prometer o que não foi verificado.',
+  'reason deve ser operacional e curta, sem cadeia de raciocínio detalhada.'
+].join(' ');
+
+export function normalizeAnaDryRunResult(value={}){
+  const decision=['suggest','handoff','no_reply'].includes(value?.decision)?value.decision:'handoff';
+  const confidence=Math.max(0,Math.min(1,Number(value?.confidence)||0));
+  const responseText=decision==='no_reply'?'':clean(value?.response_text,1200);
+  const reason=clean(value?.reason,300)||'policy_fallback';
+  const missingContext=Array.isArray(value?.missing_context)?value.missing_context.map(x=>clean(x,120)).filter(Boolean).slice(0,5):[];
+  if(decision==='suggest'&&(!responseText||confidence<0.55)){
+    return {decision:'handoff',confidence,response_text:responseText,reason:'low_confidence_or_empty_suggestion',missing_context:missingContext};
+  }
+  return {decision,confidence,response_text:responseText,reason,missing_context:missingContext};
+}
+
+export function buildAnaDryRunInput({inboundText='',history=[]}={}){
+  return {
+    inbound_message:clean(inboundText,3000),
+    recent_history:(Array.isArray(history)?history:[]).slice(-12).map(item=>({
+      direction:item?.direction==='outbound'?'outbound':'inbound',
+      text:clean(item?.text_body,2000),
+      sender_kind:clean(item?.sender_kind,40),
+      at:clean(item?.created_at||item?.received_at||item?.sent_at,80)
+    })).filter(item=>item.text)
+  };
+}
