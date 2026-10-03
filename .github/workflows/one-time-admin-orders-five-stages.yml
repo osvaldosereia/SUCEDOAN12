@@ -1,0 +1,112 @@
+name: One-time admin orders five stages
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-admin-orders-five-stages.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts
+            .github/workflows/one-time-admin-orders-five-stages.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Create regression test
+        shell: bash
+        run: |
+          mkdir -p scripts
+          cat > scripts/test-admin-orders-five-stages-v1.mjs <<'EOF'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+
+          const expectedFilters="const filters=[['all','Todos'],['separate','Separar'],['ready','Pronto'],['delivery','Entrega'],['finalized','Finalizado']];";
+          assert.ok(html.includes(expectedFilters),'Pedidos deve exibir somente Todos, Separar, Pronto, Entrega e Finalizado');
+          assert.ok(html.includes("if(filter==='finalized')return o.status==='delivered';"),'Finalizado deve listar todos os pedidos delivered');
+          assert.ok(html.includes("if(state.orderFilter!=='finalized')rows=sortOperationalOrders(rows);"),'Finalizado deve usar a visualização histórica sem o tratamento operacional das filas ativas');
+
+          const filterBlock=html.slice(html.indexOf('function paintOrderFilters(){'),html.indexOf('function paintOrderRows(){'));
+          for(const removed of ['Novos','Prontos','Em entrega','Entregues hoje','Dias anteriores','Problemas']){
+            assert.equal(filterBlock.includes("'"+removed+"'"),false,`Filtro antigo não pode permanecer no menu: ${removed}`);
+          }
+
+          assert.ok(html.includes("created:'Confirmar pedido'"),'Pedido criado deve oferecer confirmação');
+          assert.ok(html.includes("processing:consumed?'Finalizar separação':'Regularizar separação'"),'Separação deve avançar para pronto ao finalizar');
+          assert.ok(html.includes("ready:'Liberar para entrega'"),'Pedido pronto deve avançar para entrega');
+          assert.ok(html.includes("out_for_delivery:'Confirmar entrega'"),'Pedido em entrega deve permitir confirmação');
+          assert.ok(html.includes("status:'delivered',operator:currentOperator()||'Entrega'"),'Confirmação da entrega deve finalizar o pedido');
+
+          console.log('OK · menu de Pedidos usa somente as cinco etapas e preserva o fluxo operacional.');
+          EOF
+
+      - name: Verify RED before production change
+        shell: bash
+        run: |
+          if node scripts/test-admin-orders-five-stages-v1.mjs; then
+            echo 'ERRO: regressão já estava verde antes da alteração; teste não prova a mudança.'
+            exit 1
+          else
+            echo 'RED confirmado: o Admin atual ainda não atende ao menu de cinco etapas.'
+          fi
+
+      - name: Patch order filters
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path=Path('vitrine/admin/index.html')
+          s=path.read_text()
+
+          replacements=[
+            (
+              "    if(filter==='delivered')return deliveredToday(o);",
+              "    if(filter==='finalized')return o.status==='delivered';",
+              1,
+            ),
+            (
+              "    const filters=[['all','Todos'],['new','Novos'],['separate','Separar'],['ready','Prontos'],['delivery','Em entrega'],['delivered','Entregues hoje'],['backlog','Dias anteriores'],['problems','Problemas']];",
+              "    const filters=[['all','Todos'],['separate','Separar'],['ready','Pronto'],['delivery','Entrega'],['finalized','Finalizado']];",
+              1,
+            ),
+            (
+              "    if(!['delivered'].includes(state.orderFilter))rows=sortOperationalOrders(rows);",
+              "    if(state.orderFilter!=='finalized')rows=sortOperationalOrders(rows);",
+              1,
+            ),
+          ]
+
+          for old,new,expected in replacements:
+            count=s.count(old)
+            if count!=expected:
+              raise SystemExit(f'expected {expected} match(es), found {count}: {old}')
+            s=s.replace(old,new,expected)
+
+          path.write_text(s)
+          PY
+
+      - name: Verify GREEN
+        shell: bash
+        run: |
+          node scripts/test-admin-orders-five-stages-v1.mjs
+
+      - name: Commit tested change and remove one-time workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/one-time-admin-orders-five-stages.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vitrine/admin/index.html scripts/test-admin-orders-five-stages-v1.mjs .github/workflows/one-time-admin-orders-five-stages.yml
+          git commit -m "fix(admin): simplify orders to five operational stages"
+          git push origin HEAD:main
