@@ -40,7 +40,7 @@ const obj=(v:unknown):JsonRecord=>v&&typeof v==="object"&&!Array.isArray(v)?v as
 const arr=(v:unknown):unknown[]=>Array.isArray(v)?v:[];
 const paymentLabel=(v:unknown)=>{
   const raw=text(v,80),key=raw.toLowerCase();
-  const labels:Record<string,string>={pix:"PIX",dinheiro:"Dinheiro",cash:"Dinheiro",credito:"Cartão de crédito",credit_card:"Cartão de crédito",alimentacao:"Cartão alimentação",refeicao:"Cartão refeição"};
+  const labels:Record<string,string>={pix:"PIX",dinheiro:"Dinheiro",cash:"Dinheiro",credito:"Cartão de crédito",credit_card:"Cartão de crédito",alimentacao:"Cartão alimentação",refeicao:"Cartão refeição",food_card:"Cartão alimentação/refeição"};
   return labels[key]||raw||"A confirmar";
 };
 const formatPhoneBr=(v:unknown)=>{
@@ -211,7 +211,7 @@ async function claim(orderId:string,scope:DispatchScope){
   if(r.error)throw new Error(`claim_failed: ${text(r.error.message)}`);
   return r.data?.found===true?r.data.item:null;
 }
-async function finish(outboxId:string,status:"sent"|"retry"|"failed"|"suppressed",externalId:string|null,lastError:string|null,retrySeconds=300){
+async function finish(outboxId:string,status:"accepted"|"sent"|"retry"|"failed"|"suppressed",externalId:string|null,lastError:string|null,retrySeconds=300){
   const r=await db.rpc("ops2_finish_whatsapp_outbox_v1",{
     p_outbox_id:outboxId,p_status:status,p_external_message_id:externalId,p_last_error:lastError,p_retry_after_seconds:retrySeconds
   });
@@ -348,10 +348,19 @@ Deno.serve(async(req:Request)=>{
       const response=await fetch(url,{method:"POST",headers,body:JSON.stringify(providerPayload)});
       const data=await response.json().catch(()=>({}));
       if(response.ok){
-        const externalId=text(data?.external_message_id||data?.message_id||data?.id||"",200)||null;
-        await finish(outboxId,"sent",externalId,null);
+        const rawExternalId=text(data?.external_message_id||data?.message_id||data?.id||"",200)||null;
+        const externalId=rawExternalId?.startsWith("wamid.")?rawExternalId:null;
+        const providerAcceptanceId=text(data?.data?.event_id||data?.event_id||"",200)||null;
+        const nextStatus=externalId?"sent":"accepted";
+        if(!externalId){
+          const acceptanceAudit=await db.from("ops2_whatsapp_outbox_v1")
+            .update({payload:{...obj(item.payload),provider_request:providerPayload,provider_acceptance:{http_status:response.status,event_id:providerAcceptanceId,queued:data?.data?.queued===true,accepted_at:new Date().toISOString()}}})
+            .eq("id",outboxId).eq("status","sending");
+          if(acceptanceAudit.error)throw new Error(`provider_acceptance_audit_failed: ${text(acceptanceAudit.error.message,240)}`);
+        }
+        await finish(outboxId,nextStatus,externalId,null);
         void enqueuePapoAiOrderSignals(orderId,channel,item.phone_e164,details);
-        return respond({ok:true,status:"sent",outbox_id:outboxId,recipient_kind:item.recipient_kind,channel_origin:channel,dispatch_scope:scope,external_message_id:externalId});
+        return respond({ok:true,status:nextStatus,outbox_id:outboxId,recipient_kind:item.recipient_kind,channel_origin:channel,dispatch_scope:scope,provider_acceptance_id:providerAcceptanceId,external_message_id:externalId});
       }
 
       const providerDetail=data?.error||data?.message||response.statusText;
