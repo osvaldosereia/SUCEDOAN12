@@ -29,6 +29,7 @@ on:
       - 'supabase/sql/20261003_whatsapp_ana_admin_preview_v1.sql'
       - 'supabase/sql/20261003_whatsapp_meta_shadow_media_preserve_v1.sql'
       - 'scripts/test-attendance-meta-*.mjs'
+      - 'scripts/test-attendance-media-audio-ux-v1.mjs'
       - 'scripts/test-attendance-human-ai-state-v1.mjs'
       - 'scripts/test-whatsapp-ana-worker-v1.mjs'
       - 'scripts/test-whatsapp-ana-admin-preview-v1.mjs'
@@ -40,10 +41,8 @@ on:
       - 'scripts/test-whatsapp-meta-*.mjs'
       - '.github/workflows/whatsapp-meta-central-ci.yml'
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -78,6 +77,8 @@ jobs:
         run: node scripts/test-attendance-meta-media-retry-v1.mjs
       - name: Meta media safety contract
         run: node scripts/test-attendance-meta-media-safety-v1.mjs
+      - name: Audio media UX contract
+        run: node scripts/test-attendance-media-audio-ux-v1.mjs
       - name: Human AI state contract
         run: node scripts/test-attendance-human-ai-state-v1.mjs
       - name: ANA dry-run contract
