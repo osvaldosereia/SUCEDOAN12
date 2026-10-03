@@ -3,13 +3,11 @@ import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normaliz
 
 const cors={
   'Access-Control-Allow-Origin':'*',
-  'Access-Control-Allow-Headers':'authorization, apikey, content-type',
+  'Access-Control-Allow-Headers':'authorization, content-type',
   'Access-Control-Allow-Methods':'POST, OPTIONS'
 };
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
 const clean=(value:unknown,max=500)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
-const validUuid=(value:unknown)=>{const s=String(value??'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:null};
-const serverSecret=()=>{try{return JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}').default||Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}catch{return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}};
 
 function outputText(data:any){
   return (Array.isArray(data?.output)?data.output:[])
@@ -51,6 +49,12 @@ export async function generateAnaDryRunSuggestion({
   }catch(error:any){
     return {ok:false,error:clean(error?.name||'openai_request_error'),error_message:clean(error?.message,240),latency_ms:Date.now()-started};
   }
+}
+
+async function aiGate(db:any,conversationId:string){
+  const gate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:conversationId});
+  if(gate.error)return {ok:false,allowed:false,error:'ai_gate_rpc_failed'};
+  return gate.data||{ok:false,allowed:false,error:'ai_gate_empty'};
 }
 
 async function finish(db:any,args:any){
@@ -107,10 +111,9 @@ Deno.serve(async(req:Request)=>{
   if(req.method==='OPTIONS')return new Response('',{status:204,headers:cors});
   if(req.method!=='POST')return json({ok:false,error:'method_not_allowed'},405);
 
-  const serviceKey=serverSecret();
-  const secretHeader=req.headers.get('apikey')||'';
-  const legacyBearer=(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'').trim();
-  if(!serviceKey||(secretHeader!==serviceKey&&legacyBearer!==serviceKey))return json({ok:false,error:'worker_not_authorized'},401);
+  const serviceKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
+  const authorization=req.headers.get('authorization')||'';
+  if(!serviceKey||authorization!==`Bearer ${serviceKey}`)return json({ok:false,error:'worker_not_authorized'},401);
 
   const supabaseUrl=Deno.env.get('SUPABASE_URL')||'';
   const apiKey=Deno.env.get('OPENAI_API_KEY')||'';
@@ -120,13 +123,8 @@ Deno.serve(async(req:Request)=>{
 
   const db=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const body=await req.json().catch(()=>({}));
-  const requestedJobId=body?.job_id;
-  const jobId=requestedJobId===undefined||requestedJobId===null||requestedJobId===''?null:validUuid(requestedJobId);
-  if(requestedJobId&&!jobId)return json({ok:false,error:'invalid_job_id'},400);
   const limit=Math.max(1,Math.min(3,Number(body?.limit)||1));
-  const claimed=jobId
-    ?await db.rpc('ops2_ana_claim_dry_run_job_v1',{p_job_id:jobId})
-    :await db.rpc('ops2_ana_claim_dry_run_v1',{p_limit:limit});
+  const claimed=await db.rpc('ops2_ana_claim_dry_run_v1',{p_limit:limit});
   if(claimed.error)return json({ok:false,error:'claim_failed',detail:clean(claimed.error.message)},500);
 
   const jobs=Array.isArray(claimed.data)?claimed.data:[];
@@ -139,5 +137,5 @@ Deno.serve(async(req:Request)=>{
     }
   }
 
-  return json({ok:true,dry_run:true,dry_run_not_sendable:true,claimed:jobs.length,job_id:jobId,results});
+  return json({ok:true,dry_run:true,dry_run_not_sendable:true,claimed:jobs.length,results});
 });
