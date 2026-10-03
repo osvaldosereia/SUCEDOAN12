@@ -4,16 +4,20 @@ on:
   pull_request:
     paths:
       - 'supabase/functions/_shared/whatsapp-meta-*.mjs'
+      - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
       - 'supabase/functions/whatsapp-meta-webhook-v1/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
       - 'vitrine/admin/atendimento/attendance-send.js'
+      - 'vitrine/admin/atendimento/attendance-media-send.js'
       - 'vitrine/admin/atendimento/attendance-templates.js'
       - 'vitrine/admin/atendimento/index.html'
       - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
       - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_fix_v2.sql'
+      - 'supabase/sql/20261003_admin_attendance_meta_media_send_v1.sql'
+      - 'supabase/sql/20261003_admin_attendance_meta_media_safety_v2.sql'
       - 'scripts/test-attendance-meta-*.mjs'
       - 'scripts/test-attendance-template-picker-v1.mjs'
       - 'scripts/test-attendance-template-send-ui-v1.mjs'
@@ -53,8 +57,14 @@ jobs:
         run: node scripts/test-whatsapp-meta-template-admin-v1.mjs
       - name: Meta transport contract
         run: node scripts/test-attendance-meta-send-v1.mjs
-      - name: Meta inbound media contract
+      - name: Meta media contract
         run: node scripts/test-attendance-meta-media-v1.mjs
+      - name: Meta media content signature contract
+        run: node scripts/test-attendance-meta-media-content-v1.mjs
+      - name: Meta media retry/idempotency contract
+        run: node scripts/test-attendance-meta-media-retry-v1.mjs
+      - name: Meta media safety contract
+        run: node scripts/test-attendance-meta-media-safety-v1.mjs
       - name: Meta Phone Number ID strictness
         run: node scripts/test-attendance-meta-phone-id-v1.mjs
       - name: Meta response-body timeout
@@ -67,12 +77,16 @@ jobs:
         run: node scripts/test-attendance-meta-dedupe-v1.mjs
       - name: Admin Meta gateway contract
         run: node scripts/test-admin-attendance-meta-send-ui-v1.mjs
+      - name: Admin media dispatcher syntax
+        run: node --check supabase/functions/_shared/admin-attendance-media-send-v1.mjs
       - name: Admin templates TypeScript syntax
         run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-templates-v1/index.ts
       - name: Admin Meta gateway TypeScript syntax
         run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts
       - name: Admin composer JavaScript syntax
         run: node --check vitrine/admin/atendimento/attendance-send.js
+      - name: Admin media composer JavaScript syntax
+        run: node --check vitrine/admin/atendimento/attendance-media-send.js
       - name: Attendance templates JavaScript syntax
         run: node --check vitrine/admin/atendimento/attendance-templates.js
       - name: Meta secrets guard

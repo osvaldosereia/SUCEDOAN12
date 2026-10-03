@@ -4,6 +4,7 @@ import {validUuid,serviceWindowState,normalizeProductQuery,normalizeOutboundText
 import {findProviderMediaDescriptor,isAllowedProviderMediaUrl,isAllowedAttendanceMime,normalizedAttendanceMime,safeAttendanceFilename,readBodyLimited} from "../_shared/attendance-media-v1.mjs";
 import {sendTextViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
 import {fetchMetaMediaInfo,fetchMetaMediaResponse,MetaMediaError} from "../_shared/whatsapp-meta-media-v1.mjs";
+import {sendAttendanceMediaViaMeta} from "../_shared/admin-attendance-media-send-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -12,7 +13,7 @@ const META_WHATSAPP_GRAPH_VERSION=(Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const READ_ACTIONS=new Set(["accounts","queue","conversation","context","products","media","labels","conversation_labels","quick_replies"]);
-const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","marketing_opt_out","label_save","label_deactivate","conversation_labels_set","quick_reply_save","quick_reply_deactivate","send_text"]);
+const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","marketing_opt_out","label_save","label_deactivate","conversation_labels_set","quick_reply_save","quick_reply_deactivate","send_text","send_media"]);
 const MEDIA_BUCKET="attendance-media-v1";
 const MEDIA_RETENTION_DAYS=30;
 const MEDIA_SIGNED_URL_SECONDS=600;
@@ -351,6 +352,19 @@ Deno.serve(async(req:Request)=>{
       const q=normalizeProductQuery(url.searchParams.get("q"));const limit=num(url.searchParams.get("limit"),12,1,12);
       if(!q)return json(req,{ok:true,query:null,items:[]});
       return json(req,{ok:true,query:q,items:await productSearch(q,limit)});
+    }
+
+    if(action==="send_media"){
+      const form=await req.formData().catch(()=>null);
+      if(!form)return json(req,{ok:false,error:"media_request_invalid"},400);
+      const data=await sendAttendanceMediaViaMeta({
+        db,form,accessToken:META_WHATSAPP_ACCESS_TOKEN,graphVersion:META_WHATSAPP_GRAPH_VERSION,
+        adminUserId:auth.user_id,markClaimFailed,markMetaUncertain
+      });
+      if(data?.ok===true)return json(req,data,200);
+      const error=String(data?.error||"media_send_failed");
+      const status=error==="rate_limited"?429:["service_window_closed","human_send_not_homologated","media_provider_unavailable","meta_canary_destination_blocked","meta_send_uncertain","duplicate_not_dispatchable"].includes(error)?409:error.startsWith("meta_")?502:400;
+      return json(req,data,status);
     }
 
     const body=await req.json().catch(()=>({}));
