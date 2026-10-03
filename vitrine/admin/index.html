@@ -296,6 +296,9 @@
 
     .toolbar{gap:10px;margin-bottom:14px}
     .toolbar select{min-width:170px}
+    .product-toolbar{flex-wrap:wrap}
+    .product-toolbar #productSearch{flex:1 1 260px;min-width:240px}
+    @media(max-width:780px){.product-toolbar #productSearch{min-width:0}}
     .filter-chip{min-height:38px;border-color:var(--line);border-radius:999px;color:#445148;font-weight:700}
     .filter-chip:hover{background:var(--soft);border-color:var(--line-strong)}
     .filter-chip.active{background:var(--brand-soft);border-color:#b7ccbd;color:var(--brand2)}
@@ -3809,7 +3812,7 @@
   async function renderProducts(q=''){
     const content=$('#content');
     content.innerHTML='<div class="page-head"><div><h1>Produtos</h1><p>Consulte por categoria, subcategoria, nome, EAN ou código.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="secondary" id="printInventorySheet" type="button">Imprimir balanço A4</button><button class="primary" id="newProduct">+ Produto</button></div></div>'+
-      '<div class="toolbar">'+
+      '<div class="toolbar product-toolbar">'+
         '<input id="productSearch" type="search" placeholder="Buscar nome, EAN, código…">'+
         '<select id="productCategory" aria-label="Categoria"><option value="">Todas as categorias</option></select>'+
         '<select id="productSubcategory" aria-label="Subcategoria"><option value="">Todas as subcategorias</option></select>'+
