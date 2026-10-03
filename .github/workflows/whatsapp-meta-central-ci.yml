@@ -15,6 +15,7 @@ on:
       - 'vitrine/admin/atendimento/attendance-human-ai.js'
       - 'vitrine/admin/atendimento/attendance-templates.js'
       - 'vitrine/admin/atendimento/index.html'
+      - 'vitrine/admin/atendimento/attendance.js'
       - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
       - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_v1.sql'
@@ -23,10 +24,12 @@ on:
       - 'supabase/sql/20261003_admin_attendance_meta_media_safety_v2.sql'
       - 'supabase/sql/20261003_attendance_human_ai_state_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_jobs_v1.sql'
+      - 'supabase/sql/20261003_whatsapp_ana_admin_preview_v1.sql'
       - 'supabase/sql/20261003_whatsapp_meta_shadow_media_preserve_v1.sql'
       - 'scripts/test-attendance-meta-*.mjs'
       - 'scripts/test-attendance-human-ai-state-v1.mjs'
       - 'scripts/test-whatsapp-ana-worker-v1.mjs'
+      - 'scripts/test-whatsapp-ana-admin-preview-v1.mjs'
       - 'scripts/test-attendance-template-picker-v1.mjs'
       - 'scripts/test-attendance-template-send-ui-v1.mjs'
       - 'scripts/test-admin-attendance-template-send-v1.mjs'
@@ -77,6 +80,8 @@ jobs:
         run: node scripts/test-attendance-human-ai-state-v1.mjs
       - name: ANA dry-run contract
         run: node scripts/test-whatsapp-ana-worker-v1.mjs
+      - name: ANA Admin preview contract
+        run: node scripts/test-whatsapp-ana-admin-preview-v1.mjs
       - name: Meta Phone Number ID strictness
         run: node scripts/test-attendance-meta-phone-id-v1.mjs
       - name: Meta response-body timeout
@@ -101,6 +106,8 @@ jobs:
         run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-templates-v1/index.ts
       - name: Admin Meta gateway TypeScript syntax
         run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts
+      - name: Admin core JavaScript syntax
+        run: node --check vitrine/admin/atendimento/attendance.js
       - name: Admin composer JavaScript syntax
         run: node --check vitrine/admin/atendimento/attendance-send.js
       - name: Admin media composer JavaScript syntax
