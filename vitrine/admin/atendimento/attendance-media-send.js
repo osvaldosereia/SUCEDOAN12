@@ -2,7 +2,9 @@ const ADMIN_ATTENDANCE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v
 const ADMIN_TOKEN_KEY='da_finance_access_token_v1';
 const MAX_BYTES=16*1024*1024;
 const $=selector=>document.querySelector(selector);
-let sending=false,pendingMediaIdempotencyKey=null,mediaConversationId=null,lastMediaReceipt=null;
+let sending=false;
+let pendingMediaIdempotencyKey=null;
+let mediaConversationId=null,lastMediaReceipt=null;
 function adminToken(){return String(sessionStorage.getItem(ADMIN_TOKEN_KEY)||'').trim()}
 function selectedConversationId(){return String($('.queue-card.selected')?.dataset?.conversationId||'').trim()}
 function note(text,tone='neutral'){const el=$('#mediaFileNote');if(!el)return;el.textContent=text;el.dataset.tone=tone;el.setAttribute('aria-live','polite')}
