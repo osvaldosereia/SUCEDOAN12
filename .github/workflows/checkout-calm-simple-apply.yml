@@ -22,6 +22,7 @@ jobs:
           else
             node scripts/apply-checkout-calm-simple.mjs
           fi
+          node scripts/fix-checkout-calm-existing-detection.mjs
       - name: Verify focused contracts
         run: |
           node scripts/test-checkout-simple-ux.mjs
