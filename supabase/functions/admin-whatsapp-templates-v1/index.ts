@@ -43,7 +43,11 @@ async function cachedTemplates(accountId:string){
     .order("name")
     .order("language");
   if(q.error)throw q.error;
-  return (q.data||[]).map((row:any)=>({...row,sendable:String(row.status||"").toUpperCase()==="APPROVED"}));
+  return (q.data||[]).map((row:any)=>{
+    const attendance=row?.metadata?.attendance&&typeof row.metadata.attendance==="object"?row.metadata.attendance:{};
+    const approved=String(row.status||"").toUpperCase()==="APPROVED";
+    return {...row,sendable:approved&&attendance.enabled===true,attendance};
+  });
 }
 
 async function syncTemplates(account:any){
