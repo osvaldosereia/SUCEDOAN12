@@ -6,20 +6,12 @@ on:
       - 'feat/attendance-papoai-webhook-send'
   pull_request:
     paths:
-      - 'scripts/test-admin-attendance-papoai-webhook-send-v1.mjs'
-      - 'scripts/test-admin-attendance-send-ui-v1.mjs'
-      - 'scripts/test-admin-attendance-api-v1.mjs'
-      - 'scripts/test-admin-attendance-ui-v1.mjs'
-      - 'scripts/test-admin-attendance-layout-v3.mjs'
-      - 'scripts/test-admin-attendance-unified-bridge-v3.mjs'
-      - 'scripts/test-admin-attendance-frame-route-v1.mjs'
-      - 'scripts/test-admin-attendance-native-v1.mjs'
-      - 'scripts/test-admin-attendance-unsupported-display-v1.mjs'
+      - 'scripts/test-admin-attendance-*.mjs'
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/atendimento/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
       - 'supabase/sql/20261002_admin_attendance_papoai_webhook_send_v1.sql'
       - 'supabase/sql/20261003_admin_attendance_unsupported_display_v1.sql'
-      - 'vitrine/admin/atendimento/**'
       - '.github/workflows/attendance-papoai-send-ci.yml'
 
 jobs:
@@ -34,12 +26,12 @@ jobs:
       - run: node scripts/test-admin-attendance-send-ui-v1.mjs
       - run: node scripts/test-admin-attendance-api-v1.mjs
       - run: node scripts/test-admin-attendance-ui-v1.mjs
-      - run: node scripts/test-admin-attendance-layout-v3.mjs
-      - run: node scripts/test-admin-attendance-unified-bridge-v3.mjs
-      - run: node scripts/test-admin-attendance-frame-route-v1.mjs
       - run: node scripts/test-admin-attendance-native-v1.mjs
+      - run: node scripts/test-admin-attendance-native-channel-v1.mjs
       - run: node scripts/test-admin-attendance-unsupported-display-v1.mjs
-      - run: node --check vitrine/admin/atendimento/attendance.js
+      - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
-      - run: node --check vitrine/admin/atendimento/attendance-layout-v3.js
-      - run: node --check vitrine/admin/atendimento/attendance-layout-v3-bridge.js
+      - run: node --check vitrine/admin/atendimento/attendance-media-send.js
+      - run: node --check vitrine/admin/atendimento/attendance-templates.js
+      - run: node --check vitrine/admin/atendimento/attendance-human-ai.js
+      - run: node --check vitrine/admin/atendimento/attendance-ana-preview.js
