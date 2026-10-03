@@ -58,6 +58,8 @@ jobs:
         run: node scripts/test-order-separation-v2-customer.mjs
       - name: Separation v2 Admin storefront
         run: node scripts/test-order-separation-v2-admin-ui.mjs
+      - name: Separation v2 Admin list
+        run: node scripts/test-admin-order-separation-v2-list.mjs
       - name: Public order storefront and printing
         run: |
           node scripts/test-order-public-summary.mjs
