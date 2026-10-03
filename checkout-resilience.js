@@ -96,11 +96,6 @@
       .da-checkout-helper{margin:0 0 10px;padding:10px 11px;border-radius:11px;background:#f6f8f6;color:#59645d;font-size:13px;line-height:1.4}
       .da-phone-unified{display:block}.da-phone-unified input{width:100%}
       .da-phone-legacy{display:none!important}
-      .da-checkout-cart-summary{margin:0 0 14px;border:1px solid #dbe5de;border-radius:15px;background:#fff;overflow:hidden}
-      .da-checkout-cart-summary>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px;padding:11px 13px}
-      .da-checkout-cart-summary>summary::-webkit-details-marker{display:none}
-      .da-checkout-cart-summary>summary strong{display:block;font-size:16px}.da-checkout-cart-summary>summary small{display:block;color:#66716a;font-size:12px;margin-top:2px}
-      .da-checkout-cart-summary>summary b{font-size:18px;white-space:nowrap}.da-checkout-cart-summary[open]>summary{border-bottom:1px solid #e7ebe8;background:#f8faf8}
       .da-date-source{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
       .da-date-options{display:grid;grid-template-columns:1fr 1fr;gap:9px}.da-date-option{min-height:56px;border:1px solid #d7dfd9;border-radius:13px;background:#fff;color:#18221c;padding:10px 12px;text-align:left;font-size:14px;font-weight:800}
       .da-date-option[aria-pressed="true"]{border-color:#176b43;background:#edf6f0;color:#135938;box-shadow:0 0 0 2px rgba(23,107,67,.08)}
@@ -143,10 +138,6 @@
     waBox.insertBefore(label,grid||waBox.firstChild);const input=byId('checkoutWhatsappUnified');if(input){input.value=formatUnifiedPhone(initial);input.addEventListener('input',()=>syncUnifiedPhoneToLegacy(input));appendRequired(label)}
     if(grid)grid.classList.add('da-phone-legacy');if(lookup){lookup.hidden=true;lookup.style.display='none'}
   }
-  function collapseOrderSummary(body){
-    const list=body?.querySelector('.checkout-list');if(!list||list.closest('.da-checkout-cart-summary'))return;const details=document.createElement('details');details.className='da-checkout-cart-summary';
-    const summary=document.createElement('summary'),total=byId('checkoutTotal')?.textContent||'';summary.innerHTML='<span><strong>Seu pedido</strong><small>Ver ou alterar produtos</small></span><b>'+escapeHtml(total)+'</b>';list.parentNode.insertBefore(details,list);details.appendChild(summary);details.appendChild(list);
-  }
   function setupDateChoices(sec,select,label){
     if(!sec||!select||sec.querySelector('.da-date-options'))return;const options=[...select.options].filter(o=>o.value);if(!options.length)return;if(label)label.classList.add('da-date-source');
     const host=document.createElement('div');host.className='da-date-options';for(const option of options){const btn=document.createElement('button');btn.type='button';btn.className='da-date-option';btn.textContent=option.textContent;btn.dataset.date=option.value;btn.setAttribute('aria-pressed',String(select.value===option.value));btn.onclick=()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));host.querySelectorAll('.da-date-option').forEach(x=>x.setAttribute('aria-pressed',String(x===btn)));clearFieldError(select)};host.appendChild(btn)}
@@ -160,7 +151,7 @@
     const btn=byId('sendWhats');if(btn&&!btn.disabled&&btn.textContent!=='Confirmar pedido')btn.textContent='Confirmar pedido';const total=byId('checkoutTotal')?.textContent||'',target=document.querySelector('.da-checkout-final-total strong');if(target&&target.textContent!==total)target.textContent=total;
   }
   function organizeCheckoutSections(){
-    const body=byId('sheetBody');if(!body||!byId('sendWhats')||body.querySelector('[data-da-checkout-organized="1"]'))return;injectCheckoutStyles();const marker=document.createElement('span');marker.dataset.daCheckoutOrganized='1';marker.hidden=true;body.prepend(marker);collapseOrderSummary(body);
+    const body=byId('sheetBody');if(!body||!byId('sendWhats')||body.querySelector('[data-da-checkout-organized="1"]'))return;injectCheckoutStyles();const marker=document.createElement('span');marker.dataset.daCheckoutOrganized='1';marker.hidden=true;body.prepend(marker);
     const waHeading=checkoutHeading(body,/WhatsApp/i),dateHeading=checkoutHeading(body,/Data de entrega/i),paymentHeading=checkoutHeading(body,/Como você vai pagar/i),waBox=body.querySelector('.wa-lookup');
     if(waHeading&&waBox){const sec=makeSection('1. Seu WhatsApp','Digite o número com DDD. Vamos conferir seu cadastro automaticamente.','whatsapp');waHeading.parentNode.insertBefore(sec,waHeading);waHeading.remove();sec.appendChild(waBox);const helper=document.createElement('div');helper.className='da-checkout-helper';helper.textContent='Exemplo: (65) 99815-0975. Você também pode colar o número completo.';sec.insertBefore(helper,waBox);setupUnifiedWhatsapp(waBox)}
     const formName=byId('checkoutName');
