@@ -29,6 +29,7 @@ jobs:
         run: |
           python3 scripts/patch-admin-attendance-filter-menu-v1.py
           git checkout -- scripts/test-admin-attendance-organization-api-v1.mjs
+          sed -i 's/[[:space:]]\+$//' vitrine/admin/atendimento/index.html
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
