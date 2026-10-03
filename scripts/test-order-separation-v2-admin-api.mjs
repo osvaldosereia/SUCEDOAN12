@@ -21,9 +21,17 @@ assert.match(src,/async function orderSeparationItemSet\(/,'Admin API must have 
 assert.match(src,/ops2_set_order_separation_item_v2/,'item state must persist through canonical RPC');
 assert.match(src,/stale_order_version|order_version_conflict/,'Admin API must preserve explicit stale-client conflicts');
 
+const attentionStart=src.indexOf('async function markSeparationNeedsAttention');
+assert.ok(attentionStart>=0,'recoverable completion helper missing');
+const attentionEnd=src.indexOf('\nasync function ',attentionStart+20);
+const attention=src.slice(attentionStart,attentionEnd>attentionStart?attentionEnd:src.length);
+assert.match(attention,/p_phase:"needs_attention"/i,'external failures must be persisted as needs_attention');
+assert.match(attention,/resume_from/i,'recovery state must preserve the phase to resume from');
+
 const completeStart=src.indexOf('async function orderSeparationComplete');
 assert.ok(completeStart>=0,'completion orchestrator missing');
-const complete=src.slice(completeStart,src.indexOf('\nasync function ',completeStart+20)>completeStart?src.indexOf('\nasync function ',completeStart+20):src.length);
+const completeEnd=src.indexOf('\nasync function ',completeStart+20);
+const complete=src.slice(completeStart,completeEnd>completeStart?completeEnd:src.length);
 for(const marker of [
   'ops2_prepare_order_separation_completion_v2',
   'ops2_apply_order_separation_stock_v2',
@@ -35,7 +43,7 @@ for(const marker of [
   'out_for_delivery',
   'ops2_mark_order_separation_completion_v2'
 ]) assert.ok(complete.includes(marker),`completion orchestrator missing phase marker: ${marker}`);
-assert.match(complete,/needs_attention/i,'external failures must leave a recoverable completion state');
+assert.match(complete,/markSeparationNeedsAttention/i,'completion failures must route through recoverable attention state');
 assert.match(complete,/physical_stock_launched/i,'physical stock success must be recorded before final status');
 
 assert.match(src,/async function buildSnapshot\(oid:string,reason="first_separation"[^)]*\)/,'buildSnapshot must remain the canonical Bling snapshot builder');
