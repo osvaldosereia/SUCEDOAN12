@@ -62,6 +62,7 @@ assert.ok(admin.includes("activeLink=link?.state==='active'"), 'active registrat
 assert.ok(admin.includes('Envio do pedido aguardando configuração PapoAI'), 'provider-not-ready state must be visible');
 assert.ok(!admin.includes('/cadastro/?order_id='), 'public registration link must not expose order_id');
 
+// HTTP/provider acceptance is not delivery. The Admin must only call a confirmed wamid-backed row sent.
 assert.ok(admin.includes('PapoAI aceitou · aguardando confirmação da Meta'), 'accepted must be shown as queued/awaiting Meta, never sent');
 assert.ok(admin.includes('Enviado confirmado pelo WhatsApp'), 'sent must be shown as confirmed delivery handoff');
 assert.ok(admin.includes('Sem confirmação da Meta há mais de 15 min · revisar no PapoAI'), 'stale accepted must show an operational warning');
