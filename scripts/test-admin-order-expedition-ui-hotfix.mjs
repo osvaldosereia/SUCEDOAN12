@@ -8,7 +8,7 @@ for (const copy of [
   'Abrir WhatsApp do cliente',
   'Abrir WhatsApp do cliente com link de cadastro',
   'Copiar link de cadastro',
-  'Nenhuma falta de estoque foi encontrada agora'
+  'Nenhuma falta de estoque foi encontrada neste momento'
 ]) {
   assert.ok(admin.includes(copy), `admin expedition UI missing: ${copy}`);
 }
