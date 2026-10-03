@@ -8,7 +8,7 @@ const js=fs.readFileSync(jsPath,'utf8');
 assert.match(js,/sendable/,'UI deve respeitar flag server-side sendable');
 assert.match(js,/parameter_labels/,'campos devem vir dos metadados do template');
 assert.match(js,/\.queue-card\.selected/,'destino deve ser a conversa selecionada na Central');
-assert.match(js,/dataset\.conversationId/);
+assert.match(js,/dataset\??\.conversationId/,'conversation_id deve vir do dataset da conversa selecionada');
 assert.match(js,/method\s*:\s*["']POST["']/);
 assert.match(js,/action["']?\s*[:,]\s*["']send["']|searchParams\.set\(["']action["'],\s*["']send["']\)/);
 for(const key of ['conversation_id','template_id','parameters','idempotency_key'])assert.match(js,new RegExp(key));
