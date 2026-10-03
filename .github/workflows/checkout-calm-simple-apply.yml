@@ -1,0 +1,41 @@
+name: checkout-calm-simple-apply
+on:
+  push:
+    branches:
+      - fix/checkout-calm-simple
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/checkout-calm-simple
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply checkout UX patch
+        run: |
+          if grep -q "checkoutMarketingExisting" index.html; then
+            echo "checkout calm patch already applied"
+          else
+            node scripts/apply-checkout-calm-simple.mjs
+          fi
+      - name: Verify focused contracts
+        run: |
+          node scripts/test-checkout-simple-ux.mjs
+          node scripts/test-checkout-customer-capture-v1.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-existing-registration.mjs
+          node --check checkout-resilience.js
+      - name: Commit implementation
+        run: |
+          if git diff --quiet -- index.html vitrine/index.html checkout-resilience.js; then
+            echo "no implementation changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html vitrine/index.html checkout-resilience.js
+          git commit -m "fix: simplificar checkout e evitar saltos visuais"
+          git push origin HEAD:fix/checkout-calm-simple
