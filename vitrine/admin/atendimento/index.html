@@ -8,142 +8,33 @@
 </head>
 <body>
   <main class="attendance-app" id="attendanceApp">
-    <header class="attendance-topbar">
-      <div>
-        <strong>Atendimento</strong>
-        <span id="connectionStatus">Carregando canais…</span>
-      </div>
-      <label class="global-search">🔎 <input id="globalSearch" type="search" placeholder="Buscar cliente ou telefone" autocomplete="off"></label>
-    </header>
-
+    <header class="attendance-topbar"><div><strong>Atendimento</strong><span id="connectionStatus">Carregando canais…</span></div><label class="global-search">🔎 <input id="globalSearch" type="search" placeholder="Buscar cliente ou telefone" autocomplete="off"></label></header>
     <section class="attendance-grid">
-      <aside class="queue-column" aria-label="Conversas do WhatsApp">
-        <div class="channel-switcher" role="tablist" aria-label="Número do WhatsApp">
-          <button type="button" data-channel-switch="0975" class="active" role="tab" aria-selected="true">0975</button>
-          <button type="button" data-channel-switch="1018" role="tab" aria-selected="false">1018</button>
-        </div>
-        <header class="queue-head">
-          <div><strong>Conversas</strong><small id="activeChannelStatus">Conectando 0975…</small></div>
-          <span class="attention-count" id="activeChannelCount">0</span>
-        </header>
-        <div class="queue-organizer">
-          <select id="labelFilter" aria-label="Filtrar por etiqueta"><option value="">Todas as etiquetas</option></select>
-          <button type="button" id="manageLabelsBtn">Etiquetas</button>
-        </div>
-        <div class="queue-list" id="queueList"></div>
-      </aside>
-
+      <aside class="queue-column" aria-label="Conversas do WhatsApp"><div class="channel-switcher" role="tablist" aria-label="Número do WhatsApp"><button type="button" data-channel-switch="0975" class="active" role="tab" aria-selected="true">0975</button><button type="button" data-channel-switch="1018" role="tab" aria-selected="false">1018</button></div><header class="queue-head"><div><strong>Conversas</strong><small id="activeChannelStatus">Conectando 0975…</small></div><span class="attention-count" id="activeChannelCount">0</span></header><div class="queue-organizer"><select id="labelFilter" aria-label="Filtrar por etiqueta"><option value="">Todas as etiquetas</option></select><button type="button" id="manageLabelsBtn">Etiquetas</button></div><div class="queue-list" id="queueList"></div></aside>
       <section class="conversation-pane" id="conversationPane">
-        <header class="conversation-head" id="conversationHead">
-          <div><strong>Selecione uma conversa</strong><small>0975 e 1018 permanecem separados.</small></div>
-          <div class="conversation-head-actions">
-            <button type="button" id="conversationLabelsBtn" disabled>Etiquetas</button>
-            <button type="button" class="context-open" id="openContextBtn" disabled>Cliente</button>
-          </div>
-        </header>
-        <div class="conversation-empty" id="conversationEmpty">Escolha uma conversa na lista ao lado.</div>
-        <div class="messages" id="messages" hidden></div>
-        <div class="composer" id="composer">
-          <div class="service-window neutral" id="serviceWindow">Nenhuma conversa selecionada</div>
-
-          <div class="quick-tools" aria-label="Ferramentas rápidas">
-            <button type="button" id="catalogBtn" disabled title="Gera o link no rascunho; não envia automaticamente">Catálogo</button>
-            <button type="button" id="quickRepliesBtn" disabled>Respostas</button>
-            <button type="button" id="templatesBtn">Templates</button>
-            <button type="button" id="productsBtn" disabled>Produtos</button>
-            <button type="button" id="moreToolsBtn" disabled>Mais ⋯</button>
-          </div>
-
-          <div class="composer-panel" id="quickRepliesMenu" hidden aria-label="Respostas rápidas">
-            <div id="quickRepliesList" class="quick-replies-list"></div>
-            <button type="button" id="manageQuickRepliesBtn" class="panel-manage">Gerenciar respostas</button>
-          </div>
-          <div class="composer-panel" id="templatesMenu" hidden aria-label="Templates do WhatsApp">
-            <div class="composer-actions">
-              <strong>Templates aprovados do canal</strong>
-              <button type="button" id="templateSyncBtn">Atualizar</button>
-            </div>
-            <small id="templatesStatus">Abra para sincronizar com a Meta.</small>
-            <div id="templatesList" class="quick-replies-list"></div>
-          </div>
-          <div class="composer-panel more-tools-menu" id="moreToolsMenu" hidden>
-            <button type="button" id="quoteBtn" disabled>Criar orçamento</button>
-            <button type="button" id="saleBtn" disabled>Nova venda</button>
-            <button type="button" id="followUpBtn" disabled>Marcar retorno</button>
-            <button type="button" id="optOutBtn" disabled title="Desativa ofertas para o cliente vinculado">Não receber ofertas</button>
-          </div>
-          <div class="composer-panel conversation-labels" id="conversationLabelsMenu" hidden>
-            <strong>Etiquetas desta conversa</strong>
-            <div id="conversationLabelsList"></div>
-            <button type="button" id="saveConversationLabelsBtn">Salvar etiquetas</button>
-          </div>
-          <div class="composer-panel follow-up-panel" id="followUpPanel" hidden>
-            <label>Retornar em <input id="followUpAt" type="datetime-local"></label>
-            <div><button type="button" id="saveFollowUpBtn">Salvar</button><button type="button" id="clearFollowUpBtn">Limpar</button><button type="button" id="cancelFollowUpBtn">Cancelar</button></div>
-          </div>
-
+        <header class="conversation-head" id="conversationHead"><div><strong>Selecione uma conversa</strong><small>0975 e 1018 permanecem separados.</small></div><div class="conversation-head-actions"><button type="button" id="conversationLabelsBtn" disabled>Etiquetas</button><button type="button" class="context-open" id="openContextBtn" disabled>Cliente</button></div></header>
+        <div class="conversation-empty" id="conversationEmpty">Escolha uma conversa na lista ao lado.</div><div class="messages" id="messages" hidden></div>
+        <div class="composer" id="composer"><div class="service-window neutral" id="serviceWindow">Nenhuma conversa selecionada</div>
+          <div class="quick-tools" aria-label="Ferramentas rápidas"><button type="button" id="catalogBtn" disabled title="Gera o link no rascunho; não envia automaticamente">Catálogo</button><button type="button" id="quickRepliesBtn" disabled>Respostas</button><button type="button" id="templatesBtn">Templates</button><button type="button" id="productsBtn" disabled>Produtos</button><button type="button" id="moreToolsBtn" disabled>Mais ⋯</button></div>
+          <div class="composer-panel" id="quickRepliesMenu" hidden aria-label="Respostas rápidas"><div id="quickRepliesList" class="quick-replies-list"></div><button type="button" id="manageQuickRepliesBtn" class="panel-manage">Gerenciar respostas</button></div>
+          <div class="composer-panel" id="templatesMenu" hidden aria-label="Templates do WhatsApp"><div class="composer-actions"><strong>Templates aprovados do canal</strong><button type="button" id="templateSyncBtn">Atualizar</button></div><small id="templatesStatus">Abra para sincronizar com a Meta.</small><div id="templatesList" class="quick-replies-list"></div></div>
+          <div class="composer-panel more-tools-menu" id="moreToolsMenu" hidden><button type="button" id="quoteBtn" disabled>Criar orçamento</button><button type="button" id="saleBtn" disabled>Nova venda</button><button type="button" id="followUpBtn" disabled>Marcar retorno</button><button type="button" id="optOutBtn" disabled title="Desativa ofertas para o cliente vinculado">Não receber ofertas</button></div>
+          <div class="composer-panel conversation-labels" id="conversationLabelsMenu" hidden><strong>Etiquetas desta conversa</strong><div id="conversationLabelsList"></div><button type="button" id="saveConversationLabelsBtn">Salvar etiquetas</button></div>
+          <div class="composer-panel follow-up-panel" id="followUpPanel" hidden><label>Retornar em <input id="followUpAt" type="datetime-local"></label><div><button type="button" id="saveFollowUpBtn">Salvar</button><button type="button" id="clearFollowUpBtn">Limpar</button><button type="button" id="cancelFollowUpBtn">Cancelar</button></div></div>
           <textarea id="messageDraft" rows="2" placeholder="Digite sua resposta…"></textarea>
-          <div class="composer-media">
+          <div class="composer-media" aria-label="Enviar imagem, áudio ou PDF">
             <label>Anexo <input id="mediaFile" type="file" accept="image/jpeg,image/png,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,application/pdf"></label>
-            <button type="button" id="sendMediaBtn" disabled>Enviar anexo</button>
-            <small id="mediaFileNote">Imagem, áudio ou PDF · até 16 MB.</small>
+            <span id="mediaFileName">Nenhum arquivo selecionado</span><button type="button" id="clearMediaBtn" hidden>Remover</button><button type="button" id="sendMediaBtn" disabled>Enviar anexo</button>
+            <small id="mediaFileNote">Imagem, áudio ou PDF · até 16 MB.</small><small id="mediaProgress" role="status" aria-live="polite"></small>
           </div>
-          <div class="composer-actions">
-            <span id="composerNote">Selecione uma conversa</span>
-            <button type="button" id="copyReplyBtn" disabled>Copiar resposta</button>
-            <button type="button" id="openPapoAiBtn" disabled>Abrir PapoAI</button>
-            <button type="button" class="primary" id="sendBtn" disabled>Enviar</button>
-          </div>
+          <div class="composer-actions"><span id="composerNote">Selecione uma conversa</span><button type="button" id="copyReplyBtn" disabled>Copiar resposta</button><button type="button" id="openPapoAiBtn" disabled>Abrir PapoAI</button><button type="button" class="primary" id="sendBtn" disabled>Enviar</button></div>
           <small>Texto livre e anexos são enviados somente dentro da janela de 24h e quando o canal Meta estiver homologado. Enter envia texto; Shift+Enter quebra a linha.</small>
         </div>
       </section>
-
-      <aside class="context-pane" id="contextPane" aria-label="Contexto do cliente">
-        <header class="context-tabs">
-          <button type="button" class="active" data-context-tab="customer">Cliente</button>
-          <button type="button" data-context-tab="orders">Pedidos</button>
-          <button type="button" data-context-tab="products">Produtos</button>
-          <button type="button" data-context-tab="assistant">Assistente</button>
-          <button type="button" class="context-close" id="closeContextBtn" aria-label="Fechar">×</button>
-        </header>
-        <div class="context-body" id="contextBody"><div class="context-empty">Selecione uma conversa.</div></div>
-      </aside>
+      <aside class="context-pane" id="contextPane" aria-label="Contexto do cliente"><header class="context-tabs"><button type="button" class="active" data-context-tab="customer">Cliente</button><button type="button" data-context-tab="orders">Pedidos</button><button type="button" data-context-tab="products">Produtos</button><button type="button" data-context-tab="assistant">Assistente</button><button type="button" class="context-close" id="closeContextBtn" aria-label="Fechar">×</button></header><div class="context-body" id="contextBody"><div class="context-empty">Selecione uma conversa.</div></div></aside>
     </section>
-
-    <div class="admin-dialog" id="labelManager" hidden>
-      <section class="admin-dialog-card">
-        <header><strong>Gerenciar etiquetas</strong><button type="button" id="closeLabelManagerBtn">×</button></header>
-        <form id="labelForm">
-          <input type="hidden" id="labelEditId">
-          <label>Nome <input id="labelName" maxlength="60" required></label>
-          <label>Cor <input id="labelColor" type="color" value="#5f6368"></label>
-          <label>Ordem <input id="labelSortOrder" type="number" value="0"></label>
-          <button type="submit">Salvar etiqueta</button>
-        </form>
-        <div id="labelManagerList" class="manager-list"></div>
-      </section>
-    </div>
-
-    <div class="admin-dialog quick-replies-manager" id="quickRepliesManager" hidden>
-      <section class="admin-dialog-card">
-        <header><strong>Gerenciar respostas rápidas</strong><button type="button" id="closeQuickRepliesManagerBtn">×</button></header>
-        <form id="quickReplyForm">
-          <input type="hidden" id="quickReplyEditId">
-          <label>Título <input id="quickReplyTitle" maxlength="80" required></label>
-          <label>Resposta <textarea id="quickReplyContent" rows="4" maxlength="4000" required></textarea></label>
-          <label class="inline-check"><input id="quickReplyFavorite" type="checkbox" checked> Mostrar nos favoritos</label>
-          <label>Ordem <input id="quickReplySortOrder" type="number" value="0"></label>
-          <button type="submit">Salvar resposta</button>
-        </form>
-        <div id="quickRepliesManagerList" class="manager-list"></div>
-      </section>
-    </div>
+    <div class="admin-dialog" id="labelManager" hidden><section class="admin-dialog-card"><header><strong>Gerenciar etiquetas</strong><button type="button" id="closeLabelManagerBtn">×</button></header><form id="labelForm"><input type="hidden" id="labelEditId"><label>Nome <input id="labelName" maxlength="60" required></label><label>Cor <input id="labelColor" type="color" value="#5f6368"></label><label>Ordem <input id="labelSortOrder" type="number" value="0"></label><button type="submit">Salvar etiqueta</button></form><div id="labelManagerList" class="manager-list"></div></section></div>
+    <div class="admin-dialog quick-replies-manager" id="quickRepliesManager" hidden><section class="admin-dialog-card"><header><strong>Gerenciar respostas rápidas</strong><button type="button" id="closeQuickRepliesManagerBtn">×</button></header><form id="quickReplyForm"><input type="hidden" id="quickReplyEditId"><label>Título <input id="quickReplyTitle" maxlength="80" required></label><label>Resposta <textarea id="quickReplyContent" rows="4" maxlength="4000" required></textarea></label><label class="inline-check"><input id="quickReplyFavorite" type="checkbox" checked> Mostrar nos favoritos</label><label>Ordem <input id="quickReplySortOrder" type="number" value="0"></label><button type="submit">Salvar resposta</button></form><div id="quickRepliesManagerList" class="manager-list"></div></section></div>
   </main>
-  <script type="module" src="./attendance.js"></script>
-  <script type="module" src="./attendance-ana-preview.js"></script>
-  <script type="module" src="./attendance-send.js"></script>
-  <script type="module" src="./attendance-media-send.js"></script>
-  <script type="module" src="./attendance-templates.js"></script>
-  <script type="module" src="./attendance-human-ai.js"></script>
-</body>
-</html>
+  <script type="module" src="./attendance.js"></script><script type="module" src="./attendance-ana-preview.js"></script><script type="module" src="./attendance-send.js"></script><script type="module" src="./attendance-media-send.js"></script><script type="module" src="./attendance-templates.js"></script><script type="module" src="./attendance-human-ai.js"></script>
+</body></html>
