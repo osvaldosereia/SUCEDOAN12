@@ -25,13 +25,14 @@ assert.ok(enqueueStart>=0&&claimStart>enqueueStart,'funções template devem est
 const enqueueSql=sql.slice(enqueueStart,claimStart);
 assert.doesNotMatch(enqueueSql,/service_window_closed|last_inbound_at\s*\+\s*interval\s*'24 hours'/i,'template não depende da janela de 24h');
 
-assert.match(templatesApi,/POST/,'gateway de templates deve aceitar POST autenticado');
-assert.match(templatesApi,/action\s*===\s*["']send["']|action\s*===\s*["']send_template["']/);
+assert.match(templatesApi,/Access-Control-Allow-Methods[^\n]*GET,POST,OPTIONS/,'gateway de templates deve aceitar POST autenticado');
+assert.match(templatesApi,/action\s*!==\s*["']send["'][\s\S]{0,80}action\s*!==\s*["']send_template["']/,'gateway deve negar por padrão ações POST fora de send/send_template');
 assert.match(templatesApi,/ops2_admin_attendance_enqueue_template_v1/);
 assert.match(templatesApi,/ops2_admin_attendance_claim_template_outbox_v1/);
 assert.match(templatesApi,/ops2_admin_attendance_accept_meta_template_outbound_v1/);
 assert.match(templatesApi,/sendTemplateViaMeta/);
 assert.match(templatesApi,/destination_fields_not_allowed/,'browser não pode escolher destino');
+assert.match(templatesApi,/template_identity_fields_not_allowed/,'browser não pode trocar nome/idioma/componentes do cache');
 assert.match(templatesApi,/template_id/);
 assert.match(templatesApi,/parameters/);
 assert.match(templatesApi,/attendance/);
