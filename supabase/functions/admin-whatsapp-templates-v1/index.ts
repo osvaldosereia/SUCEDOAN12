@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {buildTemplateCacheRows,listTemplatesViaMeta,MetaTemplatesError} from "../_shared/whatsapp-meta-templates-v1.mjs";
+import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -13,10 +14,12 @@ const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {
   "Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br",
   "Vary":"Origin",
   "Access-Control-Allow-Headers":"content-type,authorization,apikey",
-  "Access-Control-Allow-Methods":"GET,OPTIONS"
+  "Access-Control-Allow-Methods":"GET,POST,OPTIONS"
 }};
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const validUuid=(v:unknown)=>{const s=String(v??"").trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:null};
+const clean=(v:unknown,max=200)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
+const validIdempotency=(v:unknown)=>{const s=String(v??"").trim();return s.length>=8&&s.length<=120&&/^[A-Za-z0-9._:-]+$/.test(s)?s:null};
 const metaReady=()=>Boolean(META_WHATSAPP_ACCESS_TOKEN&&/^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION));
 
 async function adminAuth(req:Request){
@@ -43,65 +46,123 @@ async function cachedTemplates(accountId:string){
     .order("name")
     .order("language");
   if(q.error)throw q.error;
-  return (q.data||[]).map((row:any)=>({...row,sendable:String(row.status||"").toUpperCase()==="APPROVED"}));
+  return (q.data||[]).map((row:any)=>{
+    const attendance=row?.metadata?.attendance&&typeof row.metadata.attendance==="object"?row.metadata.attendance:{};
+    const approved=String(row.status||"").toUpperCase()==="APPROVED";
+    return {...row,sendable:approved&&attendance.enabled===true,attendance};
+  });
 }
 
 async function syncTemplates(account:any){
   if(!metaReady())return {ok:false,error:"meta_transport_not_configured"};
   if(!/^\d{5,30}$/.test(String(account?.waba_id||"")))return {ok:false,error:"waba_not_configured"};
-
   const existing=await db.from("whatsapp_templates_v1").select("name,language,metadata").eq("whatsapp_account_id",account.id);
   if(existing.error)throw existing.error;
   const existingByKey=new Map((existing.data||[]).map((row:any)=>[`${row.name}\u0000${row.language}`,row]));
-
-  const remote=await listTemplatesViaMeta({
-    accessToken:META_WHATSAPP_ACCESS_TOKEN,
-    wabaId:account.waba_id,
-    graphVersion:META_WHATSAPP_GRAPH_VERSION,
-    timeoutMs:12000,
-    maxPages:20,
-  });
+  const remote=await listTemplatesViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,timeoutMs:12000,maxPages:20});
   if(remote.truncated)return {ok:false,error:"meta_templates_pagination_truncated",page_count:remote.page_count};
-
   const syncedAt=new Date().toISOString();
   const rows=buildTemplateCacheRows({items:remote.items,account,existingByKey,syncedAt});
-  if(rows.length){
-    const saved=await db.from("whatsapp_templates_v1").upsert(rows,{onConflict:"waba_id,name,language"});
-    if(saved.error)throw saved.error;
-  }
+  if(rows.length){const saved=await db.from("whatsapp_templates_v1").upsert(rows,{onConflict:"waba_id,name,language"});if(saved.error)throw saved.error}
   return {ok:true,synced:rows.length,last_synced_at:syncedAt,page_count:remote.page_count};
+}
+
+async function markFailed(claim:any,errorCode:string){
+  const now=new Date().toISOString();
+  const updated=await db.from("whatsapp_outbox_v1").update({status:"failed",last_error:clean(errorCode,180)||"template_transport_failed",updated_at:now}).eq("id",claim?.outbox_id).eq("status","claimed");
+  if(updated.error)throw updated.error;
+}
+
+async function markUncertain(claim:any,errorCode:string){
+  const now=new Date().toISOString();
+  const code=`meta_send_uncertain:${clean(errorCode,120)||"unknown"}`;
+  const updated=await db.from("whatsapp_outbox_v1").update({last_error:code,updated_at:now}).eq("id",claim?.outbox_id).eq("status","claimed");
+  if(updated.error)throw updated.error;
+  return {ok:false,error:"meta_send_uncertain",uncertain:true,retryable:false,outbox_id:claim?.outbox_id};
+}
+
+async function dispatchTemplate(outboxId:string){
+  const claimed=await db.rpc("ops2_admin_attendance_claim_template_outbox_v1",{p_outbox_id:outboxId});
+  if(claimed.error)throw claimed.error;
+  const claim=claimed.data||{ok:false,error:"outbox_claim_failed"};
+  if(claim?.already_sent===true)return {ok:true,status:"accepted",outbox_status:"sent",duplicate:true,provider:"meta",message_type:"template"};
+  if(claim?.ok!==true)return claim;
+  if(!metaReady()||!/^\d{5,30}$/.test(String(claim?.phone_number_id||""))){await markFailed(claim,"meta_transport_not_configured");return {ok:false,error:"meta_transport_not_configured",provider:"meta"}}
+  try{
+    const result=await sendTemplateViaMeta({
+      accessToken:META_WHATSAPP_ACCESS_TOKEN,
+      phoneNumberId:claim.phone_number_id,
+      toE164:claim.to_phone_e164,
+      templateName:claim.template_name,
+      languageCode:claim.language_code,
+      components:Array.isArray(claim.components)?claim.components:[],
+      graphVersion:META_WHATSAPP_GRAPH_VERSION,
+      timeoutMs:15000
+    });
+    const acceptedAt=new Date().toISOString();
+    const accepted=await db.rpc("ops2_admin_attendance_accept_meta_template_outbound_v1",{p_outbox_id:claim.outbox_id,p_provider_message_id:result.providerMessageId,p_accepted_at:acceptedAt});
+    if(accepted.error||accepted.data?.ok!==true)return await markUncertain(claim,accepted.error?.message||accepted.data?.error||"canonical_template_persist_failed");
+    return {ok:true,status:"accepted",outbox_status:"sent",provider:"meta",message_type:"template",provider_message_id:result.providerMessageId,message_id:accepted.data?.message_id||null,status_current:accepted.data?.status_current||"accepted",template_name:claim.template_name};
+  }catch(error){
+    if(error instanceof MetaTransportError){
+      if(error.uncertain)return await markUncertain(claim,error.code);
+      await markFailed(claim,error.code);
+      return {ok:false,error:error.code,provider:"meta",retryable:error.retryable===true,uncertain:false,http_status:error.httpStatus};
+    }
+    return await markUncertain(claim,"unexpected_template_transport_error");
+  }
 }
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
-  if(req.method!=="GET")return json(req,{ok:false,error:"method_not_allowed"},405);
+  if(req.method!=="GET"&&req.method!=="POST")return json(req,{ok:false,error:"method_not_allowed"},405);
   if(!SUPABASE_URL||!SERVICE_KEY)return json(req,{ok:false,error:"server_config"},500);
-
   const auth=await adminAuth(req);
   if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);
 
   try{
     const url=new URL(req.url);
-    const action=String(url.searchParams.get("action")||"list").trim().toLowerCase();
+    const action=String(url.searchParams.get("action")||(req.method==="POST"?"send":"list")).trim().toLowerCase();
+
+    if(req.method==="POST"){
+      if(action!=="send"&&action!=="send_template")return json(req,{ok:false,error:"action_not_allowed"},404);
+      const body=await req.json().catch(()=>({}));
+      if(body?.to_phone_e164!==undefined||body?.whatsapp_account_id!==undefined||body?.account_id!==undefined||body?.customer_id!==undefined||body?.phone_number_id!==undefined||body?.waba_id!==undefined){
+        return json(req,{ok:false,error:"destination_fields_not_allowed"},400);
+      }
+      if(body?.template_name!==undefined||body?.language_code!==undefined||body?.components!==undefined){return json(req,{ok:false,error:"template_identity_fields_not_allowed"},400)}
+      const conversationId=validUuid(body?.conversation_id);if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
+      const templateId=validUuid(body?.template_id);if(!templateId)return json(req,{ok:false,error:"invalid_template_id"},400);
+      if(!Array.isArray(body?.parameters)||body.parameters.length>100||body.parameters.some((value:any)=>typeof value!=="string"||!value.trim()||value.length>1024))return json(req,{ok:false,error:"template_parameters_invalid"},400);
+      const idempotencyKey=validIdempotency(body?.idempotency_key);if(!idempotencyKey)return json(req,{ok:false,error:"invalid_idempotency_key"},400);
+      const queued=await db.rpc("ops2_admin_attendance_enqueue_template_v1",{p_conversation_id:conversationId,p_template_id:templateId,p_parameters:body.parameters,p_idempotency_key:idempotencyKey});
+      if(queued.error)throw queued.error;
+      const data=queued.data||{ok:false,error:"enqueue_failed"};
+      if(data?.ok!==true){
+        const error=String(data?.error||"enqueue_failed");
+        const status=error==="rate_limited"?429:["meta_template_send_not_homologated","meta_canary_destination_blocked","meta_send_uncertain","template_not_sendable"].includes(error)?409:400;
+        return json(req,data,status);
+      }
+      if(data?.duplicate===true){
+        if(data?.status==="sent")return json(req,{ok:true,status:"accepted",duplicate:true,outbox_id:data.outbox_id,provider:"meta",message_type:"template"},200);
+        if(data?.status!=="queued")return json(req,{ok:false,error:"duplicate_not_dispatchable",outbox_id:data.outbox_id,status:data.status,provider:"meta"},409);
+      }
+      const dispatched=await dispatchTemplate(data.outbox_id);
+      return json(req,dispatched,dispatched?.ok===true?200:502);
+    }
+
     if(action!=="list"&&action!=="sync")return json(req,{ok:false,error:"action_not_allowed"},404);
     const accountId=validUuid(url.searchParams.get("account_id"));
     if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
     const account=await accountById(accountId);
     if(!account)return json(req,{ok:false,error:"account_not_found"},404);
-
     let sync=null;
     if(action==="sync"){
       sync=await syncTemplates(account);
-      if(sync?.ok!==true){
-        const status=sync?.error==="meta_transport_not_configured"?503:502;
-        return json(req,sync,status);
-      }
+      if(sync?.ok!==true){const status=sync?.error==="meta_transport_not_configured"?503:502;return json(req,sync,status)}
     }
-    if(action==="list"||action==="sync"){
-      const items=await cachedTemplates(account.id);
-      return json(req,{ok:true,account:{id:account.id,slug:account.slug,display_name:account.display_name,waba_id:account.waba_id},sync,items});
-    }
-    return json(req,{ok:false,error:"action_not_allowed"},404);
+    const items=await cachedTemplates(account.id);
+    return json(req,{ok:true,account:{id:account.id,slug:account.slug,display_name:account.display_name,waba_id:account.waba_id},sync,items});
   }catch(error){
     if(error instanceof MetaTemplatesError){
       console.error("admin-whatsapp-templates-v1",error.code,error.httpStatus||"");

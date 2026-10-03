@@ -37,8 +37,9 @@ assert.match(edge,/META_WHATSAPP_GRAPH_VERSION/);
 assert.match(edge,/listTemplatesViaMeta/);
 assert.match(edge,/whatsapp_templates_v1/);
 assert.match(edge,/onConflict:\s*["']waba_id,name,language["']/);
-assert.match(edge,/action===?["']sync["']/);
-assert.match(edge,/action===?["']list["']/);
+assert.match(edge,/action\s*!==\s*["']list["'][\s\S]{0,80}action\s*!==\s*["']sync["']/,'GET deve continuar deny-by-default fora de list/sync');
+assert.match(edge,/action\s*===\s*["']sync["']/,'sync deve continuar executando atualização remota');
+assert.match(edge,/req\.method\s*===\s*["']POST["']/,'POST deve ficar em ramo separado do list/sync');
 assert.doesNotMatch(edge,/EAA[A-Za-z0-9_-]{30,}/,'não pode conter token literal');
 assert.doesNotMatch(edge,/shopping-checkout|shopping-chat-checkout|bling/i,'sync de templates não pode depender do checkout/Bling');
 
