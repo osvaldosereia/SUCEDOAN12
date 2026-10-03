@@ -17,9 +17,11 @@ jobs:
           fetch-depth: 1
           sparse-checkout: |
             vitrine/admin/index.html
+            scripts/test-admin-order-whatsapp-three-destinations-v1.mjs
             scripts/test-admin-order-whatsapp-ui-integration.mjs
             scripts/test-admin-order-expedition-ui-hotfix.mjs
             scripts/test-order-public-summary.mjs
+            scripts/apply-admin-order-whatsapp-three-destinations-v1.py
             supabase/functions/admin-products-live-v1/index.ts
             supabase/functions/admin-orders-v1/index.ts
             supabase/functions/order-public-view-v1/index.ts
@@ -28,205 +30,19 @@ jobs:
             .github/workflows/one-time-admin-order-whatsapp-three-destinations.yml
           sparse-checkout-cone-mode: false
 
-      - name: Create regression test
-        shell: bash
-        run: |
-          cat > scripts/test-admin-order-whatsapp-three-destinations-v1.mjs <<'EOF'
-          import fs from 'node:fs';
-          import assert from 'node:assert/strict';
-
-          const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
-          const panelStart=admin.indexOf('function orderWhatsappRegistrationHtml');
-          const panelEnd=admin.indexOf('function customerWhatsappAcceptedIsStale',panelStart);
-          assert.ok(panelStart>=0&&panelEnd>panelStart,'WhatsApp panel must exist');
-          const panel=admin.slice(panelStart,panelEnd);
-
-          for(const copy of ['Enviar pedido:','Cliente','65 99815-0975','65 99688-4599']){
-            assert.ok(panel.includes(copy),`missing order send control: ${copy}`);
-          }
-          assert.ok(panel.includes('id="openOrderCustomerWhatsApp"'),'customer send button must remain available');
-          assert.ok(panel.includes('id="sendOrderWhatsApp"'),'0975 send button must exist');
-          assert.ok(panel.includes('id="sendOrderWhatsApp4599"'),'4599 send button must exist');
-          assert.equal(panel.includes('65 98449-1018'),false,'1018 must not be added to this three-button group');
-          assert.equal(panel.includes('Abrir pedido no WhatsApp da empresa'),false,'old company button label must be removed');
-          assert.equal(panel.includes('Abrir WhatsApp do cliente'),false,'old customer button label must be removed');
-
-          assert.ok(admin.includes('const COMPANY_WHATSAPP_E164="5565998150975"'),'0975 target must remain exact');
-          assert.ok(admin.includes('const ORDER_WHATSAPP_4599_E164="5565996884599"'),'4599 target must be exact');
-          assert.ok(admin.includes('function openCurrentOrder4599Whatsapp'),'4599 handler must exist');
-          assert.ok(admin.includes('openNativeWhatsapp(ORDER_WHATSAPP_4599_E164,currentOrderCompanyWhatsappMessage())'),'4599 must open native WhatsApp with order message');
-          assert.ok(admin.includes("$('#sendOrderWhatsApp4599').onclick=openCurrentOrder4599Whatsapp"),'4599 button must be bound');
-
-          const companyStart=admin.indexOf('function currentOrderCompanyWhatsappMessage');
-          const companyEnd=admin.indexOf('function openNativeWhatsapp',companyStart);
-          const customerStart=admin.indexOf('function currentOrderCustomerWhatsappMessage');
-          const customerEnd=admin.indexOf('function openCurrentOrderCustomerWhatsapp',customerStart);
-          const company=admin.slice(companyStart,companyEnd);
-          const customer=admin.slice(customerStart,customerEnd);
-          for(const [name,block] of [['company',company],['customer',customer]]){
-            for(const field of ['Pedido: #','Cliente: ','Endereço: ','Telefone: ']){
-              assert.ok(block.includes(field),`${name} message missing ${field}`);
-            }
-          }
-          assert.ok(company.includes('Conferir pedido completo:'),'fixed-number message must contain the order storefront link');
-          assert.ok(customer.includes('Confira produtos, fotos, quantidades e entrega:'),'customer message must contain the order storefront link');
-          assert.ok(admin.includes('function currentOrderWhatsappShareData'),'shared order/customer/address data formatter must exist');
-          assert.ok(admin.includes("const a=(o.delivery_address_snapshot&&typeof o.delivery_address_snapshot==='object'?o.delivery_address_snapshot"),'message must prioritize the persisted delivery address snapshot');
-          assert.ok(admin.includes("$('#orderDeliveryStreet')?.value"),'message must use the address currently visible in the editor when present');
-
-          console.log('OK · three order WhatsApp destinations + complete order message contract');
-          EOF
-
-      - name: Verify RED before production change
+      - name: Verify red
         shell: bash
         run: |
           if node scripts/test-admin-order-whatsapp-three-destinations-v1.mjs; then
-            echo 'ERRO: regression test was already green before the requested change.'
+            echo "Regression test unexpectedly passed before the change."
             exit 1
-          else
-            echo 'RED confirmed: current Admin does not yet have the requested three-button contract.'
           fi
+          echo "RED confirmed."
 
-      - name: Patch Admin and affected regression contracts
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
+      - name: Apply patch
+        run: python3 scripts/apply-admin-order-whatsapp-three-destinations-v1.py
 
-          p=Path('vitrine/admin/index.html')
-          s=p.read_text()
-
-          old="""      '<div class=\"print-actions\" style=\"margin-top:10px\">'+
-        '<button class=\"primary\" id=\"sendOrderWhatsApp\" type=\"button\">Abrir pedido no WhatsApp da empresa</button>'+ 
-        '<button class=\"secondary\" id=\"openOrderCustomerWhatsApp\" type=\"button\" '+(phone?'':'disabled')+'>Abrir WhatsApp do cliente</button>'+ 
-        '<button class=\"secondary\" id=\"issueOrderRegistrationLink\" type=\"button\" '+(phone&&!registered?'':'disabled')+'>'+(registered?'Cadastro concluído':'Gerar link de cadastro')+'</button>'+ 
-      '</div><div id=\"orderRegistrationLinkActions\" class=\"hidden\" style=\"display:none!important;margin-top:10px\"><div class=\"sub\" id=\"orderRegistrationLinkValue\"></div><div class=\"print-actions\" style=\"margin-top:8px\"><button class=\"secondary\" id=\"openOrderRegistrationWhatsApp\" type=\"button\">Abrir WhatsApp do cliente com link de cadastro</button><button class=\"secondary\" id=\"copyOrderRegistrationLink\" type=\"button\">Copiar link de cadastro</button></div></div></div>';"""
-          # Exact file has no spaces between concatenation operator and newline on button rows.
-          old=old.replace("</button>'+ \n","</button>'+\n")
-          new="""      '<div class=\"sub\" style=\"margin-top:10px;font-weight:800\">Enviar pedido:</div>'+ 
-      '<div class=\"print-actions\" style=\"margin-top:8px\">'+
-        '<button class=\"secondary\" id=\"openOrderCustomerWhatsApp\" type=\"button\" '+(phone?'':'disabled')+'>Cliente</button>'+ 
-        '<button class=\"primary\" id=\"sendOrderWhatsApp\" type=\"button\">65 99815-0975</button>'+ 
-        '<button class=\"secondary\" id=\"sendOrderWhatsApp4599\" type=\"button\">65 99688-4599</button>'+ 
-      '</div>'+ 
-      '<div class=\"print-actions\" style=\"margin-top:10px\">'+
-        '<button class=\"secondary\" id=\"issueOrderRegistrationLink\" type=\"button\" '+(phone&&!registered?'':'disabled')+'>'+(registered?'Cadastro concluído':'Gerar link de cadastro')+'</button>'+ 
-      '</div><div id=\"orderRegistrationLinkActions\" class=\"hidden\" style=\"display:none!important;margin-top:10px\"><div class=\"sub\" id=\"orderRegistrationLinkValue\"></div><div class=\"print-actions\" style=\"margin-top:8px\"><button class=\"secondary\" id=\"openOrderRegistrationWhatsApp\" type=\"button\">Abrir WhatsApp do cliente com link de cadastro</button><button class=\"secondary\" id=\"copyOrderRegistrationLink\" type=\"button\">Copiar link de cadastro</button></div></div></div>';"""
-          new=new.replace("</div>'+ \n","</div>'+\n").replace("</button>'+ \n","</button>'+\n")
-          count=s.count(old)
-          if count!=1:
-            raise SystemExit(f'WhatsApp button block expected 1 match, found {count}')
-          s=s.replace(old,new,1)
-
-          old_phone="    const phone=o?.whatsapp_phone_e164||o?.delivery_address_snapshot?.phone||'';"
-          new_phone="    const phone=o?.phone_e164||o?.whatsapp_phone_e164||o?.delivery_address_snapshot?.phone||o?.delivery_address?.phone||'';"
-          if s.count(old_phone)!=1: raise SystemExit('phone resolver mismatch')
-          s=s.replace(old_phone,new_phone,1)
-
-          old_const='  const COMPANY_WHATSAPP_E164="5565998150975";'
-          new_const='  const COMPANY_WHATSAPP_E164="5565998150975";\n  const ORDER_WHATSAPP_4599_E164="5565996884599";'
-          if s.count(old_const)!=1: raise SystemExit('company WhatsApp constant mismatch')
-          s=s.replace(old_const,new_const,1)
-
-          company_pattern=r"  function currentOrderCompanyWhatsappMessage\(\)\{\n.*?\n  \}\n  function openNativeWhatsapp"
-          company_repl="""  function currentOrderWhatsappShareData(){
-    const d=state.currentOrder||{},o=d.order||{},customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{};
-    const a=(o.delivery_address_snapshot&&typeof o.delivery_address_snapshot==='object'?o.delivery_address_snapshot:(o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:(d.customer?.address||{})));
-    const field=(selector,fallback='')=>String($(selector)?.value??fallback??'').trim();
-    const code=shortOrder(o.order_number||o.public_order_code||o.id||'');
-    const customerName=field('#orderDeliveryName',o.customer_name||customer.name||customer.display_name||a.customer_name||a.recipient_name||d.customer?.display_name||'');
-    const rawPhone=field('#orderDeliveryPhone',o.phone_e164||o.whatsapp_phone_e164||a.phone||d.customer?.phone||'');
-    const phone=phoneDigits(rawPhone),phoneLabel=phone?formatPhone(phone):'';
-    const street=field('#orderDeliveryStreet',a.street||''),number=field('#orderDeliveryNumber',a.number||''),district=field('#orderDeliveryDistrict',a.district||''),complement=field('#orderDeliveryComplement',a.complement||''),city=field('#orderDeliveryCity',a.city||''),uf=field('#orderDeliveryState',a.state||''),postal=field('#orderDeliveryPostalCode',a.postal_code||'');
-    const streetLine=[street,number].filter(Boolean).join(', '),cityLine=city?(uf?city+'/'+uf:city):uf;
-    const address=[streetLine,district,complement?'Compl. '+complement:'',cityLine,postal?'CEP '+postal:''].filter(Boolean).join(' - ');
-    return {code,customerName,phone,phoneLabel,address,url:publicOrderUrlFor(o),order:o};
-  }
-  function currentOrderCompanyWhatsappMessage(){
-    const x=currentOrderWhatsappShareData(),lines=['PEDIDO DONA ANTONIA'];
-    lines.push('Pedido: #'+(x.code||'Não informado'));
-    lines.push('Cliente: '+(x.customerName||'Não informado'));
-    lines.push('Endereço: '+(x.address||'Não informado'));
-    lines.push('Telefone: '+(x.phoneLabel||'Não informado'));
-    const total=Number(x.order?.total||x.order?.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
-    if(x.url)lines.push('','Conferir pedido completo:',''+x.url);
-    return lines.join('\\n')
-  }
-  function openNativeWhatsapp"""
-          s,n=re.subn(company_pattern,company_repl,s,count=1,flags=re.S)
-          if n!=1: raise SystemExit(f'company message block expected 1 match, found {n}')
-
-          old_open="""  function openCurrentOrderCompanyWhatsapp(){
-    openNativeWhatsapp(COMPANY_WHATSAPP_E164,currentOrderCompanyWhatsappMessage())
-  }"""
-          new_open="""  function openCurrentOrderCompanyWhatsapp(){
-    openNativeWhatsapp(COMPANY_WHATSAPP_E164,currentOrderCompanyWhatsappMessage())
-  }
-  function openCurrentOrder4599Whatsapp(){
-    openNativeWhatsapp(ORDER_WHATSAPP_4599_E164,currentOrderCompanyWhatsappMessage())
-  }"""
-          if s.count(old_open)!=1: raise SystemExit('company open handler mismatch')
-          s=s.replace(old_open,new_open,1)
-
-          customer_pattern=r"  function currentOrderCustomerWhatsappMessage\(\)\{\n.*?\n  \}\n  function openCurrentOrderCustomerWhatsapp"
-          customer_repl="""  function currentOrderCustomerWhatsappMessage(){
-    const x=currentOrderWhatsappShareData(),lines=['Ola! Seu pedido da Dona Antonia foi recebido.'];
-    lines.push('Pedido: #'+(x.code||'Não informado'));
-    lines.push('Cliente: '+(x.customerName||'Não informado'));
-    lines.push('Endereço: '+(x.address||'Não informado'));
-    lines.push('Telefone: '+(x.phoneLabel||'Não informado'));
-    const total=Number(x.order?.total||x.order?.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
-    if(x.url)lines.push('','Confira produtos, fotos, quantidades e entrega:',''+x.url);
-    return lines.join('\\n')
-  }
-  function openCurrentOrderCustomerWhatsapp"""
-          s,n=re.subn(customer_pattern,customer_repl,s,count=1,flags=re.S)
-          if n!=1: raise SystemExit(f'customer message block expected 1 match, found {n}')
-
-          old_bind="""    if($('#sendOrderWhatsApp'))$('#sendOrderWhatsApp').onclick=openCurrentOrderCompanyWhatsapp;
-    if($('#openOrderCustomerWhatsApp'))$('#openOrderCustomerWhatsApp').onclick=openCurrentOrderCustomerWhatsapp;"""
-          new_bind="""    if($('#sendOrderWhatsApp'))$('#sendOrderWhatsApp').onclick=openCurrentOrderCompanyWhatsapp;
-    if($('#sendOrderWhatsApp4599'))$('#sendOrderWhatsApp4599').onclick=openCurrentOrder4599Whatsapp;
-    if($('#openOrderCustomerWhatsApp'))$('#openOrderCustomerWhatsApp').onclick=openCurrentOrderCustomerWhatsapp;"""
-          if s.count(old_bind)!=1: raise SystemExit('WhatsApp binding block mismatch')
-          s=s.replace(old_bind,new_bind,1)
-
-          p.write_text(s)
-
-          # Update only affected copy expectations in existing regressions.
-          p=Path('scripts/test-admin-order-whatsapp-ui-integration.mjs')
-          t=p.read_text()
-          old="""  'WhatsApp e cadastro',
-  'Abrir pedido no WhatsApp da empresa',
-  'Abrir WhatsApp do cliente',"""
-          new="""  'WhatsApp e cadastro',
-  'Enviar pedido:',
-  'Cliente',
-  '65 99815-0975',
-  '65 99688-4599',"""
-          if t.count(old)!=1: raise SystemExit('whatsapp integration copy contract mismatch')
-          t=t.replace(old,new,1)
-          anchor="assert.ok(admin.includes('const COMPANY_WHATSAPP_E164=\"5565998150975\"'), 'company WhatsApp target must remain 65 99815-0975');"
-          addition=anchor+"\nassert.ok(admin.includes('const ORDER_WHATSAPP_4599_E164=\"5565996884599\"'), 'secondary order WhatsApp target must be 65 99688-4599');\nassert.ok(admin.includes(\"openNativeWhatsapp(ORDER_WHATSAPP_4599_E164,currentOrderCompanyWhatsappMessage())\"), '4599 button must use the same complete order message');"
-          if t.count(anchor)!=1: raise SystemExit('whatsapp integration target assertion mismatch')
-          t=t.replace(anchor,addition,1)
-          p.write_text(t)
-
-          p=Path('scripts/test-admin-order-expedition-ui-hotfix.mjs')
-          t=p.read_text()
-          old="""  'Enviar pedido para WhatsApp da empresa',
-  'Abrir WhatsApp do cliente',"""
-          new="""  'Enviar pedido:',
-  'Cliente',
-  '65 99815-0975',
-  '65 99688-4599',"""
-          if t.count(old)!=1: raise SystemExit('expedition WhatsApp copy contract mismatch')
-          t=t.replace(old,new,1)
-          p.write_text(t)
-          PY
-
-      - name: Verify GREEN and affected regressions
+      - name: Verify green
         shell: bash
         run: |
           node scripts/test-admin-order-whatsapp-three-destinations-v1.mjs
@@ -234,12 +50,13 @@ jobs:
           node scripts/test-admin-order-expedition-ui-hotfix.mjs
           node scripts/test-order-public-summary.mjs
 
-      - name: Commit tested change and remove one-time workflow
+      - name: Commit tested change
         shell: bash
         run: |
           rm -f .github/workflows/one-time-admin-order-whatsapp-three-destinations.yml
+          rm -f scripts/apply-admin-order-whatsapp-three-destinations-v1.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add vitrine/admin/index.html scripts/test-admin-order-whatsapp-three-destinations-v1.mjs scripts/test-admin-order-whatsapp-ui-integration.mjs scripts/test-admin-order-expedition-ui-hotfix.mjs .github/workflows/one-time-admin-order-whatsapp-three-destinations.yml
+          git add vitrine/admin/index.html scripts/test-admin-order-whatsapp-three-destinations-v1.mjs scripts/test-admin-order-whatsapp-ui-integration.mjs scripts/test-admin-order-expedition-ui-hotfix.mjs scripts/apply-admin-order-whatsapp-three-destinations-v1.py .github/workflows/one-time-admin-order-whatsapp-three-destinations.yml
           git commit -m "fix(admin): add three order WhatsApp destinations"
           git push origin HEAD:main
