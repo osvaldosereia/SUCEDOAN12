@@ -17,6 +17,7 @@ on:
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_fix_v2.sql'
       - 'supabase/sql/20261003_admin_attendance_meta_media_send_v1.sql'
+      - 'supabase/sql/20261003_admin_attendance_meta_media_safety_v2.sql'
       - 'scripts/test-attendance-meta-*.mjs'
       - 'scripts/test-attendance-template-picker-v1.mjs'
       - 'scripts/test-attendance-template-send-ui-v1.mjs'
@@ -60,6 +61,8 @@ jobs:
         run: node scripts/test-attendance-meta-media-v1.mjs
       - name: Meta media retry/idempotency contract
         run: node scripts/test-attendance-meta-media-retry-v1.mjs
+      - name: Meta media safety contract
+        run: node scripts/test-attendance-meta-media-safety-v1.mjs
       - name: Meta Phone Number ID strictness
         run: node scripts/test-attendance-meta-phone-id-v1.mjs
       - name: Meta response-body timeout
