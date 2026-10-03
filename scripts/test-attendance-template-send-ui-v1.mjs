@@ -15,7 +15,12 @@ for(const key of ['conversation_id','template_id','parameters','idempotency_key'
 assert.doesNotMatch(js,/to_phone_e164|phone_number_id|waba_id|whatsapp_account_id/,'browser não pode escolher destino/identidade Meta');
 assert.match(js,/template-send-form/);
 assert.match(js,/Enviar template/);
-assert.match(js,/catch[\s\S]{0,600}setTemplateFormStatus|catch[\s\S]{0,600}error/i,'falha deve ser tratada no próprio formulário');
-assert.doesNotMatch(js,/catch[\s\S]{0,500}(?:reset\(|replaceChildren\(\)|\.value\s*=\s*["']["'])/i,'falha não deve apagar os parâmetros digitados');
+
+const submitStart=js.indexOf('async function submitTemplate');
+const submitEnd=js.indexOf('function openTemplateForm',submitStart);
+assert.ok(submitStart>=0&&submitEnd>submitStart,'submitTemplate deve existir como fluxo isolado');
+const submitJs=js.slice(submitStart,submitEnd);
+assert.match(submitJs,/catch[\s\S]*setTemplateFormStatus/i,'falha deve ser tratada no próprio formulário');
+assert.doesNotMatch(submitJs,/(?:reset\(|replaceChildren\(\)|\.value\s*=\s*["']["'])/i,'falha de envio não deve apagar os parâmetros digitados');
 
 console.log('PASS test-attendance-template-send-ui-v1');
