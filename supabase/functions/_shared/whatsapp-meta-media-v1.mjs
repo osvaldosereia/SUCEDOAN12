@@ -30,8 +30,31 @@ function strictBytes(value){
   if(bytes.byteLength>OUTBOUND_MEDIA_MAX_BYTES)throw new MetaMediaError('meta_media_too_large');
   return bytes;
 }
+function startsWithBytes(bytes,signature){
+  if(bytes.byteLength<signature.length)return false;
+  for(let i=0;i<signature.length;i++)if(bytes[i]!==signature[i])return false;
+  return true;
+}
+function startsWithAscii(bytes,text){return startsWithBytes(bytes,new TextEncoder().encode(text))}
 
 export function isAllowedOutboundMetaMime(value){return OUTBOUND_MEDIA_MIME.has(normalizedMime(value))}
+
+export function validateOutboundMetaMediaContent(mimeType,value){
+  const mime=normalizedMime(mimeType);
+  if(!OUTBOUND_MEDIA_MIME.has(mime))throw new MetaMediaError('meta_media_type_not_allowed');
+  const bytes=strictBytes(value);
+  let valid=false;
+  if(mime==='image/png')valid=startsWithBytes(bytes,[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
+  else if(mime==='image/jpeg')valid=startsWithBytes(bytes,[0xff,0xd8,0xff]);
+  else if(mime==='application/pdf')valid=startsWithAscii(bytes,'%PDF-');
+  else if(mime==='audio/ogg')valid=startsWithAscii(bytes,'OggS');
+  else if(mime==='audio/amr')valid=startsWithAscii(bytes,'#!AMR\n')||startsWithAscii(bytes,'#!AMR-WB\n');
+  else if(mime==='audio/aac')valid=startsWithAscii(bytes,'ADIF')||(bytes.byteLength>=2&&bytes[0]===0xff&&(bytes[1]&0xf6)===0xf0);
+  else if(mime==='audio/mpeg')valid=startsWithAscii(bytes,'ID3')||(bytes.byteLength>=2&&bytes[0]===0xff&&(bytes[1]&0xe0)===0xe0);
+  else if(mime==='audio/mp4')valid=bytes.byteLength>=12&&bytes[4]===0x66&&bytes[5]===0x74&&bytes[6]===0x79&&bytes[7]===0x70;
+  if(!valid)throw new MetaMediaError('meta_media_content_mismatch');
+  return true;
+}
 
 export function isAllowedMetaMediaUrl(value){
   try{
@@ -75,6 +98,7 @@ export async function uploadMetaMedia({accessToken,graphVersion,phoneNumberId,mi
   const version=strictGraphVersion(graphVersion);const phoneId=strictPhoneNumberId(phoneNumberId);
   const mime=normalizedMime(mimeType);if(!OUTBOUND_MEDIA_MIME.has(mime))throw new MetaMediaError('meta_media_type_not_allowed');
   const safeName=strictFilename(filename);const bodyBytes=strictBytes(bytes);
+  validateOutboundMetaMediaContent(mime,bodyBytes);
   const form=new FormData();
   form.set('messaging_product','whatsapp');
   form.set('type',mime);
