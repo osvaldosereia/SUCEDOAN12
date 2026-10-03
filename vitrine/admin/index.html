@@ -1463,7 +1463,7 @@
   }
 
   function statusPill(status){
-    const map={created:'Novo',storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Bling',processing:'Separando',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'};
+    const map={created:'Novo',storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Bling',processing:'Separando',ready:'Entrega',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'};
     const cls=status==='cancelled'?'danger':status==='created'?'warn':'';
     return '<span class="pill '+cls+'">'+esc(map[status]||status||'—')+'</span>';
   }
@@ -1619,7 +1619,7 @@
       created:'Confirmar pedido',
       confirmed:consumed?'Continuar separação':'Iniciar separação',
       processing:consumed?'Finalizar separação':'Regularizar separação',
-      ready:'Liberar para entrega',
+      ready:'Revisar entrega',
       out_for_delivery:'Confirmar entrega',
       delivered:'Conferir pagamento / fiscal',
       cancelled:'Nenhuma ação'
@@ -7614,13 +7614,15 @@
   async function selectOrderSeparator(orderId,separatorKey,btn){
     if(btn){btn.disabled=true}
     try{
+      const selected=String(orderSeparationListEntry(orderId)?.assignment?.separator_key||'');
+      const requested=selected===separatorKey?null:separatorKey;
       const data=await api('order_separation_assign',{}, {
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:orderId,separator_key:separatorKey})
+        body:JSON.stringify({id:orderId,separator_key:requested})
       });
       state.orderSeparationById=state.orderSeparationById||{};
       const previous=orderSeparationListEntry(orderId)||{};
-      state.orderSeparationById[orderId]={separation:{...previous,assignment:data.assignment||{separator_key:separatorKey,separator_label:ORDER_SEPARATOR_OPTIONS.find(x=>x[0]===separatorKey)?.[1]||separatorKey}}};
+      state.orderSeparationById[orderId]={separation:{...previous,assignment:data.assignment||{separator_key:requested,separator_label:requested?(ORDER_SEPARATOR_OPTIONS.find(x=>x[0]===requested)?.[1]||requested):null}}};
       paintOrderRows();
     }catch(e){
       toast(errorMessage(e?.message||'separator_update_failed'));
