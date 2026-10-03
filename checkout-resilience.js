@@ -11,12 +11,21 @@
   function byId(id){return document.getElementById(id)}
   function digits(value,max=20){return String(value??'').replace(/\D+/g,'').slice(0,max)}
   function field(id){const el=byId(id);return el?String(el.value??'').trim():''}
+  function localWhatsappDigits(value){
+    let d=digits(value,13);if(d.startsWith('55')&&d.length>=12)d=d.slice(2);return d.slice(0,11);
+  }
+  function formatUnifiedPhone(value){
+    const d=localWhatsappDigits(value);if(!d)return '';if(d.length<=2)return d;const ddd=d.slice(0,2),mobile=d.slice(2);
+    if(mobile.length<=4)return '('+ddd+') '+mobile;
+    if(d.length<=10)return '('+ddd+') '+mobile.slice(0,4)+'-'+mobile.slice(4,8);
+    return '('+ddd+') '+mobile.slice(0,5)+'-'+mobile.slice(5,9);
+  }
   function liveCheckoutPhone(){
-    const ddd=digits(field('checkoutDdd'),2);
-    let mobile=digits(field('checkoutPhone'),9);
-    if(mobile.length===8)mobile='9'+mobile;
-    const valid=ddd.length===2&&mobile.length===9&&mobile.startsWith('9');
-    return {ddd,mobile,valid,full:valid?'+55'+ddd+mobile:''};
+    const unified=byId('checkoutWhatsappUnified');let local=unified?localWhatsappDigits(unified.value):'';
+    if(local.length===10)local=local.slice(0,2)+'9'+local.slice(2);
+    if(local.length===11){const ddd=local.slice(0,2),mobile=local.slice(2),valid=mobile.startsWith('9');return {ddd,mobile,valid,full:valid?'+55'+local:''}}
+    const ddd=digits(field('checkoutDdd'),2);let mobile=digits(field('checkoutPhone'),9);if(mobile.length===8)mobile='9'+mobile;
+    const valid=ddd.length===2&&mobile.length===9&&mobile.startsWith('9');return {ddd,mobile,valid,full:valid?'+55'+ddd+mobile:''};
   }
   function checkoutRegistrationDraft(){
     return {
@@ -70,21 +79,38 @@
     const style=document.createElement('style');
     style.id='daCheckoutRequiredStyles';
     style.textContent=`
-      .da-checkout-section{margin:14px 0;padding:14px;border:1px solid #e2e8e3;border-radius:16px;background:#fff}
-      .da-checkout-section h3{margin:0 0 5px!important;font-size:17px!important;color:#18221c}
-      .da-checkout-section-desc{margin:0 0 12px;color:#66716a;font-size:12px;line-height:1.4}
-      .da-checkout-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .da-checkout-section{margin:14px 0;padding:16px;border:1px solid #e2e8e3;border-radius:16px;background:#fff}
+      .da-checkout-section h3{margin:0 0 5px!important;font-size:18px!important;color:#18221c}
+      .da-checkout-section-desc{margin:0 0 13px;color:#66716a;font-size:13px;line-height:1.45}
+      .da-checkout-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
       .da-checkout-grid .span-all{grid-column:1/-1}
+      .da-checkout-section .wa-field span{font-size:13px!important;line-height:1.3;margin-bottom:5px!important}
+      .da-checkout-section .wa-field input,.da-checkout-section .wa-field select{height:52px!important;min-height:52px!important;font-size:16px!important;border-radius:12px!important;padding:0 12px!important}
       .da-required-star{color:#a52232;font-weight:900;margin-left:3px}
-      .da-validation-summary{margin:12px 0;padding:12px 13px;border:2px solid #b42a3a;border-radius:14px;background:#fff4f5;color:#72202b;font-size:13px;line-height:1.45}
-      .da-validation-summary strong{display:block;margin-bottom:5px;font-size:14px}
-      .da-field-error{margin-top:5px;color:#a52232;font-size:12px;font-weight:750;line-height:1.3}
+      .da-validation-summary{margin:12px 0;padding:13px 14px;border:2px solid #b42a3a;border-radius:14px;background:#fff4f5;color:#72202b;font-size:14px;line-height:1.5}
+      .da-validation-summary strong{display:block;margin-bottom:5px;font-size:15px}
+      .da-field-error{margin-top:6px;color:#a52232;font-size:13px;font-weight:750;line-height:1.35}
       .da-section-invalid{border-color:#d05a67!important;box-shadow:0 0 0 3px rgba(180,42,58,.08)}
       [aria-invalid="true"]{border-color:#b42a3a!important;box-shadow:0 0 0 3px rgba(180,42,58,.10)!important;background:#fffafa!important}
-      .da-checkout-ok{padding:10px 11px;border-radius:11px;background:#eef7f1;color:#17613f;font-size:12px;font-weight:750}
-      .da-checkout-helper{margin:0 0 10px;padding:9px 10px;border-radius:11px;background:#f6f8f6;color:#59645d;font-size:12px}
+      .da-checkout-ok{padding:12px 13px;border-radius:11px;background:#eef7f1;color:#17613f;font-size:14px;font-weight:750}
+      .da-checkout-helper{margin:0 0 10px;padding:10px 11px;border-radius:11px;background:#f6f8f6;color:#59645d;font-size:13px;line-height:1.4}
+      .da-phone-unified{display:block}.da-phone-unified input{width:100%}
+      .da-phone-legacy{display:none!important}
+      .da-checkout-cart-summary{margin:0 0 14px;border:1px solid #dbe5de;border-radius:15px;background:#fff;overflow:hidden}
+      .da-checkout-cart-summary>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px;padding:11px 13px}
+      .da-checkout-cart-summary>summary::-webkit-details-marker{display:none}
+      .da-checkout-cart-summary>summary strong{display:block;font-size:16px}.da-checkout-cart-summary>summary small{display:block;color:#66716a;font-size:12px;margin-top:2px}
+      .da-checkout-cart-summary>summary b{font-size:18px;white-space:nowrap}.da-checkout-cart-summary[open]>summary{border-bottom:1px solid #e7ebe8;background:#f8faf8}
+      .da-date-source{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+      .da-date-options{display:grid;grid-template-columns:1fr 1fr;gap:9px}.da-date-option{min-height:56px;border:1px solid #d7dfd9;border-radius:13px;background:#fff;color:#18221c;padding:10px 12px;text-align:left;font-size:14px;font-weight:800}
+      .da-date-option[aria-pressed="true"]{border-color:#176b43;background:#edf6f0;color:#135938;box-shadow:0 0 0 2px rgba(23,107,67,.08)}
+      .da-checkout-section .payments{gap:9px!important}.da-checkout-section .pay{min-height:52px!important;padding:11px 12px!important;font-size:14px!important;border-radius:13px!important}.da-checkout-section .pay:has(input:checked){border-color:#176b43;background:#edf6f0}
+      .da-address-confirm{font-size:14px!important}.da-address-confirm>div{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:9px!important}
+      #confirmAddress{min-height:52px!important;background:#176b43!important;color:#fff!important;font-size:14px!important}#editAddress{min-height:52px!important;font-size:13px!important}
+      .da-checkout-final-total{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 2px 4px}.da-checkout-final-total span{font-size:12px;color:#66716a;font-weight:750}.da-checkout-final-total strong{font-size:21px;color:#18221c}
+      #sendWhats{min-height:56px!important;font-size:17px!important;border-radius:14px!important}.action-stack #addMoreCheckout{min-height:48px!important;font-size:13px!important}
       #saveCheckoutRegistration{display:none!important}
-      @media(max-width:560px){.da-checkout-section{padding:13px 12px}.da-checkout-grid{grid-template-columns:1fr}.da-checkout-grid .span-all{grid-column:auto}}
+      @media(max-width:560px){.da-checkout-section{padding:14px 12px}.da-checkout-grid{grid-template-columns:1fr}.da-checkout-grid .span-all{grid-column:auto}.da-date-options{grid-template-columns:1fr}.da-checkout-section .payments{grid-template-columns:1fr!important}.da-address-confirm>div{grid-template-columns:1fr!important}}
     `;
     document.head.appendChild(style);
   }
@@ -100,74 +126,51 @@
     const star=document.createElement('span');star.className='da-required-star';star.textContent='*';star.setAttribute('aria-hidden','true');span.appendChild(star);
   }
   function checkoutHeading(body,pattern){return [...body.querySelectorAll('h3.checkout-title')].find(h=>pattern.test(String(h.textContent||'')))}
+  let automaticLookupTimer=null;
+  function scheduleAutomaticLookup(){
+    if(automaticLookupTimer)clearTimeout(automaticLookupTimer);const ph=liveCheckoutPhone();if(!ph.valid)return;
+    automaticLookupTimer=originalSetTimeout(()=>{const current=liveCheckoutPhone(),lookup=byId('lookupCustomer');if(current.valid&&lookup)lookup.click()},320);
+  }
+  function syncUnifiedPhoneToLegacy(input){
+    const local=localWhatsappDigits(input?.value||'');if(input)input.value=formatUnifiedPhone(local);
+    const ddd=byId('checkoutDdd'),phone=byId('checkoutPhone');if(ddd){ddd.value=local.slice(0,2);ddd.dispatchEvent(new Event('input',{bubbles:true}))}if(phone){phone.value=local.slice(2);phone.dispatchEvent(new Event('input',{bubbles:true}))}
+    clearFieldError(input);scheduleAutomaticLookup();
+  }
+  function setupUnifiedWhatsapp(waBox){
+    if(!waBox||byId('checkoutWhatsappUnified'))return;const grid=waBox.querySelector('.wa-grid'),ddd=byId('checkoutDdd'),phone=byId('checkoutPhone'),lookup=byId('lookupCustomer');
+    const initialDdd=digits(ddd?.value,2),initialMobile=digits(phone?.value,9),initial=initialDdd.length===2&&initialMobile.length>=8?initialDdd+initialMobile:'';
+    const label=document.createElement('label');label.className='wa-field da-phone-unified';label.innerHTML='<span>WhatsApp com DDD</span><input id="checkoutWhatsappUnified" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="(65) 99815-0975" aria-label="WhatsApp com DDD">';
+    waBox.insertBefore(label,grid||waBox.firstChild);const input=byId('checkoutWhatsappUnified');if(input){input.value=formatUnifiedPhone(initial);input.addEventListener('input',()=>syncUnifiedPhoneToLegacy(input));appendRequired(label)}
+    if(grid)grid.classList.add('da-phone-legacy');if(lookup){lookup.hidden=true;lookup.style.display='none'}
+  }
+  function collapseOrderSummary(body){
+    const list=body?.querySelector('.checkout-list');if(!list||list.closest('.da-checkout-cart-summary'))return;const details=document.createElement('details');details.className='da-checkout-cart-summary';
+    const summary=document.createElement('summary'),total=byId('checkoutTotal')?.textContent||'';summary.innerHTML='<span><strong>Seu pedido</strong><small>Ver ou alterar produtos</small></span><b>'+escapeHtml(total)+'</b>';list.parentNode.insertBefore(details,list);details.appendChild(summary);details.appendChild(list);
+  }
+  function setupDateChoices(sec,select,label){
+    if(!sec||!select||sec.querySelector('.da-date-options'))return;const options=[...select.options].filter(o=>o.value);if(!options.length)return;if(label)label.classList.add('da-date-source');
+    const host=document.createElement('div');host.className='da-date-options';for(const option of options){const btn=document.createElement('button');btn.type='button';btn.className='da-date-option';btn.textContent=option.textContent;btn.dataset.date=option.value;btn.setAttribute('aria-pressed',String(select.value===option.value));btn.onclick=()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));host.querySelectorAll('.da-date-option').forEach(x=>x.setAttribute('aria-pressed',String(x===btn)));clearFieldError(select)};host.appendChild(btn)}
+    sec.insertBefore(host,label?.nextSibling||null);
+  }
+  function setupCheckoutFooter(){
+    const stack=byId('sheetAction')?.querySelector('.action-stack'),btn=byId('sendWhats');if(!stack||!btn)return;let total=stack.querySelector('.da-checkout-final-total');if(!total){total=document.createElement('div');total.className='da-checkout-final-total';total.innerHTML='<span>Total do pedido</span><strong></strong>';stack.prepend(total)}
+    const add=byId('addMoreCheckout');if(add&&btn.nextSibling!==add)stack.insertBefore(btn,add);refreshCheckoutPresentation();
+  }
+  function refreshCheckoutPresentation(){
+    const btn=byId('sendWhats');if(btn&&!btn.disabled&&btn.textContent!=='Confirmar pedido')btn.textContent='Confirmar pedido';const total=byId('checkoutTotal')?.textContent||'',target=document.querySelector('.da-checkout-final-total strong');if(target&&target.textContent!==total)target.textContent=total;
+  }
   function organizeCheckoutSections(){
-    const body=byId('sheetBody');
-    if(!body||!byId('sendWhats')||body.querySelector('[data-da-checkout-organized="1"]'))return;
-    injectCheckoutStyles();
-    const marker=document.createElement('span');marker.dataset.daCheckoutOrganized='1';marker.hidden=true;body.prepend(marker);
-
-    const waHeading=checkoutHeading(body,/WhatsApp/i),dateHeading=checkoutHeading(body,/Data de entrega/i),paymentHeading=checkoutHeading(body,/Como você vai pagar/i);
-    const waBox=body.querySelector('.wa-lookup');
-    if(waHeading&&waBox){
-      const sec=makeSection('Seu WhatsApp','Usamos este número para identificar seu cadastro e enviar a cópia do pedido.','whatsapp');
-      waHeading.parentNode.insertBefore(sec,waHeading);waHeading.remove();sec.appendChild(waBox);
-      const helper=document.createElement('div');helper.className='da-checkout-helper';helper.textContent='Digite seu WhatsApp e toque em Continuar.';sec.insertBefore(helper,waBox);
-      const lookup=byId('lookupCustomer');if(lookup)lookup.textContent='Continuar';
-      appendRequired(byId('checkoutDdd')?.closest('label'));appendRequired(byId('checkoutPhone')?.closest('label'));
-    }
-
+    const body=byId('sheetBody');if(!body||!byId('sendWhats')||body.querySelector('[data-da-checkout-organized="1"]'))return;injectCheckoutStyles();const marker=document.createElement('span');marker.dataset.daCheckoutOrganized='1';marker.hidden=true;body.prepend(marker);collapseOrderSummary(body);
+    const waHeading=checkoutHeading(body,/WhatsApp/i),dateHeading=checkoutHeading(body,/Data de entrega/i),paymentHeading=checkoutHeading(body,/Como você vai pagar/i),waBox=body.querySelector('.wa-lookup');
+    if(waHeading&&waBox){const sec=makeSection('1. Seu WhatsApp','Digite o número com DDD. Vamos conferir seu cadastro automaticamente.','whatsapp');waHeading.parentNode.insertBefore(sec,waHeading);waHeading.remove();sec.appendChild(waBox);const helper=document.createElement('div');helper.className='da-checkout-helper';helper.textContent='Exemplo: (65) 99815-0975. Você também pode colar o número completo.';sec.insertBefore(helper,waBox);setupUnifiedWhatsapp(waBox)}
     const formName=byId('checkoutName');
-    if(formName){
-      const grid=formName.closest('div[style*="display:grid"]')||formName.parentElement?.parentElement;
-      const personal=makeSection('Informações pessoais','Preencha somente os dados básicos para identificar o pedido.','personal');
-      const personalGrid=document.createElement('div');personalGrid.className='da-checkout-grid';personal.appendChild(personalGrid);
-      const delivery=makeSection('Dados da entrega','Informe onde devemos entregar seu pedido.','delivery');
-      const deliveryGrid=document.createElement('div');deliveryGrid.className='da-checkout-grid';delivery.appendChild(deliveryGrid);
-      const anchor=dateHeading||grid;
-      if(anchor?.parentNode){anchor.parentNode.insertBefore(personal,anchor);anchor.parentNode.insertBefore(delivery,anchor)}
-
-      const nameLabel=byId('checkoutName')?.closest('label'),docLabel=byId('checkoutDocument')?.closest('label');
-      if(nameLabel){nameLabel.classList.add('span-all');personalGrid.appendChild(nameLabel);appendRequired(nameLabel)}
-      if(docLabel){personalGrid.appendChild(docLabel);if(!byId('customerLookupResult')?.classList?.contains('found'))appendRequired(docLabel)}
-      const marketing=byId('checkoutMarketing')?.closest('label');if(marketing){marketing.classList.add('span-all');personalGrid.appendChild(marketing)}
-
-      for(const id of ['checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity','checkoutPostal','checkoutComplement','checkoutReference']){
-        const label=byId(id)?.closest('label');if(!label)continue;
-        if(['checkoutStreet','checkoutComplement','checkoutReference'].includes(id))label.classList.add('span-all');
-        deliveryGrid.appendChild(label);
-        if(['checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity'].includes(id))appendRequired(label);
-      }
-      const save=byId('saveCheckoutRegistration');if(save)delivery.appendChild(save);
-      if(grid&&grid.children.length===0)grid.remove();
-      const oldNotice=[...body.querySelectorAll('.rule-notice')].find(x=>/Cadastro opcional|Cadastro do cliente|pedido pode ser finalizado/i.test(String(x.textContent||'')));
-      if(oldNotice)oldNotice.remove();
-    }else if(existingRegistrationComplete()){
-      const personal=makeSection('Informações pessoais','Seus dados pessoais já estão cadastrados. Você não precisa digitar tudo novamente.','personal');
-      const ok=document.createElement('div');ok.className='da-checkout-ok';ok.textContent='✓ Cadastro encontrado pelo seu WhatsApp.';personal.appendChild(ok);
-      const delivery=makeSection('Dados da entrega','Confira o endereço abaixo antes de continuar.','delivery');
-      const addressNotice=byId('confirmAddress')?.closest('.rule-notice');
-      const anchor=dateHeading||addressNotice;
-      if(anchor?.parentNode){anchor.parentNode.insertBefore(personal,anchor);anchor.parentNode.insertBefore(delivery,anchor)}
-      if(addressNotice)delivery.appendChild(addressNotice);
-      const marketingNotice=byId('editMarketingPreference')?.closest('.rule-notice');if(marketingNotice)personal.appendChild(marketingNotice);
-    }
-
-    if(dateHeading){
-      const sec=makeSection('Data da entrega','Escolha quando deseja receber.','date');
-      dateHeading.parentNode.insertBefore(sec,dateHeading);dateHeading.remove();
-      const select=byId('checkoutDeliveryDate'),label=select?.closest('label'),note=label?.nextElementSibling;
-      if(label){sec.appendChild(label);appendRequired(label)}if(note?.classList?.contains('note'))sec.appendChild(note);
-    }
-    if(paymentHeading){
-      const sec=makeSection('Forma de pagamento','O pagamento é feito na entrega.','payment');
-      paymentHeading.parentNode.insertBefore(sec,paymentHeading);paymentHeading.remove();
-      const payments=body.querySelector('.payments'),note=payments?.nextElementSibling;if(payments)sec.appendChild(payments);if(note?.classList?.contains('note'))sec.appendChild(note);
-    }
-
-    const btn=byId('sendWhats');if(btn)btn.textContent='Finalizar pedido';
-    body.querySelectorAll('input,select').forEach(el=>{
-      const clear=()=>clearFieldError(el);el.addEventListener('input',clear);el.addEventListener('change',clear);
-    });
+    if(formName){const grid=formName.closest('div[style*="display:grid"]')||formName.parentElement?.parentElement,personal=makeSection('2. Seus dados','Para cliente novo, CPF ou CNPJ é obrigatório.','personal'),personalGrid=document.createElement('div');personalGrid.className='da-checkout-grid';personal.appendChild(personalGrid);const delivery=makeSection('3. Endereço da entrega','Informe onde devemos entregar seu pedido.','delivery'),deliveryGrid=document.createElement('div');deliveryGrid.className='da-checkout-grid';delivery.appendChild(deliveryGrid),anchor=dateHeading||grid;if(anchor?.parentNode){anchor.parentNode.insertBefore(personal,anchor);anchor.parentNode.insertBefore(delivery,anchor)}
+      const nameLabel=byId('checkoutName')?.closest('label'),docLabel=byId('checkoutDocument')?.closest('label');if(nameLabel){nameLabel.classList.add('span-all');personalGrid.appendChild(nameLabel);appendRequired(nameLabel)}if(docLabel){personalGrid.appendChild(docLabel);if(!byId('customerLookupResult')?.classList?.contains('found'))appendRequired(docLabel)}const marketing=byId('checkoutMarketing')?.closest('label');if(marketing){marketing.classList.add('span-all');personalGrid.appendChild(marketing)}
+      for(const id of ['checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity','checkoutPostal','checkoutComplement','checkoutReference']){const label=byId(id)?.closest('label');if(!label)continue;if(['checkoutStreet','checkoutComplement','checkoutReference'].includes(id))label.classList.add('span-all');deliveryGrid.appendChild(label);if(['checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity'].includes(id))appendRequired(label)}const save=byId('saveCheckoutRegistration');if(save)delivery.appendChild(save);if(grid&&grid.children.length===0)grid.remove();const oldNotice=[...body.querySelectorAll('.rule-notice')].find(x=>/Cadastro opcional|Cadastro do cliente|pedido pode ser finalizado/i.test(String(x.textContent||'')));if(oldNotice)oldNotice.remove();
+    }else if(existingRegistrationComplete()){const personal=makeSection('2. Seus dados','Seu cadastro já foi encontrado pelo WhatsApp.','personal'),ok=document.createElement('div');ok.className='da-checkout-ok';ok.textContent='✓ Cadastro encontrado. Você não precisa digitar tudo novamente.';personal.appendChild(ok);const delivery=makeSection('3. Endereço da entrega','Confira se devemos entregar neste endereço.','delivery'),addressNotice=byId('confirmAddress')?.closest('.rule-notice'),anchor=dateHeading||addressNotice;if(anchor?.parentNode){anchor.parentNode.insertBefore(personal,anchor);anchor.parentNode.insertBefore(delivery,anchor)}if(addressNotice){addressNotice.classList.add('da-address-confirm');delivery.appendChild(addressNotice)}const confirm=byId('confirmAddress'),edit=byId('editAddress');if(confirm)confirm.textContent='Sim, entregar aqui';if(edit)edit.textContent='Usar outro endereço';const marketingNotice=byId('editMarketingPreference')?.closest('.rule-notice');if(marketingNotice)personal.appendChild(marketingNotice)}
+    if(dateHeading){const sec=makeSection('4. Data da entrega','Toque no dia em que deseja receber.','date');dateHeading.parentNode.insertBefore(sec,dateHeading);dateHeading.remove();const select=byId('checkoutDeliveryDate'),label=select?.closest('label'),note=label?.nextElementSibling;if(label){sec.appendChild(label);appendRequired(label)}setupDateChoices(sec,select,label);if(note?.classList?.contains('note'))sec.appendChild(note)}
+    if(paymentHeading){const sec=makeSection('5. Forma de pagamento','Você só paga quando receber o pedido.','payment');paymentHeading.parentNode.insertBefore(sec,paymentHeading);paymentHeading.remove();const payments=body.querySelector('.payments'),note=payments?.nextElementSibling;if(payments)sec.appendChild(payments);if(note?.classList?.contains('note'))sec.appendChild(note)}
+    setupCheckoutFooter();body.querySelectorAll('input,select').forEach(el=>{const clear=()=>clearFieldError(el);el.addEventListener('input',clear);el.addEventListener('change',clear)});
   }
 
   function clearCheckoutValidation(){
@@ -184,10 +187,10 @@
   function issue(id,message,target=null){return {id,message,target:target||id}}
   function validateCheckoutBasics(){
     const issues=[];const ph=liveCheckoutPhone();
-    if(!ph.valid)issues.push(issue('checkoutPhone','Confira o WhatsApp. Digite o DDD e o número com 9 dígitos.','checkoutPhone'));
+    if(!ph.valid)issues.push(issue('checkoutWhatsappUnified','Digite seu WhatsApp com DDD. Ex.: (65) 99815-0975.','checkoutWhatsappUnified'));
     const completeExisting=existingRegistrationComplete();
     const draft=checkoutRegistrationDraft();
-    if(ph.valid&&!completeExisting&&!byId('checkoutName'))issues.push(issue('lookupCustomer','Depois do WhatsApp, toque em Continuar para carregar seus dados.','lookupCustomer'));
+    if(ph.valid&&!completeExisting&&!byId('checkoutName')){scheduleAutomaticLookup();issues.push(issue('checkoutWhatsappUnified','Estamos conferindo seu cadastro. Aguarde um instante.','checkoutWhatsappUnified'))}
     if(byId('checkoutName')){
       if(!draft.name)issues.push(issue('checkoutName','Digite seu nome completo.'));
       const known=byId('customerLookupResult')?.classList?.contains('found');
@@ -205,9 +208,8 @@
     return {ok:issues.length===0,issues};
   }
   function markIssue(item){
-    if(item.id==='payment'){
-      const sec=document.querySelector?.('[data-da-section="payment"]');sec?.classList.add('da-section-invalid');return sec;
-    }
+    if(item.id==='payment'){const sec=document.querySelector?.('[data-da-section="payment"]');sec?.classList.add('da-section-invalid');return sec}
+    if(item.id==='checkoutDeliveryDate'){const sec=document.querySelector?.('[data-da-section="date"]');sec?.classList.add('da-section-invalid');return sec?.querySelector?.('.da-date-options')||sec}
     const el=byId(item.target);if(!el)return null;
     el.setAttribute?.('aria-invalid','true');
     const sec=el.closest?.('.da-checkout-section');sec?.classList.add('da-section-invalid');
@@ -319,13 +321,13 @@
   };
 
   const observer=new MutationObserver(()=>{
-    organizeCheckoutSections();
+    organizeCheckoutSections();refreshCheckoutPresentation();
     const fallback=document.querySelector?.('.wa-fallback');if(fallback&&pendingWhatsappReturnUrl)fallback.href=pendingWhatsappReturnUrl;
     const toast=document.querySelector?.('#toast');if(!toast||!pendingSubmitError)return;
     const text=String(toast.textContent||'');if(text.includes('Não consegui registrar')||text.includes('O estoque mudou. Atualize a cesta'))toast.textContent=humanError(pendingSubmitError);
   });
   observer.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
-  originalSetTimeout(organizeCheckoutSections,0);
+  originalSetTimeout(()=>{organizeCheckoutSections();refreshCheckoutPresentation()},0);
 
-  window.__DA_CHECKOUT_RESILIENCE__={CUTOFF_HOUR,applyStockAdjustment,confirmStockAdjustment,liveCheckoutPhone,checkoutRegistrationDraft,registrationDraftComplete,existingRegistrationComplete,validateCheckoutBasics,showCheckoutValidation};
+  window.__DA_CHECKOUT_RESILIENCE__={CUTOFF_HOUR,applyStockAdjustment,confirmStockAdjustment,formatUnifiedPhone,liveCheckoutPhone,checkoutRegistrationDraft,registrationDraftComplete,existingRegistrationComplete,validateCheckoutBasics,showCheckoutValidation};
 })();
