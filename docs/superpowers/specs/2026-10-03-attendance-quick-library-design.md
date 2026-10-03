@@ -117,6 +117,8 @@ Devem continuar obrigatórios:
 
 Os limites de produto devem ser mais conservadores do que os limites físicos do Storage e compatíveis com o WhatsApp Cloud API.
 
+Os números abaixo refletem os limites atuais verificados durante o desenho, mas devem ser revalidados contra a documentação corrente da Meta imediatamente antes de implementar os validators.
+
 ### 5.1 Imagem
 
 - JPEG e PNG;
@@ -145,7 +147,7 @@ Os limites de produto devem ser mais conservadores do que os limites físicos do
 
 ### 5.4 Documentos
 
-Suportar os MIME types de documento compatíveis com o pipeline Meta, incluindo inicialmente:
+Suportar inicialmente:
 
 - PDF;
 - TXT;
@@ -174,7 +176,9 @@ Pipeline:
 5. gerar thumbnail;
 6. mostrar preview;
 7. informar tamanho original e final;
-8. enviar versão otimizada para o backend.
+8. solicitar ao gateway autorização de upload;
+9. enviar a versão otimizada diretamente ao bucket privado usando URL/token de upload assinado;
+10. confirmar o upload no gateway.
 
 Exemplo visual esperado: `4,8 MB → 620 KB`.
 
@@ -186,7 +190,9 @@ Na v1:
 
 - validar MIME;
 - validar tamanho;
-- fazer upload direto;
+- pedir autorização de upload ao gateway;
+- enviar diretamente ao bucket privado com upload assinado;
+- confirmar no gateway;
 - não transcodificar.
 
 ## 7. Modelo de dados
@@ -203,14 +209,16 @@ Campos propostos:
 - `thumbnail_path text null`;
 - `original_filename text not null`;
 - `original_size_bytes bigint null`;
-- `stored_size_bytes bigint not null`;
+- `stored_size_bytes bigint null`;
 - `width integer null`;
 - `height integer null`;
 - `duration_seconds numeric null`;
 - `category text null`;
 - `tags text[] not null default '{}'`;
 - `sort_order integer not null default 0`;
-- `is_active boolean not null default true`;
+- `upload_status text not null default 'pending'` (`pending`, `ready`, `failed`);
+- `upload_expires_at timestamptz null`;
+- `is_active boolean not null default false`;
 - `created_by uuid not null`;
 - `updated_by uuid null`;
 - `created_at timestamptz not null default now()`;
@@ -218,34 +226,54 @@ Campos propostos:
 - `deleted_at timestamptz null`;
 - `deleted_by uuid null`.
 
+Regras:
+
+- item nasce `pending` e inativo;
+- somente `library_upload_complete` pode promovê-lo a `ready` + ativo após validar que o objeto existe e bate com os metadados esperados;
+- item `pending`, `failed` ou inativo nunca pode ser enviado;
+- uploads pendentes expirados podem ser limpos com segurança.
+
 Índices:
 
 - `is_active`;
+- `upload_status`;
 - `media_kind`;
 - `category`;
 - `created_at desc`;
-- busca por título/tags conforme estratégia escolhida na implementação.
+- busca por título/tags conforme estratégia escolhida no plano de implementação.
 
 ## 8. Auditoria
 
-Registrar criação, edição, desativação e envio.
+Usar uma tabela dedicada e única: `attendance_library_audit_v1`.
 
-Para envio, registrar ao menos:
+Ela registra ações de catálogo e envio com campo `action`, incluindo:
 
-- atendente/admin;
-- item da biblioteca;
-- conversa;
-- customer quando existir;
-- canal 0975/1018;
-- timestamp;
-- janela de 24h válida no momento da tentativa;
-- `outbox_id`;
-- `message_id` canônico;
-- provider message ID Meta quando existir;
-- resultado;
-- erro normalizado quando falhar.
+- `item_create`;
+- `item_upload_complete`;
+- `item_update`;
+- `item_deactivate`;
+- `send_attempt`;
+- `send_success`;
+- `send_failure`.
 
-A implementação pode usar tabela dedicada `attendance_library_send_audit_v1` ou integrar ao padrão de auditoria existente, desde que mantenha os campos acima e consulta simples.
+Campos mínimos:
+
+- `id`;
+- `action`;
+- `admin_user_id`;
+- `library_item_id`;
+- `conversation_id` nullable;
+- `customer_id` nullable;
+- `whatsapp_account_id` nullable;
+- `service_window_open` nullable;
+- `outbox_id` nullable;
+- `message_id` nullable;
+- `provider_message_id` nullable;
+- `error_code` nullable;
+- `details jsonb`;
+- `created_at`.
+
+A tabela é somente de auditoria; excluir/desativar item nunca apaga seus eventos históricos.
 
 ## 9. Storage e acesso
 
@@ -255,11 +283,21 @@ Criar bucket privado `attendance-library-v1`.
 
 Nunca tornar esse bucket público.
 
-### 9.2 Acesso pelo navegador
+### 9.2 Upload sem expor privilégios
 
-O navegador não deve receber service role nem acesso amplo ao bucket.
+O navegador não recebe service role nem permissão ampla no bucket.
 
-Operações de catálogo e Storage devem passar pelo gateway administrativo da Central, que já valida o JWT e `admin_users`.
+Fluxo obrigatório:
+
+1. navegador envia ao gateway apenas metadados do arquivo já processado: nome, MIME, tamanho, categoria/tags e hash quando aplicável;
+2. gateway valida JWT, `admin_users`, tipo e tamanho;
+3. gateway cria o item `pending`, define paths controlados e emite autorização de upload assinada para os objetos esperados;
+4. navegador envia o arquivo diretamente ao Storage usando essa autorização limitada;
+5. navegador chama `library_upload_complete`;
+6. gateway confere que os objetos existem e correspondem ao cadastro esperado;
+7. somente então marca item `ready` + ativo.
+
+Assim arquivos grandes não precisam atravessar o Edge Function apenas para chegar ao Storage.
 
 ### 9.3 Preview
 
@@ -273,7 +311,7 @@ Usar UUIDs/paths controlados pelo backend, não o nome original como path princi
 
 Exemplo:
 
-`items/<item_uuid>/original-or-optimized.jpg`
+`items/<item_uuid>/asset.<ext>`
 
 `items/<item_uuid>/thumb.jpg`
 
@@ -289,7 +327,7 @@ Na v1, todo usuário ativo e autorizado do Vitrine Admin pode:
 - editar;
 - desativar itens.
 
-A implementação deve manter a autorização centralizada no backend do Admin.
+A autorização fica centralizada no gateway do Admin. O upload assinado é uma autorização temporária e específica para os paths previamente definidos pelo backend, não uma permissão geral de Storage.
 
 Separação de papéis por atendente/manager fica fora do escopo inicial, mas o modelo de auditoria deve permitir adicioná-la depois.
 
@@ -309,26 +347,28 @@ Remover um item da Biblioteca nunca tenta apagar mensagens já enviadas no Whats
 
 ## 12. API / gateway
 
-Preferência: estender `admin-whatsapp-ops-v1` ou criar um módulo/helper dedicado chamado por ele, preservando o mesmo padrão de autenticação.
+Manter `admin-whatsapp-ops-v1` como o único gateway HTTP externo da Central e adicionar lógica modular em um helper compartilhado, por exemplo `_shared/admin-attendance-library-v1.mjs`.
+
+Isso preserva o padrão atual de autenticação e evita criar uma segunda superfície HTTP administrativa.
 
 Ações esperadas:
 
 ### Leitura
 
-- listar biblioteca;
-- buscar/filtrar;
-- obter preview assinado;
-- obter categorias/tags se necessário.
+- `library_list` — listar/buscar/filtrar;
+- `library_preview` — gerar preview assinado.
 
 ### Escrita
 
-- criar item;
-- atualizar metadados;
-- desativar item;
-- enviar item da biblioteca;
-- envio de lote.
+- `library_upload_prepare` — validar metadados, criar item pending e emitir upload assinado;
+- `library_upload_complete` — confirmar objetos e ativar item;
+- `library_update` — editar título/categoria/tags/ordem;
+- `library_deactivate` — soft delete;
+- `library_send` — enviar um único item para a conversa ativa.
 
-A API deve rejeitar qualquer tentativa de enviar para telefone/account fornecido pelo cliente. O destino continua sendo resolvido server-side a partir do `conversation_id`.
+Não criar endpoint de lote no backend na v1. O frontend coordena o lote sequencial chamando `library_send` uma vez por item. Isso mantém cada envio independente, idempotente e com nova validação da janela de 24h.
+
+A API deve rejeitar qualquer tentativa de enviar telefone/account/customer como destino fornecido pelo cliente. O destino continua sendo resolvido server-side a partir do `conversation_id`.
 
 ## 13. UX da galeria
 
@@ -374,14 +414,17 @@ Cada card mostra:
 
 O upload aceita múltiplos arquivos.
 
-A tela deve mostrar fila de processamento por item, incluindo:
+A tela deve mostrar fila por item:
 
 - aguardando;
-- compactando;
-- pronto;
+- compactando (imagem);
+- solicitando upload;
 - enviando para Storage;
+- confirmando;
 - concluído;
 - erro.
+
+Cada item usa seu próprio ciclo prepare → upload assinado → complete. Falha de um arquivo não deve invalidar os demais da fila de cadastro.
 
 Nenhum arquivo deve ser enviado automaticamente para cliente após ser cadastrado na Biblioteca.
 
@@ -389,7 +432,9 @@ Nenhum arquivo deve ser enviado automaticamente para cliente após ser cadastrad
 
 ### 15.1 Semântica
 
-Os itens são enviados sequencialmente, um por vez.
+Os itens são enviados sequencialmente, um por vez, pelo frontend.
+
+Para cada item selecionado, a UI chama `library_send` e só avança depois de receber resultado definitivo ou falha tratável daquele item.
 
 Não disparar todos em paralelo.
 
@@ -432,7 +477,7 @@ Erros de arquivo individual podem permitir seguir para o próximo item.
 
 Oferecer `Tentar novamente os que falharam`.
 
-Retry reutiliza idempotência apropriada e não reenvia os já concluídos.
+Retry cria/reutiliza a idempotência conforme o estado do outbox e nunca reenvia os já concluídos.
 
 ## 16. Estado da janela de 24h na UI
 
@@ -470,13 +515,17 @@ A Biblioteca é uma fonte adicional de anexos; não substitui o composer nem o a
 
 ### Banco / Storage
 
-- criação de item;
+- criação pending;
+- `upload_complete` promove apenas arquivo válido para ready/ativo;
+- pending/failed não pode ser enviado;
 - edição;
 - soft delete;
 - item inativo não pode ser enviado;
 - bucket privado;
+- upload assinado limitado ao path esperado;
 - preview assinado;
-- autorização administrativa.
+- autorização administrativa;
+- limpeza segura de pending expirado.
 
 ### Upload
 
@@ -490,7 +539,8 @@ A Biblioteca é uma fonte adicional de anexos; não substitui o composer nem o a
 - tamanho acima do limite;
 - vídeo válido/inválido;
 - áudio válido/inválido;
-- documento válido/inválido.
+- documento válido/inválido;
+- upload direto ao Storage sem service key no browser.
 
 ### Biblioteca
 
@@ -533,15 +583,16 @@ Continuar executando as suítes atuais da Central/Meta, incluindo os contratos d
 Executar em etapas pequenas e revisáveis:
 
 1. banco + bucket + contratos de segurança;
-2. API de catálogo;
-3. upload + compactação de imagem;
-4. galeria e gerenciamento;
-5. seleção múltipla;
-6. envio da biblioteca pelo pipeline Meta;
-7. compliance de 24h e interrupção de lote;
-8. auditoria;
-9. testes completos;
-10. PR final e merge somente após CI verde e verificação em produção sem envio para clientes reais não autorizados.
+2. helper de biblioteca + ações no gateway;
+3. upload prepare/complete com upload assinado;
+4. compactação e thumbnail de imagem;
+5. galeria e gerenciamento;
+6. seleção múltipla;
+7. `library_send` integrado ao pipeline Meta;
+8. compliance de 24h e interrupção de lote;
+9. auditoria;
+10. testes completos;
+11. PR final e merge somente após CI verde e verificação em produção sem envio para clientes reais não autorizados.
 
 ## 20. Critérios de aceite
 
@@ -551,6 +602,8 @@ A feature só é considerada pronta quando:
 - imagens ficam leves após upload;
 - galeria é rápida em celular e desktop;
 - imagem, vídeo, áudio e documento suportados podem ser cadastrados;
+- upload não expõe service role nem permissão geral de Storage;
+- itens incompletos/pending não aparecem como utilizáveis;
 - itens podem ser editados e removidos;
 - múltiplos itens podem ser selecionados;
 - lote envia sequencialmente;
@@ -563,9 +616,10 @@ A feature só é considerada pronta quando:
 
 ## 21. Observações de implementação
 
-- Validar novamente os limites/formats suportados pela Meta imediatamente antes de codificar os validators, pois regras externas podem mudar.
+- Validar novamente os limites/formatos suportados pela Meta imediatamente antes de codificar os validators, pois regras externas podem mudar.
 - O plano Free atual do Supabase impõe limite global de 50 MB para arquivos; por isso o limite operacional de 25 MB para documentos da Biblioteca é deliberadamente conservador.
-- Não expor service role, tokens Meta ou paths privilegiados no frontend.
+- Usar upload assinado para evitar trafegar arquivos grandes pelo gateway e nunca expor service role no navegador.
+- Não expor tokens Meta nem paths privilegiados no frontend.
 - Não criar bucket público.
 - Não permitir que o navegador determine o número de destino.
 - Não confundir upload para a Biblioteca com envio para o cliente.
@@ -586,3 +640,11 @@ Aprovado pelo usuário durante o desenho:
 - auditoria completa;
 - janela de 24h obrigatória no frontend e backend;
 - nenhuma mídia livre fora da janela de 24h.
+
+Decisões técnicas fechadas na revisão da especificação:
+
+- `admin-whatsapp-ops-v1` permanece como gateway HTTP único da Central;
+- lógica da Biblioteca fica em helper compartilhado dedicado;
+- upload usa autorização assinada para path específico e confirmação server-side;
+- `attendance_library_audit_v1` é a auditoria única do módulo;
+- frontend orquestra lotes chamando `library_send` sequencialmente, sem endpoint batch na v1.
