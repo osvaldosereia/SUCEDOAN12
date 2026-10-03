@@ -10,7 +10,7 @@ assert.match(js,/parameter_labels/,'campos devem vir dos metadados do template')
 assert.match(js,/\.queue-card\.selected/,'destino deve ser a conversa selecionada na Central');
 assert.match(js,/dataset\??\.conversationId/,'conversation_id deve vir do dataset da conversa selecionada');
 assert.match(js,/method\s*:\s*["']POST["']/);
-assert.match(js,/action["']?\s*[:,]\s*["']send["']|searchParams\.set\(["']action["'],\s*["']send["']\)/);
+assert.match(js,/adminPost\(TEMPLATE_API,\s*["']send["']|action["']?\s*[:,]\s*["']send["']|searchParams\.set\(["']action["'],\s*["']send["']\)/,'envio deve chamar explicitamente a ação send');
 for(const key of ['conversation_id','template_id','parameters','idempotency_key'])assert.match(js,new RegExp(key));
 assert.doesNotMatch(js,/to_phone_e164|phone_number_id|waba_id|whatsapp_account_id/,'browser não pode escolher destino/identidade Meta');
 assert.match(js,/template-send-form/);
