@@ -69,7 +69,21 @@
             <div class="composer-panel conversation-labels" id="conversationLabelsMenu" hidden><strong>Etiquetas desta conversa</strong><div id="conversationLabelsList"></div><button type="button" id="saveConversationLabelsBtn">Salvar etiquetas</button></div>
             <div class="composer-panel follow-up-panel" id="followUpPanel" hidden><label>Retornar em <input id="followUpAt" type="datetime-local"></label><div><button type="button" id="saveFollowUpBtn">Salvar</button><button type="button" id="clearFollowUpBtn">Limpar</button><button type="button" id="cancelFollowUpBtn">Cancelar</button></div></div>
             <textarea id="messageDraft" rows="3" placeholder="Digite sua mensagem…"></textarea>
-            <div class="composer-bottom"><div><span id="composerNote">Selecione uma conversa</span><small id="mediaFileNote">Imagem, áudio ou PDF · até 16 MB.</small></div><div class="composer-actions"><button type="button" id="sendMediaBtn" disabled>Enviar anexo</button><button type="button" id="copyReplyBtn" disabled>Copiar</button><button type="button" id="openPapoAiBtn" disabled>Abrir PapoAI</button><button type="button" class="primary" id="sendBtn" disabled>Enviar</button></div></div>
+            <div class="composer-bottom">
+              <div class="composer-media" aria-label="Estado do anexo">
+                <span id="composerNote">Selecione uma conversa</span>
+                <small id="mediaFileName">Nenhum arquivo selecionado</small>
+                <small id="mediaFileNote">Imagem, áudio ou PDF · até 16 MB.</small>
+                <small id="mediaProgress" role="status" aria-live="polite"></small>
+              </div>
+              <div class="composer-actions">
+                <button type="button" id="clearMediaBtn" hidden>Remover anexo</button>
+                <button type="button" id="sendMediaBtn" disabled>Enviar anexo</button>
+                <button type="button" id="copyReplyBtn" disabled>Copiar</button>
+                <button type="button" id="openPapoAiBtn" disabled>Abrir PapoAI</button>
+                <button type="button" class="primary" id="sendBtn" disabled>Enviar</button>
+              </div>
+            </div>
           </div>
         </section>
 
