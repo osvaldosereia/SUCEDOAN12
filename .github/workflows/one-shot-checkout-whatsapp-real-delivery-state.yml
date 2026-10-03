@@ -1,0 +1,24 @@
+name: One-shot checkout WhatsApp real delivery state
+
+on:
+  push:
+    branches:
+      - fix/checkout-whatsapp-real-delivery-state-20261002
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Real delivery-state contract
+        run: node scripts/test-checkout-whatsapp-real-delivery-state.mjs
+      - name: TypeScript syntax sanity
+        run: npx --yes esbuild supabase/functions/admin-orders-v1/index.ts --bundle --platform=neutral --format=esm --external:jsr:* --external:npm:* --outfile=/tmp/admin-orders.js
+      - name: Diff check
+        run: git diff --check
