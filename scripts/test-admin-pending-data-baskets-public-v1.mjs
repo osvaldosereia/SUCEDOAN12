@@ -31,8 +31,11 @@ assert.match(shortMigration,/public_code/i,'Resumo público deve ter código cur
 assert.match(shortMigration,/\[A-Z\].*\[A-Z\].*\[0-9\].*\{3\}/i,'Código público deve ter duas letras e três números');
 assert.match(publicEdge,/public_token/,'Endpoint público deve resolver pedido pelo token curto');
 assert.match(publicEdge,/public_code/,'Endpoint público deve devolver o código curto');
+assert.match(publicEdge,/channel_origin/,'Endpoint público deve devolver o canal de origem da conversa');
 assert.match(page,/searchParams\.get\(['"]k['"]\)/,'Página do pedido deve aceitar token curto k');
-assert.match(page,/searchParams\.get\(['"]c['"]\)/,'Página deve conhecer o canal de origem do WhatsApp');
+assert.match(page,/channel_origin/,'Página deve usar o canal de origem devolvido pelo backend');
+assert.match(page,/5565998150975/,'Página deve conhecer o canal 0975');
+assert.match(page,/5565984491018/,'Página deve conhecer o canal 1018');
 assert.match(page,/whatsapp:\/\/send\?phone=/,'Botão deve tentar voltar diretamente ao app/conversa do WhatsApp');
 assert.match(shortPage,/pedido\/\?k=/,'Atalho /p deve encaminhar para a página de pedido com token curto');
 assert.match(adminOrders,/order_public_token/,'Payload para PapoAI deve incluir token público curto');
