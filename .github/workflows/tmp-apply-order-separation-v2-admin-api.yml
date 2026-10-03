@@ -5,6 +5,7 @@ on:
     branches: [feat/order-separation-v2]
     paths:
       - 'scripts/apply-order-separation-v2-admin-api.py'
+      - 'scripts/test-order-separation-v2-admin-api.mjs'
       - '.github/workflows/tmp-apply-order-separation-v2-admin-api.yml'
 
 permissions:
