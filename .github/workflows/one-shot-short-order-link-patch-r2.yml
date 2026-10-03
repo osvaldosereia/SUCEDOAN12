@@ -1,0 +1,89 @@
+name: one-shot-short-order-link-patch-r2
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-short-order-link-patch-r2.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/short-order-link-whatsapp
+          fetch-depth: 1
+      - name: Apply surgical short-link patches
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          import re
+          def read(path): return Path(path).read_text()
+          def write(path,s): Path(path).write_text(s)
+          def replace_once(s,old,new,label):
+              if old not in s: raise SystemExit(f'missing pattern: {label}')
+              return s.replace(old,new,1)
+
+          path='supabase/functions/admin-orders-v1/index.ts'; s=read(path)
+          if 'order_public_token:' not in s:
+              s=replace_once(s,'  const providerPayload={\n','''  let publicOrderLink:any=null;\n  try{\n    const publicLinkResult=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});\n    if(!publicLinkResult.error)publicOrderLink=publicLinkResult.data||null;\n  }catch(error){console.error("order_public_link",text((error as Error)?.message||error,180))}\n\n  const providerPayload={\n''','admin-orders public link lookup')
+              s=replace_once(s,'    order_id:item.order_id,\n','''    order_id:item.order_id,\n    order_public_token:text(publicOrderLink?.public_token,32),\n    order_public_code:text(publicOrderLink?.public_code,5),\n    order_url:text(publicOrderLink?.public_url,220)||`https://donaantonia.com.br/pedido/?o=${orderId}`,\n''','admin-orders public fields')
+              write(path,s)
+
+          path='supabase/functions/storefront-v2/index.ts'; s=read(path)
+          if 'order_public_url:publicOrderLink' not in s:
+              s=replace_once(s,'  const orderId=created.data?.order_id;let papoaiLink:any=null;\n','  const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;\n','storefront public link var')
+              s=replace_once(s,'  if(orderId&&ph)kickWhatsappOrderOutbound(orderId);\n','''  if(orderId){try{const publicLink=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});if(!publicLink.error)publicOrderLink=publicLink.data||null}catch(e){console.error("order_public_link",txt((e as any)?.message,180))}}\n  if(orderId&&ph)kickWhatsappOrderOutbound(orderId);\n''','storefront public link lookup')
+              s=replace_once(s,'  return {...created.data,phone_attached:Boolean(ph),','  return {...created.data,order_public_url:publicOrderLink?.public_url||null,order_public_code:publicOrderLink?.public_code||null,phone_attached:Boolean(ph),','storefront public return')
+              write(path,s)
+
+          for path in ['index.html','vitrine/index.html']:
+              s=read(path)
+              if 'saved?.order_public_url' not in s:
+                  pattern=r"    function orderPublicUrl\(saved\)\{.*?\}\n    function renderOrderSuccess"
+                  replacement="""    function orderPublicUrl(saved){const short=String(saved?.order_public_url||'').trim();if(/^https:\\/\\/donaantonia\\.com\\.br\\/p\\/\\?k=[a-f0-9]{16}$/i.test(short))return short;const id=String(saved?.order_id||saved?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}\n    function renderOrderSuccess"""
+                  s,n=re.subn(pattern,replacement,s,count=1,flags=re.S)
+                  if n!=1: raise SystemExit(f'missing orderPublicUrl in {path}')
+              if 'saved?.order_public_code' not in s:
+                  old="function renderOrderSuccess(saved){const orderNumber=saved?.order_number?String(saved.order_number).slice(0,80):'Pedido'"
+                  new="function renderOrderSuccess(saved){const orderNumber=saved?.order_public_code?String(saved.order_public_code).slice(0,5):(saved?.order_number?String(saved.order_number).slice(0,80):'Pedido')"
+                  s=replace_once(s,old,new,f'{path} short order code')
+              write(path,s)
+          PY
+      - name: Verify contracts
+        run: |
+          node scripts/test-admin-pending-data-baskets-public-v1.mjs
+          node scripts/test-order-public-summary.mjs
+          node scripts/test-checkout-whatsapp-return.mjs
+          node <<'NODE'
+          const fs=require('fs');
+          for(const file of ['index.html','vitrine/index.html','pedido/index.html']){
+            const html=fs.readFileSync(file,'utf8');
+            const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+            scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`${file} script ${i+1}: ${e.message}`)}});
+          }
+          console.log('inline syntax OK');
+          NODE
+          git diff --check
+      - name: Commit patch to feature branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/functions/admin-orders-v1/index.ts supabase/functions/storefront-v2/index.ts index.html vitrine/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'feat: ligar checkout e PapoAI ao link curto'
+            git push origin HEAD:fix/short-order-link-whatsapp
+          fi
+      - name: Remove one-shot workflow from main
+        if: always()
+        run: |
+          git fetch origin main --depth=1
+          git switch --force -C cleanup FETCH_HEAD
+          rm -f .github/workflows/one-shot-short-order-link-patch-r2.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: remover aplicador temporario r2'
+            git push origin HEAD:main
+          fi
