@@ -1420,7 +1420,7 @@ function renderAttendance(){
   content.innerHTML='<div class="page-head"><div><h1>Atendimento</h1><p>0975 e 1018 em uma central simples, com contexto de cliente e pedidos.</p></div></div>'+ 
     '<div class="quote-admin-shell"><iframe id="attendanceFrame" class="quote-admin-frame" title="Central de Atendimento Dona Antônia" loading="eager"></iframe></div>';
   const frame=$('#attendanceFrame');
-  if(frame)frame.src='/vitrine/admin/atendimento/?embedded=1';
+  if(frame)frame.src='./atendimento/?embedded=1';
 }
 async function attendanceOpenCustomer(customerId){
   setTab('customers');
