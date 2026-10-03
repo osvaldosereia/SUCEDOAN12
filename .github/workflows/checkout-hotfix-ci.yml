@@ -13,8 +13,7 @@ on:
     branches: [main]
     paths:
       - 'checkout-resilience.js'
-      - 'scripts/test-checkout-customer-capture-v1.mjs'
-      - 'scripts/test-checkout-whatsapp-return.mjs'
+      - 'scripts/test-checkout*.mjs'
       - 'supabase/migrations/20261002150000_checkout_whatsapp_return_channel.sql'
       - 'index.html'
       - 'vitrine/index.html'
@@ -32,6 +31,7 @@ jobs:
           node-version: '22'
       - name: Checkout regression contracts
         run: |
+          node scripts/test-checkout-simple-ux.mjs
           node scripts/test-checkout-customer-capture-v1.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-existing-registration.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-whatsapp-payload-audit.mjs
