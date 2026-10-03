@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const path='vitrine/admin/atendimento/attendance-app.js';
+assert.equal(fs.existsSync(path),true,'attendance-app.js deve existir');
+const src=fs.readFileSync(path,'utf8');
+assert.match(src,/status_current/,'histórico deve considerar status canônico');
+assert.match(src,/messageStatusLabel/,'deve haver tradutor explícito de status');
+assert.match(src,/Enviada|Entregue|Lida|Falhou/,'deve apresentar status em linguagem operacional');
+assert.match(src,/message-status/,'deve renderizar status junto à mensagem outbound');
+assert.match(src,/aria-label/,'status deve ter descrição acessível');
+assert.match(src,/failed|error/,'falha deve ficar distinguível');
+console.log('PASS test-attendance-media-status-ux-v1');
