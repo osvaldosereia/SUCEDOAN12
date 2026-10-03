@@ -109,9 +109,12 @@ async function orderDetails(orderId:string){
   const productsText=productLines.join("\n");
   const itemsText=lines.join(" • ").replace(/[\r\n\t]+/g," ").replace(/ {4,}/g,"   ").trim();
   const itemsTextLineSeparator=lines.join("\u2028").trim();
-  const productBucket=Math.min(60,Math.max(5,Math.ceil(lines.length/5)*5));
-  const productPaddingCount=productBucket-lines.length;
-  const productSlots=Object.fromEntries(Array.from({length:productBucket},(_,index)=>[
+  const productOverflow=lines.length>60;
+  const productBucket=productOverflow?0:Math.max(5,Math.ceil(lines.length/5)*5);
+  const productTemplateMode=productOverflow?"legacy_fallback":"bucketed";
+  const productSlotCount=productOverflow?0:productBucket;
+  const productPaddingCount=productOverflow?0:productBucket-lines.length;
+  const productSlots=Object.fromEntries(Array.from({length:productSlotCount},(_,index)=>[
     `product_${String(index+1).padStart(2,"0")}`,
     lines[index]||"\u200B"
   ] as const));
@@ -197,6 +200,8 @@ async function orderDetails(orderId:string){
     productsText,
     itemsText,
     itemsTextLineSeparator,
+    productTemplateMode,
+    productOverflow,
     productBucket,
     productPaddingCount,
     productSlots,
@@ -326,6 +331,8 @@ Deno.serve(async(req:Request)=>{
     total_formatted:details.totalFormatted,
     payment_label:details.paymentLabel,
     product_count:details.itemCount,
+    product_template_mode:details.productTemplateMode,
+    product_overflow:details.productOverflow,
     product_bucket:details.productBucket,
     product_padding_count:details.productPaddingCount,
     ...details.productSlots,
