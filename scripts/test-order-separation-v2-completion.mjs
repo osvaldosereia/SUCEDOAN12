@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const migrationPath='supabase/migrations/20261003193000_order_separation_v2.sql';
-assert.ok(fs.existsSync(migrationPath),`migration missing: ${migrationPath}`);
-const sql=fs.readFileSync(migrationPath,'utf8');
+const basePath='supabase/migrations/20261003193000_order_separation_v2.sql';
+const completionPath='supabase/migrations/20261003193500_order_separation_v2_completion.sql';
+assert.ok(fs.existsSync(basePath),`migration missing: ${basePath}`);
+assert.ok(fs.existsSync(completionPath),`migration missing: ${completionPath}`);
+const sql=fs.readFileSync(basePath,'utf8')+'\n'+fs.readFileSync(completionPath,'utf8');
 
 for(const fn of [
   'ops2_prepare_order_separation_completion_v2',
@@ -18,13 +20,13 @@ assert.ok(prepareStart>=0,'prepare completion function missing');
 const prepare=sql.slice(prepareStart,sql.toLowerCase().indexOf('create or replace function public.ops2_apply_order_separation_stock_v2',prepareStart));
 assert.match(prepare,/for\s+update/i,'completion preparation must lock the order');
 assert.match(prepare,/state\s*=\s*'pending'|state\s+in\s*\([^)]*pending/i,'completion must reject pending items');
-assert.match(prepare,/missing_subtotal[\s\S]*sum\s*\([\s\S]*line_total/i,'missing subtotal must come from missing line totals');
-assert.match(prepare,/final_total[\s\S]*original_total[\s\S]*missing_subtotal|v_final_total\s*:=\s*round\s*\(\s*v_original_total\s*-\s*v_missing_subtotal/i,'final total must subtract missing subtotal exactly once');
+assert.match(prepare,/sum\s*\(\s*line_total\s*\)[\s\S]*state\s*=\s*'missing'|state\s*=\s*'missing'[\s\S]*sum\s*\(\s*line_total\s*\)/i,'missing subtotal must come from missing line totals');
+assert.match(prepare,/v_final_total\s*:=\s*round\s*\(\s*v_original_total\s*-\s*v_missing_subtotal/i,'final total must subtract missing subtotal exactly once');
 assert.match(prepare,/original_discount/i,'completion audit must preserve original discount');
 assert.match(prepare,/original_other_expenses/i,'completion audit must preserve original other expenses');
 assert.match(prepare,/original_basket_hidden_adjustment/i,'completion audit must preserve basket hidden adjustment');
 assert.match(prepare,/deliverable_order_item_ids/i,'completion must persist deliverable line ids');
-assert.match(prepare,/on\s+conflict\s*\(\s*order_id\s*\)|already_prepared|already_completed/i,'completion preparation must be idempotent');
+assert.match(prepare,/already_prepared|already_completed|on\s+conflict\s*\(\s*order_id\s*\)/i,'completion preparation must be idempotent');
 
 const stockStart=sql.toLowerCase().indexOf('create or replace function public.ops2_apply_order_separation_stock_v2');
 assert.ok(stockStart>=0,'partial stock function missing');
@@ -47,11 +49,10 @@ assert.match(preflight,/state\s*=\s*'separated'|state='separated'/i,'preflight i
 assert.match(preflight,/fiscal_subtotal_item_sum_mismatch/i,'existing fiscal subtotal guard must remain');
 assert.match(preflight,/canonical_total_not_balanced/i,'existing canonical total balance guard must remain');
 
-// Formula-level contracts expressed in SQL source.
-assert.match(sql,/subtotal\s*=\s*round\s*\([^;]*-\s*v_missing_subtotal|v_new_subtotal\s*:=\s*round\s*\([^;]*-\s*v_missing_subtotal/i,'canonical subtotal must fall by missing subtotal');
-assert.match(sql,/fiscal_subtotal\s*=\s*round\s*\([^;]*-\s*v_missing_subtotal|v_new_fiscal_subtotal\s*:=\s*round\s*\([^;]*-\s*v_missing_subtotal/i,'fiscal subtotal must fall by missing subtotal');
-assert.doesNotMatch(prepare,/discount\s*=\s*[^,;]+/i,'completion must not repurpose commercial discount');
-assert.doesNotMatch(prepare,/other_expenses\s*=\s*[^,;]+/i,'completion must not overwrite other expenses');
-assert.doesNotMatch(prepare,/basket_hidden_adjustment\s*=\s*[^,;]+/i,'completion must not overwrite basket hidden adjustment');
+assert.match(prepare,/v_new_subtotal\s*:=\s*round\s*\(\s*v_original_subtotal\s*-\s*v_missing_subtotal/i,'canonical subtotal must fall by missing subtotal');
+assert.match(prepare,/v_new_fiscal_subtotal\s*:=\s*round\s*\(\s*v_original_fiscal_subtotal\s*-\s*v_missing_subtotal/i,'fiscal subtotal must fall by missing subtotal');
+assert.doesNotMatch(prepare,/\bdiscount\s*=\s*[^,;]+/i,'completion must not repurpose commercial discount');
+assert.doesNotMatch(prepare,/\bother_expenses\s*=\s*[^,;]+/i,'completion must not overwrite other expenses');
+assert.doesNotMatch(prepare,/\bbasket_hidden_adjustment\s*=\s*[^,;]+/i,'completion must not overwrite basket hidden adjustment');
 
 console.log('OK · separation v2 completion financial/stock contract');
