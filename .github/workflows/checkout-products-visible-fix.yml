@@ -1,0 +1,40 @@
+name: checkout-products-visible-fix
+on:
+  push:
+    branches:
+      - fix/checkout-products-visible
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/checkout-products-visible
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply visible-products patch
+        run: |
+          if grep -q "function collapseOrderSummary" checkout-resilience.js; then
+            node scripts/apply-checkout-products-visible.mjs
+          else
+            echo "visible-products patch already applied"
+          fi
+      - name: Verify checkout contracts
+        run: |
+          node scripts/test-checkout-simple-ux.mjs
+          node scripts/test-checkout-customer-capture-v1.mjs
+          node --check checkout-resilience.js
+      - name: Commit implementation
+        run: |
+          if git diff --quiet -- checkout-resilience.js; then
+            echo "no implementation changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add checkout-resilience.js
+          git commit -m "fix: manter produtos sempre visiveis no checkout"
+          git push origin HEAD:fix/checkout-products-visible
