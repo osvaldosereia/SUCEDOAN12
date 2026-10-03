@@ -86,7 +86,7 @@ function validateMediaRequest({ accessToken, phoneNumberId, toE164, mediaType, m
   const id = String(mediaId ?? '').trim();
   const normalizedCaption = typeof caption === 'string' ? caption.trim() : '';
   const normalizedFilename = typeof filename === 'string' ? filename.trim() : '';
-  if (!['image','audio','document'].includes(type)) throw invalidRequest();
+  if (!['image','audio','video','document'].includes(type)) throw invalidRequest();
   if (!/^[A-Za-z0-9._:-]{3,240}$/.test(id)) throw invalidRequest();
   if (normalizedCaption.length > 1024) throw invalidRequest();
   if (normalizedFilename.length > 240 || /[\u0000-\u001f\u007f\\/]/.test(normalizedFilename)) throw invalidRequest();
