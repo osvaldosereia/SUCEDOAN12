@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const path='vitrine/admin/atendimento/attendance-media-send.js';
+const src=fs.readFileSync(path,'utf8');
+assert.match(src,/attendance:conversation-refreshed/,'mídia deve observar refresh canônico da conversa');
+assert.match(src,/provider_message_id/,'observador deve correlacionar pelo WAMID/provider id');
+assert.match(src,/delivered|read/,'observador deve promover estados de entrega/leitura');
+assert.match(src,/mediaProgress/,'estado final deve ser refletido no feedback do composer');
+assert.doesNotMatch(src,/setInterval|setTimeout\([^)]*poll/i,'não deve criar polling próprio concorrente');
+console.log('PASS test-attendance-media-delivery-observer-v1');
