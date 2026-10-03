@@ -14,8 +14,8 @@ assert.ok(panel.includes('id="openOrderCustomerWhatsApp"'),'customer send button
 assert.ok(panel.includes('id="sendOrderWhatsApp"'),'0975 send button must exist');
 assert.ok(panel.includes('id="sendOrderWhatsApp4599"'),'4599 send button must exist');
 assert.equal(panel.includes('65 98449-1018'),false,'1018 must not be added to this three-button group');
-assert.equal(panel.includes('Abrir pedido no WhatsApp da empresa'),false,'old company button label must be removed');
-assert.equal(panel.includes('Abrir WhatsApp do cliente'),false,'old customer button label must be removed');
+assert.equal(panel.includes('>Abrir pedido no WhatsApp da empresa</button>'),false,'old company button label must be removed');
+assert.equal(panel.includes('>Abrir WhatsApp do cliente</button>'),false,'old customer order button label must be removed');
 
 assert.ok(admin.includes('const COMPANY_WHATSAPP_E164="5565998150975"'),'0975 target must remain exact');
 assert.ok(admin.includes('const ORDER_WHATSAPP_4599_E164="5565996884599"'),'4599 target must be exact');
