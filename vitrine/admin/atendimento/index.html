@@ -83,13 +83,17 @@
           </div>
 
           <textarea id="messageDraft" rows="2" placeholder="Digite sua resposta…"></textarea>
+          <div class="composer-media">
+            <label>Anexo <input id="mediaFile" type="file" accept="image/jpeg,image/png,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,application/pdf"></label>
+            <small id="mediaFileNote">Imagem, áudio ou PDF · até 16 MB.</small>
+          </div>
           <div class="composer-actions">
             <span id="composerNote">Selecione uma conversa</span>
             <button type="button" id="copyReplyBtn" disabled>Copiar resposta</button>
             <button type="button" id="openPapoAiBtn" disabled>Abrir PapoAI</button>
             <button type="button" class="primary" id="sendBtn" disabled>Enviar</button>
           </div>
-          <small>Texto livre é enviado somente dentro da janela de 24h e quando o canal estiver homologado. Enter envia; Shift+Enter quebra a linha.</small>
+          <small>Texto livre e anexos são enviados somente dentro da janela de 24h e quando o canal Meta estiver homologado. Enter envia texto; Shift+Enter quebra a linha.</small>
         </div>
       </section>
 
