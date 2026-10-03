@@ -16,6 +16,7 @@ jobs:
           fetch-depth: 1
           sparse-checkout: |
             vitrine/admin/index.html
+            vitrine/admin/atendimento/index.html
             scripts/patch-admin-attendance-native-v1.py
             scripts/test-admin-attendance-native-v1.mjs
           sparse-checkout-cone-mode: false
