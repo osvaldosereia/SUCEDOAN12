@@ -286,11 +286,20 @@ Deno.serve(async(req:Request)=>{
     return respond({ok:false,error:errorText,status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:422);
   }
 
+  let publicOrderLink:any=null;
+  try{
+    const publicLinkResult=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});
+    if(!publicLinkResult.error)publicOrderLink=publicLinkResult.data||null;
+  }catch(error){console.error("order_public_link",text((error as Error)?.message||error,180))}
+
   const providerPayload={
     event:"order_received",
     source:scope==="checkout_auto"?"dona_antonia_supabase":"dona_antonia_admin",
     event_id:outboxId,
     order_id:item.order_id,
+    order_public_token:text(publicOrderLink?.public_token,32),
+    order_public_code:text(publicOrderLink?.public_code,5),
+    order_url:text(publicOrderLink?.public_url,220)||`https://donaantonia.com.br/pedido/?o=${orderId}`,
     recipient_kind:text(item.recipient_kind,30),
     phone_e164:item.phone_e164,
     order_number:details.orderNumber,

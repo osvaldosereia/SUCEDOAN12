@@ -7779,9 +7779,9 @@ window.addEventListener('message',event=>{
       }
     });
   }
-  function publicOrderUrlFor(o){const id=String(o?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}
+  function publicOrderUrlFor(o){const short=String(o?.public_order_url||'').trim();if(/^https:\/\/donaantonia\.com\.br\/p\/\?k=[a-f0-9]{16}$/i.test(short))return short;const id=String(o?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}
   function currentOrderCompanyWhatsappMessage(){
-    const d=state.currentOrder||{},o=d.order||{},customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{},delivery=o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:{},code=o.order_number||o.id||'',url=publicOrderUrlFor(o),lines=['PEDIDO DONA ANTONIA'];
+    const d=state.currentOrder||{},o=d.order||{},customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{},delivery=o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:{},code=o.public_order_code||o.order_number||o.id||'',url=publicOrderUrlFor(o),lines=['PEDIDO DONA ANTONIA'];
     if(code)lines.push('','Pedido: '+code);
     const customerName=o.customer_name||customer.name||customer.display_name||delivery.customer_name||'';if(customerName)lines.push('Cliente: '+customerName);
     const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
@@ -7796,7 +7796,7 @@ window.addEventListener('message',event=>{
     openNativeWhatsapp(COMPANY_WHATSAPP_E164,currentOrderCompanyWhatsappMessage())
   }
   function currentOrderCustomerWhatsappMessage(){
-    const d=state.currentOrder||{},o=d.order||{},code=o.order_number||o.id||'',url=publicOrderUrlFor(o),lines=['Ola! Seu pedido da Dona Antonia foi recebido.'];
+    const d=state.currentOrder||{},o=d.order||{},code=o.public_order_code||o.order_number||o.id||'',url=publicOrderUrlFor(o),lines=['Ola! Seu pedido da Dona Antonia foi recebido.'];
     if(code)lines.push('Pedido: '+code);
     const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
     if(url)lines.push('','Confira produtos, fotos, quantidades e entrega:',''+url);

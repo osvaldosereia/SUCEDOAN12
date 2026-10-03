@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>Pedido · Dona Antônia</title>
+</head>
+<body>
+<script>
+(()=>{'use strict';
+  const k=(new URLSearchParams(location.search).get('k')||'').trim();
+  if(!/^[a-f0-9]{16}$/i.test(k)){location.replace('/pedido/');return}
+  location.replace('/pedido/?k='+encodeURIComponent(k));
+})();
+</script>
+</body>
+</html>
