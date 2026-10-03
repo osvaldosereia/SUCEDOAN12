@@ -14,10 +14,22 @@ function controls(){return {state:$('#humanAiState'),takeover:$('#takeoverBtn'),
 function setStatus(text,tone='neutral'){
   const {state}=controls();if(!state)return;state.textContent=text;state.dataset.tone=tone;
 }
+function syncConversationHeaderMode(mode){
+  if(!selectedConversationId())return;
+  const subtitle=$('#conversationHead')?.querySelector('small');if(!subtitle)return;
+  const channel=String($('.channel-switcher [data-channel-switch].active')?.dataset?.channelSwitch||'').trim();
+  let label=null;
+  if(mode==='human'||mode==='human_copilot')label='Atendimento humano';
+  else if(mode==='ai')label='ANA atendendo';
+  else if(mode==='paused')label='IA pausada';
+  if(!label)return;
+  subtitle.textContent=channel?`${channel} · ${label}`:label;
+}
 function renderMode(mode){
   const {takeover,resume}=controls();if(!takeover||!resume)return;
   const selected=Boolean(selectedConversationId());
   if(!selected){takeover.disabled=true;resume.disabled=true;setStatus('Sem conversa');return}
+  syncConversationHeaderMode(mode);
   if(mode==='human'||mode==='human_copilot'){
     takeover.disabled=true;resume.disabled=busy;setStatus('Humano no controle','human');return;
   }
