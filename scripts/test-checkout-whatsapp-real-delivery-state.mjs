@@ -15,6 +15,8 @@ assert.match(sql,/recipient_kind\s*=\s*'customer'/i,'reconciliation must be rest
 assert.match(sql,/external_message_id/i,'reconciliation must persist the wamid on the order outbox');
 assert.match(sql,/right\([^\n]*order_number[^\n]*8\)/i,'historical short order numbers must be backfilled when safely correlated');
 assert.match(sql,/status\s*=\s*'accepted'/i,'legacy sent-without-wamid rows must become accepted when not confirmed');
+assert.match(sql,/q\.status\s+in\s*\(\s*'sending'\s*,\s*'accepted'\s*,\s*'sent'\s*\)/i,'message.sent reconciliation must also win if it arrives while provider acknowledgement is still being finalized');
+assert.match(sql,/v_status\s*=\s*'accepted'[\s\S]*v_item\.status\s*=\s*'sent'/i,'accepted finish must be idempotent when a real wamid already won the race');
 
 assert.match(edge,/"accepted"/,'edge finish type must support accepted');
 assert.match(edge,/provider_acceptance/i,'PapoAI 202 acknowledgement must be audited separately from wamid');
