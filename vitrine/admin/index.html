@@ -100,6 +100,8 @@
     .basket-product-picker-action{width:100%;min-height:36px;border-radius:8px;margin-top:auto}
     @media(max-width:620px){.basket-product-picker-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.basket-product-picker-photo{height:100px}.basket-product-picker-name{font-size:11px}}
     .print-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.print-actions button{min-height:52px}
+    .order-public-link{display:flex;gap:8px;align-items:end;margin-top:10px}.order-public-link label{flex:1;min-width:0}.order-public-link input{width:100%;font-size:13px}.order-public-link button{flex-shrink:0;min-height:44px}.order-public-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-public-actions button{min-height:44px}
+    @media(max-width:520px){.order-public-link{align-items:stretch;flex-direction:column}.order-public-actions button{flex:1 1 130px}}
     .ops-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
     .ops-card{border:1px solid var(--line);background:#fff;border-radius:10px;padding:14px;text-align:left;min-height:104px;cursor:pointer;color:var(--ink)}
     .ops-card:hover{border-color:#a8c7fa;background:#f8fbff}.ops-card small{display:block;color:var(--muted);font-size:11px;font-weight:700}.ops-card strong{display:block;font-size:26px;margin-top:6px}.ops-card span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
@@ -7780,6 +7782,49 @@ window.addEventListener('message',event=>{
     });
   }
   function publicOrderUrlFor(o){const short=String(o?.public_order_url||'').trim();if(/^https:\/\/donaantonia\.com\.br\/p\/\?k=[a-f0-9]{16}$/i.test(short))return short;const id=String(o?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}
+  function orderPublicVitrineHtml(o){
+    const url=publicOrderUrlFor(o);
+    return '<div class="section-title">Vitrine do pedido</div><div class="rule-notice">'+
+      '<strong>Fotos e quantidades do pedido salvo</strong><div class="sub">A mesma página criada pelo checkout. Disponível mesmo com estoque zerado ou negativo.</div>'+
+      '<div class="order-public-link"><label><span>Link da vitrine do pedido</span><input id="orderPublicLink" type="text" readonly value="'+esc(url)+'" placeholder="Gere a vitrine para obter o link"></label><button class="primary" id="copyOrderPublicLink" type="button" '+(url?'':'disabled')+'>Copiar link</button></div>'+
+      '<div class="order-public-actions"><button class="secondary" id="openOrderVitrine" type="button" '+(url?'':'disabled')+'>Abrir vitrine</button><button class="secondary" id="printOrderVitrine" type="button" '+(url?'':'disabled')+'>Imprimir vitrine</button><button class="secondary" id="generateOrderVitrine" type="button" '+(o?.id?'':'disabled')+'>Gerar vitrine</button></div></div>';
+  }
+  function bindCurrentOrderVitrine(){
+    if($('#copyOrderPublicLink'))$('#copyOrderPublicLink').onclick=copyCurrentOrderPublicLink;
+    if($('#openOrderVitrine'))$('#openOrderVitrine').onclick=openCurrentOrderVitrine;
+    if($('#printOrderVitrine'))$('#printOrderVitrine').onclick=printCurrentOrderVitrine;
+    if($('#generateOrderVitrine'))$('#generateOrderVitrine').onclick=generateCurrentOrderVitrine;
+  }
+  async function generateCurrentOrderVitrine(){
+    const id=state.currentOrder?.order?.id,btn=$('#generateOrderVitrine');if(!id||btn?.disabled)return;
+    if(btn){btn.disabled=true;btn.textContent='Gerando…'}
+    try{
+      const data=await api('order',{id});
+      if(state.currentOrder?.order?.id!==id)return;
+      if(data.order?.id!==id||!publicOrderUrlFor(data.order))throw new Error('link_unavailable');
+      Object.assign(state.currentOrder.order,{public_order_url:data.order.public_order_url,public_order_code:data.order.public_order_code});
+      const panel=$('#orderPublicVitrinePanel');if(panel){panel.innerHTML=orderPublicVitrineHtml(state.currentOrder.order);bindCurrentOrderVitrine()}
+      toast('Vitrine do pedido disponível');
+    }catch{if(state.currentOrder?.order?.id===id)toast('Não consegui gerar a vitrine agora. Tente novamente.')}
+    finally{if(btn){btn.disabled=false;btn.textContent='Gerar vitrine'}}
+  }
+  async function copyCurrentOrderPublicLink(){
+    const url=publicOrderUrlFor(state.currentOrder?.order);if(!url)return;
+    try{await navigator.clipboard.writeText(url);toast('Link da vitrine copiado')}
+    catch{
+      const input=$('#orderPublicLink');input?.focus();input?.select();
+      let copied=false;try{copied=document.execCommand('copy')}catch{}
+      toast(copied?'Link da vitrine copiado':'O link está selecionado. Copie pelo teclado ou mantenha pressionado para copiar.');
+    }
+  }
+  function openCurrentOrderVitrine(){
+    const url=publicOrderUrlFor(state.currentOrder?.order);if(url)window.open(url,'_blank','noopener,noreferrer');
+  }
+  function printCurrentOrderVitrine(){
+    const url=publicOrderUrlFor(state.currentOrder?.order);if(!url)return;
+    const printUrl=new URL(url);printUrl.searchParams.set('print','1');
+    window.open(printUrl.toString(),'_blank','noopener,noreferrer');
+  }
   function currentOrderCompanyWhatsappMessage(){
     const d=state.currentOrder||{},o=d.order||{},customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{},delivery=o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:{},code=o.public_order_code||o.order_number||o.id||'',url=publicOrderUrlFor(o),lines=['PEDIDO DONA ANTONIA'];
     if(code)lines.push('','Pedido: '+code);
@@ -7882,6 +7927,7 @@ window.addEventListener('message',event=>{
     $('#editorTitle').textContent='Pedido #'+shortOrder(o.order_number);
     $('#editorBody').innerHTML=syncAlert+cancellationAlert+deliveryFailureAlert+customerSuggestion+orderStockAlertHtml(d.stock_readiness)+blingPreflightAlertHtml(state.currentOrderBlingPreview)+
       '<div class="order-summary"><div class="summary-box"><small>Total</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div class="summary-box"><small>Itens</small><strong>'+esc(String(d.items?.length||0))+'</strong></div></div>'+
+      '<div id="orderPublicVitrinePanel">'+orderPublicVitrineHtml(o)+'</div>'+
       orderWhatsappRegistrationHtml(o)+
       '<div class="form-grid">'+
         '<div class="span-2 order-stage"><span>Situação atual</span>'+statusPill(o.status)+'<b>Próxima ação: '+esc(orderNextAction(o))+'</b></div>'+
@@ -7927,6 +7973,7 @@ window.addEventListener('message',event=>{
     $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button><button class="primary" id="saveOrder">Salvar dados</button>';
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#saveOrder').onclick=saveOrder;
+    bindCurrentOrderVitrine();
     if($('#sendOrderWhatsApp'))$('#sendOrderWhatsApp').onclick=openCurrentOrderCompanyWhatsapp;
     if($('#openOrderCustomerWhatsApp'))$('#openOrderCustomerWhatsApp').onclick=openCurrentOrderCustomerWhatsapp;
     if($('#issueOrderRegistrationLink'))$('#issueOrderRegistrationLink').onclick=issueCurrentOrderRegistrationLink;
