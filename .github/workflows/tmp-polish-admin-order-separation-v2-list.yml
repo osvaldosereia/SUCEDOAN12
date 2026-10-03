@@ -1,0 +1,54 @@
+name: Temporary polish Admin separation v2 list
+
+on:
+  push:
+    branches: [feat/order-separation-v2]
+    paths:
+      - 'scripts/apply-admin-order-separation-v2-list-polish.py'
+      - '.github/workflows/tmp-polish-admin-order-separation-v2-list.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/order-separation-v2
+          fetch-depth: 2
+      - run: python scripts/apply-admin-order-separation-v2-list-polish.py
+      - name: Verify list contracts
+        run: |
+          node scripts/test-admin-order-separation-v2-list.mjs
+          node scripts/test-admin-orders-four-stages-v2.mjs
+      - name: Verify all V2/public regressions
+        run: |
+          node scripts/test-order-separation-v2-schema.mjs
+          node scripts/test-order-separation-v2-completion.mjs
+          node scripts/test-order-separation-v2-admin-api.mjs
+          node scripts/test-order-separation-v2-customer.mjs
+          node scripts/test-order-separation-v2-admin-ui.mjs
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          node scripts/test-order-public-summary.mjs
+          node scripts/test-admin-order-public-vitrine.mjs
+          node scripts/test-order-public-vitrine-print.mjs
+          node scripts/test-public-order-triple-tap-separation-v1.mjs
+      - name: Syntax
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean).forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline ${i+1}: ${e.message}`)}});
+          console.log('syntax OK');
+          NODE
+      - run: git diff --check
+      - name: Commit verified cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vitrine/admin/index.html
+          git rm scripts/apply-admin-order-separation-v2-list-polish.py .github/workflows/tmp-polish-admin-order-separation-v2-list.yml
+          git commit -m "fix(admin): finalize four-stage separation queue"
+          git push origin HEAD:feat/order-separation-v2
