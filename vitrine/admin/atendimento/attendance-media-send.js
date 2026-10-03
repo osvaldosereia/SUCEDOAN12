@@ -3,6 +3,7 @@ const ADMIN_TOKEN_KEY='da_finance_access_token_v1';
 const MAX_BYTES=16*1024*1024;
 const $=selector=>document.querySelector(selector);
 let sending=false;
+let pendingMediaIdempotencyKey=null;
 
 function adminToken(){return String(sessionStorage.getItem(ADMIN_TOKEN_KEY)||'').trim()}
 function selectedConversationId(){return String($('.queue-card.selected')?.dataset?.conversationId||'').trim()}
@@ -30,6 +31,7 @@ function sendErrorMessage(error){
   if(code==='rate_limited')return 'Muitos envios em pouco tempo. Tente novamente em instantes.';
   if(code==='media_mime_not_allowed'||code==='meta_media_type_not_allowed')return 'Tipo de arquivo não permitido. Use imagem, áudio ou PDF.';
   if(code==='media_size_invalid'||code==='meta_media_too_large')return 'Arquivo acima do limite de 16 MB.';
+  if(code==='meta_transport_not_configured')return 'O transporte Meta deste canal não está configurado.';
   if(code==='meta_send_uncertain')return 'Resultado incerto na Meta. Não reenvie até conferir o histórico.';
   return 'Não consegui enviar o anexo. O arquivo continua selecionado para nova tentativa.';
 }
@@ -38,9 +40,10 @@ async function sendMedia(){
   const file=mediaFile(),conversationId=selectedConversationId();
   if(sending||!file||!conversationId||!supported(file)||file.size<1||file.size>MAX_BYTES){sync();return}
   const token=adminToken();if(!token){note('Sessão do Admin expirada.','error');return}
+  pendingMediaIdempotencyKey ||= idempotencyKey();
   const form=new FormData();
   form.set('conversation_id',conversationId);
-  form.set('idempotency_key',idempotencyKey());
+  form.set('idempotency_key',pendingMediaIdempotencyKey);
   form.set('file',file,file.name);
   const caption=String($('#messageDraft')?.value||'').trim();
   if(caption)form.set('caption',caption);
@@ -51,6 +54,7 @@ async function sendMedia(){
     const data=await response.json().catch(()=>({}));
     if(!response.ok||data?.ok===false){const error=new Error(data?.error||`attendance_${response.status}`);error.data=data;throw error}
     $('#mediaFile').value='';
+    pendingMediaIdempotencyKey=null;
     note('Anexo aceito pela Meta e registrado no histórico.','success');
   }catch(error){
     note(sendErrorMessage(error),'error');
@@ -63,6 +67,7 @@ function bind(){
   const input=$('#mediaFile'),button=$('#sendMediaBtn'),queue=$('#queueList');
   if(!input||!button)return;
   input.addEventListener('change',()=>{
+    pendingMediaIdempotencyKey=null;
     const file=mediaFile();
     if(file&&!supported(file))note('Tipo não permitido. Use imagem, áudio ou PDF.','error');
     else if(file&&file.size>MAX_BYTES)note('Arquivo acima do limite de 16 MB.','error');
