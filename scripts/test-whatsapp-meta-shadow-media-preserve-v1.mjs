@@ -7,7 +7,6 @@ const sql=fs.readFileSync(path,'utf8');
 
 assert.match(sql,/create or replace function public\.whatsapp_ingest_event_v1/i);
 assert.match(sql,/m\.provider='meta'\s+and\s+p_provider='papoai'/i,'duplicata PapoAI posterior deve ter tratamento específico');
-assert.match(sql,/p_message->'metadata'\s*,?'?\s*'?'?/, 'migration deve tratar metadata recebida');
 assert.match(sql,/coalesce\(p_message->'metadata','\{\}'::jsonb\)\s*-\s*'media'\s*-\s*'source'/i,'shadow PapoAI não pode substituir source/media canônicos da Meta');
 assert.match(sql,/coalesce\(p_message->'metadata'->'media','\{\}'::jsonb\)\s*\|\|\s*coalesce\(m\.metadata->'media','\{\}'::jsonb\)/i,'media deve mesclar com Meta à direita para preservar provider_media_id');
 assert.match(sql,/'source'\s*,\s*coalesce\(m\.metadata->>'source','meta'\)/i,'source Meta deve permanecer canônico');
