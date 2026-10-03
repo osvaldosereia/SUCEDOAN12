@@ -17,8 +17,9 @@ on:
       - 'scripts/test-order-separation-v2-*.mjs'
       - 'scripts/test-admin-order-separation-v2-list.mjs'
       - 'scripts/test-admin-orders-four-stages-v2.mjs'
-      - 'supabase/migrations/20261003193000_order_separation_v2.sql'
-      - 'supabase/migrations/20261003193500_order_separation_v2_completion.sql'
+      - 'supabase/migrations/20261003201103_order_separation_v2.sql'
+      - 'supabase/migrations/20261003201158_order_separation_v2_completion.sql'
+      - 'supabase/migrations/20261003201432_order_separation_v2_order_item_index.sql'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
       - 'supabase/functions/storefront-v2/index.ts'
@@ -40,8 +41,9 @@ on:
       - 'scripts/test-order-separation-v2-*.mjs'
       - 'scripts/test-admin-order-separation-v2-list.mjs'
       - 'scripts/test-admin-orders-four-stages-v2.mjs'
-      - 'supabase/migrations/20261003193000_order_separation_v2.sql'
-      - 'supabase/migrations/20261003193500_order_separation_v2_completion.sql'
+      - 'supabase/migrations/20261003201103_order_separation_v2.sql'
+      - 'supabase/migrations/20261003201158_order_separation_v2_completion.sql'
+      - 'supabase/migrations/20261003201432_order_separation_v2_order_item_index.sql'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
       - 'supabase/functions/storefront-v2/index.ts'
@@ -61,8 +63,10 @@ jobs:
           node-version: '22'
       - name: Admin WhatsApp contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
-      - name: Separation v2 schema
-        run: node scripts/test-order-separation-v2-schema.mjs
+      - name: Separation v2 schema and migration history
+        run: |
+          node scripts/test-order-separation-v2-schema.mjs
+          node scripts/test-order-separation-v2-indexes.mjs
       - name: Separation v2 completion
         run: node scripts/test-order-separation-v2-completion.mjs
       - name: Separation v2 Admin API
