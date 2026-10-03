@@ -4,8 +4,11 @@ import re
 p = Path('vitrine/admin/index.html')
 s = p.read_text(encoding='utf-8')
 
-markup_pattern = r'<div class="toolbar">(?=\s*<input id="productSearch")'
-s, markup_count = re.subn(markup_pattern, '<div class="toolbar product-toolbar">', s, count=1)
+# O HTML da tela de Produtos é montado dentro de uma string JS, por isso as aspas
+# aparecem escapadas (\") no arquivo-fonte. O segundo grupo ancora no productSearch
+# para não alterar nenhuma outra toolbar do Admin.
+markup_pattern = re.compile(r'''(<div class=\\"toolbar)(\\">'\+\s*'<input id=\\"productSearch\\")''')
+s, markup_count = markup_pattern.subn(r'\1 product-toolbar\2', s, count=1)
 if markup_count != 1:
     raise SystemExit(f'product toolbar anchor count unexpected: {markup_count}')
 
