@@ -1,0 +1,126 @@
+name: one-shot-short-order-link-patch-r4
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-shot-short-order-link-patch-r4.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/short-order-link-whatsapp
+          fetch-depth: 1
+      - name: Apply final surgical patches
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          import re
+          def read(path): return Path(path).read_text()
+          def write(path,s): Path(path).write_text(s)
+          def replace_once(s,old,new,label):
+              if old not in s: raise SystemExit(f'missing pattern: {label}')
+              return s.replace(old,new,1)
+
+          # Fix channel keys in strict JS.
+          path='pedido/index.html'; s=read(path)
+          bad="CHANNELS={0975:'5565998150975',1018:'5565984491018'}"
+          good="CHANNELS={'0975':'5565998150975','1018':'5565984491018'}"
+          if bad in s:s=s.replace(bad,good,1)
+          write(path,s)
+
+          # PapoAI payload
+          path='supabase/functions/admin-orders-v1/index.ts'; s=read(path)
+          if 'order_public_token:' not in s:
+              s=replace_once(s,'  const providerPayload={\n','''  let publicOrderLink:any=null;\n  try{\n    const publicLinkResult=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});\n    if(!publicLinkResult.error)publicOrderLink=publicLinkResult.data||null;\n  }catch(error){console.error("order_public_link",text((error as Error)?.message||error,180))}\n\n  const providerPayload={\n''','admin-orders public link lookup')
+              s=replace_once(s,'    order_id:item.order_id,\n','''    order_id:item.order_id,\n    order_public_token:text(publicOrderLink?.public_token,32),\n    order_public_code:text(publicOrderLink?.public_code,5),\n    order_url:text(publicOrderLink?.public_url,220)||`https://donaantonia.com.br/pedido/?o=${orderId}`,\n''','admin-orders public fields')
+              write(path,s)
+
+          # Checkout API
+          path='supabase/functions/storefront-v2/index.ts'; s=read(path)
+          if 'order_public_url:publicOrderLink' not in s:
+              s=replace_once(s,'  const orderId=created.data?.order_id;let papoaiLink:any=null;\n','  const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;\n','storefront public link var')
+              s=replace_once(s,'  if(orderId&&ph)kickWhatsappOrderOutbound(orderId);\n','''  if(orderId){try{const publicLink=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});if(!publicLink.error)publicOrderLink=publicLink.data||null}catch(e){console.error("order_public_link",txt((e as any)?.message,180))}}\n  if(orderId&&ph)kickWhatsappOrderOutbound(orderId);\n''','storefront public link lookup')
+              s=replace_once(s,'  return {...created.data,phone_attached:Boolean(ph),','  return {...created.data,order_public_url:publicOrderLink?.public_url||null,order_public_code:publicOrderLink?.public_code||null,phone_attached:Boolean(ph),','storefront public return')
+              write(path,s)
+
+          # Public checkout UIs
+          for path in ['index.html','vitrine/index.html']:
+              s=read(path)
+              if 'saved?.order_public_url' not in s:
+                  pattern=r"    function orderPublicUrl\(saved\)\{.*?\}\n    function renderOrderSuccess"
+                  replacement="""    function orderPublicUrl(saved){const short=String(saved?.order_public_url||'').trim();if(/^https:\\/\\/donaantonia\\.com\\.br\\/p\\/\\?k=[a-f0-9]{16}$/i.test(short))return short;const id=String(saved?.order_id||saved?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}\n    function renderOrderSuccess"""
+                  s,n=re.subn(pattern,replacement,s,count=1,flags=re.S)
+                  if n!=1: raise SystemExit(f'missing orderPublicUrl in {path}')
+              if 'saved?.order_public_code' not in s:
+                  old="function renderOrderSuccess(saved){const orderNumber=saved?.order_number?String(saved.order_number).slice(0,80):'Pedido'"
+                  new="function renderOrderSuccess(saved){const orderNumber=saved?.order_public_code?String(saved.order_public_code).slice(0,5):(saved?.order_number?String(saved.order_number).slice(0,80):'Pedido')"
+                  s=replace_once(s,old,new,f'{path} short order code')
+              write(path,s)
+
+          # Checkout stock adjustment
+          path='checkout-resilience.js'; s=read(path)
+          if 'saved?.order_public_url' not in s:
+              old="const orderId=String(saved?.order_id||'').trim(),orderUrl=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(orderId):'',total=Number(saved?.total_cents||0)/100;"
+              new="const orderId=String(saved?.order_id||'').trim(),shortUrl=String(saved?.order_public_url||'').trim(),orderUrl=/^https:\\/\\/donaantonia\\.com\\.br\\/p\\/\\?k=[a-f0-9]{16}$/i.test(shortUrl)?shortUrl:(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(orderId):''),total=Number(saved?.total_cents||0)/100;"
+              s=replace_once(s,old,new,'stock adjustment short URL')
+              write(path,s)
+
+          # Admin detail backend
+          path='supabase/functions/admin-products-live-v1/index.ts'; s=read(path)
+          if 'public_order_url:' not in s:
+              old='''  const mapped=(await mapOrders([oq.data]))[0];let bl:any=null;try{const h=await hub("order_link_status",{source_order_id:oid});if(!h.error)bl=h.data}catch{}\n  return {order:{...mapped,subtotal_cents:Math.round(Number(oq.data.subtotal||0)*100),discount_cents:Math.round(Number(oq.data.discount||0)*100),delivery_cents:0},customer,history_sync:{state:"synced",canonical:true},stock_readiness:mapped.stock_readiness,bling_link:bl,items:result,separation_plan,checkout_separation_plan:oq.data.checkout_snapshot?.separation_plan||[]};\n'''
+              new='''  const mapped=(await mapOrders([oq.data]))[0];let bl:any=null;try{const h=await hub("order_link_status",{source_order_id:oid});if(!h.error)bl=h.data}catch{}\n  let publicLink:any=null;try{const q=await db.rpc("ops2_order_public_link_v1",{p_order_id:oid});if(!q.error)publicLink=q.data||null}catch{}\n  return {order:{...mapped,subtotal_cents:Math.round(Number(oq.data.subtotal||0)*100),discount_cents:Math.round(Number(oq.data.discount||0)*100),delivery_cents:0,public_order_url:publicLink?.public_url||null,public_order_code:publicLink?.public_code||null},customer,history_sync:{state:"synced",canonical:true},stock_readiness:mapped.stock_readiness,bling_link:bl,items:result,separation_plan,checkout_separation_plan:oq.data.checkout_snapshot?.separation_plan||[]};\n'''
+              s=replace_once(s,old,new,'admin products public link')
+              write(path,s)
+
+          # Admin manual messages
+          path='vitrine/admin/index.html'; s=read(path)
+          if 'o?.public_order_url' not in s:
+              old="function publicOrderUrlFor(o){const id=String(o?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}"
+              new="function publicOrderUrlFor(o){const short=String(o?.public_order_url||'').trim();if(/^https:\\/\\/donaantonia\\.com\\.br\\/p\\/\\?k=[a-f0-9]{16}$/i.test(short))return short;const id=String(o?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}"
+              s=replace_once(s,old,new,'admin publicOrderUrlFor')
+          s=s.replace("code=o.order_number||o.id||'',url=publicOrderUrlFor(o)","code=o.public_order_code||o.order_number||o.id||'',url=publicOrderUrlFor(o)")
+          write(path,s)
+          PY
+      - name: Verify contracts and syntax
+        run: |
+          node scripts/test-admin-pending-data-baskets-public-v1.mjs
+          node scripts/test-order-public-summary.mjs
+          node scripts/test-checkout-whatsapp-return.mjs
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          node <<'NODE'
+          const fs=require('fs');
+          for(const file of ['index.html','vitrine/index.html','pedido/index.html','vitrine/admin/index.html']){
+            const html=fs.readFileSync(file,'utf8');
+            const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+            scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`${file} script ${i+1}: ${e.message}`)}});
+          }
+          new Function(fs.readFileSync('checkout-resilience.js','utf8'));
+          console.log('syntax OK');
+          NODE
+          git diff --check
+      - name: Commit patch to feature branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pedido/index.html supabase/functions/admin-orders-v1/index.ts supabase/functions/storefront-v2/index.ts supabase/functions/admin-products-live-v1/index.ts index.html vitrine/index.html checkout-resilience.js vitrine/admin/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'feat: usar codigo e link curto em todos os fluxos'
+            git push origin HEAD:fix/short-order-link-whatsapp
+          fi
+      - name: Remove one-shot workflow from main
+        if: always()
+        run: |
+          git fetch origin main --depth=1
+          git switch --force -C cleanup FETCH_HEAD
+          rm -f .github/workflows/one-shot-short-order-link-patch-r4.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: remover aplicador temporario r4'
+            git push origin HEAD:main
+          fi
