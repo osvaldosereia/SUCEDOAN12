@@ -11,6 +11,7 @@ on:
       - 'vitrine/admin/atendimento/attendance-templates.js'
       - 'vitrine/admin/atendimento/index.html'
       - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
+      - 'supabase/sql/20261002_admin_attendance_media_outbound_v4.sql'
       - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_fix_v2.sql'
@@ -55,6 +56,8 @@ jobs:
         run: node scripts/test-attendance-meta-send-v1.mjs
       - name: Meta inbound media contract
         run: node scripts/test-attendance-meta-media-v1.mjs
+      - name: Meta outbound media contract
+        run: node scripts/test-attendance-meta-media-outbound-v1.mjs
       - name: Meta Phone Number ID strictness
         run: node scripts/test-attendance-meta-phone-id-v1.mjs
       - name: Meta response-body timeout
