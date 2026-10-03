@@ -3,6 +3,7 @@ import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {validUuid,serviceWindowState,normalizeProductQuery,normalizeOutboundText,normalizeIdempotencyKey} from "../_shared/admin-attendance-domain-v1.mjs";
 import {findProviderMediaDescriptor,isAllowedProviderMediaUrl,isAllowedAttendanceMime,normalizedAttendanceMime,safeAttendanceFilename,readBodyLimited} from "../_shared/attendance-media-v1.mjs";
 import {sendTextViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
+import {fetchMetaMediaInfo,fetchMetaMediaResponse,MetaMediaError} from "../_shared/whatsapp-meta-media-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -214,22 +215,44 @@ async function resolveAttendanceMedia(messageId:string){
   const message=await db.from("whatsapp_messages_v1").select("id,provider,message_type,metadata").eq("id",messageId).maybeSingle();
   if(message.error)throw message.error;
   if(!message.data)return {ok:false,error:"message_not_found"};
-  if(String(message.data.provider||"")!=="papoai")return {ok:false,error:"media_provider_unsupported"};
+  const provider=String(message.data.provider||"");
   const metadata:any=message.data.metadata&&typeof message.data.metadata==="object"?message.data.metadata:{};
-  const captureId=validUuid(metadata.legacy_capture_id);
-  if(!captureId)return {ok:false,error:"media_capture_unavailable"};
-  const capture=await db.from("papoai_webhook_inbox_v2").select("payload").eq("id",captureId).maybeSingle();
-  if(capture.error)throw capture.error;
-  const descriptor=findProviderMediaDescriptor(capture.data?.payload);
-  if(!descriptor||!isAllowedProviderMediaUrl(descriptor.provider_url))return {ok:false,error:"media_unavailable"};
+  let upstream:Response;
+  let fallbackMime:string|null=null;
+  let filenameSource:string|null=null;
 
-  const upstream=await fetch(descriptor.provider_url,{method:"GET",redirect:"error",headers:{"Accept":"*/*"}});
-  if(!upstream.ok)return {ok:false,error:"media_provider_fetch_failed"};
+  if(provider==="meta"){
+    if(!metaConfigReady())return {ok:false,error:"meta_transport_not_configured"};
+    const providerMediaId=clean(metadata?.media?.provider_media_id,240);
+    if(!providerMediaId)return {ok:false,error:"media_capture_unavailable"};
+    try{
+      const info=await fetchMetaMediaInfo({accessToken:META_WHATSAPP_ACCESS_TOKEN,graphVersion:META_WHATSAPP_GRAPH_VERSION,mediaId:providerMediaId,timeoutMs:15000});
+      if(info.fileSize!==null&&info.fileSize>MEDIA_MAX_BYTES)return {ok:false,error:"media_too_large"};
+      upstream=await fetchMetaMediaResponse({accessToken:META_WHATSAPP_ACCESS_TOKEN,url:info.url,timeoutMs:15000});
+      fallbackMime=normalizedAttendanceMime(info.mimeType)||normalizedAttendanceMime(metadata?.media?.mime_type);
+      filenameSource=clean(metadata?.media?.filename,260)||null;
+    }catch(error){
+      if(error instanceof MetaMediaError)return {ok:false,error:error.code};
+      throw error;
+    }
+  }else if(provider==="papoai"){
+    const captureId=validUuid(metadata.legacy_capture_id);
+    if(!captureId)return {ok:false,error:"media_capture_unavailable"};
+    const capture=await db.from("papoai_webhook_inbox_v2").select("payload").eq("id",captureId).maybeSingle();
+    if(capture.error)throw capture.error;
+    const descriptor=findProviderMediaDescriptor(capture.data?.payload);
+    if(!descriptor||!isAllowedProviderMediaUrl(descriptor.provider_url))return {ok:false,error:"media_unavailable"};
+    upstream=await fetch(descriptor.provider_url,{method:"GET",redirect:"error",headers:{"Accept":"*/*"}});
+    if(!upstream.ok)return {ok:false,error:"media_provider_fetch_failed"};
+    fallbackMime=descriptor.mime_type;
+    filenameSource=descriptor.filename||null;
+  }else return {ok:false,error:"media_provider_unsupported"};
+
   const upstreamMime=normalizedAttendanceMime(upstream.headers.get("content-type"));
-  const mimeType=isAllowedAttendanceMime(upstreamMime)?upstreamMime:descriptor.mime_type;
+  const mimeType=isAllowedAttendanceMime(upstreamMime)?upstreamMime:fallbackMime;
   if(!isAllowedAttendanceMime(mimeType))return {ok:false,error:"media_type_not_allowed"};
   const bytes=await readBodyLimited(upstream,MEDIA_MAX_BYTES);
-  const filename=safeAttendanceFilename(descriptor.filename||`arquivo-${messageId}`);
+  const filename=safeAttendanceFilename(filenameSource||`arquivo-${messageId}`);
   const objectPath=`${messageId}/${Date.now()}-${filename}`;
   const uploaded=await db.storage.from(MEDIA_BUCKET).upload(objectPath,bytes,{contentType:mimeType,upsert:false,cacheControl:"3600"});
   if(uploaded.error)throw uploaded.error;
