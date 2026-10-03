@@ -19,6 +19,8 @@ for (const copy of [
 for (const fn of [
   'function orderWhatsappRegistrationHtml',
   'function renderCurrentOrderWhatsappStatus',
+  'function customerWhatsappDeliveryLabel',
+  'function customerWhatsappAcceptedIsStale',
   'async function refreshCurrentOrderWhatsappRegistration',
   'async function sendCurrentOrderWhatsapp',
   'async function issueCurrentOrderRegistrationLink',
@@ -60,6 +62,14 @@ assert.ok(admin.includes("activeLink=link?.state==='active'"), 'active registrat
 assert.ok(admin.includes('Envio do pedido aguardando configuração PapoAI'), 'provider-not-ready state must be visible');
 assert.ok(!admin.includes('/cadastro/?order_id='), 'public registration link must not expose order_id');
 
+assert.ok(admin.includes('PapoAI aceitou · aguardando confirmação da Meta'), 'accepted must be shown as queued/awaiting Meta, never sent');
+assert.ok(admin.includes('Enviado confirmado pelo WhatsApp'), 'sent must be shown as confirmed delivery handoff');
+assert.ok(admin.includes('Sem confirmação da Meta há mais de 15 min · revisar no PapoAI'), 'stale accepted must show an operational warning');
+assert.ok(admin.includes('15*60*1000'), 'stale accepted threshold must be 15 minutes');
+assert.ok(admin.includes('customer.updated_at'), 'accepted age must use the persisted outbox timestamp');
+assert.ok(!admin.includes("'Empresa 0975: '+(ops.status==='sent'?'enviada':ops.status)"), 'native company handoff must not be presented as a PapoAI-tracked send');
+assert.ok(admin.includes('Empresa: envio manual pelo WhatsApp (não rastreado pelo PapoAI)'), 'company native handoff limitation must be explicit');
+
 for (const action of ['order_whatsapp_send','order_registration_link_issue','order_registration_link_status']) {
   assert.ok(adminApi.includes(`\"${action}\"`), `admin backend missing action: ${action}`);
 }
@@ -76,6 +86,7 @@ assert.ok(adminApi.includes('/functions/v1/admin-orders-v1'), 'admin backend mus
 assert.ok(adminApi.includes('ops2_enqueue_admin_order_whatsapp_v1'), 'admin backend must enqueue the order idempotently');
 assert.ok(adminApi.includes('ops2_issue_order_registration_link_v1'), 'admin backend must issue a token-bound registration link');
 assert.ok(adminApi.includes('order_whatsapp_provider_not_configured'), 'admin backend must fail closed if PapoAI provider is not ready');
+assert.ok(adminApi.includes('updated_at'), 'admin status backend must expose outbox updated_at for stale accepted detection');
 
 assert.ok(orderTransport.includes('async function orderDetails'), 'order transport must load the complete persisted checkout order');
 assert.ok(orderTransport.includes('.from("orders")'), 'order transport must load the order row');
@@ -103,4 +114,4 @@ for (const field of [
 }
 assert.ok(orderTransport.includes('items_text:details.itemsText'), 'legacy template items_text must stay Meta-safe');
 
-console.log('admin native company/customer handoff + expanded baskets + isolated checkout retry contract: ok');
+console.log('admin native company/customer handoff + accurate WhatsApp delivery state contract: ok');
