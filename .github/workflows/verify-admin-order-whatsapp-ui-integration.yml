@@ -5,26 +5,48 @@ on:
     branches: [main]
     paths:
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/separacao/**'
       - 'pedido/index.html'
       - 'p/index.html'
+      - 'checkout-resilience.js'
+      - 'scripts/test-checkout*.mjs'
+      - 'scripts/test-order-public-summary.mjs'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
       - 'scripts/test-public-order-triple-tap-separation-v1.mjs'
+      - 'scripts/test-order-separation-v2-*.mjs'
+      - 'scripts/test-admin-order-separation-v2-list.mjs'
+      - 'scripts/test-admin-orders-four-stages-v2.mjs'
+      - 'supabase/migrations/20261003201103_order_separation_v2.sql'
+      - 'supabase/migrations/20261003201158_order_separation_v2_completion.sql'
+      - 'supabase/migrations/20261003201432_order_separation_v2_order_item_index.sql'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
+      - 'supabase/functions/storefront-v2/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
   push:
-    branches: [main, feat/admin-order-whatsapp-main-integration-20261001, feat/admin-order-storefront-link-20261003]
+    branches: [main, feat/admin-order-whatsapp-main-integration-20261001, feat/admin-order-storefront-link-20261003, feat/order-separation-v2]
     paths:
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/separacao/**'
       - 'pedido/index.html'
       - 'p/index.html'
+      - 'checkout-resilience.js'
+      - 'scripts/test-checkout*.mjs'
+      - 'scripts/test-order-public-summary.mjs'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
       - 'scripts/test-public-order-triple-tap-separation-v1.mjs'
+      - 'scripts/test-order-separation-v2-*.mjs'
+      - 'scripts/test-admin-order-separation-v2-list.mjs'
+      - 'scripts/test-admin-orders-four-stages-v2.mjs'
+      - 'supabase/migrations/20261003201103_order_separation_v2.sql'
+      - 'supabase/migrations/20261003201158_order_separation_v2_completion.sql'
+      - 'supabase/migrations/20261003201432_order_separation_v2_order_item_index.sql'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
+      - 'supabase/functions/storefront-v2/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
 
@@ -36,15 +58,47 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Contract
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Admin WhatsApp contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
+      - name: Separation v2 schema and migration history
+        run: |
+          node scripts/test-order-separation-v2-schema.mjs
+          node scripts/test-order-separation-v2-indexes.mjs
+      - name: Separation v2 completion
+        run: node scripts/test-order-separation-v2-completion.mjs
+      - name: Separation v2 Admin API
+        run: node scripts/test-order-separation-v2-admin-api.mjs
+      - name: Separation v2 customer storefront
+        run: node scripts/test-order-separation-v2-customer.mjs
+      - name: Separation v2 Admin storefront
+        run: node scripts/test-order-separation-v2-admin-ui.mjs
+      - name: Separation v2 Admin list and four stages
+        run: |
+          node scripts/test-admin-order-separation-v2-list.mjs
+          node scripts/test-admin-orders-four-stages-v2.mjs
+      - name: Checkout regression contracts
+        run: |
+          node scripts/test-checkout-simple-ux.mjs
+          node scripts/test-checkout-customer-capture-v1.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-existing-registration.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-whatsapp-payload-audit.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-address-reference.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-admin-stock-readiness-pagination.mjs
+          node scripts/test-site-only-order-registration.mjs
+          node scripts/test-checkout-whatsapp-return.mjs
+          node scripts/test-checkout-stock-adjustment-contract.mjs
+          node scripts/test-checkout-whatsapp-outbox.mjs
+          node --check checkout-resilience.js
       - name: Public order storefront and printing
         run: |
           node scripts/test-order-public-summary.mjs
           node scripts/test-admin-order-public-vitrine.mjs
           node scripts/test-order-public-vitrine-print.mjs
           node scripts/test-public-order-triple-tap-separation-v1.mjs
-      - name: Inline JavaScript syntax
+      - name: JavaScript syntax
         run: |
           node <<'NODE'
           const fs=require('fs');
@@ -54,6 +108,7 @@ jobs:
             scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`${file} inline script ${i+1}: ${e.message}`)}});
             console.log(`${file}: inline syntax OK (${scripts.length} script blocks)`);
           }
+          if(fs.existsSync('vitrine/admin/separacao/separation.js'))new Function(fs.readFileSync('vitrine/admin/separacao/separation.js','utf8'));
           NODE
       - name: Diff check
         run: git diff --check HEAD^ HEAD || git diff --check
