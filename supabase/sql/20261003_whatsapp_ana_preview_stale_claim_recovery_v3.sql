@@ -155,6 +155,36 @@ begin
 end;
 $function$;
 
+-- One-time deploy cleanup for orphaned admin preview claims that predate the lease.
+-- This is dry-run state only; no message/outbox is created.
+update public.whatsapp_ana_jobs_v1
+set status='failed',
+    decision=null,
+    suggestion_text=null,
+    confidence=null,
+    reason='stale_preview_claim_timeout',
+    completed_at=now(),
+    last_error='stale_preview_claim_timeout',
+    metadata=coalesce(metadata,'{}'::jsonb)
+      || jsonb_build_object(
+        'dry_run_not_sendable',true,
+        'stale_claim_recovery_count',
+          (case
+            when coalesce(metadata->>'stale_claim_recovery_count','') ~ '^[0-9]+$'
+              then (metadata->>'stale_claim_recovery_count')::integer
+            else 0
+          end)+1,
+        'last_stale_claim_recovered_at',now(),
+        'last_stale_claimed_at',claimed_at,
+        'stale_claim_recovery_reason','deploy_cleanup'
+      ),
+    updated_at=now()
+where status='claimed'
+  and dry_run=true
+  and claimed_at <= now() - interval '2 minutes'
+  and coalesce(metadata->>'source','')='admin_preview'
+  and coalesce(metadata->>'dry_run_not_sendable','false')='true';
+
 revoke all on function public.ops2_admin_ana_preview_start_v1(uuid) from public,anon,authenticated;
 grant execute on function public.ops2_admin_ana_preview_start_v1(uuid) to authenticated;
 
