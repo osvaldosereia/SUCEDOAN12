@@ -8,10 +8,11 @@ async function stockBreakdownMap(ids:string[]){
   const out=new Map<string,any>();const cleanIds=[...new Set((ids||[]).filter(Boolean))];if(!cleanIds.length)return out;
   for(let i=0;i<cleanIds.length;i+=80){
     const r=await db.from("ops2_loose_sellable_stock_v1")
-      .select("product_id,effective_sellable_stock,basket_locked_quantity,loose_sellable_stock,bling_stock_ready")
+      .select("product_id,sellable_physical,effective_sellable_stock,basket_locked_quantity,loose_sellable_stock,bling_stock_ready")
       .in("product_id",cleanIds.slice(i,i+80));
     if(r.error)throw r.error;
     for(const x of r.data||[])out.set(String(x.product_id),{
+      physical_stock:Math.max(0,Number(x.sellable_physical??x.effective_sellable_stock??0)),
       effective_stock:Math.max(0,Number(x.effective_sellable_stock||0)),
       basket_locked:Math.max(0,Number(x.basket_locked_quantity||0)),
       loose_stock:Math.max(0,Number(x.loose_sellable_stock||0)),
@@ -48,12 +49,12 @@ function days(a:string,b:string){return Math.round((Date.parse(b+"T12:00:00Z")-D
 function offer(p:any){if(!p.is_offer||p.offer_price==null)return null;const m=meta(p.metadata);return {id:p.id,product_id:p.id,title:p.name,sale_price_cents:Math.round(Number(p.offer_price||0)*100),starts_at:m.offer_starts_at||null,ends_at:m.offer_ends_at||null,active:true,metadata:{source:m.offer_source||"manual",discount_percent:m.offer_discount_percent??null,duration_mode:m.offer_duration_mode||"stock_zero"}}}
 function mp(p:any){
   const m=meta(p.metadata),s=meta(p.__stock_breakdown);
-  const total=Number(p.stock||0),locked=Math.max(0,Number(s.basket_locked||0)),loose=Math.max(0,Number(s.loose_stock??total));
+  const sellable=Number(p.stock||0),physical=Math.max(0,Number(s.physical_stock??sellable)),locked=Math.max(0,Number(s.basket_locked||0)),loose=Math.max(0,physical-locked),sellableLoose=Math.max(0,Number(s.loose_stock??sellable));
   return {
     id:p.id,sku:p.sku||null,gtin:p.gtin||null,name:p.name||"",description:p.description_short||p.description_long||"",
     active:p.is_active!==false,sale_price_cents:Math.round(Number(p.price||0)*100),
-    stock_quantity:total,physical_stock_quantity:total,loose_stock_quantity:loose,basket_locked_quantity:locked,
-    stock_breakdown_warning:locked>total+0.0001,stock_breakdown_difference:Math.max(0,locked-total),
+    stock_quantity:physical,physical_stock_quantity:physical,sellable_stock_quantity:sellable,virtual_stock_quantity:sellable,loose_stock_quantity:loose,sellable_loose_stock_quantity:sellableLoose,basket_locked_quantity:locked,
+    stock_breakdown_warning:locked>physical+0.0001,stock_breakdown_difference:Math.max(0,locked-physical),
     bling_stock_ready:s.bling_stock_ready===true,
     image_url:p.image_url||"",image_original_url:p.image_original_url||"",image_ai_url:p.image_ai_url||"",
     image_ai_status:p.image_ai_status||null,image_ai_model:p.image_ai_model||null,image_ai_processed_at:p.image_ai_processed_at||null,
@@ -2255,7 +2256,7 @@ async function basketLooseStockMap(ids:string[]){
   // quanto truncamento pelo limite máximo de linhas do Data API.
   for(let i=0;i<clean.length;i+=60){
     const q=await db.from("ops2_loose_sellable_stock_v1")
-      .select("product_id,effective_sellable_stock,basket_locked_quantity,loose_sellable_stock,bling_stock_ready")
+      .select("product_id,sellable_physical,effective_sellable_stock,basket_locked_quantity,loose_sellable_stock,bling_stock_ready")
       .in("product_id",clean.slice(i,i+60));
     if(q.error)throw q.error;
     for(const x of q.data||[])out.set(String(x.product_id),x);
