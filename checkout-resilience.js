@@ -48,7 +48,7 @@
   }
   function existingRegistrationComplete(){
     const result=byId('customerLookupResult');
-    return Boolean(result?.classList?.contains('found')&&/cadastro completo/i.test(String(result.textContent||''))&&!byId('checkoutName'));
+    return Boolean(result?.classList?.contains('found')&&!byId('checkoutName'));
   }
   function validCpf(value){
     const d=digits(value,11);if(d.length!==11||/^(\d)\1{10}$/.test(d))return false;
