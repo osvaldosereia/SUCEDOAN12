@@ -1,9 +1,16 @@
 const clean=(value,max=2000)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,max);
-const OUTBOUND_MEDIA_MAX_BYTES=16*1024*1024;
+const MIB=1024*1024;
+const DOCUMENT_MIME=new Set([
+  'application/pdf','text/plain','application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'
+]);
 const OUTBOUND_MEDIA_MIME=new Set([
   'image/jpeg','image/png',
   'audio/aac','audio/amr','audio/mpeg','audio/mp4','audio/ogg',
-  'application/pdf'
+  'video/mp4','video/3gpp',
+  ...DOCUMENT_MIME
 ]);
 
 export class MetaMediaError extends Error{
@@ -20,14 +27,20 @@ function strictFilename(value){
   if(!filename||filename==='.'||filename==='..')throw new MetaMediaError('meta_media_filename_invalid');
   return filename;
 }
-function strictBytes(value){
+function outboundMaxBytesForMime(mime){
+  if(mime==='image/jpeg'||mime==='image/png')return 5*MIB;
+  if(mime.startsWith('audio/')||mime.startsWith('video/'))return 16*MIB;
+  if(DOCUMENT_MIME.has(mime))return 25*MIB;
+  return 0;
+}
+function strictBytes(value,maxBytes){
   let bytes;
   if(value instanceof Uint8Array)bytes=value;
   else if(value instanceof ArrayBuffer)bytes=new Uint8Array(value);
   else if(ArrayBuffer.isView(value))bytes=new Uint8Array(value.buffer,value.byteOffset,value.byteLength);
   else throw new MetaMediaError('meta_media_bytes_invalid');
   if(bytes.byteLength<1)throw new MetaMediaError('meta_media_empty');
-  if(bytes.byteLength>OUTBOUND_MEDIA_MAX_BYTES)throw new MetaMediaError('meta_media_too_large');
+  if(!Number.isFinite(maxBytes)||maxBytes<1||bytes.byteLength>maxBytes)throw new MetaMediaError('meta_media_too_large');
   return bytes;
 }
 function startsWithBytes(bytes,signature){
@@ -36,22 +49,33 @@ function startsWithBytes(bytes,signature){
   return true;
 }
 function startsWithAscii(bytes,text){return startsWithBytes(bytes,new TextEncoder().encode(text))}
+function isIsoBmff(bytes){return bytes.byteLength>=12&&bytes[4]===0x66&&bytes[5]===0x74&&bytes[6]===0x79&&bytes[7]===0x70}
+function hasOleHeader(bytes){return startsWithBytes(bytes,[0xd0,0xcf,0x11,0xe0,0xa1,0xb1,0x1a,0xe1])}
+function hasZipHeader(bytes){return startsWithBytes(bytes,[0x50,0x4b,0x03,0x04])||startsWithBytes(bytes,[0x50,0x4b,0x05,0x06])}
 
 export function isAllowedOutboundMetaMime(value){return OUTBOUND_MEDIA_MIME.has(normalizedMime(value))}
+export function outboundMetaMaxBytes(value){return outboundMaxBytesForMime(normalizedMime(value))}
 
 export function validateOutboundMetaMediaContent(mimeType,value){
   const mime=normalizedMime(mimeType);
   if(!OUTBOUND_MEDIA_MIME.has(mime))throw new MetaMediaError('meta_media_type_not_allowed');
-  const bytes=strictBytes(value);
+  const bytes=strictBytes(value,outboundMaxBytesForMime(mime));
   let valid=false;
   if(mime==='image/png')valid=startsWithBytes(bytes,[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
   else if(mime==='image/jpeg')valid=startsWithBytes(bytes,[0xff,0xd8,0xff]);
   else if(mime==='application/pdf')valid=startsWithAscii(bytes,'%PDF-');
+  else if(mime==='text/plain')valid=!bytes.includes(0);
+  else if(['application/msword','application/vnd.ms-excel','application/vnd.ms-powerpoint'].includes(mime))valid=hasOleHeader(bytes);
+  else if([
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+  ].includes(mime))valid=hasZipHeader(bytes);
   else if(mime==='audio/ogg')valid=startsWithAscii(bytes,'OggS');
   else if(mime==='audio/amr')valid=startsWithAscii(bytes,'#!AMR\n')||startsWithAscii(bytes,'#!AMR-WB\n');
   else if(mime==='audio/aac')valid=startsWithAscii(bytes,'ADIF')||(bytes.byteLength>=2&&bytes[0]===0xff&&(bytes[1]&0xf6)===0xf0);
   else if(mime==='audio/mpeg')valid=startsWithAscii(bytes,'ID3')||(bytes.byteLength>=2&&bytes[0]===0xff&&(bytes[1]&0xe0)===0xe0);
-  else if(mime==='audio/mp4')valid=bytes.byteLength>=12&&bytes[4]===0x66&&bytes[5]===0x74&&bytes[6]===0x79&&bytes[7]===0x70;
+  else if(mime==='audio/mp4'||mime==='video/mp4'||mime==='video/3gpp')valid=isIsoBmff(bytes);
   if(!valid)throw new MetaMediaError('meta_media_content_mismatch');
   return true;
 }
@@ -97,7 +121,7 @@ export async function uploadMetaMedia({accessToken,graphVersion,phoneNumberId,mi
   const token=clean(accessToken,12000);if(!token)throw new MetaMediaError('meta_media_token_missing');
   const version=strictGraphVersion(graphVersion);const phoneId=strictPhoneNumberId(phoneNumberId);
   const mime=normalizedMime(mimeType);if(!OUTBOUND_MEDIA_MIME.has(mime))throw new MetaMediaError('meta_media_type_not_allowed');
-  const safeName=strictFilename(filename);const bodyBytes=strictBytes(bytes);
+  const safeName=strictFilename(filename);const bodyBytes=strictBytes(bytes,outboundMaxBytesForMime(mime));
   validateOutboundMetaMediaContent(mime,bodyBytes);
   const form=new FormData();
   form.set('messaging_product','whatsapp');
