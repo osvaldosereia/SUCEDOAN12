@@ -14,6 +14,12 @@ function controls(){return {state:$('#humanAiState'),takeover:$('#takeoverBtn'),
 function setStatus(text,tone='neutral'){
   const {state}=controls();if(!state)return;state.textContent=text;state.dataset.tone=tone;
 }
+function syncConversationHeadMode(mode){
+  const small=$('#conversationHead small');if(!small||!selectedConversationId())return;
+  const current=String(small.textContent||'');const channel=current.split('·')[0].trim();
+  if(mode==='human'||mode==='human_copilot')small.textContent=`${channel} · Atendimento humano`;
+  else if(mode==='ai')small.textContent=`${channel} · ANA atendendo`;
+}
 function renderMode(mode){
   const {takeover,resume}=controls();if(!takeover||!resume)return;
   const selected=Boolean(selectedConversationId());
@@ -52,7 +58,7 @@ async function changeState(rpc){
   try{
     const result=await callStateRpc(rpc,conversationId);
     if(selectedConversationId()!==conversationId)return;
-    renderMode(result.mode);
+    renderMode(result.mode);syncConversationHeadMode(result.mode);
     document.dispatchEvent(new CustomEvent('attendance:human-ai-state-changed',{detail:{conversationId,mode:result.mode}}));
   }catch(error){
     if(selectedConversationId()===conversationId)setStatus(error?.message==='conversation_owned_by_other_admin'?'Conversa assumida por outro atendente':'Não foi possível alterar o atendimento','error');
@@ -64,7 +70,7 @@ async function sync(){
   ensureControls();const conversationId=selectedConversationId();
   if(!conversationId){lastConversationId=null;renderMode(null);return}
   lastConversationId=conversationId;
-  try{const conversation=await readConversation(conversationId);if(selectedConversationId()!==conversationId)return;renderMode(conversation?.mode||null)}catch{if(selectedConversationId()===conversationId)setStatus('Estado indisponível','error')}
+  try{const conversation=await readConversation(conversationId);if(selectedConversationId()!==conversationId)return;renderMode(conversation?.mode||null);syncConversationHeadMode(conversation?.mode||null)}catch{if(selectedConversationId()===conversationId)setStatus('Estado indisponível','error')}
 }
 function scheduleSync(delay=0){clearTimeout(syncTimer);syncTimer=setTimeout(()=>sync().catch(()=>{}),delay)}
 
