@@ -12,9 +12,12 @@ const js=fs.readFileSync(jsPath,'utf8');
 assert.match(html,/data-channel-switch="all"/,'fila unificada Todas deve existir');
 assert.match(html,/data-channel-switch="0975"/,'filtro 0975 deve existir');
 assert.match(html,/data-channel-switch="1018"/,'filtro 1018 deve existir');
-assert.match(html,/data-queue-filter="unread"/);
+assert.match(html,/data-queue-filter="recent"/);
 assert.match(html,/data-queue-filter="order"/);
 assert.match(html,/data-queue-filter="pending"/);
+assert.match(html,/id="queueFilterMenu"/);
+assert.match(html,/id="queueLabelFilters"/);
+assert.doesNotMatch(html,/data-queue-filter="unread"/,'Não lidas não deve permanecer como filtro principal');
 assert.match(html,/id="queueList"/);
 assert.equal((html.match(/class="queue-list"/g)||[]).length,1,'deve existir uma única fila visual');
 assert.match(html,/id="conversationPane"/);
@@ -30,6 +33,7 @@ assert.match(js,/da_finance_access_token_v1/);
 assert.match(js,/QUEUE_PAGE_SIZE\s*=\s*50/);
 assert.match(js,/MESSAGE_PAGE_SIZE\s*=\s*30/);
 assert.match(js,/activeChannel\s*:\s*['"]all['"]/,'Todas deve ser a visão inicial');
+assert.match(js,/quickFilter\s*:\s*['"]recent['"]/,'RECENTE deve ser o filtro inicial');
 assert.match(js,/state\.activeChannel===['"]all['"]\?CHANNELS:\[state\.activeChannel\]/,'read side unificado deve resolver ambos os canais');
 assert.match(js,/Promise\.all\(channels\.map\(channelQueue\)\)/,'0975 e 1018 devem ser lidos em paralelo na visão Todas');
 assert.match(js,/function\s+switchChannel\s*\(/);
@@ -47,4 +51,4 @@ assert.match(css,/\.messages\{[^}]*min-height:0[^}]*overflow:auto/,'histórico d
 assert.match(css,/@media\(max-width:680px\)/,'mobile deve possuir layout próprio');
 assert.match(css,/grid-template-columns:var\(--queue\) minmax\(430px,1fr\) var\(--context\)/,'desktop deve priorizar conversa central');
 
-console.log('OK · Atendimento nativo usa inbox unificada, conversa central e contexto integrado.');
+console.log('OK · Atendimento nativo usa inbox unificada, filtros operacionais RECENTE/PEDIDOS/CADASTRO, conversa central e contexto integrado.');

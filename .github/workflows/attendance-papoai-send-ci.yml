@@ -10,6 +10,7 @@ on:
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/atendimento/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
+      - 'supabase/migrations/**'
       - 'supabase/sql/20261002_admin_attendance_papoai_webhook_send_v1.sql'
       - 'supabase/sql/20261003_admin_attendance_unsupported_display_v1.sql'
       - '.github/workflows/attendance-papoai-send-ci.yml'
@@ -29,6 +30,7 @@ jobs:
       - run: node scripts/test-admin-attendance-native-v1.mjs
       - run: node scripts/test-admin-attendance-scroll-layout-v1.mjs
       - run: node scripts/test-admin-attendance-viewport-fit-v1.mjs
+      - run: node scripts/test-admin-attendance-filter-menu-v1.mjs
       - run: node scripts/test-admin-attendance-native-channel-v1.mjs
       - run: node scripts/test-admin-attendance-unsupported-display-v1.mjs
       - run: node --check vitrine/admin/atendimento/attendance-app.js

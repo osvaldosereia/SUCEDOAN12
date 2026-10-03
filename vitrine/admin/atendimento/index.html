@@ -35,13 +35,24 @@
             <button type="button" data-channel-switch="1018" role="tab" aria-selected="false">1018</button>
           </div>
           <label class="queue-search">⌕ <input id="globalSearch" type="search" placeholder="Buscar nome ou telefone" autocomplete="off"></label>
-          <div class="queue-quick-filters" id="queueQuickFilters" aria-label="Filtros rápidos">
-            <button type="button" data-queue-filter="unread">Não lidas</button>
-            <button type="button" data-queue-filter="order">Pedidos</button>
-            <button type="button" data-queue-filter="pending">Cadastro pendente</button>
+          <div class="queue-filter-wrap" id="queueFilterWrap">
+            <button type="button" class="queue-filter-trigger" id="queueFilterMenuBtn" aria-haspopup="menu" aria-expanded="false">
+              <span id="queueFilterMenuLabel">RECENTE</span><span class="queue-filter-chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="queue-filter-menu" id="queueFilterMenu" role="menu" hidden>
+              <div class="queue-filter-primary" aria-label="Filtros operacionais">
+                <button type="button" data-queue-filter="recent" role="menuitem">RECENTE</button>
+                <button type="button" data-queue-filter="order" role="menuitem">PEDIDOS</button>
+                <button type="button" data-queue-filter="pending" role="menuitem">CADASTRO</button>
+              </div>
+              <div class="queue-filter-divider"></div>
+              <div class="queue-filter-caption">ETIQUETAS</div>
+              <div class="queue-filter-labels" id="queueLabelFilters"></div>
+              <div class="queue-filter-footer"><button type="button" id="manageLabelsBtn">Gerenciar etiquetas</button></div>
+            </div>
           </div>
           <header class="queue-head"><div><strong>Conversas</strong><small id="activeChannelStatus">Carregando canais…</small></div><span class="attention-count" id="activeChannelCount">0</span></header>
-          <div class="queue-organizer"><select id="labelFilter" aria-label="Filtrar por etiqueta"><option value="">Todas as etiquetas</option></select><button type="button" id="manageLabelsBtn">Etiquetas</button></div>
+
           <div class="queue-list" id="queueList"><div class="queue-state">Carregando conversas…</div></div>
         </aside>
 

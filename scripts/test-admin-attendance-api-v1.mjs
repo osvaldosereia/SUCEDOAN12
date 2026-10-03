@@ -28,8 +28,8 @@ for(const action of ['accounts','queue','conversation','context','products','med
 for(const action of ['mark_read','follow_up','issue_catalog','marketing_opt_out','label_save','label_deactivate','conversation_labels_set','quick_reply_save','quick_reply_deactivate','send_text'])assert.match(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${action}`));
 for(const unsupported of ['takeover','release'])assert.doesNotMatch(api,new RegExp(`SAFE_POST_ACTIONS[^\\n]*${unsupported}`),`${unsupported} não pode ficar exposto enquanto controle da ANA não estiver homologado`);
 assert.match(api,/admin_users/);
-assert.match(api,/ops2_admin_attendance_queue_v3/);
-assert.doesNotMatch(api,/ops2_admin_attendance_queue_v1/,'gateway v3 não deve voltar à fila legada');
+assert.match(api,/ops2_admin_attendance_queue_v4/);
+assert.doesNotMatch(api,/ops2_admin_attendance_queue_v1/,'gateway v4 não deve voltar à fila legada');
 assert.match(api,/ops2_admin_attendance_conversation_v1/);
 assert.match(api,/ops2_admin_attendance_context_v1/);
 assert.match(api,/ops2_issue_papoai_catalog_link_v1/);
@@ -48,4 +48,4 @@ assert.doesNotMatch(api,/graph\.facebook\.com\/v\d/i,'endpoint Graph versionado 
 const config=fs.readFileSync(configPath,'utf8');
 assert.match(config,/\[functions\.admin-whatsapp-ops-v1\][\s\S]*?verify_jwt\s*=\s*false/);
 assert.doesNotMatch(config,/\[functions\.admin-attendance-v1\]/);
-console.log('OK · gateway da Central usa auth Admin, outbox v3 e provider switch server-side atrás de gates.');
+console.log('OK · gateway da Central usa auth Admin, fila v4, outbox v3 e provider switch server-side atrás de gates.');
