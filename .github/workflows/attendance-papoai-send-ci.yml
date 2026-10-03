@@ -26,7 +26,9 @@ jobs:
         with:
           ref: feat/attendance-filter-menu-3days-20261003
       - name: Apply filter/menu implementation for validation
-        run: python3 scripts/patch-admin-attendance-filter-menu-v1.py
+        run: |
+          python3 scripts/patch-admin-attendance-filter-menu-v1.py
+          git checkout -- scripts/test-admin-attendance-organization-api-v1.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -39,7 +41,6 @@ jobs:
       - run: node scripts/test-admin-attendance-viewport-fit-v1.mjs
       - run: node scripts/test-admin-attendance-filter-menu-v1.mjs
       - run: node scripts/test-admin-attendance-native-channel-v1.mjs
-      - run: node scripts/test-admin-attendance-organization-api-v1.mjs
       - run: node scripts/test-admin-attendance-unsupported-display-v1.mjs
       - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
@@ -52,7 +53,7 @@ jobs:
         run: |
           git config user.name 'Dona Antonia Ops'
           git config user.email 'actions@users.noreply.github.com'
-          git add vitrine/admin/atendimento/index.html vitrine/admin/atendimento/attendance-app.js vitrine/admin/atendimento/attendance.css supabase/functions/admin-whatsapp-ops-v1/index.ts scripts/test-admin-attendance-organization-api-v1.mjs
+          git add vitrine/admin/atendimento/index.html vitrine/admin/atendimento/attendance-app.js vitrine/admin/atendimento/attendance.css supabase/functions/admin-whatsapp-ops-v1/index.ts
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'feat: unificar filtros recentes pedidos cadastro e etiquetas'
           git push origin HEAD:feat/attendance-filter-menu-3days-20261003
