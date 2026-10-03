@@ -1,0 +1,111 @@
+const SUPABASE_URL='https://ssbesxgaijknwsjbsbcz.supabase.co';
+const ANA_PREVIEW_API=`${SUPABASE_URL}/functions/v1/admin-whatsapp-ana-preview-v1`;
+const ADMIN_TOKEN_KEY='da_finance_access_token_v1';
+const ADMIN_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
+const $=selector=>document.querySelector(selector);
+let busy=false;
+let lastPreview=null;
+
+function selectedConversationId(){return String($('.queue-card.selected')?.dataset?.conversationId||'').trim()}
+function assistantActive(){return Boolean($('.context-tabs [data-context-tab="assistant"].active'))}
+function contextBody(){return $('#contextBody')}
+function el(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node}
+function percent(value){const n=Number(value);return Number.isFinite(n)?`${Math.round(Math.max(0,Math.min(1,n))*100)}%`:'—'}
+function decisionLabel(value){return ({suggest:'Sugerir resposta',handoff:'Encaminhar para humano',no_reply:'Não responder'})[String(value||'')]||'Sem decisão'}
+
+async function requestPreview(conversationId){
+  const access=String(sessionStorage.getItem(ADMIN_TOKEN_KEY)||'').trim();
+  if(!access)throw new Error('admin_session_required');
+  const response=await fetch(ANA_PREVIEW_API,{
+    method:'POST',
+    headers:{Authorization:`Bearer ${access}`,apikey:ADMIN_PUBLIC_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({conversation_id:conversationId}),
+    cache:'no-store'
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||data?.ok===false)throw new Error(data?.error||`ana_preview_${response.status}`);
+  if(data?.dry_run_not_sendable!==true)throw new Error('ana_preview_safety_contract_missing');
+  return data.job||null;
+}
+
+function useSuggestion(text){
+  const draft=$('#messageDraft');
+  const value=String(text||'').trim();
+  if(!draft||!value)return;
+  draft.value=value;
+  draft.dispatchEvent(new Event('input',{bubbles:true}));
+  draft.focus();
+  draft.setSelectionRange(draft.value.length,draft.value.length);
+}
+
+function renderResult(box,job){
+  box.replaceChildren();
+  const card=el('section','context-card');
+  const title=el('h3','', 'ANA · prévia segura');
+  const safety=el('p','context-muted','Não envia ao cliente. A sugestão serve somente para avaliação e para preencher o rascunho manualmente.');
+  card.append(title,safety);
+
+  const meta=el('div','assistant-preview-meta');
+  const decision=el('span','assistant-preview-chip',decisionLabel(job?.decision));
+  decision.dataset.decision=String(job?.decision||'');
+  const confidence=el('span','assistant-preview-chip',`Confiança ${percent(job?.confidence)}`);
+  confidence.dataset.confidence=String(job?.confidence??'');
+  meta.append(decision,confidence);card.append(meta);
+
+  if(job?.status!=='completed'){
+    card.append(el('p','context-muted',job?.status==='skipped'?'A ANA não gerou resposta porque o gate de segurança bloqueou esta conversa.':'Não foi possível concluir esta sugestão.'));
+  }else if(job?.suggestion_text){
+    const suggestion=el('div','assistant-preview-text',job.suggestion_text);card.append(suggestion);
+    const use=el('button','', 'Usar no rascunho');use.type='button';use.addEventListener('click',()=>useSuggestion(job.suggestion_text));card.append(use);
+  }else{
+    card.append(el('p','context-muted',job?.decision==='no_reply'?'A ANA avaliou que não é necessário responder agora.':'A ANA recomenda atendimento humano antes de responder.'));
+  }
+
+  if(job?.reason)card.append(el('small','context-muted',`Motivo: ${job.reason}`));
+  if(Array.isArray(job?.missing_context)&&job.missing_context.length){
+    const missing=el('div','assistant-preview-missing');missing.append(el('strong','', 'Contexto que faltou'));
+    const list=document.createElement('ul');for(const item of job.missing_context)list.append(el('li','',String(item)));missing.append(list);card.append(missing);
+  }
+
+  const regenerate=el('button','', 'Gerar sugestão da ANA');regenerate.type='button';regenerate.disabled=busy;regenerate.addEventListener('click',()=>generate().catch(()=>{}));card.append(regenerate);
+  box.append(card);
+}
+
+function errorText(code){
+  if(code==='ai_gate_closed')return 'Esta conversa está em atendimento humano. Clique em “Liberar para IA” antes de testar a ANA.';
+  if(code==='ana_preview_no_text_inbound')return 'Não há mensagem de texto recebida nesta conversa para a ANA analisar.';
+  if(code==='admin_session_required'||code==='admin_session_invalid')return 'A sessão do Admin precisa ser renovada.';
+  if(code==='ana_preview_worker_failed')return 'A ANA não conseguiu gerar a sugestão agora.';
+  return 'Não foi possível gerar a sugestão da ANA.';
+}
+
+function renderPanel(){
+  if(!assistantActive())return;
+  const box=contextBody();if(!box)return;
+  const conversationId=selectedConversationId();
+  box.replaceChildren();
+  const card=el('section','context-card');card.append(el('h3','', 'ANA · prévia segura'));
+  card.append(el('p','context-muted','Não envia ao cliente. Gere uma resposta para avaliar a ANA antes de qualquer automação real.'));
+  if(!conversationId){card.append(el('div','context-empty','Selecione uma conversa.'));box.append(card);return}
+  if(lastPreview?.conversationId===conversationId&&lastPreview.job){box.append(card);renderResult(box,lastPreview.job);return}
+  const button=el('button','', 'Gerar sugestão da ANA');button.type='button';button.disabled=busy;button.addEventListener('click',()=>generate().catch(()=>{}));card.append(button);box.append(card);
+}
+
+async function generate(){
+  if(busy)return;const conversationId=selectedConversationId();if(!conversationId)return;
+  busy=true;const box=contextBody();if(box){box.replaceChildren();const card=el('section','context-card');card.append(el('h3','', 'ANA · prévia segura'),el('p','context-muted','Analisando a conversa… Não envia ao cliente.'));box.append(card)}
+  try{
+    const job=await requestPreview(conversationId);
+    if(selectedConversationId()!==conversationId||!assistantActive())return;
+    lastPreview={conversationId,job};renderResult(contextBody(),job);
+  }catch(error){
+    if(selectedConversationId()!==conversationId||!assistantActive())return;
+    const card=el('section','context-card');card.append(el('h3','', 'ANA · prévia segura'),el('p','context-muted',errorText(error?.message)));
+    const retry=el('button','', 'Gerar sugestão da ANA');retry.type='button';retry.addEventListener('click',()=>generate().catch(()=>{}));card.append(retry);contextBody().replaceChildren(card);
+  }finally{busy=false}
+}
+
+document.addEventListener('click',event=>{if(event.target?.closest?.('[data-context-tab="assistant"]'))queueMicrotask(renderPanel)});
+document.addEventListener('attendance:human-ai-state-changed',()=>{if(assistantActive())renderPanel()});
+const queue=$('#queueList');if(queue)new MutationObserver(()=>{if(assistantActive())renderPanel()}).observe(queue,{childList:true,subtree:true});
+if(assistantActive())renderPanel();
