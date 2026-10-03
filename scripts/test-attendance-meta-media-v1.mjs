@@ -12,6 +12,7 @@ assert.equal(helper.isAllowedMetaMediaUrl('https://graph.facebook.com/v26.0/123'
 assert.equal(helper.isAllowedMetaMediaUrl('http://lookaside.fbsbx.com/a'),false,'HTTP deve ser rejeitado');
 assert.equal(helper.isAllowedMetaMediaUrl('https://lookaside.fbsbx.com.evil.example/a'),false,'host malicioso deve ser rejeitado');
 assert.equal(helper.isAllowedMetaMediaUrl('https://evil.example/a'),false,'host fora da Meta deve ser rejeitado');
+assert.equal(helper.isAllowedMetaMediaUrl('https://user:pass@lookaside.fbsbx.com/a'),false,'userinfo na URL deve ser rejeitado');
 
 const calls=[];
 const fakeFetch=async (url,options={})=>{
