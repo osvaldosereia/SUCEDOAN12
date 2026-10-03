@@ -14,7 +14,8 @@ for(const table of ['order_separation_assignments_v1','order_separation_items_v1
 assert.match(sql,/separator_key\s+text[\s\S]*check\s*\([\s\S]*jose[\s\S]*claudenil[\s\S]*kelly[\s\S]*jovenil/i,'separator keys must be constrained to the four approved people');
 assert.match(sql,/state\s+text[\s\S]*check\s*\([\s\S]*pending[\s\S]*separated[\s\S]*missing/i,'item state must be pending|separated|missing');
 assert.match(sql,/unique\s*\(\s*order_id\s*,\s*order_item_id\s*\)/i,'separation item must be unique per order item');
-assert.match(sql,/order_separation_completions_v1[\s\S]*order_id\s+uuid[\s\S]*(?:unique\s*\(\s*order_id\s*\)|order_id\s+uuid\s+[^\n]*unique)/i,'completion must be unique per order');
+const completionTable=sql.slice(sql.toLowerCase().indexOf('create table if not exists public.order_separation_completions_v1'),sql.toLowerCase().indexOf('alter table public.order_separation_assignments_v1'));
+assert.match(completionTable,/order_id\s+uuid\s+[^\n,]*\bunique\b|unique\s*\(\s*order_id\s*\)/i,'completion must be unique per order');
 
 for(const fn of [
   'ops2_init_order_separation_v2',
@@ -33,7 +34,7 @@ assert.match(sql,/on\s+conflict[\s\S]*do\s+update[\s\S]*where[\s\S]*state\s*=\s*
 const itemFn=sql.slice(sql.toLowerCase().indexOf('create or replace function public.ops2_set_order_separation_item_v2'));
 assert.match(itemFn,/p_expected_order_updated_at\s+timestamptz/i,'item state writes must require expected order version');
 assert.match(itemFn,/stale_order_version|order_version_conflict/i,'stale clients must receive an explicit conflict marker');
-assert.match(itemFn,/p_state[\s\S]*(pending|separated|missing)/i,'state writes must validate requested state');
+assert.match(itemFn,/p_state[\s\S]*(separated|missing)/i,'state writes must validate requested state');
 assert.match(itemFn,/order_separation_completions_v1/i,'completed separation must block later item changes');
 assert.match(itemFn,/order_item_id/i,'state write must scope to the canonical order item');
 
