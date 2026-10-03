@@ -79,7 +79,7 @@ const uploaded=await helper.uploadMetaMedia({
   phoneNumberId:'1218939807961094',
   mimeType:'image/png',
   filename:'foto.png',
-  bytes:new Uint8Array([1,2,3,4]),
+  bytes:new Uint8Array([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a,0,0,0,0]),
   fetchFn:fakeUpload
 });
 assert.equal(uploaded.mediaId,'9988776655');
