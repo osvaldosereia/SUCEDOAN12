@@ -116,9 +116,8 @@ async function completeSeparation(orderId:string,row:any,body:any){
 
   const started=await db.rpc("ops_start_order_check_v1",{p_order_id:orderId,p_operator_label:"Separação pela vitrine"});if(started.error)return {status:409,body:{ok:false,error:String(started.error.message||"check_start_failed")}};
   const sessionId=String(started.data?.session_id||"");if(!validUuid(sessionId))return {status:409,body:{ok:false,error:"check_session_missing"}};
-  const marked=await db.from("ops_order_check_items").update({checked_quantity:db.rpc?undefined:undefined}).eq("session_id",sessionId);
-  if(marked.error&&String(marked.error.message||"").length){/* replaced below with per-row safe update */}
   const checkItems=await db.from("ops_order_check_items").select("id,expected_quantity").eq("session_id",sessionId);if(checkItems.error)throw checkItems.error;
+  if(!(checkItems.data||[]).length)return {status:409,body:{ok:false,error:"check_items_missing"}};
   for(const item of checkItems.data||[]){const up=await db.from("ops_order_check_items").update({checked_quantity:item.expected_quantity,updated_at:new Date().toISOString()}).eq("id",item.id);if(up.error)throw up.error}
   const finished=await db.rpc("ops_finish_order_check_v1",{p_order_id:orderId,p_operator_label:"Separação pela vitrine"});if(finished.error)return {status:409,body:{ok:false,error:String(finished.error.message||"check_finish_failed")}};
   if(finished.data?.ok!==true)return {status:409,body:{ok:false,...finished.data}};
