@@ -4,10 +4,12 @@ import fs from 'node:fs';
 const helperPath='supabase/functions/_shared/whatsapp-meta-media-v1.mjs';
 const transportPath='supabase/functions/_shared/whatsapp-meta-transport-v1.mjs';
 const apiPath='supabase/functions/admin-whatsapp-ops-v1/index.ts';
-const uiPath='vitrine/admin/atendimento/attendance-send.js';
+const mediaGatewayPath='supabase/functions/_shared/admin-attendance-media-send-v1.mjs';
+const uiPath='vitrine/admin/atendimento/attendance-media-send.js';
 const htmlPath='vitrine/admin/atendimento/index.html';
 const mediaSqlPath='supabase/sql/20261003_admin_attendance_meta_media_send_v1.sql';
 assert.ok(fs.existsSync(helperPath),`${helperPath} deve existir`);
+assert.ok(fs.existsSync(mediaGatewayPath),`${mediaGatewayPath} deve existir`);
 const helper=await import(new URL('../supabase/functions/_shared/whatsapp-meta-media-v1.mjs',import.meta.url));
 const transport=await import(new URL('../supabase/functions/_shared/whatsapp-meta-transport-v1.mjs',import.meta.url));
 
@@ -145,8 +147,10 @@ assert.match(mediaSql,/message_type[\s\S]*image[\s\S]*audio[\s\S]*document/i,'so
 assert.match(mediaSql,/provider_media_id/i,'media ID oficial deve ser persistido no canônico');
 
 const api=fs.readFileSync(apiPath,'utf8');
-assert.match(api,/whatsapp-meta-media-v1\.mjs/,'gateway deve importar helper Meta media');
-assert.match(api,/provider_media_id/,'gateway deve resolver media ID canônico');
+const mediaGateway=fs.readFileSync(mediaGatewayPath,'utf8');
+const gatewaySource=`${api}\n${mediaGateway}`;
+assert.match(api,/whatsapp-meta-media-v1\.mjs/,'gateway deve manter helper Meta media inbound');
+assert.match(api,/provider_media_id/,'gateway deve resolver media ID canônico inbound');
 assert.match(api,/fetchMetaMediaInfo/,'gateway deve resolver URL temporária server-side');
 assert.match(api,/fetchMetaMediaResponse/,'gateway deve baixar mídia Meta server-side');
 assert.match(api,/attendance-media-v1/,'deve reutilizar bucket privado atual');
@@ -154,17 +158,19 @@ assert.match(api,/createSignedUrl/,'browser deve continuar recebendo apenas URL 
 assert.doesNotMatch(api,/json\([^\n]*provider_media_id/i,'media ID do provider não deve ser exposto diretamente ao browser');
 assert.match(api,/SAFE_POST_ACTIONS[^\n]*send_media/,'send_media deve existir somente no gateway autenticado');
 assert.match(api,/req\.formData\(\)/,'arquivo deve ser recebido server-side por multipart');
-assert.match(api,/ops2_admin_attendance_enqueue_media_v1/);
-assert.match(api,/ops2_admin_attendance_claim_media_outbox_v1/);
-assert.match(api,/ops2_admin_attendance_accept_meta_media_outbound_v1/);
-assert.match(api,/uploadMetaMedia/);
-assert.match(api,/sendMediaViaMeta/);
-assert.match(api,/destination_fields_not_allowed/,'browser não pode escolher destino/conta');
+assert.match(gatewaySource,/ops2_admin_attendance_enqueue_media_v1/);
+assert.match(gatewaySource,/ops2_admin_attendance_claim_media_outbox_v1/);
+assert.match(gatewaySource,/ops2_admin_attendance_accept_meta_media_outbound_v1/);
+assert.match(gatewaySource,/uploadMetaMedia/);
+assert.match(gatewaySource,/sendMediaViaMeta/);
+assert.match(gatewaySource,/destination_fields_not_allowed/,'browser não pode escolher destino/conta');
 
 // UI simples: anexo fica no composer, sem token/Phone Number ID/destino livre.
 const ui=fs.readFileSync(uiPath,'utf8');
 const html=fs.readFileSync(htmlPath,'utf8');
 assert.match(html,/id="mediaFile"/,'composer deve ter seletor de mídia');
+assert.match(html,/id="sendMediaBtn"/,'composer deve ter envio de anexo isolado do texto');
+assert.match(html,/attendance-media-send\.js/,'módulo de mídia deve ser carregado pelo Admin');
 assert.match(html,/accept="[^"]*(image\/)[^"]*(audio\/)[^"]*(application\/pdf)/i,'seletor deve anunciar imagem, áudio e PDF');
 assert.match(ui,/send_media/,'composer deve enviar anexo pelo gateway');
 assert.match(ui,/FormData/,'upload do browser deve usar multipart para o gateway');
