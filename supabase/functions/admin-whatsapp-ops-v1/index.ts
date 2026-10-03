@@ -285,7 +285,7 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="GET"&&action==="queue"){
       const accountId=validUuid(url.searchParams.get("account_id"));
       if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
-      const r=await db.rpc("ops2_admin_attendance_queue_v3",{
+      const r=await db.rpc("ops2_admin_attendance_queue_v4",{
         p_whatsapp_account_id:accountId,
         p_limit:num(url.searchParams.get("limit"),50,1,50),
         p_search:clean(url.searchParams.get("search"),80)||null,
