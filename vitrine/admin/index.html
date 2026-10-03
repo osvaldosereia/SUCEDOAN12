@@ -1677,7 +1677,7 @@ window.addEventListener('message',event=>{
     if(filter==='separate')return ['confirmed','processing'].includes(o.status);
     if(filter==='ready')return o.status==='ready';
     if(filter==='delivery')return o.status==='out_for_delivery';
-    if(filter==='delivered')return deliveredToday(o);
+    if(filter==='finalized')return o.status==='delivered';
     if(filter==='backlog')return isBacklogOrder(o);
     if(filter==='problems')return orderIssueMatch(o,state.orderIssueFilter);
     return true;
@@ -7495,7 +7495,7 @@ window.addEventListener('message',event=>{
   }
   function paintOrderFilters(){
     const host=$('#orderFilters');if(!host)return;
-    const filters=[['all','Todos'],['new','Novos'],['separate','Separar'],['ready','Prontos'],['delivery','Em entrega'],['delivered','Entregues hoje'],['backlog','Dias anteriores'],['problems','Problemas']];
+    const filters=[['all','Todos'],['separate','Separar'],['ready','Pronto'],['delivery','Entrega'],['finalized','Finalizado']];
     host.innerHTML=filters.map(([key,label])=>'<button class="filter-chip '+(state.orderFilter===key?'active':'')+'" type="button" data-order-filter="'+key+'">'+esc(label)+' · '+orderFilterCount(key)+'</button>').join('');
     host.querySelectorAll('[data-order-filter]').forEach(b=>b.onclick=()=>{
       state.orderFilter=b.dataset.orderFilter;
@@ -7517,7 +7517,7 @@ window.addEventListener('message',event=>{
   function paintOrderRows(){
     const host=$('#orderRows');if(!host)return;
     let rows=state.orders.filter(o=>orderFilterMatch(o,state.orderFilter)&&orderSearchMatch(o,state.orderQuery));
-    if(!['delivered'].includes(state.orderFilter))rows=sortOperationalOrders(rows);
+    if(state.orderFilter!=='finalized')rows=sortOperationalOrders(rows);
     host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">Nenhum pedido nesta etapa.</div>';
     host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));
     host.querySelectorAll('[data-order-issue-open]').forEach(b=>b.onclick=()=>openOrderForIssue(b.dataset.orderIssueOpen,b.dataset.orderIssueKind));
