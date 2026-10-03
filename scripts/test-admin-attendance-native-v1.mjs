@@ -3,6 +3,7 @@ import fs from 'node:fs';
 
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
 const page=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
+const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
 
 assert.doesNotMatch(admin,/attendanceFrame|<iframe[^>]+atendimento/i,'Atendimento não pode ser embutido em iframe');
 assert.doesNotMatch(admin,/data\?\.type\s*!==\s*['"]da-attendance['"]|parent\.postMessage/,'Admin não deve depender de bridge postMessage para Atendimento');
@@ -14,4 +15,6 @@ assert.match(page,/src=['"]\.\/attendance-app\.js['"]/,'página final deve carre
 assert.equal((page.match(/<link[^>]+rel=['"]stylesheet['"]/g)||[]).length,1,'Atendimento deve carregar uma única folha de estilo própria');
 assert.doesNotMatch(page,/\?embedded=1|parent\.document|postMessage/,'página final deve ser independente de embedding');
 
-console.log('OK · arquitetura do Atendimento é nativa, sem iframe/bridge/layout sobreposto.');
+assert.match(css,/\[hidden\]\s*\{\s*display\s*:\s*none\s*!important\s*\}/i,'elementos com hidden devem ser realmente removidos do layout, inclusive o estado Carregando conversa');
+
+console.log('OK · arquitetura do Atendimento é nativa e estados hidden não ocupam espaço no layout.');
