@@ -230,6 +230,11 @@ async function enqueuePapoAiOrderSignals(orderId:string,channel:Channel,phone:un
   }catch(error){console.error("papoai_signal_enqueue",text((error as Error)?.message||error,180))}
 }
 
+function providerFailureIsTransient(status:number,detail:unknown){
+  const message=text(detail,400).toLowerCase();
+  return status===429||status===502||status===503||status===504||(status===500&&/(timeout|timed out|connect|connection|temporar|upstream)/.test(message));
+}
+
 Deno.serve(async(req:Request)=>{
   if(!U||!K)return respond({ok:false,error:"server_config"},500);
   const internalKey=req.headers.get("x-internal-key")||"",serviceRole=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -337,25 +342,38 @@ Deno.serve(async(req:Request)=>{
       .update({payload:{...obj(item.payload),provider_request:providerPayload}})
       .eq("id",outboxId).eq("status","sending");
     if(audit.error)throw new Error(`provider_payload_audit_failed: ${text(audit.error.message,240)}`);
-    const response=await fetch(url,{method:"POST",headers,body:JSON.stringify(providerPayload)});
-    const data=await response.json().catch(()=>({}));
-    if(response.ok){
-      const externalId=text(data?.external_message_id||data?.message_id||data?.id||"",200)||null;
-      await finish(outboxId,"sent",externalId,null);
-      void enqueuePapoAiOrderSignals(orderId,channel,item.phone_e164,details);
-      return respond({ok:true,status:"sent",outbox_id:outboxId,recipient_kind:item.recipient_kind,channel_origin:channel,dispatch_scope:scope,external_message_id:externalId});
-    }
 
-    const retryable=response.status===429;
-    const state=retryable&&Number(item.attempt_count||0)<5?"retry":"failed";
-    const errorText=`provider_http_${response.status}: ${text(data?.error||data?.message||response.statusText,300)}`;
-    await finish(outboxId,state,null,errorText,retryable?300:0);
-    return respond({ok:false,error:"provider_rejected",status:state,outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},retryable?503:502);
+    const providerAttempts=scope==="checkout_auto"?2:1;
+    for(let providerAttempt=1;providerAttempt<=providerAttempts;providerAttempt++){
+      const response=await fetch(url,{method:"POST",headers,body:JSON.stringify(providerPayload)});
+      const data=await response.json().catch(()=>({}));
+      if(response.ok){
+        const externalId=text(data?.external_message_id||data?.message_id||data?.id||"",200)||null;
+        await finish(outboxId,"sent",externalId,null);
+        void enqueuePapoAiOrderSignals(orderId,channel,item.phone_e164,details);
+        return respond({ok:true,status:"sent",outbox_id:outboxId,recipient_kind:item.recipient_kind,channel_origin:channel,dispatch_scope:scope,external_message_id:externalId});
+      }
+
+      const providerDetail=data?.error||data?.message||response.statusText;
+      const transient=providerFailureIsTransient(response.status,providerDetail);
+      if(scope==="checkout_auto"&&transient&&providerAttempt<providerAttempts){
+        await new Promise(resolve=>setTimeout(resolve,750));
+        continue;
+      }
+
+      const retryable=(scope==="checkout_auto"&&transient)||response.status===429;
+      const state=retryable&&Number(item.attempt_count||0)<5?"retry":"failed";
+      const errorText=`provider_http_${response.status}: ${text(providerDetail,300)}`;
+      await finish(outboxId,state,null,errorText,retryable?(response.status===429?300:30):0);
+      return respond({ok:false,error:"provider_rejected",status:state,outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},retryable?503:502);
+    }
+    throw new Error("provider_attempt_loop_exhausted");
   }catch(error){
     const errorText=`provider_ambiguous_failure: ${text((error as Error)?.message||error,300)}`;
-    try{await finish(outboxId,"failed",null,errorText,0)}catch(finishError){
+    const state=scope==="checkout_auto"&&Number(item.attempt_count||0)<5?"retry":"failed";
+    try{await finish(outboxId,state,null,errorText,state==="retry"?30:0)}catch(finishError){
       return respond({ok:false,error:"provider_failure_and_finish_failed",outbox_id:outboxId,detail:text((finishError as Error)?.message||finishError)},500);
     }
-    return respond({ok:false,error:"provider_unreachable",status:"failed",outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},503);
+    return respond({ok:false,error:"provider_unreachable",status:state,outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},503);
   }
 });

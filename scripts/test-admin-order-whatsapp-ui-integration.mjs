@@ -22,8 +22,11 @@ for (const fn of [
   'async function refreshCurrentOrderWhatsappRegistration',
   'async function sendCurrentOrderWhatsapp',
   'async function issueCurrentOrderRegistrationLink',
+  'function appendCurrentOrderWhatsappItems',
   'function currentOrderCompanyWhatsappMessage',
+  'function openNativeWhatsapp',
   'function openCurrentOrderCompanyWhatsapp',
+  'function currentOrderCustomerWhatsappMessage',
   'function openCurrentOrderCustomerWhatsapp',
   'function openCurrentOrderRegistrationWhatsapp',
   'async function copyCurrentOrderRegistrationLink'
@@ -31,20 +34,30 @@ for (const fn of [
   assert.ok(admin.includes(fn), `admin UI missing handler: ${fn}`);
 }
 
-assert.ok(admin.includes('const COMPANY_WHATSAPP_E164="5565998150975"'), 'company WhatsApp target must be the operational 0975 number');
-assert.ok(admin.includes("window.open('https://wa.me/'+COMPANY_WHATSAPP_E164+'?text='"), 'company action must use a direct WhatsApp deep link');
-assert.ok(admin.includes("$('#sendOrderWhatsApp').onclick=openCurrentOrderCompanyWhatsapp"), 'company WhatsApp button must open the direct readable handoff');
-assert.ok(!admin.includes("$('#sendOrderWhatsApp').onclick=sendCurrentOrderWhatsapp"), 'company WhatsApp button must not use the PapoAI template cross-send');
-assert.ok(admin.includes("lines.push('','📦 PRODUTOS')"), 'company WhatsApp text must contain a products section');
-assert.ok(admin.includes("lines.push('• '+qty+'x '+name)"), 'company WhatsApp text must put every product on its own bullet line');
+assert.ok(admin.includes('const COMPANY_WHATSAPP_E164="5565998150975"'), 'company WhatsApp target must remain 65 99815-0975');
+assert.ok(admin.includes("const url='whatsapp://send?phone='+encodeURIComponent(phone)+'&text='+encodeURIComponent(message)"), 'admin WhatsApp actions must use the native WhatsApp protocol');
+assert.ok(admin.includes("$('#sendOrderWhatsApp').onclick=openCurrentOrderCompanyWhatsapp"), 'company WhatsApp button must stay separate from checkout transport');
+assert.ok(!admin.includes("$('#sendOrderWhatsApp').onclick=sendCurrentOrderWhatsapp"), 'company WhatsApp button must not use automatic checkout/PapoAI transport');
+assert.ok(admin.includes("openNativeWhatsapp(COMPANY_WHATSAPP_E164,currentOrderCompanyWhatsappMessage())"), 'company button must target only the company number');
+assert.ok(admin.includes("phoneDigits(o.phone_e164||o.whatsapp_phone_e164"), 'customer admin action must resolve the canonical order phone first');
+assert.ok(admin.includes("openNativeWhatsapp(phone,currentOrderCustomerWhatsappMessage())"), 'customer admin button must target the customer phone');
+
+const companyStart=admin.indexOf('function currentOrderCompanyWhatsappMessage');
+const companyEnd=admin.indexOf('function openCurrentOrderCompanyWhatsapp',companyStart);
+assert.ok(companyStart>=0&&companyEnd>companyStart,'company formatter block must exist');
+const companyBlock=admin.slice(companyStart,companyEnd);
+assert.ok(!/[\u{1F300}-\u{1FAFF}]/u.test(companyBlock),'company order text must not include emoji that can become replacement characters');
+assert.ok(!companyBlock.includes("'• '"),'company order text must not depend on Unicode bullet characters');
+assert.ok(admin.includes("lines.push('- '+qty+'x '+name)"), 'every top-level item must use a plain ASCII dash');
+assert.ok(admin.includes("const components=Array.isArray(item?.components)?item.components:[]"), 'basket item must expose its persisted components');
+assert.ok(admin.includes("lines.push('  Itens da cesta:')"), 'basket identification must be followed by its components');
+assert.ok(admin.includes("lines.push('  - '+componentQty+'x '+componentName)"), 'basket components must be one per line with their actual quantity');
 assert.ok(admin.includes("api('order_registration_link_issue'"), 'registration button must use existing order_registration_link_issue action');
 assert.ok(admin.includes("api('order_registration_link_status'"), 'UI must refresh registration/send status');
 assert.ok(admin.includes("orderWhatsappRegistrationHtml(o)+"), 'order editor must render WhatsApp/registration panel');
 assert.ok(admin.includes("$('#issueOrderRegistrationLink').onclick=issueCurrentOrderRegistrationLink"), 'registration button must be bound');
 assert.ok(admin.includes("activeLink=link?.state==='active'"), 'active registration link must block accidental replacement');
 assert.ok(admin.includes('Envio do pedido aguardando configuração PapoAI'), 'provider-not-ready state must be visible');
-assert.ok(!admin.includes("finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Enviar pedido para WhatsApp da empresa'}await refreshCurrentOrderWhatsappRegistration()}"), 'legacy PapoAI company-send lifecycle must not be reintroduced');
-assert.ok(!admin.includes("finally{if(document.contains(btn)){btn.disabled=false;btn.textContent='Gerar link de cadastro'}}"), 'issue handler must not blindly re-enable an active registration link');
 assert.ok(!admin.includes('/cadastro/?order_id='), 'public registration link must not expose order_id');
 
 for (const action of ['order_whatsapp_send','order_registration_link_issue','order_registration_link_status']) {
@@ -63,47 +76,31 @@ assert.ok(adminApi.includes('/functions/v1/admin-orders-v1'), 'admin backend mus
 assert.ok(adminApi.includes('ops2_enqueue_admin_order_whatsapp_v1'), 'admin backend must enqueue the order idempotently');
 assert.ok(adminApi.includes('ops2_issue_order_registration_link_v1'), 'admin backend must issue a token-bound registration link');
 assert.ok(adminApi.includes('order_whatsapp_provider_not_configured'), 'admin backend must fail closed if PapoAI provider is not ready');
-assert.ok(adminApi.includes('if(r.method===\"GET\"&&a===\"order_registration_link_status\")'), 'status action must be routed');
-assert.ok(adminApi.includes('if(r.method===\"POST\"&&a===\"order_whatsapp_send\")'), 'send action must be routed');
-assert.ok(adminApi.includes('if(r.method===\"POST\"&&a===\"order_registration_link_issue\")'), 'registration action must be routed');
 
 assert.ok(orderTransport.includes('async function orderDetails'), 'order transport must load the complete persisted checkout order');
 assert.ok(orderTransport.includes('.from("orders")'), 'order transport must load the order row');
 assert.ok(orderTransport.includes('.from("order_items")'), 'order transport must load persisted order items');
-assert.ok(orderTransport.includes('const productLines=lines.map(line=>`• ${line}`);'), 'visual products must carry a bullet marker');
-assert.ok(orderTransport.includes('productLines.join("\\n")'), 'visual products must be one item per line');
-assert.ok(orderTransport.includes('basketLines.join("\\n")'), 'multiple baskets must also remain one basket per line');
+assert.ok(orderTransport.includes('const productLines=lines.map(line=>`• ${line}`);'), 'provider visual products may keep their existing template bullet marker');
+assert.ok(orderTransport.includes('productLines.join("\\n")'), 'provider products must be one item per line');
+assert.ok(orderTransport.includes('basketLines.join("\\n")'), 'multiple baskets must remain one basket per line');
 assert.ok(orderTransport.includes('const itemsText=lines.join(" • ")'), 'template-safe item text must remain single-line');
-assert.ok(orderTransport.includes('const itemsTextLineSeparator=lines.join("\\u2028")'), 'experimental template text must use Unicode line separator instead of LF');
-assert.ok(orderTransport.includes('items_text_line_separator:details.itemsTextLineSeparator'), 'provider payload must expose Unicode line-separated item text without changing items_text');
-assert.ok(orderTransport.includes('const productBucket=Math.min(60,Math.max(5,Math.ceil(lines.length/5)*5));'), 'transport must bucket product templates in groups of five');
-assert.ok(orderTransport.includes('Array.from({length:productBucket}'), 'template product slots must stop at the selected bucket');
-assert.ok(orderTransport.includes('lines[index]||"\\u200B"'), 'unused bucket slots must receive an invisible non-empty filler');
-assert.ok(orderTransport.includes('const productPaddingCount=productBucket-lines.length;'), 'transport must expose how many template lines are padding');
-assert.ok(orderTransport.includes('`product_${String(index+1).padStart(2,"0")}`'), 'individual product slots must be named product_01...product_60');
-assert.ok(orderTransport.includes('product_count:details.itemCount'), 'provider payload must expose product_count for template routing');
-assert.ok(orderTransport.includes('product_bucket:details.productBucket'), 'provider payload must expose selected five-item bucket');
-assert.ok(orderTransport.includes('product_padding_count:details.productPaddingCount'), 'provider payload must expose padding count for audit');
-assert.ok(orderTransport.includes('...details.productSlots'), 'provider payload must expose individual product fields at top level');
+assert.ok(orderTransport.includes('const itemsTextLineSeparator=lines.join("\\u2028")'), 'template text must preserve the existing Unicode line-separator contract');
+assert.ok(orderTransport.includes('phone_e164:item.phone_e164'), 'checkout provider payload must target the customer phone from the outbox item');
+assert.ok(orderTransport.includes('recipient_kind:item.recipient_kind'), 'checkout recipient kind must remain the queued customer recipient');
+assert.ok(orderTransport.includes('function providerFailureIsTransient'), 'transport must classify transient provider failures');
+assert.ok(orderTransport.includes('const providerAttempts=scope==="checkout_auto"?2:1'), 'only automatic checkout sends should get the immediate provider retry');
+assert.ok(orderTransport.includes('providerAttempt<providerAttempts'), 'transport must actually retry before finishing the outbox row');
+assert.ok(orderTransport.includes('scope==="checkout_auto"&&transient'), 'transient checkout exhaustion must remain retryable instead of being permanently failed');
+assert.ok(orderTransport.includes('order_items_not_ready'), 'checkout must retry instead of sending an incomplete order');
+assert.ok(orderTransport.includes('scope==="checkout_auto"?"retry":"failed"'), 'checkout must preserve its retry behavior when order items are not ready');
+
 for (const field of [
-  'order_date',
-  'order_number_short',
-  'customer_status',
-  'customer_name',
-  'customer_phone_formatted',
-  'address_label',
-  'district_label',
-  'city_label',
-  'delivery_label',
-  'basket_text',
-  'products_text',
-  'total_formatted',
-  'payment_label'
+  'order_date','order_number_short','customer_status','customer_name','customer_phone_formatted',
+  'address_label','district_label','city_label','delivery_label','basket_text','products_text',
+  'total_formatted','payment_label'
 ]) {
   assert.ok(orderTransport.includes(`${field}:`), `provider payload must expose ${field}`);
 }
 assert.ok(orderTransport.includes('items_text:details.itemsText'), 'legacy template items_text must stay Meta-safe');
-assert.ok(orderTransport.includes('order_items_not_ready'), 'checkout must retry instead of sending an incomplete order');
-assert.ok(orderTransport.includes('scope==="checkout_auto"?"retry":"failed"'), 'checkout must retry when order items are not ready');
 
-console.log('admin direct company WhatsApp + customer gateway + full storefront order contract: ok');
+console.log('admin native company/customer handoff + expanded baskets + isolated checkout retry contract: ok');

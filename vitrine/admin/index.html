@@ -7745,48 +7745,67 @@ window.addEventListener('message',event=>{
     finally{if(document.contains(btn))btn.textContent='Atualizando…';await refreshCurrentOrderWhatsappRegistration()}
   }
   const COMPANY_WHATSAPP_E164="5565998150975";
+  function appendCurrentOrderWhatsappItems(lines,items){
+    (Array.isArray(items)?items:[]).forEach(item=>{
+      const qty=Number(item?.quantity||item?.qty||1)||1;
+      const name=String(item?.name_snapshot||item?.product_name||item?.name||item?.title||'Item').trim();
+      lines.push('- '+qty+'x '+name);
+      const components=Array.isArray(item?.components)?item.components:[];
+      if(components.length){
+        lines.push('  Itens da cesta:');
+        components.forEach(component=>{
+          const componentQty=Number(component?.quantity||component?.qty||1)||1;
+          const componentName=String(component?.name_snapshot||component?.product_name||component?.name||component?.title||'Item').trim();
+          lines.push('  - '+componentQty+'x '+componentName);
+        });
+      }
+    });
+  }
   function currentOrderCompanyWhatsappMessage(){
     const d=state.currentOrder||{},o=d.order||{},items=Array.isArray(d.items)?d.items:[];
     const customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{};
     const delivery=(o.delivery_address_snapshot&&typeof o.delivery_address_snapshot==='object'?o.delivery_address_snapshot:(o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:{}));
     const code=o.order_number||o.id||'';
-    const lines=['🛒 PEDIDO DONA ANTÔNIA'];
-    if(code)lines.push('','🔢 Pedido: '+code);
+    const lines=['PEDIDO DONA ANTONIA'];
+    if(code)lines.push('','Pedido: '+code);
     const customerName=o.customer_name||customer.name||customer.display_name||delivery.customer_name||'';
-    const customerPhone=o.whatsapp_phone_e164||o.phone_e164||customer.phone_e164||delivery.phone||'';
-    lines.push('','👤 CLIENTE');
+    const customerPhone=o.phone_e164||o.whatsapp_phone_e164||customer.phone_e164||delivery.phone||'';
+    lines.push('','CLIENTE');
     if(customerName)lines.push('Nome: '+customerName);
     if(customerPhone)lines.push('WhatsApp: '+formatPhone(customerPhone));
     const address=[delivery.street,delivery.number,delivery.complement].filter(Boolean).join(', ');
     const district=delivery.district||delivery.neighborhood||'';
     const city=delivery.city||'';
     if(address||district||city){
-      lines.push('','📍 ENTREGA');
-      if(address)lines.push('Endereço: '+address);
+      lines.push('','ENTREGA');
+      if(address)lines.push('Endereco: '+address);
       if(district)lines.push('Bairro: '+district);
       if(city)lines.push('Cidade: '+city);
     }
-    lines.push('','📦 PRODUTOS');
-    items.forEach(item=>{const qty=Number(item.quantity||item.qty||1)||1,name=item.name_snapshot||item.product_name||item.name||item.title||'Item';lines.push('• '+qty+'x '+name)});
-    const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('','💰 TOTAL: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
-    const payment=o.payment_method||o.payment_label||'';if(payment)lines.push('💳 PAGAMENTO: '+payment);
+    lines.push('','PRODUTOS');
+    appendCurrentOrderWhatsappItems(lines,items);
+    const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('','TOTAL: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+    const payment=o.payment_method||o.payment_label||'';if(payment)lines.push('PAGAMENTO: '+payment);
     return lines.join('\n')
   }
+  function openNativeWhatsapp(phone,message){
+    const url='whatsapp://send?phone='+encodeURIComponent(phone)+'&text='+encodeURIComponent(message);
+    window.location.href=url;
+  }
   function openCurrentOrderCompanyWhatsapp(){
-    const text=currentOrderCompanyWhatsappMessage();
-    const popup=window.open('https://wa.me/'+COMPANY_WHATSAPP_E164+'?text='+encodeURIComponent(text),'_blank','noopener');
-    if(!popup)toast('O navegador bloqueou a abertura do WhatsApp da empresa')
+    openNativeWhatsapp(COMPANY_WHATSAPP_E164,currentOrderCompanyWhatsappMessage())
   }
   function currentOrderCustomerWhatsappMessage(){
     const d=state.currentOrder||{},o=d.order||{},items=Array.isArray(d.items)?d.items:[],code=o.order_number||o.id||'';
-    const lines=['Olá! Segue o seu pedido da Dona Antônia'+(code?' '+code:'')+'.'];
-    if(items.length){lines.push('');items.forEach(item=>{const qty=Number(item.quantity||item.qty||1)||1,name=item.name_snapshot||item.product_name||item.name||item.title||'Item';lines.push('• '+qty+'x '+name)})}
+    const lines=['Ola! Segue o seu pedido da Dona Antonia'+(code?' '+code:'')+'.'];
+    if(items.length){lines.push('','PRODUTOS');appendCurrentOrderWhatsappItems(lines,items)}
     const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('','Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
     return lines.join('\n')
   }
   function openCurrentOrderCustomerWhatsapp(){
-    const o=state.currentOrder?.order||{},phone=phoneDigits(o.whatsapp_phone_e164||o.delivery_address_snapshot?.phone||'');if(!phone){toast('Pedido sem WhatsApp do cliente');return}
-    const popup=window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(currentOrderCustomerWhatsappMessage()),'_blank','noopener');if(!popup)toast('O navegador bloqueou a abertura do WhatsApp')
+    const o=state.currentOrder?.order||{},phone=phoneDigits(o.phone_e164||o.whatsapp_phone_e164||o.delivery_address_snapshot?.phone||o.delivery_address?.phone||'');
+    if(!phone){toast('Pedido sem WhatsApp do cliente');return}
+    openNativeWhatsapp(phone,currentOrderCustomerWhatsappMessage())
   }
   function currentOrderRegistrationUrl(){return $('#orderRegistrationLinkActions')?.dataset?.url||''}
   function openCurrentOrderRegistrationWhatsapp(){
