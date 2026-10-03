@@ -1,0 +1,14 @@
+/* Ajustes finais da Central v3 mantidos separados para reduzir o risco no CSS base. */
+body.attendance-layout-v3 .more-tools-menu #catalogBtn{display:block}
+body.attendance-layout-v3 .operational-context-body:empty::before{
+  content:'Selecione uma conversa.';
+  display:block;
+  margin:24px 10px;
+  padding:18px 12px;
+  border:1px dashed #d9e2dc;
+  border-radius:10px;
+  color:#7a867f;
+  text-align:center;
+  font-size:10px;
+  background:#fff;
+}
