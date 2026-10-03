@@ -5,7 +5,7 @@ import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normaliz
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SUPABASE_ANON_KEY=Deno.env.get("SUPABASE_ANON_KEY")||"";
 const OPENAI_API_KEY=Deno.env.get("OPENAI_API_KEY")||"";
-const ANA_MODEL=(Deno.env.get("ANA_OPENAI_MODEL")||"gpt-5.6-luna").trim();
+const ANA_MODEL=(Deno.env.get("ANA_OPENAI_MODEL")||"gpt-6-luna").trim();
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const clean=(value:unknown,max=500)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const validUuid=(value:unknown)=>{const s=String(value??"").trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:null};
