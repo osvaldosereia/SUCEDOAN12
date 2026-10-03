@@ -7786,8 +7786,7 @@ window.addEventListener('message',event=>{
     const customerName=o.customer_name||customer.name||customer.display_name||delivery.customer_name||'';if(customerName)lines.push('Cliente: '+customerName);
     const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
     if(url)lines.push('','Conferir pedido completo:',''+url);
-    return lines.join('
-')
+    return lines.join('\n')
   }
   function openNativeWhatsapp(phone,message){
     const url='whatsapp://send?phone='+encodeURIComponent(phone)+'&text='+encodeURIComponent(message);
@@ -7801,8 +7800,7 @@ window.addEventListener('message',event=>{
     if(code)lines.push('Pedido: '+code);
     const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
     if(url)lines.push('','Confira produtos, fotos, quantidades e entrega:',''+url);
-    return lines.join('
-')
+    return lines.join('\n')
   }
   function openCurrentOrderCustomerWhatsapp(){
     const o=state.currentOrder?.order||{},phone=phoneDigits(o.phone_e164||o.whatsapp_phone_e164||o.delivery_address_snapshot?.phone||o.delivery_address?.phone||'');
