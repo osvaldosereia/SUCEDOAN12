@@ -32,6 +32,8 @@ assert.match(ui,/Assumir atendimento/,'operador deve entender a ação de takeov
 assert.match(ui,/Liberar para IA/,'operador deve entender a retomada da IA');
 assert.match(ui,/Authorization:`Bearer \$\{access\}`/,'RPC deve usar a sessão real do Admin');
 assert.doesNotMatch(ui,/graph\.facebook\.com/i,'controle de estado não pode falar diretamente com a Meta');
+assert.match(ui,/syncConversationHeaderMode/,'mudança Humano × IA deve atualizar também o subtítulo da conversa');
+assert.match(ui,/conversationHead[\s\S]*Atendimento humano[\s\S]*ANA atendendo/i,'subtítulo deve refletir imediatamente o modo atual');
 assert.match(html,/attendance-human-ai\.js/,'módulo de estado deve ser carregado pela Central');
 
 console.log('PASS test-attendance-human-ai-state-v1');
