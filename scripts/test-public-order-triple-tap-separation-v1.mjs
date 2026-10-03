@@ -8,6 +8,8 @@ assert.ok(page.includes('SEPARATION_TAPS=3'),'a separação deve exigir exatamen
 assert.ok(page.includes('SEPARATION_TAP_WINDOW_MS'),'os 3 toques precisam ocorrer em uma janela curta');
 assert.ok(page.includes('data-separation-index'),'cada linha de produto deve ser marcada individualmente');
 assert.ok(page.includes('product-card separated'),'o produto separado precisa ter estado visual próprio');
+assert.ok(page.includes('.product-placeholder'),'a área de foto vazia também precisa aceitar a conferência');
+assert.ok(page.includes('activeTapIndex'),'toques em outro produto devem reiniciar a sequência anterior');
 assert.ok(page.includes("action:'complete_separation'"),'a vitrine precisa concluir a separação pelo endpoint público');
 assert.ok(page.includes('checked_indexes'),'a conclusão deve enviar exatamente os itens conferidos');
 assert.ok(page.includes('Concluir separação'),'o botão só deve existir para concluir a separação completa');
@@ -26,4 +28,4 @@ assert.ok(edge.includes('status:"ready"')||edge.includes("status:'ready'"),'conc
 assert.ok(!edge.includes('ops2_launch_physical_stock'),'a vitrine pública nunca pode executar a baixa física definitiva');
 assert.ok(!edge.includes('status:"out_for_delivery"')&&!edge.includes("status:'out_for_delivery'"),'a vitrine pública não pode pular PRONTO e mandar para ENTREGA');
 
-console.log('OK · vitrine pública: 3 toques por produto, sem login, conclusão segura em PRONTO.');
+console.log('OK · vitrine pública: 3 toques consecutivos por produto, sem login, conclusão segura em PRONTO.');
