@@ -7,12 +7,17 @@ on:
   pull_request:
     paths:
       - 'scripts/test-admin-attendance-*.mjs'
+      - 'scripts/test-attendance-meta-media-*.mjs'
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/atendimento/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
+      - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-meta-media-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'supabase/migrations/**'
       - 'supabase/sql/20261002_admin_attendance_papoai_webhook_send_v1.sql'
       - 'supabase/sql/20261003_admin_attendance_unsupported_display_v1.sql'
+      - 'supabase/sql/20261003_admin_attendance_meta_media_send_v1.sql'
       - 'supabase/sql/20261003_attendance_library_v1.sql'
       - '.github/workflows/attendance-papoai-send-ci.yml'
 
@@ -35,6 +40,9 @@ jobs:
       - run: node scripts/test-admin-attendance-native-channel-v1.mjs
       - run: node scripts/test-admin-attendance-unsupported-display-v1.mjs
       - run: node scripts/test-admin-attendance-library-schema-v1.mjs
+      - run: node scripts/test-admin-attendance-library-send-v1.mjs
+      - run: node scripts/test-attendance-meta-media-v1.mjs
+      - run: node scripts/test-attendance-meta-media-retry-v1.mjs
       - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
       - run: node --check vitrine/admin/atendimento/attendance-media-send.js
