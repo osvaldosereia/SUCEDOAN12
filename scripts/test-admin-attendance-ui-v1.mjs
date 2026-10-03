@@ -42,6 +42,9 @@ assert.match(js,/function\s+fmtQueueStamp\s*\(/,'fila deve ter data/hora legíve
 assert.match(js,/Hoje|Ontem/,'histórico deve reconhecer dias recentes');
 assert.match(js,/message-date-separator/,'histórico deve inserir separadores de data');
 assert.match(js,/canonical_last_message_at\s*\|\|\s*item\.last_message_at/,'card deve usar recência canônica');
+assert.match(js,/function\s+displayMessageText\s*\(/,'UI deve isolar a regra de texto exibido');
+assert.match(js,/raw_type\s*===\s*['"]unsupported['"]/,'mensagem unsupported deve ser tratada explicitamente');
+assert.match(js,/Mensagem recebida, mas o provedor não disponibilizou o conteúdo/,'fallback unsupported deve ser neutro ao provedor');
 assert.match(css,/\.message-date-separator\{/,'separador de data precisa de estilo próprio');
 assert.match(css,/\.attendance-app\{[^}]*height:100vh[^}]*min-height:0[^}]*overflow:hidden/,'central deve ficar contida na altura do iframe');
 assert.match(css,/\.attendance-grid\{[^}]*min-height:0[^}]*overflow:hidden/,'grid não pode criar scroll externo');
@@ -49,4 +52,4 @@ assert.match(css,/\.messages\{[^}]*min-height:0[^}]*overflow:auto/,'histórico d
 assert.match(css,/@media\s*\(max-width:\s*759px\)/);
 assert.match(css,/@media\s*\(min-width:\s*1180px\)/);
 assert.doesNotMatch(css,/grid-template-columns:[^}]*\.72fr[^}]*\.72fr/,'desktop não deve reservar duas colunas de fila');
-console.log('OK · Central v2 usa fila única, seletor de canal e timeline contida.');
+console.log('OK · Central v2 usa fila única, seletor de canal, timeline contida e fallback neutro.');
