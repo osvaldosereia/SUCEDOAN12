@@ -38,7 +38,7 @@
 ## File map
 
 **Create**
-- `supabase/migrations/20261003193000_order_separation_v2.sql` — separation tables, constraints, RPCs, public-snapshot enrichment, fiscal-preflight adaptation, partial reservation handling.
+- `supabase/migrations/20261003201103_order_separation_v2.sql` — separation tables, constraints, RPCs, public-snapshot enrichment, fiscal-preflight adaptation, partial reservation handling.
 - `vitrine/admin/separacao/index.html` — dedicated Admin separation storefront shell.
 - `vitrine/admin/separacao/separation.js` — Admin separation API client and UI state handling.
 - `scripts/test-order-separation-v2-schema.mjs` — migration/data-contract tests.
@@ -59,7 +59,7 @@
 ### Task 1: Canonical separation schema and per-item state
 
 **Files:**
-- Create: `supabase/migrations/20261003193000_order_separation_v2.sql`
+- Create: `supabase/migrations/20261003201103_order_separation_v2.sql`
 - Create: `scripts/test-order-separation-v2-schema.mjs`
 
 **Interfaces:**
@@ -82,7 +82,7 @@
 ### Task 2: Partial reservation handling and financial recomposition
 
 **Files:**
-- Modify: `supabase/migrations/20261003193000_order_separation_v2.sql`
+- Modify: `supabase/migrations/20261003201103_order_separation_v2.sql`
 - Create: `scripts/test-order-separation-v2-completion.mjs`
 - Modify canonical definition of `ops2_fiscal_dispatch_preflight_v1` in the new migration (do not edit old migration files).
 
@@ -194,7 +194,7 @@
 ### Task 7: Public snapshot refresh and historical compatibility
 
 **Files:**
-- Modify behavior through `supabase/migrations/20261003193000_order_separation_v2.sql`
+- Modify behavior through `supabase/migrations/20261003201103_order_separation_v2.sql`
 - Modify: `scripts/test-order-public-summary.mjs`
 - Extend: `scripts/test-order-separation-v2-customer.mjs`
 

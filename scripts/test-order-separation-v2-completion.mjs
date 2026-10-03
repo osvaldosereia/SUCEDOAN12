@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const basePath='supabase/migrations/20261003193000_order_separation_v2.sql';
-const completionPath='supabase/migrations/20261003193500_order_separation_v2_completion.sql';
+const basePath='supabase/migrations/20261003201103_order_separation_v2.sql';
+const completionPath='supabase/migrations/20261003201158_order_separation_v2_completion.sql';
 assert.ok(fs.existsSync(basePath),`migration missing: ${basePath}`);
 assert.ok(fs.existsSync(completionPath),`migration missing: ${completionPath}`);
 const sql=fs.readFileSync(basePath,'utf8')+'\n'+fs.readFileSync(completionPath,'utf8');

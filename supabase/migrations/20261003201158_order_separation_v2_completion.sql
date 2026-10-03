@@ -1,5 +1,5 @@
 -- Dona Antônia · Order Separation V2 completion pipeline
--- Additive migration layered on top of 20261003193000_order_separation_v2.sql.
+-- Additive migration layered on top of 20261003201103_order_separation_v2.sql.
 
 create or replace function public.ops2_prepare_order_separation_completion_v2(
   p_order_id uuid,

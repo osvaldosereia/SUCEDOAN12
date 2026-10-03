@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const edge=fs.readFileSync('supabase/functions/order-public-view-v1/index.ts','utf8');
 const page=fs.readFileSync('pedido/index.html','utf8');
 const shortPage=fs.readFileSync('p/index.html','utf8');
-const migration=fs.readFileSync('supabase/migrations/20261003193000_order_separation_v2.sql','utf8');
+const migration=fs.readFileSync('supabase/migrations/20261003201103_order_separation_v2.sql','utf8');
 
 assert.match(edge,/method_not_allowed/,'public endpoint must reject unsupported methods');
 assert.doesNotMatch(edge,/complete_separation|checked_indexes|ops2_launch_physical_stock|ops2_set_order_separation_item_v2/i,'customer endpoint must not expose separation mutation');

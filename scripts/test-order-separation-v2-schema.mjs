@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const migrationPath='supabase/migrations/20261003193000_order_separation_v2.sql';
+const migrationPath='supabase/migrations/20261003201103_order_separation_v2.sql';
 assert.ok(fs.existsSync(migrationPath),`migration missing: ${migrationPath}`);
 const sql=fs.readFileSync(migrationPath,'utf8');
 
