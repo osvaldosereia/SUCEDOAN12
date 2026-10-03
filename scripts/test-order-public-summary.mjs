@@ -21,6 +21,13 @@ assert.match(page,/name="referrer" content="no-referrer"/,'secret order id must 
 assert.match(page,/Produtos do pedido/,'page must show order products');
 assert.match(page,/Produtos avulsos/,'standalone products section required');
 assert.match(page,/Quantidade:/,'quantities must be visible');
+assert.match(page,/\.product-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,'mobile product grid must use two columns');
+assert.match(page,/@media\(min-width:760px\)[\s\S]*\.product-grid\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}/,'desktop product grid must use four columns');
+assert.match(page,/\.product-card/,'products must render as vertical cards');
+assert.match(page,/\.product-card img\{width:100%;aspect-ratio:1\/1/,'product image must be large and square');
+assert.match(page,/\.product-qty/,'quantity must have a dedicated emphasized style');
+assert.doesNotMatch(page,/unit_price|line_total|item-price/,'public order page must not render individual product prices');
+assert.match(page,/Total do pedido/,'only order total must remain visible');
 assert.match(admin,/function publicOrderUrlFor/,'admin must reuse the order summary link');
 const company=admin.slice(admin.indexOf('function currentOrderCompanyWhatsappMessage'),admin.indexOf('function openNativeWhatsapp'));
 const customer=admin.slice(admin.indexOf('function currentOrderCustomerWhatsappMessage'),admin.indexOf('function openCurrentOrderCustomerWhatsapp'));
