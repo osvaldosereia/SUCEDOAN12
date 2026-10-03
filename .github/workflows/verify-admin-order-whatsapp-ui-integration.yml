@@ -50,6 +50,8 @@ jobs:
         run: node scripts/test-order-separation-v2-schema.mjs
       - name: Separation v2 completion
         run: node scripts/test-order-separation-v2-completion.mjs
+      - name: Separation v2 Admin API
+        run: node scripts/test-order-separation-v2-admin-api.mjs
       - name: Public order storefront and printing
         run: |
           node scripts/test-order-public-summary.mjs
