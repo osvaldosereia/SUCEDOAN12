@@ -22,7 +22,12 @@ async function api(action,params={},method='GET'){
   return data;
 }
 
-function activeChannel(){return String($('[data-channel-switch].active')?.dataset?.channelSwitch||'')}
+function activeChannel(){
+  const selected=String($('.queue-card.selected[data-channel]')?.dataset?.channel||'').trim();
+  if(/^(0975|1018)$/.test(selected))return selected;
+  const active=String($('[data-channel-switch].active')?.dataset?.channelSwitch||'').trim();
+  return /^(0975|1018)$/.test(active)?active:'';
+}
 function showNote(text,tone='neutral'){const note=$('#composerNote');if(!note)return;note.textContent=text;note.dataset.tone=tone}
 function selectedFromDom(){return String($('.queue-card.selected')?.dataset?.conversationId||selectedConversationId||'').trim()||null}
 function draftText(){return String($('#messageDraft')?.value||'').trim()}
@@ -62,16 +67,8 @@ async function refreshCapability(conversationId=selectedFromDom()){
   syncSendButton({updateNote:true});
 }
 
-function scheduleCapabilityRefresh(){
-  clearTimeout(refreshDebounce);
-  refreshDebounce=setTimeout(()=>refreshCapability(selectedFromDom()).catch(()=>{}),80);
-}
-
-function idempotencyKey(){
-  const random=globalThis.crypto?.randomUUID?crypto.randomUUID().replace(/-/g,'').slice(0,12):Math.random().toString(36).slice(2,14);
-  return `admin:${Date.now()}:${random}`;
-}
-
+function scheduleCapabilityRefresh(){clearTimeout(refreshDebounce);refreshDebounce=setTimeout(()=>refreshCapability(selectedFromDom()).catch(()=>{}),80)}
+function idempotencyKey(){const random=globalThis.crypto?.randomUUID?crypto.randomUUID().replace(/-/g,'').slice(0,12):Math.random().toString(36).slice(2,14);return `admin:${Date.now()}:${random}`}
 function sendErrorMessage(error){
   const code=String(error?.message||'');
   if(code==='service_window_closed')return 'Janela de 24h encerrada · use template aprovado no PapoAI';
@@ -94,46 +91,20 @@ async function sendDraft(){
     $('#messageDraft').value='';
     const provider=result?.provider||currentCapability?.provider;
     showNote(provider==='meta'?`Mensagem aceita pela Meta no canal ${activeChannel()} · histórico registrado no Admin`:`Mensagem aceita pelo canal ${activeChannel()} · o histórico atualizará pela confirmação do PapoAI`,'success');
+    document.dispatchEvent(new CustomEvent('attendance:sent',{detail:{conversationId,provider}}));
     setTimeout(()=>refreshCapability(conversationId).catch(()=>{}),700);
   }catch(error){
-    const code=String(error?.message||'');
-    showNote(sendErrorMessage(error),'error');
+    const code=String(error?.message||'');showNote(sendErrorMessage(error),'error');
     if(['service_window_closed','human_send_not_homologated','meta_transport_not_configured','meta_send_uncertain'].includes(code))currentCapability={...currentCapability,enabled:false,reason:code};
-  }finally{
-    sending=false;syncSendButton();
-  }
+  }finally{sending=false;syncSendButton()}
 }
-
-function resetChannelSelection(){
-  selectedConversationId=null;
-  currentCapability={enabled:false,reason:'conversation_required',provider:null};
-  clearTimeout(refreshDebounce);
-  syncSendButton({updateNote:true});
-}
-
+function resetChannelSelection(){selectedConversationId=null;currentCapability={enabled:false,reason:'conversation_required',provider:null};clearTimeout(refreshDebounce);syncSendButton({updateNote:true})}
 function bind(){
-  const draft=$('#messageDraft'),send=$('#sendBtn'),queue=$('#queueList');
-  if(!draft||!send||!queue)return;
-  draft.addEventListener('input',()=>syncSendButton());
-  draft.addEventListener('keydown',event=>{
-    if(event.key==='Enter'&&!event.shiftKey){
-      if(send.disabled)return;
-      event.preventDefault();sendDraft().catch(()=>{});
-    }
-  });
-  send.addEventListener('click',()=>sendDraft().catch(()=>{}));
+  const draft=$('#messageDraft'),send=$('#sendBtn'),queue=$('#queueList');if(!draft||!send||!queue)return;
+  draft.addEventListener('input',()=>syncSendButton());draft.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){if(send.disabled)return;event.preventDefault();sendDraft().catch(()=>{})}});send.addEventListener('click',()=>sendDraft().catch(()=>{}));
   document.querySelectorAll('[data-channel-switch]').forEach(button=>button.addEventListener('click',()=>resetChannelSelection()));
-  queue.addEventListener('click',event=>{
-    const card=event.target.closest?.('.queue-card');if(!card)return;
-    selectedConversationId=String(card.dataset.conversationId||'')||null;
-    currentCapability={enabled:false,reason:'loading',provider:null};syncSendButton();scheduleCapabilityRefresh();
-  });
-  const observer=new MutationObserver(()=>scheduleCapabilityRefresh());
-  observer.observe(queue,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleCapabilityRefresh()});
-  capabilityTimer=setInterval(()=>{if(!document.hidden&&selectedFromDom())refreshCapability(selectedFromDom()).catch(()=>{})},CAPABILITY_REFRESH_MS);
-  window.addEventListener('beforeunload',()=>{if(capabilityTimer)clearInterval(capabilityTimer)});
-  syncSendButton();
+  queue.addEventListener('click',event=>{const card=event.target.closest?.('.queue-card');if(!card)return;selectedConversationId=String(card.dataset.conversationId||'')||null;currentCapability={enabled:false,reason:'loading',provider:null};syncSendButton();scheduleCapabilityRefresh()});
+  const observer=new MutationObserver(()=>scheduleCapabilityRefresh());observer.observe(queue,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleCapabilityRefresh()});capabilityTimer=setInterval(()=>{if(!document.hidden&&selectedFromDom())refreshCapability(selectedFromDom()).catch(()=>{})},CAPABILITY_REFRESH_MS);window.addEventListener('beforeunload',()=>{if(capabilityTimer)clearInterval(capabilityTimer)});syncSendButton();
 }
-
 bind();
