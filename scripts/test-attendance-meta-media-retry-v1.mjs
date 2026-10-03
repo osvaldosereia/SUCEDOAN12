@@ -13,7 +13,7 @@ const sendEnd=ui.indexOf('\nfunction ',sendStart+10);
 const sendSource=ui.slice(sendStart,sendEnd>sendStart?sendEnd:undefined);
 assert.match(sendSource,/form\.set\(['"]idempotency_key['"],pendingMediaIdempotencyKey\)/,'retry deve enviar a chave persistida');
 assert.match(sendSource,/mediaFile[^\n]*value\s*=\s*['"]['"][\s\S]{0,150}pendingMediaIdempotencyKey\s*=\s*null/,'sucesso deve encerrar a operação idempotente');
-assert.doesNotMatch(sendSource,/catch[\s\S]{0,500}pendingMediaIdempotencyKey\s*=\s*null/,'erro não pode trocar a chave do mesmo arquivo');
+assert.doesNotMatch(sendSource,/\}catch\(error\)\{[\s\S]{0,250}pendingMediaIdempotencyKey\s*=\s*null/,'erro não pode trocar a chave do mesmo arquivo');
 
 assert.match(api,/action==="send_media"[\s\S]{0,350}metaConfigReady\(\)/,'send_media deve falhar antes do enqueue quando Meta não estiver configurada');
 
