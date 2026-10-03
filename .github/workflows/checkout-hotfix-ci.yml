@@ -11,6 +11,7 @@ on:
       - 'supabase/functions/admin-orders-v1/index.ts'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/sql/20261003_customer_identity_admin_phone_fix.sql'
+      - 'supabase/sql/20261003_customer_admin_email_generated_fix.sql'
       - 'vitrine/admin/index.html'
       - 'scripts/test-admin-stock-readiness-pagination.mjs'
   pull_request:
@@ -21,6 +22,7 @@ on:
       - 'scripts/test-customer-identity-admin-v2.mjs'
       - 'supabase/migrations/20261002150000_checkout_whatsapp_return_channel.sql'
       - 'supabase/sql/20261003_customer_identity_admin_phone_fix.sql'
+      - 'supabase/sql/20261003_customer_admin_email_generated_fix.sql'
       - 'index.html'
       - 'vitrine/index.html'
       - 'vitrine/admin/index.html'
