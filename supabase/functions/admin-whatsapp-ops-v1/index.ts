@@ -5,6 +5,7 @@ import {findProviderMediaDescriptor,isAllowedProviderMediaUrl,isAllowedAttendanc
 import {sendTextViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
 import {fetchMetaMediaInfo,fetchMetaMediaResponse,MetaMediaError} from "../_shared/whatsapp-meta-media-v1.mjs";
 import {sendAttendanceMediaViaMeta} from "../_shared/admin-attendance-media-send-v1.mjs";
+import {listAttendanceLibrary,prepareAttendanceLibraryUpload,completeAttendanceLibraryUpload,signAttendanceLibraryPreview,updateAttendanceLibraryItem,deactivateAttendanceLibraryItem} from "../_shared/admin-attendance-library-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -12,8 +13,8 @@ const META_WHATSAPP_ACCESS_TOKEN=(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||""
 const META_WHATSAPP_GRAPH_VERSION=(Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"").trim();
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
-const READ_ACTIONS=new Set(["accounts","queue","conversation","context","products","media","labels","conversation_labels","quick_replies"]);
-const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","marketing_opt_out","label_save","label_deactivate","conversation_labels_set","quick_reply_save","quick_reply_deactivate","send_text","send_media"]);
+const READ_ACTIONS=new Set(["accounts","queue","conversation","context","products","media","labels","conversation_labels","quick_replies","library_list","library_preview"]);
+const SAFE_POST_ACTIONS=new Set(["mark_read","follow_up","issue_catalog","marketing_opt_out","label_save","label_deactivate","conversation_labels_set","quick_reply_save","quick_reply_deactivate","send_text","send_media","library_upload_prepare","library_upload_complete","library_update","library_deactivate","library_send"]);
 const MEDIA_BUCKET="attendance-media-v1";
 const MEDIA_RETENTION_DAYS=30;
 const MEDIA_SIGNED_URL_SECONDS=600;
@@ -348,6 +349,21 @@ Deno.serve(async(req:Request)=>{
       const r=await q;if(r.error)throw r.error;return json(req,{ok:true,items:r.data||[]});
     }
 
+    if(req.method==="GET"&&action==="library_list"){
+      const data=await listAttendanceLibrary({
+        db,query:url.searchParams.get("q")||"",kind:url.searchParams.get("kind"),category:url.searchParams.get("category"),
+        limit:num(url.searchParams.get("limit"),40,1,100),cursor:url.searchParams.get("cursor")
+      });
+      return json(req,data,data?.ok===false?400:200);
+    }
+
+    if(req.method==="GET"&&action==="library_preview"){
+      const itemId=validUuid(url.searchParams.get("item_id"));
+      if(!itemId)return json(req,{ok:false,error:"library_item_invalid"},400);
+      const data=await signAttendanceLibraryPreview({db,itemId});
+      return json(req,data,data?.ok===false?404:200);
+    }
+
     if(req.method==="GET"&&action==="products"){
       const q=normalizeProductQuery(url.searchParams.get("q"));const limit=num(url.searchParams.get("limit"),12,1,12);
       if(!q)return json(req,{ok:true,query:null,items:[]});
@@ -368,6 +384,37 @@ Deno.serve(async(req:Request)=>{
     }
 
     const body=await req.json().catch(()=>({}));
+
+    if(action==="library_upload_prepare"){
+      const data=await prepareAttendanceLibraryUpload({db,adminUserId:auth.user_id,input:body});
+      return json(req,data,data?.ok===false?400:200);
+    }
+
+    if(action==="library_upload_complete"){
+      const data=await completeAttendanceLibraryUpload({db,adminUserId:auth.user_id,input:body});
+      return json(req,data,data?.ok===false?400:200);
+    }
+
+    if(action==="library_update"){
+      const data=await updateAttendanceLibraryItem({db,adminUserId:auth.user_id,input:body});
+      return json(req,data,data?.ok===false?400:200);
+    }
+
+    if(action==="library_deactivate"){
+      const data=await deactivateAttendanceLibraryItem({db,adminUserId:auth.user_id,itemId:body?.item_id});
+      return json(req,data,data?.ok===false?404:200);
+    }
+
+    if(action==="library_send"){
+      if(body?.to_phone_e164!==undefined||body?.whatsapp_account_id!==undefined||body?.account_id!==undefined||body?.phone_number_id!==undefined||body?.waba_id!==undefined||body?.customer_id!==undefined){
+        return json(req,{ok:false,error:"destination_fields_not_allowed"},400);
+      }
+      const conversationId=validUuid(body?.conversation_id);const itemId=validUuid(body?.item_id);const idempotencyKey=normalizeIdempotencyKey(body?.idempotency_key);
+      if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
+      if(!itemId)return json(req,{ok:false,error:"library_item_invalid"},400);
+      if(!idempotencyKey)return json(req,{ok:false,error:"invalid_idempotency_key"},400);
+      return json(req,{ok:false,error:"library_send_not_ready"},501);
+    }
 
     if(action==="label_save"){
       const id=body?.id?validUuid(body.id):null;const name=clean(body?.name,60);const color=clean(body?.color,7)||"#5f6368";const sortOrder=num(body?.sort_order,0,-9999,9999);
