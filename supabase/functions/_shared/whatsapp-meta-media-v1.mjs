@@ -1,4 +1,10 @@
 const clean=(value,max=2000)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,max);
+const OUTBOUND_MEDIA_MAX_BYTES=16*1024*1024;
+const OUTBOUND_MEDIA_MIME=new Set([
+  'image/jpeg','image/png',
+  'audio/aac','audio/amr','audio/mpeg','audio/mp4','audio/ogg',
+  'application/pdf'
+]);
 
 export class MetaMediaError extends Error{
   constructor(code,{status=0,retryable=false}={}){super(code);this.name='MetaMediaError';this.code=code;this.status=status;this.retryable=retryable}
@@ -7,6 +13,25 @@ export class MetaMediaError extends Error{
 
 function strictGraphVersion(value){const version=clean(value,20);if(!/^v\d+\.\d+$/.test(version))throw new MetaMediaError('meta_media_graph_version_invalid');return version}
 function strictMediaId(value){const id=clean(value,240);if(!/^[A-Za-z0-9._:-]{3,240}$/.test(id))throw new MetaMediaError('meta_media_id_invalid');return id}
+function strictPhoneNumberId(value){const id=clean(value,40);if(!/^\d{5,30}$/.test(id))throw new MetaMediaError('meta_media_phone_number_id_invalid');return id}
+function normalizedMime(value){return clean(value,180).toLowerCase().split(';')[0].trim()}
+function strictFilename(value){
+  const filename=clean(value,240).replace(/[\\/]+/g,'_').replace(/[^\p{L}\p{N}._() -]+/gu,'_').trim();
+  if(!filename||filename==='.'||filename==='..')throw new MetaMediaError('meta_media_filename_invalid');
+  return filename;
+}
+function strictBytes(value){
+  let bytes;
+  if(value instanceof Uint8Array)bytes=value;
+  else if(value instanceof ArrayBuffer)bytes=new Uint8Array(value);
+  else if(ArrayBuffer.isView(value))bytes=new Uint8Array(value.buffer,value.byteOffset,value.byteLength);
+  else throw new MetaMediaError('meta_media_bytes_invalid');
+  if(bytes.byteLength<1)throw new MetaMediaError('meta_media_empty');
+  if(bytes.byteLength>OUTBOUND_MEDIA_MAX_BYTES)throw new MetaMediaError('meta_media_too_large');
+  return bytes;
+}
+
+export function isAllowedOutboundMetaMime(value){return OUTBOUND_MEDIA_MIME.has(normalizedMime(value))}
 
 export function isAllowedMetaMediaUrl(value){
   try{
@@ -43,4 +68,24 @@ export async function fetchMetaMediaResponse({accessToken,url,fetchFn=fetch,time
   }catch(error){if(error instanceof MetaMediaError)throw error;throw new MetaMediaError('meta_media_download_network_error',{retryable:true})}
   if(!response.ok)throw new MetaMediaError(`meta_media_download_http_${response.status}`,{status:response.status,retryable:response.status>=500});
   return response;
+}
+
+export async function uploadMetaMedia({accessToken,graphVersion,phoneNumberId,mimeType,filename,bytes,fetchFn=fetch,timeoutMs=20000}={}){
+  const token=clean(accessToken,12000);if(!token)throw new MetaMediaError('meta_media_token_missing');
+  const version=strictGraphVersion(graphVersion);const phoneId=strictPhoneNumberId(phoneNumberId);
+  const mime=normalizedMime(mimeType);if(!OUTBOUND_MEDIA_MIME.has(mime))throw new MetaMediaError('meta_media_type_not_allowed');
+  const safeName=strictFilename(filename);const bodyBytes=strictBytes(bytes);
+  const form=new FormData();
+  form.set('messaging_product','whatsapp');
+  form.set('type',mime);
+  form.set('file',new Blob([bodyBytes],{type:mime}),safeName);
+  let response;
+  try{
+    response=await fetchFn(`https://graph.facebook.com/${version}/${phoneId}/media`,{
+      method:'POST',headers:{Authorization:`Bearer ${token}`},body:form,redirect:'error',signal:AbortSignal.timeout(timeoutMs)
+    });
+  }catch(error){if(error instanceof MetaMediaError)throw error;throw new MetaMediaError('meta_media_upload_network_error',{retryable:true})}
+  if(!response.ok){const payload=await safeJson(response);const code=clean(payload?.error?.code,40)||String(response.status);throw new MetaMediaError(`meta_media_upload_http_${code}`,{status:response.status,retryable:response.status>=500||response.status===429})}
+  const payload=await safeJson(response);const mediaId=clean(payload?.id,240);if(!mediaId)throw new MetaMediaError('meta_media_upload_invalid_response');
+  return {ok:true,provider:'meta',mediaId,mimeType:mime,filename:safeName,sizeBytes:bodyBytes.byteLength};
 }
