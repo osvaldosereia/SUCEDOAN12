@@ -29,7 +29,7 @@ on:
       - 'supabase/sql/20261003_whatsapp_ana_admin_preview_v1.sql'
       - 'supabase/sql/20261003_whatsapp_meta_shadow_media_preserve_v1.sql'
       - 'scripts/test-attendance-meta-*.mjs'
-      - 'scripts/test-attendance-media-audio-ux-v1.mjs'
+      - 'scripts/test-attendance-media-*.mjs'
       - 'scripts/test-attendance-human-ai-state-v1.mjs'
       - 'scripts/test-whatsapp-ana-worker-v1.mjs'
       - 'scripts/test-whatsapp-ana-admin-preview-v1.mjs'
@@ -53,77 +53,41 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Provider-neutral outbox contract
-        run: node scripts/test-attendance-provider-neutral-v3.mjs
-      - name: Attendance template picker contract
-        run: node scripts/test-attendance-template-picker-v1.mjs
-      - name: Attendance template send UI contract
-        run: node scripts/test-attendance-template-send-ui-v1.mjs
-      - name: Meta template transport send contract
-        run: node scripts/test-whatsapp-meta-template-send-v1.mjs
-      - name: Admin template send contract
-        run: node scripts/test-admin-attendance-template-send-v1.mjs
-      - name: Template PLpgSQL ambiguity regression
-        run: node scripts/test-attendance-meta-template-plpgsql-v1.mjs
-      - name: Meta templates contract
-        run: node scripts/test-whatsapp-meta-templates-v1.mjs
-      - name: Meta templates admin sync contract
-        run: node scripts/test-whatsapp-meta-template-admin-v1.mjs
-      - name: Meta transport contract
-        run: node scripts/test-attendance-meta-send-v1.mjs
-      - name: Meta media contract
-        run: node scripts/test-attendance-meta-media-v1.mjs
-      - name: Meta media content signature contract
-        run: node scripts/test-attendance-meta-media-content-v1.mjs
-      - name: Meta media retry/idempotency contract
-        run: node scripts/test-attendance-meta-media-retry-v1.mjs
-      - name: Meta media safety contract
-        run: node scripts/test-attendance-meta-media-safety-v1.mjs
-      - name: Audio media UX contract
-        run: node scripts/test-attendance-media-audio-ux-v1.mjs
-      - name: Human AI state contract
-        run: node scripts/test-attendance-human-ai-state-v1.mjs
-      - name: ANA dry-run contract
-        run: node scripts/test-whatsapp-ana-worker-v1.mjs
-      - name: ANA Admin preview contract
-        run: node scripts/test-whatsapp-ana-admin-preview-v1.mjs
-      - name: Meta Phone Number ID strictness
-        run: node scripts/test-attendance-meta-phone-id-v1.mjs
-      - name: Meta response-body timeout
-        run: node scripts/test-attendance-meta-body-timeout-v1.mjs
-      - name: Meta webhook contract
-        run: node scripts/test-whatsapp-meta-webhook-v1.mjs
-      - name: Meta shadow media preservation regression
-        run: node scripts/test-whatsapp-meta-shadow-media-preserve-v1.mjs
-      - name: Meta webhook TypeScript syntax
-        run: node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts
-      - name: ANA worker TypeScript syntax
-        run: node --experimental-strip-types --check supabase/functions/whatsapp-ana-worker-v1/index.ts
-      - name: ANA preview API TypeScript syntax
-        run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ana-preview-v1/index.ts
-      - name: ANA policy JavaScript syntax
-        run: node --check supabase/functions/_shared/ana-policy-v1.mjs
-      - name: Meta canonical outbound contract
-        run: node scripts/test-attendance-meta-dedupe-v1.mjs
-      - name: Admin Meta gateway contract
-        run: node scripts/test-admin-attendance-meta-send-ui-v1.mjs
-      - name: Admin media dispatcher syntax
-        run: node --check supabase/functions/_shared/admin-attendance-media-send-v1.mjs
-      - name: Admin templates TypeScript syntax
-        run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-templates-v1/index.ts
-      - name: Admin Meta gateway TypeScript syntax
-        run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts
-      - name: Native Attendance core JavaScript syntax
-        run: node --check vitrine/admin/atendimento/attendance-app.js
-      - name: ANA preview UI JavaScript syntax
-        run: node --check vitrine/admin/atendimento/attendance-ana-preview.js
-      - name: Admin composer JavaScript syntax
-        run: node --check vitrine/admin/atendimento/attendance-send.js
-      - name: Admin media composer JavaScript syntax
-        run: node --check vitrine/admin/atendimento/attendance-media-send.js
-      - name: Human AI controls JavaScript syntax
-        run: node --check vitrine/admin/atendimento/attendance-human-ai.js
-      - name: Attendance templates JavaScript syntax
-        run: node --check vitrine/admin/atendimento/attendance-templates.js
-      - name: Meta secrets guard
-        run: node scripts/test-whatsapp-meta-no-secrets-v1.mjs
+      - {name: Provider-neutral outbox contract, run: 'node scripts/test-attendance-provider-neutral-v3.mjs'}
+      - {name: Attendance template picker contract, run: 'node scripts/test-attendance-template-picker-v1.mjs'}
+      - {name: Attendance template send UI contract, run: 'node scripts/test-attendance-template-send-ui-v1.mjs'}
+      - {name: Meta template transport send contract, run: 'node scripts/test-whatsapp-meta-template-send-v1.mjs'}
+      - {name: Admin template send contract, run: 'node scripts/test-admin-attendance-template-send-v1.mjs'}
+      - {name: Template PLpgSQL ambiguity regression, run: 'node scripts/test-attendance-meta-template-plpgsql-v1.mjs'}
+      - {name: Meta templates contract, run: 'node scripts/test-whatsapp-meta-templates-v1.mjs'}
+      - {name: Meta templates admin sync contract, run: 'node scripts/test-whatsapp-meta-template-admin-v1.mjs'}
+      - {name: Meta transport contract, run: 'node scripts/test-attendance-meta-send-v1.mjs'}
+      - {name: Meta media contract, run: 'node scripts/test-attendance-meta-media-v1.mjs'}
+      - {name: Meta media content signature contract, run: 'node scripts/test-attendance-meta-media-content-v1.mjs'}
+      - {name: Meta media retry/idempotency contract, run: 'node scripts/test-attendance-meta-media-retry-v1.mjs'}
+      - {name: Meta media safety contract, run: 'node scripts/test-attendance-meta-media-safety-v1.mjs'}
+      - {name: Audio media UX contract, run: 'node scripts/test-attendance-media-audio-ux-v1.mjs'}
+      - {name: Media status UX contract, run: 'node scripts/test-attendance-media-status-ux-v1.mjs'}
+      - {name: Human AI state contract, run: 'node scripts/test-attendance-human-ai-state-v1.mjs'}
+      - {name: ANA dry-run contract, run: 'node scripts/test-whatsapp-ana-worker-v1.mjs'}
+      - {name: ANA Admin preview contract, run: 'node scripts/test-whatsapp-ana-admin-preview-v1.mjs'}
+      - {name: Meta Phone Number ID strictness, run: 'node scripts/test-attendance-meta-phone-id-v1.mjs'}
+      - {name: Meta response-body timeout, run: 'node scripts/test-attendance-meta-body-timeout-v1.mjs'}
+      - {name: Meta webhook contract, run: 'node scripts/test-whatsapp-meta-webhook-v1.mjs'}
+      - {name: Meta shadow media preservation regression, run: 'node scripts/test-whatsapp-meta-shadow-media-preserve-v1.mjs'}
+      - {name: Meta webhook TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts'}
+      - {name: ANA worker TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-ana-worker-v1/index.ts'}
+      - {name: ANA preview API TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-ana-preview-v1/index.ts'}
+      - {name: ANA policy JavaScript syntax, run: 'node --check supabase/functions/_shared/ana-policy-v1.mjs'}
+      - {name: Meta canonical outbound contract, run: 'node scripts/test-attendance-meta-dedupe-v1.mjs'}
+      - {name: Admin Meta gateway contract, run: 'node scripts/test-admin-attendance-meta-send-ui-v1.mjs'}
+      - {name: Admin media dispatcher syntax, run: 'node --check supabase/functions/_shared/admin-attendance-media-send-v1.mjs'}
+      - {name: Admin templates TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-templates-v1/index.ts'}
+      - {name: Admin Meta gateway TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts'}
+      - {name: Native Attendance core JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-app.js'}
+      - {name: ANA preview UI JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-ana-preview.js'}
+      - {name: Admin composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-send.js'}
+      - {name: Admin media composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-media-send.js'}
+      - {name: Human AI controls JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-human-ai.js'}
+      - {name: Attendance templates JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-templates.js'}
+      - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}

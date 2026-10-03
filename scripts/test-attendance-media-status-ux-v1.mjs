@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const path='vitrine/admin/atendimento/attendance-media-send.js';
+assert.equal(fs.existsSync(path),true,'attendance-media-send.js deve existir');
+const src=fs.readFileSync(path,'utf8');
+assert.match(src,/provider_message_id|message_id/,'retorno de mídia deve preservar identificador canônico/provedor quando disponível');
+assert.match(src,/status_current|status/,'retorno deve considerar status do envio');
+assert.match(src,/mediaSendState/,'deve existir estado operacional explícito do envio');
+assert.match(src,/Aceito pela Meta|Entregue|Lido|Falhou/,'deve usar linguagem operacional clara');
+assert.match(src,/aria-live/,'feedback do envio deve ser anunciável');
+assert.match(src,/attendance:media-send-state/,'deve publicar mudança de estado sem acoplar módulos');
+assert.match(src,/idempotency/,'retry deve continuar preservando idempotência');
+console.log('PASS test-attendance-media-status-ux-v1');
