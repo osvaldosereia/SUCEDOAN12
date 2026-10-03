@@ -7020,6 +7020,7 @@
       host.innerHTML=state.customers.length?state.customers.map(customerRow).join(''):'<div class="empty">Nenhum cliente encontrado.</div>';
       host.querySelectorAll('[data-history-customer]').forEach(b=>b.onclick=()=>openCustomerProfile(state.customers.find(c=>c.id===b.dataset.historyCustomer)));
       host.querySelectorAll('[data-edit-customer]').forEach(b=>b.onclick=()=>openCustomerEditor(state.customers.find(c=>c.id===b.dataset.editCustomer)));
+      host.querySelectorAll('[data-delete-customer]').forEach(b=>b.onclick=()=>{const c=state.customers.find(x=>x.id===b.dataset.deleteCustomer);deleteCustomer(c?.id||'',c?.display_name||'')});
     }catch(e){host.innerHTML='<div class="empty">Erro ao carregar clientes. <button class="text" id="retryCustomers">Tentar novamente</button></div>';if($('#retryCustomers'))$('#retryCustomers').onclick=()=>loadCustomers(q)}
   }
   function customerRow(c){
@@ -7030,7 +7031,7 @@
       '<span class="mobile-wide">'+esc(formatPhone(c.phone))+'</span>'+
       '<span class="desktop-extra">'+esc(formatCpf(c.cpf))+'</span>'+
       '<span class="desktop-extra">'+esc(address||'—')+'</span>'+
-      '<div class="customer-row-actions"><button class="text" data-history-customer="'+esc(c.id)+'">Histórico</button><button class="text" data-edit-customer="'+esc(c.id)+'">Editar</button></div></div>';
+      '<div class="customer-row-actions"><button class="text" data-history-customer="'+esc(c.id)+'">Histórico</button><button class="text" data-edit-customer="'+esc(c.id)+'">Editar</button><button class="text danger" data-delete-customer="'+esc(c.id)+'">Excluir</button></div></div>';
   }
 
   function historySourceLabel(source){
@@ -7172,11 +7173,12 @@
       '<label><span>UF</span><input name="state" maxlength="2" value="'+esc(a.state||'MT')+'"></label>'+
       '<label class="span-2"><span>Referência</span><input name="raw_text" value="'+esc(a.raw_text||'')+'"></label>'+
       '</form>';
-    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button><button class="primary" id="saveCustomer">Salvar cliente</button>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button>'+(c?'<button class="text danger" id="deleteCustomer">Excluir definitivamente</button>':'')+'<button class="primary" id="saveCustomer">Salvar cliente</button>';
     $('#cancelEditor').onclick=()=>{
       $('#editor').close();
       if(returnOrderId)openOrder(returnOrderId);
     };
+    if(c&&$('#deleteCustomer'))$('#deleteCustomer').onclick=()=>deleteCustomer(c.id,c.display_name||'',true);
     $('#saveCustomer').onclick=()=>saveCustomer(c?.id||'',returnOrderId);
     if(!$('#editor').open)$('#editor').showModal();
     if(returnOrderId){
@@ -7184,6 +7186,23 @@
       if(cpf){cpf.focus();cpf.scrollIntoView({behavior:'smooth',block:'center'})}
     }
   }
+  async function deleteCustomer(id,name='',fromEditor=false){
+    if(!id)return;
+    const label=String(name||'este cliente').trim()||'este cliente';
+    if(!confirm('Excluir definitivamente o cadastro de '+label+'?\n\nOs pedidos históricos serão mantidos, mas os dados de cadastro e contato serão apagados. Esta ação não pode ser desfeita.'))return;
+    const q=$('#customerSearch')?.value.trim()||'';
+    try{
+      await customerApi('vitrine_customer_delete',{id});
+      if(fromEditor&&$('#editor')?.open)$('#editor').close();
+      state.customerProfile=null;
+      state.customers=(state.customers||[]).filter(c=>c.id!==id);
+      toast('Cadastro do cliente excluído definitivamente');
+      await renderCustomers(q);
+    }catch(e){
+      toast(errorMessage(e.message));
+    }
+  }
+
   function customerStatusOptions(current){
     return [['active','Ativo'],['inactive','Inativo']].map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
   }
