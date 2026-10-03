@@ -56,13 +56,15 @@ jobs:
         run: node scripts/test-order-separation-v2-admin-api.mjs
       - name: Separation v2 customer storefront
         run: node scripts/test-order-separation-v2-customer.mjs
+      - name: Separation v2 Admin storefront
+        run: node scripts/test-order-separation-v2-admin-ui.mjs
       - name: Public order storefront and printing
         run: |
           node scripts/test-order-public-summary.mjs
           node scripts/test-admin-order-public-vitrine.mjs
           node scripts/test-order-public-vitrine-print.mjs
           node scripts/test-public-order-triple-tap-separation-v1.mjs
-      - name: Inline JavaScript syntax
+      - name: JavaScript syntax
         run: |
           node <<'NODE'
           const fs=require('fs');
@@ -72,6 +74,7 @@ jobs:
             scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`${file} inline script ${i+1}: ${e.message}`)}});
             console.log(`${file}: inline syntax OK (${scripts.length} script blocks)`);
           }
+          if(fs.existsSync('vitrine/admin/separacao/separation.js'))new Function(fs.readFileSync('vitrine/admin/separacao/separation.js','utf8'));
           NODE
       - name: Diff check
         run: git diff --check HEAD^ HEAD || git diff --check
