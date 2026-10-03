@@ -4,11 +4,13 @@ import assert from 'node:assert/strict';
 const admin = fs.readFileSync('vitrine/admin/index.html', 'utf8');
 
 for (const copy of [
-  'Enviar pedido para WhatsApp da empresa',
-  'Abrir WhatsApp do cliente',
+  'Enviar pedido:',
+  'Cliente',
+  '65 99815-0975',
+  '65 99688-4599',
   'Abrir WhatsApp do cliente com link de cadastro',
   'Copiar link de cadastro',
-  'Nenhuma falta de estoque foi encontrada agora'
+  'Nenhuma falta de estoque foi encontrada neste momento'
 ]) {
   assert.ok(admin.includes(copy), `admin expedition UI missing: ${copy}`);
 }

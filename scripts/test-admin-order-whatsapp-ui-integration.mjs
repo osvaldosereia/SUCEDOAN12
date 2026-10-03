@@ -7,8 +7,10 @@ const orderTransport = fs.readFileSync('supabase/functions/admin-orders-v1/index
 
 for (const copy of [
   'WhatsApp e cadastro',
-  'Abrir pedido no WhatsApp da empresa',
-  'Abrir WhatsApp do cliente',
+  'Enviar pedido:',
+  'Cliente',
+  '65 99815-0975',
+  '65 99688-4599',
   'Gerar link de cadastro',
   'Abrir WhatsApp do cliente com link de cadastro',
   'Copiar link de cadastro'
@@ -37,6 +39,8 @@ for (const fn of [
 }
 
 assert.ok(admin.includes('const COMPANY_WHATSAPP_E164="5565998150975"'), 'company WhatsApp target must remain 65 99815-0975');
+assert.ok(admin.includes('const ORDER_WHATSAPP_4599_E164="5565996884599"'), 'secondary order WhatsApp target must be 65 99688-4599');
+assert.ok(admin.includes("openNativeWhatsapp(ORDER_WHATSAPP_4599_E164,currentOrderCompanyWhatsappMessage())"), '4599 button must use the same complete order message');
 assert.ok(admin.includes("const url='whatsapp://send?phone='+encodeURIComponent(phone)+'&text='+encodeURIComponent(message)"), 'admin WhatsApp actions must use the native WhatsApp protocol');
 assert.ok(admin.includes("$('#sendOrderWhatsApp').onclick=openCurrentOrderCompanyWhatsapp"), 'company WhatsApp button must stay separate from checkout transport');
 assert.ok(!admin.includes("$('#sendOrderWhatsApp').onclick=sendCurrentOrderWhatsapp"), 'company WhatsApp button must not use automatic checkout/PapoAI transport');
