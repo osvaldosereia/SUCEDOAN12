@@ -1,0 +1,64 @@
+name: one-shot-fix-order-summary-escape
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/one-shot-fix-order-summary-escape.yml]
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/order-public-summary-link
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fix and verify feature branch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('vitrine/admin/index.html')
+          s=p.read_text()
+          bad="return lines.join('"+"\n"+"')"
+          count=s.count(bad)
+          if count!=2: raise SystemExit(f'expected 2 broken join strings, got {count}')
+          s=s.replace(bad,"return lines.join('\\n')")
+          p.write_text(s)
+          PY
+          node scripts/test-order-public-summary.mjs
+          node scripts/test-checkout-whatsapp-return.mjs
+          node scripts/test-checkout-stock-adjustment-contract.mjs
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          node --check checkout-resilience.js
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`vitrine/admin/index.html inline script ${i+1}: ${e.message}`)}});
+          console.log(`inline syntax OK (${scripts.length} script blocks)`);
+          NODE
+          git diff --check
+      - name: Commit branch fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vitrine/admin/index.html
+          git commit -m "fix: corrigir escape das mensagens do pedido"
+          git pull --rebase origin feat/order-public-summary-link
+          git push origin HEAD:feat/order-public-summary-link
+      - name: Remove dispatcher
+        if: always()
+        shell: bash
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-fix-order-summary-escape.yml
+          git commit -m "chore: remover validador temporario"
+          git push origin main
