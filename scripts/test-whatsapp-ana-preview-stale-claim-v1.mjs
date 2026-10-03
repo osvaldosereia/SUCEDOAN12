@@ -9,7 +9,7 @@ assert.match(sql,/create or replace function public\.ops2_admin_ana_preview_star
 assert.match(sql,/v_job\.status='claimed'/i,'deve tratar claim já existente');
 assert.match(sql,/claimed_at\s*>\s*now\(\)\s*-\s*interval\s*'2 minutes'/i,'claim recente deve continuar busy por lease de 2 minutos');
 assert.match(sql,/ana_preview_busy/i,'claim recente deve continuar fail-closed como busy');
-assert.match(sql,/coalesce\(v_job\.metadata->>'source',''\)='admin_preview'/i,'somente claim criado pela prévia administrativa pode ser recuperado');
+assert.match(sql,/coalesce\(v_job\.metadata->>'source',''\)<>'admin_preview'/i,'claim que não veio da prévia administrativa deve permanecer bloqueado');
 assert.match(sql,/dry_run_not_sendable/i,'recovery deve permanecer estritamente dry-run e não enviável');
 assert.match(sql,/stale_claim_recovery_count/i,'recovery deve deixar trilha auditável de contagem');
 assert.match(sql,/last_stale_claim_recovered_at/i,'recovery deve registrar quando recuperou claim órfão');
