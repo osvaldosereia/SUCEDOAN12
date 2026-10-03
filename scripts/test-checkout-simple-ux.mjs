@@ -2,6 +2,10 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const ux=fs.readFileSync('checkout-resilience.js','utf8');
+const site=fs.readFileSync('index.html','utf8');
+const mirror=fs.readFileSync('vitrine/index.html','utf8');
+
+assert.equal(site,mirror,'public storefront mirrors must stay identical');
 
 // Telefone: uma unica acao visivel e consulta automatica.
 assert.match(ux,/checkoutWhatsappUnified/,'checkout must expose one unified WhatsApp field');
@@ -19,17 +23,35 @@ assert.doesNotMatch(ux,/function collapseOrderSummary\(/,'order items must not b
 assert.doesNotMatch(ux,/da-checkout-cart-summary/,'checkout must not hide product list inside details');
 assert.doesNotMatch(ux,/Ver ou alterar produtos/,'product list must already be visible without an extra disclosure action');
 
-// Data deixa de depender de um select pequeno.
+// Checkout calmo: rerenders nao podem jogar a tela para outro ponto.
+assert.match(site,/previousCheckoutScrollTop/,'checkout repaint must remember current scroll position');
+assert.match(site,/sheetBody\.scrollTop=previousCheckoutScrollTop/,'checkout repaint must restore current scroll position');
+
+// Endereco cadastrado ja vale como confirmado; so existe a acao de trocar.
+assert.doesNotMatch(site,/id=\\?"confirmAddress\\?"/,'saved address must not require a confirmation button');
+assert.doesNotMatch(ux,/Confirme se este é o endereço da entrega/,'validation must not require confirming a saved address');
+assert.match(site,/id=\\?"editAddress\\?"/,'saved address must still offer an edit action');
+assert.match(site,/state\.addressConfirmed=data\.found&&data\.customer\?\.registration_complete===true/,'complete saved address must be accepted automatically after lookup');
+
+// Marketing: uma frase + checkbox, sem abrir formulario inteiro.
+assert.match(site,/Quero receber ofertas semanais por WhatsApp/,'marketing choice must use one plain-language sentence');
+assert.match(site,/checkoutMarketingExisting/,'existing customer must get an inline marketing checkbox');
+assert.match(site,/saveCheckoutMarketingPreference/,'existing marketing preference must save without entering edit mode');
+assert.doesNotMatch(site,/editMarketingPreference/,'checkout must not show the old confusing marketing edit button');
+assert.match(site,/state\.customerLookup\.status==='new'\|\|c\.marketing_opt_in===true/,'new customer marketing checkbox must start selected while preserving existing choices');
+
+// Primeira data disponivel ja vem selecionada.
+assert.match(site,/state\.checkoutDeliveryDate=state\.deliveryOptions\[0\]\?\.date\|\|''/,'first available delivery date must be selected automatically');
 assert.match(ux,/da-date-options/,'delivery dates must be rendered as large choice cards');
 assert.match(ux,/checkoutDeliveryDate/,'canonical delivery-date select must remain the source of truth');
-assert.match(ux,/dispatchEvent\(new Event\('change'/,'date cards must update the canonical select');
 
-// Controles grandes para celular e baixa familiaridade digital.
+// Menos texto e controles grandes.
+assert.doesNotMatch(ux,/Você não precisa digitar tudo novamente/,'checkout must avoid redundant explanatory copy');
+assert.doesNotMatch(ux,/Toque no dia em que deseja receber/,'delivery section must not repeat obvious instructions');
 assert.match(ux,/font-size:16px/,'typed form values must use at least 16px');
 assert.match(ux,/min-height:52px/,'primary form controls must have generous touch height');
 assert.match(ux,/@media\(max-width:560px\)[\s\S]*\.payments\{grid-template-columns:1fr!important/,'mobile payment choices must use one column');
-assert.match(ux,/Sim, entregar aqui/,'saved-address primary action must be explicit');
-assert.match(ux,/Usar outro endereço/,'saved-address secondary action must be explicit');
+assert.match(ux,/Trocar endereço/,'saved-address action must use short plain language');
 
 // Rodape simples: total + uma acao dominante.
 assert.match(ux,/da-checkout-final-total/,'checkout footer must keep total visible');

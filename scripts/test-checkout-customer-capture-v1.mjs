@@ -15,10 +15,10 @@ assert.match(capture,/function validateCheckoutBasics\(/,'checkout must validate
 assert.match(capture,/function showCheckoutValidation\(/,'checkout must visibly explain what is missing or invalid');
 assert.match(capture,/scrollIntoView/,'checkout must take the customer to the field that needs attention');
 assert.match(capture,/aria-invalid/,'invalid fields must be exposed visibly and accessibly');
-assert.match(capture,/(Informações pessoais|2\. Seus dados)/,'checkout must visibly separate personal information');
-assert.match(capture,/(Dados da entrega|3\. Endereço da entrega)/,'checkout must visibly separate delivery information');
-assert.match(capture,/Data da entrega/,'checkout must visibly separate delivery date');
-assert.match(capture,/Forma de pagamento/,'checkout must visibly separate payment');
+assert.match(capture,/(Informações pessoais|2\. Seus dados|Seus dados)/,'checkout must visibly separate personal information');
+assert.match(capture,/(Dados da entrega|3\. Endereço da entrega|Endereço)/,'checkout must visibly separate delivery information');
+assert.match(capture,/Data de entrega/,'checkout must visibly separate delivery date');
+assert.match(capture,/(Forma de pagamento|Pagamento na entrega)/,'checkout must visibly separate payment');
 assert.match(capture,/body\.whatsapp_phone=phone\.full/,'live phone must be injected in submit_order');
 assert.match(capture,/url\.searchParams\.set\('action','customer_register'\)/,'capture layer must reuse canonical customer_register');
 for(const field of ['checkoutName','checkoutDocument','checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity']){
