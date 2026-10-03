@@ -7693,13 +7693,17 @@ window.addEventListener('message',event=>{
     }
   }
   function orderWhatsappRegistrationHtml(o){
-    const phone=o?.whatsapp_phone_e164||o?.delivery_address_snapshot?.phone||'';
+    const phone=o?.phone_e164||o?.whatsapp_phone_e164||o?.delivery_address_snapshot?.phone||o?.delivery_address?.phone||'';
     const registered=o?.registration_complete===true;
     return '<div class="section-title">WhatsApp e cadastro</div><div class="rule-notice" id="orderWhatsappRegistrationPanel">'+
       '<strong>'+esc(phone?formatPhone(phone):'Pedido sem WhatsApp')+'</strong><div id="orderWhatsappRegistrationStatus" class="sub">'+(registered?'Cadastro concluído':'Cadastro pendente')+'</div>'+
+      '<div class="sub" style="margin-top:10px;font-weight:800">Enviar pedido:</div>'+
+      '<div class="print-actions" style="margin-top:8px">'+
+        '<button class="secondary" id="openOrderCustomerWhatsApp" type="button" '+(phone?'':'disabled')+'>Cliente</button>'+
+        '<button class="primary" id="sendOrderWhatsApp" type="button">65 99815-0975</button>'+
+        '<button class="secondary" id="sendOrderWhatsApp4599" type="button">65 99688-4599</button>'+
+      '</div>'+
       '<div class="print-actions" style="margin-top:10px">'+
-        '<button class="primary" id="sendOrderWhatsApp" type="button">Abrir pedido no WhatsApp da empresa</button>'+
-        '<button class="secondary" id="openOrderCustomerWhatsApp" type="button" '+(phone?'':'disabled')+'>Abrir WhatsApp do cliente</button>'+
         '<button class="secondary" id="issueOrderRegistrationLink" type="button" '+(phone&&!registered?'':'disabled')+'>'+(registered?'Cadastro concluído':'Gerar link de cadastro')+'</button>'+
       '</div><div id="orderRegistrationLinkActions" class="hidden" style="display:none!important;margin-top:10px"><div class="sub" id="orderRegistrationLinkValue"></div><div class="print-actions" style="margin-top:8px"><button class="secondary" id="openOrderRegistrationWhatsApp" type="button">Abrir WhatsApp do cliente com link de cadastro</button><button class="secondary" id="copyOrderRegistrationLink" type="button">Copiar link de cadastro</button></div></div></div>';
   }
@@ -7765,6 +7769,7 @@ window.addEventListener('message',event=>{
     finally{if(document.contains(btn))btn.textContent='Atualizando…';await refreshCurrentOrderWhatsappRegistration()}
   }
   const COMPANY_WHATSAPP_E164="5565998150975";
+  const ORDER_WHATSAPP_4599_E164="5565996884599";
   function appendCurrentOrderWhatsappItems(lines,items){
     (Array.isArray(items)?items:[]).forEach(item=>{
       const qty=Number(item?.quantity||item?.qty||1)||1;
@@ -7825,12 +7830,27 @@ window.addEventListener('message',event=>{
     const printUrl=new URL(url);printUrl.searchParams.set('print','1');
     window.open(printUrl.toString(),'_blank','noopener,noreferrer');
   }
+  function currentOrderWhatsappShareData(){
+    const d=state.currentOrder||{},o=d.order||{},customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{};
+    const a=(o.delivery_address_snapshot&&typeof o.delivery_address_snapshot==='object'?o.delivery_address_snapshot:(o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:(d.customer?.address||{})));
+    const field=(selector,fallback='')=>String($(selector)?.value??fallback??'').trim();
+    const code=shortOrder(o.order_number||o.public_order_code||o.id||'');
+    const customerName=field('#orderDeliveryName',o.customer_name||customer.name||customer.display_name||a.customer_name||a.recipient_name||d.customer?.display_name||'');
+    const rawPhone=field('#orderDeliveryPhone',o.phone_e164||o.whatsapp_phone_e164||a.phone||d.customer?.phone||'');
+    const phone=phoneDigits(rawPhone),phoneLabel=phone?formatPhone(phone):'';
+    const street=field('#orderDeliveryStreet',a.street||''),number=field('#orderDeliveryNumber',a.number||''),district=field('#orderDeliveryDistrict',a.district||''),complement=field('#orderDeliveryComplement',a.complement||''),city=field('#orderDeliveryCity',a.city||''),uf=field('#orderDeliveryState',a.state||''),postal=field('#orderDeliveryPostalCode',a.postal_code||'');
+    const streetLine=[street,number].filter(Boolean).join(', '),cityLine=city?(uf?city+'/'+uf:city):uf;
+    const address=[streetLine,district,complement?'Compl. '+complement:'',cityLine,postal?'CEP '+postal:''].filter(Boolean).join(' - ');
+    return {code,customerName,phone,phoneLabel,address,url:publicOrderUrlFor(o),order:o};
+  }
   function currentOrderCompanyWhatsappMessage(){
-    const d=state.currentOrder||{},o=d.order||{},customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{},delivery=o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:{},code=o.public_order_code||o.order_number||o.id||'',url=publicOrderUrlFor(o),lines=['PEDIDO DONA ANTONIA'];
-    if(code)lines.push('','Pedido: '+code);
-    const customerName=o.customer_name||customer.name||customer.display_name||delivery.customer_name||'';if(customerName)lines.push('Cliente: '+customerName);
-    const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
-    if(url)lines.push('','Conferir pedido completo:',''+url);
+    const x=currentOrderWhatsappShareData(),lines=['PEDIDO DONA ANTONIA'];
+    lines.push('Pedido: #'+(x.code||'Não informado'));
+    lines.push('Cliente: '+(x.customerName||'Não informado'));
+    lines.push('Endereço: '+(x.address||'Não informado'));
+    lines.push('Telefone: '+(x.phoneLabel||'Não informado'));
+    const total=Number(x.order?.total||x.order?.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+    if(x.url)lines.push('','Conferir pedido completo:',''+x.url);
     return lines.join('\n')
   }
   function openNativeWhatsapp(phone,message){
@@ -7840,11 +7860,17 @@ window.addEventListener('message',event=>{
   function openCurrentOrderCompanyWhatsapp(){
     openNativeWhatsapp(COMPANY_WHATSAPP_E164,currentOrderCompanyWhatsappMessage())
   }
+  function openCurrentOrder4599Whatsapp(){
+    openNativeWhatsapp(ORDER_WHATSAPP_4599_E164,currentOrderCompanyWhatsappMessage())
+  }
   function currentOrderCustomerWhatsappMessage(){
-    const d=state.currentOrder||{},o=d.order||{},code=o.public_order_code||o.order_number||o.id||'',url=publicOrderUrlFor(o),lines=['Ola! Seu pedido da Dona Antonia foi recebido.'];
-    if(code)lines.push('Pedido: '+code);
-    const total=Number(o.total||o.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
-    if(url)lines.push('','Confira produtos, fotos, quantidades e entrega:',''+url);
+    const x=currentOrderWhatsappShareData(),lines=['Ola! Seu pedido da Dona Antonia foi recebido.'];
+    lines.push('Pedido: #'+(x.code||'Não informado'));
+    lines.push('Cliente: '+(x.customerName||'Não informado'));
+    lines.push('Endereço: '+(x.address||'Não informado'));
+    lines.push('Telefone: '+(x.phoneLabel||'Não informado'));
+    const total=Number(x.order?.total||x.order?.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+    if(x.url)lines.push('','Confira produtos, fotos, quantidades e entrega:',''+x.url);
     return lines.join('\n')
   }
   function openCurrentOrderCustomerWhatsapp(){
@@ -7975,6 +8001,7 @@ window.addEventListener('message',event=>{
     $('#saveOrder').onclick=saveOrder;
     bindCurrentOrderVitrine();
     if($('#sendOrderWhatsApp'))$('#sendOrderWhatsApp').onclick=openCurrentOrderCompanyWhatsapp;
+    if($('#sendOrderWhatsApp4599'))$('#sendOrderWhatsApp4599').onclick=openCurrentOrder4599Whatsapp;
     if($('#openOrderCustomerWhatsApp'))$('#openOrderCustomerWhatsApp').onclick=openCurrentOrderCustomerWhatsapp;
     if($('#issueOrderRegistrationLink'))$('#issueOrderRegistrationLink').onclick=issueCurrentOrderRegistrationLink;
     if($('#openOrderRegistrationWhatsApp'))$('#openOrderRegistrationWhatsApp').onclick=openCurrentOrderRegistrationWhatsapp;
