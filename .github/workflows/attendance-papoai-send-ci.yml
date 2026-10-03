@@ -8,8 +8,11 @@ on:
     paths:
       - 'scripts/test-admin-attendance-papoai-webhook-send-v1.mjs'
       - 'scripts/test-admin-attendance-send-ui-v1.mjs'
+      - 'scripts/test-admin-attendance-ui-v1.mjs'
+      - 'scripts/test-admin-attendance-unsupported-display-v1.mjs'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
       - 'supabase/sql/20261002_admin_attendance_papoai_webhook_send_v1.sql'
+      - 'supabase/sql/20261003_admin_attendance_unsupported_display_v1.sql'
       - 'vitrine/admin/atendimento/**'
       - '.github/workflows/attendance-papoai-send-ci.yml'
 
@@ -25,5 +28,6 @@ jobs:
       - run: node scripts/test-admin-attendance-send-ui-v1.mjs
       - run: node scripts/test-admin-attendance-api-v1.mjs
       - run: node scripts/test-admin-attendance-ui-v1.mjs
+      - run: node scripts/test-admin-attendance-unsupported-display-v1.mjs
       - run: node --check vitrine/admin/atendimento/attendance.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
