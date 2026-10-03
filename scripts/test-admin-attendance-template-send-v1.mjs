@@ -11,7 +11,7 @@ assert.match(sql,/ops2_admin_attendance_claim_template_outbox_v1/i);
 assert.match(sql,/ops2_admin_attendance_accept_meta_template_outbound_v1/i);
 assert.match(sql,/message_type\s*,[\s\S]*?'template'/i);
 assert.match(sql,/template_id/i);
-assert.match(sql,/status\s*=\s*'APPROVED'|upper\([^)]*status[^)]*\)\s*=\s*'APPROVED'/i);
+assert.match(sql,/upper\(coalesce\(t\.status,''\)\)\s*=\s*'APPROVED'/i);
 assert.match(sql,/attendance[\s\S]*enabled/i);
 assert.match(sql,/meta_canary_to_e164/i);
 assert.match(sql,/meta_canary_destination_blocked/i);
