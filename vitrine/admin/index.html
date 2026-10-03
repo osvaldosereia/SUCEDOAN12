@@ -7841,7 +7841,7 @@
     const d=state.currentOrder||{},o=d.order||{},customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{};
     const a=(o.delivery_address_snapshot&&typeof o.delivery_address_snapshot==='object'?o.delivery_address_snapshot:(o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:(d.customer?.address||{})));
     const field=(selector,fallback='')=>String($(selector)?.value??fallback??'').trim();
-    const code=shortOrder(o.order_number||o.public_order_code||o.id||'');
+    const code=shortOrder(o.order_number||'');
     const customerName=field('#orderDeliveryName',o.customer_name||customer.name||customer.display_name||a.customer_name||a.recipient_name||d.customer?.display_name||'');
     const rawPhone=field('#orderDeliveryPhone',o.phone_e164||o.whatsapp_phone_e164||a.phone||d.customer?.phone||'');
     const phone=phoneDigits(rawPhone),phoneLabel=phone?formatPhone(phone):'';
