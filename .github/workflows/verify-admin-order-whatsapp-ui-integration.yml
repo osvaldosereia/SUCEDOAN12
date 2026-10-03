@@ -8,15 +8,20 @@ on:
       - 'vitrine/admin/separacao/**'
       - 'pedido/index.html'
       - 'p/index.html'
+      - 'checkout-resilience.js'
+      - 'scripts/test-checkout*.mjs'
       - 'scripts/test-order-public-summary.mjs'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
       - 'scripts/test-public-order-triple-tap-separation-v1.mjs'
       - 'scripts/test-order-separation-v2-*.mjs'
+      - 'scripts/test-admin-order-separation-v2-list.mjs'
+      - 'scripts/test-admin-orders-four-stages-v2.mjs'
       - 'supabase/migrations/20261003193000_order_separation_v2.sql'
       - 'supabase/migrations/20261003193500_order_separation_v2_completion.sql'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
+      - 'supabase/functions/storefront-v2/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
   push:
@@ -26,15 +31,20 @@ on:
       - 'vitrine/admin/separacao/**'
       - 'pedido/index.html'
       - 'p/index.html'
+      - 'checkout-resilience.js'
+      - 'scripts/test-checkout*.mjs'
       - 'scripts/test-order-public-summary.mjs'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
       - 'scripts/test-public-order-triple-tap-separation-v1.mjs'
       - 'scripts/test-order-separation-v2-*.mjs'
+      - 'scripts/test-admin-order-separation-v2-list.mjs'
+      - 'scripts/test-admin-orders-four-stages-v2.mjs'
       - 'supabase/migrations/20261003193000_order_separation_v2.sql'
       - 'supabase/migrations/20261003193500_order_separation_v2_completion.sql'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
+      - 'supabase/functions/storefront-v2/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
 
@@ -46,7 +56,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Contract
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Admin WhatsApp contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
       - name: Separation v2 schema
         run: node scripts/test-order-separation-v2-schema.mjs
@@ -58,8 +71,23 @@ jobs:
         run: node scripts/test-order-separation-v2-customer.mjs
       - name: Separation v2 Admin storefront
         run: node scripts/test-order-separation-v2-admin-ui.mjs
-      - name: Separation v2 Admin list
-        run: node scripts/test-admin-order-separation-v2-list.mjs
+      - name: Separation v2 Admin list and four stages
+        run: |
+          node scripts/test-admin-order-separation-v2-list.mjs
+          node scripts/test-admin-orders-four-stages-v2.mjs
+      - name: Checkout regression contracts
+        run: |
+          node scripts/test-checkout-simple-ux.mjs
+          node scripts/test-checkout-customer-capture-v1.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-existing-registration.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-whatsapp-payload-audit.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-address-reference.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-admin-stock-readiness-pagination.mjs
+          node scripts/test-site-only-order-registration.mjs
+          node scripts/test-checkout-whatsapp-return.mjs
+          node scripts/test-checkout-stock-adjustment-contract.mjs
+          node scripts/test-checkout-whatsapp-outbox.mjs
+          node --check checkout-resilience.js
       - name: Public order storefront and printing
         run: |
           node scripts/test-order-public-summary.mjs
