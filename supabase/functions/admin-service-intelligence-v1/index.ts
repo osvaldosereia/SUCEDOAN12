@@ -8468,112 +8468,25 @@ async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
 }
 
 async function vitrineSaveCustomer(sb:any,body:any){
-  const id=uuid(body?.id);
-  const name=clean(body?.display_name,180);
-  if(!name)return {ok:false,error:"name_required",status:400};
-  const phone=vitrinePhone(body?.phone);
-  const cpf=vitrineDigits(body?.cpf,14);
-  const email=clean(body?.email,180).toLowerCase();
-  const birthdayDay=vitrineDay(body?.birthday_day);
-  const birthdayMonth=vitrineMonth(body?.birthday_month);
-  const isActive=!["inactive","blocked"].includes(clean(body?.status,20));
-
-  if(phone){
-    const r=await sb.from("customers").select("id").eq("primary_whatsapp_e164",phone).maybeSingle();
-    if(r.error)throw r.error;
-    if(r.data&&r.data.id!==id)return {ok:false,error:"phone_already_in_use",status:409};
+  const q=await sb.rpc("ops2_admin_customer_save_v2",{p_payload:body&&typeof body==="object"?body:{}});
+  if(q.error)throw q.error;
+  const result=q.data&&typeof q.data==="object"?q.data:{ok:false,error:"customer_save_failed"};
+  if(result.ok!==true){
+    const status=result.error==="customer_not_found"?404:["phone_already_in_use","cpf_already_in_use","duplicate_customer_identity"].includes(String(result.error||""))?409:400;
+    return {...result,status};
   }
-  if(cpf){
-    const r=await sb.from("customers").select("id").eq("cpf_cnpj",cpf).maybeSingle();
-    if(r.error)throw r.error;
-    if(r.data&&r.data.id!==id)return {ok:false,error:"cpf_already_in_use",status:409};
-  }
-
-  let customerId=id;
-  const mainRow:any={
-    name,cpf_cnpj:cpf||null,primary_whatsapp_e164:phone||null,is_active:isActive,
-    birthday_day:birthdayDay,birthday_month:birthdayMonth,updated_at:new Date().toISOString()
-  };
-  if(id){
-    const r=await sb.from("customers").update(mainRow).eq("id",id).select("id").maybeSingle();
-    if(r.error)throw r.error;
-    if(!r.data)return {ok:false,error:"customer_not_found",status:404};
-  }else{
-    const r=await sb.from("customers").insert(mainRow).select("id").single();
-    if(r.error)throw r.error;
-    customerId=r.data.id;
-  }
-
-  const currentPhones=await sb.from("customer_phones").select("id,phone_e164").eq("customer_id",customerId).eq("is_primary",true).limit(1);
-  if(currentPhones.error)throw currentPhones.error;
-  if(phone){
-    const existing=await sb.from("customer_phones").select("id,customer_id").eq("phone_e164",phone).maybeSingle();
-    if(existing.error)throw existing.error;
-    if(existing.data&&existing.data.customer_id!==customerId)return {ok:false,error:"phone_already_in_use",status:409};
-    const clear=await sb.from("customer_phones").update({is_primary:false}).eq("customer_id",customerId);
-    if(clear.error)throw clear.error;
-    if(existing.data){
-      const up=await sb.from("customer_phones").update({is_primary:true,source:"vitrine_admin"}).eq("id",existing.data.id);
-      if(up.error)throw up.error;
-    }else{
-      const ins=await sb.from("customer_phones").insert({customer_id:customerId,phone_e164:phone,source:"vitrine_admin",is_primary:true});
-      if(ins.error)throw ins.error;
-    }
-  }else if((currentPhones.data||[]).length){
-    const clear=await sb.from("customer_phones").update({is_primary:false}).eq("customer_id",customerId);
-    if(clear.error)throw clear.error;
-  }
-
-  const currentEmail=await sb.from("customer_emails").select("id")
-    .eq("customer_id",customerId).order("is_primary",{ascending:false}).order("created_at",{ascending:false}).limit(1);
-  if(currentEmail.error)throw currentEmail.error;
-  const emailId=currentEmail.data?.[0]?.id||null;
-  if(email){
-    const emailRow:any={email,email_normalized:email,is_primary:true,source:"vitrine_admin",updated_at:new Date().toISOString()};
-    if(emailId){
-      const up=await sb.from("customer_emails").update(emailRow).eq("id",emailId);
-      if(up.error)throw up.error;
-    }else{
-      const ins=await sb.from("customer_emails").insert({customer_id:customerId,...emailRow});
-      if(ins.error)throw ins.error;
-    }
-  }else if(emailId){
-    const up=await sb.from("customer_emails").update({is_primary:false,updated_at:new Date().toISOString()}).eq("id",emailId);
-    if(up.error)throw up.error;
-  }
-
-  const a=obj(body?.address);
-  const hasAddress=[a.street,a.number,a.district,a.city,a.postal_code,a.raw_text].some(Boolean);
-  const currentAddress=await sb.from("customer_addresses").select("id")
-    .eq("customer_id",customerId).eq("is_default",true).eq("is_active",true)
-    .order("updated_at",{ascending:false}).limit(1);
-  if(currentAddress.error)throw currentAddress.error;
-  const addressId=currentAddress.data?.[0]?.id||null;
-  if(hasAddress){
-    const addressRow:any={
-      customer_id:customerId,label:"Entrega",street:clean(a.street,180)||null,number:clean(a.number,40)||null,
-      complement:clean(a.complement,140)||null,neighborhood:clean(a.district,140)||null,
-      city:clean(a.city,120)||"Cuiabá",state:clean(a.state,2)||"MT",postal_code:clean(a.postal_code,20)||null,
-      reference:clean(a.raw_text,400)||null,is_default:true,is_active:true,updated_at:new Date().toISOString()
-    };
-    if(addressId){
-      const up=await sb.from("customer_addresses").update(addressRow).eq("id",addressId);
-      if(up.error)throw up.error;
-    }else{
-      const ins=await sb.from("customer_addresses").insert(addressRow);
-      if(ins.error)throw ins.error;
-    }
-  }
-
+  const customerId=uuid(result.customer_id);
+  if(!customerId)return {ok:false,error:"customer_save_failed",status:500};
   const savedCustomer=await vitrineGetCustomer(sb,customerId);
+  if(!savedCustomer)return {ok:false,error:"customer_not_found",status:404};
   try{
     const snapshot=await blingHubCustomerSnapshot(sb,customerId);
-    const q=await sb.rpc("enqueue_bling_hub_job_v2",{
+    const queued=await sb.rpc("enqueue_bling_hub_job_v2",{
       p_domain:"customer",p_operation:"sync_customer",p_source_system:"canonical_ssbes",p_source_id:customerId,
       p_idempotency_key:"canonical_ssbes:customer:"+customerId+":"+String(snapshot?.updated_at||new Date().toISOString()),
       p_payload:{customer_id:customerId,allow_create:blingHubValidCpfCnpj(snapshot?.cpf_cnpj)},p_payload_version:1
     });
-    if(q.error)throw q.error;
+    if(queued.error)throw queued.error;
   }catch(e){
     console.error("bling_customer_enqueue_failed",clean((e as Error)?.message||e,300));
   }
@@ -9413,10 +9326,10 @@ Deno.serve(async(req:Request)=>{
     }
   }
 
-  if(new Set(["vitrine_customers_list","vitrine_customer_get","vitrine_customer_save","vitrine_customer_history","vitrine_customer_order_detail"]).has(action)){
+  if(new Set(["vitrine_customers_list","vitrine_customer_get","vitrine_customer_save","vitrine_customer_delete","vitrine_customer_history","vitrine_customer_order_detail"]).has(action)){
     const auth=await vitrineAdminAuth(sb,req);
     if(!auth.ok)return json({ok:false,error:auth.error},Number(auth.status||401));
-    if(action==="vitrine_customer_save"&&!["owner","admin","manager"].includes(String(auth.role||""))){
+    if(new Set(["vitrine_customer_save","vitrine_customer_delete"]).has(action)&&!["owner","admin","manager"].includes(String(auth.role||""))){
       return json({ok:false,error:"editor_required"},403);
     }
   }
@@ -9424,6 +9337,17 @@ Deno.serve(async(req:Request)=>{
   if(action==="vitrine_customers_list"){
     try{return json({ok:true,customers:await vitrineListCustomers(sb,body)})}
     catch(e){return json({ok:false,error:"customers_unavailable",detail:clean((e as Error)?.message,300)},500)}
+  }
+  if(action==="vitrine_customer_delete"){
+    const id=uuid(body?.id);if(!id)return json({ok:false,error:"invalid_customer"},400);
+    try{
+      const q=await sb.rpc("ops2_admin_customer_delete_v1",{p_customer_id:id});
+      if(q.error)throw q.error;
+      const result=q.data&&typeof q.data==="object"?q.data:{ok:false,error:"customer_delete_failed"};
+      return json(result,result.ok===true?200:result.error==="customer_not_found"?404:400);
+    }catch(e){
+      return json({ok:false,error:"customer_delete_failed",detail:clean((e as Error)?.message,300)},500);
+    }
   }
   if(action==="vitrine_customer_get"){
     const id=uuid(body?.id);if(!id)return json({ok:false,error:"invalid_customer"},400);
