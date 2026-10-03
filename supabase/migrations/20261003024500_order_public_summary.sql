@@ -82,6 +82,9 @@ $$;
 revoke all on function public.ops2_refresh_order_public_snapshot_v1(uuid) from public, anon, authenticated;
 grant execute on function public.ops2_refresh_order_public_snapshot_v1(uuid) to service_role;
 
+-- order_items are inserted in the same checkout transaction. A deferred constraint
+-- trigger runs at transaction end, when every final item already exists. Only the
+-- first deferred row refreshes; the rest see the immutable snapshot and no-op.
 create or replace function public.ops2_order_item_public_snapshot_trigger_v1()
 returns trigger
 language plpgsql
@@ -89,6 +92,11 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
+  if exists (
+    select 1 from public.order_public_snapshots_v1 s where s.order_id = new.order_id
+  ) then
+    return new;
+  end if;
   perform public.ops2_refresh_order_public_snapshot_v1(new.order_id);
   return new;
 end;
@@ -97,6 +105,7 @@ $$;
 revoke all on function public.ops2_order_item_public_snapshot_trigger_v1() from public, anon, authenticated;
 
 drop trigger if exists trg_order_item_public_snapshot_v1 on public.order_items;
-create trigger trg_order_item_public_snapshot_v1
+create constraint trigger trg_order_item_public_snapshot_v1
 after insert on public.order_items
+deferrable initially deferred
 for each row execute function public.ops2_order_item_public_snapshot_trigger_v1();
