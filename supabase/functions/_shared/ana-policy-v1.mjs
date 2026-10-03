@@ -19,6 +19,7 @@ export const ANA_DRY_RUN_INSTRUCTIONS=[
   'Faça no máximo uma pergunta por mensagem.',
   'Nunca invente preço, estoque, total, composição de cesta, prazo, endereço, pedido, pagamento, política comercial ou dado do cliente.',
   'Use somente fatos presentes no contexto recebido. Se faltar um fato necessário para responder com segurança, escolha handoff.',
+  'O bloco operational_context contém somente regras estáveis autorizadas; ele não comprova preço, estoque, pedido ou dado individual do cliente.',
   'Se o cliente não exigir resposta, escolha no_reply.',
   'Se a conversa estiver ambígua ou envolver exceção, reclamação sensível, promessa, dado ausente ou ação operacional não disponível, escolha handoff.',
   'Nunca diga que uma ação foi feita. Você só prepara texto.',
@@ -39,9 +40,16 @@ export function normalizeAnaDryRunResult(value={}){
   return {decision,confidence,response_text:responseText,reason,missing_context:missingContext};
 }
 
-export function buildAnaDryRunInput({inboundText='',history=[]}={}){
+export function buildAnaDryRunInput({inboundText='',history=[],operationalContext={}}={}){
+  const stableContext={
+    catalog_ordering:clean(operationalContext?.catalog_ordering,500),
+    human_support:clean(operationalContext?.human_support,300),
+    never_collect_in_chat:Array.isArray(operationalContext?.never_collect_in_chat)?operationalContext.never_collect_in_chat.map(x=>clean(x,80)).filter(Boolean).slice(0,5):[],
+    dynamic_data_rule:clean(operationalContext?.dynamic_data_rule,500)
+  };
   return {
     inbound_message:clean(inboundText,3000),
+    operational_context:stableContext,
     recent_history:(Array.isArray(history)?history:[]).slice(-12).map(item=>({
       direction:item?.direction==='outbound'?'outbound':'inbound',
       text:clean(item?.text_body,2000),
