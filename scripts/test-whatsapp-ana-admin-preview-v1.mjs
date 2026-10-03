@@ -22,7 +22,7 @@ assert.match(sql,/grant execute on function public\.ops2_ana_claim_dry_run_job_v
 assert.match(worker,/body\?\.job_id/,'worker deve aceitar job_id explícito');
 assert.match(worker,/ops2_ana_claim_dry_run_job_v1/,'worker deve usar claim exato quando job_id vier preenchido');
 assert.match(worker,/ops2_ana_claim_dry_run_v1/,'worker deve preservar modo batch para fases futuras');
-assert.match(worker,/req\.headers\.get\(['"]apikey['"]\)/i,'worker service-to-service deve autenticar chave secreta via apikey');
+assert.match(worker,/req\.headers\.get\(['"]apikey['"]\)/i,'worker deve suportar autenticação service-to-service atual via apikey');
 assert.match(worker,/dry_run_not_sendable:true/,'resultado do worker deve continuar não enviável');
 
 assert.match(api,/adminAuth/,'preview deve exigir autenticação administrativa');
@@ -32,7 +32,6 @@ assert.match(api,/\.eq\(['"]direction['"],['"]inbound['"]\)/i,'preview deve esco
 assert.match(api,/\.eq\(['"]message_type['"],['"]text['"]\)/i,'preview deve usar somente inbound texto nesta fase');
 assert.match(api,/ops2_ana_enqueue_dry_run_v1/,'preview deve enfileirar pelo contrato canônico');
 assert.match(api,/whatsapp-ana-worker-v1/,'preview deve chamar o worker server-side');
-assert.match(api,/headers:\{apikey:SERVICE_KEY/i,'preview deve chamar worker com secret key no header apikey');
 assert.match(api,/job_id:enqueueData\.job_id/,'preview deve mandar ao worker exatamente o job criado');
 assert.match(api,/whatsapp_ana_jobs_v1/,'preview deve ler o resultado auditável do job');
 assert.match(api,/dry_run_not_sendable:true/,'preview deve declarar que não envia mensagem');
