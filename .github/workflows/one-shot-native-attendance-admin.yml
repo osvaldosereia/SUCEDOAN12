@@ -1,10 +1,11 @@
 name: One-shot native Attendance Admin
 on:
-  push:
-    branches: ['refactor/attendance-native-admin-20261003']
+  pull_request:
+    branches: ['main']
     paths:
       - '.github/workflows/one-shot-native-attendance-admin.yml'
       - 'scripts/patch-admin-attendance-native-v1.py'
+      - 'vitrine/admin/index.html'
 permissions:
   contents: write
 jobs:
@@ -13,6 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: refactor/attendance-native-admin-20261003
           fetch-depth: 1
           sparse-checkout: |
             vitrine/admin/index.html
