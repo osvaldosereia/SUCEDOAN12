@@ -1,0 +1,47 @@
+name: One-shot fix attendance frame route
+on:
+  push:
+    branches: ['fix/attendance-blank-frame-20261003']
+    paths:
+      - '.github/workflows/one-shot-fix-attendance-frame-route.yml'
+      - 'scripts/patch-admin-attendance-frame-route-v1.py'
+permissions:
+  contents: write
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/test-admin-attendance-frame-route-v1.mjs
+            scripts/patch-admin-attendance-frame-route-v1.py
+          sparse-checkout-cone-mode: false
+      - name: Apply minimal route fix
+        run: python3 scripts/patch-admin-attendance-frame-route-v1.py
+      - name: Regression test
+        run: node scripts/test-admin-attendance-frame-route-v1.mjs
+      - name: Validate inline JavaScript and diff
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log('admin inline JavaScript syntax OK');
+          NODE
+          git diff --check
+      - name: Commit route fix
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          if git diff --cached --quiet; then
+            echo 'No production change required'
+          else
+            git commit -m 'fix(admin): keep attendance iframe under current prefix'
+            git pull --rebase origin fix/attendance-blank-frame-20261003
+            git push origin HEAD:fix/attendance-blank-frame-20261003
+          fi
