@@ -63,7 +63,13 @@ export async function sendAttendanceMediaViaMeta({
   if(data.ok!==true)return data;
   if(data.duplicate===true){
     if(data.status==='sent')return {ok:true,status:'accepted',duplicate:true,outbox_id:data.outbox_id,provider:'meta'};
-    if(data.status!=='queued')return {ok:false,error:'duplicate_not_dispatchable',outbox_id:data.outbox_id,status:data.status,provider:'meta'};
+    if(data.status==='failed'){
+      const requeued=await db.rpc('ops2_admin_attendance_requeue_failed_media_v1',{p_outbox_id:data.outbox_id});
+      if(requeued.error)throw requeued.error;
+      if(requeued.data?.ok!==true)return requeued.data||{ok:false,error:'media_retry_failed'};
+    }else if(data.status!=='queued'){
+      return {ok:false,error:'duplicate_not_dispatchable',outbox_id:data.outbox_id,status:data.status,provider:'meta'};
+    }
   }
 
   const claimed=await db.rpc('ops2_admin_attendance_claim_media_outbox_v1',{p_outbox_id:data.outbox_id});
