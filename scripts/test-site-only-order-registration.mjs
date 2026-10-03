@@ -29,8 +29,9 @@ assert.match(sf, /registration_complete/i, 'registration state may still be retu
 
 for (const page of ['index.html','vitrine/index.html']) {
   const html = read(page);
-  assert.ok(html.includes('Confirmar este endereço'), `${page}: optional saved-address confirmation UI must remain available`);
-  assert.ok(html.includes('Alterar endereço'), `${page}: optional address edit UI must remain available`);
+  assert.ok(!html.includes('Confirmar este endereço'), `${page}: saved address must not require an extra confirmation click`);
+  assert.ok(html.includes('Trocar endereço'), `${page}: saved address must offer one clear edit action`);
+  assert.match(html, /state\.addressConfirmed=data\.found&&data\.customer\?\.registration_complete===true/, `${page}: complete saved address must be accepted automatically`);
   assert.ok(html.includes('CPF'), `${page}: optional registration CPF field must remain available`);
   assert.match(html, /Seu WhatsApp <span class="muted">\(opcional\)<\/span>/, `${page}: WhatsApp must remain optional`);
   assert.match(html, /Data de entrega <span class="muted">\(opcional\)<\/span>/, `${page}: delivery date must remain optional`);
