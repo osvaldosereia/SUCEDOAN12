@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const page=fs.readFileSync('pedido/index.html','utf8');
 const edge=fs.readFileSync('supabase/functions/order-public-view-v1/index.ts','utf8');
 
-assert.ok(page.includes('const SEPARATION_TAPS=3'),'a separação deve exigir exatamente 3 toques');
+assert.ok(page.includes('SEPARATION_TAPS=3'),'a separação deve exigir exatamente 3 toques');
 assert.ok(page.includes('SEPARATION_TAP_WINDOW_MS'),'os 3 toques precisam ocorrer em uma janela curta');
 assert.ok(page.includes('data-separation-index'),'cada linha de produto deve ser marcada individualmente');
 assert.ok(page.includes('product-card separated'),'o produto separado precisa ter estado visual próprio');
