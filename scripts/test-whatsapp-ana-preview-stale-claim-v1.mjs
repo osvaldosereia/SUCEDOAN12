@@ -14,6 +14,7 @@ assert.match(sql,/dry_run_not_sendable/i,'recovery deve permanecer estritamente 
 assert.match(sql,/stale_claim_recovery_count/i,'recovery deve deixar trilha auditável de contagem');
 assert.match(sql,/last_stale_claim_recovered_at/i,'recovery deve registrar quando recuperou claim órfão');
 assert.match(sql,/attempt_count=j\.attempt_count\+1/i,'nova tentativa deve incrementar attempt_count');
+assert.match(sql,/update public\.whatsapp_ana_jobs_v1[\s\S]*status='failed'[\s\S]*stale_preview_claim_timeout[\s\S]*status='claimed'[\s\S]*claimed_at\s*<=\s*now\(\)\s*-\s*interval\s*'2 minutes'/i,'deploy deve encerrar claims órfãos já existentes de forma auditável');
 assert.match(sql,/auth\.uid\(\)/i,'start continua exigindo usuário autenticado');
 assert.match(sql,/admin_users[\s\S]*is_active=true/i,'start continua exigindo admin ativo');
 assert.match(sql,/ops2_attendance_ai_gate_v1/i,'start continua respeitando gate Humano × IA');
