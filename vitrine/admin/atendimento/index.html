@@ -85,6 +85,7 @@
           <textarea id="messageDraft" rows="2" placeholder="Digite sua resposta…"></textarea>
           <div class="composer-media">
             <label>Anexo <input id="mediaFile" type="file" accept="image/jpeg,image/png,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,application/pdf"></label>
+            <button type="button" id="sendMediaBtn" disabled>Enviar anexo</button>
             <small id="mediaFileNote">Imagem, áudio ou PDF · até 16 MB.</small>
           </div>
           <div class="composer-actions">
@@ -140,6 +141,7 @@
   </main>
   <script type="module" src="./attendance.js"></script>
   <script type="module" src="./attendance-send.js"></script>
+  <script type="module" src="./attendance-media-send.js"></script>
   <script type="module" src="./attendance-templates.js"></script>
 </body>
 </html>
