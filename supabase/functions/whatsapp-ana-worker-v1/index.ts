@@ -109,7 +109,8 @@ Deno.serve(async(req:Request)=>{
 
   const serviceKey=serverSecret();
   const secretHeader=req.headers.get('apikey')||'';
-  if(!serviceKey||secretHeader!==serviceKey)return json({ok:false,error:'worker_not_authorized'},401);
+  const legacyBearer=(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'').trim();
+  if(!serviceKey||(secretHeader!==serviceKey&&legacyBearer!==serviceKey))return json({ok:false,error:'worker_not_authorized'},401);
 
   const supabaseUrl=Deno.env.get('SUPABASE_URL')||'';
   const apiKey=Deno.env.get('OPENAI_API_KEY')||'';
