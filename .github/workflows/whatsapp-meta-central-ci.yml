@@ -13,6 +13,7 @@ on:
       - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
       - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_v1.sql'
+      - 'supabase/sql/20261002_admin_attendance_meta_template_send_fix_v2.sql'
       - 'scripts/test-attendance-meta-*.mjs'
       - 'scripts/test-attendance-template-picker-v1.mjs'
       - 'scripts/test-admin-attendance-template-send-v1.mjs'
@@ -41,6 +42,8 @@ jobs:
         run: node scripts/test-whatsapp-meta-template-send-v1.mjs
       - name: Admin template send contract
         run: node scripts/test-admin-attendance-template-send-v1.mjs
+      - name: Template PLpgSQL ambiguity regression
+        run: node scripts/test-attendance-meta-template-plpgsql-v1.mjs
       - name: Meta templates contract
         run: node scripts/test-whatsapp-meta-templates-v1.mjs
       - name: Meta templates admin sync contract
