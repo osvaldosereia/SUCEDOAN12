@@ -1,0 +1,15 @@
+name: order-summary-cards-verify
+on:
+  push:
+    branches:
+      - feat/order-summary-cards
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public order summary contract
+        run: node scripts/test-order-public-summary.mjs
