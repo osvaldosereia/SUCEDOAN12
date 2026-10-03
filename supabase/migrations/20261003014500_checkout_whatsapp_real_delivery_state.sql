@@ -35,6 +35,24 @@ begin
     return jsonb_build_object('ok',false,'error','sent_requires_external_message_id');
   end if;
 
+  -- message.sent can win the race by a few milliseconds. In that case an
+  -- asynchronous 202 acknowledgement must never downgrade real sent -> accepted.
+  if v_status='accepted' then
+    select * into v_item
+    from public.ops2_whatsapp_outbox_v1
+    where id=p_outbox_id;
+    if found and v_item.status='sent' and nullif(btrim(coalesce(v_item.external_message_id,'')),'') is not null then
+      return jsonb_build_object(
+        'ok',true,
+        'outbox_id',v_item.id,
+        'status',v_item.status,
+        'attempt_count',v_item.attempt_count,
+        'external_message_id',v_item.external_message_id,
+        'race_resolved',true
+      );
+    end if;
+  end if;
+
   update public.ops2_whatsapp_outbox_v1
      set status=v_status,
          external_message_id=case when v_status='sent' then nullif(btrim(p_external_message_id),'') else external_message_id end,
@@ -111,7 +129,7 @@ begin
    where q.order_id=v_order_id
      and q.recipient_kind='customer'
      and q.whatsapp_account_id=new.whatsapp_account_id
-     and q.status in ('accepted','sent')
+     and q.status in ('sending','accepted','sent')
      and (q.external_message_id is null or q.external_message_id=new.provider_message_id);
 
   return new;
