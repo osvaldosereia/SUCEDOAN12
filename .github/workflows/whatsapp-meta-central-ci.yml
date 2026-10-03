@@ -59,6 +59,8 @@ jobs:
         run: node scripts/test-attendance-meta-send-v1.mjs
       - name: Meta media contract
         run: node scripts/test-attendance-meta-media-v1.mjs
+      - name: Meta media content signature contract
+        run: node scripts/test-attendance-meta-media-content-v1.mjs
       - name: Meta media retry/idempotency contract
         run: node scripts/test-attendance-meta-media-retry-v1.mjs
       - name: Meta media safety contract
