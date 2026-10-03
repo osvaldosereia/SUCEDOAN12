@@ -18,8 +18,8 @@ assert.match(sql,/inbound_message_id uuid not null unique/i,'cada inbound deve g
 assert.match(sql,/dry_run boolean not null default true/i,'primeira fase deve nascer em dry-run');
 assert.match(sql,/status[\s\S]*queued[\s\S]*claimed[\s\S]*completed[\s\S]*skipped[\s\S]*failed/i,'job precisa ter lifecycle auditável');
 assert.match(sql,/ops2_ana_enqueue_dry_run_v1/i,'enqueue deve ser operação explícita nesta fase');
-assert.match(sql,/direction='inbound'/i,'somente mensagem inbound pode entrar no worker');
-assert.match(sql,/message_type='text'/i,'primeiro corte deve ser texto; mídia fica fora até política própria');
+assert.match(sql,/v_message\.direction\s*<>\s*'inbound'[\s\S]*message_not_inbound/i,'qualquer mensagem que não seja inbound deve ser rejeitada');
+assert.match(sql,/v_message\.message_type\s*<>\s*'text'[\s\S]*message_type_not_supported/i,'primeiro corte deve rejeitar mídia e aceitar somente texto');
 assert.match(sql,/ops2_attendance_ai_gate_v1/i,'enqueue deve respeitar o gate Humano × IA');
 assert.match(sql,/revoke all on function public\.ops2_ana_enqueue_dry_run_v1/i,'enqueue não pode ficar público');
 
