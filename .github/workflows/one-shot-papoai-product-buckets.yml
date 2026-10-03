@@ -5,13 +5,37 @@ on:
     branches:
       - fix/papoai-product-lines-buckets-20261002
 
+permissions:
+  contents: write
+
 jobs:
   contract:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: fix/papoai-product-lines-buckets-20261002
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Apply focused patch
+        run: python scripts/patch-papoai-product-buckets.py
       - name: Bucket contract
         run: node scripts/test-papoai-product-template-buckets.mjs
+      - name: Existing WhatsApp contract
+        run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
+      - name: Diff check
+        run: git diff --check
+      - name: Commit implementation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/functions/admin-orders-v1/index.ts
+          if git diff --cached --quiet; then
+            echo 'No implementation changes to commit'
+          else
+            git commit -m 'fix: protect PapoAI product template bucket overflow'
+            git push
+          fi
