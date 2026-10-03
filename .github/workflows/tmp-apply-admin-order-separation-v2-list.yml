@@ -1,0 +1,58 @@
+name: Temporary apply Admin separation v2 list
+
+on:
+  push:
+    branches: [feat/order-separation-v2]
+    paths:
+      - 'scripts/apply-admin-order-separation-v2-list.py'
+      - '.github/workflows/tmp-apply-admin-order-separation-v2-list.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/order-separation-v2
+          fetch-depth: 2
+      - name: Apply deterministic patch
+        run: python scripts/apply-admin-order-separation-v2-list.py
+      - name: Verify Admin separation list
+        run: node scripts/test-admin-order-separation-v2-list.mjs
+      - name: Verify separation contracts
+        run: |
+          node scripts/test-order-separation-v2-schema.mjs
+          node scripts/test-order-separation-v2-completion.mjs
+          node scripts/test-order-separation-v2-admin-api.mjs
+          node scripts/test-order-separation-v2-customer.mjs
+          node scripts/test-order-separation-v2-admin-ui.mjs
+      - name: Verify public/Admin regressions
+        run: |
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          node scripts/test-order-public-summary.mjs
+          node scripts/test-admin-order-public-vitrine.mjs
+          node scripts/test-order-public-vitrine-print.mjs
+          node scripts/test-public-order-triple-tap-separation-v1.mjs
+      - name: Verify inline JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`vitrine/admin/index.html inline script ${i+1}: ${e.message}`)}});
+          new Function(fs.readFileSync('vitrine/admin/separacao/separation.js','utf8'));
+          console.log('Admin syntax OK');
+          NODE
+      - name: Diff check
+        run: git diff --check
+      - name: Commit verified target and clean temporary helpers
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vitrine/admin/index.html
+          git rm scripts/apply-admin-order-separation-v2-list.py .github/workflows/tmp-apply-admin-order-separation-v2-list.yml
+          git commit -m "feat(admin): make separation list operational"
+          git push origin HEAD:feat/order-separation-v2
