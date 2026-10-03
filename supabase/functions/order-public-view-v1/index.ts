@@ -50,7 +50,7 @@ Deno.serve(async(req:Request)=>{
 
   const orderId=String(row.order_id||"");
   const [current,channel]=await Promise.all([
-    db.from("orders").select("status,updated_at").eq("id",orderId).maybeSingle(),
+    db.from("orders").select("status,updated_at,whatsapp_account_id").eq("id",orderId).maybeSingle(),
     db.from("ops2_whatsapp_outbox_v1")
       .select("channel_origin")
       .eq("order_id",orderId)
@@ -59,6 +59,21 @@ Deno.serve(async(req:Request)=>{
       .limit(1)
       .maybeSingle()
   ]);
+
+  let channelOrigin=String(channel.data?.channel_origin||"");
+  if(channelOrigin!=="0975"&&channelOrigin!=="1018"){
+    const accountId=String(current.data?.whatsapp_account_id||"").trim();
+    if(accountId){
+      const account=await db.from("whatsapp_accounts")
+        .select("phone_e164")
+        .eq("id",accountId)
+        .maybeSingle();
+      const digits=String(account.data?.phone_e164||"").replace(/\D/g,"");
+      if(digits==="5565984491018")channelOrigin="1018";
+      else if(digits==="5565998150975")channelOrigin="0975";
+    }
+  }
+  if(channelOrigin!=="1018")channelOrigin="0975";
 
   void db.from("order_public_snapshots_v1")
     .update({open_count:Number(row.open_count||0)+1,last_opened_at:new Date().toISOString()})
@@ -74,7 +89,7 @@ Deno.serve(async(req:Request)=>{
     ok:true,
     public_code:row.public_code,
     snapshot,
-    channel_origin:String(channel.data?.channel_origin||"0975"),
+    channel_origin:channelOrigin,
     current_status:current.data?.status||null,
     current_status_updated_at:current.data?.updated_at||null
   });
