@@ -16,6 +16,7 @@ on:
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_fix_v2.sql'
       - 'scripts/test-attendance-meta-*.mjs'
       - 'scripts/test-attendance-template-picker-v1.mjs'
+      - 'scripts/test-attendance-template-send-ui-v1.mjs'
       - 'scripts/test-admin-attendance-template-send-v1.mjs'
       - 'scripts/test-admin-attendance-meta-send-ui-v1.mjs'
       - 'scripts/test-attendance-provider-neutral-v3.mjs'
@@ -38,6 +39,8 @@ jobs:
         run: node scripts/test-attendance-provider-neutral-v3.mjs
       - name: Attendance template picker contract
         run: node scripts/test-attendance-template-picker-v1.mjs
+      - name: Attendance template send UI contract
+        run: node scripts/test-attendance-template-send-ui-v1.mjs
       - name: Meta template transport send contract
         run: node scripts/test-whatsapp-meta-template-send-v1.mjs
       - name: Admin template send contract
