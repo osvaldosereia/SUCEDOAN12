@@ -175,25 +175,6 @@ with models as (
     c.is_active as category_active
   from public.basket_templates bt
   left join public.basket_categories c on c.id=bt.category_id
-  union all
-  select
-    'kit'::text,
-    k.id,
-    null::uuid,
-    k.id,
-    k.name,
-    0::numeric,
-    null::text,
-    k.sort_order,
-    k.is_active,
-    k.category_id,
-    c.name,
-    c.slug,
-    c.sort_order,
-    c.is_active
-  from public.basket_kit_templates k
-  left join public.basket_categories c on c.id=k.category_id
-  where k.basket_id is null
 ), candidates as (
   select
     m.commercial_id,
@@ -201,8 +182,7 @@ with models as (
     row_number() over(partition by m.commercial_id order by a.built_at,a.created_at,a.lot_id) as rn
   from models m
   join public.basket_lot_public_availability_v1 a
-    on (m.source_kind='basket' and a.basket_id=m.commercial_id)
-    or (m.source_kind='kit' and a.kit_template_id=m.commercial_id and a.basket_id is null)
+    on a.basket_id=m.commercial_id
   where a.public_available>0 and a.availability_reason='available'
 )
 select

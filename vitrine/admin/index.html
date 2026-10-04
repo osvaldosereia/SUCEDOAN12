@@ -3312,16 +3312,47 @@
 
   async function renderBaskets(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Cestas/Kits</h1><p>Crie, edite e venda rapidamente. O site acompanha estoque e lotes automaticamente.</p></div><div class="basket-auto-actions"><button class="secondary" id="basketProductSuggestions" type="button">Sugestões de produtos</button><button class="secondary" id="refreshBaskets" type="button">Atualizar</button></div></div><div id="basketCommercialFilters"></div><div id="basketAdminBody"><div class="loading">Carregando Cestas/Kits…</div></div>';
-    $('#refreshBaskets').onclick=renderBaskets;$('#basketProductSuggestions').onclick=openBasketSubstitutionCatalog;
+    content.innerHTML='<div class="page-head"><div><h1>Cestas/Kits</h1><p>Crie, edite e venda rapidamente. O site acompanha estoque e lotes automaticamente.</p></div><div class="basket-auto-actions"><button class="primary" id="basketCommercialCreate" type="button" disabled>Nova Cesta/Kit</button><button class="secondary" id="basketProductSuggestions" type="button">Sugestões de produtos</button><button class="secondary" id="refreshBaskets" type="button">Atualizar</button></div></div><div id="basketCommercialFilters"></div><div id="basketAdminBody"><div class="loading">Carregando Cestas/Kits…</div></div>';
+    $('#refreshBaskets').onclick=renderBaskets;$('#basketProductSuggestions').onclick=openBasketSubstitutionCatalog;$('#basketCommercialCreate').onclick=openBasketCommercialCreate;
     try{
       const data=await api('basket_commercial_admin');
       state.basketCommercialModels=data.models||[];state.basketCategories=data.categories||[];state.basketCommercialFilter='';
+      if($('#basketCommercialCreate'))$('#basketCommercialCreate').disabled=!(state.basketCategories||[]).length;
       paintBasketCommercialFilters();paintBasketCommercialModels();
     }catch(e){
       $('#basketAdminBody').innerHTML='<div class="empty">Não consegui carregar as Cestas/Kits. <button class="text" id="retryBaskets">Tentar novamente</button></div>';
       $('#retryBaskets')?.addEventListener('click',renderBaskets);
     }
+  }
+  function openBasketCommercialCreate(){
+    const cats=(state.basketCategories||[]).filter(c=>c.is_active!==false);
+    if(!cats.length){toast('As categorias de Cestas/Kits ainda não carregaram.');return}
+    $('#editorTitle').textContent='Nova Cesta/Kit';
+    $('#editorBody').innerHTML='<div class="form-grid">'+
+      '<label class="span-2"><span>Nome</span><input id="basketCommercialCreateName" maxlength="180" placeholder="Ex.: Kit Limpeza Essencial"></label>'+
+      '<label><span>Categoria</span><select id="basketCommercialCreateCategory"><option value="">Selecione</option>'+cats.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('')+'</select></label>'+
+      '<label><span>Preço de venda</span><input id="basketCommercialCreatePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>'+
+      '<div class="span-2 rule-notice"><strong>Fluxo rápido</strong><div>Depois de criar, a composição do primeiro lote abre automaticamente.</div></div></div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="basketCommercialCreateCancel" type="button">Cancelar</button><button class="primary" id="basketCommercialCreateSave" type="button">Criar e montar primeiro lote</button>';
+    $('#basketCommercialCreateCancel').onclick=()=>$('#editor').close();
+    $('#basketCommercialCreateSave').onclick=createBasketCommercial;
+    if(!$('#editor').open)$('#editor').showModal();
+    setTimeout(()=>$('#basketCommercialCreateName')?.focus(),0);
+  }
+  async function createBasketCommercial(){
+    const operator=requireOperator();if(!operator)return;
+    const name=String($('#basketCommercialCreateName')?.value||'').trim(),category_id=String($('#basketCommercialCreateCategory')?.value||'');
+    const price=Number(String($('#basketCommercialCreatePrice')?.value||'').replace(',','.'));
+    if(!name){toast('Informe o nome da Cesta/Kit.');return}
+    if(!category_id){toast('Escolha a categoria.');return}
+    if(!Number.isFinite(price)||price<0){toast('Informe um preço válido.');return}
+    const btn=$('#basketCommercialCreateSave');btn.disabled=true;btn.textContent='Criando…';
+    try{
+      const data=await api('basket_commercial_create',{method:'POST',body:{name,category_id,base_price_cents:Math.round(price*100),operator}});
+      const model=data?.model||{};$('#editor').close();toast('Cesta/Kit criada. Agora monte o primeiro lote.');
+      await renderBaskets();
+      if(model.kit_template_id){await openBasketKitAdmin(model.kit_template_id);startBasketKitLotDraft(null)}
+    }catch(e){toast(errorMessage(e?.message||'Não consegui criar a Cesta/Kit.'));btn.disabled=false;btn.textContent='Criar e montar primeiro lote'}
   }
   function paintBasketCommercialFilters(){
     const host=$('#basketCommercialFilters');if(!host)return;
