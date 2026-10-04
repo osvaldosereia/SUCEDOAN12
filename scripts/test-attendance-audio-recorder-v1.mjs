@@ -20,8 +20,14 @@ assert.match(html,/attendance-audio-recorder\.js/,'módulo do gravador deve ser 
 
 assert.match(recorder,/navigator\.mediaDevices\.getUserMedia\(\{audio:true\}\)/,'microfone deve ser pedido somente no fluxo de gravação');
 assert.match(recorder,/MediaRecorder\.isTypeSupported/,'formato deve ser detectado no navegador');
-assert.match(recorder,/audio\/mp4/,'deve tentar MP4 compatível com Meta');
+assert.match(recorder,/audio\/mp4/,'deve manter MP4/AAC apenas como fallback compatível');
 assert.match(recorder,/audio\/ogg/,'deve tentar OGG compatível com Meta');
+assert.match(recorder,/audio\/aac/,'deve tentar AAC antes do fallback MP4 fragmentado');
+const oggIndex=recorder.indexOf("{mimeType:'audio/ogg;codecs=opus'");
+const aacIndex=recorder.indexOf("{mimeType:'audio/aac'");
+const mp4Index=recorder.indexOf("{mimeType:'audio/mp4;codecs=mp4a.40.2'");
+assert.ok(oggIndex>=0&&aacIndex>=0&&mp4Index>=0,'formatos OGG/Opus, AAC e MP4/AAC devem estar declarados');
+assert.ok(oggIndex<aacIndex&&aacIndex<mp4Index,'gravador deve priorizar OGG/Opus, depois AAC e deixar MP4/AAC por último');
 assert.doesNotMatch(recorder,/audio\/webm/,'não deve produzir WebM que o transporte atual não aceita');
 assert.match(recorder,/attendance:recorded-audio-ready/,'gravação pronta deve entrar no pipeline de mídia existente');
 assert.match(recorder,/attendance:send-recorded-audio/,'botão do gravador deve disparar envio direto pelo pipeline existente');
