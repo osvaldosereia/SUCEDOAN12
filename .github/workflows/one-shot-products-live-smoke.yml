@@ -1,0 +1,27 @@
+name: One-shot products live smoke
+on:
+  push:
+    branches: [feat/produtos-listagem-operacional-current]
+    paths:
+      - '.github/workflows/one-shot-products-live-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar Admin publicado
+        shell: bash
+        run: |
+          ok=0
+          for i in 1 2 3 4 5 6; do
+            curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' "https://donaantonia.com.br/vitrine/admin/?products-smoke=${GITHUB_RUN_ID}-${i}" -o /tmp/admin.html || true
+            if grep -q 'products operational list v2' /tmp/admin.html 2>/dev/null && grep -q 'Ver mais 5' /tmp/admin.html && grep -q 'Venda / custo' /tmp/admin.html; then
+              echo 'Admin de produção contém a nova listagem operacional.'
+              ok=1
+              break
+            fi
+            echo "Tentativa ${i}: versão nova ainda não apareceu."
+            sleep 10
+          done
+          test "$ok" = 1
