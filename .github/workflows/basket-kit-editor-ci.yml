@@ -6,6 +6,7 @@ on:
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'scripts/test-basket-kit-*.mjs'
       - 'scripts/test-basket-lot-*.mjs'
+      - 'scripts/test-basket-mounted-edit-print-models.mjs'
       - 'supabase/functions/basket-lot-image-v1/**'
       - 'supabase/sql/20261003_basket_lot_commercial_fields_v1.sql'
       - 'supabase/sql/20261004_basket_lot_linked_hygiene_and_original_rule_v1.sql'
@@ -13,6 +14,8 @@ on:
       - 'supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql'
       - 'supabase/sql/20261004_basket_categories_and_financials_v1.sql'
       - 'supabase/sql/20261004_basket_lot_types_links_financials_v1.sql'
+      - 'supabase/sql/20261004_basket_lot_reopen_and_model_admin_v1.sql'
+      - 'supabase/sql/20261004_basket_lot_model_admin_rpc_permissions_v1.sql'
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/basket-carousel.js'
       - 'supabase/functions/storefront-v2/index.ts'
@@ -24,6 +27,7 @@ on:
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'scripts/test-basket-kit-*.mjs'
       - 'scripts/test-basket-lot-*.mjs'
+      - 'scripts/test-basket-mounted-edit-print-models.mjs'
       - 'supabase/functions/basket-lot-image-v1/**'
       - 'supabase/sql/20261003_basket_lot_commercial_fields_v1.sql'
       - 'supabase/sql/20261004_basket_lot_linked_hygiene_and_original_rule_v1.sql'
@@ -31,6 +35,8 @@ on:
       - 'supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql'
       - 'supabase/sql/20261004_basket_categories_and_financials_v1.sql'
       - 'supabase/sql/20261004_basket_lot_types_links_financials_v1.sql'
+      - 'supabase/sql/20261004_basket_lot_reopen_and_model_admin_v1.sql'
+      - 'supabase/sql/20261004_basket_lot_model_admin_rpc_permissions_v1.sql'
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/basket-carousel.js'
       - 'supabase/functions/storefront-v2/index.ts'
@@ -54,6 +60,7 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-financials-categories.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-types-links-financials.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-mounted-edit-print-models.mjs
       - run: node scripts/test-basket-kit-image-browser.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
