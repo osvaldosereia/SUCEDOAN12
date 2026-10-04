@@ -33,6 +33,12 @@ assert.match(page,/category_id/,'category is required during creation');
 assert.match(page,/base_price_cents/,'price is set during creation');
 assert.match(page,/openBasketKitAdmin/,'after model creation the composition editor must open');
 assert.match(page,/startBasketKitLotDraft/,'first lot creation must start in the same flow');
+assert.match(admin,/function basketBusinessTypeForCategory\(/,'lot defaults must derive operational type from the public category');
+assert.match(admin,/cestas-completas['"]\s*:\s*['"]basic_complete/,'complete baskets must default to basic_complete');
+assert.match(admin,/cestas-so-alimento['"]\s*:\s*['"]basic_food/,'food-only baskets must default to basic_food');
+assert.match(admin,/kits-limpeza-e-higiene['"]\s*:\s*['"]cleaning_hygiene/,'cleaning+hygiene kits must default correctly');
+assert.match(admin,/kits-limpeza['"]\s*:\s*['"]cleaning/,'cleaning kits must default correctly');
+assert.match(admin,/kits-higiene['"]\s*:\s*['"]hygiene/,'hygiene kits must default correctly');
 
 for(const source of [publicRoot,publicVitrine]){
   assert.match(source,/basket_categories/,'public site must consume basket categories separately');
@@ -40,6 +46,8 @@ for(const source of [publicRoot,publicVitrine]){
   assert.match(source,/category_slug/,'basket cards must be filtered by their Cesta\/Kit category');
   assert.match(source,/Cestas e Kits/,'public heading must use the unified name');
   assert.match(source,/data-basket-category/,'public site must render category controls for Cestas\/Kits');
+  assert.match(source,/Itens do kit/,'kit composition must not be mislabeled as food');
+  assert.match(source,/basketGroupTitle\(group,b\)/,'composition label must consider the commercial category');
 }
 assert.equal(publicRoot,publicVitrine,'root and /vitrine public storefronts must stay identical');
 console.log('basket unified commercial model: PASS');
