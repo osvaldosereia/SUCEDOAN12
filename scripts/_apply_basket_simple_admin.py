@@ -104,9 +104,13 @@ new='''  async function renderBaskets(){
   }
 '''
 s=s[:start]+new+s[end:]
-s=s.replace('>Desativar no site<','>Pausar venda<').replace('>Ativar no site<','>Retomar venda<')
+# Replace every daily wording, including expressions inside concatenated strings.
+s=s.replace('Desativar no site','Pausar venda').replace('Ativar no site','Retomar venda')
+s=s.replace('ATIVO NO SITE','VENDA ATIVA').replace('FORA DO SITE','VENDA PAUSADA')
 s=s.replace("toast(enabled?'Lote ativado para venda':'Lote retirado do site');","toast(enabled?'Venda retomada':'Venda pausada');")
+s=s.replace("toast('Lote marcado como montado · continua fora do site')","toast('Lote montado · venda automática enquanto houver estoque')")
 s=s.replace('Lote montado. Ele permanece fora do site até você ativar.','Lote montado. A venda fica automática enquanto houver estoque.')
+s=s.replace('Desative o lote no site antes de editar.','Pause a venda do lote antes de editar.')
 p.write_text(s)
 
 # Update the old source contract to the new pause/resume language.
