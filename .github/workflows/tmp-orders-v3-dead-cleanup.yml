@@ -1,0 +1,72 @@
+name: Temporary orders v3 dead cleanup
+
+on:
+  push:
+    branches: [feat/orders-clean-flow-v3-20261004]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove obsolete top-level order WhatsApp UI functions
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          p=Path('vitrine/admin/index.html')
+          lines=p.read_text().splitlines(True)
+          targets={
+            'orderWhatsappRegistrationHtml','renderCurrentOrderWhatsappStatus','customerWhatsappDeliveryLabel',
+            'customerWhatsappAcceptedIsStale','refreshCurrentOrderWhatsappRegistration','sendCurrentOrderWhatsapp',
+            'issueCurrentOrderRegistrationLink','appendCurrentOrderWhatsappItems','currentOrderCompanyWhatsappMessage',
+            'openNativeWhatsapp','openCurrentOrderCompanyWhatsapp','currentOrderCustomerWhatsappMessage',
+            'openCurrentOrderCustomerWhatsapp','openCurrentOrderRegistrationWhatsapp','copyCurrentOrderRegistrationLink'
+          }
+          starts=[]
+          rx=re.compile(r'^  (?:async )?function\s+([A-Za-z0-9_]+)\s*\(')
+          for i,line in enumerate(lines):
+            m=rx.match(line)
+            if m: starts.append((i,m.group(1)))
+          spans=[]
+          for pos,(i,name) in enumerate(starts):
+            if name not in targets: continue
+            end=starts[pos+1][0] if pos+1<len(starts) else len(lines)
+            spans.append((i,end,name))
+          if not spans:
+            raise SystemExit('no legacy order whatsapp functions found')
+          remove=set()
+          for a,b,name in spans:
+            print('removing',name,a+1,b)
+            remove.update(range(a,b))
+          out=''.join(line for i,line in enumerate(lines) if i not in remove)
+          for symbol in ['COMPANY_WHATSAPP_E164','ORDER_WHATSAPP_4599_E164']:
+            if out.count(symbol)==1:
+              out=re.sub(r'^  const '+symbol+r'=.*\n','',out,flags=re.M)
+          p.write_text(out)
+          remaining=[name for name in targets if name in out]
+          if remaining: raise SystemExit('legacy references remain: '+','.join(sorted(remaining)))
+          PY
+      - name: Verify clean order UI
+        run: |
+          node scripts/test-admin-orders-clean-flow-v3.mjs
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{const p=`/tmp/admin-${i}.js`;fs.writeFileSync(p,src);cp.execFileSync(process.execPath,['--check',p],{stdio:'inherit'})});
+          NODE
+          git diff --check
+      - name: Commit cleanup
+        run: |
+          if ! git diff --quiet; then
+            git config user.name 'OSSJU'
+            git config user.email 'Junior.sereia@hotmail.com'
+            git add vitrine/admin/index.html
+            git commit -m 'refactor: remove dead order whatsapp ui handlers'
+            git push origin HEAD:feat/orders-clean-flow-v3-20261004
+          fi
