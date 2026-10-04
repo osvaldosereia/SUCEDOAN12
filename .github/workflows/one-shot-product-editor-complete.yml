@@ -34,7 +34,7 @@ jobs:
           fi
           grep -q 'editor precisa declarar o contrato completo v1' /tmp/product-editor-red.log
           echo 'RED confirmado: editor completo ainda ausente.'
-      - name: Corrigir escape do gerador
+      - name: Corrigir gerador
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -44,8 +44,13 @@ jobs:
           new='admin=pattern.sub(lambda _: new_editor,admin,count=1)'
           if old not in s:
               raise SystemExit('anchor pattern.sub not found')
-          p.write_text(s.replace(old,new,1))
-          print('root cause fixed: re.sub replacement escapes preserved')
+          s=s.replace(old,new,1)
+          old_write='ADMIN.write_text(admin)'
+          new_write="admin='\\n'.join(line.rstrip() for line in admin.splitlines())+'\\n'\nADMIN.write_text(admin)"
+          if old_write not in s:
+              raise SystemExit('anchor ADMIN.write_text not found')
+          p.write_text(s.replace(old_write,new_write,1))
+          print('generator fixed: replacement escapes preserved and trailing whitespace stripped')
           PY
       - name: Aplicar implementação
         run: python3 scripts/patch-product-editor-complete.py
