@@ -302,3 +302,34 @@ $function$;
 
 revoke all on function public.ops3_complete_delivery_v1(uuid,text,bigint,text,text) from public,anon,authenticated;
 grant execute on function public.ops3_complete_delivery_v1(uuid,text,bigint,text,text) to service_role;
+
+
+-- Reabertura segura: somente confirmado e antes de qualquer marcação da separação.
+create or replace function public.ops3_reopen_order_v1(p_order_id uuid,p_operator_label text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public','pg_temp'
+as $function$
+declare
+  v_order public.orders%rowtype;
+  v_release jsonb;
+  v_started integer:=0;
+begin
+  select * into v_order from public.orders where id=p_order_id for update;
+  if not found then raise exception 'order_not_found'; end if;
+  if v_order.status<>'confirmed' then raise exception 'order_not_confirmed'; end if;
+  if exists(select 1 from public.order_separation_completions_v1 where order_id=p_order_id) then raise exception 'separation_already_started'; end if;
+  select count(*) into v_started from public.order_separation_items_v1 where order_id=p_order_id and state<>'pending';
+  if v_started>0 then raise exception 'separation_already_started'; end if;
+  v_release:=public.release_vitrine_order_stock_v1(p_order_id);
+  if coalesce((v_release->>'ok')::boolean,false) is not true then raise exception 'stock_release_failed'; end if;
+  delete from public.order_separation_items_v1 where order_id=p_order_id and state='pending';
+  delete from public.order_separation_assignments_v1 where order_id=p_order_id;
+  update public.orders set status='storefront_received',confirmed_at=null,updated_at=now() where id=p_order_id;
+  perform public.ops2_refresh_order_public_snapshot_v1(p_order_id);
+  return jsonb_build_object('ok',true,'order_id',p_order_id,'status','storefront_received','stock_release',v_release);
+end;
+$function$;
+revoke all on function public.ops3_reopen_order_v1(uuid,text) from public,anon,authenticated;
+grant execute on function public.ops3_reopen_order_v1(uuid,text) to service_role;
