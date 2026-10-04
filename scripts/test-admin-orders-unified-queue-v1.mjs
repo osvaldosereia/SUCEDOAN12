@@ -30,6 +30,9 @@ assert.match(ui,/data-open-order/,'Open order must preserve the existing canonic
 assert.match(api,/conversation_id/,'Gateway must prefer the order conversation');
 assert.match(api,/whatsapp_account_id/,'Gateway must preserve the order WhatsApp account/channel');
 assert.match(api,/wa_contact_e164/,'Gateway must resolve legacy orders by customer phone when needed');
+assert.match(api,/5565998150975/,'Gateway must explicitly allow the official 0975 E.164 channel');
+assert.match(api,/5565984491018/,'Gateway must explicitly allow the official 1018 E.164 channel');
+assert.doesNotMatch(api,/endsWith\("0975"\)|endsWith\("1018"\)/,'Gateway must not accept channels only by four-digit suffix');
 assert.match(api,/admin-whatsapp-ops-v1/,'Gateway must reuse the canonical Attendance outbound transport');
 assert.match(api,/action=send_text/,'Gateway must send through the canonical text action');
 assert.match(api,/public_order_url|ops2_order_public_link_v1/,'Gateway must send the existing public order vitrine');
