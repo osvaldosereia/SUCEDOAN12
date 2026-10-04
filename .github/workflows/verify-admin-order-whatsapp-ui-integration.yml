@@ -5,12 +5,16 @@ on:
     branches: [main]
     paths:
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/orders-unified-queue-v1.js'
+      - 'vitrine/admin/separacao/**'
       - 'pedido/index.html'
       - 'p/index.html'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
       - 'scripts/test-public-order-triple-tap-separation-v1.mjs'
+      - 'scripts/test-admin-orders-unified-queue-v1.mjs'
       - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-order-vitrine-send-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
@@ -18,12 +22,16 @@ on:
     branches: [main, feat/admin-order-whatsapp-main-integration-20261001, feat/admin-order-storefront-link-20261003]
     paths:
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/orders-unified-queue-v1.js'
+      - 'vitrine/admin/separacao/**'
       - 'pedido/index.html'
       - 'p/index.html'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
       - 'scripts/test-public-order-triple-tap-separation-v1.mjs'
+      - 'scripts/test-admin-orders-unified-queue-v1.mjs'
       - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-order-vitrine-send-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
@@ -37,15 +45,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Contract
-        run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
+        run: |
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          node scripts/test-admin-orders-unified-queue-v1.mjs
       - name: Public order storefront and printing
         run: |
           node scripts/test-order-public-summary.mjs
           node scripts/test-admin-order-public-vitrine.mjs
           node scripts/test-order-public-vitrine-print.mjs
           node scripts/test-public-order-triple-tap-separation-v1.mjs
-      - name: Inline JavaScript syntax
+      - name: Browser JavaScript syntax
         run: |
+          node --check vitrine/admin/orders-unified-queue-v1.js
+          node --check vitrine/admin/separacao/separation.js
           node <<'NODE'
           const fs=require('fs');
           for(const file of ['vitrine/admin/index.html','pedido/index.html','p/index.html']){
