@@ -5,6 +5,7 @@ const OUTBOUND_MEDIA_MIME=new Set([
   'audio/aac','audio/amr','audio/mpeg','audio/mp4','audio/ogg',
   'application/pdf'
 ]);
+const M4A_BROWSER_MIME_ALIASES=new Set(['','audio/x-m4a','audio/m4a','application/octet-stream']);
 
 export class MetaMediaError extends Error{
   constructor(code,{status=0,retryable=false}={}){super(code);this.name='MetaMediaError';this.code=code;this.status=status;this.retryable=retryable}
@@ -37,6 +38,13 @@ function startsWithBytes(bytes,signature){
 }
 function startsWithAscii(bytes,text){return startsWithBytes(bytes,new TextEncoder().encode(text))}
 
+export function canonicalOutboundMetaMime(value,filename=''){
+  const mime=normalizedMime(value);
+  if(OUTBOUND_MEDIA_MIME.has(mime))return mime;
+  const name=clean(filename,240).toLowerCase();
+  if(name.endsWith('.m4a')&&M4A_BROWSER_MIME_ALIASES.has(mime))return 'audio/mp4';
+  return '';
+}
 export function isAllowedOutboundMetaMime(value){return OUTBOUND_MEDIA_MIME.has(normalizedMime(value))}
 
 export function validateOutboundMetaMediaContent(mimeType,value){
@@ -87,7 +95,7 @@ export async function fetchMetaMediaResponse({accessToken,url,fetchFn=fetch,time
   const target=clean(url,4000);if(!isAllowedMetaMediaUrl(target))throw new MetaMediaError('meta_media_url_not_allowed');
   let response;
   try{
-    response=await fetchFn(target,{method:'GET',headers:{Authorization:`Bearer ${token}`,Accept:'*/*'},redirect:'error',signal:AbortSignal.timeout(timeoutMs)});
+    response=await fetchFn(target,{method:'GET',headers:{Authorization:`Bearer ${token}`},redirect:'error',signal:AbortSignal.timeout(timeoutMs)});
   }catch(error){if(error instanceof MetaMediaError)throw error;throw new MetaMediaError('meta_media_download_network_error',{retryable:true})}
   if(!response.ok)throw new MetaMediaError(`meta_media_download_http_${response.status}`,{status:response.status,retryable:response.status>=500});
   return response;
@@ -96,8 +104,9 @@ export async function fetchMetaMediaResponse({accessToken,url,fetchFn=fetch,time
 export async function uploadMetaMedia({accessToken,graphVersion,phoneNumberId,mimeType,filename,bytes,fetchFn=fetch,timeoutMs=20000}={}){
   const token=clean(accessToken,12000);if(!token)throw new MetaMediaError('meta_media_token_missing');
   const version=strictGraphVersion(graphVersion);const phoneId=strictPhoneNumberId(phoneNumberId);
-  const mime=normalizedMime(mimeType);if(!OUTBOUND_MEDIA_MIME.has(mime))throw new MetaMediaError('meta_media_type_not_allowed');
-  const safeName=strictFilename(filename);const bodyBytes=strictBytes(bytes);
+  const safeName=strictFilename(filename);
+  const mime=canonicalOutboundMetaMime(mimeType,safeName);if(!OUTBOUND_MEDIA_MIME.has(mime))throw new MetaMediaError('meta_media_type_not_allowed');
+  const bodyBytes=strictBytes(bytes);
   validateOutboundMetaMediaContent(mime,bodyBytes);
   const form=new FormData();
   form.set('messaging_product','whatsapp');

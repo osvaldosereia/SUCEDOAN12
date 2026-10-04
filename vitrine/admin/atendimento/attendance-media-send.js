@@ -6,15 +6,17 @@ let sending=false;
 let pendingMediaIdempotencyKey=null;
 let mediaConversationId=null,lastMediaReceipt=null;
 let recordedMediaFile=null;
+const M4A_BROWSER_MIME_ALIASES=new Set(['','audio/x-m4a','audio/m4a','application/octet-stream']);
 function adminToken(){return String(sessionStorage.getItem(ADMIN_TOKEN_KEY)||'').trim()}
 function selectedConversationId(){return String($('.queue-card.selected')?.dataset?.conversationId||'').trim()}
 function note(text,tone='neutral'){const el=$('#mediaFileNote');if(!el)return;el.textContent=text;el.dataset.tone=tone;el.setAttribute('aria-live','polite')}
 function progress(text=''){const el=$('#mediaProgress');if(el){el.textContent=text;el.setAttribute('aria-live','polite')}}
 function idempotencyKey(){const random=globalThis.crypto?.randomUUID?crypto.randomUUID().replace(/-/g,'').slice(0,12):Math.random().toString(36).slice(2,14);return `admin-media:${Date.now()}:${random}`}
 function mediaFile(){return recordedMediaFile||$('#mediaFile')?.files?.[0]||null}
-function mediaKind(file=mediaFile()){const type=String(file?.type||'').toLowerCase();if(type.startsWith('audio/'))return 'audio';if(type.startsWith('image/'))return 'image';if(type==='application/pdf')return 'document';return 'file'}
+function canonicalFileMime(file){const raw=String(file?.type||'').split(';',1)[0].trim().toLowerCase();const name=String(file?.name||'').trim().toLowerCase();if(name.endsWith('.m4a')&&M4A_BROWSER_MIME_ALIASES.has(raw))return 'audio/mp4';return raw}
+function mediaKind(file=mediaFile()){const type=canonicalFileMime(file);if(type.startsWith('audio/'))return 'audio';if(type.startsWith('image/'))return 'image';if(type==='application/pdf')return 'document';return 'file'}
 function mediaLabel(kind=mediaKind()){return ({audio:'Áudio',image:'Imagem',document:'PDF'})[kind]||'Anexo'}
-function supported(file){return Boolean(file&&['image/jpeg','image/png','audio/aac','audio/amr','audio/mpeg','audio/mp4','audio/ogg','application/pdf'].includes(String(file.type||'').toLowerCase()))}
+function supported(file){return Boolean(file&&['image/jpeg','image/png','audio/aac','audio/amr','audio/mpeg','audio/mp4','audio/ogg','application/pdf'].includes(canonicalFileMime(file)))}
 function mediaSendState(status='accepted',data={}){const normalized=String(status||'accepted').toLowerCase();const labels={accepted:'Aceito pela Meta',sent:'Enviado',delivered:'Entregue',read:'Lido',failed:'Falhou',error:'Falhou'};const detail={status:normalized,label:labels[normalized]||'Aceito pela Meta',provider_message_id:data?.provider_message_id||data?.message_id||null,conversation_id:selectedConversationId(),at:new Date().toISOString()};document.dispatchEvent(new CustomEvent('attendance:media-send-state',{detail}));return detail}
 function syncSelection(){const file=mediaFile(),name=$('#mediaFileName'),clear=$('#clearMediaBtn');if(name)name.textContent=file?`${mediaLabel(mediaKind(file))}: ${file.name}`:'Nenhum arquivo selecionado';if(clear)clear.hidden=!file}
 function clearMediaSelection(){const input=$('#mediaFile');if(input)input.value='';recordedMediaFile=null;pendingMediaIdempotencyKey=null;mediaConversationId=null;syncSelection();progress('');document.dispatchEvent(new CustomEvent('attendance:media-cleared'))}

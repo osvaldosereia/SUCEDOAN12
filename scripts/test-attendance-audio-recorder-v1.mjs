@@ -35,6 +35,9 @@ assert.match(media,/attendance:recorded-audio-ready/,'composer de mídia deve ac
 assert.match(media,/recordedMediaFile/,'composer deve manter arquivo gravado separado do input nativo');
 assert.match(media,/attendance:send-recorded-audio/,'composer de mídia deve aceitar pedido de envio direto do gravador');
 assert.match(media,/attendance:media-cleared/,'limpeza do anexo deve sincronizar o gravador');
+assert.match(media,/audio\/x-m4a/,'arquivo M4A baixado deve aceitar MIME audio/x-m4a do navegador');
+assert.match(media,/audio\/m4a/,'arquivo M4A baixado deve aceitar MIME audio/m4a do navegador');
+assert.match(media,/\.m4a/i,'arquivo .m4a sem MIME confiável deve ser reconhecido e normalizado com segurança no servidor');
 assert.doesNotMatch(recorder,/graph\.facebook\.com/,'gravador nunca deve chamar Graph diretamente');
 
 console.log('PASS test-attendance-audio-recorder-v1');
