@@ -19,13 +19,15 @@ const result=vm.runInContext(`basketKitDraftFinancials({
   ],
   linked_hygiene_lot_id:'h1'
 },[
-  {id:'h1',items:[{quantity_per_kit:1,product:{cost:6,price:9}},{quantity_per_kit:2,product:{cost:2,price:3}}]}
+  {id:'h1',items:[{quantity_per_kit:1,product:[{cost:6,price:9}]},{quantity_per_kit:2,product:{cost:2,price:3}}]}
 ])`,ctx);
-assert.deepEqual(JSON.parse(JSON.stringify(result)),{cost:34.5,retail:53},'somatórios devem incluir alimentos e o lote de limpeza escolhido');
+assert.deepEqual(JSON.parse(JSON.stringify(result)),{cost:34.5,retail:53},'somatórios devem incluir alimentos e o lote de limpeza escolhido mesmo quando a relação vem como array');
 assert.ok(admin.includes('id="kitLotCostSum"')&&admin.includes('id="kitLotRetailSum"'),'criação do lote deve mostrar custo e venda internos');
 assert.ok(admin.includes('Categorias de cestas'),'Admin deve oferecer gestão das categorias');
 assert.ok(service.includes('basket_categories_admin')&&service.includes('basket_category_save')&&service.includes('basket_category_delete'),'API deve oferecer listar, salvar e excluir categorias');
 assert.ok(service.includes('category_id'),'API deve permitir vincular cesta à categoria');
+const writeActions=service.slice(service.indexOf('const WRITE_ACTIONS='),service.indexOf('const cors='));
+for(const action of ['basket_category_save','basket_category_delete','basket_category_assign'])assert.ok(writeActions.includes('"'+action+'"'),action+' deve exigir autenticação de escrita');
 assert.ok(migration.includes('create table if not exists public.basket_categories'),'migration deve criar categorias próprias de cestas');
 assert.ok(migration.includes('category_id'),'migration deve vincular basket_templates à categoria');
 
