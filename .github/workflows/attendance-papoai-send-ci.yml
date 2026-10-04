@@ -49,12 +49,14 @@ jobs:
       - run: node scripts/test-admin-attendance-library-image-v1.mjs
       - run: node scripts/test-admin-attendance-library-ui-v1.mjs
       - run: node scripts/test-admin-attendance-library-queue-v1.mjs
+      - run: node scripts/test-admin-attendance-auth-refresh-v1.mjs
       - run: node scripts/test-attendance-meta-media-v1.mjs
       - run: node scripts/test-attendance-meta-media-retry-v1.mjs
       - run: node --check supabase/functions/_shared/admin-attendance-library-v1.mjs
       - run: node --check supabase/functions/_shared/admin-attendance-library-send-v1.mjs
       - run: node --check vitrine/admin/atendimento/attendance-library-image.js
       - run: node --check vitrine/admin/atendimento/attendance-library.js
+      - run: node --check vitrine/admin/atendimento/attendance-auth.js
       - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
       - run: node --check vitrine/admin/atendimento/attendance-media-send.js
