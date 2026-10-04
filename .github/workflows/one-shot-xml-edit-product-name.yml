@@ -7,6 +7,8 @@ on:
       - fix/xml-edit-product-name-20261003
     paths:
       - '.github/workflows/one-shot-xml-edit-product-name.yml'
+      - 'scripts/patch_purchase_xml_edit_product_name.py'
+      - 'scripts/test_purchase_xml_edit_product_name.py'
 
 permissions:
   contents: write
