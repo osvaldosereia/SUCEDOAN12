@@ -1,0 +1,71 @@
+name: One-shot XML editable product name
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/xml-edit-product-name-20261003
+    paths:
+      - '.github/workflows/one-shot-xml-edit-product-name.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: RED - prove regression test fails before implementation
+        run: |
+          if grep -q 'PURCHASE_XML_EDIT_NAME_V1' vitrine/admin/index.html; then
+            echo 'Implementation already present; skipping RED replay on rerun.'
+          else
+            set +e
+            python scripts/test_purchase_xml_edit_product_name.py > /tmp/xml-name-red.log 2>&1
+            status=$?
+            set -e
+            cat /tmp/xml-name-red.log
+            if [ "$status" -eq 0 ]; then
+              echo 'Regression test unexpectedly passed before implementation.'
+              exit 1
+            fi
+            echo 'RED confirmed: editable-name behavior was missing before the patch.'
+          fi
+
+      - name: Apply focused admin patch
+        run: python scripts/patch_purchase_xml_edit_product_name.py
+
+      - name: GREEN - verify editable name contract
+        run: |
+          python scripts/test_purchase_xml_edit_product_name.py
+          python scripts/verify_purchase_product_identification.py
+
+      - name: Verify inline JavaScript syntax and diff
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('vitrine/admin/index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m => m[1]).filter(Boolean);
+          for (const [i, src] of scripts.entries()) {
+            try { new Function(src); }
+            catch (e) { throw new Error(`Inline script ${i + 1} syntax error: ${e.message}`); }
+          }
+          console.log(`Verified ${scripts.length} inline script(s).`);
+          NODE
+          git diff --check
+
+      - name: Commit implementation to feature branch
+        run: |
+          if git diff --quiet; then
+            echo 'No implementation diff to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'fix(admin): allow editing XML product name before save'
+          git push origin HEAD:${GITHUB_REF_NAME}
