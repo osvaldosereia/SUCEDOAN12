@@ -26,8 +26,13 @@ html = replace_once(
 
 html = replace_once(
     html,
-    "      (reason?'<div class=\\\"purchase-factor-hint warn-text\\\" style=\\\"margin-bottom:8px\\\">'+esc(reason)+'</div>':'')+\n      '<div class=\\\"purchase-price-grid\\\">'+\n",
-    "      (reason?'<div class=\\\"purchase-factor-hint warn-text\\\" style=\\\"margin-bottom:8px\\\">'+esc(reason)+'</div>':'')+\n      '<div class=\\\"purchase-field\\\" style=\\\"margin-bottom:8px\\\"><label>Nome do produto</label><input type=\\\"text\\\" maxlength=\\\"300\\\" data-catalog-product-name value=\\\"'+esc(prod.name||x.description||'')+'\\\"><div class=\\\"purchase-factor-hint\\\">Você pode editar o nome antes de salvar.</div></div>'+\n      '<div class=\\\"purchase-price-grid\\\">'+\n",
+    '''      (reason?'<div class="purchase-factor-hint warn-text" style="margin-bottom:8px">'+esc(reason)+'</div>':'')+
+      '<div class="purchase-price-grid">'+
+''',
+    '''      (reason?'<div class="purchase-factor-hint warn-text" style="margin-bottom:8px">'+esc(reason)+'</div>':'')+
+      '<div class="purchase-field" style="margin-bottom:8px"><label>Nome do produto</label><input type="text" maxlength="300" data-catalog-product-name value="'+esc(prod.name||x.description||'')+'"><div class="purchase-factor-hint">Você pode editar o nome antes de salvar.</div></div>'+
+      '<div class="purchase-price-grid">'+
+''',
     "editable product name field",
 )
 
