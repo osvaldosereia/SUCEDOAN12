@@ -24,6 +24,20 @@ const selectedConversationId=()=>document.querySelector('.queue-card.selected')?
 const serviceWindowOpen=()=>document.querySelector('#serviceWindow')?.classList.contains('open')===true;
 const isOffersActive=()=>offersTab()?.classList.contains('active')===true;
 
+export function formatAttendanceOfferSendError(code){
+  switch(String(code||'').trim()){
+    case 'meta_canary_destination_blocked': return 'Não foi possível enviar a imagem: este canal ainda não está liberado para imagens nesta conversa.';
+    case 'meta_media_canary_not_enabled':
+    case 'meta_canary_not_enabled': return 'O envio de imagem está temporariamente indisponível neste canal.';
+    case 'human_send_not_homologated': return 'Este canal ainda não está liberado para envio de mídia pelo atendimento.';
+    case 'service_window_closed': return 'Janela de 24h encerrada. Produtos não podem ser enviados nesta conversa.';
+    case 'rate_limited': return 'Muitos envios em sequência. Aguarde um momento e tente novamente.';
+    case 'meta_transport_not_configured': return 'O canal Meta não está configurado para enviar imagens.';
+    case 'meta_send_uncertain': return 'A Meta não confirmou o envio. Atualize a conversa antes de tentar novamente.';
+    default: return 'Não foi possível enviar as ofertas agora. Tente novamente.';
+  }
+}
+
 function normalizeOffer(item){
   const id=String(item?.id||item?.product_id||'').trim();
   if(!id)return null;
@@ -121,10 +135,11 @@ async function sendSelected(root,retry=false){
     const result=await runner(options);
     if(selectedConversationId()!==conversationId)return;
     const sent=result.sent?.length||0,failed=result.failed?.length||0;
-    syncBatchBar(root,failed?`${sent} enviado${sent===1?'':'s'} · ${failed} falhou`:`${sent} produto${sent===1?' enviado':'s enviados'}`);
+    const stoppedMessage=result.stopped_by?formatAttendanceOfferSendError(result.stopped_by):'';
+    syncBatchBar(root,stoppedMessage||(failed?`${sent} enviado${sent===1?'':'s'} · ${failed} falhou`:`${sent} produto${sent===1?' enviado':'s enviados'}`));
     if(sent){setTimeout(()=>document.querySelector('.queue-card.selected')?.click(),150)}
   }catch(error){
-    if(selectedConversationId()===conversationId)syncBatchBar(root,String(error?.message||'Falha ao enviar ofertas.'));
+    if(selectedConversationId()===conversationId)syncBatchBar(root,formatAttendanceOfferSendError(error?.code||error?.message));
   }finally{
     sending=false;
     if(root.isConnected)syncBatchBar(root);
