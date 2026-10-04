@@ -7,6 +7,7 @@
   <meta name="theme-color" content="#f7f8f7">
   <title>Atendimento · Dona Antônia</title>
   <link rel="stylesheet" href="./attendance.css">
+  <link rel="stylesheet" href="./attendance-library.css">
   <style>
     .audio-recorder-panel{margin:0 0 7px;border:1px solid #cfe0d5;border-radius:11px;background:#fff;padding:9px;box-shadow:0 4px 14px rgba(22,53,35,.06)}
     .audio-recorder-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.audio-recorder-head strong{display:block;font-size:11px}.audio-recorder-head small{display:block;margin-top:2px;color:#6f7b73;font-size:9px}.audio-recorder-head small[data-tone=recording]{color:#a22638;font-weight:800}.audio-recorder-head small[data-tone=error]{color:#a22638}.audio-recorder-head small[data-tone=success]{color:#176b43}.audio-recorder-head [role=timer]{min-width:48px;text-align:center;border-radius:999px;background:#eef5f0;padding:4px 7px;font-variant-numeric:tabular-nums;font-size:11px;font-weight:850;color:#355343}
@@ -74,6 +75,7 @@
             <div class="service-window neutral" id="serviceWindow">Nenhuma conversa selecionada</div>
             <div class="quick-tools" aria-label="Ferramentas rápidas">
               <label class="attach-tool" title="Anexar imagem, áudio ou PDF"><span>📎 Anexar</span><input id="mediaFile" type="file" accept="image/jpeg,image/png,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,application/pdf" hidden></label>
+              <button type="button" id="libraryBtn">🗂 Biblioteca</button>
               <button type="button" id="recordAudioBtn" aria-pressed="false" disabled>🎙 Gravar áudio</button>
               <button type="button" id="quickRepliesBtn" disabled>Respostas</button>
               <button type="button" id="templatesBtn">Templates</button>
@@ -124,12 +126,37 @@
         </aside>
       </section>
 
+      <div class="attendance-library-overlay" id="attendanceLibraryOverlay" hidden></div>
+      <aside class="attendance-library-drawer" id="attendanceLibraryDrawer" role="dialog" aria-modal="true" aria-label="Biblioteca rápida" aria-hidden="true" hidden>
+        <header class="library-head"><div><strong>Biblioteca rápida</strong><small>Imagens, vídeos, áudios e arquivos prontos para reutilizar</small></div><button type="button" id="libraryCloseBtn" aria-label="Fechar Biblioteca">×</button></header>
+        <div class="library-controls">
+          <div class="library-search-row"><input id="librarySearch" type="search" placeholder="Buscar por nome, categoria ou etiqueta" autocomplete="off"><button type="button" class="library-add" id="libraryAddBtn">+ Adicionar</button></div>
+          <input id="libraryFileInput" type="file" multiple hidden accept="image/jpeg,image/png,video/mp4,video/3gpp,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,.m4a,application/pdf,text/plain,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+          <div class="library-filters" aria-label="Filtrar Biblioteca">
+            <button type="button" class="active" data-library-kind="all">Todos</button>
+            <button type="button" data-library-kind="image">Imagens</button>
+            <button type="button" data-library-kind="video">Vídeos</button>
+            <button type="button" data-library-kind="audio">Áudios</button>
+            <button type="button" data-library-kind="document">Arquivos</button>
+          </div>
+        </div>
+        <div class="library-upload-queue" id="libraryUploadQueue"></div>
+        <div class="library-body"><div class="library-grid" id="libraryGrid"><div class="library-state">Abra a Biblioteca para carregar os itens.</div></div></div>
+        <footer class="library-footer">
+          <div class="library-footer-status" id="librarySelectionStatus"><strong>Nenhum item selecionado</strong><small>Toque nos cards para selecionar.</small></div>
+          <button type="button" id="libraryClearSelectionBtn" disabled>Limpar seleção</button>
+          <button type="button" class="primary" id="librarySendBtn" disabled>Enviar 0</button>
+          <span id="libraryStatus" role="status" aria-live="polite" hidden></span>
+        </footer>
+      </aside>
+
       <div class="admin-dialog" id="labelManager" hidden><section class="admin-dialog-card"><header><strong>Gerenciar etiquetas</strong><button type="button" id="closeLabelManagerBtn">×</button></header><form id="labelForm"><input type="hidden" id="labelEditId"><label>Nome <input id="labelName" maxlength="60" required></label><label>Cor <input id="labelColor" type="color" value="#5f6368"></label><label>Ordem <input id="labelSortOrder" type="number" value="0"></label><button type="submit">Salvar etiqueta</button></form><div id="labelManagerList" class="manager-list"></div></section></div>
       <div class="admin-dialog" id="quickRepliesManager" hidden><section class="admin-dialog-card"><header><strong>Gerenciar respostas rápidas</strong><button type="button" id="closeQuickRepliesManagerBtn">×</button></header><form id="quickReplyForm"><input type="hidden" id="quickReplyEditId"><label>Título <input id="quickReplyTitle" maxlength="80" required></label><label>Resposta <textarea id="quickReplyContent" rows="4" maxlength="4000" required></textarea></label><label class="inline-check"><input id="quickReplyFavorite" type="checkbox" checked> Mostrar nos favoritos</label><label>Ordem <input id="quickReplySortOrder" type="number" value="0"></label><button type="submit">Salvar resposta</button></form><div id="quickRepliesManagerList" class="manager-list"></div></section></div>
     </main>
   </div>
 
   <script type="module" src="./attendance-app.js"></script>
+  <script type="module" src="./attendance-library.js"></script>
   <script type="module" src="./attendance-ana-preview.js"></script>
   <script type="module" src="./attendance-send.js"></script>
   <script type="module" src="./attendance-audio-recorder.js"></script>
