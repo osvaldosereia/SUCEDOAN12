@@ -185,14 +185,7 @@ Deno.serve(async (req: Request) => {
     const messageOrStatusEvents = hasMetaMessageOrStatusEvents(payload);
     const phoneNumberIds = extractMetaPhoneNumberIds(payload);
     if (!phoneNumberIds.length) {
-      if (messageOrStatusEvents) return json({
-        ok: false,
-        error: "meta_account_unresolved",
-        unknown_phone_number_ids: [],
-        template_events_captured: templateEventsCaptured,
-        template_events_unmatched: templateEventsUnmatched,
-        template_events_duplicates: templateEventsDuplicates,
-      }, 422);
+      if (messageOrStatusEvents) return json({ ok: false, error: "meta_account_unresolved", unknown_phone_number_ids: [] }, 422);
       if (templateEventsCaptured > 0) return json({
         ok: true,
         inbound_normalized: 0,
