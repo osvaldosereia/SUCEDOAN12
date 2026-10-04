@@ -25,8 +25,8 @@ assert.doesNotMatch(row,/Gerar imagem|data-lot-image/,'new basket lot cards must
 assert.doesNotMatch(row,/Ver composição|<details/,'composition must be visible without opening details');
 assert.match(row,/basket-lot-inline-strip/,'composition must render as an inline horizontal strip');
 assert.match(row,/data-kit-lot-delete/,'ready/depleted lots must expose delete action');
-assert.match(row,/Desativar no site/,'active lots must remain disable-able');
-assert.match(row,/Ativar no site/,'inactive lots must remain activate-able');
+assert.match(row,/Pausar venda/,'active lots must remain pause-able');
+assert.match(row,/Retomar venda/,'paused lots must remain resumable');
 assert.match(adminUi,/flex:0 0 360px;width:360px/,'horizontal product cards must be wide enough to keep quantity inside');
 assert.match(adminUi,/\.basket-lot-component-card\{display:grid;grid-template-columns:48px minmax\(0,1fr\) 64px/,'desktop lot card grid must keep quantity inside the card');
 assert.match(adminUi,/\.basket-lot-component-stock\{grid-column:2\/-1/,'stock block should move below the main row instead of overflowing the card');

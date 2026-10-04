@@ -2503,19 +2503,23 @@ function nextBasketKitShortCodeFromLots(prefix:string,lots:any[]){
   return null;
 }
 async function basketCommercialAdmin(){
-  const [catalogQ,availabilityQ,categoriesQ]=await Promise.all([
+  const [catalogQ,availabilityQ,categoriesQ,kitMapQ]=await Promise.all([
     db.from("basket_commercial_catalog_v1").select("*").order("category_sort_order").order("model_name"),
     db.from("basket_lot_public_availability_v1").select("lot_id,basket_id,kit_template_id,status,short_code,public_name,sale_price_override,public_available,availability_reason,built_at,created_at,sale_enabled,linked_lot_id").order("built_at",{ascending:true}),
-    db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order")
+    db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order"),
+    db.from("basket_kit_templates").select("id,basket_id,kind,is_active").eq("is_active",true)
   ]);
-  if(catalogQ.error)throw catalogQ.error;if(availabilityQ.error)throw availabilityQ.error;if(categoriesQ.error)throw categoriesQ.error;
-  const availability=availabilityQ.data||[];
+  if(catalogQ.error)throw catalogQ.error;if(availabilityQ.error)throw availabilityQ.error;if(categoriesQ.error)throw categoriesQ.error;if(kitMapQ.error)throw kitMapQ.error;
+  const availability=availabilityQ.data||[],kitMap=kitMapQ.data||[];
   const models=(catalogQ.data||[]).map((m:any)=>{
     const cid=String(m.commercial_id||"");
     const lots=availability.filter((l:any)=>m.source_kind==="basket"?String(l.basket_id||"")===cid:(String(l.kit_template_id||"")===cid&&!l.basket_id));
     const ready=lots.filter((l:any)=>l.status==="ready"),drafts=lots.filter((l:any)=>l.status==="draft");
     const publicLot=lots.find((l:any)=>String(l.lot_id)===String(m.public_lot_id||""))||null;
     const operational=publicLot||ready.find((l:any)=>l.availability_reason==="paused")||ready.find((l:any)=>l.availability_reason!=="depleted")||ready[0]||drafts[0]||lots[0]||null;
+    const editorKit=m.source_kind==="basket"?kitMap.find((k:any)=>String(k.basket_id||"")===cid&&k.kind==="food"):kitMap.find((k:any)=>String(k.id)===cid);
+    const editorLots=editorKit?availability.filter((l:any)=>String(l.kit_template_id||"")===String(editorKit.id)):[];
+    const duplicate=[...editorLots].filter((l:any)=>["draft","ready"].includes(String(l.status))).sort((a:any,b:any)=>Date.parse(b.built_at||b.created_at||0)-Date.parse(a.built_at||a.created_at||0))[0]||null;
     const reason=String(publicLot?.availability_reason||operational?.availability_reason||m.availability_reason||"depleted");
     const state=reason==="draft"?"Em edição":reason==="paused"?"Pausado":reason==="depleted"?"Esgotado":["model_inactive","category_inactive"].includes(reason)?"Indisponível":"Montado";
     return {
@@ -2525,6 +2529,7 @@ async function basketCommercialAdmin(){
       public_lot_id:m.public_lot_id||null,public_lot_code:m.public_lot_code||null,
       public_available:Number(m.public_available||0),availability_reason:reason,state,
       operational_lot_id:operational?.lot_id||null,operational_lot_code:operational?.short_code||null,
+      editor_kit_template_id:editorKit?.id||null,duplicate_lot_id:duplicate?.lot_id||null,
       lot_count:lots.length,ready_lot_count:ready.length,draft_lot_count:drafts.length,
       ready_units:ready.reduce((n:number,l:any)=>n+Number(l.public_available||0),0),
       model_active:m.model_active===true,category_active:m.category_active===true
