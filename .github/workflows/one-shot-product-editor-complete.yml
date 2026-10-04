@@ -70,7 +70,7 @@ jobs:
         run: |
           git config user.name 'Dona Antonia Ops'
           git config user.email 'actions@users.noreply.github.com'
-          git rm scripts/patch-product-editor-complete.py .github/workflows/one-shot-product-editor-complete.yml .github/workflows/one-shot-product-editor-diagnose.yml
+          git rm -f scripts/patch-product-editor-complete.py .github/workflows/one-shot-product-editor-complete.yml .github/workflows/one-shot-product-editor-diagnose.yml
           git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts scripts/test-product-editor-complete.mjs
           git commit -m 'feat(admin): editor completo de produtos'
           git push origin HEAD:feat/product-editor-complete-20261004
