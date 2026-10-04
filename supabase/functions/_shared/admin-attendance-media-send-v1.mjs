@@ -6,6 +6,7 @@ const MAX_BYTES=16*1024*1024;
 const SAFE_MEDIA_GATE_ERRORS=new Set([
   'human_send_not_homologated',
   'meta_canary_not_enabled',
+  'meta_media_canary_not_enabled',
   'meta_canary_destination_blocked',
 ]);
 
