@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import {stripTypeScriptTypes} from 'node:module';
 const product=(id,name)=>({id,name,image_url:'https://images.test/'+id+'.webp',packaging:'1 kg'});
-const tables={basket_sales_runtime_v1:[{id:1,sales_mode:'legacy'}],basket_templates:[{id:'basket',name:'Cesta',is_active:true,base_price:100},{id:'inactive',name:'Oculta',is_active:false}],basket_current_lot_v1:[{basket_id:'basket',lot_id:'sale-lot',quantity_available:3,sale_price_override:90},{basket_id:'inactive',lot_id:'hidden-lot',quantity_available:5}],basket_lot_images:[],basket_split_availability_v1:[{basket_id:'basket',food_lot_id:'food-lot',hygiene_lot_id:'hygiene-lot',uses_hygiene_kit:true,split_available:2}],basket_stock_lot_items:[{lot_id:'sale-lot',product_id:'rice',quantity_per_basket:3,position_order:1,product:product('rice','Arroz')},{lot_id:'draft-lot',product_id:'wrong',quantity_per_basket:9,product:product('wrong','Modelo diferente')},{lot_id:'food-lot',product_id:'rice',quantity_per_basket:2,position_order:1,product:product('rice','Arroz')},{lot_id:'hygiene-lot',product_id:'soap',quantity_per_basket:2,position_order:2,product:[product('soap','Sabonete')]},{lot_id:'hygiene-lot',product_id:'rice',quantity_per_basket:1,position_order:3,product:product('rice','Arroz')},{lot_id:'hidden-lot',product_id:'hidden',quantity_per_basket:1,product:product('hidden','Oculto')}]};
+const tables={basket_sales_runtime_v1:[{id:1,sales_mode:'legacy'}],basket_templates:[{id:'basket',name:'Cesta',is_active:true,base_price:100},{id:'inactive',name:'Oculta',is_active:false}],basket_current_lot_v1:[{basket_id:'basket',lot_id:'sale-lot',quantity_available:3,sale_price_override:90,public_name:'Cesta Lote Legacy'},{basket_id:'inactive',lot_id:'hidden-lot',quantity_available:5}],basket_lot_images:[],basket_split_availability_v1:[{basket_id:'basket',food_lot_id:'food-lot',food_public_name:'Cesta Lote Outubro',food_sale_price_override:123.45,hygiene_lot_id:'hygiene-lot',uses_hygiene_kit:true,split_available:2}],basket_stock_lot_items:[{lot_id:'sale-lot',product_id:'rice',quantity_per_basket:3,position_order:1,product:product('rice','Arroz')},{lot_id:'draft-lot',product_id:'wrong',quantity_per_basket:9,product:product('wrong','Modelo diferente')},{lot_id:'food-lot',product_id:'rice',quantity_per_basket:2,position_order:1,product:product('rice','Arroz')},{lot_id:'hygiene-lot',product_id:'soap',quantity_per_basket:2,position_order:2,product:[product('soap','Sabonete')]},{lot_id:'hygiene-lot',product_id:'rice',quantity_per_basket:1,position_order:3,product:product('rice','Arroz')},{lot_id:'hidden-lot',product_id:'hidden',quantity_per_basket:1,product:product('hidden','Oculto')}]};
 const queries=[];
 class Query{constructor(t){this.t=t;this.filters=[]}select(){return this}eq(k,v){this.filters.push(x=>x[k]===v);return this}in(k,v){this.filters.push(x=>v.includes(x[k]));this.ids=v;return this}order(){return this}maybeSingle(){this.one=true;return this}then(resolve){const rows=tables[this.t].filter(x=>this.filters.every(f=>f(x)));queries.push({table:this.t,ids:this.ids});return Promise.resolve({data:this.one?rows[0]:rows,error:null}).then(resolve)}}
 const ctx={db:{from:t=>new Query(t)},cents:v=>Math.round(Number(v||0)*100),CATEGORIES:[],Map,Set};vm.createContext(ctx);
@@ -12,12 +12,15 @@ const unit=source.slice(source.indexOf('async function splitGlobalReady()'),sour
 vm.runInContext(stripTypeScriptTypes(unit,{mode:'strip'}),ctx);
 const legacy=JSON.parse(JSON.stringify(await vm.runInContext('home()',ctx)));
 assert.equal(legacy.baskets.length,1);assert.equal(legacy.baskets[0].display_price_cents,9000);
+assert.equal(legacy.baskets[0].name,'Cesta Lote Legacy','legacy usa o nome comercial do lote ativo');
 assert.deepEqual(legacy.baskets[0].carousel_items.map(x=>[x.product_id,x.quantity]),[['rice',3]],'usar composição real do lote à venda');
 assert.equal(queries.filter(x=>x.table==='basket_stock_lot_items').length,1,'uma consulta para todas as cestas');
 assert.deepEqual(Array.from(queries.find(x=>x.table==='basket_stock_lot_items').ids),['sale-lot']);
 tables.basket_sales_runtime_v1[0].sales_mode='split';queries.length=0;
 const split=JSON.parse(JSON.stringify(await vm.runInContext('home()',ctx)));
+assert.equal(split.baskets[0].name,'Cesta Lote Outubro','split usa o nome do lote de alimentos ativo');
+assert.equal(split.baskets[0].display_price_cents,12345,'split usa o preço comercial do lote de alimentos ativo');
 assert.deepEqual(split.baskets[0].carousel_items.map(x=>[x.product_id,x.quantity]),[['rice',3],['soap',2]],'combinar os lotes selecionados e somar produto repetido');
 assert.equal(queries.filter(x=>x.table==='basket_stock_lot_items').length,1);
 assert.ok(!JSON.stringify(split).includes('Modelo diferente'));assert.ok(!JSON.stringify(split).includes('Oculto'));
-console.log('Basket carousel service: selected sale lots, quantities, split aggregation and batch query passed');
+console.log('Basket carousel service: lot commercial name/price, selected sale lots, quantities, split aggregation and batch query passed');

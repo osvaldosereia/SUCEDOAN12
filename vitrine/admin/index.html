@@ -3432,6 +3432,8 @@
       quantity:source?Number(source.quantity_built||10):10,
       short_code:resumeDraft?(source.short_code||d.next_short_code||''):(d.next_short_code||''),
       notes:resumeDraft?(source.notes||''):'',
+      public_name:String(source?.public_name||d.kit?.basket?.name||''),
+      sale_price:Number(source?.sale_price_override??d.kit?.basket?.base_price??0),
       items
     };
     if($('#kitTemplateReference'))$('#kitTemplateReference').open=false;
@@ -3452,6 +3454,10 @@
       '<div class="basket-composer-summary"><label><span>Código do lote</span><div class="kit-code-editor"><span class="kit-code-prefix">'+esc(prefix)+'</span><select id="kitLotDigit">'+digits.map(x=>'<option value="'+x+'" '+(x===currentDigit?'selected':'')+' '+(used.has(prefix+x)&&prefix+x!==draft.short_code?'disabled':'')+'>'+x+(used.has(prefix+x)&&prefix+x!==draft.short_code?' · em uso':'')+'</option>').join('')+'</select></div><small>Preenchido automaticamente. Você pode escolher outro número.</small></label>'+
         '<label><span>Quantidade de kits</span><input class="basket-inline-input" id="kitLotQty" type="number" min="1" max="500" step="1" value="'+esc(draft.quantity)+'"><small>De 1 a 500 kits por lote.</small></label>'+
         '<div class="basket-kpi"><small>Disponível para montar</small><strong id="kitLotCapacity">'+esc(basketKitLotDraftCapacity())+'</strong><span class="sub">kits com esta composição</span></div></div>'+
+      (d.kit.kind==='food'?'<div class="basket-composer-summary" style="margin-top:10px">'+
+        '<label><span>Nome no site</span><input class="basket-inline-input" id="kitLotPublicName" maxlength="120" value="'+esc(draft.public_name||'')+'" placeholder="Nome que o cliente verá"><small>Este é o nome público deste lote.</small></label>'+
+        '<label><span>Valor da cesta</span><input class="basket-inline-input" id="kitLotSalePrice" inputmode="decimal" type="number" min="0" max="9999999" step="0.01" value="'+esc(Number(draft.sale_price||0).toFixed(2))+'"><small>A diferença para a soma dos produtos fica como valor oculto e permanece na personalização.</small></label>'+
+        '<div class="basket-kpi"><small>Regra comercial</small><strong>Preço fixado</strong><span class="sub">trocas alteram só os produtos; o ajuste oculto é preservado</span></div></div>':'')+
       '<div id="kitLotWarning" class="basket-warning" hidden></div>'+
       '<div class="kit-draft-list">'+draft.items.map((x,i)=>'<div class="kit-draft-line">'+
         '<img class="kit-draft-photo" loading="lazy" src="'+esc(x.image_url||'/img/sem-foto.svg')+'" alt="">'+
@@ -3471,6 +3477,8 @@
     $('#kitLotDigit').onchange=e=>{draft.short_code=prefix+e.currentTarget.value;updateBasketKitLotFeedback()};
     $('#kitLotQty').oninput=e=>{draft.quantity=Number(e.currentTarget.value);updateBasketKitLotFeedback()};
     $('#kitLotNotes').oninput=e=>draft.notes=e.currentTarget.value;
+    if($('#kitLotPublicName'))$('#kitLotPublicName').oninput=e=>draft.public_name=e.currentTarget.value;
+    if($('#kitLotSalePrice'))$('#kitLotSalePrice').oninput=e=>draft.sale_price=Number(e.currentTarget.value);
     host.querySelectorAll('[data-kit-line-qty]').forEach(el=>el.oninput=()=>{const i=Number(el.dataset.kitLineQty);draft.items[i].quantity_per_kit=Number(el.value);draft.items[i].is_changed=true;updateBasketKitLotFeedback()});
     host.querySelectorAll('[data-kit-other]').forEach(btn=>btn.onclick=()=>openBasketKitProductPicker(Number(btn.dataset.kitOther)));
     host.querySelectorAll('[data-kit-remove]').forEach(btn=>btn.onclick=()=>{draft.items.splice(Number(btn.dataset.kitRemove),1);paintBasketKitLotComposer()});
@@ -3558,6 +3566,7 @@
     const d=state.basketKitDetail,draft=state.basketKitLotDraft,op=requireOperator();if(!d||!draft||!op)return;
     if(!Number.isInteger(draft.quantity)||draft.quantity<1||draft.quantity>500||!draft.items.length||draft.items.some(x=>!Number.isInteger(x.quantity_per_kit)||x.quantity_per_kit<1||x.quantity_per_kit>100)){toast('Confira a quantidade de kits e de produtos.');return}
     if(activateAfter&&draft.quantity>basketKitLotDraftCapacity()){toast('Falta estoque para confirmar a montagem.');return}
+    if(d.kit.kind==='food'&&(!String(draft.public_name||'').trim()||!Number.isFinite(Number(draft.sale_price))||Number(draft.sale_price)<0)){toast('Informe o nome no site e o valor da cesta.');return}
     if(!/^[A-Z]{2}[0-9]$/.test(String(draft.short_code||''))){toast('Escolha o código do lote.');return}
     const saveBtn=$('#saveKitLotDraft'),activateBtn=$('#activateKitLotDraft');
     if(saveBtn)saveBtn.disabled=true;if(activateBtn)activateBtn.disabled=true;
@@ -3565,6 +3574,7 @@
       const saved=await api('basket_kit_lot_draft_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         draft_lot_id:draft.draft_lot_id||null,kit_template_id:d.kit.id,quantity:Number(draft.quantity||0),short_code:draft.short_code,
         duplicated_from_lot_id:draft.source_lot_id||null,operator:op,notes:draft.notes||'',
+        public_name:d.kit.kind==='food'?String(draft.public_name||'').trim():null,sale_price:d.kit.kind==='food'?Number(draft.sale_price):null,
         items:draft.items.map((x,i)=>({kit_template_item_id:x.kit_template_item_id||null,source_template_item_id:x.source_template_item_id||null,template_product_id:x.template_product_id||null,
           product_id:x.product_id,quantity_per_kit:Number(x.quantity_per_kit||0),position_order:i,is_changed:x.is_changed===true,change_note:x.is_changed?'Alterado na criação/duplicação do lote':null}))
       })});
