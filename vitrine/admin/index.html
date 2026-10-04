@@ -7737,62 +7737,6 @@
     const printUrl=new URL(url);printUrl.searchParams.set('print','1');
     window.open(printUrl.toString(),'_blank','noopener,noreferrer');
   }
-  function currentOrderWhatsappShareData(){
-    const d=state.currentOrder||{},o=d.order||{},customer=o.customer_snapshot&&typeof o.customer_snapshot==='object'?o.customer_snapshot:{};
-    const a=(o.delivery_address_snapshot&&typeof o.delivery_address_snapshot==='object'?o.delivery_address_snapshot:(o.delivery_address&&typeof o.delivery_address==='object'?o.delivery_address:(d.customer?.address||{})));
-    const field=(selector,fallback='')=>String($(selector)?.value??fallback??'').trim();
-    const code=shortOrder(o.order_number||o.public_order_code||o.id||'');
-    const customerName=field('#orderDeliveryName',o.customer_name||customer.name||customer.display_name||a.customer_name||a.recipient_name||d.customer?.display_name||'');
-    const rawPhone=field('#orderDeliveryPhone',o.phone_e164||o.whatsapp_phone_e164||a.phone||d.customer?.phone||'');
-    const phone=phoneDigits(rawPhone),phoneLabel=phone?formatPhone(phone):'';
-    const street=field('#orderDeliveryStreet',a.street||''),number=field('#orderDeliveryNumber',a.number||''),district=field('#orderDeliveryDistrict',a.district||''),complement=field('#orderDeliveryComplement',a.complement||''),city=field('#orderDeliveryCity',a.city||''),uf=field('#orderDeliveryState',a.state||''),postal=field('#orderDeliveryPostalCode',a.postal_code||'');
-    const streetLine=[street,number].filter(Boolean).join(', '),cityLine=city?(uf?city+'/'+uf:city):uf;
-    const address=[streetLine,district,complement?'Compl. '+complement:'',cityLine,postal?'CEP '+postal:''].filter(Boolean).join(' - ');
-    return {code,customerName,phone,phoneLabel,address,url:publicOrderUrlFor(o),order:o};
-  }
-  function currentOrderCompanyWhatsappMessage(){
-    const x=currentOrderWhatsappShareData(),lines=['PEDIDO DONA ANTONIA'];
-    lines.push('Pedido: #'+(x.code||'Não informado'));
-    lines.push('Cliente: '+(x.customerName||'Não informado'));
-    lines.push('Endereço: '+(x.address||'Não informado'));
-    lines.push('Telefone: '+(x.phoneLabel||'Não informado'));
-    const total=Number(x.order?.total||x.order?.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
-    if(x.url)lines.push('','Conferir pedido completo:',''+x.url);
-    return lines.join('\n')
-  }
-  function openNativeWhatsapp(phone,message){
-    const url='whatsapp://send?phone='+encodeURIComponent(phone)+'&text='+encodeURIComponent(message);
-    window.location.href=url;
-  }
-  function openCurrentOrderCompanyWhatsapp(){
-    openNativeWhatsapp(COMPANY_WHATSAPP_E164,currentOrderCompanyWhatsappMessage())
-  }
-  function openCurrentOrder4599Whatsapp(){
-    openNativeWhatsapp(ORDER_WHATSAPP_4599_E164,currentOrderCompanyWhatsappMessage())
-  }
-  function currentOrderCustomerWhatsappMessage(){
-    const x=currentOrderWhatsappShareData(),lines=['Ola! Seu pedido da Dona Antonia foi recebido.'];
-    lines.push('Pedido: #'+(x.code||'Não informado'));
-    lines.push('Cliente: '+(x.customerName||'Não informado'));
-    lines.push('Endereço: '+(x.address||'Não informado'));
-    lines.push('Telefone: '+(x.phoneLabel||'Não informado'));
-    const total=Number(x.order?.total||x.order?.total_amount||0);if(Number.isFinite(total)&&total>0)lines.push('Total: '+total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
-    if(x.url)lines.push('','Confira produtos, fotos, quantidades e entrega:',''+x.url);
-    return lines.join('\n')
-  }
-  function openCurrentOrderCustomerWhatsapp(){
-    const o=state.currentOrder?.order||{},phone=phoneDigits(o.phone_e164||o.whatsapp_phone_e164||o.delivery_address_snapshot?.phone||o.delivery_address?.phone||'');
-    if(!phone){toast('Pedido sem WhatsApp do cliente');return}
-    openNativeWhatsapp(phone,currentOrderCustomerWhatsappMessage())
-  }
-  function currentOrderRegistrationUrl(){return $('#orderRegistrationLinkActions')?.dataset?.url||''}
-  function openCurrentOrderRegistrationWhatsapp(){
-    const url=currentOrderRegistrationUrl(),o=state.currentOrder?.order||{},phone=phoneDigits(o.whatsapp_phone_e164||o.delivery_address_snapshot?.phone||'');if(!url||!phone)return;
-    const text='Olá! Para concluir seu cadastro da Dona Antônia e vincular ao seu pedido, acesse: '+url;
-    window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(text),'_blank','noopener');
-  }
-  async function copyCurrentOrderRegistrationLink(){const url=currentOrderRegistrationUrl();if(!url)return;try{await navigator.clipboard.writeText(url);toast('Link de cadastro copiado')}catch{prompt('Copie o link de cadastro:',url)}}
-
   async function openOrder(id){
     $('#editorTitle').textContent='Pedido';$('#editorBody').innerHTML='<div class="loading">Carregando pedido…</div>';$('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>';$('#cancelEditor').onclick=()=>$('#editor').close();$('#editor').showModal();
     try{const data=await api('order',{id});state.currentOrder=data;state.currentOrderFiscal=null;try{if(['confirmed','processing','ready','out_for_delivery','delivered'].includes(data.order?.status)){const sep=await api('order_separation_get',{id});data.separation=sep.separation||sep}}catch{}if(data.order?.status==='delivered')await loadCurrentOrderFiscal(false);paintOrderDetail()}catch(e){$('#editorBody').innerHTML='<div class="empty">Não consegui abrir este pedido.</div>'}
