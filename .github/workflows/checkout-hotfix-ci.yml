@@ -48,6 +48,7 @@ jobs:
           node-version: '22'
       - name: Checkout regression contracts
         run: |
+          node scripts/test-registration-catalog-return.mjs
           node scripts/test-checkout-simple-ux.mjs
           node scripts/test-checkout-customer-capture-v1.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-existing-registration.mjs
@@ -59,6 +60,5 @@ jobs:
           node scripts/test-checkout-stock-adjustment-contract.mjs
           node scripts/test-checkout-whatsapp-outbox.mjs
           node scripts/test-checkout-order-meta-cutover-v1.mjs
-          node scripts/test-registration-catalog-return.mjs
           node scripts/test-customer-identity-admin-v2.mjs
           node --check checkout-resilience.js
