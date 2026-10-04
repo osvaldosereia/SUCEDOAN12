@@ -23,15 +23,19 @@ assert.match(auth,/export\s+async\s+function\s+attendanceAuthorizedFetch/,'auth 
 assert.match(auth,/ensureAttendanceToken/,'fetch autenticado deve usar renovação preventiva');
 assert.match(auth,/response\.status\s*===\s*401/,'fetch autenticado deve recuperar uma vez após 401');
 assert.match(auth,/forceRefresh\s*:\s*true/,'recuperação 401 deve forçar token novo');
+assert.match(auth,/import\.meta\.url/,'auth deve distinguir alias sem versão da instância canônica');
+assert.match(auth,/import\(['"]\.\/attendance-auth\.js\?v=auth-refresh-v2['"]\)/,'alias sem versão deve delegar para a instância canônica v2');
+assert.match(auth,/canonicalAuth[\s\S]*ensureAttendanceToken/,'renovação via alias deve delegar ao canônico');
+assert.match(auth,/canonicalAuth[\s\S]*attendanceJsonApi/,'API JSON via alias deve delegar ao canônico');
 
 assert.match(app,/ensureAttendanceToken/,'boot do Atendimento deve preservar o hotfix #716');
 assert.match(app,/async\s+function\s+boot\(\)[\s\S]*await\s+ensureAttendanceToken\(\)/,'boot deve renovar/obter sessão antes de carregar a Central');
 assert.doesNotMatch(app,/\badminToken\s*\(/,'boot não pode voltar a chamar helper removido');
-assert.match(app,/from\s+['"]\.\/attendance-auth\.js\?v=auth-refresh-v2['"]/i,'core deve compartilhar exatamente a mesma instância versionada do auth');
-assert.match(library,/from\s+['"]\.\/attendance-auth\.js\?v=auth-refresh-v2['"]/i,'Biblioteca deve compartilhar exatamente a mesma instância versionada do auth');
+assert.match(app,/from\s+['"]\.\/attendance-auth\.js['"]/i,'core deve usar o alias compatível do auth compartilhado');
+assert.match(library,/from\s+['"]\.\/attendance-auth\.js['"]/i,'Biblioteca deve usar o alias compatível do auth compartilhado');
 
 for(const [name,source] of Object.entries(files)){
-  assert.match(source,/from\s+['"]\.\/attendance-auth\.js\?v=auth-refresh-v2['"]/i,`${name} deve importar a versão atual do auth compartilhado`);
+  assert.match(source,/from\s+['"]\.\/attendance-auth\.js\?v=auth-refresh-v2['"]/i,`${name} deve importar a instância canônica atual do auth compartilhado`);
   assert.doesNotMatch(source,/sessionStorage\.getItem\([^)]*da_finance_access_token_v1|ADMIN_TOKEN_KEY\s*=|function\s+(?:adminToken|token)\s*\(\)\s*\{[^}]*sessionStorage/s,`${name} não deve gerenciar JWT por conta própria`);
 }
 assert.match(files.send,/attendanceJsonApi/,'envio de texto deve usar API JSON compartilhada');
@@ -46,4 +50,4 @@ for(const module of ['attendance-app.js','attendance-library.js','attendance-ana
   assert.match(html,new RegExp(`${escaped}\\?v=auth-refresh-v2`),`${module} deve receber cache-bust v2`);
 }
 
-console.log('OK · toda a Central usa uma única instância versionada de renovação de sessão e preserva o boot autenticado.');
+console.log('OK · toda a Central converge para uma instância canônica versionada de sessão e preserva o boot autenticado.');
