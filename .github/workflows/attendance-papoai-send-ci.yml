@@ -24,6 +24,7 @@ on:
       - 'supabase/sql/20261003_admin_attendance_meta_media_send_v1.sql'
       - 'supabase/sql/20261003_attendance_library_v1.sql'
       - 'supabase/sql/20261003_attendance_library_media_transport_expand_v1.sql'
+      - 'supabase/sql/20261004_storefront_catalog_link_v1.sql'
       - '.github/workflows/attendance-papoai-send-ci.yml'
 
 jobs:
@@ -37,6 +38,7 @@ jobs:
       - run: node scripts/test-admin-attendance-papoai-webhook-send-v1.mjs
       - run: node scripts/test-admin-attendance-send-ui-v1.mjs
       - run: node scripts/test-admin-attendance-api-v1.mjs
+      - run: node scripts/test-admin-attendance-catalog-link-cutover-v1.mjs
       - run: node scripts/test-admin-attendance-ui-v1.mjs
       - run: node scripts/test-admin-attendance-native-v1.mjs
       - run: node scripts/test-admin-attendance-scroll-layout-v1.mjs
