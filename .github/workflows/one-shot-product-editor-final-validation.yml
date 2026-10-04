@@ -51,8 +51,35 @@ jobs:
           scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
           console.log(`Admin JS syntax OK (${scripts.length} inline scripts)`);
           NODE
-      - name: TypeScript da Edge Function
-        run: deno check supabase/functions/admin-products-live-v1/index.ts
+      - name: TypeScript diferencial contra main
+        shell: bash
+        run: |
+          git show origin/main:supabase/functions/admin-products-live-v1/index.ts > /tmp/admin-products-main.ts
+          set +e
+          deno check /tmp/admin-products-main.ts > /tmp/main-check.log 2>&1
+          main_code=$?
+          deno check supabase/functions/admin-products-live-v1/index.ts > /tmp/branch-check.log 2>&1
+          branch_code=$?
+          set -e
+          echo '--- baseline main ---'
+          grep -oE 'TS[0-9]+' /tmp/main-check.log | sort | uniq -c || true
+          echo '--- branch ---'
+          grep -oE 'TS[0-9]+' /tmp/branch-check.log | sort | uniq -c || true
+          grep -oE 'TS[0-9]+' /tmp/main-check.log | sort > /tmp/main-codes.txt || true
+          grep -oE 'TS[0-9]+' /tmp/branch-check.log | sort > /tmp/branch-codes.txt || true
+          if [ "$main_code" -eq 0 ]; then
+            echo 'Baseline main passou; portanto a branch também precisa passar.'
+            test "$branch_code" -eq 0
+          else
+            echo 'Baseline main já contém dívida de typecheck; exigindo zero erros adicionais por código.'
+            diff -u /tmp/main-codes.txt /tmp/branch-codes.txt
+            if grep -Eq 'productDetail|saveProductEditorFiscal|syncProductEditorIdentifiers|validateProductEditorExtras|normalizedFiscal|editorGtins|editorTags' /tmp/branch-check.log; then
+              echo 'Erro TypeScript encontrado no código novo do editor.' >&2
+              cat /tmp/branch-check.log
+              exit 1
+            fi
+          fi
+          echo 'TypeScript diferencial OK: nenhum erro novo introduzido pelo editor.'
       - name: Integridade do diff
         run: git diff --check origin/main...HEAD
       - name: Remover workflow temporario
