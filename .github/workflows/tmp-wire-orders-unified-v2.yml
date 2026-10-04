@@ -1,0 +1,40 @@
+name: Temporary wire unified orders v2
+
+on:
+  push:
+    branches: [feat/orders-unified-queue-vitrines-v2-20261004]
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wire loader
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('vitrine/admin/index.html')
+          text=path.read_text()
+          tag='<script src="/vitrine/admin/orders-unified-queue-v1.js?v=20261004"></script>'
+          anchor='<script src="/vitrine/admin/basket-lot-image.js?v=studio-v2"></script>'
+          if tag not in text:
+              if anchor not in text: raise SystemExit('admin script anchor not found')
+              path.write_text(text.replace(anchor,anchor+'\n'+tag,1))
+          PY
+      - name: Commit loader
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add vitrine/admin/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: load unified orders queue"
+            git push origin HEAD:feat/orders-unified-queue-vitrines-v2-20261004
+          fi
+      - name: Verify contract
+        run: |
+          node --check vitrine/admin/orders-unified-queue-v1.js
+          node --check vitrine/admin/separacao/separation.js
+          node scripts/test-admin-orders-unified-queue-v1.mjs
