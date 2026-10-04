@@ -6293,6 +6293,7 @@
       return hay.includes(term);
     });
   }
+  // PURCHASE_XML_EDIT_NAME_V1
   function purchaseCatalogCardHtml(x){
     const p=x.pricing_preview||{},prod=x.products||{},flags=x.flags||{};
     const factor=p.suggested_conversion_factor??x.conversion_factor??(p.requires_conversion_confirmation?'':1);
@@ -6316,6 +6317,7 @@
         '<span class="pill '+statusCls+'">'+esc(status)+'</span>'+
       '</div></div>'+
       (reason?'<div class="purchase-factor-hint warn-text" style="margin-bottom:8px">'+esc(reason)+'</div>':'')+
+      '<div class="purchase-field" style="margin-bottom:8px"><label>Nome do produto</label><input type="text" maxlength="300" data-catalog-product-name value="'+esc(prod.name||x.description||'')+'"><div class="purchase-factor-hint">Você pode editar o nome antes de salvar.</div></div>'+
       '<div class="purchase-price-grid">'+
         '<div class="purchase-field"><label>Conversão para UN</label><input type="number" min="1" step="1" data-catalog-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint">'+(p.requires_conversion_confirmation?'Confira quantas UN existem em 1 '+esc(x.purchase_unit||'embalagem')+'.':'Compra: '+qtyText)+'</div></div>'+
         '<div class="purchase-price-box"><small>Quantidade final</small><strong data-catalog-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
@@ -6349,12 +6351,14 @@
     const operator=operatorOverride||requireOperator();if(!operator)return false;
     const factor=Number(String(card.querySelector('[data-catalog-factor]')?.value||'').replace(',','.'));
     const sale=Number(String(card.querySelector('[data-catalog-sale]')?.value||'').replace(',','.'));
+    const proposedName=String(card.querySelector('[data-catalog-product-name]')?.value||'').trim();
     const updateCost=Boolean(card.querySelector('[data-catalog-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-catalog-update-sale]')?.checked);
+    if(!proposedName){if(!quiet)toast('Informe o nome do produto');return false}
     if(!Number.isFinite(factor)||factor<1){if(!quiet)toast('Informe a conversão para UN');return false}
     if(updateSale&&(!Number.isFinite(sale)||sale<0)){if(!quiet)toast('Informe um preço de venda válido');return false}
     const btn=card.querySelector('[data-catalog-approve]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
     try{
-      await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+      await purchaseApi('apply_item_update',{item_id:itemId,proposed_name:proposedName,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
       const result=card.querySelector('[data-catalog-result]');if(result)result.textContent='Atualizado';
       if(!quiet){
         toast('Cadastro atualizado');
