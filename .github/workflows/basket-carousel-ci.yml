@@ -1,0 +1,35 @@
+name: Basket product carousel
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'vitrine/basket-carousel.js'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'scripts/test-basket-carousel-*.mjs'
+      - '.github/workflows/basket-carousel-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'vitrine/basket-carousel.js'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'scripts/test-basket-carousel-*.mjs'
+      - '.github/workflows/basket-carousel-ci.yml'
+permissions:
+  contents: read
+jobs:
+  carousel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --prefix "$RUNNER_TEMP/carousel-tests" --no-save --package-lock=false playwright@1.62.1
+      - run: node "$RUNNER_TEMP/carousel-tests/node_modules/playwright/cli.js" install --with-deps chromium
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-carousel-service.mjs
+      - run: node scripts/test-basket-carousel-browser.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
