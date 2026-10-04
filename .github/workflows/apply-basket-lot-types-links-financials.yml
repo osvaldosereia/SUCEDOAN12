@@ -1,0 +1,30 @@
+name: Apply basket lot types links financials
+on:
+  push:
+    branches: [feat/basket-lot-types-link-financials-20261004]
+    paths:
+      - 'scripts/patch-basket-lot-admin-ui.mjs'
+      - 'scripts/patch-basket-lot-service-tests.mjs'
+      - '.github/workflows/apply-basket-lot-types-links-financials.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/basket-lot-types-link-financials-20261004
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node scripts/patch-basket-lot-admin-ui.mjs
+      - run: node scripts/patch-basket-lot-service-tests.mjs
+      - name: Commit patched files
+        run: |
+          git config user.name "OSSJU"
+          git config user.email "Junior.sereia@hotmail.com"
+          git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts scripts/test-basket-kit-financials-categories.mjs scripts/test-basket-lot-ops-rules.mjs scripts/test-basket-kit-commercial-fields.mjs
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "feat: classificar e vincular lotes com painel financeiro"
+          git push origin HEAD:feat/basket-lot-types-link-financials-20261004
