@@ -25,6 +25,15 @@ jobs:
           p.write_text(s)
           PY
             node scripts/apply-orders-clean-flow-v3.mjs
+            python - <<'PY'
+          import re
+          from pathlib import Path
+          p=Path('vitrine/admin/index.html')
+          s=p.read_text()
+          s=re.sub(r'\s*<button\b[^>]*\bdata-tab="separation"[^>]*>[\s\S]*?</button>','',s,count=1)
+          s=s.replace("if(tab==='separation')renderSeparationTablet();",'')
+          p.write_text(s)
+          PY
           fi
       - name: Orders V3 contract and diff
         run: |
