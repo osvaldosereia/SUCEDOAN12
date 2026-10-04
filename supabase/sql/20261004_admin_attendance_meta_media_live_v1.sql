@@ -1,8 +1,130 @@
--- Graduação controlada do outbound de mídia Meta: canário -> live.
--- O trigger continua fail-closed. Modo live NÃO remove gates de janela de 24h,
--- homologação humana, provider Meta, rate limit, idempotência ou destino server-side;
--- esses gates permanecem nos RPCs enqueue/claim. Aqui apenas deixamos de exigir
--- allowlist de canário quando meta_media_live_enabled=true.
+-- Preparação segura para futura graduação do outbound de mídia Meta: canário -> live.
+-- A migration NÃO abre mídia live. Ela cria readiness baseado em evidência canônica,
+-- faz o guard revalidar essa readiness se alguém tentar ligar live no futuro e
+-- restaura/preserva o canário estrito 0975 <-> 1018 até a homologação real do áudio.
+
+create or replace function public.ops2_attendance_media_live_readiness_v1(p_whatsapp_account_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+  v_runtime public.whatsapp_channel_runtime_v1%rowtype;
+  v_image_count integer:=0;
+  v_audio_count integer:=0;
+  v_document_count integer:=0;
+  v_duplicate_wamid_count integer:=0;
+  v_unhealthy_queue_count integer:=0;
+  v_ready boolean:=false;
+begin
+  if p_whatsapp_account_id is null then
+    return jsonb_build_object('ok',false,'ready',false,'error','whatsapp_account_required');
+  end if;
+
+  select r.* into v_runtime
+  from public.whatsapp_channel_runtime_v1 r
+  where r.whatsapp_account_id=p_whatsapp_account_id
+    and r.send_enabled=true
+    and r.human_send_enabled=true
+    and r.homologated_at is not null
+    and r.outbound_provider='meta';
+
+  if not found then
+    return jsonb_build_object('ok',true,'ready',false,'reason','human_send_not_homologated');
+  end if;
+
+  with evidence as (
+    select o.message_type,o.provider_message_id
+    from public.whatsapp_outbox_v1 o
+    join public.whatsapp_messages_v1 m on m.id=o.message_id
+    where o.whatsapp_account_id=p_whatsapp_account_id
+      and o.purpose='human_attendance'
+      and o.provider='meta'
+      and o.message_type in ('image','audio','document')
+      and o.status='sent'
+      and o.provider_message_id is not null
+      and m.provider='meta'
+      and m.direction='outbound'
+      and m.provider_message_id=o.provider_message_id
+      and m.status_current in ('sent','delivered','read')
+      and lower(coalesce(o.metadata->>'meta_media_canary','false'))='true'
+      and exists (
+        select 1
+        from jsonb_array_elements_text(
+          case
+            when jsonb_typeof(v_runtime.metadata->'meta_media_canary_to_e164')='array'
+              then v_runtime.metadata->'meta_media_canary_to_e164'
+            else '[]'::jsonb
+          end
+        ) allowed(value)
+        where public.canonical_whatsapp_e164_br_v2(allowed.value)
+              = public.canonical_whatsapp_e164_br_v2(o.to_phone_e164)
+      )
+  )
+  select
+    count(*) filter (where message_type='image')::integer,
+    count(*) filter (where message_type='audio')::integer,
+    count(*) filter (where message_type='document')::integer
+  into v_image_count,v_audio_count,v_document_count
+  from evidence;
+
+  select count(*)::integer into v_duplicate_wamid_count
+  from (
+    select o.provider_message_id
+    from public.whatsapp_outbox_v1 o
+    where o.whatsapp_account_id=p_whatsapp_account_id
+      and o.purpose='human_attendance'
+      and o.provider='meta'
+      and o.message_type in ('image','audio','document')
+      and o.status='sent'
+      and o.provider_message_id is not null
+      and lower(coalesce(o.metadata->>'meta_media_canary','false'))='true'
+    group by o.provider_message_id
+    having count(*)>1
+  ) duplicated;
+
+  select count(*)::integer into v_unhealthy_queue_count
+  from public.whatsapp_outbox_v1 o
+  where o.whatsapp_account_id=p_whatsapp_account_id
+    and o.purpose='human_attendance'
+    and o.provider='meta'
+    and o.message_type in ('image','audio','document')
+    and o.status in ('queued','claimed','failed')
+    and o.created_at>=now()-interval '24 hours';
+
+  v_ready:=
+    lower(coalesce(v_runtime.metadata->>'meta_media_canary_enabled','false'))='true'
+    and v_image_count>0
+    and v_audio_count>0
+    and v_document_count>0
+    and v_duplicate_wamid_count=0
+    and v_unhealthy_queue_count=0;
+
+  return jsonb_build_object(
+    'ok',true,
+    'ready',v_ready,
+    'evidence',jsonb_build_object(
+      'image',v_image_count,
+      'audio',v_audio_count,
+      'document',v_document_count,
+      'duplicate_wamid',v_duplicate_wamid_count,
+      'unhealthy_queue_24h',v_unhealthy_queue_count
+    ),
+    'requires',jsonb_build_array(
+      'strict_media_canary_enabled',
+      'image_meta_canary_with_wamid_and_status',
+      'audio_meta_canary_with_wamid_and_status',
+      'document_meta_canary_with_wamid_and_status',
+      'no_duplicate_wamid',
+      'clean_media_queue_24h'
+    )
+  );
+end;
+$$;
+
+revoke all on function public.ops2_attendance_media_live_readiness_v1(uuid) from public,anon,authenticated;
+grant execute on function public.ops2_attendance_media_live_readiness_v1(uuid) to service_role;
 
 create or replace function public.ops2_admin_attendance_media_canary_guard_v1()
 returns trigger
@@ -15,10 +137,11 @@ declare
   v_phone text;
   v_live boolean:=false;
   v_canary boolean:=false;
+  v_readiness jsonb;
 begin
   if new.purpose='human_attendance'
      and new.provider='meta'
-     and new.message_type in ('image','audio','video','document')
+     and new.message_type in ('image','audio','document')
      and (
        tg_op='INSERT'
        or (tg_op='UPDATE' and old.status is distinct from new.status and new.status='claimed')
@@ -44,7 +167,12 @@ begin
       raise exception using errcode='P0001',message='meta_canary_destination_blocked';
     end if;
 
-    if not v_live then
+    if v_live then
+      v_readiness:=public.ops2_attendance_media_live_readiness_v1(new.whatsapp_account_id);
+      if coalesce((v_readiness->>'ready')::boolean,false) is not true then
+        raise exception using errcode='P0001',message='meta_media_live_not_ready';
+      end if;
+    else
       if not v_canary then
         raise exception using errcode='P0001',message='meta_media_canary_not_enabled';
       end if;
@@ -77,18 +205,27 @@ $$;
 
 revoke all on function public.ops2_admin_attendance_media_canary_guard_v1() from public,anon,authenticated;
 
--- Os dois números oficiais já passaram pelo envio controlado de mídia.
--- A allowlist histórica permanece no metadata para rollback imediato a canário.
+-- Estado produtivo permanece fail-closed. A ativação live exige uma migration futura,
+-- explícita e posterior à evidência real; esta migration só prepara o mecanismo.
 update public.whatsapp_channel_runtime_v1 r
 set metadata=jsonb_set(
   jsonb_set(
-    coalesce(r.metadata,'{}'::jsonb),
-    '{meta_media_live_enabled}',
+    jsonb_set(
+      coalesce(r.metadata,'{}'::jsonb),
+      '{meta_media_live_enabled}',
+      to_jsonb(false),
+      true
+    ),
+    '{meta_media_canary_enabled}',
     to_jsonb(true),
     true
   ),
-  '{meta_media_canary_enabled}',
-  to_jsonb(false),
+  '{meta_media_canary_to_e164}',
+  case
+    when a.phone_e164='+5565998150975' then jsonb_build_array('+5565984491018')
+    when a.phone_e164='+5565984491018' then jsonb_build_array('+5565998150975')
+    else '[]'::jsonb
+  end,
   true
 )
 from public.whatsapp_accounts a
