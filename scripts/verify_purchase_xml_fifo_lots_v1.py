@@ -40,6 +40,16 @@ for needle in [
 ]:
     need(migration.lower(), needle.lower(), migration_path)
 
+activation_fix_path = "supabase/migrations/20261004033500_purchase_xml_fifo_lots_activation_fix_v1.sql"
+activation_fix = load(activation_fix_path)
+for needle in [
+    "set processing_status=processing_status",
+    "after insert or update on public.purchase_stock_receipts",
+    "perform public.activate_purchase_xml_inventory_lots_v1",
+    "where product_id is not null and coalesce(converted_quantity,0)>0",
+]:
+    need(activation_fix.lower(), needle.lower(), activation_fix_path)
+
 for path in [
     "supabase/functions/purchase-xml-v1/index.ts",
     "supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts",
