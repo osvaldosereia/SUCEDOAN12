@@ -102,7 +102,7 @@ async function validateProductEditorExtras(pid:string,p:any){
     const invalid=desired.find(x=>!editorGtinValid(x));if(invalid)return {error:"invalid_additional_gtin",status:400,identifier:invalid};
     if(desired.length){
       const q=await db.from("product_identifiers").select("product_id,identifier_value,identifier_kind,status")
-        .eq("identifier_kind","base_gtin").eq("status","confirmed").in("identifier_value",desired);
+        .in("identifier_kind",["base_gtin","package_gtin"]).eq("status","confirmed").in("identifier_value",desired);
       if(q.error)throw q.error;
       const conflict=(q.data||[]).find((x:any)=>String(x.product_id)!==String(pid||""));
       if(conflict)return {error:"identifier_already_linked",status:409,identifier:conflict.identifier_value,product_id:conflict.product_id};
@@ -142,17 +142,20 @@ async function syncProductEditorIdentifiers(productId:string,primary:any,extra:a
 async function saveProductEditorFiscal(productId:string,value:any,operator:any){
   const f=normalizedFiscal(value),now=new Date().toISOString();
   const q=await db.from("product_fiscal_profiles").select("*").eq("product_id",productId).maybeSingle();if(q.error)throw q.error;
-  const before=q.data||{};
+  const before=q.data||null,keys=["ncm","cest","origin_code","commercial_gtin","tax_gtin","commercial_unit","tax_unit","fiscal_description"];
+  const comparable=(v:any)=>v===null||v===undefined||String(v).trim()===""?null:String(v);
+  const fiscalChanged=keys.some(k=>comparable(before?.[k])!==comparable((f as any)[k]));
+  if(!fiscalChanged)return {ok:true,changed:false};
   const row:any={
-    ...before,product_id:productId,ncm:f.ncm,cest:f.cest,origin_code:f.origin_code,
+    ...(before||{}),product_id:productId,ncm:f.ncm,cest:f.cest,origin_code:f.origin_code,
     commercial_gtin:f.commercial_gtin,tax_gtin:f.tax_gtin,commercial_unit:f.commercial_unit,tax_unit:f.tax_unit,
-    fiscal_description:f.fiscal_description,st_status:before.st_status||"unknown",
+    fiscal_description:f.fiscal_description,st_status:before?.st_status||"unknown",
     classification_source:"admin_product_editor",review_status:"human_validated",validated_at:now,
-    metadata:{...meta(before.metadata),last_manual_edit_at:now,last_manual_edit_by:tx(operator,80)||"Operação"},updated_at:now
+    metadata:{...meta(before?.metadata),last_manual_edit_at:now,last_manual_edit_by:tx(operator,80)||"Operação"},updated_at:now
   };
   delete row.created_at;
   const up=await db.from("product_fiscal_profiles").upsert(row,{onConflict:"product_id"});if(up.error)throw up.error;
-  return {ok:true};
+  return {ok:true,changed:true};
 }
 async function productDetail(pid:string){
   if(!pid)return {error:"invalid_product",status:400};

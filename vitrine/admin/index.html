@@ -4547,7 +4547,7 @@
     const offerDiscount=manualOffer?.metadata?.discount_percent??derivedDiscount;
     const offerPrice=manualOffer?((Number(manualOffer.sale_price_cents||0)/100).toFixed(2)).replace('.',','):'';
     const offerDuration=manualOffer?.metadata?.duration_mode||'stock_zero';
-    const fiscal=isDuplicate?{}:(p?.fiscal||{}),additionalGtins=isDuplicate?[]:(Array.isArray(p?.additional_gtins)?p.additional_gtins:[]);
+    const fiscal=isDuplicate?{ncm:p?.ncm||p?.fiscal?.ncm||''}:(p?.fiscal||{}),additionalGtins=isDuplicate?[]:(Array.isArray(p?.additional_gtins)?p.additional_gtins:[]);
     const editorSection=(title,body,open=false)=>'<details class="product-editor-section" data-product-editor-section '+(open?'open':'')+'><summary>'+title+'</summary><div class="product-editor-section-grid">'+body+'</div></details>';
     $('#editorTitle').textContent=isDuplicate?'Duplicar produto':(p?'Editar produto':'Novo produto');
     const expiredLifecycle=!isDuplicate&&p?.active===false&&p?.deactivation_reason==='expired';
@@ -4586,7 +4586,7 @@
       '<label><span>NCM</span><input name="fiscal_ncm" inputmode="numeric" maxlength="8" value="'+esc(fiscal?.ncm||p?.ncm||'')+'"></label>'+
       '<label><span>CEST</span><input name="fiscal_cest" inputmode="numeric" maxlength="7" value="'+esc(fiscal?.cest||'')+'"></label>'+
       '<label><span>Origem</span><select name="fiscal_origin_code">'+originOptions(fiscal?.origin_code)+'</select></label>'+
-      '<label><span>GTIN comercial</span><input name="fiscal_commercial_gtin" inputmode="numeric" value="'+esc(fiscal?.commercial_gtin||p?.gtin||'')+'"></label>'+
+      '<label><span>GTIN comercial</span><input name="fiscal_commercial_gtin" inputmode="numeric" value="'+esc(isDuplicate?'':(fiscal?.commercial_gtin||p?.gtin||''))+'"></label>'+
       '<label><span>GTIN tributável</span><input name="fiscal_tax_gtin" inputmode="numeric" value="'+esc(fiscal?.tax_gtin||'')+'"></label>'+
       '<label><span>Unidade comercial</span><input name="fiscal_commercial_unit" value="'+esc(fiscal?.commercial_unit||'')+'"></label>'+
       '<label><span>Unidade tributável</span><input name="fiscal_tax_unit" value="'+esc(fiscal?.tax_unit||'')+'"></label>'+
@@ -4635,6 +4635,7 @@
       };
     }
     const form=$('#productForm');
+    form.dataset.fiscalOriginal=JSON.stringify(productFiscalDraft(form));
     const auto=form.querySelector('[name="auto_expiry_offer_enabled"]');
     const manualControls=[...form.querySelectorAll('[name="offer_active"],[name="offer_discount"],[name="offer_price"],[name="offer_duration"]')];
     const syncAutoState=()=>{const disabled=auto.checked;manualControls.forEach(el=>el.disabled=disabled);$('#autoOfferNote').textContent=disabled?'A oferta automática está ligada. Desative-a acima para configurar uma oferta manual.':'Você pode definir uma oferta manual. Ao ativá-la, a oferta automática por validade será desligada.'};
@@ -4654,6 +4655,7 @@
     const cats=[['','Sem categoria'],['mercearia','Mercearia'],['limpeza_lavanderia','Limpeza e lavanderia'],['higiene_beleza','Higiene e beleza'],['casa_pet','Casa e pet']];
     return cats.map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
   }
+  function productFiscalDraft(form){return {ncm:form.querySelector('[name="fiscal_ncm"]')?.value||'',cest:form.querySelector('[name="fiscal_cest"]')?.value||'',origin_code:form.querySelector('[name="fiscal_origin_code"]')?.value||'',commercial_gtin:form.querySelector('[name="fiscal_commercial_gtin"]')?.value||'',tax_gtin:form.querySelector('[name="fiscal_tax_gtin"]')?.value||'',commercial_unit:form.querySelector('[name="fiscal_commercial_unit"]')?.value||'',tax_unit:form.querySelector('[name="fiscal_tax_unit"]')?.value||'',fiscal_description:form.querySelector('[name="fiscal_description"]')?.value||''}}
   function centsFromInput(v){
     const clean=String(v||'0').replace(/\./g,'').replace(',','.');
     const n=Number(clean);return Number.isFinite(n)?Math.max(0,Math.round(n*100)):0;
@@ -4663,7 +4665,8 @@
       .map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
   }
   async function saveProduct(id,duplicateFromId=""){
-    const form=new FormData($('#productForm')),btn=$('#saveProduct');
+    const formEl=$('#productForm'),form=new FormData(formEl),btn=$('#saveProduct');
+    const fiscalDraft=productFiscalDraft(formEl),fiscalOriginal=formEl.dataset.fiscalOriginal||'',fiscalChanged=JSON.stringify(fiscalDraft)!==fiscalOriginal;
     const operator=requireOperator();if(!operator)return;
     const requestedStock=Number(String(form.get('stock')||0).replace(',','.'))||0;
     let productSaved=false,stockUpdateStarted=false;
@@ -4684,7 +4687,7 @@
           storefront_featured:form.get('storefront_featured')==='on',is_upsell:form.get('is_upsell')==='on',is_whatsapp_active:form.get('is_whatsapp_active')==='on',whatsapp_category:form.get('whatsapp_category'),
           customer_category:form.get('customer_category'),customer_subcategory:form.get('customer_subcategory'),customer_subsubcategory:form.get('customer_subsubcategory'),
           additional_gtins:String(form.get('additional_gtins')||'').split(/[\s,;]+/).map(x=>x.replace(/\D+/g,'')).filter(Boolean),
-          fiscal:{ncm:form.get('fiscal_ncm'),cest:form.get('fiscal_cest'),origin_code:form.get('fiscal_origin_code'),commercial_gtin:form.get('fiscal_commercial_gtin'),tax_gtin:form.get('fiscal_tax_gtin'),commercial_unit:form.get('fiscal_commercial_unit'),tax_unit:form.get('fiscal_tax_unit'),fiscal_description:form.get('fiscal_description')},
+          ...(fiscalChanged?{fiscal:fiscalDraft}:{}),
           image_url:form.get('image_url'),description:form.get('description'),active:form.get('active')==='on',operator
         })
       });
