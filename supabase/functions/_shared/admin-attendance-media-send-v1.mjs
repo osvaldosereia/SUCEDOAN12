@@ -8,6 +8,12 @@ const DOCUMENT_MIME=new Set([
   'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'
 ]);
+const SAFE_MEDIA_GATE_ERRORS=new Set([
+  'human_send_not_homologated',
+  'meta_canary_not_enabled',
+  'meta_media_canary_not_enabled',
+  'meta_canary_destination_blocked',
+]);
 
 function mediaTypeFromMime(value){
   const mime=normalizedAttendanceMime(value);
@@ -23,6 +29,11 @@ function normalizedBytes(value){
   if(value instanceof ArrayBuffer)return new Uint8Array(value);
   if(ArrayBuffer.isView(value))return new Uint8Array(value.buffer,value.byteOffset,value.byteLength);
   return null;
+}
+
+function structuredMediaGateError(error){
+  const code=String(error?.message||'').trim();
+  return SAFE_MEDIA_GATE_ERRORS.has(code)?{ok:false,error:code}:null;
 }
 
 async function sha256Hex(bytes){
@@ -64,7 +75,11 @@ export async function sendAttendanceMediaBytesViaMeta({
     p_caption:mediaType==='audio'?null:(safeCaption||null),
     p_idempotency_key:safeIdempotencyKey,
   });
-  if(queued.error)throw queued.error;
+  if(queued.error){
+    const gateError=structuredMediaGateError(queued.error);
+    if(gateError)return gateError;
+    throw queued.error;
+  }
   const data=queued.data||{ok:false,error:'enqueue_failed'};
   if(data.ok!==true)return data;
   if(data.duplicate===true){
