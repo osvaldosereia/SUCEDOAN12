@@ -1,0 +1,35 @@
+name: one-shot-attendance-auth-refresh
+
+on:
+  push:
+    branches:
+      - fix/attendance-library-upload-auth-20261003
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/attendance-library-upload-auth-20261003
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply auth refresh patch
+        run: |
+          set -euo pipefail
+          python3 scripts/patch-attendance-auth-refresh-v1.py
+          git diff --check
+          node scripts/test-admin-attendance-auth-refresh-v1.mjs
+          node --check vitrine/admin/atendimento/attendance-auth.js
+          node --check vitrine/admin/atendimento/attendance-app.js
+          node --check vitrine/admin/atendimento/attendance-library.js
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vitrine/admin/atendimento/attendance-app.js vitrine/admin/atendimento/attendance-library.js vitrine/admin/atendimento/index.html
+          git commit -m "fix: renovar sessão e preservar upload da Biblioteca"
+          git push origin HEAD:fix/attendance-library-upload-auth-20261003
