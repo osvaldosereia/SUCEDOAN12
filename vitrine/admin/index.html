@@ -1275,6 +1275,7 @@
     <div class="modal-actions" id="editorActions"></div>
   </dialog>
 
+<script src="/vitrine/admin/basket-lot-image.js"></script>
 <script>
 (()=>{
   const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-products-live-v1';
@@ -3362,6 +3363,7 @@
         (isDraft?'<button class="primary" type="button" data-kit-lot-resume="'+esc(l.id)+'">Continuar editando</button><button class="text danger" type="button" data-kit-lot-draft-delete="'+esc(l.id)+'">Excluir rascunho</button>':
           (canToggle?'<button class="'+(l.sale_enabled===true?'secondary':'primary')+'" type="button" data-kit-lot-sale="'+esc(l.id)+'" data-enabled="'+(l.sale_enabled===true?'0':'1')+'">'+(l.sale_enabled===true?'Desativar no site':'Ativar no site')+'</button>':'')+
           '<button class="secondary" type="button" data-kit-lot-copy="'+esc(l.id)+'">Duplicar</button>'+
+          (['ready','depleted'].includes(l.status)?'<button class="secondary" type="button" data-lot-image="'+esc(l.id)+'">Gerar imagem</button>':'')+
           (canToggle?'<button class="text danger" type="button" data-kit-lot-cancel="'+esc(l.id)+'">Cancelar</button>':'')
         )+
       '</div></div>'+
@@ -3389,6 +3391,7 @@
     $('#backToBasketKits').onclick=renderBaskets;
     $('#newKitLot').onclick=()=>startBasketKitLotDraft(null);
     content.querySelectorAll('[data-kit-lot-copy]').forEach(btn=>btn.onclick=()=>startBasketKitLotDraft(btn.dataset.kitLotCopy));
+    bindBasketLotImages(content);
     content.querySelectorAll('[data-kit-lot-resume]').forEach(btn=>btn.onclick=()=>startBasketKitLotDraft(btn.dataset.kitLotResume));
     content.querySelectorAll('[data-kit-lot-draft-delete]').forEach(btn=>btn.onclick=()=>deleteBasketKitLotDraft(btn.dataset.kitLotDraftDelete));
     content.querySelectorAll('[data-kit-lot-sale]').forEach(btn=>btn.onclick=()=>toggleBasketLotSale(btn.dataset.kitLotSale,btn.dataset.enabled==='1','kit'));
@@ -3602,6 +3605,12 @@
     catch(e){toast(String(e?.message||'')==='lot_has_allocated_orders'?'Este lote já está ligado a pedido e não pode ser cancelado.':'Não consegui cancelar o lote.')}
   }
 
+  async function basketImageApi(event,payload={}){
+    const token=await adminStepUp();
+    const r=await fetch('https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/basket-lot-image-v1',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({event,...payload}),cache:'no-store'});
+    const data=await r.json();if(!r.ok||data.ok===false)throw new Error(data.error||'image_service_error');return data;
+  }
+  function bindBasketLotImages(content){content.querySelectorAll('[data-lot-image]').forEach(btn=>btn.onclick=()=>BasketLotImage.open(btn.dataset.lotImage,basketImageApi,esc))}
   async function openBasketAdmin(id,migrateKitId=null){
     state.pendingMigrationFoodKitId=migrateKitId||null;
     const content=$('#content');content.innerHTML='<div class="loading">Abrindo cesta…</div>';
@@ -3618,6 +3627,7 @@
       '<div><span class="pill '+(l.sale_enabled===true?'':'off')+'">'+(l.sale_enabled===true?'NO SITE':'FORA DO SITE')+'</span></div>'+
       '<div class="basket-row-actions">'+
         (canToggle?'<button class="'+(l.sale_enabled===true?'secondary':'primary')+'" type="button" data-legacy-lot-sale="'+esc(l.id)+'" data-enabled="'+(l.sale_enabled===true?'0':'1')+'">'+(l.sale_enabled===true?'Desativar no site':'Ativar no site')+'</button>':'')+
+        (['ready','depleted'].includes(l.status)?'<button class="secondary" type="button" data-lot-image="'+esc(l.id)+'">Gerar imagem</button>':'')+
         (Number(l.quantity_available||0)>0?'<button class="secondary" type="button" data-basket-legacy-release="'+esc(l.id)+'">Migrar unidades</button>':'')+
       '</div></div>'+
       '<details><summary style="padding:0 12px 10px;cursor:pointer;font-size:11px;color:var(--brand)">Ver composição real</summary><div class="basket-lot-items">'+lotCompositionCards(l.items||[],'quantity_per_basket')+'</div></details></div>';
@@ -3637,6 +3647,7 @@
         '<div class="basket-row-actions"><button class="text" type="button" data-basket-item-edit="'+i+'">Editar</button></div></div>').join('')+'</div></section>'+
       '<section><div class="history-title"><div><strong>Lotes completos antigos</strong><span class="sub">Preservados apenas para transição. Não crie novas cestas completas por aqui.</span></div></div><div class="basket-lot-list">'+((d.lots||[]).map(basketLotHtml).join('')||'<div class="history-empty">Nenhum lote cadastrado.</div>')+'</div></section>';
     $('#backToBaskets').onclick=renderBaskets;
+    bindBasketLotImages(content);
     $('#editBasketMeta').onclick=openBasketMetaEditor;
     $('#addBasketItem').onclick=()=>openBasketItemEditor(null);
     content.querySelectorAll('[data-basket-item-edit]').forEach(btn=>btn.onclick=()=>openBasketItemEditor(d.items[Number(btn.dataset.basketItemEdit)]));
