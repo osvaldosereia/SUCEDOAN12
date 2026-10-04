@@ -1,5 +1,5 @@
 import {safeAttendanceFilename,normalizedAttendanceMime} from './attendance-media-v1.mjs';
-import {uploadMetaMedia,MetaMediaError,isAllowedOutboundMetaMime} from './whatsapp-meta-media-v1.mjs';
+import {uploadMetaMedia,MetaMediaError,isAllowedOutboundMetaMime,canonicalOutboundMetaMime} from './whatsapp-meta-media-v1.mjs';
 import {sendMediaViaMeta,MetaTransportError} from './whatsapp-meta-transport-v1.mjs';
 
 const MAX_BYTES=16*1024*1024;
@@ -37,11 +37,11 @@ export async function sendAttendanceMediaViaMeta({
   if(!(file instanceof File))return {ok:false,error:'media_file_required'};
   if(file.size<1||file.size>MAX_BYTES)return {ok:false,error:'media_size_invalid'};
 
-  const mimeType=normalizedAttendanceMime(file.type);
+  const filename=safeAttendanceFilename(file.name||'arquivo');
+  const mimeType=canonicalOutboundMetaMime(file.type,filename);
   const mediaType=mediaTypeFromMime(mimeType);
   if(!mediaType||!isAllowedOutboundMetaMime(mimeType))return {ok:false,error:'media_mime_not_allowed'};
   if(caption.length>1024)return {ok:false,error:'media_caption_too_long'};
-  const filename=safeAttendanceFilename(file.name||'arquivo');
   if(!conversationId||!idempotencyKey)return {ok:false,error:'media_request_invalid'};
 
   const bytes=new Uint8Array(await file.arrayBuffer());
