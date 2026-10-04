@@ -1,0 +1,31 @@
+name: Basket kit editor
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'scripts/test-basket-kit-*.mjs'
+      - '.github/workflows/basket-kit-editor-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'scripts/test-basket-kit-*.mjs'
+      - '.github/workflows/basket-kit-editor-ci.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --prefix "$RUNNER_TEMP/basket-tests" --no-save --package-lock=false playwright@1.62.1
+      - run: node "$RUNNER_TEMP/basket-tests/node_modules/playwright/cli.js" install --with-deps chromium
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-suggestions.mjs
+      - run: node scripts/test-basket-kit-editor.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
