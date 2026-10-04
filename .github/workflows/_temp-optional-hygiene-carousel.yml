@@ -4,6 +4,7 @@ on:
     branches: ['fix/optional-hygiene-carousel-qty-20261004']
     paths:
       - 'scripts/patch-optional-hygiene-carousel.py'
+      - 'scripts/test-basket-lot-ops-rules.mjs'
       - '.github/workflows/_temp-optional-hygiene-carousel.yml'
 permissions:
   contents: write
