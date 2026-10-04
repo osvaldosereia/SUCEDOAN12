@@ -11,6 +11,7 @@ on:
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/atendimento/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
+      - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
       - 'supabase/functions/_shared/admin-attendance-library-v1.mjs'
       - 'supabase/functions/_shared/admin-attendance-library-send-v1.mjs'
@@ -53,6 +54,7 @@ jobs:
       - run: node scripts/test-admin-attendance-boot-auth-v1.mjs
       - run: node scripts/test-admin-attendance-auth-all-modules-v2.mjs
       - run: node scripts/test-admin-attendance-product-media-batch-v1.mjs
+      - run: node scripts/test-admin-attendance-offers-tab-v1.mjs
       - run: node scripts/test-attendance-meta-media-v1.mjs
       - run: node scripts/test-attendance-meta-media-retry-v1.mjs
       - run: node --check supabase/functions/_shared/admin-attendance-library-v1.mjs
@@ -61,6 +63,7 @@ jobs:
       - run: node --check vitrine/admin/atendimento/attendance-library.js
       - run: node --check vitrine/admin/atendimento/attendance-auth.js
       - run: node --check vitrine/admin/atendimento/attendance-product-send.js
+      - run: node --check vitrine/admin/atendimento/attendance-offers.js
       - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
       - run: node --check vitrine/admin/atendimento/attendance-media-send.js

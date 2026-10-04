@@ -1084,32 +1084,26 @@ async function summary(windowInput:any=null){
 
 async function receiptLotPlanStatus(documentId:string){
   const iq=await sb.from("purchase_xml_items")
-    .select("id,document_id,product_id,description,converted_quantity,conversion_factor,purchase_quantity,purchase_unit")
+    .select("id,document_id,product_id,description,converted_quantity,conversion_factor,purchase_quantity,purchase_unit,inventory_lot_id,lot_expiration_date")
     .eq("document_id",documentId).order("item_number");
   if(iq.error)throw iq.error;
   const items=iq.data||[];
-  const ids=items.map((x:any)=>x.id);
-  const eq=ids.length
-    ?await sb.from("purchase_xml_item_lot_evidence").select("*").in("purchase_item_id",ids).order("purchase_item_id").order("trace_index")
+  const lotIds=[...new Set(items.map((x:any)=>x.inventory_lot_id).filter(Boolean))];
+  const lq=lotIds.length
+    ?await sb.from("product_inventory_lots").select("id,product_id,lot_code,expiration_date,quantity_on_hand,quantity_reserved,status,source,source_ref,received_at,created_at,metadata").in("id",lotIds)
     :{data:[],error:null};
-  if(eq.error)throw eq.error;
-  const map=new Map<string,any[]>();
-  for(const e of eq.data||[]){const k=String(e.purchase_item_id);if(!map.has(k))map.set(k,[]);map.get(k)!.push(e)}
+  if(lq.error)throw lq.error;
+  const lotMap=new Map((lq.data||[]).map((x:any)=>[String(x.id),x]));
   const detail=items.map((it:any)=>{
-    const evidence=map.get(String(it.id))||[];
-    const ignored=evidence.some((e:any)=>e.status==="ignored"&&obj(e.metadata).no_expiry===true);
-    const usable=evidence.filter((e:any)=>e.status!=="ignored");
     const expected=Number(it.converted_quantity||0);
-    const total=usable.reduce((s:number,e:any)=>s+Number(e.base_quantity||0),0);
-    const valid=ignored||(
-      expected>0&&usable.length>0&&
-      usable.every((e:any)=>Boolean(day(e.expiration_date))&&Number(e.base_quantity||0)>0&&["ready","materialized"].includes(String(e.status)))&&
-      Math.abs(total-expected)<=0.001
-    );
+    const lot=it.inventory_lot_id?lotMap.get(String(it.inventory_lot_id))||null:null;
+    const valid=Boolean(it.product_id&&expected>0&&it.inventory_lot_id&&lot);
     return {
       item_id:it.id,product_id:it.product_id||null,description:it.description||"",
-      expected_base_quantity:expected,planned_base_quantity:ignored?expected:total,
-      no_expiry:ignored,valid,evidence
+      expected_base_quantity:expected,planned_base_quantity:expected,
+      inventory_lot_id:it.inventory_lot_id||null,
+      expiration_date:day(it.lot_expiration_date||lot?.expiration_date)||null,
+      expiration_optional:true,inventory_lot:lot,valid
     };
   });
   return {
@@ -1117,7 +1111,7 @@ async function receiptLotPlanStatus(documentId:string){
     item_count:detail.length,
     ready_count:detail.filter((x:any)=>x.valid).length,
     pending_count:detail.filter((x:any)=>!x.valid).length,
-    items:detail
+    expiration_required:false,items:detail
   };
 }
 
@@ -1126,106 +1120,48 @@ async function saveReceiptLotPlan(body:any,userId:string|null){
   if(!/^[0-9a-f-]{36}$/i.test(documentId))return {ok:false,status:400,error:"invalid_document"};
   const requested=Array.isArray(body?.items)?body.items:[];
   const iq=await sb.from("purchase_xml_items")
-    .select("id,document_id,product_id,description,converted_quantity,conversion_factor,purchase_quantity,purchase_unit")
+    .select("id,document_id,product_id,converted_quantity,inventory_lot_id,lot_expiration_date")
     .eq("document_id",documentId).order("item_number");
   if(iq.error)throw iq.error;
   const items=iq.data||[];
   if(!items.length)return {ok:false,status:404,error:"document_without_items"};
   const byId=new Map(items.map((x:any)=>[String(x.id),x]));
   if(requested.length!==items.length)return {ok:false,status:409,error:"all_receipt_items_required"};
-
-  const prepared:any[]=[];
   for(const entry of requested){
     const item=byId.get(String(entry?.item_id||""));
     if(!item)return {ok:false,status:409,error:"invalid_receipt_item"};
-    if(!item.product_id)return {ok:false,status:409,error:"product_match_required",item_id:item.id};
-    const expected=Number(item.converted_quantity||0);
-    if(!(expected>0))return {ok:false,status:409,error:"converted_quantity_required",item_id:item.id};
-    const noExpiry=entry?.no_expiry===true;
-    if(noExpiry){
-      prepared.push({item,rows:[{
-        purchase_item_id:item.id,trace_index:1,lot_code:null,manufacture_date:null,expiration_date:null,
-        xml_quantity:Number(item.purchase_quantity||0)||null,base_quantity:expected,
-        conversion_factor:Number(item.conversion_factor||0)||null,status:"ignored",source:"manual_receipt",
-        metadata:{no_expiry:true,operator_user_id:userId||null,document_id:documentId}
-      }]});
-      continue;
-    }
-    const lots=Array.isArray(entry?.lots)?entry.lots:[];
-    if(!lots.length)return {ok:false,status:409,error:"expiration_lot_required",item_id:item.id};
-    let total=0;const rows:any[]=[];
-    for(let j=0;j<lots.length;j++){
-      const l=lots[j]||{},exp=day(l.expiration_date),qty=Number(l.base_quantity);
-      if(!exp)return {ok:false,status:409,error:"expiration_date_required",item_id:item.id,lot_index:j+1};
-      if(!Number.isFinite(qty)||qty<=0)return {ok:false,status:409,error:"lot_quantity_required",item_id:item.id,lot_index:j+1};
-      total+=qty;
-      const factor=Number(item.conversion_factor||0);
-      rows.push({
-        purchase_item_id:item.id,trace_index:j+1,
-        lot_code:clean(l.lot_code,120)||null,manufacture_date:null,expiration_date:exp,
-        xml_quantity:factor>0?qty/factor:null,base_quantity:qty,
-        conversion_factor:factor>0?factor:null,status:"ready",source:"manual_receipt",
-        metadata:{operator_user_id:userId||null,document_id:documentId,manual_receipt:true}
-      });
-    }
-    if(Math.abs(total-expected)>0.001)return {ok:false,status:409,error:"lot_quantity_mismatch",item_id:item.id,expected,planned:total};
-    prepared.push({item,rows});
-  }
-
-  for(const p of prepared){
-    const del=await sb.from("purchase_xml_item_lot_evidence").delete().eq("purchase_item_id",p.item.id);
-    if(del.error)throw del.error;
-    const ins=await sb.from("purchase_xml_item_lot_evidence").insert(p.rows);
-    if(ins.error)throw ins.error;
+    const raw=clean(entry?.expiration_date??entry?.lots?.[0]?.expiration_date??"",20);
+    const exp=raw?day(raw):"";
+    if(raw&&!exp)return {ok:false,status:409,error:"invalid_expiration_date",item_id:item.id};
+    const up=await sb.from("purchase_xml_items")
+      .update({lot_expiration_date:exp||null,updated_at:new Date().toISOString()})
+      .eq("id",item.id);
+    if(up.error)throw up.error;
   }
   const status=await receiptLotPlanStatus(documentId);
   await sb.from("bling_hub_audit_v2").insert({
-    event_type:"purchase_receipt_lots_planned",severity:"info",domain:"stock",source_system:"canonical",source_id:documentId,
-    details:{item_count:status.item_count,ready_count:status.ready_count,pending_count:status.pending_count,complete:status.complete,user_id:userId||null,stock_changed:false}
+    event_type:"purchase_receipt_lot_validity_saved",severity:"info",domain:"stock",source_system:"canonical",source_id:documentId,
+    details:{item_count:status.item_count,ready_count:status.ready_count,pending_count:status.pending_count,complete:status.complete,expiration_required:false,user_id:userId||null,stock_changed:false}
   });
-  return {ok:true,document_id:documentId,lot_plan:status,stock_changed:false};
+  return {ok:true,document_id:documentId,lot_plan:status,stock_changed:false,expiration_required:false};
 }
 
 async function materializeReceiptLots(documentId:string,userId:string|null){
-  const status=await receiptLotPlanStatus(documentId);
-  if(!status.complete)return {ok:false,error:"receipt_lot_plan_incomplete",lot_plan:status};
-  const dq=await sb.from("purchase_xml_documents").select("document_key,issued_at,supplier_name,metadata").eq("id",documentId).maybeSingle();
-  if(dq.error)throw dq.error;
-  const invoiceNo=clean(obj(dq.data?.metadata).invoice_number,80)||null;
-  let count=0;
-  for(const it of status.items){
-    if(it.no_expiry)continue;
-    for(const e of it.evidence||[]){
-      if(e.status==="ignored")continue;
-      const fallbackLot="NF-"+(invoiceNo||String(dq.data?.document_key||"").slice(-8))+"-"+String(e.trace_index||1);
-      const q=await sb.rpc("ops2_upsert_product_lot_v1",{
-        p_product_id:it.product_id,
-        p_lot_code:clean(e.lot_code,120)||fallbackLot,
-        p_expiration_date:day(e.expiration_date),
-        p_quantity_on_hand:Number(e.base_quantity||0),
-        p_source:"purchase_xml",
-        p_source_ref:documentId+":"+it.item_id+":"+String(e.trace_index||1),
-        p_received_at:new Date().toISOString(),
-        p_metadata:{
-          document_id:documentId,document_key:dq.data?.document_key||null,invoice_number:invoiceNo,
-          supplier_name:dq.data?.supplier_name||null,purchase_item_id:it.item_id,
-          evidence_id:e.id||null,operator_user_id:userId||null,partial_tracking:true
-        }
-      });
-      if(q.error)throw q.error;
-      const up=await sb.from("purchase_xml_item_lot_evidence").update({
-        status:"materialized",updated_at:new Date().toISOString(),
-        metadata:{...obj(e.metadata),materialized_at:new Date().toISOString(),materialized_by:userId||null}
-      }).eq("id",e.id);
-      if(up.error)throw up.error;
-      count++;
-    }
-  }
+  const q=await sb.rpc("activate_purchase_xml_inventory_lots_v1",{p_document_id:documentId,p_user_id:userId});
+  if(q.error)throw q.error;
+  const result=q.data||{};
   await sb.from("bling_hub_audit_v2").insert({
-    event_type:"purchase_receipt_lots_materialized",severity:"info",domain:"stock",source_system:"canonical",source_id:documentId,
-    details:{lot_count:count,user_id:userId||null,physical_stock_changed:false,lot_tracking_complete_changed:false}
+    event_type:"purchase_receipt_internal_lots_activated",severity:"info",domain:"stock",source_system:"canonical",source_id:documentId,
+    details:{active_lots:Number(result?.active_lots||0),items_touched:Number(result?.items_touched||0),user_id:userId||null,physical_stock_changed:false,local_product_stock_mutated:false}
   });
-  return {ok:true,materialized_lots:count,physical_stock_changed:false,lot_tracking_complete_changed:false};
+  return {
+    ok:result?.ok!==false,
+    materialized_lots:Number(result?.active_lots||0),
+    items_touched:Number(result?.items_touched||0),
+    physical_stock_changed:false,
+    local_product_stock_mutated:false,
+    lot_tracking_complete_changed:false
+  };
 }
 
 async function docDetail(id:string){
@@ -1241,14 +1177,17 @@ async function docDetail(id:string){
   }
   const itemIds=(it.data||[]).map((x:any)=>x.id);
   const productIds=[...new Set((it.data||[]).map((x:any)=>x.product_id).filter(Boolean))];
-  const [lotQ,currentLotQ]=await Promise.all([
+  const entryLotIds=[...new Set((it.data||[]).map((x:any)=>x.inventory_lot_id).filter(Boolean))];
+  const [lotQ,currentLotQ,entryLotQ]=await Promise.all([
     itemIds.length?sb.from("purchase_xml_item_lot_evidence").select("*").in("purchase_item_id",itemIds).order("purchase_item_id").order("trace_index"):Promise.resolve({data:[],error:null}),
-    productIds.length?sb.from("product_inventory_lots").select("id,product_id,lot_code,expiration_date,quantity_on_hand,quantity_reserved,status,source,source_ref,received_at,metadata").in("product_id",productIds).in("status",["active","expired"]).order("expiration_date",{ascending:true}):Promise.resolve({data:[],error:null})
+    productIds.length?sb.from("product_inventory_lots").select("id,product_id,lot_code,expiration_date,quantity_on_hand,quantity_reserved,status,source,source_ref,received_at,created_at,metadata").in("product_id",productIds).in("status",["active","expired","depleted"]):Promise.resolve({data:[],error:null}),
+    entryLotIds.length?sb.from("product_inventory_lots").select("id,product_id,lot_code,expiration_date,quantity_on_hand,quantity_reserved,status,source,source_ref,received_at,created_at,metadata").in("id",entryLotIds):Promise.resolve({data:[],error:null})
   ]);
-  if(lotQ.error)throw lotQ.error;if(currentLotQ.error)throw currentLotQ.error;
-  const lotMap=new Map<string,any[]>(),currentLotMap=new Map<string,any[]>();
+  if(lotQ.error)throw lotQ.error;if(currentLotQ.error)throw currentLotQ.error;if(entryLotQ.error)throw entryLotQ.error;
+  const lotMap=new Map<string,any[]>(),currentLotMap=new Map<string,any[]>(),entryLotMap=new Map<string,any>();
   for(const lot of lotQ.data||[]){const k=String(lot.purchase_item_id);if(!lotMap.has(k))lotMap.set(k,[]);lotMap.get(k)!.push(lot)}
   for(const lot of currentLotQ.data||[]){const k=String(lot.product_id);if(!currentLotMap.has(k))currentLotMap.set(k,[]);currentLotMap.get(k)!.push(lot)}
+  for(const lot of entryLotQ.data||[])entryLotMap.set(String(lot.id),lot)
   const items=(it.data||[]).map((x:any)=>{
     const prod=Array.isArray(x.products)?x.products[0]:x.products;
     const pack=itemLooksPackaged(x);
@@ -1262,7 +1201,7 @@ async function docDetail(id:string){
     const baseQty=proposedFactor&&qty>0?qty*Number(proposedFactor):null;
     const proposedCost=baseQty&&baseQty>0&&Number.isFinite(net)?net/baseQty:null;
     const suggestedSale=proposedCost!==null?Math.round(proposedCost*1.40*100)/100:null;
-    return {...x,products:prod||null,lot_evidence:lotMap.get(String(x.id))||[],current_inventory_lots:currentLotMap.get(String(x.product_id))||[],pricing_preview:{
+    return {...x,products:prod||null,lot_evidence:lotMap.get(String(x.id))||[],entry_inventory_lot:entryLotMap.get(String(x.inventory_lot_id))||null,current_inventory_lots:currentLotMap.get(String(x.product_id))||[],pricing_preview:{
       markup_percent:40,
       current_cost:prod?.cost==null?null:Number(prod.cost),
       current_sale_price:prod?.price==null?null:Number(prod.price),
@@ -1278,7 +1217,7 @@ async function docDetail(id:string){
     }};
   });
   const receiptLotPlan=await receiptLotPlanStatus(id);
-  return {ok:true,document:d.data,items,receipt_plan:plan.data||null,receipt_lot_plan:receiptLotPlan,pricing_policy:{default_markup_percent:40,sale_unit:"UN",catalog_updates_require_human_approval:true,stock_receipt_separate:true,stock_authority:"bling",receipt_requires_bling_verification:true,receipt_lots_required:true}};
+  return {ok:true,document:d.data,items,receipt_plan:plan.data||null,receipt_lot_plan:receiptLotPlan,pricing_policy:{default_markup_percent:40,sale_unit:"UN",catalog_updates_require_human_approval:true,stock_receipt_separate:true,stock_authority:"bling",receipt_requires_bling_verification:true,receipt_internal_lot_required:true,receipt_expiration_optional:true,lot_number_required:false,lot_allocation_policy:"fifo"}};
 }
 
 async function catalogQueue(windowInput:any=null){
