@@ -151,7 +151,9 @@ begin
     null,null,null,jsonb_build_object('source','order_confirmation_send_response','order_outbox_id',v_outbox.id,'order_id',v_outbox.order_id)
   );
   if coalesce((v_status_result->>'ok')::boolean,false) is not true then
-    return jsonb_build_object('ok',false,'error','accepted_status_record_failed','detail',v_status_result);
+    raise exception using
+      errcode='P0001',
+      message='accepted_status_record_failed:'||left(coalesce(v_status_result::text,'{}'),400);
   end if;
 
   for r in
