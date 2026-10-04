@@ -46,7 +46,9 @@ for needle in [
     "set processing_status=processing_status",
     "after insert or update on public.purchase_stock_receipts",
     "perform public.activate_purchase_xml_inventory_lots_v1",
-    "where product_id is not null and coalesce(converted_quantity,0)>0",
+    "tg_op='insert'",
+    "where product_id is not null",
+    "coalesce(converted_quantity,0)>0",
 ]:
     need(activation_fix.lower(), needle.lower(), activation_fix_path)
 
