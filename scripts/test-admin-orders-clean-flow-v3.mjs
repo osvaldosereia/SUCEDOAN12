@@ -40,6 +40,14 @@ assert.ok(!completeBlock.includes('status:"out_for_delivery"'),'Concluir separa�
 assert.match(completeBlock,/status:"ready"/,'Concluir separação deve terminar no marco interno ready/separado');
 assert.match(completeBlock,/ops2_refresh_order_public_snapshot_v1/,'Conclusão precisa atualizar a vitrine pública');
 
+const deliveryStart=backend.indexOf('async function completeDeliveryV3');
+assert.ok(deliveryStart>=0,'Backend precisa manter conclusão V3 da entrega');
+const deliveryEnd=backend.indexOf('\nasync function ',deliveryStart+20);
+const deliveryBlock=backend.slice(deliveryStart,deliveryEnd>deliveryStart?deliveryEnd:backend.length);
+assert.match(deliveryBlock,/ops3_complete_delivery_v1/,'Entrega V3 deve confirmar pagamento e entrega atomicamente');
+assert.match(deliveryBlock,/ops2_ensure_delivered_attended/,'Entrega V3 deve concluir o pedido como Atendido no Bling');
+assert.match(deliveryBlock,/review_bling/,'Falha de sincronização Bling deve gerar revisão sem desfazer a entrega');
+
 assert.match(migration,/separation_state/,'Snapshot público precisa transportar estado de separação por item');
 assert.match(migration,/missing_subtotal/,'Snapshot público precisa transportar abatimento');
 assert.match(migration,/original_total/,'Snapshot público precisa transportar total original');
