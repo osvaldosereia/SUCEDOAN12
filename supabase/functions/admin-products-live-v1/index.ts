@@ -2577,7 +2577,7 @@ async function basketLotSaleToggle(p:any,auth:any){
   const q=await db.rpc("set_basket_lot_sale_enabled_v1",{p_lot_id:lid,p_enabled:enabled,p_operator:tx(p?.operator,80)||"Operação"});
   if(q.error){
     const m=String(q.error.message||"");
-    const code=m.includes("lot_not_available_for_sale")?"lot_not_available_for_sale":m.includes("lot_not_found")?"lot_not_found":"lot_sale_toggle_failed";
+    const code=m.includes("linked_hygiene_lot_required")?"linked_hygiene_lot_required":m.includes("linked_hygiene_lot_unavailable")?"linked_hygiene_lot_unavailable":m.includes("lot_not_available_for_sale")?"lot_not_available_for_sale":m.includes("lot_not_found")?"lot_not_found":"lot_sale_toggle_failed";
     return {error:code,status:code==="lot_not_found"?404:409};
   }
   await opsEvent(enabled?"basket.lot_sale_enabled":"basket.lot_sale_disabled",enabled?"Lote liberado para venda no site.":"Lote retirado da venda no site.","basket",lid,

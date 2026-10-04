@@ -3324,7 +3324,8 @@
       else if(returnKind==='legacy'&&state.basketDetail?.basket?.id)await openBasketAdmin(state.basketDetail.basket.id);
       else await renderBaskets();
     }catch(e){
-      toast(String(e?.message||'')==='lot_not_available_for_sale'?'Este lote não está disponível para ativação.':'Não consegui alterar o lote.');
+      const code=String(e?.message||'');
+      toast(code==='linked_hygiene_lot_required'?'Vincule um lote de Limpeza/Higiene antes de ativar esta cesta no site.':code==='linked_hygiene_lot_unavailable'?'O lote de Limpeza/Higiene vinculado não está mais montado/disponível. Escolha outro lote.':code==='lot_not_available_for_sale'?'Este lote não está disponível para ativação.':'Não consegui alterar o lote.');
     }
   }
   async function openBasketKitAdmin(id){
