@@ -16,8 +16,6 @@ required_admin = [
     "const proposedName=String(card.querySelector('[data-catalog-product-name]')?.value||'').trim();",
     "if(!proposedName){if(!quiet)toast('Informe o nome do produto');return false}",
     "proposed_name:proposedName",
-    "card.querySelector('[data-catalog-product-name]')?.value||card.querySelector('[data-catalog-identity-name]')?.value",
-    "if(!name){toast('Informe o nome do produto');return}",
 ]
 missing = [needle for needle in required_admin if needle not in admin]
 assert not missing, f"{ADMIN}: missing {missing}"
