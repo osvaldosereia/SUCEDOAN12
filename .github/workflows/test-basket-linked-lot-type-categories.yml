@@ -1,0 +1,23 @@
+name: Basket linked lot type + categories
+
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-basket-linked-lot-type-categories.mjs'
+      - '.github/workflows/test-basket-linked-lot-type-categories.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-basket-linked-lot-type-categories.mjs'
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/test-basket-linked-lot-type-categories.mjs
