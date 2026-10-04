@@ -1,7 +1,7 @@
 # RETOMADA — Central WhatsApp Própria via Meta Cloud API
 
-**Checkpoint canônico:** 2026-10-03 (Cuiabá)  
-**Main confirmada:** `628cfd0f66c63bc4f38f7dac5d246fab38a75190`  
+**Checkpoint canônico:** 2026-10-03/04 (Cuiabá)  
+**Main confirmada:** `d4f6816e7c4727a2605d6115f1e87722075480e8`  
 **Supabase canônico:** `ssbesxgaijknwsjbsbcz`  
 **Issue mestre:** #630  
 **Task mídia:** #649
@@ -12,7 +12,7 @@
 
 - Tasks 0–8: concluídas/homologadas conforme #630.
 - Task 9A — inbound mídia Meta: concluída/homologada.
-- Task 9B — outbound mídia Meta: imagem/PDF comprovados; gravador de áudio no Admin agora implementado; falta somente o canário real de áudio gravado pelo Admin com evidência WAMID/status/dedupe/fila limpa.
+- Task 9B — outbound mídia Meta: imagem/PDF comprovados; gravador de áudio e envio direto implementados; correção de MIME M4A concluída; falta somente o canário real de áudio pelo Admin com evidência WAMID/status/dedupe/fila limpa.
 - Task 10 — Humano × IA: implementada e fail-closed.
 - Task 11 — ANA própria: preview/dry-run implementado; recovery de claim stale aplicado; `ana_enabled=false`.
 - Marketing/campanhas: `campaigns_enabled=false`.
@@ -34,7 +34,7 @@ campaigns_enabled = false
 
 Canários permanecem restritos a 0975↔1018. Não ampliar para clientes reais durante homologação.
 
-## Últimos merges relevantes
+## Merges relevantes mais recentes
 
 ### PR #686 — observabilidade de mídia
 
@@ -51,51 +51,86 @@ Merge `800f7e270bb355f9bccffea6d456f57ca4f59501`.
 Migration aplicada: `whatsapp_ana_preview_stale_claim_recovery_v3`.
 
 - lease de 2 minutos para preview `claimed`;
-- claim recente retorna `ana_preview_busy`;
 - somente `admin_preview` + `dry_run=true` + `dry_run_not_sendable=true` pode ser recuperado;
 - cleanup auditável de claim antigo;
-- nenhum caminho de envio WhatsApp foi criado.
+- nenhum caminho de envio WhatsApp criado.
 
 ### PR #690 — gravador de áudio no Atendimento
 
 Merge `628cfd0f66c63bc4f38f7dac5d246fab38a75190`.
 
-Objetivo: remover o bloqueio humano da Task 9B — antes o Admin aceitava arquivo de áudio, mas não permitia gravar áudio dentro da conversa.
+Entregue:
+- botão `🎙 Gravar áudio`;
+- acesso ao microfone somente após clique;
+- vínculo da gravação à conversa selecionada;
+- cronômetro, Parar, Cancelar e preview;
+- liberação de `MediaStream` e Object URL;
+- formatos MP4/AAC ou OGG/Opus conforme `MediaRecorder.isTypeSupported()`;
+- áudio gravado vira `File` e entra no mesmo pipeline `send_media`;
+- sem Graph API no browser;
+- canário, janela de 24h, idempotência e WAMID preservados.
+
+### PR #693 — envio direto no painel do gravador
+
+Merge `833e4a6fcdb972524bd51ba8fc42d98a8c14ec29`.
+
+Motivo: o áudio já ficava em memória, mas a UI fazia parecer que era necessário baixar e anexar novamente.
 
 Entregue:
-- botão `🎙 Gravar áudio` no composer;
-- acesso ao microfone solicitado somente após clique do usuário;
-- vínculo da gravação à conversa selecionada;
-- cronômetro acessível;
-- botões Parar e Cancelar;
-- preview com player antes do envio;
-- cancelamento automático se a conversa mudar durante a gravação;
-- liberação do `MediaStream`/tracks ao parar, cancelar ou sair;
-- liberação do Object URL anterior para evitar vazamento de memória;
-- escolha dinâmica de formato com `MediaRecorder.isTypeSupported()`;
-- somente formatos já aceitos pelo transporte atual: MP4/AAC ou OGG/Opus;
-- `audio/webm` não entra no pipeline Meta atual;
-- áudio gravado vira `File` e entra no MESMO `send_media` já existente;
-- nenhuma rota/backend Meta nova;
-- navegador nunca chama Graph diretamente;
-- idempotência, canário, janela de 24h, WAMID e observação de status permanecem no pipeline existente;
-- mobile: botões de gravação ampliados/empilhados no painel;
-- erro explícito de permissão, microfone ausente/ocupado ou formato incompatível.
+- botão **Enviar áudio** dentro do painel do gravador;
+- após Parar/ouvir, o áudio é enviado pelo mesmo `send_media`;
+- download/anexo manual não é requisito;
+- os dois CIs ficaram verdes antes do merge.
 
-TDD/CI:
-1. RED comprovado no `Audio recorder contract` antes da implementação;
-2. primeiro GREEN revelou regressão do contrato nativo porque foi criada uma segunda folha CSS;
-3. correção preservou o contrato de uma única folha CSS própria; estilos do gravador ficaram inline no `index.html`;
-4. head final `91444e0943b027177ad1158180ea29c27705f41c` passou os dois checks:
+### PR #694 — aliases MIME de M4A
+
+Merge `d4d6c5cc83b7341ba3e72bb19f341f95cd8a4312`.
+
+Falha real reproduzida pelo usuário ao anexar:
+
+```text
+Áudio: 5c503739-9027-48b4-afb4-4f96442432b7.m4a
+Tipo não permitido. Use imagem, áudio ou PDF.
+```
+
+Root cause: arquivos `.m4a` podem voltar do navegador/OS como `audio/x-m4a`, `audio/m4a`, MIME vazio ou `application/octet-stream`, enquanto o whitelist aceitava somente `audio/mp4`.
+
+Correção:
+- frontend reconhece esses aliases somente quando o nome termina em `.m4a`;
+- backend possui `canonicalOutboundMetaMime()` para normalizar alias M4A → `audio/mp4`;
+- MIME explícito incompatível, como `application/pdf`, não é sobrescrito pela extensão;
+- alias M4A em arquivo que não termina `.m4a` continua bloqueado;
+- conteúdo continua submetido à validação binária real `ftyp`, portanto renomear arquivo falso para `.m4a` não libera o envio.
+
+TDD: RED real em `Meta media content signature contract`, depois GREEN completo.
+
+### PR #695 — MIME canônico antes do FormData
+
+Merge `d4f6816e7c4727a2605d6115f1e87722075480e8`.
+
+Motivo: mesmo o frontend reconhecendo o `.m4a`, o `FormData` ainda poderia enviar o MIME original do SO ao runtime produtivo já publicado.
+
+Correção:
+- `fileForUpload(file)` preserva exatamente os bytes;
+- se `.m4a` vier por alias, cria um novo `File([file], file.name, {type:'audio/mp4'})` somente para o upload;
+- `FormData` recebe `uploadFile`, não o MIME alias original;
+- demais arquivos não são reenvelopados;
+- validação server-side de conteúdo continua ativa.
+
+TDD:
+1. RED real em `Audio recorder contract`;
+2. implementação criada;
+3. teste foi refinado para validar comportamento, não uma forma textual específica;
+4. head final `a930f84ca3b03b4db99627997d286f33e1cc6980` passou:
    - `WhatsApp Meta Central CI` = success;
    - `attendance-papoai-send-ci` = success;
-5. #690 só foi mergeado depois desses dois checks.
+5. merge somente após ambos verdes.
 
-Arquivos centrais do gravador:
-- `vitrine/admin/atendimento/attendance-audio-recorder.js`
-- `vitrine/admin/atendimento/attendance-media-send.js`
-- `vitrine/admin/atendimento/index.html`
-- `scripts/test-attendance-audio-recorder-v1.mjs`
+## Observação de deploy backend
+
+O repositório já contém canonicalização server-side do M4A em `whatsapp-meta-media-v1.mjs` e `admin-attendance-media-send-v1.mjs`. Na última inspeção, a Edge Function produtiva `admin-whatsapp-ops-v1` ainda estava na versão 25 e usava autenticação Admin customizada com `verify_jwt=false` na camada da plataforma.
+
+O PR #695 resolve o teste atual sem depender desse deploy porque o navegador envia o `File` já canonicalizado como `audio/mp4`. Em futura publicação da Edge Function, preservar `verify_jwt=false` na plataforma porque a própria função valida o Bearer Admin; não alterar isso inadvertidamente.
 
 ## Task 9B — gate exato AGORA
 
@@ -105,45 +140,31 @@ Já comprovado:
 - upload Meta oficial server-side;
 - WAMID persistido;
 - status canônicos;
-- dedupe/idempotência;
-- retry seguro;
-- fila limpa nos testes anteriores;
-- seleção de áudio por arquivo;
-- gravador de áudio dentro do Admin implementado em #690.
+- dedupe/idempotência e retry seguro;
+- gravador no Admin;
+- envio direto pelo botão `Enviar áudio`;
+- seleção/anexo de `.m4a` com MIME alternativo corrigida.
 
-**Ainda falta somente a prova real do áudio gravado pelo Admin:**
+**Ainda falta a prova real do áudio:**
 
-1. usuário abre o Atendimento autenticado;
+1. usuário faz `Ctrl+F5` no Atendimento;
 2. seleciona conversa controlada 0975↔1018;
-3. clica `🎙 Gravar áudio`;
-4. autoriza o microfone;
-5. grava uma mensagem curta;
-6. clica `Parar`;
-7. ouve a prévia;
-8. clica `Enviar anexo`;
-9. depois a programação deve consultar Supabase e comprovar:
+3. preferencialmente usa `🎙 Gravar áudio` → `Parar` → `Enviar áudio`;
+4. como alternativa, pode anexar novamente o mesmo `.m4a` que antes foi rejeitado;
+5. depois consultar Supabase e comprovar:
    - `direction='outbound'`;
    - `message_type='audio'`;
    - `provider='meta'`;
    - `provider_message_id LIKE 'wamid.%'`;
    - progressão de status;
    - nenhuma duplicação;
-   - outbox sem queued/claimed/failed residual.
+   - outbox sem `queued/claimed/failed` residual.
 
 **Não declarar Task 9B concluída antes dessa evidência.**
 
-## Se o botão/gravador não aparecer no Admin
-
-1. confirmar que `main` contém `628cfd0f...` ou commit posterior;
-2. atualizar a página do Atendimento ignorando cache (`Ctrl+F5` no desktop);
-3. confirmar que `attendance-audio-recorder.js` é servido;
-4. não criar bypass de autenticação nem enviar áudio por outra rota para “simular” o gate.
-
-A ferramenta de navegação externa usada no checkpoint não conseguiu abrir a rota autenticada/publicada do Admin; portanto o deploy visual deve ser confirmado pelo usuário no próprio navegador. O código e os dois CIs do merge estão comprovados.
-
 ## Task 11 — ANA após fechar 9B
 
-Próximo trabalho técnico depois do canário de áudio:
+Depois do canário de áudio:
 - executar preview ANA autenticado pós-#688 até `completed`;
 - revisar decisão/confiança/contexto ausente/modelo/latência;
 - ampliar canários de qualidade sem outbound automático;
@@ -151,18 +172,19 @@ Próximo trabalho técnico depois do canário de áudio:
 
 ## Trabalho paralelo
 
-PR draft #687 — Biblioteca Rápida do Atendimento — existe em paralelo e toca principalmente backend/mídia. Antes de qualquer alteração futura no Atendimento, auditar/rebasear contra a `main` corrente para não sobrescrever trabalho paralelo.
+PR draft #687 — Biblioteca Rápida do Atendimento — existe em paralelo e toca backend/mídia. Antes de qualquer alteração futura no Atendimento, auditar/rebasear contra a `main` corrente para não sobrescrever trabalho paralelo.
 
 ## Próxima ação exata para retomada
 
 1. ler #630 e #649 mais recentes;
 2. confirmar `main` e PRs ativos;
-3. consultar Supabase por outbound `audio + provider=meta` posterior ao merge #690;
-4. se o usuário já tiver enviado o áudio gravado, verificar imediatamente WAMID/status/dedupe/outbox;
-5. se tudo passar, fechar Task 9B em #649/#630;
-6. então continuar Task 11 ANA;
-7. depois marketing/agendamentos/templates/automação;
-8. retirada do PapoAI somente no final e de modo reversível.
+3. perguntar/verificar se o usuário já fez o teste pós-#695;
+4. se enviou, consultar imediatamente `whatsapp_messages_v1` e `whatsapp_outbox_v1`;
+5. comprovar WAMID/status/dedupe/fila limpa;
+6. se tudo passar, fechar Task 9B em #649/#630;
+7. então continuar Task 11 ANA;
+8. depois marketing/agendamentos/templates/automação;
+9. retirada do PapoAI somente no final, reversível e com checkpoints.
 
 ## Invariantes de segurança
 
