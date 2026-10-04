@@ -11,6 +11,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            index.html
+            vitrine/index.html
+            vitrine/admin/index.html
+            scripts/test-basket-unified-commercial-model.mjs
+            scripts/test-basket-lot-ops-rules.mjs
+            scripts/test-basket-admin-simple-flow.mjs
+            scripts/_apply_basket_category_semantics.py
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
