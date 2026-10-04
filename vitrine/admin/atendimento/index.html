@@ -7,6 +7,12 @@
   <meta name="theme-color" content="#f7f8f7">
   <title>Atendimento · Dona Antônia</title>
   <link rel="stylesheet" href="./attendance.css">
+  <style>
+    .audio-recorder-panel{margin:0 0 7px;border:1px solid #cfe0d5;border-radius:11px;background:#fff;padding:9px;box-shadow:0 4px 14px rgba(22,53,35,.06)}
+    .audio-recorder-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.audio-recorder-head strong{display:block;font-size:11px}.audio-recorder-head small{display:block;margin-top:2px;color:#6f7b73;font-size:9px}.audio-recorder-head small[data-tone=recording]{color:#a22638;font-weight:800}.audio-recorder-head small[data-tone=error]{color:#a22638}.audio-recorder-head small[data-tone=success]{color:#176b43}.audio-recorder-head [role=timer]{min-width:48px;text-align:center;border-radius:999px;background:#eef5f0;padding:4px 7px;font-variant-numeric:tabular-nums;font-size:11px;font-weight:850;color:#355343}
+    .audio-recorder-panel audio{display:block;width:100%;height:34px;margin-top:8px}.audio-recorder-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}.audio-recorder-actions button{min-height:31px;border:1px solid #dfe6e1;background:#fff;border-radius:8px;padding:0 10px;font-size:10px;font-weight:800}.audio-recorder-actions #stopAudioRecordingBtn:not(:disabled){background:#a22638;border-color:#a22638;color:#fff}#recordAudioBtn[aria-pressed=true]{background:#fff0f2;border-color:#e5b9c1;color:#a22638}
+    @media (max-width:720px){.audio-recorder-panel{padding:8px}.audio-recorder-head{align-items:center}.audio-recorder-actions{display:grid;grid-template-columns:1fr 1fr}.audio-recorder-actions button{min-height:38px}.audio-recorder-panel audio{height:38px}}
+  </style>
 </head>
 <body>
   <div class="attendance-shell">
@@ -68,6 +74,7 @@
             <div class="service-window neutral" id="serviceWindow">Nenhuma conversa selecionada</div>
             <div class="quick-tools" aria-label="Ferramentas rápidas">
               <label class="attach-tool" title="Anexar imagem, áudio ou PDF"><span>📎 Anexar</span><input id="mediaFile" type="file" accept="image/jpeg,image/png,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,application/pdf" hidden></label>
+              <button type="button" id="recordAudioBtn" aria-pressed="false" disabled>🎙 Gravar áudio</button>
               <button type="button" id="quickRepliesBtn" disabled>Respostas</button>
               <button type="button" id="templatesBtn">Templates</button>
               <button type="button" id="productsBtn" disabled>Produtos</button>
@@ -79,6 +86,17 @@
             <div class="composer-panel more-tools-menu" id="moreToolsMenu" hidden><button type="button" id="quoteBtn" disabled>Criar orçamento</button><button type="button" id="saleBtn" disabled>Nova venda</button><button type="button" id="followUpBtn" disabled>Marcar retorno</button><button type="button" id="optOutBtn" disabled>Não receber ofertas</button></div>
             <div class="composer-panel conversation-labels" id="conversationLabelsMenu" hidden><strong>Etiquetas desta conversa</strong><div id="conversationLabelsList"></div><button type="button" id="saveConversationLabelsBtn">Salvar etiquetas</button></div>
             <div class="composer-panel follow-up-panel" id="followUpPanel" hidden><label>Retornar em <input id="followUpAt" type="datetime-local"></label><div><button type="button" id="saveFollowUpBtn">Salvar</button><button type="button" id="clearFollowUpBtn">Limpar</button><button type="button" id="cancelFollowUpBtn">Cancelar</button></div></div>
+            <div class="audio-recorder-panel" id="audioRecorderPanel" hidden>
+              <div class="audio-recorder-head">
+                <div><strong>Gravador de áudio</strong><small id="audioRecorderStatus" role="status" aria-live="polite">Pronto para gravar.</small></div>
+                <span id="audioRecorderTimer" role="timer" aria-label="Tempo de gravação">00:00</span>
+              </div>
+              <audio id="audioRecorderPreview" controls hidden preload="metadata"></audio>
+              <div class="audio-recorder-actions">
+                <button type="button" id="stopAudioRecordingBtn" disabled>Parar</button>
+                <button type="button" id="cancelAudioRecordingBtn">Cancelar</button>
+              </div>
+            </div>
             <textarea id="messageDraft" rows="3" placeholder="Digite sua mensagem…"></textarea>
             <div class="composer-bottom">
               <div class="composer-media" aria-label="Estado do anexo">
@@ -113,6 +131,7 @@
   <script type="module" src="./attendance-app.js"></script>
   <script type="module" src="./attendance-ana-preview.js"></script>
   <script type="module" src="./attendance-send.js"></script>
+  <script type="module" src="./attendance-audio-recorder.js"></script>
   <script type="module" src="./attendance-media-send.js"></script>
   <script type="module" src="./attendance-templates.js"></script>
   <script type="module" src="./attendance-human-ai.js"></script>
