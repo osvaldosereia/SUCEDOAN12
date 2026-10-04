@@ -10,10 +10,10 @@ assert 'CENTRAL_LAZY_ON_DEMAND_V1' in block, 'Central precisa usar carregamento 
 assert 'data-central-shortcut="orders"' in block, 'Central deve manter atalho simples para Pedidos'
 assert 'data-central-shortcut="attendance"' in block, 'Central deve manter atalho simples para Atendimento'
 assert 'data-central-shortcut="products"' in block, 'Central deve manter atalho simples para Produtos'
-
+assert 'data-central-toggle="'+"'"+'+key+'+"'"+'"' in block or 'data-central-toggle="'+"'"+'+key+' in block, 'blocos devem usar acionador lazy generico'
+assert 'id="centralSection-'+"'"+'+key+' in block, 'blocos devem usar corpo lazy generico'
 for section in ['orders','attention','expiry','integrations','printing']:
-    assert f'data-central-toggle="{section}"' in block, f'bloco {section} deve iniciar fechado e ser acionavel'
-    assert f'id="centralSection-{section}"' in block, f'bloco {section} precisa de corpo lazy dedicado'
+    assert f"['{section}'," in block, f'bloco {section} deve estar configurado na Central'
 
 loader_marker='  async function loadCentralSection(name,body){'
 assert loader_marker in block, 'Central deve concentrar consultas no loader acionado por clique'
