@@ -6,6 +6,7 @@ on:
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'scripts/test-basket-kit-*.mjs'
       - 'supabase/functions/basket-lot-image-v1/**'
+      - 'supabase/sql/20261003_basket_lot_commercial_fields_v1.sql'
       - 'vitrine/admin/basket-lot-image.js'
       - 'supabase/functions/storefront-v2/index.ts'
       - '.github/workflows/basket-kit-editor-ci.yml'
@@ -16,6 +17,7 @@ on:
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'scripts/test-basket-kit-*.mjs'
       - 'supabase/functions/basket-lot-image-v1/**'
+      - 'supabase/sql/20261003_basket_lot_commercial_fields_v1.sql'
       - 'vitrine/admin/basket-lot-image.js'
       - 'supabase/functions/storefront-v2/index.ts'
       - '.github/workflows/basket-kit-editor-ci.yml'
@@ -34,6 +36,7 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-suggestions.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image-service.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-commercial-fields.mjs
       - run: node scripts/test-basket-kit-image-browser.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright

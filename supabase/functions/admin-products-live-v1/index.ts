@@ -2344,7 +2344,7 @@ async function basketKitsAdmin(){
   const [kq,iq,lq]=await Promise.all([
     db.from("basket_kit_templates").select("id,kind,basket_id,name,code_prefix,is_active,sort_order,metadata,basket:basket_templates(id,name,image_url,base_price,uses_hygiene_kit,split_kits_enabled)").eq("is_active",true).order("sort_order").order("name"),
     db.from("basket_kit_template_items").select("id,kit_template_id,product_id,quantity").order("sort_order"),
-    db.from("basket_stock_lots").select("id,kit_template_id,basket_id,lot_kind,short_code,status,sale_enabled,quantity_built,quantity_available,built_at,built_by,duplicated_from_lot_id").not("kit_template_id","is",null).order("built_at",{ascending:true})
+    db.from("basket_stock_lots").select("id,kit_template_id,basket_id,lot_kind,short_code,status,sale_enabled,quantity_built,quantity_available,built_at,built_by,duplicated_from_lot_id,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,public_name").not("kit_template_id","is",null).order("built_at",{ascending:true})
   ]);
   if(kq.error)throw kq.error;if(iq.error)throw iq.error;if(lq.error)throw lq.error;
   const items=iq.data||[],lots=lq.data||[],stock=await basketLooseStockMap(items.map((x:any)=>x.product_id));
@@ -2374,7 +2374,7 @@ async function basketKitAdminDetail(rawId:any){
   if(kq.error)throw kq.error;if(!kq.data)return {error:"kit_template_not_found",status:404};
   const [iq,lq]=await Promise.all([
     db.from("basket_kit_template_items").select("*,product:products(id,name,sku,gtin,image_url,price,packaging,unit,brand,category,sales_category,storefront_category,subcategory,customer_subcategory,subsubcategory,customer_subsubcategory,is_active)").eq("kit_template_id",kid).order("sort_order").order("created_at"),
-    db.from("basket_stock_lots").select("id,basket_id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,composition_hash,built_at,built_by,notes,source,duplicated_from_lot_id,metadata,created_at").eq("kit_template_id",kid).order("built_at",{ascending:false}).limit(40)
+    db.from("basket_stock_lots").select("id,basket_id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,composition_hash,built_at,built_by,notes,source,duplicated_from_lot_id,metadata,created_at,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,public_name").eq("kit_template_id",kid).order("built_at",{ascending:false}).limit(40)
   ]);
   if(iq.error)throw iq.error;if(lq.error)throw lq.error;
   const lots=lq.data||[],templateItems=iq.data||[];
