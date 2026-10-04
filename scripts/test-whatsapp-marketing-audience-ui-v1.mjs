@@ -18,7 +18,7 @@ for(const label of ['Visão geral','Templates Meta','Públicos','Consentimentos'
 }
 assert.match(template,/import\([^)]*audience-center\.js/,'Públicos/Consentimentos devem ser lazy-loaded pelo módulo de Marketing');
 assert.doesNotMatch(loader,/import\([^)]*audience-center\.js/,'audience-center.js não pode ser carregado no bootstrap inicial do Admin');
-assert.match(loader,/audience-center\.css/,'CSS da Fase 2 deve ser carregado pelo bootstrap compartilhado');
+assert.match(source,/audience-center\.css/,'CSS da Fase 2 também deve ser carregado somente quando o módulo abrir');
 
 assert.match(source,/admin-marketing-audiences-v1/,'UI deve usar a Edge autenticada de públicos');
 assert.match(source,/attendanceAuthorizedFetch/,'UI deve reutilizar autenticação Admin existente');
