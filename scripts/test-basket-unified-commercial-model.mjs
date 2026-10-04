@@ -5,6 +5,7 @@ const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const commerce=fs.readFileSync('supabase/sql/20261004_basket_canonical_commerce_v1.sql','utf8');
 const createSql=fs.readFileSync('supabase/sql/20261004_basket_commercial_create_v1.sql','utf8');
+const categorySql=fs.readFileSync('supabase/sql/20261004_basket_category_required_v1.sql','utf8');
 const publicRoot=fs.readFileSync('index.html','utf8');
 const publicVitrine=fs.readFileSync('vitrine/index.html','utf8');
 
@@ -16,6 +17,8 @@ assert.match(createSql,/insert into public\.basket_templates/i,'creator must cre
 assert.match(createSql,/insert into public\.basket_kit_templates/i,'creator must create its internal primary composition');
 assert.match(createSql,/grant execute on function public\.create_basket_commercial_model_v1/i,'service role execution contract is required');
 assert.match(createSql,/revoke all on function public\.create_basket_commercial_model_v1[\s\S]*from public,anon,authenticated/i,'creator must not be exposed directly to storefront users');
+assert.match(categorySql,/basket_templates_category_required/i,'every commercial Cesta\/Kit must have a public category');
+assert.match(categorySql,/check \(category_id is not null\)/i,'category constraint must reject uncategorized commercial models');
 
 assert.match(backend,/"basket_commercial_create"/,'admin action must be registered');
 assert.match(backend,/async function basketCommercialCreate\(/,'admin backend must expose create helper');
