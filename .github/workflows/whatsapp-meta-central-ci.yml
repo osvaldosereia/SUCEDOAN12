@@ -11,6 +11,9 @@ on:
       - 'supabase/functions/whatsapp-meta-webhook-v1/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
+      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/basket-lot-image.js'
+      - 'vitrine/admin/marketing/**'
       - 'vitrine/admin/atendimento/**'
       - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
       - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
@@ -31,6 +34,7 @@ on:
       - 'scripts/test-attendance-*.mjs'
       - 'scripts/test-whatsapp-ana-*.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
+      - 'scripts/test-whatsapp-marketing-*.mjs'
       - '.github/workflows/whatsapp-meta-central-ci.yml'
   workflow_dispatch:
 permissions:
@@ -51,6 +55,8 @@ jobs:
       - {name: Meta templates contract, run: 'node scripts/test-whatsapp-meta-templates-v1.mjs'}
       - {name: Meta templates admin sync contract, run: 'node scripts/test-whatsapp-meta-template-admin-v1.mjs'}
       - {name: Meta template mutation contract, run: 'node scripts/test-whatsapp-meta-template-mutations-v1.mjs'}
+      - {name: Marketing Meta template admin UI contract, run: 'node scripts/test-whatsapp-marketing-template-admin-v1.mjs'}
+      - {name: Marketing intelligence legacy contract, run: 'python scripts/test-marketing-intelligence-contract.py'}
       - {name: Meta transport contract, run: 'node scripts/test-attendance-meta-send-v1.mjs'}
       - {name: Meta media contract, run: 'node scripts/test-attendance-meta-media-v1.mjs'}
       - {name: Meta media content signature contract, run: 'node scripts/test-attendance-meta-media-content-v1.mjs'}
@@ -93,4 +99,5 @@ jobs:
       - {name: Audio PCM worklet syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-pcm-worklet.js'}
       - {name: Human AI controls JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-human-ai.js'}
       - {name: Attendance templates JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-templates.js'}
+      - {name: Marketing template center syntax, run: 'node --check vitrine/admin/marketing/template-center.js'}
       - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}
