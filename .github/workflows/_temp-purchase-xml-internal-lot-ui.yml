@@ -1,0 +1,39 @@
+name: Temp purchase XML internal lot patch
+on:
+  push:
+    branches: ['fix/purchase-xml-optional-expiry-fifo-20261004']
+    paths:
+      - 'scripts/test-purchase-xml-internal-lot-ui.mjs'
+      - 'scripts/patch-purchase-xml-internal-lot-ui.py'
+      - '.github/workflows/_temp-purchase-xml-internal-lot-ui.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/purchase-xml-optional-expiry-fifo-20261004
+          fetch-depth: 1
+      - name: Confirm RED before implementation
+        run: |
+          if node scripts/test-purchase-xml-internal-lot-ui.mjs; then
+            echo 'Expected contract test to fail before patch'
+            exit 1
+          else
+            echo 'RED confirmed'
+          fi
+      - name: Apply surgical patch
+        run: python3 scripts/patch-purchase-xml-internal-lot-ui.py
+      - name: Contract test GREEN
+        run: node scripts/test-purchase-xml-internal-lot-ui.mjs
+      - name: Diff check
+        run: git diff --check
+      - name: Commit implementation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vitrine/admin/index.html supabase/functions/purchase-xml-v1/index.ts supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts
+          git commit -m 'fix: align XML receipt UI with automatic FIFO lots'
+          git push origin HEAD:fix/purchase-xml-optional-expiry-fifo-20261004
