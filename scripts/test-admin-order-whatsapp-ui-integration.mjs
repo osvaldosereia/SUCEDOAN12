@@ -35,9 +35,9 @@ assert.ok(vitrineGateway.includes('conversation_id'),'gateway must prefer the ca
 assert.ok(vitrineGateway.includes('whatsapp_account_id'),'gateway must preserve the canonical channel');
 assert.ok(vitrineGateway.includes('admin-whatsapp-ops-v1'),'gateway must reuse Attendance outbound transport');
 assert.ok(vitrineGateway.includes('action=send_text'),'gateway must send through the canonical text action');
-assert.ok(!vitrineGateway.includes('META_WHATSAPP_ACCESS_TOKEN'),'gateway must not duplicate Meta credentials');
+assert.ok(!vitrineGateway.includes('META_WHATSAPP_ACCESS_TOKEN'),'vitrine gateway must not duplicate Meta credentials');
 
-// Checkout/order confirmation transport remains protected; Pedidos V3 does not rewrite it.
+// Admin keeps the checkout/order confirmation gateway, while the provider implementation itself is now Meta direct.
 for(const fn of [
   'async function orderWhatsappGatewayReadiness',
   'async function dispatchOrderWhatsapp',
@@ -52,10 +52,19 @@ assert.ok(orderTransport.includes('.from("orders")'),'order transport must load 
 assert.ok(orderTransport.includes('.from("order_items")'),'order transport must load persisted items');
 assert.ok(orderTransport.includes('productLines.join("\\n")'),'provider products must remain one per line');
 assert.ok(orderTransport.includes('basketLines.join("\\n")'),'basket lines must remain one per line');
-assert.ok(orderTransport.includes('phone_e164:item.phone_e164'),'provider must target the queued customer phone');
-assert.ok(orderTransport.includes('recipient_kind:item.recipient_kind'),'provider must preserve recipient kind');
-assert.ok(orderTransport.includes('function providerFailureIsTransient'),'provider failures must remain classified');
-assert.ok(orderTransport.includes('scope==="checkout_auto"?2:1'),'automatic checkout sends keep immediate retry');
 assert.ok(orderTransport.includes('order_items_not_ready'),'checkout must not send an incomplete order');
+assert.ok(orderTransport.includes('scope==="checkout_auto"?"retry":"failed"'),'incomplete automatic checkout must remain retryable');
 
-console.log('orders v3 customer vitrine + preserved checkout WhatsApp transport contract: ok');
+// Current canonical transport: Meta Cloud API direct with utility templates and atomic accepted/WAMID persistence.
+assert.ok(orderTransport.includes('sendTemplateViaMeta'),'order confirmation must use the shared Meta transport');
+assert.ok(orderTransport.includes('MetaTransportError'),'typed Meta transport failures must be handled');
+assert.ok(orderTransport.includes('META_WHATSAPP_ACCESS_TOKEN'),'Meta credential remains server-side in the dispatcher');
+assert.ok(orderTransport.includes('META_WHATSAPP_GRAPH_VERSION'),'Meta Graph version remains server-side configuration');
+assert.ok(orderTransport.includes('pedidorecebidosite0975'),'0975 must use the approved utility template');
+assert.ok(orderTransport.includes('pedidorecebidosite1018'),'1018 must use the approved utility template');
+assert.ok(orderTransport.includes('ops2_accept_order_whatsapp_meta_v1'),'accepted WAMID must be persisted through the canonical RPC');
+assert.ok(!orderTransport.includes('PAPOAI_ORDER_TEMPLATE_WEBHOOK_0975_URL'),'checkout confirmation must not depend on PapoAI webhook 0975');
+assert.ok(!orderTransport.includes('PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL'),'checkout confirmation must not depend on PapoAI webhook 1018');
+assert.ok(!orderTransport.includes('PAPOAI_ORDER_WEBHOOK_TOKEN'),'checkout confirmation must not depend on a PapoAI order token');
+
+console.log('orders v3 customer vitrine + Meta-direct checkout WhatsApp transport contract: ok');
