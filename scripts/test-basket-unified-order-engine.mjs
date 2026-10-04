@@ -16,7 +16,8 @@ assert.match(sql,/availability_reason='available'/i,'legacy basket must be publi
 assert.match(sql,/allocation_role[^\n]*legacy|legacy[^\n]*allocation_role/i,'legacy allocations must coexist with food/hygiene allocations');
 assert.match(sql,/basket_component_not_in_lot/i,'legacy component guard must be preserved');
 assert.match(sql,/for update/i,'legacy lot must be locked before reserving the last unit');
-assert.doesNotMatch(sql,/split_kits_not_globally_ready/i,'global split gate must be removed');
+assert.match(sql,/v_all_split:=true/i,'global split gate must be replaced by per-item routing');
+assert.match(sql,/basket_unified_global_gate_anchor_missing/i,'migration must fail closed if the old global gate cannot be located');
 
 const submitStart=store.indexOf('async function submit(req:Request,p:any){');
 const submitEnd=store.indexOf('\nDeno.serve',submitStart);
