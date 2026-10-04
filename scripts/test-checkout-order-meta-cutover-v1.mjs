@@ -21,6 +21,7 @@ assert.match(sql,/message_type[^\n]*template/i,'outbound canônico deve ser do t
 assert.match(sql,/provider[^\n]*meta/i,'outbound canônico deve identificar provider Meta');
 assert.match(sql,/sender_kind[^\n]*automation/i,'confirmação automática do checkout deve ser identificada como automação');
 assert.match(sql,/whatsapp_record_status_v1/i,'aceite deve registrar status accepted no pipeline canônico');
+assert.match(sql,/raise\s+exception[\s\S]{0,220}accepted_status_record_failed/i,'falha ao registrar accepted deve abortar atomicamente o aceite');
 assert.match(sql,/ops2_whatsapp_outbox_v1/i,'aceite deve finalizar a outbox específica do pedido');
 assert.match(sql,/external_message_id/i,'WAMID deve permanecer auditável na outbox do pedido');
 assert.match(sql,/security\s+definer/i,'aceite deve executar server-side');
