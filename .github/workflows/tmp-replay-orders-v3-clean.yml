@@ -14,16 +14,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 100
-      - name: Fetch source branch and apply final Orders V3 diff
+      - name: Fetch source branch and reconcile Orders V3
         run: |
           git fetch origin feat/orders-clean-flow-v3-20261004:refs/remotes/origin/feat/orders-clean-flow-v3-20261004 --depth=100
           BASE=$(git merge-base HEAD origin/feat/orders-clean-flow-v3-20261004)
           echo "merge-base=$BASE"
+
+          git diff "$BASE" HEAD -- vitrine/admin/index.html > /tmp/current-main-admin.diff
+
           git diff "$BASE" origin/feat/orders-clean-flow-v3-20261004 -- . \
+            ':(exclude)vitrine/admin/index.html' \
             ':(exclude).github/workflows/tmp-orders-v3-dead-cleanup.yml' \
             ':(exclude)scripts/patch-orders-v3-delivery-bling.mjs' \
-            > /tmp/orders-v3.diff
-          git apply --3way /tmp/orders-v3.diff
+            > /tmp/orders-v3-other.diff
+          git apply --3way /tmp/orders-v3-other.diff
+
+          git show origin/feat/orders-clean-flow-v3-20261004:vitrine/admin/index.html > vitrine/admin/index.html
+          git apply /tmp/current-main-admin.diff
       - name: Verify Orders V3 and recent main work
         run: |
           node scripts/test-admin-orders-clean-flow-v3.mjs
