@@ -14,6 +14,7 @@ assert.match(html,/id="audioRecorderPanel"/,'composer deve ter painel de gravaç
 assert.match(html,/id="audioRecorderTimer"[^>]*role="timer"/,'gravador deve expor cronômetro acessível');
 assert.match(html,/id="stopAudioRecordingBtn"/,'gravador deve permitir parar');
 assert.match(html,/id="cancelAudioRecordingBtn"/,'gravador deve permitir cancelar');
+assert.match(html,/id="sendRecordedAudioBtn"/,'gravador deve permitir enviar diretamente sem download/anexo manual');
 assert.match(html,/id="audioRecorderPreview"[^>]*controls/,'gravador deve permitir ouvir antes do envio');
 assert.match(html,/attendance-audio-recorder\.js/,'módulo do gravador deve ser carregado');
 
@@ -23,6 +24,7 @@ assert.match(recorder,/audio\/mp4/,'deve tentar MP4 compatível com Meta');
 assert.match(recorder,/audio\/ogg/,'deve tentar OGG compatível com Meta');
 assert.doesNotMatch(recorder,/audio\/webm/,'não deve produzir WebM que o transporte atual não aceita');
 assert.match(recorder,/attendance:recorded-audio-ready/,'gravação pronta deve entrar no pipeline de mídia existente');
+assert.match(recorder,/attendance:send-recorded-audio/,'botão do gravador deve disparar envio direto pelo pipeline existente');
 assert.match(recorder,/new File\(/,'gravação deve virar File compatível com FormData atual');
 assert.match(recorder,/getTracks\(\)\.forEach/,'stream do microfone deve ser encerrado');
 assert.match(recorder,/URL\.revokeObjectURL/,'preview anterior deve liberar memória');
@@ -31,6 +33,7 @@ assert.match(recorder,/selectedConversationId/,'gravação deve ficar vinculada 
 
 assert.match(media,/attendance:recorded-audio-ready/,'composer de mídia deve aceitar áudio gravado');
 assert.match(media,/recordedMediaFile/,'composer deve manter arquivo gravado separado do input nativo');
+assert.match(media,/attendance:send-recorded-audio/,'composer de mídia deve aceitar pedido de envio direto do gravador');
 assert.match(media,/attendance:media-cleared/,'limpeza do anexo deve sincronizar o gravador');
 assert.doesNotMatch(recorder,/graph\.facebook\.com/,'gravador nunca deve chamar Graph diretamente');
 
