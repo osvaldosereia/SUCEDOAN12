@@ -6,7 +6,7 @@ const FORMAT_CANDIDATES=[
   {mimeType:'audio/ogg',fileType:'audio/ogg',extension:'ogg'},
 ];
 let recorder=null,stream=null,chunks=[],startedAt=0,timerHandle=null,previewUrl=null;
-let recordingConversationId=null,cancelled=false;
+let recordingConversationId=null,cancelled=false,recordedAudioReady=false;
 
 function selectedConversationId(){return String($('.queue-card.selected')?.dataset?.conversationId||'').trim()}
 function status(text,tone='neutral'){const el=$('#audioRecorderStatus');if(el){el.textContent=text;el.dataset.tone=tone}}
@@ -16,7 +16,8 @@ function updateTimer(){const el=$('#audioRecorderTimer');if(el)el.textContent=fo
 function stopTimer(){if(timerHandle){clearInterval(timerHandle);timerHandle=null}}
 function releaseStream(){if(stream){stream.getTracks().forEach(track=>track.stop());stream=null}}
 function releasePreview(){if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}const audio=$('#audioRecorderPreview');if(audio){audio.removeAttribute('src');audio.load?.()}}
-function resetReady(){releasePreview();const preview=$('#audioRecorderPreview');if(preview)preview.hidden=true;const timer=$('#audioRecorderTimer');if(timer)timer.textContent='00:00'}
+function syncDirectSend(){const button=$('#sendRecordedAudioBtn');if(button)button.disabled=!recordedAudioReady}
+function resetReady(){recordedAudioReady=false;syncDirectSend();releasePreview();const preview=$('#audioRecorderPreview');if(preview)preview.hidden=true;const timer=$('#audioRecorderTimer');if(timer)timer.textContent='00:00'}
 function compatibleFormat(){if(typeof MediaRecorder==='undefined'||typeof MediaRecorder.isTypeSupported!=='function')return null;return FORMAT_CANDIDATES.find(item=>MediaRecorder.isTypeSupported(item.mimeType))||null}
 function recorderErrorMessage(error){const name=String(error?.name||'');if(name==='NotAllowedError'||name==='SecurityError')return 'Permissão do microfone negada. Libere o microfone no navegador e tente novamente.';if(name==='NotFoundError')return 'Nenhum microfone foi encontrado neste dispositivo.';if(name==='NotReadableError')return 'O microfone está ocupado ou indisponível.';return 'Não consegui iniciar o microfone. Tente novamente.'}
 function syncRecordButton(){const button=$('#recordAudioBtn');if(!button)return;const active=Boolean(recorder&&recorder.state!=='inactive');button.disabled=active||!selectedConversationId();button.textContent=active?'🎙 Gravando…':'🎙 Gravar áudio';button.setAttribute('aria-pressed',active?'true':'false')}
@@ -49,7 +50,8 @@ async function startRecording(){
       releasePreview();previewUrl=URL.createObjectURL(file);
       const preview=$('#audioRecorderPreview');if(preview){preview.src=previewUrl;preview.hidden=false}
       const timer=$('#audioRecorderTimer');if(timer)timer.textContent=formatElapsed(elapsed);
-      status('Áudio pronto. Ouça e depois toque em “Enviar anexo”.','success');
+      recordedAudioReady=true;syncDirectSend();
+      status('Áudio pronto. Ouça e toque em “Enviar áudio” para mandar direto.','success');
       document.dispatchEvent(new CustomEvent('attendance:recorded-audio-ready',{detail:{file,conversation_id:recordingConversationId}}));
       recordingConversationId=null;
     });
@@ -61,17 +63,18 @@ async function startRecording(){
 
 function stopRecording(){if(!recorder||recorder.state==='inactive')return;cancelled=false;recorder.stop();status('Finalizando áudio…')}
 function cancelRecording(){if(!recorder||recorder.state==='inactive'){resetReady();panel(false);return}cancelled=true;recorder.stop();stopTimer();releaseStream();status('Gravação cancelada.');syncRecordButton()}
+function sendRecordedAudio(){if(!recordedAudioReady)return;document.dispatchEvent(new CustomEvent('attendance:send-recorded-audio'))}
 function handleConversationChange(){if(recorder&&recorder.state!=='inactive'&&selectedConversationId()!==recordingConversationId){cancelled=true;recorder.stop();status('Gravação cancelada porque a conversa mudou.','error')}syncRecordButton()}
 function bind(){
-  const record=$('#recordAudioBtn'),stop=$('#stopAudioRecordingBtn'),cancel=$('#cancelAudioRecordingBtn'),queue=$('#queueList');
+  const record=$('#recordAudioBtn'),stop=$('#stopAudioRecordingBtn'),cancel=$('#cancelAudioRecordingBtn'),send=$('#sendRecordedAudioBtn'),queue=$('#queueList');
   if(!record)return;
   record.addEventListener('click',()=>startRecording().catch(()=>{}));
-  stop?.addEventListener('click',stopRecording);cancel?.addEventListener('click',cancelRecording);
+  stop?.addEventListener('click',stopRecording);cancel?.addEventListener('click',cancelRecording);send?.addEventListener('click',sendRecordedAudio);
   queue?.addEventListener('click',()=>setTimeout(handleConversationChange,0));
   document.querySelectorAll('[data-channel-switch]').forEach(el=>el.addEventListener('click',()=>setTimeout(handleConversationChange,0)));
   document.addEventListener('attendance:media-cleared',()=>{if(!recorder||recorder.state==='inactive'){resetReady();panel(false)}});
   window.addEventListener('beforeunload',()=>{stopTimer();releaseStream();releasePreview()});
   new MutationObserver(syncRecordButton).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
-  syncRecordButton();
+  syncRecordButton();syncDirectSend();
 }
 bind();
