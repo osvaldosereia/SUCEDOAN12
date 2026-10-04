@@ -13,13 +13,16 @@ try{
    const data=product.toDataURL(),assets={scene:scene.toDataURL(),items:[{name:'Arroz',quantity:3,data_url:data},{name:'Óleo',quantity:2,data_url:data}]};
    const labels=[];const fill=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(value,...args){labels.push(value);return fill.call(this,value,...args)};
    const image=await BasketLotImage.render(assets),packed=await BasketLotImage.compress(image);CanvasRenderingContext2D.prototype.fillText=fill;
-   const bytes=new Uint8Array(await packed.blob.arrayBuffer()),slots=BasketLotImage.layout(32);
-   const transparent=BasketLotImage.productCanvas(await BasketLotImage.load(data));const pixels=transparent.getContext('2d').getImageData(0,0,120,180).data;
-   return {size:packed.blob.size,type:packed.blob.type,width:packed.width,labels,header:String.fromCharCode(...bytes.subarray(8,12)),slotCount:slots.length,inside:slots.every(x=>x.x>=0&&x.y>=0&&x.x+x.w<=768&&x.y+x.h<=768),edgeAlpha:pixels[3],productAlpha:pixels[(90*120+60)*4+3]};
+   const bytes=new Uint8Array(await packed.blob.arrayBuffer());
+   const center=Array.from(image.getContext('2d').getImageData(512,512,1,1).data);
+   const boards=await BasketLotImage.referenceBoards(Array.from({length:32},()=>({data_url:data})));
+   const first=await BasketLotImage.load('data:image/webp;base64,'+boards[0]);
+   return {size:packed.blob.size,type:packed.blob.type,width:packed.width,labels,header:String.fromCharCode(...bytes.subarray(8,12)),center,boardCount:boards.length,boardWidth:first.naturalWidth,boardHeight:first.naturalHeight};
  });
- assert.ok(result.size<=50000);assert.equal(result.type,'image/webp');assert.equal(result.header,'WEBP');
- assert.deepEqual(result.labels,['3 un.','2 un.','Quantidades por cesta indicadas nas etiquetas.']);
- assert.equal(result.slotCount,32);assert.equal(result.inside,true);assert.equal(result.edgeAlpha,0);assert.equal(result.productAlpha,255,'não remover o centro do produto');
+ assert.ok(result.size<=150000);assert.equal(result.type,'image/webp');assert.equal(result.header,'WEBP');
+ assert.deepEqual(result.labels,[],'não colar produtos ou etiquetas sobre a fotografia');
+ assert.deepEqual(result.center,[172,140,105,255],'preservar a fotografia inteira sem montagem');
+ assert.equal(result.boardCount,16);assert.equal(result.boardWidth,1024);assert.equal(result.boardHeight,1536);
  // Opening the panel must not charge or publish anything. Only an explicit button does.
  await page.evaluate(async()=>{window.events=[];window.api=async(event,payload)=>{events.push(event);return event==='context'?{needs_hygiene:true,hygiene_lots:[],jobs:[]}:{} };await BasketLotImage.open('lot',api,x=>String(x));});
  assert.deepEqual(await page.evaluate(()=>events),['context']);assert.equal(await page.locator('#lotImageStart').isDisabled(),true);
@@ -28,7 +31,7 @@ try{
  assert.equal(await page.locator('#lotImagePublish').isVisible(),false);
  await page.evaluate(()=>document.querySelector('#editor').dispatchEvent(new Event('close')));
  await page.click('#lotImageStart');await page.waitForFunction(()=>!document.querySelector('#lotImagePublish').hidden);
- assert.deepEqual(await page.evaluate(()=>events),['context','start']);
+ assert.deepEqual(await page.evaluate(()=>events),['context','references','start']);
  assert.ok((await page.locator('#lotImagePreview').innerText()).includes('3 un. · Arroz'));
  console.log('Basket image browser: labels, WebP budget, composition and explicit generation passed');
 }finally{await browser.close()}
