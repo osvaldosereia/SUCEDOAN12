@@ -1,0 +1,36 @@
+name: One-shot basket family picker UX v1
+on:
+  push:
+    branches: [fix/basket-family-picker-20261004]
+    paths: ['.github/workflows/one-shot-basket-family-picker-ux-v1.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply patch
+        run: python3 scripts/patch-basket-family-picker-ux-v1.py
+      - name: Verify focused contracts
+        run: |
+          node scripts/test-basket-family-picker-ux-v1.mjs
+          node scripts/test-basket-kit-financials-categories.mjs
+      - name: Verify admin JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log('ADMIN_JS_SYNTAX_OK');
+          NODE
+          git diff --check
+      - name: Commit implementation and clean one-shot files
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git rm -f scripts/patch-basket-family-picker-ux-v1.py .github/workflows/one-shot-basket-family-picker-ux-v1.yml
+          git commit -m 'fix: improve basket family substitutions UX'
+          git push origin HEAD:fix/basket-family-picker-20261004
