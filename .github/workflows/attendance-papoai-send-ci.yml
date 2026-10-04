@@ -15,6 +15,7 @@ on:
       - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
       - 'supabase/functions/_shared/admin-attendance-library-v1.mjs'
       - 'supabase/functions/_shared/admin-attendance-library-send-v1.mjs'
+      - 'supabase/functions/_shared/attendance-media-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-media-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'supabase/migrations/**'
@@ -43,6 +44,7 @@ jobs:
       - run: node scripts/test-admin-attendance-filter-menu-v1.mjs
       - run: node scripts/test-admin-attendance-native-channel-v1.mjs
       - run: node scripts/test-admin-attendance-unsupported-display-v1.mjs
+      - run: node scripts/test-admin-attendance-media-api-v1.mjs
       - run: node scripts/test-admin-attendance-library-schema-v1.mjs
       - run: node scripts/test-admin-attendance-library-send-v1.mjs
       - run: node scripts/test-admin-attendance-library-api-v1.mjs
