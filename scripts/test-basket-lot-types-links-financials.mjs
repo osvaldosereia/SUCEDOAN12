@@ -7,12 +7,15 @@ const service=fs.readFileSync('supabase/functions/admin-products-live-v1/index.t
 const storefront=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 const migration=fs.readFileSync('supabase/sql/20261004_basket_lot_types_links_financials_v1.sql','utf8');
 
-for(const label of ['Cesta Básica Completa','Cesta Básica Só os Alimentos','Kit Limpeza e Higiene','Kit Limpeza','Kit Higiene'])assert.ok(admin.includes(label),`Admin deve oferecer o tipo ${label}`);
+for(const label of ['Cestas Completas','Cestas Só Alimento','Kits Limpeza e Higiene','Kits Limpeza','Kits Higiene'])assert.ok(admin.includes(label),`Admin deve oferecer o tipo ${label}`);
 assert.ok(admin.includes('id="kitLotBusinessType"'),'editor deve ter seletor de tipo do lote');
+assert.ok(admin.includes('id="kitLotLinkedType"'),'editor deve selecionar primeiro o tipo do lote vinculado');
 assert.ok(admin.includes('id="kitLotLinkedLot"'),'editor deve ter seletor opcional para vincular outro lote');
+assert.match(admin,/linkableLots\.filter\([^\n]*business_type/,'lotes vinculáveis devem ser filtrados pelo tipo escolhido');
 assert.ok(admin.includes('Custo un.')&&admin.includes('Venda un.'),'cada item deve mostrar custo e venda unitários');
 for(const id of ['kitLotCostSum','kitLotRetailSum','kitLotHiddenSum','kitLotCostToRetailPct','kitLotCostToManualPct'])assert.ok(admin.includes(`id="${id}"`),`painel financeiro deve renderizar ${id}`);
 assert.ok(admin.includes('Itens do lote vinculado'),'editor deve mostrar os itens do lote vinculado');
+assert.match(admin,/linkedLot\.items[\s\S]*kit-draft-line/,'itens vinculados devem usar o mesmo layout visual da composição');
 
 const fnStart=admin.indexOf('  function basketKitDraftFinancials(');
 const fnEnd=admin.indexOf('\n  function ',fnStart+12);
