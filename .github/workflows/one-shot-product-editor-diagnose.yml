@@ -1,0 +1,47 @@
+name: One-shot product editor syntax diagnose
+on:
+  push:
+    branches: [feat/product-editor-complete-20261004]
+    paths: ['.github/workflows/one-shot-product-editor-diagnose.yml']
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            supabase/functions/admin-products-live-v1/index.ts
+            scripts/test-product-editor-complete.mjs
+            scripts/patch-product-editor-complete.py
+          sparse-checkout-cone-mode: false
+      - name: Gerar patch e localizar sintaxe inválida
+        shell: bash
+        run: |
+          python3 scripts/patch-product-editor-complete.py
+          node scripts/test-product-editor-complete.mjs
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          fs.writeFileSync('/tmp/admin-inline-1.js',scripts[0]||'');
+          console.log('inline scripts',scripts.length,'chars',scripts[0]?.length||0);
+          NODE
+          set +e
+          node --check /tmp/admin-inline-1.js > /tmp/nodecheck.log 2>&1
+          code=$?
+          set -e
+          cat /tmp/nodecheck.log
+          if [ "$code" -ne 0 ]; then
+            line=$(grep -m1 -oE '/tmp/admin-inline-1\.js:[0-9]+' /tmp/nodecheck.log | cut -d: -f2 || true)
+            if [ -n "$line" ]; then
+              start=$((line>5?line-5:1)); end=$((line+5));
+              echo "--- contexto $start..$end ---"
+              nl -ba /tmp/admin-inline-1.js | sed -n "${start},${end}p"
+            fi
+            exit "$code"
+          fi
+          echo 'Admin JS syntax OK'
