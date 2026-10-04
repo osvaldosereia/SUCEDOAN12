@@ -18,6 +18,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Diagnose current Admin anchors
+        run: |
+          grep -n -A 10 -B 4 "public_name:String(source" vitrine/admin/index.html || true
+          grep -n -A 5 -B 2 "function basketKitDraftFinancials" vitrine/admin/index.html || true
       - run: node scripts/patch-basket-lot-admin-ui.mjs
       - run: node scripts/patch-basket-lot-service-tests.mjs
       - name: Commit patched files
