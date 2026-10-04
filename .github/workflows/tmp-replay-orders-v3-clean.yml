@@ -59,8 +59,9 @@ jobs:
               resolved=strip_style(orders)+'\n\n'+strip_style(basket)+'\n  </style>\n'
               s=s[:m.start()]+resolved+s[m.end():]
               p.write_text(s)
-          if any(x in p.read_text() for x in ('<<<<<<<','=======','>>>>>>>')):
-              raise SystemExit('conflict markers remain')
+          final=p.read_text()
+          if re.search(r'^(?:<<<<<<<|=======|>>>>>>>)',final,re.M):
+              raise SystemExit('real conflict markers remain')
           PY
 
           if [ "$MERGE_STATUS" -gt 1 ] && grep -q '^<<<<<<<' vitrine/admin/index.html; then exit "$MERGE_STATUS"; fi
