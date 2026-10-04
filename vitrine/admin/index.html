@@ -6458,101 +6458,76 @@
   }
 
 
-  function purchaseLotRowsForItem(item){
-    const rows=(item?.lot_evidence||[]).filter(x=>x.status!=='ignored');
-    if(rows.length)return rows;
-    const qty=Number(item?.converted_quantity||item?.pricing_preview?.proposed_base_quantity||0);
-    return [{lot_code:'',expiration_date:'',base_quantity:qty||''}];
+  function purchaseInternalLotShort(item){
+    const id=String(item?.entry_inventory_lot?.id||item?.inventory_lot_id||'').replace(/-/g,'');
+    return id?id.slice(0,8).toUpperCase():'PENDENTE';
+  }
+  function purchaseInternalLotStatus(v){
+    return ({quarantine:'Aguardando entrada',active:'Ativo',depleted:'Esgotado',expired:'Vencido',cancelled:'Cancelado'})[String(v||'')]||'Preparando';
   }
   function purchaseCurrentInventoryLotsHtml(item){
-    const lots=(item?.current_inventory_lots||[]).filter(x=>Number(x.quantity_on_hand||0)>Number(x.quantity_reserved||0));
-    const tracking=item?.products?.metadata?.lot_tracking_complete===true||item?.products?.metadata?.lot_tracking_complete==='true';
-    if(!lots.length){
-      return '<div class="purchase-factor-hint '+(tracking?'':'warn-text')+'" style="margin:6px 0 10px">'+
-        (tracking?'Nenhum lote anterior com saldo disponível.':'Estoque anterior ainda não foi reconciliado por validade. O FEFO definitivo será ativado após o levantamento inicial dos lotes.')+
-      '</div>';
-    }
-    const active=lots.filter(x=>x.status==='active'&&x.expiration_date).sort((a,b)=>String(a.expiration_date).localeCompare(String(b.expiration_date)));
-    const first=active[0]?.id||null;
-    return '<div style="margin:8px 0 10px"><small class="sub" style="display:block;margin-bottom:6px">Estoque já cadastrado por validade</small><div style="display:flex;gap:6px;flex-wrap:wrap">'+
-      lots.map(x=>{
+    const currentId=String(item?.inventory_lot_id||item?.entry_inventory_lot?.id||'');
+    const lots=(item?.current_inventory_lots||[])
+      .filter(x=>String(x.id||'')!==currentId&&Number(x.quantity_on_hand||0)>Number(x.quantity_reserved||0))
+      .sort((a,b)=>String(a.received_at||a.created_at||'').localeCompare(String(b.received_at||b.created_at||'')));
+    if(!lots.length)return '<div class="purchase-factor-hint" style="margin:6px 0 10px">Nenhum lote anterior com saldo disponível.</div>';
+    return '<div style="margin:8px 0 10px"><small class="sub" style="display:block;margin-bottom:6px">Estoque anterior por lote · FIFO</small><div style="display:flex;gap:6px;flex-wrap:wrap">'+
+      lots.map((x,i)=>{
         const available=Math.max(0,Number(x.quantity_on_hand||0)-Number(x.quantity_reserved||0));
-        const isFirst=x.id===first;
-        const label=dateOnly(String(x.expiration_date||''))+' · '+fmtQty(available)+' UN';
-        return '<span class="pill '+(isFirst?'warn':'')+'" title="'+esc(x.lot_code||'Sem código de lote')+'">'+esc(label)+(isFirst?' · '+(tracking?'FEFO: sair primeiro':'mais próxima cadastrada'):'')+'</span>';
-      }).join('')+
-      '</div>'+(tracking?'':'<small class="sub" style="display:block;margin-top:6px">Referência provisória: ainda pode existir estoque antigo sem lote cadastrado.</small>')+'</div>';
+        const ref=String(x.lot_code||String(x.id||'').replace(/-/g,'').slice(0,8).toUpperCase()||'INTERNO');
+        const exp=x.expiration_date?'Val. '+dateOnly(String(x.expiration_date)):'Sem validade';
+        return '<span class="pill '+(i===0?'warn':'')+'" title="'+esc(String(x.id||''))+'">Lote '+esc(ref)+' · '+esc(exp)+' · '+esc(fmtQty(available))+' UN'+(i===0?' · FIFO: sai primeiro':'')+'</span>';
+      }).join('')+'</div><small class="sub" style="display:block;margin-top:6px">A ordem de saída considera a data de recebimento do lote, não a validade.</small></div>';
   }
   function purchaseReceiptLotsHtml(d,items,lotPlan){
     if(!Array.isArray(items)||!items.length)return '';
-    const received=d?.receipt_status==='received';
     const complete=lotPlan?.complete===true;
+    const planItems=Array.isArray(lotPlan?.items)?lotPlan.items:[];
     return '<div class="purchase-safe '+(complete?'':'purchase-danger')+'" style="margin:14px 0 0">'+
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">'+
-        '<div><strong>Lotes e validades desta entrada</strong><small>'+(complete?'Validades fechadas com as quantidades recebidas.':'Informe a validade de cada quantidade recebida antes de preparar a entrada. Se o XML trouxe rastreabilidade, os campos já vêm preenchidos.')+'</small></div>'+
-        '<span class="pill '+(complete?'':'warn')+'">'+(complete?'Pronto':'Pendente')+'</span>'+
+        '<div><strong>Lotes internos desta entrada</strong><small>Cada item desta NF-e recebe automaticamente um lote interno. Não é necessário informar número de lote real; a validade é opcional.</small></div>'+
+        '<span class="pill '+(complete?'':'warn')+'">'+(complete?'Lotes gerados':'Preparando lotes')+'</span>'+
       '</div>'+
       '<div class="purchase-items" style="margin-top:10px">'+items.map((item,idx)=>{
-        const ev=item.lot_evidence||[],ignored=ev.some(x=>x.status==='ignored'&&x?.metadata?.no_expiry===true);
-        const rows=purchaseLotRowsForItem(item);
-        const expected=Number(item.converted_quantity||item?.pricing_preview?.proposed_base_quantity||0);
-        const nearestNew=rows.filter(r=>r.expiration_date).map(r=>String(r.expiration_date)).sort()[0]||'';
-        return '<div class="purchase-item-card" data-receipt-lot-item="'+esc(item.id)+'" data-expected-qty="'+esc(expected)+'">'+
-          '<div class="purchase-item-title"><div><strong>'+esc(item?.products?.name||item.description||('Item '+(idx+1)))+'</strong><small>Recebido: '+esc(fmtQty(expected))+' UN</small></div><span class="pill">'+esc(item.purchase_unit||'UN')+'</span></div>'+
+        const planItem=planItems.find(x=>String(x.item_id)===String(item.id))||{};
+        const lot=item.entry_inventory_lot||planItem.inventory_lot||null;
+        const lotId=String(lot?.id||item.inventory_lot_id||planItem.inventory_lot_id||'');
+        const expected=Number(item.converted_quantity||item?.pricing_preview?.proposed_base_quantity||planItem.expected_base_quantity||0);
+        const expiry=String(item.lot_expiration_date||lot?.expiration_date||planItem.expiration_date||'').slice(0,10);
+        const ref=purchaseInternalLotShort({...item,entry_inventory_lot:lot,inventory_lot_id:lotId});
+        const status=purchaseInternalLotStatus(lot?.status);
+        return '<div class="purchase-item-card" data-receipt-lot-item="'+esc(item.id)+'">'+
+          '<div class="purchase-item-title"><div><strong>'+esc(item?.products?.name||item.description||('Item '+(idx+1)))+'</strong><small>Entrada: '+esc(fmtQty(expected))+' UN</small></div><span class="pill '+(lot?.status==='quarantine'?'warn':'')+'">Lote interno '+esc(ref)+'</span></div>'+
+          '<div class="purchase-factor-hint" title="'+esc(lotId)+'" style="margin:6px 0 10px">Status: '+esc(status)+' · '+(expiry?'Validade '+esc(dateOnly(expiry)):'Sem validade informada')+'</div>'+
           purchaseCurrentInventoryLotsHtml(item)+
-          '<label class="purchase-checks" style="margin:8px 0"><input type="checkbox" data-receipt-no-expiry '+(ignored?'checked':'')+' '+(received?'disabled':'')+'> Sem controle de validade para este item</label>'+
-          '<div data-receipt-lot-rows style="'+(ignored?'display:none':'display:grid')+';gap:8px">'+
-            rows.map((r,ri)=>'<div class="purchase-price-grid" data-receipt-lot-row>'+
-              '<div class="purchase-field"><label>Lote</label><input data-receipt-lot-code value="'+esc(r.lot_code||'')+'" placeholder="Opcional"></div>'+
-              '<div class="purchase-field"><label>Validade'+(nearestNew&&String(r.expiration_date||'')===nearestNew?' · mais próxima desta entrada':'')+'</label><input type="date" data-receipt-lot-exp value="'+esc(r.expiration_date||'')+'" '+(received?'disabled':'')+'></div>'+
-              '<div class="purchase-field"><label>Quantidade UN</label><input type="number" min="0.001" step="0.001" data-receipt-lot-qty value="'+esc(purchaseNumberInput(r.base_quantity??''))+'" '+(received?'disabled':'')+'></div>'+
-              '<div class="purchase-field"><label>&nbsp;</label><button class="secondary" type="button" data-receipt-lot-remove '+(received?'disabled':'')+'>Remover</button></div>'+
-            '</div>').join('')+
+          '<div class="purchase-price-grid">'+
+            '<div class="purchase-field"><label>Validade desta entrada (opcional)</label><input type="date" data-receipt-lot-exp value="'+esc(expiry)+'"><div class="purchase-factor-hint">Pode ficar em branco. Informar uma data não altera a quantidade recebida.</div></div>'+
+            '<div class="purchase-price-box"><small>Lote interno</small><strong title="'+esc(lotId)+'">'+esc(ref)+'</strong></div>'+
+            '<div class="purchase-price-box"><small>Quantidade da NF-e</small><strong>'+esc(fmtQty(expected))+' UN</strong></div>'+
+            '<div class="purchase-price-box"><small>Ordem de saída</small><strong>FIFO</strong></div>'+
           '</div>'+
-          (!received?'<button class="text" type="button" data-receipt-lot-add style="margin-top:8px">+ Outra validade</button>':'')+
         '</div>';
       }).join('')+'</div>'+
-      (!received?'<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="primary" type="button" data-save-receipt-lots="'+esc(d.id)+'">Salvar lotes e validades</button></div>':'')+
-      '<small class="sub" style="display:block;margin-top:8px">A soma das validades de cada item deve fechar com a quantidade recebida. Salvar aqui não altera o estoque físico do Bling.</small>'+
+      '<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="primary" type="button" data-save-receipt-lots="'+esc(d.id)+'">Salvar validade</button></div>'+
+      '<small class="sub" style="display:block;margin-top:8px">Deixe a validade em branco quando ela não for conhecida ou não se aplicar. O saldo físico continua sendo do Bling e o consumo interno dos lotes segue FIFO.</small>'+
     '</div>';
-  }
-  function addPurchaseReceiptLotRow(itemEl){
-    const rows=itemEl?.querySelector('[data-receipt-lot-rows]');if(!rows)return;
-    const wrap=document.createElement('div');wrap.className='purchase-price-grid';wrap.setAttribute('data-receipt-lot-row','');
-    wrap.innerHTML='<div class="purchase-field"><label>Lote</label><input data-receipt-lot-code placeholder="Opcional"></div>'+
-      '<div class="purchase-field"><label>Validade</label><input type="date" data-receipt-lot-exp></div>'+
-      '<div class="purchase-field"><label>Quantidade UN</label><input type="number" min="0.001" step="0.001" data-receipt-lot-qty></div>'+
-      '<div class="purchase-field"><label>&nbsp;</label><button class="secondary" type="button" data-receipt-lot-remove>Remover</button></div>';
-    rows.appendChild(wrap);
-    const rm=wrap.querySelector('[data-receipt-lot-remove]');if(rm)rm.onclick=()=>wrap.remove();
   }
   function bindPurchaseReceiptLots(docId){
     const host=document.querySelector('[data-purchase-detail="'+CSS.escape(docId)+'"]');if(!host)return;
-    host.querySelectorAll('[data-receipt-lot-add]').forEach(b=>b.onclick=()=>addPurchaseReceiptLotRow(b.closest('[data-receipt-lot-item]')));
-    host.querySelectorAll('[data-receipt-lot-remove]').forEach(b=>b.onclick=()=>{const row=b.closest('[data-receipt-lot-row]');if(row)row.remove()});
-    host.querySelectorAll('[data-receipt-no-expiry]').forEach(ch=>ch.onchange=()=>{
-      const item=ch.closest('[data-receipt-lot-item]'),rows=item?.querySelector('[data-receipt-lot-rows]'),add=item?.querySelector('[data-receipt-lot-add]');
-      if(rows)rows.style.display=ch.checked?'none':'grid';if(add)add.style.display=ch.checked?'none':'inline-flex';
-    });
     const save=host.querySelector('[data-save-receipt-lots]');if(save)save.onclick=()=>savePurchaseReceiptLots(docId);
   }
   async function savePurchaseReceiptLots(docId){
     const host=document.querySelector('[data-purchase-detail="'+CSS.escape(docId)+'"]');if(!host)return;
-    const items=[...host.querySelectorAll('[data-receipt-lot-item]')].map(item=>{
-      const noExpiry=Boolean(item.querySelector('[data-receipt-no-expiry]')?.checked);
-      const lots=noExpiry?[]:[...item.querySelectorAll('[data-receipt-lot-row]')].map(row=>({
-        lot_code:String(row.querySelector('[data-receipt-lot-code]')?.value||'').trim(),
-        expiration_date:String(row.querySelector('[data-receipt-lot-exp]')?.value||'').trim(),
-        base_quantity:Number(String(row.querySelector('[data-receipt-lot-qty]')?.value||'').replace(',','.'))
-      }));
-      return {item_id:item.dataset.receiptLotItem,no_expiry:noExpiry,lots};
-    });
+    const items=[...host.querySelectorAll('[data-receipt-lot-item]')].map(item=>({
+      item_id:item.dataset.receiptLotItem,
+      expiration_date:String(item.querySelector('[data-receipt-lot-exp]')?.value||'').trim()
+    }));
     const btn=host.querySelector('[data-save-receipt-lots]');if(btn){btn.disabled=true;btn.textContent='Salvando…'}
     try{
       await purchaseApi('save_receipt_lots',{document_id:docId,items});
-      toast('Lotes e validades salvos');
+      toast('Validade opcional salva');
       await refreshPurchaseAfterApproval(docId);
-    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Salvar lotes e validades'}}
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Salvar validade'}}
   }
 
   function purchaseStockBlockHtml(d,plan=null,lotPlan=null){
@@ -6570,8 +6545,8 @@
       return '<div class="purchase-safe '+(review?'purchase-danger':'')+'" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>'+(review?'Entrada ainda não confirmada':'Aguardando entrada no Bling')+'</strong><small>'+esc(detail)+'</small></div><button class="primary" type="button" data-purchase-verify-receipt="'+esc(d.id)+'">Verificar entrada no Bling</button></div></div>';
     }
     if(d?.receipt_status==='ready'){
-      if(lotPlan?.complete!==true)return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>Antes de preparar a entrada, salve os lotes e validades de todos os itens acima.</small></div>';
-      return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Recebimento físico</strong><small>Produtos e validades estão prontos. Preparar cria um marco de conferência; não soma estoque local. O recebimento deve aparecer no estoque físico do Bling antes de ser concluído.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Preparar entrada</button></div></div>';
+      if(lotPlan?.complete!==true)return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>O lote interno de algum item ainda não foi gerado. Revise o vínculo do produto e a conversão antes de preparar a entrada.</small></div>';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Recebimento físico</strong><small>Produtos e lotes internos estão prontos. A validade é opcional. Preparar cria um marco de conferência; não soma estoque local. O recebimento deve aparecer no estoque físico do Bling antes de ser concluído.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Preparar entrada</button></div></div>';
     }
     return '<div class="purchase-safe '+(d?.receipt_status==='review'?'purchase-danger':'')+'" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>'+(d?.receipt_status==='review'?'Finalize primeiro as revisões de embalagem, conversão ou vínculo dos produtos.':'A entrada física ainda não está liberada para esta nota.')+'</small></div>';
   }
