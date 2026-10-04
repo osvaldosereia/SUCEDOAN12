@@ -15,13 +15,35 @@ jobs:
       - name: Apply one-shot source transformation
         run: |
           if grep -q 'orders-unified-queue-v1.js' vitrine/admin/index.html; then
+            python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/apply-orders-clean-flow-v3.mjs')
+          s=p.read_text()
+          s=s.replace("ordersBlock+'  function publicOrderUrlFor(o){'","ordersBlock")
+          s=s.replace("detailBlock+'  function blingPreflightOperationalBlockers(p){'","detailBlock")
+          s=s.replace("separationBackend+'\\n\\nasync function adminAuth(r:Request){'","separationBackend")
+          p.write_text(s)
+          PY
             node scripts/apply-orders-clean-flow-v3.mjs
           fi
-      - name: Syntax and Orders V3 contract
+      - name: Orders V3 contract and diff
         run: |
           node scripts/test-admin-orders-clean-flow-v3.mjs
-          node --check <(sed -n '/<script>/,/<\/script>/p' pedido/index.html | sed '1d;$d') || true
           git diff --check
+      - name: Browser JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          for(const file of ['vitrine/admin/index.html','pedido/index.html']){
+            const html=fs.readFileSync(file,'utf8');
+            const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+            scripts.forEach((code,i)=>{
+              const path=`/tmp/${file.replaceAll('/','-')}-${i}.js`;
+              fs.writeFileSync(path,code);
+              require('child_process').execFileSync(process.execPath,['--check',path],{stdio:'inherit'});
+            });
+          }
+          NODE
       - name: Commit transformed sources
         run: |
           if ! git diff --quiet; then
