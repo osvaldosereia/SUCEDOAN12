@@ -2,6 +2,7 @@ const TOKEN_KEY='da_finance_access_token_v1';
 const AUTH_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1?exchange=1';
 const ATTENDANCE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ops-v1';
 const REFRESH_SKEW_SECONDS=90;
+const canonicalAuth=import.meta.url.includes('v=auth-refresh-v2')?null:import('./attendance-auth.js?v=auth-refresh-v2');
 
 let refreshPromise=null;
 
@@ -32,6 +33,7 @@ async function issueAdminToken(){
   return token;
 }
 export async function ensureAttendanceToken({forceRefresh=false}={}){
+  if(canonicalAuth)return await (await canonicalAuth).ensureAttendanceToken({forceRefresh});
   const existing=storedToken();
   if(!forceRefresh&&existing&&!tokenExpiresSoon(existing))return existing;
   if(refreshPromise)return await refreshPromise;
@@ -39,6 +41,7 @@ export async function ensureAttendanceToken({forceRefresh=false}={}){
   return await refreshPromise;
 }
 export async function attendanceAuthorizedFetch(input,options={}, {forceRefresh=false}={}){
+  if(canonicalAuth)return await (await canonicalAuth).attendanceAuthorizedFetch(input,options,{forceRefresh});
   const auth=await ensureAttendanceToken({forceRefresh});
   const headers=new Headers(options?.headers||{});headers.set('Authorization',`Bearer ${auth}`);
   const response=await fetch(input,{...options,headers,cache:options?.cache||'no-store'});
@@ -64,5 +67,6 @@ async function requestJson(action,params,method){
   return data;
 }
 export async function attendanceJsonApi(action,params={},method='GET'){
+  if(canonicalAuth)return await (await canonicalAuth).attendanceJsonApi(action,params,method);
   return await requestJson(action,params,String(method||'GET').toUpperCase());
 }
