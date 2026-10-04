@@ -2455,16 +2455,14 @@ function basketKitPackageCompatible(base:any,candidate:any){
 }
 async function basketKitSuggestions(base:any,products:any[],loose:Map<string,any>,qty:number,catalog:Map<string,string>,priceVariation=15){
   const family=catalog.get(String(base?.id));if(!family)return [];
-  const scored:any[]=[];
+  const basePrice=Number(base?.price||0),scored:any[]=[];
   for(const cand of products){
     if(String(cand.id)===String(base?.id)||catalog.get(String(cand.id))!==family)continue;
-    const available=Number(loose.get(String(cand.id))?.loose_sellable_stock||0);
-    const price=Number(base?.price||0),candidatePrice=Number(cand.price||0);
-    if(available<=0||price<=0||candidatePrice<=0||Math.abs(candidatePrice-price)/price*100>priceVariation||!basketKitPackageCompatible(base,cand))continue;
-    scored.push({...cand,loose_stock:available,price_cents:Math.round(candidatePrice*100),capacity:qty>0?Math.floor(available/qty):0,price_delta_pct:Math.abs(candidatePrice-price)/price*100});
+    const available=Number(loose.get(String(cand.id))?.loose_sellable_stock||0),candidatePrice=Number(cand.price||0);
+    scored.push({...cand,loose_stock:available,price_cents:Math.round(candidatePrice*100),capacity:qty>0?Math.floor(available/qty):0,price_delta_pct:basePrice>0?Math.abs(candidatePrice-basePrice)/basePrice*100:null});
   }
-  scored.sort((a,b)=>a.price_delta_pct-b.price_delta_pct||b.loose_stock-a.loose_stock||String(a.name).localeCompare(String(b.name),"pt-BR"));
-  return scored.slice(0,7);
+  scored.sort((a:any,b:any)=>{const aa=Number(a.loose_stock||0)>0?1:0,bb=Number(b.loose_stock||0)>0?1:0,ad=Number.isFinite(Number(a.price_delta_pct))?Number(a.price_delta_pct):Number.POSITIVE_INFINITY,bd=Number.isFinite(Number(b.price_delta_pct))?Number(b.price_delta_pct):Number.POSITIVE_INFINITY;return bb-aa||Number(b.loose_stock||0)-Number(a.loose_stock||0)||ad-bd||String(a.name).localeCompare(String(b.name),"pt-BR")});
+  return scored;
 }
 async function basketKitProductSuggestions(u:URL){
   const pid=id(u.searchParams.get("product_id"));if(!pid)return {error:"invalid_product",status:400};
