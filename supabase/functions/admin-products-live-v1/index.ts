@@ -2573,7 +2573,8 @@ async function basketKitAdminDetail(rawId:any){
       .select("lot_id,product_id,quantity_per_basket,position_order,product:products(id,name,sku,image_url,price,cost,packaging)")
       .in("lot_id",linkableLots.map((x:any)=>x.id)).order("position_order");
     if(hi.error)throw hi.error;
-    linkableLots=linkableLots.map((h:any)=>({...h,items:(hi.data||[]).filter((x:any)=>String(x.lot_id)===String(h.id)).map((x:any)=>({...x,quantity_per_kit:Number(x.quantity_per_basket||0)}))}));
+    const linkedStock=await basketLooseStockMap((hi.data||[]).map((x:any)=>x.product_id));
+    linkableLots=linkableLots.map((h:any)=>({...h,items:(hi.data||[]).filter((x:any)=>String(x.lot_id)===String(h.id)).map((x:any)=>{const s:any=linkedStock.get(String(x.product_id))||{};return {...x,quantity_per_kit:Number(x.quantity_per_basket||0),loose_stock:Number(s.loose_sellable_stock||0)}})}));
   }
   const nx=await db.rpc("next_basket_kit_short_code_v1",{p_kit_template_id:kid});
   return {kit:{...kq.data,basket},items,lots:lotRows,linkable_lots:linkableLots,hygiene_lots:linkableLots.filter((x:any)=>x.lot_kind==="hygiene"),default_hygiene_lot_id:null,
