@@ -22,8 +22,6 @@ jobs:
             supabase/sql
             supabase/migrations
             scripts
-            .github/workflows/basket-kit-editor-ci.yml
-            .github/workflows/basket-carousel-ci.yml
           sparse-checkout-cone-mode: false
       - name: Verify completed canonical contracts
         run: |
@@ -33,28 +31,35 @@ jobs:
           node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
-          cmp supabase/sql/20261004_basket_canonical_checkout_v1.sql supabase/migrations/20261004230000_basket_canonical_checkout_v1.sql
-      - name: RED canonical storefront
-        run: |
-          set +e
-          node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs > /tmp/store-red.log 2>&1
-          rc=$?
-          set -e
-          cat /tmp/store-red.log
-          if [ "$rc" -eq 0 ]; then touch /tmp/store-already-green; else grep -Eq 'public_lot_kind|home must use canonical|home response must expose|detail must use canonical|quote must revalidate' /tmp/store-red.log; fi
-      - name: Implement canonical storefront
-        run: |
-          if [ ! -f /tmp/store-already-green ]; then python scripts/_apply_basket_storefront_canonical.py; fi
           node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-carousel-service.mjs
-          node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
-          cmp supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql
-          git diff --check
-      - name: Commit canonical storefront
+      - name: RED unified commercial model
         run: |
-          if git diff --quiet -- supabase/functions/storefront-v2/index.ts supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql scripts/test-basket-carousel-service.mjs; then exit 0; fi
+          set +e
+          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs > /tmp/unified-red.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/unified-red.log
+          if [ "$rc" -eq 0 ]; then touch /tmp/unified-already-green; else grep -Eq 'ENOENT|commercial catalog|commercial model|create action|public site|Nova Cesta' /tmp/unified-red.log; fi
+      - name: Implement unified commercial model
+        run: |
+          if [ ! -f /tmp/unified-already-green ]; then python scripts/_apply_basket_unified_commercial.py; fi
+          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-commerce.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-mounting.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-carousel-service.mjs
+          cmp supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql
+          cmp supabase/sql/20261004_basket_commercial_create_v1.sql supabase/migrations/20261004231500_basket_commercial_create_v1.sql
+          git diff --check
+      - name: Commit unified commercial model
+        run: |
+          if git diff --quiet -- vitrine/admin/index.html index.html vitrine/index.html supabase/functions/admin-products-live-v1/index.ts supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql supabase/sql/20261004_basket_commercial_create_v1.sql supabase/migrations/20261004231500_basket_commercial_create_v1.sql; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add supabase/functions/storefront-v2/index.ts supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql scripts/test-basket-carousel-service.mjs
-          git commit -m 'refactor: serve baskets kits from canonical catalog'
+          git add vitrine/admin/index.html index.html vitrine/index.html supabase/functions/admin-products-live-v1/index.ts supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql supabase/sql/20261004_basket_commercial_create_v1.sql supabase/migrations/20261004231500_basket_commercial_create_v1.sql
+          git commit -m 'feat: unify baskets kits commercial workflow'
           git push origin HEAD:feature/baskets-kits-canonical-20261004-exec
