@@ -1,0 +1,39 @@
+name: one-shot-sync-basket-cache
+
+on:
+  push:
+    branches:
+      - feat/attendance-quick-library-20261003
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/attendance-quick-library-20261003
+      - name: Apply exact main cache-buster
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('vitrine/admin/index.html')
+          s=p.read_text()
+          old='<script src="/vitrine/admin/basket-lot-image.js"></script>'
+          new='<script src="/vitrine/admin/basket-lot-image.js?v=studio-v2"></script>'
+          if old not in s:
+              if new in s:
+                  raise SystemExit(0)
+              raise SystemExit('expected cache-buster anchor not found')
+          p.write_text(s.replace(old,new,1))
+          PY
+          git diff --check
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vitrine/admin/index.html
+          git commit -m "chore: sync latest basket image cache-buster"
+          git push origin HEAD:feat/attendance-quick-library-20261003
