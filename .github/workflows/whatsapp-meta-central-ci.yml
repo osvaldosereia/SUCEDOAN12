@@ -58,7 +58,7 @@ jobs:
       - {name: Media canary error contract, run: 'node scripts/test-attendance-media-canary-error-contract-v1.mjs'}
       - {name: Audio media UX contract, run: 'node scripts/test-attendance-media-audio-ux-v1.mjs'}
       - {name: Audio recorder contract, run: 'node scripts/test-attendance-audio-recorder-v1.mjs'}
-      - {name: Audio vendor contract, run: 'node scripts/test-attendance-audio-vendor-v1.mjs'}
+      - {name: Audio WebCodecs OGG contract, run: 'node scripts/test-attendance-audio-webcodecs-v1.mjs'}
       - {name: Media status UX contract, run: 'node scripts/test-attendance-media-status-ux-v1.mjs'}
       - {name: Media delivery observer contract, run: 'node scripts/test-attendance-media-delivery-observer-v1.mjs'}
       - {name: Human AI state contract, run: 'node scripts/test-attendance-human-ai-state-v1.mjs'}
