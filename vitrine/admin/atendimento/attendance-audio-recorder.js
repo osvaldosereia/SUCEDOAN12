@@ -1,9 +1,10 @@
 const $=selector=>document.querySelector(selector);
 const FORMAT_CANDIDATES=[
-  {mimeType:'audio/mp4;codecs=mp4a.40.2',fileType:'audio/mp4',extension:'m4a'},
-  {mimeType:'audio/mp4',fileType:'audio/mp4',extension:'m4a'},
   {mimeType:'audio/ogg;codecs=opus',fileType:'audio/ogg',extension:'ogg'},
   {mimeType:'audio/ogg',fileType:'audio/ogg',extension:'ogg'},
+  {mimeType:'audio/aac',fileType:'audio/aac',extension:'aac'},
+  {mimeType:'audio/mp4;codecs=mp4a.40.2',fileType:'audio/mp4',extension:'m4a'},
+  {mimeType:'audio/mp4',fileType:'audio/mp4',extension:'m4a'},
 ];
 let recorder=null,stream=null,chunks=[],startedAt=0,timerHandle=null,previewUrl=null;
 let recordingConversationId=null,cancelled=false,recordedAudioReady=false;
@@ -29,7 +30,7 @@ async function startRecording(){
   const conversationId=selectedConversationId();
   if(!conversationId){status('Selecione uma conversa antes de gravar.','error');return}
   const format=compatibleFormat();
-  if(!format){panel(true);status('Este navegador não grava em MP4/AAC ou OGG/Opus compatível com o WhatsApp. Use “Anexar” para escolher um áudio.','error');syncRecordButton();return}
+  if(!format){panel(true);status('Este navegador não grava em OGG/Opus, AAC ou MP4/AAC compatível com o WhatsApp. Use “Anexar” para escolher um áudio.','error');syncRecordButton();return}
   if(!navigator.mediaDevices?.getUserMedia){panel(true);status('Este navegador não permite acesso ao microfone nesta página.','error');return}
   panel(true);resetReady();status('Solicitando acesso ao microfone…');
   try{
@@ -51,8 +52,8 @@ async function startRecording(){
       const preview=$('#audioRecorderPreview');if(preview){preview.src=previewUrl;preview.hidden=false}
       const timer=$('#audioRecorderTimer');if(timer)timer.textContent=formatElapsed(elapsed);
       recordedAudioReady=true;syncDirectSend();
-      status('Áudio pronto. Ouça e toque em “Enviar áudio” para mandar direto.','success');
-      document.dispatchEvent(new CustomEvent('attendance:recorded-audio-ready',{detail:{file,conversation_id:recordingConversationId}}));
+      status(`Áudio pronto (${format.extension.toUpperCase()}). Ouça e toque em “Enviar áudio” para mandar direto.`,'success');
+      document.dispatchEvent(new CustomEvent('attendance:recorded-audio-ready',{detail:{file,conversation_id:recordingConversationId,recording_mime_type:format.mimeType}}));
       recordingConversationId=null;
     });
     recorder.start(500);startedAt=Date.now();updateTimer();timerHandle=setInterval(updateTimer,250);
