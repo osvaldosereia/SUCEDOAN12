@@ -12,8 +12,9 @@ let currentRoot=null;
 let busy=false;
 let pendingTemplateLoads=[];
 let syncButtonResetTimer=null;
+let audienceModulePromise=null;
 
-const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const channelByPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.endsWith('0975')?'0975':digits.endsWith('1018')?'1018':null};
 const templateBody=components=>String((Array.isArray(components)?components:[]).find(item=>String(item?.type||'').toUpperCase()==='BODY')?.text||'');
 const templateHeader=components=>String((Array.isArray(components)?components:[]).find(item=>String(item?.type||'').toUpperCase()==='HEADER')?.text||'');
@@ -73,6 +74,25 @@ async function ensureAccounts(){
 }
 
 function overviewButton(){return document.querySelector('[data-tab="marketing"]')}
+function marketingNavHtml(active='overview'){
+  const button=(key,label)=>`<button type="button" class="${key===active?'active':''}" data-marketing-view="${key}">${label}</button>`;
+  return `${button('overview','Visão geral')}${button('templates','Templates Meta')}${button('audiences','Públicos')}${button('consents','Consentimentos')}<span class="marketing-campaign-gate">Campanhas desligadas</span>`;
+}
+function loadAudienceModule(){
+  if(!audienceModulePromise)audienceModulePromise=import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1');
+  return audienceModulePromise;
+}
+async function openAudienceSection(view,root){
+  const module=await loadAudienceModule();
+  if(view==='audiences')return module.mountAudienceView(root);
+  return module.mountConsentView(root);
+}
+function bindMarketingNav(root){
+  root.querySelector('[data-marketing-view="overview"]')?.addEventListener('click',()=>overviewButton()?.click());
+  root.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>mountTemplateView(root));
+  root.querySelector('[data-marketing-view="audiences"]')?.addEventListener('click',()=>openAudienceSection('audiences',root).catch(error=>console.warn('marketing-audience-load',String(error?.message||error).slice(0,160))));
+  root.querySelector('[data-marketing-view="consents"]')?.addEventListener('click',()=>openAudienceSection('consents',root).catch(error=>console.warn('marketing-consents-load',String(error?.message||error).slice(0,160))));
+}
 
 function injectSubviewNav(){
   const root=document.querySelector('#content');
@@ -82,10 +102,9 @@ function injectSubviewNav(){
   const nav=document.createElement('div');
   nav.className='marketing-template-subnav';
   nav.dataset.marketingSubnav='1';
-  nav.innerHTML='<button type="button" class="active" data-marketing-view="overview">Visão geral</button><button type="button" data-marketing-view="templates">Templates Meta</button><span class="marketing-campaign-gate">Campanhas desligadas</span>';
+  nav.innerHTML=marketingNavHtml('overview');
   root.querySelector('.page-head')?.after(nav);
-  nav.querySelector('[data-marketing-view="overview"]')?.addEventListener('click',()=>overviewButton()?.click());
-  nav.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>mountTemplateView(root));
+  bindMarketingNav(nav);
 }
 
 function renderFilters(root){
@@ -290,7 +309,7 @@ async function removeTemplate(id){
 }
 
 function bindTemplateView(root){
-  root.querySelector('[data-marketing-view="overview"]')?.addEventListener('click',()=>overviewButton()?.click());
+  bindMarketingNav(root);
   root.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>{});
   root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');setSyncButtonState('idle',activeChannel);templates=[];templatesLoaded=false;renderList(root);loadTemplates({channel:activeChannel}).catch(()=>{})});
   root.querySelector('[data-template-sync]')?.addEventListener('click',()=>loadTemplates({sync:true,channel:activeChannel}));
@@ -303,7 +322,7 @@ async function mountTemplateView(root=document.querySelector('#content')){
   currentRoot=root;
   root.innerHTML=`<div class="marketing-template-center">
     <div class="page-head"><div><h1>Marketing</h1><p>Templates oficiais da Meta. Gestão separada de campanhas.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
-    <div class="marketing-template-subnav" data-marketing-subnav><button type="button" data-marketing-view="overview">Visão geral</button><button type="button" class="active" data-marketing-view="templates">Templates Meta</button></div>
+    <div class="marketing-template-subnav" data-marketing-subnav>${marketingNavHtml('templates')}</div>
     <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync data-sync-state="idle" aria-busy="false">Sincronizar</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
     ${renderFilters(root)}
     <div class="marketing-template-status" data-template-center-status>Carregando somente quando esta aba é aberta…</div>
