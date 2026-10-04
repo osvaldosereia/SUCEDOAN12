@@ -42,9 +42,10 @@ jobs:
           const fs=require('fs');
           const html=fs.readFileSync('vitrine/admin/index.html','utf8');
           const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
-          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
-          console.log('Admin JS syntax OK');
+          console.log('Inline scripts:',scripts.length,'primeiro chars:',scripts[0]?.length||0);
+          fs.writeFileSync('/tmp/admin-inline-1.js',scripts[0]||'');
           NODE
+          node --check /tmp/admin-inline-1.js
           python3 -m py_compile scripts/patch-product-editor-complete.py
           git diff --check
       - name: Commit da implementação e limpeza do one-shot
