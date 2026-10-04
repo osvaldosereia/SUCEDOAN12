@@ -63,7 +63,7 @@ window.BasketLotImage={
   async open(lotId,api,esc){
     const $=s=>document.querySelector(s),session=Symbol();this.session=session;
     const active=()=>this.session===session&&$('#editor').open;
-    $('#editor').addEventListener('close',()=>{if(this.session===session)this.session=null},{once:true});
+    $('#editor').addEventListener('close',()=>{if(this.session===session&&!$('#editor').open)this.session=null},{once:true});
     const close=()=>{$('#editor').close();this.session=null};
     $('#editorTitle').textContent='Imagem do lote';$('#editorBody').innerHTML='<p>Carregando composição…</p>';
     $('#editorActions').innerHTML='<button class="secondary" id="lotImageClose" type="button">Fechar</button>';$('#lotImageClose').onclick=close;
@@ -113,3 +113,4 @@ window.BasketLotImage={
     else{if($('#lotImageHygiene'))$('#lotImageHygiene').onchange=restore;await restore()}
   }
 };
+
