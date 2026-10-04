@@ -3586,6 +3586,17 @@
     let cap=999999;for(const x of grouped.values())if(x.qty>0)cap=Math.min(cap,Math.floor(Number(x.stock||0)/x.qty));
     return cap===999999?0:Math.max(0,cap);
   }
+  function basketBusinessTypeForCategory(categoryId){
+    const c=(state.basketCategories||[]).find(x=>String(x.id)===String(categoryId||''));
+    const bySlug={
+      'cestas-completas':'basic_complete',
+      'cestas-so-alimento':'basic_food',
+      'kits-limpeza-e-higiene':'cleaning_hygiene',
+      'kits-limpeza':'cleaning',
+      'kits-higiene':'hygiene'
+    };
+    return bySlug[String(c?.slug||'')]||'';
+  }
   function startBasketKitLotDraft(sourceLotId=null){
     const d=state.basketKitDetail;if(!d)return;
     const source=sourceLotId?(d.lots||[]).find(x=>String(x.id)===String(sourceLotId)):null;
@@ -3614,7 +3625,7 @@
       notes:resumeDraft?(source.notes||''):'',
       public_name:String(source?.public_name||d.kit?.basket?.name||d.kit?.name||''),
       sale_price:Number(source?.own_sale_price_override??source?.sale_price_override??d.kit?.basket?.base_price??0),
-      business_type:String(source?.business_type||(d.kit.kind==='food'?'basic_food':'cleaning_hygiene')),
+      business_type:String(source?.business_type||basketBusinessTypeForCategory(d.kit?.basket?.category_id)||(d.kit.kind==='food'?'basic_food':'cleaning_hygiene')),
       linked_lot_id:source?.linked_lot_id||source?.linked_hygiene_lot_id||null,
       items
     };
