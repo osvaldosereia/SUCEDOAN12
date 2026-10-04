@@ -31,8 +31,11 @@ assert.match(adminUi,/\.basket-lot-component-card\{display:grid;grid-template-co
 assert.match(adminUi,/\.basket-lot-component-stock\{grid-column:2\/-1/,'stock block should move below the main row instead of overflowing the card');
 
 assert.match(adminUi,/Tipo da cesta\/kit/,'every lot must expose business classification');
-assert.match(adminUi,/Vincular outro lote \(opcional\)/,'generic linked-lot selector must be optional');
+assert.match(adminUi,/Tipo do lote vinculado \(opcional\)/,'linked-lot flow must start with an optional type selector');
+assert.match(adminUi,/Escolher lote/,'linked-lot flow must expose the lot selector after the type');
+assert.match(adminUi,/kitLotLinkedType/,'linked-lot type selector must be wired');
 assert.match(adminUi,/kitLotLinkedLot/,'generic linked-lot selector must be wired');
+assert.match(adminUi,/linkableLots\.filter\([^\n]*business_type/,'linked-lot choices must be filtered by selected business type');
 assert.match(adminUi,/linked_lot_id/,'lot save must persist the selected generic linked lot when one is chosen');
 assert.match(adminUi,/data-kit-lot-delete[^\n]*deleteBasketKitLot|deleteBasketKitLot\(/,'lot delete UI must be wired to a handler');
 assert.match(adminUi,/CESTA ORIGINAL|permanece original/i,'separation UI must explicitly identify preserved original baskets');
