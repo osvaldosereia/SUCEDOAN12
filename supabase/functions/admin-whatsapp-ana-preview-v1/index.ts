@@ -4,6 +4,7 @@ import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normaliz
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SUPABASE_ANON_KEY=Deno.env.get("SUPABASE_ANON_KEY")||"";
+const SUPABASE_SERVICE_ROLE_KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const OPENAI_API_KEY=Deno.env.get("OPENAI_API_KEY")||"";
 const ANA_MODEL=(Deno.env.get("ANA_OPENAI_MODEL")||"gpt-6-luna").trim();
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
@@ -14,6 +15,15 @@ const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(bo
 
 function outputText(data:any){return (Array.isArray(data?.output)?data.output:[]).flatMap((item:any)=>Array.isArray(item?.content)?item.content:[]).filter((item:any)=>item?.type==="output_text").map((item:any)=>String(item?.text||"")).join("").trim()}
 function dbFor(req:Request){const authorization=req.headers.get("Authorization")||"";return createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false},global:{headers:{Authorization:authorization}}})}
+function serviceDb(){return createClient(SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}})}
+async function openaiKey(){
+  if(OPENAI_API_KEY)return OPENAI_API_KEY;
+  if(!SUPABASE_URL||!SUPABASE_SERVICE_ROLE_KEY)return "";
+  try{
+    const q=await serviceDb().rpc("get_conversation_worker_provider_secret_v1");
+    return typeof q.data==="string"?q.data.trim():"";
+  }catch{return ""}
+}
 async function adminAuth(req:Request,db:any){const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();if(!token)return {ok:false as const,status:401,error:"admin_auth_required"};const user=await db.auth.getUser(token);if(user.error||!user.data?.user?.id)return {ok:false as const,status:401,error:"admin_session_invalid"};return {ok:true as const,user_id:user.data.user.id}}
 
 function operationalContext(){
@@ -26,11 +36,12 @@ function operationalContext(){
 }
 
 async function generateSuggestion(inboundText:string,history:any[]){
-  if(!OPENAI_API_KEY)return {ok:false as const,error:"openai_not_configured"};
+  const apiKey=await openaiKey();
+  if(!apiKey)return {ok:false as const,error:"openai_not_configured"};
   const input=buildAnaDryRunInput({inboundText,history,operationalContext:operationalContext()});
   const started=Date.now();
   try{
-    const response=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${OPENAI_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:ANA_MODEL,store:false,max_output_tokens:500,reasoning:{effort:"low"},instructions:ANA_DRY_RUN_INSTRUCTIONS,input:[{role:"user",content:[{type:"input_text",text:JSON.stringify(input)}]}],text:{format:{type:"json_schema",name:"ana_dry_run_suggestion",strict:true,schema:ANA_DRY_RUN_SCHEMA}}}),signal:AbortSignal.timeout(15000)});
+    const response=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${apiKey}`,"Content-Type":"application/json"},body:JSON.stringify({model:ANA_MODEL,store:false,max_output_tokens:500,reasoning:{effort:"low"},instructions:ANA_DRY_RUN_INSTRUCTIONS,input:[{role:"user",content:[{type:"input_text",text:JSON.stringify(input)}]}],text:{format:{type:"json_schema",name:"ana_dry_run_suggestion",strict:true,schema:ANA_DRY_RUN_SCHEMA}}}),signal:AbortSignal.timeout(15000)});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)return {ok:false as const,error:"openai_http_error",status:response.status,response_id:data?.id||null,latency_ms:Date.now()-started};
     let parsed:any={};try{parsed=JSON.parse(outputText(data)||"{}")}catch{return {ok:false as const,error:"openai_parse_error",response_id:data?.id||null,latency_ms:Date.now()-started}}
