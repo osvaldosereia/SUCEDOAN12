@@ -23,7 +23,7 @@ jobs:
             supabase/migrations
             scripts
           sparse-checkout-cone-mode: false
-      - name: Verify completed canonical contracts
+      - name: Verify canonical contracts
         run: |
           set -euo pipefail
           node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-commerce.mjs
@@ -33,33 +33,30 @@ jobs:
           node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-carousel-service.mjs
-      - name: RED unified commercial model
+          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
+      - name: RED unified mixed order engine
         run: |
           set +e
-          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs > /tmp/unified-red.log 2>&1
+          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-order-engine.mjs > /tmp/order-red.log 2>&1
           rc=$?
           set -e
-          cat /tmp/unified-red.log
-          if [ "$rc" -eq 0 ]; then touch /tmp/unified-already-green; else grep -Eq 'ENOENT|commercial catalog|commercial model|create action|public site|Nova Cesta' /tmp/unified-red.log; fi
-      - name: Implement unified commercial model
+          cat /tmp/order-red.log
+          if [ "$rc" -eq 0 ]; then touch /tmp/order-already-green; else grep -Eq 'ENOENT|unified order|legacy|storefront|parallel order|cart' /tmp/order-red.log; fi
+      - name: Implement unified mixed order engine
         run: |
-          if [ ! -f /tmp/unified-already-green ]; then python scripts/_apply_basket_unified_commercial.py; fi
-          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
-          node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-commerce.mjs
-          node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-mounting.mjs
-          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs
-          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs
+          if [ ! -f /tmp/order-already-green ]; then python scripts/_apply_basket_unified_order_engine.py; fi
+          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-order-engine.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-carousel-service.mjs
-          cmp supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql
-          cmp supabase/sql/20261004_basket_commercial_create_v1.sql supabase/migrations/20261004231500_basket_commercial_create_v1.sql
+          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
+          cmp supabase/sql/20261004_basket_unified_order_engine_v1.sql supabase/migrations/20261004233000_basket_unified_order_engine_v1.sql
           git diff --check
-      - name: Commit unified commercial model
+      - name: Commit unified mixed order engine
         run: |
-          if git diff --quiet -- vitrine/admin/index.html index.html vitrine/index.html supabase/functions/admin-products-live-v1/index.ts supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql supabase/sql/20261004_basket_commercial_create_v1.sql supabase/migrations/20261004231500_basket_commercial_create_v1.sql; then exit 0; fi
+          if git diff --quiet -- index.html vitrine/index.html supabase/functions/storefront-v2/index.ts supabase/sql/20261004_basket_unified_order_engine_v1.sql supabase/migrations/20261004233000_basket_unified_order_engine_v1.sql; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add vitrine/admin/index.html index.html vitrine/index.html supabase/functions/admin-products-live-v1/index.ts supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql supabase/sql/20261004_basket_commercial_create_v1.sql supabase/migrations/20261004231500_basket_commercial_create_v1.sql
-          git commit -m 'feat: unify baskets kits commercial workflow'
+          git add index.html vitrine/index.html supabase/functions/storefront-v2/index.ts supabase/sql/20261004_basket_unified_order_engine_v1.sql supabase/migrations/20261004233000_basket_unified_order_engine_v1.sql
+          git commit -m 'feat: support mixed legacy and modern basket orders'
           git push origin HEAD:feature/baskets-kits-canonical-20261004-exec
