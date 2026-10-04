@@ -1,4 +1,4 @@
-name: Temporary orders v3 dead cleanup
+name: Temporary orders v3 delivery sync
 
 on:
   push:
@@ -8,48 +8,63 @@ permissions:
   contents: write
 
 jobs:
-  cleanup:
+  patch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Remove obsolete order WhatsApp UI block
+      - name: Patch delivery v3 Bling completion
         run: |
           python - <<'PY'
-          import re
           from pathlib import Path
-          p=Path('vitrine/admin/index.html')
+          p=Path('supabase/functions/admin-products-live-v1/index.ts')
           s=p.read_text()
-          start='  function currentOrderWhatsappShareData(){'
-          end='  async function openOrder(id){'
+          start='async function completeDeliveryV3(p:any,auth:any){'
+          end='async function reopenOrderV3(p:any,auth:any){'
           a=s.find(start); b=s.find(end,a)
           if a<0 or b<0:
-            raise SystemExit('legacy order WhatsApp block markers not found')
-          s=s[:a]+s[b:]
-          for symbol in ['COMPANY_WHATSAPP_E164','ORDER_WHATSAPP_4599_E164']:
-            if s.count(symbol)==1:
-              s=re.sub(r'^  const '+symbol+r'=.*\n','',s,flags=re.M)
-          p.write_text(s)
-          for legacy in ['currentOrderWhatsappShareData','currentOrderCompanyWhatsappMessage','openNativeWhatsapp','openCurrentOrderCompanyWhatsapp','openCurrentOrder4599Whatsapp','currentOrderCustomerWhatsappMessage','openCurrentOrderCustomerWhatsapp','currentOrderRegistrationUrl','openCurrentOrderRegistrationWhatsapp','copyCurrentOrderRegistrationLink']:
-            if legacy in s:
-              raise SystemExit('legacy order WhatsApp symbol remains: '+legacy)
+            raise SystemExit('delivery v3 function markers not found')
+          replacement=r'''async function completeDeliveryV3(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
+  const method=tx(p?.method,40).toLowerCase(),amount=Math.round(Number(p?.amount_cents||0));
+  const q=await db.rpc("ops3_complete_delivery_v1",{p_order_id:oid,p_method:method,p_amount_cents:amount,p_operator_label:tx(p?.operator,80)||"Entrega",p_idempotency_key:tx(p?.idempotency_key,120)||("delivery-v3:"+oid)});
+  if(q.error){const m=String(q.error.message||"");for(const code of ["invalid_payment_method","payment_total_mismatch","payment_already_captured","order_not_ready_for_delivery","separation_not_completed","delivery_return_open"]){if(m.includes(code))return {error:code,status:code.startsWith("invalid_")?400:409}}throw q.error}
+  try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"delivered"})}catch{}
+  try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
+
+  let bling_completion:any=null;
+  try{
+    try{await hub("fiscal_status",{source_order_id:oid})}catch{}
+    const h=await hub("ops2_ensure_delivered_attended",{source_order_id:oid});
+    if(h.error){
+      await db.from("orders").update({sync_status:"review_bling",sync_error:tx(h.error||"bling_attended_failed",300),updated_at:new Date().toISOString()}).eq("id",oid);
+      try{await db.rpc("ops_open_attention_v1",{p_type:"bling_delivery_sync_review",p_summary:"Entrega confirmada; Bling precisa de revisão.",p_entity_type:"order",p_entity_id:oid,p_correlation_id:oid,p_priority:"high",p_owner_role:"supervisor",p_recommended_action:"Abra o pedido entregue e revise a situação no Bling.",p_evidence:{error:h.error,detail:h.detail||h.data||null},p_source_system:"bling",p_idempotency_key:"ops3:bling_delivery_review:"+oid,p_due_at:null})}catch{}
+      bling_completion={attempted:true,ok:false,error:h.error,detail:h.detail||h.data||null,recovery_scheduled:true};
+    }else{
+      bling_completion={attempted:true,ok:true,result:h.data};
+      await opsEvent("order.bling_attended","Pedido entregue confirmado como Atendido no Bling.","order",oid,{bling_completion},tx(p?.operator,80)||"Entrega","automation","bling","order-bling-attended-v3:"+oid);
+    }
+  }catch(e){
+    await db.from("orders").update({sync_status:"review_bling",sync_error:tx((e as Error)?.message||e,300),updated_at:new Date().toISOString()}).eq("id",oid);
+    bling_completion={attempted:true,ok:false,error:tx((e as Error)?.message||e,300),recovery_scheduled:true};
+  }
+  return {...(q.data||{ok:true,order_id:oid,status:"delivered"}),bling_completion};
+}
+
+'''
+          p.write_text(s[:a]+replacement+s[b:])
           PY
-      - name: Verify clean order UI
+      - name: Verify delivery and order flow
         run: |
           node scripts/test-admin-orders-clean-flow-v3.mjs
           node scripts/test-admin-order-whatsapp-ui-integration.mjs
-          node <<'NODE'
-          const fs=require('fs'),cp=require('child_process');
-          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
-          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
-          scripts.forEach((src,i)=>{const p=`/tmp/admin-${i}.js`;fs.writeFileSync(p,src);cp.execFileSync(process.execPath,['--check',p],{stdio:'inherit'})});
-          NODE
           git diff --check
-      - name: Commit cleanup
+      - name: Commit backend patch
         run: |
           if ! git diff --quiet; then
             git config user.name 'OSSJU'
             git config user.email 'Junior.sereia@hotmail.com'
-            git add vitrine/admin/index.html
-            git commit -m 'refactor: remove dead order whatsapp ui handlers'
+            git add supabase/functions/admin-products-live-v1/index.ts
+            git commit -m 'fix: preserve Bling completion after delivery v3'
             git push origin HEAD:feat/orders-clean-flow-v3-20261004
           fi
