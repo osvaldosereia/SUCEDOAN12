@@ -1,0 +1,47 @@
+name: One-shot products header
+on:
+  push:
+    branches: [feat/produtos-listagem-operacional-current]
+    paths:
+      - '.github/workflows/one-shot-products-header.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurar bot
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - name: RED - cabecalho antigo deve falhar
+        shell: bash
+        run: |
+          if node scripts/test-products-operational-list.mjs; then
+            echo 'Teste deveria falhar antes do ajuste de cabecalho.'
+            exit 1
+          else
+            echo 'RED confirmado para cabecalho.'
+          fi
+      - name: Ajustar cabecalho
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('vitrine/admin/index.html')
+          s=p.read_text()
+          old='<div class="panel" id="productsPanel"><div class="list-head products-layout"><span></span><span>Produto</span><span>Preço</span><span>Estoque</span><span>Status</span><span></span></div>'
+          new='<div class="panel" id="productsPanel"><div class="list-head products-layout"><span></span><span>Produto</span><span>Venda / custo</span><span>Estoque / validade</span><span>Status / kits</span><span>Ações</span></div>'
+          if old not in s:
+              raise SystemExit('cabecalho esperado nao encontrado')
+          p.write_text(s.replace(old,new,1))
+          PY
+      - name: GREEN
+        run: |
+          node scripts/test-products-operational-list.mjs
+          node scripts/test-mobile-products-quick-edit.mjs
+      - name: Publicar ajuste
+        run: |
+          git add vitrine/admin/index.html
+          git commit -m "fix: alinhar cabecalho da listagem de produtos"
+          git push
