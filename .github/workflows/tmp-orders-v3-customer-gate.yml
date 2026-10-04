@@ -12,8 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply customer data gate
-        run: node scripts/patch-orders-v3-customer-gate.mjs
+      - name: Apply focused V3 compatibility patches
+        run: |
+          node scripts/patch-orders-v3-customer-gate.mjs
+          node scripts/patch-public-order-whatsapp-app.mjs
       - name: Verify focused contracts
         run: |
           node scripts/test-admin-orders-clean-flow-v3.mjs
@@ -31,12 +33,12 @@ jobs:
             scripts.forEach((src,i)=>{const p=`/tmp/${file.replaceAll('/','-')}-${i}.js`;fs.writeFileSync(p,src);cp.execFileSync(process.execPath,['--check',p],{stdio:'inherit'})});
           }
           NODE
-      - name: Commit generated admin patch
+      - name: Commit generated patches
         run: |
           if ! git diff --quiet; then
             git config user.name 'OSSJU'
             git config user.email 'Junior.sereia@hotmail.com'
-            git add vitrine/admin/index.html
-            git commit -m 'fix: preserve customer data gate in orders v3'
+            git add vitrine/admin/index.html pedido/index.html
+            git commit -m 'fix: preserve customer gate and public whatsapp handoff'
             git push origin HEAD:feat/orders-clean-flow-v3-clean-20261004
           fi
