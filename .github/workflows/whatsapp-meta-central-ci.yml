@@ -23,6 +23,7 @@ on:
       - 'supabase/sql/20261003_whatsapp_ana_jobs_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_admin_preview_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_preview_stale_claim_recovery_v3.sql'
+      - 'supabase/sql/20261003_whatsapp_ana_review_observability_v4.sql'
       - 'supabase/sql/20261003_whatsapp_meta_shadow_media_preserve_v1.sql'
       - 'scripts/test-attendance-*.mjs'
       - 'scripts/test-whatsapp-ana-*.mjs'
@@ -60,6 +61,7 @@ jobs:
       - {name: ANA dry-run contract, run: 'node scripts/test-whatsapp-ana-worker-v1.mjs'}
       - {name: ANA Admin preview contract, run: 'node scripts/test-whatsapp-ana-admin-preview-v1.mjs'}
       - {name: ANA stale preview claim recovery, run: 'node scripts/test-whatsapp-ana-preview-stale-claim-v1.mjs'}
+      - {name: ANA review observability contract, run: 'node scripts/test-whatsapp-ana-review-observability-v1.mjs'}
       - {name: Meta Phone Number ID strictness, run: 'node scripts/test-attendance-meta-phone-id-v1.mjs'}
       - {name: Meta response-body timeout, run: 'node scripts/test-attendance-meta-body-timeout-v1.mjs'}
       - {name: Meta webhook contract, run: 'node scripts/test-whatsapp-meta-webhook-v1.mjs'}
