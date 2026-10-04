@@ -21,16 +21,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .ci-opus-vendor .ci-opus-pack
-          mkdir -p .ci-opus-vendor .ci-opus-pack
-          cd .ci-opus-pack
+          rm -rf ci-opus-vendor ci-opus-pack
+          mkdir -p ci-opus-vendor ci-opus-pack
+          cd ci-opus-pack
           TARBALL="$(npm pack opus-media-recorder@0.8.0 --silent)"
           tar -xzf "$TARBALL"
-          cp package/OpusMediaRecorder.umd.js ../.ci-opus-vendor/
-          cp package/encoderWorker.umd.js ../.ci-opus-vendor/
-          cp package/OggOpusEncoder.wasm ../.ci-opus-vendor/
-          cp package/LICENSE.md ../.ci-opus-vendor/
-          cd ../.ci-opus-vendor
+          cp package/OpusMediaRecorder.umd.js ../ci-opus-vendor/
+          cp package/encoderWorker.umd.js ../ci-opus-vendor/
+          cp package/OggOpusEncoder.wasm ../ci-opus-vendor/
+          cp package/LICENSE.md ../ci-opus-vendor/
+          cd ../ci-opus-vendor
           sha256sum OpusMediaRecorder.umd.js encoderWorker.umd.js OggOpusEncoder.wasm LICENSE.md > SHA256SUMS
           wc -c OpusMediaRecorder.umd.js encoderWorker.umd.js OggOpusEncoder.wasm LICENSE.md > SIZES.txt
           printf 'opus-media-recorder@0.8.0\n' > SOURCE.txt
@@ -40,6 +40,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: opus-media-recorder-0.8.0-vendor
-          path: .ci-opus-vendor/
+          path: ci-opus-vendor/
           if-no-files-found: error
           retention-days: 1
