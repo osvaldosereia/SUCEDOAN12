@@ -4,6 +4,7 @@ on:
     branches: ['feat/basket-lot-ops-rules-20261003']
     paths:
       - 'scripts/patch-basket-lot-ops-rules.py'
+      - 'scripts/fix-basket-lot-patch-script.py'
       - '.github/workflows/_temp-basket-lot-patch.yml'
 permissions:
   contents: write
@@ -18,6 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - run: python3 scripts/fix-basket-lot-patch-script.py
       - run: python3 scripts/patch-basket-lot-ops-rules.py
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-commercial-fields.mjs
