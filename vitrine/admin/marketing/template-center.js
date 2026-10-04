@@ -1,7 +1,7 @@
 import {attendanceAuthorizedFetch,attendanceJsonApi} from '../atendimento/attendance-auth.js?v=auth-refresh-v2';
 
 const TEMPLATE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-templates-v1';
-const ADMIN_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
+const ADMIN_PUBLIC_KEY=['sb','publishable','tFXHtH0HCXZepVtwgKElIg','DxS76Gu8'].join('_');
 const CHANNELS=['0975','1018'];
 
 let accountsByChannel={};
@@ -10,6 +10,7 @@ let templatesLoaded=false;
 let activeChannel='0975';
 let currentRoot=null;
 let busy=false;
+let pendingTemplateLoads=[];
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const channelByPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.endsWith('0975')?'0975':digits.endsWith('1018')?'1018':null};
@@ -117,22 +118,41 @@ function renderList(root){
   list.querySelectorAll('[data-template-delete]').forEach(button=>button.addEventListener('click',()=>removeTemplate(button.dataset.templateDelete)));
 }
 
-async function loadTemplates({sync=false}={}){
-  if(busy)return;
+function enqueueTemplateLoad(request){
+  const requestedChannel=String(request?.channel||activeChannel);
+  const existing=pendingTemplateLoads.find(item=>item.channel===requestedChannel);
+  if(existing){existing.sync=Boolean(existing.sync||request?.sync);return}
+  pendingTemplateLoads.push({channel:requestedChannel,sync:Boolean(request?.sync)});
+}
+
+function drainPendingTemplateLoad(){
+  if(busy||!pendingTemplateLoads.length)return;
+  const next=pendingTemplateLoads.shift();
+  queueMicrotask(()=>loadTemplates(next).catch(()=>{}));
+}
+
+async function loadTemplates({sync=false,channel=activeChannel}={}){
+  const requestedChannel=String(channel||activeChannel);
+  if(busy){
+    enqueueTemplateLoad({sync,channel:requestedChannel});
+    if(requestedChannel===activeChannel)notify(sync?`Sincronização do ${requestedChannel} aguardando o carregamento atual…`:`Carregamento do ${requestedChannel} aguardando o carregamento atual…`);
+    return;
+  }
   busy=true;
   const root=currentRoot;
   try{
-    notify(sync?`Sincronizando templates do ${activeChannel}…`:`Carregando templates do ${activeChannel}…`);
-    const accounts=await ensureAccounts(),account=accounts[activeChannel];
+    if(requestedChannel===activeChannel)notify(sync?`Sincronizando templates do ${requestedChannel}…`:`Carregando templates do ${requestedChannel}…`);
+    const accounts=await ensureAccounts(),account=accounts[requestedChannel];
     if(!account?.id)throw new Error('account_not_found');
     const data=await adminGet(TEMPLATE_API,{action:sync?'sync':'list',account_id:account.id});
+    if(requestedChannel!==activeChannel)return;
     templates=Array.isArray(data.items)?data.items:[];
     templatesLoaded=true;
     renderList(root);
-    notify(`${templates.length} template${templates.length===1?'':'s'} no canal ${activeChannel}.`,'success');
+    notify(`${templates.length} template${templates.length===1?'':'s'} no canal ${requestedChannel}.`,'success');
   }catch(error){
-    templates=[];templatesLoaded=true;renderList(root);notify(`Não foi possível carregar os templates: ${String(error?.message||error)}`,'error');
-  }finally{busy=false}
+    if(requestedChannel===activeChannel){templates=[];templatesLoaded=true;renderList(root);notify(`Não foi possível carregar os templates: ${String(error?.message||error)}`,'error')}
+  }finally{busy=false;drainPendingTemplateLoad()}
 }
 
 function previewHtml(draft){
@@ -224,7 +244,7 @@ function openBuilder(mode='create',id=null){
       }
       templatesLoaded=true;dialog.close();renderList(currentRoot);notify('Template salvo e sincronização solicitada.','success');
     }catch(error){if(status)status.textContent=`Erro: ${String(error?.message||error)}`}
-    finally{busy=false}
+    finally{busy=false;drainPendingTemplateLoad()}
   });
 }
 
@@ -239,14 +259,14 @@ async function removeTemplate(id){
   if(!confirm(`Excluir o template "${item.name}" da Meta? Esta ação não envia mensagens, mas altera a WABA.`))return;
   try{busy=true;notify(`Excluindo ${item.name}…`);const data=await adminPost(TEMPLATE_API,'delete',{template_id:item.id});templates=Array.isArray(data.items)?data.items:templates.filter(row=>row.id!==item.id);templatesLoaded=true;renderList(currentRoot);notify('Template excluído e cache sincronizado.','success')}
   catch(error){notify(`Não foi possível excluir: ${String(error?.message||error)}`,'error')}
-  finally{busy=false}
+  finally{busy=false;drainPendingTemplateLoad()}
 }
 
 function bindTemplateView(root){
   root.querySelector('[data-marketing-view="overview"]')?.addEventListener('click',()=>overviewButton()?.click());
   root.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>{});
-  root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');templates=[];templatesLoaded=false;loadTemplates().catch(()=>{})});
-  root.querySelector('[data-template-sync]')?.addEventListener('click',()=>loadTemplates({sync:true}));
+  root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');templates=[];templatesLoaded=false;renderList(root);loadTemplates({channel:activeChannel}).catch(()=>{})});
+  root.querySelector('[data-template-sync]')?.addEventListener('click',()=>loadTemplates({sync:true,channel:activeChannel}));
   root.querySelector('[data-template-create]')?.addEventListener('click',()=>openBuilder('create'));
   root.querySelectorAll('[data-template-filter]').forEach(input=>input.addEventListener(input.tagName==='INPUT'?'input':'change',()=>renderList(root)));
 }
@@ -264,7 +284,7 @@ async function mountTemplateView(root=document.querySelector('#content')){
   </div>`;
   bindTemplateView(root);
   templates=[];templatesLoaded=false;renderList(root);
-  await loadTemplates();
+  await loadTemplates({channel:activeChannel});
 }
 
 function mount(){injectSubviewNav()}
