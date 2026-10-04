@@ -85,6 +85,8 @@ jobs:
       - {name: Admin composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-send.js'}
       - {name: Admin media composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-media-send.js'}
       - {name: Audio recorder JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-recorder.js'}
+      - {name: Audio WebCodecs adapter syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-webcodecs-adapter.js'}
+      - {name: Audio PCM worklet syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-pcm-worklet.js'}
       - {name: Human AI controls JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-human-ai.js'}
       - {name: Attendance templates JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-templates.js'}
       - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}
