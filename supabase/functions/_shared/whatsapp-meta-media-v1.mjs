@@ -12,6 +12,7 @@ const OUTBOUND_MEDIA_MIME=new Set([
   'video/mp4','video/3gpp',
   ...DOCUMENT_MIME
 ]);
+const M4A_BROWSER_MIME_ALIASES=new Set(['','audio/x-m4a','audio/m4a','application/octet-stream']);
 
 export class MetaMediaError extends Error{
   constructor(code,{status=0,retryable=false}={}){super(code);this.name='MetaMediaError';this.code=code;this.status=status;this.retryable=retryable}
@@ -53,6 +54,13 @@ function isIsoBmff(bytes){return bytes.byteLength>=12&&bytes[4]===0x66&&bytes[5]
 function hasOleHeader(bytes){return startsWithBytes(bytes,[0xd0,0xcf,0x11,0xe0,0xa1,0xb1,0x1a,0xe1])}
 function hasZipHeader(bytes){return startsWithBytes(bytes,[0x50,0x4b,0x03,0x04])||startsWithBytes(bytes,[0x50,0x4b,0x05,0x06])}
 
+export function canonicalOutboundMetaMime(value,filename=''){
+  const mime=normalizedMime(value);
+  if(OUTBOUND_MEDIA_MIME.has(mime))return mime;
+  const name=clean(filename,240).toLowerCase();
+  if(name.endsWith('.m4a')&&M4A_BROWSER_MIME_ALIASES.has(mime))return 'audio/mp4';
+  return '';
+}
 export function isAllowedOutboundMetaMime(value){return OUTBOUND_MEDIA_MIME.has(normalizedMime(value))}
 export function outboundMetaMaxBytes(value){return outboundMaxBytesForMime(normalizedMime(value))}
 
@@ -120,8 +128,9 @@ export async function fetchMetaMediaResponse({accessToken,url,fetchFn=fetch,time
 export async function uploadMetaMedia({accessToken,graphVersion,phoneNumberId,mimeType,filename,bytes,fetchFn=fetch,timeoutMs=20000}={}){
   const token=clean(accessToken,12000);if(!token)throw new MetaMediaError('meta_media_token_missing');
   const version=strictGraphVersion(graphVersion);const phoneId=strictPhoneNumberId(phoneNumberId);
-  const mime=normalizedMime(mimeType);if(!OUTBOUND_MEDIA_MIME.has(mime))throw new MetaMediaError('meta_media_type_not_allowed');
-  const safeName=strictFilename(filename);const bodyBytes=strictBytes(bytes,outboundMaxBytesForMime(mime));
+  const safeName=strictFilename(filename);
+  const mime=canonicalOutboundMetaMime(mimeType,safeName);if(!OUTBOUND_MEDIA_MIME.has(mime))throw new MetaMediaError('meta_media_type_not_allowed');
+  const bodyBytes=strictBytes(bytes,outboundMaxBytesForMime(mime));
   validateOutboundMetaMediaContent(mime,bodyBytes);
   const form=new FormData();
   form.set('messaging_product','whatsapp');
