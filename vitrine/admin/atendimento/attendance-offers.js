@@ -1,4 +1,3 @@
-import {attendanceAuthorizedFetch} from './attendance-auth.js?v=auth-refresh-v2';
 import {
   MAX_PRODUCT_BATCH,
   attendanceProductSelection,
@@ -10,7 +9,7 @@ import {
   retryFailedAttendanceProducts
 } from './attendance-product-send.js?v=product-media-v1';
 
-const OFFERS_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-attendance-offers-v1';
+const OFFERS_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2?action=offers';
 const CACHE_MS=30000;
 let cachedOffers=[];
 let cachedAt=0;
@@ -25,14 +24,28 @@ const selectedConversationId=()=>document.querySelector('.queue-card.selected')?
 const serviceWindowOpen=()=>document.querySelector('#serviceWindow')?.classList.contains('open')===true;
 const isOffersActive=()=>offersTab()?.classList.contains('active')===true;
 
+function normalizeOffer(item){
+  const id=String(item?.id||item?.product_id||'').trim();
+  if(!id)return null;
+  return {
+    id,
+    name:item?.name||'Produto',
+    gtin:item?.gtin||null,
+    image_url:item?.image_url||null,
+    sale_price:Number(item?.regular_price_cents??item?.price_cents??0)/100,
+    sellable_stock:Math.max(0,Number(item?.stock_quantity||0)),
+    offer:{active:true,price:Number(item.price_cents||0)/100}
+  };
+}
+
 async function fetchOffers({force=false}={}){
-  if(!force&&cachedOffers.length&&Date.now()-cachedAt<CACHE_MS)return cachedOffers;
+  if(!force&&cachedAt&&Date.now()-cachedAt<CACHE_MS)return cachedOffers;
   if(loadingPromise)return await loadingPromise;
   loadingPromise=(async()=>{
-    const response=await attendanceAuthorizedFetch(`${OFFERS_API}?limit=300`,{method:'GET',cache:'no-store'});
+    const response=await fetch(OFFERS_API,{method:'GET',cache:'no-store',credentials:'omit'});
     const data=await response.json().catch(()=>({}));
     if(!response.ok||data?.ok===false)throw new Error(data?.error||`offers_${response.status}`);
-    cachedOffers=Array.isArray(data.items)?data.items:[];
+    cachedOffers=(Array.isArray(data.offers)?data.offers:[]).map(normalizeOffer).filter(Boolean);
     cachedAt=Date.now();
     return cachedOffers;
   })();
