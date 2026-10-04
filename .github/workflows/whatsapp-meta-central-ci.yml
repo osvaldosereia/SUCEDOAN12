@@ -63,6 +63,7 @@ jobs:
       - {name: Marketing consent ledger contract, run: 'node scripts/test-whatsapp-marketing-consent-ledger-v1.mjs'}
       - {name: Marketing audience preview contract, run: 'node scripts/test-whatsapp-marketing-audience-preview-v1.mjs'}
       - {name: Admin marketing audiences contract, run: 'node scripts/test-admin-marketing-audiences-v1.mjs'}
+      - {name: Marketing audience UI contract, run: 'node scripts/test-whatsapp-marketing-audience-ui-v1.mjs'}
       - {name: Marketing intelligence legacy contract, run: 'python scripts/test-marketing-intelligence-contract.py'}
       - {name: Meta transport contract, run: 'node scripts/test-attendance-meta-send-v1.mjs'}
       - {name: Meta media contract, run: 'node scripts/test-attendance-meta-media-v1.mjs'}
@@ -108,4 +109,5 @@ jobs:
       - {name: Human AI controls JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-human-ai.js'}
       - {name: Attendance templates JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-templates.js'}
       - {name: Marketing template center syntax, run: 'node --check vitrine/admin/marketing/template-center.js'}
+      - {name: Marketing audience center syntax, run: 'node --check vitrine/admin/marketing/audience-center.js'}
       - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}
