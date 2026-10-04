@@ -34,12 +34,36 @@ jobs:
           git merge-file -p /tmp/admin-v3.html /tmp/admin-base.html /tmp/admin-main.html > vitrine/admin/index.html
           MERGE_STATUS=$?
           set -e
-          if grep -q '^<<<<<<<' vitrine/admin/index.html; then
-            echo 'Admin merge conflicts:'
-            grep -n -A30 -B10 '^<<<<<<<' vitrine/admin/index.html || true
-            exit 2
-          fi
-          if [ "$MERGE_STATUS" -gt 1 ]; then exit "$MERGE_STATUS"; fi
+
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('vitrine/admin/index.html')
+          s=p.read_text()
+          blocks=list(re.finditer(r'^<<<<<<<[^\n]*\n(.*?)^=======\n(.*?)^>>>>>>>[^\n]*\n?',s,re.M|re.S))
+          if blocks:
+              if len(blocks)!=1:
+                  raise SystemExit(f'unexpected admin conflict count: {len(blocks)}')
+              m=blocks[0]
+              left,right=m.group(1),m.group(2)
+              left_orders='/* Pedidos V3:' in left
+              right_orders='/* Pedidos V3:' in right
+              left_basket='/* basket-family-picker-ux-v1 */' in left
+              right_basket='/* basket-family-picker-ux-v1 */' in right
+              if not ((left_orders and right_basket) or (right_orders and left_basket)):
+                  raise SystemExit('unexpected admin conflict; refusing automatic resolution')
+              orders=left if left_orders else right
+              basket=left if left_basket else right
+              def strip_style(x):
+                  return re.sub(r'\s*</style>\s*$', '', x.rstrip())
+              resolved=strip_style(orders)+'\n\n'+strip_style(basket)+'\n  </style>\n'
+              s=s[:m.start()]+resolved+s[m.end():]
+              p.write_text(s)
+          if any(x in p.read_text() for x in ('<<<<<<<','=======','>>>>>>>')):
+              raise SystemExit('conflict markers remain')
+          PY
+
+          if [ "$MERGE_STATUS" -gt 1 ] && grep -q '^<<<<<<<' vitrine/admin/index.html; then exit "$MERGE_STATUS"; fi
       - name: Verify Orders V3 and recent main work
         run: |
           node scripts/test-admin-orders-clean-flow-v3.mjs
