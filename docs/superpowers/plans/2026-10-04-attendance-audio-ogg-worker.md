@@ -11,7 +11,6 @@
 **Spec:** `docs/superpowers/specs/2026-10-04-attendance-audio-ogg-worker-design.md`
 
 ## Global Constraints
-
 - Processamento de áudio 100% local antes do clique em **Enviar áudio**.
 - Não usar CDN/runtime externo para JS, Worker ou WASM.
 - Dependência `opus-media-recorder` fixada exatamente em `0.8.0`; não usar `latest`.
@@ -26,12 +25,11 @@
 - Não criar migration nem serviço novo no Supabase para esta feature.
 
 ## Review Focus
-
-- **Worker/WASM indisponível ou corrompido:** UI deve falhar explicitamente e manter envio desabilitado; cobrir na Task 2.
-- **Arquivo com MIME `audio/ogg` mas bytes inválidos:** não habilitar envio; cobrir `OggS`/`OpusHead` na Task 2.
-- **Troca de conversa durante gravação/finalização:** cancelar captura, worker, preview e arquivo pronto; cobrir na Task 3.
-- **Clique duplo em Enviar áudio:** continuar usando o idempotency key/pipeline existente, sem segundo envio; cobrir regressão na Task 3.
-- **Browser com OGG nativo:** não baixar/carregar vendor Worker/WASM desnecessariamente; cobrir na Task 2.
+- Worker/WASM indisponível ou corrompido: UI falha explicitamente e mantém envio desabilitado.
+- MIME `audio/ogg` com bytes inválidos: não habilitar envio sem `OggS` + `OpusHead`.
+- Troca de conversa durante gravação/finalização: cancelar stream, worker, preview e arquivo pronto.
+- Clique duplo em Enviar áudio: preservar idempotência e impedir segundo disparo do gravador.
+- Browser com OGG nativo: não carregar vendor Worker/WASM.
 
 ---
 
@@ -48,56 +46,13 @@
 
 **Interfaces:**
 - Produces: diretório vendor imutável por versão; `MANIFEST.json` com `version`, `files[path].sha256`, `files[path].bytes`.
-- Consumes: nenhum código de runtime da Central.
 
-- [ ] **Step 1: Escrever o teste RED do vendor**
-
-Criar `test-attendance-audio-vendor-v1.mjs` com asserts para:
-- versão exatamente `0.8.0`;
-- existência dos quatro artefatos necessários + licença;
-- nenhum URL `http://`, `https://`, `cdn.jsdelivr`, `unpkg` nos arquivos de configuração/runtime;
-- SHA-256 e tamanho de cada arquivo iguais ao manifesto;
-- WASM começa com magic bytes `00 61 73 6d`.
-
-- [ ] **Step 2: Rodar o teste e confirmar RED**
-
-Run: `node scripts/test-attendance-audio-vendor-v1.mjs`
-Expected: FAIL por artefatos/manifesto inexistentes.
-
-- [ ] **Step 3: Adicionar artefatos pinados do pacote `opus-media-recorder@0.8.0`**
-
-Usar somente:
-- `OpusMediaRecorder.umd.js`;
-- `encoderWorker.umd.js`;
-- `OggOpusEncoder.wasm`;
-- licença correspondente.
-
-Não incluir `WebMOpusEncoder.wasm`, porque esta implementação só produz OGG.
-
-- [ ] **Step 4: Gerar `MANIFEST.json` com hashes/tamanhos dos artefatos vendorizados**
-
-Formato:
-```json
-{
-  "package": "opus-media-recorder",
-  "version": "0.8.0",
-  "files": {
-    "OpusMediaRecorder.umd.js": {"sha256": "...", "bytes": 0}
-  }
-}
-```
-
-- [ ] **Step 5: Adicionar o teste do vendor ao `whatsapp-meta-central-ci.yml` e rodar GREEN**
-
-Run: `node scripts/test-attendance-audio-vendor-v1.mjs`
-Expected: `PASS test-attendance-audio-vendor-v1`.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add vitrine/admin/atendimento/vendor/opus-media-recorder/0.8.0 scripts/test-attendance-audio-vendor-v1.mjs .github/workflows/whatsapp-meta-central-ci.yml
-git commit -m "build(audio): vendorizar encoder OGG Opus pinado"
-```
+- [ ] Escrever teste RED exigindo versão `0.8.0`, artefatos, licença, hashes/tamanhos, ausência de CDN e magic WASM `00 61 73 6d`.
+- [ ] Rodar `node scripts/test-attendance-audio-vendor-v1.mjs`; esperado FAIL por artefatos ausentes.
+- [ ] Adicionar somente `OpusMediaRecorder.umd.js`, `encoderWorker.umd.js`, `OggOpusEncoder.wasm` e licença do pacote 0.8.0; não incluir WebM encoder.
+- [ ] Gerar `MANIFEST.json` com SHA-256 e bytes reais.
+- [ ] Adicionar teste ao `whatsapp-meta-central-ci.yml` e rodar GREEN.
+- [ ] Commit `build(audio): vendorizar encoder OGG Opus pinado`.
 
 ---
 
@@ -111,69 +66,16 @@ git commit -m "build(audio): vendorizar encoder OGG Opus pinado"
 **Interfaces:**
 - Produces: `window.AttendanceOggRecorder.resolve(stream, options?) -> Promise<{ recorder, encoder, mimeType, fileType, extension }>`.
 - Produces: `window.AttendanceOggRecorder.isValidOggOpus(blob) -> Promise<boolean>`.
-- Produces: `window.AttendanceOggRecorder.dispose()` para limpar loader/worker mantido pelo adapter quando aplicável.
-- Consumes: vendor da Task 1 e `MediaRecorder` nativo quando suportar `audio/ogg;codecs=opus`.
+- Produces: `window.AttendanceOggRecorder.dispose()`.
 
-- [ ] **Step 1: Escrever teste RED do adapter**
-
-Asserts mínimos:
-- `resolve()` escolhe nativo quando `MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') === true`;
-- caminho nativo não referencia/carrega `OpusMediaRecorder.umd.js`;
-- fallback worker usa `OpusMediaRecorder.umd.js`, `encoderWorker.umd.js` e `OggOpusEncoder.wasm` no diretório same-origin `vendor/opus-media-recorder/0.8.0/`;
-- `mimeType` final é `audio/ogg;codecs=opus`, `fileType='audio/ogg'`, `extension='ogg'`;
-- erro de carregamento do worker/wasm rejeita `resolve()` e não retorna MediaRecorder MP4;
-- `isValidOggOpus()` rejeita blob vazio e bytes sem `OggS`/`OpusHead`;
-- `isValidOggOpus()` aceita fixture sintética com `OggS` no offset 0 e `OpusHead` na janela inicial;
-- não há `fetch`/URL de CDN nem `graph.facebook.com`.
-
-- [ ] **Step 2: Rodar teste e confirmar RED**
-
-Run: `node scripts/test-attendance-audio-ogg-recorder-v1.mjs`
-Expected: FAIL porque `attendance-audio-ogg-recorder.js` não existe.
-
-- [ ] **Step 3: Implementar o loader lazy same-origin**
-
-No arquivo novo, definir as constantes exatas:
-- `VENDOR_BASE='./vendor/opus-media-recorder/0.8.0/'`;
-- script `OpusMediaRecorder.umd.js`;
-- worker `encoderWorker.umd.js`;
-- wasm `OggOpusEncoder.wasm`.
-
-O loader deve cachear uma única Promise para impedir downloads/instâncias duplicadas quando o operador clicar repetidamente.
-
-- [ ] **Step 4: Implementar `resolve(stream, {audioBitsPerSecond=64000}={})`**
-
-Regras:
-- caminho nativo: `new MediaRecorder(stream,{mimeType:'audio/ogg;codecs=opus',audioBitsPerSecond})`;
-- fallback: instanciar `OpusMediaRecorder` com `mimeType:'audio/ogg'` e `workerOptions` same-origin;
-- nunca selecionar `audio/mp4`, `audio/aac` ou `audio/webm` como saída do gravador novo.
-
-- [ ] **Step 5: Implementar `isValidOggOpus(blob)`**
-
-Ler apenas uma janela inicial limitada (máximo 64 KiB), exigir:
-- bytes 0..3 = ASCII `OggS`;
-- sequência ASCII `OpusHead` dentro da janela;
-- `blob.size > 0`.
-
-- [ ] **Step 6: Implementar `dispose()`**
-
-Limpar somente recursos internos do adapter. Não interromper streams externos que pertencem ao gravador chamador.
-
-- [ ] **Step 7: Rodar GREEN + sintaxe**
-
-Run:
-```bash
-node scripts/test-attendance-audio-ogg-recorder-v1.mjs
-node --check vitrine/admin/atendimento/attendance-audio-ogg-recorder.js
-```
-Expected: PASS / exit 0.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add vitrine/admin/atendimento/attendance-audio-ogg-recorder.js scripts/test-attendance-audio-ogg-recorder-v1.mjs .github/workflows/whatsapp-meta-central-ci.yml
-git commit -m "feat(audio): adicionar adapter OGG Opus local"
-```
+- [ ] Escrever RED cobrindo nativo OGG/Opus primeiro, fallback same-origin, ausência de MP4/AAC/WebM como saída, erro fail-closed e validação Ogg/Opus.
+- [ ] Rodar `node scripts/test-attendance-audio-ogg-recorder-v1.mjs`; esperado FAIL por módulo inexistente.
+- [ ] Implementar loader lazy com `VENDOR_BASE='./vendor/opus-media-recorder/0.8.0/'`, cacheando uma única Promise.
+- [ ] Implementar `resolve(stream,{audioBitsPerSecond=64000}={})`: nativo OGG/Opus ou `OpusMediaRecorder` com worker + Ogg WASM same-origin.
+- [ ] Implementar `isValidOggOpus(blob)`: `size>0`, `OggS` no início e `OpusHead` dentro dos primeiros 64 KiB.
+- [ ] Implementar `dispose()` sem encerrar stream externo.
+- [ ] Rodar teste + `node --check`; esperado PASS.
+- [ ] Commit `feat(audio): adicionar adapter OGG Opus local`.
 
 ---
 
@@ -187,79 +89,18 @@ git commit -m "feat(audio): adicionar adapter OGG Opus local"
 - Modify: `.github/workflows/whatsapp-meta-central-ci.yml`
 
 **Interfaces:**
-- Consumes: `window.AttendanceOggRecorder.resolve()`, `.isValidOggOpus()`, `.dispose()` da Task 2.
-- Produces: evento existente `attendance:recorded-audio-ready` com `detail.file` OGG válido e diagnósticos `recording_container='ogg'`, `recording_codec='opus'`, `recording_encoder='native'|'worker'`, `size_bytes`.
-- Preserva: evento `attendance:send-recorded-audio` e pipeline atual de `attendance-media-send.js`.
+- Consumes: `AttendanceOggRecorder.resolve/isValidOggOpus/dispose`.
+- Produces: `attendance:recorded-audio-ready` com `file` OGG e diagnósticos `recording_container='ogg'`, `recording_codec='opus'`, `recording_encoder='native'|'worker'`, `size_bytes`.
+- Preserva: `attendance:send-recorded-audio` e `attendance-media-send.js` como único owner de `send_media`/idempotência.
 
-- [ ] **Step 1: Escrever teste RED v2 do gravador**
-
-Cobrir:
-- `index.html` carrega `attendance-audio-ogg-recorder.js` antes de `attendance-audio-recorder.js`;
-- M4A/MP4 não aparece mais em `FORMAT_CANDIDATES` de gravação automática;
-- `startRecording()` resolve o recorder via `AttendanceOggRecorder.resolve(stream,{audioBitsPerSecond:64000})`;
-- após `stop`, UI entra em estado `finalizing` com texto **Preparando áudio OGG/Opus…**;
-- arquivo só fica ready após `isValidOggOpus(blob) === true`;
-- arquivo final tem extensão `.ogg` e MIME `audio/ogg`;
-- erro do encoder/validação mantém `Enviar áudio` desabilitado e oferece tentar novamente/Anexar;
-- evento `attendance:recorded-audio-ready` carrega encoder/container/codec/tamanho;
-- troca de conversa durante recording/finalizing limpa stream, preview e estado;
-- clique duplo em envio não cria nova chamada de transporte: o gravador apenas dispara o evento existente uma vez enquanto `recordedAudioReady` está true e passa a estado sending até `attendance:media-cleared`/erro do pipeline.
-
-- [ ] **Step 2: Rodar RED**
-
-Run: `node scripts/test-attendance-audio-recorder-v2.mjs`
-Expected: FAIL nas integrações ainda inexistentes.
-
-- [ ] **Step 3: Carregar adapter antes do gravador em `index.html`**
-
-Somente o adapter pequeno entra no carregamento normal; os assets pesados continuam lazy dentro do adapter.
-
-- [ ] **Step 4: Refatorar `attendance-audio-recorder.js` para usar o adapter**
-
-Remover seleção automática MP4/AAC. `startRecording()` deve:
-1. selecionar conversa;
-2. pedir microfone;
-3. resolver OGG recorder;
-4. gravar;
-5. finalizar;
-6. validar OGG/Opus;
-7. criar `File` `.ogg`;
-8. habilitar preview/envio.
-
-- [ ] **Step 5: Implementar estados UX**
-
-Estados/textos exatos:
-- requesting: `Solicitando acesso ao microfone…`;
-- recording: `Gravando… fale normalmente e toque em Parar quando terminar.`;
-- finalizing: `Preparando áudio OGG/Opus…`;
-- ready native: `Áudio pronto (OGG/Opus · nativo).`;
-- ready worker: `Áudio pronto (OGG/Opus · compatibilidade).`;
-- encoder error: `Não consegui preparar o áudio em OGG/Opus. Tente novamente ou use Anexar.`
-
-Manter `aria-live`, timer e preview existentes.
-
-- [ ] **Step 6: Preservar envio/idempotência existente**
-
-Não adicionar `fetch` Meta nem rota nova. `sendRecordedAudio()` continua disparando `attendance:send-recorded-audio`; `attendance-media-send.js` continua sendo o único owner do `send_media` e da idempotency key.
-
-- [ ] **Step 7: Rodar regressão completa local**
-
-Run:
-```bash
-node scripts/test-attendance-audio-recorder-v1.mjs
-node scripts/test-attendance-audio-recorder-v2.mjs
-node scripts/test-attendance-audio-ogg-recorder-v1.mjs
-node --check vitrine/admin/atendimento/attendance-audio-recorder.js
-node --check vitrine/admin/atendimento/attendance-audio-ogg-recorder.js
-```
-Expected: todos PASS / exit 0.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add vitrine/admin/atendimento/index.html vitrine/admin/atendimento/attendance-audio-recorder.js scripts/test-attendance-audio-recorder-v1.mjs scripts/test-attendance-audio-recorder-v2.mjs .github/workflows/whatsapp-meta-central-ci.yml
-git commit -m "feat(audio): gravar OGG Opus compatível no Atendimento"
-```
+- [ ] Escrever RED v2 para ordem dos scripts, remoção do fallback M4A, adapter, finalizing, validação OGG, erros, troca de conversa e clique duplo.
+- [ ] Rodar `node scripts/test-attendance-audio-recorder-v2.mjs`; esperado FAIL.
+- [ ] Carregar adapter antes do gravador; assets pesados continuam lazy.
+- [ ] Refatorar `startRecording()` para microfone → resolver OGG recorder → gravar → finalizar → validar → criar `.ogg` → preview.
+- [ ] Estados exatos: `Solicitando acesso ao microfone…`, `Gravando…`, `Preparando áudio OGG/Opus…`, `Áudio pronto (OGG/Opus · nativo|compatibilidade).`, erro explícito com tentar novamente/Anexar.
+- [ ] Preservar `aria-live`, timer, preview e pipeline atual.
+- [ ] Rodar v1 + v2 + adapter + `node --check`; esperado tudo PASS.
+- [ ] Commit `feat(audio): gravar OGG Opus compatível no Atendimento`.
 
 ---
 
@@ -271,104 +112,32 @@ git commit -m "feat(audio): gravar OGG Opus compatível no Atendimento"
 - Modify: `docs/RETOMADA-WHATSAPP-CENTRAL-PROPRIA.md`
 
 **Interfaces:**
-- Consumes: vendor/adapter/gravador das Tasks 1–3.
-- Produces: gates de CI que bloqueiam CDN, segredo, M4A automático, asset ausente e regressão de sintaxe.
+- Produces gates que bloqueiam CDN, segredo, M4A automático, asset ausente e regressão de sintaxe.
 
-- [ ] **Step 1: Escrever teste de segurança/rollback**
-
-Asserts:
-- vendor é same-origin e versão pinada;
-- nenhuma referência runtime a `@latest`, `cdn.jsdelivr`, `unpkg`, `graph.facebook.com` no gravador/adapter;
-- `attendance-audio-recorder.js` não cria `File(...m4a...)` nem escolhe `audio/mp4` como fallback;
-- adapter não contém `service_role`, `WHATSAPP_TOKEN`, `phone_number_id` ou segredo;
-- tamanho total dos três artefatos executáveis do vendor fica registrado no manifesto e dentro de um teto explícito documentado no teste (usar o tamanho real pinado + margem de 5%, não um número inventado antes de vendorizar);
-- `index.html` mantém Anexar/Biblioteca mesmo se encoder falhar.
-
-- [ ] **Step 2: Rodar RED/GREEN do guard**
-
-Run: `node scripts/test-attendance-audio-ogg-security-v1.mjs`
-Expected: PASS após os ajustes finais.
-
-- [ ] **Step 3: Rodar as duas suítes CI completas no PR**
-
-GitHub Actions obrigatórios:
-- `WhatsApp Meta Central CI` GREEN;
-- `attendance-papoai-send-ci` GREEN.
-
-Não marcar ready/mergear com check pendente, skipped por falha anterior, ou head diferente do revisado.
-
-- [ ] **Step 4: Revisar diff final**
-
-Esperado: somente Admin Atendimento, vendor pinado, testes/CI e docs. Zero migration, zero checkout/pedidos/estoque/Bling.
-
-- [ ] **Step 5: Atualizar checkpoint canônico**
-
-`docs/RETOMADA-WHATSAPP-CENTRAL-PROPRIA.md` deve registrar:
-- PR/SHA;
-- formato final OGG/Opus;
-- vendor 0.8.0 + hashes;
-- live OFF/canário ON;
-- histórico dos dois M4A failed preservado;
-- próximo passo = canário humano bilateral.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add .github/workflows/whatsapp-meta-central-ci.yml scripts/test-attendance-audio-ogg-security-v1.mjs docs/RETOMADA-WHATSAPP-CENTRAL-PROPRIA.md
-git commit -m "test(audio): endurecer gravador OGG Opus"
-```
+- [ ] Testar same-origin/version pin, ausência de `@latest`/CDN/Graph, ausência de fallback MP4 no gravador, ausência de segredos e teto de bundle baseado no tamanho real + 5%.
+- [ ] Confirmar Anexar/Biblioteca permanecem disponíveis se encoder falhar.
+- [ ] Rodar `node scripts/test-attendance-audio-ogg-security-v1.mjs`; esperado PASS.
+- [ ] Rodar os dois workflows completos: `WhatsApp Meta Central CI` e `attendance-papoai-send-ci` GREEN no mesmo HEAD.
+- [ ] Revisar diff: somente Atendimento/vendor/testes/CI/docs; zero migration, checkout, pedidos, estoque ou Bling.
+- [ ] Atualizar handoff com PR/SHA, formato OGG, hashes vendor, live OFF/canário ON e failures M4A históricos.
+- [ ] Commit `test(audio): endurecer gravador OGG Opus`.
 
 ---
 
 ### Task 5: Homologação bilateral Task 9B
 
-**Files:**
-- No product-code changes expected unless evidence exposes a defect.
-- Update: issue `#630` checkpoint.
-- Update: issue `#649` Task 9B evidence.
-- Update: `docs/RETOMADA-WHATSAPP-CENTRAL-PROPRIA.md` only if the gate closes.
+**Files:** checkpoints #630/#649 e handoff somente após evidência.
 
-**Interfaces:**
-- Consumes: Admin autenticado + runtime production after merged CI-green code.
-- Produces: evidência final de readiness, sem alterar gates automaticamente.
+- [ ] Confirmar baseline: live OFF, canário ON, allowlist recíproca 0975↔1018, fila limpa, áudio ainda não homologado.
+- [ ] Canário humano 0975→1018: Ctrl+F5, gravar 2–5 s, UI deve mostrar OGG/Opus, enviar uma vez.
+- [ ] Validar: outbound/audio/meta, MIME `audio/ogg`, WAMID, status final não failed, zero WAMID duplicado, fila limpa.
+- [ ] Repetir 1018→0975 com os mesmos requisitos.
+- [ ] Conferir readiness bilateral com áudio > 0 nos dois canais, sem duplicação/fila suja; live continua OFF.
+- [ ] Registrar WAMIDs/status/timestamps/dedupe/readiness em #630/#649 e handoff; só então fechar Task 9B.
 
-- [ ] **Step 1: Confirmar baseline antes do canário**
-
-Read-only Supabase:
-- `meta_media_live_enabled=false`;
-- `meta_media_canary_enabled=true`;
-- allowlist estrita recíproca 0975↔1018;
-- fila de mídia `queued/claimed/failed` limpa, desconsiderando failures históricos já encerrados;
-- readiness áudio ainda não homologada.
-
-- [ ] **Step 2: Canário humano 0975 → 1018**
-
-Operador:
-- Ctrl+F5;
-- gravar 2–5 s;
-- UI deve mostrar `OGG/Opus` antes de enviar;
-- enviar uma única vez.
-
-- [ ] **Step 3: Validar 0975 → 1018 no Supabase**
-
-Exigir no mesmo registro/evidência:
-- `direction='outbound'`;
-- `message_type='audio'`;
-- `provider='meta'`;
-- `metadata.media.mime_type='audio/ogg'`;
-- WAMID não nulo;
-- status canônico final não `failed`;
-- zero WAMID duplicado;
-- fila limpa.
-
-- [ ] **Step 4: Repetir 1018 → 0975**
-
-Mesmos requisitos do Step 3.
-
-- [ ] **Step 5: Conferir readiness server-side bilateral**
-
-Esperado: contagem válida de áudio > 0 nos dois canais, sem duplicação e sem fila suja. `meta_media_live_enabled` deve **continuar false**; readiness verde não implica graduação automática.
-
-- [ ] **Step 6: Registrar fechamento da 9B**
-
-Comentar #630/#649 com WAMIDs, status, timestamps, dedupe, fila e readiness; atualizar handoff. Somente então marcar Task 9B homologada e avançar a prioridade para Task 10/11.
+## Self-review result
+- Cobertura da especificação: completa; requisitos das seções 1–16 estão mapeados para Tasks 1–5.
+- Interfaces: `AttendanceOggRecorder` é definido na Task 2 e consumido com os mesmos nomes na Task 3.
+- Review Focus: os cinco riscos prioritários têm teste explícito nas Tasks 2–4.
+- Rollback: nenhum schema/backend novo; rollback remove adapter/vendor/referências e mantém Anexar/Biblioteca.
+- Dependência: `opus-media-recorder` 0.8.0 usa Worker + WASM e suporta `audio/ogg`; produção será same-origin e sem CDN.
