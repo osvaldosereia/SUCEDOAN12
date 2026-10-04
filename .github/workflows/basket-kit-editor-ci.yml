@@ -16,10 +16,12 @@ on:
       - 'supabase/sql/20261004_basket_lot_types_links_financials_v1.sql'
       - 'supabase/sql/20261004_basket_lot_reopen_and_model_admin_v1.sql'
       - 'supabase/sql/20261004_basket_lot_model_admin_rpc_permissions_v1.sql'
+      - 'supabase/sql/20261004_basket_link_draft_selection_v1.sql'
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/basket-carousel.js'
       - 'supabase/functions/storefront-v2/index.ts'
       - '.github/workflows/basket-kit-editor-ci.yml'
+      - 'scripts/apply-basket-lot-consistency-20261004.py'
   push:
     branches: [main]
     paths:
@@ -42,12 +44,29 @@ on:
       - 'supabase/functions/storefront-v2/index.ts'
       - '.github/workflows/basket-kit-editor-ci.yml'
 permissions:
-  contents: read
+  contents: write
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Apply consistency patch
+        run: |
+          python scripts/apply-basket-lot-consistency-20261004.py
+          git diff --check
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts
+            git commit -m "fix: alinhar contagem e seleção de lotes"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
