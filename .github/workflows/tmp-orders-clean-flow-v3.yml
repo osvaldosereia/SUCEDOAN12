@@ -1,0 +1,16 @@
+name: Temporary orders clean flow v3
+
+on:
+  push:
+    branches: [feat/orders-clean-flow-v3-20261004]
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Orders V3 contract
+        run: node scripts/test-admin-orders-clean-flow-v3.mjs
