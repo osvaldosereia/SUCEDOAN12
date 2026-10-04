@@ -49,6 +49,7 @@ jobs:
       - {name: Template PLpgSQL ambiguity regression, run: 'node scripts/test-attendance-meta-template-plpgsql-v1.mjs'}
       - {name: Meta templates contract, run: 'node scripts/test-whatsapp-meta-templates-v1.mjs'}
       - {name: Meta templates admin sync contract, run: 'node scripts/test-whatsapp-meta-template-admin-v1.mjs'}
+      - {name: Meta template mutation contract, run: 'node scripts/test-whatsapp-meta-template-mutations-v1.mjs'}
       - {name: Meta transport contract, run: 'node scripts/test-attendance-meta-send-v1.mjs'}
       - {name: Meta media contract, run: 'node scripts/test-attendance-meta-media-v1.mjs'}
       - {name: Meta media content signature contract, run: 'node scripts/test-attendance-meta-media-content-v1.mjs'}
