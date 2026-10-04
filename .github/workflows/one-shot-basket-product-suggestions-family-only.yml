@@ -1,0 +1,44 @@
+name: One-shot basket product suggestions family only
+
+on:
+  push:
+    branches:
+      - fix/product-suggestions-family-only-20261004
+    paths:
+      - scripts/apply-basket-product-suggestions-family-only-v1.py
+      - .github/workflows/one-shot-basket-product-suggestions-family-only.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/product-suggestions-family-only-20261004
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply focused patch
+        run: python scripts/apply-basket-product-suggestions-family-only-v1.py
+      - name: Contract test
+        run: node scripts/test-basket-family-picker-ux-v1.mjs
+      - name: Diff check
+        run: git diff --check
+      - name: Commit generated implementation
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts
+          git commit -m "fix: usar famílias como sugestões de produtos"
+          git push origin HEAD:fix/product-suggestions-family-only-20261004
