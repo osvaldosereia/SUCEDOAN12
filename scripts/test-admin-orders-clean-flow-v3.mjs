@@ -6,12 +6,18 @@ const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.t
 const publicView=fs.readFileSync('supabase/functions/order-public-view-v1/index.ts','utf8');
 const publicPage=fs.readFileSync('pedido/index.html','utf8');
 const migrationPath='supabase/migrations/20261004193000_orders_clean_flow_v3.sql';
+const localReadyMigrationPath='supabase/migrations/20261004231500_order_separation_local_ready_v3.sql';
+const orderCheckGateMigrationPath='supabase/migrations/20261004232000_order_check_gate_accept_separation_v3.sql';
 assert.equal(fs.existsSync(migrationPath),true,'Pedidos V3 precisa de migration canônica para snapshot/entrega');
+assert.equal(fs.existsSync(localReadyMigrationPath),true,'Separação V3 precisa garantir READY local antes do gate do Bling');
+assert.equal(fs.existsSync(orderCheckGateMigrationPath),true,'Gate de conferência precisa aceitar a separação V3 concluída');
 for(const legacyTest of [
   'scripts/test-admin-order-expedition-ui-hotfix.mjs',
   'scripts/test-admin-order-whatsapp-three-destinations-v1.mjs'
 ]) assert.equal(fs.existsSync(legacyTest),false,`Contrato legado de Pedidos não deve voltar: ${legacyTest}`);
 const migration=fs.readFileSync(migrationPath,'utf8');
+const localReadyMigration=fs.readFileSync(localReadyMigrationPath,'utf8');
+const orderCheckGateMigration=fs.readFileSync(orderCheckGateMigrationPath,'utf8');
 
 assert.ok(!admin.includes('/vitrine/admin/orders-unified-queue-v1.js'),'Pedidos V3 não pode depender de script que sobrepõe a UI canônica');
 for(const id of ['confirmReadyOrders','orderFilters','orderIssueFilters'])assert.ok(!admin.includes(`id="${id}"`),`Controle legado ${id} deve sair da tela`);
@@ -36,6 +42,13 @@ assert.match(admin,/data-separation-state="missing"/,'Separação precisa ter bo
 assert.match(admin,/CONCLUIR SEPARA[CÇ][AÃ]O/i);
 assert.doesNotMatch(admin,/window\.open\(`?\/?vitrine\/admin\/separacao/i,'Separação V3 não abre nova aba');
 
+assert.match(admin,/\.orders-separation-buttons button\{[^}]*border:1px solid #d6dfd9[^}]*color:#59625c/s,'Botões de separação devem começar neutros/apagados');
+assert.doesNotMatch(admin,/\.orders-separation-buttons \[data-separation-state="separated"\]\{border:1px solid #77b68e;color:#145b38\}/,'SEPARADO não pode aparecer verde antes do clique');
+assert.doesNotMatch(admin,/\.orders-separation-buttons \[data-separation-state="missing"\]\{border:1px solid #d8989f;color:#9d2235\}/,'FALTOU não pode aparecer vermelho antes do clique');
+assert.match(admin,/\.orders-separation-state-tag/,'Foto precisa receber etiqueta visual do estado escolhido');
+assert.match(admin,/✓\s*SEPARADO/,'Etiqueta verde deve indicar ✓ SEPARADO');
+assert.match(admin,/×\s*FALTOU/,'Etiqueta vermelha deve indicar × FALTOU');
+
 const completeStart=backend.indexOf('async function orderSeparationComplete');
 assert.ok(completeStart>=0,'Backend precisa manter conclusão canônica da separação');
 const completeEnd=backend.indexOf('\nasync function ',completeStart+20);
@@ -43,6 +56,17 @@ const completeBlock=backend.slice(completeStart,completeEnd>completeStart?comple
 assert.ok(!completeBlock.includes('status:"out_for_delivery"'),'Concluir separação não pode mover automaticamente para entrega');
 assert.match(completeBlock,/status:"ready"/,'Concluir separação deve terminar no marco interno ready/separado');
 assert.match(completeBlock,/ops2_refresh_order_public_snapshot_v1/,'Conclusão precisa atualizar a vitrine pública');
+assert.match(completeBlock,/target_key:"verified"/,'Conclusão precisa manter a sincronização Verificado no Bling');
+
+assert.match(localReadyMigration,/create or replace function public\.ops2_apply_order_separation_stock_v2/,'Migration precisa atualizar a operação canônica de estoque da separação');
+assert.match(localReadyMigration,/stock_applied[^]*status='ready'/,'Retomada idempotente precisa promover para READY sem reaplicar estoque');
+assert.match(localReadyMigration,/set status='ready',updated_at=v_now/,'Conclusão local precisa persistir READY');
+assert.match(localReadyMigration,/local_order_status/,'RPC precisa devolver o estado local efetivo para observabilidade');
+assert.match(orderCheckGateMigration,/create or replace function public\.ops_enforce_order_check_before_ready_v1/,'Gate canônico de READY precisa ser atualizado');
+assert.match(orderCheckGateMigration,/order_separation_completions_v1/,'Gate deve reconhecer conclusão V3 da separação');
+assert.match(orderCheckGateMigration,/stock_applied/,'Gate só pode aceitar separação cujo estoque foi aplicado');
+assert.match(orderCheckGateMigration,/state='pending'/,'Gate deve rejeitar separação que ainda tenha item pendente');
+assert.match(orderCheckGateMigration,/ops_order_check_sessions/,'Fluxo legado verificado continua compatível durante a transição');
 
 const deliveryStart=backend.indexOf('async function completeDeliveryV3');
 assert.ok(deliveryStart>=0,'Backend precisa manter conclusão V3 da entrega');
