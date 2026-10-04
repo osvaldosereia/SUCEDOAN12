@@ -1,6 +1,6 @@
+import {attendanceAuthorizedFetch,attendanceJsonApi} from './attendance-auth.js?v=auth-refresh-v2';
+
 const TEMPLATE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-templates-v1';
-const ATTENDANCE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ops-v1';
-const ADMIN_TOKEN_KEY='da_finance_access_token_v1';
 const ADMIN_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
 
 const $=selector=>document.querySelector(selector);
@@ -8,7 +8,6 @@ let accountsByChannel={};
 let syncing=false;
 let sendingTemplate=false;
 
-function adminToken(){return String(sessionStorage.getItem(ADMIN_TOKEN_KEY)||'').trim()}
 function activeChannel(){
   const selected=String($('.queue-card.selected[data-channel]')?.dataset?.channel||'').trim();
   if(/^(0975|1018)$/.test(selected))return selected;
@@ -19,15 +18,13 @@ function channelByPhone(phone){const digits=String(phone||'').replace(/\D/g,'');
 function selectedConversationId(){return String($('.queue-card.selected')?.dataset?.conversationId||'').trim()}
 
 async function adminGet(baseUrl,params={}){
-  const token=adminToken();if(!token)throw new Error('admin_session_required');
   const url=new URL(baseUrl);for(const [key,value] of Object.entries(params))if(value!==null&&value!==undefined&&value!=='')url.searchParams.set(key,String(value));
-  const response=await fetch(url,{method:'GET',headers:{Authorization:`Bearer ${token}`,apikey:ADMIN_PUBLIC_KEY},cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||`templates_${response.status}`);return data;
+  const response=await attendanceAuthorizedFetch(url,{method:'GET',headers:{apikey:ADMIN_PUBLIC_KEY},cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||`templates_${response.status}`);return data;
 }
 async function adminPost(baseUrl,action,body){
-  const token=adminToken();if(!token)throw new Error('admin_session_required');
-  const url=new URL(baseUrl);url.searchParams.set('action',action);const response=await fetch(url,{method:'POST',headers:{Authorization:`Bearer ${token}`,apikey:ADMIN_PUBLIC_KEY,'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||`templates_${response.status}`);return data;
+  const url=new URL(baseUrl);url.searchParams.set('action',action);const response=await attendanceAuthorizedFetch(url,{method:'POST',headers:{apikey:ADMIN_PUBLIC_KEY,'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||`templates_${response.status}`);return data;
 }
-async function ensureAccounts(){if(Object.keys(accountsByChannel).length===2)return accountsByChannel;const data=await adminGet(ATTENDANCE_API,{action:'accounts'}),next={};for(const account of data.items||[]){const channel=channelByPhone(account.phone_e164);if(channel)next[channel]=account}accountsByChannel=next;return next}
+async function ensureAccounts(){if(Object.keys(accountsByChannel).length===2)return accountsByChannel;const data=await attendanceJsonApi('accounts',{},'GET'),next={};for(const account of data.items||[]){const channel=channelByPhone(account.phone_e164);if(channel)next[channel]=account}accountsByChannel=next;return next}
 function bodyPreview(components){const body=(Array.isArray(components)?components:[]).find(item=>String(item?.type||'').toUpperCase()==='BODY');return String(body?.text||'').trim()}
 function setStatus(text,tone='neutral'){const node=$('#templatesStatus');if(!node)return;node.textContent=text;node.dataset.tone=tone}
 function setTemplateFormStatus(form,text,tone='neutral'){const node=form?.querySelector?.('[data-template-form-status]');if(!node)return;node.textContent=text;node.dataset.tone=tone}
@@ -36,7 +33,7 @@ function parameterLabels(item){const configured=Array.isArray(item?.attendance?.
 async function submitTemplate(form,item){
   if(sendingTemplate)return;const conversationId=selectedConversationId();if(!conversationId){setTemplateFormStatus(form,'Selecione uma conversa antes de enviar.','error');return}const inputs=[...form.querySelectorAll('[data-template-parameter]')],parameters=inputs.map(input=>String(input.value||'').trim());if(parameters.some(value=>!value)){setTemplateFormStatus(form,'Preencha todos os campos do template.','error');return}sendingTemplate=true;const button=form.querySelector('button[type="submit"]');if(button)button.disabled=true;setTemplateFormStatus(form,'Enviando template pela Meta…');
   try{const result=await adminPost(TEMPLATE_API,'send',{conversation_id:conversationId,template_id:item.id,parameters,idempotency_key:idempotencyKey()});setTemplateFormStatus(form,result?.status_current==='read'?'Template enviado e lido.':'Template enviado pela Meta.','success');setStatus(`Template ${item.name} enviado para a conversa selecionada.`,'success')}
-  catch(error){const code=String(error?.message||''),messages={meta_canary_destination_blocked:'Este destino não está liberado durante o canário.',template_not_sendable:'Este template não está liberado para atendimento.',template_parameter_count_mismatch:'A quantidade de campos não corresponde ao template.',meta_send_uncertain:'O resultado do envio ficou incerto. Não reenvie agora.',admin_session_required:'Sua sessão do Admin precisa ser renovada.'};setTemplateFormStatus(form,messages[code]||'Não foi possível enviar o template. Os dados foram mantidos para revisão.','error')}
+  catch(error){const code=String(error?.message||''),messages={meta_canary_destination_blocked:'Este destino não está liberado durante o canário.',template_not_sendable:'Este template não está liberado para atendimento.',template_parameter_count_mismatch:'A quantidade de campos não corresponde ao template.',meta_send_uncertain:'O resultado do envio ficou incerto. Não reenvie agora.',admin_session_required:'Sua sessão do Admin precisa ser renovada.',admin_auto_session_failed:'Sua sessão do Admin precisa ser renovada.'};setTemplateFormStatus(form,messages[code]||'Não foi possível enviar o template. Os dados foram mantidos para revisão.','error')}
   finally{sendingTemplate=false;if(button)button.disabled=false}
 }
 function openTemplateForm(card,item){card.querySelector('.template-send-form')?.remove();const labels=parameterLabels(item),form=document.createElement('form');form.className='template-send-form';const fields=document.createElement('div');fields.className='template-send-fields';labels.forEach((label,index)=>{const wrap=document.createElement('label');wrap.className='template-send-field';const caption=document.createElement('span');caption.textContent=label;const input=document.createElement('input');input.type='text';input.maxLength=1024;input.required=true;input.dataset.templateParameter=String(index+1);input.placeholder=`{{${index+1}}}`;wrap.append(caption,input);fields.append(wrap)});const actions=document.createElement('div');actions.className='template-send-actions';const status=document.createElement('small');status.dataset.templateFormStatus='1';status.textContent=labels.length?'Preencha os campos e confira antes de enviar.':'Template sem variáveis; confira antes de enviar.';const send=document.createElement('button');send.type='submit';send.className='secondary-btn';send.textContent='Enviar template';actions.append(status,send);form.append(fields,actions);form.addEventListener('submit',event=>{event.preventDefault();submitTemplate(form,item).catch(()=>{})});card.append(form);if(labels.length)form.querySelector('input')?.focus()}
@@ -44,7 +41,7 @@ function renderTemplates(items,channel){const list=$('#templatesList');if(!list)
 async function syncCurrentChannel(){
   if(syncing)return;const channel=activeChannel();if(!channel){setStatus('Selecione uma conversa ou o canal 0975/1018 para ver os templates.','error');return}syncing=true;const button=$('#templateSyncBtn');if(button)button.disabled=true;setStatus(`Sincronizando templates do ${channel}…`);
   try{const accounts=await ensureAccounts(),account=accounts[channel];if(!account?.id)throw new Error('account_not_found');const data=await adminGet(TEMPLATE_API,{action:'sync',account_id:account.id});renderTemplates(data.items||[],channel);const approved=(data.items||[]).filter(item=>String(item?.status||'').toUpperCase()==='APPROVED').length,sendable=(data.items||[]).filter(item=>item?.sendable===true).length;setStatus(`${approved} aprovado${approved===1?'':'s'}; ${sendable} liberado${sendable===1?'':'s'} para envio no canal ${channel}.`,'success')}
-  catch(error){const code=String(error?.message||''),message=code==='admin_session_required'?'Sua sessão do Admin precisa ser renovada.':'Não foi possível sincronizar os templates agora.';setStatus(message,'error');const list=$('#templatesList');if(list){list.replaceChildren();const empty=document.createElement('div');empty.className='context-empty';empty.textContent=message;list.append(empty)}}finally{syncing=false;if(button)button.disabled=false}
+  catch(error){const code=String(error?.message||''),message=['admin_session_required','admin_auto_session_failed'].includes(code)?'Sua sessão do Admin precisa ser renovada.':'Não foi possível sincronizar os templates agora.';setStatus(message,'error');const list=$('#templatesList');if(list){list.replaceChildren();const empty=document.createElement('div');empty.className='context-empty';empty.textContent=message;list.append(empty)}}finally{syncing=false;if(button)button.disabled=false}
 }
 function closeTemplates(){const menu=$('#templatesMenu');if(menu)menu.hidden=true}
 function toggleTemplates(){const menu=$('#templatesMenu');if(!menu)return;menu.hidden=!menu.hidden;if(!menu.hidden)syncCurrentChannel().catch(()=>{})}

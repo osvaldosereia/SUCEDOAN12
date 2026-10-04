@@ -30,7 +30,8 @@ assert.match(ui,/ops2_admin_attendance_takeover_v1/,'UI deve expor takeover expl
 assert.match(ui,/ops2_admin_attendance_resume_ai_v1/,'UI deve expor retorno explícito para IA');
 assert.match(ui,/Assumir atendimento/,'operador deve entender a ação de takeover');
 assert.match(ui,/Liberar para IA/,'operador deve entender a retomada da IA');
-assert.match(ui,/Authorization:`Bearer \$\{access\}`/,'RPC deve usar a sessão real do Admin');
+assert.match(ui,/attendanceAuthorizedFetch/,'RPC deve usar a sessão renovável compartilhada do Admin');
+assert.doesNotMatch(ui,/sessionStorage\.getItem|ADMIN_TOKEN_KEY/,'controle Humano × IA não deve gerenciar JWT diretamente');
 assert.doesNotMatch(ui,/graph\.facebook\.com/i,'controle de estado não pode falar diretamente com a Meta');
 assert.match(ui,/syncConversationHeaderMode/,'mudança Humano × IA deve atualizar também o subtítulo da conversa');
 assert.match(ui,/conversationHead[\s\S]*Atendimento humano[\s\S]*ANA atendendo/i,'subtítulo deve refletir imediatamente o modo atual');

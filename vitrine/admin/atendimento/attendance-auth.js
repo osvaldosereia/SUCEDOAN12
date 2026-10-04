@@ -2,6 +2,7 @@ const TOKEN_KEY='da_finance_access_token_v1';
 const AUTH_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1?exchange=1';
 const ATTENDANCE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ops-v1';
 const REFRESH_SKEW_SECONDS=90;
+const canonicalAuth=import.meta.url.includes('v=auth-refresh-v2')?null:import('./attendance-auth.js?v=auth-refresh-v2');
 
 let refreshPromise=null;
 
@@ -32,32 +33,40 @@ async function issueAdminToken(){
   return token;
 }
 export async function ensureAttendanceToken({forceRefresh=false}={}){
+  if(canonicalAuth)return await (await canonicalAuth).ensureAttendanceToken({forceRefresh});
   const existing=storedToken();
   if(!forceRefresh&&existing&&!tokenExpiresSoon(existing))return existing;
   if(refreshPromise)return await refreshPromise;
   refreshPromise=(async()=>{try{return await issueAdminToken()}finally{refreshPromise=null}})();
   return await refreshPromise;
 }
-function apiError(data,status){const error=new Error(data?.error||`attendance_${status}`);error.status=status;error.payload=data;return error}
-async function requestJson(action,params,method,forceRefresh=false){
+export async function attendanceAuthorizedFetch(input,options={}, {forceRefresh=false}={}){
+  if(canonicalAuth)return await (await canonicalAuth).attendanceAuthorizedFetch(input,options,{forceRefresh});
   const auth=await ensureAttendanceToken({forceRefresh});
+  const headers=new Headers(options?.headers||{});headers.set('Authorization',`Bearer ${auth}`);
+  const response=await fetch(input,{...options,headers,cache:options?.cache||'no-store'});
+  if(response.status===401&&!forceRefresh){
+    clearToken(auth);
+    return await attendanceAuthorizedFetch(input,options,{forceRefresh:true});
+  }
+  return response;
+}
+function apiError(data,status){const error=new Error(data?.error||`attendance_${status}`);error.status=status;error.payload=data;return error}
+async function requestJson(action,params,method){
   const url=new URL(ATTENDANCE_API);url.searchParams.set('action',action);
-  const options={method,headers:{Authorization:`Bearer ${auth}`},cache:'no-store'};
+  const options={method,headers:{},cache:'no-store'};
   if(method==='GET'){
     for(const [key,value] of Object.entries(params||{}))if(value!==null&&value!==undefined&&value!=='')url.searchParams.set(key,String(value));
   }else{
     options.headers['Content-Type']='application/json';
     options.body=JSON.stringify(params??{});
   }
-  const response=await fetch(url,options);
-  if(response.status===401&&!forceRefresh){
-    clearToken(auth);
-    return await requestJson(action,params,method,true);
-  }
+  const response=await attendanceAuthorizedFetch(url,options);
   const data=await response.json().catch(()=>({}));
   if(!response.ok||data?.ok===false)throw apiError(data,response.status);
   return data;
 }
 export async function attendanceJsonApi(action,params={},method='GET'){
-  return await requestJson(action,params,String(method||'GET').toUpperCase(),false);
+  if(canonicalAuth)return await (await canonicalAuth).attendanceJsonApi(action,params,method);
+  return await requestJson(action,params,String(method||'GET').toUpperCase());
 }

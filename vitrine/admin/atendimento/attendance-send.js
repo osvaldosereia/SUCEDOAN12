@@ -1,5 +1,5 @@
-const ADMIN_ATTENDANCE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ops-v1';
-const ADMIN_TOKEN_KEY='da_finance_access_token_v1';
+import {attendanceJsonApi} from './attendance-auth.js?v=auth-refresh-v2';
+
 const CAPABILITY_REFRESH_MS=15000;
 const $=selector=>document.querySelector(selector);
 
@@ -9,18 +9,7 @@ let sending=false;
 let capabilityTimer=null;
 let refreshDebounce=null;
 
-function adminToken(){return String(sessionStorage.getItem(ADMIN_TOKEN_KEY)||'').trim()}
-async function api(action,params={},method='GET'){
-  const token=adminToken();
-  if(!token)throw new Error('admin_session_required');
-  const url=new URL(ADMIN_ATTENDANCE_API);url.searchParams.set('action',action);
-  if(method==='GET')for(const [key,value] of Object.entries(params))if(value!==null&&value!==undefined&&value!=='')url.searchParams.set(key,String(value));
-  const options={method,headers:{Authorization:`Bearer ${token}`}};
-  if(method!=='GET'){options.headers['Content-Type']='application/json';options.body=JSON.stringify(params)}
-  const response=await fetch(url,options);const data=await response.json().catch(()=>({}));
-  if(!response.ok||data?.ok===false){const error=new Error(data?.error||`attendance_${response.status}`);error.data=data;throw error}
-  return data;
-}
+async function api(action,params={},method='GET'){return await attendanceJsonApi(action,params,method)}
 
 function activeChannel(){
   const selected=String($('.queue-card.selected[data-channel]')?.dataset?.channel||'').trim();
