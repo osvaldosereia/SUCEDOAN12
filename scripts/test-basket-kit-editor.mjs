@@ -10,13 +10,15 @@ try {
  const page=await browser.newPage();
  await page.setContent('<main id="content"></main><dialog id="editor"><h2 id="editorTitle"></h2><div id="editorBody"></div><div id="editorActions"></div></dialog>');
  await page.addStyleTag({content:html.match(/<style[^>]*>([\s\S]*?)<\/style>/)[1]});
- await page.addScriptTag({content:`const $=s=>document.querySelector(s);const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');const fmtQty=v=>String(v);const dateTime=v=>String(v);const toast=()=>{};const requireOperator=()=> 'Teste';const renderBaskets=()=>{};const toggleBasketLotSale=()=>{};let api=async(action,params,options)=>{window.calls.push({action,params,body:options?JSON.parse(options.body):null});return action==='basket_kit_lot_draft_save'?{draft:{lot_id:'saved',short_code:'EB1'}}:action==='basket_kit_admin'?window.fixture:{products:[],suggestions:[]}};window.calls=[];const state={basketKitDetail:null};window.fixture={kit:{id:'kit',code_prefix:'EB',kind:'food',basket:{name:'Econômica',base_price:79.9}},ready_quantity:0,next_short_code:'EB1',lots:[],items:[{id:'item',product_id:'rice',quantity:1,loose_stock:20,product:{name:'Arroz 5kg',sku:'P1',price:20},suggestions:[{id:'jelly',name:'Geleia',loose_stock:10}]}]};state.basketKitDetail=window.fixture;${code};paintBasketKitAdmin();`});
+ await page.addScriptTag({content:`const $=s=>document.querySelector(s);const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');const fmtQty=v=>String(v);const dateTime=v=>String(v);const cents=v=>Math.round(Number(v||0)*100);const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0)/100);const toast=()=>{};const requireOperator=()=> 'Teste';const renderBaskets=()=>{};const toggleBasketLotSale=()=>{};let api=async(action,params,options)=>{window.calls.push({action,params,body:options?JSON.parse(options.body):null});return action==='basket_kit_lot_draft_save'?{draft:{lot_id:'saved',short_code:'EB1'}}:action==='basket_kit_admin'?window.fixture:{products:[],suggestions:[]}};window.calls=[];const state={basketKitDetail:null};window.fixture={kit:{id:'kit',code_prefix:'EB',kind:'food',basket:{name:'Econômica',base_price:79.9}},ready_quantity:0,next_short_code:'EB1',lots:[],items:[{id:'item',product_id:'rice',quantity:1,loose_stock:20,product:{name:'Arroz 5kg',sku:'P1',price:20,cost:15},suggestions:[{id:'jelly',name:'Geleia',loose_stock:10}]}],hygiene_lots:[]};state.basketKitDetail=window.fixture;${code};paintBasketKitAdmin();`});
  await page.click('#newKitLot');
  await page.waitForFunction(()=>document.querySelector('#basketKitLotComposer strong')?.getBoundingClientRect().width>0);
  assert.equal(await page.locator('#content').getByText('Arroz 5kg',{exact:true}).filter({visible:true}).count(),1,'a criação deve mostrar somente uma composição');
  assert.equal(await page.locator('[data-kit-suggest]').count(),0,'alternativas devem aparecer apenas em Trocar');
  assert.equal(await page.locator('#kitLotPublicName').inputValue(),'Econômica','nome público começa com o nome atual da cesta');
  assert.equal(await page.locator('#kitLotSalePrice').inputValue(),'79.90','preço começa com o valor comercial atual');
+ assert.equal(await page.locator('#kitLotCostSum').textContent(),'R$ 15,00','resumo interno deve mostrar custo do kit');
+ assert.equal(await page.locator('#kitLotRetailSum').textContent(),'R$ 20,00','resumo interno deve mostrar soma de venda do kit');
  await page.locator('#kitLotPublicName').fill('Cesta Econômica Outubro');
  await page.locator('#kitLotSalePrice').fill('89.90');
  await page.locator('#kitLotQty').fill('15');
@@ -40,7 +42,7 @@ try {
  await page.click('#activateKitLotDraft');
  await page.waitForFunction(()=>window.calls.some(c=>c.action==='basket_kit_lot_draft_activate'));
  assert.equal(await page.evaluate(()=>window.calls.some(c=>c.action==='basket_lot_sale_toggle')),false,'montagem não pode ativar venda');
- await page.evaluate(()=>{state.basketKitDetail={...window.fixture,lots:[{id:'source',status:'ready',short_code:'EB2',quantity_built:12,public_name:'Cesta Econômica Lote 2',sale_price_override:92.5,items:[{product_id:'beans',quantity_per_kit:2,loose_stock:30,product:{name:'Feijão 1kg'}}]}]};startBasketKitLotDraft('source');});
+ await page.evaluate(()=>{state.basketKitDetail={...window.fixture,lots:[{id:'source',status:'ready',short_code:'EB2',quantity_built:12,public_name:'Cesta Econômica Lote 2',sale_price_override:92.5,items:[{product_id:'beans',quantity_per_kit:2,loose_stock:30,product:{name:'Feijão 1kg',price:9,cost:6}}]}]};startBasketKitLotDraft('source');});
  assert.equal(await page.locator('#kitLotQty').inputValue(),'12');
  assert.equal(await page.locator('#kitLotPublicName').inputValue(),'Cesta Econômica Lote 2','duplicar herda o nome público como ponto de partida');
  assert.equal(await page.locator('#kitLotSalePrice').inputValue(),'92.50','duplicar herda o preço do lote como ponto de partida');
@@ -68,7 +70,7 @@ try {
  await page.click('[data-kit-other="1"]');
  await page.locator('#kitProductSearch').fill('arroz');
  await page.waitForFunction(()=>window.pending.length===2);
- await page.evaluate(()=>window.pending[1].resolve({products:[{id:'new-rice',name:'Arroz novo',loose_stock:20}]}));
+ await page.evaluate(()=>window.pending[1].resolve({products:[{id:'new-rice',name:'Arroz novo',loose_stock:20,price:22,cost:16}]}));
  await page.waitForSelector('[data-kit-pick="new-rice"]');
  await page.evaluate(()=>window.pending[0].reject(new Error('old request')));
  await page.waitForTimeout(50);
