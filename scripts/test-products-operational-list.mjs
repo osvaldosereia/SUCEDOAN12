@@ -6,6 +6,7 @@ const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts',
 const checks=[
   ['carrega 5 produtos por vez',html.includes('const limit=5;')],
   ['botao explicito ver mais 5',html.includes('Ver mais 5')],
+  ['cabecalho operacional',html.includes('<span>Venda / custo</span><span>Estoque / validade</span><span>Status / kits</span><span>Ações</span>')],
   ['edicao rapida preco venda',html.includes('data-mobile-product-field="price"')],
   ['edicao rapida preco custo',html.includes('data-mobile-product-field="cost"')],
   ['edicao rapida estoque',html.includes('data-mobile-product-field="stock"')],
