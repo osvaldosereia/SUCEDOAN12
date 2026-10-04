@@ -18,11 +18,6 @@ verify_jwt = false
 [functions.admin-whatsapp-ops-v1]
 verify_jwt = false
 
-# Leitura autenticada das ofertas para a lateral direita do Atendimento.
-# O próprio handler valida o Bearer e a associação ativa em admin_users.
-[functions.admin-attendance-offers-v1]
-verify_jwt = false
-
 [functions.whatsapp-order-outbound-v1]
 verify_jwt = true
 [functions.papoai-order-signals-v1]
