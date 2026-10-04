@@ -23,6 +23,7 @@ assert.match(html,/attendance-library\.js/,'módulo da Biblioteca deve estar car
 assert.match(css,/\.attendance-library-overlay\s*\{/,'deve existir overlay da Biblioteca');
 assert.match(css,/\.attendance-library-drawer\s*\{[^}]*position\s*:\s*fixed[^}]*right\s*:\s*0/is,'drawer desktop deve abrir pela lateral direita');
 assert.match(css,/\.library-footer\s*\{[^}]*position\s*:\s*sticky/is,'footer de seleção/envio deve permanecer visível');
+assert.match(css,/#libraryStatus\[hidden\]:not\(:empty\)\s*\{[^}]*display\s*:\s*block\s*!important/is,'status aria-live deve ficar visível quando tiver conteúdo');
 assert.match(css,/@media\s*\(max-width\s*:\s*720px\)[\s\S]*\.attendance-library-drawer\s*\{[^}]*width\s*:\s*(?:100%|min\(100%)/i,'mobile deve usar drawer quase/tela inteira');
 
 assert.ok(fs.existsSync(jsPath),'deve existir attendance-library.js');
@@ -40,7 +41,6 @@ assert.match(js,/erro/i,'UI de upload deve expor erro por arquivo');
 assert.match(js,/library_update/,'deve permitir editar metadados');
 assert.match(js,/library_deactivate/,'deve permitir remover logicamente');
 assert.match(js,/library_preview/,'cards devem resolver preview assinado');
-assert.match(js,/node\.hidden\s*=\s*false/,'status aria-live deve ficar visível quando atualizado');
 assert.doesNotMatch(js,/SERVICE_ROLE|SUPABASE_SERVICE_ROLE|service_role/i,'frontend não pode conter service role');
 
 console.log('PASS test-admin-attendance-library-ui-v1');
