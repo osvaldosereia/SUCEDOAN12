@@ -59,7 +59,7 @@
 ### Task 2: Adapter OGG/Opus nativo + Worker/WASM
 
 **Files:**
-- Create: `vitrine/admin/atendimento/attendance-audio-ogg-recorder.js`
+- Create: `vitrine/admin/atendimento/attendance-audio-ogg-worker-adapter.js`
 - Create: `scripts/test-attendance-audio-ogg-recorder-v1.mjs`
 - Modify: `.github/workflows/whatsapp-meta-central-ci.yml`
 
@@ -95,7 +95,7 @@
 
 - [ ] Escrever RED v2 para ordem dos scripts, remoção do fallback M4A, adapter, finalizing, validação OGG, erros, troca de conversa e clique duplo.
 - [ ] Rodar `node scripts/test-attendance-audio-recorder-v2.mjs`; esperado FAIL.
-- [ ] Carregar adapter antes do gravador; assets pesados continuam lazy.
+- [ ] Carregar `attendance-audio-ogg-worker-adapter.js` antes do gravador; assets pesados continuam lazy.
 - [ ] Refatorar `startRecording()` para microfone → resolver OGG recorder → gravar → finalizar → validar → criar `.ogg` → preview.
 - [ ] Estados exatos: `Solicitando acesso ao microfone…`, `Gravando…`, `Preparando áudio OGG/Opus…`, `Áudio pronto (OGG/Opus · nativo|compatibilidade).`, erro explícito com tentar novamente/Anexar.
 - [ ] Preservar `aria-live`, timer, preview e pipeline atual.
