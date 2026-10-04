@@ -2,8 +2,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const html=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
-const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
+const baseCss=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
+const libraryCssPath='vitrine/admin/atendimento/attendance-library.css';
 const jsPath='vitrine/admin/atendimento/attendance-library.js';
+assert.ok(fs.existsSync(libraryCssPath),'deve existir CSS isolado da Biblioteca');
+const css=`${baseCss}\n${fs.readFileSync(libraryCssPath,'utf8')}`;
 
 for(const id of [
   'libraryBtn','attendanceLibraryOverlay','attendanceLibraryDrawer','libraryCloseBtn','librarySearch',
@@ -14,8 +17,8 @@ for(const kind of ['all','image','video','audio','document']){
   assert.match(html,new RegExp(`data-library-kind=["']${kind}["']`),`deve existir filtro ${kind}`);
 }
 assert.match(html,/id=["']libraryFileInput["'][^>]*\bmultiple\b|\bmultiple\b[^>]*id=["']libraryFileInput["']/s,'input de upload deve aceitar múltiplos arquivos');
+assert.match(html,/attendance-library\.css/,'CSS da Biblioteca deve estar carregado de forma isolada');
 assert.match(html,/attendance-library\.js/,'módulo da Biblioteca deve estar carregado');
-assert.match(html,/attendance-library-image\.js|attendance-library\.js/,'otimizador deve estar acessível ao módulo da Biblioteca');
 
 assert.match(css,/\.attendance-library-overlay\s*\{/,'deve existir overlay da Biblioteca');
 assert.match(css,/\.attendance-library-drawer\s*\{[^}]*position\s*:\s*fixed[^}]*right\s*:\s*0/is,'drawer desktop deve abrir pela lateral direita');
@@ -37,6 +40,7 @@ assert.match(js,/erro/i,'UI de upload deve expor erro por arquivo');
 assert.match(js,/library_update/,'deve permitir editar metadados');
 assert.match(js,/library_deactivate/,'deve permitir remover logicamente');
 assert.match(js,/library_preview/,'cards devem resolver preview assinado');
+assert.match(js,/node\.hidden\s*=\s*false/,'status aria-live deve ficar visível quando atualizado');
 assert.doesNotMatch(js,/SERVICE_ROLE|SUPABASE_SERVICE_ROLE|service_role/i,'frontend não pode conter service role');
 
 console.log('PASS test-admin-attendance-library-ui-v1');
