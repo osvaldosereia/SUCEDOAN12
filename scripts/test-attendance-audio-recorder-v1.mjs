@@ -38,7 +38,8 @@ assert.match(media,/attendance:media-cleared/,'limpeza do anexo deve sincronizar
 assert.match(media,/audio\/x-m4a/,'arquivo M4A baixado deve aceitar MIME audio/x-m4a do navegador');
 assert.match(media,/audio\/m4a/,'arquivo M4A baixado deve aceitar MIME audio/m4a do navegador');
 assert.match(media,/\.m4a/i,'arquivo .m4a sem MIME confiável deve ser reconhecido e normalizado com segurança no servidor');
-assert.match(media,/new File\(\[file\],file\.name,\{type:canonicalFileMime\(file\)/,'M4A com MIME alias deve ser reenvelopado com MIME canônico antes do FormData');
+assert.match(media,/function fileForUpload\(file\)[\s\S]*canonicalFileMime\(file\)[\s\S]*new File\(\[file\],file\.name,\{type:canonical/,'M4A com MIME alias deve ser reenvelopado com MIME canônico antes do FormData');
+assert.match(media,/uploadFile=fileForUpload\(file\)/,'envio deve construir arquivo de upload canônico');
 assert.match(media,/form\.set\('file',uploadFile,uploadFile\.name\)/,'FormData deve receber o arquivo canônico, não o MIME alias original');
 assert.doesNotMatch(recorder,/graph\.facebook\.com/,'gravador nunca deve chamar Graph diretamente');
 
