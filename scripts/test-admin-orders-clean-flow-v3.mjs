@@ -40,6 +40,8 @@ assert.match(migration,/missing_subtotal/,'Snapshot público precisa transportar
 assert.match(migration,/original_total/,'Snapshot público precisa transportar total original');
 assert.match(migration,/final_total/,'Snapshot público precisa transportar total final');
 assert.match(migration,/ops3_complete_delivery_v1/,'Entrega+pagamento deve ser uma operação canônica única');
+assert.match(migration,/ops3_reopen_order_v1/,'Reabertura precisa ser uma operação protegida no banco');
+assert.match(migration,/release_vitrine_order_stock_v1/,'Reabertura precisa liberar a reserva antes de voltar a editar');
 assert.match(migration,/status='delivered'/,'Operação de entrega deve concluir delivered');
 
 assert.match(publicPage,/FALTOU/,'Vitrine pública precisa exibir item faltante');
@@ -55,6 +57,7 @@ assert.ok(detailStart>=0,'Pedido aberto precisa continuar no Admin canônico');
 const detailEnd=admin.indexOf('\n  function ',detailStart+30);
 const detailBlock=admin.slice(detailStart,detailEnd>detailStart?detailEnd:admin.length);
 assert.match(detailBlock,/VITRINE CLIENTE/i,'Vitrine Cliente deve ficar dentro do pedido aberto');
+assert.match(detailBlock,/REABRIR PEDIDO/i,'Pedido confirmado ainda não separado deve poder ser reaberto com segurança');
 assert.ok(!detailBlock.includes('Diagnóstico da integração'),'Pedido aberto não deve expor diagnóstico ERP/Bling no fluxo normal');
 assert.ok(!detailBlock.includes('Antes de separar, revise o Bling'),'Bling não deve bloquear separação na UI V3');
 assert.match(detailBlock,/o\.status===['"]delivered['"]/,'Fiscal só deve aparecer/ser operado depois de entregue');
@@ -64,5 +67,6 @@ assert.match(admin,/Forma recebida/,'Entrega deve permitir registrar forma receb
 assert.match(admin,/Valor recebido/,'Entrega deve confirmar o valor recebido');
 assert.match(admin,/CONFIRMAR ENTREGA/,'Entrega e pagamento devem ser confirmados numa única ação');
 assert.match(backend,/order_delivery_complete_v3/,'Admin backend precisa expor a entrega+pagamento V3');
+assert.match(backend,/order_reopen_v3/,'Admin backend precisa expor a reabertura segura V3');
 
 console.log('orders clean flow v3 contract: ok');
