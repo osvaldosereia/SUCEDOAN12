@@ -1,0 +1,23 @@
+name: One-shot basket financials categories
+on:
+  push:
+    branches: [feat/basket-financials-categories-20261004]
+    paths:
+      - 'scripts/patch-basket-financials-categories.py'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/basket-financials-categories-20261004
+      - run: python scripts/patch-basket-financials-categories.py
+      - run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add vitrine/admin/index.html vitrine/basket-carousel.js vitrine/index.html index.html supabase/functions/admin-products-live-v1/index.ts supabase/functions/storefront-v2/index.ts supabase/sql/20261004_basket_categories_and_financials_v1.sql
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: financeiros internos e categorias de cestas"
+          git push
