@@ -13,6 +13,7 @@ on:
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
       - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
       - 'supabase/functions/_shared/admin-attendance-library-v1.mjs'
+      - 'supabase/functions/_shared/admin-attendance-library-send-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-media-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'supabase/migrations/**'
@@ -44,9 +45,11 @@ jobs:
       - run: node scripts/test-admin-attendance-library-schema-v1.mjs
       - run: node scripts/test-admin-attendance-library-send-v1.mjs
       - run: node scripts/test-admin-attendance-library-api-v1.mjs
+      - run: node scripts/test-admin-attendance-library-delivery-v1.mjs
       - run: node scripts/test-attendance-meta-media-v1.mjs
       - run: node scripts/test-attendance-meta-media-retry-v1.mjs
       - run: node --check supabase/functions/_shared/admin-attendance-library-v1.mjs
+      - run: node --check supabase/functions/_shared/admin-attendance-library-send-v1.mjs
       - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
       - run: node --check vitrine/admin/atendimento/attendance-media-send.js
