@@ -3,7 +3,7 @@
 **Data:** 2026-10-04  
 **Projeto:** Dona Antônia — Central de Atendimento WhatsApp própria  
 **Escopo:** Task 9B — áudio outbound pelo Admin  
-**Estado:** desenho conversacional aprovado; especificação escrita aguardando revisão humana antes do plano de implementação
+**Estado:** especificação aprovada pelo usuário; plano em `docs/superpowers/plans/2026-10-04-attendance-audio-ogg-worker.md`
 
 ## 1. Contexto e evidência
 
