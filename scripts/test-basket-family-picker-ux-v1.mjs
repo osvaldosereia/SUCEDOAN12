@@ -3,6 +3,7 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 
 // Produto -> família -> todos os membros autorizados são sugestões de troca.
 assert.ok(admin.includes('function basketConfiguredFamilyForProduct('),'picker deve expor helper de família configurada');
@@ -30,6 +31,18 @@ assert.ok(admin.includes('data-basket-auto-family-pick'),'cards configurados dev
 assert.ok(admin.includes('loose_stock'),'cards de sugestão devem exibir estoque solto');
 assert.ok(admin.includes('packaging'),'cards de sugestão devem manter embalagem quando disponível');
 assert.ok(admin.includes('Sem estoque'),'sugestão sem estoque deve ficar claramente sinalizada');
+
+// A troca de produto do lote deve retornar a família inteira: sem limite de preço, embalagem, estoque ou top 7.
+const apiStart=edge.indexOf('async function basketKitProductSuggestions(u:URL)');
+const apiEnd=edge.indexOf('\nfunction ',apiStart+20);
+assert.ok(apiStart>0&&apiEnd>apiStart,'endpoint de sugestões do lote deve existir');
+const apiFn=edge.slice(apiStart,apiEnd);
+assert.ok(apiFn.includes('basket_lot_substitution_products'),'endpoint deve usar o cadastro explícito da família');
+assert.ok(!apiFn.includes('basket_lot_automation_settings'),'endpoint não pode depender da configuração da automação antiga');
+assert.ok(!apiFn.includes('price_variation_pct'),'preço não pode limitar membros da família');
+assert.ok(!apiFn.includes('basketKitPackageCompatible'),'embalagem não pode ocultar membro autorizado da família');
+assert.ok(!apiFn.includes('slice(0,7)'),'família não pode ser truncada para sete sugestões');
+assert.ok(apiFn.includes('loose_stock'),'endpoint deve devolver estoque de cada sugestão');
 
 // A aba deve ser somente o catálogo de sugestões por família, sem gerador/fila automática.
 assert.ok(admin.includes('id="basketProductSuggestions"'),'Cestas deve expor botão Sugestões de produtos');
