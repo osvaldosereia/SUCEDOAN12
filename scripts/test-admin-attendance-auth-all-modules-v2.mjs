@@ -20,17 +20,16 @@ assert.match(auth,/ensureAttendanceToken/,'fetch autenticado deve usar renovaç�
 assert.match(auth,/response\.status\s*===\s*401/,'fetch autenticado deve recuperar uma vez após 401');
 assert.match(auth,/forceRefresh\s*:\s*true/,'recuperação 401 deve forçar token novo');
 
-assert.match(files.send,/from\s+['"]\.\/attendance-auth\.js['"]/,'envio de texto deve importar auth compartilhado');
+for(const [name,source] of Object.entries(files)){
+  assert.match(source,/from\s+['"]\.\/attendance-auth\.js\?v=auth-refresh-v2['"]/i,`${name} deve importar a versão atual do auth compartilhado`);
+  assert.doesNotMatch(source,/sessionStorage\.getItem\([^)]*da_finance_access_token_v1|ADMIN_TOKEN_KEY\s*=|function\s+(?:adminToken|token)\s*\(\)\s*\{[^}]*sessionStorage/s,`${name} não deve gerenciar JWT por conta própria`);
+}
 assert.match(files.send,/attendanceJsonApi/,'envio de texto deve usar API JSON compartilhada');
 assert.match(files.media,/attendanceAuthorizedFetch/,'mídia multipart deve usar fetch autenticado compartilhado');
 assert.match(files.templates,/attendanceAuthorizedFetch/,'templates devem usar fetch autenticado compartilhado');
 assert.match(files.humanAi,/attendanceAuthorizedFetch/,'Humano×IA deve usar fetch autenticado compartilhado para RPC direto');
 assert.match(files.humanAi,/attendanceJsonApi/,'Humano×IA deve usar API compartilhada para leitura da conversa');
 assert.match(files.ana,/attendanceAuthorizedFetch/,'ANA deve usar fetch autenticado compartilhado');
-
-for(const [name,source] of Object.entries(files)){
-  assert.doesNotMatch(source,/sessionStorage\.getItem\([^)]*da_finance_access_token_v1|ADMIN_TOKEN_KEY\s*=|function\s+(?:adminToken|token)\s*\(\)\s*\{[^}]*sessionStorage/s,`${name} não deve gerenciar JWT por conta própria`);
-}
 
 for(const module of ['attendance-app.js','attendance-library.js','attendance-ana-preview.js','attendance-send.js','attendance-media-send.js','attendance-templates.js','attendance-human-ai.js']){
   const escaped=module.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
