@@ -1,0 +1,71 @@
+name: One-shot basket product suggestions API patch
+
+on:
+  push:
+    branches:
+      - fix/product-suggestions-family-only-20261004
+    paths:
+      - .github/workflows/one-shot-basket-product-suggestions-api.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Patch repository through GitHub API
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: fix/product-suggestions-family-only-20261004
+        run: |
+          node <<'NODE'
+          const https=require('https');
+          const {Buffer}=require('buffer');
+          const token=process.env.GH_TOKEN, repo=process.env.REPO, branch=process.env.BRANCH;
+          function req(method,path,body){return new Promise((resolve,reject)=>{const r=https.request({hostname:'api.github.com',path,method,headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','User-Agent':'family-suggestions-patch','Content-Type':'application/json'}},res=>{let s='';res.on('data',d=>s+=d);res.on('end',()=>{if(res.statusCode<200||res.statusCode>=300)return reject(new Error(`${method} ${path} -> ${res.statusCode}: ${s.slice(0,500)}`));resolve(JSON.parse(s))})});r.on('error',reject);if(body)r.write(JSON.stringify(body));r.end()})}
+          async function getFile(path){const x=await req('GET',`/repos/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`);return {sha:x.sha,text:Buffer.from(x.content.replace(/\n/g,''),'base64').toString('utf8')}}
+          async function putFile(path,sha,text,message){return req('PUT',`/repos/${repo}/contents/${path}`,{message,content:Buffer.from(text,'utf8').toString('base64'),sha,branch})}
+          const must=(ok,msg)=>{if(!ok)throw new Error(msg)};
+          (async()=>{
+            const a=await getFile('vitrine/admin/index.html');let admin=a.text;
+            const e=await getFile('supabase/functions/admin-products-live-v1/index.ts');let edge=e.text;
+
+            let count=0;
+            admin=admin.replace(/\n  function basketAutoStatusLabel\(v\)\{[\s\S]*?\n  async function openBasketSubstitutionCatalog\(\)\{/,(m)=>{count++;return '\n  async function openBasketSubstitutionCatalog(){'});
+            must(count===1,'old automatic suggestion block not found');
+            admin=admin.replaceAll("$('#editorTitle').textContent='Produtos substituíveis';","$('#editorTitle').textContent='Sugestões de produtos';");
+            admin=admin.replaceAll("$('#editorActions').innerHTML='<button class=\"secondary\" id=\"basketFamilyBack\" type=\"button\">Voltar</button>';\n    $('#basketFamilyBack').onclick=()=>openBasketAutoSuggestions(state.basketAutoStatus||'pending');","$('#editorActions').innerHTML='<button class=\"secondary\" id=\"basketFamilyClose\" type=\"button\">Fechar</button>';\n    $('#basketFamilyClose').onclick=()=>$('#editor').close();");
+            admin=admin.replace('<div class=\"rule-notice\"><strong>Lista explícita</strong><div>A automação só troca produtos que estiverem autorizados dentro da mesma família. Preço, embalagem e estoque continuam sendo conferidos.</div></div>','<div class=\"rule-notice\"><strong>Regra simples por família</strong><div>Produtos da mesma família aparecem como sugestões de troca entre si. A família define as opções; estoque e preço são exibidos para você decidir.</div></div>');
+            admin=admin.replace('<label><span>Automação</span><select id=\"basketFamilyEnabled\">','<label><span>Status da família</span><select id=\"basketFamilyEnabled\">');
+            admin=admin.replace('Somente estes produtos poderão substituir uns aos outros nesta família. Ao adicionar um produto que esteja em outra família, ele será movido para esta.','Todos estes produtos aparecem como sugestões de troca entre si. Ao adicionar um produto que esteja em outra família, ele será movido para esta.');
+            const oldHeader='<button class=\"secondary\" id=\"basketCategoriesManage\" type=\"button\">Categorias de cestas</button><button class=\"secondary\" id=\"basketAutoSuggestions\" type=\"button\">Sugestões automáticas</button><button class=\"secondary\" id=\"refreshBaskets\" type=\"button\">Atualizar</button>';
+            must(admin.includes(oldHeader),'old suggestions button not found');
+            admin=admin.replace(oldHeader,'<button class=\"secondary\" id=\"basketCategoriesManage\" type=\"button\">Categorias de cestas</button><button class=\"secondary\" id=\"basketProductSuggestions\" type=\"button\">Sugestões de produtos</button><button class=\"secondary\" id=\"refreshBaskets\" type=\"button\">Atualizar</button>');
+            const oldHandler="$('#basketAutoSuggestions').onclick=()=>openBasketAutoSuggestions('pending');";must(admin.includes(oldHandler),'old suggestions handler not found');admin=admin.replace(oldHandler,"$('#basketProductSuggestions').onclick=openBasketSubstitutionCatalog;");
+            admin=admin.replaceAll('<h3>Alternativas cadastradas</h3>','<h3>Sugestões da família</h3>');
+            admin=admin.replaceAll('Nenhuma alternativa compatível com saldo. Você pode buscar outro produto abaixo.','Nenhum outro produto cadastrado nesta família. Você pode buscar outro produto abaixo.');
+
+            const cardOld=`    return '<article class="basket-product-picker-card '+(stock<=0?'zero-stock':'')+'">'+\n      '<div class="basket-product-picker-photo"><img loading="lazy" src="'+esc(photo)+'" alt="" onerror="this.onerror=null;this.src=\\'/img/sem-foto.svg\\'"></div>'+\n      '<div class="basket-product-picker-name">'+esc(p?.name||'Produto')+'</div>'+\n      '<div class="basket-product-picker-code"><strong>Código: '+esc(code)+'</strong>'+(ean?'<br>EAN: '+esc(ean):'')+'</div>'+\n      '<div class="basket-product-picker-stock"><span>Estoque solto</span><strong>'+esc(fmtQty(stock))+'</strong></div>'+\n      '<button class="secondary basket-product-picker-action" type="button" '+attr+'="'+esc(p.id)+'">'+esc(label)+'</button>'+\n    '</article>';`;
+            const cardNew=`    const price=Number(p?.price??p?.sale_price_cents/100??0),zero=stock<=0;\n    return '<article class="basket-product-picker-card '+(zero?'zero-stock':'')+'">'+\n      '<div class="basket-product-picker-photo"><img loading="lazy" src="'+esc(photo)+'" alt="" onerror="this.onerror=null;this.src=\\'/img/sem-foto.svg\\'"></div>'+\n      '<div class="basket-product-picker-name">'+esc(p?.name||'Produto')+'</div>'+\n      '<div class="basket-product-picker-code"><strong>Código: '+esc(code)+'</strong>'+(ean?'<br>EAN: '+esc(ean):'')+'<br>Preço: '+esc(price.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}))+'</div>'+\n      '<div class="basket-product-picker-stock"><span>Estoque solto</span><strong>'+esc(fmtQty(stock))+'</strong></div>'+\n      '<button class="secondary basket-product-picker-action" type="button" '+(zero?'disabled ':'')+attr+'="'+esc(p.id)+'">'+esc(zero?'Sem estoque':label)+'</button>'+\n    '</article>';`;
+            must(admin.includes(cardOld),'product suggestion card block not found');admin=admin.replace(cardOld,cardNew);
+            const authOld="<small>'+esc(p.sku||p.gtin||'')+' · '+esc(p.packaging||'')+' · '+esc(fmtQty(p.loose_stock||0))+' solto</small>";
+            must(admin.includes(authOld),'family authorized product detail not found');admin=admin.replace(authOld,"<small>'+esc(p.sku||p.gtin||'')+' · '+esc(p.packaging||'')+' · '+esc(fmtQty(p.loose_stock||0))+' solto · '+esc(Number(p.price||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}))+'</small>");
+
+            const api=/async function basketKitProductSuggestions\(u:URL\)\{[\s\S]*?\nfunction nextBasketKitShortCodeFromLots/;
+            must(api.test(edge),'basketKitProductSuggestions block not found');
+            edge=edge.replace(api,`async function basketKitProductSuggestions(u:URL){\n  const pid=id(u.searchParams.get("product_id"));if(!pid)return {error:"invalid_product",status:400};\n  const quantity=Number(u.searchParams.get("quantity_per_kit")||1);\n  if(!Number.isInteger(quantity)||quantity<1||quantity>100)return {error:"invalid_quantity",status:400};\n  const membership=await db.from("basket_lot_substitution_products").select("family_key").eq("product_id",pid).maybeSingle();\n  if(membership.error)throw membership.error;\n  const family=membership.data?.family_key;if(!family)return {family_key:null,suggestions:[]};\n  const [rule,members]=await Promise.all([\n    db.from("basket_lot_substitution_rules").select("enabled,label").eq("family_key",family).maybeSingle(),\n    db.from("basket_lot_substitution_products").select("product_id").eq("family_key",family).order("product_id")\n  ]);\n  if(rule.error)throw rule.error;if(members.error)throw members.error;\n  if(rule.data?.enabled!==true)return {family_key:family,family_label:rule.data?.label||family,suggestions:[]};\n  const ids=(members.data||[]).map((m:any)=>String(m.product_id)),products:any[]=[];\n  for(let i=0;i<ids.length;i+=60){const q=await db.from("products").select("id,name,sku,gtin,image_url,price,packaging,unit,brand").eq("is_active",true).in("id",ids.slice(i,i+60));if(q.error)throw q.error;products.push(...(q.data||[]));}\n  const base=products.find(p=>String(p.id)===pid);if(!base)return {family_key:family,family_label:rule.data?.label||family,suggestions:[]};\n  const loose=await basketLooseStockMap(products.map(p=>p.id)),basePrice=Number(base.price||0);\n  const suggestions=products.filter(p=>String(p.id)!==pid).map((cand:any)=>{const available=Number(loose.get(String(cand.id))?.loose_sellable_stock||0),candidatePrice=Number(cand.price||0);return {...cand,loose_stock:available,price_cents:Math.round(candidatePrice*100),capacity:quantity>0?Math.floor(available/quantity):0,price_delta_pct:basePrice>0?Math.abs(candidatePrice-basePrice)/basePrice*100:null};});\n  suggestions.sort((a:any,b:any)=>{const aa=Number(a.loose_stock||0)>0?1:0,bb=Number(b.loose_stock||0)>0?1:0,ad=Number.isFinite(Number(a.price_delta_pct))?Number(a.price_delta_pct):Number.POSITIVE_INFINITY,bd=Number.isFinite(Number(b.price_delta_pct))?Number(b.price_delta_pct):Number.POSITIVE_INFINITY;return bb-aa||Number(b.loose_stock||0)-Number(a.loose_stock||0)||ad-bd||String(a.name).localeCompare(String(b.name),"pt-BR");});\n  return {family_key:family,family_label:rule.data?.label||family,suggestions};\n}\nfunction nextBasketKitShortCodeFromLots`);
+
+            for(const bad of ['Sugestões automáticas de lotes','Gerar sugestões agora','Automação segura','basket_lot_suggestion_generate_now_v1','basket_lot_suggestions_admin_v1'])must(!admin.includes(bad),`legacy admin remains: ${bad}`);
+            must(admin.includes('id="basketProductSuggestions"'),'new product suggestions button missing');
+            must(admin.includes("$('#basketProductSuggestions').onclick=openBasketSubstitutionCatalog;"),'new direct catalog handler missing');
+            const s=edge.slice(edge.indexOf('async function basketKitProductSuggestions(u:URL)'),edge.indexOf('\nfunction nextBasketKitShortCodeFromLots'));
+            must(!s.includes('basket_lot_automation_settings'),'endpoint still depends on old automation');must(!s.includes('price_variation_pct'),'endpoint still price-filters');must(!s.includes('slice(0,7)'),'endpoint still truncates family');must(s.includes('loose_stock'),'stock missing');
+
+            await putFile('vitrine/admin/index.html',a.sha,admin,'fix: simplificar sugestões de produtos por família');
+            const currentEdge=await getFile('supabase/functions/admin-products-live-v1/index.ts');
+            await putFile('supabase/functions/admin-products-live-v1/index.ts',currentEdge.sha,edge,'fix: retornar toda a família como sugestão');
+            console.log('BASKET_PRODUCT_SUGGESTIONS_API_PATCH_OK');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
