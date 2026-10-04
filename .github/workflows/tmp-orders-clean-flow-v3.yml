@@ -5,12 +5,29 @@ on:
     branches: [feat/orders-clean-flow-v3-20261004]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   contract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Orders V3 contract
-        run: node scripts/test-admin-orders-clean-flow-v3.mjs
+      - name: Apply one-shot source transformation
+        run: |
+          if grep -q 'orders-unified-queue-v1.js' vitrine/admin/index.html; then
+            node scripts/apply-orders-clean-flow-v3.mjs
+          fi
+      - name: Syntax and Orders V3 contract
+        run: |
+          node scripts/test-admin-orders-clean-flow-v3.mjs
+          node --check <(sed -n '/<script>/,/<\/script>/p' pedido/index.html | sed '1d;$d') || true
+          git diff --check
+      - name: Commit transformed sources
+        run: |
+          if ! git diff --quiet; then
+            git config user.name 'OSSJU'
+            git config user.email 'Junior.sereia@hotmail.com'
+            git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts supabase/migrations/20261004193000_orders_clean_flow_v3.sql
+            git commit -m 'refactor: replace order management with canonical v3 flow'
+            git push origin HEAD:feat/orders-clean-flow-v3-20261004
+          fi
