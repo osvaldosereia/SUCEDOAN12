@@ -13,8 +13,17 @@ jobs:
         with:
           fetch-depth: 0
           sparse-checkout: |
+            index.html
+            vitrine/index.html
             vitrine/admin/index.html
+            pedido/index.html
+            p/index.html
+            checkout-resilience.js
+            supabase/functions/admin-orders-v1/index.ts
             supabase/functions/admin-products-live-v1/index.ts
+            supabase/functions/storefront-v2/index.ts
+            supabase/functions/order-public-view-v1/index.ts
+            supabase/migrations/20261003043000_order_public_short_link.sql
             scripts/test-product-editor-complete.mjs
             scripts/test-products-operational-list.mjs
             scripts/test-mobile-products-quick-edit.mjs
