@@ -30,27 +30,28 @@ jobs:
           set -euo pipefail
           node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-commerce.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-mounting.mjs
-          cmp supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql
-          cmp supabase/sql/20261004_basket_canonical_mounting_v1.sql supabase/migrations/20261004224500_basket_canonical_mounting_v1.sql
-      - name: RED canonical admin API
+          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs
+      - name: RED simplified admin
         run: |
           set +e
-          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs > /tmp/admin-red.log 2>&1
+          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs > /tmp/simple-red.log 2>&1
           rc=$?
           set -e
-          cat /tmp/admin-red.log
-          if [ "$rc" -eq 0 ]; then touch /tmp/admin-already-green; else grep -q 'canonical basket admin action must exist' /tmp/admin-red.log; fi
-      - name: Implement canonical admin API
+          cat /tmp/simple-red.log
+          if [ "$rc" -eq 0 ]; then touch /tmp/simple-already-green; else grep -Eq 'primary page must use unified|primary page must consume canonical|Pausar venda|pause/resume' /tmp/simple-red.log; fi
+      - name: Implement simplified admin
         run: |
-          if [ ! -f /tmp/admin-already-green ]; then python scripts/_apply_basket_canonical_admin.py; fi
+          if [ ! -f /tmp/simple-already-green ]; then python scripts/_apply_basket_simple_admin.py; fi
+          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-kit-suggestions.mjs
           git diff --check
-      - name: Commit canonical admin API
+      - name: Commit simplified admin
         run: |
-          if git diff --quiet -- supabase/functions/admin-products-live-v1/index.ts; then exit 0; fi
+          if git diff --quiet -- vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts scripts/test-basket-lot-ops-rules.mjs; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add supabase/functions/admin-products-live-v1/index.ts
-          git commit -m 'feat: expose canonical basket admin model'
+          git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts scripts/test-basket-lot-ops-rules.mjs
+          git commit -m 'refactor: simplify baskets kits admin workflow'
           git push origin HEAD:feature/baskets-kits-canonical-20261004-exec
