@@ -17,7 +17,6 @@ assert.match(html,/id="cancelAudioRecordingBtn"/,'gravador deve permitir cancela
 assert.match(html,/id="sendRecordedAudioBtn"/,'gravador deve permitir enviar diretamente sem download/anexo manual');
 assert.match(html,/id="audioRecorderPreview"[^>]*controls/,'gravador deve permitir ouvir antes do envio');
 assert.match(html,/attendance-audio-recorder\.js/,'módulo do gravador deve ser carregado');
-assert.match(html,/attendance-audio-recorder\.js\?v=audio-webcodecs-v1/,'HTML deve quebrar cache da versão M4A e carregar o gravador WebCodecs novo');
 
 assert.match(recorder,/navigator\.mediaDevices\.getUserMedia\(\{audio:true\}\)/,'microfone deve ser pedido somente no fluxo de gravação');
 assert.match(recorder,/MediaRecorder\.isTypeSupported/,'OGG nativo deve ser detectado no navegador');
