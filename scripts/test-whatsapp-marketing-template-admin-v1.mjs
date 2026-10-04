@@ -44,10 +44,18 @@ assert.doesNotMatch(source,/async function loadTemplates\([^)]*\)\s*\{\s*if\(bus
 assert.match(source,/pendingTemplateLoad/,'requisição feita durante carregamento deve ficar enfileirada');
 assert.match(source,/requestedChannel/,'cada carregamento deve capturar o canal solicitado e não depender de activeChannel mutável após await');
 assert.match(source,/loadTemplates\(\{sync:true,channel:activeChannel\}\)/,'botão Sincronizar deve solicitar explicitamente sync do canal ativo');
+assert.match(source,/function setSyncButtonState\(/,'botão deve ter helper explícito de estado visual');
+assert.match(source,/aria-busy/,'botão deve anunciar estado ocupado para acessibilidade');
+assert.match(source,/\.disabled\s*=/,'botão deve bloquear clique repetido durante o sync');
+assert.match(source,/Aguardando sincronização|Sincronização na fila/,'clique durante carga deve ficar visivelmente enfileirado');
+assert.match(source,/Sincronizando/,'botão deve mostrar processamento em andamento');
+assert.match(source,/Sincronizado/,'botão deve confirmar visualmente conclusão');
+assert.match(source,/data-sync-state/,'estado visual deve ficar disponível no DOM para CSS e diagnóstico');
 assert.doesNotMatch(source,/EAA[A-Za-z0-9_-]{30,}/,'frontend não pode conter token Meta');
 assert.doesNotMatch(source,/1497253794754816|840102181903253/,'frontend não pode hardcodar WABA');
 assert.doesNotMatch(source,/Enviar para cliente|send_template|to_phone_e164/i,'subview de gestão não pode enviar template a cliente');
 assert.match(css,/\.marketing-template-center/);
 assert.match(css,/@media/,'UI deve ter adaptação mobile');
+assert.match(css,/data-sync-state/,'CSS deve refletir visualmente o estado do botão de sincronização');
 
 console.log('PASS test-whatsapp-marketing-template-admin-v1');
