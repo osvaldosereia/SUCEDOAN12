@@ -11,7 +11,12 @@ const migration=fs.readFileSync(migrationPath,'utf8');
 
 assert.ok(!admin.includes('/vitrine/admin/orders-unified-queue-v1.js'),'Pedidos V3 não pode depender de script que sobrepõe a UI canônica');
 for(const id of ['confirmReadyOrders','orderFilters','orderIssueFilters'])assert.ok(!admin.includes(`id="${id}"`),`Controle legado ${id} deve sair da tela`);
-for(const text of ['Confirmar aptos','Próxima ação:','Todos</button><button','Separar</button><button','Pronto</button><button','Entrega</button><button','Finalizado</button>'])assert.ok(!admin.includes(text),`Fluxo legado ainda presente: ${text}`);
+assert.ok(!admin.includes('data-order-filter="separate"'),'Filtro legado Separar deve sair da tela');
+assert.ok(!admin.includes('data-order-filter="ready"'),'Filtro legado Pronto deve sair da tela');
+assert.ok(!admin.includes('data-order-filter="delivery"'),'Filtro legado Entrega deve sair da tela');
+assert.ok(!admin.includes('data-order-filter="finalized"'),'Filtro legado Finalizado deve sair da tela');
+assert.ok(!admin.includes('Confirmar aptos'),'Confirmação em massa deve sair da tela');
+assert.ok(!admin.includes('Próxima ação:'),'Coluna/linha Próxima ação deve sair da gestão V3');
 assert.ok(!admin.includes('data-tab="separation"'),'Separação não pode continuar como uma segunda seção paralela de Pedidos');
 
 assert.match(admin,/function\s+orderRow\s*\(/,'A lista deve continuar sendo renderizada pela implementação canônica do Admin');
