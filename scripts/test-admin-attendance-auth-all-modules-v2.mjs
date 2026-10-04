@@ -10,7 +10,8 @@ const targets={
   media:'vitrine/admin/atendimento/attendance-media-send.js',
   templates:'vitrine/admin/atendimento/attendance-templates.js',
   humanAi:'vitrine/admin/atendimento/attendance-human-ai.js',
-  ana:'vitrine/admin/atendimento/attendance-ana-preview.js'
+  ana:'vitrine/admin/atendimento/attendance-ana-preview.js',
+  products:'vitrine/admin/atendimento/attendance-product-send.js'
 };
 for(const path of [authPath,htmlPath,appPath,libraryPath,...Object.values(targets)])assert.equal(fs.existsSync(path),true,`${path} deve existir`);
 const auth=fs.readFileSync(authPath,'utf8');
@@ -44,10 +45,14 @@ assert.match(files.templates,/attendanceAuthorizedFetch/,'templates devem usar f
 assert.match(files.humanAi,/attendanceAuthorizedFetch/,'Humano×IA deve usar fetch autenticado compartilhado para RPC direto');
 assert.match(files.humanAi,/attendanceJsonApi/,'Humano×IA deve usar API compartilhada para leitura da conversa');
 assert.match(files.ana,/attendanceAuthorizedFetch/,'ANA deve usar fetch autenticado compartilhado');
+assert.match(files.products,/attendanceAuthorizedFetch/,'Produtos com imagem devem usar fetch autenticado compartilhado');
+assert.match(files.products,/attendanceJsonApi/,'fallback de texto de Produtos deve usar API compartilhada');
 
-for(const module of ['attendance-app.js','attendance-library.js','attendance-ana-preview.js','attendance-send.js','attendance-media-send.js','attendance-templates.js','attendance-human-ai.js']){
+const directModules=['attendance-library.js','attendance-ana-preview.js','attendance-send.js','attendance-media-send.js','attendance-templates.js','attendance-human-ai.js'];
+assert.match(html,/attendance-app\.js\?v=(?:auth-refresh-v2|product-media-v1)/,'core deve ter cache-bust explícito compatível com sessão renovável');
+for(const module of directModules){
   const escaped=module.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   assert.match(html,new RegExp(`${escaped}\\?v=auth-refresh-v2`),`${module} deve receber cache-bust v2`);
 }
 
-console.log('OK · toda a Central converge para uma instância canônica versionada de sessão e preserva o boot autenticado.');
+console.log('OK · toda a Central, inclusive Produtos, converge para uma instância canônica versionada de sessão e preserva o boot autenticado.');
