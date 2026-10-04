@@ -1,9 +1,9 @@
-name: One-shot basket lot types links financials
+name: One-shot basket linked lot safety
 on:
   push:
     branches: [feat/basket-lot-types-link-financials-20261004]
     paths:
-      - 'scripts/patch-basket-lot-types-links-financials.py'
+      - 'scripts/patch-basket-linked-internal-safety.py'
       - '.github/workflows/one-shot-basket-lot-types-links-financials.yml'
 permissions:
   contents: write
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: python scripts/patch-basket-lot-types-links-financials.py
+      - run: python scripts/patch-basket-linked-internal-safety.py
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-types-links-financials.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-financials-categories.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
@@ -20,7 +20,6 @@ jobs:
       - run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts scripts/test-basket-kit-financials-categories.mjs scripts/test-basket-kit-commercial-fields.mjs scripts/test-basket-lot-ops-rules.mjs
-          git commit -m "feat: implement basket lot types links and financial panel" || exit 0
+          git add supabase/functions/admin-products-live-v1/index.ts supabase/sql/20261004_basket_lot_types_links_financials_v1.sql
+          git commit -m "fix: protect generic linked lot consumption" || exit 0
           git push
-# rerun after generic commercial contract update
