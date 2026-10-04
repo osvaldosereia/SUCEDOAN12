@@ -5,6 +5,7 @@ import {
   extractMetaPhoneNumberIds,
   hasMetaMessageOrStatusEvents,
   normalizeMetaWebhook,
+  templateEventsFromMeta,
   verifyMetaChallenge,
   verifyMetaSignature,
 } from "../_shared/whatsapp-meta-webhook-v1.mjs";
@@ -126,6 +127,25 @@ async function persistStatus(status: any, payloadHash: string) {
   };
 }
 
+async function persistTemplateEvent(event: any) {
+  const applied = await db.rpc("whatsapp_apply_template_event_v1", {
+    p_waba_id: event.waba_id,
+    p_meta_template_id: event.meta_template_id,
+    p_template_name: event.template_name,
+    p_language: event.language,
+    p_event_type: event.event_type,
+    p_status: event.status,
+    p_quality_rating: event.quality_rating,
+    p_reason: event.reason,
+    p_provider_event_key: event.provider_event_key,
+    p_payload: event.payload,
+    p_occurred_at: event.occurred_at,
+  });
+  if (applied.error) throw applied.error;
+  if (applied.data?.ok !== true) throw new Error(String(applied.data?.error || "meta_template_event_apply_failed"));
+  return applied.data;
+}
+
 Deno.serve(async (req: Request) => {
   try {
     if (req.method === "GET") {
@@ -151,17 +171,55 @@ Deno.serve(async (req: Request) => {
     try { payload = JSON.parse(rawBody); } catch { return json({ ok: false, error: "invalid_json" }, 400); }
     if (payload?.object !== "whatsapp_business_account") return json({ ok: false, error: "unsupported_object" }, 400);
 
+    const templateEvents = templateEventsFromMeta(payload);
+    let templateEventsCaptured = 0;
+    let templateEventsUnmatched = 0;
+    let templateEventsDuplicates = 0;
+    for (const event of templateEvents) {
+      const result = await persistTemplateEvent(event);
+      templateEventsCaptured += 1;
+      if (result?.unmatched === true) templateEventsUnmatched += 1;
+      if (result?.duplicate === true) templateEventsDuplicates += 1;
+    }
+
+    const messageOrStatusEvents = hasMetaMessageOrStatusEvents(payload);
     const phoneNumberIds = extractMetaPhoneNumberIds(payload);
     if (!phoneNumberIds.length) {
-      if (hasMetaMessageOrStatusEvents(payload)) return json({ ok: false, error: "meta_account_unresolved", unknown_phone_number_ids: [] }, 422);
-      return json({ ok: true, ignored: true, reason: "no_message_phone_number_id" });
+      if (messageOrStatusEvents) return json({
+        ok: false,
+        error: "meta_account_unresolved",
+        unknown_phone_number_ids: [],
+        template_events_captured: templateEventsCaptured,
+        template_events_unmatched: templateEventsUnmatched,
+        template_events_duplicates: templateEventsDuplicates,
+      }, 422);
+      if (templateEventsCaptured > 0) return json({
+        ok: true,
+        inbound_normalized: 0,
+        inbound_duplicates: 0,
+        statuses_captured: 0,
+        statuses_recorded: 0,
+        statuses_pending: 0,
+        template_events_captured: templateEventsCaptured,
+        template_events_unmatched: templateEventsUnmatched,
+        template_events_duplicates: templateEventsDuplicates,
+      });
+      return json({ ok: true, ignored: true, reason: "no_message_phone_number_id", template_events_captured: 0, template_events_unmatched: 0 });
     }
 
     const accounts = await accountMap(phoneNumberIds);
     const normalized = await normalizeMetaWebhook({ payload, rawBody, accountByPhoneNumberId: accounts });
     if (normalized.unknownPhoneNumberIds.length || normalized.messages.some((m: any) => !m.associable) || normalized.statuses.some((s: any) => !s.associable)) {
       console.warn("whatsapp-meta-webhook-v1 unmapped account", normalized.unknownPhoneNumberIds.join(",").slice(0, 300));
-      return json({ ok: true, ignored: true, reason: "meta_account_unresolved", unknown_phone_number_ids: normalized.unknownPhoneNumberIds }, 200);
+      return json({
+        ok: true,
+        ignored: true,
+        reason: "meta_account_unresolved",
+        unknown_phone_number_ids: normalized.unknownPhoneNumberIds,
+        template_events_captured: templateEventsCaptured,
+        template_events_unmatched: templateEventsUnmatched,
+        template_events_duplicates: templateEventsDuplicates,
+      }, 200);
     }
 
     const safePayload = redactWebhookPayload(payload);
@@ -190,6 +248,9 @@ Deno.serve(async (req: Request) => {
       statuses_captured: statusesCaptured,
       statuses_recorded: statusesRecorded,
       statuses_pending: statusesPending,
+      template_events_captured: templateEventsCaptured,
+      template_events_unmatched: templateEventsUnmatched,
+      template_events_duplicates: templateEventsDuplicates,
     });
   } catch (error) {
     console.error("whatsapp-meta-webhook-v1", errorText(error).slice(0, 500));
