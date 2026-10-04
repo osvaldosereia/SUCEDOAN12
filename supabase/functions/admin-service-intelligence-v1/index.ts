@@ -9339,7 +9339,7 @@ Deno.serve(async(req:Request)=>{
     catch(e){return json({ok:false,error:"customers_unavailable",detail:clean((e as Error)?.message,300)},500)}
   }
   if(action==="vitrine_customer_delete"){
-    const id=uuid(body?.id);if(!id)return json({ok:false,error:"invalid_customer"},400);
+    const id=uuid(body?.id??body?.customer_id);if(!id)return json({ok:false,error:"invalid_customer"},400);
     try{
       const q=await sb.rpc("ops2_admin_customer_delete_v1",{p_customer_id:id});
       if(q.error)throw q.error;
