@@ -62,6 +62,7 @@ jobs:
       - run: node --check vitrine/admin/atendimento/attendance-library.js
       - run: node --check vitrine/admin/atendimento/attendance-auth.js
       - run: node --check vitrine/admin/atendimento/attendance-product-send.js
+      - run: node --check vitrine/admin/atendimento/attendance-offers.js
       - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
       - run: node --check vitrine/admin/atendimento/attendance-media-send.js
