@@ -40,6 +40,10 @@ assert.match(source,/attendanceJsonApi\(['"]accounts['"]/,'canais devem ser reso
 assert.match(source,/attendanceAuthorizedFetch/,'sessão Admin deve usar helper autenticado existente');
 assert.match(source,/MutationObserver/,'módulo deve montar somente quando a área Marketing estiver visível');
 assert.match(source,/templatesLoaded/,'dados de templates devem ter estado lazy e não carregar na importação');
+assert.doesNotMatch(source,/async function loadTemplates\([^)]*\)\s*\{\s*if\(busy\)return;/,'sync/canal não pode ser descartado silenciosamente quando já existe carregamento em andamento');
+assert.match(source,/pendingTemplateLoad/,'requisição feita durante carregamento deve ficar enfileirada');
+assert.match(source,/requestedChannel/,'cada carregamento deve capturar o canal solicitado e não depender de activeChannel mutável após await');
+assert.match(source,/loadTemplates\(\{sync:true,channel:activeChannel\}\)/,'botão Sincronizar deve solicitar explicitamente sync do canal ativo');
 assert.doesNotMatch(source,/EAA[A-Za-z0-9_-]{30,}/,'frontend não pode conter token Meta');
 assert.doesNotMatch(source,/1497253794754816|840102181903253/,'frontend não pode hardcodar WABA');
 assert.doesNotMatch(source,/Enviar para cliente|send_template|to_phone_e164/i,'subview de gestão não pode enviar template a cliente');
