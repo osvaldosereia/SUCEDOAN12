@@ -23,7 +23,8 @@ const result=vm.runInContext(`basketKitDraftFinancials({
 ])`,ctx);
 assert.deepEqual(JSON.parse(JSON.stringify(result)),{cost:34.5,retail:53},'somatórios devem incluir alimentos e o lote de limpeza escolhido mesmo quando a relação vem como array');
 assert.ok(admin.includes('id="kitLotCostSum"')&&admin.includes('id="kitLotRetailSum"'),'criação do lote deve mostrar custo e venda internos');
-assert.match(admin,/const cents\s*=|function cents\s*\(/,'Novo lote usa cents() nos somatórios e precisa ter esse helper definido no Admin real');
+const globalHelpers=admin.slice(admin.indexOf('  const $='),admin.indexOf('  const state='));
+assert.match(globalHelpers,/const cents\s*=|function cents\s*\(/,'Novo lote usa cents() nos somatórios e precisa ter esse helper no bloco global do Admin');
 assert.ok(admin.includes('Categorias de cestas'),'Admin deve oferecer gestão das categorias');
 assert.ok(service.includes('basket_categories_admin')&&service.includes('basket_category_save')&&service.includes('basket_category_delete'),'API deve oferecer listar, salvar e excluir categorias');
 assert.ok(service.includes('category_id'),'API deve permitir vincular cesta à categoria');
