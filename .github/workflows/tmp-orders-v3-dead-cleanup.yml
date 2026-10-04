@@ -12,43 +12,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Remove obsolete top-level order WhatsApp UI functions
+      - name: Remove obsolete order WhatsApp UI block
         run: |
           python - <<'PY'
           import re
           from pathlib import Path
           p=Path('vitrine/admin/index.html')
-          lines=p.read_text().splitlines(True)
-          targets={
-            'orderWhatsappRegistrationHtml','renderCurrentOrderWhatsappStatus','customerWhatsappDeliveryLabel',
-            'customerWhatsappAcceptedIsStale','refreshCurrentOrderWhatsappRegistration','sendCurrentOrderWhatsapp',
-            'issueCurrentOrderRegistrationLink','appendCurrentOrderWhatsappItems','currentOrderCompanyWhatsappMessage',
-            'openNativeWhatsapp','openCurrentOrderCompanyWhatsapp','currentOrderCustomerWhatsappMessage',
-            'openCurrentOrderCustomerWhatsapp','openCurrentOrderRegistrationWhatsapp','copyCurrentOrderRegistrationLink'
-          }
-          starts=[]
-          rx=re.compile(r'^  (?:async )?function\s+([A-Za-z0-9_]+)\s*\(')
-          for i,line in enumerate(lines):
-            m=rx.match(line)
-            if m: starts.append((i,m.group(1)))
-          spans=[]
-          for pos,(i,name) in enumerate(starts):
-            if name not in targets: continue
-            end=starts[pos+1][0] if pos+1<len(starts) else len(lines)
-            spans.append((i,end,name))
-          if not spans:
-            raise SystemExit('no legacy order whatsapp functions found')
-          remove=set()
-          for a,b,name in spans:
-            print('removing',name,a+1,b)
-            remove.update(range(a,b))
-          out=''.join(line for i,line in enumerate(lines) if i not in remove)
+          s=p.read_text()
+          start='  function currentOrderWhatsappShareData(){'
+          end='  async function openOrder(id){'
+          a=s.find(start); b=s.find(end,a)
+          if a<0 or b<0:
+            raise SystemExit('legacy order WhatsApp block markers not found')
+          s=s[:a]+s[b:]
           for symbol in ['COMPANY_WHATSAPP_E164','ORDER_WHATSAPP_4599_E164']:
-            if out.count(symbol)==1:
-              out=re.sub(r'^  const '+symbol+r'=.*\n','',out,flags=re.M)
-          p.write_text(out)
-          remaining=[name for name in targets if name in out]
-          if remaining: raise SystemExit('legacy references remain: '+','.join(sorted(remaining)))
+            if s.count(symbol)==1:
+              s=re.sub(r'^  const '+symbol+r'=.*\n','',s,flags=re.M)
+          p.write_text(s)
+          for legacy in ['currentOrderWhatsappShareData','currentOrderCompanyWhatsappMessage','openNativeWhatsapp','openCurrentOrderCompanyWhatsapp','openCurrentOrder4599Whatsapp','currentOrderCustomerWhatsappMessage','openCurrentOrderCustomerWhatsapp','currentOrderRegistrationUrl','openCurrentOrderRegistrationWhatsapp','copyCurrentOrderRegistrationLink']:
+            if legacy in s:
+              raise SystemExit('legacy order WhatsApp symbol remains: '+legacy)
           PY
       - name: Verify clean order UI
         run: |
