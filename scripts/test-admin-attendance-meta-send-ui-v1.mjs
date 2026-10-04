@@ -30,17 +30,18 @@ assert.match(api, /human_send_enabled/);
 assert.match(api, /homologated_at/);
 assert.doesNotMatch(api, /EAA[A-Za-z0-9_-]{30,}/, 'gateway não pode conter token literal');
 
-// O browser usa Bearer apenas para autenticar a sessão administrativa no Supabase.
-// Token/endpoint da Meta devem existir exclusivamente no backend.
+// O browser autentica somente a sessão administrativa no backend compartilhado.
+// Token/endpoint da Meta permanecem exclusivamente server-side.
 assert.doesNotMatch(ui, /graph\.facebook\.com/i, 'browser nunca chama Graph diretamente');
 assert.doesNotMatch(ui, /META_WHATSAPP_ACCESS_TOKEN/i, 'browser nunca conhece o secret Meta');
 assert.doesNotMatch(ui, /EAA[A-Za-z0-9_-]{30,}/, 'browser não pode conter token Meta literal');
-assert.match(ui, /ADMIN_ATTENDANCE_API/);
-assert.match(ui, /Authorization:\s*`Bearer \$\{token\}`/, 'Bearer do browser deve ser somente a sessão Admin para o backend');
+assert.match(ui, /attendanceJsonApi/, 'envio deve usar o cliente autenticado compartilhado');
+assert.match(ui, /attendance-auth\.js\?v=auth-refresh-v2/, 'envio deve carregar a versão atual do auth compartilhado');
+assert.doesNotMatch(ui, /sessionStorage\.getItem|Authorization:\s*`Bearer/, 'módulo de envio não deve gerenciar Bearer diretamente');
 assert.match(ui, /currentCapability\.provider|send_capability/);
 assert.match(ui, /meta_send_uncertain/);
 assert.match(ui, /Meta|meta/i);
 assert.match(ui, /PapoAI/);
 assert.match(ui, /finally[\s\S]{0,120}sending=false/, 'loading deve sempre destravar');
 
-console.log('OK · gateway usa outbox v3 e provider switch server-side; UI usa apenas sessão Admin e permanece sem segredo/Graph Meta.');
+console.log('OK · gateway usa outbox v3/provider switch; UI usa auth Admin compartilhado e permanece sem segredo/Graph Meta.');
