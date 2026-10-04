@@ -1,0 +1,15 @@
+name: Temporary unified orders contract
+
+on:
+  push:
+    branches: [feat/orders-unified-queue-vitrines-20261004]
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/test-admin-orders-unified-queue-v1.mjs
