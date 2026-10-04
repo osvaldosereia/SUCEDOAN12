@@ -6,7 +6,6 @@ permissions:
   contents: write
 jobs:
   inspect:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,9 +43,9 @@ jobs:
           cat /tmp/admin-red.log
           if [ "$rc" -eq 0 ]; then echo 'Admin canonical contract already green'; touch /tmp/admin-already-green; else grep -q 'canonical basket admin action must exist' /tmp/admin-red.log; fi
       - name: Implement canonical admin API
-        if: hashFiles('/tmp/admin-already-green') == ''
         shell: bash
         run: |
+          if [ -f /tmp/admin-already-green ]; then exit 0; fi
           python - <<'PY'
           from pathlib import Path
           p=Path('supabase/functions/admin-products-live-v1/index.ts')
