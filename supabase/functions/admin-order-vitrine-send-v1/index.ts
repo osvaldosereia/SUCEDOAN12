@@ -5,12 +5,13 @@ const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
+const OFFICIAL_CHANNELS=new Map([["5565998150975","0975"],["5565984491018","1018"]]);
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"content-type,authorization,apikey","Access-Control-Allow-Methods":"POST,OPTIONS"}};
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const clean=(value:unknown,max=500)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(value:unknown)=>{const text=clean(value,64);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text)?text:""};
 const digits=(value:unknown)=>String(value??"").replace(/\D+/g,"").slice(0,20);
-const channelKey=(phone:unknown)=>{const d=digits(phone);if(d.endsWith("0975"))return "0975";if(d.endsWith("1018"))return "1018";return null};
+const channelKey=(phone:unknown)=>OFFICIAL_CHANNELS.get(digits(phone))||null;
 
 async function adminAuth(req:Request){
   const header=req.headers.get("Authorization")||"",token=header.replace(/^Bearer\s+/i,"").trim();
