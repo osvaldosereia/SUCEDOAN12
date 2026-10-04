@@ -1,0 +1,39 @@
+name: One-shot admin central lazy GREEN
+on:
+  push:
+    branches: [fix/central-lazy-on-demand]
+    paths: ['.github/workflows/one-shot-admin-central-lazy-green.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/test-admin-central-progressive-load.py
+            scripts/patch-admin-central-lazy-on-demand.py
+          sparse-checkout-cone-mode: false
+      - name: Apply lazy Central patch
+        run: python3 scripts/patch-admin-central-lazy-on-demand.py
+      - name: GREEN - verify lazy contract and syntax
+        run: |
+          python3 scripts/test-admin-central-progressive-load.py
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log('syntax OK');
+          NODE
+          git diff --check
+      - name: Commit implementation
+        run: |
+          git config user.name 'Dona Antonia Ops'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'perf(admin): carregar Central somente ao abrir blocos'
+          git push origin HEAD:fix/central-lazy-on-demand
