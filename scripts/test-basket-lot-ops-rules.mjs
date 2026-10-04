@@ -57,7 +57,7 @@ assert.match(adminUi,/status==='draft'[^\n]*Em edição|Em edição[^\n]*status=
 assert.match(adminUi,/status==='ready'[^\n]*Montado|Montado[^\n]*status==='ready'/,'linked-lot options must visibly identify mounted lots');
 assert.match(adminApi,/linked_lot_id/,'admin API must return and accept the generic linked lot');
 assert.match(adminApi,/basket_kit_lot_delete/,'admin API must expose safe lot deletion');
-assert.match(adminApi,/Number\(a\?\.split_available\|\|0\)<=0/,'split readiness must trust per-lot availability instead of global hygiene requirement');
+assert.match(adminApi,/Number\(a\?\.split_available\|\|0\)<=0/,'legacy readiness helper must still tolerate optional hygiene per food lot');
 
 assert.ok(fs.existsSync(draftLinkMigrationPath),'draft linked-lot migration must exist');
 const draftLinkMigration=fs.existsSync(draftLinkMigrationPath)?fs.readFileSync(draftLinkMigrationPath,'utf8'):'';
@@ -65,9 +65,10 @@ assert.match(draftLinkMigration,/status\s+in\s*\(\s*'draft'\s*,\s*'ready'\s*\)/i
 assert.match(draftLinkMigration,/linked_lot_unavailable/i,'mounting must still reject an unavailable linked lot');
 assert.match(draftLinkMigration,/apply_basket_kit_lot_commercial_v3/i,'mounting must refresh linked commercial snapshots before becoming ready');
 
-assert.match(storefront,/const usesHygiene=pricing\?\.uses_hygiene_kit===true/,'price preview must derive hygiene use from split availability');
-assert.doesNotMatch(storefront,/if\(b\.uses_hygiene_kit&&uid\(pricing\.hygiene_lot_id\)!==hygieneLot\)/,'price preview must not use the global basket flag for hygiene');
-assert.match(storefront,/hygiene=usesHygiene\?/,'price preview must load hygiene components only when the selected food lot links a hygiene lot');
+assert.match(storefront,/linked=c\.linked_lot_id\?String\(c\.linked_lot_id\):""/,'canonical preview must derive the optional linked lot from the selected commercial lot');
+assert.match(storefront,/hygiene=linked\?await splitLotItems\(linked,"hygiene"\):\[\]/,'canonical preview must load linked components only when the selected lot has a link');
+assert.match(storefront,/requestedLinked=uid\(payload\?\.hygiene_lot_id\)/,'quote must validate any linked lot supplied by the browser');
+assert.doesNotMatch(storefront,/const usesHygiene=pricing\?\.uses_hygiene_kit===true/,'canonical storefront must not derive hygiene from the legacy split availability view');
 
 assert.match(migration,/add column if not exists linked_hygiene_lot_id uuid/i,'food lots need a persisted hygiene-lot link');
 assert.match(migration,/references public\.basket_stock_lots\(id\)/i,'hygiene link must be referentially constrained');
@@ -81,7 +82,7 @@ assert.match(optionalHygiene,/set uses_hygiene_kit=false/i,'the accidental globa
 assert.match(optionalHygiene,/v_linked is not null/i,'activation should validate hygiene only when a hygiene lot is actually linked');
 assert.doesNotMatch(optionalHygiene,/raise exception 'linked_hygiene_lot_required'/i,'activation must not require hygiene when none was selected');
 assert.match(optionalHygiene,/\(f\.linked_hygiene_lot_id is not null\) uses_hygiene_kit/i,'split availability must derive hygiene presence from the selected food-lot link');
-assert.match(optionalHygiene,/v_basket\.uses_hygiene_kit:=exists/i,'checkout must derive hygiene use from the selected food lot rather than a global basket requirement');
+assert.match(optionalHygiene,/v_basket\.uses_hygiene_kit:=exists/i,'legacy checkout migration must derive hygiene use from the selected food lot rather than a global basket requirement');
 assert.match(optionalHygiene,/hl\.status='ready'/i,'a selected hygiene lot must still be physically ready');
 
 console.log('Basket lot operational rules contract: PASS');
