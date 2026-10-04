@@ -4,13 +4,13 @@ import {sendAttendanceMediaBytesViaMeta} from './admin-attendance-media-send-v1.
 const clean=(value,max=500)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const validUuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''))?String(value):null;
 
-async function writeAudit(db,{adminUserId,itemId,conversationId,result,errorCode=null,delivery=null,metadata={}}={}){
+async function writeAudit(db,{adminUserId,itemId,conversationId,action,result,errorCode=null,delivery=null,metadata={}}={}){
   const payload={
     admin_user_id:adminUserId,
     item_id:validUuid(itemId),
     conversation_id:validUuid(conversationId),
     whatsapp_account_id:null,
-    action:'item_send',
+    action,
     result,
     error_code:errorCode?clean(errorCode,180):null,
     outbox_id:validUuid(delivery?.outbox_id),
@@ -34,7 +34,7 @@ async function storageBytes(db,path){
   return {ok:true,bytes:new Uint8Array(buffer)};
 }
 
-export async function sendAttendanceLibraryItemViaMeta({
+export async function sendAttendanceLibraryItem({
   db,adminUserId,conversationId,itemId,idempotencyKey,caption='',accessToken,graphVersion,
   markClaimFailed,markMetaUncertain,
 }={}){
@@ -51,21 +51,26 @@ export async function sendAttendanceLibraryItemViaMeta({
 
   const loaded=await loadActiveAttendanceLibraryItem({db,itemId:safeItemId});
   if(loaded.ok!==true){
-    await writeAudit(db,{adminUserId:adminId,itemId:safeItemId,conversationId:safeConversationId,result:'failed',errorCode:loaded.error,metadata:{stage:'load'}});
+    await writeAudit(db,{adminUserId:adminId,itemId:safeItemId,conversationId:safeConversationId,action:'send_failure',result:'failed',errorCode:loaded.error,metadata:{stage:'load'}});
     return loaded;
   }
   const item=loaded.item;
   const downloaded=await storageBytes(db,item.storage_path);
   if(downloaded.ok!==true){
-    await writeAudit(db,{adminUserId:adminId,itemId:safeItemId,conversationId:safeConversationId,result:'failed',errorCode:downloaded.error,metadata:{stage:'download'}});
+    await writeAudit(db,{adminUserId:adminId,itemId:safeItemId,conversationId:safeConversationId,action:'send_failure',result:'failed',errorCode:downloaded.error,metadata:{stage:'download'}});
     return downloaded;
   }
   const expectedSize=Number(item.stored_size_bytes||0);
   if(expectedSize<1||downloaded.bytes.byteLength!==expectedSize){
     const error='library_storage_size_mismatch';
-    await writeAudit(db,{adminUserId:adminId,itemId:safeItemId,conversationId:safeConversationId,result:'failed',errorCode:error,metadata:{stage:'verify',expected_size:expectedSize,actual_size:downloaded.bytes.byteLength}});
+    await writeAudit(db,{adminUserId:adminId,itemId:safeItemId,conversationId:safeConversationId,action:'send_failure',result:'failed',errorCode:error,metadata:{stage:'verify',expected_size:expectedSize,actual_size:downloaded.bytes.byteLength}});
     return {ok:false,error};
   }
+
+  await writeAudit(db,{
+    adminUserId:adminId,itemId:safeItemId,conversationId:safeConversationId,
+    action:'send_attempt',result:'attempt',metadata:{stage:'delivery',media_kind:item.media_kind,mime_type:item.mime_type,stored_size_bytes:downloaded.bytes.byteLength,idempotency_key:safeKey},
+  });
 
   const delivery=await sendAttendanceMediaBytesViaMeta({
     db,
@@ -83,9 +88,12 @@ export async function sendAttendanceLibraryItemViaMeta({
   const accepted=delivery?.ok===true;
   const audit=await writeAudit(db,{
     adminUserId:adminId,itemId:safeItemId,conversationId:safeConversationId,
-    result:accepted?'success':'failed',errorCode:accepted?null:(delivery?.error||'library_send_failed'),delivery,
-    metadata:{stage:'delivery',media_kind:item.media_kind,mime_type:item.mime_type,stored_size_bytes:downloaded.bytes.byteLength},
+    action:accepted?'send_success':'send_failure',result:accepted?'success':'failed',
+    errorCode:accepted?null:(delivery?.error||'library_send_failed'),delivery,
+    metadata:{stage:'delivery',media_kind:item.media_kind,mime_type:item.mime_type,stored_size_bytes:downloaded.bytes.byteLength,idempotency_key:safeKey},
   });
-  if(accepted)return {...delivery,item_id:safeItemId,audit_recorded:audit.ok===true};
   return {...delivery,item_id:safeItemId,audit_recorded:audit.ok===true};
 }
+
+// Compatibilidade com o wiring já publicado na branch durante a implementação incremental.
+export const sendAttendanceLibraryItemViaMeta=sendAttendanceLibraryItem;
