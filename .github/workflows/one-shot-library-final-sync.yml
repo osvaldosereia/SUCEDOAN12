@@ -1,0 +1,33 @@
+name: one-shot-library-final-sync
+
+on:
+  push:
+    branches:
+      - feat/attendance-quick-library-20261003
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/attendance-quick-library-20261003
+          fetch-depth: 0
+      - name: Probe merge with current main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if git merge --no-edit origin/main; then
+            git push origin HEAD:feat/attendance-quick-library-20261003
+          else
+            echo 'MERGE_CONFLICTS_BEGIN'
+            git diff --name-only --diff-filter=U | sort
+            echo 'MERGE_CONFLICTS_END'
+            git merge --abort || true
+            exit 1
+          fi
