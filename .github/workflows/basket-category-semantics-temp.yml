@@ -1,0 +1,39 @@
+name: Basket category semantics temp
+on:
+  push:
+    branches: [feature/baskets-kits-canonical-20261004-exec]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: RED category-aware semantics
+        run: |
+          set +e
+          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs >/tmp/red.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/red.log
+          if [ "$rc" -eq 0 ]; then touch /tmp/already-green; else grep -Eq 'operational type|complete baskets|cleaning|Itens do kit|composition label' /tmp/red.log; fi
+      - name: Apply category-aware semantics
+        run: |
+          if [ ! -f /tmp/already-green ]; then python scripts/_apply_basket_category_semantics.py; fi
+          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs
+          git diff --check
+      - name: Commit production changes
+        run: |
+          if git diff --quiet -- vitrine/admin/index.html index.html vitrine/index.html; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vitrine/admin/index.html index.html vitrine/index.html
+          git commit -m 'fix: derive basket kit semantics from public category'
+          git push origin HEAD:feature/baskets-kits-canonical-20261004-exec
