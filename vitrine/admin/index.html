@@ -7290,14 +7290,15 @@
     if(!confirm('Excluir definitivamente o cadastro de '+label+'?\n\nOs pedidos históricos serão mantidos, mas os dados de cadastro e contato serão apagados. Esta ação não pode ser desfeita.'))return;
     const q=$('#customerSearch')?.value.trim()||'';
     try{
-      await customerApi('vitrine_customer_delete',{id});
+      await customerApi('vitrine_customer_delete',{id,customer_id:id});
       if(fromEditor&&$('#editor')?.open)$('#editor').close();
       state.customerProfile=null;
       state.customers=(state.customers||[]).filter(c=>c.id!==id);
       toast('Cadastro do cliente excluído definitivamente');
       await renderCustomers(q);
     }catch(e){
-      toast(errorMessage(e.message));
+      console.error('customer_delete_failed',e);
+      toast('Não foi possível excluir o cadastro.');
     }
   }
 
