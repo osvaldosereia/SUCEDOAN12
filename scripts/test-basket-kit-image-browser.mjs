@@ -26,8 +26,10 @@ try{
  await page.click('#lotImageClose');
  await page.evaluate(async()=>{events=[];window.api=async event=>{events.push(event);return event==='context'?{needs_hygiene:false,hygiene_lots:[],jobs:[]}:{job:{status:'preview',id:'job',manifest:[{name:'Arroz',quantity:3}],image_url:'data:image/webp;base64,UklGRg==',byte_size:22000,width:768}}};await BasketLotImage.open('lot',api,x=>String(x));});
  assert.equal(await page.locator('#lotImagePublish').isVisible(),false);
+ await page.evaluate(()=>document.querySelector('#editor').dispatchEvent(new Event('close')));
  await page.click('#lotImageStart');await page.waitForFunction(()=>!document.querySelector('#lotImagePublish').hidden);
  assert.deepEqual(await page.evaluate(()=>events),['context','start']);
  assert.ok((await page.locator('#lotImagePreview').innerText()).includes('3 un. · Arroz'));
  console.log('Basket image browser: labels, WebP budget, composition and explicit generation passed');
 }finally{await browser.close()}
+
