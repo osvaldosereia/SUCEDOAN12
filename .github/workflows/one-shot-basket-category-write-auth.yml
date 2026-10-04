@@ -4,6 +4,7 @@ on:
     branches: [feat/basket-financials-categories-20261004]
     paths:
       - 'scripts/patch-basket-category-write-auth.py'
+      - '.github/workflows/one-shot-basket-category-write-auth.yml'
 permissions:
   contents: write
 jobs:
