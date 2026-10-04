@@ -1,4 +1,5 @@
 import {optimizeLibraryImage} from './attendance-library-image.js';
+import {attendanceJsonApi} from './attendance-auth.js';
 
 const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ops-v1';
 const TOKEN_KEY='da_finance_access_token_v1';
@@ -32,21 +33,11 @@ const state={
 };
 const $=selector=>document.querySelector(selector);
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-const token=()=>String(sessionStorage.getItem(TOKEN_KEY)||'').trim();
 const prettyBytes=value=>{const n=Number(value||0);if(n<1024)return `${n} B`;if(n<1024*1024)return `${(n/1024).toFixed(0)} KB`;return `${(n/(1024*1024)).toFixed(n>=10*1024*1024?0:1)} MB`};
 const baseTitle=name=>(String(name||'Arquivo').replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim()||'Arquivo').slice(0,120);
 const makeId=prefix=>`${prefix}-${Date.now()}-${globalThis.crypto?.randomUUID?.()||Math.random().toString(16).slice(2)}`.replace(/[^A-Za-z0-9._:-]/g,'').slice(0,120);
 
-async function api(action,params={},method='GET'){
-  const auth=token();if(!auth)throw new Error('admin_session_required');
-  const url=new URL(API);url.searchParams.set('action',action);
-  const options={method,headers:{Authorization:`Bearer ${auth}`},cache:'no-store'};
-  if(method==='GET')for(const [key,value] of Object.entries(params))if(value!==null&&value!==undefined&&value!=='')url.searchParams.set(key,String(value));
-  else{options.headers['Content-Type']='application/json';options.body=JSON.stringify(params)}
-  const response=await fetch(url,options),data=await response.json().catch(()=>({}));
-  if(!response.ok||data?.ok===false){const error=new Error(data?.error||`library_http_${response.status}`);error.status=response.status;error.payload=data;throw error}
-  return data;
-}
+async function api(action,params={},method='GET'){return await attendanceJsonApi(action,params,method)}
 
 function canonicalMime(file){
   const ext=String(file?.name||'').toLowerCase().split('.').pop()||'';

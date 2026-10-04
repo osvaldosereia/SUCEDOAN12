@@ -1,3 +1,4 @@
+import {attendanceJsonApi} from './attendance-auth.js';
 const ADMIN_ATTENDANCE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ops-v1';
 const ADMIN_TOKEN_KEY='da_finance_access_token_v1';
 const PAPOAI_APP_URL='https://app.papoai.net/';
@@ -16,8 +17,7 @@ const dayKey=v=>{const d=new Date(v);return Number.isNaN(+d)?'':`${d.getFullYear
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 let refreshTimer=null,searchTimer=null,productTimer=null;
 
-function adminToken(){return String(sessionStorage.getItem(ADMIN_TOKEN_KEY)||'').trim()}
-async function api(action,params={},method='GET'){const token=adminToken();if(!token)throw new Error('admin_session_required');const url=new URL(ADMIN_ATTENDANCE_API);url.searchParams.set('action',action);if(method==='GET')for(const [k,v] of Object.entries(params))if(v!==null&&v!==undefined&&v!=='')url.searchParams.set(k,String(v));const options={method,headers:{Authorization:`Bearer ${token}`},cache:'no-store'};if(method!=='GET'){options.headers['Content-Type']='application/json';options.body=JSON.stringify(params)}const response=await fetch(url,options),data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||`attendance_${response.status}`);return data}
+async function api(action,params={},method='GET'){return await attendanceJsonApi(action,params,method)}
 function channelByPhone(v){const d=String(v||'').replace(/\D/g,'');return d.endsWith('0975')?'0975':d.endsWith('1018')?'1018':''}
 function selectedId(){return state.selected?.id||''}
 function showNote(text,tone='neutral'){const n=$('#composerNote');if(n){n.textContent=text;n.dataset.tone=tone}}
