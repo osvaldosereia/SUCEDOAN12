@@ -32,6 +32,7 @@ jobs:
           s=p.read_text()
           s=re.sub(r'\s*<button\b[^>]*\bdata-tab="separation"[^>]*>[\s\S]*?</button>','',s,count=1)
           s=s.replace("if(tab==='separation')renderSeparationTablet();",'')
+          s='\n'.join(line.rstrip() for line in s.splitlines())+'\n'
           p.write_text(s)
           PY
           fi
