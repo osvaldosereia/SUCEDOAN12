@@ -36,9 +36,8 @@ assert.match(imageLive,/create\s+or\s+replace\s+function\s+public\.ops2_admin_at
 assert.match(imageLive,/meta_image_live_enabled/i,'imagem deve ter flag live independente da mídia geral');
 assert.match(imageLive,/new\.message_type\s*=\s*'image'/i,'liberação independente deve valer somente para image');
 assert.match(imageLive,/meta_canary_destination_blocked/i,'áudio/documento devem continuar usando bloqueio do canário');
-assert.match(imageLive,/a\.phone_e164\s*=\s*'\+5565998150975'/i,'somente o canal 0975 pode ser graduado para imagem live');
-assert.match(imageLive,/\{meta_image_live_enabled\}[\s\S]*to_jsonb\(true\)/i,'migration deve ligar explicitamente imagem live no 0975');
-assert.doesNotMatch(imageLive,/a\.phone_e164\s*=\s*'\+5565984491018'[\s\S]{0,300}to_jsonb\(true\)/i,'canal 1018 não pode ser liberado para imagem live nesta mudança');
+assert.match(imageLive,/\{meta_image_live_enabled\}[\s\S]{0,120}to_jsonb\(false\)[\s\S]{0,220}a\.phone_e164\s*=\s*'\+5565984491018'/i,'canal 1018 deve permanecer explicitamente fechado para imagem live');
+assert.match(imageLive,/\{meta_image_live_enabled\}[\s\S]{0,120}to_jsonb\(true\)[\s\S]{0,220}a\.phone_e164\s*=\s*'\+5565998150975'/i,'somente o canal 0975 deve ser graduado para imagem live');
 assert.doesNotMatch(imageLive,/\{meta_media_live_enabled\}[\s\S]{0,120}to_jsonb\(true\)/i,'áudio/documento não podem ser liberados junto com imagem');
 
 console.log('PASS test-attendance-meta-media-live-v1');
