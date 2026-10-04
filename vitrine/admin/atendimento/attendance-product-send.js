@@ -25,10 +25,12 @@ function canvas(width,height){const el=document.createElement('canvas');el.width
 function fit(width,height,maxDimension){const longest=Math.max(width,height);if(longest<=maxDimension)return {width,height};const ratio=maxDimension/longest;return {width:Math.max(1,Math.round(width*ratio)),height:Math.max(1,Math.round(height*ratio))}}
 function canvasBlob(source,quality){return new Promise((resolve,reject)=>source.toBlob(blob=>blob?resolve(blob):reject(new Error('product_image_encode_failed')),'image/jpeg',quality))}
 function asError(code,payload=null){const error=new Error(code);error.code=code;error.payload=payload;return error}
+function failureRecord(product,batch,index,error){return {product,batch,index,error:String(error||'product_send_failed')}}
+function isSecurityStop(code){return SECURITY_STOP_ERRORS.has(code)||String(code||'').startsWith('meta_send_uncertain')}
 
 export function formatAttendanceProductCaption(product){return `${clean(product?.name,180)||'Produto'} — ${money(productPrice(product))}`}
 export function attendanceProductSelection(){return [...selected.values()]}
-export function attendanceProductFailedSelection(){return [...failed.values()]}
+export function attendanceProductFailedSelection(){return [...failed.values()].map(entry=>entry.product)}
 export function isAttendanceProductSelected(productId){return selected.has(String(productId||''))}
 export function clearAttendanceProductSelection(){selected.clear();failed.clear();return []}
 export function toggleAttendanceProductSelection(product){
@@ -98,13 +100,10 @@ export async function sendAttendanceProduct({conversationId,product,batch,index=
   const cid=String(conversationId||'').trim();if(!cid)throw asError('invalid_conversation_id');
   if(!product?.id)throw asError('product_id_required');
   if(!product?.image_url)return await sendText(cid,product,batch,index,'no_image');
-  let prepared=true;
   try{return await sendMedia(cid,product,batch,index)}catch(error){
     const code=String(error?.code||error?.message||'');
     if(SECURITY_STOP_ERRORS.has(code)||code.startsWith('meta_')||code.startsWith('attendance_'))throw error;
-    prepared=false;
-    if(!prepared)return await sendText(cid,product,batch,index,'image_unavailable');
-    throw error;
+    return await sendText(cid,product,batch,index,'image_unavailable');
   }
 }
 
@@ -123,10 +122,13 @@ export async function sendAttendanceProductBatch({conversationId,products=attend
       sent.push({product,result});selected.delete(String(product.id));
     }catch(error){
       const code=String(error?.code||error?.message||'product_send_failed');
-      const failure={product,error:code};failedItems.push(failure);failed.set(String(product.id),product);
-      if(SECURITY_STOP_ERRORS.has(code)||code.startsWith('meta_send_uncertain')){
+      const record=failureRecord(product,currentBatch,index,code);failedItems.push(record);failed.set(String(product.id),record);
+      if(isSecurityStop(code)){
         stoppedBy=code;
-        for(const remaining of items.slice(index+1)){if(!failed.has(String(remaining.id))){failed.set(String(remaining.id),remaining);failedItems.push({product:remaining,error:'not_attempted'})}}
+        for(const [offset,remaining] of items.slice(index+1).entries()){
+          if(failed.has(String(remaining.id)))continue;
+          const pending=failureRecord(remaining,currentBatch,index+offset+1,'not_attempted');failed.set(String(remaining.id),pending);failedItems.push(pending);
+        }
         break;
       }
     }
@@ -135,7 +137,27 @@ export async function sendAttendanceProductBatch({conversationId,products=attend
   return {ok:failedItems.length===0,sent,failed:failedItems,stopped_by:stoppedBy,batch_id:currentBatch};
 }
 
-export async function retryFailedAttendanceProducts(options={}){
-  const products=attendanceProductFailedSelection();
-  return await sendAttendanceProductBatch({...options,products});
+export async function retryFailedAttendanceProducts({conversationId,serviceWindowOpen=false,onProgress=()=>{}}={}){
+  const entries=[...failed.values()];
+  if(!serviceWindowOpen)return {ok:false,error:'service_window_closed',sent:[],failed:entries};
+  if(!conversationId)return {ok:false,error:'invalid_conversation_id',sent:[],failed:entries};
+  if(!entries.length)return {ok:false,error:'product_batch_empty',sent:[],failed:[]};
+  const sent=[],failedItems=[];failed.clear();let stoppedBy=null;
+  for(const [position,entry] of entries.entries()){
+    onProgress({phase:'sending',current:position+1,total:entries.length,product:entry.product,sent:sent.length,failed:failedItems.length,retry:true});
+    try{
+      const result=await sendAttendanceProduct({conversationId,product:entry.product,batch:entry.batch,index:entry.index});
+      sent.push({product:entry.product,result});selected.delete(String(entry.product.id));
+    }catch(error){
+      const code=String(error?.code||error?.message||'product_send_failed');
+      const record=failureRecord(entry.product,entry.batch,entry.index,code);failed.set(String(entry.product.id),record);failedItems.push(record);
+      if(isSecurityStop(code)){
+        stoppedBy=code;
+        for(const remaining of entries.slice(position+1)){if(!failed.has(String(remaining.product.id))){failed.set(String(remaining.product.id),remaining);failedItems.push(remaining)}}
+        break;
+      }
+    }
+  }
+  onProgress({phase:'done',current:entries.length,total:entries.length,sent:sent.length,failed:failedItems.length,stoppedBy,retry:true});
+  return {ok:failedItems.length===0,sent,failed:failedItems,stopped_by:stoppedBy,batch_id:entries[0]?.batch||null,retry:true};
 }

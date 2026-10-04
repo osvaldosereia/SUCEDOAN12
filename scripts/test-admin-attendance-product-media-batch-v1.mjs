@@ -26,13 +26,14 @@ assert.match(source,/service_window_closed/,'fila deve reconhecer fechamento da 
 assert.match(source,/SECURITY_STOP_ERRORS/,'erros de segurança devem interromper o restante do lote');
 assert.match(source,/for\s*\([^)]*of[^)]*\)\s*\{[\s\S]*?await\s+sendAttendanceProduct/,'envio deve ser estritamente sequencial');
 assert.doesNotMatch(source,/Promise\.all\s*\([\s\S]{0,700}(?:send_media|sendAttendanceProduct)/,'produtos não podem ser enviados em paralelo');
-assert.match(source,/failed/,'fila deve preservar itens que falharam para retry');
+assert.match(source,/failed\.set\(String\(product\.id\),record\)/,'fila deve preservar contexto dos itens que falharam');
 assert.match(source,/idempotency/i,'cada item deve usar idempotência explícita');
+assert.match(source,/batch:entry\.batch,index:entry\.index/,'retry deve reutilizar batch e índice originais do item');
 assert.doesNotMatch(source,/to_phone_e164\s*:|phone_number_id\s*:|whatsapp_account_id\s*:/,'frontend não pode escolher destino técnico');
 
 assert.match(app,/attendance-product-send\.js/,'app deve integrar o módulo de produtos');
 assert.match(app,/Selecionar/,'card deve permitir selecionar produto');
-assert.match(app,/Enviar\s+\$\{count\}\s+produto/,'painel deve exibir botão Enviar N produtos');
+assert.match(app,/['"]Enviar ['"]\s*\+\s*count\s*\+\s*['"] produto/,'painel deve exibir botão Enviar N produtos');
 assert.match(app,/clearAttendanceProductSelection/,'troca de conversa deve limpar seleção');
 assert.match(app,/service_window\?\.open/,'UI deve verificar janela de 24h antes do lote');
 assert.match(css,/\.product-batch-bar/,'deve existir barra visual do lote');
