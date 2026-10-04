@@ -27,7 +27,7 @@
 
 - **Estoque avulso zero com estoque físico reservado no lote:** a Cesta/Kit deve continuar vendável se `effective_sellable_stock` do componente for positivo; Task 1 cobre a diferença entre estoque físico e avulso.
 - **Lote principal disponível e vínculo esgotado/pausado:** `public_available` deve ser zero e o motivo `linked_lot_unavailable`; Tasks 1 e 5 cobrem esse caso.
-- **Dois lotes montados do mesmo modelo:** o lote público deve avançar em FIFO quando o primeiro esgotar sem intervenção humana; Tasks 1 e 4 cobrem o rollover.
+- **Dois lotes montados do mesmo modelo:** o lote público deve avançar em FIFO quando o primeiro esgotar sem intervenção humana; Tasks 1 e 6 cobrem o rollover.
 - **Categorias de produto x categorias de Cesta/Kit:** o payload de `home()` deve manter `categories` atuais e acrescentar `basket_categories`; Tasks 3 e 6 cobrem a separação.
 - **Concorrência no último estoque conectado:** dois checkouts simultâneos não podem consumir mais que o menor saldo; Task 5 cobre bloqueio transacional e decremento conjunto.
 
@@ -47,7 +47,7 @@
 
 - [ ] **Step 1: Write the failing contract test**
 
-Create `scripts/test-basket-canonical-commerce.mjs` asserting the new SQL file defines both canonical views, checks `effective_sellable_stock` rather than `loose_sellable_stock` for component existence, uses `least(...)` for linked lots, exposes all required `availability_reason` values, and orders eligible lots by `built_at, created_at, id` for FIFO.
+Create `scripts/test-basket-canonical-commerce.mjs` asserting the new SQL file defines both canonical views, checks `effective_sellable_stock` rather than `loose_sellable_stock` for component existence, uses `least(...)` for linked lots, exposes all required `availability_reason` values, orders eligible lots by `built_at, created_at, id` for FIFO, and enforces category presence for every public commercial model.
 
 - [ ] **Step 2: Run the test and verify RED**
 
@@ -56,11 +56,11 @@ Expected: FAIL because `supabase/sql/20261004_basket_canonical_commerce_v1.sql` 
 
 - [ ] **Step 3: Implement category normalization and availability views**
 
-In both migration snapshots, add `category_id` to standalone `basket_kit_templates` if missing and backfill deterministically: baskets with `uses_hygiene_kit=true` → `cestas-completas`; false → `cestas-so-alimento`; standalone `Kit Limpeza e Higiene` → `kits-limpeza-e-higiene`. Define `basket_lot_public_availability_v1` with the exact output fields from Interfaces and the reasons from the spec.
+In both migration snapshots, add `category_id` to standalone `basket_kit_templates` if missing and backfill deterministically: baskets with `uses_hygiene_kit=true` → `cestas-completas`; false → `cestas-so-alimento`; standalone `Kit Limpeza e Higiene` → `kits-limpeza-e-higiene`. After backfill, make `basket_templates.category_id` mandatory and add a constraint requiring `basket_kit_templates.category_id` whenever `basket_id is null`; internal kit templates inherit the parent basket category and may keep their own `category_id` null. Define `basket_lot_public_availability_v1` with the exact output fields from Interfaces and the reasons from the spec.
 
 - [ ] **Step 4: Implement model-level canonical catalog**
 
-Define `basket_commercial_catalog_v1` to normalize `basket_templates` and standalone `basket_kit_templates` only, select the first `public_available>0` lot by FIFO, expose current price/name/category/image fields, and never expose internal `basket_kit_templates` linked to a basket as duplicate public products.
+Define `basket_commercial_catalog_v1` to normalize `basket_templates` and standalone `basket_kit_templates` only, select the first `public_available>0` lot by FIFO, expose current price/name/category/image fields, use published lot image then model image as fallback, and never expose internal `basket_kit_templates` linked to a basket as duplicate public products.
 
 - [ ] **Step 5: Add compatibility wrappers**
 
@@ -162,7 +162,7 @@ Commit message: `feat: expose canonical basket admin model`.
 
 - [ ] **Step 1: Write failing browser/source tests**
 
-Cover: five category filters; card fields name/price/public stock/state/current lot; actions Editar, Novo lote, Duplicar lote, Pausar/Retomar, Imprimir; absence of technical `split`, `food`, `hygiene`, `business_type` controls in the primary view; absence of `Ativar no site`.
+Cover: five category filters; card fields name/price/public stock/state/current lot; actions Editar, Novo lote, Duplicar lote, Pausar/Retomar, Imprimir; absence of technical `split`, `food`, `hygiene`, `business_type` controls in the primary view; absence of `Ativar no site`; criação de um novo modelo permite informar e salvar o primeiro lote sem sair do formulário.
 
 - [ ] **Step 2: Verify RED**
 
@@ -175,7 +175,7 @@ Render the primary page from `basket_commercial_admin`; use category chips and c
 
 - [ ] **Step 4: Unify create/edit form**
 
-The form must expose only Name, Category, Price, Composition, Lot Quantity and optional Linked Lot. `Novo lote` uses default composition; `Duplicar lote` clones composition/price/link but generates a new code. Preserve current family-based **Trocar** picker with stock display.
+The form must expose only Name, Category, Price, Composition, Lot Quantity and optional Linked Lot. For um novo modelo, a mesma confirmação deve criar/salvar o modelo e seu primeiro lote sem exigir navegação adicional. `Novo lote` usa a composição padrão; `Duplicar lote` copia composição/preço/vínculo, herda a categoria do modelo e gera novo código automaticamente. Preserve current family-based **Trocar** picker with stock display.
 
 - [ ] **Step 5: Preserve advanced/history routes behind secondary actions**
 
@@ -243,7 +243,7 @@ Commit message: `fix: reserve basket stock from canonical availability`.
 
 - [ ] **Step 1: Write failing service tests**
 
-Assert `categories` remains Mercearia/Limpeza/Higiene/Casa-Pet; `basket_categories` has exactly five official categories; baskets with `public_available=0` are absent; stock is copied from `public_available`; detail/quote reject a lot no longer canonical-available.
+Assert `categories` remains Mercearia/Limpeza/Higiene/Casa-Pet; `basket_categories` has exactly five official categories; baskets with `public_available=0` are absent; stock is copied from `public_available`; detail/quote reject a lot no longer canonical-available; quando o primeiro lote FIFO esgota, a resposta passa automaticamente ao próximo lote elegível do mesmo modelo.
 
 - [ ] **Step 2: Verify RED**
 
