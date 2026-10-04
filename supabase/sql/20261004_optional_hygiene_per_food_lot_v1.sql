@@ -1,0 +1,1 @@
+-- TDD placeholder: optional hygiene per food lot
