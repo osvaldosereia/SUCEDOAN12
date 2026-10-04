@@ -36,5 +36,16 @@ Deno.serve(async(req:Request)=>{
   const tokenHash=link?.properties?.hashed_token;
   if(linkError||!tokenHash)return json(origin,{ok:false,error:"session_bootstrap_failed"},500);
 
-  return json(origin,{ok:true,token_hash:tokenHash,verification_type:"email",passwordless:true},200);
+  const exchange=new URL(req.url).searchParams.get("exchange")==="1";
+  if(!exchange)return json(origin,{ok:true,token_hash:tokenHash,verification_type:"email",passwordless:true},200);
+
+  const {data:verified,error:verifyError}=await sb.auth.verifyOtp({token_hash:tokenHash,type:"email"});
+  const accessToken=verified?.session?.access_token||"";
+  if(verifyError||!accessToken)return json(origin,{ok:false,error:"session_exchange_failed"},500);
+  return json(origin,{
+    ok:true,
+    access_token:accessToken,
+    expires_at:verified.session?.expires_at||null,
+    passwordless:true,
+  },200);
 });
