@@ -220,6 +220,7 @@ select
   m.image_url,
   m.default_price,
   c.lot_id as public_lot_id,
+  c.lot_kind as public_lot_kind,
   c.short_code as public_lot_code,
   c.lot_code as public_internal_lot_code,
   c.linked_lot_id,
@@ -239,7 +240,7 @@ select
 from models m
 left join (
   select
-    commercial_id,lot_id,short_code,lot_code,linked_lot_id,linked_available,public_available,
+    commercial_id,lot_id,lot_kind,short_code,lot_code,linked_lot_id,linked_available,public_available,
     availability_reason,public_name,sale_price_override,own_sale_price_override,built_at as public_lot_built_at
   from candidates
   where rn=1
