@@ -21,6 +21,7 @@ on:
       - 'supabase/sql/20261003_admin_attendance_meta_media_gate_v3.sql'
       - 'supabase/sql/20261004_admin_attendance_meta_media_live_v1.sql'
       - 'supabase/sql/20261004_admin_attendance_meta_media_readiness_compat_v2.sql'
+      - 'supabase/sql/20261004_whatsapp_template_events_v1.sql'
       - 'supabase/sql/20261003_attendance_human_ai_state_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_jobs_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_admin_preview_v1.sql'
@@ -72,6 +73,7 @@ jobs:
       - {name: Meta Phone Number ID strictness, run: 'node scripts/test-attendance-meta-phone-id-v1.mjs'}
       - {name: Meta response-body timeout, run: 'node scripts/test-attendance-meta-body-timeout-v1.mjs'}
       - {name: Meta webhook contract, run: 'node scripts/test-whatsapp-meta-webhook-v1.mjs'}
+      - {name: Meta template webhook events contract, run: 'node scripts/test-whatsapp-meta-template-events-v1.mjs'}
       - {name: Meta shadow media preservation regression, run: 'node scripts/test-whatsapp-meta-shadow-media-preserve-v1.mjs'}
       - {name: Meta webhook TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts'}
       - {name: ANA worker TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-ana-worker-v1/index.ts'}
