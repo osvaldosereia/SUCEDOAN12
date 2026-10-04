@@ -3466,7 +3466,7 @@
   }
   function basketKitDraftFinancials(draft,hygieneLots){
     let cost=0,retail=0;
-    const add=items=>{for(const x of items||[]){const p=x.product||x||{},qty=Number(x.quantity??x.quantity_per_kit??x.quantity_per_basket??0),q=Number.isFinite(qty)&&qty>0?qty:0;cost+=q*Math.max(0,Number(p.cost||0));retail+=q*Math.max(0,Number(p.price||0));}};
+    const add=items=>{for(const x of items||[]){const raw=x.product||x||{},p=Array.isArray(raw)?(raw[0]||{}):raw,qty=Number(x.quantity??x.quantity_per_kit??x.quantity_per_basket??0),q=Number.isFinite(qty)&&qty>0?qty:0;cost+=q*Math.max(0,Number(p.cost||0));retail+=q*Math.max(0,Number(p.price||0));}};
     add(draft?.items||[]);
     if(draft?.linked_hygiene_lot_id){const h=(hygieneLots||[]).find(x=>String(x.id)===String(draft.linked_hygiene_lot_id));add(h?.items||[])}
     return {cost:Math.round(cost*100)/100,retail:Math.round(retail*100)/100};
