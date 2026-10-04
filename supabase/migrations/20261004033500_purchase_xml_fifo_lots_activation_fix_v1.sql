@@ -43,6 +43,33 @@ $$;
 revoke all on function public.activate_purchase_xml_inventory_lots_v1(uuid,uuid)
   from public, anon, authenticated;
 
+-- This trigger function is shared by the verified-plan path and receipt path.
+-- OLD is not available on INSERT, so gate it explicitly with TG_OP.
+create or replace function public.purchase_xml_activate_inventory_lots_trigger_v1()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public'
+as $$
+begin
+  if tg_table_name='purchase_stock_receipt_plans_v1' then
+    if new.status='verified'
+       and (tg_op='INSERT' or old.status is distinct from new.status) then
+      perform public.activate_purchase_xml_inventory_lots_v1(new.document_id,new.verified_by);
+    end if;
+  elsif tg_table_name='purchase_stock_receipts' then
+    if new.status='applied'
+       and (tg_op='INSERT' or old.status is distinct from new.status) then
+      perform public.activate_purchase_xml_inventory_lots_v1(new.document_id,new.confirmed_by);
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.purchase_xml_activate_inventory_lots_trigger_v1()
+  from public, anon, authenticated;
+
 -- Cover both the normal plan verification path and any receipt that is inserted
 -- directly already in status applied.
 drop trigger if exists purchase_receipt_activate_inventory_lots_v1
