@@ -4,10 +4,12 @@ import fs from 'node:fs';
 const htmlPath=new URL('../vitrine/admin/atendimento/index.html',import.meta.url);
 const cssPath=new URL('../vitrine/admin/atendimento/attendance.css',import.meta.url);
 const jsPath=new URL('../vitrine/admin/atendimento/attendance-app.js',import.meta.url);
-for(const p of [htmlPath,cssPath,jsPath])assert.ok(fs.existsSync(p),`${p.pathname} deve existir`);
+const authPath=new URL('../vitrine/admin/atendimento/attendance-auth.js',import.meta.url);
+for(const p of [htmlPath,cssPath,jsPath,authPath])assert.ok(fs.existsSync(p),`${p.pathname} deve existir`);
 const html=fs.readFileSync(htmlPath,'utf8');
 const css=fs.readFileSync(cssPath,'utf8');
 const js=fs.readFileSync(jsPath,'utf8');
+const auth=fs.readFileSync(authPath,'utf8');
 
 assert.match(html,/data-channel-switch="all"/,'fila unificada Todas deve existir');
 assert.match(html,/data-channel-switch="0975"/,'filtro 0975 deve existir');
@@ -42,7 +44,9 @@ assert.match(js,/conversationOpen:false/);
 assert.match(js,/state\.conversationOpen=true/);
 assert.match(js,/message-date-separator/);
 assert.match(js,/canonical_last_message_at\|\|b\.last_message_at/,'fila deve ordenar pela recência canônica');
-assert.match(js,/admin_session_required/,'sem sessão deve falhar explicitamente');
+assert.match(js,/attendanceJsonApi/,'core deve delegar autenticação ao cliente compartilhado');
+assert.match(auth,/ensureAttendanceToken/,'cliente compartilhado deve garantir sessão antes das chamadas');
+assert.match(auth,/sessionStorage\.setItem/,'sessão renovada deve ser persistida para os demais módulos');
 assert.doesNotMatch(js,/pin\s*:\s*['"]000000['"]|ADMIN_AUTH_API|admin-pin-auth-v1/,'core nativo não pode carregar autenticação embutida');
 assert.doesNotMatch(js,/parent\.document|parent\.postMessage|postMessage\(/,'core nativo não pode depender da página pai');
 
@@ -51,4 +55,4 @@ assert.match(css,/\.messages\{[^}]*min-height:0[^}]*overflow:auto/,'histórico d
 assert.match(css,/@media\(max-width:680px\)/,'mobile deve possuir layout próprio');
 assert.match(css,/grid-template-columns:var\(--queue\) minmax\(430px,1fr\) var\(--context\)/,'desktop deve priorizar conversa central');
 
-console.log('OK · Atendimento nativo usa inbox unificada, filtros operacionais RECENTE/PEDIDOS/CADASTRO, conversa central e contexto integrado.');
+console.log('OK · Atendimento nativo usa inbox unificada, sessão compartilhada renovável, filtros operacionais e contexto integrado.');
