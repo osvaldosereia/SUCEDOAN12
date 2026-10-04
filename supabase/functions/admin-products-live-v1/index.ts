@@ -2472,23 +2472,32 @@ async function basketKitProductSuggestions(u:URL){
   if(!Number.isInteger(quantity)||quantity<1||quantity>100)return {error:"invalid_quantity",status:400};
   const membership=await db.from("basket_lot_substitution_products").select("family_key").eq("product_id",pid).maybeSingle();
   if(membership.error)throw membership.error;
-  const family=membership.data?.family_key;if(!family)return {suggestions:[]};
-  const [rule,members,settings]=await Promise.all([
-    db.from("basket_lot_substitution_rules").select("enabled").eq("family_key",family).maybeSingle(),
-    db.from("basket_lot_substitution_products").select("product_id").eq("family_key",family).order("product_id"),
-    db.from("basket_lot_automation_settings").select("price_variation_pct").eq("id",1).maybeSingle()
+  const family=membership.data?.family_key;if(!family)return {family_key:null,suggestions:[]};
+  const [rule,members]=await Promise.all([
+    db.from("basket_lot_substitution_rules").select("enabled,label").eq("family_key",family).maybeSingle(),
+    db.from("basket_lot_substitution_products").select("product_id").eq("family_key",family).order("product_id")
   ]);
-  if(rule.error)throw rule.error;if(members.error)throw members.error;if(settings.error)throw settings.error;
-  if(rule.data?.enabled!==true)return {suggestions:[]};
+  if(rule.error)throw rule.error;if(members.error)throw members.error;
+  if(rule.data?.enabled!==true)return {family_key:family,family_label:rule.data?.label||family,suggestions:[]};
   const ids=(members.data||[]).map((m:any)=>String(m.product_id)),products:any[]=[];
-  // Only fetch this family's products. Keep URL sizes below the gateway limit.
   for(let i=0;i<ids.length;i+=60){
     const q=await db.from("products").select("id,name,sku,gtin,image_url,price,packaging,unit,brand").eq("is_active",true).in("id",ids.slice(i,i+60));
     if(q.error)throw q.error;products.push(...(q.data||[]));
   }
-  const base=products.find(p=>String(p.id)===pid);if(!base)return {suggestions:[]};
+  const base=products.find(p=>String(p.id)===pid);if(!base)return {family_key:family,family_label:rule.data?.label||family,suggestions:[]};
   const loose=await basketLooseStockMap(products.map(p=>p.id));
-  return {suggestions:await basketKitSuggestions(base,products,loose,quantity,new Map(ids.map((x:string)=>[x,family])),Number(settings.data?.price_variation_pct??15))};
+  const basePrice=Number(base.price||0);
+  const suggestions=products.filter(p=>String(p.id)!==pid).map((cand:any)=>{
+    const available=Number(loose.get(String(cand.id))?.loose_sellable_stock||0),candidatePrice=Number(cand.price||0);
+    return {...cand,loose_stock:available,price_cents:Math.round(candidatePrice*100),capacity:quantity>0?Math.floor(available/quantity):0,price_delta_pct:basePrice>0?Math.abs(candidatePrice-basePrice)/basePrice*100:null};
+  });
+  suggestions.sort((a:any,b:any)=>{
+    const aa=Number(a.loose_stock||0)>0?1:0,bb=Number(b.loose_stock||0)>0?1:0;
+    const ad=Number.isFinite(Number(a.price_delta_pct))?Number(a.price_delta_pct):Number.POSITIVE_INFINITY;
+    const bd=Number.isFinite(Number(b.price_delta_pct))?Number(b.price_delta_pct):Number.POSITIVE_INFINITY;
+    return bb-aa||Number(b.loose_stock||0)-Number(a.loose_stock||0)||ad-bd||String(a.name).localeCompare(String(b.name),"pt-BR");
+  });
+  return {family_key:family,family_label:rule.data?.label||family,suggestions};
 }
 function nextBasketKitShortCodeFromLots(prefix:string,lots:any[]){
   const used=new Set((lots||[]).filter((l:any)=>["draft","ready"].includes(String(l.status))).map((l:any)=>String(l.short_code||"")));
