@@ -1,0 +1,25 @@
+name: Basket canonical inspect
+on:
+  push:
+    branches: [feature/baskets-kits-canonical-20261004-exec]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Inspect basket code
+        shell: bash
+        run: |
+          set -e
+          echo '=== ADMIN API basket functions ==='
+          grep -nE 'async function basket(KitsAdmin|KitAdminDetail)|basket_lot_sale_toggle|basket_kit_lot_draft_activate|basket_category' supabase/functions/admin-products-live-v1/index.ts | head -80 || true
+          echo '=== STOREFRONT basket functions ==='
+          grep -nE '^async function (home|quote|basketDetail)|basket_current_lot_v1|basket_split_availability_v1|create_vitrine_cart_order_v1|reserve_vitrine_order_stock_v1' supabase/functions/storefront-v2/index.ts | head -120 || true
+          echo '=== SQL recent basket objects ==='
+          grep -RniE 'create or replace (view|function).*basket_(current_lot|split_availability|kit_lot_draft_activate|lot_sale_toggle)|sale_enabled|linked_lot_id' supabase/sql supabase/migrations | tail -160 || true
+          echo '=== ADMIN UI basket labels ==='
+          grep -nE 'Ativar no site|Desativar no site|Pausar venda|Retomar venda|function kitLotRow|openBasketKitAdmin|Categorias de cestas' vitrine/admin/index.html | head -120 || true
