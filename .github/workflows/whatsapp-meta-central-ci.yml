@@ -11,6 +11,7 @@ on:
       - 'supabase/functions/whatsapp-meta-webhook-v1/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
+      - 'supabase/functions/admin-marketing-audiences-v1/**'
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/admin/marketing/**'
@@ -37,6 +38,7 @@ on:
       - 'scripts/test-whatsapp-ana-*.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
       - 'scripts/test-whatsapp-marketing-*.mjs'
+      - 'scripts/test-admin-marketing-*.mjs'
       - '.github/workflows/whatsapp-meta-central-ci.yml'
   workflow_dispatch:
 permissions:
@@ -60,6 +62,7 @@ jobs:
       - {name: Marketing Meta template admin UI contract, run: 'node scripts/test-whatsapp-marketing-template-admin-v1.mjs'}
       - {name: Marketing consent ledger contract, run: 'node scripts/test-whatsapp-marketing-consent-ledger-v1.mjs'}
       - {name: Marketing audience preview contract, run: 'node scripts/test-whatsapp-marketing-audience-preview-v1.mjs'}
+      - {name: Admin marketing audiences contract, run: 'node scripts/test-admin-marketing-audiences-v1.mjs'}
       - {name: Marketing intelligence legacy contract, run: 'python scripts/test-marketing-intelligence-contract.py'}
       - {name: Meta transport contract, run: 'node scripts/test-attendance-meta-send-v1.mjs'}
       - {name: Meta media contract, run: 'node scripts/test-attendance-meta-media-v1.mjs'}
@@ -93,6 +96,7 @@ jobs:
       - {name: Admin Meta gateway contract, run: 'node scripts/test-admin-attendance-meta-send-ui-v1.mjs'}
       - {name: Admin media dispatcher syntax, run: 'node --check supabase/functions/_shared/admin-attendance-media-send-v1.mjs'}
       - {name: Admin templates TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-templates-v1/index.ts'}
+      - {name: Admin marketing audiences TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-marketing-audiences-v1/index.ts'}
       - {name: Admin Meta gateway TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts'}
       - {name: Native Attendance core JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-app.js'}
       - {name: ANA preview UI JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-ana-preview.js'}
