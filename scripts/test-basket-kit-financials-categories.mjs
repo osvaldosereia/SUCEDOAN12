@@ -17,11 +17,11 @@ const result=vm.runInContext(`basketKitDraftFinancials({
     {quantity:2,product:{cost:10,price:15}},
     {quantity:1,product:{cost:4.5,price:8}}
   ],
-  linked_hygiene_lot_id:'h1'
+  linked_lot_id:'h1',sale_price:44
 },[
   {id:'h1',items:[{quantity_per_kit:1,product:[{cost:6,price:9}]},{quantity_per_kit:2,product:{cost:2,price:3}}]}
 ])`,ctx);
-assert.deepEqual(JSON.parse(JSON.stringify(result)),{cost:34.5,retail:53},'somatórios devem incluir alimentos e o lote de limpeza escolhido mesmo quando a relação vem como array');
+assert.equal(result.cost,34.5);assert.equal(result.retail,53);assert.equal(result.totalCost,34.5);assert.equal(result.totalRetail,53);
 assert.ok(admin.includes('id="kitLotCostSum"')&&admin.includes('id="kitLotRetailSum"'),'criação do lote deve mostrar custo e venda internos');
 const globalHelpers=admin.slice(admin.indexOf('  const $='),admin.indexOf('  const state='));
 assert.match(globalHelpers,/const cents\s*=|function cents\s*\(/,'Novo lote usa cents() nos somatórios e precisa ter esse helper no bloco global do Admin');

@@ -12,6 +12,7 @@ on:
       - 'supabase/sql/20261004_all_food_baskets_require_hygiene_v1.sql'
       - 'supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql'
       - 'supabase/sql/20261004_basket_categories_and_financials_v1.sql'
+      - 'supabase/sql/20261004_basket_lot_types_links_financials_v1.sql'
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/basket-carousel.js'
       - 'supabase/functions/storefront-v2/index.ts'
@@ -29,6 +30,7 @@ on:
       - 'supabase/sql/20261004_all_food_baskets_require_hygiene_v1.sql'
       - 'supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql'
       - 'supabase/sql/20261004_basket_categories_and_financials_v1.sql'
+      - 'supabase/sql/20261004_basket_lot_types_links_financials_v1.sql'
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/basket-carousel.js'
       - 'supabase/functions/storefront-v2/index.ts'
@@ -51,6 +53,7 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-commercial-fields.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-financials-categories.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-types-links-financials.mjs
       - run: node scripts/test-basket-kit-image-browser.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright

@@ -3511,21 +3511,32 @@
       quantity:source?Number(source.quantity_built||10):10,
       short_code:resumeDraft?(source.short_code||d.next_short_code||''):(d.next_short_code||''),
       notes:resumeDraft?(source.notes||''):'',
-      public_name:String(source?.public_name||d.kit?.basket?.name||''),
-      sale_price:Number(source?.sale_price_override??d.kit?.basket?.base_price??0),
-      linked_hygiene_lot_id:source?.linked_hygiene_lot_id||null,
+      public_name:String(source?.public_name||d.kit?.basket?.name||d.kit?.name||''),
+      sale_price:Number(source?.own_sale_price_override??source?.sale_price_override??d.kit?.basket?.base_price??0),
+      business_type:String(source?.business_type||(d.kit.kind==='food'?'basic_food':'cleaning_hygiene')),
+      linked_lot_id:source?.linked_lot_id||source?.linked_hygiene_lot_id||null,
       items
     };
     if($('#kitTemplateReference'))$('#kitTemplateReference').open=false;
     paintBasketKitLotComposer();setTimeout(()=>$('#basketKitLotComposer')?.scrollIntoView({behavior:'smooth',block:'start'}),20);
   }
-  function basketKitDraftFinancials(draft,hygieneLots){
-    let cost=0,retail=0;
-    const add=items=>{for(const x of items||[]){const raw=x.product||x||{},p=Array.isArray(raw)?(raw[0]||{}):raw,qty=Number(x.quantity??x.quantity_per_kit??x.quantity_per_basket??0),q=Number.isFinite(qty)&&qty>0?qty:0;cost+=q*Math.max(0,Number(p.cost||0));retail+=q*Math.max(0,Number(p.price||0));}};
-    add(draft?.items||[]);
-    if(draft?.linked_hygiene_lot_id){const h=(hygieneLots||[]).find(x=>String(x.id)===String(draft.linked_hygiene_lot_id));add(h?.items||[])}
-    return {cost:Math.round(cost*100)/100,retail:Math.round(retail*100)/100};
+  function basketKitDraftFinancials(draft,linkableLots){
+    const round=v=>Math.round(Number(v||0)*100)/100;
+    const itemTotals=items=>{let cost=0,retail=0;for(const x of items||[]){const raw=x.product||x||{},p=Array.isArray(raw)?(raw[0]||{}):raw,qty=Number(x.quantity??x.quantity_per_kit??x.quantity_per_basket??0),q=Number.isFinite(qty)&&qty>0?qty:0;cost+=q*Math.max(0,Number(x.cost??p.cost??0));retail+=q*Math.max(0,Number(x.price??p.price??0));}return {cost:round(cost),retail:round(retail)}};
+    const own=itemTotals(draft?.items||[]),ownManual=round(draft?.sale_price||0),ownHidden=round(ownManual-own.retail);
+    const linkedId=draft?.linked_lot_id||draft?.linked_hygiene_lot_id||null;
+    const linked=(linkableLots||[]).find(x=>String(x.id)===String(linkedId||''));
+    const linkedItems=itemTotals(linked?.items||[]);
+    const linkedCost=round(linked?.cost_sum_snapshot??linked?.own_cost_sum_snapshot??linkedItems.cost);
+    const linkedRetail=round(linked?.component_sum_snapshot??linked?.own_component_sum_snapshot??linkedItems.retail);
+    const linkedManual=round(linked?.sale_price_override??linked?.own_sale_price_override??linkedRetail);
+    const linkedHidden=round(linked?.hidden_adjustment_snapshot??linked?.own_hidden_adjustment_snapshot??(linkedManual-linkedRetail));
+    const totalCost=round(own.cost+linkedCost),totalRetail=round(own.retail+linkedRetail),totalManual=round(ownManual+linkedManual),totalHidden=round(ownHidden+linkedHidden);
+    const costToRetailPct=totalCost>0?((totalRetail-totalCost)/totalCost)*100:null;
+    const costToManualPct=totalCost>0?((totalManual-totalCost)/totalCost)*100:null;
+    return {ownCost:own.cost,ownRetail:own.retail,linkedCost,linkedRetail,totalCost,totalRetail,ownManual,linkedManual,totalManual,ownHidden,linkedHidden,totalHidden,costToRetailPct,costToManualPct,cost:totalCost,retail:totalRetail,linked};
   }
+  function basketKitFinancialPct(v){return Number.isFinite(Number(v))?Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'—'}
   function basketKitLotDraftCapacity(){
     return basketKitDraftCapacityFromItems(state.basketKitLotDraft?.items||[]);
   }
@@ -3537,20 +3548,26 @@
     const currentDigit=String(draft.short_code||'').slice(2,3);
     const title=draft.draft_lot_id?'Continuar rascunho '+esc(draft.short_code||''):
       draft.source_lot_id?'Duplicar '+esc(draft.source_code||'lote'):'Novo lote · '+esc(draft.short_code||'');
+    const linkableLots=(d.linkable_lots||d.hygiene_lots||[]).filter(x=>String(x.id)!==String(draft.draft_lot_id||draft.source_lot_id||''));
+    const linkedLot=linkableLots.find(x=>String(x.id)===String(draft.linked_lot_id||''))||null;
+    const financial=basketKitDraftFinancials(draft,linkableLots);
     host.innerHTML='<div class="basket-composer"><div class="basket-composer-head"><div><h2>'+title+'</h2><p>Confira os produtos que serão colocados em cada kit. Confirmar montagem reserva estoque; a venda é ativada depois.</p></div><button class="text" id="closeKitLotDraft" type="button">Fechar</button></div>'+
       '<div class="basket-composer-summary"><label><span>Código do lote</span><div class="kit-code-editor"><span class="kit-code-prefix">'+esc(prefix)+'</span><select id="kitLotDigit">'+digits.map(x=>'<option value="'+x+'" '+(x===currentDigit?'selected':'')+' '+(used.has(prefix+x)&&prefix+x!==draft.short_code?'disabled':'')+'>'+x+(used.has(prefix+x)&&prefix+x!==draft.short_code?' · em uso':'')+'</option>').join('')+'</select></div><small>Preenchido automaticamente. Você pode escolher outro número.</small></label>'+
         '<label><span>Quantidade de kits</span><input class="basket-inline-input" id="kitLotQty" type="number" min="1" max="500" step="1" value="'+esc(draft.quantity)+'"><small>De 1 a 500 kits por lote.</small></label>'+
         '<div class="basket-kpi"><small>Disponível para montar</small><strong id="kitLotCapacity">'+esc(basketKitLotDraftCapacity())+'</strong><span class="sub">kits com esta composição</span></div></div>'+
-      (d.kit.kind==='food'?'<div class="basket-composer-summary" style="margin-top:10px">'+
-        '<label><span>Nome no site</span><input class="basket-inline-input" id="kitLotPublicName" maxlength="120" value="'+esc(draft.public_name||'')+'" placeholder="Nome que o cliente verá"><small>Este é o nome público deste lote.</small></label>'+
-        '<label><span>Valor da cesta</span><input class="basket-inline-input" id="kitLotSalePrice" inputmode="decimal" type="number" min="0" max="9999999" step="0.01" value="'+esc(Number(draft.sale_price||0).toFixed(2))+'"><small>A diferença para a soma dos produtos fica como valor oculto e permanece na personalização.</small></label>'+
-        '<div class="basket-kpi"><small>Regra comercial</small><strong>Preço fixado</strong><span class="sub">trocas alteram só os produtos; o ajuste oculto é preservado</span></div></div>':'')+
-      (d.kit.kind==='food'?'<div class="basket-composer-summary" style="margin-top:10px"><label><span>Lote de Limpeza/Higiene (opcional)</span><select id="kitLotHygieneLot"><option value="">Sem kit de Limpeza/Higiene</option>'+(d.hygiene_lots||[]).map(h=>'<option value="'+esc(h.id)+'" '+(String(h.id)===String(draft.linked_hygiene_lot_id||'')?'selected':'')+'>'+esc((h.public_name||h.short_code||h.lot_code||'Kit limpeza')+' · código '+(h.short_code||h.lot_code||'—')+' · '+fmtQty(h.quantity_available||0)+' disponível(is)')+'</option>').join('')+'</select><small>Opcional. Escolha um lote somente quando esta cesta realmente tiver Limpeza/Higiene.</small></label><div class="basket-kpi"><small>Vínculo físico</small><strong>Alimentos + Limpeza</strong><span class="sub">se nenhum lote for escolhido, a cesta terá apenas o kit de alimentos</span></div></div>':'')+
-      '<div class="basket-composer-summary" style="margin-top:10px"><div class="basket-kpi"><small>Somatório do preço de custo</small><strong id="kitLotCostSum">'+money(cents(basketKitDraftFinancials(draft,d.hygiene_lots||[]).cost))+'</strong><span class="sub">interno · custo dos produtos de 1 kit</span></div><div class="basket-kpi"><small>Somatório do preço de venda</small><strong id="kitLotRetailSum">'+money(cents(basketKitDraftFinancials(draft,d.hygiene_lots||[]).retail))+'</strong><span class="sub">interno · soma dos preços individuais de 1 kit</span></div><div class="basket-kpi"><small>Visibilidade</small><strong>Somente Admin</strong><span class="sub">estes valores não são enviados à vitrine pública</span></div></div>'+
+      '<div class="basket-composer-summary" style="margin-top:10px">'+
+        '<label><span>Tipo da cesta/kit</span><select id="kitLotBusinessType">'+[['basic_complete','Cesta Básica Completa'],['basic_food','Cesta Básica Só os Alimentos'],['cleaning_hygiene','Kit Limpeza e Higiene'],['cleaning','Kit Limpeza'],['hygiene','Kit Higiene']].map(x=>'<option value="'+x[0]+'" '+(draft.business_type===x[0]?'selected':'')+'>'+x[1]+'</option>').join('')+'</select><small>Classificação operacional deste lote.</small></label>'+ 
+        '<label><span>Nome no site</span><input class="basket-inline-input" id="kitLotPublicName" maxlength="120" value="'+esc(draft.public_name||'')+'" placeholder="Nome que o cliente verá"><small>Nome público deste lote quando ele fizer parte de uma oferta.</small></label>'+ 
+        '<label><span>Valor manual deste lote</span><input class="basket-inline-input" id="kitLotSalePrice" inputmode="decimal" type="number" min="0" max="9999999" step="0.01" value="'+esc(Number(draft.sale_price||0).toFixed(2))+'"><small>É o valor comercial próprio deste lote; o vínculo soma o valor do outro lote.</small></label></div>'+ 
+      '<div class="basket-composer-summary" style="margin-top:10px"><label><span>Vincular outro lote (opcional)</span><select id="kitLotLinkedLot"><option value="">Sem lote vinculado</option>'+linkableLots.map(h=>'<option value="'+esc(h.id)+'" '+(String(h.id)===String(draft.linked_lot_id||'')?'selected':'')+'>'+esc((h.public_name||h.short_code||h.lot_code||'Lote')+' · '+(h.short_code||h.lot_code||'—')+' · '+fmtQty(h.quantity_available||0)+' disponível(is)')+'</option>').join('')+'</select><small>Se escolhido, estoque e valores comerciais dos dois lotes permanecem vinculados.</small></label>'+ 
+        '<div class="basket-kpi"><small>Valor comercial combinado</small><strong id="kitLotManualTotal">'+money(cents(financial.totalManual))+'</strong><span class="sub">valor manual deste lote + valor do lote vinculado</span></div>'+ 
+        '<div class="basket-kpi"><small>Valor oculto combinado</small><strong id="kitLotHiddenSum">'+money(cents(financial.totalHidden))+'</strong><span class="sub">soma dos ajustes ocultos dos dois lotes</span></div></div>'+ 
+      '<div class="basket-composer-summary" style="margin-top:10px"><div class="basket-kpi"><small>Custo total do kit</small><strong id="kitLotCostSum">'+money(cents(financial.totalCost))+'</strong><span class="sub">custo dos produtos de 1 kit, incluindo lote vinculado</span></div><div class="basket-kpi"><small>Venda total dos produtos</small><strong id="kitLotRetailSum">'+money(cents(financial.totalRetail))+'</strong><span class="sub">soma dos preços individuais de venda</span></div><div class="basket-kpi"><small>Diferença custo → venda dos produtos</small><strong id="kitLotCostToRetailPct">'+basketKitFinancialPct(financial.costToRetailPct)+'</strong><span class="sub">percentual sobre o custo total</span></div><div class="basket-kpi"><small>Diferença custo → valor definido do kit</small><strong id="kitLotCostToManualPct">'+basketKitFinancialPct(financial.costToManualPct)+'</strong><span class="sub">percentual sobre o custo total</span></div></div>'+ 
+      (linkedLot?'<div class="panel" style="margin-top:10px;padding:12px"><div class="kit-section-title" style="margin:0 0 8px"><div><h2 style="font-size:15px">Itens do lote vinculado</h2><p>'+esc((linkedLot.public_name||linkedLot.short_code||'Lote')+' · '+(linkedLot.short_code||linkedLot.lot_code||'—'))+'</p></div></div><div class="basket-lot-inline-strip">'+(linkedLot.items||[]).map(x=>{const raw=x.product||x||{},p=Array.isArray(raw)?(raw[0]||{}):raw;return '<div class="basket-lot-component-card"><div><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc(fmtQty(x.quantity_per_kit||x.quantity_per_basket||0))+'× por kit</small><small>Custo un. '+money(cents(p.cost||0))+' · Venda un. '+money(cents(p.price||0))+'</small></div></div>'}).join('')+'</div></div>':'')+
       '<div id="kitLotWarning" class="basket-warning" hidden></div>'+
       '<div class="kit-draft-list">'+draft.items.map((x,i)=>'<div class="kit-draft-line">'+
         '<img class="kit-draft-photo" loading="lazy" src="'+esc(x.image_url||'/img/sem-foto.svg')+'" alt="">'+
-        '<div class="basket-choice '+(x.is_changed?'changed':'')+'"><strong>'+esc(x.name)+'</strong><small>'+esc(x.sku||'')+(x.is_changed?' · alterado neste lote':'')+'</small></div>'+
+        '<div class="basket-choice '+(x.is_changed?'changed':'')+'"><strong>'+esc(x.name)+'</strong><small>'+esc(x.sku||'')+(x.is_changed?' · alterado neste lote':'')+'</small><small>Custo un. '+money(cents(x.cost||0))+' · Venda un. '+money(cents(x.price||0))+'</small></div>'+
         '<label><span class="sub">Qtd. por kit</span><input class="basket-inline-input" type="number" min="1" max="100" step="1" value="'+esc(x.quantity_per_kit)+'" data-kit-line-qty="'+i+'" aria-label="Quantidade por kit de '+esc(x.name)+'"></label>'+
         '<div class="basket-stock-box" data-kit-stock="'+i+'"></div>'+
         '<div class="basket-row-actions"><button class="secondary" type="button" data-kit-other="'+i+'">Trocar</button><button class="text danger" type="button" data-kit-remove="'+i+'">Remover</button></div>'+
@@ -3566,9 +3583,10 @@
     $('#kitLotDigit').onchange=e=>{draft.short_code=prefix+e.currentTarget.value;updateBasketKitLotFeedback()};
     $('#kitLotQty').oninput=e=>{draft.quantity=Number(e.currentTarget.value);updateBasketKitLotFeedback()};
     $('#kitLotNotes').oninput=e=>draft.notes=e.currentTarget.value;
+    if($('#kitLotBusinessType'))$('#kitLotBusinessType').onchange=e=>draft.business_type=e.currentTarget.value;
     if($('#kitLotPublicName'))$('#kitLotPublicName').oninput=e=>draft.public_name=e.currentTarget.value;
-    if($('#kitLotSalePrice'))$('#kitLotSalePrice').oninput=e=>draft.sale_price=Number(e.currentTarget.value);
-    if($('#kitLotHygieneLot'))$('#kitLotHygieneLot').onchange=e=>{draft.linked_hygiene_lot_id=e.currentTarget.value||null;updateBasketKitLotFeedback()};
+    if($('#kitLotSalePrice'))$('#kitLotSalePrice').oninput=e=>{draft.sale_price=Number(e.currentTarget.value);updateBasketKitLotFeedback()};
+    if($('#kitLotLinkedLot'))$('#kitLotLinkedLot').onchange=e=>{draft.linked_lot_id=e.currentTarget.value||null;paintBasketKitLotComposer()};
     host.querySelectorAll('[data-kit-line-qty]').forEach(el=>el.oninput=()=>{const i=Number(el.dataset.kitLineQty);draft.items[i].quantity_per_kit=Number(el.value);draft.items[i].is_changed=true;updateBasketKitLotFeedback()});
     host.querySelectorAll('[data-kit-other]').forEach(btn=>btn.onclick=()=>openBasketKitProductPicker(Number(btn.dataset.kitOther)));
     host.querySelectorAll('[data-kit-remove]').forEach(btn=>btn.onclick=()=>{draft.items.splice(Number(btn.dataset.kitRemove),1);paintBasketKitLotComposer()});
@@ -3583,9 +3601,13 @@
     const valid=Number.isInteger(draft.quantity)&&draft.quantity>=1&&draft.quantity<=500&&draft.items.length>0&&draft.items.every(x=>Number.isInteger(x.quantity_per_kit)&&x.quantity_per_kit>=1&&x.quantity_per_kit<=100);
     const cap=basketKitLotDraftCapacity(),over=draft.quantity>cap;
     $('#kitLotCapacity').textContent=fmtQty(cap);
-    const financial=basketKitDraftFinancials(draft,state.basketKitDetail?.hygiene_lots||[]);
-    if($('#kitLotCostSum'))$('#kitLotCostSum').textContent=money(cents(financial.cost));
-    if($('#kitLotRetailSum'))$('#kitLotRetailSum').textContent=money(cents(financial.retail));
+    const financial=basketKitDraftFinancials(draft,state.basketKitDetail?.linkable_lots||state.basketKitDetail?.hygiene_lots||[]);
+    if($('#kitLotCostSum'))$('#kitLotCostSum').textContent=money(cents(financial.totalCost));
+    if($('#kitLotRetailSum'))$('#kitLotRetailSum').textContent=money(cents(financial.totalRetail));
+    if($('#kitLotManualTotal'))$('#kitLotManualTotal').textContent=money(cents(financial.totalManual));
+    if($('#kitLotHiddenSum'))$('#kitLotHiddenSum').textContent=money(cents(financial.totalHidden));
+    if($('#kitLotCostToRetailPct'))$('#kitLotCostToRetailPct').textContent=basketKitFinancialPct(financial.costToRetailPct);
+    if($('#kitLotCostToManualPct'))$('#kitLotCostToManualPct').textContent=basketKitFinancialPct(financial.costToManualPct);
     const warning=$('#kitLotWarning');
     warning.hidden=valid&&!over;
     warning.textContent=!valid?'Informe de 1 a 500 kits e de 1 a 100 unidades por produto. A composição precisa ter pelo menos um produto.':over?'Estoque insuficiente para '+draft.quantity+' kits. Reduza a quantidade, troque os produtos ou salve como rascunho.':'';
@@ -3667,8 +3689,8 @@
       const saved=await api('basket_kit_lot_draft_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         draft_lot_id:draft.draft_lot_id||null,kit_template_id:d.kit.id,quantity:Number(draft.quantity||0),short_code:draft.short_code,
         duplicated_from_lot_id:draft.source_lot_id||null,operator:op,notes:draft.notes||'',
-        public_name:d.kit.kind==='food'?String(draft.public_name||'').trim():null,sale_price:d.kit.kind==='food'?Number(draft.sale_price):null,
-        linked_hygiene_lot_id:d.kit.kind==='food'?(draft.linked_hygiene_lot_id||null):null,
+        public_name:String(draft.public_name||'').trim(),sale_price:Number(draft.sale_price),business_type:draft.business_type,
+        linked_lot_id:draft.linked_lot_id||null,
         items:draft.items.map((x,i)=>({kit_template_item_id:x.kit_template_item_id||null,source_template_item_id:x.source_template_item_id||null,template_product_id:x.template_product_id||null,
           product_id:x.product_id,quantity_per_kit:Number(x.quantity_per_kit||0),position_order:i,is_changed:x.is_changed===true,change_note:x.is_changed?'Alterado na criação/duplicação do lote':null}))
       })});
