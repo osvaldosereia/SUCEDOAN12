@@ -80,3 +80,6 @@
 - Cinco riscos prioritários têm testes explícitos.
 - Rollback sem schema/backend novo.
 - `opus-media-recorder` 0.8.0 é pinado, Worker/WASM same-origin e sem CDN.
+
+## Execution status
+Plano pronto para revisão humana. Após aprovação, executar em modo Native neste harness usando `superpowers:executing-plans`, porque a sessão atual não expõe ferramenta de subagentes dedicada.
