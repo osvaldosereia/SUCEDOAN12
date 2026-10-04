@@ -40,7 +40,8 @@ assert.match(migration,/\(v_group='hygiene'\s+or\s+sale_enabled=true\)/i,'lote v
 assert.ok(service.includes('create_basket_kit_lot_v4')&&service.includes('save_basket_kit_lot_draft_v4'),'gateway deve usar RPC v4');
 assert.ok(service.includes('p_business_type')&&service.includes('p_linked_lot_id'),'gateway deve persistir tipo e vínculo genérico');
 assert.ok(service.includes('linkable_lots'),'detalhe Admin deve devolver lotes vinculáveis');
-assert.match(service,/\.eq\("status","ready"\)\.gt\("quantity_available",0\)\.is\("linked_lot_id",null\)/,'seletor não deve oferecer lote já composto como alvo');
+assert.match(service,/\.in\("status",\["draft","ready"\]\)/,'seletor deve carregar lotes em edição e montados da categoria');
+assert.match(admin,/h\.linked_lot_id\?'disabled':'/,'lote já composto deve continuar visível, porém desabilitado como alvo');
 assert.match(service,/\["insufficient_loose_stock","lot_product_unavailable","linked_lot_unavailable"\]/,'lote vinculado indisponível deve ser conflito 409');
 assert.ok(storefront.includes('linked_lot_id')||migration.includes('linked_lot_id'),'storefront/view deve conhecer vínculo genérico');
 for(const forbidden of ['own_cost_sum_snapshot','cost_sum_snapshot','cost_to_retail_pct','cost_to_manual_pct'])assert.ok(!storefront.includes(`"${forbidden}"`),`storefront não deve publicar ${forbidden}`);
