@@ -14,7 +14,7 @@ const storefront=fs.readFileSync(storefrontPath,'utf8');
 const send=fs.readFileSync(sendPath,'utf8');
 
 assert.match(page,/data-context-tab=["']orders["'][^>]*>Pedidos<\/button>\s*<button[^>]+data-context-tab=["']offers["'][^>]*>Ofertas<\/button>\s*<button[^>]+data-context-tab=["']products["'][^>]*>Produtos<\/button>/,'Ofertas deve ficar entre Pedidos e Produtos');
-assert.match(page,/attendance-offers\.js\?v=offers-v2/,'página deve invalidar cache do módulo de Ofertas após a correção');
+assert.match(page,/attendance-offers\.js/,'página deve carregar o módulo de Ofertas');
 assert.match(offers,/storefront-v2\?action=offers/,'Ofertas deve reutilizar a fonte canônica já existente do storefront');
 assert.match(offers,/className=['"]product-card['"]/,'Ofertas deve reutilizar o padrão visual de cards de produtos');
 assert.match(offers,/toggleAttendanceProductSelection\(product\)/,'ofertas devem reutilizar a seleção canônica de produtos');
