@@ -1,5 +1,5 @@
 import {safeAttendanceFilename,normalizedAttendanceMime} from './attendance-media-v1.mjs';
-import {uploadMetaMedia,MetaMediaError,isAllowedOutboundMetaMime,outboundMetaMaxBytes} from './whatsapp-meta-media-v1.mjs';
+import {uploadMetaMedia,MetaMediaError,isAllowedOutboundMetaMime,outboundMetaMaxBytes,canonicalOutboundMetaMime} from './whatsapp-meta-media-v1.mjs';
 import {sendMediaViaMeta,MetaTransportError} from './whatsapp-meta-transport-v1.mjs';
 
 const DOCUMENT_MIME=new Set([
@@ -41,9 +41,9 @@ export async function sendAttendanceMediaBytesViaMeta({
 
   const safeConversationId=String(conversationId||'').trim();
   const safeIdempotencyKey=String(idempotencyKey||'').trim();
-  const normalizedMime=normalizedAttendanceMime(mimeType);
-  const mediaType=mediaTypeFromMime(normalizedMime);
   const safeFilename=safeAttendanceFilename(filename||'arquivo');
+  const normalizedMime=canonicalOutboundMetaMime(mimeType,safeFilename);
+  const mediaType=mediaTypeFromMime(normalizedMime);
   const safeCaption=String(caption||'').trim();
   const bodyBytes=normalizedBytes(bytes);
   const maxBytes=outboundMetaMaxBytes(normalizedMime);
@@ -150,13 +150,13 @@ export async function sendAttendanceMediaViaMeta({
   const file=form.get('file');
   if(!(file instanceof File))return {ok:false,error:'media_file_required'};
 
-  const mimeType=normalizedAttendanceMime(file.type);
+  const filename=safeAttendanceFilename(file.name||'arquivo');
+  const mimeType=canonicalOutboundMetaMime(file.type,filename);
   const mediaType=mediaTypeFromMime(mimeType);
   const maxBytes=outboundMetaMaxBytes(mimeType);
   if(!mediaType||!isAllowedOutboundMetaMime(mimeType)||maxBytes<1)return {ok:false,error:'media_mime_not_allowed'};
   if(file.size<1||file.size>maxBytes)return {ok:false,error:'media_size_invalid'};
   if(caption.length>1024)return {ok:false,error:'media_caption_too_long'};
-  const filename=safeAttendanceFilename(file.name||'arquivo');
   if(!conversationId||!idempotencyKey)return {ok:false,error:'media_request_invalid'};
 
   const bytes=new Uint8Array(await file.arrayBuffer());
