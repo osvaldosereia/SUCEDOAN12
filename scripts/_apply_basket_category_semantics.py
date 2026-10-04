@@ -33,7 +33,7 @@ for p in [Path('index.html'),Path('vitrine/index.html')]:
 "    function basketGroupTitle(group){return group==='food'?'Alimentos':group==='hygiene'?'Limpeza e higiene':'Itens da cesta'}",
 "    function basketGroupTitle(group,basket){const slug=String(basket?.category_slug||'');if(group==='food')return slug.startsWith('kits-')?'Itens do kit':'Alimentos';return group==='hygiene'?'Limpeza e higiene':'Itens da cesta'}",
 'public group title')
-    s=replace_once(s,'basketGroupTitle(group)+'</,'basketGroupTitle(group,b)+'</,'public group title call')
+    s=replace_once(s,"basketGroupTitle(group)+'</","basketGroupTitle(group,b)+'</",'public group title call')
     p.write_text(s)
 
 if Path('index.html').read_text()!=Path('vitrine/index.html').read_text():
