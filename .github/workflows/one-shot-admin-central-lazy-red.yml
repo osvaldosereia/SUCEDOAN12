@@ -1,0 +1,20 @@
+name: One-shot admin central lazy RED
+on:
+  push:
+    branches: [fix/central-lazy-on-demand]
+    paths: ['.github/workflows/one-shot-admin-central-lazy-red.yml']
+permissions:
+  contents: read
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            vitrine/admin/index.html
+            scripts/test-admin-central-progressive-load.py
+          sparse-checkout-cone-mode: false
+      - name: RED - new lazy contract must fail on current Central
+        run: python3 scripts/test-admin-central-progressive-load.py
