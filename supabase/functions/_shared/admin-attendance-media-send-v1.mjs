@@ -1,8 +1,13 @@
 import {safeAttendanceFilename,normalizedAttendanceMime} from './attendance-media-v1.mjs';
-import {uploadMetaMedia,MetaMediaError,isAllowedOutboundMetaMime,canonicalOutboundMetaMime} from './whatsapp-meta-media-v1.mjs';
+import {uploadMetaMedia,MetaMediaError,isAllowedOutboundMetaMime,outboundMetaMaxBytes,canonicalOutboundMetaMime} from './whatsapp-meta-media-v1.mjs';
 import {sendMediaViaMeta,MetaTransportError} from './whatsapp-meta-transport-v1.mjs';
 
-const MAX_BYTES=16*1024*1024;
+const DOCUMENT_MIME=new Set([
+  'application/pdf','text/plain','application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'
+]);
 const SAFE_MEDIA_GATE_ERRORS=new Set([
   'human_send_not_homologated',
   'meta_canary_not_enabled',
@@ -14,7 +19,15 @@ function mediaTypeFromMime(value){
   const mime=normalizedAttendanceMime(value);
   if(mime==='image/jpeg'||mime==='image/png')return 'image';
   if(['audio/aac','audio/amr','audio/mpeg','audio/mp4','audio/ogg'].includes(mime))return 'audio';
-  if(mime==='application/pdf')return 'document';
+  if(['video/mp4','video/3gpp'].includes(mime))return 'video';
+  if(DOCUMENT_MIME.has(mime))return 'document';
+  return null;
+}
+
+function normalizedBytes(value){
+  if(value instanceof Uint8Array)return value;
+  if(value instanceof ArrayBuffer)return new Uint8Array(value);
+  if(ArrayBuffer.isView(value))return new Uint8Array(value.buffer,value.byteOffset,value.byteLength);
   return null;
 }
 
@@ -28,46 +41,39 @@ async function sha256Hex(bytes){
   return [...new Uint8Array(digest)].map(value=>value.toString(16).padStart(2,'0')).join('');
 }
 
-export async function sendAttendanceMediaViaMeta({
-  db,form,accessToken,graphVersion,
+export async function sendAttendanceMediaBytesViaMeta({
+  db,conversationId,idempotencyKey,bytes,mimeType,filename,caption='',accessToken,graphVersion,
   markClaimFailed,markMetaUncertain,
 }={}){
-  if(!db||!(form instanceof FormData))return {ok:false,error:'media_request_invalid'};
+  if(!db)return {ok:false,error:'media_request_invalid'};
   const token=String(accessToken??'').trim();
   const version=String(graphVersion??'').trim();
   if(!token||!/^v\d+\.\d+$/.test(version))return {ok:false,error:'meta_transport_not_configured'};
 
-  for(const key of ['to_phone_e164','whatsapp_account_id','account_id','phone_number_id','waba_id','customer_id']){
-    if(form.has(key))return {ok:false,error:'destination_fields_not_allowed'};
-  }
+  const safeConversationId=String(conversationId||'').trim();
+  const safeIdempotencyKey=String(idempotencyKey||'').trim();
+  const safeFilename=safeAttendanceFilename(filename||'arquivo');
+  const normalizedMime=canonicalOutboundMetaMime(mimeType,safeFilename);
+  const mediaType=mediaTypeFromMime(normalizedMime);
+  const safeCaption=String(caption||'').trim();
+  const bodyBytes=normalizedBytes(bytes);
+  const maxBytes=outboundMetaMaxBytes(normalizedMime);
 
-  const conversationId=String(form.get('conversation_id')||'').trim();
-  const idempotencyKey=String(form.get('idempotency_key')||'').trim();
-  const caption=String(form.get('caption')||'').trim();
-  const file=form.get('file');
-  if(!(file instanceof File))return {ok:false,error:'media_file_required'};
-  if(file.size<1||file.size>MAX_BYTES)return {ok:false,error:'media_size_invalid'};
+  if(!safeConversationId||!safeIdempotencyKey||!bodyBytes)return {ok:false,error:'media_request_invalid'};
+  if(!mediaType||!isAllowedOutboundMetaMime(normalizedMime)||maxBytes<1)return {ok:false,error:'media_mime_not_allowed'};
+  if(bodyBytes.byteLength<1||bodyBytes.byteLength>maxBytes)return {ok:false,error:'media_size_invalid'};
+  if(safeCaption.length>1024)return {ok:false,error:'media_caption_too_long'};
 
-  const filename=safeAttendanceFilename(file.name||'arquivo');
-  const mimeType=canonicalOutboundMetaMime(file.type,filename);
-  const mediaType=mediaTypeFromMime(mimeType);
-  if(!mediaType||!isAllowedOutboundMetaMime(mimeType))return {ok:false,error:'media_mime_not_allowed'};
-  if(caption.length>1024)return {ok:false,error:'media_caption_too_long'};
-  if(!conversationId||!idempotencyKey)return {ok:false,error:'media_request_invalid'};
-
-  const bytes=new Uint8Array(await file.arrayBuffer());
-  if(bytes.byteLength!==file.size||bytes.byteLength>MAX_BYTES)return {ok:false,error:'media_size_invalid'};
-  const sha256=await sha256Hex(bytes);
-
+  const sha256=await sha256Hex(bodyBytes);
   const queued=await db.rpc('ops2_admin_attendance_enqueue_media_v1',{
-    p_conversation_id:conversationId,
+    p_conversation_id:safeConversationId,
     p_media_type:mediaType,
-    p_mime_type:mimeType,
-    p_filename:filename,
-    p_size_bytes:bytes.byteLength,
+    p_mime_type:normalizedMime,
+    p_filename:safeFilename,
+    p_size_bytes:bodyBytes.byteLength,
     p_sha256:sha256,
-    p_caption:mediaType==='audio'?null:(caption||null),
-    p_idempotency_key:idempotencyKey,
+    p_caption:mediaType==='audio'?null:(safeCaption||null),
+    p_idempotency_key:safeIdempotencyKey,
   });
   if(queued.error){
     const gateError=structuredMediaGateError(queued.error);
@@ -98,9 +104,9 @@ export async function sendAttendanceMediaViaMeta({
       accessToken:token,
       graphVersion:version,
       phoneNumberId:claim.phone_number_id,
-      mimeType,
-      filename,
-      bytes,
+      mimeType:normalizedMime,
+      filename:safeFilename,
+      bytes:bodyBytes,
       timeoutMs:20000,
     });
     const sent=await sendMediaViaMeta({
@@ -109,8 +115,8 @@ export async function sendAttendanceMediaViaMeta({
       toE164:claim.to_phone_e164,
       mediaType,
       mediaId:uploaded.mediaId,
-      caption:mediaType==='audio'?'':caption,
-      filename:mediaType==='document'?filename:'',
+      caption:mediaType==='audio'?'':safeCaption,
+      filename:mediaType==='document'?safeFilename:'',
       graphVersion:version,
       timeoutMs:15000,
     });
@@ -126,8 +132,8 @@ export async function sendAttendanceMediaViaMeta({
     }
     return {
       ok:true,status:'accepted',outbox_status:'sent',provider:'meta',
-      provider_message_id:sent.providerMessageId,
-      message_id:accepted.data?.message_id||null,
+      outbox_id:claim.outbox_id,
+      provider_message_id:sent.providerMessageId,message_id:accepted.data?.message_id||null,
       status_current:accepted.data?.status_current||'accepted',
     };
   }catch(error){
@@ -142,4 +148,36 @@ export async function sendAttendanceMediaViaMeta({
     }
     return await markMetaUncertain(claim,'unexpected_media_transport_error');
   }
+}
+
+export async function sendAttendanceMediaViaMeta({
+  db,form,accessToken,graphVersion,
+  markClaimFailed,markMetaUncertain,
+}={}){
+  if(!db||!(form instanceof FormData))return {ok:false,error:'media_request_invalid'};
+  for(const key of ['to_phone_e164','whatsapp_account_id','account_id','phone_number_id','waba_id','customer_id']){
+    if(form.has(key))return {ok:false,error:'destination_fields_not_allowed'};
+  }
+
+  const conversationId=String(form.get('conversation_id')||'').trim();
+  const idempotencyKey=String(form.get('idempotency_key')||'').trim();
+  const caption=String(form.get('caption')||'').trim();
+  const file=form.get('file');
+  if(!(file instanceof File))return {ok:false,error:'media_file_required'};
+
+  const filename=safeAttendanceFilename(file.name||'arquivo');
+  const mimeType=canonicalOutboundMetaMime(file.type,filename);
+  const mediaType=mediaTypeFromMime(mimeType);
+  const maxBytes=outboundMetaMaxBytes(mimeType);
+  if(!mediaType||!isAllowedOutboundMetaMime(mimeType)||maxBytes<1)return {ok:false,error:'media_mime_not_allowed'};
+  if(file.size<1||file.size>maxBytes)return {ok:false,error:'media_size_invalid'};
+  if(caption.length>1024)return {ok:false,error:'media_caption_too_long'};
+  if(!conversationId||!idempotencyKey)return {ok:false,error:'media_request_invalid'};
+
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  if(bytes.byteLength!==file.size)return {ok:false,error:'media_size_invalid'};
+  return await sendAttendanceMediaBytesViaMeta({
+    db,conversationId,idempotencyKey,bytes,mimeType,filename,caption,accessToken,graphVersion,
+    markClaimFailed,markMetaUncertain,
+  });
 }
