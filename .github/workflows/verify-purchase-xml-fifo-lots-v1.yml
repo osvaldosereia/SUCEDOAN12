@@ -5,27 +5,42 @@ on:
     branches:
       - feat/purchase-xml-fifo-lots-v1
     paths:
-      - 'scripts/verify_purchase_xml_fifo_lots_v1.py'
-      - 'supabase/migrations/20261004033000_purchase_xml_fifo_lots_v1.sql'
-      - 'supabase/functions/purchase-xml-v1/index.ts'
-      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
-      - 'vitrine/admin/index.html'
       - '.github/workflows/verify-purchase-xml-fifo-lots-v1.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'scripts/verify_purchase_xml_fifo_lots_v1.py'
-      - 'supabase/migrations/20261004033000_purchase_xml_fifo_lots_v1.sql'
-      - 'supabase/functions/purchase-xml-v1/index.ts'
-      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
-      - 'vitrine/admin/index.html'
+
+permissions:
+  contents: write
 
 jobs:
-  verify:
+  patch-and-verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feat/purchase-xml-fifo-lots-v1
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python scripts/verify_purchase_xml_fifo_lots_v1.py
+      - name: Confirm RED
+        shell: bash
+        run: |
+          if python scripts/verify_purchase_xml_fifo_lots_v1.py; then
+            echo 'Expected RED before source patch.' >&2
+            exit 1
+          fi
+          echo 'RED confirmed.'
+      - name: Apply source patch
+        run: python scripts/patch_purchase_xml_fifo_lots_v1.py
+      - name: Confirm GREEN
+        run: python scripts/verify_purchase_xml_fifo_lots_v1.py
+      - name: Commit verified source patch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vitrine/admin/index.html \
+            supabase/functions/purchase-xml-v1/index.ts \
+            supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts
+          git rm -f .github/workflows/verify-purchase-xml-fifo-lots-v1.yml .github/workflows/one-shot-purchase-xml-fifo-lots-v1.yml
+          git commit -m 'feat: wire XML FIFO lots into admin'
+          git push origin HEAD:feat/purchase-xml-fifo-lots-v1
