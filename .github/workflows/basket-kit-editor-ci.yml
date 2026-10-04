@@ -2,56 +2,32 @@ name: Basket kit editor
 on:
   pull_request:
     paths:
+      - 'index.html'
+      - 'vitrine/index.html'
       - 'vitrine/admin/index.html'
-      - 'supabase/functions/admin-products-live-v1/index.ts'
-      - 'scripts/test-basket-kit-*.mjs'
-      - 'scripts/test-basket-lot-*.mjs'
-      - 'scripts/test-basket-canonical-*.mjs'
-      - 'scripts/test-basket-admin-*.mjs'
-      - 'scripts/test-basket-storefront-*.mjs'
-      - 'scripts/test-basket-mounted-edit-print-models.mjs'
-      - 'supabase/functions/basket-lot-image-v1/**'
-      - 'supabase/sql/20261003_basket_lot_commercial_fields_v1.sql'
-      - 'supabase/sql/20261004_basket_lot_linked_hygiene_and_original_rule_v1.sql'
-      - 'supabase/sql/20261004_all_food_baskets_require_hygiene_v1.sql'
-      - 'supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql'
-      - 'supabase/sql/20261004_basket_categories_and_financials_v1.sql'
-      - 'supabase/sql/20261004_basket_lot_types_links_financials_v1.sql'
-      - 'supabase/sql/20261004_basket_lot_reopen_and_model_admin_v1.sql'
-      - 'supabase/sql/20261004_basket_lot_model_admin_rpc_permissions_v1.sql'
-      - 'supabase/sql/20261004_basket_link_draft_selection_v1.sql'
-      - 'supabase/sql/20261004_basket_canonical_commerce_v1.sql'
-      - 'supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql'
-      - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/basket-carousel.js'
+      - 'vitrine/admin/basket-lot-image.js'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/functions/basket-lot-image-v1/**'
+      - 'supabase/sql/2026100*_basket_*.sql'
+      - 'supabase/migrations/2026100*_basket_*.sql'
+      - 'scripts/test-basket-*.mjs'
       - '.github/workflows/basket-kit-editor-ci.yml'
   push:
     branches: [main]
     paths:
+      - 'index.html'
+      - 'vitrine/index.html'
       - 'vitrine/admin/index.html'
-      - 'supabase/functions/admin-products-live-v1/index.ts'
-      - 'scripts/test-basket-kit-*.mjs'
-      - 'scripts/test-basket-lot-*.mjs'
-      - 'scripts/test-basket-canonical-*.mjs'
-      - 'scripts/test-basket-admin-*.mjs'
-      - 'scripts/test-basket-storefront-*.mjs'
-      - 'scripts/test-basket-mounted-edit-print-models.mjs'
-      - 'supabase/functions/basket-lot-image-v1/**'
-      - 'supabase/sql/20261003_basket_lot_commercial_fields_v1.sql'
-      - 'supabase/sql/20261004_basket_lot_linked_hygiene_and_original_rule_v1.sql'
-      - 'supabase/sql/20261004_all_food_baskets_require_hygiene_v1.sql'
-      - 'supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql'
-      - 'supabase/sql/20261004_basket_categories_and_financials_v1.sql'
-      - 'supabase/sql/20261004_basket_lot_types_links_financials_v1.sql'
-      - 'supabase/sql/20261004_basket_lot_reopen_and_model_admin_v1.sql'
-      - 'supabase/sql/20261004_basket_lot_model_admin_rpc_permissions_v1.sql'
-      - 'supabase/sql/20261004_basket_link_draft_selection_v1.sql'
-      - 'supabase/sql/20261004_basket_canonical_commerce_v1.sql'
-      - 'supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql'
-      - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/basket-carousel.js'
+      - 'vitrine/admin/basket-lot-image.js'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/functions/basket-lot-image-v1/**'
+      - 'supabase/sql/2026100*_basket_*.sql'
+      - 'supabase/migrations/2026100*_basket_*.sql'
+      - 'scripts/test-basket-*.mjs'
       - '.github/workflows/basket-kit-editor-ci.yml'
 permissions:
   contents: read
@@ -70,10 +46,17 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image-service.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-commercial-fields.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
-      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-commerce.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-financials-categories.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-types-links-financials.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-mounted-edit-print-models.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-commerce.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-mounting.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-order-engine.mjs
       - run: node scripts/test-basket-kit-image-browser.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
