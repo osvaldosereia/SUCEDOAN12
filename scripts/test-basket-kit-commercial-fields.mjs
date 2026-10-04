@@ -26,13 +26,14 @@ assert.match(adminUi,/public_name:d\.kit\.kind==='food'/,'draft save must send p
 assert.match(adminUi,/sale_price:d\.kit\.kind==='food'/,'draft save must send sale price');
 
 const adminApi=fs.readFileSync(adminApiPath,'utf8');
-assert.match(adminApi,/save_basket_kit_lot_draft_v2/,'gateway must use commercial draft RPC');
-assert.match(adminApi,/create_basket_kit_lot_v2/,'gateway must use commercial create RPC');
+assert.match(adminApi,/save_basket_kit_lot_draft_v3/,'gateway must use linked-hygiene commercial draft RPC');
+assert.match(adminApi,/create_basket_kit_lot_v3/,'gateway must use linked-hygiene commercial create RPC');
+assert.match(adminApi,/p_linked_hygiene_lot_id/,'gateway must persist the selected hygiene lot');
 const detailStart=adminApi.indexOf('async function basketKitAdminDetail');
 const detailEnd=adminApi.indexOf('async function basketKitLotCreate',detailStart);
 assert.ok(detailStart>=0&&detailEnd>detailStart,'basketKitAdminDetail block missing');
 const detail=adminApi.slice(detailStart,detailEnd);
-assert.match(detail,/basket_stock_lots"\)\.select\("[^"]*sale_price_override[^"]*public_name[^"]*"\)/,'admin detail must return saved commercial fields so resume/duplicate preserve them');
+assert.match(detail,/basket_stock_lots"\)\.select\("[^"]*sale_price_override[^"]*public_name[^"]*linked_hygiene_lot_id[^"]*"\)/,'admin detail must return saved commercial fields and linked hygiene so resume/duplicate preserve them');
 
 const storefront=fs.readFileSync(storefrontPath,'utf8');
 assert.match(storefront,/name:a\.food_public_name\|\|b\.name/,'split home/detail must use food lot public name');
