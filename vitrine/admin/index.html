@@ -3124,55 +3124,11 @@
     if(!response.ok)throw new Error(data?.message||data?.error||'basket_auto_rpc_failed');
     return data;
   }
-  function basketAutoStatusLabel(v){return v==='approved'?'Aprovada':v==='rejected'?'Rejeitada':'Pendente'}
-  function basketAutoBuildLabel(v){return v==='ready'?'Pronta para aprovar':'Precisa de atenção'}
-  async function openBasketAutoSuggestions(status='pending'){
-    $('#editorTitle').textContent='Sugestões automáticas de lotes';
-    $('#editorBody').innerHTML='<div class="loading">Carregando sugestões…</div>';
-    $('#editorActions').innerHTML='<button class="secondary" id="basketAutoClose" type="button">Fechar</button>';
-    $('#basketAutoClose').onclick=()=>$('#editor').close();
-    if(!$('#editor').open)$('#editor').showModal();
-    try{state.basketAutoData=await basketAutoRpc('basket_lot_suggestions_admin_v1',{p_status:status});state.basketAutoStatus=status;paintBasketAutoSuggestions()}
-    catch(e){$('#editorBody').innerHTML='<div class="empty">Não consegui carregar as sugestões.</div>'}
-  }
-  function paintBasketAutoSuggestions(){
-    const d=state.basketAutoData||{},cfg=d.settings||{},rules=d.rules||[],rows=d.suggestions||[],status=state.basketAutoStatus||'pending';
-    $('#editorTitle').textContent='Sugestões automáticas de lotes';
-    $('#editorBody').innerHTML=
-      '<div class="rule-notice"><strong>Automação segura</strong><div>O sistema apenas sugere. O estoque só é reservado depois que você aprova um lote.</div></div>'+
-      '<div class="section-title">Configuração</div><div class="basket-auto-settings">'+
-        '<label><span>Automação</span><select id="basketAutoEnabled"><option value="1" '+(cfg.enabled?'selected':'')+'>Ligada</option><option value="0" '+(!cfg.enabled?'selected':'')+'>Desligada</option></select></label>'+
-        '<label><span>Quantidade por sugestão</span><input id="basketAutoQty" type="number" min="1" max="100" value="'+esc(cfg.lot_quantity||5)+'"></label>'+
-        '<label><span>Variação máxima de preço</span><input id="basketAutoPct" type="number" min="0" max="100" step="1" value="'+esc(cfg.price_variation_pct||15)+'"></label></div>'+
-      '<div class="basket-auto-families">'+rules.map(r=>'<label class="basket-auto-family"><input type="checkbox" data-basket-auto-family="'+esc(r.family_key)+'" '+(r.enabled?'checked':'')+'><span>'+esc(r.label)+'</span></label>').join('')+'</div>'+
-      '<div class="basket-auto-actions"><button class="secondary" id="basketAutoSaveSettings" type="button">Salvar configuração</button><button class="secondary" id="basketAutoManageCatalog" type="button">Gerenciar substituições</button><button class="primary" id="basketAutoGenerate" type="button">Gerar sugestões agora</button></div>'+
-      '<div class="section-title">Fila</div><div class="basket-auto-status">'+
-        '<button class="secondary" data-basket-auto-status="pending" type="button">Pendentes</button><button class="secondary" data-basket-auto-status="approved" type="button">Aprovadas</button><button class="secondary" data-basket-auto-status="rejected" type="button">Rejeitadas</button></div>'+
-      '<div class="basket-auto-grid">'+(rows.length?rows.map(x=>'<article class="basket-auto-card"><div class="basket-auto-head"><div><h3>'+esc(x.basket_name)+'</h3><span class="sub">'+esc(dateTime(x.created_at))+' · '+esc(basketAutoStatusLabel(x.status))+'</span></div><span class="pill '+(x.buildability_status==='ready'?'':'warn')+'">'+esc(basketAutoBuildLabel(x.buildability_status))+'</span></div><div class="basket-auto-metrics"><div class="basket-auto-metric"><small>Montar</small><strong>'+esc(fmtQty(x.quantity_planned))+'</strong></div><div class="basket-auto-metric"><small>Soma itens</small><strong>'+esc(Number(x.component_sum||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}))+'</strong></div><div class="basket-auto-metric"><small>Preço cesta</small><strong>'+esc(Number(x.sale_price||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}))+'</strong></div><div class="basket-auto-metric"><small>Ajuste</small><strong>'+esc(Number(x.hidden_adjustment||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}))+'</strong></div></div>'+(Array.isArray(x.issues)&&x.issues.length?'<div class="basket-auto-issues">'+esc(x.issues.length)+' ponto(s) precisam de conferência antes de aprovar.</div>':'')+'<div class="basket-auto-actions"><button class="secondary" type="button" data-basket-auto-open="'+esc(x.id)+'">Abrir composição</button></div></article>').join(''):'<div class="history-empty">Nenhuma sugestão nesta situação.</div>')+'</div>';
-    $('#editorActions').innerHTML='<button class="secondary" id="basketAutoClose" type="button">Fechar</button>';
-    $('#basketAutoClose').onclick=()=>$('#editor').close();
-    $('#basketAutoSaveSettings').onclick=saveBasketAutoSettings;
-    $('#basketAutoManageCatalog').onclick=openBasketSubstitutionCatalog;
-    $('#basketAutoGenerate').onclick=generateBasketAutoSuggestions;
-    $('#editorBody').querySelectorAll('[data-basket-auto-status]').forEach(b=>b.onclick=()=>openBasketAutoSuggestions(b.dataset.basketAutoStatus));
-    $('#editorBody').querySelectorAll('[data-basket-auto-open]').forEach(b=>b.onclick=()=>openBasketAutoSuggestionDetail(b.dataset.basketAutoOpen));
-  }
-  async function saveBasketAutoSettings(){
-    const btn=$('#basketAutoSaveSettings'),families=[...$('#editorBody').querySelectorAll('[data-basket-auto-family]:checked')].map(x=>x.dataset.basketAutoFamily);
-    btn.disabled=true;
-    try{await basketAutoRpc('basket_lot_automation_settings_admin_v1',{p_enabled:$('#basketAutoEnabled').value==='1',p_lot_quantity:Number($('#basketAutoQty').value||5),p_price_variation_pct:Number($('#basketAutoPct').value||15),p_enabled_families:families,p_operator:requireOperator()});toast('Configuração salva');await openBasketAutoSuggestions(state.basketAutoStatus||'pending')}
-    catch(e){toast('Não consegui salvar a configuração');btn.disabled=false}
-  }
-  async function generateBasketAutoSuggestions(){
-    const btn=$('#basketAutoGenerate');btn.disabled=true;btn.textContent='Gerando…';
-    try{const r=await basketAutoRpc('basket_lot_suggestion_generate_now_v1',{});toast('Sugestões atualizadas: '+String(r.generated_count||0));await openBasketAutoSuggestions('pending')}
-    catch(e){toast('Não consegui gerar as sugestões');btn.disabled=false;btn.textContent='Gerar sugestões agora'}
-  }
   async function openBasketSubstitutionCatalog(){
-    $('#editorTitle').textContent='Produtos substituíveis';
+    $('#editorTitle').textContent='Sugestões de produtos';
     $('#editorBody').innerHTML='<div class="loading">Carregando famílias…</div>';
-    $('#editorActions').innerHTML='<button class="secondary" id="basketFamilyBack" type="button">Voltar</button>';
-    $('#basketFamilyBack').onclick=()=>openBasketAutoSuggestions(state.basketAutoStatus||'pending');
+    $('#editorActions').innerHTML='<button class="secondary" id="basketFamilyClose" type="button">Fechar</button>';
+    $('#basketFamilyClose').onclick=()=>$('#editor').close();
     try{
       state.basketSubstitutionCatalog=await basketAutoRpc('basket_lot_substitution_catalog_admin_v1',{});
       paintBasketSubstitutionCatalog();
@@ -3180,13 +3136,13 @@
   }
   function paintBasketSubstitutionCatalog(){
     const families=state.basketSubstitutionCatalog?.families||[];
-    $('#editorTitle').textContent='Produtos substituíveis';
-    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Lista explícita</strong><div>A automação só troca produtos que estiverem autorizados dentro da mesma família. Preço, embalagem e estoque continuam sendo conferidos.</div></div>'+
+    $('#editorTitle').textContent='Sugestões de produtos';
+    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Regra simples por família</strong><div>Produtos da mesma família aparecem como sugestões de troca entre si. A família define as opções; estoque e preço são exibidos para você decidir.</div></div>'+
       '<div class="basket-auto-actions"><button class="primary" id="basketFamilyNew" type="button">+ Nova família</button></div>'+
       '<div class="section-title">Famílias</div><div class="basket-family-grid">'+
       (families.length?families.map(f=>'<article class="basket-family-card '+(f.enabled?'':'off')+'"><div class="basket-family-card-head"><div><strong>'+esc(f.label)+'</strong><span class="sub">'+esc(f.product_count||0)+' produto(s) autorizado(s)</span></div><span class="pill '+(f.enabled?'':'off')+'">'+(f.enabled?'ATIVA':'DESATIVADA')+'</span></div><div class="basket-auto-actions"><button class="secondary" data-basket-family-edit="'+esc(f.family_key)+'" type="button">Editar família</button></div></article>').join(''):'<div class="history-empty">Nenhuma família cadastrada.</div>')+'</div>';
-    $('#editorActions').innerHTML='<button class="secondary" id="basketFamilyBack" type="button">Voltar</button>';
-    $('#basketFamilyBack').onclick=()=>openBasketAutoSuggestions(state.basketAutoStatus||'pending');
+    $('#editorActions').innerHTML='<button class="secondary" id="basketFamilyClose" type="button">Fechar</button>';
+    $('#basketFamilyClose').onclick=()=>$('#editor').close();
     $('#basketFamilyNew').onclick=()=>openBasketSubstitutionFamilyEditor(null);
     $('#editorBody').querySelectorAll('[data-basket-family-edit]').forEach(b=>b.onclick=()=>openBasketSubstitutionFamilyEditor(b.dataset.basketFamilyEdit));
   }
@@ -3197,14 +3153,14 @@
   }
   function renderBasketFamilyAuthorizedProducts(){
     const d=state.basketSubstitutionFamilyDraft,host=$('#basketFamilyAuthorizedProducts');if(!d||!host)return;
-    host.innerHTML=(d.products||[]).length?(d.products||[]).map(p=>'<div class="basket-family-product"><img src="'+esc(p.image_url||'/img/placeholder-produto.png')+'" alt=""><div><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc(p.sku||p.gtin||'')+' · '+esc(p.packaging||'')+' · '+esc(fmtQty(p.loose_stock||0))+' solto</small></div><button class="text danger" data-basket-family-remove="'+esc(p.id)+'" type="button">Remover</button></div>').join(''):'<div class="history-empty">Nenhum produto autorizado nesta família.</div>';
+    host.innerHTML=(d.products||[]).length?(d.products||[]).map(p=>'<div class="basket-family-product"><img src="'+esc(p.image_url||'/img/placeholder-produto.png')+'" alt=""><div><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc(p.sku||p.gtin||'')+' · '+esc(p.packaging||'')+' · '+esc(fmtQty(p.loose_stock||0))+' solto · '+esc(Number(p.price||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}))+'</small></div><button class="text danger" data-basket-family-remove="'+esc(p.id)+'" type="button">Remover</button></div>').join(''):'<div class="history-empty">Nenhum produto autorizado nesta família.</div>';
     host.querySelectorAll('[data-basket-family-remove]').forEach(b=>b.onclick=()=>{d.products=(d.products||[]).filter(p=>String(p.id)!==String(b.dataset.basketFamilyRemove));renderBasketFamilyAuthorizedProducts()});
   }
   function paintBasketSubstitutionFamilyEditor(){
     const d=state.basketSubstitutionFamilyDraft;if(!d)return;
     $('#editorTitle').textContent=d.family_key?'Editar família':'Nova família';
-    $('#editorBody').innerHTML='<div class="basket-family-editor-head"><label><span>Nome da família</span><input id="basketFamilyLabel" maxlength="80" value="'+esc(d.label||'')+'" placeholder="Ex.: Arroz"></label><label><span>Automação</span><select id="basketFamilyEnabled"><option value="1" '+(d.enabled!==false?'selected':'')+'>Ativa</option><option value="0" '+(d.enabled===false?'selected':'')+'>Desativada</option></select></label></div>'+
-      '<div class="section-title">Produtos autorizados</div><div class="basket-family-note">Somente estes produtos poderão substituir uns aos outros nesta família. Ao adicionar um produto que esteja em outra família, ele será movido para esta.</div>'+
+    $('#editorBody').innerHTML='<div class="basket-family-editor-head"><label><span>Nome da família</span><input id="basketFamilyLabel" maxlength="80" value="'+esc(d.label||'')+'" placeholder="Ex.: Arroz"></label><label><span>Status da família</span><select id="basketFamilyEnabled"><option value="1" '+(d.enabled!==false?'selected':'')+'>Ativa</option><option value="0" '+(d.enabled===false?'selected':'')+'>Desativada</option></select></label></div>'+
+      '<div class="section-title">Produtos autorizados</div><div class="basket-family-note">Todos estes produtos aparecem como sugestões de troca entre si. Ao adicionar um produto que esteja em outra família, ele será movido para esta.</div>'+
       '<div id="basketFamilyAuthorizedProducts" class="basket-family-products"></div>'+
       '<div class="section-title">Adicionar produto</div><label><span>Buscar por nome, EAN ou código</span><input id="basketFamilyProductSearch" type="search" placeholder="Digite pelo menos 2 caracteres"></label><div id="basketFamilyProductResults" class="basket-family-search-results"><div class="history-empty">Busque um produto para adicionar. A lista permanecerá aberta para adicionar vários.</div></div>';
     $('#editorActions').innerHTML='<button class="secondary" id="basketFamilyCancel" type="button">Voltar</button><button class="primary" id="basketFamilySave" type="button">Salvar família</button>';
@@ -3352,9 +3308,9 @@
 
   async function renderBaskets(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Cestas</h1><p>Monte os novos lotes sem alterar o que está sendo vendido hoje. A troca do site é manual.</p></div><div class="basket-auto-actions"><button class="secondary" id="basketCategoriesManage" type="button">Categorias de cestas</button><button class="secondary" id="basketAutoSuggestions" type="button">Sugestões automáticas</button><button class="secondary" id="refreshBaskets" type="button">Atualizar</button></div></div><div id="basketAdminBody"><div class="loading">Carregando cestas e kits…</div></div>';
+    content.innerHTML='<div class="page-head"><div><h1>Cestas</h1><p>Monte os novos lotes sem alterar o que está sendo vendido hoje. A troca do site é manual.</p></div><div class="basket-auto-actions"><button class="secondary" id="basketCategoriesManage" type="button">Categorias de cestas</button><button class="secondary" id="basketProductSuggestions" type="button">Sugestões de produtos</button><button class="secondary" id="refreshBaskets" type="button">Atualizar</button></div></div><div id="basketAdminBody"><div class="loading">Carregando cestas e kits…</div></div>';
     $('#refreshBaskets').onclick=renderBaskets;
-    $('#basketAutoSuggestions').onclick=()=>openBasketAutoSuggestions('pending');
+    $('#basketProductSuggestions').onclick=openBasketSubstitutionCatalog;
     $('#basketCategoriesManage').onclick=openBasketCategoriesAdmin;
     try{
       const [kitsData,legacyData,runtimeData,categoriesData]=await Promise.all([api('basket_kits_admin'),api('baskets_admin'),api('basket_sales_runtime'),api('basket_categories_admin')]);
@@ -3762,12 +3718,13 @@
     const code=p?.sku||p?.gtin||'Sem código';
     const ean=p?.gtin&&String(p.gtin)!==String(code)?String(p.gtin):'';
     const photo=p?.image_url||'/img/sem-foto.svg';
-    return '<article class="basket-product-picker-card '+(stock<=0?'zero-stock':'')+'">'+
+    const price=Number(p?.price??p?.sale_price_cents/100??0),zero=stock<=0;
+    return '<article class="basket-product-picker-card '+(zero?'zero-stock':'')+'">'+
       '<div class="basket-product-picker-photo"><img loading="lazy" src="'+esc(photo)+'" alt="" onerror="this.onerror=null;this.src=\'/img/sem-foto.svg\'"></div>'+
       '<div class="basket-product-picker-name">'+esc(p?.name||'Produto')+'</div>'+
-      '<div class="basket-product-picker-code"><strong>Código: '+esc(code)+'</strong>'+(ean?'<br>EAN: '+esc(ean):'')+'</div>'+
+      '<div class="basket-product-picker-code"><strong>Código: '+esc(code)+'</strong>'+(ean?'<br>EAN: '+esc(ean):'')+'<br>Preço: '+esc(price.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}))+'</div>'+
       '<div class="basket-product-picker-stock"><span>Estoque solto</span><strong>'+esc(fmtQty(stock))+'</strong></div>'+
-      '<button class="secondary basket-product-picker-action" type="button" '+attr+'="'+esc(p.id)+'">'+esc(label)+'</button>'+
+      '<button class="secondary basket-product-picker-action" type="button" '+(zero?'disabled ':'' )+attr+'="'+esc(p.id)+'">'+esc(zero?'Sem estoque':label)+'</button>'+
     '</article>';
   }
   function openBasketKitProductPicker(index){
@@ -3787,7 +3744,7 @@
       const data=await api('basket_kit_product_suggestions',{product_id:productId,quantity_per_kit:state.basketKitLotDraft.items[index].quantity_per_kit});
       if(state.basketKitPickerToken!==pickerToken||!$('#editor').open)return;
       const host=$('#kitProductSuggestions');if(!host)return;
-      host.innerHTML='<h3>Alternativas cadastradas</h3>'+((data.suggestions||[]).length?'<div class="basket-product-picker-grid">'+data.suggestions.map(p=>basketProductPickerCard(p,'data-kit-alternative','Usar')).join('')+'</div>':'<p class="sub">Nenhuma alternativa compatível com saldo. Você pode buscar outro produto abaixo.</p>');
+      host.innerHTML='<h3>Sugestões da família</h3>'+((data.suggestions||[]).length?'<div class="basket-product-picker-grid">'+data.suggestions.map(p=>basketProductPickerCard(p,'data-kit-alternative','Usar')).join('')+'</div>':'<p class="sub">Nenhum outro produto cadastrado nesta família. Você pode buscar outro produto abaixo.</p>');
       host.querySelectorAll('[data-kit-alternative]').forEach(btn=>btn.onclick=()=>{const p=data.suggestions.find(x=>String(x.id)===String(btn.dataset.kitAlternative));if(!p)return;state.basketKitPickerToken=null;$('#editor').close();setBasketKitDraftProduct(index,p)});
     }catch{if(state.basketKitPickerToken===pickerToken&&$('#kitProductSuggestions'))$('#kitProductSuggestions').textContent='Não consegui carregar as alternativas. Use a busca abaixo.'}
   }
