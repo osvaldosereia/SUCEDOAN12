@@ -2201,7 +2201,60 @@
     if(!w){toast('Libere pop-ups para imprimir');return}
     const css='@page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}body{margin:0;color:#000;font:11px Arial,sans-serif}.manifest-head{display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:end;margin-bottom:8mm;border-bottom:2px solid #000;padding-bottom:4mm}.manifest-head h1{grid-column:1/-1;margin:0;font-size:20px}.manifest-head div:last-child{text-align:right}.manifest-payments{grid-column:1/-1;text-align:left!important;margin-top:2mm;padding-top:2mm;border-top:1px solid #000}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #000;padding:2.5mm;vertical-align:top}th{background:#eee;font-size:10px;text-align:left}th:nth-child(1),td:nth-child(1){width:6%}th:nth-child(2),td:nth-child(2){width:21%}th:nth-child(3),td:nth-child(3){width:30%}th:nth-child(4),td:nth-child(4){width:14%}th:nth-child(5),td:nth-child(5){width:12%}th:nth-child(6),td:nth-child(6){width:17%}.right{text-align:right}.sign{height:18mm}.manifest-foot{display:grid;grid-template-columns:1fr auto auto;gap:12mm;margin-top:8mm;padding-top:4mm;border-top:1px solid #000}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
     w.document.open();
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body>'+body+'<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),300));<\/script></body></html>');
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body>'+body+'<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),300));<\/script>
+<style id="purchase-xml-fifo-lots-v1-style">
+.purchase-fifo-lot-v1{border:1px solid #dfe8e2;background:#fff;border-radius:12px;padding:11px;margin-top:9px}.purchase-fifo-lot-v1 h4{margin:0 0 4px;font-size:13px}.purchase-fifo-lot-v1 p{margin:0 0 9px;color:var(--muted);font-size:11px}.purchase-fifo-lot-grid{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;gap:8px;align-items:end}.purchase-fifo-lot-grid label span{display:block;font-size:11px;font-weight:800;margin-bottom:4px}.purchase-fifo-lot-grid input{min-height:38px}.purchase-fifo-lot-grid button{min-height:38px}.purchase-fifo-lot-state{margin-top:8px;font-size:11px;line-height:1.45;color:#536158}.purchase-fifo-lot-state strong{color:var(--ink)}@media(max-width:680px){.purchase-fifo-lot-grid{grid-template-columns:1fr}.purchase-fifo-lot-grid button{width:100%}}
+</style>
+<script id="PURCHASE_XML_FIFO_LOTS_V1">
+(function(){
+  const lotLabel=s=>({quarantine:'Aguardando entrada no estoque',active:'Ativo',depleted:'Esgotado',expired:'Vencido',cancelled:'Cancelado'})[s]||s||'Ainda não criado';
+  const n=v=>Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:3});
+  async function loadLot(card,item){
+    const box=card.querySelector('[data-purchase-fifo-lot]');if(!box)return;
+    const state=box.querySelector('[data-purchase-lot-state]'),input=box.querySelector('[data-purchase-lot-expiration]');
+    try{
+      const r=await purchaseApi('lot_state',{item_id:item.id});
+      if(input)input.value=r?.expiration_date||'';
+      if(!state)return;
+      if(!r?.inventory_lot_id){state.innerHTML='<strong>Lote interno:</strong> será criado quando o produto estiver identificado e com quantidade convertida.';return}
+      const l=r.lot||{},available=Math.max(0,Number(l.quantity_on_hand||0)-Number(l.quantity_reserved||0));
+      state.innerHTML='<strong>Lote interno:</strong> '+esc(lotLabel(l.status))+' · entrada '+esc(n(l.quantity_on_hand))+' '+esc(r.base_unit||'UN')+' · reservado '+esc(n(l.quantity_reserved))+' · disponível '+esc(n(available))+'<br><span>Sem número de lote obrigatório. O estoque total continua sendo conferido pelo Bling.</span>';
+    }catch(e){if(state)state.textContent=errorMessage(e.message)}
+  }
+  async function saveLot(card,item,clear=false){
+    const box=card.querySelector('[data-purchase-fifo-lot]'),input=box?.querySelector('[data-purchase-lot-expiration]'),btn=clear?box?.querySelector('[data-purchase-lot-clear]'):box?.querySelector('[data-purchase-lot-save]');
+    if(!box||!input)return;
+    if(btn){btn.disabled=true;btn.textContent=clear?'Limpando…':'Salvando…'}
+    try{
+      const expiration=clear?null:(input.value||null);
+      await purchaseApi('set_lot_expiration',{item_id:item.id,expiration_date:expiration});
+      if(clear)input.value='';
+      toast(clear?'Validade removida':'Validade desta entrada salva');
+      await loadLot(card,item);
+    }catch(e){toast(errorMessage(e.message))}
+    finally{if(btn){btn.disabled=false;btn.textContent=clear?'Sem validade':'Salvar validade'}}
+  }
+  function enhancePurchaseFifoLots(){
+    document.querySelectorAll('[data-purchase-catalog-item]').forEach(card=>{
+      if(card.querySelector('[data-purchase-fifo-lot]'))return;
+      let item=null;try{item=JSON.parse(card.getAttribute('data-catalog-item')||'null')}catch{}
+      if(!item?.id)return;
+      const identity=card.querySelector('.purchase-identity-v1')||card;
+      const box=document.createElement('div');box.className='purchase-fifo-lot-v1';box.setAttribute('data-purchase-fifo-lot','1');
+      box.innerHTML='<h4>Entrada de estoque desta nota</h4><p>Cada item recebido vira uma entrada interna separada. A validade é opcional; não precisa informar número de lote.</p><div class="purchase-fifo-lot-grid"><label><span>Validade desta entrada (opcional)</span><input type="date" data-purchase-lot-expiration></label><button class="secondary" type="button" data-purchase-lot-save>Salvar validade</button><button class="text" type="button" data-purchase-lot-clear>Sem validade</button></div><div class="purchase-fifo-lot-state" data-purchase-lot-state>Carregando lote interno…</div>';
+      identity.appendChild(box);
+      box.querySelector('[data-purchase-lot-save]')?.addEventListener('click',()=>saveLot(card,item,false));
+      box.querySelector('[data-purchase-lot-clear]')?.addEventListener('click',()=>saveLot(card,item,true));
+      loadLot(card,item);
+    });
+  }
+  const previousPurchaseFifoPaint=paintPurchaseCatalogList;
+  paintPurchaseCatalogList=function(){previousPurchaseFifoPaint();setTimeout(enhancePurchaseFifoLots,0)};
+  setTimeout(enhancePurchaseFifoLots,350);
+})();
+</script>
+
+</body></html>');
     w.document.close();
   }
 

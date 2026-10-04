@@ -1281,6 +1281,59 @@ async function docDetail(id:string){
   return {ok:true,document:d.data,items,receipt_plan:plan.data||null,receipt_lot_plan:receiptLotPlan,pricing_policy:{default_markup_percent:40,sale_unit:"UN",catalog_updates_require_human_approval:true,stock_receipt_separate:true,stock_authority:"bling",receipt_requires_bling_verification:true,receipt_lots_required:true}};
 }
 
+
+// PURCHASE_XML_FIFO_LOTS_V1
+async function purchaseLotState(body:any){
+  const id=clean(body?.item_id,80);
+  if(!/^[0-9a-f-]{36}$/i.test(id))return {ok:false,status:400,error:"invalid_item"};
+  const q=await sb.from("purchase_xml_items")
+    .select("id,document_id,item_number,description,product_id,converted_quantity,base_unit,lot_expiration_date,inventory_lot_id,processing_status")
+    .eq("id",id).maybeSingle();
+  if(q.error)throw q.error;
+  if(!q.data)return {ok:false,status:404,error:"item_not_found"};
+  let lot:any=null;
+  if(q.data.inventory_lot_id){
+    const l=await sb.from("product_inventory_lots")
+      .select("id,product_id,expiration_date,quantity_on_hand,quantity_reserved,status,source,source_ref,received_at,created_at,updated_at")
+      .eq("id",q.data.inventory_lot_id).maybeSingle();
+    if(l.error)throw l.error;
+    lot=l.data||null;
+  }
+  return {
+    ok:true,
+    item_id:q.data.id,
+    document_id:q.data.document_id,
+    product_id:q.data.product_id,
+    expiration_date:q.data.lot_expiration_date||lot?.expiration_date||null,
+    inventory_lot_id:q.data.inventory_lot_id||null,
+    expected_quantity:Number(q.data.converted_quantity||0),
+    base_unit:q.data.base_unit||"UN",
+    processing_status:q.data.processing_status,
+    lot,
+    expiration_required:false,
+    lot_number_required:false,
+  };
+}
+async function setPurchaseLotExpiration(body:any,userId:string|null){
+  const id=clean(body?.item_id,80);
+  if(!/^[0-9a-f-]{36}$/i.test(id))return {ok:false,status:400,error:"invalid_item"};
+  const raw=clean(body?.expiration_date,20);
+  const expiration=raw?day(raw):null;
+  if(raw&&!expiration)return {ok:false,status:400,error:"invalid_expiration_date"};
+  const before=await purchaseLotState({item_id:id});
+  if(!before.ok)return before;
+  const u=await sb.from("purchase_xml_items")
+    .update({lot_expiration_date:expiration,updated_at:new Date().toISOString()})
+    .eq("id",id);
+  if(u.error)throw u.error;
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"purchase_xml_lot_expiration_updated",severity:"info",domain:"stock",
+    source_system:"vitrine_admin",source_id:id,
+    details:{expiration_date:expiration,previous_expiration_date:before.expiration_date||null,user_id:userId,lot_number_required:false}
+  });
+  return await purchaseLotState({item_id:id});
+}
+
 async function catalogQueue(windowInput:any=null){
   const requested=obj(windowInput);
   const window=purchaseWindow(
@@ -1490,6 +1543,8 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
     if(action==="manual_import"){const r=await manualImport(body?.files);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="catalog_queue")return js(req,await catalogQueue(body));
+    if(action==="lot_state"){const r=await purchaseLotState(body);return js(req,r,r.ok?200:Number(r.status||400))}
+    if(action==="set_lot_expiration"){if(a.internal)return js(req,{ok:false,error:"human_action_required"},403);const r=await setPurchaseLotExpiration(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="search_products")return js(req,await searchPurchaseProducts(body));
     if(action==="resolve_item_identity"){if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);const r=await resolvePurchaseItemIdentity(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="summary")return js(req,await summary(body));
