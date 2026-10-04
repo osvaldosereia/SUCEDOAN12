@@ -39,6 +39,11 @@ assert.doesNotMatch(api,/gpt-5\.6-luna/,'preview não deve usar nome do produto 
 assert.match(api,/dry_run_not_sendable:true/,'preview deve declarar que não envia mensagem');
 assert.doesNotMatch(api,/whatsapp_outbox_v1|ops2_admin_attendance_enqueue|sendMeta|graph\.facebook\.com|whatsapp-ana-worker-v1/i,'preview não pode enviar WhatsApp nem depender do worker batch');
 
+// Regressão real observada em produção: PostgrestBuilder de db.rpc não expõe .catch().
+assert.doesNotMatch(api,/db\.rpc\([\s\S]{0,650}?\)\.catch\s*\(/i,'cleanup de falha da ANA não pode chamar .catch() diretamente no builder de db.rpc');
+assert.match(api,/async function finalizeFailedPreview|function finalizeFailedPreview/i,'cleanup de geração falha deve ser isolado e não pode mascarar o erro original');
+assert.match(api,/finalizeFailedPreview\([\s\S]{0,500}?ana_preview_generation_failed/i,'falha de geração deve tentar finalizar o job e ainda devolver erro controlado ao Admin');
+
 // Task 11: contexto operacional controlado e observabilidade da prévia.
 assert.match(policy,/operational_context/,'input da ANA deve separar contexto operacional do histórico textual');
 assert.match(policy,/catalog_ordering/,'contexto deve ensinar o fluxo oficial de catálogo/pedido sem inventar dados dinâmicos');
