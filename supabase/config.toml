@@ -26,3 +26,25 @@ verify_jwt = false
 # Validates the existing Admin Bearer and active non-viewer membership internally.
 [functions.basket-lot-image-v1]
 verify_jwt = false
+
+# Marketing Center: superfície administrativa privada. Nunca expor no Admin público sem sessão JWT.
+[functions.admin-marketing-v1]
+verify_jwt = true
+
+[functions.admin-marketing-workflow-v1]
+verify_jwt = true
+
+[functions.admin-marketing-media-v1]
+verify_jwt = true
+
+[functions.admin-marketing-dry-run-v1]
+verify_jwt = true
+
+[functions.admin-marketing-insights-v1]
+verify_jwt = true
+
+[functions.admin-marketing-carousel-v1]
+verify_jwt = true
+
+[functions.admin-marketing-render-triage-v1]
+verify_jwt = true
