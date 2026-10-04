@@ -11,6 +11,18 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
+def replace_after(text: str, anchor: str, old: str, new: str, label: str) -> str:
+    anchor_pos = text.find(anchor)
+    if anchor_pos < 0:
+        raise RuntimeError(f"{label}: anchor not found")
+    old_pos = text.find(old, anchor_pos)
+    if old_pos < 0:
+        raise RuntimeError(f"{label}: target not found after anchor")
+    if old_pos - anchor_pos > 4000:
+        raise RuntimeError(f"{label}: target is too far from anchor ({old_pos - anchor_pos} chars)")
+    return text[:old_pos] + new + text[old_pos + len(old):]
+
+
 html = PATH.read_text(encoding="utf-8")
 
 if MARKER in html:
@@ -50,10 +62,13 @@ html = replace_once(
     "validate proposed product name",
 )
 
-html = replace_once(
+payload_old = "      await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});\n"
+payload_new = "      await purchaseApi('apply_item_update',{item_id:itemId,proposed_name:proposedName,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});\n"
+html = replace_after(
     html,
-    "      await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});\n",
-    "      await purchaseApi('apply_item_update',{item_id:itemId,proposed_name:proposedName,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});\n",
+    "    const proposedName=String(card.querySelector('[data-catalog-product-name]')?.value||'').trim();\n",
+    payload_old,
+    payload_new,
     "send proposed product name",
 )
 
