@@ -3,6 +3,12 @@ import {uploadMetaMedia,MetaMediaError,isAllowedOutboundMetaMime,canonicalOutbou
 import {sendMediaViaMeta,MetaTransportError} from './whatsapp-meta-transport-v1.mjs';
 
 const MAX_BYTES=16*1024*1024;
+const SAFE_MEDIA_GATE_ERRORS=new Set([
+  'human_send_not_homologated',
+  'meta_canary_not_enabled',
+  'meta_media_canary_not_enabled',
+  'meta_canary_destination_blocked',
+]);
 
 function mediaTypeFromMime(value){
   const mime=normalizedAttendanceMime(value);
@@ -10,6 +16,11 @@ function mediaTypeFromMime(value){
   if(['audio/aac','audio/amr','audio/mpeg','audio/mp4','audio/ogg'].includes(mime))return 'audio';
   if(mime==='application/pdf')return 'document';
   return null;
+}
+
+function structuredMediaGateError(error){
+  const code=String(error?.message||'').trim();
+  return SAFE_MEDIA_GATE_ERRORS.has(code)?{ok:false,error:code}:null;
 }
 
 async function sha256Hex(bytes){
@@ -58,7 +69,11 @@ export async function sendAttendanceMediaViaMeta({
     p_caption:mediaType==='audio'?null:(caption||null),
     p_idempotency_key:idempotencyKey,
   });
-  if(queued.error)throw queued.error;
+  if(queued.error){
+    const gateError=structuredMediaGateError(queued.error);
+    if(gateError)return gateError;
+    throw queued.error;
+  }
   const data=queued.data||{ok:false,error:'enqueue_failed'};
   if(data.ok!==true)return data;
   if(data.duplicate===true){

@@ -18,6 +18,7 @@ on:
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_fix_v2.sql'
       - 'supabase/sql/20261003_admin_attendance_meta_media_send_v1.sql'
       - 'supabase/sql/20261003_admin_attendance_meta_media_safety_v2.sql'
+      - 'supabase/sql/20261003_admin_attendance_meta_media_gate_v3.sql'
       - 'supabase/sql/20261003_attendance_human_ai_state_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_jobs_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_admin_preview_v1.sql'
@@ -50,6 +51,7 @@ jobs:
       - {name: Meta media content signature contract, run: 'node scripts/test-attendance-meta-media-content-v1.mjs'}
       - {name: Meta media retry/idempotency contract, run: 'node scripts/test-attendance-meta-media-retry-v1.mjs'}
       - {name: Meta media safety contract, run: 'node scripts/test-attendance-meta-media-safety-v1.mjs'}
+      - {name: Media canary error contract, run: 'node scripts/test-attendance-media-canary-error-contract-v1.mjs'}
       - {name: Audio media UX contract, run: 'node scripts/test-attendance-media-audio-ux-v1.mjs'}
       - {name: Audio recorder contract, run: 'node scripts/test-attendance-audio-recorder-v1.mjs'}
       - {name: Media status UX contract, run: 'node scripts/test-attendance-media-status-ux-v1.mjs'}
