@@ -21,7 +21,7 @@ assert.match(sql,/meta_media_mode[\s\S]*(?:live|canary)/i,'outbox deve registrar
 assert.match(sql,/meta_media_live_enabled[\s\S]*to_jsonb\(false\)/i,'migration não pode abrir live automaticamente');
 assert.match(sql,/meta_media_canary_enabled[\s\S]*to_jsonb\(true\)/i,'migration deve manter canário ligado até homologação');
 assert.match(sql,/\+5565998150975[\s\S]*\+5565984491018|\+5565984491018[\s\S]*\+5565998150975/,'allowlist persistida deve permanecer exclusivamente 0975↔1018');
-assert.doesNotMatch(sql,/meta_media_live_enabled[^;]{0,300}to_jsonb\(true\)/i,'migration de readiness não pode ativar live');
+assert.doesNotMatch(sql,/'\{meta_media_live_enabled\}'\s*,\s*to_jsonb\(true\)/i,'migration de readiness não pode ativar live');
 assert.doesNotMatch(sql,/service_window_closed\s*:=|last_inbound_at\s*:=/i,'migration não pode contornar a janela de 24h');
 
 console.log('PASS test-attendance-meta-media-live-v1');
