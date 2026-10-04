@@ -11,8 +11,9 @@ let activeChannel='0975';
 let currentRoot=null;
 let busy=false;
 let pendingTemplateLoads=[];
+let syncButtonResetTimer=null;
 
-const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
 const channelByPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.endsWith('0975')?'0975':digits.endsWith('1018')?'1018':null};
 const templateBody=components=>String((Array.isArray(components)?components:[]).find(item=>String(item?.type||'').toUpperCase()==='BODY')?.text||'');
 const templateHeader=components=>String((Array.isArray(components)?components:[]).find(item=>String(item?.type||'').toUpperCase()==='HEADER')?.text||'');
@@ -26,6 +27,22 @@ function notify(text,tone='neutral'){
   if(!node)return;
   node.textContent=text;
   node.dataset.tone=tone;
+}
+
+function setSyncButtonState(state='idle',channel=activeChannel){
+  const button=currentRoot?.querySelector?.('[data-template-sync]');
+  if(!button)return;
+  if(syncButtonResetTimer){clearTimeout(syncButtonResetTimer);syncButtonResetTimer=null}
+  const normalized=['queued','syncing','success','error'].includes(String(state))?String(state):'idle';
+  const working=normalized==='queued'||normalized==='syncing';
+  button.setAttribute('data-sync-state',normalized);
+  button.setAttribute('aria-busy',working?'true':'false');
+  button.disabled=working;
+  button.textContent=normalized==='queued'?'Aguardando sincronização…':normalized==='syncing'?`Sincronizando ${channel}…`:normalized==='success'?'Sincronizado ✓':normalized==='error'?'Erro ao sincronizar':'Sincronizar';
+  if(normalized==='success'||normalized==='error'){
+    const delay=normalized==='success'?1800:2600;
+    syncButtonResetTimer=setTimeout(()=>{if(String(channel)===String(activeChannel))setSyncButtonState('idle',channel)},delay);
+  }
 }
 
 async function adminGet(baseUrl,params={}){
@@ -135,13 +152,19 @@ async function loadTemplates({sync=false,channel=activeChannel}={}){
   const requestedChannel=String(channel||activeChannel);
   if(busy){
     enqueueTemplateLoad({sync,channel:requestedChannel});
-    if(requestedChannel===activeChannel)notify(sync?`Sincronização do ${requestedChannel} aguardando o carregamento atual…`:`Carregamento do ${requestedChannel} aguardando o carregamento atual…`);
+    if(requestedChannel===activeChannel){
+      if(sync)setSyncButtonState('queued',requestedChannel);
+      notify(sync?`Sincronização do ${requestedChannel} aguardando o carregamento atual…`:`Carregamento do ${requestedChannel} aguardando o carregamento atual…`);
+    }
     return;
   }
   busy=true;
   const root=currentRoot;
   try{
-    if(requestedChannel===activeChannel)notify(sync?`Sincronizando templates do ${requestedChannel}…`:`Carregando templates do ${requestedChannel}…`);
+    if(requestedChannel===activeChannel){
+      if(sync)setSyncButtonState('syncing',requestedChannel);
+      notify(sync?`Sincronizando templates do ${requestedChannel}…`:`Carregando templates do ${requestedChannel}…`);
+    }
     const accounts=await ensureAccounts(),account=accounts[requestedChannel];
     if(!account?.id)throw new Error('account_not_found');
     const data=await adminGet(TEMPLATE_API,{action:sync?'sync':'list',account_id:account.id});
@@ -149,9 +172,13 @@ async function loadTemplates({sync=false,channel=activeChannel}={}){
     templates=Array.isArray(data.items)?data.items:[];
     templatesLoaded=true;
     renderList(root);
-    notify(`${templates.length} template${templates.length===1?'':'s'} no canal ${requestedChannel}.`,'success');
+    if(sync)setSyncButtonState('success',requestedChannel);
+    notify(sync?`${templates.length} template${templates.length===1?'':'s'} sincronizado${templates.length===1?'':'s'} com a Meta no canal ${requestedChannel}.`:`${templates.length} template${templates.length===1?'':'s'} no canal ${requestedChannel}.`,'success');
   }catch(error){
-    if(requestedChannel===activeChannel){templates=[];templatesLoaded=true;renderList(root);notify(`Não foi possível carregar os templates: ${String(error?.message||error)}`,'error')}
+    if(requestedChannel===activeChannel){
+      if(sync)setSyncButtonState('error',requestedChannel);
+      templates=[];templatesLoaded=true;renderList(root);notify(sync?`Falha ao sincronizar o canal ${requestedChannel}: ${String(error?.message||error)}`:`Não foi possível carregar os templates: ${String(error?.message||error)}`,'error');
+    }
   }finally{busy=false;drainPendingTemplateLoad()}
 }
 
@@ -265,7 +292,7 @@ async function removeTemplate(id){
 function bindTemplateView(root){
   root.querySelector('[data-marketing-view="overview"]')?.addEventListener('click',()=>overviewButton()?.click());
   root.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>{});
-  root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');templates=[];templatesLoaded=false;renderList(root);loadTemplates({channel:activeChannel}).catch(()=>{})});
+  root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');setSyncButtonState('idle',activeChannel);templates=[];templatesLoaded=false;renderList(root);loadTemplates({channel:activeChannel}).catch(()=>{})});
   root.querySelector('[data-template-sync]')?.addEventListener('click',()=>loadTemplates({sync:true,channel:activeChannel}));
   root.querySelector('[data-template-create]')?.addEventListener('click',()=>openBuilder('create'));
   root.querySelectorAll('[data-template-filter]').forEach(input=>input.addEventListener(input.tagName==='INPUT'?'input':'change',()=>renderList(root)));
@@ -277,7 +304,7 @@ async function mountTemplateView(root=document.querySelector('#content')){
   root.innerHTML=`<div class="marketing-template-center">
     <div class="page-head"><div><h1>Marketing</h1><p>Templates oficiais da Meta. Gestão separada de campanhas.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
     <div class="marketing-template-subnav" data-marketing-subnav><button type="button" data-marketing-view="overview">Visão geral</button><button type="button" class="active" data-marketing-view="templates">Templates Meta</button></div>
-    <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync>Sincronizar</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
+    <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync data-sync-state="idle" aria-busy="false">Sincronizar</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
     ${renderFilters(root)}
     <div class="marketing-template-status" data-template-center-status>Carregando somente quando esta aba é aberta…</div>
     <div class="marketing-template-list" data-template-list></div>
