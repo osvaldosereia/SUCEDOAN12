@@ -6,6 +6,7 @@ const adminApiPath='supabase/functions/admin-products-live-v1/index.ts';
 const storefrontPath='supabase/functions/storefront-v2/index.ts';
 const migrationPath='supabase/sql/20261004_basket_lot_linked_hygiene_and_original_rule_v1.sql';
 const optionalHygienePath='supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql';
+const draftLinkMigrationPath='supabase/sql/20261004_basket_link_draft_selection_v1.sql';
 
 for(const path of [adminUiPath,adminApiPath,storefrontPath,migrationPath,optionalHygienePath])assert.ok(fs.existsSync(path),`missing ${path}`);
 
@@ -41,10 +42,28 @@ assert.match(adminUi,/data-kit-lot-delete[^\n]*deleteBasketKitLot|deleteBasketKi
 assert.match(adminUi,/CESTA ORIGINAL|permanece original/i,'separation UI must explicitly identify preserved original baskets');
 assert.match(adminUi,/loose_quantity/,'separation UI must use loose quantity for extras instead of re-picking preassembled components');
 
-assert.match(adminApi,/linkableLots/,'admin API must load linkable ready lots for every kit');
+const detailStart=adminApi.indexOf('async function basketKitAdminDetail');
+const detailEnd=adminApi.indexOf('\nasync function ',detailStart+20);
+assert.ok(detailStart>=0&&detailEnd>detailStart,'basketKitAdminDetail block missing');
+const detail=adminApi.slice(detailStart,detailEnd);
+assert.match(detail,/linkableLots/,'admin API must load linkable lots for every kit');
+assert.doesNotMatch(detail,/\.eq\("status","ready"\)\.gt\("quantity_available",0\)/,'linked-lot picker must not hide draft lots or mounted lots with zero availability');
+assert.match(detail,/\.in\("status",\["draft","ready"\]\)/,'linked-lot picker must load both draft and mounted lots');
+assert.match(adminUi,/Lotes existentes[\s\S]*d\.lots/,'kit summary must expose the number of existing lot records');
+assert.match(adminUi,/Lotes montados[\s\S]*ready_lot_count/,'mounted KPI must count mounted lots, not available units');
+assert.match(adminUi,/Kits disponíveis[\s\S]*ready_quantity/,'available-unit KPI must be separate from mounted lot count');
+assert.match(adminUi,/Em edição[\s\S]*draft_lot_count/,'draft KPI must keep counting editable lots');
+assert.match(adminUi,/status==='draft'[^\n]*Em edição|Em edição[^\n]*status==='draft'/,'linked-lot options must visibly identify drafts');
+assert.match(adminUi,/status==='ready'[^\n]*Montado|Montado[^\n]*status==='ready'/,'linked-lot options must visibly identify mounted lots');
 assert.match(adminApi,/linked_lot_id/,'admin API must return and accept the generic linked lot');
 assert.match(adminApi,/basket_kit_lot_delete/,'admin API must expose safe lot deletion');
 assert.match(adminApi,/Number\(a\?\.split_available\|\|0\)<=0/,'split readiness must trust per-lot availability instead of global hygiene requirement');
+
+assert.ok(fs.existsSync(draftLinkMigrationPath),'draft linked-lot migration must exist');
+const draftLinkMigration=fs.existsSync(draftLinkMigrationPath)?fs.readFileSync(draftLinkMigrationPath,'utf8'):'';
+assert.match(draftLinkMigration,/status\s+in\s*\(\s*'draft'\s*,\s*'ready'\s*\)/i,'draft save must accept a linked lot that is still being edited');
+assert.match(draftLinkMigration,/linked_lot_unavailable/i,'mounting must still reject an unavailable linked lot');
+assert.match(draftLinkMigration,/apply_basket_kit_lot_commercial_v3/i,'mounting must refresh linked commercial snapshots before becoming ready');
 
 assert.match(storefront,/const usesHygiene=pricing\?\.uses_hygiene_kit===true/,'price preview must derive hygiene use from split availability');
 assert.doesNotMatch(storefront,/if\(b\.uses_hygiene_kit&&uid\(pricing\.hygiene_lot_id\)!==hygieneLot\)/,'price preview must not use the global basket flag for hygiene');

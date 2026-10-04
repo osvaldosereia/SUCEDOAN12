@@ -40,7 +40,9 @@ assert.match(admin,/Editar lote/,'ready unused lot must expose edit action');
 assert.match(admin,/data-kit-lot-edit/,'ready lot edit action must be addressable');
 assert.match(admin,/basket_kit_lot_reopen/,'UI must reopen ready lot through API instead of duplicating it');
 assert.match(admin,/Em edição/,'draft state must be presented as Em edição');
-assert.match(admin,/Montados/,'kit detail must distinguish mounted quantity');
+assert.match(admin,/Lotes existentes/,'kit detail must expose existing lot records');
+assert.match(admin,/Lotes montados/,'kit detail must distinguish mounted lot count');
+assert.match(admin,/Kits disponíveis/,'kit detail must distinguish available unit count from mounted lots');
 assert.match(admin,/Em edição.*draft|draft.*Em edição/is,'kit detail must surface draft lots');
 
 assert.match(admin,/function printBasketKitLot\(/,'browser lot print function must exist');
