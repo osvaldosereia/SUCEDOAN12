@@ -18,6 +18,7 @@ jobs:
             scripts/test-product-editor-complete.mjs
             scripts/patch-product-editor-complete.py
             .github/workflows/one-shot-product-editor-complete.yml
+            .github/workflows/one-shot-product-editor-diagnose.yml
           sparse-checkout-cone-mode: false
       - name: RED - contrato precisa falhar antes da implementação
         shell: bash
@@ -33,6 +34,19 @@ jobs:
           fi
           grep -q 'editor precisa declarar o contrato completo v1' /tmp/product-editor-red.log
           echo 'RED confirmado: editor completo ainda ausente.'
+      - name: Corrigir escape do gerador
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/patch-product-editor-complete.py')
+          s=p.read_text()
+          old='admin=pattern.sub(new_editor,admin,count=1)'
+          new='admin=pattern.sub(lambda _: new_editor,admin,count=1)'
+          if old not in s:
+              raise SystemExit('anchor pattern.sub not found')
+          p.write_text(s.replace(old,new,1))
+          print('root cause fixed: re.sub replacement escapes preserved')
+          PY
       - name: Aplicar implementação
         run: python3 scripts/patch-product-editor-complete.py
       - name: GREEN - contrato, JavaScript e diff
@@ -42,17 +56,16 @@ jobs:
           const fs=require('fs');
           const html=fs.readFileSync('vitrine/admin/index.html','utf8');
           const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
-          console.log('Inline scripts:',scripts.length,'primeiro chars:',scripts[0]?.length||0);
-          fs.writeFileSync('/tmp/admin-inline-1.js',scripts[0]||'');
+          scripts.forEach((src,i)=>{try{new Function(src)}catch(e){throw new Error(`inline script ${i+1}: ${e.message}`)}});
+          console.log('Admin JS syntax OK');
           NODE
-          node --check /tmp/admin-inline-1.js
           python3 -m py_compile scripts/patch-product-editor-complete.py
           git diff --check
       - name: Commit da implementação e limpeza do one-shot
         run: |
           git config user.name 'Dona Antonia Ops'
           git config user.email 'actions@users.noreply.github.com'
-          git rm scripts/patch-product-editor-complete.py .github/workflows/one-shot-product-editor-complete.yml
-          git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts
+          git rm scripts/patch-product-editor-complete.py .github/workflows/one-shot-product-editor-complete.yml .github/workflows/one-shot-product-editor-diagnose.yml
+          git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts scripts/test-product-editor-complete.mjs
           git commit -m 'feat(admin): editor completo de produtos'
           git push origin HEAD:feat/product-editor-complete-20261004
