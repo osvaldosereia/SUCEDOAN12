@@ -28,5 +28,8 @@ assert.match(storefront,/ops2_loose_sellable_stock_v1/,'fonte canônica deve usa
 assert.match(storefront,/action={2,3}["']offers["']\)return json\(req,await offerList\(\)/,'rota pública de ofertas deve continuar ativa');
 assert.match(send,/product\?\.offer\?\.active\?product\?\.offer\?\.price:product\?\.sale_price/,'envio deve usar preço de oferta quando ativo');
 assert.match(send,/form\.set\(['"]caption['"],formatAttendanceProductCaption\(product\)\)/,'imagem deve levar nome e valor no caption');
+assert.match(offers,/function\s+formatAttendanceOfferSendError\s*\(/,'Ofertas deve traduzir erros técnicos de envio em mensagem operacional');
+assert.match(offers,/meta_canary_destination_blocked[\s\S]*imagem[\s\S]*canal/i,'bloqueio de mídia deve explicar que imagem ainda não está liberada naquele canal');
+assert.match(offers,/result\.stopped_by[\s\S]*formatAttendanceOfferSendError/i,'resultado bloqueado deve mostrar a causa em vez de apenas contador de falhas');
 
 console.log('PASS test-admin-attendance-offers-tab-v1');
