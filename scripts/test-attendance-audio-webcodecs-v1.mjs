@@ -34,6 +34,7 @@ assert.match(adapter,/oggCrc|checksum/i,'páginas Ogg devem ter checksum');
 assert.match(adapter,/isValidOggOpus/,'adapter deve validar OggS + OpusHead antes do envio');
 assert.match(adapter,/audioWorklet\.addModule/,'captura PCM deve carregar worklet same-origin');
 assert.match(adapter,/attendance-audio-pcm-worklet\.js/,'adapter deve usar o worklet versionado local');
+assert.match(adapter,/async stop\(\)\{[\s\S]*try\{[\s\S]*await this\.encoder\.flush\(\)[\s\S]*finally\{[\s\S]*await this\._closeGraph\(\)/,'stop deve liberar AudioContext/encoder mesmo quando flush ou mux falhar');
 assert.doesNotMatch(adapter,/https?:\/\//,'adapter não pode buscar CDN/API externa');
 assert.doesNotMatch(adapter,/graph\.facebook\.com/,'adapter nunca deve chamar Meta diretamente');
 
