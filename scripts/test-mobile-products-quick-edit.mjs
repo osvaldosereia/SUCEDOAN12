@@ -11,7 +11,7 @@ const checks=[
  ['edicao rapida',html.includes('data-mobile-product-field="price"')&&html.includes('data-mobile-product-field="stock"')&&html.includes('data-mobile-product-field="gondola"')&&html.includes('data-mobile-product-field="expiration"')],
  ['autosave debounce',html.includes('setTimeout(()=>flushMobileProductQuickSave(id),650)')],
  ['fila estoque',html.includes('async function processMobileProductStockQueue()')],
- ['mobile 10 por vez',html.includes("const limit=isProductsMobile()?10:60")],
+ ['produtos 5 por vez',html.includes("const limit=5;")],
  ['sort enviado backend',html.includes('sort:state.productSort||\'\'')],
  ['ordenacoes',html.includes('updated_desc')&&html.includes('updated_asc')&&html.includes('expiry_asc')&&html.includes('gondola_asc')&&html.includes('name_desc')],
  ['backend quick save',edge.includes('async function quickProductSave(')&&edge.includes('a==="product_quick_save"')],
