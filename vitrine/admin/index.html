@@ -151,7 +151,7 @@
       .form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}
       .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.operational-alert{align-items:stretch;flex-direction:column}.operational-alert button{width:100%}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.dispatch-row{grid-template-columns:92px minmax(0,1fr) auto}.dispatch-row>:nth-child(3){grid-column:2}.dispatch-row>:nth-child(4){grid-column:3;grid-row:1/3}.dispatch-row .dispatch-actions{grid-column:2/4;justify-content:flex-start}.dispatch-bulk{align-items:stretch;flex-direction:column}.dispatch-bulk-actions{justify-content:space-between}.dispatch-bulk-actions button{flex:1}.closure-row{grid-template-columns:72px minmax(0,1fr) auto}.closure-row>:nth-child(3),.closure-row>:nth-child(4){grid-column:2}.closure-row>:nth-child(5){grid-column:3;grid-row:1/4}.quick-link{min-height:40px}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.orders-layout .order-row-next{grid-column:2/4}.orders-layout .customer-row-actions{grid-column:2/4;grid-row:auto;justify-content:flex-start}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
     }
-  
+
     /* Material-like operational shell */
     :root{--ink:#202124;--muted:#5f6368;--line:#dadce0;--soft:#f8f9fa;--brand:#1a73e8;--brand2:#1558b0;--danger:#d93025;--warn:#b06000;--radius:8px}
     html,body{background:#f8f9fa}
@@ -962,7 +962,7 @@
       }
     }
 
-  
+
     .basket-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
     .basket-admin-card{border:1px solid var(--line);border-radius:14px;background:#fff;padding:14px;display:grid;gap:12px}
     .basket-admin-head{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:center}
@@ -1205,7 +1205,7 @@
     @media(max-width:850px){.kit-draft-line{grid-template-columns:46px minmax(0,1fr) 90px}.kit-draft-line .basket-stock-box,.kit-draft-line .basket-row-actions{grid-column:2/-1}.kit-draft-footer{position:static}}
     @media(max-width:620px){.kit-draft-line{grid-template-columns:44px minmax(0,1fr)}.kit-draft-line>label,.kit-draft-line .basket-stock-box,.kit-draft-line .basket-row-actions{grid-column:2}.kit-draft-footer .basket-toolbar{width:100%}#kitTemplateReference .basket-component-row{grid-template-columns:44px minmax(0,1fr)}#kitTemplateReference .basket-component-row>div:nth-child(n+3){grid-column:2}}
       .basket-category-link{display:grid;grid-template-columns:auto minmax(160px,1fr);gap:8px;align-items:center;margin-top:8px}.basket-category-link>span{margin:0;color:var(--muted);font-size:11px;font-weight:800}.basket-category-link select{min-height:38px;padding:7px 9px}.basket-category-admin-list{display:grid;gap:8px;margin-top:12px}.basket-category-admin-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}.basket-category-admin-row small{grid-column:1/-1;color:var(--muted)}@media(max-width:620px){.basket-category-link{grid-template-columns:1fr}.basket-category-admin-row{grid-template-columns:1fr 1fr}.basket-category-admin-row input{grid-column:1/-1}}
-  
+
     /* products operational list v2 */
     .products-layout{grid-template-columns:54px minmax(230px,1.45fr) minmax(250px,1.15fr) minmax(210px,.95fr) minmax(145px,.7fr) minmax(150px,.72fr);gap:12px}
     .product-operational-row{position:relative;padding-block:12px;align-items:start}
@@ -1224,6 +1224,16 @@
     @media(max-width:1100px) and (min-width:641px){.products-layout{grid-template-columns:48px minmax(210px,1.35fr) minmax(220px,1fr) minmax(190px,.9fr) minmax(135px,.65fr)}.product-row-actions{grid-column:2/-1;display:flex!important;justify-content:flex-end}.product-row-actions .product-action-btn{min-width:90px}}
     @media(max-width:640px){.product-kit-menu{margin-top:7px}.product-kit-popover{position:static;min-width:0;max-width:none;margin-top:5px}.mobile-product-quick-grid{grid-template-columns:1fr 1fr}.mobile-product-kit-count{display:block;margin-top:6px}}
 
+
+    /* PRODUCT_EDITOR_COMPLETE_V1 */
+    .product-editor-section{grid-column:1/-1;border:1px solid var(--line);border-radius:13px;background:#fbfcfb;overflow:hidden}
+    .product-editor-section>summary{cursor:pointer;list-style:none;padding:12px 14px;font-size:12px;font-weight:900;color:var(--brand);display:flex;align-items:center;justify-content:space-between;background:#f5f8f6}
+    .product-editor-section>summary::-webkit-details-marker{display:none}.product-editor-section>summary:after{content:'+';font-size:18px;color:var(--muted)}.product-editor-section[open]>summary:after{content:'−'}
+    .product-editor-section-grid{padding:12px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px}.product-editor-section-grid>.span-2{grid-column:1/-1}
+    .product-editor-readonly{border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px 10px;display:grid;gap:3px;min-width:0}.product-editor-readonly small{color:var(--muted);font-size:10px;font-weight:800}.product-editor-readonly strong{font-size:12px;word-break:break-word}
+    .product-editor-readonly-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.product-editor-helper{grid-column:1/-1;color:var(--muted);font-size:10px;margin-top:-4px}
+    .product-editor-section textarea[name="additional_gtins"]{min-height:76px}.product-editor-section textarea[name="fiscal_description"]{min-height:70px}
+    @media(max-width:640px){.product-editor-section-grid{grid-template-columns:1fr}.product-editor-section-grid>.span-2,.product-editor-readonly-grid{grid-column:1}.product-editor-readonly-grid{grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body>
@@ -3630,13 +3640,13 @@
         '<label><span>Quantidade de kits</span><input class="basket-inline-input" id="kitLotQty" type="number" min="1" max="500" step="1" value="'+esc(draft.quantity)+'"><small>De 1 a 500 kits por lote.</small></label>'+
         '<div class="basket-kpi"><small>Disponível para montar</small><strong id="kitLotCapacity">'+esc(basketKitLotDraftCapacity())+'</strong><span class="sub">kits com esta composição</span></div></div>'+
       '<div class="basket-composer-summary" style="margin-top:10px">'+
-        '<label><span>Tipo da cesta/kit</span><select id="kitLotBusinessType">'+[['basic_complete','Cesta Básica Completa'],['basic_food','Cesta Básica Só os Alimentos'],['cleaning_hygiene','Kit Limpeza e Higiene'],['cleaning','Kit Limpeza'],['hygiene','Kit Higiene']].map(x=>'<option value="'+x[0]+'" '+(draft.business_type===x[0]?'selected':'')+'>'+x[1]+'</option>').join('')+'</select><small>Classificação operacional deste lote.</small></label>'+ 
-        '<label><span>Nome no site</span><input class="basket-inline-input" id="kitLotPublicName" maxlength="120" value="'+esc(draft.public_name||'')+'" placeholder="Nome que o cliente verá"><small>Nome público deste lote quando ele fizer parte de uma oferta.</small></label>'+ 
-        '<label><span>Valor manual deste lote</span><input class="basket-inline-input" id="kitLotSalePrice" inputmode="decimal" type="number" min="0" max="9999999" step="0.01" value="'+esc(Number(draft.sale_price||0).toFixed(2))+'"><small>É o valor comercial próprio deste lote; o vínculo soma o valor do outro lote.</small></label></div>'+ 
-      '<div class="basket-composer-summary" style="margin-top:10px"><label><span>Vincular outro lote (opcional)</span><select id="kitLotLinkedLot"><option value="">Sem lote vinculado</option>'+linkableLots.map(h=>'<option value="'+esc(h.id)+'" '+(String(h.id)===String(draft.linked_lot_id||'')?'selected':'')+'>'+esc((h.public_name||h.short_code||h.lot_code||'Lote')+' · '+(h.short_code||h.lot_code||'—')+' · '+fmtQty(h.quantity_available||0)+' disponível(is)')+'</option>').join('')+'</select><small>Se escolhido, estoque e valores comerciais dos dois lotes permanecem vinculados.</small></label>'+ 
-        '<div class="basket-kpi"><small>Valor comercial combinado</small><strong id="kitLotManualTotal">'+money(cents(financial.totalManual))+'</strong><span class="sub">valor manual deste lote + valor do lote vinculado</span></div>'+ 
-        '<div class="basket-kpi"><small>Valor oculto combinado</small><strong id="kitLotHiddenSum">'+money(cents(financial.totalHidden))+'</strong><span class="sub">soma dos ajustes ocultos dos dois lotes</span></div></div>'+ 
-      '<div class="basket-composer-summary" style="margin-top:10px"><div class="basket-kpi"><small>Custo total do kit</small><strong id="kitLotCostSum">'+money(cents(financial.totalCost))+'</strong><span class="sub">custo dos produtos de 1 kit, incluindo lote vinculado</span></div><div class="basket-kpi"><small>Venda total dos produtos</small><strong id="kitLotRetailSum">'+money(cents(financial.totalRetail))+'</strong><span class="sub">soma dos preços individuais de venda</span></div><div class="basket-kpi"><small>Diferença custo → venda dos produtos</small><strong id="kitLotCostToRetailPct">'+basketKitFinancialPct(financial.costToRetailPct)+'</strong><span class="sub">percentual sobre o custo total</span></div><div class="basket-kpi"><small>Diferença custo → valor definido do kit</small><strong id="kitLotCostToManualPct">'+basketKitFinancialPct(financial.costToManualPct)+'</strong><span class="sub">percentual sobre o custo total</span></div></div>'+ 
+        '<label><span>Tipo da cesta/kit</span><select id="kitLotBusinessType">'+[['basic_complete','Cesta Básica Completa'],['basic_food','Cesta Básica Só os Alimentos'],['cleaning_hygiene','Kit Limpeza e Higiene'],['cleaning','Kit Limpeza'],['hygiene','Kit Higiene']].map(x=>'<option value="'+x[0]+'" '+(draft.business_type===x[0]?'selected':'')+'>'+x[1]+'</option>').join('')+'</select><small>Classificação operacional deste lote.</small></label>'+
+        '<label><span>Nome no site</span><input class="basket-inline-input" id="kitLotPublicName" maxlength="120" value="'+esc(draft.public_name||'')+'" placeholder="Nome que o cliente verá"><small>Nome público deste lote quando ele fizer parte de uma oferta.</small></label>'+
+        '<label><span>Valor manual deste lote</span><input class="basket-inline-input" id="kitLotSalePrice" inputmode="decimal" type="number" min="0" max="9999999" step="0.01" value="'+esc(Number(draft.sale_price||0).toFixed(2))+'"><small>É o valor comercial próprio deste lote; o vínculo soma o valor do outro lote.</small></label></div>'+
+      '<div class="basket-composer-summary" style="margin-top:10px"><label><span>Vincular outro lote (opcional)</span><select id="kitLotLinkedLot"><option value="">Sem lote vinculado</option>'+linkableLots.map(h=>'<option value="'+esc(h.id)+'" '+(String(h.id)===String(draft.linked_lot_id||'')?'selected':'')+'>'+esc((h.public_name||h.short_code||h.lot_code||'Lote')+' · '+(h.short_code||h.lot_code||'—')+' · '+fmtQty(h.quantity_available||0)+' disponível(is)')+'</option>').join('')+'</select><small>Se escolhido, estoque e valores comerciais dos dois lotes permanecem vinculados.</small></label>'+
+        '<div class="basket-kpi"><small>Valor comercial combinado</small><strong id="kitLotManualTotal">'+money(cents(financial.totalManual))+'</strong><span class="sub">valor manual deste lote + valor do lote vinculado</span></div>'+
+        '<div class="basket-kpi"><small>Valor oculto combinado</small><strong id="kitLotHiddenSum">'+money(cents(financial.totalHidden))+'</strong><span class="sub">soma dos ajustes ocultos dos dois lotes</span></div></div>'+
+      '<div class="basket-composer-summary" style="margin-top:10px"><div class="basket-kpi"><small>Custo total do kit</small><strong id="kitLotCostSum">'+money(cents(financial.totalCost))+'</strong><span class="sub">custo dos produtos de 1 kit, incluindo lote vinculado</span></div><div class="basket-kpi"><small>Venda total dos produtos</small><strong id="kitLotRetailSum">'+money(cents(financial.totalRetail))+'</strong><span class="sub">soma dos preços individuais de venda</span></div><div class="basket-kpi"><small>Diferença custo → venda dos produtos</small><strong id="kitLotCostToRetailPct">'+basketKitFinancialPct(financial.costToRetailPct)+'</strong><span class="sub">percentual sobre o custo total</span></div><div class="basket-kpi"><small>Diferença custo → valor definido do kit</small><strong id="kitLotCostToManualPct">'+basketKitFinancialPct(financial.costToManualPct)+'</strong><span class="sub">percentual sobre o custo total</span></div></div>'+
       (linkedLot?'<div class="panel" style="margin-top:10px;padding:12px"><div class="kit-section-title" style="margin:0 0 8px"><div><h2 style="font-size:15px">Itens do lote vinculado</h2><p>'+esc((linkedLot.public_name||linkedLot.short_code||'Lote')+' · '+(linkedLot.short_code||linkedLot.lot_code||'—'))+'</p></div></div><div class="basket-lot-inline-strip">'+(linkedLot.items||[]).map(x=>{const raw=x.product||x||{},p=Array.isArray(raw)?(raw[0]||{}):raw;return '<div class="basket-lot-component-card"><div><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc(fmtQty(x.quantity_per_kit||x.quantity_per_basket||0))+'× por kit</small><small>Custo un. '+money(cents(p.cost||0))+' · Venda un. '+money(cents(p.price||0))+'</small></div></div>'}).join('')+'</div></div>':'')+
       '<div id="kitLotWarning" class="basket-warning" hidden></div>'+
       '<div class="kit-draft-list">'+draft.items.map((x,i)=>'<div class="kit-draft-line">'+
@@ -4510,8 +4520,26 @@
     };
   }
 
-  function openProductEditor(p=null,duplicate=false){
+  // PRODUCT_EDITOR_COMPLETE_V1
+  async function openProductEditor(p=null,duplicate=false){
     const isDuplicate=Boolean(duplicate&&p?.id);
+    const productEditor=$('#editor');
+    if(p?.id&&p?._detail_loaded!==true){
+      $('#editorTitle').textContent=isDuplicate?'Duplicar produto':'Editar produto';
+      $('#editorBody').innerHTML='<div class="loading">Carregando cadastro completo…</div>';
+      $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button>';
+      $('#cancelEditor').onclick=()=>productEditor.close();
+      productEditor.classList.add('product-editor-dialog');
+      if(!productEditor.open){productEditor.addEventListener('close',()=>productEditor.classList.remove('product-editor-dialog'),{once:true});productEditor.showModal()}
+      try{
+        const data=await api('product_detail',{id:p.id});
+        return openProductEditor({...p,...(data.product||{}),identifiers:data.identifiers||[],fiscal:data.fiscal||data.product?.fiscal||null,_detail_loaded:true},duplicate);
+      }catch(e){
+        $('#editorBody').innerHTML='<div class="empty">Não consegui carregar o cadastro completo.<br><small>'+esc(errorMessage(e.message))+'</small><br><button class="secondary" id="retryProductDetail" type="button">Tentar novamente</button></div>';
+        if($('#retryProductDetail'))$('#retryProductDetail').onclick=()=>openProductEditor({...p,_detail_loaded:false},duplicate);
+        return;
+      }
+    }
     const autoExpiry=isDuplicate?false:Boolean(p?.auto_expiry_offer_enabled);
     const offer=isDuplicate?null:(p?.offer||null);
     const manualOffer=offer&&offer?.metadata?.source!=='expiry_auto'?offer:null;
@@ -4520,50 +4548,77 @@
     const offerDiscount=manualOffer?.metadata?.discount_percent??derivedDiscount;
     const offerPrice=manualOffer?((Number(manualOffer.sale_price_cents||0)/100).toFixed(2)).replace('.',','):'';
     const offerDuration=manualOffer?.metadata?.duration_mode||'stock_zero';
+    const fiscal=isDuplicate?{ncm:p?.ncm||p?.fiscal?.ncm||''}:(p?.fiscal||{}),additionalGtins=isDuplicate?[]:(Array.isArray(p?.additional_gtins)?p.additional_gtins:[]);
+    const editorSection=(title,body,open=false)=>'<details class="product-editor-section" data-product-editor-section '+(open?'open':'')+'><summary>'+title+'</summary><div class="product-editor-section-grid">'+body+'</div></details>';
     $('#editorTitle').textContent=isDuplicate?'Duplicar produto':(p?'Editar produto':'Novo produto');
     const expiredLifecycle=!isDuplicate&&p?.active===false&&p?.deactivation_reason==='expired';
-    $('#editorBody').innerHTML='<form id="productForm" class="form-grid">'+
-      (isDuplicate?'<div class="offer-note span-2"><strong>Novo produto baseado em '+esc(p?.name||'produto')+'.</strong><br>SKU/EAN, estoque, validade e ofertas foram limpos. Classificação e dados fiscais internos serão herdados quando salvar.</div>':'')+
-      (expiredLifecycle?'<div class="offer-note span-2"><strong>Produto desativado automaticamente por vencimento.</strong><br>Corrija a data de validade antes de reativá-lo.</div>':'')+
+    const identification=
       '<label class="span-2"><span>Nome *</span><input name="name" required value="'+esc(p?.name||'')+'"></label>'+
       '<label><span>Código / SKU</span><input name="sku" value="'+esc(isDuplicate?'':(p?.sku||''))+'" placeholder="'+(isDuplicate?'Informe o novo SKU':'')+'"></label>'+
-      '<label><span>EAN / GTIN</span><input name="gtin" inputmode="numeric" value="'+esc(isDuplicate?'':(p?.gtin||''))+'" placeholder="'+(isDuplicate?'Informe o novo EAN':'')+'"></label>'+
+      '<label><span>EAN / GTIN principal</span><input name="gtin" inputmode="numeric" value="'+esc(isDuplicate?'':(p?.gtin||''))+'" placeholder="'+(isDuplicate?'Informe o novo EAN':'')+'"></label>'+
+      '<label class="span-2"><span>EANs adicionais</span><textarea name="additional_gtins" placeholder="Um EAN por linha">'+esc(additionalGtins.join('\n'))+'</textarea><small>Use para EAN antigo/novo do mesmo produto. O sistema impede vincular um EAN já confirmado em outro produto.</small></label>'+
+      '<label><span>Marca</span><input name="brand" value="'+esc(p?.brand||'')+'"></label>'+
+      '<label><span>Embalagem</span><input name="packaging" value="'+esc(p?.packaging||'')+'"></label>';
+    const commercial=
       '<label><span>Preço de venda</span><input name="price" inputmode="decimal" value="'+esc(((Number(p?.sale_price_cents||0)/100).toFixed(2)).replace('.',','))+'"></label>'+
-      '<label><span>Estoque físico'+(p&&!isDuplicate?' · Bling':'')+'</span><input name="stock" inputmode="decimal" value="'+esc(isDuplicate?'0':fmtQty(p?.stock_quantity||0))+'">'+(p&&!isDuplicate?'<small>Saldo físico total. Ao salvar, ele é ajustado e conferido no Bling.</small>':'')+'</label>'+
-      (p&&!isDuplicate?'<div class="product-stock-breakdown span-2">'+
-        '<div class="product-stock-box"><small>Estoque físico / Bling</small><strong>'+esc(fmtQty(p.stock_quantity||0))+'</strong></div>'+
-        '<div class="product-stock-box"><small>Estoque avulso vendável</small><strong>'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+'</strong></div>'+
-        '<div class="product-stock-box"><small>Registrado em cestas/kits</small><strong>'+esc(fmtQty(p.basket_locked_quantity||0))+'</strong></div>'+
-        (p.stock_breakdown_warning?'<div class="product-stock-warning"><strong>Atenção: há divergência de montagem.</strong> Os lotes registram '+esc(fmtQty(p.basket_locked_quantity||0))+' unidade(s) deste produto em cestas/kits, mas o Bling informa '+esc(fmtQty(p.stock_quantity||0))+' unidade(s) físicas. Por segurança, o estoque avulso fica em '+esc(fmtQty(p.loose_stock_quantity||0))+' até a reconciliação dos lotes.</div>':'')+
-      '</div>':'')+
-      '<label><span>Data de validade</span><input name="expiration_date" type="date" value="'+esc(isDuplicate?'':(p?.expiration_date||''))+'"></label>'+
+      '<label><span>Preço de custo</span><input name="cost" inputmode="decimal" value="'+esc(((Number(p?.cost_cents||0)/100).toFixed(2)).replace('.',','))+'"></label>'+
+      '<label><span>Unidade</span><input name="unit" value="'+esc(p?.unit||'')+'" placeholder="UN, KG, LT…"></label>'+
+      '<label><span>Estoque mínimo</span><input name="min_stock" inputmode="decimal" value="'+esc(p?.min_stock??'')+'"></label>'+
+      '<label class="span-2"><span>Fornecedor principal</span><input name="supplier" value="'+esc(p?.supplier||'')+'"></label>';
+    const classification=
       '<label><span>Categoria da vitrine</span><select name="category">'+categoryOptions(p?.category||'')+'</select></label>'+
       '<label><span>Subcategoria</span><input name="subcategory" value="'+esc(p?.subcategory||'')+'"></label>'+
-      '<label><span>Embalagem</span><input name="packaging" value="'+esc(p?.packaging||'')+'"></label>'+
-      '<div class="product-image-admin span-2" id="productImagePanel">'+
-        '<div class="product-image-preview"><img id="productImagePreview" src="'+esc(p?.image_url||'/img/sem-foto.svg')+'" alt="Foto do produto" onerror="this.onerror=null;this.src=\'/img/sem-foto.svg\'"></div>'+
-        '<div class="product-image-tools"><strong>Foto do produto</strong><small>Envie a foto original que você encontrou. Ela fica preservada; depois a automação cria e substitui a imagem do site pelo padrão Dona Antônia, com fundo cinza-claro.</small>'+
-          (!isDuplicate&&p?.id?'<input id="productImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="product-image-actions"><button class="secondary" id="chooseProductImage" type="button">'+(p?.image_url?'Trocar foto original':'Adicionar foto')+'</button><a class="secondary product-google-images-link" id="productGoogleImages" data-google-product-name="'+esc(p?.name||'')+'" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(p?.name||'')+'">Google Imagens ↗</a><button class="primary" id="standardizeProductImage" type="button" '+(!(p?.image_original_url||p?.image_url)?'disabled':'')+'>Padronizar com IA</button></div><div class="product-image-status '+(p?.image_ai_status==='completed'?'ok':p?.image_ai_status==='error'?'error':p?.image_ai_status==='processing'?'warn':'')+'" id="productImageStatus">'+esc(productImageStatusText(p))+'</div>':'<div class="product-image-status">Salve o produto primeiro. Depois você poderá enviar e padronizar a foto aqui.</div>')+
-        '</div></div>'+
-      '<label class="span-2"><span>URL da imagem</span><input name="image_url" value="'+esc(p?.image_url||'')+'"><small>Campo técnico. Normalmente use os botões acima para adicionar ou substituir a imagem.</small></label>'+
-      '<label class="span-2"><span>Descrição</span><textarea name="description">'+esc(p?.description||'')+'</textarea></label>'+
+      '<label><span>Subcategoria detalhada</span><input name="subsubcategory" value="'+esc(p?.detailed_subcategory||'')+'"></label>'+
+      '<label><span>Tags</span><input name="tags" value="'+esc(Array.isArray(p?.tags)?p.tags.join(', '):'')+'" placeholder="Separe por vírgula"></label>'+
+      '<label><span>Categoria para o cliente</span><input name="customer_category" value="'+esc(p?.customer_category||'')+'"></label>'+
+      '<label><span>Subcategoria para o cliente</span><input name="customer_subcategory" value="'+esc(p?.customer_subcategory||'')+'"></label>'+
+      '<label class="span-2"><span>Detalhe para o cliente</span><input name="customer_subsubcategory" value="'+esc(p?.customer_subsubcategory||'')+'"></label>'+
+      '<label class="check"><input name="storefront_featured" type="checkbox" '+(p?.storefront_featured?'checked':'')+'><strong>Destaque na vitrine</strong></label>'+
+      '<label class="check"><input name="is_upsell" type="checkbox" '+(p?.is_upsell?'checked':'')+'><strong>Produto de sugestão/upsell</strong></label>'+
+      '<label class="check"><input name="is_whatsapp_active" type="checkbox" '+(p?.is_whatsapp_active?'checked':'')+'><strong>Ativo no catálogo WhatsApp</strong></label>'+
+      '<label><span>Categoria WhatsApp</span><input name="whatsapp_category" value="'+esc(p?.whatsapp_category||'')+'"></label>';
+    const stock=
+      '<label><span>Estoque físico'+(p&&!isDuplicate?' · Bling':'')+'</span><input name="stock" inputmode="decimal" value="'+esc(isDuplicate?'0':fmtQty(p?.stock_quantity||0))+'">'+(p&&!isDuplicate?'<small>Ao salvar, qualquer alteração continua sendo enviada e conferida no Bling.</small>':'')+'</label>'+
+      '<label><span>Data de validade</span><input name="expiration_date" type="date" value="'+esc(isDuplicate?'':(p?.expiration_date||''))+'"></label>'+
+      '<label><span>Gôndola</span><input name="gondola" type="number" min="1" max="30" step="1" value="'+esc(isDuplicate?'':(p?.gondola_number??''))+'"></label>'+
+      '<label><span>Prateleira</span><input name="shelf" value="'+esc(isDuplicate?'':(p?.shelf_label||''))+'"></label>'+
+      (p&&!isDuplicate?'<div class="product-stock-breakdown span-2"><div class="product-stock-box"><small>Estoque físico / Bling</small><strong>'+esc(fmtQty(p.stock_quantity||0))+'</strong></div><div class="product-stock-box"><small>Estoque avulso vendável</small><strong>'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+'</strong></div><div class="product-stock-box"><small>Registrado em cestas/kits</small><strong>'+esc(fmtQty(p.basket_locked_quantity||0))+'</strong></div>'+(p.stock_breakdown_warning?'<div class="product-stock-warning"><strong>Atenção: há divergência de montagem.</strong> Os lotes registram '+esc(fmtQty(p.basket_locked_quantity||0))+' unidade(s) deste produto em cestas/kits, mas o Bling informa '+esc(fmtQty(p.stock_quantity||0))+' unidade(s) físicas.</div>':'')+'</div>':'');
+    const fiscalBody=
+      '<label><span>NCM</span><input name="fiscal_ncm" inputmode="numeric" maxlength="8" value="'+esc(fiscal?.ncm||p?.ncm||'')+'"></label>'+
+      '<label><span>CEST</span><input name="fiscal_cest" inputmode="numeric" maxlength="7" value="'+esc(fiscal?.cest||'')+'"></label>'+
+      '<label><span>Origem</span><select name="fiscal_origin_code">'+originOptions(fiscal?.origin_code)+'</select></label>'+
+      '<label><span>GTIN comercial</span><input name="fiscal_commercial_gtin" inputmode="numeric" value="'+esc(isDuplicate?'':(fiscal?.commercial_gtin||p?.gtin||''))+'"></label>'+
+      '<label><span>GTIN tributável</span><input name="fiscal_tax_gtin" inputmode="numeric" value="'+esc(fiscal?.tax_gtin||'')+'"></label>'+
+      '<label><span>Unidade comercial</span><input name="fiscal_commercial_unit" value="'+esc(fiscal?.commercial_unit||'')+'"></label>'+
+      '<label><span>Unidade tributável</span><input name="fiscal_tax_unit" value="'+esc(fiscal?.tax_unit||'')+'"></label>'+
+      '<label class="span-2"><span>Descrição fiscal</span><textarea name="fiscal_description">'+esc(fiscal?.fiscal_description||'')+'</textarea></label>'+
+      '<div class="product-editor-readonly-grid"><div class="product-editor-readonly"><small>Situação ST</small><strong>'+esc(fiscal?.st_status||'Não classificado')+'</strong></div><div class="product-editor-readonly"><small>Revisão fiscal</small><strong>'+esc(fiscal?.review_status||'Pendente')+'</strong></div><div class="product-editor-readonly"><small>Segmento fiscal</small><strong>'+esc(fiscal?.tax_segment_name||'—')+'</strong></div></div>'+
+      '<div class="product-editor-helper">Ao salvar alterações fiscais por aqui, a revisão fica registrada como validação humana. Regras derivadas e evidências continuam preservadas.</div>';
+    const imageBody=
+      '<div class="product-image-admin span-2" id="productImagePanel"><div class="product-image-preview"><img id="productImagePreview" src="'+esc(p?.image_url||'/img/sem-foto.svg')+'" alt="Foto do produto" onerror="this.onerror=null;this.src=\'/img/sem-foto.svg\'"></div><div class="product-image-tools"><strong>Foto do produto</strong><small>Envie a foto original. A automação pode padronizar a imagem para a vitrine.</small>'+
+      (!isDuplicate&&p?.id?'<input id="productImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="product-image-actions"><button class="secondary" id="chooseProductImage" type="button">'+(p?.image_url?'Trocar foto original':'Adicionar foto')+'</button><a class="secondary product-google-images-link" id="productGoogleImages" data-google-product-name="'+esc(p?.name||'')+'" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(p?.name||'')+'">Google Imagens ↗</a><button class="primary" id="standardizeProductImage" type="button" '+(!(p?.image_original_url||p?.image_url)?'disabled':'')+'>Padronizar com IA</button></div><div class="product-image-status '+(p?.image_ai_status==='completed'?'ok':p?.image_ai_status==='error'?'error':p?.image_ai_status==='processing'?'warn':'')+'" id="productImageStatus">'+esc(productImageStatusText(p))+'</div>':'<div class="product-image-status">Salve o produto primeiro. Depois você poderá enviar e padronizar a foto aqui.</div>')+
+      '</div></div><label class="span-2"><span>URL da imagem</span><input name="image_url" value="'+esc(p?.image_url||'')+'"><small>Campo técnico; normalmente use os botões acima.</small></label><label class="span-2"><span>Descrição</span><textarea name="description">'+esc(p?.description||'')+'</textarea></label>';
+    const integrationBody=!p||isDuplicate?'<div class="product-editor-helper">Os identificadores de integração aparecem depois que o produto é criado.</div>':
+      '<div class="product-editor-readonly-grid"><div class="product-editor-readonly"><small>ID Bling</small><strong>'+esc(p?.bling_product_id||'—')+'</strong></div><div class="product-editor-readonly"><small>Status de sincronização</small><strong>'+esc(p?.sync_status||'—')+'</strong></div><div class="product-editor-readonly"><small>Origem</small><strong>'+esc(p?.source_system||'—')+'</strong></div><div class="product-editor-readonly"><small>Última sincronização Bling</small><strong>'+(p?.last_bling_sync_at?esc(dateTime(p.last_bling_sync_at)):'—')+'</strong></div><div class="product-editor-readonly"><small>Última contagem</small><strong>'+(p?.last_counted_at?esc(dateTime(p.last_counted_at)):'—')+'</strong></div><div class="product-editor-readonly"><small>Verificação física</small><strong>'+(p?.physically_verified?'Confirmada':'Não confirmada')+'</strong></div></div>';
+    const offerBody=
       '<label class="check span-2"><input name="active" type="checkbox" '+(!isDuplicate&&p?.active!==false?'checked':'')+'><strong>Produto ativo na vitrine</strong></label>'+
-      '<div class="section-title span-2">Oferta por validade</div>'+
       '<label class="check span-2"><input name="auto_expiry_offer_enabled" type="checkbox" '+(autoExpiry?'checked':'')+'><span><strong>Ativar oferta automática pela validade</strong><small>60–90 dias: 10% · 30–59 dias: 20% · menos de 30 dias: 40%</small></span></label>'+
-      '<div class="section-title span-2">Oferta manual</div>'+
-      '<div class="offer-note" id="autoOfferNote">'+(autoExpiry?'A oferta automática está ligada. Desative-a acima para configurar uma oferta manual.':'Você pode definir uma oferta manual. Ao ativá-la, a oferta automática por validade será desligada.')+'</div>'+
+      '<div class="offer-note span-2" id="autoOfferNote">'+(autoExpiry?'A oferta automática está ligada. Desative-a acima para configurar uma oferta manual.':'Você pode definir uma oferta manual. Ao ativá-la, a oferta automática por validade será desligada.')+'</div>'+
       '<label class="check span-2"><input name="offer_active" type="checkbox" '+(manualOffer?.active?'checked':'')+'><strong>Oferta manual ativa</strong></label>'+
       '<label><span>Desconto (%)</span><input name="offer_discount" type="number" min="1" max="95" step="0.1" inputmode="decimal" value="'+esc(offerDiscount)+'"></label>'+
       '<label><span>Valor da oferta</span><input name="offer_price" inputmode="decimal" value="'+esc(offerPrice)+'"></label>'+
-      '<label class="span-2"><span>Validade da oferta</span><select name="offer_duration">'+offerDurationOptions(offerDuration)+'</select></label>'+
-      '</form>';
+      '<label class="span-2"><span>Validade da oferta</span><select name="offer_duration">'+offerDurationOptions(offerDuration)+'</select></label>';
+    $('#editorBody').innerHTML='<form id="productForm" class="form-grid">'+
+      (isDuplicate?'<div class="offer-note span-2"><strong>Novo produto baseado em '+esc(p?.name||'produto')+'.</strong><br>SKU/EAN, estoque, validade, EANs adicionais e ofertas foram limpos. Os demais dados ficam disponíveis para revisão antes de criar.</div>':'')+
+      (expiredLifecycle?'<div class="offer-note span-2"><strong>Produto desativado automaticamente por vencimento.</strong><br>Corrija a validade antes de reativá-lo.</div>':'')+
+      editorSection('Identificação',identification,true)+editorSection('Comercial',commercial,true)+editorSection('Classificação e canais',classification,true)+editorSection('Estoque, localização e validade',stock,true)+editorSection('Fiscal',fiscalBody,false)+editorSection('Imagem e descrição',imageBody,false)+editorSection('Integrações e auditoria',integrationBody,false)+editorSection('Status e ofertas',offerBody,false)+'</form>';
     $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button>'+(p&&!isDuplicate?'<button class="secondary" id="manageProductLots">Lotes/validades</button><button class="secondary" id="duplicateFromEditor">Duplicar</button>':'')+'<button class="primary" id="saveProduct">'+(isDuplicate?'Criar produto duplicado':'Salvar produto')+'</button>';
-    $('#cancelEditor').onclick=()=>$('#editor').close();
+    $('#cancelEditor').onclick=()=>productEditor.close();
     if($('#manageProductLots'))$('#manageProductLots').onclick=()=>openProductLotsEditor(p);
     if($('#duplicateFromEditor'))$('#duplicateFromEditor').onclick=()=>openProductEditor(p,true);
     $('#saveProduct').onclick=()=>saveProduct(isDuplicate?'':(p?.id||''),isDuplicate?p.id:'');
-    const productEditor=$('#editor');productEditor.classList.add('product-editor-dialog');productEditor.addEventListener('close',()=>productEditor.classList.remove('product-editor-dialog'),{once:true});
-    productEditor.showModal();
+    productEditor.classList.add('product-editor-dialog');
+    if(!productEditor.open){productEditor.addEventListener('close',()=>productEditor.classList.remove('product-editor-dialog'),{once:true});productEditor.showModal()}
 
     if(!isDuplicate&&p?.id&&$('#chooseProductImage')){
       $('#chooseProductImage').onclick=()=>$('#productImageFile').click();
@@ -4571,60 +4626,37 @@
         const file=e.currentTarget.files?.[0];if(!file)return;
         const choose=$('#chooseProductImage'),std=$('#standardizeProductImage'),status=$('#productImageStatus');
         choose.disabled=true;if(std)std.disabled=true;status.className='product-image-status warn';status.textContent='Enviando e salvando a foto original…';
-        try{
-          const data=await uploadProductImageSource(p.id,file);
-          p.image_url=data.image_url;p.image_original_url=data.image_original_url;p.image_ai_status=null;p.image_ai_url='';p.image_ai_error=null;
-          $('#productImagePreview').src=data.image_url;$('#productForm [name="image_url"]').value=data.image_url;
-          status.className='product-image-status ok';status.textContent='Foto original salva. Agora você pode padronizar com IA.';
-          choose.textContent='Trocar foto original';if(std)std.disabled=false;toast('Foto original salva');
-        }catch(err){status.className='product-image-status error';status.textContent=errorMessage(err.message);toast(errorMessage(err.message))}
-        finally{choose.disabled=false;e.currentTarget.value=''}
+        try{const data=await uploadProductImageSource(p.id,file);p.image_url=data.image_url;p.image_original_url=data.image_original_url;p.image_ai_status=null;p.image_ai_url='';p.image_ai_error=null;$('#productImagePreview').src=data.image_url;$('#productForm [name="image_url"]').value=data.image_url;status.className='product-image-status ok';status.textContent='Foto original salva. Agora você pode padronizar com IA.';choose.textContent='Trocar foto original';if(std)std.disabled=false;toast('Foto original salva')}
+        catch(err){status.className='product-image-status error';status.textContent=errorMessage(err.message);toast(errorMessage(err.message))}finally{choose.disabled=false;e.currentTarget.value=''}
       };
       if($('#standardizeProductImage'))$('#standardizeProductImage').onclick=async()=>{
-        const btn=$('#standardizeProductImage'),choose=$('#chooseProductImage'),status=$('#productImageStatus');
-        btn.disabled=true;choose.disabled=true;status.className='product-image-status warn';status.textContent='Padronizando e conferindo fidelidade da embalagem… isso pode levar alguns segundos.';
-        try{
-          const data=await standardizeProductImage(p.id);
-          p.image_url=data.image_url;p.image_ai_url=data.image_url;p.image_ai_status='completed';p.image_original_url=data.image_original_url||p.image_original_url;p.image_ai_validation=data.validation||null;p.image_ai_processed_at=new Date().toISOString();
-          $('#productImagePreview').src=data.image_url;$('#productForm [name="image_url"]').value=data.image_url;
-          const v=data.validation||{};status.className='product-image-status ok';status.textContent='Imagem padronizada e aprovada'+(v.fidelity_score!=null?' · fidelidade '+Math.round(Number(v.fidelity_score)*100)+'%':'')+'.';
-          toast('Imagem padronizada e substituída no produto');
-        }catch(err){status.className='product-image-status error';status.textContent='A automação não substituiu a foto: '+errorMessage(err.message);toast('A imagem original foi mantida. A padronização não passou na validação.')}
-        finally{btn.disabled=false;choose.disabled=false}
+        const btn=$('#standardizeProductImage'),choose=$('#chooseProductImage'),status=$('#productImageStatus');btn.disabled=true;choose.disabled=true;status.className='product-image-status warn';status.textContent='Padronizando e conferindo fidelidade da embalagem… isso pode levar alguns segundos.';
+        try{const data=await standardizeProductImage(p.id);p.image_url=data.image_url;p.image_ai_url=data.image_url;p.image_ai_status='completed';p.image_original_url=data.image_original_url||p.image_original_url;p.image_ai_validation=data.validation||null;p.image_ai_processed_at=new Date().toISOString();$('#productImagePreview').src=data.image_url;$('#productForm [name="image_url"]').value=data.image_url;const v=data.validation||{};status.className='product-image-status ok';status.textContent='Imagem padronizada e aprovada'+(v.fidelity_score!=null?' · fidelidade '+Math.round(Number(v.fidelity_score)*100)+'%':'')+'.';toast('Imagem padronizada e substituída no produto')}
+        catch(err){status.className='product-image-status error';status.textContent='A automação não substituiu a foto: '+errorMessage(err.message);toast('A imagem original foi mantida. A padronização não passou na validação.')}finally{btn.disabled=false;choose.disabled=false}
       };
     }
-
     const form=$('#productForm');
+    form.dataset.fiscalOriginal=JSON.stringify(productFiscalDraft(form));
     const auto=form.querySelector('[name="auto_expiry_offer_enabled"]');
     const manualControls=[...form.querySelectorAll('[name="offer_active"],[name="offer_discount"],[name="offer_price"],[name="offer_duration"]')];
-    const syncAutoState=()=>{
-      const disabled=auto.checked;
-      manualControls.forEach(el=>el.disabled=disabled);
-      $('#autoOfferNote').textContent=disabled
-        ?'A oferta automática está ligada. Desative-a acima para configurar uma oferta manual.'
-        :'Você pode definir uma oferta manual. Ao ativá-la, a oferta automática por validade será desligada.';
-    };
-    auto.onchange=syncAutoState;
-    syncAutoState();
-
-    const discount=form.querySelector('[name="offer_discount"]');
-    const offerPriceEl=form.querySelector('[name="offer_price"]');
-    const regularPrice=form.querySelector('[name="price"]');
-    discount.oninput=()=>{
-      const base=centsFromInput(regularPrice.value),d=Number(discount.value);
-      if(base>0&&Number.isFinite(d)&&d>0&&d<100)offerPriceEl.value=((Math.round(base*(100-d)/100))/100).toFixed(2).replace('.',',');
-    };
-    offerPriceEl.oninput=()=>{
-      const base=centsFromInput(regularPrice.value),sale=centsFromInput(offerPriceEl.value);
-      if(base>0&&sale>0&&sale<base)discount.value=(Math.round((1-sale/base)*1000)/10).toString();
-    };
+    const syncAutoState=()=>{const disabled=auto.checked;manualControls.forEach(el=>el.disabled=disabled);$('#autoOfferNote').textContent=disabled?'A oferta automática está ligada. Desative-a acima para configurar uma oferta manual.':'Você pode definir uma oferta manual. Ao ativá-la, a oferta automática por validade será desligada.'};
+    auto.onchange=syncAutoState;syncAutoState();
+    const discount=form.querySelector('[name="offer_discount"]'),offerPriceEl=form.querySelector('[name="offer_price"]'),regularPrice=form.querySelector('[name="price"]');
+    discount.oninput=()=>{const base=centsFromInput(regularPrice.value),d=Number(discount.value);if(base>0&&Number.isFinite(d)&&d>0&&d<100)offerPriceEl.value=((Math.round(base*(100-d)/100))/100).toFixed(2).replace('.',',')};
+    offerPriceEl.oninput=()=>{const base=centsFromInput(regularPrice.value),sale=centsFromInput(offerPriceEl.value);if(base>0&&sale>0&&sale<base)discount.value=(Math.round((1-sale/base)*1000)/10).toString()};
     regularPrice.oninput=()=>{if(discount.value)discount.oninput()};
+  }
+
+  function originOptions(current){
+    const labels=['0 · Nacional','1 · Estrangeira · importação direta','2 · Estrangeira · mercado interno','3 · Nacional · conteúdo importado > 40%','4 · Nacional · processos produtivos básicos','5 · Nacional · conteúdo importado ≤ 40%','6 · Estrangeira · importação direta sem similar','7 · Estrangeira · mercado interno sem similar','8 · Nacional · conteúdo importado > 70%'];
+    return '<option value="">Não informado</option>'+labels.map((l,i)=>'<option value="'+i+'" '+(String(current??'')===String(i)?'selected':'')+'>'+l+'</option>').join('');
   }
 
   function categoryOptions(current){
     const cats=[['','Sem categoria'],['mercearia','Mercearia'],['limpeza_lavanderia','Limpeza e lavanderia'],['higiene_beleza','Higiene e beleza'],['casa_pet','Casa e pet']];
     return cats.map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
   }
+  function productFiscalDraft(form){return {ncm:form.querySelector('[name="fiscal_ncm"]')?.value||'',cest:form.querySelector('[name="fiscal_cest"]')?.value||'',origin_code:form.querySelector('[name="fiscal_origin_code"]')?.value||'',commercial_gtin:form.querySelector('[name="fiscal_commercial_gtin"]')?.value||'',tax_gtin:form.querySelector('[name="fiscal_tax_gtin"]')?.value||'',commercial_unit:form.querySelector('[name="fiscal_commercial_unit"]')?.value||'',tax_unit:form.querySelector('[name="fiscal_tax_unit"]')?.value||'',fiscal_description:form.querySelector('[name="fiscal_description"]')?.value||''}}
   function centsFromInput(v){
     const clean=String(v||'0').replace(/\./g,'').replace(',','.');
     const n=Number(clean);return Number.isFinite(n)?Math.max(0,Math.round(n*100)):0;
@@ -4634,7 +4666,8 @@
       .map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
   }
   async function saveProduct(id,duplicateFromId=""){
-    const form=new FormData($('#productForm')),btn=$('#saveProduct');
+    const formEl=$('#productForm'),form=new FormData(formEl),btn=$('#saveProduct');
+    const fiscalDraft=productFiscalDraft(formEl),fiscalOriginal=formEl.dataset.fiscalOriginal||'',fiscalChanged=JSON.stringify(fiscalDraft)!==fiscalOriginal;
     const operator=requireOperator();if(!operator)return;
     const requestedStock=Number(String(form.get('stock')||0).replace(',','.'))||0;
     let productSaved=false,stockUpdateStarted=false;
@@ -4645,11 +4678,17 @@
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           id,duplicate_from_id:duplicateFromId||null,name:form.get('name'),sku:form.get('sku'),gtin:form.get('gtin'),
-          sale_price_cents:centsFromInput(form.get('price')),
+          sale_price_cents:centsFromInput(form.get('price')),cost_cents:centsFromInput(form.get('cost')),
           stock_quantity:requestedStock,
           expiration_date:form.get('expiration_date')||null,
           auto_expiry_offer_enabled:autoExpiry,
-          category:form.get('category'),subcategory:form.get('subcategory'),packaging:form.get('packaging'),
+          category:form.get('category'),subcategory:form.get('subcategory'),subsubcategory:form.get('subsubcategory'),packaging:form.get('packaging'),
+          brand:form.get('brand'),supplier:form.get('supplier'),unit:form.get('unit'),min_stock:form.get('min_stock'),
+          gondola:form.get('gondola'),shelf:form.get('shelf'),tags:String(form.get('tags')||'').split(/[,;]+/).map(x=>x.trim()).filter(Boolean),
+          storefront_featured:form.get('storefront_featured')==='on',is_upsell:form.get('is_upsell')==='on',is_whatsapp_active:form.get('is_whatsapp_active')==='on',whatsapp_category:form.get('whatsapp_category'),
+          customer_category:form.get('customer_category'),customer_subcategory:form.get('customer_subcategory'),customer_subsubcategory:form.get('customer_subsubcategory'),
+          additional_gtins:String(form.get('additional_gtins')||'').split(/[\s,;]+/).map(x=>x.replace(/\D+/g,'')).filter(Boolean),
+          ...(fiscalChanged?{fiscal:fiscalDraft}:{}),
           image_url:form.get('image_url'),description:form.get('description'),active:form.get('active')==='on',operator
         })
       });
