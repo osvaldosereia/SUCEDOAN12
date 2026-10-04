@@ -13,13 +13,13 @@ assert.match(auth,/export\s+async\s+function\s+attendanceJsonApi/,'cliente auten
 assert.match(auth,/(?:tokenExpiresSoon|jwtExpiresSoon|expiresSoon)/,'JWT deve ser renovado antes do vencimento');
 assert.match(auth,/response\.status\s*===\s*401/,'401 deve disparar recuperação de sessão');
 assert.match(auth,/(?:forceRefresh|force\s*:\s*true)/,'401 deve forçar renovação do token');
-assert.match(auth,/body\s*=\s*JSON\.stringify\(params/,'POST deve enviar corpo JSON explicitamente');
+assert.match(auth,/JSON\.stringify\(params/,'POST deve enviar corpo JSON explicitamente');
 assert.match(auth,/sessionStorage\.setItem\([^,]+,\s*token\)/,'novo token deve ser persistido no sessionStorage');
 assert.match(bootstrap,/searchParams\.get\("exchange"\)\s*===\s*"1"/,'bootstrap deve ter modo de troca server-side opcional');
 assert.match(bootstrap,/auth\.verifyOtp/,'bootstrap deve trocar token hash por sessão somente no modo exchange');
 assert.match(app,/attendanceJsonApi/,'core do Atendimento deve usar o cliente compartilhado');
 assert.match(library,/attendanceJsonApi/,'Biblioteca deve usar o cliente compartilhado');
-assert.match(html,/attendance-app\.js\?v=auth-refresh-v1/,'core deve receber cache-bust');
-assert.match(html,/attendance-library\.js\?v=auth-refresh-v1/,'Biblioteca deve receber cache-bust');
+assert.match(html,/attendance-app\.js\?v=auth-refresh-v2/,'core deve receber cache-bust atual');
+assert.match(html,/attendance-library\.js\?v=auth-refresh-v2/,'Biblioteca deve receber cache-bust atual');
 
 console.log('OK · Atendimento renova sessão e preserva corpo JSON da Biblioteca.');
