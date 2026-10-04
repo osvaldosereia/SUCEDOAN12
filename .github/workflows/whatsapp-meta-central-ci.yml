@@ -58,6 +58,8 @@ jobs:
       - {name: Media canary error contract, run: 'node scripts/test-attendance-media-canary-error-contract-v1.mjs'}
       - {name: Audio media UX contract, run: 'node scripts/test-attendance-media-audio-ux-v1.mjs'}
       - {name: Audio recorder contract, run: 'node scripts/test-attendance-audio-recorder-v1.mjs'}
+      - {name: Audio WebCodecs OGG contract, run: 'node scripts/test-attendance-audio-webcodecs-v1.mjs'}
+      - {name: Audio Ogg mux behavior, run: 'node scripts/test-attendance-audio-ogg-mux-v1.mjs'}
       - {name: Media status UX contract, run: 'node scripts/test-attendance-media-status-ux-v1.mjs'}
       - {name: Media delivery observer contract, run: 'node scripts/test-attendance-media-delivery-observer-v1.mjs'}
       - {name: Human AI state contract, run: 'node scripts/test-attendance-human-ai-state-v1.mjs'}
@@ -84,6 +86,8 @@ jobs:
       - {name: Admin composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-send.js'}
       - {name: Admin media composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-media-send.js'}
       - {name: Audio recorder JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-recorder.js'}
+      - {name: Audio WebCodecs adapter syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-webcodecs-adapter.js'}
+      - {name: Audio PCM worklet syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-pcm-worklet.js'}
       - {name: Human AI controls JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-human-ai.js'}
       - {name: Attendance templates JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-templates.js'}
       - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}
