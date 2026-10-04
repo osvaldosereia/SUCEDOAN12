@@ -4034,7 +4034,7 @@
         '<select id="productSort" aria-label="Ordenação"><option value="">Ordenação padrão</option><option value="name_asc">Nome A–Z</option><option value="name_desc">Nome Z–A</option><option value="updated_desc">Atualizados recentemente</option><option value="updated_asc">Não atualizados recentemente</option><option value="expiry_asc">Validade mais próxima</option><option value="expiry_desc">Validade mais distante</option><option value="gondola_asc">Gôndola 1→30</option><option value="gondola_desc">Gôndola 30→1</option></select>'+
         '<button class="secondary" id="productSearchBtn">Buscar</button>'+
       '</div>'+
-      '<div class="panel" id="productsPanel"><div class="list-head products-layout"><span></span><span>Produto</span><span>Preço</span><span>Estoque</span><span>Status</span><span></span></div><div id="productRows"><div class="loading">Carregando…</div></div><div class="more" id="productMore"></div></div>';
+      '<div class="panel" id="productsPanel"><div class="list-head products-layout"><span></span><span>Produto</span><span>Venda / custo</span><span>Estoque / validade</span><span>Status / kits</span><span>Ações</span></div><div id="productRows"><div class="loading">Carregando…</div></div><div class="more" id="productMore"></div></div>';
     $('#newProduct').onclick=()=>openProductEditor();
     $('#printInventorySheet').onclick=openInventoryPrintSelector;
     $('#productSearch').value=q;
