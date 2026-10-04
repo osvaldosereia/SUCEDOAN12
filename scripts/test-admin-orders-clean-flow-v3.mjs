@@ -7,6 +7,10 @@ const publicView=fs.readFileSync('supabase/functions/order-public-view-v1/index.
 const publicPage=fs.readFileSync('pedido/index.html','utf8');
 const migrationPath='supabase/migrations/20261004193000_orders_clean_flow_v3.sql';
 assert.equal(fs.existsSync(migrationPath),true,'Pedidos V3 precisa de migration canônica para snapshot/entrega');
+for(const legacyTest of [
+  'scripts/test-admin-order-expedition-ui-hotfix.mjs',
+  'scripts/test-admin-order-whatsapp-three-destinations-v1.mjs'
+]) assert.equal(fs.existsSync(legacyTest),false,`Contrato legado de Pedidos não deve voltar: ${legacyTest}`);
 const migration=fs.readFileSync(migrationPath,'utf8');
 
 assert.ok(!admin.includes('/vitrine/admin/orders-unified-queue-v1.js'),'Pedidos V3 não pode depender de script que sobrepõe a UI canônica');
