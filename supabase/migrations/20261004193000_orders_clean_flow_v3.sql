@@ -133,6 +133,40 @@ for each row execute function public.ops_enforce_delivery_payment_before_deliver
 revoke all on function public.ops_enforce_delivery_payment_before_delivered_v1() from public,anon,authenticated;
 grant execute on function public.ops_enforce_delivery_payment_before_delivered_v1() to service_role;
 
+-- O lote/cesta pré-montado passa a ser consumido quando a separação realmente
+-- conclui em ready. Mantém out_for_delivery apenas como compatibilidade histórica.
+create or replace function public.sync_basket_allocations_from_order_status_v1()
+returns trigger
+language plpgsql
+set search_path to ''
+as $function$
+declare
+  r record;
+begin
+  if new.status='cancelled' and old.status is distinct from 'cancelled' then
+    for r in
+      select id,lot_id,quantity from public.basket_stock_allocations
+      where order_id=new.id and status='allocated'
+      for update
+    loop
+      update public.basket_stock_allocations
+         set status='released',released_at=now()
+       where id=r.id;
+      update public.basket_stock_lots
+         set quantity_available=least(quantity_built,quantity_available+r.quantity),
+             status='ready',updated_at=now()
+       where id=r.lot_id;
+    end loop;
+  elsif new.status in ('ready','out_for_delivery')
+        and old.status is distinct from new.status then
+    update public.basket_stock_allocations
+       set status='consumed',consumed_at=coalesce(consumed_at,now())
+     where order_id=new.id and status='allocated';
+  end if;
+  return new;
+end;
+$function$;
+
 -- Operação única para a entrega: registra o recebimento real e conclui o pedido.
 create or replace function public.ops3_complete_delivery_v1(
   p_order_id uuid,
