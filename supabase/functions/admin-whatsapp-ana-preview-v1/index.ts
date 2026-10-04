@@ -38,6 +38,19 @@ async function generateSuggestion(inboundText:string,history:any[]){
   }catch(error:any){return {ok:false as const,error:clean(error?.name||"openai_request_error",120),latency_ms:Date.now()-started}}
 }
 
+async function finalizeFailedPreview(db:any,jobId:string,generated:any){
+  try{
+    const failed=await db.rpc("ops2_admin_ana_preview_finish_v1",{
+      p_job_id:jobId,p_status:"failed",p_reason:generated?.error||"ana_preview_generation_failed",
+      p_model:ANA_MODEL,p_provider_response_id:generated?.response_id||null,
+      p_last_error:generated?.error||"ana_preview_generation_failed",p_missing_context:[]
+    });
+    if(failed?.error)console.error("admin-whatsapp-ana-preview-v1","failed_preview_finalize",clean(failed.error?.message||failed.error,240));
+  }catch(error){
+    console.error("admin-whatsapp-ana-preview-v1","failed_preview_finalize_exception",clean(error instanceof Error?error.message:error,240));
+  }
+}
+
 Deno.serve(async(req:Request)=>{
   try{
     if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
@@ -50,7 +63,7 @@ Deno.serve(async(req:Request)=>{
     if(start.cached===true)return json(req,{ok:true,dry_run:true,dry_run_not_sendable:true,job:{id:start.job_id,status:start.status,decision:start.decision,suggestion_text:start.suggestion_text,confidence:start.confidence===null?null:Number(start.confidence),reason:start.reason,model:start.model,latency_ms:null,missing_context:Array.isArray(start.missing_context)?start.missing_context:[],completed_at:start.completed_at,cached:true}});
     const jobId=validUuid(start.job_id);if(!jobId)return json(req,{ok:false,error:"ana_preview_job_invalid",dry_run_not_sendable:true},500);
     const generated=await generateSuggestion(String(start.inbound_text||""),Array.isArray(start.history)?start.history:[]);
-    if(!generated.ok){await db.rpc("ops2_admin_ana_preview_finish_v1",{p_job_id:jobId,p_status:"failed",p_reason:generated.error,p_model:ANA_MODEL,p_provider_response_id:generated.response_id||null,p_last_error:generated.error,p_missing_context:[]}).catch(()=>{});return json(req,{ok:false,error:"ana_preview_generation_failed",dry_run_not_sendable:true},502)}
+    if(!generated.ok){await finalizeFailedPreview(db,jobId,generated);return json(req,{ok:false,error:"ana_preview_generation_failed",dry_run_not_sendable:true},502)}
     const result=generated.result;const finished=await db.rpc("ops2_admin_ana_preview_finish_v1",{p_job_id:jobId,p_status:"completed",p_decision:result.decision,p_suggestion_text:result.response_text,p_confidence:result.confidence,p_reason:result.reason,p_model:ANA_MODEL,p_provider_response_id:generated.response_id||null,p_last_error:null,p_missing_context:result.missing_context});if(finished.error)throw finished.error;const job=finished.data||{ok:false,error:"ana_preview_finish_failed"};if(job.ok!==true)return json(req,{ok:false,error:job.error||"ana_preview_finish_failed",dry_run_not_sendable:true},409);
     return json(req,{ok:true,dry_run:true,dry_run_not_sendable:true,job:{id:job.job_id,status:job.status,decision:job.decision,suggestion_text:job.suggestion_text,confidence:job.confidence===null?null:Number(job.confidence),reason:job.reason,model:job.model||ANA_MODEL,latency_ms:generated.latency_ms,missing_context:Array.isArray(job.missing_context)?job.missing_context:[],completed_at:job.completed_at,cached:false}});
   }catch(error){console.error("admin-whatsapp-ana-preview-v1",clean(error instanceof Error?error.message:error,500));return json(req,{ok:false,error:"ana_preview_internal_error",dry_run_not_sendable:true},500)}
