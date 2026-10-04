@@ -14,6 +14,7 @@ assert.match(admin, /Os pedidos históricos serão mantidos/, 'confirmação dev
 assert.match(edge, /ops2_admin_customer_save_v2/, 'salvamento deve usar RPC transacional');
 assert.match(edge, /vitrine_customer_delete/, 'edge admin precisa expor exclusão autenticada');
 assert.match(edge, /ops2_admin_customer_delete_v1/, 'exclusão precisa usar RPC transacional');
+assert.match(edge, /body\?\.id\s*\?\?\s*body\?\.customer_id/, 'exclusão precisa aceitar id e customer_id para compatibilidade com Admin já aberto');
 assert.match(edge, /const savedCustomer=await vitrineGetCustomer\(sb,customerId\)/, 'salvamento precisa reler estado persistido');
 
 assert.match(sql, /resolve_customer_by_phone_v1/, 'migração precisa de resolvedor determinístico');
