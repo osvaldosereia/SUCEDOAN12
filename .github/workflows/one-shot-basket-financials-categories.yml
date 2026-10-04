@@ -3,7 +3,7 @@ on:
   push:
     branches: [feat/basket-financials-categories-20261004]
     paths:
-      - 'scripts/patch-basket-financials-categories.py'
+      - 'scripts/patch-basket-financials-categories-v2.py'
 permissions:
   contents: write
 jobs:
@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: feat/basket-financials-categories-20261004
-      - run: python scripts/patch-basket-financials-categories.py
+      - run: python scripts/patch-basket-financials-categories-v2.py
       - run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
