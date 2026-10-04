@@ -2561,12 +2561,13 @@ async function basketKitAdminDetail(rawId:any){
   const lotItems=liq.data||[];
   const lotRows=lots.map((l:any)=>({...l,quantity_built:Number(l.quantity_built||0),quantity_available:Number(l.quantity_available||0),
     items:lotItems.filter((x:any)=>x.lot_id===l.id).map((x:any)=>{const p:any=Array.isArray(x.product)?x.product[0]:x.product,s:any=loose.get(String(x.product_id))||{};return {...x,product:p,quantity_per_kit:Number(x.quantity_per_basket||0),loose_stock:Number(s.loose_sellable_stock||0)}})}));
-  const ready=[...lotRows].filter((x:any)=>x.status==="ready"&&x.quantity_available>0).sort((a:any,b:any)=>Date.parse(a.built_at)-Date.parse(b.built_at));
+  const mountedLots=[...lotRows].filter((x:any)=>x.status==="ready").sort((a:any,b:any)=>Date.parse(a.built_at)-Date.parse(b.built_at));
+  const ready=mountedLots.filter((x:any)=>x.quantity_available>0);
   const drafts=lotRows.filter((x:any)=>x.status==="draft");
   const saleReady=ready.filter((x:any)=>x.sale_enabled===true);
   let linkableLots:any[]=[];
   const basket:any=Array.isArray(kq.data.basket)?kq.data.basket[0]:kq.data.basket;
-  const hq=await db.from("basket_stock_lots").select("id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,built_at,public_name,business_type,linked_lot_id,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,own_sale_price_override,own_component_sum_snapshot,own_hidden_adjustment_snapshot,own_cost_sum_snapshot,cost_sum_snapshot").not("kit_template_id","is",null).eq("status","ready").gt("quantity_available",0).is("linked_lot_id",null).order("built_at",{ascending:true});
+  const hq=await db.from("basket_stock_lots").select("id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,built_at,public_name,business_type,linked_lot_id,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,own_sale_price_override,own_component_sum_snapshot,own_hidden_adjustment_snapshot,own_cost_sum_snapshot,cost_sum_snapshot").not("kit_template_id","is",null).in("status",["draft","ready"]).order("built_at",{ascending:true});
   if(hq.error)throw hq.error;linkableLots=hq.data||[];
   if(linkableLots.length){
     const hi=await db.from("basket_stock_lot_items")
@@ -2578,8 +2579,8 @@ async function basketKitAdminDetail(rawId:any){
   }
   const nx=await db.rpc("next_basket_kit_short_code_v1",{p_kit_template_id:kid});
   return {kit:{...kq.data,basket},items,lots:lotRows,linkable_lots:linkableLots,hygiene_lots:linkableLots.filter((x:any)=>x.lot_kind==="hygiene"),default_hygiene_lot_id:null,
-    current_lot:saleReady[0]||null,last_lot:lotRows[0]||null,ready_quantity:ready.reduce((sum:number,x:any)=>sum+x.quantity_available,0),
-    draft_quantity:drafts.reduce((sum:number,x:any)=>sum+Number(x.quantity_built||0),0),draft_lot_count:drafts.length,
+    current_lot:saleReady[0]||null,last_lot:lotRows[0]||null,ready_quantity:ready.reduce((sum:number,x:any)=>sum+x.quantity_available,0),ready_lot_count:mountedLots.length,
+    existing_lot_count:mountedLots.length+drafts.length,draft_quantity:drafts.reduce((sum:number,x:any)=>sum+Number(x.quantity_built||0),0),draft_lot_count:drafts.length,
     sale_ready_quantity:saleReady.reduce((sum:number,x:any)=>sum+x.quantity_available,0),
     next_short_code:nx.error?null:nx.data};
 }
