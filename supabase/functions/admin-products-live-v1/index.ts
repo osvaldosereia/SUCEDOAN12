@@ -2401,7 +2401,7 @@ async function basketKitAdminDetail(rawId:any){
   const saleReady=ready.filter((x:any)=>x.sale_enabled===true);
   let linkableLots:any[]=[];
   const basket:any=Array.isArray(kq.data.basket)?kq.data.basket[0]:kq.data.basket;
-  const hq=await db.from("basket_stock_lots").select("id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,built_at,public_name,business_type,linked_lot_id,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,own_sale_price_override,own_component_sum_snapshot,own_hidden_adjustment_snapshot,own_cost_sum_snapshot,cost_sum_snapshot").not("kit_template_id","is",null).eq("status","ready").gt("quantity_available",0).order("built_at",{ascending:true});
+  const hq=await db.from("basket_stock_lots").select("id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,built_at,public_name,business_type,linked_lot_id,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,own_sale_price_override,own_component_sum_snapshot,own_hidden_adjustment_snapshot,own_cost_sum_snapshot,cost_sum_snapshot").not("kit_template_id","is",null).eq("status","ready").gt("quantity_available",0).is("linked_lot_id",null).order("built_at",{ascending:true});
   if(hq.error)throw hq.error;linkableLots=hq.data||[];
   if(linkableLots.length){
     const hi=await db.from("basket_stock_lot_items")
@@ -2501,7 +2501,7 @@ async function basketKitLotDraftActivate(p:any,auth:any){
       m.includes("empty_lot_composition")?"empty_lot_composition":
       m.includes("lot_product_unavailable")?"lot_product_unavailable":m.includes("linked_lot_unavailable")?"linked_lot_unavailable":
       tx(m,240)||"kit_lot_draft_activate_failed";
-    return {error:code,status:["insufficient_loose_stock","lot_product_unavailable"].includes(code)?409:400};
+    return {error:code,status:["insufficient_loose_stock","lot_product_unavailable","linked_lot_unavailable"].includes(code)?409:400};
   }
   await opsEvent("basket.kit_lot_built","Rascunho concluído como lote real, ainda fora do site.","basket",lid,
     {lot_id:lid,short_code:q.data?.short_code,quantity:q.data?.quantity_built,sale_enabled:false},

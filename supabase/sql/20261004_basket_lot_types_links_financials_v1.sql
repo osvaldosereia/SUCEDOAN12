@@ -356,6 +356,11 @@ begin
         and l.status='ready' and l.quantity_available>0$new$;
   if position(v_old in v_def)=0 then raise exception 'generic_link_checkout_validation_anchor_missing'; end if;
   v_def:=replace(v_def,v_old,v_new);
+
+  v_old:=$old$where id=v_group_lot_id and status='ready' and quantity_available>0 and sale_enabled=true$old$;
+  v_new:=$new$where id=v_group_lot_id and status='ready' and quantity_available>0 and (v_group='hygiene' or sale_enabled=true)$new$;
+  if position(v_old in v_def)=0 then raise exception 'generic_link_checkout_sale_enabled_anchor_missing'; end if;
+  v_def:=replace(v_def,v_old,v_new);
   execute v_def;
 end
 $patch$;
