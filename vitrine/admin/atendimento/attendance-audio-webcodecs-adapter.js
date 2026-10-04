@@ -159,15 +159,17 @@ class WebCodecsOggSession{
   async stop(){
     if(this.state!=='recording')throw new Error('Gravador OGG não está ativo.');
     this.state='finalizing';this.node?.port.postMessage({type:'active',value:false});
-    await wait(35);
-    this.source?.disconnect();this.node?.disconnect();this.silentGain?.disconnect();
-    if(this.pending.length){this._encodeFrame(this.pending);this.pending=new Float32Array(0)}
-    if(this.encoderError)throw this.encoderError;
-    await this.encoder.flush();
-    if(this.encoderError)throw this.encoderError;
-    const blob=muxOggOpus(this.packets,this.totalInputSamples);
-    await this._closeGraph();this.state='inactive';
-    return blob;
+    try{
+      await wait(35);
+      this.source?.disconnect();this.node?.disconnect();this.silentGain?.disconnect();
+      if(this.pending.length){this._encodeFrame(this.pending);this.pending=new Float32Array(0)}
+      if(this.encoderError)throw this.encoderError;
+      await this.encoder.flush();
+      if(this.encoderError)throw this.encoderError;
+      return muxOggOpus(this.packets,this.totalInputSamples);
+    }finally{
+      await this._closeGraph();this.state='inactive';
+    }
   }
   async cancel(){
     if(this.state==='closed')return;
