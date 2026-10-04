@@ -108,3 +108,10 @@ s=s.replace('>Desativar no site<','>Pausar venda<').replace('>Ativar no site<','
 s=s.replace("toast(enabled?'Lote ativado para venda':'Lote retirado do site');","toast(enabled?'Venda retomada':'Venda pausada');")
 s=s.replace('Lote montado. Ele permanece fora do site até você ativar.','Lote montado. A venda fica automática enquanto houver estoque.')
 p.write_text(s)
+
+# Update the old source contract to the new pause/resume language.
+tp=Path('scripts/test-basket-lot-ops-rules.mjs')
+t=tp.read_text()
+t=t.replace("assert.match(row,/Desativar no site/,'active lots must remain disable-able');","assert.match(row,/Pausar venda/,'active lots must remain pause-able');")
+t=t.replace("assert.match(row,/Ativar no site/,'inactive lots must remain activate-able');","assert.match(row,/Retomar venda/,'paused lots must remain resumable');")
+tp.write_text(t)
