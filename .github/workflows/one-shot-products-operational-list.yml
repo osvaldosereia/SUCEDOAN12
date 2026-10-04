@@ -1,0 +1,38 @@
+name: One-shot products operational list
+on:
+  push:
+    branches: [feat/produtos-listagem-operacional-5]
+    paths:
+      - 'scripts/test-products-operational-list.mjs'
+      - 'scripts/patch-products-operational-list.py'
+      - '.github/workflows/one-shot-products-operational-list.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: RED - confirmar que o comportamento ainda nao existe
+        shell: bash
+        run: |
+          if node scripts/test-products-operational-list.mjs; then
+            echo 'O teste deveria falhar antes do patch.'
+            exit 1
+          else
+            echo 'RED confirmado: teste falhou antes da implementacao.'
+          fi
+      - name: Aplicar patch
+        run: python scripts/patch-products-operational-list.py
+      - name: GREEN - regressao da listagem
+        run: |
+          node scripts/test-products-operational-list.mjs
+          node scripts/test-mobile-products-quick-edit.mjs
+          python -m py_compile scripts/patch-products-operational-list.py
+      - name: Commit da implementacao
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts scripts/test-mobile-products-quick-edit.mjs
+          git commit -m "feat: tornar produtos uma lista operacional leve" || exit 0
+          git push
