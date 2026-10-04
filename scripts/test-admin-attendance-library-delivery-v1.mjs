@@ -30,7 +30,7 @@ assert.match(sender,/outbox_id/,'auditoria deve guardar outbox_id quando houver'
 assert.match(sender,/message_id/,'auditoria deve guardar message_id quando houver');
 
 assert.match(gateway,/admin-attendance-library-send-v1\.mjs/,'gateway deve importar sender da Biblioteca');
-assert.match(gateway,/action==="library_send"[\s\S]*sendAttendanceLibraryItem\s*\(/,'library_send deve chamar o sender canônico');
+assert.match(gateway,/action==="library_send"[\s\S]*sendAttendanceLibraryItem(?:ViaMeta)?\s*\(/,'library_send deve chamar o sender da Biblioteca');
 assert.doesNotMatch(gateway,/library_send_not_ready/,'library_send não pode continuar bloqueado por stub');
 assert.match(gateway,/destination_fields_not_allowed/,'gateway deve continuar rejeitando destino informado pelo navegador');
 
