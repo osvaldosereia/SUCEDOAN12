@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {sendAttendanceMediaViaMeta} from '../supabase/functions/_shared/admin-attendance-media-send-v1.mjs';
 
 function mediaForm(){
@@ -30,4 +31,10 @@ async function expectCanaryError(code){
 await expectCanaryError('meta_canary_not_enabled');
 await expectCanaryError('meta_canary_destination_blocked');
 
-console.log('OK · erros do gate de mídia chegam estruturados ao Admin.');
+const api=fs.readFileSync('supabase/functions/admin-whatsapp-ops-v1/index.ts','utf8');
+const statusLine=api.split('\n').find(line=>line.includes('const status=error'))||'';
+assert.match(statusLine,/meta_canary_not_enabled/,'canário desligado deve ser conflito operacional, não erro 5xx da Meta');
+assert.match(statusLine,/meta_canary_destination_blocked/,'destino fora do canário deve continuar conflito operacional');
+assert.match(statusLine,/\?409:/,'erros do gate devem retornar HTTP 409');
+
+console.log('OK · erros do gate de mídia chegam estruturados ao Admin como conflito operacional.');
