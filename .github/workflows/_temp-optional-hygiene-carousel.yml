@@ -1,0 +1,28 @@
+name: Temp optional hygiene carousel patch
+on:
+  push:
+    branches: ['fix/optional-hygiene-carousel-qty-20261004']
+    paths:
+      - 'scripts/patch-optional-hygiene-carousel.py'
+      - '.github/workflows/_temp-optional-hygiene-carousel.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/optional-hygiene-carousel-qty-20261004
+          fetch-depth: 1
+      - run: python3 scripts/patch-optional-hygiene-carousel.py
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-commercial-fields.mjs
+      - run: git diff --check
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts supabase/functions/storefront-v2/index.ts
+          git commit -m 'fix: hygiene optional and keep lot qty inside card'
+          git push origin HEAD:fix/optional-hygiene-carousel-qty-20261004
