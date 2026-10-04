@@ -199,18 +199,18 @@ async function quote(payload:any){
   const split=await splitGlobalReady();
   if(split){
     const foodLot=uid(payload?.food_lot_id),hygieneLot=uid(payload?.hygiene_lot_id);
-    const {data:b,error:be}=await db.from("basket_templates").select("id,base_price,uses_hygiene_kit").eq("id",id).eq("is_active",true).eq("split_kits_enabled",true).maybeSingle();
+    const {data:b,error:be}=await db.from("basket_templates").select("id,base_price").eq("id",id).eq("is_active",true).eq("split_kits_enabled",true).maybeSingle();
     if(be)throw be;if(!b)return {error:"basket_not_found",status:404};if(!foodLot)return {error:"basket_food_lot_required",status:400};
-    const {data:pricing,error:pe}=await db.from("basket_split_availability_v1").select("food_lot_id,hygiene_lot_id,food_sale_price_override").eq("basket_id",id).maybeSingle();
+    const {data:pricing,error:pe}=await db.from("basket_split_availability_v1").select("food_lot_id,hygiene_lot_id,food_sale_price_override,uses_hygiene_kit").eq("basket_id",id).maybeSingle();
     if(pe)throw pe;if(!pricing||uid(pricing.food_lot_id)!==foodLot)return {error:"basket_food_lot_unavailable",status:409};
-    if(b.uses_hygiene_kit&&uid(pricing.hygiene_lot_id)!==hygieneLot)return {error:"basket_hygiene_lot_unavailable",status:409};
-    const food=await splitLotItems(foodLot,"food"),hygiene=b.uses_hygiene_kit?(hygieneLot?await splitLotItems(hygieneLot,"hygiene"):[]):[];
-    if(b.uses_hygiene_kit&&!hygieneLot)return {error:"basket_hygiene_lot_required",status:400};
+    const usesHygiene=pricing?.uses_hygiene_kit===true,resolvedHygieneLot=usesHygiene?uid(pricing.hygiene_lot_id):"";
+    if(usesHygiene&&hygieneLot&&resolvedHygieneLot!==hygieneLot)return {error:"basket_hygiene_lot_unavailable",status:409};
+    const food=await splitLotItems(foodLot,"food"),hygiene=usesHygiene?(resolvedHygieneLot?await splitLotItems(resolvedHygieneLot,"hygiene"):[]):[];
     const all=[...food,...hygiene],reqRows=Array.isArray(payload?.items)?payload.items:[],req=new Map<string,number>();
     for(const x of reqRows){const pid=uid(x?.product_id),g=String(x?.component_group||"");if(pid&&["food","hygiene"].includes(g))req.set(g+"|"+pid,Number(x?.quantity||0))}
     for(const x of reqRows){const pid=uid(x?.product_id),g=String(x?.component_group||"");if(pid&&["food","hygiene"].includes(g)&&!all.some((r:any)=>r.product_id===pid&&r.component_group===g))return {error:"basket_component_not_in_selected_kit",status:409}}
     const selected=all.map((r:any)=>({...r,quantity:req.has(r.component_group+"|"+r.product_id)?Number(req.get(r.component_group+"|"+r.product_id)):0}));
-    const foodChanged=groupChanged(selected,"food"),hygieneChanged=b.uses_hygiene_kit?groupChanged(selected,"hygiene"):false;
+    const foodChanged=groupChanged(selected,"food"),hygieneChanged=usesHygiene?groupChanged(selected,"hygiene"):false;
     let total=Number(pricing.food_sale_price_override??b.base_price??0);
     for(const r of selected){
       const qty=Number(r.quantity||0),base=Number(r.base_quantity||0),changed=r.component_group==="food"?foodChanged:hygieneChanged,loose=Number(r.loose_stock_quantity||0);
@@ -225,7 +225,7 @@ async function quote(payload:any){
       else if(qty>base)total+=(qty-base)*Number(r.add_unit_delta??price);
     }
     return {ok:true,total_cents:Math.max(0,cents(total)),split_mode:true,food_changed:foodChanged,hygiene_changed:hygieneChanged,
-      food_lot_id:foodLot,food_lot_code:payload?.food_lot_code||null,hygiene_lot_id:hygieneLot||null,hygiene_lot_code:payload?.hygiene_lot_code||null};
+      food_lot_id:foodLot,food_lot_code:payload?.food_lot_code||null,hygiene_lot_id:resolvedHygieneLot||null,hygiene_lot_code:payload?.hygiene_lot_code||null};
   }
 
   const {data:b,error:be}=await db.from("basket_templates").select("id,base_price").eq("id",id).eq("is_active",true).maybeSingle();if(be)throw be;if(!b)return {error:"basket_not_found",status:404};
