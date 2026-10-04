@@ -68,6 +68,26 @@ async function basketImageMap(lotIds:string[]){
   return map;
 }
 async function basketLotImage(lotId:string,hygieneId:string|null,fallback:string){const images=await basketImageMap([lotId]);return images.get(lotId+":"+(hygieneId||""))||fallback||""}
+async function basketCarouselItems(baskets:any[]){
+  const ids=[...new Set(baskets.flatMap((b:any)=>b.split_mode?[b.food_lot_id,...(b.uses_hygiene_kit&&b.hygiene_lot_id?[b.hygiene_lot_id]:[])]:[b.lot_id]).filter(Boolean))];
+  if(!ids.length)return baskets;
+  const {data,error}=await db.from("basket_stock_lot_items").select("lot_id,product_id,quantity_per_basket,position_order,product:products(name,image_url,packaging)").in("lot_id",ids).order("position_order");
+  if(error)throw error;
+  const byLot=new Map<string,any[]>();
+  for(const row of data||[]){const rows=byLot.get(row.lot_id)||[];rows.push(row);byLot.set(row.lot_id,rows)}
+  return baskets.map((b:any)=>{
+    const lots=b.split_mode?[b.food_lot_id,...(b.uses_hygiene_kit&&b.hygiene_lot_id?[b.hygiene_lot_id]:[])]:[b.lot_id];
+    const items=new Map<string,any>();
+    for(const lot of lots)for(const row of byLot.get(lot)||[]){
+      const p=Array.isArray(row.product)?row.product[0]:row.product,quantity=Number(row.quantity_per_basket);
+      if(!p||!Number.isFinite(quantity)||quantity<=0)continue;
+      const previous=items.get(row.product_id);
+      if(previous)previous.quantity+=quantity;
+      else items.set(row.product_id,{product_id:row.product_id,name:p.name,image_url:p.image_url||"",packaging:p.packaging||"",quantity});
+    }
+    return {...b,carousel_items:[...items.values()]};
+  });
+}
 async function home(){
   const split=await splitGlobalReady();
   const {data:basketsBase,error:be}=await db.from("basket_templates").select("id,name,base_price,image_url,sort_order").eq("is_active",true).order("sort_order").order("base_price").order("name");
@@ -83,7 +103,7 @@ async function home(){
       hygiene_lot_id:a.hygiene_lot_id||null,hygiene_lot_code:a.hygiene_short_code||"",hygiene_lot_quantity:Number(a.hygiene_available||0),
       uses_hygiene_kit:a.uses_hygiene_kit===true
     }}).filter(Boolean);
-    return {ok:true,version:"canonical-vitrine-v3-split-kits",split_kits:true,baskets,categories:CATEGORIES};
+    return {ok:true,version:"canonical-vitrine-v3-split-kits",split_kits:true,baskets:await basketCarouselItems(baskets),categories:CATEGORIES};
   }
   const {data:lq,error:le}=await db.from("basket_current_lot_v1").select("basket_id,lot_id,lot_code,quantity_available,built_at,sale_price_override");
   if(le)throw le;const lm=new Map((lq||[]).map((x:any)=>[String(x.basket_id),x]));
@@ -92,7 +112,7 @@ async function home(){
     id:b.id,name:b.name,display_price_cents:cents(lot.sale_price_override??b.base_price),image_url:images.get(lot.lot_id+":")||b.image_url||"",
     stock_quantity:Number(lot.quantity_available||0),lot_id:lot.lot_id,lot_code:lot.lot_code,split_mode:false
   }}).filter(Boolean);
-  return {ok:true,version:"canonical-vitrine-v2-premounted",split_kits:false,baskets,categories:CATEGORIES};
+  return {ok:true,version:"canonical-vitrine-v2-premounted",split_kits:false,baskets:await basketCarouselItems(baskets),categories:CATEGORIES};
 }
 async function sellableMap(ids:string[]){
   const out=new Map<string,number>();if(!ids.length)return out;
