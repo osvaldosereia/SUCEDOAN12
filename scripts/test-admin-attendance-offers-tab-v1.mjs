@@ -25,7 +25,7 @@ assert.match(offers,/offer:\{active:true,price:Number\(item\.price_cents\|\|0\)\
 assert.match(storefront,/async function offerList\(\)/,'storefront deve manter lista canônica de ofertas');
 assert.match(storefront,/\.eq\(["']is_active["'],true\)\.eq\(["']is_offer["'],true\)/,'fonte canônica deve filtrar produtos ativos em oferta');
 assert.match(storefront,/ops2_loose_sellable_stock_v1/,'fonte canônica deve usar estoque vendável avulso');
-assert.match(storefront,/action==["']offers["']\)return json\(req,await offerList\(\)/,'rota pública de ofertas deve continuar ativa');
+assert.match(storefront,/action={2,3}["']offers["']\)return json\(req,await offerList\(\)/,'rota pública de ofertas deve continuar ativa');
 assert.match(send,/product\?\.offer\?\.active\?product\?\.offer\?\.price:product\?\.sale_price/,'envio deve usar preço de oferta quando ativo');
 assert.match(send,/form\.set\(['"]caption['"],formatAttendanceProductCaption\(product\)\)/,'imagem deve levar nome e valor no caption');
 
