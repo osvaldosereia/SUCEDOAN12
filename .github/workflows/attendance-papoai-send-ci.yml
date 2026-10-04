@@ -50,6 +50,7 @@ jobs:
       - run: node scripts/test-admin-attendance-library-ui-v1.mjs
       - run: node scripts/test-admin-attendance-library-queue-v1.mjs
       - run: node scripts/test-admin-attendance-auth-refresh-v1.mjs
+      - run: node scripts/test-admin-attendance-boot-auth-v1.mjs
       - run: node scripts/test-admin-attendance-auth-all-modules-v2.mjs
       - run: node scripts/test-attendance-meta-media-v1.mjs
       - run: node scripts/test-attendance-meta-media-retry-v1.mjs
