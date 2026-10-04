@@ -310,7 +310,6 @@ with food as (
 )
 select bt.id basket_id,bt.name,
        (f.linked_lot_id is not null) uses_hygiene_kit,
-       (f.linked_lot_id is not null) has_linked_lot,
        bt.split_kits_enabled,
        f.kit_template_id food_kit_template_id,f.lot_id food_lot_id,f.short_code food_short_code,
        coalesce(f.quantity_available,0) food_available,
@@ -319,17 +318,19 @@ select bt.id basket_id,bt.name,
        case when f.linked_lot_id is not null then x.short_code else null end hygiene_short_code,
        case when f.linked_lot_id is not null and x.status='ready' then coalesce(x.quantity_available,0)
             when f.linked_lot_id is not null then 0 else 2147483647 end hygiene_available,
-       f.linked_lot_id,
-       case when f.linked_lot_id is not null then x.short_code else null end linked_lot_code,
-       case when f.linked_lot_id is not null then coalesce(x.quantity_available,0) else 2147483647 end linked_available,
-       x.business_type linked_business_type,
        case when f.lot_id is null then 0
             when f.linked_lot_id is not null and (x.lot_id is null or x.status<>'ready' or x.quantity_available<=0) then 0
             else least(coalesce(f.quantity_available,0),case when f.linked_lot_id is not null then coalesce(x.quantity_available,0) else coalesce(f.quantity_available,0) end)
        end split_available,
        f.public_name food_public_name,f.sale_price_override food_sale_price_override,
        f.component_sum_snapshot food_component_sum_snapshot,f.hidden_adjustment_snapshot food_hidden_adjustment_snapshot,
-       f.linked_hygiene_lot_id,f.business_type food_business_type
+       f.linked_hygiene_lot_id,
+       (f.linked_lot_id is not null) has_linked_lot,
+       f.linked_lot_id,
+       case when f.linked_lot_id is not null then x.short_code else null end linked_lot_code,
+       case when f.linked_lot_id is not null then coalesce(x.quantity_available,0) else 2147483647 end linked_available,
+       x.business_type linked_business_type,
+       f.business_type food_business_type
 from public.basket_templates bt
 left join food f on f.basket_id=bt.id
 left join linked x on x.lot_id=f.linked_lot_id;
