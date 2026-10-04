@@ -51,20 +51,53 @@ async function finalizeFailedPreview(db:any,jobId:string,generated:any){
   }
 }
 
+async function observePreview(db:any,jobId:string,latencyMs:number,cached=false){
+  try{
+    const observed=await db.rpc("ops2_admin_ana_preview_observe_v1",{
+      p_job_id:jobId,p_latency_ms:Math.max(0,Math.round(Number(latencyMs)||0)),p_cached:Boolean(cached)
+    });
+    if(observed?.error)console.error("admin-whatsapp-ana-preview-v1","preview_observe",clean(observed.error?.message||observed.error,240));
+  }catch(error){
+    console.error("admin-whatsapp-ana-preview-v1","preview_observe_exception",clean(error instanceof Error?error.message:error,240));
+  }
+}
+
 Deno.serve(async(req:Request)=>{
   try{
     if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
     if(req.method!=="POST")return json(req,{ok:false,error:"method_not_allowed"},405);
     if(!SUPABASE_URL||!SUPABASE_ANON_KEY)return json(req,{ok:false,error:"server_config"},500);
     const db=dbFor(req);const auth=await adminAuth(req,db);if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);
-    const body=await req.json().catch(()=>({}));const conversationId=validUuid(body?.conversation_id);if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id",dry_run_not_sendable:true},400);
+    const body=await req.json().catch(()=>({}));
+    const action=clean(body?.action||"preview",30).toLowerCase()||"preview";
+
+    if(action==="review"){
+      const jobId=validUuid(body?.job_id);const outcome=clean(body?.outcome,30).toLowerCase();const note=clean(body?.note,500)||null;
+      if(!jobId)return json(req,{ok:false,error:"job_required",dry_run_not_sendable:true},400);
+      if(!["used","helpful","rejected"].includes(outcome))return json(req,{ok:false,error:"review_outcome_invalid",dry_run_not_sendable:true},400);
+      const reviewed=await db.rpc("ops2_admin_ana_preview_review_v1",{p_job_id:jobId,p_outcome:outcome,p_note:note});
+      if(reviewed.error)throw reviewed.error;const review=reviewed.data||{ok:false,error:"ana_review_failed"};
+      if(review.ok!==true)return json(req,{ok:false,error:review.error||"ana_review_failed",dry_run_not_sendable:true},review.error==="admin_not_authorized"?403:409);
+      return json(req,{ok:true,dry_run:true,dry_run_not_sendable:true,review});
+    }
+
+    if(action==="metrics"){
+      const measured=await db.rpc("ops2_admin_ana_preview_metrics_v1");if(measured.error)throw measured.error;
+      const metrics=measured.data||{ok:false,error:"ana_metrics_failed"};
+      if(metrics.ok!==true)return json(req,{ok:false,error:metrics.error||"ana_metrics_failed",dry_run_not_sendable:true},metrics.error==="admin_not_authorized"?403:409);
+      return json(req,{ok:true,dry_run:true,dry_run_not_sendable:true,metrics});
+    }
+
+    if(action!=="preview")return json(req,{ok:false,error:"action_invalid",dry_run_not_sendable:true},400);
+    const conversationId=validUuid(body?.conversation_id);if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id",dry_run_not_sendable:true},400);
     const started=await db.rpc("ops2_admin_ana_preview_start_v1",{p_conversation_id:conversationId});if(started.error)throw started.error;const start=started.data||{ok:false,error:"ana_preview_start_failed"};
     if(start.ok!==true){const error=String(start.error||"ana_preview_start_failed");const status=["ai_gate_closed","ana_preview_no_text_inbound","ana_preview_busy"].includes(error)?409:error==="conversation_not_found"?404:error==="admin_not_authorized"?403:400;return json(req,{ok:false,error,dry_run_not_sendable:true},status)}
     if(start.cached===true)return json(req,{ok:true,dry_run:true,dry_run_not_sendable:true,job:{id:start.job_id,status:start.status,decision:start.decision,suggestion_text:start.suggestion_text,confidence:start.confidence===null?null:Number(start.confidence),reason:start.reason,model:start.model,latency_ms:null,missing_context:Array.isArray(start.missing_context)?start.missing_context:[],completed_at:start.completed_at,cached:true}});
     const jobId=validUuid(start.job_id);if(!jobId)return json(req,{ok:false,error:"ana_preview_job_invalid",dry_run_not_sendable:true},500);
     const generated=await generateSuggestion(String(start.inbound_text||""),Array.isArray(start.history)?start.history:[]);
-    if(!generated.ok){await finalizeFailedPreview(db,jobId,generated);return json(req,{ok:false,error:"ana_preview_generation_failed",dry_run_not_sendable:true},502)}
+    if(!generated.ok){await finalizeFailedPreview(db,jobId,generated);await observePreview(db,jobId,generated.latency_ms,false);return json(req,{ok:false,error:"ana_preview_generation_failed",dry_run_not_sendable:true},502)}
     const result=generated.result;const finished=await db.rpc("ops2_admin_ana_preview_finish_v1",{p_job_id:jobId,p_status:"completed",p_decision:result.decision,p_suggestion_text:result.response_text,p_confidence:result.confidence,p_reason:result.reason,p_model:ANA_MODEL,p_provider_response_id:generated.response_id||null,p_last_error:null,p_missing_context:result.missing_context});if(finished.error)throw finished.error;const job=finished.data||{ok:false,error:"ana_preview_finish_failed"};if(job.ok!==true)return json(req,{ok:false,error:job.error||"ana_preview_finish_failed",dry_run_not_sendable:true},409);
+    await observePreview(db,jobId,generated.latency_ms,false);
     return json(req,{ok:true,dry_run:true,dry_run_not_sendable:true,job:{id:job.job_id,status:job.status,decision:job.decision,suggestion_text:job.suggestion_text,confidence:job.confidence===null?null:Number(job.confidence),reason:job.reason,model:job.model||ANA_MODEL,latency_ms:generated.latency_ms,missing_context:Array.isArray(job.missing_context)?job.missing_context:[],completed_at:job.completed_at,cached:false}});
   }catch(error){console.error("admin-whatsapp-ana-preview-v1",clean(error instanceof Error?error.message:error,500));return json(req,{ok:false,error:"ana_preview_internal_error",dry_run_not_sendable:true},500)}
 });
