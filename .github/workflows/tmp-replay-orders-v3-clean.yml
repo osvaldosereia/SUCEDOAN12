@@ -20,8 +20,6 @@ jobs:
           BASE=$(git merge-base HEAD origin/feat/orders-clean-flow-v3-20261004)
           echo "merge-base=$BASE"
 
-          git diff "$BASE" HEAD -- vitrine/admin/index.html > /tmp/current-main-admin.diff
-
           git diff "$BASE" origin/feat/orders-clean-flow-v3-20261004 -- . \
             ':(exclude)vitrine/admin/index.html' \
             ':(exclude).github/workflows/tmp-orders-v3-dead-cleanup.yml' \
@@ -29,8 +27,19 @@ jobs:
             > /tmp/orders-v3-other.diff
           git apply --3way /tmp/orders-v3-other.diff
 
-          git show origin/feat/orders-clean-flow-v3-20261004:vitrine/admin/index.html > vitrine/admin/index.html
-          git apply /tmp/current-main-admin.diff
+          git show "$BASE":vitrine/admin/index.html > /tmp/admin-base.html
+          git show origin/feat/orders-clean-flow-v3-20261004:vitrine/admin/index.html > /tmp/admin-v3.html
+          cp vitrine/admin/index.html /tmp/admin-main.html
+          set +e
+          git merge-file -p /tmp/admin-v3.html /tmp/admin-base.html /tmp/admin-main.html > vitrine/admin/index.html
+          MERGE_STATUS=$?
+          set -e
+          if grep -q '^<<<<<<<' vitrine/admin/index.html; then
+            echo 'Admin merge conflicts:'
+            grep -n -A30 -B10 '^<<<<<<<' vitrine/admin/index.html || true
+            exit 2
+          fi
+          if [ "$MERGE_STATUS" -gt 1 ]; then exit "$MERGE_STATUS"; fi
       - name: Verify Orders V3 and recent main work
         run: |
           node scripts/test-admin-orders-clean-flow-v3.mjs
