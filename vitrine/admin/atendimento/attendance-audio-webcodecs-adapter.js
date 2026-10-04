@@ -7,12 +7,6 @@ const DEFAULT_BITRATE=64000;
 const MAX_OGG_PACKET_BYTES=255*255;
 
 function asciiBytes(text){return new TextEncoder().encode(text)}
-function concatBytes(parts){
-  const size=parts.reduce((sum,part)=>sum+part.length,0);
-  const out=new Uint8Array(size);let offset=0;
-  for(const part of parts){out.set(part,offset);offset+=part.length}
-  return out;
-}
 function writeU16LE(view,offset,value){view.setUint16(offset,value,true)}
 function writeU32LE(view,offset,value){view.setUint32(offset,value>>>0,true)}
 function writeI16LE(view,offset,value){view.setInt16(offset,value,true)}
@@ -80,9 +74,9 @@ function makeOpusTags(){
   writeU32LE(view,12+vendor.length,0);
   return packet;
 }
-function muxOggOpus(packets,totalInputSamples){
+function muxOggOpus(packets,totalInputSamples,serialOverride){
   if(!packets.length)throw new Error('Nenhum pacote Opus foi produzido.');
-  const serial=randomSerial();let pageSequence=0;
+  const serial=Number.isInteger(serialOverride)?(serialOverride>>>0):randomSerial();let pageSequence=0;
   const pages=[
     makeOggPage(makeOpusHead(),{headerType:2,granulePosition:0,serial,pageSequence:pageSequence++}),
     makeOggPage(makeOpusTags(),{headerType:0,granulePosition:0,serial,pageSequence:pageSequence++}),
@@ -200,4 +194,4 @@ async function resolve(stream,{audioBitsPerSecond=DEFAULT_BITRATE}={}){
 async function dispose(session){try{await session?.cancel?.()}catch{}}
 
 export const AttendanceOggRecorder={resolve,isValidOggOpus,dispose};
-export {PRE_SKIP};
+export {PRE_SKIP,muxOggOpus as __testMuxOggOpus};
