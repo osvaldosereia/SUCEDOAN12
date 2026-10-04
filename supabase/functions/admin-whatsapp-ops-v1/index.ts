@@ -6,6 +6,7 @@ import {sendTextViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-trans
 import {fetchMetaMediaInfo,fetchMetaMediaResponse,MetaMediaError} from "../_shared/whatsapp-meta-media-v1.mjs";
 import {sendAttendanceMediaViaMeta} from "../_shared/admin-attendance-media-send-v1.mjs";
 import {listAttendanceLibrary,prepareAttendanceLibraryUpload,completeAttendanceLibraryUpload,signAttendanceLibraryPreview,updateAttendanceLibraryItem,deactivateAttendanceLibraryItem} from "../_shared/admin-attendance-library-v1.mjs";
+import {sendAttendanceLibraryItemViaMeta} from "../_shared/admin-attendance-library-send-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -413,7 +414,14 @@ Deno.serve(async(req:Request)=>{
       if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
       if(!itemId)return json(req,{ok:false,error:"library_item_invalid"},400);
       if(!idempotencyKey)return json(req,{ok:false,error:"invalid_idempotency_key"},400);
-      return json(req,{ok:false,error:"library_send_not_ready"},501);
+      const data=await sendAttendanceLibraryItemViaMeta({
+        db,adminUserId:auth.user_id,conversationId,itemId,idempotencyKey,caption:String(body?.caption||''),
+        accessToken:META_WHATSAPP_ACCESS_TOKEN,graphVersion:META_WHATSAPP_GRAPH_VERSION,markClaimFailed,markMetaUncertain
+      });
+      if(data?.ok===true)return json(req,data,200);
+      const error=String(data?.error||"library_send_failed");
+      const status=error==="rate_limited"?429:["service_window_closed","human_send_not_homologated","media_provider_unavailable","meta_canary_destination_blocked","meta_send_uncertain","duplicate_not_dispatchable"].includes(error)?409:error.startsWith("meta_")?502:400;
+      return json(req,data,status);
     }
 
     if(action==="label_save"){
