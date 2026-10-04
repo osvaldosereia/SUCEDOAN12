@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
-import {buildTemplateCacheRows,listTemplatesViaMeta,MetaTemplatesError} from "../_shared/whatsapp-meta-templates-v1.mjs";
+import {buildTemplateCacheRows,listTemplatesViaMeta,createTemplateViaMeta,editTemplateViaMeta,deleteTemplateViaMeta,MetaTemplatesError} from "../_shared/whatsapp-meta-templates-v1.mjs";
 import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
@@ -39,6 +39,15 @@ async function accountById(accountId:string){
   return q.data||null;
 }
 
+async function templateRowById(templateId:string){
+  const q=await db.from("whatsapp_templates_v1")
+    .select("id,whatsapp_account_id,waba_id,meta_template_id,name,language,category,status,components,quality_rating,last_synced_at,metadata,updated_at")
+    .eq("id",templateId)
+    .maybeSingle();
+  if(q.error)throw q.error;
+  return q.data||null;
+}
+
 async function cachedTemplates(accountId:string){
   const q=await db.from("whatsapp_templates_v1")
     .select("id,whatsapp_account_id,waba_id,meta_template_id,name,language,category,status,components,quality_rating,last_synced_at,metadata,updated_at")
@@ -65,6 +74,28 @@ async function syncTemplates(account:any){
   const rows=buildTemplateCacheRows({items:remote.items,account,existingByKey,syncedAt});
   if(rows.length){const saved=await db.from("whatsapp_templates_v1").upsert(rows,{onConflict:"waba_id,name,language"});if(saved.error)throw saved.error}
   return {ok:true,synced:rows.length,last_synced_at:syncedAt,page_count:remote.page_count};
+}
+
+async function mutationResult(account:any,mutation:string,remote:any){
+  const sync=await syncTemplates(account);
+  const items=sync?.ok===true?await cachedTemplates(account.id):[];
+  return {
+    ok:true,
+    mutation,
+    account_id:account.id,
+    meta_template_id:clean(remote?.payload?.id??remote?.meta_template_id,80)||null,
+    sync,
+    sync_pending:sync?.ok!==true,
+    items,
+  };
+}
+
+function mutationFieldsBlocked(body:any,action:string){
+  const forbidden=["waba_id","phone_number_id","access_token","to_phone_e164","conversation_id","customer_id","whatsapp_account_id"];
+  if(forbidden.some(key=>body?.[key]!==undefined))return true;
+  if(action!=="create"&&body?.account_id!==undefined)return true;
+  if(action==="create"&&body?.template_id!==undefined)return true;
+  return false;
 }
 
 async function markFailed(claim:any,errorCode:string){
@@ -125,30 +156,65 @@ Deno.serve(async(req:Request)=>{
     const action=String(url.searchParams.get("action")||(req.method==="POST"?"send":"list")).trim().toLowerCase();
 
     if(req.method==="POST"){
-      if(action!=="send"&&action!=="send_template")return json(req,{ok:false,error:"action_not_allowed"},404);
       const body=await req.json().catch(()=>({}));
-      if(body?.to_phone_e164!==undefined||body?.whatsapp_account_id!==undefined||body?.account_id!==undefined||body?.customer_id!==undefined||body?.phone_number_id!==undefined||body?.waba_id!==undefined){
-        return json(req,{ok:false,error:"destination_fields_not_allowed"},400);
+
+      if(action==="send"||action==="send_template"){
+        if(body?.to_phone_e164!==undefined||body?.whatsapp_account_id!==undefined||body?.account_id!==undefined||body?.customer_id!==undefined||body?.phone_number_id!==undefined||body?.waba_id!==undefined){
+          return json(req,{ok:false,error:"destination_fields_not_allowed"},400);
+        }
+        if(body?.template_name!==undefined||body?.language_code!==undefined||body?.components!==undefined){return json(req,{ok:false,error:"template_identity_fields_not_allowed"},400)}
+        const conversationId=validUuid(body?.conversation_id);if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
+        const templateId=validUuid(body?.template_id);if(!templateId)return json(req,{ok:false,error:"invalid_template_id"},400);
+        if(!Array.isArray(body?.parameters)||body.parameters.length>100||body.parameters.some((value:any)=>typeof value!=="string"||!value.trim()||value.length>1024))return json(req,{ok:false,error:"template_parameters_invalid"},400);
+        const idempotencyKey=validIdempotency(body?.idempotency_key);if(!idempotencyKey)return json(req,{ok:false,error:"invalid_idempotency_key"},400);
+        const queued=await db.rpc("ops2_admin_attendance_enqueue_template_v1",{p_conversation_id:conversationId,p_template_id:templateId,p_parameters:body.parameters,p_idempotency_key:idempotencyKey});
+        if(queued.error)throw queued.error;
+        const data=queued.data||{ok:false,error:"enqueue_failed"};
+        if(data?.ok!==true){
+          const error=String(data?.error||"enqueue_failed");
+          const status=error==="rate_limited"?429:["meta_template_send_not_homologated","meta_canary_destination_blocked","meta_send_uncertain","template_not_sendable"].includes(error)?409:400;
+          return json(req,data,status);
+        }
+        if(data?.duplicate===true){
+          if(data?.status==="sent")return json(req,{ok:true,status:"accepted",duplicate:true,outbox_id:data.outbox_id,provider:"meta",message_type:"template"},200);
+          if(data?.status!=="queued")return json(req,{ok:false,error:"duplicate_not_dispatchable",outbox_id:data.outbox_id,status:data.status,provider:"meta"},409);
+        }
+        const dispatched=await dispatchTemplate(data.outbox_id);
+        return json(req,dispatched,dispatched?.ok===true?200:502);
       }
-      if(body?.template_name!==undefined||body?.language_code!==undefined||body?.components!==undefined){return json(req,{ok:false,error:"template_identity_fields_not_allowed"},400)}
-      const conversationId=validUuid(body?.conversation_id);if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
-      const templateId=validUuid(body?.template_id);if(!templateId)return json(req,{ok:false,error:"invalid_template_id"},400);
-      if(!Array.isArray(body?.parameters)||body.parameters.length>100||body.parameters.some((value:any)=>typeof value!=="string"||!value.trim()||value.length>1024))return json(req,{ok:false,error:"template_parameters_invalid"},400);
-      const idempotencyKey=validIdempotency(body?.idempotency_key);if(!idempotencyKey)return json(req,{ok:false,error:"invalid_idempotency_key"},400);
-      const queued=await db.rpc("ops2_admin_attendance_enqueue_template_v1",{p_conversation_id:conversationId,p_template_id:templateId,p_parameters:body.parameters,p_idempotency_key:idempotencyKey});
-      if(queued.error)throw queued.error;
-      const data=queued.data||{ok:false,error:"enqueue_failed"};
-      if(data?.ok!==true){
-        const error=String(data?.error||"enqueue_failed");
-        const status=error==="rate_limited"?429:["meta_template_send_not_homologated","meta_canary_destination_blocked","meta_send_uncertain","template_not_sendable"].includes(error)?409:400;
-        return json(req,data,status);
+
+      if(action!=="create"&&action!=="edit"&&action!=="delete")return json(req,{ok:false,error:"action_not_allowed"},404);
+      if(mutationFieldsBlocked(body,action))return json(req,{ok:false,error:"mutation_fields_not_allowed"},400);
+      if(!metaReady())return json(req,{ok:false,error:"meta_transport_not_configured"},503);
+
+      try{
+        if(action==="create"){
+          const accountId=validUuid(body?.account_id);if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
+          const account=await accountById(accountId);if(!account)return json(req,{ok:false,error:"account_not_found"},404);
+          const remote=await createTemplateViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,template:body?.draft,timeoutMs:15000});
+          return json(req,await mutationResult(account,"create",remote),200);
+        }
+
+        const templateId=validUuid(body?.template_id);if(!templateId)return json(req,{ok:false,error:"invalid_template_id"},400);
+        const row=await templateRowById(templateId);if(!row)return json(req,{ok:false,error:"template_not_found"},404);
+        const account=await accountById(row.whatsapp_account_id);if(!account)return json(req,{ok:false,error:"account_not_found"},404);
+        if(!/^\d{5,30}$/.test(String(row.meta_template_id||"")))return json(req,{ok:false,error:"meta_template_id_missing"},409);
+
+        if(action==="edit"){
+          const remote=await editTemplateViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,templateId:row.meta_template_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,template:body?.draft,timeoutMs:15000});
+          return json(req,await mutationResult(account,"edit",remote),200);
+        }
+
+        if(action==="delete"){
+          const remote=await deleteTemplateViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,name:row.name,templateId:row.meta_template_id,timeoutMs:15000});
+          return json(req,await mutationResult(account,"delete",remote),200);
+        }
+      }catch(error){
+        if(error instanceof MetaTemplatesError&&(error.code==="meta_templates_timeout"||error.code==="meta_templates_network_error")){
+          return json(req,{ok:false,error:"meta_template_mutation_uncertain",uncertain:true,retryable:false,requires_sync:true},409);
+        }
+        throw error;
       }
-      if(data?.duplicate===true){
-        if(data?.status==="sent")return json(req,{ok:true,status:"accepted",duplicate:true,outbox_id:data.outbox_id,provider:"meta",message_type:"template"},200);
-        if(data?.status!=="queued")return json(req,{ok:false,error:"duplicate_not_dispatchable",outbox_id:data.outbox_id,status:data.status,provider:"meta"},409);
-      }
-      const dispatched=await dispatchTemplate(data.outbox_id);
-      return json(req,dispatched,dispatched?.ok===true?200:502);
     }
 
     if(action!=="list"&&action!=="sync")return json(req,{ok:false,error:"action_not_allowed"},404);
