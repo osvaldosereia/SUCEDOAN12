@@ -31,27 +31,30 @@ jobs:
           node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-commerce.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-mounting.mjs
           node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs
-      - name: RED simplified admin
+          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
+          cmp supabase/sql/20261004_basket_canonical_checkout_v1.sql supabase/migrations/20261004230000_basket_canonical_checkout_v1.sql
+      - name: RED canonical storefront
         run: |
           set +e
-          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs > /tmp/simple-red.log 2>&1
+          node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs > /tmp/store-red.log 2>&1
           rc=$?
           set -e
-          cat /tmp/simple-red.log
-          if [ "$rc" -eq 0 ]; then touch /tmp/simple-already-green; else grep -Eq 'primary page must use unified|primary page must consume canonical|Pausar venda|pause/resume' /tmp/simple-red.log; fi
-      - name: Implement simplified admin
+          cat /tmp/store-red.log
+          if [ "$rc" -eq 0 ]; then touch /tmp/store-already-green; else grep -Eq 'public_lot_kind|home must use canonical|home response must expose|detail must use canonical|quote must revalidate' /tmp/store-red.log; fi
+      - name: Implement canonical storefront
         run: |
-          if [ ! -f /tmp/simple-already-green ]; then python scripts/_apply_basket_simple_admin.py; fi
-          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs
-          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs
-          node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
-          node --disable-warning=ExperimentalWarning scripts/test-basket-kit-suggestions.mjs
+          if [ ! -f /tmp/store-already-green ]; then python scripts/_apply_basket_storefront_canonical.py; fi
+          node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-carousel-service.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
+          cmp supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql
           git diff --check
-      - name: Commit simplified admin
+      - name: Commit canonical storefront
         run: |
-          if git diff --quiet -- vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts scripts/test-basket-lot-ops-rules.mjs; then exit 0; fi
+          if git diff --quiet -- supabase/functions/storefront-v2/index.ts supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql scripts/test-basket-carousel-service.mjs .github/workflows/basket-carousel-ci.yml; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts scripts/test-basket-lot-ops-rules.mjs
-          git commit -m 'refactor: simplify baskets kits admin workflow'
+          git add supabase/functions/storefront-v2/index.ts supabase/sql/20261004_basket_canonical_commerce_v1.sql supabase/migrations/20261004223000_basket_canonical_commerce_v1.sql scripts/test-basket-carousel-service.mjs .github/workflows/basket-carousel-ci.yml
+          git commit -m 'refactor: serve baskets kits from canonical catalog'
           git push origin HEAD:feature/baskets-kits-canonical-20261004-exec
