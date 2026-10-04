@@ -1,0 +1,38 @@
+name: One-shot deploy admin service intelligence
+
+on:
+  push:
+    branches:
+      - fix/customer-delete-runtime-20261003
+    paths:
+      - .github/workflows/one-shot-deploy-admin-service-intelligence.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ssbesxgaijknwsjbsbcz
+    steps:
+      - name: Checkout production main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate deploy credentials
+        shell: bash
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "SUPABASE_ACCESS_TOKEN is not configured"; exit 1; }
+
+      - name: Deploy admin-service-intelligence-v1
+        run: supabase functions deploy admin-service-intelligence-v1 --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
