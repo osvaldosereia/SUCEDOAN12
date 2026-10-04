@@ -23,4 +23,7 @@ assert.equal(split.baskets[0].display_price_cents,12345,'split usa o preço come
 assert.deepEqual(split.baskets[0].carousel_items.map(x=>[x.product_id,x.quantity]),[['rice',3],['soap',2]],'combinar os lotes selecionados e somar produto repetido');
 assert.equal(queries.filter(x=>x.table==='basket_stock_lot_items').length,1);
 assert.ok(!JSON.stringify(split).includes('Modelo diferente'));assert.ok(!JSON.stringify(split).includes('Oculto'));
-console.log('Basket carousel service: lot commercial name/price, selected sale lots, quantities, split aggregation and batch query passed');
+const quoteBlock=source.slice(source.indexOf('async function quote(payload:any)'),source.indexOf('async function resolveCode('));
+assert.match(quoteBlock,/food_sale_price_override/, 'prévia do checkout split deve ler o preço comercial do lote');
+assert.doesNotMatch(quoteBlock,/let total=Number\(b\.base_price\|\|0\)/,'prévia do checkout split não pode voltar ao preço da cesta-modelo');
+console.log('Basket carousel service: lot commercial name/price, selected sale lots, quantities, split aggregation, batch query and quote base passed');
