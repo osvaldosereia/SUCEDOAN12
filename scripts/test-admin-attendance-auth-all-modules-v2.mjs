@@ -3,6 +3,7 @@ import fs from 'node:fs';
 
 const authPath='vitrine/admin/atendimento/attendance-auth.js';
 const htmlPath='vitrine/admin/atendimento/index.html';
+const appPath='vitrine/admin/atendimento/attendance-app.js';
 const targets={
   send:'vitrine/admin/atendimento/attendance-send.js',
   media:'vitrine/admin/atendimento/attendance-media-send.js',
@@ -10,15 +11,20 @@ const targets={
   humanAi:'vitrine/admin/atendimento/attendance-human-ai.js',
   ana:'vitrine/admin/atendimento/attendance-ana-preview.js'
 };
-for(const path of [authPath,htmlPath,...Object.values(targets)])assert.equal(fs.existsSync(path),true,`${path} deve existir`);
+for(const path of [authPath,htmlPath,appPath,...Object.values(targets)])assert.equal(fs.existsSync(path),true,`${path} deve existir`);
 const auth=fs.readFileSync(authPath,'utf8');
 const html=fs.readFileSync(htmlPath,'utf8');
+const app=fs.readFileSync(appPath,'utf8');
 const files=Object.fromEntries(Object.entries(targets).map(([key,path])=>[key,fs.readFileSync(path,'utf8')]));
 
 assert.match(auth,/export\s+async\s+function\s+attendanceAuthorizedFetch/,'auth compartilhado deve expor fetch autenticado genérico');
 assert.match(auth,/ensureAttendanceToken/,'fetch autenticado deve usar renovação preventiva');
 assert.match(auth,/response\.status\s*===\s*401/,'fetch autenticado deve recuperar uma vez após 401');
 assert.match(auth,/forceRefresh\s*:\s*true/,'recuperação 401 deve forçar token novo');
+
+assert.match(app,/ensureAttendanceToken/,'boot do Atendimento deve preservar o hotfix #716');
+assert.match(app,/async\s+function\s+boot\(\)[\s\S]*await\s+ensureAttendanceToken\(\)/,'boot deve renovar/obter sessão antes de carregar a Central');
+assert.doesNotMatch(app,/\badminToken\s*\(/,'boot não pode voltar a chamar helper removido');
 
 for(const [name,source] of Object.entries(files)){
   assert.match(source,/from\s+['"]\.\/attendance-auth\.js\?v=auth-refresh-v2['"]/i,`${name} deve importar a versão atual do auth compartilhado`);
@@ -36,4 +42,4 @@ for(const module of ['attendance-app.js','attendance-library.js','attendance-ana
   assert.match(html,new RegExp(`${escaped}\\?v=auth-refresh-v2`),`${module} deve receber cache-bust v2`);
 }
 
-console.log('OK · toda a Central usa renovação de sessão compartilhada.');
+console.log('OK · toda a Central usa renovação de sessão compartilhada e preserva o boot autenticado.');
