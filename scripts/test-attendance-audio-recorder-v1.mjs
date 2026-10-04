@@ -36,6 +36,9 @@ assert.match(recorder,/getTracks\(\)\.forEach/,'stream do microfone deve ser enc
 assert.match(recorder,/URL\.revokeObjectURL/,'preview anterior deve liberar memória');
 assert.match(recorder,/NotAllowedError|microfone/i,'negação de permissão deve ter estado explícito');
 assert.match(recorder,/selectedConversationId/,'gravação deve ficar vinculada à conversa selecionada');
+assert.match(recorder,/recorder\.mimeType/,'formato efetivamente produzido pelo MediaRecorder deve ser observado');
+assert.match(recorder,/recording_mime_type:actualMimeType/,'evento deve transportar o MIME efetivamente produzido, não apenas o solicitado');
+assert.match(recorder,/Formato real:/,'UI deve mostrar o MIME real para diagnóstico do canário');
 
 assert.match(media,/attendance:recorded-audio-ready/,'composer de mídia deve aceitar áudio gravado');
 assert.match(media,/recordedMediaFile/,'composer deve manter arquivo gravado separado do input nativo');
