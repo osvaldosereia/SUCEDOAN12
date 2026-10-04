@@ -2,6 +2,13 @@ import assert from 'node:assert/strict';
 
 const media=await import('../supabase/functions/_shared/whatsapp-meta-media-v1.mjs');
 assert.equal(typeof media.validateOutboundMetaMediaContent,'function','helper deve validar assinatura real do arquivo');
+assert.equal(typeof media.canonicalOutboundMetaMime,'function','helper deve normalizar aliases MIME antes do upload');
+assert.equal(media.canonicalOutboundMetaMime('audio/x-m4a','gravacao.m4a'),'audio/mp4');
+assert.equal(media.canonicalOutboundMetaMime('audio/m4a','gravacao.m4a'),'audio/mp4');
+assert.equal(media.canonicalOutboundMetaMime('','gravacao.m4a'),'audio/mp4');
+assert.equal(media.canonicalOutboundMetaMime('application/octet-stream','gravacao.m4a'),'audio/mp4');
+assert.equal(media.canonicalOutboundMetaMime('application/pdf','gravacao.m4a'),'application/pdf','MIME explícito incompatível não deve ser sobrescrito por extensão');
+assert.equal(media.canonicalOutboundMetaMime('audio/x-m4a','arquivo.exe'),'','alias M4A exige extensão .m4a');
 
 const ascii=s=>new TextEncoder().encode(s);
 const samples={

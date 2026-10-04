@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const mediaPath='vitrine/admin/atendimento/attendance-media-send.js';
+const appPath='vitrine/admin/atendimento/attendance-app.js';
+const media=fs.readFileSync(mediaPath,'utf8');
+const app=fs.readFileSync(appPath,'utf8');
+assert.match(media,/attendance:conversation-refreshed/,'mídia deve observar refresh canônico da conversa');
+assert.match(media,/provider_message_id/,'observador deve correlacionar pelo WAMID/provider id');
+assert.match(media,/delivered|read/,'observador deve promover estados de entrega/leitura');
+assert.match(media,/mediaProgress/,'estado final deve ser refletido no feedback do composer');
+assert.doesNotMatch(media,/setInterval|setTimeout\([^)]*poll/i,'não deve criar polling próprio concorrente');
+assert.match(app,/new CustomEvent\(['"]attendance:conversation-refreshed['"]/,'refresh canônico deve publicar o evento consumido pelo observador');
+assert.match(app,/detail:\{conversation_id:id,messages:/,'evento deve transportar conversa e mensagens canônicas');
+assert.match(app,/async function refreshSelected/,'evento deve nascer no refresh já existente');
+assert.doesNotMatch(app,/attendance:conversation-refreshed[\s\S]{0,300}setInterval/,'bridge não pode criar polling adicional');
+console.log('PASS test-attendance-media-delivery-observer-v1');

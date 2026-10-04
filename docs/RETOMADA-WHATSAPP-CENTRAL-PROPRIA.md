@@ -1,210 +1,200 @@
 # RETOMADA — Central WhatsApp Própria via Meta Cloud API
 
-**Última atualização:** 2026-10-02  
-**Branch:** `feat/whatsapp-meta-central-task0-task1`  
+**Checkpoint canônico:** 2026-10-03/04 (Cuiabá)  
+**Main confirmada:** `d4f6816e7c4727a2605d6115f1e87722075480e8`  
+**Supabase canônico:** `ssbesxgaijknwsjbsbcz`  
 **Issue mestre:** #630  
-**PR:** #632
+**Task mídia:** #649
+
+> Este arquivo é o ponto de retomada obrigatório. Antes de programar, ler os comentários mais recentes de #630/#649 e auditar PRs/branches abertos, principalmente trabalho paralelo de Atendimento.
 
 ## Estado executivo
 
-- Task 0 — safeguard/baseline/secrets: **concluída**.
-- Task 1 — outbox provider-neutral v3: **concluída e aplicada em produção com gates OFF**.
-- Task 2 — adapter de envio Meta: **concluída em código/testes e incluída no gateway v18**.
-- Task 3 — webhook Meta próprio: **implantado, secrets configurados, challenge validado HTTP 200 e HMAC funcionando; falta assinar/validar `messages` no 1018**.
-- Task 4 — canonical outbound/status/dedupe: **concluída e aplicada em produção**.
-- Task 5 — gateway/botão Admin: **backend `admin-whatsapp-ops-v1` v18 ACTIVE e fail-closed; UI provider-aware permanece no branch**.
-- Task 6 — canário 1018: **não iniciado**.
+- Tasks 0–8: concluídas/homologadas conforme #630.
+- Task 9A — inbound mídia Meta: concluída/homologada.
+- Task 9B — outbound mídia Meta: imagem/PDF comprovados; gravador de áudio e envio direto implementados; correção de MIME M4A concluída; falta somente o canário real de áudio pelo Admin com evidência WAMID/status/dedupe/fila limpa.
+- Task 10 — Humano × IA: implementada e fail-closed.
+- Task 11 — ANA própria: preview/dry-run implementado; recovery de claim stale aplicado; `ana_enabled=false`.
+- Marketing/campanhas: `campaigns_enabled=false`.
+- PapoAI: permanece sombra/fallback; não remover antes dos gates finais.
 
-## Mudança operacional importante — plano Supabase
+## Runtime canônico conhecido
 
-Em 2026-10-02 o projeto foi atualizado para plano pago. A limitação `Max number of functions reached` deixou de bloquear a criação de novas Edge Functions.
-
-Não foi necessário apagar nenhuma função antiga. `whatsapp-ingest-make-v1` e demais stubs 410 permanecem intactos por enquanto.
-
-## Invariantes atuais
+Nos canais `dona-antonia-0975` e `dona-antonia-1018`:
 
 ```text
-0975: send_enabled=true, human_send_enabled=false, homologated_at=null, inbound_provider=papoai, outbound_provider=papoai
-1018: send_enabled=true, human_send_enabled=false, homologated_at=null, inbound_provider=papoai, outbound_provider=papoai
+inbound_provider = papoai
+outbound_provider = meta
+capture_enabled = true
+send_enabled = true
+human_send_enabled = true
+ana_enabled = false
+campaigns_enabled = false
 ```
 
-Verificado nesta fase:
-- `human_attendance` outbox: **0 linhas** antes da ativação de canário;
-- botão Enviar continua bloqueado pelos gates;
-- PapoAI continua provider runtime dos dois canais;
-- nenhuma mensagem real foi enviada pela nova implementação nesta fase;
-- checkout, estoque, Bling e criação de pedido não foram tocados.
+Canários permanecem restritos a 0975↔1018. Não ampliar para clientes reais durante homologação.
 
-## Ativos Meta não secretos
+## Merges relevantes mais recentes
 
-### 0975
-- WABA ID: `1497253794754816`
-- Phone Number ID: `945659128620084`
+### PR #686 — observabilidade de mídia
 
-### 1018
-- WABA ID: `840102181903253`
-- Phone Number ID: `1218939807961094`
+Merge `405f1c0f11371ddb17c97fcd5229af9b99b8bbb7`.
 
-### App próprio
-- `cell principal`
-- App ID: `1547249776748513`
+- WAMID/provider_message_id correlacionado com refresh canônico;
+- estados Aceito/Enviado/Entregue/Lido/Falhou;
+- sem polling concorrente.
 
-## Task 1 — outbox provider-neutral
+### PR #688 — recovery de claim órfão ANA
 
-Migration aplicada: `admin_attendance_provider_neutral_v3`.
+Merge `800f7e270bb355f9bccffea6d456f57ca4f59501`.
 
-Funções:
-- `ops2_admin_attendance_enqueue_text_v3(uuid,text,text)`
-- `ops2_admin_attendance_claim_outbox_v3(uuid)`
+Migration aplicada: `whatsapp_ana_preview_stale_claim_recovery_v3`.
 
-Smoke test com gates OFF:
+- lease de 2 minutos para preview `claimed`;
+- somente `admin_preview` + `dry_run=true` + `dry_run_not_sendable=true` pode ser recuperado;
+- cleanup auditável de claim antigo;
+- nenhum caminho de envio WhatsApp criado.
+
+### PR #690 — gravador de áudio no Atendimento
+
+Merge `628cfd0f66c63bc4f38f7dac5d246fab38a75190`.
+
+Entregue:
+- botão `🎙 Gravar áudio`;
+- acesso ao microfone somente após clique;
+- vínculo da gravação à conversa selecionada;
+- cronômetro, Parar, Cancelar e preview;
+- liberação de `MediaStream` e Object URL;
+- formatos MP4/AAC ou OGG/Opus conforme `MediaRecorder.isTypeSupported()`;
+- áudio gravado vira `File` e entra no mesmo pipeline `send_media`;
+- sem Graph API no browser;
+- canário, janela de 24h, idempotência e WAMID preservados.
+
+### PR #693 — envio direto no painel do gravador
+
+Merge `833e4a6fcdb972524bd51ba8fc42d98a8c14ec29`.
+
+Motivo: o áudio já ficava em memória, mas a UI fazia parecer que era necessário baixar e anexar novamente.
+
+Entregue:
+- botão **Enviar áudio** dentro do painel do gravador;
+- após Parar/ouvir, o áudio é enviado pelo mesmo `send_media`;
+- download/anexo manual não é requisito;
+- os dois CIs ficaram verdes antes do merge.
+
+### PR #694 — aliases MIME de M4A
+
+Merge `d4d6c5cc83b7341ba3e72bb19f341f95cd8a4312`.
+
+Falha real reproduzida pelo usuário ao anexar:
 
 ```text
-=> { ok:false, error:"human_send_not_homologated" }
-rows_created = 0
+Áudio: 5c503739-9027-48b4-afb4-4f96442432b7.m4a
+Tipo não permitido. Use imagem, áudio ou PDF.
 ```
 
-## Task 2 — adapter Meta
+Root cause: arquivos `.m4a` podem voltar do navegador/OS como `audio/x-m4a`, `audio/m4a`, MIME vazio ou `application/octet-stream`, enquanto o whitelist aceitava somente `audio/mp4`.
 
-Arquivo:
-- `supabase/functions/_shared/whatsapp-meta-transport-v1.mjs`
+Correção:
+- frontend reconhece esses aliases somente quando o nome termina em `.m4a`;
+- backend possui `canonicalOutboundMetaMime()` para normalizar alias M4A → `audio/mp4`;
+- MIME explícito incompatível, como `application/pdf`, não é sobrescrito pela extensão;
+- alias M4A em arquivo que não termina `.m4a` continua bloqueado;
+- conteúdo continua submetido à validação binária real `ftyp`, portanto renomear arquivo falso para `.m4a` não libera o envio.
 
-Garantias:
-- Graph `/{phone_number_id}/messages`;
-- `wamid` obrigatório;
-- `phone_number_id` somente dígitos;
-- timeout cobre fetch + body;
-- network/timeout/5xx ficam `uncertain` para impedir retry cego;
-- token não é logado nem embutido.
+TDD: RED real em `Meta media content signature contract`, depois GREEN completo.
 
-## Task 3 — webhook Meta próprio
+### PR #695 — MIME canônico antes do FormData
 
-Edge Function implantada e validada:
+Merge `d4f6816e7c4727a2605d6115f1e87722075480e8`.
 
-```text
-slug: whatsapp-meta-webhook-v1
-status: ACTIVE
-version: 6
-verify_jwt: false
-```
+Motivo: mesmo o frontend reconhecendo o `.m4a`, o `FormData` ainda poderia enviar o MIME original do SO ao runtime produtivo já publicado.
 
-`verify_jwt=false` é intencional porque a Meta não envia JWT Supabase. A autenticação do POST é feita por HMAC `X-Hub-Signature-256` usando o App Secret da Meta; o GET de verificação usa verify token próprio.
+Correção:
+- `fileForUpload(file)` preserva exatamente os bytes;
+- se `.m4a` vier por alias, cria um novo `File([file], file.name, {type:'audio/mp4'})` somente para o upload;
+- `FormData` recebe `uploadFile`, não o MIME alias original;
+- demais arquivos não são reenvelopados;
+- validação server-side de conteúdo continua ativa.
 
-Arquivos canônicos no GitHub:
-- `supabase/functions/_shared/whatsapp-meta-webhook-v1.mjs`
-- `supabase/functions/whatsapp-meta-webhook-v1/index.ts`
-- `supabase/functions/_shared/whatsapp-core-v1.mjs`
-- `scripts/test-whatsapp-meta-webhook-v1.mjs`
-- fixtures `meta-webhook-*`
+TDD:
+1. RED real em `Audio recorder contract`;
+2. implementação criada;
+3. teste foi refinado para validar comportamento, não uma forma textual específica;
+4. head final `a930f84ca3b03b4db99627997d286f33e1cc6980` passou:
+   - `WhatsApp Meta Central CI` = success;
+   - `attendance-papoai-send-ci` = success;
+5. merge somente após ambos verdes.
 
-Contrato:
-- challenge GET;
-- HMAC sobre bytes exatos;
-- App Secret e verify token somente por env;
-- limite de payload 2 MiB;
-- canal resolvido exclusivamente por `phone_number_id`;
-- `phone_number_id` conhecido é associado à conta canônica;
-- inbound reutiliza `whatsapp_ingest_event_v1`;
-- status bruto é capturado antes da reconciliação;
-- status antecipado fica pendente e Task 4 reaplica quando outbound existe;
-- nenhuma IA roda sincronicamente no webhook;
-- fixtures cobrem inbound + sent + delivered + read + failed.
+## Observação de deploy backend
 
-### Secrets e challenge
+O repositório já contém canonicalização server-side do M4A em `whatsapp-meta-media-v1.mjs` e `admin-attendance-media-send-v1.mjs`. Na última inspeção, a Edge Function produtiva `admin-whatsapp-ops-v1` ainda estava na versão 25 e usava autenticação Admin customizada com `verify_jwt=false` na camada da plataforma.
 
-Configurados server-side no Supabase, sem valores no GitHub/chat:
-- `META_WHATSAPP_APP_SECRET`
-- `META_WHATSAPP_VERIFY_TOKEN`
+O PR #695 resolve o teste atual sem depender desse deploy porque o navegador envia o `File` já canonicalizado como `audio/mp4`. Em futura publicação da Edge Function, preservar `verify_jwt=false` na plataforma porque a própria função valida o Bearer Admin; não alterar isso inadvertidamente.
 
-Em 2026-10-02 a Meta realizou o challenge GET contra:
+## Task 9B — gate exato AGORA
 
-`https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/whatsapp-meta-webhook-v1`
+Já comprovado:
+- imagem outbound Meta;
+- PDF/documento outbound Meta;
+- upload Meta oficial server-side;
+- WAMID persistido;
+- status canônicos;
+- dedupe/idempotência e retry seguro;
+- gravador no Admin;
+- envio direto pelo botão `Enviar áudio`;
+- seleção/anexo de `.m4a` com MIME alternativo corrigida.
 
-Resultado confirmado nos logs:
-- primeira tentativa com token divergente: HTTP 403;
-- token corrigido no Supabase/Meta;
-- tentativa seguinte: **HTTP 200**;
-- em seguida a Meta começou a fazer POSTs assinados que passaram a validação HMAC e responderam majoritariamente HTTP 200.
+**Ainda falta a prova real do áudio:**
 
-### Hardening após validação
+1. usuário faz `Ctrl+F5` no Atendimento;
+2. seleciona conversa controlada 0975↔1018;
+3. preferencialmente usa `🎙 Gravar áudio` → `Parar` → `Enviar áudio`;
+4. como alternativa, pode anexar novamente o mesmo `.m4a` que antes foi rejeitado;
+5. depois consultar Supabase e comprovar:
+   - `direction='outbound'`;
+   - `message_type='audio'`;
+   - `provider='meta'`;
+   - `provider_message_id LIKE 'wamid.%'`;
+   - progressão de status;
+   - nenhuma duplicação;
+   - outbox sem `queued/claimed/failed` residual.
 
-Um payload de teste autenticado da Meta usou um `phone_number_id` não mapeado e recebeu 422; a Meta repetiu esse evento depois, confirmando risco de retry desnecessário.
+**Não declarar Task 9B concluída antes dessa evidência.**
 
-TDD aplicado:
-1. RED: teste novo exigindo acknowledge 200 para evento assinado de conta não mapeada falhou contra o código 422;
-2. GREEN: webhook alterado para retornar `{ok:true, ignored:true, reason:'meta_account_unresolved'}` com HTTP 200 para conta autenticada não mapeada;
-3. nenhum evento é persistido para conta desconhecida;
-4. versão endurecida implantada como **v6**.
+## Task 11 — ANA após fechar 9B
 
-Eventos sem `phone_number_id` válido mas contendo `messages/statuses` continuam tratados de forma estrita.
+Depois do canário de áudio:
+- executar preview ANA autenticado pós-#688 até `completed`;
+- revisar decisão/confiança/contexto ausente/modelo/latência;
+- ampliar canários de qualidade sem outbound automático;
+- manter `ana_enabled=false` até homologação explícita.
 
-## Task 4 — outbound canônico/status/dedupe
+## Trabalho paralelo
 
-Migration aplicada: `whatsapp_meta_canonical_outbound_v1`.
+PR draft #687 — Biblioteca Rápida do Atendimento — existe em paralelo e toca backend/mídia. Antes de qualquer alteração futura no Atendimento, auditar/rebasear contra a `main` corrente para não sobrescrever trabalho paralelo.
 
-Função:
-- `ops2_admin_attendance_accept_meta_outbound_v1(uuid,text,timestamptz)`
+## Próxima ação exata para retomada
 
-Índice:
-- `whatsapp_messages_wamid_account_uidx` — UNIQUE por `(whatsapp_account_id, provider_message_id)` quando `provider_message_id LIKE 'wamid.%'`.
+1. ler #630 e #649 mais recentes;
+2. confirmar `main` e PRs ativos;
+3. perguntar/verificar se o usuário já fez o teste pós-#695;
+4. se enviou, consultar imediatamente `whatsapp_messages_v1` e `whatsapp_outbox_v1`;
+5. comprovar WAMID/status/dedupe/fila limpa;
+6. se tudo passar, fechar Task 9B em #649/#630;
+7. então continuar Task 11 ANA;
+8. depois marketing/agendamentos/templates/automação;
+9. retirada do PapoAI somente no final, reversível e com checkpoints.
 
-Comportamento:
-1. recebe outbox Meta `claimed` + `wamid`;
-2. grava outbound canônico `provider='meta'`, `status_current='accepted'`, `sender_kind='human'`;
-3. o mesmo `wamid` não duplica entre Meta e PapoAI;
-4. se PapoAI ecoar primeiro, o aceite Meta promove a mesma linha para provider Meta;
-5. liga outbox à mensagem canônica;
-6. registra/reconcilia status;
-7. não apaga evidências.
+## Invariantes de segurança
 
-Dry-run transacional real no Postgres passou com `ROLLBACK` e sem persistir dados de teste.
-
-## Task 5 — gateway provider-neutral
-
-`admin-whatsapp-ops-v1` está **version 18, ACTIVE**.
-
-O gateway:
-- usa outbox v3;
-- escolhe provider server-side;
-- mantém fallback PapoAI;
-- chama adapter Meta somente quando runtime=`meta`;
-- exige credenciais/configuração Meta server-side;
-- sucesso Meta exige `wamid`;
-- estado incerto não sofre retry cego;
-- browser nunca recebe token Meta.
-
-UI no branch:
-- provider-aware;
-- draft só limpa após sucesso;
-- erros `meta_transport_not_configured` / `meta_send_uncertain` tratados;
-- browser não chama Graph diretamente;
-- botão só habilita com capability válida.
-
-## Segurança pendente antes do canário
-
-1. revogar tokens Meta de envio que apareceram em screenshots;
-2. gerar credencial de produção nova para outbound;
-3. configurar `META_WHATSAPP_ACCESS_TOKEN` e `META_WHATSAPP_GRAPH_VERSION` somente quando formos habilitar outbound;
-4. assinar o campo `messages` do webhook no app Meta;
-5. confirmar o app próprio inscrito na WABA 1018 mantendo PapoAI em sombra;
-6. validar inbound/status/dedupe reais no 1018;
-7. manter gates de envio humano OFF até homologação completa.
-
-## Próxima ação exata
-
-1. no App Dashboard Meta `cell principal`, em Webhooks/WhatsApp, assinar o campo **`messages`**;
-2. manter os demais campos sem alteração nesta fase;
-3. confirmar que `cell principal` continua inscrito na WABA `840102181903253` (1018);
-4. fazer um inbound controlado 0975 -> 1018 para validar Meta + PapoAI em sombra sem duplicar no Admin;
-5. validar status/dedupe no Supabase;
-6. somente então preparar Task 6 — canário outbound 1018.
-
-## Rollback operacional
-
-```text
-human_send_enabled=false
--> nenhum send humano novo
--> preservar outbox/mensagens/webhook events
--> fallback Copiar resposta + Abrir PapoAI
--> nunca retry cego de estado uncertain
-```
+- branch/PR isolado; nunca programar diretamente em `main`;
+- TDD RED→GREEN;
+- CI verde antes do merge;
+- WAMID é identidade externa canônica;
+- timeout/estado incerto nunca recebe retry cego;
+- canários 0975↔1018 permanecem restritos;
+- ANA e campanhas permanecem desligadas até gate explícito;
+- não tocar checkout, pedidos, estoque ou Bling fora do escopo;
+- somente APIs oficiais Meta/OpenAI;
+- checkpoint obrigatório em #630 e, para mídia, #649.

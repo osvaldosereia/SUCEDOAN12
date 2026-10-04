@@ -11,13 +11,7 @@ on:
       - 'supabase/functions/whatsapp-meta-webhook-v1/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
-      - 'vitrine/admin/atendimento/attendance-app.js'
-      - 'vitrine/admin/atendimento/attendance-send.js'
-      - 'vitrine/admin/atendimento/attendance-media-send.js'
-      - 'vitrine/admin/atendimento/attendance-human-ai.js'
-      - 'vitrine/admin/atendimento/attendance-templates.js'
-      - 'vitrine/admin/atendimento/attendance-ana-preview.js'
-      - 'vitrine/admin/atendimento/index.html'
+      - 'vitrine/admin/atendimento/**'
       - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
       - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_v1.sql'
@@ -27,32 +21,22 @@ on:
       - 'supabase/sql/20261003_attendance_human_ai_state_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_jobs_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_admin_preview_v1.sql'
+      - 'supabase/sql/20261003_whatsapp_ana_preview_stale_claim_recovery_v3.sql'
       - 'supabase/sql/20261003_whatsapp_meta_shadow_media_preserve_v1.sql'
-      - 'scripts/test-attendance-meta-*.mjs'
-      - 'scripts/test-attendance-media-*.mjs'
-      - 'scripts/test-attendance-human-ai-state-v1.mjs'
-      - 'scripts/test-whatsapp-ana-worker-v1.mjs'
-      - 'scripts/test-whatsapp-ana-admin-preview-v1.mjs'
-      - 'scripts/test-attendance-template-picker-v1.mjs'
-      - 'scripts/test-attendance-template-send-ui-v1.mjs'
-      - 'scripts/test-admin-attendance-template-send-v1.mjs'
-      - 'scripts/test-admin-attendance-meta-send-ui-v1.mjs'
-      - 'scripts/test-attendance-provider-neutral-v3.mjs'
+      - 'scripts/test-attendance-*.mjs'
+      - 'scripts/test-whatsapp-ana-*.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
       - '.github/workflows/whatsapp-meta-central-ci.yml'
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+        with: {node-version: '22'}
       - {name: Provider-neutral outbox contract, run: 'node scripts/test-attendance-provider-neutral-v3.mjs'}
       - {name: Attendance template picker contract, run: 'node scripts/test-attendance-template-picker-v1.mjs'}
       - {name: Attendance template send UI contract, run: 'node scripts/test-attendance-template-send-ui-v1.mjs'}
@@ -67,10 +51,13 @@ jobs:
       - {name: Meta media retry/idempotency contract, run: 'node scripts/test-attendance-meta-media-retry-v1.mjs'}
       - {name: Meta media safety contract, run: 'node scripts/test-attendance-meta-media-safety-v1.mjs'}
       - {name: Audio media UX contract, run: 'node scripts/test-attendance-media-audio-ux-v1.mjs'}
+      - {name: Audio recorder contract, run: 'node scripts/test-attendance-audio-recorder-v1.mjs'}
       - {name: Media status UX contract, run: 'node scripts/test-attendance-media-status-ux-v1.mjs'}
+      - {name: Media delivery observer contract, run: 'node scripts/test-attendance-media-delivery-observer-v1.mjs'}
       - {name: Human AI state contract, run: 'node scripts/test-attendance-human-ai-state-v1.mjs'}
       - {name: ANA dry-run contract, run: 'node scripts/test-whatsapp-ana-worker-v1.mjs'}
       - {name: ANA Admin preview contract, run: 'node scripts/test-whatsapp-ana-admin-preview-v1.mjs'}
+      - {name: ANA stale preview claim recovery, run: 'node scripts/test-whatsapp-ana-preview-stale-claim-v1.mjs'}
       - {name: Meta Phone Number ID strictness, run: 'node scripts/test-attendance-meta-phone-id-v1.mjs'}
       - {name: Meta response-body timeout, run: 'node scripts/test-attendance-meta-body-timeout-v1.mjs'}
       - {name: Meta webhook contract, run: 'node scripts/test-whatsapp-meta-webhook-v1.mjs'}
@@ -88,6 +75,7 @@ jobs:
       - {name: ANA preview UI JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-ana-preview.js'}
       - {name: Admin composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-send.js'}
       - {name: Admin media composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-media-send.js'}
+      - {name: Audio recorder JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-recorder.js'}
       - {name: Human AI controls JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-human-ai.js'}
       - {name: Attendance templates JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-templates.js'}
       - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}
