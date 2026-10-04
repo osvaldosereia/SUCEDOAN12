@@ -1,0 +1,31 @@
+name: Verify purchase XML FIFO lots v1
+
+on:
+  push:
+    branches:
+      - feat/purchase-xml-fifo-lots-v1
+    paths:
+      - 'scripts/verify_purchase_xml_fifo_lots_v1.py'
+      - 'supabase/migrations/20261004033000_purchase_xml_fifo_lots_v1.sql'
+      - 'supabase/functions/purchase-xml-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
+      - 'vitrine/admin/index.html'
+      - '.github/workflows/verify-purchase-xml-fifo-lots-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/verify_purchase_xml_fifo_lots_v1.py'
+      - 'supabase/migrations/20261004033000_purchase_xml_fifo_lots_v1.sql'
+      - 'supabase/functions/purchase-xml-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
+      - 'vitrine/admin/index.html'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/verify_purchase_xml_fifo_lots_v1.py
