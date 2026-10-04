@@ -38,6 +38,7 @@ async function startRecording(){
     if(selectedConversationId()!==conversationId){releaseStream();status('A conversa mudou antes do início da gravação. Tente novamente.','error');return}
     chunks=[];cancelled=false;recordingConversationId=conversationId;
     recorder=new MediaRecorder(stream,{mimeType:format.mimeType,audioBitsPerSecond:64000});
+    const actualMimeType=String(recorder.mimeType||format.mimeType||format.fileType).trim().toLowerCase();
     recorder.addEventListener('dataavailable',event=>{if(event.data?.size>0)chunks.push(event.data)});
     recorder.addEventListener('error',event=>{status(recorderErrorMessage(event.error),'error');cancelled=true;finishUi()});
     recorder.addEventListener('stop',()=>{
@@ -52,13 +53,13 @@ async function startRecording(){
       const preview=$('#audioRecorderPreview');if(preview){preview.src=previewUrl;preview.hidden=false}
       const timer=$('#audioRecorderTimer');if(timer)timer.textContent=formatElapsed(elapsed);
       recordedAudioReady=true;syncDirectSend();
-      status(`Áudio pronto (${format.extension.toUpperCase()}). Ouça e toque em “Enviar áudio” para mandar direto.`,'success');
-      document.dispatchEvent(new CustomEvent('attendance:recorded-audio-ready',{detail:{file,conversation_id:recordingConversationId,recording_mime_type:format.mimeType}}));
+      status(`Áudio pronto (${format.extension.toUpperCase()}). Formato real: ${actualMimeType}. Ouça e toque em “Enviar áudio” para mandar direto.`,'success');
+      document.dispatchEvent(new CustomEvent('attendance:recorded-audio-ready',{detail:{file,conversation_id:recordingConversationId,recording_mime_type:actualMimeType}}));
       recordingConversationId=null;
     });
     recorder.start(500);startedAt=Date.now();updateTimer();timerHandle=setInterval(updateTimer,250);
     const stop=$('#stopAudioRecordingBtn');if(stop)stop.disabled=false;
-    status('Gravando… fale normalmente e toque em Parar quando terminar.','recording');syncRecordButton();
+    status(`Gravando… formato real: ${actualMimeType}. Fale normalmente e toque em Parar quando terminar.`,'recording');syncRecordButton();
   }catch(error){releaseStream();stopTimer();status(recorderErrorMessage(error),'error');syncRecordButton()}
 }
 
