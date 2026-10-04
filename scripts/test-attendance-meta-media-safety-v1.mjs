@@ -26,9 +26,12 @@ assert.match(dedicatedGate,/new\.metadata[\s\S]*meta_media_canary/i,'outbox deve
 
 assert.match(dispatcher,/data\.status\s*===\s*['"]failed['"][\s\S]{0,350}ops2_admin_attendance_requeue_failed_media_v1/i,'dispatcher deve requeue apenas falha determinística do mesmo idempotency key');
 assert.doesNotMatch(dispatcher,/data\.status\s*===\s*['"]claimed['"][\s\S]{0,200}requeue/i,'estado claimed/uncertain nunca pode ser reenviado cegamente');
+assert.match(dispatcher,/meta_media_canary_not_enabled/i,'gateway deve preservar erro operacional do gate dedicado');
 
 assert.match(ui,/let\s+mediaConversationId\s*=\s*null/,'anexo deve ficar vinculado à conversa em que foi escolhido');
 assert.match(ui,/selectedConversationId\(\)\s*!==\s*mediaConversationId[\s\S]{0,220}clearMediaSelection/i,'troca de conversa deve limpar anexo pendente');
 assert.match(ui,/function\s+clearMediaSelection\(/,'UI deve ter limpeza explícita e auditável do anexo');
+assert.match(ui,/meta_media_canary_not_enabled/,'UI deve reconhecer o gate dedicado');
+assert.match(ui,/0975↔1018/,'UI deve explicar o escopo do canário em vez de erro genérico');
 
 console.log('PASS test-attendance-meta-media-safety-v1');
