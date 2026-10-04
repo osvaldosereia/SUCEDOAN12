@@ -2401,7 +2401,7 @@ async function basketKitAdminDetail(rawId:any){
   const saleReady=ready.filter((x:any)=>x.sale_enabled===true);
   let hygieneLots:any[]=[];
   const basket:any=Array.isArray(kq.data.basket)?kq.data.basket[0]:kq.data.basket;
-  if(kq.data.kind==="food"&&basket?.uses_hygiene_kit===true){
+  if(kq.data.kind==="food"){
     const hq=await db.from("basket_stock_lots").select("id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,built_at,public_name").eq("lot_kind","hygiene").eq("status","ready").gt("quantity_available",0).order("built_at",{ascending:true});
     if(hq.error)throw hq.error;hygieneLots=hq.data||[];
   }
@@ -2556,7 +2556,7 @@ async function basketSalesRuntime(){
   if(rt.error)throw rt.error;if(lots.error)throw lots.error;if(bq.error)throw bq.error;if(avq.error)throw avq.error;if(legacyq.error)throw legacyq.error;
   const av=new Map((avq.data||[]).map((x:any)=>[String(x.basket_id),x]));
   const legacy=new Set((legacyq.data||[]).map((x:any)=>String(x.basket_id)));
-  const missingSplit=(bq.data||[]).filter((b:any)=>{const a:any=av.get(String(b.id));return !a?.food_lot_id||(b.uses_hygiene_kit===true&&!a?.hygiene_lot_id)}).map((b:any)=>b.name);
+  const missingSplit=(bq.data||[]).filter((b:any)=>{const a:any=av.get(String(b.id));return !a?.food_lot_id||Number(a?.split_available||0)<=0}).map((b:any)=>b.name);
   const missingLegacy=(bq.data||[]).filter((b:any)=>!legacy.has(String(b.id))).map((b:any)=>b.name);
   const rows=lots.data||[];
   return {
