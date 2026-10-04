@@ -1,0 +1,27 @@
+name: Apply split basket quote price patch
+on:
+  push:
+    branches: [codex/basket-lot-quote-price-fix]
+    paths:
+      - scripts/patch-basket-lot-quote-price.py
+      - .github/workflows/one-shot-basket-lot-quote-price.yml
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/basket-lot-quote-price-fix
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/patch-basket-lot-quote-price.py
+      - name: Commit storefront patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add supabase/functions/storefront-v2/index.ts
+          git commit -m "fix: quote split basket from lot commercial price"
+          git push origin HEAD:codex/basket-lot-quote-price-fix
