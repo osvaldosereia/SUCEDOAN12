@@ -2344,7 +2344,7 @@ async function basketKitsAdmin(){
   const [kq,iq,lq]=await Promise.all([
     db.from("basket_kit_templates").select("id,kind,basket_id,name,code_prefix,is_active,sort_order,metadata,basket:basket_templates(id,name,image_url,base_price,category_id,uses_hygiene_kit,split_kits_enabled)").eq("is_active",true).order("sort_order").order("name"),
     db.from("basket_kit_template_items").select("id,kit_template_id,product_id,quantity").order("sort_order"),
-    db.from("basket_stock_lots").select("id,kit_template_id,basket_id,lot_kind,short_code,status,sale_enabled,quantity_built,quantity_available,built_at,built_by,duplicated_from_lot_id,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,public_name,linked_hygiene_lot_id").not("kit_template_id","is",null).order("built_at",{ascending:true})
+    db.from("basket_stock_lots").select("id,kit_template_id,basket_id,lot_kind,short_code,status,sale_enabled,quantity_built,quantity_available,built_at,built_by,duplicated_from_lot_id,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,public_name,linked_hygiene_lot_id,business_type,linked_lot_id,own_sale_price_override,own_component_sum_snapshot,own_hidden_adjustment_snapshot,own_cost_sum_snapshot,cost_sum_snapshot").not("kit_template_id","is",null).order("built_at",{ascending:true})
   ]);
   if(kq.error)throw kq.error;if(iq.error)throw iq.error;if(lq.error)throw lq.error;
   const items=iq.data||[],lots=lq.data||[],stock=await basketLooseStockMap(items.map((x:any)=>x.product_id));
@@ -2374,7 +2374,7 @@ async function basketKitAdminDetail(rawId:any){
   if(kq.error)throw kq.error;if(!kq.data)return {error:"kit_template_not_found",status:404};
   const [iq,lq]=await Promise.all([
     db.from("basket_kit_template_items").select("*,product:products(id,name,sku,gtin,image_url,price,cost,packaging,unit,brand,category,sales_category,storefront_category,subcategory,customer_subcategory,subsubcategory,customer_subsubcategory,is_active)").eq("kit_template_id",kid).order("sort_order").order("created_at"),
-    db.from("basket_stock_lots").select("id,basket_id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,composition_hash,built_at,built_by,notes,source,duplicated_from_lot_id,metadata,created_at,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,public_name,linked_hygiene_lot_id").eq("kit_template_id",kid).order("built_at",{ascending:false}).limit(40)
+    db.from("basket_stock_lots").select("id,basket_id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,composition_hash,built_at,built_by,notes,source,duplicated_from_lot_id,metadata,created_at,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,public_name,linked_hygiene_lot_id,business_type,linked_lot_id,own_sale_price_override,own_component_sum_snapshot,own_hidden_adjustment_snapshot,own_cost_sum_snapshot,cost_sum_snapshot").eq("kit_template_id",kid).order("built_at",{ascending:false}).limit(40)
   ]);
   if(iq.error)throw iq.error;if(lq.error)throw lq.error;
   const lots=lq.data||[],templateItems=iq.data||[];
@@ -2399,21 +2399,19 @@ async function basketKitAdminDetail(rawId:any){
     items:lotItems.filter((x:any)=>x.lot_id===l.id).map((x:any)=>{const p:any=Array.isArray(x.product)?x.product[0]:x.product,s:any=loose.get(String(x.product_id))||{};return {...x,product:p,quantity_per_kit:Number(x.quantity_per_basket||0),loose_stock:Number(s.loose_sellable_stock||0)}})}));
   const ready=[...lotRows].filter((x:any)=>x.status==="ready"&&x.quantity_available>0).sort((a:any,b:any)=>Date.parse(a.built_at)-Date.parse(b.built_at));
   const saleReady=ready.filter((x:any)=>x.sale_enabled===true);
-  let hygieneLots:any[]=[];
+  let linkableLots:any[]=[];
   const basket:any=Array.isArray(kq.data.basket)?kq.data.basket[0]:kq.data.basket;
-  if(kq.data.kind==="food"){
-    const hq=await db.from("basket_stock_lots").select("id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,built_at,public_name").eq("lot_kind","hygiene").eq("status","ready").gt("quantity_available",0).order("built_at",{ascending:true});
-    if(hq.error)throw hq.error;hygieneLots=hq.data||[];
-    if(hygieneLots.length){
-      const hi=await db.from("basket_stock_lot_items")
-        .select("lot_id,product_id,quantity_per_basket,position_order,product:products(id,name,price,cost)")
-        .in("lot_id",hygieneLots.map((x:any)=>x.id)).order("position_order");
-      if(hi.error)throw hi.error;
-      hygieneLots=hygieneLots.map((h:any)=>({...h,items:(hi.data||[]).filter((x:any)=>String(x.lot_id)===String(h.id)).map((x:any)=>({...x,quantity_per_kit:Number(x.quantity_per_basket||0)}))}));
-    }
+  const hq=await db.from("basket_stock_lots").select("id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,built_at,public_name,business_type,linked_lot_id,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,own_sale_price_override,own_component_sum_snapshot,own_hidden_adjustment_snapshot,own_cost_sum_snapshot,cost_sum_snapshot").not("kit_template_id","is",null).eq("status","ready").gt("quantity_available",0).order("built_at",{ascending:true});
+  if(hq.error)throw hq.error;linkableLots=hq.data||[];
+  if(linkableLots.length){
+    const hi=await db.from("basket_stock_lot_items")
+      .select("lot_id,product_id,quantity_per_basket,position_order,product:products(id,name,sku,image_url,price,cost,packaging)")
+      .in("lot_id",linkableLots.map((x:any)=>x.id)).order("position_order");
+    if(hi.error)throw hi.error;
+    linkableLots=linkableLots.map((h:any)=>({...h,items:(hi.data||[]).filter((x:any)=>String(x.lot_id)===String(h.id)).map((x:any)=>({...x,quantity_per_kit:Number(x.quantity_per_basket||0)}))}));
   }
   const nx=await db.rpc("next_basket_kit_short_code_v1",{p_kit_template_id:kid});
-  return {kit:{...kq.data,basket},items,lots:lotRows,hygiene_lots:hygieneLots,default_hygiene_lot_id:hygieneLots[0]?.id||null,
+  return {kit:{...kq.data,basket},items,lots:lotRows,linkable_lots:linkableLots,hygiene_lots:linkableLots.filter((x:any)=>x.lot_kind==="hygiene"),default_hygiene_lot_id:null,
     current_lot:saleReady[0]||null,last_lot:lotRows[0]||null,ready_quantity:ready.reduce((s:number,x:any)=>s+x.quantity_available,0),
     sale_ready_quantity:saleReady.reduce((s:number,x:any)=>s+x.quantity_available,0),
     next_short_code:nx.error?null:nx.data};
@@ -2432,12 +2430,12 @@ async function basketKitLotCreate(p:any,auth:any){
     change_note:tx(x?.change_note,300)||null
   }));
   if(clean.some((x:any)=>!x.product_id||!Number.isFinite(x.quantity_per_kit)||x.quantity_per_kit<=0))return {error:"invalid_kit_lot_items",status:400};
-  const q=await db.rpc("create_basket_kit_lot_v3",{
+  const q=await db.rpc("create_basket_kit_lot_v4",{
     p_kit_template_id:kid,p_quantity:quantity,p_items:clean,p_operator:tx(p?.operator,80)||"Operação",
     p_notes:tx(p?.notes,800)||null,p_short_code:tx(p?.short_code,3).toUpperCase()||null,
     p_duplicated_from_lot_id:id(p?.duplicated_from_lot_id)||null,
     p_public_name:tx(p?.public_name,120)||null,p_sale_price:p?.sale_price==null?null:Number(p.sale_price),
-    p_linked_hygiene_lot_id:id(p?.linked_hygiene_lot_id)||null
+    p_business_type:tx(p?.business_type,40)||null,p_linked_lot_id:id(p?.linked_lot_id)||null
   });
   if(q.error){
     const m=String(q.error.message||"").split("\n")[0];
@@ -2469,13 +2467,13 @@ async function basketKitLotDraftSave(p:any,auth:any){
     change_note:tx(x?.change_note,300)||null
   }));
   if(clean.some((x:any)=>!x.product_id||!Number.isFinite(x.quantity_per_kit)||x.quantity_per_kit<=0))return {error:"invalid_kit_lot_items",status:400};
-  const q=await db.rpc("save_basket_kit_lot_draft_v3",{
+  const q=await db.rpc("save_basket_kit_lot_draft_v4",{
     p_lot_id:lid,p_kit_template_id:kid,p_quantity:quantity,p_items:clean,
     p_operator:tx(p?.operator,80)||"Operação",p_notes:tx(p?.notes,800)||null,
     p_short_code:tx(p?.short_code,3).toUpperCase()||null,
     p_duplicated_from_lot_id:id(p?.duplicated_from_lot_id)||null,
     p_public_name:tx(p?.public_name,120)||null,p_sale_price:p?.sale_price==null?null:Number(p.sale_price),
-    p_linked_hygiene_lot_id:id(p?.linked_hygiene_lot_id)||null
+    p_business_type:tx(p?.business_type,40)||null,p_linked_lot_id:id(p?.linked_lot_id)||null
   });
   if(q.error){
     const m=String(q.error.message||"").split("\n")[0];
@@ -2501,7 +2499,7 @@ async function basketKitLotDraftActivate(p:any,auth:any){
       m.includes("draft_lot_not_found")?"draft_lot_not_found":
       m.includes("draft_lot_required")?"draft_lot_required":
       m.includes("empty_lot_composition")?"empty_lot_composition":
-      m.includes("lot_product_unavailable")?"lot_product_unavailable":
+      m.includes("lot_product_unavailable")?"lot_product_unavailable":m.includes("linked_lot_unavailable")?"linked_lot_unavailable":
       tx(m,240)||"kit_lot_draft_activate_failed";
     return {error:code,status:["insufficient_loose_stock","lot_product_unavailable"].includes(code)?409:400};
   }
@@ -2584,7 +2582,7 @@ async function basketLotSaleToggle(p:any,auth:any){
   const q=await db.rpc("set_basket_lot_sale_enabled_v1",{p_lot_id:lid,p_enabled:enabled,p_operator:tx(p?.operator,80)||"Operação"});
   if(q.error){
     const m=String(q.error.message||"");
-    const code=m.includes("linked_hygiene_lot_required")?"linked_hygiene_lot_required":m.includes("linked_hygiene_lot_unavailable")?"linked_hygiene_lot_unavailable":m.includes("lot_not_available_for_sale")?"lot_not_available_for_sale":m.includes("lot_not_found")?"lot_not_found":"lot_sale_toggle_failed";
+    const code=m.includes("linked_lot_unavailable")?"linked_lot_unavailable":m.includes("linked_hygiene_lot_required")?"linked_hygiene_lot_required":m.includes("linked_hygiene_lot_unavailable")?"linked_hygiene_lot_unavailable":m.includes("lot_not_available_for_sale")?"lot_not_available_for_sale":m.includes("lot_not_found")?"lot_not_found":"lot_sale_toggle_failed";
     return {error:code,status:code==="lot_not_found"?404:409};
   }
   await opsEvent(enabled?"basket.lot_sale_enabled":"basket.lot_sale_disabled",enabled?"Lote liberado para venda no site.":"Lote retirado da venda no site.","basket",lid,

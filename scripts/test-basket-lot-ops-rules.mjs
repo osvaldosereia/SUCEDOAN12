@@ -30,17 +30,16 @@ assert.match(adminUi,/flex:0 0 360px;width:360px/,'horizontal product cards must
 assert.match(adminUi,/\.basket-lot-component-card\{display:grid;grid-template-columns:48px minmax\(0,1fr\) 64px/,'desktop lot card grid must keep quantity inside the card');
 assert.match(adminUi,/\.basket-lot-component-stock\{grid-column:2\/-1/,'stock block should move below the main row instead of overflowing the card');
 
-assert.match(adminUi,/Lote de Limpeza\/Higiene \(opcional\)/,'food lot composer must clearly mark hygiene selection optional');
-assert.match(adminUi,/d\.kit\.kind==='food'\?'<div class="basket-composer-summary"[^\n]*kitLotHygieneLot/,'hygiene selector must be available for every food lot, not only a basket flag');
-assert.doesNotMatch(adminUi,/const requiresHygiene=/,'admin must not require a hygiene lot to save or mount a food lot');
-assert.doesNotMatch(adminUi,/Escolha qual lote de Limpeza\/Higiene pertence a esta cesta/,'admin must not warn when hygiene is intentionally omitted');
-assert.match(adminUi,/linked_hygiene_lot_id/,'food lot save must persist the selected hygiene lot when one is chosen');
+assert.match(adminUi,/Tipo da cesta\/kit/,'every lot must expose business classification');
+assert.match(adminUi,/Vincular outro lote \(opcional\)/,'generic linked-lot selector must be optional');
+assert.match(adminUi,/kitLotLinkedLot/,'generic linked-lot selector must be wired');
+assert.match(adminUi,/linked_lot_id/,'lot save must persist the selected generic linked lot when one is chosen');
 assert.match(adminUi,/data-kit-lot-delete[^\n]*deleteBasketKitLot|deleteBasketKitLot\(/,'lot delete UI must be wired to a handler');
 assert.match(adminUi,/CESTA ORIGINAL|permanece original/i,'separation UI must explicitly identify preserved original baskets');
 assert.match(adminUi,/loose_quantity/,'separation UI must use loose quantity for extras instead of re-picking preassembled components');
 
-assert.match(adminApi,/if\(kq\.data\.kind==="food"\)\{/,'admin API must load available hygiene lots for every food kit');
-assert.match(adminApi,/linked_hygiene_lot_id/,'admin API must return and accept the linked hygiene lot');
+assert.match(adminApi,/linkableLots/,'admin API must load linkable ready lots for every kit');
+assert.match(adminApi,/linked_lot_id/,'admin API must return and accept the generic linked lot');
 assert.match(adminApi,/basket_kit_lot_delete/,'admin API must expose safe lot deletion');
 assert.match(adminApi,/Number\(a\?\.split_available\|\|0\)<=0/,'split readiness must trust per-lot availability instead of global hygiene requirement');
 
