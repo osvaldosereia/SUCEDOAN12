@@ -20,5 +20,8 @@ const key2=await vm.runInContext('manifestHash(imageManifest(items),"food","hygi
 assert.notEqual(key1,key2,'alterar quantidade deve invalidar a prévia');
 assert.equal(vm.runInContext('sourceAllowed("https://127.0.0.1/a")',ctx),false);
 assert.equal(vm.runInContext('sourceAllowed("https://ssbesxgaijknwsjbsbcz.supabase.co/storage/v1/object/public/product-images/a.webp")',ctx),true);
-assert.equal(vm.runInContext('validFinalWebp(new Uint8Array(51001))',ctx),false);
+assert.equal(vm.runInContext('validFinalWebp(new Uint8Array(150001))',ctx),false);
+ctx.manifest=[{name:'Arroz 5 kg',packaging:'5 kg',quantity:3},{name:'Óleo 900 ml',quantity:1}];
+assert.match(vm.runInContext('photographyPrompt(manifest)',ctx),/3 un\./);
+assert.match(vm.runInContext('photographyPrompt(manifest)',ctx),/real kitchen table/);
 console.log('Basket image manifest, freshness and source guards passed');

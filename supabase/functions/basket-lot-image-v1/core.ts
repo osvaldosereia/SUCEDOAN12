@@ -1,5 +1,5 @@
-export const IMAGE_MODEL='gpt-image-2.5-flare';
-export const MAX_IMAGE_BYTES=50_000;
+export const IMAGE_MODEL='gpt-image-2.5-sunburst';
+export const MAX_IMAGE_BYTES=150_000;
 export function sourceAllowed(raw:string){try{const u=new URL(raw);return u.protocol==='https:'&&['ssbesxgaijknwsjbsbcz.supabase.co','donaantonia.com.br','www.donaantonia.com.br','raw.githubusercontent.com'].includes(u.hostname)&&!u.username&&!u.password&&!u.port}catch{return false}}
 export function imageManifest(rows:any[]){
   const grouped=new Map<string,any>();
@@ -16,7 +16,7 @@ export function imageManifest(rows:any[]){
   return [...grouped.values()];
 }
 export async function manifestHash(items:any[],lotId:string,hygieneId:string|null){
-  const text=JSON.stringify({v:1,lotId,hygieneId,items:items.map(x=>[x.product_id,x.quantity,x.image_url])});
+  const text=JSON.stringify({v:2,lotId,hygieneId,items:items.map(x=>[x.product_id,x.quantity,x.image_url,x.name,x.packaging])});
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
 export function webpDimensions(bytes:Uint8Array){
@@ -35,6 +35,12 @@ export function webpDimensions(bytes:Uint8Array){
 export function validFinalWebp(bytes:Uint8Array,width?:number){
   if(bytes.length<30||bytes.length>MAX_IMAGE_BYTES)return false;
   const d=webpDimensions(bytes);
-  return Boolean(d&&d.width===d.height&&[512,640,768].includes(d.width)&&(width===undefined||width===d.width));
+  return Boolean(d&&d.width===d.height&&[768,1024].includes(d.width)&&(width===undefined||width===d.width));
 }
-export function backgroundPrompt(){return 'Square photorealistic commercial photography background. Empty large light oak kitchen table fills the entire frame, seen from a slightly elevated near-front camera, neutral bright kitchen subtly visible only in the upper 8 percent. Soft diffuse natural window light from the left, fine realistic wood texture, crisp table surface, balanced warm neutral color. The table is completely empty and uncluttered: no products, no food, no packages, no dishes, no plants, no decorations, no hands, no people, no labels or text. This is a background plate for compositing real packaged grocery product photographs in evenly spaced rows; keep the table equally sharp from back to front, subtle perspective and no dramatic blur.'}
+export function photographyPrompt(items:any[],paired=false){return `Create one square, ultra-realistic commercial photograph of the EXACT packaged products in the supplied reference photographs, together on a real kitchen table. Imagine groceries have just arrived home and someone thoughtfully arranged the purchases together for a photograph. Finish like a premium advertising agency food/product photography shoot, with natural rather than theatrical styling.
+REFERENCES: ${paired?'Each input image is a REFERENCE BOARD with two separate product photographs: first at the top, second at the bottom. Read them in that order. The last board may have only one product. The boards are identity references only, NOT the final layout.':'Input images are individual product identity references in the exact order listed below.'}
+${items.map((x,i)=>`${i+1}. ${JSON.stringify(String(x.name))}; package ${JSON.stringify(String(x.packaging||''))}; exactly ONE exemplar of this retail package in the photograph; quantity badge text: "${x.quantity} un.".`).join('\n')}
+IDENTITY FIRST: preserve each reference product's brand, exact label artwork, lettering, colors, cap, wrapper, container geometry and package format. Do not invent alternate labels or substitute a similar product. Preserve believable physical proportions BETWEEN products: use the named weights and volumes as scale cues, e.g. a 2 L bottle is larger than a 500 ml bottle, a toothpaste carton and a soap bar are much smaller than a detergent bag. A multipack stays one intact multipack.
+COMPOSITION: a single cohesive three-dimensional arrangement. Larger packages naturally behind, smaller ones in front, subtly varied orientations, modest overlaps without hiding brands. All products rest physically on the SAME tabletop with convincing contact shadows, consistent camera perspective, gravity and scale. Keep every product recognizable and fully within the image. Do not use a grid, floating cutouts, collage, shelf or isolated catalog thumbnails. The group fills about 80 percent of the frame. No shopping basket, extra products, fruit, flowers, people or hands.
+CAMERA AND LIGHT: elevated three-quarter frontal view, realistic 50 mm product photography, soft large studio key light from the left and gentle fill, coherent shadows, controlled highlights on plastic, paper and metal, fine real table texture, neutral clean kitchen softly out of focus in the background. Tack-sharp product packaging and readable labels, natural color, realistic dynamic range, no exaggerated gloss or CGI appearance.
+QUANTITIES: show only ONE exemplar per listed product, even if quantity is greater than one. Add a small discreet flat warm-white badge with dark green typography beside EACH product, reading its exact quantity badge text above. Keep each badge visibly associated with its product; never cover its label. These are small graphic annotations, not physical product labels. No headings, slogan or footer. Photograph the complete scene, not an empty background.`}
