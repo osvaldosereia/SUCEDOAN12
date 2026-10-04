@@ -22,8 +22,9 @@ assert.match(source,/audience-center\.css/,'CSS da Fase 2 também deve ser carre
 
 assert.match(source,/admin-marketing-audiences-v1/,'UI deve usar a Edge autenticada de públicos');
 assert.match(source,/attendanceAuthorizedFetch/,'UI deve reutilizar autenticação Admin existente');
-assert.match(source,/action[=:]['"]?overview|action.*overview/s,'abertura deve carregar overview');
-assert.match(source,/action[=:]['"]?preview|adminPost\([^,]+,['"]preview['"]/s,'Calcular público deve chamar preview apenas sob ação do operador');
+assert.match(source,/apiGet\(['"]overview['"]\)/,'abertura deve carregar overview');
+assert.match(source,/adminPost\(['"]preview['"],[\s\S]*filters/,'Calcular público deve chamar preview apenas sob ação do operador');
+assert.match(source,/form\.addEventListener\(['"]submit['"][\s\S]*adminPost\(['"]preview['"]/,'preview deve ocorrer no submit explícito do formulário');
 assert.match(source,/Calcular público/);
 assert.match(source,/Encontrados/);
 assert.match(source,/Elegíveis/);
