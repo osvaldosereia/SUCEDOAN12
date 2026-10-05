@@ -1591,7 +1591,7 @@
       label='Pedir endereço';
       request='pode me enviar seu endereço completo (rua, número, bairro e uma referência)?';
     }
-    const message=greeting+' Para concluirmos seu pedido #'+shortOrder(o?.order_number)+' da Dona Antônia, '+request+(needAddress?' Se preferir, envie sua localização pelo WhatsApp.':'');
+    const message=greeting+' Para concluirmos seu pedido #'+orderDisplayCode(o)+' da Dona Antônia, '+request+(needAddress?' Se preferir, envie sua localização pelo WhatsApp.':'');
     return {href:whatsappMessageHref(phone,message),label};
   }
   function orderAddressRequestHref(o){
@@ -1928,7 +1928,7 @@
           '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
         const todayOrders=body.querySelector('#todayOrders');
         if(todayOrders){
-          todayOrders.innerHTML=pending.length?pending.map(o=>'<button class="history-row today-order-row" type="button" data-today-order="'+esc(o.id)+'"><strong>#'+esc(shortOrder(o.order_number))+'</strong><div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+money(o.total_cents)+' · '+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div><span class="next-action">'+esc(orderNextAction(o))+'</span><span class="today-status">'+statusPill(o.status)+'</span></button>').join(''):'<div class="history-empty">Nenhum pedido pendente agora.</div>';
+          todayOrders.innerHTML=pending.length?pending.map(o=>'<button class="history-row today-order-row" type="button" data-today-order="'+esc(o.id)+'"><strong>#'+esc(orderDisplayCode(o))+'</strong><div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+money(o.total_cents)+' · '+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div><span class="next-action">'+esc(orderNextAction(o))+'</span><span class="today-status">'+statusPill(o.status)+'</span></button>').join(''):'<div class="history-empty">Nenhum pedido pendente agora.</div>';
           todayOrders.querySelectorAll('[data-today-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.todayOrder));
         }
         body.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;if(state.orderFilter!=='problems')state.orderIssueFilter='all';setTab('orders')});
@@ -2045,7 +2045,7 @@
         : '<button class="quick-link primary-link" type="button" data-confirm-delivery="'+esc(o.id)+'">Confirmar entrega</button><button class="quick-link" type="button" data-return-expedition="'+esc(o.id)+'">Não entregou</button>')
       : '';
     return '<div class="history-row dispatch-row">'+
-      '<div>'+(o.status==='ready'&&fiscal.authorized?'<label class="dispatch-select"><input type="checkbox" data-dispatch-select="'+esc(o.id)+'" '+(selected?'checked':'')+'>#'+esc(shortOrder(o.order_number))+'</label>':'<strong>#'+esc(shortOrder(o.order_number))+'</strong>')+'<span class="sub">'+esc(relativeAge(o.created_at))+'</span>'+(o.status==='ready'?'<span class="sub '+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.title)+'</span>':'')+'</div>'+
+      '<div>'+(o.status==='ready'&&fiscal.authorized?'<label class="dispatch-select"><input type="checkbox" data-dispatch-select="'+esc(o.id)+'" '+(selected?'checked':'')+'>#'+esc(orderDisplayCode(o))+'</label>':'<strong>#'+esc(orderDisplayCode(o))+'</strong>')+'<span class="sub">'+esc(relativeAge(o.created_at))+'</span>'+(o.status==='ready'?'<span class="sub '+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.title)+'</span>':'')+'</div>'+
       '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(address)+'</small>'+returnNote+'</div>'+
       '<div class="history-main"><strong>'+money(o.total_cents)+'</strong><small>'+esc(payment)+'</small>'+(o.status==='ready'?'<small class="'+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.detail)+'</small>':'')+'</div>'+
       '<span>'+statusPill(o.status)+'</span>'+
@@ -2129,7 +2129,7 @@
     const o=state.orders.find(x=>x.id===id)||state.currentOrder?.order,ret=o?.delivery_return;
     if(!o||!ret||ret.status!=='returned_review'){toast('Este retorno não está mais aguardando revisão');return}
     $('#editorTitle').textContent='Revisar retorno';
-    $('#editorBody').innerHTML='<div class="rule-notice warn"><strong>Pedido #'+esc(shortOrder(o.order_number))+'</strong><div>'+esc(ret.reason_label||'Não entregue')+(ret.note?' · '+esc(ret.note):'')+'<br>A mercadoria já voltou fisicamente, mas continua fora do estoque vendável.</div></div>'+
+    $('#editorBody').innerHTML='<div class="rule-notice warn"><strong>Pedido #'+esc(orderDisplayCode(o))+'</strong><div>'+esc(ret.reason_label||'Não entregue')+(ret.note?' · '+esc(ret.note):'')+'<br>A mercadoria já voltou fisicamente, mas continua fora do estoque vendável.</div></div>'+
       '<div class="section-title">O que aconteceu com a mercadoria?</div>'+
       '<div class="panel" style="padding:14px;margin-bottom:10px"><strong>Tudo íntegro e haverá nova tentativa</strong><p class="sub">Mantém os itens alocados ao mesmo pedido e libera para reentrega.</p><button class="primary" id="returnResolveRedelivery" type="button">LIBERAR PARA REENTREGA</button></div>'+
       '<div class="panel" style="padding:14px;margin-bottom:10px"><strong>Cliente desistiu e tudo voltou íntegro</strong><p class="sub">Cancela comercialmente e restaura todo o estoque local. O fiscal fica pendente de revisão no Bling.</p><button class="secondary" id="returnResolveCancel" type="button">CANCELAR E DEVOLVER AO ESTOQUE</button></div>'+
@@ -2229,7 +2229,7 @@
     const planned=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Não informado';
     state.deliveryPaymentDraft={order:o,parts:[{method:deliveryPaymentDefaultMethod(o),amount_cents:Number(o.total_cents||0)}]};
     $('#editorTitle').textContent='Confirmar entrega';
-    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Pedido #'+esc(shortOrder(o.order_number))+'</strong><div>'+esc(o.customer_name||'Cliente')+' · '+money(o.total_cents)+'<br>Previsto: '+esc(planned)+'</div></div>'+
+    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Pedido #'+esc(orderDisplayCode(o))+'</strong><div>'+esc(o.customer_name||'Cliente')+' · '+money(o.total_cents)+'<br>Previsto: '+esc(planned)+'</div></div>'+
       '<div class="section-title">Pagamento realmente recebido</div><div id="deliveryPaymentParts"></div>'+
       '<div class="dispatch-actions" style="justify-content:flex-start"><button class="secondary" id="addDeliveryPaymentPart" type="button">Dividir em 2 formas</button></div>'+
       '<div class="order-summary" style="margin-top:12px"><div class="summary-box"><small>Total do pedido</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Pagamentos</small><div id="deliveryPaymentSum"></div></div></div>'+
@@ -2281,7 +2281,7 @@
       const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'NÃO INFORMADO';
       return '<tr>'+
         '<td>'+(index+1)+'</td>'+
-        '<td><b>#'+esc(shortOrder(o.order_number))+'</b><br>'+esc(o.customer_name||a.customer_name||a.recipient_name||'SEM CLIENTE')+(phone?'<br>'+esc(formatPhone(phone)):'')+'</td>'+
+        '<td><b>#'+esc(orderDisplayCode(o))+'</b><br>'+esc(o.customer_name||a.customer_name||a.recipient_name||'SEM CLIENTE')+(phone?'<br>'+esc(formatPhone(phone)):'')+'</td>'+
         '<td>'+esc(address)+'</td>'+
         '<td>'+esc(payment)+'</td>'+
         '<td class="right"><b>'+money(o.total_cents)+'</b></td>'+
@@ -2338,7 +2338,7 @@
         });
         ok++;
         state.expeditionSelected=state.expeditionSelected.filter(id=>id!==o.id);
-      }catch(e){failed.push('#'+shortOrder(o.order_number))}
+      }catch(e){failed.push('#'+orderDisplayCode(o))}
     }
     try{const data=await api('orders');state.orders=data.orders||[]}catch{}
     paintExpeditionBody();
@@ -2395,7 +2395,7 @@
     const payment=actualPaymentText(o)||(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado');
     const returning=ret?.status==='returning';
     return '<article class="separation-tablet-card driver-card '+(returning?'problem':'')+'">'+
-      '<div class="separation-tablet-top"><div><strong>Parada '+(index+1)+' · #'+esc(shortOrder(o.order_number))+'</strong><div class="customer">'+esc(o.customer_name||a.customer_name||a.recipient_name||'Sem cliente')+'</div></div><strong>'+money(o.total_cents)+'</strong></div>'+
+      '<div class="separation-tablet-top"><div><strong>Parada '+(index+1)+' · #'+esc(orderDisplayCode(o))+'</strong><div class="customer">'+esc(o.customer_name||a.customer_name||a.recipient_name||'Sem cliente')+'</div></div><strong>'+money(o.total_cents)+'</strong></div>'+
       '<div class="meta"><span>'+esc(payment)+'</span><span>'+esc(formatPhone(o.whatsapp_phone_e164||a.phone||''))+'</span></div>'+
       '<div class="rule-notice '+(returning?'warn':'')+'" style="margin-top:10px"><strong>'+(returning?'RETORNANDO · '+esc(ret.reason_label||'Não entregue'):'Endereço')+'</strong><div>'+esc(address)+'</div></div>'+
       '<div class="separation-tablet-actions">'+
@@ -2487,7 +2487,7 @@
     const actual=o?.payment_method_snapshot?.actual||null;
     const canConfirmPayment=o.status==='delivered'&&!actual?.received&&f&&!f.error&&f.payment_status!=='confirmed';
     return '<div class="closure-row">'+
-      '<div><strong>#'+esc(shortOrder(o.order_number))+'</strong><span class="sub">'+esc(dateTime(o.delivered_at))+'</span></div>'+
+      '<div><strong>#'+esc(orderDisplayCode(o))+'</strong><span class="sub">'+esc(dateTime(o.delivered_at))+'</span></div>'+
       '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(actualPaymentText(o)||(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado'))+'</small></div>'+
       '<strong>'+money(o.total_cents)+'</strong>'+
       '<div class="closure-status"><strong class="'+cls+'">'+esc(label.title)+'</strong><small>'+esc(label.detail)+'</small></div>'+
@@ -2504,7 +2504,7 @@
       toast(o?.payment_method_snapshot?.actual?.received?'O pagamento real já foi registrado; falta conciliar com o Bling.':'Este recebimento não está mais pendente');return;
     }
     const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
-    if(!confirm('Confirmar recebimento de '+money(o.total_cents)+' via '+payment+'?\n\nPedido #'+shortOrder(o.order_number)))return;
+    if(!confirm('Confirmar recebimento de '+money(o.total_cents)+' via '+payment+'?\n\nPedido #'+orderDisplayCode(o)))return;
     const btn=document.querySelector('[data-closure-payment="'+CSS.escape(id)+'"]');
     if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
     try{
@@ -6739,7 +6739,7 @@
         controls+='<button class="order-v3-control" type="button" data-v3-delivery-fail="'+esc(o.id)+'">NÃO ENTREGUE</button>';
       }
     }
-    return '<article class="order-v3-card"><div class="order-v3-head"><div><small>Código do pedido</small><strong>#'+esc(shortOrder(o.order_number||o.id))+'</strong></div><div><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div><small>Cliente</small><strong>'+esc(o.customer_name||'Sem cliente')+'</strong></div><div><small>Total</small><strong>'+money(o.total_cents||0)+'</strong></div></div><div class="order-v3-tags">'+orderV3Tags(o)+'</div>'+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions"><button class="order-v3-action" type="button" data-v3-separation="'+esc(o.id)+'" '+disabled+'>'+(m.separated?'✓ SEPARAÇÃO CONCLUÍDA':o.status==='ready'?'CONTINUAR SEPARAÇÃO':'ABRIR VITRINE SEPARAÇÃO')+'</button><button class="order-v3-action primary" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
+    return '<article class="order-v3-card"><div class="order-v3-head"><div><small>Código do pedido</small><strong>#'+esc(orderDisplayCode(o))+'</strong></div><div><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div><small>Cliente</small><strong>'+esc(o.customer_name||'Sem cliente')+'</strong></div><div><small>Total</small><strong>'+money(o.total_cents||0)+'</strong></div></div><div class="order-v3-tags">'+orderV3Tags(o)+'</div>'+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions"><button class="order-v3-action" type="button" data-v3-separation="'+esc(o.id)+'" '+disabled+'>'+(m.separated?'✓ SEPARAÇÃO CONCLUÍDA':o.status==='ready'?'CONTINUAR SEPARAÇÃO':'ABRIR VITRINE SEPARAÇÃO')+'</button><button class="order-v3-action primary" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
   }
   async function renderOrders(){const content=$('#content');content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Todos os pedidos, do mais recente para o mais antigo.</p></div></div><div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery||'')+'"></div><div id="orderRows" class="orders-v3-list"><div class="loading">Carregando pedidos…</div></div>';$('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;paintOrderRows()};await loadOrders()}
   async function loadOrders(){
@@ -6767,7 +6767,7 @@
   async function completeOrderSeparation(id,expected,back,btn){btn.disabled=true;btn.textContent='CONCLUINDO…';try{const result=await api('order_separation_complete',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:id,expected_order_updated_at:expected,operator:currentOperator()||'Separação'})});toast(Number(result.missing_subtotal||0)>0?'✓ Separação concluída com sucesso · faltas abatidas do pedido':'✓ Separação concluída com sucesso');closeOrderSeparationSheet();await loadOrders();if(state.currentOrder?.order?.id===id)await openOrder(id)}catch(e){toast('A separação NÃO foi concluída · '+errorMessage(e.message));await loadOrderSeparationSheet(id,back)}}
   function deliveryMethodV3(value){const s=normalize(value||'');if(s.includes('pix'))return 'pix';if(s.includes('dinheiro')||s==='cash')return 'cash';if(s.includes('credito')||s.includes('crédito')||s.includes('credit'))return 'credit_card';if(s.includes('refeicao')||s.includes('refeição')||s.includes('meal'))return 'meal_card';if(s.includes('alimentacao')||s.includes('alimentação')||s.includes('food'))return 'food_card';return 'other'}
   function deliveryMethodOptionsV3(current){const rows=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição'],['other','Outro']];return rows.map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('')}
-  async function openOrderDeliveryConfirm(id){let order=state.orders.find(o=>String(o.id)===String(id));if(!order){await loadOrders();order=state.orders.find(o=>String(o.id)===String(id))}if(order&&orderCustomerDataPending(order)){toast('Complete os dados essenciais do cliente antes da entrega');return}if(!order||order.status!=='out_for_delivery'||orderV3Milestones(order).delivered){toast('O pedido precisa ter SAÍDO PARA ENTREGA antes da confirmação');return}const planned=order.payment_method_snapshot?.label||order.payment_method_snapshot?.method||'A confirmar',method=deliveryMethodV3(order.payment_method_snapshot?.method||planned);const dlg=document.createElement('dialog');dlg.className='delivery-v3-dialog';dlg.innerHTML='<div class="delivery-v3-body"><h2>Confirmar entrega</h2><div class="muted">Pedido #'+esc(shortOrder(order.order_number||order.id))+'</div><div class="delivery-v3-grid"><label><span>Forma prevista</span><input value="'+esc(planned)+'" readonly></label><label><span>Forma recebida</span><select id="deliveryV3Method">'+deliveryMethodOptionsV3(method)+'</select></label><label><span>Valor recebido</span><input value="'+esc(money(order.total_cents||0))+'" readonly></label></div></div><div class="delivery-v3-actions"><button class="delivery-v3-cancel" type="button">Cancelar</button><button class="delivery-v3-confirm" type="button">CONFIRMAR ENTREGA</button></div>';document.body.appendChild(dlg);const close=()=>{dlg.close();dlg.remove()};dlg.querySelector('.delivery-v3-cancel').onclick=close;dlg.querySelector('.delivery-v3-confirm').onclick=async()=>{const btn=dlg.querySelector('.delivery-v3-confirm');btn.disabled=true;btn.textContent='CONFIRMANDO…';try{await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,method:dlg.querySelector('#deliveryV3Method').value,amount_cents:Number(order.total_cents||0),operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+id})});toast('Entrega e recebimento confirmados');close();await loadOrders();if(state.currentOrder?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='CONFIRMAR ENTREGA'}};dlg.showModal()}
+  async function openOrderDeliveryConfirm(id){let order=state.orders.find(o=>String(o.id)===String(id));if(!order){await loadOrders();order=state.orders.find(o=>String(o.id)===String(id))}if(order&&orderCustomerDataPending(order)){toast('Complete os dados essenciais do cliente antes da entrega');return}if(!order||order.status!=='out_for_delivery'||orderV3Milestones(order).delivered){toast('O pedido precisa ter SAÍDO PARA ENTREGA antes da confirmação');return}const planned=order.payment_method_snapshot?.label||order.payment_method_snapshot?.method||'A confirmar',method=deliveryMethodV3(order.payment_method_snapshot?.method||planned);const dlg=document.createElement('dialog');dlg.className='delivery-v3-dialog';dlg.innerHTML='<div class="delivery-v3-body"><h2>Confirmar entrega</h2><div class="muted">Pedido #'+esc(orderDisplayCode(order))+'</div><div class="delivery-v3-grid"><label><span>Forma prevista</span><input value="'+esc(planned)+'" readonly></label><label><span>Forma recebida</span><select id="deliveryV3Method">'+deliveryMethodOptionsV3(method)+'</select></label><label><span>Valor recebido</span><input value="'+esc(money(order.total_cents||0))+'" readonly></label></div></div><div class="delivery-v3-actions"><button class="delivery-v3-cancel" type="button">Cancelar</button><button class="delivery-v3-confirm" type="button">CONFIRMAR ENTREGA</button></div>';document.body.appendChild(dlg);const close=()=>{dlg.close();dlg.remove()};dlg.querySelector('.delivery-v3-cancel').onclick=close;dlg.querySelector('.delivery-v3-confirm').onclick=async()=>{const btn=dlg.querySelector('.delivery-v3-confirm');btn.disabled=true;btn.textContent='CONFIRMANDO…';try{await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,method:dlg.querySelector('#deliveryV3Method').value,amount_cents:Number(order.total_cents||0),operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+id})});toast('Entrega e recebimento confirmados');close();await loadOrders();if(state.currentOrder?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='CONFIRMAR ENTREGA'}};dlg.showModal()}
   async function sendOrderCustomerVitrineV3(id,btn){const access=String(sessionStorage.getItem('da_finance_access_token_v1')||'').trim();if(!access){toast('Sua sessão do Admin expirou');return}if(btn){btn.disabled=true;btn.textContent='ENVIANDO…'}try{const response=await fetch('https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-order-vitrine-send-v1',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+access},body:JSON.stringify({order_id:id,request_id:(crypto.randomUUID?.()||String(Date.now())).replace(/[^A-Za-z0-9-]/g,'').slice(0,80)})}),data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||'vitrine_send_failed');toast('Vitrine enviada ao cliente pelo WhatsApp '+(String(data.channel_phone_e164||'').replace(/\D/g,'').endsWith('1018')?'1018':'0975'))}catch(e){toast(e.message==='conversation_not_found'||e.message==='channel_unavailable'?'Não encontrei com segurança a conversa 0975/1018 deste pedido.':errorMessage(e.message))}finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='VITRINE CLIENTE'}}}
   async function reopenOrderV3(id){if(!confirm('Reabrir este pedido para edição? A reserva será liberada.'))return;try{await api('order_reopen_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Operação'})});toast('Pedido reaberto para edição');await loadOrders();await openOrder(id)}catch(e){toast(errorMessage(e.message))}}
 
@@ -6826,7 +6826,7 @@
   function paintOrderDetail(){
     const d=state.currentOrder,o=d.order,c=d.customer||{},delivery=o.delivery_address_snapshot||c.address||{},milestones=orderV3Milestones(o),states=orderV3SeparationMap(),sep=d.separation||{},completion=sep.completion||{},original=Number(completion.original_total??o.total_cents/100??0),missing=Number(completion.missing_subtotal||0),finalTotal=Number(completion.final_total??o.total_cents/100??0),sepStarted=Boolean(completion?.prepared_at||completion?.completed_at)||(sep.items||[]).some(x=>String(x.state||'pending')!=='pending'),locked=milestones.confirmed,editable=!milestones.delivered&&!milestones.cancelled,customerPending=orderCustomerDataPending(o),customerPendingReasons=orderCustomerDataPendingReasons(o);
     const fiscal=['ready','out_for_delivery','delivered'].includes(o.status)?'<div class="order-v3-section"><h3>Fiscal / NF-e</h3><div id="orderFiscalStatus">'+orderFiscalHtml(state.currentOrderFiscal,o)+'</div>'+fiscalCanaryActionHtml(state.currentOrderFiscal,o)+'<div class="print-actions">'+((state.currentOrderFiscal?.danfe_available||state.currentOrderFiscal?.authorized===true||state.currentOrderFiscal?.dispatch_gate?.authorized===true||state.currentOrderFiscal?.bling_invoice_id)?'<button class="secondary" id="printDanfe" type="button">Imprimir DANFE</button>':'')+'</div></div>':'';
-    $('#editorBody').innerHTML=(customerPending?'<div class="rule-notice warn"><strong>AGUARDANDO DADOS DO CLIENTE</strong><div>'+esc(customerPendingReasons.join(' · '))+'</div></div>':'')+'<div class="order-v3-detail-head"><div><h2 style="margin:0">Pedido #'+esc(shortOrder(o.order_number||o.id))+'</h2><div class="muted">'+esc(dateTime(o.created_at))+' · '+esc(o.customer_name||c.display_name||'Cliente')+'</div><div class="order-v3-tags">'+orderV3Tags(o)+'</div></div><div class="order-v3-total">'+money(o.total_cents||0)+'</div></div>'+
+    $('#editorBody').innerHTML=(customerPending?'<div class="rule-notice warn"><strong>AGUARDANDO DADOS DO CLIENTE</strong><div>'+esc(customerPendingReasons.join(' · '))+'</div></div>':'')+'<div class="order-v3-detail-head"><div><h2 style="margin:0">Pedido #'+esc(orderDisplayCode(o))+'</h2><div class="muted">'+esc(dateTime(o.created_at))+' · '+esc(o.customer_name||c.display_name||'Cliente')+'</div><div class="order-v3-tags">'+orderV3Tags(o)+'</div></div><div class="order-v3-total">'+money(o.total_cents||0)+'</div></div>'+
       (missing>0?'<div class="order-v3-financial"><span>Total original: <strong>'+separationMoney(original)+'</strong></span><span class="discount">Abatimento por falta: <strong>− '+separationMoney(missing)+'</strong></span><span>Total final: <strong>'+separationMoney(finalTotal)+'</strong></span></div>':'')+
       '<div class="order-v3-section"><h3>Cliente e entrega</h3><div class="form-grid"><label class="span-2"><span>Nome</span><input id="orderDeliveryName" value="'+esc(delivery.customer_name||delivery.recipient_name||c.display_name||'')+'" '+(editable?'':'disabled')+'></label><label><span>Telefone / WhatsApp</span><input id="orderDeliveryPhone" value="'+esc(formatPhone(delivery.phone||c.phone||o.whatsapp_phone_e164||''))+'" '+(editable?'':'disabled')+'></label><label><span>Pagamento previsto</span><select id="orderPayment" '+(editable?'':'disabled')+'>'+orderV3PaymentOptions(o.payment_method_snapshot?.method||o.payment_method_snapshot?.label||'')+'</select></label><label class="span-2"><span>Rua / avenida</span><input id="orderDeliveryStreet" value="'+esc(delivery.street||'')+'" '+(editable?'':'disabled')+'></label><label><span>Número</span><input id="orderDeliveryNumber" value="'+esc(delivery.number||'')+'" '+(editable?'':'disabled')+'></label><label><span>Bairro</span><input id="orderDeliveryDistrict" value="'+esc(delivery.district||'')+'" '+(editable?'':'disabled')+'></label><label><span>Complemento</span><input id="orderDeliveryComplement" value="'+esc(delivery.complement||'')+'" '+(editable?'':'disabled')+'></label><label><span>CEP</span><input id="orderDeliveryPostalCode" value="'+esc(delivery.postal_code||'')+'" '+(editable?'':'disabled')+'></label><label><span>Cidade</span><input id="orderDeliveryCity" value="'+esc(delivery.city||'Cuiabá')+'" '+(editable?'':'disabled')+'></label><label><span>UF</span><input id="orderDeliveryState" maxlength="2" value="'+esc(delivery.state||'MT')+'" '+(editable?'':'disabled')+'></label><label class="span-2"><span>Referência</span><input id="orderDeliveryRawText" value="'+esc(delivery.raw_text||delivery.reference||'')+'" '+(editable?'':'disabled')+'></label></div></div>'+
       '<div class="order-v3-section"><h3>Itens</h3>'+(locked?'<div class="muted" style="margin-bottom:8px">Produtos e quantidades estão travados porque o pedido já foi confirmado.</div>':'')+'<div class="order-v3-items">'+(d.items||[]).map(i=>orderV3DetailItemHtml(i,states)).join('')+'</div></div>'+
@@ -6903,14 +6903,14 @@
   async function executeCurrentOrderFiscalCanary(){
     const o=state.currentOrder?.order;if(!o||o.status!=='ready')return;
     const f=state.currentOrderFiscal||{};if(f.can_issue!==true){toast('A NF-e ainda não está liberada para emissão');return}
-    if(!confirm('EMITIR NF-e do pedido #'+shortOrder(o.order_number||o.id)+' agora?\n\nA emissão será enviada ao Bling/SEFAZ.'))return;
+    if(!confirm('EMITIR NF-e do pedido #'+orderDisplayCode(o)+' agora?\n\nA emissão será enviada ao Bling/SEFAZ.'))return;
     const btn=$('#executeFiscalCanary');if(btn){btn.disabled=true;btn.textContent='EMITINDO NF-e…'}
     try{const result=await api('order_fiscal_issue_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,confirmation:'EMITIR_NFE',operator:currentOperator()||'Operação'})});state.currentOrderFiscal=result.fiscal||result;state.fiscalByOrder[o.id]=state.currentOrderFiscal;toast(state.currentOrderFiscal?.authorized?'NF-e autorizada':'NF-e enviada; aguardando autorização');await loadCurrentOrderFiscal(true)}catch(e){toast(errorMessage(e?.message||'fiscal_issue_failed'));await loadCurrentOrderFiscal(true)}
   }
   async function startCurrentOrderDispatchV4(){
     const o=state.currentOrder?.order;if(!o||o.status!=='ready')return;
     const f=state.currentOrderFiscal||{};if(f.authorized!==true&&f.stage!=='authorized'){toast('A NF-e precisa estar autorizada antes da saída');return}
-    if(!confirm('Confirmar que o pedido #'+shortOrder(o.order_number||o.id)+' SAIU PARA ENTREGA?'))return;
+    if(!confirm('Confirmar que o pedido #'+orderDisplayCode(o)+' SAIU PARA ENTREGA?'))return;
     const btn=$('#startDispatchV4');if(btn){btn.disabled=true;btn.textContent='REGISTRANDO SAÍDA…'}
     try{await api('order_dispatch_start_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+o.id})});toast('Saída para entrega registrada');delete state.fiscalByOrder[o.id];await loadOrders();await openOrder(o.id)}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
   }
@@ -6967,7 +6967,7 @@
     if(o.status!=='delivered'){toast('Confirme a entrega antes do pagamento');return}
     const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
     const amount=money(o.total_cents);
-    const ok=confirm('Confirmar recebimento de '+amount+' via '+payment+'?\n\nEsta ação registra o pagamento do pedido #'+shortOrder(o.order_number)+'.');
+    const ok=confirm('Confirmar recebimento de '+amount+' via '+payment+'?\n\nEsta ação registra o pagamento do pedido #'+orderDisplayCode(o)+'.');
     if(!ok)return;
     const btn=$('#confirmFiscalPayment');
     if(btn){btn.disabled=true;btn.textContent='Confirmando recebimento…'}
@@ -7525,7 +7525,7 @@
     const kitBlock=kitRefs.length?'<div class="block"><b>PEGAR PRONTO</b>'+kitRefs.map(x=>'<div style="border:2px solid #000;padding:1.5mm;margin:1mm 0;font-size:13px;font-weight:900">'+esc(fmtQty(x.quantity))+'× '+esc(x.label)+' · '+esc(x.code)+(x.basket?'<div style="font-size:8px;font-weight:600;margin-top:.5mm">'+esc(x.basket)+'</div>':'')+'</div>').join('')+'</div>':'';
     const sections=groups.map(g=>'<div class="gondola-title">'+esc(g.label)+'</div>'+g.shelves.map(s=>'<div class="shelf-title-print">'+esc(s.label)+'</div><div class="sep-grid">'+s.items.map(i=>'<div class="sep-card"><img src="'+esc(i.image_url||'/img/logoantonia5.png')+'" alt=""><div class="sep-name">'+esc(i.name)+'</div>'+(i.gtin?'<div class="sep-ean">EAN '+esc(i.gtin)+'</div>':'<div class="sep-ean missing">SEM EAN</div>')+'<div class="sep-qty">'+esc(fmtQty(i.quantity))+'×</div></div>').join('')+'</div>').join('')).join('');
     const units=items.reduce((sum,i)=>sum+Number(i.quantity||0),0),kitUnits=kitRefs.reduce((sum,x)=>sum+Number(x.quantity||0),0);
-    return '<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>SEPARAÇÃO · Pedido #'+esc(shortOrder(o.order_number))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+kitBlock+sections+'<div class="foot">'+kitRefs.length+' referência(s) pronta(s) · '+items.length+' produto(s) avulso(s) · '+esc(fmtQty(kitUnits+units))+' unidades/volumes</div>';
+    return '<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>SEPARAÇÃO · Pedido #'+esc(orderDisplayCode(o))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+kitBlock+sections+'<div class="foot">'+kitRefs.length+' referência(s) pronta(s) · '+items.length+' produto(s) avulso(s) · '+esc(fmtQty(kitUnits+units))+' unidades/volumes</div>';
   }
   async function markPickingPresented(orderId){
     try{await api('ops_print_presented',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})})}catch{}
@@ -7533,7 +7533,7 @@
   function printSeparationOnly(detail,existingWindow=null){
     const o=detail.order,w=existingWindow||window.open('','_blank','width=420,height=700');
     if(!w){toast('Libere pop-ups para imprimir');return false}
-    openPrint('Separação #'+shortOrder(o.order_number),separationTicketBody(detail),'separation',w);
+    openPrint('Separação #'+orderDisplayCode(o),separationTicketBody(detail),'separation',w);
     markPickingPresented(o.id);
     return true;
   }
@@ -7559,13 +7559,13 @@
     const o=detail.order,c=detail.customer||{},a=o.delivery_address_snapshot||c.address||{},payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
     const products=separationItems(detail).map(i=>'<div class="delivery-item"><b>'+esc(fmtQty(i.quantity))+'×</b><span>'+esc(i.name)+'</span></div>').join('');
     const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||'NÃO INFORMADO';
-    const body='<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>ENTREGA · Pedido #'+esc(shortOrder(o.order_number))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+
+    const body='<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>ENTREGA · Pedido #'+esc(orderDisplayCode(o))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+
       '<div class="block"><b>CLIENTE</b><div>'+esc(c.display_name||a.recipient_name||'NÃO VINCULADO')+'</div>'+(c.phone?'<div>Tel: '+esc(formatPhone(c.phone))+'</div>':'')+(c.cpf?'<div>CPF: '+esc(formatCpf(c.cpf))+'</div>':'')+(c.email?'<div>E-mail: '+esc(c.email)+'</div>':'')+'</div>'+
       '<div class="block"><b>ENDEREÇO</b><div>'+esc(address)+'</div>'+(a.postal_code?'<div>CEP: '+esc(a.postal_code)+'</div>':'')+'</div>'+
       '<div class="block"><b>PAGAMENTO</b><div>'+esc(payment)+'</div><div>Status: '+esc(o.status||'')+'</div><div class="big-total">TOTAL: '+money(o.total_cents)+'</div></div>'+
       '<div class="block"><b>PRODUTOS</b>'+products+'</div>'+
       '<div class="block lines"><div>Observações:</div><br><br><div>Recebido por: __________________</div></div>';
-    openPrint('Entrega #'+shortOrder(o.order_number),body,'delivery');
+    openPrint('Entrega #'+orderDisplayCode(o),body,'delivery');
   }
   function openPrint(title,body,mode,existingWindow=null){
     const w=existingWindow||window.open('','_blank','width=420,height=700');
@@ -7577,6 +7577,7 @@
   }
 
   function shortOrder(n){const s=String(n||'');return s.length>8?s.slice(-8):s}
+  function orderDisplayCode(o){const code=String(o?.public_code||o?.public_order_code||'').trim().toUpperCase();return /^[A-Z]{2}\d{3}$/.test(code)?code:'—'}
   function phoneDigits(v){
     let d=String(v||'').replace(/\D/g,'');
     if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;

@@ -18,8 +18,8 @@ type OrderRow={
 };
 
 const ORDER_TEMPLATE_BY_CHANNEL:Record<Channel,string>={
-  "0975":"pedidorecebidosite0975",
-  "1018":"pedidorecebidosite1018"
+  "0975":"pedidoorganizadosite0975v2",
+  "1018":"pedidoorganizadosite1018v2"
 };
 const ORDER_TEMPLATE_LANGUAGE="pt_BR";
 
@@ -308,6 +308,13 @@ Deno.serve(async(req:Request)=>{
     const publicLinkResult=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});
     if(!publicLinkResult.error)publicOrderLink=publicLinkResult.data||null;
   }catch(error){console.error("order_public_link",text((error as Error)?.message||error,180))}
+  const publicOrderCode=text(publicOrderLink?.public_code,5);
+  const publicOrderUrl=text(publicOrderLink?.public_url,300);
+  if(!/^[A-Z]{2}[0-9]{3}$/.test(publicOrderCode)||!publicOrderUrl){
+    const nextStatus=scope==="checkout_auto"?"retry":"failed";
+    try{await finish(outboxId,nextStatus,null,"public_order_identity_missing",scope==="checkout_auto"?30:0)}catch{}
+    return respond({ok:false,error:"public_order_identity_missing",status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:409);
+  }
 
   const providerPayload={
     event:"order_received",
@@ -315,8 +322,8 @@ Deno.serve(async(req:Request)=>{
     event_id:outboxId,
     order_id:item.order_id,
     order_public_token:text(publicOrderLink?.public_token,32),
-    order_public_code:text(publicOrderLink?.public_code,5),
-    order_url:text(publicOrderLink?.public_url,220)||`https://donaantonia.com.br/pedido/?o=${orderId}`,
+    order_public_code:publicOrderCode,
+    order_url:publicOrderUrl,
     recipient_kind:text(item.recipient_kind,30),
     phone_e164:item.phone_e164,
     order_number:details.orderNumber,
@@ -369,10 +376,20 @@ Deno.serve(async(req:Request)=>{
 
   const templateName=ORDER_TEMPLATE_BY_CHANNEL[channel];
   const components=[{type:"body",parameters:[
-    {type:"text",text:details.orderNumber},
-    {type:"text",text:details.totalFormatted},
-    {type:"text",text:details.deliverySummary},
-    {type:"text",text:details.paymentLabel}
+    {type:"text",text:text(details.orderDate,40)},
+    {type:"text",text:publicOrderCode},
+    {type:"text",text:text(details.customerStatus,30)},
+    {type:"text",text:text(details.customerName,80)},
+    {type:"text",text:text(details.customerPhone,30)},
+    {type:"text",text:text(details.addressLabel,90)},
+    {type:"text",text:text(details.districtLabel,40)},
+    {type:"text",text:text(details.cityLabel,40)},
+    {type:"text",text:text(details.deliveryLabel,80)},
+    {type:"text",text:text(details.basketTextTemplate,80)},
+    {type:"text",text:text(details.itemsText,180)},
+    {type:"text",text:text(details.totalFormatted,30)},
+    {type:"text",text:text(details.paymentLabel,50)},
+    {type:"text",text:publicOrderUrl}
   ]}];
   const metaRequest:JsonRecord={provider:"meta",dispatch_scope:scope,template_name:templateName,language_code:ORDER_TEMPLATE_LANGUAGE,components};
 

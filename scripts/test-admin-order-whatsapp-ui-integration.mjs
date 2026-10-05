@@ -60,8 +60,8 @@ assert.ok(orderTransport.includes('sendTemplateViaMeta'),'order confirmation mus
 assert.ok(orderTransport.includes('MetaTransportError'),'typed Meta transport failures must be handled');
 assert.ok(orderTransport.includes('META_WHATSAPP_ACCESS_TOKEN'),'Meta credential remains server-side in the dispatcher');
 assert.ok(orderTransport.includes('META_WHATSAPP_GRAPH_VERSION'),'Meta Graph version remains server-side configuration');
-assert.ok(orderTransport.includes('pedidorecebidosite0975'),'0975 must use the approved utility template');
-assert.ok(orderTransport.includes('pedidorecebidosite1018'),'1018 must use the approved utility template');
+assert.ok(orderTransport.includes('pedidoorganizadosite0975v2'),'0975 must use the approved utility template');
+assert.ok(orderTransport.includes('pedidoorganizadosite1018v2'),'1018 must use the approved utility template');
 assert.ok(orderTransport.includes('ops2_accept_order_whatsapp_meta_v1'),'accepted WAMID must be persisted through the canonical RPC');
 assert.ok(!orderTransport.includes('PAPOAI_ORDER_TEMPLATE_WEBHOOK_0975_URL'),'checkout confirmation must not depend on PapoAI webhook 0975');
 assert.ok(!orderTransport.includes('PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL'),'checkout confirmation must not depend on PapoAI webhook 1018');
