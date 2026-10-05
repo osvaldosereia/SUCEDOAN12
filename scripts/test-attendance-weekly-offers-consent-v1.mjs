@@ -12,9 +12,10 @@ const uiPath='vitrine/admin/atendimento/attendance-marketing-consent.js';
 const customerViewPath='vitrine/admin/atendimento/attendance-customer-view.js';
 const consentEdgePath='supabase/functions/admin-whatsapp-weekly-consent-v1/index.ts';
 const whatsappCorePath='supabase/functions/_shared/whatsapp-core-v1.mjs';
+const metaTransportPath='supabase/functions/_shared/whatsapp-meta-transport-v1.mjs';
 const configPath='supabase/config.toml';
 
-for(const p of [migrationPath,sqlMirrorPath,browserMigrationPath,browserSqlMirrorPath,templateFixPath,templateFixMirrorPath,consentEdgePath,whatsappCorePath])assert.ok(fs.existsSync(p),`${p} deve existir`);
+for(const p of [migrationPath,sqlMirrorPath,browserMigrationPath,browserSqlMirrorPath,templateFixPath,templateFixMirrorPath,consentEdgePath,whatsappCorePath,metaTransportPath])assert.ok(fs.existsSync(p),`${p} deve existir`);
 assert.ok(fs.existsSync(uiPath),'módulo de consentimento no Atendimento deve existir');
 
 const core=fs.readFileSync(migrationPath,'utf8');
@@ -29,6 +30,7 @@ const ui=fs.readFileSync(uiPath,'utf8');
 const customerView=fs.readFileSync(customerViewPath,'utf8');
 const consentEdge=fs.readFileSync(consentEdgePath,'utf8');
 const whatsappCore=fs.readFileSync(whatsappCorePath,'utf8');
+const metaTransport=fs.readFileSync(metaTransportPath,'utf8');
 const config=fs.readFileSync(configPath,'utf8');
 
 assert.equal(core,coreMirror,'migration principal e espelho SQL devem permanecer idênticos');
@@ -48,11 +50,19 @@ assert.match(consentEdge,/category:\s*['"]MARKETING['"]/i,'template de ofertas d
 assert.match(consentEdge,/type:\s*['"]QUICK_REPLY['"]/i,'template deve usar respostas rápidas');
 assert.match(consentEdge,/SIM, QUERO RECEBER/i);
 assert.match(consentEdge,/AGORA NÃO/i);
+assert.match(consentEdge,/WEEKLY_OFFERS_OPT_IN/,'envio deve definir payload estável do botão SIM');
+assert.match(consentEdge,/WEEKLY_OFFERS_OPT_OUT/,'envio deve definir payload estável do botão NÃO');
+assert.match(consentEdge,/sub_type:\s*['"]quick_reply['"]/i,'envio deve incluir componentes quick_reply');
+assert.match(consentEdge,/type:\s*['"]payload['"]/i,'quick reply deve enviar payload explícito');
 assert.match(consentEdge,/createTemplateViaMeta/i,'edge deve criar o template oficial quando ainda não existir');
 assert.match(consentEdge,/ops2_admin_attendance_enqueue_template_v1/i,'consentimento deve usar o transporte oficial de templates');
 assert.match(consentEdge,/ops2_admin_attendance_weekly_consent_mark_sent_v1/i,'edge deve marcar pedido somente depois do template aceito');
 assert.match(consentEdge,/weekly_consent_template_pending_approval/i);
 assert.match(config,/\[functions\.admin-whatsapp-weekly-consent-v1\][\s\S]*?verify_jwt\s*=\s*true/i,'edge dedicada deve exigir JWT');
+
+assert.match(metaTransport,/sub_type/,'transporte deve aceitar componente de botão');
+assert.match(metaTransport,/quick_reply/i,'transporte deve aceitar quick reply');
+assert.match(metaTransport,/type:\s*['"]payload['"]/i,'transporte deve preservar payload de botão');
 
 assert.match(whatsappCore,/\['text','audio','image','document','location','interactive','button','template','reaction'\]/,'normalizador Meta deve preservar mensagens de botão');
 assert.match(whatsappCore,/message\?\.button\?\.text/,'clique no quick reply deve virar text_body canônico');
