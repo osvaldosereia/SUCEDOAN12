@@ -7,6 +7,7 @@ const edgePath='supabase/functions/admin-attendance-customer-v1/index.ts';
 const uiPath='vitrine/admin/atendimento/attendance-customer.js';
 const cssPath='vitrine/admin/atendimento/attendance-customer.css';
 const loaderPath='vitrine/admin/atendimento/attendance-human-ai.js';
+const configPath='supabase/config.toml';
 const workflowPath='.github/workflows/attendance-papoai-send-ci.yml';
 
 for(const [path,label] of [
@@ -25,6 +26,7 @@ const edge=fs.readFileSync(edgePath,'utf8');
 const ui=fs.readFileSync(uiPath,'utf8');
 const css=fs.readFileSync(cssPath,'utf8');
 const loader=fs.readFileSync(loaderPath,'utf8');
+const config=fs.readFileSync(configPath,'utf8');
 const workflow=fs.readFileSync(workflowPath,'utf8');
 
 assert.equal(mirror.trim(),sql.trim(),'espelho SQL deve ser idêntico à migration');
@@ -54,6 +56,7 @@ assert.match(edge,/ops2_admin_customer_save_v2/,'criação/edição deve reutili
 assert.match(edge,/wa_contact_e164/i,'criação deve buscar o telefone a partir da conversa no servidor');
 assert.match(edge,/canonical_whatsapp_e164_br_v2/i,'telefone da conversa deve ser normalizado no servidor');
 assert.doesNotMatch(edge,/META_WHATSAPP_ACCESS_TOKEN|sendTextViaMeta|sendAttendanceMediaViaMeta|PAPOAI/i,'backend de cliente não deve tocar em transporte WhatsApp/Meta/PapoAI');
+assert.match(config,/\[functions\.admin-attendance-customer-v1\][\s\S]*?verify_jwt\s*=\s*false/i,'Edge de cliente deve usar o mesmo gateway interno do Admin e validar Bearer por conta própria');
 
 assert.match(ui,/Cadastrar cliente/,'estado sem cliente deve oferecer cadastro inline');
 assert.match(ui,/Buscar cadastro/,'estado sem cliente deve oferecer busca de existente');
