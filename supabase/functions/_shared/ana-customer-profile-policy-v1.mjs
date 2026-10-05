@@ -20,7 +20,7 @@ export const ANA_CUSTOMER_PROFILE_SCHEMA={
           evidence_message_ids:{type:'array',items:{type:'string',maxLength:80},maxItems:10},
           third_party_context:{type:'boolean'}
         },
-        required:['field_name','value','confidence','classification','recommendation','evidence_message_ids']
+        required:['field_name','value','confidence','classification','recommendation','evidence_message_ids','third_party_context']
       }
     }
   },
