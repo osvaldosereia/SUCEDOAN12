@@ -64,6 +64,7 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-product-quick-edit-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-ui-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-search-chips-ui-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-most-used-column-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-suggestions.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image-service.mjs
