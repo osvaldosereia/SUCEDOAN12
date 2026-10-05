@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   patch:
+    # Temporary branch-only patch runner. Removed before merge.
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
