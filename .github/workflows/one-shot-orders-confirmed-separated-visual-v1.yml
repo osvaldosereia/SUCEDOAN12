@@ -4,6 +4,10 @@ on:
     branches: [fix/orders-confirmed-separated-visual-v1]
     paths:
       - '.github/workflows/one-shot-orders-confirmed-separated-visual-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-orders-confirmed-separated-visual-v1.yml'
 permissions:
   contents: write
 jobs:
@@ -12,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 1
           sparse-checkout: |
             vitrine/admin/index.html
@@ -122,5 +127,6 @@ jobs:
           git rm .github/workflows/one-shot-orders-confirmed-separated-visual-v1.yml
           git add vitrine/admin/index.html scripts/test-admin-orders-clean-flow-v3.mjs
           git commit -m 'fix(admin): destacar pedidos confirmados e separados'
-          git pull --rebase origin "$GITHUB_REF_NAME"
-          git push origin HEAD:"$GITHUB_REF_NAME"
+          target_branch="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          git pull --rebase origin "$target_branch"
+          git push origin HEAD:"$target_branch"
