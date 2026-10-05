@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const migration='supabase/migrations/20261005002000_basket_zero_price_fallback_v1.sql';
+const migration='supabase/migrations/20261005002500_basket_zero_price_fallback_v1.sql';
 assert.equal(fs.existsSync(migration),true,`missing ${migration}`);
 const sql=fs.readFileSync(migration,'utf8');
 
