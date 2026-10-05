@@ -5,7 +5,7 @@ const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br","http://localhost:3000","http://127.0.0.1:3000"]);
-const MUTATIONS=new Set(["save"]);
+const MUTATIONS=new Set(["save","reserve","mount","cancel"]);
 
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"content-type,authorization,apikey","Access-Control-Allow-Methods":"GET,POST,OPTIONS"}};
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
@@ -30,10 +30,16 @@ function rpcError(error:any){
   const codes=[
     "store_basket_required","store_basket_not_found","store_basket_name_invalid","store_basket_price_invalid","store_basket_image_invalid",
     "store_basket_kits_invalid","store_basket_kit_unavailable","store_basket_kit_duplicate","store_basket_kit_quantity_invalid",
-    "store_basket_category_missing","store_basket_quantity_invalid","store_basket_recipe_empty"
+    "store_basket_category_missing","store_basket_quantity_invalid","store_basket_recipe_empty","store_basket_product_unavailable",
+    "insufficient_loose_stock","store_basket_build_not_found","store_basket_reservation_required","store_basket_reservation_not_mountable",
+    "store_basket_reservation_not_cancellable","store_basket_reservation_already_sellable","store_basket_not_available",
+    "lot_reservation_mismatch","lot_has_order_history"
   ];
   const code=codes.find(x=>detail.includes(x))||"store_basket_operation_failed";
-  if(code==="store_basket_not_found")return {error:code,status:404,message:"Cesta não encontrada."};
+  if(["store_basket_not_found","store_basket_build_not_found"].includes(code))return {error:code,status:404,message:"Cesta ou montagem não encontrada."};
+  if(code==="insufficient_loose_stock")return {error:code,status:409,message:"Estoque avulso insuficiente para reservar esta quantidade."};
+  if(code==="store_basket_product_unavailable")return {error:code,status:409,message:"A receita possui produto ou kit inativo. Revise a composição antes de reservar."};
+  if(["store_basket_reservation_not_mountable","store_basket_reservation_not_cancellable","store_basket_reservation_already_sellable","store_basket_not_available","lot_reservation_mismatch","lot_has_order_history"].includes(code))return {error:code,status:409,message:"O estado atual desta montagem não permite a operação solicitada."};
   if(code==="store_basket_operation_failed")return {error:code,status:500,message:"Não foi possível concluir a operação de Cestas do Site."};
   if(["store_basket_kit_unavailable","store_basket_kit_duplicate","store_basket_recipe_empty"].includes(code))return {error:code,status:409,message:"Revise os kits internos usados nesta cesta."};
   return {error:code,status:400,message:"Revise os dados da Cesta do Site."};
@@ -71,6 +77,37 @@ async function preview(input:any){
   const q=await db.rpc("preview_store_basket_recipe_v1",{p_basket_id:basketId,p_quantity:quantity});
   if(q.error)return rpcError(q.error);return {preview:q.data};
 }
+async function builds(input:any){
+  const basketId=uuid(input?.basket_id||input?.id);if(!basketId)return {error:"store_basket_required",status:400};
+  const q=await db.rpc("store_basket_builds_v1",{p_basket_id:basketId});
+  if(q.error)return rpcError(q.error);return {builds:Array.isArray(q.data?.builds)?q.data.builds:[]};
+}
+async function reserve(input:any){
+  const basketId=uuid(input?.basket_id||input?.id),quantity=integer(input?.quantity);
+  if(!basketId)return {error:"store_basket_required",status:400};
+  if(!quantity)return {error:"store_basket_quantity_invalid",status:400};
+  const q=await db.rpc("reserve_store_basket_recipe_v1",{
+    p_basket_id:basketId,
+    p_quantity:quantity,
+    p_operator:clean(input?.operator,80)||"Operação",
+    p_notes:clean(input?.notes,500)||null
+  });
+  if(q.error)return rpcError(q.error);return {reservation:q.data};
+}
+async function mount(input:any){
+  const lotId=uuid(input?.lot_id||input?.id);if(!lotId)return {error:"store_basket_build_not_found",status:400};
+  const q=await db.rpc("mount_store_basket_reservation_v1",{p_lot_id:lotId,p_operator:clean(input?.operator,80)||"Operação"});
+  if(q.error)return rpcError(q.error);return {build:q.data};
+}
+async function cancel(input:any){
+  const lotId=uuid(input?.lot_id||input?.id);if(!lotId)return {error:"store_basket_build_not_found",status:400};
+  const q=await db.rpc("cancel_store_basket_reservation_v1",{
+    p_lot_id:lotId,
+    p_operator:clean(input?.operator,80)||"Operação",
+    p_reason:clean(input?.reason,500)||null
+  });
+  if(q.error)return rpcError(q.error);return {build:q.data};
+}
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
@@ -88,6 +125,10 @@ Deno.serve(async(req:Request)=>{
     else if(action==="editor")result=await editor(input);
     else if(action==="save")result=await save(input);
     else if(action==="preview")result=await preview(input);
+    else if(action==="builds")result=await builds(input);
+    else if(action==="reserve")result=await reserve(input);
+    else if(action==="mount")result=await mount(input);
+    else if(action==="cancel")result=await cancel(input);
     else return json(req,{ok:false,error:"unknown_action"},404);
     if(result?.error)return json(req,{ok:false,...result},result.status||400);
     return json(req,{ok:true,...result});
