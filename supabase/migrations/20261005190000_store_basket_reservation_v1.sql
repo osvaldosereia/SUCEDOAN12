@@ -32,7 +32,8 @@ create or replace function public.reserve_store_basket_recipe_v1(
   p_basket_id uuid,p_quantity integer,p_operator text default null,p_notes text default null
 ) returns jsonb language plpgsql security definer set search_path='' as $function$
 declare
-  v_basket public.basket_templates%rowtype;
+  v_basket_name text;
+  v_basket_price numeric;
   v_category_slug text;
   v_business_type text;
   v_lot_id uuid:=gen_random_uuid();
@@ -49,7 +50,7 @@ begin
   if p_basket_id is null then raise exception 'store_basket_required'; end if;
   if p_quantity is null or p_quantity<1 or p_quantity>500 then raise exception 'store_basket_quantity_invalid'; end if;
 
-  select b,c.slug into v_basket,v_category_slug
+  select b.name,b.base_price,c.slug into v_basket_name,v_basket_price,v_category_slug
   from public.basket_templates b
   left join public.basket_categories c on c.id=b.category_id
   where b.id=p_basket_id and b.is_active=true;
@@ -95,7 +96,7 @@ begin
   join public.assembly_kit_items i on i.kit_id=k.id
   join public.products p on p.id=i.product_id
   where r.basket_id=p_basket_id;
-  v_hidden:=round(coalesce(v_basket.base_price,0)-v_component_sum,2);
+  v_hidden:=round(coalesce(v_basket_price,0)-v_component_sum,2);
 
   v_business_type:=case v_category_slug
     when 'cestas-completas' then 'basic_complete'
@@ -126,8 +127,8 @@ begin
     v_lot_id,p_basket_id,v_lot_code,'draft',p_quantity,0,v_hash,now(),v_operator,
     nullif(btrim(coalesce(p_notes,'')),''),'admin',
     jsonb_build_object('store_basket_reserved_v1',true,'reserved_at',now(),'reserved_by',v_operator,'recipe_source','store_basket_recipe_kits'),
-    null,'legacy_full',null,false,v_basket.name,v_business_type,'assembling',
-    round(coalesce(v_basket.base_price,0),2),round(coalesce(v_basket.base_price,0),2),
+    null,'legacy_full',null,false,v_basket_name,v_business_type,'assembling',
+    round(coalesce(v_basket_price,0),2),round(coalesce(v_basket_price,0),2),
     v_component_sum,v_component_sum,v_hidden,v_hidden,v_cost_sum,v_cost_sum
   );
 
@@ -154,8 +155,8 @@ begin
   return jsonb_build_object(
     'ok',true,'lot_id',v_lot_id,'lot_code',v_lot_code,'basket_id',p_basket_id,
     'status','draft','assembly_status','assembling','quantity_built',p_quantity,
-    'quantity_available',0,'sale_enabled',false,'public_name',v_basket.name,
-    'sale_price',round(coalesce(v_basket.base_price,0),2),'component_sum',v_component_sum,
+    'quantity_available',0,'sale_enabled',false,'public_name',v_basket_name,
+    'sale_price',round(coalesce(v_basket_price,0),2),'component_sum',v_component_sum,
     'cost_sum',v_cost_sum,'hidden_adjustment',v_hidden,'preview',v_preview
   );
 end;
