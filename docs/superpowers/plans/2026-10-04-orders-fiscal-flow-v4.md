@@ -2,31 +2,31 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Entregar o fluxo canônico de Pedidos `RECEBIDO → CONFIRMADO → SEPARADO → NF-e AUTORIZADA → SAÍDA → ENTREGA + PAGAMENTO → ENTREGUE`, usando NF-e modelo 55 para as entregas e reaproveitando a integração Bling já existente.
+**Goal:** Entregar o fluxo canônico de Pedidos `RECEBIDO → CONFIRMADO → SEPARADO → NF-e AUTORIZADA → SAÍDA → ENTREGA + PAGAMENTO → ENTREGUE`, usando NF-e modelo 55 nas entregas e reaproveitando a integração Bling já existente.
 
-**Architecture:** A UI continua no `vitrine/admin/index.html`; não será criado outro módulo de Pedidos. O PostgreSQL passa a considerar a separação concluída como ponto de prontidão fiscal, consolida o gate de saída e torna a entrega dependente de NF-e autorizada + pagamento real. `admin-products-live-v1` orquestra a operação humana, enquanto `admin-service-intelligence-v1` continua como ponte canônica para Pedido de Venda → NF-e → SEFAZ → DANFE. O runtime fiscal permanece desligado até o canário final.
+**Architecture:** A UI permanece em `vitrine/admin/index.html`, sem módulo paralelo de Pedidos. O PostgreSQL passa a considerar a separação concluída como ponto de prontidão fiscal, consolida o gate de saída e exige NF-e autorizada antes da saída e da entrega. `admin-products-live-v1` orquestra a operação humana e `admin-service-intelligence-v1` continua como ponte canônica Pedido de Venda → NF-e → SEFAZ → DANFE. O runtime fiscal continua desligado até o canário final.
 
-**Tech Stack:** HTML/JavaScript do Admin, Supabase Edge Functions Deno/TypeScript, PostgreSQL/RPC, Bling API v3, GitHub Actions e contract tests Node.js.
+**Tech Stack:** HTML/JavaScript, Supabase Edge Functions Deno/TypeScript, PostgreSQL/RPC, Bling API v3, GitHub Actions e contract tests Node.js.
 
 **Spec:** `docs/superpowers/specs/2026-10-04-orders-fiscal-flow-v4-design.md`
 
 ## Global Constraints
-- Usar NF-e modelo 55 como documento padrão do fluxo de entrega da Dona Antônia em Cuiabá e Várzea Grande.
-- Não criar nova Edge Function de Bling; reutilizar `admin-service-intelligence-v1` e a ponte `hub(...)` já existente.
-- Não criar script de sobreposição da página Pedidos; toda UX fica na implementação canônica `vitrine/admin/index.html`.
+- Usar NF-e modelo 55 como documento padrão do fluxo de entrega em Cuiabá e Várzea Grande.
+- Não criar nova Edge Function de Bling; reutilizar `admin-service-intelligence-v1` e `hub(...)`.
+- Não criar script de sobreposição da página Pedidos; toda UX fica no Admin canônico.
 - `payment_method` do checkout é forma prevista; settlement da entrega é a forma realmente recebida.
 - Nenhum retry pode duplicar abatimento, estoque, pagamento, NF-e ou evento fiscal.
-- Não habilitar emissão fiscal automática. A primeira emissão live será humana e canário.
-- Não ativar `fiscal_runtime_config.enabled`/geração/autorização global antes do canário aprovado.
-- MDF-e fica fora deste plano; ele será tratado separadamente como operação de saída/carga.
-- Toda mudança produtiva entra por branch/PR e deve passar pelos contratos V3 existentes além dos novos contratos V4.
+- Não habilitar emissão fiscal automática; a primeira emissão live será humana e canário.
+- Não ativar geração/autorização global em `fiscal_runtime_config` antes do canário aprovado.
+- MDF-e fica fora deste plano e será tratado separadamente como operação de saída/carga.
+- Toda alteração produtiva entra por branch/PR e passa pelos contratos V3 e V4.
 
 ## Review Focus
-- Clique repetido em `EMITIR NF-e`: deve localizar/reconciliar a mesma nota e nunca criar uma segunda NF-e.
-- Pedido com itens `FALTOU`: a NF-e deve usar o total final consolidado e nunca o valor original da cesta.
-- Tentativa de entrega com NF-e pendente/rejeitada: deve falhar antes de criar settlement ou marcar `delivered`.
-- Forma prevista diferente da forma recebida: settlement deve gravar a forma real sem reemitir/cancelar NF-e automaticamente.
-- Pedidos legados em `out_for_delivery`/`delivered`: devem continuar abrindo e reconciliando fiscal sem obrigar reexecução das etapas novas.
+- Clique repetido em `EMITIR NF-e`: deve localizar/reconciliar a mesma nota e nunca criar uma segunda NF-e. Testado na Task 6.
+- Pedido com itens `FALTOU`: deve emitir pelo total final e nunca pelo valor original. Testado nas Tasks 1 e 6.
+- Tentativa de entrega com NF-e pendente/rejeitada: deve falhar antes de criar settlement ou marcar `delivered`. Testado na Task 2.
+- Forma prevista diferente da recebida: settlement deve gravar a forma real sem reemitir/cancelar NF-e automaticamente. Testado nas Tasks 2 e 4.
+- Pedidos legados `out_for_delivery`/`delivered`: devem abrir e reconciliar fiscal sem obrigar reexecução das etapas novas. Testado nas Tasks 1 e 7.
 
 ---
 
@@ -38,33 +38,34 @@
 - Test: `scripts/test-admin-orders-clean-flow-v3.mjs`
 
 **Interfaces:**
-- Consumes: `vitrine/admin/index.html`, `supabase/functions/admin-products-live-v1/index.ts`, `supabase/functions/admin-service-intelligence-v1/index.ts`, migration V4.
-- Produces: contrato estático executável que impede regressão para `Separado → Entregue → Fiscal`.
+- Consumes: Admin, `admin-products-live-v1`, `admin-service-intelligence-v1` e migration V4.
+- Produces: contrato executável que impede regressão para `Separado → Entregue → Fiscal`.
 
 - [ ] **Step 1: Write the failing V4 contract**
 
-Criar `scripts/test-admin-orders-fiscal-flow-v4.mjs` com asserts para:
-- fiscal aparecer a partir de `ready/SEPARADO`, não apenas `delivered`;
-- card possuir `NF-e PENDENTE`/`NF-e AUTORIZADA` e tags grandes distintas;
-- `ENTREGUE` não ser a próxima ação quando fiscal não está autorizado;
-- backend expor `order_fiscal_status`, `order_fiscal_issue_v4`, `order_dispatch_start_v4` e `delivery_fail_register`;
-- migration V4 redefinir `refresh_order_fiscal_readiness_v1`, `preview_bling_invoice_eligibility_v1`, `ops2_fiscal_dispatch_preflight_v1` e `ops3_complete_delivery_v1`;
-- migration V4 exigir autorização fiscal para saída/entrega e preservar payment gate;
-- Bling bridge manter emissão idempotente a partir do pedido de venda.
+Criar asserts exigindo:
+- fiscal visível a partir de `ready/SEPARADO`, não só `delivered`;
+- tags `NF-e PENDENTE`/`NF-e AUTORIZADA` grandes e distintas;
+- `ENTREGUE` indisponível sem autorização/saída;
+- backend com `order_fiscal_status`, `order_fiscal_issue_v4`, `order_dispatch_start_v4` e `delivery_fail_register`;
+- migration redefinindo `refresh_order_fiscal_readiness_v1`, `preview_bling_invoice_eligibility_v1`, `ops2_fiscal_dispatch_preflight_v1` e `ops3_complete_delivery_v1`;
+- autorização fiscal exigida para saída/entrega e payment gate preservado;
+- emissão idempotente a partir do Pedido de Venda;
+- compatibilidade explícita para `out_for_delivery` e `delivered` legados.
 
-- [ ] **Step 2: Run test to verify RED**
+- [ ] **Step 2: Verify RED**
 
 Run: `node scripts/test-admin-orders-fiscal-flow-v4.mjs`
 Expected: FAIL porque o fluxo atual ainda libera entrega antes do fiscal.
 
-- [ ] **Step 3: Wire V4 contract into official CI**
+- [ ] **Step 3: Wire the contract into CI**
 
-Adicionar o novo script, a migration `*orders_fiscal_flow_v4*.sql` e `admin-service-intelligence-v1/index.ts` aos `paths` do workflow; executar V3 + V4 no job `contract`.
+Adicionar o script, `*orders_fiscal_flow_v4*.sql` e `admin-service-intelligence-v1/index.ts` aos `paths`; executar V3 + V4 no job `contract`.
 
-- [ ] **Step 4: Keep V3 regression green**
+- [ ] **Step 4: Preserve V3 regression**
 
 Run: `node scripts/test-admin-orders-clean-flow-v3.mjs`
-Expected: PASS antes das mudanças funcionais; durante a implementação, atualizar apenas asserts V3 que contradizem explicitamente a V4, preservando separação, vitrine e idempotência.
+Expected: PASS; atualizar somente asserts V3 que contradizem a ordem fiscal V4.
 
 - [ ] **Step 5: Commit**
 
@@ -82,56 +83,52 @@ git commit -m "test: definir contrato fiscal Pedidos V4"
 - Test: `scripts/test-admin-orders-fiscal-flow-v4.mjs`
 
 **Interfaces:**
-- Consumes: `order_separation_completions_v1`, `order_separation_items_v1`, `order_fiscal_controls`, `orders`, settlement tables.
-- Produces: `refresh_order_fiscal_readiness_v1(uuid)`, `preview_bling_invoice_eligibility_v1(uuid)`, `ops2_fiscal_dispatch_preflight_v1(uuid)`, `ops4_start_dispatch_v1(uuid,text,text)`, versão V4 de `ops3_complete_delivery_v1(...)`.
+- Consumes: `order_separation_completions_v1`, `order_separation_items_v1`, `order_fiscal_controls`, `orders`, settlements.
+- Produces: `refresh_order_fiscal_readiness_v1(uuid)`, `preview_bling_invoice_eligibility_v1(uuid)`, `ops2_fiscal_dispatch_preflight_v1(uuid)`, `ops4_start_dispatch_v1(uuid,text,text)` e `ops3_complete_delivery_v1(...)` V4.
 
 - [ ] **Step 1: Extend RED assertions for SQL invariants**
 
-Exigir no contrato que readiness não contenha dependência de `delivered` nem `payment_status='confirmed'` para emissão, e que a entrega exija `dispatch_fiscal_status='authorized'`.
+Exigir que readiness de emissão não dependa de `delivered` nem `payment_status='confirmed'` e que entrega exija `dispatch_fiscal_status='authorized'`.
 
 - [ ] **Step 2: Implement V4 readiness**
 
-`refresh_order_fiscal_readiness_v1(p_order_id uuid) -> jsonb` deve considerar fiscalmente candidato quando:
-- status local é `ready` (ou estado posterior apenas para reconciliação);
-- existe conclusão de separação com `stock_applied=true` e `completed_at` preenchido;
-- não existem itens `pending`;
-- total final é positivo e coincide com o pedido;
-- cliente/endereço e vínculo Bling necessários estão disponíveis.
-
-Pagamento e `delivered_at` permanecem no controle financeiro, não na prontidão de emissão.
+`refresh_order_fiscal_readiness_v1(p_order_id uuid) -> jsonb` deve considerar candidato quando: status `ready` (estados posteriores só para reconciliação), completion com `stock_applied=true` e `completed_at`, zero `pending`, total final positivo/coerente e dependências obrigatórias de cliente/endereço/Bling presentes.
 
 - [ ] **Step 3: Align invoice eligibility/preflight**
 
-Redefinir `preview_bling_invoice_eligibility_v1(uuid)` e `ops2_fiscal_dispatch_preflight_v1(uuid)` para reutilizar a readiness V4 e devolver blockers estruturados. `ready` pode emitir; `out_for_delivery`/`delivered` só reconciliam nota existente, evitando emissão tardia duplicada.
+`preview_bling_invoice_eligibility_v1(uuid)` e `ops2_fiscal_dispatch_preflight_v1(uuid)` reutilizam readiness e retornam blockers estruturados. `ready` pode emitir; `out_for_delivery`/`delivered` apenas reconciliam nota existente.
 
 - [ ] **Step 4: Consolidate dispatch gate**
 
-Manter um único caminho canônico baseado em `check_order_dispatch_fiscal_gate_v1(uuid)`. Remover o trigger duplicado somente depois que o teste comprovar equivalência; a transição nova para `out_for_delivery` deve ser bloqueada sem fiscal `authorized`.
+Usar `check_order_dispatch_fiscal_gate_v1(uuid)` como caminho canônico. Remover trigger duplicado somente após contrato provar equivalência. Nova transição para `out_for_delivery` deve falhar sem fiscal autorizado.
 
 - [ ] **Step 5: Add `ops4_start_dispatch_v1`**
 
-Signature:
-`ops4_start_dispatch_v1(p_order_id uuid, p_operator_label text default null, p_idempotency_key text default null) returns jsonb`.
+Signature: `ops4_start_dispatch_v1(p_order_id uuid, p_operator_label text default null, p_idempotency_key text default null) returns jsonb`.
 
-Requisitos: order `ready`, separação concluída, fiscal autorizado; persistir `out_for_delivery`, horário/evento de saída e responder idempotentemente se a saída já foi registrada.
+Requer `ready`, separação concluída e fiscal autorizado; persiste `out_for_delivery` e evento/horário de saída; retry retorna o estado já registrado.
 
 - [ ] **Step 6: Harden `ops3_complete_delivery_v1`**
 
-Preservar assinatura existente. Para nova entrega, exigir `out_for_delivery`, separação concluída e fiscal autorizado antes de criar settlement. Pedido já `delivered` continua idempotente. Manter validação de valor = total final e método real recebido.
+Preservar assinatura. Para nova entrega, exigir `out_for_delivery`, separação concluída e fiscal autorizado **antes** de criar settlement. Pedido já `delivered` continua idempotente. Valor recebido deve igualar total final e método deve ser o efetivamente recebido.
 
-- [ ] **Step 7: Verify migration contract**
+- [ ] **Step 7: Add legacy compatibility assertions**
+
+`out_for_delivery` antigo com NF-e existente deve ser reconciliável; `delivered` antigo deve continuar legível/idempotente, sem criar nova NF-e ou novo settlement.
+
+- [ ] **Step 8: Verify migration contract**
 
 Run: `node scripts/test-admin-orders-fiscal-flow-v4.mjs`
-Expected: SQL section PASS; UI/backend sections ainda podem permanecer RED.
+Expected: seção SQL PASS.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql scripts/test-admin-orders-fiscal-flow-v4.mjs
 git commit -m "feat: alinhar prontidão fiscal e gate de saída V4"
 ```
 
-### Task 3: Orquestração fiscal canônica no backend do Admin
+### Task 3: Orquestração fiscal canônica no backend
 
 **Files:**
 - Modify: `supabase/functions/admin-products-live-v1/index.ts`
@@ -139,47 +136,37 @@ git commit -m "feat: alinhar prontidão fiscal e gate de saída V4"
 - Test: `scripts/test-admin-orders-fiscal-flow-v4.mjs`
 
 **Interfaces:**
-- Consumes: RPCs da Task 2; `hub(...)`; subações fiscais existentes do `admin-service-intelligence-v1`.
-- Produces Admin actions:
+- Consumes: RPCs da Task 2, `hub(...)` e subações fiscais já existentes.
+- Produces:
   - GET `order_fiscal_status?id=<uuid>`
-  - POST `order_fiscal_issue_v4` body `{id, confirmation}`
-  - POST `order_dispatch_start_v4` body `{id, operator, idempotency_key}`
-  - POST `order_delivery_complete_v3` preservado, agora sob gate V4.
+  - POST `order_fiscal_issue_v4` `{id, confirmation}`
+  - POST `order_dispatch_start_v4` `{id, operator, idempotency_key}`
+  - POST `order_delivery_complete_v3` preservado sob gate V4.
 
 - [ ] **Step 1: Write failing backend assertions**
 
-Exigir `order_fiscal_issue_v4` no `LOCAL`/`WRITE_ACTIONS`, uso do preflight V4, chamada à ponte Bling existente e ausência de criação direta de uma segunda integração `/nfe` no Admin.
+Exigir `order_fiscal_issue_v4` em `LOCAL`/`WRITE_ACTIONS`, uso de preflight, chamada à ponte Bling existente e ausência de segunda integração `/nfe` no Admin.
 
-- [ ] **Step 2: Normalize fiscal status response**
+- [ ] **Step 2: Normalize fiscal status**
 
-`order_fiscal_status` deve devolver um objeto simples para UI:
-`{stage, authorized, can_issue, can_dispatch, invoice_id, invoice_number, sefaz_status, danfe_available, blockers[]}`.
-
-Mapear blockers técnicos para códigos estáveis; texto humano fica na UI.
+`order_fiscal_status` retorna `{stage, authorized, can_issue, can_dispatch, invoice_id, invoice_number, sefaz_status, danfe_available, blockers[]}`.
 
 - [ ] **Step 3: Implement human issue orchestration**
 
-`order_fiscal_issue_v4`:
-1. roda readiness/preflight local;
-2. falha fechado se runtime não permite execução ou se houver hard blocker;
-3. chama a operação fiscal humana já existente do `admin-service-intelligence-v1`;
-4. reconcilia `order_fiscal_controls`;
-5. retorna a mesma NF-e se o clique for repetido.
+`order_fiscal_issue_v4`: readiness/preflight → fail closed em blocker/runtime → operação fiscal humana já existente → reconciliação de `order_fiscal_controls` → mesma NF-e em retry. A função não altera runtime.
 
-Não habilitar runtime dentro desta função.
+- [ ] **Step 4: Adjust Bling preview to V4**
 
-- [ ] **Step 4: Adjust Bling preview to V4 order stage**
-
-No `admin-service-intelligence-v1`, `blingHubVitrineDispatchFiscalPreview` deve aceitar pedido `ready` com separação concluída, usar total final e manter os blockers de Pedido de Venda/Verificado/dados fiscais. Não exigir pagamento/entrega para gerar/enviar NF-e.
+`blingHubVitrineDispatchFiscalPreview` aceita `ready` com separação concluída, usa total final e mantém blockers de Pedido de Venda/Verificado/dados fiscais; não exige pagamento/entrega.
 
 - [ ] **Step 5: Expose dispatch start**
 
-`order_dispatch_start_v4` chama `ops4_start_dispatch_v1`; nenhum write no Bling é necessário para iniciar a saída física além do que já estiver no fluxo canônico.
+`order_dispatch_start_v4` chama `ops4_start_dispatch_v1`.
 
-- [ ] **Step 6: Verify backend contract**
+- [ ] **Step 6: Verify**
 
 Run: `node scripts/test-admin-orders-fiscal-flow-v4.mjs`
-Expected: backend section PASS.
+Expected: seção backend PASS.
 
 - [ ] **Step 7: Commit**
 
@@ -196,34 +183,34 @@ git commit -m "feat: orquestrar NF-e V4 pelo Bling existente"
 - Regression: `scripts/test-admin-orders-clean-flow-v3.mjs`
 
 **Interfaces:**
-- Consumes: `order_fiscal_status`, `order_fiscal_issue_v4`, `order_dispatch_start_v4`, `order_delivery_complete_v3`.
-- Produces: card e pedido aberto com próxima ação inequívoca.
+- Consumes: status/emissão fiscal, saída, entrega V3.
+- Produces: card/pedido aberto com próxima ação inequívoca.
 
-- [ ] **Step 1: Write RED assertions for visual states**
+- [ ] **Step 1: Write RED visual assertions**
 
-Exigir tags persistentes e maiores com classes distintas: `CONFIRMADO`, `SEPARADO`, `NF-e PENDENTE`, `NF-e AUTORIZADA`, `ENTREGUE`, `ENTREGA NÃO CONCLUÍDA`. Exigir que `ENTREGUE` não seja acionável antes da autorização/saída.
+Exigir tags persistentes e grandes: `CONFIRMADO`, `SEPARADO`, `NF-e PENDENTE`, `NF-e AUTORIZADA`, `ENTREGUE`, `ENTREGA NÃO CONCLUÍDA`; `ENTREGUE` não acionável antes da autorização/saída.
 
-- [ ] **Step 2: Implement status tags**
+- [ ] **Step 2: Implement semantic tag styles**
 
-Adicionar classes específicas, contraste alto e tamanho legível. A cor é semântica, mas o texto continua obrigatório para acessibilidade.
+`CONFIRMADO` azul, `SEPARADO` laranja, `NF-e PENDENTE` âmbar, `NF-e AUTORIZADA` roxo/azulado, `ENTREGUE` verde, ocorrência/cancelamento vermelho. Texto continua obrigatório além da cor.
 
-- [ ] **Step 3: Make post-separation action fiscal**
+- [ ] **Step 3: Make fiscal the post-separation action**
 
-Depois de `ready`, mostrar `EMITIR NF-e` como próxima ação. O bloco Fiscal passa a aparecer a partir de Separado. `EMITIR NF-e` exibe `PROCESSANDO`, depois `AUTORIZADA` ou blocker traduzido.
+Depois de `ready`, mostrar `EMITIR NF-e`; bloco Fiscal aparece a partir de Separado e mostra `PROCESSANDO`, `AUTORIZADA` ou blocker traduzido.
 
-- [ ] **Step 4: Add DANFE and dispatch action**
+- [ ] **Step 4: Add DANFE and dispatch**
 
-Após autorização: mostrar número da nota, `IMPRIMIR DANFE` e `SAIU PARA ENTREGA`. Só após registrar a saída o botão `ENTREGUE` fica disponível.
+Após autorização: número da nota, `IMPRIMIR DANFE` e `SAIU PARA ENTREGA`. `ENTREGUE` só depois da saída.
 
-- [ ] **Step 5: Preserve auto-close behavior**
+- [ ] **Step 5: Preserve auto-close**
 
-`CONCLUIR SEPARAÇÃO` fecha o bottom sheet somente em sucesso real; `CONFIRMAR ENTREGA` fecha o diálogo somente depois da resposta `ok:true`. Em erro, manter aberto com mensagem prática.
+`CONCLUIR SEPARAÇÃO` fecha sheet apenas em `ok:true`; `CONFIRMAR ENTREGA` fecha diálogo apenas em `ok:true`; erro mantém aberto com mensagem prática.
 
-- [ ] **Step 6: Translate blockers for staff**
+- [ ] **Step 6: Translate blockers**
 
-Exemplos: `customer_document_missing` → “CPF/CNPJ do cliente precisa ser corrigido”; `product_fiscal_missing` → “Produto precisa de ajuste fiscal”; `bling_order_not_verified` → “Pedido ainda não está pronto no Bling”. Não mostrar 409/RPC internamente.
+Ex.: `customer_document_missing` → “CPF/CNPJ do cliente precisa ser corrigido”; `product_fiscal_missing` → “Produto precisa de ajuste fiscal”; `bling_order_not_verified` → “Pedido ainda não está pronto no Bling”. Não mostrar 409/RPC.
 
-- [ ] **Step 7: Verify UI + browser syntax**
+- [ ] **Step 7: Verify**
 
 Run:
 ```bash
@@ -239,7 +226,7 @@ git add vitrine/admin/index.html scripts/test-admin-orders-fiscal-flow-v4.mjs sc
 git commit -m "feat: simplificar operação fiscal na tela de pedidos"
 ```
 
-### Task 5: Entrega frustrada e retorno sem cancelar NF-e automaticamente
+### Task 5: Cancelamento fiscal seguro, entrega frustrada e retorno
 
 **Files:**
 - Modify: `supabase/functions/admin-products-live-v1/index.ts`
@@ -248,64 +235,67 @@ git commit -m "feat: simplificar operação fiscal na tela de pedidos"
 - Test: `scripts/test-admin-orders-fiscal-flow-v4.mjs`
 
 **Interfaces:**
-- Consumes: fluxo existente `delivery_fail_register`, `delivery_return_confirm`, `delivery_return_resolve`, estado `out_for_delivery` e fiscal autorizado.
-- Produces: `ENTREGA NÃO CONCLUÍDA`/retorno sem settlement e sem cancelamento automático de NF-e.
+- Consumes: `delivery_fail_register`, `delivery_return_confirm`, `delivery_return_resolve`, `out_for_delivery`, fiscal autorizado e cancelamento operacional existente.
+- Produces: cancelamento/reagendamento protegido e `ENTREGA NÃO CONCLUÍDA` sem settlement nem cancelamento automático da NF-e.
 
-- [ ] **Step 1: Pin failure behavior in tests**
+- [ ] **Step 1: Pin pre-dispatch cancellation behavior**
 
-Exigir que falha após `out_for_delivery` não grave `delivered`, não crie/complete settlement, preserve `bling_invoice_id`/fiscal autorizado e use o fluxo existente de retorno.
+Quando NF-e já estiver autorizada e pedido ainda `ready`, cancelar/reprogramar **não** pode simplesmente cancelar o pedido e deixar a nota órfã. A ação deve bloquear o cancelamento operacional direto e abrir revisão/ação fiscal explícita; nunca cancelar NF-e automaticamente.
 
-- [ ] **Step 2: Reuse existing failed-delivery operations**
+- [ ] **Step 2: Pin post-dispatch failure behavior**
 
-Ajustar `registerFailedDelivery` para aceitar o estágio V4 e preservar nota. Não criar outra tabela/rota se `order_delivery_return_cases` e ações existentes já cobrem o caso.
+Após `out_for_delivery`, falha não grava `delivered`, não cria/completa settlement, preserva `bling_invoice_id`/autorização e usa retorno existente.
 
-- [ ] **Step 3: Add UI action**
+- [ ] **Step 3: Reuse existing return operations**
 
-Quando `out_for_delivery`, mostrar `ENTREGUE` e `NÃO ENTREGUE`. `NÃO ENTREGUE` abre motivo curto e registra retorno; nenhum pagamento é presumido.
+Ajustar `registerFailedDelivery` ao estágio V4. Não criar tabela/rota nova se `order_delivery_return_cases` e ações existentes cobrem o caso.
 
-- [ ] **Step 4: Keep fiscal event 110192 behind homologation flag**
+- [ ] **Step 4: Add UI actions**
 
-Não enviar evento SEFAZ nesta task. Apenas persistir estado suficiente para integração futura/canário; nenhuma inferência automática de cancelamento/devolução fiscal.
+Em `out_for_delivery`, mostrar `ENTREGUE` e `NÃO ENTREGUE`. Motivos mínimos: cliente ausente, recusou, endereço incorreto/inacessível, problema operacional/veículo, outro com observação.
 
-- [ ] **Step 5: Verify**
+- [ ] **Step 5: Keep event 110192 behind homologation**
+
+Nesta task não enviar evento SEFAZ. Persistir estado suficiente para futura integração; nenhuma inferência automática de cancelamento/devolução fiscal.
+
+- [ ] **Step 6: Verify**
 
 Run: `node scripts/test-admin-orders-fiscal-flow-v4.mjs`
-Expected: PASS para entrega frustrada e preservação fiscal.
+Expected: PASS para cancelamento protegido, entrega frustrada e preservação fiscal.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add supabase/functions/admin-products-live-v1/index.ts vitrine/admin/index.html supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql scripts/test-admin-orders-fiscal-flow-v4.mjs
-git commit -m "feat: tratar insucesso de entrega no fluxo V4"
+git commit -m "feat: proteger cancelamento e insucesso no fluxo V4"
 ```
 
-### Task 6: Preflight fiscal de produtos e emissão canário no Bling
+### Task 6: Preflight fiscal e emissão canário no Bling
 
 **Files:**
 - Modify: `supabase/functions/admin-service-intelligence-v1/index.ts`
 - Modify: `supabase/functions/admin-products-live-v1/index.ts`
 - Test: `scripts/test-admin-orders-fiscal-flow-v4.mjs`
-- Runtime data: `fiscal_runtime_config` — alterar somente no passo controlado, nunca em migration global.
+- Runtime data: `fiscal_runtime_config` — alterar só no canário, nunca em migration global.
 
 **Interfaces:**
-- Consumes: Pedido de Venda Bling já sincronizado, `product_fiscal_readiness_v1`, `order_fiscal_controls`, runtime Bling/fiscal.
-- Produces: preflight legível e uma execução humana idempotente apta a canário.
+- Consumes: Pedido de Venda Bling, `product_fiscal_readiness_v1`, `order_fiscal_controls`, runtime Bling/fiscal.
+- Produces: preflight legível e emissão humana idempotente apta a canário.
 
-- [ ] **Step 1: Classify hard blockers vs warnings**
+- [ ] **Step 1: Classify blockers vs warnings**
 
-Hard blockers devem ser somente dados que impedem a emissão real: ausência/inconsistência obrigatória de cliente/endereço, total, vínculo do pedido Bling, NCM/origem/regra fiscal necessária para o item ou rejeição explícita do Bling/SEFAZ. Pendência local que não impede a operação deve aparecer como warning, não bloquear cegamente todos os produtos.
+Hard blocker somente quando impede emissão real: cliente/endereço obrigatório, total, vínculo do Pedido de Venda, NCM/origem/regra fiscal necessária ou rejeição Bling/SEFAZ. Pendência local meramente administrativa vira warning.
 
 - [ ] **Step 2: Verify final-total payload**
 
-Teste deve exigir que pedido com `FALTOU` envie o total final e os itens efetivamente vendáveis; nunca recriar o valor oculto/abatido de forma incorreta.
+Pedido com `FALTOU` deve usar total final e itens efetivamente vendidos; não recriar valor abatido nem faturar item faltante.
 
 - [ ] **Step 3: Verify idempotent invoice lookup**
 
-Antes de POST de criação, localizar NF-e já vinculada ao Pedido de Venda/source order. Se existir, reconciliar e continuar autorização/DANFE conforme situação; não criar outra.
+Antes de criar, localizar NF-e já vinculada ao Pedido de Venda/source order. Existindo, reconciliar/autorizá-la/obter DANFE conforme situação; nunca criar outra.
 
 - [ ] **Step 4: Run full static regression**
 
-Run:
 ```bash
 node scripts/test-admin-orders-fiscal-flow-v4.mjs
 node scripts/test-admin-orders-clean-flow-v3.mjs
@@ -316,65 +306,62 @@ node scripts/test-order-public-vitrine-print.mjs
 ```
 Expected: todos PASS.
 
-- [ ] **Step 5: Deploy code with runtime still OFF**
+- [ ] **Step 5: Deploy with fiscal runtime still OFF**
 
-Aplicar migration e publicar Edge Functions, mas confirmar por SQL que `fiscal_runtime_config` continua sem emissão global. Rodar `order_fiscal_status`/preflight em pedido controlado sem side effect externo.
+Aplicar migration e publicar Edge Functions; confirmar por SQL que emissão global continua desligada. Rodar `order_fiscal_status`/preflight em pedido controlado sem side effect externo.
 
 - [ ] **Step 6: Controlled canary**
 
-Somente após preflight sem hard blockers, selecionar explicitamente um pedido de teste controlado no runtime canário e habilitar apenas o mínimo necessário para **uma** emissão humana. Executar `EMITIR NF-e` uma vez; conferir no Bling e SEFAZ: mesma venda, uma única NF-e, número/chave, `authorized=true`, DANFE disponível.
+Selecionar explicitamente um pedido de teste sem hard blockers e habilitar apenas o mínimo necessário para **uma** emissão humana. Executar `EMITIR NF-e`; conferir Pedido de Venda, uma única NF-e, número/chave, `authorized=true` e DANFE.
 
-- [ ] **Step 7: Retry canary once for idempotency**
+- [ ] **Step 7: Retry canary for idempotency**
 
-Acionar novamente a mesma operação e confirmar que não surgiu segunda NF-e.
+Repetir a mesma operação e comprovar ausência de segunda NF-e.
 
 - [ ] **Step 8: Close canary**
 
-Desarmar canário após o teste e manter emissão automática desabilitada. Registrar evidência do invoice id/número e resultado sem PII no PR/checkpoint.
+Desarmar canário e manter emissão automática desabilitada. Registrar evidência sem PII.
 
-- [ ] **Step 9: Commit any code-only corrections from canary**
+- [ ] **Step 9: Commit code-only fixes from canary**
 
 ```bash
 git add supabase/functions/admin-service-intelligence-v1/index.ts supabase/functions/admin-products-live-v1/index.ts scripts/test-admin-orders-fiscal-flow-v4.mjs
 git commit -m "fix: fechar homologação fiscal V4"
 ```
 
-### Task 7: Rollout, saneamento do pedido controlado e PR final
+### Task 7: Rollout, saneamento controlado e PR final
 
 **Files:**
-- Modify only if required by findings: V4 files above.
-- Do not hardcode production order IDs in migration or source.
+- Modify only if findings require: V4 files above.
+- Never hardcode production order IDs in migration/source.
 
 **Interfaces:**
-- Produces: V4 pronta para produção humana com observabilidade e rollback operacional.
+- Produces: V4 pronta para produção humana com observabilidade.
 
-- [ ] **Step 1: Repair only residual test state through canonical operations**
+- [ ] **Step 1: Repair residual controlled-test state canonically**
 
-O pedido controlado usado durante o desenvolvimento que ficou `ready` com separation completion em `needs_attention` deve ser reconciliado por operação canônica ou correção de dados auditada; não inserir ID específico em migration.
+Pedido de teste que ficou `ready` com separation completion em `needs_attention` deve ser reconciliado por operação canônica/correção auditada, nunca por ID em migration.
 
-- [ ] **Step 2: Verify DB invariants in production**
+- [ ] **Step 2: Verify production DB invariants**
 
-Consultas de leitura devem confirmar:
-- um único gate fiscal efetivo de saída;
-- `ops3_complete_delivery_v1` exige fiscal autorizado + saída + pagamento;
-- readiness de pedido separado não exige `delivered`;
-- runtime automático segue desligado;
-- nenhuma NF-e duplicada no pedido canário.
+Confirmar: um gate fiscal efetivo de saída; entrega exige fiscal+saída+pagamento; readiness de separado não exige `delivered`; runtime automático off; nenhuma NF-e duplicada.
 
-- [ ] **Step 3: Verify actual Admin behavior**
+- [ ] **Step 3: Verify legacy orders**
 
-Fluxo controlado completo:
-`Confirmar → Separar → Fechar sheet → Emitir NF-e → Autorizar → DANFE → Sair para entrega → Confirmar forma recebida → Entregar`.
-Também executar cenário `NÃO ENTREGUE` sem pagamento.
+Abrir amostras não-PII de `out_for_delivery` e `delivered` antigos e confirmar que UI/status fiscal carregam sem exigir nova emissão, nova saída ou novo pagamento.
 
-- [ ] **Step 4: Run all official checks**
+- [ ] **Step 4: Verify complete controlled flow**
 
-Além do workflow de Pedidos, aguardar checks acionados por `vitrine/admin/index.html` e funções compartilhadas. Nenhum merge com CI pendente/vermelha.
+`Confirmar → Separar → fechar sheet → Emitir NF-e → Autorizar → DANFE → Sair → confirmar forma recebida → Entregar` e, em segundo cenário, `NÃO ENTREGUE` sem pagamento.
 
-- [ ] **Step 5: Review diff for dead/parallel code**
+- [ ] **Step 5: Run all official checks**
 
-Buscar rotas/controles fiscais antigos que ficaram sem consumidor. Remover somente código comprovadamente morto; não apagar tabelas históricas ou Edge Functions externas sem auditoria de consumidores.
+Aguardar workflows acionados pelo Admin e funções compartilhadas; nenhum merge com CI pendente/vermelha.
 
-- [ ] **Step 6: Open PR and merge**
+- [ ] **Step 6: Review dead/parallel code**
 
-PR deve listar: nova máquina de estados, gates, ações Admin, resultado do canário, runtime final e limitações conhecidas. Fazer merge somente com branch atualizada e verificação final verde.
+Remover somente rotas/controles fiscais comprovadamente sem consumidor. Não apagar tabelas históricas ou Edge Functions externas sem auditoria.
+
+- [ ] **Step 7: Open PR and merge**
+
+PR lista máquina de estados, gates, ações Admin, resultado do canário, runtime final e limitações. Merge somente com branch atualizada e verificação verde.
