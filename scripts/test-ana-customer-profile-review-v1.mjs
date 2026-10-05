@@ -13,6 +13,8 @@ const sql=fs.readFileSync(migration,'utf8');
 for(const token of ['ops2_admin_ana_customer_profile_review_v1','ops2_admin_ana_customer_profile_metrics_v1','ops2_admin_attendance_customer_access_v1(true)','reviewed_accepted','reviewed_rejected','ops2_valid_cpf_cnpj_v1'])assert.match(sql,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')),`review SQL deve conter ${token}`);
 assert.match(sql,/p_outcome[\s\S]*accepted[\s\S]*rejected/i,'review aceita somente accepted/rejected');
 assert.match(sql,/field_name\s*=\s*'cpf_cnpj'[\s\S]*ops2_valid_cpf_cnpj_v1/i,'CPF deve ser revalidado deterministicamente');
+assert.match(sql,/recommendation\s*=\s*'ignore'[\s\S]*suggestion_not_usable|suggestion_not_usable[\s\S]*recommendation/i,'sugestão marcada ignore não pode ser aceita como utilizável');
+assert.match(sql,/from\s+public\.customers[\s\S]*cpf_cnpj[\s\S]*cpf_cnpj_belongs_to_other_customer/i,'review deve bloquear CPF/CNPJ pertencente a outro cliente');
 assert.match(sql,/status\s*=\s*case[\s\S]*reviewed_accepted[\s\S]*reviewed_rejected/i,'review deve persistir status auditável');
 assert.equal(fs.readFileSync(mirror,'utf8'),sql,'espelho SQL deve ser idêntico');
 
