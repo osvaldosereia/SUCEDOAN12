@@ -38,16 +38,19 @@ assert.match(sql,/idempot/i,'materialização deve ser idempotente');
 assert.doesNotMatch(sql,/campaigns_enabled\s*=\s*true|mode\s*=\s*['"]live['"]|ana_enabled\s*=\s*true/i,'ponte não pode ativar runtime');
 assert.doesNotMatch(sql,/graph\.facebook\.com|http_post|net\.http/i,'ponte SQL não pode chamar Meta/HTTP');
 
-const edgePath='supabase/functions/admin-marketing-strategy-v1/index.ts';
+const edgePath='supabase/functions/admin-marketing-strategy-campaign-v1/index.ts';
+assert.equal(fs.existsSync(edgePath),true,'Edge Admin dedicada da ponte deve existir');
 const edge=fs.readFileSync(edgePath,'utf8');
+assert.match(edge,/db\.auth\.getUser\s*\(/,'Edge bridge deve validar sessão Admin');
+assert.match(edge,/from\(["']admin_users["']\)/,'Edge bridge deve exigir admin_users ativo');
 for(const action of ['materialize_campaign','approve_send','schedule_send','start_send']){
-  assert.ok(edge.includes(`"${action}"`)||edge.includes(`'${action}'`),`action ausente na Edge: ${action}`);
+  assert.ok(edge.includes(`"${action}"`)||edge.includes(`'${action}'`),`action ausente na Edge bridge: ${action}`);
 }
 for(const rpc of ['marketing_strategy_materialize_campaign_v1','marketing_strategy_approve_send_v1','marketing_strategy_schedule_send_v1']){
   assert.match(edge,new RegExp(`rpc\\(["']${rpc}["']`,'i'),`Edge deve delegar à RPC da ponte: ${rpc}`);
 }
-assert.doesNotMatch(edge,/marketing_materialize_dispatches_v1|marketing_claim_dispatch_batch_v1|sendTemplateViaMeta/i,'Edge de Estratégia não pode despachar diretamente');
-assert.doesNotMatch(edge,/campaigns_enabled\s*[:=]\s*true|ana_enabled\s*[:=]\s*true|runtime_mode\s*[:=]\s*["']live["']/i,'Edge não pode ativar runtime');
+assert.doesNotMatch(edge,/marketing_materialize_dispatches_v1|marketing_claim_dispatch_batch_v1|sendTemplateViaMeta|graph\.facebook\.com/i,'Edge bridge não pode despachar/chamar Meta diretamente');
+assert.doesNotMatch(edge,/campaigns_enabled\s*[:=]\s*true|ana_enabled\s*[:=]\s*true|runtime_mode\s*[:=]\s*["']live["']/i,'Edge bridge não pode ativar runtime');
 
 const uiPath='vitrine/admin/marketing/strategy-center.js';
 const ui=fs.readFileSync(uiPath,'utf8');
@@ -55,12 +58,14 @@ for(const label of ['Preparar campanha','Aprovar e enviar agora','Aprovar e agen
 assert.match(ui,/submit_template/,'UI deve permitir concluir Portão B pela Edge de Estratégia');
 assert.match(ui,/materialize_campaign/,'UI deve preparar campanha pelo bridge');
 assert.match(ui,/approve_send/,'UI deve registrar Portão C antes de agendar/enviar');
-assert.match(ui,/schedule_send/,'UI deve delegar agendamento à Edge');
-assert.match(ui,/start_send/,'UI deve delegar envio imediato à Edge');
+assert.match(ui,/schedule_send/,'UI deve delegar agendamento à Edge bridge');
+assert.match(ui,/start_send/,'UI deve delegar envio imediato à Edge bridge');
+assert.match(ui,/admin-marketing-strategy-campaign-v1/,'UI deve usar Edge bridge dedicada');
 assert.doesNotMatch(ui,/graph\.facebook\.com|META_WHATSAPP_ACCESS_TOKEN|service_role/i,'browser não pode conter Graph/token/service-role');
 
 const workflow=fs.readFileSync('.github/workflows/marketing-professional-ui-ci.yml','utf8');
 assert.ok(workflow.includes('scripts/test-marketing-strategy-campaign-bridge-v1.mjs'),'CI deve executar contrato da ponte Estratégia → Campanha');
+assert.ok(workflow.includes('supabase/functions/admin-marketing-strategy-campaign-v1/**'),'CI deve observar a Edge bridge');
 assert.ok(workflow.includes('scripts/test-admin-marketing-campaigns-v1.mjs'),'CI deve manter regressão do backend de campanhas');
 assert.ok(workflow.includes('scripts/test-whatsapp-marketing-worker-v1.mjs'),'CI deve manter regressão do worker existente');
 
