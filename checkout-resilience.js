@@ -320,3 +320,12 @@
 
   window.__DA_CHECKOUT_RESILIENCE__={CUTOFF_HOUR,applyStockAdjustment,confirmStockAdjustment,formatUnifiedPhone,liveCheckoutPhone,checkoutRegistrationDraft,registrationDraftComplete,existingRegistrationComplete,validateCheckoutBasics,showCheckoutValidation};
 })();
+
+// Public storefront recovery for constrained in-app browsers (Instagram/Facebook webviews).
+if (!window.__DA_INSTAGRAM_RESILIENCE_LOADED__) {
+  window.__DA_INSTAGRAM_RESILIENCE_LOADED__ = true;
+  const s=document.createElement('script');
+  s.src='/vitrine/instagram-resilience.js?v=20261005-1';
+  s.defer=true;
+  document.head.appendChild(s);
+}
