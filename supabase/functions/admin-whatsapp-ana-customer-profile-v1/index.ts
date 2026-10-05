@@ -47,8 +47,22 @@ Deno.serve(async(req:Request)=>{
     if(!SUPABASE_URL||!SUPABASE_ANON_KEY||!SUPABASE_SERVICE_ROLE_KEY)return json(req,{ok:false,error:"server_config"},500);
     const db=requestDb(req);const auth=await adminAuth(req,db);if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);
     const body=await req.json().catch(()=>({}));const action=clean(body?.action||"extract",30).toLowerCase();
-    const conversationId=validUuid(body?.conversation_id);if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
 
+    if(action==="review"){
+      const suggestionId=validUuid(body?.suggestion_id);const outcome=clean(body?.outcome,20).toLowerCase();
+      if(!suggestionId)return json(req,{ok:false,error:"suggestion_required"},400);
+      if(!["accepted","rejected"].includes(outcome))return json(req,{ok:false,error:"review_outcome_invalid"},400);
+      const reviewed=await db.rpc("ops2_admin_ana_customer_profile_review_v1",{p_suggestion_id:suggestionId,p_outcome:outcome});if(reviewed.error)throw reviewed.error;
+      const data=reviewed.data||{ok:false,error:"profile_review_failed"};if(data.ok!==true)return json(req,data,data.error==="admin_not_authorized"?403:409);
+      return json(req,data);
+    }
+    if(action==="metrics"){
+      const measured=await db.rpc("ops2_admin_ana_customer_profile_metrics_v1");if(measured.error)throw measured.error;
+      const data=measured.data||{ok:false,error:"profile_metrics_failed"};if(data.ok!==true)return json(req,data,data.error==="admin_not_authorized"?403:400);
+      return json(req,data);
+    }
+
+    const conversationId=validUuid(body?.conversation_id);if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
     if(action==="list"){
       const listed=await db.rpc("ops2_admin_ana_customer_profile_suggestions_v1",{p_conversation_id:conversationId});if(listed.error)throw listed.error;
       const data=listed.data||{ok:false,error:"suggestions_unavailable"};if(data.ok!==true)return json(req,data,data.error==="admin_not_authorized"?403:400);
