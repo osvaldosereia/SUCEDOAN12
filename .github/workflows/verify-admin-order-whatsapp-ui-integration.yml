@@ -8,31 +8,37 @@ on:
       - 'pedido/index.html'
       - 'p/index.html'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
+      - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
       - 'scripts/test-order-separation-preassembled-v3.mjs'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
       - 'scripts/test-order-public-summary.mjs'
       - 'supabase/migrations/*orders_clean_flow_v3*.sql'
+      - 'supabase/migrations/*orders_fiscal_flow_v4*.sql'
       - 'supabase/migrations/*order_separation_preassembled_components_v3*.sql'
       - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
       - 'supabase/functions/admin-order-vitrine-send-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
       - '.github/workflows/verify-admin-order-whatsapp-ui-integration.yml'
   push:
-    branches: [main, feat/orders-clean-flow-v3-20261004, fix/preassembled-separation-v3-20261004]
+    branches: [main, feat/orders-clean-flow-v3-20261004, fix/preassembled-separation-v3-20261004, feat/orders-fiscal-flow-v4-20261004]
     paths:
       - 'vitrine/admin/index.html'
       - 'pedido/index.html'
       - 'p/index.html'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
+      - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
       - 'scripts/test-order-separation-preassembled-v3.mjs'
       - 'scripts/test-admin-order-public-vitrine.mjs'
       - 'scripts/test-order-public-vitrine-print.mjs'
       - 'scripts/test-order-public-summary.mjs'
       - 'supabase/migrations/*orders_clean_flow_v3*.sql'
+      - 'supabase/migrations/*orders_fiscal_flow_v4*.sql'
       - 'supabase/migrations/*order_separation_preassembled_components_v3*.sql'
       - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
       - 'supabase/functions/admin-order-vitrine-send-v1/index.ts'
       - 'supabase/functions/order-public-view-v1/index.ts'
       - 'scripts/test-admin-order-whatsapp-ui-integration.mjs'
@@ -46,10 +52,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Orders V3 contract
+      - name: Orders V3 + V4 contracts
         run: |
           node scripts/test-admin-orders-clean-flow-v3.mjs
           node scripts/test-order-separation-preassembled-v3.mjs
+          node scripts/test-admin-orders-fiscal-flow-v4.mjs
       - name: Existing WhatsApp transport contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
       - name: Public order storefront and printing

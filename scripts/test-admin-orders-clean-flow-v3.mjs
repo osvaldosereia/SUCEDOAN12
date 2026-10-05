@@ -101,7 +101,7 @@ assert.match(detailBlock,/VITRINE CLIENTE/i,'Vitrine Cliente deve ficar dentro d
 assert.match(detailBlock,/REABRIR PEDIDO/i,'Pedido confirmado ainda não separado deve poder ser reaberto com segurança');
 assert.ok(!detailBlock.includes('Diagnóstico da integração'),'Pedido aberto não deve expor diagnóstico ERP/Bling no fluxo normal');
 assert.ok(!detailBlock.includes('Antes de separar, revise o Bling'),'Bling não deve bloquear separação na UI V3');
-assert.match(detailBlock,/o\.status===['"]delivered['"]/,'Fiscal só deve aparecer/ser operado depois de entregue');
+assert.match(detailBlock,/\['ready','out_for_delivery','delivered'\]\.includes\(o\.status\)/,'V4 substitui apenas o marco fiscal: o painel começa após a separação e o restante do fluxo V3 permanece canônico');
 
 assert.match(admin,/Forma prevista/,'Entrega deve mostrar forma prevista de pagamento');
 assert.match(admin,/Forma recebida/,'Entrega deve permitir registrar forma recebida');
