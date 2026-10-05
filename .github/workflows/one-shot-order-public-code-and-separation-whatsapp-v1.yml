@@ -1,0 +1,50 @@
+name: One-shot order public code and separation WhatsApp
+
+on:
+  push:
+    branches: [feat/order-public-code-and-separation-whatsapp-v1]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/order-public-code-and-separation-whatsapp-v1
+          fetch-depth: 0
+      - name: Apply surgical patch
+        run: python scripts/patch-order-public-code-and-separation-whatsapp-v1.py
+      - name: Contract tests
+        run: |
+          node scripts/test-order-customer-notifications-v1.mjs
+          node scripts/test-admin-order-whatsapp-ui-integration.mjs
+          node scripts/test-checkout-order-meta-cutover-v1.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-checkout-whatsapp-payload-audit.mjs
+          node scripts/test-admin-orders-clean-flow-v3.mjs
+          node scripts/test-order-separation-preassembled-v3.mjs
+          node scripts/test-order-public-summary.mjs
+          node scripts/test-admin-order-public-vitrine.mjs
+          node scripts/test-order-public-vitrine-print.mjs
+      - name: Diff check
+        run: git diff --check
+      - name: Commit patch
+        run: |
+          if git diff --quiet; then
+            echo 'No patch changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/functions/admin-orders-v1/index.ts \
+                  supabase/functions/admin-products-live-v1/index.ts \
+                  supabase/functions/admin-order-vitrine-send-v1/index.ts \
+                  vitrine/admin/index.html \
+                  scripts/test-admin-order-whatsapp-ui-integration.mjs \
+                  scripts/test-checkout-order-meta-cutover-v1.mjs \
+                  scripts/test-checkout-whatsapp-payload-audit.mjs
+          git commit -m 'feat: unificar codigo do pedido e avisos da separacao'
+          git push origin HEAD:feat/order-public-code-and-separation-whatsapp-v1
