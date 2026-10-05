@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'vitrine/admin/marketing/**'
+      - 'vitrine/admin/marketing/strategy-center.js'
+      - 'vitrine/admin/marketing/strategy-center.css'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
       - 'supabase/functions/admin-marketing-campaigns-v1/**'
       - 'supabase/functions/admin-marketing-strategy-v1/**'
@@ -14,6 +16,7 @@ on:
       - 'scripts/test-admin-marketing-strategy-v1.mjs'
       - 'scripts/test-admin-marketing-campaigns-v1.mjs'
       - 'scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-strategy-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-professional-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-papoai-shell-v1.mjs'
       - 'scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs'
@@ -40,6 +43,8 @@ jobs:
         run: node scripts/test-marketing-strategy-engine-v1.mjs
       - name: Marketing strategy Admin API contract
         run: node scripts/test-admin-marketing-strategy-v1.mjs
+      - name: Marketing strategy UI contract
+        run: node scripts/test-whatsapp-marketing-strategy-ui-v1.mjs
       - name: Existing campaigns backend regression
         run: node scripts/test-admin-marketing-campaigns-v1.mjs
       - name: Existing campaign drafts regression
@@ -68,6 +73,8 @@ jobs:
         run: node scripts/test-whatsapp-marketing-audience-progressive-v1.mjs
       - name: Marketing polish syntax
         run: node --check vitrine/admin/marketing/marketing-polish.js
+      - name: Marketing strategy center syntax
+        run: node --check vitrine/admin/marketing/strategy-center.js
       - name: Campaign entry syntax
         run: node --check vitrine/admin/marketing/campaign-entry.js
       - name: Existing audience UI regression
