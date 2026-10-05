@@ -42,6 +42,6 @@ assert.match(api,/recipe_kits_save/,'guided admin API must expose recipe_kits_sa
 assert.match(api,/rpc\("basket_recipe_kits_v1"/,'model editor must load linked recipe kits');
 assert.match(api,/rpc\("save_basket_recipe_kits_v1"/,'API must save linked recipe kits through canonical RPC');
 assert.match(api,/recipe_kits\s*:/,'model editor response must include recipe_kits');
-assert.match(api,/auth\.role==="viewer"[\s\S]{0,220}MUTATIONS/i,'viewer must remain read-only');
+assert.match(api,/MUTATIONS[\s\S]{0,220}auth\.role==="viewer"/i,'viewer must remain read-only');
 
 console.log('basket recipe kit links v1: PASS');
