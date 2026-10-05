@@ -44,3 +44,7 @@ jobs:
       - run: node scripts/test-basket-carousel-browser.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
+
+      - run: node scripts/test-basket-home-browser.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
