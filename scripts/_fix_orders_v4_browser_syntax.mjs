@@ -17,5 +17,12 @@ replaceOnce(
   "if(!confirm('EMITIR NF-e do pedido #'+shortOrder(o.order_number||o.id)+' agora?\\n\\nA emissão será enviada ao Bling/SEFAZ.'))return;",
   'fiscal_confirm_newline'
 );
+replaceOnce(
+  "  async function openDanfeForOrder\n  async function openDanfeForOrder(id,orderNumber=''){",
+  "  async function openDanfeForOrder(id,orderNumber=''){",
+  'orphan_openDanfeForOrder'
+);
+const orphan=/^\s*async function\s+([A-Za-z_$][\w$]*)\s*$\n\s*async function\s+\1\s*\(/m.exec(s);
+if(orphan)throw new Error('remaining_orphan_async_signature:'+orphan[1]);
 fs.writeFileSync(file,s);
 console.log('Pedidos V4 browser syntax fixes applied');
