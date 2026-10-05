@@ -62,7 +62,17 @@ assert.match(printBinding,/printBasketKitLot\(m\.operational_lot_id\)/,'Imprimir
 
 assert.doesNotMatch(admin,/id="basketProductSuggestions"/,'legacy broken Sugestões de produtos button must not be exposed in the canonical top toolbar');
 
+const archiveStart=admin.indexOf('async function archiveBasketKitTemplate');
+const archiveEnd=admin.indexOf('\n  function basketKitDraftCapacityFromItems',archiveStart+1);
+assert.ok(archiveStart>=0&&archiveEnd>archiveStart,'commercial model archive block must exist');
+const archiveBlock=admin.slice(archiveStart,archiveEnd);
+assert.match(archiveBlock,/basket_archive/,'linked commercial model deletion must archive the basket model, not only its internal kit template');
+assert.match(archiveBlock,/basket_has_live_lots/,'model deletion must explain live-lot safety block');
+
 const createSql=fs.readFileSync('supabase/sql/20261004_basket_commercial_create_v1.sql','utf8');
 assert.match(createSql,/v_prefix\s*:=\s*chr\([^;]+\)\s*\|\|\s*chr\(/i,'commercial model prefix must concatenate text with || in PostgreSQL');
+const archiveSql=fs.readFileSync('supabase/sql/20261005_basket_commercial_archive_fix_v1.sql','utf8');
+assert.match(archiveSql,/update\s+public\.basket_kit_templates[\s\S]*is_active\s*=\s*false/i,'commercial archive must deactivate its internal kit template atomically');
+assert.match(archiveSql,/basket_has_live_lots/i,'commercial archive must reject live lots before archiving');
 
 console.log('basket guided builder UI v1: PASS');
