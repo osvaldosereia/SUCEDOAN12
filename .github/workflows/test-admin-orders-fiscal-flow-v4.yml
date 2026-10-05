@@ -6,6 +6,7 @@ on:
       - main
       - 'feat/orders-fiscal-flow-v4-*'
       - 'fix/separation-verified-gate-v4-*'
+      - 'fix/separation-completion-feedback-v4-*'
     paths:
       - 'vitrine/admin/index.html'
       - 'pedido/index.html'
@@ -16,6 +17,7 @@ on:
       - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
       - 'scripts/test-order-separation-verified-gate-v4.mjs'
+      - 'scripts/test-order-separation-completion-feedback-v4.mjs'
       - '.github/workflows/test-admin-orders-fiscal-flow-v4.yml'
   pull_request:
     branches: [main]
@@ -29,6 +31,7 @@ on:
       - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
       - 'scripts/test-order-separation-verified-gate-v4.mjs'
+      - 'scripts/test-order-separation-completion-feedback-v4.mjs'
       - '.github/workflows/test-admin-orders-fiscal-flow-v4.yml'
 
 permissions:
@@ -46,6 +49,8 @@ jobs:
         run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
       - name: Separação aceita como conferência para Verificado
         run: node scripts/test-order-separation-verified-gate-v4.mjs
+      - name: Conclusão da separação e parcelas Bling
+        run: node scripts/test-order-separation-completion-feedback-v4.mjs
       - name: Pedidos V3 regression
         run: node scripts/test-admin-orders-clean-flow-v3.mjs
       - name: Browser JavaScript syntax
