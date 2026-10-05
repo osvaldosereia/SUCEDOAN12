@@ -14,6 +14,19 @@ function loadReportModule(){if(!reportModulePromise)reportModulePromise=import('
 async function openReport(campaignId){const module=await loadReportModule();return module.openCampaignReport(campaignId)}
 async function apiGet(action,params={}){const url=new URL(CAMPAIGN_API);url.searchParams.set('action',action);for(const [key,value] of Object.entries(params))if(value!==undefined&&value!==null&&value!=='')url.searchParams.set(key,String(value));const response=await attendanceAuthorizedFetch(url,{method:'GET',headers:{apikey:ADMIN_PUBLIC_KEY},cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||`campaign_${response.status}`);return data}
 
+async function loadRecentCampaigns(limit=3){
+  const data=await apiGet('list');
+  const safeLimit=Math.max(1,Math.min(5,Number(limit)||3));
+  const items=Array.isArray(data.items)?data.items:[];
+  return items.slice(0,safeLimit).map(item=>({
+    id:String(item.id||''),
+    name:String(item.name||'Campanha'),
+    status:String(item.status||''),
+    status_label:STATUS_LABELS[item.status]||String(item.status||'—'),
+    date:item.scheduled_for||item.started_at||item.updated_at||item.created_at||null
+  }));
+}
+
 function filterToolbar(){return `<div class="marketing-simple-campaign-toolbar"><label><span>Pesquisar</span><input type="search" data-simple-campaign-search placeholder="Nome da campanha"></label><label><span>Situação</span><select data-simple-campaign-status><option value="">Todas</option>${Object.entries(STATUS_LABELS).map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select></label><label><span>Canal</span><select data-simple-campaign-channel><option value="">Todos</option><option value="0975">0975</option><option value="1018">1018</option></select></label></div>`}
 function tableShell(){return `${filterToolbar()}<div class="marketing-simple-campaign-table-wrap"><table class="marketing-simple-campaign-table"><thead><tr><th>Nome</th><th>Data de disparo</th><th>Destinatários</th><th>Canal</th><th>Status</th><th>Ações</th><th>Relatório</th></tr></thead><tbody data-simple-campaign-rows></tbody></table></div>`}
 
@@ -47,5 +60,5 @@ async function buildSimpleList(center,legacyHost){
 function enhanceCampaignList(root=document.querySelector('#content')){const center=root?.querySelector?.('.marketing-campaign-center');const legacyHost=center?.querySelector?.('[data-campaign-list]');if(!center||!legacyHost||legacyHost.classList.contains('marketing-campaign-loading'))return;buildSimpleList(center,legacyHost)}
 function observe(){if(observerStarted)return;observerStarted=true;const observer=new MutationObserver(()=>queueMicrotask(()=>enhanceCampaignList()));observer.observe(document.documentElement,{subtree:true,childList:true});enhanceCampaignList()}
 observe();
-window.DAMarketingCampaignListSimple={enhanceCampaignList};
-export {enhanceCampaignList};
+window.DAMarketingCampaignListSimple={enhanceCampaignList,loadRecentCampaigns};
+export {enhanceCampaignList,loadRecentCampaigns};
