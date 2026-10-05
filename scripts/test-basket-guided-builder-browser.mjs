@@ -12,6 +12,9 @@ try{
   await page.addScriptTag({content:`
     window.calls=[];
     window.saleCalls=[];
+    window.modelName='Econômica Bonini';
+    window.modelPrice=92;
+    window.modelCategory='cat1';
     window.confirm=()=>true;
     window.alert=()=>{};
     window.DonaAntoniaAdminBridge={
@@ -24,10 +27,15 @@ try{
     window.fetch=async(url,options={})=>{
       const body=JSON.parse(options.body||'{}');window.calls.push(body);
       const action=body.action;let payload={ok:true};
-      if(action==='model_editor')payload={ok:true,categories:[{id:'cat1',name:'Cestas Só Alimento',slug:'cestas-so-alimento',is_active:true}],model:{basket:{id:'basket',name:'Econômica Bonini',base_price:92,category_id:'cat1',image_url:'',is_active:true},kit_template:{id:'kit',name:'Econômica Bonini'},positions:[{id:'pos1',product_id:'rice',product_name:'Arroz 5kg',price:20,quantity:1,position_label:'Arroz',family_key:'arroz',search_query:null,removable:true,quantity_editable:true,min_quantity:0,max_quantity:null}]}};
+      if(action==='model_editor')payload={ok:true,categories:[{id:'cat1',name:'Cestas Só Alimento',slug:'cestas-so-alimento',is_active:true}],model:{basket:{id:'basket',name:window.modelName,base_price:window.modelPrice,category_id:window.modelCategory,image_url:'',is_active:true},kit_template:{id:'kit',name:window.modelName},positions:[{id:'pos1',product_id:'rice',product_name:'Arroz 5kg',price:20,quantity:1,position_label:'Arroz',family_key:'arroz',search_query:null,removable:true,quantity_editable:true,min_quantity:0,max_quantity:null}]}};
       else if(action==='position_products')payload={ok:true,source:'family',family_key:'arroz',family_label:'Arroz',family_enabled:true,products:[{id:'rice',name:'Arroz 5kg',sku:'P1',gtin:'7891',packaging:'5kg',image_url:'',cost_price:15,sale_price:20,effective_sellable_stock:30,basket_locked_quantity:5,loose_stock:25,is_active:true,selectable:true},{id:'rice2',name:'Arroz Premium 5kg',sku:'P2',gtin:'7892',packaging:'5kg',image_url:'',cost_price:17,sale_price:23,effective_sellable_stock:8,basket_locked_quantity:8,loose_stock:0,is_active:true,selectable:false}],total:2,next_offset:null};
       else if(action==='linkable_lots')payload={ok:true,lots:[{id:'clean1',basket_id:'clean-basket',short_code:'LH1',lot_code:'LOT-LH1',status:'ready',assembly_status:'mounted',sale_enabled:false,quantity_built:10,quantity_available:10,public_name:'Kit Limpeza Essencial',business_type:'cleaning_hygiene',sale_price_override:30,linked_lot_id:null,items:[{product_id:'soap',quantity_per_basket:1,loose_stock:14,product:{id:'soap',name:'Sabão em pó',sku:'S1',gtin:'7901',packaging:'800g',image_url:'',cost:8,price:12}}]}]};
-      else if(action==='model_save')payload={ok:true,model:{ok:true,item_count:1}};
+      else if(action==='model_save'){
+        window.modelName=body.commercial?.name||window.modelName;
+        window.modelPrice=Number(body.commercial?.base_price??window.modelPrice);
+        window.modelCategory=body.commercial?.category_id||window.modelCategory;
+        payload={ok:true,model:{ok:true,item_count:1}};
+      }
       else if(action==='lot_preview')payload={ok:true,preview:{ok:true,requirements:[{product_id:'rice',name:'Arroz 5kg',quantity_per_basket:1,required:10,available:25,balance_after:15,ok:true}],component_sum:20,cost_sum:15,sale_price:92,hidden_adjustment:72}};
       else if(action==='lot_reserve')payload={ok:true,lot:{ok:true,lot_id:'lot1',short_code:'EB1',status:'draft',assembly_status:'assembling',quantity_built:10,quantity_available:0,sale_enabled:false,public_name:body.public_name,sale_price_override:body.sale_price,linked_lot_id:body.linked_lot_id}};
       else if(action==='lot_update')payload={ok:true,lot:{ok:true,lot_id:'lot1',short_code:'EB1',status:'draft',assembly_status:'assembling',quantity_built:10,quantity_available:0,sale_enabled:false,public_name:body.public_name,sale_price_override:body.sale_price,linked_lot_id:body.linked_lot_id}};
