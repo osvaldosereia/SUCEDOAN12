@@ -1,0 +1,24 @@
+name: Temporary guided builder v2 patch
+on:
+  push:
+    branches:
+      - refactor/baskets-canonical-section-20261005
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[guided-v2-patch-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/baskets-canonical-section-20261005
+      - run: python scripts/tmp-patch-guided-builder-v2.py
+      - name: Commit guided builder v2
+        run: |
+          if git diff --quiet -- vitrine/admin/basket-guided-builder.js; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vitrine/admin/basket-guided-builder.js
+          git commit -m 'refactor: alinhar editor guiado ao runtime canônico [guided-v2-patch-applied]'
+          git push origin HEAD:refactor/baskets-canonical-section-20261005
