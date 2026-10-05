@@ -1,6 +1,9 @@
 const ROOT_SELECTOR='#content';
+const PRIMARY_MARKETING_VIEWS=['overview','templates','campaigns','audiences'];
+const PRIMARY_MARKETING_LABELS={overview:'Visão geral',templates:'Templates',campaigns:'Campanhas',audiences:'Públicos'};
 const ADVANCED_FILTERS=['product_ids','last_purchase_after','last_purchase_before','inactive_days','min_order_count','max_order_count','min_lifetime_value','max_lifetime_value'];
 let scheduled=false;
+let consentModulePromise=null;
 
 const text=value=>String(value?.textContent||'').trim();
 
@@ -18,16 +21,59 @@ function activeView(root){
   return root.querySelector('[data-marketing-subnav] [data-marketing-view].active')?.dataset?.marketingView||'overview';
 }
 
+function loadConsentModule(){
+  if(window.DAMarketingAudienceCenter?.mountConsentView)return Promise.resolve(window.DAMarketingAudienceCenter);
+  if(!consentModulePromise)consentModulePromise=import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1');
+  return consentModulePromise;
+}
+
+function ensureAdminConsentsAction(root,nav){
+  let more=nav.querySelector('[data-marketing-admin-more]');
+  if(!more){
+    more=document.createElement('details');
+    more.className='marketing-admin-more';
+    more.dataset.marketingAdminMore='1';
+    more.innerHTML='<summary>Mais</summary><button type="button" data-marketing-admin-consents>Consentimentos</button>';
+    const gate=nav.querySelector('.marketing-campaign-gate');
+    if(gate)nav.insertBefore(more,gate);else nav.appendChild(more);
+    more.querySelector('[data-marketing-admin-consents]')?.addEventListener('click',async()=>{
+      try{
+        const module=await loadConsentModule();
+        more.open=false;
+        await module.mountConsentView(root);
+      }catch(error){console.warn('marketing-consents-load',String(error?.message||error).slice(0,160))}
+    });
+  }
+}
+
 function polishNav(root){
   const nav=root.querySelector('[data-marketing-subnav]');
   if(!nav)return;
-  const labels={overview:'Visão geral',templates:'Templates',audiences:'Públicos',campaigns:'Campanhas',consents:'Consentimentos'};
   nav.querySelectorAll('[data-marketing-view]').forEach(button=>{
-    const label=labels[button.dataset.marketingView];
-    if(label)setText(button,label);
+    const view=String(button.dataset.marketingView||'');
+    if(!PRIMARY_MARKETING_VIEWS.includes(view)){button.remove();return}
+    setText(button,PRIMARY_MARKETING_LABELS[view]);
     if(button.classList.contains('active'))button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
   });
+  const gate=nav.querySelector('.marketing-campaign-gate');
+  for(const view of PRIMARY_MARKETING_VIEWS){
+    const button=nav.querySelector(`[data-marketing-view="${view}"]`);
+    if(button)nav.insertBefore(button,gate||null);
+  }
+  ensureAdminConsentsAction(root,nav);
   setText(nav.querySelector('.marketing-campaign-gate'),'Envios desativados');
+}
+
+function removeDuplicateMarketingHeads(root){
+  const heads=[...root.querySelectorAll('.page-head')].filter(head=>text(head.querySelector('h1'))==='Marketing');
+  heads.slice(1).forEach(head=>head.remove());
+}
+
+function removeDuplicateGateBadges(root){
+  const gates=[...root.querySelectorAll('.marketing-campaign-gate')];
+  if(gates.length<2)return;
+  const primary=root.querySelector('[data-marketing-subnav] .marketing-campaign-gate')||gates[0];
+  gates.forEach(gate=>{if(gate!==primary)gate.remove()});
 }
 
 function polishOverview(root){
@@ -72,8 +118,9 @@ function polishAudience(root){
   const center=root.querySelector('.marketing-audience-center');
   if(!center)return;
   const view=activeView(root);
+  const isConsentView=Boolean(center.querySelector('[data-consent-search],[data-consent-detail]'));
   const head=center.querySelector('.page-head');
-  if(view==='audiences'){
+  if(view==='audiences'&&!isConsentView){
     setText(head?.querySelector('p'),'Crie segmentos de clientes usando localização, compras, marcas e etiquetas.');
     const section=center.querySelector('.marketing-audience-section-head');
     setText(section?.querySelector('h2'),'Públicos');
@@ -84,7 +131,7 @@ function polishAudience(root){
     setText(form?.querySelector('[data-clear-filters]'),'Limpar');
     setText(form?.querySelector('[data-create-campaign-from-audience]'),'Criar campanha');
   }
-  if(view==='consents'){
+  if(isConsentView){
     setText(head?.querySelector('p'),'Histórico de autorização para mensagens de marketing.');
     const section=center.querySelector('.marketing-audience-section-head');
     setText(section?.querySelector('h2'),'Consentimentos');
@@ -121,6 +168,8 @@ function polishCampaigns(root){
 function polishShared(root){
   root.classList.add('marketing-pro-shell');
   polishNav(root);
+  removeDuplicateMarketingHeads(root);
+  removeDuplicateGateBadges(root);
   polishOverview(root);
   polishTemplates(root);
   polishAudience(root);
