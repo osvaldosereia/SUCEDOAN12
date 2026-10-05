@@ -3,14 +3,26 @@
 
   const KIT_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-kit-builder-v1';
   const state={
-    kits:[],chips:[],products:[],mostUsed:[],draft:null,stockAuthority:'legacy_shadow',savingProductIds:new Set(),
+    kits:[],chips:[],products:[],mostUsed:[],draft:null,
+    stockAuthority:'legacy_shadow',savingProductIds:new Set(),
     host:null,query:'',nextOffset:null,loading:false,searchTimer:null,chipManagerOpen:false
   };
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]||c));
   const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
   const qty=v=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:3}).format(Number(v||0));
 
   function bridge(){return window.DonaAntoniaAdminBridge||{}}
+  function toast(message){const b=bridge();if(typeof b.toast==='function')b.toast(message);else console.warn(message)}
+  function operator(){const b=bridge();return typeof b.operator==='function'?(b.operator()||'Operação'):'Operação'}
+  function numberValue(value){
+    const raw=String(value??'').trim().replace(/\s+/g,'').replace(',','.');
+    if(raw==='')return null;
+    const n=Number(raw);return Number.isFinite(n)?n:null;
+  }
+  function cents(value){return Math.round(Number(value||0)*100)}
+  function errorCode(error){return String(error?.error||error?.data?.error||error?.payload?.error||error?.message||'')}
+
   function api(action,params={},options={}){
     const b=bridge();
     if(typeof b.api!=='function')return Promise.reject(new Error('admin_bridge_unavailable'));
@@ -25,7 +37,7 @@
     const t=await token();
     const verb=String(method||'GET').toUpperCase();
     let url=KIT_API+'?action='+encodeURIComponent(action);
-    const options={method:verb,headers:{'Authorization':'Bearer '+t},cache:'no-store'};
+    const options={method:verb,headers:{Authorization:'Bearer '+t},cache:'no-store'};
     if(verb==='GET'){
       const q=new URLSearchParams();
       Object.entries(payload||{}).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')q.set(k,String(v))});
@@ -39,29 +51,21 @@
     if(!res.ok||data?.ok===false){const e=new Error(data?.error||'kit_builder_request_failed');e.data=data;e.status=res.status;throw e}
     return data;
   }
-  function toast(message){
-    const b=bridge();
-    if(typeof b.toast==='function')b.toast(message);
-    else console.warn(message);
+
+  function emptyDraft(){return {kit_id:null,name:'',type:'food',notes:'',source_kit_id:null,items:[]}}
+  function setProducts(rows){
+    state.products=Array.isArray(rows)?rows:[];
+    const authority=state.products.find(p=>p?.stock_authority)?.stock_authority;
+    if(authority)state.stockAuthority=authority;
   }
-  function operator(){
-    const b=bridge();
-    return typeof b.operator==='function'?(b.operator()||'Operação'):'Operação';
-  }
-  function numberValue(value){
-    const raw=String(value??'').trim().replace(/\s+/g,'').replace(',','.');
-    if(raw==='')return null;
-    const n=Number(raw);
-    return Number.isFinite(n)?n:null;
-  }
-  function cents(value){return Math.round(Number(value||0)*100)}
-  function errorCode(error){return String(error?.error||error?.data?.error||error?.payload?.error||error?.message||'')}
+  function setMostUsed(rows){state.mostUsed=Array.isArray(rows)?rows:[]}
+  function setDraft(value){state.draft=value||emptyDraft()}
 
   function replaceProduct(next){
     if(!next?.id)return;
     for(const list of [state.products,state.mostUsed]){
-      const idx=list.findIndex(p=>String(p.id)===String(next.id));
-      if(idx>=0)list[idx]={...list[idx],...next};
+      const index=list.findIndex(p=>String(p.id)===String(next.id));
+      if(index>=0)list[index]={...list[index],...next};
     }
     if(state.draft?.items){
       state.draft.items=state.draft.items.map(item=>String(item.product_id)===String(next.id)?{...item,product:{...(item.product||{}),...next}}:item);
@@ -76,7 +80,6 @@
     const nextCost=Object.prototype.hasOwnProperty.call(changes,'cost')?numberValue(changes.cost):Number(product?.cost_price||0);
     const nextPrice=Object.prototype.hasOwnProperty.call(changes,'price')?numberValue(changes.price):Number(product?.sale_price||0);
     const nextStock=Object.prototype.hasOwnProperty.call(changes,'stock')?numberValue(changes.stock):Number(product?.physical_stock||0);
-
     if(nextCost===null||nextCost<0)throw new Error('invalid_cost: Custo não pode ser negativo.');
     if(nextPrice===null||nextPrice<0)throw new Error('invalid_price: Preço de venda não pode ser negativo.');
     if(nextStock===null||nextStock<0)throw new Error('invalid_stock: Estoque não pode ser negativo.');
@@ -126,22 +129,18 @@
     }finally{state.savingProductIds.delete(productId)}
   }
 
-  function emptyDraft(){return {kit_id:null,name:'',type:'food',notes:'',source_kit_id:null,items:[]}}
-  function setProducts(rows){
-    state.products=Array.isArray(rows)?rows:[];
-    const authority=state.products.find(p=>p?.stock_authority)?.stock_authority;
-    if(authority)state.stockAuthority=authority;
-  }
-  function setMostUsed(rows){state.mostUsed=Array.isArray(rows)?rows:[]}
-  function setDraft(value){state.draft=value||emptyDraft()}
-
   function ensureStyles(){
     if(document.getElementById('kitBuilderStyles'))return;
     const style=document.createElement('style');style.id='kitBuilderStyles';style.textContent=`
-      .kit-builder-workspace{display:grid;grid-template-columns:minmax(330px,1.15fr) minmax(310px,.95fr) minmax(290px,.9fr);gap:12px;align-items:start}
-      .kb-col{background:#fff;border:1px solid #e3e8e4;border-radius:16px;min-height:620px;overflow:hidden}.kb-col-head{padding:13px 14px;border-bottom:1px solid #e8ece9;display:flex;align-items:center;gap:8px}.kb-col-head>div{min-width:0;flex:1}.kb-col-head h3{margin:0;font-size:16px}.kb-col-head small{color:#6b756f}.kb-body{padding:12px}.kb-search{display:flex;gap:7px}.kb-search input{flex:1;min-width:0;min-height:42px;border:1px solid #dce3de;border-radius:10px;padding:9px 11px}.kb-search button,.kb-btn{min-height:38px;border:1px solid #d9e0db;background:#fff;border-radius:9px;padding:0 10px;font-weight:800}.kb-btn.primary{background:#176b43;color:#fff;border-color:#176b43}.kb-btn.danger{color:#9d2235}.kb-btn.compact{min-height:32px;padding:0 8px;font-size:11px}.kb-chip-wrap{display:flex;align-items:center;gap:6px;margin:9px 0}.kb-chips{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;flex:1;min-width:0;padding:2px 1px 5px;scrollbar-width:thin}.kb-chip{flex:0 0 auto;border:1px solid #dfe5e1;background:#f7f9f7;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800;white-space:nowrap}.kb-chip-manage{flex:0 0 auto}.kb-chip-manager{border:1px solid #dfe5e1;background:#fafcfb;border-radius:12px;padding:9px;margin:8px 0}.kb-chip-manager h4{margin:0 0 7px;font-size:12px}.kb-chip-row{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(120px,1fr) auto;gap:6px;align-items:end;padding:7px 0;border-top:1px solid #edf0ee}.kb-chip-row:first-of-type{border-top:0}.kb-chip-row label span{display:block;font-size:8px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-chip-row input{width:100%;min-height:34px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-chip-actions{display:flex;gap:4px;flex-wrap:wrap}.kb-section-title{display:flex;align-items:center;gap:7px;margin:12px 0 7px;font-size:12px;font-weight:900}.kb-products{display:grid;gap:8px}.kb-product{border:1px solid #e0e6e2;border-radius:12px;padding:9px;display:grid;grid-template-columns:72px 1fr;gap:9px}.kb-product img{width:72px;height:72px;object-fit:contain;background:#fafafa;border-radius:9px}.kb-product h4{margin:0 0 2px;font-size:12px;line-height:1.25}.kb-product .meta{font-size:9px;color:#6c766f}.kb-stock-grid,.kb-price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px}.kb-price-grid{grid-template-columns:1fr 1fr}.kb-metric{background:#f5f7f5;border-radius:7px;padding:5px}.kb-metric small{display:block;font-size:8px;color:#6d7770}.kb-metric strong{font-size:10px}.kb-product-actions{display:flex;gap:5px;margin-top:7px}.kb-product-actions button{flex:1}.kb-inline{grid-column:1/-1;background:#f7faf8;border-radius:9px;padding:8px;display:none}.kb-product.editing .kb-inline{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px}.kb-inline label span{display:block;font-size:8px;color:#66716a;font-weight:800}.kb-inline input{width:100%;min-height:35px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-draft-fields{display:grid;gap:8px}.kb-draft-fields input,.kb-draft-fields select,.kb-draft-fields textarea{width:100%;border:1px solid #dce3de;border-radius:9px;padding:8px 10px;background:#fff}.kb-draft-fields input,.kb-draft-fields select{min-height:40px}.kb-draft-fields label span{display:block;font-size:9px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-items{display:grid;gap:7px;margin-top:10px}.kb-item{display:grid;grid-template-columns:1fr 78px 34px;gap:6px;align-items:center;border:1px solid #e2e7e4;border-radius:10px;padding:8px}.kb-item strong{font-size:11px}.kb-item small{display:block;color:#6d7770;font-size:9px}.kb-item input{width:100%;min-height:36px;border:1px solid #dce3de;border-radius:8px;padding:6px}.kb-summary{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}.kb-summary div{background:#f2f6f3;border-radius:9px;padding:8px}.kb-summary small{display:block;color:#66716a;font-size:9px}.kb-summary strong{font-size:13px}.kb-draft-actions{display:flex;gap:7px}.kb-draft-actions button{flex:1}.kb-saved{display:grid;gap:7px}.kb-saved-card{border:1px solid #e1e6e2;border-radius:11px;padding:9px}.kb-saved-card h4{margin:0 0 3px;font-size:12px}.kb-saved-meta{display:flex;gap:8px;flex-wrap:wrap;color:#68736c;font-size:9px}.kb-saved-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}.kb-empty{padding:18px;text-align:center;color:#68736c;font-size:11px}.kb-more{width:100%;margin-top:8px}.kb-authority{font-size:9px;color:#66716a;margin-top:7px}.kb-loading{opacity:.65;pointer-events:none}
+      .kit-builder-workspace{display:grid;grid-template-columns:minmax(330px,1.15fr) minmax(310px,.95fr) minmax(290px,.9fr);gap:12px;align-items:start;max-width:100%}
+      .kb-col{background:#fff;border:1px solid #e3e8e4;border-radius:16px;min-height:620px;overflow:hidden;min-width:0}.kb-col-head{padding:13px 14px;border-bottom:1px solid #e8ece9;display:flex;align-items:center;gap:8px}.kb-col-head>div{min-width:0;flex:1}.kb-col-head h3{margin:0;font-size:16px}.kb-col-head small{color:#6b756f}.kb-body{padding:12px;min-width:0}.kb-search{display:flex;gap:7px}.kb-search input{flex:1;min-width:0;min-height:42px;border:1px solid #dce3de;border-radius:10px;padding:9px 11px}.kb-search button,.kb-btn{min-height:38px;border:1px solid #d9e0db;background:#fff;border-radius:9px;padding:0 10px;font-weight:800}.kb-btn.primary{background:#176b43;color:#fff;border-color:#176b43}.kb-btn.danger{color:#9d2235}.kb-btn.compact{min-height:32px;padding:0 8px;font-size:11px}
+      .kb-chip-wrap{display:flex;align-items:center;gap:6px;margin:9px 0;min-width:0}.kb-chips{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;flex:1;min-width:0;padding:2px 1px 5px;scrollbar-width:thin}.kb-chip{flex:0 0 auto;border:1px solid #dfe5e1;background:#f7f9f7;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800;white-space:nowrap}.kb-chip-manage{flex:0 0 auto}.kb-chip-manager{border:1px solid #dfe5e1;background:#fafcfb;border-radius:12px;padding:9px;margin:8px 0}.kb-chip-manager h4{margin:0 0 7px;font-size:12px}.kb-chip-row{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(120px,1fr) auto;gap:6px;align-items:end;padding:7px 0;border-top:1px solid #edf0ee}.kb-chip-row:first-of-type{border-top:0}.kb-chip-row label span{display:block;font-size:8px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-chip-row input{width:100%;min-height:34px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-chip-actions{display:flex;gap:4px;flex-wrap:wrap}
+      .kb-section-title{display:flex;align-items:center;gap:7px;margin:12px 0 7px;font-size:12px;font-weight:900}.kb-products{display:grid;gap:8px}.kb-product{border:1px solid #e0e6e2;border-radius:12px;padding:9px;display:grid;grid-template-columns:72px minmax(0,1fr);gap:9px}.kb-product img{width:72px;height:72px;object-fit:contain;background:#fafafa;border-radius:9px}.kb-product h4{margin:0 0 2px;font-size:12px;line-height:1.25}.kb-product .meta{font-size:9px;color:#6c766f;overflow-wrap:anywhere}.kb-stock-grid,.kb-price-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}.kb-price-grid{grid-template-columns:1fr 1fr}.kb-metric{background:#f5f7f5;border-radius:7px;padding:5px;min-width:0}.kb-metric small{display:block;font-size:8px;color:#6d7770}.kb-metric strong{font-size:10px}.kb-product-actions{display:flex;gap:5px;margin-top:7px}.kb-product-actions button{flex:1}.kb-inline{grid-column:1/-1;background:#f7faf8;border-radius:9px;padding:8px;display:none}.kb-product.editing .kb-inline{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px}.kb-inline label span{display:block;font-size:8px;color:#66716a;font-weight:800}.kb-inline input{width:100%;min-height:35px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}
+      .kb-draft-fields{display:grid;gap:8px}.kb-draft-fields input,.kb-draft-fields select,.kb-draft-fields textarea{width:100%;border:1px solid #dce3de;border-radius:9px;padding:8px 10px;background:#fff}.kb-draft-fields input,.kb-draft-fields select{min-height:40px}.kb-draft-fields label span{display:block;font-size:9px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-items{display:grid;gap:7px;margin-top:10px}.kb-item{display:grid;grid-template-columns:minmax(0,1fr) 78px 34px;gap:6px;align-items:center;border:1px solid #e2e7e4;border-radius:10px;padding:8px}.kb-item strong{font-size:11px}.kb-item small{display:block;color:#6d7770;font-size:9px}.kb-item input{width:100%;min-height:36px;border:1px solid #dce3de;border-radius:8px;padding:6px}.kb-summary{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}.kb-summary div{background:#f2f6f3;border-radius:9px;padding:8px}.kb-summary small{display:block;color:#66716a;font-size:9px}.kb-summary strong{font-size:13px}.kb-draft-actions{display:flex;gap:7px}.kb-draft-actions button{flex:1}
+      .kb-most-used{display:grid;gap:6px;margin-bottom:14px}.kb-used-card{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:7px;align-items:center;border:1px solid #e2e7e4;border-radius:10px;padding:7px}.kb-used-card img{width:48px;height:48px;object-fit:contain;background:#fafafa;border-radius:7px}.kb-used-card h4{font-size:11px;margin:0 0 2px}.kb-used-card small{display:block;font-size:9px;color:#68736c}.kb-used-card .kb-btn{min-height:34px;padding:0 8px}
+      .kb-saved{display:grid;gap:7px}.kb-saved-card{border:1px solid #e1e6e2;border-radius:11px;padding:9px}.kb-saved-card h4{margin:0 0 3px;font-size:12px}.kb-saved-meta{display:flex;gap:8px;flex-wrap:wrap;color:#68736c;font-size:9px}.kb-saved-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}.kb-empty{padding:18px;text-align:center;color:#68736c;font-size:11px}.kb-more{width:100%;margin-top:8px}.kb-authority{font-size:9px;color:#66716a;margin-top:7px}.kb-loading{opacity:.65;pointer-events:none}
       @media(max-width:1050px){.kit-builder-workspace{grid-template-columns:1fr 1fr}.kb-col[data-kit-column="saved"]{grid-column:1/-1;min-height:auto}}
-      @media(max-width:720px){.kit-builder-workspace{grid-template-columns:1fr}.kb-col[data-kit-column="saved"]{grid-column:auto}.kb-col{min-height:auto}.kb-product.editing .kb-inline{grid-template-columns:1fr 1fr}.kb-inline .kb-btn{grid-column:1/-1}.kb-chip-row{grid-template-columns:1fr}.kb-chip-actions{justify-content:flex-start}}
+      @media(max-width:720px){.kit-builder-workspace{grid-template-columns:minmax(0,1fr)}.kb-col[data-kit-column="saved"]{grid-column:auto}.kb-col{min-height:auto}.kb-product.editing .kb-inline{grid-template-columns:1fr 1fr}.kb-inline .kb-btn{grid-column:1/-1}.kb-chip-row{grid-template-columns:1fr}.kb-chip-actions{justify-content:flex-start}.kb-item{grid-template-columns:minmax(0,1fr) 70px 34px}.kb-used-card{grid-template-columns:44px minmax(0,1fr) auto}}
     `;document.head.appendChild(style);
   }
 
@@ -159,8 +158,8 @@
   }
 
   function draftTotals(){
-    const items=state.draft?.items||[];let cost_total=0,sale_total=0;
-    for(const item of items){const q=Number(item.quantity||0),p=item.product||{};cost_total+=q*Number(p.cost_price||0);sale_total+=q*Number(p.sale_price||0)}
+    let cost_total=0,sale_total=0;
+    for(const item of state.draft?.items||[]){const q=Number(item.quantity||0),p=item.product||{};cost_total+=q*Number(p.cost_price||0);sale_total+=q*Number(p.sale_price||0)}
     return {cost_total:Math.round(cost_total*100)/100,sale_total:Math.round(sale_total*100)/100};
   }
   function draftHtml(){
@@ -173,7 +172,11 @@
   }
 
   function savedHtml(){
-    return (state.kits||[]).map(k=>'<article class="kb-saved-card" data-kit-saved="'+esc(k.id)+'"><h4>'+esc(k.name)+'</h4><div class="kb-saved-meta"><span>'+esc(k.type==='food'?'Alimentos':k.type==='cleaning_hygiene'?'Limpeza/Higiene':'Outro')+'</span><span>'+esc(k.item_count||0)+' itens</span><span>Custo '+esc(money(k.cost_total))+'</span><span>Venda '+esc(money(k.sale_total))+'</span></div><div class="kb-saved-actions"><button class="kb-btn" data-kit-edit type="button">Editar</button><button class="kb-btn" data-kit-duplicate type="button">Duplicar</button><button class="kb-btn danger" data-kit-archive type="button">Arquivar</button></div></article>').join('')||'<div class="kb-empty">Nenhum kit interno salvo.</div>';
+    return (state.kits||[]).map(k=>'<article class="kb-saved-card" data-kit-saved="'+esc(k.id)+'"><h4>'+esc(k.name)+'</h4><div class="kb-saved-meta"><span>'+esc(k.type==='food'?'Alimentos':k.type==='cleaning_hygiene'?'Limpeza/Higiene':'Outro')+'</span><span>'+esc(k.item_count||0)+' itens</span><span>Custo '+esc(money(k.cost_total))+'</span><span>Venda '+esc(money(k.sale_total))+'</span></div><div class="kb-saved-actions"><button class="kb-btn" data-kit-edit type="button">Editar</button><button class="kb-btn" data-kit-duplicate type="button">Usar como base</button><button class="kb-btn danger" data-kit-archive type="button">Arquivar</button></div></article>').join('')||'<div class="kb-empty">Nenhum kit interno salvo.</div>';
+  }
+
+  function mostUsedHtml(){
+    return (state.mostUsed||[]).map(p=>'<article class="kb-used-card" data-kit-most-used="'+esc(p.id)+'"><img src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt=""><div><h4>'+esc(p.name||'Produto')+'</h4><small>'+esc(qty(p.usage_count||0))+' kits usando · Livre '+esc(qty(p.loose_sellable_stock))+'</small><small>Custo '+esc(money(p.cost_price))+' · Venda '+esc(money(p.sale_price))+'</small></div><button class="kb-btn primary" type="button" data-kit-most-used-add>Adicionar</button></article>').join('')||'<div class="kb-empty">Os produtos mais usados aparecerão aqui conforme os kits forem salvos.</div>';
   }
 
   function renderChipManager(){
@@ -187,12 +190,12 @@
   }
 
   function catalogHtml(){
-    const rows=state.query?state.products:(state.mostUsed.length?state.mostUsed:state.products);
+    const rows=state.products;
     return '<div class="kb-search"><input data-kit-search placeholder="Buscar por nome, código ou EAN" value="'+esc(state.query)+'"><button class="kb-btn" type="button" data-kit-search-go>Buscar</button></div>'+
       '<div class="kb-chip-wrap"><div class="kb-chips">'+state.chips.map(c=>'<button class="kb-chip" type="button" data-kit-chip="'+esc(c.query)+'">'+esc(c.label)+'</button>').join('')+'</div><button class="kb-btn compact kb-chip-manage" type="button" data-kit-chip-manage>'+(state.chipManagerOpen?'Fechar chips':'Editar chips')+'</button></div>'+
       renderChipManager()+
-      '<div class="kb-section-title">'+(state.query?'Resultados':'Mais usados')+'</div><div class="kb-products">'+(rows.map(productCardHtml).join('')||'<div class="kb-empty">Nenhum produto encontrado.</div>')+'</div>'+
-      (state.query&&state.nextOffset!==null?'<button class="kb-btn kb-more" type="button" data-kit-more>Ver mais</button>':'')+
+      '<div class="kb-section-title">'+(state.query?'Resultados':'Produtos disponíveis')+'</div><div class="kb-products">'+(rows.map(productCardHtml).join('')||'<div class="kb-empty">Nenhum produto encontrado.</div>')+'</div>'+
+      (state.nextOffset!==null?'<button class="kb-btn kb-more" type="button" data-kit-more>Ver mais</button>':'')+
       '<div class="kb-authority">Autoridade de estoque: '+esc(state.stockAuthority==='bling'?'Bling':'estoque operacional')+'.</div>';
   }
 
@@ -202,26 +205,33 @@
     host.innerHTML='<div class="kit-builder-workspace '+(state.loading?'kb-loading':'')+'">'+
       '<section class="kb-col" data-kit-column="catalog"><div class="kb-col-head"><div><h3>Produtos</h3><small>Busque e adicione ao kit</small></div></div><div class="kb-body" data-kit-catalog-body>'+catalogHtml()+'</div></section>'+
       '<section class="kb-col" data-kit-column="draft"><div class="kb-col-head"><div><h3>Kit em montagem</h3><small>Receita interna, sem reservar estoque</small></div></div><div class="kb-body" data-kit-draft-body>'+draftHtml()+'</div></section>'+
-      '<section class="kb-col" data-kit-column="saved"><div class="kb-col-head"><div><h3>Kits salvos</h3><small>Editar, duplicar ou arquivar</small></div></div><div class="kb-body"><div class="kb-saved">'+savedHtml()+'</div></div></section>'+
+      '<section class="kb-col" data-kit-column="saved"><div class="kb-col-head"><div><h3>Atalhos para montar</h3><small>Reaproveite produtos e kits já usados</small></div></div><div class="kb-body"><div class="kb-section-title">Produtos mais usados</div><div class="kb-most-used">'+mostUsedHtml()+'</div><div class="kb-section-title">Kits salvos</div><div class="kb-saved">'+savedHtml()+'</div></div></section>'+
       '</div>';
     bindWorkspace();
   }
 
   function productById(id){return [...state.products,...state.mostUsed].find(p=>String(p.id)===String(id))||null}
   function addProduct(product){
-    if(!product)return;const d=state.draft||emptyDraft();
+    if(!product)return;
+    const d=state.draft||emptyDraft();
     const existing=d.items.find(x=>String(x.product_id)===String(product.id));
     if(existing)existing.quantity=Number(existing.quantity||0)+1;
     else d.items.push({product_id:product.id,quantity:1,product});
     state.draft=d;renderWorkspace();
   }
-  function removeProduct(id){state.draft.items=state.draft.items.filter(x=>String(x.product_id)!==String(id));renderWorkspace()}
+  function removeProduct(id){
+    state.draft.items=state.draft.items.filter(x=>String(x.product_id)!==String(id));
+    renderWorkspace();
+  }
   function updateDraftFromFields(){
     const host=state.host;if(!host||!state.draft)return;
     state.draft.name=String(host.querySelector('[data-kit-name]')?.value||'').trim();
     state.draft.type=String(host.querySelector('[data-kit-type]')?.value||'food');
     state.draft.notes=String(host.querySelector('[data-kit-notes]')?.value||'').trim();
-    host.querySelectorAll('[data-kit-item]').forEach(node=>{const item=state.draft.items.find(x=>String(x.product_id)===String(node.dataset.kitItem));if(item){const n=numberValue(node.querySelector('[data-kit-item-qty]')?.value);if(n!==null&&n>0)item.quantity=n}});
+    host.querySelectorAll('[data-kit-item]').forEach(node=>{
+      const item=state.draft.items.find(x=>String(x.product_id)===String(node.dataset.kitItem));
+      if(item){const n=numberValue(node.querySelector('[data-kit-item-qty]')?.value);if(n!==null&&n>0)item.quantity=n}
+    });
   }
 
   async function searchProducts(query=state.query,append=false){
@@ -240,7 +250,6 @@
     const data=await kitCall('chips',{},'GET');
     state.chips=Array.isArray(data.chips)?data.chips:[];
   }
-
   async function saveSearchChip(row){
     if(!row)return;
     const chipId=String(row.dataset.kitChipRow||'').trim()||null;
@@ -254,7 +263,6 @@
       await refreshChips();toast(chipId?'Busca rápida atualizada.':'Busca rápida adicionada.');
     }catch{toast('Não consegui salvar esta busca rápida.')}finally{state.loading=false;renderWorkspace()}
   }
-
   async function archiveSearchChip(chipId){
     const chip=state.chips.find(c=>String(c.id)===String(chipId));
     if(!chip)return;
@@ -265,13 +273,11 @@
       await refreshChips();toast('Busca rápida excluída.');
     }catch{toast('Não consegui excluir esta busca rápida.')}finally{state.loading=false;renderWorkspace()}
   }
-
   async function reorderSearchChip(chipId,direction){
     const index=state.chips.findIndex(c=>String(c.id)===String(chipId));
     const target=index+(direction<0?-1:1);
     if(index<0||target<0||target>=state.chips.length)return;
-    const next=[...state.chips];
-    [next[index],next[target]]=[next[target],next[index]];
+    const next=[...state.chips];[next[index],next[target]]=[next[target],next[index]];
     state.loading=true;renderWorkspace();
     try{
       const data=await kitCall('chip_reorder',{chip_ids:next.map(c=>c.id),operator:operator()},'POST');
@@ -285,7 +291,6 @@
     state.draft={kit_id:k.id,name:k.name,type:k.type,notes:k.notes||'',source_kit_id:k.source_kit_id||null,items:(k.items||[]).map(x=>({product_id:x.product_id,quantity:Number(x.quantity||1),product:x.product||{id:x.product_id,name:'Produto'}}))};
     renderWorkspace();
   }
-
   async function saveDraftKit(){
     updateDraftFromFields();const d=state.draft||emptyDraft();
     if(!d.name){toast('Informe o nome do kit.');return}
@@ -294,21 +299,39 @@
     state.loading=true;renderWorkspace();
     try{
       const data=await kitCall('kit_save',{kit_id:d.kit_id||null,name:d.name,type:d.type,notes:d.notes||null,source_kit_id:d.source_kit_id||null,operator:operator(),items:d.items.map((x,i)=>({product_id:x.product_id,quantity:Number(x.quantity),sort_order:i}))},'POST');
-      const saved=data?.result?.kit||data?.kit||null;toast(d.kit_id?'Kit atualizado.':'Kit salvo.');
-      await refreshSaved();if(saved?.id)await loadKit(saved.id);else{state.draft=emptyDraft();renderWorkspace()}
-    }catch(e){const code=errorCode(e);toast(code.includes('product_unavailable')?'Existe produto inativo no kit.':code.includes('items_invalid')?'Adicione produtos válidos ao kit.':'Não consegui salvar o kit.')}finally{state.loading=false;renderWorkspace()}
+      const saved=data?.result?.kit||data?.kit||null;
+      toast(d.kit_id?'Kit atualizado.':'Kit salvo.');
+      await refreshSaved();
+      const used=await kitCall('most_used',{limit:20},'GET').catch(()=>({products:state.mostUsed}));
+      setMostUsed(used.products||[]);
+      if(saved?.id)await loadKit(saved.id);else{state.draft=emptyDraft();renderWorkspace()}
+    }catch(e){
+      const code=errorCode(e);
+      toast(code.includes('product_unavailable')?'Existe produto inativo no kit.':code.includes('items_invalid')?'Adicione produtos válidos ao kit.':'Não consegui salvar o kit.');
+    }finally{state.loading=false;renderWorkspace()}
   }
-
   async function duplicateKit(kit){
-    try{const data=await kitCall('kit',{id:kit.id},'GET'),k=data.kit;if(!k)return;state.draft={kit_id:null,name:(k.name||'Kit')+' cópia',type:k.type,notes:k.notes||'',source_kit_id:k.id,items:(k.items||[]).map(x=>({product_id:x.product_id,quantity:Number(x.quantity||1),product:x.product||{id:x.product_id,name:'Produto'}}))};renderWorkspace();toast('Cópia aberta. Ajuste e salve como novo kit.')}catch{toast('Não consegui duplicar este kit.')}
+    try{
+      const data=await kitCall('kit',{id:kit.id},'GET'),k=data.kit;if(!k)return;
+      state.draft={kit_id:null,name:(k.name||'Kit')+' cópia',type:k.type,notes:k.notes||'',source_kit_id:k.id,items:(k.items||[]).map(x=>({product_id:x.product_id,quantity:Number(x.quantity||1),product:x.product||{id:x.product_id,name:'Produto'}}))};
+      renderWorkspace();toast('Kit carregado como base. Ajuste os produtos e salve com outro nome.');
+    }catch{toast('Não consegui usar este kit como base.')}
   }
-
   async function archiveKit(kit){
     if(typeof window.confirm==='function'&&!window.confirm('Arquivar o kit '+kit.name+'?'))return;
-    try{await kitCall('kit_archive',{kit_id:kit.id,operator:operator()},'POST');if(state.draft?.kit_id===kit.id)state.draft=emptyDraft();await refreshSaved();toast('Kit arquivado.')}catch(e){toast(errorCode(e).includes('assembly_kit_in_use')?'Este kit está sendo usado por uma cesta ativa e não pode ser arquivado agora.':'Não consegui arquivar o kit.')}
+    try{
+      await kitCall('kit_archive',{kit_id:kit.id,operator:operator()},'POST');
+      if(state.draft?.kit_id===kit.id)state.draft=emptyDraft();
+      await refreshSaved();
+      const used=await kitCall('most_used',{limit:20},'GET').catch(()=>({products:state.mostUsed}));setMostUsed(used.products||[]);
+      toast('Kit arquivado.');
+    }catch(e){toast(errorCode(e).includes('assembly_kit_in_use')?'Este kit está sendo usado por uma cesta ativa e não pode ser arquivado agora.':'Não consegui arquivar o kit.')}
   }
-
-  async function refreshSaved(){const data=await kitCall('kits',{limit:100},'GET');state.kits=Array.isArray(data.kits)?data.kits:[];renderWorkspace()}
+  async function refreshSaved(){
+    const data=await kitCall('kits',{limit:100},'GET');
+    state.kits=Array.isArray(data.kits)?data.kits:[];
+    renderWorkspace();
+  }
 
   function bindWorkspace(){
     const host=state.host;if(!host)return;
@@ -336,6 +359,10 @@
         const button=card.querySelector('[data-kit-inline-save]');if(button)button.disabled=true;
         try{await saveProductInline(p,{cost:card.querySelector('[data-kit-edit-cost]')?.value,price:card.querySelector('[data-kit-edit-price]')?.value,stock:card.querySelector('[data-kit-edit-stock]')?.value});renderWorkspace()}catch{}finally{if(button)button.disabled=false}
       });
+    });
+    host.querySelectorAll('[data-kit-most-used]').forEach(card=>{
+      const p=productById(card.dataset.kitMostUsed);
+      card.querySelector('[data-kit-most-used-add]')?.addEventListener('click',()=>addProduct(p));
     });
 
     host.querySelectorAll('[data-kit-item]').forEach(node=>{
@@ -368,7 +395,9 @@
   }
 
   window.DonaAntoniaKitBuilder={
-    state,open,renderWorkspace,renderChipManager,saveSearchChip,archiveSearchChip,reorderSearchChip,
-    saveDraftKit,duplicateKit,archiveKit,saveProductInline,setProducts,setMostUsed,setDraft,searchProducts
+    state,open,renderWorkspace,renderChipManager,mostUsedHtml,
+    saveSearchChip,archiveSearchChip,reorderSearchChip,
+    saveDraftKit,duplicateKit,archiveKit,saveProductInline,
+    setProducts,setMostUsed,setDraft,searchProducts
   };
 })();
