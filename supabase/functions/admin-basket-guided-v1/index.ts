@@ -29,7 +29,7 @@ async function adminAuth(req:Request){
 
 const DOMAIN_ERRORS=[
   "basket_not_found","basket_kit_template_not_found","lot_not_found","guided_reserved_lot_required",
-  "basket_positions_invalid","position_product_invalid","position_product_unavailable","position_family_invalid","position_product_not_in_family",
+  "basket_positions_invalid","basket_name_invalid","basket_category_required","basket_price_invalid","basket_image_invalid","position_product_invalid","position_product_unavailable","position_family_invalid","position_product_not_in_family",
   "position_label_invalid","position_quantity_invalid","position_quantity_out_of_bounds","duplicate_product_confirmation_required",
   "invalid_lot_quantity","empty_lot_composition","invalid_lot_product","invalid_kit_template_item","invalid_lot_component_quantity",
   "fixed_position_quantity_changed","required_position_missing","insufficient_loose_stock","invalid_sale_price","invalid_public_name",
@@ -115,8 +115,29 @@ async function positionProducts(input:any){
   return {source:"search",position,family_key:null,products:page.map((p:any)=>productCard(p,stocks.get(String(p.id)))),total,next_offset:offset+page.length<total?offset+page.length:null};
 }
 
-async function modelEditor(input:any){const basketId=uuid(input?.basket_id);if(!basketId)return {error:"invalid_basket",status:400};const q=await db.rpc("basket_commercial_model_editor_v1",{p_basket_id:basketId});if(q.error)return rpcError(q.error);return {model:q.data};}
-async function modelSave(input:any){const basketId=uuid(input?.basket_id),positions=list(input?.positions);if(!basketId)return {error:"invalid_basket",status:400};if(!positions||!positions.length)return {error:"basket_positions_invalid",status:400};const q=await db.rpc("save_basket_commercial_model_composition_v1",{p_basket_id:basketId,p_positions:positions,p_operator:operator(input)});if(q.error)return rpcError(q.error);return {model:q.data};}
+async function modelEditor(input:any){
+  const basketId=uuid(input?.basket_id);if(!basketId)return {error:"invalid_basket",status:400};
+  const [q,categories]=await Promise.all([
+    db.rpc("basket_commercial_model_editor_v1",{p_basket_id:basketId}),
+    db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order").order("name")
+  ]);
+  if(q.error)return rpcError(q.error);if(categories.error)throw categories.error;
+  return {model:q.data,categories:categories.data||[]};
+}
+async function modelSave(input:any){
+  const basketId=uuid(input?.basket_id),positions=list(input?.positions),commercial=input?.commercial||{};
+  const name=clean(commercial?.name,180),categoryId=uuid(commercial?.category_id),basePrice=money(commercial?.base_price),imageUrl=clean(commercial?.image_url,1000);
+  if(!basketId)return {error:"invalid_basket",status:400};
+  if(!positions||!positions.length)return {error:"basket_positions_invalid",status:400};
+  if(!name)return {error:"basket_name_invalid",status:400};
+  if(!categoryId)return {error:"basket_category_required",status:400};
+  if(basePrice===null)return {error:"basket_price_invalid",status:400};
+  const q=await db.rpc("save_basket_commercial_model_v2",{
+    p_basket_id:basketId,p_name:name,p_category_id:categoryId,p_base_price:basePrice,p_image_url:imageUrl||null,
+    p_positions:positions,p_operator:operator(input)
+  });
+  if(q.error)return rpcError(q.error);return {model:q.data};
+}
 async function lotPreview(input:any){const basketId=uuid(input?.basket_id),quantity=integer(input?.quantity),items=list(input?.items);if(!basketId)return {error:"invalid_basket",status:400};if(!quantity)return {error:"invalid_lot_quantity",status:400};if(!items||!items.length)return {error:"empty_lot_composition",status:400};const q=await db.rpc("preview_basket_commercial_lot_v1",{p_basket_id:basketId,p_quantity:quantity,p_items:items});if(q.error)return rpcError(q.error);return {preview:q.data};}
 async function lotReserve(input:any){const basketId=uuid(input?.basket_id),quantity=integer(input?.quantity),items=list(input?.items),linked=input?.linked_lot_id?uuid(input.linked_lot_id):null,price=money(input?.sale_price);if(!basketId)return {error:"invalid_basket",status:400};if(!quantity)return {error:"invalid_lot_quantity",status:400};if(!items||!items.length)return {error:"empty_lot_composition",status:400};if(input?.linked_lot_id&&!linked)return {error:"invalid_linked_lot",status:400};if(input?.sale_price!==null&&input?.sale_price!==undefined&&price===null)return {error:"invalid_sale_price",status:400};const q=await db.rpc("create_basket_commercial_lot_reserved_v1",{p_basket_id:basketId,p_quantity:quantity,p_items:items,p_public_name:clean(input?.public_name,120)||null,p_sale_price:price,p_operator:operator(input),p_notes:clean(input?.notes,800)||null,p_short_code:clean(input?.short_code,3).toUpperCase()||null,p_linked_lot_id:linked});if(q.error)return rpcError(q.error);return {lot:q.data};}
 async function lotUpdate(input:any){const lotId=uuid(input?.lot_id),quantity=integer(input?.quantity),items=list(input?.items),linked=input?.linked_lot_id?uuid(input.linked_lot_id):null,price=money(input?.sale_price);if(!lotId)return {error:"invalid_lot",status:400};if(!quantity)return {error:"invalid_lot_quantity",status:400};if(!items||!items.length)return {error:"empty_lot_composition",status:400};if(input?.linked_lot_id&&!linked)return {error:"invalid_linked_lot",status:400};if(input?.sale_price!==null&&input?.sale_price!==undefined&&price===null)return {error:"invalid_sale_price",status:400};const q=await db.rpc("update_basket_reserved_lot_v1",{p_lot_id:lotId,p_quantity:quantity,p_items:items,p_public_name:clean(input?.public_name,120)||null,p_sale_price:price,p_operator:operator(input),p_notes:clean(input?.notes,800)||null,p_linked_lot_id:linked});if(q.error)return rpcError(q.error);return {lot:q.data};}
