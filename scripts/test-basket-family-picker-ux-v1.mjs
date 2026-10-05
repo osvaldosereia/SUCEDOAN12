@@ -16,9 +16,9 @@ assert.match(guidedApi,/basket_lot_substitution_products/i,'catálogo guiado dev
 assert.match(guidedApi,/ops2_loose_sellable_stock_v1/i,'catálogo guiado deve usar estoque avulso canônico');
 assert.doesNotMatch(guidedApi,/slice\(0,7\)/,'família não pode ser truncada arbitrariamente');
 
-// Não existem dois pickers/editores concorrentes no Admin.
+// Não existem dois pickers/editores concorrentes no runtime do Admin.
 assert.doesNotMatch(admin,/id="basketProductSuggestions"|Sugestões configuradas|data-basket-auto-family-pick/,'picker legado não deve coexistir com editor guiado');
-assert.doesNotMatch(admin,/basket-auto-compose-card|basket-auto-compose-actions|basket-auto-compose-meta/,'compositor manual legado não deve coexistir com editor guiado');
+assert.doesNotMatch(admin,/function\s+(?:paintBasketKitLotComposer|startBasketKitLotDraft|openBasketKitAdmin|paintBasketSubstitutionFamilyEditor)\s*\(/,'funções do compositor/picker legado não devem coexistir no runtime');
 assert.doesNotMatch(admin,/Sugestões automáticas de lotes|Gerar sugestões agora|Automação segura/,'automação antiga de sugestões deve permanecer fora do Admin');
 assert.doesNotMatch(section,/basket_lot_suggestion_generate_now_v1|basket_lot_suggestions_admin_v1/,'seção canônica não deve chamar geradores antigos');
 
