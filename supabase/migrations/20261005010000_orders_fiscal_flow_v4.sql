@@ -357,6 +357,7 @@ begin
   if s.id is null or s.completed_at is null then raise exception 'separation_not_completed'; end if;
   if coalesce((s.metadata->>'stock_applied')::boolean,false) is not true then raise exception 'separation_stock_not_applied'; end if;
   if exists(select 1 from public.order_separation_items_v1 where order_id=o.id and state='pending') then raise exception 'separation_has_pending_items'; end if;
+  if c.dispatch_fiscal_status not in ('authorized','not_required') then raise exception 'fiscal_authorization_required_before_dispatch'; end if;
 
   gate:=public.check_order_dispatch_fiscal_gate_v1(o.id);
   if coalesce((gate->>'allowed')::boolean,false) is not true then
