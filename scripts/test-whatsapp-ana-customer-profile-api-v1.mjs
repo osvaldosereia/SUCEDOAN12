@@ -13,6 +13,7 @@ const migration=fs.readFileSync(migrationPath,'utf8');
 for(const token of [
   'ana-customer-profile-policy-v1.mjs',
   'ops2_admin_ana_customer_profile_context_v1',
+  'ops2_ana_customer_profile_persist_v1',
   'customer_profile_extraction_runs_v1',
   'customer_profile_suggestions_v1',
   'snapshot_key',
@@ -35,6 +36,12 @@ assert.doesNotMatch(edge,/db\.rpc\(["']ops2_admin_attendance_customer_access_v1[
 const writeGatePos=edge.indexOf('ops2_admin_ana_customer_profile_extract_access_v1');
 const modelCallPos=edge.lastIndexOf('generateProfile(context)');
 assert.ok(writeGatePos>0&&modelCallPos>writeGatePos,'gate de escrita deve ocorrer antes da geração/persistência de sugestões');
+
+assert.match(migration,/create\s+or\s+replace\s+function\s+public\.ops2_ana_customer_profile_persist_v1/i,'persistência de run+sugestões deve ser transacional no Postgres');
+assert.match(migration,/ops2_valid_cpf_cnpj_v1/i,'persistência deve validar CPF/CNPJ deterministicamente');
+assert.match(migration,/from\s+public\.customers[\s\S]*cpf_cnpj/i,'persistência deve detectar CPF/CNPJ pertencente a outro cliente');
+assert.doesNotMatch(edge,/from\(["']customer_profile_extraction_runs_v1["']\)\.insert/,'Edge não deve criar run fora da transação de persistência');
+assert.doesNotMatch(edge,/from\(["']customer_profile_suggestions_v1["']\)\.insert/,'Edge não deve inserir sugestões fora da transação de persistência');
 
 for(const forbidden of [
   '.from("customers").update',
