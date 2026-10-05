@@ -4,6 +4,7 @@ const PRIMARY_MARKETING_LABELS={overview:'Visão geral',templates:'Templates',ca
 const ADVANCED_FILTERS=['product_ids','last_purchase_after','last_purchase_before','inactive_days','min_order_count','max_order_count','min_lifetime_value','max_lifetime_value'];
 let scheduled=false;
 let consentModulePromise=null;
+let templateSimpleModulePromise=null;
 
 const text=value=>String(value?.textContent||'').trim();
 
@@ -25,6 +26,12 @@ function loadConsentModule(){
   if(window.DAMarketingAudienceCenter?.mountConsentView)return Promise.resolve(window.DAMarketingAudienceCenter);
   if(!consentModulePromise)consentModulePromise=import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1');
   return consentModulePromise;
+}
+
+function loadTemplateSimpleModule(){
+  if(window.DAMarketingTemplateSimple?.enhanceTemplateCenter)return Promise.resolve(window.DAMarketingTemplateSimple);
+  if(!templateSimpleModulePromise)templateSimpleModulePromise=import('/vitrine/admin/marketing/template-type-picker.js?v=marketing-template-simple-v1');
+  return templateSimpleModulePromise;
 }
 
 function ensureAdminConsentsAction(root,nav){
@@ -93,6 +100,7 @@ function polishTemplates(root){
   center.querySelectorAll('[data-template-detail]').forEach(button=>setText(button,'Ver'));
   const status=center.querySelector('[data-template-center-status]');
   if(status&&text(status).startsWith('Carregando templates'))setText(status,'Carregando modelos…');
+  loadTemplateSimpleModule().then(module=>module.enhanceTemplateCenter(root)).catch(error=>console.warn('marketing-template-simple-load',String(error?.message||error).slice(0,160)));
 }
 
 function groupAdvancedAudienceFilters(form){
