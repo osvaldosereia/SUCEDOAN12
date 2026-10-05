@@ -6,6 +6,10 @@ Transformar a criação e manutenção de **Cestas e Kits** no Vitrine/Admin em 
 
 O fluxo deve reaproveitar o modelo canônico atual de Cestas/Kits, lotes, famílias de substituição, estoque avulso, estoque reservado, preço oculto, impressão e histórico. Não deve criar um segundo sistema paralelo.
 
+### Relação com a especificação anterior
+
+Esta especificação **substitui somente a regra de momento da reserva** descrita em `docs/superpowers/specs/2026-10-04-baskets-mounted-edit-print-models.md`. A partir deste desenho, um lote operacional confirmado em **Em montagem** já reserva estoque; `Marcar como montado` passa a confirmar a montagem física e não cria uma segunda reserva. As demais garantias da especificação anterior — edição segura, impressão A4, histórico, arquivamento lógico e separação entre montagem e publicação — continuam válidas.
+
 ## Princípios
 
 1. **Uma entidade comercial única.** `basket_templates` continua sendo a fonte comercial de Cestas/Kits. `basket_kit_templates` representa a composição operacional interna, nunca uma segunda entidade comercial pública.
@@ -195,7 +199,7 @@ Nenhuma reversão é permitida quando houver pedido/alocação histórica que to
 
 ## Edição de lote
 
-Preservar as regras de segurança já existentes para reabrir/editar lotes.
+Preservar as regras de segurança já existentes para reabrir/editar lotes, com a nova semântica de reserva antecipada desta especificação.
 
 Um lote sem uso histórico pode permitir edição de:
 
