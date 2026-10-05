@@ -69,6 +69,7 @@ try{
   const saved=await page.evaluate(()=>window.calls.find(c=>c.action==='model_save'));
   assert.equal(saved.commercial.name,'Econômica Atualizada','salvamento deve incluir dados comerciais');
   assert.equal(saved.commercial.category_id,'cat1');
+  await page.waitForFunction(()=>document.querySelector('#bgLotPublicName')?.value==='Econômica Atualizada');
 
   await page.waitForFunction(()=>window.calls.some(c=>c.action==='linkable_lots'));
   assert.equal(await page.locator('#bgLotPublicName').inputValue(),'Econômica Atualizada');
