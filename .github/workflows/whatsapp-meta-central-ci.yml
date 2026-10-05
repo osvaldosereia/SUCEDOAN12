@@ -7,6 +7,7 @@ on:
       - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
       - 'supabase/functions/_shared/ana-policy-v1.mjs'
       - 'supabase/functions/whatsapp-ana-worker-v1/**'
+      - 'supabase/functions/whatsapp-marketing-worker-v1/**'
       - 'supabase/functions/admin-whatsapp-ana-preview-v1/**'
       - 'supabase/functions/whatsapp-meta-webhook-v1/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
@@ -38,6 +39,7 @@ on:
       - 'supabase/migrations/20261005002000_marketing_audience_candidates_v2.sql'
       - 'supabase/migrations/20261005004000_marketing_campaign_drafts_v1.sql'
       - 'supabase/migrations/20261005014000_marketing_campaign_execution_v1.sql'
+      - 'supabase/migrations/20261005018000_marketing_campaign_worker_support_v1.sql'
       - 'scripts/test-attendance-*.mjs'
       - 'scripts/test-whatsapp-ana-*.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
@@ -69,6 +71,7 @@ jobs:
       - {name: Marketing audience shared core contract, run: 'node scripts/test-whatsapp-marketing-audience-core-v2.mjs'}
       - {name: Marketing campaign drafts contract, run: 'node scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'}
       - {name: Marketing campaign execution contract, run: 'node scripts/test-whatsapp-marketing-campaign-execution-v1.mjs'}
+      - {name: Marketing campaign worker contract, run: 'node scripts/test-whatsapp-marketing-worker-v1.mjs'}
       - {name: Admin marketing audiences contract, run: 'node scripts/test-admin-marketing-audiences-v1.mjs'}
       - {name: Admin marketing campaigns contract, run: 'node scripts/test-admin-marketing-campaigns-v1.mjs'}
       - {name: Marketing audience UI contract, run: 'node scripts/test-whatsapp-marketing-audience-ui-v1.mjs'}
@@ -100,6 +103,7 @@ jobs:
       - {name: Meta shadow media preservation regression, run: 'node scripts/test-whatsapp-meta-shadow-media-preserve-v1.mjs'}
       - {name: Meta webhook TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts'}
       - {name: ANA worker TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-ana-worker-v1/index.ts'}
+      - {name: Marketing worker TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-marketing-worker-v1/index.ts'}
       - {name: ANA preview API TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-ana-preview-v1/index.ts'}
       - {name: ANA policy JavaScript syntax, run: 'node --check supabase/functions/_shared/ana-policy-v1.mjs'}
       - {name: Meta canonical outbound contract, run: 'node scripts/test-attendance-meta-dedupe-v1.mjs'}
