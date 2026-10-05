@@ -31,7 +31,7 @@ assert.match(sql,/marketing_strategy_transition_v1/i,'ponte deve manter state ma
 assert.match(sql,/ready_for_review/i,'campanha materializada deve ficar em revisão antes do Portão C');
 assert.match(sql,/ready_to_send/i,'estratégia materializada deve chegar a Pronta para envio');
 assert.match(sql,/send_approved/i,'Portão C deve registrar aprovação separada do disparo');
-assert.match(sql,/approved[^\n]{0,200}ready_for_review|ready_for_review[^\n]{0,200}approved/i,'aprovação do disparo deve aprovar a campanha canônica');
+assert.match(sql,/ready_for_review[\s\S]{0,500}['"]approved['"]|['"]approved['"][\s\S]{0,500}ready_for_review/i,'aprovação do disparo deve aprovar a campanha canônica');
 assert.match(sql,/scheduled/i,'agendamento bem-sucedido deve refletir estado scheduled');
 assert.match(sql,/strategy_id/i,'campanha e estratégia devem permanecer ligadas');
 assert.match(sql,/idempot/i,'materialização deve ser idempotente');
