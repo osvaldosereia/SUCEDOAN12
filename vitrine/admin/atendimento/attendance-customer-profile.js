@@ -1,4 +1,4 @@
-import {customerEditor,customerProfileExtract,customerProfileList} from './attendance-customer-api.js?v=customer-profile-v1';
+import {customerEditor,customerProfileExtract,customerProfileList,customerProfileReview} from './attendance-customer-api.js?v=customer-profile-v1';
 import {renderCustomerForm} from './attendance-customer-form.js?v=customer-profile-v1';
 
 const FIELD_LABELS={name:'Nome',cpf_cnpj:'CPF/CNPJ',email:'E-mail',postal_code:'CEP',street:'Rua',number:'Número',complement:'Complemento',neighborhood:'Bairro',city:'Cidade',state:'UF',reference:'Referência'};
@@ -8,7 +8,7 @@ export function maskProfileSuggestion(field,value){
   if(field!=='cpf_cnpj')return text;
   const digits=text.replace(/\D/g,'');return digits?`***${digits.slice(-4)}`:'***';
 }
-export function isUsableProfileSuggestion(item){return item?.recommendation!=='ignore'&&Number(item?.confidence||0)>=0.80}
+export function isUsableProfileSuggestion(item){return item?.status!=='reviewed_rejected'&&item?.recommendation!=='ignore'&&Number(item?.confidence||0)>=0.80}
 export function profileProgress(profile={}){
   const address=profile?.address||{};
   const values=[profile?.name||profile?.display_name,profile?.phone||profile?.phone_e164,profile?.cpf||profile?.cpf_cnpj,profile?.email,address?.street,address?.number,address?.district||address?.neighborhood,address?.city];
@@ -47,8 +47,8 @@ function renderSuggestion(container,item,{conversationId,card,onRefresh}){
   if(isUsableProfileSuggestion(item)){
     const actions=document.createElement('div');actions.className='attendance-customer-actions compact';
     const use=button('Usar no formulário',true),discard=button('Descartar');
-    use.onclick=async()=>{use.disabled=true;try{const data=await customerEditor(conversationId);const filled=applySuggestion(data,item);renderCustomerForm({card,conversationId,mode:'save',phone:filled?.conversation_phone_e164||'',data:filled,onDone:onRefresh,onCancel:onRefresh})}finally{use.disabled=false}};
-    discard.onclick=()=>{row.hidden=true};actions.append(use,discard);row.append(actions);
+    use.onclick=async()=>{use.disabled=discard.disabled=true;try{await customerProfileReview(item.id,'accepted');const data=await customerEditor(conversationId);const filled=applySuggestion(data,item);renderCustomerForm({card,conversationId,mode:'save',phone:filled?.conversation_phone_e164||'',data:filled,onDone:onRefresh,onCancel:onRefresh})}catch(error){use.disabled=discard.disabled=false;const msg=document.createElement('div');msg.className='attendance-customer-status error';msg.textContent=String(error?.message||'')==='invalid_cpf_cnpj'?'O CPF/CNPJ encontrado não é válido. Revise manualmente.':'Não foi possível aceitar esta sugestão.';row.append(msg)}};
+    discard.onclick=async()=>{use.disabled=discard.disabled=true;try{await customerProfileReview(item.id,'rejected');row.hidden=true}catch{use.disabled=discard.disabled=false}};actions.append(use,discard);row.append(actions);
   }
   container.append(row);
 }
@@ -57,7 +57,7 @@ async function loadSuggestions(container,conversationId,options){
   container.replaceChildren();
   const loading=document.createElement('div');loading.className='attendance-customer-status';loading.textContent='Carregando sugestões…';container.append(loading);
   try{
-    const data=await customerProfileList(conversationId);container.replaceChildren();const items=(Array.isArray(data?.items)?data.items:[]).filter(isUsableProfileSuggestion);
+    const data=await customerProfileList(conversationId);container.replaceChildren();const items=(Array.isArray(data?.items)?data.items:[]).filter(item=>item?.status==='pending'&&isUsableProfileSuggestion(item));
     if(!items.length){const empty=document.createElement('div');empty.className='attendance-customer-status';empty.textContent='Nenhuma sugestão cadastral pendente.';container.append(empty);return}
     for(const item of items)renderSuggestion(container,item,{conversationId,...options});
   }catch{container.replaceChildren();const error=document.createElement('div');error.className='attendance-customer-status error';error.textContent='Não foi possível carregar as sugestões da ANA.';container.append(error)}
