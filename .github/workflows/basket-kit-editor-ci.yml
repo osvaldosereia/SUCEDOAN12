@@ -62,6 +62,7 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-assembly-kits-domain-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-assembly-kits-legacy-bootstrap-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-recipe-kit-links-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-recipe-kits-ui-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-admin-api-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-product-quick-edit-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-ui-v1.mjs
