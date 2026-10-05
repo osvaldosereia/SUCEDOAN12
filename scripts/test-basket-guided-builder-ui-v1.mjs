@@ -51,12 +51,17 @@ assert.match(saveBlock,/model_save/,'saving model must call model_save');
 assert.doesNotMatch(saveBlock,/lot_reserve/,'saving model must not reserve stock');
 
 // Regressões observadas em produção em 2026-10-05.
-const newLotBinding=admin.match(/host\.querySelectorAll\('\[data-commercial-new\]'\)[\s\S]{0,700}/)?.[0]||'';
+const newLotStart=admin.indexOf("host.querySelectorAll('[data-commercial-new]')");
+const newLotEnd=admin.indexOf('\n    host.querySelectorAll',newLotStart+1);
+assert.ok(newLotStart>=0&&newLotEnd>newLotStart,'commercial Novo lote binding must exist');
+const newLotBinding=admin.slice(newLotStart,newLotEnd);
 assert.match(newLotBinding,/DonaAntoniaBasketGuided\?\.open/,'card Novo lote must open guided builder directly');
-assert.doesNotMatch(newLotBinding,/startBasketKitLotDraft/,'card Novo lote must not fall back to legacy lot composer when guided builder is available');
+assert.doesNotMatch(newLotBinding,/startBasketKitLotDraft/,'card Novo lote must not call the legacy lot composer');
 
-const printBinding=admin.match(/host\.querySelectorAll\('\[data-commercial-print\]'\)[\s\S]{0,900}/)?.[0]||'';
-assert.ok(printBinding,'commercial print binding must exist');
+const printStart=admin.indexOf("host.querySelectorAll('[data-commercial-print]')");
+const printEnd=admin.indexOf('\n  }',printStart+1);
+assert.ok(printStart>=0&&printEnd>printStart,'commercial print binding must exist');
+const printBinding=admin.slice(printStart,printEnd);
 assert.doesNotMatch(printBinding,/openBasketKitAdmin/,'Imprimir on commercial card must not navigate into basket detail');
 assert.match(printBinding,/printBasketKitLot\(m\.operational_lot_id\)/,'Imprimir must pass the lot id, not the lot object');
 
