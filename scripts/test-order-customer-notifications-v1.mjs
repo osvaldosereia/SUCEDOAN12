@@ -40,6 +40,10 @@ assert.match(notifier,/missing_subtotal/,'notificador deve informar o abatimento
 assert.match(notifier,/final_total/,'notificador deve informar o novo total');
 assert.match(notifier,/public_code/,'notificador deve usar somente o código público curto');
 assert.match(notifier,/sendTemplateViaMeta/,'aviso deve usar Meta Utility template, inclusive fora da janela de 24h');
+assert.match(notifier,/whatsapp_templates_v1/,'notificador deve consultar o cache canônico de templates Meta');
+assert.match(notifier,/APPROVED/,'notificador só pode enviar template pós-separação aprovado pela Meta');
+assert.match(notifier,/template_pending_approval/,'template pendente não pode virar falha definitiva do aviso');
+assert.match(notifier,/status:"pending"/,'aviso deve permanecer pendente enquanto o template aguarda aprovação');
 
 const completeStart=adminApi.indexOf('async function orderSeparationComplete');
 assert.ok(completeStart>=0,'conclusão canônica da separação deve existir');
