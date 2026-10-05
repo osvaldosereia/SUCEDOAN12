@@ -12,6 +12,7 @@ on:
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
       - 'supabase/functions/admin-marketing-audiences-v1/**'
+      - 'supabase/functions/admin-marketing-campaigns-v1/**'
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/admin/marketing/**'
@@ -67,6 +68,7 @@ jobs:
       - {name: Marketing audience shared core contract, run: 'node scripts/test-whatsapp-marketing-audience-core-v2.mjs'}
       - {name: Marketing campaign drafts contract, run: 'node scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'}
       - {name: Admin marketing audiences contract, run: 'node scripts/test-admin-marketing-audiences-v1.mjs'}
+      - {name: Admin marketing campaigns contract, run: 'node scripts/test-admin-marketing-campaigns-v1.mjs'}
       - {name: Marketing audience UI contract, run: 'node scripts/test-whatsapp-marketing-audience-ui-v1.mjs'}
       - {name: Marketing intelligence legacy contract, run: 'python scripts/test-marketing-intelligence-contract.py'}
       - {name: Meta transport contract, run: 'node scripts/test-attendance-meta-send-v1.mjs'}
@@ -102,6 +104,7 @@ jobs:
       - {name: Admin media dispatcher syntax, run: 'node --check supabase/functions/_shared/admin-attendance-media-send-v1.mjs'}
       - {name: Admin templates TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-templates-v1/index.ts'}
       - {name: Admin marketing audiences TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-marketing-audiences-v1/index.ts'}
+      - {name: Admin marketing campaigns TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-marketing-campaigns-v1/index.ts'}
       - {name: Admin Meta gateway TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts'}
       - {name: Native Attendance core JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-app.js'}
       - {name: ANA preview UI JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-ana-preview.js'}
