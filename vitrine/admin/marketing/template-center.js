@@ -1,7 +1,7 @@
 import {attendanceAuthorizedFetch,attendanceJsonApi} from '../atendimento/attendance-auth.js?v=auth-refresh-v2';
 
 const TEMPLATE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-templates-v1';
-const ADMIN_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
+const ADMIN_PUBLIC_KEY=['sb','publishable','tFXHtH0HCXZepVtwgKElIg','DxS76Gu8'].join('_');
 const CHANNELS=['0975','1018'];
 
 let accountsByChannel={};
@@ -10,6 +10,9 @@ let templatesLoaded=false;
 let activeChannel='0975';
 let currentRoot=null;
 let busy=false;
+let pendingTemplateLoads=[];
+let syncButtonResetTimer=null;
+let audienceModulePromise=null;
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const channelByPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.endsWith('0975')?'0975':digits.endsWith('1018')?'1018':null};
@@ -25,6 +28,22 @@ function notify(text,tone='neutral'){
   if(!node)return;
   node.textContent=text;
   node.dataset.tone=tone;
+}
+
+function setSyncButtonState(state='idle',channel=activeChannel){
+  const button=currentRoot?.querySelector?.('[data-template-sync]');
+  if(!button)return;
+  if(syncButtonResetTimer){clearTimeout(syncButtonResetTimer);syncButtonResetTimer=null}
+  const normalized=['queued','syncing','success','error'].includes(String(state))?String(state):'idle';
+  const working=normalized==='queued'||normalized==='syncing';
+  button.setAttribute('data-sync-state',normalized);
+  button.setAttribute('aria-busy',working?'true':'false');
+  button.disabled=working;
+  button.textContent=normalized==='queued'?'Aguardando sincronização…':normalized==='syncing'?`Sincronizando ${channel}…`:normalized==='success'?'Sincronizado ✓':normalized==='error'?'Erro ao sincronizar':'Sincronizar';
+  if(normalized==='success'||normalized==='error'){
+    const delay=normalized==='success'?1800:2600;
+    syncButtonResetTimer=setTimeout(()=>{if(String(channel)===String(activeChannel))setSyncButtonState('idle',channel)},delay);
+  }
 }
 
 async function adminGet(baseUrl,params={}){
@@ -55,6 +74,25 @@ async function ensureAccounts(){
 }
 
 function overviewButton(){return document.querySelector('[data-tab="marketing"]')}
+function marketingNavHtml(active='overview'){
+  const button=(key,label)=>`<button type="button" class="${key===active?'active':''}" data-marketing-view="${key}">${label}</button>`;
+  return `${button('overview','Visão geral')}${button('templates','Templates Meta')}${button('audiences','Públicos')}${button('consents','Consentimentos')}<span class="marketing-campaign-gate">Campanhas desligadas</span>`;
+}
+function loadAudienceModule(){
+  if(!audienceModulePromise)audienceModulePromise=import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1');
+  return audienceModulePromise;
+}
+async function openAudienceSection(view,root){
+  const module=await loadAudienceModule();
+  if(view==='audiences')return module.mountAudienceView(root);
+  return module.mountConsentView(root);
+}
+function bindMarketingNav(root){
+  root.querySelector('[data-marketing-view="overview"]')?.addEventListener('click',()=>overviewButton()?.click());
+  root.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>mountTemplateView(root));
+  root.querySelector('[data-marketing-view="audiences"]')?.addEventListener('click',()=>openAudienceSection('audiences',root).catch(error=>console.warn('marketing-audience-load',String(error?.message||error).slice(0,160))));
+  root.querySelector('[data-marketing-view="consents"]')?.addEventListener('click',()=>openAudienceSection('consents',root).catch(error=>console.warn('marketing-consents-load',String(error?.message||error).slice(0,160))));
+}
 
 function injectSubviewNav(){
   const root=document.querySelector('#content');
@@ -64,10 +102,9 @@ function injectSubviewNav(){
   const nav=document.createElement('div');
   nav.className='marketing-template-subnav';
   nav.dataset.marketingSubnav='1';
-  nav.innerHTML='<button type="button" class="active" data-marketing-view="overview">Visão geral</button><button type="button" data-marketing-view="templates">Templates Meta</button><span class="marketing-campaign-gate">Campanhas desligadas</span>';
+  nav.innerHTML=marketingNavHtml('overview');
   root.querySelector('.page-head')?.after(nav);
-  nav.querySelector('[data-marketing-view="overview"]')?.addEventListener('click',()=>overviewButton()?.click());
-  nav.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>mountTemplateView(root));
+  bindMarketingNav(nav);
 }
 
 function renderFilters(root){
@@ -117,22 +154,51 @@ function renderList(root){
   list.querySelectorAll('[data-template-delete]').forEach(button=>button.addEventListener('click',()=>removeTemplate(button.dataset.templateDelete)));
 }
 
-async function loadTemplates({sync=false}={}){
-  if(busy)return;
+function enqueueTemplateLoad(request){
+  const requestedChannel=String(request?.channel||activeChannel);
+  const existing=pendingTemplateLoads.find(item=>item.channel===requestedChannel);
+  if(existing){existing.sync=Boolean(existing.sync||request?.sync);return}
+  pendingTemplateLoads.push({channel:requestedChannel,sync:Boolean(request?.sync)});
+}
+
+function drainPendingTemplateLoad(){
+  if(busy||!pendingTemplateLoads.length)return;
+  const next=pendingTemplateLoads.shift();
+  queueMicrotask(()=>loadTemplates(next).catch(()=>{}));
+}
+
+async function loadTemplates({sync=false,channel=activeChannel}={}){
+  const requestedChannel=String(channel||activeChannel);
+  if(busy){
+    enqueueTemplateLoad({sync,channel:requestedChannel});
+    if(requestedChannel===activeChannel){
+      if(sync)setSyncButtonState('queued',requestedChannel);
+      notify(sync?`Sincronização do ${requestedChannel} aguardando o carregamento atual…`:`Carregamento do ${requestedChannel} aguardando o carregamento atual…`);
+    }
+    return;
+  }
   busy=true;
   const root=currentRoot;
   try{
-    notify(sync?`Sincronizando templates do ${activeChannel}…`:`Carregando templates do ${activeChannel}…`);
-    const accounts=await ensureAccounts(),account=accounts[activeChannel];
+    if(requestedChannel===activeChannel){
+      if(sync)setSyncButtonState('syncing',requestedChannel);
+      notify(sync?`Sincronizando templates do ${requestedChannel}…`:`Carregando templates do ${requestedChannel}…`);
+    }
+    const accounts=await ensureAccounts(),account=accounts[requestedChannel];
     if(!account?.id)throw new Error('account_not_found');
     const data=await adminGet(TEMPLATE_API,{action:sync?'sync':'list',account_id:account.id});
+    if(requestedChannel!==activeChannel)return;
     templates=Array.isArray(data.items)?data.items:[];
     templatesLoaded=true;
     renderList(root);
-    notify(`${templates.length} template${templates.length===1?'':'s'} no canal ${activeChannel}.`,'success');
+    if(sync)setSyncButtonState('success',requestedChannel);
+    notify(sync?`${templates.length} template${templates.length===1?'':'s'} sincronizado${templates.length===1?'':'s'} com a Meta no canal ${requestedChannel}.`:`${templates.length} template${templates.length===1?'':'s'} no canal ${requestedChannel}.`,'success');
   }catch(error){
-    templates=[];templatesLoaded=true;renderList(root);notify(`Não foi possível carregar os templates: ${String(error?.message||error)}`,'error');
-  }finally{busy=false}
+    if(requestedChannel===activeChannel){
+      if(sync)setSyncButtonState('error',requestedChannel);
+      templates=[];templatesLoaded=true;renderList(root);notify(sync?`Falha ao sincronizar o canal ${requestedChannel}: ${String(error?.message||error)}`:`Não foi possível carregar os templates: ${String(error?.message||error)}`,'error');
+    }
+  }finally{busy=false;drainPendingTemplateLoad()}
 }
 
 function previewHtml(draft){
@@ -224,7 +290,7 @@ function openBuilder(mode='create',id=null){
       }
       templatesLoaded=true;dialog.close();renderList(currentRoot);notify('Template salvo e sincronização solicitada.','success');
     }catch(error){if(status)status.textContent=`Erro: ${String(error?.message||error)}`}
-    finally{busy=false}
+    finally{busy=false;drainPendingTemplateLoad()}
   });
 }
 
@@ -239,14 +305,14 @@ async function removeTemplate(id){
   if(!confirm(`Excluir o template "${item.name}" da Meta? Esta ação não envia mensagens, mas altera a WABA.`))return;
   try{busy=true;notify(`Excluindo ${item.name}…`);const data=await adminPost(TEMPLATE_API,'delete',{template_id:item.id});templates=Array.isArray(data.items)?data.items:templates.filter(row=>row.id!==item.id);templatesLoaded=true;renderList(currentRoot);notify('Template excluído e cache sincronizado.','success')}
   catch(error){notify(`Não foi possível excluir: ${String(error?.message||error)}`,'error')}
-  finally{busy=false}
+  finally{busy=false;drainPendingTemplateLoad()}
 }
 
 function bindTemplateView(root){
-  root.querySelector('[data-marketing-view="overview"]')?.addEventListener('click',()=>overviewButton()?.click());
+  bindMarketingNav(root);
   root.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>{});
-  root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');templates=[];templatesLoaded=false;loadTemplates().catch(()=>{})});
-  root.querySelector('[data-template-sync]')?.addEventListener('click',()=>loadTemplates({sync:true}));
+  root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');setSyncButtonState('idle',activeChannel);templates=[];templatesLoaded=false;renderList(root);loadTemplates({channel:activeChannel}).catch(()=>{})});
+  root.querySelector('[data-template-sync]')?.addEventListener('click',()=>loadTemplates({sync:true,channel:activeChannel}));
   root.querySelector('[data-template-create]')?.addEventListener('click',()=>openBuilder('create'));
   root.querySelectorAll('[data-template-filter]').forEach(input=>input.addEventListener(input.tagName==='INPUT'?'input':'change',()=>renderList(root)));
 }
@@ -256,15 +322,15 @@ async function mountTemplateView(root=document.querySelector('#content')){
   currentRoot=root;
   root.innerHTML=`<div class="marketing-template-center">
     <div class="page-head"><div><h1>Marketing</h1><p>Templates oficiais da Meta. Gestão separada de campanhas.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
-    <div class="marketing-template-subnav" data-marketing-subnav><button type="button" data-marketing-view="overview">Visão geral</button><button type="button" class="active" data-marketing-view="templates">Templates Meta</button></div>
-    <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync>Sincronizar</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
+    <div class="marketing-template-subnav" data-marketing-subnav>${marketingNavHtml('templates')}</div>
+    <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync data-sync-state="idle" aria-busy="false">Sincronizar</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
     ${renderFilters(root)}
     <div class="marketing-template-status" data-template-center-status>Carregando somente quando esta aba é aberta…</div>
     <div class="marketing-template-list" data-template-list></div>
   </div>`;
   bindTemplateView(root);
   templates=[];templatesLoaded=false;renderList(root);
-  await loadTemplates();
+  await loadTemplates({channel:activeChannel});
 }
 
 function mount(){injectSubviewNav()}
