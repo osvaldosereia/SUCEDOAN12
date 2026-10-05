@@ -1,0 +1,44 @@
+name: TEMP Pedidos V4 browser syntax fix
+
+on:
+  push:
+    branches: [feat/orders-fiscal-flow-v4-20261004]
+    paths:
+      - 'scripts/_fix_orders_v4_browser_syntax.mjs'
+      - '.github/workflows/_temp-orders-v4-browser-syntax-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Fix canonical browser syntax
+        run: node scripts/_fix_orders_v4_browser_syntax.mjs
+      - name: Validate contracts and inline JavaScript
+        run: |
+          git diff --check
+          node scripts/test-admin-orders-fiscal-flow-v4.mjs
+          node scripts/test-admin-orders-clean-flow-v3.mjs
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          for(const file of ['vitrine/admin/index.html','pedido/index.html','p/index.html']){
+            const html=fs.readFileSync(file,'utf8');
+            const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+            scripts.forEach((src,i)=>{const path=`/tmp/${file.replaceAll('/','-')}-${i}.js`;fs.writeFileSync(path,src);cp.execFileSync(process.execPath,['--check',path],{stdio:'inherit'})});
+            console.log(`${file}: inline syntax OK (${scripts.length} script blocks)`);
+          }
+          NODE
+      - name: Commit canonical syntax fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'fix: corrigir sintaxe JavaScript do Pedidos V4'
+          git push
