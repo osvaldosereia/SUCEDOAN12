@@ -7,15 +7,21 @@ on:
       - 'vitrine/admin/marketing/strategy-center.js'
       - 'vitrine/admin/marketing/strategy-center.css'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
+      - 'supabase/functions/admin-whatsapp-template-carousel-v1/**'
       - 'supabase/functions/admin-marketing-campaigns-v1/**'
       - 'supabase/functions/admin-marketing-strategy-v1/**'
       - 'supabase/functions/_shared/marketing-strategy-engine-v1.mjs'
+      - 'supabase/functions/_shared/marketing-template-strategy-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-meta-carousel-v1.mjs'
       - 'supabase/migrations/*marketing_strategy*'
       - 'scripts/test-marketing-strategy-foundation-v1.mjs'
       - 'scripts/test-marketing-strategy-engine-v1.mjs'
       - 'scripts/test-admin-marketing-strategy-v1.mjs'
+      - 'scripts/test-marketing-strategy-template-gate-v1.mjs'
       - 'scripts/test-admin-marketing-campaigns-v1.mjs'
       - 'scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'
+      - 'scripts/test-whatsapp-meta-template-admin-v1.mjs'
       - 'scripts/test-whatsapp-marketing-strategy-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-professional-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-papoai-shell-v1.mjs'
@@ -43,6 +49,10 @@ jobs:
         run: node scripts/test-marketing-strategy-engine-v1.mjs
       - name: Marketing strategy Admin API contract
         run: node scripts/test-admin-marketing-strategy-v1.mjs
+      - name: Marketing strategy template gate contract
+        run: node scripts/test-marketing-strategy-template-gate-v1.mjs
+      - name: Existing simple Meta template regression
+        run: node scripts/test-whatsapp-meta-template-admin-v1.mjs
       - name: Marketing strategy UI contract
         run: node scripts/test-whatsapp-marketing-strategy-ui-v1.mjs
       - name: Existing campaigns backend regression
