@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const apiPath='supabase/functions/storefront-baskets-v2-v1/index.ts';
+const pagePath='vitrine/cestas-kits-v2-preview/index.html';
+assert.ok(fs.existsSync(apiPath),`missing ${apiPath}`);
+assert.ok(fs.existsSync(pagePath),`missing ${pagePath}`);
+const api=fs.readFileSync(apiPath,'utf8');
+const page=fs.readFileSync(pagePath,'utf8');
+for(const action of ['health','categories','catalog','detail']) assert.match(api,new RegExp(`['\"]${action}['\"]`),`missing storefront action ${action}`);
+assert.match(api,/basket_v2_item_availability_v1/,'preview API must use canonical V2 availability');
+assert.match(api,/availability[^\n]*>\s*0|\.gt\(["']availability["'],\s*0\)/,'catalog must hide zero-stock V2 items');
+assert.match(api,/paused[^\n]*(false|is false)/i,'catalog must hide paused items');
+assert.match(api,/composition_mode/,'detail must distinguish products from combined kits');
+assert.doesNotMatch(api,/insert\(|update\(|delete\(|\.rpc\([^)]*(save|mount|pause|import_apply)/i,'preview API must remain read-only');
+assert.match(page,/<meta[^>]+name=["']robots["'][^>]+noindex[^>]+nofollow/i,'preview page must be noindex,nofollow');
+assert.ok(page.includes('storefront-baskets-v2-v1'),'preview page must use only V2 storefront API');
+for(const cat of ['Cestas Completas','Cestas Só Alimento','Kits Limpeza e Higiene','Kits Limpeza','Kits Higiene']) assert.ok(page.includes(cat),`preview missing category ${cat}`);
+assert.ok(page.includes('Itens desta Cesta/Kit'),'products mode must expose its products');
+assert.ok(page.includes('Composta por'),'combined mode must expose its base kits');
+assert.doesNotMatch(page,/lot_code|short_code|Código do lote|Comprar|Finalizar pedido|checkout/i,'preview must not expose lot codes or buying/checkout UI');
+console.log('baskets kits v2 storefront preview contract: ok');
