@@ -1,3 +1,4 @@
+import './attendance-customer.js?v=customer-link-v1';
 import {attendanceAuthorizedFetch,attendanceJsonApi} from './attendance-auth.js?v=auth-refresh-v2';
 
 const SUPABASE_URL='https://ssbesxgaijknwsjbsbcz.supabase.co';
