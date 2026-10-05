@@ -70,6 +70,9 @@ Deno.serve(async(req:Request)=>{
     }
     if(action!=="extract")return json(req,{ok:false,error:"action_invalid"},400);
 
+    const writeAccess=await db.rpc("ops2_admin_attendance_customer_access_v1",{p_write:true});if(writeAccess.error)throw writeAccess.error;
+    const writeGate=writeAccess.data||{ok:false,error:"admin_not_authorized"};if(writeGate.ok!==true)return json(req,{ok:false,error:writeGate.error||"admin_not_authorized"},403);
+
     const contextCall=await db.rpc("ops2_admin_ana_customer_profile_context_v1",{p_conversation_id:conversationId});if(contextCall.error)throw contextCall.error;
     const context=contextCall.data||{ok:false,error:"profile_context_unavailable"};
     if(context.ok!==true){const status=context.error==="ambiguous_phone"?409:context.error==="conversation_not_found"?404:context.error==="admin_not_authorized"?403:400;return json(req,{ok:false,error:context.error||"profile_context_unavailable"},status)}
