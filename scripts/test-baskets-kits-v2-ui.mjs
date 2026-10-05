@@ -21,6 +21,6 @@ assert.ok(js.includes('+ Adicionar Cesta/Kit'),'combination must allow repeated 
 assert.ok(js.includes('Custo não informado'),'missing cost must be explicit');
 assert.match(js,/cost\s*===\s*null|cost\s*==\s*null/,'null cost must be treated separately');
 assert.doesNotMatch(js,/linked_lot_id|sale_enabled|own_sale_price_override|basket_commercial_create/,'V2 UI must not expose legacy technical concepts');
-assert.match(js,/position:\s*sticky|v2-financial-sticky/,'financial summary must remain visible on desktop');
+assert.match(css,/\.v2bk-financial-sticky\s*\{[^}]*position:\s*sticky/i,'financial summary must remain visible on desktop');
 assert.match(css,/@media\s*\(max-width:\s*760px\)/,'V2 UI must have mobile layout');
 console.log('baskets kits v2 fast admin UI contract: ok');
