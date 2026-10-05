@@ -1,7 +1,7 @@
 # Marketing Dona Antônia — UX simples inspirada no fluxo do PapoAI
 
 **Data:** 2026-10-05  
-**Status:** design aprovado em conversa, aguardando revisão do documento antes do plano de implementação  
+**Status:** aprovado pelo usuário para implementação  
 **Referência visual:** prints do PapoAI fornecidos pelo usuário nesta conversa.  
 **Escopo:** Vitrine/Admin → Marketing.  
 
@@ -345,7 +345,7 @@ Reaproveitar os módulos atuais, reduzindo superfície de regressão:
 - camada compartilhada `marketing-polish.*` apenas se ainda fizer sentido após simplificação.
 
 Backend a reutilizar:
-- `admin-meta-templates-v1`
+- `admin-whatsapp-templates-v1`
 - `admin-marketing-audiences-v1`
 - `admin-marketing-campaigns-v1`
 - worker/agendamento atual.
