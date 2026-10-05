@@ -105,6 +105,7 @@ Deno.serve(async(req:Request)=>{
     if(!READ_ACTIONS.has(action)&&!WRITE_ACTIONS.has(action))return json(req,{ok:false,error:"action_not_supported"},404);
     if(READ_ACTIONS.has(action)&&req.method!=="GET")return json(req,{ok:false,error:"method_not_allowed"},405);
     if(WRITE_ACTIONS.has(action)&&req.method!=="POST")return json(req,{ok:false,error:"method_not_allowed"},405);
+    if(WRITE_ACTIONS.has(action)&&auth.role==="viewer")return json(req,{ok:false,error:"admin_write_forbidden"},403);
 
     if(action==="search"){
       const q=clean(url.searchParams.get("q"),180);
