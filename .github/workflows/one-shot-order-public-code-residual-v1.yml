@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/one-shot-order-public-code-residual-v1.yml'
+      - 'scripts/patch-order-public-code-residual-v1.py'
 
 permissions:
   contents: write
