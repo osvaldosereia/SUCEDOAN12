@@ -72,6 +72,9 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-runtime-v2.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-commercial-model-edit-v2.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-order-engine.mjs
+      - run: node scripts/test-basket-admin-runtime-browser-v2.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
       - run: node scripts/test-basket-guided-builder-browser.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
