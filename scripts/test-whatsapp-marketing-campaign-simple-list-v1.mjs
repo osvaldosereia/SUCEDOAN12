@@ -4,9 +4,12 @@ import fs from 'node:fs';
 const modulePath='vitrine/admin/marketing/campaign-list-simple.js';
 assert.equal(fs.existsSync(modulePath),true,'campaign-list-simple.js deve existir');
 const source=fs.readFileSync(modulePath,'utf8');
+const center=fs.readFileSync('vitrine/admin/marketing/campaign-center.js','utf8');
 const entry=fs.readFileSync('vitrine/admin/marketing/campaign-entry.js','utf8');
+const screen=source+'\n'+center;
 
-for(const text of ['Campanhas','Pesquisar','Situação','Canal','Nome','Data de disparo','Destinatários','Status','Ações','Relatório','Abrir'])assert.ok(source.includes(text),`lista simples deve conter ${text}`);
+assert.ok(screen.includes('Campanhas'),'tela deve manter o título Campanhas');
+for(const text of ['Pesquisar','Situação','Canal','Nome','Data de disparo','Destinatários','Status','Ações','Relatório','Abrir'])assert.ok(source.includes(text),`lista simples deve conter ${text}`);
 assert.match(source,/admin-marketing-campaigns-v1/,'lista deve usar API Admin canônica');
 assert.match(source,/attendanceAuthorizedFetch/,'lista deve usar autenticação Admin');
 assert.match(source,/attendanceJsonApi\(['"]accounts['"]/,'lista deve resolver canais pela fonte autenticada');
