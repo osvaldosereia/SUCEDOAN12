@@ -13,26 +13,19 @@ assert.match(migration,/reopen_basket_kit_lot_for_edit_v1/i,'migration must prov
 for(const guard of ['lot_sale_must_be_disabled','lot_has_order_history','lot_already_changed','lot_is_dependency'])assert.match(migration,new RegExp(guard,'i'),`reopen must preserve ${guard}`);
 assert.match(migration,/archive_basket_template_admin_v1/i,'basket model archive must exist');
 
-assert.match(guidedApi,/reopen_basket_kit_lot_for_edit_v1/,'guided API must reuse safe lot reopening');
-for(const action of ['lot_mount','lot_reopen','lot_cancel'])assert.match(guided,new RegExp(action),`guided UI must expose ${action}`);
-assert.match(guided,/Marcar como montado/,'draft must expose explicit mounted action');
-assert.match(guided,/Editar lote/,'reserved lot must expose edit action');
-assert.match(guided,/Em montagem|Montado/,'guided editor must surface assembly states');
+assert.match(guidedApi,/reopen_basket_kit_lot_for_edit_v1/,'guided compatibility API must reuse safe lot reopening');
+for(const action of ['lot_mount','lot_reopen','lot_cancel'])assert.match(guided,new RegExp(action),`guided compatibility UI must preserve ${action}`);
+assert.match(guided,/Marcar como montado/,'technical guided flow must still support mounted action');
+assert.match(guided,/Editar lote/,'technical guided flow must still support reserved-lot edit');
+assert.match(guided,/Em montagem|Montado/,'technical guided flow must still surface assembly states');
 
-assert.match(section,/function printLot\(lot\)/,'canonical section must own pure lot printing');
-assert.match(section,/@page\{size:A4 portrait/i,'print CSS must use A4 portrait');
-assert.match(section,/grid-template-columns:repeat\(4,1fr\)/i,'print CSS must use four columns');
-assert.match(section,/lot-print-card/,'print cards must exist');
-assert.match(section,/sale_price_override/,'print must use saved lot sale value');
-assert.match(section,/public_name/,'print must use saved public name');
-assert.match(section,/data-basket-print/,'mounted/operational lot must expose print action');
+// O cutover deliberadamente remove edição/impressão/arquivamento do controlador normal.
+assert.match(section,/Criador de Kits/,'normal operation must expose kit builder');
+assert.match(section,/Cestas do Site/,'normal operation must expose store baskets');
+for(const retired of ['Editar lote','Imprimir','Excluir modelo'])assert.doesNotMatch(section,new RegExp(retired,'i'),`normal operation must not expose ${retired}`);
+assert.doesNotMatch(section,/data-basket-print|data-basket-edit|basket_archive|function printLot/,'simple controller must not own legacy lot/model actions');
 
-assert.match(section,/data-basket-edit/,'commercial model must expose edit action');
-assert.match(section,/Excluir modelo/,'commercial model must expose archive/delete action');
-assert.match(section,/basket_archive/,'commercial model must archive through canonical API');
-assert.doesNotMatch(section,/basket_kit_template_save|basket_kit_template_archive/,'canonical section must not manage an internal kit as a second commercial model');
-
-// Legacy endpoints may stay for data compatibility, but are no longer an Admin UI dependency.
+// Legacy endpoints stay available for historical data and technical compatibility only.
 for(const action of ['basket_kit_lot_reopen','basket_kit_template_save','basket_kit_template_archive','basket_archive'])assert.match(api,new RegExp('"'+action+'"'),'legacy compatibility API must remain available during migration: '+action);
 
-console.log('basket mounted edit, print and models contracts: PASS');
+console.log('basket mounted/edit compatibility retained; normal UI simplified: PASS');
