@@ -5,12 +5,14 @@ const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
 const hub=fs.readFileSync('supabase/functions/admin-service-intelligence-v1/index.ts','utf8');
 
 // A ordem local READY não basta: a UI só pode dizer SEPARADO quando a conclusão real existe.
+const helperStart=admin.indexOf('function orderSeparationCompletedV4');
 const milestoneStart=admin.indexOf('function orderV3Milestones');
+assert.ok(helperStart>=0,'Admin precisa de helper canônico para conclusão real da separação');
 assert.ok(milestoneStart>=0,'Admin precisa manter orderV3Milestones');
-const milestoneEnd=admin.indexOf('\n  function ',milestoneStart+20);
-const milestoneBlock=admin.slice(milestoneStart,milestoneEnd>milestoneStart?milestoneEnd:milestoneStart+1400);
-assert.match(milestoneBlock,/separation_completed/,'Marco SEPARADO precisa considerar readiness.separation_completed');
-assert.doesNotMatch(milestoneBlock,/separated:\['ready','out_for_delivery','delivered'\]\.includes\(s\)/,'READY sozinho não pode significar separação concluída');
+const flowBlock=admin.slice(helperStart,Math.min(admin.length,milestoneStart+900));
+assert.match(flowBlock,/readiness\?\.separation_completed===true/,'Marco SEPARADO precisa considerar readiness.separation_completed');
+assert.match(flowBlock,/separated:orderSeparationCompletedV4\(o\)/,'Milestone SEPARADO precisa depender do helper de conclusão real');
+assert.doesNotMatch(flowBlock,/separated:\['ready','out_for_delivery','delivered'\]\.includes\(s\)/,'READY sozinho não pode significar separação concluída');
 
 assert.match(admin,/SEPARAÇÃO PENDENTE/i,'Card precisa mostrar quando a separação ainda não terminou de verdade');
 assert.match(admin,/SEPARAÇÃO CONCLUÍDA/i,'Card/botão precisa mostrar claramente quando a separação terminou');
