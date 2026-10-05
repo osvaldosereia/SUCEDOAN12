@@ -6,6 +6,8 @@ on:
       - 'vitrine/admin/marketing/**'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
       - 'supabase/functions/admin-marketing-campaigns-v1/**'
+      - 'supabase/migrations/*marketing_strategy*'
+      - 'scripts/test-marketing-strategy-foundation-v1.mjs'
       - 'scripts/test-whatsapp-marketing-professional-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-papoai-shell-v1.mjs'
       - 'scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs'
@@ -26,6 +28,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
+      - name: Marketing strategy foundation contract
+        run: node scripts/test-marketing-strategy-foundation-v1.mjs
       - name: Marketing professional UI contract
         run: node scripts/test-whatsapp-marketing-professional-ui-v1.mjs
       - name: Marketing PapoAI-like shell contract
