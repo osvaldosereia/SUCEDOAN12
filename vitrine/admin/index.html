@@ -3351,7 +3351,8 @@
       const data=await api('basket_commercial_create',{method:'POST',body:{name,category_id,base_price_cents:Math.round(price*100),operator}});
       const model=data?.model||{};$('#editor').close();toast('Cesta/Kit criada. Agora monte o primeiro lote.');
       await renderBaskets();
-      if(model.kit_template_id){await openBasketKitAdmin(model.kit_template_id);startBasketKitLotDraft(null)}
+      if(model.basket_id&&window.DonaAntoniaBasketGuided?.open){window.DonaAntoniaBasketGuided.open(model.basket_id,{mode:'lot',commercial:model})}
+      else if(model.kit_template_id){await openBasketKitAdmin(model.kit_template_id);startBasketKitLotDraft(null)}
     }catch(e){toast(errorMessage(e?.message||'Não consegui criar a Cesta/Kit.'));btn.disabled=false;btn.textContent='Criar e montar primeiro lote'}
   }
   function paintBasketCommercialFilters(){
@@ -3384,8 +3385,8 @@
     const rows=(state.basketCommercialModels||[]).filter(m=>!filter||String(m.category_slug||'')===filter);
     host.innerHTML=rows.length?'<div class="basket-admin-grid">'+rows.map(basketCommercialCard).join('')+'</div>':'<div class="empty">Nenhuma Cesta/Kit nesta categoria.</div>';
     const find=id=>(state.basketCommercialModels||[]).find(x=>String(x.commercial_id)===String(id));
-    host.querySelectorAll('[data-commercial-edit]').forEach(b=>b.onclick=()=>openBasketCommercialEditor(find(b.dataset.commercialEdit),'edit'));
-    host.querySelectorAll('[data-commercial-new]').forEach(b=>b.onclick=()=>openBasketCommercialEditor(find(b.dataset.commercialNew),'new'));
+    host.querySelectorAll('[data-commercial-edit]').forEach(b=>b.onclick=()=>{const m=find(b.dataset.commercialEdit);if(window.DonaAntoniaBasketGuided?.open)window.DonaAntoniaBasketGuided.open(m?.commercial_id,{mode:'model',commercial:m});else openBasketCommercialEditor(m,'edit')});
+    host.querySelectorAll('[data-commercial-new]').forEach(b=>b.onclick=()=>{const m=find(b.dataset.commercialNew);if(window.DonaAntoniaBasketGuided?.open)window.DonaAntoniaBasketGuided.open(m?.commercial_id,{mode:'lot',commercial:m});else openBasketCommercialEditor(m,'new')});
     host.querySelectorAll('[data-commercial-duplicate]').forEach(b=>b.onclick=()=>openBasketCommercialEditor(find(b.dataset.commercialDuplicate),'duplicate'));
     host.querySelectorAll('[data-commercial-toggle]').forEach(b=>b.onclick=async()=>{const m=find(b.dataset.commercialToggle);if(m?.operational_lot_id)await toggleBasketLotSale(m.operational_lot_id,b.dataset.enabled==='1','canonical')});
     host.querySelectorAll('[data-commercial-print]').forEach(b=>b.onclick=async()=>{const m=find(b.dataset.commercialPrint);if(!m?.editor_kit_template_id)return;await openBasketKitAdmin(m.editor_kit_template_id);const lot=(state.basketKitDetail?.lots||[]).find(x=>String(x.id)===String(m.operational_lot_id));if(lot)printBasketKitLot(lot)});
@@ -8676,8 +8677,19 @@
   const originalPaint=paintPurchaseCatalogList;paintPurchaseCatalogList=function(){originalPaint();enhance()};
   const originalReason=purchaseCatalogReasonLabel;purchaseCatalogReasonLabel=function(v){if(v==='identity_confirmation_required')return 'Confirme qual produto é este e se o EAN é da unidade ou da embalagem';return originalReason(v)};
   setTimeout(enhance,250);
+  window.DonaAntoniaGuidedBridge={
+    token:adminStepUp,
+    operator:requireOperator,
+    toast,
+    refresh:renderBaskets,
+    legacyApi:api,
+    openCommercialEditor:openBasketCommercialEditor,
+    openKitAdmin:openBasketKitAdmin,
+    startLegacyDraft:startBasketKitLotDraft
+  };
 })();
 </script>
+<script src="/vitrine/admin/basket-guided-builder.js?v=guided-v1"></script>
 
 </body>
 </html>
