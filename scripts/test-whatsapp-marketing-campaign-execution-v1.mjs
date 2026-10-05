@@ -61,4 +61,13 @@ assert.match(sql,/whatsapp_enqueue_outbound_v1|insert\s+into\s+public\.whatsapp_
 assert.doesNotMatch(sql,/graph\.facebook\.com|sendTemplateViaMeta/i,'SQL de execução não pode implementar cliente Graph');
 assert.doesNotMatch(sql,/create\s+or\s+replace\s+function\s+public\.[^(]*(?:set|update|promote)[^(]*execution_runtime/i,'Task 1 não pode expor RPC para promover runtime');
 
+const wamidFixPath='supabase/migrations/20261005025000_marketing_campaign_wamid_regex_fix_v1.sql';
+assert.equal(fs.existsSync(wamidFixPath),true,'migration de correção do WAMID deve existir');
+const wamidFix=fs.readFileSync(wamidFixPath,'utf8');
+assert.match(wamidFix,/create\s+or\s+replace\s+function\s+public\.marketing_finish_dispatch_v1\s*\(/i,'fix deve substituir marketing_finish_dispatch_v1');
+assert.equal(wamidFix.includes("p_provider_message_id !~ '^wamid\\.'"),true,'WAMID deve aceitar prefixo literal wamid.');
+assert.equal(wamidFix.includes("p_provider_message_id !~ '^wamid\\\\.'"),false,'regex não pode exigir barra invertida literal antes do ponto');
+assert.match(wamidFix,/revoke\s+all\s+on\s+function\s+public\.marketing_finish_dispatch_v1[\s\S]*from\s+public\s*,\s*anon\s*,\s*authenticated/i,'fix deve manter RPC service-role only');
+assert.match(wamidFix,/grant\s+execute\s+on\s+function\s+public\.marketing_finish_dispatch_v1[\s\S]*to\s+service_role/i,'fix deve manter grant service_role');
+
 console.log('PASS test-whatsapp-marketing-campaign-execution-v1');
