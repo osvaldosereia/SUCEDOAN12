@@ -6,7 +6,8 @@ const guided=fs.readFileSync('vitrine/admin/basket-guided-builder.js','utf8');
 const service=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const storefront=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 const carousel=fs.readFileSync('vitrine/basket-carousel.js','utf8');
-const migration=fs.readFileSync('supabase/sql/20261004_basket_categories_and_financials_v1.sql','utf8');
+const categoryMigration=fs.readFileSync('supabase/sql/20261004_basket_categories_and_financials_v1.sql','utf8');
+const lotFinancialMigration=fs.readFileSync('supabase/sql/20261004_basket_lot_types_links_financials_v1.sql','utf8');
 
 const summaryStart=guided.indexOf('function summaryData()');
 const summaryEnd=guided.indexOf('\n  function renderSummary',summaryStart);
@@ -21,15 +22,15 @@ for(const label of ['Custo dos produtos','Soma dos preços','Preço final','Ajus
 
 // O JavaScript exibe o resumo; snapshots financeiros de lote e vínculo pertencem ao banco.
 assert.doesNotMatch(guided,/function basketKitDraftFinancials/,'não deve existir um segundo motor financeiro legado no editor guiado');
-assert.match(migration,/cost_sum_snapshot|component_sum_snapshot|hidden_adjustment_snapshot/i,'banco deve persistir snapshots financeiros do lote');
+for(const field of ['cost_sum_snapshot','component_sum_snapshot','hidden_adjustment_snapshot'])assert.match(lotFinancialMigration,new RegExp(field,'i'),`domínio SQL deve persistir ${field}`);
 
 assert.ok(admin.includes('Categorias de cestas'),'Admin deve oferecer gestão das categorias');
 assert.ok(service.includes('basket_categories_admin')&&service.includes('basket_category_save')&&service.includes('basket_category_delete'),'API deve oferecer listar, salvar e excluir categorias');
 assert.ok(service.includes('category_id'),'API deve permitir vincular cesta à categoria');
 const writeActions=service.slice(service.indexOf('const WRITE_ACTIONS='),service.indexOf('const cors='));
 for(const action of ['basket_category_save','basket_category_delete','basket_category_assign'])assert.ok(writeActions.includes('"'+action+'"'),action+' deve exigir autenticação de escrita');
-assert.ok(migration.includes('create table if not exists public.basket_categories'),'migration deve criar categorias próprias de cestas');
-assert.ok(migration.includes('category_id'),'migration deve vincular basket_templates à categoria');
+assert.ok(categoryMigration.includes('create table if not exists public.basket_categories'),'migration deve criar categorias próprias de cestas');
+assert.ok(categoryMigration.includes('category_id'),'migration deve vincular basket_templates à categoria');
 
 const sandbox={window:{}};const vm=(await import('node:vm')).default;vm.createContext(sandbox);vm.runInContext(carousel,sandbox);
 const html=sandbox.window.BasketCarousel.card({id:'b1',name:'Econômica 1',category_name:'Econômicas',display_price_cents:9800,carousel_items:[]},x=>String(x),x=>'R$ '+(x/100).toFixed(2),x=>x);
