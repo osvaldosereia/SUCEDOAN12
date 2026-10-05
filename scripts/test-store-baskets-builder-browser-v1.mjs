@@ -39,6 +39,7 @@ try{
           {id:'22222222-2222-4222-8222-222222222222',name:'Limpeza Padrão',type:'cleaning_hygiene',item_count:10,cost_total:40,sale_total:55}
         ],cost_total:65.89,product_sale_total:93.14
       }})});
+      if(action==='builds')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,builds:[]})});
       if(action==='save')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,result:{basket_id:body.basket_id||'cccccccc-cccc-4ccc-8ccc-cccccccccccc',name:body.name,sale_price:body.sale_price,hidden_adjustment:Number(body.sale_price)-148.14}})});
       if(action==='preview')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,preview:{ok:true,basket_id:body.basket_id,name:'Econômica Bonini',quantity:body.quantity,sale_price:92,unit_cost_total:105.89,unit_product_sale_total:148.14,hidden_adjustment:-56.14,requirements:[
         {product_id:'p1',name:'Arroz',quantity_per_basket:1,required:Number(body.quantity),available:100,balance_after:100-Number(body.quantity),ok:true},
