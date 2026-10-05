@@ -14,8 +14,8 @@ assert.ok(mainClose>0,'main admin runtime boundary must be identifiable');
 assert.ok(bridgePos>0&&bridgePos<mainClose,'admin bridge must be created inside the main admin runtime before start()');
 assert.doesNotMatch(admin.slice(mainClose),/window\.DonaAntoniaGuidedBridge\s*=/,'post-runtime scripts must not own the basket/admin bridge');
 
-assert.match(admin,/basket-guided-builder\.js\?v=guided-v2/,'admin must load guided builder v2');
-assert.match(admin,/basket-admin-section\.js\?v=canonical-v2/,'admin must load the canonical basket section module');
+assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'admin must load guided builder v3');
+assert.match(admin,/basket-admin-section\.js\?v=canonical-v3/,'admin must load the canonical basket section module v3');
 assert.match(guided,/window\.DonaAntoniaAdminBridge/,'guided builder must consume the stable admin bridge');
 assert.doesNotMatch(guided,/DonaAntoniaGuidedBridge/,'guided builder must not depend on the retired basket-specific bridge');
 
@@ -37,4 +37,4 @@ assert.match(section,/detailForLot\([\s\S]*openGuided\([^\n]*\{lot\}/,'edit-curr
 assert.match(section,/function printLot\(lot\)/,'printing must be a pure lot-data operation');
 assert.doesNotMatch(section,/state\.basketKitDetail\s*=|previous\s*=\s*state\.basketKitDetail/,'printing must not mutate legacy shared basket state');
 
-console.log('basket admin canonical runtime v2: PASS');
+console.log('basket admin canonical runtime v3: PASS');
