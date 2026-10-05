@@ -9,6 +9,8 @@ const JPEG_START_QUALITY=.86;
 const JPEG_QUALITY_STEP=.08;
 const DOWNSCALE_STEP=.86;
 const MIN_LONG_SIDE=720;
+const STICKER_MAX_DIMENSION=512;
+const STICKER_MAX_BYTES=1024*1024;
 
 function fail(code){const error=new Error(code);error.code=code;throw error}
 function canvas(width,height){const el=document.createElement('canvas');el.width=Math.max(1,Math.round(width));el.height=Math.max(1,Math.round(height));return el}
@@ -68,6 +70,15 @@ async function optimizedPng(source){
   return {blob,canvas:work};
 }
 
+async function optimizedStickerPng(source){
+  let work=source,blob=await blobFromCanvas(work,'image/png');
+  while(blob.size>STICKER_MAX_BYTES&&Math.max(work.width,work.height)>STICKER_MAX_DIMENSION){
+    const nextLong=Math.max(STICKER_MAX_DIMENSION,Math.floor(Math.max(work.width,work.height)*DOWNSCALE_STEP));
+    const dims=fit(work.width,work.height,nextLong);work=draw(work,dims.width,dims.height);blob=await blobFromCanvas(work,'image/png');
+  }
+  return {blob,canvas:work};
+}
+
 async function thumbnailFrom(source,preserveAlpha,name){
   const dims=fit(source.width,source.height,LIBRARY_THUMBNAIL_MAX_DIMENSION),thumbCanvas=draw(source,dims.width,dims.height);
   const type=preserveAlpha?'image/png':'image/jpeg';
@@ -87,12 +98,13 @@ export async function optimizeLibraryImage(file,options={}){
   try{
     const sourceWidth=Number(decoded.width||decoded.naturalWidth||0),sourceHeight=Number(decoded.height||decoded.naturalHeight||0);
     if(sourceWidth<1||sourceHeight<1)fail('library_image_decode_failed');
-    const dims=fit(sourceWidth,sourceHeight,Math.min(LIBRARY_IMAGE_MAX_DIMENSION,Math.max(320,maxDimension)));
+    const sticker=options.sticker===true;
+    const dims=fit(sourceWidth,sourceHeight,sticker?STICKER_MAX_DIMENSION:Math.min(LIBRARY_IMAGE_MAX_DIMENSION,Math.max(320,maxDimension)));
     const initial=draw(decoded,dims.width,dims.height);
-    const preserveAlpha=mime==='image/png'&&hasAlpha(initial);
-    const optimized=preserveAlpha?await optimizedPng(initial):await optimizedJpeg(initial);
+    const preserveAlpha=mime==='image/png'&&(sticker||hasAlpha(initial));
+    const optimized=preserveAlpha?(sticker?await optimizedStickerPng(initial):await optimizedPng(initial)):await optimizedJpeg(initial);
     if(!optimized?.blob||optimized.blob.size<1)fail('library_image_encode_failed');
-    if(optimized.blob.size>LIBRARY_IMAGE_MAX_BYTES)fail('library_image_too_large');
+    if(optimized.blob.size>(sticker?STICKER_MAX_BYTES:LIBRARY_IMAGE_MAX_BYTES))fail(sticker?'library_sticker_too_large':'library_image_too_large');
 
     const outputType=preserveAlpha?'image/png':'image/jpeg',ext=preserveAlpha?'png':'jpg';
     const outputFile=new File([optimized.blob],`${baseName(file.name)}.${ext}`,{type:outputType,lastModified:Date.now()});
