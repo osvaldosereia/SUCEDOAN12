@@ -20,7 +20,18 @@ jobs:
         with:
           node-version: 22
       - name: Apply V4 patch to canonical UI/backend
-        run: node scripts/_apply_orders_v4_ui_patch.mjs
+        run: |
+          node scripts/_apply_orders_v4_ui_patch.mjs
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('vitrine/admin/index.html')
+          s=p.read_text()
+          s,n=re.subn(r'(\.order-v3-tag\{[^}]*?)font-size:11px',r'\1font-size:13px',s,count=1)
+          if n != 1:
+              raise SystemExit(f'order-v3-tag css replacements={n}')
+          p.write_text(s)
+          PY
       - name: Verify contract and diff
         run: |
           git diff --check
