@@ -6,6 +6,7 @@ on:
       - 'vitrine/admin/marketing/**'
       - 'scripts/test-whatsapp-marketing-professional-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-papoai-shell-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs'
       - '.github/workflows/marketing-professional-ui-ci.yml'
 
 jobs:
@@ -19,6 +20,8 @@ jobs:
         run: node scripts/test-whatsapp-marketing-professional-ui-v1.mjs
       - name: Marketing PapoAI-like shell contract
         run: node scripts/test-whatsapp-marketing-papoai-shell-v1.mjs
+      - name: Marketing simple templates contract
+        run: node scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs
       - name: Campaign entry syntax
         run: node --check vitrine/admin/marketing/campaign-entry.js
       - name: Existing audience UI regression
