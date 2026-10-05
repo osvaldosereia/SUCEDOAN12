@@ -6,7 +6,7 @@ const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br","http://localhost:3000","http://127.0.0.1:3000"]);
-const MUTATIONS=new Set(["model_save","lot_reserve","lot_update","lot_mount","lot_cancel","lot_reopen"]);
+const MUTATIONS=new Set(["model_save","recipe_kits_save","lot_reserve","lot_update","lot_mount","lot_cancel","lot_reopen"]);
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"content-type,authorization,apikey","Access-Control-Allow-Methods":"GET,POST,OPTIONS"}};
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const clean=(value:unknown,max=500)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
@@ -31,6 +31,7 @@ const DOMAIN_ERRORS=[
   "basket_not_found","basket_kit_template_not_found","lot_not_found","guided_reserved_lot_required",
   "basket_positions_invalid","basket_name_invalid","basket_category_required","basket_price_invalid","basket_image_invalid","position_product_invalid","position_product_unavailable","position_family_invalid","position_product_not_in_family",
   "position_label_invalid","position_quantity_invalid","position_quantity_out_of_bounds","duplicate_product_confirmation_required",
+  "basket_recipe_kits_invalid","basket_recipe_kit_invalid","basket_recipe_kit_unavailable","basket_recipe_kit_duplicate","basket_recipe_kit_quantity_invalid","basket_recipe_kit_required_invalid",
   "invalid_lot_quantity","empty_lot_composition","invalid_lot_product","invalid_kit_template_item","invalid_lot_component_quantity",
   "fixed_position_quantity_changed","required_position_missing","insufficient_loose_stock","invalid_sale_price","invalid_public_name",
   "invalid_linked_lot","linked_price_exceeds_total","kit_short_code_in_use","invalid_kit_short_code","reserved_lot_not_editable",
@@ -45,6 +46,10 @@ const PT:Record<string,string>={
   linked_lot_unavailable:"O lote vinculado não está disponível para esta operação.",
   basket_not_found:"Cesta ou kit não encontrado.",
   basket_kit_template_not_found:"Composição operacional não encontrada.",
+  basket_recipe_kits_invalid:"Revise os kits internos vinculados à cesta.",
+  basket_recipe_kit_unavailable:"Um dos kits internos está inativo ou indisponível.",
+  basket_recipe_kit_duplicate:"O mesmo kit interno não pode ser vinculado duas vezes à mesma cesta.",
+  basket_recipe_kit_quantity_invalid:"Revise a quantidade do kit interno na cesta.",
   lot_not_found:"Lote não encontrado.",
   duplicate_product_confirmation_required:"Confirme o uso do mesmo produto em mais de uma posição.",
   position_product_not_in_family:"O produto não pertence à família configurada desta posição.",
@@ -55,7 +60,7 @@ function rpcError(error:any){
   const detail=clean(error?.message||error,1000);
   const code=DOMAIN_ERRORS.find(x=>detail.includes(x))||"guided_basket_operation_failed";
   if(code.endsWith("_not_found")||code==="lot_not_found"||code==="basket_not_found")return {error:code,status:404,message:PT[code]||"Registro não encontrado."};
-  if(["insufficient_loose_stock","duplicate_product_confirmation_required","lot_sale_must_be_disabled","lot_has_order_history","lot_is_dependency","lot_already_changed","lot_not_editable","reserved_lot_not_editable","reserved_lot_not_mountable","lot_not_cancellable","lot_reservation_mismatch","linked_lot_unavailable","guided_reserved_lot_required","kit_short_code_in_use","position_product_not_in_family","required_position_missing","position_quantity_out_of_bounds","linked_price_exceeds_total"].includes(code))return {error:code,status:409,message:PT[code]||"A operação conflita com o estado atual do lote."};
+  if(["insufficient_loose_stock","duplicate_product_confirmation_required","basket_recipe_kit_unavailable","basket_recipe_kit_duplicate","lot_sale_must_be_disabled","lot_has_order_history","lot_is_dependency","lot_already_changed","lot_not_editable","reserved_lot_not_editable","reserved_lot_not_mountable","lot_not_cancellable","lot_reservation_mismatch","linked_lot_unavailable","guided_reserved_lot_required","kit_short_code_in_use","position_product_not_in_family","required_position_missing","position_quantity_out_of_bounds","linked_price_exceeds_total"].includes(code))return {error:code,status:409,message:PT[code]||"A operação conflita com o estado atual do lote."};
   if(code==="guided_basket_operation_failed")return {error:code,status:500,message:"Não foi possível concluir a operação de Cestas/Kits."};
   return {error:code,status:400,message:PT[code]||"Revise os dados informados."};
 }
@@ -146,12 +151,13 @@ async function linkableLots(input:any){
 
 async function modelEditor(input:any){
   const basketId=uuid(input?.basket_id);if(!basketId)return {error:"invalid_basket",status:400};
-  const [q,categories]=await Promise.all([
+  const [q,categories,recipeKits]=await Promise.all([
     db.rpc("basket_commercial_model_editor_v1",{p_basket_id:basketId}),
-    db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order").order("name")
+    db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order").order("name"),
+    db.rpc("basket_recipe_kits_v1",{p_basket_id:basketId})
   ]);
-  if(q.error)return rpcError(q.error);if(categories.error)throw categories.error;
-  return {model:q.data,categories:categories.data||[]};
+  if(q.error)return rpcError(q.error);if(categories.error)throw categories.error;if(recipeKits.error)return rpcError(recipeKits.error);
+  return {model:{...(q.data||{}),recipe_kits:Array.isArray(recipeKits.data?.kits)?recipeKits.data.kits:[]},categories:categories.data||[]};
 }
 async function modelSave(input:any){
   const basketId=uuid(input?.basket_id),positions=list(input?.positions),commercial=input?.commercial||{};
@@ -166,6 +172,14 @@ async function modelSave(input:any){
     p_positions:positions,p_operator:operator(input)
   });
   if(q.error)return rpcError(q.error);return {model:q.data};
+}
+async function recipeKitsSave(input:any){
+  const basketId=uuid(input?.basket_id),recipeKits=list(input?.recipe_kits,20);
+  if(!basketId)return {error:"invalid_basket",status:400};
+  if(!recipeKits)return {error:"basket_recipe_kits_invalid",status:400};
+  const q=await db.rpc("save_basket_recipe_kits_v1",{p_basket_id:basketId,p_kits:recipeKits,p_operator:operator(input)});
+  if(q.error)return rpcError(q.error);
+  return {recipe_kits:Array.isArray(q.data?.kits)?q.data.kits:[],recipe_kits_result:q.data};
 }
 async function lotPreview(input:any){const basketId=uuid(input?.basket_id),quantity=integer(input?.quantity),items=list(input?.items);if(!basketId)return {error:"invalid_basket",status:400};if(!quantity)return {error:"invalid_lot_quantity",status:400};if(!items||!items.length)return {error:"empty_lot_composition",status:400};const q=await db.rpc("preview_basket_commercial_lot_v1",{p_basket_id:basketId,p_quantity:quantity,p_items:items});if(q.error)return rpcError(q.error);return {preview:q.data};}
 async function lotReserve(input:any){const basketId=uuid(input?.basket_id),quantity=integer(input?.quantity),items=list(input?.items),linked=input?.linked_lot_id?uuid(input.linked_lot_id):null,price=money(input?.sale_price);if(!basketId)return {error:"invalid_basket",status:400};if(!quantity)return {error:"invalid_lot_quantity",status:400};if(!items||!items.length)return {error:"empty_lot_composition",status:400};if(input?.linked_lot_id&&!linked)return {error:"invalid_linked_lot",status:400};if(input?.sale_price!==null&&input?.sale_price!==undefined&&price===null)return {error:"invalid_sale_price",status:400};const q=await db.rpc("create_basket_commercial_lot_reserved_v1",{p_basket_id:basketId,p_quantity:quantity,p_items:items,p_public_name:clean(input?.public_name,120)||null,p_sale_price:price,p_operator:operator(input),p_notes:clean(input?.notes,800)||null,p_short_code:clean(input?.short_code,3).toUpperCase()||null,p_linked_lot_id:linked});if(q.error)return rpcError(q.error);return {lot:q.data};}
@@ -188,6 +202,7 @@ Deno.serve(async(req:Request)=>{
     else if(action==="position_products")result=await positionProducts(input);
     else if(action==="linkable_lots")result=await linkableLots(input);
     else if(action==="model_save")result=await modelSave(input);
+    else if(action==="recipe_kits_save")result=await recipeKitsSave(input);
     else if(action==="lot_preview")result=await lotPreview(input);
     else if(action==="lot_reserve")result=await lotReserve(input);
     else if(action==="lot_update")result=await lotUpdate(input);
