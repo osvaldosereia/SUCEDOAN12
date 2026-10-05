@@ -13,6 +13,10 @@ verify_jwt = false
 [functions.admin-products-live-v1]
 verify_jwt = false
 
+# API dedicada da montagem guiada de Cestas/Kits; valida Bearer + admin_users internamente.
+[functions.admin-basket-guided-v1]
+verify_jwt = false
+
 # Central de Atendimento do Vitrine/Admin. Reaproveita o slot aposentado
 # admin-whatsapp-ops-v1 e valida Bearer do Admin internamente.
 [functions.admin-whatsapp-ops-v1]
