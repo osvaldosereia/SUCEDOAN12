@@ -10,6 +10,8 @@ on:
       - 'supabase/functions/admin-whatsapp-template-carousel-v1/**'
       - 'supabase/functions/admin-marketing-campaigns-v1/**'
       - 'supabase/functions/admin-marketing-strategy-v1/**'
+      - 'supabase/functions/admin-marketing-strategy-campaign-v1/**'
+      - 'supabase/functions/whatsapp-marketing-worker-v1/**'
       - 'supabase/functions/_shared/marketing-strategy-engine-v1.mjs'
       - 'supabase/functions/_shared/marketing-template-strategy-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
@@ -19,8 +21,10 @@ on:
       - 'scripts/test-marketing-strategy-engine-v1.mjs'
       - 'scripts/test-admin-marketing-strategy-v1.mjs'
       - 'scripts/test-marketing-strategy-template-gate-v1.mjs'
+      - 'scripts/test-marketing-strategy-campaign-bridge-v1.mjs'
       - 'scripts/test-admin-marketing-campaigns-v1.mjs'
       - 'scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-worker-v1.mjs'
       - 'scripts/test-whatsapp-meta-template-admin-v1.mjs'
       - 'scripts/test-whatsapp-marketing-strategy-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-professional-ui-v1.mjs'
@@ -51,6 +55,8 @@ jobs:
         run: node scripts/test-admin-marketing-strategy-v1.mjs
       - name: Marketing strategy template gate contract
         run: node scripts/test-marketing-strategy-template-gate-v1.mjs
+      - name: Marketing strategy campaign bridge contract
+        run: node scripts/test-marketing-strategy-campaign-bridge-v1.mjs
       - name: Existing simple Meta template regression
         run: node scripts/test-whatsapp-meta-template-admin-v1.mjs
       - name: Marketing strategy UI contract
@@ -59,6 +65,8 @@ jobs:
         run: node scripts/test-admin-marketing-campaigns-v1.mjs
       - name: Existing campaign drafts regression
         run: node scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs
+      - name: Existing marketing worker regression
+        run: node scripts/test-whatsapp-marketing-worker-v1.mjs
       - name: Marketing professional UI contract
         run: node scripts/test-whatsapp-marketing-professional-ui-v1.mjs
       - name: Marketing PapoAI-like shell contract
