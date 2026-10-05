@@ -1,0 +1,39 @@
+name: Pedidos Fiscal Flow V4
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/orders-fiscal-flow-v4-*'
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
+      - 'supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql'
+      - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
+      - '.github/workflows/test-admin-orders-fiscal-flow-v4.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
+      - 'supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql'
+      - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
+      - '.github/workflows/test-admin-orders-fiscal-flow-v4.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pedidos V4 contract
+        run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
+      - name: Diff hygiene
+        run: git diff --check
