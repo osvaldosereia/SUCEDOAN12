@@ -32,6 +32,14 @@ assert.match(reserve,/insert into public\.basket_lot_component_reservations/i,'r
 assert.match(reserve,/['"]active['"]/i,'new component reservations must be active');
 assert.doesNotMatch(reserve,/basket_kit_template_items|kit_template_item_id/i,'new store basket reserve must not depend on guided template positions');
 
+// PostgreSQL rejects a %ROWTYPE record as one target in a multi-item INTO list.
+// Keep the basket fields scalar because the category slug is selected alongside them.
+assert.doesNotMatch(reserve,/select\s+b\s*,\s*c\.slug\s+into\s+v_basket\s*,/i,'rowtype record must not be mixed with scalar targets in one INTO list');
+for(const variable of ['v_basket_name text','v_basket_price numeric','v_category_slug text']){
+  assert.match(reserve,new RegExp(variable.replace(/\s+/g,'\\s+'),'i'),`reserve must declare scalar ${variable}`);
+}
+assert.match(reserve,/select\s+b\.name\s*,\s*b\.base_price\s*,\s*c\.slug\s+into\s+v_basket_name\s*,\s*v_basket_price\s*,\s*v_category_slug/i,'basket commercial fields must be selected into scalar targets');
+
 const mount=sql.slice(sql.indexOf('create or replace function public.mount_store_basket_reservation_v1'),sql.indexOf('create or replace function public.cancel_store_basket_reservation_v1'));
 assert.match(mount,/store_basket_reserved_v1/i,'mount must only accept store-basket reservations');
 assert.match(mount,/lot_reservation_mismatch/i,'mount must verify reserved quantities before conversion');
