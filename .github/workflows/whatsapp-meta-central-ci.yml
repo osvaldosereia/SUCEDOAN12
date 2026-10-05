@@ -34,6 +34,7 @@ on:
       - 'supabase/sql/20261003_whatsapp_meta_shadow_media_preserve_v1.sql'
       - 'supabase/migrations/20261004233000_marketing_consent_ledger_v1.sql'
       - 'supabase/migrations/20261004234500_marketing_audience_preview_v1.sql'
+      - 'supabase/migrations/20261005002000_marketing_audience_candidates_v2.sql'
       - 'scripts/test-attendance-*.mjs'
       - 'scripts/test-whatsapp-ana-*.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
@@ -62,6 +63,7 @@ jobs:
       - {name: Marketing Meta template admin UI contract, run: 'node scripts/test-whatsapp-marketing-template-admin-v1.mjs'}
       - {name: Marketing consent ledger contract, run: 'node scripts/test-whatsapp-marketing-consent-ledger-v1.mjs'}
       - {name: Marketing audience preview contract, run: 'node scripts/test-whatsapp-marketing-audience-preview-v1.mjs'}
+      - {name: Marketing audience shared core contract, run: 'node scripts/test-whatsapp-marketing-audience-core-v2.mjs'}
       - {name: Admin marketing audiences contract, run: 'node scripts/test-admin-marketing-audiences-v1.mjs'}
       - {name: Marketing audience UI contract, run: 'node scripts/test-whatsapp-marketing-audience-ui-v1.mjs'}
       - {name: Marketing intelligence legacy contract, run: 'python scripts/test-marketing-intelligence-contract.py'}
