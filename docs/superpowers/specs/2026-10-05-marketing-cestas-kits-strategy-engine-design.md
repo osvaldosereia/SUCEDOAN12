@@ -1,40 +1,40 @@
 # Marketing Dona Antônia — Motor de Estratégia para Cestas e Kits
 
 **Data:** 2026-10-05  
-**Status:** aguardando revisão final do usuário  
+**Status:** aguardando revisão e aprovação do usuário  
 **Escopo:** Vitrine/Admin → Marketing → Estratégia  
-**Base existente:** catálogo canônico de Cestas/Kits, campanhas, públicos, templates Meta, snapshots, worker, relatórios e pedidos.
+**Base existente:** catálogo canônico de Cestas/Kits, clientes, pedidos, campanhas, públicos, templates Meta, snapshots, worker, relatórios e telemetria comercial.
 
 ## 1. Objetivo
 
-Criar uma nova área **Marketing → Estratégia** que funcione como o cérebro comercial da Dona Antônia para WhatsApp.
+Criar a nova área **Marketing → Estratégia**, responsável por transformar os dados comerciais da Dona Antônia em recomendações semanais de Marketing pelo WhatsApp.
 
-O produto principal das campanhas não será o item avulso. O motor deve trabalhar prioritariamente com **Cestas e Kits prontos**, oferecendo combinações já fáceis de entender e comprar, alinhadas ao pedido mínimo de **R$ 75** e à política comercial de **entrega grátis para as Cestas/Kits elegíveis dentro da área atendida**.
+O Marketing deve ser centrado em **Cestas e Kits prontos**, e não em itens avulsos. A própria Cesta ou Kit é a combinação comercial oferecida ao cliente: uma solução fácil de entender, com valor final conhecido, alinhada ao pedido mínimo e à política de entrega grátis quando elegível.
 
 O sistema deve:
 
-1. consultar continuamente as Cestas/Kits que realmente estão disponíveis para venda;
-2. identificar o que faz mais sentido divulgar em cada momento;
-3. montar uma estratégia semanal;
-4. criar campanha e template quando necessário;
-5. pedir aprovação humana antes de enviar qualquer template novo à Meta;
-6. acompanhar a aprovação da Meta;
-7. pedir nova aprovação humana antes do disparo aos clientes;
-8. registrar entrega, leitura, clique, interação, acesso ao site, carrinho, pedido e receita quando tecnicamente disponível;
-9. aprender com os resultados e melhorar as estratégias seguintes;
-10. gerenciar o ciclo de vida dos templates para evitar acúmulo desnecessário na Meta.
+1. consultar as Cestas/Kits realmente disponíveis no catálogo canônico;
+2. identificar qual Cesta/Kit ou conjunto de alternativas merece divulgação naquele momento;
+3. considerar clientes, histórico de compra, sazonalidade, estoque, preço, disponibilidade e resultados anteriores;
+4. criar uma estratégia semanal explicável;
+5. produzir campanha, público, texto e criativo;
+6. reutilizar templates Meta aprovados sempre que possível;
+7. quando for necessário template novo, aguardar aprovação humana antes de enviá-lo à Meta;
+8. acompanhar aprovação ou rejeição pela Meta;
+9. aguardar uma segunda aprovação humana antes do disparo aos clientes;
+10. medir entrega, leitura, clique, interação, acesso ao site, carrinho, pedido e receita quando tecnicamente disponíveis;
+11. aprender com os resultados para melhorar as estratégias seguintes;
+12. gerenciar o ciclo de vida dos templates sem apagá-los da Meta automaticamente.
 
-A automação será inicialmente **assistida**, não autônoma para envio.
+A v1 será **assistida por IA, com humano no controle das ações externas**.
 
 ---
 
-## 2. Princípio comercial central
-
-A estratégia parte de uma premissa simples:
+## 2. Princípio comercial
 
 > A Dona Antônia deve vender uma solução pronta para a necessidade do cliente, e não apenas uma lista de preços.
 
-Por isso, o motor de Marketing deve preferir:
+O motor pode selecionar, por exemplo:
 
 - Cesta Econômica;
 - Cesta Família;
@@ -42,76 +42,75 @@ Por isso, o motor de Marketing deve preferir:
 - Kit Limpeza;
 - Kit Higiene;
 - Kit Limpeza + Higiene;
-- novos kits temáticos que venham a ser cadastrados;
-- combinações de duas ou mais Cestas/Kits quando necessário para formar uma oferta comercial válida.
+- novos Kits/Cestas temáticos cadastrados futuramente.
 
-Itens avulsos podem existir na composição do produto e no checkout, mas **não são a unidade principal de decisão do motor de Marketing v1**.
+Itens avulsos podem fazer parte da composição e do checkout, mas **não são a unidade principal de decisão do Marketing v1**.
+
+A v1 **não cria um “combo de duas Cestas/Kits” para superar o pedido mínimo**. Cada Cesta/Kit divulgada deve ser comercialmente válida por si só.
 
 ---
 
-## 3. Regras de negócio obrigatórias
+## 3. Regras comerciais obrigatórias
 
-### 3.1 Pedido mínimo
+### 3.1 Pedido mínimo de R$ 75
 
-A política comercial atual tem pedido mínimo de **R$ 75**.
+O pedido mínimo atual é **R$ 75**.
 
-O motor nunca deve recomendar como oferta principal uma combinação que, sozinha, leve o cliente a uma compra inválida.
+Regra dura do motor:
 
-Regra:
-
-- se uma Cesta/Kit tiver preço final >= R$ 75, pode ser ofertada isoladamente;
-- se uma Cesta/Kit tiver preço abaixo de R$ 75, ela só pode entrar como parte de uma **combinação pronta** cujo total atinja o mínimo;
-- a UI deve mostrar claramente quando a recomendação é uma combinação de dois ou mais modelos.
+- Cesta/Kit com preço final >= R$ 75 pode ser selecionada para Marketing;
+- Cesta/Kit abaixo de R$ 75 fica **inelegível para Marketing isolado** até que preço/composição seja ajustado na fonte canônica;
+- o Marketing não altera preço, composição ou regra do checkout para tornar uma oferta elegível;
+- carrossel pode mostrar várias alternativas, mas **cada card deve ser uma Cesta/Kit válida individualmente**.
 
 ### 3.2 Entrega grátis
 
-As campanhas de Cestas/Kits podem destacar **entrega grátis** apenas quando a oferta e o destino estiverem dentro das regras comerciais vigentes.
+O texto pode destacar **entrega grátis** somente quando a Cesta/Kit e o destino estiverem dentro das regras comerciais vigentes.
 
-O motor não deve prometer entrega grátis para destino fora da área atendida ou para uma combinação que não satisfaça as regras vigentes.
+O motor nunca pode prometer entrega grátis fora da área atendida ou em condição que não seja realmente elegível.
 
 ### 3.3 Estoque e disponibilidade
 
-Somente Cestas/Kits realmente vendáveis entram na seleção normal.
+Somente Cestas/Kits realmente vendáveis entram na seleção.
 
-O motor deve usar o catálogo canônico e respeitar, no mínimo:
+A fonte deve ser o catálogo canônico já existente, respeitando pelo menos:
 
 - modelo ativo;
 - categoria ativa;
 - lote apto;
-- `public_available > 0`;
-- `availability_reason = available`;
-- preço comercial atual;
+- disponibilidade pública positiva;
+- motivo de disponibilidade compatível com venda;
+- preço público atual;
 - imagem e nome públicos atuais.
 
-Antes do disparo, a disponibilidade deve ser revalidada. Se uma oferta ficar indisponível entre a aprovação da estratégia e o envio, o disparo deve ser bloqueado para aquela oferta e retornar à revisão, ou o sistema deve propor substituição antes de prosseguir.
+A disponibilidade, preço e elegibilidade devem ser revalidados imediatamente antes do envio. Mudança material devolve a estratégia para revisão.
 
-### 3.4 Área e calendário operacional
+### 3.4 Operação e calendário
 
-O Marketing deve respeitar a operação de venda local. Campanhas não devem criar expectativa impossível de entrega.
+A estratégia deve respeitar:
 
-A recomendação de horário deve considerar:
-
-- dias de operação;
+- área de atendimento vigente;
 - domingos e feriados nacionais fechados;
 - regra operacional de pedidos após 12h quando aplicável;
-- fuso `America/Cuiaba`.
+- fuso `America/Cuiaba`;
+- capacidade operacional para cumprir a oferta comunicada.
 
-A v1 pode usar quinta-feira pela manhã como hipótese inicial de envio, mas esse horário é **configurável e deve ser substituído pelos dados reais assim que houver histórico suficiente**.
+Quinta-feira pela manhã pode ser uma hipótese inicial de horário, mas deve ser configurável e substituída pelos dados reais quando houver histórico suficiente.
 
 ### 3.5 Frequência
 
 Política inicial:
 
 - no máximo **1 campanha programada de Marketing por cliente por semana**;
-- campanhas operacionais/utilitárias não contam como Marketing;
-- cliente com revogação/`NAO_CONTATAR` não entra;
-- cliente inelegível pelos gates já existentes continua excluído no backend.
+- mensagens utilitárias/operacionais não contam como Marketing;
+- revogação/`NAO_CONTATAR` exclui o cliente;
+- todos os gates atuais de consentimento, telefone válido, deduplicação e segurança continuam valendo.
 
 ---
 
 ## 4. Navegação
 
-A área Marketing passa a ter a navegação principal:
+A navegação principal de Marketing passa a ser:
 
 - **Visão geral**
 - **Estratégia**
@@ -119,75 +118,76 @@ A área Marketing passa a ter a navegação principal:
 - **Campanhas**
 - **Públicos**
 
-`Estratégia` não substitui Campanhas.
-
 Responsabilidades:
 
 - **Estratégia:** decide e explica o que vale a pena fazer;
-- **Templates:** gerencia os modelos Meta;
+- **Templates:** administra os modelos Meta;
 - **Campanhas:** executa o que foi aprovado;
-- **Públicos:** apoia segmentações;
-- **Relatórios:** alimentam o aprendizado.
+- **Públicos:** suporta seleção e segmentação;
+- **Relatórios:** alimentam aprendizado e comparação.
+
+A nova área **não cria um segundo motor de campanhas**. Ela usa o transporte, snapshots, worker, runtime e relatórios existentes.
 
 ---
 
 ## 5. Fluxo de aprovação obrigatório
 
-A v1 terá três portões separados.
+Existem três portões distintos.
 
-### Portão A — aprovação interna da estratégia e conteúdo
+### Portão A — aprovação interna
 
-A automação cria:
+A automação prepara:
 
 - objetivo;
-- Cesta/Kit ou combinação;
+- Cesta/Kit ou carrossel de alternativas;
 - público;
 - argumento comercial;
 - texto;
-- criativo/carrossel quando aplicável;
+- criativo;
 - horário sugerido;
-- template a reutilizar ou novo template necessário.
+- template reutilizável ou necessidade de template novo;
+- justificativa baseada em dados.
 
 Estado:
 
 `Rascunho da IA → Aguardando sua aprovação`
 
-A Meta ainda não é chamada.
+A Meta **não é chamada** antes desta aprovação.
 
 Ações:
 
 - `Aprovar estratégia`
 - `Editar`
-- `Gerar outra sugestão`
+- `Gerar alternativa`
 - `Descartar`
 
-Se a estratégia exigir um template novo, a ação principal passa a ser:
+Quando for necessário template novo, a ação explícita será:
 
 `Aprovar e enviar para Meta`
 
-### Portão B — aprovação Meta
+### Portão B — aprovação da Meta
 
-Somente após o Portão A o backend envia o template para a Meta.
+Somente após o Portão A o backend autorizado envia o template à Meta.
 
-Estados simplificados:
+Estados de UI:
 
 - Enviando para Meta;
 - Em análise;
 - Aprovado;
 - Rejeitado.
 
-Se rejeitado:
+Se houver rejeição:
 
-- registrar motivo disponível;
-- IA pode sugerir uma correção;
-- a correção volta obrigatoriamente ao Portão A;
-- nenhuma nova versão é submetida sem aprovação humana.
+- registrar o motivo retornado quando disponível;
+- a IA pode sugerir correção;
+- qualquer correção volta ao Portão A;
+- nenhuma nova submissão ocorre sem nova aprovação humana.
 
 ### Portão C — aprovação do disparo
 
-Mesmo com template aprovado pela Meta, a campanha não envia automaticamente na v1.
+Template aprovado pela Meta **não significa campanha enviada**.
 
-Estado:
+A campanha passa para:
 
 `Pronta para envio`
 
@@ -198,49 +198,32 @@ Ações:
 - `Editar estratégia`
 - `Cancelar`
 
-Qualquer edição material de texto/template/oferta depois de aprovado invalida a aprovação anterior e retorna ao estágio correspondente.
+Qualquer alteração material de oferta, texto ou template invalida a aprovação correspondente.
 
 ---
 
 ## 6. Tela `Marketing → Estratégia`
 
-### 6.1 Cabeçalho
+### 6.1 Recomendação da semana
 
-Título:
+Card principal, por exemplo:
 
-**Estratégia de Marketing**
+**Recomendação da semana — Cesta Família**
 
-Subtítulo curto:
-
-`A Dona Antônia analisa Cestas, Kits, clientes e resultados para sugerir a melhor campanha da semana.`
-
-Ações:
-
-- `Gerar estratégia agora`
-- `Calendário`
-- `Configurações`
-
-### 6.2 Card principal — Recomendação da semana
-
-Exemplo visual de conteúdo:
-
-**Recomendação da semana**  
-`Cesta Família + Kit Limpeza`
-
-- Público estimado: 412 clientes elegíveis antes da revalidação final;
-- Melhor janela sugerida: quinta, 09:00;
+- Público: todos os clientes elegíveis nesta fase inicial;
+- Melhor janela sugerida: quinta-feira, 09:00;
 - Objetivo: compra do mês;
-- Entrega: grátis conforme regra vigente;
-- Total da oferta: R$ 149,90;
+- Preço: valor canônico atual;
+- Entrega: grátis quando elegível;
 - Confiança: Boa oportunidade.
 
 **Por que esta estratégia?**
 
 - início do mês;
 - estoque saudável;
-- combinação acima do pedido mínimo;
-- histórico recente favorável para Cestas;
-- clientes selecionados ainda não receberam esta oferta no período.
+- Cesta acima do pedido mínimo;
+- necessidade de formar histórico próprio;
+- ausência de campanha equivalente recente para os clientes elegíveis.
 
 Ações:
 
@@ -248,163 +231,149 @@ Ações:
 - `Aprovar`
 - `Gerar alternativa`
 
-### 6.3 Oportunidades detectadas
+### 6.2 Oportunidades detectadas
 
-Cards menores:
+Cards de linguagem simples, como:
 
-- `Nova Cesta sem histórico — testar`
-- `Kit Limpeza com alto estoque`
-- `Clientes próximos de recompra`
-- `Cesta vencedora no início do mês`
-- `Público inativo com boa afinidade`
+- `Nova Cesta sem histórico — vale testar`;
+- `Kit Limpeza com estoque saudável`;
+- `Clientes entrando na janela provável de recompra`;
+- `Cesta com bom desempenho no início do mês`;
+- `Novo Kit que ainda precisa de dados`.
 
-Cada card deve explicar em linguagem simples o motivo da oportunidade.
-
-### 6.4 Calendário comercial
+### 6.3 Calendário comercial
 
 Visão mensal com:
 
-- estratégia planejada por semana;
+- estratégia sugerida por semana;
 - sazonalidades;
-- datas comerciais;
-- início/meio/fim do mês;
 - campanhas já enviadas;
 - campanhas aprovadas/agendadas;
+- datas comerciais;
 - lacunas sem campanha.
 
 O calendário não dispara nada sozinho na v1.
 
-### 6.5 Aprendizados
+### 6.4 Aprendizados
 
-Bloco de leitura simples, por exemplo:
+Exemplos de apresentação:
 
-- `Cestas completas convertem melhor do dia 1 ao dia 8.`
-- `Kit Limpeza teve mais pedidos entre clientes que já compraram limpeza.`
-- `Carrosséis com 4 ofertas geraram mais acessos que campanhas de oferta única.`
-- `Clientes sem compra há 45–70 dias responderam melhor à Cesta Econômica.`
+- `Cestas completas tiveram melhor resultado do dia 1 ao dia 8.`
+- `Kit Limpeza converteu melhor entre clientes que já compraram limpeza.`
+- `Carrossel com quatro Cestas/Kits gerou mais acessos que oferta única.`
 
-Toda afirmação deve estar ligada a dados reais. A IA não pode inventar aprendizados sem evidência suficiente.
+Toda conclusão deve mostrar uma base mínima, por exemplo:
+
+`3 campanhas · 1.284 entregas · 47 pedidos`
+
+Sem evidência suficiente, usar `Sinal inicial` ou `Tendência`, nunca apresentar hipótese como fato.
 
 ---
 
 ## 7. Motor de Oportunidades
 
-O motor deve separar **fatos determinísticos** de **interpretação da IA**.
+O motor deve separar fatos de interpretação.
 
 ### 7.1 Camada determinística
 
-Responsável por fatos e pontuações reproduzíveis:
+Responsável por fatos reproduzíveis:
 
 - Cestas/Kits disponíveis;
 - preço;
-- estoque público;
-- categoria;
-- lote;
+- estoque/disponibilidade;
+- categoria e lote;
 - data de criação/ativação;
-- histórico de vendas;
-- clientes elegíveis;
-- última compra;
-- frequência de compra;
+- histórico de venda;
+- última compra do cliente;
+- frequência;
 - ticket médio;
-- categorias compradas;
+- Cestas/Kits/categorias compradas;
 - campanhas recebidas;
-- leitura/clique/resposta;
-- pedidos atribuídos;
-- receita atribuída;
+- leitura, clique e interação;
+- pedidos e receita atribuídos;
 - sazonalidade configurada;
-- limite semanal;
+- frequência semanal;
 - consentimento/supressão;
-- dia/horário.
+- calendário operacional.
 
 ### 7.2 Camada de IA
 
 Responsável por:
 
 - explicar a oportunidade;
-- sugerir a estratégia;
-- escrever o texto;
-- propor títulos;
+- sugerir estratégia;
+- redigir texto;
+- propor título/argumento;
 - escolher entre formatos permitidos;
-- sugerir teste A/B;
+- sugerir experimento;
 - resumir aprendizados;
-- sugerir próximo experimento.
+- sugerir a próxima ação.
 
 A IA **não pode**:
 
-- inventar preço;
-- inventar estoque;
-- inventar produto;
-- inventar resultado;
-- ignorar o pedido mínimo;
-- marcar cliente inelegível como elegível;
+- inventar preço, estoque, produto ou resultado;
+- ignorar pedido mínimo ou disponibilidade;
+- tornar cliente inelegível elegível;
 - enviar campanha;
-- enviar template à Meta sem aprovação humana;
+- submeter template à Meta antes da aprovação humana;
 - excluir template da Meta;
-- alterar diretamente dados canônicos de estoque, pedido ou cliente.
+- alterar dados canônicos de estoque, pedido ou cliente.
 
 ---
 
-## 8. Pontuação inicial das oportunidades
+## 8. Score inicial
 
-A v1 usa score explicável, não um modelo de machine learning opaco.
+A v1 usa pontuação explicável, não um modelo opaco.
 
-Cada Cesta/Kit ou combinação recebe componentes de pontuação, por exemplo:
+Cada Cesta/Kit ou seleção de campanha recebe componentes como:
 
-- **Disponibilidade e estoque:** 0–25;
-- **Adequação ao momento/sazonalidade:** 0–20;
-- **Adequação ao público:** 0–20;
-- **Desempenho histórico:** 0–20;
-- **Valor de exploração/novidade:** 0–10;
-- **Qualidade operacional da oferta:** 0–5.
+- disponibilidade e estoque: 0–25;
+- adequação ao momento/sazonalidade: 0–20;
+- adequação ao público: 0–20;
+- desempenho histórico: 0–20;
+- exploração/novidade: 0–10;
+- qualidade operacional da oferta: 0–5.
 
 Total: 0–100.
 
-Faixas de apresentação:
+Faixas de UI:
 
 - 80–100: `Excelente oportunidade`;
 - 60–79: `Boa oportunidade`;
 - 40–59: `Vale testar`;
 - abaixo de 40: não priorizar por padrão.
 
-Os pesos devem ser configuráveis e versionados para podermos comparar mudanças de estratégia.
+Pesos devem ser configuráveis e versionados.
 
 ---
 
-## 9. Fase inicial — formação de histórico
+## 9. Formação de histórico — cold start
 
-Como ainda haverá muitos kits novos sem histórico, a v1 não deve fingir que conhece o comportamento individual desde o primeiro dia.
+Nas primeiras semanas ainda não haverá dados suficientes para personalização forte. Portanto, a estratégia inicial será deliberadamente ampla.
 
-### 9.1 Cold start
+### 9.1 Primeiros ciclos
 
-Nas primeiras campanhas:
+- enviar a campanha para **todos os clientes elegíveis**, depois de aplicar consentimento, supressão, deduplicação e limite semanal;
+- manter no máximo uma campanha programada por cliente por semana;
+- variar Cestas/Kits entre as semanas;
+- usar carrossel quando houver várias opções válidas e fizer sentido aprender preferência;
+- cada card do carrossel deve respeitar individualmente o mínimo de R$ 75;
+- cada card/oferta deve ter rastreamento próprio;
+- registrar qual Cesta/Kit foi visualizada, clicada e comprada quando os sinais estiverem disponíveis.
 
-- usar base ampla de clientes elegíveis;
-- respeitar supressão e limite semanal;
-- variar as Cestas/Kits oferecidas entre semanas;
-- preferir carrossel quando houver várias opções relevantes;
-- usar links rastreáveis separados por card/oferta;
-- registrar qual Cesta/Kit foi visualizada e qual foi comprada.
-
-Objetivo: produzir dados próprios rapidamente.
+Objetivo: formar rapidamente uma base própria de comportamento sem fingir que o sistema já conhece preferências que ainda não conhece.
 
 ### 9.2 Exploração controlada
 
-O motor não deve mostrar sempre apenas a campeã histórica.
+O motor não deve recomendar apenas a campeã histórica.
 
-Uma parcela das oportunidades deve receber bônus de exploração para:
-
-- Cesta/Kit novo;
-- composição recém-alterada;
-- nova faixa de preço;
-- novo formato de comunicação.
-
-Isso evita que o algoritmo fique preso às primeiras opções vencedoras.
+Cestas/Kits novos ou alterados recebem oportunidade controlada para gerar evidência. Isso evita que os primeiros vencedores impeçam a descoberta de ofertas melhores.
 
 ---
 
-## 10. Fase aprendida — personalização
+## 10. Personalização futura
 
-Com histórico suficiente, o motor passa a ponderar por cliente/público.
+Quando houver histórico suficiente, o motor passa a ponderar individualmente ou por segmentos.
 
 Sinais possíveis:
 
@@ -413,9 +382,8 @@ Sinais possíveis:
 - ticket médio;
 - Cestas/Kits já comprados;
 - categorias presentes nas compras;
-- preço médio aceito;
-- campanhas lidas;
-- campanhas clicadas;
+- faixa de preço aceita;
+- campanhas lidas/clicadas;
 - campanhas que geraram pedido;
 - ofertas repetidamente ignoradas.
 
@@ -424,22 +392,18 @@ Exemplos:
 - cliente mensal entrando na janela de recompra → Cesta do mês;
 - histórico de limpeza → Kit Limpeza;
 - ticket alto → Cesta Família/Premium;
-- cliente inativo → combinação de entrada com alto apelo;
-- comprador recorrente da mesma cesta → recompra ou upgrade controlado.
+- cliente inativo → Cesta/Kit de maior apelo comprovado;
+- comprador recorrente da mesma Cesta → recompra ou upgrade controlado.
 
-A pessoa não deve receber textos invasivos como `você está há 43 dias sem comprar`. Esses sinais são internos.
+Esses sinais são internos. O cliente não recebe linguagem invasiva como `você está há 43 dias sem comprar`.
 
 ---
 
 ## 11. Sazonalidade
 
-Criar calendário interno versionado.
+Criar calendário interno versionado com regras como:
 
-Tipos de regra:
-
-- início do mês;
-- meio do mês;
-- fim do mês;
+- início, meio e fim do mês;
 - volta às aulas;
 - Páscoa;
 - Dia das Mães;
@@ -448,39 +412,35 @@ Tipos de regra:
 - Black Friday;
 - Natal;
 - Ano Novo;
-- sazonalidades locais cadastradas pela Dona Antônia.
+- sazonalidades locais configuradas pela Dona Antônia.
 
-Cada regra pode sugerir:
+Cada regra pode influenciar:
 
-- categorias de Cesta/Kit;
+- Cestas/Kits prioritários;
 - objetivo;
 - janela de envio;
-- peso no score;
-- texto-base opcional.
+- peso do score;
+- argumento sugerido.
 
-A v1 não depende de dados externos de clima ou web para funcionar. Fontes externas podem ser avaliadas futuramente.
+A v1 não depende de clima ou dados externos da web para funcionar.
 
 ---
 
-## 12. Seleção de oferta e combinações
+## 12. Formatos de oferta da v1
 
-O motor trabalha com três tipos de oferta:
+Existem apenas dois formatos comerciais principais:
 
-### 12.1 Oferta simples
+### 12.1 Oferta única
 
-Uma única Cesta/Kit que já satisfaz as regras comerciais.
+Uma Cesta/Kit elegível, com preço >= R$ 75 e disponibilidade válida.
 
 ### 12.2 Carrossel de alternativas
 
-De 2 a N Cestas/Kits independentes, cada card levando para sua vitrine/ação rastreável.
+Duas ou mais Cestas/Kits independentes, cada uma comercialmente válida por si só e com rastreamento próprio.
 
-Uso recomendado no cold start para aprender preferências.
+O carrossel é especialmente útil no cold start para descobrir preferências.
 
-### 12.3 Combinação pronta
-
-Duas ou mais Cestas/Kits apresentadas como uma solução única quando isso fizer sentido comercial ou for necessário para atingir o mínimo.
-
-A combinação deve guardar os IDs canônicos de cada componente para atribuição posterior.
+**Fora de escopo da v1:** criar um produto sintético juntando duas ou mais Cestas/Kits apenas para alcançar o pedido mínimo. Se isso for desejado futuramente, terá desenho comercial e técnico próprio.
 
 ---
 
@@ -488,29 +448,25 @@ A combinação deve guardar os IDs canônicos de cada componente para atribuiç�
 
 O sistema deve medir mais do que `enviado`.
 
-### 13.1 Eventos desejados
-
-Por campanha/destinatário/oferta quando disponíveis:
+Eventos desejados por campanha/destinatário/oferta, quando tecnicamente disponíveis:
 
 1. selecionado para público;
 2. enviado;
 3. entregue;
 4. lido;
-5. link/card clicado;
+5. card/link clicado;
 6. vitrine aberta;
 7. interação/resposta no WhatsApp;
-8. item/cesta adicionada ao carrinho;
+8. Cesta/Kit adicionada ao carrinho;
 9. checkout iniciado;
 10. pedido criado;
 11. pedido confirmado;
 12. pedido cancelado;
 13. receita atribuída.
 
-### 13.2 Links de campanha
+### 13.1 Links rastreáveis
 
-Todo CTA de Marketing deve usar um deep link rastreável da Dona Antônia com identificadores não sensíveis ou token opaco.
-
-O token deve permitir relacionar:
+Todo CTA deve usar deep link rastreável da Dona Antônia, preferencialmente com token opaco, relacionando:
 
 - estratégia;
 - campanha;
@@ -519,29 +475,20 @@ O token deve permitir relacionar:
 - sessão;
 - pedido.
 
-Não expor UUIDs internos em URL pública quando isso puder ser evitado.
+Evitar expor UUIDs internos na URL pública.
 
-### 13.3 Atribuição de venda
+### 13.2 Atribuição
 
-Hierarquia sugerida:
+Separar:
 
-**Atribuição direta**
-
-Pedido contém token/origem explícita da campanha.
-
-**Atribuição assistida**
-
-Cliente recebeu/interagiu com a campanha e realizou pedido dentro de uma janela configurável, sem outra campanha posterior que explique melhor a conversão.
+- **direta:** o pedido carrega origem/token explícito da campanha;
+- **assistida:** o cliente recebeu/interagiu e realizou pedido dentro de janela configurável, sem campanha posterior mais explicativa.
 
 Janela inicial sugerida: 7 dias.
 
-Relatórios devem separar `direta` de `assistida`; não somar ambas como se fossem a mesma certeza.
+Relatórios nunca devem somar atribuição direta e assistida como se fossem a mesma certeza.
 
-### 13.4 Identificação da Cesta/Kit comprada
-
-A atribuição deve preferir dados canônicos do pedido, incluindo os metadados de Cesta/Lote já registrados no motor de pedidos.
-
-Isso permite saber não apenas se houve pedido, mas **qual Cesta/Kit efetivamente vendeu**.
+A identificação da Cesta/Kit comprada deve preferir os metadados canônicos de pedido já existentes (`basket_id`, `basket_lot_id` ou equivalentes).
 
 ---
 
@@ -549,8 +496,7 @@ Isso permite saber não apenas se houve pedido, mas **qual Cesta/Kit efetivament
 
 Por estratégia, campanha, público e Cesta/Kit:
 
-- público selecionado;
-- público elegível;
+- selecionados/elegíveis;
 - enviados;
 - entregues;
 - lidos;
@@ -570,38 +516,23 @@ Por estratégia, campanha, público e Cesta/Kit:
 - cancelamentos;
 - opt-outs/supressões associados quando disponíveis.
 
-Principal métrica econômica inicial:
+Métrica econômica principal inicial:
 
-> **Receita e pedidos por 1.000 mensagens entregues.**
-
-Isso permite comparar campanhas de tamanhos diferentes.
+> **Pedidos e receita por 1.000 mensagens entregues.**
 
 ---
 
 ## 15. Ciclo de vida de Templates Meta
 
-### 15.1 Regra `reuse first`
+### 15.1 Reuse first
 
-Antes de criar um template, o sistema procura:
+Antes de criar template novo, o sistema procura:
 
-1. template aprovado idêntico/reutilizável;
-2. família aprovada que aceite os dados da nova oferta;
-3. somente então cria um template novo.
+1. template aprovado reutilizável;
+2. família aprovada compatível com a estratégia;
+3. somente então propõe um template novo.
 
-Objetivo: reduzir submissões e acúmulo.
-
-### 15.2 Famílias de template
-
-Quando o contrato Meta e o worker atual permitirem parametrização segura, preferir famílias reutilizáveis como:
-
-- oferta única de Cesta/Kit;
-- carrossel de Cestas/Kits;
-- recompra;
-- oportunidade sazonal.
-
-Se a estrutura/mídia não puder ser reutilizada com segurança, criar versão específica.
-
-### 15.3 Estados locais
+### 15.2 Estados locais
 
 - Rascunho;
 - Aguardando aprovação interna;
@@ -615,431 +546,197 @@ Se a estrutura/mídia não puder ser reutilizada com segurança, criar versão e
 - Candidato à exclusão;
 - Excluído da Meta.
 
-### 15.4 Templates protegidos
+### 15.3 Templates protegidos
 
-Templates operacionais/utilitários críticos devem ter `protected = true`.
+Templates operacionais/utilitários críticos terão `protected = true` e nunca entrarão na limpeza automática sugerida.
 
-Exemplos:
+### 15.4 Candidato à exclusão
 
-- confirmação de pedido;
-- atendimento operacional;
-- fluxos necessários ao checkout/pós-pedido.
-
-Eles nunca entram na fila automática de limpeza.
-
-### 15.5 Candidato à exclusão
-
-Regra inicial sugerida para Marketing:
+Regra inicial para template de Marketing:
 
 - não protegido;
-- nenhuma campanha ativa/agendada/futura usa o template;
+- nenhuma campanha ativa, agendada ou futura depende dele;
 - nenhuma estratégia aprovada depende dele;
 - último uso há pelo menos 60 dias;
 - sem pendência operacional conhecida.
 
-O sistema marca e explica.
+O sistema apenas recomenda e explica.
 
-### 15.6 Exclusão
+### 15.5 Exclusão
 
-A automação **não apaga template da Meta sozinha**.
+A automação **não exclui template da Meta sozinha**.
 
 Fluxo:
 
-`Candidato à exclusão → Revisar limpeza → Usuário confirma → Backend exclui na Meta`
+`Candidato à exclusão → Revisar limpeza → Usuário confirma → Backend autorizado exclui na Meta`
 
-Após exclusão na Meta, manter localmente:
+O histórico local permanece, incluindo conteúdo, ID Meta antigo, campanhas, resultados, motivo de aposentadoria e data da exclusão.
 
-- ID Meta antigo;
-- nome;
-- conteúdo;
-- mídia/referências permitidas;
-- campanhas associadas;
-- resultados;
-- motivo da aposentadoria;
-- data da exclusão;
-- aprendizado.
-
-Apagar da Meta não apaga inteligência histórica.
+Apagar da Meta **não apaga a inteligência histórica**.
 
 ---
 
-## 16. Tela de Gestão de Templates dentro de Estratégia
+## 16. Dados e estruturas
 
-Adicionar bloco `Saúde dos templates` ou atalho para Templates com visão operacional:
+### 16.1 Reutilizar obrigatoriamente
 
-- Protegidos;
-- Em uso;
-- Em análise;
-- Rejeitados;
-- Aposentados;
-- Candidatos à exclusão.
+**Cestas/Kits**
+- catálogo comercial canônico;
+- preço, imagem, categoria, lote, disponibilidade e estoque público.
 
-Exemplo:
-
-`7 templates de Marketing podem ser aposentados. 3 já podem ser removidos da Meta com segurança.`
-
-Ações:
-
-- `Revisar limpeza`
-- `Manter`
-- `Aposentar`
-- `Excluir selecionados da Meta`
-
-Toda exclusão exige confirmação explícita.
-
----
-
-## 17. Dados existentes a reutilizar
-
-A implementação deve reutilizar o sistema atual em vez de duplicá-lo.
-
-### Cestas/Kits
-
-Fonte canônica prevista:
-
-- catálogo comercial canônico de Cestas/Kits;
-- disponibilidade pública;
-- preço;
-- imagem;
-- categoria;
-- lote atual;
-- estoque público;
-- disponibilidade e motivo.
-
-### Campanhas
-
-Reutilizar:
-
+**Campanhas**
 - `marketing_campaigns_v1`;
-- snapshots de campanha;
-- destinatários do snapshot;
-- eventos da campanha;
-- dispatches;
+- snapshots e destinatários;
+- eventos/dispatches;
 - worker/agendamento;
 - runtime de execução;
-- relatórios atuais.
+- relatórios existentes.
 
-### Templates
-
-Reutilizar:
-
+**Templates**
 - `whatsapp_templates_v1`;
 - sincronização Meta existente;
-- Edge Functions Admin existentes;
-- função de carrossel já criada/deployada;
-- status de template vindos da Meta.
+- Edge Functions Admin atuais;
+- fluxo de carrossel já existente.
 
-### Clientes
-
-Reutilizar:
-
-- cadastro canônico;
-- telefone canônico;
+**Clientes**
+- cadastro canônico e telefone;
 - histórico de pedidos;
-- etiquetas/interesses quando úteis;
-- consentimento/supressão;
-- métricas de compra existentes ou views derivadas.
+- interesses/etiquetas quando úteis;
+- consentimento/supressão.
 
-### Pedidos
+**Pedidos**
+- pedidos e itens canônicos;
+- metadados de Cesta/Kit/Lote para atribuição.
 
-Usar `orders`/`order_items` e metadados canônicos de Cesta/Kit/Lote para atribuição.
+### 16.2 Novas estruturas previstas
 
----
+Os nomes finais podem ser refinados no plano técnico, sem mudar o contrato funcional.
 
-## 18. Novas estruturas previstas
+**`marketing_strategy_runs_v1`**  
+Uma linha por estratégia gerada, contendo período, estado, objetivo, público, horário sugerido, score, justificativa, versão das regras/pesos, metadados da IA, aprovações e campanha materializada.
 
-Os nomes abaixo são proposta arquitetural e podem ser ajustados no plano técnico se o schema atual oferecer uma opção melhor.
+**`marketing_strategy_offers_v1`**  
+Cestas/Kits pertencentes à estratégia, com ID canônico, lote/snapshot quando aplicável, posição no carrossel, preço/estoque snapshot, score e justificativas.
 
-### `marketing_strategy_runs_v1`
+**`marketing_strategy_events_v1`**  
+Ledger append-only de geração, aprovação, submissão Meta, aprovação/rejeição Meta, criação da campanha, aprovação de envio, agendamento, conclusão e aposentadoria.
 
-Uma linha por estratégia gerada.
+**`marketing_seasonality_rules_v1`**  
+Calendário e pesos de sazonalidade configuráveis.
 
-Campos conceituais:
+**`marketing_template_lifecycle_v1`**  
+Camada de ciclo de vida/proteção sobre o cache Meta existente.
 
-- id;
-- período de referência;
-- status;
-- objetivo;
-- audience definition;
-- suggested_send_at;
-- score/nível de confiança;
-- rationale;
-- snapshot das regras/pesos;
-- AI model/version metadata;
-- aprovado por/em;
-- rejeitado por/em;
-- campaign_id quando materializada;
-- timestamps.
-
-### `marketing_strategy_offers_v1`
-
-Ofertas pertencentes à estratégia:
-
-- strategy_id;
-- commercial_id da Cesta/Kit;
-- lot_id selecionado/snapshot quando aplicável;
-- posição/hero/card;
-- preço snapshot;
-- estoque snapshot;
-- score;
-- reasons;
-- offer snapshot.
-
-Para combinação pronta, permitir grupo de componentes.
-
-### `marketing_strategy_events_v1`
-
-Ledger append-only:
-
-- generated;
-- internally_approved;
-- internally_rejected;
-- sent_to_meta;
-- meta_approved;
-- meta_rejected;
-- campaign_created;
-- send_approved;
-- scheduled;
-- completed;
-- retired.
-
-### `marketing_seasonality_rules_v1`
-
-Calendário/regras:
-
-- nome;
-- período;
-- recorrência;
-- prioridade;
-- categorias/ofertas preferidas;
-- peso;
-- notas;
-- ativo.
-
-### `marketing_template_lifecycle_v1`
-
-Complemento operacional ao cache Meta:
-
-- template_id;
-- protected;
-- lifecycle_status;
-- purpose;
-- last_used_at;
-- retired_at;
-- delete_candidate_at;
-- deleted_from_meta_at;
-- deletion_reason;
-- strategy metadata.
-
-### `marketing_attribution_events_v1`
-
-Somente para eventos que ainda não tenham fonte canônica adequada.
-
-Não duplicar `delivery/read` se o WhatsApp ledger atual já os representar. Preferir views agregadoras sobre fontes existentes.
-
-Eventos possíveis:
-
-- campaign_link_open;
-- storefront_view;
-- add_to_cart;
-- checkout_started;
-- direct_order_attribution.
+**`marketing_attribution_events_v1`**  
+Somente para eventos ainda sem fonte canônica adequada, como abertura de vitrine, add-to-cart, checkout e atribuição direta. Não duplicar eventos de entrega/leitura já existentes.
 
 ---
 
-## 19. Estratégia de cold start recomendada
+## 17. Experimentos e aprendizado
 
-Primeiro ciclo operacional sugerido: 8 semanas.
-
-### Semanas 1–4
-
-- 1 campanha semanal;
-- base ampla elegível;
-- alternância de Cestas/Kits;
-- carrossel quando útil;
-- rastreamento por oferta;
-- sem segmentação agressiva baseada em pouco dado.
-
-### Semanas 5–8
-
-- começar a comparar grupos;
-- recompra;
-- afinidade por Cesta/Kit/categoria;
-- faixa de ticket;
-- inatividade;
-- aprendizado de horário;
-- exploração de novos kits.
-
-Ao final, o painel deve conseguir comparar resultados e recomendar a fase seguinte.
-
----
-
-## 20. Experimentos
-
-O sistema deve suportar aprendizado deliberado.
-
-Tipos iniciais:
+O sistema deve permitir testes planejados, por exemplo:
 
 - oferta única vs carrossel;
 - Cesta Econômica vs Cesta Família;
-- 3 cards vs 4 cards;
+- três cards vs quatro cards;
 - argumento `economia` vs `praticidade`;
 - horário A vs horário B;
-- público amplo vs público com afinidade.
+- público amplo vs segmento, quando já houver dados suficientes.
 
-Regras:
+Cada experimento guarda:
 
-- cada experimento guarda hipótese;
-- grupos mutuamente exclusivos quando necessário;
-- mesma janela de comparação;
+- hipótese;
+- grupos comparáveis;
 - métrica principal definida antes do envio;
-- resultado registrado mesmo quando inconclusivo.
+- período de comparação;
+- resultado, inclusive quando inconclusivo.
 
-A IA pode sugerir experimento, mas não pode mudar silenciosamente a métrica depois de ver o resultado.
+A IA não pode escolher a métrica depois de ver o resultado.
 
 ---
 
-## 21. Decisão semanal do motor
-
-Fluxo conceitual:
+## 18. Processo semanal do motor
 
 1. carregar Cestas/Kits vendáveis;
-2. excluir ofertas comercialmente inválidas;
-3. carregar estado de clientes elegíveis;
-4. aplicar limite de frequência e supressões;
+2. excluir qualquer Cesta/Kit abaixo do pedido mínimo ou comercialmente inelegível;
+3. carregar todos os clientes elegíveis para a fase atual;
+4. aplicar consentimento, supressões, deduplicação e limite semanal;
 5. carregar sazonalidade;
 6. carregar desempenho histórico;
-7. calcular score de ofertas;
-8. aplicar exploração controlada;
-9. escolher oferta simples, carrossel ou combinação;
-10. escolher público inicial;
+7. calcular score das ofertas;
+8. aplicar exploração controlada a novas Cestas/Kits;
+9. escolher oferta única ou carrossel;
+10. definir público;
 11. definir objetivo e hipótese;
 12. montar texto/criativo;
-13. verificar template reutilizável;
-14. montar estratégia;
-15. salvar rationale + snapshots;
+13. procurar template reutilizável;
+14. salvar estratégia e snapshots;
+15. apresentar justificativa;
 16. aguardar aprovação humana.
 
-Nada é enviado durante este processo.
+Nada é enviado durante essa análise.
 
 ---
 
-## 22. Revalidação antes do envio
+## 19. Revalidação antes do disparo
 
-Imediatamente antes de materializar/disparar:
+Imediatamente antes do envio, revalidar:
 
-- revalidar template aprovado;
-- revalidar canal;
-- revalidar runtime;
-- revalidar consentimento/supressão;
-- revalidar telefone;
-- deduplicar;
-- revalidar frequência semanal;
-- revalidar Cesta/Kit/lote/estoque;
-- revalidar preço;
-- revalidar mínimo de R$ 75;
-- revalidar regras de entrega;
-- revalidar agenda/feriado quando aplicável.
+- template aprovado;
+- canal e runtime;
+- consentimento/supressão;
+- telefone válido;
+- deduplicação;
+- limite semanal;
+- Cesta/Kit/lote/estoque;
+- preço;
+- mínimo de R$ 75;
+- entrega grátis/área;
+- agenda operacional e feriado quando aplicável.
 
-Se preço ou composição tiverem mudado de forma que altere o conteúdo aprovado, bloquear e devolver à revisão.
+Se preço, disponibilidade, composição ou conteúdo comercial tiver mudado materialmente, bloquear o envio e devolver à revisão.
+
+A implementação **não pode ativar automaticamente** `campaigns_enabled` nem mudar runtime de `off` para `live` como efeito colateral da criação da nova área.
 
 ---
 
-## 23. Segurança e responsabilidades
+## 20. Segurança
 
 - navegador Admin nunca chama Graph API diretamente;
-- service role permanece somente no backend;
-- toda chamada Meta passa pelas Edge Functions autorizadas;
-- estratégia não contorna os gates existentes;
-- snapshots/eventos de decisão importantes são append-only quando possível;
-- ações destrutivas ficam auditadas;
-- aprovação interna registra operador e data;
-- aprovação de envio registra operador e data;
-- exclusão Meta registra operador, template e motivo;
-- nenhuma ação automática deve ligar `campaigns_enabled` ou mudar runtime de `off` para `live` sem fluxo explícito de homologação.
+- `service_role` fica somente no backend;
+- chamadas Meta passam pelas Edge Functions autorizadas;
+- estratégia não contorna gates atuais;
+- aprovações registram operador e data;
+- ações destrutivas são auditadas;
+- snapshots relevantes preservam o contexto da decisão;
+- nenhuma campanha é enviada pela IA diretamente;
+- nenhum template é submetido à Meta antes da aprovação humana;
+- nenhum template é excluído da Meta sem confirmação humana.
 
 ---
 
-## 24. Estados resumidos
+## 21. Rollout
 
-### Estratégia
+### Fase 1 — Estratégia assistida e instrumentação
 
-`draft → awaiting_internal_approval → approved_internal → waiting_meta (se necessário) → ready_to_send → send_approved → scheduled/running → completed`
-
-Alternativas:
-
-`rejected_internal`, `meta_rejected`, `cancelled`, `superseded`.
-
-### Template
-
-`draft → awaiting_internal_approval → meta_pending → meta_approved → active → retired → delete_candidate → meta_deleted`
-
-### Campanha
-
-Continuar usando os estados canônicos atuais, acrescentando apenas adaptação de UI/integração necessária; não criar um segundo motor de execução.
-
----
-
-## 25. Critérios para a IA dizer que aprendeu algo
-
-A IA só deve apresentar um aprendizado como conclusão quando houver suporte mínimo definido.
-
-V1:
-
-- mostrar `Sinal inicial` quando amostra for pequena;
-- mostrar `Tendência` quando houver repetição consistente;
-- mostrar `Aprendizado forte` somente após volume mínimo e resultado consistente definido no plano técnico.
-
-Sempre apresentar base simples:
-
-`3 campanhas · 1.284 entregas · 47 pedidos`
-
-Evitar frases absolutas com poucos dados.
-
----
-
-## 26. Relatório de Estratégia
-
-Além do relatório de campanha existente, a nova área deve responder:
-
-- Qual estratégia escolhemos?
-- Por que escolhemos?
-- O que oferecemos?
-- Para quem?
-- Qual era a hipótese?
-- Quantos receberam?
-- Quantos leram?
-- Quantos acessaram?
-- Quantos compraram?
-- Qual Cesta/Kit compraram?
-- Quanto faturou?
-- Qual receita por 1.000 entregues?
-- Funcionou melhor ou pior que campanhas comparáveis?
-- O que o motor recomenda fazer diferente na próxima semana?
-
----
-
-## 27. Rollout
-
-### Fase 1 — Instrumentação e Estratégia assistida
-
-- nova aba Estratégia;
-- ingestão do catálogo canônico;
+- aba Estratégia;
+- leitura do catálogo canônico;
+- filtro obrigatório de R$ 75;
 - score explicável;
 - recomendação semanal;
-- aprovação interna;
-- tracking de campanha/oferta;
-- sem envio automático.
+- primeiros envios para todos os clientes elegíveis;
+- tracking por oferta;
+- aprovação humana obrigatória.
 
-### Fase 2 — Ciclo Meta completo
+### Fase 2 — Ciclo Meta
 
-- reaproveitamento de template;
+- reuso de templates;
 - criação de template quando necessário;
 - aprovação interna antes da Meta;
 - acompanhamento de status;
-- fluxo de rejeição;
+- tratamento de rejeição;
 - gestão de ciclo de vida;
-- fila de limpeza com exclusão somente após aprovação.
+- limpeza somente após confirmação humana.
 
 ### Fase 3 — Aprendizado comercial
 
@@ -1054,84 +751,80 @@ Além do relatório de campanha existente, a nova área deve responder:
 ### Fase 4 — Experimentos
 
 - A/B;
-- exploração de novos Kits;
-- comparação de horários/argumentos/formatos.
+- exploração de novos Kits/Cestas;
+- comparação de horários, argumentos e formatos.
 
 ### Fase 5 — Automação limitada futura
 
-Somente depois de histórico e confiança:
-
-- determinadas estratégias recorrentes podem ser auto-preparadas;
-- envio automático permanece uma decisão separada de produto e segurança;
-- exclusão de template Meta continua exigindo confirmação humana salvo futura decisão explícita em contrário.
+Somente depois de histórico e confiança suficientes. Qualquer mudança para envio automático será uma decisão de produto separada e explícita.
 
 ---
 
-## 28. Testes obrigatórios
+## 22. Testes obrigatórios
 
 Seguir TDD e PRs pequenos.
 
 Cobrir pelo menos:
 
-1. só selecionar Cesta/Kit disponível;
-2. respeitar mínimo de R$ 75;
-3. criar combinação válida quando necessário;
-4. nunca enviar à Meta antes da aprovação interna;
+1. selecionar somente Cesta/Kit disponível;
+2. excluir da recomendação qualquer Cesta/Kit abaixo de R$ 75;
+3. garantir que cada card de carrossel seja comercialmente válido individualmente;
+4. nunca enviar template à Meta antes da aprovação interna;
 5. nunca disparar campanha antes da aprovação de envio;
 6. invalidar aprovação após mudança material;
-7. reusar template aprovado quando compatível;
+7. reutilizar template aprovado quando compatível;
 8. nunca sugerir exclusão de template protegido;
-9. bloquear exclusão se houver campanha ativa/agendada dependente;
-10. manter histórico local após exclusão Meta;
-11. respeitar frequência semanal;
-12. respeitar supressão/consentimento;
-13. revalidar estoque/preço antes do envio;
-14. registrar tracking e atribuição sem duplicar pedidos;
+9. bloquear exclusão se campanha ativa/agendada depender do template;
+10. preservar histórico local após exclusão Meta;
+11. respeitar limite semanal;
+12. respeitar consentimento/supressão;
+13. revalidar estoque/preço/mínimo antes do envio;
+14. registrar tracking e atribuição sem duplicar pedido;
 15. separar receita direta de assistida;
-16. não permitir Graph direto do browser;
-17. manter runtime de produção seguro durante homologação;
+16. impedir Graph direto do browser;
+17. não alterar runtime de produção automaticamente;
 18. regressão das áreas Templates, Campanhas, Públicos, Atendimento e Cestas/Kits.
 
 ---
 
-## 29. Critério de conclusão da primeira versão
+## 23. Critério de conclusão da v1
 
-A v1 está pronta quando o operador consegue:
+A primeira versão estará pronta quando o operador conseguir:
 
 1. abrir `Marketing → Estratégia`;
-2. ver uma recomendação semanal baseada apenas em Cestas/Kits vendáveis;
-3. entender por que ela foi sugerida;
-4. revisar público, oferta, texto e horário;
+2. ver recomendação baseada somente em Cestas/Kits vendáveis e >= R$ 75;
+3. entender por que foi sugerida;
+4. revisar público, oferta, texto, criativo e horário;
 5. aprovar internamente;
-6. quando necessário, enviar o template à Meta somente após essa aprovação;
+6. enviar um template novo à Meta somente após essa aprovação;
 7. acompanhar aprovação/rejeição Meta;
 8. aprovar separadamente o disparo;
-9. executar usando o motor atual de campanhas;
+9. executar pelo motor de campanhas atual;
 10. acompanhar entrega/leitura/clique/interação/pedido conforme disponibilidade dos eventos;
-11. ver receita e Cesta/Kit vendido;
-12. ver o aprendizado proposto para a próxima campanha;
+11. ver receita e Cesta/Kit comprada;
+12. ver o aprendizado sugerido para a campanha seguinte;
 13. revisar templates aposentados/candidatos à exclusão;
 14. excluir da Meta somente após confirmação humana;
-15. preservar integralmente histórico e métricas locais.
+15. preservar histórico e métricas locais.
 
 ---
 
-## 30. Decisões fechadas nesta especificação
+## 24. Decisões fechadas
 
-- Marketing será centrado em **Cestas e Kits**.
-- Pedido mínimo de **R$ 75** é regra dura do motor.
-- Combinações prontas podem ser criadas pela estratégia quando necessário.
-- Entrega grátis só é comunicada quando a oferta é elegível segundo as regras da empresa.
+- Marketing é centrado em **Cestas e Kits**.
+- Pedido mínimo de **R$ 75** é regra dura.
+- A própria Cesta/Kit é a combinação pronta; a v1 não cria “combo de combos” para atingir o mínimo.
+- Carrosséis podem mostrar alternativas, desde que cada Cesta/Kit seja válida individualmente.
+- Entrega grátis só é comunicada quando realmente elegível.
 - Estratégia inicial é semanal.
-- Começo usa público amplo elegível para formar histórico.
-- Personalização aumenta conforme os dados próprios amadurecem.
-- IA sugere; fatos vêm de fontes determinísticas.
-- Usuário aprova antes de qualquer novo template ser enviado à Meta.
-- Meta aprova o template.
-- Usuário aprova novamente antes do envio aos clientes.
-- Templates devem ser reutilizados sempre que possível.
-- Templates operacionais ficam protegidos.
-- Templates antigos de Marketing entram em fila automática de limpeza.
-- Exclusão da Meta exige confirmação humana.
+- Nas primeiras campanhas, o público padrão será **todos os clientes elegíveis**, após os gates de consentimento e frequência.
+- A personalização aumenta conforme os dados próprios amadurecem.
+- IA interpreta e sugere; fatos comerciais vêm de fontes determinísticas.
+- Usuário aprova antes de template novo ir à Meta.
+- Meta aprova/rejeita o template.
+- Usuário aprova novamente antes do disparo.
+- Templates aprovados devem ser reutilizados quando compatíveis.
+- Templates operacionais são protegidos.
+- Templates antigos de Marketing podem entrar automaticamente em fila de limpeza, mas **a exclusão da Meta exige confirmação humana**.
 - Histórico local nunca é apagado junto com o template Meta.
-- Sistema atual de campanhas, worker, snapshots e gates é reaproveitado; não haverá transporte paralelo.
+- Campanhas, snapshots, worker, runtime e gates atuais são reaproveitados; não haverá transporte paralelo.
