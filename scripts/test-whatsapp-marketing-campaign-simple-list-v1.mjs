@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const modulePath='vitrine/admin/marketing/campaign-list-simple.js';
+assert.equal(fs.existsSync(modulePath),true,'campaign-list-simple.js deve existir');
+const source=fs.readFileSync(modulePath,'utf8');
+const entry=fs.readFileSync('vitrine/admin/marketing/campaign-entry.js','utf8');
+
+for(const text of ['Campanhas','Pesquisar','Situação','Canal','Nome','Data de disparo','Destinatários','Status','Ações','Relatório','Abrir'])assert.ok(source.includes(text),`lista simples deve conter ${text}`);
+assert.match(source,/admin-marketing-campaigns-v1/,'lista deve usar API Admin canônica');
+assert.match(source,/attendanceAuthorizedFetch/,'lista deve usar autenticação Admin');
+assert.match(source,/attendanceJsonApi\(['"]accounts['"]/,'lista deve resolver canais pela fonte autenticada');
+assert.match(source,/data-simple-campaign-search/,'deve existir busca por nome');
+assert.match(source,/data-simple-campaign-status/,'deve existir filtro por situação');
+assert.match(source,/data-simple-campaign-channel/,'deve existir filtro por canal');
+assert.match(source,/data-campaign-report/,'cada linha deve reservar ação de relatório');
+assert.doesNotMatch(source,/Revisão\s*\$\{|snapshot|dispatch|WAMID|UUID/i,'lista comum não deve mostrar jargão técnico');
+assert.doesNotMatch(source,/graph\.facebook\.com/,'browser não deve chamar Meta Graph');
+assert.match(entry,/campaign-list-simple\.js/,'bootstrap deve carregar lista simples');
+console.log('marketing campaign simple list contract: ok');
