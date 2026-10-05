@@ -9,10 +9,10 @@ const migration=fs.readFileSync('supabase/sql/20261004_basket_fixed_categories_v
 assert.doesNotMatch(admin,/id="kitLotLinkedType"|id="kitLotLinkedLot"/,'seletor legado de lote vinculado não deve continuar no runtime principal');
 assert.ok(guided.includes('id="bgLotLinkedType"'),'editor guiado deve ter seletor do tipo do lote vinculado');
 assert.ok(guided.includes('id="bgLotLinkedLot"'),'editor guiado deve manter seletor do lote vinculado');
-assert.match(guided,/linkableLots\.filter\([^\n]*business_type/,'lista guiada de lotes vinculáveis deve ser filtrada pelo tipo escolhido');
+assert.match(guided,/\(state\.linkableLots\|\|\[\]\)\.filter\([^\n]*business_type/,'lista guiada de lotes vinculáveis deve ser filtrada pelo tipo escolhido');
 assert.match(guided,/bgLotLinkedType[^\n]*change|change[^\n]*bgLotLinkedType/,'trocar o tipo do lote vinculado deve atualizar o fluxo');
 assert.ok(guided.includes('Itens do lote vinculado'),'editor guiado deve mostrar os itens do lote vinculado');
-assert.match(guided,/linkedLot\.items[\s\S]*bg-linked-item/,'itens do lote vinculado devem aparecer no resumo canônico');
+assert.match(guided,/linked\.items[\s\S]*bg-linked-item/,'itens do lote vinculado devem aparecer no resumo canônico');
 assert.match(guided,/linked_lot_id\s*:/,'criar/atualizar lote deve enviar linked_lot_id');
 
 assert.match(guidedApi,/["']linkable_lots["']/,'API guiada deve expor consulta de lotes vinculáveis');
@@ -28,4 +28,4 @@ for(const label of ['Cestas Completas','Cestas Só Alimento','Kits Limpeza e Hig
 assert.match(guided,/Categoria/,'editor guiado deve editar a categoria comercial pelo cadastro oficial');
 assert.ok(!admin.includes('Nova categoria</span><input'),'categorias de cesta não devem depender de criação livre por texto');
 
-console.log('basket linked lot type + categories contract: ok');
+console.log('basket linked lot type + categories canonical: ok');
