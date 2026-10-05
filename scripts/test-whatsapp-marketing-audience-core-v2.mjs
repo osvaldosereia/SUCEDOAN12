@@ -13,7 +13,7 @@ for(const filter of ['customer_ids','search','city','neighborhood','label_ids','
   assert.match(sql,new RegExp(`['\"]${filter}['\"]`,'i'),`filtro ausente no núcleo: ${filter}`);
 }
 assert.match(sql,/canonical_whatsapp_e164_br_v2/i,'núcleo deve canonicalizar telefone E.164');
-assert.match(sql,/row_number\s*\(\s*\)\s*over[\s\S]*partition\s+by\s+canonical_phone/i,'núcleo deve deduplicar deterministicamente por telefone');
+assert.match(sql,/row_number\s*\(\s*\)\s*over[\s\S]*partition\s+by\s+(?:[a-z_][a-z0-9_]*\.)?canonical_phone/i,'núcleo deve deduplicar deterministicamente por telefone');
 for(const reason of ['no_consent','opted_out','inactive_customer','invalid_phone','duplicate_phone']){
   assert.match(sql,new RegExp(reason,'i'),`motivo técnico ausente: ${reason}`);
 }
