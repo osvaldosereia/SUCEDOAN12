@@ -3,10 +3,12 @@ import fs from 'node:fs';
 
 const edgePath='supabase/functions/admin-whatsapp-ana-customer-profile-v1/index.ts';
 const configPath='supabase/config.toml';
+const migrationPath='supabase/migrations/20261005160000_ana_customer_profile_suggestions_v1.sql';
 assert.equal(fs.existsSync(edgePath),true,'Edge de extração cadastral da ANA deve existir');
 
 const edge=fs.readFileSync(edgePath,'utf8');
 const config=fs.readFileSync(configPath,'utf8');
+const migration=fs.readFileSync(migrationPath,'utf8');
 
 for(const token of [
   'ana-customer-profile-policy-v1.mjs',
@@ -25,9 +27,12 @@ assert.match(edge,/auth\.getUser\(/,'Edge deve validar bearer Admin server-side'
 assert.match(edge,/allowedEvidence|allowed_evidence|evidenceSet|evidence_set/i,'Edge deve validar evidence IDs contra contexto');
 assert.match(edge,/snapshotKey|snapshot_key/i,'Edge deve deduplicar a mesma fotografia da conversa');
 assert.match(edge,/if\s*\([^)]*ambiguous_phone|error\s*===\s*["']ambiguous_phone["']/i,'telefone ambíguo deve abortar antes do modelo');
-assert.match(edge,/ops2_admin_attendance_customer_access_v1/,'extract deve reusar autorização canônica de escrita');
-assert.match(edge,/p_write\s*:\s*true/,'extract deve exigir perfil administrativo com escrita; viewer não pode persistir sugestões');
-const writeGatePos=edge.indexOf('ops2_admin_attendance_customer_access_v1');
+assert.match(migration,/create\s+or\s+replace\s+function\s+public\.ops2_admin_ana_customer_profile_extract_access_v1\s*\(\s*\)/i,'migration deve expor wrapper writer-safe específico da ANA');
+assert.match(migration,/ops2_admin_attendance_customer_access_v1\(true\)/i,'wrapper da ANA deve delegar ao helper canônico com escrita');
+assert.match(migration,/grant\s+execute\s+on\s+function\s+public\.ops2_admin_ana_customer_profile_extract_access_v1\(\)[\s\S]*authenticated/i,'wrapper writer-safe deve ser chamável por sessão autenticada');
+assert.match(edge,/ops2_admin_ana_customer_profile_extract_access_v1/,'extract deve chamar wrapper writer-safe da ANA');
+assert.doesNotMatch(edge,/db\.rpc\(["']ops2_admin_attendance_customer_access_v1["']/,'Edge não deve chamar diretamente helper service-role-only');
+const writeGatePos=edge.indexOf('ops2_admin_ana_customer_profile_extract_access_v1');
 const modelCallPos=edge.lastIndexOf('generateProfile(context)');
 assert.ok(writeGatePos>0&&modelCallPos>writeGatePos,'gate de escrita deve ocorrer antes da geração/persistência de sugestões');
 
