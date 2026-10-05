@@ -62,6 +62,8 @@ assert.match(ui,/customer_reconcile|action:\s*['"]reconcile['"]/i,'UI deve tenta
 assert.match(ui,/queue-card\.selected/,'UI deve trabalhar a partir da conversa selecionada');
 assert.match(ui,/readOnly\s*:\s*true|readOnly\s*=\s*true|readonly/i,'WhatsApp da criação deve ser somente leitura');
 assert.match(ui,/MutationObserver/,'módulo deve se acoplar apenas ao card/contexto renderizado');
+assert.doesNotMatch(ui,/\battempted\b/,'polling/redesenho do mesmo cliente não pode bloquear um novo card por estado global de tentativa');
+assert.match(ui,/attendanceCustomerActive\s*=\s*['"]loading['"]|dataset\.attendanceCustomerActive\s*=\s*['"]loading['"]/,'cada card em reconciliação deve marcar seu próprio estado para evitar loops');
 assert.doesNotMatch(ui,/send_text|send_media|META_WHATSAPP|PAPOAI/i,'módulo de cliente não deve tocar no transporte de mensagens');
 
 assert.match(css,/attendance-customer/i,'CSS deve ficar isolado pelo namespace attendance-customer');
