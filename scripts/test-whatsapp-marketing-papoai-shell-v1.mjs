@@ -18,7 +18,7 @@ assert.match(polish,/PRIMARY_MARKETING_VIEWS\.includes\(view\)/,'shell deve remo
 assert.match(polish,/button\.remove\(\)/,'shell deve remover aba secundária criada por submódulos antigos');
 assert.match(polish,/data-marketing-admin-consents/,'Consentimentos deve permanecer acessível como ação administrativa secundária');
 
-assert.match(polish,/setText\(nav\.querySelector\('\.marketing-campaign-gate'\),'Envios desativados'\)/,'status operacional deve ser único e simples');
+assert.match(polish,/setText\((?:gate|nav\.querySelector\('\.marketing-campaign-gate'\)),'Envios desativados'\)/,'status operacional deve ser único e simples');
 assert.match(polish,/removeDuplicateMarketingHeads/,'shell deve remover cabeçalhos Marketing duplicados');
 assert.match(polish,/removeDuplicateGateBadges/,'shell deve remover badges operacionais duplicados');
 
