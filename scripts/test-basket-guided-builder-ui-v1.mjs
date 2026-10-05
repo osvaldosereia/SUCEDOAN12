@@ -7,17 +7,19 @@ const uiPath='vitrine/admin/basket-guided-builder.js';
 assert.equal(fs.existsSync(uiPath),true,'guided builder UI module must exist');
 const ui=fs.readFileSync(uiPath,'utf8');
 
-assert.match(admin,/basket-guided-builder\.js\?v=guided-v2/,'admin must load guided builder v2');
-assert.match(admin,/basket-admin-section\.js\?v=canonical-v2/,'admin must load canonical basket section');
+assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'admin must load guided builder v3');
+assert.match(admin,/basket-admin-section\.js\?v=canonical-v3/,'admin must load canonical basket section v3');
 assert.match(admin,/DonaAntoniaAdminBridge/,'admin must expose one stable bridge from its main runtime');
 assert.doesNotMatch(admin,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not remain');
-assert.match(section,/DonaAntoniaBasketGuided\?\.open/,'canonical Cestas/Kits cards must route into guided builder');
-assert.doesNotMatch(section,/startBasketKitLotDraft|openBasketKitAdmin/,'canonical cards must not fall back to legacy composers');
+assert.match(section,/function guided\(\)[^\n]*DonaAntoniaBasketGuided/,'canonical section must own one guided-builder adapter');
+assert.match(section,/function openGuided\(/,'canonical cards must route through one openGuided path');
+assert.match(section,/g\.open\(m\.commercial_id/,'openGuided must open the commercial model in the guided builder');
+assert.doesNotMatch(section,/startBasketKitLotDraft|openBasketKitAdmin|openBasketCommercialEditor/,'canonical cards must not fall back to legacy composers');
 
-for(const label of ['Dados comerciais','Itens da cesta/kit','Resumo','Criar lote / reservar','Marcar como montado']){
-  assert.match(ui,new RegExp(label.replace('/','\\/'),'i'),`guided UI must show ${label}`);
+for(const label of ['Dados comerciais','Itens da cesta/kit','Resumo','Criar lote / reservar','Marcar como montado','Nome público do lote','Preço final do lote','Tipo do lote vinculado','Escolher lote','Itens do lote vinculado']){
+  assert.match(ui,new RegExp(label.replaceAll('/','\\/'),'i'),`guided UI must show ${label}`);
 }
-for(const action of ['model_editor','position_products','model_save','lot_preview','lot_reserve','lot_update','lot_mount','lot_cancel','lot_reopen']){
+for(const action of ['model_editor','position_products','linkable_lots','model_save','lot_preview','lot_reserve','lot_update','lot_mount','lot_cancel','lot_reopen']){
   assert.match(ui,new RegExp(`["']${action}["']`),`guided UI must call ${action}`);
 }
 
@@ -35,7 +37,8 @@ for(const operational of ['Em montagem','Montado','Pausado','Esgotado','Cancelad
 assert.match(ui,/Ativar venda/i,'sale activation must remain separate from mounting');
 assert.match(ui,/Editar lote/i,'reserved lot must remain editable');
 assert.match(ui,/Cancelar lote/i,'reserved lot must be cancellable when eligible');
-assert.match(ui,/applyDuplicateSeed/,'guided editor must support duplicate as a new-lot seed');
+assert.match(ui,/applyDuplicateSeed/,'guided editor must support duplicate/existing lot as an exact snapshot seed');
+assert.match(ui,/state\.lot\|\|state\?\.duplicateLot|state\?\.lot\|\|state\?\.duplicateLot/,'existing lot must take precedence over duplicate seed');
 
 const saveStart=ui.indexOf('async function saveModel');
 const saveEnd=ui.indexOf('\n  async function ensureSavedForLot',saveStart+1);
@@ -45,12 +48,21 @@ assert.match(saveBlock,/model_save/,'saving model must call model_save');
 assert.match(saveBlock,/commercial:/,'saving model must include commercial fields');
 assert.doesNotMatch(saveBlock,/lot_reserve/,'saving model must not reserve stock');
 
+const reserveStart=ui.indexOf('async function reserveOrUpdateLot');
+const reserveEnd=ui.indexOf('\n  async function mountLot',reserveStart+1);
+assert.ok(reserveStart>=0&&reserveEnd>reserveStart,'lot reservation helper must be identifiable');
+const reserve=ui.slice(reserveStart,reserveEnd);
+for(const field of ['public_name','sale_price','linked_lot_id'])assert.match(reserve,new RegExp(field),`lot reservation must persist ${field}`);
+assert.match(reserve,/lot_update/,'editing an assembling lot must update the same reservation');
+assert.match(reserve,/lot_reserve/,'new lot must use canonical reservation action');
+
 assert.match(section,/data-basket-new-lot/,'commercial Novo lote binding must exist');
 assert.match(section,/openGuided\(modelFromCard\(btn\),'lot'\)/,'card Novo lote must open guided builder directly');
+assert.match(section,/data-basket-edit-lot/,'current lot edit action must exist on canonical card');
 assert.match(section,/function printLot\(lot\)/,'commercial print must be a pure lot function');
 assert.doesNotMatch(section,/state\.basketKitDetail/,'printing must not mutate legacy basket detail state');
-assert.match(section,/source_kind==='basket'[\s\S]*api\('basket_admin'/,'legacy/full basket lots must load from basket_admin before printing');
-assert.match(section,/api\('basket_kit_admin'/,'standalone/internal kit lots may load from basket_kit_admin');
+assert.match(section,/source_kind==='basket'[\s\S]*api\('basket_admin'/,'legacy/full basket lots must load from basket_admin only as a compatibility read');
+assert.match(section,/api\('basket_kit_admin'/,'standalone/internal kit lots may load from basket_kit_admin only as a compatibility read');
 assert.match(section,/basket_archive/,'commercial model deletion must use canonical basket_archive');
 assert.match(section,/basket_has_live_lots/,'model deletion must explain live-lot safety block');
 assert.doesNotMatch(section,/basketProductSuggestions|Sugestões de produtos/,'legacy global suggestions action must not return');
@@ -61,4 +73,4 @@ const archiveSql=fs.readFileSync('supabase/sql/20261005_basket_commercial_archiv
 assert.match(archiveSql,/update\s+public\.basket_kit_templates[\s\S]*is_active\s*=\s*false/i,'commercial archive must deactivate its internal kit template atomically');
 assert.match(archiveSql,/basket_has_live_lots/i,'commercial archive must reject live lots before archiving');
 
-console.log('basket guided builder UI v1: PASS');
+console.log('basket guided builder UI v3: PASS');
