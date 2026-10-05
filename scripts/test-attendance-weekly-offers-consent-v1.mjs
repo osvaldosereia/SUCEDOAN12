@@ -3,21 +3,26 @@ import assert from 'node:assert/strict';
 
 const migrationPath='supabase/migrations/20261005190000_attendance_weekly_offers_consent_v1.sql';
 const sqlMirrorPath='supabase/sql/20261005_attendance_weekly_offers_consent_v1.sql';
+const browserMigrationPath='supabase/migrations/20261005190500_attendance_weekly_offers_consent_browser_v1.sql';
+const browserSqlMirrorPath='supabase/sql/20261005_attendance_weekly_offers_consent_browser_v1.sql';
 const customerApiPath='vitrine/admin/atendimento/attendance-customer-api.js';
 const uiPath='vitrine/admin/atendimento/attendance-marketing-consent.js';
 const customerViewPath='vitrine/admin/atendimento/attendance-customer-view.js';
 
-assert.ok(fs.existsSync(migrationPath),'migration semanal deve existir');
-assert.ok(fs.existsSync(sqlMirrorPath),'espelho SQL semanal deve existir');
+for(const p of [migrationPath,sqlMirrorPath,browserMigrationPath,browserSqlMirrorPath])assert.ok(fs.existsSync(p),`${p} deve existir`);
 assert.ok(fs.existsSync(uiPath),'módulo de consentimento no Atendimento deve existir');
 
-const sql=fs.readFileSync(migrationPath,'utf8');
-const mirror=fs.readFileSync(sqlMirrorPath,'utf8');
+const core=fs.readFileSync(migrationPath,'utf8');
+const coreMirror=fs.readFileSync(sqlMirrorPath,'utf8');
+const browser=fs.readFileSync(browserMigrationPath,'utf8');
+const browserMirror=fs.readFileSync(browserSqlMirrorPath,'utf8');
+const sql=`${core}\n${browser}`;
 const customerApi=fs.readFileSync(customerApiPath,'utf8');
 const ui=fs.readFileSync(uiPath,'utf8');
 const customerView=fs.readFileSync(customerViewPath,'utf8');
 
-assert.equal(sql,mirror,'migration e espelho SQL devem permanecer idênticos');
+assert.equal(core,coreMirror,'migration principal e espelho SQL devem permanecer idênticos');
+assert.equal(browser,browserMirror,'migration browser e espelho SQL devem permanecer idênticos');
 assert.match(sql,/create table if not exists public\.marketing_weekly_consent_requests_v1/i);
 assert.match(sql,/consent_scope[^\n]*weekly_offers_coupons/i);
 assert.match(sql,/no máximo 1 vez por semana/i);
