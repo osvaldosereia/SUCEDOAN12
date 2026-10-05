@@ -10,21 +10,21 @@ const migration=fs.readFileSync('supabase/sql/20261004_basket_lot_linked_hygiene
 const optionalHygiene=fs.readFileSync('supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql','utf8');
 const draftLinkMigrationPath='supabase/sql/20261004_basket_link_draft_selection_v1.sql';
 
-// A operação normal de lotes pertence ao módulo canônico + editor guiado, não a kitLotRow no index.
-assert.doesNotMatch(section,/kitLotRow|paintBasketKitAdmin/,'módulo canônico não deve depender da lista/compositor legado');
-for(const label of ['Pausar venda','Retomar venda','Editar lote','Imprimir'])assert.match(section,new RegExp(label),`card canônico deve expor ${label}`);
-assert.match(section,/basket_lot_sale_toggle/,'pausa/retomada deve usar a ação canônica de venda');
-assert.match(section,/data-basket-edit-lot/,'lote atual deve poder ser aberto para edição real');
+// O controlador normal foi simplificado. Operação de lote permanece apenas na camada técnica de compatibilidade.
+assert.doesNotMatch(section,/kitLotRow|paintBasketKitAdmin|basket_lot_sale_toggle|data-basket-edit-lot/,'controlador simples não deve possuir operação de lote');
+for(const label of ['Pausar venda','Retomar venda','Editar lote','Imprimir'])assert.doesNotMatch(section,new RegExp(label),`operação normal não deve expor ${label}`);
+assert.match(section,/Criador de Kits/,'operação normal deve começar no criador de kits');
+assert.match(section,/Cestas do Site/,'operação normal deve separar cestas externas');
 
-assert.ok(guided.includes('id="bgLotPublicName"'),'lote deve permitir nome público próprio');
-assert.ok(guided.includes('id="bgLotSalePrice"'),'lote deve permitir preço próprio');
+assert.ok(guided.includes('id="bgLotPublicName"'),'compatibilidade de lote deve manter nome público próprio');
+assert.ok(guided.includes('id="bgLotSalePrice"'),'compatibilidade de lote deve manter preço próprio');
 assert.ok(guided.includes('id="bgLotLinkedType"'),'vínculo opcional deve começar pelo tipo');
 assert.ok(guided.includes('id="bgLotLinkedLot"'),'vínculo opcional deve permitir escolher o lote');
 assert.match(guided,/\(state\.linkableLots\|\|\[\]\)\.filter\([^\n]*business_type/,'lotes vinculáveis devem ser filtrados pelo tipo');
 assert.match(guided,/linked_lot_id\s*:/,'reserva/edição deve persistir o lote vinculado escolhido');
-assert.ok(guided.includes('Itens do lote vinculado'),'composição vinculada deve ser visível no mesmo editor');
-for(const label of ['Em montagem','Montado','Cancelar lote','Reabrir para editar','Ativar venda'])assert.match(guided,new RegExp(label),`editor guiado deve manter a operação ${label}`);
-assert.doesNotMatch(guided,/data-kit-lot-delete|deleteBasketKitLot/,'fluxo canônico deve cancelar/liberar reserva, não apagar lote fisicamente pela UI');
+assert.ok(guided.includes('Itens do lote vinculado'),'composição vinculada deve ser visível no editor de compatibilidade');
+for(const label of ['Em montagem','Montado','Cancelar lote','Reabrir para editar','Ativar venda'])assert.match(guided,new RegExp(label),`editor técnico deve manter a operação ${label}`);
+assert.doesNotMatch(guided,/data-kit-lot-delete|deleteBasketKitLot/,'fluxo técnico deve cancelar/liberar reserva, não apagar lote fisicamente pela UI');
 
 const linkedStart=guidedApi.indexOf('async function linkableLots');
 const linkedEnd=guidedApi.indexOf('\nasync function modelEditor',linkedStart);
@@ -65,4 +65,4 @@ assert.match(optionalHygiene,/\(f\.linked_hygiene_lot_id is not null\) uses_hygi
 assert.match(optionalHygiene,/v_basket\.uses_hygiene_kit:=exists/i,'legacy checkout migration must derive hygiene use from the selected food lot rather than a global basket requirement');
 assert.match(optionalHygiene,/hl\.status='ready'/i,'a selected hygiene lot must still be physically ready');
 
-console.log('Basket lot operational rules canonical: PASS');
+console.log('Basket lot operational rules compatibility: PASS');
