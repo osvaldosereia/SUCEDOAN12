@@ -1,0 +1,27 @@
+name: Marketing Campaign Execution UI CI
+
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/marketing/campaign-center.js'
+      - 'vitrine/admin/marketing/campaign-center.css'
+      - 'scripts/test-whatsapp-marketing-campaign-execution-ui-v1.mjs'
+      - '.github/workflows/marketing-campaign-execution-ui-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Marketing campaign execution UI contract
+        run: node scripts/test-whatsapp-marketing-campaign-execution-ui-v1.mjs
+      - name: Campaign center syntax
+        run: node --check vitrine/admin/marketing/campaign-center.js
+      - name: Existing campaign UI regression
+        run: node scripts/test-whatsapp-marketing-campaign-ui-v1.mjs

@@ -80,6 +80,7 @@ jobs:
       - {name: Admin marketing campaign scheduling contract, run: 'node scripts/test-admin-marketing-campaign-scheduling-v1.mjs'}
       - {name: Marketing audience UI contract, run: 'node scripts/test-whatsapp-marketing-audience-ui-v1.mjs'}
       - {name: Marketing campaign UI contract, run: 'node scripts/test-whatsapp-marketing-campaign-ui-v1.mjs'}
+      - {name: Marketing campaign execution UI contract, run: 'node scripts/test-whatsapp-marketing-campaign-execution-ui-v1.mjs'}
       - {name: Marketing intelligence legacy contract, run: 'python scripts/test-marketing-intelligence-contract.py'}
       - {name: Meta transport contract, run: 'node scripts/test-attendance-meta-send-v1.mjs'}
       - {name: Meta media contract, run: 'node scripts/test-attendance-meta-media-v1.mjs'}

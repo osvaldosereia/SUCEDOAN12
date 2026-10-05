@@ -2,9 +2,10 @@ import {attendanceAuthorizedFetch,attendanceJsonApi} from '../atendimento/attend
 
 const CAMPAIGN_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-marketing-campaigns-v1';
 const ADMIN_PUBLIC_KEY=['sb','publishable','tFXHtH0HCXZepVtwgKElIg','DxS76Gu8'].join('_');
-const CSS_URL='/vitrine/admin/marketing/campaign-center.css?v=marketing-campaign-v1';
+const CSS_URL='/vitrine/admin/marketing/campaign-center.css?v=marketing-campaign-v2';
 const PREFILL_KEY='da_marketing_campaign_prefill_v1';
-const STATUS_LABELS={draft:'Rascunho',ready_for_review:'Pronta para revisão',approved:'Aprovada',cancelled:'Cancelada'};
+const STATUS_LABELS={draft:'Rascunho',ready_for_review:'Pronta para revisão',approved:'Aprovada',scheduled:'Agendada',running:'Em execução',paused:'Pausada',completed:'Concluída',failed:'Falhou',cancelled:'Cancelada'};
+const EXECUTION_STATUSES=new Set(['approved','scheduled','running','paused','completed','failed','cancelled']);
 let activeRoot=null;
 let campaigns=[];
 let accounts=[];
@@ -15,6 +16,7 @@ let currentCampaign=null;
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const fmtDate=value=>{if(!value)return '—';const date=new Date(value);return Number.isNaN(date.getTime())?'—':date.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})};
+const localDateTimeValue=value=>{if(!value)return '';const date=new Date(value);if(Number.isNaN(date.getTime()))return '';const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);return local.toISOString().slice(0,16)};
 const channelByPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.endsWith('0975')?'0975':digits.endsWith('1018')?'1018':'Outro'};
 const objectLike=value=>Boolean(value)&&typeof value==='object'&&!Array.isArray(value);
 
@@ -72,8 +74,8 @@ async function loadCampaigns(){const data=await apiGet('list');campaigns=Array.i
 async function loadOptions(accountId){const data=await apiGet('options',{whatsapp_account_id:accountId});editorTemplates=Array.isArray(data.templates)?data.templates:[];return editorTemplates}
 
 function campaignListHtml(){
-  if(!campaigns.length)return '<div class="marketing-campaign-empty">Nenhuma campanha em rascunho ainda.</div>';
-  return `<div class="marketing-campaign-list">${campaigns.map(item=>`<button type="button" class="marketing-campaign-card" data-campaign-open="${esc(item.id)}"><span><strong>${esc(item.name||'Campanha')}</strong><small>${esc(item.template_name_snapshot||'Template')} · Revisão ${Number(item.revision||1)}</small></span><span class="marketing-campaign-state state-${esc(item.status)}">${esc(STATUS_LABELS[item.status]||item.status)}</span><small>${esc(fmtDate(item.updated_at))}</small></button>`).join('')}</div>`;
+  if(!campaigns.length)return '<div class="marketing-campaign-empty">Nenhuma campanha ainda.</div>';
+  return `<div class="marketing-campaign-list">${campaigns.map(item=>`<button type="button" class="marketing-campaign-card" data-campaign-open="${esc(item.id)}"><span><strong>${esc(item.name||'Campanha')}</strong><small>${esc(item.template_name_snapshot||'Template')} · Revisão ${Number(item.revision||1)}</small></span><span class="marketing-campaign-state state-${esc(item.status)}">${esc(STATUS_LABELS[item.status]||item.status)}</span><small>${esc(item.scheduled_for?`Agendada: ${fmtDate(item.scheduled_for)}`:fmtDate(item.updated_at))}</small></button>`).join('')}</div>`;
 }
 function renderList(root){const host=root.querySelector('[data-campaign-list]');if(host)host.innerHTML=campaignListHtml();host?.querySelectorAll('[data-campaign-open]').forEach(button=>button.addEventListener('click',()=>openCampaign(root,button.dataset.campaignOpen)))}
 
@@ -127,6 +129,7 @@ function editorHtml(){
     <section data-campaign-preview><h4>Prévia</h4></section>
     <section data-campaign-snapshot></section>
     <section data-campaign-summary><h4>Resumo</h4><p>Salve o rascunho para gerar um snapshot versionado do público.</p></section>
+    <section data-campaign-execution class="marketing-campaign-execution" hidden></section>
     <div data-campaign-status class="marketing-campaign-status" role="status" aria-live="polite"></div>
     <div class="marketing-campaign-actions"><button type="button" data-campaign-close>Fechar</button><button type="submit" class="primary" data-campaign-save aria-busy="false">Salvar rascunho</button><button type="button" data-campaign-snapshot-button aria-busy="false" hidden>Gerar snapshot</button><button type="button" data-campaign-ready hidden>Pronta para revisão</button><button type="button" data-campaign-return-draft hidden>Voltar para rascunho</button><button type="button" data-campaign-approve hidden>Aprovar revisão</button><button type="button" data-campaign-internal-test hidden>Preparar teste interno</button></div>
     <p class="marketing-campaign-safety">Campanhas desligadas — Nenhuma mensagem será enviada nesta fase.</p>
@@ -152,6 +155,41 @@ function syncEditorState(form,campaign,snapshot){
   if(snapshot&&campaign&&snapshot.campaign_revision!==campaign.revision){form.querySelector('[data-campaign-summary]').insertAdjacentHTML('afterbegin','<div class="marketing-campaign-warning">A campanha mudou. Gere um novo snapshot para esta revisão.</div>')}
 }
 
+function executionGateOpen(state){const runtime=state?.runtime||{};return runtime.campaigns_enabled===true&&runtime.send_enabled===true&&runtime.outbound_provider==='meta'&&['canary','live'].includes(runtime.mode)}
+function progressCard(label,value,key){return `<article data-execution-count="${key}"><small>${label}</small><strong>${Number(value||0)}</strong></article>`}
+function executionPanelHtml(state,campaign){
+  const status=state?.status||campaign?.status||'approved',runtime=state?.runtime||{},counts=state?.counts||{},gateOpen=executionGateOpen(state),scheduled=state?.scheduled_for||campaign?.scheduled_for||'';
+  const canSchedule=status==='approved',canPause=['scheduled','running'].includes(status),canResume=status==='paused',canCancel=['scheduled','running','paused'].includes(status);
+  const gateLabel=gateOpen?(runtime.mode==='canary'?'Canário habilitado':'Campanhas habilitadas'):'Campanhas desligadas';
+  const gateDetail=gateOpen?`Runtime ${esc(runtime.mode)} · envio controlado pelo backend.`:`Runtime ${esc(runtime.mode||'off')} · campaigns_enabled=${runtime.campaigns_enabled===true?'true':'false'}. Nenhuma mensagem pode iniciar.`;
+  return `<div class="marketing-campaign-execution-head"><div><h4>Execução</h4><p>Status: <b>${esc(STATUS_LABELS[status]||status)}</b>${scheduled?` · ${esc(fmtDate(scheduled))}`:''}</p></div><span class="marketing-campaign-execution-gate ${gateOpen?'open':'closed'}">${esc(gateLabel)}</span></div>
+    <p class="marketing-campaign-execution-gate-detail">${gateDetail}</p>
+    <div class="marketing-campaign-execution-counts">${progressCard('Total',counts.total,'total')}${progressCard('Pendentes',counts.pending,'pending')}${progressCard('Pulados',counts.skipped,'skipped')}${progressCard('Aceitos',counts.accepted,'accepted')}${progressCard('Retry',counts.retry,'retry')}${progressCard('Incertos',counts.uncertain,'uncertain')}${progressCard('Falhas',counts.failed,'failed')}</div>
+    <div class="marketing-campaign-execution-controls">
+      ${canSchedule?`<label><span>Data e hora</span><input type="datetime-local" data-campaign-schedule-at value="${esc(localDateTimeValue(scheduled))}" ${gateOpen?'':'disabled'}></label><button type="button" data-campaign-schedule ${gateOpen?'':'disabled'}>Agendar</button><button type="button" class="primary" data-campaign-start-now ${gateOpen?'':'disabled'}>Enviar agora</button>`:''}
+      ${canPause?'<button type="button" data-campaign-pause>Pausar</button>':''}
+      ${canResume?`<button type="button" data-campaign-resume ${gateOpen?'':'disabled'}>Retomar</button>`:''}
+      ${canCancel?'<button type="button" class="danger" data-campaign-cancel-execution>Cancelar execução</button>':''}
+    </div>`;
+}
+async function runExecutionAction(root,form,action,body,question,busyLabel){
+  if(!currentCampaign?.id||busy)return;if(question&&!confirm(question))return;const button=form.querySelector(`[data-campaign-${action.replaceAll('_','-')}]`);
+  try{busy=true;setBusy(button,true,busyLabel);await apiPost(action,body);await loadCampaigns();renderList(root);await openCampaign(root,currentCampaign.id)}catch(error){notice(form,`Não foi possível executar a ação: ${String(error?.message||error)}`,'error')}finally{busy=false;setBusy(button,false)}
+}
+function bindExecutionActions(root,form,state){
+  const gateOpen=executionGateOpen(state),campaignId=currentCampaign?.id,revision=currentCampaign?.revision;if(!campaignId)return;
+  form.querySelector('[data-campaign-schedule]')?.addEventListener('click',()=>{if(!gateOpen)return;const value=form.querySelector('[data-campaign-schedule-at]')?.value;if(!value){notice(form,'Informe a data e hora do agendamento.','error');return}const date=new Date(value);if(Number.isNaN(date.getTime())){notice(form,'Data/hora inválida.','error');return}runExecutionAction(root,form,'schedule',{campaign_id:campaignId,expected_revision:revision,scheduled_for:date.toISOString()},'Confirmar o agendamento desta campanha?','Agendando…')});
+  form.querySelector('[data-campaign-start-now]')?.addEventListener('click',()=>{if(!gateOpen)return;runExecutionAction(root,form,'start_now',{campaign_id:campaignId,expected_revision:revision},'Confirmar início desta campanha agora?','Iniciando…')});
+  form.querySelector('[data-campaign-pause]')?.addEventListener('click',()=>runExecutionAction(root,form,'pause',{campaign_id:campaignId,reason:'admin_marketing_ui'},'Pausar a execução desta campanha?','Pausando…'));
+  form.querySelector('[data-campaign-resume]')?.addEventListener('click',()=>{if(!gateOpen)return;runExecutionAction(root,form,'resume',{campaign_id:campaignId},'Retomar a execução desta campanha?','Retomando…')});
+  form.querySelector('[data-campaign-cancel-execution]')?.addEventListener('click',()=>runExecutionAction(root,form,'cancel_execution',{campaign_id:campaignId,reason:'admin_marketing_ui'},'Cancelar esta execução? Destinatários ainda não enviados serão pulados.','Cancelando…'));
+}
+async function renderExecutionPanel(root,form,campaign){
+  const host=form.querySelector('[data-campaign-execution]');if(!host)return;if(!campaign?.id||!EXECUTION_STATUSES.has(campaign.status)){host.hidden=true;host.innerHTML='';return}
+  host.hidden=false;host.innerHTML='<div class="marketing-campaign-loading">Carregando estado de execução…</div>';
+  try{const state=await apiGet('execution_status',{campaign_id:campaign.id});if(currentCampaign?.id!==campaign.id)return;host.innerHTML=executionPanelHtml(state,campaign);bindExecutionActions(root,form,state)}catch(error){host.innerHTML=`<div class="marketing-campaign-warning"><b>Execução ainda indisponível nesta implantação.</b><br>${esc(error?.message||error)}. Campanhas desligadas.</div>`}
+}
+
 async function openEditor(root,{detail=null,prefill=null}={}){
   const host=root.querySelector('[data-campaign-workspace]');if(!host)return;host.innerHTML=editorHtml();const form=host.querySelector('[data-campaign-editor]');currentCampaign=detail?.campaign||null;
   await populateAccounts(form,currentCampaign?.whatsapp_account_id||'');
@@ -159,6 +197,7 @@ async function openEditor(root,{detail=null,prefill=null}={}){
   if(currentCampaign){form.elements.name.value=currentCampaign.name||'';form.elements.deep_campaign.value=currentCampaign.deep_link?.campaign||'';form.elements.deep_category.value=currentCampaign.deep_link?.category||'';form.elements.deep_brand.value=currentCampaign.deep_link?.brand||'';await populateTemplates(form,currentCampaign.whatsapp_account_id,currentCampaign.template_id,currentCampaign.variable_values||{})}
   else{const first=accounts[0]?.id||'';if(first){form.elements.whatsapp_account_id.value=first;await populateTemplates(form,first,'',{})}}
   syncEditorState(form,currentCampaign,detail?.snapshot||null);
+  await renderExecutionPanel(root,form,currentCampaign);
   form.elements.whatsapp_account_id.addEventListener('change',()=>populateTemplates(form,form.elements.whatsapp_account_id.value,'',{}));
   form.elements.template_id.addEventListener('change',()=>renderVariableInputs(form,{}));
   form.addEventListener('input',event=>{if(event.target.matches('[data-variable-index], [name="template_id"]'))renderPreview(form)});
@@ -175,7 +214,7 @@ async function openCampaign(root,id){try{const detail=await apiGet('detail',{cam
 
 async function mountCampaignView(root=document.querySelector('#content'),options={}){
   if(!root)return;ensureCss();activeRoot=root;const prefill=options.prefill||parsePrefill();
-  root.innerHTML=`<div class="marketing-campaign-center"><div class="page-head"><div><h1>Marketing</h1><p>Crie e revise campanhas sem executar mensagens.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>${navMarkup()}<section class="marketing-campaign-section"><div class="marketing-campaign-section-head"><div><h2>Campanhas</h2><p>Rascunhos, snapshots versionados e revisão administrativa.</p></div><button type="button" class="primary" data-new-campaign>Novo rascunho</button></div><div data-campaign-status class="marketing-campaign-status" role="status" aria-live="polite"></div><div data-campaign-list class="marketing-campaign-loading">Carregando campanhas…</div><div data-campaign-workspace></div></section></div>`;
+  root.innerHTML=`<div class="marketing-campaign-center"><div class="page-head"><div><h1>Marketing</h1><p>Crie, revise e acompanhe campanhas. O envio continua protegido por dois gates server-side.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>${navMarkup()}<section class="marketing-campaign-section"><div class="marketing-campaign-section-head"><div><h2>Campanhas</h2><p>Rascunhos, snapshots, revisão, agendamento e execução controlada.</p></div><button type="button" class="primary" data-new-campaign>Novo rascunho</button></div><div data-campaign-status class="marketing-campaign-status" role="status" aria-live="polite"></div><div data-campaign-list class="marketing-campaign-loading">Carregando campanhas…</div><div data-campaign-workspace></div></section></div>`;
   bindNav(root);root.querySelector('[data-new-campaign]').addEventListener('click',()=>openEditor(root,{prefill:null}));
   try{await Promise.all([loadAccounts(),loadCampaigns()]);if(activeRoot!==root)return;renderList(root);if(prefill)await openEditor(root,{prefill})}catch(error){if(activeRoot===root)root.querySelector('[data-campaign-list]').innerHTML=`<div class="marketing-campaign-error">Não foi possível carregar: ${esc(error?.message||error)}</div>`}
 }
