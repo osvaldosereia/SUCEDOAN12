@@ -19,7 +19,10 @@ assert.match(source,/data-campaign-resume/i,'botão Retomar deve existir');
 assert.match(source,/data-campaign-cancel-execution/i,'botão Cancelar deve existir');
 assert.match(source,/Campanhas desligadas/i,'kill-switch deve ficar visível');
 assert.match(source,/execution_status/i,'UI deve consultar status operacional server-side');
-for(const action of ['schedule','start_now','pause','resume','cancel_execution'])assert.match(source,new RegExp(`apiPost\\(["']${action}["']`,'i'),`UI deve usar API Admin: ${action}`);
+assert.match(source,/async\s+function\s+runExecutionAction[\s\S]*apiPost\(action,body\)/i,'wrapper operacional deve delegar somente à API Admin');
+for(const action of ['schedule','start_now','pause','resume','cancel_execution']){
+  assert.match(source,new RegExp(`runExecutionAction\\([^\\n]*["']${action}["']`,'i'),`UI deve usar wrapper Admin para: ${action}`);
+}
 assert.match(source,/campaigns_enabled/i,'UI deve considerar kill-switch do canal');
 assert.match(source,/runtime[^\n]{0,80}mode|mode[^\n]{0,80}runtime/i,'UI deve considerar execution runtime');
 assert.match(source,/\.disabled\s*=|disabled=/i,'Enviar agora/Agendar devem poder ser bloqueados');
