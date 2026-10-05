@@ -1,5 +1,5 @@
 import {optimizeLibraryImage} from './attendance-library-image.js';
-import {attendanceJsonApi} from './attendance-auth.js';
+import {attendanceAuthorizedFetch,attendanceJsonApi} from './attendance-auth.js';
 
 const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ops-v1';
 const TOKEN_KEY='da_finance_access_token_v1';
@@ -64,14 +64,15 @@ function syncConversationContext(){
 }
 function syncFooter(){
   const count=state.selected.size,status=$('#librarySelectionStatus'),clear=$('#libraryClearSelectionBtn'),send=$('#librarySendBtn');
-  const conversationId=activeConversationId(),windowOpen=serviceWindowOpen(),retryCount=state.failedItems.size;
+  const conversationId=activeConversationId(),windowOpen=serviceWindowOpen(),retryCount=state.failedItems.size,insert=$('#libraryInsertBtn');
   if(status){
     status.querySelector('strong').textContent=count?`${count} selecionado${count===1?'':'s'}`:'Nenhum item selecionado';
-    status.querySelector('small').textContent=!conversationId?'Selecione uma conversa para enviar.':!windowOpen?'Janela de atendimento encerrada. Mídia livre não pode ser enviada.':retryCount?'Somente os itens com falha serão reenviados.':count?'Pronto para enviar na conversa ativa.':'Toque nos cards para selecionar.';
+    status.querySelector('small').textContent=!conversationId?'Selecione uma conversa para usar as figurinhas.':retryCount?'Somente os itens com falha serão reenviados.':count?'Envie a figurinha selecionada ou envie os itens como mídia.':'Toque nos cards para selecionar.';
   }
   if(clear)clear.disabled=state.sending||count===0;
+  if(insert)insert.disabled=state.sending||count!==1||state.items.find(item=>state.selected.has(item.id))?.media_kind!=='image';
   if(send){
-    send.textContent=retryCount?`Tentar novamente ${retryCount}`:`Enviar ${count}`;
+    send.textContent=retryCount?`Tentar novamente ${retryCount}`:`Enviar mídia ${count}`;
     send.disabled=state.sending||count===0||!conversationId||!windowOpen;
     send.title=!conversationId?'Selecione uma conversa.':!windowOpen?'Janela de atendimento encerrada. Mídia livre não pode ser enviada.':'';
   }
@@ -98,8 +99,9 @@ async function loadLibrary(){
   if(state.loading)return;state.loading=true;setStatus('Carregando…');
   const grid=$('#libraryGrid');if(grid)grid.innerHTML='<div class="library-state">Carregando itens…</div>';
   try{
-    const data=await api('library_list',{q:state.query,kind:state.kind==='all'?'':state.kind,limit:60});
-    state.items=data.items||[];
+    const wantsStickers=state.kind==='sticker';
+    const data=await api('library_list',{q:state.query,kind:wantsStickers?'image':state.kind==='all'?'':state.kind,limit:60});
+    state.items=(data.items||[]).filter(item=>!wantsStickers||item.category==='Figurinha'||(item.tags||[]).includes('figurinha'));
     const valid=new Set(state.items.map(item=>item.id));for(const id of [...state.selected])if(!valid.has(id)){state.selected.delete(id);state.failedItems.delete(id)}
     renderItems();setStatus(`${state.items.length} item${state.items.length===1?'':'s'} na Biblioteca.`,'success');syncFooter();
   }finally{state.loading=false}
@@ -116,7 +118,7 @@ function toggleItemSelection(item,card,select){
 function itemCard(item){
   const card=document.createElement('article');card.className='library-card';card.dataset.itemId=item.id;if(state.selected.has(item.id))card.classList.add('selected');
   const select=document.createElement('button');select.type='button';select.className='library-card-select';select.setAttribute('aria-pressed',String(state.selected.has(item.id)));
-  const thumb=document.createElement('div');thumb.className='library-thumb';thumb.textContent=iconFor(item.media_kind);thumb.dataset.previewFor=item.id;
+  const thumb=document.createElement('div');thumb.className='library-thumb';if(item.category==='Figurinha'||(item.tags||[]).includes('figurinha'))thumb.classList.add('sticker-thumb');thumb.textContent=iconFor(item.media_kind);thumb.dataset.previewFor=item.id;
   const info=document.createElement('div');info.className='library-card-info';
   const title=document.createElement('strong');title.textContent=item.title||item.original_filename||'Arquivo';
   const meta=document.createElement('small');meta.textContent=`${item.category||labelKind(item.media_kind)} · ${prettyBytes(item.stored_size_bytes)}`;
@@ -151,8 +153,9 @@ async function prepareAsset(file,row){
   if(kind!=='image'&&file.size>(MIME_LIMITS.get(mime)||0))throw new Error('library_original_size_invalid');
   if(kind==='image'){
     uploadStage(row,'compactando');
-    const optimized=await optimizeLibraryImage(new File([file],file.name,{type:mime,lastModified:file.lastModified}));
-    return {kind,mime:optimized.mimeType,asset:optimized.file,thumbnail:optimized.thumbnail,width:optimized.width,height:optimized.height,originalSize:optimized.originalBytes};
+    const sticker=state.uploadMode==='sticker'||file._attendanceSticker===true;
+    const optimized=await optimizeLibraryImage(new File([file],file.name,{type:mime,lastModified:file.lastModified}),{sticker});
+    return {kind,mime:optimized.mimeType,asset:optimized.file,thumbnail:optimized.thumbnail,width:optimized.width,height:optimized.height,originalSize:optimized.originalBytes,sticker};
   }
   const asset=file.type===mime?file:new File([file],file.name,{type:mime,lastModified:file.lastModified});
   return {kind,mime,asset,thumbnail:null,width:null,height:null,originalSize:file.size};
@@ -164,7 +167,7 @@ async function uploadOne(file){
     uploadStage(row,'solicitando upload');
     const reserved=await api('library_upload_prepare',{
       title:baseTitle(file.name),media_kind:prepared.kind,mime_type:prepared.mime,original_filename:file.name,
-      original_size_bytes:prepared.originalSize,category:null,tags:[]
+      original_size_bytes:prepared.originalSize,category:prepared.sticker?'Figurinha':null,tags:prepared.sticker?['figurinha','transparente','dona-antonia']:[]
     },'POST');
     uploadStage(row,'enviando Storage');
     await putSigned(reserved.upload,prepared.asset);
@@ -182,7 +185,23 @@ async function uploadOne(file){
 }
 async function uploadFiles(files){
   if(state.uploading)return;const list=[...files];if(!list.length)return;state.uploading=true;$('#libraryAddBtn').disabled=true;setStatus(`Preparando ${list.length} arquivo${list.length===1?'':'s'}…`);
-  let ok=0;try{for(const file of list)if(await uploadOne(file))ok++;await loadLibrary();setStatus(`${ok} de ${list.length} upload${list.length===1?'':'s'} concluído${ok===1?'':'s'}.`,ok===list.length?'success':'warning')}finally{state.uploading=false;$('#libraryAddBtn').disabled=false;$('#libraryFileInput').value=''}
+  let ok=0;try{for(const file of list)if(await uploadOne(file))ok++;await loadLibrary();setStatus(`${ok} de ${list.length} upload${ok===1?'':'s'} concluído${ok===1?'':'s'}.`,ok===list.length?'success':'warning')}finally{state.uploading=false;$('#libraryAddBtn').disabled=false;$('#libraryFileInput').value='';$('#stickerFileInput').value='';state.uploadMode='normal'}
+}
+
+async function uploadStickers(files){
+  state.uploadMode='sticker';try{await uploadFiles(files);$('#libraryKindSticker')?.click()}finally{state.uploadMode='normal'}
+}
+
+async function insertSelectedImage(){
+  if(state.selected.size!==1)return;const item=state.items.find(entry=>state.selected.has(entry.id));if(!item||item.media_kind!=='image')return;
+  const conversationId=activeConversationId();if(!conversationId){setStatus('Selecione uma conversa antes de inserir a figurinha.','error');return}
+  const preview=await api('library_preview',{item_id:item.id});
+  const mediaResponse=await fetch(preview.preview_url);if(!mediaResponse.ok)throw new Error('library_preview_sign_failed');
+  const form=new FormData();form.set('conversation_id',conversationId);form.set('idempotency_key',`sticker:${uploadId()}`.slice(0,120));form.set('file',new File([await mediaResponse.blob()],item.original_filename||`${item.title||'figurinha'}.png`,{type:item.mime_type||'image/png'}));
+  const url=new URL(API);url.searchParams.set('action','send_media');
+  const response=await attendanceAuthorizedFetch(url,{method:'POST',body:form,cache:'no-store'});const data=await response.json().catch(()=>({}));
+  if(!response.ok||data?.ok===false)throw new Error(data?.error||'media_send_failed');
+  setStatus('Figurinha enviada na conversa.','success');clearSelection();closeDrawer();document.dispatchEvent(new CustomEvent('attendance:sent',{detail:{conversationId,provider:'meta'}}));document.dispatchEvent(new CustomEvent('attendance:conversation-refreshed'));
 }
 
 function idempotencyKey(batchId,itemId){return `lib:${batchId}:${itemId}`.slice(0,120)}
@@ -233,7 +252,6 @@ async function sendQueue(items,{retry=false}={}){
 }
 async function sendSelected(){deliveryReset();await sendQueue(selectedItems(),{retry:false})}
 async function retryFailed(){if(!state.failedItems.size)return;await sendQueue(selectedItems(),{retry:true})}
-
 async function editItem(item){
   const title=prompt('Nome do item',item.title||'');if(title===null)return;const cleanTitle=title.trim();if(!cleanTitle){setStatus('Informe um nome para o item.','error');return}
   const category=prompt('Categoria (opcional)',item.category||'');if(category===null)return;
@@ -255,10 +273,13 @@ function bindConversationObserver(){
 function bind(){
   $('#libraryBtn')?.addEventListener('click',openDrawer);$('#libraryCloseBtn')?.addEventListener('click',closeDrawer);$('#attendanceLibraryOverlay')?.addEventListener('click',closeDrawer);
   $('#libraryAddBtn')?.addEventListener('click',()=>$('#libraryFileInput')?.click());$('#libraryFileInput')?.addEventListener('change',event=>uploadFiles(event.target.files).catch(error=>setStatus(messageFor(error),'error')));
+  $('#libraryInsertBtn')?.addEventListener('click',()=>insertSelectedImage().catch(error=>setStatus(messageFor(error),'error')));
+  $('#stickerFileInput')?.addEventListener('change',event=>uploadStickers(event.target.files).catch(error=>setStatus(messageFor(error),'error')));
   $('#libraryClearSelectionBtn')?.addEventListener('click',()=>{clearSelection();deliveryReset()});
   $('#librarySendBtn')?.addEventListener('click',()=>{const action=state.failedItems.size?retryFailed():sendSelected();action.catch(error=>{setStatus(messageFor(error),'error');state.sending=false;syncFooter()})});
   $('#librarySearch')?.addEventListener('input',event=>{state.query=event.target.value.trim();clearTimeout(state.searchTimer);state.searchTimer=setTimeout(()=>loadLibrary().catch(renderError),250)});
-  document.querySelectorAll('[data-library-kind]').forEach(button=>button.addEventListener('click',()=>{state.kind=button.dataset.libraryKind||'all';document.querySelectorAll('[data-library-kind]').forEach(item=>item.classList.toggle('active',item===button));loadLibrary().catch(renderError)}));
+  document.querySelectorAll('[data-library-kind]').forEach(button=>{if(button.dataset.libraryKind==='sticker')button.id='libraryKindSticker';button.addEventListener('click',()=>{state.kind=button.dataset.libraryKind||'all';document.querySelectorAll('[data-library-kind]').forEach(item=>item.classList.toggle('active',item===button));loadLibrary().catch(renderError)})});
+  $('#libraryStickerAddBtn')?.addEventListener('click',()=>$('#stickerFileInput')?.click());
   document.addEventListener('attendance:conversation-refreshed',()=>syncFooter());
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&state.open)closeDrawer()});bindConversationObserver();syncConversationContext();syncFooter();
 }

@@ -76,6 +76,7 @@
             <div class="quick-tools" aria-label="Ferramentas rápidas">
               <label class="attach-tool" title="Anexar imagem, áudio ou PDF"><span>📎 Anexar</span><input id="mediaFile" type="file" accept="image/jpeg,image/png,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,application/pdf" hidden></label>
               <button type="button" id="libraryBtn">🗂 Biblioteca</button>
+              <button type="button" id="emojiBtn" aria-expanded="false" aria-controls="emojiPicker">😊 Emojis</button>
               <button type="button" id="recordAudioBtn" aria-pressed="false" disabled>🎙 Gravar áudio</button>
               <button type="button" id="quickRepliesBtn" disabled>Respostas</button>
               <button type="button" id="templatesBtn">Templates</button>
@@ -84,6 +85,7 @@
               <button type="button" id="moreToolsBtn" disabled>Mais ⋯</button>
             </div>
             <div class="composer-panel" id="quickRepliesMenu" hidden><div id="quickRepliesList" class="quick-replies-list"></div><button type="button" id="manageQuickRepliesBtn" class="panel-manage">Gerenciar respostas</button></div>
+            <div class="composer-panel emoji-picker" id="emojiPicker" aria-label="Emojis básicos" hidden></div>
             <div class="composer-panel" id="templatesMenu" hidden><div class="composer-panel-head"><strong>Templates aprovados</strong><button type="button" id="templateSyncBtn">Atualizar</button></div><small id="templatesStatus">Abra para sincronizar com a Meta.</small><div id="templatesList" class="quick-replies-list"></div></div>
             <div class="composer-panel more-tools-menu" id="moreToolsMenu" hidden><button type="button" id="quoteBtn" disabled>Criar orçamento</button><button type="button" id="saleBtn" disabled>Nova venda</button><button type="button" id="followUpBtn" disabled>Marcar retorno</button><button type="button" id="optOutBtn" disabled>Não receber ofertas</button></div>
             <div class="composer-panel conversation-labels" id="conversationLabelsMenu" hidden><strong>Etiquetas desta conversa</strong><div id="conversationLabelsList"></div><button type="button" id="saveConversationLabelsBtn">Salvar etiquetas</button></div>
@@ -128,12 +130,15 @@
 
       <div class="attendance-library-overlay" id="attendanceLibraryOverlay" hidden></div>
       <aside class="attendance-library-drawer" id="attendanceLibraryDrawer" role="dialog" aria-modal="true" aria-label="Biblioteca rápida" aria-hidden="true" hidden>
-        <header class="library-head"><div><strong>Biblioteca rápida</strong><small>Imagens, vídeos, áudios e arquivos prontos para reutilizar</small></div><button type="button" id="libraryCloseBtn" aria-label="Fechar Biblioteca">×</button></header>
+        <header class="library-head"><div><strong>Biblioteca rápida</strong><small>Figurinhas transparentes e imagens, vídeos, áudios e arquivos reutilizáveis</small></div><button type="button" id="libraryCloseBtn" aria-label="Fechar Biblioteca">×</button></header>
         <div class="library-controls">
           <div class="library-search-row"><input id="librarySearch" type="search" placeholder="Buscar por nome, categoria ou etiqueta" autocomplete="off"><button type="button" class="library-add" id="libraryAddBtn">+ Adicionar</button></div>
           <input id="libraryFileInput" type="file" multiple hidden accept="image/jpeg,image/png,video/mp4,video/3gpp,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,.m4a,application/pdf,text/plain,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+          <input id="stickerFileInput" type="file" multiple hidden accept="image/png">
+          <div class="library-sticker-actions"><button type="button" class="library-add" id="libraryStickerAddBtn">+ Figurinha PNG</button><button type="button" class="library-add" id="installStarterStickersBtn">Adicionar pacote inicial</button></div>
           <div class="library-filters" aria-label="Filtrar Biblioteca">
             <button type="button" class="active" data-library-kind="all">Todos</button>
+            <button type="button" data-library-kind="sticker">Figurinhas</button>
             <button type="button" data-library-kind="image">Imagens</button>
             <button type="button" data-library-kind="video">Vídeos</button>
             <button type="button" data-library-kind="audio">Áudios</button>
@@ -144,8 +149,9 @@
         <div class="library-body"><div class="library-grid" id="libraryGrid"><div class="library-state">Abra a Biblioteca para carregar os itens.</div></div></div>
         <footer class="library-footer">
           <div class="library-footer-status" id="librarySelectionStatus"><strong>Nenhum item selecionado</strong><small>Toque nos cards para selecionar.</small></div>
+          <button type="button" id="libraryInsertBtn" disabled>Enviar figurinha</button>
           <button type="button" id="libraryClearSelectionBtn" disabled>Limpar seleção</button>
-          <button type="button" class="primary" id="librarySendBtn" disabled>Enviar 0</button>
+          <button type="button" class="primary" id="librarySendBtn" disabled>Enviar mídia 0</button>
           <span id="libraryStatus" role="status" aria-live="polite" hidden></span>
         </footer>
       </aside>
@@ -157,7 +163,9 @@
 
   <script type="module" src="./attendance-app.js?v=product-media-v1"></script>
   <script type="module" src="./attendance-offers.js?v=offers-v1"></script>
-  <script type="module" src="./attendance-library.js?v=auth-refresh-v2"></script>
+  <script type="module" src="./attendance-library.js?v=stickers-emoji-v1"></script>
+  <script type="module" src="./attendance-emoji.js?v=stickers-emoji-v1"></script>
+  <script type="module" src="./attendance-stickers-seed.js?v=stickers-emoji-v1"></script>
   <script type="module" src="./attendance-ana-preview.js?v=auth-refresh-v2"></script>
   <script type="module" src="./attendance-send.js?v=auth-refresh-v2"></script>
   <script type="module" src="./attendance-audio-recorder.js?v=auth-refresh-v2"></script>
