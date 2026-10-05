@@ -20,7 +20,7 @@ assert.match(guided,/window\.DonaAntoniaAdminBridge/,'guided builder must consum
 assert.doesNotMatch(guided,/DonaAntoniaGuidedBridge/,'guided builder must not depend on the retired basket-specific bridge');
 
 const renderStart=admin.indexOf('  async function renderBaskets(){');
-const renderEnd=admin.indexOf('\n  function kitAdminCard(',renderStart);
+const renderEnd=admin.indexOf('\n  async function renderProducts',renderStart);
 assert.ok(renderStart>0&&renderEnd>renderStart,'renderBaskets compatibility boundary must remain identifiable');
 const renderBlock=admin.slice(renderStart,renderEnd);
 assert.match(renderBlock,/DonaAntoniaBasketAdmin\?\.render/,'index renderBaskets must delegate to the canonical module');
