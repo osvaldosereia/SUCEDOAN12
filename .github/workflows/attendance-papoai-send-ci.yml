@@ -11,6 +11,7 @@ on:
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/atendimento/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
+      - 'supabase/functions/admin-attendance-customer-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
       - 'supabase/functions/_shared/admin-attendance-library-v1.mjs'
@@ -25,6 +26,7 @@ on:
       - 'supabase/sql/20261003_attendance_library_v1.sql'
       - 'supabase/sql/20261003_attendance_library_media_transport_expand_v1.sql'
       - 'supabase/sql/20261004_storefront_catalog_link_v1.sql'
+      - 'supabase/sql/20261005_attendance_customer_link_v1.sql'
       - '.github/workflows/attendance-papoai-send-ci.yml'
 
 jobs:
@@ -69,6 +71,11 @@ jobs:
       - run: node --check vitrine/admin/atendimento/attendance-auth.js
       - run: node --check vitrine/admin/atendimento/attendance-product-send.js
       - run: node --check vitrine/admin/atendimento/attendance-offers.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer-api.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer-form.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer-search.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer-view.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer.js
       - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
       - run: node --check vitrine/admin/atendimento/attendance-media-send.js
