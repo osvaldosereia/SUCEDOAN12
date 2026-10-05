@@ -8,6 +8,7 @@ on:
       - 'vitrine/basket-carousel.js'
       - 'vitrine/admin/basket-lot-image.js'
       - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-basket-guided-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/functions/basket-lot-image-v1/**'
       - 'supabase/sql/2026100*_basket_*.sql'
@@ -23,6 +24,7 @@ on:
       - 'vitrine/basket-carousel.js'
       - 'vitrine/admin/basket-lot-image.js'
       - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-basket-guided-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/functions/basket-lot-image-v1/**'
       - 'supabase/sql/2026100*_basket_*.sql'
@@ -61,6 +63,7 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-guided-positions-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-reservation-domain-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-guided-lot-flow-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-guided-admin-api-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-order-engine.mjs
       - run: node scripts/test-basket-kit-image-browser.mjs
         env:
