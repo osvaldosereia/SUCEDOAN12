@@ -10,8 +10,15 @@ window.BasketCarousel={
     }).join('');
     return '<article class="card basket-card">'+(category?'<div class="basket-category-tag">'+esc(category)+'</div>':'')+'<div class="basket-card-title name">'+esc(name)+'</div><div class="basket-carousel"><div class="basket-product-strip" id="'+esc(region)+'" tabindex="0" role="region" aria-label="Produtos da '+esc(name)+'">'+(photos||'<span class="basket-photo-missing">Confira os produtos em Ver cesta</span>')+'</div><div class="basket-scroll-track" role="scrollbar" tabindex="0" aria-label="Percorrer produtos da '+esc(name)+'" aria-controls="'+esc(region)+'" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="basket-scroll-thumb"></span></div></div><div class="card-body basket-card-info"><button type="button" class="add" data-basket="'+esc(b.id)+'" aria-label="Ver cesta '+esc(name)+'">Ver cesta</button><div class="price">'+money(b.display_price_cents)+'</div></div></article>';
   },
+  prepareHome(host){
+    const section=host?.closest?.('.section');if(!section)return;
+    section.querySelector('.basket-category-list')?.remove();
+    const heading=section.querySelector('.section-head h2');
+    if(heading?.textContent?.trim()==='Cestas e Kits')heading.closest('.section-head')?.remove();
+  },
   mount(host){
     this.dispose?.();if(!host)return;
+    this.prepareHome(host);
     const abort=new AbortController(),signal=abort.signal;
     const images=host.querySelectorAll('img[data-basket-src]');
     const load=img=>{img.src=img.dataset.basketSrc;img.removeAttribute('data-basket-src')};
