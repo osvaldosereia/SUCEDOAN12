@@ -1,0 +1,23 @@
+name: Marketing Audience Progressive CI
+
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/marketing/marketing-polish.js'
+      - 'vitrine/admin/marketing/audience-center.js'
+      - 'scripts/test-whatsapp-marketing-audience-progressive-v1.mjs'
+      - '.github/workflows/marketing-audience-progressive-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Progressive audience contract
+        run: node scripts/test-whatsapp-marketing-audience-progressive-v1.mjs
+      - name: Existing audience UI regression
+        run: node scripts/test-whatsapp-marketing-audience-ui-v1.mjs
+      - name: Marketing polish syntax
+        run: node --check vitrine/admin/marketing/marketing-polish.js
