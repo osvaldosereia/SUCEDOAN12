@@ -22,11 +22,11 @@ async function customerRpc(name,payload={}){
   return data;
 }
 
-async function customerProfileApi(action,conversationId){
+async function customerProfileApi(action,payload={}){
   const response=await attendanceAuthorizedFetch(PROFILE_API,{
     method:'POST',
     headers:{apikey:ADMIN_PUBLIC_KEY,'Content-Type':'application/json'},
-    body:JSON.stringify({action,conversation_id:conversationId}),
+    body:JSON.stringify({action,...(payload||{})}),
     cache:'no-store'
   });
   const data=await response.json().catch(()=>({}));
@@ -40,5 +40,7 @@ export const customerEditor=conversationId=>customerRpc('ops2_admin_attendance_c
 export const customerLink=(conversationId,customerId)=>customerRpc('ops2_admin_attendance_customer_link_browser_v1',{p_conversation_id:conversationId,p_customer_id:customerId});
 export const customerCreate=(conversationId,customer)=>customerRpc('ops2_admin_attendance_customer_create_browser_v1',{p_conversation_id:conversationId,p_customer:customer});
 export const customerSave=(conversationId,customer)=>customerRpc('ops2_admin_attendance_customer_save_browser_v1',{p_conversation_id:conversationId,p_customer:customer});
-export const customerProfileExtract=conversationId=>customerProfileApi('extract',conversationId);
-export const customerProfileList=conversationId=>customerProfileApi('list',conversationId);
+export const customerProfileExtract=conversationId=>customerProfileApi('extract',{conversation_id:conversationId});
+export const customerProfileList=conversationId=>customerProfileApi('list',{conversation_id:conversationId});
+export const customerProfileReview=(suggestionId,outcome)=>customerProfileApi('review',{suggestion_id:suggestionId,outcome});
+export const customerProfileMetrics=()=>customerProfileApi('metrics');
