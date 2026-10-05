@@ -1,25 +1,16 @@
-import {attendanceAuthorizedFetch} from './attendance-auth.js?v=auth-refresh-v2';
+import {customerReconcile} from './attendance-customer-api.js?v=customer-link-v1';
+import {decorateLinkedCustomer,renderUnlinkedCustomer} from './attendance-customer-view.js?v=customer-link-v1';
 
-const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-attendance-customer-v1';
+const COPY={create:'Cadastrar cliente',search:'Buscar cadastro',edit:'Editar aqui'};
+const PHONE_OPTIONS={readOnly:true};
+let selected='',attempted=false,busy=false;
+
 const selectedConversationId=()=>document.querySelector('.queue-card.selected')?.dataset?.conversationId||'';
+const active=()=>document.querySelector('[data-context-tab="customer"]')?.classList.contains('active')===true;
+const customerCard=()=>[...(document.querySelector('#contextBody')?.children||[])].find(x=>x.classList?.contains('context-card')&&x.querySelector('h3')?.textContent?.trim()==='Cliente')||null;
+function selection(){const id=selectedConversationId();if(id!==selected){selected=id;attempted=false}return id}
+function reload(){document.querySelector('.queue-card.selected')?.click()}
+async function customer_reconcile(id,card){const result=await customerReconcile(id);if(selection()!==id)return;if(result.linked===true){reload();return}renderUnlinkedCustomer({card,conversationId:id,result,copy:COPY,phoneOptions:PHONE_OPTIONS,onDone:reload})}
+async function process(){if(busy||!active())return;const id=selection(),card=customerCard();if(!id||!card)return;if(card.querySelector('.customer-hero')){decorateLinkedCustomer({card,conversationId:id,copy:COPY,onDone:reload});return}if(card.querySelector('[data-attendance-customer-active]')||attempted)return;attempted=true;busy=true;try{await customer_reconcile(id,card)}catch{card.append(Object.assign(document.createElement('div'),{className:'attendance-customer-status error',textContent:'Não foi possível verificar o cadastro automaticamente.'}))}finally{busy=false}}
 
-async function api(action,params={},method='GET'){
-  const url=new URL(API);url.searchParams.set('action',action);
-  const options={method,headers:{},cache:'no-store'};
-  if(method==='GET'){for(const [key,value] of Object.entries(params))if(value!==null&&value!==undefined&&value!=='')url.searchParams.set(key,String(value))}
-  else{options.headers['Content-Type']='application/json';options.body=JSON.stringify(params)}
-  const response=await attendanceAuthorizedFetch(url,options);
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok||data?.ok===false)throw Object.assign(new Error(data?.error||'customer_error'),{payload:data});
-  return data;
-}
-
-async function customer_reconcile(conversationId){return api('reconcile',{conversation_id:conversationId},'POST')}
-
-function install(){
-  const body=document.querySelector('#contextBody');if(!body)return;
-  new MutationObserver(()=>{}).observe(body,{childList:true,subtree:false});
-  window.addEventListener('attendance:customer-refresh',()=>selectedConversationId());
-}
-
-install();
+const body=document.querySelector('#contextBody');if(body){new MutationObserver(()=>queueMicrotask(process)).observe(body,{childList:true,subtree:false});document.querySelector('[data-context-tab="customer"]')?.addEventListener('click',()=>queueMicrotask(process));queueMicrotask(process)}
