@@ -11,11 +11,13 @@ const checks=[
   ['edicao rapida preco custo',html.includes('data-mobile-product-field="cost"')],
   ['edicao rapida estoque',html.includes('data-mobile-product-field="stock"')],
   ['validade operacional na linha',html.includes('Próxima validade')&&html.includes('data-mobile-product-field="expiration"')],
-  ['atalho kits na linha',html.includes('data-open-product-kit')&&html.includes('product-kit-menu')],
+  ['atalho cesta canônica na linha',html.includes('data-open-product-basket')&&html.includes('product-kit-menu')],
+  ['atalho nao chama editor legado',!html.includes('openBasketKitAdmin(el.dataset.openProductKit)')],
   ['acoes visuais compactas',html.includes('product-action-btn')&&html.includes('product-operational-row')],
   ['backend retorna custo',edge.includes('cost_cents:Math.round(Number(p.cost||0)*100)')],
   ['backend aceita custo rapido',edge.includes('cost_cents')&&edge.includes('patch.cost=Math.round(cents)/100')],
   ['backend enriquece lotes e kits',edge.includes('async function productOperationalMetaMap')&&edge.includes('linked_kits')&&edge.includes('next_expiration_date')],
+  ['backend inclui basket_id nos kits vinculados',edge.includes('id,name,kind,is_active,basket_id')&&edge.includes('basket_id:k.basket_id||null')],
   ['backend enriquece somente pagina atual',edge.includes('productOperationalMetaMap(rows.map((x:any)=>x.id))')]
 ];
 
