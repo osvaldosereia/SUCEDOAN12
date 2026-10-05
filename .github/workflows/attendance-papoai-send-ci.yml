@@ -8,6 +8,7 @@ on:
     paths:
       - 'scripts/test-admin-attendance-*.mjs'
       - 'scripts/test-attendance-meta-media-*.mjs'
+      - 'scripts/test-attendance-weekly-offers-consent-v1.mjs'
       - 'scripts/test-whatsapp-ana-preview-buttons-v1.mjs'
       - 'scripts/test-ana-customer-profile-*.mjs'
       - 'scripts/test-whatsapp-ana-customer-profile-*.mjs'
@@ -33,6 +34,7 @@ on:
       - 'supabase/sql/20261003_attendance_library_media_transport_expand_v1.sql'
       - 'supabase/sql/20261004_storefront_catalog_link_v1.sql'
       - 'supabase/sql/20261005_attendance_customer_link_v1.sql'
+      - 'supabase/sql/20261005_attendance_weekly_offers_consent_v1.sql'
       - 'supabase/sql/20261005_ana_customer_profile*.sql'
       - '.github/workflows/attendance-papoai-send-ci.yml'
 
@@ -49,6 +51,7 @@ jobs:
       - run: node scripts/test-admin-attendance-api-v1.mjs
       - run: node scripts/test-admin-attendance-customer-link-v1.mjs
       - run: node scripts/test-admin-attendance-customer-rpc-production-v1.mjs
+      - run: node scripts/test-attendance-weekly-offers-consent-v1.mjs
       - run: node scripts/test-ana-customer-profile-schema-v1.mjs
       - run: node scripts/test-whatsapp-ana-customer-profile-policy-v1.mjs
       - run: node scripts/test-whatsapp-ana-customer-profile-api-v1.mjs
@@ -88,6 +91,7 @@ jobs:
       - run: node --check vitrine/admin/atendimento/attendance-auth.js
       - run: node --check vitrine/admin/atendimento/attendance-product-send.js
       - run: node --check vitrine/admin/atendimento/attendance-offers.js
+      - run: node --check vitrine/admin/atendimento/attendance-marketing-consent.js
       - run: node --check vitrine/admin/atendimento/attendance-customer-api.js
       - run: node --check vitrine/admin/atendimento/attendance-customer-form.js
       - run: node --check vitrine/admin/atendimento/attendance-customer-search.js
