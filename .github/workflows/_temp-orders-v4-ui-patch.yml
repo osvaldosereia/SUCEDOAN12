@@ -27,7 +27,7 @@ jobs:
           import re
           p=Path('vitrine/admin/index.html')
           s=p.read_text()
-          s,n=re.subn(r'(\.order-v3-tag\{[^}]*?)font-size:11px',r'\1font-size:13px',s,count=1)
+          s,n=re.subn(r'(\.order-v3-tag\{[^}]*?)font-size:10px',r'\1font-size:13px',s,count=1)
           if n != 1:
               raise SystemExit(f'order-v3-tag css replacements={n}')
           p.write_text(s)
