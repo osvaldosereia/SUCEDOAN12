@@ -7,10 +7,13 @@ on:
       - 'vitrine/admin/marketing/campaign-center.css'
       - 'vitrine/admin/marketing/campaign-simple-ui.js'
       - 'vitrine/admin/marketing/campaign-simple-ui.css'
+      - 'vitrine/admin/marketing/campaign-list-simple.js'
+      - 'vitrine/admin/marketing/campaign-list-simple.css'
       - 'vitrine/admin/marketing/campaign-entry.js'
       - 'vitrine/admin/marketing/marketing-polish.js'
       - 'scripts/test-whatsapp-marketing-campaign-execution-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-simple-list-v1.mjs'
       - '.github/workflows/marketing-campaign-execution-ui-ci.yml'
   workflow_dispatch:
 
@@ -28,10 +31,14 @@ jobs:
         run: node scripts/test-whatsapp-marketing-campaign-execution-ui-v1.mjs
       - name: Marketing simple campaign audience contract
         run: node scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs
+      - name: Marketing simple campaign list contract
+        run: node scripts/test-whatsapp-marketing-campaign-simple-list-v1.mjs
       - name: Campaign center syntax
         run: node --check vitrine/admin/marketing/campaign-center.js
       - name: Campaign simple UI syntax
         run: node --check vitrine/admin/marketing/campaign-simple-ui.js
+      - name: Campaign list simple syntax
+        run: node --check vitrine/admin/marketing/campaign-list-simple.js
       - name: Campaign entry syntax
         run: node --check vitrine/admin/marketing/campaign-entry.js
       - name: Existing campaign UI regression
