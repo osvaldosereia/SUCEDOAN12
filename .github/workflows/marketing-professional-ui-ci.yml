@@ -11,7 +11,7 @@ on:
       - 'scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-papoai-responsive-v1.mjs'
       - 'scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs'
-      - 'scripts/test-whatsapp-marketing-campaign-list-simple-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-simple-list-v1.mjs'
       - 'scripts/test-whatsapp-marketing-template-carousel-v1.mjs'
       - 'scripts/test-admin-whatsapp-template-carousel-v1.mjs'
       - 'scripts/test-admin-marketing-campaign-report-v1.mjs'
@@ -37,7 +37,7 @@ jobs:
       - name: Marketing simple campaign audience contract
         run: node scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs
       - name: Marketing simple campaign list contract
-        run: node scripts/test-whatsapp-marketing-campaign-list-simple-v1.mjs
+        run: node scripts/test-whatsapp-marketing-campaign-simple-list-v1.mjs
       - name: Marketing carousel UI contract
         run: node scripts/test-whatsapp-marketing-template-carousel-v1.mjs
       - name: Marketing carousel backend contract
