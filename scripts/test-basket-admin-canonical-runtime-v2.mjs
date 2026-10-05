@@ -29,7 +29,9 @@ assert.doesNotMatch(renderBlock,/basket_commercial_admin|basketCommercialCard|op
 for(const action of ['basket_commercial_admin','basket_commercial_create','basket_lot_sale_toggle','basket_archive'])assert.match(section,new RegExp(action),`canonical section must own ${action}`);
 assert.match(section,/api\('basket_commercial_create',\s*\{\},\s*\{[\s\S]*method:\s*'POST'/,'create must send POST options in the third api argument');
 assert.doesNotMatch(section,/api\('basket_commercial_create',\s*\{\s*method:/,'create must never encode fetch options as query params');
-assert.match(section,/DonaAntoniaBasketGuided\?\.open/,'Editar/Novo lote must use the guided builder');
+assert.match(section,/function guided\(\)\{return window\.DonaAntoniaBasketGuided\|\|null\}/,'canonical section must resolve the guided builder through one adapter');
+assert.match(section,/function openGuided\(/,'Editar/Novo lote must share one guided-editor adapter');
+assert.match(section,/g\.open\(m\.commercial_id/,'guided-editor adapter must open the commercial model id');
 assert.doesNotMatch(section,/openBasketCommercialEditor|startBasketKitLotDraft|openBasketKitAdmin/,'canonical cards must not fall back to legacy editors');
 assert.match(section,/data-basket-edit-lot/,'canonical card must expose edit-current-lot when a lot exists');
 assert.match(section,/async function editCurrentLot\(/,'canonical section must own the current-lot loader');
