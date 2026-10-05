@@ -3,31 +3,34 @@ name: One-shot order public code residual v1
 on:
   push:
     branches: [feat/order-public-code-and-separation-whatsapp-v1]
+    paths:
+      - '.github/workflows/one-shot-order-public-code-residual-v1.yml'
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: feat/order-public-code-and-separation-whatsapp-v1
-          fetch-depth: 1
+          fetch-depth: 0
       - name: Apply residual patch
-        run: python scripts/patch-order-public-code-residual-v1.py
+        run: python3 scripts/patch-order-public-code-residual-v1.py
       - name: Contract tests
         run: |
           node scripts/test-order-customer-notifications-v1.mjs
           node scripts/test-admin-order-whatsapp-ui-integration.mjs
           node scripts/test-admin-orders-clean-flow-v3.mjs
           git diff --check
-      - name: Commit patch
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/one-shot-order-public-code-residual-v1.yml
+      - name: Commit patch and cleanup
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add vitrine/admin/index.html
+          git add vitrine/admin/index.html .github/workflows/one-shot-order-public-code-residual-v1.yml
           git commit -m 'fix(admin): usar somente codigo publico do pedido'
           git push origin HEAD:feat/order-public-code-and-separation-whatsapp-v1
