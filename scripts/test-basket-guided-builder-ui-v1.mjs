@@ -1,34 +1,31 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-// Contrato final da integração guiada dentro da seção canônica de Cestas/Kits.
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
 const uiPath='vitrine/admin/basket-guided-builder.js';
 assert.equal(fs.existsSync(uiPath),true,'guided builder UI module must exist');
 const ui=fs.readFileSync(uiPath,'utf8');
 
-assert.match(admin,/basket-guided-builder\.js/,'admin must load guided builder UI');
-assert.match(admin,/DonaAntoniaGuidedBridge/,'admin must expose a narrow bridge to the guided UI');
-assert.match(admin,/DonaAntoniaBasketGuided[^\n]*open/,'existing Cestas\/Kits flow must route into guided builder');
-assert.match(admin,/data-commercial-new[\s\S]{0,1800}DonaAntoniaBasketGuided/,'Novo lote must use the guided builder');
+assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'admin must load guided builder v3');
+assert.match(admin,/basket-admin-section\.js\?v=canonical-v3/,'admin must load canonical basket section v3');
+assert.match(admin,/DonaAntoniaAdminBridge/,'admin must expose one stable bridge from its main runtime');
+assert.doesNotMatch(admin,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not remain');
+assert.match(section,/function guided\(\)[^\n]*DonaAntoniaBasketGuided/,'canonical section must own one guided-builder adapter');
+assert.match(section,/function openGuided\(/,'canonical cards must route through one openGuided path');
+assert.match(section,/g\.open\(m\.commercial_id/,'openGuided must open the commercial model in the guided builder');
+assert.doesNotMatch(section,/startBasketKitLotDraft|openBasketKitAdmin|openBasketCommercialEditor/,'canonical cards must not fall back to legacy composers');
 
-for(const label of ['Dados comerciais','Itens da cesta/kit','Resumo','Criar lote / reservar','Marcar como montado']){
-  assert.match(ui,new RegExp(label.replace('/','\\/'),'i'),`guided UI must show ${label}`);
+for(const label of ['Dados comerciais','Itens da cesta/kit','Resumo','Criar lote / reservar','Marcar como montado','Nome público do lote','Preço final do lote','Tipo do lote vinculado','Escolher lote','Itens do lote vinculado']){
+  assert.match(ui,new RegExp(label.replaceAll('/','\\/'),'i'),`guided UI must show ${label}`);
 }
-for(const action of ['model_editor','position_products','model_save','lot_preview','lot_reserve','lot_update','lot_mount','lot_cancel','lot_reopen']){
+for(const action of ['model_editor','position_products','linkable_lots','model_save','lot_preview','lot_reserve','lot_update','lot_mount','lot_cancel','lot_reopen']){
   assert.match(ui,new RegExp(`["']${action}["']`),`guided UI must call ${action}`);
 }
 
 assert.match(ui,/IntersectionObserver|Carregar produtos/i,'product carousels must lazy-load');
-assert.match(ui,/position_label/i,'positions must expose editable terms');
-assert.match(ui,/family_key/i,'positions must preserve configured family');
-assert.match(ui,/search_query/i,'positions must preserve textual fallback');
-assert.match(ui,/removable/i,'positions must preserve removable rule');
-assert.match(ui,/quantity_editable/i,'positions must preserve quantity editable rule');
-assert.match(ui,/min_quantity/i,'positions must preserve min quantity');
-assert.match(ui,/max_quantity/i,'positions must preserve max quantity');
+for(const field of ['position_label','family_key','search_query','removable','quantity_editable','min_quantity','max_quantity'])assert.match(ui,new RegExp(field),`positions must preserve ${field}`);
 assert.match(ui,/duplicate_confirmed|mesmo produto|produto repetido/i,'same SKU in two positions must require confirmation');
-
 for(const stock of ['Total','Reservado','Avulso'])assert.match(ui,new RegExp(stock,'i'),`product cards must show ${stock} stock`);
 for(const field of ['cost_price','sale_price','effective_sellable_stock','basket_locked_quantity','loose_stock'])assert.match(ui,new RegExp(field),`UI must consume ${field}`);
 assert.match(ui,/Por cesta/i,'lot preview must show per-basket quantity');
@@ -36,45 +33,39 @@ assert.match(ui,/Necessário/i,'lot preview must show required total');
 assert.match(ui,/Saldo/i,'lot preview must show post-reservation balance');
 assert.match(ui,/insufficient|insuficiente|balance_after/i,'UI must surface insufficient stock');
 
-for(const state of ['Em montagem','Montado','Pausado','Esgotado','Cancelado'])assert.match(ui,new RegExp(state,'i'),`UI must expose operational state ${state}`);
+for(const operational of ['Em montagem','Montado','Pausado','Esgotado','Cancelado'])assert.match(ui,new RegExp(operational,'i'),`UI must expose operational state ${operational}`);
 assert.match(ui,/Ativar venda/i,'sale activation must remain separate from mounting');
 assert.match(ui,/Editar lote/i,'reserved lot must remain editable');
 assert.match(ui,/Cancelar lote/i,'reserved lot must be cancellable when eligible');
-assert.match(ui,/Duplicar lote|Imprimir lote|Ver composição/i,'legacy lot operations must remain represented');
+assert.match(ui,/applyDuplicateSeed/,'guided editor must support duplicate/existing lot as an exact snapshot seed');
+assert.match(ui,/state\.lot\|\|state\?\.duplicateLot|state\?\.lot\|\|state\?\.duplicateLot/,'existing lot must take precedence over duplicate seed');
 
 const saveStart=ui.indexOf('async function saveModel');
 const saveEnd=ui.indexOf('\n  async function ensureSavedForLot',saveStart+1);
-assert.ok(saveStart>=0,'saveModel helper must exist');
-assert.ok(saveEnd>saveStart,'saveModel boundary must be identifiable');
+assert.ok(saveStart>=0&&saveEnd>saveStart,'saveModel helper must be identifiable');
 const saveBlock=ui.slice(saveStart,saveEnd);
 assert.match(saveBlock,/model_save/,'saving model must call model_save');
+assert.match(saveBlock,/commercial:/,'saving model must include commercial fields');
 assert.doesNotMatch(saveBlock,/lot_reserve/,'saving model must not reserve stock');
 
-// Regressões observadas em produção em 2026-10-05.
-const newLotStart=admin.indexOf("host.querySelectorAll('[data-commercial-new]')");
-const newLotEnd=admin.indexOf('\n    host.querySelectorAll',newLotStart+1);
-assert.ok(newLotStart>=0&&newLotEnd>newLotStart,'commercial Novo lote binding must exist');
-const newLotBinding=admin.slice(newLotStart,newLotEnd);
-assert.match(newLotBinding,/DonaAntoniaBasketGuided\?\.open/,'card Novo lote must open guided builder directly');
-assert.doesNotMatch(newLotBinding,/startBasketKitLotDraft/,'card Novo lote must not call the legacy lot composer');
+const reserveStart=ui.indexOf('async function reserveOrUpdateLot');
+const reserveEnd=ui.indexOf('\n  async function mountLot',reserveStart+1);
+assert.ok(reserveStart>=0&&reserveEnd>reserveStart,'lot reservation helper must be identifiable');
+const reserve=ui.slice(reserveStart,reserveEnd);
+for(const field of ['public_name','sale_price','linked_lot_id'])assert.match(reserve,new RegExp(field),`lot reservation must persist ${field}`);
+assert.match(reserve,/lot_update/,'editing an assembling lot must update the same reservation');
+assert.match(reserve,/lot_reserve/,'new lot must use canonical reservation action');
 
-const printStart=admin.indexOf("host.querySelectorAll('[data-commercial-print]')");
-const printEnd=admin.indexOf('\n  }',printStart+1);
-assert.ok(printStart>=0&&printEnd>printStart,'commercial print binding must exist');
-const printBinding=admin.slice(printStart,printEnd);
-assert.doesNotMatch(printBinding,/openBasketKitAdmin/,'Imprimir on commercial card must not navigate into basket detail');
-assert.match(printBinding,/source_kind==='basket'[\s\S]*api\('basket_admin'/,'legacy/full basket lots must load from basket_admin before printing');
-assert.match(printBinding,/api\('basket_kit_admin'/,'standalone kit lots must still load from basket_kit_admin');
-assert.match(printBinding,/printBasketKitLot\(m\.operational_lot_id\)/,'Imprimir must pass the lot id, not the lot object');
-
-assert.doesNotMatch(admin,/id="basketProductSuggestions"/,'legacy broken Sugestões de produtos button must not be exposed in the canonical top toolbar');
-
-const archiveStart=admin.indexOf('async function archiveBasketKitTemplate');
-const archiveEnd=admin.indexOf('\n  function basketKitDraftCapacityFromItems',archiveStart+1);
-assert.ok(archiveStart>=0&&archiveEnd>archiveStart,'commercial model archive block must exist');
-const archiveBlock=admin.slice(archiveStart,archiveEnd);
-assert.match(archiveBlock,/basket_archive/,'linked commercial model deletion must archive the basket model, not only its internal kit template');
-assert.match(archiveBlock,/basket_has_live_lots/,'model deletion must explain live-lot safety block');
+assert.match(section,/data-basket-new-lot/,'commercial Novo lote binding must exist');
+assert.match(section,/openGuided\(modelFromCard\(btn\),'lot'\)/,'card Novo lote must open guided builder directly');
+assert.match(section,/data-basket-edit-lot/,'current lot edit action must exist on canonical card');
+assert.match(section,/function printLot\(lot\)/,'commercial print must be a pure lot function');
+assert.doesNotMatch(section,/state\.basketKitDetail/,'printing must not mutate legacy basket detail state');
+assert.match(section,/source_kind==='basket'[\s\S]*api\('basket_admin'/,'legacy/full basket lots must load from basket_admin only as a compatibility read');
+assert.match(section,/api\('basket_kit_admin'/,'standalone/internal kit lots may load from basket_kit_admin only as a compatibility read');
+assert.match(section,/basket_archive/,'commercial model deletion must use canonical basket_archive');
+assert.match(section,/basket_has_live_lots/,'model deletion must explain live-lot safety block');
+assert.doesNotMatch(section,/basketProductSuggestions|Sugestões de produtos/,'legacy global suggestions action must not return');
 
 const createSql=fs.readFileSync('supabase/sql/20261004_basket_commercial_create_v1.sql','utf8');
 assert.match(createSql,/v_prefix\s*:=\s*chr\([^;]+\)\s*\|\|\s*chr\(/i,'commercial model prefix must concatenate text with || in PostgreSQL');
@@ -82,4 +73,4 @@ const archiveSql=fs.readFileSync('supabase/sql/20261005_basket_commercial_archiv
 assert.match(archiveSql,/update\s+public\.basket_kit_templates[\s\S]*is_active\s*=\s*false/i,'commercial archive must deactivate its internal kit template atomically');
 assert.match(archiveSql,/basket_has_live_lots/i,'commercial archive must reject live lots before archiving');
 
-console.log('basket guided builder UI v1: PASS');
+console.log('basket guided builder UI v3: PASS');

@@ -1,66 +1,46 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const adminUiPath='vitrine/admin/index.html';
-const adminApiPath='supabase/functions/admin-products-live-v1/index.ts';
-const storefrontPath='supabase/functions/storefront-v2/index.ts';
-const migrationPath='supabase/sql/20261004_basket_lot_linked_hygiene_and_original_rule_v1.sql';
-const optionalHygienePath='supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql';
+const adminUi=fs.readFileSync('vitrine/admin/index.html','utf8');
+const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
+const guided=fs.readFileSync('vitrine/admin/basket-guided-builder.js','utf8');
+const guidedApi=fs.readFileSync('supabase/functions/admin-basket-guided-v1/index.ts','utf8');
+const storefront=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
+const migration=fs.readFileSync('supabase/sql/20261004_basket_lot_linked_hygiene_and_original_rule_v1.sql','utf8');
+const optionalHygiene=fs.readFileSync('supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql','utf8');
 const draftLinkMigrationPath='supabase/sql/20261004_basket_link_draft_selection_v1.sql';
 
-for(const path of [adminUiPath,adminApiPath,storefrontPath,migrationPath,optionalHygienePath])assert.ok(fs.existsSync(path),`missing ${path}`);
+// A operação normal de lotes pertence ao módulo canônico + editor guiado, não a kitLotRow no index.
+assert.doesNotMatch(section,/kitLotRow|paintBasketKitAdmin/,'módulo canônico não deve depender da lista/compositor legado');
+for(const label of ['Pausar venda','Retomar venda','Editar lote','Imprimir'])assert.match(section,new RegExp(label),`card canônico deve expor ${label}`);
+assert.match(section,/basket_lot_sale_toggle/,'pausa/retomada deve usar a ação canônica de venda');
+assert.match(section,/data-basket-edit-lot/,'lote atual deve poder ser aberto para edição real');
 
-const adminUi=fs.readFileSync(adminUiPath,'utf8');
-const adminApi=fs.readFileSync(adminApiPath,'utf8');
-const storefront=fs.readFileSync(storefrontPath,'utf8');
-const migration=fs.readFileSync(migrationPath,'utf8');
-const optionalHygiene=fs.readFileSync(optionalHygienePath,'utf8');
+assert.ok(guided.includes('id="bgLotPublicName"'),'lote deve permitir nome público próprio');
+assert.ok(guided.includes('id="bgLotSalePrice"'),'lote deve permitir preço próprio');
+assert.ok(guided.includes('id="bgLotLinkedType"'),'vínculo opcional deve começar pelo tipo');
+assert.ok(guided.includes('id="bgLotLinkedLot"'),'vínculo opcional deve permitir escolher o lote');
+assert.match(guided,/\(state\.linkableLots\|\|\[\]\)\.filter\([^\n]*business_type/,'lotes vinculáveis devem ser filtrados pelo tipo');
+assert.match(guided,/linked_lot_id\s*:/,'reserva/edição deve persistir o lote vinculado escolhido');
+assert.ok(guided.includes('Itens do lote vinculado'),'composição vinculada deve ser visível no mesmo editor');
+for(const label of ['Em montagem','Montado','Cancelar lote','Reabrir para editar','Ativar venda'])assert.match(guided,new RegExp(label),`editor guiado deve manter a operação ${label}`);
+assert.doesNotMatch(guided,/data-kit-lot-delete|deleteBasketKitLot/,'fluxo canônico deve cancelar/liberar reserva, não apagar lote fisicamente pela UI');
 
-const rowStart=adminUi.indexOf('function kitLotRow');
-const rowEnd=adminUi.indexOf('function paintBasketKitAdmin',rowStart);
-assert.ok(rowStart>=0&&rowEnd>rowStart,'kitLotRow block missing');
-const row=adminUi.slice(rowStart,rowEnd);
-assert.match(row,/public_name\s*\|\|\s*code/,'lot card must prefer the public basket name over physical code');
-assert.doesNotMatch(row,/Gerar imagem|data-lot-image/,'new basket lot cards must not expose image generation');
-assert.doesNotMatch(row,/Ver composição|<details/,'composition must be visible without opening details');
-assert.match(row,/basket-lot-inline-strip/,'composition must render as an inline horizontal strip');
-assert.match(row,/data-kit-lot-delete/,'ready/depleted lots must expose delete action');
-assert.match(row,/Pausar venda/,'active lots must remain pause-able');
-assert.match(row,/Retomar venda/,'paused lots must remain resumable');
-assert.match(adminUi,/flex:0 0 360px;width:360px/,'horizontal product cards must be wide enough to keep quantity inside');
-assert.match(adminUi,/\.basket-lot-component-card\{display:grid;grid-template-columns:48px minmax\(0,1fr\) 64px/,'desktop lot card grid must keep quantity inside the card');
-assert.match(adminUi,/\.basket-lot-component-stock\{grid-column:2\/-1/,'stock block should move below the main row instead of overflowing the card');
+const linkedStart=guidedApi.indexOf('async function linkableLots');
+const linkedEnd=guidedApi.indexOf('\nasync function modelEditor',linkedStart);
+assert.ok(linkedStart>=0&&linkedEnd>linkedStart,'gateway guiado deve ter catálogo isolado de lotes vinculáveis');
+const linked=guidedApi.slice(linkedStart,linkedEnd);
+assert.match(linked,/\.in\("status",\["draft","ready"\]\)/,'seletor deve carregar lotes em montagem e montados');
+assert.match(linked,/\.is\("linked_lot_id",null\)/,'um lote já composto não deve ser oferecido como nova dependência');
+assert.match(linked,/quantity_available/,'catálogo deve trazer disponibilidade física do lote');
+assert.match(linked,/basket_stock_lot_items/,'catálogo deve trazer snapshot dos itens vinculados');
 
-assert.match(adminUi,/Tipo da cesta\/kit/,'every lot must expose business classification');
-assert.match(adminUi,/Tipo do lote vinculado \(opcional\)/,'linked-lot flow must start with an optional type selector');
-assert.match(adminUi,/Escolher lote/,'linked-lot flow must expose the lot selector after the type');
-assert.match(adminUi,/kitLotLinkedType/,'linked-lot type selector must be wired');
-assert.match(adminUi,/kitLotLinkedLot/,'generic linked-lot selector must be wired');
-assert.match(adminUi,/linkableLots\.filter\([^\n]*business_type/,'linked-lot choices must be filtered by selected business type');
-assert.match(adminUi,/linked_lot_id/,'lot save must persist the selected generic linked lot when one is chosen');
-assert.match(adminUi,/data-kit-lot-delete[^\n]*deleteBasketKitLot|deleteBasketKitLot\(/,'lot delete UI must be wired to a handler');
-assert.match(adminUi,/CESTA ORIGINAL|permanece original/i,'separation UI must explicitly identify preserved original baskets');
-assert.match(adminUi,/loose_quantity/,'separation UI must use loose quantity for extras instead of re-picking preassembled components');
-
-const detailStart=adminApi.indexOf('async function basketKitAdminDetail');
-const detailEnd=adminApi.indexOf('\nasync function ',detailStart+20);
-assert.ok(detailStart>=0&&detailEnd>detailStart,'basketKitAdminDetail block missing');
-const detail=adminApi.slice(detailStart,detailEnd);
-assert.match(detail,/linkableLots/,'admin API must load linkable lots for every kit');
-assert.doesNotMatch(detail,/\.eq\("status","ready"\)\.gt\("quantity_available",0\)/,'linked-lot picker must not hide draft lots or mounted lots with zero availability');
-assert.match(detail,/\.in\("status",\["draft","ready"\]\)/,'linked-lot picker must load both draft and mounted lots');
-assert.match(adminUi,/Lotes existentes[\s\S]*d\.lots/,'kit summary must expose the number of existing lot records');
-assert.match(adminUi,/Lotes montados[\s\S]*ready_lot_count/,'mounted KPI must count mounted lots, not available units');
-assert.match(adminUi,/Kits disponíveis[\s\S]*ready_quantity/,'available-unit KPI must be separate from mounted lot count');
-assert.match(adminUi,/Em edição[\s\S]*draft_lot_count/,'draft KPI must keep counting editable lots');
-assert.match(adminUi,/status==='draft'[^\n]*Em edição|Em edição[^\n]*status==='draft'/,'linked-lot options must visibly identify drafts');
-assert.match(adminUi,/status==='ready'[^\n]*Montado|Montado[^\n]*status==='ready'/,'linked-lot options must visibly identify mounted lots');
-assert.match(adminApi,/linked_lot_id/,'admin API must return and accept the generic linked lot');
-assert.match(adminApi,/basket_kit_lot_delete/,'admin API must expose safe lot deletion');
-assert.match(adminApi,/Number\(a\?\.split_available\|\|0\)<=0/,'legacy readiness helper must still tolerate optional hygiene per food lot');
+// A separação de pedido continua preservando cesta original quando só há acréscimos.
+assert.match(adminUi,/CESTA ORIGINAL|permanece original/i,'separação deve identificar cesta original preservada');
+assert.match(adminUi,/loose_quantity/,'extras da separação devem sair do estoque avulso');
 
 assert.ok(fs.existsSync(draftLinkMigrationPath),'draft linked-lot migration must exist');
-const draftLinkMigration=fs.existsSync(draftLinkMigrationPath)?fs.readFileSync(draftLinkMigrationPath,'utf8'):'';
+const draftLinkMigration=fs.readFileSync(draftLinkMigrationPath,'utf8');
 assert.match(draftLinkMigration,/status\s+in\s*\(\s*'draft'\s*,\s*'ready'\s*\)/i,'draft save must accept a linked lot that is still being edited');
 assert.match(draftLinkMigration,/linked_lot_unavailable/i,'mounting must still reject an unavailable linked lot');
 assert.match(draftLinkMigration,/apply_basket_kit_lot_commercial_v3/i,'mounting must refresh linked commercial snapshots before becoming ready');
@@ -85,4 +65,4 @@ assert.match(optionalHygiene,/\(f\.linked_hygiene_lot_id is not null\) uses_hygi
 assert.match(optionalHygiene,/v_basket\.uses_hygiene_kit:=exists/i,'legacy checkout migration must derive hygiene use from the selected food lot rather than a global basket requirement');
 assert.match(optionalHygiene,/hl\.status='ready'/i,'a selected hygiene lot must still be physically ready');
 
-console.log('Basket lot operational rules contract: PASS');
+console.log('Basket lot operational rules canonical: PASS');

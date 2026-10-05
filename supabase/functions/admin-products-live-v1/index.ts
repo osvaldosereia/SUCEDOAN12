@@ -281,9 +281,9 @@ async function productOperationalMetaMap(ids:string[]){
   ]);
   if(lots.error)throw lots.error;if(items.error)throw items.error;
   for(const l of lots.data||[]){const pid=String(l.product_id||"");const o=out.get(pid);if(!o||String(l.status||"")!=="active")continue;const available=Number(l.quantity_on_hand||0)-Number(l.quantity_reserved||0);if(available<=0)continue;o.active_lot_count+=1;if(l.expiration_date&&(!o.next_expiration_date||String(l.expiration_date)<String(o.next_expiration_date)))o.next_expiration_date=String(l.expiration_date)}
-  const kitIds=[...new Set((items.data||[]).map((x:any)=>String(x.kit_template_id||"")).filter(Boolean))];let kits:any[]=[];if(kitIds.length){const kr=await db.from("basket_kit_templates").select("id,name,kind,is_active").in("id",kitIds);if(kr.error)throw kr.error;kits=kr.data||[]}
+  const kitIds=[...new Set((items.data||[]).map((x:any)=>String(x.kit_template_id||"")).filter(Boolean))];let kits:any[]=[];if(kitIds.length){const kr=await db.from("basket_kit_templates").select("id,name,kind,is_active,basket_id").in("id",kitIds);if(kr.error)throw kr.error;kits=kr.data||[]}
   const kitMap=new Map(kits.map((k:any)=>[String(k.id),k]));
-  for(const x of items.data||[]){const o=out.get(String(x.product_id||"")),k:any=kitMap.get(String(x.kit_template_id||""));if(!o||!k)continue;if(!o.linked_kits.some((z:any)=>String(z.id)===String(k.id)))o.linked_kits.push({id:k.id,name:k.name||"Kit",kind:k.kind||null,active:k.is_active!==false})}
+  for(const x of items.data||[]){const o=out.get(String(x.product_id||"")),k:any=kitMap.get(String(x.kit_template_id||""));if(!o||!k)continue;if(!o.linked_kits.some((z:any)=>String(z.id)===String(k.id)))o.linked_kits.push({id:k.id,basket_id:k.basket_id||null,name:k.name||"Kit",kind:k.kind||null,active:k.is_active!==false})}
   for(const o of out.values())o.linked_kits.sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
   return out;
 }

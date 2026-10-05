@@ -10,13 +10,13 @@ assert.match(api,/db\.auth\.getUser/i,'guided API must validate the bearer token
 assert.match(api,/role[^\n]*viewer|viewer[^\n]*forbidden/i,'viewer role must not mutate guided baskets');
 assert.match(api,/Access-Control-Allow-Origin/i,'guided API must provide explicit CORS');
 
-for(const action of ['model_editor','position_products','model_save','lot_preview','lot_reserve','lot_update','lot_mount','lot_cancel','lot_reopen']){
+for(const action of ['model_editor','position_products','linkable_lots','model_save','lot_preview','lot_reserve','lot_update','lot_mount','lot_cancel','lot_reopen']){
   assert.match(api,new RegExp(`["']${action}["']`),`guided API must expose ${action}`);
 }
 
 for(const rpc of [
   'basket_commercial_model_editor_v1',
-  'save_basket_commercial_model_composition_v1',
+  'save_basket_commercial_model_v2',
   'preview_basket_commercial_lot_v1',
   'create_basket_commercial_lot_reserved_v1',
   'update_basket_reserved_lot_v1',
@@ -37,6 +37,16 @@ for(const field of ['cost_price','sale_price','effective_sellable_stock','basket
   assert.match(api,new RegExp(field),`position product cards must return ${field}`);
 }
 
+const linkedStart=api.indexOf('async function linkableLots');
+const linkedEnd=api.indexOf('\nasync function modelEditor',linkedStart);
+assert.ok(linkedStart>=0&&linkedEnd>linkedStart,'linkable lots helper must be isolated');
+const linked=api.slice(linkedStart,linkedEnd);
+assert.match(linked,/basket_stock_lots/,'linked lot catalog must use canonical lots');
+assert.match(linked,/basket_stock_lot_items/,'linked lot catalog must return its component snapshot');
+assert.match(linked,/business_type/,'linked lot catalog must preserve operational type');
+assert.match(linked,/ops2_loose_sellable_stock_v1|stockMap/,'linked lot components must expose canonical loose stock');
+assert.doesNotMatch(linked,/\.insert\(|\.update\(|\.delete\(/,'linkable lot catalog must remain read-only');
+
 assert.doesNotMatch(api,/from\(["']basket_lot_component_reservations["']\)\.(insert|update|delete)/i,'edge function must not duplicate reservation mutation rules');
 assert.doesNotMatch(api,/from\(["']basket_stock_lots["']\)\.(insert|update|delete)/i,'edge function must not mutate lots directly');
 assert.doesNotMatch(api,/service_role[^\n]*(response|json)|SUPABASE_SERVICE_ROLE_KEY[^\n]*(response|json)/i,'service role credentials must never be returned');
@@ -45,4 +55,4 @@ for(const code of ['insufficient_loose_stock','lot_has_order_history','lot_is_de
   assert.match(api,new RegExp(code),`guided API must map ${code}`);
 }
 
-console.log('basket guided admin api v1: PASS');
+console.log('basket guided admin api v2: PASS');
