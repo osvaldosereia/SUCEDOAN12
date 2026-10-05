@@ -7872,6 +7872,22 @@ function blingHubOrderManagedProjection(order:any){
     })).sort((a:any,b:any)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))
   };
 }
+function blingHubRebalanceInstallmentsForTotal(parcelas:any,totalRaw:number){
+  const rows=Array.isArray(parcelas)?parcelas.map((p:any)=>({...p})):[];
+  const total=Math.round(Number(totalRaw||0)*100)/100;
+  if(!rows.length||!Number.isFinite(total)||total<0)return rows;
+  const values=rows.map((p:any)=>Math.max(0,Number(p?.valor||0)));
+  const current=Math.round(values.reduce((sum:number,v:number)=>sum+v,0)*100)/100;
+  if(Math.abs(current-total)<0.005)return rows;
+  const denominator=current>0?current:rows.length;
+  let used=0;
+  return rows.map((p:any,index:number)=>{
+    const weight=current>0?values[index]/denominator:1/rows.length;
+    const valor=index===rows.length-1?Math.round((total-used)*100)/100:Math.round((total*weight)*100)/100;
+    used=Math.round((used+valor)*100)/100;
+    return {...p,valor};
+  });
+}
 function blingHubOrderPutPayload(current:any,desired:any){
   const keep=["dataSaida","dataPrevista","numeroPedidoCompra","loja","vendedor","situacao","unidadeNegocio","categoria","tributacao","intermediador","taxas","parcelas"];
   const payload:any={};
@@ -7879,6 +7895,7 @@ function blingHubOrderPutPayload(current:any,desired:any){
     if(current?.[key]!==undefined&&current?.[key]!==null)payload[key]=current[key];
   }
   Object.assign(payload,desired||{});
+  if(Array.isArray(payload.parcelas)&&Number.isFinite(Number(desired?.total)))payload.parcelas=blingHubRebalanceInstallmentsForTotal(payload.parcelas,Number(desired?.total));
   payload.transporte={
     ...(current?.transporte&&typeof current.transporte==="object"?current.transporte:{}),
     ...(desired?.transporte&&typeof desired.transporte==="object"?desired.transporte:{})
