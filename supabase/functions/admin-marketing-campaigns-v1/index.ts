@@ -7,14 +7,18 @@ const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoR
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const MAX_BODY_BYTES=32000;
 const MAX_FILTER_BYTES=16000;
-const FORBIDDEN_FIELDS=new Set(["waba_id","phone_number_id","to_phone_e164","destination_phone","outbox_id","schedule_at","send_at","service_role","service_key","access_token","authorization"]);
+const FORBIDDEN_FIELDS=new Set(["waba_id","phone_number_id","to_phone_e164","destination_phone","outbox_id","schedule_at","send_at","runtime_mode","worker_url","service_role","service_key","access_token","authorization"]);
 const CREATE_FIELDS=new Set(["name","whatsapp_account_id","template_id","filters","variable_values","deep_link","idempotency_key"]);
 const UPDATE_FIELDS=new Set(["campaign_id","expected_revision","patch"]);
 const PATCH_FIELDS=new Set(["name","whatsapp_account_id","template_id","filters","variable_values","deep_link","notes"]);
 const SNAPSHOT_FIELDS=new Set(["campaign_id","expected_revision","idempotency_key"]);
 const TRANSITION_FIELDS=new Set(["campaign_id","expected_revision","to_status","reason"]);
 const INTERNAL_TEST_FIELDS=new Set(["campaign_id","expected_revision"]);
-const ALLOWED_TRANSITIONS=new Set(["draft","ready_for_review","approved","cancelled"]);
+const SCHEDULE_FIELDS=new Set(["campaign_id","expected_revision","scheduled_for"]);
+const PAUSE_FIELDS=new Set(["campaign_id","reason"]);
+const RESUME_FIELDS=new Set(["campaign_id","scheduled_for"]);
+const CANCEL_EXECUTION_FIELDS=new Set(["campaign_id","reason"]);
+const ALLOWED_TRANSITIONS=new Set(["draft","ready_for_review","approved","scheduled","running","paused","completed","failed","cancelled"]);
 
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {
   "Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br",
@@ -66,6 +70,7 @@ function rpcStatus(data:any){
   const error=String(data?.error||"");
   if(error==="campaign_not_found")return 404;
   if(error==="revision_conflict")return 409;
+  if(error==="campaigns_disabled")return 409;
   if(error==="campaign_not_draft"||error==="campaign_invalid_transition"||error==="snapshot_stale"||error==="template_not_sendable")return 409;
   if(error==="account_not_available")return 422;
   return 400;
@@ -77,9 +82,17 @@ function validateFilters(filters:unknown){
   return null;
 }
 
+function normalizedDateTime(value:unknown){
+  const raw=String(value??"").trim();
+  if(!raw)return null;
+  const ms=Date.parse(raw);
+  if(!Number.isFinite(ms))return null;
+  return new Date(ms).toISOString();
+}
+
 async function listCampaigns(status:string|null){
   let query=db.from("marketing_campaigns_v1")
-    .select("id,name,whatsapp_account_id,template_id,status,revision,template_name_snapshot,template_language_snapshot,template_category_snapshot,created_at,updated_at,ready_for_review_at,approved_at,cancelled_at")
+    .select("id,name,whatsapp_account_id,template_id,status,revision,template_name_snapshot,template_language_snapshot,template_category_snapshot,scheduled_for,started_at,paused_at,completed_at,failed_at,execution_last_error,created_at,updated_at,ready_for_review_at,approved_at,cancelled_at")
     .order("updated_at",{ascending:false}).limit(100);
   if(status){if(!ALLOWED_TRANSITIONS.has(status))return {status:400,data:{ok:false,error:"invalid_status"}};query=query.eq("status",status)}
   const rows=await query;if(rows.error)throw rows.error;
@@ -88,6 +101,13 @@ async function listCampaigns(status:string|null){
 
 async function campaignDetail(campaignId:string){
   const result=await db.rpc("marketing_campaign_detail_v1",{p_campaign_id:campaignId});
+  if(result.error)throw result.error;
+  const data=result.data||{ok:false,error:"campaign_not_found"};
+  return {status:rpcStatus(data),data};
+}
+
+async function executionStatus(campaignId:string){
+  const result=await db.rpc("marketing_campaign_execution_status_v1",{p_campaign_id:campaignId});
   if(result.error)throw result.error;
   const data=result.data||{ok:false,error:"campaign_not_found"};
   return {status:rpcStatus(data),data};
@@ -148,6 +168,39 @@ async function transition(body:Record<string,unknown>){
   if(result.error)throw result.error;const data=result.data||{ok:false,error:"transition_failed"};return {status:rpcStatus(data),data};
 }
 
+async function scheduleCampaign(body:Record<string,unknown>,startNow=false){
+  if(!onlyKeys(body,SCHEDULE_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
+  const campaignId=validUuid(body.campaign_id),revision=Number(body.expected_revision);
+  if(!campaignId||!Number.isInteger(revision)||revision<1)return {status:400,data:{ok:false,error:"invalid_payload"}};
+  const scheduledFor=startNow?new Date().toISOString():normalizedDateTime(body.scheduled_for);
+  if(!scheduledFor)return {status:400,data:{ok:false,error:"invalid_scheduled_for"}};
+  const result=await db.rpc("marketing_schedule_campaign_v1",{p_campaign_id:campaignId,p_expected_revision:revision,p_scheduled_for:scheduledFor});
+  if(result.error)throw result.error;const data=result.data||{ok:false,error:"schedule_failed"};return {status:rpcStatus(data),data};
+}
+
+async function pauseCampaign(body:Record<string,unknown>){
+  if(!onlyKeys(body,PAUSE_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
+  const campaignId=validUuid(body.campaign_id);if(!campaignId)return {status:400,data:{ok:false,error:"invalid_campaign_id"}};
+  const result=await db.rpc("marketing_pause_campaign_v1",{p_campaign_id:campaignId,p_reason:clean(body.reason,500)||null});
+  if(result.error)throw result.error;const data=result.data||{ok:false,error:"pause_failed"};return {status:rpcStatus(data),data};
+}
+
+async function resumeCampaign(body:Record<string,unknown>){
+  if(!onlyKeys(body,RESUME_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
+  const campaignId=validUuid(body.campaign_id);if(!campaignId)return {status:400,data:{ok:false,error:"invalid_campaign_id"}};
+  const scheduledFor=body.scheduled_for===undefined?new Date().toISOString():normalizedDateTime(body.scheduled_for);
+  if(!scheduledFor)return {status:400,data:{ok:false,error:"invalid_scheduled_for"}};
+  const result=await db.rpc("marketing_resume_campaign_v1",{p_campaign_id:campaignId,p_scheduled_for:scheduledFor});
+  if(result.error)throw result.error;const data=result.data||{ok:false,error:"resume_failed"};return {status:rpcStatus(data),data};
+}
+
+async function cancelExecution(body:Record<string,unknown>){
+  if(!onlyKeys(body,CANCEL_EXECUTION_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
+  const campaignId=validUuid(body.campaign_id);if(!campaignId)return {status:400,data:{ok:false,error:"invalid_campaign_id"}};
+  const result=await db.rpc("marketing_cancel_campaign_execution_v1",{p_campaign_id:campaignId,p_reason:clean(body.reason,500)||null});
+  if(result.error)throw result.error;const data=result.data||{ok:false,error:"cancel_failed"};return {status:rpcStatus(data),data};
+}
+
 async function prepareInternalTest(body:Record<string,unknown>){
   if(!onlyKeys(body,INTERNAL_TEST_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
   const campaignId=validUuid(body.campaign_id),revision=Number(body.expected_revision);
@@ -172,6 +225,7 @@ Deno.serve(async(req:Request)=>{
       if(action==="list"){const result=await listCampaigns(clean(url.searchParams.get("status"),40).toLowerCase()||null);return json(req,result.data,result.status)}
       if(action==="detail"){const id=validUuid(url.searchParams.get("campaign_id"));if(!id)return json(req,{ok:false,error:"invalid_campaign_id"},400);const result=await campaignDetail(id);return json(req,result.data,result.status)}
       if(action==="options"){const id=validUuid(url.searchParams.get("whatsapp_account_id"));if(!id)return json(req,{ok:false,error:"invalid_account_id"},400);const result=await options(id);return json(req,result.data,result.status)}
+      if(action==="execution_status"){const id=validUuid(url.searchParams.get("campaign_id"));if(!id)return json(req,{ok:false,error:"invalid_campaign_id"},400);const result=await executionStatus(id);return json(req,result.data,result.status)}
       return json(req,{ok:false,error:"action_not_allowed"},404);
     }
     const parsed=await readJsonBody(req);if(!parsed.ok)return json(req,{ok:false,error:parsed.error},parsed.error==="payload_too_large"?413:400);
@@ -181,6 +235,11 @@ Deno.serve(async(req:Request)=>{
     else if(action==="create_snapshot")result=await createSnapshot(parsed.body);
     else if(action==="transition")result=await transition(parsed.body);
     else if(action==="prepare_internal_test")result=await prepareInternalTest(parsed.body);
+    else if(action==="schedule")result=await scheduleCampaign(parsed.body,false);
+    else if(action==="start_now")result=await scheduleCampaign(parsed.body,true);
+    else if(action==="pause")result=await pauseCampaign(parsed.body);
+    else if(action==="resume")result=await resumeCampaign(parsed.body);
+    else if(action==="cancel_execution")result=await cancelExecution(parsed.body);
     else return json(req,{ok:false,error:"action_not_allowed"},404);
     return json(req,result.data,result.status);
   }catch(error){
