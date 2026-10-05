@@ -1,0 +1,25 @@
+name: Marketing Campaign Report CI
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/admin-marketing-campaign-report-v1/**'
+      - 'vitrine/admin/marketing/campaign-report.js'
+      - 'vitrine/admin/marketing/campaign-entry.js'
+      - 'scripts/test-admin-marketing-campaign-report-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-report-ui-v1.mjs'
+      - '.github/workflows/marketing-campaign-report-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Campaign report API contract
+        run: node scripts/test-admin-marketing-campaign-report-v1.mjs
+      - name: Campaign report UI contract
+        run: node scripts/test-whatsapp-marketing-campaign-report-ui-v1.mjs
+      - name: Campaign report UI syntax
+        run: node --check vitrine/admin/marketing/campaign-report.js
