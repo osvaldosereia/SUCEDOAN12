@@ -8,7 +8,7 @@ assert.equal(typeof helper.findReusableTemplate,'function','helper deve exportar
 assert.equal(typeof helper.buildStrategyTemplateDraft,'function','helper deve exportar buildStrategyTemplateDraft');
 
 const strategy={id:'11111111-1111-4111-8111-111111111111',whatsapp_account_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',offer_format:'single',copy_snapshot:{headline:'Cesta Família',body:'Oferta da semana',cta:'Ver cesta'}};
-const compatible={id:'22222222-2222-4222-8222-222222222222',whatsapp_account_id:strategy.whatsapp_account_id,category:'MARKETING',status:'APPROVED',language:'pt_BR',components:[{type:'BODY',text:'{{1}}\n\n{{2}}\n\n{{3}}'}],metadata:{strategy_profile:{offer_format:'single',version:1,reusable:true}}};
+const compatible={id:'22222222-2222-4222-8222-222222222222',whatsapp_account_id:strategy.whatsapp_account_id,category:'MARKETING',status:'APPROVED',language:'pt_BR',components:[{type:'BODY',text:'{{1}}\n\n{{2}}\n\n{{3}}'}],metadata:{strategy_profile:{offer_format:'single',version:1,reusable:true,compatibility_key:'single:v1'}}};
 const protectedCompatible={...compatible,id:'33333333-3333-4333-8333-333333333333',lifecycle:{protected:true}};
 const templates=[
   {...compatible,id:'44444444-4444-4444-8444-444444444444',status:'PENDING'},
@@ -21,6 +21,23 @@ assert.equal(helper.findReusableTemplate(strategy,[protectedCompatible])?.id,pro
 assert.equal(helper.findReusableTemplate({...strategy,offer_format:'carousel'},templates),null,'formato incompatível não pode ser reutilizado');
 assert.equal(helper.findReusableTemplate(strategy,templates.map(item=>({...item,status:'REJECTED'}))),null,'template não aprovado não pode ser reutilizado');
 assert.equal(protectedCompatible.lifecycle.protected,true,'helper puro não pode alterar flag protected');
+
+const legacyFixed={...compatible,id:'77777777-7777-4777-8777-777777777777',components:[{type:'BODY',text:'Oferta fixa antiga sem parâmetros'}],metadata:{}};
+assert.equal(helper.findReusableTemplate(strategy,[legacyFixed]),null,'template legado fixo não pode ser tratado como compatível só por ser MARKETING APPROVED');
+const legacyCanonical={...compatible,id:'88888888-8888-4888-8888-888888888888',metadata:{}};
+assert.equal(helper.findReusableTemplate(strategy,[legacyCanonical])?.id,legacyCanonical.id,'template simples legado só pode ser reutilizado quando tiver exatamente a estrutura genérica segura');
+
+const carouselStrategy={...strategy,offer_format:'carousel',offers:[
+  {commercial_id:'10101010-1010-4010-8010-101010101010',public_lot_id:'aaaaaaaa-1111-4111-8111-aaaaaaaa1111',public_name:'Cesta Econômica',sale_price_snapshot:99.9},
+  {commercial_id:'20202020-2020-4020-8020-202020202020',public_lot_id:'bbbbbbbb-2222-4222-8222-bbbbbbbb2222',public_name:'Cesta Família',sale_price_snapshot:159.9},
+]};
+const carouselProfile=helper.buildStrategyTemplateProfile(carouselStrategy,carouselStrategy.offers);
+const carouselCompatible={...compatible,id:'99999999-9999-4999-8999-999999999999',components:[{type:'BODY',text:'Opções'},{type:'CAROUSEL',cards:[]}],metadata:{strategy_profile:carouselProfile}};
+assert.equal(helper.findReusableTemplate(carouselStrategy,[carouselCompatible])?.id,carouselCompatible.id,'carrossel deve reutilizar somente perfil compatível exato');
+const carouselWrongProfile={...carouselCompatible,id:'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',metadata:{strategy_profile:{...carouselProfile,compatibility_key:'carousel:2:outra-oferta'}}};
+assert.equal(helper.findReusableTemplate(carouselStrategy,[carouselWrongProfile]),null,'carrossel com outra composição não pode ser reutilizado');
+const carouselNoProfile={...carouselCompatible,id:'bbbbbbbb-cccc-4ddd-8eee-ffffffffffff',metadata:{}};
+assert.equal(helper.findReusableTemplate(carouselStrategy,[carouselNoProfile]),null,'carrossel sem perfil explícito não pode ser reutilizado com segurança');
 
 const simpleDraft=helper.buildStrategyTemplateDraft(strategy,[{public_name:'Cesta Família',sale_price_snapshot:159.9,image_url:'https://www.donaantonia.com.br/img/cesta.jpg'}],{name:'da_strategy_single_test'});
 assert.equal(simpleDraft.category,'MARKETING');
