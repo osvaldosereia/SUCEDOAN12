@@ -50,4 +50,20 @@ if script_tag not in s:
     s=s[:end]+'\n'+script_tag+s[end:]
 
 path.write_text(s,encoding='utf-8')
+
+# 4) O resumo é uma etapa visível, não apenas um bloco visual sem título.
+module_path=Path('vitrine/admin/basket-guided-builder.js')
+module=module_path.read_text(encoding='utf-8')
+css_anchor='.bg-summary{position:sticky;'
+if '.bg-summary-title{' not in module:
+    if css_anchor not in module:
+        raise SystemExit('guided summary css anchor not found')
+    module=module.replace(css_anchor,'.bg-summary-title{display:block;margin:0 0 7px;font-size:12px;font-weight:900}.bg-summary{position:sticky;',1)
+html_anchor='function renderSummary(){const s=summaryData();return \'<div class="bg-summary"><div class="bg-summary-grid">\'+'
+if '<strong class="bg-summary-title">Resumo</strong>' not in module:
+    if html_anchor not in module:
+        raise SystemExit('guided summary html anchor not found')
+    module=module.replace(html_anchor,'function renderSummary(){const s=summaryData();return \'<div class="bg-summary"><strong class="bg-summary-title">Resumo</strong><div class="bg-summary-grid">\' +',1)
+module_path.write_text(module,encoding='utf-8')
+
 print('basket guided admin UI patch applied')
