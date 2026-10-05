@@ -1,5 +1,6 @@
 let campaignModulePromise=null;
 let marketingPolishPromise=null;
+let campaignSimplePromise=null;
 const PREFILL_KEY='da_marketing_campaign_prefill_v1';
 
 function ensureMarketingPolish(){
@@ -12,6 +13,11 @@ function ensureMarketingPolish(){
   }
   if(!marketingPolishPromise)marketingPolishPromise=import('/vitrine/admin/marketing/marketing-polish.js?v=marketing-polish-v1').catch(error=>{console.warn('marketing-polish-load',String(error?.message||error).slice(0,160));return null});
   return marketingPolishPromise;
+}
+
+function ensureCampaignSimple(){
+  if(!campaignSimplePromise)campaignSimplePromise=import('/vitrine/admin/marketing/campaign-simple-ui.js?v=marketing-campaign-simple-v1').catch(error=>{console.warn('marketing-campaign-simple-load',String(error?.message||error).slice(0,160));return null});
+  return campaignSimplePromise;
 }
 
 function loadCampaignModule(){
@@ -38,6 +44,7 @@ async function openCampaigns(prefill=null){
   const root=document.querySelector('#content');if(!root)return;
   if(prefill){try{sessionStorage.setItem(PREFILL_KEY,JSON.stringify(prefill))}catch{}}
   const module=await loadCampaignModule();
+  await ensureCampaignSimple();
   return module.mountCampaignView(root,prefill?{prefill}:{});
 }
 
@@ -61,10 +68,10 @@ function enhanceAudienceHandoff(root=document){
   });
 }
 
-function enhance(){enhanceMarketingNav(document);enhanceAudienceHandoff(document);window.DAMarketingPolish?.apply?.()}
+function enhance(){enhanceMarketingNav(document);enhanceAudienceHandoff(document);window.DAMarketingPolish?.apply?.();window.DAMarketingCampaignSimple?.enhanceCampaignCenter?.()}
 const observer=new MutationObserver(()=>enhance());
 observer.observe(document.documentElement,{subtree:true,childList:true});
-ensureMarketingPolish().finally(enhance);
+Promise.allSettled([ensureMarketingPolish(),ensureCampaignSimple()]).finally(enhance);
 enhance();
 
 window.DAMarketingCampaignEntry={openCampaigns,collectAudienceFilters};
