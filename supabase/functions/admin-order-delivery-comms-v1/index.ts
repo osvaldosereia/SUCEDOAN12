@@ -1,0 +1,23 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import {createClient} from "npm:@supabase/supabase-js@2.58.0";
+const U=Deno.env.get("SUPABASE_URL")||"";
+const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
+const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
+const O=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
+const cors=(r:Request)=>{const o=r.headers.get("origin")||"";return {"Access-Control-Allow-Origin":O.has(o)?o:"https://www.donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"content-type,authorization,apikey","Access-Control-Allow-Methods":"POST,OPTIONS"}};
+const js=(r:Request,b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{...cors(r),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
+const uid=(v:unknown)=>{const s=String(v||"").trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:null};
+async function admin(req:Request){const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();if(!token)return null;const u=await db.auth.getUser(token);if(u.error||!u.data.user)return null;const a=await db.from("admin_users").select("role,is_active").eq("user_id",u.data.user.id).eq("is_active",true).maybeSingle();if(!a.data||a.data.role==="viewer")return null;return token}
+async function invoke(slug:string,token:string,body:any,query=""){const res=await fetch(`${U}/functions/v1/${slug}${query}`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});const raw=await res.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}return {ok:res.ok&&data?.ok!==false,status:res.status,data}}
+Deno.serve(async(req:Request)=>{
+ if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});if(req.method!=="POST")return js(req,{ok:false,error:"method_not_allowed"},405);
+ const token=await admin(req);if(!token)return js(req,{ok:false,error:"admin_not_authorized"},403);
+ const body=await req.json().catch(()=>({}));const orderId=uid(body?.order_id);if(!orderId)return js(req,{ok:false,error:"invalid_order_id"},400);
+ const oq=await db.from("orders").select("id,status,total,order_number,customer_id,phone_e164,delivery_address").eq("id",orderId).maybeSingle();if(oq.error)return js(req,{ok:false,error:"order_lookup_failed"},500);const o:any=oq.data;if(!o)return js(req,{ok:false,error:"order_not_found"},404);if(o.status!=="delivered")return js(req,{ok:false,error:"order_not_delivered"},409);
+ const pq=await db.from("order_public_snapshots_v1").select("public_code").eq("order_id",orderId).maybeSingle();const code=String(pq.data?.public_code||o.order_number||"").trim();if(!code)return js(req,{ok:false,error:"order_code_missing"},409);
+ let cq:any=null;if(o.customer_id){const q=await db.from("conversations").select("id").eq("customer_id",o.customer_id).order("updated_at",{ascending:false}).limit(1).maybeSingle();cq=q.data}if(!cq&&o.phone_e164){const q=await db.from("conversations").select("id").eq("wa_contact_e164",o.phone_e164).order("updated_at",{ascending:false}).limit(1).maybeSingle();cq=q.data}if(!cq)return js(req,{ok:true,order_id:orderId,order_code:code,delivery_message:{sent:false,reason:"conversation_not_found"},consent:{sent:false,reason:"conversation_not_found"}});
+ const amount=Number(o.total||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});const text=`✅ *Pedido ${code} entregue!*\n\nEntrega concluída e pagamento de *${amount}* confirmado.\n\nMuito obrigado por comprar com a Dona Antônia! 💚`;
+ const delivery=await invoke("admin-whatsapp-ops-v1",token,{conversation_id:cq.id,text,idempotency_key:`order-delivered:${orderId}`},"?action=send_text");if(!delivery.ok)return js(req,{ok:false,error:"delivery_message_failed",order_id:orderId,order_code:code,detail:delivery.data},502);
+ const consent=await invoke("admin-whatsapp-weekly-consent-v1",token,{conversation_id:cq.id});const reason=String(consent.data?.error||"");const benign=new Set(["weekly_consent_already_decided","weekly_consent_already_requested","service_window_closed"]);if(!consent.ok&&!benign.has(reason))return js(req,{ok:false,error:"consent_request_failed",order_id:orderId,order_code:code,delivery_message:{sent:true},detail:consent.data},502);
+ return js(req,{ok:true,order_id:orderId,order_code:code,delivery_message:{sent:true},consent:{sent:consent.ok,skipped:!consent.ok,reason:reason||null}});
+});
