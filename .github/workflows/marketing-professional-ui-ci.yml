@@ -1,0 +1,24 @@
+name: Marketing Professional UI CI
+
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/marketing/**'
+      - 'scripts/test-whatsapp-marketing-professional-ui-v1.mjs'
+      - '.github/workflows/marketing-professional-ui-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Marketing professional UI contract
+        run: node scripts/test-whatsapp-marketing-professional-ui-v1.mjs
+      - name: Campaign entry syntax
+        run: node --check vitrine/admin/marketing/campaign-entry.js
+      - name: Existing audience UI regression
+        run: node scripts/test-whatsapp-marketing-audience-ui-v1.mjs
+      - name: Existing campaign UI regression
+        run: node scripts/test-whatsapp-marketing-campaign-ui-v1.mjs
