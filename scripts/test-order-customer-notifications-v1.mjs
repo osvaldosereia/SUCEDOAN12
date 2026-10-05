@@ -23,6 +23,10 @@ assert.match(vitrineGateway,/public_order_code/,'envio manual da vitrine deve co
 assert.doesNotMatch(vitrineGateway,/Pedido: \$\{short\}/,'envio manual não deve mostrar order_number técnico');
 assert.match(adminApi,/public_code/,'API de pedidos do Admin deve transportar public_code');
 assert.match(admin,/public_code/,'Admin deve mostrar public_code nos pedidos');
+assert.match(admin,/function orderDisplayCode\(/,'Admin deve centralizar o código humano do pedido');
+assert.doesNotMatch(admin,/shortOrder\(current\.order_number\|\|current\.id\)/,'confirmação de saída não pode mostrar número técnico');
+assert.doesNotMatch(admin,/shortOrder\(j\.payload\?\.order_number\|\|j\.entity_id\)/,'fila de impressão não pode mostrar número técnico');
+assert.doesNotMatch(admin,/openDanfeForOrder\(o\.id,o\.order_number\)/,'DANFE não pode receber número técnico para exibição');
 
 // Pós-separação: independente do Bling e idempotente.
 assert.match(migration,/order_separation_customer_notifications_v1/,'migration precisa guardar idempotência/status do aviso ao cliente');
