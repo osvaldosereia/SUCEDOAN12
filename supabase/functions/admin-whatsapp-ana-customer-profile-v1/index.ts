@@ -86,15 +86,20 @@ Deno.serve(async(req:Request)=>{
     const allowedEvidence=new Set((Array.isArray(context.messages)?context.messages:[]).map((m:any)=>String(m?.id||"")).filter(Boolean));
     const candidates=(generated.result?.candidates||[]).filter((candidate:any)=>Array.isArray(candidate.evidence_message_ids)&&candidate.evidence_message_ids.length>0&&candidate.evidence_message_ids.every((id:string)=>allowedEvidence.has(String(id))));
 
-    const insertedRun=await svc.from("customer_profile_extraction_runs_v1").insert({conversation_id:conversationId,customer_id:context.customer_id||null,conversation_phone_e164:context.conversation_phone_e164||null,snapshot_key:snapshotKey,status:"completed",model:ANA_MODEL,provider_response_id:generated.response_id||null,metadata:{latency_ms:generated.latency_ms||null,usage:generated.usage||null,candidate_count:candidates.length},created_by_admin_user_id:auth.user_id}).select("id").maybeSingle();
-    if(insertedRun.error){const raced=await existingSnapshot(svc,conversationId,snapshotKey);if(raced)return json(req,{ok:true,reused:true,run_id:raced.run.id,suggestions:raced.suggestions});throw insertedRun.error}
-    const runId=insertedRun.data?.id;if(!runId)throw new Error("profile_run_insert_failed");
-
-    let suggestions:any[]=[];
-    if(candidates.length){
-      const rows=candidates.map((candidate:any)=>({run_id:runId,conversation_id:conversationId,customer_id:context.customer_id||null,field_name:candidate.field_name,suggested_value:{value:candidate.value},normalized_value:String(candidate.value),confidence:candidate.confidence,classification:candidate.classification,recommendation:candidate.recommendation,evidence_message_ids:candidate.evidence_message_ids,model:ANA_MODEL,policy_version:"ana_customer_profile_v1"}));
-      const inserted=await svc.from("customer_profile_suggestions_v1").insert(rows).select("id,run_id,field_name,normalized_value,confidence,classification,recommendation,evidence_message_ids,status,created_at");if(inserted.error)throw inserted.error;suggestions=inserted.data||[];
-    }
-    return json(req,{ok:true,reused:false,run_id:runId,suggestions});
+    const persisted=await svc.rpc("ops2_ana_customer_profile_persist_v1",{
+      p_conversation_id:conversationId,
+      p_customer_id:context.customer_id||null,
+      p_conversation_phone_e164:context.conversation_phone_e164||null,
+      p_snapshot_key:snapshotKey,
+      p_model:ANA_MODEL,
+      p_provider_response_id:generated.response_id||null,
+      p_metadata:{latency_ms:generated.latency_ms||null,usage:generated.usage||null,candidate_count:candidates.length},
+      p_created_by_admin_user_id:auth.user_id,
+      p_candidates:candidates
+    });
+    if(persisted.error)throw persisted.error;
+    const stored=persisted.data||{ok:false,error:"profile_persist_failed"};
+    if(stored.ok!==true)return json(req,{ok:false,error:stored.error||"profile_persist_failed"},409);
+    return json(req,{ok:true,reused:stored.reused===true,run_id:stored.run_id,suggestions:Array.isArray(stored.suggestions)?stored.suggestions:[]});
   }catch(error){console.error("admin-whatsapp-ana-customer-profile-v1",clean(error instanceof Error?error.message:error,500));return json(req,{ok:false,error:"ana_customer_profile_internal_error"},500)}
 });
