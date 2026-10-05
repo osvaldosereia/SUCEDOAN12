@@ -1,5 +1,18 @@
 let campaignModulePromise=null;
+let marketingPolishPromise=null;
 const PREFILL_KEY='da_marketing_campaign_prefill_v1';
+
+function ensureMarketingPolish(){
+  if(!document.querySelector('link[data-da-marketing-polish]')){
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='/vitrine/admin/marketing/marketing-polish.css?v=marketing-polish-v1';
+    link.dataset.daMarketingPolish='1';
+    document.head.appendChild(link);
+  }
+  if(!marketingPolishPromise)marketingPolishPromise=import('/vitrine/admin/marketing/marketing-polish.js?v=marketing-polish-v1').catch(error=>{console.warn('marketing-polish-load',String(error?.message||error).slice(0,160));return null});
+  return marketingPolishPromise;
+}
 
 function loadCampaignModule(){
   if(!campaignModulePromise)campaignModulePromise=import('/vitrine/admin/marketing/campaign-center.js?v=marketing-campaign-v1');
@@ -48,9 +61,10 @@ function enhanceAudienceHandoff(root=document){
   });
 }
 
-function enhance(){enhanceMarketingNav(document);enhanceAudienceHandoff(document)}
+function enhance(){enhanceMarketingNav(document);enhanceAudienceHandoff(document);window.DAMarketingPolish?.apply?.()}
 const observer=new MutationObserver(()=>enhance());
 observer.observe(document.documentElement,{subtree:true,childList:true});
+ensureMarketingPolish().finally(enhance);
 enhance();
 
 window.DAMarketingCampaignEntry={openCampaigns,collectAudienceFilters};
