@@ -13,12 +13,23 @@ function offersOfStrategy(strategy,offers){
 }
 
 function componentsOf(template){return Array.isArray(template?.components)?template.components:[]}
-function templateProfile(template){return objectLike(template?.metadata?.strategy_profile)?template.metadata.strategy_profile:{}}
+function hasStrategyProfile(template){return objectLike(template?.metadata?.strategy_profile)}
+function templateProfile(template){return hasStrategyProfile(template)?template.metadata.strategy_profile:{}}
 function inferredTemplateFormat(template){
   const profile=templateProfile(template);
   const explicit=String(profile.offer_format||'').toLowerCase();
   if(explicit==='single'||explicit==='carousel')return explicit;
   return componentsOf(template).some(component=>String(component?.type||'').toUpperCase()==='CAROUSEL')?'carousel':'single';
+}
+function canonicalSimpleStructure(template){
+  const components=componentsOf(template);
+  if(components.length!==1)return false;
+  const body=components[0];
+  if(String(body?.type||'').toUpperCase()!=='BODY')return false;
+  const text=String(body?.text||'');
+  const placeholders=[...text.matchAll(/\{\{(\d+)\}\}/g)].map(match=>Number(match[1]));
+  if(placeholders.length!==3||placeholders[0]!==1||placeholders[1]!==2||placeholders[2]!==3)return false;
+  return text.replace(/\{\{1\}\}/g,'').replace(/\{\{2\}\}/g,'').replace(/\{\{3\}\}/g,'').trim()==='';
 }
 
 function hashText(value){
@@ -56,22 +67,35 @@ export function findReusableTemplate(strategy,templates=[]){
     if(String(template?.status||'').toUpperCase()!=='APPROVED')return false;
     if(template?.metadata?.meta_missing===true)return false;
     if(String(template?.language||'pt_BR')!=='pt_BR')return false;
+    if(inferredTemplateFormat(template)!==desired.offer_format)return false;
+
+    const profiled=hasStrategyProfile(template);
     const profile=templateProfile(template);
     if(profile.reusable===false)return false;
-    if(inferredTemplateFormat(template)!==desired.offer_format)return false;
-    if(desired.offer_format==='carousel'){
-      const desiredCount=Number(desired.card_count||0),candidateCount=Number(profile.card_count||0);
-      if(desiredCount>0&&candidateCount>0&&candidateCount!==desiredCount)return false;
-      if(desired.compatibility_key&&profile.compatibility_key&&profile.compatibility_key!==desired.compatibility_key)return false;
+
+    if(desired.offer_format==='single'){
+      if(!canonicalSimpleStructure(template))return false;
+      if(profiled){
+        if(Number(profile.version||0)!==1)return false;
+        if(String(profile.offer_format||'').toLowerCase()!=='single')return false;
+        if(profile.compatibility_key&&profile.compatibility_key!==desired.compatibility_key)return false;
+      }
+      return true;
     }
-    return true;
+
+    if(!profiled)return false;
+    if(Number(profile.version||0)!==1||profile.reusable!==true)return false;
+    if(String(profile.offer_format||'').toLowerCase()!=='carousel')return false;
+    if(Number(profile.card_count||0)!==Number(desired.card_count||0))return false;
+    if(!profile.compatibility_key||profile.compatibility_key!==desired.compatibility_key)return false;
+    return componentsOf(template).some(component=>String(component?.type||'').toUpperCase()==='CAROUSEL');
   });
   candidates.sort((a,b)=>{
     const ap=templateProfile(a),bp=templateProfile(b);
     const exactA=ap.compatibility_key===desired.compatibility_key?1:0;
     const exactB=bp.compatibility_key===desired.compatibility_key?1:0;
     if(exactA!==exactB)return exactB-exactA;
-    const explicitA=ap.offer_format?1:0,explicitB=bp.offer_format?1:0;
+    const explicitA=hasStrategyProfile(a)?1:0,explicitB=hasStrategyProfile(b)?1:0;
     if(explicitA!==explicitB)return explicitB-explicitA;
     return String(b?.updated_at||'').localeCompare(String(a?.updated_at||''));
   });
