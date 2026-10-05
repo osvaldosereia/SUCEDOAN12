@@ -76,6 +76,7 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-recipe-domain-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-admin-api-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-builder-ui-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-simple-tabs-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-admin-api-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-product-quick-edit-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-ui-v1.mjs
@@ -110,6 +111,9 @@ jobs:
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
       - run: node scripts/test-store-baskets-builder-browser-v1.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
+      - run: node scripts/test-basket-simple-tabs-browser-v1.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
       - run: node scripts/test-basket-admin-runtime-browser-v2.mjs
