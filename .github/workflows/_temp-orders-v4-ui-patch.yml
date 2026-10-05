@@ -36,8 +36,8 @@ jobs:
         run: |
           git diff --check
           node scripts/test-admin-orders-fiscal-flow-v4.mjs
-          grep -q 'order_dispatch_start_v4' vitrine/admin/index.html
-          grep -q 'ENTREGA NÃO CONCLUÍDA' vitrine/admin/index.html
+          grep -q "api('order_dispatch_start_v4'" vitrine/admin/index.html
+          grep -q 'data-v3-delivery-fail' vitrine/admin/index.html
           grep -q 'NF-e AUTORIZADA' vitrine/admin/index.html
       - name: Commit canonical changes
         run: |
