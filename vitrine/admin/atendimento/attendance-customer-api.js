@@ -1,11 +1,11 @@
 import {attendanceAuthorizedFetch} from './attendance-auth.js?v=auth-refresh-v2';
 
 const SUPABASE_URL='https://ssbesxgaijknwsjbsbcz.supabase.co';
-const RPC_API=`${SUPABASE_URL}/rest/v1/rpc`;
+const RPC_API=`${SUPABASE_URL}/rest/v1/rpc/`;
 const ADMIN_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
 
 async function customerRpc(name,payload={}){
-  const response=await attendanceAuthorizedFetch(`${RPC_API}/${name}`,{
+  const response=await attendanceAuthorizedFetch(`${RPC_API}${name}`,{
     method:'POST',
     headers:{apikey:ADMIN_PUBLIC_KEY,'Content-Type':'application/json'},
     body:JSON.stringify(payload||{}),
