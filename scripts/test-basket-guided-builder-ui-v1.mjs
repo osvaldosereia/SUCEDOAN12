@@ -63,6 +63,8 @@ const printEnd=admin.indexOf('\n  }',printStart+1);
 assert.ok(printStart>=0&&printEnd>printStart,'commercial print binding must exist');
 const printBinding=admin.slice(printStart,printEnd);
 assert.doesNotMatch(printBinding,/openBasketKitAdmin/,'Imprimir on commercial card must not navigate into basket detail');
+assert.match(printBinding,/source_kind==='basket'[\s\S]*api\('basket_admin'/,'legacy/full basket lots must load from basket_admin before printing');
+assert.match(printBinding,/api\('basket_kit_admin'/,'standalone kit lots must still load from basket_kit_admin');
 assert.match(printBinding,/printBasketKitLot\(m\.operational_lot_id\)/,'Imprimir must pass the lot id, not the lot object');
 
 assert.doesNotMatch(admin,/id="basketProductSuggestions"/,'legacy broken Sugestões de produtos button must not be exposed in the canonical top toolbar');
