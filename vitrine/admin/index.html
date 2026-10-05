@@ -3368,7 +3368,7 @@
   function productExpiryLabel(p){const d=p?.next_expiration_date||p?.expiration_date||null;return d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'Sem validade'}
   function productKitLinks(p,compact=false){
     const kits=productLinkedKits(p);if(!kits.length)return '<span class="product-no-kits">Sem kits</span>';
-    return '<details class="product-kit-menu '+(compact?'mobile-product-kit-count':'')+'"><summary>'+esc(kits.length)+' '+(kits.length===1?'kit':'kits')+'</summary><div class="product-kit-popover">'+kits.map(k=>'<button type="button" class="product-kit-link" data-open-product-kit="'+esc(k.id)+'">'+esc(k.name||'Kit')+'</button>').join('')+'</div></details>';
+    return '<details class="product-kit-menu '+(compact?'mobile-product-kit-count':'')+'"><summary>'+esc(kits.length)+' '+(kits.length===1?'cesta/kit':'cestas/kits')+'</summary><div class="product-kit-popover">'+kits.map(k=>k.basket_id?'<button type="button" class="product-kit-link" data-open-product-basket="'+esc(k.basket_id)+'">'+esc(k.name||'Cesta/Kit')+'</button>':'<span class="product-kit-link" aria-disabled="true">'+esc(k.name||'Cesta/Kit')+'</span>').join('')+'</div></details>';
   }
   function productMobileCard(p){
     const price=(Number(p.sale_price_cents||0)/100).toFixed(2).replace('.',','),cost=(Number(p.cost_cents||0)/100).toFixed(2).replace('.',','),g=Number(p.gondola_number||0),identity=p.gtin||p.sku||'Sem EAN';
@@ -3414,7 +3414,7 @@
   function bindMobileProductCards(host){
     host.querySelectorAll('[data-mobile-product-field]').forEach(el=>{const event=el.tagName==='SELECT'||el.type==='date'?'change':'input';el.addEventListener(event,()=>scheduleMobileProductQuickSave(el.dataset.productId,el.dataset.mobileProductField,el.value))});
     host.querySelectorAll('[data-mobile-product-active]').forEach(el=>el.onchange=()=>saveMobileProductActive(el.dataset.mobileProductActive,el.checked,el));
-    host.querySelectorAll('[data-open-product-kit]').forEach(el=>el.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openBasketKitAdmin(el.dataset.openProductKit)});
+    host.querySelectorAll('[data-open-product-basket]').forEach(el=>el.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const basketId=el.dataset.openProductBasket;if(window.DonaAntoniaBasketGuided?.open&&basketId)window.DonaAntoniaBasketGuided.open(basketId,{mode:'model'});else toast('O editor de Cestas/Kits não carregou. Atualize a página e tente novamente.')});
   }
 
   function productRow(p){
