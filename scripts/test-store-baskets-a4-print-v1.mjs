@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const ui=fs.readFileSync('vitrine/admin/store-baskets-builder.js','utf8');
 const api=fs.readFileSync('supabase/functions/admin-store-baskets-v1/index.ts','utf8');
-const sql=fs.readFileSync('supabase/sql/20261005_store_basket_reservation_v1.sql','utf8');
+const sql=fs.readFileSync('supabase/sql/20261005_store_basket_build_detail_v1.sql','utf8');
 assert.match(ui,/data-store-print/,'mounted build must expose print action');
 assert.match(ui,/function printBuild/,'print implementation required');
 assert.match(ui,/@page\s*\{[^}]*size:\s*A4/i,'print must target A4');
