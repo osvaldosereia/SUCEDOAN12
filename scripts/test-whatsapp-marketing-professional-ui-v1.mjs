@@ -18,7 +18,7 @@ assert.match(entrySource,/marketing-polish\.js/,'bootstrap deve carregar enhance
 for(const text of ['Templates','Públicos','Campanhas','Consentimentos'])assert.ok(js.includes(text),`navegação deve manter ${text}`);
 assert.ok(js.includes('Envios desativados'),'gate deve usar texto curto e operacional');
 assert.ok(js.includes('Atualizar público'),'Públicos deve usar CTA curto');
-assert.ok(js.includes('Filtros avançados'),'Públicos deve recolher filtros avançados');
+assert.ok(js.includes('Mais filtros'),'Públicos deve recolher filtros avançados sob texto simples');
 assert.ok(js.includes('Modelos oficiais do WhatsApp usados nas campanhas'),'Templates deve ter descrição simples');
 assert.ok(js.includes('Crie, revise e acompanhe campanhas do WhatsApp'),'Campanhas deve ter descrição operacional');
 assert.ok(js.includes('Histórico de autorização para mensagens de marketing'),'Consentimentos deve ter descrição curta');
