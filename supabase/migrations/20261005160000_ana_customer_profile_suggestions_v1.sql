@@ -177,9 +177,136 @@ begin
 end;
 $function$;
 
+-- Service-role-only atomic persistence. The run and all suggestions are committed
+-- together, so a partial failure cannot leave a reusable empty snapshot.
+create or replace function public.ops2_ana_customer_profile_persist_v1(
+  p_conversation_id uuid,
+  p_customer_id uuid,
+  p_conversation_phone_e164 text,
+  p_snapshot_key text,
+  p_model text,
+  p_provider_response_id text,
+  p_metadata jsonb,
+  p_created_by_admin_user_id uuid,
+  p_candidates jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+declare
+  v_run_id uuid;
+  v_candidate jsonb;
+  v_field text;
+  v_value text;
+  v_normalized text;
+  v_classification text;
+  v_recommendation text;
+  v_confidence numeric;
+  v_evidence uuid[];
+  v_doc text;
+  v_doc_conflict boolean:=false;
+  v_items jsonb:='[]'::jsonb;
+begin
+  if p_conversation_id is null or nullif(btrim(coalesce(p_snapshot_key,'')),'') is null then
+    return jsonb_build_object('ok',false,'error','invalid_profile_snapshot');
+  end if;
+  if not exists(select 1 from public.conversations c where c.id=p_conversation_id) then
+    return jsonb_build_object('ok',false,'error','conversation_not_found');
+  end if;
+
+  insert into public.customer_profile_extraction_runs_v1(
+    conversation_id,customer_id,conversation_phone_e164,snapshot_key,status,model,
+    provider_response_id,metadata,created_by_admin_user_id
+  ) values(
+    p_conversation_id,p_customer_id,nullif(btrim(coalesce(p_conversation_phone_e164,'')),''),
+    p_snapshot_key,'completed',nullif(btrim(coalesce(p_model,'')),''),
+    nullif(btrim(coalesce(p_provider_response_id,'')),''),coalesce(p_metadata,'{}'::jsonb),p_created_by_admin_user_id
+  )
+  on conflict(conversation_id,snapshot_key) do nothing
+  returning id into v_run_id;
+
+  if v_run_id is null then
+    select r.id into v_run_id
+    from public.customer_profile_extraction_runs_v1 r
+    where r.conversation_id=p_conversation_id and r.snapshot_key=p_snapshot_key;
+
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id',s.id,'run_id',s.run_id,'field_name',s.field_name,'normalized_value',s.normalized_value,
+      'confidence',s.confidence,'classification',s.classification,'recommendation',s.recommendation,
+      'evidence_message_ids',to_jsonb(s.evidence_message_ids),'status',s.status,'created_at',s.created_at
+    ) order by s.created_at),'[]'::jsonb)
+    into v_items
+    from public.customer_profile_suggestions_v1 s where s.run_id=v_run_id;
+
+    return jsonb_build_object('ok',true,'reused',true,'run_id',v_run_id,'suggestions',v_items);
+  end if;
+
+  for v_candidate in
+    select value from jsonb_array_elements(coalesce(p_candidates,'[]'::jsonb))
+  loop
+    v_field:=lower(btrim(coalesce(v_candidate->>'field_name','')));
+    if not (v_field=any(array['name','cpf_cnpj','email','postal_code','street','number','complement','neighborhood','city','state','reference']::text[])) then
+      continue;
+    end if;
+
+    v_value:=nullif(left(btrim(coalesce(v_candidate->>'value','')),1200),'');
+    if v_value is null then continue; end if;
+    v_confidence:=greatest(0,least(1,coalesce((v_candidate->>'confidence')::numeric,0)));
+    v_classification:=case when v_candidate->>'classification' in ('explicit','derived','ambiguous') then v_candidate->>'classification' else 'ambiguous' end;
+    v_recommendation:=case when v_candidate->>'recommendation' in ('auto_apply','confirm','ignore') then v_candidate->>'recommendation' else 'ignore' end;
+
+    select coalesce(array_agg(m.id order by m.created_at),array[]::uuid[])
+    into v_evidence
+    from jsonb_array_elements_text(coalesce(v_candidate->'evidence_message_ids','[]'::jsonb)) e(id_text)
+    join public.whatsapp_messages_v1 m
+      on m.id=e.id_text::uuid and m.conversation_id=p_conversation_id;
+    if coalesce(array_length(v_evidence,1),0)=0 then continue; end if;
+
+    v_normalized:=v_value;
+    if v_field='cpf_cnpj' then
+      v_doc:=regexp_replace(v_value,'[^0-9]','','g');
+      v_normalized:=v_doc;
+      if public.ops2_valid_cpf_cnpj_v1(v_doc) is not true then
+        v_recommendation:='ignore';
+      else
+        select exists(
+          select 1 from public.customers c
+          where regexp_replace(coalesce(c.cpf_cnpj,''),'[^0-9]','','g')=v_doc
+            and (p_customer_id is null or c.id<>p_customer_id)
+        ) into v_doc_conflict;
+        if v_doc_conflict then v_recommendation:='ignore'; end if;
+      end if;
+    end if;
+
+    insert into public.customer_profile_suggestions_v1(
+      run_id,conversation_id,customer_id,field_name,suggested_value,normalized_value,
+      confidence,classification,recommendation,evidence_message_ids,model,policy_version
+    ) values(
+      v_run_id,p_conversation_id,p_customer_id,v_field,jsonb_build_object('value',v_value),v_normalized,
+      v_confidence,v_classification,v_recommendation,v_evidence,nullif(btrim(coalesce(p_model,'')),''),'ana_customer_profile_v1'
+    )
+    on conflict(run_id,field_name,normalized_value) do nothing;
+  end loop;
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id',s.id,'run_id',s.run_id,'field_name',s.field_name,'normalized_value',s.normalized_value,
+    'confidence',s.confidence,'classification',s.classification,'recommendation',s.recommendation,
+    'evidence_message_ids',to_jsonb(s.evidence_message_ids),'status',s.status,'created_at',s.created_at
+  ) order by s.created_at),'[]'::jsonb)
+  into v_items
+  from public.customer_profile_suggestions_v1 s where s.run_id=v_run_id;
+
+  return jsonb_build_object('ok',true,'reused',false,'run_id',v_run_id,'suggestions',v_items);
+end;
+$function$;
+
 revoke all on function public.ops2_admin_ana_customer_profile_extract_access_v1() from public,anon;
 revoke all on function public.ops2_admin_ana_customer_profile_context_v1(uuid) from public,anon;
 revoke all on function public.ops2_admin_ana_customer_profile_suggestions_v1(uuid) from public,anon;
+revoke all on function public.ops2_ana_customer_profile_persist_v1(uuid,uuid,text,text,text,text,jsonb,uuid,jsonb) from public,anon,authenticated;
 grant execute on function public.ops2_admin_ana_customer_profile_extract_access_v1() to authenticated,service_role;
 grant execute on function public.ops2_admin_ana_customer_profile_context_v1(uuid) to authenticated,service_role;
 grant execute on function public.ops2_admin_ana_customer_profile_suggestions_v1(uuid) to authenticated,service_role;
+grant execute on function public.ops2_ana_customer_profile_persist_v1(uuid,uuid,text,text,text,text,jsonb,uuid,jsonb) to service_role;
