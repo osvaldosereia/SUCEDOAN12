@@ -4,7 +4,7 @@
 
 **Goal:** Permitir que a ANA própria peça dados faltantes, associe confirmações válidas a sugestões específicas e promova dados confirmados para o cadastro canônico, usando conversa natural primeiro e WhatsApp Flow quando a coleta estruturada ajudar.
 
-**Architecture:** Esta fase parte das sugestões auditáveis da Fase 1. Cada pedido de confirmação recebe ID, escopo e expiração; mensagens inbound só confirmam dados quando estiverem ligadas a uma solicitação pendente. A promoção usa RPC server-side determinística e o caminho canônico de cadastro; Flow entra como uma fonte estruturada adicional, não como uma nova base.
+**Architecture:** Esta fase parte das sugestões auditáveis da Fase 1. Cada pedido de confirmação recebe ID, escopo e expiração; mensagens inbound só confirmam dados quando estiverem ligadas a uma solicitação pendente. A promoção usa RPC server-side determinística e o caminho canônico de cadastro; Flow entra como fonte estruturada adicional, não como nova base. As antigas Edge Functions `admin-whatsapp-flow-v1` e `whatsapp-flow-data-exchange-v1` estão aposentadas em produção com HTTP 410 e não serão reativadas; o cadastro usará funções novas e isoladas.
 
 **Tech Stack:** Supabase Postgres/PLpgSQL, Supabase Edge Functions/Deno/TypeScript, WhatsApp Meta Cloud API já integrada, JavaScript ES modules no Admin, Node 22 contract tests.
 
@@ -27,7 +27,7 @@
 - `sim` antigo ou genérico não pode confirmar uma solicitação nova — coberto no Task 1 e Task 2.
 - Correção do cliente após uma sugestão deve invalidar a sugestão antiga — coberto no Task 2.
 - CPF pertencente a outro cliente deve bloquear promoção e abrir conflito — coberto no Task 3.
-- Flow reenviado/repetido deve ser idempotente — coberto no Task 4.
+- Flow reenviado/repetido deve ser idempotente — coberto no Task 5.
 - Mensagem de terceiro com endereço não pode virar endereço principal confirmado por simples `sim` fora do contexto — coberto no Task 2 e Task 3.
 
 ---
@@ -79,21 +79,23 @@ git commit -m "feat: add ANA customer confirmation requests"
 
 **Files:**
 - Create: `supabase/functions/_shared/ana-customer-confirmation-v1.mjs`
+- Modify: `supabase/functions/whatsapp-meta-webhook-v1/index.ts`
+- Modify: `supabase/functions/_shared/whatsapp-meta-webhook-v1.mjs` only if the canonical normalized-message shape needs a helper field; do not parse the provider payload twice.
 - Create: `scripts/test-ana-customer-confirmation-v1.mjs`
-- Modify: canonical Meta inbound processing file that currently persists `whatsapp_messages_v1` only at the integration point proven during implementation; do not duplicate ingest.
+- Modify: `.github/workflows/whatsapp-meta-central-ci.yml`
 
 **Interfaces:**
-- Consumes: inbound canonical message + pending confirmation request.
+- Consumes: canonical inbound message persisted by `whatsapp-meta-webhook-v1` + pending confirmation request.
 - Produces: `classifyCustomerConfirmation({message,pendingRequest}) -> {decision:'confirm'|'correct'|'none',request_id}`; RPC `ops2_ana_customer_confirmation_apply_signal_v1(p_request_id uuid,p_message_id uuid,p_decision text) -> jsonb`.
 
 - [ ] **Step 1: Write the failing classifier contract**
 
 Test exact cases:
-- `sim`, `está correto`, `confirmo` within an active request → `confirm`;
+- `sim`, `está correto`, `confirmo` after an active request → `confirm`;
 - `não`, `corrigir`, `está errado` → `correct`;
 - no pending request → `none`;
 - expired request → `none`;
-- a generic `sim` sent before the request message timestamp → `none`;
+- a generic `sim` with timestamp before the request outbound message → `none`;
 - a later message supplying a different CPF/address invalidates the earlier request instead of confirming it.
 
 - [ ] **Step 2: Run and confirm RED**
@@ -103,17 +105,17 @@ Expected: FAIL because classifier does not exist.
 
 - [ ] **Step 3: Implement classifier and hook after canonical inbound persistence**
 
-The hook receives canonical message ID; it must not parse provider payload directly. Persist confirmation signal idempotently by `(request_id,message_id)`.
+The webhook hook must receive the canonical `whatsapp_messages_v1.id`; it must not decide from raw Meta JSON. Persist confirmation signal idempotently by `(request_id,message_id)`.
 
 - [ ] **Step 4: Run classifier and existing inbound/Meta contracts**
 
-Run: `node scripts/test-ana-customer-confirmation-v1.mjs` plus the existing Meta webhook/inbound contract suite.
+Run: `node scripts/test-ana-customer-confirmation-v1.mjs && node scripts/test-whatsapp-meta-webhook-v1.mjs && node scripts/test-whatsapp-meta-template-events-v1.mjs`
 Expected: PASS with no change to ordinary message ingest.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/functions/_shared/ana-customer-confirmation-v1.mjs scripts/test-ana-customer-confirmation-v1.mjs supabase/functions
+git add supabase/functions/_shared/ana-customer-confirmation-v1.mjs supabase/functions/whatsapp-meta-webhook-v1/index.ts supabase/functions/_shared/whatsapp-meta-webhook-v1.mjs scripts/test-ana-customer-confirmation-v1.mjs .github/workflows/whatsapp-meta-central-ci.yml
 git commit -m "feat: classify ANA customer confirmations"
 ```
 
@@ -128,11 +130,12 @@ git commit -m "feat: classify ANA customer confirmations"
 
 **Interfaces:**
 - Consumes: confirmed request from Task 2; existing `ops2_admin_customer_save_v2`/canonical customer save primitives.
-- Produces: `ops2_ana_customer_profile_promote_v1(p_request_id uuid,p_source text) -> jsonb` where source is `ana_confirmed_customer` or `admin_manual`.
+- Produces: `ops2_ana_customer_profile_promote_v1(p_request_id uuid,p_source text) -> jsonb` where source is constrained to `ana_confirmed_customer`, `admin_manual` or `flow`.
 
 - [ ] **Step 1: Write the failing promotion contract**
 
 Assert:
+- migration extends suggestion status to support `confirmed` while preserving Phase 1 statuses;
 - promotion rechecks conversation/customer identity;
 - CPF validator runs again and duplicate document blocks promotion;
 - address promotion requires confirmed request containing the exact address suggestions;
@@ -165,16 +168,17 @@ git commit -m "feat: promote confirmed ANA customer data"
 
 **Files:**
 - Create: `supabase/functions/_shared/ana-customer-registration-dialog-v1.mjs`
-- Modify: `supabase/functions/_shared/ana-policy-v1.mjs` only to recognize an explicit registration context; do not make general ANA collect personal data by default.
-- Modify/Create server action in the ANA worker/API that generates the registration question.
-- Create: `scripts/test-ana-customer-registration-dialog-v1.mjs`
+- Modify: `supabase/functions/_shared/ana-policy-v1.mjs` only to recognize explicit `registration_context`; general ANA continues sem coleta de dados pessoais fora desse contexto.
 - Modify: `vitrine/admin/atendimento/attendance-customer-profile.js`
+- Modify: `vitrine/admin/atendimento/attendance-send.js` to accept an internal `attendance:prefill-draft` event and place controlled text in `#messageDraft`; do not auto-send in the first cutover.
+- Create: `scripts/test-ana-customer-registration-dialog-v1.mjs`
+- Create: `scripts/test-admin-attendance-customer-prefill-v1.mjs`
 
 **Interfaces:**
-- Consumes: missing fields from customer readiness state; pending confirmation state.
-- Produces: `nextCustomerRegistrationPrompt({state,pending}) -> {field,text,requires_confirmation}` and an Admin action `Pedir dados ao cliente` that creates the draft/message through the existing official Meta outbound path.
+- Consumes: missing fields from customer state; pending confirmation state.
+- Produces: `nextCustomerRegistrationPrompt({state,pending}) -> {field,text,requires_confirmation}`; Attendance action `Pedir dados ao cliente` that preenche o composer; the existing `attendance-send.js` continues to send through `admin-whatsapp-ops-v1` / Meta when the human presses `Enviar`.
 
-- [ ] **Step 1: Write the failing dialog contract**
+- [ ] **Step 1: Write the failing dialog/prefill contracts**
 
 Assert priority:
 1. name;
@@ -183,26 +187,30 @@ Assert priority:
 4. number;
 5. complement/reference only when useful.
 
-Also assert general ANA does not spontaneously ask CPF/address outside `registration_context=true`.
+Also assert:
+- general ANA does not ask CPF/address outside `registration_context=true`;
+- `attendance:prefill-draft` never auto-clicks/sends;
+- currently selected conversation must match the profile action source.
 
 - [ ] **Step 2: Run and confirm RED**
 
-Run: `node scripts/test-ana-customer-registration-dialog-v1.mjs`
-Expected: FAIL because dialog policy does not exist.
+Run: `node scripts/test-ana-customer-registration-dialog-v1.mjs && node scripts/test-admin-attendance-customer-prefill-v1.mjs`
+Expected: FAIL because dialog/prefill behavior does not exist.
 
-- [ ] **Step 3: Implement dialog policy and Attendance action**
+- [ ] **Step 3: Implement dialog policy and controlled composer prefill**
 
-Initial cutover: `Pedir dados ao cliente` prepares/sends one controlled message using the existing direct Meta transport; no autonomous loop yet. Keep a server-side kill switch for any future automatic send.
+Initial cutover requires human press on `Enviar`. Automatic outbound remains a later rollout decision; no new Meta transport is introduced.
 
-- [ ] **Step 4: Run dialog, outbound and Meta transport contracts**
+- [ ] **Step 4: Run dialog, composer and Meta send regressions**
 
-Expected: PASS, with existing send/idempotency rules unchanged.
+Run the two new tests plus `scripts/test-admin-attendance-send-ui-v1.mjs` and the existing Meta transport contracts.
+Expected: PASS with send/idempotency behavior unchanged.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/functions/_shared/ana-customer-registration-dialog-v1.mjs supabase/functions/_shared/ana-policy-v1.mjs scripts/test-ana-customer-registration-dialog-v1.mjs vitrine/admin/atendimento/attendance-customer-profile.js
-git commit -m "feat: ask missing customer data with ANA"
+git add supabase/functions/_shared/ana-customer-registration-dialog-v1.mjs supabase/functions/_shared/ana-policy-v1.mjs scripts/test-ana-customer-registration-dialog-v1.mjs scripts/test-admin-attendance-customer-prefill-v1.mjs vitrine/admin/atendimento/attendance-customer-profile.js vitrine/admin/atendimento/attendance-send.js
+git commit -m "feat: prepare missing customer data prompts with ANA"
 ```
 
 ### Task 5: WhatsApp Flow como coleta estruturada opcional
@@ -211,41 +219,46 @@ git commit -m "feat: ask missing customer data with ANA"
 - Create: `supabase/migrations/20261005180000_customer_registration_flow_sessions_v1.sql`
 - Create: `supabase/sql/20261005_customer_registration_flow_sessions_v1.sql`
 - Create: `supabase/functions/_shared/customer-registration-flow-v1.mjs`
+- Create: `supabase/functions/admin-whatsapp-customer-flow-v1/index.ts`
+- Create: `supabase/functions/whatsapp-customer-flow-data-exchange-v1/index.ts`
+- Modify: `supabase/config.toml`
 - Create: `scripts/test-whatsapp-customer-registration-flow-v1.mjs`
-- Modify only the existing Meta interactive-message transport module confirmed at implementation time; do not add a second transport.
-- Modify the existing Meta webhook normalizer confirmed at implementation time to map Flow completion into a canonical event.
+- Modify: `.github/workflows/whatsapp-meta-central-ci.yml`
 
 **Interfaces:**
-- Consumes: customer/conversation, missing fields, existing Meta channel credentials.
-- Produces: flow session `{id,customer_id,conversation_id,requested_fields,expires_at,status}`; `buildCustomerRegistrationFlowPayload(session)`; `consumeCustomerRegistrationFlowResponse(event)`.
+- Consumes: customer/conversation, missing fields, existing Meta channel credentials/transport contracts.
+- Produces: flow session `{id,customer_id,conversation_id,requested_fields,expires_at,status}`; `buildCustomerRegistrationFlowPayload(session)`; `consumeCustomerRegistrationFlowResponse(event)`; admin Edge starts a session; data-exchange Edge validates/decrypts the Meta Flow exchange according to the already-homologated Meta Flow protocol before turning values into profile suggestions.
 
 - [ ] **Step 1: Write the failing Flow contract**
 
 Assert:
-- Flow session is bound to customer + conversation and expires;
+- do not reactivate retired `admin-whatsapp-flow-v1` or `whatsapp-flow-data-exchange-v1`;
+- new Flow session is bound to customer + conversation and expires;
 - only requested fields are accepted;
 - response cannot supply/change phone identity;
 - duplicate Flow completion is idempotent;
 - Flow values pass the same deterministic validators as natural-chat values;
-- Flow completion creates suggestions/confirmation data and uses Task 3 promotion path, never direct table writes.
+- Flow completion creates suggestions/confirmation data and uses Task 3 promotion path with `p_source='flow'`, never direct customer table writes;
+- feature flag defaults OFF.
 
 - [ ] **Step 2: Run and confirm RED**
 
 Run: `node scripts/test-whatsapp-customer-registration-flow-v1.mjs`
-Expected: FAIL because Flow adapter/session does not exist.
+Expected: FAIL because new Flow adapter/session functions do not exist.
 
-- [ ] **Step 3: Implement Flow session + adapter behind feature flag**
+- [ ] **Step 3: Implement isolated Flow functions behind feature flag**
 
-Feature flag defaults OFF until a Meta Flow ID/version is configured and homologated for both 0975 and 1018. Natural chat remains the primary path.
+Do not share state with retired PapoAI-era Flow functions. Natural chat remains primary. Enable only after a Meta Flow ID/version is configured and homologated for both 0975 and 1018.
 
 - [ ] **Step 4: Run Flow + webhook + transport suites**
 
+Run new Flow test plus Meta webhook/transport tests.
 Expected: PASS; ordinary text/media/template traffic unchanged.
 
 - [ ] **Step 5: Commit and open Phase 2 PR**
 
 ```bash
-git add supabase/migrations supabase/sql supabase/functions scripts/test-whatsapp-customer-registration-flow-v1.mjs .github/workflows vitrine/admin/atendimento
+git add supabase/migrations/20261005180000_customer_registration_flow_sessions_v1.sql supabase/sql/20261005_customer_registration_flow_sessions_v1.sql supabase/functions/_shared/customer-registration-flow-v1.mjs supabase/functions/admin-whatsapp-customer-flow-v1 supabase/functions/whatsapp-customer-flow-data-exchange-v1 supabase/config.toml scripts/test-whatsapp-customer-registration-flow-v1.mjs .github/workflows/whatsapp-meta-central-ci.yml
 git commit -m "feat: add optional WhatsApp Flow customer registration"
 ```
 
