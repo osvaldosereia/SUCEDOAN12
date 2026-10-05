@@ -31,6 +31,9 @@ assert.match(section,/api\('basket_commercial_create',\s*\{\},\s*\{[\s\S]*method
 assert.doesNotMatch(section,/api\('basket_commercial_create',\s*\{\s*method:/,'create must never encode fetch options as query params');
 assert.match(section,/DonaAntoniaBasketGuided\?\.open/,'Editar/Novo lote must use the guided builder');
 assert.doesNotMatch(section,/openBasketCommercialEditor|startBasketKitLotDraft|openBasketKitAdmin/,'canonical cards must not fall back to legacy editors');
+assert.match(section,/data-basket-edit-lot/,'canonical card must expose edit-current-lot when a lot exists');
+assert.match(section,/async function editCurrentLot\(/,'canonical section must own the current-lot loader');
+assert.match(section,/detailForLot\([\s\S]*openGuided\([^\n]*\{lot\}/,'edit-current-lot must load the saved lot snapshot and pass it into the guided editor');
 assert.match(section,/function printLot\(lot\)/,'printing must be a pure lot-data operation');
 assert.doesNotMatch(section,/state\.basketKitDetail\s*=|previous\s*=\s*state\.basketKitDetail/,'printing must not mutate legacy shared basket state');
 
