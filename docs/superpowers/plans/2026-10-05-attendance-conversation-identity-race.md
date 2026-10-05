@@ -48,7 +48,7 @@ Expected: a timestamped migration path under `supabase/migrations/`; use that ex
 
 - [ ] **Step 2: Replace the resolver body without changing its interface**
 
-Keep `p_whatsapp_account_id uuid, p_phone_e164 text, p_customer_id uuid default null, p_source text default 'unknown'`, its `jsonb` result, `SECURITY DEFINER`, empty search path, and existing ACL. Derive a lock phone with `coalesce(public.canonical_whatsapp_e164_br_v2(v_phone),v_phone)`; acquire `pg_advisory_xact_lock(hashtextextended('whatsapp-conversation:'||p_whatsapp_account_id::text||':'||v_lock_phone,0))` before the existing lookup. Keep invalid/unrecognized input behavior unchanged.
+Keep `p_whatsapp_account_id uuid, p_phone_e164 text, p_customer_id uuid default null, p_source text default 'unknown'`, its `jsonb` result, `SECURITY DEFINER`, empty search path, and existing ACL. After validating the account and non-empty phone, set `v_phone := coalesce(public.canonical_whatsapp_e164_br_v2(v_phone),v_phone)`; then acquire `pg_advisory_xact_lock(hashtextextended('whatsapp-conversation:'||p_whatsapp_account_id::text||':'||v_phone,0))` before the lookup. Use this same `v_phone` for lookup, insertion, and return. Unrecognized phone values retain their existing string and behavior.
 
 - [ ] **Step 3: Consolidate only eligible duplicate groups in the same migration transaction**
 
@@ -57,8 +57,8 @@ Identify open rows by account + valid canonical phone. Process a group only if e
 Move dependent references to the keeper before deleting duplicate conversation rows. Handle collisions explicitly:
   - Merge attendance labels with `ON CONFLICT DO NOTHING`, then remove duplicate label links.
   - Merge `attendance_conversation_state_v1` by greatest `last_read_at` with its matching message ID; preserve the follow-up from the row with greatest `updated_at`, including null cancellation; then remove duplicate state rows.
-  - Reassign messages and ordinary references in audit, cart, catalog session, profile extraction/suggestion, outbound intent/outbox, orders, PapoAI flow, identity-token, and ANA job/review tables.
-  - Merge conversation activity timestamps with greatest values and preserve human-required state if either row requires it.
+  - Reassign `whatsapp_messages_v1`, `attendance_human_ai_audit_v1`, `attendance_library_audit_v1`, `carts`, `catalog_sessions`, `customer_profile_extraction_runs_v1`, `customer_profile_suggestions_v1`, `ops2_papoai_outbound_intents_v1`, `ops2_whatsapp_outbox_v1`, `orders`, `papoai_customer_flow_events_v1`, `storefront_identity_tokens`, `whatsapp_ana_jobs_v1`, and `whatsapp_ana_reviews_v1`. Reassign `whatsapp_outbox_v1` as well, respecting `ON DELETE SET NULL` semantics by moving it before deletion.
+  - Merge `last_inbound_at`, `last_outbound_at`, `service_window_expires_at`, and `updated_at` with greatest values. Use the row with latest `updated_at` for current `status`, `mode`, and `stage`; set `human_required` true if either row requires it.
   - Before deleting each duplicate, assert no foreign-key row remains attached to it; any collision or failed assertion aborts the migration.
 
 The data routine must be idempotent: after eligible groups are consolidated, running it again makes no conversation changes. Do not hardcode production row UUIDs or phone numbers in the migration.
