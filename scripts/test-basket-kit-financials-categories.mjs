@@ -20,11 +20,14 @@ assert.match(summary,/base_price/,'preço final do modelo deve ser a referência
 assert.match(summary,/hidden\s*:\s*final-sale|hidden=final-sale/,'ajuste oculto visual deve ser derivado do preço final menos a soma dos itens');
 for(const label of ['Custo dos produtos','Soma dos preços','Preço final','Ajuste oculto'])assert.ok(guided.includes(label),`resumo guiado deve mostrar ${label}`);
 
-// O JavaScript exibe o resumo; snapshots financeiros de lote e vínculo pertencem ao banco.
 assert.doesNotMatch(guided,/function basketKitDraftFinancials/,'não deve existir um segundo motor financeiro legado no editor guiado');
 for(const field of ['cost_sum_snapshot','component_sum_snapshot','hidden_adjustment_snapshot'])assert.match(lotFinancialMigration,new RegExp(field,'i'),`domínio SQL deve persistir ${field}`);
 
-assert.ok(admin.includes('Categorias de cestas'),'Admin deve oferecer gestão das categorias');
+const catStart=admin.indexOf('async function openBasketCategoriesAdmin()');
+const catEnd=admin.indexOf('\n  async function ',catStart+12);
+assert.ok(catStart>=0&&catEnd>catStart,'Admin deve manter uma tela própria para gestão das categorias');
+const catFn=admin.slice(catStart,catEnd);
+assert.match(catFn,/basket_categories_admin/,'gestão de categorias deve carregar a API oficial');
 assert.ok(service.includes('basket_categories_admin')&&service.includes('basket_category_save')&&service.includes('basket_category_delete'),'API deve oferecer listar, salvar e excluir categorias');
 assert.ok(service.includes('category_id'),'API deve permitir vincular cesta à categoria');
 const writeActions=service.slice(service.indexOf('const WRITE_ACTIONS='),service.indexOf('const cors='));
