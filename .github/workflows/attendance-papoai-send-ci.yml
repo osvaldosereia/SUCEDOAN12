@@ -42,6 +42,7 @@ jobs:
       - run: node scripts/test-admin-attendance-send-ui-v1.mjs
       - run: node scripts/test-admin-attendance-api-v1.mjs
       - run: node scripts/test-admin-attendance-customer-link-v1.mjs
+      - run: node scripts/test-admin-attendance-customer-rpc-production-v1.mjs
       - run: node scripts/test-admin-attendance-catalog-link-cutover-v1.mjs
       - run: node scripts/test-admin-attendance-ui-v1.mjs
       - run: node scripts/test-admin-attendance-native-v1.mjs
