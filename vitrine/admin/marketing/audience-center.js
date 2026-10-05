@@ -77,13 +77,21 @@ async function loadLabels(){
   return labelsCache;
 }
 
-function overviewCards(data){
+function consentOverviewCards(data){
   const counts=data?.counts||{};
   return `<div class="marketing-audience-kpis">
     <article><small>Total de clientes</small><strong>${Number(counts.total||0)}</strong></article>
     <article class="good"><small>Com consentimento</small><strong>${Number(counts.opt_in||0)}</strong></article>
     <article class="warn"><small>Revogaram</small><strong>${Number(counts.opt_out||0)}</strong></article>
     <article><small>Nunca consentiram</small><strong>${Number(counts.never_consented||0)}</strong></article>
+  </div>`;
+}
+
+function audienceOverviewCards(data){
+  const counts=data?.counts||{};
+  return `<div class="marketing-audience-base-card">
+    <div><small>Base disponível para segmentação</small><strong>${Number(counts.total||0)}</strong><span>clientes cadastrados</span></div>
+    <p>Use os filtros comerciais normalmente. <span>Autorização WhatsApp confirmada: <b>${Number(counts.opt_in||0)}</b></span></p>
   </div>`;
 }
 
@@ -124,27 +132,26 @@ function collectFilters(form){
   return filters;
 }
 
-function reasonsHtml(reasons=[]){
-  if(!Array.isArray(reasons)||!reasons.length)return '<span class="marketing-audience-pill good">Elegível</span>';
-  return reasons.map(reason=>`<span class="marketing-audience-pill bad">${esc(reasonLabels[reason]||reason)}</span>`).join('');
-}
-
 function renderAudienceResult(root,data){
   const panel=root.querySelector('[data-audience-result]');if(!panel)return;
   const reasonEntries=Object.entries(data?.exclusion_reasons||{}).filter(([,count])=>Number(count)>0);
   const items=Array.isArray(data?.items)?data.items:[];
   panel.innerHTML=`<div class="marketing-audience-result-head">
-    <div class="marketing-audience-kpis compact">
-      <article><small>Encontrados</small><strong>${Number(data?.found_count||0)}</strong></article>
-      <article class="good"><small>Elegíveis</small><strong>${Number(data?.eligible_count||0)}</strong></article>
-      <article class="warn"><small>Excluídos</small><strong>${Number(data?.excluded_count||0)}</strong></article>
-    </div>
-    ${reasonEntries.length?`<div class="marketing-audience-reason-summary">${reasonEntries.map(([reason,count])=>`<span>${esc(reasonLabels[reason]||reason)} <b>${Number(count)}</b></span>`).join('')}</div>`:''}
+    <article class="marketing-audience-segment-total"><small>Clientes no público</small><strong>${Number(data?.found_count||0)}</strong><span>Resultado dos filtros comerciais aplicados.</span></article>
+    <details class="marketing-audience-send-checks">
+      <summary>Verificações técnicas de envio</summary>
+      <div class="marketing-audience-send-checks-body">
+        <span>Aptos pelas regras atuais <b>${Number(data?.eligible_count||0)}</b></span>
+        <span>Com alguma pendência <b>${Number(data?.excluded_count||0)}</b></span>
+        ${reasonEntries.map(([reason,count])=>`<span>${esc(reasonLabels[reason]||reason)} <b>${Number(count)}</b></span>`).join('')}
+      </div>
+      <p>Estas verificações são mantidas para a futura etapa de envio e não impedem montar, analisar ou salvar o público comercial.</p>
+    </details>
   </div>
-  <div class="marketing-audience-table-wrap"><table class="marketing-audience-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Consentimento</th><th>Compras</th><th>Última compra</th><th>Elegibilidade</th></tr></thead><tbody>
-    ${items.length?items.map(item=>`<tr><td><strong>${esc(item.name||'Cliente')}</strong><small>${esc([item.city,item.neighborhood].filter(Boolean).join(' · '))}</small></td><td>${esc(item.masked_phone||'—')}</td><td>${esc(stateLabels[item.consent_state]||item.consent_state||'—')}</td><td>${Number(item.order_count||0)}<small>${money(item.lifetime_value)}</small></td><td>${esc(fmtDate(item.last_purchase_at))}</td><td><div class="marketing-audience-pills">${reasonsHtml(item.exclusion_reasons)}</div></td></tr>`).join(''):'<tr><td colspan="6" class="empty">Nenhum cliente encontrado com estes filtros.</td></tr>'}
+  <div class="marketing-audience-table-wrap"><table class="marketing-audience-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Local</th><th>Compras</th><th>Última compra</th></tr></thead><tbody>
+    ${items.length?items.map(item=>`<tr><td><strong>${esc(item.name||'Cliente')}</strong></td><td>${esc(item.masked_phone||'—')}</td><td>${esc([item.city,item.neighborhood].filter(Boolean).join(' · ')||'—')}</td><td>${Number(item.order_count||0)}<small>${money(item.lifetime_value)}</small></td><td>${esc(fmtDate(item.last_purchase_at))}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhum cliente encontrado com estes filtros.</td></tr>'}
   </tbody></table></div>
-  <p class="marketing-audience-note">A lista é apenas uma prévia. Os critérios obrigatórios de consentimento, telefone válido, cliente ativo e duplicidade não podem ser removidos.</p>`;
+  <p class="marketing-audience-note">As verificações de envio são aplicadas depois, na campanha. Aqui o foco é montar e analisar o público.</p>`;
 }
 
 function setButtonBusy(button,busy,label){
@@ -159,9 +166,9 @@ async function mountAudienceView(root=document.querySelector('#content')){
   if(!root)return;
   ensureCss();activeRoot=root;
   root.innerHTML=`<div class="marketing-audience-center">
-    <div class="page-head"><div><h1>Marketing</h1><p>Monte públicos comerciais com consentimento validado.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
+    <div class="page-head"><div><h1>Marketing</h1><p>Monte públicos comerciais usando toda a sua base de clientes.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
     ${navMarkup('audiences')}
-    <section class="marketing-audience-section"><div class="marketing-audience-section-head"><div><h2>Públicos</h2><p>Os filtros comerciais encontram clientes; os gates obrigatórios definem quem é elegível.</p></div></div>
+    <section class="marketing-audience-section"><div class="marketing-audience-section-head"><div><h2>Públicos</h2><p>Filtre por perfil de compra, localização e atendimento. As verificações de envio são aplicadas depois, na campanha.</p></div></div>
       <div data-audience-overview class="marketing-audience-loading">Carregando visão geral…</div>
       <div data-audience-form-host></div>
       <div data-audience-status class="marketing-audience-status" role="status" aria-live="polite"></div>
@@ -172,7 +179,7 @@ async function mountAudienceView(root=document.querySelector('#content')){
   try{
     const [overview,labels]=await Promise.all([loadOverview(),loadLabels()]);
     if(activeRoot!==root)return;
-    root.querySelector('[data-audience-overview]').innerHTML=overviewCards(overview);
+    root.querySelector('[data-audience-overview]').innerHTML=audienceOverviewCards(overview);
     root.querySelector('[data-audience-form-host]').innerHTML=audienceForm(labels);
     const form=root.querySelector('[data-audience-form]');
     form.querySelector('[data-clear-filters]')?.addEventListener('click',()=>{form.reset();root.querySelector('[data-audience-result]').innerHTML='';root.querySelector('[data-audience-status]').textContent='Filtros limpos.'});
@@ -183,7 +190,7 @@ async function mountAudienceView(root=document.querySelector('#content')){
         audienceBusy=true;setButtonBusy(button,true,'Calculando…');status.textContent='Calculando público no servidor…';
         const data=await adminPost('preview',{filters:collectFilters(form),limit:50,offset:0});
         if(activeRoot!==root)return;
-        renderAudienceResult(root,data);status.textContent=`Cálculo concluído: ${Number(data.eligible_count||0)} elegível(is) de ${Number(data.found_count||0)} encontrado(s).`;
+        renderAudienceResult(root,data);status.textContent=`Cálculo concluído: ${Number(data.found_count||0)} cliente(s) encontrado(s).`;
       }catch(error){if(activeRoot===root)status.textContent=`Não foi possível calcular o público: ${String(error?.message||error)}`}
       finally{audienceBusy=false;if(activeRoot===root)setButtonBusy(button,false,'')}
     });
@@ -264,7 +271,7 @@ async function mountConsentView(root=document.querySelector('#content')){
     </section>
   </div>`;
   bindNav(root);
-  try{const overview=await loadOverview();if(activeRoot===root)root.querySelector('[data-consent-overview]').innerHTML=overviewCards(overview)}catch(error){if(activeRoot===root)root.querySelector('[data-consent-overview]').innerHTML=`<div class="marketing-audience-error">Não foi possível carregar: ${esc(error?.message||error)}</div>`}
+  try{const overview=await loadOverview();if(activeRoot===root)root.querySelector('[data-consent-overview]').innerHTML=consentOverviewCards(overview)}catch(error){if(activeRoot===root)root.querySelector('[data-consent-overview]').innerHTML=`<div class="marketing-audience-error">Não foi possível carregar: ${esc(error?.message||error)}</div>`}
   const input=root.querySelector('[data-consent-search]'),button=root.querySelector('[data-consent-search-button]'),status=root.querySelector('[data-consent-search-status]');
   const search=async()=>{
     if(consentBusy)return;const query=String(input.value||'').trim();if(query.length<2){status.textContent='Digite pelo menos 2 caracteres.';return}
