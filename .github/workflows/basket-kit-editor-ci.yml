@@ -51,6 +51,7 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-mounted-edit-print-models.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-commerce.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-zero-price-fallback.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-postdeploy-hardening.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-mounting.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs
