@@ -1,0 +1,31 @@
+name: Store basket reservation domain
+on:
+  pull_request:
+    paths:
+      - 'supabase/sql/20261005_store_basket_reservation_v1.sql'
+      - 'supabase/migrations/20261005190000_store_basket_reservation_v1.sql'
+      - 'supabase/functions/admin-store-baskets-v1/**'
+      - 'scripts/test-store-baskets-reservation-domain-v1.mjs'
+      - 'scripts/test-store-baskets-admin-api-v1.mjs'
+      - '.github/workflows/store-basket-reservation-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/sql/20261005_store_basket_reservation_v1.sql'
+      - 'supabase/migrations/20261005190000_store_basket_reservation_v1.sql'
+      - 'supabase/functions/admin-store-baskets-v1/**'
+      - 'scripts/test-store-baskets-reservation-domain-v1.mjs'
+      - 'scripts/test-store-baskets-admin-api-v1.mjs'
+      - '.github/workflows/store-basket-reservation-ci.yml'
+permissions:
+  contents: read
+jobs:
+  reservation-domain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-reservation-domain-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-admin-api-v1.mjs
