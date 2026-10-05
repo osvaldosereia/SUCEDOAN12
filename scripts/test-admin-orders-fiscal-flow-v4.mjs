@@ -51,6 +51,8 @@ assert.ok(!fs.existsSync('scripts/_apply_orders_v4_ui_patch.mjs'),'Patch tempor�
 assert.ok(!fs.existsSync('.github/workflows/_temp-orders-v4-ui-patch.yml'),'Workflow temporário da UI não pode permanecer no produto');
 assert.ok(!fs.existsSync('scripts/_fix_orders_v4_browser_syntax.mjs'),'Corretor temporário de sintaxe não pode permanecer no produto');
 assert.ok(!fs.existsSync('.github/workflows/_temp-orders-v4-browser-syntax-fix.yml'),'Workflow temporário de sintaxe não pode permanecer no produto');
+assert.ok(!fs.existsSync('scripts/_apply_orders_v4_tag_styles.mjs'),'Patch temporário de estilos não pode permanecer no produto');
+assert.ok(!fs.existsSync('.github/workflows/_temp-orders-v4-tag-styles.yml'),'Workflow temporário de estilos não pode permanecer no produto');
 
 // Bridge Bling: geração a partir do Pedido de Venda existente, reconciliação antes de POST e DANFE.
 assert.match(blingBridge,/blingHubVitrineDispatchFiscalPreview/,'Bridge Bling precisa manter o preflight fiscal existente');
