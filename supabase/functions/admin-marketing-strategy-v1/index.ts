@@ -5,21 +5,50 @@ import {
   rankOffers,
   chooseFormat,
 } from "../_shared/marketing-strategy-engine-v1.mjs";
+import {
+  findReusableTemplate,
+  buildStrategyTemplateDraft,
+  buildStrategyTemplateProfile,
+  strategyTemplateName,
+} from "../_shared/marketing-template-strategy-v1.mjs";
+import {
+  buildTemplateCacheRows,
+  listTemplatesViaMeta,
+  createTemplateViaMeta,
+  MetaTemplatesError,
+} from "../_shared/whatsapp-meta-templates-v1.mjs";
+import {
+  createCarouselTemplateViaMeta,
+  uploadTemplateMediaSampleViaMeta,
+  MetaCarouselError,
+} from "../_shared/whatsapp-meta-carousel-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
+const META_WHATSAPP_ACCESS_TOKEN=(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"").trim();
+const META_WHATSAPP_GRAPH_VERSION=(Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"").trim();
+const META_APP_ID=(Deno.env.get("META_APP_ID")||Deno.env.get("WHATSAPP_APP_ID")||"").trim();
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const MAX_BODY_BYTES=48000;
+const MAX_MEDIA_BYTES=18*1024*1024;
+const MEDIA_HOSTS=new Set([
+  "donaantonia.com.br","www.donaantonia.com.br","ssbesxgaijknwsjbsbcz.supabase.co",
+  "firebasestorage.googleapis.com","storage.googleapis.com",
+]);
 const FORBIDDEN_FIELDS=new Set([
   "waba_id","to_phone_e164","destination_phone","phone_number_id","access_token",
   "service_role","service_key","outbox_id","runtime_mode","campaigns_enabled","ana_enabled",
 ]);
 const GET_ACTIONS=new Set(["overview","detail","calendar","opportunities","learnings","settings"]);
-const POST_ACTIONS=new Set(["generate","regenerate","edit_draft","request_internal_approval","approve_internal","discard","save_weights","save_seasonality"]);
+const POST_ACTIONS=new Set([
+  "generate","regenerate","edit_draft","request_internal_approval","approve_internal","discard",
+  "save_weights","save_seasonality","submit_template","refresh_template_status",
+]);
 const GENERATE_FIELDS=new Set(["whatsapp_account_id","period_start","period_end","schedule_suggestion","prefer_carousel","regenerated_from"]);
 const EDIT_FIELDS=new Set(["strategy_id","expected_revision","objective","copy_snapshot","schedule_suggestion","offer_format"]);
 const TRANSITION_FIELDS=new Set(["strategy_id","expected_revision","reason"]);
+const TEMPLATE_GATE_FIELDS=new Set(["strategy_id","expected_revision"]);
 const WEIGHT_FIELDS=new Set(["weights","version_note"]);
 const SEASONALITY_FIELDS=new Set(["rule_key","name","starts_on","ends_on","month_numbers","day_of_month_start","day_of_month_end","priority","score_effect","operational_closed","metadata"]);
 const WEIGHT_KEYS=Object.keys(DEFAULT_STRATEGY_WEIGHTS_V1);
@@ -36,6 +65,7 @@ const validUuid=(value:unknown)=>{const s=String(value??"").trim();return /^[0-9
 const clean=(value:unknown,max=300)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const onlyKeys=(body:Record<string,unknown>,allowed:Set<string>)=>Object.keys(body).every(key=>allowed.has(key));
 const clamp01=(value:unknown)=>{const n=Number(value);return Number.isFinite(n)?Math.max(0,Math.min(1,n)):0};
+const metaReady=()=>Boolean(META_WHATSAPP_ACCESS_TOKEN&&/^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION));
 
 async function adminAuth(req:Request){
   const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
@@ -297,6 +327,196 @@ async function transition(body:Record<string,unknown>,adminUserId:string,toStatu
 async function requestInternalApproval(body:Record<string,unknown>,adminUserId:string){return transition(body,adminUserId,"awaiting_internal_approval")}
 async function approveInternal(body:Record<string,unknown>,adminUserId:string){return transition(body,adminUserId,"approved_internal")}
 async function discardStrategy(body:Record<string,unknown>,adminUserId:string){return transition(body,adminUserId,"discarded")}
+
+async function accountById(accountId:string){
+  const result=await db.from("whatsapp_accounts").select("id,waba_id,is_active").eq("id",accountId).eq("is_active",true).maybeSingle();
+  if(result.error)throw result.error;
+  return result.data||null;
+}
+async function strategyForTemplate(strategyId:string){
+  const result=await db.from("marketing_strategy_runs_v1")
+    .select("id,whatsapp_account_id,status,revision,offer_format,copy_snapshot,template_id,metadata")
+    .eq("id",strategyId).maybeSingle();
+  if(result.error)throw result.error;
+  return result.data||null;
+}
+async function strategyOffers(strategyId:string){
+  const result=await db.from("marketing_strategy_offers_v1")
+    .select("id,strategy_id,position,commercial_id,public_lot_id,public_name,image_url,sale_price_snapshot,public_available_snapshot,availability_reason_snapshot")
+    .eq("strategy_id",strategyId).order("position");
+  if(result.error)throw result.error;
+  return result.data||[];
+}
+async function strategyTemplateCandidates(accountId:string){
+  const rows=await db.from("whatsapp_templates_v1")
+    .select("id,whatsapp_account_id,meta_template_id,name,language,category,status,components,metadata,updated_at")
+    .eq("whatsapp_account_id",accountId).eq("category","MARKETING");
+  if(rows.error)throw rows.error;
+  const items=rows.data||[];
+  const ids=items.map((row:any)=>row.id).filter(Boolean);
+  if(!ids.length)return items;
+  const lifecycle=await db.from("marketing_template_lifecycle_v1").select("template_id,protected,lifecycle_status,last_used_at").in("template_id",ids);
+  if(lifecycle.error)throw lifecycle.error;
+  const byId=new Map((lifecycle.data||[]).map((row:any)=>[String(row.template_id),row]));
+  return items.map((row:any)=>({...row,lifecycle:byId.get(String(row.id))||null}));
+}
+async function syncTemplateCache(account:any){
+  const existing=await db.from("whatsapp_templates_v1").select("name,language,metadata").eq("whatsapp_account_id",account.id);
+  if(existing.error)throw existing.error;
+  const existingByKey=new Map((existing.data||[]).map((row:any)=>[`${row.name}\u0000${row.language}`,row]));
+  const remote=await listTemplatesViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,timeoutMs:12000,maxPages:20});
+  if(remote.truncated)throw new Error("meta_templates_pagination_truncated");
+  const syncedAt=new Date().toISOString();
+  const rows=buildTemplateCacheRows({items:remote.items,account,existingByKey,syncedAt});
+  if(rows.length){const saved=await db.from("whatsapp_templates_v1").upsert(rows,{onConflict:"waba_id,name,language"});if(saved.error)throw saved.error}
+  return {ok:true,synced:rows.length,last_synced_at:syncedAt};
+}
+async function localTemplateByName(accountId:string,name:string){
+  const result=await db.from("whatsapp_templates_v1")
+    .select("id,whatsapp_account_id,meta_template_id,name,language,category,status,components,metadata,updated_at")
+    .eq("whatsapp_account_id",accountId).eq("name",name).eq("language","pt_BR").maybeSingle();
+  if(result.error)throw result.error;
+  return result.data||null;
+}
+async function tagNewStrategyTemplate(template:any,profile:any,strategyId:string){
+  if(!template?.id)return;
+  const metadata={...(objectLike(template.metadata)?template.metadata:{}),strategy_profile:profile,strategy_engine:{source:"marketing_strategy_v1",created_for_strategy_id:strategyId}};
+  const updated=await db.from("whatsapp_templates_v1").update({metadata,updated_at:new Date().toISOString()}).eq("id",template.id);
+  if(updated.error)throw updated.error;
+  const lifecycle=await db.from("marketing_template_lifecycle_v1").select("template_id,protected").eq("template_id",template.id).maybeSingle();
+  if(lifecycle.error)throw lifecycle.error;
+  if(!lifecycle.data){
+    const inserted=await db.from("marketing_template_lifecycle_v1").insert({template_id:template.id,protected:false,lifecycle_status:"active",metadata:{source:"marketing_strategy_v1"}});
+    if(inserted.error)throw inserted.error;
+  }
+}
+async function updateStrategyTemplateContext(strategy:any,templateId:string|null,submission:Record<string,unknown>){
+  const metadata={...(objectLike(strategy?.metadata)?strategy.metadata:{}),template_submission:submission};
+  const update:any={metadata,updated_at:new Date().toISOString()};
+  if(templateId)update.template_id=templateId;
+  const result=await db.from("marketing_strategy_runs_v1").update(update)
+    .eq("id",strategy.id).eq("revision",strategy.revision).eq("status",strategy.status).select("id,revision,status,template_id,metadata").maybeSingle();
+  if(result.error)throw result.error;
+  return result.data||null;
+}
+function safeMediaUrl(value:unknown){
+  let url:URL;try{url=new URL(String(value||""))}catch{return null}
+  if(url.protocol!=="https:"||url.username||url.password||!MEDIA_HOSTS.has(url.hostname.toLowerCase()))return null;
+  return url;
+}
+async function fetchStrategyImage(value:unknown){
+  const url=safeMediaUrl(value);if(!url)throw new Error("strategy_template_media_not_allowed");
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
+  try{
+    const response=await fetch(url.toString(),{method:"GET",redirect:"error",signal:controller.signal,headers:{Accept:"image/jpeg,image/png"}});
+    if(!response.ok)throw new Error("strategy_template_media_fetch_failed");
+    const mime=String(response.headers.get("content-type")||"").split(";")[0].trim().toLowerCase();
+    if(mime!=="image/jpeg"&&mime!=="image/png")throw new Error("strategy_template_media_type_invalid");
+    const length=Number(response.headers.get("content-length")||0);if(length>MAX_MEDIA_BYTES)throw new Error("strategy_template_media_size_invalid");
+    const bytes=new Uint8Array(await response.arrayBuffer());if(!bytes.byteLength||bytes.byteLength>MAX_MEDIA_BYTES)throw new Error("strategy_template_media_size_invalid");
+    const name=`strategy-${crypto.randomUUID()}.${mime==="image/png"?"png":"jpg"}`;
+    return {bytes,mime,name};
+  }finally{clearTimeout(timer)}
+}
+async function uploadCarouselSamples(offers:any[]){
+  if(!META_APP_ID)throw new Error("meta_app_id_not_configured");
+  const handles=[];
+  for(const offer of offers){
+    const file=await fetchStrategyImage(offer?.image_url);
+    const uploaded=await uploadTemplateMediaSampleViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,appId:META_APP_ID,graphVersion:META_WHATSAPP_GRAPH_VERSION,fileName:file.name,mimeType:file.mime,bytes:file.bytes});
+    handles.push(uploaded.handle);
+  }
+  return handles;
+}
+async function submitTemplate(body:Record<string,unknown>,adminUserId:string){
+  if(!onlyKeys(body,TEMPLATE_GATE_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
+  const id=validUuid(body.strategy_id),expectedRevision=Number(body.expected_revision);
+  if(!id||!Number.isInteger(expectedRevision)||expectedRevision<1)return {status:400,data:{ok:false,error:"invalid_payload"}};
+  const strategy=await strategyForTemplate(id);if(!strategy)return {status:404,data:{ok:false,error:"strategy_not_found"}};
+  if(Number(strategy.revision)!==expectedRevision)return {status:409,data:{ok:false,error:"revision_conflict",revision:strategy.revision,status_current:strategy.status}};
+  if(String(strategy.status)!=="approved_internal")return {status:409,data:{ok:false,error:"strategy_not_approved_internal",status_current:strategy.status}};
+  const offers=await strategyOffers(id);if(!offers.length)return {status:409,data:{ok:false,error:"strategy_offers_missing"}};
+  const candidates=await strategyTemplateCandidates(strategy.whatsapp_account_id);
+  const strategyContext={...strategy,offers};
+  const reusable=findReusableTemplate(strategyContext,candidates);
+  if(reusable){
+    const linked=await updateStrategyTemplateContext(strategy,reusable.id,{mode:"reused",template_name:reusable.name,template_status:"APPROVED",linked_at:new Date().toISOString()});
+    if(!linked)return {status:409,data:{ok:false,error:"revision_conflict"}};
+    const moved=await transition({strategy_id:id,expected_revision:expectedRevision,reason:"approved_template_reused"},adminUserId,"meta_approved");
+    if(moved.data?.ok===true)await appendEvent(id,"template_reused",adminUserId,{template_id:reusable.id,template_name:reusable.name,protected:reusable?.lifecycle?.protected===true});
+    return {status:moved.status,data:{...moved.data,reused:true,template_id:reusable.id,template_name:reusable.name}};
+  }
+  if(!metaReady())return {status:503,data:{ok:false,error:"meta_transport_not_configured"}};
+  const account=await accountById(strategy.whatsapp_account_id);if(!account)return {status:404,data:{ok:false,error:"account_not_available"}};
+  const profile=buildStrategyTemplateProfile(strategyContext,offers);
+  const name=strategyTemplateName(strategyContext,offers);
+  let created:any;
+  try{
+    if(String(strategy.offer_format)==="carousel"){
+      const mediaHandles=await uploadCarouselSamples(offers);
+      const draft=buildStrategyTemplateDraft(strategyContext,offers,{name,mediaHandles});
+      created=await createCarouselTemplateViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,draft});
+    }else{
+      const draft=buildStrategyTemplateDraft(strategyContext,offers,{name});
+      created=await createTemplateViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,template:draft,timeoutMs:15000});
+    }
+  }catch(error){
+    const code=error instanceof MetaTemplatesError||error instanceof MetaCarouselError?error.code:clean(error instanceof Error?error.message:String(error),180)||"template_submission_failed";
+    await appendEvent(id,"template_submission_failed",adminUserId,{error:code}).catch(()=>null);
+    const retryable=error instanceof MetaTemplatesError||error instanceof MetaCarouselError?error.retryable===true:false;
+    return {status:502,data:{ok:false,error:code,retryable}};
+  }
+  const remoteId=clean(created?.payload?.id,80)||null;
+  const remoteStatus=clean(created?.payload?.status,40).toUpperCase()||"PENDING";
+  let sync:any=null;try{sync=await syncTemplateCache(account)}catch{sync=null}
+  const localTemplate=sync?.ok===true?await localTemplateByName(account.id,name):null;
+  if(localTemplate)await tagNewStrategyTemplate(localTemplate,profile,id);
+  const linked=await updateStrategyTemplateContext(strategy,localTemplate?.id||null,{mode:"created",template_name:name,meta_template_id:remoteId,template_status:remoteStatus,sync_pending:!localTemplate,submitted_at:new Date().toISOString(),profile});
+  if(!linked)return {status:409,data:{ok:false,error:"revision_conflict",remote_created:true,meta_template_id:remoteId}};
+  await appendEvent(id,"template_submitted_meta",adminUserId,{template_id:localTemplate?.id||null,template_name:name,meta_template_id:remoteId,status:remoteStatus,sync_pending:!localTemplate});
+  if(remoteStatus==="APPROVED"&&localTemplate){
+    const moved=await transition({strategy_id:id,expected_revision:expectedRevision,reason:"meta_approved_on_submission"},adminUserId,"meta_approved");
+    return {status:moved.status,data:{...moved.data,reused:false,template_id:localTemplate.id,template_name:name,meta_status:remoteStatus}};
+  }
+  const pending=await transition({strategy_id:id,expected_revision:expectedRevision,reason:"template_submitted_meta"},adminUserId,"awaiting_meta");
+  if(pending.data?.ok!==true)return pending;
+  if(remoteStatus==="REJECTED"){
+    const rejected=await transition({strategy_id:id,expected_revision:Number(pending.data.revision),reason:"meta_rejected_on_submission"},adminUserId,"meta_rejected");
+    if(rejected.data?.ok===true)await appendEvent(id,"template_meta_rejected",adminUserId,{template_id:localTemplate?.id||null,template_name:name});
+    return {status:rejected.status,data:{...rejected.data,reused:false,template_id:localTemplate?.id||null,template_name:name,meta_status:remoteStatus}};
+  }
+  return {status:200,data:{...pending.data,reused:false,template_id:localTemplate?.id||null,template_name:name,meta_status:remoteStatus,sync_pending:!localTemplate}};
+}
+async function refreshTemplateStatus(body:Record<string,unknown>,adminUserId:string){
+  if(!onlyKeys(body,TEMPLATE_GATE_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
+  const id=validUuid(body.strategy_id),expectedRevision=Number(body.expected_revision);
+  if(!id||!Number.isInteger(expectedRevision)||expectedRevision<1)return {status:400,data:{ok:false,error:"invalid_payload"}};
+  const strategy=await strategyForTemplate(id);if(!strategy)return {status:404,data:{ok:false,error:"strategy_not_found"}};
+  if(Number(strategy.revision)!==expectedRevision)return {status:409,data:{ok:false,error:"revision_conflict",revision:strategy.revision,status_current:strategy.status}};
+  if(String(strategy.status)!=="awaiting_meta")return {status:409,data:{ok:false,error:"strategy_not_awaiting_meta",status_current:strategy.status}};
+  let template:any=null;
+  if(strategy.template_id){
+    const q=await db.from("whatsapp_templates_v1").select("id,name,status,metadata").eq("id",strategy.template_id).maybeSingle();if(q.error)throw q.error;template=q.data;
+  }else{
+    const name=clean((strategy.metadata as any)?.template_submission?.template_name,512);
+    if(name)template=await localTemplateByName(strategy.whatsapp_account_id,name);
+  }
+  if(!template)return {status:409,data:{ok:false,error:"template_cache_pending"}};
+  const status=clean(template.status,40).toUpperCase();
+  if(status==="APPROVED"){
+    if(!strategy.template_id){const linked=await updateStrategyTemplateContext(strategy,template.id,{...(objectLike((strategy.metadata as any)?.template_submission)?(strategy.metadata as any).template_submission:{}),template_status:status,sync_pending:false});if(!linked)return {status:409,data:{ok:false,error:"revision_conflict"}}}
+    const moved=await transition({strategy_id:id,expected_revision:expectedRevision,reason:"meta_template_approved"},adminUserId,"meta_approved");
+    if(moved.data?.ok===true)await appendEvent(id,"template_meta_approved",adminUserId,{template_id:template.id,template_name:template.name});
+    return moved;
+  }
+  if(status==="REJECTED"){
+    const moved=await transition({strategy_id:id,expected_revision:expectedRevision,reason:"meta_template_rejected"},adminUserId,"meta_rejected");
+    if(moved.data?.ok===true)await appendEvent(id,"template_meta_rejected",adminUserId,{template_id:template.id,template_name:template.name,rejected_reason:template?.metadata?.rejected_reason||null});
+    return moved;
+  }
+  return {status:200,data:{ok:true,strategy_id:id,revision:expectedRevision,status:"awaiting_meta",template_status:status||"PENDING"}};
+}
+
 function validateWeights(value:unknown){
   if(!objectLike(value))return null;
   const keys=Object.keys(value);if(keys.length!==WEIGHT_KEYS.length||WEIGHT_KEYS.some(key=>!keys.includes(key)))return null;
@@ -358,6 +578,8 @@ Deno.serve(async(req:Request)=>{
     else if(action==="request_internal_approval")result=await requestInternalApproval(parsed.body,auth.user_id);
     else if(action==="approve_internal")result=await approveInternal(parsed.body,auth.user_id);
     else if(action==="discard")result=await discardStrategy(parsed.body,auth.user_id);
+    else if(action==="submit_template")result=await submitTemplate(parsed.body,auth.user_id);
+    else if(action==="refresh_template_status")result=await refreshTemplateStatus(parsed.body,auth.user_id);
     else if(action==="save_weights")result=await saveWeights(parsed.body,auth.user_id);
     else result=await saveSeasonality(parsed.body,auth.user_id);
     return json(req,result.data,result.status);
