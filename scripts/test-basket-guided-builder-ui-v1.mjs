@@ -42,9 +42,10 @@ assert.match(ui,/Cancelar lote/i,'reserved lot must be cancellable when eligible
 assert.match(ui,/Duplicar lote|Imprimir lote|Ver composição/i,'legacy lot operations must remain represented');
 
 const saveStart=ui.indexOf('async function saveModel');
-const saveEnd=ui.indexOf('\nasync function',saveStart+1);
+const saveEnd=ui.indexOf('\n  async function ensureSavedForLot',saveStart+1);
 assert.ok(saveStart>=0,'saveModel helper must exist');
-const saveBlock=ui.slice(saveStart,saveEnd>saveStart?saveEnd:saveStart+2500);
+assert.ok(saveEnd>saveStart,'saveModel boundary must be identifiable');
+const saveBlock=ui.slice(saveStart,saveEnd);
 assert.match(saveBlock,/model_save/,'saving model must call model_save');
 assert.doesNotMatch(saveBlock,/lot_reserve/,'saving model must not reserve stock');
 
