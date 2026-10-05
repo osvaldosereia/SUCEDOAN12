@@ -1,0 +1,24 @@
+name: Temporary product basket link v2 patch
+on:
+  push:
+    branches:
+      - refactor/baskets-canonical-section-20261005
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[product-basket-link-v2-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/baskets-canonical-section-20261005
+      - run: python scripts/tmp-patch-product-basket-link-v2.py
+      - name: Commit canonical product basket link
+        run: |
+          if git diff --quiet -- supabase/functions/admin-products-live-v1/index.ts vitrine/admin/index.html; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/functions/admin-products-live-v1/index.ts vitrine/admin/index.html
+          git commit -m 'refactor: abrir cestas vinculadas pelo editor canônico [product-basket-link-v2-applied]'
+          git push origin HEAD:refactor/baskets-canonical-section-20261005
