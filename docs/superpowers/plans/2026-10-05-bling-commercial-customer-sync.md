@@ -4,9 +4,9 @@
 
 **Goal:** Separar prontidão comercial de prontidão fiscal e permitir sincronizar no Bling o mesmo cliente canônico em gatilhos comerciais, inclusive sem CPF quando a conta real estiver homologada para isso.
 
-**Architecture:** Introduzir readiness v2 sem quebrar `ops2_customer_registration_state_v1`; adicionar política explícita de capacidade da conta Bling; criar enfileiramento v2 por gatilho comercial; substituir o guard de criação por uma regra que respeite a capacidade homologada e preserve idempotência por `customer_id`/`bling_contact_id`. A regra fiscal continua separada e operações fiscais não herdam permissão apenas porque o contato existe no Bling.
+**Architecture:** Introduzir readiness v2 sem quebrar `ops2_customer_registration_state_v1`; adicionar política explícita de capacidade da conta Bling; criar enfileiramento v2 por gatilho comercial; substituir o guard de criação por uma regra que respeite a capacidade homologada e preserve idempotência por `customer_id`/`bling_contact_id`. O worker canônico de clientes continua sendo o já existente em `supabase/functions/admin-service-intelligence-v1/index.ts` (`blingHubCustomerSnapshot`, `blingHubCustomerPayload`, `blingHubProcessCustomerJobs`); não será criada integração paralela. A regra fiscal continua separada.
 
-**Tech Stack:** Supabase Postgres/PLpgSQL, Bling Hub v2 existente, Edge/worker Bling existente, JavaScript do Admin apenas para status/ação explícita, Node 22 contract tests.
+**Tech Stack:** Supabase Postgres/PLpgSQL, Bling Hub v2 existente, `admin-service-intelligence-v1`, JavaScript do Admin apenas para status/ação explícita, Node 22 contract tests.
 
 **Spec:** `docs/superpowers/specs/2026-10-05-ana-cadastro-cliente-bling-design.md`
 
@@ -25,7 +25,7 @@
 
 - Cliente sem CPF e sem gatilho comercial nunca deve gerar job Bling — coberto no Task 2.
 - Política de conta não homologada deve bloquear criação sem CPF com motivo visível, não falhar silenciosamente — coberto no Task 2 e Task 3.
-- Cliente já ligado ao Bling deve continuar atualizável mesmo que esteja fiscalmente incompleto — coberto no Task 3.
+- Cliente já ligado ao Bling deve continuar atualizável mesmo que esteja fiscalmente incompleto — coberto no Task 3 e Task 5.
 - Repetir o mesmo gatilho comercial não pode criar dois jobs/contatos — coberto no Task 2 e Task 4.
 - Tornar `commercial_ready=true` não pode liberar NF-e quando `fiscal_ready=false` — coberto no Task 1 e Task 5.
 
@@ -207,40 +207,48 @@ git commit -m "feat: sync commercial customers to Bling on demand"
 ### Task 5: Preservar bloqueios fiscais e enriquecer o mesmo contato
 
 **Files:**
+- Modify: `supabase/functions/admin-service-intelligence-v1/index.ts`
 - Create: `scripts/test-bling-customer-enrichment-v1.mjs`
-- Modify only the existing Bling customer sync worker/SQL payload builder identified during execution; no new parallel Bling integration.
-- Modify existing fiscal readiness checks only where necessary to consume `fiscal_ready`, never `commercial_ready`.
+- Modify: `.github/workflows/attendance-papoai-send-ci.yml` or the existing Bling-specific CI if present on the execution branch.
 
 **Interfaces:**
-- Consumes: `bling_contact_id`, readiness v2, current Bling customer payload/update operation.
-- Produces: update of same Bling contact when new CPF/address arrives; no new contact when `bling_contact_id` exists.
+- Consumes: `bling_contact_id`, readiness v2, job payload from Tasks 2–4.
+- Produces: adjusted behavior in existing `blingHubCustomerSnapshot`, `blingHubCustomerPayload`, `blingHubFindContactByDocument`, `blingHubProcessCustomerJobs`, and `blingHubEnsureCustomerNow`; update of the same Bling contact when new CPF/address arrives; no second contact when `bling_contact_id` exists.
 
 - [ ] **Step 1: Write failing enrichment/fiscal contract**
 
-Assert:
-- customer initially synced without CPF receives CPF/address later and worker performs update using same `bling_contact_id`;
+Assert against `admin-service-intelligence-v1/index.ts` behavior:
+- customer initially synced without CPF receives CPF/address later and `blingHubProcessCustomerJobs` updates the same `bling_contact_id`;
+- CREATE path does not require `blingHubFindContactByDocument` when there is no document and policy explicitly authorizes minimal creation;
+- after minimal creation, verification cannot require equality of `numeroDocumento` when no document was sent; verification must use returned provider ID + read-after-write;
 - missing/late document never causes create-second-contact;
 - `commercial_ready=true,fiscal_ready=false` remains blocked in fiscal operation tests;
-- `fiscal_ready=true` preserves current fiscal path;
 - retry of update is idempotent.
 
 - [ ] **Step 2: Run and confirm RED against current worker behavior**
 
 Run: `node scripts/test-bling-customer-enrichment-v1.mjs`
-Expected: FAIL only where current worker/guard assumes complete registration for creation/update path.
+Expected: FAIL because current worker contains `valid_document_required`, document lookup/verification assumptions and create authorization tied to valid CPF/CNPJ.
 
-- [ ] **Step 3: Modify the existing customer payload builder/worker minimally**
+- [ ] **Step 3: Modify the existing worker minimally**
 
-For CREATE, omit absent optional document/address fields rather than sending invalid placeholders. For UPDATE, send newly confirmed values to the existing `bling_contact_id`.
+In `admin-service-intelligence-v1/index.ts`:
+- `blingHubCustomerPayload` omits absent optional document/address fields rather than sending placeholders;
+- `blingHubProcessCustomerJobs` uses the job's vetted `creation_guard`/policy snapshot to authorize minimal CREATE;
+- if document exists, retain exact-document reconciliation before create;
+- if document does not exist but minimal create is homologated, do not search by document; create once and bind the returned provider ID;
+- verification after documentless create uses `/contatos/{id}` read-after-write and stable provider ID, not `numeroDocumento` equality;
+- UPDATE always targets the existing `bling_contact_id` and enriches confirmed fields.
 
 - [ ] **Step 4: Run Bling, order, customer and fiscal regression suites**
 
+Run new enrichment test plus existing Bling Hub/customer/order/fiscal contracts.
 Expected: all PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add scripts/test-bling-customer-enrichment-v1.mjs supabase/functions supabase/sql supabase/migrations
+git add supabase/functions/admin-service-intelligence-v1/index.ts scripts/test-bling-customer-enrichment-v1.mjs .github/workflows
 git commit -m "feat: enrich existing Bling customer without duplication"
 ```
 
@@ -251,7 +259,7 @@ git commit -m "feat: enrich existing Bling customer without duplication"
 - No production policy mutation until explicit approval at deployment time.
 
 **Interfaces:**
-- Consumes: policy from Task 2 and observable Bling API/account behavior.
+- Consumes: policy from Task 2 and observable Bling API/account behavior through the existing `admin-service-intelligence-v1`/Bling Hub credentials.
 - Produces: recorded evidence of whether document/address are mandatory for the Dona Antônia account; only then policy flags may be enabled.
 
 - [ ] **Step 1: Verify code ships with policy disabled**
