@@ -69,6 +69,21 @@ async function handleWrite(action:string,body:Record<string,any>,auth:any){
   if(action==="item_pause"){const itemId=uuid(body.item_id);if(!itemId)throw new Error("invalid_id");return rpc("basket_v2_item_pause_v1",{p_item_id:itemId,p_paused:body.paused===true,p_operator:operator});}
   if(action==="product_components_save"){const itemId=uuid(body.item_id);if(!itemId||!Array.isArray(body.components))throw new Error("invalid_components");return rpc("basket_v2_product_components_save_v1",{p_item_id:itemId,p_components:body.components,p_operator:operator});}
   if(action==="kit_components_save"){const itemId=uuid(body.item_id);if(!itemId||!Array.isArray(body.components))throw new Error("invalid_components");return rpc("basket_v2_kit_components_save_v1",{p_item_id:itemId,p_components:body.components,p_operator:operator});}
+  if(action==="lot_draft_save"){
+    const itemId=uuid(body.item_id),lotId=body.lot_id?uuid(body.lot_id):null,quantity=Number(body.quantity);
+    if(!itemId||!Number.isInteger(quantity)||quantity<1||!Array.isArray(body.items))throw new Error("invalid_lot");
+    const items=body.items.map((x:any,i:number)=>({product_id:uuid(x?.product_id),quantity_per_kit:Number(x?.quantity_per_kit??x?.quantity),position_order:Number.isFinite(Number(x?.position_order))?Number(x.position_order):i})).filter((x:any)=>x.product_id&&x.quantity_per_kit>0);
+    if(!items.length)throw new Error("invalid_lot_items");
+    return rpc("basket_v2_lot_draft_save_v1",{p_item_id:itemId,p_lot_id:lotId,p_quantity:quantity,p_items:items,p_operator:operator});
+  }
+  if(action==="lot_mount"){
+    const lotId=uuid(body.lot_id);if(!lotId)throw new Error("invalid_lot_id");
+    return rpc("basket_v2_lot_mount_v1",{p_lot_id:lotId,p_operator:operator});
+  }
+  if(action==="lot_delete_draft"){
+    const lotId=uuid(body.lot_id);if(!lotId)throw new Error("invalid_lot_id");
+    return rpc("basket_v2_lot_draft_delete_v1",{p_lot_id:lotId,p_operator:operator});
+  }
   throw new Error("unknown_action");
 }
 
@@ -88,7 +103,7 @@ Deno.serve(async(req:Request)=>{
     }
     if(req.method==="POST"){
       const parsed=await readBody(req);if(!parsed.ok)return json(req,{ok:false,error:parsed.error},400);
-      const allowed=new Set(["item_save","item_duplicate","item_pause","product_components_save","kit_components_save"]);if(!allowed.has(action))return json(req,{ok:false,error:"unknown_action"},404);
+      const allowed=new Set(["item_save","item_duplicate","item_pause","product_components_save","kit_components_save","lot_draft_save","lot_mount","lot_delete_draft"]);if(!allowed.has(action))return json(req,{ok:false,error:"unknown_action"},404);
       const result=await handleWrite(action,parsed.body,auth);return json(req,{ok:true,result});
     }
     return json(req,{ok:false,error:"method_not_allowed"},405);
