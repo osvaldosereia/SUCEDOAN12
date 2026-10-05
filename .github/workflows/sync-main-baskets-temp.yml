@@ -108,7 +108,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git rm .github/workflows/sync-main-baskets-temp.yml
+          git rm -f .github/workflows/sync-main-baskets-temp.yml
           git add -A
           git commit -m 'chore: sync current main into basket canonical branch'
           git push origin HEAD:feature/baskets-kits-canonical-20261004-exec
