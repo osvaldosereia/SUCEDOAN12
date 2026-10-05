@@ -26,22 +26,30 @@ assert.match(source,/apiGet\(['"]overview['"]\)/,'abertura deve carregar overvie
 assert.match(source,/adminPost\(['"]preview['"],[\s\S]*filters/,'Calcular público deve chamar preview apenas sob ação do operador');
 assert.match(source,/form\.addEventListener\(['"]submit['"][\s\S]*adminPost\(['"]preview['"]/,'preview deve ocorrer no submit explícito do formulário');
 assert.match(source,/Calcular público/);
-assert.match(source,/Encontrados/);
-assert.match(source,/Elegíveis/);
-assert.match(source,/Excluídos/);
+
+// Público deve ser orientado à segmentação da base inteira; consentimento fica secundário.
+assert.match(source,/Clientes no público/,'resultado deve destacar o total encontrado como público principal');
+assert.match(source,/Verificações técnicas de envio/,'regras de envio devem ficar em bloco técnico secundário');
+assert.match(source,/Autorização WhatsApp confirmada/,'consentimento pode aparecer como informação técnica secundária');
+assert.match(source,/As verificações de envio são aplicadas depois, na campanha/,'tela deve explicar que segmentação e gate de envio são etapas diferentes');
+assert.doesNotMatch(source,/<small>Elegíveis<\/small>/,'Elegíveis não deve ser KPI principal na tela de Públicos');
+assert.doesNotMatch(source,/<small>Excluídos<\/small>/,'Excluídos não deve ser KPI principal na tela de Públicos');
+assert.doesNotMatch(source,/<th>Consentimento<\/th>/,'Consentimento não deve ocupar coluna principal da tabela de Públicos');
+assert.doesNotMatch(source,/<th>Elegibilidade<\/th>/,'Elegibilidade não deve ocupar coluna principal da tabela de Públicos');
+assert.match(source,/Cálculo concluído: \$\{Number\(data\.found_count\|\|0\)\} cliente\(s\) encontrado\(s\)\./,'status final deve priorizar quantidade encontrada');
 
 for(const field of ['search','city','neighborhood','label_ids','product_ids','brand','category','last_purchase_after','last_purchase_before','inactive_days','min_order_count','max_order_count','min_lifetime_value','max_lifetime_value']){
   assert.match(source,new RegExp(`(?:name|data-filter)=["']${field}["']`),`controle de filtro ausente: ${field}`);
 }
 for(const reason of ['no_consent','opted_out','inactive_customer','invalid_phone','duplicate_phone']){
-  assert.match(source,new RegExp(reason),`motivo amigável deve ser mapeado: ${reason}`);
+  assert.match(source,new RegExp(reason),`motivo técnico deve continuar mapeado para a etapa de envio: ${reason}`);
 }
 
 assert.match(source,/mountAudienceView/);
 assert.match(source,/mountConsentView/);
 assert.match(source,/consent_history/,'Consentimentos deve carregar histórico sob demanda');
 assert.match(source,/record_consent/,'Consentimentos deve registrar decisão pela API canônica');
-assert.match(source,/marketing_opt_in|consent_state/,'estado atual deve ficar visível');
+assert.match(source,/marketing_opt_in|consent_state/,'estado atual deve ficar visível na área específica de Consentimentos');
 assert.match(source,/Última atualização|Histórico/,'detalhe deve mostrar momento/histórico');
 assert.match(source,/confirm\s*\(/,'alteração de consentimento deve exigir confirmação explícita');
 assert.match(source,/consent_text_version/,'opt-in manual deve exigir versão da evidência');
