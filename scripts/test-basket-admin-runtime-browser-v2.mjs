@@ -40,7 +40,7 @@ try{
   await page.getByRole('button',{name:'Novo lote'}).click();
   assert.deepEqual(await page.evaluate(()=>window.guidedCalls[0]),{id:'basket1',mode:'lot',commercial:await page.evaluate(()=>window.DonaAntoniaBasketAdmin.state.models[0])});
 
-  await page.getByRole('button',{name:'Editar'}).click();
+  await page.getByRole('button',{name:'Editar',exact:true}).click();
   assert.equal(await page.evaluate(()=>window.guidedCalls[1].mode),'model');
 
   await page.getByRole('button',{name:'Nova Cesta/Kit'}).click();
