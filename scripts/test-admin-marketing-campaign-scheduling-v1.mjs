@@ -27,7 +27,7 @@ assert.match(source,/hasForbiddenField/i,'ações novas devem manter inspeção 
 assert.doesNotMatch(source,/sendTemplateViaMeta|graph\.facebook\.com|net\.http_post|whatsapp-marketing-worker-v1/i,'Admin nunca chama transporte/worker diretamente');
 
 assert.match(sql,/create\s+or\s+replace\s+function\s+public\.marketing_cancel_campaign_execution_v1\s*\(/i,'cancelamento canônico deve existir');
-assert.match(sql,/status\s+in\s*\(\s*['"]scheduled['"]\s*,\s*['"]running['"]\s*,\s*['"]paused['"]\s*\)/i,'cancelamento deve conter estados executáveis');
+assert.match(sql,/v_campaign\.status\s+not\s+in\s*\(\s*['"]scheduled['"]\s*,\s*['"]running['"]\s*,\s*['"]paused['"]\s*\)/i,'cancelamento deve restringir-se aos estados executáveis');
 assert.match(sql,/marketing_campaign_dispatches_v1[\s\S]*status\s*=\s*['"]skipped['"]/i,'cancelamento deve pular dispatches não enviados');
 assert.match(sql,/skip_reason\s*=\s*['"]campaign_cancelled['"]/i,'dispatch cancelado deve ter motivo explícito');
 assert.match(sql,/whatsapp_outbox_v1[\s\S]*status\s*=\s*['"]cancelled['"]/i,'outbox já criada e não enviada deve ser cancelada');
