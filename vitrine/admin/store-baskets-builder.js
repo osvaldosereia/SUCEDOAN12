@@ -46,6 +46,13 @@
   }
   function catalogKit(id){return state.kitCatalog.find(k=>String(k.id)===String(id))||null}
   function availableToAdd(){const used=new Set((state.draft?.kits||[]).map(k=>String(k.kit_id)));return state.kitCatalog.filter(k=>!used.has(String(k.id)))}
+  function invalidatePreview(){state.preview=null;state.root?.querySelector('[data-store-preview-table]')?.remove()}
+  function updateSummary(){
+    if(!state.root||!state.draft)return;
+    const s=linkedSummary();
+    const values={cost:s.cost,sale:s.sale,final:Number(state.draft.basket?.sale_price||0),hidden:s.hidden};
+    for(const [key,value] of Object.entries(values)){const el=state.root.querySelector('[data-store-summary="'+key+'"]');if(el)el.textContent=money(value)}
+  }
 
   function listHtml(){
     if(!state.baskets.length)return '<div class="sb-empty">Nenhuma Cesta do Site configurada.</div>';
@@ -64,7 +71,7 @@
   function editorHtml(){
     if(!state.draft)return '<div class="sb-empty">Escolha uma cesta ou clique em <strong>Nova cesta</strong>.</div>';
     const b=state.draft.basket||{},s=linkedSummary(),available=availableToAdd();
-    return '<div data-store-basket-editor><div class="sb-fields"><label><span>Nome da cesta</span><input data-store-name maxlength="180" value="'+esc(b.name||'')+'"></label><label><span>Valor de venda</span><input data-store-sale-price type="number" min="0" step="0.01" value="'+esc(Number(b.sale_price||0).toFixed(2))+'"></label><label class="wide"><span>Imagem (opcional)</span><input data-store-image maxlength="1000" value="'+esc(b.image_url||'')+'" placeholder="URL da imagem"></label></div><div class="sb-summary"><div class="sb-stat"><small>Custo dos produtos</small><strong>'+money(s.cost)+'</strong></div><div class="sb-stat"><small>Venda dos produtos</small><strong>'+money(s.sale)+'</strong></div><div class="sb-stat"><small>Valor final</small><strong>'+money(b.sale_price)+'</strong></div><div class="sb-stat"><small>Valor oculto</small><strong>'+money(s.hidden)+'</strong></div></div><h3 class="sb-section-title">Kits internos</h3><p class="sb-note">A cesta externa é composta somente por estes kits. Salvar a receita não reserva estoque.</p><div class="sb-kits">'+kitRowsHtml()+'</div><div class="sb-kit-add"><select data-store-kit-select><option value="">Escolha um kit...</option>'+available.map(k=>'<option value="'+esc(k.id)+'">'+esc(TYPE_LABELS[k.type]||'Outro')+' · '+esc(k.name)+' · '+money(k.sale_total)+'</option>').join('')+'</select><button type="button" class="sb-btn" data-store-kit-add>+ Adicionar kit</button></div><h3 class="sb-section-title">Montagem</h3><p class="sb-note">A quantidade abaixo serve somente para calcular o que será necessário. Esta tela ainda não reserva estoque.</p><div class="sb-assemble"><label><span>Quantidade a montar</span><input data-store-quantity type="number" min="1" max="500" step="1" value="'+esc(state.quantity||1)+'"></label><button type="button" class="sb-btn" data-store-preview '+(!b.id?'disabled title="Salve a cesta antes de calcular a prévia"':'')+'>Calcular prévia</button><small>'+(b.id?'Confira necessidade e saldo por produto antes da montagem.':'Salve a nova cesta para liberar a prévia de estoque.')+'</small></div>'+previewHtml()+'<div class="sb-actions"><button type="button" class="sb-btn primary" data-store-save>Salvar receita</button></div></div>';
+    return '<div data-store-basket-editor><div class="sb-fields"><label><span>Nome da cesta</span><input data-store-name maxlength="180" value="'+esc(b.name||'')+'"></label><label><span>Valor de venda</span><input data-store-sale-price type="number" min="0" step="0.01" value="'+esc(Number(b.sale_price||0).toFixed(2))+'"></label><label class="wide"><span>Imagem (opcional)</span><input data-store-image maxlength="1000" value="'+esc(b.image_url||'')+'" placeholder="URL da imagem"></label></div><div class="sb-summary"><div class="sb-stat"><small>Custo dos produtos</small><strong data-store-summary="cost">'+money(s.cost)+'</strong></div><div class="sb-stat"><small>Venda dos produtos</small><strong data-store-summary="sale">'+money(s.sale)+'</strong></div><div class="sb-stat"><small>Valor final</small><strong data-store-summary="final">'+money(b.sale_price)+'</strong></div><div class="sb-stat"><small>Valor oculto</small><strong data-store-summary="hidden">'+money(s.hidden)+'</strong></div></div><h3 class="sb-section-title">Kits internos</h3><p class="sb-note">A cesta externa é composta somente por estes kits. Salvar a receita não reserva estoque.</p><div class="sb-kits">'+kitRowsHtml()+'</div><div class="sb-kit-add"><select data-store-kit-select><option value="">Escolha um kit...</option>'+available.map(k=>'<option value="'+esc(k.id)+'">'+esc(TYPE_LABELS[k.type]||'Outro')+' · '+esc(k.name)+' · '+money(k.sale_total)+'</option>').join('')+'</select><button type="button" class="sb-btn" data-store-kit-add>+ Adicionar kit</button></div><h3 class="sb-section-title">Montagem</h3><p class="sb-note">A quantidade abaixo serve somente para calcular o que será necessário. Esta tela ainda não reserva estoque.</p><div class="sb-assemble"><label><span>Quantidade a montar</span><input data-store-quantity type="number" min="1" max="500" step="1" value="'+esc(state.quantity||1)+'"></label><button type="button" class="sb-btn" data-store-preview '+(!b.id?'disabled title="Salve a cesta antes de calcular a prévia"':'')+'>Calcular prévia</button><small>'+(b.id?'Confira necessidade e saldo por produto antes da montagem.':'Salve a nova cesta para liberar a prévia de estoque.')+'</small></div>'+previewHtml()+'<div class="sb-actions"><button type="button" class="sb-btn primary" data-store-save>Salvar receita</button></div></div>';
   }
   function render(){
     if(!state.root)return;ensureStyle();
@@ -84,12 +91,12 @@
     state.root.querySelector('[data-store-new]')?.addEventListener('click',newBasket);
     state.root.querySelectorAll('[data-store-basket-card]').forEach(btn=>btn.addEventListener('click',()=>openBasket(btn.dataset.storeBasketCard)));
     state.root.querySelector('[data-store-name]')?.addEventListener('input',e=>{state.draft.basket.name=e.target.value});
-    state.root.querySelector('[data-store-sale-price]')?.addEventListener('input',e=>{const n=Number(String(e.target.value||'').replace(',','.'));if(Number.isFinite(n)&&n>=0){state.draft.basket.sale_price=n;render()}});
+    state.root.querySelector('[data-store-sale-price]')?.addEventListener('input',e=>{const n=Number(String(e.target.value||'').replace(',','.'));if(Number.isFinite(n)&&n>=0){state.draft.basket.sale_price=n;invalidatePreview();updateSummary()}});
     state.root.querySelector('[data-store-image]')?.addEventListener('input',e=>{state.draft.basket.image_url=e.target.value});
-    state.root.querySelectorAll('[data-store-kit-qty]').forEach(input=>input.addEventListener('change',()=>{sync();state.preview=null;render()}));
+    state.root.querySelectorAll('[data-store-kit-qty]').forEach(input=>input.addEventListener('input',()=>{sync();invalidatePreview();updateSummary()}));
     state.root.querySelectorAll('[data-store-kit-remove]').forEach(btn=>btn.addEventListener('click',()=>{sync();state.draft.kits.splice(Number(btn.dataset.storeKitRemove),1);state.preview=null;render()}));
     state.root.querySelector('[data-store-kit-add]')?.addEventListener('click',()=>{sync();const sel=state.root.querySelector('[data-store-kit-select]'),k=catalogKit(sel?.value);if(!k)return;state.draft.kits.push({kit_id:k.id,name:k.name,type:k.type,quantity:1,is_required:true,sort_order:state.draft.kits.length,item_count:Number(k.item_count||0),unit_cost_total:Number(k.cost_total||0),unit_sale_total:Number(k.sale_total||0),cost_total:Number(k.cost_total||0),sale_total:Number(k.sale_total||0)});state.preview=null;render()});
-    state.root.querySelector('[data-store-quantity]')?.addEventListener('change',()=>{sync();state.preview=null;render()});
+    state.root.querySelector('[data-store-quantity]')?.addEventListener('input',()=>{sync();invalidatePreview()});
     state.root.querySelector('[data-store-preview]')?.addEventListener('click',preview);
     state.root.querySelector('[data-store-save]')?.addEventListener('click',save);
   }
@@ -109,7 +116,7 @@
     if(!kits.length){toast('Adicione pelo menos um kit interno.');return}
     try{
       const r=await storeCall('save',{basket_id:b.id||null,name:b.name,sale_price:Number(b.sale_price||0),image_url:b.image_url||'',kits:kits.map((k,i)=>({kit_id:k.kit_id,quantity:Number(k.quantity||1),is_required:k.is_required!==false,sort_order:i})),operator:operator()});
-      const newId=r.result?.basket_id||b.id;toast('Cesta salva. A receita não reservou estoque.');await loadCatalog();if(newId)await openBasket(newId);else render();
+      const newId=r.result?.basket_id||b.id;await loadCatalog();if(newId)await openBasket(newId);else render();toast('Cesta salva. A receita não reservou estoque.');
     }catch(e){toast(e.data?.message||e.message||'Não consegui salvar a cesta.')}
   }
   async function preview(){
