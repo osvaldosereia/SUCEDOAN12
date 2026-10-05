@@ -1,3 +1,21 @@
+/* Embedded-browser resilience: retry only the initial storefront home request and allow a recent stale home snapshot while fresh data is retried. */
+(()=>{
+  'use strict';
+  if(!/Instagram|FBAN|FBAV/i.test(navigator.userAgent||''))return;
+  const CACHE_KEY='da_storefront_home_carousel_v1',MAX_STALE=7*24*60*60*1000,nativeFetch=window.fetch.bind(window);
+  try{const cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');if(cached?.saved_at&&cached?.data&&Date.now()-Number(cached.saved_at)<=MAX_STALE){cached.saved_at=Date.now();localStorage.setItem(CACHE_KEY,JSON.stringify(cached))}}catch{}
+  window.fetch=async(input,init)=>{
+    const url=String(input?.url||input||''),isHome=url.includes('/functions/v1/storefront-v2')&&/[?&]action=home(?:&|$)/.test(url);
+    if(!isHome)return nativeFetch(input,init);
+    let lastError;
+    for(let attempt=0;attempt<3;attempt++){
+      try{const response=await nativeFetch(input,init);if(response.ok)return response;lastError=new Error('storefront_home_http_'+response.status)}catch(error){lastError=error}
+      if(attempt<2)await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+    }
+    throw lastError||new Error('storefront_home_unavailable');
+  };
+})();
+
 /* Original catalog photographs; the selected sale-lot composition supplies quantities. */
 window.BasketCarousel={
   card(b,esc,money,basketName){
@@ -22,8 +40,6 @@ window.BasketCarousel={
     const abort=new AbortController(),signal=abort.signal;
     const images=host.querySelectorAll('img[data-basket-src]');
     const load=img=>{img.src=img.dataset.basketSrc;img.removeAttribute('data-basket-src')};
-    // Viewport intersection also respects the horizontal clipping of each carousel.
-    // Native lazy loading alone may eagerly fetch far outside a horizontal strip.
     const observer='IntersectionObserver'in window?new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){load(entry.target);observer.unobserve(entry.target)}},{threshold:.01}):null;
     if(observer)images.forEach(img=>observer.observe(img));else images.forEach(load);
     const updates=[];
