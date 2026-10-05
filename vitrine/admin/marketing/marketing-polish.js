@@ -11,8 +11,10 @@ const ADVANCED_FILTERS=['brand','category','product_ids','last_purchase_after','
 let scheduled=false;
 let consentModulePromise=null;
 let templateSimpleModulePromise=null;
+let recentCampaignModulePromise=null;
 
 const text=value=>String(value?.textContent||'').trim();
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
 function marketingRoot(){
   const root=document.querySelector(ROOT_SELECTOR);
@@ -38,6 +40,12 @@ function loadTemplateSimpleModule(){
   if(window.DAMarketingTemplateSimple?.enhanceTemplateCenter)return Promise.resolve(window.DAMarketingTemplateSimple);
   if(!templateSimpleModulePromise)templateSimpleModulePromise=import('/vitrine/admin/marketing/template-type-picker.js?v=marketing-template-simple-v1');
   return templateSimpleModulePromise;
+}
+
+function loadRecentCampaignModule(){
+  if(window.DAMarketingCampaignListSimple?.loadRecentCampaigns)return Promise.resolve(window.DAMarketingCampaignListSimple);
+  if(!recentCampaignModulePromise)recentCampaignModulePromise=import('/vitrine/admin/marketing/campaign-list-simple.js?v=marketing-campaign-list-v1');
+  return recentCampaignModulePromise;
 }
 
 function ensureAdminConsentsAction(root,nav){
@@ -128,6 +136,28 @@ function overviewCardMarkup(card){
   return `<button type="button" class="marketing-overview-card" data-marketing-overview-card="${card.key}"><span>${card.label}</span><small>${card.description}</small><strong>Abrir</strong></button>`;
 }
 
+function overviewDate(value){
+  if(!value)return 'Sem data';
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())?'Sem data':date.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+}
+
+async function loadOverviewRecentCampaigns(root,dashboard){
+  const list=dashboard.querySelector('[data-marketing-recent-list]');
+  if(!list)return;
+  try{
+    const module=await loadRecentCampaignModule();
+    const items=await module.loadRecentCampaigns(3);
+    if(!dashboard.isConnected)return;
+    if(!items.length){list.innerHTML='<span class="marketing-overview-recent-empty">Nenhuma campanha criada ainda.</span>';return}
+    list.innerHTML=items.map(item=>`<button type="button" class="marketing-overview-recent-item" data-overview-open-recent="${esc(item.id)}"><span><strong>${esc(item.name)}</strong><small>${esc(overviewDate(item.date))}</small></span><em class="state-${esc(item.status)}">${esc(item.status_label)}</em></button>`).join('');
+    list.querySelectorAll('[data-overview-open-recent]').forEach(button=>button.addEventListener('click',()=>openOverviewView(root,'campaigns')));
+  }catch(error){
+    if(dashboard.isConnected)list.innerHTML='<span class="marketing-overview-recent-empty">Não foi possível carregar as campanhas agora.</span>';
+    console.warn('marketing-overview-recent',String(error?.message||error).slice(0,160));
+  }
+}
+
 function bindOverviewDashboard(root,dashboard){
   const open=view=>openOverviewView(root,view);
   dashboard.querySelector('[data-overview-new-campaign]')?.addEventListener('click',()=>open('campaigns'));
@@ -149,9 +179,10 @@ function ensureOverviewDashboard(root){
   const dashboard=document.createElement('div');
   dashboard.className='marketing-overview';
   dashboard.dataset.marketingOverview='1';
-  dashboard.innerHTML=`<div class="marketing-overview-head"><div><h2>Visão geral</h2><p>Atalhos para o trabalho diário de campanhas e relacionamento.</p></div><div class="marketing-overview-actions" data-marketing-overview-actions><button type="button" class="primary" data-overview-new-campaign>Nova campanha</button><button type="button" class="secondary" data-overview-new-template>Novo template</button></div></div><div class="marketing-overview-kpis">${OVERVIEW_CARDS.map(overviewCardMarkup).join('')}</div><div class="marketing-overview-columns"><section class="marketing-overview-panel" data-marketing-recent-campaigns><div><span class="marketing-overview-eyebrow">Campanhas</span><h3>Últimas campanhas</h3><p>Acompanhe status, destinatários e resultados na lista de campanhas.</p></div><button type="button" class="secondary" data-overview-recent-campaigns>Ver campanhas</button></section><section class="marketing-overview-panel marketing-overview-panel-secondary"><div><span class="marketing-overview-eyebrow">Radar</span><h3>Oportunidades</h3><p>O radar de ofertas continua disponível como apoio, sem ocupar o fluxo principal.</p></div></section></div>`;
+  dashboard.innerHTML=`<div class="marketing-overview-head"><div><h2>Visão geral</h2><p>Atalhos para o trabalho diário de campanhas e relacionamento.</p></div><div class="marketing-overview-actions" data-marketing-overview-actions><button type="button" class="primary" data-overview-new-campaign>Nova campanha</button><button type="button" class="secondary" data-overview-new-template>Novo template</button></div></div><div class="marketing-overview-kpis">${OVERVIEW_CARDS.map(overviewCardMarkup).join('')}</div><div class="marketing-overview-columns"><section class="marketing-overview-panel marketing-overview-recent" data-marketing-recent-campaigns><div class="marketing-overview-panel-body"><span class="marketing-overview-eyebrow">Campanhas</span><h3>Últimas campanhas</h3><div class="marketing-overview-recent-list" data-marketing-recent-list><span class="marketing-overview-recent-empty">Carregando campanhas…</span></div></div><button type="button" class="secondary" data-overview-recent-campaigns>Ver campanhas</button></section><section class="marketing-overview-panel marketing-overview-panel-secondary"><div><span class="marketing-overview-eyebrow">Radar</span><h3>Oportunidades</h3><p>O radar de ofertas continua disponível como apoio, sem ocupar o fluxo principal.</p></div></section></div>`;
   nav.insertAdjacentElement('afterend',dashboard);
   bindOverviewDashboard(root,dashboard);
+  loadOverviewRecentCampaigns(root,dashboard);
   legacySections.forEach(section=>{
     if(section===radar)return;
     section.hidden=true;
