@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const p='supabase/functions/admin-order-delivery-comms-v1/index.ts';
+assert.ok(fs.existsSync(p));
+const edge=fs.readFileSync(p,'utf8');
+const cfg=fs.readFileSync('supabase/config.toml','utf8');
+assert.match(edge,/status!=="delivered"/,'must refuse communication before delivery');
+assert.match(edge,/order_public_snapshots_v1/,'must reuse the public order code');
+assert.match(edge,/Pedido \$\{code\} entregue/,'delivery message must show the same order code');
+assert.match(edge,/Muito obrigado por comprar com a Dona Antônia/,'delivery close must be humanized');
+assert.match(edge,/order-delivered:\$\{orderId\}/,'delivery message must be idempotent');
+assert.match(edge,/admin-whatsapp-weekly-consent-v1/,'must reuse canonical consent template flow');
+assert.match(edge,/weekly_consent_already_decided/,'must not re-ask decided customers');
+assert.match(edge,/weekly_consent_already_requested/,'must not duplicate consent requests');
+assert.match(cfg,/\[functions\.admin-order-delivery-comms-v1\]\s*\nverify_jwt = true/,'delivery communications edge must require JWT');
+console.log('order delivery comms contract: OK');
