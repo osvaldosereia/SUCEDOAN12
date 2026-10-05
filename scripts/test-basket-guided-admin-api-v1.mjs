@@ -10,7 +10,7 @@ assert.match(api,/db\.auth\.getUser/i,'guided API must validate the bearer token
 assert.match(api,/role[^\n]*viewer|viewer[^\n]*forbidden/i,'viewer role must not mutate guided baskets');
 assert.match(api,/Access-Control-Allow-Origin/i,'guided API must provide explicit CORS');
 
-for(const action of ['model_editor','model_save','lot_preview','lot_reserve','lot_update','lot_mount','lot_cancel','lot_reopen']){
+for(const action of ['model_editor','position_products','model_save','lot_preview','lot_reserve','lot_update','lot_mount','lot_cancel','lot_reopen']){
   assert.match(api,new RegExp(`["']${action}["']`),`guided API must expose ${action}`);
 }
 
@@ -25,6 +25,16 @@ for(const rpc of [
   'reopen_basket_kit_lot_for_edit_v1'
 ]){
   assert.match(api,new RegExp(`db\\.rpc\\(["']${rpc}["']`),`guided API must delegate to ${rpc}`);
+}
+
+assert.match(api,/basket_lot_substitution_products/i,'position catalog must reuse explicit family membership');
+assert.match(api,/ops2_loose_sellable_stock_v1/i,'position catalog must use canonical loose stock');
+assert.match(api,/family_key/i,'position catalog must support explicit family selection');
+assert.match(api,/search_query|searchParams\.get\(["']q["']\)/i,'position catalog must support textual fallback search');
+assert.match(api,/limit/i,'position catalog must support a bounded page size');
+assert.match(api,/offset/i,'position catalog must support pagination');
+for(const field of ['cost_price','sale_price','effective_sellable_stock','basket_locked_quantity','loose_stock']){
+  assert.match(api,new RegExp(field),`position product cards must return ${field}`);
 }
 
 assert.doesNotMatch(api,/from\(["']basket_lot_component_reservations["']\)\.(insert|update|delete)/i,'edge function must not duplicate reservation mutation rules');
