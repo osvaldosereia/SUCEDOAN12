@@ -9,13 +9,19 @@ on:
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/admin/basket-guided-builder.js'
       - 'vitrine/admin/basket-admin-section.js'
+      - 'vitrine/admin/kit-builder.js'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/admin-basket-guided-v1/**'
+      - 'supabase/functions/admin-kit-builder-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/functions/basket-lot-image-v1/**'
       - 'supabase/sql/2026100*_basket_*.sql'
+      - 'supabase/sql/202610*_assembly_*.sql'
       - 'supabase/migrations/2026100*_basket_*.sql'
+      - 'supabase/migrations/202610*_assembly_*.sql'
       - 'scripts/test-basket-*.mjs'
+      - 'scripts/test-assembly-*.mjs'
+      - 'scripts/test-kit-builder-*.mjs'
       - '.github/workflows/basket-kit-editor-ci.yml'
   push:
     branches: [main]
@@ -27,13 +33,19 @@ on:
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/admin/basket-guided-builder.js'
       - 'vitrine/admin/basket-admin-section.js'
+      - 'vitrine/admin/kit-builder.js'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/admin-basket-guided-v1/**'
+      - 'supabase/functions/admin-kit-builder-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/functions/basket-lot-image-v1/**'
       - 'supabase/sql/2026100*_basket_*.sql'
+      - 'supabase/sql/202610*_assembly_*.sql'
       - 'supabase/migrations/2026100*_basket_*.sql'
+      - 'supabase/migrations/202610*_assembly_*.sql'
       - 'scripts/test-basket-*.mjs'
+      - 'scripts/test-assembly-*.mjs'
+      - 'scripts/test-kit-builder-*.mjs'
       - '.github/workflows/basket-kit-editor-ci.yml'
 permissions:
   contents: read
@@ -47,6 +59,7 @@ jobs:
           node-version: '24'
       - run: npm install --prefix "$RUNNER_TEMP/basket-tests" --no-save --package-lock=false playwright@1.62.1
       - run: node "$RUNNER_TEMP/basket-tests/node_modules/playwright/cli.js" install --with-deps chromium
+      - run: node --disable-warning=ExperimentalWarning scripts/test-assembly-kits-domain-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-suggestions.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image-service.mjs
