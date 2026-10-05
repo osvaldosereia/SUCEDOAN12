@@ -52,6 +52,8 @@ jobs:
       - run: node scripts/test-ana-customer-profile-schema-v1.mjs
       - run: node scripts/test-whatsapp-ana-customer-profile-policy-v1.mjs
       - run: node scripts/test-whatsapp-ana-customer-profile-api-v1.mjs
+      - run: node scripts/test-admin-attendance-customer-profile-ui-v1.mjs
+      - run: node scripts/test-ana-customer-profile-review-v1.mjs
       - run: node scripts/test-whatsapp-ana-preview-buttons-v1.mjs
       - run: node scripts/test-admin-attendance-catalog-link-cutover-v1.mjs
       - run: node scripts/test-admin-attendance-ui-v1.mjs
@@ -90,6 +92,7 @@ jobs:
       - run: node --check vitrine/admin/atendimento/attendance-customer-form.js
       - run: node --check vitrine/admin/atendimento/attendance-customer-search.js
       - run: node --check vitrine/admin/atendimento/attendance-customer-view.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer-profile.js
       - run: node --check vitrine/admin/atendimento/attendance-customer.js
       - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
