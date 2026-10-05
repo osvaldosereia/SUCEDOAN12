@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const file='vitrine/admin/index.html';
+let s=fs.readFileSync(file,'utf8');
+const broken='  async function quickConfirmOrder\n  async function quickConfirmOrder(id,btn)';
+const fixed='  async function quickConfirmOrder(id,btn)';
+const first=s.indexOf(broken);
+if(first<0)throw new Error('orphan_quickConfirmOrder_anchor_missing');
+if(s.indexOf(broken,first+broken.length)>=0)throw new Error('orphan_quickConfirmOrder_anchor_not_unique');
+s=s.slice(0,first)+fixed+s.slice(first+broken.length);
+fs.writeFileSync(file,s);
+console.log('Pedidos V4 browser syntax orphan removed');
