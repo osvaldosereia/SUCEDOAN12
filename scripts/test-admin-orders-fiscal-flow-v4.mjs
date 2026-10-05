@@ -72,9 +72,9 @@ const detailEnd=admin.indexOf('\n  function blingPreflightOperationalBlockers',d
 assert.ok(detailStart>=0&&detailEnd>detailStart,'Teste precisa localizar o pedido aberto canônico');
 const detailBlock=admin.slice(detailStart,detailEnd);
 assert.match(detailBlock,/\['ready','out_for_delivery','delivered'\]\.includes\(o\.status\)[\s\S]*orderFiscalHtml/,'Pedido aberto deve mostrar Fiscal / NF-e desde SEPARADO/ready');
-assert.doesNotMatch(detailBlock,/milestones\.separated&&!milestones\.delivered&&!milestones\.cancelled\?'<button class=\\"primary\\" id=\\"deliverOrderV3\\"/,'Pedido SEPARADO ainda não pode oferecer CONFIRMAR ENTREGA antes da saída');
-assert.match(detailBlock,/o\.status==='out_for_delivery'[\s\S]*id=\\"deliverOrderV3\\"/,'CONFIRMAR ENTREGA só deve aparecer depois de SAIU PARA ENTREGA');
-assert.match(detailBlock,/id=\\"deliveryFailedV4\\"[\s\S]*ENTREGA NÃO CONCLUÍDA/,'Pedido em rota precisa oferecer ENTREGA NÃO CONCLUÍDA no pedido aberto');
+assert.doesNotMatch(detailBlock,/milestones\.separated&&!milestones\.delivered&&!milestones\.cancelled[\s\S]{0,240}deliverOrderV3/,'Pedido SEPARADO ainda não pode oferecer CONFIRMAR ENTREGA antes da saída');
+assert.match(detailBlock,/o\.status==='out_for_delivery'[\s\S]{0,420}deliverOrderV3/,'CONFIRMAR ENTREGA só deve aparecer depois de SAIU PARA ENTREGA');
+assert.match(detailBlock,/deliveryFailedV4[\s\S]{0,180}ENTREGA NÃO CONCLUÍDA/,'Pedido em rota precisa oferecer ENTREGA NÃO CONCLUÍDA no pedido aberto');
 assert.match(detailBlock,/startDispatchV4/,'Pedido aberto autorizado precisa ligar a ação SAIU PARA ENTREGA');
 
 console.log('orders fiscal flow v4 contract: ok');
