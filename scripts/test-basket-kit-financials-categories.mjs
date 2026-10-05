@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
 const guided=fs.readFileSync('vitrine/admin/basket-guided-builder.js','utf8');
+const guidedApi=fs.readFileSync('supabase/functions/admin-basket-guided-v1/index.ts','utf8');
 const service=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const storefront=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 const carousel=fs.readFileSync('vitrine/basket-carousel.js','utf8');
@@ -23,13 +24,12 @@ for(const label of ['Custo dos produtos','Soma dos preços','Preço final','Ajus
 assert.doesNotMatch(guided,/function basketKitDraftFinancials/,'não deve existir um segundo motor financeiro legado no editor guiado');
 for(const field of ['cost_sum_snapshot','component_sum_snapshot','hidden_adjustment_snapshot'])assert.match(lotFinancialMigration,new RegExp(field,'i'),`domínio SQL deve persistir ${field}`);
 
-const catStart=admin.indexOf('async function openBasketCategoriesAdmin()');
-const catEnd=admin.indexOf('\n  async function ',catStart+12);
-assert.ok(catStart>=0&&catEnd>catStart,'Admin deve manter uma tela própria para gestão das categorias');
-const catFn=admin.slice(catStart,catEnd);
-assert.match(catFn,/basket_categories_admin/,'gestão de categorias deve carregar a API oficial');
-assert.ok(service.includes('basket_categories_admin')&&service.includes('basket_category_save')&&service.includes('basket_category_delete'),'API deve oferecer listar, salvar e excluir categorias');
-assert.ok(service.includes('category_id'),'API deve permitir vincular cesta à categoria');
+// Categoria comercial é selecionada no mesmo editor canônico; não há segundo cadastro livre na tela principal.
+assert.ok(guided.includes('id="bgCommercialCategory"'),'editor comercial deve permitir escolher a categoria oficial');
+assert.match(guidedApi,/basket_categories[^\n]*select|from\("basket_categories"\)/,'API guiada deve carregar as categorias oficiais');
+assert.doesNotMatch(admin,/Nova categoria<\/span><input|id="basketCategoryName"/,'runtime principal não deve manter um segundo editor livre de categorias');
+assert.ok(service.includes('basket_categories_admin')&&service.includes('basket_category_save')&&service.includes('basket_category_delete'),'API de compatibilidade/gestão deve preservar CRUD de categorias');
+assert.ok(service.includes('category_id'),'API deve preservar vínculo de cesta à categoria');
 const writeActions=service.slice(service.indexOf('const WRITE_ACTIONS='),service.indexOf('const cors='));
 for(const action of ['basket_category_save','basket_category_delete','basket_category_assign'])assert.ok(writeActions.includes('"'+action+'"'),action+' deve exigir autenticação de escrita');
 assert.ok(categoryMigration.includes('create table if not exists public.basket_categories'),'migration deve criar categorias próprias de cestas');
