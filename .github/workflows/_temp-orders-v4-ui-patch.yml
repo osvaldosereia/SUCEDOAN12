@@ -1,0 +1,36 @@
+name: TEMP apply Pedidos V4 UI patch
+
+on:
+  push:
+    branches: [feat/orders-fiscal-flow-v4-20261004]
+    paths:
+      - 'scripts/_apply_orders_v4_ui_patch.mjs'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply V4 patch to canonical UI/backend
+        run: node scripts/_apply_orders_v4_ui_patch.mjs
+      - name: Verify contract and diff
+        run: |
+          git diff --check
+          node scripts/test-admin-orders-fiscal-flow-v4.mjs
+          grep -q 'order_dispatch_start_v4' vitrine/admin/index.html
+          grep -q 'ENTREGA NÃO CONCLUÍDA' vitrine/admin/index.html
+          grep -q 'NF-e AUTORIZADA' vitrine/admin/index.html
+      - name: Commit canonical changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vitrine/admin/index.html supabase/functions/admin-products-live-v1/index.ts
+          git commit -m 'feat: expor fluxo fiscal e saída Pedidos V4'
+          git push
