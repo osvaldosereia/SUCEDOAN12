@@ -1,6 +1,13 @@
 -- Persist the attribution included in signed Meta WhatsApp webhooks and expose
 -- the evidence-backed service/free-entry deadlines to the Admin context.
 
+alter table public.conversations
+  add column if not exists source text not null default 'unknown',
+  add column if not exists referral jsonb not null default '{}'::jsonb,
+  add column if not exists last_inbound_at timestamptz,
+  add column if not exists service_window_expires_at timestamptz,
+  add column if not exists free_entry_window_expires_at timestamptz;
+
 create or replace function public.capture_whatsapp_conversation_attribution_v1()
 returns trigger
 language plpgsql

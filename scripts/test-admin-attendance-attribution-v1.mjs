@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const migrationPath = new URL('../supabase/migrations/20261005200000_meta_whatsapp_referral_attribution_v1.sql', import.meta.url);
 const uiPath = new URL('../vitrine/admin/atendimento/attendance-app.js', import.meta.url);
 assert.ok(fs.existsSync(migrationPath), 'migration deve expor a atribuição no contexto seguro');
+assert.match(fs.readFileSync(migrationPath, 'utf8'), /add column if not exists source text[\s\S]*add column if not exists referral jsonb[\s\S]*add column if not exists free_entry_window_expires_at timestamptz/i, 'migration deve criar os campos sem depender de drift manual');
 const migration = fs.readFileSync(migrationPath, 'utf8');
 const ui = fs.readFileSync(uiPath, 'utf8');
 
