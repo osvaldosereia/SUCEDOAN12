@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
+// RED contract: basket models may reuse internal kit recipes without reserving stock.
 const migrationPath='supabase/migrations/20261005160000_basket_recipe_kit_links_v1.sql';
 const sqlPath='supabase/sql/20261005_basket_recipe_kit_links_v1.sql';
 const apiPath='supabase/functions/admin-basket-guided-v1/index.ts';
