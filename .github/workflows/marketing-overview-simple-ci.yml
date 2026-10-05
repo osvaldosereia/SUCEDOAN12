@@ -1,0 +1,24 @@
+name: Marketing Overview Simple CI
+
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/marketing/marketing-overview-simple.js'
+      - 'vitrine/admin/marketing/marketing-overview-simple.css'
+      - 'vitrine/admin/marketing/campaign-entry.js'
+      - 'scripts/test-whatsapp-marketing-papoai-responsive-v1.mjs'
+      - '.github/workflows/marketing-overview-simple-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Marketing overview contract
+        run: node scripts/test-whatsapp-marketing-papoai-responsive-v1.mjs
+      - name: Campaign entry syntax
+        run: node --check vitrine/admin/marketing/campaign-entry.js
+      - name: Overview syntax
+        run: node --check vitrine/admin/marketing/marketing-overview-simple.js
