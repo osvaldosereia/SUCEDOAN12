@@ -6,7 +6,7 @@ const sqlMirrorPath='supabase/sql/20261005_attendance_customer_link_v1.sql';
 const edgePath='supabase/functions/admin-attendance-customer-v1/index.ts';
 const uiPath='vitrine/admin/atendimento/attendance-customer.js';
 const cssPath='vitrine/admin/atendimento/attendance-customer.css';
-const loaderPath='vitrine/admin/atendimento/attendance-offers.js';
+const loaderPath='vitrine/admin/atendimento/attendance-human-ai.js';
 const workflowPath='.github/workflows/attendance-papoai-send-ci.yml';
 
 for(const [path,label] of [
@@ -60,12 +60,12 @@ assert.match(ui,/Buscar cadastro/,'estado sem cliente deve oferecer busca de exi
 assert.match(ui,/Editar aqui/,'cliente vinculado deve poder ser editado inline');
 assert.match(ui,/customer_reconcile|action:\s*['"]reconcile['"]/i,'UI deve tentar reconciliação automática');
 assert.match(ui,/queue-card\.selected/,'UI deve trabalhar a partir da conversa selecionada');
-assert.match(ui,/readOnly\s*=\s*true|readonly/i,'WhatsApp da criação deve ser somente leitura');
+assert.match(ui,/readOnly\s*:\s*true|readOnly\s*=\s*true|readonly/i,'WhatsApp da criação deve ser somente leitura');
 assert.match(ui,/MutationObserver/,'módulo deve se acoplar apenas ao card/contexto renderizado');
 assert.doesNotMatch(ui,/send_text|send_media|META_WHATSAPP|PAPOAI/i,'módulo de cliente não deve tocar no transporte de mensagens');
 
 assert.match(css,/attendance-customer/i,'CSS deve ficar isolado pelo namespace attendance-customer');
-assert.match(loader,/attendance-customer\.js\?v=customer-link-v1/,'módulo já carregado da página deve importar o cliente lateral');
+assert.match(loader,/attendance-customer\.js\?v=customer-link-v1/,'um módulo carregado diretamente pela página deve importar o cliente lateral');
 assert.match(workflow,/node scripts\/test-admin-attendance-customer-link-v1\.mjs/,'CI do Atendimento deve executar o novo contrato');
 
 console.log('PASS: contrato de identificação/vínculo/cadastro de cliente no Atendimento');
