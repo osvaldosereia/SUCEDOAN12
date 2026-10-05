@@ -13,7 +13,8 @@ assert.match(src,/order-status-confirmed-tag/,'Tag CONFIRMADO precisa ter classe
 assert.match(src,/order-status-separated-tag/,'Tag SEPARADO precisa ter classe de destaque');
 assert.match(src,/order-separation-ready/,'Botão de separação precisa ter classe verde discreta');
 assert.match(src,/MutationObserver/,'Decoração precisa acompanhar re-render dos cards');
-const loader=fs.readFileSync(new URL('../vitrine/admin/basket-admin-section.js',import.meta.url),'utf8');
-assert.match(loader,/orders-visual-v1\.js\?v=20261005-1/,'Loader do Admin precisa carregar o destaque dos pedidos');
-assert.match(loader,/basket-admin-section-core\.js\?v=canonical-v3/,'Loader precisa preservar o módulo canônico de Cestas/Kits');
+const baskets=fs.readFileSync(new URL('../vitrine/admin/basket-admin-section.js',import.meta.url),'utf8');
+assert.match(baskets,/window\.DonaAntoniaBasketAdmin=\{render,setSale,printLot,printCommercialLot,duplicateLot,archiveModel,openCreate,state\}/,'Módulo canônico de Cestas/Kits precisa permanecer no arquivo original');
+assert.match(baskets,/orders-visual-v1\.js\?v=20261005-1/,'Admin precisa carregar o destaque visual dos pedidos');
+assert.match(baskets,/data-orders-visual-v1/,'Carga do visual deve ser idempotente');
 console.log('orders visual v1 contract: ok');
