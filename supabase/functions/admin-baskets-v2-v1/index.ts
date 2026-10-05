@@ -40,7 +40,8 @@ async function listItems(){
   const q=await db.from("basket_v2_items").select("id,public_name,category_id,image_url,sale_price,composition_mode,paused,is_active,sort_order,category:basket_categories(id,name,slug)").eq("is_active",true).order("sort_order").order("public_name");
   if(q.error)throw q.error;
   const av=await db.from("basket_v2_item_availability_v1").select("item_id,availability");if(av.error)throw av.error;const am=new Map((av.data||[]).map((x:any)=>[String(x.item_id),Number(x.availability||0)]));
-  return {categories:OFFICIAL_CATEGORIES,items:(q.data||[]).map((x:any)=>{const availability=am.get(String(x.id))||0;return {id:x.id,public_name:x.public_name,category:x.category,price_cents:Math.round(Number(x.sale_price||0)*100),availability,composition_mode:x.composition_mode,state:x.paused?"paused":availability>0?"selling":"out_of_stock",image_url:x.image_url||""}})};
+  const cats=await db.from("basket_categories").select("id,name,slug,sort_order").eq("is_active",true).in("name",OFFICIAL_CATEGORIES).order("sort_order");if(cats.error)throw cats.error;
+  return {categories:cats.data||[],items:(q.data||[]).map((x:any)=>{const availability=am.get(String(x.id))||0;return {id:x.id,public_name:x.public_name,category:x.category,price_cents:Math.round(Number(x.sale_price||0)*100),availability,composition_mode:x.composition_mode,state:x.paused?"paused":availability>0?"selling":"out_of_stock",image_url:x.image_url||""}})};
 }
 function enrichDetail(detail:any){
   if(!detail?.item)return detail;
@@ -61,7 +62,7 @@ function enrichDetail(detail:any){
   const commercial_adjustment_cents=final_sale_price_cents!==null&&component_sales_total_cents!==null?final_sale_price_cents-component_sales_total_cents:null;
   return {...detail,kit_components:components,summary:{cost_total_cents,retail_products_total_cents,component_sales_total_cents,final_sale_price_cents,commercial_adjustment_cents,availability:Math.max(0,Number(detail.availability||0))}};
 }
-async function detail(id:string){const q=await db.rpc("basket_v2_item_detail_admin_v1",{p_item_id:id});if(q.error)throw q.error;return enrichDetail(q.data)}
+async function detail(id:string){const q=await db.rpc("basket_v2_item_detail_admin_v1",{p_item_id:id});if(q.error)throw q.error;const d=enrichDetail(q.data);const rows=Array.isArray(d?.product_components)?d.product_components:[];const sm=await stockMap(rows.map((x:any)=>String(x.product_id||x.product?.id||"")));d.product_components=rows.map((x:any)=>({...x,loose_stock:Number(sm.get(String(x.product_id||x.product?.id))||0),product:{...(x.product||{}),loose_stock:Number(sm.get(String(x.product_id||x.product?.id))||0)}}));return d}
 async function productSearch(u:URL){
   const term=clean(u.searchParams.get("q"),100).replace(/[,()%]/g," ");const limit=Math.max(1,Math.min(30,Number(u.searchParams.get("limit")||15)));if(term.length<2)return {products:[]};
   let q=db.from("products").select("id,name,sku,gtin,image_url,packaging,unit,cost,price").eq("is_active",true);
