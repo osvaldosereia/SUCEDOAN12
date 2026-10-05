@@ -1,0 +1,98 @@
+name: Sync main into basket branch temp
+on:
+  push:
+    branches: [feature/baskets-kits-canonical-20261004-exec]
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Merge current main and resolve known admin overlap
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git show HEAD:vitrine/admin/index.html > /tmp/admin-ours.html
+          set +e
+          git merge --no-commit --no-ff origin/main
+          merge_rc=$?
+          set -e
+          unmerged="$(git diff --name-only --diff-filter=U || true)"
+          if [ -n "$unmerged" ] && [ "$unmerged" != "vitrine/admin/index.html" ]; then
+            echo "Unexpected merge conflicts:"
+            echo "$unmerged"
+            exit 1
+          fi
+          if [ -n "$unmerged" ]; then
+            cp /tmp/admin-ours.html vitrine/admin/index.html
+            git show origin/main:vitrine/admin/index.html > /tmp/admin-main.html
+            python - <<'PY'
+          from pathlib import Path
+          ours_path=Path('vitrine/admin/index.html')
+          ours=ours_path.read_text().splitlines()
+          main=Path('/tmp/admin-main.html').read_text().splitlines()
+          markers=['.orders-bottom-sheet-backdrop{','  async function loadOrderSeparationSheet(']
+          for marker in markers:
+              main_lines=[line for line in main if marker in line]
+              ours_idx=[i for i,line in enumerate(ours) if marker in line]
+              if len(main_lines)!=1 or len(ours_idx)!=1:
+                  raise SystemExit(f'cannot reconcile marker {marker}: main={len(main_lines)} ours={len(ours_idx)}')
+              ours[ours_idx[0]]=main_lines[0]
+          ours_path.write_text('\n'.join(ours)+'\n')
+          PY
+            git add vitrine/admin/index.html
+          elif [ "$merge_rc" -ne 0 ]; then
+            echo "Merge failed without reported unmerged files"
+            exit 1
+          fi
+      - name: Renumber colliding basket migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          git mv supabase/migrations/20261004231500_basket_commercial_create_v1.sql supabase/migrations/20261005000000_basket_commercial_create_v1.sql
+          git mv supabase/migrations/20261004232000_basket_category_required_v1.sql supabase/migrations/20261005000500_basket_category_required_v1.sql
+          git mv supabase/migrations/20261004233000_basket_unified_order_engine_v1.sql supabase/migrations/20261005001000_basket_unified_order_engine_v1.sql
+          python - <<'PY'
+          from pathlib import Path
+          repl={
+            '20261004231500_basket_commercial_create_v1.sql':'20261005000000_basket_commercial_create_v1.sql',
+            '20261004232000_basket_category_required_v1.sql':'20261005000500_basket_category_required_v1.sql',
+            '20261004233000_basket_unified_order_engine_v1.sql':'20261005001000_basket_unified_order_engine_v1.sql',
+          }
+          for p in Path('.').rglob('*'):
+              if not p.is_file() or '.git' in p.parts: continue
+              try: s=p.read_text()
+              except Exception: continue
+              n=s
+              for a,b in repl.items(): n=n.replace(a,b)
+              if n!=s: p.write_text(n)
+          PY
+      - name: Verify merged basket stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-basket-unified-order-engine.mjs
+          node --disable-warning=ExperimentalWarning scripts/test-order-separation-preassembled-v3.mjs
+          git diff --check
+      - name: Commit merged state and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/sync-main-baskets-temp.yml
+          git add -A
+          git commit -m 'chore: sync current main into basket canonical branch'
+          git push origin HEAD:feature/baskets-kits-canonical-20261004-exec
