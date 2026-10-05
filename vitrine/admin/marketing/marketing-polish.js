@@ -76,13 +76,19 @@ function polishNav(root){
     setText(button,PRIMARY_MARKETING_LABELS[view]);
     if(button.classList.contains('active'))button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
   });
-  const gate=nav.querySelector('.marketing-campaign-gate');
-  for(const view of PRIMARY_MARKETING_VIEWS){
-    const button=nav.querySelector(`[data-marketing-view="${view}"]`);
-    if(button)nav.insertBefore(button,gate||null);
-  }
   ensureAdminConsentsAction(root,nav);
-  setText(nav.querySelector('.marketing-campaign-gate'),'Envios desativados');
+  const gate=nav.querySelector('.marketing-campaign-gate');
+  const more=nav.querySelector('[data-marketing-admin-more]');
+  const buttons=PRIMARY_MARKETING_VIEWS.map(view=>nav.querySelector(`[data-marketing-view="${view}"]`)).filter(Boolean);
+  const anchor=more||gate||null;
+  const children=[...nav.children];
+  const anchorIndex=anchor?children.indexOf(anchor):children.length;
+  const startIndex=anchorIndex-buttons.length;
+  const navAlreadyOrdered=startIndex>=0&&buttons.every((button,index)=>children[startIndex+index]===button);
+  if(!navAlreadyOrdered){
+    for(const button of buttons)nav.insertBefore(button,anchor);
+  }
+  setText(gate,'Envios desativados');
 }
 
 function removeDuplicateMarketingHeads(root){
