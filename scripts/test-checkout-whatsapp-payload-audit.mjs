@@ -42,7 +42,7 @@ const db={
   from:table=>query(table),
   rpc:async(name,args)=>{
     if(name.includes('claim'))return {data:{found:true,item:{id:outboxId,order_id:orderId,recipient_kind:'customer',phone_e164:'+5565999828360',channel_origin:'0975',whatsapp_account_id:accountId,attempt_count:1,payload:{kind:'order_received'}}},error:null};
-    if(name==='ops2_order_public_link_v1')return {data:null,error:null};
+    if(name==='ops2_order_public_link_v1')return {data:{public_code:'DA123',public_token:'abc123abc123abc1',public_url:'https://donaantonia.com.br/p/?k=abc123abc123abc1'},error:null};
     if(name==='ops2_accept_order_whatsapp_meta_v1'){
       acceptedArgs=args;
       return {data:{ok:true,status:'sent',message_id:canonicalMessageId,status_current:'accepted'},error:null};
@@ -84,18 +84,18 @@ assert.ok(providerRequest?.delivery_address_full.includes('Grade branca'),'confi
 
 assert.equal(metaCall?.phoneNumberId,account.phone_number_id);
 assert.equal(metaCall?.toE164,'+5565999828360');
-assert.equal(metaCall?.templateName,'pedidorecebidosite0975');
+assert.equal(metaCall?.templateName,'pedidoorganizadosite0975v2');
 assert.equal(metaCall?.languageCode,'pt_BR');
 assert.equal(metaCall?.components?.length,1);
 const parameters=metaCall.components[0].parameters;
-assert.deepEqual(JSON.parse(JSON.stringify(parameters)),[
-  {type:'text',text:'DA-TEST-12345678'},
-  {type:'text',text:providerRequest.total_formatted},
-  {type:'text',text:providerRequest.delivery_label},
-  {type:'text',text:'PIX'}
-]);
-assert.match(String(parameters[1].text),/92/,'template must keep formatted order total');
-assert.ok(String(parameters[2].text).includes('Grade branca'),'template delivery summary must retain address reference');
+assert.equal(parameters.length,14);
+assert.equal(parameters[1].text,'DA123','template must expose only the public order code');
+assert.equal(String(parameters[11].text).replace(/\s/g,' '),String(providerRequest.total_formatted).replace(/\s/g,' '));
+assert.equal(parameters[12].text,'PIX');
+assert.equal(parameters[13].text,'https://donaantonia.com.br/p/?k=abc123abc123abc1');
+assert.ok(parameters[10].text.includes('Arroz 5kg'),'organized confirmation must retain products');
+assert.ok(parameters[5].text.includes('Grade branca'),'organized confirmation address must retain checkout reference');
+assert.ok(!parameters.some(p=>String(p.text).includes('DA-TEST-12345678')),'technical order_number must never be customer-visible');
 
 assert.deepEqual(JSON.parse(JSON.stringify(audit?.meta_request?.components)),JSON.parse(JSON.stringify(metaCall.components)),'outbox must audit exactly the Meta template components');
 assert.equal(acceptedArgs?.p_outbox_id,outboxId);

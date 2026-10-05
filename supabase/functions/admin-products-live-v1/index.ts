@@ -1188,9 +1188,18 @@ async function stockReadiness(orderIds:string[]){
   }
   return out;
 }
+async function publicOrderCodeMap(ids:string[]){
+  const out=new Map<string,string>(),cleanIds=[...new Set((ids||[]).filter(Boolean))];
+  for(let i=0;i<cleanIds.length;i+=100){
+    const q=await db.from("order_public_snapshots_v1").select("order_id,public_code").in("order_id",cleanIds.slice(i,i+100));
+    if(q.error)throw q.error;
+    for(const row of q.data||[]){const code=tx(row.public_code,5);if(/^[A-Z]{2}[0-9]{3}$/.test(code))out.set(String(row.order_id),code)}
+  }
+  return out;
+}
 async function mapOrders(rows:any[]){
   const ids=rows.map((o:any)=>o.id);
-  const [rmap,ready,smap,dmap]=await Promise.all([reservationRows(ids),stockReadiness(ids),paymentSettlementMap(ids),deliveryReturnMap(ids)]);
+  const [rmap,ready,smap,dmap,pmap]=await Promise.all([reservationRows(ids),stockReadiness(ids),paymentSettlementMap(ids),deliveryReturnMap(ids),publicOrderCodeMap(ids)]);
   const cids=[...new Set(rows.map((o:any)=>o.customer_id).filter(Boolean))],cm=new Map<string,any>();
   if(cids.length){
     const cq=await db.from("ops2_admin_customer_registration_v1")
@@ -1205,7 +1214,7 @@ async function mapOrders(rows:any[]){
       if(v!==null&&v!==undefined&&(typeof v!=="string"||v.trim()!==""))address[k]=v;
     }
     return {
-      id:o.id,order_number:o.order_number,status:uiStatus(o.status),total_cents:Math.round(Number(o.total||0)*100),
+      id:o.id,public_code:pmap.get(String(o.id))||null,order_number:o.order_number,status:uiStatus(o.status),total_cents:Math.round(Number(o.total||0)*100),
       payment_method_snapshot:paySnap(o,rmap.get(o.id)||[],smap.get(o.id)||null),delivery_return:dmap.get(o.id)||null,
       delivery_address_snapshot:address,
       whatsapp_phone_e164:o.phone_e164||address.phone||c.primary_whatsapp_e164||"",
@@ -1252,7 +1261,7 @@ async function orderDetailCanonical(orderId:any){
   const separation_plan=(aq.data||[]).map((a:any)=>{const lot:any=Array.isArray(a.lot)?a.lot[0]:a.lot;return {basket_id:a.basket_id,lot_id:a.lot_id,quantity:Number(a.quantity||0),status:a.status,role:a.allocation_role,short_code:lot?.short_code||meta(a.metadata).short_code||null,lot_code:lot?.lot_code||null,lot_kind:lot?.lot_kind||a.allocation_role}});
   const mapped=(await mapOrders([oq.data]))[0];let bl:any=null;try{const h=await hub("order_link_status",{source_order_id:oid});if(!h.error)bl=h.data}catch{}
   let publicLink:any=null;try{const q=await db.rpc("ops2_order_public_link_v1",{p_order_id:oid});if(!q.error)publicLink=q.data||null}catch{}
-  return {order:{...mapped,subtotal_cents:Math.round(Number(oq.data.subtotal||0)*100),discount_cents:Math.round(Number(oq.data.discount||0)*100),delivery_cents:0,public_order_url:publicLink?.public_url||null,public_order_code:publicLink?.public_code||null},customer,history_sync:{state:"synced",canonical:true},stock_readiness:mapped.stock_readiness,bling_link:bl,items:result,separation_plan,checkout_separation_plan:oq.data.checkout_snapshot?.separation_plan||[]};
+  return {order:{...mapped,subtotal_cents:Math.round(Number(oq.data.subtotal||0)*100),discount_cents:Math.round(Number(oq.data.discount||0)*100),delivery_cents:0,public_order_url:publicLink?.public_url||null,public_order_code:publicLink?.public_code||null,public_code:publicLink?.public_code||mapped.public_code||null},customer,history_sync:{state:"synced",canonical:true},stock_readiness:mapped.stock_readiness,bling_link:bl,items:result,separation_plan,checkout_separation_plan:oq.data.checkout_snapshot?.separation_plan||[]};
 }
 async function guardOrder(oid:string){const c=await cutover(),q=await db.from("orders").select("id,created_at,source").eq("id",oid).maybeSingle();if(q.error)throw q.error;if(!q.data)return {error:"order_not_found",status:404};if(!OP_SOURCES.includes(String(q.data.source||""))||(c.legacy_orders_read_only&&Date.parse(q.data.created_at)<Date.parse(c.live_orders_since)))return {error:"legacy_order_read_only",status:409};return {ok:true}}
 function transitionAllowed(a:string,b:string){if(a===b)return true;const m:any={created:["confirmed","cancelled"],confirmed:["processing","cancelled"],processing:["ready","cancelled"],ready:["cancelled"],out_for_delivery:["ready","delivered","cancelled"],delivered:[],cancelled:[]};return (m[a]||[]).includes(b)}
@@ -3380,6 +3389,16 @@ async function orderSeparationComplete(p:any,auth:any){
   const stock=await db.rpc("ops2_apply_order_separation_stock_v2",{p_order_id:oid});if(stock.error)throw stock.error;
   if(stock.data?.ok!==true){await markSeparationNeedsAttention(oid,"stock_applied",stock.data?.error,stock.data);return {error:String(stock.data?.error||"separation_stock_failed"),status:409,recovery_scheduled:true}}
   try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
+
+  try{
+    const notifyResponse=await fetch(`${U}/functions/v1/order-separation-notify-v1`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-internal-key":K},
+      body:JSON.stringify({order_id:oid}),
+      signal:AbortSignal.timeout(18000)
+    });
+    if(!notifyResponse.ok){const detail=await notifyResponse.text().catch(()=>"");console.error("order_separation_customer_notify",oid,notifyResponse.status,tx(detail,300))}
+  }catch(error){console.error("order_separation_customer_notify",oid,tx((error as Error)?.message||error,300))}
 
   const snap=await buildSnapshot(oid,"separation_verified");
   const verified=await hub("ops2_ensure_order_state",{payload:snap,target_key:"verified",canary:false});

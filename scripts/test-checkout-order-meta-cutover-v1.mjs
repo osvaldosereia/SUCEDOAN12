@@ -33,8 +33,8 @@ assert.match(dispatcher,/MetaTransportError/,'dispatcher deve tratar erros tipad
 assert.match(dispatcher,/META_WHATSAPP_ACCESS_TOKEN/,'token Meta deve continuar somente server-side');
 assert.match(dispatcher,/META_WHATSAPP_GRAPH_VERSION/,'Graph version deve ser configuração server-side');
 assert.match(dispatcher,/phone_number_id/,'dispatcher deve resolver Phone Number ID do canal canônico');
-assert.match(dispatcher,/pedidorecebidosite0975/,'0975 deve usar o template utilitário homologado');
-assert.match(dispatcher,/pedidorecebidosite1018/,'1018 deve usar o template utilitário homologado');
+assert.match(dispatcher,/pedidoorganizadosite0975v2/,'0975 deve usar o template utilitário homologado');
+assert.match(dispatcher,/pedidoorganizadosite1018v2/,'1018 deve usar o template utilitário homologado');
 assert.match(dispatcher,/sendTemplateViaMeta\s*\(/,'confirmação deve chamar diretamente o adapter Meta compartilhado');
 assert.match(dispatcher,/ops2_accept_order_whatsapp_meta_v1/,'WAMID aceito deve ser persistido pelo RPC canônico do pedido');
 for(const value of ['orderNumber','totalFormatted','deliverySummary','paymentLabel']) assert.match(dispatcher,new RegExp(`\\b${value}\\b`),`${value} deve alimentar o template de confirmação`);
