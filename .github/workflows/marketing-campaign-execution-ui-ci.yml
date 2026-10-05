@@ -5,7 +5,10 @@ on:
     paths:
       - 'vitrine/admin/marketing/campaign-center.js'
       - 'vitrine/admin/marketing/campaign-center.css'
+      - 'vitrine/admin/marketing/campaign-simple-ui.js'
+      - 'vitrine/admin/marketing/marketing-polish.js'
       - 'scripts/test-whatsapp-marketing-campaign-execution-ui-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs'
       - '.github/workflows/marketing-campaign-execution-ui-ci.yml'
   workflow_dispatch:
 
@@ -21,6 +24,8 @@ jobs:
         with: {node-version: '22'}
       - name: Marketing campaign execution UI contract
         run: node scripts/test-whatsapp-marketing-campaign-execution-ui-v1.mjs
+      - name: Marketing simple campaign audience contract
+        run: node scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs
       - name: Campaign center syntax
         run: node --check vitrine/admin/marketing/campaign-center.js
       - name: Existing campaign UI regression
