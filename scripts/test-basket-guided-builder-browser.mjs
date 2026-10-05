@@ -51,21 +51,23 @@ try{
 
   await page.locator('#bgLotQty').fill('10');
   await page.click('[data-bg-preview]');
-  await page.waitForFunction(()=>window.calls.some(c=>c.action==='lot_preview'));
+  await page.getByText('Necessário',{exact:true}).waitFor();
+  assert.equal(await page.evaluate(()=>window.calls.some(c=>c.action==='lot_preview')),true);
   assert.equal(await page.getByText('Necessário',{exact:true}).count(),1);
   assert.equal(await page.getByText('Saldo',{exact:true}).count(),1);
   assert.equal(await page.getByText('15',{exact:true}).count()>=1,true,'prévia deve mostrar saldo pós-reserva');
 
   await page.click('[data-bg-reserve]');
-  await page.waitForFunction(()=>window.calls.some(c=>c.action==='lot_reserve'));
+  await page.getByText('Em montagem',{exact:true}).first().waitFor();
+  assert.equal(await page.evaluate(()=>window.calls.some(c=>c.action==='lot_reserve')),true);
   assert.equal(await page.getByText('Em montagem',{exact:true}).count()>=1,true,'lote reservado deve ficar Em montagem');
   assert.equal(await page.getByRole('button',{name:'Marcar como montado'}).count(),1);
   assert.equal(await page.getByRole('button',{name:'Ativar venda'}).isDisabled(),true,'montar não ativa venda');
 
   await page.click('[data-bg-mount]');
-  await page.waitForFunction(()=>window.calls.some(c=>c.action==='lot_mount'));
+  await page.getByText('Montado',{exact:true}).first().waitFor();
+  assert.equal(await page.evaluate(()=>window.calls.some(c=>c.action==='lot_mount')),true);
   assert.equal(await page.getByText('Montado',{exact:true}).count()>=1,true,'montagem deve mudar o estado visível');
-  assert.equal(await page.evaluate(()=>window.calls.some(c=>c.action==='model_save'&&c.action==='lot_reserve')),false);
 
   await page.setViewportSize({width:390,height:844});
   await page.waitForTimeout(50);
