@@ -1,4 +1,53 @@
 /* Original catalog photographs; the selected sale-lot composition supplies quantities. */
+(() => {
+  'use strict';
+  const TOKEN_RE=/^[0-9a-f]{36}$/i;
+  const TRACKING_STORE='da_marketing_tracking_v1';
+  const MARKETING_CONTEXT_KEY='da_vitrine_marketing_context_v1';
+  const TRACKING_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/marketing-tracking-v1';
+  const WINDOW_MS=7*24*60*60*1000;
+  let trackingToken='';
+
+  function cleanToken(value){const token=String(value??'').trim().toLowerCase();return TOKEN_RE.test(token)?token:''}
+  function storedToken(){
+    try{
+      const saved=JSON.parse(localStorage.getItem(TRACKING_STORE)||'null');
+      if(!saved||Number(saved.expires_at||0)<=Date.now()){localStorage.removeItem(TRACKING_STORE);return ''}
+      return cleanToken(saved.token);
+    }catch{return ''}
+  }
+  function rememberToken(token){try{localStorage.setItem(TRACKING_STORE,JSON.stringify({token,expires_at:Date.now()+WINDOW_MS}))}catch{}}
+  function syncMarketingContext(){
+    if(!trackingToken)return;
+    try{
+      let ctx=JSON.parse(sessionStorage.getItem(MARKETING_CONTEXT_KEY)||'null');
+      const fresh=ctx&&typeof ctx==='object'&&!Array.isArray(ctx)&&Date.now()-Number(ctx.captured_at||0)<=4*60*60*1000;
+      if(!fresh)ctx={};
+      ctx.tracking_token=trackingToken;
+      ctx.captured_at=Date.now();
+      sessionStorage.setItem(MARKETING_CONTEXT_KEY,JSON.stringify(ctx));
+    }catch{}
+  }
+  async function track(action){
+    if(!trackingToken)return;
+    try{await fetch(`${TRACKING_API}?action=${encodeURIComponent(action)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:trackingToken}),cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer'})}catch{}
+  }
+
+  try{
+    const url=new URL(location.href),incoming=cleanToken(url.searchParams.get('mt'));
+    trackingToken=incoming||storedToken();
+    if(incoming){rememberToken(incoming);url.searchParams.delete('mt');history.replaceState(null,'',url.pathname+(url.search?'?'+url.searchParams.toString():'')+url.hash)}
+  }catch{trackingToken=storedToken()}
+
+  if(trackingToken){
+    syncMarketingContext();
+    window.setTimeout(syncMarketingContext,0);
+    void track('open');
+    document.addEventListener('click',event=>{const target=event.target instanceof Element?event.target.closest('#sendWhats'):null;if(target)void track('checkout')},true);
+  }
+  window.DAMarketingTracking={get tracking_token(){return trackingToken},syncMarketingContext};
+})();
+
 window.BasketCarousel={
   card(b,esc,money,basketName){
     const items=Array.isArray(b.carousel_items)?b.carousel_items:[];

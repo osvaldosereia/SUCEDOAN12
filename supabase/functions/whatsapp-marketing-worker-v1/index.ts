@@ -48,19 +48,45 @@ function requestedLimit(value:unknown){
   const n=Number(value??DEFAULT_BATCH);if(!Number.isInteger(n)||n<1)return DEFAULT_BATCH;return Math.min(n,MAX_BATCH);
 }
 
-function bodyComponents(templateComponents:unknown,variableValues:unknown){
-  const vars=(variableValues&&typeof variableValues==="object"&&!Array.isArray(variableValues))?variableValues as Record<string,unknown>:{};
+function bodyComponents(templateComponents:unknown,variableValues:unknown,trackingLinks:any[]=[]){
+  const vars=(variableValues&&typeof variableValues==="object"&&!Array.isArray(variableValues))?{...(variableValues as Record<string,unknown>)}:{};
   const components=Array.isArray(templateComponents)?templateComponents:[];
   const body=components.find((item:any)=>String(item?.type||"").toUpperCase()==="BODY");
   const required=[...new Set([...String(body?.text||"").matchAll(/\{\{(\d+)\}\}/g)].map(match=>Number(match[1])).filter(Number.isInteger))].sort((a,b)=>a-b);
+  if(required.includes(3)&&trackingLinks.length===1&&text(trackingLinks[0]?.url,2000))vars["3"]=text(trackingLinks[0].url,2000);
   const indexes=required.length?required:Object.keys(vars).filter(key=>/^\d+$/.test(key)).map(Number).sort((a,b)=>a-b);
   if(!indexes.length)return [];
   const parameters=indexes.map(index=>{
-    const value=text(vars[String(index)],1024);
+    const value=text(vars[String(index)],2000);
     if(!value)throw new Error(`template_variable_missing:${index}`);
     return {type:"text",text:value};
   });
   return [{type:"body",parameters}];
+}
+
+function carouselTrackingComponent(templateComponents:unknown,trackingLinks:any[]=[],trackingRequired=false){
+  const components=Array.isArray(templateComponents)?templateComponents:[];
+  const carousel=components.find((item:any)=>String(item?.type||"").toUpperCase()==="CAROUSEL");
+  if(!carousel||!trackingRequired)return null;
+  const cards=Array.isArray(carousel.cards)?carousel.cards:[];
+  if(!cards.length)throw new Error("carousel_template_cards_missing");
+  if(trackingLinks.length!==cards.length)throw new Error("carousel_tracking_links_mismatch");
+  return {
+    type:"carousel",
+    cards:trackingLinks.map((link:any,index:number)=>{
+      const token=text(link?.tracking_token,120);
+      const cardIndex=Number(link?.card_index);
+      if(!/^[0-9a-f]{36}$/.test(token)||!Number.isInteger(cardIndex)||cardIndex!==index)throw new Error("carousel_tracking_link_invalid");
+      return {card_index:cardIndex,components:[{type:"button",sub_type:"url",index:"0",parameters:[{type:"text",text:token}]}]};
+    }),
+  };
+}
+
+function messageComponents(templateComponents:unknown,variableValues:unknown,trackingLinks:any[]=[],trackingRequired=false){
+  const output=bodyComponents(templateComponents,variableValues,trackingLinks);
+  const carousel=carouselTrackingComponent(templateComponents,trackingLinks,trackingRequired);
+  if(carousel)output.push(carousel);
+  return output;
 }
 
 async function finish(dispatchId:string,status:string,lastError:string|null=null,retryAfter:number|null=null){
@@ -109,8 +135,16 @@ async function processDispatch(item:any,mode:string,account:any,canaryPhones:Set
     return {status:"skipped",error:"canary_recipient_not_allowed"};
   }
 
+  const tracking=await db.rpc("marketing_issue_tracking_links_v1",{p_dispatch_id:dispatchId});
+  if(tracking.error||tracking.data?.ok!==true){
+    await finish(dispatchId,"failed","tracking_links_unavailable",null);
+    return {status:"failed",error:"tracking_links_unavailable"};
+  }
+  const tracking_links=Array.isArray(tracking.data?.tracking_links)?tracking.data.tracking_links:[];
+  const strategyTracked=tracking.data?.strategy_tracked===true;
+
   let components:any[];
-  try{components=bodyComponents(data.template_components,data.variable_values)}
+  try{components=messageComponents(data.template_components,data.variable_values,tracking_links,strategyTracked)}
   catch(error){await finish(dispatchId,"failed",text(error instanceof Error?error.message:error,500),null);return {status:"failed",error:"template_variables_invalid"}}
 
   try{

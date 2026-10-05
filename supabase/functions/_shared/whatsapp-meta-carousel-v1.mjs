@@ -15,9 +15,15 @@ function normalizeButton(raw){
   if(!BUTTON_TYPES.has(type)||!text)fail('carousel_button_invalid');
   if(type==='QUICK_REPLY')return {type,text};
   const rawUrl=clean(value.url,2000);if(!rawUrl)fail('carousel_button_invalid');
-  let url;try{url=new URL(rawUrl)}catch{fail('carousel_button_invalid')}
+  const placeholders=[...rawUrl.matchAll(/\{\{(\d+)\}\}/g)].map(match=>Number(match[1]));
+  if(placeholders.length>1||placeholders.some(index=>index!==1))fail('carousel_button_invalid');
+  const parsedUrl=placeholders.length?rawUrl.replace(/\{\{1\}\}/g,'tracking-example'):rawUrl;
+  let url;try{url=new URL(parsedUrl)}catch{fail('carousel_button_invalid')}
   if(url.protocol!=='https:'||url.username||url.password)fail('carousel_button_invalid');
-  return {type,text,url:url.toString()};
+  if(!placeholders.length)return {type,text,url:url.toString()};
+  const example=Array.isArray(value.example)?value.example.map(item=>clean(item,2000)).filter(Boolean):[];
+  if(example.length!==1)fail('carousel_button_example_required');
+  return {type,text,url:rawUrl,example};
 }
 function normalizeCard(raw){
   const card=plain(raw),components=Array.isArray(card.components)?card.components:[];
