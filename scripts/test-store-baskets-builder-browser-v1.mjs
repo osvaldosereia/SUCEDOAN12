@@ -1,0 +1,91 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
+
+const code=fs.readFileSync('vitrine/admin/store-baskets-builder.js','utf8');
+const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-store-baskets-v1';
+const KIT_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-kit-builder-v1';
+
+const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
+try{
+  const page=await browser.newPage({viewport:{width:1440,height:1000}});
+  const calls=[];
+  await page.setContent('<!doctype html><html><body><main id="content"></main><script>window.DonaAntoniaAdminBridge={token:async()=>"token-test",operator:()=>"Teste",toast:(m)=>{window.__toasts=(window.__toasts||[]).concat(m)}};<\/script></body></html>');
+  await page.route('**/functions/v1/**',async route=>{
+    const req=route.request();
+    const url=new URL(req.url());
+    let body={};
+    if(req.method()==='POST'){body=JSON.parse(req.postData()||'{}')}
+    const action=body.action||url.searchParams.get('action');
+    calls.push({url:req.url(),method:req.method(),action,body});
+    if(req.url().startsWith(KIT_API)){
+      return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,kits:[
+        {id:'11111111-1111-4111-8111-111111111111',name:'Alimentos Econômica',type:'food',item_count:14,cost_total:65.89,sale_total:93.14},
+        {id:'22222222-2222-4222-8222-222222222222',name:'Limpeza Padrão',type:'cleaning_hygiene',item_count:10,cost_total:40,sale_total:55}
+      ]})});
+    }
+    if(req.url().startsWith(API)){
+      if(action==='list')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,baskets:[
+        {id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',name:'Econômica Bonini',sale_price:92,cost_total:65.89,product_sale_total:93.14,calculated_hidden_adjustment:-1.14,category_slug:'cestas-so-alimento',kits:[{kit_id:'11111111-1111-4111-8111-111111111111',name:'Alimentos Econômica',type:'food',quantity:1}]},
+        {id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',name:'Grande Bonini',sale_price:410,cost_total:300,product_sale_total:360,calculated_hidden_adjustment:50,category_slug:'cestas-completas',kits:[]}
+      ]})});
+      if(action==='editor')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,editor:{
+        basket:{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',name:'Econômica Bonini',image_url:'',sale_price:92,hidden_adjustment:-1.14,category_slug:'cestas-so-alimento'},
+        recipe_kits:[{kit_id:'11111111-1111-4111-8111-111111111111',name:'Alimentos Econômica',type:'food',quantity:1,is_required:true,sort_order:0,item_count:14,cost_total:65.89,sale_total:93.14,unit_cost_total:65.89,unit_sale_total:93.14}],
+        available_kits:[
+          {id:'11111111-1111-4111-8111-111111111111',name:'Alimentos Econômica',type:'food',item_count:14,cost_total:65.89,sale_total:93.14},
+          {id:'22222222-2222-4222-8222-222222222222',name:'Limpeza Padrão',type:'cleaning_hygiene',item_count:10,cost_total:40,sale_total:55}
+        ],cost_total:65.89,product_sale_total:93.14
+      }})});
+      if(action==='save')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,result:{basket_id:body.basket_id||'cccccccc-cccc-4ccc-8ccc-cccccccccccc',name:body.name,sale_price:body.sale_price,hidden_adjustment:Number(body.sale_price)-148.14}})});
+      if(action==='preview')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,preview:{ok:true,basket_id:body.basket_id,name:'Econômica Bonini',quantity:body.quantity,sale_price:92,unit_cost_total:105.89,unit_product_sale_total:148.14,hidden_adjustment:-56.14,requirements:[
+        {product_id:'p1',name:'Arroz',quantity_per_basket:1,required:Number(body.quantity),available:100,balance_after:100-Number(body.quantity),ok:true},
+        {product_id:'p2',name:'Detergente',quantity_per_basket:2,required:Number(body.quantity)*2,available:80,balance_after:80-Number(body.quantity)*2,ok:true}
+      ]}})});
+    }
+    return route.fulfill({status:404,contentType:'application/json',body:'{"ok":false}'});
+  });
+  await page.addScriptTag({content:code});
+  await page.evaluate(()=>window.DonaAntoniaStoreBaskets.open('#content'));
+  await page.waitForSelector('[data-store-basket-list]');
+  assert.equal(await page.locator('[data-store-basket-card]').count(),2,'must list existing store baskets');
+
+  await page.locator('[data-store-basket-card]').first().click();
+  await page.waitForSelector('[data-store-basket-editor]');
+  assert.equal(await page.locator('[data-store-name]').inputValue(),'Econômica Bonini');
+  assert.equal(await page.locator('[data-store-linked-kit]').count(),1);
+  await page.selectOption('[data-store-kit-select]','22222222-2222-4222-8222-222222222222');
+  await page.click('[data-store-kit-add]');
+  assert.equal(await page.locator('[data-store-linked-kit]').count(),2,'must add an internal kit');
+  await page.locator('[data-store-sale-price]').fill('410');
+  await page.locator('[data-store-quantity]').fill('10');
+  await page.click('[data-store-preview]');
+  await page.waitForSelector('[data-store-preview-table]');
+  assert.equal(await page.locator('[data-store-preview-row]').count(),2,'preview must show consolidated requirements');
+  await page.click('[data-store-save]');
+  await page.waitForFunction(()=>window.__toasts?.some(x=>String(x).includes('salva')));
+  const editSave=calls.find(x=>x.url.startsWith(API)&&x.action==='save'&&x.body.basket_id==='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+  assert.ok(editSave,'editing existing basket must call save');
+  assert.equal(editSave.body.kits.length,2,'save must contain linked kits only');
+  assert.equal(editSave.body.sale_price,410);
+
+  await page.click('[data-store-new]');
+  await page.waitForSelector('[data-store-basket-editor]');
+  assert.equal(await page.locator('[data-store-name]').inputValue(),'');
+  await page.locator('[data-store-name]').fill('Cesta Nova Teste');
+  await page.locator('[data-store-sale-price]').fill('199.90');
+  await page.selectOption('[data-store-kit-select]','11111111-1111-4111-8111-111111111111');
+  await page.click('[data-store-kit-add]');
+  await page.selectOption('[data-store-kit-select]','22222222-2222-4222-8222-222222222222');
+  await page.click('[data-store-kit-add]');
+  await page.click('[data-store-save]');
+  const newSave=calls.filter(x=>x.url.startsWith(API)&&x.action==='save').at(-1);
+  assert.equal(newSave.body.basket_id,null,'new basket save must not fake an id');
+  assert.equal(newSave.body.kits.length,2);
+
+  const oldConcepts=await page.locator('body').innerText();
+  assert.equal(/família|posição|adicionar termo/i.test(oldConcepts),false,'new UI must not expose old family/position concepts');
+  console.log('store baskets builder browser v1: PASS');
+}finally{await browser.close()}
