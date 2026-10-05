@@ -2794,7 +2794,19 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
     if(!local.data||local.data.status!=="ready")return {ok:false,error:"local_order_not_ready",status:409,external_write:false};
     const checked=await sb.from("ops_order_check_sessions").select("id,verified_at").eq("order_id",sourceOrderId).eq("status","verified").not("verified_at","is",null).order("verified_at",{ascending:false}).limit(1).maybeSingle();
     if(checked.error)throw checked.error;
-    if(!checked.data?.id)return {ok:false,error:"order_check_required_before_bling_verified",status:409,external_write:false};
+    let separationVerified=false;
+    if(!checked.data?.id){
+      const [completion,items,pending]=await Promise.all([
+        sb.from("order_separation_completions_v1").select("metadata").eq("order_id",sourceOrderId).maybeSingle(),
+        sb.from("order_separation_items_v1").select("id",{count:"exact",head:true}).eq("order_id",sourceOrderId),
+        sb.from("order_separation_items_v1").select("id",{count:"exact",head:true}).eq("order_id",sourceOrderId).eq("state","pending")
+      ]);
+      if(completion.error)throw completion.error;
+      if(items.error)throw items.error;
+      if(pending.error)throw pending.error;
+      separationVerified=completion.data?.metadata?.stock_applied===true&&Number(items.count||0)>0&&Number(pending.count||0)===0;
+    }
+    if(!checked.data?.id&&!separationVerified)return {ok:false,error:"order_check_required_before_bling_verified",status:409,external_write:false};
   }
   const selectedDepositId=Number(meta?.selected_deposit_id||0)||0;
   if(targetKey==="approved_separation"&&!selectedDepositId){
@@ -3376,7 +3388,19 @@ async function blingHubOps2CanaryOrderStatus(sb:any,sourceOrderIdRaw:any,targetK
     if(!local.data||local.data.status!=="ready")return {ok:false,error:"local_order_not_ready",status:409,external_write:false};
     const checked=await sb.from("ops_order_check_sessions").select("id,verified_at").eq("order_id",sourceOrderId).eq("status","verified").not("verified_at","is",null).order("verified_at",{ascending:false}).limit(1).maybeSingle();
     if(checked.error)throw checked.error;
-    if(!checked.data?.id)return {ok:false,error:"order_check_required_before_bling_verified",status:409,external_write:false};
+    let separationVerified=false;
+    if(!checked.data?.id){
+      const [completion,items,pending]=await Promise.all([
+        sb.from("order_separation_completions_v1").select("metadata").eq("order_id",sourceOrderId).maybeSingle(),
+        sb.from("order_separation_items_v1").select("id",{count:"exact",head:true}).eq("order_id",sourceOrderId),
+        sb.from("order_separation_items_v1").select("id",{count:"exact",head:true}).eq("order_id",sourceOrderId).eq("state","pending")
+      ]);
+      if(completion.error)throw completion.error;
+      if(items.error)throw items.error;
+      if(pending.error)throw pending.error;
+      separationVerified=completion.data?.metadata?.stock_applied===true&&Number(items.count||0)>0&&Number(pending.count||0)===0;
+    }
+    if(!checked.data?.id&&!separationVerified)return {ok:false,error:"order_check_required_before_bling_verified",status:409,external_write:false};
   }
 
   const token=await blingHubOauth(sb);
