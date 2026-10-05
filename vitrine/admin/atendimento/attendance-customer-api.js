@@ -1,20 +1,16 @@
 import {attendanceAuthorizedFetch} from './attendance-auth.js?v=auth-refresh-v2';
 
-const CUSTOMER_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-attendance-customer-v1';
+const SUPABASE_URL='https://ssbesxgaijknwsjbsbcz.supabase.co';
+const RPC_API=`${SUPABASE_URL}/rest/v1/rpc`;
+const ADMIN_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
 
-async function customerApi(action,params={},method='GET'){
-  const url=new URL(CUSTOMER_API);
-  url.searchParams.set('action',action);
-  const options={method,headers:{},cache:'no-store'};
-  if(method==='GET'){
-    for(const [key,value] of Object.entries(params||{})){
-      if(value!==null&&value!==undefined&&value!=='')url.searchParams.set(key,String(value));
-    }
-  }else{
-    options.headers['Content-Type']='application/json';
-    options.body=JSON.stringify(params||{});
-  }
-  const response=await attendanceAuthorizedFetch(url,options);
+async function customerRpc(name,payload={}){
+  const response=await attendanceAuthorizedFetch(`${RPC_API}/${name}`,{
+    method:'POST',
+    headers:{apikey:ADMIN_PUBLIC_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify(payload||{}),
+    cache:'no-store'
+  });
   const data=await response.json().catch(()=>({}));
   if(!response.ok||data?.ok===false){
     const error=new Error(data?.error||`customer_${response.status}`);
@@ -25,9 +21,9 @@ async function customerApi(action,params={},method='GET'){
   return data;
 }
 
-export const customerReconcile=conversationId=>customerApi('reconcile',{conversation_id:conversationId},'POST');
-export const customerSearch=query=>customerApi('search',{q:query},'GET');
-export const customerEditor=conversationId=>customerApi('editor',{conversation_id:conversationId},'GET');
-export const customerLink=(conversationId,customerId)=>customerApi('link',{conversation_id:conversationId,customer_id:customerId},'POST');
-export const customerCreate=(conversationId,customer)=>customerApi('create',{conversation_id:conversationId,customer},'POST');
-export const customerSave=(conversationId,customer)=>customerApi('save',{conversation_id:conversationId,customer},'POST');
+export const customerReconcile=conversationId=>customerRpc('ops2_admin_attendance_customer_reconcile_browser_v1',{p_conversation_id:conversationId});
+export const customerSearch=query=>customerRpc('ops2_admin_attendance_customer_search_browser_v1',{p_query:query,p_limit:10});
+export const customerEditor=conversationId=>customerRpc('ops2_admin_attendance_customer_editor_browser_v1',{p_conversation_id:conversationId});
+export const customerLink=(conversationId,customerId)=>customerRpc('ops2_admin_attendance_customer_link_browser_v1',{p_conversation_id:conversationId,p_customer_id:customerId});
+export const customerCreate=(conversationId,customer)=>customerRpc('ops2_admin_attendance_customer_create_browser_v1',{p_conversation_id:conversationId,p_customer:customer});
+export const customerSave=(conversationId,customer)=>customerRpc('ops2_admin_attendance_customer_save_browser_v1',{p_conversation_id:conversationId,p_customer:customer});
