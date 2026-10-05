@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
+// Contrato canônico do código público e das notificações Utility do pedido.
 const transport=fs.readFileSync('supabase/functions/admin-orders-v1/index.ts','utf8');
 const adminApi=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
