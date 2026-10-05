@@ -4,7 +4,7 @@
   const KIT_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-kit-builder-v1';
   const state={
     kits:[],chips:[],products:[],mostUsed:[],draft:null,stockAuthority:'legacy_shadow',savingProductIds:new Set(),
-    host:null,query:'',nextOffset:null,loading:false,searchTimer:null
+    host:null,query:'',nextOffset:null,loading:false,searchTimer:null,chipManagerOpen:false
   };
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
@@ -59,8 +59,7 @@
 
   function replaceProduct(next){
     if(!next?.id)return;
-    const lists=[state.products,state.mostUsed];
-    for(const list of lists){
+    for(const list of [state.products,state.mostUsed]){
       const idx=list.findIndex(p=>String(p.id)===String(next.id));
       if(idx>=0)list[idx]={...list[idx],...next};
     }
@@ -140,9 +139,9 @@
     if(document.getElementById('kitBuilderStyles'))return;
     const style=document.createElement('style');style.id='kitBuilderStyles';style.textContent=`
       .kit-builder-workspace{display:grid;grid-template-columns:minmax(330px,1.15fr) minmax(310px,.95fr) minmax(290px,.9fr);gap:12px;align-items:start}
-      .kb-col{background:#fff;border:1px solid #e3e8e4;border-radius:16px;min-height:620px;overflow:hidden}.kb-col-head{padding:13px 14px;border-bottom:1px solid #e8ece9;display:flex;align-items:center;gap:8px}.kb-col-head h3{margin:0;font-size:16px}.kb-col-head small{color:#6b756f}.kb-body{padding:12px}.kb-search{display:flex;gap:7px}.kb-search input{flex:1;min-height:42px;border:1px solid #dce3de;border-radius:10px;padding:9px 11px}.kb-search button,.kb-btn{min-height:38px;border:1px solid #d9e0db;background:#fff;border-radius:9px;padding:0 10px;font-weight:800}.kb-btn.primary{background:#176b43;color:#fff;border-color:#176b43}.kb-btn.danger{color:#9d2235}.kb-chips{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}.kb-chip{border:1px solid #dfe5e1;background:#f7f9f7;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800}.kb-section-title{display:flex;align-items:center;gap:7px;margin:12px 0 7px;font-size:12px;font-weight:900}.kb-products{display:grid;gap:8px}.kb-product{border:1px solid #e0e6e2;border-radius:12px;padding:9px;display:grid;grid-template-columns:72px 1fr;gap:9px}.kb-product img{width:72px;height:72px;object-fit:contain;background:#fafafa;border-radius:9px}.kb-product h4{margin:0 0 2px;font-size:12px;line-height:1.25}.kb-product .meta{font-size:9px;color:#6c766f}.kb-stock-grid,.kb-price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px}.kb-price-grid{grid-template-columns:1fr 1fr}.kb-metric{background:#f5f7f5;border-radius:7px;padding:5px}.kb-metric small{display:block;font-size:8px;color:#6d7770}.kb-metric strong{font-size:10px}.kb-product-actions{display:flex;gap:5px;margin-top:7px}.kb-product-actions button{flex:1}.kb-inline{grid-column:1/-1;background:#f7faf8;border-radius:9px;padding:8px;display:none}.kb-product.editing .kb-inline{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px}.kb-inline label span{display:block;font-size:8px;color:#66716a;font-weight:800}.kb-inline input{width:100%;min-height:35px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-draft-fields{display:grid;gap:8px}.kb-draft-fields input,.kb-draft-fields select,.kb-draft-fields textarea{width:100%;border:1px solid #dce3de;border-radius:9px;padding:8px 10px;background:#fff}.kb-draft-fields input,.kb-draft-fields select{min-height:40px}.kb-draft-fields label span{display:block;font-size:9px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-items{display:grid;gap:7px;margin-top:10px}.kb-item{display:grid;grid-template-columns:1fr 78px 34px;gap:6px;align-items:center;border:1px solid #e2e7e4;border-radius:10px;padding:8px}.kb-item strong{font-size:11px}.kb-item small{display:block;color:#6d7770;font-size:9px}.kb-item input{width:100%;min-height:36px;border:1px solid #dce3de;border-radius:8px;padding:6px}.kb-summary{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}.kb-summary div{background:#f2f6f3;border-radius:9px;padding:8px}.kb-summary small{display:block;color:#66716a;font-size:9px}.kb-summary strong{font-size:13px}.kb-draft-actions{display:flex;gap:7px}.kb-draft-actions button{flex:1}.kb-saved{display:grid;gap:7px}.kb-saved-card{border:1px solid #e1e6e2;border-radius:11px;padding:9px}.kb-saved-card h4{margin:0 0 3px;font-size:12px}.kb-saved-meta{display:flex;gap:8px;flex-wrap:wrap;color:#68736c;font-size:9px}.kb-saved-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}.kb-empty{padding:18px;text-align:center;color:#68736c;font-size:11px}.kb-more{width:100%;margin-top:8px}.kb-authority{font-size:9px;color:#66716a;margin-top:7px}.kb-loading{opacity:.65;pointer-events:none}
+      .kb-col{background:#fff;border:1px solid #e3e8e4;border-radius:16px;min-height:620px;overflow:hidden}.kb-col-head{padding:13px 14px;border-bottom:1px solid #e8ece9;display:flex;align-items:center;gap:8px}.kb-col-head>div{min-width:0;flex:1}.kb-col-head h3{margin:0;font-size:16px}.kb-col-head small{color:#6b756f}.kb-body{padding:12px}.kb-search{display:flex;gap:7px}.kb-search input{flex:1;min-width:0;min-height:42px;border:1px solid #dce3de;border-radius:10px;padding:9px 11px}.kb-search button,.kb-btn{min-height:38px;border:1px solid #d9e0db;background:#fff;border-radius:9px;padding:0 10px;font-weight:800}.kb-btn.primary{background:#176b43;color:#fff;border-color:#176b43}.kb-btn.danger{color:#9d2235}.kb-btn.compact{min-height:32px;padding:0 8px;font-size:11px}.kb-chip-wrap{display:flex;align-items:center;gap:6px;margin:9px 0}.kb-chips{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;flex:1;min-width:0;padding:2px 1px 5px;scrollbar-width:thin}.kb-chip{flex:0 0 auto;border:1px solid #dfe5e1;background:#f7f9f7;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800;white-space:nowrap}.kb-chip-manage{flex:0 0 auto}.kb-chip-manager{border:1px solid #dfe5e1;background:#fafcfb;border-radius:12px;padding:9px;margin:8px 0}.kb-chip-manager h4{margin:0 0 7px;font-size:12px}.kb-chip-row{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(120px,1fr) auto;gap:6px;align-items:end;padding:7px 0;border-top:1px solid #edf0ee}.kb-chip-row:first-of-type{border-top:0}.kb-chip-row label span{display:block;font-size:8px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-chip-row input{width:100%;min-height:34px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-chip-actions{display:flex;gap:4px;flex-wrap:wrap}.kb-section-title{display:flex;align-items:center;gap:7px;margin:12px 0 7px;font-size:12px;font-weight:900}.kb-products{display:grid;gap:8px}.kb-product{border:1px solid #e0e6e2;border-radius:12px;padding:9px;display:grid;grid-template-columns:72px 1fr;gap:9px}.kb-product img{width:72px;height:72px;object-fit:contain;background:#fafafa;border-radius:9px}.kb-product h4{margin:0 0 2px;font-size:12px;line-height:1.25}.kb-product .meta{font-size:9px;color:#6c766f}.kb-stock-grid,.kb-price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px}.kb-price-grid{grid-template-columns:1fr 1fr}.kb-metric{background:#f5f7f5;border-radius:7px;padding:5px}.kb-metric small{display:block;font-size:8px;color:#6d7770}.kb-metric strong{font-size:10px}.kb-product-actions{display:flex;gap:5px;margin-top:7px}.kb-product-actions button{flex:1}.kb-inline{grid-column:1/-1;background:#f7faf8;border-radius:9px;padding:8px;display:none}.kb-product.editing .kb-inline{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px}.kb-inline label span{display:block;font-size:8px;color:#66716a;font-weight:800}.kb-inline input{width:100%;min-height:35px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-draft-fields{display:grid;gap:8px}.kb-draft-fields input,.kb-draft-fields select,.kb-draft-fields textarea{width:100%;border:1px solid #dce3de;border-radius:9px;padding:8px 10px;background:#fff}.kb-draft-fields input,.kb-draft-fields select{min-height:40px}.kb-draft-fields label span{display:block;font-size:9px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-items{display:grid;gap:7px;margin-top:10px}.kb-item{display:grid;grid-template-columns:1fr 78px 34px;gap:6px;align-items:center;border:1px solid #e2e7e4;border-radius:10px;padding:8px}.kb-item strong{font-size:11px}.kb-item small{display:block;color:#6d7770;font-size:9px}.kb-item input{width:100%;min-height:36px;border:1px solid #dce3de;border-radius:8px;padding:6px}.kb-summary{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}.kb-summary div{background:#f2f6f3;border-radius:9px;padding:8px}.kb-summary small{display:block;color:#66716a;font-size:9px}.kb-summary strong{font-size:13px}.kb-draft-actions{display:flex;gap:7px}.kb-draft-actions button{flex:1}.kb-saved{display:grid;gap:7px}.kb-saved-card{border:1px solid #e1e6e2;border-radius:11px;padding:9px}.kb-saved-card h4{margin:0 0 3px;font-size:12px}.kb-saved-meta{display:flex;gap:8px;flex-wrap:wrap;color:#68736c;font-size:9px}.kb-saved-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}.kb-empty{padding:18px;text-align:center;color:#68736c;font-size:11px}.kb-more{width:100%;margin-top:8px}.kb-authority{font-size:9px;color:#66716a;margin-top:7px}.kb-loading{opacity:.65;pointer-events:none}
       @media(max-width:1050px){.kit-builder-workspace{grid-template-columns:1fr 1fr}.kb-col[data-kit-column="saved"]{grid-column:1/-1;min-height:auto}}
-      @media(max-width:720px){.kit-builder-workspace{grid-template-columns:1fr}.kb-col[data-kit-column="saved"]{grid-column:auto}.kb-col{min-height:auto}.kb-product.editing .kb-inline{grid-template-columns:1fr 1fr}.kb-inline .kb-btn{grid-column:1/-1}}
+      @media(max-width:720px){.kit-builder-workspace{grid-template-columns:1fr}.kb-col[data-kit-column="saved"]{grid-column:auto}.kb-col{min-height:auto}.kb-product.editing .kb-inline{grid-template-columns:1fr 1fr}.kb-inline .kb-btn{grid-column:1/-1}.kb-chip-row{grid-template-columns:1fr}.kb-chip-actions{justify-content:flex-start}}
     `;document.head.appendChild(style);
   }
 
@@ -177,10 +176,21 @@
     return (state.kits||[]).map(k=>'<article class="kb-saved-card" data-kit-saved="'+esc(k.id)+'"><h4>'+esc(k.name)+'</h4><div class="kb-saved-meta"><span>'+esc(k.type==='food'?'Alimentos':k.type==='cleaning_hygiene'?'Limpeza/Higiene':'Outro')+'</span><span>'+esc(k.item_count||0)+' itens</span><span>Custo '+esc(money(k.cost_total))+'</span><span>Venda '+esc(money(k.sale_total))+'</span></div><div class="kb-saved-actions"><button class="kb-btn" data-kit-edit type="button">Editar</button><button class="kb-btn" data-kit-duplicate type="button">Duplicar</button><button class="kb-btn danger" data-kit-archive type="button">Arquivar</button></div></article>').join('')||'<div class="kb-empty">Nenhum kit interno salvo.</div>';
   }
 
+  function renderChipManager(){
+    if(!state.chipManagerOpen)return '';
+    const rows=state.chips.map((chip,index)=>'<div class="kb-chip-row" data-kit-chip-row="'+esc(chip.id)+'">'+
+      '<label><span>Nome do chip</span><input data-kit-chip-label maxlength="80" value="'+esc(chip.label||'')+'"></label>'+
+      '<label><span>Busca usada</span><input data-kit-chip-query maxlength="120" value="'+esc(chip.query||'')+'"></label>'+
+      '<div class="kb-chip-actions"><button class="kb-btn compact primary" type="button" data-kit-chip-save>Salvar</button><button class="kb-btn compact" type="button" data-kit-chip-up '+(index===0?'disabled':'')+'>↑</button><button class="kb-btn compact" type="button" data-kit-chip-down '+(index===state.chips.length-1?'disabled':'')+'>↓</button><button class="kb-btn compact danger" type="button" data-kit-chip-archive>Excluir</button></div></div>').join('');
+    return '<div class="kb-chip-manager" data-kit-chip-manager><h4>Buscas rápidas</h4>'+rows+
+      '<div class="kb-chip-row" data-kit-chip-row=""><label><span>Novo chip</span><input data-kit-chip-label maxlength="80" placeholder="Ex.: Arroz"></label><label><span>Busca usada</span><input data-kit-chip-query maxlength="120" placeholder="Ex.: arroz"></label><div class="kb-chip-actions"><button class="kb-btn compact primary" type="button" data-kit-chip-save>Adicionar</button></div></div></div>';
+  }
+
   function catalogHtml(){
     const rows=state.query?state.products:(state.mostUsed.length?state.mostUsed:state.products);
     return '<div class="kb-search"><input data-kit-search placeholder="Buscar por nome, código ou EAN" value="'+esc(state.query)+'"><button class="kb-btn" type="button" data-kit-search-go>Buscar</button></div>'+
-      '<div class="kb-chips">'+state.chips.map(c=>'<button class="kb-chip" type="button" data-kit-chip="'+esc(c.query)+'">'+esc(c.label)+'</button>').join('')+'</div>'+
+      '<div class="kb-chip-wrap"><div class="kb-chips">'+state.chips.map(c=>'<button class="kb-chip" type="button" data-kit-chip="'+esc(c.query)+'">'+esc(c.label)+'</button>').join('')+'</div><button class="kb-btn compact kb-chip-manage" type="button" data-kit-chip-manage>'+(state.chipManagerOpen?'Fechar chips':'Editar chips')+'</button></div>'+
+      renderChipManager()+
       '<div class="kb-section-title">'+(state.query?'Resultados':'Mais usados')+'</div><div class="kb-products">'+(rows.map(productCardHtml).join('')||'<div class="kb-empty">Nenhum produto encontrado.</div>')+'</div>'+
       (state.query&&state.nextOffset!==null?'<button class="kb-btn kb-more" type="button" data-kit-more>Ver mais</button>':'')+
       '<div class="kb-authority">Autoridade de estoque: '+esc(state.stockAuthority==='bling'?'Bling':'estoque operacional')+'.</div>';
@@ -226,6 +236,49 @@
     }catch{toast('Não consegui buscar produtos para o kit.')}finally{state.loading=false;renderWorkspace()}
   }
 
+  async function refreshChips(){
+    const data=await kitCall('chips',{},'GET');
+    state.chips=Array.isArray(data.chips)?data.chips:[];
+  }
+
+  async function saveSearchChip(row){
+    if(!row)return;
+    const chipId=String(row.dataset.kitChipRow||'').trim()||null;
+    const label=String(row.querySelector('[data-kit-chip-label]')?.value||'').trim();
+    const query=String(row.querySelector('[data-kit-chip-query]')?.value||'').trim();
+    if(!label||!query){toast('Informe o nome do chip e a busca rápida.');return}
+    const currentIndex=chipId?state.chips.findIndex(c=>String(c.id)===chipId):state.chips.length;
+    state.loading=true;renderWorkspace();
+    try{
+      await kitCall('chip_save',{chip_id:chipId,label,query,sort_order:Math.max(0,currentIndex),operator:operator()},'POST');
+      await refreshChips();toast(chipId?'Busca rápida atualizada.':'Busca rápida adicionada.');
+    }catch{toast('Não consegui salvar esta busca rápida.')}finally{state.loading=false;renderWorkspace()}
+  }
+
+  async function archiveSearchChip(chipId){
+    const chip=state.chips.find(c=>String(c.id)===String(chipId));
+    if(!chip)return;
+    if(typeof window.confirm==='function'&&!window.confirm('Excluir a busca rápida '+chip.label+'?'))return;
+    state.loading=true;renderWorkspace();
+    try{
+      await kitCall('chip_archive',{chip_id:chip.id,operator:operator()},'POST');
+      await refreshChips();toast('Busca rápida excluída.');
+    }catch{toast('Não consegui excluir esta busca rápida.')}finally{state.loading=false;renderWorkspace()}
+  }
+
+  async function reorderSearchChip(chipId,direction){
+    const index=state.chips.findIndex(c=>String(c.id)===String(chipId));
+    const target=index+(direction<0?-1:1);
+    if(index<0||target<0||target>=state.chips.length)return;
+    const next=[...state.chips];
+    [next[index],next[target]]=[next[target],next[index]];
+    state.loading=true;renderWorkspace();
+    try{
+      const data=await kitCall('chip_reorder',{chip_ids:next.map(c=>c.id),operator:operator()},'POST');
+      state.chips=Array.isArray(data.chips)?data.chips:next;toast('Ordem das buscas rápidas atualizada.');
+    }catch{toast('Não consegui reorganizar as buscas rápidas.')}finally{state.loading=false;renderWorkspace()}
+  }
+
   async function loadKit(kitId){
     const data=await kitCall('kit',{id:kitId},'GET');const k=data.kit;
     if(!k)throw new Error('assembly_kit_not_found');
@@ -265,6 +318,14 @@
     search?.addEventListener('keydown',e=>{if(e.key==='Enter')runSearch()});
     search?.addEventListener('input',()=>{clearTimeout(state.searchTimer);state.searchTimer=setTimeout(()=>searchProducts(search.value,false),300)});
     host.querySelectorAll('[data-kit-chip]').forEach(btn=>btn.addEventListener('click',()=>searchProducts(btn.dataset.kitChip||'',false)));
+    host.querySelector('[data-kit-chip-manage]')?.addEventListener('click',()=>{state.chipManagerOpen=!state.chipManagerOpen;renderWorkspace()});
+    host.querySelectorAll('[data-kit-chip-row]').forEach(row=>{
+      const chipId=String(row.dataset.kitChipRow||'');
+      row.querySelector('[data-kit-chip-save]')?.addEventListener('click',()=>saveSearchChip(row));
+      row.querySelector('[data-kit-chip-archive]')?.addEventListener('click',()=>archiveSearchChip(chipId));
+      row.querySelector('[data-kit-chip-up]')?.addEventListener('click',()=>reorderSearchChip(chipId,-1));
+      row.querySelector('[data-kit-chip-down]')?.addEventListener('click',()=>reorderSearchChip(chipId,1));
+    });
     host.querySelector('[data-kit-more]')?.addEventListener('click',()=>searchProducts(state.query,true));
 
     host.querySelectorAll('[data-kit-product]').forEach(card=>{
@@ -307,6 +368,7 @@
   }
 
   window.DonaAntoniaKitBuilder={
-    state,open,renderWorkspace,saveDraftKit,duplicateKit,archiveKit,saveProductInline,setProducts,setMostUsed,setDraft,searchProducts
+    state,open,renderWorkspace,renderChipManager,saveSearchChip,archiveSearchChip,reorderSearchChip,
+    saveDraftKit,duplicateKit,archiveKit,saveProductInline,setProducts,setMostUsed,setDraft,searchProducts
   };
 })();
