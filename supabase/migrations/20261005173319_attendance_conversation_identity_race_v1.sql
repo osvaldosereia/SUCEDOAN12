@@ -1,5 +1,8 @@
 begin;
 
+set local lock_timeout = '5s';
+set local statement_timeout = '90s';
+
 -- Prevent the resolver from creating parallel rows while the existing open
 -- conversations are being consolidated below.
 lock table public.conversations in access exclusive mode;
