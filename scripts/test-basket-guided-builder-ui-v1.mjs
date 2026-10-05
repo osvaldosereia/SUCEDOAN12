@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
+// Contrato final da integração guiada dentro da seção canônica de Cestas/Kits.
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
 const uiPath='vitrine/admin/basket-guided-builder.js';
 assert.equal(fs.existsSync(uiPath),true,'guided builder UI module must exist');
