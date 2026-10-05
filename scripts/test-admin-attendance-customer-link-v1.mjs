@@ -49,6 +49,7 @@ assert.match(sql,/update\s+public\.whatsapp_messages_v1[\s\S]*customer_id/i,'men
 assert.match(edge,/admin_users/i,'Edge de cliente deve validar usuário administrativo');
 assert.match(edge,/admin_auth_required|admin_session_invalid/i,'Edge deve falhar fechado sem sessão admin');
 for(const action of ['status','search','editor','reconcile','link','create','save'])assert.match(edge,new RegExp(`["']${action}["']`),`Edge deve expor action ${action}`);
+assert.match(edge,/WRITE_ACTIONS\.has\(action\)[\s\S]{0,220}auth\.role\s*===\s*["']viewer["']/i,'viewer pode consultar, mas não pode reconciliar/vincular/criar/editar cliente');
 assert.match(edge,/ops2_admin_attendance_reconcile_customer_v1/,'Edge deve chamar RPC de reconciliação');
 assert.match(edge,/ops2_admin_attendance_customer_search_v1/,'Edge deve chamar RPC de busca');
 assert.match(edge,/ops2_admin_attendance_link_customer_v1/,'Edge deve chamar RPC de vínculo');
@@ -72,5 +73,6 @@ assert.doesNotMatch(ui,/send_text|send_media|META_WHATSAPP|PAPOAI/i,'módulo de 
 assert.match(css,/attendance-customer/i,'CSS deve ficar isolado pelo namespace attendance-customer');
 assert.match(loader,/attendance-customer\.js\?v=customer-link-v1/,'um módulo carregado diretamente pela página deve importar o cliente lateral');
 assert.match(workflow,/node scripts\/test-admin-attendance-customer-link-v1\.mjs/,'CI do Atendimento deve executar o novo contrato');
+assert.match(workflow,/node --experimental-strip-types --check supabase\/functions\/admin-attendance-customer-v1\/index\.ts/,'CI deve validar a sintaxe TypeScript da nova Edge');
 
 console.log('PASS: contrato de identificação/vínculo/cadastro de cliente no Atendimento');
