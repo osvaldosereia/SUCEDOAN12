@@ -21,6 +21,6 @@ assert.match(edge,/META_APP_ID/,'Edge deve exigir app id para upload de mídia')
 assert.match(edge,/adminAuth/,'Edge deve exigir autenticação Admin');
 assert.match(edge,/action===['"]upload_media['"]|action===['"]upload_media['"]/,'Edge deve expor upload_media');
 assert.match(edge,/action===['"]create['"]|action===['"]create['"]/,'Edge deve expor create');
-assert.doesNotMatch(edge,/to_phone_e164|destination_phone/,'carrossel de template não deve aceitar destinatário');
+assert.match(edge,/to_phone_e164[^\n]+destination_phone[^\n]+destination_fields_not_allowed/,'Edge deve rejeitar explicitamente qualquer destinatário no fluxo de criação de template');
 
 console.log('admin whatsapp template carousel contract: ok');
