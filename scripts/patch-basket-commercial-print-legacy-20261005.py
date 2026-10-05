@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# Patch temporário executado por CI; removido antes do merge.
 p=Path('vitrine/admin/index.html')
 s=p.read_text()
 old="host.querySelectorAll('[data-commercial-print]').forEach(b=>b.onclick=async()=>{const m=find(b.dataset.commercialPrint);if(!m?.editor_kit_template_id||!m?.operational_lot_id)return;try{const data=await api('basket_kit_admin',{id:m.editor_kit_template_id});state.basketKitDetail=data;printBasketKitLot(m.operational_lot_id)}catch(e){toast('Não consegui preparar a impressão deste lote.')}});"
