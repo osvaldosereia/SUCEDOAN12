@@ -1,0 +1,32 @@
+name: One shot baskets kits v2 footer wire
+on:
+  push:
+    branches:
+      - feat/baskets-kits-v2-20261004
+    paths:
+      - '.github/workflows/one-shot-baskets-kits-v2-footer-wire.yml'
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/baskets-kits-v2-20261004
+          fetch-depth: 1
+      - name: Move V2 module to real document footer
+        run: python3 scripts/patch-baskets-kits-v2-footer-wire.py
+      - name: Verify V2 UI contract before commit
+        run: node scripts/test-baskets-kits-v2-ui.mjs
+      - name: Remove temporary patch infrastructure
+        run: rm -f scripts/patch-baskets-kits-v2-footer-wire.py .github/workflows/one-shot-baskets-kits-v2-footer-wire.yml
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: load Cestas e Kits v2 at admin document footer"
+          git push origin HEAD:feat/baskets-kits-v2-20261004
