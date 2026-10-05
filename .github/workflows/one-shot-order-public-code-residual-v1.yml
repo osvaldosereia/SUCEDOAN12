@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/one-shot-order-public-code-residual-v1.yml'
       - 'scripts/patch-order-public-code-residual-v1.py'
+      - 'scripts/patch-order-separation-notify-template-gate-v1.py'
 
 permissions:
   contents: write
@@ -18,9 +19,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: feat/order-public-code-and-separation-whatsapp-v1
-          fetch-depth: 0
-      - name: Apply residual patch
+          fetch-depth: 1
+      - name: Apply public-code residual patch
         run: python3 scripts/patch-order-public-code-residual-v1.py
+      - name: Apply template approval gate
+        run: python3 scripts/patch-order-separation-notify-template-gate-v1.py
       - name: Contract tests
         run: |
           node scripts/test-order-customer-notifications-v1.mjs
@@ -33,6 +36,6 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add vitrine/admin/index.html .github/workflows/one-shot-order-public-code-residual-v1.yml
-          git commit -m 'fix(admin): usar somente codigo publico do pedido'
+          git add vitrine/admin/index.html supabase/functions/order-separation-notify-v1/index.ts .github/workflows/one-shot-order-public-code-residual-v1.yml
+          git commit -m 'fix(orders): fechar codigo publico e gate dos templates'
           git push origin HEAD:feat/order-public-code-and-separation-whatsapp-v1
