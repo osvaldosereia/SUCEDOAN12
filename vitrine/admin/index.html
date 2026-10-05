@@ -7771,7 +7771,6 @@
     if(btn){btn.disabled=true;btn.textContent='REGISTRANDO SAÍDA…'}
     try{await api('order_dispatch_start_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+id})});toast('Saída para entrega registrada');delete state.fiscalByOrder[id];await loadOrders();if(state.currentOrder?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
   }
-  async function quickConfirmOrder
   async function quickConfirmOrder(id,btn){const current=state.orders.find(o=>String(o.id)===String(id));if(current&&orderCustomerDataPending(current)){toast('Complete os dados essenciais do cliente antes de confirmar');return}if(btn){btn.disabled=true;btn.textContent='CONFIRMANDO…'}try{await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'confirmed',operator:currentOperator()||'Operação'})});toast('Pedido confirmado');await loadOrders()}catch(e){toast(errorMessage(e.message))}finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='CONFIRMADO'}}}
   function closeOrderSeparationSheet(){document.querySelector('.orders-bottom-sheet-backdrop')?.remove()}
   function separationMoney(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
@@ -7917,9 +7916,7 @@
   async function executeCurrentOrderFiscalCanary(){
     const o=state.currentOrder?.order;if(!o||o.status!=='ready')return;
     const f=state.currentOrderFiscal||{};if(f.can_issue!==true){toast('A NF-e ainda não está liberada para emissão');return}
-    if(!confirm('EMITIR NF-e do pedido #'+shortOrder(o.order_number||o.id)+' agora?
-
-A emissão será enviada ao Bling/SEFAZ.'))return;
+    if(!confirm('EMITIR NF-e do pedido #'+shortOrder(o.order_number||o.id)+' agora?\n\nA emissão será enviada ao Bling/SEFAZ.'))return;
     const btn=$('#executeFiscalCanary');if(btn){btn.disabled=true;btn.textContent='EMITINDO NF-e…'}
     try{const result=await api('order_fiscal_issue_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,confirmation:'EMITIR_NFE',operator:currentOperator()||'Operação'})});state.currentOrderFiscal=result.fiscal||result;state.fiscalByOrder[o.id]=state.currentOrderFiscal;toast(state.currentOrderFiscal?.authorized?'NF-e autorizada':'NF-e enviada; aguardando autorização');await loadCurrentOrderFiscal(true)}catch(e){toast(errorMessage(e?.message||'fiscal_issue_failed'));await loadCurrentOrderFiscal(true)}
   }
@@ -7930,7 +7927,6 @@ A emissão será enviada ao Bling/SEFAZ.'))return;
     const btn=$('#startDispatchV4');if(btn){btn.disabled=true;btn.textContent='REGISTRANDO SAÍDA…'}
     try{await api('order_dispatch_start_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+o.id})});toast('Saída para entrega registrada');delete state.fiscalByOrder[o.id];await loadOrders();await openOrder(o.id)}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
   }
-  async function openDanfeForOrder
   async function openDanfeForOrder(id,orderNumber=''){
     if(!id)return;
     const w=window.open('','_blank','width=900,height=900');
