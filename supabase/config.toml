@@ -27,6 +27,11 @@ verify_jwt = false
 [functions.admin-attendance-customer-v1]
 verify_jwt = false
 
+# ANA própria: extração cadastral read/suggest. O gateway exige JWT e a função
+# ainda revalida o usuário e a autorização do Admin via RPCs canônicas.
+[functions.admin-whatsapp-ana-customer-profile-v1]
+verify_jwt = true
+
 [functions.whatsapp-order-outbound-v1]
 verify_jwt = true
 [functions.papoai-order-signals-v1]

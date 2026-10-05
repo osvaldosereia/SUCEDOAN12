@@ -1,5 +1,5 @@
-import {customerReconcile} from './attendance-customer-api.js?v=customer-link-v1';
-import {decorateLinkedCustomer,renderUnlinkedCustomer} from './attendance-customer-view.js?v=customer-link-v1';
+import {customerReconcile} from './attendance-customer-api.js?v=customer-profile-v1';
+import {decorateLinkedCustomer,renderUnlinkedCustomer} from './attendance-customer-view.js?v=customer-profile-v1';
 
 const COPY={create:'Cadastrar cliente',search:'Buscar cadastro',edit:'Editar aqui'};
 const PHONE_OPTIONS={readOnly:true};

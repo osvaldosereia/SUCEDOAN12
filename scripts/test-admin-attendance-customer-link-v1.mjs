@@ -71,7 +71,7 @@ assert.match(ui,/attendanceCustomerActive\s*=\s*['"]loading['"]|dataset\.attenda
 assert.doesNotMatch(ui,/send_text|send_media|META_WHATSAPP|PAPOAI/i,'módulo de cliente não deve tocar no transporte de mensagens');
 
 assert.match(css,/attendance-customer/i,'CSS deve ficar isolado pelo namespace attendance-customer');
-assert.match(loader,/attendance-customer\.js\?v=customer-link-v1/,'um módulo carregado diretamente pela página deve importar o cliente lateral');
+assert.match(loader,/attendance-customer\.js\?v=customer-(?:link|profile)-v1/,'um módulo carregado diretamente pela página deve importar o cliente lateral com versão compatível');
 assert.match(workflow,/node scripts\/test-admin-attendance-customer-link-v1\.mjs/,'CI do Atendimento deve executar o novo contrato');
 assert.match(workflow,/node --experimental-strip-types --check supabase\/functions\/admin-attendance-customer-v1\/index\.ts/,'CI deve validar a sintaxe TypeScript da nova Edge');
 
