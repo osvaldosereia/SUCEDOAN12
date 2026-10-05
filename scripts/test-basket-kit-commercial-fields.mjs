@@ -35,12 +35,14 @@ const detailEnd=adminApi.indexOf('async function basketKitLotCreate',detailStart
 assert.ok(detailStart>=0&&detailEnd>detailStart,'basketKitAdminDetail block missing');
 const detail=adminApi.slice(detailStart,detailEnd);
 assert.match(detail,/sale_price_override[^"]*public_name[^"]*business_type[^"]*linked_lot_id/,'admin detail must return saved type/link/commercial fields so resume/duplicate preserve them');
-assert.match(detail,/linkableLots/,'admin detail must expose ready lots that can be linked');
+assert.match(detail,/linkableLots/,'admin detail must expose lots that can be linked');
 
 const storefront=fs.readFileSync(storefrontPath,'utf8');
-assert.match(storefront,/name:a\.food_public_name\|\|b\.name/,'split home/detail must use food lot public name');
-assert.match(storefront,/food_sale_price_override\?\?b\.base_price/,'split home/detail must use food lot effective price');
-assert.match(storefront,/basket_current_lot_v1"\)\.select\("lot_id,lot_code,quantity_available,built_at,sale_price_override,public_name"\)/,'legacy basket detail must select public_name before using it');
-assert.match(storefront,/name:lot\.public_name\|\|b\.name/,'legacy basket detail must use public lot name');
+assert.match(storefront,/db\.from\("basket_commercial_catalog_v1"\)/,'storefront must read the canonical commercial catalog');
+assert.match(storefront,/name:x\.public_name\|\|x\.model_name/,'home must use the selected public lot name');
+assert.match(storefront,/display_price_cents:cents\(x\.sale_price\)/,'home must use canonical effective sale price');
+assert.match(storefront,/name:c\.public_name\|\|c\.model_name/,'basket detail must use the selected public lot name');
+assert.match(storefront,/display_price_cents:cents\(c\.sale_price\)/,'basket detail must use canonical effective sale price');
+assert.match(storefront,/let total=Number\(c\.sale_price\|\|0\)/,'quote personalization must start from canonical lot sale price');
 
 console.log('Basket lot commercial contract: PASS');

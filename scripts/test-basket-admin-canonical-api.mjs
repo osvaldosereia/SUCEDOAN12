@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const p='supabase/functions/admin-products-live-v1/index.ts';
+const s=fs.readFileSync(p,'utf8');
+assert.ok(s.includes('basket_commercial_admin'),'canonical basket admin action must exist');
+const a=s.indexOf('async function basketCommercialAdmin');
+assert.ok(a>0,'basketCommercialAdmin helper must exist');
+const b=s.indexOf('\nasync function ',a+20);
+const block=s.slice(a,b>0?b:undefined);
+assert.match(block,/basket_commercial_catalog_v1/,'admin must read canonical commercial catalog');
+assert.match(block,/basket_lot_public_availability_v1/,'admin must read canonical lot availability');
+assert.match(block,/basket_categories/,'admin must expose basket categories');
+assert.doesNotMatch(block,/quantity_available[^\n]{0,100}[><=]/,'admin must not recalculate public availability from raw lot quantity');
+for(const field of ['commercial_id','source_kind','category_slug','public_lot_id','public_available','availability_reason','ready_lot_count','draft_lot_count'])assert.ok(block.includes(field),field+' must be returned');
+assert.match(s,/a==="basket_commercial_admin"[\s\S]{0,160}basketCommercialAdmin\(/,'GET route must serve canonical basket admin');
+console.log('basket admin canonical API: PASS');

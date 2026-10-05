@@ -3312,75 +3312,90 @@
 
   async function renderBaskets(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Cestas</h1><p>Monte os novos lotes sem alterar o que está sendo vendido hoje. A troca do site é manual.</p></div><div class="basket-auto-actions"><button class="secondary" id="basketCategoriesManage" type="button">Categorias de cestas</button><button class="secondary" id="basketProductSuggestions" type="button">Sugestões de produtos</button><button class="secondary" id="refreshBaskets" type="button">Atualizar</button></div></div><div id="basketAdminBody"><div class="loading">Carregando cestas e kits…</div></div>';
-    $('#refreshBaskets').onclick=renderBaskets;
-    $('#basketProductSuggestions').onclick=openBasketSubstitutionCatalog;
-    $('#basketCategoriesManage').onclick=openBasketCategoriesAdmin;
+    content.innerHTML='<div class="page-head"><div><h1>Cestas/Kits</h1><p>Crie, edite e venda rapidamente. O site acompanha estoque e lotes automaticamente.</p></div><div class="basket-auto-actions"><button class="primary" id="basketCommercialCreate" type="button" disabled>Nova Cesta/Kit</button><button class="secondary" id="basketProductSuggestions" type="button">Sugestões de produtos</button><button class="secondary" id="refreshBaskets" type="button">Atualizar</button></div></div><div id="basketCommercialFilters"></div><div id="basketAdminBody"><div class="loading">Carregando Cestas/Kits…</div></div>';
+    $('#refreshBaskets').onclick=renderBaskets;$('#basketProductSuggestions').onclick=openBasketSubstitutionCatalog;$('#basketCommercialCreate').onclick=openBasketCommercialCreate;
     try{
-      const [kitsData,legacyData,runtimeData,categoriesData]=await Promise.all([api('basket_kits_admin'),api('baskets_admin'),api('basket_sales_runtime'),api('basket_categories_admin')]);
-      state.basketKits=kitsData.kits||[];state.basketKitSummary=kitsData.summary||{};
-      state.baskets=legacyData.baskets||[];state.basketSummary=legacyData.summary||{};state.basketCategories=categoriesData.categories||[];
-      state.basketSalesRuntime=runtimeData.runtime||{};
-      const host=$('#basketAdminBody'),ks=state.basketKitSummary,rt=state.basketSalesRuntime;
-      const food=state.basketKits.filter(k=>k.kind==='food'),hygiene=state.basketKits.filter(k=>k.kind==='hygiene');
-      const readyFood=food.filter(k=>Number(k.ready_quantity||0)>0).length;
-      const enabledFood=food.filter(k=>Number(k.sale_ready_quantity||0)>0).length;
-      const readyHygiene=hygiene.some(k=>Number(k.ready_quantity||0)>0);
-      const enabledHygiene=hygiene.some(k=>Number(k.sale_ready_quantity||0)>0);
-      const legacyUnits=(state.baskets||[]).reduce((s,b)=>s+Number(b.ready_quantity||0),0);
-      const mode=rt.sales_mode==='split'?'split':'legacy';
-      const splitReady=(rt.missing_split||[]).length===0;
-      const legacyReady=(rt.missing_legacy||[]).length===0;
-      host.innerHTML=
-        '<div class="bling-grid">'+
-          '<div class="bling-card"><small>Site público agora</small><strong>'+(mode==='legacy'?'CESTAS ATUAIS':'NOVOS KITS')+'</strong><span class="sub">'+(mode==='legacy'?'estrutura antiga permanece publicada':'Alimentos + Limpeza/Higiene')+'</span></div>'+
-          '<div class="bling-card"><small>Alimentos novos</small><strong>'+esc(readyFood)+' / '+esc(food.length)+'</strong><span class="sub">'+esc(enabledFood)+' modelo(s) com lote ativado</span></div>'+
-          '<div class="bling-card"><small>Kit LH</small><strong>'+(readyHygiene?'MONTADO':'FALTA')+'</strong><span class="sub">'+(enabledHygiene?'ativado para venda':'ainda fora do site')+'</span></div>'+
-          '<div class="bling-card"><small>Unidades antigas</small><strong>'+esc(legacyUnits)+'</strong><span class="sub">'+esc(rt.legacy?.enabled_lots||0)+' lote(s) antigo(s) ativado(s)</span></div>'+
-        '</div>'+
-        '<details class="kit-transition"><summary style="cursor:pointer;font-weight:700">Controle da vitrine e transição</summary><span>Os novos lotes nascem <b>fora do site</b>. Monte tudo com calma, ative os lotes que deseja usar e só depois troque o modo da vitrine. Desativar um lote impede novas vendas daquele lote, mas não altera pedidos que já reservaram unidades.</span>'+
-          '<div class="basket-toolbar" style="margin-top:10px">'+
-            '<button class="secondary" id="enableAllSplitLots" type="button">Ativar todos os lotes novos prontos</button>'+
-            '<button class="secondary" id="disableAllSplitLots" type="button">Desativar todos os lotes novos</button>'+
-            '<button class="secondary" id="disableAllLegacyLots" type="button">Retirar cestas atuais do site</button>'+
-            '<button class="secondary" id="enableAllLegacyLots" type="button">Reativar cestas atuais</button>'+
-          '</div>'+
-          '<div class="basket-toolbar" style="margin-top:10px">'+
-            '<button class="'+(mode==='legacy'?'primary':'secondary')+'" id="useLegacyBaskets" type="button" '+(mode==='legacy'?'disabled':'')+'>Usar cestas atuais</button>'+
-            '<button class="'+(mode==='split'?'primary':'secondary')+'" id="useSplitBaskets" type="button" '+(mode==='split'?'disabled':'')+'>Usar novos kits no site</button>'+
-          '</div>'+
-          (!splitReady?'<small style="display:block;margin-top:8px;color:var(--muted)">Para mudar para os novos kits ainda faltam lotes ativados em: '+esc((rt.missing_split||[]).join(', '))+'</small>':'')+
-          (!legacyReady&&mode==='split'?'<small style="display:block;margin-top:8px;color:var(--muted)">As cestas antigas estão parcialmente desativadas. Para voltar ao modo antigo, reative os lotes necessários.</small>':'')+
-        '</details>'+
-        '<div class="kit-section-title"><div><h2>Limpeza e higiene</h2><p>Um único kit padrão serve para todas as cestas que possuem esta parte.</p></div></div>'+
-        '<div class="basket-admin-grid">'+hygiene.map(kitAdminCard).join('')+'</div>'+
-        '<div class="kit-section-title"><div><h2>Alimentos</h2><p>Cada cesta tem seu próprio lote de alimentos.</p></div></div>'+
-        '<div class="basket-admin-grid">'+food.map(kitAdminCard).join('')+'</div>'+
-        '<details id="legacyBasketTransition" style="margin-top:18px"><summary style="cursor:pointer;font-weight:700;color:var(--muted)">Cestas atuais e lotes antigos</summary>'+
-          '<div class="basket-warning"><strong>Estrutura atual preservada</strong><small>Essas cestas continuam no site enquanto o modo estiver em “Cestas atuais” e o respectivo lote estiver ativado.</small></div>'+
-          '<div class="basket-admin-grid">'+state.baskets.map(b=>'<article class="basket-admin-card">'+
-            '<div class="basket-admin-head"><img src="'+esc(b.image_url||'/img/sem-foto.svg')+'" alt=""><div><h3>'+esc(b.name)+'</h3><p>'+money(b.base_price_cents)+' · modelo comercial</p></div></div>'+
-            '<div class="basket-kpis"><div class="basket-kpi"><small>Antigas prontas</small><strong>'+esc(b.ready_quantity)+'</strong></div><div class="basket-kpi"><small>Lotes antigos</small><strong>'+esc(b.ready_lot_count)+'</strong></div><div class="basket-kpi"><small>No site</small><strong>'+(b.current_lot?.sale_enabled===true?'SIM':'NÃO')+'</strong></div></div>'+
-            '<div class="basket-toolbar"><button class="secondary" type="button" data-basket-manage="'+esc(b.id)+'">Ver lotes antigos</button></div></article>').join('')+
-          '</div></details>';
-      host.querySelectorAll('[data-basket-category]').forEach(sel=>sel.onchange=()=>assignBasketCategory(sel.dataset.basketCategory,sel.value));
-      host.querySelectorAll('[data-kit-manage]').forEach(btn=>btn.onclick=()=>openBasketKitAdmin(btn.dataset.kitManage));
-      host.querySelectorAll('[data-kit-new]').forEach(btn=>btn.onclick=async()=>{await openBasketKitAdmin(btn.dataset.kitNew);startBasketKitLotDraft(null)});
-      host.querySelectorAll('[data-kit-duplicate-current]').forEach(btn=>btn.onclick=async()=>{await openBasketKitAdmin(btn.dataset.kitDuplicateCurrent);startBasketKitLotDraft(btn.dataset.sourceLot)});
-      host.querySelectorAll('[data-kit-migrate-basket]').forEach(btn=>btn.onclick=()=>openBasketAdmin(btn.dataset.kitMigrateBasket,btn.dataset.foodKitId));
-      host.querySelectorAll('[data-kit-migrate-hygiene]').forEach(btn=>btn.onclick=()=>{const d=$('#legacyBasketTransition');if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});toast('Escolha uma cesta antiga e use “Migrar unidades” depois da desmontagem física.')}});
-      host.querySelectorAll('[data-basket-manage]').forEach(btn=>btn.onclick=()=>openBasketAdmin(btn.dataset.basketManage));
-      $('#enableAllSplitLots').onclick=()=>bulkBasketLotSale('split',true);
-      $('#disableAllSplitLots').onclick=()=>bulkBasketLotSale('split',false);
-      $('#disableAllLegacyLots').onclick=()=>bulkBasketLotSale('legacy',false);
-      $('#enableAllLegacyLots').onclick=()=>bulkBasketLotSale('legacy',true);
-      $('#useLegacyBaskets').onclick=()=>setBasketSalesMode('legacy');
-      $('#useSplitBaskets').onclick=()=>setBasketSalesMode('split');
+      const data=await api('basket_commercial_admin');
+      state.basketCommercialModels=data.models||[];state.basketCategories=data.categories||[];state.basketCommercialFilter='';
+      if($('#basketCommercialCreate'))$('#basketCommercialCreate').disabled=!(state.basketCategories||[]).length;
+      paintBasketCommercialFilters();paintBasketCommercialModels();
     }catch(e){
-      $('#basketAdminBody').innerHTML='<div class="empty">Não consegui carregar as cestas. <button class="text" id="retryBaskets">Tentar novamente</button></div>';
-      if($('#retryBaskets'))$('#retryBaskets').onclick=renderBaskets;
+      $('#basketAdminBody').innerHTML='<div class="empty">Não consegui carregar as Cestas/Kits. <button class="text" id="retryBaskets">Tentar novamente</button></div>';
+      $('#retryBaskets')?.addEventListener('click',renderBaskets);
     }
   }
+  function openBasketCommercialCreate(){
+    const cats=(state.basketCategories||[]).filter(c=>c.is_active!==false);
+    if(!cats.length){toast('As categorias de Cestas/Kits ainda não carregaram.');return}
+    $('#editorTitle').textContent='Nova Cesta/Kit';
+    $('#editorBody').innerHTML='<div class="form-grid">'+
+      '<label class="span-2"><span>Nome</span><input id="basketCommercialCreateName" maxlength="180" placeholder="Ex.: Kit Limpeza Essencial"></label>'+
+      '<label><span>Categoria</span><select id="basketCommercialCreateCategory"><option value="">Selecione</option>'+cats.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('')+'</select></label>'+
+      '<label><span>Preço de venda</span><input id="basketCommercialCreatePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>'+
+      '<div class="span-2 rule-notice"><strong>Fluxo rápido</strong><div>Depois de criar, a composição do primeiro lote abre automaticamente.</div></div></div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="basketCommercialCreateCancel" type="button">Cancelar</button><button class="primary" id="basketCommercialCreateSave" type="button">Criar e montar primeiro lote</button>';
+    $('#basketCommercialCreateCancel').onclick=()=>$('#editor').close();
+    $('#basketCommercialCreateSave').onclick=createBasketCommercial;
+    if(!$('#editor').open)$('#editor').showModal();
+    setTimeout(()=>$('#basketCommercialCreateName')?.focus(),0);
+  }
+  async function createBasketCommercial(){
+    const operator=requireOperator();if(!operator)return;
+    const name=String($('#basketCommercialCreateName')?.value||'').trim(),category_id=String($('#basketCommercialCreateCategory')?.value||'');
+    const price=Number(String($('#basketCommercialCreatePrice')?.value||'').replace(',','.'));
+    if(!name){toast('Informe o nome da Cesta/Kit.');return}
+    if(!category_id){toast('Escolha a categoria.');return}
+    if(!Number.isFinite(price)||price<0){toast('Informe um preço válido.');return}
+    const btn=$('#basketCommercialCreateSave');btn.disabled=true;btn.textContent='Criando…';
+    try{
+      const data=await api('basket_commercial_create',{method:'POST',body:{name,category_id,base_price_cents:Math.round(price*100),operator}});
+      const model=data?.model||{};$('#editor').close();toast('Cesta/Kit criada. Agora monte o primeiro lote.');
+      await renderBaskets();
+      if(model.kit_template_id){await openBasketKitAdmin(model.kit_template_id);startBasketKitLotDraft(null)}
+    }catch(e){toast(errorMessage(e?.message||'Não consegui criar a Cesta/Kit.'));btn.disabled=false;btn.textContent='Criar e montar primeiro lote'}
+  }
+  function paintBasketCommercialFilters(){
+    const host=$('#basketCommercialFilters');if(!host)return;
+    const cats=state.basketCategories||[],active=String(state.basketCommercialFilter||'');
+    host.innerHTML='<div class="basket-toolbar" style="margin:0 0 14px"><button class="'+(!active?'primary':'secondary')+'" data-basket-commercial-filter="" type="button">Todas</button>'+cats.map(c=>'<button class="'+(active===String(c.slug)?'primary':'secondary')+'" data-basket-commercial-filter="'+esc(c.slug)+'" type="button">'+esc(c.name)+'</button>').join('')+'</div>';
+    host.querySelectorAll('[data-basket-commercial-filter]').forEach(b=>b.onclick=()=>{state.basketCommercialFilter=String(b.dataset.basketCommercialFilter||'');paintBasketCommercialFilters();paintBasketCommercialModels()});
+  }
+  function basketAvailabilityCopy(reason){
+    return reason==='component_out_of_stock'?'Produto da composição sem estoque':reason==='linked_lot_unavailable'?'Lote vinculado indisponível':reason==='paused'?'Venda pausada':reason==='draft'?'Em edição':reason==='depleted'?'Sem unidades disponíveis':reason==='model_inactive'||reason==='category_inactive'?'Indisponível':'Disponível para venda';
+  }
+  function basketCommercialCard(m){
+    const canEdit=Boolean(m.editor_kit_template_id)||m.source_kind==='basket';
+    const pause=m.availability_reason==='paused',canToggle=Boolean(m.operational_lot_id)&&m.state!=='Em edição'&&m.state!=='Esgotado';
+    const price=Number(m.price||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    return '<article class="basket-admin-card" data-commercial-card="'+esc(m.commercial_id)+'">'+
+      '<div class="basket-admin-head"><img src="'+esc(m.image_url||'/img/sem-foto.svg')+'" alt=""><div><span class="pill">'+esc(m.category_name||'Sem categoria')+'</span><h3 style="margin:6px 0 2px">'+esc(m.name)+'</h3><p>'+esc(price)+'</p></div></div>'+
+      '<div class="basket-kpis"><div class="basket-kpi"><small>Estoque público</small><strong>'+esc(m.public_available||0)+'</strong></div><div class="basket-kpi"><small>Estado</small><strong>'+esc(m.state||'—')+'</strong></div><div class="basket-kpi"><small>Lote atual</small><strong>'+esc(m.public_lot_code||m.operational_lot_code||'—')+'</strong></div><div class="basket-kpi"><small>Lotes</small><strong>'+esc(m.lot_count||0)+'</strong></div></div>'+
+      '<p class="sub" style="margin:0">'+esc(basketAvailabilityCopy(m.availability_reason))+'</p>'+
+      '<div class="basket-toolbar">'+
+        (canEdit?'<button class="secondary" data-commercial-edit="'+esc(m.commercial_id)+'" type="button">Editar</button>':'')+
+        (m.editor_kit_template_id?'<button class="primary" data-commercial-new="'+esc(m.commercial_id)+'" type="button">Novo lote</button>':'')+
+        (m.editor_kit_template_id&&m.duplicate_lot_id?'<button class="secondary" data-commercial-duplicate="'+esc(m.commercial_id)+'" type="button">Duplicar</button>':'')+
+        (canToggle?'<button class="secondary" data-commercial-toggle="'+esc(m.commercial_id)+'" data-enabled="'+(pause?'1':'0')+'" type="button">'+(pause?'Retomar venda':'Pausar venda')+'</button>':'')+
+        (m.operational_lot_id?'<button class="secondary" data-commercial-print="'+esc(m.commercial_id)+'" type="button">Imprimir</button>':'')+
+      '</div></article>';
+  }
+  function paintBasketCommercialModels(){
+    const host=$('#basketAdminBody');if(!host)return;const filter=String(state.basketCommercialFilter||'');
+    const rows=(state.basketCommercialModels||[]).filter(m=>!filter||String(m.category_slug||'')===filter);
+    host.innerHTML=rows.length?'<div class="basket-admin-grid">'+rows.map(basketCommercialCard).join('')+'</div>':'<div class="empty">Nenhuma Cesta/Kit nesta categoria.</div>';
+    const find=id=>(state.basketCommercialModels||[]).find(x=>String(x.commercial_id)===String(id));
+    host.querySelectorAll('[data-commercial-edit]').forEach(b=>b.onclick=()=>openBasketCommercialEditor(find(b.dataset.commercialEdit),'edit'));
+    host.querySelectorAll('[data-commercial-new]').forEach(b=>b.onclick=()=>openBasketCommercialEditor(find(b.dataset.commercialNew),'new'));
+    host.querySelectorAll('[data-commercial-duplicate]').forEach(b=>b.onclick=()=>openBasketCommercialEditor(find(b.dataset.commercialDuplicate),'duplicate'));
+    host.querySelectorAll('[data-commercial-toggle]').forEach(b=>b.onclick=async()=>{const m=find(b.dataset.commercialToggle);if(m?.operational_lot_id)await toggleBasketLotSale(m.operational_lot_id,b.dataset.enabled==='1','canonical')});
+    host.querySelectorAll('[data-commercial-print]').forEach(b=>b.onclick=async()=>{const m=find(b.dataset.commercialPrint);if(!m?.editor_kit_template_id)return;await openBasketKitAdmin(m.editor_kit_template_id);const lot=(state.basketKitDetail?.lots||[]).find(x=>String(x.id)===String(m.operational_lot_id));if(lot)printBasketKitLot(lot)});
+  }
+  async function openBasketCommercialEditor(m,mode){
+    if(!m)return;
+    if(m.editor_kit_template_id){await openBasketKitAdmin(m.editor_kit_template_id);if(mode==='new')startBasketKitLotDraft(null);else if(mode==='duplicate'&&m.duplicate_lot_id)startBasketKitLotDraft(m.duplicate_lot_id);return}
+    if(m.source_kind==='basket')await openBasketAdmin(m.commercial_id);
+  }
+
   function kitAdminCard(k){
     const label=k.kind==='hygiene'?'Limpeza e Higiene':(k.basket?.name||k.name).replace(/^Alimentos · /,'');
     const draftCount=Number(k.draft_lot_count||0);
@@ -3430,7 +3445,7 @@
     const op=requireOperator();if(!op)return;
     try{
       await api('basket_lot_sale_toggle',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,enabled,operator:op})});
-      toast(enabled?'Lote ativado para venda':'Lote retirado do site');
+      toast(enabled?'Venda retomada':'Venda pausada');
       if(returnKind==='kit'&&state.basketKitDetail?.kit?.id)await openBasketKitAdmin(state.basketKitDetail.kit.id);
       else if(returnKind==='legacy'&&state.basketDetail?.basket?.id)await openBasketAdmin(state.basketDetail.basket.id);
       else await renderBaskets();
@@ -3473,10 +3488,10 @@
         '<small><b>Valor: '+money(cents(price))+'</b>'+(linkedHygiene?' · Limpeza/Higiene: '+esc(linkedHygiene.public_name||linkedHygiene.short_code||linkedHygiene.lot_code||'lote'):'')+'</small></div>'+
       '<div><strong>'+(isDraft?esc(l.quantity_built):esc(l.quantity_available)+' / '+esc(l.quantity_built))+'</strong><small>'+(isDraft?'quantidade planejada':'disponível / montado')+'</small></div>'+
       '<div><span class="pill '+(l.status==='ready'?'':isDraft?'warn':'off')+'">'+esc(l.status==='ready'?'Montado':l.status==='depleted'?'Esgotado':l.status==='cancelled'?'Cancelado':'Em edição')+'</span></div>'+
-      '<div><span class="pill '+(l.sale_enabled===true?'':'off')+'">'+(isDraft?'NÃO RESERVA ESTOQUE':l.sale_enabled===true?'ATIVO NO SITE':'FORA DO SITE')+'</span></div>'+
+      '<div><span class="pill '+(l.sale_enabled===true?'':'off')+'">'+(isDraft?'NÃO RESERVA ESTOQUE':l.sale_enabled===true?'VENDA ATIVA':'VENDA PAUSADA')+'</span></div>'+
       '<div class="basket-row-actions">'+
         (isDraft?'<button class="primary" type="button" data-kit-lot-mount="'+esc(l.id)+'">Marcar como montado</button><button class="secondary" type="button" data-kit-lot-resume="'+esc(l.id)+'">Continuar editando</button><button class="text danger" type="button" data-kit-lot-draft-delete="'+esc(l.id)+'">Excluir rascunho</button>':
-          (canToggle?'<button class="'+(l.sale_enabled===true?'secondary':'primary')+'" type="button" data-kit-lot-sale="'+esc(l.id)+'" data-enabled="'+(l.sale_enabled===true?'0':'1')+'">'+(l.sale_enabled===true?'Desativar no site':'Ativar no site')+'</button>':'')+
+          (canToggle?'<button class="'+(l.sale_enabled===true?'secondary':'primary')+'" type="button" data-kit-lot-sale="'+esc(l.id)+'" data-enabled="'+(l.sale_enabled===true?'0':'1')+'">'+(l.sale_enabled===true?'Pausar venda':'Retomar venda')+'</button>':'')+
           (canEdit?'<button class="secondary" type="button" data-kit-lot-edit="'+esc(l.id)+'">Editar lote</button>':'')+
           (['ready','depleted'].includes(l.status)?'<button class="secondary" type="button" data-kit-lot-print="'+esc(l.id)+'">Imprimir lote</button>':'')+
           '<button class="secondary" type="button" data-kit-lot-copy="'+esc(l.id)+'">Duplicar</button><button class="text danger" type="button" data-kit-lot-delete="'+esc(l.id)+'">Excluir lote</button>')+
@@ -3491,14 +3506,14 @@
   }
   async function mountBasketKitLot(lotId){
     const op=requireOperator();if(!op)return;
-    try{await api('basket_kit_lot_draft_activate',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op})});toast('Lote marcado como montado · continua fora do site');await openBasketKitAdmin(state.basketKitDetail.kit.id)}
+    try{await api('basket_kit_lot_draft_activate',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op})});toast('Lote montado · venda automática enquanto houver estoque');await openBasketKitAdmin(state.basketKitDetail.kit.id)}
     catch(e){const c=String(e?.message||'');toast(c==='insufficient_loose_stock'?'Falta estoque para marcar este lote como montado.':c==='lot_product_unavailable'?'Há produto indisponível neste lote.':'Não consegui concluir a montagem.')}
   }
   async function reopenBasketKitLot(lotId){
     const op=requireOperator();if(!op)return;if(!confirm('Reabrir este lote para edição? O estoque reservado por ele ficará disponível até você marcar como montado novamente.'))return;
     const kid=state.basketKitDetail?.kit?.id;
     try{await api('basket_kit_lot_reopen',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lot_id:lotId,operator:op})});await openBasketKitAdmin(kid);startBasketKitLotDraft(lotId);toast('Lote reaberto para edição')}
-    catch(e){const c=String(e?.message||'');toast(c==='lot_sale_must_be_disabled'?'Desative o lote no site antes de editar.':c==='lot_has_order_history'?'Este lote já foi usado em pedido e deve permanecer no histórico.':c==='lot_already_changed'?'Este lote já teve unidades consumidas ou desmontadas e não pode voltar para edição.':c==='lot_is_dependency'?'Outro lote montado depende deste vínculo. Edite o vínculo primeiro.':'Não consegui reabrir o lote.')}
+    catch(e){const c=String(e?.message||'');toast(c==='lot_sale_must_be_disabled'?'Pause a venda do lote antes de editar.':c==='lot_has_order_history'?'Este lote já foi usado em pedido e deve permanecer no histórico.':c==='lot_already_changed'?'Este lote já teve unidades consumidas ou desmontadas e não pode voltar para edição.':c==='lot_is_dependency'?'Outro lote montado depende deste vínculo. Edite o vínculo primeiro.':'Não consegui reabrir o lote.')}
   }
   function paintBasketKitAdmin(){
     const d=state.basketKitDetail;if(!d)return;const k=d.kit,content=$('#content');
@@ -3571,6 +3586,17 @@
     let cap=999999;for(const x of grouped.values())if(x.qty>0)cap=Math.min(cap,Math.floor(Number(x.stock||0)/x.qty));
     return cap===999999?0:Math.max(0,cap);
   }
+  function basketBusinessTypeForCategory(categoryId){
+    const c=(state.basketCategories||[]).find(x=>String(x.id)===String(categoryId||''));
+    const bySlug={
+      'cestas-completas':'basic_complete',
+      'cestas-so-alimento':'basic_food',
+      'kits-limpeza-e-higiene':'cleaning_hygiene',
+      'kits-limpeza':'cleaning',
+      'kits-higiene':'hygiene'
+    };
+    return bySlug[String(c?.slug||'')]||'';
+  }
   function startBasketKitLotDraft(sourceLotId=null){
     const d=state.basketKitDetail;if(!d)return;
     const source=sourceLotId?(d.lots||[]).find(x=>String(x.id)===String(sourceLotId)):null;
@@ -3599,7 +3625,7 @@
       notes:resumeDraft?(source.notes||''):'',
       public_name:String(source?.public_name||d.kit?.basket?.name||d.kit?.name||''),
       sale_price:Number(source?.own_sale_price_override??source?.sale_price_override??d.kit?.basket?.base_price??0),
-      business_type:String(source?.business_type||(d.kit.kind==='food'?'basic_food':'cleaning_hygiene')),
+      business_type:String(source?.business_type||basketBusinessTypeForCategory(d.kit?.basket?.category_id)||(d.kit.kind==='food'?'basic_food':'cleaning_hygiene')),
       linked_lot_id:source?.linked_lot_id||source?.linked_hygiene_lot_id||null,
       items
     };
@@ -3856,9 +3882,9 @@
       '<div><strong>'+esc(l.lot_code)+'</strong><small>'+esc(l.source==='bootstrap_existing'?'Estoque inicial informado':l.built_by||'Operação')+' · '+esc(dateTime(l.built_at))+'</small></div>'+
       '<div><strong>'+esc(l.quantity_available)+' / '+esc(l.quantity_built)+'</strong><small>disponível / montado'+(dismantled?' · '+esc(dismantled)+' desmontada(s)':'')+'</small></div>'+
       '<div>'+basketGapLabel(gap)+'</div>'+
-      '<div><span class="pill '+(l.sale_enabled===true?'':'off')+'">'+(l.sale_enabled===true?'NO SITE':'FORA DO SITE')+'</span></div>'+
+      '<div><span class="pill '+(l.sale_enabled===true?'':'off')+'">'+(l.sale_enabled===true?'NO SITE':'VENDA PAUSADA')+'</span></div>'+
       '<div class="basket-row-actions">'+
-        (canToggle?'<button class="'+(l.sale_enabled===true?'secondary':'primary')+'" type="button" data-legacy-lot-sale="'+esc(l.id)+'" data-enabled="'+(l.sale_enabled===true?'0':'1')+'">'+(l.sale_enabled===true?'Desativar no site':'Ativar no site')+'</button>':'')+
+        (canToggle?'<button class="'+(l.sale_enabled===true?'secondary':'primary')+'" type="button" data-legacy-lot-sale="'+esc(l.id)+'" data-enabled="'+(l.sale_enabled===true?'0':'1')+'">'+(l.sale_enabled===true?'Pausar venda':'Retomar venda')+'</button>':'')+
         (['ready','depleted'].includes(l.status)?'<button class="secondary" type="button" data-lot-image="'+esc(l.id)+'">Gerar imagem</button>':'')+
         (Number(l.quantity_available||0)>0?'<button class="secondary" type="button" data-basket-legacy-release="'+esc(l.id)+'">Migrar unidades</button>':'')+
       '</div></div>'+
