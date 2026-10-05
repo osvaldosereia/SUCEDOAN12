@@ -9,8 +9,8 @@ import {
 assert.equal(ANA_CUSTOMER_PROFILE_SCHEMA.additionalProperties,false,'schema raiz deve ser estrito');
 const item=ANA_CUSTOMER_PROFILE_SCHEMA.properties.candidates.items;
 assert.equal(item.additionalProperties,false,'candidato deve ser estrito');
-for(const key of ['field_name','value','confidence','classification','recommendation','evidence_message_ids']){
-  assert.ok(item.required.includes(key),`candidato exige ${key}`);
+for(const key of ['field_name','value','confidence','classification','recommendation','evidence_message_ids','third_party_context']){
+  assert.ok(item.required.includes(key),`candidato exige ${key} para Structured Outputs estrito`);
 }
 assert.equal(item.properties.field_name.enum.includes('phone'),false,'modelo não controla telefone');
 assert.equal(item.properties.field_name.enum.includes('customer_id'),false,'modelo não controla customer_id');
