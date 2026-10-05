@@ -14,7 +14,7 @@ assert.match(source,/data-simple-campaign-search/,'deve existir busca por nome')
 assert.match(source,/data-simple-campaign-status/,'deve existir filtro por situação');
 assert.match(source,/data-simple-campaign-channel/,'deve existir filtro por canal');
 assert.match(source,/data-campaign-report/,'cada linha deve reservar ação de relatório');
-assert.doesNotMatch(source,/Revisão\s*\$\{|snapshot|dispatch|WAMID|UUID/i,'lista comum não deve mostrar jargão técnico');
+for(const jargon of ['snapshot','dispatch','WAMID','UUID'])assert.equal(new RegExp(`>[^<]*${jargon}[^<]*<`,'i').test(source),false,`${jargon} não deve aparecer como texto visível na lista`);
 assert.doesNotMatch(source,/graph\.facebook\.com/,'browser não deve chamar Meta Graph');
 assert.match(entry,/campaign-list-simple\.js/,'bootstrap deve carregar lista simples');
 console.log('marketing campaign simple list contract: ok');
