@@ -58,6 +58,12 @@ async function activeAccount(accountId:string|null,channel:Channel){
   return (q.data||[]).find((row:any)=>channelFromPhone(row.phone_e164)===channel)||null;
 }
 
+async function templateApprovedForAccount(accountId:string,templateName:string){
+  const q=await db.from("whatsapp_templates_v1").select("status").eq("whatsapp_account_id",accountId).eq("name",templateName).eq("language",TEMPLATE_LANGUAGE).maybeSingle();
+  if(q.error)throw q.error;
+  return String(q.data?.status||"").toUpperCase()==="APPROVED";
+}
+
 async function canonicalConversation(route:any,order:any,account:any){
   const direct=uuid(route?.conversation_id)||uuid(order?.conversation_id);
   if(direct)return direct;
@@ -136,6 +142,7 @@ Deno.serve(async(req:Request)=>{
     const account=await activeAccount(uuid(route.whatsapp_account_id)||uuid(order.whatsapp_account_id)||null,channel);
     if(!account||!/^\d{5,30}$/.test(String(account.phone_number_id||"")))return respond({ok:false,error:"whatsapp_account_missing",channel_origin:channel},409);
     const templateName=TEMPLATE_BY_KIND[kind][channel];
+    const templateApproved=await templateApprovedForAccount(account.id,templateName);
     const originalTotal=completion.original_total??order.total??0,finalTotal=completion.final_total??order.total??0;
     const missingText=missingItemsText(missingItems);
     const components=kind==="prepared_adjusted"?[{type:"body",parameters:[
@@ -146,10 +153,11 @@ Deno.serve(async(req:Request)=>{
     ]}];
 
     const payload={public_code:publicCode,order_url:orderUrl,missing_items:missingItems,missing_items_text:missingText,original_total:originalTotal,missing_subtotal:missingSubtotal,final_total:finalTotal,template_name:templateName,components};
+    const initialStatus=templateApproved?"sending":"pending";
     const insert=await db.from("order_separation_customer_notifications_v1").insert({
-      order_id:orderId,notification_kind:kind,status:"sending",whatsapp_account_id:account.id,
+      order_id:orderId,notification_kind:kind,status:initialStatus,whatsapp_account_id:account.id,
       conversation_id:uuid(route.conversation_id)||uuid(order.conversation_id)||null,customer_id:order.customer_id||null,
-      phone_e164:routePhone,channel_origin:channel,template_name:templateName,attempt_count:1,payload
+      phone_e164:routePhone,channel_origin:channel,template_name:templateName,attempt_count:templateApproved?1:0,payload
     }).select("id,status,provider_message_id").maybeSingle();
 
     let notification:any=insert.data;
@@ -159,11 +167,16 @@ Deno.serve(async(req:Request)=>{
       if(existing.error)throw existing.error;
       if(existing.data?.status==="accepted")return respond({ok:true,status:"accepted",duplicate:true,notification_id:existing.data.id,provider_message_id:existing.data.provider_message_id,public_code:publicCode});
       if(existing.data?.status==="sending"||existing.data?.status==="uncertain")return respond({ok:false,error:"notification_not_retryable",status:existing.data.status,notification_id:existing.data.id},409);
-      if(body?.retry!==true)return respond({ok:false,error:"notification_requires_explicit_retry",status:existing.data?.status||"failed",notification_id:existing.data?.id||null},409);
-      const claimed=await db.from("order_separation_customer_notifications_v1").update({status:"sending",last_error:null,attempt_count:2,updated_at:new Date().toISOString(),payload}).eq("id",existing.data.id).in("status",["pending","retry","failed"]).select("id,status,provider_message_id").maybeSingle();
+      if(existing.data?.status==="pending"&&!templateApproved)return respond({ok:true,status:"pending",reason:"template_pending_approval",notification_id:existing.data.id,template_name:templateName,public_code:publicCode},202);
+      const automaticPendingClaim=existing.data?.status==="pending"&&templateApproved;
+      if(!automaticPendingClaim&&body?.retry!==true)return respond({ok:false,error:"notification_requires_explicit_retry",status:existing.data?.status||"failed",notification_id:existing.data?.id||null},409);
+      const claimable=automaticPendingClaim?["pending"]:["retry","failed"];
+      const claimed=await db.from("order_separation_customer_notifications_v1").update({status:"sending",last_error:null,attempt_count:automaticPendingClaim?1:2,updated_at:new Date().toISOString(),payload}).eq("id",existing.data.id).in("status",claimable).select("id,status,provider_message_id").maybeSingle();
       if(claimed.error)throw claimed.error;if(!claimed.data)return respond({ok:false,error:"notification_claim_failed"},409);
       notification=claimed.data;
     }
+
+    if(!templateApproved)return respond({ok:true,status:"pending",reason:"template_pending_approval",notification_id:notification?.id||null,template_name:templateName,public_code:publicCode},202);
 
     let result:any=null;
     for(let attempt=1;attempt<=2;attempt++){
