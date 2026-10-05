@@ -61,6 +61,7 @@
       '<div class="basket-toolbar">'+
         '<button class="secondary" data-basket-edit type="button">Editar</button>'+
         '<button class="primary" data-basket-new-lot type="button">Novo lote</button>'+
+        (m.operational_lot_id?'<button class="secondary" data-basket-edit-lot type="button">Editar lote</button>':'')+
         (canDuplicate?'<button class="secondary" data-basket-duplicate type="button">Duplicar</button>':'')+
         (canToggle?'<button class="secondary" data-basket-sale="'+(pause?'1':'0')+'" type="button">'+(pause?'Retomar venda':'Pausar venda')+'</button>':'')+
         (m.operational_lot_id?'<button class="secondary" data-basket-print type="button">Imprimir</button>':'')+
@@ -80,6 +81,7 @@
     host.innerHTML=rows.length?'<div class="basket-admin-grid">'+rows.map(cardHtml).join('')+'</div>':'<div class="empty">Nenhuma Cesta/Kit nesta categoria.</div>';
     host.querySelectorAll('[data-basket-edit]').forEach(btn=>btn.addEventListener('click',()=>openGuided(modelFromCard(btn),'model')));
     host.querySelectorAll('[data-basket-new-lot]').forEach(btn=>btn.addEventListener('click',()=>openGuided(modelFromCard(btn),'lot')));
+    host.querySelectorAll('[data-basket-edit-lot]').forEach(btn=>btn.addEventListener('click',()=>editCurrentLot(modelFromCard(btn))));
     host.querySelectorAll('[data-basket-duplicate]').forEach(btn=>btn.addEventListener('click',()=>duplicateLot(modelFromCard(btn))));
     host.querySelectorAll('[data-basket-sale]').forEach(btn=>btn.addEventListener('click',()=>setSale(modelFromCard(btn),btn.dataset.basketSale==='1')));
     host.querySelectorAll('[data-basket-print]').forEach(btn=>btn.addEventListener('click',()=>printCommercialLot(modelFromCard(btn))));
@@ -163,6 +165,16 @@
       return (data.lots||[]).find(x=>String(x.id)===String(lotId))||null;
     }
     return null;
+  }
+
+  async function editCurrentLot(m){
+    const lotId=m?.operational_lot_id;if(!lotId){toast('Este modelo ainda não possui lote para editar.');return}
+    try{
+      const lot=await detailForLot(m,lotId,true);
+      if(!lot){toast('Não encontrei o lote atual para editar.');return}
+      if(!lot.assembly_status)lot.assembly_status=lot.status==='ready'?'mounted':'assembling';
+      openGuided(m,'lot',{lot});
+    }catch{toast('Não consegui carregar o lote atual para edição.')}
   }
 
   async function duplicateLot(m){

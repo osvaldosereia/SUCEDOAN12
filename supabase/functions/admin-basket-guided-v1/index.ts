@@ -115,6 +115,35 @@ async function positionProducts(input:any){
   return {source:"search",position,family_key:null,products:page.map((p:any)=>productCard(p,stocks.get(String(p.id)))),total,next_offset:offset+page.length<total?offset+page.length:null};
 }
 
+async function linkableLots(input:any){
+  const basketId=uuid(input?.basket_id);
+  let q=db.from("basket_stock_lots")
+    .select("id,basket_id,kit_template_id,lot_kind,short_code,lot_code,status,assembly_status,sale_enabled,quantity_built,quantity_available,built_at,public_name,business_type,linked_lot_id,sale_price_override,own_sale_price_override,component_sum_snapshot,cost_sum_snapshot")
+    .not("kit_template_id","is",null).in("status",["draft","ready"]).is("linked_lot_id",null)
+    .order("built_at",{ascending:false}).limit(250);
+  if(basketId)q=q.neq("basket_id",basketId);
+  const found=await q;if(found.error)throw found.error;
+  const lots:any[]=found.data||[],lotIds=lots.map((x:any)=>String(x.id)).filter(Boolean);
+  const items:any[]=[];
+  for(let pos=0;pos<lotIds.length;pos+=80){
+    const r=await db.from("basket_stock_lot_items").select("lot_id,product_id,quantity_per_basket,position_order").in("lot_id",lotIds.slice(pos,pos+80)).order("position_order");
+    if(r.error)throw r.error;items.push(...(r.data||[]));
+  }
+  const productIds=[...new Set(items.map((x:any)=>String(x.product_id||"")).filter(Boolean))];
+  const products=new Map<string,any>();
+  for(let pos=0;pos<productIds.length;pos+=80){
+    const r=await db.from("products").select("id,name,sku,gtin,packaging,image_url,cost,price,is_active").in("id",productIds.slice(pos,pos+80));
+    if(r.error)throw r.error;for(const row of r.data||[])products.set(String(row.id),row);
+  }
+  const stocks=await stockMap(productIds),byLot=new Map<string,any[]>();
+  for(const item of items){
+    const product=products.get(String(item.product_id))||{},stock=stocks.get(String(item.product_id));
+    const row={...item,loose_stock:num(stock?.loose_sellable_stock),product:{...product,loose_stock:num(stock?.loose_sellable_stock)}};
+    const arr=byLot.get(String(item.lot_id))||[];arr.push(row);byLot.set(String(item.lot_id),arr);
+  }
+  return {lots:lots.map((lot:any)=>({...lot,items:byLot.get(String(lot.id))||[]}))};
+}
+
 async function modelEditor(input:any){
   const basketId=uuid(input?.basket_id);if(!basketId)return {error:"invalid_basket",status:400};
   const [q,categories]=await Promise.all([
@@ -157,6 +186,7 @@ Deno.serve(async(req:Request)=>{
     let result:any;
     if(action==="model_editor")result=await modelEditor(input);
     else if(action==="position_products")result=await positionProducts(input);
+    else if(action==="linkable_lots")result=await linkableLots(input);
     else if(action==="model_save")result=await modelSave(input);
     else if(action==="lot_preview")result=await lotPreview(input);
     else if(action==="lot_reserve")result=await lotReserve(input);
