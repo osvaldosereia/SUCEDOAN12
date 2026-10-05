@@ -29,7 +29,8 @@ assert.match(source,/from\(["']marketing_strategy_runs_v1["']\)/,'deve persistir
 assert.match(source,/from\(["']marketing_strategy_offers_v1["']\)/,'deve persistir offers snapshot');
 assert.match(source,/marketing_strategy_(append_event|transition)_v1/,'deve registrar ledger/transições via RPC canônica');
 
-assert.match(source,/approve_internal[\s\S]{0,5000}marketing_strategy_transition_v1/,'aprovação interna deve apenas transicionar estratégia');
+assert.match(source,/async function approveInternal[\s\S]{0,300}return transition\(body,adminUserId,["']approved_internal["']\)/,'aprovação interna deve somente delegar para a transição local');
+assert.match(source,/async function transition[\s\S]{0,1500}marketing_strategy_transition_v1/,'helper de transição deve usar a RPC auditada');
 assert.doesNotMatch(source,/graph\.facebook\.com/i,'Edge de estratégia local não pode chamar Graph');
 assert.doesNotMatch(source,/marketing_schedule_campaign_v1|marketing_start_campaign_v1|send_now|schedule_send/i,'Task 3 não pode agendar/iniciar campanha');
 assert.doesNotMatch(source,/to_phone_e164\s*:|destination_phone\s*:|phone_number_id\s*:/i,'Task 3 não pode receber destino de envio');
