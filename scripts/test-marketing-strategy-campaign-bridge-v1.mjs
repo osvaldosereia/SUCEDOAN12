@@ -9,6 +9,7 @@ for(const fn of [
   'marketing_strategy_revalidate_commercial_v1',
   'marketing_strategy_materialize_campaign_v1',
   'marketing_strategy_approve_send_v1',
+  'marketing_strategy_schedule_send_v1',
 ]){
   assert.match(sql,new RegExp(`create\\s+or\\s+replace\\s+function\\s+public\\.${fn}\\s*\\(`,'i'),`RPC ausente: ${fn}`);
   assert.match(sql,new RegExp(`grant\\s+execute\\s+on\\s+function\\s+public\\.${fn}`,'i'),`RPC deve ser service-role only: ${fn}`);
@@ -25,11 +26,13 @@ assert.match(sql,/strategy_material_change/i,'mudança material deve bloquear e 
 assert.match(sql,/marketing_create_campaign_v1/i,'ponte deve reutilizar criação canônica de campanha');
 assert.match(sql,/marketing_create_campaign_snapshot_v1/i,'ponte deve reutilizar snapshot canônico');
 assert.match(sql,/marketing_transition_campaign_v1/i,'ponte deve reutilizar state machine canônica de campanha');
+assert.match(sql,/marketing_schedule_campaign_v1/i,'ponte de agendamento deve reutilizar gate/agendamento canônico');
 assert.match(sql,/marketing_strategy_transition_v1/i,'ponte deve manter state machine da Estratégia');
 assert.match(sql,/ready_for_review/i,'campanha materializada deve ficar em revisão antes do Portão C');
 assert.match(sql,/ready_to_send/i,'estratégia materializada deve chegar a Pronta para envio');
 assert.match(sql,/send_approved/i,'Portão C deve registrar aprovação separada do disparo');
 assert.match(sql,/approved[^\n]{0,200}ready_for_review|ready_for_review[^\n]{0,200}approved/i,'aprovação do disparo deve aprovar a campanha canônica');
+assert.match(sql,/scheduled/i,'agendamento bem-sucedido deve refletir estado scheduled');
 assert.match(sql,/strategy_id/i,'campanha e estratégia devem permanecer ligadas');
 assert.match(sql,/idempot/i,'materialização deve ser idempotente');
 assert.doesNotMatch(sql,/campaigns_enabled\s*=\s*true|mode\s*=\s*['"]live['"]|ana_enabled\s*=\s*true/i,'ponte não pode ativar runtime');
@@ -40,13 +43,11 @@ const edge=fs.readFileSync(edgePath,'utf8');
 for(const action of ['materialize_campaign','approve_send','schedule_send','start_send']){
   assert.ok(edge.includes(`"${action}"`)||edge.includes(`'${action}'`),`action ausente na Edge: ${action}`);
 }
-for(const rpc of ['marketing_strategy_materialize_campaign_v1','marketing_strategy_approve_send_v1','marketing_schedule_campaign_v1']){
-  assert.match(edge,new RegExp(`rpc\\(["']${rpc}["']`,'i'),`Edge deve delegar à RPC canônica: ${rpc}`);
+for(const rpc of ['marketing_strategy_materialize_campaign_v1','marketing_strategy_approve_send_v1','marketing_strategy_schedule_send_v1']){
+  assert.match(edge,new RegExp(`rpc\\(["']${rpc}["']`,'i'),`Edge deve delegar à RPC da ponte: ${rpc}`);
 }
-assert.match(edge,/send_approved/i,'schedule/start deve exigir Portão C aprovado');
-assert.match(edge,/marketing_strategy_transition_v1/i,'schedule/start deve refletir status da Estratégia somente após sucesso canônico');
-assert.doesNotMatch(edge,/campaigns_enabled\s*[:=]\s*true|ana_enabled\s*[:=]\s*true|runtime_mode\s*[:=]\s*["']live["']/i,'Edge não pode ativar runtime');
 assert.doesNotMatch(edge,/marketing_materialize_dispatches_v1|marketing_claim_dispatch_batch_v1|sendTemplateViaMeta/i,'Edge de Estratégia não pode despachar diretamente');
+assert.doesNotMatch(edge,/campaigns_enabled\s*[:=]\s*true|ana_enabled\s*[:=]\s*true|runtime_mode\s*[:=]\s*["']live["']/i,'Edge não pode ativar runtime');
 
 const uiPath='vitrine/admin/marketing/strategy-center.js';
 const ui=fs.readFileSync(uiPath,'utf8');
