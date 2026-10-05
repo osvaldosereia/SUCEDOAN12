@@ -11,7 +11,8 @@ assert.match(sql,/marketing_campaign_execution_runtime_v1/i,'tick deve consultar
 assert.match(sql,/mode\s+in\s*\(\s*['"]canary['"]\s*,\s*['"]live['"]\s*\)/i,'tick deve aceitar apenas canary/live');
 assert.match(sql,/return\s+null|return\s+0|no[_ ]?op/i,'gate fechado deve retornar sem HTTP');
 assert.match(sql,/net\.http_post\s*\(/i,'tick ativo deve usar pg_net');
-assert.match(sql,/whatsapp-marketing-worker-v1/i,'tick só pode chamar o worker de marketing');
+assert.match(sql,/https:\/\/ssbesxgaijknwsjbsbcz\.supabase\.co\/functions\/v1\/whatsapp-marketing-worker-v1/i,'tick deve chamar somente o endpoint canônico do worker');
+assert.match(sql,/timeout_milliseconds\s*:=\s*\d+/i,'HTTP do tick deve ter timeout finito');
 assert.match(sql,/marketing_campaign_worker_internal_key_v1\s*\(/i,'autenticação interna deve vir do servidor');
 assert.match(sql,/x-dona-antonia-marketing-worker-key/i,'header interno deve ser enviado ao worker');
 assert.match(sql,/jsonb_build_object\s*\(\s*['"]limit['"]/i,'payload deve conter limite');
