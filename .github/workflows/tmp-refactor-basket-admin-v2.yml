@@ -1,0 +1,28 @@
+name: Temporary basket admin canonical refactor
+on:
+  push:
+    branches:
+      - refactor/baskets-canonical-section-20261005
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[basket-canonical-patch-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/baskets-canonical-section-20261005
+      - name: Apply structural patch
+        run: python scripts/tmp-refactor-basket-admin-v2.py
+      - name: Commit structural refactor
+        run: |
+          if git diff --quiet -- vitrine/admin/index.html; then
+            echo 'No patch changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vitrine/admin/index.html
+          git commit -m 'refactor: remover runtime legado sobreposto de Cestas/Kits [basket-canonical-patch-applied]'
+          git push origin HEAD:refactor/baskets-canonical-section-20261005
