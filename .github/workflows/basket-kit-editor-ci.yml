@@ -61,6 +61,7 @@ jobs:
       - run: node "$RUNNER_TEMP/basket-tests/node_modules/playwright/cli.js" install --with-deps chromium
       - run: node --disable-warning=ExperimentalWarning scripts/test-assembly-kits-domain-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-admin-api-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-product-quick-edit-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-suggestions.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image-service.mjs
