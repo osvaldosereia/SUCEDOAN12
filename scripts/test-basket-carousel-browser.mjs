@@ -45,8 +45,8 @@ try{
    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"/>'});
  });
  await app.goto('https://app.test/');await app.locator('#basketGrid .basket-product').first().waitFor();
- assert.equal(await app.locator('#basketGrid .basket-product').count(),24,'all basket products remain available on the home page');
- assert.equal(await app.getByRole('heading',{name:'Cestas e Kits'}).count(),0,'home must not show the Cestas e Kits segmenter heading');
+ 
+ assert.equal(await app.getByRole('heading',{name:'Escolha suas Cestas e Kits',exact:true}).count(),1,'show the new home section heading');
  assert.equal(await app.locator('#basketGrid .basket-product').count(),24);
  await app.locator('#basketGrid [data-basket]').click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
