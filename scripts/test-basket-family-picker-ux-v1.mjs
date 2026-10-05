@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
+const guided=fs.readFileSync('vitrine/admin/basket-guided-builder.js','utf8');
 
 // Produto -> família -> todos os membros autorizados são sugestões de troca.
 assert.ok(admin.includes('function basketConfiguredFamilyForProduct('),'picker deve expor helper de família configurada');
@@ -44,12 +45,12 @@ assert.ok(!apiFn.includes('basketKitPackageCompatible'),'embalagem não pode ocu
 assert.ok(!apiFn.includes('slice(0,7)'),'família não pode ser truncada para sete sugestões');
 assert.ok(apiFn.includes('loose_stock'),'endpoint deve devolver estoque de cada sugestão');
 
-// A aba deve ser somente o catálogo de sugestões por família, sem gerador/fila automática.
-assert.ok(admin.includes('id="basketProductSuggestions"'),'Cestas deve expor botão Sugestões de produtos');
-assert.ok(admin.includes('>Sugestões de produtos</button>'),'botão deve usar o novo nome');
-assert.ok(admin.includes("$('#basketProductSuggestions').onclick=openBasketSubstitutionCatalog;"),'botão deve abrir diretamente o catálogo de famílias');
-assert.ok(admin.includes("$('#editorTitle').textContent='Sugestões de produtos';"),'catálogo deve usar o novo título');
-assert.ok(admin.includes('Produtos da mesma família aparecem como sugestões de troca entre si.'),'catálogo deve explicar a regra de família');
+// No fluxo canônico novo, as famílias alimentam os carrosséis do editor guiado.
+// O botão global legado de sugestões não deve mais ser exposto no topo.
+assert.ok(!admin.includes('id="basketProductSuggestions"'),'botão legado de Sugestões de produtos deve sair do topo de Cestas/Kits');
+assert.ok(guided.includes('family_key'),'editor guiado deve preservar a família configurada de cada posição');
+assert.ok(guided.includes("call('position_products'"),'editor guiado deve buscar produtos/famílias pela API protegida');
+assert.ok(guided.includes('Carregar produtos')||guided.includes('IntersectionObserver'),'carrosséis guiados devem carregar produtos sob demanda');
 assert.ok(!admin.includes('Sugestões automáticas de lotes'),'tela antiga de sugestões automáticas deve sair do Admin');
 assert.ok(!admin.includes('Gerar sugestões agora'),'geração manual automática deve sair do Admin');
 assert.ok(!admin.includes('Automação segura'),'configuração da automação deve sair do Admin');

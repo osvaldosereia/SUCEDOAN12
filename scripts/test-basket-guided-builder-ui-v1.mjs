@@ -50,4 +50,36 @@ const saveBlock=ui.slice(saveStart,saveEnd);
 assert.match(saveBlock,/model_save/,'saving model must call model_save');
 assert.doesNotMatch(saveBlock,/lot_reserve/,'saving model must not reserve stock');
 
+// Regressões observadas em produção em 2026-10-05.
+const newLotStart=admin.indexOf("host.querySelectorAll('[data-commercial-new]')");
+const newLotEnd=admin.indexOf('\n    host.querySelectorAll',newLotStart+1);
+assert.ok(newLotStart>=0&&newLotEnd>newLotStart,'commercial Novo lote binding must exist');
+const newLotBinding=admin.slice(newLotStart,newLotEnd);
+assert.match(newLotBinding,/DonaAntoniaBasketGuided\?\.open/,'card Novo lote must open guided builder directly');
+assert.doesNotMatch(newLotBinding,/startBasketKitLotDraft/,'card Novo lote must not call the legacy lot composer');
+
+const printStart=admin.indexOf("host.querySelectorAll('[data-commercial-print]')");
+const printEnd=admin.indexOf('\n  }',printStart+1);
+assert.ok(printStart>=0&&printEnd>printStart,'commercial print binding must exist');
+const printBinding=admin.slice(printStart,printEnd);
+assert.doesNotMatch(printBinding,/openBasketKitAdmin/,'Imprimir on commercial card must not navigate into basket detail');
+assert.match(printBinding,/source_kind==='basket'[\s\S]*api\('basket_admin'/,'legacy/full basket lots must load from basket_admin before printing');
+assert.match(printBinding,/api\('basket_kit_admin'/,'standalone kit lots must still load from basket_kit_admin');
+assert.match(printBinding,/printBasketKitLot\(m\.operational_lot_id\)/,'Imprimir must pass the lot id, not the lot object');
+
+assert.doesNotMatch(admin,/id="basketProductSuggestions"/,'legacy broken Sugestões de produtos button must not be exposed in the canonical top toolbar');
+
+const archiveStart=admin.indexOf('async function archiveBasketKitTemplate');
+const archiveEnd=admin.indexOf('\n  function basketKitDraftCapacityFromItems',archiveStart+1);
+assert.ok(archiveStart>=0&&archiveEnd>archiveStart,'commercial model archive block must exist');
+const archiveBlock=admin.slice(archiveStart,archiveEnd);
+assert.match(archiveBlock,/basket_archive/,'linked commercial model deletion must archive the basket model, not only its internal kit template');
+assert.match(archiveBlock,/basket_has_live_lots/,'model deletion must explain live-lot safety block');
+
+const createSql=fs.readFileSync('supabase/sql/20261004_basket_commercial_create_v1.sql','utf8');
+assert.match(createSql,/v_prefix\s*:=\s*chr\([^;]+\)\s*\|\|\s*chr\(/i,'commercial model prefix must concatenate text with || in PostgreSQL');
+const archiveSql=fs.readFileSync('supabase/sql/20261005_basket_commercial_archive_fix_v1.sql','utf8');
+assert.match(archiveSql,/update\s+public\.basket_kit_templates[\s\S]*is_active\s*=\s*false/i,'commercial archive must deactivate its internal kit template atomically');
+assert.match(archiveSql,/basket_has_live_lots/i,'commercial archive must reject live lots before archiving');
+
 console.log('basket guided builder UI v1: PASS');

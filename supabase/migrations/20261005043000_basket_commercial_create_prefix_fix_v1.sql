@@ -1,4 +1,4 @@
--- Dona Antônia · criação unificada de Cesta/Kit comercial v1
+-- Corrige concatenação do prefixo de dois caracteres no PostgreSQL.
 create or replace function public.create_basket_commercial_model_v1(
   p_name text,
   p_category_id uuid,

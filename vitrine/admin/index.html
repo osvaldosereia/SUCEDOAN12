@@ -3312,8 +3312,8 @@
 
   async function renderBaskets(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Cestas/Kits</h1><p>Crie, edite e venda rapidamente. O site acompanha estoque e lotes automaticamente.</p></div><div class="basket-auto-actions"><button class="primary" id="basketCommercialCreate" type="button" disabled>Nova Cesta/Kit</button><button class="secondary" id="basketProductSuggestions" type="button">Sugestões de produtos</button><button class="secondary" id="refreshBaskets" type="button">Atualizar</button></div></div><div id="basketCommercialFilters"></div><div id="basketAdminBody"><div class="loading">Carregando Cestas/Kits…</div></div>';
-    $('#refreshBaskets').onclick=renderBaskets;$('#basketProductSuggestions').onclick=openBasketSubstitutionCatalog;$('#basketCommercialCreate').onclick=openBasketCommercialCreate;
+    content.innerHTML='<div class="page-head"><div><h1>Cestas/Kits</h1><p>Crie, edite e venda rapidamente. O site acompanha estoque e lotes automaticamente.</p></div><div class="basket-auto-actions"><button class="primary" id="basketCommercialCreate" type="button" disabled>Nova Cesta/Kit</button><button class="secondary" id="refreshBaskets" type="button">Atualizar</button></div></div><div id="basketCommercialFilters"></div><div id="basketAdminBody"><div class="loading">Carregando Cestas/Kits…</div></div>';
+    $('#refreshBaskets').onclick=renderBaskets;$('#basketCommercialCreate').onclick=openBasketCommercialCreate;
     try{
       const data=await api('basket_commercial_admin');
       state.basketCommercialModels=data.models||[];state.basketCategories=data.categories||[];state.basketCommercialFilter='';
@@ -3389,7 +3389,7 @@
     host.querySelectorAll('[data-commercial-new]').forEach(b=>b.onclick=()=>{const m=find(b.dataset.commercialNew);if(window.DonaAntoniaBasketGuided?.open)window.DonaAntoniaBasketGuided.open(m?.commercial_id,{mode:'lot',commercial:m});else openBasketCommercialEditor(m,'new')});
     host.querySelectorAll('[data-commercial-duplicate]').forEach(b=>b.onclick=()=>openBasketCommercialEditor(find(b.dataset.commercialDuplicate),'duplicate'));
     host.querySelectorAll('[data-commercial-toggle]').forEach(b=>b.onclick=async()=>{const m=find(b.dataset.commercialToggle);if(m?.operational_lot_id)await toggleBasketLotSale(m.operational_lot_id,b.dataset.enabled==='1','canonical')});
-    host.querySelectorAll('[data-commercial-print]').forEach(b=>b.onclick=async()=>{const m=find(b.dataset.commercialPrint);if(!m?.editor_kit_template_id)return;await openBasketKitAdmin(m.editor_kit_template_id);const lot=(state.basketKitDetail?.lots||[]).find(x=>String(x.id)===String(m.operational_lot_id));if(lot)printBasketKitLot(lot)});
+    host.querySelectorAll('[data-commercial-print]').forEach(b=>b.onclick=async()=>{const m=find(b.dataset.commercialPrint);if(!m?.operational_lot_id)return;try{if(m.source_kind==='basket'){const data=await api('basket_admin',{id:m.commercial_id});const lot=(data.lots||[]).find(x=>String(x.id)===String(m.operational_lot_id));if(!lot)throw new Error('lot_not_found');const previous=state.basketKitDetail;state.basketKitDetail={lots:[lot]};printBasketKitLot(m.operational_lot_id);state.basketKitDetail=previous}else{if(!m.editor_kit_template_id)return;const data=await api('basket_kit_admin',{id:m.editor_kit_template_id});state.basketKitDetail=data;printBasketKitLot(m.operational_lot_id)}}catch(e){toast('Não consegui preparar a impressão deste lote.')}});
   }
   async function openBasketCommercialEditor(m,mode){
     if(!m)return;
@@ -3574,9 +3574,20 @@
     catch(e){const c=String(e?.message||'');toast(c==='kit_template_product_duplicate'?'O mesmo produto não pode aparecer duas vezes no modelo.':c==='kit_template_product_unavailable'?'Há produto inativo no modelo.':'Não consegui salvar o modelo.');btn.disabled=false}
   }
   async function archiveBasketKitTemplate(){
-    const d=state.basketKitDetail,op=requireOperator();if(!d||!op)return;if(!confirm('Excluir este modelo de kit? Lotes e pedidos históricos serão preservados.'))return;
-    try{await api('basket_kit_template_archive',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kit_template_id:d.kit.id,operator:op})});toast('Modelo excluído');await renderBaskets()}
-    catch(e){toast(String(e?.message||'')==='kit_template_has_live_lots'?'Há lote em edição ou montado neste modelo. Exclua/finalize os lotes antes.':'Não consegui excluir o modelo.')}
+    const d=state.basketKitDetail,op=requireOperator();if(!d||!op)return;
+    const basketId=d.kit?.basket?.id||d.kit?.basket_id||null;
+    if(!confirm('Excluir este modelo? O histórico será preservado. Lotes em edição ou com unidades disponíveis precisam ser encerrados antes.'))return;
+    try{
+      if(basketId){
+        await api('basket_archive',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:basketId,operator:op})});
+      }else{
+        await api('basket_kit_template_archive',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kit_template_id:d.kit.id,operator:op})});
+      }
+      toast('Modelo excluído');await renderBaskets();
+    }catch(e){
+      const code=String(e?.message||'');
+      toast(code==='basket_has_live_lots'||code==='kit_template_has_live_lots'?'Há lote em edição ou com unidades disponíveis. Cancele/finalize esses lotes antes de excluir o modelo.':'Não consegui excluir o modelo.');
+    }
   }
   function basketKitDraftCapacityFromItems(items){
     if(!items?.length)return 0;const grouped=new Map();
