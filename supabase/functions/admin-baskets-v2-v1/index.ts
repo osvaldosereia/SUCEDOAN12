@@ -22,6 +22,8 @@ async function adminAuth(req:Request){
   if(!row.data?.user_id)return {ok:false as const,status:403,error:"admin_not_authorized"};
   return {ok:true as const,status:200,user_id:user.data.user.id};
 }
+async function readBody(req:Request){try{const raw=await req.text();if(raw.length>100000)return {ok:false as const,error:"payload_too_large"};const body=raw.trim()?JSON.parse(raw):{};if(!body||typeof body!=="object"||Array.isArray(body))return {ok:false as const,error:"invalid_body"};return {ok:true as const,body:body as Record<string,any>}}catch{return {ok:false as const,error:"invalid_json"}}}
+async function rpc(name:string,args:Record<string,unknown>){const q=await db.rpc(name,args);if(q.error)throw q.error;return q.data}
 
 async function stockMap(ids:string[]){
   const out=new Map<string,number>();const unique=[...new Set(ids.filter(Boolean))];if(!unique.length)return out;
@@ -60,18 +62,35 @@ async function componentCandidates(u:URL){
   return {items:(r.data||[]).map((x:any)=>({id:x.id,public_name:x.public_name,image_url:x.image_url||"",category:x.category,availability:am.get(String(x.id))||0,current_cost:validMoney(mm.get(String(x.id))?.current_cost),retail_products_total:validMoney(mm.get(String(x.id))?.retail_products_total),sale_price:validMoney(x.sale_price)}))};
 }
 
+async function handleWrite(action:string,body:Record<string,any>,auth:any){
+  const operator=clean(body.operator||auth.user_id,80)||"Operação";
+  if(action==="item_save")return rpc("basket_v2_item_save_v1",{p_item:body,p_operator:operator});
+  if(action==="item_duplicate"){const itemId=uuid(body.item_id);if(!itemId)throw new Error("invalid_id");return rpc("basket_v2_item_duplicate_v1",{p_item_id:itemId,p_operator:operator});}
+  if(action==="item_pause"){const itemId=uuid(body.item_id);if(!itemId)throw new Error("invalid_id");return rpc("basket_v2_item_pause_v1",{p_item_id:itemId,p_paused:body.paused===true,p_operator:operator});}
+  if(action==="product_components_save"){const itemId=uuid(body.item_id);if(!itemId||!Array.isArray(body.components))throw new Error("invalid_components");return rpc("basket_v2_product_components_save_v1",{p_item_id:itemId,p_components:body.components,p_operator:operator});}
+  if(action==="kit_components_save"){const itemId=uuid(body.item_id);if(!itemId||!Array.isArray(body.components))throw new Error("invalid_components");return rpc("basket_v2_kit_components_save_v1",{p_item_id:itemId,p_components:body.components,p_operator:operator});}
+  throw new Error("unknown_action");
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   const u=new URL(req.url),action=clean(u.searchParams.get("action"),50)||"health";
   if(action==="health")return json(req,{ok:true,service:"admin-baskets-v2-v1",categories:OFFICIAL_CATEGORIES});
   const auth=await adminAuth(req);if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);
   try{
-    if(req.method!=="GET")return json(req,{ok:false,error:"method_not_allowed"},405);
-    if(action==="list")return json(req,{ok:true,...await listItems()});
-    if(action==="detail"){const itemId=uuid(u.searchParams.get("id"));if(!itemId)return json(req,{ok:false,error:"invalid_id"},400);return json(req,{ok:true,detail:await detail(itemId)});}
-    if(action==="product_search")return json(req,{ok:true,...await productSearch(u)});
-    if(action==="product_suggestions"){const out:any=await productSuggestions(u);return out.error?json(req,{ok:false,error:out.error},out.status||400):json(req,{ok:true,...out});}
-    if(action==="component_candidates")return json(req,{ok:true,...await componentCandidates(u)});
-    return json(req,{ok:false,error:"unknown_action"},404);
-  }catch(e){console.error("admin-baskets-v2-v1",e);return json(req,{ok:false,error:"internal_error"},500)}
+    if(req.method==="GET"){
+      if(action==="list")return json(req,{ok:true,...await listItems()});
+      if(action==="detail"){const itemId=uuid(u.searchParams.get("id"));if(!itemId)return json(req,{ok:false,error:"invalid_id"},400);return json(req,{ok:true,detail:await detail(itemId)});}
+      if(action==="product_search")return json(req,{ok:true,...await productSearch(u)});
+      if(action==="product_suggestions"){const out:any=await productSuggestions(u);return out.error?json(req,{ok:false,error:out.error},out.status||400):json(req,{ok:true,...out});}
+      if(action==="component_candidates")return json(req,{ok:true,...await componentCandidates(u)});
+      return json(req,{ok:false,error:"unknown_action"},404);
+    }
+    if(req.method==="POST"){
+      const parsed=await readBody(req);if(!parsed.ok)return json(req,{ok:false,error:parsed.error},400);
+      const allowed=new Set(["item_save","item_duplicate","item_pause","product_components_save","kit_components_save"]);if(!allowed.has(action))return json(req,{ok:false,error:"unknown_action"},404);
+      const result=await handleWrite(action,parsed.body,auth);return json(req,{ok:true,result});
+    }
+    return json(req,{ok:false,error:"method_not_allowed"},405);
+  }catch(e){const message=String((e as any)?.message||e||"internal_error");console.error("admin-baskets-v2-v1",message);const known=message.startsWith("basket_v2_")||message.startsWith("invalid_")||message==="unknown_action";return json(req,{ok:false,error:known?message:"internal_error"},known?409:500)}
 });
