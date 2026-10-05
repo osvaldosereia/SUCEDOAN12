@@ -32,7 +32,7 @@ begin
   ) returning id into v_basket_id;
 
   for v_i in 0..675 loop
-    v_prefix:=chr(65+(v_i/26))+chr(65+(v_i%26));
+    v_prefix:=chr(65+(v_i/26))||chr(65+(v_i%26));
     exit when not exists(select 1 from public.basket_kit_templates where code_prefix=v_prefix);
     v_prefix:=null;
   end loop;
