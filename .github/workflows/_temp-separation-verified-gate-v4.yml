@@ -1,0 +1,36 @@
+name: TEMP separation verified gate v4
+
+on:
+  push:
+    branches:
+      - 'fix/separation-verified-gate-v4-*'
+    paths:
+      - 'scripts/_apply_separation_verified_gate_v4.mjs'
+      - '.github/workflows/_temp-separation-verified-gate-v4.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply canonical patch
+        run: node scripts/_apply_separation_verified_gate_v4.mjs
+      - name: Commit canonical source
+        run: |
+          if git diff --quiet -- supabase/functions/admin-service-intelligence-v1/index.ts; then
+            echo 'No canonical diff produced' >&2
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/functions/admin-service-intelligence-v1/index.ts
+          git commit -m 'fix: accept completed separation for Bling verified gate'
+          git push origin HEAD:${{ github.ref_name }}
