@@ -14,7 +14,7 @@ once("esc(shortOrder(j.payload?.order_number||j.entity_id))","esc(orderDisplayCo
 once("shortOrder(current.order_number||current.id)","orderDisplayCode(current)",'dispatch confirmation code')
 s=s.replace("openDanfeForOrder(o.id,o.order_number)","openDanfeForOrder(o.id,orderDisplayCode(o))")
 once("async function openDanfeForOrder(id,orderNumber='')","async function openDanfeForOrder(id,orderCode='')",'danfe signature')
-once("orderNumber?'#'+shortOrder(orderNumber)+' ':'',","orderCode?'#'+orderCode+' ':'',",'danfe toast code')
+once("toast('DANFE '+(data.invoice_number?data.invoice_number+' ':orderNumber?'#'+shortOrder(orderNumber)+' ':'')+'aberto para impressão');","toast('DANFE '+(data.invoice_number?data.invoice_number+' ':orderCode?'#'+orderCode+' ':'')+'aberto para impressão');",'danfe toast code')
 if 'shortOrder(' in s: raise SystemExit('residual shortOrder usage remains')
 path.write_text(s,encoding='utf-8')
 print('residual human order identifiers removed')
