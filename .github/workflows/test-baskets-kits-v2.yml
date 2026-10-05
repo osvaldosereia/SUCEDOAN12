@@ -1,0 +1,31 @@
+name: Baskets Kits V2
+on:
+  push:
+    branches:
+      - feat/baskets-kits-v2-20261004
+  pull_request:
+    paths:
+      - 'supabase/migrations/**baskets_kits_v2**'
+      - 'supabase/functions/admin-baskets-v2-v1/**'
+      - 'supabase/functions/storefront-baskets-v2-v1/**'
+      - 'vitrine/admin/cestas-kits-v2.*'
+      - 'vitrine/cestas-kits-v2-preview/**'
+      - 'scripts/test-baskets-kits-v2-*.mjs'
+      - '.github/workflows/test-baskets-kits-v2.yml'
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run V2 contract tests
+        run: |
+          set -e
+          for f in scripts/test-baskets-kits-v2-*.mjs; do
+            [ -f "$f" ] || continue
+            echo "==> $f"
+            node "$f"
+          done
