@@ -51,6 +51,17 @@ revoke all on table public.customer_profile_suggestions_v1 from public,anon,auth
 grant all on table public.customer_profile_extraction_runs_v1 to service_role;
 grant all on table public.customer_profile_suggestions_v1 to service_role;
 
+create or replace function public.ops2_admin_ana_customer_profile_extract_access_v1()
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  return public.ops2_admin_attendance_customer_access_v1(true);
+end;
+$function$;
+
 create or replace function public.ops2_admin_ana_customer_profile_context_v1(p_conversation_id uuid)
 returns jsonb
 language plpgsql
@@ -166,7 +177,9 @@ begin
 end;
 $function$;
 
+revoke all on function public.ops2_admin_ana_customer_profile_extract_access_v1() from public,anon;
 revoke all on function public.ops2_admin_ana_customer_profile_context_v1(uuid) from public,anon;
 revoke all on function public.ops2_admin_ana_customer_profile_suggestions_v1(uuid) from public,anon;
+grant execute on function public.ops2_admin_ana_customer_profile_extract_access_v1() to authenticated,service_role;
 grant execute on function public.ops2_admin_ana_customer_profile_context_v1(uuid) to authenticated,service_role;
 grant execute on function public.ops2_admin_ana_customer_profile_suggestions_v1(uuid) to authenticated,service_role;
