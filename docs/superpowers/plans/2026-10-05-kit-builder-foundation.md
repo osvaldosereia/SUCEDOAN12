@@ -4,32 +4,31 @@
 
 **Goal:** Criar a camada canônica de kits internos e o editor de três colunas, sem reservar estoque e sem ativar ainda a nova tela como fluxo principal de produção.
 
-**Architecture:** Kits internos serão receitas independentes em tabelas próprias (`assembly_kits`, `assembly_kit_items`, `assembly_search_chips`). Uma Edge Function dedicada `admin-kit-builder-v1` fornecerá catálogo, CRUD de kits/chips e agregados de “mais usados”. A UI `vitrine/admin/kit-builder.js` será autocontida e consumirá somente a `DonaAntoniaAdminBridge`; ela ficará pronta e testada, mas o cutover da seção Cestas ocorrerá apenas no plano de migração.
+**Architecture:** Kits internos serão receitas independentes em `assembly_kits`, `assembly_kit_items` e `assembly_search_chips`. A Edge Function `admin-kit-builder-v1` cuidará somente do domínio de kits, chips, catálogo e agregados. A edição de custo/preço/estoque reutilizará diretamente as ações canônicas já existentes em `admin-products-live-v1`; não haverá um segundo mecanismo de escrita de produto.
 
-**Tech Stack:** PostgreSQL/Supabase migrations e RPCs, Supabase Edge Functions em TypeScript/Deno, JavaScript sem framework no Admin, Node 24 + Playwright 1.62.1 no CI.
+**Tech Stack:** PostgreSQL/Supabase migrations e RPCs, Edge Functions TypeScript/Deno, JavaScript sem framework, Node 24 + Playwright 1.62.1.
 
 **Spec:** `docs/superpowers/specs/2026-10-05-kit-builder-and-store-baskets-design.md`
 
 ## Global Constraints
 
-- Salvar/editar kit interno nunca cria lote, reserva ou altera `basket_locked_component_stock_v1`.
-- Tipos permitidos: `food`, `cleaning_hygiene`, `other`.
-- Kit usado como base é copiado/expandido; `source_kit_id` é apenas histórico.
-- Produtos duplicados em um kit são consolidados por `product_id`.
-- Estoque exibido vem de `ops2_loose_sellable_stock_v1`.
-- Custo/preço usam o cadastro oficial de `products`.
-- Edição rápida reutiliza os caminhos oficiais `product_quick_save` e `product_stock_set`; não criar um segundo mecanismo de estoque.
-- Se a autoridade de estoque for Bling, a UI deve respeitar o comportamento oficial de `product_stock_set` e nunca falsificar alteração local de estoque.
-- Apenas `service_role` executa RPCs novas; `anon` e `authenticated` permanecem sem EXECUTE.
-- A UI antiga não será removida neste plano; também não será carregada junto com a nova UI em produção.
+- Salvar/editar kit nunca cria lote ou reserva.
+- Tipos: `food`, `cleaning_hygiene`, `other`.
+- Kit usado como base é expandido/copiado; `source_kit_id` é só histórico.
+- Produto repetido é consolidado por `product_id`.
+- Leitura de estoque: `ops2_loose_sellable_stock_v1`.
+- Escrita rápida: `product_quick_save` para custo/preço e `product_stock_set` para estoque; nenhuma escrita direta em `products.stock` pela nova ferramenta.
+- Se Bling for autoridade, prevalece exatamente o comportamento de `product_stock_set`; a UI exibe a resposta oficial e não simula estoque alterado.
+- RPCs novas: `service_role` apenas.
+- Módulo novo fica testado, mas não vira o fluxo visível de Cestas antes do cutover do plano 3.
 
 ## Review Focus
 
-1. Produto já reservado: edição de estoque nunca pode reduzir a disponibilidade física abaixo do bloqueado; teste no Task 3.
-2. Kit base alterado depois: kit derivado permanece inalterado; teste no Task 1 e browser no Task 4.
-3. Produto repetido: adicionar duas vezes soma quantidade e não cria duas linhas; teste no Task 1 e Task 4.
-4. Autoridade Bling: edição de estoque segue `product_stock_set` e a UI mostra o erro/estado oficial; teste no Task 3/4.
-5. Kit arquivado em uso futuro por cesta externa: API deve expor uso/referência para o plano 2 e bloquear quando houver vínculo ativo; contrato inicial no Task 2.
+1. Estoque já reservado nunca pode ser apagado por edição rápida — Task 3.
+2. Kit derivado não acompanha mudanças posteriores no kit-base — Task 1/3.
+3. Adicionar o mesmo produto duas vezes soma quantidade — Task 1/3.
+4. Autoridade Bling não pode ser contornada por patch local — Task 3.
+5. Arquivamento de kit passa a ser bloqueado quando houver receita externa ativa no Plano 2 — contrato de extensão definido na Task 1.
 
 ---
 
@@ -42,33 +41,15 @@
 - Modify: `.github/workflows/basket-kit-editor-ci.yml`
 
 **Interfaces:**
-- Produces: `save_assembly_kit_v1(p_kit_id uuid, p_name text, p_type text, p_notes text, p_source_kit_id uuid, p_items jsonb, p_operator text) -> jsonb`
-- Produces: `archive_assembly_kit_v1(p_kit_id uuid, p_operator text) -> jsonb`
-- Produces tables `assembly_kits`, `assembly_kit_items`, `assembly_search_chips`.
+- `save_assembly_kit_v1(p_kit_id uuid, p_name text, p_type text, p_notes text, p_source_kit_id uuid, p_items jsonb, p_operator text) -> jsonb`
+- `archive_assembly_kit_v1(p_kit_id uuid, p_operator text) -> jsonb`
+- tables `assembly_kits`, `assembly_kit_items`, `assembly_search_chips`.
 
-- [ ] **Step 1: Write the failing domain test**
-
-Assert that the migration creates the three tables, the `type` check, unique `(kit_id,product_id)`, positive quantity, RLS/service-role-only grants, and both RPC signatures. Assert that `save_assembly_kit_v1` aggregates duplicate product IDs before storing and never references basket reservation/lot tables.
-
-- [ ] **Step 2: Run RED**
-
-Run: `node --disable-warning=ExperimentalWarning scripts/test-assembly-kits-domain-v1.mjs`
-Expected: FAIL because the migration/RPCs do not exist.
-
-- [ ] **Step 3: Implement schema and RPCs**
-
-`save_assembly_kit_v1` must validate non-empty name/type/items, lock the kit row on update, replace its items transactionally, aggregate duplicates, preserve `source_kit_id` only as metadata/history and return the saved kit plus item count. `archive_assembly_kit_v1` sets `is_active=false`; no physical delete.
-
-- [ ] **Step 4: Run GREEN and transaction probe**
-
-Run: `node --disable-warning=ExperimentalWarning scripts/test-assembly-kits-domain-v1.mjs`
-Expected: PASS.
-
-Probe the SQL inside `BEGIN ... ROLLBACK` against the canonical Supabase and assert creating/editing a kit does not change `basket_locked_component_stock_v1`.
-
-- [ ] **Step 5: Commit**
-
-Commit: `feat: adicionar dominio de receitas internas de kits`
+- [ ] **Step 1: Write RED test** — assert tables, constraints, positive quantity, unique `(kit_id,product_id)`, RLS/grants, RPC signatures, duplicate-product consolidation and zero references to reservation/lot writes.
+- [ ] **Step 2: Run RED** — `node --disable-warning=ExperimentalWarning scripts/test-assembly-kits-domain-v1.mjs`; expected FAIL.
+- [ ] **Step 3: Implement schema/RPCs** — transactional replace of kit items, validation, `source_kit_id` historical only, archive via `is_active=false`; add an internal helper/check hook that Plano 2 can extend to reject archive when a live store recipe references the kit.
+- [ ] **Step 4: Run GREEN + transaction probe** — test PASS; create/edit kit inside `BEGIN...ROLLBACK` and assert `basket_locked_component_stock_v1` unchanged.
+- [ ] **Step 5: Commit** — `feat: adicionar dominio de receitas internas de kits`.
 
 ---
 
@@ -80,70 +61,18 @@ Commit: `feat: adicionar dominio de receitas internas de kits`
 - Modify: `.github/workflows/basket-kit-editor-ci.yml`
 
 **Interfaces:**
-- Consumes RPCs from Task 1 and `ops2_loose_sellable_stock_v1`.
-- Produces actions: `kits`, `kit`, `kit_save`, `kit_archive`, `products`, `most_used`, `chips`, `chip_save`, `chip_archive`, `chip_reorder`.
+- Actions: `kits`, `kit`, `kit_save`, `kit_archive`, `products`, `most_used`, `chips`, `chip_save`, `chip_archive`, `chip_reorder`.
 - `products` returns `{id,name,sku,gtin,packaging,image_url,cost_price,sale_price,effective_stock,basket_locked,loose_stock,stock_authority}`.
 
-- [ ] **Step 1: Write failing API contract test**
-
-Assert JWT/admin auth, viewer read-only behavior, explicit action allowlist, paginated product search by name/SKU/EAN, stock fields from the canonical view, kit summary totals, lazy kit detail and `most_used` grouped only across active kits.
-
-- [ ] **Step 2: Run RED**
-
-Run: `node --disable-warning=ExperimentalWarning scripts/test-kit-builder-admin-api-v1.mjs`
-Expected: FAIL because `admin-kit-builder-v1` does not exist.
-
-- [ ] **Step 3: Implement minimal gateway**
-
-Use the same admin authentication pattern as `admin-basket-guided-v1`. Do not add business writes directly in the Edge Function when an RPC exists. Chips may be saved through service-role DB calls because they are Admin-only configuration.
-
-- [ ] **Step 4: Run GREEN**
-
-Run: `node --disable-warning=ExperimentalWarning scripts/test-kit-builder-admin-api-v1.mjs`
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
-
-Commit: `feat: adicionar api do criador de kits`
+- [ ] **Step 1: Write RED API contract** — JWT/admin auth, viewer read-only, action allowlist, paginated name/SKU/EAN search, canonical stock fields, lazy kit detail, totals and `most_used` from active kits only.
+- [ ] **Step 2: Run RED** — `node --disable-warning=ExperimentalWarning scripts/test-kit-builder-admin-api-v1.mjs`; expected FAIL.
+- [ ] **Step 3: Implement gateway** — same auth pattern as `admin-basket-guided-v1`; writes de kit via RPCs; chips via Admin-only persistence; no product write action in this Edge Function.
+- [ ] **Step 4: Run GREEN** — expected PASS.
+- [ ] **Step 5: Commit** — `feat: adicionar api do criador de kits`.
 
 ---
 
-### Task 3: Edição rápida de produto sem duplicar estoque
-
-**Files:**
-- Modify: `supabase/functions/admin-kit-builder-v1/index.ts`
-- Modify: `supabase/functions/admin-products-live-v1/index.ts` only if an explicit return field needed by the UI is missing; do not create alternate stock logic.
-- Create: `scripts/test-kit-builder-product-quick-edit-v1.mjs`
-
-**Interfaces:**
-- `admin-kit-builder-v1` action `product_quick_update` delegates cost/price to the canonical product write and stock to the official stock write, returning the remapped product.
-- Input: `{product_id,cost_price,sale_price,stock_quantity?,operator}`.
-
-- [ ] **Step 1: Write failing tests**
-
-Cover: cost < 0 rejected; sale < 0 rejected; viewer forbidden; cost/sale update returns refreshed stock breakdown; target stock below current locked quantity is rejected or normalized by the official stock path; Bling-authority behavior is returned transparently and never replaced by `products.stock` patching.
-
-- [ ] **Step 2: Run RED**
-
-Run: `node --disable-warning=ExperimentalWarning scripts/test-kit-builder-product-quick-edit-v1.mjs`
-Expected: FAIL for missing action.
-
-- [ ] **Step 3: Implement delegation**
-
-Prefer extracting/reusing the canonical functions already used by `product_quick_save`/`product_stock_set`. If direct function sharing is impractical, call the canonical Admin endpoint from the browser as two explicit operations and keep `admin-kit-builder-v1` read-only for product writes; choose one path and make the test enforce that there is only one stock authority.
-
-- [ ] **Step 4: Run GREEN plus existing product tests**
-
-Run the new test and all existing product/Admin stock tests touched by the change.
-Expected: PASS with no stock-authority regression.
-
-- [ ] **Step 5: Commit**
-
-Commit: `feat: permitir ajuste rapido de produto no criador de kits`
-
----
-
-### Task 4: UI de três colunas do Criador de Kits
+### Task 3: UI de três colunas + edição rápida canônica
 
 **Files:**
 - Create: `vitrine/admin/kit-builder.js`
@@ -152,65 +81,36 @@ Commit: `feat: permitir ajuste rapido de produto no criador de kits`
 - Modify: `.github/workflows/basket-kit-editor-ci.yml`
 
 **Interfaces:**
-- Consumes `window.DonaAntoniaAdminBridge` and `admin-kit-builder-v1`.
-- Exposes `window.DonaAntoniaKitBuilder = {render, openKit, newKit, reset}`.
-- No dependency on `DonaAntoniaBasketGuided`, positions, families or legacy composers.
+- Consumes `window.DonaAntoniaAdminBridge`.
+- Reads kits/catalog through `admin-kit-builder-v1`.
+- Writes produto through the existing Admin bridge actions `product_quick_save` and `product_stock_set` only.
+- Exposes `window.DonaAntoniaKitBuilder={render,openKit,newKit,reset}`.
 
-- [ ] **Step 1: Write RED static/UI contract**
-
-Require three columns on desktop; search; horizontal chip strip; product rows with photo/name/stock/cost/sale; inline save; central draft with name/type/items/totals; third-column modes `Mais usados` and `Kits existentes`; `Usar como base`; sticky summary; only chips may have intentional horizontal overflow.
-
-- [ ] **Step 2: Write RED Playwright flow**
-
-Mock the API and verify: search, chip click, add product, duplicate product consolidates, quantity edit updates cost/sale, remove, choose a base kit copies items, modify derived kit without changing source fixture, save new kit, edit kit, inline product save, desktop 3 columns, mobile internal tabs and usable vertical scrolling.
-
-- [ ] **Step 3: Run RED**
-
-Run both new tests. Expected: FAIL because module does not exist.
-
-- [ ] **Step 4: Implement UI**
-
-Keep all kit-draft state inside `kit-builder.js`. Do not mutate DOM state from `index.html`. Product list and most-used use incremental loading. Preserve focus while editing quantities/prices. Summary cost/sale is derived from current draft items, never stored as independent editable values.
-
-- [ ] **Step 5: Run GREEN**
-
-Run static + browser tests at desktop and 390x844 viewport.
-Expected: PASS and `document.documentElement.scrollWidth <= viewportWidth` except the chip strip’s own scroll container.
-
-- [ ] **Step 6: Commit**
-
-Commit: `feat: criar editor visual de kits em tres colunas`
+- [ ] **Step 1: Write RED static contract** — three columns; search; horizontally scrollable chips; product rows with photo/name/stock/cost/sale; central kit draft; sticky totals; `Mais usados | Kits existentes`; no families/positions/guided editor dependency.
+- [ ] **Step 2: Write RED Playwright flow** — search/chip, add, duplicate consolidation, quantity change, remove, base-kit expansion, derived independence, save/update kit, inline cost/sale save via `product_quick_save`, stock save via `product_stock_set`, and display of official stock-write failure/authority response.
+- [ ] **Step 3: Add reserved-stock assertion** — mock `basket_locked_quantity=30`; UI must never invent a lower post-save locked amount and must refresh from canonical response after stock write.
+- [ ] **Step 4: Run RED** — both tests expected FAIL.
+- [ ] **Step 5: Implement UI** — all draft state inside the module; incremental product loading; focused inputs preserved; cost/sale totals derived from items; desktop 3 columns, tablet collapse, mobile `Produtos | Kit | Mais usados`; only chip strip has horizontal scrolling.
+- [ ] **Step 6: Run GREEN** — static/browser PASS at 1440x1000 and 390x844; page has no horizontal overflow.
+- [ ] **Step 7: Commit** — `feat: criar editor visual de kits em tres colunas`.
 
 ---
 
-### Task 5: CI e entrega oculta da fundação
+### Task 4: CI e entrega ainda não visível
 
 **Files:**
 - Modify: `.github/workflows/basket-kit-editor-ci.yml`
-- Modify: `vitrine/admin/index.html` only to preload/load `kit-builder.js` if it remains unreachable from normal navigation; do not switch the Cestas tab yet.
+- Optionally load: `vitrine/admin/kit-builder.js` from `vitrine/admin/index.html`, without routing the Cestas tab to it.
 - Create: `scripts/test-kit-builder-not-active-before-cutover.mjs`
 
-**Interfaces:**
-- Produces a tested module available for Plan 2/3, without replacing the live Cestas workflow yet.
-
-- [ ] **Step 1: Add cutover guard test**
-
-Assert the live Cestas tab still has one active controller until the migration plan flips it; `kit-builder.js` may load but must not create a second visible Cestas workflow.
-
-- [ ] **Step 2: Run full Basket CI**
-
-Run every command in `.github/workflows/basket-kit-editor-ci.yml` including the new tests.
-Expected: all pass.
-
-- [ ] **Step 3: Commit**
-
-Commit: `test: integrar criador de kits ao ci sem cutover`
+- [ ] **Step 1: Guard test** — module novo pode estar carregado, mas não pode haver dois fluxos Cestas visíveis antes do Plano 3.
+- [ ] **Step 2: Run full Basket CI** — every workflow command plus new tests; expected all PASS.
+- [ ] **Step 3: Commit** — `test: integrar criador de kits ao ci sem cutover`.
 
 ## PR boundary
 
-Recommended PRs for this plan:
 1. schema/RPCs;
-2. Edge Function + product write integration;
+2. Edge Function de kits;
 3. UI + browser tests.
 
-No migration of the 9 active baskets and no production cutover occurs in this plan.
+Nenhuma das 9 cestas é migrada e nenhum cutover de produção ocorre neste plano.
