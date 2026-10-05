@@ -1,0 +1,35 @@
+name: TEMP apply Pedidos V4 backend patch
+
+on:
+  push:
+    branches: [feat/orders-fiscal-flow-v4-20261004]
+    paths:
+      - 'scripts/_apply_orders_v4_backend_patch.mjs'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply fail-closed patch to canonical backend
+        run: node scripts/_apply_orders_v4_backend_patch.mjs
+      - name: Verify TypeScript text and diff
+        run: |
+          git diff --check
+          grep -q 'order_fiscal_issue_v4' supabase/functions/admin-products-live-v1/index.ts
+          grep -q 'order_dispatch_start_v4' supabase/functions/admin-products-live-v1/index.ts
+          grep -q 'ops4_start_dispatch_v1' supabase/functions/admin-products-live-v1/index.ts
+      - name: Commit canonical backend change
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/functions/admin-products-live-v1/index.ts
+          git commit -m 'feat: orquestrar NF-e V4 pelo Bling existente'
+          git push
