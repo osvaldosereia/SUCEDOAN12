@@ -51,6 +51,7 @@ jobs:
       - run: node scripts/test-admin-attendance-customer-rpc-production-v1.mjs
       - run: node scripts/test-ana-customer-profile-schema-v1.mjs
       - run: node scripts/test-whatsapp-ana-customer-profile-policy-v1.mjs
+      - run: node scripts/test-whatsapp-ana-customer-profile-api-v1.mjs
       - run: node scripts/test-whatsapp-ana-preview-buttons-v1.mjs
       - run: node scripts/test-admin-attendance-catalog-link-cutover-v1.mjs
       - run: node scripts/test-admin-attendance-ui-v1.mjs
@@ -76,6 +77,7 @@ jobs:
       - run: node scripts/test-attendance-meta-media-v1.mjs
       - run: node scripts/test-attendance-meta-media-retry-v1.mjs
       - run: node --experimental-strip-types --check supabase/functions/admin-attendance-customer-v1/index.ts
+      - run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ana-customer-profile-v1/index.ts
       - run: node --check supabase/functions/_shared/admin-attendance-library-v1.mjs
       - run: node --check supabase/functions/_shared/admin-attendance-library-send-v1.mjs
       - run: node --check supabase/functions/_shared/ana-customer-profile-policy-v1.mjs
