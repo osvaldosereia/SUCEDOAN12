@@ -25,6 +25,11 @@ assert.match(edge,/auth\.getUser\(/,'Edge deve validar bearer Admin server-side'
 assert.match(edge,/allowedEvidence|allowed_evidence|evidenceSet|evidence_set/i,'Edge deve validar evidence IDs contra contexto');
 assert.match(edge,/snapshotKey|snapshot_key/i,'Edge deve deduplicar a mesma fotografia da conversa');
 assert.match(edge,/if\s*\([^)]*ambiguous_phone|error\s*===\s*["']ambiguous_phone["']/i,'telefone ambíguo deve abortar antes do modelo');
+assert.match(edge,/ops2_admin_attendance_customer_access_v1/,'extract deve reusar autorização canônica de escrita');
+assert.match(edge,/p_write\s*:\s*true/,'extract deve exigir perfil administrativo com escrita; viewer não pode persistir sugestões');
+const writeGatePos=edge.indexOf('ops2_admin_attendance_customer_access_v1');
+const modelCallPos=edge.lastIndexOf('generateProfile(context)');
+assert.ok(writeGatePos>0&&modelCallPos>writeGatePos,'gate de escrita deve ocorrer antes da geração/persistência de sugestões');
 
 for(const forbidden of [
   '.from("customers").update',
