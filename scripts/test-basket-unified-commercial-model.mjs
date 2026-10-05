@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
+const guided=fs.readFileSync('vitrine/admin/basket-guided-builder.js','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const commerce=fs.readFileSync('supabase/sql/20261004_basket_canonical_commerce_v1.sql','utf8');
 const createSql=fs.readFileSync('supabase/sql/20261004_basket_commercial_create_v1.sql','utf8');
@@ -25,20 +27,14 @@ assert.match(backend,/async function basketCommercialCreate\(/,'admin backend mu
 assert.match(backend,/create_basket_commercial_model_v1/,'admin backend must call the atomic creator');
 assert.match(backend,/a==="basket_commercial_create"/,'POST route must exist');
 
-const page=admin.slice(admin.indexOf('async function renderBaskets(){'),admin.indexOf('function kitAdminCard('));
-assert.match(page,/Nova Cesta\/Kit/,'primary page must expose one create action');
-assert.match(page,/openBasketCommercialCreate/,'create action must open the fast flow');
-assert.match(page,/basket_commercial_create/,'fast flow must persist through canonical create action');
-assert.match(page,/category_id/,'category is required during creation');
-assert.match(page,/base_price_cents/,'price is set during creation');
-assert.match(page,/openBasketKitAdmin/,'after model creation the composition editor must open');
-assert.match(page,/startBasketKitLotDraft/,'first lot creation must start in the same flow');
-assert.match(admin,/function basketBusinessTypeForCategory\(/,'lot defaults must derive operational type from the public category');
-assert.match(admin,/cestas-completas['"]\s*:\s*['"]basic_complete/,'complete baskets must default to basic_complete');
-assert.match(admin,/cestas-so-alimento['"]\s*:\s*['"]basic_food/,'food-only baskets must default to basic_food');
-assert.match(admin,/kits-limpeza-e-higiene['"]\s*:\s*['"]cleaning_hygiene/,'cleaning+hygiene kits must default correctly');
-assert.match(admin,/kits-limpeza['"]\s*:\s*['"]cleaning/,'cleaning kits must default correctly');
-assert.match(admin,/kits-higiene['"]\s*:\s*['"]hygiene/,'hygiene kits must default correctly');
+assert.match(admin,/DonaAntoniaBasketAdmin\?\.render/,'index must delegate the primary Cestas/Kits page');
+assert.match(section,/Nova Cesta\/Kit/,'primary page must expose one create action');
+assert.match(section,/basket_commercial_create/,'fast flow must persist through canonical create action');
+assert.match(section,/category_id/,'category is required during creation');
+assert.match(section,/base_price_cents/,'price is set during creation');
+assert.match(section,/DonaAntoniaBasketGuided\?\.open/,'after model creation the guided editor must open');
+assert.doesNotMatch(section,/openBasketKitAdmin|startBasketKitLotDraft/,'commercial creation must never fall back to legacy composers');
+assert.match(guided,/Criar lote \/ reservar/,'first lot is created inside the guided editor');
 
 for(const source of [publicRoot,publicVitrine]){
   assert.match(source,/basket_categories/,'public site must consume basket categories separately');
