@@ -11,6 +11,7 @@ const json=(r:Request,b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s
 const clean=(v:unknown,n=160)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
 const uuid=(v:unknown)=>{const s=clean(v,64);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:null};
 function validMoney(v:unknown){const n=Number(v);if(!Number.isFinite(n)||n<=0)return null;return Math.round(n*100)/100}
+function moneyCents(v:unknown){const n=validMoney(v);return n===null?null:Math.round(n*100)}
 
 async function adminAuth(req:Request){
   const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
@@ -41,7 +42,26 @@ async function listItems(){
   const av=await db.from("basket_v2_item_availability_v1").select("item_id,availability");if(av.error)throw av.error;const am=new Map((av.data||[]).map((x:any)=>[String(x.item_id),Number(x.availability||0)]));
   return {categories:OFFICIAL_CATEGORIES,items:(q.data||[]).map((x:any)=>{const availability=am.get(String(x.id))||0;return {id:x.id,public_name:x.public_name,category:x.category,price_cents:Math.round(Number(x.sale_price||0)*100),availability,composition_mode:x.composition_mode,state:x.paused?"paused":availability>0?"selling":"out_of_stock",image_url:x.image_url||""}})};
 }
-async function detail(id:string){const q=await db.rpc("basket_v2_item_detail_admin_v1",{p_item_id:id});if(q.error)throw q.error;return q.data}
+function enrichDetail(detail:any){
+  if(!detail?.item)return detail;
+  const components=(Array.isArray(detail.kit_components)?detail.kit_components:[]).map((c:any)=>({
+    item_id:c.component_item_id,
+    name:c.name||"",
+    quantity:Math.max(1,Number(c.quantity||1)),
+    availability:Math.max(0,Number(c.availability||0)),
+    current_cost_cents:moneyCents(c.current_cost),
+    retail_products_cents:moneyCents(c.retail_products_total),
+    sale_price_cents:moneyCents(c.sale_price),
+  }));
+  if(detail.item.composition_mode!=="combined_kits")return {...detail,kit_components:components};
+  const cost_total_cents=components.length&&components.every((c:any)=>c.current_cost_cents!==null)?components.reduce((s:number,c:any)=>s+c.current_cost_cents*c.quantity,0):null;
+  const retail_products_total_cents=components.length&&components.every((c:any)=>c.retail_products_cents!==null)?components.reduce((s:number,c:any)=>s+c.retail_products_cents*c.quantity,0):null;
+  const component_sales_total_cents=components.length&&components.every((c:any)=>c.sale_price_cents!==null)?components.reduce((s:number,c:any)=>s+c.sale_price_cents*c.quantity,0):null;
+  const final_sale_price_cents=moneyCents(detail.item.sale_price);
+  const commercial_adjustment_cents=final_sale_price_cents!==null&&component_sales_total_cents!==null?final_sale_price_cents-component_sales_total_cents:null;
+  return {...detail,kit_components:components,summary:{cost_total_cents,retail_products_total_cents,component_sales_total_cents,final_sale_price_cents,commercial_adjustment_cents,availability:Math.max(0,Number(detail.availability||0))}};
+}
+async function detail(id:string){const q=await db.rpc("basket_v2_item_detail_admin_v1",{p_item_id:id});if(q.error)throw q.error;return enrichDetail(q.data)}
 async function productSearch(u:URL){
   const term=clean(u.searchParams.get("q"),100).replace(/[,()%]/g," ");const limit=Math.max(1,Math.min(30,Number(u.searchParams.get("limit")||15)));if(term.length<2)return {products:[]};
   let q=db.from("products").select("id,name,sku,gtin,image_url,packaging,unit,cost,price").eq("is_active",true);
