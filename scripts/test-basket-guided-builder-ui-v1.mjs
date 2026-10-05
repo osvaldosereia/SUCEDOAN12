@@ -50,4 +50,19 @@ const saveBlock=ui.slice(saveStart,saveEnd);
 assert.match(saveBlock,/model_save/,'saving model must call model_save');
 assert.doesNotMatch(saveBlock,/lot_reserve/,'saving model must not reserve stock');
 
+// Regressões observadas em produção em 2026-10-05.
+const newLotBinding=admin.match(/host\.querySelectorAll\('\[data-commercial-new\]'\)[\s\S]{0,700}/)?.[0]||'';
+assert.match(newLotBinding,/DonaAntoniaBasketGuided\?\.open/,'card Novo lote must open guided builder directly');
+assert.doesNotMatch(newLotBinding,/startBasketKitLotDraft/,'card Novo lote must not fall back to legacy lot composer when guided builder is available');
+
+const printBinding=admin.match(/host\.querySelectorAll\('\[data-commercial-print\]'\)[\s\S]{0,900}/)?.[0]||'';
+assert.ok(printBinding,'commercial print binding must exist');
+assert.doesNotMatch(printBinding,/openBasketKitAdmin/,'Imprimir on commercial card must not navigate into basket detail');
+assert.match(printBinding,/printBasketKitLot\(m\.operational_lot_id\)/,'Imprimir must pass the lot id, not the lot object');
+
+assert.doesNotMatch(admin,/id="basketProductSuggestions"/,'legacy broken Sugestões de produtos button must not be exposed in the canonical top toolbar');
+
+const createSql=fs.readFileSync('supabase/sql/20261004_basket_commercial_create_v1.sql','utf8');
+assert.match(createSql,/v_prefix\s*:=\s*chr\([^;]+\)\s*\|\|\s*chr\(/i,'commercial model prefix must concatenate text with || in PostgreSQL');
+
 console.log('basket guided builder UI v1: PASS');
