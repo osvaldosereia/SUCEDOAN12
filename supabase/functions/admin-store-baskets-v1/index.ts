@@ -1,136 +1,25 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
-
 const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br","http://localhost:3000","http://127.0.0.1:3000"]);
 const MUTATIONS=new Set(["save","reserve","mount","cancel"]);
-
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"content-type,authorization,apikey","Access-Control-Allow-Methods":"GET,POST,OPTIONS"}};
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const clean=(value:unknown,max=500)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(value:unknown)=>{const s=clean(value,64);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""};
 const money=(value:unknown)=>{const n=Number(value);return Number.isFinite(n)&&n>=0&&n<=9999999?Math.round(n*100)/100:null};
 const integer=(value:unknown,min=1,max=500)=>{const n=Number(value);return Number.isInteger(n)&&n>=min&&n<=max?n:null};
-
-async function adminAuth(req:Request){
-  const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
-  if(!token)return {ok:false as const,status:401,error:"admin_auth_required",role:""};
-  const user=await db.auth.getUser(token);
-  if(user.error||!user.data?.user?.id)return {ok:false as const,status:401,error:"admin_session_invalid",role:""};
-  const row=await db.from("admin_users").select("user_id,role,is_active").eq("user_id",user.data.user.id).eq("is_active",true).maybeSingle();
-  if(row.error)return {ok:false as const,status:500,error:"admin_auth_lookup_failed",role:""};
-  if(!row.data?.user_id)return {ok:false as const,status:403,error:"admin_not_authorized",role:""};
-  return {ok:true as const,status:200,user_id:String(user.data.user.id),role:String(row.data.role||"viewer")};
-}
-
-function rpcError(error:any){
-  const detail=clean(error?.message||error,1000);
-  const codes=[
-    "store_basket_required","store_basket_not_found","store_basket_name_invalid","store_basket_price_invalid","store_basket_image_invalid",
-    "store_basket_kits_invalid","store_basket_kit_unavailable","store_basket_kit_duplicate","store_basket_kit_quantity_invalid",
-    "store_basket_category_missing","store_basket_quantity_invalid","store_basket_recipe_empty","store_basket_product_unavailable",
-    "insufficient_loose_stock","store_basket_build_not_found","store_basket_reservation_required","store_basket_reservation_not_mountable",
-    "store_basket_reservation_not_cancellable","store_basket_reservation_already_sellable","store_basket_not_available",
-    "lot_reservation_mismatch","lot_has_order_history"
-  ];
-  const code=codes.find(x=>detail.includes(x))||"store_basket_operation_failed";
-  if(["store_basket_not_found","store_basket_build_not_found"].includes(code))return {error:code,status:404,message:"Cesta ou montagem não encontrada."};
-  if(code==="insufficient_loose_stock")return {error:code,status:409,message:"Estoque avulso insuficiente para reservar esta quantidade."};
-  if(code==="store_basket_product_unavailable")return {error:code,status:409,message:"A receita possui produto ou kit inativo. Revise a composição antes de reservar."};
-  if(["store_basket_reservation_not_mountable","store_basket_reservation_not_cancellable","store_basket_reservation_already_sellable","store_basket_not_available","lot_reservation_mismatch","lot_has_order_history"].includes(code))return {error:code,status:409,message:"O estado atual desta montagem não permite a operação solicitada."};
-  if(code==="store_basket_operation_failed")return {error:code,status:500,message:"Não foi possível concluir a operação de Cestas do Site."};
-  if(["store_basket_kit_unavailable","store_basket_kit_duplicate","store_basket_recipe_empty"].includes(code))return {error:code,status:409,message:"Revise os kits internos usados nesta cesta."};
-  return {error:code,status:400,message:"Revise os dados da Cesta do Site."};
-}
-
-async function list(){
-  const q=await db.rpc("store_basket_recipe_catalog_v1");
-  if(q.error)return rpcError(q.error);
-  return {baskets:Array.isArray(q.data?.baskets)?q.data.baskets:[]};
-}
-async function editor(input:any){
-  const basketId=uuid(input?.basket_id||input?.id);if(!basketId)return {error:"store_basket_required",status:400};
-  const q=await db.rpc("store_basket_recipe_editor_v1",{p_basket_id:basketId});
-  if(q.error)return rpcError(q.error);return {editor:q.data};
-}
-async function save(input:any){
-  const basketId=input?.basket_id?uuid(input.basket_id):null;
-  if(input?.basket_id&&!basketId)return {error:"store_basket_required",status:400};
-  const price=money(input?.sale_price);if(price===null)return {error:"store_basket_price_invalid",status:400};
-  const kits=Array.isArray(input?.kits)?input.kits.slice(0,20):null;if(!kits||!kits.length)return {error:"store_basket_kits_invalid",status:400};
-  const q=await db.rpc("save_store_basket_recipe_v1",{
-    p_basket_id:basketId,
-    p_name:clean(input?.name,180),
-    p_sale_price:price,
-    p_image_url:clean(input?.image_url,1000)||null,
-    p_kits:kits,
-    p_operator:clean(input?.operator,80)||"Operação"
-  });
-  if(q.error)return rpcError(q.error);return {result:q.data};
-}
-async function preview(input:any){
-  const basketId=uuid(input?.basket_id||input?.id),quantity=integer(input?.quantity);
-  if(!basketId)return {error:"store_basket_required",status:400};
-  if(!quantity)return {error:"store_basket_quantity_invalid",status:400};
-  const q=await db.rpc("preview_store_basket_recipe_v1",{p_basket_id:basketId,p_quantity:quantity});
-  if(q.error)return rpcError(q.error);return {preview:q.data};
-}
-async function builds(input:any){
-  const basketId=uuid(input?.basket_id||input?.id);if(!basketId)return {error:"store_basket_required",status:400};
-  const q=await db.rpc("store_basket_builds_v1",{p_basket_id:basketId});
-  if(q.error)return rpcError(q.error);return {builds:Array.isArray(q.data?.builds)?q.data.builds:[]};
-}
-async function reserve(input:any){
-  const basketId=uuid(input?.basket_id||input?.id),quantity=integer(input?.quantity);
-  if(!basketId)return {error:"store_basket_required",status:400};
-  if(!quantity)return {error:"store_basket_quantity_invalid",status:400};
-  const q=await db.rpc("reserve_store_basket_recipe_v1",{
-    p_basket_id:basketId,
-    p_quantity:quantity,
-    p_operator:clean(input?.operator,80)||"Operação",
-    p_notes:clean(input?.notes,500)||null
-  });
-  if(q.error)return rpcError(q.error);return {reservation:q.data};
-}
-async function mount(input:any){
-  const lotId=uuid(input?.lot_id||input?.id);if(!lotId)return {error:"store_basket_build_not_found",status:400};
-  const q=await db.rpc("mount_store_basket_reservation_v1",{p_lot_id:lotId,p_operator:clean(input?.operator,80)||"Operação"});
-  if(q.error)return rpcError(q.error);return {build:q.data};
-}
-async function cancel(input:any){
-  const lotId=uuid(input?.lot_id||input?.id);if(!lotId)return {error:"store_basket_build_not_found",status:400};
-  const q=await db.rpc("cancel_store_basket_reservation_v1",{
-    p_lot_id:lotId,
-    p_operator:clean(input?.operator,80)||"Operação",
-    p_reason:clean(input?.reason,500)||null
-  });
-  if(q.error)return rpcError(q.error);return {build:q.data};
-}
-
-Deno.serve(async(req:Request)=>{
-  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
-  if(!["GET","POST"].includes(req.method))return json(req,{ok:false,error:"method_not_allowed"},405);
-  if(!U||!K)return json(req,{ok:false,error:"server_config"},500);
-  try{
-    const auth:any=await adminAuth(req);if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);
-    const url=new URL(req.url);let body:any={};
-    if(req.method==="POST"){try{body=await req.json()}catch{return json(req,{ok:false,error:"invalid_json"},400)}}
-    const input:any={...Object.fromEntries(url.searchParams.entries()),...body};
-    const action=clean(input?.action,40);
-    if(MUTATIONS.has(action)&&auth.role==="viewer")return json(req,{ok:false,error:"forbidden",message:"Perfil de consulta não pode alterar Cestas do Site."},403);
-    let result:any;
-    if(action==="list")result=await list();
-    else if(action==="editor")result=await editor(input);
-    else if(action==="save")result=await save(input);
-    else if(action==="preview")result=await preview(input);
-    else if(action==="builds")result=await builds(input);
-    else if(action==="reserve")result=await reserve(input);
-    else if(action==="mount")result=await mount(input);
-    else if(action==="cancel")result=await cancel(input);
-    else return json(req,{ok:false,error:"unknown_action"},404);
-    if(result?.error)return json(req,{ok:false,...result},result.status||400);
-    return json(req,{ok:true,...result});
-  }catch(error){console.error("admin-store-baskets-v1",error);return json(req,{ok:false,error:"internal_error"},500)}
-});
+async function adminAuth(req:Request){const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();if(!token)return {ok:false as const,status:401,error:"admin_auth_required",role:""};const user=await db.auth.getUser(token);if(user.error||!user.data?.user?.id)return {ok:false as const,status:401,error:"admin_session_invalid",role:""};const row=await db.from("admin_users").select("user_id,role,is_active").eq("user_id",user.data.user.id).eq("is_active",true).maybeSingle();if(row.error)return {ok:false as const,status:500,error:"admin_auth_lookup_failed",role:""};if(!row.data?.user_id)return {ok:false as const,status:403,error:"admin_not_authorized",role:""};return {ok:true as const,status:200,user_id:String(user.data.user.id),role:String(row.data.role||"viewer")}}
+function rpcError(error:any){const detail=clean(error?.message||error,1000);const codes=["store_basket_required","store_basket_not_found","store_basket_name_invalid","store_basket_price_invalid","store_basket_image_invalid","store_basket_kits_invalid","store_basket_kit_unavailable","store_basket_kit_duplicate","store_basket_kit_quantity_invalid","store_basket_category_missing","store_basket_quantity_invalid","store_basket_recipe_empty","store_basket_product_unavailable","insufficient_loose_stock","store_basket_build_not_found","store_basket_reservation_required","store_basket_reservation_not_mountable","store_basket_reservation_not_cancellable","store_basket_reservation_already_sellable","store_basket_not_available","lot_reservation_mismatch","lot_has_order_history"];const code=codes.find(x=>detail.includes(x))||"store_basket_operation_failed";if(["store_basket_not_found","store_basket_build_not_found"].includes(code))return {error:code,status:404,message:"Cesta ou montagem não encontrada."};if(code==="insufficient_loose_stock")return {error:code,status:409,message:"Estoque avulso insuficiente para reservar esta quantidade."};if(code==="store_basket_product_unavailable")return {error:code,status:409,message:"A receita possui produto ou kit inativo. Revise a composição antes de reservar."};if(["store_basket_reservation_not_mountable","store_basket_reservation_not_cancellable","store_basket_reservation_already_sellable","store_basket_not_available","lot_reservation_mismatch","lot_has_order_history"].includes(code))return {error:code,status:409,message:"O estado atual desta montagem não permite a operação solicitada."};if(code==="store_basket_operation_failed")return {error:code,status:500,message:"Não foi possível concluir a operação de Cestas do Site."};if(["store_basket_kit_unavailable","store_basket_kit_duplicate","store_basket_recipe_empty"].includes(code))return {error:code,status:409,message:"Revise os kits internos usados nesta cesta."};return {error:code,status:400,message:"Revise os dados da Cesta do Site."}}
+async function list(){const q=await db.rpc("store_basket_recipe_catalog_v1");if(q.error)return rpcError(q.error);return {baskets:Array.isArray(q.data?.baskets)?q.data.baskets:[]}}
+async function editor(input:any){const basketId=uuid(input?.basket_id||input?.id);if(!basketId)return {error:"store_basket_required",status:400};const q=await db.rpc("store_basket_recipe_editor_v1",{p_basket_id:basketId});if(q.error)return rpcError(q.error);return {editor:q.data}}
+async function save(input:any){const basketId=input?.basket_id?uuid(input.basket_id):null;if(input?.basket_id&&!basketId)return {error:"store_basket_required",status:400};const price=money(input?.sale_price);if(price===null)return {error:"store_basket_price_invalid",status:400};const kits=Array.isArray(input?.kits)?input.kits.slice(0,20):null;if(!kits||!kits.length)return {error:"store_basket_kits_invalid",status:400};const q=await db.rpc("save_store_basket_recipe_v1",{p_basket_id:basketId,p_name:clean(input?.name,180),p_sale_price:price,p_image_url:clean(input?.image_url,1000)||null,p_kits:kits,p_operator:clean(input?.operator,80)||"Operação"});if(q.error)return rpcError(q.error);return {result:q.data}}
+async function preview(input:any){const basketId=uuid(input?.basket_id||input?.id),quantity=integer(input?.quantity);if(!basketId)return {error:"store_basket_required",status:400};if(!quantity)return {error:"store_basket_quantity_invalid",status:400};const q=await db.rpc("preview_store_basket_recipe_v1",{p_basket_id:basketId,p_quantity:quantity});if(q.error)return rpcError(q.error);return {preview:q.data}}
+async function builds(input:any){const basketId=uuid(input?.basket_id||input?.id);if(!basketId)return {error:"store_basket_required",status:400};const q=await db.rpc("store_basket_builds_v1",{p_basket_id:basketId});if(q.error)return rpcError(q.error);return {builds:Array.isArray(q.data?.builds)?q.data.builds:[]}}
+async function buildDetail(input:any){const lotId=uuid(input?.lot_id||input?.id);if(!lotId)return {error:"store_basket_build_not_found",status:400};const q=await db.rpc("store_basket_build_detail_v1",{p_lot_id:lotId});if(q.error)return rpcError(q.error);if(!q.data)return {error:"store_basket_build_not_found",status:404};return {build:q.data}}
+async function reserve(input:any){const basketId=uuid(input?.basket_id||input?.id),quantity=integer(input?.quantity);if(!basketId)return {error:"store_basket_required",status:400};if(!quantity)return {error:"store_basket_quantity_invalid",status:400};const q=await db.rpc("reserve_store_basket_recipe_v1",{p_basket_id:basketId,p_quantity:quantity,p_operator:clean(input?.operator,80)||"Operação",p_notes:clean(input?.notes,500)||null});if(q.error)return rpcError(q.error);return {reservation:q.data}}
+async function mount(input:any){const lotId=uuid(input?.lot_id||input?.id);if(!lotId)return {error:"store_basket_build_not_found",status:400};const q=await db.rpc("mount_store_basket_reservation_v1",{p_lot_id:lotId,p_operator:clean(input?.operator,80)||"Operação"});if(q.error)return rpcError(q.error);return {build:q.data}}
+async function cancel(input:any){const lotId=uuid(input?.lot_id||input?.id);if(!lotId)return {error:"store_basket_build_not_found",status:400};const q=await db.rpc("cancel_store_basket_reservation_v1",{p_lot_id:lotId,p_operator:clean(input?.operator,80)||"Operação",p_reason:clean(input?.reason,500)||null});if(q.error)return rpcError(q.error);return {build:q.data}}
+Deno.serve(async(req:Request)=>{if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});if(!["GET","POST"].includes(req.method))return json(req,{ok:false,error:"method_not_allowed"},405);if(!U||!K)return json(req,{ok:false,error:"server_config"},500);try{const auth:any=await adminAuth(req);if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);const url=new URL(req.url);let body:any={};if(req.method==="POST"){try{body=await req.json()}catch{return json(req,{ok:false,error:"invalid_json"},400)}}const input:any={...Object.fromEntries(url.searchParams.entries()),...body};const action=clean(input?.action,40);if(MUTATIONS.has(action)&&auth.role==="viewer")return json(req,{ok:false,error:"forbidden",message:"Perfil de consulta não pode alterar Cestas do Site."},403);let result:any;if(action==="list")result=await list();else if(action==="editor")result=await editor(input);else if(action==="save")result=await save(input);else if(action==="preview")result=await preview(input);else if(action==="builds")result=await builds(input);else if(action==="build_detail")result=await buildDetail(input);else if(action==="reserve")result=await reserve(input);else if(action==="mount")result=await mount(input);else if(action==="cancel")result=await cancel(input);else return json(req,{ok:false,error:"unknown_action"},404);if(result?.error)return json(req,{ok:false,...result},result.status||400);return json(req,{ok:true,...result})}catch(error){console.error("admin-store-baskets-v1",error);return json(req,{ok:false,error:"internal_error"},500)}});
