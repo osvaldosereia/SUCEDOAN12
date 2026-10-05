@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const index=fs.readFileSync('vitrine/admin/index.html','utf8');
+const jsPath='vitrine/admin/cestas-kits-v2.js';
+const cssPath='vitrine/admin/cestas-kits-v2.css';
+assert.match(index,/data-tab="baskets"[\s\S]*>Cestas</,'legacy Cestas entry must remain');
+assert.match(index,/\/vitrine\/admin\/cestas-kits-v2\.js/,'Admin must load V2 module');
+assert.ok(fs.existsSync(jsPath),'V2 JS must exist');
+assert.ok(fs.existsSync(cssPath),'V2 CSS must exist');
+const js=fs.readFileSync(jsPath,'utf8'),css=fs.readFileSync(cssPath,'utf8');
+for(const text of ['Cestas e Kits','+ Nova Cesta/Kit','Buscar cesta ou kit','Editar','Novo lote','Duplicar','Pausar','Retomar']) assert.ok(js.includes(text),`missing UX label: ${text}`);
+for(const cat of ['Cestas Completas','Cestas Só Alimento','Kits Limpeza e Higiene','Kits Limpeza','Kits Higiene']) assert.ok(js.includes(cat),`missing category: ${cat}`);
+assert.match(js,/Produtos[\s\S]*Combinar Cestas\/Kits/,'editor must expose only the two composition modes');
+assert.ok(js.includes('+ Adicionar Cesta/Kit'),'combination must allow repeated component adds');
+assert.ok(js.includes('Custo não informado'),'missing cost must be explicit');
+assert.match(js,/cost\s*===\s*null|cost\s*==\s*null/,'null cost must be treated separately');
+assert.doesNotMatch(js,/linked_lot_id|sale_enabled|own_sale_price_override|basket_commercial_create/,'V2 UI must not expose legacy technical concepts');
+assert.match(js,/position:\s*sticky|v2-financial-sticky/,'financial summary must remain visible on desktop');
+assert.match(css,/@media\s*\(max-width:\s*760px\)/,'V2 UI must have mobile layout');
+console.log('baskets kits v2 fast admin UI contract: ok');
