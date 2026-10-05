@@ -5,6 +5,7 @@ on:
     branches: [feat/orders-fiscal-flow-v4-20261004]
     paths:
       - 'scripts/_apply_orders_v4_ui_patch.mjs'
+      - '.github/workflows/_temp-orders-v4-ui-patch.yml'
 
 permissions:
   contents: write
