@@ -1,0 +1,34 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+
+const path='vitrine/admin/kit-builder.js';
+assert.ok(fs.existsSync(path),`missing ${path}`);
+const ui=fs.readFileSync(path,'utf8');
+
+assert.match(ui,/admin-kit-builder-v1/,'kit builder must call its isolated edge function');
+assert.match(ui,/bridge\(\)[\s\S]{0,220}token|function token\(/,'kit API must use the authenticated Admin bridge token');
+assert.match(ui,/function renderWorkspace\(/,'three-column workspace renderer required');
+for(const marker of ['data-kit-column="catalog"','data-kit-column="draft"','data-kit-column="saved"']){
+  assert.ok(ui.includes(marker),`missing workspace column ${marker}`);
+}
+assert.match(ui,/data-kit-search/,'catalog must have product search');
+assert.match(ui,/data-kit-chip/,'catalog must expose reusable search chips');
+assert.match(ui,/most_used/,'catalog must expose most-used products');
+assert.match(ui,/data-kit-product/,'catalog must render selectable product cards');
+for(const label of ['Estoque físico','Reservado','Livre','Custo','Venda'])assert.ok(ui.includes(label),`product cards must show ${label}`);
+assert.match(ui,/data-kit-inline-edit/,'product cards must open inline edit');
+assert.match(ui,/data-kit-add/,'product cards must add product to draft');
+assert.match(ui,/data-kit-item-qty/,'draft must edit per-kit quantity');
+assert.match(ui,/data-kit-item-remove/,'draft must remove items');
+assert.match(ui,/function saveDraftKit\(/,'draft save action required');
+assert.match(ui,/['"]kit_save['"]/,'saving must use isolated kit API');
+assert.match(ui,/source_kit_id/,'duplicate kit must retain source linkage');
+assert.match(ui,/function duplicateKit\(/,'saved kits must support duplication');
+assert.match(ui,/function archiveKit\(/,'saved kits must support archive');
+assert.match(ui,/['"]kit_archive['"]/,'archive must use isolated kit API');
+assert.match(ui,/cost_total|Custo total/,'workspace must calculate kit cost total');
+assert.match(ui,/sale_total|Venda total/,'workspace must calculate kit sale total');
+assert.match(ui,/function open\(/,'module must expose open entry point');
+assert.match(ui,/DonaAntoniaKitBuilder/,'module must expose stable global adapter');
+
+console.log('kit builder ui v1: PASS');
