@@ -32,6 +32,11 @@ verify_jwt = false
 [functions.admin-whatsapp-ana-customer-profile-v1]
 verify_jwt = true
 
+# Consentimento semanal: envio exclusivamente por template Meta MARKETING com quick replies.
+# Gateway exige JWT e a função também valida admin_users/non-viewer.
+[functions.admin-whatsapp-weekly-consent-v1]
+verify_jwt = true
+
 [functions.whatsapp-order-outbound-v1]
 verify_jwt = true
 [functions.papoai-order-signals-v1]

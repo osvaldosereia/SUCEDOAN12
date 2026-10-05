@@ -57,7 +57,7 @@ function epochIso(value,fallback=null){
 
 function canonicalType(value){
   const t=clean(value,40).toLowerCase();
-  if(['text','audio','image','document','location','interactive','template','reaction'].includes(t))return t;
+  if(['text','audio','image','document','location','interactive','button','template','reaction'].includes(t))return t;
   if(t==='text/plain')return 'text';
   if(t==='voice'||t==='ptt'||t.startsWith('audio/'))return 'audio';
   if(t.startsWith('image/'))return 'image';
