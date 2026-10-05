@@ -1,7 +1,7 @@
 const ROOT_SELECTOR='#content';
 const PRIMARY_MARKETING_VIEWS=['overview','templates','campaigns','audiences'];
 const PRIMARY_MARKETING_LABELS={overview:'Visão geral',templates:'Templates',campaigns:'Campanhas',audiences:'Públicos'};
-const ADVANCED_FILTERS=['product_ids','last_purchase_after','last_purchase_before','inactive_days','min_order_count','max_order_count','min_lifetime_value','max_lifetime_value'];
+const ADVANCED_FILTERS=['brand','category','product_ids','last_purchase_after','last_purchase_before','inactive_days','min_order_count','max_order_count','min_lifetime_value','max_lifetime_value'];
 let scheduled=false;
 let consentModulePromise=null;
 let templateSimpleModulePromise=null;
@@ -115,7 +115,7 @@ function groupAdvancedAudienceFilters(form){
   const details=document.createElement('details');
   details.className='marketing-pro-advanced';
   details.dataset.marketingProAdvanced='1';
-  details.innerHTML='<summary>Filtros avançados</summary><div class="marketing-pro-advanced-body"></div>';
+  details.innerHTML='<summary>Mais filtros</summary><div class="marketing-pro-advanced-body"></div>';
   const body=details.querySelector('.marketing-pro-advanced-body');
   nodes.forEach(node=>body.appendChild(node));
   const actions=form.querySelector('.marketing-audience-form-actions');
