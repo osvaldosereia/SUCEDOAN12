@@ -4,10 +4,19 @@ on:
   pull_request:
     paths:
       - 'vitrine/admin/marketing/**'
+      - 'supabase/functions/admin-whatsapp-templates-v1/**'
+      - 'supabase/functions/admin-marketing-campaigns-v1/**'
       - 'scripts/test-whatsapp-marketing-professional-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-papoai-shell-v1.mjs'
       - 'scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-papoai-responsive-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-list-simple-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-template-carousel-v1.mjs'
+      - 'scripts/test-admin-whatsapp-template-carousel-v1.mjs'
+      - 'scripts/test-admin-marketing-campaign-report-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-report-ui-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-audience-progressive-v1.mjs'
       - '.github/workflows/marketing-professional-ui-ci.yml'
 
 jobs:
@@ -25,6 +34,22 @@ jobs:
         run: node scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs
       - name: Marketing overview and responsive contract
         run: node scripts/test-whatsapp-marketing-papoai-responsive-v1.mjs
+      - name: Marketing simple campaign audience contract
+        run: node scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs
+      - name: Marketing simple campaign list contract
+        run: node scripts/test-whatsapp-marketing-campaign-list-simple-v1.mjs
+      - name: Marketing carousel UI contract
+        run: node scripts/test-whatsapp-marketing-template-carousel-v1.mjs
+      - name: Marketing carousel backend contract
+        run: node scripts/test-admin-whatsapp-template-carousel-v1.mjs
+      - name: Marketing campaign report backend contract
+        run: node scripts/test-admin-marketing-campaign-report-v1.mjs
+      - name: Marketing campaign report UI contract
+        run: node scripts/test-whatsapp-marketing-campaign-report-ui-v1.mjs
+      - name: Marketing audience progressive contract
+        run: node scripts/test-whatsapp-marketing-audience-progressive-v1.mjs
+      - name: Marketing polish syntax
+        run: node --check vitrine/admin/marketing/marketing-polish.js
       - name: Campaign entry syntax
         run: node --check vitrine/admin/marketing/campaign-entry.js
       - name: Existing audience UI regression
