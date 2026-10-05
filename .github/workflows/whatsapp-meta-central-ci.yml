@@ -21,13 +21,13 @@ on:
       - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_fix_v2.sql'
+      - 'supabase/sql/20261003_admin_attendance_human_ai_state_v1.sql'
       - 'supabase/sql/20261003_admin_attendance_meta_media_send_v1.sql'
       - 'supabase/sql/20261003_admin_attendance_meta_media_safety_v2.sql'
       - 'supabase/sql/20261003_admin_attendance_meta_media_gate_v3.sql'
       - 'supabase/sql/20261004_admin_attendance_meta_media_live_v1.sql'
       - 'supabase/sql/20261004_admin_attendance_meta_media_readiness_compat_v2.sql'
       - 'supabase/sql/20261004_whatsapp_template_events_v1.sql'
-      - 'supabase/sql/20261003_attendance_human_ai_state_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_jobs_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_admin_preview_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_preview_stale_claim_recovery_v3.sql'
@@ -70,6 +70,7 @@ jobs:
       - {name: Admin marketing audiences contract, run: 'node scripts/test-admin-marketing-audiences-v1.mjs'}
       - {name: Admin marketing campaigns contract, run: 'node scripts/test-admin-marketing-campaigns-v1.mjs'}
       - {name: Marketing audience UI contract, run: 'node scripts/test-whatsapp-marketing-audience-ui-v1.mjs'}
+      - {name: Marketing campaign UI contract, run: 'node scripts/test-whatsapp-marketing-campaign-ui-v1.mjs'}
       - {name: Marketing intelligence legacy contract, run: 'python scripts/test-marketing-intelligence-contract.py'}
       - {name: Meta transport contract, run: 'node scripts/test-attendance-meta-send-v1.mjs'}
       - {name: Meta media contract, run: 'node scripts/test-attendance-meta-media-v1.mjs'}
@@ -117,4 +118,5 @@ jobs:
       - {name: Attendance templates JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-templates.js'}
       - {name: Marketing template center syntax, run: 'node --check vitrine/admin/marketing/template-center.js'}
       - {name: Marketing audience center syntax, run: 'node --check vitrine/admin/marketing/audience-center.js'}
+      - {name: Marketing campaign center syntax, run: 'node --check vitrine/admin/marketing/campaign-center.js'}
       - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}
