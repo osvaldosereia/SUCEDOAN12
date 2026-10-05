@@ -11,6 +11,7 @@ on:
       - 'supabase/functions/admin-service-intelligence-v1/index.ts'
       - 'supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql'
       - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
+      - 'scripts/test-admin-orders-clean-flow-v3.mjs'
       - '.github/workflows/test-admin-orders-fiscal-flow-v4.yml'
   pull_request:
     branches: [main]
@@ -20,6 +21,7 @@ on:
       - 'supabase/functions/admin-service-intelligence-v1/index.ts'
       - 'supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql'
       - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
+      - 'scripts/test-admin-orders-clean-flow-v3.mjs'
       - '.github/workflows/test-admin-orders-fiscal-flow-v4.yml'
 
 permissions:
@@ -35,5 +37,7 @@ jobs:
           node-version: 22
       - name: Pedidos V4 contract
         run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
+      - name: Pedidos V3 regression
+        run: node scripts/test-admin-orders-clean-flow-v3.mjs
       - name: Diff hygiene
         run: git diff --check
