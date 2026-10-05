@@ -65,7 +65,7 @@ try{
   await page.waitForSelector('[data-store-preview-table]');
   assert.equal(await page.locator('[data-store-preview-row]').count(),2,'preview must show consolidated requirements');
   await page.click('[data-store-save]');
-  await page.waitForFunction(()=>window.__toasts?.some(x=>String(x).includes('salva')));
+  await page.waitForFunction(()=>window.__toasts?.filter(x=>String(x).includes('salva')).length>=1);
   const editSave=calls.find(x=>x.url.startsWith(API)&&x.action==='save'&&x.body.basket_id==='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
   assert.ok(editSave,'editing existing basket must call save');
   assert.equal(editSave.body.kits.length,2,'save must contain linked kits only');
@@ -81,6 +81,7 @@ try{
   await page.selectOption('[data-store-kit-select]','22222222-2222-4222-8222-222222222222');
   await page.click('[data-store-kit-add]');
   await page.click('[data-store-save]');
+  await page.waitForFunction(()=>window.__toasts?.filter(x=>String(x).includes('salva')).length>=2);
   const newSave=calls.filter(x=>x.url.startsWith(API)&&x.action==='save').at(-1);
   assert.equal(newSave.body.basket_id,null,'new basket save must not fake an id');
   assert.equal(newSave.body.kits.length,2);
