@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'supabase/functions/_shared/whatsapp-meta-*.mjs'
+      - 'supabase/functions/_shared/whatsapp-core-v1.mjs'
       - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
       - 'supabase/functions/_shared/ana-policy-v1.mjs'
       - 'supabase/functions/whatsapp-ana-worker-v1/**'
@@ -42,9 +43,11 @@ on:
       - 'supabase/migrations/20261005018000_marketing_campaign_worker_support_v1.sql'
       - 'supabase/migrations/20261005021000_marketing_campaign_worker_cron_v1.sql'
       - 'supabase/migrations/20261005024000_marketing_campaign_execution_controls_v1.sql'
+      - 'supabase/migrations/20261005173000_meta_whatsapp_referral_attribution_v1.sql'
       - 'scripts/test-attendance-*.mjs'
       - 'scripts/test-whatsapp-ana-*.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
+      - 'scripts/test-admin-attendance-attribution-v1.mjs'
       - 'scripts/test-whatsapp-marketing-*.mjs'
       - 'scripts/test-admin-marketing-*.mjs'
       - '.github/workflows/whatsapp-meta-central-ci.yml'
@@ -104,6 +107,8 @@ jobs:
       - {name: Meta Phone Number ID strictness, run: 'node scripts/test-attendance-meta-phone-id-v1.mjs'}
       - {name: Meta response-body timeout, run: 'node scripts/test-attendance-meta-body-timeout-v1.mjs'}
       - {name: Meta webhook contract, run: 'node scripts/test-whatsapp-meta-webhook-v1.mjs'}
+      - {name: Meta referral attribution contract, run: 'node scripts/test-whatsapp-meta-referral-attribution-v1.mjs'}
+      - {name: Admin attendance attribution contract, run: 'node scripts/test-admin-attendance-attribution-v1.mjs'}
       - {name: Meta template webhook events contract, run: 'node scripts/test-whatsapp-meta-template-events-v1.mjs'}
       - {name: Meta shadow media preservation regression, run: 'node scripts/test-whatsapp-meta-shadow-media-preserve-v1.mjs'}
       - {name: Meta webhook TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts'}
@@ -131,3 +136,4 @@ jobs:
       - {name: Marketing audience center syntax, run: 'node --check vitrine/admin/marketing/audience-center.js'}
       - {name: Marketing campaign center syntax, run: 'node --check vitrine/admin/marketing/campaign-center.js'}
       - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}
+
