@@ -25,6 +25,13 @@ assert.ok(js.includes('Histórico de autorização para mensagens de marketing')
 assert.ok(js.includes('Destino do botão'),'editor de campanhas deve substituir jargão Deep link');
 assert.ok(js.includes('Enviar para revisão'),'editor deve usar ação clara');
 
+// Regressão: o MutationObserver não pode disparar outro ciclo apenas para
+// recolocar botões que já estão na ordem correta. Reordene somente se a
+// subnavegação realmente estiver fora da ordem esperada.
+assert.match(js,/const\s+navAlreadyOrdered\s*=/,'subnavegação deve detectar quando já está estável');
+assert.match(js,/if\s*\(\s*!navAlreadyOrdered\s*\)/,'reordenação deve acontecer somente quando necessária');
+assert.doesNotMatch(js,/if\(button\)nav\.insertBefore\(button,gate\|\|null\)/,'não pode haver insertBefore incondicional a cada MutationObserver');
+
 for(const token of ['.marketing-pro-shell','.marketing-template-subnav','.marketing-audience-filters','.marketing-campaign-card','.marketing-pro-advanced','.marketing-pro-toolbar']){
   assert.ok(css.includes(token),`CSS profissional deve conter ${token}`);
 }
