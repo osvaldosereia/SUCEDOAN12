@@ -60,6 +60,7 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-guided-positions-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-reservation-domain-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-guided-lot-flow-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-order-engine.mjs
       - run: node scripts/test-basket-kit-image-browser.mjs
         env:
