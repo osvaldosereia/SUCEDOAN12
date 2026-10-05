@@ -32,7 +32,9 @@ assert.match(section,/Nova Cesta\/Kit/,'primary page must expose one create acti
 assert.match(section,/basket_commercial_create/,'fast flow must persist through canonical create action');
 assert.match(section,/category_id/,'category is required during creation');
 assert.match(section,/base_price_cents/,'price is set during creation');
-assert.match(section,/DonaAntoniaBasketGuided\?\.open/,'after model creation the guided editor must open');
+assert.match(section,/function openGuided\(/,'canonical section must own the guided-editor adapter');
+assert.match(section,/openGuided\(created,['"]lot['"]\)/,'after model creation the guided editor must open in lot mode');
+assert.match(section,/g\.open\(m\.commercial_id/,'guided-editor adapter must delegate to DonaAntoniaBasketGuided.open');
 assert.doesNotMatch(section,/openBasketKitAdmin|startBasketKitLotDraft/,'commercial creation must never fall back to legacy composers');
 assert.match(guided,/Criar lote \/ reservar/,'first lot is created inside the guided editor');
 
