@@ -37,6 +37,7 @@ on:
       - 'supabase/migrations/20261004234500_marketing_audience_preview_v1.sql'
       - 'supabase/migrations/20261005002000_marketing_audience_candidates_v2.sql'
       - 'supabase/migrations/20261005004000_marketing_campaign_drafts_v1.sql'
+      - 'supabase/migrations/20261005014000_marketing_campaign_execution_v1.sql'
       - 'scripts/test-attendance-*.mjs'
       - 'scripts/test-whatsapp-ana-*.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
@@ -67,6 +68,7 @@ jobs:
       - {name: Marketing audience preview contract, run: 'node scripts/test-whatsapp-marketing-audience-preview-v1.mjs'}
       - {name: Marketing audience shared core contract, run: 'node scripts/test-whatsapp-marketing-audience-core-v2.mjs'}
       - {name: Marketing campaign drafts contract, run: 'node scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'}
+      - {name: Marketing campaign execution contract, run: 'node scripts/test-whatsapp-marketing-campaign-execution-v1.mjs'}
       - {name: Admin marketing audiences contract, run: 'node scripts/test-admin-marketing-audiences-v1.mjs'}
       - {name: Admin marketing campaigns contract, run: 'node scripts/test-admin-marketing-campaigns-v1.mjs'}
       - {name: Marketing audience UI contract, run: 'node scripts/test-whatsapp-marketing-audience-ui-v1.mjs'}
