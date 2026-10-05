@@ -37,6 +37,8 @@ jobs:
         run: node scripts/test-whatsapp-ana-customer-profile-api-v1.mjs
       - name: Attendance customer profile UI
         run: node scripts/test-admin-attendance-customer-profile-ui-v1.mjs
+      - name: ANA customer profile review
+        run: node scripts/test-ana-customer-profile-review-v1.mjs
       - name: Profile policy syntax
         run: node --check supabase/functions/_shared/ana-customer-profile-policy-v1.mjs
       - name: Profile Edge syntax
