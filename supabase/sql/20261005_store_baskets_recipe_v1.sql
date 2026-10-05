@@ -59,7 +59,6 @@ as $function$
       where r.basket_id=b.id
     ) fin on true
     where exists(select 1 from public.store_basket_recipe_kits r where r.basket_id=b.id)
-       or b.is_active=true
   ) q;
 $function$;
 
@@ -190,10 +189,10 @@ begin
       coalesce((e.value->>'is_required')::boolean,true) as is_required
     from jsonb_array_elements(p_kits) with ordinality e(value,ordinality)
   )
-  select count(*),
-         count(*) filter(where k.type='food'),
-         count(*) filter(where k.type='cleaning_hygiene'),
-         count(*) filter(where k.type not in ('food','cleaning_hygiene')),
+  select count(distinct ik.kit_id),
+         count(distinct ik.kit_id) filter(where k.type='food'),
+         count(distinct ik.kit_id) filter(where k.type='cleaning_hygiene'),
+         count(distinct ik.kit_id) filter(where k.type not in ('food','cleaning_hygiene')),
          coalesce(sum(coalesce(p.cost,0)*i.quantity*ik.quantity),0),
          coalesce(sum(coalesce(p.price,0)*i.quantity*ik.quantity),0)
   into v_kit_count,v_food_count,v_cleaning_count,v_other_count,v_cost_total,v_product_sale_total
