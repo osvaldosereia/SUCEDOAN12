@@ -103,6 +103,7 @@ try{
   const rowToDelete=page.locator('[data-kit-chip-row="11111111-1111-4111-8111-111111111111"]');
   await rowToDelete.locator('[data-kit-chip-archive]').click();
   await page.waitForFunction(()=>window.calls.some(c=>c.action==='chip_archive'));
+  await page.waitForFunction(()=>document.querySelectorAll('[data-kit-chip]').length===1);
   assert.equal(await page.locator('[data-kit-chip]').count(),1,'chip excluído deve sair da barra');
 
   await page.setViewportSize({width:390,height:844});
