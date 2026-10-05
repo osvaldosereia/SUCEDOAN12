@@ -49,6 +49,8 @@ assert.ok(!fs.existsSync('scripts/_apply_orders_v4_backend_patch.mjs'),'Patch te
 assert.ok(!fs.existsSync('.github/workflows/_temp-orders-v4-backend-patch.yml'),'Workflow temporário de patch não pode permanecer no produto');
 assert.ok(!fs.existsSync('scripts/_apply_orders_v4_ui_patch.mjs'),'Patch temporário da UI não pode permanecer no produto');
 assert.ok(!fs.existsSync('.github/workflows/_temp-orders-v4-ui-patch.yml'),'Workflow temporário da UI não pode permanecer no produto');
+assert.ok(!fs.existsSync('scripts/_fix_orders_v4_browser_syntax.mjs'),'Corretor temporário de sintaxe não pode permanecer no produto');
+assert.ok(!fs.existsSync('.github/workflows/_temp-orders-v4-browser-syntax-fix.yml'),'Workflow temporário de sintaxe não pode permanecer no produto');
 
 // Bridge Bling: geração a partir do Pedido de Venda existente, reconciliação antes de POST e DANFE.
 assert.match(blingBridge,/blingHubVitrineDispatchFiscalPreview/,'Bridge Bling precisa manter o preflight fiscal existente');
@@ -66,6 +68,9 @@ assert.match(admin,/Forma prevista/i,'Entrega continua mostrando a forma previst
 assert.match(admin,/Forma recebida/i,'Entrega continua registrando a forma realmente recebida');
 assert.match(admin,/CONFIRMAR ENTREGA/i,'Entrega e pagamento continuam confirmados juntos');
 assert.match(admin,/order-v3-tag[^}]*font-size:(?:12|13|14|15|16)px/s,'Tags operacionais precisam ser maiores/legíveis');
+assert.match(admin,/\.order-v3-tag\.warn\s*\{/,'Estado fiscal de atenção precisa de estilo próprio');
+assert.match(admin,/\.order-v3-tag\.danger\s*\{/,'NF-e rejeitada precisa de estilo visual de perigo próprio');
+assert.match(admin,/\.order-v3-tag\.ok\s*\{/,'NF-e autorizada precisa de estilo visual de sucesso próprio');
 
 const detailStart=admin.indexOf('function paintOrderDetail(){');
 const detailEnd=admin.indexOf('\n  function blingPreflightOperationalBlockers',detailStart);
