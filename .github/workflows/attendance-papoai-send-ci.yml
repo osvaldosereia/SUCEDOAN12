@@ -65,6 +65,7 @@ jobs:
       - run: node scripts/test-admin-attendance-offers-tab-v1.mjs
       - run: node scripts/test-attendance-meta-media-v1.mjs
       - run: node scripts/test-attendance-meta-media-retry-v1.mjs
+      - run: node --experimental-strip-types --check supabase/functions/admin-attendance-customer-v1/index.ts
       - run: node --check supabase/functions/_shared/admin-attendance-library-v1.mjs
       - run: node --check supabase/functions/_shared/admin-attendance-library-send-v1.mjs
       - run: node --check vitrine/admin/atendimento/attendance-library-image.js
