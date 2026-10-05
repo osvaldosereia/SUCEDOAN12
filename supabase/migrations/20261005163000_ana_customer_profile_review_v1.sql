@@ -16,6 +16,8 @@ declare
   v_outcome text:=lower(btrim(coalesce(p_outcome,'')));
   v_target_status text;
   v_user_id uuid:=auth.uid();
+  v_doc text;
+  v_other_customer uuid;
 begin
   if coalesce((v_access->>'ok')::boolean,false) is not true then return v_access; end if;
   if p_suggestion_id is null then return jsonb_build_object('ok',false,'error','suggestion_required'); end if;
@@ -36,9 +38,24 @@ begin
     return jsonb_build_object('ok',false,'error','suggestion_already_reviewed','status',v_suggestion.status);
   end if;
 
-  if v_outcome='accepted' and v_suggestion.field_name='cpf_cnpj'
-     and public.ops2_valid_cpf_cnpj_v1(v_suggestion.normalized_value) is not true then
-    return jsonb_build_object('ok',false,'error','invalid_cpf_cnpj');
+  if v_outcome='accepted' and v_suggestion.recommendation='ignore' then
+    return jsonb_build_object('ok',false,'error','suggestion_not_usable');
+  end if;
+
+  if v_outcome='accepted' and v_suggestion.field_name='cpf_cnpj' then
+    v_doc:=regexp_replace(coalesce(v_suggestion.normalized_value,''),'[^0-9]','','g');
+    if public.ops2_valid_cpf_cnpj_v1(v_doc) is not true then
+      return jsonb_build_object('ok',false,'error','invalid_cpf_cnpj');
+    end if;
+
+    select c.id into v_other_customer
+    from public.customers c
+    where regexp_replace(coalesce(c.cpf_cnpj,''),'[^0-9]','','g')=v_doc
+      and (v_suggestion.customer_id is null or c.id<>v_suggestion.customer_id)
+    limit 1;
+    if found then
+      return jsonb_build_object('ok',false,'error','cpf_cnpj_belongs_to_other_customer');
+    end if;
   end if;
 
   update public.customer_profile_suggestions_v1
