@@ -25,7 +25,7 @@ Fluxos principais esperados:
 - Nenhum envio direto do navegador para Graph API.
 - PapoAI continua conectado nos dois números enquanto essa decisão permanecer vigente.
 - Esta reformulação não remove o ledger de consentimento, mas consentimento deixa de ser navegação principal e não domina a experiência de criação de campanha.
-- Regras de bloqueio/revogação e proteção técnica continuam no backend antes do envio.
+- As proteções obrigatórias de envio do WhatsApp/Meta continuam sendo aplicadas no backend imediatamente antes da materialização/disparo; a UI não precisa expor essa complexidade no fluxo normal.
 - A UI normal não deve expor UUIDs, WAMIDs, IDs de outbox, runtime mode ou detalhes de service role.
 - Reaproveitar cores, tipografia, botões, cards, tabelas e modais já usados no Vitrine/Admin da Dona Antônia.
 
@@ -244,13 +244,15 @@ Antes de criar, mostrar uma linha simples:
 
 ### Todos os clientes
 
-Seleciona a base de clientes válida para segmentação comercial, sem exigir ao usuário montar filtros manualmente.
+Na interface, seleciona toda a base de clientes cadastrados como público comercial, sem exigir filtros manuais.
+
+O total mostrado na montagem da campanha representa o público selecionado. No momento da materialização/envio, o backend calcula quantos estão tecnicamente aptos a receber a mensagem conforme as regras vigentes do WhatsApp/Meta e os gates internos. A eventual diferença é mostrada apenas na revisão/execução, de forma simples, sem transformar consentimento em etapa principal da UX.
 
 ### Por etiquetas
 
-A campanha recebe clientes associados a qualquer uma das etiquetas selecionadas, com deduplicação por telefone canônico.
+A campanha seleciona clientes associados a qualquer uma das etiquetas escolhidas, com deduplicação por telefone canônico.
 
-A UI permite múltiplas etiquetas e informa o total resultante antes da criação.
+A UI permite múltiplas etiquetas e informa o total selecionado antes da criação. No envio, aplicam-se os mesmos gates server-side usados em `Todos os clientes`.
 
 ### Proteções server-side
 
@@ -258,12 +260,13 @@ Antes de materializar/enviar, o backend continua aplicando:
 - telefone válido;
 - deduplicação;
 - cliente ativo;
+- consentimento/opt-in quando exigido pelas regras vigentes do WhatsApp/Meta;
 - bloqueio/revogação/supressão explícita;
 - gates de canal e runtime;
 - template aprovado e compatível com canal;
 - idempotência.
 
-Essas proteções não devem poluir a tela normal.
+Essas proteções não devem poluir a tela normal. Quando reduzirem o público efetivamente enviável, a revisão da campanha informa apenas a quantidade final e, opcionalmente, um resumo de motivos em `Detalhes`.
 
 ## 11. Públicos — tela de apoio
 
