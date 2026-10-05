@@ -6,10 +6,14 @@ on:
       - 'vitrine/admin/marketing/**'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
       - 'supabase/functions/admin-marketing-campaigns-v1/**'
+      - 'supabase/functions/admin-marketing-strategy-v1/**'
       - 'supabase/functions/_shared/marketing-strategy-engine-v1.mjs'
       - 'supabase/migrations/*marketing_strategy*'
       - 'scripts/test-marketing-strategy-foundation-v1.mjs'
       - 'scripts/test-marketing-strategy-engine-v1.mjs'
+      - 'scripts/test-admin-marketing-strategy-v1.mjs'
+      - 'scripts/test-admin-marketing-campaigns-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'
       - 'scripts/test-whatsapp-marketing-professional-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-papoai-shell-v1.mjs'
       - 'scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs'
@@ -34,6 +38,12 @@ jobs:
         run: node scripts/test-marketing-strategy-foundation-v1.mjs
       - name: Marketing strategy deterministic engine contract
         run: node scripts/test-marketing-strategy-engine-v1.mjs
+      - name: Marketing strategy Admin API contract
+        run: node scripts/test-admin-marketing-strategy-v1.mjs
+      - name: Existing campaigns backend regression
+        run: node scripts/test-admin-marketing-campaigns-v1.mjs
+      - name: Existing campaign drafts regression
+        run: node scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs
       - name: Marketing professional UI contract
         run: node scripts/test-whatsapp-marketing-professional-ui-v1.mjs
       - name: Marketing PapoAI-like shell contract
