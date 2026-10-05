@@ -10,18 +10,23 @@ on:
       - 'vitrine/admin/basket-guided-builder.js'
       - 'vitrine/admin/basket-admin-section.js'
       - 'vitrine/admin/kit-builder.js'
+      - 'vitrine/admin/store-baskets-builder.js'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/admin-basket-guided-v1/**'
       - 'supabase/functions/admin-kit-builder-v1/**'
+      - 'supabase/functions/admin-store-baskets-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/functions/basket-lot-image-v1/**'
       - 'supabase/sql/2026100*_basket_*.sql'
       - 'supabase/sql/202610*_assembly_*.sql'
+      - 'supabase/sql/202610*_store_baskets_*.sql'
       - 'supabase/migrations/2026100*_basket_*.sql'
       - 'supabase/migrations/202610*_assembly_*.sql'
+      - 'supabase/migrations/202610*_store_baskets_*.sql'
       - 'scripts/test-basket-*.mjs'
       - 'scripts/test-assembly-*.mjs'
       - 'scripts/test-kit-builder-*.mjs'
+      - 'scripts/test-store-baskets-*.mjs'
       - '.github/workflows/basket-kit-editor-ci.yml'
   push:
     branches: [main]
@@ -34,18 +39,23 @@ on:
       - 'vitrine/admin/basket-guided-builder.js'
       - 'vitrine/admin/basket-admin-section.js'
       - 'vitrine/admin/kit-builder.js'
+      - 'vitrine/admin/store-baskets-builder.js'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/admin-basket-guided-v1/**'
       - 'supabase/functions/admin-kit-builder-v1/**'
+      - 'supabase/functions/admin-store-baskets-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/functions/basket-lot-image-v1/**'
       - 'supabase/sql/2026100*_basket_*.sql'
       - 'supabase/sql/202610*_assembly_*.sql'
+      - 'supabase/sql/202610*_store_baskets_*.sql'
       - 'supabase/migrations/2026100*_basket_*.sql'
       - 'supabase/migrations/202610*_assembly_*.sql'
+      - 'supabase/migrations/202610*_store_baskets_*.sql'
       - 'scripts/test-basket-*.mjs'
       - 'scripts/test-assembly-*.mjs'
       - 'scripts/test-kit-builder-*.mjs'
+      - 'scripts/test-store-baskets-*.mjs'
       - '.github/workflows/basket-kit-editor-ci.yml'
 permissions:
   contents: read
@@ -63,6 +73,8 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-assembly-kits-legacy-bootstrap-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-recipe-kit-links-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-recipe-kits-ui-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-recipe-domain-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-admin-api-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-admin-api-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-product-quick-edit-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-ui-v1.mjs
