@@ -1,0 +1,28 @@
+name: Marketing Carousel CI
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/whatsapp-meta-carousel-v1.mjs'
+      - 'supabase/functions/admin-whatsapp-template-carousel-v1/**'
+      - 'vitrine/admin/marketing/template-carousel-editor.js'
+      - 'vitrine/admin/marketing/campaign-entry.js'
+      - 'scripts/test-admin-whatsapp-template-carousel-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-template-carousel-v1.mjs'
+      - '.github/workflows/marketing-carousel-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Carousel backend contract
+        run: node scripts/test-admin-whatsapp-template-carousel-v1.mjs
+      - name: Carousel UI contract
+        run: node scripts/test-whatsapp-marketing-template-carousel-v1.mjs
+      - name: Carousel helper syntax
+        run: node --check supabase/functions/_shared/whatsapp-meta-carousel-v1.mjs
+      - name: Carousel editor syntax
+        run: node --check vitrine/admin/marketing/template-carousel-editor.js
