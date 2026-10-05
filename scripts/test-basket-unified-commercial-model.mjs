@@ -50,4 +50,14 @@ for(const source of [publicRoot,publicVitrine]){
   assert.match(source,/basketGroupTitle\(group,b\)/,'composition label must consider the commercial category');
 }
 assert.equal(publicRoot,publicVitrine,'root and /vitrine public storefronts must stay identical');
+
+const promotionPath='supabase/migrations/20261005021000_basket_promote_legacy_standalone_kits_v1.sql';
+assert.ok(fs.existsSync(promotionPath),'legacy standalone kits must be promoted into the unified commercial model');
+const promotion=fs.readFileSync(promotionPath,'utf8');
+assert.match(promotion,/basket_kit_templates[\s\S]*basket_id is null[\s\S]*category_id is not null/i,'promotion must target categorized standalone kit templates');
+assert.match(promotion,/insert into public\.basket_templates/i,'promotion must create the single commercial Cesta\/Kit record');
+assert.match(promotion,/update public\.basket_kit_templates[\s\S]*basket_id/i,'promotion must bind the existing internal kit template instead of duplicating its composition');
+assert.match(promotion,/update public\.basket_stock_lots[\s\S]*basket_id/i,'existing draft and ready kit lots must follow the promoted commercial model');
+assert.doesNotMatch(promotion,/insert into public\.basket_kit_template_items/i,'promotion must preserve existing kit composition without cloning items');
+
 console.log('basket unified commercial model: PASS');
