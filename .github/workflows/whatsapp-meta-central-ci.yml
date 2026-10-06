@@ -42,10 +42,12 @@ on:
       - 'supabase/migrations/20261005018000_marketing_campaign_worker_support_v1.sql'
       - 'supabase/migrations/20261005021000_marketing_campaign_worker_cron_v1.sql'
       - 'supabase/migrations/20261005024000_marketing_campaign_execution_controls_v1.sql'
+      - 'supabase/sql/20261006_marketing_security_hardening_v1.sql'
       - 'scripts/test-attendance-*.mjs'
       - 'scripts/test-whatsapp-ana-*.mjs'
       - 'scripts/test-whatsapp-meta-*.mjs'
       - 'scripts/test-whatsapp-marketing-*.mjs'
+      - 'scripts/test-marketing-security-hardening-v1.mjs'
       - 'scripts/test-admin-marketing-*.mjs'
       - '.github/workflows/whatsapp-meta-central-ci.yml'
   workflow_dispatch:
@@ -69,6 +71,7 @@ jobs:
       - {name: Meta template mutation contract, run: 'node scripts/test-whatsapp-meta-template-mutations-v1.mjs'}
       - {name: Marketing Meta template admin UI contract, run: 'node scripts/test-whatsapp-marketing-template-admin-v1.mjs'}
       - {name: Marketing consent ledger contract, run: 'node scripts/test-whatsapp-marketing-consent-ledger-v1.mjs'}
+      - {name: Marketing security hardening contract, run: 'node scripts/test-marketing-security-hardening-v1.mjs'}
       - {name: Marketing audience preview contract, run: 'node scripts/test-whatsapp-marketing-audience-preview-v1.mjs'}
       - {name: Marketing audience shared core contract, run: 'node scripts/test-whatsapp-marketing-audience-core-v2.mjs'}
       - {name: Marketing campaign drafts contract, run: 'node scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'}
