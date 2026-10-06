@@ -3407,16 +3407,6 @@ async function orderSeparationComplete(p:any,auth:any){
   if(stock.data?.ok!==true){await markSeparationNeedsAttention(oid,"stock_applied",stock.data?.error,stock.data);return {error:String(stock.data?.error||"separation_stock_failed"),status:409,recovery_scheduled:true}}
   try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
 
-  try{
-    const notifyResponse=await fetch(`${U}/functions/v1/order-separation-notify-v1`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json","x-internal-key":K},
-      body:JSON.stringify({order_id:oid}),
-      signal:AbortSignal.timeout(18000)
-    });
-    if(!notifyResponse.ok){const detail=await notifyResponse.text().catch(()=>"");console.error("order_separation_customer_notify",oid,notifyResponse.status,tx(detail,300))}
-  }catch(error){console.error("order_separation_customer_notify",oid,tx((error as Error)?.message||error,300))}
-
   const snap=await buildSnapshot(oid,"separation_verified");
   const verified=await hub("ops2_ensure_order_state",{payload:snap,target_key:"verified",canary:false});
   if(verified.error){await markSeparationNeedsAttention(oid,"bling_verified",verified.error,verified.data||verified.detail);return {error:"bling_verified_failed",status:verified.status||409,detail:verified.data||verified.detail||null,recovery_scheduled:true}}
@@ -3436,6 +3426,15 @@ async function orderSeparationComplete(p:any,auth:any){
   try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"ready"})}catch{}
   const done=await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"completed",p_metadata:{completed_by:auth?.user_id||null,separated_at:new Date().toISOString()}});if(done.error)throw done.error;
   try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
+  try{
+    const notifyResponse=await fetch(`${U}/functions/v1/order-separation-notify-v1`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-internal-key":K},
+      body:JSON.stringify({order_id:oid}),
+      signal:AbortSignal.timeout(18000)
+    });
+    if(!notifyResponse.ok){const detail=await notifyResponse.text().catch(()=>"");console.error("order_separation_customer_notify",oid,notifyResponse.status,tx(detail,300))}
+  }catch(error){console.error("order_separation_customer_notify",oid,tx((error as Error)?.message||error,300))}
   await opsEvent("order.separation_completed","Separação concluída. Pedido pronto para entrega.","order",oid,{missing_subtotal:prep.data?.missing_subtotal||0,final_total:prep.data?.final_total||null,status:"ready"},tx(p?.operator,80)||"Separação","human","dona_antonia","order-separation-v3-complete:"+oid);
   return {order_id:oid,status:"ready",completion:done.data,missing_subtotal:prep.data?.missing_subtotal||0,final_total:prep.data?.final_total||null,recovery_scheduled:false};
 }
