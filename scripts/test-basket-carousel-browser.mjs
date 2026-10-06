@@ -14,8 +14,8 @@ try{
  await page.evaluate(b=>{const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');window.opened=[];window.b=b;document.querySelector('#basketGrid').innerHTML=Array.from({length:9},(_,i)=>BasketCarousel.card({...b,id:b.id+i},escape,x=>'R$ '+(x/100).toFixed(2),x=>x));document.querySelectorAll('[data-basket]').forEach(x=>x.onclick=()=>opened.push(x.dataset.basket));BasketCarousel.mount(document.querySelector('#basketGrid'));},basket);
  await page.waitForFunction(()=>document.querySelector('.basket-card-photo img')?.hasAttribute('src'));
  await page.waitForTimeout(150);
- assert.ok(fetched.size>=2&&fetched.size<=5,'carregar somente as fotos que entram na área visível');
- assert.ok(!fetched.has('https://photos.test/p23.svg'));
+ assert.ok(fetched.has('https://photos.test/p0.svg'),'carregar a foto inicial da cesta');
+ assert.ok(!fetched.has('https://photos.test/p23.svg'),'não carregar fotos de produtos secundários fora do cartão');
  assert.equal(await page.locator('.basket-card').count(),9);
  assert.equal(await page.locator('.basket-card-photo img').count(),9);
  assert.equal(await page.locator('.basket-product').count(),0,'cada cartão mostra apenas a foto do primeiro produto');
