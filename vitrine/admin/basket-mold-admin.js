@@ -36,9 +36,10 @@ function normalizeEditor(e){
     name:e?.basket_name||'',
     hidden_adjustment:Number(e?.hidden_adjustment||0),
     public_composition_count:Number(e?.public_composition_count||2),
+    price_preview:(Array.isArray(e?.price_preview)?e.price_preview:[]).map(r=>({composition_number:Number(r.composition_number||1),product_total:Number(r.product_total||0),hidden_adjustment:Number(r.hidden_adjustment||0),final_total:Number(r.final_total||0)})),
     positions:(Array.isArray(e?.positions)?e.positions:[]).map(p=>({
       position_id:p.position_id||null,label:p.label||'',quantity:Number(p.quantity||1),
-      options:(Array.isArray(p.options)?p.options:[]).map(o=>({product_id:o.product_id||o.id,name:o.name||'Produto',sku:o.sku||'',gtin:o.gtin||'',image_url:o.image_url||'',loose_sellable_stock:Number(o.loose_sellable_stock||0)}))
+      options:(Array.isArray(p.options)?p.options:[]).map(o=>({product_id:o.product_id||o.id,name:o.name||'Produto',sku:o.sku||'',gtin:o.gtin||'',image_url:o.image_url||'',loose_sellable_stock:Number(o.loose_sellable_stock||0),effective_price:Number(o.effective_price??o.price??0)}))
     }))
   };
 }
@@ -49,11 +50,11 @@ function listHtml(){
 }
 
 function selectedOptionHtml(o,pi,oi){
-  return'<div class="bm-selected" data-mold-selected-product><img src="'+esc(o.image_url||'/img/sem-foto.svg')+'" alt=""><span><strong>'+esc(o.name||'Produto')+'</strong><small>'+esc([o.sku,o.gtin].filter(Boolean).join(' · '))+'</small></span><button type="button" class="danger" data-mold-remove-option="'+pi+'" data-option-index="'+oi+'">Remover</button></div>';
+  return'<div class="bm-selected" data-mold-selected-product><img src="'+esc(o.image_url||'/img/sem-foto.svg')+'" alt=""><span><strong>'+esc(o.name||'Produto')+'</strong><small>'+esc([o.sku,o.gtin].filter(Boolean).join(' · '))+'</small><small>'+money(o.effective_price||0)+' · estoque livre '+esc(qty(o.loose_sellable_stock))+'</small></span><button type="button" class="danger" data-mold-remove-option="'+pi+'" data-option-index="'+oi+'">Remover</button></div>';
 }
 
 function resultHtml(p,pi){
-  return'<button type="button" class="bm-result" data-mold-product-option="'+esc(p.id)+'" data-position-index="'+pi+'"><img src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt=""><span><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc([p.sku,p.gtin,p.packaging].filter(Boolean).join(' · '))+'</small><small>Estoque livre: '+esc(qty(p.loose_sellable_stock))+'</small></span><span>Adicionar</span></button>';
+  return'<button type="button" class="bm-result" data-mold-product-option="'+esc(p.id)+'" data-position-index="'+pi+'"><img src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt=""><span><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc([p.sku,p.gtin,p.packaging].filter(Boolean).join(' · '))+'</small><small>'+money(p.effective_price??p.price??0)+' · estoque livre '+esc(qty(p.loose_sellable_stock))+'</small></span><span>Adicionar</span></button>';
 }
 
 function positionHtml(p,pi){
@@ -61,15 +62,30 @@ function positionHtml(p,pi){
   return'<article class="bm-position" data-mold-position="'+pi+'"><div class="bm-position-top"><label><span>Nome da posição</span><input data-mold-position-label="'+pi+'" value="'+esc(p.label||'')+'" placeholder="Ex.: Arroz 5 kg"></label><label><span>Quantidade</span><input data-mold-position-quantity="'+pi+'" type="number" min="0.001" max="999" step="0.001" value="'+esc(p.quantity||1)+'"></label><button type="button" class="danger" data-mold-remove-position="'+pi+'">Remover posição</button></div><div class="bm-options">'+((p.options||[]).map((o,oi)=>selectedOptionHtml(o,pi,oi)).join('')||'<span class="bm-status">Nenhum produto permitido ainda.</span>')+'</div><div class="bm-search"><input data-mold-product-search="'+pi+'" value="'+esc(state.search[pi]||'')+'" placeholder="Buscar produto por nome, código ou EAN"><button type="button" data-mold-product-search-go="'+pi+'">Buscar</button></div><div class="bm-results">'+results.map(r=>resultHtml(r,pi)).join('')+'</div></article>';
 }
 
+function pricePreviewHtml(d){
+  const rows=Array.isArray(d?.price_preview)?d.price_preview:[];
+  if(!rows.length)return'<div class="bm-note" data-mold-price-preview><strong>Produtos + Ajuste = Total</strong><br>Salve a composição para gerar a prévia de preço.</div>';
+  const adjustment=Number(d.hidden_adjustment||0);
+  return'<div class="bm-note" data-mold-price-preview><strong>Produtos + Ajuste = Total</strong><div style="display:grid;gap:4px;margin-top:6px">'+rows.map(r=>'<div><b>Tipo '+esc(r.composition_number)+'</b> · '+money(r.product_total)+' + '+money(adjustment)+' = <strong>'+money(Number(r.product_total||0)+adjustment)+'</strong></div>').join('')+'</div><small>O ajuste é fixo. Trocas de produto alteram somente a parcela dos produtos.</small></div>';
+}
+function paintPricePreview(){
+  const box=state.root?.querySelector('[data-mold-price-preview]');if(!box||!state.draft)return;
+  const input=state.root.querySelector('[data-mold-hidden-adjustment]'),adjustment=Number(input?.value||state.draft.hidden_adjustment||0);
+  const rows=Array.isArray(state.draft.price_preview)?state.draft.price_preview:[];
+  if(!rows.length)return;
+  box.innerHTML='<strong>Produtos + Ajuste = Total</strong><div style="display:grid;gap:4px;margin-top:6px">'+rows.map(r=>'<div><b>Tipo '+esc(r.composition_number)+'</b> · '+money(r.product_total)+' + '+money(adjustment)+' = <strong>'+money(Number(r.product_total||0)+adjustment)+'</strong></div>').join('')+'</div><small>O ajuste é fixo. Trocas de produto alteram somente a parcela dos produtos.</small>';
+}
+
 function editorHtml(){
   const d=state.draft;if(!d)return'<div class="bm-empty">Escolha uma cesta para configurar o molde.</div>';
-  return'<div data-mold-editor><div class="bm-fields"><label><span>Nome da cesta</span><input data-mold-name value="'+esc(d.name||'')+'"></label><label><span>Valor oculto fixo (somado ao preço)</span><input data-mold-hidden-adjustment type="number" step="0.01" value="'+esc(Number(d.hidden_adjustment||0).toFixed(2))+'"></label><label><span>Categoria na vitrine</span><select data-mold-category><option value="">Selecione uma categoria</option>'+state.categories.map(c=>'<option value="'+esc(c.id)+'" '+(String(d.category_id)===String(c.id)?'selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label><label><span>Composições no site</span><select data-mold-composition-count><option value="1" '+(d.public_composition_count===1?'selected':'')+'>1 composição</option><option value="2" '+(d.public_composition_count===2?'selected':'')+'>2 composições</option><option value="3" '+(d.public_composition_count===3?'selected':'')+'>3 composições</option><option value="4" '+(d.public_composition_count===4?'selected':'')+'>4 composições</option></select></label></div><div class="bm-note">Cada posição representa o que precisa existir na cesta. Em cada posição, selecione todos os produtos que podem ser usados como variação. O valor oculto é fixo e permanece o mesmo entre as composições e futuras substituições do cliente.</div><div class="bm-head"><h3>Posições do molde</h3><span class="bm-grow"></span><button type="button" data-mold-add-position>+ Adicionar posição</button></div>'+((d.positions||[]).map(positionHtml).join('')||'<div class="bm-empty">Adicione a primeira posição do molde.</div>')+'<div class="bm-actions"><button type="button" class="primary" data-mold-save '+(state.busy?'disabled':'')+'>Salvar molde</button></div></div>';
+  return'<div data-mold-editor><div class="bm-fields"><label><span>Nome da cesta</span><input data-mold-name value="'+esc(d.name||'')+'"></label><label><span>Ajuste fixo (somado aos produtos)</span><input data-mold-hidden-adjustment type="number" step="0.01" value="'+esc(Number(d.hidden_adjustment||0).toFixed(2))+'"></label><label><span>Categoria na vitrine</span><select data-mold-category><option value="">Selecione uma categoria</option>'+state.categories.map(c=>'<option value="'+esc(c.id)+'" '+(String(d.category_id)===String(c.id)?'selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label><label><span>Composições no site</span><select data-mold-composition-count><option value="1" '+(d.public_composition_count===1?'selected':'')+'>1 composição</option><option value="2" '+(d.public_composition_count===2?'selected':'')+'>2 composições</option><option value="3" '+(d.public_composition_count===3?'selected':'')+'>3 composições</option><option value="4" '+(d.public_composition_count===4?'selected':'')+'>4 composições</option></select></label></div>'+pricePreviewHtml(d)+'<div class="bm-note">Cada posição representa o que precisa existir na cesta. Em cada posição, selecione apenas produtos realmente equivalentes como variação. O ajuste é fixo e permanece o mesmo entre as composições e futuras substituições do cliente.</div><div class="bm-head"><h3>Posições do molde</h3><span class="bm-grow"></span><button type="button" data-mold-add-position>+ Adicionar posição</button></div>'+((d.positions||[]).map(positionHtml).join('')||'<div class="bm-empty">Adicione a primeira posição do molde.</div>')+'<div class="bm-actions"><button type="button" class="primary" data-mold-save '+(state.busy?'disabled':'')+'>Salvar molde</button></div></div>';
 }
 
 function render(){
   if(!state.root)return;style();
   state.root.innerHTML='<section class="bm"><div class="bm-top"><div><h2>Cestas Molde</h2><small>Defina posições e produtos permitidos. O sistema cuida das composições.</small></div><span class="bm-grow"></span></div><div class="bm-grid"><aside class="bm-panel"><strong>Cestas</strong><div class="bm-list">'+listHtml()+'</div></aside><main class="bm-panel">'+editorHtml()+'</main></div></section>';
   bind();
+  state.root.querySelector('[data-mold-hidden-adjustment]')?.addEventListener('input',paintPricePreview);
 }
 
 function sync(){
@@ -97,7 +113,7 @@ function addOption(pi,id){
   sync();const p=(state.results[pi]||[]).find(x=>String(x.id)===String(id));if(!p)return;
   const pos=state.draft.positions[pi];if(!pos)return;
   if(pos.options.some(x=>String(x.product_id)===String(id)))return toast('Este produto já está permitido nesta posição.');
-  pos.options.push({product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url,loose_sellable_stock:p.loose_sellable_stock});
+  pos.options.push({product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url,loose_sellable_stock:p.loose_sellable_stock,effective_price:Number(p.effective_price??p.price??0)});
   state.results[pi]=state.results[pi].filter(x=>String(x.id)!==String(id));render();
 }
 
