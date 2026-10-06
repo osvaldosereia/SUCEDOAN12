@@ -35,6 +35,7 @@
 - Modify: `supabase/functions/admin-marketing-audiences-v1/index.ts`
 - Modify: `scripts/test-admin-marketing-audiences-v1.mjs`
 - Create: `scripts/test-whatsapp-marketing-consent-history-v1.mjs`
+- Modify: `.github/workflows/marketing-professional-ui-ci.yml`
 
 **Interfaces:**
 - Consumes: existing `adminAuth(req)`, customers, and `marketing_customer_consent_current_v1`.
@@ -71,6 +72,7 @@ Commit: `feat: add authenticated consent customer search`
 - Modify: `supabase/functions/admin-marketing-audiences-v1/index.ts`
 - Modify: `scripts/test-admin-marketing-audiences-v1.mjs`
 - Modify: `scripts/test-whatsapp-marketing-consent-history-v1.mjs`
+- Modify: `.github/workflows/marketing-professional-ui-ci.yml`
 
 **Interfaces:**
 - Consumes: `customer_id`, consent events, `marketing_campaign_dispatches_v1`, `marketing_campaigns_v1`, `whatsapp_templates_v1`, and `whatsapp_message_status_events_v1`.
@@ -110,6 +112,7 @@ Commit: `feat: include campaign activity in consent history`
 - Test: `scripts/test-whatsapp-marketing-audience-ui-v1.mjs`
 - Create: `scripts/test-whatsapp-marketing-consent-history-ui-v1.mjs`
 - Modify: `scripts/test-whatsapp-marketing-papoai-responsive-v1.mjs`
+- Modify: `.github/workflows/marketing-professional-ui-ci.yml`
 
 **Interfaces:**
 - Consumes: Task 1 `consent_list` and Task 2 `consent_history`.
