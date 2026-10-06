@@ -13,6 +13,12 @@ try{
   const page=await browser.newPage({viewport:{width:1440,height:1000}});
   const calls=[];
   let builds=[];
+  const composition=[
+    {product_id:'p1',name:'Arroz Tio Bonini 5kg',sku:'A1',gtin:'7891',packaging:'5kg',image_url:'https://example.test/arroz.png',quantity_per_basket:1,loose_sellable_stock:100,basket_locked_quantity:20,cost_price:17.5,sale_price:22.9,kit_sources:[{kit_id:'11111111-1111-4111-8111-111111111111',name:'Alimentos Econômica',type:'food',quantity:1}]},
+    {product_id:'p2',name:'Feijão Carioca 1kg',sku:'F1',gtin:'7892',packaging:'1kg',image_url:'https://example.test/feijao.png',quantity_per_basket:1,loose_sellable_stock:80,basket_locked_quantity:10,cost_price:6.29,sale_price:8.49,kit_sources:[{kit_id:'11111111-1111-4111-8111-111111111111',name:'Alimentos Econômica',type:'food',quantity:1}]},
+    {product_id:'p3',name:'Óleo de Soja 900ml',sku:'O1',gtin:'7893',packaging:'900ml',image_url:'https://example.test/oleo.png',quantity_per_basket:1,loose_sellable_stock:70,basket_locked_quantity:8,cost_price:6.59,sale_price:7.99,kit_sources:[{kit_id:'11111111-1111-4111-8111-111111111111',name:'Alimentos Econômica',type:'food',quantity:1}]},
+    {product_id:'p4',name:'Sal Cristal 1kg',sku:'S1',gtin:'7894',packaging:'1kg',image_url:'https://example.test/sal.png',quantity_per_basket:1,loose_sellable_stock:60,basket_locked_quantity:6,cost_price:1.59,sale_price:2.99,kit_sources:[{kit_id:'11111111-1111-4111-8111-111111111111',name:'Alimentos Econômica',type:'food',quantity:1}]}
+  ];
   await page.setContent('<!doctype html><html><body><main id="content"></main><script>window.confirm=()=>true;window.DonaAntoniaAdminBridge={token:async()=>"token-test",operator:()=>"Teste",toast:(m)=>{window.__toasts=(window.__toasts||[]).concat(m)}};<\/script></body></html>');
   await page.route('**/functions/v1/**',async route=>{
     const req=route.request();
@@ -33,12 +39,12 @@ try{
         {id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',name:'Grande Bonini',sale_price:410,cost_total:300,product_sale_total:360,calculated_hidden_adjustment:50,category_slug:'cestas-completas',kits:[]}
       ]})});
       if(action==='editor')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,editor:{
-        basket:{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',name:'Econômica Bonini',image_url:'',sale_price:92,hidden_adjustment:-1.14,category_slug:'cestas-so-alimento'},
+        basket:{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',name:'Econômica Bonini',image_url:'https://example.test/cesta.png',sale_price:92,hidden_adjustment:-1.14,category_slug:'cestas-so-alimento'},
         recipe_kits:[{kit_id:'11111111-1111-4111-8111-111111111111',name:'Alimentos Econômica',type:'food',quantity:1,is_required:true,sort_order:0,item_count:14,cost_total:65.89,sale_total:93.14,unit_cost_total:65.89,unit_sale_total:93.14}],
         available_kits:[
           {id:'11111111-1111-4111-8111-111111111111',name:'Alimentos Econômica',type:'food',item_count:14,cost_total:65.89,sale_total:93.14},
           {id:'22222222-2222-4222-8222-222222222222',name:'Limpeza Padrão',type:'cleaning_hygiene',item_count:10,cost_total:40,sale_total:55}
-        ],cost_total:65.89,product_sale_total:93.14
+        ],cost_total:65.89,product_sale_total:93.14,products:composition
       }})});
       if(action==='builds')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,builds})});
       if(action==='reserve'){
@@ -70,6 +76,14 @@ try{
   await page.waitForSelector('[data-store-basket-editor]');
   assert.equal(await page.locator('[data-store-name]').inputValue(),'Econômica Bonini');
   assert.equal(await page.locator('[data-store-kit-qty]').count(),1);
+  assert.equal(await page.locator('[data-store-product-card]').count(),4,'selected basket must show effective product composition');
+  assert.match(await page.locator('[data-store-product-card="p1"]').innerText(),/Qtd\. na cesta:\s*1/,'product card must show basket quantity');
+  assert.match(await page.locator('[data-store-product-card="p1"]').innerText(),/Alimentos Econômica/,'product card must show kit origin');
+  assert.match(await page.locator('[data-store-product-card="p1"]').innerText(),/Livre\s*100/,'product card must show loose stock');
+  assert.match(await page.locator('[data-store-product-card="p1"]').innerText(),/Reservado\s*20/,'product card must show reserved stock');
+  assert.equal(await page.locator('.sb-basket-image').getAttribute('src'),'https://example.test/cesta.png','basket image must be visible, not only its URL');
+  assert.equal(await page.locator('.sb-product-grid').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),4,'wide desktop must render four product columns');
+
   await page.selectOption('[data-store-kit-select]','22222222-2222-4222-8222-222222222222');
   await page.click('[data-store-kit-add]');
   assert.equal(await page.locator('[data-store-kit-qty]').count(),2,'must add an internal kit');
@@ -99,6 +113,7 @@ try{
   await page.click('[data-store-new]');
   await page.waitForSelector('[data-store-basket-editor]');
   assert.equal(await page.locator('[data-store-name]').inputValue(),'');
+  assert.equal(await page.locator('[data-store-product-card]').count(),0,'new unsaved basket must not invent a composition');
   await page.locator('[data-store-name]').fill('Cesta Nova Teste');
   await page.locator('[data-store-sale-price]').fill('199.90');
   await page.selectOption('[data-store-kit-select]','11111111-1111-4111-8111-111111111111');
@@ -113,5 +128,5 @@ try{
 
   const oldConcepts=await page.locator('body').innerText();
   assert.equal(/família|posição|adicionar termo/i.test(oldConcepts),false,'new UI must not expose old family/position concepts');
-  console.log('store baskets builder browser v1: PASS');
+  console.log('store baskets builder browser v2 visible composition: PASS');
 }finally{await browser.close()}
