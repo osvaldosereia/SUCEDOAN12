@@ -74,6 +74,7 @@ Commit: `feat(db): add saved marketing audiences`
 - Modify: `supabase/functions/admin-marketing-audiences-v1/index.ts`
 - Modify: `scripts/test-admin-marketing-audiences-v1.mjs`
 - Test: `scripts/test-whatsapp-marketing-audiences-saved-v1.mjs`
+- Modify: `.github/workflows/marketing-audience-progressive-ci.yml`
 
 **Interfaces:**
 - Consumes: Task 1 table and existing `adminAuth(req)`.
@@ -115,6 +116,7 @@ Commit: `feat: add authenticated saved audience API`
 - Modify: `vitrine/admin/marketing/audience-center.css`
 - Test: `scripts/test-whatsapp-marketing-audience-ui-v1.mjs`
 - Test: `scripts/test-whatsapp-marketing-audience-progressive-v1.mjs`
+- Modify: `.github/workflows/marketing-audience-progressive-ci.yml`
 
 **Interfaces:**
 - Consumes: existing `overview`/`preview` actions and Task 2 saved-audience actions.
