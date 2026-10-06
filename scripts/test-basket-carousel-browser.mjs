@@ -41,7 +41,7 @@ try{
    if(u.pathname.endsWith('.js'))return route.fulfill({contentType:'application/javascript',body:''});
    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"/>'});
  });
- await app.goto('https://app.test/');await app.locator('.basket-card-photo img').first().waitFor();
+ await app.goto('https://app.test/');await app.locator('.basket-card-photo img').first().waitFor({timeout:10000}).catch(async error=>{throw new Error('home image did not render: '+JSON.stringify({errors,body:await app.locator('body').innerText(),cause:error.message}))});
  
  for(const heading of ['Cestas Completas','Cestas Só Alimentos','Kits Promocionais'])assert.equal(await app.getByRole('heading',{name:heading,exact:true}).count(),1,'show storefront group '+heading);
  assert.equal(await app.locator('.basket-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
