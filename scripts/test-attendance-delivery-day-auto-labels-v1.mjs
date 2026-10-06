@@ -18,6 +18,7 @@ assert.match(activeStatuses,/storefront_received[\s\S]*confirmed[\s\S]*processin
 assert.doesNotMatch(activeStatuses,/delivered|cancelled/i,'pedido entregue/cancelado não deve manter etiqueta futura');
 for(const day of ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo']) assert.ok(sql.includes(day),'etiqueta semanal ausente: '+day);
 assert.match(sql,/on\s+conflict[\s\S]*do\s+nothing/i,'reprocessamento não pode duplicar vínculos');
+assert.match(sql,/pg_advisory_xact_lock[\s\S]*ops2_admin_attendance_set_labels_v1/i,'alteração manual e automática deve serializar por conversa');
 assert.match(sql,/create\s+trigger[\s\S]*after\s+insert[\s\S]*update[\s\S]*orders/i,'mudança de pedido precisa atualizar etiquetas');
 assert.match(sql,/delete\s+from\s+public\.attendance_conversation_auto_labels_v1/i,'reagendamento deve remover origem automática antiga');
 assert.match(sql,/attendance_conversation_labels_v1[\s\S]*manual_labels_v1[\s\S]*auto_labels_v1/i,'projeção deve unir origem humana e automática');
