@@ -18,6 +18,20 @@ if old_errors in s:
 elif new_errors not in s:
     raise SystemExit('anchor_missing:mold_error_status')
 
+old_event='''reservation_on_confirmation:true,stock_reserved:false,papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items'''
+new_event='''stock_reserved:created.data?.stock_reserved===true,reservation_timing:created.data?.reservation_timing||null,reservation_status:created.data?.reservation_status||null,papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items'''
+if old_event in s:
+    s=s.replace(old_event,new_event,1)
+elif new_event not in s:
+    raise SystemExit('anchor_missing:reservation_event_truth')
+
+old_return='''history_synced:Boolean(customer),stock_reserved:false,reservation_timing:"on_confirmation",papoai_conversation_linked:Boolean(papoaiLink?.linked)'''
+new_return='''history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked)'''
+if old_return in s:
+    s=s.replace(old_return,new_return,1)
+elif new_return not in s:
+    raise SystemExit('anchor_missing:reservation_return_truth')
+
 p.write_text(s,encoding='utf-8')
 
 for html_path in [Path('index.html'),Path('vitrine/index.html')]:
@@ -37,4 +51,4 @@ for html_path in [Path('index.html'),Path('vitrine/index.html')]:
         raise SystemExit(f'anchor_missing:mold_quote_result:{html_path}')
     html_path.write_text(h,encoding='utf-8')
 
-print('R5 mold loose-stock alignment and quote rollback applied')
+print('R5 mold stock, reservation telemetry and quote rollback applied')
