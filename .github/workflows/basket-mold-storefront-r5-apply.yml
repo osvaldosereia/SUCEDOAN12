@@ -6,6 +6,7 @@ on:
     branches: [feat/basket-molds-storefront-r5]
     paths:
       - 'scripts/apply-basket-mold-storefront-r5.py'
+      - 'scripts/fix-basket-mold-storefront-r5-transformer.py'
       - '.github/workflows/basket-mold-storefront-r5-apply.yml'
 jobs:
   apply:
@@ -19,6 +20,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - run: python scripts/fix-basket-mold-storefront-r5-transformer.py
       - run: python scripts/apply-basket-mold-storefront-r5.py
       - name: Commit guarded transformation
         run: |
