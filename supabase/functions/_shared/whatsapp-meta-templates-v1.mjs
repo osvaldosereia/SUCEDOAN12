@@ -14,9 +14,11 @@ const clean=(value,max=500)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,
 const plainObject=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 const TEMPLATE_NAME_RE=/^[a-z0-9_]{1,512}$/;
 const LANGUAGE_RE=/^[a-z]{2,3}(?:_[A-Z]{2})?$/;
-const TEMPLATE_CATEGORIES=new Set(['MARKETING','UTILITY']);
+const TEMPLATE_CATEGORIES=new Set(['MARKETING','UTILITY','AUTHENTICATION']);
 const TEMPLATE_COMPONENT_TYPES=new Set(['HEADER','BODY','FOOTER','BUTTONS']);
-const TEMPLATE_BUTTON_TYPES=new Set(['URL','QUICK_REPLY','CATALOG']);
+const TEMPLATE_HEADER_FORMATS=new Set(['TEXT','IMAGE','VIDEO','DOCUMENT','LOCATION']);
+const TEMPLATE_BUTTON_TYPES=new Set(['URL','QUICK_REPLY','PHONE_NUMBER','CATALOG','OTP']);
+const OTP_TYPES=new Set(['COPY_CODE','ONE_TAP','ZERO_TAP']);
 
 export function normalizeMetaTemplate(raw){
   const item=raw&&typeof raw==='object'?raw:{};
@@ -97,24 +99,64 @@ function normalizeHeaderExample(example,placeholderCount){
   return {header_text:normalized};
 }
 
-function normalizeButtons(rawButtons){
+function normalizeMediaHeaderExample(example){
+  const handles=example?.header_handle;
+  if(!Array.isArray(handles)||handles.length!==1)throw fail('meta_template_header_handle_required');
+  const handle=clean(handles[0],4096);
+  if(!handle)throw fail('meta_template_header_handle_required');
+  return {header_handle:[handle]};
+}
+
+function normalizeUrlButton(raw,type,text){
+  const urlRaw=clean(raw?.url,2000);
+  if(!urlRaw)throw fail('meta_template_buttons_invalid');
+  const placeholders=[...urlRaw.matchAll(/\{\{(\d+)\}\}/g)].map(match=>Number(match[1]));
+  if(placeholders.length>1||placeholders.some(index=>index!==1))throw fail('meta_template_buttons_invalid');
+  const sample=placeholders.length?urlRaw.replace(/\{\{1\}\}/g,'sample'):urlRaw;
+  let parsed;
+  try{parsed=new URL(sample)}catch{throw fail('meta_template_buttons_invalid')}
+  if(parsed.protocol!=='https:'||parsed.username||parsed.password)throw fail('meta_template_buttons_invalid');
+  if(!placeholders.length)return {type,text,url:parsed.toString()};
+  const examples=Array.isArray(raw?.example)?raw.example.map(value=>clean(value,2000)).filter(Boolean):[];
+  if(examples.length!==1)throw fail('meta_template_examples_required');
+  return {type,text,url:urlRaw,example:examples};
+}
+
+function normalizeOtpButton(raw,category){
+  if(category!=='AUTHENTICATION')throw fail('meta_template_component_unsupported');
+  const otpType=clean(raw?.otp_type,30).toUpperCase();
+  if(!OTP_TYPES.has(otpType))throw fail('meta_template_buttons_invalid');
+  const button={type:'OTP',otp_type:otpType};
+  const text=clean(raw?.text,25);if(text)button.text=text;
+  if(otpType==='ONE_TAP'){
+    const autofill=clean(raw?.autofill_text,25),packageName=clean(raw?.package_name,180),signatureHash=clean(raw?.signature_hash,180);
+    if(!autofill||!packageName||!signatureHash)throw fail('meta_template_buttons_invalid');
+    button.autofill_text=autofill;button.package_name=packageName;button.signature_hash=signatureHash;
+  }
+  if(otpType==='ZERO_TAP')button.zero_tap_terms_accepted=Boolean(raw?.zero_tap_terms_accepted);
+  return button;
+}
+
+function normalizeButtons(rawButtons,category){
   if(!Array.isArray(rawButtons)||rawButtons.length<1||rawButtons.length>10)throw fail('meta_template_buttons_invalid');
   return rawButtons.map(raw=>{
     const type=clean(raw?.type,30).toUpperCase();
     if(!TEMPLATE_BUTTON_TYPES.has(type))throw fail('meta_template_component_unsupported');
+    if(type==='OTP')return normalizeOtpButton(raw,category);
     if(type==='CATALOG'){
+      if(category!=='MARKETING')throw fail('meta_template_component_unsupported');
       const text=clean(raw?.text,25);
       return text?{type,text}:{type};
     }
     const text=clean(raw?.text,25);
     if(!text)throw fail('meta_template_buttons_invalid');
     if(type==='QUICK_REPLY')return {type,text};
-    const urlRaw=clean(raw?.url,2000);
-    if(!urlRaw||/\{\{\d+\}\}/.test(urlRaw))throw fail('meta_template_buttons_invalid');
-    let url;
-    try{url=new URL(urlRaw);}catch{throw fail('meta_template_buttons_invalid')}
-    if(url.protocol!=='https:'||url.username||url.password)throw fail('meta_template_buttons_invalid');
-    return {type,text,url:url.toString()};
+    if(type==='PHONE_NUMBER'){
+      const phoneNumber=clean(raw?.phone_number,30).replace(/[\s()-]/g,'');
+      if(!/^\+?\d{8,20}$/.test(phoneNumber))throw fail('meta_template_buttons_invalid');
+      return {type,text,phone_number:phoneNumber};
+    }
+    return normalizeUrlButton(raw,type,text);
   });
 }
 
@@ -139,6 +181,7 @@ export function validateTemplateDraft(input){
     if(type==='BODY'){
       bodyCount++;
       if(bodyCount>1)throw fail('meta_template_components_invalid');
+      if(category==='AUTHENTICATION')return {type,add_security_recommendation:Boolean(component.add_security_recommendation)};
       const text=clean(component.text,1024);
       if(!text||text.length>1024)throw fail('meta_template_body_invalid');
       const placeholders=extractPlaceholders(text);
@@ -147,9 +190,11 @@ export function validateTemplateDraft(input){
     }
     if(type==='HEADER'){
       headerCount++;
-      if(headerCount>1)throw fail('meta_template_components_invalid');
+      if(headerCount>1||category==='AUTHENTICATION')throw fail('meta_template_components_invalid');
       const format=clean(component.format,20).toUpperCase();
-      if(format!=='TEXT')throw fail('meta_template_component_unsupported');
+      if(!TEMPLATE_HEADER_FORMATS.has(format))throw fail('meta_template_component_unsupported');
+      if(format==='LOCATION')return {type,format};
+      if(format!=='TEXT')return {type,format,example:normalizeMediaHeaderExample(component.example)};
       const text=clean(component.text,60);
       if(!text)throw fail('meta_template_header_invalid');
       const placeholders=extractPlaceholders(text);
@@ -159,15 +204,23 @@ export function validateTemplateDraft(input){
     if(type==='FOOTER'){
       footerCount++;
       if(footerCount>1)throw fail('meta_template_components_invalid');
+      if(category==='AUTHENTICATION'){
+        const minutes=Math.trunc(Number(component.code_expiration_minutes));
+        if(!Number.isFinite(minutes)||minutes<1||minutes>90)throw fail('meta_template_footer_invalid');
+        return {type,code_expiration_minutes:minutes};
+      }
       const text=clean(component.text,60);
       if(!text)throw fail('meta_template_footer_invalid');
       return {type,text};
     }
     buttonsCount++;
     if(buttonsCount>1)throw fail('meta_template_components_invalid');
-    return {type,buttons:normalizeButtons(component.buttons)};
+    return {type,buttons:normalizeButtons(component.buttons,category)};
   });
   if(bodyCount!==1)throw fail('meta_template_body_required');
+  if(category==='AUTHENTICATION'){
+    if(headerCount!==0||buttonsCount!==1||components.find(component=>component.type==='BUTTONS')?.buttons?.some(button=>button.type!=='OTP'))throw fail('meta_template_components_invalid');
+  }
   return {name,language,category,components};
 }
 
