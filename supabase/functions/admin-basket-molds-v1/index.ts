@@ -41,7 +41,7 @@ async function save(db:any,input:any){
   if(hidden===null)return {error:"basket_mold_hidden_adjustment_invalid",status:400,message:"Informe um valor oculto válido."};
   if(!count)return {error:"basket_mold_public_composition_count_invalid",status:400,message:"Escolha entre 1 e 4 composições públicas."};
   if(!positions?.length)return {error:"basket_mold_positions_required",status:400,message:"Adicione pelo menos uma posição ao molde."};
-  const q=await db.rpc("admin_save_basket_mold_v2",{p_basket_id:id,p_name:name,p_hidden_adjustment:hidden,p_public_composition_count:count,p_positions:positions,p_operator:clean(input?.operator,80)||"Operação",p_category_id:categoryId,p_subcategory_id:subcategoryId});
+  const q=await db.rpc("admin_save_basket_mold_v1",{p_basket_id:id,p_name:name,p_hidden_adjustment:hidden,p_public_composition_count:count,p_positions:positions,p_operator:clean(input?.operator,80)||"Operação",p_category_id:categoryId,p_subcategory_id:subcategoryId});
   if(q.error)return rpcError(q.error);return {editor:q.data};
 }
 
