@@ -81,6 +81,33 @@ async function persistInbound(message: any, payloadHash: string, safePayload: un
   return result.data;
 }
 
+async function enqueueAnaForInbound(message: any, ingestResult: any) {
+  if (message?.event_type !== "message.received" || message?.message?.direction !== "inbound" || !ingestResult?.message_id) return false;
+  const queued = await db.rpc("ops2_ana_enqueue_live_job_v1", { p_inbound_message_id: ingestResult.message_id });
+  if (queued.error) {
+    console.error("whatsapp-meta-webhook-v1 ana enqueue failed", errorText(queued.error).slice(0, 300));
+    return false;
+  }
+  if (queued.data?.ok !== true || !queued.data?.job_id) return false;
+
+  // Queue execution after acknowledging Meta's webhook; duplicate callbacks are
+  // collapsed by the canonical message and job idempotency constraints.
+  EdgeRuntime.waitUntil((async () => {
+    try {
+      const response = await fetch(`${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/whatsapp-ana-worker-v1`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_KEY}` },
+        body: JSON.stringify({ mode: "live", limit: 1 }),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!response.ok) console.error("whatsapp-meta-webhook-v1 ana worker status", response.status);
+    } catch (error) {
+      console.error("whatsapp-meta-webhook-v1 ana worker invoke failed", errorText(error).slice(0, 300));
+    }
+  })());
+  return true;
+}
+
 async function applyCustomerConfirmationSignal(message: any, ingestResult: any) {
   if (message?.event_type !== "message.received" || message?.message?.direction !== "inbound" || !ingestResult?.message_id) return null;
 
@@ -271,12 +298,14 @@ Deno.serve(async (req: Request) => {
     let inboundNormalized = 0;
     let inboundDuplicates = 0;
     let anaConfirmationsApplied = 0;
+    let anaJobsQueued = 0;
     for (const message of normalized.messages) {
       const result = await persistInbound(message, normalized.payloadHash, safePayload);
       if (result?.duplicate === true) inboundDuplicates += 1;
       else inboundNormalized += 1;
       const confirmation = await applyCustomerConfirmationSignal(message, result);
       if (confirmation?.ok === true) anaConfirmationsApplied += 1;
+      if (await enqueueAnaForInbound(message, result)) anaJobsQueued += 1;
     }
 
     let statusesCaptured = 0;
@@ -294,6 +323,7 @@ Deno.serve(async (req: Request) => {
       inbound_normalized: inboundNormalized,
       inbound_duplicates: inboundDuplicates,
       ana_confirmations_applied: anaConfirmationsApplied,
+      ana_jobs_queued: anaJobsQueued,
       statuses_captured: statusesCaptured,
       statuses_recorded: statusesRecorded,
       statuses_pending: statusesPending,

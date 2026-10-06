@@ -35,7 +35,9 @@ assert.match(worker,/https:\/\/api\.openai\.com\/v1\/responses/,'worker deve usa
 assert.match(worker,/text:\s*\{[\s\S]*format:\s*\{[\s\S]*type:'json_schema'/,'worker deve usar Structured Outputs');
 assert.match(worker,/store:false/,'resposta não deve ser armazenada pelo provedor por padrão');
 assert.match(worker,/OPENAI_API_KEY/,'chave deve ser lida apenas do ambiente server-side');
-assert.doesNotMatch(worker,/whatsapp_outbox_v1|ops2_admin_attendance_enqueue|sendMeta|graph\.facebook\.com/i,'dry-run não pode enfileirar nem enviar WhatsApp');
+const dryRunProcessor=worker.slice(worker.indexOf('async function processJob'),worker.indexOf('Deno.serve'));
+assert.doesNotMatch(dryRunProcessor,/whatsapp_outbox_v1|ops2_ana_begin_live_send_v1|sendTextViaMeta/i,'dry-run não pode enfileirar nem enviar WhatsApp');
 assert.match(worker,/dry_run_not_sendable/,'worker deve declarar explicitamente que resultado não é enviável');
+assert.match(worker,/processLiveJob/,'envio live deve usar um processador separado do dry-run');
 
 console.log('PASS test-whatsapp-ana-worker-v1');
