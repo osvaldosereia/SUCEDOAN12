@@ -24,6 +24,7 @@ function rpcError(error:any){
   if(code==="admin_not_authorized")return {error:code,status:403,message:"Usuário sem permissão para Cestas Molde."};
   if(code==="basket_mold_basket_not_found")return {error:code,status:404,message:"Cesta não encontrada."};
   if(code==="basket_mold_duplicate_option")return {error:code,status:409,message:"O mesmo produto não pode aparecer duas vezes na mesma posição."};
+  if(code==="basket_category_invalid")return {error:code,status:400,message:"Escolha uma das categorias disponíveis para a vitrine."};
   if(code==="basket_mold_operation_failed")return {error:code,status:500,message:"Não foi possível concluir a operação de Cestas Molde."};
   return {error:code,status:400,message:"Revise os dados do molde antes de salvar."};
 }
