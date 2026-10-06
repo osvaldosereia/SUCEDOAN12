@@ -12,7 +12,8 @@ const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CH
 try{
   const page=await browser.newPage({viewport:{width:1440,height:1000}});
   const calls=[];
-  await page.setContent('<!doctype html><html><body><main id="content"></main><script>window.DonaAntoniaAdminBridge={token:async()=>"token-test",operator:()=>"Teste",toast:(m)=>{window.__toasts=(window.__toasts||[]).concat(m)}};<\/script></body></html>');
+  let builds=[];
+  await page.setContent('<!doctype html><html><body><main id="content"></main><script>window.confirm=()=>true;window.DonaAntoniaAdminBridge={token:async()=>"token-test",operator:()=>"Teste",toast:(m)=>{window.__toasts=(window.__toasts||[]).concat(m)}};<\/script></body></html>');
   await page.route('**/functions/v1/**',async route=>{
     const req=route.request();
     const url=new URL(req.url());
@@ -39,6 +40,19 @@ try{
           {id:'22222222-2222-4222-8222-222222222222',name:'Limpeza Padrão',type:'cleaning_hygiene',item_count:10,cost_total:40,sale_total:55}
         ],cost_total:65.89,product_sale_total:93.14
       }})});
+      if(action==='builds')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,builds})});
+      if(action==='reserve'){
+        builds=[{id:'lot-test-1',lot_id:'lot-test-1',code:'AB1',quantity:Number(body.quantity),status:'reserved'}];
+        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,result:{lot_id:'lot-test-1'}})});
+      }
+      if(action==='mount'){
+        builds=builds.map(x=>({...x,status:'mounted'}));
+        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true})});
+      }
+      if(action==='cancel'){
+        builds=builds.map(x=>({...x,status:'cancelled'}));
+        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true})});
+      }
       if(action==='save')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,result:{basket_id:body.basket_id||'cccccccc-cccc-4ccc-8ccc-cccccccccccc',name:body.name,sale_price:body.sale_price,hidden_adjustment:Number(body.sale_price)-148.14}})});
       if(action==='preview')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,preview:{ok:true,basket_id:body.basket_id,name:'Econômica Bonini',quantity:body.quantity,sale_price:92,unit_cost_total:105.89,unit_product_sale_total:148.14,hidden_adjustment:-56.14,requirements:[
         {product_id:'p1',name:'Arroz',quantity_per_basket:1,required:Number(body.quantity),available:100,balance_after:100-Number(body.quantity),ok:true},
@@ -55,15 +69,26 @@ try{
   await page.locator('[data-store-basket-card]').first().click();
   await page.waitForSelector('[data-store-basket-editor]');
   assert.equal(await page.locator('[data-store-name]').inputValue(),'Econômica Bonini');
-  assert.equal(await page.locator('[data-store-linked-kit]').count(),1);
+  assert.equal(await page.locator('[data-store-kit-qty]').count(),1);
   await page.selectOption('[data-store-kit-select]','22222222-2222-4222-8222-222222222222');
   await page.click('[data-store-kit-add]');
-  assert.equal(await page.locator('[data-store-linked-kit]').count(),2,'must add an internal kit');
+  assert.equal(await page.locator('[data-store-kit-qty]').count(),2,'must add an internal kit');
   await page.locator('[data-store-sale-price]').fill('410');
   await page.locator('[data-store-quantity]').fill('10');
   await page.click('[data-store-preview]');
-  await page.waitForSelector('[data-store-preview-table]');
-  assert.equal(await page.locator('[data-store-preview-row]').count(),2,'preview must show consolidated requirements');
+  await page.waitForSelector('.sb-preview table');
+  assert.equal(await page.locator('.sb-preview tr').count(),3,'preview must show header plus two consolidated requirements');
+
+  await page.click('[data-store-reserve]');
+  await page.waitForFunction(()=>window.__toasts?.some(x=>String(x).includes('Reserva criada')));
+  assert.ok(calls.find(x=>x.action==='reserve'&&x.body.quantity===10),'reserve must send requested quantity');
+  await page.waitForSelector('[data-store-mount="lot-test-1"]');
+  assert.match(await page.locator('[data-store-builds]').innerText(),/Em montagem/);
+  await page.click('[data-store-mount="lot-test-1"]');
+  await page.waitForFunction(()=>window.__toasts?.some(x=>String(x).includes('disponível')));
+  assert.ok(calls.find(x=>x.action==='mount'&&x.body.lot_id==='lot-test-1'),'mount must target reserved lot');
+  assert.match(await page.locator('[data-store-builds]').innerText(),/Montado/);
+
   await page.click('[data-store-save]');
   await page.waitForFunction(()=>window.__toasts?.filter(x=>String(x).includes('salva')).length>=1);
   const editSave=calls.find(x=>x.url.startsWith(API)&&x.action==='save'&&x.body.basket_id==='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');

@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const checkout=fs.readFileSync('supabase/sql/20261004_basket_unified_order_engine_v1.sql','utf8');
+const reservation=fs.readFileSync('supabase/sql/20261005_store_basket_reservation_v1.sql','utf8');
+assert.match(reservation,/quantity_available\s*=\s*quantity_built/i,'mounted lot must expose built quantity');
+assert.match(reservation,/sale_enabled\s*=\s*true/i,'mounted lot must become sellable');
+assert.match(checkout,/basket_lot_public_availability_v1/i,'checkout must consume canonical basket lot availability');
+assert.match(checkout,/v_alloc_rows:=v_alloc_rows\|\|jsonb_build_array/i,'checkout must enqueue the selected physical basket lot allocation');
+assert.match(checkout,/['"]allocation_role['"],['"]legacy['"]/i,'full mounted store baskets must use the canonical legacy_full allocation role');
+assert.match(checkout,/v_loose_units:=greatest\(v_selected_qty-v_base_qty,0\)\*v_line_qty/i,'full-basket checkout may consume loose stock only for extras above the preassembled base');
+console.log('store baskets checkout lot contract v1: PASS');

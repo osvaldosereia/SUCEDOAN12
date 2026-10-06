@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const sql=fs.readFileSync('supabase/sql/20261005_store_basket_build_detail_v1.sql','utf8');
+assert.match(sql,/basket_stock_lot_items/);
+assert.match(sql,/join public\.products/);
+assert.match(sql,/p\.image_url/,'print detail must use canonical products.image_url');
+assert.doesNotMatch(sql,/p\.url_imagem/,'legacy image field must not be used');
+assert.match(sql,/quantity_for_lot/);
+assert.match(sql,/store_basket_reserved_v1/);
+assert.match(sql,/revoke all on function public\.store_basket_build_detail_v1\(uuid\) from public,anon,authenticated/i);
+assert.match(sql,/grant execute on function public\.store_basket_build_detail_v1\(uuid\) to service_role/i);
+console.log('store baskets build detail sql v1: PASS');
