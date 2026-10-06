@@ -1,0 +1,31 @@
+name: Baskets operational polish
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/baskets-operational-polish.js'
+      - 'vitrine/admin/basket-admin-section.js'
+      - 'scripts/test-baskets-operational-polish-*.mjs'
+      - '.github/workflows/baskets-operational-polish-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/baskets-operational-polish.js'
+      - 'vitrine/admin/basket-admin-section.js'
+      - 'scripts/test-baskets-operational-polish-*.mjs'
+      - '.github/workflows/baskets-operational-polish-ci.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node scripts/test-baskets-operational-polish-v1.mjs
+      - run: npm install --prefix "$RUNNER_TEMP/basket-polish-tests" --no-save --package-lock=false playwright@1.62.1
+      - run: node "$RUNNER_TEMP/basket-polish-tests/node_modules/playwright/cli.js" install --with-deps chromium
+      - run: node scripts/test-baskets-operational-polish-browser-v1.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-polish-tests/node_modules/playwright

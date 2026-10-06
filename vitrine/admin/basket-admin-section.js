@@ -134,3 +134,13 @@
   script.setAttribute('data-product-basket-cutover-v1','');
   document.head.appendChild(script);
 })();
+
+(()=>{
+  'use strict';
+  if(document.querySelector('script[data-baskets-operational-polish-v1]'))return;
+  const script=document.createElement('script');
+  script.src='/vitrine/admin/baskets-operational-polish.js?v=20261006-1';
+  script.async=false;
+  script.setAttribute('data-baskets-operational-polish-v1','');
+  document.head.appendChild(script);
+})();
