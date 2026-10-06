@@ -80,6 +80,15 @@ assert.match(migration,/separation_state/,'Snapshot público precisa transportar
 assert.match(migration,/missing_subtotal/,'Snapshot público precisa transportar abatimento');
 assert.match(migration,/original_total/,'Snapshot público precisa transportar total original');
 assert.match(migration,/final_total/,'Snapshot público precisa transportar total final');
+const liveTotalsPath='supabase/migrations/20261006211217_order_separation_live_totals_v3.sql';
+assert.equal(fs.existsSync(liveTotalsPath),true,'Separação precisa versionar abatimento em tempo real');
+const liveTotals=fs.readFileSync(liveTotalsPath,'utf8');
+assert.match(liveTotals,/sum\(line_total\).*state='missing'/s,'Abatimento em tempo real deve somar itens marcados como FALTOU');
+assert.match(liveTotals,/'missing_subtotal',v_live_missing_subtotal/,'RPC da separação deve devolver abatimento atual');
+assert.match(liveTotals,/'final_total',v_final_total/,'RPC da separação deve devolver total atual');
+assert.match(admin,/orders-sheet-financial/,'Vitrine de separação deve mostrar total original, abatimento e total atual');
+assert.match(admin,/data\.missing_subtotal/,'Vitrine de separação deve consumir o abatimento calculado pelo backend');
+assert.match(admin,/sep\.missing_subtotal/,'Pedido aberto deve refletir faltas antes da conclusão');
 assert.match(migration,/ops3_complete_delivery_v1/,'Entrega+pagamento deve ser uma operação canônica única');
 assert.match(migration,/ops3_reopen_order_v1/,'Reabertura precisa ser uma operação protegida no banco');
 assert.match(migration,/release_vitrine_order_stock_v1/,'Reabertura precisa liberar a reserva antes de voltar a editar');
