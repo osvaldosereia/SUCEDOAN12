@@ -4132,6 +4132,26 @@ async function blingHubVitrineDispatchFiscalReconcile(sb:any,sourceOrderIdRaw:an
     }
   });
 
+  let operationClosed=false;
+  if(preview.config?.canary_enabled===true
+     && preview.config?.canary_selected===true
+     && preview.config?.human_issue_enabled===true
+     && preview.config?.dispatch_gate_mode==="enforce"){
+    const closed=await sb.from("fiscal_runtime_config").update({
+      dispatch_fiscal_canary_enabled:false,
+      dispatch_fiscal_canary_armed_at:null,
+      dispatch_invoice_generate_enabled:false,
+      dispatch_invoice_authorize_enabled:false,
+      dispatch_invoice_canary_source_order_id:null,
+      dispatch_gate_mode:"enforce",
+      updated_at:now
+    }).eq("id",1)
+      .eq("dispatch_invoice_canary_source_order_id",preview.source_order_id)
+      .eq("dispatch_gate_mode","enforce");
+    if(closed.error)throw closed.error;
+    operationClosed=true;
+  }
+
   return {
     ok:true,reconciled:true,authorized:true,
     source_order_id:preview.source_order_id,
@@ -4141,6 +4161,7 @@ async function blingHubVitrineDispatchFiscalReconcile(sb:any,sourceOrderIdRaw:an
     invoice_number:invoice?.numero||null,
     sefaz_status:invoice?.situation?.label||"Autorizada",
     dispatch_gate:marked.data||null,
+    operation_closed:operationClosed,
     external_write:false,external_side_effect:false
   };
 }
