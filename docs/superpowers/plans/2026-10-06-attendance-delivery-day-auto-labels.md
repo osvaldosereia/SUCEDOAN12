@@ -32,8 +32,7 @@
 ### Task 1: Contrato de banco para etiquetas automáticas
 
 **Files:**
-- Modify: `supabase/sql/20261002_admin_attendance_set_labels_v1.sql`
-- Create: `supabase/sql/20261006_attendance_delivery_day_auto_labels_v1.sql`
+- Create: `supabase/sql/20261006_attendance_delivery_day_auto_labels_v1.sql` (also redefines the Admin set-labels RPC)
 - Test: `scripts/test-attendance-delivery-day-auto-labels-v1.mjs`
 - Modify: `.github/workflows/attendance-papoai-send-ci.yml`
 
