@@ -53,6 +53,9 @@ const completeBlock=adminApi.slice(completeStart,completeEnd>completeStart?compl
 assert.match(completeBlock,/order-separation-notify-v1/,'conclusão deve disparar o notificador de cliente');
 const notifyAt=completeBlock.indexOf('order-separation-notify-v1');
 const blingAt=completeBlock.indexOf('target_key:"verified"');
-assert.ok(notifyAt>=0&&blingAt>=0&&notifyAt<blingAt,'aviso ao cliente deve ser iniciado antes do gate do Bling');
+const readyTransitionAt=completeBlock.indexOf('ready_transition_failed');
+const completedAt=completeBlock.indexOf('p_phase:"completed"');
+assert.ok(notifyAt>=0&&blingAt>=0&&readyTransitionAt>=0&&completedAt>=0,'fluxo precisa verificar Bling, prontidão e conclusão antes de notificar');
+assert.ok(blingAt<readyTransitionAt&&readyTransitionAt<completedAt&&completedAt<notifyAt,'aviso ao cliente só pode ser iniciado depois do Bling confirmado, pedido pronto e conclusão registrada');
 
 console.log('order customer notifications v1 contract: ok');
