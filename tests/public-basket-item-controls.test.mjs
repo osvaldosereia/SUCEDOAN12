@@ -34,15 +34,21 @@ for (const file of files) {
 
   test(`${file} keeps mold basket cards comfortable and horizontal on phones`, () => {
     const html = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
-    assert.match(html, /class="basket-item-option" data-mold-option=/, 'alternative selector should have its own grid column');
+    assert.match(html, /class="basket-item-option" data-mold-option-wrap=/, 'custom alternative selector should render as its own full-width control');
+    assert.match(html, /class="basket-option-trigger"/, 'custom selector should use a non-native trigger');
+    assert.match(html, /class="basket-option-menu"/, 'custom selector should expose a visual options menu');
+    assert.match(html, /basket-option-choice-price/, 'each alternative should show its price');
+    assert.match(html, /safeImage\(a\.image_url\)/, 'each alternative should show its product image');
+    assert.doesNotMatch(html, /<select class="basket-item-option"/, 'mold alternatives must not fall back to a native select');
     assert.match(html, /\.basket-edit-list \.basket-item-card\s*\{[^}]*grid-template-columns:\s*86px\s+minmax\(0,1fr\)/s, 'cards should give the product photo about 30 percent more width');
-    assert.match(html, /\.basket-edit-list \.basket-item-card \.checkout-thumb\s*\{[^}]*width:\s*82px[^}]*height:\s*82px/s, 'product photo should be 82px square');
-    assert.match(html, /\.basket-item-mold-card\s*\{[^}]*grid-template-columns:\s*86px\s+minmax\(160px,\.9fr\)\s+minmax\(180px,1\.1fr\)\s+auto/s, 'wide cards should place image, details, selector, and actions in one row');
+    assert.match(html, /\.basket-edit-list \.basket-item-card \.checkout-thumb\s*\{[^}]*width:\s*82px[^}]*height:\s*82px[^}]*align-self:\s*start/s, 'product photo should be 82px square and align with the product name');
+    assert.match(html, /\.basket-item-mold-card\s*\{[^}]*grid-template-columns:\s*86px\s+minmax\(0,1fr\)\s+auto/s, 'wide cards should align image, details and actions above the full-width selector');
     assert.match(html, /\.basket-item-actions \.checkout-qty\s*\{[^}]*grid-template-columns:\s*44px\s+32px\s+44px[^}]*overflow:\s*visible/s, 'quantity buttons must not shrink or clip the minus glyph');
     assert.match(html, /\.basket-item-actions \.checkout-qty button\s*\{[^}]*min-width:\s*44px[^}]*height:\s*44px/s, 'quantity controls should have comfortable touch targets');
+    assert.match(html, /\.basket-option-menu\s*\{[^}]*max-height:\s*268px[^}]*overflow-y:\s*auto/s, 'long alternative lists should scroll inside the custom selector');
     assert.match(html, /@media\s*\(max-width:\s*760px\)[\s\S]*?\.basket-edit-list \.basket-item-card\s*\{[^}]*grid-template-columns:\s*86px\s+minmax\(0,1fr\)/s, 'narrow cards should keep a large photo with a two-column horizontal layout');
     assert.match(html, /@media\s*\(max-width:\s*760px\)[\s\S]*?\.basket-item-mold-card \.basket-item-actions\s*\{[^}]*grid-column:\s*2[^}]*grid-row:\s*2/s, 'narrow controls should occupy their own row beside the photo');
-    assert.match(html, /@media\s*\(max-width:\s*760px\)[\s\S]*?\.basket-item-option\s*\{[^}]*grid-column:\s*2\s*\/\s*-1[^}]*grid-row:\s*3/s, 'narrow alternative selector should stay available on a quiet third row');
+    assert.match(html, /@media\s*\(max-width:\s*760px\)[\s\S]*?\.basket-item-option\s*\{[^}]*grid-column:\s*1\s*\/\s*-1[^}]*grid-row:\s*3/s, 'narrow custom selector should span almost the full card width on its own row');
     assert.match(html, /\.sheet-inner\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/s, 'sheet should keep the action bar outside the scrolling region');
     assert.match(html, /\.sheet-scroll\s*\{[^}]*min-height:\s*0/s, 'scroll area should shrink above the fixed action bar instead of covering content');
     assert.match(html, /\.basket-hero-compact\s*\{[^}]*grid-template-columns:\s*1fr/s, 'basket summary should use the full row without a basket photo');
