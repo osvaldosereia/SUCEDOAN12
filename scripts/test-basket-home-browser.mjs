@@ -64,7 +64,7 @@ try{
  await app.locator('.home-shortcuts [data-category="mercearia"]').click();
  await app.locator('#productGrid').waitFor();
  await app.locator('#backHome').click();
- await app.locator('#basketSections [data-basket]').click();await app.locator('#addBasket').waitFor();
+ await app.locator('#basketSections [data-basket]').first().click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
  for(const entry of ['index.html','vitrine/index.html']){const pageSource=fs.readFileSync(entry,'utf8');assert.ok(pageSource.includes('BasketCarousel.mount('));assert.ok(pageSource.includes('da_storefront_home_carousel_v1'));assert.ok(pageSource.includes('/vitrine/basket-carousel.js?v='))}
  console.log('Basket storefront browser: one photo per basket, responsive grid, home and basket navigation passed');
