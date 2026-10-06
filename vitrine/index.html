@@ -196,13 +196,20 @@
     #homeOfferGrid .product-card{background:#fff;border:1px solid #ece9e1;border-radius:16px;overflow:hidden}#homeOfferGrid .photo{background:#fff;border-radius:0;aspect-ratio:1.15}#homeOfferGrid .card-body{padding:10px}#homeOfferGrid .quick-add{border-radius:50%}#homeOfferGrid .price{color:#174a30}.home-view #allOffers{padding-left:0}
     @media(min-width:760px){.home-hero{min-height:220px;padding:32px;background-position:center 58%}.home-hero h1{font-size:36px}.home-hero p{font-size:21px}.home-hero-copy{max-width:60%}.home-shortcuts{max-width:680px;margin:0 auto;padding-top:24px}.home-shortcuts button{font-size:15px}.home-shortcuts svg{width:38px;height:38px}.home-view .section-head h2{font-size:30px}}
 
-    .basket-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .basket-card-photo{display:grid;place-items:center;aspect-ratio:4/3;margin:8px 9px 0;overflow:hidden;border-radius:12px;background:#fff}
-    .basket-card-photo img{width:100%;height:100%;object-fit:contain}
-    .basket-card-info{min-width:0}
-    .basket-card .basket-card-title{overflow-wrap:anywhere}
-    @media(min-width:760px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}}
-    @media(min-width:1080px){.basket-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}}
+    .basket-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:12px}
+    .basket-card{display:flex;flex-direction:column;min-width:0;height:100%;overflow:hidden;background:#fff;border:1px solid #e3e8e3;border-radius:17px;box-shadow:0 3px 12px rgba(25,49,36,.06);transition:transform .18s ease,box-shadow .18s ease}
+    .home-view .basket-card{background:#fff;border:1px solid #e3e8e3}
+    @media(hover:hover){.basket-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(25,49,36,.1)}}
+    .basket-card-photo{display:grid;place-items:center;aspect-ratio:4/3;margin:10px 10px 0;overflow:hidden;border-radius:12px;background:#f5f7f5}
+    .basket-card-photo img{display:block;width:100%;height:100%;padding:8px;box-sizing:border-box;object-fit:contain}
+    .basket-card-info{display:flex;flex:1;flex-direction:column;align-items:stretch;gap:8px;min-width:0;padding:12px 13px 14px}
+    .basket-card .basket-category-tag{display:inline-flex;align-self:flex-start;max-width:100%;margin:0;padding:4px 8px;border-radius:999px;background:#edf5f0;color:#176b43;font-size:10px;font-weight:800;line-height:1.2;white-space:normal}
+    .basket-card .basket-card-title{display:block;min-height:2.56em;margin:0;color:#1b2d22;font-size:16px;font-weight:760;line-height:1.28;letter-spacing:-.01em;white-space:normal;overflow:visible;overflow-wrap:normal;word-break:normal;hyphens:none;-webkit-line-clamp:unset;-webkit-box-orient:initial}
+    .basket-card .price{align-self:flex-start;min-width:0;margin:2px 0 0;color:#155d3e;font-size:clamp(16px,1.35vw,21px);font-weight:900;line-height:1.15;letter-spacing:-.025em;white-space:nowrap}
+    .basket-card .add{align-self:stretch;width:100%;min-height:43px;margin-top:auto;padding:9px 12px;border-radius:10px;font-size:14px;font-weight:800;white-space:nowrap}
+    @media(min-width:760px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}}
+    @media(min-width:1080px){.basket-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}}
+    @media(max-width:480px){.basket-card-photo{margin:8px 8px 0}.basket-card-info{gap:7px;padding:10px}.basket-card .basket-card-title{font-size:14px}.basket-card .price{font-size:16px}.basket-card .add{min-height:40px;padding:8px 9px;font-size:13px}}
 </style>
 </head>
 <body>
