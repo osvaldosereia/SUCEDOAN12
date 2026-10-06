@@ -151,7 +151,7 @@ A contagem é informativa e deve vir da função de públicos. Regras de dedupli
 
 ## 7. Consentimentos
 
-Mostrar indicadores de total, consentidos, revogados e nunca consentidos, mais busca por nome ou telefone. O detalhe de um cliente mostra o estado atual e os eventos de auditoria existentes, incluindo data, decisão, origem e canal quando esses dados estiverem disponíveis.
+Mostrar indicadores de total, consentidos, revogados e nunca consentidos, mais busca por nome ou telefone. O detalhe de um cliente mostra o estado atual e uma linha do tempo com os eventos de auditoria de consentimento e as campanhas recebidas, incluindo data, decisão/origem/canal e template/status da mensagem quando esses dados canônicos estiverem disponíveis.
 
 A tela é uma projeção legível dos registros canônicos. Ações de consentimento devem continuar registrando eventos no ledger existente; nunca editar ou apagar o histórico para simular uma decisão anterior.
 
@@ -216,6 +216,7 @@ Cada etapa será validada com os comandos e verificações do repositório, revi
 - Exclusão requer confirmação e reflete o resultado remoto.
 - Webhooks atualizam o estado e o histórico sem duplicar eventos.
 - Campanhas só aceitam templates aprovados, mostram elegibilidade e mantêm validação server-side de consentimento/opt-out.
+- O histórico do cliente mostra eventos de consentimento e registros canônicos de campanhas recebidas quando disponíveis, sem expor identificadores internos.
 - Públicos e Consentimentos continuam consultando seus contratos canônicos.
 - Nenhuma tabela paralela de templates, canais, campanhas ou consentimentos é criada.
 - Nenhum gate existente de produção, canário ou envio é alterado pela reformulação.
