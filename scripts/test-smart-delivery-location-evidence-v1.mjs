@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const sql=fs.readFileSync('supabase/migrations/20261006233000_smart_delivery_location_evidence_v1.sql','utf8');
+const must=(v,m)=>{if(!v)throw new Error(m)};
+must(sql.includes('customer_location_evidence_v1'),'location evidence table missing');
+must(sql.includes("source in ('customer_whatsapp','business_whatsapp','driver','admin','geocoder','import')"),'location sources missing');
+must(sql.includes("confidence in ('unconfirmed','probable','confirmed')"),'confidence states missing');
+must(sql.includes('whatsapp_message_id'),'WhatsApp traceability missing');
+must(sql.includes('customer_address_id'),'address association missing');
+must(sql.includes('order_id'),'order association missing');
+must(sql.includes('enable row level security'),'RLS missing');
+console.log('smart delivery location evidence schema: ok');
