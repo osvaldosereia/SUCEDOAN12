@@ -22,6 +22,10 @@ try{
       {id:'p1',name:'Arroz 5kg',sku:'A1',gtin:'7891',packaging:'5kg',image_url:'',cost_price:6,sale_price:9,physical_stock:50,basket_locked_quantity:10,loose_sellable_stock:40,stock_authority:'legacy_shadow'},
       {id:'p2',name:'Feijão 1kg',sku:'F1',gtin:'7892',packaging:'1kg',image_url:'',cost_price:5,sale_price:8,physical_stock:30,basket_locked_quantity:5,loose_sellable_stock:25,stock_authority:'legacy_shadow'}
     ];
+    const basketProducts=[
+      {...products[0],basket_usage_count:2,basket_names:['Economica Bonini','Mini Bonini']},
+      {...products[1],basket_usage_count:1,basket_names:['Economica Bonini']}
+    ];
     window.DonaAntoniaAdminBridge={
       token:async()=> 'token-test',operator:()=> 'Teste',toast:m=>window.toasts.push(m),
       api:async(action,params={},options={})=>{window.bridgeCalls.push({action,params,options});return {product:products[0]}}
@@ -32,6 +36,7 @@ try{
       let payload={ok:true};
       if(action==='kits')payload={ok:true,kits:window.savedKits,total:window.savedKits.length,next_offset:null};
       else if(action==='chips')payload={ok:true,chips:window.chipState};
+      else if(action==='basket_products')payload={ok:true,products:basketProducts,total:basketProducts.length,stock_authority:'legacy_shadow'};
       else if(action==='products'){
         const q=(u.searchParams.get('q')||'').toLowerCase();
         const rows=q?products.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q)):products;
@@ -64,6 +69,16 @@ try{
   assert.equal(await page.locator('[data-kit-nav-card]').count(),1,'kits salvos devem virar navegação lateral');
   assert.equal(await page.locator('[data-kit-chip]').count(),2,'chips devem carregar');
   assert.equal(await page.locator('.kb-chips').evaluate(el=>getComputedStyle(el).overflowX),'auto','barra de chips deve ter rolagem horizontal');
+  assert.equal(await page.locator('[data-kit-product-mode="baskets"]').getAttribute('class').then(x=>x.includes('active')),true,'Em cestas deve abrir selecionado');
+  assert.equal(await page.locator('.kb-usage').count(),2,'produtos usados nas cestas devem mostrar contexto de uso');
+  assert.match(await page.locator('[data-kit-product="p1"] .kb-usage').textContent(),/2 cestas/);
+  assert.equal(await page.evaluate(()=>window.calls.some(c=>c.action==='basket_products')),true,'abertura deve consultar basket_products');
+
+  await page.locator('[data-kit-product-mode="all"]').click();
+  await page.waitForFunction(()=>window.calls.some(c=>c.action==='products'));
+  assert.equal(await page.locator('[data-kit-product-mode="all"]').getAttribute('class').then(x=>x.includes('active')),true,'Todos os produtos deve ser alternável');
+  await page.locator('[data-kit-product-mode="baskets"]').click();
+  assert.equal(await page.locator('[data-kit-product]').count(),2,'retorno a Em cestas deve restaurar todos os produtos usados em cesta');
 
   await page.locator('[data-kit-nav-card]').click();
   await page.waitForFunction(()=>document.querySelector('[data-kit-name]')?.value==='Kit Base');
@@ -118,5 +133,5 @@ try{
   await page.waitForTimeout(50);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=390),true,'workspace não deve estourar horizontalmente no celular');
 
-  console.log('kit builder browser v2 master-detail: PASS');
+  console.log('kit builder browser v3 basket products: PASS');
 } finally {await browser.close()}
