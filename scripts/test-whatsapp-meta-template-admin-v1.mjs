@@ -73,12 +73,13 @@ assert.match(edge,/editTemplateViaMeta/,'Edge deve importar helper de edição')
 assert.match(edge,/deleteTemplateViaMeta/,'Edge deve importar helper de exclusão');
 assert.match(edge,/whatsapp_templates_v1/);
 assert.match(edge,/whatsapp_template_events_v1/,'detalhe deve expor histórico de aprovação/rejeição da Meta');
+assert.match(edge,/async function templateEvents\(/,'histórico deve ficar encapsulado em helper dedicado');
 assert.match(edge,/onConflict:\s*["']waba_id,name,language["']/);
 assert.match(edge,/action\s*!==\s*["']list["'][\s\S]{0,120}action\s*!==\s*["']sync["'][\s\S]{0,120}action\s*!==\s*["']detail["']/,'GET deve continuar deny-by-default fora de list/sync/detail');
 assert.match(edge,/action\s*===\s*["']sync["']/,'sync deve continuar executando atualização remota');
 assert.match(edge,/action\s*===\s*["']detail["']/,'GET detail deve existir');
 assert.match(edge,/detail[\s\S]{0,2400}syncTemplates\(/,'detail deve sincronizar com Meta antes de responder');
-assert.match(edge,/detail[\s\S]{0,3000}whatsapp_template_events_v1/,'detail deve trazer histórico do template');
+assert.match(edge,/detail[\s\S]{0,2600}templateEvents\(/,'detail deve chamar o helper de histórico depois da sincronização');
 assert.match(edge,/req\.method\s*===\s*["']POST["']/,'POST deve ficar em ramo separado do list/sync');
 assert.match(edge,/action\s*===\s*["']create["']/,'POST create deve existir');
 assert.match(edge,/action\s*===\s*["']edit["']/,'POST edit deve existir');
