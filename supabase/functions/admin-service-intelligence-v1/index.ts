@@ -7651,6 +7651,52 @@ async function blingHubCreateOrderOnce(sb:any,token:string,payload:any){
   }
 }
 
+function blingHubSeparationEvidenceReady(orderStatus:any,completion:any,itemsRaw:any,reservationsRaw:any,basketAllocationsRaw:any){
+  if(String(orderStatus||"").trim().toLowerCase()!=="ready")return false;
+  const separationItems=Array.isArray(itemsRaw)?itemsRaw:[];
+  const stockRows=[
+    ...(Array.isArray(reservationsRaw)?reservationsRaw:[]),
+    ...(Array.isArray(basketAllocationsRaw)?basketAllocationsRaw:[])
+  ];
+  const separationFinalized=separationItems.length>0
+    &&separationItems.every((item:any)=>["separated","missing"].includes(String(item?.state||"").trim()));
+  const stockFinalized=stockRows.length>0
+    &&stockRows.every((row:any)=>["consumed","released"].includes(String(row?.status||"").trim()));
+
+  return completion?.metadata?.stock_applied===true
+    &&separationFinalized
+    &&stockFinalized;
+}
+
+async function blingHubVerifiedSeparationStockGate(sb:any,payload:any){
+  const sourceOrderId=uuid(payload?.source_order_id);
+  if(!sourceOrderId)return false;
+
+  const [completion,items,reservations,basketAllocations]=await Promise.all([
+    sb.from("order_separation_completions_v1")
+      .select("metadata")
+      .eq("order_id",sourceOrderId)
+      .maybeSingle(),
+    sb.from("order_separation_items_v1")
+      .select("state")
+      .eq("order_id",sourceOrderId),
+    sb.from("vitrine_stock_reservations")
+      .select("status")
+      .eq("order_id",sourceOrderId),
+    sb.from("basket_stock_allocations")
+      .select("status")
+      .eq("order_id",sourceOrderId)
+  ]);
+  if(completion.error)throw completion.error;
+  if(items.error)throw items.error;
+  if(reservations.error)throw reservations.error;
+  if(basketAllocations.error)throw basketAllocations.error;
+
+  return blingHubSeparationEvidenceReady(
+    payload?.status,completion.data,items.data,reservations.data,basketAllocations.data
+  );
+}
+
 async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
   const payload=payloadRaw&&typeof payloadRaw==="object"?payloadRaw:{};
   const sourceOrderId=clean(payload?.source_order_id,80);
@@ -7746,9 +7792,16 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
   const earlyAwaiting=["awaiting_confirmation","awaiting_confirmation_canary"].includes(queueReason);
   const earlyApproved=queueReason==="approved_early_order";
   const earlyOrder=earlyAwaiting||earlyApproved;
-  const separationStarted=queueReason==="first_separation" || payment?.stock_consumed===true;
-  const physicalStockHandled=payment?.stock_consumed===true || (separationStarted && payment?.stock_reserved===true);
   const orderStatus=clean(payload?.status,40).toLowerCase();
+  const verifiedSeparationStockReady=queueReason==="ean_verified"
+    ?await blingHubVerifiedSeparationStockGate(sb,payload)
+    :false;
+  const separationStarted=queueReason==="first_separation"
+    || payment?.stock_consumed===true
+    || verifiedSeparationStockReady;
+  const physicalStockHandled=payment?.stock_consumed===true
+    || (separationStarted && payment?.stock_reserved===true)
+    || verifiedSeparationStockReady;
 
   if(earlyAwaiting){
     if(!["created","storefront_received"].includes(orderStatus))operationalBlockers.push("awaiting_confirmation_status_required");
