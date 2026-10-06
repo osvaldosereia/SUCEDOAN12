@@ -1,0 +1,39 @@
+name: One-shot public basket controls
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/public-basket-qty-remove-20261006
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify regression is red before patch
+        run: |
+          set +e
+          node --test tests/public-basket-item-controls.test.mjs
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "Regression test unexpectedly passed before patch"
+            exit 1
+          fi
+      - name: Apply patch
+        run: node scripts/patch-public-basket-controls.mjs
+      - name: Verify green
+        run: node --test tests/public-basket-item-controls.test.mjs
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html vitrine/index.html
+          git commit -m "fix: restore editable basket item controls"
+          git push origin HEAD:fix/public-basket-qty-remove-20261006
