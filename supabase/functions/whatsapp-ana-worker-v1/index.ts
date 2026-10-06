@@ -21,10 +21,10 @@ function outputText(data:any){
 }
 
 export async function generateAnaDryRunSuggestion({
-  apiKey,model,inboundText,history,fetchFn=fetch
-}:{apiKey:string,model:string,inboundText:string,history:any[],fetchFn?:typeof fetch}){
+  apiKey,model,inboundText,history,operationalContext={},fetchFn=fetch
+}:{apiKey:string,model:string,inboundText:string,history:any[],operationalContext?:any,fetchFn?:typeof fetch}){
   if(!apiKey)return {ok:false,error:'missing_openai_api_key'};
-  const input=buildAnaDryRunInput({inboundText,history});
+  const input=buildAnaDryRunInput({inboundText,history,operationalContext});
   const started=Date.now();
   try{
     const response=await fetchFn('https://api.openai.com/v1/responses',{
@@ -51,6 +51,24 @@ export async function generateAnaDryRunSuggestion({
   }catch(error:any){
     return {ok:false,error:clean(error?.name||'openai_request_error'),error_message:clean(error?.message,240),latency_ms:Date.now()-started};
   }
+}
+
+async function resolveOpenAIKey(db:any){
+  const direct=Deno.env.get('OPENAI_API_KEY')||'';
+  if(direct)return direct;
+  try{
+    const result=await db.rpc('get_conversation_worker_provider_secret_v1');
+    return typeof result.data==='string'?result.data.trim():'';
+  }catch{return ''}
+}
+
+function operationalContext(){
+  return {
+    catalog_ordering:'Para consultar produtos e fazer pedido, direcione o cliente ao catálogo/site oficial. O atendimento pode orientar e oferecer atendimento humano, mas esta resposta não cria pedido.',
+    human_support:'Atendimento humano está disponível quando o cliente pedir ajuda, quando faltar contexto confiável ou quando houver exceção operacional.',
+    never_collect_in_chat:['CPF/CNPJ','endereço completo'],
+    dynamic_data_rule:'Preço, estoque, total, composição de cesta, prazo/entrega, pagamento e dados do pedido são dinâmicos. Só afirme esses dados quando vierem explicitamente no contexto; caso contrário, encaminhe para humano ou para o catálogo/site oficial.'
+  };
 }
 
 async function aiGate(db:any,conversationId:string){
@@ -85,7 +103,7 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
     .eq('conversation_id',job.conversation_id).not('text_body','is',null).order('created_at',{ascending:false}).limit(12);
   if(historyResult.error)throw new Error(`history_failed:${historyResult.error.message}`);
   const history=(historyResult.data||[]).reverse();
-  const generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history});
+  const generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext()});
   if(!generated.ok)return await finishLive(db,{p_job_id:job.id,p_status:'failed',p_decision:'handoff',p_reason:generated.error,p_model:model,
     p_provider_response_id:generated.response_id||null,p_error:generated.error,p_metadata:{latency_ms:generated.latency_ms||null}});
   const secondGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
@@ -150,7 +168,7 @@ async function processJob(db:any,job:any,apiKey:string,model:string){
   if(historyResult.error)throw new Error(`history_failed:${historyResult.error.message}`);
   const history=(historyResult.data||[]).reverse();
 
-  const generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history});
+  const generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext()});
   if(!generated.ok){
     return await finish(db,{p_job_id:job.id,p_status:'failed',p_reason:generated.error,p_model:model,p_provider_response_id:generated.response_id||null,p_last_error:generated.error,p_metadata:{dry_run_not_sendable:true,latency_ms:generated.latency_ms||null,usage:generated.usage||null}});
   }
@@ -183,14 +201,14 @@ Deno.serve(async(req:Request)=>{
   if(!serviceKey||authorization!==`Bearer ${serviceKey}`)return json({ok:false,error:'worker_not_authorized'},401);
 
   const supabaseUrl=Deno.env.get('SUPABASE_URL')||'';
-  const apiKey=Deno.env.get('OPENAI_API_KEY')||'';
-  const model=Deno.env.get('ANA_OPENAI_MODEL')||'gpt-5.6-luna';
+  const model=Deno.env.get('ANA_OPENAI_MODEL')||'gpt-6-luna';
   const metaAccessToken=Deno.env.get('META_WHATSAPP_ACCESS_TOKEN')||'';
   const metaGraphVersion=Deno.env.get('META_WHATSAPP_GRAPH_VERSION')||'';
   if(!supabaseUrl||!serviceKey)return json({ok:false,error:'worker_not_configured'},503);
-  if(!apiKey)return json({ok:false,error:'openai_not_configured'},503);
 
   const db=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  const apiKey=await resolveOpenAIKey(db);
+  if(!apiKey)return json({ok:false,error:'openai_not_configured'},503);
   const body=await req.json().catch(()=>({}));
   const limit=Math.max(1,Math.min(3,Number(body?.limit)||1));
   const live=body?.mode==='live';

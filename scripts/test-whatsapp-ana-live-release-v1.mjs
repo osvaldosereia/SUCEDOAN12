@@ -20,6 +20,9 @@ assert.match(policy,/score>=minConfidence/,'automatic send must require the high
 assert.match(worker,/shouldSendAnaLiveReply/,'worker must apply live-send confidence policy');
 assert.match(worker,/ops2_attendance_ai_gate_v1[\s\S]*generateAnaDryRunSuggestion[\s\S]*ops2_attendance_ai_gate_v1[\s\S]*ops2_ana_begin_live_send_v1/i,'worker must check human control before and after generation and before send');
 assert.match(worker,/sendTextViaMeta/,'live worker must use the existing Meta transport');
+assert.match(worker,/get_conversation_worker_provider_secret_v1/,'live worker must use the existing server-side OpenAI key fallback');
+assert.match(worker,/gpt-6-luna/,'live worker default model must match ANA preview');
+assert.match(worker,/catalog_ordering:[\s\S]*dynamic_data_rule/,'live replies must get the approved stable service context');
 assert.match(worker,/ops2_ana_accept_live_outbound_v1/,'live worker must persist Meta acceptance canonically');
 assert.match(webhook,/ops2_ana_enqueue_live_job_v1/,'Meta inbound must enqueue ANA work');
 assert.match(webhook,/EdgeRuntime\.waitUntil/,'ANA response generation must not block the Meta webhook acknowledgment');
