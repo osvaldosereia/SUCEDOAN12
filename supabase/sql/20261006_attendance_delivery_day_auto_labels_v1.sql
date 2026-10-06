@@ -118,7 +118,12 @@ begin
   select distinct o.conversation_id,l.id,'delivery_schedule',o.id
   from public.orders o
   cross join lateral (
-    select public.ops2_attendance_delivery_date_v1(o.delivery_address->>'delivery_date') as delivery_date
+    select public.ops2_attendance_delivery_date_v1(
+      coalesce(
+        nullif(btrim(o.delivery_address->>'delivery_date'),''),
+        nullif(btrim(o.checkout_snapshot->'delivery'->>'date'),'')
+      )
+    ) as delivery_date
   ) d
   cross join lateral (
     select case extract(isodow from d.delivery_date)::integer
@@ -283,7 +288,7 @@ $$;
 
 drop trigger if exists trg_attendance_delivery_day_labels_v1 on public.orders;
 create trigger trg_attendance_delivery_day_labels_v1
-after insert or update of conversation_id,status,delivery_address or delete
+after insert or update of conversation_id,status,delivery_address,checkout_snapshot or delete
 on public.orders
 for each row execute function public.ops2_attendance_orders_refresh_delivery_labels_trigger_v1();
 
