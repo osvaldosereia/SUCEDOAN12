@@ -50,14 +50,12 @@
 
 window.BasketCarousel={
   card(b,esc,money,basketName){
-    const items=Array.isArray(b.carousel_items)?b.carousel_items:[];
-    const name=basketName(b.name),category=String(b.category_name||'').trim(),key=String(b.card_key||b.id),region='basket-products-'+key.replace(/[^a-zA-Z0-9_-]/g,'-');/* R5_MOLD_CARD_KEY_V1 */
-    const photos=items.map((p,i)=>{
-      const quantity=Number(p.quantity),label=Number.isInteger(quantity)?String(quantity):quantity.toLocaleString('pt-BR');
-      const url=/^(https?:\/\/|\/(?!\/))/i.test(String(p.image_url||''))?p.image_url:'';
-      return '<div class="basket-product" title="'+esc(p.name)+'"><span class="basket-quantity">'+esc(label)+' un.</span>'+(url?'<img data-product-index="'+i+'" data-basket-src="'+esc(url)+'" width="108" height="138" decoding="async" alt="'+esc(p.name)+'">':'<span class="basket-photo-missing">'+esc(p.name)+'</span>')+'</div>';
-    }).join('');
-    return '<article class="card basket-card">'+(category?'<div class="basket-category-tag">'+esc(category)+'</div>':'')+'<div class="basket-card-title name">'+esc(name)+'</div><div class="basket-carousel"><div class="basket-product-strip" id="'+esc(region)+'" tabindex="0" role="region" aria-label="Produtos da '+esc(name)+'">'+(photos||'<span class="basket-photo-missing">Confira os produtos em Ver cesta</span>')+'</div><div class="basket-scroll-track" role="scrollbar" tabindex="0" aria-label="Percorrer produtos da '+esc(name)+'" aria-controls="'+esc(region)+'" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="basket-scroll-thumb"></span></div></div><div class="card-body basket-card-info"><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="Ver cesta '+esc(name)+'">Ver cesta</button><div class="price">'+money(b.display_price_cents)+'</div></div></article>';
+    const items=Array.isArray(b.carousel_items)?b.carousel_items:[],first=items[0]||null;
+    const name=basketName(b.name),key=String(b.card_key||b.id);
+    const category=b.category_name?'<span class="basket-category-tag">'+esc(b.category_name)+'</span>':'';
+    const url=/^(https?:\/\/|\/(?!\/))/i.test(String(first?.image_url||''))?first.image_url:'';
+    const photo=first&&url?'<img data-basket-src="'+esc(url)+'" width="420" height="280" decoding="async" alt="'+esc(first.name||'Arroz da cesta')+'">':'<span class="basket-photo-missing">'+esc(first?.name||'Foto indisponível')+'</span>';
+    return '<article class="card basket-card"><div class="basket-card-photo">'+photo+'</div><div class="card-body basket-card-info">'+category+'<div class="basket-card-title name">'+esc(name)+'</div><div class="price">'+money(b.display_price_cents)+'</div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="Ver cesta '+esc(name)+'">Ver cesta</button></div></article>';
   },
   prepareHome(host){
     const section=host?.closest?.('.section');if(!section)return;

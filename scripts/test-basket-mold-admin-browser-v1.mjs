@@ -14,10 +14,10 @@ try{
     window.fetch=async (_url,opts)=>{
       const body=JSON.parse(opts.body||'{}');window.__calls.push(body);
       const reply=(data,status=200)=>Promise.resolve({ok:status<400,status,json:async()=>data});
-      if(body.action==='list')return reply({ok:true,baskets:[{id:'4069e5be-10bf-4f5a-9b39-ebcce77cd9a9',name:'Economica Bonini',mold_configured:false,public_composition_count:2,hidden_adjustment:0}]});
-      if(body.action==='editor')return reply({ok:true,editor:{basket_id:body.basket_id,basket_name:'Economica Bonini',hidden_adjustment:0,public_composition_count:2,positions:[]}});
+      if(body.action==='list')return reply({ok:true,baskets:[{id:'4069e5be-10bf-4f5a-9b39-ebcce77cd9a9',name:'Economica Bonini',mold_configured:false,public_composition_count:2,hidden_adjustment:0,category_id:'00000000-0000-4000-8000-000000000001',category_name:'Cestas Completas'}],categories:[{id:'00000000-0000-4000-8000-000000000001',name:'Cestas Completas',slug:'cestas-completas',sort_order:10}]});
+      if(body.action==='editor')return reply({ok:true,editor:{basket_id:body.basket_id,basket_name:'Economica Bonini',category_id:'00000000-0000-4000-8000-000000000001',hidden_adjustment:0,public_composition_count:2,positions:[]}});
       if(body.action==='products')return reply({ok:true,products:[{id:'7c1a9999-1df2-4d8e-b729-d7492a8c20a9',name:'Arroz Teste 5 kg',sku:'AR5',gtin:'7890000000000',loose_sellable_stock:20,image_url:''}]});
-      if(body.action==='save')return reply({ok:true,editor:{basket_id:body.basket_id,basket_name:body.name,hidden_adjustment:body.hidden_adjustment,public_composition_count:body.public_composition_count,positions:body.positions}});
+      if(body.action==='save')return reply({ok:true,editor:{basket_id:body.basket_id,basket_name:body.name,category_id:body.category_id,hidden_adjustment:body.hidden_adjustment,public_composition_count:body.public_composition_count,positions:body.positions}});
       return reply({ok:false,error:'unexpected'},400);
     };
   <\/script></body></html>`);

@@ -196,6 +196,13 @@
     #homeOfferGrid .product-card{background:#fff;border:1px solid #ece9e1;border-radius:16px;overflow:hidden}#homeOfferGrid .photo{background:#fff;border-radius:0;aspect-ratio:1.15}#homeOfferGrid .card-body{padding:10px}#homeOfferGrid .quick-add{border-radius:50%}#homeOfferGrid .price{color:#174a30}.home-view #allOffers{padding-left:0}
     @media(min-width:760px){.home-hero{min-height:220px;padding:32px;background-position:center 58%}.home-hero h1{font-size:36px}.home-hero p{font-size:21px}.home-hero-copy{max-width:60%}.home-shortcuts{max-width:680px;margin:0 auto;padding-top:24px}.home-shortcuts button{font-size:15px}.home-shortcuts svg{width:38px;height:38px}.home-view .section-head h2{font-size:30px}}
 
+    .basket-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .basket-card-photo{display:grid;place-items:center;aspect-ratio:4/3;margin:8px 9px 0;overflow:hidden;border-radius:12px;background:#fff}
+    .basket-card-photo img{width:100%;height:100%;object-fit:contain}
+    .basket-card-info{min-width:0}
+    .basket-card .basket-card-title{overflow-wrap:anywhere}
+    @media(min-width:760px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}}
+    @media(min-width:1080px){.basket-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}}
 </style>
 </head>
 <body>
@@ -545,13 +552,12 @@
     function renderHome(){
       state.view='home';state.category=null;state.query='';renderNav();$('#globalSearchInput').value='';
       const baskets=state.home?.baskets||[],categories=state.home?.categories?.length?state.home.categories:STATIC_CATEGORIES;
-      const basketCategories=state.home?.basket_categories||[],active=String(state.basketCategory||'');
-      const visibleBaskets=active?baskets.filter(b=>String(b.category_slug||'')===active):baskets;
-      content.innerHTML=homeIntro(categories)+section('Escolha suas Cestas e Kits','Confira os produtos e ajuste do seu jeito.',basketCategoryControls(basketCategories,active)+'<div class="grid" id="basketGrid">'+(visibleBaskets.length?visibleBaskets.map((b,i)=>basketCard(b,i)).join(''):'<div class="empty">Nenhuma Cesta/Kit disponível nesta categoria agora.</div>')+'</div>')+section('Ofertas da semana','Preços promocionais ativos agora.','<div id="homeOffersMount">'+(state.offersLoaded?'':offersSkeleton())+'</div>');
+      const basketGroups=[{slug:'cestas-completas',title:'Cestas Completas'},{slug:'cestas-so-alimentos',title:'Cestas Só Alimentos'},{slug:'kits-promocionais',title:'Kits Promocionais'}];
+      const basketGroupMarkup='<div id="basketSections">'+basketGroups.map(group=>{const items=baskets.filter(b=>String(b.category_slug||'')===group.slug);return section(group.title,'', '<div class="grid basket-grid">'+(items.length?items.map((b,i)=>basketCard(b,i)).join(''):'<div class="empty">Nenhum item disponível nesta categoria agora.</div>')+'</div>')}).join('')+'</div>';
+      content.innerHTML=homeIntro(categories)+basketGroupMarkup+section('Ofertas da semana','Preços promocionais ativos agora.','<div id="homeOffersMount">'+(state.offersLoaded?'':offersSkeleton())+'</div>');
       content.querySelectorAll('[data-basket]').forEach(btn=>btn.onclick=()=>openBasket(btn.dataset.basket));
-      content.querySelectorAll('[data-basket-category]').forEach(btn=>btn.onclick=()=>{state.basketCategory=String(btn.dataset.basketCategory||'');renderHome()});
       content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));
-      bindHomeIntro();BasketCarousel.mount(document.querySelector('#basketGrid'));if(state.offersLoaded)paintHomeOffers();else observeOffers();
+      bindHomeIntro();BasketCarousel.mount(document.querySelector('#basketSections'));if(state.offersLoaded)paintHomeOffers();else observeOffers();
     }
     function paintOffersPage(){const grid=$('#offerGrid');if(!grid)return;grid.innerHTML=state.offers.length?state.offers.map((p,i)=>productCard(p,true,i)).join(''):'<div class="empty">Nenhuma oferta ativa agora.</div>';attachProductControls(grid,state.offers)}
     async function renderOffers(){state.view='offers';state.category=null;state.query='';renderNav();$('#globalSearchInput').value='';content.innerHTML=section('Ofertas','Produtos com preço promocional ativo.','<div class="grid" id="offerGrid">'+(state.offersLoaded?'':'<div class="loader"></div><div class="loader"></div>')+'</div>');if(state.offersLoaded)paintOffersPage();else{try{await loadOffers();paintOffersPage()}catch{const grid=$('#offerGrid');if(grid)grid.innerHTML='<div class="empty">Não consegui carregar as ofertas agora. <button class="text-btn" id="retryOffersPage" type="button">Tentar novamente</button></div>';if($('#retryOffersPage'))$('#retryOffersPage').onclick=()=>{state.offersPromise=null;renderOffers()}}}window.scrollTo({top:0,behavior:'smooth'})}
