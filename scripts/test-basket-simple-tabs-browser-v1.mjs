@@ -18,7 +18,7 @@ try{
   await page.addScriptTag({content:code});
   await page.evaluate(()=>window.DonaAntoniaBasketAdmin.render());
   await page.waitForSelector('[data-test-basket-molds]');
-  assert.equal(await page.locator('[data-basket-simple-tab]').count(),3,'must expose mold editor plus two advanced legacy tools');
+  assert.equal(await page.locator('[data-basket-simple-tab]').count(),4,'must expose mold editor, taxonomy and two advanced legacy tools');
   assert.equal(await page.locator('[data-basket-simple-tab="molds"]').getAttribute('aria-selected'),'true','molds tab must be default');
   assert.deepEqual(await page.evaluate(()=>window.__basketTabCalls),['molds']);
   assert.equal(await page.locator('[data-basket-advanced]').count(),1,'legacy tools must be grouped under advanced disclosure');
