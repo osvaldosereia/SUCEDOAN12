@@ -92,15 +92,13 @@ function basketCategoryFields(b:any){const c=Array.isArray(b?.category)?b.catego
 // R5_MOLD_STOREFRONT_V1
 async function moldAvailableStockMap(productIds:string[]){
   const ids=[...new Set(productIds.filter(Boolean))];const out=new Map<string,number>();if(!ids.length)return out;
-  const [sq,oq,lq]=await Promise.all([
-    db.from("ops2_sellable_stock_v1").select("product_id,effective_sellable_stock,is_active").in("product_id",ids),
-    db.from("vitrine_stock_reservations").select("product_id,quantity,status,expires_at").in("product_id",ids).in("status",["reserved","allocated"]),
-    db.from("basket_lot_component_reservations").select("product_id,quantity_reserved,status").in("product_id",ids).in("status",["reserved","active"])
-  ]);if(sq.error)throw sq.error;if(oq.error)throw oq.error;if(lq.error)throw lq.error;
-  const reservedOrders=new Map<string,number>(),reservedLots=new Map<string,number>(),now=Date.now();
+  const [sq,oq]=await Promise.all([
+    db.from("ops2_loose_sellable_stock_v1").select("product_id,loose_sellable_stock,is_active").in("product_id",ids),
+    db.from("vitrine_stock_reservations").select("product_id,quantity,status,expires_at").in("product_id",ids).in("status",["reserved","allocated"])
+  ]);if(sq.error)throw sq.error;if(oq.error)throw oq.error;
+  const reservedOrders=new Map<string,number>(),now=Date.now();
   for(const r of oq.data||[]){if(r.expires_at&&new Date(r.expires_at).getTime()<=now)continue;const id=String(r.product_id);reservedOrders.set(id,(reservedOrders.get(id)||0)+Number(r.quantity||0))}
-  for(const r of lq.data||[]){const id=String(r.product_id);reservedLots.set(id,(reservedLots.get(id)||0)+Number(r.quantity_reserved||0))}
-  for(const r of sq.data||[]){const id=String(r.product_id);out.set(id,Math.max(0,Number(r.effective_sellable_stock||0)-(reservedOrders.get(id)||0)-(reservedLots.get(id)||0)))}
+  for(const r of sq.data||[]){const id=String(r.product_id);out.set(id,Math.max(0,Number(r.loose_sellable_stock||0)-(reservedOrders.get(id)||0)))}
   return out;
 }
 function moldEffectivePriceCents(p:any){const n=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0?Number(p.offer_price):Number(p?.price||0);return cents(n)}
@@ -409,7 +407,7 @@ async function submit(req:Request,p:any){
   const marketingCampaign=txt(p?.marketing_context?.campaign,80);
   const customerSnapshot={...(customer?{found:true,id:customer.id,display_name:customer.display_name||null,address:customer.address||null,marketing_opt_in:customer.marketing_opt_in===true,identity_status:"existing_optional"}:{}),...(whatsappOrigin?{whatsapp_origin:whatsappOrigin}:{}),...(marketingCampaign?{marketing_campaign:marketingCampaign}:{}),...(stock.stock_adjustment?{stock_adjusted_retry:true,stock_adjustments:stock.adjusted_items}:{})};
   const created=await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}});
-  if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items}}
+  if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit","basket_mold_unavailable","basket_mold_not_configured","basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items}}
   const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
   if(orderId){try{const publicLink=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});if(!publicLink.error)publicOrderLink=publicLink.data||null}catch(e){console.error("order_public_link",txt((e as any)?.message,180))}}
