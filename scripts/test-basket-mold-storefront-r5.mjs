@@ -23,9 +23,12 @@ assert.match(sql,/basket_mold_option_invalid|basket_mold_component_invalid/i,'un
 assert.doesNotMatch(sql,/insert\s+into\s+public\.basket_stock_lots/i,'R5 must not create fake physical lots');
 
 assert.match(api,/basket_mold_public_compositions_v2/i,'storefront must consume the canonical mold generator');
+assert.match(api,/ops2_loose_sellable_stock_v1/i,'storefront mold detail must use canonical loose sellable stock');
+assert.match(api,/loose_sellable_stock/i,'storefront mold detail must read loose sellable stock values');
 assert.match(api,/mold_mode\s*:\s*true/i,'public cards must identify mold compositions');
 assert.match(api,/composition_number/i,'public cards/details must keep composition identity');
 assert.match(api,/basket_mold/i,'storefront API must expose mold detail/order payloads');
+assert.match(api,/basket_mold_composition_invalid[^\n]+includes\(e\)\?409:400/i,'mold checkout conflicts must map to HTTP 409');
 
 for(const [name,html] of [['root',root],['vitrine',vitrine]]){
   assert.match(html,/type:\s*['"]basket_mold['"]/i,`${name} must put mold compositions in cart as basket_mold`);
@@ -36,6 +39,7 @@ for(const [name,html] of [['root',root],['vitrine',vitrine]]){
   assert.match(html,/food_lot_id:item\.type===['"]basket['"]\?\(item\.food_lot_id\|\|null\):null/i,`${name} split food lot id must remain gated to physical baskets only`);
   assert.doesNotMatch(html,/lot_id:item\.type===['"]basket_mold['"]/i,`${name} must not attach a physical lot to mold compositions`);
   assert.doesNotMatch(html,/food_lot_id:item\.type===['"]basket_mold['"]/i,`${name} must not attach a split physical lot to mold compositions`);
+  assert.match(html,/const previous=\{\.\.\.item\}[^\n]+if\(!ok\)Object\.assign\(item,previous\)/i,`${name} must roll back a mold option rejected during re-quote`);
 }
 
 console.log('basket mold storefront R5: PASS');
