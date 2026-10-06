@@ -13,9 +13,10 @@ assert.match(sql,/ops2_attendance_refresh_delivery_day_labels_v1/i,'a sincroniza
 assert.match(sql,/delivery_address\s*->>\s*'delivery_date'/i,'a fonte do dia deve ser a data estruturada do pedido');
 assert.match(sql,/conversation_id\s+is\s+not\s+null/i,'pedido sem conversa ligada não deve escolher conversa por inferência');
 assert.match(sql,/America\/Cuiaba/i,'data de hoje deve usar o fuso local da operação');
-for(const status of ['storefront_received','confirmed','processing','ready']) assert.match(sql,new RegExp(status),`status ativo deve ser considerado: ${status}`);
-const activeStatuses=sql.match(/and o\\.status in \\(([^)]+)\\)/i)?.[1]||'';\nassert.match(activeStatuses,/storefront_received[\\s\\S]*confirmed[\\s\\S]*processing[\\s\\S]*ready/i,'somente status ativos conhecidos devem receber etiqueta');\nassert.doesNotMatch(activeStatuses,/delivered|cancelled/i,'pedido entregue/cancelado não deve manter etiqueta futura');
-for(const day of ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo']) assert.ok(sql.includes(day),`etiqueta semanal ausente: ${day}`);
+const activeStatuses=sql.match(/and o\.status in \(([^)]+)\)/i)?.[1]||'';
+assert.match(activeStatuses,/storefront_received[\s\S]*confirmed[\s\S]*processing[\s\S]*ready/i,'somente status ativos conhecidos devem receber etiqueta');
+assert.doesNotMatch(activeStatuses,/delivered|cancelled/i,'pedido entregue/cancelado não deve manter etiqueta futura');
+for(const day of ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo']) assert.ok(sql.includes(day),\`etiqueta semanal ausente: \${day}\`);
 assert.match(sql,/on\s+conflict[\s\S]*do\s+nothing/i,'reprocessamento não pode duplicar vínculos');
 assert.match(sql,/create\s+trigger[\s\S]*after\s+insert[\s\S]*update[\s\S]*orders/i,'mudança de pedido precisa atualizar etiquetas');
 assert.match(sql,/delete\s+from\s+public\.attendance_conversation_auto_labels_v1/i,'reagendamento deve remover origem automática antiga');
