@@ -52,10 +52,11 @@ const completeEnd=adminApi.indexOf('\nasync function ',completeStart+20);
 const completeBlock=adminApi.slice(completeStart,completeEnd>completeStart?completeEnd:adminApi.length);
 assert.match(completeBlock,/order-separation-notify-v1/,'conclusão deve disparar o notificador de cliente');
 const notifyAt=completeBlock.indexOf('order-separation-notify-v1');
-const blingAt=completeBlock.indexOf('target_key:"verified"');
 const readyTransitionAt=completeBlock.indexOf('ready_transition_failed');
 const completedAt=completeBlock.indexOf('p_phase:"completed"');
-assert.ok(notifyAt>=0&&blingAt>=0&&readyTransitionAt>=0&&completedAt>=0,'fluxo precisa verificar Bling, prontidão e conclusão antes de notificar');
-assert.ok(blingAt<readyTransitionAt&&readyTransitionAt<completedAt&&completedAt<notifyAt,'aviso ao cliente só pode ser iniciado depois do Bling confirmado, pedido pronto e conclusão registrada');
+const integrationAt=completeBlock.indexOf('runSeparationPostCompletionIntegrations');
+assert.ok(notifyAt>=0&&readyTransitionAt>=0&&completedAt>=0&&integrationAt>=0,'fluxo precisa concluir localmente, atualizar o cliente e só então iniciar integrações externas');
+assert.ok(readyTransitionAt<completedAt&&completedAt<notifyAt&&notifyAt<integrationAt,'aviso ao cliente deve ocorrer após conclusão local e antes do Bling/NF-e em segundo plano');
+assert.match(adminApi,/target_key:"verified"/,'sincronização Verificado no Bling deve continuar existindo no pós-conclusão');
 
 console.log('order customer notifications v1 contract: ok');
