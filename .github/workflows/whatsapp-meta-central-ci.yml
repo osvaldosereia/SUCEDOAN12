@@ -6,6 +6,7 @@ on:
       - 'supabase/functions/_shared/whatsapp-meta-*.mjs'
       - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
       - 'supabase/functions/_shared/ana-policy-v1.mjs'
+      - 'supabase/functions/_shared/ana-live-policy-v1.mjs'
       - 'supabase/functions/whatsapp-ana-worker-v1/**'
       - 'supabase/functions/whatsapp-marketing-worker-v1/**'
       - 'supabase/functions/admin-whatsapp-ana-preview-v1/**'
@@ -50,6 +51,8 @@ on:
       - 'scripts/test-admin-attendance-customer-profile-ui-v1.mjs'
       - 'supabase/functions/_shared/ana-customer-confirmation-v1.mjs'
       - 'supabase/migrations/20261006051000_ana_customer_confirmation_apply_signal_v1.sql'
+      - 'supabase/migrations/20261006120000_whatsapp_ana_live_send_v1.sql'
+      - 'supabase/sql/20261006_whatsapp_ana_live_send_v1.sql'
       - 'supabase/sql/20261006_ana_customer_confirmation_apply_signal_v1.sql'
       - 'supabase/migrations/20261005170000_ana_customer_profile_confirmation_v1.sql'
       - 'supabase/sql/20261005_ana_customer_profile_confirmation_v1.sql'
@@ -108,6 +111,8 @@ jobs:
       - {name: Media delivery observer contract, run: 'node scripts/test-attendance-media-delivery-observer-v1.mjs'}
       - {name: Human AI state contract, run: 'node scripts/test-attendance-human-ai-state-v1.mjs'}
       - {name: ANA dry-run contract, run: 'node scripts/test-whatsapp-ana-worker-v1.mjs'}
+      - {name: ANA live confidence policy, run: 'node scripts/test-whatsapp-ana-live-policy-v1.mjs'}
+      - {name: ANA live release contract, run: 'node scripts/test-whatsapp-ana-live-release-v1.mjs'}
       - {name: ANA Admin preview contract, run: 'node scripts/test-whatsapp-ana-admin-preview-v1.mjs'}
       - {name: ANA stale preview claim recovery, run: 'node scripts/test-whatsapp-ana-preview-stale-claim-v1.mjs'}
       - {name: ANA immediate claim cleanup regression, run: 'node scripts/test-whatsapp-ana-preview-claim-cleanup-v1.mjs'}
@@ -125,6 +130,7 @@ jobs:
       - {name: Marketing worker TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-marketing-worker-v1/index.ts'}
       - {name: ANA preview API TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-ana-preview-v1/index.ts'}
       - {name: ANA policy JavaScript syntax, run: 'node --check supabase/functions/_shared/ana-policy-v1.mjs'}
+      - {name: ANA live policy JavaScript syntax, run: 'node --check supabase/functions/_shared/ana-live-policy-v1.mjs'}
       - {name: Meta canonical outbound contract, run: 'node scripts/test-attendance-meta-dedupe-v1.mjs'}
       - {name: Admin Meta gateway contract, run: 'node scripts/test-admin-attendance-meta-send-ui-v1.mjs'}
       - {name: Admin media dispatcher syntax, run: 'node --check supabase/functions/_shared/admin-attendance-media-send-v1.mjs'}
