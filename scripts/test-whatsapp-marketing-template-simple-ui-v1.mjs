@@ -25,6 +25,7 @@ assert.match(picker,/data-template-preview-body/,'prévia deve atualizar o corpo
 assert.match(picker,/input[\s\S]{0,120}data-template-media-file|data-template-media-file[\s\S]{0,120}input/,'cabeçalho de mídia deve aceitar arquivo');
 assert.match(picker,/upload_media/,'mídia de exemplo deve ser enviada pelo backend');
 assert.match(picker,/data-template-simple-submit/,'editor deve ter ação principal clara');
+assert.match(picker,/data-template-filter=["']language["'][\s\S]{0,180}hidden=true|language[\s\S]{0,180}hidden=true/,'filtro de idioma legado deve ficar oculto na tela simples');
 assert.match(picker,/action:'detail'/,'detalhes e edição devem consultar o endpoint live antes de abrir');
 assert.match(picker,/Histórico Meta/,'detalhe deve mostrar linha do tempo de aprovação/rejeição');
 assert.match(picker,/Atualizado agora pela Meta/,'detalhe deve deixar claro quando o estado foi confirmado ao vivo');
