@@ -30,12 +30,17 @@ assert.match(sql,/grant execute on function public\.store_basket_ops_overview_v1
 const edge=fs.readFileSync('supabase/functions/admin-store-baskets-v1/index.ts','utf8');
 assert.match(edge,/store_basket_recipe_catalog_v1/,'admin list must keep using the canonical catalog RPC');
 
-const ui=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
+const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
+assert.match(section,/store-baskets-ops-overview\.js\?v=20261006-1/,'simple controller must load the isolated ops enhancer');
+assert.doesNotMatch(section,/public_available|availability_reason/,'simple controller must not own stock business data');
+
+const ui=fs.readFileSync('vitrine/admin/store-baskets-ops-overview.js','utf8');
 for(const phrase of ['Disponível no site','Em montagem','Pode montar agora','Lotes disponíveis','Estoque existente','Novo fluxo']){
   assert.match(ui,new RegExp(phrase,'i'),`UI must show ${phrase}`);
 }
 assert.match(ui,/data-store-ops-overview/,'UI must expose operational overview hook');
 assert.match(ui,/data-store-basket-stock/,'basket list must expose stock summary hook');
 assert.match(ui,/storeCall\(['"]list['"]\)/,'ops panel must reuse the existing authenticated list action');
+assert.match(ui,/MutationObserver/,'ops panel must survive builder re-renders without owning the builder');
 
 console.log('store baskets ops overview v1: PASS');
