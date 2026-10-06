@@ -13,6 +13,10 @@ const MAX_BATCH=25;
 const MAX_BODY_BYTES=4096;
 const INTERNAL_HEADER="x-dona-antonia-marketing-worker-key";
 const ALLOWED_BODY_FIELDS=new Set(["limit","tick_id"]);
+const TRACKING_MEDIA_HOSTS=new Set([
+  "donaantonia.com.br","www.donaantonia.com.br","ssbesxgaijknwsjbsbcz.supabase.co",
+  "firebasestorage.googleapis.com","storage.googleapis.com",
+]);
 
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const normalizeDigits=(value:unknown)=>String(value??"").replace(/\D+/g,"");
@@ -22,6 +26,14 @@ const text=(value:unknown,max=300)=>String(value??"").replace(/[\u0000-\u001f\u0
 function safeEquals(a:string,b:string){
   if(a.length!==b.length)return false;
   let diff=0;for(let i=0;i<a.length;i++)diff|=a.charCodeAt(i)^b.charCodeAt(i);return diff===0;
+}
+function safeTrackingImage(value:unknown){
+  const raw=text(value,2000);if(!raw)return null;
+  try{
+    const url=new URL(raw);
+    if(url.protocol!=="https:"||url.username||url.password||!TRACKING_MEDIA_HOSTS.has(url.hostname.toLowerCase()))return null;
+    return url.toString();
+  }catch{return null}
 }
 
 async function authenticate(req:Request){
@@ -76,8 +88,12 @@ function carouselTrackingComponent(templateComponents:unknown,trackingLinks:any[
     cards:trackingLinks.map((link:any,index:number)=>{
       const token=text(link?.tracking_token,120);
       const cardIndex=Number(link?.card_index);
-      if(!/^[0-9a-f]{36}$/.test(token)||!Number.isInteger(cardIndex)||cardIndex!==index)throw new Error("carousel_tracking_link_invalid");
-      return {card_index:cardIndex,components:[{type:"button",sub_type:"url",index:"0",parameters:[{type:"text",text:token}]}]};
+      const imageUrl=safeTrackingImage(link?.image_url);
+      if(!/^[0-9a-f]{36}$/.test(token)||!Number.isInteger(cardIndex)||cardIndex!==index||!imageUrl)throw new Error("carousel_tracking_link_invalid");
+      return {card_index:cardIndex,components:[
+        {type:"header",parameters:[{type:"image",image:{link:imageUrl}}]},
+        {type:"button",sub_type:"url",index:"0",parameters:[{type:"text",text:token}]},
+      ]};
     }),
   };
 }
