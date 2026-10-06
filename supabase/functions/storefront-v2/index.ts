@@ -123,7 +123,7 @@ async function moldHomeCards(){
     }
   }
   const preferredNames=['Grande Completa','Grande Só Alimento','Média Completa','Média Só Alimento','Pequena Completa','Pequena Só Alimento','Mini Completa','Mini Só Alimento','Econômica'];
-  const normalizeName=(value:string)=>String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLocaleLowerCase('pt-BR');
+  const normalizeName=(value:string)=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');
   const preferredOrder=new Map(preferredNames.map((name,index)=>[normalizeName(name),index]));
   cards.sort((a,b)=>(preferredOrder.get(normalizeName(a.model_name))??preferredNames.length)-(preferredOrder.get(normalizeName(b.model_name))??preferredNames.length)||a.category_sort_order-b.category_sort_order||a.model_name.localeCompare(b.model_name,'pt-BR')||a.composition_number-b.composition_number);return cards;
 }
