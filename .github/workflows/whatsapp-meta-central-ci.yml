@@ -122,6 +122,7 @@ jobs:
       - {name: Admin marketing campaigns TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-marketing-campaigns-v1/index.ts'}
       - {name: Admin Meta gateway TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts'}
       - {name: Native Attendance core JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-app.js'}
+      - {name: Native Attendance DOM binding regression, run: 'node scripts/test-attendance-app-dom-bindings-v1.mjs'}
       - {name: ANA preview UI JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-ana-preview.js'}
       - {name: Admin composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-send.js'}
       - {name: Admin media composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-media-send.js'}
