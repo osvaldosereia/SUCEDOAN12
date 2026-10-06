@@ -1,39 +1,45 @@
-name: One-shot public basket controls
+name: Public basket controls
 
 on:
+  push:
+    branches:
+      - fix/public-basket-qty-remove-20261006
+    paths:
+      - 'scripts/patch-public-basket-controls.mjs'
+      - 'tests/public-basket-item-controls.test.mjs'
+      - '.github/workflows/one-shot-public-basket-controls.yml'
+      - 'index.html'
+      - 'vitrine/index.html'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  patch:
+  patch-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: fix/public-basket-qty-remove-20261006
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify regression is red before patch
+      - name: Apply patch only when regression is still red
         run: |
-          set +e
-          node --test tests/public-basket-item-controls.test.mjs
-          code=$?
-          set -e
-          if [ "$code" -eq 0 ]; then
-            echo "Regression test unexpectedly passed before patch"
-            exit 1
+          if node --test tests/public-basket-item-controls.test.mjs; then
+            echo "Basket controls are already applied."
+            exit 0
           fi
-      - name: Apply patch
-        run: node scripts/patch-public-basket-controls.mjs
-      - name: Verify green
-        run: node --test tests/public-basket-item-controls.test.mjs
-      - name: Commit patch
-        run: |
+          node scripts/patch-public-basket-controls.mjs
+          node --test tests/public-basket-item-controls.test.mjs
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html vitrine/index.html
+          if git diff --cached --quiet; then
+            echo "No storefront changes to commit."
+            exit 0
+          fi
           git commit -m "fix: restore editable basket item controls"
           git push origin HEAD:fix/public-basket-qty-remove-20261006
