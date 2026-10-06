@@ -17,6 +17,15 @@ for (const file of files) {
     assert.match(html, /data-b-inc=/);
   });
 
+  test(`${file} makes mold baskets editable too`, () => {
+    const html = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+    assert.match(html, /data-mold-dec=/, 'expected mold decrement control');
+    assert.match(html, /data-mold-inc=/, 'expected mold increment control');
+    assert.match(html, /data-mold-remove=/, 'expected explicit mold remove control');
+    assert.match(html, /function changeMoldQty\(/, 'expected mold quantity behavior');
+    assert.doesNotMatch(html, /As quantidades do molde permanecem fixas\./);
+  });
+
   test(`${file} spaces editable basket rows and controls`, () => {
     const html = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
     assert.match(html, /basket-item-card/);
