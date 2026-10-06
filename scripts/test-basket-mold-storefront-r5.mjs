@@ -32,7 +32,10 @@ for(const [name,html] of [['root',root],['vitrine',vitrine]]){
   assert.match(html,/composition_number/i,`${name} must keep selected composition number`);
   assert.match(html,/position_id/i,`${name} must send selected mold positions`);
   assert.match(html,/item\.type===['"]basket_mold['"]|item\.type===\"basket_mold\"/i,`${name} checkout must recognize basket_mold cart lines`);
-  assert.doesNotMatch(html,/basket_mold[^\n]{0,180}(?:lot_id|food_lot_id)/i,`${name} must not invent a physical lot for mold compositions`);
+  assert.match(html,/lot_id:item\.type===['"]basket['"]\?\(item\.lot_id\|\|null\):null/i,`${name} physical lot id must remain gated to physical baskets only`);
+  assert.match(html,/food_lot_id:item\.type===['"]basket['"]\?\(item\.food_lot_id\|\|null\):null/i,`${name} split food lot id must remain gated to physical baskets only`);
+  assert.doesNotMatch(html,/lot_id:item\.type===['"]basket_mold['"]/i,`${name} must not attach a physical lot to mold compositions`);
+  assert.doesNotMatch(html,/food_lot_id:item\.type===['"]basket_mold['"]/i,`${name} must not attach a split physical lot to mold compositions`);
 }
 
 console.log('basket mold storefront R5: PASS');
