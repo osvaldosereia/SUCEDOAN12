@@ -32,7 +32,6 @@ try{
       let payload={ok:true};
       if(action==='kits')payload={ok:true,kits:window.savedKits,total:window.savedKits.length,next_offset:null};
       else if(action==='chips')payload={ok:true,chips:window.chipState};
-      else if(action==='most_used')payload={ok:true,products};
       else if(action==='products'){
         const q=(u.searchParams.get('q')||'').toLowerCase();
         const rows=q?products.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q)):products;
@@ -58,14 +57,20 @@ try{
   `});
   await page.addScriptTag({content:code});
   await page.evaluate(()=>window.DonaAntoniaKitBuilder.open('#content'));
-  await page.waitForSelector('[data-kit-column="catalog"]');
+  await page.waitForSelector('[data-kit-column="kits"]');
   await page.waitForFunction(()=>document.querySelectorAll('[data-kit-product]').length===2);
 
   assert.equal(await page.locator('[data-kit-column]').count(),3,'workspace deve ter 3 colunas');
+  assert.equal(await page.locator('[data-kit-nav-card]').count(),1,'kits salvos devem virar navegação lateral');
   assert.equal(await page.locator('[data-kit-chip]').count(),2,'chips devem carregar');
   assert.equal(await page.locator('.kb-chips').evaluate(el=>getComputedStyle(el).overflowX),'auto','barra de chips deve ter rolagem horizontal');
-  assert.equal(await page.getByText('Arroz 5kg',{exact:true}).count()>=1,true);
 
+  await page.locator('[data-kit-nav-card]').click();
+  await page.waitForFunction(()=>document.querySelector('[data-kit-name]')?.value==='Kit Base');
+  assert.equal(await page.locator('[data-kit-nav-card]').getAttribute('aria-current'),'true','kit selecionado deve ficar marcado como atual');
+  assert.match(await page.locator('[data-kit-editor-title]').textContent(),/Editando:.*Kit Base/,'editor deve identificar claramente o kit carregado');
+
+  await page.locator('[data-kit-new]').click();
   await page.locator('[data-kit-product="p1"] [data-kit-add]').click();
   assert.equal(await page.locator('[data-kit-item="p1"]').count(),1,'produto deve entrar no kit em montagem');
   await page.locator('[data-kit-name]').fill('Kit Arroz Teste');
@@ -77,8 +82,8 @@ try{
   assert.equal(saved.body.name,'Kit Arroz Teste');
   assert.equal(saved.body.items[0].quantity,2,'quantidade editada deve ser salva');
 
-  await page.waitForSelector('[data-kit-saved]');
-  await page.locator('[data-kit-saved] [data-kit-duplicate]').click();
+  await page.waitForSelector('[data-kit-nav-card]');
+  await page.locator('[data-kit-nav-card] [data-kit-duplicate]').click();
   await page.waitForFunction(()=>document.querySelector('[data-kit-name]')?.value.includes('cópia'));
   assert.equal(await page.locator('[data-kit-name]').inputValue(),'Kit Arroz Teste cópia');
   assert.equal(await page.evaluate(()=>window.DonaAntoniaKitBuilder.state.draft.source_kit_id),'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','duplicação deve manter origem');
@@ -106,9 +111,12 @@ try{
   await page.waitForFunction(()=>document.querySelectorAll('[data-kit-chip]').length===1);
   assert.equal(await page.locator('[data-kit-chip]').count(),1,'chip excluído deve sair da barra');
 
+  assert.equal(await page.locator('[data-kit-column="kits"] .kb-body').evaluate(el=>getComputedStyle(el).overflowY),'auto','navegação de kits deve rolar internamente');
+  assert.equal(await page.locator('[data-kit-column="products"] .kb-body').evaluate(el=>getComputedStyle(el).overflowY),'auto','produtos devem rolar internamente');
+
   await page.setViewportSize({width:390,height:844});
   await page.waitForTimeout(50);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=390),true,'workspace não deve estourar horizontalmente no celular');
 
-  console.log('kit builder browser v1: PASS');
+  console.log('kit builder browser v2 master-detail: PASS');
 } finally {await browser.close()}
