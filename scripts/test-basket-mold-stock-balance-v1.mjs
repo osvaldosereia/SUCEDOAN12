@@ -6,9 +6,10 @@ assert.equal(fs.existsSync(SQL_PATH),true,'R4 stock-balancing SQL must exist');
 const sql=fs.readFileSync(SQL_PATH,'utf8');
 
 assert.match(sql,/create or replace function public\.basket_mold_public_compositions_v2\s*\(p_basket_id uuid\)/i);
-assert.match(sql,/effective_sellable_stock/i,'must start from canonical sellable stock');
-assert.match(sql,/vitrine_stock_reservations/i,'must subtract active order reservations');
-assert.match(sql,/basket_lot_component_reservations/i,'must subtract active basket-lot reservations');
+assert.match(sql,/ops2_loose_sellable_stock_v1/i,'must start from canonical loose sellable stock, excluding products already locked in basket lots');
+assert.match(sql,/loose_sellable_stock/i,'must use the canonical loose stock value');
+assert.match(sql,/vitrine_stock_reservations/i,'must subtract active order reservations from loose stock');
+assert.doesNotMatch(sql,/active_lot_reservations/i,'must not double-subtract basket lot reservations already represented by canonical loose stock');
 assert.match(sql,/p\.is_active\s*=\s*true/i,'inactive products must be excluded');
 assert.match(sql,/available_stock\s*\/\s*nullif\([^)]*quantity/i,'selection must calculate coverage by units consumed per basket');
 assert.match(sql,/coverage_baskets/i,'coverage must be returned for auditability');

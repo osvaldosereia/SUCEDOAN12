@@ -1,9 +1,6 @@
--- Dona Antônia · Cestas Molde · Rodada 4/6 + alinhamento R5
--- Balanceamento determinístico: cobertura = estoque avulso vendável líquido / consumo por cesta.
--- A view ops2_loose_sellable_stock_v1 já exclui unidades travadas em montagem, lotes prontos e alocações.
--- Descontamos apenas reservas de pedidos ainda ativas. Somente leitura: exibição nunca cria reserva.
-
-begin;
+-- Dona Antônia · Cestas Molde · R5 hotfix
+-- Alinha o balanceamento público ao estoque avulso canônico.
+-- ops2_loose_sellable_stock_v1 já exclui componentes travados em montagem, lotes prontos e alocações.
 
 create or replace function public.basket_mold_public_compositions_v2(p_basket_id uuid)
 returns jsonb
@@ -37,8 +34,7 @@ eligible as (
   where greatest(0,coalesce(s.loose_sellable_stock,0)-coalesce(orr.reserved,0)) >= pos.quantity
 ),
 scored as (
-  select e.*,
-         floor(e.available_stock / nullif(e.quantity,0))::bigint coverage_baskets
+  select e.*,floor(e.available_stock / nullif(e.quantity,0))::bigint coverage_baskets
   from eligible e
 ),
 ranked as (
@@ -56,11 +52,7 @@ chosen as (
   select sl.composition_number,r.*,
          (r.coverage_baskets::numeric / greatest(1,ceil(sl.composition_number::numeric / r.option_count)))::numeric selection_score
   from slots sl
-  join ranked r
-    on r.option_rank = case
-      when sl.composition_number <= r.option_count then sl.composition_number
-      else 1
-    end
+  join ranked r on r.option_rank=case when sl.composition_number<=r.option_count then sl.composition_number else 1 end
 ),
 compositions as (
   select c.composition_number,
@@ -70,7 +62,7 @@ compositions as (
            'image_url',c.image_url,'available_stock',c.available_stock,
            'coverage_baskets',c.coverage_baskets,'option_rank',c.option_rank,
            'selection_score',c.selection_score,
-           'selection_reason',case when c.composition_number <= c.option_count then 'distinct_by_coverage' else 'highest_coverage_repeat' end
+           'selection_reason',case when c.composition_number<=c.option_count then 'distinct_by_coverage' else 'highest_coverage_repeat' end
          ) order by c.position_order,c.position_id) items
   from chosen c group by c.composition_number
 )
@@ -84,7 +76,6 @@ select coalesce((
 ),jsonb_build_object('basket_id',p_basket_id,'error','basket_mold_not_found'));
 $function$;
 
--- Keep the R3 public contract stable for callers while upgrading its engine.
 create or replace function public.basket_mold_public_compositions_v1(p_basket_id uuid)
 returns jsonb
 language sql
@@ -99,5 +90,3 @@ revoke all on function public.basket_mold_public_compositions_v2(uuid) from publ
 grant execute on function public.basket_mold_public_compositions_v2(uuid) to service_role;
 revoke all on function public.basket_mold_public_compositions_v1(uuid) from public, anon, authenticated;
 grant execute on function public.basket_mold_public_compositions_v1(uuid) to service_role;
-
-commit;
