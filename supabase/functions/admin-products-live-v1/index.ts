@@ -1159,9 +1159,26 @@ async function stockReadiness(orderIds:string[]){
     const d=demand.get(r.order_id)!;d.set(r.product_id,(d.get(r.product_id)||0)+q);pids.add(r.product_id)
   }
   const ids=[...pids];if(!ids.length){for(const oid of orderIds)out.set(oid,{ok:hasKitAlloc.has(oid),shortage_count:0,shortages:[],demand_lines:0,reserved_lines:0,error:hasKitAlloc.has(oid)?null:"empty_order_stock",preassembled_only:hasKitAlloc.has(oid)});return out}
-  const [pr,rr,sm,authority]=await Promise.all([
-    db.from("products").select("id,name,sku,gtin,is_active,gondola,shelf").in("id",ids),
-    db.from("vitrine_stock_reservations").select("order_id,product_id,quantity,status,expires_at").in("product_id",ids),
+  // Keep UUID filters below the gateway URL limit as the order history grows.
+  const readStockRows=async()=>{
+    const products:any[]=[],reservations:any[]=[];
+    for(let i=0;i<ids.length;i+=80){
+      const batch=ids.slice(i,i+80);
+      const pr=await db.from("products").select("id,name,sku,gtin,is_active,gondola,shelf").in("id",batch);
+      if(pr.error)throw pr.error;
+      products.push(...(pr.data||[]));
+      for(let offset=0;;offset+=1000){
+        const rr=await db.from("vitrine_stock_reservations").select("order_id,product_id,quantity,status,expires_at")
+          .in("product_id",batch).order("id",{ascending:true}).range(offset,offset+999);
+        if(rr.error)throw rr.error;
+        reservations.push(...(rr.data||[]));
+        if((rr.data||[]).length<1000)break;
+      }
+    }
+    return [{data:products},{data:reservations}];
+  };
+  const [[pr,rr],sm,authority]=await Promise.all([
+    readStockRows(),
     effectiveStockMap(ids),
     stockAuthority()
   ]);
