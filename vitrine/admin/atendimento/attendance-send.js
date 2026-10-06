@@ -20,17 +20,17 @@ function activeChannel(){
 function showNote(text,tone='neutral'){const note=$('#composerNote');if(!note)return;note.textContent=text;note.dataset.tone=tone}
 function selectedFromDom(){return String($('.queue-card.selected')?.dataset?.conversationId||selectedConversationId||'').trim()||null}
 function draftText(){return String($('#messageDraft')?.value||'').trim()}
-function providerLabel(provider=currentCapability?.provider){return provider==='meta'?'Meta':'PapoAI'}
+function providerLabel(provider=currentCapability?.provider){return provider==='meta'?'Meta':'Canal oficial'}
 
 function capabilityNote(){
   const channel=activeChannel();
   if(!selectedConversationId)return ['Selecione uma conversa','neutral'];
   if(currentCapability?.enabled)return [`Envio direto disponível pelo canal ${channel} via ${providerLabel()}`,'success'];
-  if(currentCapability?.reason==='service_window_closed')return ['Janela de 24h encerrada · use template aprovado no PapoAI','error'];
+  if(currentCapability?.reason==='service_window_closed')return ['Janela de 24h encerrada · selecione um template aprovado da Meta','error'];
   if(currentCapability?.reason==='meta_transport_not_configured')return [`Canal ${channel} preparado para Meta, mas o transporte seguro ainda não está configurado`,'neutral'];
   if(currentCapability?.reason==='meta_send_uncertain')return ['O resultado do último envio pela Meta é incerto · não reenvie até conferir o histórico','error'];
-  if(currentCapability?.reason==='human_send_not_homologated')return [`Canal ${channel} ainda não homologado para envio direto · copiar/abrir PapoAI continua disponível`,'neutral'];
-  return ['Envio direto indisponível neste momento · use copiar/abrir PapoAI','neutral'];
+  if(currentCapability?.reason==='human_send_not_homologated')return [`Canal ${channel} ainda não está homologado para envio direto pela Meta`,'neutral'];
+  return ['Envio pela Meta indisponível. O texto continua disponível para revisão.','neutral'];
 }
 
 function syncSendButton({updateNote=false}={}){
@@ -38,7 +38,6 @@ function syncSendButton({updateNote=false}={}){
   const hasDraft=Boolean(draftText());
   send.disabled=!selectedConversationId||!hasDraft||currentCapability?.enabled!==true||sending;
   send.textContent=sending?'Enviando…':'Enviar';
-  const fallbackCopy=$('#copyReplyBtn'),fallbackOpen=$('#openPapoAiBtn');void [fallbackCopy,fallbackOpen];
   if(updateNote){const [text,tone]=capabilityNote();showNote(text,tone)}
 }
 
@@ -60,14 +59,13 @@ function scheduleCapabilityRefresh(){clearTimeout(refreshDebounce);refreshDeboun
 function idempotencyKey(){const random=globalThis.crypto?.randomUUID?crypto.randomUUID().replace(/-/g,'').slice(0,12):Math.random().toString(36).slice(2,14);return `admin:${Date.now()}:${random}`}
 function sendErrorMessage(error){
   const code=String(error?.message||'');
-  if(code==='service_window_closed')return 'Janela de 24h encerrada · use template aprovado no PapoAI';
+  if(code==='service_window_closed')return 'Janela de 24h encerrada · selecione um template aprovado da Meta';
   if(code==='human_send_not_homologated')return 'Este canal ainda não está homologado para envio direto';
   if(code==='rate_limited')return 'Muitas mensagens em pouco tempo · aguarde um instante';
   if(code==='meta_transport_not_configured')return 'O envio direto pela Meta ainda não está configurado neste canal';
   if(code==='meta_send_uncertain')return 'A Meta pode ter recebido a mensagem, mas não conseguimos confirmar. Não reenvie agora; confira o histórico.';
   if(code==='meta_http_error'||code==='meta_invalid_request')return 'A Meta não aceitou a mensagem. O texto foi mantido para revisão.';
-  if(code==='papoai_transport_failed'||code==='transport_config_missing')return 'O PapoAI não aceitou o envio agora · use copiar/abrir PapoAI';
-  return 'Não consegui enviar agora · use copiar/abrir PapoAI';
+  return 'Não consegui enviar pela Meta. A mensagem continua no campo para revisão.';
 }
 
 async function sendDraft(){
@@ -79,7 +77,7 @@ async function sendDraft(){
     if(selectedConversationId!==conversationId)return;
     $('#messageDraft').value='';
     const provider=result?.provider||currentCapability?.provider;
-    showNote(provider==='meta'?`Mensagem aceita pela Meta no canal ${activeChannel()} · histórico registrado no Admin`:`Mensagem aceita pelo canal ${activeChannel()} · o histórico atualizará pela confirmação do PapoAI`,'success');
+    showNote(provider==='meta'?`Mensagem aceita pela Meta no canal ${activeChannel()} · histórico registrado no Admin`:`Mensagem aceita pelo provedor oficial no canal ${activeChannel()} · aguardando confirmação`,'success');
     document.dispatchEvent(new CustomEvent('attendance:sent',{detail:{conversationId,provider}}));
     setTimeout(()=>refreshCapability(conversationId).catch(()=>{}),700);
   }catch(error){
