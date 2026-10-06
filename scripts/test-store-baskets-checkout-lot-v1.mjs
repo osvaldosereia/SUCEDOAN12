@@ -5,6 +5,7 @@ const reservation=fs.readFileSync('supabase/sql/20261005_store_basket_reservatio
 assert.match(reservation,/quantity_available\s*=\s*quantity_built/i,'mounted lot must expose built quantity');
 assert.match(reservation,/sale_enabled\s*=\s*true/i,'mounted lot must become sellable');
 assert.match(checkout,/basket_lot_public_availability_v1/i,'checkout must consume canonical basket lot availability');
-assert.match(checkout,/basket_stock_allocations/i,'checkout must allocate the selected physical basket lot');
+assert.match(checkout,/v_alloc_rows:=v_alloc_rows\|\|jsonb_build_array/i,'checkout must enqueue the selected physical basket lot allocation');
+assert.match(checkout,/['"]allocation_role['"],['"]legacy['"]/i,'full mounted store baskets must use the canonical legacy_full allocation role');
 assert.match(checkout,/v_loose_units:=greatest\(v_selected_qty-v_base_qty,0\)\*v_line_qty/i,'full-basket checkout may consume loose stock only for extras above the preassembled base');
 console.log('store baskets checkout lot contract v1: PASS');
