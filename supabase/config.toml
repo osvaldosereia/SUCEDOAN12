@@ -3,6 +3,11 @@ project_id = "ssbesxgaijknwsjbsbcz"
 [functions.storefront-v2]
 verify_jwt = false
 
+# Tracking público por capability token opaco; a função só aceita token aleatório,
+# não expõe PII e delega a RPCs service-role-only.
+[functions.marketing-tracking-v1]
+verify_jwt = false
+
 [functions.admin-service-intelligence-v1]
 verify_jwt = false
 

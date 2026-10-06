@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {stripTypeScriptTypes} from 'node:module';
+import {sendTemplateViaMeta as sendTemplateViaMetaReal} from '../supabase/functions/_shared/whatsapp-meta-transport-v1.mjs';
 
 const workerPath='supabase/functions/whatsapp-marketing-worker-v1/index.ts';
 const supportPath='supabase/migrations/20261005018000_marketing_campaign_worker_support_v1.sql';
@@ -13,7 +14,7 @@ const sql=fs.readFileSync(supportPath,'utf8');
 assert.match(source,/sendTemplateViaMeta/,'worker deve reutilizar sendTemplateViaMeta');
 assert.match(source,/MetaTransportError/,'worker deve tratar MetaTransportError');
 assert.doesNotMatch(source,/graph\.facebook\.com/i,'worker não pode implementar Graph cru');
-for(const rpc of ['marketing_campaign_worker_internal_key_v1','marketing_claim_dispatch_batch_v1','marketing_revalidate_dispatch_v1','marketing_finish_dispatch_v1','marketing_accept_meta_dispatch_v1']){
+for(const rpc of ['marketing_campaign_worker_internal_key_v1','marketing_claim_dispatch_batch_v1','marketing_revalidate_dispatch_v1','marketing_issue_tracking_links_v1','marketing_finish_dispatch_v1','marketing_accept_meta_dispatch_v1']){
   assert.match(source,new RegExp(rpc),`worker deve chamar ${rpc}`);
 }
 assert.match(source,/DEFAULT_BATCH\s*=\s*10/,'batch padrão deve ser 10');
@@ -36,9 +37,36 @@ assert.match(sql,/marketing_finish_dispatch_v1/i,'aceite deve finalizar dispatch
 assert.match(sql,/whatsapp_messages_v1/i,'aceite deve vincular WAMID à mensagem canônica');
 assert.match(sql,/revoke\s+all[\s\S]*marketing_accept_meta_dispatch_v1[\s\S]*anon[\s\S]*authenticated/i,'aceite deve ser service-role only');
 
+// Integração real worker -> helper Meta: carousel precisa sobreviver à validação
+// do transporte e chegar ao payload Graph exatamente no formato esperado.
+{
+  const requests=[];
+  const components=[{
+    type:'carousel',
+    cards:[{
+      card_index:0,
+      components:[{
+        type:'button',sub_type:'url',index:'0',
+        parameters:[{type:'text',text:'0123456789abcdef0123456789abcdef0123'}],
+      }],
+    }],
+  }];
+  const sent=await sendTemplateViaMetaReal({
+    accessToken:'meta-token',phoneNumberId:'945659128620084',toE164:'+5565998150975',
+    templateName:'mkt_carousel_tracking_v1',languageCode:'pt_BR',components,graphVersion:'v23.0',
+    fetchImpl:async(_url,init)=>{
+      requests.push(JSON.parse(init.body));
+      return new Response(JSON.stringify({messages:[{id:'wamid.CAROUSEL_TRANSPORT_TEST'}]}),{status:200,headers:{'content-type':'application/json'}});
+    },
+  });
+  assert.equal(sent.providerMessageId,'wamid.CAROUSEL_TRANSPORT_TEST');
+  assert.equal(requests.length,1,'carousel válido deve chegar ao transporte Meta');
+  assert.deepEqual(requests[0].template.components,components,'transporte deve preservar componente carousel seguro');
+}
+
 function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='ok',attemptCount=0,toPhone='+5565998150975'}={}){
   let handler;
-  const calls={meta:[],finish:[],accept:[],claim:[],revalidate:[]};
+  const calls={meta:[],finish:[],accept:[],claim:[],revalidate:[],tracking:[]};
   const accountId='308660df-72a0-4e23-b3e9-b36d7307bb20';
   const dispatchId='10000000-0000-4000-8000-000000000001';
   const expectedKey='worker-test-secret';
@@ -72,6 +100,10 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
         if(revalidate==='skip')return {data:{ok:false,error:'dispatch_skipped',skip_reason:'no_consent',dispatch_id:dispatchId},error:null};
         return {data:{ok:true,dispatch_id:dispatchId,outbox_id:'30000000-0000-4000-8000-000000000003',whatsapp_account_id:accountId,to_phone_e164:toPhone,template_id:'40000000-0000-4000-8000-000000000004',template_name:'mktcatalogodonaantoniav1',language_code:'pt_BR',variable_values:{1:'Cliente',2:'Oferta'},mode},error:null};
       }
+      if(name==='marketing_issue_tracking_links_v1'){
+        calls.tracking.push(args);
+        return {data:{ok:true,strategy_tracked:false,tracking_links:[]},error:null};
+      }
       if(name==='marketing_finish_dispatch_v1'){calls.finish.push(args);return {data:{ok:true,status:args.p_status},error:null};}
       if(name==='marketing_accept_meta_dispatch_v1'){calls.accept.push(args);return {data:{ok:true,status:'accepted',provider_message_id:args.p_provider_message_id},error:null};}
       return {data:null,error:null};
@@ -102,6 +134,7 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
   const h=buildHarness({mode:'live'});const result=await h.invoke();
   assert.equal(result.response.status,200);assert.equal(h.calls.meta.length,1,'live válido deve chamar Meta exatamente uma vez');
   assert.equal(h.calls.accept.length,1,'sucesso deve aceitar WAMID pela RPC específica');
+  assert.equal(h.calls.tracking.length,1,'worker deve consultar tracking antes do transporte');
   assert.equal(h.calls.accept[0].p_provider_message_id,'wamid.TEST_MARKETING');
   assert.deepEqual(JSON.parse(JSON.stringify(h.calls.meta[0].components)),[{type:'body',parameters:[{type:'text',text:'Cliente'},{type:'text',text:'Oferta'}]}]);
 }
@@ -109,7 +142,7 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
   const h=buildHarness({mode:'off'});await h.invoke();assert.equal(h.calls.meta.length,0,'mode off deve ser no-op');assert.equal(h.calls.claim.length,0,'mode off não deve claimar');
 }
 {
-  const h=buildHarness({revalidate:'skip'});await h.invoke();assert.equal(h.calls.meta.length,0,'skip deve ocorrer antes do transporte');
+  const h=buildHarness({revalidate:'skip'});await h.invoke();assert.equal(h.calls.meta.length,0,'skip deve ocorrer antes do transporte');assert.equal(h.calls.tracking.length,0,'skip não deve emitir tracking');
 }
 {
   const h=buildHarness({mode:'canary',toPhone:'+5565999999999'});await h.invoke();assert.equal(h.calls.meta.length,0,'canary externo não pode chamar Meta');assert.equal(h.calls.finish.at(-1)?.p_status,'skipped');assert.equal(h.calls.finish.at(-1)?.p_last_error,'canary_recipient_not_allowed');

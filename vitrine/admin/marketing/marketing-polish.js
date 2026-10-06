@@ -1,6 +1,6 @@
 const ROOT_SELECTOR='#content';
-const PRIMARY_MARKETING_VIEWS=['overview','templates','campaigns','audiences'];
-const PRIMARY_MARKETING_LABELS={overview:'Visão geral',templates:'Templates',campaigns:'Campanhas',audiences:'Públicos'};
+const PRIMARY_MARKETING_VIEWS=['overview','strategy','templates','campaigns','audiences'];
+const PRIMARY_MARKETING_LABELS={overview:'Visão geral',strategy:'Estratégia',templates:'Templates',campaigns:'Campanhas',audiences:'Públicos'};
 const OVERVIEW_CARDS=[
   {key:'campaigns',label:'Campanhas',description:'Crie, agende e acompanhe campanhas do WhatsApp.'},
   {key:'templates',label:'Templates',description:'Gerencie os modelos aprovados usados nos envios.'},
@@ -20,7 +20,7 @@ function marketingRoot(){
   const root=document.querySelector(ROOT_SELECTOR);
   if(!root)return null;
   const title=text(root.querySelector('.page-head h1'));
-  const hasMarketingUi=Boolean(root.querySelector('[data-marketing-subnav],.marketing-template-center,.marketing-audience-center,.marketing-campaign-center,.marketing-grid'));
+  const hasMarketingUi=Boolean(root.querySelector('[data-marketing-subnav],.marketing-strategy-center,.marketing-template-center,.marketing-audience-center,.marketing-campaign-center,.marketing-grid'));
   return title==='Marketing'||hasMarketingUi?root:null;
 }
 
@@ -67,9 +67,23 @@ function ensureAdminConsentsAction(root,nav){
   }
 }
 
+function ensurePrimaryViewButtons(root,nav){
+  const gate=nav.querySelector('.marketing-campaign-gate');
+  for(const view of PRIMARY_MARKETING_VIEWS){
+    if(nav.querySelector(`[data-marketing-view="${view}"]`))continue;
+    const button=document.createElement('button');
+    button.type='button';
+    button.dataset.marketingView=view;
+    button.textContent=PRIMARY_MARKETING_LABELS[view];
+    button.addEventListener('click',()=>openOverviewView(root,view));
+    nav.insertBefore(button,gate||null);
+  }
+}
+
 function polishNav(root){
   const nav=root.querySelector('[data-marketing-subnav]');
   if(!nav)return;
+  ensurePrimaryViewButtons(root,nav);
   nav.querySelectorAll('[data-marketing-view]').forEach(button=>{
     const view=String(button.dataset.marketingView||'');
     if(!PRIMARY_MARKETING_VIEWS.includes(view)){button.remove();return}
@@ -106,6 +120,10 @@ function removeDuplicateGateBadges(root){
 async function openOverviewView(root,view,{create=false}={}){
   try{
     if(view==='overview')return document.querySelector('[data-tab="marketing"]')?.click();
+    if(view==='strategy'){
+      const module=window.DAMarketingStrategyCenter||await import('/vitrine/admin/marketing/strategy-center.js?v=marketing-strategy-v1');
+      return module?.mountStrategyView?.(root);
+    }
     if(view==='campaigns'){
       const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-v1');
       return entry?.openCampaigns?.();
