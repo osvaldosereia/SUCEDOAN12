@@ -57,5 +57,8 @@ export const customerProfileExtract=conversationId=>customerProfileApi('extract'
 export const customerProfileList=conversationId=>customerProfileApi('list',{conversation_id:conversationId});
 export const customerProfileReview=(suggestionId,outcome)=>customerProfileApi('review',{suggestion_id:suggestionId,outcome});
 export const customerProfileMetrics=()=>customerProfileApi('metrics');
+export const customerConfirmationCreate=(conversationId,suggestionIds)=>customerRpc('ops2_ana_customer_confirmation_create_v1',{p_conversation_id:conversationId,p_suggestion_ids:suggestionIds});
+export const customerConfirmationPending=conversationId=>customerRpc('ops2_ana_customer_confirmation_pending_v1',{p_conversation_id:conversationId});
+export const customerConfirmationBind=(requestId,messageId)=>customerRpc('ops2_ana_customer_confirmation_bind_outbound_v1',{p_request_id:requestId,p_message_id:messageId});
 export const marketingConsentState=conversationId=>customerRpc('ops2_admin_attendance_weekly_consent_state_browser_v1',{p_conversation_id:conversationId});
 export const marketingConsentRequest=conversationId=>weeklyConsentApi(conversationId);
