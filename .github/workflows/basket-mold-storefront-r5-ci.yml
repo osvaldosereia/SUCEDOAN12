@@ -1,0 +1,30 @@
+name: Basket mold storefront R5
+on:
+  pull_request:
+    paths:
+      - 'supabase/sql/20261006_basket_mold_storefront_checkout_v1.sql'
+      - 'supabase/migrations/20261006*_basket_mold_storefront_checkout_v1.sql'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'scripts/test-basket-mold-storefront-r5.mjs'
+      - '.github/workflows/basket-mold-storefront-r5-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/sql/20261006_basket_mold_storefront_checkout_v1.sql'
+      - 'supabase/migrations/20261006*_basket_mold_storefront_checkout_v1.sql'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'scripts/test-basket-mold-storefront-r5.mjs'
+      - '.github/workflows/basket-mold-storefront-r5-ci.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-basket-mold-storefront-r5.mjs
