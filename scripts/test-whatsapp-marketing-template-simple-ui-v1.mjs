@@ -7,7 +7,7 @@ const picker=fs.readFileSync(pickerPath,'utf8');
 const polish=fs.readFileSync('vitrine/admin/marketing/marketing-polish.js','utf8');
 
 for(const label of ['Modelo padrão','Carrossel','Catálogo / Produtos','Autenticação'])assert.ok(picker.includes(label),`picker deve oferecer ${label}`);
-for(const fn of ['openTemplateTypePicker','openSimpleTemplateEditor','submitSimpleTemplate','enhanceTemplateCenter','updateWhatsAppPreview','insertTemplateVariable'])assert.match(picker,new RegExp(`function ${fn}\\(`),`${fn} deve existir`);
+for(const fn of ['openTemplateTypePicker','openSimpleTemplateEditor','openExistingTemplateEditor','openLiveTemplateDetail','submitSimpleTemplate','enhanceTemplateCenter','updateWhatsAppPreview','insertTemplateVariable'])assert.match(picker,new RegExp(`function ${fn}\\(`),`${fn} deve existir`);
 
 assert.match(picker,/admin-whatsapp-templates-v1/,'criação deve usar API Admin de templates');
 assert.match(picker,/attendanceAuthorizedFetch/,'API Admin deve usar autenticação existente');
@@ -25,6 +25,11 @@ assert.match(picker,/data-template-preview-body/,'prévia deve atualizar o corpo
 assert.match(picker,/input[\s\S]{0,120}data-template-media-file|data-template-media-file[\s\S]{0,120}input/,'cabeçalho de mídia deve aceitar arquivo');
 assert.match(picker,/upload_media/,'mídia de exemplo deve ser enviada pelo backend');
 assert.match(picker,/data-template-simple-submit/,'editor deve ter ação principal clara');
+assert.match(picker,/action:'detail'/,'detalhes e edição devem consultar o endpoint live antes de abrir');
+assert.match(picker,/Histórico Meta/,'detalhe deve mostrar linha do tempo de aprovação/rejeição');
+assert.match(picker,/Atualizado agora pela Meta/,'detalhe deve deixar claro quando o estado foi confirmado ao vivo');
+assert.match(picker,/stopImmediatePropagation\(\)/,'enhancer deve substituir os handlers legados de Ver/Editar sem dupla abertura');
+assert.match(picker,/adminPost\('edit'/,'editor visual deve salvar alterações pela API Admin');
 assert.match(polish,/template-type-picker\.js/,'shell deve carregar enhancer simples de Templates');
 
 console.log('marketing template rich simple UI contract: ok');
