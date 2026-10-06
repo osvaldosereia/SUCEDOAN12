@@ -130,6 +130,7 @@ async function moldHomeCards(){
   cards.sort((a,b)=>a.category_sort_order-b.category_sort_order||a.model_name.localeCompare(b.model_name,'pt-BR')||a.composition_number-b.composition_number);return cards;
 }
 async function moldDetail(basketId:string,compositionNumber:number,selections:any[]|null=null){
+  const gate=await db.rpc("basket_mold_cutover_ready_v1",{p_basket_id:basketId});if(gate.error)throw gate.error;if(gate.data!==true)return null;
   const [mq,bq,pq]=await Promise.all([
     db.from("basket_molds").select("id,basket_id,hidden_adjustment,public_composition_count").eq("basket_id",basketId).maybeSingle(),
     db.from("basket_templates").select("id,name,image_url,is_active").eq("id",basketId).maybeSingle(),
