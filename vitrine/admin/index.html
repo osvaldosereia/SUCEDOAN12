@@ -1494,7 +1494,7 @@
     if(tab==='customers')renderCustomers();
     if(tab==='finance')renderFinance();
     if(tab==='bling')renderBling();
-    if(tab==='orders')renderOrders();
+    if(tab==='orders')return renderOrders();
     if(tab==='expedition')renderExpedition();
     if(tab==='driver')renderDriver();
     if(tab==='closure')renderClosure();
@@ -6723,6 +6723,8 @@
     return '';
   }
   function orderV3Tags(o){const m=orderV3Milestones(o),tags=[],f=state.fiscalByOrder[o?.id]||(state.currentOrder?.order?.id===o?.id?state.currentOrderFiscal:null);if(m.confirmed)tags.push('<span class="order-v3-tag">CONFIRMADO</span>');if(m.separated)tags.push('<span class="order-v3-tag">SEPARADO</span>');else if(o?.status==='ready'&&f?.readiness?.separation_completed===false)tags.push('<span class="order-v3-tag warn">SEPARAÇÃO PENDENTE</span>');const fiscalTag=orderFiscalTagV4(o);if(fiscalTag)tags.push(fiscalTag);if(m.delivered)tags.push('<span class="order-v3-tag ok">ENTREGUE</span>');if(m.cancelled)tags.push('<span class="order-v3-tag cancelled">CANCELADO</span>');if(!tags.length)tags.push('<span class="order-v3-tag neutral">RECEBIDO</span>');if(orderCustomerDataPending(o))tags.push('<span class="order-v3-tag neutral" title="'+esc(orderCustomerDataPendingReasons(o).join(' · '))+'">AGUARDANDO DADOS DO CLIENTE</span>');return tags.join('')}
+  function orderSeparationUrlFor(id){const url=new URL('/vitrine/admin/',location.origin);url.searchParams.set('separacao',String(id||''));return url.toString()}
+  async function copyOrderSeparationLink(id,btn){const url=orderSeparationUrlFor(id);try{await navigator.clipboard.writeText(url)}catch{const input=document.createElement('textarea');input.value=url;input.style.position='fixed';input.style.opacity='0';document.body.appendChild(input);input.select();document.execCommand('copy');input.remove()}toast('Link da vitrine de separação copiado');if(btn){btn.textContent='LINK COPIADO';setTimeout(()=>{if(document.contains(btn))btn.textContent='COPIAR LINK SEPARAÇÃO'},1800)}}
   function orderRow(o){
     const m=orderV3Milestones(o),disabled=m.cancelled?'disabled':'',f=state.fiscalByOrder[o.id]||null;let controls='';
     if(orderCustomerDataPending(o)){
@@ -6741,7 +6743,7 @@
         controls+='<button class="order-v3-control" type="button" data-v3-delivery-fail="'+esc(o.id)+'">NÃO ENTREGUE</button>';
       }
     }
-    return '<article class="order-v3-card"><div class="order-v3-head"><div><small>Código do pedido</small><strong>#'+esc(orderDisplayCode(o))+'</strong></div><div><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div><small>Cliente</small><strong>'+esc(o.customer_name||'Sem cliente')+'</strong></div><div><small>Total</small><strong>'+money(o.total_cents||0)+'</strong></div></div><div class="order-v3-tags">'+orderV3Tags(o)+'</div>'+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions"><button class="order-v3-action" type="button" data-v3-separation="'+esc(o.id)+'" '+disabled+'>'+(m.separated?'✓ SEPARAÇÃO CONCLUÍDA':o.status==='ready'?'CONTINUAR SEPARAÇÃO':'ABRIR VITRINE SEPARAÇÃO')+'</button><button class="order-v3-action primary" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
+    return '<article class="order-v3-card"><div class="order-v3-head"><div><small>Código do pedido</small><strong>#'+esc(orderDisplayCode(o))+'</strong></div><div><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div><small>Cliente</small><strong>'+esc(o.customer_name||'Sem cliente')+'</strong></div><div><small>Total</small><strong>'+money(o.total_cents||0)+'</strong></div></div><div class="order-v3-tags">'+orderV3Tags(o)+'</div>'+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions"><button class="order-v3-action" type="button" data-v3-separation="'+esc(o.id)+'" '+disabled+'>'+(m.separated?'✓ SEPARAÇÃO CONCLUÍDA':o.status==='ready'?'CONTINUAR SEPARAÇÃO':'ABRIR VITRINE SEPARAÇÃO')+'</button>'+(m.confirmed&&!m.cancelled?'<button class="order-v3-action" type="button" data-copy-separation="'+esc(o.id)+'">COPIAR LINK SEPARAÇÃO</button>':'')+'<button class="order-v3-action primary" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
   }
   async function renderOrders(){const content=$('#content');content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Todos os pedidos, do mais recente para o mais antigo.</p></div></div><div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery||'')+'"></div><div id="orderRows" class="orders-v3-list"><div class="loading">Carregando pedidos…</div></div>';$('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;paintOrderRows()};await loadOrders()}
   async function loadOrders(){
@@ -6751,7 +6753,7 @@
       if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);paintOrderRows()}
     }catch(e){const host=$('#orderRows');if(host)host.innerHTML='<div class="empty">Não consegui carregar os pedidos.</div>'}
   }
-  function paintOrderRows(){const host=$('#orderRows');if(!host)return;const rows=state.orders.filter(o=>orderV3SearchMatch(o,state.orderQuery)).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">Nenhum pedido encontrado.</div>';host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));host.querySelectorAll('[data-v3-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.v3Confirm,b));host.querySelectorAll('[data-v3-separate],[data-v3-separation]').forEach(b=>b.onclick=()=>openOrderSeparationSheet(b.dataset.v3Separate||b.dataset.v3Separation));host.querySelectorAll('[data-v3-dispatch]').forEach(b=>b.onclick=()=>startOrderDispatchV4(b.dataset.v3Dispatch,b));host.querySelectorAll('[data-v3-deliver]').forEach(b=>b.onclick=()=>openOrderDeliveryConfirm(b.dataset.v3Deliver));host.querySelectorAll('[data-v3-delivery-fail]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.v3DeliveryFail,false))}
+  function paintOrderRows(){const host=$('#orderRows');if(!host)return;const rows=state.orders.filter(o=>orderV3SearchMatch(o,state.orderQuery)).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">Nenhum pedido encontrado.</div>';host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));host.querySelectorAll('[data-copy-separation]').forEach(b=>b.onclick=()=>copyOrderSeparationLink(b.dataset.copySeparation,b));host.querySelectorAll('[data-v3-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.v3Confirm,b));host.querySelectorAll('[data-v3-separate],[data-v3-separation]').forEach(b=>b.onclick=()=>openOrderSeparationSheet(b.dataset.v3Separate||b.dataset.v3Separation));host.querySelectorAll('[data-v3-dispatch]').forEach(b=>b.onclick=()=>startOrderDispatchV4(b.dataset.v3Dispatch,b));host.querySelectorAll('[data-v3-deliver]').forEach(b=>b.onclick=()=>openOrderDeliveryConfirm(b.dataset.v3Deliver));host.querySelectorAll('[data-v3-delivery-fail]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.v3DeliveryFail,false))}
   async function startOrderDispatchV4(id,btn){
     const current=state.orders.find(o=>String(o.id)===String(id));
     if(!current||current.status!=='ready'){toast('Este pedido não está pronto para saída');return}
@@ -7631,7 +7633,7 @@
     errorMessage
   };
 
-  function start(){setTab('today')}
+  async function start(){const params=new URLSearchParams(location.search),sharedSeparationId=params.get('separacao')||'',uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;if(!uuid.test(sharedSeparationId)){setTab('today');return}await setTab('orders');await openOrderSeparationSheet(sharedSeparationId);history.replaceState({},'',location.pathname+location.hash)}
   start();
 })();
 </script>
