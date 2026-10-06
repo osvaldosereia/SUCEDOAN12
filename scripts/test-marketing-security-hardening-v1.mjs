@@ -28,4 +28,12 @@ for (const signature of [
   assert.ok(sql.includes('grant execute on function public.'+signature+' to service_role'),signature+' must remain callable by trusted server code');
 }
 
+for (const signature of [
+  'marketing_repurchase_order_trigger_v1()',
+  'marketing_repurchase_customer_trigger_v1()',
+  'marketing_capture_optout_v1()',
+]) {
+  assert.ok(sql.includes('revoke all on function public.'+signature+' from service_role'),signature+' must only run as a database trigger');
+}
+
 console.log('marketing security hardening contract: OK');
