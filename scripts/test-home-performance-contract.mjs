@@ -9,8 +9,10 @@ assert.ok(start.indexOf('renderInitialShell()')<start.indexOf('resolveEntryWhats
 assert.match(start,/const identityPhonePromise=resolveEntryWhatsappPhone\(\)/,'identity lookup should run concurrently');
 assert.match(start,/api\('home_priority'\)/,'homepage should request the first basket subgroup separately');
 assert.match(start,/homePartial/,'homepage should track whether its first basket group is still loading');
+assert.match(start,/await api\('home_priority'\)[\s\S]*await api\('home'\)/,'homepage should fetch the remaining baskets after the priority group');
 const renderHome=page.slice(page.indexOf('function renderHome(){'),page.indexOf('function paintOffersPage('));
 assert.match(renderHome,/homePartial[\s\S]*Grande/i,'partial homepage should limit its first render to the Grande subgroup');
+assert.match(renderHome,/aria-busy="true"[\s\S]*homeRemainingBaskets/,'homepage should show a lightweight loading state for the remaining groups');
 
 const service=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 const home=service.slice(service.indexOf('async function home('),service.indexOf('async function sellableMap('));
