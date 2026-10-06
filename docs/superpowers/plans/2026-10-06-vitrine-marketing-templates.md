@@ -170,7 +170,7 @@ Commit: `feat: complete carousel template editor`
 - Modify: `vitrine/admin/marketing/template-center.css`
 - Modify: `supabase/functions/whatsapp-meta-webhook-v1/index.ts` only if status events are not already reflected in the cache
 - Test: `scripts/test-whatsapp-marketing-template-admin-v1.mjs`
-- Test: `scripts/test-admin-whatsapp-meta-template-plpgsql-v1.mjs`
+- Test: `scripts/test-attendance-meta-template-plpgsql-v1.mjs`
 
 **Interfaces:**
 - Consumes: `meta_template_id`, existing edit/delete/sync contracts, and `whatsapp_template_events_v1`.
