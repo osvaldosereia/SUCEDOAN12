@@ -8,7 +8,7 @@ const sectionPath='vitrine/admin/basket-admin-section.js';
 assert.equal(fs.existsSync(sectionPath),true,'basket admin section controller must exist');
 const section=fs.readFileSync(sectionPath,'utf8');
 
-const mainClose=admin.indexOf("  function start(){setTab('today')}");
+const mainClose=admin.search(/^  (?:async )?function start\(\)/m);
 const bridgePos=admin.indexOf('window.DonaAntoniaAdminBridge=');
 assert.ok(mainClose>0,'main admin runtime boundary must be identifiable');
 assert.ok(bridgePos>0&&bridgePos<mainClose,'admin bridge must be created inside the main admin runtime before start()');
