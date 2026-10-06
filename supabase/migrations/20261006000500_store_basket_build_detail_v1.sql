@@ -9,7 +9,7 @@ returns jsonb language sql security definer set search_path='' as $function$
     'built_at',l.built_at,'built_by',l.built_by,
     'items',coalesce((
       select jsonb_agg(jsonb_build_object(
-        'product_id',i.product_id,'name',p.name,'image_url',p.url_imagem,
+        'product_id',i.product_id,'name',p.name,'image_url',p.image_url,
         'quantity_per_basket',i.quantity_per_basket,'quantity_for_lot',i.quantity_per_basket*l.quantity_built
       ) order by i.position_order,p.name)
       from public.basket_stock_lot_items i join public.products p on p.id=i.product_id
