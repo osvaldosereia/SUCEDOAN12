@@ -210,6 +210,20 @@
     @media(min-width:760px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}}
     @media(min-width:1080px){.basket-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}}
     @media(max-width:480px){.basket-card-photo{margin:8px 8px 0}.basket-card-info{gap:7px;padding:10px}.basket-card .basket-card-title{font-size:14px}.basket-card .price{font-size:16px}.basket-card .add{min-height:40px;padding:8px 9px;font-size:13px}}
+
+    /* Final basket-card layout: isolated from legacy grid rules above. */
+    .basket-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:stretch;gap:12px}
+    .basket-card{display:flex!important;flex-direction:column!important;min-width:0;height:100%;overflow:hidden}
+    .basket-card-photo{display:grid;place-items:center;width:auto;aspect-ratio:1/1!important;margin:8px 8px 0!important;overflow:hidden;border-radius:12px;background:#f5f7f5}
+    .basket-card-photo img{display:block;width:100%;height:100%;padding:7px;object-fit:contain}
+    .basket-card .basket-card-info{display:flex!important;flex:1 1 auto;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start;gap:5px;min-width:0;padding:9px 10px 10px!important}
+    .basket-card .basket-category-tag{display:none!important}
+    .basket-card .basket-card-title{display:block!important;min-width:0;min-height:0!important;margin:0!important;padding:0!important;font-size:13px!important;font-weight:700;line-height:1.28!important;white-space:normal;overflow:visible;overflow-wrap:break-word!important;word-break:normal!important;hyphens:none}
+    .basket-card .price{display:block!important;align-self:flex-start!important;min-width:0;margin:0!important;font-size:15px!important;font-weight:850;line-height:1.2!important;white-space:nowrap}
+    .basket-card .add{display:block!important;align-self:stretch!important;width:100%!important;min-height:36px!important;height:auto;margin:2px 0 0!important;padding:7px 8px!important;border-radius:9px;font-size:12px!important;line-height:1.2;white-space:nowrap}
+    @media(min-width:760px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px}}
+    @media(min-width:1080px){.basket-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px}}
+    @media(max-width:480px){.basket-card-info{gap:5px}.basket-card .basket-card-title{font-size:12.5px!important}.basket-card .price{font-size:14px!important}.basket-card .add{min-height:34px!important;font-size:11.5px!important}}
 </style>
 </head>
 <body>
@@ -254,7 +268,7 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <script src="/vitrine/basket-carousel.js?v=20261006-basket-card-v1"></script>
+  <script src="/vitrine/basket-carousel.js?v=20261006-basket-card-v2"></script>
   <script>
   (() => {
     'use strict';
