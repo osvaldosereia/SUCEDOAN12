@@ -30,18 +30,22 @@ const moldUi = `    function moldDraftTotalCents(d){if(!d)return 0;const hidden=
 
 const moldQuote = `    async function quoteMoldBasket(){const d=state.basketDraft;if(!d?.basket?.mold_mode)return false;const requestedQty=new Map((d.items||[]).map(x=>[String(x.position_id),Math.max(0,Number(x.quantity||0))])),actionTotal=$('#basketActionTotal');if(actionTotal)actionTotal.textContent='Calculando…';try{const data=await api('basket_mold_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:d.basket.id,composition_number:d.basket.composition_number,items:d.items.map(x=>({position_id:x.position_id,product_id:x.product_id}))})});d.basket={...d.basket,...(data.basket||{})};d.items=(data.items||d.items).map(x=>{const wanted=requestedQty.has(String(x.position_id))?Number(requestedQty.get(String(x.position_id))):Number(x.quantity||0),max=Math.max(0,Math.floor(Number(x.stock_quantity||0)));return {...x,base_quantity:Number(x.base_quantity??x.quantity??0),quantity:Math.max(0,Math.min(max,wanted))}});d.total_cents=moldDraftTotalCents(d);if($('#basketActionTotal'))$('#basketActionTotal').textContent=money(d.total_cents);return true}catch(e){toast(e?.message==='basket_mold_option_invalid'?'Essa variação não está disponível nesta cesta.':'O estoque dessa variação mudou. Escolha outra opção.');return false}}\n`;
 
+const emptyMoldAnchor = `function addMoldBasketDraft(){const d=state.basketDraft;if(!d?.basket?.mold_mode)return;const item={`;
+const emptyMoldGuard = `function addMoldBasketDraft(){const d=state.basketDraft;if(!d?.basket?.mold_mode)return;if(!d.items.some(x=>Number(x.quantity||0)>0)){toast('Esta cesta ficou sem produtos.');return}const item={`;
+
 for (const file of targets) {
   let html = readFileSync(file, 'utf8');
-  if (html.includes('data-mold-remove=') && html.includes('data-b-remove=')) {
-    console.log(`already patched ${file}`);
-    continue;
+  const alreadyPatched = html.includes('data-mold-remove=') && html.includes('data-b-remove=');
+  if (!alreadyPatched) {
+    html = replaceOnce(html, oldCss, newCss, 'css', file);
+    html = replaceOnce(html, oldRow, newRow, 'regular row', file);
+    html = replaceOnce(html, oldBind, newBind, 'regular binding', file);
+    html = replaceOnce(html, oldFn, newFn, 'regular remove function', file);
+    html = replaceRange(html, '    function paintMoldBasketSheet(){', '    async function changeMoldOption', moldUi, 'mold UI', file);
+    html = replaceRange(html, '    async function quoteMoldBasket(){', '    function addMoldBasketDraft(){', moldQuote, 'mold quote', file);
   }
-  html = replaceOnce(html, oldCss, newCss, 'css', file);
-  html = replaceOnce(html, oldRow, newRow, 'regular row', file);
-  html = replaceOnce(html, oldBind, newBind, 'regular binding', file);
-  html = replaceOnce(html, oldFn, newFn, 'regular remove function', file);
-  html = replaceRange(html, '    function paintMoldBasketSheet(){', '    async function changeMoldOption', moldUi, 'mold UI', file);
-  html = replaceRange(html, '    async function quoteMoldBasket(){', '    function addMoldBasketDraft(){', moldQuote, 'mold quote', file);
+  if (html.includes(emptyMoldAnchor)) html = html.replace(emptyMoldAnchor, emptyMoldGuard);
+  else if (!html.includes(emptyMoldGuard)) throw new Error(`${file}: missing mold empty guard anchor`);
   writeFileSync(file, html);
   console.log(`patched ${file}`);
 }
