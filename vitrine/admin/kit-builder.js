@@ -3,14 +3,15 @@
 
   const KIT_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-kit-builder-v1';
   const state={
-    kits:[],chips:[],products:[],mostUsed:[],draft:null,
-    stockAuthority:'legacy_shadow',savingProductIds:new Set(),
+    kits:[],chips:[],products:[],basketProducts:[],mostUsed:[],draft:null,
+    productMode:'baskets',stockAuthority:'legacy_shadow',savingProductIds:new Set(),
     host:null,query:'',nextOffset:null,loading:false,searchTimer:null,chipManagerOpen:false
   };
 
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c));
   const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
   const qty=v=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:3}).format(Number(v||0));
+  const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 
   function bridge(){return window.DonaAntoniaAdminBridge||{}}
   function toast(message){const b=bridge();if(typeof b.toast==='function')b.toast(message);else console.warn(message)}
@@ -58,12 +59,17 @@
     const authority=state.products.find(p=>p?.stock_authority)?.stock_authority;
     if(authority)state.stockAuthority=authority;
   }
+  function setBasketProducts(rows){
+    state.basketProducts=Array.isArray(rows)?rows:[];
+    const authority=state.basketProducts.find(p=>p?.stock_authority)?.stock_authority;
+    if(authority)state.stockAuthority=authority;
+  }
   function setMostUsed(rows){state.mostUsed=Array.isArray(rows)?rows:[]}
   function setDraft(value){state.draft=value||emptyDraft()}
 
   function replaceProduct(next){
     if(!next?.id)return;
-    for(const list of [state.products,state.mostUsed]){
+    for(const list of [state.products,state.basketProducts,state.mostUsed]){
       const index=list.findIndex(p=>String(p.id)===String(next.id));
       if(index>=0)list[index]={...list[index],...next};
     }
@@ -107,7 +113,7 @@
         latest=quickResult?.product||latest;
       }
       const normalized={
-        ...latest,id:productId,
+        ...product,...latest,id:productId,
         cost_price:costChanged?nextCost:Number(latest?.cost_price??product?.cost_price??0),
         sale_price:priceChanged?nextPrice:Number(latest?.sale_price??product?.sale_price??0),
         physical_stock:stockChanged?nextStock:Number(latest?.physical_stock??product?.physical_stock??0),
@@ -136,17 +142,25 @@
       .kb-col{background:#fff;border:1px solid #e1e7e3;border-radius:16px;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}.kb-col-head{padding:14px;border-bottom:1px solid #e8ece9;display:flex;align-items:center;gap:8px;flex:0 0 auto;background:#fff}.kb-col-head>div{min-width:0;flex:1}.kb-col-head h3{margin:0;font-size:16px;line-height:1.2}.kb-col-head small{display:block;color:#68736c;font-size:11px;margin-top:3px}.kb-body{padding:12px;min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}.kb-btn{min-height:38px;border:1px solid #d9e0db;background:#fff;border-radius:9px;padding:0 10px;font-weight:800;cursor:pointer}.kb-btn:hover{background:#f7faf8}.kb-btn.primary{background:#176b43;color:#fff;border-color:#176b43}.kb-btn.primary:hover{background:#125b38}.kb-btn.danger{color:#9d2235}.kb-btn.compact{min-height:32px;padding:0 8px;font-size:11px}.kb-btn:disabled{opacity:.55;cursor:not-allowed}
       .kb-nav{display:grid;gap:7px}.kb-nav-card{border:1px solid #dfe5e1;border-radius:11px;padding:10px;background:#fff;cursor:pointer;transition:.12s ease}.kb-nav-card:hover{border-color:#9ebbaa;background:#f8fbf9}.kb-nav-card.active{border:2px solid #176b43;background:#f2f8f4;padding:9px}.kb-nav-card h4{margin:0 0 4px;font-size:13px;line-height:1.25}.kb-nav-meta{display:flex;gap:7px;flex-wrap:wrap;color:#68736c;font-size:10px}.kb-nav-actions{display:flex;gap:5px;margin-top:8px}.kb-nav-actions .kb-btn{flex:1;min-width:0}.kb-nav-empty{padding:18px 10px;text-align:center;color:#68736c;font-size:12px}.kb-new-hint{margin:0 0 10px;padding:9px;border-radius:10px;background:#f5f8f6;color:#5f6c64;font-size:11px;line-height:1.35}
       .kb-editor-banner{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:10px 11px;border-radius:10px;background:#f2f8f4;border:1px solid #dbe9e0}.kb-editor-banner strong{font-size:12px}.kb-editor-banner span{font-size:11px;color:#5e6b63}.kb-draft-fields{display:grid;gap:8px}.kb-draft-fields input,.kb-draft-fields select,.kb-draft-fields textarea{width:100%;border:1px solid #dce3de;border-radius:9px;padding:8px 10px;background:#fff}.kb-draft-fields input,.kb-draft-fields select{min-height:40px}.kb-draft-fields label span{display:block;font-size:10px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-items{display:grid;gap:7px;margin-top:10px}.kb-item{display:grid;grid-template-columns:minmax(0,1fr) 78px 34px;gap:6px;align-items:center;border:1px solid #e2e7e4;border-radius:10px;padding:8px}.kb-item strong{font-size:12px}.kb-item small{display:block;color:#6d7770;font-size:10px;margin-top:2px}.kb-item input{width:100%;min-height:36px;border:1px solid #dce3de;border-radius:8px;padding:6px}.kb-summary{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}.kb-summary div{background:#f2f6f3;border-radius:9px;padding:9px}.kb-summary small{display:block;color:#66716a;font-size:10px}.kb-summary strong{font-size:14px}.kb-draft-actions{display:flex;gap:7px}.kb-draft-actions button{flex:1}
-      .kb-search{display:flex;gap:7px}.kb-search input{flex:1;min-width:0;min-height:42px;border:1px solid #dce3de;border-radius:10px;padding:9px 11px}.kb-chip-wrap{display:flex;align-items:center;gap:6px;margin:9px 0;min-width:0}.kb-chips{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;flex:1;min-width:0;padding:2px 1px 5px;scrollbar-width:thin}.kb-chip{flex:0 0 auto;border:1px solid #dfe5e1;background:#f7f9f7;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800;white-space:nowrap}.kb-chip-manage{flex:0 0 auto}.kb-chip-manager{border:1px solid #dfe5e1;background:#fafcfb;border-radius:12px;padding:9px;margin:8px 0}.kb-chip-manager h4{margin:0 0 7px;font-size:12px}.kb-chip-row{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(120px,1fr) auto;gap:6px;align-items:end;padding:7px 0;border-top:1px solid #edf0ee}.kb-chip-row:first-of-type{border-top:0}.kb-chip-row label span{display:block;font-size:9px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-chip-row input{width:100%;min-height:34px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-chip-actions{display:flex;gap:4px;flex-wrap:wrap}.kb-section-title{display:flex;align-items:center;gap:7px;margin:12px 0 7px;font-size:12px;font-weight:900}.kb-products{display:grid;gap:8px}.kb-product{border:1px solid #e0e6e2;border-radius:12px;padding:9px;display:grid;grid-template-columns:72px minmax(0,1fr);gap:9px}.kb-product img{width:72px;height:72px;object-fit:contain;background:#fafafa;border-radius:9px}.kb-product h4{margin:0 0 2px;font-size:12px;line-height:1.25}.kb-product .meta{font-size:10px;color:#6c766f;overflow-wrap:anywhere}.kb-stock-grid,.kb-price-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}.kb-price-grid{grid-template-columns:1fr 1fr}.kb-metric{background:#f5f7f5;border-radius:7px;padding:5px;min-width:0}.kb-metric small{display:block;font-size:9px;color:#6d7770}.kb-metric strong{font-size:11px}.kb-product-actions{display:flex;gap:5px;margin-top:7px}.kb-product-actions button{flex:1}.kb-inline{grid-column:1/-1;background:#f7faf8;border-radius:9px;padding:8px;display:none}.kb-product.editing .kb-inline{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px}.kb-inline label span{display:block;font-size:9px;color:#66716a;font-weight:800}.kb-inline input{width:100%;min-height:35px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-empty{padding:18px;text-align:center;color:#68736c;font-size:12px}.kb-more{width:100%;margin-top:8px}.kb-authority{font-size:10px;color:#66716a;margin-top:7px}.kb-loading{opacity:.65;pointer-events:none}
+      .kb-product-modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px}.kb-product-mode{border:1px solid #dfe5e1;background:#f7f9f7;border-radius:10px;min-height:38px;padding:0 9px;font-weight:900;font-size:11px;cursor:pointer}.kb-product-mode.active{background:#176b43;color:#fff;border-color:#176b43}.kb-search{display:flex;gap:7px}.kb-search input{flex:1;min-width:0;min-height:42px;border:1px solid #dce3de;border-radius:10px;padding:9px 11px}.kb-chip-wrap{display:flex;align-items:center;gap:6px;margin:9px 0;min-width:0}.kb-chips{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;flex:1;min-width:0;padding:2px 1px 5px;scrollbar-width:thin}.kb-chip{flex:0 0 auto;border:1px solid #dfe5e1;background:#f7f9f7;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800;white-space:nowrap}.kb-chip-manage{flex:0 0 auto}.kb-chip-manager{border:1px solid #dfe5e1;background:#fafcfb;border-radius:12px;padding:9px;margin:8px 0}.kb-chip-manager h4{margin:0 0 7px;font-size:12px}.kb-chip-row{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(120px,1fr) auto;gap:6px;align-items:end;padding:7px 0;border-top:1px solid #edf0ee}.kb-chip-row:first-of-type{border-top:0}.kb-chip-row label span{display:block;font-size:9px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-chip-row input{width:100%;min-height:34px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-chip-actions{display:flex;gap:4px;flex-wrap:wrap}.kb-section-title{display:flex;align-items:center;gap:7px;margin:12px 0 7px;font-size:12px;font-weight:900}.kb-products{display:grid;gap:8px}.kb-product{border:1px solid #e0e6e2;border-radius:12px;padding:9px;display:grid;grid-template-columns:72px minmax(0,1fr);gap:9px}.kb-product img{width:72px;height:72px;object-fit:contain;background:#fafafa;border-radius:9px}.kb-product h4{margin:0 0 2px;font-size:12px;line-height:1.25}.kb-product .meta{font-size:10px;color:#6c766f;overflow-wrap:anywhere}.kb-usage{margin-top:4px;font-size:9px;color:#176b43;font-weight:800;line-height:1.3}.kb-stock-grid,.kb-price-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}.kb-price-grid{grid-template-columns:1fr 1fr}.kb-metric{background:#f5f7f5;border-radius:7px;padding:5px;min-width:0}.kb-metric small{display:block;font-size:9px;color:#6d7770}.kb-metric strong{font-size:11px}.kb-product-actions{display:flex;gap:5px;margin-top:7px}.kb-product-actions button{flex:1}.kb-inline{grid-column:1/-1;background:#f7faf8;border-radius:9px;padding:8px;display:none}.kb-product.editing .kb-inline{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px}.kb-inline label span{display:block;font-size:9px;color:#66716a;font-weight:800}.kb-inline input{width:100%;min-height:35px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-empty{padding:18px;text-align:center;color:#68736c;font-size:12px}.kb-more{width:100%;margin-top:8px}.kb-authority{font-size:10px;color:#66716a;margin-top:7px}.kb-loading{opacity:.65;pointer-events:none}
       @media(max-width:1100px){.kit-builder-workspace{grid-template-columns:minmax(220px,.7fr) minmax(330px,1fr);max-height:none}.kb-col[data-kit-column="products"]{grid-column:1/-1;min-height:520px;max-height:70vh}}
       @media(max-width:720px){.kit-builder-workspace{grid-template-columns:minmax(0,1fr);max-height:none;min-height:0}.kb-col[data-kit-column="products"]{grid-column:auto;min-height:0;max-height:none}.kb-col{min-height:0}.kb-body{overflow:visible}.kb-product.editing .kb-inline{grid-template-columns:1fr 1fr}.kb-inline .kb-btn{grid-column:1/-1}.kb-chip-row{grid-template-columns:1fr}.kb-chip-actions{justify-content:flex-start}.kb-item{grid-template-columns:minmax(0,1fr) 70px 34px}}
     `;document.head.appendChild(style);
+  }
+
+  function productUsageHtml(p){
+    const n=Number(p?.basket_usage_count||0);
+    if(!n)return '';
+    const names=Array.isArray(p.basket_names)?p.basket_names.filter(Boolean):[];
+    const visible=names.slice(0,3).join(', ')+(names.length>3?' +'+(names.length-3):'');
+    return '<div class="kb-usage" title="'+esc(names.join(', '))+'">Usado em '+esc(n)+' cesta'+(n===1?'':'s')+(visible?': '+esc(visible):'')+'</div>';
   }
 
   function productCardHtml(p){
     const authority=String(p.stock_authority||state.stockAuthority||'');
     return '<article class="kb-product" data-kit-product="'+esc(p.id)+'">'+
       '<img src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt="">'+
-      '<div><h4>'+esc(p.name||'Produto')+'</h4><div class="meta">'+esc([p.sku,p.gtin,p.packaging].filter(Boolean).join(' · '))+'</div>'+
+      '<div><h4>'+esc(p.name||'Produto')+'</h4><div class="meta">'+esc([p.sku,p.gtin,p.packaging].filter(Boolean).join(' · '))+'</div>'+productUsageHtml(p)+
       '<div class="kb-stock-grid"><div class="kb-metric"><small>Estoque físico</small><strong>'+esc(qty(p.physical_stock))+'</strong></div><div class="kb-metric"><small>Reservado</small><strong>'+esc(qty(p.basket_locked_quantity))+'</strong></div><div class="kb-metric"><small>Livre</small><strong>'+esc(qty(p.loose_sellable_stock))+'</strong></div></div>'+
       '<div class="kb-price-grid"><div class="kb-metric"><small>Custo</small><strong>'+esc(money(p.cost_price))+'</strong></div><div class="kb-metric"><small>Venda</small><strong>'+esc(money(p.sale_price))+'</strong></div></div>'+
       '<div class="kb-product-actions"><button class="kb-btn" type="button" data-kit-inline-edit>Editar</button><button class="kb-btn primary" type="button" data-kit-add>Adicionar</button></div>'+
@@ -197,13 +211,23 @@
       '<div class="kb-chip-row" data-kit-chip-row=""><label><span>Novo chip</span><input data-kit-chip-label maxlength="80" placeholder="Ex.: Arroz"></label><label><span>Busca usada</span><input data-kit-chip-query maxlength="120" placeholder="Ex.: arroz"></label><div class="kb-chip-actions"><button class="kb-btn compact primary" type="button" data-kit-chip-save>Adicionar</button></div></div></div>';
   }
 
+  function basketRows(){
+    const q=normalize(state.query);
+    if(!q)return state.basketProducts;
+    return state.basketProducts.filter(p=>normalize([p.name,p.sku,p.gtin,p.packaging,...(Array.isArray(p.basket_names)?p.basket_names:[])].filter(Boolean).join(' ')).includes(q));
+  }
+  function catalogRows(){return state.productMode==='baskets'?basketRows():state.products}
+
   function catalogHtml(){
-    const rows=state.products;
-    return '<div class="kb-search"><input data-kit-search placeholder="Buscar por nome, código ou EAN" value="'+esc(state.query)+'"><button class="kb-btn" type="button" data-kit-search-go>Buscar</button></div>'+
+    const rows=catalogRows();
+    const basketCount=state.basketProducts.length;
+    const title=state.productMode==='baskets'?(state.query?'Resultados em cestas':'Produtos usados nas cestas'):(state.query?'Resultados':'Todos os produtos');
+    return '<div class="kb-product-modes"><button class="kb-product-mode '+(state.productMode==='baskets'?'active':'')+'" type="button" data-kit-product-mode="baskets">Em cestas ('+esc(basketCount)+')</button><button class="kb-product-mode '+(state.productMode==='all'?'active':'')+'" type="button" data-kit-product-mode="all">Todos os produtos</button></div>'+
+      '<div class="kb-search"><input data-kit-search placeholder="Buscar por nome, código ou EAN" value="'+esc(state.query)+'"><button class="kb-btn" type="button" data-kit-search-go>Buscar</button></div>'+
       '<div class="kb-chip-wrap"><div class="kb-chips">'+state.chips.map(c=>'<button class="kb-chip" type="button" data-kit-chip="'+esc(c.query)+'">'+esc(c.label)+'</button>').join('')+'</div><button class="kb-btn compact kb-chip-manage" type="button" data-kit-chip-manage>'+(state.chipManagerOpen?'Fechar chips':'Editar chips')+'</button></div>'+
       renderChipManager()+
-      '<div class="kb-section-title">'+(state.query?'Resultados':'Produtos disponíveis')+'</div><div class="kb-products">'+(rows.map(productCardHtml).join('')||'<div class="kb-empty">Nenhum produto encontrado.</div>')+'</div>'+
-      (state.nextOffset!==null?'<button class="kb-btn kb-more" type="button" data-kit-more>Ver mais</button>':'')+
+      '<div class="kb-section-title">'+esc(title)+'</div><div class="kb-products">'+(rows.map(productCardHtml).join('')||'<div class="kb-empty">Nenhum produto encontrado.</div>')+'</div>'+
+      (state.productMode==='all'&&state.nextOffset!==null?'<button class="kb-btn kb-more" type="button" data-kit-more>Ver mais</button>':'')+
       '<div class="kb-authority">Autoridade de estoque: '+esc(state.stockAuthority==='bling'?'Bling':'estoque operacional')+'.</div>';
   }
 
@@ -213,14 +237,16 @@
     host.innerHTML='<div class="kit-builder-workspace '+(state.loading?'kb-loading':'')+'">'+
       '<section class="kb-col" data-kit-column="kits"><div class="kb-col-head"><div><h3>Kits internos</h3><small>Selecione um kit para editar</small></div><button class="kb-btn primary compact" type="button" data-kit-new>+ Novo kit</button></div><div class="kb-body"><p class="kb-new-hint">Os kits são receitas reutilizáveis. Selecionar um kit abre a edição no painel central.</p>'+kitNavHtml()+'</div></section>'+
       '<section class="kb-col" data-kit-column="draft"><div class="kb-col-head"><div><h3>Editor do kit</h3><small>Receita interna, sem reservar estoque</small></div></div><div class="kb-body" data-kit-draft-body>'+draftHtml()+'</div></section>'+
-      '<section class="kb-col" data-kit-column="products"><div class="kb-col-head"><div><h3>Produtos</h3><small>Busque e adicione ao kit selecionado</small></div></div><div class="kb-body" data-kit-catalog-body>'+catalogHtml()+'</div></section>'+
+      '<section class="kb-col" data-kit-column="products"><div class="kb-col-head"><div><h3>Produtos</h3><small>Comece pelos itens que já fazem parte das cestas</small></div></div><div class="kb-body" data-kit-catalog-body>'+catalogHtml()+'</div></section>'+
       '</div>';
     bindWorkspace();
   }
 
   function productById(id){
-    const direct=state.products.find(p=>String(p.id)===String(id));
-    if(direct)return direct;
+    for(const list of [state.basketProducts,state.products]){
+      const direct=list.find(p=>String(p.id)===String(id));
+      if(direct)return direct;
+    }
     const item=state.draft?.items?.find(x=>String(x.product_id)===String(id));
     return item?.product||null;
   }
@@ -247,8 +273,19 @@
     });
   }
 
+  async function refreshBasketProducts(){
+    const data=await kitCall('basket_products',{limit:300},'GET');
+    setBasketProducts(data.products||[]);
+    if(data.stock_authority)state.stockAuthority=data.stock_authority;
+    return data;
+  }
+
   async function searchProducts(query=state.query,append=false){
-    state.query=String(query||'').trim();state.loading=true;renderWorkspace();
+    state.query=String(query||'').trim();
+    if(state.productMode==='baskets'){
+      state.nextOffset=null;renderWorkspace();return;
+    }
+    state.loading=true;renderWorkspace();
     try{
       const offset=append?(state.nextOffset||0):0;
       const data=await kitCall('products',{q:state.query,offset,limit:20},'GET');
@@ -257,6 +294,12 @@
       state.nextOffset=data.next_offset??null;
       if(data.stock_authority)state.stockAuthority=data.stock_authority;
     }catch{toast('Não consegui buscar produtos para o kit.')}finally{state.loading=false;renderWorkspace()}
+  }
+
+  async function setProductMode(mode){
+    state.productMode=mode==='all'?'all':'baskets';state.query='';state.nextOffset=null;
+    if(state.productMode==='all'&&!state.products.length){await searchProducts('',false);return}
+    renderWorkspace();
   }
 
   async function refreshChips(){
@@ -314,7 +357,7 @@
       const data=await kitCall('kit_save',{kit_id:d.kit_id||null,name:d.name,type:d.type,notes:d.notes||null,source_kit_id:d.source_kit_id||null,operator:operator(),items:d.items.map((x,i)=>({product_id:x.product_id,quantity:Number(x.quantity),sort_order:i}))},'POST');
       const saved=data?.result?.kit||data?.kit||null;
       toast(d.kit_id?'Kit atualizado.':'Kit salvo.');
-      await refreshSaved();
+      await Promise.all([refreshSaved(),refreshBasketProducts()]);
       if(saved?.id)await loadKit(saved.id);else{state.draft=emptyDraft();renderWorkspace()}
     }catch(e){
       const code=errorCode(e);
@@ -333,7 +376,7 @@
     try{
       await kitCall('kit_archive',{kit_id:kit.id,operator:operator()},'POST');
       if(state.draft?.kit_id===kit.id)state.draft=emptyDraft();
-      await refreshSaved();
+      await Promise.all([refreshSaved(),refreshBasketProducts()]);
       toast('Kit arquivado.');
     }catch(e){toast(errorCode(e).includes('assembly_kit_in_use')?'Este kit está sendo usado por uma cesta ativa e não pode ser arquivado agora.':'Não consegui arquivar o kit.')}
   }
@@ -345,6 +388,7 @@
 
   function bindWorkspace(){
     const host=state.host;if(!host)return;
+    host.querySelectorAll('[data-kit-product-mode]').forEach(btn=>btn.addEventListener('click',()=>setProductMode(btn.dataset.kitProductMode)));
     const search=host.querySelector('[data-kit-search]');
     const runSearch=()=>searchProducts(search?.value||'',false);
     host.querySelector('[data-kit-search-go]')?.addEventListener('click',runSearch);
@@ -392,15 +436,16 @@
   async function open(host){
     state.host=typeof host==='string'?document.querySelector(host):(host||document.getElementById('content'));
     if(!state.host)throw new Error('kit_builder_host_missing');
-    state.draft=state.draft||emptyDraft();state.loading=true;renderWorkspace();
+    state.draft=state.draft||emptyDraft();state.productMode='baskets';state.query='';state.loading=true;renderWorkspace();
     try{
-      const [kitsData,chipsData,productsData]=await Promise.all([
-        kitCall('kits',{limit:100},'GET'),kitCall('chips',{},'GET'),kitCall('products',{limit:20,offset:0},'GET')
+      const [kitsData,chipsData,basketData]=await Promise.all([
+        kitCall('kits',{limit:100},'GET'),kitCall('chips',{},'GET'),kitCall('basket_products',{limit:300},'GET')
       ]);
       state.kits=Array.isArray(kitsData.kits)?kitsData.kits:[];
       state.chips=Array.isArray(chipsData.chips)?chipsData.chips:[];
-      setProducts(productsData.products||[]);
-      state.nextOffset=productsData.next_offset??null;if(productsData.stock_authority)state.stockAuthority=productsData.stock_authority;
+      setBasketProducts(basketData.products||[]);
+      state.products=[];state.nextOffset=null;
+      if(basketData.stock_authority)state.stockAuthority=basketData.stock_authority;
     }catch{toast('Não consegui carregar o Criador de Kits.')}finally{state.loading=false;renderWorkspace()}
   }
 
@@ -408,6 +453,6 @@
     state,open,renderWorkspace,renderChipManager,mostUsedHtml,savedHtml,kitNavHtml,
     saveSearchChip,archiveSearchChip,reorderSearchChip,
     saveDraftKit,duplicateKit,archiveKit,saveProductInline,
-    setProducts,setMostUsed,setDraft,searchProducts,loadKit
+    setProducts,setBasketProducts,setMostUsed,setDraft,searchProducts,setProductMode,refreshBasketProducts,loadKit
   };
 })();

@@ -11,7 +11,7 @@ const ORIGINS=new Set([
   "http://localhost:3000",
   "http://127.0.0.1:3000"
 ]);
-const READ_ACTIONS=new Set(["kits","kit","products","most_used","chips"]);
+const READ_ACTIONS=new Set(["kits","kit","products","most_used","basket_products","chips"]);
 const MUTATIONS=new Set(["kit_save","kit_archive","chip_save","chip_archive","chip_reorder"]);
 const ACTIONS=new Set([...READ_ACTIONS,...MUTATIONS]);
 
@@ -232,6 +232,60 @@ async function mostUsed(input:any){
   return {products:ranked.map(x=>({...productCard(byId.get(x.product_id)||{id:x.product_id},stocks.get(x.product_id),authority),usage_count:x.usage_count}))};
 }
 
+async function basketProducts(input:any){
+  const limit=positiveInt(input?.limit,200,1,300);
+  const basketsQ=await db.from("basket_templates")
+    .select("id,name,sort_order")
+    .eq("is_active",true)
+    .order("sort_order")
+    .order("name");
+  if(basketsQ.error)throw basketsQ.error;
+  const baskets=basketsQ.data||[];
+  if(!baskets.length)return {products:[],total:0,stock_authority:await stockAuthority()};
+
+  const basketIds=baskets.map((b:any)=>String(b.id));
+  const recipeRows:any[]=[];
+  for(let pos=0;pos<basketIds.length;pos+=80){
+    const q=await db.from("store_basket_recipe_kits")
+      .select("basket_id,kit_id")
+      .in("basket_id",basketIds.slice(pos,pos+80));
+    if(q.error)throw q.error;
+    recipeRows.push(...(q.data||[]));
+  }
+  if(!recipeRows.length)return {products:[],total:0,stock_authority:await stockAuthority()};
+
+  const kitIds=[...new Set(recipeRows.map((r:any)=>String(r.kit_id)).filter(Boolean))];
+  const items=await kitItemsFor(kitIds);
+  const basketsByKit=new Map<string,Set<string>>();
+  for(const row of recipeRows){
+    const kitId=String(row.kit_id),basketId=String(row.basket_id);
+    const set=basketsByKit.get(kitId)||new Set<string>();
+    set.add(basketId);basketsByKit.set(kitId,set);
+  }
+  const usage=new Map<string,Set<string>>();
+  for(const item of items){
+    const pid=String(item.product_id),basketSet=usage.get(pid)||new Set<string>();
+    for(const basketId of basketsByKit.get(String(item.kit_id))||[])basketSet.add(basketId);
+    usage.set(pid,basketSet);
+  }
+
+  const basketNameById=new Map(baskets.map((b:any)=>[String(b.id),String(b.name||"")]));
+  const productsRows=await productRows([...usage.keys()]);
+  const byId=new Map(productsRows.map((p:any)=>[String(p.id),p]));
+  const stocks=await stockMap([...usage.keys()]);
+  const authority=await stockAuthority();
+  const rows=[...usage.entries()].map(([product_id,basketIdsSet])=>{
+    const basket_names=[...basketIdsSet].map(id=>basketNameById.get(id)||"").filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    return {
+      ...productCard(byId.get(product_id)||{id:product_id},stocks.get(product_id),authority),
+      basket_usage_count:basketIdsSet.size,
+      basket_names
+    };
+  }).sort((a:any,b:any)=>b.basket_usage_count-a.basket_usage_count||String(a.name).localeCompare(String(b.name),"pt-BR"));
+  const visible=rows.slice(0,limit);
+  return {products:visible,total:rows.length,stock_authority:authority};
+}
+
 async function chips(input:any){
   const includeArchived=String(input?.include_archived||"")==="1"||input?.include_archived===true;
   let q=db.from("assembly_search_chips")
@@ -343,6 +397,7 @@ Deno.serve(async(req:Request)=>{
     else if(action==="kit")out=await kit(input);
     else if(action==="products")out=await products(input);
     else if(action==="most_used")out=await mostUsed(input);
+    else if(action==="basket_products")out=await basketProducts(input);
     else if(action==="chips")out=await chips(input);
     else if(action==="kit_save")out=await kitSave(input);
     else if(action==="kit_archive")out=await kitArchive(input);

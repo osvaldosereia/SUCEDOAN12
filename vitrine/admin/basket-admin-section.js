@@ -2,7 +2,7 @@
   'use strict';
 
   const MODULES={
-    kits:{label:'Criador de Kits',description:'Crie receitas internas reutilizáveis sem reservar estoque.',src:'/vitrine/admin/kit-builder.js?v=master-detail-v1',global:'DonaAntoniaKitBuilder'},
+    kits:{label:'Criador de Kits',description:'Crie receitas internas reutilizáveis sem reservar estoque.',src:'/vitrine/admin/kit-builder.js?v=basket-products-v1',global:'DonaAntoniaKitBuilder'},
     store:{label:'Cestas do Site',description:'Combine kits internos nas cestas que aparecem no site.',src:'/vitrine/admin/store-baskets-builder.js?v=simple-tabs-v1',global:'DonaAntoniaStoreBaskets'}
   };
   const state={tab:'kits',generation:0,loaders:new Map()};

@@ -11,7 +11,7 @@ assert.match(source,/from\("admin_users"\)[\s\S]*is_active/i,'must authorize aga
 assert.match(source,/role[^\n]*viewer|viewer[^\n]*role/i,'viewer role must be recognized');
 assert.match(source,/viewer[\s\S]{0,300}(forbidden|403)|forbidden[\s\S]{0,300}viewer/i,'viewer must be read-only');
 
-for(const action of ['kits','kit','kit_save','kit_archive','products','most_used','chips','chip_save','chip_archive','chip_reorder']){
+for(const action of ['kits','kit','kit_save','kit_archive','products','most_used','basket_products','chips','chip_save','chip_archive','chip_reorder']){
   assert.match(source,new RegExp(`['\"]${action}['\"]`),`missing action ${action}`);
 }
 
@@ -35,12 +35,22 @@ assert.match(source,/range\(|offset/i,'product search must paginate');
 assert.match(source,/limit/i,'product search must cap page size');
 
 const mostUsedStart=source.indexOf('async function mostUsed');
-assert.ok(mostUsedStart>=0,'mostUsed function must exist');
+assert.ok(mostUsedStart>=0,'mostUsed function must exist for compatibility');
 const mostUsedSource=source.slice(mostUsedStart,source.indexOf('\nasync function',mostUsedStart+20)>0?source.indexOf('\nasync function',mostUsedStart+20):source.length);
-assert.match(mostUsedSource,/assembly_kits/i,'most used must derive from kits');
-assert.match(mostUsedSource,/is_active/i,'most used must use active kits only');
-assert.match(mostUsedSource,/count|usage_count/i,'most used must aggregate usage');
+assert.match(mostUsedSource,/assembly_kits/i,'most used compatibility endpoint must derive from kits');
+
+const basketProductsStart=source.indexOf('async function basketProducts');
+assert.ok(basketProductsStart>=0,'basketProducts function must exist');
+const basketProductsEnd=source.indexOf('\nasync function',basketProductsStart+20);
+const basketProductsSource=source.slice(basketProductsStart,basketProductsEnd>basketProductsStart?basketProductsEnd:source.length);
+assert.match(basketProductsSource,/basket_templates/i,'basket products must derive from commercial baskets');
+assert.match(basketProductsSource,/is_active/i,'basket products must consider active baskets only');
+assert.match(basketProductsSource,/store_basket_recipe_kits/i,'basket products must follow canonical recipe links');
+assert.match(basketProductsSource,/assembly_kit_items|kitItemsFor/i,'basket products must expand kit items');
+assert.match(basketProductsSource,/basket_usage_count/i,'basket products must expose basket usage count');
+assert.match(basketProductsSource,/basket_names/i,'basket products must expose basket names');
+assert.match(basketProductsSource,/stockMap|loose_sellable_stock/i,'basket products must expose canonical stock context');
 
 assert.doesNotMatch(source,/DonaAntoniaBasketGuided|basket_kit_template_items|basket_lot_substitution_/i,'new kit API must not depend on guided/family-position domain');
 
-console.log('kit builder admin api v1: PASS');
+console.log('kit builder admin api v2 basket products: PASS');
