@@ -1,0 +1,24 @@
+name: Basket price composition normalization
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20261006133000_basket_price_composition_normalization.sql'
+      - 'vitrine/admin/basket-mold-admin.js'
+      - 'scripts/test-basket-price-composition-normalization.mjs'
+      - '.github/workflows/basket-price-composition-normalization-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261006133000_basket_price_composition_normalization.sql'
+      - 'vitrine/admin/basket-mold-admin.js'
+      - 'scripts/test-basket-price-composition-normalization.mjs'
+      - '.github/workflows/basket-price-composition-normalization-ci.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-basket-price-composition-normalization.mjs
