@@ -97,8 +97,7 @@ begin
   return v_result||jsonb_build_object('category_id',v_category_id,'subcategory_id',v_subcategory_id);
 end;$function$;
 
-drop function if exists public.admin_save_basket_mold_v1(uuid,text,numeric,integer,jsonb,uuid,text);
-create or replace function public.admin_save_basket_mold_v1(
+create or replace function public.admin_save_basket_mold_v2(
   p_basket_id uuid,p_name text,p_hidden_adjustment numeric,p_public_composition_count integer,
   p_positions jsonb,p_category_id uuid,p_operator text,p_subcategory_id uuid
 ) returns jsonb language plpgsql security definer set search_path=''
@@ -118,6 +117,6 @@ revoke all on function public.admin_basket_mold_list_v1() from public,anon,authe
 grant execute on function public.admin_basket_mold_list_v1() to authenticated;
 revoke all on function public.admin_basket_mold_editor_v1(uuid) from public,anon,authenticated;
 grant execute on function public.admin_basket_mold_editor_v1(uuid) to authenticated;
-revoke all on function public.admin_save_basket_mold_v1(uuid,text,numeric,integer,jsonb,uuid,text,uuid) from public,anon,authenticated;
-grant execute on function public.admin_save_basket_mold_v1(uuid,text,numeric,integer,jsonb,uuid,text,uuid) to authenticated;
+revoke all on function public.admin_save_basket_mold_v2(uuid,text,numeric,integer,jsonb,uuid,text,uuid) from public,anon,authenticated;
+grant execute on function public.admin_save_basket_mold_v2(uuid,text,numeric,integer,jsonb,uuid,text,uuid) to authenticated;
 commit;
