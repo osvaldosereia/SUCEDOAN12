@@ -1,0 +1,39 @@
+name: ANA Central Admin CI
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/ana-admin-config-v1.mjs'
+      - 'supabase/functions/_shared/ana-policy-v1.mjs'
+      - 'supabase/functions/admin-whatsapp-ana-preview-v1/**'
+      - 'supabase/functions/whatsapp-ana-worker-v1/**'
+      - 'supabase/migrations/*whatsapp_ana_admin_v1.sql'
+      - 'supabase/sql/*whatsapp_ana_admin_v1.sql'
+      - 'vitrine/admin/ana/**'
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-*ana-admin*.mjs'
+      - '.github/workflows/ana-central-admin-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/ana-admin-config-v1.mjs'
+      - 'supabase/functions/_shared/ana-policy-v1.mjs'
+      - 'supabase/functions/admin-whatsapp-ana-preview-v1/**'
+      - 'supabase/functions/whatsapp-ana-worker-v1/**'
+      - 'supabase/migrations/*whatsapp_ana_admin_v1.sql'
+      - 'supabase/sql/*whatsapp_ana_admin_v1.sql'
+      - 'vitrine/admin/ana/**'
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-*ana-admin*.mjs'
+      - '.github/workflows/ana-central-admin-ci.yml'
+
+jobs:
+  ana-central-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate ANA admin schema and SQL mirror
+        run: node scripts/test-whatsapp-ana-admin-schema-v1.mjs
