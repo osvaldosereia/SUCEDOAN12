@@ -15,6 +15,7 @@ assert.match(sql,/mold_kind[\s\S]*food_only[\s\S]*papel\s+higi/i,'moldes só ali
 assert.match(sql,/l[aá]men[\s\S]*caldo/i,'variação de caldo deve ser removida das posições de lámen');
 assert.match(sql,/rosquinha[\s\S]*P0061/i,'rosquinha Rancheiro deve ser preservada/restaurada nas posições de Rosquinha');
 assert.doesNotMatch(sql,/update\s+public\.basket_stock_lots\s+set\s+quantity_/i,'migration não pode alterar quantidade física de lotes');
+assert.doesNotMatch(sql,/delete\s+from\s+public\.basket_stock_lots/i,'migration não pode apagar lotes físicos');
 
 assert.match(admin,/Produtos\s*\+\s*Ajuste\s*=\s*Total/,'Admin deve explicar a fórmula do preço');
 assert.match(admin,/price_preview/,'Admin deve exibir prévia das composições persistidas');
