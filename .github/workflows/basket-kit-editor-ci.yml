@@ -76,6 +76,7 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-recipe-domain-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-admin-api-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-builder-ui-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-visible-composition-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-simple-tabs-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-admin-api-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-basket-products-v1.mjs
