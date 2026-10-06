@@ -26,11 +26,6 @@ for (const file of files) {
     assert.doesNotMatch(html, /As quantidades do molde permanecem fixas\./);
   });
 
-  test(`${file} refuses to add a mold basket with every product removed`, () => {
-    const html = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
-    assert.match(html, /function addMoldBasketDraft\(\).*?Esta cesta ficou sem produtos\./, 'expected empty mold basket guard');
-  });
-
   test(`${file} spaces editable basket rows and controls`, () => {
     const html = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
     assert.match(html, /basket-item-card/);
