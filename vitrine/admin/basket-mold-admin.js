@@ -10,7 +10,7 @@ const toast=m=>typeof bridge().toast==='function'?bridge().toast(m):alert(m);
 const operator=()=>typeof bridge().operator==='function'?(bridge().operator()||'Operação'):'Operação';
 async function token(){if(typeof bridge().token!=='function')throw new Error('Sessão administrativa indisponível.');return bridge().token()}
 
-let state={root:null,baskets:[],categories:[],draft:null,busy:false,search:{},results:{}};
+let state={root:null,baskets:[],categories:[],subcategories:[],draft:null,busy:false,search:{},results:{}};
 
 async function call(action,payload={}){
   const t=await token();
@@ -33,6 +33,7 @@ function normalizeEditor(e){
   return{
     basket_id:e?.basket_id||'',
     category_id:e?.category_id||'',
+    subcategory_id:e?.subcategory_id||'',
     name:e?.basket_name||'',
     hidden_adjustment:Number(e?.hidden_adjustment||0),
     public_composition_count:Number(e?.public_composition_count||2),
@@ -63,7 +64,7 @@ function positionHtml(p,pi){
 
 function editorHtml(){
   const d=state.draft;if(!d)return'<div class="bm-empty">Escolha uma cesta para configurar o molde.</div>';
-  return'<div data-mold-editor><div class="bm-fields"><label><span>Nome da cesta</span><input data-mold-name value="'+esc(d.name||'')+'"></label><label><span>Valor oculto fixo (somado ao preço)</span><input data-mold-hidden-adjustment type="number" step="0.01" value="'+esc(Number(d.hidden_adjustment||0).toFixed(2))+'"></label><label><span>Categoria na vitrine</span><select data-mold-category><option value="">Selecione uma categoria</option>'+state.categories.map(c=>'<option value="'+esc(c.id)+'" '+(String(d.category_id)===String(c.id)?'selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label><label><span>Composições no site</span><select data-mold-composition-count><option value="1" '+(d.public_composition_count===1?'selected':'')+'>1 composição</option><option value="2" '+(d.public_composition_count===2?'selected':'')+'>2 composições</option><option value="3" '+(d.public_composition_count===3?'selected':'')+'>3 composições</option><option value="4" '+(d.public_composition_count===4?'selected':'')+'>4 composições</option></select></label></div><div class="bm-note">Cada posição representa o que precisa existir na cesta. Em cada posição, selecione todos os produtos que podem ser usados como variação. O valor oculto é fixo e permanece o mesmo entre as composições e futuras substituições do cliente.</div><div class="bm-head"><h3>Posições do molde</h3><span class="bm-grow"></span><button type="button" data-mold-add-position>+ Adicionar posição</button></div>'+((d.positions||[]).map(positionHtml).join('')||'<div class="bm-empty">Adicione a primeira posição do molde.</div>')+'<div class="bm-actions"><button type="button" class="primary" data-mold-save '+(state.busy?'disabled':'')+'>Salvar molde</button></div></div>';
+  return'<div data-mold-editor><div class="bm-fields"><label><span>Nome da cesta</span><input data-mold-name value="'+esc(d.name||'')+'"></label><label><span>Valor oculto fixo (somado ao preço)</span><input data-mold-hidden-adjustment type="number" step="0.01" value="'+esc(Number(d.hidden_adjustment||0).toFixed(2))+'"></label><label><span>Categoria na vitrine</span><select data-mold-category><option value="">Selecione uma categoria</option>'+state.categories.map(c=>'<option value="'+esc(c.id)+'" '+(String(d.category_id)===String(c.id)?'selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label><label><span>Subcategoria na vitrine</span><select data-mold-subcategory><option value="">Selecione uma subcategoria</option>'+state.subcategories.filter(s=>String(s.category_id)===String(d.category_id)).map(c=>'<option value="'+esc(c.id)+'" '+(String(d.subcategory_id)===String(c.id)?'selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label><label><span>Composições no site</span><select data-mold-composition-count><option value="1" '+(d.public_composition_count===1?'selected':'')+'>1 composição</option><option value="2" '+(d.public_composition_count===2?'selected':'')+'>2 composições</option><option value="3" '+(d.public_composition_count===3?'selected':'')+'>3 composições</option><option value="4" '+(d.public_composition_count===4?'selected':'')+'>4 composições</option></select></label></div><div class="bm-note">Cada posição representa o que precisa existir na cesta. Em cada posição, selecione todos os produtos que podem ser usados como variação. O valor oculto é fixo e permanece o mesmo entre as composições e futuras substituições do cliente.</div><div class="bm-head"><h3>Posições do molde</h3><span class="bm-grow"></span><button type="button" data-mold-add-position>+ Adicionar posição</button></div>'+((d.positions||[]).map(positionHtml).join('')||'<div class="bm-empty">Adicione a primeira posição do molde.</div>')+'<div class="bm-actions"><button type="button" class="primary" data-mold-save '+(state.busy?'disabled':'')+'>Salvar molde</button></div></div>';
 }
 
 function render(){
@@ -76,12 +77,13 @@ function sync(){
   if(!state.draft||!state.root)return;const q=s=>state.root.querySelector(s);
   state.draft.name=q('[data-mold-name]')?.value.trim()||'';
   state.draft.category_id=q('[data-mold-category]')?.value||'';
+  state.draft.subcategory_id=q('[data-mold-subcategory]')?.value||'';
   state.draft.hidden_adjustment=Number(q('[data-mold-hidden-adjustment]')?.value||0);
   state.draft.public_composition_count=Number(q('[data-mold-composition-count]')?.value||2);
   (state.draft.positions||[]).forEach((p,i)=>{p.label=q('[data-mold-position-label="'+i+'"]')?.value.trim()||'';p.quantity=Number(q('[data-mold-position-quantity="'+i+'"]')?.value||0);state.search[i]=q('[data-mold-product-search="'+i+'"]')?.value||state.search[i]||''});
 }
 
-async function loadList(){const r=await call('list');state.baskets=Array.isArray(r.baskets)?r.baskets:[];state.categories=Array.isArray(r.categories)?r.categories:[]}
+async function loadList(){const r=await call('list');state.baskets=Array.isArray(r.baskets)?r.baskets:[];state.categories=Array.isArray(r.categories)?r.categories:[];state.subcategories=Array.isArray(r.subcategories)?r.subcategories:[]}
 async function openBasket(id){try{const r=await call('editor',{basket_id:id});state.draft=normalizeEditor(r.editor||{});state.search={};state.results={};render()}catch(e){toast(e.message)}}
 
 function addPosition(){sync();state.draft.positions.push({position_id:null,label:'',quantity:1,options:[]});render()}
@@ -105,18 +107,20 @@ async function save(){
   if(state.busy)return;sync();const d=state.draft;
   if(!d.name)return toast('Informe o nome da cesta.');
   if(!d.category_id)return toast('Escolha a categoria da cesta na vitrine.');
+  if(!d.subcategory_id)return toast('Escolha a subdivisão da cesta na vitrine.');
   if(![1,2,3,4].includes(Number(d.public_composition_count)))return toast('Escolha de 1 a 4 composições.');
   if(!d.positions.length)return toast('Adicione pelo menos uma posição.');
   for(const p of d.positions){if(!p.label)return toast('Informe o nome de todas as posições.');if(!Number.isFinite(Number(p.quantity))||Number(p.quantity)<=0)return toast('Informe quantidades válidas.');if(!p.options.length)return toast('Selecione pelo menos um produto em cada posição.');}
   state.busy=true;render();
   try{
-    await call('save',{basket_id:d.basket_id,category_id:d.category_id,name:d.name,hidden_adjustment:Number(d.hidden_adjustment||0),public_composition_count:Number(d.public_composition_count),positions:d.positions.map(p=>({label:p.label,quantity:Number(p.quantity),options:p.options.map(o=>({product_id:o.product_id}))})),operator:operator()});
+    await call('save',{basket_id:d.basket_id,category_id:d.category_id,subcategory_id:d.subcategory_id,name:d.name,hidden_adjustment:Number(d.hidden_adjustment||0),public_composition_count:Number(d.public_composition_count),positions:d.positions.map(p=>({label:p.label,quantity:Number(p.quantity),options:p.options.map(o=>({product_id:o.product_id}))})),operator:operator()});
     const id=d.basket_id;await loadList();await openBasket(id);toast('Molde salvo.');
   }catch(e){toast(e.message)}finally{state.busy=false;render()}
 }
 
 function bind(){
   if(!state.root)return;
+  state.root.querySelector('[data-mold-category]')?.addEventListener('change',()=>{sync();state.draft.subcategory_id='';render()});
   state.root.querySelectorAll('[data-mold-basket-card]').forEach(x=>x.addEventListener('click',()=>openBasket(x.dataset.moldBasketCard)));
   state.root.querySelector('[data-mold-add-position]')?.addEventListener('click',addPosition);
   state.root.querySelectorAll('[data-mold-remove-position]').forEach(x=>x.addEventListener('click',()=>removePosition(Number(x.dataset.moldRemovePosition))));
@@ -129,7 +133,7 @@ function bind(){
 
 async function open(target){
   const root=typeof target==='string'?document.querySelector(target):target;if(!root)throw new Error('basket_mold_root_not_found');
-  state={root,baskets:[],categories:[],draft:null,busy:false,search:{},results:{}};root.innerHTML='<div class="bm-empty">Carregando Cestas Molde…</div>';
+  state={root,baskets:[],categories:[],subcategories:[],draft:null,busy:false,search:{},results:{}};root.innerHTML='<div class="bm-empty">Carregando Cestas Molde…</div>';
   try{await loadList();render()}catch(e){root.innerHTML='<div class="bm-empty">Não foi possível carregar Cestas Molde.</div>';toast(e.message)}
 }
 

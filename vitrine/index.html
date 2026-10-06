@@ -209,7 +209,7 @@
     .basket-card .add{align-self:stretch;width:100%;min-height:43px;margin-top:auto;padding:9px 12px;border-radius:10px;font-size:14px;font-weight:800;white-space:nowrap}
     @media(min-width:760px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}}
     @media(min-width:1080px){.basket-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}}
-    @media(max-width:480px){.basket-card-photo{margin:8px 8px 0}.basket-card-info{gap:7px;padding:10px}.basket-card .basket-card-title{font-size:14px}.basket-card .price{font-size:16px}.basket-card .add{min-height:40px;padding:8px 9px;font-size:13px}}
+    @media(max-width:759px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px}.basket-subgroup-title{font-size:16px;margin:8px 0}.basket-card-photo{margin:8px 8px 0}.basket-card-info{gap:7px;padding:10px}.basket-card .basket-card-title{font-size:14px}.basket-card .price{font-size:16px}.basket-card .add{min-height:40px;padding:8px 9px;font-size:13px}}
 
     /* Final basket-card layout: isolated from legacy grid rules above. */
     .basket-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:stretch;gap:12px}
@@ -222,8 +222,8 @@
     .basket-card .price{display:block!important;align-self:flex-start!important;min-width:0;margin:0!important;font-size:15px!important;font-weight:850;line-height:1.2!important;white-space:nowrap}
     .basket-card .add{display:block!important;align-self:stretch!important;width:100%!important;min-height:36px!important;height:auto;margin:2px 0 0!important;padding:7px 8px!important;border-radius:9px;font-size:12px!important;line-height:1.2;white-space:nowrap}
     @media(min-width:760px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px}}
-    @media(min-width:1080px){.basket-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px}}
-    @media(max-width:480px){.basket-card-info{gap:5px}.basket-card .basket-card-title{font-size:12.5px!important}.basket-card .price{font-size:14px!important}.basket-card .add{min-height:34px!important;font-size:11.5px!important}}
+    @media(min-width:760px) and (max-width:1079px){.basket-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px}}\n    @media(min-width:1080px){.basket-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:14px}}
+    @media(max-width:759px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px}.basket-card-info{gap:5px}.basket-card .basket-card-title{font-size:12px!important}.basket-card .price{font-size:13px!important}.basket-card .add{min-height:32px!important;font-size:10.5px!important;padding:6px 4px!important}}
 </style>
 </head>
 <body>
@@ -573,8 +573,8 @@
     function renderHome(){
       state.view='home';state.category=null;state.query='';renderNav();$('#globalSearchInput').value='';
       const baskets=state.home?.baskets||[],categories=state.home?.categories?.length?state.home.categories:STATIC_CATEGORIES;
-      const basketGroups=[{slug:'cestas-completas',title:'Cestas Completas'},{slug:'cestas-so-alimentos',title:'Cestas Só Alimentos'},{slug:'kits-promocionais',title:'Kits Promocionais'}];
-      const basketGroupMarkup='<div id="basketSections">'+basketGroups.map(group=>{const items=baskets.filter(b=>String(b.category_slug||'')===group.slug);return section(group.title,'', '<div class="grid basket-grid">'+(items.length?items.map((b,i)=>basketCard(b,i)).join(''):'<div class="empty">Nenhum item disponível nesta categoria agora.</div>')+'</div>')}).join('')+'</div>';
+      const basketGroups=Array.isArray(state.home?.basket_categories)?state.home.basket_categories:[];
+      const basketGroupMarkup='<div id="basketSections">'+basketGroups.map(group=>section(group.name,'',(group.subcategories||[]).map(sub=>{const items=baskets.filter(b=>String(b.category_id||'')===String(group.id)&&String(b.subcategory_id||'')===String(sub.id));return '<div class="basket-subgroup"><h3 class="basket-subgroup-title">'+esc(sub.name)+'</h3><div class="grid basket-grid">'+(items.length?items.map((b,i)=>basketCard(b,i)).join(''):'<div class="empty">Nenhum item disponível nesta subdivisão agora.</div>')+'</div></div>'}).join(''))).join('')+'</div>';
       content.innerHTML=homeIntro(categories)+basketGroupMarkup+section('Ofertas da semana','Preços promocionais ativos agora.','<div id="homeOffersMount">'+(state.offersLoaded?'':offersSkeleton())+'</div>');
       content.querySelectorAll('[data-basket]').forEach(btn=>btn.onclick=()=>openBasket(btn.dataset.basket));
       content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));
