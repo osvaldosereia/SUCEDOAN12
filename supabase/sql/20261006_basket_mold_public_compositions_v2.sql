@@ -1,7 +1,7 @@
--- Dona Antônia · Cestas Molde · Rodada 4/6
--- Balanceamento determinístico: cobertura = estoque vendável líquido / consumo por cesta.
--- As primeiras composições usam opções distintas quando possível; vagas excedentes favorecem maior cobertura.
--- Somente leitura: exibição nunca cria reserva.
+-- Dona Antônia · Cestas Molde · Rodada 4/6 + alinhamento R5
+-- Balanceamento determinístico: cobertura = estoque avulso vendável líquido / consumo por cesta.
+-- A view ops2_loose_sellable_stock_v1 já exclui unidades travadas em montagem, lotes prontos e alocações.
+-- Descontamos apenas reservas de pedidos ainda ativas. Somente leitura: exibição nunca cria reserva.
 
 begin;
 
@@ -24,24 +24,17 @@ active_order_reservations as (
   where r.status in ('reserved','allocated') and (r.expires_at is null or r.expires_at>now())
   group by r.product_id
 ),
-active_lot_reservations as (
-  select r.product_id,coalesce(sum(r.quantity_reserved),0)::numeric reserved
-  from public.basket_lot_component_reservations r
-  where r.status in ('reserved','active')
-  group by r.product_id
-),
 eligible as (
   select pos.id position_id,pos.label,pos.quantity,pos.sort_order position_order,
          opt.product_id,opt.sort_order option_order,p.name product_name,p.sku,p.gtin,p.image_url,
-         greatest(0,coalesce(s.effective_sellable_stock,0)-coalesce(orr.reserved,0)-coalesce(lrr.reserved,0))::numeric available_stock
+         greatest(0,coalesce(s.loose_sellable_stock,0)-coalesce(orr.reserved,0))::numeric available_stock
   from mold m
   join public.basket_mold_positions pos on pos.mold_id=m.id
   join public.basket_mold_position_options opt on opt.position_id=pos.id
   join public.products p on p.id=opt.product_id and p.is_active=true
-  join public.ops2_sellable_stock_v1 s on s.product_id=p.id and s.is_active=true
+  join public.ops2_loose_sellable_stock_v1 s on s.product_id=p.id and s.is_active=true
   left join active_order_reservations orr on orr.product_id=p.id
-  left join active_lot_reservations lrr on lrr.product_id=p.id
-  where greatest(0,coalesce(s.effective_sellable_stock,0)-coalesce(orr.reserved,0)-coalesce(lrr.reserved,0)) >= pos.quantity
+  where greatest(0,coalesce(s.loose_sellable_stock,0)-coalesce(orr.reserved,0)) >= pos.quantity
 ),
 scored as (
   select e.*,
@@ -85,7 +78,7 @@ select coalesce((
   select jsonb_build_object(
     'basket_id',m.basket_id,'name',m.name,'image_url',m.image_url,
     'hidden_adjustment',m.hidden_adjustment,'public_composition_count',m.public_composition_count,
-    'balancing','sellable_coverage_v2',
+    'balancing','loose_sellable_coverage_v3',
     'compositions',coalesce((select jsonb_agg(jsonb_build_object('number',c.composition_number,'items',c.items) order by c.composition_number) from compositions c),'[]'::jsonb)
   ) from mold m
 ),jsonb_build_object('basket_id',p_basket_id,'error','basket_mold_not_found'));
