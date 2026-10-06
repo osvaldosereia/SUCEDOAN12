@@ -3,6 +3,7 @@ import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normaliz
 import {shouldSendAnaLiveReply} from '../_shared/ana-live-policy-v1.mjs';
 import {sendTextViaMeta,MetaTransportError} from '../_shared/whatsapp-meta-transport-v1.mjs';
 import {linkedCustomerFirstName} from '../_shared/ana-customer-context-v1.mjs';
+import {buildAnaRuntimeInstructions,routeAnaMessage} from '../_shared/ana-admin-config-v1.mjs';
 
 const cors={
   'Access-Control-Allow-Origin':'*',
@@ -43,8 +44,8 @@ async function personalizedCatalogWelcome(db:any,conversationId:string,phone:str
 }
 
 export async function generateAnaDryRunSuggestion({
-  apiKey,model,inboundText,history,operationalContext={},fetchFn=fetch
-}:{apiKey:string,model:string,inboundText:string,history:any[],operationalContext?:any,fetchFn?:typeof fetch}){
+  apiKey,model,inboundText,history,operationalContext={},instructions=ANA_DRY_RUN_INSTRUCTIONS,fetchFn=fetch
+}:{apiKey:string,model:string,inboundText:string,history:any[],operationalContext?:any,instructions?:string,fetchFn?:typeof fetch}){
   if(!apiKey)return {ok:false,error:'missing_openai_api_key'};
   const input=buildAnaDryRunInput({inboundText,history,operationalContext});
   const started=Date.now();
@@ -57,7 +58,7 @@ export async function generateAnaDryRunSuggestion({
         store:false,
         max_output_tokens:500,
         reasoning:{effort:'low'},
-        instructions:ANA_DRY_RUN_INSTRUCTIONS,
+        instructions,
         input:[{role:'user',content:[{type:'input_text',text:JSON.stringify(input)}]}],
         text:{format:{type:'json_schema',name:'ana_dry_run_suggestion',strict:true,schema:ANA_DRY_RUN_SCHEMA}}
       }),
@@ -122,18 +123,44 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
   if(inbound.error||!inbound.data||inbound.data.direction!=='inbound'||inbound.data.message_type!=='text'||!String(inbound.data.text_body||'').trim()){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'inbound_not_supported',p_model:model});
   }
+  const activeConfig=await db.rpc('ops2_ana_active_config_v1');
+  if(activeConfig.error||activeConfig.data?.ok!==true){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'active_config_invalid',p_model:model});
+  }
+  const configuration=activeConfig.data.configuration;
+  const account=await db.from('whatsapp_accounts').select('phone_e164').eq('id',job.whatsapp_account_id).maybeSingle();
+  if(account.error||!account.data?.phone_e164){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'active_config_invalid',p_model:model});
+  }
+  const channel=String(account.data.phone_e164).replace(/\D/g,'').slice(-4);
+  const routed=routeAnaMessage(configuration,inbound.data.text_body,channel);
+  if(routed.path==='handoff'){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:routed.reason||'admin_trigger_handoff',p_model:model,
+      p_metadata:{trigger_key:routed.triggerKey||null,active_version:activeConfig.data.version}});
+  }
+  if(routed.path==='label'){
+    const labelGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
+    if(labelGate.error||labelGate.data?.allowed!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'human_takeover_before_trigger_label',p_model:model});
+    const labeled=await db.rpc('ops2_ana_apply_trigger_label_v1',{p_conversation_id:job.conversation_id,p_label_id:routed.labelId,p_trigger_key:routed.triggerKey});
+    if(labeled.error||labeled.data?.ok!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:labeled.data?.error||'trigger_label_failed',p_model:model});
+    return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'no_reply',p_reason:'admin_trigger_label_applied',p_model:model,
+      p_metadata:{trigger_key:routed.triggerKey,active_version:activeConfig.data.version}});
+  }
   const historyResult=await db.from('whatsapp_messages_v1').select('direction,text_body,sender_kind,created_at,received_at,sent_at')
     .eq('conversation_id',job.conversation_id).not('text_body','is',null).order('created_at',{ascending:false}).limit(12);
   if(historyResult.error)throw new Error(`history_failed:${historyResult.error.message}`);
   const history=(historyResult.data||[]).reverse();
   const customerFirstName=await linkedCustomerFirstName(db,job.conversation_id);
   let generated:any;
-  if(await isSimpleGreetingForNewDay(db,job.conversation_id,inbound.data)){
+  if(routed.path==='fixed_reply'){
+    generated={ok:true,result:normalizeAnaDryRunResult({decision:'suggest',confidence:1,response_text:routed.responseText,reason:'admin_trigger_fixed_reply',missing_context:[]}),latency_ms:0};
+  }else if(await isSimpleGreetingForNewDay(db,job.conversation_id,inbound.data)){
     const conversation=await db.from('conversations').select('wa_contact_e164').eq('id',job.conversation_id).maybeSingle();
-    const welcome=conversation.data?.wa_contact_e164?await personalizedCatalogWelcome(db,job.conversation_id,conversation.data.wa_contact_e164,customerFirstName):null;
+    const greetingName=configuration?.behavior?.use_known_first_name_on_first_greeting===false?'':customerFirstName;
+    const welcome=conversation.data?.wa_contact_e164?await personalizedCatalogWelcome(db,job.conversation_id,conversation.data.wa_contact_e164,greetingName):null;
     generated=welcome?{ok:true,result:normalizeAnaDryRunResult({decision:'suggest',confidence:0.99,response_text:welcome,reason:'first_greeting_of_day',missing_context:[]}),latency_ms:0}:null;
   }
-  if(!generated)generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext(customerFirstName)});
+  if(!generated)generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext(customerFirstName),instructions:buildAnaRuntimeInstructions(configuration)});
   if(!generated.ok)return await finishLive(db,{p_job_id:job.id,p_status:'failed',p_decision:'handoff',p_reason:generated.error,p_model:model,
     p_provider_response_id:generated.response_id||null,p_error:generated.error,p_metadata:{latency_ms:generated.latency_ms||null}});
   const secondGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});

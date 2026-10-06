@@ -19,7 +19,7 @@ assert.match(bootstrap,/searchParams\.get\("exchange"\)\s*===\s*"1"/,'bootstrap 
 assert.match(bootstrap,/auth\.verifyOtp/,'bootstrap deve trocar token hash por sessão somente no modo exchange');
 assert.match(app,/attendanceJsonApi/,'core do Atendimento deve usar o cliente compartilhado');
 assert.match(library,/attendanceJsonApi/,'Biblioteca deve usar o cliente compartilhado');
-assert.match(html,/attendance-app\.js\?v=(?:auth-refresh-v2|product-media-v1|attendance-papoai-retired-v1)/,'core deve receber cache-bust explícito e atual');
+assert.match(html,/attendance-app\.js\?v=(?:auth-refresh-v2|product-media-v1|attendance-papoai-retired-v1|ana-identified-catalog-v1)/,'core deve receber cache-bust explícito e atual');
 assert.match(html,/attendance-library\.js\?v=auth-refresh-v2/,'Biblioteca deve receber cache-bust atual');
 
 console.log('OK · Atendimento renova sessão e preserva corpo JSON da Biblioteca.');
