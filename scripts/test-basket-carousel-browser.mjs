@@ -41,11 +41,11 @@ try{
    if(u.pathname.endsWith('.js'))return route.fulfill({contentType:'application/javascript',body:''});
    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"/>'});
  });
- await app.goto('https://app.test/');await app.locator('#basketGrid .basket-card-photo img').first().waitFor();
+ await app.goto('https://app.test/');await app.locator('.basket-card-photo img').first().waitFor();
  
  assert.equal(await app.getByRole('heading',{name:'Escolha suas Cestas e Kits',exact:true}).count(),1,'show the new home section heading');
- assert.equal(await app.locator('#basketGrid .basket-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
- await app.locator('#basketGrid [data-basket]').click();await app.locator('#addBasket').waitFor();
+ assert.equal(await app.locator('.basket-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
+ await app.locator('[data-basket]').click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
  await page.evaluate(()=>{document.querySelector('#basketGrid').innerHTML=BasketCarousel.card({...b,carousel_items:b.carousel_items.slice(0,1)},s=>String(s),x=>String(x),x=>x);BasketCarousel.mount(document.querySelector('#basketGrid'))});
  assert.equal(await page.locator('.basket-scroll-track').isVisible(),true,'trilho discreto permanece visível mesmo sem overflow');
