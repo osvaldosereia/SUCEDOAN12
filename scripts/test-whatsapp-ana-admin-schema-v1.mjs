@@ -10,7 +10,7 @@ assert.equal(fs.readFileSync(mirrorPath, 'utf8'), sql, 'SQL mirror must be byte-
 for (const table of ['whatsapp_ana_admin_draft_v1','whatsapp_ana_admin_versions_v1','whatsapp_ana_admin_runtime_v1','whatsapp_ana_admin_events_v1','whatsapp_ana_admin_test_runs_v1']) {
   assert.match(sql, new RegExp(`CREATE TABLE IF NOT EXISTS private\\.${table}\\b`, 'i'), `${table} must exist in private schema`);
 }
-for (const fn of ['ops2_ana_admin_load_v1','ops2_ana_admin_save_draft_v1','ops2_ana_admin_publish_v1','ops2_ana_admin_rollback_v1','ops2_ana_active_config_v1','ops2_ana_admin_set_channel_v1']) {
+for (const fn of ['ops2_ana_admin_load_v1','ops2_ana_admin_save_draft_v1','ops2_ana_admin_publish_v1','ops2_ana_admin_rollback_v1','ops2_ana_active_config_v1','ops2_ana_admin_set_channel_v1','ops2_ana_admin_record_test_run_v1']) {
   assert.match(sql, new RegExp(`FUNCTION public\\.${fn}\\b`, 'i'), `${fn} RPC must exist`);
   assert.match(sql, new RegExp(`REVOKE (?:ALL|EXECUTE) ON FUNCTION public\\.${fn}[^;]*FROM PUBLIC`, 'i'), `${fn} must revoke PUBLIC execute`);
   assert.match(sql, new RegExp(`GRANT EXECUTE ON FUNCTION public\\.${fn}[^;]*TO service_role`, 'i'), `${fn} must grant service_role execute`);

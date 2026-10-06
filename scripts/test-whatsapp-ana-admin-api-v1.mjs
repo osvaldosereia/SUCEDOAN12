@@ -23,9 +23,11 @@ assert.match(endpoint,/authorizeAnaAdmin/);
 assert.match(endpoint,/validateAnaConfiguration/);
 assert.match(endpoint,/ops2_ana_admin_set_channel_v1/);
 assert.match(endpoint,/row\.ana_enabled/);
+assert.match(endpoint,/trigger_label_not_active/);
+assert.match(endpoint,/action==="admin_publish"[\s\S]*?trigger_label_not_active/);
 const migration=fs.readFileSync('supabase/migrations/20261007_whatsapp_ana_admin_v1.sql','utf8');
 assert.match(migration,/SET ana_enabled = p_enabled/);
-assert.doesNotMatch(migration,/SET[^;]{0,160}(send_enabled|capture_enabled|campaigns_enabled)\\s*=/i);
+assert.doesNotMatch(migration,/SET[^;]{0,160}(send_enabled|capture_enabled|campaigns_enabled)\s*=/i);
 assert.match(endpoint,/dry_run_not_sendable/);
 console.log('PASS: ANA admin authentication, role matrix and management API contracts');
 

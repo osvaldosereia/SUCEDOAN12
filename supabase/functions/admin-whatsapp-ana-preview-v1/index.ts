@@ -4,6 +4,8 @@ import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normaliz
 import {linkedCustomerFirstName} from "../_shared/ana-customer-context-v1.mjs";
 import {authorizeAnaAdmin,anaAdminPermission} from "../_shared/ana-admin-auth-v1.mjs";
 import {validateAnaConfiguration} from "../_shared/ana-admin-config-v1.mjs";
+import {buildAnaRuntimeInstructions,routeAnaMessage} from "../_shared/ana-admin-config-v1.mjs";
+import {shouldSendAnaLiveReply} from "../_shared/ana-live-policy-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SUPABASE_ANON_KEY=Deno.env.get("SUPABASE_ANON_KEY")||"";
@@ -29,16 +31,26 @@ async function openaiKey(){
 }
 async function adminAuth(req:Request,db:any){const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();if(!token)return {ok:false as const,status:401,error:"admin_auth_required"};const user=await db.auth.getUser(token);if(user.error||!user.data?.user?.id)return {ok:false as const,status:401,error:"admin_session_invalid"};return {ok:true as const,user_id:user.data.user.id}}
 
-async function anaAdminAction(req:Request,body:any,action:string){
-  if(!SUPABASE_SERVICE_ROLE_KEY)return json(req,{ok:false,error:"server_config"},500);\n  const privileged=serviceDb();
-  const principal=await authorizeAnaAdmin({authorization:req.headers.get("Authorization")||"",authClient:requestDb,serviceClient:privileged});
+async function anaAdminAction(req:Request,body:any,action:string,authClient:any){
+  if(!SUPABASE_SERVICE_ROLE_KEY)return json(req,{ok:false,error:"server_config"},500);
+  const privileged=serviceDb();
+  const principal=await authorizeAnaAdmin({authorization:req.headers.get("Authorization")||"",authClient,serviceClient:privileged});
   if(!principal.ok)return json(req,{ok:false,error:principal.error},principal.status);
   if(!anaAdminPermission(principal.role,action))return json(req,{ok:false,error:"admin_role_insufficient"},403);
   const actor=principal.user_id;
   if(action==="admin_load"||action==="admin_history"){
     const loaded=await privileged.rpc("ops2_ana_admin_load_v1");if(loaded.error)throw loaded.error;
     const result=loaded.data||{ok:false,error:"ana_admin_load_failed"};if(result.ok!==true)return json(req,{ok:false,error:result.error||"ana_admin_load_failed"},409);
-    if(action==="admin_history")return json(req,{ok:true,history:result.events||[],versions:result.versions||[],test_runs:result.test_runs||[]});
+    if(action==="admin_history"){
+      const jobs=await privileged.from("whatsapp_ana_jobs_v1").select("whatsapp_account_id,status,decision,reason,created_at,completed_at").eq("dry_run",false).order("created_at",{ascending:false}).limit(20);
+      if(jobs.error)throw jobs.error;
+      const accountIds=[...new Set((jobs.data||[]).map((job:any)=>job.whatsapp_account_id).filter(Boolean))];
+      const accountRows=accountIds.length?await privileged.from("whatsapp_accounts").select("id,phone_e164").in("id",accountIds):{data:[],error:null};if(accountRows.error)throw accountRows.error;
+      const last4=new Map((accountRows.data||[]).map((account:any)=>[account.id,String(account.phone_e164||"").replace(/\D/g,"").slice(-4)]));
+      const safeReasons=new Set(["admin_trigger_fixed_reply","admin_trigger_handoff","admin_trigger_label_applied","human_takeover_during_generation","human_takeover_before_trigger_label","human_review_required","active_config_invalid","first_greeting_of_day","ai_gate_closed_before_generation","inbound_not_supported"]);
+      const liveOutcomes=(jobs.data||[]).map((job:any)=>({channel_last4:last4.get(job.whatsapp_account_id)||"",status:job.status,decision:job.decision||"handoff",reason:safeReasons.has(job.reason)?job.reason:"other_or_needs_review",created_at:job.created_at,completed_at:job.completed_at}));
+      return json(req,{ok:true,history:[...(result.events||[]),...liveOutcomes].slice(0,40),versions:result.versions||[],test_runs:result.test_runs||[]});
+    }
     const runtime=await privileged.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at,metadata,whatsapp_accounts(phone_e164,display_name,slug)");
     if(runtime.error)throw runtime.error;
     const channels=(runtime.data||[]).map((row:any)=>({id:row.whatsapp_account_id,phone_last4:String(row.whatsapp_accounts?.phone_e164||"").replace(/\D/g,"").slice(-4),name:clean(row.whatsapp_accounts?.display_name||row.whatsapp_accounts?.slug,60),inbound_provider:row.inbound_provider,outbound_provider:row.outbound_provider,capture_enabled:row.capture_enabled,send_enabled:row.send_enabled,ana_enabled:row.ana_enabled,campaigns_enabled:row.campaigns_enabled,human_send_enabled:row.human_send_enabled,homologated_at:row.homologated_at,updated_at:row.updated_at}));
@@ -47,12 +59,18 @@ async function anaAdminAction(req:Request,body:any,action:string){
   }
   if(action==="admin_save_draft"){
     const validation=validateAnaConfiguration(body?.configuration);if(!validation.ok)return json(req,{ok:false,error:"configuration_invalid",details:validation.errors},400);
+    const labelIds=[...new Set(body.configuration.triggers.filter((trigger:any)=>trigger.action==="label").map((trigger:any)=>String(trigger.label_id)))];
+    if(labelIds.length){const activeLabels=await privileged.from("attendance_labels_v1").select("id").eq("is_active",true).in("id",labelIds);if(activeLabels.error)throw activeLabels.error;const found=new Set((activeLabels.data||[]).map((label:any)=>label.id));if(labelIds.some(id=>!found.has(id)))return json(req,{ok:false,error:"trigger_label_not_active"},400)}
     const revision=Number(body?.expected_revision);if(!Number.isSafeInteger(revision)||revision<1)return json(req,{ok:false,error:"revision_invalid"},400);
     const saved=await privileged.rpc("ops2_ana_admin_save_draft_v1",{p_configuration:body.configuration,p_expected_revision:revision,p_note:clean(body?.note,240),p_actor_id:actor});
     if(saved.error)throw saved.error;const result=saved.data||{ok:false,error:"draft_save_failed"};return json(req,result,result.ok===true?200:409);
   }
   if(action==="admin_publish"){
     const testRunId=validUuid(body?.test_run_id);if(!testRunId)return json(req,{ok:false,error:"test_run_required"},400);
+    const current=await privileged.rpc("ops2_ana_admin_load_v1");if(current.error)throw current.error;
+    const valid=validateAnaConfiguration(current.data?.draft?.configuration);if(!valid.ok)return json(req,{ok:false,error:"configuration_invalid",details:valid.errors},409);
+    const labelIds=[...new Set(current.data.draft.configuration.triggers.filter((trigger:any)=>trigger.action==="label").map((trigger:any)=>String(trigger.label_id)))];
+    if(labelIds.length){const activeLabels=await privileged.from("attendance_labels_v1").select("id").eq("is_active",true).in("id",labelIds);if(activeLabels.error)throw activeLabels.error;const found=new Set((activeLabels.data||[]).map((label:any)=>label.id));if(labelIds.some(id=>!found.has(id)))return json(req,{ok:false,error:"trigger_label_not_active"},409)}
     const published=await privileged.rpc("ops2_ana_admin_publish_v1",{p_test_run_id:testRunId,p_note:clean(body?.note,240),p_actor_id:actor});
     if(published.error)throw published.error;const result=published.data||{ok:false,error:"publish_failed"};return json(req,result,result.ok===true?200:409);
   }
@@ -66,7 +84,35 @@ async function anaAdminAction(req:Request,body:any,action:string){
     const changed=await privileged.rpc("ops2_ana_admin_set_channel_v1",{p_whatsapp_account_id:accountId,p_enabled:body.enabled,p_actor_id:actor});
     if(changed.error)throw changed.error;const result=changed.data||{ok:false,error:"channel_toggle_failed"};return json(req,result,result.ok===true?200:409);
   }
-  if(action==="admin_test")return json(req,{ok:false,error:"simulator_unavailable"},503);
+  if(action==="admin_test"){
+    const loaded=await privileged.rpc("ops2_ana_admin_load_v1");if(loaded.error)throw loaded.error;const draft=loaded.data?.draft;
+    const validation=validateAnaConfiguration(draft?.configuration);if(!validation.ok)return json(req,{ok:false,error:"configuration_invalid",details:validation.errors},409);
+    const revision=Number(draft?.revision);if(Number(body?.expected_revision)!==revision)return json(req,{ok:false,error:"revision_conflict"},409);
+    const suite=draft.configuration.test_cases.slice(0,8);if(!suite.length)return json(req,{ok:false,error:"required_test_cases_missing"},409);
+    const began=Date.now();let passed=0,failed=0;const safeReasons:string[]=[];const scenarioResults:any[]=[];
+    const simulate=async(input:string,channel:string)=>{
+      const route=routeAnaMessage(draft.configuration,input,channel);
+      if(route.path==="fixed_reply")return {outcome:"reply",reason:"fixed_reply_trigger",response_text:route.responseText,latency_ms:0};
+      if(route.path==="handoff")return {outcome:"handoff",reason:route.reason||"trigger_handoff",response_text:"",latency_ms:0};
+      if(route.path==="label")return {outcome:"label",reason:"trigger_label",response_text:"",latency_ms:0};
+      const generated=await generateSuggestion(input,[],"",buildAnaRuntimeInstructions(draft.configuration));
+      if(!generated.ok)return {outcome:"handoff",reason:"ai_fallback_handoff",response_text:"",latency_ms:Number(generated.latency_ms)||0};
+      const result=generated.result;
+      if(result.decision==="no_reply")return {outcome:"no_reply",reason:"ai_no_reply",response_text:"",latency_ms:Number(generated.latency_ms)||0};
+      if(!shouldSendAnaLiveReply({decision:result.decision,confidence:result.confidence,responseText:result.response_text}))return {outcome:"handoff",reason:"ai_low_confidence_handoff",response_text:"",latency_ms:Number(generated.latency_ms)||0};
+      return {outcome:"reply",reason:"ai_reply_eligible",response_text:result.response_text,latency_ms:Number(generated.latency_ms)||0};
+    };
+    for(const scenario of suite){
+      const result=await simulate(String(scenario.input||""),String(scenario.channel||"0975"));const ok=result.outcome===scenario.expected;
+      if(ok)passed++;else failed++;safeReasons.push(ok?"scenario_pass":"scenario_failed");
+      scenarioResults.push({key:scenario.key,expected:scenario.expected,actual:result.outcome,passed:ok,reason:result.reason});
+    }
+    let customResult:any=null;const customInput=clean(body?.input,500),channel=clean(body?.channel,4);
+    if(customInput){if(!["0975","1018"].includes(channel))return json(req,{ok:false,error:"test_channel_invalid",dry_run:true,dry_run_not_sendable:true},400);const value=await simulate(customInput,channel);customResult={outcome:value.outcome,reason:value.reason,response_text:value.response_text};}
+    const recorded=await privileged.rpc("ops2_ana_admin_record_test_run_v1",{p_draft_revision:revision,p_scenario_keys:suite.map((scenario:any)=>String(scenario.key)),p_passed_count:passed,p_failed_count:failed,p_safe_reasons:safeReasons,p_latency_ms:Math.max(0,Date.now()-began),p_actor_id:actor});
+    if(recorded.error)throw recorded.error;const saved=recorded.data||{ok:false,error:"test_run_record_failed"};if(saved.ok!==true)return json(req,{ok:false,error:saved.error||"test_run_record_failed"},409);
+    return json(req,{ok:true,dry_run:true,dry_run_not_sendable:true,test_run:saved,results:scenarioResults,custom_result:customResult});
+  }
   return json(req,{ok:false,error:"admin_action_invalid"},400);
 }
 
@@ -80,13 +126,13 @@ function operationalContext(customerFirstName=''){
   };
 }
 
-async function generateSuggestion(inboundText:string,history:any[],customerFirstName=''){
+async function generateSuggestion(inboundText:string,history:any[],customerFirstName='',instructions=ANA_DRY_RUN_INSTRUCTIONS){
   const apiKey=await openaiKey();
   if(!apiKey)return {ok:false as const,error:"openai_not_configured"};
   const input=buildAnaDryRunInput({inboundText,history,operationalContext:operationalContext(customerFirstName)});
   const started=Date.now();
   try{
-    const response=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${apiKey}`,"Content-Type":"application/json"},body:JSON.stringify({model:ANA_MODEL,store:false,max_output_tokens:500,reasoning:{effort:"low"},instructions:ANA_DRY_RUN_INSTRUCTIONS,input:[{role:"user",content:[{type:"input_text",text:JSON.stringify(input)}]}],text:{format:{type:"json_schema",name:"ana_dry_run_suggestion",strict:true,schema:ANA_DRY_RUN_SCHEMA}}}),signal:AbortSignal.timeout(15000)});
+    const response=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${apiKey}`,"Content-Type":"application/json"},body:JSON.stringify({model:ANA_MODEL,store:false,max_output_tokens:500,reasoning:{effort:"low"},instructions,input:[{role:"user",content:[{type:"input_text",text:JSON.stringify(input)}]}],text:{format:{type:"json_schema",name:"ana_dry_run_suggestion",strict:true,schema:ANA_DRY_RUN_SCHEMA}}}),signal:AbortSignal.timeout(15000)});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)return {ok:false as const,error:"openai_http_error",status:response.status,response_id:data?.id||null,latency_ms:Date.now()-started};
     let parsed:any={};try{parsed=JSON.parse(outputText(data)||"{}")}catch{return {ok:false as const,error:"openai_parse_error",response_id:data?.id||null,latency_ms:Date.now()-started}}
@@ -132,7 +178,7 @@ Deno.serve(async(req:Request)=>{
     const body=await req.json().catch(()=>({}));
     const action=clean(body?.action||"preview",30).toLowerCase()||"preview";
 
-    if(action.startsWith("admin_"))return await anaAdminAction(req,body,action);
+    if(action.startsWith("admin_"))return await anaAdminAction(req,body,action,requestDb);
 
     if(action==="review"){
       const jobId=validUuid(body?.job_id);const outcome=clean(body?.outcome,30).toLowerCase();const note=clean(body?.note,500)||null;

@@ -19,7 +19,7 @@ export function validateAnaConfiguration(configuration){
     for(const [key,choices] of Object.entries(behaviorEnums))if(!choices.has(behavior[key]))errors.push(`behavior_${key}_invalid`);
     if(typeof behavior.use_known_first_name_on_first_greeting!=='boolean')errors.push('behavior_first_name_flag_invalid');
   }
-  for(const [field,max] of [['knowledge',30],['triggers',100],['test_cases',40]]){
+  for(const [field,max] of [['knowledge',30],['triggers',100],['test_cases',8]]){
     if(!Array.isArray(configuration[field])){errors.push(`${field}_array_required`);continue}
     if(configuration[field].length>max)errors.push(`${field}_limit_exceeded`);
   }
@@ -43,6 +43,7 @@ export function validateAnaConfiguration(configuration){
   }
   for(const item of Array.isArray(configuration.test_cases)?configuration.test_cases:[]){
     if(!isPlainObject(item)||!keyPattern.test(String(item.key||''))||!cleanText(item.input,500)||!['reply','handoff','no_reply','label'].includes(item.expected))errors.push('test_case_invalid');
+    if(item?.channel!==undefined&&!allowedChannels.has(item.channel))errors.push(`test_case_${item.key}_channel_invalid`);
   }
   return {ok:errors.length===0,errors:[...new Set(errors)]};
 }

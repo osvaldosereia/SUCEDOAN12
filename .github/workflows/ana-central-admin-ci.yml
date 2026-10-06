@@ -46,3 +46,8 @@ jobs:
 
       - name: Validate ANA live worker configuration routing
         run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs
+
+      - name: Validate ANA simulator, history privacy and publish guards
+        run: node scripts/test-ana-central-admin-ci-v1.mjs
+      - name: Validate ANA Admin UI
+        run: node scripts/test-admin-ana-section-v1.mjs

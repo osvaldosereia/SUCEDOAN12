@@ -78,9 +78,9 @@ INSERT INTO private.whatsapp_ana_admin_versions_v1(version, configuration, chang
 VALUES (1, jsonb_build_object(
   'behavior', jsonb_build_object('tone','cordial','conciseness','short','emoji','sparingly','use_known_first_name_on_first_greeting',true),
   'knowledge', jsonb_build_array(
-    jsonb_build_object('key','catalogo','title','Catálogo e pedidos','category','vendas','content','Para consultar produtos e fazer pedidos, direcione a pessoa ao catálogo/site oficial. O atendimento pode orientar por aqui; a ANA não cria pedidos.'),
-    jsonb_build_object('key','atendimento-humano','title','Atendimento humano','category','atendimento','content','Encaminhe para uma pessoa quando o cliente pedir, quando faltar informação confiável ou houver exceção operacional.'),
-    jsonb_build_object('key','dados-dinamicos','title','Dados que precisam de confirmação','category','seguranca','content','Não invente preço, estoque, total, composição, prazo, endereço, pedido, pagamento ou dado do cliente. Sem contexto confirmado, encaminhe para humano ou catálogo.')
+    jsonb_build_object('key','catalogo','title','Catálogo e pedidos','category','vendas','status','published','content','Para consultar produtos e fazer pedidos, direcione a pessoa ao catálogo/site oficial. O atendimento pode orientar por aqui; a ANA não cria pedidos.'),
+    jsonb_build_object('key','atendimento-humano','title','Atendimento humano','category','atendimento','status','published','content','Encaminhe para uma pessoa quando o cliente pedir, quando faltar informação confiável ou houver exceção operacional.'),
+    jsonb_build_object('key','dados-dinamicos','title','Dados que precisam de confirmação','category','seguranca','status','published','content','Não invente preço, estoque, total, composição, prazo, endereço, pedido, pagamento ou dado do cliente.')
   ),
   'triggers', jsonb_build_array(),
   'test_cases', jsonb_build_array(
@@ -192,11 +192,17 @@ GRANT EXECUTE ON FUNCTION public.ops2_ana_admin_publish_v1(uuid,text,uuid) TO se
 GRANT EXECUTE ON FUNCTION public.ops2_ana_admin_rollback_v1(bigint,text,uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.ops2_ana_active_config_v1() TO service_role;
 
-COMMIT;
 CREATE OR REPLACE FUNCTION public.ops2_ana_admin_set_channel_v1(p_whatsapp_account_id uuid, p_enabled boolean, p_actor_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, private AS $$
 DECLARE changed_id uuid; channel_suffix text;
 BEGIN
+  IF p_enabled IS TRUE AND NOT EXISTS(
+    SELECT 1 FROM public.whatsapp_channel_runtime_v1 r
+    WHERE r.whatsapp_account_id=p_whatsapp_account_id AND r.capture_enabled IS TRUE
+      AND r.send_enabled IS TRUE AND r.outbound_provider='meta' AND r.homologated_at IS NOT NULL
+  ) THEN
+    RETURN jsonb_build_object('ok',false,'error','channel_not_ready_for_ana');
+  END IF;
   UPDATE public.whatsapp_channel_runtime_v1 SET ana_enabled = p_enabled, updated_at = now()
     WHERE whatsapp_account_id = p_whatsapp_account_id RETURNING whatsapp_account_id INTO changed_id;
   IF changed_id IS NULL THEN RETURN jsonb_build_object('ok',false,'error','channel_not_found'); END IF;
@@ -240,3 +246,36 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.ops2_ana_apply_trigger_label_v1(uuid,uuid,text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.ops2_ana_apply_trigger_label_v1(uuid,uuid,text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.ops2_ana_admin_record_test_run_v1(
+  p_draft_revision bigint,p_scenario_keys text[],p_passed_count integer,p_failed_count integer,
+  p_safe_reasons jsonb,p_latency_ms integer,p_actor_id uuid
+)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, private AS $$
+DECLARE run_id uuid;
+BEGIN
+  IF p_draft_revision IS NULL OR p_draft_revision<1 OR coalesce(cardinality(p_scenario_keys),0)>20
+     OR p_passed_count IS NULL OR p_failed_count IS NULL OR p_passed_count<0 OR p_failed_count<0
+     OR p_passed_count+p_failed_count>20 OR coalesce(p_latency_ms,0)<0 THEN
+    RETURN jsonb_build_object('ok',false,'error','test_run_input_invalid');
+  END IF;
+  IF p_safe_reasons IS NULL OR jsonb_typeof(p_safe_reasons)<>'array' THEN
+    RETURN jsonb_build_object('ok',false,'error','test_run_privacy_input_invalid');
+  END IF;
+  IF jsonb_array_length(p_safe_reasons)>20 THEN
+    RETURN jsonb_build_object('ok',false,'error','test_run_input_invalid');
+  END IF;
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(p_safe_reasons) AS items(value) WHERE jsonb_typeof(items.value)<>'string' OR length(items.value#>>'{}')>80)
+     OR EXISTS(SELECT 1 FROM unnest(coalesce(p_scenario_keys,'{}'::text[])) k WHERE k !~ '^[a-z0-9][a-z0-9_-]{0,39}$') THEN
+    RETURN jsonb_build_object('ok',false,'error','test_run_privacy_input_invalid');
+  END IF;
+  INSERT INTO private.whatsapp_ana_admin_test_runs_v1(draft_revision,scenario_keys,passed_count,failed_count,safe_reasons,latency_ms,actor_id)
+    VALUES(p_draft_revision,coalesce(p_scenario_keys,'{}'::text[]),p_passed_count,p_failed_count,p_safe_reasons,p_latency_ms,p_actor_id)
+    RETURNING id INTO run_id;
+  RETURN jsonb_build_object('ok',true,'id',run_id,'draft_revision',p_draft_revision,'passed_count',p_passed_count,'failed_count',p_failed_count);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.ops2_ana_admin_record_test_run_v1(bigint,text[],integer,integer,jsonb,integer,uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.ops2_ana_admin_record_test_run_v1(bigint,text[],integer,integer,jsonb,integer,uuid) TO service_role;
+
+COMMIT;
