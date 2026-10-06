@@ -30,6 +30,9 @@ assert.match(api,/mold_mode\s*:\s*true/i,'public cards must identify mold compos
 assert.match(api,/composition_number/i,'public cards/details must keep composition identity');
 assert.match(api,/basket_mold/i,'storefront API must expose mold detail/order payloads');
 assert.match(api,/basket_mold_composition_invalid[^\n]+includes\(e\)\?409:400/i,'mold checkout conflicts must map to HTTP 409');
+assert.doesNotMatch(api,/stock_reserved:false,reservation_timing:"on_confirmation"/i,'storefront must not override the database on-create reservation result');
+assert.match(api,/stock_reserved:created\.data\?\.stock_reserved===true/i,'storefront event telemetry must reflect the database reservation result');
+assert.match(api,/reservation_timing:created\.data\?\.reservation_timing\|\|null/i,'storefront event telemetry must reflect the database reservation timing');
 
 for(const [name,html] of [['root',root],['vitrine',vitrine]]){
   assert.match(html,/type:\s*['"]basket_mold['"]/i,`${name} must put mold compositions in cart as basket_mold`);
