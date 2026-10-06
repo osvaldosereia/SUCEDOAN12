@@ -23,6 +23,7 @@ on:
       - 'supabase/functions/_shared/marketing-template-strategy-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-carousel-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'supabase/migrations/*marketing_strategy*'
       - 'scripts/test-marketing-strategy-foundation-v1.mjs'
       - 'scripts/test-marketing-strategy-engine-v1.mjs'
@@ -30,6 +31,7 @@ on:
       - 'scripts/test-marketing-strategy-template-gate-v1.mjs'
       - 'scripts/test-marketing-strategy-campaign-bridge-v1.mjs'
       - 'scripts/test-marketing-strategy-attribution-learning-v1.mjs'
+      - 'scripts/test-marketing-strategy-carousel-media-v1.mjs'
       - 'scripts/test-admin-marketing-campaigns-v1.mjs'
       - 'scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'
       - 'scripts/test-whatsapp-marketing-worker-v1.mjs'
@@ -67,6 +69,8 @@ jobs:
         run: node scripts/test-marketing-strategy-campaign-bridge-v1.mjs
       - name: Marketing strategy attribution and learning contract
         run: node scripts/test-marketing-strategy-attribution-learning-v1.mjs
+      - name: Marketing strategy carousel media contract
+        run: node scripts/test-marketing-strategy-carousel-media-v1.mjs
       - name: Existing simple Meta template regression
         run: node scripts/test-whatsapp-meta-template-admin-v1.mjs
       - name: Marketing strategy UI contract
