@@ -15,13 +15,19 @@ const delegate=admin.slice(start,end);
 assert.match(delegate,/DonaAntoniaBasketAdmin\?\.render/,'index must delegate baskets to one section controller');
 assert.doesNotMatch(delegate,/basket_commercial_admin|basketCommercialCard|kitLotRow/,'index must not host a second baskets implementation');
 
-assert.match(section,/Cestas e Kits/,'primary page must use the simple Cestas e Kits heading');
-assert.match(section,/Criador de Kits/,'first operational tab must be Criador de Kits');
-assert.match(section,/Cestas do Site/,'second operational tab must be Cestas do Site');
-assert.match(section,/DonaAntoniaKitBuilder/,'section must delegate internal-kit work');
-assert.match(section,/DonaAntoniaStoreBaskets/,'section must delegate external-basket work');
+assert.match(section,/Cestas do Site/,'primary page must use the simplified Cestas do Site heading');
+assert.match(section,/Cestas Molde/,'day-to-day editor must be Cestas Molde');
+assert.match(section,/tab\s*:\s*['"]molds['"]/,'Cestas Molde must be the default workspace');
+assert.match(section,/Ferramentas avançadas/,'legacy tooling must be explicitly secondary');
+assert.match(section,/data-basket-advanced/,'legacy tooling must be inside an advanced disclosure');
+assert.match(section,/Criador de Kits/,'internal kit maintenance may remain available as an advanced tool');
+assert.match(section,/Operação anterior/,'previous basket operation may remain available as an advanced tool');
+assert.match(section,/DonaAntoniaBasketMolds/,'section must delegate normal work to the mold editor');
+assert.match(section,/DonaAntoniaKitBuilder/,'section must preserve internal-kit maintenance compatibility');
+assert.match(section,/DonaAntoniaStoreBaskets/,'section must preserve previous basket operation compatibility');
+assert.doesNotMatch(section,/primeiro crie os kits internos/i,'normal operation must no longer teach the internal kit workflow');
 assert.doesNotMatch(section,/basket_commercial_admin|basket_commercial_create|category_slug|public_available|availability_reason/,'simple controller must not own basket business data');
-for(const label of ['Editar','Novo lote','Duplicar','Pausar venda','Retomar venda','Imprimir','Excluir modelo'])assert.doesNotMatch(section,new RegExp(label),label+' must stay out of normal operation');
+for(const label of ['Novo lote','Duplicar','Pausar venda','Retomar venda','Imprimir','Excluir modelo'])assert.doesNotMatch(section,new RegExp(label),label+' must stay out of normal operation');
 assert.doesNotMatch(section,/openBasketKitAdmin|startBasketKitLotDraft|paintBasketKitAdmin|kitLotRow|DonaAntoniaBasketGuided/,'simple section must not route into legacy/guided editors');
 
 assert.match(section,/orders-visual-v1\.js\?v=20261005-1/,'admin runtime must keep loading the order status visual enhancer');
@@ -37,4 +43,4 @@ assert.match(orderVisualSource,/background:#fff4e3/,'separated card must use a l
 assert.match(orderVisualSource,/order-separation-ready/,'separation button must have the discreet green state');
 assert.match(orderVisualSource,/MutationObserver/,'visual state must survive order-list re-renders');
 
-console.log('basket admin simple tabs + order visual flow: PASS');
+console.log('basket admin mold-first simple flow + order visual flow: PASS');
