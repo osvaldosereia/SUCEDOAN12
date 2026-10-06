@@ -2209,7 +2209,13 @@
     const split=$('#addDeliveryPaymentPart');if(split)split.disabled=d.parts.length>=2;
   }
   async function finalizeDeliveredOrder(o){
-    await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'delivered',operator:currentOperator()||'Entrega'})});
+    const actual=o?.payment_method_snapshot?.actual||{};
+    const parts=Array.isArray(actual.parts)?actual.parts:[];
+    if(parts.length!==1)throw new Error('delivery_already_captured_requires_canonical_review');
+    const method=String(parts[0]?.method||'').trim();
+    const amount=Number(parts[0]?.amount_cents||0);
+    if(!method||amount!==Number(o.total_cents||0))throw new Error('delivery_already_captured_requires_canonical_review');
+    await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,method,amount_cents:amount,operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+o.id})});
     const data=await api('orders');state.orders=data.orders||[];paintExpeditionBody();
   }
   async function captureDeliveryPaymentAndFinish(){
@@ -2222,8 +2228,13 @@
     const operator=requireOperator();if(!operator)return;
     const btn=$('#deliveryPaymentConfirm');if(btn){btn.disabled=true;btn.textContent='SALVANDO…'}
     try{
-      await api('order_payment_capture',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,parts,operator})});
-      await finalizeDeliveredOrder(d.order);
+      if(parts.length===1){
+        await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,method:parts[0].method,amount_cents:parts[0].amount_cents,operator,idempotency_key:'delivery-v3:'+d.order.id})});
+      }else{
+        await api('order_payment_capture',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,parts,operator})});
+        await api('order_delivery_finalize_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,operator,idempotency_key:'delivery-finalize-v4:'+d.order.id})});
+      }
+      const data=await api('orders');state.orders=data.orders||[];paintExpeditionBody();
       $('#editor').close();state.deliveryPaymentDraft=null;
       toast('Entrega e pagamento registrados');
     }catch(e){
@@ -2345,9 +2356,9 @@
     let ok=0;const failed=[];
     for(const o of selected){
       try{
-        await api('order_update',{},{
+        await api('order_dispatch_start_v4',{},{
           method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({id:o.id,status:'out_for_delivery'})
+          body:JSON.stringify({id:o.id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+o.id})
         });
         ok++;
         state.expeditionSelected=state.expeditionSelected.filter(id=>id!==o.id);
