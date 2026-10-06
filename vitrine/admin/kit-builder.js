@@ -132,15 +132,13 @@
   function ensureStyles(){
     if(document.getElementById('kitBuilderStyles'))return;
     const style=document.createElement('style');style.id='kitBuilderStyles';style.textContent=`
-      .kit-builder-workspace{display:grid;grid-template-columns:minmax(330px,1.15fr) minmax(310px,.95fr) minmax(290px,.9fr);gap:12px;align-items:start;max-width:100%}
-      .kb-col{background:#fff;border:1px solid #e3e8e4;border-radius:16px;min-height:620px;overflow:hidden;min-width:0}.kb-col-head{padding:13px 14px;border-bottom:1px solid #e8ece9;display:flex;align-items:center;gap:8px}.kb-col-head>div{min-width:0;flex:1}.kb-col-head h3{margin:0;font-size:16px}.kb-col-head small{color:#6b756f}.kb-body{padding:12px;min-width:0}.kb-search{display:flex;gap:7px}.kb-search input{flex:1;min-width:0;min-height:42px;border:1px solid #dce3de;border-radius:10px;padding:9px 11px}.kb-search button,.kb-btn{min-height:38px;border:1px solid #d9e0db;background:#fff;border-radius:9px;padding:0 10px;font-weight:800}.kb-btn.primary{background:#176b43;color:#fff;border-color:#176b43}.kb-btn.danger{color:#9d2235}.kb-btn.compact{min-height:32px;padding:0 8px;font-size:11px}
-      .kb-chip-wrap{display:flex;align-items:center;gap:6px;margin:9px 0;min-width:0}.kb-chips{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;flex:1;min-width:0;padding:2px 1px 5px;scrollbar-width:thin}.kb-chip{flex:0 0 auto;border:1px solid #dfe5e1;background:#f7f9f7;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800;white-space:nowrap}.kb-chip-manage{flex:0 0 auto}.kb-chip-manager{border:1px solid #dfe5e1;background:#fafcfb;border-radius:12px;padding:9px;margin:8px 0}.kb-chip-manager h4{margin:0 0 7px;font-size:12px}.kb-chip-row{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(120px,1fr) auto;gap:6px;align-items:end;padding:7px 0;border-top:1px solid #edf0ee}.kb-chip-row:first-of-type{border-top:0}.kb-chip-row label span{display:block;font-size:8px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-chip-row input{width:100%;min-height:34px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-chip-actions{display:flex;gap:4px;flex-wrap:wrap}
-      .kb-section-title{display:flex;align-items:center;gap:7px;margin:12px 0 7px;font-size:12px;font-weight:900}.kb-products{display:grid;gap:8px}.kb-product{border:1px solid #e0e6e2;border-radius:12px;padding:9px;display:grid;grid-template-columns:72px minmax(0,1fr);gap:9px}.kb-product img{width:72px;height:72px;object-fit:contain;background:#fafafa;border-radius:9px}.kb-product h4{margin:0 0 2px;font-size:12px;line-height:1.25}.kb-product .meta{font-size:9px;color:#6c766f;overflow-wrap:anywhere}.kb-stock-grid,.kb-price-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}.kb-price-grid{grid-template-columns:1fr 1fr}.kb-metric{background:#f5f7f5;border-radius:7px;padding:5px;min-width:0}.kb-metric small{display:block;font-size:8px;color:#6d7770}.kb-metric strong{font-size:10px}.kb-product-actions{display:flex;gap:5px;margin-top:7px}.kb-product-actions button{flex:1}.kb-inline{grid-column:1/-1;background:#f7faf8;border-radius:9px;padding:8px;display:none}.kb-product.editing .kb-inline{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px}.kb-inline label span{display:block;font-size:8px;color:#66716a;font-weight:800}.kb-inline input{width:100%;min-height:35px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}
-      .kb-draft-fields{display:grid;gap:8px}.kb-draft-fields input,.kb-draft-fields select,.kb-draft-fields textarea{width:100%;border:1px solid #dce3de;border-radius:9px;padding:8px 10px;background:#fff}.kb-draft-fields input,.kb-draft-fields select{min-height:40px}.kb-draft-fields label span{display:block;font-size:9px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-items{display:grid;gap:7px;margin-top:10px}.kb-item{display:grid;grid-template-columns:minmax(0,1fr) 78px 34px;gap:6px;align-items:center;border:1px solid #e2e7e4;border-radius:10px;padding:8px}.kb-item strong{font-size:11px}.kb-item small{display:block;color:#6d7770;font-size:9px}.kb-item input{width:100%;min-height:36px;border:1px solid #dce3de;border-radius:8px;padding:6px}.kb-summary{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}.kb-summary div{background:#f2f6f3;border-radius:9px;padding:8px}.kb-summary small{display:block;color:#66716a;font-size:9px}.kb-summary strong{font-size:13px}.kb-draft-actions{display:flex;gap:7px}.kb-draft-actions button{flex:1}
-      .kb-most-used{display:grid;gap:6px;margin-bottom:14px}.kb-used-card{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:7px;align-items:center;border:1px solid #e2e7e4;border-radius:10px;padding:7px}.kb-used-card img{width:48px;height:48px;object-fit:contain;background:#fafafa;border-radius:7px}.kb-used-card h4{font-size:11px;margin:0 0 2px}.kb-used-card small{display:block;font-size:9px;color:#68736c}.kb-used-card .kb-btn{min-height:34px;padding:0 8px}
-      .kb-saved{display:grid;gap:7px}.kb-saved-card{border:1px solid #e1e6e2;border-radius:11px;padding:9px}.kb-saved-card h4{margin:0 0 3px;font-size:12px}.kb-saved-meta{display:flex;gap:8px;flex-wrap:wrap;color:#68736c;font-size:9px}.kb-saved-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}.kb-empty{padding:18px;text-align:center;color:#68736c;font-size:11px}.kb-more{width:100%;margin-top:8px}.kb-authority{font-size:9px;color:#66716a;margin-top:7px}.kb-loading{opacity:.65;pointer-events:none}
-      @media(max-width:1050px){.kit-builder-workspace{grid-template-columns:1fr 1fr}.kb-col[data-kit-column="saved"]{grid-column:1/-1;min-height:auto}}
-      @media(max-width:720px){.kit-builder-workspace{grid-template-columns:minmax(0,1fr)}.kb-col[data-kit-column="saved"]{grid-column:auto}.kb-col{min-height:auto}.kb-product.editing .kb-inline{grid-template-columns:1fr 1fr}.kb-inline .kb-btn{grid-column:1/-1}.kb-chip-row{grid-template-columns:1fr}.kb-chip-actions{justify-content:flex-start}.kb-item{grid-template-columns:minmax(0,1fr) 70px 34px}.kb-used-card{grid-template-columns:44px minmax(0,1fr) auto}}
+      .kit-builder-workspace{display:grid;grid-template-columns:minmax(240px,.68fr) minmax(360px,1fr) minmax(360px,1.12fr);gap:12px;align-items:stretch;max-width:100%;max-height:calc(100vh - 240px);min-height:610px}
+      .kb-col{background:#fff;border:1px solid #e1e7e3;border-radius:16px;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}.kb-col-head{padding:14px;border-bottom:1px solid #e8ece9;display:flex;align-items:center;gap:8px;flex:0 0 auto;background:#fff}.kb-col-head>div{min-width:0;flex:1}.kb-col-head h3{margin:0;font-size:16px;line-height:1.2}.kb-col-head small{display:block;color:#68736c;font-size:11px;margin-top:3px}.kb-body{padding:12px;min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}.kb-btn{min-height:38px;border:1px solid #d9e0db;background:#fff;border-radius:9px;padding:0 10px;font-weight:800;cursor:pointer}.kb-btn:hover{background:#f7faf8}.kb-btn.primary{background:#176b43;color:#fff;border-color:#176b43}.kb-btn.primary:hover{background:#125b38}.kb-btn.danger{color:#9d2235}.kb-btn.compact{min-height:32px;padding:0 8px;font-size:11px}.kb-btn:disabled{opacity:.55;cursor:not-allowed}
+      .kb-nav{display:grid;gap:7px}.kb-nav-card{border:1px solid #dfe5e1;border-radius:11px;padding:10px;background:#fff;cursor:pointer;transition:.12s ease}.kb-nav-card:hover{border-color:#9ebbaa;background:#f8fbf9}.kb-nav-card.active{border:2px solid #176b43;background:#f2f8f4;padding:9px}.kb-nav-card h4{margin:0 0 4px;font-size:13px;line-height:1.25}.kb-nav-meta{display:flex;gap:7px;flex-wrap:wrap;color:#68736c;font-size:10px}.kb-nav-actions{display:flex;gap:5px;margin-top:8px}.kb-nav-actions .kb-btn{flex:1;min-width:0}.kb-nav-empty{padding:18px 10px;text-align:center;color:#68736c;font-size:12px}.kb-new-hint{margin:0 0 10px;padding:9px;border-radius:10px;background:#f5f8f6;color:#5f6c64;font-size:11px;line-height:1.35}
+      .kb-editor-banner{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:10px 11px;border-radius:10px;background:#f2f8f4;border:1px solid #dbe9e0}.kb-editor-banner strong{font-size:12px}.kb-editor-banner span{font-size:11px;color:#5e6b63}.kb-draft-fields{display:grid;gap:8px}.kb-draft-fields input,.kb-draft-fields select,.kb-draft-fields textarea{width:100%;border:1px solid #dce3de;border-radius:9px;padding:8px 10px;background:#fff}.kb-draft-fields input,.kb-draft-fields select{min-height:40px}.kb-draft-fields label span{display:block;font-size:10px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-items{display:grid;gap:7px;margin-top:10px}.kb-item{display:grid;grid-template-columns:minmax(0,1fr) 78px 34px;gap:6px;align-items:center;border:1px solid #e2e7e4;border-radius:10px;padding:8px}.kb-item strong{font-size:12px}.kb-item small{display:block;color:#6d7770;font-size:10px;margin-top:2px}.kb-item input{width:100%;min-height:36px;border:1px solid #dce3de;border-radius:8px;padding:6px}.kb-summary{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}.kb-summary div{background:#f2f6f3;border-radius:9px;padding:9px}.kb-summary small{display:block;color:#66716a;font-size:10px}.kb-summary strong{font-size:14px}.kb-draft-actions{display:flex;gap:7px}.kb-draft-actions button{flex:1}
+      .kb-search{display:flex;gap:7px}.kb-search input{flex:1;min-width:0;min-height:42px;border:1px solid #dce3de;border-radius:10px;padding:9px 11px}.kb-chip-wrap{display:flex;align-items:center;gap:6px;margin:9px 0;min-width:0}.kb-chips{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;flex:1;min-width:0;padding:2px 1px 5px;scrollbar-width:thin}.kb-chip{flex:0 0 auto;border:1px solid #dfe5e1;background:#f7f9f7;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800;white-space:nowrap}.kb-chip-manage{flex:0 0 auto}.kb-chip-manager{border:1px solid #dfe5e1;background:#fafcfb;border-radius:12px;padding:9px;margin:8px 0}.kb-chip-manager h4{margin:0 0 7px;font-size:12px}.kb-chip-row{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(120px,1fr) auto;gap:6px;align-items:end;padding:7px 0;border-top:1px solid #edf0ee}.kb-chip-row:first-of-type{border-top:0}.kb-chip-row label span{display:block;font-size:9px;font-weight:800;color:#66716a;margin-bottom:3px}.kb-chip-row input{width:100%;min-height:34px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-chip-actions{display:flex;gap:4px;flex-wrap:wrap}.kb-section-title{display:flex;align-items:center;gap:7px;margin:12px 0 7px;font-size:12px;font-weight:900}.kb-products{display:grid;gap:8px}.kb-product{border:1px solid #e0e6e2;border-radius:12px;padding:9px;display:grid;grid-template-columns:72px minmax(0,1fr);gap:9px}.kb-product img{width:72px;height:72px;object-fit:contain;background:#fafafa;border-radius:9px}.kb-product h4{margin:0 0 2px;font-size:12px;line-height:1.25}.kb-product .meta{font-size:10px;color:#6c766f;overflow-wrap:anywhere}.kb-stock-grid,.kb-price-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}.kb-price-grid{grid-template-columns:1fr 1fr}.kb-metric{background:#f5f7f5;border-radius:7px;padding:5px;min-width:0}.kb-metric small{display:block;font-size:9px;color:#6d7770}.kb-metric strong{font-size:11px}.kb-product-actions{display:flex;gap:5px;margin-top:7px}.kb-product-actions button{flex:1}.kb-inline{grid-column:1/-1;background:#f7faf8;border-radius:9px;padding:8px;display:none}.kb-product.editing .kb-inline{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px}.kb-inline label span{display:block;font-size:9px;color:#66716a;font-weight:800}.kb-inline input{width:100%;min-height:35px;border:1px solid #dce3de;border-radius:7px;padding:6px 8px}.kb-empty{padding:18px;text-align:center;color:#68736c;font-size:12px}.kb-more{width:100%;margin-top:8px}.kb-authority{font-size:10px;color:#66716a;margin-top:7px}.kb-loading{opacity:.65;pointer-events:none}
+      @media(max-width:1100px){.kit-builder-workspace{grid-template-columns:minmax(220px,.7fr) minmax(330px,1fr);max-height:none}.kb-col[data-kit-column="products"]{grid-column:1/-1;min-height:520px;max-height:70vh}}
+      @media(max-width:720px){.kit-builder-workspace{grid-template-columns:minmax(0,1fr);max-height:none;min-height:0}.kb-col[data-kit-column="products"]{grid-column:auto;min-height:0;max-height:none}.kb-col{min-height:0}.kb-body{overflow:visible}.kb-product.editing .kb-inline{grid-template-columns:1fr 1fr}.kb-inline .kb-btn{grid-column:1/-1}.kb-chip-row{grid-template-columns:1fr}.kb-chip-actions{justify-content:flex-start}.kb-item{grid-template-columns:minmax(0,1fr) 70px 34px}}
     `;document.head.appendChild(style);
   }
 
@@ -162,22 +160,32 @@
     for(const item of state.draft?.items||[]){const q=Number(item.quantity||0),p=item.product||{};cost_total+=q*Number(p.cost_price||0);sale_total+=q*Number(p.sale_price||0)}
     return {cost_total:Math.round(cost_total*100)/100,sale_total:Math.round(sale_total*100)/100};
   }
+
   function draftHtml(){
     const d=state.draft||emptyDraft(),totals=draftTotals();
+    const editing=Boolean(d.kit_id);
+    const title=editing?'Editando: '+(d.name||'Kit'):'Novo kit';
     const items=(d.items||[]).map(item=>'<div class="kb-item" data-kit-item="'+esc(item.product_id)+'"><div><strong>'+esc(item.product?.name||'Produto')+'</strong><small>'+esc(money(item.product?.sale_price||0))+' por unidade</small></div><input data-kit-item-qty type="number" min="0.001" step="0.001" value="'+esc(item.quantity||1)+'"><button class="kb-btn danger" type="button" data-kit-item-remove title="Remover">×</button></div>').join('');
-    return '<div class="kb-draft-fields"><label><span>Nome do kit</span><input data-kit-name maxlength="180" value="'+esc(d.name||'')+'" placeholder="Ex.: Kit Limpeza Essencial"></label><label><span>Tipo</span><select data-kit-type><option value="food" '+(d.type==='food'?'selected':'')+'>Alimentos</option><option value="cleaning_hygiene" '+(d.type==='cleaning_hygiene'?'selected':'')+'>Limpeza e higiene</option><option value="other" '+(d.type==='other'?'selected':'')+'>Outro</option></select></label><label><span>Observação interna</span><textarea data-kit-notes rows="2">'+esc(d.notes||'')+'</textarea></label></div>'+
-      '<div class="kb-items">'+(items||'<div class="kb-empty">Adicione produtos da coluna ao lado.</div>')+'</div>'+
+    return '<div class="kb-editor-banner"><div><strong data-kit-editor-title>'+esc(title)+'</strong><span>'+(editing?'Alterações serão salvas neste kit.':'Monte uma nova receita interna sem reservar estoque.')+'</span></div></div>'+
+      '<div class="kb-draft-fields"><label><span>Nome do kit</span><input data-kit-name maxlength="180" value="'+esc(d.name||'')+'" placeholder="Ex.: Kit Limpeza Essencial"></label><label><span>Tipo</span><select data-kit-type><option value="food" '+(d.type==='food'?'selected':'')+'>Alimentos</option><option value="cleaning_hygiene" '+(d.type==='cleaning_hygiene'?'selected':'')+'>Limpeza e higiene</option><option value="other" '+(d.type==='other'?'selected':'')+'>Outro</option></select></label><label><span>Observação interna</span><textarea data-kit-notes rows="2">'+esc(d.notes||'')+'</textarea></label></div>'+
+      '<div class="kb-items">'+(items||'<div class="kb-empty">Adicione produtos pela coluna da direita.</div>')+'</div>'+
       '<div class="kb-summary"><div><small>Custo total</small><strong>'+esc(money(totals.cost_total))+'</strong></div><div><small>Venda total</small><strong>'+esc(money(totals.sale_total))+'</strong></div></div>'+
-      '<div class="kb-draft-actions"><button class="kb-btn" data-kit-new type="button">Limpar</button><button class="kb-btn primary" data-kit-save type="button">'+(d.kit_id?'Salvar alterações':'Salvar kit')+'</button></div>';
+      '<div class="kb-draft-actions"><button class="kb-btn" data-kit-clear type="button">Limpar campos</button><button class="kb-btn primary" data-kit-save type="button">'+(editing?'Salvar alterações':'Salvar kit')+'</button></div>';
   }
 
-  function savedHtml(){
-    return (state.kits||[]).map(k=>'<article class="kb-saved-card" data-kit-saved="'+esc(k.id)+'"><h4>'+esc(k.name)+'</h4><div class="kb-saved-meta"><span>'+esc(k.type==='food'?'Alimentos':k.type==='cleaning_hygiene'?'Limpeza/Higiene':'Outro')+'</span><span>'+esc(k.item_count||0)+' itens</span><span>Custo '+esc(money(k.cost_total))+'</span><span>Venda '+esc(money(k.sale_total))+'</span></div><div class="kb-saved-actions"><button class="kb-btn" data-kit-edit type="button">Editar</button><button class="kb-btn" data-kit-duplicate type="button">Usar como base</button><button class="kb-btn danger" data-kit-archive type="button">Arquivar</button></div></article>').join('')||'<div class="kb-empty">Nenhum kit interno salvo.</div>';
+  function kitNavHtml(){
+    if(!state.kits.length)return '<div class="kb-nav-empty">Nenhum kit interno salvo.<br>Use <strong>+ Novo kit</strong> para começar.</div>';
+    const current=String(state.draft?.kit_id||'');
+    return '<div class="kb-nav">'+state.kits.map(k=>{
+      const active=current===String(k.id),type=k.type==='food'?'Alimentos':k.type==='cleaning_hygiene'?'Limpeza/Higiene':'Outro';
+      return '<article class="kb-nav-card '+(active?'active':'')+'" data-kit-nav-card="'+esc(k.id)+'" data-kit-saved="'+esc(k.id)+'" aria-current="'+(active?'true':'false')+'" tabindex="0">'+
+        '<h4>'+esc(k.name)+'</h4><div class="kb-nav-meta"><span>'+esc(type)+'</span><span>'+esc(k.item_count||0)+' itens</span></div>'+
+        '<div class="kb-nav-actions"><button class="kb-btn compact" data-kit-duplicate type="button">Usar como base</button><button class="kb-btn compact danger" data-kit-archive type="button">Arquivar</button></div></article>';
+    }).join('')+'</div>';
   }
 
-  function mostUsedHtml(){
-    return (state.mostUsed||[]).map(p=>'<article class="kb-used-card" data-kit-most-used="'+esc(p.id)+'"><img src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt=""><div><h4>'+esc(p.name||'Produto')+'</h4><small>'+esc(qty(p.usage_count||0))+' kits usando · Livre '+esc(qty(p.loose_sellable_stock))+'</small><small>Custo '+esc(money(p.cost_price))+' · Venda '+esc(money(p.sale_price))+'</small></div><button class="kb-btn primary" type="button" data-kit-most-used-add>Adicionar</button></article>').join('')||'<div class="kb-empty">Os produtos mais usados aparecerão aqui conforme os kits forem salvos.</div>';
-  }
+  function savedHtml(){return kitNavHtml()}
+  function mostUsedHtml(){return ''}
 
   function renderChipManager(){
     if(!state.chipManagerOpen)return '';
@@ -203,14 +211,19 @@
     const host=state.host;if(!host)return;
     ensureStyles();
     host.innerHTML='<div class="kit-builder-workspace '+(state.loading?'kb-loading':'')+'">'+
-      '<section class="kb-col" data-kit-column="catalog"><div class="kb-col-head"><div><h3>Produtos</h3><small>Busque e adicione ao kit</small></div></div><div class="kb-body" data-kit-catalog-body>'+catalogHtml()+'</div></section>'+
-      '<section class="kb-col" data-kit-column="draft"><div class="kb-col-head"><div><h3>Kit em montagem</h3><small>Receita interna, sem reservar estoque</small></div></div><div class="kb-body" data-kit-draft-body>'+draftHtml()+'</div></section>'+
-      '<section class="kb-col" data-kit-column="saved"><div class="kb-col-head"><div><h3>Atalhos para montar</h3><small>Reaproveite produtos e kits já usados</small></div></div><div class="kb-body"><div class="kb-section-title">Produtos mais usados</div><div class="kb-most-used">'+mostUsedHtml()+'</div><div class="kb-section-title">Kits salvos</div><div class="kb-saved">'+savedHtml()+'</div></div></section>'+
+      '<section class="kb-col" data-kit-column="kits"><div class="kb-col-head"><div><h3>Kits internos</h3><small>Selecione um kit para editar</small></div><button class="kb-btn primary compact" type="button" data-kit-new>+ Novo kit</button></div><div class="kb-body"><p class="kb-new-hint">Os kits são receitas reutilizáveis. Selecionar um kit abre a edição no painel central.</p>'+kitNavHtml()+'</div></section>'+
+      '<section class="kb-col" data-kit-column="draft"><div class="kb-col-head"><div><h3>Editor do kit</h3><small>Receita interna, sem reservar estoque</small></div></div><div class="kb-body" data-kit-draft-body>'+draftHtml()+'</div></section>'+
+      '<section class="kb-col" data-kit-column="products"><div class="kb-col-head"><div><h3>Produtos</h3><small>Busque e adicione ao kit selecionado</small></div></div><div class="kb-body" data-kit-catalog-body>'+catalogHtml()+'</div></section>'+
       '</div>';
     bindWorkspace();
   }
 
-  function productById(id){return [...state.products,...state.mostUsed].find(p=>String(p.id)===String(id))||null}
+  function productById(id){
+    const direct=state.products.find(p=>String(p.id)===String(id));
+    if(direct)return direct;
+    const item=state.draft?.items?.find(x=>String(x.product_id)===String(id));
+    return item?.product||null;
+  }
   function addProduct(product){
     if(!product)return;
     const d=state.draft||emptyDraft();
@@ -302,8 +315,6 @@
       const saved=data?.result?.kit||data?.kit||null;
       toast(d.kit_id?'Kit atualizado.':'Kit salvo.');
       await refreshSaved();
-      const used=await kitCall('most_used',{limit:20},'GET').catch(()=>({products:state.mostUsed}));
-      setMostUsed(used.products||[]);
       if(saved?.id)await loadKit(saved.id);else{state.draft=emptyDraft();renderWorkspace()}
     }catch(e){
       const code=errorCode(e);
@@ -323,7 +334,6 @@
       await kitCall('kit_archive',{kit_id:kit.id,operator:operator()},'POST');
       if(state.draft?.kit_id===kit.id)state.draft=emptyDraft();
       await refreshSaved();
-      const used=await kitCall('most_used',{limit:20},'GET').catch(()=>({products:state.mostUsed}));setMostUsed(used.products||[]);
       toast('Kit arquivado.');
     }catch(e){toast(errorCode(e).includes('assembly_kit_in_use')?'Este kit está sendo usado por uma cesta ativa e não pode ser arquivado agora.':'Não consegui arquivar o kit.')}
   }
@@ -360,22 +370,22 @@
         try{await saveProductInline(p,{cost:card.querySelector('[data-kit-edit-cost]')?.value,price:card.querySelector('[data-kit-edit-price]')?.value,stock:card.querySelector('[data-kit-edit-stock]')?.value});renderWorkspace()}catch{}finally{if(button)button.disabled=false}
       });
     });
-    host.querySelectorAll('[data-kit-most-used]').forEach(card=>{
-      const p=productById(card.dataset.kitMostUsed);
-      card.querySelector('[data-kit-most-used-add]')?.addEventListener('click',()=>addProduct(p));
-    });
 
     host.querySelectorAll('[data-kit-item]').forEach(node=>{
       node.querySelector('[data-kit-item-remove]')?.addEventListener('click',()=>removeProduct(node.dataset.kitItem));
       node.querySelector('[data-kit-item-qty]')?.addEventListener('change',()=>{updateDraftFromFields();renderWorkspace()});
     });
     host.querySelector('[data-kit-new]')?.addEventListener('click',()=>{state.draft=emptyDraft();renderWorkspace()});
+    host.querySelector('[data-kit-clear]')?.addEventListener('click',()=>{state.draft=emptyDraft();renderWorkspace()});
     host.querySelector('[data-kit-save]')?.addEventListener('click',saveDraftKit);
-    host.querySelectorAll('[data-kit-saved]').forEach(card=>{
-      const kit=state.kits.find(k=>String(k.id)===String(card.dataset.kitSaved));
-      card.querySelector('[data-kit-edit]')?.addEventListener('click',()=>loadKit(kit.id).catch(()=>toast('Não consegui abrir o kit.')));
-      card.querySelector('[data-kit-duplicate]')?.addEventListener('click',()=>duplicateKit(kit));
-      card.querySelector('[data-kit-archive]')?.addEventListener('click',()=>archiveKit(kit));
+
+    host.querySelectorAll('[data-kit-nav-card]').forEach(card=>{
+      const kit=state.kits.find(k=>String(k.id)===String(card.dataset.kitNavCard));
+      const open=()=>kit&&loadKit(kit.id).catch(()=>toast('Não consegui abrir o kit.'));
+      card.addEventListener('click',e=>{if(e.target.closest('button'))return;open()});
+      card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();open()}});
+      card.querySelector('[data-kit-duplicate]')?.addEventListener('click',e=>{e.stopPropagation();if(kit)duplicateKit(kit)});
+      card.querySelector('[data-kit-archive]')?.addEventListener('click',e=>{e.stopPropagation();if(kit)archiveKit(kit)});
     });
   }
 
@@ -384,20 +394,20 @@
     if(!state.host)throw new Error('kit_builder_host_missing');
     state.draft=state.draft||emptyDraft();state.loading=true;renderWorkspace();
     try{
-      const [kitsData,chipsData,usedData,productsData]=await Promise.all([
-        kitCall('kits',{limit:100},'GET'),kitCall('chips',{},'GET'),kitCall('most_used',{limit:20},'GET'),kitCall('products',{limit:20,offset:0},'GET')
+      const [kitsData,chipsData,productsData]=await Promise.all([
+        kitCall('kits',{limit:100},'GET'),kitCall('chips',{},'GET'),kitCall('products',{limit:20,offset:0},'GET')
       ]);
       state.kits=Array.isArray(kitsData.kits)?kitsData.kits:[];
       state.chips=Array.isArray(chipsData.chips)?chipsData.chips:[];
-      setMostUsed(usedData.products||[]);setProducts(productsData.products||[]);
+      setProducts(productsData.products||[]);
       state.nextOffset=productsData.next_offset??null;if(productsData.stock_authority)state.stockAuthority=productsData.stock_authority;
     }catch{toast('Não consegui carregar o Criador de Kits.')}finally{state.loading=false;renderWorkspace()}
   }
 
   window.DonaAntoniaKitBuilder={
-    state,open,renderWorkspace,renderChipManager,mostUsedHtml,
+    state,open,renderWorkspace,renderChipManager,mostUsedHtml,savedHtml,kitNavHtml,
     saveSearchChip,archiveSearchChip,reorderSearchChip,
     saveDraftKit,duplicateKit,archiveKit,saveProductInline,
-    setProducts,setMostUsed,setDraft,searchProducts
+    setProducts,setMostUsed,setDraft,searchProducts,loadKit
   };
 })();
