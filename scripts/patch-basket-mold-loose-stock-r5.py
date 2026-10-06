@@ -19,4 +19,22 @@ elif new_errors not in s:
     raise SystemExit('anchor_missing:mold_error_status')
 
 p.write_text(s,encoding='utf-8')
-print('R5 mold loose-stock alignment applied')
+
+for html_path in [Path('index.html'),Path('vitrine/index.html')]:
+    h=html_path.read_text(encoding='utf-8')
+    old_change="""Object.assign(item,{product_id:alt.product_id,name:alt.name,sku:alt.sku,gtin:alt.gtin,image_url:alt.image_url||'',packaging:alt.packaging||'',stock_quantity:stockNumber(alt.stock_quantity)});await quoteMoldBasket();paintMoldBasketSheet()}"""
+    new_change="""const previous={...item};Object.assign(item,{product_id:alt.product_id,name:alt.name,sku:alt.sku,gtin:alt.gtin,image_url:alt.image_url||'',packaging:alt.packaging||'',stock_quantity:stockNumber(alt.stock_quantity)});const ok=await quoteMoldBasket();if(!ok)Object.assign(item,previous);paintMoldBasketSheet()}"""
+    if old_change in h:
+        h=h.replace(old_change,new_change,1)
+    elif new_change not in h:
+        raise SystemExit(f'anchor_missing:mold_quote_rollback:{html_path}')
+
+    old_result="""if($('#basketActionTotal'))$('#basketActionTotal').textContent=money(d.total_cents)}catch(e){toast(e?.message==='basket_mold_option_invalid'?'Essa variação não está disponível nesta cesta.':'O estoque dessa variação mudou. Escolha outra opção.')}}"""
+    new_result="""if($('#basketActionTotal'))$('#basketActionTotal').textContent=money(d.total_cents);return true}catch(e){toast(e?.message==='basket_mold_option_invalid'?'Essa variação não está disponível nesta cesta.':'O estoque dessa variação mudou. Escolha outra opção.');return false}}"""
+    if old_result in h:
+        h=h.replace(old_result,new_result,1)
+    elif new_result not in h:
+        raise SystemExit(f'anchor_missing:mold_quote_result:{html_path}')
+    html_path.write_text(h,encoding='utf-8')
+
+print('R5 mold loose-stock alignment and quote rollback applied')
