@@ -17,10 +17,10 @@ try{
  assert.ok(fetched.has('https://photos.test/p0.svg'),'carregar a foto inicial da cesta');
  assert.ok(!fetched.has('https://photos.test/p23.svg'),'não carregar fotos de produtos secundários fora do cartão');
  assert.equal(await page.locator('.basket-card').count(),9);
- assert.equal(await page.locator('.basket-card-photo img').count(),9);
+ assert.equal(await page.locator('.basket-card-photo img').count(),9);\n assert.equal(await page.locator('.basket-category-tag').count(),0,'não renderizar etiqueta de categoria no cartão');\n assert.ok(await page.locator('.basket-card-photo').first().evaluate(el=>Math.abs(el.getBoundingClientRect().width-el.getBoundingClientRect().height)<1),'foto deve ocupar quadro quadrado');
  assert.equal(await page.locator('.basket-product').count(),0,'cada cartão mostra apenas a foto do primeiro produto');
  const mobile=await page.evaluate(()=>({cols:getComputedStyle(document.querySelector('#basketGrid')).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth>innerWidth}));
- assert.equal(mobile.cols,2);assert.equal(mobile.overflow,false);
+ assert.equal(mobile.cols,2);assert.equal(mobile.overflow,false);\n assert.equal(await page.locator('.basket-card').first().evaluate(el=>{const t=el.querySelector('.basket-card-title').getBoundingClientRect(),p=el.querySelector('.price').getBoundingClientRect(),b=el.querySelector('.add').getBoundingClientRect();return t.bottom<=p.top&&p.bottom<=b.top}),true,'nome, preço e botão devem ficar empilhados sem sobreposição');
  await page.locator('[data-basket]').first().click();assert.deepEqual(await page.evaluate(()=>opened),['basket0']);
  await page.setViewportSize({width:1440,height:900});
  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#basketGrid')).gridTemplateColumns.split(' ').length),5);
