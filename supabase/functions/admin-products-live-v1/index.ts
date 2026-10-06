@@ -603,12 +603,13 @@ async function ensureProductLinkedForStock(pid:string,operator:string){
   return {ok:true,bling_id:blingId,created:job?.result?.created===true,linked:true,job_id:jobId};
 }
 
-async function setProductStockOfficial(p:any,auth:any){
+async function setProductStockOfficial(p:any,auth:any,context:any={}){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const pid=id(p?.product_id),target=Number(p?.stock_quantity);
   if(!pid)return {error:"invalid_product",status:400};
   if(!Number.isFinite(target)||target<0)return {error:"invalid_stock",status:400};
   const operator=tx(p?.operator,80)||"Operação";
+  const stockSource=context?.source==="order_separation_missing"?"order_separation_missing":"admin_product_editor";
   const authority=await stockAuthority();
   if(authority!=="bling")return {error:"bling_stock_authority_not_active",status:409};
 
@@ -634,7 +635,7 @@ async function setProductStockOfficial(p:any,auth:any){
     };
   }
 
-  const idem="admin-product-stock:"+pid+":"+String(target)+":"+crypto.randomUUID();
+  const idem=stockSource+":"+pid+":"+String(target)+":"+crypto.randomUUID();
   const enq=await hub("enqueue_job",{
     domain:"stock",operation:"set_stock",source_id:pid,idempotency_key:idem,
     payload:{stock_quantity:target,source:"admin_product_editor",operator_label:operator}
@@ -662,10 +663,10 @@ async function setProductStockOfficial(p:any,auth:any){
   }
 
   const product=await one(pid);
-  await opsEvent("product.stock_set","Estoque ajustado no Bling pelo cadastro do produto.","product",pid,
+  await opsEvent("product.stock_set",stockSource==="order_separation_missing"?"Estoque zerado no Bling após falta registrada na separação.":"Estoque ajustado no Bling pelo cadastro do produto.","product",pid,
     {target_stock:target,previous_stock:Number(before.data?.current_stock??0),job_id:jobId,verified:true,
      product_auto_linked:Boolean(autoLink),bling_product_id:Number(verify.data?.bling_id||autoLink?.bling_id||0)||null},
-    operator,"human","bling","product-stock:"+jobId);
+    operator,stockSource==="order_separation_missing"?"automation":"human","bling","product-stock:"+jobId);
   return {
     stock_updated:true,verified:true,job_id:jobId,
     previous_stock:Number(before.data?.current_stock??0),current_stock:target,target_stock:target,
@@ -3423,6 +3424,14 @@ async function orderSeparationItemSet(p:any,auth:any){
 async function markSeparationNeedsAttention(oid:string,resumeFrom:string,error:any,detail:any=null){
   try{await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"needs_attention",p_metadata:{resume_from:resumeFrom,last_error:String(error||"separation_completion_failed"),last_error_detail:detail||null,last_error_at:new Date().toISOString()}})}catch{}
 }
+async function zeroMissingOrderProductsStock(items:any[],auth:any,operator:string){
+  const productIds=[...new Set((Array.isArray(items)?items:[]).map((item:any)=>id(item?.product_id)).filter(Boolean))];
+  for(const productId of productIds){
+    const result=await setProductStockOfficial({product_id:productId,stock_quantity:0,operator},auth,{source:"order_separation_missing"});
+    if(result?.error)return {error:String(result.error),status:Number(result.status||409),product_id:productId,detail:result.detail||null,job_id:result.job_id||null,job_status:result.job_status||null};
+  }
+  return {ok:true,product_ids:productIds};
+}
 async function orderSeparationComplete(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
@@ -3438,11 +3447,19 @@ async function orderSeparationComplete(p:any,auth:any){
   if(verified.error){await markSeparationNeedsAttention(oid,"bling_verified",verified.error,verified.data||verified.detail);return {error:"bling_verified_failed",status:verified.status||409,detail:verified.data||verified.detail||null,recovery_scheduled:true}}
   await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"bling_verified",p_metadata:{bling_verified:true,bling_order_id:verified.data?.bling_order_id||null,verified_at:new Date().toISOString()}});
 
-  const completionQ=await db.from("order_separation_completions_v1").select("phase,metadata").eq("order_id",oid).maybeSingle();if(completionQ.error)throw completionQ.error;
+  const completionQ=await db.from("order_separation_completions_v1").select("phase,metadata,missing_items").eq("order_id",oid).maybeSingle();if(completionQ.error)throw completionQ.error;
   if(completionQ.data?.metadata?.physical_stock_launched!==true){
     const launch=await hub("ops2_launch_physical_stock",{payload:await buildSnapshot(oid,"separation_physical_stock")});
     if(launch.error){await markSeparationNeedsAttention(oid,"bling_verified",launch.error,launch.data||launch.detail);return {error:launch.error||"physical_stock_launch_failed",status:launch.status||409,detail:launch.data||launch.detail||null,recovery_scheduled:true}}
     await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"physical_stock_launched",p_metadata:{physical_stock_launched:true,physical_stock_result:launch.data||null,physical_stock_launched_at:new Date().toISOString()}});
+  }
+  if(completionQ.data?.metadata?.missing_products_stock_zeroed!==true){
+    let missingStock:any;
+    try{missingStock=await zeroMissingOrderProductsStock(completionQ.data?.missing_items,auth,tx(p?.operator,80)||"Separação")}
+    catch(error){missingStock={error:tx((error as Error)?.message||error,300),status:409}}
+    if(missingStock?.ok!==true){await markSeparationNeedsAttention(oid,"physical_stock_launched",missingStock?.error||"missing_product_stock_zero_failed",missingStock);return {error:missingStock?.error||"missing_product_stock_zero_failed",status:missingStock?.status||409,detail:missingStock?.detail||null,product_id:missingStock?.product_id||null,job_id:missingStock?.job_id||null,job_status:missingStock?.job_status||null,recovery_scheduled:true}}
+    const zeroed=await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"physical_stock_launched",p_metadata:{missing_products_stock_zeroed:true,missing_products_stock_zeroed_ids:missingStock.product_ids,missing_products_stock_zeroed_at:new Date().toISOString()}});
+    if(zeroed.error){await markSeparationNeedsAttention(oid,"physical_stock_launched",zeroed.error.message,zeroed.error);return {error:"missing_product_stock_zero_record_failed",status:409,recovery_scheduled:true}}
   }
 
   let oq=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;
