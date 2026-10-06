@@ -13,8 +13,10 @@ assert.match(sql,/create or replace function public\.edit_store_basket_component
 assert.match(sql,/p_action text/i,'RPC must use explicit action');
 assert.match(sql,/set_quantity|replace|remove/i,'RPC must support quantity, replace and remove');
 assert.match(sql,/store_basket_recipe_kits/i,'RPC must validate basket-kit link');
-assert.match(sql,/join public\.basket_templates/i,'shared-use detection must consider active commercial baskets');
+assert.match(sql,/join public\.basket_templates/i,'shared-use detection must consider commercial baskets');
 assert.match(sql,/count\s*\(\s*distinct[^)]*basket_id/i,'RPC must count distinct baskets using the kit');
+assert.match(sql,/count\s*\(\s*distinct\s+r\.basket_id\s*\)[\s\S]*filter\s*\(\s*where\s+b\.is_active\s*\)/i,'RPC must audit active use while cloning on any basket link');
+assert.match(sql,/if\s+v_usage_count\s*>\s*1/i,'clone decision must use all basket links, not only active baskets');
 assert.match(sql,/insert into public\.assembly_kits/i,'shared kit must be clonable');
 assert.match(sql,/source_kit_id/i,'clone must preserve source lineage');
 assert.match(sql,/insert into public\.assembly_kit_items/i,'clone must copy kit items');
