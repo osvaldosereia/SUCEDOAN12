@@ -1,0 +1,24 @@
+name: Basket molds domain R1
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/sql/20261006_basket_molds_domain_v1.sql'
+      - 'scripts/test-basket-molds-domain-r1.mjs'
+      - '.github/workflows/basket-molds-domain-r1-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/sql/20261006_basket_molds_domain_v1.sql'
+      - 'scripts/test-basket-molds-domain-r1.mjs'
+      - '.github/workflows/basket-molds-domain-r1-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/test-basket-molds-domain-r1.mjs
