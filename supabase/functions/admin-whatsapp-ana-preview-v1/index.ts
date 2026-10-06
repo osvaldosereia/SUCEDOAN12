@@ -2,6 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normalizeAnaDryRunResult} from "../_shared/ana-policy-v1.mjs";
 import {linkedCustomerFirstName} from "../_shared/ana-customer-context-v1.mjs";
+import {authorizeAnaAdmin,anaAdminPermission} from "../_shared/ana-admin-auth-v1.mjs";
+import {validateAnaConfiguration} from "../_shared/ana-admin-config-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SUPABASE_ANON_KEY=Deno.env.get("SUPABASE_ANON_KEY")||"";
@@ -26,6 +28,46 @@ async function openaiKey(){
   }catch{return ""}
 }
 async function adminAuth(req:Request,db:any){const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();if(!token)return {ok:false as const,status:401,error:"admin_auth_required"};const user=await db.auth.getUser(token);if(user.error||!user.data?.user?.id)return {ok:false as const,status:401,error:"admin_session_invalid"};return {ok:true as const,user_id:user.data.user.id}}
+
+async function anaAdminAction(req:Request,body:any,action:string){
+  if(!SUPABASE_SERVICE_ROLE_KEY)return json(req,{ok:false,error:"server_config"},500);\n  const privileged=serviceDb();
+  const principal=await authorizeAnaAdmin({authorization:req.headers.get("Authorization")||"",authClient:requestDb,serviceClient:privileged});
+  if(!principal.ok)return json(req,{ok:false,error:principal.error},principal.status);
+  if(!anaAdminPermission(principal.role,action))return json(req,{ok:false,error:"admin_role_insufficient"},403);
+  const actor=principal.user_id;
+  if(action==="admin_load"||action==="admin_history"){
+    const loaded=await privileged.rpc("ops2_ana_admin_load_v1");if(loaded.error)throw loaded.error;
+    const result=loaded.data||{ok:false,error:"ana_admin_load_failed"};if(result.ok!==true)return json(req,{ok:false,error:result.error||"ana_admin_load_failed"},409);
+    if(action==="admin_history")return json(req,{ok:true,history:result.events||[],versions:result.versions||[],test_runs:result.test_runs||[]});
+    const runtime=await privileged.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at,metadata,whatsapp_accounts(phone_e164,display_name,slug)");
+    if(runtime.error)throw runtime.error;
+    const channels=(runtime.data||[]).map((row:any)=>({id:row.whatsapp_account_id,phone_last4:String(row.whatsapp_accounts?.phone_e164||"").replace(/\D/g,"").slice(-4),name:clean(row.whatsapp_accounts?.display_name||row.whatsapp_accounts?.slug,60),inbound_provider:row.inbound_provider,outbound_provider:row.outbound_provider,capture_enabled:row.capture_enabled,send_enabled:row.send_enabled,ana_enabled:row.ana_enabled,campaigns_enabled:row.campaigns_enabled,human_send_enabled:row.human_send_enabled,homologated_at:row.homologated_at,updated_at:row.updated_at}));
+    return json(req,{ok:true,role:principal.role,...result,channels});
+  }
+  if(action==="admin_save_draft"){
+    const validation=validateAnaConfiguration(body?.configuration);if(!validation.ok)return json(req,{ok:false,error:"configuration_invalid",details:validation.errors},400);
+    const revision=Number(body?.expected_revision);if(!Number.isSafeInteger(revision)||revision<1)return json(req,{ok:false,error:"revision_invalid"},400);
+    const saved=await privileged.rpc("ops2_ana_admin_save_draft_v1",{p_configuration:body.configuration,p_expected_revision:revision,p_note:clean(body?.note,240),p_actor_id:actor});
+    if(saved.error)throw saved.error;const result=saved.data||{ok:false,error:"draft_save_failed"};return json(req,result,result.ok===true?200:409);
+  }
+  if(action==="admin_publish"){
+    const testRunId=validUuid(body?.test_run_id);if(!testRunId)return json(req,{ok:false,error:"test_run_required"},400);
+    const published=await privileged.rpc("ops2_ana_admin_publish_v1",{p_test_run_id:testRunId,p_note:clean(body?.note,240),p_actor_id:actor});
+    if(published.error)throw published.error;const result=published.data||{ok:false,error:"publish_failed"};return json(req,result,result.ok===true?200:409);
+  }
+  if(action==="admin_rollback"){
+    const versionId=Number(body?.version_id);if(!Number.isSafeInteger(versionId)||versionId<1)return json(req,{ok:false,error:"version_invalid"},400);
+    const rolled=await privileged.rpc("ops2_ana_admin_rollback_v1",{p_version_id:versionId,p_note:clean(body?.note,240),p_actor_id:actor});
+    if(rolled.error)throw rolled.error;const result=rolled.data||{ok:false,error:"rollback_failed"};return json(req,result,result.ok===true?200:409);
+  }
+  if(action==="admin_set_channel"){
+    const accountId=validUuid(body?.whatsapp_account_id);if(!accountId||typeof body?.enabled!=="boolean")return json(req,{ok:false,error:"channel_toggle_invalid"},400);
+    const changed=await privileged.rpc("ops2_ana_admin_set_channel_v1",{p_whatsapp_account_id:accountId,p_enabled:body.enabled,p_actor_id:actor});
+    if(changed.error)throw changed.error;const result=changed.data||{ok:false,error:"channel_toggle_failed"};return json(req,result,result.ok===true?200:409);
+  }
+  if(action==="admin_test")return json(req,{ok:false,error:"simulator_unavailable"},503);
+  return json(req,{ok:false,error:"admin_action_invalid"},400);
+}
 
 function operationalContext(customerFirstName=''){
   return {
@@ -89,6 +131,8 @@ Deno.serve(async(req:Request)=>{
     const body=await req.json().catch(()=>({}));
     const action=clean(body?.action||"preview",30).toLowerCase()||"preview";
 
+    if(action.startsWith("admin_"))return await anaAdminAction(req,body,action);
+
     if(action==="review"){
       const jobId=validUuid(body?.job_id);const outcome=clean(body?.outcome,30).toLowerCase();const note=clean(body?.note,500)||null;
       if(!jobId)return json(req,{ok:false,error:"job_required",dry_run_not_sendable:true},400);
@@ -126,3 +170,4 @@ Deno.serve(async(req:Request)=>{
     return json(req,{ok:false,error:"ana_preview_internal_error",dry_run_not_sendable:true},500)
   }
 });
+

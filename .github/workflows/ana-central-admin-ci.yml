@@ -40,3 +40,6 @@ jobs:
 
       - name: Validate ANA admin configuration and deterministic triggers
         run: node scripts/test-whatsapp-ana-admin-config-v1.mjs
+
+      - name: Validate ANA admin authentication and API contracts
+        run: node scripts/test-whatsapp-ana-admin-api-v1.mjs

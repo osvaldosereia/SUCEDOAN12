@@ -193,3 +193,19 @@ GRANT EXECUTE ON FUNCTION public.ops2_ana_admin_rollback_v1(bigint,text,uuid) TO
 GRANT EXECUTE ON FUNCTION public.ops2_ana_active_config_v1() TO service_role;
 
 COMMIT;
+CREATE OR REPLACE FUNCTION public.ops2_ana_admin_set_channel_v1(p_whatsapp_account_id uuid, p_enabled boolean, p_actor_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, private AS $$
+DECLARE changed_id uuid; channel_suffix text;
+BEGIN
+  UPDATE public.whatsapp_channel_runtime_v1 SET ana_enabled = p_enabled, updated_at = now()
+    WHERE whatsapp_account_id = p_whatsapp_account_id RETURNING whatsapp_account_id INTO changed_id;
+  IF changed_id IS NULL THEN RETURN jsonb_build_object('ok',false,'error','channel_not_found'); END IF;
+  SELECT right(regexp_replace(coalesce(a.phone_e164,''),'\\D','','g'),4) INTO channel_suffix
+    FROM public.whatsapp_accounts a WHERE a.id = changed_id;
+  INSERT INTO private.whatsapp_ana_admin_events_v1(action,actor_id,channel_key,detail)
+    VALUES('channel_toggled',p_actor_id,channel_suffix,jsonb_build_object('ana_enabled',p_enabled));
+  RETURN jsonb_build_object('ok',true,'channel_key',channel_suffix,'ana_enabled',p_enabled);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.ops2_ana_admin_set_channel_v1(uuid,boolean,uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.ops2_ana_admin_set_channel_v1(uuid,boolean,uuid) TO service_role;
