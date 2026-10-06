@@ -341,7 +341,14 @@ async function submit(req:Request,p:any){
     if(phoneLimit.data!==true)return {error:"rate_limited",status:429};
   }
   let customer:any=null;
-  if(ph){
+  if(ph&&p?.checkout_registration&&typeof p.checkout_registration==="object"){
+    // Resolve this checkout through its validated registration, never an arbitrary
+    // phone match when legacy imports contain more than one customer for a number.
+    const registered=await registerCustomer(req,{...p.checkout_registration,phone:ph,source:"checkout"});
+    if(registered.error)return {error:registered.error,status:registered.status||400};
+    customer=registered.customer;
+    if(!customer||customer.registration_complete!==true)return {error:"registration_incomplete",status:400};
+  }else if(ph){
     try{const found=await lookupCustomer(ph);if(found?.found&&found?.customer)customer=found.customer}catch(e){console.error("optional_customer_lookup",txt((e as any)?.message,180))}
   }
   const marketingCampaign=txt(p?.marketing_context?.campaign,80);
