@@ -22,18 +22,20 @@ assert.match(sql,/min\s*\(/i,'buildable quantity must be limited by the scarcest
 for(const field of ['public_available','assembling_units','max_buildable_now','sellable_lots','existing_available_units','new_flow_available_units','existing_sellable_lots','new_flow_sellable_lots','assembling_lots']){
   assert.match(sql,new RegExp(field,'i'),`overview must expose ${field}`);
 }
+assert.match(sql,/create or replace function public\.store_basket_recipe_catalog_v1\(\)/i,'catalog RPC must be enriched in the same migration');
+assert.match(sql,/["']operations["']/i,'catalog rows must embed operations without a second browser request');
 assert.match(sql,/revoke all on function public\.store_basket_ops_overview_v1\(\) from public,anon,authenticated/i,'overview RPC must not be callable directly by client roles');
 assert.match(sql,/grant execute on function public\.store_basket_ops_overview_v1\(\) to service_role/i,'overview RPC must be service_role only');
 
 const edge=fs.readFileSync('supabase/functions/admin-store-baskets-v1/index.ts','utf8');
-assert.match(edge,/store_basket_ops_overview_v1/,'admin list must load operational overview');
-assert.match(edge,/operations/,'admin list must attach operational metrics to each basket');
+assert.match(edge,/store_basket_recipe_catalog_v1/,'admin list must keep using the canonical catalog RPC');
 
-const ui=fs.readFileSync('vitrine/admin/store-baskets-builder.js','utf8');
+const ui=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
 for(const phrase of ['Disponível no site','Em montagem','Pode montar agora','Lotes disponíveis','Estoque existente','Novo fluxo']){
   assert.match(ui,new RegExp(phrase,'i'),`UI must show ${phrase}`);
 }
 assert.match(ui,/data-store-ops-overview/,'UI must expose operational overview hook');
 assert.match(ui,/data-store-basket-stock/,'basket list must expose stock summary hook');
+assert.match(ui,/storeCall\(['"]list['"]\)/,'ops panel must reuse the existing authenticated list action');
 
 console.log('store baskets ops overview v1: PASS');
