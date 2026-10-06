@@ -43,7 +43,7 @@ try{
  });
  await app.goto('https://app.test/');await app.locator('.basket-card-photo img').first().waitFor();
  
- assert.equal(await app.getByRole('heading',{name:'Escolha suas Cestas e Kits',exact:true}).count(),1,'show the new home section heading');
+ for(const heading of ['Cestas Completas','Cestas Só Alimentos','Kits Promocionais'])assert.equal(await app.getByRole('heading',{name:heading,exact:true}).count(),1,'show storefront group '+heading);
  assert.equal(await app.locator('.basket-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
  await app.locator('[data-basket]').click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
