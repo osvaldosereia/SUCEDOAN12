@@ -1,6 +1,10 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-const candidates=['supabase/functions/basket-storefront-v1/index.ts','supabase/functions/storefront-v2/index.ts','supabase/functions/basket-shop-v1/index.ts'].filter(fs.existsSync).map(p=>fs.readFileSync(p,'utf8')).join('\n');
-assert.match(candidates,/basket_lot_public_availability_v1|basket_sales_runtime_v1|basket_stock_lots/i,'public basket availability must derive from canonical basket lot stock');
-assert.match(candidates,/sale_enabled|quantity_available|status/i,'public exposure must consider sellable lot state');
+const sql=fs.readFileSync('supabase/sql/20261005_basket_component_reservations_v1.sql','utf8');
+const view=sql.slice(sql.indexOf('create or replace view public.basket_lot_public_availability_v1'));
+assert.match(view,/assembly_status=['"]assembling['"][\s\S]*['"]assembling['"]/i,'assembling lots must be identified as unavailable');
+assert.match(view,/status=['"]ready['"][\s\S]*assembly_status in \(['"]legacy['"],['"]mounted['"]\)/i,'only ready legacy/mounted lots may expose stock');
+assert.match(view,/sale_enabled/i,'public availability must require sale enabled');
+assert.match(view,/quantity_available/i,'public availability must derive from physical lot quantity');
+assert.match(view,/public_available/i,'canonical public quantity required');
 console.log('store baskets public availability v1: PASS');

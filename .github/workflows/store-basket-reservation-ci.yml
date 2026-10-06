@@ -4,18 +4,26 @@ on:
     paths:
       - 'supabase/sql/20261005_store_basket_reservation_v1.sql'
       - 'supabase/migrations/20261005190000_store_basket_reservation_v1.sql'
+      - 'supabase/sql/20261005_store_basket_build_detail_v1.sql'
+      - 'supabase/migrations/20261006000500_store_basket_build_detail_v1.sql'
+      - 'supabase/sql/20261005_basket_component_reservations_v1.sql'
+      - 'supabase/sql/20261004_basket_unified_order_engine_v1.sql'
       - 'supabase/functions/admin-store-baskets-v1/**'
-      - 'scripts/test-store-baskets-reservation-domain-v1.mjs'
-      - 'scripts/test-store-baskets-admin-api-v1.mjs'
+      - 'vitrine/admin/store-baskets-builder.js'
+      - 'scripts/test-store-baskets-*.mjs'
       - '.github/workflows/store-basket-reservation-ci.yml'
   push:
     branches: [main]
     paths:
       - 'supabase/sql/20261005_store_basket_reservation_v1.sql'
       - 'supabase/migrations/20261005190000_store_basket_reservation_v1.sql'
+      - 'supabase/sql/20261005_store_basket_build_detail_v1.sql'
+      - 'supabase/migrations/20261006000500_store_basket_build_detail_v1.sql'
+      - 'supabase/sql/20261005_basket_component_reservations_v1.sql'
+      - 'supabase/sql/20261004_basket_unified_order_engine_v1.sql'
       - 'supabase/functions/admin-store-baskets-v1/**'
-      - 'scripts/test-store-baskets-reservation-domain-v1.mjs'
-      - 'scripts/test-store-baskets-admin-api-v1.mjs'
+      - 'vitrine/admin/store-baskets-builder.js'
+      - 'scripts/test-store-baskets-*.mjs'
       - '.github/workflows/store-basket-reservation-ci.yml'
 permissions:
   contents: read
@@ -29,3 +37,18 @@ jobs:
           node-version: '24'
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-reservation-domain-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-admin-api-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-operational-safety-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-lot-operations-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-build-detail-sql-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-build-detail-migration-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-build-detail-api-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-a4-print-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-a4-print-ui-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-print-action-safety-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-print-browser-contract-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-order-allocation-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-public-availability-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-checkout-lot-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-no-legacy-double-stock-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-go-live-contract-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-human-smoke-spec-v1.mjs
