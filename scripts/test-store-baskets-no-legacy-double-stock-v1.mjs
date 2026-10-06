@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const sql=fs.readFileSync('supabase/sql/20261004_basket_unified_order_engine_v1.sql','utf8');
-const legacy=sql.slice(sql.indexOf("if v_legacy_lot_id is not null then"),sql.indexOf("if v_first_basket is null",sql.indexOf("if v_legacy_lot_id is not null then")));
+const start=sql.indexOf("if v_legacy_lot_id is not null then");
+const end=sql.indexOf("continue;",start);
+assert.ok(start>=0&&end>start,'legacy full-basket order block must exist');
+const legacy=sql.slice(start,end+9);
 assert.match(legacy,/v_preassembled_units:=least\(v_selected_qty,v_base_qty\)\*v_line_qty/i,'base units must be recognized as preassembled');
 assert.match(legacy,/v_loose_units:=greatest\(v_selected_qty-v_base_qty,0\)\*v_line_qty/i,'only extras become loose demand');
 assert.doesNotMatch(legacy,/update\s+public\.products/i,'legacy full-basket path must not directly decrement component products');
