@@ -16,6 +16,14 @@ assert.match(ui,/data-kit-search/,'product column must have search');
 assert.match(ui,/data-kit-chip/,'product column must expose reusable search chips');
 assert.match(ui,/data-kit-product/,'product column must render selectable product cards');
 for(const label of ['Estoque físico','Reservado','Livre','Custo','Venda'])assert.ok(ui.includes(label),`product cards must show ${label}`);
+assert.match(ui,/productMode\s*:\s*['"]baskets['"]/,'basket products must be the default product mode');
+assert.match(ui,/basketProducts\s*:\s*\[\]/,'basket products must have dedicated state');
+assert.match(ui,/data-kit-product-mode=["']baskets["']/,'product column must expose Em cestas mode');
+assert.match(ui,/data-kit-product-mode=["']all["']/,'product column must expose Todos os produtos mode');
+assert.match(ui,/Em cestas/,'default mode label required');
+assert.match(ui,/Todos os produtos/,'full catalog mode label required');
+assert.match(ui,/['"]basket_products['"]/,'UI must call basket_products action');
+assert.match(ui,/basket_usage_count|cestas usando|usado em.*cesta/i,'basket usage context must be visible on product cards');
 assert.match(ui,/data-kit-inline-edit/,'product cards must open inline edit');
 assert.match(ui,/data-kit-add/,'product cards must add product to draft');
 assert.match(ui,/data-kit-item-qty/,'draft must edit per-kit quantity');
@@ -31,4 +39,4 @@ assert.match(ui,/sale_total|Venda total/,'workspace must calculate kit sale tota
 assert.match(ui,/function open\(/,'module must expose open entry point');
 assert.match(ui,/DonaAntoniaKitBuilder/,'module must expose stable global adapter');
 
-console.log('kit builder ui v2 master-detail: PASS');
+console.log('kit builder ui v3 basket products: PASS');
