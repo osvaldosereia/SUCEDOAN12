@@ -190,6 +190,8 @@ begin
     return jsonb_build_object('ok',false,'error','too_many_labels');
   end if;
 
+  perform pg_advisory_xact_lock(hashtextextended(p_conversation_id::text,6801));
+
   select count(distinct x)::integer into v_distinct from unnest(v_ids) x;
   select count(*)::integer into v_valid
   from public.attendance_labels_v1 l
