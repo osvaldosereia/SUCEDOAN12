@@ -38,6 +38,56 @@ function validateRequest({ accessToken, phoneNumberId, toE164, text, graphVersio
   if (!body.trim() || body.length > 4096) throw invalidRequest();
   return { ...common, body };
 }
+function safeTextParameter(parameter, maxLength = 1024) {
+  if (!parameter || typeof parameter !== 'object' || String(parameter.type ?? '').toLowerCase() !== 'text') throw invalidRequest();
+  const text = typeof parameter.text === 'string' ? parameter.text.trim() : '';
+  if (!text || text.length > maxLength || /[\u0000-\u001f\u007f]/.test(text)) throw invalidRequest();
+  return { type: 'text', text };
+}
+function safeQuickReplyButton(component) {
+  const subType = String(component?.sub_type ?? '').toLowerCase();
+  const index = String(component?.index ?? '');
+  const parameters = component?.parameters ?? [];
+  if (subType !== 'quick_reply' || !/^[0-9]$/.test(index) || !Array.isArray(parameters) || parameters.length !== 1) throw invalidRequest();
+  const parameter = parameters[0];
+  if (!parameter || typeof parameter !== 'object' || String(parameter.type ?? '').toLowerCase() !== 'payload') throw invalidRequest();
+  const payload = typeof parameter.payload === 'string' ? parameter.payload.trim() : '';
+  if (!payload || payload.length > 256 || /[\u0000-\u001f\u007f]/.test(payload)) throw invalidRequest();
+  return { type: 'button', sub_type: 'quick_reply', index, parameters: [{ type: 'payload', payload }] };
+}
+function safeCarouselComponent(component) {
+  const cards = component?.cards;
+  if (!Array.isArray(cards) || cards.length < 1 || cards.length > 10) throw invalidRequest();
+  const seen = new Set();
+  const safeCards = cards.map((card) => {
+    if (!card || typeof card !== 'object') throw invalidRequest();
+    const cardIndex = Number(card.card_index);
+    if (!Number.isInteger(cardIndex) || cardIndex < 0 || cardIndex > 9 || seen.has(cardIndex)) throw invalidRequest();
+    seen.add(cardIndex);
+    const components = card.components;
+    if (!Array.isArray(components) || components.length !== 1) throw invalidRequest();
+    const button = components[0];
+    if (!button || typeof button !== 'object' || String(button.type ?? '').toLowerCase() !== 'button') throw invalidRequest();
+    const subType = String(button.sub_type ?? '').toLowerCase();
+    const index = String(button.index ?? '');
+    const parameters = button.parameters ?? [];
+    if (subType !== 'url' || !/^[0-9]$/.test(index) || !Array.isArray(parameters) || parameters.length !== 1) throw invalidRequest();
+    return {
+      card_index: cardIndex,
+      components: [{
+        type: 'button',
+        sub_type: 'url',
+        index,
+        parameters: [safeTextParameter(parameters[0], 2000)],
+      }],
+    };
+  });
+  safeCards.sort((a, b) => a.card_index - b.card_index);
+  for (let index = 0; index < safeCards.length; index++) {
+    if (safeCards[index].card_index !== index) throw invalidRequest();
+  }
+  return { type: 'carousel', cards: safeCards };
+}
 function validateTemplateRequest({ accessToken, phoneNumberId, toE164, templateName, languageCode, components, graphVersion, timeoutMs, fetchImpl }) {
   const common = validateCommonRequest({ accessToken, phoneNumberId, toE164, graphVersion, timeoutMs, fetchImpl });
   const name = typeof templateName === 'string' ? templateName.trim() : '';
@@ -48,31 +98,15 @@ function validateTemplateRequest({ accessToken, phoneNumberId, toE164, templateN
   const safeComponents = normalizedComponents.map((component) => {
     if (!component || typeof component !== 'object') throw invalidRequest();
     const type = String(component.type ?? '').toLowerCase();
-    const parameters = component.parameters ?? [];
-    if (!Array.isArray(parameters) || parameters.length > 100) throw invalidRequest();
 
     if (type === 'body') {
-      return {
-        type: 'body',
-        parameters: parameters.map((parameter) => {
-          if (!parameter || typeof parameter !== 'object' || String(parameter.type ?? '').toLowerCase() !== 'text') throw invalidRequest();
-          const text = typeof parameter.text === 'string' ? parameter.text : '';
-          if (!text.trim() || text.length > 1024) throw invalidRequest();
-          return { type: 'text', text };
-        }),
-      };
+      const parameters = component.parameters ?? [];
+      if (!Array.isArray(parameters) || parameters.length > 100) throw invalidRequest();
+      return { type: 'body', parameters: parameters.map((parameter) => safeTextParameter(parameter, 1024)) };
     }
 
-    if (type === 'button') {
-      const subType = String(component.sub_type ?? '').toLowerCase();
-      const index = String(component.index ?? '');
-      if (subType !== 'quick_reply' || !/^[0-9]$/.test(index) || parameters.length !== 1) throw invalidRequest();
-      const parameter = parameters[0];
-      if (!parameter || typeof parameter !== 'object' || String(parameter.type ?? '').toLowerCase() !== 'payload') throw invalidRequest();
-      const payload = typeof parameter.payload === 'string' ? parameter.payload.trim() : '';
-      if (!payload || payload.length > 256 || /[\u0000-\u001f\u007f]/.test(payload)) throw invalidRequest();
-      return { type: 'button', sub_type: 'quick_reply', index, parameters: [{ type: 'payload', payload }] };
-    }
+    if (type === 'button') return safeQuickReplyButton(component);
+    if (type === 'carousel') return safeCarouselComponent(component);
 
     throw invalidRequest();
   });
@@ -115,7 +149,7 @@ export async function sendTemplateViaMeta({ accessToken, phoneNumberId, toE164, 
   return await postMetaMessage(request, { messaging_product: 'whatsapp', recipient_type: 'individual', to: request.to, type: 'template', template: { name: request.name, language: { code: request.language }, components: request.components } }, fetchImpl);
 }
 export async function sendMediaViaMeta({ accessToken, phoneNumberId, toE164, mediaType, mediaId, caption = '', filename = '', graphVersion, timeoutMs = 10000, fetchImpl = globalThis.fetch } = {}) {
-  const request = validateMediaRequest({ accessToken, phoneNumberId, toE164, mediaType, mediaId, caption, filename, graphVersion, timeoutMs, fetchImpl });
+  const request = validateMediaRequest({ accessToken, phoneNumberId, toE164, graphVersion, timeoutMs, fetchImpl, mediaType, mediaId, caption, filename });
   const media = { id: request.id }; if (request.type !== 'audio' && request.caption) media.caption = request.caption; if (request.type === 'document' && request.filename) media.filename = request.filename;
   return await postMetaMessage(request, { messaging_product: 'whatsapp', recipient_type: 'individual', to: request.to, type: request.type, [request.type]: media }, fetchImpl);
 }
