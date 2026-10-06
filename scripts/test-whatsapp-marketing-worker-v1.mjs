@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {stripTypeScriptTypes} from 'node:module';
+import {sendTemplateViaMeta as sendTemplateViaMetaReal} from '../supabase/functions/_shared/whatsapp-meta-transport-v1.mjs';
 
 const workerPath='supabase/functions/whatsapp-marketing-worker-v1/index.ts';
 const supportPath='supabase/migrations/20261005018000_marketing_campaign_worker_support_v1.sql';
@@ -35,6 +36,33 @@ assert.match(sql,/whatsapp_record_status_v1/i,'aceite deve registrar status can�
 assert.match(sql,/marketing_finish_dispatch_v1/i,'aceite deve finalizar dispatch de forma atômica');
 assert.match(sql,/whatsapp_messages_v1/i,'aceite deve vincular WAMID à mensagem canônica');
 assert.match(sql,/revoke\s+all[\s\S]*marketing_accept_meta_dispatch_v1[\s\S]*anon[\s\S]*authenticated/i,'aceite deve ser service-role only');
+
+// Integração real worker -> helper Meta: carousel precisa sobreviver à validação
+// do transporte e chegar ao payload Graph exatamente no formato esperado.
+{
+  const requests=[];
+  const components=[{
+    type:'carousel',
+    cards:[{
+      card_index:0,
+      components:[{
+        type:'button',sub_type:'url',index:'0',
+        parameters:[{type:'text',text:'0123456789abcdef0123456789abcdef0123'}],
+      }],
+    }],
+  }];
+  const sent=await sendTemplateViaMetaReal({
+    accessToken:'meta-token',phoneNumberId:'945659128620084',toE164:'+5565998150975',
+    templateName:'mkt_carousel_tracking_v1',languageCode:'pt_BR',components,graphVersion:'v23.0',
+    fetchImpl:async(_url,init)=>{
+      requests.push(JSON.parse(init.body));
+      return new Response(JSON.stringify({messages:[{id:'wamid.CAROUSEL_TRANSPORT_TEST'}]}),{status:200,headers:{'content-type':'application/json'}});
+    },
+  });
+  assert.equal(sent.providerMessageId,'wamid.CAROUSEL_TRANSPORT_TEST');
+  assert.equal(requests.length,1,'carousel válido deve chegar ao transporte Meta');
+  assert.deepEqual(requests[0].template.components,components,'transporte deve preservar componente carousel seguro');
+}
 
 function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='ok',attemptCount=0,toPhone='+5565998150975'}={}){
   let handler;
