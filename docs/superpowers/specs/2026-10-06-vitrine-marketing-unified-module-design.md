@@ -125,7 +125,7 @@ O drawer de detalhe mostra nome, status, categoria, idioma, canal, identificador
 
 A lista contém pesquisa, situação, filtro de campanhas ativas e ação **Nova campanha**. Colunas visíveis: nome, data, público, template, canal, status e relatório.
 
-O editor solicita nome, descrição opcional, canal, template aprovado, horário de início, público e janela de exclusão de conversas recentes. Um resumo de elegibilidade é exibido antes de salvar/criar, por exemplo: “529 clientes encontrados · 20 com consentimento comercial · 20 destinatários elegíveis”.
+O editor solicita nome, descrição opcional, canal, template aprovado, horário de início, público salvo ou filtros montados na hora e janela de exclusão de conversas recentes. Ao usar um público salvo, a campanha copia seus filtros para o snapshot da campanha, de modo que alterações futuras no público não mudem uma campanha já criada. Um resumo de elegibilidade é exibido antes de salvar/criar, por exemplo: “529 clientes encontrados · 20 com consentimento comercial · 20 destinatários elegíveis”.
 
 A UI oferece rascunho, agendamento e visualização de estado/relatório conforme as ações já suportadas pelo backend. Regras obrigatórias:
 
@@ -145,7 +145,10 @@ Usar um fluxo progressivo:
 1. nome do público;
 2. filtros principais: cidade, bairro, etiqueta, produto comprado, categoria, marca e data da última compra;
 3. resumo persistente da quantidade encontrada;
-4. filtros avançados recolhidos em “Mais filtros”.
+4. filtros avançados recolhidos em “Mais filtros”;
+5. ação para salvar os filtros como público reutilizável.
+
+Públicos salvos podem ser listados, selecionados em campanhas e atualizados. Como o banco canônico não contém uma tabela de públicos salvos, adicionar `marketing_audiences_v1` por migração aditiva, com nome, filtros JSONB, autor e timestamps. A Edge Function autenticada é a única via de leitura/escrita pelo Admin; habilitar RLS e não conceder acesso direto a `anon` ou `authenticated`.
 
 A contagem é informativa e deve vir da função de públicos. Regras de deduplicação, elegibilidade e consentimento continuam sendo aplicadas pelo backend de campanhas.
 
@@ -179,7 +182,7 @@ Meta webhook
   → atualização do estado local exibido
 ```
 
-Não adicionar tabelas até que o inventário dos contratos confirme uma lacuna concreta. Se uma migração for necessária, ela será aditiva, terá RLS e grants revisados, preservará as linhas existentes e será apresentada no plano antes de execução.
+Não adicionar tabelas até que o inventário dos contratos confirme uma lacuna concreta. A ausência de armazenamento para públicos salvos é uma lacuna confirmada; adicionar apenas `marketing_audiences_v1` por migração aditiva, com RLS e grants revisados, preservando as linhas existentes. Qualquer outra migração precisa ser justificada no plano antes da execução.
 
 ## 9. Erros, estados e acessibilidade
 
@@ -217,7 +220,8 @@ Cada etapa será validada com os comandos e verificações do repositório, revi
 - Webhooks atualizam o estado e o histórico sem duplicar eventos.
 - Campanhas só aceitam templates aprovados, mostram elegibilidade e mantêm validação server-side de consentimento/opt-out.
 - O histórico do cliente mostra eventos de consentimento e registros canônicos de campanhas recebidas quando disponíveis, sem expor identificadores internos.
-- Públicos e Consentimentos continuam consultando seus contratos canônicos.
+- Públicos e Consentimentos continuam consultando seus contratos canônicos; públicos salvos persistem em `marketing_audiences_v1` e campanhas copiam o filtro escolhido para seu snapshot.
+- RLS está habilitado na nova tabela de públicos e nenhuma policy permite acesso direto do navegador.
 - Nenhuma tabela paralela de templates, canais, campanhas ou consentimentos é criada.
 - Nenhum gate existente de produção, canário ou envio é alterado pela reformulação.
 
