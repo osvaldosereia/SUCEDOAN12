@@ -112,25 +112,26 @@ async function moldHomeCards(){
   if(!visibleMolds.length)return [];
   const basketIds=visibleMolds.map((m:any)=>String(m.basket_id)),moldIds=visibleMolds.map((m:any)=>String(m.id));
   const [bq,pq]=await Promise.all([
-    db.from("basket_templates").select("id,name,image_url,is_active,category_id").in("id",basketIds),
+    db.from("basket_templates").select("id,name,image_url,is_active,category_id,subcategory_id").in("id",basketIds),
     db.from("basket_mold_positions").select("id,mold_id").in("mold_id",moldIds)
   ]);if(bq.error)throw bq.error;if(pq.error)throw pq.error;
   const baskets=new Map((bq.data||[]).map((b:any)=>[String(b.id),b])),positionCounts=new Map<string,number>();for(const p of pq.data||[]){const id=String(p.mold_id);positionCounts.set(id,(positionCounts.get(id)||0)+1)}
-  const categoryIds=[...new Set((bq.data||[]).map((b:any)=>b.category_id?String(b.category_id):"").filter(Boolean))],categoryMap=new Map<string,any>();if(categoryIds.length){const cq=await db.from("basket_categories").select("id,name,slug,sort_order,is_active").in("id",categoryIds);if(cq.error)throw cq.error;for(const c of cq.data||[])categoryMap.set(String(c.id),c)}
+  const [categoryQ,subcategoryQ]=await Promise.all([
+    db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order"),
+    db.from("basket_subcategories").select("id,category_id,name,sort_order,is_active").eq("is_active",true).order("sort_order")
+  ]);if(categoryQ.error)throw categoryQ.error;if(subcategoryQ.error)throw subcategoryQ.error;
+  const categoryMap=new Map((categoryQ.data||[]).map((x:any)=>[String(x.id),x])),subcategoryMap=new Map((subcategoryQ.data||[]).map((x:any)=>[String(x.id),x]));
   const generated=await Promise.all(visibleMolds.map(async(m:any)=>{const q=await db.rpc("basket_mold_public_compositions_v2",{p_basket_id:m.basket_id});if(q.error)throw q.error;return {m,data:q.data||{}}}));
   const productIds:string[]=[];for(const g of generated)for(const c of g.data?.compositions||[])for(const i of c.items||[])if(i.product_id)productIds.push(String(i.product_id));const products=await moldProductsMap(productIds);
   const cards:any[]=[];
-  for(const {m,data} of generated){const b=baskets.get(String(m.basket_id));if(!b||b.is_active!==true)continue;const cat=b.category_id?categoryMap.get(String(b.category_id)):null;if(cat&&cat.is_active===false)continue;const expected=positionCounts.get(String(m.id))||0;if(!expected)continue;
+  for(const {m,data} of generated){const b=baskets.get(String(m.basket_id));if(!b||b.is_active!==true)continue;const cat=b.category_id?categoryMap.get(String(b.category_id)):null;const sub=b.subcategory_id?subcategoryMap.get(String(b.subcategory_id)):null;if(!cat||!sub||String(sub.category_id)!==String(cat.id))continue;const expected=positionCounts.get(String(m.id))||0;if(!expected)continue;
     for(const c of data.compositions||[]){const items=Array.isArray(c.items)?c.items:[];if(items.length!==expected)continue;let productTotal=0,capacity=30;const carousel:any[]=[];let valid=true;
       for(const i of items){const p=products.get(String(i.product_id));if(!p||p.is_active!==true){valid=false;break}const qty=Number(i.quantity||0),price=moldEffectivePriceCents(p);if(!(qty>0)){valid=false;break}productTotal+=Math.round(price*qty);capacity=Math.min(capacity,Math.max(0,Math.floor(Number(i.coverage_baskets||0))));carousel.push({position_id:i.position_id,label:i.label,product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||i.image_url||"",packaging:p.packaging||"",quantity:qty,stock_quantity:Number(i.available_stock||0),price_cents:price})}
       if(!valid||capacity<1)continue;const total=Math.max(0,productTotal+cents(data.hidden_adjustment||0)),n=Number(c.number||1);
-      cards.push({id:String(b.id),card_key:String(b.id)+"@"+n,mold_mode:true,mold_id:String(m.id),composition_number:n,public_composition_count:Number(data.public_composition_count||1),name:String(b.name)+" - Tipo "+n,model_name:String(b.name),display_price_cents:total,hidden_adjustment_cents:cents(data.hidden_adjustment||0),image_url:b.image_url||"",stock_quantity:capacity,category_name:cat?.name||null,category_slug:cat?.slug||null,category_sort_order:Number(cat?.sort_order||0),carousel_items:carousel})
+      cards.push({id:String(b.id),card_key:String(b.id)+"@"+n,mold_mode:true,mold_id:String(m.id),composition_number:n,public_composition_count:Number(data.public_composition_count||1),name:String(b.name)+" - Tipo "+n,model_name:String(b.name),display_price_cents:total,hidden_adjustment_cents:cents(data.hidden_adjustment||0),image_url:b.image_url||"",stock_quantity:capacity,category_id:cat.id,category_name:cat.name,category_slug:cat.slug,category_sort_order:Number(cat.sort_order||0),subcategory_id:sub.id,subcategory_name:sub.name,subcategory_sort_order:Number(sub.sort_order||0),carousel_items:carousel})
     }
   }
-  const preferredNames=['Grande Completa','Grande Só Alimento','Média Completa','Média Só Alimento','Pequena Completa','Pequena Só Alimento','Mini Completa','Mini Só Alimento','Econômica'];
-  const normalizeName=(value:string)=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');
-  const preferredOrder=new Map(preferredNames.map((name,index)=>[normalizeName(name),index]));
-  cards.sort((a,b)=>(preferredOrder.get(normalizeName(a.model_name))??preferredNames.length)-(preferredOrder.get(normalizeName(b.model_name))??preferredNames.length)||a.category_sort_order-b.category_sort_order||a.model_name.localeCompare(b.model_name,'pt-BR')||a.composition_number-b.composition_number);return cards;
+  cards.sort((a,b)=>a.category_sort_order-b.category_sort_order||a.subcategory_sort_order-b.subcategory_sort_order||a.composition_number-b.composition_number||String(a.id).localeCompare(String(b.id)));return cards;
 }
 async function moldDetail(basketId:string,compositionNumber:number,selections:any[]|null=null){
   const gate=await db.rpc("basket_mold_cutover_ready_v1",{p_basket_id:basketId});if(gate.error)throw gate.error;if(gate.data!==true)return null;
@@ -151,28 +152,35 @@ async function moldQuote(payload:any){const id=uid(payload?.basket_id),n=Math.tr
 
 async function home(){
   const moldCards=await moldHomeCards(),moldBasketIds=new Set(moldCards.map((x:any)=>String(x.id)));
-  const [catalogQ,categoriesQ]=await Promise.all([
+  const [catalogQ,categoriesQ,subcategoriesQ]=await Promise.all([
     db.from("basket_commercial_catalog_v1").select("*").eq("source_kind","basket").gt("public_available",0).order("category_sort_order").order("public_name"),
-    db.from("basket_categories").select("id,name,slug,sort_order").eq("is_active",true).order("sort_order")
+    db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order"),
+    db.from("basket_subcategories").select("id,category_id,name,sort_order,is_active").eq("is_active",true).order("sort_order")
   ]);
-  if(catalogQ.error)throw catalogQ.error;if(categoriesQ.error)throw categoriesQ.error;
-  const rows=(catalogQ.data||[]).filter((x:any)=>x.model_active===true&&x.category_active===true&&x.public_lot_id&&Number(x.public_available||0)>0&&!moldBasketIds.has(String(x.commercial_id)));
+  if(catalogQ.error)throw catalogQ.error;if(categoriesQ.error)throw categoriesQ.error;if(subcategoriesQ.error)throw subcategoriesQ.error;
+  const categories=categoriesQ.data||[],subcategories=subcategoriesQ.data||[],categoryMap=new Map(categories.map((x:any)=>[String(x.id),x])),subcategoryMap=new Map(subcategories.map((x:any)=>[String(x.id),x]));
+  const candidates=(catalogQ.data||[]).filter((x:any)=>x.model_active===true&&x.category_active===true&&x.public_lot_id&&Number(x.public_available||0)>0&&!moldBasketIds.has(String(x.commercial_id)));
+  const templateIds=[...new Set(candidates.map((x:any)=>String(x.basket_id||x.commercial_id)).filter(Boolean))];
+  const templatesQ=templateIds.length?await db.from("basket_templates").select("id,category_id,subcategory_id").in("id",templateIds):{data:[],error:null};
+  if(templatesQ.error)throw templatesQ.error;
+  const templateMap=new Map((templatesQ.data||[]).map((x:any)=>[String(x.id),x]));
+  const rows=candidates.filter((x:any)=>{const t=templateMap.get(String(x.basket_id||x.commercial_id));const c=categoryMap.get(String(t?.category_id||x.category_id||""));const sub=subcategoryMap.get(String(t?.subcategory_id||""));return Boolean(c&&sub&&String(sub.category_id)===String(c.id))});
   const images=await basketImageMap(rows.map((x:any)=>String(x.public_lot_id||"")).filter(Boolean));
   const baskets=rows.map((x:any)=>{
+    const t=templateMap.get(String(x.basket_id||x.commercial_id)),category=categoryMap.get(String(t?.category_id||x.category_id||"")),subcategory=subcategoryMap.get(String(t?.subcategory_id||""));
     const linked=x.linked_lot_id||null,split=String(x.public_lot_kind||"")==="food"||Boolean(linked),lot=String(x.public_lot_id||"");
     return {
       id:x.commercial_id,source_kind:x.source_kind,name:x.public_name||x.model_name,
-      category_name:x.category_name||null,category_slug:x.category_slug||null,
+      category_id:category.id,category_name:category.name,category_slug:category.slug,category_sort_order:Number(category.sort_order||0),
+      subcategory_id:subcategory.id,subcategory_name:subcategory.name,subcategory_sort_order:Number(subcategory.sort_order||0),
       display_price_cents:cents(x.sale_price),image_url:images.get(lot+":"+(linked||""))||x.image_url||"",
-      stock_quantity:Number(x.public_available||0),availability_reason:x.availability_reason||"available",
-      split_mode:split,
-      ...(split?{food_lot_id:lot,food_lot_code:x.public_lot_code||"",food_lot_quantity:Number(x.public_available||0),
-        hygiene_lot_id:linked,hygiene_lot_code:"",hygiene_lot_quantity:Number(x.linked_available||0),uses_hygiene_kit:Boolean(linked)}:
-        {lot_id:lot,lot_code:x.public_lot_code||x.public_internal_lot_code||""})
+      stock_quantity:Number(x.public_available||0),availability_reason:x.availability_reason||"available",split_mode:split,
+      ...(split?{food_lot_id:lot,food_lot_code:x.public_lot_code||"",food_lot_quantity:Number(x.public_available||0),hygiene_lot_id:linked,hygiene_lot_code:"",hygiene_lot_quantity:Number(x.linked_available||0),uses_hygiene_kit:Boolean(linked)}:{lot_id:lot,lot_code:x.public_lot_code||x.public_internal_lot_code||""})
     };
   });
-  return {ok:true,version:"canonical-basket-commerce-v1",split_kits:baskets.some((b:any)=>b.split_mode===true),
-    baskets:[...moldCards,...await basketCarouselItems(baskets)],categories:CATEGORIES,basket_categories:categoriesQ.data||[]};
+  const basketTaxonomy=categories.map((c:any)=>({...c,subcategories:subcategories.filter((s:any)=>String(s.category_id)===String(c.id)).map((s:any)=>({id:s.id,category_id:s.category_id,name:s.name,sort_order:s.sort_order}))}));
+  const allBaskets=[...moldCards,...await basketCarouselItems(baskets)].sort((a:any,b:any)=>Number(a.category_sort_order||0)-Number(b.category_sort_order||0)||Number(a.subcategory_sort_order||0)-Number(b.subcategory_sort_order||0)||Number(a.composition_number||0)-Number(b.composition_number||0));
+  return {ok:true,version:"canonical-basket-commerce-v1",split_kits:baskets.some((b:any)=>b.split_mode===true),baskets:allBaskets,categories:CATEGORIES,basket_categories:basketTaxonomy};
 }
 async function sellableMap(ids:string[]){
   const out=new Map<string,number>();if(!ids.length)return out;
