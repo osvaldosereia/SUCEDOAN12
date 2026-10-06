@@ -44,6 +44,17 @@ function safeTextParameter(parameter, maxLength = 1024) {
   if (!text || text.length > maxLength || /[\u0000-\u001f\u007f]/.test(text)) throw invalidRequest();
   return { type: 'text', text };
 }
+function safeImageParameter(parameter) {
+  if (!parameter || typeof parameter !== 'object' || String(parameter.type ?? '').toLowerCase() !== 'image') throw invalidRequest();
+  const image = parameter.image;
+  if (!image || typeof image !== 'object' || Array.isArray(image)) throw invalidRequest();
+  const link = typeof image.link === 'string' ? image.link.trim() : '';
+  if (!link || link.length > 2000 || /[\u0000-\u001f\u007f]/.test(link)) throw invalidRequest();
+  let url;
+  try { url = new URL(link); } catch { throw invalidRequest(); }
+  if (url.protocol !== 'https:' || url.username || url.password) throw invalidRequest();
+  return { type: 'image', image: { link: url.toString() } };
+}
 function safeQuickReplyButton(component) {
   const subType = String(component?.sub_type ?? '').toLowerCase();
   const index = String(component?.index ?? '');
@@ -65,22 +76,32 @@ function safeCarouselComponent(component) {
     if (!Number.isInteger(cardIndex) || cardIndex < 0 || cardIndex > 9 || seen.has(cardIndex)) throw invalidRequest();
     seen.add(cardIndex);
     const components = card.components;
-    if (!Array.isArray(components) || components.length !== 1) throw invalidRequest();
-    const button = components[0];
-    if (!button || typeof button !== 'object' || String(button.type ?? '').toLowerCase() !== 'button') throw invalidRequest();
-    const subType = String(button.sub_type ?? '').toLowerCase();
-    const index = String(button.index ?? '');
-    const parameters = button.parameters ?? [];
-    if (subType !== 'url' || !/^[0-9]$/.test(index) || !Array.isArray(parameters) || parameters.length !== 1) throw invalidRequest();
-    return {
-      card_index: cardIndex,
-      components: [{
-        type: 'button',
-        sub_type: 'url',
-        index,
-        parameters: [safeTextParameter(parameters[0], 2000)],
-      }],
-    };
+    if (!Array.isArray(components) || components.length < 1 || components.length > 2) throw invalidRequest();
+    let headerSeen = false;
+    let buttonSeen = false;
+    const safeNested = components.map((nested) => {
+      if (!nested || typeof nested !== 'object') throw invalidRequest();
+      const type = String(nested.type ?? '').toLowerCase();
+      if (type === 'header') {
+        if (headerSeen) throw invalidRequest();
+        headerSeen = true;
+        const parameters = nested.parameters ?? [];
+        if (!Array.isArray(parameters) || parameters.length !== 1) throw invalidRequest();
+        return { type: 'header', parameters: [safeImageParameter(parameters[0])] };
+      }
+      if (type === 'button') {
+        if (buttonSeen) throw invalidRequest();
+        buttonSeen = true;
+        const subType = String(nested.sub_type ?? '').toLowerCase();
+        const index = String(nested.index ?? '');
+        const parameters = nested.parameters ?? [];
+        if (subType !== 'url' || !/^[0-9]$/.test(index) || !Array.isArray(parameters) || parameters.length !== 1) throw invalidRequest();
+        return { type: 'button', sub_type: 'url', index, parameters: [safeTextParameter(parameters[0], 2000)] };
+      }
+      throw invalidRequest();
+    });
+    if (!buttonSeen) throw invalidRequest();
+    return { card_index: cardIndex, components: safeNested };
   });
   safeCards.sort((a, b) => a.card_index - b.card_index);
   for (let index = 0; index < safeCards.length; index++) {
