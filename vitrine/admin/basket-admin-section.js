@@ -2,6 +2,7 @@
   'use strict';
 
   const MODULES={
+    taxonomy:{label:'Categorias da vitrine',description:'Crie categorias e subdivisões, controle a ordem e escolha quais seções ficam ativas.',src:'/vitrine/admin/basket-category-admin.js?v=20261006-1',global:'DonaAntoniaBasketTaxonomy'},
     molds:{label:'Cestas Molde',description:'Edite nome, valor oculto, posições, quantidades e produtos permitidos em cada cesta.',src:'/vitrine/admin/basket-mold-admin.js?v=20261006-r2',global:'DonaAntoniaBasketMolds'},
     kits:{label:'Criador de Kits',description:'Ferramenta técnica para manutenção das receitas reutilizáveis existentes.',src:'/vitrine/admin/kit-builder.js?v=basket-products-v1',global:'DonaAntoniaKitBuilder'},
     store:{label:'Operação anterior',description:'Ferramenta técnica para receitas, reservas e montagens do modelo anterior.',src:'/vitrine/admin/store-baskets-builder.js?v=component-edit-v1',global:'DonaAntoniaStoreBaskets'}
@@ -24,7 +25,7 @@
 
   function renderShell(){
     const root=host();if(!root)return null;ensureStyle();
-    root.innerHTML='<section class="basket-simple-shell"><div class="basket-simple-head"><div><h1>Cestas do Site</h1><p>Configure cada cesta pelo molde e deixe o sistema cuidar das variações.</p></div></div><div class="basket-simple-tabs" role="tablist" aria-label="Cestas do Site"><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="molds">Cestas Molde</button></div><details class="basket-advanced" data-basket-advanced><summary>Ferramentas avançadas</summary><div class="basket-simple-tabs" role="tablist" aria-label="Ferramentas avançadas"><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="kits">Criador de Kits</button><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="store">Operação anterior</button></div></details><div class="basket-simple-help" data-basket-simple-help></div><div class="basket-simple-workspace" data-basket-simple-workspace></div></section>';
+    root.innerHTML='<section class="basket-simple-shell"><div class="basket-simple-head"><div><h1>Cestas do Site</h1><p>Configure cada cesta pelo molde e deixe o sistema cuidar das variações.</p></div></div><div class="basket-simple-tabs" role="tablist" aria-label="Cestas do Site"><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="molds">Cestas Molde</button><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="taxonomy">Categorias da vitrine</button></div><details class="basket-advanced" data-basket-advanced><summary>Ferramentas avançadas</summary><div class="basket-simple-tabs" role="tablist" aria-label="Ferramentas avançadas"><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="kits">Criador de Kits</button><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="store">Operação anterior</button></div></details><div class="basket-simple-help" data-basket-simple-help></div><div class="basket-simple-workspace" data-basket-simple-workspace></div></section>';
     root.querySelectorAll('[data-basket-simple-tab]').forEach(btn=>btn.addEventListener('click',()=>setTab(String(btn.dataset.basketSimpleTab||'molds'))));
     return root;
   }
