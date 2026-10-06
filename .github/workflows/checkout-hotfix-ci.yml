@@ -60,5 +60,6 @@ jobs:
           node scripts/test-checkout-stock-adjustment-contract.mjs
           node scripts/test-checkout-whatsapp-outbox.mjs
           node scripts/test-checkout-order-meta-cutover-v1.mjs
+          node scripts/test-checkout-whatsapp-real-delivery-state.mjs
           node scripts/test-customer-identity-admin-v2.mjs
           node --check checkout-resilience.js
