@@ -1268,6 +1268,7 @@
           <div class="admin-sidebar-list">
             <button class="admin-sidebar-item" data-tab="today" type="button"><span class="nav-item-icon" aria-hidden="true">⌂</span><span>Central</span></button>
             <button class="admin-sidebar-item" data-tab="attendance" type="button"><span class="nav-item-icon" aria-hidden="true">☏</span><span>Atendimento</span></button>
+            <button class="admin-sidebar-item" data-tab="ana" type="button"><span class="nav-item-icon" aria-hidden="true">✦</span><span>ANA</span></button>
             <button class="admin-sidebar-item" data-tab="orders" type="button"><span class="nav-item-icon" aria-hidden="true">▤</span><span>Pedidos</span></button>
             <button class="admin-sidebar-item" data-tab="expedition" type="button"><span class="nav-item-icon" aria-hidden="true">↗</span><span>Expedição</span></button>
             <button class="admin-sidebar-item" data-tab="driver" type="button"><span class="nav-item-icon" aria-hidden="true">◆</span><span>Entregador</span></button>
@@ -1481,6 +1482,7 @@
     closeNavMenus();
     if(tab==='today')renderToday();
     if(tab==='attendance')renderAttendance();
+    if(tab==='ana')import('/vitrine/admin/ana/ana-admin.js?v=1').then(module=>module.mountAnaAdmin($('#content'))).catch(error=>{$('#content').innerHTML='<section class="panel"><h1>ANA</h1><p>Não foi possível abrir a gestão da ANA.</p></section>';console.error('admin_ana_load',error)});
     if(tab==='products')renderProducts();
     if(tab==='baskets')renderBaskets();
     if(tab==='quotes')renderQuotes();
