@@ -46,6 +46,10 @@ on:
       - 'scripts/test-attendance-*.mjs'
       - 'scripts/test-whatsapp-ana-*.mjs'
       - 'scripts/test-ana-customer-profile-confirmation-schema-v1.mjs'
+      - 'scripts/test-ana-customer-confirmation-v1.mjs'
+      - 'supabase/functions/_shared/ana-customer-confirmation-v1.mjs'
+      - 'supabase/migrations/20261006051000_ana_customer_confirmation_apply_signal_v1.sql'
+      - 'supabase/sql/20261006_ana_customer_confirmation_apply_signal_v1.sql'
       - 'supabase/migrations/20261005170000_ana_customer_profile_confirmation_v1.sql'
       - 'supabase/sql/20261005_ana_customer_profile_confirmation_v1.sql'
       - 'scripts/test-whatsapp-meta-*.mjs'
@@ -108,6 +112,7 @@ jobs:
       - {name: ANA immediate claim cleanup regression, run: 'node scripts/test-whatsapp-ana-preview-claim-cleanup-v1.mjs'}
       - {name: ANA review observability contract, run: 'node scripts/test-whatsapp-ana-review-observability-v1.mjs'}
       - {name: ANA customer confirmation schema contract, run: 'node scripts/test-ana-customer-profile-confirmation-schema-v1.mjs'}
+      - {name: ANA customer confirmation classifier contract, run: 'node scripts/test-ana-customer-confirmation-v1.mjs'}
       - {name: Meta Phone Number ID strictness, run: 'node scripts/test-attendance-meta-phone-id-v1.mjs'}
       - {name: Meta response-body timeout, run: 'node scripts/test-attendance-meta-body-timeout-v1.mjs'}
       - {name: Meta webhook contract, run: 'node scripts/test-whatsapp-meta-webhook-v1.mjs'}
@@ -139,4 +144,5 @@ jobs:
       - {name: Marketing audience center syntax, run: 'node --check vitrine/admin/marketing/audience-center.js'}
       - {name: Marketing campaign center syntax, run: 'node --check vitrine/admin/marketing/campaign-center.js'}
       - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}
+
 
