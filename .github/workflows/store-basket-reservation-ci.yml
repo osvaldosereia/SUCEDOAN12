@@ -6,6 +6,8 @@ on:
       - 'supabase/migrations/20261005190000_store_basket_reservation_v1.sql'
       - 'supabase/sql/20261005_store_basket_build_detail_v1.sql'
       - 'supabase/migrations/20261006000500_store_basket_build_detail_v1.sql'
+      - 'supabase/sql/20261006_store_basket_ops_overview_v1.sql'
+      - 'supabase/migrations/20261006043000_store_basket_ops_overview_v1.sql'
       - 'supabase/sql/20261005_basket_component_reservations_v1.sql'
       - 'supabase/sql/20261004_basket_unified_order_engine_v1.sql'
       - 'supabase/functions/admin-store-baskets-v1/**'
@@ -19,6 +21,8 @@ on:
       - 'supabase/migrations/20261005190000_store_basket_reservation_v1.sql'
       - 'supabase/sql/20261005_store_basket_build_detail_v1.sql'
       - 'supabase/migrations/20261006000500_store_basket_build_detail_v1.sql'
+      - 'supabase/sql/20261006_store_basket_ops_overview_v1.sql'
+      - 'supabase/migrations/20261006043000_store_basket_ops_overview_v1.sql'
       - 'supabase/sql/20261005_basket_component_reservations_v1.sql'
       - 'supabase/sql/20261004_basket_unified_order_engine_v1.sql'
       - 'supabase/functions/admin-store-baskets-v1/**'
@@ -50,5 +54,6 @@ jobs:
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-public-availability-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-checkout-lot-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-no-legacy-double-stock-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-ops-overview-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-go-live-contract-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-human-smoke-spec-v1.mjs
