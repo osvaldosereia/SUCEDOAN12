@@ -19,7 +19,7 @@ try{
   await page.addScriptTag({content:section});
   await page.evaluate(()=>window.DonaAntoniaBasketAdmin.render());
   await page.waitForSelector('[data-runtime-molds]');
-  assert.equal(await page.locator('[data-basket-simple-tab]').count(),3,'runtime must expose mold editor plus two advanced tools');
+  assert.equal(await page.locator('[data-basket-simple-tab]').count(),4,'runtime must expose mold editor, taxonomy and two advanced tools');
   assert.equal(await page.locator('[data-basket-simple-tab="molds"]').getAttribute('aria-selected'),'true');
   assert.equal(await page.locator('[data-basket-advanced]').count(),1,'legacy tools must stay grouped under advanced disclosure');
 

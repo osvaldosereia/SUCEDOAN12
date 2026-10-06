@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const source=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 const sql=fs.readFileSync('supabase/sql/20261004_basket_canonical_commerce_v1.sql','utf8');
-const home=source.slice(source.indexOf('async function home(){'),source.indexOf('async function sellableMap('));
+const home=source.slice(source.indexOf('async function home('),source.indexOf('async function sellableMap('));
 const detail=source.slice(source.indexOf('async function basket(id:string){'),source.indexOf('function groupChanged('));
 const quote=source.slice(source.indexOf('async function quote(payload:any){'),source.indexOf('async function resolveCode('));
 assert.match(sql,/public_lot_kind/i,'canonical catalog must expose current lot kind');

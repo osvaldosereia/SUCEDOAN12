@@ -327,6 +327,7 @@
     const sheetTitle = $('#sheetTitle');
     const state = {
       home: {baskets:[],categories:STATIC_CATEGORIES,basket_categories:[]},
+      homePartial: false,
       offers: [],
       offersLoaded: false,
       offersPromise: null,
@@ -594,9 +595,11 @@
     function renderHome(){
       state.view='home';state.category=null;state.query='';renderNav();$('#globalSearchInput').value='';
       const baskets=state.home?.baskets||[],categories=state.home?.categories?.length?state.home.categories:STATIC_CATEGORIES;
-      const basketGroups=Array.isArray(state.home?.basket_categories)?state.home.basket_categories:[];
+      let basketGroups=Array.isArray(state.home?.basket_categories)?state.home.basket_categories:[];
+      if(state.homePartial)basketGroups=basketGroups.filter(group=>group.slug==='cestas-completas').map(group=>({...group,subcategories:(group.subcategories||[]).filter(sub=>String(sub.name||'').trim().toLocaleLowerCase('pt-BR')==='grande')}));
       const basketGroupMarkup='<div id="basketSections">'+basketGroups.map(group=>section(group.name,'',(group.subcategories||[]).map(sub=>{const items=baskets.filter(b=>String(b.category_id||'')===String(group.id)&&String(b.subcategory_id||'')===String(sub.id));return '<div class="basket-subgroup"><h3 class="basket-subgroup-title">'+esc(sub.name)+'</h3><div class="grid basket-grid">'+(items.length?items.map((b,i)=>basketCard(b,i)).join(''):'<div class="empty">Nenhum item disponível nesta subdivisão agora.</div>')+'</div></div>'}).join(''))).join('')+'</div>';
-      content.innerHTML=homeIntro(categories)+basketGroupMarkup+section('Ofertas da semana','Preços promocionais ativos agora.','<div id="homeOffersMount">'+(state.offersLoaded?'':offersSkeleton())+'</div>');
+      const remainingBasketMarkup=state.homePartial?section('Outras cestas','Carregando as demais opções…','<div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>','homeRemainingBaskets'):'';
+      content.innerHTML=homeIntro(categories)+basketGroupMarkup+remainingBasketMarkup+section('Ofertas da semana','Preços promocionais ativos agora.','<div id="homeOffersMount">'+(state.offersLoaded?'':offersSkeleton())+'</div>');
       content.querySelectorAll('[data-basket]').forEach(btn=>btn.onclick=()=>openBasket(btn.dataset.basket));
       content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));
       bindHomeIntro();BasketCarousel.mount(document.querySelector('#basketSections'));if(state.offersLoaded)paintHomeOffers();else observeOffers();
@@ -683,7 +686,7 @@
       toast('Pedido recebido. Enviaremos no WhatsApp o link para conferir seu pedido.')
     }
     $('#globalSearchForm').onsubmit=e=>{e.preventDefault();const q=$('#globalSearchInput').value.trim();if(q)renderSearch(q)};
-    async function start(){captureMarketingEntryContext();renderInitialShell();const cachedHome=readCache(HOME_CACHE_KEY,5*60*1000),hadCached=Boolean(cachedHome?.baskets?.length);if(hadCached){state.home={...state.home,...cachedHome,categories:cachedHome.categories?.length?cachedHome.categories:STATIC_CATEGORIES};renderHome()}const identityPhonePromise=resolveEntryWhatsappPhone();void identityPhonePromise.then(phone=>{state.whatsappPhone=phone;if(phone){const d=phoneDigits(phone).replace(/^55/,'');if(d.length===11){state.checkoutDdd=d.slice(0,2);state.checkoutPhone=d.slice(2)}}}).catch(()=>{state.whatsappPhone=''});paintCart();try{const fresh=await api('home');state.home={...state.home,...fresh,categories:fresh.categories?.length?fresh.categories:STATIC_CATEGORIES};writeCache(HOME_CACHE_KEY,state.home);if(state.view==='home')renderHome();applyMarketingEntryContext()}catch(e){if(!state.home?.baskets?.length){renderNav();content.innerHTML='<section class="section"><div class="empty">Não consegui abrir a vitrine agora.<br><button class="primary" style="margin-top:12px" id="retryHome">Tentar novamente</button><br><a class="text-btn" style="display:inline-block;margin-top:8px" href="https://wa.me/'+resolveWhatsappDestination()+'">Falar no WhatsApp</a></div></section>';$('#retryHome').onclick=()=>location.reload()}}}
+    async function start(){captureMarketingEntryContext();renderInitialShell();const cachedHome=readCache(HOME_CACHE_KEY,5*60*1000),hadCached=Boolean(cachedHome?.baskets?.length);if(hadCached){state.home={...state.home,...cachedHome,categories:cachedHome.categories?.length?cachedHome.categories:STATIC_CATEGORIES};renderHome()}const identityPhonePromise=resolveEntryWhatsappPhone();void identityPhonePromise.then(phone=>{state.whatsappPhone=phone;if(phone){const d=phoneDigits(phone).replace(/^55/,'');if(d.length===11){state.checkoutDdd=d.slice(0,2);state.checkoutPhone=d.slice(2)}}}).catch(()=>{state.whatsappPhone=''});paintCart();try{if(!hadCached){try{const priority=await api('home_priority');if(priority?.baskets?.length){state.home={...state.home,...priority,categories:priority.categories?.length?priority.categories:STATIC_CATEGORIES};state.homePartial=true;if(state.view==='home')renderHome()}}catch{}}const fresh=await api('home');state.home={...state.home,...fresh,categories:fresh.categories?.length?fresh.categories:STATIC_CATEGORIES};state.homePartial=false;writeCache(HOME_CACHE_KEY,state.home);if(state.view==='home')renderHome();applyMarketingEntryContext()}catch(e){if(!state.home?.baskets?.length){renderNav();content.innerHTML='<section class="section"><div class="empty">Não consegui abrir a vitrine agora.<br><button class="primary" style="margin-top:12px" id="retryHome">Tentar novamente</button><br><a class="text-btn" style="display:inline-block;margin-top:8px" href="https://wa.me/'+resolveWhatsappDestination()+'">Falar no WhatsApp</a></div></section>';$('#retryHome').onclick=()=>location.reload()}}}
     start();
   })();
   </script>

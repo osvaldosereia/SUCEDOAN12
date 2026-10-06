@@ -16,6 +16,8 @@ const CATEGORIES=[
 const HOME_CACHE_TTL_MS=30_000;
 let homeCache:{expiresAt:number,data:any}|null=null;
 let homePromise:Promise<any>|null=null;
+let homePriorityCache:{expiresAt:number,data:any}|null=null;
+let homePriorityPromise:Promise<any>|null=null;
 const ALLOWED_ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ALLOWED_ORIGINS.has(origin)?origin:"https://donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"GET, POST, OPTIONS"}};
 const json=(req:Request,v:any,s=200,h:Record<string,string>={})=>new Response(JSON.stringify(v),{status:s,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8",...h}});
@@ -106,8 +108,20 @@ async function moldAvailableStockMap(productIds:string[]){
 }
 function moldEffectivePriceCents(p:any){const n=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0?Number(p.offer_price):Number(p?.price||0);return cents(n)}
 async function moldProductsMap(ids:string[]){const clean=[...new Set(ids.filter(Boolean))],out=new Map<string,any>();if(!clean.length)return out;const q=await db.from("products").select("id,name,sku,gtin,image_url,packaging,price,offer_price,is_offer,is_active").in("id",clean);if(q.error)throw q.error;for(const p of q.data||[])out.set(String(p.id),p);return out}
-async function moldHomeCards(){
-  const mq=await db.from("basket_molds").select("id,basket_id,hidden_adjustment,public_composition_count,metadata");if(mq.error)throw mq.error;const molds=mq.data||[];if(!molds.length)return [];
+async function moldHomeCards(priorityOnly=false){
+  const mq=await db.from("basket_molds").select("id,basket_id,hidden_adjustment,public_composition_count,metadata");if(mq.error)throw mq.error;let molds=mq.data||[];if(!molds.length)return [];
+  if(priorityOnly){
+    const basketIds=[...new Set(molds.map((m:any)=>String(m.basket_id)))];
+    const [bq,cq,sq]=await Promise.all([
+      db.from("basket_templates").select("id,category_id,subcategory_id").in("id",basketIds),
+      db.from("basket_categories").select("id,slug").eq("is_active",true),
+      db.from("basket_subcategories").select("id,category_id,name").eq("is_active",true)
+    ]);if(bq.error)throw bq.error;if(cq.error)throw cq.error;if(sq.error)throw sq.error;
+    const complete=(cq.data||[]).find((c:any)=>c.slug==="cestas-completas"),largeIds=new Set((sq.data||[]).filter((s:any)=>String(s.category_id)===String(complete?.id)&&String(s.name||"").trim().toLocaleLowerCase("pt-BR")==="grande").map((s:any)=>String(s.id)));
+    const largeBasketIds=new Set((bq.data||[]).filter((b:any)=>String(b.category_id)===String(complete?.id)&&largeIds.has(String(b.subcategory_id))).map((b:any)=>String(b.id)));
+    molds=molds.filter((m:any)=>largeBasketIds.has(String(m.basket_id)));
+  }
+  if(!molds.length)return [];
   const legacySourceIds=[...new Set(molds.flatMap((m:any)=>String(m?.metadata?.transition_mode||"")==="legacy_first"&&Array.isArray(m?.metadata?.legacy_source_basket_ids)?m.metadata.legacy_source_basket_ids.map((x:any)=>String(x)).filter(Boolean):[]))];
   const legacyAvailable=new Set<string>();
   if(legacySourceIds.length){const lq=await db.from("basket_commercial_catalog_v1").select("commercial_id,public_available").eq("source_kind","basket").in("commercial_id",legacySourceIds).gt("public_available",0);if(lq.error)throw lq.error;for(const row of lq.data||[])if(Number(row.public_available||0)>0)legacyAvailable.add(String(row.commercial_id))}
@@ -153,8 +167,8 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
 async function moldQuote(payload:any){const id=uid(payload?.basket_id),n=Math.trunc(Number(payload?.composition_number||1));if(!id)return {error:"invalid_basket",status:400};try{const d=await moldDetail(id,n,Array.isArray(payload?.items)?payload.items:[]);if(!d)return {error:"basket_mold_unavailable",status:409};return {ok:true,total_cents:d.basket.display_price_cents,basket:d.basket,items:d.items}}catch(e:any){const code=txt(e?.message,100);return {error:["basket_mold_option_invalid","basket_mold_component_invalid"].includes(code)?code:"basket_mold_unavailable",status:409}}
 }
 
-async function home(){
-  const moldCards=await moldHomeCards(),moldBasketIds=new Set(moldCards.map((x:any)=>String(x.id)));
+async function home(priorityOnly=false){
+  const moldCards=await moldHomeCards(priorityOnly),moldBasketIds=new Set(moldCards.map((x:any)=>String(x.id)));
   const [catalogQ,categoriesQ,subcategoriesQ]=await Promise.all([
     db.from("basket_commercial_catalog_v1").select("*").eq("source_kind","basket").gt("public_available",0).order("category_sort_order").order("public_name"),
     db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order"),
@@ -167,7 +181,7 @@ async function home(){
   const templatesQ=templateIds.length?await db.from("basket_templates").select("id,category_id,subcategory_id").in("id",templateIds):{data:[],error:null};
   if(templatesQ.error)throw templatesQ.error;
   const templateMap=new Map((templatesQ.data||[]).map((x:any)=>[String(x.id),x]));
-  const rows=candidates.filter((x:any)=>{const t=templateMap.get(String(x.basket_id||x.commercial_id));const c=categoryMap.get(String(t?.category_id||x.category_id||""));const sub=subcategoryMap.get(String(t?.subcategory_id||""));return Boolean(c&&sub&&String(sub.category_id)===String(c.id))});
+  const rows=candidates.filter((x:any)=>{const t=templateMap.get(String(x.basket_id||x.commercial_id));const c=categoryMap.get(String(t?.category_id||x.category_id||""));const sub=subcategoryMap.get(String(t?.subcategory_id||""));return Boolean(c&&sub&&String(sub.category_id)===String(c.id)&&(!priorityOnly||(c.slug==="cestas-completas"&&String(sub.name||"").trim().toLocaleLowerCase("pt-BR")==="grande")))});
   const images=await basketImageMap(rows.map((x:any)=>String(x.public_lot_id||"")).filter(Boolean));
   const baskets=rows.map((x:any)=>{
     const t=templateMap.get(String(x.basket_id||x.commercial_id)),category=categoryMap.get(String(t?.category_id||x.category_id||"")),subcategory=subcategoryMap.get(String(t?.subcategory_id||""));
@@ -183,7 +197,7 @@ async function home(){
   });
   const basketTaxonomy=categories.map((c:any)=>({...c,subcategories:subcategories.filter((s:any)=>String(s.category_id)===String(c.id)).map((s:any)=>({id:s.id,category_id:s.category_id,name:s.name,sort_order:s.sort_order}))}));
   const allBaskets=[...moldCards,...await basketCarouselItems(baskets)].sort((a:any,b:any)=>Number(a.category_sort_order||0)-Number(b.category_sort_order||0)||Number(a.subcategory_sort_order||0)-Number(b.subcategory_sort_order||0)||Number(a.composition_number||0)-Number(b.composition_number||0));
-  return {ok:true,version:"canonical-basket-commerce-v1",split_kits:baskets.some((b:any)=>b.split_mode===true),baskets:allBaskets,categories:CATEGORIES,basket_categories:basketTaxonomy};
+  return {ok:true,version:"canonical-basket-commerce-v1",priority:priorityOnly,split_kits:baskets.some((b:any)=>b.split_mode===true),baskets:allBaskets,categories:CATEGORIES,basket_categories:basketTaxonomy};
 }
 async function cachedHome(){
   if(homeCache&&homeCache.expiresAt>Date.now())return homeCache.data;
@@ -191,6 +205,13 @@ async function cachedHome(){
     homePromise=home().then(data=>{homeCache={expiresAt:Date.now()+HOME_CACHE_TTL_MS,data};return data}).finally(()=>{homePromise=null});
   }
   return homePromise;
+}
+async function cachedHomePriority(){
+  if(homePriorityCache&&homePriorityCache.expiresAt>Date.now())return homePriorityCache.data;
+  if(!homePriorityPromise){
+    homePriorityPromise=home(true).then(data=>{homePriorityCache={expiresAt:Date.now()+HOME_CACHE_TTL_MS,data};return data}).finally(()=>{homePriorityPromise=null});
+  }
+  return homePriorityPromise;
 }
 async function sellableMap(ids:string[]){
   const out=new Map<string,number>();if(!ids.length)return out;
@@ -450,6 +471,7 @@ Deno.serve(async(req:Request)=>{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
     if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:27},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home")return json(req,await cachedHome(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
+    if(req.method==="GET"&&action==="home_priority")return json(req,await cachedHomePriority(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="products")return json(req,await productList(u),200,{"Cache-Control":"no-store"});
