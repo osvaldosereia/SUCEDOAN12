@@ -19,7 +19,7 @@ function dbFor(req:Request){
 
 function rpcError(error:any){
   const detail=clean(error?.message||error,1000);
-  const known=["admin_not_authorized","basket_mold_name_invalid","basket_mold_basket_not_found","basket_mold_public_composition_count_invalid","basket_mold_positions_required","basket_mold_position_label_required","basket_mold_position_quantity_invalid","basket_mold_position_options_required","basket_mold_product_invalid","basket_mold_product_not_found","basket_mold_duplicate_option"];
+  const known=["admin_not_authorized","basket_mold_name_invalid","basket_mold_basket_not_found","basket_mold_public_composition_count_invalid","basket_mold_positions_required","basket_mold_position_label_required","basket_mold_position_quantity_invalid","basket_mold_position_options_required","basket_mold_product_invalid","basket_mold_product_not_found","basket_mold_duplicate_option","basket_category_invalid"];
   const code=known.find(x=>detail.includes(x))||"basket_mold_operation_failed";
   if(code==="admin_not_authorized")return {error:code,status:403,message:"Usuário sem permissão para Cestas Molde."};
   if(code==="basket_mold_basket_not_found")return {error:code,status:404,message:"Cesta não encontrada."};
@@ -32,13 +32,14 @@ async function list(db:any){const q=await db.rpc("admin_basket_mold_list_v1");if
 async function editor(db:any,input:any){const id=uuid(input?.basket_id||input?.id);if(!id)return {error:"basket_mold_basket_not_found",status:400,message:"Cesta não encontrada."};const q=await db.rpc("admin_basket_mold_editor_v1",{p_basket_id:id});if(q.error)return rpcError(q.error);return {editor:q.data}}
 async function products(db:any,input:any){const limit=integer(input?.limit??24,1,40)||24;const q=await db.rpc("admin_basket_mold_products_v1",{p_query:clean(input?.q,80)||null,p_limit:limit});if(q.error)return rpcError(q.error);return q.data||{products:[]}}
 async function save(db:any,input:any){
-  const id=uuid(input?.basket_id),name=clean(input?.name,180),hidden=finite(input?.hidden_adjustment),count=integer(input?.public_composition_count,1,4),positions=Array.isArray(input?.positions)?input.positions.slice(0,80):null;
+  const id=uuid(input?.basket_id),categoryId=uuid(input?.category_id),name=clean(input?.name,180),hidden=finite(input?.hidden_adjustment),count=integer(input?.public_composition_count,1,4),positions=Array.isArray(input?.positions)?input.positions.slice(0,80):null;
   if(!id)return {error:"basket_mold_basket_not_found",status:400,message:"Cesta não encontrada."};
+  if(!categoryId)return {error:"basket_category_invalid",status:400,message:"Escolha uma categoria da vitrine."};
   if(!name)return {error:"basket_mold_name_invalid",status:400,message:"Informe o nome da cesta."};
   if(hidden===null)return {error:"basket_mold_hidden_adjustment_invalid",status:400,message:"Informe um valor oculto válido."};
   if(!count)return {error:"basket_mold_public_composition_count_invalid",status:400,message:"Escolha entre 1 e 4 composições públicas."};
   if(!positions?.length)return {error:"basket_mold_positions_required",status:400,message:"Adicione pelo menos uma posição ao molde."};
-  const q=await db.rpc("admin_save_basket_mold_v1",{p_basket_id:id,p_name:name,p_hidden_adjustment:hidden,p_public_composition_count:count,p_positions:positions,p_operator:clean(input?.operator,80)||"Operação"});
+  const q=await db.rpc("admin_save_basket_mold_with_category_v1",{p_basket_id:id,p_name:name,p_hidden_adjustment:hidden,p_public_composition_count:count,p_positions:positions,p_operator:clean(input?.operator,80)||"Operação",p_category_id:categoryId});
   if(q.error)return rpcError(q.error);return {editor:q.data};
 }
 
