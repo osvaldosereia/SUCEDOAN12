@@ -276,6 +276,9 @@
           if(!existingRegistrationComplete()){
             const saved=await persistRegistrationBeforeOrder(requestUrl,phone,draft);
             if(saved?.ok!==true){pendingSubmitError={error:saved?.error||'registration_incomplete'};showRegistrationServerError(pendingSubmitError.error);throw new Error(pendingSubmitError.error)}
+            // The server revalidates these fields to preserve the selected identity
+            // even if a legacy phone lookup is ambiguous. A customer ID is not proof.
+            body.checkout_registration=draft;
           }
           options={...options,body:JSON.stringify(body)};args=[input,options];
         }
