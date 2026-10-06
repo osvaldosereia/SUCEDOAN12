@@ -14,7 +14,7 @@
 
 - Não inferir classificação nem comportamento a partir do nome ou slug de categoria, subdivisão, cesta ou kit.
 - Categoria, subdivisão, ordem, estado ativo e número de composições devem ser configuráveis no admin.
-- Criar inicialmente as categorias Cestas Completas e Cestas Só Alimentos ativas, com Grande, Média, Pequena e Mini em cada uma; outras categorias ficam inativas.
+- Criar inicialmente as categorias Cestas Completas e Cestas Só Alimentos ativas, com Grande, Média, Pequena e Mini em cada uma; demais categorias existentes e novos cadastros começam inativos.
 - Os moldes iniciais das categorias ativas começam com três composições; a quantidade continua configurável de 1 a 4 por molde.
 - Cestas e kits sem classificação completa continuam administráveis e não aparecem agrupados na vitrine.
 - Novas tabelas expostas no schema public devem ter RLS e acesso de escrita somente por fluxo administrativo autenticado.
@@ -51,7 +51,7 @@
 - [ ] Inserir as oito subdivisões iniciais e ajustar estados para deixar somente as duas categorias solicitadas ativas.
 - [ ] Definir três composições iniciais nos moldes atualmente associados às categorias iniciais, preservando o campo configurável para cada molde.
 - [ ] Atualizar RPCs para validar que a subdivisão pertence à categoria selecionada, sem consultar rótulos.
-- [ ] Revisar a migration completa e o diff de segurança antes de seguir.
+- [ ] Revisar a migration completa e o diff de segurança antes de seguir.\n- [ ] Aplicar a migration aprovada ao projeto Supabase e conferir as colunas, FKs, políticas e registros iniciais antes de publicar as funções.
 
 ### Tarefa 2: API administrativa para categorias e subdivisões
 
@@ -105,7 +105,7 @@
 - [ ] Substituir os grupos e subdivisões fixos no HTML por agrupamento dinâmico baseado na resposta da API.
 - [ ] Dimensionar foto, nome, preço e botão para caberem nas três colunas móveis e seis colunas desktop.
 - [ ] Atualizar o cache-buster do recurso público se a mudança alterar um arquivo JavaScript compartilhado.
-- [ ] Conferir visualmente a vitrine nos breakpoints móvel, intermediário e desktop, e observar os checks automáticos existentes no PR.
+- [ ] Publicar as Edge Functions administrativas e públicas depois da migration.\n- [ ] Conferir visualmente a vitrine nos breakpoints móvel, intermediário e desktop, e observar os checks automáticos existentes no PR.
 
 ## Escopo desta rodada
 
