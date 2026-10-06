@@ -12,6 +12,7 @@ on:
       - 'supabase/sql/20261004_basket_unified_order_engine_v1.sql'
       - 'supabase/functions/admin-store-baskets-v1/**'
       - 'vitrine/admin/store-baskets-builder.js'
+      - 'vitrine/admin/store-baskets-ops-overview.js'
       - 'scripts/test-store-baskets-*.mjs'
       - '.github/workflows/store-basket-reservation-ci.yml'
   push:
@@ -27,6 +28,7 @@ on:
       - 'supabase/sql/20261004_basket_unified_order_engine_v1.sql'
       - 'supabase/functions/admin-store-baskets-v1/**'
       - 'vitrine/admin/store-baskets-builder.js'
+      - 'vitrine/admin/store-baskets-ops-overview.js'
       - 'scripts/test-store-baskets-*.mjs'
       - '.github/workflows/store-basket-reservation-ci.yml'
 permissions:
