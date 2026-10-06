@@ -126,14 +126,14 @@ begin
 end;
 $function$;
 
-create or replace function public.admin_save_basket_mold_with_category_v1(
+create or replace function public.admin_save_basket_mold_v1(
   p_basket_id uuid,
   p_name text,
   p_hidden_adjustment numeric,
   p_public_composition_count integer,
   p_positions jsonb,
-  p_operator text,
-  p_category_id uuid
+  p_category_id uuid,
+  p_operator text default null
 )
 returns jsonb
 language plpgsql
@@ -177,7 +177,7 @@ grant execute on function public.admin_basket_mold_list_v1() to authenticated;
 revoke all on function public.admin_basket_mold_editor_v1(uuid) from public,anon,authenticated;
 grant execute on function public.admin_basket_mold_editor_v1(uuid) to authenticated;
 
-revoke all on function public.admin_save_basket_mold_with_category_v1(uuid,text,numeric,integer,jsonb,text,uuid) from public,anon,authenticated;
-grant execute on function public.admin_save_basket_mold_with_category_v1(uuid,text,numeric,integer,jsonb,text,uuid) to authenticated;
+revoke all on function public.admin_save_basket_mold_v1(uuid,text,numeric,integer,jsonb,uuid,text) from public,anon,authenticated;
+grant execute on function public.admin_save_basket_mold_v1(uuid,text,numeric,integer,jsonb,uuid,text) to authenticated;
 
 commit;
