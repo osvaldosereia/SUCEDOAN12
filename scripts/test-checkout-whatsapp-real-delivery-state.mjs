@@ -20,6 +20,8 @@ assert.match(sql,/v_status\s*=\s*'accepted'[\s\S]*v_item\.status\s*=\s*'sent'/i,
 
 assert.match(edge,/"accepted"/,'edge finish type must support accepted');
 assert.match(edge,/provider_request[\s\S]*meta_request/i,'direct Meta template request must be audited before sending');
+assert.match(edge,/providerCode[\s\S]*providerSubcode[\s\S]*httpStatus/i,'Meta rejection diagnostics must be captured from the typed transport error');
+assert.match(edge,/provider_code_\$\{providerCode\}[\s\S]*provider_subcode_\$\{providerSubcode\}[\s\S]*metaErrorDiagnostic\(error\)/i,'Meta provider diagnostics must be persisted with failed/retry outbox records');
 assert.match(edge,/ops2_accept_order_whatsapp_meta_v1/i,'Meta WAMID must be accepted into the canonical order transport');
 assert.match(edge,/externalId[\s\S]*accepted/i,'HTTP success without wamid must not be marked sent');
 assert.match(edge,/externalId[\s\S]*"sent"/i,'HTTP success with wamid may be marked sent');
