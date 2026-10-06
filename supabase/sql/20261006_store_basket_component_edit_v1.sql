@@ -21,6 +21,7 @@ declare
   v_link_id uuid;
   v_target_kit_id uuid:=p_kit_id;
   v_usage_count integer:=0;
+  v_active_usage_count integer:=0;
   v_item_count integer:=0;
   v_old_quantity numeric;
   v_existing_quantity numeric;
@@ -83,9 +84,14 @@ begin
     if v_item_count<=1 then raise exception 'store_basket_component_last_item'; end if;
   end if;
 
-  select count(distinct r.basket_id)::integer into v_usage_count
+  -- Um kit pode estar ligado também a modelos temporariamente inativos.
+  -- Para impedir efeitos laterais futuros, qualquer segundo vínculo força clone exclusivo.
+  select
+    count(distinct r.basket_id)::integer,
+    count(distinct r.basket_id) filter(where b.is_active=true)::integer
+  into v_usage_count,v_active_usage_count
   from public.store_basket_recipe_kits r
-  join public.basket_templates b on b.id=r.basket_id and b.is_active=true
+  left join public.basket_templates b on b.id=r.basket_id
   where r.kit_id=p_kit_id;
 
   -- Edição pela tela de uma cesta é sempre basket-only. Se a receita é compartilhada,
@@ -186,6 +192,7 @@ begin
     'target_kit_id',v_target_kit_id,
     'cloned',v_cloned,
     'shared_usage_before',v_usage_count,
+    'active_usage_before',v_active_usage_count,
     'action',v_action,
     'product_id',p_product_id,
     'new_product_id',p_new_product_id,
