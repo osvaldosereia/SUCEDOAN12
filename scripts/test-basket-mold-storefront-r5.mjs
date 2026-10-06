@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
+// R5 release contract: public mold composition, loose-stock parity and fail-closed personalization.
 const sqlPath='supabase/sql/20261006_basket_mold_storefront_checkout_v1.sql';
 const apiPath='supabase/functions/storefront-v2/index.ts';
 const rootPath='index.html';
