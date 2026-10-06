@@ -38,7 +38,7 @@ assert.match(site,/Quero receber ofertas semanais por WhatsApp/,'marketing choic
 assert.match(site,/checkoutMarketingExisting/,'existing customer must get an inline marketing checkbox');
 assert.match(site,/saveCheckoutMarketingPreference/,'existing marketing preference must save without entering edit mode');
 assert.doesNotMatch(site,/editMarketingPreference/,'checkout must not show the old confusing marketing edit button');
-assert.match(site,//c\\.marketing_opt_in===true//,'new customer marketing checkbox must start unchecked unless the customer explicitly opted in');
+assert.match(site,/marketingChecked=c\.marketing_opt_in===true/,'new customer marketing checkbox must start unchecked unless the customer explicitly opted in');
 
 // Primeira data disponivel ja vem selecionada.
 assert.match(site,/state\.checkoutDeliveryDate=state\.deliveryOptions\[0\]\?\.date\|\|''/,'first available delivery date must be selected automatically');
