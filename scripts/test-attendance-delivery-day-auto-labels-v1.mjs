@@ -16,7 +16,7 @@ assert.match(sql,/America\/Cuiaba/i,'data de hoje deve usar o fuso local da oper
 const activeStatuses=sql.match(/and o\.status in \(([^)]+)\)/i)?.[1]||'';
 assert.match(activeStatuses,/storefront_received[\s\S]*confirmed[\s\S]*processing[\s\S]*ready/i,'somente status ativos conhecidos devem receber etiqueta');
 assert.doesNotMatch(activeStatuses,/delivered|cancelled/i,'pedido entregue/cancelado não deve manter etiqueta futura');
-for(const day of ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo']) assert.ok(sql.includes(day),\`etiqueta semanal ausente: \${day}\`);
+for(const day of ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo']) assert.ok(sql.includes(day),'etiqueta semanal ausente: '+day);
 assert.match(sql,/on\s+conflict[\s\S]*do\s+nothing/i,'reprocessamento não pode duplicar vínculos');
 assert.match(sql,/create\s+trigger[\s\S]*after\s+insert[\s\S]*update[\s\S]*orders/i,'mudança de pedido precisa atualizar etiquetas');
 assert.match(sql,/delete\s+from\s+public\.attendance_conversation_auto_labels_v1/i,'reagendamento deve remover origem automática antiga');
