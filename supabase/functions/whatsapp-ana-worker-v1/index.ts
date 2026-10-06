@@ -1,7 +1,8 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
-import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normalizeAnaDryRunResult} from '../_shared/ana-policy-v1.mjs';
+import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normalizeAnaDryRunResult,isSimpleAnaGreeting,buildAnaCatalogWelcome} from '../_shared/ana-policy-v1.mjs';
 import {shouldSendAnaLiveReply} from '../_shared/ana-live-policy-v1.mjs';
 import {sendTextViaMeta,MetaTransportError} from '../_shared/whatsapp-meta-transport-v1.mjs';
+import {linkedCustomerFirstName} from '../_shared/ana-customer-context-v1.mjs';
 
 const cors={
   'Access-Control-Allow-Origin':'*',
@@ -18,6 +19,27 @@ function outputText(data:any){
     .map((item:any)=>String(item?.text||''))
     .join('')
     .trim();
+}
+
+async function isSimpleGreetingForNewDay(db:any,conversationId:string,inbound:any){
+  if(!isSimpleAnaGreeting(inbound?.text_body))return false;
+  const current=new Date(inbound?.received_at||inbound?.created_at||'');
+  if(!Number.isFinite(current.getTime()))return false;
+  const parts=new Intl.DateTimeFormat('en',{timeZone:'America/Cuiaba',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(current);
+  const values=Object.fromEntries(parts.filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));
+  const dayStart=new Date(Date.UTC(Number(values.year),Number(values.month)-1,Number(values.day),4));
+  const prior=await db.from('whatsapp_messages_v1').select('id').eq('conversation_id',conversationId)
+    .gte('created_at',dayStart.toISOString()).lt('created_at',current.toISOString()).limit(1).maybeSingle();
+  return !prior.error&&!prior.data;
+}
+
+async function personalizedCatalogWelcome(db:any,conversationId:string,phone:string,customerFirstName:string){
+  const link=await db.rpc('ops2_issue_storefront_catalog_link_v1',{
+    p_phone:phone,p_conversation_id:conversationId,p_source_event_key:`ana-first-greeting:${conversationId}:${new Date().toISOString().slice(0,10)}`,
+    p_source:'attendance_ana',p_ttl_minutes:120
+  });
+  if(link.error||link.data?.ok!==true||!link.data?.catalog_path)return null;
+  return buildAnaCatalogWelcome({firstName:customerFirstName,catalogPath:link.data.catalog_path})||null;
 }
 
 export async function generateAnaDryRunSuggestion({
@@ -62,12 +84,13 @@ async function resolveOpenAIKey(db:any){
   }catch{return ''}
 }
 
-function operationalContext(){
+function operationalContext(customerFirstName=''){
   return {
     catalog_ordering:'Para consultar produtos e fazer pedido, direcione o cliente ao catálogo/site oficial. O atendimento pode orientar e oferecer atendimento humano, mas esta resposta não cria pedido.',
     human_support:'Atendimento humano está disponível quando o cliente pedir ajuda, quando faltar contexto confiável ou quando houver exceção operacional.',
     never_collect_in_chat:['CPF/CNPJ','endereço completo'],
-    dynamic_data_rule:'Preço, estoque, total, composição de cesta, prazo/entrega, pagamento e dados do pedido são dinâmicos. Só afirme esses dados quando vierem explicitamente no contexto; caso contrário, encaminhe para humano ou para o catálogo/site oficial.'
+    dynamic_data_rule:'Preço, estoque, total, composição de cesta, prazo/entrega, pagamento e dados do pedido são dinâmicos. Só afirme esses dados quando vierem explicitamente no contexto; caso contrário, encaminhe para humano ou para o catálogo/site oficial.',
+    known_customer_first_name:customerFirstName
   };
 }
 
@@ -103,7 +126,14 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
     .eq('conversation_id',job.conversation_id).not('text_body','is',null).order('created_at',{ascending:false}).limit(12);
   if(historyResult.error)throw new Error(`history_failed:${historyResult.error.message}`);
   const history=(historyResult.data||[]).reverse();
-  const generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext()});
+  const customerFirstName=await linkedCustomerFirstName(db,job.conversation_id);
+  let generated:any;
+  if(await isSimpleGreetingForNewDay(db,job.conversation_id,inbound.data)){
+    const conversation=await db.from('conversations').select('wa_contact_e164').eq('id',job.conversation_id).maybeSingle();
+    const welcome=conversation.data?.wa_contact_e164?await personalizedCatalogWelcome(db,job.conversation_id,conversation.data.wa_contact_e164,customerFirstName):null;
+    generated=welcome?{ok:true,result:normalizeAnaDryRunResult({decision:'suggest',confidence:0.99,response_text:welcome,reason:'first_greeting_of_day',missing_context:[]}),latency_ms:0}:null;
+  }
+  if(!generated)generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext(customerFirstName)});
   if(!generated.ok)return await finishLive(db,{p_job_id:job.id,p_status:'failed',p_decision:'handoff',p_reason:generated.error,p_model:model,
     p_provider_response_id:generated.response_id||null,p_error:generated.error,p_metadata:{latency_ms:generated.latency_ms||null}});
   const secondGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
@@ -168,7 +198,8 @@ async function processJob(db:any,job:any,apiKey:string,model:string){
   if(historyResult.error)throw new Error(`history_failed:${historyResult.error.message}`);
   const history=(historyResult.data||[]).reverse();
 
-  const generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext()});
+  const customerFirstName=await linkedCustomerFirstName(db,job.conversation_id);
+  const generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext(customerFirstName)});
   if(!generated.ok){
     return await finish(db,{p_job_id:job.id,p_status:'failed',p_reason:generated.error,p_model:model,p_provider_response_id:generated.response_id||null,p_last_error:generated.error,p_metadata:{dry_run_not_sendable:true,latency_ms:generated.latency_ms||null,usage:generated.usage||null}});
   }

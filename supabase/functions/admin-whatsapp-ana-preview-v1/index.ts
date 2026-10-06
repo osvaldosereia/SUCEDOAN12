@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normalizeAnaDryRunResult} from "../_shared/ana-policy-v1.mjs";
+import {linkedCustomerFirstName} from "../_shared/ana-customer-context-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SUPABASE_ANON_KEY=Deno.env.get("SUPABASE_ANON_KEY")||"";
@@ -26,19 +27,20 @@ async function openaiKey(){
 }
 async function adminAuth(req:Request,db:any){const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();if(!token)return {ok:false as const,status:401,error:"admin_auth_required"};const user=await db.auth.getUser(token);if(user.error||!user.data?.user?.id)return {ok:false as const,status:401,error:"admin_session_invalid"};return {ok:true as const,user_id:user.data.user.id}}
 
-function operationalContext(){
+function operationalContext(customerFirstName=''){
   return {
     catalog_ordering:"Para consultar produtos e fazer pedido, direcione o cliente ao catálogo/site oficial. O atendimento pode orientar e oferecer atendimento humano, mas esta prévia não cria pedido.",
     human_support:"Atendimento humano está disponível quando o cliente pedir ajuda, quando faltar contexto confiável ou quando houver exceção operacional.",
     never_collect_in_chat:["CPF/CNPJ","endereço completo"],
-    dynamic_data_rule:"Preço, estoque, total, composição de cesta, prazo/entrega, pagamento e dados do pedido são dinâmicos. Só afirme esses dados quando vierem explicitamente no contexto; caso contrário, encaminhe para humano ou para o catálogo/site oficial."
+    dynamic_data_rule:"Preço, estoque, total, composição de cesta, prazo/entrega, pagamento e dados do pedido são dinâmicos. Só afirme esses dados quando vierem explicitamente no contexto; caso contrário, encaminhe para humano ou para o catálogo/site oficial.",
+    known_customer_first_name:customerFirstName
   };
 }
 
-async function generateSuggestion(inboundText:string,history:any[]){
+async function generateSuggestion(inboundText:string,history:any[],customerFirstName=''){
   const apiKey=await openaiKey();
   if(!apiKey)return {ok:false as const,error:"openai_not_configured"};
-  const input=buildAnaDryRunInput({inboundText,history,operationalContext:operationalContext()});
+  const input=buildAnaDryRunInput({inboundText,history,operationalContext:operationalContext(customerFirstName)});
   const started=Date.now();
   try{
     const response=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${apiKey}`,"Content-Type":"application/json"},body:JSON.stringify({model:ANA_MODEL,store:false,max_output_tokens:500,reasoning:{effort:"low"},instructions:ANA_DRY_RUN_INSTRUCTIONS,input:[{role:"user",content:[{type:"input_text",text:JSON.stringify(input)}]}],text:{format:{type:"json_schema",name:"ana_dry_run_suggestion",strict:true,schema:ANA_DRY_RUN_SCHEMA}}}),signal:AbortSignal.timeout(15000)});
@@ -110,7 +112,8 @@ Deno.serve(async(req:Request)=>{
     if(start.ok!==true){const error=String(start.error||"ana_preview_start_failed");const status=["ai_gate_closed","ana_preview_no_text_inbound","ana_preview_busy"].includes(error)?409:error==="conversation_not_found"?404:error==="admin_not_authorized"?403:400;return json(req,{ok:false,error,dry_run_not_sendable:true},status)}
     if(start.cached===true)return json(req,{ok:true,dry_run:true,dry_run_not_sendable:true,job:{id:start.job_id,status:start.status,decision:start.decision,suggestion_text:start.suggestion_text,confidence:start.confidence===null?null:Number(start.confidence),reason:start.reason,model:start.model,latency_ms:null,missing_context:Array.isArray(start.missing_context)?start.missing_context:[],completed_at:start.completed_at,cached:true}});
     const jobId=validUuid(start.job_id);if(!jobId)return json(req,{ok:false,error:"ana_preview_job_invalid",dry_run_not_sendable:true},500);claimedJobId=jobId;
-    const generated=await generateSuggestion(String(start.inbound_text||""),Array.isArray(start.history)?start.history:[]);
+    const customerFirstName=await linkedCustomerFirstName(serviceDb(),conversationId);
+    const generated=await generateSuggestion(String(start.inbound_text||""),Array.isArray(start.history)?start.history:[],customerFirstName);
     if(!generated.ok){const finalized=await finalizeFailedPreview(db,jobId,generated);if(finalized)claimedJobId=null;await observePreview(db,jobId,generated.latency_ms,false);return json(req,{ok:false,error:"ana_preview_generation_failed",dry_run_not_sendable:true},502)}
     const result=generated.result;const finished=await db.rpc("ops2_admin_ana_preview_finish_v1",{p_job_id:jobId,p_status:"completed",p_decision:result.decision,p_suggestion_text:result.response_text,p_confidence:result.confidence,p_reason:result.reason,p_model:ANA_MODEL,p_provider_response_id:generated.response_id||null,p_last_error:null,p_missing_context:result.missing_context});if(finished.error)throw finished.error;const job=finished.data||{ok:false,error:"ana_preview_finish_failed"};
     if(job.ok!==true){const finalized=await finalizeFailedPreview(db,jobId,{error:job.error||"ana_preview_finish_failed"});if(finalized)claimedJobId=null;return json(req,{ok:false,error:job.error||"ana_preview_finish_failed",dry_run_not_sendable:true},409)}
