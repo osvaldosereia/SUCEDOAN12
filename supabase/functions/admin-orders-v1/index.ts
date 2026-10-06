@@ -27,6 +27,15 @@ const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
   status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}
 });
 const text=(v:unknown,n=500)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
+const metaErrorDiagnostic=(error:MetaTransportError)=>{
+  const digits=(value:unknown)=>String(value??"").replace(/\D+/g,"").slice(0,16);
+  const parts=[text(error.code,80)||"meta_error"];
+  const httpStatus=digits(error.httpStatus),providerCode=digits(error.providerCode),providerSubcode=digits(error.providerSubcode);
+  if(httpStatus)parts.push(`http_${httpStatus}`);
+  if(providerCode)parts.push(`provider_code_${providerCode}`);
+  if(providerSubcode)parts.push(`provider_subcode_${providerSubcode}`);
+  return parts.join(":");
+};
 const uid=(v:unknown)=>{const s=text(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""};
 const money=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(n):""};
 const quantityLabel=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3}).format(n):""};
@@ -429,7 +438,7 @@ Deno.serve(async(req:Request)=>{
       }catch(error){
         if(error instanceof MetaTransportError){
           if(error.uncertain){
-            await markMetaUncertain(outboxId,item,providerPayload,metaRequest,null,error.code);
+            await markMetaUncertain(outboxId,item,providerPayload,metaRequest,null,metaErrorDiagnostic(error));
             return respond({ok:false,error:"meta_send_uncertain",status:"failed",uncertain:true,outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},503);
           }
           const retryable=error.retryable===true&&Number(item.attempt_count||0)<5;
@@ -438,7 +447,7 @@ Deno.serve(async(req:Request)=>{
             continue;
           }
           const state=retryable?"retry":"failed";
-          await finish(outboxId,state,null,error.code,error.httpStatus===429?300:30);
+          await finish(outboxId,state,null,metaErrorDiagnostic(error),error.httpStatus===429?300:30);
           return respond({ok:false,error:error.code,status:state,retryable,uncertain:false,outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope,http_status:error.httpStatus},retryable?503:502);
         }
         await markMetaUncertain(outboxId,item,providerPayload,metaRequest,null,"unexpected_transport_error");
