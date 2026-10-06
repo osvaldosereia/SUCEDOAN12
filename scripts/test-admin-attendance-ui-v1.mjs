@@ -25,8 +25,8 @@ assert.equal((html.match(/class="queue-list"/g)||[]).length,1,'deve existir uma 
 assert.match(html,/id="conversationPane"/);
 assert.match(html,/id="contextPane"/);
 for(const tab of ['Visão geral','Pedidos','Produtos','Assistente'])assert.match(html,new RegExp(`>${tab}<`));
-assert.match(html,/id="copyReplyBtn"/);
-assert.match(html,/id="openPapoAiBtn"/);
+assert.match(html,/id="copyReplyBtn"/,'cópia de resposta deve continuar disponível');
+assert.doesNotMatch(html,/openPapoAiBtn|Abrir PapoAI/i,'atendimento não deve exibir acesso ao PapoAI');
 assert.match(html,/id="sendBtn"[^>]*disabled/);
 assert.doesNotMatch(html,/iframe|embedded=1|attendance-layout-v3/i,'tela nativa não pode carregar arquitetura antiga');
 
@@ -55,4 +55,4 @@ assert.match(css,/\.messages\{[^}]*min-height:0[^}]*overflow:auto/,'histórico d
 assert.match(css,/@media\(max-width:680px\)/,'mobile deve possuir layout próprio');
 assert.match(css,/grid-template-columns:var\(--queue\) minmax\(430px,1fr\) var\(--context\)/,'desktop deve priorizar conversa central');
 
-console.log('OK · Atendimento nativo usa inbox unificada, sessão compartilhada renovável, filtros operacionais e contexto integrado.');
+console.log('OK · Atendimento nativo usa inbox unificada, cópia de resposta e não oferece acesso ao PapoAI.');
