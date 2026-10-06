@@ -37,3 +37,6 @@ jobs:
           node-version: 22
       - name: Validate ANA admin schema and SQL mirror
         run: node scripts/test-whatsapp-ana-admin-schema-v1.mjs
+
+      - name: Validate ANA admin configuration and deterministic triggers
+        run: node scripts/test-whatsapp-ana-admin-config-v1.mjs
