@@ -124,3 +124,13 @@
   script.setAttribute('data-store-ops-panel-v1','');
   document.head.appendChild(script);
 })();
+
+(()=>{
+  'use strict';
+  if(document.querySelector('script[data-product-basket-cutover-v1]'))return;
+  const script=document.createElement('script');
+  script.src='/vitrine/admin/product-basket-link-cutover.js?v=20261006-1';
+  script.async=false;
+  script.setAttribute('data-product-basket-cutover-v1','');
+  document.head.appendChild(script);
+})();
