@@ -18,6 +18,7 @@ on:
       - 'supabase/functions/admin-marketing-strategy-v1/**'
       - 'supabase/functions/admin-marketing-strategy-campaign-v1/**'
       - 'supabase/functions/admin-marketing-strategy-learnings-v1/**'
+      - 'supabase/functions/admin-marketing-template-lifecycle-v1/**'
       - 'supabase/functions/whatsapp-marketing-worker-v1/**'
       - 'supabase/functions/_shared/marketing-strategy-engine-v1.mjs'
       - 'supabase/functions/_shared/marketing-template-strategy-v1.mjs'
@@ -25,6 +26,7 @@ on:
       - 'supabase/functions/_shared/whatsapp-meta-carousel-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'supabase/migrations/*marketing_strategy*'
+      - 'supabase/migrations/*marketing_template_lifecycle*'
       - 'scripts/test-marketing-strategy-foundation-v1.mjs'
       - 'scripts/test-marketing-strategy-engine-v1.mjs'
       - 'scripts/test-admin-marketing-strategy-v1.mjs'
@@ -32,6 +34,7 @@ on:
       - 'scripts/test-marketing-strategy-campaign-bridge-v1.mjs'
       - 'scripts/test-marketing-strategy-attribution-learning-v1.mjs'
       - 'scripts/test-marketing-strategy-carousel-media-v1.mjs'
+      - 'scripts/test-marketing-template-lifecycle-v1.mjs'
       - 'scripts/test-admin-marketing-campaigns-v1.mjs'
       - 'scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'
       - 'scripts/test-whatsapp-marketing-worker-v1.mjs'
@@ -71,6 +74,8 @@ jobs:
         run: node scripts/test-marketing-strategy-attribution-learning-v1.mjs
       - name: Marketing strategy carousel media contract
         run: node scripts/test-marketing-strategy-carousel-media-v1.mjs
+      - name: Marketing template lifecycle contract
+        run: node scripts/test-marketing-template-lifecycle-v1.mjs
       - name: Existing simple Meta template regression
         run: node scripts/test-whatsapp-meta-template-admin-v1.mjs
       - name: Marketing strategy UI contract
@@ -105,6 +110,8 @@ jobs:
         run: node scripts/test-whatsapp-marketing-audience-progressive-v1.mjs
       - name: Storefront tracking collector syntax
         run: node --check vitrine/basket-carousel.js
+      - name: Marketing template lifecycle syntax
+        run: node --check vitrine/admin/marketing/template-lifecycle-panel.js
       - name: Marketing polish syntax
         run: node --check vitrine/admin/marketing/marketing-polish.js
       - name: Marketing strategy center syntax

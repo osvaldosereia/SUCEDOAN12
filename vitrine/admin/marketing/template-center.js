@@ -13,6 +13,7 @@ let busy=false;
 let pendingTemplateLoads=[];
 let syncButtonResetTimer=null;
 let audienceModulePromise=null;
+let lifecycleModulePromise=null;
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const channelByPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.endsWith('0975')?'0975':digits.endsWith('1018')?'1018':null};
@@ -81,6 +82,19 @@ function marketingNavHtml(active='overview'){
 function loadAudienceModule(){
   if(!audienceModulePromise)audienceModulePromise=import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1');
   return audienceModulePromise;
+}
+function loadTemplateLifecycleModule(){
+  if(window.DAMarketingTemplateLifecycle?.openTemplateLifecycle)return Promise.resolve(window.DAMarketingTemplateLifecycle);
+  if(!lifecycleModulePromise)lifecycleModulePromise=import('/vitrine/admin/marketing/template-lifecycle-panel.js?v=marketing-template-lifecycle-v1');
+  return lifecycleModulePromise;
+}
+async function openTemplateLifecycle(options={}){
+  const module=await loadTemplateLifecycleModule();
+  return module.openTemplateLifecycle(options);
+}
+async function lifecycleOptions(focusTemplateId=null){
+  const accounts=await ensureAccounts();
+  return {accountId:accounts[activeChannel]?.id||null,focusTemplateId};
 }
 async function openAudienceSection(view,root){
   const module=await loadAudienceModule();
@@ -302,10 +316,21 @@ function openDetail(id){
 
 async function removeTemplate(id){
   const item=templates.find(row=>String(row.id)===String(id));if(!item||busy)return;
+  if(String(item.category||'').toUpperCase()==='MARKETING'){
+    const options=await lifecycleOptions(item.id);
+    return openTemplateLifecycle(options);
+  }
   if(!confirm(`Excluir o template "${item.name}" da Meta? Esta ação não envia mensagens, mas altera a WABA.`))return;
   try{busy=true;notify(`Excluindo ${item.name}…`);const data=await adminPost(TEMPLATE_API,'delete',{template_id:item.id});templates=Array.isArray(data.items)?data.items:templates.filter(row=>row.id!==item.id);templatesLoaded=true;renderList(currentRoot);notify('Template excluído e cache sincronizado.','success')}
   catch(error){notify(`Não foi possível excluir: ${String(error?.message||error)}`,'error')}
   finally{busy=false;drainPendingTemplateLoad()}
+}
+
+async function openCleanupReview(){
+  try{
+    const options=await lifecycleOptions();
+    await openTemplateLifecycle(options);
+  }catch(error){notify(`Não foi possível abrir a revisão de limpeza: ${String(error?.message||error)}`,'error')}
 }
 
 function bindTemplateView(root){
@@ -313,6 +338,7 @@ function bindTemplateView(root){
   root.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>{});
   root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');setSyncButtonState('idle',activeChannel);templates=[];templatesLoaded=false;renderList(root);loadTemplates({channel:activeChannel}).catch(()=>{})});
   root.querySelector('[data-template-sync]')?.addEventListener('click',()=>loadTemplates({sync:true,channel:activeChannel}));
+  root.querySelector('[data-template-cleanup]')?.addEventListener('click',openCleanupReview);
   root.querySelector('[data-template-create]')?.addEventListener('click',()=>openBuilder('create'));
   root.querySelectorAll('[data-template-filter]').forEach(input=>input.addEventListener(input.tagName==='INPUT'?'input':'change',()=>renderList(root)));
 }
@@ -323,7 +349,7 @@ async function mountTemplateView(root=document.querySelector('#content')){
   root.innerHTML=`<div class="marketing-template-center">
     <div class="page-head"><div><h1>Marketing</h1><p>Templates oficiais da Meta. Gestão separada de campanhas.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
     <div class="marketing-template-subnav" data-marketing-subnav>${marketingNavHtml('templates')}</div>
-    <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync data-sync-state="idle" aria-busy="false">Sincronizar</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
+    <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync data-sync-state="idle" aria-busy="false">Sincronizar</button><button type="button" data-template-cleanup>Revisar limpeza</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
     ${renderFilters(root)}
     <div class="marketing-template-status" data-template-center-status>Carregando somente quando esta aba é aberta…</div>
     <div class="marketing-template-list" data-template-list></div>
