@@ -3495,13 +3495,25 @@ async function autoIssueFiscalAfterSeparation(oid:string){
   if(before.authorized===true)return {attempted:false,ok:true,authorized:true,stage:"authorized",idempotent_replay:true,fiscal:before};
   if((before.hard_blockers||[]).length)return {attempted:false,ok:false,error:"fiscal_dispatch_not_eligible",blockers:before.hard_blockers,fiscal:before};
   if(before.issue_enabled!==true)return {attempted:false,ok:false,error:"fiscal_auto_issue_not_enabled",fiscal:before};
+
   const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});
   if(h.error)return {attempted:true,ok:false,error:h.error||"fiscal_issue_failed",detail:h.detail||h.data||null,fiscal:before};
-  try{await hub("fiscal_dispatch_reconcile",{source_order_id:oid})}catch{}
-  const after:any=await orderFiscalStatusV4(oid);
-  if(after.error)return {attempted:true,ok:true,authorized:false,stage:"processing",result:h.data||null};
-  const accepted=after.authorized===true||after.stage==="processing";
-  return {attempted:true,ok:accepted,authorized:after.authorized===true,stage:after.stage||null,result:h.data||null,fiscal:after};
+
+  let after:any=null,reconcile:any=null;
+  for(let attempt=1;attempt<=5;attempt++){
+    try{reconcile=await hub("fiscal_dispatch_reconcile",{source_order_id:oid})}catch{}
+    after=await orderFiscalStatusV4(oid);
+    if(after?.authorized===true||after?.stage==="authorized"){
+      return {attempted:true,ok:true,authorized:true,stage:"authorized",attempts:attempt,result:h.data||null,reconcile:reconcile?.data||null,fiscal:after};
+    }
+    if(after?.stage==="rejected"){
+      return {attempted:true,ok:false,authorized:false,stage:"rejected",attempts:attempt,error:"fiscal_rejected",result:h.data||null,reconcile:reconcile?.data||null,fiscal:after};
+    }
+    if(attempt<5)await new Promise(resolve=>setTimeout(resolve,2000));
+  }
+  if(after?.error)return {attempted:true,ok:true,authorized:false,stage:"processing",attempts:5,result:h.data||null};
+  const accepted=after?.stage==="processing"||after?.stage==="pending";
+  return {attempted:true,ok:accepted,authorized:false,stage:after?.stage||"processing",attempts:5,result:h.data||null,reconcile:reconcile?.data||null,fiscal:after};
 }
 async function runSeparationPostCompletionIntegrations(oid:string,operator:string){
   let blingVerified:any={attempted:true,ok:false};
