@@ -12,21 +12,18 @@ try{
  await page.route('https://photos.test/**',async route=>{fetched.add(route.request().url());await route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"><rect x="20" y="10" width="60" height="110" fill="green"/></svg>'})});
  await page.setContent('<style>'+css+'</style><main class="wrap"><div id="basketGrid" class="grid"></div></main>');await page.addScriptTag({content:js});
  await page.evaluate(b=>{const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');window.opened=[];window.b=b;document.querySelector('#basketGrid').innerHTML=Array.from({length:9},(_,i)=>BasketCarousel.card({...b,id:b.id+i},escape,x=>'R$ '+(x/100).toFixed(2),x=>x));document.querySelectorAll('[data-basket]').forEach(x=>x.onclick=()=>opened.push(x.dataset.basket));BasketCarousel.mount(document.querySelector('#basketGrid'));},basket);
- await page.waitForFunction(()=>document.querySelector('.basket-product img')?.hasAttribute('src'));
+ await page.waitForFunction(()=>document.querySelector('.basket-card-photo img')?.hasAttribute('src'));
  await page.waitForTimeout(150);
- assert.ok(fetched.size>=3&&fetched.size<=5,'carregar somente as fotos que entram na área visível');assert.ok(!fetched.has('https://photos.test/p23.svg'));
- assert.equal(await page.locator('.basket-card').count(),9);assert.equal(await page.locator('.basket-card').first().locator('.basket-product').count(),24);
- assert.equal(await page.locator('.basket-quantity').nth(1).innerText(),'3 un.');
- const mobile=await page.evaluate(()=>{const grid=document.querySelector('#basketGrid'),card=grid.firstElementChild,button=card.querySelector('[data-basket]'),name=card.querySelector('.name'),price=card.querySelector('.price'),strip=card.querySelector('.basket-product-strip');return {cols:getComputedStyle(grid).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth>innerWidth,scrollable:strip.scrollWidth>strip.clientWidth,buttonY:button.getBoundingClientRect().top,nameY:name.getBoundingClientRect().top,priceY:price.getBoundingClientRect().top,track:card.querySelector('.basket-scroll-thumb').getBoundingClientRect().height}});
- const density=await page.evaluate(()=>{const c=document.querySelector('.basket-card'),s=c.querySelector('.basket-product-strip'),p=s.firstElementChild;return {count:(s.clientWidth+8)/(p.getBoundingClientRect().width+8),nameBottom:c.querySelector('.name').getBoundingClientRect().bottom,photosTop:s.getBoundingClientRect().top,font:parseFloat(getComputedStyle(c.querySelector('.name')).fontSize),tileBackground:getComputedStyle(p).backgroundColor}});assert.ok(Math.abs(density.count-3.5)<.04);assert.ok(density.nameBottom<=density.photosTop);assert.ok(density.font>=18);assert.equal(density.tileBackground,'rgba(0, 0, 0, 0)');assert.equal(mobile.cols,1);assert.equal(mobile.overflow,false);assert.equal(mobile.scrollable,true);assert.equal(mobile.track,3);assert.ok(mobile.buttonY>mobile.nameY);assert.ok(mobile.priceY>mobile.nameY);
- await page.locator('.basket-product-strip').first().focus();await page.keyboard.press('End');
- await page.waitForFunction(()=>document.querySelector('.basket-product-strip').scrollLeft>1000);await page.waitForFunction(()=>document.querySelector('.basket-product-strip img[data-product-index="23"]').hasAttribute('src'));
- assert.ok(fetched.has('https://photos.test/p23.svg'),'carregar produtos finais depois de deslizar');
+ assert.ok(fetched.size>=2&&fetched.size<=5,'carregar somente as fotos que entram na área visível');
+ assert.ok(!fetched.has('https://photos.test/p23.svg'));
+ assert.equal(await page.locator('.basket-card').count(),9);
+ assert.equal(await page.locator('.basket-card-photo img').count(),9);
+ assert.equal(await page.locator('.basket-product').count(),0,'cada cartão mostra apenas a foto do primeiro produto');
+ const mobile=await page.evaluate(()=>({cols:getComputedStyle(document.querySelector('#basketGrid')).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth>innerWidth}));
+ assert.equal(mobile.cols,2);assert.equal(mobile.overflow,false);
  await page.locator('[data-basket]').first().click();assert.deepEqual(await page.evaluate(()=>opened),['basket0']);
  await page.setViewportSize({width:1440,height:900});
- assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#basketGrid')).gridTemplateColumns.split(' ').length),4);
- assert.ok(Math.abs(await page.evaluate(()=>{const s=document.querySelector('.basket-product-strip');return (s.clientWidth+8)/(s.firstElementChild.getBoundingClientRect().width+8)})-3.5)<.04);const track=page.locator('.basket-scroll-track').first();await track.focus();await page.keyboard.press('Home');await page.waitForFunction(()=>document.querySelector('.basket-product-strip').scrollLeft===0);
- const box=await track.boundingBox();await page.mouse.click(box.x+box.width*.85,box.y+box.height/2);await page.waitForFunction(()=>document.querySelector('.basket-product-strip').scrollLeft>100);
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#basketGrid')).gridTemplateColumns.split(' ').length),6);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  await page.setViewportSize({width:320,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  // Run the complete public page too: test script loading, home wiring and existing detail navigation.
@@ -44,10 +41,10 @@ try{
    if(u.pathname.endsWith('.js'))return route.fulfill({contentType:'application/javascript',body:''});
    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"/>'});
  });
- await app.goto('https://app.test/');await app.locator('#basketGrid .basket-product').first().waitFor();
+ await app.goto('https://app.test/');await app.locator('#basketGrid .basket-card-photo img').first().waitFor();
  
  assert.equal(await app.getByRole('heading',{name:'Escolha suas Cestas e Kits',exact:true}).count(),1,'show the new home section heading');
- assert.equal(await app.locator('#basketGrid .basket-product').count(),24);
+ assert.equal(await app.locator('#basketGrid .basket-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
  await app.locator('#basketGrid [data-basket]').click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
  await page.evaluate(()=>{document.querySelector('#basketGrid').innerHTML=BasketCarousel.card({...b,carousel_items:b.carousel_items.slice(0,1)},s=>String(s),x=>String(x),x=>x);BasketCarousel.mount(document.querySelector('#basketGrid'))});
