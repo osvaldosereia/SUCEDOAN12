@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const helperUrl=new URL('../supabase/functions/_shared/whatsapp-meta-templates-v1.mjs',import.meta.url);
 const edgeUrl=new URL('../supabase/functions/admin-whatsapp-templates-v1/index.ts',import.meta.url);
 
-const {buildTemplateCacheRows}=await import(helperUrl.href);
+const {buildTemplateCacheRows,validateTemplateDraft}=await import(helperUrl.href);
 
 const syncedAt='2026-10-02T22:10:00.000Z';
 const account={id:'11111111-1111-4111-8111-111111111111',waba_id:'1497253794754816',slug:'dona-antonia-0975'};
@@ -28,6 +28,38 @@ assert.deepEqual(rows[0].metadata.attendance,{show_in_attendance:true,favorite_o
 assert.equal(rows[0].metadata.local_note,'preservar');
 assert.equal(rows[0].metadata.sync_source,'meta_cloud_api');
 assert.equal(rows[0].metadata.rejected_reason,null);
+
+const media=validateTemplateDraft({name:'oferta_imagem',language:'pt_BR',category:'MARKETING',components:[
+  {type:'HEADER',format:'IMAGE',example:{header_handle:['4::sample-handle']}},
+  {type:'BODY',text:'Olá {{1}}',example:{body_text:[['Maria']]}},
+  {type:'BUTTONS',buttons:[{type:'PHONE_NUMBER',text:'Telefonar',phone_number:'5565998150975'}]}
+]});
+assert.equal(media.components[0].format,'IMAGE');
+assert.equal(media.components[0].example.header_handle[0],'4::sample-handle');
+assert.equal(media.components[2].buttons[0].type,'PHONE_NUMBER');
+
+const location=validateTemplateDraft({name:'localizacao_loja',language:'pt_BR',category:'UTILITY',components:[
+  {type:'HEADER',format:'LOCATION'},
+  {type:'BODY',text:'Confira nossa localização.'}
+]});
+assert.equal(location.components[0].format,'LOCATION');
+
+const catalog=validateTemplateDraft({name:'ver_catalogo',language:'pt_BR',category:'MARKETING',components:[
+  {type:'BODY',text:'Veja nossos produtos.'},
+  {type:'BUTTONS',buttons:[{type:'CATALOG',text:'Ver catálogo'}]}
+]});
+assert.equal(catalog.components[1].buttons[0].type,'CATALOG');
+
+const authTemplate=validateTemplateDraft({name:'codigo_acesso',language:'pt_BR',category:'AUTHENTICATION',components:[
+  {type:'BODY',add_security_recommendation:true},
+  {type:'FOOTER',code_expiration_minutes:10},
+  {type:'BUTTONS',buttons:[{type:'OTP',otp_type:'COPY_CODE',text:'Copiar código'}]}
+]});
+assert.equal(authTemplate.category,'AUTHENTICATION');
+assert.equal(authTemplate.components[0].add_security_recommendation,true);
+assert.equal(authTemplate.components[2].buttons[0].type,'OTP');
+
+assert.throws(()=>validateTemplateDraft({name:'imagem_sem_amostra',language:'pt_BR',category:'MARKETING',components:[{type:'HEADER',format:'IMAGE'},{type:'BODY',text:'Teste'}]}),/meta_template_header_handle_required/);
 
 assert.equal(fs.existsSync(edgeUrl),true,'Edge Function administrativa de templates deve existir');
 const edge=fs.readFileSync(edgeUrl,'utf8');
