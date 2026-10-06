@@ -37,8 +37,8 @@ assert.ok(categoryMigration.includes('category_id'),'migration deve vincular bas
 
 const sandbox={window:{}};const vm=(await import('node:vm')).default;vm.createContext(sandbox);vm.runInContext(carousel,sandbox);
 const html=sandbox.window.BasketCarousel.card({id:'b1',name:'Econômica 1',category_name:'Econômicas',display_price_cents:9800,carousel_items:[]},x=>String(x),x=>'R$ '+(x/100).toFixed(2),x=>x);
-assert.ok(html.includes('basket-category-tag'),'card público deve renderizar tag da categoria');
-assert.ok(html.indexOf('Econômicas')<html.indexOf('Econômica 1'),'tag deve aparecer antes/acima do nome da cesta');
+assert.ok(!html.includes('basket-category-tag'),'card público não deve renderizar tag da categoria');
+assert.ok(!html.includes('Econômicas'),'nome da categoria não deve ocupar espaço no card');
 assert.ok(storefront.includes('category_name')&&storefront.includes('category_slug'),'storefront deve publicar somente identificação pública da categoria');
 assert.ok(!storefront.includes('cost_sum_cents'),'storefront não deve publicar custo interno do lote');
 console.log('basket financials/categories canonical: PASS');
