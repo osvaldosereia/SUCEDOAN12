@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - 'scripts/test-admin-attendance-*.mjs'
+      - 'scripts/test-attendance-delivery-day-auto-labels-v1.mjs'
       - 'scripts/test-attendance-meta-media-*.mjs'
       - 'scripts/test-attendance-weekly-offers-consent-v1.mjs'
       - 'scripts/test-whatsapp-ana-preview-buttons-v1.mjs'
@@ -39,6 +40,7 @@ on:
       - 'supabase/sql/20261005_attendance_weekly_offers_consent_v1.sql'
       - 'supabase/sql/20261005_attendance_weekly_offers_consent_template_v2.sql'
       - 'supabase/sql/20261005_ana_customer_profile*.sql'
+      - 'supabase/sql/20261006_attendance_delivery_day_auto_labels_v1.sql'
       - '.github/workflows/attendance-papoai-send-ci.yml'
 
 jobs:
@@ -51,6 +53,7 @@ jobs:
           node-version: '22'
       - run: node scripts/test-admin-attendance-papoai-webhook-send-v1.mjs
       - run: node scripts/test-admin-attendance-send-ui-v1.mjs
+      - run: node scripts/test-attendance-delivery-day-auto-labels-v1.mjs
       - run: node scripts/test-admin-attendance-api-v1.mjs
       - run: node scripts/test-admin-attendance-customer-link-v1.mjs
       - run: node scripts/test-admin-attendance-customer-rpc-production-v1.mjs
