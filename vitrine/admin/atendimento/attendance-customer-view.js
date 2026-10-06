@@ -1,7 +1,7 @@
 import {customerEditor} from './attendance-customer-api.js?v=weekly-consent-v1';
 import {renderCustomerForm} from './attendance-customer-form.js?v=customer-profile-v1';
 import {renderCustomerSearch} from './attendance-customer-search.js?v=customer-profile-v1';
-import {renderCustomerProfileAssistant} from './attendance-customer-profile.js?v=customer-profile-v1';
+import {renderCustomerProfileAssistant} from './attendance-customer-profile.js?v=customer-profile-confirm-v1';
 import {renderMarketingConsent} from './attendance-marketing-consent.js?v=weekly-consent-v1';
 
 function ensureCss(){if(document.querySelector('[data-attendance-customer-css]'))return;const link=document.createElement('link');link.rel='stylesheet';link.href='./attendance-customer.css?v=weekly-consent-v1';link.dataset.attendanceCustomerCss='1';document.head.append(link)}

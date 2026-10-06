@@ -78,7 +78,7 @@ async function sendDraft(){
     $('#messageDraft').value='';
     const provider=result?.provider||currentCapability?.provider;
     showNote(provider==='meta'?`Mensagem aceita pela Meta no canal ${activeChannel()} · histórico registrado no Admin`:`Mensagem aceita pelo provedor oficial no canal ${activeChannel()} · aguardando confirmação`,'success');
-    document.dispatchEvent(new CustomEvent('attendance:sent',{detail:{conversationId,provider}}));
+    document.dispatchEvent(new CustomEvent('attendance:sent',{detail:{conversationId,provider,messageId:result?.message_id||null,text}}));
     setTimeout(()=>refreshCapability(conversationId).catch(()=>{}),700);
   }catch(error){
     const code=String(error?.message||'');showNote(sendErrorMessage(error),'error');

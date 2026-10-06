@@ -1,7 +1,8 @@
-import {customerEditor,customerProfileExtract,customerProfileList,customerProfileReview} from './attendance-customer-api.js?v=customer-profile-v1';
+import {customerConfirmationBind,customerConfirmationCreate,customerConfirmationPending,customerEditor,customerProfileExtract,customerProfileList,customerProfileReview} from './attendance-customer-api.js?v=customer-profile-confirm-v1';
 import {renderCustomerForm} from './attendance-customer-form.js?v=customer-profile-v1';
 
 const FIELD_LABELS={name:'Nome',cpf_cnpj:'CPF/CNPJ',email:'E-mail',postal_code:'CEP',street:'Rua',number:'Número',complement:'Complemento',neighborhood:'Bairro',city:'Cidade',state:'UF',reference:'Referência'};
+let pendingConfirmation=null;
 
 export function maskProfileSuggestion(field,value){
   const text=String(value??'').trim();
@@ -13,6 +14,14 @@ export function profileProgress(profile={}){
   const address=profile?.address||{};
   const values=[profile?.name||profile?.display_name,profile?.phone||profile?.phone_e164,profile?.cpf||profile?.cpf_cnpj,profile?.email,address?.street,address?.number,address?.district||address?.neighborhood,address?.city];
   return {complete:values.filter(v=>String(v??'').trim()).length,total:8};
+}
+export function buildCustomerConfirmationMessage(items=[]){
+  const usable=(Array.isArray(items)?items:[]).filter(isUsableProfileSuggestion).slice(0,8);
+  if(!usable.length)return '';
+  const name=usable.find(item=>item?.field_name==='name');
+  const greeting=String(valueOf(name)||'').trim();
+  const lines=usable.map(item=>`${FIELD_LABELS[item?.field_name]||'Dado'}: ${maskProfileSuggestion(item?.field_name,valueOf(item))}`);
+  return `Oi${greeting?`, ${greeting}`:''}! Para deixar seu cadastro certinho, você pode confirmar estes dados?\n${lines.join('\n')}\nResponda “SIM” se estiver correto ou escreva a correção. 😊`;
 }
 
 const button=(text,primary=false)=>{const b=document.createElement('button');b.type='button';b.className=`attendance-customer-btn${primary?' primary':''}`;b.textContent=text;return b};
@@ -38,6 +47,7 @@ function applySuggestion(data,item){
 
 function renderSuggestion(container,item,{conversationId,card,onRefresh}){
   const row=document.createElement('div');row.className='attendance-profile-suggestion';row.dataset.suggestionId=String(item?.id||'');
+  if(isUsableProfileSuggestion(item)){const choose=document.createElement('label');choose.className='attendance-profile-confirm-choice';const input=document.createElement('input');input.type='checkbox';input.value=String(item.id||'');input.dataset.confirmSuggestion='1';input.checked=true;const text=document.createElement('span');text.textContent='Incluir no pedido de confirmação';choose.append(input,text);row.append(choose)}
   const head=document.createElement('div');head.className='attendance-profile-suggestion-head';
   const strong=document.createElement('strong');strong.textContent=FIELD_LABELS[item?.field_name]||item?.field_name||'Dado';
   const badge=document.createElement('span');badge.textContent=confidenceLabel(item);head.append(strong,badge);
@@ -60,7 +70,34 @@ async function loadSuggestions(container,conversationId,options){
     const data=await customerProfileList(conversationId);container.replaceChildren();const items=(Array.isArray(data?.items)?data.items:[]).filter(item=>item?.status==='pending'&&isUsableProfileSuggestion(item));
     if(!items.length){const empty=document.createElement('div');empty.className='attendance-customer-status';empty.textContent='Nenhuma sugestão cadastral pendente.';container.append(empty);return}
     for(const item of items)renderSuggestion(container,item,{conversationId,...options});
+    const confirm=button('Pedir confirmação ao cliente',true);confirm.onclick=async()=>{
+      const selected=[...container.querySelectorAll('[data-confirm-suggestion]:checked')].map(input=>items.find(item=>String(item.id)===input.value)).filter(Boolean);
+      if(!selected.length){statusMessage(container,'Selecione ao menos um dado para confirmar.','error');return}
+      if(selected.length>8){statusMessage(container,'Selecione até 8 dados por mensagem.','error');return}
+      const text=buildCustomerConfirmationMessage(selected);if(!text){statusMessage(container,'Não há dados utilizáveis para confirmar.','error');return}
+      confirm.disabled=true;confirm.textContent='Preparando rascunho…';
+      try{
+        const request=await customerConfirmationCreate(conversationId,selected.map(item=>item.id));
+        if(!request?.request_id)throw new Error('confirmation_request_missing');
+        const current=await customerConfirmationPending(conversationId);
+        if(current?.outbound_message_id){statusMessage(container,'Já existe uma confirmação enviada aguardando resposta.','warning');return}
+        const draft=document.querySelector('#messageDraft');if(!draft)throw new Error('composer_unavailable');
+        pendingConfirmation={requestId:String(request.request_id),conversationId,text};
+        draft.value=text;draft.dispatchEvent(new Event('input',{bubbles:true}));draft.focus();
+        statusMessage(container,'Rascunho pronto para revisar e enviar. A confirmação só começa após o envio pelo botão Enviar.','success');
+      }catch(error){
+        const code=String(error?.message||'');
+        statusMessage(container,code==='ambiguous_phone'?'Há mais de um cadastro associado ao telefone. Resolva o cliente antes de pedir confirmação.':'Não foi possível preparar o pedido de confirmação.','error');
+      }finally{confirm.disabled=false;confirm.textContent='Pedir confirmação ao cliente'}
+    };
+    container.append(confirm);
   }catch{container.replaceChildren();const error=document.createElement('div');error.className='attendance-customer-status error';error.textContent='Não foi possível carregar as sugestões da ANA.';container.append(error)}
+}
+
+function statusMessage(container,text,tone='neutral'){
+  let status=container.querySelector('[data-profile-confirmation-status]');
+  if(!status){status=document.createElement('div');status.dataset.profileConfirmationStatus='1';status.className='attendance-customer-status';container.append(status)}
+  status.dataset.tone=tone;status.textContent=text;
 }
 
 export async function renderCustomerProfileAssistant({card,conversationId,onRefresh}){
@@ -79,3 +116,11 @@ export async function renderCustomerProfileAssistant({card,conversationId,onRefr
   review.onclick=async()=>{list.hidden=!list.hidden;if(!list.hidden)await loadSuggestions(list,conversationId,{card,onRefresh})};
   extract.onclick=async()=>{extract.disabled=true;extract.textContent='ANA analisando…';try{await customerProfileExtract(conversationId);list.hidden=false;await loadSuggestions(list,conversationId,{card,onRefresh})}catch(error){list.hidden=false;list.replaceChildren();const msg=document.createElement('div');msg.className='attendance-customer-status error';msg.textContent=String(error?.message||'')==='ambiguous_phone'?'Há mais de um cadastro possível para este telefone. Resolva o cliente antes de usar a ANA.':'A ANA não conseguiu analisar os dados agora.';list.append(msg)}finally{extract.disabled=false;extract.textContent='ANA buscar dados na conversa'}};
 }
+
+if(typeof document!=='undefined')document.addEventListener('attendance:sent',async event=>{
+  const detail=event?.detail||{},pending=pendingConfirmation;
+  if(!pending||detail.conversationId!==pending.conversationId||detail.provider!=='meta'||detail.text!==pending.text||!detail.messageId)return;
+  pendingConfirmation=null;
+  try{await customerConfirmationBind(pending.requestId,detail.messageId)}
+  catch{const box=document.querySelector('[data-attendance-customer-profile] .attendance-profile-suggestions');if(box)statusMessage(box,'A mensagem foi enviada, mas não consegui vincular a resposta ao pedido. Confira a conversa antes de pedir novamente.','warning')}
+});
