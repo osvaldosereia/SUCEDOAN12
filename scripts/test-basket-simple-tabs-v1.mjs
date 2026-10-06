@@ -9,7 +9,7 @@ assert.match(source,/Cestas do Site/,'second simple tab is required');
 assert.match(source,/kit-builder\.js/,'controller must load kit builder module');
 assert.match(source,/kit-builder\.js\?v=basket-products-v1/,'controller must bust cache for the basket-products kit builder');
 assert.match(source,/store-baskets-builder\.js/,'controller must load store baskets module');
-assert.match(source,/store-baskets-builder\.js\?v=visible-composition-v1/,'controller must bust cache for visible basket composition');
+assert.match(source,/store-baskets-builder\.js\?v=component-edit-v1/,'controller must bust cache for component edit UI');
 assert.match(source,/DonaAntoniaKitBuilder/,'controller must use internal kit workspace');
 assert.match(source,/DonaAntoniaStoreBaskets/,'controller must use store baskets workspace');
 assert.match(source,/window\.DonaAntoniaBasketAdmin/,'stable admin adapter must remain');
@@ -25,4 +25,4 @@ for(const retired of ['basket_commercial_admin','basket_commercial_create','open
 }
 assert.doesNotMatch(source,/api\(['"]basket_/,'simple controller must not own basket business API calls');
 
-console.log('basket simple tabs v3 visible composition cache: PASS');
+console.log('basket simple tabs v4 component edit cache: PASS');
