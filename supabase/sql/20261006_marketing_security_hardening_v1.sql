@@ -18,3 +18,7 @@ grant execute on function public.marketing_repurchase_recalc_v1(uuid) to service
 grant execute on function public.marketing_repurchase_mark_sent_v1(uuid,uuid,timestamptz) to service_role;
 
 commit;
+
+revoke all on function public.marketing_repurchase_order_trigger_v1() from service_role;
+revoke all on function public.marketing_repurchase_customer_trigger_v1() from service_role;
+revoke all on function public.marketing_capture_optout_v1() from service_role;
