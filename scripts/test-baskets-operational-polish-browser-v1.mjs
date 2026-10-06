@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-import { chromium } from process.env.PLAYWRIGHT_PATH ? await import(process.env.PLAYWRIGHT_PATH) : await import('playwright');
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 
 const code=fs.readFileSync('vitrine/admin/baskets-operational-polish.js','utf8');
 const browser=await chromium.launch({headless:true});
