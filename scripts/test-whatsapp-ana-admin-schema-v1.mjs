@@ -17,8 +17,10 @@ for (const fn of ['ops2_ana_admin_load_v1','ops2_ana_admin_save_draft_v1','ops2_
 }
 assert.match(sql, /ENABLE ROW LEVEL SECURITY/i);
 assert.match(sql, /FOR UPDATE/i, 'draft save/publish must lock revision state');
+assert.match(sql,/ana_trigger/,'ANA deterministic labels remain a separate automatic source');
 assert.doesNotMatch(sql, /UPDATE public\.whatsapp_channel_runtime_v1[\s\S]{0,250}(send_enabled|capture_enabled|campaigns_enabled)\s*=/i, 'ANA controls cannot change send/capture/campaign switches');
 console.log('PASS: ANA admin schema isolation, immutable audit, RPC grants, revision and SQL mirror contracts');
+
 
 
 

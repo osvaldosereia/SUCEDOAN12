@@ -43,3 +43,6 @@ jobs:
 
       - name: Validate ANA admin authentication and API contracts
         run: node scripts/test-whatsapp-ana-admin-api-v1.mjs
+
+      - name: Validate ANA live worker configuration routing
+        run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs

@@ -39,7 +39,7 @@ export function validateAnaConfiguration(configuration){
     if(!['phrase','exact'].includes(trigger.match)||!Array.isArray(trigger.phrases)||!trigger.phrases.length||trigger.phrases.length>20||trigger.phrases.some(x=>normalizeAnaMatchText(x).length<2))errors.push(`trigger_${trigger.key}_match_invalid`);
     if(!['fixed_reply','label','handoff'].includes(trigger.action))errors.push(`trigger_${trigger.key}_action_invalid`);
     if(trigger.action==='fixed_reply'&&(!cleanText(trigger.response_text,500)||String(trigger.response_text).length>500))errors.push(`trigger_${trigger.key}_reply_invalid`);
-    if(trigger.action==='label'&&!keyPattern.test(String(trigger.label_key||'')))errors.push(`trigger_${trigger.key}_label_invalid`);
+    if(trigger.action==='label'&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(trigger.label_id||'')))errors.push(`trigger_${trigger.key}_label_invalid`);
   }
   for(const item of Array.isArray(configuration.test_cases)?configuration.test_cases:[]){
     if(!isPlainObject(item)||!keyPattern.test(String(item.key||''))||!cleanText(item.input,500)||!['reply','handoff','no_reply','label'].includes(item.expected))errors.push('test_case_invalid');
@@ -60,7 +60,7 @@ export function evaluateAnaTriggers(configuration,inboundText,channel){
     });
     if(matched)return {matched:true,triggerKey:trigger.key,action:trigger.action,
       responseText:trigger.action==='fixed_reply'?cleanText(trigger.response_text,500):'',
-      labelKey:trigger.action==='label'?trigger.label_key:null,priority:trigger.priority};
+      labelId:trigger.action==='label'?trigger.label_id:null,priority:trigger.priority};
   }
   return {matched:false};
 }
@@ -72,7 +72,19 @@ export function buildAnaRuntimeInstructions(configuration){
   const tone=behavior.tone==='warm'?'acolhedora e gentil':behavior.tone==='neutral'?'neutra e profissional':'curta e cordial';
   const length=behavior.conciseness==='balanced'?'Use respostas objetivas, com contexto suficiente.':'Prefira respostas curtas, com uma ideia principal.';
   const emoji=behavior.emoji==='never'?'Não use emojis.':'Use emojis com moderação, somente quando ajudarem.';
+  const firstName=behavior.use_known_first_name_on_first_greeting?'Use o primeiro nome conhecido somente no primeiro cumprimento do dia.':'Não use o nome do cadastro na resposta.';
   const facts=configuration.knowledge.filter(item=>item.status!=='draft'&&item.status!=='archived')
     .map(item=>`- ${cleanText(item.title,100)}: ${cleanText(item.content,900)}`).join('\n');
-  return `${ANA_DRY_RUN_INSTRUCTIONS}\n\nPreferências de estilo permitidas: use linguagem ${tone}. ${length} ${emoji}\n\nFatos aprovados do conhecimento (fonte autorizada; não substituem confirmação de dados dinâmicos):\n${facts||'- Nenhum fato adicional publicado.'}`;
+  return `${ANA_DRY_RUN_INSTRUCTIONS}\n\nPreferências de estilo permitidas: use linguagem ${tone}. ${length} ${emoji} ${firstName}\n\nFatos aprovados do conhecimento (fonte autorizada; não substituem confirmação de dados dinâmicos):\n${facts||'- Nenhum fato adicional publicado.'}`;
 }
+
+export function routeAnaMessage(configuration,inboundText,channel){
+  const validation=validateAnaConfiguration(configuration);
+  if(!validation.ok)return {path:'handoff',reason:'active_config_invalid'};
+  const trigger=evaluateAnaTriggers(configuration,inboundText,channel);
+  if(!trigger.matched)return {path:'ai'};
+  if(trigger.action==='fixed_reply')return {path:'fixed_reply',triggerKey:trigger.triggerKey,responseText:trigger.responseText};
+  if(trigger.action==='label')return {path:'label',triggerKey:trigger.triggerKey,labelId:trigger.labelId};
+  return {path:'handoff',triggerKey:trigger.triggerKey,reason:'admin_trigger_handoff'};
+}
+

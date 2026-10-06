@@ -209,3 +209,34 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.ops2_ana_admin_set_channel_v1(uuid,boolean,uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.ops2_ana_admin_set_channel_v1(uuid,boolean,uuid) TO service_role;
+
+ALTER TABLE public.attendance_conversation_auto_labels_v1
+  DROP CONSTRAINT IF EXISTS attendance_conversation_auto_labels_v1_source_check;
+ALTER TABLE public.attendance_conversation_auto_labels_v1
+  ADD CONSTRAINT attendance_conversation_auto_labels_v1_source_check
+  CHECK (source_kind IN ('delivery_schedule','product_purchase','ana_trigger'));
+
+CREATE OR REPLACE FUNCTION public.ops2_ana_apply_trigger_label_v1(p_conversation_id uuid,p_label_id uuid,p_trigger_key text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE label_source uuid; inserted_count integer:=0;
+BEGIN
+  IF p_conversation_id IS NULL OR p_label_id IS NULL OR btrim(coalesce(p_trigger_key,''))='' OR char_length(p_trigger_key)>40 THEN
+    RETURN jsonb_build_object('ok',false,'error','trigger_label_input_invalid');
+  END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.conversations WHERE id=p_conversation_id) THEN
+    RETURN jsonb_build_object('ok',false,'error','conversation_not_found');
+  END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.attendance_labels_v1 WHERE id=p_label_id AND is_active=true) THEN
+    RETURN jsonb_build_object('ok',false,'error','label_not_active');
+  END IF;
+  label_source:=md5('ana-trigger:'||p_trigger_key)::uuid;
+  INSERT INTO public.attendance_conversation_auto_labels_v1(conversation_id,label_id,source_kind,source_ref)
+    VALUES(p_conversation_id,p_label_id,'ana_trigger',label_source) ON CONFLICT DO NOTHING;
+  GET DIAGNOSTICS inserted_count=ROW_COUNT;
+  INSERT INTO public.attendance_conversation_labels_v1(conversation_id,label_id)
+    VALUES(p_conversation_id,p_label_id) ON CONFLICT DO NOTHING;
+  RETURN jsonb_build_object('ok',true,'applied',inserted_count>0);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.ops2_ana_apply_trigger_label_v1(uuid,uuid,text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.ops2_ana_apply_trigger_label_v1(uuid,uuid,text) TO service_role;

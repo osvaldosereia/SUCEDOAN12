@@ -7,7 +7,7 @@ const base = {
   triggers: [
     {key:'broad',name:'Ajuda',enabled:true,priority:10,channels:['all'],match:'phrase',phrases:['ajuda'],action:'handoff'},
     {key:'site',name:'Catálogo',enabled:true,priority:20,channels:['0975'],match:'phrase',phrases:['ver catalogo'],action:'fixed_reply',response_text:'Claro! Acesse o catálogo oficial.'},
-    {key:'label',name:'Interesse',enabled:true,priority:5,channels:['1018'],match:'phrase',phrases:['produtos para cabelo'],action:'label',label_key:'interesse-cabelo'}
+    {key:'label',name:'Interesse',enabled:true,priority:5,channels:['1018'],match:'phrase',phrases:['produtos para cabelo'],action:'label',label_id:'00000000-0000-4000-8000-000000000002'}
   ],
   test_cases: [{key:'oi',input:'Oi',expected:'reply'}]
 };
@@ -26,3 +26,4 @@ assert.match(instructions,/O catálogo fica no site oficial/);
 assert.match(instructions,/curta e cordial/);
 assert.doesNotMatch(instructions,/ignore as regras|ignore a política/i);
 console.log('PASS: ANA config validation, protected instructions, deterministic priority and channel scopes');
+

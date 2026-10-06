@@ -42,7 +42,8 @@ async function anaAdminAction(req:Request,body:any,action:string){
     const runtime=await privileged.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at,metadata,whatsapp_accounts(phone_e164,display_name,slug)");
     if(runtime.error)throw runtime.error;
     const channels=(runtime.data||[]).map((row:any)=>({id:row.whatsapp_account_id,phone_last4:String(row.whatsapp_accounts?.phone_e164||"").replace(/\D/g,"").slice(-4),name:clean(row.whatsapp_accounts?.display_name||row.whatsapp_accounts?.slug,60),inbound_provider:row.inbound_provider,outbound_provider:row.outbound_provider,capture_enabled:row.capture_enabled,send_enabled:row.send_enabled,ana_enabled:row.ana_enabled,campaigns_enabled:row.campaigns_enabled,human_send_enabled:row.human_send_enabled,homologated_at:row.homologated_at,updated_at:row.updated_at}));
-    return json(req,{ok:true,role:principal.role,...result,channels});
+    const labelsResult=await privileged.from("attendance_labels_v1").select("id,name,color,sort_order").eq("is_active",true).order("sort_order",{ascending:true});if(labelsResult.error)throw labelsResult.error;
+    return json(req,{ok:true,role:principal.role,...result,channels,labels:labelsResult.data||[]});
   }
   if(action==="admin_save_draft"){
     const validation=validateAnaConfiguration(body?.configuration);if(!validation.ok)return json(req,{ok:false,error:"configuration_invalid",details:validation.errors},400);
