@@ -13,6 +13,9 @@ const CATEGORIES=[
   {key:"higiene_beleza",label:"Higiene e beleza"},
   {key:"casa_pet",label:"Casa e pet"}
 ];
+const HOME_CACHE_TTL_MS=30_000;
+let homeCache:{expiresAt:number,data:any}|null=null;
+let homePromise:Promise<any>|null=null;
 const ALLOWED_ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ALLOWED_ORIGINS.has(origin)?origin:"https://donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"GET, POST, OPTIONS"}};
 const json=(req:Request,v:any,s=200,h:Record<string,string>={})=>new Response(JSON.stringify(v),{status:s,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8",...h}});
@@ -85,7 +88,7 @@ async function basketCarouselItems(baskets:any[]){
       if(previous)previous.quantity+=quantity;
       else items.set(row.product_id,{product_id:row.product_id,name:p.name,image_url:p.image_url||"",packaging:p.packaging||"",quantity});
     }
-    return {...b,carousel_items:[...items.values()]};
+    return {...b,carousel_items:[...items.values()].slice(0,1)};
   });
 }
 function basketCategoryFields(b:any){const c=Array.isArray(b?.category)?b.category[0]:b?.category;return {category_name:c?.name||null,category_slug:c?.slug||null};}
@@ -128,7 +131,7 @@ async function moldHomeCards(){
     for(const c of data.compositions||[]){const items=Array.isArray(c.items)?c.items:[];if(items.length!==expected)continue;let productTotal=0,capacity=30;const carousel:any[]=[];let valid=true;
       for(const i of items){const p=products.get(String(i.product_id));if(!p||p.is_active!==true){valid=false;break}const qty=Number(i.quantity||0),price=moldEffectivePriceCents(p);if(!(qty>0)){valid=false;break}productTotal+=Math.round(price*qty);capacity=Math.min(capacity,Math.max(0,Math.floor(Number(i.coverage_baskets||0))));carousel.push({position_id:i.position_id,label:i.label,product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||i.image_url||"",packaging:p.packaging||"",quantity:qty,stock_quantity:Number(i.available_stock||0),price_cents:price})}
       if(!valid||capacity<1)continue;const total=Math.max(0,productTotal+cents(data.hidden_adjustment||0)),n=Number(c.number||1);
-      cards.push({id:String(b.id),card_key:String(b.id)+"@"+n,mold_mode:true,mold_id:String(m.id),composition_number:n,public_composition_count:Number(data.public_composition_count||1),name:String(b.name)+" - Tipo "+n,model_name:String(b.name),display_price_cents:total,hidden_adjustment_cents:cents(data.hidden_adjustment||0),image_url:b.image_url||"",stock_quantity:capacity,category_id:cat.id,category_name:cat.name,category_slug:cat.slug,category_sort_order:Number(cat.sort_order||0),subcategory_id:sub.id,subcategory_name:sub.name,subcategory_sort_order:Number(sub.sort_order||0),carousel_items:carousel})
+      cards.push({id:String(b.id),card_key:String(b.id)+"@"+n,mold_mode:true,mold_id:String(m.id),composition_number:n,public_composition_count:Number(data.public_composition_count||1),name:String(b.name)+" - Tipo "+n,model_name:String(b.name),display_price_cents:total,hidden_adjustment_cents:cents(data.hidden_adjustment||0),image_url:b.image_url||"",stock_quantity:capacity,category_id:cat.id,category_name:cat.name,category_slug:cat.slug,category_sort_order:Number(cat.sort_order||0),subcategory_id:sub.id,subcategory_name:sub.name,subcategory_sort_order:Number(sub.sort_order||0),carousel_items:carousel.slice(0,1)})
     }
   }
   cards.sort((a,b)=>a.category_sort_order-b.category_sort_order||a.subcategory_sort_order-b.subcategory_sort_order||a.composition_number-b.composition_number||String(a.id).localeCompare(String(b.id)));return cards;
@@ -181,6 +184,13 @@ async function home(){
   const basketTaxonomy=categories.map((c:any)=>({...c,subcategories:subcategories.filter((s:any)=>String(s.category_id)===String(c.id)).map((s:any)=>({id:s.id,category_id:s.category_id,name:s.name,sort_order:s.sort_order}))}));
   const allBaskets=[...moldCards,...await basketCarouselItems(baskets)].sort((a:any,b:any)=>Number(a.category_sort_order||0)-Number(b.category_sort_order||0)||Number(a.subcategory_sort_order||0)-Number(b.subcategory_sort_order||0)||Number(a.composition_number||0)-Number(b.composition_number||0));
   return {ok:true,version:"canonical-basket-commerce-v1",split_kits:baskets.some((b:any)=>b.split_mode===true),baskets:allBaskets,categories:CATEGORIES,basket_categories:basketTaxonomy};
+}
+async function cachedHome(){
+  if(homeCache&&homeCache.expiresAt>Date.now())return homeCache.data;
+  if(!homePromise){
+    homePromise=home().then(data=>{homeCache={expiresAt:Date.now()+HOME_CACHE_TTL_MS,data};return data}).finally(()=>{homePromise=null});
+  }
+  return homePromise;
 }
 async function sellableMap(ids:string[]){
   const out=new Map<string,number>();if(!ids.length)return out;
@@ -439,7 +449,7 @@ Deno.serve(async(req:Request)=>{
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
     if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:27},200,{"Cache-Control":"no-store"});
-    if(req.method==="GET"&&action==="home")return json(req,await home(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
+    if(req.method==="GET"&&action==="home")return json(req,await cachedHome(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="products")return json(req,await productList(u),200,{"Cache-Control":"no-store"});
