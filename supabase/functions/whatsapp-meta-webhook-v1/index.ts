@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { redactWebhookPayload } from "../_shared/whatsapp-core-v1.mjs";
+import { classifyCustomerConfirmation } from "../_shared/ana-customer-confirmation-v1.mjs";
 import {
   extractMetaPhoneNumberIds,
   hasMetaMessageOrStatusEvents,
@@ -78,6 +79,65 @@ async function persistInbound(message: any, payloadHash: string, safePayload: un
   if (result.error) throw result.error;
   if (result.data?.ok !== true) throw new Error(String(result.data?.error || "meta_ingest_failed"));
   return result.data;
+}
+
+async function applyCustomerConfirmationSignal(message: any, ingestResult: any) {
+  if (message?.event_type !== "message.received" || message?.message?.direction !== "inbound" || !ingestResult?.message_id) return null;
+
+  // Read the canonical row written by whatsapp_ingest_event_v1; do not make
+  // confirmation decisions from raw provider JSON or an unpersisted payload.
+  const canonicalResult = await db.from("whatsapp_messages_v1")
+    .select("id,conversation_id,direction,message_type,text_body,received_at,created_at")
+    .eq("id", ingestResult.message_id)
+    .maybeSingle();
+  if (canonicalResult.error) throw canonicalResult.error;
+  const canonicalMessage = canonicalResult.data;
+  if (!canonicalMessage || canonicalMessage.direction !== "inbound" || !["text","button","interactive"].includes(String(canonicalMessage.message_type || ""))) return null;
+
+  const requestResult = await db.from("customer_profile_confirmation_requests_v1")
+    .select("id,conversation_id,status,suggestion_ids,expires_at,outbound_message_id,confirmation_summary")
+    .eq("conversation_id", canonicalMessage.conversation_id)
+    .eq("status", "pending")
+    .gt("expires_at", canonicalMessage.received_at || canonicalMessage.created_at)
+    .maybeSingle();
+  if (requestResult.error) throw requestResult.error;
+  const request = requestResult.data;
+  if (!request || !request.outbound_message_id) return null;
+
+  const outboundResult = await db.from("whatsapp_messages_v1")
+    .select("id,conversation_id,direction,sent_at,created_at")
+    .eq("id", request.outbound_message_id)
+    .maybeSingle();
+  if (outboundResult.error) throw outboundResult.error;
+  const outbound = outboundResult.data;
+  if (!outbound || outbound.direction !== "outbound" || outbound.conversation_id !== canonicalMessage.conversation_id) return null;
+
+  const ids = Array.isArray(request.suggestion_ids) ? request.suggestion_ids : [];
+  const suggestionsResult = ids.length
+    ? await db.from("customer_profile_suggestions_v1").select("field_name,normalized_value").in("id", ids)
+    : { data: [], error: null };
+  if (suggestionsResult.error) throw suggestionsResult.error;
+
+  const classified = classifyCustomerConfirmation({
+    message: canonicalMessage,
+    pendingRequest: {
+      ...request,
+      outbound_sent_at: outbound.sent_at || outbound.created_at,
+      suggestions: suggestionsResult.data || [],
+    },
+  });
+  if (classified.decision === "none" || !classified.request_id) return null;
+
+  const applied = await db.rpc("ops2_ana_customer_confirmation_apply_signal_v1", {
+    p_request_id: classified.request_id,
+    p_message_id: canonicalMessage.id,
+    p_decision: classified.decision,
+  });
+  if (applied.error) throw applied.error;
+  if (applied.data?.ok !== true && !["confirmation_request_expired","confirmation_message_before_request","confirmation_request_not_pending"].includes(String(applied.data?.error || ""))) {
+    throw new Error(String(applied.data?.error || "ana_confirmation_signal_failed"));
+  }
+  return applied.data?.ok === true ? applied.data : null;
 }
 
 async function persistStatus(status: any, payloadHash: string) {
@@ -210,10 +270,13 @@ Deno.serve(async (req: Request) => {
     const safePayload = redactWebhookPayload(payload);
     let inboundNormalized = 0;
     let inboundDuplicates = 0;
+    let anaConfirmationsApplied = 0;
     for (const message of normalized.messages) {
       const result = await persistInbound(message, normalized.payloadHash, safePayload);
       if (result?.duplicate === true) inboundDuplicates += 1;
       else inboundNormalized += 1;
+      const confirmation = await applyCustomerConfirmationSignal(message, result);
+      if (confirmation?.ok === true) anaConfirmationsApplied += 1;
     }
 
     let statusesCaptured = 0;
@@ -230,6 +293,7 @@ Deno.serve(async (req: Request) => {
       ok: true,
       inbound_normalized: inboundNormalized,
       inbound_duplicates: inboundDuplicates,
+      ana_confirmations_applied: anaConfirmationsApplied,
       statuses_captured: statusesCaptured,
       statuses_recorded: statusesRecorded,
       statuses_pending: statusesPending,
@@ -242,3 +306,4 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "webhook_internal_error" }, 500);
   }
 });
+
