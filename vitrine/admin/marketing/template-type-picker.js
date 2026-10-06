@@ -11,15 +11,29 @@ const TEMPLATE_TYPES=[
 ];
 const HEADER_LABELS={NONE:'Nenhum',TEXT:'Texto',IMAGE:'Imagem',VIDEO:'Vídeo',DOCUMENT:'Documento',LOCATION:'Localização'};
 const BUTTON_LABELS={NONE:'Nenhum',QUICK_REPLY:'Resposta rápida',URL:'Abrir site',PHONE_NUMBER:'Telefonar',CATALOG:'Catálogo',OTP:'OTP'};
+const STATUS_LABELS={APPROVED:'Aprovado',PENDING:'Em análise',REJECTED:'Rejeitado',IN_APPEAL:'Em recurso',FLAGGED:'Atenção',DISABLED:'Desativado',PENDING_DELETION:'Excluindo',PAUSED:'Pausado',UNKNOWN:'Não informado'};
 let accountsCache=null;
 let observerStarted=false;
+let captureBound=false;
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const channelByPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.endsWith('0975')?'0975':digits.endsWith('1018')?'1018':'Outro'};
+const component=(item,type)=>(Array.isArray(item?.components)?item.components:[]).find(entry=>String(entry?.type||'').toUpperCase()===type)||null;
+const templateButtons=item=>Array.isArray(component(item,'BUTTONS')?.buttons)?component(item,'BUTTONS').buttons:[];
+const fmtDate=value=>{const date=new Date(value||0);return Number.isNaN(date.getTime())?'—':date.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})};
+const statusLabel=value=>STATUS_LABELS[String(value||'UNKNOWN').toUpperCase()]||String(value||'Não informado');
 
 function ensurePickerStyles(){
   if(document.querySelector('link[data-marketing-template-picker-css]'))return;
-  const link=document.createElement('link');link.rel='stylesheet';link.href='/vitrine/admin/marketing/template-type-picker.css?v=marketing-template-picker-v2';link.dataset.marketingTemplatePickerCss='1';document.head.appendChild(link);
+  const link=document.createElement('link');link.rel='stylesheet';link.href='/vitrine/admin/marketing/template-type-picker.css?v=marketing-template-picker-v3';link.dataset.marketingTemplatePickerCss='1';document.head.appendChild(link);
+}
+
+async function adminGet(params={}){
+  const url=new URL(TEMPLATE_API);for(const [key,value] of Object.entries(params))if(value!==undefined&&value!==null&&value!=='')url.searchParams.set(key,String(value));
+  const response=await attendanceAuthorizedFetch(url,{method:'GET',headers:{apikey:ADMIN_PUBLIC_KEY},cache:'no-store'});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||data?.ok===false){const error=new Error(data?.error||`template_${response.status}`);error.payload=data;throw error}
+  return data;
 }
 
 async function adminPost(action,body){
@@ -94,17 +108,17 @@ function previewHtml(){
   return `<aside class="marketing-whatsapp-preview" aria-label="Prévia do WhatsApp"><div class="marketing-whatsapp-preview-title">Prévia do WhatsApp</div><div class="marketing-whatsapp-phone"><div class="marketing-whatsapp-bubble"><div data-template-preview-header class="preview-header" hidden></div><div data-template-preview-body class="preview-body">Sua mensagem aparecerá aqui.</div><div data-template-preview-footer class="preview-footer" hidden></div><div data-template-preview-buttons class="preview-buttons"></div><time>agora</time></div></div></aside>`;
 }
 
-function simpleEditorHtml(type){
+function simpleEditorHtml(type,item=null){
   const category=type==='authentication'?'AUTHENTICATION':type==='catalog'?'MARKETING':'MARKETING';
   const categoryOptions=type==='standard'?'<option value="MARKETING">Marketing</option><option value="UTILITY">Utilidade</option>':`<option value="${category}">${category==='AUTHENTICATION'?'Autenticação':'Marketing'}</option>`;
-  return `<div class="marketing-template-editor-layout"><form data-template-simple-form data-template-kind="${type}"><section class="template-editor-section"><h4>Informações gerais</h4><div class="marketing-template-form-grid"><label><span>Nome</span><input name="name" required maxlength="512" placeholder="ex.: ofertas_outubro"></label><label><span>Canal WhatsApp</span><select name="account_id" required><option value="">Carregando…</option></select></label><label><span>Categoria</span><select name="category" required>${categoryOptions}</select></label><label><span>Idioma</span><select name="language"><option value="pt_BR">Português (Brasil)</option></select></label></div></section>${standardFields(type)}<div data-template-simple-status class="marketing-template-status" role="status" aria-live="polite"></div><div class="marketing-template-dialog-actions"><button type="button" data-simple-cancel>Cancelar</button><button type="submit" class="primary" data-template-simple-submit>Enviar para análise</button></div></form>${previewHtml()}</div>`;
+  return `<div class="marketing-template-editor-layout"><form data-template-simple-form data-template-kind="${type}" data-template-id="${esc(item?.id||'')}"><section class="template-editor-section"><h4>Informações gerais</h4><div class="marketing-template-form-grid"><label><span>Nome</span><input name="name" required maxlength="512" placeholder="ex.: ofertas_outubro"></label><label><span>Canal WhatsApp</span><select name="account_id" required><option value="">Carregando…</option></select></label><label><span>Categoria</span><select name="category" required>${categoryOptions}</select></label><label><span>Idioma</span><select name="language"><option value="pt_BR">Português (Brasil)</option></select></label></div></section>${standardFields(type)}<div data-template-simple-status class="marketing-template-status" role="status" aria-live="polite"></div><div class="marketing-template-dialog-actions"><button type="button" data-simple-cancel>Cancelar</button><button type="submit" class="primary" data-template-simple-submit>${item?'Salvar alterações':'Enviar para análise'}</button></div></form>${previewHtml()}</div>`;
 }
 
 function headerFieldsHtml(type){
   if(type==='TEXT')return '<label class="wide"><span>Texto do cabeçalho</span><input name="header_text" maxlength="60" placeholder="Ex.: Oferta da semana"></label><label class="wide"><span>Exemplo das variáveis do cabeçalho</span><input name="header_examples" placeholder="Exemplo 1 | Exemplo 2"></label>';
   if(['IMAGE','VIDEO','DOCUMENT'].includes(type)){
     const accept=type==='IMAGE'?'image/jpeg,image/png':type==='VIDEO'?'video/mp4':'application/pdf';
-    return `<label class="wide"><span>${HEADER_LABELS[type]} de exemplo</span><input type="file" data-template-media-file name="header_file" accept="${accept}" required><small>Usada somente como amostra para aprovação do template.</small></label>`;
+    return `<label class="wide"><span>${HEADER_LABELS[type]} de exemplo</span><input type="file" data-template-media-file name="header_file" accept="${accept}" required><small>Usada somente como amostra para aprovação do template. Na edição, deixe vazio para manter a amostra atual.</small></label>`;
   }
   if(type==='LOCATION')return '<p class="template-field-help">A mensagem terá um cabeçalho de localização. Os dados reais da localização são enviados no momento do disparo.</p>';
   return '<p class="template-field-help">Sem cabeçalho.</p>';
@@ -173,16 +187,61 @@ function bindDynamicFields(form){
   refreshHeader();refreshButtons();renderVariableExamples(form);updateWhatsAppPreview(form);
 }
 
-async function openSimpleTemplateEditor(type='standard'){
-  const titles={standard:'Novo modelo padrão',catalog:'Novo template de Catálogo',authentication:'Novo template de Autenticação'};
-  const dialog=shellDialog(titles[type]||'Novo template',simpleEditorHtml(type),{wide:true});
+function detectTemplateKind(item){
+  if(String(item?.category||'').toUpperCase()==='AUTHENTICATION')return 'authentication';
+  if(component(item,'CAROUSEL'))return 'carousel';
+  if(templateButtons(item).some(button=>String(button?.type||'').toUpperCase()==='CATALOG'))return 'catalog';
+  return 'standard';
+}
+
+function hydrateEditor(form,item){
+  if(!item)return;
+  form.dataset.templateId=String(item.id||'');
+  form.elements.name.value=String(item.name||'');form.elements.name.readOnly=true;
+  form.elements.language.value=String(item.language||'pt_BR');
+  if(form.elements.category)form.elements.category.value=String(item.category||'MARKETING').toUpperCase();
+  if(form.elements.account_id){form.elements.account_id.value=String(item.whatsapp_account_id||'');form.elements.account_id.disabled=true}
+  const type=form.dataset.templateKind||'standard';
+  if(type==='authentication'){
+    const body=component(item,'BODY'),footer=component(item,'FOOTER'),button=templateButtons(item)[0]||{};
+    if(form.elements.security_recommendation)form.elements.security_recommendation.checked=body?.add_security_recommendation!==false;
+    if(form.elements.expiration_minutes)form.elements.expiration_minutes.value=String(footer?.code_expiration_minutes||10);
+    if(form.elements.otp_type)form.elements.otp_type.value=String(button?.otp_type||'COPY_CODE');
+    updateWhatsAppPreview(form);return;
+  }
+  const header=component(item,'HEADER'),body=component(item,'BODY'),footer=component(item,'FOOTER'),button=templateButtons(item)[0]||null;
+  if(form.elements.body)form.elements.body.value=String(body?.text||'');
+  if(form.elements.footer)form.elements.footer.value=String(footer?.text||'');
+  if(form.elements.header_type){form.elements.header_type.value=String(header?.format||'NONE').toUpperCase();form.elements.header_type.dispatchEvent(new Event('change',{bubbles:true}))}
+  if(header?.format==='TEXT'){
+    if(form.elements.header_text)form.elements.header_text.value=String(header.text||'');
+    if(form.elements.header_examples)form.elements.header_examples.value=(header?.example?.header_text||[]).join(' | ');
+  }else if(['IMAGE','VIDEO','DOCUMENT'].includes(String(header?.format||'').toUpperCase())){
+    const handle=String(header?.example?.header_handle?.[0]||'');if(handle)form.dataset.existingHeaderHandle=handle;
+    const file=form.querySelector('[data-template-media-file]');if(file&&handle)file.required=false;
+  }
+  renderVariableExamples(form);
+  const examples=Array.isArray(body?.example?.body_text?.[0])?body.example.body_text[0]:[];
+  examples.forEach((value,index)=>{const input=form.elements[`body_example_${index+1}`];if(input)input.value=String(value||'')});
+  if(button&&form.elements.button_type){
+    const buttonType=String(button.type||'NONE').toUpperCase();
+    if([...form.elements.button_type.options].some(option=>option.value===buttonType)){form.elements.button_type.value=buttonType;form.elements.button_type.dispatchEvent(new Event('change',{bubbles:true}))}
+    if(form.elements.button_text)form.elements.button_text.value=String(button.text||BUTTON_LABELS[buttonType]||'');
+    if(form.elements.button_value)form.elements.button_value.value=String(button.url||button.phone_number||'');
+  }
+  updateWhatsAppPreview(form);
+}
+
+async function openSimpleTemplateEditor(type='standard',item=null){
+  const titles=item?{standard:`Editar ${item.name}`,catalog:`Editar ${item.name}`,authentication:`Editar ${item.name}`}:{standard:'Novo modelo padrão',catalog:'Novo template de Catálogo',authentication:'Novo template de Autenticação'};
+  const dialog=shellDialog(titles[type]||'Template',simpleEditorHtml(type,item),{wide:true});
   const form=dialog.querySelector('[data-template-simple-form]');
   const accounts=await loadAccounts().catch(()=>[]);
   const select=form.elements.account_id;
   select.innerHTML='<option value="">Selecione</option>'+accounts.map(account=>`<option value="${esc(account.id)}">${esc(channelByPhone(account.phone_e164))} · ${esc(account.display_name||'WhatsApp')}</option>`).join('');
   form.querySelector('[data-simple-cancel]')?.addEventListener('click',()=>closeDialog(dialog));
   form.addEventListener('submit',event=>submitSimpleTemplate(event,dialog));
-  bindDynamicFields(form);
+  bindDynamicFields(form);hydrateEditor(form,item);
   return dialog;
 }
 
@@ -201,13 +260,17 @@ async function buildDraft(form,accountId){
   const headerType=String(form.elements.header_type?.value||'NONE');
   if(headerType==='TEXT'){
     const headerText=String(form.elements.header_text?.value||'').trim();
-    const component={type:'HEADER',format:'TEXT',text:headerText};
-    const headerExamples=String(form.elements.header_examples?.value||'').split('|').map(item=>item.trim()).filter(Boolean);
-    if(variableCount(headerText)&&headerExamples.length)component.example={header_text:headerExamples};
-    components.push(component);
+    const componentValue={type:'HEADER',format:'TEXT',text:headerText};
+    const headerExamples=String(form.elements.header_examples?.value||'').split('|').map(entry=>entry.trim()).filter(Boolean);
+    if(variableCount(headerText)&&headerExamples.length)componentValue.example={header_text:headerExamples};
+    components.push(componentValue);
   }else if(['IMAGE','VIDEO','DOCUMENT'].includes(headerType)){
-    const file=form.querySelector('[data-template-media-file]')?.files?.[0];if(!file)throw new Error('Selecione o arquivo de exemplo do cabeçalho.');
-    const uploaded=await uploadTemplateMedia(accountId,file);components.push({type:'HEADER',format:headerType,example:{header_handle:[uploaded.handle]}});
+    const file=form.querySelector('[data-template-media-file]')?.files?.[0];
+    let handle='';
+    if(file){const uploaded=await uploadTemplateMedia(accountId,file);handle=String(uploaded.handle||'')}
+    else handle=String(form.dataset.existingHeaderHandle||'');
+    if(!handle)throw new Error('Selecione o arquivo de exemplo do cabeçalho.');
+    components.push({type:'HEADER',format:headerType,example:{header_handle:[handle]}});
   }else if(headerType==='LOCATION')components.push({type:'HEADER',format:'LOCATION'});
   const bodyText=String(form.elements.body?.value||'').trim();
   const body={type:'BODY',text:bodyText};
@@ -231,7 +294,7 @@ async function buildDraft(form,accountId){
 
 function friendlyError(error){
   const code=String(error?.payload?.error||error?.message||'').trim();
-  const map={meta_template_examples_required:'Preencha os exemplos das variáveis.',meta_template_component_unsupported:'Esse recurso ainda não é aceito pela configuração da Meta.',meta_template_buttons_invalid:'Revise os dados dos botões.',meta_template_header_invalid:'Revise o cabeçalho.',carousel_media_invalid:'O arquivo escolhido não é aceito.',meta_template_mutation_uncertain:'A Meta pode ter recebido a alteração. Sincronize antes de tentar novamente.'};
+  const map={meta_template_examples_required:'Preencha os exemplos das variáveis.',meta_template_component_unsupported:'Esse recurso ainda não é aceito pela configuração da Meta.',meta_template_buttons_invalid:'Revise os dados dos botões.',meta_template_header_invalid:'Revise o cabeçalho.',meta_template_header_handle_required:'Envie uma amostra de mídia para esse cabeçalho.',carousel_media_invalid:'O arquivo escolhido não é aceito.',meta_template_mutation_uncertain:'A Meta pode ter recebido a alteração. Sincronize antes de tentar novamente.'};
   return map[code]||code||'Erro inesperado ao enviar o template.';
 }
 
@@ -240,18 +303,62 @@ async function submitSimpleTemplate(event,dialog){
   const form=event.currentTarget;
   const button=form.querySelector('[data-template-simple-submit]');
   const status=form.querySelector('[data-template-simple-status]');
+  const templateId=String(form.dataset.templateId||'').trim();
   const accountId=String(form.elements.account_id?.value||'').trim();
-  if(!accountId){status.textContent='Selecione o canal WhatsApp.';return}
-  button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='Enviando…';status.textContent='Preparando o template para análise da Meta…';
+  if(!templateId&&!accountId){status.textContent='Selecione o canal WhatsApp.';return}
+  button.disabled=true;button.setAttribute('aria-busy','true');button.textContent=templateId?'Salvando…':'Enviando…';status.textContent=templateId?'Salvando alterações na Meta…':'Preparando o template para análise da Meta…';
   try{
     const draft=await buildDraft(form,accountId);
     if(!draft.name){status.textContent='Informe o nome do template.';return}
-    await adminPost('create',{account_id:accountId,draft});
-    status.textContent='Template enviado para análise. Atualizando a lista…';
+    if(templateId)await adminPost('edit',{template_id:templateId,draft});
+    else await adminPost('create',{account_id:accountId,draft});
+    status.textContent=templateId?'Alterações enviadas. Atualizando a lista…':'Template enviado para análise. Atualizando a lista…';
     closeDialog(dialog);
     await window.DAMarketingTemplateCenter?.mountTemplateView?.(document.querySelector('#content'));
-  }catch(error){status.textContent=`Não foi possível enviar. ${friendlyError(error)}`}
-  finally{if(button.isConnected){button.disabled=false;button.setAttribute('aria-busy','false');button.textContent='Enviar para análise'}}
+  }catch(error){status.textContent=`Não foi possível ${templateId?'salvar':'enviar'}. ${friendlyError(error)}`}
+  finally{if(button.isConnected){button.disabled=false;button.setAttribute('aria-busy','false');button.textContent=templateId?'Salvar alterações':'Enviar para análise'}}
+}
+
+function detailPreview(item){
+  const body=component(item,'BODY');
+  const footer=component(item,'FOOTER');
+  const header=component(item,'HEADER');
+  const buttons=templateButtons(item);
+  return `<div class="marketing-template-live-preview"><div class="marketing-template-live-message">${header?`<strong>${esc(header.text||HEADER_LABELS[String(header.format||'').toUpperCase()]||'Cabeçalho')}</strong>`:''}<p>${esc(body?.text||'Template de autenticação').replace(/\n/g,'<br>')}</p>${footer?.text?`<small>${esc(footer.text)}</small>`:''}${buttons.length?`<div>${buttons.map(button=>`<span>${esc(button.text||BUTTON_LABELS[String(button.type||'').toUpperCase()]||button.type)}</span>`).join('')}</div>`:''}</div></div>`;
+}
+
+function historyHtml(events=[]){
+  if(!events.length)return '<p class="template-history-empty">Ainda não há eventos registrados para este template.</p>';
+  return `<div class="template-history-list">${events.map(event=>`<article><span class="template-history-dot"></span><div><strong>${esc(statusLabel(event.status||event.event_type))}</strong><small>${esc(fmtDate(event.occurred_at||event.received_at))}${event.quality_rating?` · Qualidade ${esc(event.quality_rating)}`:''}</small>${event.reason?`<p>${esc(event.reason)}</p>`:''}</div></article>`).join('')}</div>`;
+}
+
+function liveDetailHtml(data){
+  const item=data.item||{};const reason=String(item?.metadata?.rejected_reason||'').trim();const live=data.live===true;
+  return `<div class="marketing-template-live-detail"><div class="template-live-summary"><div><span class="template-live-status ${String(item.status||'').toLowerCase()}">${esc(statusLabel(item.status))}</span><h3>${esc(item.name||'Template')}</h3><p>${esc(item.language||'—')} · ${esc(item.category||'—')}</p></div><span class="template-live-source ${live?'ok':'warn'}">${live?'Atualizado agora pela Meta':'Meta indisponível · cache local'}</span></div>${reason?`<div class="template-live-reason"><strong>Motivo informado pela Meta</strong><p>${esc(reason)}</p></div>`:''}${detailPreview(item)}<section class="template-live-history"><h4>Histórico Meta</h4>${historyHtml(data.events||[])}</section><div class="marketing-template-dialog-actions"><button type="button" data-live-close>Fechar</button>${detectTemplateKind(item)==='carousel'?'<button type="button" class="secondary" disabled title="A edição de carrossel permanece no editor especializado">Carrossel</button>':`<button type="button" class="primary" data-live-edit="${esc(item.id||'')}">Editar</button>`}</div></div>`;
+}
+
+async function openLiveTemplateDetail(id){
+  const dialog=shellDialog('Detalhes do template','<div class="template-live-loading">Atualizando com a Meta…</div>',{wide:true});
+  try{
+    const data=await adminGet({action:'detail',template_id:id});
+    const body=dialog.querySelector('.marketing-template-dialog-body');if(!body)return dialog;
+    body.innerHTML=liveDetailHtml(data);
+    body.querySelector('[data-live-close]')?.addEventListener('click',()=>closeDialog(dialog));
+    body.querySelector('[data-live-edit]')?.addEventListener('click',()=>{const item=data.item;closeDialog(dialog);openSimpleTemplateEditor(detectTemplateKind(item),item)});
+  }catch(error){
+    const body=dialog.querySelector('.marketing-template-dialog-body');if(body)body.innerHTML=`<div class="template-live-error"><strong>Não foi possível atualizar o template.</strong><p>${esc(friendlyError(error))}</p><button type="button" data-live-close>Fechar</button></div>`;
+    body?.querySelector('[data-live-close]')?.addEventListener('click',()=>closeDialog(dialog));
+  }
+  return dialog;
+}
+
+async function openExistingTemplateEditor(id){
+  try{
+    const data=await adminGet({action:'detail',template_id:id});const item=data.item;
+    const kind=detectTemplateKind(item);
+    if(kind==='carousel')return openLiveTemplateDetail(id);
+    return openSimpleTemplateEditor(kind,item);
+  }catch(error){return openLiveTemplateDetail(id)}
 }
 
 function simplifyToolbar(center){
@@ -272,13 +379,23 @@ function enhanceTemplateCenter(root=document.querySelector('#content')){
   const sync=center.querySelector('[data-template-sync]');if(sync&&sync.dataset.syncState!=='syncing')sync.textContent='Sincronizar com Meta';
 }
 
+function bindCaptureActions(){
+  if(captureBound)return;captureBound=true;
+  document.addEventListener('click',event=>{
+    const detail=event.target?.closest?.('[data-template-detail]');
+    if(detail){event.preventDefault();event.stopImmediatePropagation();openLiveTemplateDetail(detail.dataset.templateDetail);return}
+    const edit=event.target?.closest?.('[data-template-edit]');
+    if(edit&&!edit.disabled){event.preventDefault();event.stopImmediatePropagation();openExistingTemplateEditor(edit.dataset.templateEdit)}
+  },true);
+}
+
 function observe(){
-  if(observerStarted)return;observerStarted=true;ensurePickerStyles();
+  if(observerStarted)return;observerStarted=true;ensurePickerStyles();bindCaptureActions();
   const observer=new MutationObserver(()=>enhanceTemplateCenter());
   observer.observe(document.documentElement,{subtree:true,childList:true});
   enhanceTemplateCenter();
 }
 
 observe();
-window.DAMarketingTemplateSimple={openTemplateTypePicker,openSimpleTemplateEditor,submitSimpleTemplate,enhanceTemplateCenter,updateWhatsAppPreview,insertTemplateVariable};
-export {openTemplateTypePicker,openSimpleTemplateEditor,submitSimpleTemplate,enhanceTemplateCenter,updateWhatsAppPreview,insertTemplateVariable};
+window.DAMarketingTemplateSimple={openTemplateTypePicker,openSimpleTemplateEditor,openExistingTemplateEditor,openLiveTemplateDetail,submitSimpleTemplate,enhanceTemplateCenter,updateWhatsAppPreview,insertTemplateVariable};
+export {openTemplateTypePicker,openSimpleTemplateEditor,openExistingTemplateEditor,openLiveTemplateDetail,submitSimpleTemplate,enhanceTemplateCenter,updateWhatsAppPreview,insertTemplateVariable};
