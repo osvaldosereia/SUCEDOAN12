@@ -47,8 +47,6 @@ try{
  assert.equal(await app.locator('.basket-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
  await app.locator('[data-basket]').click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
- await page.evaluate(()=>{document.querySelector('#basketGrid').innerHTML=BasketCarousel.card({...b,carousel_items:b.carousel_items.slice(0,1)},s=>String(s),x=>String(x),x=>x);BasketCarousel.mount(document.querySelector('#basketGrid'))});
- assert.equal(await page.locator('.basket-scroll-track').isVisible(),true,'trilho discreto permanece visível mesmo sem overflow');
  for(const entry of ['index.html','vitrine/index.html']){const pageSource=fs.readFileSync(entry,'utf8');assert.ok(pageSource.includes('BasketCarousel.mount('));assert.ok(pageSource.includes('da_storefront_home_carousel_v1'));assert.ok(pageSource.includes('/vitrine/basket-carousel.js?v='))}
- console.log('Basket carousel browser: mobile/desktop, quantities, real lazy requests, horizontal scrolling and basket navigation passed');
+ console.log('Basket storefront browser: one photo per basket, responsive 2/6-column grid, category groups and basket navigation passed');
 }finally{await browser.close()}
