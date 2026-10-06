@@ -7,7 +7,7 @@ const api=fs.readFileSync('supabase/functions/admin-store-baskets-v1/index.ts','
 // A mounted lot remains visible as an operational record with code, quantity and state.
 assert.match(ui,/function historyHtml\(\)/);
 assert.match(ui,/b\.code\|\|b\.lot_code/);
-assert.match(ui,/b\.quantity\|\|b\.qty\|\|b\.units/);
+assert.match(ui,/b\.quantity_built\?\?b\.quantity\?\?b\.qty\?\?b\.units/);
 assert.match(ui,/Montado/);
 assert.match(ui,/Em montagem/);
 assert.match(ui,/Cancelado/);
