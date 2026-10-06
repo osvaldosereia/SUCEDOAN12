@@ -10,7 +10,8 @@ const milestoneStart=admin.indexOf('function orderV3Milestones');
 assert.ok(helperStart>=0,'Admin precisa de helper canônico para conclusão real da separação');
 assert.ok(milestoneStart>=0,'Admin precisa manter orderV3Milestones');
 const flowBlock=admin.slice(helperStart,Math.min(admin.length,milestoneStart+900));
-assert.match(flowBlock,/readiness\?\.separation_completed===true/,'Marco SEPARADO precisa considerar readiness.separation_completed');
+assert.match(flowBlock,/summary\?\.completed_at/,'Marco SEPARADO deve usar a conclusão operacional persistida no resumo');
+assert.match(flowBlock,/readiness\?\.separation_completed===true/,'Readiness fiscal continua sendo fallback compatível para conclusão da separação');
 assert.match(flowBlock,/separated:orderSeparationCompletedV4\(o\)/,'Milestone SEPARADO precisa depender do helper de conclusão real');
 assert.doesNotMatch(flowBlock,/separated:\['ready','out_for_delivery','delivered'\]\.includes\(s\)/,'READY sozinho não pode significar separação concluída');
 
