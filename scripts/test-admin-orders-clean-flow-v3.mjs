@@ -34,7 +34,7 @@ assert.match(admin,/created_at/,'Pedidos precisam continuar ordenáveis por cheg
 assert.match(admin,/CONFIRMADO/,'Card precisa ter marco CONFIRMADO');
 assert.match(admin,/SEPARADO/,'Card precisa ter marco SEPARADO');
 assert.match(admin,/ENTREGUE/,'Card precisa ter marco ENTREGUE');
-assert.match(admin,/ABRIR VITRINE SEPARA[CÇ][AÃ]O/i,'Card precisa abrir a separação');
+assert.match(admin,/INICIAR SEPARA[CÇ][AÃ]O|CONTINUAR SEPARA[CÇ][AÃ]O|ABRIR VITRINE SEPARA[CÇ][AÃ]O/i,'Card precisa abrir/iniciar a separação');
 assert.match(admin,/ABRIR PEDIDO/i,'Card precisa abrir o pedido');
 assert.match(admin,/orders-bottom-sheet/,'Separação deve existir como bottom sheet dentro do Admin');
 assert.match(admin,/data-separation-state="separated"/,'Separação precisa ter botão SEPARADO por item');
@@ -56,7 +56,9 @@ const completeBlock=backend.slice(completeStart,completeEnd>completeStart?comple
 assert.ok(!completeBlock.includes('status:"out_for_delivery"'),'Concluir separação não pode mover automaticamente para entrega');
 assert.match(completeBlock,/status:"ready"/,'Concluir separação deve terminar no marco interno ready/separado');
 assert.match(completeBlock,/ops2_refresh_order_public_snapshot_v1/,'Conclusão precisa atualizar a vitrine pública');
-assert.match(completeBlock,/target_key:"verified"/,'Conclusão precisa manter a sincronização Verificado no Bling');
+assert.match(backend,/runSeparationPostCompletionIntegrations/,'Integrações externas devem ocorrer depois da conclusão operacional');
+assert.match(backend,/target_key:"verified"/,'Pós-conclusão precisa manter a sincronização Verificado no Bling');
+assert.doesNotMatch(completeBlock,/ops2_launch_physical_stock/,'Conclusão da separação não pode fazer baixa física no Bling; isso pertence à saída para entrega');
 
 assert.match(localReadyMigration,/create or replace function public\.ops2_apply_order_separation_stock_v2/,'Migration precisa atualizar a operação canônica de estoque da separação');
 assert.match(localReadyMigration,/stock_applied[^]*status='ready'/,'Retomada idempotente precisa promover para READY sem reaplicar estoque');
