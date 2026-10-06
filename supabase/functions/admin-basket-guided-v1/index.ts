@@ -151,27 +151,31 @@ async function linkableLots(input:any){
 
 async function modelEditor(input:any){
   const basketId=uuid(input?.basket_id);if(!basketId)return {error:"invalid_basket",status:400};
-  const [q,categories,recipeKits]=await Promise.all([
+  const [q,categories,subcategories,recipeKits,basketRow]=await Promise.all([
     db.rpc("basket_commercial_model_editor_v1",{p_basket_id:basketId}),
     db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order").order("name"),
-    db.rpc("basket_recipe_kits_v1",{p_basket_id:basketId})
+    db.from("basket_subcategories").select("id,category_id,name,sort_order,is_active").eq("is_active",true).order("sort_order").order("name"),
+    db.rpc("basket_recipe_kits_v1",{p_basket_id:basketId}),
+    db.from("basket_templates").select("category_id,subcategory_id").eq("id",basketId).maybeSingle()
   ]);
-  if(q.error)return rpcError(q.error);if(categories.error)throw categories.error;if(recipeKits.error)return rpcError(recipeKits.error);
-  return {model:{...(q.data||{}),recipe_kits:Array.isArray(recipeKits.data?.kits)?recipeKits.data.kits:[]},categories:categories.data||[]};
+  if(q.error)return rpcError(q.error);if(categories.error)throw categories.error;if(subcategories.error)throw subcategories.error;if(recipeKits.error)return rpcError(recipeKits.error);if(basketRow.error)throw basketRow.error;
+  return {model:{...(q.data||{}),basket:{...(q.data?.basket||{}),category_id:basketRow.data?.category_id||q.data?.basket?.category_id||null,subcategory_id:basketRow.data?.subcategory_id||null},recipe_kits:Array.isArray(recipeKits.data?.kits)?recipeKits.data.kits:[]},categories:categories.data||[],subcategories:subcategories.data||[]};
 }
 async function modelSave(input:any){
   const basketId=uuid(input?.basket_id),positions=list(input?.positions),commercial=input?.commercial||{};
-  const name=clean(commercial?.name,180),categoryId=uuid(commercial?.category_id),basePrice=money(commercial?.base_price),imageUrl=clean(commercial?.image_url,1000);
+  const name=clean(commercial?.name,180),categoryId=uuid(commercial?.category_id),subcategoryId=uuid(commercial?.subcategory_id),basePrice=money(commercial?.base_price),imageUrl=clean(commercial?.image_url,1000);
   if(!basketId)return {error:"invalid_basket",status:400};
   if(!positions||!positions.length)return {error:"basket_positions_invalid",status:400};
   if(!name)return {error:"basket_name_invalid",status:400};
   if(!categoryId)return {error:"basket_category_required",status:400};
+  if(!subcategoryId)return {error:"basket_subcategory_required",status:400};
+  const sub=await db.from("basket_subcategories").select("id").eq("id",subcategoryId).eq("category_id",categoryId).eq("is_active",true).maybeSingle();if(sub.error)throw sub.error;if(!sub.data)return {error:"basket_subcategory_required",status:400};
   if(basePrice===null)return {error:"basket_price_invalid",status:400};
   const q=await db.rpc("save_basket_commercial_model_v2",{
     p_basket_id:basketId,p_name:name,p_category_id:categoryId,p_base_price:basePrice,p_image_url:imageUrl||null,
     p_positions:positions,p_operator:operator(input)
   });
-  if(q.error)return rpcError(q.error);return {model:q.data};
+  if(q.error)return rpcError(q.error);const now=new Date().toISOString();const [update,kitUpdate]=await Promise.all([db.from("basket_templates").update({category_id:categoryId,subcategory_id:subcategoryId,updated_at:now}).eq("id",basketId),db.from("basket_kit_templates").update({category_id:categoryId,subcategory_id:subcategoryId,updated_at:now}).eq("basket_id",basketId).eq("is_active",true)]);if(update.error)throw update.error;if(kitUpdate.error)throw kitUpdate.error;return {model:{...(q.data||{}),category_id:categoryId,subcategory_id:subcategoryId}};
 }
 async function recipeKitsSave(input:any){
   const basketId=uuid(input?.basket_id),recipeKits=list(input?.recipe_kits,20);
