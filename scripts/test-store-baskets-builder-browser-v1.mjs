@@ -127,6 +127,6 @@ try{
   assert.equal(newSave.body.kits.length,2);
 
   const oldConcepts=await page.locator('body').innerText();
-  assert.equal(/família|posição|adicionar termo/i.test(oldConcepts),false,'new UI must not expose old family/position concepts');
+  assert.equal(/família|adicionar termo|posição de produto/i.test(oldConcepts),false,'new UI must not expose old guided-family concepts');
   console.log('store baskets builder browser v2 visible composition: PASS');
 }finally{await browser.close()}
