@@ -1,4 +1,3 @@
--- Applied as migration 20261006135623_basket_subcategories_schema_base.sql
 create table if not exists public.basket_subcategories (
  id uuid primary key default gen_random_uuid(),
  category_id uuid not null references public.basket_categories(id) on delete cascade,
@@ -14,20 +13,17 @@ alter table public.basket_subcategories enable row level security;
 revoke all on public.basket_subcategories from public, anon, authenticated;
 grant select, insert, update, delete on public.basket_subcategories to service_role;
 
--- Applied as migration 20261006135706_basket_subcategories_columns_v1.sql
 alter table public.basket_templates add column if not exists subcategory_id uuid references public.basket_subcategories(id) on delete set null;
 alter table public.basket_kit_templates add column if not exists subcategory_id uuid references public.basket_subcategories(id) on delete set null;
 create index if not exists basket_subcategories_order_idx on public.basket_subcategories(category_id,sort_order,name);
 update public.basket_molds m set public_composition_count=3 from public.basket_templates b where b.id=m.basket_id and b.is_active=true and m.public_composition_count<>3;
 
--- Applied as migration 20261006135713_basket_subcategories_seed_v1.sql
 update public.basket_categories set is_active=slug in ('cestas-completas','cestas-so-alimentos'),sort_order=case slug when 'cestas-completas' then 10 when 'cestas-so-alimentos' then 20 else sort_order end;
 insert into public.basket_subcategories(category_id,name,sort_order,is_active)
 select c.id,s.name,s.sort_order,true from public.basket_categories c cross join (values ('Grande',10),('Média',20),('Pequena',30),('Mini',40)) as s(name,sort_order)
 where c.slug in ('cestas-completas','cestas-so-alimentos')
 on conflict(category_id,name) do update set sort_order=excluded.sort_order,is_active=true,updated_at=now();
 
--- Applied as migration 20261006135723_basket_mold_taxonomy_list_v1.sql
 create or replace function public.admin_basket_mold_list_v1() returns jsonb language plpgsql security definer set search_path='' as $function$
 declare v_uid uuid:=auth.uid();
 begin
@@ -40,7 +36,6 @@ begin
  'subcategories',coalesce((select jsonb_agg(jsonb_build_object('id',s.id,'category_id',s.category_id,'name',s.name,'sort_order',s.sort_order) order by s.sort_order,s.name) from public.basket_subcategories s where s.is_active),'[]'::jsonb));
 end; $function$;
 
--- Applied as migration 20261006135730_basket_mold_taxonomy_editor_v1.sql
 create or replace function public.admin_basket_mold_editor_v1(p_basket_id uuid) returns jsonb language plpgsql security definer set search_path='' as $function$
 declare v_uid uuid:=auth.uid(); v_result jsonb; v_category_id uuid; v_subcategory_id uuid;
 begin
@@ -50,7 +45,6 @@ begin
  return v_result||jsonb_build_object('category_id',v_category_id,'subcategory_id',v_subcategory_id);
 end; $function$;
 
--- Applied as migration 20261006135738_basket_mold_taxonomy_save_v1.sql
 create or replace function public.admin_save_basket_mold_v2(
  p_basket_id uuid,p_name text,p_hidden_adjustment numeric,p_public_composition_count integer,
  p_positions jsonb,p_category_id uuid,p_operator text,p_subcategory_id uuid
@@ -68,23 +62,3 @@ begin
 end; $function$;
 revoke all on function public.admin_save_basket_mold_v2(uuid,text,numeric,integer,jsonb,uuid,text,uuid) from public,anon,authenticated;
 grant execute on function public.admin_save_basket_mold_v2(uuid,text,numeric,integer,jsonb,uuid,text,uuid) to authenticated;
-
--- Applied as migration 20261006135933_basket_mold_taxonomy_save_compat_v1.sql
-create or replace function public.admin_save_basket_mold_v1(
- p_basket_id uuid,p_name text,p_hidden_adjustment numeric,p_public_composition_count integer,p_positions jsonb,
- p_category_id uuid,p_operator text,p_subcategory_id uuid
-) returns jsonb language plpgsql security definer set search_path='' as $function$
-declare v_uid uuid:=auth.uid(); v_name text:=btrim(coalesce(p_name,'')); v_result jsonb;
-begin
- if v_uid is null or not exists(select 1 from public.admin_users a where a.user_id=v_uid and a.is_active and a.role<>'viewer') then raise exception 'admin_not_authorized'; end if;
- if not exists(select 1 from public.basket_templates b where b.id=p_basket_id) then raise exception 'basket_mold_basket_not_found'; end if;
- if not exists(select 1 from public.basket_categories c where c.id=p_category_id and c.is_active) then raise exception 'basket_category_invalid'; end if;
- if not exists(select 1 from public.basket_subcategories s where s.id=p_subcategory_id and s.category_id=p_category_id and s.is_active) then raise exception 'basket_subcategory_invalid'; end if;
- if v_name='' or char_length(v_name)>180 then raise exception 'basket_mold_name_invalid'; end if;
- update public.basket_templates set name=v_name,category_id=p_category_id,subcategory_id=p_subcategory_id,updated_at=now() where id=p_basket_id;
- v_result:=public.save_basket_mold_v1(p_basket_id,p_hidden_adjustment,p_public_composition_count,p_positions,coalesce(nullif(btrim(p_operator),''),'Operação'));
- return coalesce(v_result,'{}'::jsonb)||jsonb_build_object('basket_name',v_name,'category_id',p_category_id,'subcategory_id',p_subcategory_id);
-end; $function$;
-revoke all on function public.admin_save_basket_mold_v1(uuid,text,numeric,integer,jsonb,uuid,text,uuid) from public,anon,authenticated;
-grant execute on function public.admin_save_basket_mold_v1(uuid,text,numeric,integer,jsonb,uuid,text,uuid) to authenticated;
-revoke all on function public.admin_save_basket_mold_v2(uuid,text,numeric,integer,jsonb,uuid,text,uuid) from public,anon,authenticated;
