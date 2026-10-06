@@ -104,15 +104,20 @@ async function moldAvailableStockMap(productIds:string[]){
 function moldEffectivePriceCents(p:any){const n=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0?Number(p.offer_price):Number(p?.price||0);return cents(n)}
 async function moldProductsMap(ids:string[]){const clean=[...new Set(ids.filter(Boolean))],out=new Map<string,any>();if(!clean.length)return out;const q=await db.from("products").select("id,name,sku,gtin,image_url,packaging,price,offer_price,is_offer,is_active").in("id",clean);if(q.error)throw q.error;for(const p of q.data||[])out.set(String(p.id),p);return out}
 async function moldHomeCards(){
-  const mq=await db.from("basket_molds").select("id,basket_id,hidden_adjustment,public_composition_count");if(mq.error)throw mq.error;const molds=mq.data||[];if(!molds.length)return [];
-  const basketIds=molds.map((m:any)=>String(m.basket_id)),moldIds=molds.map((m:any)=>String(m.id));
+  const mq=await db.from("basket_molds").select("id,basket_id,hidden_adjustment,public_composition_count,metadata");if(mq.error)throw mq.error;const molds=mq.data||[];if(!molds.length)return [];
+  const legacySourceIds=[...new Set(molds.flatMap((m:any)=>String(m?.metadata?.transition_mode||"")==="legacy_first"&&Array.isArray(m?.metadata?.legacy_source_basket_ids)?m.metadata.legacy_source_basket_ids.map((x:any)=>String(x)).filter(Boolean):[]))];
+  const legacyAvailable=new Set<string>();
+  if(legacySourceIds.length){const lq=await db.from("basket_commercial_catalog_v1").select("commercial_id,public_available").eq("source_kind","basket").in("commercial_id",legacySourceIds).gt("public_available",0);if(lq.error)throw lq.error;for(const row of lq.data||[])if(Number(row.public_available||0)>0)legacyAvailable.add(String(row.commercial_id))}
+  const visibleMolds=molds.filter((m:any)=>{if(String(m?.metadata?.transition_mode||"")!=="legacy_first")return true;const ids=Array.isArray(m?.metadata?.legacy_source_basket_ids)?m.metadata.legacy_source_basket_ids:[];return !ids.some((x:any)=>legacyAvailable.has(String(x)))});
+  if(!visibleMolds.length)return [];
+  const basketIds=visibleMolds.map((m:any)=>String(m.basket_id)),moldIds=visibleMolds.map((m:any)=>String(m.id));
   const [bq,pq]=await Promise.all([
     db.from("basket_templates").select("id,name,image_url,is_active,category_id").in("id",basketIds),
     db.from("basket_mold_positions").select("id,mold_id").in("mold_id",moldIds)
   ]);if(bq.error)throw bq.error;if(pq.error)throw pq.error;
   const baskets=new Map((bq.data||[]).map((b:any)=>[String(b.id),b])),positionCounts=new Map<string,number>();for(const p of pq.data||[]){const id=String(p.mold_id);positionCounts.set(id,(positionCounts.get(id)||0)+1)}
   const categoryIds=[...new Set((bq.data||[]).map((b:any)=>b.category_id?String(b.category_id):"").filter(Boolean))],categoryMap=new Map<string,any>();if(categoryIds.length){const cq=await db.from("basket_categories").select("id,name,slug,sort_order,is_active").in("id",categoryIds);if(cq.error)throw cq.error;for(const c of cq.data||[])categoryMap.set(String(c.id),c)}
-  const generated=await Promise.all(molds.map(async(m:any)=>{const q=await db.rpc("basket_mold_public_compositions_v2",{p_basket_id:m.basket_id});if(q.error)throw q.error;return {m,data:q.data||{}}}));
+  const generated=await Promise.all(visibleMolds.map(async(m:any)=>{const q=await db.rpc("basket_mold_public_compositions_v2",{p_basket_id:m.basket_id});if(q.error)throw q.error;return {m,data:q.data||{}}}));
   const productIds:string[]=[];for(const g of generated)for(const c of g.data?.compositions||[])for(const i of c.items||[])if(i.product_id)productIds.push(String(i.product_id));const products=await moldProductsMap(productIds);
   const cards:any[]=[];
   for(const {m,data} of generated){const b=baskets.get(String(m.basket_id));if(!b||b.is_active!==true)continue;const cat=b.category_id?categoryMap.get(String(b.category_id)):null;if(cat&&cat.is_active===false)continue;const expected=positionCounts.get(String(m.id))||0;if(!expected)continue;
@@ -125,6 +130,7 @@ async function moldHomeCards(){
   cards.sort((a,b)=>a.category_sort_order-b.category_sort_order||a.model_name.localeCompare(b.model_name,'pt-BR')||a.composition_number-b.composition_number);return cards;
 }
 async function moldDetail(basketId:string,compositionNumber:number,selections:any[]|null=null){
+  const gate=await db.rpc("basket_mold_cutover_ready_v1",{p_basket_id:basketId});if(gate.error)throw gate.error;if(gate.data!==true)return null;
   const [mq,bq,pq]=await Promise.all([
     db.from("basket_molds").select("id,basket_id,hidden_adjustment,public_composition_count").eq("basket_id",basketId).maybeSingle(),
     db.from("basket_templates").select("id,name,image_url,is_active").eq("id",basketId).maybeSingle(),
