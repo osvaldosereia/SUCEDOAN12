@@ -8,13 +8,13 @@ const ui=fs.readFileSync(path,'utf8');
 assert.match(ui,/admin-kit-builder-v1/,'kit builder must call its isolated edge function');
 assert.match(ui,/bridge\(\)[\s\S]{0,220}token|function token\(/,'kit API must use the authenticated Admin bridge token');
 assert.match(ui,/function renderWorkspace\(/,'three-column workspace renderer required');
-for(const marker of ['data-kit-column="catalog"','data-kit-column="draft"','data-kit-column="saved"']){
+for(const marker of ['data-kit-column="kits"','data-kit-column="draft"','data-kit-column="products"']){
   assert.ok(ui.includes(marker),`missing workspace column ${marker}`);
 }
-assert.match(ui,/data-kit-search/,'catalog must have product search');
-assert.match(ui,/data-kit-chip/,'catalog must expose reusable search chips');
-assert.match(ui,/most_used/,'catalog must expose most-used products');
-assert.match(ui,/data-kit-product/,'catalog must render selectable product cards');
+assert.match(ui,/data-kit-nav-card/,'left column must expose selectable saved kits');
+assert.match(ui,/data-kit-search/,'product column must have search');
+assert.match(ui,/data-kit-chip/,'product column must expose reusable search chips');
+assert.match(ui,/data-kit-product/,'product column must render selectable product cards');
 for(const label of ['Estoque físico','Reservado','Livre','Custo','Venda'])assert.ok(ui.includes(label),`product cards must show ${label}`);
 assert.match(ui,/data-kit-inline-edit/,'product cards must open inline edit');
 assert.match(ui,/data-kit-add/,'product cards must add product to draft');
@@ -31,4 +31,4 @@ assert.match(ui,/sale_total|Venda total/,'workspace must calculate kit sale tota
 assert.match(ui,/function open\(/,'module must expose open entry point');
 assert.match(ui,/DonaAntoniaKitBuilder/,'module must expose stable global adapter');
 
-console.log('kit builder ui v1: PASS');
+console.log('kit builder ui v2 master-detail: PASS');
