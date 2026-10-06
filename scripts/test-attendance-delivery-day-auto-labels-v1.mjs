@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const migrationPath='supabase/sql/20261006_attendance_delivery_day_auto_labels_v1.sql';
-const forwardMigrationPath='supabase/migrations/20261006170000_attendance_delivery_day_checkout_fallback_v1.sql';
+const forwardMigrationPath='supabase/migrations/20261006054423_attendance_delivery_day_checkout_fallback_v1.sql';
 assert.ok(fs.existsSync(migrationPath),'migration de etiquetas automáticas deve existir');
 const sql=fs.readFileSync(migrationPath,'utf8');
 assert.ok(fs.existsSync(forwardMigrationPath),'migração incremental de correção deve existir');
