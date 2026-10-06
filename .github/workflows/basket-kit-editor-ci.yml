@@ -11,6 +11,7 @@ on:
       - 'vitrine/admin/basket-admin-section.js'
       - 'vitrine/admin/kit-builder.js'
       - 'vitrine/admin/store-baskets-builder.js'
+      - 'vitrine/admin/store-baskets-ops-overview.js'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/admin-basket-guided-v1/**'
       - 'supabase/functions/admin-kit-builder-v1/**'
@@ -20,9 +21,11 @@ on:
       - 'supabase/sql/2026100*_basket_*.sql'
       - 'supabase/sql/202610*_assembly_*.sql'
       - 'supabase/sql/202610*_store_baskets_*.sql'
+      - 'supabase/sql/20261006_store_basket_ops_overview_v1.sql'
       - 'supabase/migrations/2026100*_basket_*.sql'
       - 'supabase/migrations/202610*_assembly_*.sql'
       - 'supabase/migrations/202610*_store_baskets_*.sql'
+      - 'supabase/migrations/20261006043000_store_basket_ops_overview_v1.sql'
       - 'scripts/test-basket-*.mjs'
       - 'scripts/test-assembly-*.mjs'
       - 'scripts/test-kit-builder-*.mjs'
@@ -40,6 +43,7 @@ on:
       - 'vitrine/admin/basket-admin-section.js'
       - 'vitrine/admin/kit-builder.js'
       - 'vitrine/admin/store-baskets-builder.js'
+      - 'vitrine/admin/store-baskets-ops-overview.js'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/admin-basket-guided-v1/**'
       - 'supabase/functions/admin-kit-builder-v1/**'
@@ -49,9 +53,11 @@ on:
       - 'supabase/sql/2026100*_basket_*.sql'
       - 'supabase/sql/202610*_assembly_*.sql'
       - 'supabase/sql/202610*_store_baskets_*.sql'
+      - 'supabase/sql/20261006_store_basket_ops_overview_v1.sql'
       - 'supabase/migrations/2026100*_basket_*.sql'
       - 'supabase/migrations/202610*_assembly_*.sql'
       - 'supabase/migrations/202610*_store_baskets_*.sql'
+      - 'supabase/migrations/20261006043000_store_basket_ops_overview_v1.sql'
       - 'scripts/test-basket-*.mjs'
       - 'scripts/test-assembly-*.mjs'
       - 'scripts/test-kit-builder-*.mjs'
@@ -113,6 +119,9 @@ jobs:
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
       - run: node scripts/test-store-baskets-builder-browser-v1.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
+      - run: node scripts/test-store-baskets-ops-overview-browser-v1.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
       - run: node scripts/test-basket-simple-tabs-browser-v1.mjs

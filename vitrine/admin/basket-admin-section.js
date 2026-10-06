@@ -114,3 +114,13 @@
   script.setAttribute('data-orders-visual-v1','');
   document.head.appendChild(script);
 })();
+
+(()=>{
+  'use strict';
+  if(document.querySelector('script[data-store-ops-panel-v1]'))return;
+  const script=document.createElement('script');
+  script.src='/vitrine/admin/store-baskets-ops-overview.js?v=20261006-1';
+  script.async=false;
+  script.setAttribute('data-store-ops-panel-v1','');
+  document.head.appendChild(script);
+})();
