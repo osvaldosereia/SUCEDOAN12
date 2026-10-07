@@ -25,7 +25,7 @@ assert.match(section,/DonaAntoniaBasketMolds/);
 assert.match(ui,/data-mold-name/);
 assert.match(ui,/data-mold-hidden-adjustment/);
 assert.match(ui,/data-mold-composition-count/);
-for(const value of [1,2,3,4])assert.match(ui,new RegExp(`<option value=["']${value}["']`));
+for(const value of [1,2,3,4,5,6])assert.match(ui,new RegExp(`<option value=["']${value}["']`));
 assert.match(ui,/data-mold-add-position/);
 assert.match(ui,/data-mold-position-label/);
 assert.match(ui,/data-mold-position-quantity/);
