@@ -47,7 +47,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
       const accountIds=[...new Set((jobs.data||[]).map((job:any)=>job.whatsapp_account_id).filter(Boolean))];
       const accountRows=accountIds.length?await privileged.from("whatsapp_accounts").select("id,phone_e164").in("id",accountIds):{data:[],error:null};if(accountRows.error)throw accountRows.error;
       const last4=new Map((accountRows.data||[]).map((account:any)=>[account.id,String(account.phone_e164||"").replace(/\D/g,"").slice(-4)]));
-      const safeReasons=new Set(["admin_trigger_fixed_reply","admin_trigger_handoff","admin_trigger_label_applied","human_takeover_during_generation","human_takeover_before_trigger_label","human_review_required","active_config_invalid","first_greeting_of_day","ai_gate_closed_before_generation","inbound_not_supported"]);
+      const safeReasons=new Set(["admin_trigger_fixed_reply","admin_trigger_handoff","admin_trigger_label_applied","admin_trigger_label_removed","human_takeover_during_generation","human_takeover_before_trigger_label","human_review_required","active_config_invalid","first_greeting_of_day","ai_gate_closed_before_generation","inbound_not_supported"]);
       const liveOutcomes=(jobs.data||[]).map((job:any)=>({channel_last4:last4.get(job.whatsapp_account_id)||"",status:job.status,decision:job.decision||"handoff",reason:safeReasons.has(job.reason)?job.reason:"other_or_needs_review",created_at:job.created_at,completed_at:job.completed_at}));
       return json(req,{ok:true,history:[...(result.events||[]),...liveOutcomes].slice(0,40),versions:result.versions||[],test_runs:result.test_runs||[]});
     }
@@ -59,7 +59,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
   }
   if(action==="admin_save_draft"){
     const validation=validateAnaConfiguration(body?.configuration);if(!validation.ok)return json(req,{ok:false,error:"configuration_invalid",details:validation.errors},400);
-    const labelIds=[...new Set(body.configuration.triggers.flatMap((trigger:any)=>Array.isArray(trigger.actions)?trigger.actions:[{type:trigger.action,label_id:trigger.label_id}]).filter((action:any)=>action.type==="label").map((action:any)=>String(action.label_id)))];
+    const labelIds=[...new Set(body.configuration.triggers.flatMap((trigger:any)=>Array.isArray(trigger.actions)?trigger.actions:[{type:trigger.action,label_id:trigger.label_id}]).filter((action:any)=>["label","remove_label"].includes(action.type)).map((action:any)=>String(action.label_id)))];
     if(labelIds.length){const activeLabels=await privileged.from("attendance_labels_v1").select("id").eq("is_active",true).in("id",labelIds);if(activeLabels.error)throw activeLabels.error;const found=new Set((activeLabels.data||[]).map((label:any)=>label.id));if(labelIds.some(id=>!found.has(id)))return json(req,{ok:false,error:"trigger_label_not_active"},400)}
     const revision=Number(body?.expected_revision);if(!Number.isSafeInteger(revision)||revision<1)return json(req,{ok:false,error:"revision_invalid"},400);
     const saved=await privileged.rpc("ops2_ana_admin_save_draft_v1",{p_configuration:body.configuration,p_expected_revision:revision,p_note:clean(body?.note,240),p_actor_id:actor});
@@ -69,7 +69,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
     const testRunId=validUuid(body?.test_run_id);if(!testRunId)return json(req,{ok:false,error:"test_run_required"},400);
     const current=await privileged.rpc("ops2_ana_admin_load_v1");if(current.error)throw current.error;
     const valid=validateAnaConfiguration(current.data?.draft?.configuration);if(!valid.ok)return json(req,{ok:false,error:"configuration_invalid",details:valid.errors},409);
-    const labelIds=[...new Set(current.data.draft.configuration.triggers.flatMap((trigger:any)=>Array.isArray(trigger.actions)?trigger.actions:[{type:trigger.action,label_id:trigger.label_id}]).filter((action:any)=>action.type==="label").map((action:any)=>String(action.label_id)))];
+    const labelIds=[...new Set(current.data.draft.configuration.triggers.flatMap((trigger:any)=>Array.isArray(trigger.actions)?trigger.actions:[{type:trigger.action,label_id:trigger.label_id}]).filter((action:any)=>["label","remove_label"].includes(action.type)).map((action:any)=>String(action.label_id)))];
     if(labelIds.length){const activeLabels=await privileged.from("attendance_labels_v1").select("id").eq("is_active",true).in("id",labelIds);if(activeLabels.error)throw activeLabels.error;const found=new Set((activeLabels.data||[]).map((label:any)=>label.id));if(labelIds.some(id=>!found.has(id)))return json(req,{ok:false,error:"trigger_label_not_active"},409)}
     const published=await privileged.rpc("ops2_ana_admin_publish_v1",{p_test_run_id:testRunId,p_note:clean(body?.note,240),p_actor_id:actor});
     if(published.error)throw published.error;const result=published.data||{ok:false,error:"publish_failed"};return json(req,result,result.ok===true?200:409);
@@ -88,7 +88,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
     const loaded=await privileged.rpc("ops2_ana_admin_load_v1");if(loaded.error)throw loaded.error;const draft=loaded.data?.draft;
     const validation=validateAnaConfiguration(draft?.configuration);if(!validation.ok)return json(req,{ok:false,error:"configuration_invalid",details:validation.errors},409);
     const revision=Number(draft?.revision);if(Number(body?.expected_revision)!==revision)return json(req,{ok:false,error:"revision_conflict"},409);
-    const suite=draft.configuration.test_cases.slice(0,8);if(!suite.length)return json(req,{ok:false,error:"required_test_cases_missing"},409);
+    const suite=draft.configuration.test_cases.slice(0,20);if(!suite.length)return json(req,{ok:false,error:"required_test_cases_missing"},409);
     const began=Date.now();let passed=0,failed=0;const safeReasons:string[]=[];const scenarioResults:any[]=[];
     const simulate=async(input:string,channel:string,context:any={})=>{
       const route=routeAnaMessage(draft.configuration,input,channel,context);
@@ -98,6 +98,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
         let responseText="";let outcome="no_reply";let continueAi=false;
         for(const action of route.actions||[]){
           if(action.type==="label"){trace.push({step:"action",type:"label",label_id:action.labelId});outcome="label"}
+          if(action.type==="remove_label"){trace.push({step:"action",type:"remove_label",label_id:action.labelId});outcome="label"}
           if(action.type==="fixed_reply"){trace.push({step:"action",type:"fixed_reply",response_text:action.responseText});responseText=action.responseText;outcome="reply"}
           if(action.type==="handoff"){trace.push({step:"action",type:"handoff"});return {outcome:"handoff",reason:"trigger_actions_handoff",response_text:"",latency_ms:0,trace}}
           if(action.type==="continue_ai"){trace.push({step:"action",type:"continue_ai"});continueAi=true}
@@ -109,6 +110,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
       if(route.path==="fixed_reply")return {outcome:"reply",reason:"fixed_reply_trigger",response_text:route.responseText,latency_ms:0,trace};
       if(route.path==="handoff")return {outcome:"handoff",reason:route.reason||"trigger_handoff",response_text:"",latency_ms:0,trace};
       if(route.path==="label")return {outcome:"label",reason:"trigger_label",response_text:"",latency_ms:0,trace};
+      if(route.path==="remove_label")return {outcome:"label",reason:"trigger_label_remove",response_text:"",latency_ms:0,trace};
       const generated=await generateSuggestion(input,[],"",buildAnaRuntimeInstructions(draft.configuration));
       if(!generated.ok)return {outcome:"handoff",reason:"ai_fallback_handoff",response_text:"",latency_ms:Number(generated.latency_ms)||0,trace};
       const result=generated.result;

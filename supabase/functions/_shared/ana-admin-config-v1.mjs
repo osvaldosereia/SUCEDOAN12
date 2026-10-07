@@ -5,7 +5,7 @@ const isPlainObject=value=>Boolean(value)&&typeof value==='object'&&!Array.isArr
 const keyPattern=/^[a-z0-9][a-z0-9_-]{0,39}$/;
 const allowedChannels=new Set(['all','0975','1018']);
 const behaviorEnums={tone:new Set(['cordial','warm','neutral']),conciseness:new Set(['short','balanced']),emoji:new Set(['never','sparingly'])};
-const actionTypes=new Set(['fixed_reply','label','handoff','continue_ai']);
+const actionTypes=new Set(['fixed_reply','label','remove_label','handoff','continue_ai']);
 const conditionTypes=new Set(['customer_linked','human_mode']);
 const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -17,7 +17,7 @@ function normalizedTriggerActions(trigger){
 function validateTriggerAction(triggerKey,action,index,errors){
   if(!isPlainObject(action)||!actionTypes.has(action.type)){errors.push(`trigger_${triggerKey}_action_${index}_invalid`);return}
   if(action.type==='fixed_reply'&&(!cleanText(action.response_text,500)||String(action.response_text).length>500))errors.push(`trigger_${triggerKey}_reply_${index}_invalid`);
-  if(action.type==='label'&&!uuidPattern.test(String(action.label_id||'')))errors.push(`trigger_${triggerKey}_label_${index}_invalid`);
+  if(['label','remove_label'].includes(action.type)&&!uuidPattern.test(String(action.label_id||'')))errors.push(`trigger_${triggerKey}_label_${index}_invalid`);
 }
 function actionSequenceErrors(triggerKey,actions){
   const errors=[];
@@ -53,7 +53,7 @@ export function validateAnaConfiguration(configuration){
     for(const [key,choices] of Object.entries(behaviorEnums))if(!choices.has(behavior[key]))errors.push(`behavior_${key}_invalid`);
     if(typeof behavior.use_known_first_name_on_first_greeting!=='boolean')errors.push('behavior_first_name_flag_invalid');
   }
-  for(const [field,max] of [['knowledge',30],['triggers',100],['test_cases',8]]){
+  for(const [field,max] of [['knowledge',30],['triggers',100],['test_cases',20]]){
     if(!Array.isArray(configuration[field])){errors.push(`${field}_array_required`);continue}
     if(configuration[field].length>max)errors.push(`${field}_limit_exceeded`);
   }
@@ -116,7 +116,7 @@ export function evaluateAnaTriggers(configuration,inboundText,channel,context={}
       const actions=normalizedTriggerActions(trigger).map(action=>({
         type:action.type,
         responseText:action.type==='fixed_reply'?cleanText(action.response_text,500):'',
-        labelId:action.type==='label'?action.label_id:null
+        labelId:['label','remove_label'].includes(action.type)?action.label_id:null
       }));
       const first=actions[0]||{};
       return {matched:true,triggerKey:trigger.key,actions,action:first.type,responseText:first.responseText||'',labelId:first.labelId||null,priority:trigger.priority};
@@ -146,6 +146,7 @@ export function routeAnaMessage(configuration,inboundText,channel,context={}){
   if(Array.isArray(trigger.actions)&&trigger.actions.length>1)return {path:'actions',triggerKey:trigger.triggerKey,actions:trigger.actions};
   if(trigger.action==='fixed_reply')return {path:'fixed_reply',triggerKey:trigger.triggerKey,responseText:trigger.responseText};
   if(trigger.action==='label')return {path:'label',triggerKey:trigger.triggerKey,labelId:trigger.labelId};
+  if(trigger.action==='remove_label')return {path:'remove_label',triggerKey:trigger.triggerKey,labelId:trigger.labelId};
   if(trigger.action==='continue_ai')return {path:'ai',triggerKey:trigger.triggerKey};
   return {path:'handoff',triggerKey:trigger.triggerKey,reason:'admin_trigger_handoff'};
 }

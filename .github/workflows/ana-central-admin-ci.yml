@@ -7,11 +7,11 @@ on:
       - 'supabase/functions/_shared/ana-policy-v1.mjs'
       - 'supabase/functions/admin-whatsapp-ana-preview-v1/**'
       - 'supabase/functions/whatsapp-ana-worker-v1/**'
-      - 'supabase/migrations/*whatsapp_ana_admin_v1.sql'
-      - 'supabase/sql/*whatsapp_ana_admin_v1.sql'
+      - 'supabase/migrations/*ana*.sql'
+      - 'supabase/sql/*ana*.sql'
       - 'vitrine/admin/ana/**'
       - 'vitrine/admin/index.html'
-      - 'scripts/test-*ana-admin*.mjs'
+      - 'scripts/test-*ana*.mjs'
       - '.github/workflows/ana-central-admin-ci.yml'
   push:
     branches: [main]
@@ -20,11 +20,11 @@ on:
       - 'supabase/functions/_shared/ana-policy-v1.mjs'
       - 'supabase/functions/admin-whatsapp-ana-preview-v1/**'
       - 'supabase/functions/whatsapp-ana-worker-v1/**'
-      - 'supabase/migrations/*whatsapp_ana_admin_v1.sql'
-      - 'supabase/sql/*whatsapp_ana_admin_v1.sql'
+      - 'supabase/migrations/*ana*.sql'
+      - 'supabase/sql/*ana*.sql'
       - 'vitrine/admin/ana/**'
       - 'vitrine/admin/index.html'
-      - 'scripts/test-*ana-admin*.mjs'
+      - 'scripts/test-*ana*.mjs'
       - '.github/workflows/ana-central-admin-ci.yml'
 
 jobs:
@@ -46,6 +46,9 @@ jobs:
 
       - name: Validate ANA live worker configuration routing
         run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs
+
+      - name: Validate ANA label-removal provenance contract
+        run: node scripts/test-whatsapp-ana-label-removal-v1.mjs
 
       - name: Validate ANA simulator, history privacy and publish guards
         run: node scripts/test-ana-central-admin-ci-v1.mjs
