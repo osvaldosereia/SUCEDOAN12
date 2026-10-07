@@ -47,7 +47,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
       const accountIds=[...new Set((jobs.data||[]).map((job:any)=>job.whatsapp_account_id).filter(Boolean))];
       const accountRows=accountIds.length?await privileged.from("whatsapp_accounts").select("id,phone_e164").in("id",accountIds):{data:[],error:null};if(accountRows.error)throw accountRows.error;
       const last4=new Map((accountRows.data||[]).map((account:any)=>[account.id,String(account.phone_e164||"").replace(/\D/g,"").slice(-4)]));
-      const safeReasons=new Set(["admin_trigger_fixed_reply","admin_trigger_handoff","admin_trigger_label_applied","human_takeover_during_generation","human_takeover_before_trigger_label","human_review_required","active_config_invalid","first_greeting_of_day","ai_gate_closed_before_generation","inbound_not_supported"]);
+      const safeReasons=new Set(["admin_trigger_fixed_reply","admin_trigger_handoff","admin_trigger_label_applied","admin_trigger_label_removed","human_takeover_during_generation","human_takeover_before_trigger_label","human_review_required","active_config_invalid","first_greeting_of_day","ai_gate_closed_before_generation","inbound_not_supported"]);
       const liveOutcomes=(jobs.data||[]).map((job:any)=>({channel_last4:last4.get(job.whatsapp_account_id)||"",status:job.status,decision:job.decision||"handoff",reason:safeReasons.has(job.reason)?job.reason:"other_or_needs_review",created_at:job.created_at,completed_at:job.completed_at}));
       return json(req,{ok:true,history:[...(result.events||[]),...liveOutcomes].slice(0,40),versions:result.versions||[],test_runs:result.test_runs||[]});
     }
