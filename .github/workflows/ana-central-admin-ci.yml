@@ -53,6 +53,9 @@ jobs:
       - name: Validate ANA automation template library
         run: node scripts/test-ana-automation-library-v1.mjs
 
+      - name: Validate ANA knowledge admin
+        run: node scripts/test-ana-knowledge-admin-v1.mjs
+
       - name: Validate ANA simulator, history privacy and publish guards
         run: node scripts/test-ana-central-admin-ci-v1.mjs
       - name: Validate ANA Admin UI
