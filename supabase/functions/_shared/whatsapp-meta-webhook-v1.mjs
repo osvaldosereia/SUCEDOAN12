@@ -71,7 +71,7 @@ export function hasMetaMessageOrStatusEvents(payload) {
   for (const entry of Array.isArray(payload?.entry) ? payload.entry : []) {
     for (const change of Array.isArray(entry?.changes) ? entry.changes : []) {
       const value = change?.value;
-      if ((Array.isArray(value?.messages) && value.messages.length > 0) || (Array.isArray(value?.statuses) && value.statuses.length > 0)) return true;
+      if ((Array.isArray(value?.messages) && value.messages.length > 0) || (Array.isArray(value?.statuses) && value.statuses.length > 0) || (change?.field === 'smb_message_echoes' && Array.isArray(value?.message_echoes) && value.message_echoes.length > 0)) return true;
     }
   }
   return false;
