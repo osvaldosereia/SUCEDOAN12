@@ -144,6 +144,11 @@ assert.match(edge, /whatsapp_record_status_v1/);
 assert.match(edge, /hasMetaMessageOrStatusEvents/);
 assert.match(edge, /echoes_normalized/);
 assert.match(edge, /smb_message_echoes/);
+assert.match(edge, /META_APP_ID/,'webhook deve conhecer o Meta App ID apenas no backend');
+assert.match(edge, /\/subscriptions/,'webhook deve auditar a assinatura de campos do app Meta');
+assert.match(edge, /ensureCoexistenceEchoSubscription/,'webhook deve autocorrigir assinatura de coexistência');
+assert.match(edge, /fields:[\s\S]{0,160}mergedFields\.join/,'reparo deve preservar campos existentes e adicionar coexistência');
+assert.match(edge, /EdgeRuntime\.waitUntil\(ensureCoexistenceEchoSubscription\(\)\)/,'reparo não deve atrasar o ACK do webhook');
 assert.match(edge, /meta_account_unresolved/);
 assert.match(edge, /phone_number_id/);
 assert.match(edge, /normalized\.unknownPhoneNumberIds[\s\S]{0,700}ok:\s*true,\s*ignored:\s*true,\s*reason:\s*"meta_account_unresolved"[\s\S]{0,220}unknown_phone_number_ids[\s\S]{0,80},\s*200/i,

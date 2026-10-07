@@ -21,6 +21,8 @@ const SERVICE_KEY = (() => {
 })();
 const APP_SECRET = Deno.env.get("META_WHATSAPP_APP_SECRET") || "";
 const VERIFY_TOKEN = Deno.env.get("META_WHATSAPP_VERIFY_TOKEN") || "";
+const META_APP_ID = (Deno.env.get("META_APP_ID") || Deno.env.get("WHATSAPP_APP_ID") || "").trim();
+const META_GRAPH_VERSION = (Deno.env.get("META_WHATSAPP_GRAPH_VERSION") || "v24.0").trim();
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
@@ -29,6 +31,77 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
   status,
   headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
 });
+
+let coexistenceSubscriptionCheckedAt = 0;
+let coexistenceSubscriptionCheck: Promise<void> | null = null;
+
+function subscriptionFields(row: any) {
+  const raw = Array.isArray(row?.fields) ? row.fields : [];
+  return raw.map((field: any) => {
+    if (typeof field === "string") return field.trim();
+    if (field && typeof field === "object") return String(field.name || field.field || "").trim();
+    return "";
+  }).filter(Boolean);
+}
+
+async function ensureCoexistenceEchoSubscription() {
+  const now = Date.now();
+  if (now - coexistenceSubscriptionCheckedAt < 6 * 60 * 60 * 1000) return;
+  if (coexistenceSubscriptionCheck) return coexistenceSubscriptionCheck;
+
+  coexistenceSubscriptionCheck = (async () => {
+    coexistenceSubscriptionCheckedAt = now;
+    if (!META_APP_ID || !APP_SECRET || !VERIFY_TOKEN || !SUPABASE_URL) {
+      console.warn("whatsapp-meta-webhook-v1 coexistence subscription not configured");
+      return;
+    }
+
+    const appAccessToken = `${META_APP_ID}|${APP_SECRET}`;
+    const endpoint = `https://graph.facebook.com/${META_GRAPH_VERSION}/${META_APP_ID}/subscriptions`;
+    const headers = { Authorization: `Bearer ${appAccessToken}` };
+    const current = await fetch(endpoint, { headers, signal: AbortSignal.timeout(10000) });
+    const currentBody = await current.json().catch(() => ({}));
+    if (!current.ok) {
+      console.warn("whatsapp-meta-webhook-v1 coexistence subscription read failed", current.status);
+      return;
+    }
+
+    const subscription = (Array.isArray(currentBody?.data) ? currentBody.data : [])
+      .find((row: any) => String(row?.object || "") === "whatsapp_business_account");
+    const fields = subscriptionFields(subscription);
+    if (fields.includes("smb_message_echoes")) {
+      console.info("whatsapp-meta-webhook-v1 coexistence subscription ok");
+      return;
+    }
+
+    const callbackUrl = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/whatsapp-meta-webhook-v1`;
+    const mergedFields = [...new Set([...fields, "messages", "smb_message_echoes"])];
+    const body = new URLSearchParams({
+      object: "whatsapp_business_account",
+      callback_url: callbackUrl,
+      verify_token: VERIFY_TOKEN,
+      fields: mergedFields.join(","),
+    });
+    const updated = await fetch(endpoint, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      signal: AbortSignal.timeout(10000),
+    });
+    const updatedBody = await updated.json().catch(() => ({}));
+    if (!updated.ok || updatedBody?.success !== true) {
+      console.warn("whatsapp-meta-webhook-v1 coexistence subscription update failed", updated.status);
+      return;
+    }
+    console.info("whatsapp-meta-webhook-v1 coexistence subscription repaired", mergedFields.join(","));
+  })().catch((error) => {
+    console.warn("whatsapp-meta-webhook-v1 coexistence subscription exception", errorText(error).slice(0, 180));
+  }).finally(() => {
+    coexistenceSubscriptionCheck = null;
+  });
+
+  return coexistenceSubscriptionCheck;
+}
 
 async function readBodyLimited(req: Request, maxBytes = MAX_BODY_BYTES) {
   const declared = Number(req.headers.get("content-length") || 0);
@@ -257,6 +330,11 @@ Deno.serve(async (req: Request) => {
     let payload: any;
     try { payload = JSON.parse(rawBody); } catch { return json({ ok: false, error: "invalid_json" }, 400); }
     if (payload?.object !== "whatsapp_business_account") return json({ ok: false, error: "unsupported_object" }, 400);
+
+    // Keep the app-level WhatsApp Business Account webhook subscription healthy.
+    // This is required in Coexistence mode so messages typed in the WhatsApp
+    // Business mobile app arrive here as smb_message_echoes.
+    EdgeRuntime.waitUntil(ensureCoexistenceEchoSubscription());
 
     const templateEvents = templateEventsFromMeta(payload);
     let templateEventsCaptured = 0;
