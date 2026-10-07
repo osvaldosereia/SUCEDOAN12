@@ -50,6 +50,10 @@ const disabledDraft={...base,triggers:[{key:'draft-rule',name:'Rascunho',enabled
 assert.equal(validateAnaConfiguration(disabledDraft).ok,true,'disabled draft automation may be saved without phrases');
 const badSequence={...base,triggers:[{key:'bad-sequence',name:'Inválida',enabled:true,priority:50,channels:['all'],match:'phrase',phrases:['teste'],actions:[{type:'fixed_reply',response_text:'Oi'},{type:'continue_ai'}]}]};
 assert.equal(validateAnaConfiguration(badSequence).ok,false,'only one terminal outcome is allowed');
+const includeExcludeConflict={...base,triggers:[{key:'bad-phrase-conflict',name:'Frases conflitantes',enabled:true,priority:50,channels:['all'],match:'phrase',phrases:['quero comprar'],exclude_phrases:['quero comprar'],actions:[{type:'handoff'}]}]};
+assert.equal(validateAnaConfiguration(includeExcludeConflict).ok,false,'same phrase cannot be both include and exclude');
+const labelDirectionConflict={...base,triggers:[{key:'bad-label-direction',name:'Etiqueta conflitante',enabled:true,priority:50,channels:['all'],match:'phrase',phrases:['teste'],actions:[{type:'label',label_id:'00000000-0000-4000-8000-000000000002'},{type:'remove_label',label_id:'00000000-0000-4000-8000-000000000002'},{type:'continue_ai'}]}]};
+assert.equal(validateAnaConfiguration(labelDirectionConflict).ok,false,'same automation cannot apply and remove the same label');
 const contradictory={...base,triggers:[{key:'bad-condition',name:'Condição',enabled:true,priority:50,channels:['all'],match:'phrase',phrases:['teste'],conditions:[{type:'customer_linked',value:true},{type:'customer_linked',value:false}],actions:[{type:'handoff'}]}]};
 assert.equal(validateAnaConfiguration(contradictory).ok,false,'contradictory conditions are rejected');
 const instructions=buildAnaRuntimeInstructions(base);

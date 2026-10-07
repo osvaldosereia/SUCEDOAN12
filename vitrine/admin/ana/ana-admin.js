@@ -1,5 +1,6 @@
 import {listAnaAutomationTemplates,buildAnaAutomationTemplate} from './ana-automation-library.js';
 import {parseKnowledgeKeywords,knowledgeCategories,knowledgeMatches} from './ana-knowledge.js';
+import {analyzeAnaAutomationDraft} from './ana-diagnostics.js';
 const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ana-preview-v1';
 const TOKEN_KEY='da_finance_access_token_v1';
 const sections=[['overview','Visão geral'],['behavior','Comportamento'],['knowledge','Conhecimento'],['triggers','Automações'],['tests','Testes e histórico']];
@@ -17,6 +18,8 @@ function configErrorText(code=''){
   if(value.includes('multiple_terminal_actions'))return 'Use somente uma ação final: responder, transferir para humano ou continuar com a ANA.';
   if(value.includes('terminal_action_must_be_last'))return 'A ação final deve ser a última da sequência.';
   if(value.includes('condition_')&&(value.includes('_duplicate')||value.includes('_contradictory')))return 'Há condições repetidas ou contraditórias nesta automação.';
+  if(value.includes('include_exclude_conflict'))return 'A mesma frase não pode estar em “disparar” e “não disparar”.';
+  if(value.includes('label_action_contradictory'))return 'A mesma automação não pode aplicar e remover a mesma etiqueta.';
   if(value==='trigger_label_not_active')return 'Uma etiqueta usada pela automação não está mais ativa.';
   if(value==='revision_conflict')return 'O rascunho foi alterado em outra sessão. Atualize a página antes de salvar.';
   if(value==='configuration_invalid')return 'Revise os campos destacados da automação antes de salvar.';
@@ -114,7 +117,40 @@ function renderTriggers(){
   }).join('');
   return head+renderAutomationTemplates()+(cards||'<div class="ana-card">Nenhuma automação configurada.</div>');
 }
-function renderTests(){const latest=state.testRuns[0]||null;const safeHistory=[...state.events,...state.history].slice(0,30);return `<div class="ana-page-head"><div><h1>Testes e histórico</h1><p>Simulador isolado: não envia WhatsApp e não altera pedidos, clientes ou consentimentos.</p></div><button class="ana-button" data-action="refresh-history">Atualizar histórico</button></div><section class="ana-card"><h2>Simular mensagem</h2><p class="ana-muted">Use somente exemplos fictícios. O resultado não pode ser enviado ao cliente.</p><div class="ana-form-grid"><label><span>Canal para teste</span><select id="anaTestChannel"><option value="0975">0975</option><option value="1018">1018</option></select></label><label class="ana-check"><input type="checkbox" id="anaTestCustomerLinked"><span>Simular cliente identificado no cadastro</span></label><label class="ana-full"><span>Mensagem sintética</span><textarea id="anaTestInput" maxlength="500" placeholder="Ex.: Oi, quero saber o horário de atendimento"></textarea></label></div><button class="ana-button primary" data-action="test" ${canEdit()?'':'disabled'}>Executar teste sem envio</button>${latest?`<div class="ana-result">Último teste: ${esc(latest.passed_count)} passaram · ${esc(latest.failed_count)} falharam · revisão r${esc(latest.draft_revision)}${latest.failed_count?' · corrija antes de publicar':''}</div>`:''}${state.lastTest?`<div class="ana-result"><strong>Resultado dos cenários</strong>${(state.lastTest.results||[]).map(item=>`<div>${item.passed?'✓':'✕'} ${esc(item.key)} · esperado ${esc(item.expected)} · obtido ${esc(item.actual)} · ${esc(item.reason)}</div>`).join('')}${state.lastTest.custom_result?`<p>${esc(state.lastTest.custom_result.outcome)} · ${esc(state.lastTest.custom_result.reason)}</p>${(state.lastTest.custom_result.trace||[]).length?`<div class="ana-trace"><strong>Caminho da decisão</strong>${state.lastTest.custom_result.trace.map((step,i)=>`<div><b>${i+1}</b> ${esc(step.step==='automation'?`Automação: ${step.trigger_key}`:step.type==='label'?'Aplicaria etiqueta':step.type==='remove_label'?'Removeria etiqueta':step.type==='fixed_reply'?'Responderia mensagem':step.type==='handoff'?'Transferiria para humano':step.type==='continue_ai'||step.type==='would_call_ai'?'Continuaria com a ANA':`IA: ${step.type}`)}</div>`).join('')}</div>`:''}${state.lastTest.custom_result.response_text?`<blockquote>${esc(state.lastTest.custom_result.response_text)}</blockquote>`:''}`:''}</div>`:''}</section><section class="ana-card"><h2>Versões publicadas</h2>${state.versions.map(v=>`<div class="ana-history-row"><span>v${esc(v.version)} · ${esc(v.change_note||'sem observação')} · ${esc(new Date(v.created_at).toLocaleString('pt-BR'))}</span>${isOwner()?`<button class="ana-button" data-rollback="${esc(v.id)}">Restaurar esta versão</button>`:''}</div>`).join('')||'<p class="ana-muted">Ainda não há histórico de versões.</p>'}</section><section class="ana-card"><h2>Atividade recente</h2>${safeHistory.map(e=>`<div class="ana-history-row"><span>${esc(e.action||e.outcome||e.reason||'ANA')} · ${esc(e.created_at?new Date(e.created_at).toLocaleString('pt-BR'):'')}</span>${e.version_id?badge(`versão ${e.version_id}`):''}</div>`).join('')||'<p class="ana-muted">Nenhum evento recente.</p>'}</section>${isOwner()?'<div class="ana-sticky-actions"><span>Publicar exige todos os testes obrigatórios aprovados.</span><button class="ana-button primary" data-action="publish" '+(!latest||latest.failed_count||latest.draft_revision!==state.revision?'disabled':'')+'>Publicar versão testada</button></div>':''}`}
+function renderTests(){
+  const latest=state.testRuns[0]||null;
+  const safeHistory=[...state.events,...state.history].slice(0,30);
+  const diagnostics=analyzeAnaAutomationDraft(config().triggers||[]);
+  const diagnosticList=diagnostics.issues.slice(0,12).map(item=>`<div class="ana-diagnostic ${item.severity}"><strong>${item.severity==='critical'?'Crítico':'Aviso'}</strong><span>${esc(item.message)}</span></div>`).join('');
+  return `<div class="ana-page-head"><div><h1>Testes e histórico</h1><p>Simulador isolado: não envia WhatsApp e não altera pedidos, clientes ou consentimentos.</p></div><button class="ana-button" data-action="refresh-history">Atualizar histórico</button></div>
+  <section class="ana-card">
+    <h2>Diagnóstico do rascunho</h2>
+    <div class="ana-pills">${badge(`${diagnostics.criticalCount} crítico(s)`,diagnostics.criticalCount?'amber':'green')}${badge(`${diagnostics.warningCount} aviso(s)`,diagnostics.warningCount?'amber':'neutral')}</div>
+    ${diagnosticList?`<div class="ana-diagnostic-list">${diagnosticList}</div>`:'<p class="ana-muted">Nenhuma colisão ou contradição detectada nas automações ativas.</p>'}
+  </section>
+  <section class="ana-card">
+    <h2>Simular mensagem</h2>
+    <p class="ana-muted">Use somente exemplos fictícios. O resultado não pode ser enviado ao cliente.</p>
+    <div class="ana-form-grid">
+      <label><span>Canal para teste</span><select id="anaTestChannel"><option value="0975">0975</option><option value="1018">1018</option></select></label>
+      <label class="ana-check"><input type="checkbox" id="anaTestCustomerLinked"><span>Simular cliente identificado no cadastro</span></label>
+      <label class="ana-check"><input type="checkbox" id="anaTestHumanMode"><span>Simular conversa assumida por humano</span></label>
+      <label class="ana-full"><span>Mensagem sintética</span><textarea id="anaTestInput" maxlength="500" placeholder="Ex.: Oi, quero saber o horário de atendimento"></textarea></label>
+    </div>
+    <button class="ana-button primary" data-action="test" ${canEdit()?'':'disabled'}>Executar teste sem envio</button>
+    ${latest?`<div class="ana-result">Último teste: ${esc(latest.passed_count)} passaram · ${esc(latest.failed_count)} falharam · revisão r${esc(latest.draft_revision)}${latest.failed_count?' · corrija antes de publicar':''}</div>`:''}
+    ${state.lastTest?`<div class="ana-result"><strong>Resultado dos cenários</strong>
+      ${(state.lastTest.results||[]).map(item=>`<div>${item.passed?'✓':'✕'} ${esc(item.key)} · esperado ${esc(item.expected)} · obtido ${esc(item.actual)} · ${esc(item.reason)}</div>`).join('')}
+      ${state.lastTest.custom_result?`<p>${esc(state.lastTest.custom_result.outcome)} · ${esc(state.lastTest.custom_result.reason)}</p>
+        ${(state.lastTest.custom_result.trace||[]).length?`<div class="ana-trace"><strong>Caminho da decisão</strong>${state.lastTest.custom_result.trace.map((step,i)=>`<div><b>${i+1}</b> ${esc(step.step==='automation'?`Automação: ${step.trigger_key}`:step.type==='human_mode'?'Gate humano: ANA não responde':step.type==='label'?'Aplicaria etiqueta':step.type==='remove_label'?'Removeria etiqueta':step.type==='fixed_reply'?'Responderia mensagem':step.type==='handoff'?'Transferiria para humano':step.type==='continue_ai'||step.type==='would_call_ai'?'Continuaria com a ANA':`IA: ${step.type}`)}</div>`).join('')}</div>`:''}
+        ${state.lastTest.custom_result.response_text?`<blockquote>${esc(state.lastTest.custom_result.response_text)}</blockquote>`:''}
+      `:''}
+    </div>`:''}
+  </section>
+  <section class="ana-card"><h2>Versões publicadas</h2>${state.versions.map(v=>`<div class="ana-history-row"><span>v${esc(v.version)} · ${esc(v.change_note||'sem observação')} · ${esc(new Date(v.created_at).toLocaleString('pt-BR'))}</span>${isOwner()?`<button class="ana-button" data-rollback="${esc(v.id)}">Restaurar esta versão</button>`:''}</div>`).join('')||'<p class="ana-muted">Ainda não há histórico de versões.</p>'}</section>
+  <section class="ana-card"><h2>Atividade recente</h2>${safeHistory.map(e=>`<div class="ana-history-row"><span>${esc(e.action||e.outcome||e.reason||'ANA')} · ${esc(e.created_at?new Date(e.created_at).toLocaleString('pt-BR'):'')}</span>${e.version_id?badge(`versão ${e.version_id}`):''}</div>`).join('')||'<p class="ana-muted">Nenhum evento recente.</p>'}</section>
+  ${isOwner()?'<div class="ana-sticky-actions"><span>Publicar exige todos os testes obrigatórios aprovados.</span><button class="ana-button primary" data-action="publish" '+(!latest||latest.failed_count||latest.draft_revision!==state.revision?'disabled':'')+'>Publicar versão testada</button></div>':''}`;
+}
 function render(){if(!state.host)return;const content=state.section==='overview'?renderOverview():state.section==='behavior'?renderBehavior():state.section==='knowledge'?renderKnowledge():state.section==='triggers'?renderTriggers():renderTests();state.host.innerHTML=`<link rel="stylesheet" href="/vitrine/admin/ana/ana-admin.css?v=1"><div class="ana-shell"><nav class="ana-tabs" aria-label="Gestão da ANA">${sections.map(([key,label])=>`<button class="${state.section===key?'active':''}" data-section="${key}" aria-current="${state.section===key?'page':'false'}">${label}</button>`).join('')}</nav>${state.dirty?'<div class="ana-unsaved" role="status">Há alterações não salvas no rascunho.</div>':''}<div class="ana-body">${content}</div></div>`;bind()}
 function markDirty(){state.dirty=true;render()}
 function readDraft(){
@@ -186,7 +222,7 @@ function bind(){
       else if(action==='save'){await saveDraft()}
       else if(action==='add-knowledge'){const next=readDraft();next.knowledge.push({key:`fato-${Date.now()}`,title:'',category:'geral',content:'',status:'draft',keywords:[]});state.draft.configuration=next;state.dirty=true;state.section='knowledge';render()}
       else if(action==='add-trigger'){const next=readDraft();next.triggers.push({key:newTriggerKey(),name:'Nova automação',enabled:false,priority:50,channels:['all'],match:'phrase',phrases:[],exclude_phrases:[],conditions:[],actions:[{type:'handoff'}]});state.draft.configuration=next;state.dirty=true;state.section='triggers';render()}
-      else if(action==='test'){if(state.dirty)throw new Error('Salve o rascunho antes de testar.');const input=state.host.querySelector('#anaTestInput')?.value.trim()||'';if(!input)throw new Error('Digite uma mensagem sintética para testar.');const test=await api('admin_test',{input,channel:state.host.querySelector('#anaTestChannel')?.value||'0975',customer_linked:Boolean(state.host.querySelector('#anaTestCustomerLinked')?.checked),expected_revision:state.revision});state.lastTest=test;await load(false);state.section='tests';state.lastTest=test;render()}
+      else if(action==='test'){if(state.dirty)throw new Error('Salve o rascunho antes de testar.');const input=state.host.querySelector('#anaTestInput')?.value.trim()||'';if(!input)throw new Error('Digite uma mensagem sintética para testar.');const test=await api('admin_test',{input,channel:state.host.querySelector('#anaTestChannel')?.value||'0975',customer_linked:Boolean(state.host.querySelector('#anaTestCustomerLinked')?.checked),human_mode:Boolean(state.host.querySelector('#anaTestHumanMode')?.checked),expected_revision:state.revision});state.lastTest=test;await load(false);state.section='tests';state.lastTest=test;render()}
       else if(action==='publish'){if(!confirm('Publicar a configuração testada para a ANA?'))return;const latest=state.testRuns[0];if(!latest?.id)throw new Error('Execute os testes obrigatórios antes de publicar.');await api('admin_publish',{test_run_id:latest.id,note:'Publicação pela área ANA'});await load()}
       else if(action==='refresh-history'){await loadHistory()}
     }catch(error){alert(error?.message||'Não foi possível concluir a ação.')}

@@ -11,3 +11,6 @@
 @media(max-width:850px){.ana-template-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.ana-template-grid{grid-template-columns:1fr}.ana-template-card{min-height:64px}}
 
 .ana-knowledge-tools{display:grid;gap:8px}.ana-knowledge-tools input[type="search"]{min-height:42px}.ana-editor-card[hidden]{display:none!important}
+
+.ana-diagnostic-list{display:grid;gap:7px;margin-top:10px}.ana-diagnostic{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start;padding:9px 10px;border-radius:9px;border:1px solid #e3e8e4;background:#fafbfa}.ana-diagnostic strong{font-size:11px;text-transform:uppercase;letter-spacing:.03em}.ana-diagnostic span{font-size:12px;line-height:1.4}.ana-diagnostic.critical{border-color:#e5c3c6;background:#fff6f7;color:#8d2637}.ana-diagnostic.warning{border-color:#ead9a9;background:#fffbef;color:#715313}
+@media(max-width:560px){.ana-diagnostic{grid-template-columns:1fr;gap:3px}}

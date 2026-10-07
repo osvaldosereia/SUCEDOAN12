@@ -73,11 +73,21 @@ export function validateAnaConfiguration(configuration){
     const phrasesValid=Array.isArray(trigger.phrases)&&trigger.phrases.length<=20&&trigger.phrases.every(x=>normalizeAnaMatchText(x).length>=2);
     if(!['phrase','exact'].includes(trigger.match)||!phrasesValid||(trigger.enabled===true&&trigger.phrases.length===0))errors.push(`trigger_${trigger.key}_match_invalid`);
     if(trigger.exclude_phrases!==undefined&&(!Array.isArray(trigger.exclude_phrases)||trigger.exclude_phrases.length>20||trigger.exclude_phrases.some(x=>normalizeAnaMatchText(x).length<2)))errors.push(`trigger_${trigger.key}_exclude_phrases_invalid`);
+    const includeSet=new Set((trigger.phrases||[]).map(normalizeAnaMatchText).filter(Boolean));
+    const excludeSet=new Set((trigger.exclude_phrases||[]).map(normalizeAnaMatchText).filter(Boolean));
+    if([...includeSet].some(phrase=>excludeSet.has(phrase)))errors.push(`trigger_${trigger.key}_include_exclude_conflict`);
     const actions=normalizedTriggerActions(trigger);
     if(!actions.length||actions.length>5)errors.push(`trigger_${trigger.key}_actions_invalid`);
     else{
       actions.forEach((action,index)=>validateTriggerAction(trigger.key,action,index,errors));
       errors.push(...actionSequenceErrors(trigger.key,actions));
+      const labelDirections=new Map();
+      for(const action of actions){
+        if(!['label','remove_label'].includes(action?.type)||!action?.label_id)continue;
+        const previous=labelDirections.get(action.label_id);
+        if(previous&&previous!==action.type)errors.push(`trigger_${trigger.key}_label_action_contradictory`);
+        labelDirections.set(action.label_id,action.type);
+      }
     }
     if(trigger.conditions!==undefined){
       if(!Array.isArray(trigger.conditions)||trigger.conditions.length>5)errors.push(`trigger_${trigger.key}_conditions_invalid`);
