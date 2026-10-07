@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+const migration=fs.readFileSync('supabase/migrations/20261007234000_smart_delivery_route_optimizer_contract_v1.sql','utf8');
+const must=(v,m)=>{if(!v)throw new Error(m)};
+for(const fn of ['smart_delivery_optimizer_prepare_v1','smart_delivery_optimizer_apply_v1','smart_delivery_optimizer_fail_v1']) must(migration.includes(fn),'missing '+fn);
+must(migration.includes("v_run.status<>'planned'"),'optimizer must reject non-planned routes');
+must(migration.includes('loading_started_at is not null'),'optimizer must reject routes already loading');
+must(migration.includes('destination_latitude is null'),'prepare must reject stops without coordinates');
+must(migration.includes('v_distinct<>v_expected'),'apply must reject duplicate stop ids');
+must(migration.includes('v_matches<>v_expected'),'apply must reject foreign or missing stop ids');
+must(migration.includes("optimizer_payload->>'state','')<>'prepared'"),'apply must require a prepared token');
+must(migration.includes("'smart_delivery.optimizer_applied'"),'optimizer application must be audited');
+console.log('smart delivery route optimizer contract v1: ok');
