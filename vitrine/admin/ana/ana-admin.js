@@ -1,5 +1,6 @@
 import {listAnaAutomationTemplates,buildAnaAutomationTemplate} from './ana-automation-library.js';
 import {parseKnowledgeKeywords,knowledgeCategories,knowledgeMatches} from './ana-knowledge.js';
+import {analyzeAnaAutomationDraft} from './ana-diagnostics.js';
 const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ana-preview-v1';
 const TOKEN_KEY='da_finance_access_token_v1';
 const sections=[['overview','Visão geral'],['behavior','Comportamento'],['knowledge','Conhecimento'],['triggers','Automações'],['tests','Testes e histórico']];
@@ -17,6 +18,8 @@ function configErrorText(code=''){
   if(value.includes('multiple_terminal_actions'))return 'Use somente uma ação final: responder, transferir para humano ou continuar com a ANA.';
   if(value.includes('terminal_action_must_be_last'))return 'A ação final deve ser a última da sequência.';
   if(value.includes('condition_')&&(value.includes('_duplicate')||value.includes('_contradictory')))return 'Há condições repetidas ou contraditórias nesta automação.';
+  if(value.includes('include_exclude_conflict'))return 'A mesma frase não pode estar em “disparar” e “não disparar”.';
+  if(value.includes('label_action_contradictory'))return 'A mesma automação não pode aplicar e remover a mesma etiqueta.';
   if(value==='trigger_label_not_active')return 'Uma etiqueta usada pela automação não está mais ativa.';
   if(value==='revision_conflict')return 'O rascunho foi alterado em outra sessão. Atualize a página antes de salvar.';
   if(value==='configuration_invalid')return 'Revise os campos destacados da automação antes de salvar.';
