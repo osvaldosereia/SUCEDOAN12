@@ -9,3 +9,5 @@
 
 .ana-template-library{display:grid;gap:12px}.ana-template-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.ana-template-card{display:grid;gap:4px;text-align:left;padding:11px;border:1px solid #dce5df;border-radius:10px;background:#f8faf8;color:#18221c;cursor:pointer}.ana-template-card strong{font-size:13px}.ana-template-card span{font-size:11px;line-height:1.35;color:#66716a}.ana-template-card:hover{border-color:#9ebda9;background:#f2f7f3}
 @media(max-width:850px){.ana-template-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.ana-template-grid{grid-template-columns:1fr}.ana-template-card{min-height:64px}}
+
+.ana-knowledge-tools{display:grid;gap:8px}.ana-knowledge-tools input[type="search"]{min-height:42px}.ana-editor-card[hidden]{display:none!important}

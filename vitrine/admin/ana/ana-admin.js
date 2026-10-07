@@ -1,4 +1,5 @@
 import {listAnaAutomationTemplates,buildAnaAutomationTemplate} from './ana-automation-library.js';
+import {parseKnowledgeKeywords,knowledgeCategories,knowledgeMatches} from './ana-knowledge.js';
 const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ana-preview-v1';
 const TOKEN_KEY='da_finance_access_token_v1';
 const sections=[['overview','Visão geral'],['behavior','Comportamento'],['knowledge','Conhecimento'],['triggers','Automações'],['tests','Testes e histórico']];
@@ -44,7 +45,29 @@ function badge(text,kind='neutral'){return `<span class="ana-badge ${kind}">${es
 function statusCard(channel){const operational=channel.capture_enabled&&channel.send_enabled&&channel.outbound_provider==='meta'&&channel.homologated_at;return `<article class="ana-card ana-channel"><div class="ana-row"><div><small>Canal WhatsApp</small><h3>${esc(channel.name||'Dona Antônia')} · ${esc(channel.phone_last4||'••••')}</h3></div>${badge(channel.ana_enabled?'ANA ativa':'ANA desligada',channel.ana_enabled?'green':'neutral')}</div><div class="ana-pills">${badge(operational?'Meta pronto':'Canal restrito',operational?'green':'amber')}${badge(channel.campaigns_enabled?'Campanhas ligadas':'Campanhas separadas',channel.campaigns_enabled?'amber':'neutral')}${badge(channel.human_send_enabled?'Humano habilitado':'Humano indisponível',channel.human_send_enabled?'green':'amber')}</div><p>Entrada ${esc(channel.inbound_provider)} · saída ${esc(channel.outbound_provider)} · atualizado ${esc(channel.updated_at?new Date(channel.updated_at).toLocaleString('pt-BR'):'—')}</p>${isOwner()?`<button class="ana-button ${channel.ana_enabled?'danger':'primary'}" data-toggle-channel="${esc(channel.id)}" data-enabled="${channel.ana_enabled?'false':'true'}">${channel.ana_enabled?'Desligar ANA neste canal':'Ligar ANA neste canal'}</button>`:''}</article>`}
 function renderOverview(){const active=state.active||{};return `<div class="ana-page-head"><div><h1>ANA</h1><p>Gestão central da atendente virtual, com regras publicadas e testes sem envio.</p></div><button class="ana-button" data-action="refresh">Atualizar</button></div><div class="ana-kpis"><div class="ana-card"><small>Versão publicada</small><strong>${esc(active.version??'—')}</strong><span>${esc(active.created_at?new Date(active.created_at).toLocaleString('pt-BR'):'Nenhuma versão publicada')}</span></div><div class="ana-card"><small>Rascunho</small><strong>r${esc(state.revision)}</strong><span>${state.dirty?'Alterações não salvas':'Rascunho carregado'}</span></div><div class="ana-card"><small>Testes mais recentes</small><strong>${esc(state.testRuns[0]?.passed_count??'—')} / ${esc((state.testRuns[0]?.passed_count||0)+(state.testRuns[0]?.failed_count||0))}</strong><span>${state.testRuns[0]?.failed_count?'Há cenários que precisam de ajuste':'Execução mais recente'}</span></div></div><div class="ana-channel-grid">${state.channels.map(statusCard).join('')||'<div class="ana-card">Nenhum canal disponível.</div>'}</div><section class="ana-card ana-safety"><h2>Como a ANA decide</h2><p>Automações publicadas são verificadas primeiro. A IA usa apenas conhecimento publicado e encaminha casos incertos para uma pessoa.</p><p>A retomada humana prevalece. Preço, estoque, pedido, pagamento e prazo não podem ser inventados. Campanhas e consentimento de marketing continuam na área Marketing.</p></section>`}
 function renderBehavior(){const b=config().behavior;return `<div class="ana-page-head"><div><h1>Comportamento</h1><p>Ajustes simples de estilo. As regras de segurança são protegidas.</p></div>${canEdit()?'<button class="ana-button primary" data-action="save">Salvar rascunho</button>':''}</div><section class="ana-card ana-form-grid"><label><span>Tom</span><select data-behavior="tone" ${canEdit()?'':'disabled'}><option value="cordial" ${b.tone==='cordial'?'selected':''}>Cordial e direto</option><option value="warm" ${b.tone==='warm'?'selected':''}>Acolhedor e gentil</option><option value="neutral" ${b.tone==='neutral'?'selected':''}>Neutro e profissional</option></select></label><label><span>Tamanho da resposta</span><select data-behavior="conciseness" ${canEdit()?'':'disabled'}><option value="short" ${b.conciseness==='short'?'selected':''}>Curta</option><option value="balanced" ${b.conciseness==='balanced'?'selected':''}>Equilibrada</option></select></label><label><span>Emojis</span><select data-behavior="emoji" ${canEdit()?'':'disabled'}><option value="sparingly" ${b.emoji==='sparingly'?'selected':''}>Com moderação</option><option value="never" ${b.emoji==='never'?'selected':''}>Não usar</option></select></label><label class="ana-check"><input type="checkbox" data-behavior="use_known_first_name_on_first_greeting" ${b.use_known_first_name_on_first_greeting?'checked':''} ${canEdit()?'':'disabled'}><span>Usar o primeiro nome cadastrado no primeiro cumprimento do dia</span></label></section><section class="ana-card"><h2>Regras protegidas</h2><ul><li>Não inventar dados de preço, estoque, pedido, pagamento, endereço ou entrega.</li><li>Não alterar pedido nem cadastro.</li><li>Encaminhar dúvidas sensíveis ou sem base para atendimento humano.</li><li>Se a pessoa assumir a conversa, a ANA para.</li></ul></section>`}
-function renderKnowledge(){const items=config().knowledge||[];return `<div class="ana-page-head"><div><h1>Conhecimento</h1><p>Respostas curtas aprovadas; só itens publicados orientam a ANA.</p></div>${canEdit()?'<button class="ana-button" data-action="add-knowledge">Adicionar informação</button><button class="ana-button primary" data-action="save">Salvar rascunho</button>':''}</div>${items.map((item,i)=>`<article class="ana-card ana-editor-card"><div class="ana-row"><strong>Informação ${i+1}</strong>${badge(item.status==='published'?'Publicada':item.status==='archived'?'Arquivada':'Rascunho')}</div><div class="ana-form-grid"><label><span>Título</span><input data-knowledge="${i}" data-field="title" value="${esc(item.title)}" ${canEdit()?'':'disabled'}></label><label><span>Categoria</span><input data-knowledge="${i}" data-field="category" value="${esc(item.category)}" ${canEdit()?'':'disabled'}></label><label class="ana-full"><span>Resposta aprovada</span><textarea data-knowledge="${i}" data-field="content" maxlength="1600" ${canEdit()?'':'disabled'}>${esc(item.content)}</textarea></label><label><span>Status</span><select data-knowledge="${i}" data-field="status" ${canEdit()?'':'disabled'}><option value="draft" ${item.status==='draft'?'selected':''}>Rascunho</option><option value="published" ${item.status==='published'?'selected':''}>Publicada</option><option value="archived" ${item.status==='archived'?'selected':''}>Arquivada</option></select></label>${canEdit()?`<button class="ana-button danger" data-remove-knowledge="${i}">Remover do rascunho</button>`:''}</div></article>`).join('')||'<div class="ana-card">Nenhum conteúdo cadastrado ainda.</div>'}`}
+function renderKnowledge(){
+  const items=config().knowledge||[],categories=knowledgeCategories(items);
+  const filters=`<section class="ana-card ana-knowledge-tools">
+    <div class="ana-form-grid">
+      <label class="ana-full"><span>Buscar conhecimento</span><input id="anaKnowledgeSearch" type="search" placeholder="Busque por título, conteúdo ou palavra-chave"></label>
+      <label><span>Categoria</span><select id="anaKnowledgeCategory"><option value="all">Todas</option>${categories.map(category=>`<option value="${esc(category)}">${esc(category)}</option>`).join('')}</select></label>
+      <label><span>Status</span><select id="anaKnowledgeStatus"><option value="all">Todos</option><option value="published">Publicada</option><option value="draft">Rascunho</option><option value="archived">Arquivada</option></select></label>
+    </div>
+    <p class="ana-muted"><span id="anaKnowledgeCount">${items.length}</span> informação(ões) exibida(s).</p>
+  </section>`;
+  const cards=items.map((item,i)=>`<article class="ana-card ana-editor-card" data-knowledge-card="${i}">
+    <div class="ana-row"><strong>${esc(item.title||`Informação ${i+1}`)}</strong>${badge(item.status==='published'?'Publicada':item.status==='archived'?'Arquivada':'Rascunho')}</div>
+    <div class="ana-form-grid">
+      <label><span>Título</span><input data-knowledge="${i}" data-field="title" value="${esc(item.title)}" ${canEdit()?'':'disabled'}></label>
+      <label><span>Categoria</span><input data-knowledge="${i}" data-field="category" value="${esc(item.category)}" ${canEdit()?'':'disabled'}></label>
+      <label class="ana-full"><span>Resposta aprovada</span><textarea data-knowledge="${i}" data-field="content" maxlength="1600" ${canEdit()?'':'disabled'}>${esc(item.content)}</textarea></label>
+      <label class="ana-full"><span>Palavras-chave (uma por linha)</span><textarea data-knowledge="${i}" data-field="keywords" maxlength="720" placeholder="Ex.: catálogo&#10;pedido&#10;cesta básica" ${canEdit()?'':'disabled'}>${esc((item.keywords||[]).join('\n'))}</textarea></label>
+      <label><span>Status</span><select data-knowledge="${i}" data-field="status" ${canEdit()?'':'disabled'}><option value="draft" ${item.status==='draft'?'selected':''}>Rascunho</option><option value="published" ${item.status==='published'?'selected':''}>Publicada</option><option value="archived" ${item.status==='archived'?'selected':''}>Arquivada</option></select></label>
+      ${canEdit()?`<button class="ana-button danger" data-remove-knowledge="${i}">Remover do rascunho</button>`:''}
+    </div>
+  </article>`).join('');
+  return `<div class="ana-page-head"><div><h1>Conhecimento</h1><p>Respostas curtas aprovadas; só itens publicados orientam a ANA.</p></div>${canEdit()?'<button class="ana-button" data-action="add-knowledge">Adicionar informação</button><button class="ana-button primary" data-action="save">Salvar rascunho</button>':''}</div>${filters}${cards||'<div class="ana-card">Nenhum conteúdo cadastrado ainda.</div>'}`;
+}
 function renderAutomationTemplates(){
   if(!canEdit())return '';
   return `<section class="ana-card ana-template-library">
@@ -97,7 +120,7 @@ function markDirty(){state.dirty=true;render()}
 function readDraft(){
   const next=structuredClone(config());
   state.host.querySelectorAll('[data-behavior]').forEach(el=>{next.behavior[el.dataset.behavior]=el.type==='checkbox'?el.checked:el.value});
-  state.host.querySelectorAll('[data-knowledge]').forEach(el=>{const item=next.knowledge[Number(el.dataset.knowledge)];if(item)item[el.dataset.field]=el.value});
+  state.host.querySelectorAll('[data-knowledge]').forEach(el=>{const item=next.knowledge[Number(el.dataset.knowledge)];if(!item)return;const field=el.dataset.field;item[field]=field==='keywords'?parseKnowledgeKeywords(el.value):el.value});
   state.host.querySelectorAll('[data-trigger]').forEach(el=>{
     const item=next.triggers[Number(el.dataset.trigger)];if(!item)return;const key=el.dataset.field;
     if(key==='enabled')item.enabled=el.checked;
@@ -121,12 +144,33 @@ function readDraft(){
 async function saveDraft(){const configuration=readDraft();const result=await api('admin_save_draft',{configuration,expected_revision:state.revision,note:'Rascunho ANA salvo'});state.draft={configuration,revision:result.revision};state.revision=result.revision;state.dirty=false;state.lastTest=null;await load(false);state.section='overview';render()}
 async function load(showLoading=true){if(showLoading)state.host.innerHTML='<div class="ana-loading">Carregando gestão da ANA…</div>';const data=await api('admin_load');state.role=data.role||'viewer';state.draft=data.draft||null;state.active=data.active||null;state.revision=Number(data.draft?.revision||0);state.channels=data.channels||[];state.labels=data.labels||[];state.versions=data.versions||[];state.testRuns=data.test_runs||[];state.events=data.events||[];state.dirty=false;render()}
 async function loadHistory(){const data=await api('admin_history');state.history=data.history||[];state.versions=data.versions||state.versions;state.testRuns=data.test_runs||state.testRuns;state.section='tests';render()}
+function applyKnowledgeFilters(){
+  const query=state.host.querySelector('#anaKnowledgeSearch')?.value||'';
+  const category=state.host.querySelector('#anaKnowledgeCategory')?.value||'all';
+  const status=state.host.querySelector('#anaKnowledgeStatus')?.value||'all';
+  const draft=readDraft();
+  let visible=0;
+  state.host.querySelectorAll('[data-knowledge-card]').forEach(card=>{
+    const item=draft.knowledge[Number(card.dataset.knowledgeCard)]||{};
+    const show=knowledgeMatches(item,{query,category,status});
+    card.hidden=!show;
+    if(show)visible++;
+  });
+  const count=state.host.querySelector('#anaKnowledgeCount');
+  if(count)count.textContent=String(visible);
+}
 function showDirty(){
   state.dirty=true;
   const note=state.host.querySelector('.ana-unsaved');
   if(!note){const n=document.createElement('div');n.className='ana-unsaved';n.textContent='Há alterações não salvas no rascunho.';state.host.querySelector('.ana-body').prepend(n)}
 }
 function bind(){
+  const knowledgeSearch=state.host.querySelector('#anaKnowledgeSearch');
+  const knowledgeCategory=state.host.querySelector('#anaKnowledgeCategory');
+  const knowledgeStatus=state.host.querySelector('#anaKnowledgeStatus');
+  if(knowledgeSearch)knowledgeSearch.addEventListener('input',applyKnowledgeFilters);
+  if(knowledgeCategory)knowledgeCategory.addEventListener('change',applyKnowledgeFilters);
+  if(knowledgeStatus)knowledgeStatus.addEventListener('change',applyKnowledgeFilters);
   state.host.querySelectorAll('[data-section]').forEach(button=>button.onclick=()=>{if(state.dirty&&!confirm('Descartar alterações não salvas?'))return;state.dirty=false;state.section=button.dataset.section;render()});
   state.host.querySelectorAll('[data-behavior],[data-knowledge],[data-trigger],[data-condition-select],[data-trigger-action]').forEach(el=>el.addEventListener('change',showDirty));
   state.host.querySelectorAll('select[data-trigger-action][data-action-field="type"]').forEach(el=>el.addEventListener('change',()=>{
