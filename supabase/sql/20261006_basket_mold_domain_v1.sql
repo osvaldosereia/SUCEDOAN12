@@ -7,7 +7,7 @@ create table if not exists public.basket_molds (
   id uuid primary key default gen_random_uuid(),
   basket_id uuid not null unique references public.basket_templates(id) on delete cascade,
   hidden_adjustment numeric(12,2) not null default 0,
-  public_composition_count smallint not null default 2 check (public_composition_count between 1 and 4),
+  public_composition_count smallint not null default 2 check (public_composition_count between 1 and 6),
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -137,7 +137,7 @@ begin
     raise exception 'basket_mold_basket_not_found';
   end if;
 
-  if p_public_composition_count is null or p_public_composition_count < 1 or p_public_composition_count > 4 then
+  if p_public_composition_count is null or p_public_composition_count < 1 or p_public_composition_count > 6 then
     raise exception 'basket_mold_public_composition_count_invalid';
   end if;
 
