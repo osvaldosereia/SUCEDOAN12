@@ -22,6 +22,7 @@ const SERVICE_KEY = (() => {
 const APP_SECRET = Deno.env.get("META_WHATSAPP_APP_SECRET") || "";
 const VERIFY_TOKEN = Deno.env.get("META_WHATSAPP_VERIFY_TOKEN") || "";
 const META_APP_ID = (Deno.env.get("META_APP_ID") || Deno.env.get("WHATSAPP_APP_ID") || "").trim();
+const META_ACCESS_TOKEN = (Deno.env.get("META_WHATSAPP_ACCESS_TOKEN") || "").trim();
 const META_GRAPH_VERSION = (Deno.env.get("META_WHATSAPP_GRAPH_VERSION") || "v24.0").trim();
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -44,6 +45,60 @@ function subscriptionFields(row: any) {
   }).filter(Boolean);
 }
 
+async function discoverMetaAppSubscription() {
+  if (!APP_SECRET) return null;
+
+  const directCandidates = META_APP_ID ? [META_APP_ID] : [];
+  const candidates = new Set(directCandidates);
+
+  if (!META_APP_ID && META_ACCESS_TOKEN) {
+    const accounts = await db.from("whatsapp_accounts")
+      .select("waba_id")
+      .eq("is_active", true)
+      .not("waba_id", "is", null);
+    if (!accounts.error) {
+      for (const row of accounts.data || []) {
+        const wabaId = String((row as any)?.waba_id || "").trim();
+        if (!/^\d{5,30}$/.test(wabaId)) continue;
+        try {
+          const response = await fetch(
+            `https://graph.facebook.com/${META_GRAPH_VERSION}/${wabaId}/subscribed_apps`,
+            {
+              headers: { Authorization: `Bearer ${META_ACCESS_TOKEN}`, Accept: "application/json" },
+              signal: AbortSignal.timeout(10000),
+            },
+          );
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) continue;
+          for (const item of Array.isArray(body?.data) ? body.data : []) {
+            const candidate = String(item?.whatsapp_business_api_data?.id || "").trim();
+            if (/^\d{5,30}$/.test(candidate)) candidates.add(candidate);
+          }
+        } catch {
+          // Best-effort discovery; the next subscribed WABA may still identify the app.
+        }
+      }
+    }
+  }
+
+  for (const appId of candidates) {
+    const appAccessToken = `${appId}|${APP_SECRET}`;
+    const endpoint = `https://graph.facebook.com/${META_GRAPH_VERSION}/${appId}/subscriptions`;
+    try {
+      const response = await fetch(endpoint, {
+        headers: { Authorization: `Bearer ${appAccessToken}`, Accept: "application/json" },
+        signal: AbortSignal.timeout(10000),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) return { appId, endpoint, appAccessToken, body };
+    } catch {
+      // Candidate belongs to another provider/app; continue without exposing IDs.
+    }
+  }
+
+  return null;
+}
+
 async function ensureCoexistenceEchoSubscription() {
   const now = Date.now();
   if (now - coexistenceSubscriptionCheckedAt < 6 * 60 * 60 * 1000) return;
@@ -51,22 +106,18 @@ async function ensureCoexistenceEchoSubscription() {
 
   coexistenceSubscriptionCheck = (async () => {
     coexistenceSubscriptionCheckedAt = now;
-    if (!META_APP_ID || !APP_SECRET || !VERIFY_TOKEN || !SUPABASE_URL) {
+    if (!APP_SECRET || !VERIFY_TOKEN || !SUPABASE_URL) {
       console.warn("whatsapp-meta-webhook-v1 coexistence subscription not configured");
       return;
     }
 
-    const appAccessToken = `${META_APP_ID}|${APP_SECRET}`;
-    const endpoint = `https://graph.facebook.com/${META_GRAPH_VERSION}/${META_APP_ID}/subscriptions`;
-    const headers = { Authorization: `Bearer ${appAccessToken}` };
-    const current = await fetch(endpoint, { headers, signal: AbortSignal.timeout(10000) });
-    const currentBody = await current.json().catch(() => ({}));
-    if (!current.ok) {
-      console.warn("whatsapp-meta-webhook-v1 coexistence subscription read failed", current.status);
+    const discovered = await discoverMetaAppSubscription();
+    if (!discovered) {
+      console.warn("whatsapp-meta-webhook-v1 coexistence app unresolved");
       return;
     }
 
-    const subscription = (Array.isArray(currentBody?.data) ? currentBody.data : [])
+    const subscription = (Array.isArray(discovered.body?.data) ? discovered.body.data : [])
       .find((row: any) => String(row?.object || "") === "whatsapp_business_account");
     const fields = subscriptionFields(subscription);
     if (fields.includes("smb_message_echoes")) {
@@ -82,9 +133,12 @@ async function ensureCoexistenceEchoSubscription() {
       verify_token: VERIFY_TOKEN,
       fields: mergedFields.join(","),
     });
-    const updated = await fetch(endpoint, {
+    const updated = await fetch(discovered.endpoint, {
       method: "POST",
-      headers: { ...headers, "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        Authorization: `Bearer ${discovered.appAccessToken}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
       body,
       signal: AbortSignal.timeout(10000),
     });
