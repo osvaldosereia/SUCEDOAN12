@@ -7080,9 +7080,34 @@
       settled_amount_mismatch:'Valor recebido diferente do pedido',
       order_cancelled:'Pedido cancelado',
       order_returned:'Pedido devolvido',
-      fiscal_control_missing:'Controle fiscal ainda não iniciado'
+      fiscal_control_missing:'Controle fiscal ainda não iniciado',
+      fiscal_subtotal_item_sum_mismatch:'A soma dos produtos não confere com o subtotal fiscal',
+      canonical_total_not_balanced:'O total do pedido não confere com subtotal, acréscimos e descontos',
+      bling_order_not_linked:'O pedido ainda não está vinculado à venda no Bling',
+      bling_order_not_verified:'A venda ainda não chegou ao status Verificado no Bling',
+      invoice_generation_failed:'O Bling recebeu a solicitação, mas não conseguiu gerar a NF-e',
+      fiscal_dispatch_preflight_failed:'A conferência fiscal encontrou dados inconsistentes',
+      fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão',
+      fiscal_status_unavailable:'Não foi possível consultar o retorno fiscal no Bling'
     };
     return map[code]||String(code||'').replaceAll('_',' ');
+  }
+  function fiscalDiagnosticHtml(f){
+    if(!f||f.authorized===true)return '';
+    const provider=f.provider||{},job=provider.job||{},readiness=f.readiness||{},raw=[
+      ...(Array.isArray(f.hard_blockers)?f.hard_blockers:[]),
+      ...(Array.isArray(f.blockers)?f.blockers:[]),
+      job.error_code,f.fiscal_block_reason
+    ].filter(Boolean),reasons=[...new Set(raw)].map(fiscalBlockReasonLabel);
+    const detail=job.error_detail||provider.error_detail||provider.detail||'';
+    const attempts=job.attempts!=null?Number(job.attempts):null;
+    const lines=[];
+    if(reasons.length)lines.push('<strong>Motivo identificado</strong><div>'+reasons.map(esc).join(' · ')+'</div>');
+    if(detail)lines.push('<div style="margin-top:6px">'+esc(detail)+'</div>');
+    if(readiness?.eligible===false&&readiness?.reason)lines.push('<div style="margin-top:6px">Pré-validação: '+esc(fiscalBlockReasonLabel(readiness.reason))+'</div>');
+    if(attempts!=null)lines.push('<div style="margin-top:6px">Tentativas registradas: '+attempts+'</div>');
+    if(!lines.length&&f.stage==='pending')lines.push('<strong>Aguardando retorno do Bling</strong><div>A solicitação fiscal ainda não trouxe NF-e nem erro específico.</div>');
+    return lines.length?'<div class="rule-notice warn" style="margin-top:8px">'+lines.join('')+'</div>':'';
   }
 
   function orderFiscalHtml(f,o){
@@ -7091,9 +7116,9 @@
     const blockers=Array.isArray(f.blockers)?f.blockers:[];
     if(f.authorized===true||f.stage==='authorized')return '<div class="rule-notice"><strong>NF-e AUTORIZADA</strong><div>'+(f.invoice_number?'Nota '+esc(f.invoice_number)+' · ':'')+esc(f.sefaz_status||'Autorizada pela SEFAZ')+'</div></div>';
     if(f.stage==='processing')return '<div class="rule-notice warn"><strong>NF-e EM PROCESSAMENTO</strong><div>Aguarde a autorização. Não repita a geração da nota.</div></div>';
-    if(f.stage==='rejected')return '<div class="rule-notice warn"><strong>NF-e REJEITADA</strong><div>'+esc(f.sefaz_status||blockers.join(' · ')||'Revise o retorno fiscal antes de tentar novamente.')+'</div></div>';
-    if(f.stage==='blocked')return '<div class="rule-notice warn"><strong>NF-e BLOQUEADA</strong><div>'+esc(blockers.map(fiscalBlockReasonLabel).join(' · ')||'Existem requisitos pendentes para emissão.')+'</div></div>';
-    return '<div class="rule-notice warn"><strong>NF-e PENDENTE</strong><div>A emissão automática foi iniciada após a separação. A saída continua bloqueada até a autorização.</div></div>';
+    if(f.stage==='rejected')return '<div class="rule-notice warn"><strong>NF-e REJEITADA</strong><div>'+esc(f.sefaz_status||blockers.map(fiscalBlockReasonLabel).join(' · ')||'Revise o retorno fiscal antes de tentar novamente.')+'</div></div>'+fiscalDiagnosticHtml(f);
+    if(f.stage==='blocked')return '<div class="rule-notice warn"><strong>NF-e BLOQUEADA</strong><div>'+esc(blockers.map(fiscalBlockReasonLabel).join(' · ')||'Existem requisitos pendentes para emissão.')+'</div></div>'+fiscalDiagnosticHtml(f);
+    return '<div class="rule-notice warn"><strong>NF-e PENDENTE</strong><div>A nota ainda não foi autorizada. Veja abaixo o retorno mais recente da integração.</div></div>'+fiscalDiagnosticHtml(f);
   }
   function fiscalCanaryActionHtml(f,o){
     if(!f||f.error||!o||!['ready','out_for_delivery','delivered'].includes(o.status))return '';
@@ -7108,7 +7133,16 @@
     const f=state.currentOrderFiscal||{};if(f.can_issue!==true){toast('A NF-e ainda não está liberada para emissão');return}
     if(!confirm('EMITIR NF-e do pedido #'+orderDisplayCode(o)+' agora?\n\nA emissão será enviada ao Bling/SEFAZ.'))return;
     const btn=$('#executeFiscalCanary');if(btn){btn.disabled=true;btn.textContent='EMITINDO NF-e…'}
-    try{const result=await api('order_fiscal_issue_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,confirmation:'EMITIR_NFE',operator:currentOperator()||'Operação'})});state.currentOrderFiscal=result.fiscal||result;state.fiscalByOrder[o.id]=state.currentOrderFiscal;toast(state.currentOrderFiscal?.authorized?'NF-e autorizada':'NF-e enviada; aguardando autorização');await loadCurrentOrderFiscal(true)}catch(e){toast(errorMessage(e?.message||'fiscal_issue_failed'));await loadCurrentOrderFiscal(true)}
+    try{
+      const result=await api('order_fiscal_issue_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,confirmation:'EMITIR_NFE',operator:currentOperator()||'Operação'})});
+      state.currentOrderFiscal=result.fiscal||result;state.fiscalByOrder[o.id]=state.currentOrderFiscal;
+      toast(state.currentOrderFiscal?.authorized?'NF-e autorizada':state.currentOrderFiscal?.stage==='rejected'?'NF-e não gerada · veja o motivo no pedido':'Solicitação enviada ao Bling · consultando retorno');
+      await loadCurrentOrderFiscal(true);
+    }catch(e){
+      await loadCurrentOrderFiscal(true);
+      const current=state.currentOrderFiscal||{},job=current.provider?.job||{},reason=job.error_detail||job.error_code||e?.message||'fiscal_issue_failed';
+      toast('NF-e NÃO GERADA · '+fiscalBlockReasonLabel(reason));
+    }
   }
   async function startCurrentOrderDispatchV4(){
     const o=state.currentOrder?.order;if(!o||o.status!=='ready')return;
