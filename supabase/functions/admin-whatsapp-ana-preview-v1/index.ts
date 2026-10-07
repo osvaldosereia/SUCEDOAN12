@@ -42,14 +42,33 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
     const loaded=await privileged.rpc("ops2_ana_admin_load_v1");if(loaded.error)throw loaded.error;
     const result=loaded.data||{ok:false,error:"ana_admin_load_failed"};if(result.ok!==true)return json(req,{ok:false,error:result.error||"ana_admin_load_failed"},409);
     if(action==="admin_history"){
+      const safeReasons=new Set(["admin_trigger_fixed_reply","admin_trigger_handoff","admin_trigger_label_applied","admin_trigger_label_removed","human_takeover_during_generation","human_takeover_before_trigger_label","human_review_required","active_config_invalid","first_greeting_of_day","ai_gate_closed_before_generation","inbound_not_supported"]);
       const jobs=await privileged.from("whatsapp_ana_jobs_v1").select("whatsapp_account_id,status,decision,reason,created_at,completed_at").eq("dry_run",false).order("created_at",{ascending:false}).limit(20);
       if(jobs.error)throw jobs.error;
       const accountIds=[...new Set((jobs.data||[]).map((job:any)=>job.whatsapp_account_id).filter(Boolean))];
       const accountRows=accountIds.length?await privileged.from("whatsapp_accounts").select("id,phone_e164").in("id",accountIds):{data:[],error:null};if(accountRows.error)throw accountRows.error;
       const last4=new Map((accountRows.data||[]).map((account:any)=>[account.id,String(account.phone_e164||"").replace(/\D/g,"").slice(-4)]));
-      const safeReasons=new Set(["admin_trigger_fixed_reply","admin_trigger_handoff","admin_trigger_label_applied","admin_trigger_label_removed","human_takeover_during_generation","human_takeover_before_trigger_label","human_review_required","active_config_invalid","first_greeting_of_day","ai_gate_closed_before_generation","inbound_not_supported"]);
       const liveOutcomes=(jobs.data||[]).map((job:any)=>({channel_last4:last4.get(job.whatsapp_account_id)||"",status:job.status,decision:job.decision||"handoff",reason:safeReasons.has(job.reason)?job.reason:"other_or_needs_review",created_at:job.created_at,completed_at:job.completed_at}));
-      return json(req,{ok:true,history:[...(result.events||[]),...liveOutcomes].slice(0,40),versions:result.versions||[],test_runs:result.test_runs||[]});
+
+      const since=new Date(Date.now()-7*24*60*60*1000).toISOString();
+      const metricRows=await privileged.from("whatsapp_ana_jobs_v1").select("status,decision,reason,created_at,metadata").eq("dry_run",false).gte("created_at",since).order("created_at",{ascending:false}).limit(1000);
+      if(metricRows.error)throw metricRows.error;
+      const decisionCounts:any={suggest:0,handoff:0,no_reply:0,other:0},statusCounts:any={completed:0,skipped:0,failed:0,other:0};
+      const reasonCounts=new Map<string,number>(),triggerCounts=new Map<string,number>();
+      for(const job of metricRows.data||[]){
+        const decision=["suggest","handoff","no_reply"].includes(String(job.decision||""))?String(job.decision):"other";
+        decisionCounts[decision]++;
+        const status=["completed","skipped","failed"].includes(String(job.status||""))?String(job.status):"other";
+        statusCounts[status]++;
+        const rawReason=String(job.reason||"");
+        const reason=safeReasons.has(rawReason)?rawReason:"other_or_needs_review";
+        reasonCounts.set(reason,(reasonCounts.get(reason)||0)+1);
+        const triggerKey=clean(job.metadata?.trigger_key,40);
+        if(/^[a-z0-9][a-z0-9_-]{0,39}$/.test(triggerKey))triggerCounts.set(triggerKey,(triggerCounts.get(triggerKey)||0)+1);
+      }
+      const top=(values:Map<string,number>,limit=6)=>[...values.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,limit).map(([key,count])=>({key,count}));
+      const metrics={window_days:7,total:(metricRows.data||[]).length,decisions:decisionCounts,statuses:statusCounts,reasons:top(reasonCounts),triggers:top(triggerCounts)};
+      return json(req,{ok:true,history:[...(result.events||[]),...liveOutcomes].slice(0,40),versions:result.versions||[],test_runs:result.test_runs||[],metrics});
     }
     const runtime=await privileged.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at,metadata,whatsapp_accounts(phone_e164,display_name,slug)");
     if(runtime.error)throw runtime.error;
