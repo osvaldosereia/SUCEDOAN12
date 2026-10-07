@@ -127,6 +127,7 @@ function metricReasonLabel(key=''){
     human_takeover_before_trigger_label:'Humano assumiu antes da etiqueta',
     human_review_required:'Revisão humana necessária',
     active_config_invalid:'Configuração ativa inválida',
+    dynamic_data_requires_confirmation:'Preço/estoque exige confirmação',
     first_greeting_of_day:'Primeiro cumprimento do dia',
     ai_gate_closed_before_generation:'ANA bloqueada pelo gate humano',
     inbound_not_supported:'Mensagem não suportada',
