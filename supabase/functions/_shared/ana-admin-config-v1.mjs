@@ -53,7 +53,7 @@ export function validateAnaConfiguration(configuration){
     for(const [key,choices] of Object.entries(behaviorEnums))if(!choices.has(behavior[key]))errors.push(`behavior_${key}_invalid`);
     if(typeof behavior.use_known_first_name_on_first_greeting!=='boolean')errors.push('behavior_first_name_flag_invalid');
   }
-  for(const [field,max] of [['knowledge',30],['triggers',100],['test_cases',8]]){
+  for(const [field,max] of [['knowledge',30],['triggers',100],['test_cases',20]]){
     if(!Array.isArray(configuration[field])){errors.push(`${field}_array_required`);continue}
     if(configuration[field].length>max)errors.push(`${field}_limit_exceeded`);
   }
