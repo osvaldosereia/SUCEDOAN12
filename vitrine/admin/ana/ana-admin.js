@@ -150,6 +150,16 @@ function bind(){
   });
   state.host.querySelectorAll('[data-toggle-channel]').forEach(button=>button.onclick=async()=>{const enabled=button.dataset.enabled==='true';if(!confirm(`${enabled?'Ativar':'Desligar'} a ANA apenas neste canal?`))return;try{await api('admin_set_channel',{whatsapp_account_id:button.dataset.toggleChannel,enabled});await load()}catch(error){alert(error.message)}});
   state.host.querySelectorAll('[data-remove-knowledge]').forEach(button=>button.onclick=()=>{const next=readDraft();next.knowledge.splice(Number(button.dataset.removeKnowledge),1);state.draft.configuration=next;state.dirty=true;render()});
+  state.host.querySelectorAll('[data-add-template]').forEach(button=>button.onclick=()=>{
+    try{
+      const next=readDraft();
+      const item=buildAnaAutomationTemplate(button.dataset.addTemplate,{labels:state.labels,key:newTriggerKey()});
+      next.triggers.push(item);
+      state.draft.configuration=next;
+      state.dirty=true;
+      render();
+    }catch(error){alert(error?.message||'Não foi possível adicionar este modelo.')}
+  });
   state.host.querySelectorAll('[data-add-action]').forEach(button=>button.onclick=()=>{
     const next=readDraft(),i=Number(button.dataset.addAction),item=next.triggers[i];if(!item)return;
     if(!Array.isArray(item.actions)){item.actions=actionsOf(item);delete item.action;delete item.response_text;delete item.label_id}
