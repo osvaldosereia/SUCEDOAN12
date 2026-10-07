@@ -88,7 +88,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
     const loaded=await privileged.rpc("ops2_ana_admin_load_v1");if(loaded.error)throw loaded.error;const draft=loaded.data?.draft;
     const validation=validateAnaConfiguration(draft?.configuration);if(!validation.ok)return json(req,{ok:false,error:"configuration_invalid",details:validation.errors},409);
     const revision=Number(draft?.revision);if(Number(body?.expected_revision)!==revision)return json(req,{ok:false,error:"revision_conflict"},409);
-    const suite=draft.configuration.test_cases.slice(0,8);if(!suite.length)return json(req,{ok:false,error:"required_test_cases_missing"},409);
+    const suite=draft.configuration.test_cases.slice(0,20);if(!suite.length)return json(req,{ok:false,error:"required_test_cases_missing"},409);
     const began=Date.now();let passed=0,failed=0;const safeReasons:string[]=[];const scenarioResults:any[]=[];
     const simulate=async(input:string,channel:string,context:any={})=>{
       const route=routeAnaMessage(draft.configuration,input,channel,context);
