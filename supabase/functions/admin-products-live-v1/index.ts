@@ -1458,7 +1458,16 @@ async function orderFiscalIssueV4(p:any,auth:any){
   if(before.authorized===true)return {issued:false,idempotent_replay:true,fiscal:before};
   if((before.hard_blockers||[]).length)return {error:"fiscal_dispatch_not_eligible",status:409,blockers:before.hard_blockers,fiscal:before};
   const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});
-  if(h.error)return {error:h.error||"fiscal_issue_failed",status:h.status||409,detail:h.detail||h.data||null,fiscal:before};
+  if(h.error){
+    const after:any=await orderFiscalStatusV4(oid).catch(()=>before);
+    return {
+      error:h.error||"fiscal_issue_failed",status:h.status||409,
+      detail:h.data?.detail||h.detail||h.data?.provider_error||h.data||null,
+      provider_details:h.data?.provider_details||[],
+      http_status:h.data?.http_status||null,
+      fiscal:after?.error?before:after
+    };
+  }
   try{await hub("fiscal_dispatch_reconcile",{source_order_id:oid})}catch{}
   const after:any=await orderFiscalStatusV4(oid);
   return {issued:true,result:h.data||null,fiscal:after};
