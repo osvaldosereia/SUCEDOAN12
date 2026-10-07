@@ -13,6 +13,7 @@ assert.match(ui,/role.*owner|owner.*role/i);
 assert.match(ui,/campaigns_enabled|marketing/i);
 assert.match(ui,/Adicionar ação|data-add-action/);
 assert.match(ui,/Continuar com a ANA|continue_ai/);
+assert.match(ui,/Remover etiqueta|remove_label/,'editor must expose provenance-safe label removal');
 assert.match(ui,/Duplicar automação|data-duplicate-trigger/);
 assert.match(ui,/data-move-action/);
 assert.match(ui,/exclude_phrases|Não disparar se contiver/);
