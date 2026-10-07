@@ -5,6 +5,29 @@ const isPlainObject=value=>Boolean(value)&&typeof value==='object'&&!Array.isArr
 const keyPattern=/^[a-z0-9][a-z0-9_-]{0,39}$/;
 const allowedChannels=new Set(['all','0975','1018']);
 const behaviorEnums={tone:new Set(['cordial','warm','neutral']),conciseness:new Set(['short','balanced']),emoji:new Set(['never','sparingly'])};
+const actionTypes=new Set(['fixed_reply','label','handoff','continue_ai']);
+const conditionTypes=new Set(['customer_linked','human_mode']);
+const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function normalizedTriggerActions(trigger){
+  if(Array.isArray(trigger?.actions))return trigger.actions;
+  if(trigger?.action)return [{type:trigger.action,response_text:trigger.response_text,label_id:trigger.label_id}];
+  return [];
+}
+function validateTriggerAction(triggerKey,action,index,errors){
+  if(!isPlainObject(action)||!actionTypes.has(action.type)){errors.push(`trigger_${triggerKey}_action_${index}_invalid`);return}
+  if(action.type==='fixed_reply'&&(!cleanText(action.response_text,500)||String(action.response_text).length>500))errors.push(`trigger_${triggerKey}_reply_${index}_invalid`);
+  if(action.type==='label'&&!uuidPattern.test(String(action.label_id||'')))errors.push(`trigger_${triggerKey}_label_${index}_invalid`);
+}
+function conditionsMatch(conditions,context={}){
+  if(!Array.isArray(conditions)||!conditions.length)return true;
+  return conditions.every(condition=>{
+    if(!isPlainObject(condition)||!conditionTypes.has(condition.type))return false;
+    if(condition.type==='customer_linked')return Boolean(context.customerLinked)===Boolean(condition.value);
+    if(condition.type==='human_mode')return Boolean(context.humanMode)===Boolean(condition.value);
+    return false;
+  });
+}
 
 export function normalizeAnaMatchText(value=''){
   return cleanText(value,3000).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').replace(/[^\p{L}\p{N}]+/gu,' ').trim().replace(/\s+/g,' ');
@@ -37,9 +60,15 @@ export function validateAnaConfiguration(configuration){
     if(typeof trigger.enabled!=='boolean'||!Number.isInteger(trigger.priority)||trigger.priority<0||trigger.priority>100)errors.push(`trigger_${trigger.key}_priority_invalid`);
     if(!Array.isArray(trigger.channels)||!trigger.channels.length||trigger.channels.some(channel=>!allowedChannels.has(channel)))errors.push(`trigger_${trigger.key}_channels_invalid`);
     if(!['phrase','exact'].includes(trigger.match)||!Array.isArray(trigger.phrases)||!trigger.phrases.length||trigger.phrases.length>20||trigger.phrases.some(x=>normalizeAnaMatchText(x).length<2))errors.push(`trigger_${trigger.key}_match_invalid`);
-    if(!['fixed_reply','label','handoff'].includes(trigger.action))errors.push(`trigger_${trigger.key}_action_invalid`);
-    if(trigger.action==='fixed_reply'&&(!cleanText(trigger.response_text,500)||String(trigger.response_text).length>500))errors.push(`trigger_${trigger.key}_reply_invalid`);
-    if(trigger.action==='label'&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(trigger.label_id||'')))errors.push(`trigger_${trigger.key}_label_invalid`);
+    const actions=normalizedTriggerActions(trigger);
+    if(!actions.length||actions.length>5)errors.push(`trigger_${trigger.key}_actions_invalid`);
+    else actions.forEach((action,index)=>validateTriggerAction(trigger.key,action,index,errors));
+    if(trigger.conditions!==undefined){
+      if(!Array.isArray(trigger.conditions)||trigger.conditions.length>5)errors.push(`trigger_${trigger.key}_conditions_invalid`);
+      else trigger.conditions.forEach((condition,index)=>{
+        if(!isPlainObject(condition)||!conditionTypes.has(condition.type)||typeof condition.value!=='boolean')errors.push(`trigger_${trigger.key}_condition_${index}_invalid`);
+      });
+    }
   }
   for(const item of Array.isArray(configuration.test_cases)?configuration.test_cases:[]){
     if(!isPlainObject(item)||!keyPattern.test(String(item.key||''))||!cleanText(item.input,500)||!['reply','handoff','no_reply','label'].includes(item.expected))errors.push('test_case_invalid');
@@ -48,7 +77,7 @@ export function validateAnaConfiguration(configuration){
   return {ok:errors.length===0,errors:[...new Set(errors)]};
 }
 
-export function evaluateAnaTriggers(configuration,inboundText,channel){
+export function evaluateAnaTriggers(configuration,inboundText,channel,context={}){
   const text=normalizeAnaMatchText(inboundText);const channelKey=cleanText(channel,16);
   if(!text||!Array.isArray(configuration?.triggers))return {matched:false};
   const candidates=configuration.triggers.filter(item=>item?.enabled===true&&Array.isArray(item.channels)&&
@@ -59,9 +88,15 @@ export function evaluateAnaTriggers(configuration,inboundText,channel){
       const needle=normalizeAnaMatchText(phrase);if(!needle)return false;
       return trigger.match==='exact'?text===needle:` ${text} `.includes(` ${needle} `);
     });
-    if(matched)return {matched:true,triggerKey:trigger.key,action:trigger.action,
-      responseText:trigger.action==='fixed_reply'?cleanText(trigger.response_text,500):'',
-      labelId:trigger.action==='label'?trigger.label_id:null,priority:trigger.priority};
+    if(matched&&conditionsMatch(trigger.conditions,context)){
+      const actions=normalizedTriggerActions(trigger).map(action=>({
+        type:action.type,
+        responseText:action.type==='fixed_reply'?cleanText(action.response_text,500):'',
+        labelId:action.type==='label'?action.label_id:null
+      }));
+      const first=actions[0]||{};
+      return {matched:true,triggerKey:trigger.key,actions,action:first.type,responseText:first.responseText||'',labelId:first.labelId||null,priority:trigger.priority};
+    }
   }
   return {matched:false};
 }
@@ -84,8 +119,10 @@ export function routeAnaMessage(configuration,inboundText,channel){
   if(!validation.ok)return {path:'handoff',reason:'active_config_invalid'};
   const trigger=evaluateAnaTriggers(configuration,inboundText,channel);
   if(!trigger.matched)return {path:'ai'};
+  if(Array.isArray(trigger.actions)&&trigger.actions.length>1)return {path:'actions',triggerKey:trigger.triggerKey,actions:trigger.actions};
   if(trigger.action==='fixed_reply')return {path:'fixed_reply',triggerKey:trigger.triggerKey,responseText:trigger.responseText};
   if(trigger.action==='label')return {path:'label',triggerKey:trigger.triggerKey,labelId:trigger.labelId};
+  if(trigger.action==='continue_ai')return {path:'ai',triggerKey:trigger.triggerKey};
   return {path:'handoff',triggerKey:trigger.triggerKey,reason:'admin_trigger_handoff'};
 }
 
