@@ -42,7 +42,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
     const loaded=await privileged.rpc("ops2_ana_admin_load_v1");if(loaded.error)throw loaded.error;
     const result=loaded.data||{ok:false,error:"ana_admin_load_failed"};if(result.ok!==true)return json(req,{ok:false,error:result.error||"ana_admin_load_failed"},409);
     if(action==="admin_history"){
-      const safeReasons=new Set(["admin_trigger_fixed_reply","admin_trigger_handoff","admin_trigger_label_applied","admin_trigger_label_removed","human_takeover_during_generation","human_takeover_before_trigger_label","human_review_required","active_config_invalid","first_greeting_of_day","ai_gate_closed_before_generation","inbound_not_supported"]);
+      const safeReasons=new Set(["admin_trigger_fixed_reply","admin_trigger_handoff","admin_trigger_label_applied","admin_trigger_label_removed","human_takeover_during_generation","human_takeover_before_trigger_label","human_review_required","active_config_invalid","dynamic_data_requires_confirmation","first_greeting_of_day","ai_gate_closed_before_generation","inbound_not_supported"]);
       const jobs=await privileged.from("whatsapp_ana_jobs_v1").select("whatsapp_account_id,status,decision,reason,created_at,completed_at").eq("dry_run",false).order("created_at",{ascending:false}).limit(20);
       if(jobs.error)throw jobs.error;
       const accountIds=[...new Set((jobs.data||[]).map((job:any)=>job.whatsapp_account_id).filter(Boolean))];
