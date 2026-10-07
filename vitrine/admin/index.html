@@ -6887,10 +6887,27 @@
       if(btn)delete btn.dataset.saving;
     }
   }
-  function showSeparationPackagingNotice(orderId,orderNumber,back){
+  async function resolveOriginalOrderCodeForPackaging(orderId){
+    let current=state.orders.find(o=>String(o.id)===String(orderId));
+    let code=orderDisplayCode(current);
+    if(code&&code!=='—')return code;
+    try{
+      const data=await api('order',{id:orderId});
+      current=data?.order||null;
+      code=orderDisplayCode(current);
+      if(code&&code!=='—')return code;
+    }catch{}
+    return '';
+  }
+  async function showSeparationPackagingNotice(orderId,back){
     document.querySelector('.orders-packaging-backdrop')?.remove();
-    const current=state.orders.find(o=>String(o.id)===String(orderId));
-    const display=String(orderNumber||current?.order_number||orderDisplayCode(current)||'').replace(/^DA-/i,'');
+    const display=await resolveOriginalOrderCodeForPackaging(orderId);
+    if(!display){
+      toast('Separação concluída, mas não encontrei o número original do pedido. Abra o pedido antes de etiquetar a embalagem.');
+      if(back?.isConnected)back.remove();else closeOrderSeparationSheet();
+      await loadOrders();
+      return;
+    }
     const overlay=document.createElement('div');overlay.className='orders-packaging-backdrop';
     overlay.innerHTML='<section class="orders-packaging-sheet" role="dialog" aria-modal="true" aria-labelledby="packagingNoticeTitle"><div class="orders-packaging-kicker">Separação concluída</div><strong class="orders-packaging-number">#'+esc(display)+'</strong><h2 class="orders-packaging-message" id="packagingNoticeTitle">ANOTE O NÚMERO DO PEDIDO NA EMBALAGEM</h2><button class="orders-packaging-ok" type="button">OK</button></section>';
     document.body.appendChild(overlay);
@@ -6911,7 +6928,7 @@
       const result=await api('order_separation_complete',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:id,expected_order_updated_at:expected,separator_key:assignment.separator_key,operator:assignment.separator_label||separatorLabel(assignment.separator_key)||'Separação'})});
       btn.textContent='SEPARAÇÃO CONCLUÍDA';
       await refreshOrderSeparationBoard();
-      showSeparationPackagingNotice(id,result.order_number||'',back);
+      await showSeparationPackagingNotice(id,back);
       setTimeout(async()=>{try{const o=state.orders.find(x=>String(x.id)===String(id));if(o?.status==='ready'){await loadFiscalForOrders([o]);paintOrderRows()}}catch{}},5000);
     }catch(e){toast('A separação NÃO foi concluída · '+(e.message==='separator_required'?'escolha o separador responsável':errorMessage(e.message)));await loadOrderSeparationSheet(id,back)}
   }
