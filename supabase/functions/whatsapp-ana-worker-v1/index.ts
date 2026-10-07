@@ -153,18 +153,23 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
         const labeled=await db.rpc('ops2_ana_apply_trigger_label_v1',{p_conversation_id:job.conversation_id,p_label_id:action.labelId,p_trigger_key:routed.triggerKey});
         if(labeled.error||labeled.data?.ok!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:labeled.data?.error||'trigger_label_failed',p_model:model});
       }
+      if(action.type==='remove_label'){
+        const unlabeled=await db.rpc('ops2_ana_remove_trigger_label_v1',{p_conversation_id:job.conversation_id,p_label_id:action.labelId,p_trigger_key:routed.triggerKey});
+        if(unlabeled.error||unlabeled.data?.ok!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:unlabeled.data?.error||'trigger_label_remove_failed',p_model:model});
+      }
       if(action.type==='fixed_reply')fixedReply=action.responseText||fixedReply;
     }
     if(fixedReply)routed.path='fixed_reply',routed.responseText=fixedReply;
     else if((routed.actions||[]).some((action:any)=>action.type==='continue_ai'))routed.path='ai';
     else return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'no_reply',p_reason:'admin_trigger_actions_completed',p_model:model,p_metadata:{trigger_key:routed.triggerKey,active_version:activeConfig.data.version}});
   }
-  if(routed.path==='label'){
+  if(routed.path==='label'||routed.path==='remove_label'){
     const labelGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
     if(labelGate.error||labelGate.data?.allowed!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'human_takeover_before_trigger_label',p_model:model});
-    const labeled=await db.rpc('ops2_ana_apply_trigger_label_v1',{p_conversation_id:job.conversation_id,p_label_id:routed.labelId,p_trigger_key:routed.triggerKey});
-    if(labeled.error||labeled.data?.ok!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:labeled.data?.error||'trigger_label_failed',p_model:model});
-    return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'no_reply',p_reason:'admin_trigger_label_applied',p_model:model,
+    const removing=routed.path==='remove_label';
+    const labeled=await db.rpc(removing?'ops2_ana_remove_trigger_label_v1':'ops2_ana_apply_trigger_label_v1',{p_conversation_id:job.conversation_id,p_label_id:routed.labelId,p_trigger_key:routed.triggerKey});
+    if(labeled.error||labeled.data?.ok!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:labeled.data?.error||(removing?'trigger_label_remove_failed':'trigger_label_failed'),p_model:model});
+    return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'no_reply',p_reason:removing?'admin_trigger_label_removed':'admin_trigger_label_applied',p_model:model,
       p_metadata:{trigger_key:routed.triggerKey,active_version:activeConfig.data.version}});
   }
   const historyResult=await db.from('whatsapp_messages_v1').select('direction,text_body,sender_kind,created_at,received_at,sent_at')
