@@ -3477,16 +3477,30 @@ async function orderSeparationItemSet(p:any,auth:any){
   if(requestedSeparator&&requestedSeparator!==separator)return {error:"separator_assignment_changed",status:409,separator_key:separator,separator_label:assignmentQ.data?.separator_label||null};
   let oq=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;if(!oq.data)return {error:"order_not_found",status:404};
   if(String(oq.data.updated_at)!==expected)return {error:"stale_order_version",conflict:"order_version_conflict",status:409,order_updated_at:oq.data.updated_at};
-  if(uiStatus(oq.data.status)==="confirmed"){
-    let approval:any=null;try{approval=await syncConfirmedOrderToBling(oid,separator||tx(p?.operator,80)||"Separação")}catch(e){approval={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
-    if(!approval?.ok)return {error:"bling_approval_required_before_separation",status:409,bling_sync:approval};
-    const moved=await db.from("orders").update({status:"processing",updated_at:new Date().toISOString()}).eq("id",oid).eq("status","confirmed").select("updated_at").maybeSingle();if(moved.error)throw moved.error;
-    oq=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;
-  }
-  const q=await db.rpc("ops2_set_order_separation_item_v2",{p_order_id:oid,p_order_item_id:itemId,p_state:requested,p_expected_order_updated_at:oq.data?.updated_at,p_separator_key:separator});if(q.error)throw q.error;
+
+  const q=await db.rpc("ops2_set_order_separation_item_v2",{p_order_id:oid,p_order_item_id:itemId,p_state:requested,p_expected_order_updated_at:oq.data.updated_at,p_separator_key:separator});if(q.error)throw q.error;
   if(q.data?.ok!==true){const conflict=["stale_order_version","order_version_conflict"].includes(String(q.data?.error||q.data?.conflict||""));return {error:String(q.data?.error||"separation_item_update_failed"),status:conflict?409:400,...q.data}}
+
+  let blingSync:any=null,warning:string|null=null,orderUpdatedAt=q.data?.order_updated_at||null;
+  if(uiStatus(oq.data.status)==="confirmed"){
+    try{blingSync=await syncConfirmedOrderToBling(oid,separator||tx(p?.operator,80)||"Separação")}
+    catch(e){blingSync={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
+    if(blingSync?.ok){
+      const moved=await db.from("orders").update({status:"processing",updated_at:new Date().toISOString()}).eq("id",oid).eq("status","confirmed").select("updated_at").maybeSingle();if(moved.error)throw moved.error;
+      orderUpdatedAt=moved.data?.updated_at||orderUpdatedAt;
+    }else{
+      warning="bling_approval_pending";
+      await openSeparationIntegrationAttention(
+        oid,"order_bling_approval_pending",
+        "Item da separação foi salvo; aprovação do pedido no Bling está pendente.",
+        "Regularize a sincronização com o Bling antes de concluir a separação.",
+        {item_state:requested,order_item_id:itemId,bling_sync:blingSync}
+      );
+    }
+  }
   try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
-  return {item:q.data};
+  try{await opsEvent("order.separation_item_recorded","Item da separação registrado no Supabase.","order",oid,{order_item_id:itemId,state:requested,separator_key:separator,bling_sync:blingSync,warning},assignmentQ.data?.separator_label||separator,"human","dona_antonia","order-separation-item:"+oid+":"+itemId+":"+requested+":"+String(q.data?.order_updated_at||""))}catch{}
+  return {item:q.data,persisted:true,order_updated_at:orderUpdatedAt,bling_sync:blingSync,warning};
 }
 async function markSeparationNeedsAttention(oid:string,resumeFrom:string,error:any,detail:any=null){
   try{await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"needs_attention",p_metadata:{resume_from:resumeFrom,last_error:String(error||"separation_completion_failed"),last_error_detail:detail||null,last_error_at:new Date().toISOString()}})}catch{}
@@ -3582,11 +3596,21 @@ async function orderSeparationComplete(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
   const expected=tx(p?.expected_order_updated_at,80);if(!expected||!Number.isFinite(Date.parse(expected)))return {error:"order_version_required",status:409};
+  let completionExpected=expected;
+  let completionOrder=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(completionOrder.error)throw completionOrder.error;if(!completionOrder.data)return {error:"order_not_found",status:404};
+  if(String(completionOrder.data.updated_at)!==expected)return {error:"stale_order_version",conflict:"order_version_conflict",status:409,order_updated_at:completionOrder.data.updated_at};
   const assignmentQ=await db.from("order_separation_assignments_v1").select("separator_key,separator_label,assigned_at").eq("order_id",oid).maybeSingle();
   if(assignmentQ.error)throw assignmentQ.error;
   if(!tx(assignmentQ.data?.separator_key,30))return {error:"separator_required",status:409};
 
-  const prep=await db.rpc("ops2_prepare_order_separation_completion_v2",{p_order_id:oid,p_expected_order_updated_at:expected});if(prep.error){
+  if(uiStatus(completionOrder.data.status)==="confirmed"){
+    let approval:any=null;try{approval=await syncConfirmedOrderToBling(oid,tx(assignmentQ.data?.separator_key,30)||tx(p?.operator,80)||"Separação")}catch(e){approval={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
+    if(!approval?.ok)return {error:"bling_approval_required_before_separation",status:409,bling_sync:approval,items_persisted:true};
+    const moved=await db.from("orders").update({status:"processing",updated_at:new Date().toISOString()}).eq("id",oid).eq("status","confirmed").select("updated_at").maybeSingle();if(moved.error)throw moved.error;
+    completionExpected=moved.data?.updated_at||completionExpected;
+  }
+
+  const prep=await db.rpc("ops2_prepare_order_separation_completion_v2",{p_order_id:oid,p_expected_order_updated_at:completionExpected});if(prep.error){
     const message=String(prep.error.message||"");
     if(message.includes("separator_required_before_completion"))return {error:"separator_required",status:409};
     throw prep.error;
