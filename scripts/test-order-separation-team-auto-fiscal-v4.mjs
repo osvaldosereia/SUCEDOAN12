@@ -14,6 +14,11 @@ assert.match(admin,/data-separator-key/);
 assert.match(admin,/Trocar a separação para/);
 assert.match(admin,/EM SEPARAÇÃO ·/);
 assert.match(admin,/order-v3-progress-bar/);
+assert.match(admin,/SALVANDO…/);
+assert.match(admin,/✓ SALVO/);
+assert.match(admin,/NÃO SALVO/);
+assert.match(admin,/back\.dataset\.orderUpdatedAt/);
+assert.match(admin,/bling_approval_pending/);
 assert.match(admin,/orderCardPhone/);
 assert.match(admin,/Tel\. /);
 assert.match(admin,/INTEGRAÇÃO PENDENTE/);
@@ -45,3 +50,14 @@ assert.match(backend,/async function orderDispatchStartV4[\s\S]*ops2_launch_phys
 assert.match(backend,/fiscal_authorization_required_before_dispatch/);
 
 console.log('order separation team + auto fiscal v4 contract: ok');
+
+const itemStart=backend.indexOf('async function orderSeparationItemSet');
+const itemEnd=backend.indexOf('\nasync function markSeparationNeedsAttention',itemStart);
+const itemBlock=backend.slice(itemStart,itemEnd);
+assert.ok(itemBlock.indexOf('ops2_set_order_separation_item_v2') < itemBlock.indexOf('syncConfirmedOrderToBling'),'Persistir o item antes de depender do Bling');
+assert.match(itemBlock,/persisted:true/);
+assert.match(itemBlock,/warning/);
+const completeStart2=backend.indexOf('async function orderSeparationComplete');
+const completeEnd2=backend.indexOf('\nasync function completeDeliveryV3',completeStart2);
+const completeBlock2=backend.slice(completeStart2,completeEnd2);
+assert.ok(completeBlock2.indexOf('syncConfirmedOrderToBling') < completeBlock2.indexOf('ops2_prepare_order_separation_completion_v2'),'Conclusão mantém gate do Bling');
