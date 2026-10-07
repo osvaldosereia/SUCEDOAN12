@@ -2454,6 +2454,62 @@
     }catch(e){toast(errorMessage(e.message))}
   }
 
+  function smartRunSlotLabel(run){return run?.vehicle_key==='car_1'?'Rota 1':run?.vehicle_key==='car_2'?'Rota 2':'Rota'}
+  function smartRunAssignmentText(run){return [run?.region?.name,run?.driver?.name,run?.vehicle?.label].filter(Boolean).join(' · ')||'Atribuição operacional pendente'}
+  function smartRunCardHtml(run){
+    const stops=run?.stops||[],pendingLoad=stops.filter(s=>['planned','out_for_delivery'].includes(s.status)&&!s.loaded_at).length,loaded=stops.filter(s=>s.loaded_at).length,maps=runMapsHref(run);
+    const movable=run.status==='planned';
+    return '<article class="panel" style="padding:12px;margin:0">'+
+      '<div class="history-title"><div><strong>'+esc(smartRunSlotLabel(run))+' · '+esc(run.status==='dispatched'?'Em entrega':'Preparada')+'</strong><span>'+esc(smartRunAssignmentText(run))+'</span></div><b>'+stops.length+' parada(s)</b></div>'+
+      '<div class="sub" style="margin:8px 0">'+loaded+' carregada(s)'+(pendingLoad?' · '+pendingLoad+' aguardando carga':' · carga conferida')+'</div>'+
+      '<div class="dispatch-actions" style="margin-bottom:10px">'+
+        (movable?'<button class="quick-link" type="button" data-smart-run-edit="'+esc(run.id)+'">Ajustar rota</button>':'')+
+        (pendingLoad?'<button class="quick-link primary-link" type="button" data-smart-run-load="'+esc(run.id)+'">Confirmar carga</button>':'')+
+        (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
+      '</div>'+
+      '<div style="display:grid;gap:6px">'+stops.map(s=>'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 8px;border:1px solid #e1e6e3;border-radius:9px"><span><strong>'+esc(String(s.sequence||'—'))+'. #'+esc(s.order_number||'—')+'</strong><small style="display:block">'+esc(s.customer_name||'Sem cliente')+(s.destination_confidence==='confirmed'?' · GPS confirmado':'')+'</small></span>'+(movable&&s.status==='planned'?'<button class="text" type="button" data-smart-stop-move="'+esc(s.stop_id)+'" data-smart-source-run="'+esc(run.id)+'">Mover</button>':'')+'</div>').join('')+'</div>'+
+    '</article>';
+  }
+  function smartDeliveryRunsHtml(){
+    const runs=(state.deliveryRuns||[]).filter(r=>['planned','dispatched'].includes(r.status));
+    if(!runs.length)return '';
+    return '<section style="margin:0 0 14px"><div class="history-title" style="margin-bottom:8px"><div><strong>Rotas de hoje</strong><span>Ajuste equipe, veículo, carga e distribuição das paradas.</span></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px">'+runs.map(smartRunCardHtml).join('')+'</div></section>';
+  }
+  function openSmartRunAssignment(runId){
+    const run=(state.deliveryRuns||[]).find(r=>r.id===runId);if(!run)return;
+    $('#editorTitle').textContent='Ajustar '+smartRunSlotLabel(run);
+    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Pedido não muda</strong><div>Esta ação só troca região, entregador ou veículo da rota.</div></div><div style="display:grid;gap:12px">'+
+      '<label>Região<select id="smartRunRegion" style="width:100%">'+smartDeliveryOptionHtml('regions',run.region_id||'')+'</select></label>'+
+      '<label>Entregador<select id="smartRunDriver" style="width:100%">'+smartDeliveryOptionHtml('drivers',run.driver_id||'')+'</select></label>'+
+      '<label>Veículo<select id="smartRunVehicle" style="width:100%">'+smartDeliveryOptionHtml('vehicles',run.vehicle_id||'')+'</select></label>'+
+      '<button class="primary" id="smartRunSave" type="button">Salvar atribuição</button></div>';
+    $('#editor').showModal();
+    $('#smartRunSave').onclick=async()=>{
+      const btn=$('#smartRunSave');btn.disabled=true;btn.textContent='Salvando…';
+      try{
+        await api('smart_delivery_run_assign',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          run_id:run.id,region_id:$('#smartRunRegion').value||null,driver_id:$('#smartRunDriver').value||null,vehicle_id:$('#smartRunVehicle').value||null,operator:currentOperator()||'Operação'
+        })});
+        $('#editor').close();await loadDeliveryRuns();paintExpeditionBody();toast('Rota atualizada');
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar atribuição'}
+    };
+  }
+  function openSmartStopMove(stopId,sourceRunId){
+    const source=(state.deliveryRuns||[]).find(r=>r.id===sourceRunId),stop=source?.stops?.find(s=>s.stop_id===stopId);
+    const targets=(state.deliveryRuns||[]).filter(r=>r.id!==sourceRunId&&r.status==='planned'&&r.service_date===source?.service_date);
+    if(!stop||!targets.length){toast('Não existe outra rota preparada para receber esta parada');return}
+    $('#editorTitle').textContent='Mover parada #'+String(stop.order_number||'');
+    $('#editorBody').innerHTML='<div class="rule-notice warn"><strong>Somente a rota muda</strong><div>O pedido e seu número permanecem os mesmos. A parada irá para o final da rota escolhida.</div></div><label>Rota de destino<select id="smartTargetRun" style="width:100%;min-height:42px">'+targets.map(r=>'<option value="'+esc(r.id)+'">'+esc(smartRunSlotLabel(r)+' · '+smartRunAssignmentText(r))+'</option>').join('')+'</select></label><button class="primary" id="smartMoveSave" type="button" style="margin-top:12px">Mover parada</button>';
+    $('#editor').showModal();
+    $('#smartMoveSave').onclick=async()=>{
+      const btn=$('#smartMoveSave');btn.disabled=true;btn.textContent='Movendo…';
+      try{
+        await api('smart_delivery_stop_move',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stop_id:stopId,target_run_id:$('#smartTargetRun').value})});
+        $('#editor').close();await loadDeliveryRuns();paintExpeditionBody();toast('Parada movida sem alterar o pedido');
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Mover parada'}
+    };
+  }
+
   async function bulkDispatchSelected(){async function bulkDispatchSelected(){
     const selected=state.orders.filter(o=>o.status==='ready'&&fiscalAuthorizedForDispatch(o)&&state.expeditionSelected.includes(o.id));
     if(!selected.length){toast('Selecione ao menos um pedido pronto');return}
@@ -2492,6 +2548,7 @@
         '<div class="ops-card"><small>Entregues hoje</small><strong>'+visible.filter(deliveredToday).length+'</strong><span>Fechamento e fiscal</span></div>'+
       '</div>'+
       (ready.length?smartDeliveryPlannerHtml():'')+
+      smartDeliveryRunsHtml()+
       (ready.length?(()=>{
         const selected=selectedDispatchOrders(dispatchableReady);
         const selectedTotal=selected.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
@@ -2516,6 +2573,9 @@
     if($('#deliveryPlanDriver'))$('#deliveryPlanDriver').onchange=e=>state.deliveryPlan.driver_id=e.target.value;
     if($('#deliveryPlanVehicle'))$('#deliveryPlanVehicle').onchange=e=>state.deliveryPlan.vehicle_id=e.target.value;
     if($('#smartDeliverySettings'))$('#smartDeliverySettings').onclick=openSmartDeliverySettings;
+    document.querySelectorAll('[data-smart-run-edit]').forEach(b=>b.onclick=()=>openSmartRunAssignment(b.dataset.smartRunEdit));
+    document.querySelectorAll('[data-smart-run-load]').forEach(b=>b.onclick=()=>confirmRunLoading(b.dataset.smartRunLoad));
+    document.querySelectorAll('[data-smart-stop-move]').forEach(b=>b.onclick=()=>openSmartStopMove(b.dataset.smartStopMove,b.dataset.smartSourceRun));
     if($('#planCar1'))$('#planCar1').onclick=()=>planSelectedDeliveryRun('car_1');
     if($('#planCar2'))$('#planCar2').onclick=()=>planSelectedDeliveryRun('car_2');
     if($('#printDispatchManifest'))$('#printDispatchManifest').onclick=printDispatchManifest;
