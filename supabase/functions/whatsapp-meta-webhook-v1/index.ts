@@ -63,7 +63,7 @@ async function accountMap(phoneNumberIds: string[]) {
   return new Map((q.data || []).map((row: any) => [String(row.phone_number_id), String(row.id)]));
 }
 
-async function persistInbound(message: any, payloadHash: string, safePayload: unknown) {
+async function persistMessage(message: any, payloadHash: string, safePayload: unknown) {
   const result = await db.rpc("whatsapp_ingest_event_v1", {
     p_whatsapp_account_id: message.whatsapp_account_id,
     p_provider: "meta",
@@ -297,12 +297,20 @@ Deno.serve(async (req: Request) => {
     const safePayload = redactWebhookPayload(payload);
     let inboundNormalized = 0;
     let inboundDuplicates = 0;
+    let echoesNormalized = 0;
+    let echoesDuplicates = 0;
     let anaConfirmationsApplied = 0;
     let anaJobsQueued = 0;
     for (const message of normalized.messages) {
-      const result = await persistInbound(message, normalized.payloadHash, safePayload);
-      if (result?.duplicate === true) inboundDuplicates += 1;
-      else inboundNormalized += 1;
+      const result = await persistMessage(message, normalized.payloadHash, safePayload);
+      const isEcho = message?.message?.direction === "outbound" && message?.message?.metadata?.source_event === "smb_message_echoes";
+      if (isEcho) {
+        if (result?.duplicate === true) echoesDuplicates += 1;
+        else echoesNormalized += 1;
+      } else {
+        if (result?.duplicate === true) inboundDuplicates += 1;
+        else inboundNormalized += 1;
+      }
       const confirmation = await applyCustomerConfirmationSignal(message, result);
       if (confirmation?.ok === true) anaConfirmationsApplied += 1;
       if (await enqueueAnaForInbound(message, result)) anaJobsQueued += 1;
@@ -322,6 +330,8 @@ Deno.serve(async (req: Request) => {
       ok: true,
       inbound_normalized: inboundNormalized,
       inbound_duplicates: inboundDuplicates,
+      echoes_normalized: echoesNormalized,
+      echoes_duplicates: echoesDuplicates,
       ana_confirmations_applied: anaConfirmationsApplied,
       ana_jobs_queued: anaJobsQueued,
       statuses_captured: statusesCaptured,
