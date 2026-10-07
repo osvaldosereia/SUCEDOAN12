@@ -7,12 +7,13 @@ const historyEnd=endpoint.indexOf('const runtime=',historyStart);
 assert.ok(historyStart>=0&&historyEnd>historyStart,'admin_history block must exist');
 const history=endpoint.slice(historyStart,historyEnd);
 
-assert.match(history,/select\("status,decision,reason,created_at,metadata"\)/,'metrics query must use a privacy-minimized field set');
+assert.match(history,/select\("status,decision,reason,created_at,metadata->>trigger_key"\)/,'metrics query must extract only the trigger key from job metadata');
 assert.match(history,/eq\("dry_run",false\)/);
 assert.match(history,/gte\("created_at",since\)/);
 assert.match(history,/limit\(1000\)/,'metrics query must be bounded');
 assert.match(history,/other_or_needs_review/,'free-text reasons must be collapsed to a safe bucket');
-assert.match(history,/metadata\?\.trigger_key/,'only automation key metadata may be aggregated');
+assert.match(history,/job\.trigger_key/,'only the extracted automation key may be aggregated');
+assert.doesNotMatch(history,/select\([^)]*metadata[,")]/,'metrics query must not fetch the complete metadata object');
 assert.doesNotMatch(history,/text_body|customer_id|conversation_id|wa_contact_e164|suggestion_text|p_text/,'history metrics must not read message text or customer/conversation identifiers');
 assert.match(history,/metrics=\{window_days:7/);
 
