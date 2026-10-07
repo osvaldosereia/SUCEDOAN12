@@ -1,6 +1,8 @@
+import {listAnaAutomationTemplates,buildAnaAutomationTemplate} from './ana-automation-library.js';
 const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ana-preview-v1';
 const TOKEN_KEY='da_finance_access_token_v1';
 const sections=[['overview','Visão geral'],['behavior','Comportamento'],['knowledge','Conhecimento'],['triggers','Automações'],['tests','Testes e histórico']];
+const automationTemplates=listAnaAutomationTemplates();
 const state={host:null,role:'viewer',section:'overview',draft:null,active:null,revision:0,channels:[],labels:[],versions:[],testRuns:[],events:[],history:[],lastTest:null,busy:false,dirty:false};
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tokenPayload=token=>{try{const raw=String(token).split('.')[1]||'',pad=raw.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-raw.length%4)%4);return JSON.parse(atob(pad))}catch{return {}}};
