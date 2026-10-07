@@ -12,7 +12,7 @@ assert.match(sql,/create table if not exists public\.basket_mold_position_option
 
 // A mold extends the existing commercial basket instead of replacing it.
 assert.match(sql,/basket_id\s+uuid\s+not null\s+unique\s+references\s+public\.basket_templates\s*\(id\)/i);
-assert.match(sql,/public_composition_count\s+smallint\s+not null[^,]*check\s*\(public_composition_count\s+between\s+1\s+and\s+4\)/i);
+assert.match(sql,/public_composition_count\s+smallint\s+not null[^,]*check\s*\(public_composition_count\s+between\s+1\s+and\s+6\)/i);
 assert.match(sql,/hidden_adjustment\s+numeric(?:\(\d+\s*,\s*\d+\))?\s+not null/i);
 
 // Positions and their allowed product variations.
