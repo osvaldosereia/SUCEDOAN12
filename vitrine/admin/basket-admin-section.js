@@ -3,7 +3,7 @@
 
   const MODULES={
     taxonomy:{label:'Categorias da vitrine',description:'Crie categorias e subdivisões, controle a ordem e escolha quais seções ficam ativas.',src:'/vitrine/admin/basket-category-admin.js?v=20261006-1',global:'DonaAntoniaBasketTaxonomy'},
-    molds:{label:'Cestas Molde',description:'Edite nome, valores ocultos, posições, quantidades e produtos permitidos em cada cesta.',src:'/vitrine/admin/basket-mold-admin.js?v=20261007-conditional-hidden-v1',global:'DonaAntoniaBasketMolds'},
+    molds:{label:'Cestas Molde',description:'Edite nome, valores ocultos, posições, quantidades e produtos permitidos em cada cesta.',src:'/vitrine/admin/basket-mold-admin.js?v=20261007-compositions6-v1',global:'DonaAntoniaBasketMolds'},
     kits:{label:'Criador de Kits',description:'Ferramenta técnica para manutenção das receitas reutilizáveis existentes.',src:'/vitrine/admin/kit-builder.js?v=basket-products-v1',global:'DonaAntoniaKitBuilder'},
     store:{label:'Operação anterior',description:'Ferramenta técnica para receitas, reservas e montagens do modelo anterior.',src:'/vitrine/admin/store-baskets-builder.js?v=component-edit-v1',global:'DonaAntoniaStoreBaskets'}
   };
