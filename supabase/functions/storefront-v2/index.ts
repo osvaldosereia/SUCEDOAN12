@@ -18,6 +18,9 @@ let homeCache:{expiresAt:number,data:any}|null=null;
 let homePromise:Promise<any>|null=null;
 let homePriorityCache:{expiresAt:number,data:any}|null=null;
 let homePriorityPromise:Promise<any>|null=null;
+const MOLD_COMPOSITION_CACHE_TTL_MS=30_000;
+const moldCompositionCache=new Map<string,{expiresAt:number,data:any}>();
+const moldCompositionInFlight=new Map<string,Promise<any[]>>();
 const ALLOWED_ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ALLOWED_ORIGINS.has(origin)?origin:"https://donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"GET, POST, OPTIONS"}};
 const json=(req:Request,v:any,s=200,h:Record<string,string>={})=>new Response(JSON.stringify(v),{status:s,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8",...h}});
@@ -108,6 +111,21 @@ async function moldAvailableStockMap(productIds:string[]){
 }
 function moldEffectivePriceCents(p:any){const n=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0?Number(p.offer_price):Number(p?.price||0);return cents(n)}
 async function moldProductsMap(ids:string[]){const clean=[...new Set(ids.filter(Boolean))],out=new Map<string,any>();if(!clean.length)return out;const q=await db.from("products").select("id,name,sku,gtin,image_url,packaging,price,offer_price,is_offer,is_active").in("id",clean);if(q.error)throw q.error;for(const p of q.data||[])out.set(String(p.id),p);return out}
+async function moldPublicCompositions(basketIds:string[]){
+  const ids=[...new Set(basketIds.filter(Boolean))],out=new Map<string,any>(),now=Date.now();
+  const missing:string[]=[];
+  for(const id of ids){const cached=moldCompositionCache.get(id);if(cached&&cached.expiresAt>now)out.set(id,cached.data);else{moldCompositionCache.delete(id);missing.push(id)}}
+  if(missing.length){
+    const key=[...missing].sort().join(",");let request=moldCompositionInFlight.get(key);
+    if(!request){
+      request=db.rpc("basket_mold_public_compositions_batch_v1",{p_basket_ids:missing}).then((q:any)=>{if(q.error)throw q.error;return Array.isArray(q.data)?q.data:[]}).finally(()=>moldCompositionInFlight.delete(key));
+      moldCompositionInFlight.set(key,request);
+    }
+    const generated=await request;
+    for(const data of generated){const id=String(data?.basket_id||"");if(id){moldCompositionCache.set(id,{expiresAt:Date.now()+MOLD_COMPOSITION_CACHE_TTL_MS,data});out.set(id,data)}}
+  }
+  return out;
+}
 async function moldHomeCards(priorityOnly=false){
   const mq=await db.from("basket_molds").select("id,basket_id,hidden_adjustment,conditional_hidden_enabled,conditional_hidden_product_id,conditional_hidden_adjustment,public_composition_count,metadata");if(mq.error)throw mq.error;let molds=mq.data||[];if(!molds.length)return [];
   if(priorityOnly){
@@ -138,7 +156,8 @@ async function moldHomeCards(priorityOnly=false){
     db.from("basket_subcategories").select("id,category_id,name,sort_order,is_active").eq("is_active",true).order("sort_order")
   ]);if(categoryQ.error)throw categoryQ.error;if(subcategoryQ.error)throw subcategoryQ.error;
   const categoryMap=new Map((categoryQ.data||[]).map((x:any)=>[String(x.id),x])),subcategoryMap=new Map((subcategoryQ.data||[]).map((x:any)=>[String(x.id),x]));
-  const generated=await Promise.all(visibleMolds.map(async(m:any)=>{const q=await db.rpc("basket_mold_public_compositions_v2",{p_basket_id:m.basket_id});if(q.error)throw q.error;return {m,data:q.data||{}}}));
+  const compositionMap=await moldPublicCompositions(visibleMolds.map((m:any)=>String(m.basket_id)));
+  const generated=visibleMolds.map((m:any)=>({m,data:compositionMap.get(String(m.basket_id))||{}}));
   const productIds:string[]=[];for(const g of generated)for(const c of g.data?.compositions||[])for(const i of c.items||[])if(i.product_id)productIds.push(String(i.product_id));const products=await moldProductsMap(productIds);
   const cards:any[]=[];
   for(const {m,data} of generated){const b=baskets.get(String(m.basket_id));if(!b||b.is_active!==true)continue;const cat=b.category_id?categoryMap.get(String(b.category_id)):null;const sub=b.subcategory_id?subcategoryMap.get(String(b.subcategory_id)):null;if(!cat||!sub||String(sub.category_id)!==String(cat.id))continue;const expected=positionCounts.get(String(m.id))||0;if(!expected)continue;
