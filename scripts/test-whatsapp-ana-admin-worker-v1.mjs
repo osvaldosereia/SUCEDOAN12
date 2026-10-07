@@ -8,7 +8,10 @@ const config={behavior:{tone:'cordial',conciseness:'short',emoji:'sparingly',use
 ]};
 assert.deepEqual(routeAnaMessage(config,'Qual o horário de atendimento?','0975'),{path:'fixed_reply',triggerKey:'hours',responseText:'Atendemos em horário comercial.'});
 assert.equal(routeAnaMessage(config,'quero falar com atendente','1018').path,'handoff');
-assert.equal(routeAnaMessage(config,'quanto custa a cesta?','0975').path,'ai');
+assert.equal(routeAnaMessage(config,'quanto custa a cesta?','0975').reason,'dynamic_data_requires_confirmation','unhandled price questions must fail closed before AI');
+assert.equal(routeAnaMessage(config,'tem estoque?','0975').reason,'dynamic_data_requires_confirmation','unhandled stock questions must fail closed before AI');
+const priced={...config,triggers:[{key:'price-safe',name:'Preço seguro',enabled:true,priority:100,channels:['all'],match:'phrase',phrases:['quanto custa'],actions:[{type:'fixed_reply',response_text:'Consulte o catálogo oficial.'}]}]};
+assert.equal(routeAnaMessage(priced,'quanto custa a cesta?','0975').path,'fixed_reply','an explicit deterministic rule may safely override the dynamic-data guard');
 const multi={...config,triggers:[{key:'basket',name:'Cestas',enabled:true,priority:99,channels:['all'],match:'phrase',phrases:['cesta basica'],conditions:[{type:'human_mode',value:false},{type:'customer_linked',value:true}],actions:[{type:'label',label_id:'00000000-0000-4000-8000-000000000002'},{type:'continue_ai'}]}]};
 assert.equal(routeAnaMessage(multi,'quero cesta básica','0975',{humanMode:false,customerLinked:false}).path,'ai');
 assert.equal(routeAnaMessage(multi,'quero cesta básica','0975',{humanMode:false,customerLinked:true}).path,'actions');
@@ -29,4 +32,6 @@ assert.match(worker,/admin_trigger_label_removed/,'worker must record determinis
 assert.match(worker,/select\('customer_id,wa_contact_e164'\)/,'worker must read only the explicit conversation customer link');
 assert.match(worker,/customerLinked:Boolean\(conversation\.data\.customer_id\)/,'worker must pass explicit customer linkage to trigger routing');
 assert.match(worker,/conversation_context_unavailable/,'missing conversation context must fail closed');
+assert.match(worker,/const routeMetadata=\{trigger_key:routed\.triggerKey\|\|null,active_version:activeConfig\.data\.version\}/,'live outcomes must retain the matched trigger key for metrics');
+assert.match(worker,/p_metadata:\{\.\.\.routeMetadata,outbox_id:/,'successful sends must persist trigger metadata');
 console.log('PASS: worker published configuration, deterministic routing and fail-closed contract');

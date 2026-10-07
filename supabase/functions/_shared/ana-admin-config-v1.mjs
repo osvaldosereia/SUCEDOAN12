@@ -148,11 +148,21 @@ export function buildAnaRuntimeInstructions(configuration){
   return `${ANA_DRY_RUN_INSTRUCTIONS}\n\nPreferências de estilo permitidas: use linguagem ${tone}. ${length} ${emoji} ${firstName}\n\nFatos aprovados do conhecimento (fonte autorizada; não substituem confirmação de dados dinâmicos):\n${facts||'- Nenhum fato adicional publicado.'}`;
 }
 
+function requiresDynamicConfirmation(inboundText=''){
+  const text=normalizeAnaMatchText(inboundText);
+  if(!text)return false;
+  const phrases=['preco','qual o preco','quanto custa','valor','qual o valor','estoque','tem estoque','tem em estoque'];
+  return phrases.some(phrase=>` ${text} `.includes(` ${phrase} `));
+}
+
 export function routeAnaMessage(configuration,inboundText,channel,context={}){
   const validation=validateAnaConfiguration(configuration);
   if(!validation.ok)return {path:'handoff',reason:'active_config_invalid'};
   const trigger=evaluateAnaTriggers(configuration,inboundText,channel,context);
-  if(!trigger.matched)return {path:'ai'};
+  if(!trigger.matched){
+    if(requiresDynamicConfirmation(inboundText))return {path:'handoff',reason:'dynamic_data_requires_confirmation'};
+    return {path:'ai'};
+  }
   if(Array.isArray(trigger.actions)&&trigger.actions.length>1)return {path:'actions',triggerKey:trigger.triggerKey,actions:trigger.actions};
   if(trigger.action==='fixed_reply')return {path:'fixed_reply',triggerKey:trigger.triggerKey,responseText:trigger.responseText};
   if(trigger.action==='label')return {path:'label',triggerKey:trigger.triggerKey,labelId:trigger.labelId};
