@@ -17,6 +17,7 @@ assert.match(sql,/generate_series\s*\(\s*1\s*,/i,'every configured composition i
 assert.match(sql,/jsonb_agg/i,'batch returns composition data as JSON');
 assert.match(sql,/create or replace function public\.basket_mold_public_compositions_v2\s*\(p_basket_id uuid\)/i,'the existing single-basket RPC remains available');
 assert.match(sql,/basket_mold_public_compositions_batch_v1\s*\(array\[p_basket_id\]\)/i,'the existing RPC delegates to the batch calculation');
+assert.match(sql,/jsonb_array_elements\([\s\S]*\)\s+as\s+result\(item\)/i,'the wrapper selects JSON elements with an explicit column alias');
 assert.doesNotMatch(sql,/(insert\s+into|update|delete\s+from)\s+public\.(vitrine_stock_reservations|basket_lot_component_reservations|products)\b/i,'public composition generation remains read-only');
 assert.match(sql,/revoke all on function public\.basket_mold_public_compositions_batch_v1\(uuid\[\]\) from public,\s*anon,\s*authenticated/i);
 assert.match(sql,/grant execute on function public\.basket_mold_public_compositions_batch_v1\(uuid\[\]\) to service_role/i);

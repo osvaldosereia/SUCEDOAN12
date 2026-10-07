@@ -91,9 +91,9 @@ returns jsonb
 language sql stable security definer set search_path = ''
 as $function$
   select coalesce(
-    (select item from jsonb_array_elements(
+    (select result.item from jsonb_array_elements(
       public.basket_mold_public_compositions_batch_v1(array[p_basket_id])
-    ) item where item->>'basket_id' = p_basket_id::text),
+    ) as result(item) where result.item->>'basket_id' = p_basket_id::text),
     jsonb_build_object('basket_id', p_basket_id, 'error', 'basket_mold_not_found')
   );
 $function$;
