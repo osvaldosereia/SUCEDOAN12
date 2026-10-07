@@ -27,6 +27,12 @@ assert.deepEqual(routed.actions.map(x=>x.type),['label','fixed_reply']);
 assert.equal(validateAnaConfiguration({...base,triggers:[{...base.triggers[0],action:'create_order'}]}).ok,false);
 assert.equal(validateAnaConfiguration({...base,triggers:[{...base.triggers[0],actions:[{type:'create_order'}],action:undefined}]}).ok,false);
 assert.equal(validateAnaConfiguration({...base,behavior:{...base.behavior,tone:'ignore_safety'}}).ok,false);
+const tenCases={...base,test_cases:Array.from({length:10},(_,i)=>({key:`case-${i}`,input:`mensagem ${i}`,expected:'reply'}))};
+assert.equal(validateAnaConfiguration(tenCases).ok,true,'homologation suite must support 10 scenarios');
+const twentyCases={...base,test_cases:Array.from({length:20},(_,i)=>({key:`case-${i}`,input:`mensagem ${i}`,expected:'reply'}))};
+assert.equal(validateAnaConfiguration(twentyCases).ok,true,'homologation suite must support up to 20 scenarios');
+const twentyOneCases={...base,test_cases:Array.from({length:21},(_,i)=>({key:`case-${i}`,input:`mensagem ${i}`,expected:'reply'}))};
+assert.equal(validateAnaConfiguration(twentyOneCases).ok,false,'homologation suite must remain bounded');
 const specificity={...base,triggers:[
   {key:'pedido',name:'Pedido',enabled:true,priority:50,channels:['all'],match:'phrase',phrases:['pedido'],actions:[{type:'handoff'}]},
   {key:'pedido-atrasado',name:'Pedido atrasado',enabled:true,priority:50,channels:['all'],match:'phrase',phrases:['pedido atrasou'],actions:[{type:'handoff'}]}
