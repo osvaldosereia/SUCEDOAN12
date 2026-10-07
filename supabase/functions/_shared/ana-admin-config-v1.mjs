@@ -19,6 +19,17 @@ function validateTriggerAction(triggerKey,action,index,errors){
   if(action.type==='fixed_reply'&&(!cleanText(action.response_text,500)||String(action.response_text).length>500))errors.push(`trigger_${triggerKey}_reply_${index}_invalid`);
   if(action.type==='label'&&!uuidPattern.test(String(action.label_id||'')))errors.push(`trigger_${triggerKey}_label_${index}_invalid`);
 }
+function actionSequenceErrors(triggerKey,actions){
+  const errors=[];
+  const terminalIndexes=actions.map((a,i)=>['handoff','continue_ai'].includes(a?.type)?i:-1).filter(i=>i>=0);
+  if(terminalIndexes.length>1)errors.push(`trigger_${triggerKey}_multiple_terminal_actions`);
+  if(terminalIndexes.some(i=>i!==actions.length-1))errors.push(`trigger_${triggerKey}_terminal_action_must_be_last`);
+  return errors;
+}
+function triggerSpecificity(trigger,text){
+  const matches=(trigger.phrases||[]).map(phrase=>normalizeAnaMatchText(phrase)).filter(Boolean).filter(needle=>trigger.match==='exact'?text===needle:` ${text} `.includes(` ${needle} `));
+  return matches.reduce((best,needle)=>Math.max(best,needle.split(' ').length*1000+needle.length),0)+(trigger.match==='exact'?1000000:0);
+}
 function conditionsMatch(conditions,context={}){
   if(!Array.isArray(conditions)||!conditions.length)return true;
   return conditions.every(condition=>{
@@ -60,14 +71,23 @@ export function validateAnaConfiguration(configuration){
     if(typeof trigger.enabled!=='boolean'||!Number.isInteger(trigger.priority)||trigger.priority<0||trigger.priority>100)errors.push(`trigger_${trigger.key}_priority_invalid`);
     if(!Array.isArray(trigger.channels)||!trigger.channels.length||trigger.channels.some(channel=>!allowedChannels.has(channel)))errors.push(`trigger_${trigger.key}_channels_invalid`);
     if(!['phrase','exact'].includes(trigger.match)||!Array.isArray(trigger.phrases)||!trigger.phrases.length||trigger.phrases.length>20||trigger.phrases.some(x=>normalizeAnaMatchText(x).length<2))errors.push(`trigger_${trigger.key}_match_invalid`);
+    if(trigger.exclude_phrases!==undefined&&(!Array.isArray(trigger.exclude_phrases)||trigger.exclude_phrases.length>20||trigger.exclude_phrases.some(x=>normalizeAnaMatchText(x).length<2)))errors.push(`trigger_${trigger.key}_exclude_phrases_invalid`);
     const actions=normalizedTriggerActions(trigger);
     if(!actions.length||actions.length>5)errors.push(`trigger_${trigger.key}_actions_invalid`);
-    else actions.forEach((action,index)=>validateTriggerAction(trigger.key,action,index,errors));
+    else{
+      actions.forEach((action,index)=>validateTriggerAction(trigger.key,action,index,errors));
+      errors.push(...actionSequenceErrors(trigger.key,actions));
+    }
     if(trigger.conditions!==undefined){
       if(!Array.isArray(trigger.conditions)||trigger.conditions.length>5)errors.push(`trigger_${trigger.key}_conditions_invalid`);
-      else trigger.conditions.forEach((condition,index)=>{
-        if(!isPlainObject(condition)||!conditionTypes.has(condition.type)||typeof condition.value!=='boolean')errors.push(`trigger_${trigger.key}_condition_${index}_invalid`);
-      });
+      else{
+        const conditionSeen=new Map();
+        trigger.conditions.forEach((condition,index)=>{
+          if(!isPlainObject(condition)||!conditionTypes.has(condition.type)||typeof condition.value!=='boolean'){errors.push(`trigger_${trigger.key}_condition_${index}_invalid`);return}
+          if(conditionSeen.has(condition.type)&&conditionSeen.get(condition.type)!==condition.value)errors.push(`trigger_${trigger.key}_condition_${condition.type}_contradictory`);
+          conditionSeen.set(condition.type,condition.value);
+        });
+      }
     }
   }
   for(const item of Array.isArray(configuration.test_cases)?configuration.test_cases:[]){
@@ -81,14 +101,14 @@ export function evaluateAnaTriggers(configuration,inboundText,channel,context={}
   const text=normalizeAnaMatchText(inboundText);const channelKey=cleanText(channel,16);
   if(!text||!Array.isArray(configuration?.triggers))return {matched:false};
   const candidates=configuration.triggers.filter(item=>item?.enabled===true&&Array.isArray(item.channels)&&
-    (item.channels.includes('all')||item.channels.includes(channelKey)))
-    .sort((a,b)=>Number(b.priority)-Number(a.priority)||String(a.key).localeCompare(String(b.key)));
-  for(const trigger of candidates){
-    const matched=(trigger.phrases||[]).some(phrase=>{
-      const needle=normalizeAnaMatchText(phrase);if(!needle)return false;
-      return trigger.match==='exact'?text===needle:` ${text} `.includes(` ${needle} `);
-    });
-    if(matched&&conditionsMatch(trigger.conditions,context)){
+    (item.channels.includes('all')||item.channels.includes(channelKey))&&conditionsMatch(item.conditions,context))
+    .map(item=>({item,specificity:triggerSpecificity(item,text)}))
+    .filter(candidate=>candidate.specificity>0)
+    .filter(candidate=>!(candidate.item.exclude_phrases||[]).some(phrase=>{const needle=normalizeAnaMatchText(phrase);return needle&&` ${text} `.includes(` ${needle} `)}))
+    .sort((a,b)=>Number(b.item.priority)-Number(a.item.priority)||b.specificity-a.specificity||String(a.item.key).localeCompare(String(b.item.key)));
+  for(const candidate of candidates){
+    const trigger=candidate.item;
+    {
       const actions=normalizedTriggerActions(trigger).map(action=>({
         type:action.type,
         responseText:action.type==='fixed_reply'?cleanText(action.response_text,500):'',
