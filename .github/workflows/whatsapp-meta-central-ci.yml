@@ -123,6 +123,8 @@ jobs:
       - {name: Meta Phone Number ID strictness, run: 'node scripts/test-attendance-meta-phone-id-v1.mjs'}
       - {name: Meta response-body timeout, run: 'node scripts/test-attendance-meta-body-timeout-v1.mjs'}
       - {name: Meta webhook contract, run: 'node scripts/test-whatsapp-meta-webhook-v1.mjs'}
+      - {name: Smart Delivery Meta location capture, run: 'node scripts/test-smart-delivery-whatsapp-location-capture-v2.mjs'}
+      - {name: Smart Delivery operational RPC guards, run: 'node scripts/test-smart-delivery-operational-rpcs-v1.mjs'}
       - {name: Meta template webhook events contract, run: 'node scripts/test-whatsapp-meta-template-events-v1.mjs'}
       - {name: Meta shadow media preservation regression, run: 'node scripts/test-whatsapp-meta-shadow-media-preserve-v1.mjs'}
       - {name: Meta webhook TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts'}
