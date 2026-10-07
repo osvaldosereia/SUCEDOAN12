@@ -9,6 +9,8 @@ on:
       - 'index.html'
       - 'vitrine/index.html'
       - 'scripts/test-basket-mold-storefront-r5.mjs'
+      - 'scripts/test-basket-mold-conditional-hidden-v1.mjs'
+      - 'supabase/migrations/20261007114941_basket_mold_conditional_hidden_adjustment_v1.sql'
       - 'tests/public-basket-item-controls.test.mjs'
       - '.github/workflows/basket-mold-storefront-r5-ci.yml'
   push:
@@ -21,6 +23,8 @@ on:
       - 'index.html'
       - 'vitrine/index.html'
       - 'scripts/test-basket-mold-storefront-r5.mjs'
+      - 'scripts/test-basket-mold-conditional-hidden-v1.mjs'
+      - 'supabase/migrations/20261007114941_basket_mold_conditional_hidden_adjustment_v1.sql'
       - 'tests/public-basket-item-controls.test.mjs'
       - '.github/workflows/basket-mold-storefront-r5-ci.yml'
 jobs:
@@ -32,4 +36,5 @@ jobs:
         with:
           node-version: '20'
       - run: node scripts/test-basket-mold-storefront-r5.mjs
+      - run: node scripts/test-basket-mold-conditional-hidden-v1.mjs
       - run: node --test tests/public-basket-item-controls.test.mjs
