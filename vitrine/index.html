@@ -238,19 +238,94 @@
     @media(min-width:1080px){.basket-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}}
     @media(max-width:759px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px}.basket-subgroup-title{font-size:16px;margin:8px 0}.basket-card-photo{margin:8px 8px 0}.basket-card-info{gap:7px;padding:10px}.basket-card .basket-card-title{font-size:14px}.basket-card .price{font-size:16px}.basket-card .add{min-height:40px;padding:8px 9px;font-size:13px}}
 
-    /* Final basket-card layout: isolated from legacy grid rules above. */
+    /* Final basket layout: horizontal on phones, vertical on larger screens. */
+    #basketSections{display:grid;gap:26px}
+    #basketSections>.section{
+      --basket-accent:#176b43;
+      --basket-tint:#f2f8f4;
+      --basket-line:#d9e9df;
+      margin:0;
+      padding:18px;
+      border:1px solid var(--basket-line);
+      border-radius:22px;
+      background:linear-gradient(180deg,var(--basket-tint) 0,rgba(255,255,255,.98) 150px);
+      box-shadow:0 8px 24px rgba(28,53,39,.045)
+    }
+    #basketSections>.section:nth-child(4n+2){--basket-accent:#8a5a32;--basket-tint:#fbf5ed;--basket-line:#eadfce}
+    #basketSections>.section:nth-child(4n+3){--basket-accent:#3f6378;--basket-tint:#f1f6f8;--basket-line:#d9e6eb}
+    #basketSections>.section:nth-child(4n+4){--basket-accent:#6d5a7e;--basket-tint:#f7f3f9;--basket-line:#e5ddea}
+    #basketSections>.section>.section-head{margin-bottom:18px;padding-bottom:13px;border-bottom:1px solid var(--basket-line)}
+    #basketSections>.section>.section-head h2{color:var(--basket-accent)}
+    .basket-subgroup{margin:0 0 18px;padding:14px;border:1px solid var(--basket-line);border-radius:17px;background:rgba(255,255,255,.86)}
+    .basket-subgroup:last-child{margin-bottom:0}
+    .basket-subgroup-title{display:flex;align-items:center;gap:10px;margin:0 0 13px;color:#24362b;font-size:18px;font-weight:850;line-height:1.2}
+    .basket-subgroup-title::before{content:'';width:7px;height:26px;flex:0 0 7px;border-radius:999px;background:var(--basket-accent)}
+    .basket-subgroup-title::after{content:'';height:1px;flex:1;background:var(--basket-line)}
+
     .basket-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:stretch;gap:12px}
     .basket-card{display:flex!important;flex-direction:column!important;min-width:0;height:100%;overflow:hidden}
-    .basket-card-photo{display:grid;place-items:center;width:auto;aspect-ratio:1/1!important;margin:8px 8px 0!important;overflow:hidden;border-radius:0;background:transparent}
+    .basket-card-photo{display:grid;place-items:center;width:auto;aspect-ratio:1/1!important;margin:8px 8px 0!important;overflow:hidden;border-radius:10px;background:#f8faf8}
     .basket-card-photo img{display:block;width:100%;height:100%;padding:0;object-fit:contain}
     .basket-card .basket-card-info{display:flex!important;flex:1 1 auto;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start;gap:5px;min-width:0;padding:9px 10px 10px!important}
     .basket-card .basket-category-tag{display:none!important}
     .basket-card .basket-card-title{display:block!important;min-width:0;min-height:0!important;margin:0!important;padding:0!important;font-size:13px!important;font-weight:700;line-height:1.28!important;white-space:normal;overflow:visible;overflow-wrap:break-word!important;word-break:normal!important;hyphens:none}
     .basket-card .price{display:block!important;align-self:flex-start!important;min-width:0;margin:0!important;font-size:15px!important;font-weight:850;line-height:1.2!important;white-space:nowrap}
     .basket-card .add{display:block!important;align-self:stretch!important;width:100%!important;min-height:36px!important;height:auto;margin:2px 0 0!important;padding:7px 8px!important;border-radius:9px;font-size:12px!important;line-height:1.2;white-space:nowrap}
-    @media(min-width:760px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px}}
-    @media(min-width:760px) and (max-width:1079px){.basket-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px}}\n    @media(min-width:1080px){.basket-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:14px}}
-    @media(max-width:759px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px}.basket-card-info{gap:5px}.basket-card .basket-card-title{font-size:12px!important}.basket-card .price{font-size:13px!important}.basket-card .add{min-height:32px!important;font-size:10.5px!important;padding:6px 4px!important}}
+
+    @media(min-width:760px) and (max-width:1079px){
+      .basket-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px}
+    }
+    @media(min-width:1080px){
+      .basket-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:14px}
+    }
+    @media(max-width:759px){
+      #basketSections{gap:22px}
+      #basketSections>.section{padding:14px 12px;border-radius:19px}
+      #basketSections>.section>.section-head{margin-bottom:15px;padding:0 3px 11px}
+      #basketSections>.section>.section-head h2{font-size:23px;line-height:1.12}
+      .basket-subgroup{margin-bottom:16px;padding:11px 9px 12px;border-radius:15px}
+      .basket-subgroup-title{margin-bottom:11px;font-size:17px}
+      .basket-subgroup-title::before{width:6px;height:23px;flex-basis:6px}
+
+      .basket-grid{grid-template-columns:minmax(0,1fr)!important;gap:11px!important}
+      .basket-card{
+        display:grid!important;
+        grid-template-columns:128px minmax(0,1fr)!important;
+        min-height:136px;
+        height:auto;
+        align-items:stretch;
+        border-radius:16px;
+        box-shadow:0 3px 12px rgba(25,49,36,.07)
+      }
+      .basket-card-photo{
+        width:120px!important;
+        height:120px!important;
+        aspect-ratio:auto!important;
+        align-self:center;
+        margin:8px 0 8px 8px!important;
+        border-radius:12px;
+        background:#f7f9f7
+      }
+      .basket-card .basket-card-info{
+        min-width:0;
+        padding:13px 12px!important;
+        gap:7px!important;
+        justify-content:center
+      }
+      .basket-card .basket-card-title{font-size:15px!important;font-weight:760;line-height:1.25!important}
+      .basket-card .price{font-size:18px!important;line-height:1.15!important}
+      .basket-card .add{min-height:39px!important;margin-top:1px!important;padding:8px 10px!important;font-size:13px!important}
+    }
+    @media(max-width:389px){
+      #basketSections>.section{padding-inline:9px}
+      .basket-subgroup{padding-inline:7px}
+      .basket-card{grid-template-columns:112px minmax(0,1fr)!important;min-height:124px}
+      .basket-card-photo{width:104px!important;height:104px!important}
+      .basket-card .basket-card-info{padding:10px!important}
+      .basket-card .basket-card-title{font-size:14px!important}
+      .basket-card .price{font-size:17px!important}
+      .basket-card .add{min-height:37px!important;font-size:12px!important}
+    }
 </style>
 </head>
 <body>
