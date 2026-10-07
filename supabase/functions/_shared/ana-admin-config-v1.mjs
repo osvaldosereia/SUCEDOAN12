@@ -21,7 +21,7 @@ function validateTriggerAction(triggerKey,action,index,errors){
 }
 function actionSequenceErrors(triggerKey,actions){
   const errors=[];
-  const terminalIndexes=actions.map((a,i)=>['handoff','continue_ai'].includes(a?.type)?i:-1).filter(i=>i>=0);
+  const terminalIndexes=actions.map((a,i)=>['fixed_reply','handoff','continue_ai'].includes(a?.type)?i:-1).filter(i=>i>=0);
   if(terminalIndexes.length>1)errors.push(`trigger_${triggerKey}_multiple_terminal_actions`);
   if(terminalIndexes.some(i=>i!==actions.length-1))errors.push(`trigger_${triggerKey}_terminal_action_must_be_last`);
   return errors;
@@ -70,7 +70,7 @@ export function validateAnaConfiguration(configuration){
     seen.add(`t:${trigger.key}`);
     if(typeof trigger.enabled!=='boolean'||!Number.isInteger(trigger.priority)||trigger.priority<0||trigger.priority>100)errors.push(`trigger_${trigger.key}_priority_invalid`);
     if(!Array.isArray(trigger.channels)||!trigger.channels.length||trigger.channels.some(channel=>!allowedChannels.has(channel)))errors.push(`trigger_${trigger.key}_channels_invalid`);
-    if(!['phrase','exact'].includes(trigger.match)||!Array.isArray(trigger.phrases)||!trigger.phrases.length||trigger.phrases.length>20||trigger.phrases.some(x=>normalizeAnaMatchText(x).length<2))errors.push(`trigger_${trigger.key}_match_invalid`);
+    const phrasesValid=Array.isArray(trigger.phrases)&&trigger.phrases.length<=20&&trigger.phrases.every(x=>normalizeAnaMatchText(x).length>=2);\n    if(!['phrase','exact'].includes(trigger.match)||!phrasesValid||(trigger.enabled===true&&trigger.phrases.length===0))errors.push(`trigger_${trigger.key}_match_invalid`);
     if(trigger.exclude_phrases!==undefined&&(!Array.isArray(trigger.exclude_phrases)||trigger.exclude_phrases.length>20||trigger.exclude_phrases.some(x=>normalizeAnaMatchText(x).length<2)))errors.push(`trigger_${trigger.key}_exclude_phrases_invalid`);
     const actions=normalizedTriggerActions(trigger);
     if(!actions.length||actions.length>5)errors.push(`trigger_${trigger.key}_actions_invalid`);
