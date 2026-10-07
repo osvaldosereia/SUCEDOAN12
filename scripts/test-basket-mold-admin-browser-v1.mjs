@@ -29,7 +29,7 @@ try{
 
   await page.fill('[data-mold-name]','Econômica Moldada');
   await page.fill('[data-mold-hidden-adjustment]','-1.14');
-  await page.selectOption('[data-mold-composition-count]','4');
+  await page.selectOption('[data-mold-composition-count]','6');
   await page.click('[data-mold-add-position]');
   await page.fill('[data-mold-position-label="0"]','Arroz 5 kg');
   await page.fill('[data-mold-position-quantity="0"]','1');
@@ -49,7 +49,7 @@ try{
   const save=await page.evaluate(()=>window.__calls.findLast(x=>x.action==='save'));
   assert.equal(save.name,'Econômica Moldada');
   assert.equal(save.hidden_adjustment,-1.14);
-  assert.equal(save.public_composition_count,4);
+  assert.equal(save.public_composition_count,6);
   assert.equal(save.conditional_hidden_enabled,true);
   assert.equal(save.conditional_hidden_adjustment,3.75);
   assert.equal(save.conditional_hidden_product_id,'7c1a9999-1df2-4d8e-b729-d7492a8c20a9');
