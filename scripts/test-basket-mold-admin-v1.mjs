@@ -40,7 +40,7 @@ assert.equal(/SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEYS/.test(api),false,'m
 assert.match(api,/Authorization/);
 assert.match(api,/const MUTATIONS=new Set\(\[[^\]]*["']save["']/s);
 for(const action of ['list','editor','products','save'])assert.match(api,new RegExp(`action===?["']${action}["']`));
-for(const rpc of ['admin_basket_mold_list_v1','admin_basket_mold_editor_v1','admin_basket_mold_products_v1','admin_save_basket_mold_v1'])assert.match(api,new RegExp(rpc));
+for(const rpc of ['admin_basket_mold_list_v1','admin_basket_mold_editor_v1','admin_basket_mold_products_v1','admin_save_basket_mold_v3'])assert.match(api,new RegExp(rpc));
 
 // Public wrappers are SECURITY DEFINER but authorize auth.uid() against admin_users before touching protected tables.
 for(const fn of ['admin_basket_mold_list_v1','admin_basket_mold_editor_v1','admin_basket_mold_products_v1','admin_save_basket_mold_v1'])assert.match(sql,new RegExp(`create or replace function public\\.${fn}\\s*\\(`,'i'));
