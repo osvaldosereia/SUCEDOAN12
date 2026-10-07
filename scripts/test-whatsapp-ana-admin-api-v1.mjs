@@ -30,6 +30,8 @@ assert.match(endpoint,/trace:value\.trace/);
 assert.match(endpoint,/test_cases\.slice\(0,20\)/,'admin simulator must execute the full bounded homologation suite');
 assert.match(endpoint,/\["label","remove_label"\]\.includes\(action\.type\)/,'save and publish must validate labels used by apply/remove actions');
 assert.match(endpoint,/type:"remove_label"/,'dry-run trace must expose label removal');
+assert.match(endpoint,/humanMode:Boolean\(body\?\.human_mode\)/,'custom simulator must accept human-mode context');
+assert.match(endpoint,/human_mode_gate/,'human takeover simulation must fail closed before routing or AI');
 assert.match(endpoint,/action==="admin_publish"[\s\S]*?trigger_label_not_active/);
 const migration=fs.readFileSync('supabase/migrations/20261007_whatsapp_ana_admin_v1.sql','utf8');
 assert.match(migration,/SET ana_enabled = p_enabled/);
