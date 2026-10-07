@@ -1,4 +1,5 @@
 import {listAnaAutomationTemplates,buildAnaAutomationTemplate} from './ana-automation-library.js';
+import {parseKnowledgeKeywords,knowledgeCategories,knowledgeMatches} from './ana-knowledge.js';
 const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ana-preview-v1';
 const TOKEN_KEY='da_finance_access_token_v1';
 const sections=[['overview','Visão geral'],['behavior','Comportamento'],['knowledge','Conhecimento'],['triggers','Automações'],['tests','Testes e histórico']];
@@ -97,7 +98,7 @@ function markDirty(){state.dirty=true;render()}
 function readDraft(){
   const next=structuredClone(config());
   state.host.querySelectorAll('[data-behavior]').forEach(el=>{next.behavior[el.dataset.behavior]=el.type==='checkbox'?el.checked:el.value});
-  state.host.querySelectorAll('[data-knowledge]').forEach(el=>{const item=next.knowledge[Number(el.dataset.knowledge)];if(item)item[el.dataset.field]=el.value});
+  state.host.querySelectorAll('[data-knowledge]').forEach(el=>{const item=next.knowledge[Number(el.dataset.knowledge)];if(!item)return;const field=el.dataset.field;item[field]=field==='keywords'?parseKnowledgeKeywords(el.value):el.value});
   state.host.querySelectorAll('[data-trigger]').forEach(el=>{
     const item=next.triggers[Number(el.dataset.trigger)];if(!item)return;const key=el.dataset.field;
     if(key==='enabled')item.enabled=el.checked;
