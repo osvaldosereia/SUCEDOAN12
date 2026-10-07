@@ -2510,7 +2510,7 @@
     };
   }
 
-  async function bulkDispatchSelected(){async function bulkDispatchSelected(){
+  async function bulkDispatchSelected(){
     const selected=state.orders.filter(o=>o.status==='ready'&&fiscalAuthorizedForDispatch(o)&&state.expeditionSelected.includes(o.id));
     if(!selected.length){toast('Selecione ao menos um pedido pronto');return}
     const total=selected.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
@@ -2642,7 +2642,7 @@
     try{await loadDriverQueue()}catch(e){$('#driverQueue').innerHTML='<div class="empty">Não consegui carregar as entregas. <button class="text" id="retryDriver">Tentar novamente</button></div>';if($('#retryDriver'))$('#retryDriver').onclick=loadDriverQueue}
   }
 
-  async function renderExpedition(){async function renderExpedition(){
+  async function renderExpedition(){
     const content=$('#content');
     content.innerHTML='<div class="page-head"><div><h1>Expedição</h1><p>Pedidos prontos, em entrega e entregues em uma única fila operacional.</p></div><button class="secondary" id="refreshExpedition">Atualizar</button></div>'+
       '<div class="toolbar"><input id="expeditionSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.expeditionQuery)+'"><button class="secondary" id="clearExpeditionSearch" type="button">Limpar</button></div>'+
