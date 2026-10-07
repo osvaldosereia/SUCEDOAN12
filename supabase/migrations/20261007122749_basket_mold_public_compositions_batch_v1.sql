@@ -1,5 +1,6 @@
 -- Dona Antônia · Cestas Molde · composições públicas em lote v1
--- Calcula as opções de vários moldes com uma única leitura das reservas ativas.
+-- A view de estoque avulso já desconta componentes em montagem, lotes prontos e alocações.
+-- Calcula vários moldes de uma vez e desconta também as reservas ativas de pedidos.
 begin;
 
 create or replace function public.basket_mold_public_compositions_batch_v1(p_basket_ids uuid[])
@@ -19,26 +20,20 @@ with requested as (
   where r.status in ('reserved', 'allocated')
     and (r.expires_at is null or r.expires_at > now())
   group by r.product_id
-), active_lot_reservations as (
-  select r.product_id, coalesce(sum(r.quantity_reserved), 0)::numeric as reserved
-  from public.basket_lot_component_reservations r
-  where r.status in ('reserved', 'active')
-  group by r.product_id
 ), eligible as (
   select pos.id as position_id, pos.mold_id, m.basket_id, pos.label, pos.quantity,
          pos.sort_order as position_order, opt.product_id, opt.sort_order as option_order,
          p.name as product_name, p.sku, p.gtin, p.image_url,
-         greatest(0, coalesce(s.effective_sellable_stock, 0)
-           - coalesce(orr.reserved, 0) - coalesce(lrr.reserved, 0))::numeric as available_stock
+         greatest(0, coalesce(s.loose_sellable_stock, 0)
+           - coalesce(orr.reserved, 0))::numeric as available_stock
   from mold m
   join public.basket_mold_positions pos on pos.mold_id = m.id
   join public.basket_mold_position_options opt on opt.position_id = pos.id
   join public.products p on p.id = opt.product_id and p.is_active = true
-  join public.ops2_sellable_stock_v1 s on s.product_id = p.id and s.is_active = true
+  join public.ops2_loose_sellable_stock_v1 s on s.product_id = p.id and s.is_active = true
   left join active_order_reservations orr on orr.product_id = p.id
-  left join active_lot_reservations lrr on lrr.product_id = p.id
-  where greatest(0, coalesce(s.effective_sellable_stock, 0)
-      - coalesce(orr.reserved, 0) - coalesce(lrr.reserved, 0)) >= pos.quantity
+  where greatest(0, coalesce(s.loose_sellable_stock, 0)
+      - coalesce(orr.reserved, 0)) >= pos.quantity
 ), scored as (
   select e.*, floor(e.available_stock / nullif(e.quantity, 0))::bigint as coverage_baskets
   from eligible e
@@ -76,7 +71,7 @@ select coalesce(jsonb_agg(jsonb_build_object(
   'basket_id', m.basket_id, 'name', m.name, 'image_url', m.image_url,
   'hidden_adjustment', m.hidden_adjustment,
   'public_composition_count', m.public_composition_count,
-  'balancing', 'sellable_coverage_v2',
+  'balancing', 'loose_sellable_coverage_v3',
   'compositions', coalesce((
     select jsonb_agg(jsonb_build_object('number', c.composition_number, 'items', c.items)
       order by c.composition_number)
