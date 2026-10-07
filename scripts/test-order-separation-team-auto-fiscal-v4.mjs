@@ -13,9 +13,13 @@ for(const [key,label] of [['jose','José'],['claudio','Cláudio'],['jovenil','Jo
 assert.match(admin,/data-separator-key/);
 assert.match(admin,/Trocar a separação para/);
 assert.match(admin,/EM SEPARAÇÃO ·/);
+assert.match(admin,/order-v3-progress-bar/);
+assert.match(admin,/orderCardPhone/);
+assert.match(admin,/Tel\. /);
+assert.match(admin,/INTEGRAÇÃO PENDENTE/);
 assert.match(admin,/orders-separation-qty strong\{font-size:(?:2[7-9]|3\d)px/);
 assert.match(backend,/order_separation_board/);
-assert.match(admin,/setInterval\(refreshOrderSeparationBoard,12000\)/);
+assert.match(admin,/setInterval\(refreshOrderSeparationBoard,5000\)/);
 assert.match(backend,/separator_required/);
 assert.match(backend,/requestedSeparator!==separator/);
 
