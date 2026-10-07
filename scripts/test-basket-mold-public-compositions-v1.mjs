@@ -14,7 +14,7 @@ assert.match(sql,/effective_sellable_stock/i);
 assert.match(sql,/greatest\s*\(\s*0/i);
 assert.match(sql,/row_number\s*\(\s*\)\s*over/i,'must rank eligible options deterministically');
 assert.match(sql,/mod\s*\(/i,'must rotate choices across public compositions');
-assert.match(sql,/generate_series\s*\(\s*1\s*,/i,'must emit configured 1-4 compositions');
+assert.match(sql,/generate_series\s*\(\s*1\s*,/i,'must emit configured 1-6 compositions');
 assert.match(sql,/is_active\s*=\s*true/i,'inactive products are never eligible');
 assert.doesNotMatch(sql,/(insert\s+into|update|delete\s+from)\s+public\.(vitrine_stock_reservations|basket_lot_component_reservations|products)\b/i,'display generator must be read-only');
 assert.match(sql,/revoke all on function public\.basket_mold_public_compositions_v1\(uuid\) from public,\s*anon,\s*authenticated/i);
