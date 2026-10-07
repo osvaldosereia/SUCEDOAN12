@@ -1834,7 +1834,7 @@ async function smartDeliveryStopMove(p:any,auth:any){
   if(q.error)throw q.error;return q.data||{};
 }
 
-async function opsTimeline(async function opsTimeline(limitRaw:any){
+async function opsTimeline(limitRaw:any){
   const limit=Math.max(1,Math.min(50,Number(limitRaw||20)||20));
   const r=await db.from("ops_events")
     .select("id,occurred_at,domain,event_type,entity_type,entity_id,actor_type,actor_label,source_system,severity,summary,external_ref")
