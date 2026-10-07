@@ -38,14 +38,14 @@ async function list(db:any){const q=await db.rpc("admin_basket_mold_list_v1");if
 async function editor(db:any,input:any){const id=uuid(input?.basket_id||input?.id);if(!id)return {error:"basket_mold_basket_not_found",status:400,message:"Cesta não encontrada."};const q=await db.rpc("admin_basket_mold_editor_v1",{p_basket_id:id});if(q.error)return rpcError(q.error);return {editor:q.data}}
 async function products(db:any,input:any){const limit=integer(input?.limit??24,1,40)||24;const q=await db.rpc("admin_basket_mold_products_v1",{p_query:clean(input?.q,80)||null,p_limit:limit});if(q.error)return rpcError(q.error);return q.data||{products:[]}}
 async function save(db:any,input:any){
-  const id=uuid(input?.basket_id),categoryId=uuid(input?.category_id),subcategoryId=uuid(input?.subcategory_id),name=clean(input?.name,180),hidden=finite(input?.hidden_adjustment),count=integer(input?.public_composition_count,1,4),positions=Array.isArray(input?.positions)?input.positions.slice(0,80):null;
+  const id=uuid(input?.basket_id),categoryId=uuid(input?.category_id),subcategoryId=uuid(input?.subcategory_id),name=clean(input?.name,180),hidden=finite(input?.hidden_adjustment),count=integer(input?.public_composition_count,1,6),positions=Array.isArray(input?.positions)?input.positions.slice(0,80):null;
   const conditionalEnabled=bool(input?.conditional_hidden_enabled),conditionalProductId=uuid(input?.conditional_hidden_product_id),conditionalHidden=finite(input?.conditional_hidden_adjustment);
   if(!id)return {error:"basket_mold_basket_not_found",status:400,message:"Cesta não encontrada."};
   if(!categoryId)return {error:"basket_category_invalid",status:400,message:"Escolha uma categoria da vitrine."};
   if(!subcategoryId)return {error:"basket_subcategory_invalid",status:400,message:"Escolha uma subdivisão da vitrine."};
   if(!name)return {error:"basket_mold_name_invalid",status:400,message:"Informe o nome da cesta."};
   if(hidden===null)return {error:"basket_mold_hidden_adjustment_invalid",status:400,message:"Informe um valor oculto válido."};
-  if(!count)return {error:"basket_mold_public_composition_count_invalid",status:400,message:"Escolha entre 1 e 4 composições públicas."};
+  if(!count)return {error:"basket_mold_public_composition_count_invalid",status:400,message:"Escolha entre 1 e 6 composições públicas."};
   if(!positions?.length)return {error:"basket_mold_positions_required",status:400,message:"Adicione pelo menos uma posição ao molde."};
   if(conditionalEnabled&&!conditionalProductId)return {error:"basket_mold_conditional_hidden_product_required",status:400,message:"Escolha o produto que ativa o acréscimo oculto."};
   if(conditionalEnabled&&(conditionalHidden===null||conditionalHidden<=0))return {error:"basket_mold_conditional_hidden_adjustment_required",status:400,message:"Informe um valor maior que zero para o acréscimo oculto por produto."};
