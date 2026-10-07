@@ -139,6 +139,7 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
       p_metadata:{active_version:activeConfig.data.version}});
   }
   const routed=routeAnaMessage(configuration,inbound.data.text_body,channel,{humanMode:false,customerLinked:Boolean(conversation.data.customer_id)});
+  const routeMetadata={trigger_key:routed.triggerKey||null,active_version:activeConfig.data.version};
   if(routed.path==='handoff'){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:routed.reason||'admin_trigger_handoff',p_model:model,
       p_metadata:{trigger_key:routed.triggerKey||null,active_version:activeConfig.data.version}});
@@ -187,24 +188,24 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
   }
   if(!generated)generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext(customerFirstName),instructions:buildAnaRuntimeInstructions(configuration)});
   if(!generated.ok)return await finishLive(db,{p_job_id:job.id,p_status:'failed',p_decision:'handoff',p_reason:generated.error,p_model:model,
-    p_provider_response_id:generated.response_id||null,p_error:generated.error,p_metadata:{latency_ms:generated.latency_ms||null}});
+    p_provider_response_id:generated.response_id||null,p_error:generated.error,p_metadata:{...routeMetadata,latency_ms:generated.latency_ms||null}});
   const secondGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
   if(secondGate.error||secondGate.data?.allowed!==true){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'human_takeover_during_generation',p_model:model,
-      p_provider_response_id:generated.response_id||null});
+      p_provider_response_id:generated.response_id||null,p_metadata:routeMetadata});
   }
   const result=generated.result;
   if(result.decision==='no_reply')return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'no_reply',p_reason:result.reason,
-    p_model:model,p_provider_response_id:generated.response_id||null,p_metadata:{missing_context:result.missing_context,latency_ms:generated.latency_ms||null}});
+    p_model:model,p_provider_response_id:generated.response_id||null,p_metadata:{...routeMetadata,missing_context:result.missing_context,latency_ms:generated.latency_ms||null}});
   if(!shouldSendAnaLiveReply({decision:result.decision,confidence:result.confidence,responseText:result.response_text})){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_text:result.response_text,p_confidence:result.confidence,
       p_reason:'human_review_required',p_model:model,p_provider_response_id:generated.response_id||null,
-      p_metadata:{source_reason:result.reason,missing_context:result.missing_context,latency_ms:generated.latency_ms||null}});
+      p_metadata:{...routeMetadata,source_reason:result.reason,missing_context:result.missing_context,latency_ms:generated.latency_ms||null}});
   }
   const prepared=await db.rpc('ops2_ana_begin_live_send_v1',{p_job_id:job.id,p_text:result.response_text});
   if(prepared.error||prepared.data?.ok!==true){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_text:result.response_text,p_confidence:result.confidence,
-      p_reason:prepared.data?.error||'live_send_gate_closed',p_model:model,p_provider_response_id:generated.response_id||null});
+      p_reason:prepared.data?.error||'live_send_gate_closed',p_model:model,p_provider_response_id:generated.response_id||null,p_metadata:routeMetadata});
   }
   let sent:any;
   try{
@@ -215,18 +216,18 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
     await db.rpc('ops2_ana_fail_live_send_v1',{p_outbox_id:prepared.data.outbox_id,p_reason:code});
     return await finishLive(db,{p_job_id:job.id,p_status:'failed',p_decision:'handoff',p_text:result.response_text,p_confidence:result.confidence,
       p_reason:'meta_send_failed',p_model:model,p_provider_response_id:generated.response_id||null,p_error:code,
-      p_metadata:{uncertain:error instanceof MetaTransportError&&error.uncertain===true}});
+      p_metadata:{...routeMetadata,uncertain:error instanceof MetaTransportError&&error.uncertain===true}});
   }
   const acceptedAt=new Date().toISOString();
   const accepted=await db.rpc('ops2_ana_accept_live_outbound_v1',{p_outbox_id:prepared.data.outbox_id,p_provider_message_id:sent.providerMessageId,p_accepted_at:acceptedAt});
   if(accepted.error||accepted.data?.ok!==true){
     await db.rpc('ops2_ana_fail_live_send_v1',{p_outbox_id:prepared.data.outbox_id,p_reason:'meta_accepted_persist_failed'});
     return await finishLive(db,{p_job_id:job.id,p_status:'failed',p_decision:'handoff',p_reason:'meta_accepted_persist_failed',p_model:model,
-      p_provider_response_id:generated.response_id||null,p_error:'meta_accepted_persist_failed',p_metadata:{provider_message_id:sent.providerMessageId}});
+      p_provider_response_id:generated.response_id||null,p_error:'meta_accepted_persist_failed',p_metadata:{...routeMetadata,provider_message_id:sent.providerMessageId}});
   }
   return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'suggest',p_text:result.response_text,p_confidence:result.confidence,
     p_reason:result.reason,p_model:model,p_provider_response_id:generated.response_id||null,
-    p_metadata:{outbox_id:prepared.data.outbox_id,message_id:accepted.data?.message_id,provider_message_id:sent.providerMessageId,
+    p_metadata:{...routeMetadata,outbox_id:prepared.data.outbox_id,message_id:accepted.data?.message_id,provider_message_id:sent.providerMessageId,
       missing_context:result.missing_context,latency_ms:generated.latency_ms||null}});
 }
 
