@@ -48,7 +48,7 @@ with requested as (
   select m.basket_id, gs as composition_number
   from mold m cross join lateral generate_series(1, m.public_composition_count) gs
 ), chosen as (
-  select sl.basket_id, sl.composition_number, r.*,
+  select sl.composition_number, r.*,
          (r.coverage_baskets::numeric / greatest(1, ceil(sl.composition_number::numeric / r.option_count)))::numeric as selection_score
   from slots sl
   join ranked r on r.basket_id = sl.basket_id

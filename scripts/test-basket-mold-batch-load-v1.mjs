@@ -16,6 +16,7 @@ assert.match(sql,/loose_sellable_coverage_v3/i,'batch calculation preserves the 
 assert.match(sql,/row_number\s*\(\)\s*over/i,'selection ranking remains deterministic');
 assert.match(sql,/generate_series\s*\(\s*1\s*,/i,'every configured composition is generated');
 assert.match(sql,/jsonb_agg/i,'batch returns composition data as JSON');
+assert.match(sql,/chosen as \([\s\S]*select sl\.composition_number, r\.\*/i,'the batch ranking retains a single basket_id column');
 assert.match(sql,/create or replace function public\.basket_mold_public_compositions_v2\s*\(p_basket_id uuid\)/i,'the existing single-basket RPC remains available');
 assert.match(sql,/basket_mold_public_compositions_batch_v1\s*\(array\[p_basket_id\]\)/i,'the existing RPC delegates to the batch calculation');
 assert.match(sql,/jsonb_array_elements\([\s\S]*\)\s+as\s+result\(item\)/i,'the wrapper selects JSON elements with an explicit column alias');
