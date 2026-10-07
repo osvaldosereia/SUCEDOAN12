@@ -144,12 +144,33 @@ function readDraft(){
 async function saveDraft(){const configuration=readDraft();const result=await api('admin_save_draft',{configuration,expected_revision:state.revision,note:'Rascunho ANA salvo'});state.draft={configuration,revision:result.revision};state.revision=result.revision;state.dirty=false;state.lastTest=null;await load(false);state.section='overview';render()}
 async function load(showLoading=true){if(showLoading)state.host.innerHTML='<div class="ana-loading">Carregando gestão da ANA…</div>';const data=await api('admin_load');state.role=data.role||'viewer';state.draft=data.draft||null;state.active=data.active||null;state.revision=Number(data.draft?.revision||0);state.channels=data.channels||[];state.labels=data.labels||[];state.versions=data.versions||[];state.testRuns=data.test_runs||[];state.events=data.events||[];state.dirty=false;render()}
 async function loadHistory(){const data=await api('admin_history');state.history=data.history||[];state.versions=data.versions||state.versions;state.testRuns=data.test_runs||state.testRuns;state.section='tests';render()}
+function applyKnowledgeFilters(){
+  const query=state.host.querySelector('#anaKnowledgeSearch')?.value||'';
+  const category=state.host.querySelector('#anaKnowledgeCategory')?.value||'all';
+  const status=state.host.querySelector('#anaKnowledgeStatus')?.value||'all';
+  const draft=readDraft();
+  let visible=0;
+  state.host.querySelectorAll('[data-knowledge-card]').forEach(card=>{
+    const item=draft.knowledge[Number(card.dataset.knowledgeCard)]||{};
+    const show=knowledgeMatches(item,{query,category,status});
+    card.hidden=!show;
+    if(show)visible++;
+  });
+  const count=state.host.querySelector('#anaKnowledgeCount');
+  if(count)count.textContent=String(visible);
+}
 function showDirty(){
   state.dirty=true;
   const note=state.host.querySelector('.ana-unsaved');
   if(!note){const n=document.createElement('div');n.className='ana-unsaved';n.textContent='Há alterações não salvas no rascunho.';state.host.querySelector('.ana-body').prepend(n)}
 }
 function bind(){
+  const knowledgeSearch=state.host.querySelector('#anaKnowledgeSearch');
+  const knowledgeCategory=state.host.querySelector('#anaKnowledgeCategory');
+  const knowledgeStatus=state.host.querySelector('#anaKnowledgeStatus');
+  if(knowledgeSearch)knowledgeSearch.addEventListener('input',applyKnowledgeFilters);
+  if(knowledgeCategory)knowledgeCategory.addEventListener('change',applyKnowledgeFilters);
+  if(knowledgeStatus)knowledgeStatus.addEventListener('change',applyKnowledgeFilters);
   state.host.querySelectorAll('[data-section]').forEach(button=>button.onclick=()=>{if(state.dirty&&!confirm('Descartar alterações não salvas?'))return;state.dirty=false;state.section=button.dataset.section;render()});
   state.host.querySelectorAll('[data-behavior],[data-knowledge],[data-trigger],[data-condition-select],[data-trigger-action]').forEach(el=>el.addEventListener('change',showDirty));
   state.host.querySelectorAll('select[data-trigger-action][data-action-field="type"]').forEach(el=>el.addEventListener('change',()=>{
