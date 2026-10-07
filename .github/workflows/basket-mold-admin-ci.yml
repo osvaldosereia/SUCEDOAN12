@@ -9,6 +9,8 @@ on:
       - 'supabase/migrations/20261006070000_basket_mold_admin_v1.sql'
       - 'scripts/test-basket-mold-admin-v1.mjs'
       - 'scripts/test-basket-mold-admin-browser-v1.mjs'
+      - 'scripts/test-basket-mold-conditional-hidden-v1.mjs'
+      - 'supabase/migrations/20261007114941_basket_mold_conditional_hidden_adjustment_v1.sql'
       - '.github/workflows/basket-mold-admin-ci.yml'
   push:
     branches: [main]
@@ -20,6 +22,8 @@ on:
       - 'supabase/migrations/20261006070000_basket_mold_admin_v1.sql'
       - 'scripts/test-basket-mold-admin-v1.mjs'
       - 'scripts/test-basket-mold-admin-browser-v1.mjs'
+      - 'scripts/test-basket-mold-conditional-hidden-v1.mjs'
+      - 'supabase/migrations/20261007114941_basket_mold_conditional_hidden_adjustment_v1.sql'
       - '.github/workflows/basket-mold-admin-ci.yml'
 permissions:
   contents: read
@@ -32,6 +36,7 @@ jobs:
         with:
           node-version: '24'
       - run: node scripts/test-basket-mold-admin-v1.mjs
+      - run: node scripts/test-basket-mold-conditional-hidden-v1.mjs
       - run: npm install --prefix "$RUNNER_TEMP/basket-mold-admin-tests" --no-save --package-lock=false playwright@1.62.1
       - run: node "$RUNNER_TEMP/basket-mold-admin-tests/node_modules/playwright/cli.js" install --with-deps chromium
       - run: node scripts/test-basket-mold-admin-browser-v1.mjs
