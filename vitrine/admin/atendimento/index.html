@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#f7f8f7">
   <title>Atendimento · Dona Antônia</title>
-  <link rel="stylesheet" href="./attendance.css">
+  <link rel="stylesheet" href="./attendance.css?v=mobile-chat-v1">
   <link rel="stylesheet" href="./attendance-library.css">
   <style>
     .audio-recorder-panel{margin:0 0 7px;border:1px solid #cfe0d5;border-radius:11px;background:#fff;padding:9px;box-shadow:0 4px 14px rgba(22,53,35,.06)}
@@ -65,7 +65,7 @@
 
         <section class="conversation-pane" id="conversationPane">
           <header class="conversation-head" id="conversationHead">
-            <div class="conversation-identity"><span class="conversation-avatar" id="conversationAvatar">…</span><div><strong>Selecione uma conversa</strong><small>0975 e 1018 em uma única central</small></div></div>
+            <div class="conversation-identity"><button type="button" class="mobile-chat-back" id="mobileChatBackBtn" aria-label="Voltar para a lista de conversas">←</button><span class="conversation-avatar" id="conversationAvatar">…</span><div><strong>Selecione uma conversa</strong><small>0975 e 1018 em uma única central</small></div></div>
             <div class="conversation-head-actions"><button type="button" id="conversationLabelsBtn" disabled>Etiquetas</button><button type="button" class="context-open" id="openContextBtn" disabled>Contexto</button></div>
           </header>
           <div class="conversation-empty" id="conversationEmpty"><strong>Escolha uma conversa</strong><span>As mensagens aparecerão aqui.</span></div>
@@ -154,7 +154,7 @@
     </main>
   </div>
 
-  <script type="module" src="./attendance-app.js?v=ana-identified-catalog-v1"></script>
+  <script type="module" src="./attendance-app.js?v=mobile-chat-v1"></script>
   <script type="module" src="./attendance-offers.js?v=offers-v1"></script>
   <script type="module" src="./attendance-library.js?v=auth-refresh-v2"></script>
   <script type="module" src="./attendance-ana-preview.js?v=auth-refresh-v2"></script>
