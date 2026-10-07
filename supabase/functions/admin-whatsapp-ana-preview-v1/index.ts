@@ -59,7 +59,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
   }
   if(action==="admin_save_draft"){
     const validation=validateAnaConfiguration(body?.configuration);if(!validation.ok)return json(req,{ok:false,error:"configuration_invalid",details:validation.errors},400);
-    const labelIds=[...new Set(body.configuration.triggers.filter((trigger:any)=>trigger.action==="label").map((trigger:any)=>String(trigger.label_id)))];
+    const labelIds=[...new Set(body.configuration.triggers.flatMap((trigger:any)=>Array.isArray(trigger.actions)?trigger.actions:[{type:trigger.action,label_id:trigger.label_id}]).filter((action:any)=>action.type==="label").map((action:any)=>String(action.label_id)))];
     if(labelIds.length){const activeLabels=await privileged.from("attendance_labels_v1").select("id").eq("is_active",true).in("id",labelIds);if(activeLabels.error)throw activeLabels.error;const found=new Set((activeLabels.data||[]).map((label:any)=>label.id));if(labelIds.some(id=>!found.has(id)))return json(req,{ok:false,error:"trigger_label_not_active"},400)}
     const revision=Number(body?.expected_revision);if(!Number.isSafeInteger(revision)||revision<1)return json(req,{ok:false,error:"revision_invalid"},400);
     const saved=await privileged.rpc("ops2_ana_admin_save_draft_v1",{p_configuration:body.configuration,p_expected_revision:revision,p_note:clean(body?.note,240),p_actor_id:actor});
@@ -69,7 +69,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
     const testRunId=validUuid(body?.test_run_id);if(!testRunId)return json(req,{ok:false,error:"test_run_required"},400);
     const current=await privileged.rpc("ops2_ana_admin_load_v1");if(current.error)throw current.error;
     const valid=validateAnaConfiguration(current.data?.draft?.configuration);if(!valid.ok)return json(req,{ok:false,error:"configuration_invalid",details:valid.errors},409);
-    const labelIds=[...new Set(current.data.draft.configuration.triggers.filter((trigger:any)=>trigger.action==="label").map((trigger:any)=>String(trigger.label_id)))];
+    const labelIds=[...new Set(current.data.draft.configuration.triggers.flatMap((trigger:any)=>Array.isArray(trigger.actions)?trigger.actions:[{type:trigger.action,label_id:trigger.label_id}]).filter((action:any)=>action.type==="label").map((action:any)=>String(action.label_id)))];
     if(labelIds.length){const activeLabels=await privileged.from("attendance_labels_v1").select("id").eq("is_active",true).in("id",labelIds);if(activeLabels.error)throw activeLabels.error;const found=new Set((activeLabels.data||[]).map((label:any)=>label.id));if(labelIds.some(id=>!found.has(id)))return json(req,{ok:false,error:"trigger_label_not_active"},409)}
     const published=await privileged.rpc("ops2_ana_admin_publish_v1",{p_test_run_id:testRunId,p_note:clean(body?.note,240),p_actor_id:actor});
     if(published.error)throw published.error;const result=published.data||{ok:false,error:"publish_failed"};return json(req,result,result.ok===true?200:409);
