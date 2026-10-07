@@ -91,8 +91,12 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
     const suite=draft.configuration.test_cases.slice(0,20);if(!suite.length)return json(req,{ok:false,error:"required_test_cases_missing"},409);
     const began=Date.now();let passed=0,failed=0;const safeReasons:string[]=[];const scenarioResults:any[]=[];
     const simulate=async(input:string,channel:string,context:any={})=>{
-      const route=routeAnaMessage(draft.configuration,input,channel,context);
       const trace:any[]=[];
+      if(context?.humanMode===true){
+        trace.push({step:"gate",type:"human_mode"});
+        return {outcome:"handoff",reason:"human_mode_gate",response_text:"",latency_ms:0,trace};
+      }
+      const route=routeAnaMessage(draft.configuration,input,channel,context);
       if(route.triggerKey)trace.push({step:"automation",trigger_key:route.triggerKey});
       if(route.path==="actions"){
         let responseText="";let outcome="no_reply";let continueAi=false;
@@ -124,7 +128,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
       scenarioResults.push({key:scenario.key,expected:scenario.expected,actual:result.outcome,passed:ok,reason:result.reason});
     }
     let customResult:any=null;const customInput=clean(body?.input,500),channel=clean(body?.channel,4);
-    if(customInput){if(!["0975","1018"].includes(channel))return json(req,{ok:false,error:"test_channel_invalid",dry_run:true,dry_run_not_sendable:true},400);const value=await simulate(customInput,channel,{customerLinked:Boolean(body?.customer_linked),humanMode:false});customResult={outcome:value.outcome,reason:value.reason,response_text:value.response_text,trace:value.trace||[]};}
+    if(customInput){if(!["0975","1018"].includes(channel))return json(req,{ok:false,error:"test_channel_invalid",dry_run:true,dry_run_not_sendable:true},400);const value=await simulate(customInput,channel,{customerLinked:Boolean(body?.customer_linked),humanMode:Boolean(body?.human_mode)});customResult={outcome:value.outcome,reason:value.reason,response_text:value.response_text,trace:value.trace||[]};}
     const recorded=await privileged.rpc("ops2_ana_admin_record_test_run_v1",{p_draft_revision:revision,p_scenario_keys:suite.map((scenario:any)=>String(scenario.key)),p_passed_count:passed,p_failed_count:failed,p_safe_reasons:safeReasons,p_latency_ms:Math.max(0,Date.now()-began),p_actor_id:actor});
     if(recorded.error)throw recorded.error;const saved=recorded.data||{ok:false,error:"test_run_record_failed"};if(saved.ok!==true)return json(req,{ok:false,error:saved.error||"test_run_record_failed"},409);
     return json(req,{ok:true,dry_run:true,dry_run_not_sendable:true,test_run:saved,results:scenarioResults,custom_result:customResult});
