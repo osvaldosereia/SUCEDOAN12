@@ -59,7 +59,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
   }
   if(action==="admin_save_draft"){
     const validation=validateAnaConfiguration(body?.configuration);if(!validation.ok)return json(req,{ok:false,error:"configuration_invalid",details:validation.errors},400);
-    const labelIds=[...new Set(body.configuration.triggers.filter((trigger:any)=>trigger.action==="label").map((trigger:any)=>String(trigger.label_id)))];
+    const labelIds=[...new Set(body.configuration.triggers.flatMap((trigger:any)=>Array.isArray(trigger.actions)?trigger.actions:[{type:trigger.action,label_id:trigger.label_id}]).filter((action:any)=>action.type==="label").map((action:any)=>String(action.label_id)))];
     if(labelIds.length){const activeLabels=await privileged.from("attendance_labels_v1").select("id").eq("is_active",true).in("id",labelIds);if(activeLabels.error)throw activeLabels.error;const found=new Set((activeLabels.data||[]).map((label:any)=>label.id));if(labelIds.some(id=>!found.has(id)))return json(req,{ok:false,error:"trigger_label_not_active"},400)}
     const revision=Number(body?.expected_revision);if(!Number.isSafeInteger(revision)||revision<1)return json(req,{ok:false,error:"revision_invalid"},400);
     const saved=await privileged.rpc("ops2_ana_admin_save_draft_v1",{p_configuration:body.configuration,p_expected_revision:revision,p_note:clean(body?.note,240),p_actor_id:actor});
@@ -69,7 +69,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
     const testRunId=validUuid(body?.test_run_id);if(!testRunId)return json(req,{ok:false,error:"test_run_required"},400);
     const current=await privileged.rpc("ops2_ana_admin_load_v1");if(current.error)throw current.error;
     const valid=validateAnaConfiguration(current.data?.draft?.configuration);if(!valid.ok)return json(req,{ok:false,error:"configuration_invalid",details:valid.errors},409);
-    const labelIds=[...new Set(current.data.draft.configuration.triggers.filter((trigger:any)=>trigger.action==="label").map((trigger:any)=>String(trigger.label_id)))];
+    const labelIds=[...new Set(current.data.draft.configuration.triggers.flatMap((trigger:any)=>Array.isArray(trigger.actions)?trigger.actions:[{type:trigger.action,label_id:trigger.label_id}]).filter((action:any)=>action.type==="label").map((action:any)=>String(action.label_id)))];
     if(labelIds.length){const activeLabels=await privileged.from("attendance_labels_v1").select("id").eq("is_active",true).in("id",labelIds);if(activeLabels.error)throw activeLabels.error;const found=new Set((activeLabels.data||[]).map((label:any)=>label.id));if(labelIds.some(id=>!found.has(id)))return json(req,{ok:false,error:"trigger_label_not_active"},409)}
     const published=await privileged.rpc("ops2_ana_admin_publish_v1",{p_test_run_id:testRunId,p_note:clean(body?.note,240),p_actor_id:actor});
     if(published.error)throw published.error;const result=published.data||{ok:false,error:"publish_failed"};return json(req,result,result.ok===true?200:409);
@@ -90,17 +90,31 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
     const revision=Number(draft?.revision);if(Number(body?.expected_revision)!==revision)return json(req,{ok:false,error:"revision_conflict"},409);
     const suite=draft.configuration.test_cases.slice(0,8);if(!suite.length)return json(req,{ok:false,error:"required_test_cases_missing"},409);
     const began=Date.now();let passed=0,failed=0;const safeReasons:string[]=[];const scenarioResults:any[]=[];
-    const simulate=async(input:string,channel:string)=>{
-      const route=routeAnaMessage(draft.configuration,input,channel);
-      if(route.path==="fixed_reply")return {outcome:"reply",reason:"fixed_reply_trigger",response_text:route.responseText,latency_ms:0};
-      if(route.path==="handoff")return {outcome:"handoff",reason:route.reason||"trigger_handoff",response_text:"",latency_ms:0};
-      if(route.path==="label")return {outcome:"label",reason:"trigger_label",response_text:"",latency_ms:0};
+    const simulate=async(input:string,channel:string,context:any={})=>{
+      const route=routeAnaMessage(draft.configuration,input,channel,context);
+      const trace:any[]=[];
+      if(route.triggerKey)trace.push({step:"automation",trigger_key:route.triggerKey});
+      if(route.path==="actions"){
+        let responseText="";let outcome="no_reply";let continueAi=false;
+        for(const action of route.actions||[]){
+          if(action.type==="label"){trace.push({step:"action",type:"label",label_id:action.labelId});outcome="label"}
+          if(action.type==="fixed_reply"){trace.push({step:"action",type:"fixed_reply",response_text:action.responseText});responseText=action.responseText;outcome="reply"}
+          if(action.type==="handoff"){trace.push({step:"action",type:"handoff"});return {outcome:"handoff",reason:"trigger_actions_handoff",response_text:"",latency_ms:0,trace}}
+          if(action.type==="continue_ai"){trace.push({step:"action",type:"continue_ai"});continueAi=true}
+        }
+        if(responseText)return {outcome:"reply",reason:"trigger_actions_reply",response_text:responseText,latency_ms:0,trace};
+        if(!continueAi)return {outcome,reason:"trigger_actions_completed",response_text:"",latency_ms:0,trace};
+        trace.push({step:"ai",type:"would_call_ai"});
+      }
+      if(route.path==="fixed_reply")return {outcome:"reply",reason:"fixed_reply_trigger",response_text:route.responseText,latency_ms:0,trace};
+      if(route.path==="handoff")return {outcome:"handoff",reason:route.reason||"trigger_handoff",response_text:"",latency_ms:0,trace};
+      if(route.path==="label")return {outcome:"label",reason:"trigger_label",response_text:"",latency_ms:0,trace};
       const generated=await generateSuggestion(input,[],"",buildAnaRuntimeInstructions(draft.configuration));
-      if(!generated.ok)return {outcome:"handoff",reason:"ai_fallback_handoff",response_text:"",latency_ms:Number(generated.latency_ms)||0};
+      if(!generated.ok)return {outcome:"handoff",reason:"ai_fallback_handoff",response_text:"",latency_ms:Number(generated.latency_ms)||0,trace};
       const result=generated.result;
-      if(result.decision==="no_reply")return {outcome:"no_reply",reason:"ai_no_reply",response_text:"",latency_ms:Number(generated.latency_ms)||0};
-      if(!shouldSendAnaLiveReply({decision:result.decision,confidence:result.confidence,responseText:result.response_text}))return {outcome:"handoff",reason:"ai_low_confidence_handoff",response_text:"",latency_ms:Number(generated.latency_ms)||0};
-      return {outcome:"reply",reason:"ai_reply_eligible",response_text:result.response_text,latency_ms:Number(generated.latency_ms)||0};
+      if(result.decision==="no_reply")return {outcome:"no_reply",reason:"ai_no_reply",response_text:"",latency_ms:Number(generated.latency_ms)||0,trace};
+      if(!shouldSendAnaLiveReply({decision:result.decision,confidence:result.confidence,responseText:result.response_text}))return {outcome:"handoff",reason:"ai_low_confidence_handoff",response_text:"",latency_ms:Number(generated.latency_ms)||0,trace};
+      trace.push({step:"ai",type:"reply_eligible",confidence:result.confidence});return {outcome:"reply",reason:"ai_reply_eligible",response_text:result.response_text,latency_ms:Number(generated.latency_ms)||0,trace};
     };
     for(const scenario of suite){
       const result=await simulate(String(scenario.input||""),String(scenario.channel||"0975"));const ok=result.outcome===scenario.expected;
@@ -108,7 +122,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
       scenarioResults.push({key:scenario.key,expected:scenario.expected,actual:result.outcome,passed:ok,reason:result.reason});
     }
     let customResult:any=null;const customInput=clean(body?.input,500),channel=clean(body?.channel,4);
-    if(customInput){if(!["0975","1018"].includes(channel))return json(req,{ok:false,error:"test_channel_invalid",dry_run:true,dry_run_not_sendable:true},400);const value=await simulate(customInput,channel);customResult={outcome:value.outcome,reason:value.reason,response_text:value.response_text};}
+    if(customInput){if(!["0975","1018"].includes(channel))return json(req,{ok:false,error:"test_channel_invalid",dry_run:true,dry_run_not_sendable:true},400);const value=await simulate(customInput,channel,{customerLinked:Boolean(body?.customer_linked),humanMode:false});customResult={outcome:value.outcome,reason:value.reason,response_text:value.response_text,trace:value.trace||[]};}
     const recorded=await privileged.rpc("ops2_ana_admin_record_test_run_v1",{p_draft_revision:revision,p_scenario_keys:suite.map((scenario:any)=>String(scenario.key)),p_passed_count:passed,p_failed_count:failed,p_safe_reasons:safeReasons,p_latency_ms:Math.max(0,Date.now()-began),p_actor_id:actor});
     if(recorded.error)throw recorded.error;const saved=recorded.data||{ok:false,error:"test_run_record_failed"};if(saved.ok!==true)return json(req,{ok:false,error:saved.error||"test_run_record_failed"},409);
     return json(req,{ok:true,dry_run:true,dry_run_not_sendable:true,test_run:saved,results:scenarioResults,custom_result:customResult});

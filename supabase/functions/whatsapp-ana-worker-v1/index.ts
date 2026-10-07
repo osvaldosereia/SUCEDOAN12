@@ -133,10 +133,26 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'active_config_invalid',p_model:model});
   }
   const channel=String(account.data.phone_e164).replace(/\D/g,'').slice(-4);
-  const routed=routeAnaMessage(configuration,inbound.data.text_body,channel);
+  const routed=routeAnaMessage(configuration,inbound.data.text_body,channel,{humanMode:false});
   if(routed.path==='handoff'){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:routed.reason||'admin_trigger_handoff',p_model:model,
       p_metadata:{trigger_key:routed.triggerKey||null,active_version:activeConfig.data.version}});
+  }
+  if(routed.path==='actions'){
+    let fixedReply='';
+    for(const action of routed.actions||[]){
+      const actionGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
+      if(actionGate.error||actionGate.data?.allowed!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'human_takeover_during_trigger_actions',p_model:model,p_metadata:{trigger_key:routed.triggerKey,active_version:activeConfig.data.version}});
+      if(action.type==='handoff')return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'admin_trigger_handoff',p_model:model,p_metadata:{trigger_key:routed.triggerKey,active_version:activeConfig.data.version}});
+      if(action.type==='label'){
+        const labeled=await db.rpc('ops2_ana_apply_trigger_label_v1',{p_conversation_id:job.conversation_id,p_label_id:action.labelId,p_trigger_key:routed.triggerKey});
+        if(labeled.error||labeled.data?.ok!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:labeled.data?.error||'trigger_label_failed',p_model:model});
+      }
+      if(action.type==='fixed_reply')fixedReply=action.responseText||fixedReply;
+    }
+    if(fixedReply)routed.path='fixed_reply',routed.responseText=fixedReply;
+    else if((routed.actions||[]).some((action:any)=>action.type==='continue_ai'))routed.path='ai';
+    else return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'no_reply',p_reason:'admin_trigger_actions_completed',p_model:model,p_metadata:{trigger_key:routed.triggerKey,active_version:activeConfig.data.version}});
   }
   if(routed.path==='label'){
     const labelGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
