@@ -14,3 +14,6 @@
 
 .ana-diagnostic-list{display:grid;gap:7px;margin-top:10px}.ana-diagnostic{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start;padding:9px 10px;border-radius:9px;border:1px solid #e3e8e4;background:#fafbfa}.ana-diagnostic strong{font-size:11px;text-transform:uppercase;letter-spacing:.03em}.ana-diagnostic span{font-size:12px;line-height:1.4}.ana-diagnostic.critical{border-color:#e5c3c6;background:#fff6f7;color:#8d2637}.ana-diagnostic.warning{border-color:#ead9a9;background:#fffbef;color:#715313}
 @media(max-width:560px){.ana-diagnostic{grid-template-columns:1fr;gap:3px}}
+
+.ana-metrics-kpis{grid-template-columns:repeat(5,minmax(0,1fr));margin-top:12px}.ana-metrics-kpis .ana-card{padding:12px}.ana-metric-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}.ana-metric-columns h3{margin:0 0 7px;font-size:13px}.ana-metric-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid #edf0ed;font-size:12px}.ana-metric-row:first-of-type{border-top:0}
+@media(max-width:900px){.ana-metrics-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.ana-metrics-kpis,.ana-metric-columns{grid-template-columns:1fr}}

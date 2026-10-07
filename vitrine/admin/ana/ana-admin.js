@@ -5,7 +5,7 @@ const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-
 const TOKEN_KEY='da_finance_access_token_v1';
 const sections=[['overview','Visão geral'],['behavior','Comportamento'],['knowledge','Conhecimento'],['triggers','Automações'],['tests','Testes e histórico']];
 const automationTemplates=listAnaAutomationTemplates();
-const state={host:null,role:'viewer',section:'overview',draft:null,active:null,revision:0,channels:[],labels:[],versions:[],testRuns:[],events:[],history:[],lastTest:null,busy:false,dirty:false};
+const state={host:null,role:'viewer',section:'overview',draft:null,active:null,revision:0,channels:[],labels:[],versions:[],testRuns:[],events:[],history:[],metrics:null,lastTest:null,busy:false,dirty:false};
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tokenPayload=token=>{try{const raw=String(token).split('.')[1]||'',pad=raw.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-raw.length%4)%4);return JSON.parse(atob(pad))}catch{return {}}};
 async function token(force=false){let value=sessionStorage.getItem(TOKEN_KEY)||'';if(force||!value||Number(tokenPayload(value).exp||0)<=Math.floor(Date.now()/1000)+60){sessionStorage.removeItem(TOKEN_KEY);const response=await fetch('https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1?exchange=1',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok||!data?.ok||!data?.access_token)throw new Error(data?.error||'Sessão Admin indisponível');value=data.access_token;sessionStorage.setItem(TOKEN_KEY,value)}return value}
@@ -117,6 +117,42 @@ function renderTriggers(){
   }).join('');
   return head+renderAutomationTemplates()+(cards||'<div class="ana-card">Nenhuma automação configurada.</div>');
 }
+function metricReasonLabel(key=''){
+  return ({
+    admin_trigger_fixed_reply:'Resposta de automação',
+    admin_trigger_handoff:'Transferência por automação',
+    admin_trigger_label_applied:'Etiqueta aplicada',
+    admin_trigger_label_removed:'Etiqueta removida',
+    human_takeover_during_generation:'Humano assumiu durante resposta',
+    human_takeover_before_trigger_label:'Humano assumiu antes da etiqueta',
+    human_review_required:'Revisão humana necessária',
+    active_config_invalid:'Configuração ativa inválida',
+    first_greeting_of_day:'Primeiro cumprimento do dia',
+    ai_gate_closed_before_generation:'ANA bloqueada pelo gate humano',
+    inbound_not_supported:'Mensagem não suportada',
+    other_or_needs_review:'Outros motivos'
+  }[key]||key||'Outro');
+}
+function renderHistoryMetrics(){
+  const m=state.metrics;
+  if(!m)return '<section class="ana-card"><h2>Métricas recentes</h2><p class="ana-muted">Carregadas somente quando você clicar em “Atualizar histórico”, para manter a Central leve.</p></section>';
+  const reasons=(m.reasons||[]).map(item=>`<div class="ana-metric-row"><span>${esc(metricReasonLabel(item.key))}</span><strong>${Number(item.count)||0}</strong></div>`).join('');
+  const triggers=(m.triggers||[]).map(item=>`<div class="ana-metric-row"><span>${esc(item.key)}</span><strong>${Number(item.count)||0}</strong></div>`).join('');
+  return `<section class="ana-card">
+    <div class="ana-row"><div><h2>Últimos ${Number(m.window_days)||7} dias</h2><p class="ana-muted">Resumo operacional sem conteúdo de conversa ou identificação de cliente.</p></div></div>
+    <div class="ana-kpis ana-metrics-kpis">
+      <div class="ana-card"><small>Processados</small><strong>${Number(m.total)||0}</strong><span>jobs da ANA</span></div>
+      <div class="ana-card"><small>Respostas</small><strong>${Number(m.decisions?.suggest)||0}</strong><span>respostas enviáveis</span></div>
+      <div class="ana-card"><small>Humano</small><strong>${Number(m.decisions?.handoff)||0}</strong><span>encaminhamentos</span></div>
+      <div class="ana-card"><small>Sem resposta</small><strong>${Number(m.decisions?.no_reply)||0}</strong><span>não exigiam mensagem</span></div>
+      <div class="ana-card"><small>Falhas</small><strong>${Number(m.statuses?.failed)||0}</strong><span>execuções com erro</span></div>
+    </div>
+    <div class="ana-metric-columns">
+      <div><h3>Principais motivos</h3>${reasons||'<p class="ana-muted">Sem dados no período.</p>'}</div>
+      <div><h3>Automações acionadas</h3>${triggers||'<p class="ana-muted">Nenhuma automação publicada acionada.</p>'}</div>
+    </div>
+  </section>`;
+}
 function renderTests(){
   const latest=state.testRuns[0]||null;
   const safeHistory=[...state.events,...state.history].slice(0,30);
@@ -128,6 +164,7 @@ function renderTests(){
     <div class="ana-pills">${badge(`${diagnostics.criticalCount} crítico(s)`,diagnostics.criticalCount?'amber':'green')}${badge(`${diagnostics.warningCount} aviso(s)`,diagnostics.warningCount?'amber':'neutral')}</div>
     ${diagnosticList?`<div class="ana-diagnostic-list">${diagnosticList}</div>`:'<p class="ana-muted">Nenhuma colisão ou contradição detectada nas automações ativas.</p>'}
   </section>
+  ${renderHistoryMetrics()}
   <section class="ana-card">
     <h2>Simular mensagem</h2>
     <p class="ana-muted">Use somente exemplos fictícios. O resultado não pode ser enviado ao cliente.</p>
@@ -179,7 +216,7 @@ function readDraft(){
 }
 async function saveDraft(){const configuration=readDraft();const result=await api('admin_save_draft',{configuration,expected_revision:state.revision,note:'Rascunho ANA salvo'});state.draft={configuration,revision:result.revision};state.revision=result.revision;state.dirty=false;state.lastTest=null;await load(false);state.section='overview';render()}
 async function load(showLoading=true){if(showLoading)state.host.innerHTML='<div class="ana-loading">Carregando gestão da ANA…</div>';const data=await api('admin_load');state.role=data.role||'viewer';state.draft=data.draft||null;state.active=data.active||null;state.revision=Number(data.draft?.revision||0);state.channels=data.channels||[];state.labels=data.labels||[];state.versions=data.versions||[];state.testRuns=data.test_runs||[];state.events=data.events||[];state.dirty=false;render()}
-async function loadHistory(){const data=await api('admin_history');state.history=data.history||[];state.versions=data.versions||state.versions;state.testRuns=data.test_runs||state.testRuns;state.section='tests';render()}
+async function loadHistory(){const data=await api('admin_history');state.history=data.history||[];state.metrics=data.metrics||null;state.versions=data.versions||state.versions;state.testRuns=data.test_runs||state.testRuns;state.section='tests';render()}
 function applyKnowledgeFilters(){
   const query=state.host.querySelector('#anaKnowledgeSearch')?.value||'';
   const category=state.host.querySelector('#anaKnowledgeCategory')?.value||'all';
