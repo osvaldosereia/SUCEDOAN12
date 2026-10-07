@@ -133,7 +133,12 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'active_config_invalid',p_model:model});
   }
   const channel=String(account.data.phone_e164).replace(/\D/g,'').slice(-4);
-  const routed=routeAnaMessage(configuration,inbound.data.text_body,channel,{humanMode:false});
+  const conversation=await db.from('conversations').select('customer_id,wa_contact_e164').eq('id',job.conversation_id).maybeSingle();
+  if(conversation.error||!conversation.data){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'conversation_context_unavailable',p_model:model,
+      p_metadata:{active_version:activeConfig.data.version}});
+  }
+  const routed=routeAnaMessage(configuration,inbound.data.text_body,channel,{humanMode:false,customerLinked:Boolean(conversation.data.customer_id)});
   if(routed.path==='handoff'){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:routed.reason||'admin_trigger_handoff',p_model:model,
       p_metadata:{trigger_key:routed.triggerKey||null,active_version:activeConfig.data.version}});
@@ -171,7 +176,6 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
   if(routed.path==='fixed_reply'){
     generated={ok:true,result:normalizeAnaDryRunResult({decision:'suggest',confidence:1,response_text:routed.responseText,reason:'admin_trigger_fixed_reply',missing_context:[]}),latency_ms:0};
   }else if(await isSimpleGreetingForNewDay(db,job.conversation_id,inbound.data)){
-    const conversation=await db.from('conversations').select('wa_contact_e164').eq('id',job.conversation_id).maybeSingle();
     const greetingName=configuration?.behavior?.use_known_first_name_on_first_greeting===false?'':customerFirstName;
     const welcome=conversation.data?.wa_contact_e164?await personalizedCatalogWelcome(db,job.conversation_id,conversation.data.wa_contact_e164,greetingName):null;
     generated=welcome?{ok:true,result:normalizeAnaDryRunResult({decision:'suggest',confidence:0.99,response_text:welcome,reason:'first_greeting_of_day',missing_context:[]}),latency_ms:0}:null;
