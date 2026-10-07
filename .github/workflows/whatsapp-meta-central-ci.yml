@@ -16,6 +16,9 @@ on:
       - 'supabase/functions/admin-marketing-audiences-v1/**'
       - 'supabase/functions/admin-marketing-campaigns-v1/**'
       - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/migrations/20261007202921_smart_delivery_admin_runtime_v1.sql'
+      - 'scripts/test-smart-delivery-admin-runtime-v1.mjs'
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/admin/marketing/**'
       - 'vitrine/admin/atendimento/**'
@@ -125,6 +128,8 @@ jobs:
       - {name: Meta webhook contract, run: 'node scripts/test-whatsapp-meta-webhook-v1.mjs'}
       - {name: Smart Delivery Meta location capture, run: 'node scripts/test-smart-delivery-whatsapp-location-capture-v2.mjs'}
       - {name: Smart Delivery operational RPC guards, run: 'node scripts/test-smart-delivery-operational-rpcs-v1.mjs'}
+      - {name: Smart Delivery admin runtime, run: 'node scripts/test-smart-delivery-admin-runtime-v1.mjs'}
+      - {name: Smart Delivery admin backend syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-products-live-v1/index.ts'}
       - {name: Meta template webhook events contract, run: 'node scripts/test-whatsapp-meta-template-events-v1.mjs'}
       - {name: Meta shadow media preservation regression, run: 'node scripts/test-whatsapp-meta-shadow-media-preserve-v1.mjs'}
       - {name: Meta webhook TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts'}
