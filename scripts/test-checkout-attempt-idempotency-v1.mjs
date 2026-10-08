@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import vm from 'node:vm';
 
 const read = path => fs.readFileSync(path, 'utf8');
 const sql = read('supabase/migrations/20261008124500_checkout_attempt_idempotency_v1.sql');
@@ -37,4 +38,30 @@ assert.match(client, /sessionStorage\?\.removeItem\(CHECKOUT_ATTEMPT_STORAGE/);
 assert.equal(root, vitrine, 'site mirrors must match exactly');
 assert.match(root, /renderOrderSuccess\(saved\);window\.DonaAntoniaCheckoutAttempt\?\.complete\?\.\(\)/);
 assert.match(root, /checkout-resilience\.js\?v=20261008-idempotency1/);
+assert.match(client, /registration:body\.checkout_registration\|\|null/);
+assert.match(edge, /checkout_registration:p\?\.checkout_registration\|\|null/);
+
+// Execute the real browser helper in a sandbox, not a duplicate implementation.
+const start = client.indexOf('  const CHECKOUT_ATTEMPT_STORAGE');
+const end = client.indexOf('  function byId(id)',start);
+assert.ok(start>=0&&end>start,'checkout retry helper boundaries must be present');
+const store=new Map();
+let count=0;
+const browser={crypto:{randomUUID:()=>`00000000-0000-4000-8000-${String(++count).padStart(12,'0')}`},sessionStorage:{
+  getItem:key=>store.get(key)||null,
+  setItem:(key,value)=>store.set(key,value),
+  removeItem:key=>store.delete(key)
+}};
+const context={window:browser};
+vm.runInNewContext(client.slice(start,end)+';this.createAttempt=checkoutAttemptId;',context);
+const payload={whatsapp_phone:'+5565999999999',payment_method:'PIX',
+  items:[{type:'product',id:'X',qty:1}],checkout_registration:{street:'Rua A',number:'10'}};
+const original=context.createAttempt(payload);
+assert.equal(original,context.createAttempt(payload),'same registration retains attempt ID');
+assert.notEqual(original,context.createAttempt({...payload,
+  checkout_registration:{...payload.checkout_registration,number:'11'}}),
+'changed delivery address must use a new attempt ID');
+assert.ok(![...store.values()].join(' ').includes('Rua A'),
+'no raw registration address may be persisted in session storage');
+
 console.log('PASS checkout idempotency contract checks');
