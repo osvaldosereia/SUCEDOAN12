@@ -330,5 +330,14 @@
   (async()=>{
     if(!storedToken()){show('loginView');setConnection('Acesso necessário','error');return}
     show('queueView');await loadQueue();
+    const errorCode=new URLSearchParams(location.search).get('erro');
+    const messages={
+      pedido_invalido:'Este link de separação é inválido.',
+      pedido_indisponivel:'O pedido saiu da fila SEPARAR AGORA ou não está mais disponível para separar.',
+      dados_pendentes:'O pedido precisa ter os dados do cliente regularizados no Admin antes da separação.',
+      vitrine_indisponivel:'Não foi possível abrir a vitrine original de separação.',
+      acesso:'Não foi possível validar seu acesso à vitrine. Atualize a página e tente novamente.'
+    };
+    if(errorCode&&messages[errorCode])$('queueFeedback').textContent=messages[errorCode];
   })();
 })();
