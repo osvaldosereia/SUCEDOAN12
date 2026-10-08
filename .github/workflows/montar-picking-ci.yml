@@ -1,0 +1,29 @@
+name: Montar - Separacao operacional
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'montar/**'
+      - 'scripts/test-montar-picking-v1.mjs'
+      - 'supabase/sql/20261008_montar_manual_queue_feed_v1.sql'
+      - '.github/workflows/montar-picking-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'montar/**'
+      - 'scripts/test-montar-picking-v1.mjs'
+      - 'supabase/sql/20261008_montar_manual_queue_feed_v1.sql'
+      - '.github/workflows/montar-picking-ci.yml'
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Validate picker behavior and security
+        run: node scripts/test-montar-picking-v1.mjs
+      - name: Diff check
+        run: git diff --check HEAD^ HEAD
