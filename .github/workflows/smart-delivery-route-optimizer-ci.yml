@@ -1,0 +1,25 @@
+name: Smart Delivery Route Optimizer CI
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/smart-delivery-*.mjs'
+      - 'scripts/test-smart-delivery-google-adapter-v1.mjs'
+      - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/smart-delivery-*.mjs'
+      - 'scripts/test-smart-delivery-google-adapter-v1.mjs'
+      - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
+permissions:
+  contents: read
+jobs:
+  adapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-smart-delivery-google-adapter-v1.mjs
