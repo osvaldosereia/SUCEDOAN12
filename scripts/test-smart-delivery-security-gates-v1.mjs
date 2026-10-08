@@ -3,8 +3,8 @@ const worker=fs.readFileSync('supabase/functions/smart-delivery-optimize-v1/inde
 const gateway=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const must=(value,message)=>{if(!value)throw new Error(message)};
 const optimizer=gateway.slice(gateway.indexOf('async function smartDeliveryOptimize('),gateway.indexOf('async function smartDeliveryProofUploadUrl('));
-must(worker.includes('internal_auth_required')&&worker.includes('req.headers.get("authorization")'),'SECURITY: optimizer worker must reject arbitrary authenticated end users');
-must(optimizer.includes('Bearer "+K')||optimizer.includes('Bearer " + K'),'SECURITY: optimizer gateway must use its server credential, never forward the caller JWT');
+must(worker.includes('internal_auth_required')&&worker.includes('req.headers.get("apikey")'),'SECURITY: optimizer worker must require an internal server key');
+must(optimizer.includes('"apikey":K')&&(optimizer.includes('"authorization":"Bearer "+K')||optimizer.includes('"authorization": "Bearer "+K')),'SECURITY: optimizer gateway must use its server credential, never forward the caller JWT');
 const proofSave=gateway.slice(gateway.indexOf('async function smartDeliveryProofSave('),gateway.indexOf('async function smartDeliveryCatalog('));
 must(proofSave.includes('.info(path)'),'SECURITY: proof metadata must not be committed before uploaded object is verified');
 must(proofSave.includes('.order("created_at"'),'SECURITY: select latest delivery attempt, not an ambiguous historical stop');
