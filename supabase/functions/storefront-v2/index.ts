@@ -498,6 +498,15 @@ async function submit(req:Request,p:any){
   const created=requestId?await db.rpc("ops2_create_vitrine_checkout_once_v1",{p_request_id:requestId,p_request_context:requestContext,p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}}):await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}});
   if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit","basket_mold_unavailable","basket_mold_not_configured","basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items}}
   const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;
+  // If another concurrent submission won while this request reconciled stock,
+  // return the ORIGINAL receipt. Never overwrite its item adjustments or
+  // re-trigger checkout side effects.
+  if(created.data?.replayed===true){
+    if(!uid(orderId))return {error:"checkout_attempt_order_missing",status:503};
+    const link=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});
+    if(link.error||!link.data?.public_code)return {error:"checkout_attempt_public_link_unavailable",status:503};
+    return {...created.data,order_public_url:link.data.public_url||null,order_public_code:link.data.public_code,replayed:true};
+  }
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
   if(orderId){try{const publicLink=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});if(!publicLink.error)publicOrderLink=publicLink.data||null}catch(e){console.error("order_public_link",txt((e as any)?.message,180))}}
   if(orderId&&ph)kickWhatsappOrderOutbound(orderId);
