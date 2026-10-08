@@ -9,6 +9,9 @@ on:
       - 'supabase/config.toml'
       - 'scripts/test-smart-delivery-*.mjs'
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/manifest.webmanifest'
+      - 'vitrine/admin/sw.js'
+      - 'vitrine/admin/delivery-icon.svg'
       - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
   push:
     branches: [main]
@@ -20,6 +23,9 @@ on:
       - 'supabase/config.toml'
       - 'scripts/test-smart-delivery-*.mjs'
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/manifest.webmanifest'
+      - 'vitrine/admin/sw.js'
+      - 'vitrine/admin/delivery-icon.svg'
       - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
 permissions:
   contents: read
@@ -41,3 +47,4 @@ jobs:
       - run: node scripts/test-smart-delivery-return-flow-v1.mjs
       - run: node scripts/test-smart-delivery-security-gates-v1.mjs
       - run: node scripts/test-smart-delivery-terminal-lifecycle-v1.mjs
+      - run: node scripts/test-smart-delivery-pwa-v1.mjs
