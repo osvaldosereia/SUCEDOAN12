@@ -79,6 +79,11 @@ declare v_order uuid;
 begin
  select nullif(receipt->>'order_id','')::uuid into v_order from checkout_first;
  if v_order is null then raise exception 'checkout_id_missing'; end if;
+ if coalesce((select (receipt->>'stock_reserved')::boolean from checkout_first),false) is not true
+ then raise exception 'production_wrapper_did_not_reserve_stock'; end if;
+ if coalesce((select (receipt->>'registration_complete')::boolean from checkout_retry),false) is not true
+ then raise exception 'replay_lost_registration_complete'; end if;
+
  if (select receipt->>'order_id' from checkout_first) <>
     (select receipt->>'order_id' from checkout_retry)
  then raise exception 'retry_created_another_order'; end if;
