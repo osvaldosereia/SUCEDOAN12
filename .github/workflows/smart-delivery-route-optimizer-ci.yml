@@ -6,15 +6,7 @@ on:
       - 'supabase/functions/_shared/google-service-account-auth.mjs'
       - 'supabase/functions/smart-delivery-optimize-v1/**'
       - 'supabase/functions/admin-products-live-v1/index.ts'
-      - 'scripts/test-smart-delivery-google-*.mjs'
-      - 'scripts/test-smart-delivery-optimizer-admin-v1.mjs'
-      - 'scripts/test-smart-delivery-driver-mobile-v1.mjs'
-      - 'scripts/test-smart-delivery-proof-v1.mjs'
-      - 'scripts/test-smart-delivery-return-flow-v1.mjs'
-      - 'scripts/test-smart-delivery-return-flow-v1.mjs'
-      - 'scripts/test-smart-delivery-proof-v1.mjs'
-      - 'vitrine/admin/index.html'
-      - 'scripts/test-smart-delivery-driver-mobile-v1.mjs'
+      - 'scripts/test-smart-delivery-*.mjs'
       - 'vitrine/admin/index.html'
       - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
   push:
@@ -24,8 +16,8 @@ on:
       - 'supabase/functions/_shared/google-service-account-auth.mjs'
       - 'supabase/functions/smart-delivery-optimize-v1/**'
       - 'supabase/functions/admin-products-live-v1/index.ts'
-      - 'scripts/test-smart-delivery-google-*.mjs'
-      - 'scripts/test-smart-delivery-optimizer-admin-v1.mjs'
+      - 'scripts/test-smart-delivery-*.mjs'
+      - 'vitrine/admin/index.html'
       - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
 permissions:
   contents: read
