@@ -7027,7 +7027,7 @@
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!Array.isArray(data.order_ids))throw new Error(data.message||data.error||'manual_queue_unavailable');
     state.manualQueueIds=new Set(data.order_ids.map(String));
-    state.manualQueueLoaded=true;state.manualQueueError=false;
+    state.manualQueueLoaded=true;state.manualQueueError=false;state.manualQueueLastSync=Date.now();
     return data;
   }
   async function loadManualPickQueue(){
@@ -7062,6 +7062,10 @@
         if(nextStatus!==o.status||JSON.stringify(nextSummary)!==JSON.stringify(o.separation_summary||null))changed=true;
         return {...o,status:nextStatus,separation_summary:nextSummary};
       });
+      if(state.orderStatusTab==='manual'&&Date.now()-Number(state.manualQueueLastSync||0)>=15000){
+        const previous=[...state.manualQueueIds].sort().join(',');
+        try{await loadManualPickQueue();if(previous!==[...state.manualQueueIds].sort().join(','))changed=true}catch{}
+      }
       if(changed)paintOrderRows();
     }catch{}
   }
