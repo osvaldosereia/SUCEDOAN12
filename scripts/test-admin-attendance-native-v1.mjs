@@ -13,7 +13,7 @@ assert.doesNotMatch(page,/attendance-layout-v3(?:-bridge|-polish)?\.(?:js|css)/,
 assert.doesNotMatch(page,/src=['"]\.\/attendance\.js['"]/,'página final não deve carregar o core legado attendance.js');
 assert.match(page,/src=['"]\.\/attendance-app\.js(?:\?[^'"]+)?['"]/,'página final deve carregar o core nativo único, com cache-bust opcional');
 const ownStyles=[...(page.matchAll(/<link[^>]+rel=['"]stylesheet['"][^>]+href=['"]([^'"]+)['"][^>]*>/g))].map(match=>match[1]);
-assert.deepEqual(ownStyles,['./attendance.css','./attendance-library.css'],'Atendimento deve carregar apenas o CSS nativo e o CSS isolado da Biblioteca');
+assert.deepEqual(ownStyles.map(href=>href.split('?')[0]),['./attendance.css','./attendance-library.css'],'Atendimento deve carregar apenas o CSS nativo e o CSS isolado da Biblioteca (cache-bust opcional)');
 assert.doesNotMatch(page,/\?embedded=1|parent\.document|postMessage/,'página final deve ser independente de embedding');
 
 assert.match(css,/\[hidden\]\s*\{\s*display\s*:\s*none\s*!important\s*\}/i,'elementos com hidden devem ser realmente removidos do layout, inclusive o estado Carregando conversa');
