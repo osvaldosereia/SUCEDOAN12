@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const sql=fs.readFileSync('supabase/migrations/20261008031000_order_addon_lock_order_v2.sql','utf8');
+const order=sql.indexOf('where id=v_order_id for update');
+const session=sql.indexOf('and order_id=v_order.id for update');
+assert.ok(order>0 && session>order,'order lock must precede session lock');
+assert.match(sql,/reserve_vitrine_order_stock_v1/);
+assert.match(sql,/idempotent_replay/);
+assert.doesNotMatch(sql,/insert into public.orders/i);
+console.log('PASS: order-first locking and canonical reservation');
