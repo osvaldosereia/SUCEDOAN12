@@ -38,3 +38,20 @@ Em caso de recusa de escrita, registrar mensagem exata, arquivo e operação. N�
 **Rollback operacional:** interromper primeiro a distribuição do frontend idempotente e voltar ao backend compatível; preservar dados, códigos e migrations já executadas. Não remover a sequência nem renumerar pedidos criados durante a janela. Se a identidade pública estiver causando erros, interromper novas criações até revisar o fluxo, em vez de alterar códigos existentes.
 
 **Status:** CI de contrato e integração PostgreSQL isolada aprovados; produção ainda não homologada nem modificada.
+
+
+## Diagnóstico da tentativa de branch Supabase em 08/10/2026
+
+A branch temporária `homolog-pedidos-vitrine-20261008` (`myxqlnktoedwuxpmsxxr`) foi criada **sem copiar dados de produção**, mediante autorização explícita, para reexecutar o histórico de 1.166 migrations do projeto `ssbesxgaijknwsjbsbcz`.
+
+A reprodução automática falhou em migrations **históricas, anteriores ao projeto de pedidos**, por dependências de dados operacionais:
+
+1. Após 145 migrations, `20260908200932_whatsapp_sales_official_resources_homologation_v1` exigiu `whatsapp_release_mode='live'`, mas uma branch sem dados possui o valor default `off` (`live_mode_required`).
+2. Uma tentativa controlada de rebase em banco **sem pedidos, clientes ou mensagens**, com saídas externas desativadas, avançou até a migration `20260909160207_whatsapp_flow_personalization_loop_v9` (198 migrations).
+3. A migration seguinte, `20260909160917_whatsapp_flow_activate_100_v11`, exige **nove cestas existentes e validadas** e uma experiência antiga Meta validada/publicada. O banco de preview não tem os dados que permitiriam atender a essas verificações (`whatsapp_flow_baskets_not_ready`).
+4. Essa migration também ativaria fluxos de envio WhatsApp, portanto **não se deve fabricar condições de produção nem contornar os guardrails para avançar**.
+5. A tentativa de branch foi interrompida; a conta deve ser protegida encerrando a branch inutilizável. Nenhuma migration de código público/idempotência foi aplicada à produção.
+
+**Consequência:** o CI PostgreSQL 17 já existente continua válido para invariantes, transações, rollback e concorrência, mas não equivale ao teste do schema integral. Para homologação de ponta a ponta, é necessário obter um **snapshot de esquema sanitizado e dados sintéticos de cestas/produtos** por uma estratégia de restauração específica, em vez de reproduzir migrations históricas dependentes de estados reais do WhatsApp/Meta.
+
+**Critério de liberação inalterado:** PR #953 fica como draft e não será publicado até uma homologação real do motor de checkout/estoque e do fluxo de separação, sem disparos externos.
