@@ -82,3 +82,10 @@ test('outbound customer fields use public identity, not technical order number',
   assert.match(source, /order_number:publicOrderCode,/);
   assert.match(source, /order_number_short:publicOrderCode,/);
 });
+
+test('first order item materializes early empty snapshot without changing identity', () => {
+  const fn = part('create or replace function public.ops2_order_item_public_snapshot_trigger_v1()', '$public_snapshot$;');
+  assert.match(fn, /s\.snapshot <> '\{\}'::jsonb/i);
+  assert.match(fn, /perform public\.ops2_refresh_order_public_snapshot_v1\(new\.order_id\)/i);
+  assert.doesNotMatch(fn, /new\.public_code\s*:=/i);
+});
