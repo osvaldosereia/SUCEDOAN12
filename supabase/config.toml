@@ -50,3 +50,9 @@ verify_jwt = false
 # Validates the existing Admin Bearer and active non-viewer membership internally.
 [functions.basket-lot-image-v1]
 verify_jwt = false
+
+
+# Vitrine rápida pós-pedido: capability token opaco validado pela própria Edge Function.
+# Sem JWT público; RPCs de sessão/mutação permanecem service-role-only e o rollout inicia OFF.
+[functions.order-addon-public-v1]
+verify_jwt = false
