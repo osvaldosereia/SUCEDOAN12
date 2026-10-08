@@ -15,6 +15,7 @@ on:
       - 'scripts/test-order-public-summary.mjs'
       - 'scripts/test-order-customer-notifications-v1.mjs'
       - 'scripts/test-order-addon-foundation-v1.mjs'
+      - 'scripts/test-order-addon-atomic-v1.mjs'
       - 'supabase/migrations/*order_addon_*.sql'
       - 'supabase/migrations/*orders_clean_flow_v3*.sql'
       - 'supabase/migrations/*orders_fiscal_flow_v4*.sql'
@@ -69,6 +70,7 @@ jobs:
           node scripts/test-admin-orders-fiscal-flow-v4.mjs
           node scripts/test-order-customer-notifications-v1.mjs
           node scripts/test-order-addon-foundation-v1.mjs
+          node scripts/test-order-addon-atomic-v1.mjs
       - name: Existing WhatsApp transport contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
       - name: Public order storefront and printing
