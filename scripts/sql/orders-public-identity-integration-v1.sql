@@ -64,6 +64,7 @@ grant select,insert,update on public.orders to service_role;
 grant select,insert,update on public.order_public_snapshots_v1 to service_role;
 grant select,insert on public.order_items to service_role;
 -- Synthetic data schema for the REAL production reservation function.
+-- Production currently uses Bling as stock authority; exercise that branch.
 -- No production customer or stock rows are copied into this disposable fixture.
 create table public.products (
   id uuid primary key,
@@ -77,7 +78,7 @@ create table public.bling_hub_runtime_v2 (
   metadata jsonb not null default '{}'::jsonb
 );
 insert into public.bling_hub_runtime_v2(id,metadata)
-values(1,'{"ops2_stock_authority":"legacy_shadow"}'::jsonb);
+values(1,'{"ops2_stock_authority":"bling"}'::jsonb);
 create view public.basket_locked_component_stock_v1 as
 select id as product_id,0::numeric as basket_locked_quantity
 from public.products where false;
