@@ -2082,42 +2082,38 @@
     return '<section class="panel dispatch-section"><div class="history-title dispatch-head"><div><strong>'+esc(title)+'</strong><span>'+esc(subtitle)+'</span></div><b>'+rows.length+'</b></div>'+
       '<div>'+(rows.length?rows.map(expeditionRow).join(''):'<div class="history-empty">'+esc(empty)+'</div>')+'</div></section>';
   }
-  async function returnOrderToExpedition(id,fromDetail=false){
+  function openDriverFailureSheet(id,fromDetail=false){
     const o=(fromDetail?state.currentOrder?.order:null)||state.orders.find(x=>x.id===id);
     if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
     if(o.delivery_return?.status==='returning'){toast('Este pedido já está retornando ao depósito');return}
-    const choice=prompt(
-      'Por que a entrega não foi concluída?\n\n1 - Cliente ausente\n2 - Endereço não encontrado\n3 - Cliente pediu reagendamento\n4 - Problema no pagamento\n5 - Cliente recusou / desistiu\n6 - Veículo / rota\n7 - Outro\n\nDigite o número:'
-    );
-    if(choice===null)return;
-    const reasons={
-      '1':['customer_absent','Cliente ausente'],
-      '2':['address_not_found','Endereço não encontrado'],
-      '3':['reschedule','Cliente pediu reagendamento'],
-      '4':['payment_failed','Problema no pagamento'],
-      '5':['customer_refused','Cliente recusou / desistiu'],
-      '6':['vehicle_route','Veículo / rota'],
-      '7':['other','Outro']
-    };
-    const selected=reasons[String(choice||'').trim()];
-    if(!selected){toast('Escolha uma opção de 1 a 7');return}
-    const noteInput=prompt('Observação opcional sobre a tentativa de entrega:','');
-    if(noteInput===null)return;
-    if(!confirm('Registrar como não entregue por "'+selected[1]+'"?\n\nA mercadoria continuará fora do estoque vendável até o retorno físico ser confirmado.'))return;
-    try{
-      await api('delivery_fail_register',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:o.id,reason_code:selected[0],note:String(noteInput||'').trim(),operator:currentOperator()||'Entrega'})
-      });
-      const data=await api('orders');state.orders=data.orders||[];
-      if(fromDetail){
-        const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
-        await loadCurrentOrderFiscal(false);paintOrderDetail();loadOrders();
-      }
-      if(state.tab==='driver')paintDriverQueue();else if(state.tab==='expedition')paintExpeditionBody();
-      toast('Não entrega registrada · aguardando retorno físico');
-    }catch(e){toast(errorMessage(e.message))}
+    const reasons=[
+      ['customer_absent','Cliente ausente'],['address_not_found','Endereço não encontrado'],
+      ['reschedule','Cliente pediu reagendamento'],['payment_failed','Problema no pagamento'],
+      ['customer_refused','Cliente recusou / desistiu'],['vehicle_route','Veículo / rota'],['other','Outro']
+    ];
+    $('#editorTitle').textContent='Não entregou · #'+orderDisplayCode(o);
+    $('#editorBody').innerHTML='<div class="rule-notice warn"><strong>NÃO DEVOLVA AO ESTOQUE AGORA</strong><div>Registre o motivo. A mercadoria continuará vinculada ao pedido até o retorno físico ao depósito.</div></div>'+
+      '<div class="section-title">Por que não entregou?</div><div style="display:grid;gap:8px">'+reasons.map(([code,label])=>'<button class="secondary wide" type="button" data-driver-failure-reason="'+code+'">'+esc(label)+'</button>').join('')+'</div>'+
+      '<label style="display:grid;gap:6px;margin-top:12px"><span>Observação opcional</span><textarea id="driverFailureNote" rows="3" maxlength="500" placeholder="Ex.: cliente pediu para entregar amanhã"></textarea></label>';
+    $('#editorActions').innerHTML='<button class="secondary" id="driverFailureCancel" type="button">Voltar</button>';
+    $('#driverFailureCancel').onclick=()=>$('#editor').close();
+    document.querySelectorAll('[data-driver-failure-reason]').forEach(b=>b.onclick=()=>submitDriverFailure(o,b.dataset.driverFailureReason,b.textContent,fromDetail));
+    $('#editor').showModal();
   }
+  async function submitDriverFailure(o,reasonCode,reasonLabel,fromDetail=false){
+    const note=String($('#driverFailureNote')?.value||'').trim();
+    if(!confirm('Registrar como NÃO ENTREGUE por "'+reasonLabel+'"?\n\nO pedido deverá voltar fisicamente ao depósito.'))return;
+    const buttons=[...document.querySelectorAll('[data-driver-failure-reason]')];buttons.forEach(b=>b.disabled=true);
+    try{
+      await api('delivery_fail_register',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,reason_code:reasonCode,note,operator:currentOperator()||'Entrega'})});
+      $('#editor').close();const data=await api('orders');state.orders=data.orders||[];
+      if(fromDetail){const fresh=await api('order',{id:o.id});state.currentOrder=fresh;await loadCurrentOrderFiscal(false);paintOrderDetail();loadOrders()}
+      if(state.tab==='driver'){state.driverFocusStopId=null;paintDriverQueue()}else if(state.tab==='expedition')paintExpeditionBody();
+      toast('Não entrega registrada · levar pedido de volta ao depósito');
+    }catch(e){buttons.forEach(b=>b.disabled=false);toast(errorMessage(e.message))}
+  }
+  async function returnOrderToExpedition(id,fromDetail=false){openDriverFailureSheet(id,fromDetail)}
+
   async function confirmPhysicalDeliveryReturn(id){
     const o=state.orders.find(x=>x.id===id)||state.currentOrder?.order;
     const ret=o?.delivery_return;
@@ -2674,16 +2670,18 @@
     const s=o.__delivery_stop||{},a=o.delivery_address_snapshot||{},address=[a.street,a.number,a.complement,a.district,a.city].filter(Boolean).join(', ')||a.raw_text||'Endereço não informado';
     const maps=deliveryStopMapsHref(s)||mapsHrefFromAddress(a),wa=whatsappHref(o.whatsapp_phone_e164||a.phone||'');
     const pos=Math.max(0,rows.indexOf(o)),prev=rows[pos-1],next=rows[pos+1],confidence=s.destination_confidence||'';
-    return '<article class="separation-tablet-card driver-card" style="border-width:2px">'+
+    const returning=o.delivery_return?.status==='returning';
+    return '<article class="separation-tablet-card driver-card '+(returning?'problem':'')+'" style="border-width:2px">'+
       '<div class="separation-tablet-top"><div><small>ENTREGA ATUAL · '+(pos+1)+' DE '+rows.length+'</small><strong style="display:block;font-size:1.25rem">#'+esc(orderDisplayCode(o))+' · '+esc(o.customer_name||a.recipient_name||'Sem cliente')+'</strong></div><strong>'+money(o.total_cents)+'</strong></div>'+
       '<div class="rule-notice '+(confidence==='confirmed'?'':'warn')+'" style="margin-top:10px"><strong>'+(confidence==='confirmed'?'LOCALIZAÇÃO CONFIRMADA':'CONFIRA O ENDEREÇO')+'</strong><div>'+esc(address)+'</div></div>'+
       '<div class="separation-tablet-actions" style="margin-top:12px">'+
-        (maps?'<a class="primary wide" href="'+esc(maps)+'" target="_blank" rel="noopener">ABRIR MAPS</a>':'')+
+        (maps&&!returning?'<a class="primary wide" href="'+esc(maps)+'" target="_blank" rel="noopener">ABRIR MAPS</a>':'')+
         (wa?'<a class="secondary" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
-        '<label class="secondary" style="cursor:pointer">📷 FOTO DA ENTREGA<input hidden type="file" accept="image/jpeg,image/png,image/webp" capture="environment" data-driver-proof="'+esc(o.id)+'"></label>'+
-        (s.proof_metadata?.photo?.path?'<span class="pill">✓ Foto salva</span>':'')+
-        '<button class="primary wide" type="button" data-driver-delivered="'+esc(o.id)+'">✓ ENTREGUE</button>'+
-        '<button class="secondary" type="button" data-driver-failed="'+esc(o.id)+'">NÃO ENTREGOU</button>'+
+        (returning
+          ? '<div class="rule-notice warn" style="grid-column:1/-1"><strong>RETORNAR AO DEPÓSITO</strong><div>'+esc(o.delivery_return?.reason_label||'Entrega não concluída')+'. Não recolocar no estoque.</div></div><button class="primary wide" type="button" data-driver-returned="'+esc(o.id)+'">CONFIRMAR RETORNO FÍSICO</button>'
+          : '<label class="secondary" style="cursor:pointer">📷 FOTO DA ENTREGA<input hidden type="file" accept="image/jpeg,image/png,image/webp" capture="environment" data-driver-proof="'+esc(o.id)+'"></label>'+
+            (s.proof_metadata?.photo?.path?'<span class="pill">✓ Foto salva</span>':'')+
+            '<button class="primary wide" type="button" data-driver-delivered="'+esc(o.id)+'">✓ ENTREGUE</button><button class="secondary" type="button" data-driver-failed="'+esc(o.id)+'">NÃO ENTREGOU</button>')+
       '</div>'+
       '<div class="dispatch-actions" style="margin-top:10px">'+
         (prev?'<button class="text" type="button" data-driver-focus="'+esc(prev.__delivery_stop?.stop_id||'')+'">← Anterior</button>':'<span></span>')+
