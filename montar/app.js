@@ -109,7 +109,7 @@
     // The checkout displays order_public_code from order_public_snapshots_v1.
     // orders.order_number is an internal identifier and must never be shown to pickers.
     const code = String(value?.public_code || value?.order_public_code || '').trim().toUpperCase();
-    return /^[A-Z]{2}[0-9]{3}$/.test(code) ? code : 'NÚMERO INDISPONÍVEL';
+    return /^(?:[A-Z]{2}[0-9]{3}|[0-9]{4})$/.test(code) ? code : 'NÚMERO INDISPONÍVEL';
   };
   const progress = counts => {
     const total = Number(counts?.total||0);
