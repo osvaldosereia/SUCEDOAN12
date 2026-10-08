@@ -11,6 +11,14 @@ const request = buildGoogleOptimizeToursRequest(stops, window);
 assert.equal(request.model.shipments.length, 3);
 assert.equal(request.model.vehicles.length, 1);
 assert.equal(request.model.shipments[0].label, "stop-a");
+const depot = { latitude: -15.596, longitude: -56.095 };
+const roundTrip = buildGoogleOptimizeToursRequest(stops, { ...window, depot });
+assert.deepEqual(roundTrip.model.vehicles[0].startLocation, depot);
+assert.deepEqual(roundTrip.model.vehicles[0].endLocation, depot);
+const oneWay = buildGoogleOptimizeToursRequest(stops, { ...window, depot, returnToDepot: false });
+assert.equal(oneWay.model.vehicles[0].endLocation, undefined);
+assert.throws(() => buildGoogleOptimizeToursRequest(stops, { ...window, depot: { latitude: 0, longitude: 0 } }), /depot/);
+
 assert.equal(JSON.stringify(request).includes("customer"), false);
 const response = { routes: [{ vehicleIndex: 0, visits: [
   { shipmentIndex: 2 }, { shipmentIndex: 0 }, { shipmentIndex: 1 }
