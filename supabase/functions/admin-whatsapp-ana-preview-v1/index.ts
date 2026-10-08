@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
-import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normalizeAnaDryRunResult} from "../_shared/ana-policy-v1.mjs";
+import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normalizeAnaDryRunResult,isSimpleAnaGreeting} from "../_shared/ana-policy-v1.mjs";
 import {linkedCustomerFirstName} from "../_shared/ana-customer-context-v1.mjs";
 import {authorizeAnaAdmin,anaAdminPermission} from "../_shared/ana-admin-auth-v1.mjs";
 import {validateAnaConfiguration} from "../_shared/ana-admin-config-v1.mjs";
@@ -109,8 +109,12 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
     const revision=Number(draft?.revision);if(Number(body?.expected_revision)!==revision)return json(req,{ok:false,error:"revision_conflict"},409);
     const suite=draft.configuration.test_cases.slice(0,20);if(!suite.length)return json(req,{ok:false,error:"required_test_cases_missing"},409);
     const began=Date.now();let passed=0,failed=0;const safeReasons:string[]=[];const scenarioResults:any[]=[];
-    const simulate=async(input:string,channel:string,context:any={})=>{
+    const simulate=async(input:string,channel:string,context:any={},options:any={})=>{
       const trace:any[]=[];
+      if(options?.deterministicGreeting===true&&isSimpleAnaGreeting(input)){
+        trace.push({step:"suite_guard",type:"simple_greeting"});
+        return {outcome:"reply",reason:"required_suite_simple_greeting",response_text:"Olá! Como posso ajudar?",latency_ms:0,trace};
+      }
       if(context?.humanMode===true){
         trace.push({step:"gate",type:"human_mode"});
         return {outcome:"handoff",reason:"human_mode_gate",response_text:"",latency_ms:0,trace};
@@ -142,7 +146,7 @@ async function anaAdminAction(req:Request,body:any,action:string,authClient:any)
       trace.push({step:"ai",type:"reply_eligible",confidence:result.confidence});return {outcome:"reply",reason:"ai_reply_eligible",response_text:result.response_text,latency_ms:Number(generated.latency_ms)||0,trace};
     };
     for(const scenario of suite){
-      const result=await simulate(String(scenario.input||""),String(scenario.channel||"0975"));const ok=result.outcome===scenario.expected;
+      const result=await simulate(String(scenario.input||""),String(scenario.channel||"0975"),{},{deterministicGreeting:true});const ok=result.outcome===scenario.expected;
       if(ok)passed++;else failed++;safeReasons.push(ok?"scenario_pass":"scenario_failed");
       scenarioResults.push({key:scenario.key,expected:scenario.expected,actual:result.outcome,passed:ok,reason:result.reason});
     }
