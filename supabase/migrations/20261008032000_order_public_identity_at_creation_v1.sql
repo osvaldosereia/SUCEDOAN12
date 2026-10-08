@@ -30,7 +30,7 @@ alter table public.order_public_snapshots_v1
 -- Do not put nextval() in a snapshot INSERT default: ON CONFLICT refresh
 -- evaluates INSERT defaults even when it only updates the existing row.
 alter table public.order_public_snapshots_v1
-  alter column public_code set default '0000';
+  alter column public_code drop default;
 -- Sentinel is never persisted: a BEFORE INSERT trigger resolves the existing
 -- identity for refreshes or allocates one for an order lacking a snapshot.
 create or replace function public.ops2_resolve_snapshot_public_identity_v1()
@@ -41,7 +41,7 @@ begin
   from public.order_public_snapshots_v1 s where s.order_id=new.order_id;
   if v_existing is not null then
     new.public_code := v_existing;
-  elsif new.public_code='0000' then
+  elsif new.public_code is null then
     new.public_code := public.ops2_next_order_public_code_4d_v1();
   end if;
   return new;
