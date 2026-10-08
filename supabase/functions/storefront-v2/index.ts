@@ -455,7 +455,7 @@ async function submit(req:Request,p:any){
   const requestId=uid(rawAttempt);
   if(rawAttempt&&!requestId)return {error:"invalid_checkout_request_id",status:400};
   const deliveryDate=txt(p?.delivery_date,10);
-  const requestContext={phone_e164:ph,payment_method:pay,items:requestedItems,delivery_date:deliveryDate,whatsapp_origin:whatsappOrigin,marketing_context:p?.marketing_context||null};
+  const requestContext={phone_e164:ph,payment_method:pay,items:requestedItems,delivery_date:deliveryDate,whatsapp_origin:whatsappOrigin,marketing_context:p?.marketing_context||null,checkout_registration:p?.checkout_registration||null};
   async function replayExisting(waitForPending=false){
     if(!requestId)return null;
     const resolver=waitForPending?"ops2_wait_vitrine_checkout_attempt_v1":"ops2_lookup_vitrine_checkout_attempt_v1";
