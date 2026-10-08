@@ -629,11 +629,12 @@
       if(action==='home')url.searchParams.set('layout','basket-carousel-v1');
       Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)url.searchParams.set(k,String(v))});
       const stockSensitive=['offers','products','product','basket','basket_quote','basket_mold_quote','submit_order'].includes(action);
-      const retryableRead=(!options.method||options.method==='GET')&&['home','home_priority','products','subcategories'].includes(action);
+      const retryableRead=(!options.method||options.method==='GET')&&['home','products','subcategories'].includes(action);
       const attempts=retryableRead&&!options.signal?2:1;
       for(let attempt=0;attempt<attempts;attempt++){
         const controller=options.signal?null:new AbortController();
-        const timer=controller?setTimeout(()=>controller.abort(),12000):null;
+        const timeoutMs=action==='home_priority'?6000:retryableRead?9000:12000;
+        const timer=controller?setTimeout(()=>controller.abort(),timeoutMs):null;
         try{
           const response=await fetch(url,{cache:stockSensitive?'no-store':'default',...options,signal:options.signal||controller?.signal});
           const data=await response.json().catch(()=>({ok:false}));
