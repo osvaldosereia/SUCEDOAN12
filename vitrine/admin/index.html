@@ -6953,12 +6953,12 @@
     else if(o.status==='out_for_delivery'){stage='delivery';stageLabel='SAIU PARA ENTREGA'}
     else if(m.separated){stage='separated';stageLabel='PEDIDO JÁ SEPARADO'}
     else if(assigned&&m.confirmed){stage='separating';stageLabel='EM SEPARAÇÃO · '+separator.toUpperCase()}
-    else if(m.confirmed){stage='waiting';stageLabel='AGUARDANDO SEPARAÇÃO'}
+    else if(m.confirmed){stage='waiting';stageLabel='CONFIRMADO — MONTAR PARA ENTREGAR HOJE'}
     const cardClass=['waiting','separating','separated','delivery','done'].includes(stage)?' '+stage:'';
     let progress='';
     if(m.confirmed&&totalItems>0&&!m.delivered&&!m.cancelled){
       const progressTitle=m.separated?'Separação concluída':assigned?'Separação em andamento':'Itens para separar';
-      progress='<div class="order-v3-progress"><div class="order-v3-progress-head"><span>'+esc(progressTitle)+'</span><strong>'+checked+' de '+totalItems+' itens</strong></div><div class="order-v3-progress-bar" aria-label="Progresso da separação" aria-valuemin="0" aria-valuemax="'+totalItems+'" aria-valuenow="'+checked+'"><i style="width:'+progressPct+'%"></i></div><div class="order-v3-progress-foot"><span class="ok">'+separatedCount+' separado'+(separatedCount===1?'':'s')+'</span><span>'+pendingCount+' pendente'+(pendingCount===1?'':'s')+'</span>'+(missingCount?'<span class="missing">'+missingCount+' faltou'+(missingCount===1?'':'aram')+(missingValue>0?' · − '+esc(separationMoney(missingValue)):'')+'</span>':'')+(assigned&&assignment.assigned_at&&!m.separated?'<span>Iniciado '+esc(dateTime(assignment.assigned_at))+'</span>':'')+'</div></div>';
+      progress='<div class="order-v3-progress"><div class="order-v3-progress-head"><span>'+esc(progressTitle)+'</span><strong>'+checked+' de '+totalItems+' itens</strong></div><div class="order-v3-progress-bar" role="progressbar" aria-label="Progresso da separação" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+progressPct+'"><i style="width:'+progressPct+'%"></i></div><div class="order-v3-progress-foot"><span class="ok">'+separatedCount+' separado'+(separatedCount===1?'':'s')+'</span><span>'+pendingCount+' pendente'+(pendingCount===1?'':'s')+'</span>'+(missingCount?'<span class="missing">'+missingCount+' faltou'+(missingCount===1?'':'aram')+(missingValue>0?' · − '+esc(separationMoney(missingValue)):'')+'</span>':'')+(assigned&&assignment.assigned_at&&!m.separated?'<span>Iniciado '+esc(dateTime(assignment.assigned_at))+'</span>':'')+'</div></div>';
     }
     let controls='';
     if(orderCustomerDataPending(o)){
