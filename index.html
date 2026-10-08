@@ -768,7 +768,7 @@
         if(['insufficient_stock','product_unavailable','basket_unavailable','basket_lot_unavailable','basket_lot_insufficient','basket_component_not_in_lot','basket_kit_lot_unavailable','basket_kit_lot_insufficient','basket_component_not_in_selected_kit','basket_mold_unavailable','basket_mold_not_configured','basket_mold_component_invalid','basket_mold_option_invalid','basket_mold_composition_invalid'].includes(e.message))toast('O estoque mudou. Atualize a cesta e tente novamente.');else toast('Não consegui registrar. Tente novamente.');
         return
       }
-      state.cart=[];state.addressConfirmed=false;state.checkoutDeliveryDate='';saveCart();paintCart();renderOrderSuccess(saved);
+      state.cart=[];state.addressConfirmed=false;state.checkoutDeliveryDate='';saveCart();paintCart();renderOrderSuccess(saved);window.DonaAntoniaCheckoutAttempt?.complete?.();
       toast('Pedido recebido. Enviaremos no WhatsApp o link para conferir seu pedido.')
     }
     $('#globalSearchForm').onsubmit=e=>{e.preventDefault();const q=$('#globalSearchInput').value.trim();if(q)renderSearch(q)};
@@ -776,6 +776,6 @@
     start();
   })();
   </script>
-  <script src="/checkout-resilience.js?v=20261001" defer></script>
+  <script src="/checkout-resilience.js?v=20261008-idempotency1" defer></script>
 </body>
 </html>
