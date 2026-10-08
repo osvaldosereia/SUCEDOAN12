@@ -12,6 +12,13 @@ on:
   push:
     branches: [main]
     paths:
+      - 'supabase/functions/_shared/smart-delivery-*.mjs'
+      - 'supabase/functions/_shared/google-service-account-auth.mjs'
+      - 'supabase/functions/smart-delivery-optimize-v1/**'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'scripts/test-smart-delivery-*.mjs'
+      - 'vitrine/admin/index.html'
+      - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
 permissions:
   contents: read
 jobs:
