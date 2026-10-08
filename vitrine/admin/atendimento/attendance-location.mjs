@@ -1,7 +1,7 @@
 // Contrato de apresentação da localização WhatsApp. Não confirma endereço nem altera pedidos.
 function coordinate(value, min, max) {
   if (typeof value !== 'number' && typeof value !== 'string') return null;
-  if (typeof value === 'string' && !/^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)$/.test(value.trim())) return null;
+  if (typeof value === 'string' && !/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(value.trim())) return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null;
 }
