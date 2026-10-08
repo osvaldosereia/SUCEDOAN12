@@ -456,9 +456,10 @@ async function submit(req:Request,p:any){
   if(rawAttempt&&!requestId)return {error:"invalid_checkout_request_id",status:400};
   const deliveryDate=txt(p?.delivery_date,10);
   const requestContext={phone_e164:ph,payment_method:pay,items:requestedItems,delivery_date:deliveryDate,whatsapp_origin:whatsappOrigin,marketing_context:p?.marketing_context||null};
-  async function replayExisting(){
+  async function replayExisting(waitForPending=false){
     if(!requestId)return null;
-    const existing=await db.rpc("ops2_lookup_vitrine_checkout_attempt_v1",{p_request_id:requestId,p_request_context:requestContext});
+    const resolver=waitForPending?"ops2_wait_vitrine_checkout_attempt_v1":"ops2_lookup_vitrine_checkout_attempt_v1";
+    const existing=await db.rpc(resolver,{p_request_id:requestId,p_request_context:requestContext});
     if(existing.error)return {error:"checkout_attempt_lookup_unavailable",status:503};
     if(existing.data?.error)return {error:String(existing.data.error),status:409};
     if(existing.data?.found!==true)return null;
@@ -472,7 +473,7 @@ async function submit(req:Request,p:any){
   const replay=await replayExisting();
   if(replay)return replay;
   const stock=await reconcileOrderItemsForStock(requestedItems),items=stock.items;
-  if(!items.length){const concurrentReplay=await replayExisting();if(concurrentReplay)return concurrentReplay;return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:stock.adjusted_items}}
+  if(!items.length){const concurrentReplay=await replayExisting(true);if(concurrentReplay)return concurrentReplay;return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:stock.adjusted_items}}
   const del=deliveryDate?selectedDelivery(deliveryDate):null;
   const ik=await sha(ip(req)||"unknown"),ipLimit=await db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600});
   if(ipLimit.error)return {error:"rate_limit_unavailable",status:503};
