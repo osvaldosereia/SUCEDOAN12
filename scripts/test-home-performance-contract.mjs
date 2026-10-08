@@ -10,6 +10,13 @@ assert.match(start,/const identityPhonePromise=resolveEntryWhatsappPhone\(\)/,'i
 assert.match(start,/api\('home_priority'\)/,'homepage should request the first basket subgroup separately');
 assert.match(start,/homePartial/,'homepage should track whether its first basket group is still loading');
 assert.match(start,/await api\('home_priority'\)[\s\S]*await api\('home'\)/,'homepage should fetch the remaining baskets after the priority group');
+assert.match(start,/previousHomeSignature/,'unchanged cached homepage should not be redrawn unnecessarily');
+assert.match(start,/wasPartial/,'the completed catalog must replace a partial render');
+const storefrontApi=page.slice(page.indexOf('async function api('),page.indexOf('async function productExtra('));
+assert.match(storefrontApi,/retryableRead/,'safe catalog reads must retry transient failures');
+assert.match(storefrontApi,/invalid_catalog_response/,'invalid successful responses must not erase catalog data');
+assert.match(storefrontApi,/status>=400&&status<500/,'client errors must not be retried');
+assert.match(storefrontApi,/retryableRead&&!options[.]signal[?]2:1/,'catalog retries must be restricted to safe reads');
 const renderHome=page.slice(page.indexOf('function renderHome(){'),page.indexOf('function paintOffersPage('));
 assert.match(renderHome,/homePartial[\s\S]*Grande/i,'partial homepage should limit its first render to the Grande subgroup');
 assert.match(renderHome,/aria-busy="true"[\s\S]*homeRemainingBaskets/,'homepage should show a lightweight loading state for the remaining groups');
