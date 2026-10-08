@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { validateAnaConfiguration, evaluateAnaTriggers, buildAnaRuntimeInstructions, normalizeAnaMatchText } from '../supabase/functions/_shared/ana-admin-config-v1.mjs';
+import { validateAnaConfiguration, evaluateAnaTriggers, buildAnaRuntimeInstructions, normalizeAnaMatchText, routeAnaMessage, requiresDynamicOperationalContext } from '../supabase/functions/_shared/ana-admin-config-v1.mjs';
 
 const base = {
   behavior: { tone:'cordial', conciseness:'short', emoji:'sparingly', use_known_first_name_on_first_greeting:true },
@@ -13,11 +13,19 @@ const base = {
 };
 assert.deepEqual(validateAnaConfiguration(base), {ok:true,errors:[]});
 assert.equal(normalizeAnaMatchText('  CATÁLOGO, por favor!  '), 'catalogo por favor');
+assert.equal(requiresDynamicOperationalContext('Qual o preço?'),true);
+assert.equal(requiresDynamicOperationalContext('Tem estoque de arroz?'),true);
+assert.equal(requiresDynamicOperationalContext('Qual o status do meu pedido?'),true);
+assert.equal(requiresDynamicOperationalContext('Quero conhecer as cestas'),false);
 assert.equal(evaluateAnaTriggers(base, 'Quero ver catálogo, por favor', '0975').triggerKey, 'site');
 assert.equal(evaluateAnaTriggers(base, 'preciso de ajuda para ver catalogo', '0975').triggerKey, 'site', 'higher priority wins over broad phrase');
 assert.equal(evaluateAnaTriggers(base, 'produtos para cabelo', '0975').matched, false, 'channel scope is enforced');
 assert.equal(evaluateAnaTriggers(base, 'produtos para cabelo', '1018').action, 'label');
 assert.equal(evaluateAnaTriggers(base, 'bom dia', '0975').matched, false);
+assert.deepEqual(routeAnaMessage(base,'Qual o preço?','0975'),{path:'handoff',reason:'dynamic_data_requires_confirmation'});
+assert.deepEqual(routeAnaMessage(base,'Tem estoque de arroz?','0975'),{path:'handoff',reason:'dynamic_data_requires_confirmation'});
+const safePayment={...base,triggers:[{key:'pix',name:'PIX',enabled:true,priority:90,channels:['all'],match:'phrase',phrases:['aceita pix'],actions:[{type:'fixed_reply',response_text:'Aceitamos PIX na entrega.'}]}]};
+assert.equal(routeAnaMessage(safePayment,'Aceita pix?','0975').path,'fixed_reply','approved deterministic rule must run before the dynamic-data guard');
 const multi={...base,triggers:[{key:'basket',name:'Cestas',enabled:true,priority:90,channels:['all'],match:'phrase',phrases:['cesta basica'],conditions:[{type:'customer_linked',value:true}],actions:[{type:'label',label_id:'00000000-0000-4000-8000-000000000002'},{type:'fixed_reply',response_text:'Veja nossas cestas no catálogo.'}]}]};
 assert.equal(validateAnaConfiguration(multi).ok,true);
 assert.equal(evaluateAnaTriggers(multi,'quero cesta básica','0975',{customerLinked:false}).matched,false);
