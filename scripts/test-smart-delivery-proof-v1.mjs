@@ -11,4 +11,5 @@ must(backend.includes('createSignedUploadUrl(path)'),'server signed upload missi
 must(backend.includes('delivery-proof-v1'),'private proof bucket missing');
 must(backend.includes('path.startsWith(prefix)'),'proof path ownership guard missing');
 must(backend.includes('proof_metadata:metadata'),'proof metadata persistence missing');
+must(backend.includes('storedSize>5242880'),'server proof size guard missing');
 console.log('smart delivery private proof flow: ok');
