@@ -16,6 +16,10 @@ on:
       - 'scripts/test-order-customer-notifications-v1.mjs'
       - 'scripts/test-order-addon-foundation-v1.mjs'
       - 'scripts/test-order-addon-atomic-v1.mjs'
+      - 'scripts/test-order-addon-public-storefront-v1.mjs'
+      - 'adicionar/index.html'
+      - 'supabase/functions/order-addon-public-v1/index.ts'
+      - 'supabase/config.toml'
       - 'supabase/migrations/*order_addon_*.sql'
       - 'supabase/migrations/*orders_clean_flow_v3*.sql'
       - 'supabase/migrations/*orders_fiscal_flow_v4*.sql'
@@ -71,6 +75,7 @@ jobs:
           node scripts/test-order-customer-notifications-v1.mjs
           node scripts/test-order-addon-foundation-v1.mjs
           node scripts/test-order-addon-atomic-v1.mjs
+          node scripts/test-order-addon-public-storefront-v1.mjs
       - name: Existing WhatsApp transport contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
       - name: Public order storefront and printing
@@ -82,12 +87,14 @@ jobs:
         run: |
           node <<'NODE'
           const fs=require('fs'),cp=require('child_process');
-          for(const file of ['vitrine/admin/index.html','pedido/index.html','p/index.html']){
+          for(const file of ['vitrine/admin/index.html','pedido/index.html','p/index.html','adicionar/index.html']){
             const html=fs.readFileSync(file,'utf8');
             const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
             scripts.forEach((src,i)=>{const path=`/tmp/${file.replaceAll('/','-')}-${i}.js`;fs.writeFileSync(path,src);cp.execFileSync(process.execPath,['--check',path],{stdio:'inherit'})});
             console.log(`${file}: inline syntax OK (${scripts.length} script blocks)`);
           }
           NODE
+      - name: Quick-add Edge syntax
+        run: node --experimental-strip-types --check supabase/functions/order-addon-public-v1/index.ts
       - name: Diff check
         run: git diff --check HEAD^ HEAD || git diff --check
