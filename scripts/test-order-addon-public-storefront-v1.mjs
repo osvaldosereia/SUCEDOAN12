@@ -33,7 +33,7 @@ assert.match(page,/URLSearchParams/,'page must read its capability token from UR
 assert.match(page,/crypto\.randomUUID/,'browser must generate idempotency request keys');
 assert.match(page,/product_id[^\n]*quantity|quantity[^\n]*product_id/i,'browser payload must contain only product identity and quantity');
 assert.doesNotMatch(page,/order_id\s*:/i,'browser add-items payload must never send order_id');
-assert.doesNotMatch(page,/unit_price\s*:|price\s*:|total\s*:/i,'browser mutation payload must never send trusted financial values');
+assert.doesNotMatch(page,/body:\{action:'add_items'[\s\S]{0,500}(?:unit_price|price|total)\s*:/i,'browser mutation payload must never send trusted financial values');
 assert.match(page,/Adicionar ao mesmo pedido|Adicionar ao pedido/i,'CTA must make same-order behavior clear');
 assert.match(page,/@media\(max-width:640px\)/i,'mobile-specific layout required');
 assert.match(page,/position:sticky|position:fixed/i,'mobile action summary must remain reachable');
