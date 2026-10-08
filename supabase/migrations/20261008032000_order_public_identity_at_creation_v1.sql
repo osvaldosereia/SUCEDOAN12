@@ -19,6 +19,8 @@ begin
 end $$;
 revoke all on function public.ops2_next_order_public_code_4d_v1() from public, anon, authenticated;
 grant execute on function public.ops2_next_order_public_code_4d_v1() to service_role;
+grant usage on sequence public.order_public_code_4d_seq_v1 to service_role;
+grant execute on function public.ops2_next_order_public_code_4d_v1() to service_role;
 
 alter table public.order_public_snapshots_v1
   drop constraint if exists order_public_snapshots_v1_public_code_format_chk;
@@ -40,6 +42,7 @@ begin
   return new;
 end $$;
 revoke all on function public.ops2_assign_order_public_identity_v1() from public,anon,authenticated;
+grant execute on function public.ops2_assign_order_public_identity_v1() to service_role;
 
 drop trigger if exists trg_ops2_assign_order_public_identity_v1 on public.orders;
 create trigger trg_ops2_assign_order_public_identity_v1
