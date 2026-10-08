@@ -180,12 +180,35 @@ begin
  then raise exception 'failed_checkout_created_attempt'; end if;
 end $check$;
 
+-- Wait RPC observes the persisted result and respects payload mismatch.
+do $check$
+declare v_wait jsonb;
+begin
+  v_wait:=public.ops2_wait_vitrine_checkout_attempt_v1(
+    '00000000-0000-4000-8000-000000000003',
+    '{"items":[{"sku":"X","qty":1}]}'::jsonb
+  );
+  if v_wait->>'found'<>'true' or
+     v_wait->'result'->>'order_id' is null or
+     v_wait->'result'->>'replayed'<>'true'
+  then raise exception 'wait_lookup_failed'; end if;
+  v_wait:=public.ops2_wait_vitrine_checkout_attempt_v1(
+    '00000000-0000-4000-8000-000000000003',
+    '{"items":[{"sku":"Y","qty":1}]}'::jsonb
+  );
+  if v_wait->>'error'<>'checkout_request_changed'
+  then raise exception 'wait_lookup_mismatch_not_blocked'; end if;
+end $check$;
+
 -- Verify actual role permissions, not only grants in migration source.
 do $check$
 begin
  if has_function_privilege('anon',
    'public.ops2_create_vitrine_checkout_once_v1(uuid,jsonb,text,text,jsonb,jsonb,jsonb)','EXECUTE')
  then raise exception 'anonymous_checkout_rpc_access'; end if;
+ if has_function_privilege('anon',
+   'public.ops2_wait_vitrine_checkout_attempt_v1(uuid,jsonb)','EXECUTE')
+ then raise exception 'anonymous_wait_rpc_access'; end if;
  if has_function_privilege('authenticated',
    'public.ops2_lookup_vitrine_checkout_attempt_v1(uuid,jsonb)','EXECUTE')
  then raise exception 'authenticated_checkout_lookup_access'; end if;
