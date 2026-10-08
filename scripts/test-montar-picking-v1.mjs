@@ -84,6 +84,26 @@ for(let i=0;i<80&&!el('queueList').innerHTML.includes('DA115');i++)
   await new Promise(r=>setTimeout(r,10));
 assert.match(el('queueList').innerHTML,/DA115/);
 assert.equal(el('queueCount').textContent,'1');
+assert.match(el('queueList').innerHTML,/queue-card is-running/,'pedido em separação destacado');
+assert.match(el('queueList').innerHTML,/class="queue-assignment-banner"/,'faixa grande com responsável');
+assert.match(el('queueList').innerHTML,/EM SEPARAÇÃO/);
+assert.match(el('queueList').innerHTML,/José/,'nome vindo da atribuição persistida');
+assert.match(css,/\.queue-assignment-name\{[^}]*font-size:clamp/,'nome visível no mobile e desktop');
+assert.match(css,/\.queue-card\.is-running\{/,'borda operacional de destaque');
+// Teste de atualização após atribuição, sem alterar nada no Supabase.
+queue[0].separator_key=null;queue[0].separator_label=null;
+el('queueSearch').trigger('input');
+assert.doesNotMatch(el('queueList').innerHTML,/queue-assignment-banner/,'pedido ainda sem responsável não deve aparecer em separação');
+assert.match(el('queueList').innerHTML,/PRONTO PARA SEPARAR/);
+queue[0].separator_key='claudio';queue[0].separator_label='Cláudio';
+el('queueSearch').trigger('input');
+assert.match(el('queueList').innerHTML,/Cláudio/,'atualização mostra separador escolhido');
+queue[0].separator_label='<img src=x onerror=alert(1)>';
+el('queueSearch').trigger('input');
+assert.doesNotMatch(el('queueList').innerHTML,/<img src=x onerror=/,'nome seguro contra HTML injetado');
+assert.match(el('queueList').innerHTML,/&lt;img/,'nome deve ser escapado');
+queue[0].separator_key='jose';queue[0].separator_label='José';
+el('queueSearch').trigger('input');
 const click=id=>el('queueList').trigger('click',{target:{closest:selector=>selector==='[data-open]'?{dataset:{open:id}}:null}});
 click(otherId);
 assert.equal(redirects.length,0,'nao abrir pedidos fora da fila manual');
