@@ -1,5 +1,14 @@
 -- Execute ONLY against a disposable PostgreSQL test container.
 \set ON_ERROR_STOP on
+-- Production uses Bling stock authority; CI must exercise this branch
+-- of the real reservation function rather than the legacy-shadow fallback.
+do $check$
+begin
+ if (select metadata->>'ops2_stock_authority'
+     from public.bling_hub_runtime_v2 where id=1)<>'bling'
+ then raise exception 'stock_authority_not_bling'; end if;
+end $check$;
+
 -- Existing historical code survives the migrations.
 do $check$
 begin
