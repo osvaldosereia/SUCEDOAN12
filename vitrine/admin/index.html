@@ -7196,13 +7196,23 @@
       overlay.remove();
       if(back?.isConnected)back.remove();else closeOrderSeparationSheet();
       if(document.documentElement.classList.contains('montar-picker-only')){
-        location.replace('/montar/');
+        clearTimeout(overlay.__pickerReturnTimer);
+        location.replace('/montar/?concluido='+encodeURIComponent(orderId));
         return;
       }
       await loadOrders();
       await refreshOrderSeparationBoard();
     };
     overlay.querySelector('.orders-packaging-ok').focus();
+    if(document.documentElement.classList.contains('montar-picker-only')){
+      const summary=document.createElement('p');
+      summary.className='orders-packaging-auto-return';
+      summary.textContent='A vitrine voltará à lista automaticamente em 12 segundos. Toque em OK para voltar agora.';
+      overlay.querySelector('.orders-packaging-message').after(summary);
+      overlay.__pickerReturnTimer=setTimeout(()=>{
+        if(overlay.isConnected)location.replace('/montar/?concluido='+encodeURIComponent(orderId));
+      },12000);
+    }
   }
   async function completeOrderSeparation(id,expected,assignment,back,btn){
     if(!assignment?.separator_key){toast('Escolha quem está separando este pedido');return}
