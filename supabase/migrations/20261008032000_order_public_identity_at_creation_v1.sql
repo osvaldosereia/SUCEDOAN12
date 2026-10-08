@@ -18,6 +18,7 @@ begin
   return v_code;
 end $$;
 revoke all on function public.ops2_next_order_public_code_4d_v1() from public, anon, authenticated;
+grant execute on function public.ops2_next_order_public_code_4d_v1() to service_role;
 
 alter table public.order_public_snapshots_v1
   drop constraint if exists order_public_snapshots_v1_public_code_format_chk;
