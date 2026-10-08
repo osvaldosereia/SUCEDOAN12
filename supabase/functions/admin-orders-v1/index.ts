@@ -319,7 +319,7 @@ Deno.serve(async(req:Request)=>{
   }catch(error){console.error("order_public_link",text((error as Error)?.message||error,180))}
   const publicOrderCode=text(publicOrderLink?.public_code,5);
   const publicOrderUrl=text(publicOrderLink?.public_url,300);
-  if(!/^[A-Z]{2}[0-9]{3}$/.test(publicOrderCode)||!publicOrderUrl){
+  if(!/^(?:[A-Z]{2}[0-9]{3}|[0-9]{4})$/.test(publicOrderCode)||!publicOrderUrl){
     const nextStatus=scope==="checkout_auto"?"retry":"failed";
     try{await finish(outboxId,nextStatus,null,"public_order_identity_missing",scope==="checkout_auto"?30:0)}catch{}
     return respond({ok:false,error:"public_order_identity_missing",status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:409);
