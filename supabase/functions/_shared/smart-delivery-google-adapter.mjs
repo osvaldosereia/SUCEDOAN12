@@ -14,7 +14,8 @@ export function buildGoogleOptimizeToursRequest(stops, window) {
     }]
   }));
   const vehicle = { label: "dona-antonia-route", costPerKilometer: 1 };
-  if (window.depot) {
+  if (!window?.depot) throw new Error("Depot coordinates required");
+  {
     const { latitude, longitude } = window.depot;
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
         Math.abs(latitude) > 90 || Math.abs(longitude) > 180 ||
