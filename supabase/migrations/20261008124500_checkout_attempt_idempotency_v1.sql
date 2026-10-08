@@ -92,3 +92,24 @@ revoke all on function public.ops2_create_vitrine_checkout_once_v1(uuid,jsonb,te
   from public, anon, authenticated;
 grant execute on function public.ops2_create_vitrine_checkout_once_v1(uuid,jsonb,text,text,jsonb,jsonb,jsonb)
   to service_role;
+
+-- A racing retry can reach the stock pre-check while the original transaction
+-- still holds its inventory reservation and before its receipt is visible.
+-- Wait for the original attempt's advisory lock to be released, then look up
+-- the definitive receipt. This is called only as the fallback for a stock miss.
+create or replace function public.ops2_wait_vitrine_checkout_attempt_v1(
+  p_request_id uuid, p_request_context jsonb
+) returns jsonb language plpgsql volatile security invoker
+set search_path = public, pg_temp as $checkout_wait$
+begin
+  if p_request_id is null then
+    raise exception 'checkout_request_id_required' using errcode='22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtextextended('vitrine-checkout:'||p_request_id::text,0));
+  return public.ops2_lookup_vitrine_checkout_attempt_v1(p_request_id,p_request_context);
+end;
+$checkout_wait$;
+revoke all on function public.ops2_wait_vitrine_checkout_attempt_v1(uuid,jsonb)
+  from public, anon, authenticated;
+grant execute on function public.ops2_wait_vitrine_checkout_attempt_v1(uuid,jsonb)
+  to service_role;
