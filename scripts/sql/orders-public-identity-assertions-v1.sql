@@ -124,24 +124,32 @@ begin
  if has_table_privilege('anon','public.order_checkout_attempts_v1','SELECT')
  then raise exception 'anonymous_checkout_attempt_access'; end if;
 end $check$;
--- The first checkout reserved ONE unit; a replay must not take another.
+-- The REAL reservation function creates one reservation row, not an
+-- immediate physical-stock decrement. A checkout replay must not reserve twice.
 do $check$
-declare v_available integer;
+declare v_reserved numeric; v_physical numeric;
 begin
-  select available into v_available from public._test_stock_reservation_v1 where sku='X';
-  if v_available<>9 then raise exception 'replay_reserved_stock_twice: %',v_available; end if;
+  select coalesce(sum(quantity),0) into v_reserved
+    from public.vitrine_stock_reservations where status='reserved';
+  if v_reserved<>1 then
+    raise exception 'replay_reserved_stock_twice: %',v_reserved; end if;
+  select stock into v_physical from public.products
+    where id='00000000-0000-4000-8000-0000000000aa';
+  if v_physical<>10 then raise exception 'reserved_order_changed_physical_stock'; end if;
 end $check$;
 
--- A hard failure after decrementing stock and inserting the order must roll
--- back the order, stock update, new public snapshot and idempotency mapping.
+-- Failure after the real reserve function inserts its row must roll back the
+-- order, reservation, public identity and idempotency mapping atomically.
 do $check$
-declare
- v_order_count bigint;
- v_snap_count bigint;
- v_available integer;
+declare v_before_orders bigint;
+        v_before_snapshots bigint;
+        v_before_reserved numeric;
+        v_after_reserved numeric;
 begin
-  select count(*) into v_order_count from public.orders;
-  select count(*) into v_snap_count from public.order_public_snapshots_v1;
+  select count(*) into v_before_orders from public.orders;
+  select count(*) into v_before_snapshots from public.order_public_snapshots_v1;
+  select coalesce(sum(quantity),0) into v_before_reserved
+    from public.vitrine_stock_reservations where status='reserved';
   begin
     perform public.ops2_create_vitrine_checkout_once_v1(
       '00000000-0000-4000-8000-000000000005',
@@ -152,11 +160,13 @@ begin
   exception when others then
     if sqlerrm <> 'simulated_reservation_or_order_failure' then raise; end if;
   end;
-  select available into v_available from public._test_stock_reservation_v1 where sku='X';
-  if v_available<>9 then raise exception 'rollback_failed_stock_retained'; end if;
-  if (select count(*) from public.orders)<>v_order_count
+  select coalesce(sum(quantity),0) into v_after_reserved
+    from public.vitrine_stock_reservations where status='reserved';
+  if v_after_reserved<>v_before_reserved then
+    raise exception 'rollback_left_stock_reservation'; end if;
+  if (select count(*) from public.orders)<>v_before_orders
   then raise exception 'rollback_left_orphan_order'; end if;
-  if (select count(*) from public.order_public_snapshots_v1)<>v_snap_count
+  if (select count(*) from public.order_public_snapshots_v1)<>v_before_snapshots
   then raise exception 'rollback_left_orphan_snapshot'; end if;
   if exists(select 1 from public.order_checkout_attempts_v1
             where request_id='00000000-0000-4000-8000-000000000005')
@@ -183,6 +193,9 @@ begin
  if exists(select 1 from public.order_checkout_attempts_v1
            where request_id='00000000-0000-4000-8000-000000000006')
  then raise exception 'failed_checkout_created_attempt'; end if;
+ if (select coalesce(sum(quantity),0) from public.vitrine_stock_reservations
+      where status='reserved')<>1
+ then raise exception 'insufficient_stock_left_reservation'; end if;
 end $check$;
 
 -- Wait RPC observes the persisted result and respects payload mismatch.
