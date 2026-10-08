@@ -28,6 +28,10 @@ assert.match(endpoint,/flatMap\(\(trigger:any\)=>Array\.isArray\(trigger\.action
 assert.match(endpoint,/custom_result:customResult|custom_result/);
 assert.match(endpoint,/trace:value\.trace/);
 assert.match(endpoint,/test_cases\.slice\(0,20\)/,'admin simulator must execute the full bounded homologation suite');
+assert.match(endpoint,/isSimpleAnaGreeting/,'required suite should recognize simple greetings locally');
+assert.match(endpoint,/deterministicGreeting:true/,'required suite should run greeting without external AI dependency');
+assert.match(endpoint,/required_suite_simple_greeting/);
+assert.doesNotMatch(endpoint,/customInput[\s\S]{0,400}deterministicGreeting:true/,'manual custom simulator must keep its normal AI behavior');
 assert.match(endpoint,/\["label","remove_label"\]\.includes\(action\.type\)/,'save and publish must validate labels used by apply/remove actions');
 assert.match(endpoint,/type:"remove_label"/,'dry-run trace must expose label removal');
 assert.match(endpoint,/humanMode:Boolean\(body\?\.human_mode\)/,'custom simulator must accept human-mode context');
