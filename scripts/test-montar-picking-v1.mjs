@@ -59,7 +59,7 @@ const orderId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const otherId='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const payload=Buffer.from(JSON.stringify({exp:Math.floor(Date.now()/1000)+3600})).toString('base64url');
 const authToken='e30.'+payload+'.test';
-const queue=[{id:orderId,order_number:'DA-261008-AAAAAAAA',public_code:'DA115',status:'confirmed',customer_name:'Cliente teste',created_at:'2026-10-08T12:00:00Z',counts:{total:1,pending:1,separated:0,missing:0},separator_key:'jose',separator_label:'José'}];
+const queue=[{id:orderId,order_number:'DA-261008-AAAAAAAA',public_code:'1458',status:'confirmed',customer_name:'Cliente teste',created_at:'2026-10-08T12:00:00Z',counts:{total:1,pending:1,separated:0,missing:0},separator_key:'jose',separator_label:'José'}];
 let requested=[],redirects=[];
 const elements=new Map();
 const el=id=>{
@@ -91,11 +91,19 @@ const ctx=vm.createContext({
   window:{location:{assign:url=>redirects.push(url)},addEventListener:()=>{},scrollTo:()=>{},scrollY:0}
 });
 new vm.Script(script).runInContext(ctx);
-for(let i=0;i<80&&!el('queueList').innerHTML.includes('DA115');i++)
+for(let i=0;i<80&&!el('queueList').innerHTML.includes('1458');i++)
   await new Promise(r=>setTimeout(r,10));
-assert.match(el('queueList').innerHTML,/DA115/);
+assert.match(el('queueList').innerHTML,/1458/);
 assert.doesNotMatch(el('queueList').innerHTML,/DA-261008-AAAAAAAA/,'numero interno NUNCA exibido no card');
 assert.equal(el('queueCount').textContent,'1');
+// Both the new four-digit identity and historical AA000 orders must render.
+queue[0].public_code='DA115';
+el('queueSearch').trigger('input');
+assert.match(el('queueList').innerHTML,/DA115/,'historical code remains supported');
+queue[0].public_code='1458';
+el('queueSearch').trigger('input');
+assert.match(el('queueList').innerHTML,/1458/,'new four-digit identity is visible');
+
 assert.match(el('queueList').innerHTML,/queue-card is-running/,'pedido em separação destacado');
 assert.match(el('queueList').innerHTML,/class="queue-assignment-banner"/,'faixa grande com responsável');
 assert.match(el('queueList').innerHTML,/EM SEPARAÇÃO/);
