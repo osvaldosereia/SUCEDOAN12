@@ -25,6 +25,8 @@ assert.ok(replay > 0 && stock > replay, 'retry must resolve before stock is chec
 assert.match(edge, /ops2_create_vitrine_checkout_once_v1/);
 assert.match(edge, /invalid_checkout_request_id/);
 assert.match(edge, /checkout_attempt_lookup_unavailable/);
+assert.match(edge, /if\(created\.data\?\.replayed===true\)/);
+assert.ok(edge.indexOf('if(created.data?.replayed===true)') < edge.indexOf('if(orderId&&ph){try{const linked'), 'concurrent replay must return before CRM and WhatsApp side effects');
 assert.match(client, /body\.checkout_request_id=checkoutAttemptId\(body\)/);
 assert.match(client, /sessionStorage\?\.setItem\(CHECKOUT_ATTEMPT_STORAGE/);
 assert.match(client, /sessionStorage\?\.removeItem\(CHECKOUT_ATTEMPT_STORAGE/);
