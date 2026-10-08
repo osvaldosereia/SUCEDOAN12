@@ -17,9 +17,11 @@ export function buildGoogleOptimizeToursRequest(stops, window) {
   if (window.depot) {
     const { latitude, longitude } = window.depot;
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
-        Math.abs(latitude) > 90 || Math.abs(longitude) > 180)
+        Math.abs(latitude) > 90 || Math.abs(longitude) > 180 ||
+        (latitude === 0 && longitude === 0))
       throw new Error("Invalid depot coordinates");
     vehicle.startLocation = { latitude, longitude };
+    if (window.returnToDepot !== false) vehicle.endLocation = { latitude, longitude };
   }
   return {
     timeout: "20s", considerRoadTraffic: true, populatePolylines: false,
