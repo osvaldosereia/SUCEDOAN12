@@ -13,16 +13,19 @@ export function buildGoogleOptimizeToursRequest(stops, window) {
       duration: "180s"
     }]
   }));
-  const vehicle = { label: "dona-antonia-route", costPerKilometer: 1 };
-  if (window.depot) {
-    const { latitude, longitude } = window.depot;
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
-        Math.abs(latitude) > 90 || Math.abs(longitude) > 180 ||
-        (latitude === 0 && longitude === 0))
-      throw new Error("Invalid depot coordinates");
-    vehicle.startLocation = { latitude, longitude };
-    if (window.returnToDepot !== false) vehicle.endLocation = { latitude, longitude };
-  }
+  // A route without a verified depot produces misleading first-leg travel estimates.
+  // Require an explicit origin instead of silently optimizing from an arbitrary point.
+  const depot = window?.depot;
+  if (!depot || typeof depot !== "object") throw new Error("Missing depot coordinates");
+  const { latitude, longitude } = depot;
+  if (typeof latitude !== "number" || typeof longitude !== "number" ||
+      !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+      Math.abs(latitude) > 90 || Math.abs(longitude) > 180 ||
+      (latitude === 0 && longitude === 0))
+    throw new Error("Invalid depot coordinates");
+  const vehicle = { label: "dona-antonia-route", costPerKilometer: 1,
+    startLocation: { latitude, longitude } };
+  if (window.returnToDepot !== false) vehicle.endLocation = { latitude, longitude };
   return {
     timeout: "20s", considerRoadTraffic: true, populatePolylines: false,
     model: { globalStartTime: startTime, globalEndTime: endTime,
