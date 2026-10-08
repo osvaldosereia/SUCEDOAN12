@@ -1769,7 +1769,7 @@ async function smartDeliveryOptimize(p:any,authorization:string){
   const runId=id(p?.run_id);if(!runId)return {error:"invalid_run_id",status:400};
   const prepared=await db.rpc("smart_delivery_prepare_optimization_v1",{p_run_id:runId});
   if(prepared.error)return {error:"route_not_ready_for_optimization",status:409,detail:prepared.error.message};
-  const fn=await fetch(U+"/functions/v1/smart-delivery-optimize-v1",{method:"POST",headers:{"content-type":"application/json","authorization":authorization||("Bearer "+K)},body:JSON.stringify({run_id:runId})});
+  const fn=await fetch(U+"/functions/v1/smart-delivery-optimize-v1",{method:"POST",headers:{"content-type":"application/json","apikey":K,"authorization":"Bearer "+K},body:JSON.stringify({run_id:runId})});
   const out=await fn.json().catch(()=>({ok:false,error:"optimizer_invalid_response"}));
   return fn.ok?out:{error:out?.error||"optimizer_failed",status:fn.status||502,detail:out?.detail||null};
 }
@@ -1778,7 +1778,7 @@ async function smartDeliveryProofUploadUrl(p:any){
   if(!orderId)return {error:"invalid_order",status:400};
   const ext:any={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"};
   if(!ext[mime])return {error:"invalid_proof_type",status:400};
-  const stop=await db.from("ops_delivery_stops").select("id,run_id,status").eq("order_id",orderId).maybeSingle();
+  const stop=await db.from("ops_delivery_stops").select("id,run_id,status,created_at").eq("order_id",orderId).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(stop.error)throw stop.error;if(!stop.data?.id)return {error:"delivery_stop_not_found",status:404};
   if(!["out_for_delivery","planned"].includes(String(stop.data.status||"")))return {error:"delivery_stop_not_active",status:409};
   const path=String(stop.data.run_id)+"/"+String(stop.data.id)+"/"+crypto.randomUUID()+"."+ext[mime];
@@ -1789,11 +1789,15 @@ async function smartDeliveryProofUploadUrl(p:any){
 async function smartDeliveryProofSave(p:any){
   const orderId=id(p?.order_id),path=tx(p?.path,500),mime=tx(p?.mime_type,80).toLowerCase();
   if(!orderId||!path)return {error:"invalid_proof",status:400};
-  const stop=await db.from("ops_delivery_stops").select("id,run_id,proof_metadata").eq("order_id",orderId).maybeSingle();
+  const stop=await db.from("ops_delivery_stops").select("id,run_id,proof_metadata,created_at").eq("order_id",orderId).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(stop.error)throw stop.error;if(!stop.data?.id)return {error:"delivery_stop_not_found",status:404};
   const prefix=String(stop.data.run_id)+"/"+String(stop.data.id)+"/";
   if(!path.startsWith(prefix))return {error:"invalid_proof_path",status:400};
-  const metadata={...(stop.data.proof_metadata||{}),photo:{bucket:"delivery-proof-v1",path,mime_type:mime||null,captured_at:new Date().toISOString()}};
+  const object=await db.storage.from("delivery-proof-v1").info(path);
+  if(object.error)return {error:"proof_object_not_found",status:409};
+  const storedMime=String(object.data?.metadata?.mimetype||object.data?.contentType||mime||"").toLowerCase();
+  if(storedMime&&!["image/jpeg","image/png","image/webp"].includes(storedMime))return {error:"invalid_proof_type",status:400};
+  const metadata={...(stop.data.proof_metadata||{}),photo:{bucket:"delivery-proof-v1",path,mime_type:storedMime||mime||null,captured_at:new Date().toISOString()}};
   const q=await db.from("ops_delivery_stops").update({proof_metadata:metadata,updated_at:new Date().toISOString()}).eq("id",stop.data.id).select("id").maybeSingle();
   if(q.error)throw q.error;return {ok:true,stop_id:stop.data.id,proof_metadata:metadata};
 }
