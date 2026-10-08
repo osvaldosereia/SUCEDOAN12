@@ -240,11 +240,14 @@
       if(preserveScroll)window.scrollTo(0,y);else window.scrollTo(0,0);
     } catch(err) {fail(err);if(!preserveScroll)await backToQueue()}
   };
-  const openOrder = async id => {
-    if(busy||!queue.some(o=>o.id===id))return; // Never open an order absent from the manual queue.
-    selectedId=id;detail=null;itemSearch='';onlyPending=false;
-    show('detailView');$('detailContent').innerHTML='<div class="empty-card">Carregando produtos…</div>';
-    await loadDetail(id);
+  const openOrder = id => {
+    if(busy||!idOk(id)||!queue.some(o=>o.id===id))return; // Only manually selected orders.
+    // Reuse the original Admin separation vitrine, not a second picking implementation.
+    // The montar=1 parameter renders only that vitrine and returns to /montar on close.
+    const url=new URL('/vitrine/admin/',location.origin);
+    url.searchParams.set('separacao',id);
+    url.searchParams.set('montar','1');
+    window.location.assign(url.toString());
   };
   const backToQueue = async () => {
     if(busy)return;
