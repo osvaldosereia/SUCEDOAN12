@@ -11,7 +11,7 @@ assert.match(api,/admin_test[\s\S]*dry_run_not_sendable/);
 assert.match(api,/scenario_keys/);
 assert.match(api,/admin_history/);
 assert.match(api,/suggestion_text|p_suggestion_text/);
-assert.match(ui,/Executar teste sem envio/);
+assert.match(ui,/Executar .* testes obrigatórios/);
 assert.match(ui,/test_run_id/);
 assert.match(ui,/não envia WhatsApp/);
 assert.match(api,/dry_run_not_sendable/);
