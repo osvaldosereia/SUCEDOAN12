@@ -44,7 +44,7 @@ const elements=new Map();
 const el=id=>{
   if(!elements.has(id)){
     const listeners={};
-    elements.set(id,{id,hidden:false,value:'',innerHTML:'',textContent:'',disabled:false,
+    elements.set(id,{id,hidden:id==='packageModal',value:'',innerHTML:'',textContent:'',disabled:false,
       listeners,addEventListener:(type,cb)=>{listeners[type]=cb},
       focus:()=>{},classList:{toggle:()=>{}},
       trigger:(type,arg={})=>listeners[type]?.(arg)});
@@ -104,7 +104,7 @@ el('detailContent').trigger('click',itemEvent);
 await spin(()=>picked && details>=2 && /id="completeBtn"[^>]*>CONCLUIR SEPARAÇÃO/.test(el('detailContent').innerHTML));
 assert.deepEqual(writes,['order_separation_item_set']);
 el('completeBtn').trigger('click');
-await spin(()=>completed && el('packageModal').hidden===false);
+await spin(()=>completed && el('packageModal').hidden===false && el('packageCode').textContent==='DA115');
 assert.equal(el('packageCode').textContent,'DA115','numero imutavel na embalagem');
 el('packageOk').trigger('click');
 await spin(()=>el('queueCount').textContent==='0');
