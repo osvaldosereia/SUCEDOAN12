@@ -72,6 +72,7 @@ jobs:
       - run: node scripts/test-admin-attendance-filter-menu-v1.mjs
       - run: node scripts/test-admin-attendance-native-channel-v1.mjs
       - run: node scripts/test-admin-attendance-unsupported-display-v1.mjs
+      - run: node scripts/test-attendance-meta-template-history-v1.mjs
       - run: node scripts/test-admin-attendance-media-api-v1.mjs
       - run: node scripts/test-admin-attendance-library-schema-v1.mjs
       - run: node scripts/test-admin-attendance-library-send-v1.mjs
