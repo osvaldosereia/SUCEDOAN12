@@ -31,6 +31,33 @@ const cents=(v:any)=>Math.round(Number(v||0)*100);
 const phone=(v:any)=>{let d=String(v??"").replace(/\D+/g,"");if(d.startsWith("00"))d=d.slice(2);let local="";if(d.startsWith("55")&&(d.length===12||d.length===13))local=d.slice(2);else if(d.length===10||d.length===11)local=d;else return "";if(local.length===10&&/[6-9]/.test(local.charAt(2)))local=local.slice(0,2)+"9"+local.slice(2);return "+55"+local};
 const safeQ=(v:any)=>txt(v,100).replace(/[,%()]/g," ").trim();
 async function sha(v:string){const x=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return [...new Uint8Array(x)].map(b=>b.toString(16).padStart(2,"0")).join("")}
+function randomAddonCapability(){
+  const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);
+  let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+async function issueOrderAddonLink(orderId:string,publicUrl:string|null){
+  const token=randomAddonCapability(),tokenHash=await sha(token);
+  const created=await db.rpc("ops3_create_order_addon_session_v1",{
+    p_order_id:orderId,
+    p_token_hash:tokenHash,
+    p_source:"post_checkout",
+    p_metadata:{surface:"storefront_success",version:1}
+  });
+  if(created.error){console.error("order_addon_session_issue",txt(created.error.message,120));return null}
+  if(created.data?.ok!==true){
+    const reason=txt(created.data?.error,80)||"session_unavailable";
+    if(reason!=="feature_disabled")console.error("order_addon_session_issue",reason);
+    return null;
+  }
+  const orderAddonUrl="https://donaantonia.com.br/adicionar/#t="+encodeURIComponent(token);
+  const safePublic=/^https:\/\/donaantonia\.com\.br\/(?:p|pedido)\/\?[^#]+$/i.test(String(publicUrl||""))?String(publicUrl):"";
+  return {
+    order_addon_url:orderAddonUrl,
+    order_addon_expires_at:created.data?.expires_at||null,
+    order_public_url_with_addon:safePublic?safePublic+"#a="+encodeURIComponent(token):null
+  };
+}
 function ip(req:Request){for(const v of [req.headers.get("cf-connecting-ip"),String(req.headers.get("x-forwarded-for")||"").split(",")[0],req.headers.get("x-real-ip")]){const s=String(v||"").trim();if(s)return s.slice(0,120)}return ""}
 function code4(){const a=new Uint16Array(1);do{crypto.getRandomValues(a)}while(a[0]>=60000);return String(a[0]%10000).padStart(4,"0")}
 
@@ -475,13 +502,14 @@ async function submit(req:Request,p:any){
   const customerSnapshot={...(customer?{found:true,id:customer.id,display_name:customer.display_name||null,address:customer.address||null,marketing_opt_in:customer.marketing_opt_in===true,identity_status:"existing_optional"}:{}),...(whatsappOrigin?{whatsapp_origin:whatsappOrigin}:{}),...(marketingCampaign?{marketing_campaign:marketingCampaign}:{}),...(stock.stock_adjustment?{stock_adjusted_retry:true,stock_adjustments:stock.adjusted_items}:{})};
   const created=await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}});
   if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit","basket_mold_unavailable","basket_mold_not_configured","basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items}}
-  const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;
+  const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;let addonLink:any=null;
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
   if(orderId){try{const publicLink=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});if(!publicLink.error)publicOrderLink=publicLink.data||null}catch(e){console.error("order_public_link",txt((e as any)?.message,180))}}
+  if(orderId){try{addonLink=await issueOrderAddonLink(orderId,publicOrderLink?.public_url||null)}catch(e){console.error("order_addon_session_issue",txt((e as any)?.message,120))}}
   if(orderId&&ph)kickWhatsappOrderOutbound(orderId);
   const customerStatus=customer?"registered":"pending_registration";
   await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,stock_reserved:created.data?.stock_reserved===true,reservation_timing:created.data?.reservation_timing||null,reservation_status:created.data?.reservation_status||null,papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items},"order-received:"+orderId);
-  return {...created.data,order_public_url:publicOrderLink?.public_url||null,order_public_code:publicOrderLink?.public_code||null,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items};
+  return {...created.data,order_public_url:publicOrderLink?.public_url||null,order_public_code:publicOrderLink?.public_code||null,...(addonLink||{}),phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items};
 }
 
 Deno.serve(async(req:Request)=>{
