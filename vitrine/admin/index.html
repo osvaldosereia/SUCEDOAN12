@@ -2656,6 +2656,19 @@
     const next=rows.find(o=>!o.delivery_return&&['planned','out_for_delivery'].includes(o.__delivery_stop?.status||'out_for_delivery'))||rows[0];
     state.driverFocusStopId=next?.__delivery_stop?.stop_id||null;return next;
   }
+  async function captureDeliveryProof(orderId,input){
+    const file=input?.files?.[0];if(!file)return;
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type)){toast('Use foto JPG, PNG ou WEBP');input.value='';return}
+    if(file.size>5242880){toast('A foto deve ter no máximo 5 MB');input.value='';return}
+    try{
+      input.disabled=true;
+      const signed=await api('smart_delivery_proof_upload_url',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:orderId,mime_type:file.type})});
+      const up=await fetch(signed.signed_url,{method:'PUT',headers:{'Content-Type':file.type},body:file});
+      if(!up.ok)throw new Error('proof_upload_failed');
+      await api('smart_delivery_proof_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:orderId,path:signed.path,mime_type:file.type})});
+      await loadDeliveryRuns();paintDriverQueue();toast('Foto da entrega salva');
+    }catch(e){toast(errorMessage(e?.message||'proof_upload_failed'));input.disabled=false}
+  }
   function driverFocusHtml(rows){
     const o=driverFocusedOrder(rows);if(!o)return '<div class="empty">Nenhuma entrega nesta rota.</div>';
     const s=o.__delivery_stop||{},a=o.delivery_address_snapshot||{},address=[a.street,a.number,a.complement,a.district,a.city].filter(Boolean).join(', ')||a.raw_text||'Endereço não informado';
@@ -2667,6 +2680,8 @@
       '<div class="separation-tablet-actions" style="margin-top:12px">'+
         (maps?'<a class="primary wide" href="'+esc(maps)+'" target="_blank" rel="noopener">ABRIR MAPS</a>':'')+
         (wa?'<a class="secondary" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+        '<label class="secondary" style="cursor:pointer">📷 FOTO DA ENTREGA<input hidden type="file" accept="image/jpeg,image/png,image/webp" capture="environment" data-driver-proof="'+esc(o.id)+'"></label>'+
+        (s.proof_metadata?.photo?.path?'<span class="pill">✓ Foto salva</span>':'')+
         '<button class="primary wide" type="button" data-driver-delivered="'+esc(o.id)+'">✓ ENTREGUE</button>'+
         '<button class="secondary" type="button" data-driver-failed="'+esc(o.id)+'">NÃO ENTREGOU</button>'+
       '</div>'+
@@ -2686,6 +2701,7 @@
     const focused=q?'':driverFocusHtml(rows);
     host.innerHTML=focused+(rows.length?'<details '+(q?'open':'')+'><summary>Ver todas as entregas · '+rows.length+'</summary><div style="display:grid;gap:10px;margin-top:10px">'+rows.map(driverRow).join('')+'</div></details>':'<div class="empty">Nenhuma entrega em rota para esta seleção.</div>');
     host.querySelectorAll('[data-driver-focus]').forEach(b=>b.onclick=()=>{state.driverFocusStopId=b.dataset.driverFocus;paintDriverQueue()});
+    host.querySelectorAll('[data-driver-proof]').forEach(i=>i.onchange=()=>captureDeliveryProof(i.dataset.driverProof,i));
     host.querySelectorAll('[data-driver-delivered]').forEach(b=>b.onclick=()=>confirmDeliveryFromExpedition(b.dataset.driverDelivered));
     host.querySelectorAll('[data-driver-failed]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.driverFailed,false));
     host.querySelectorAll('[data-driver-returned]').forEach(b=>b.onclick=()=>confirmPhysicalDeliveryReturn(b.dataset.driverReturned));
