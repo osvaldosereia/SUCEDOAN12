@@ -55,3 +55,18 @@ export function readGoogleOptimizedOrder(response, stops) {
   if (seen.size !== stops.length) throw new Error("Missing shipment");
   return order;
 }
+
+export function parseDepotEnvironment(latitude, longitude, returnToDepot = "true") {
+  if (typeof latitude !== "string" || !latitude.trim() ||
+      typeof longitude !== "string" || !longitude.trim())
+    throw new Error("Depot coordinates not configured");
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+      Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0))
+    throw new Error("Invalid depot coordinates");
+  const flag = String(returnToDepot).trim().toLowerCase();
+  if (flag !== "true" && flag !== "false")
+    throw new Error("Invalid return-to-depot configuration");
+  return { depot: { latitude: lat, longitude: lng }, returnToDepot: flag === "true" };
+}
