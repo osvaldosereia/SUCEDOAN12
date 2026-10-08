@@ -57,7 +57,7 @@ create or replace function public.ops2_assign_order_public_identity_v1()
 returns trigger language plpgsql security invoker set search_path=public,pg_temp as $$
 begin
   insert into public.order_public_snapshots_v1(order_id,snapshot,public_code)
-  values(new.id,'{}'::jsonb,public.ops2_next_order_public_code_4d_v1())
+  values(new.id,'{}'::jsonb,default)
   on conflict(order_id) do nothing;
   return new;
 end $$;
