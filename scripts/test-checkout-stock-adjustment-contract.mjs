@@ -9,7 +9,7 @@ const orders = fs.readFileSync('supabase/functions/admin-orders-v1/index.ts', 'u
 
 for (const site of [rootSite, vitrineSite]) {
   assert.ok(site.includes('Finalizar pedido'), 'checkout final CTA must remain Finalizar pedido');
-  assert.ok(site.includes('/checkout-resilience.js?v=20261001'), 'public checkout must load resilient stock handling');
+  assert.match(site,/\/checkout-resilience\.js\?v=[0-9a-z-]+/i, 'public checkout must load versioned resilient stock handling');
   assert.ok(site.includes('Até 10:59') && site.includes('A partir das 11h'), 'visible delivery cutoff must be 11:00 Cuiaba');
 }
 
