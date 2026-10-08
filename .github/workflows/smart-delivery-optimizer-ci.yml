@@ -1,0 +1,25 @@
+name: Smart Delivery Optimizer Contract
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/smart-delivery-optimize-v1/**'
+      - 'supabase/migrations/*smart_delivery_route_optimizer*'
+      - 'scripts/test-smart-delivery-route-optimizer*.mjs'
+      - '.github/workflows/smart-delivery-optimizer-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/smart-delivery-optimize-v1/**'
+      - 'supabase/migrations/*smart_delivery_route_optimizer*'
+      - 'scripts/test-smart-delivery-route-optimizer*.mjs'
+      - '.github/workflows/smart-delivery-optimizer-ci.yml'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-smart-delivery-google-model-v1.mjs
+      - run: node scripts/test-smart-delivery-route-optimizer-v1.mjs
