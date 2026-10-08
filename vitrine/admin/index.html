@@ -1264,6 +1264,21 @@
     .basket-auto-picker-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:10px 0 8px;padding:9px 10px;border-radius:10px;background:var(--soft)}.basket-auto-picker-heading strong{display:block}.basket-auto-picker-heading small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.basket-auto-picker-row small b{color:var(--ink)}
     @media(max-width:700px){.basket-auto-compose-card{grid-template-columns:50px minmax(0,1fr)}.basket-auto-compose-card>img{width:50px;height:50px}.basket-auto-compose-actions{grid-column:1/-1;grid-template-columns:minmax(90px,.8fr) 1fr 1fr;align-items:end}.basket-auto-compose-actions label{min-width:0}.basket-auto-compose-actions button{min-width:0}.basket-auto-picker-heading{display:block}}
   </style>
+  <style id="montar-existing-vitrine-only">
+    html.montar-picker-only body{background:#f4f7f5}
+    html.montar-picker-only #app{display:none!important}
+    html.montar-picker-only #editor{display:none!important}
+    html.montar-picker-only .orders-bottom-sheet-backdrop{background:#f4f7f5;align-items:stretch}
+    html.montar-picker-only .orders-bottom-sheet{width:100%;max-width:100%;height:100dvh;max-height:100dvh;border-radius:0;box-shadow:none;animation:none}
+    html.montar-picker-only .orders-sheet-head{border-radius:0}
+    html.montar-picker-only .orders-separation-buttons button{min-height:48px}
+    html.montar-picker-only .orders-sheet-body{flex:1;min-height:0}
+  </style>
+  <script>
+    if(new URLSearchParams(location.search).get('montar')==='1'){
+      document.documentElement.classList.add('montar-picker-only');
+    }
+  </script>
 </head>
 <body>
   <div id="app">
@@ -7172,6 +7187,10 @@
       overlay.querySelector('.orders-packaging-ok').disabled=true;
       overlay.remove();
       if(back?.isConnected)back.remove();else closeOrderSeparationSheet();
+      if(document.documentElement.classList.contains('montar-picker-only')){
+        location.replace('/montar/');
+        return;
+      }
       await loadOrders();
       await refreshOrderSeparationBoard();
     };
@@ -8087,7 +8106,51 @@
     errorMessage
   };
 
-  async function start(){const params=new URLSearchParams(location.search),sharedSeparationId=params.get('separacao')||'',uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;if(!uuid.test(sharedSeparationId)){setTab('today');return}await setTab('orders');await openOrderSeparationSheet(sharedSeparationId);history.replaceState({},'',location.pathname+location.hash)}
+  async function start(){
+    const params=new URLSearchParams(location.search),sharedSeparationId=params.get('separacao')||'',pickerMode=params.get('montar')==='1';
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if(pickerMode){
+      if(!uuid.test(sharedSeparationId)){location.replace('/montar/?erro=pedido_invalido');return}
+      try{
+        // Verify current membership server-side. Do not show other Admin orders.
+        const allowed=await manualQueueRpc('list');
+        if(!Array.isArray(allowed.order_ids)||!allowed.order_ids.some(x=>String(x)===sharedSeparationId)){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        // Load only this one order, preserving the exact customer/status checks used by
+        // the canonical separation sheet, without rendering the full Admin order list.
+        const detail=await api('order',{id:sharedSeparationId});
+        const selectedOrder=detail?.order||null;
+        if(!selectedOrder||String(selectedOrder.id)!==sharedSeparationId){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        if(orderCustomerDataPending(selectedOrder)){
+          location.replace('/montar/?erro=dados_pendentes');return;
+        }
+        if(!orderV3Milestones(selectedOrder).confirmed||orderV3Milestones(selectedOrder).separated||
+            orderV3Milestones(selectedOrder).cancelled){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        state.orders=[selectedOrder];
+        await openOrderSeparationSheet(sharedSeparationId);
+        const sheet=document.querySelector('.orders-bottom-sheet-backdrop');
+        if(!sheet){location.replace('/montar/?erro=vitrine_indisponivel');return}
+        const close=sheet.querySelector('.orders-sheet-close');
+        if(close)close.onclick=()=>location.replace('/montar/');
+        sheet.addEventListener('click',e=>{
+          if(e.target===sheet){e.stopImmediatePropagation();location.replace('/montar/')}
+        },true);
+      }catch(error){
+        console.error('montar_existing_vitrine',error);
+        location.replace('/montar/?erro=acesso');
+      }
+      return;
+    }
+    if(!uuid.test(sharedSeparationId)){setTab('today');return}
+    await setTab('orders');
+    await openOrderSeparationSheet(sharedSeparationId);
+    history.replaceState({},'',location.pathname+location.hash);
+  }
   start();
 })();
 </script>

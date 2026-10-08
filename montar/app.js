@@ -240,11 +240,14 @@
       if(preserveScroll)window.scrollTo(0,y);else window.scrollTo(0,0);
     } catch(err) {fail(err);if(!preserveScroll)await backToQueue()}
   };
-  const openOrder = async id => {
-    if(busy||!queue.some(o=>o.id===id))return; // Never open an order absent from the manual queue.
-    selectedId=id;detail=null;itemSearch='';onlyPending=false;
-    show('detailView');$('detailContent').innerHTML='<div class="empty-card">Carregando produtos…</div>';
-    await loadDetail(id);
+  const openOrder = id => {
+    if(busy||!idOk(id)||!queue.some(o=>o.id===id))return; // Only manually selected orders.
+    // Reuse the original Admin separation vitrine, not a second picking implementation.
+    // The montar=1 parameter renders only that vitrine and returns to /montar on close.
+    const url=new URL('/vitrine/admin/',location.origin);
+    url.searchParams.set('separacao',id);
+    url.searchParams.set('montar','1');
+    window.location.assign(url.toString());
   };
   const backToQueue = async () => {
     if(busy)return;
@@ -327,5 +330,14 @@
   (async()=>{
     if(!storedToken()){show('loginView');setConnection('Acesso necessário','error');return}
     show('queueView');await loadQueue();
+    const errorCode=new URLSearchParams(location.search).get('erro');
+    const messages={
+      pedido_invalido:'Este link de separação é inválido.',
+      pedido_indisponivel:'O pedido saiu da fila SEPARAR AGORA ou não está mais disponível para separar.',
+      dados_pendentes:'O pedido precisa ter os dados do cliente regularizados no Admin antes da separação.',
+      vitrine_indisponivel:'Não foi possível abrir a vitrine original de separação.',
+      acesso:'Não foi possível validar seu acesso à vitrine. Atualize a página e tente novamente.'
+    };
+    if(errorCode&&messages[errorCode])$('queueFeedback').textContent=messages[errorCode];
   })();
 })();
