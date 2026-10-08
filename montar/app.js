@@ -143,6 +143,16 @@
         (completed?'<div class="queue-completed-message">✓ Separação registrada · '+esc(formatDate(o.completed_at))+'</div>':'<button type="button" class="queue-open" data-open="'+esc(o.id)+'">'+(started?'CONTINUAR SEPARAÇÃO':'INICIAR SEPARAÇÃO')+' <span aria-hidden="true">→</span></button>')+'</article>';
     }).join(''):'<section class="empty-card"><span class="empty-icon" aria-hidden="true">📦</span><h2>'+(queue.length?'Nenhum pedido encontrado':'Nenhum pedido para separar')+'</h2><p>'+(queue.length?'Tente buscar pelo número ou pelo nome do cliente.':'A fila começa vazia. O responsável deve usar o botão SEPARAR AGORA em um pedido confirmado no Admin.')+'</p></section>';
   };
+  const renderCompletionNotice = () => {
+    const notice=$('queueCompletionNotice');
+    if(!notice)return;
+    const id=new URLSearchParams(location.search).get('concluido')||'';
+    const record=queue.find(o=>o.id===id&&o.completed===true&&o.completed_at);
+    if(!record){notice.hidden=true;notice.textContent='';return}
+    const name=String(record.completed_separator_label||record.separator_label||SEPARATORS.find(x=>x.key===record.completed_separator_key)?.label||'Responsável não identificado');
+    notice.textContent='✓ PEDIDO #'+originalNumber(record)+' JÁ SEPARADO POR '+name+'. Separação concluída e registrada com sucesso.';
+    notice.hidden=false;
+  };
   const loadQueue = async (silent=false) => {
     if (loading || busy) return;
     loading=true;
@@ -150,10 +160,11 @@
     try {
       const data=await rpc('manual_pick_queue_feed_v1');
       if (!Array.isArray(data.orders)) throw new Error('invalid_queue_feed');
-      queue=data.orders.filter(o=>idOk(o.id)&&['confirmed','processing'].includes(o.status));
+      queue=data.orders.filter(o=>idOk(o.id)&&(['confirmed','processing'].includes(o.status)||(o.status==='ready'&&o.completed===true)));
       $('queueFeedback').textContent='';
       setConnection('Sincronizado');
       renderQueue();
+      renderCompletionNotice();
     } catch(err) {
       if(!silent) $('queueFeedback').textContent='Não foi possível carregar a fila. Use atualizar para tentar novamente.';
       fail(err);
@@ -173,8 +184,8 @@
       // A valid token alone is not sufficient: feed checks active Admin authorization.
       const check=await rpc('manual_pick_queue_feed_v1');
       if(!Array.isArray(check.orders)) throw new Error('invalid_queue_feed');
-      queue=check.orders.filter(o=>idOk(o.id));
-      renderQueue();show('queueView');setConnection('Sincronizado');
+      queue=check.orders.filter(o=>idOk(o.id)&&(['confirmed','processing'].includes(o.status)||(o.status==='ready'&&o.completed===true)));
+      renderQueue();show('queueView');renderCompletionNotice();setConnection('Sincronizado');
     } catch(err) {
       sessionStorage.removeItem(SESSION);
       $('loginError').textContent='Acesso não autorizado. Verifique o código e tente novamente.';
@@ -247,7 +258,7 @@
     } catch(err) {fail(err);if(!preserveScroll)await backToQueue()}
   };
   const openOrder = id => {
-    if(busy||!idOk(id)||!queue.some(o=>o.id===id))return; // Only manually selected orders.
+    if(busy||!idOk(id)||!queue.some(o=>o.id===id&&o.completed!==true))return; // Only manually selected orders.
     // Reuse the original Admin separation vitrine, not a second picking implementation.
     // The montar=1 parameter renders only that vitrine and returns to /montar on close.
     const url=new URL('/vitrine/admin/',location.origin);
