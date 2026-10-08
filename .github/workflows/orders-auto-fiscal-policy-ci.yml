@@ -1,0 +1,23 @@
+name: Pedidos - Politica NF-e automatica
+on:
+  push:
+    branches:
+      - agent/orders-auto-fiscal-contract-20261008
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
+      - 'scripts/test-order-auto-fiscal-policy-v1.mjs'
+      - '.github/workflows/orders-auto-fiscal-policy-ci.yml'
+permissions:
+  contents: read
+jobs:
+  policy-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate pure policy (no external requests)
+        run: node --test scripts/test-order-auto-fiscal-policy-v1.mjs
