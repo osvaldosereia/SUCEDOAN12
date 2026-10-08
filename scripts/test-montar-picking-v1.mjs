@@ -22,7 +22,7 @@ for(const endpoint of ['order_separation_get','order_separation_assign','order_s
   assert.ok(script.includes("'"+endpoint+"'"),endpoint+' deve usar backend ja existente');
 assert.doesNotMatch(script,/api\(['"]orders['"]/,'a lista nao deve consultar todos os pedidos');
 assert.doesNotMatch(script,/pin:\s*['"]\d+/,'nenhum PIN fixo no novo frontend');
-assert.match(script,/queue\.some\(o=>o\.id===id\)/,'bloquear abertura de pedido fora da fila');
+assert.match(script,/queue\.some\(o=>o\.id===id&&o\.completed!==true\)/,'bloquear abertura de pedido fora da fila ou concluido');
 assert.match(script,/url\.searchParams\.set\('separacao',id\)/,'passar ID tecnico sem alterar o numero original');
 assert.match(script,/url\.searchParams\.set\('montar','1'\)/,'modo exclusivo de separacao');
 assert.match(script,/!p\.total\|\|p\.pending/,'conclusao bloqueada com itens pendentes');
@@ -128,4 +128,42 @@ assert.equal(destination.searchParams.get('montar'),'1');
 assert.equal(destination.searchParams.get('order_number'),null,'nao gerar outro numero');
 assert.ok(!requested.some(x=>/order_separation_get|order_separation_complete|order_separation_item_set/.test(x)),
   'o clique no cartao nao inicia, grava ou conclui separacao');
+
+const newSql=readFileSync('supabase/sql/20261008_montar_feed_completed_cards_v1.sql','utf8');
+const completionSql=readFileSync('supabase/sql/20261008_fix_completion_separator_key_check_v1.sql','utf8');
+assert.match(completionSql,/array\['jose','claudio','claudenil','kelly','jovenil'\]/,'conclusao aceita separador atual e historico');
+assert.match(newSql,/c\.completed_at is not null/,'apenas conclusoes persistidas');
+assert.match(newSql,/o\.status='ready'/,'pedido pronto continua no card de separado');
+assert.match(newSql,/'completed',c\.completed_at is not null/,'flag de conclusao nao deriva da contagem');
+assert.match(script,/o\.completed===true&&Boolean\(o\.completed_at\)/,'nao confundir conferido com concluido');
+assert.match(admin,/if\(result\?\.status!=='ready'\)throw new Error\('separation_completion_unconfirmed'\)/,'API deve confirmar ready');
+assert.match(admin,/if\(persisted\)/,'erro apos sucesso nao desmarca conclusao');
+assert.match(admin,/orders-sheet-completion-error/,'erro de conclusao visivel na vitrine');
+assert.match(admin,/location\.replace\('\/montar\/\?concluido='\+encodeURIComponent\(orderId\)\)/,'retorno identificado ao /montar');
+assert.match(admin,/overlay\.__pickerReturnTimer=setTimeout/,'retorno automatico apos aviso de embalagem');
+// 27/27 significa conferido, mas so completar API pode marcar concluido.
+queue[0].counts={total:27,pending:0,separated:27,missing:0};
+queue.push({
+ id:otherId,order_number:'INTERNAL-OTHER',public_code:'DA516',status:'ready',
+ created_at:'2026-10-08T12:01:00Z',customer_name:'Concluido teste',
+ completed:true,completed_at:'2026-10-08T14:20:00Z',
+ completed_separator_key:'claudio',completed_separator_label:'Cláudio',
+ counts:{total:5,pending:0,separated:5,missing:0}
+});
+ctx.location.search='?concluido='+otherId;
+el('reloadBtn').trigger('click');
+for(let i=0;i<80&&!el('queueList').innerHTML.includes('DA516');i++)
+  await new Promise(r=>setTimeout(r,10));
+assert.equal(el('queueCount').textContent,'2');
+assert.match(el('queueList').innerHTML,/PEDIDO JÁ SEPARADO POR/);
+assert.match(el('queueList').innerHTML,/Cláudio/);
+assert.match(el('queueList').innerHTML,/DA516/);
+assert.doesNotMatch(el('queueList').innerHTML,/INTERNAL-OTHER/);
+assert.match(el('queueCompletionNotice').textContent,/PEDIDO #DA516 JÁ SEPARADO POR Cláudio/);
+const previousCount=redirects.length;
+click(otherId);
+assert.equal(redirects.length,previousCount,'pedido concluido nao pode ser reaberto para separacao');
+assert.match(el('queueList').innerHTML,/DA115/);
+assert.match(el('queueList').innerHTML,/CONTINUAR SEPARAÇÃO/,'27 de 27 sem conclusao permanece em separacao');
+
 console.log('PASS /montar: fila manual, abrir vitrine canonica, isolamento e nenhum pedido alterado.');
