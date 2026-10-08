@@ -38,6 +38,17 @@ assert.match(admin,/await manualQueueRpc\('list'\)/,'validar fila manual na entr
 assert.match(admin,/if\(orderCustomerDataPending\(selectedOrder\)\)/,'respeitar checagem existente de dados do cliente');
 assert.match(admin,/state\.orders=\[selectedOrder\]/,'a vitrine acessa somente o pedido selecionado');
 assert.match(admin,/await openOrderSeparationSheet\(sharedSeparationId\)/,'abrir vitrine de separacao existente');
+assert.match(admin,/const originalPublicCode=orderDisplayCode\(order\)/,'titulo da vitrine usa codigo do checkout');
+assert.match(script,/value\?\.public_code\s*\|\|\s*value\?\.order_public_code/,'fila usa somente codigo publico');
+assert.doesNotMatch(script,/String\(value\?\.order_number\s*\|\|/,'nao usar numero interno como fallback');
+const publicFeed=readFileSync('supabase/sql/20261008_montar_feed_public_code_v1.sql','utf8');
+assert.match(publicFeed,/'public_code',p\.public_code/,'feed retorna codigo publico existente');
+assert.match(publicFeed,/left join public\.order_public_snapshots_v1 p on p\.order_id=o\.id/,'origem do codigo publica e persistente');
+const itemSql=readFileSync('supabase/sql/20261008_fix_item_separator_key_check_v1.sql','utf8');
+assert.match(itemSql,/changed_by_separator_key is null or changed_by_separator_key = any/,'item check preservado');
+assert.match(itemSql,/array\['jose','claudio','claudenil','kelly','jovenil'\]/,'identificadores suportados pela vitrine e pelo historico');
+assert.doesNotMatch(itemSql,/update\s+public\.orders|update\s+public\.order_items/i,'migration nao reescreve pedidos ou itens');
+
 assert.match(admin,/html\.montar-picker-only #app\{display:none!important\}/,'ocultar menus administrativos');
 assert.match(admin,/if\(close\)close\.onclick=\(\)=>location\.replace\('\/montar\/'\)/,'voltar para fila quando fechar');
 assert.match(admin,/if\(document\.documentElement\.classList\.contains\('montar-picker-only'\)\)/,'voltar apos aviso da embalagem');
@@ -48,7 +59,7 @@ const orderId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const otherId='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const payload=Buffer.from(JSON.stringify({exp:Math.floor(Date.now()/1000)+3600})).toString('base64url');
 const authToken='e30.'+payload+'.test';
-const queue=[{id:orderId,order_number:'DA115',status:'confirmed',customer_name:'Cliente teste',created_at:'2026-10-08T12:00:00Z',counts:{total:1,pending:1,separated:0,missing:0},separator_key:'jose',separator_label:'José'}];
+const queue=[{id:orderId,order_number:'DA-261008-AAAAAAAA',public_code:'DA115',status:'confirmed',customer_name:'Cliente teste',created_at:'2026-10-08T12:00:00Z',counts:{total:1,pending:1,separated:0,missing:0},separator_key:'jose',separator_label:'José'}];
 let requested=[],redirects=[];
 const elements=new Map();
 const el=id=>{
@@ -83,6 +94,7 @@ new vm.Script(script).runInContext(ctx);
 for(let i=0;i<80&&!el('queueList').innerHTML.includes('DA115');i++)
   await new Promise(r=>setTimeout(r,10));
 assert.match(el('queueList').innerHTML,/DA115/);
+assert.doesNotMatch(el('queueList').innerHTML,/DA-261008-AAAAAAAA/,'numero interno NUNCA exibido no card');
 assert.equal(el('queueCount').textContent,'1');
 assert.match(el('queueList').innerHTML,/queue-card is-running/,'pedido em separação destacado');
 assert.match(el('queueList').innerHTML,/class="queue-assignment-banner"/,'faixa grande com responsável');

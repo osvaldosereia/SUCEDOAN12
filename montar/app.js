@@ -106,9 +106,10 @@
     toast(errText(err),true);
   };
   const originalNumber = value => {
-    // Never fabricate, replace or renumber orders.
-    const number = String(value?.order_number || '').trim();
-    return number || 'NÚMERO NÃO DISPONÍVEL';
+    // The checkout displays order_public_code from order_public_snapshots_v1.
+    // orders.order_number is an internal identifier and must never be shown to pickers.
+    const code = String(value?.public_code || value?.order_public_code || '').trim().toUpperCase();
+    return /^[A-Z]{2}[0-9]{3}$/.test(code) ? code : 'NÚMERO INDISPONÍVEL';
   };
   const progress = counts => {
     const total = Number(counts?.total||0);
@@ -125,7 +126,7 @@
   };
   const renderQueue = () => {
     const search=$('queueSearch').value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-    const visible=queue.filter(o=>[o.order_number,o.customer_name].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(search));
+    const visible=queue.filter(o=>[o.public_code,o.customer_name].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(search));
     $('queueCount').textContent=String(queue.length);
     $('queueList').innerHTML=visible.length?visible.map(o=>{
       const p=progress(o.counts),started=Boolean(o.separator_key || p.done);
