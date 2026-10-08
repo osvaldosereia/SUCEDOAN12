@@ -9,6 +9,8 @@ on:
       - 'scripts/test-smart-delivery-google-*.mjs'
       - 'scripts/test-smart-delivery-optimizer-admin-v1.mjs'
       - 'scripts/test-smart-delivery-driver-mobile-v1.mjs'
+      - 'scripts/test-smart-delivery-proof-v1.mjs'
+      - 'scripts/test-smart-delivery-proof-v1.mjs'
       - 'vitrine/admin/index.html'
       - 'scripts/test-smart-delivery-driver-mobile-v1.mjs'
       - 'vitrine/admin/index.html'
@@ -39,3 +41,4 @@ jobs:
       - run: node scripts/test-smart-delivery-optimizer-admin-v1.mjs
       - run: node scripts/test-smart-delivery-admin-ui-v1.mjs
       - run: node scripts/test-smart-delivery-driver-mobile-v1.mjs
+      - run: node scripts/test-smart-delivery-proof-v1.mjs
