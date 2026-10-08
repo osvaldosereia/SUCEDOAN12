@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
+const must=(v,m)=>{if(!v)throw new Error(m)};
+must(html.includes('FOTO DA ENTREGA'),'driver proof camera action missing');
+must(html.includes('capture="environment"'),'rear camera hint missing');
+must(html.includes('file.size>5242880'),'client proof size guard missing');
+must(html.includes("smart_delivery_proof_upload_url"),'signed proof upload action missing');
+must(html.includes("smart_delivery_proof_save"),'proof save action missing');
+must(backend.includes('createSignedUploadUrl(path)'),'server signed upload missing');
+must(backend.includes('delivery-proof-v1'),'private proof bucket missing');
+must(backend.includes('path.startsWith(prefix)'),'proof path ownership guard missing');
+must(backend.includes('proof_metadata:metadata'),'proof metadata persistence missing');
+console.log('smart delivery private proof flow: ok');
