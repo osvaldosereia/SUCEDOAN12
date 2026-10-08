@@ -7,6 +7,7 @@ const U=Deno.env.get("SUPABASE_URL")||"";
 const K=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const GOOGLE_PROJECT_ID=Deno.env.get("GOOGLE_ROUTE_OPTIMIZATION_PROJECT_ID")||"";
 const GOOGLE_SERVICE_ACCOUNT_JSON=Deno.env.get("GOOGLE_ROUTE_OPTIMIZATION_SERVICE_ACCOUNT_JSON")||"";
+const INTERNAL_SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||K}catch{return K}})();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
@@ -14,7 +15,9 @@ const uuid=(v:unknown)=>{const s=String(v||"");return /^[0-9a-f]{8}-[0-9a-f]{4}-
 
 Deno.serve(async(req:Request)=>{
   if(req.method!=="POST") return json({ok:false,error:"method_not_allowed"},405);
-  if(!U||!K) return json({ok:false,error:"supabase_not_configured"},500);
+  if(!U||!K||!INTERNAL_SERVICE_KEY) return json({ok:false,error:"supabase_not_configured"},500);
+  const internalKey=req.headers.get("apikey")||"";
+  if(internalKey!==INTERNAL_SERVICE_KEY) return json({ok:false,error:"internal_auth_required"},401);
   if(!GOOGLE_PROJECT_ID||!GOOGLE_SERVICE_ACCOUNT_JSON) return json({ok:false,error:"google_route_optimization_not_configured"},503);
 
   let body:any={};
