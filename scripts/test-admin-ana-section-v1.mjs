@@ -17,6 +17,9 @@ assert.match(ui,/Remover etiqueta|remove_label/,'editor must expose provenance-s
 assert.match(ui,/Modelos prontos|data-add-template/,'editor must expose the simple automation template library');
 assert.match(ui,/Diagnóstico do rascunho|analyzeAnaAutomationDraft/,'tests view must expose draft diagnostics');
 assert.match(ui,/anaTestHumanMode/,'simulator must expose human takeover context');
+assert.match(ui,/Mensagem sintética opcional/,'required suite must run without forcing a custom message');
+assert.match(ui,/latestComplete=Boolean/,'publish readiness must depend on a complete current-revision suite');
+assert.match(ui,/Executar \$\{requiredCount\} testes obrigatórios/,'tests UI must expose the full required suite count');
 assert.match(ui,/ana-diagnostics\.js/,'diagnostics must remain modular');
 assert.match(ui,/ana-automation-library\.js/,'editor must keep template definitions in a separate module');
 assert.match(ui,/Duplicar automação|data-duplicate-trigger/);
