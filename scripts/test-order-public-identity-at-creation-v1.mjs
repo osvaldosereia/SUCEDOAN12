@@ -63,3 +63,21 @@ test('public snapshot refresh preserves public code on conflict', () => {
   assert.match(migration, /on conflict\(order_id\) do update\s+set snapshot=excluded\.snapshot,refreshed_at=now\(\);/i);
   assert.doesNotMatch(migration, /set public_code=excluded\.public_code/i);
 });
+
+test('all order service consumers accept both public identity formats', () => {
+  for (const path of [
+    'supabase/functions/admin-orders-v1/index.ts',
+    'supabase/functions/admin-products-live-v1/index.ts',
+    'supabase/functions/admin-order-vitrine-send-v1/index.ts',
+    'supabase/functions/order-separation-notify-v1/index.ts'
+  ]) {
+    const source = fs.readFileSync(path, 'utf8');
+    assert.ok(source.includes('^(?:[A-Z]{2}[0-9]{3}|[0-9]{4})$'), path + ' must accept four-digit public codes');
+  }
+});
+
+test('outbound customer fields use public identity, not technical order number', () => {
+  const source = fs.readFileSync('supabase/functions/admin-orders-v1/index.ts', 'utf8');
+  assert.match(source, /order_number:publicOrderCode,/);
+  assert.match(source, /order_number_short:publicOrderCode,/);
+});
