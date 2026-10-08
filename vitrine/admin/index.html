@@ -2660,7 +2660,7 @@
       input.disabled=true;
       const signed=await api('smart_delivery_proof_upload_url',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:orderId,mime_type:file.type})});
       if(!signed?.token||!signed?.path)throw new Error('proof_upload_authorization_failed');
-      const storageBase=(API_BASE||'').replace(/\/functions\/v1\/?$/,'');
+      const storageBase=new URL(API).origin;
       const uploadUrl=storageBase+'/storage/v1/object/upload/sign/'+encodeURIComponent(signed.bucket||'delivery-proof-v1')+'/'+signed.path.split('/').map(encodeURIComponent).join('/')+'?token='+encodeURIComponent(signed.token);
       const up=await fetch(uploadUrl,{method:'PUT',headers:{'Content-Type':file.type},body:file});
       if(!up.ok)throw new Error('proof_upload_failed');
