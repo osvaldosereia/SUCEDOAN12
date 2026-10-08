@@ -90,3 +90,29 @@ execute function public.ops2_guard_order_public_identity_v1();
 
 comment on column public.order_public_snapshots_v1.public_code is
   'Public order identity allocated once at order creation. Historical AA000 codes are unchanged.';
+
+-- Order numbers are now allocated immediately after orders INSERT, by writing
+-- a deliberately empty snapshot. The existing deferred order_items trigger
+-- used to skip *every* existing snapshot, so it would skip building product
+-- lines for all newly created orders. Refresh once while still in the original
+-- order transaction when the snapshot is a placeholder; never renumber it.
+-- Keep the existing SECURITY DEFINER behavior of this pre-existing trigger.
+create or replace function public.ops2_order_item_public_snapshot_trigger_v1()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $public_snapshot$
+begin
+  if exists (
+    select 1
+    from public.order_public_snapshots_v1 s
+    where s.order_id = new.order_id
+      and s.snapshot <> '{}'::jsonb
+  ) then
+    return new;
+  end if;
+  perform public.ops2_refresh_order_public_snapshot_v1(new.order_id);
+  return new;
+end;
+$public_snapshot$;
