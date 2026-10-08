@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const must=(v,m)=>{if(!v)throw new Error(m)};
+must(html.includes("openDriverFailureSheet"),'failed delivery sheet missing');
+must(html.includes("NÃO DEVOLVA AO ESTOQUE AGORA"),'stock safety warning missing');
+for(const label of ['Cliente ausente','Endereço não encontrado','Cliente pediu reagendamento','Problema no pagamento','Cliente recusou / desistiu','Veículo / rota','Outro'])must(html.includes(label),'failure reason missing: '+label);
+must(html.includes("RETORNAR AO DEPÓSITO"),'physical return state missing');
+must(!html.includes('data-driver-returned'),'driver must not confirm warehouse custody');
+must(html.includes('data-confirm-return'),'expedition must confirm warehouse custody');
+must(html.includes('A Expedição confirmará o recebimento físico.'),'driver return handoff guidance missing');
+must(html.includes("delivery_fail_register"),'canonical failed delivery action missing');
+must(html.includes("delivery_return_confirm"),'canonical physical return action missing');
+must(html.includes("delivery_return_resolve"),'canonical supervisor resolution action missing');
+must(html.includes("CANCELAR E DEVOLVER AO ESTOQUE"),'intact cancellation resolution missing');
+must(html.includes("LIBERAR PARA REENTREGA"),'redelivery resolution missing');
+console.log('smart delivery failed-delivery lifecycle: ok');

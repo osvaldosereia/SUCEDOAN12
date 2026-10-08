@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
+const worker=fs.readFileSync('supabase/functions/smart-delivery-optimize-v1/index.ts','utf8');
+const must=(v,m)=>{if(!v)throw new Error(m)};
+must(backend.includes('"smart_delivery_optimize"'),'optimizer admin action missing');
+const writeActions=backend.match(/const WRITE_ACTIONS=new Set\(\[([\s\S]*?)\]\)/)?.[1]||'';
+must(writeActions.includes('"smart_delivery_optimize"'),'optimizer must be viewer-protected');
+must(writeActions.includes('"smart_delivery_proof_upload_url"')&&writeActions.includes('"smart_delivery_proof_save"'),'delivery photo writes must be viewer-protected');
+must(backend.includes('db.rpc("smart_delivery_prepare_optimization_v1"'),'admin preflight missing');
+must(backend.includes('/functions/v1/smart-delivery-optimize-v1'),'admin worker bridge missing');
+must(worker.includes('smart_delivery_prepare_optimization_v1'),'worker prepare gate missing');
+must(worker.includes('smart_delivery_apply_optimization_v1'),'worker transactional apply missing');
+must(worker.includes('unsafe_optimizer_result'),'unsafe Google result guard missing');
+console.log('smart delivery optimizer admin bridge: ok');

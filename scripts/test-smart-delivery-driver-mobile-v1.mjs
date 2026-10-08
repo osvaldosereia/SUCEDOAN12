@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const must=(v,m)=>{if(!v)throw new Error(m)};
+must(html.includes("driverFocusStopId:null"),'driver current-stop state missing');
+must(html.includes("ENTREGA ATUAL"),'current delivery focus card missing');
+must(html.includes("ABRIR MAPS"),'driver Maps action missing');
+must(html.includes("✓ ENTREGUE"),'driver delivered action missing');
+must(html.includes("NÃO ENTREGOU"),'driver failure action missing');
+must(html.includes("Próxima →")&&html.includes("← Anterior"),'driver stop navigation missing');
+must(html.includes("Ver todas as entregas"),'driver route fallback list missing');
+must(html.includes("Pedido permanece #"),'order identity reminder missing');
+must(html.includes("RECEBER · "),'focused stop must surface payment method');
+must(html.includes("Valor do pedido:"),'focused stop must surface amount to collect');
+must(html.includes("state.driverFocusStopId=null"),'route change must reset focused stop');
+console.log('smart delivery driver mobile focus: ok');

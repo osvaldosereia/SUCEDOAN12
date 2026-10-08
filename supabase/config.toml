@@ -51,6 +51,10 @@ verify_jwt = false
 [functions.basket-lot-image-v1]
 verify_jwt = false
 
+# Otimizador interno: a função valida explicitamente a secret key no header apikey.
+# verify_jwt fica desligado para suportar as novas sb_secret_* keys, que não são JWTs.
+[functions.smart-delivery-optimize-v1]
+verify_jwt = false
 
 # Vitrine rápida pós-pedido: capability token opaco validado pela própria Edge Function.
 # Sem JWT público; RPCs de sessão/mutação permanecem service-role-only e o rollout inicia OFF.

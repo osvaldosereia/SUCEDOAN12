@@ -1,0 +1,52 @@
+name: Smart Delivery Route Optimizer CI
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/smart-delivery-*.mjs'
+      - 'supabase/functions/_shared/google-service-account-auth.mjs'
+      - 'supabase/functions/smart-delivery-optimize-v1/**'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/config.toml'
+      - 'scripts/test-smart-delivery-*.mjs'
+      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/manifest.webmanifest'
+      - 'vitrine/admin/sw.js'
+      - 'vitrine/admin/delivery-icon.svg'
+      - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/smart-delivery-*.mjs'
+      - 'supabase/functions/_shared/google-service-account-auth.mjs'
+      - 'supabase/functions/smart-delivery-optimize-v1/**'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/config.toml'
+      - 'scripts/test-smart-delivery-*.mjs'
+      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/manifest.webmanifest'
+      - 'vitrine/admin/sw.js'
+      - 'vitrine/admin/delivery-icon.svg'
+      - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
+permissions:
+  contents: read
+jobs:
+  adapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-smart-delivery-google-adapter-v1.mjs
+      - run: node scripts/test-smart-delivery-depot-env-v1.mjs
+      - run: node scripts/test-smart-delivery-google-auth-v1.mjs
+      - run: node scripts/test-smart-delivery-optimizer-admin-v1.mjs
+      - run: node scripts/test-smart-delivery-admin-ui-v1.mjs
+      - run: node scripts/test-smart-delivery-driver-mobile-v1.mjs
+      - run: node scripts/test-smart-delivery-proof-v1.mjs
+      - run: node scripts/test-smart-delivery-return-flow-v1.mjs
+      - run: node scripts/test-smart-delivery-security-gates-v1.mjs
+      - run: node scripts/test-smart-delivery-terminal-lifecycle-v1.mjs
+      - run: node scripts/test-smart-delivery-pwa-v1.mjs
+      - run: node scripts/test-smart-delivery-migration-parity-v1.mjs
