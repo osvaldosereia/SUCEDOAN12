@@ -8,6 +8,42 @@
   let pendingSubmitError=null;
   let pendingWhatsappReturnUrl=null;
 
+  // Keep one request UUID across timeouts/retries, including a page refresh.
+  // Only a short non-reversible checksum is stored; never customer registration data.
+  const CHECKOUT_ATTEMPT_STORAGE='da_checkout_attempt_v1';
+  let pendingCheckoutAttempt=null;
+  function checkoutAttemptSignature(body){
+    const raw=JSON.stringify({phone:body.whatsapp_phone||'',payment:body.payment_method||'',delivery_date:body.delivery_date||'',origin:body.whatsapp_origin||'',items:body.items||[],marketing:body.marketing_context||null});
+    let h1=2166136261,h2=2246822519;
+    for(let i=0;i<raw.length;i++){const c=raw.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,3266489917)}
+    return raw.length+':'+(h1>>>0).toString(16)+':'+(h2>>>0).toString(16);
+  }
+  function checkoutUuid(){
+    if(window.crypto?.randomUUID)return window.crypto.randomUUID();
+    const a=new Uint8Array(16);
+    if(window.crypto?.getRandomValues)window.crypto.getRandomValues(a);
+    else for(let i=0;i<a.length;i++)a[i]=Math.floor(Math.random()*256);
+    a[6]=(a[6]&15)|64;a[8]=(a[8]&63)|128;
+    const h=Array.from(a,x=>x.toString(16).padStart(2,'0')).join('');
+    return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
+  }
+  function checkoutAttemptId(body){
+    const signature=checkoutAttemptSignature(body);
+    if(pendingCheckoutAttempt?.signature!==signature){
+      let saved=null;
+      try{saved=JSON.parse(window.sessionStorage?.getItem(CHECKOUT_ATTEMPT_STORAGE)||'null')}catch{}
+      const valid=saved?.signature===signature&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(saved?.id||'');
+      pendingCheckoutAttempt=valid?saved:{signature,id:checkoutUuid()};
+      try{window.sessionStorage?.setItem(CHECKOUT_ATTEMPT_STORAGE,JSON.stringify(pendingCheckoutAttempt))}catch{}
+    }
+    return pendingCheckoutAttempt.id;
+  }
+  window.DonaAntoniaCheckoutAttempt={complete(){
+    pendingCheckoutAttempt=null;
+    try{window.sessionStorage?.removeItem(CHECKOUT_ATTEMPT_STORAGE)}catch{}
+  }};
+
+
   function byId(id){return document.getElementById(id)}
   function digits(value,max=20){return String(value??'').replace(/\D+/g,'').slice(0,max)}
   function field(id){const el=byId(id);return el?String(el.value??'').trim():''}
@@ -267,6 +303,7 @@
             // even if a legacy phone lookup is ambiguous. A customer ID is not proof.
             body.checkout_registration=draft;
           }
+          body.checkout_request_id=checkoutAttemptId(body);
           options={...options,body:JSON.stringify(body)};args=[input,options];
         }
       }catch(error){if(pendingSubmitError)throw error}
