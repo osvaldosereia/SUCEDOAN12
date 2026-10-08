@@ -156,6 +156,8 @@ function renderHistoryMetrics(){
 }
 function renderTests(){
   const latest=state.testRuns[0]||null;
+  const requiredCount=(config().test_cases||[]).length;
+  const latestComplete=Boolean(latest&&latest.draft_revision===state.revision&&Number(latest.failed_count)===0&&Number(latest.passed_count)===requiredCount&&Array.isArray(latest.scenario_keys)&&latest.scenario_keys.length===requiredCount);
   const safeHistory=[...state.events,...state.history].slice(0,30);
   const diagnostics=analyzeAnaAutomationDraft(config().triggers||[]);
   const diagnosticList=diagnostics.issues.slice(0,12).map(item=>`<div class="ana-diagnostic ${item.severity}"><strong>${item.severity==='critical'?'Crítico':'Aviso'}</strong><span>${esc(item.message)}</span></div>`).join('');
