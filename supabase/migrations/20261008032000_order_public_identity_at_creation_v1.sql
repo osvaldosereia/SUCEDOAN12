@@ -31,12 +31,14 @@ alter table public.order_public_snapshots_v1
 -- evaluates INSERT defaults even when it only updates the existing row.
 alter table public.order_public_snapshots_v1
   alter column public_code drop default;
--- Sentinel is never persisted: a BEFORE INSERT trigger resolves the existing
--- identity for refreshes or allocates one for an order lacking a snapshot.
+-- BEFORE INSERT resolves the existing identity for refreshes, or allocates
+-- a new identity if the order does not yet have a public snapshot.
 create or replace function public.ops2_resolve_snapshot_public_identity_v1()
 returns trigger language plpgsql security invoker set search_path=public,pg_temp as $$
 declare v_existing text;
 begin
+  -- Serialize simultaneous first snapshot writes for the same order UUID.
+  perform pg_advisory_xact_lock(hashtextextended(new.order_id::text, 0));
   select s.public_code into v_existing
   from public.order_public_snapshots_v1 s where s.order_id=new.order_id;
   if v_existing is not null then
