@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'vitrine/admin/index.html'
+      - 'montar/**'
+      - 'scripts/test-montar-picking-v1.mjs'
       - 'pedido/index.html'
       - 'p/index.html'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
@@ -38,6 +40,8 @@ on:
     branches: [main, feat/orders-clean-flow-v3-20261004, fix/preassembled-separation-v3-20261004, feat/orders-fiscal-flow-v4-20261004]
     paths:
       - 'vitrine/admin/index.html'
+      - 'montar/**'
+      - 'scripts/test-montar-picking-v1.mjs'
       - 'pedido/index.html'
       - 'p/index.html'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
@@ -73,6 +77,7 @@ jobs:
         run: |
           node scripts/test-admin-orders-clean-flow-v3.mjs
           node scripts/test-order-manual-queue-v1.mjs
+          node scripts/test-montar-picking-v1.mjs
           node scripts/test-order-separation-preassembled-v3.mjs
           node scripts/test-admin-orders-fiscal-flow-v4.mjs
           node scripts/test-order-customer-notifications-v1.mjs
