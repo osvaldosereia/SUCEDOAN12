@@ -62,6 +62,9 @@ jobs:
       - name: Validate ANA history metrics
         run: node scripts/test-ana-history-metrics-v1.mjs
 
+      - name: Validate ANA full-suite publish gate
+        run: node scripts/test-ana-full-suite-publish-gate-v1.mjs
+
       - name: Validate ANA simulator, history privacy and publish guards
         run: node scripts/test-ana-central-admin-ci-v1.mjs
       - name: Validate ANA Admin UI
