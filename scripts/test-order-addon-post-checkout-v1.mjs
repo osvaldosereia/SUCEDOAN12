@@ -33,7 +33,7 @@ assert.doesNotMatch(root,/crypto\.getRandomValues[\s\S]{0,300}order_addon/i,'bro
 assert.match(resilience,/order_addon_url/,'stock-adjusted checkout success must preserve quick-add CTA');
 assert.match(resilience,/Adicionar produtos ao mesmo pedido|Acrescentar produtos ao mesmo pedido/,'stock-adjusted success must expose same-order CTA when eligible');
 
-assert.match(pedido,/new URLSearchParams\(location\.hash\.replace\(\/\^#\//,''\)\)/,'public order page must read optional write capability only from fragment');
+assert.ok(pedido.includes("location.hash.replace(/^#/,'')"),'public order page must read optional write capability only from fragment');
 assert.match(pedido,/Adicionar produtos ao mesmo pedido|Acrescentar produtos ao mesmo pedido/,'public order page must expose quick-add CTA when capability is present');
 assert.match(pedido,/current_status[^\n]*storefront_received|storefront_received[^\n]*current_status/,'public order CTA must disappear after order advances');
 assert.match(pedido,/\/adicionar\/#t=/,'public order CTA must forward capability only as fragment');
