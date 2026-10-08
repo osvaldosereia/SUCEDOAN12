@@ -1,0 +1,22 @@
+name: ANA Post-purchase Intent CI
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/ana-post-purchase-intent-v1.mjs'
+      - 'scripts/test-ana-post-purchase-intent-v1.mjs'
+      - '.github/workflows/ana-post-purchase-intent-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/ana-post-purchase-intent-v1.mjs'
+      - 'scripts/test-ana-post-purchase-intent-v1.mjs'
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check supabase/functions/_shared/ana-post-purchase-intent-v1.mjs
+      - run: node scripts/test-ana-post-purchase-intent-v1.mjs
