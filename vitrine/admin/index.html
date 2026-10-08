@@ -2456,13 +2456,39 @@
 
   function smartRunSlotLabel(run){return run?.vehicle_key==='car_1'?'Rota 1':run?.vehicle_key==='car_2'?'Rota 2':'Rota'}
   function smartRunAssignmentText(run){return [run?.region?.name,run?.driver?.name,run?.vehicle?.label].filter(Boolean).join(' · ')||'Atribuição operacional pendente'}
+  function smartRunOptimizationState(run){
+    const stops=run?.stops||[],missing=stops.filter(s=>!Number.isFinite(Number(s.destination_latitude))||!Number.isFinite(Number(s.destination_longitude))).length;
+    if(run.status!=='planned')return {kind:'locked',label:'Rota em andamento',detail:'A ordem não pode mais ser otimizada.'};
+    if(run.loading_started_at||run.loaded_at)return {kind:'locked',label:'Carga iniciada',detail:'A ordem da rota foi travada para preservar a carga.'};
+    if(missing)return {kind:'pending',label:'Localização pendente',detail:missing+' parada(s) ainda sem GPS.',missing};
+    if(run.optimizer_provider==='google_route_optimization')return {kind:'done',label:'Rota otimizada',detail:'Sequência calculada e validada.'};
+    return {kind:'ready',label:'Pronta para otimizar',detail:'Todas as paradas possuem localização.'};
+  }
+  async function optimizeSmartRun(runId){
+    const run=(state.deliveryRuns||[]).find(r=>r.id===runId);if(!run)return;
+    const gate=smartRunOptimizationState(run);
+    if(gate.kind!=='ready'&&gate.kind!=='done'){toast(gate.detail);return}
+    const btn=document.querySelector('[data-smart-run-optimize="'+runId+'"]');if(btn){btn.disabled=true;btn.textContent='Otimizando…'}
+    try{
+      await api('smart_delivery_optimize',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({run_id:runId})});
+      await loadDeliveryRuns();paintExpeditionBody();toast('Rota otimizada e conferida');
+    }catch(e){
+      const msg=String(e?.message||'');
+      if(msg==='google_route_optimization_not_configured')toast('Otimização Google ainda não configurada no servidor');
+      else if(msg==='route_not_ready_for_optimization')toast('A rota mudou ou ainda não está pronta para otimizar');
+      else toast(errorMessage(msg));
+      if(btn){btn.disabled=false;btn.textContent='Otimizar rota'}
+    }
+  }
   function smartRunCardHtml(run){
     const stops=run?.stops||[],pendingLoad=stops.filter(s=>['planned','out_for_delivery'].includes(s.status)&&!s.loaded_at).length,loaded=stops.filter(s=>s.loaded_at).length,maps=runMapsHref(run);
-    const movable=run.status==='planned';
+    const movable=run.status==='planned',optimization=smartRunOptimizationState(run);
     return '<article class="panel" style="padding:12px;margin:0">'+
       '<div class="history-title"><div><strong>'+esc(smartRunSlotLabel(run))+' · '+esc(run.status==='dispatched'?'Em entrega':'Preparada')+'</strong><span>'+esc(smartRunAssignmentText(run))+'</span></div><b>'+stops.length+' parada(s)</b></div>'+
       '<div class="sub" style="margin:8px 0">'+loaded+' carregada(s)'+(pendingLoad?' · '+pendingLoad+' aguardando carga':' · carga conferida')+'</div>'+
       '<div class="dispatch-actions" style="margin-bottom:10px">'+
+        '<span class="pill '+(optimization.kind==='pending'?'warn-text':'')+'">'+esc(optimization.label)+'</span>'+
+        ((optimization.kind==='ready'||optimization.kind==='done')?'<button class="quick-link primary-link" type="button" data-smart-run-optimize="'+esc(run.id)+'">'+(optimization.kind==='done'?'Reotimizar rota':'Otimizar rota')+'</button>':'')+
         (movable?'<button class="quick-link" type="button" data-smart-run-edit="'+esc(run.id)+'">Ajustar rota</button>':'')+
         (pendingLoad?'<button class="quick-link primary-link" type="button" data-smart-run-load="'+esc(run.id)+'">Confirmar carga</button>':'')+
         (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
@@ -2573,6 +2599,7 @@
     if($('#deliveryPlanDriver'))$('#deliveryPlanDriver').onchange=e=>state.deliveryPlan.driver_id=e.target.value;
     if($('#deliveryPlanVehicle'))$('#deliveryPlanVehicle').onchange=e=>state.deliveryPlan.vehicle_id=e.target.value;
     if($('#smartDeliverySettings'))$('#smartDeliverySettings').onclick=openSmartDeliverySettings;
+    document.querySelectorAll('[data-smart-run-optimize]').forEach(b=>b.onclick=()=>optimizeSmartRun(b.dataset.smartRunOptimize));
     document.querySelectorAll('[data-smart-run-edit]').forEach(b=>b.onclick=()=>openSmartRunAssignment(b.dataset.smartRunEdit));
     document.querySelectorAll('[data-smart-run-load]').forEach(b=>b.onclick=()=>confirmRunLoading(b.dataset.smartRunLoad));
     document.querySelectorAll('[data-smart-stop-move]').forEach(b=>b.onclick=()=>openSmartStopMove(b.dataset.smartStopMove,b.dataset.smartSourceRun));
