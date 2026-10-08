@@ -34,8 +34,8 @@ assert.match(admin,/created_at/,'Pedidos precisam continuar ordenáveis por cheg
 assert.match(admin,/CONFIRMADO/,'Card precisa ter marco CONFIRMADO');
 assert.match(admin,/SEPARADO/,'Card precisa ter marco SEPARADO');
 assert.match(admin,/ENTREGUE/,'Card precisa ter marco ENTREGUE');
-assert.match(admin,/INICIAR SEPARA[CÇ][AÃ]O|CONTINUAR SEPARA[CÇ][AÃ]O|ABRIR VITRINE SEPARA[CÇ][AÃ]O/i,'Card precisa abrir/iniciar a separação');
-assert.match(admin,/ABRIR PEDIDO/i,'Card precisa abrir o pedido');
+assert.match(admin,/COMEÇAR SEPARA[CÇ][AÃ]O|CONTINUAR|INICIAR SEPARA[CÇ][AÃ]O/i,'Card precisa abrir/iniciar a separação');
+assert.match(admin,/Ver pedido|ABRIR PEDIDO/i,'Card precisa abrir o pedido');
 assert.match(admin,/orders-bottom-sheet/,'Separação deve existir como bottom sheet dentro do Admin');
 assert.match(admin,/data-separation-state="separated"/,'Separação precisa ter botão SEPARADO por item');
 assert.match(admin,/data-separation-state="missing"/,'Separação precisa ter botão FALTOU por item');
