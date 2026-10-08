@@ -9,5 +9,7 @@ must(html.includes("NÃO ENTREGOU"),'driver failure action missing');
 must(html.includes("Próxima →")&&html.includes("← Anterior"),'driver stop navigation missing');
 must(html.includes("Ver todas as entregas"),'driver route fallback list missing');
 must(html.includes("Pedido permanece #"),'order identity reminder missing');
+must(html.includes("RECEBER · "),'focused stop must surface payment method');
+must(html.includes("Valor do pedido:"),'focused stop must surface amount to collect');
 must(html.includes("state.driverFocusStopId=null"),'route change must reset focused stop');
 console.log('smart delivery driver mobile focus: ok');
