@@ -10,7 +10,7 @@ for(const [i,source] of scripts.entries())new Script(source,{filename:'admin-inl
 assert.match(html,/orderStatusTab:'manual'/);
 assert.match(html,/const ORDER_STATUS_TABS=\[\s*\{key:'manual',label:'SEPARAR AGORA'\}/);
 assert.doesNotMatch(html,/\{key:'all',label:'Todos'\}/);
-assert.match(html,/data-manual-queue-\+'\(manualSelected\?'remove':'add'\)/);
+assert.ok(html.includes("data-manual-queue-'+(manualSelected?'remove':'add')"),'manual queue action attached to cards');
 assert.match(html,/manualQueueRpc\(enable\?'add':'remove',orderId\)/);
 assert.match(html,/data-v3-separation/);
 assert.match(html,/function openOrderSeparationSheet\(id\)/);
