@@ -11,6 +11,8 @@ on:
       - 'p/index.html'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
       - 'scripts/test-order-manual-queue-v1.mjs'
+      - 'scripts/test-separator-assignment-repair-v1.mjs'
+      - 'supabase/sql/20261008_fix_separator_claudio_legacy_check_v1.sql'
       - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
       - 'scripts/test-order-separation-preassembled-v3.mjs'
       - 'scripts/test-admin-order-public-vitrine.mjs'
@@ -46,6 +48,8 @@ on:
       - 'p/index.html'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
       - 'scripts/test-order-manual-queue-v1.mjs'
+      - 'scripts/test-separator-assignment-repair-v1.mjs'
+      - 'supabase/sql/20261008_fix_separator_claudio_legacy_check_v1.sql'
       - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
       - 'scripts/test-order-separation-preassembled-v3.mjs'
       - 'scripts/test-admin-order-public-vitrine.mjs'
@@ -77,6 +81,7 @@ jobs:
         run: |
           node scripts/test-admin-orders-clean-flow-v3.mjs
           node scripts/test-order-manual-queue-v1.mjs
+          node scripts/test-separator-assignment-repair-v1.mjs
           node scripts/test-montar-picking-v1.mjs
           node scripts/test-order-separation-preassembled-v3.mjs
           node scripts/test-admin-orders-fiscal-flow-v4.mjs
