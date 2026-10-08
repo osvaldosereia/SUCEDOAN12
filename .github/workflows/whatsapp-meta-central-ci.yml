@@ -128,6 +128,7 @@ jobs:
       - {name: Meta response-body timeout, run: 'node scripts/test-attendance-meta-body-timeout-v1.mjs'}
       - {name: Meta webhook contract, run: 'node scripts/test-whatsapp-meta-webhook-v1.mjs'}
       - {name: Smart Delivery Meta location capture, run: 'node scripts/test-smart-delivery-whatsapp-location-capture-v2.mjs'}
+      - {name: Atendimento WhatsApp location card, run: 'node scripts/test-attendance-location-card-v1.mjs'}
       - {name: Smart Delivery operational RPC guards, run: 'node scripts/test-smart-delivery-operational-rpcs-v1.mjs'}
       - {name: Smart Delivery admin runtime, run: 'node scripts/test-smart-delivery-admin-runtime-v1.mjs'}
       - {name: Smart Delivery admin UI, run: 'node scripts/test-smart-delivery-admin-ui-v1.mjs'}
