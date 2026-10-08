@@ -17,4 +17,6 @@ for(const check of [
 ]) assert.match(sql,check);
 assert.doesNotMatch(sql,/sendTemplateViaMeta|sendTextViaMeta|http\.post|net\.http_post|delete from public\.whatsapp_messages_v1/i);
 assert.match(sql,/grant execute on function public\.ops2_whatsapp_canonical_template_body_v1.*to service_role/i);
+const ui=fs.readFileSync('vitrine/admin/atendimento/attendance-app.js','utf8');
+assert.match(ui,/msg\.message_type==='text'\|\|msg\.message_type==='template'/,'template Meta com texto deve ser renderizado como mensagem do chat');
 console.log('PASS attendance meta template history static checks');
