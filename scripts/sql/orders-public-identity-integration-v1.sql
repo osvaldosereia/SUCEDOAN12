@@ -119,3 +119,26 @@ end;
 $enrich$;
 
 -- The actual v3 wrapper follows from orders-production-v3-wrapper-v1.sql.
+
+-- Synthetic WhatsApp outbox schema for the ACTUAL checkout_auto claim RPC.
+-- Never connect this test to real provider credentials or live customer data.
+create table public.ops2_whatsapp_order_runtime_v1 (
+  id integer primary key,
+  mode text not null,
+  canary_order_id uuid
+);
+insert into public.ops2_whatsapp_order_runtime_v1(id,mode) values(1,'live');
+create table public.ops2_whatsapp_outbox_v1 (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references public.orders(id) on delete cascade,
+  recipient_kind text not null default 'customer',
+  status text not null default 'pending',
+  delivery_mode text not null default 'utility_template',
+  available_at timestamptz not null default now(),
+  attempt_count integer not null default 0,
+  locked_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  last_error text
+);
+
