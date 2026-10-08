@@ -13,7 +13,7 @@
   const CHECKOUT_ATTEMPT_STORAGE='da_checkout_attempt_v1';
   let pendingCheckoutAttempt=null;
   function checkoutAttemptSignature(body){
-    const raw=JSON.stringify({phone:body.whatsapp_phone||'',payment:body.payment_method||'',delivery_date:body.delivery_date||'',origin:body.whatsapp_origin||'',items:body.items||[],marketing:body.marketing_context||null});
+    const raw=JSON.stringify({phone:body.whatsapp_phone||'',payment:body.payment_method||'',delivery_date:body.delivery_date||'',origin:body.whatsapp_origin||'',items:body.items||[],marketing:body.marketing_context||null,registration:body.checkout_registration||null});
     let h1=2166136261,h2=2246822519;
     for(let i=0;i<raw.length;i++){const c=raw.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,3266489917)}
     return raw.length+':'+(h1>>>0).toString(16)+':'+(h2>>>0).toString(16);
