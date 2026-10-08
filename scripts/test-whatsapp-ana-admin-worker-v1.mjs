@@ -8,6 +8,7 @@ const config={behavior:{tone:'cordial',conciseness:'short',emoji:'sparingly',use
 ]};
 assert.deepEqual(routeAnaMessage(config,'Qual o horário de atendimento?','0975'),{path:'fixed_reply',triggerKey:'hours',responseText:'Atendemos em horário comercial.'});
 assert.equal(routeAnaMessage(config,'quero falar com atendente','1018').path,'handoff');
+assert.equal(routeAnaMessage(config,'quanto custa a cesta?','0975').reason,'dynamic_data_requires_confirmation');
 assert.equal(routeAnaMessage(config,'quanto custa a cesta?','0975').reason,'dynamic_data_requires_confirmation','unhandled price questions must fail closed before AI');
 assert.equal(routeAnaMessage(config,'tem estoque?','0975').reason,'dynamic_data_requires_confirmation','unhandled stock questions must fail closed before AI');
 const priced={...config,triggers:[{key:'price-safe',name:'Preço seguro',enabled:true,priority:100,channels:['all'],match:'phrase',phrases:['quanto custa'],actions:[{type:'fixed_reply',response_text:'Consulte o catálogo oficial.'}]}]};
