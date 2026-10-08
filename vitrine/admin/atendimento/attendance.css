@@ -45,3 +45,16 @@
   #mediaFileNote{display:none}
   .context-pane{top:0;z-index:90}
 }
+
+/* Localizador WhatsApp: visualização leve sem carregar mapas de terceiros no chat. */
+.location-card{display:grid;gap:7px;max-width:100%;white-space:normal;min-width:0}
+.location-title{display:block;font-size:13px;line-height:1.35;color:#174f36}
+.location-name{font-weight:750;font-size:12px;overflow-wrap:anywhere}
+.location-address{font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.location-coordinates{color:#647469;font-size:11px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.location-explanation{font-size:10px;line-height:1.4;color:#63766b;margin:1px 0 0}
+.location-card-unavailable .location-explanation{color:#8a5d0a}
+.location-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px}
+.location-actions a,.location-actions button{display:inline-flex;align-items:center;justify-content:center;text-align:center;min-height:33px;padding:6px 9px;border-radius:8px;border:1px solid #c9ded0;background:#eef7f1;color:#176b43;font-size:11px;font-weight:750;text-decoration:none;line-height:1.25;white-space:normal}
+.location-actions a:hover,.location-actions button:hover{background:#e0f0e6}
+@media(max-width:680px){.location-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.location-actions a:first-child{grid-column:1/-1}.location-actions a,.location-actions button{min-width:0;font-size:11px;min-height:38px}}
