@@ -38,4 +38,12 @@ assert.throws(() => readGoogleOptimizedOrder({ routes: [{ visits: [
 assert.throws(() => readGoogleOptimizedOrder({ routes: [{ visits: [
   { shipmentIndex: 0 }, { shipmentIndex: 1 }, { shipmentIndex: 9 }
 ] }] }, stops), /Invalid visit/);
+const badVisits = [undefined, null, "0", 0.5, -1, 99];
+for (const badIndex of badVisits) {
+  const visits = [{ shipmentIndex: badIndex }, { shipmentIndex: 1 }, { shipmentIndex: 2 }];
+  assert.throws(() => readGoogleOptimizedOrder({ routes: [{ vehicleIndex: 0, visits }] }, stops), /Invalid visit/);
+}
+assert.throws(() => readGoogleOptimizedOrder({ routes: [{ vehicleIndex: 0, visits: [
+  { shipmentIndex: 0, visitRequestIndex: "0" }, { shipmentIndex: 1 }, { shipmentIndex: 2 }
+] }] }, stops), /Invalid visit/);
 console.log("Smart Delivery Google adapter safety tests: OK");
