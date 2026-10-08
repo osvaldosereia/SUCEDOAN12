@@ -2659,7 +2659,10 @@
     try{
       input.disabled=true;
       const signed=await api('smart_delivery_proof_upload_url',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:orderId,mime_type:file.type})});
-      const up=await fetch(signed.signed_url,{method:'PUT',headers:{'Content-Type':file.type},body:file});
+      if(!signed?.token||!signed?.path)throw new Error('proof_upload_authorization_failed');
+      const storageBase=(API_BASE||'').replace(/\/functions\/v1\/?$/,'');
+      const uploadUrl=storageBase+'/storage/v1/object/upload/sign/'+encodeURIComponent(signed.bucket||'delivery-proof-v1')+'/'+signed.path.split('/').map(encodeURIComponent).join('/')+'?token='+encodeURIComponent(signed.token);
+      const up=await fetch(uploadUrl,{method:'PUT',headers:{'Content-Type':file.type},body:file});
       if(!up.ok)throw new Error('proof_upload_failed');
       await api('smart_delivery_proof_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:orderId,path:signed.path,mime_type:file.type})});
       await loadDeliveryRuns();paintDriverQueue();toast('Foto da entrega salva');
