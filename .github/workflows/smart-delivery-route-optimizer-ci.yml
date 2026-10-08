@@ -39,6 +39,7 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/test-smart-delivery-google-adapter-v1.mjs
+      - run: node scripts/test-smart-delivery-depot-env-v1.mjs
       - run: node scripts/test-smart-delivery-google-auth-v1.mjs
       - run: node scripts/test-smart-delivery-optimizer-admin-v1.mjs
       - run: node scripts/test-smart-delivery-admin-ui-v1.mjs
