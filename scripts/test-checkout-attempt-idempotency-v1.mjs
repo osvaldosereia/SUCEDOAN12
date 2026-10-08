@@ -18,6 +18,9 @@ assert.match(sql, /pg_advisory_xact_lock\(hashtextextended\('vitrine-checkout:'\
 assert.match(sql, /v_result := public\.create_vitrine_cart_order_v3\(/);
 assert.match(sql, /insert into public\.order_checkout_attempts_v1\(request_id,request_hash,order_id,result\)/);
 assert.match(sql, /checkout_request_changed/);
+assert.match(sql, /create or replace function public\.ops2_wait_vitrine_checkout_attempt_v1\(/i);
+assert.match(sql, /return public\.ops2_lookup_vitrine_checkout_attempt_v1\(p_request_id,p_request_context\)/i);
+assert.match(sql, /grant execute on function public\.ops2_wait_vitrine_checkout_attempt_v1\(uuid,jsonb\)/i);
 
 const replay = edge.indexOf('const replay=await replayExisting();');
 const stock = edge.indexOf('const stock=await reconcileOrderItemsForStock(requestedItems)');
@@ -25,6 +28,7 @@ assert.ok(replay > 0 && stock > replay, 'retry must resolve before stock is chec
 assert.match(edge, /ops2_create_vitrine_checkout_once_v1/);
 assert.match(edge, /invalid_checkout_request_id/);
 assert.match(edge, /checkout_attempt_lookup_unavailable/);
+assert.match(edge, /replayExisting\(true\)/, 'stock misses should await concurrent attempts');
 assert.match(edge, /if\(created\.data\?\.replayed===true\)/);
 assert.ok(edge.indexOf('if(created.data?.replayed===true)') < edge.indexOf('if(orderId&&ph){try{const linked'), 'concurrent replay must return before CRM and WhatsApp side effects');
 assert.match(client, /body\.checkout_request_id=checkoutAttemptId\(body\)/);
