@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Validate picker behavior and security
         run: node scripts/test-montar-picking-v1.mjs
       - name: Diff check
