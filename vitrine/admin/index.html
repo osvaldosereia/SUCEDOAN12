@@ -6912,7 +6912,7 @@
   function orderSeparationSummary(o){return o?.separation_summary||{}}
 
 
-  function orderV3SearchMatch(o,q){const n=normalize(q||'');if(!n)return true;return normalize([o.order_number,o.customer_name,o.whatsapp_phone_e164,o.delivery_address_snapshot?.street,o.delivery_address_snapshot?.district].filter(Boolean).join(' ')) .includes(n)}
+  function orderV3SearchMatch(o,q){const n=normalize(q||'');if(!n)return true;return normalize([o.public_code,o.public_order_code,o.order_number,o.customer_name,o.whatsapp_phone_e164,o.delivery_address_snapshot?.street,o.delivery_address_snapshot?.district].filter(Boolean).join(' ')) .includes(n)}
   function orderCustomerDataPendingReasons(o){
     const labels=['Cliente não identificado','Telefone pendente','Endereço incompleto','CPF/CNPJ pendente'];
     const a=o?.delivery_address_snapshot||{},missing=(Array.isArray(o?.registration_missing_fields)?o.registration_missing_fields:[]).map(x=>normalize(String(x||'')));
