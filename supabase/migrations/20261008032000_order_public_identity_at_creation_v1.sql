@@ -34,7 +34,7 @@ alter table public.order_public_snapshots_v1
 -- Sentinel is never persisted: a BEFORE INSERT trigger resolves the existing
 -- identity for refreshes or allocates one for an order lacking a snapshot.
 create or replace function public.ops2_resolve_snapshot_public_identity_v1()
-returns trigger language plpgsql security invoker set search_path=public,pg_temp as $
+returns trigger language plpgsql security invoker set search_path=public,pg_temp as $$
 declare v_existing text;
 begin
   select s.public_code into v_existing
@@ -45,7 +45,7 @@ begin
     new.public_code := public.ops2_next_order_public_code_4d_v1();
   end if;
   return new;
-end $;
+end $$;
 revoke all on function public.ops2_resolve_snapshot_public_identity_v1() from public,anon,authenticated;
 grant execute on function public.ops2_resolve_snapshot_public_identity_v1() to service_role;
 drop trigger if exists trg_ops2_resolve_snapshot_public_identity_v1 on public.order_public_snapshots_v1;
