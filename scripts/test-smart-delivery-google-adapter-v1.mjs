@@ -9,6 +9,8 @@ const stops = [
 const depot = { latitude: -15.596, longitude: -56.095 };
 const window = { startTime: "2026-10-09T08:00:00-04:00", endTime: "2026-10-09T18:00:00-04:00", depot };
 const request = buildGoogleOptimizeToursRequest(stops, window);
+assert.throws(() => buildGoogleOptimizeToursRequest(stops, {startTime:window.startTime,endTime:window.endTime}), /Depot coordinates required/);
+
 assert.equal(request.model.shipments.length, 3);
 assert.deepEqual(request.model.vehicles[0].startLocation, depot);
 assert.equal(request.model.vehicles.length, 1);
