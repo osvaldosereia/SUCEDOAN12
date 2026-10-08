@@ -12,7 +12,8 @@
 (()=>{'use strict';
   const qs=new URLSearchParams(location.search),k=(qs.get('k')||'').trim();
   if(!/^[a-f0-9]{16}$/i.test(k)){location.replace('/pedido/');return}
-  location.replace('/pedido/?k='+encodeURIComponent(k)+(qs.get('print')==='1'?'&print=1':''));
+  const hp=new URLSearchParams(location.hash.replace(/^#/,'')),a=(hp.get('a')||'').trim(),addon=/^[A-Za-z0-9_-]{32,96}$/.test(a)?'#a='+encodeURIComponent(a):'';
+  location.replace('/pedido/?k='+encodeURIComponent(k)+(qs.get('print')==='1'?'&print=1':'')+addon);
 })();
 </script>
 </body>
