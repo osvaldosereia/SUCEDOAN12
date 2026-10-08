@@ -119,4 +119,79 @@ begin
  if has_table_privilege('anon','public.order_checkout_attempts_v1','SELECT')
  then raise exception 'anonymous_checkout_attempt_access'; end if;
 end $check$;
-select 'PASS postgres identity, snapshot, immutability, replay and access checks' as result;
+-- The first checkout reserved ONE unit; a replay must not take another.
+do $check$
+declare v_available integer;
+begin
+  select available into v_available from public._test_stock_reservation_v1 where sku='X';
+  if v_available<>9 then raise exception 'replay_reserved_stock_twice: %',v_available; end if;
+end $check$;
+
+-- A hard failure after decrementing stock and inserting the order must roll
+-- back the order, stock update, new public snapshot and idempotency mapping.
+do $check$
+declare
+ v_order_count bigint;
+ v_snap_count bigint;
+ v_available integer;
+begin
+  select count(*) into v_order_count from public.orders;
+  select count(*) into v_snap_count from public.order_public_snapshots_v1;
+  begin
+    perform public.ops2_create_vitrine_checkout_once_v1(
+      '00000000-0000-4000-8000-000000000005',
+      '{"items":[{"sku":"X","qty":2}]}'::jsonb,
+      '+5565999999999','TEST_ERROR',
+      '[{"sku":"X","qty":2}]'::jsonb,'{}'::jsonb,'{}'::jsonb);
+    raise exception 'forced_failure_not_raised';
+  exception when others then
+    if sqlerrm <> 'simulated_reservation_or_order_failure' then raise; end if;
+  end;
+  select available into v_available from public._test_stock_reservation_v1 where sku='X';
+  if v_available<>9 then raise exception 'rollback_failed_stock_retained'; end if;
+  if (select count(*) from public.orders)<>v_order_count
+  then raise exception 'rollback_left_orphan_order'; end if;
+  if (select count(*) from public.order_public_snapshots_v1)<>v_snap_count
+  then raise exception 'rollback_left_orphan_snapshot'; end if;
+  if exists(select 1 from public.order_checkout_attempts_v1
+            where request_id='00000000-0000-4000-8000-000000000005')
+  then raise exception 'rollback_left_checkout_attempt'; end if;
+end $check$;
+
+-- Stock insufficient must not leave an order or attempt.
+do $check$
+declare v_order_count bigint;
+begin
+ select count(*) into v_order_count from public.orders;
+ begin
+   perform public.ops2_create_vitrine_checkout_once_v1(
+      '00000000-0000-4000-8000-000000000006',
+      '{"items":[{"sku":"X","qty":50}]}'::jsonb,
+      '+5565999999999','PIX',
+      '[{"sku":"X","qty":50}]'::jsonb,'{}'::jsonb,'{}'::jsonb);
+   raise exception 'out_of_stock_accepted';
+ exception when others then
+   if sqlerrm <> 'insufficient_stock' then raise; end if;
+ end;
+ if (select count(*) from public.orders)<>v_order_count
+ then raise exception 'failed_checkout_created_order'; end if;
+ if exists(select 1 from public.order_checkout_attempts_v1
+           where request_id='00000000-0000-4000-8000-000000000006')
+ then raise exception 'failed_checkout_created_attempt'; end if;
+end $check$;
+
+-- Verify actual role permissions, not only grants in migration source.
+do $check$
+begin
+ if has_function_privilege('anon',
+   'public.ops2_create_vitrine_checkout_once_v1(uuid,jsonb,text,text,jsonb,jsonb,jsonb)','EXECUTE')
+ then raise exception 'anonymous_checkout_rpc_access'; end if;
+ if has_function_privilege('authenticated',
+   'public.ops2_lookup_vitrine_checkout_attempt_v1(uuid,jsonb)','EXECUTE')
+ then raise exception 'authenticated_checkout_lookup_access'; end if;
+ if not has_function_privilege('service_role',
+   'public.ops2_create_vitrine_checkout_once_v1(uuid,jsonb,text,text,jsonb,jsonb,jsonb)','EXECUTE')
+ then raise exception 'service_role_checkout_execute_missing'; end if;
+end $check$;
+
+select 'PASS postgres identity, stock rollback, immutability, replay and access checks' as result;
