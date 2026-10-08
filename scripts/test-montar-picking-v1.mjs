@@ -22,7 +22,7 @@ for(const endpoint of ['order_separation_get','order_separation_assign','order_s
   assert.ok(script.includes("'"+endpoint+"'"),endpoint+' deve usar backend ja existente');
 assert.doesNotMatch(script,/api\(['"]orders['"]/,'a lista nao deve consultar todos os pedidos');
 assert.doesNotMatch(script,/pin:\s*['"]\d+/,'nenhum PIN fixo no novo frontend');
-assert.match(script,/queue\.some\(o=>o\.id===id\)/,'bloquear abertura de pedido fora da fila');
+assert.match(script,/queue\.some\(o=>o\.id===id&&o\.completed!==true\)/,'bloquear abertura de pedido fora da fila ou concluido');
 assert.match(script,/url\.searchParams\.set\('separacao',id\)/,'passar ID tecnico sem alterar o numero original');
 assert.match(script,/url\.searchParams\.set\('montar','1'\)/,'modo exclusivo de separacao');
 assert.match(script,/!p\.total\|\|p\.pending/,'conclusao bloqueada com itens pendentes');
