@@ -70,3 +70,25 @@ jobs:
           COUNT=$(psql -v ON_ERROR_STOP=1 -Atc "select count(*) from public.order_checkout_attempts_v1 where request_id='$REQUEST_ID';")
           test "$COUNT" = '1'
           echo "PASS simultaneous submissions returned one persisted order"
+      - name: Two distinct orders cannot reserve the last item twice
+        run: |
+          set -euo pipefail
+          # Prior assertions created two separate one-unit reservations.
+          # With stock=3, exactly ONE of the two new checkouts may succeed.
+          psql -v ON_ERROR_STOP=1 -c "update public.products set stock=3 where id='00000000-0000-4000-8000-0000000000aa';"
+          SQL_A="select (public.ops2_create_vitrine_checkout_once_v1('00000000-0000-4000-8000-000000000007','{}'::jsonb,'+5565999999999','PIX','[]'::jsonb,'{}'::jsonb,'{}'::jsonb))->>'order_id';"
+          SQL_B="select (public.ops2_create_vitrine_checkout_once_v1('00000000-0000-4000-8000-000000000008','{}'::jsonb,'+5565999999999','PIX','[]'::jsonb,'{}'::jsonb,'{}'::jsonb))->>'order_id';"
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL_A" > /tmp/stock-a.out 2> /tmp/stock-a.err &
+          FIRST=$!
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL_B" > /tmp/stock-b.out 2> /tmp/stock-b.err &
+          SECOND=$!
+          FIRST_OK=0
+          SECOND_OK=0
+          if wait "$FIRST"; then FIRST_OK=1; else grep -q insufficient_stock /tmp/stock-a.err; fi
+          if wait "$SECOND"; then SECOND_OK=1; else grep -q insufficient_stock /tmp/stock-b.err; fi
+          test $((FIRST_OK+SECOND_OK)) -eq 1
+          SUCCESS_COUNT=$(psql -v ON_ERROR_STOP=1 -Atc "select count(*) from public.order_checkout_attempts_v1 where request_id in ('00000000-0000-4000-8000-000000000007','00000000-0000-4000-8000-000000000008');")
+          test "$SUCCESS_COUNT" = 1
+          RESERVED=$(psql -v ON_ERROR_STOP=1 -Atc "select coalesce(sum(quantity),0)::integer from public.vitrine_stock_reservations where status='reserved';")
+          test "$RESERVED" = 3
+          echo "PASS separate concurrent checkouts did not oversell Bling-controlled stock"
