@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {canonicalMessagesFromMeta} from '../supabase/functions/_shared/whatsapp-core-v1.mjs';
 import {
   normalizeWhatsAppLocation,
   locationCoordinates,
@@ -25,6 +26,28 @@ for(const coordinates of [
   {latitude:Infinity,longitude:0},{latitude:'0;alert(1)',longitude:0}
 ])assert.equal(normalizeWhatsAppLocation(message(coordinates)),null);
 assert.equal(normalizeWhatsAppLocation({metadata:null}),null);
+
+// O Meta deve preservar o mesmo ponto recebido e ecoado pelo WhatsApp Business.
+for(const [field,list,direction] of [
+  ['messages','messages','inbound'],
+  ['smb_message_echoes','message_echoes','outbound']
+]){
+  const payload={entry:[{id:'123456789',changes:[{field,value:{
+    metadata:{phone_number_id:'123456789'},
+    [list]:[{
+      id:'wamid.location-test-'+direction,type:'location',
+      ...(direction==='inbound'?{from:'5565999999999'}:{to:'5565999999999'}),
+      timestamp:'1791460000',
+      location:{latitude:-15.6,longitude:-56.1,name:'Entrada',address:'Rua Teste'}
+    }]
+  }}]}]};
+  const parsed=canonicalMessagesFromMeta(payload,()=>({id:'account-test'}));
+  assert.equal(parsed.length,1);
+  assert.equal(parsed[0].message.direction,direction);
+  assert.equal(parsed[0].message.message_type,'location');
+  assert.equal(parsed[0].message.metadata.location.latitude,-15.6);
+  assert.equal(parsed[0].message.metadata.location.longitude,-56.1);
+}
 
 const app=fs.readFileSync('vitrine/admin/atendimento/attendance-app.js','utf8');
 const html=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
