@@ -2474,6 +2474,7 @@
       const msg=String(e?.message||'');
       if(msg==='google_route_optimization_not_configured')toast('Otimização Google ainda não configurada no servidor');
       else if(msg==='route_not_ready_for_optimization')toast('A rota mudou ou ainda não está pronta para otimizar');
+      else if(msg==='invalid_route_model')toast('Não foi possível otimizar: confira o depósito e as coordenadas das entregas');
       else toast(errorMessage(msg));
       if(btn){btn.disabled=false;btn.textContent='Otimizar rota'}
     }
