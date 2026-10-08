@@ -129,10 +129,13 @@
     $('queueCount').textContent=String(queue.length);
     $('queueList').innerHTML=visible.length?visible.map(o=>{
       const p=progress(o.counts),started=Boolean(o.separator_key || p.done);
-      return '<article class="queue-card"><div class="queue-card-main">'+
-        '<div class="card-top"><span class="status'+(started?' running':'')+'">'+(started?'EM SEPARAÇÃO':'PRONTO PARA SEPARAR')+'</span><span class="card-date">'+esc(formatDate(o.created_at))+'</span></div>'+
+      const assignedName=String(o.separator_label||SEPARATORS.find(x=>x.key===o.separator_key)?.label||'').trim();
+      const responsible=assignedName||'Responsável não identificado';
+      const assignmentBanner=started?'<div class="queue-assignment-banner" role="status"><strong>EM SEPARAÇÃO</strong><span aria-hidden="true">—</span><span class="queue-assignment-name">'+esc(responsible)+'</span></div>':'';
+      return '<article class="queue-card'+(started?' is-running':'')+'"><div class="queue-card-main">'+
+        '<div class="card-top"><span class="status'+(started?' running':'')+'">'+(started?'EM ANDAMENTO':'PRONTO PARA SEPARAR')+'</span><span class="card-date">'+esc(formatDate(o.created_at))+'</span></div>'+
+        assignmentBanner+
         '<div class="order-number">#'+esc(originalNumber(o))+'</div><div class="customer">'+esc(o.customer_name||'Cliente')+'</div>'+
-        (o.separator_label?'<div class="picker-meta">Responsável: '+esc(o.separator_label)+'</div>':'')+
         progressHtml(o.counts)+'</div>'+
         '<button type="button" class="queue-open" data-open="'+esc(o.id)+'">'+(started?'CONTINUAR SEPARAÇÃO':'INICIAR SEPARAÇÃO')+' <span aria-hidden="true">→</span></button></article>';
     }).join(''):'<section class="empty-card"><span class="empty-icon" aria-hidden="true">📦</span><h2>'+(queue.length?'Nenhum pedido encontrado':'Nenhum pedido para separar')+'</h2><p>'+(queue.length?'Tente buscar pelo número ou pelo nome do cliente.':'A fila começa vazia. O responsável deve usar o botão SEPARAR AGORA em um pedido confirmado no Admin.')+'</p></section>';
