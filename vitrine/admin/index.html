@@ -7996,7 +7996,7 @@
     w.document.close();
   }
 
-  function orderDisplayCode(o){const code=String(o?.public_code||o?.public_order_code||'').trim().toUpperCase();return /^[A-Z]{2}\d{3}$/.test(code)?code:'—'}
+  function orderDisplayCode(o){const code=String(o?.public_code||o?.public_order_code||'').trim().toUpperCase();return /^(?:[A-Z]{2}\d{3}|\d{4})$/.test(code)?code:'—'}
   function phoneDigits(v){
     let d=String(v||'').replace(/\D/g,'');
     if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;
