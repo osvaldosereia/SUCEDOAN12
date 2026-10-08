@@ -7,6 +7,7 @@ const migrations=fs.readdirSync('supabase/migrations')
   .sort();
 assert.equal(migrations.length,1,'exactly one order add-on foundation migration must exist');
 const migrationPath=path.join('supabase/migrations',migrations[0]);
+const addonSql=fs.readdirSync('supabase/migrations').filter(name=>name.includes('order_addon_')&&name.endsWith('.sql')).sort().map(name=>fs.readFileSync(path.join('supabase/migrations',name),'utf8')).join('\n');
 const sql=fs.readFileSync(migrationPath,'utf8');
 
 assert.match(sql,/private\.order_addon_runtime_v1/i,'runtime gate must live in private schema');
@@ -16,6 +17,9 @@ assert.match(sql,/window_minutes[^;]*default 20/i,'initial add-on window must de
 assert.match(sql,/private\.order_addon_sessions_v1/i,'private add-on session table required');
 assert.match(sql,/token_hash text not null/i,'only token hash is persisted');
 assert.doesNotMatch(sql,/token_raw|raw_token|plain_token/i,'raw token must never be persisted');
+assert.match(addonSql,/alter table private\.order_addon_runtime_v1 enable row level security/i,'runtime table must have RLS');
+assert.match(addonSql,/alter table private\.order_addon_sessions_v1 enable row level security/i,'sessions table must have RLS');
+assert.match(addonSql,/alter table private\.order_addon_operations_v1 enable row level security/i,'operations table must have RLS');
 assert.match(sql,/check \(token_hash ~ '\^\[a-f0-9\]\{64\}\$'\)/i,'token hash must be canonical SHA-256 hex');
 assert.match(sql,/status text not null default 'open'/i,'sessions need explicit lifecycle');
 assert.match(sql,/unique[^\n]*token_hash|unique \(token_hash\)/i,'token hashes must be unique');
