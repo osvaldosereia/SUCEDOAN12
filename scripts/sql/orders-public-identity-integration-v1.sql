@@ -70,7 +70,7 @@ grant select,update on public._test_stock_reservation_v1 to service_role;
 create or replace function public.create_vitrine_cart_order_v3(
  p_phone text,p_payment_method text,p_items jsonb,
  p_customer_snapshot jsonb,p_delivery jsonb
-) returns jsonb language plpgsql security invoker as $
+) returns jsonb language plpgsql security invoker as $$
 declare
  v_id uuid;
  v_qty integer := coalesce(nullif(p_items->0->>'qty','')::integer,1);
@@ -87,5 +87,5 @@ begin
     raise exception 'simulated_reservation_or_order_failure';
   end if;
   return jsonb_build_object('order_id',v_id,'stock_reserved',true,'total',75);
-end $;
+end $$;
 grant execute on function public.create_vitrine_cart_order_v3(text,text,jsonb,jsonb,jsonb) to service_role;
