@@ -175,10 +175,10 @@ function renderTests(){
       <label><span>Canal para teste</span><select id="anaTestChannel"><option value="0975">0975</option><option value="1018">1018</option></select></label>
       <label class="ana-check"><input type="checkbox" id="anaTestCustomerLinked"><span>Simular cliente identificado no cadastro</span></label>
       <label class="ana-check"><input type="checkbox" id="anaTestHumanMode"><span>Simular conversa assumida por humano</span></label>
-      <label class="ana-full"><span>Mensagem sintética</span><textarea id="anaTestInput" maxlength="500" placeholder="Ex.: Oi, quero saber o horário de atendimento"></textarea></label>
+      <label class="ana-full"><span>Mensagem sintética opcional</span><textarea id="anaTestInput" maxlength="500" placeholder="Opcional: teste uma frase adicional além da suíte obrigatória"></textarea></label>
     </div>
-    <button class="ana-button primary" data-action="test" ${canEdit()?'':'disabled'}>Executar teste sem envio</button>
-    ${latest?`<div class="ana-result">Último teste: ${esc(latest.passed_count)} passaram · ${esc(latest.failed_count)} falharam · revisão r${esc(latest.draft_revision)}${latest.failed_count?' · corrija antes de publicar':''}</div>`:''}
+    <button class="ana-button primary" data-action="test" ${canEdit()?'':'disabled'}>Executar ${requiredCount} testes obrigatórios</button>
+    ${latest?`<div class="ana-result">Última homologação: ${esc(latest.passed_count)} de ${esc(requiredCount)} passaram · ${esc(latest.failed_count)} falharam · revisão r${esc(latest.draft_revision)}${latestComplete?' · pronta para publicação':' · execute novamente nesta revisão antes de publicar'}</div>`:''}
     ${state.lastTest?`<div class="ana-result"><strong>Resultado dos cenários</strong>
       ${(state.lastTest.results||[]).map(item=>`<div>${item.passed?'✓':'✕'} ${esc(item.key)} · esperado ${esc(item.expected)} · obtido ${esc(item.actual)} · ${esc(item.reason)}</div>`).join('')}
       ${state.lastTest.custom_result?`<p>${esc(state.lastTest.custom_result.outcome)} · ${esc(state.lastTest.custom_result.reason)}</p>
