@@ -5,7 +5,9 @@ on:
       - 'supabase/functions/_shared/smart-delivery-*.mjs'
       - 'supabase/functions/_shared/google-service-account-auth.mjs'
       - 'supabase/functions/smart-delivery-optimize-v1/**'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'scripts/test-smart-delivery-google-*.mjs'
+      - 'scripts/test-smart-delivery-optimizer-admin-v1.mjs'
       - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
   push:
     branches: [main]
@@ -13,7 +15,9 @@ on:
       - 'supabase/functions/_shared/smart-delivery-*.mjs'
       - 'supabase/functions/_shared/google-service-account-auth.mjs'
       - 'supabase/functions/smart-delivery-optimize-v1/**'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'scripts/test-smart-delivery-google-*.mjs'
+      - 'scripts/test-smart-delivery-optimizer-admin-v1.mjs'
       - '.github/workflows/smart-delivery-route-optimizer-ci.yml'
 permissions:
   contents: read
@@ -28,3 +32,4 @@ jobs:
           node-version: '22'
       - run: node scripts/test-smart-delivery-google-adapter-v1.mjs
       - run: node scripts/test-smart-delivery-google-auth-v1.mjs
+      - run: node scripts/test-smart-delivery-optimizer-admin-v1.mjs
