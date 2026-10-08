@@ -9,7 +9,8 @@ export function validateRouteStops(stops) {
     if (stop.lat == null || stop.lng == null ||
         String(stop.lat).trim() === "" || String(stop.lng).trim() === "" ||
         !Number.isFinite(Number(stop.lat)) || !Number.isFinite(Number(stop.lng)) ||
-        Math.abs(Number(stop.lat)) > 90 || Math.abs(Number(stop.lng)) > 180)
+        Math.abs(Number(stop.lat)) > 90 || Math.abs(Number(stop.lng)) > 180 ||
+        (Number(stop.lat) === 0 && Number(stop.lng) === 0))
       throw new Error("Invalid coordinates");
   }
   return stops;
