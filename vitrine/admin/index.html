@@ -7217,15 +7217,40 @@
   }
   async function completeOrderSeparation(id,expected,assignment,back,btn){
     if(!assignment?.separator_key){toast('Escolha quem está separando este pedido');return}
-    if(!confirm('Concluir a separação deste pedido como '+(assignment.separator_label||separatorLabel(assignment.separator_key))+'?\n\nDepois disso o cliente receberá a atualização e a NF-e entrará automaticamente no fluxo fiscal.'))return;
+    if(btn.disabled)return;
+    if(!confirm('Concluir a separação deste pedido como '+(assignment.separator_label||separatorLabel(assignment.separator_key))+'?\n\nA separação só será considerada concluída após a confirmação do servidor.'))return;
     btn.disabled=true;btn.textContent='CONCLUINDO…';
+    let persisted=false;
     try{
       const result=await api('order_separation_complete',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:id,expected_order_updated_at:expected,separator_key:assignment.separator_key,operator:assignment.separator_label||separatorLabel(assignment.separator_key)||'Separação'})});
-      btn.textContent='SEPARAÇÃO CONCLUÍDA';
-      await refreshOrderSeparationBoard();
+      if(result?.status!=='ready')throw new Error('separation_completion_unconfirmed');
+      persisted=true;
+      btn.textContent='✓ PEDIDO JÁ SEPARADO';
+      // Post-save refresh must never suppress the completion receipt.
+      refreshOrderSeparationBoard().catch(()=>{});
       await showSeparationPackagingNotice(id,back);
-      setTimeout(async()=>{try{const o=state.orders.find(x=>String(x.id)===String(id));if(o?.status==='ready'){await loadFiscalForOrders([o]);paintOrderRows()}}catch{}},5000);
-    }catch(e){toast('A separação NÃO foi concluída · '+(e.message==='separator_required'?'escolha o separador responsável':errorMessage(e.message)));await loadOrderSeparationSheet(id,back)}
+      if(!document.documentElement.classList.contains('montar-picker-only')){
+        setTimeout(async()=>{try{const o=state.orders.find(x=>String(x.id)===String(id));if(o?.status==='ready'){await loadFiscalForOrders([o]);paintOrderRows()}}catch{}},5000);
+      }
+    }catch(e){
+      if(persisted){
+        toast('Separação salva, mas não foi possível abrir o aviso de embalagem.');
+        if(document.documentElement.classList.contains('montar-picker-only'))location.replace('/montar/?concluido='+encodeURIComponent(id));
+        return;
+      }
+      const reason=e.message==='separator_required'?'escolha o separador responsável':errorMessage(e.message);
+      await loadOrderSeparationSheet(id,back);
+      // The global toast is behind the full-screen vitrine: always show errors
+      // inside the sticky footer, next to the completion action.
+      const foot=back?.querySelector('.orders-sheet-foot');
+      if(foot){
+        const alert=document.createElement('div');
+        alert.className='orders-sheet-completion-error';
+        alert.setAttribute('role','alert');
+        alert.textContent='NÃO FOI CONCLUÍDO. '+reason+'. Confira e tente novamente.';
+        foot.prepend(alert);
+      }else toast('A separação NÃO foi concluída · '+reason);
+    }
   }
   function deliveryMethodV3(value){const s=normalize(value||'');if(s.includes('pix'))return 'pix';if(s.includes('dinheiro')||s==='cash')return 'cash';if(s.includes('credito')||s.includes('crédito')||s.includes('credit'))return 'credit_card';if(s.includes('refeicao')||s.includes('refeição')||s.includes('meal'))return 'meal_card';if(s.includes('alimentacao')||s.includes('alimentação')||s.includes('food'))return 'food_card';return 'other'}
   function deliveryMethodOptionsV3(current){const rows=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição'],['other','Outro']];return rows.map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('')}
