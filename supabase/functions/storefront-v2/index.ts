@@ -449,9 +449,31 @@ async function reconcileOrderItemsForStock(rawItems:any[]){
 async function submit(req:Request,p:any){
   const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),requestedItems=Array.isArray(p?.items)?p.items.slice(0,80):[],whatsappOriginRaw=txt(p?.whatsapp_origin,4),whatsappOrigin=['0975','1018'].includes(whatsappOriginRaw)?whatsappOriginRaw:'';
   if(!requestedItems.length)return {error:"empty_cart",status:400};
+  // Legacy storefront clients can still checkout; upgraded clients send a
+  // stable ID so lost responses and accidental retries reuse one order.
+  const rawAttempt=txt(p?.checkout_request_id,80);
+  const requestId=uid(rawAttempt);
+  if(rawAttempt&&!requestId)return {error:"invalid_checkout_request_id",status:400};
+  const deliveryDate=txt(p?.delivery_date,10);
+  const requestContext={phone_e164:ph,payment_method:pay,items:requestedItems,delivery_date:deliveryDate,whatsapp_origin:whatsappOrigin,marketing_context:p?.marketing_context||null};
+  async function replayExisting(){
+    if(!requestId)return null;
+    const existing=await db.rpc("ops2_lookup_vitrine_checkout_attempt_v1",{p_request_id:requestId,p_request_context:requestContext});
+    if(existing.error)return {error:"checkout_attempt_lookup_unavailable",status:503};
+    if(existing.data?.error)return {error:String(existing.data.error),status:409};
+    if(existing.data?.found!==true)return null;
+    const result=existing.data?.result||{};
+    const savedId=uid(result?.order_id);
+    if(!savedId)return {error:"checkout_attempt_order_missing",status:503};
+    const link=await db.rpc("ops2_order_public_link_v1",{p_order_id:savedId});
+    if(link.error||!link.data?.public_code)return {error:"checkout_attempt_public_link_unavailable",status:503};
+    return {...result,order_public_url:link.data.public_url||null,order_public_code:link.data.public_code,replayed:true};
+  }
+  const replay=await replayExisting();
+  if(replay)return replay;
   const stock=await reconcileOrderItemsForStock(requestedItems),items=stock.items;
-  if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:stock.adjusted_items};
-  const deliveryDate=txt(p?.delivery_date,10),del=deliveryDate?selectedDelivery(deliveryDate):null;
+  if(!items.length){const concurrentReplay=await replayExisting();if(concurrentReplay)return concurrentReplay;return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:stock.adjusted_items}}
+  const del=deliveryDate?selectedDelivery(deliveryDate):null;
   const ik=await sha(ip(req)||"unknown"),ipLimit=await db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600});
   if(ipLimit.error)return {error:"rate_limit_unavailable",status:503};
   if(ipLimit.data!==true)return {error:"rate_limited",status:429};
@@ -473,7 +495,7 @@ async function submit(req:Request,p:any){
   }
   const marketingCampaign=txt(p?.marketing_context?.campaign,80);
   const customerSnapshot={...(customer?{found:true,id:customer.id,display_name:customer.display_name||null,address:customer.address||null,marketing_opt_in:customer.marketing_opt_in===true,identity_status:"existing_optional"}:{}),...(whatsappOrigin?{whatsapp_origin:whatsappOrigin}:{}),...(marketingCampaign?{marketing_campaign:marketingCampaign}:{}),...(stock.stock_adjustment?{stock_adjusted_retry:true,stock_adjustments:stock.adjusted_items}:{})};
-  const created=await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}});
+  const created=requestId?await db.rpc("ops2_create_vitrine_checkout_once_v1",{p_request_id:requestId,p_request_context:requestContext,p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}}):await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}});
   if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit","basket_mold_unavailable","basket_mold_not_configured","basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items}}
   const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
