@@ -7,6 +7,8 @@ must(html.includes('capture="environment"'),'rear camera hint missing');
 must(html.includes('file.size>5242880'),'client proof size guard missing');
 must(html.includes("smart_delivery_proof_upload_url"),'signed proof upload action missing');
 must(html.includes("smart_delivery_proof_save"),'proof save action missing');
+must(html.includes("object/upload/sign"),'signed token upload endpoint missing');
+must(html.includes("signed.token"),'signed upload token missing');
 must(backend.includes('createSignedUploadUrl(path)'),'server signed upload missing');
 must(backend.includes('delivery-proof-v1'),'private proof bucket missing');
 must(backend.includes('path.startsWith(prefix)'),'proof path ownership guard missing');
