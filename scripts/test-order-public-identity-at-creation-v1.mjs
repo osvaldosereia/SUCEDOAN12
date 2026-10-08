@@ -30,6 +30,7 @@ test('new snapshot INSERTs obtain an identity in a BEFORE INSERT trigger', () =>
   assert.match(resolver, /if v_existing is not null then\s+new\.public_code := v_existing;/i);
   assert.match(resolver, /elsif new\.public_code is null then\s+new\.public_code := public\.ops2_next_order_public_code_4d_v1\(\);/i);
   assert.doesNotMatch(sql, /'0000'/);
+  assert.match(resolver, /pg_advisory_xact_lock\(hashtextextended\(new\.order_id::text,\s*0\)\)/i);
 });
 
 test('order creation does not invoke the sequence generator twice', () => {
