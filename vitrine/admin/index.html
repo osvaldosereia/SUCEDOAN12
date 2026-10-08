@@ -7182,14 +7182,15 @@
   async function showSeparationPackagingNotice(orderId,back){
     document.querySelector('.orders-packaging-backdrop')?.remove();
     const display=await resolveOriginalOrderCodeForPackaging(orderId);
-    if(!display){
+    const pickerMode=document.documentElement.classList.contains('montar-picker-only');
+    if(!display&&!pickerMode){
       toast('Separação concluída, mas não encontrei o número original do pedido. Abra o pedido antes de etiquetar a embalagem.');
       if(back?.isConnected)back.remove();else closeOrderSeparationSheet();
       await loadOrders();
       return;
     }
     const overlay=document.createElement('div');overlay.className='orders-packaging-backdrop';
-    overlay.innerHTML='<section class="orders-packaging-sheet" role="dialog" aria-modal="true" aria-labelledby="packagingNoticeTitle"><div class="orders-packaging-kicker">Separação concluída</div><strong class="orders-packaging-number">#'+esc(display)+'</strong><h2 class="orders-packaging-message" id="packagingNoticeTitle">ANOTE O NÚMERO DO PEDIDO NA EMBALAGEM</h2><button class="orders-packaging-ok" type="button">OK</button></section>';
+    overlay.innerHTML='<section class="orders-packaging-sheet" role="dialog" aria-modal="true" aria-labelledby="packagingNoticeTitle"><div class="orders-packaging-kicker">Separação concluída</div><strong class="orders-packaging-number">#'+esc(display||'NÚMERO NÃO DISPONÍVEL')+'</strong><h2 class="orders-packaging-message" id="packagingNoticeTitle">ANOTE O NÚMERO DO PEDIDO NA EMBALAGEM</h2><button class="orders-packaging-ok" type="button">OK</button></section>';
     document.body.appendChild(overlay);
     overlay.querySelector('.orders-packaging-ok').onclick=async()=>{
       overlay.querySelector('.orders-packaging-ok').disabled=true;
