@@ -1797,6 +1797,8 @@ async function smartDeliveryProofSave(p:any){
   if(object.error)return {error:"proof_object_not_found",status:409};
   const storedMime=String(object.data?.metadata?.mimetype||object.data?.contentType||mime||"").toLowerCase();
   if(storedMime&&!["image/jpeg","image/png","image/webp"].includes(storedMime))return {error:"invalid_proof_type",status:400};
+  const storedSize=Number(object.data?.metadata?.size||object.data?.size||0);
+  if(Number.isFinite(storedSize)&&storedSize>5242880)return {error:"proof_too_large",status:400};
   const metadata={...(stop.data.proof_metadata||{}),photo:{bucket:"delivery-proof-v1",path,mime_type:storedMime||mime||null,captured_at:new Date().toISOString()}};
   const q=await db.from("ops_delivery_stops").update({proof_metadata:metadata,updated_at:new Date().toISOString()}).eq("id",stop.data.id).select("id").maybeSingle();
   if(q.error)throw q.error;return {ok:true,stop_id:stop.data.id,proof_metadata:metadata};
