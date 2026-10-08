@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'vitrine/admin/index.html'
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'checkout-resilience.js'
       - 'pedido/index.html'
       - 'p/index.html'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
@@ -17,8 +20,10 @@ on:
       - 'scripts/test-order-addon-foundation-v1.mjs'
       - 'scripts/test-order-addon-atomic-v1.mjs'
       - 'scripts/test-order-addon-public-storefront-v1.mjs'
+      - 'scripts/test-order-addon-post-checkout-v1.mjs'
       - 'adicionar/index.html'
       - 'supabase/functions/order-addon-public-v1/index.ts'
+      - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/config.toml'
       - 'supabase/migrations/*order_addon_*.sql'
       - 'supabase/migrations/*orders_clean_flow_v3*.sql'
@@ -37,8 +42,13 @@ on:
     branches: [main, feat/orders-clean-flow-v3-20261004, fix/preassembled-separation-v3-20261004, feat/orders-fiscal-flow-v4-20261004]
     paths:
       - 'vitrine/admin/index.html'
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'checkout-resilience.js'
       - 'pedido/index.html'
       - 'p/index.html'
+      - 'scripts/test-order-addon-post-checkout-v1.mjs'
+      - 'supabase/functions/storefront-v2/index.ts'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
       - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
       - 'scripts/test-order-separation-preassembled-v3.mjs'
@@ -76,6 +86,7 @@ jobs:
           node scripts/test-order-addon-foundation-v1.mjs
           node scripts/test-order-addon-atomic-v1.mjs
           node scripts/test-order-addon-public-storefront-v1.mjs
+          node scripts/test-order-addon-post-checkout-v1.mjs
       - name: Existing WhatsApp transport contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
       - name: Public order storefront and printing
@@ -95,6 +106,8 @@ jobs:
           }
           NODE
       - name: Quick-add Edge syntax
-        run: node --experimental-strip-types --check supabase/functions/order-addon-public-v1/index.ts
+        run: |
+          node --experimental-strip-types --check supabase/functions/order-addon-public-v1/index.ts
+          node --experimental-strip-types --check supabase/functions/storefront-v2/index.ts
       - name: Diff check
         run: git diff --check HEAD^ HEAD || git diff --check

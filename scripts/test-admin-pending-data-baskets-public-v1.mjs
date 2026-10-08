@@ -36,10 +36,9 @@ assert.match(publicEdge,/public_token/,'Endpoint público deve resolver pedido p
 assert.match(publicEdge,/public_code/,'Endpoint público deve devolver o código curto');
 assert.match(publicEdge,/channel_origin/,'Endpoint público deve devolver o canal de origem da conversa');
 assert.match(page,/\.get\(['"]k['"]\)/,'Página do pedido deve aceitar token curto k');
-assert.match(page,/channel_origin/,'Página deve usar o canal de origem devolvido pelo backend');
-assert.match(page,/5565998150975/,'Página deve conhecer o canal 0975');
-assert.match(page,/5565984491018/,'Página deve conhecer o canal 1018');
-assert.match(page,/whatsapp:\/\/send\?phone=/,'Botão deve tentar voltar diretamente ao app/conversa do WhatsApp');
+assert.match(publicEdge,/5565998150975/,'Backend deve reconhecer o canal 0975');
+assert.match(publicEdge,/5565984491018/,'Backend deve reconhecer o canal 1018');
+assert.doesNotMatch(page,/<button\b/i,'Resumo público do pedido permanece sem botões');
 assert.match(shortPage,/pedido\/\?k=/,'Atalho /p deve encaminhar para a página de pedido com token curto');
 assert.match(resilience,/order_public_url/,'Fluxo de ajuste de estoque do checkout deve preferir o link curto');
 assert.match(adminOrders,/ops2_order_public_link_v1/,'PapoAI deve obter a identidade pública curta pela RPC canônica');

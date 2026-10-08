@@ -21,7 +21,7 @@ function setup(search, ok = true) {
   const buttons = new Map();
   const image = {loading: 'lazy', decode: () => {effects.imageRequested = true; return imageReady;}};
   const context = vm.createContext({
-    URLSearchParams, setTimeout, clearTimeout, location: {search},
+    URLSearchParams, setTimeout, clearTimeout, location: {search, hash: ''},
     document: {getElementById: id => id === 'app' ? app : buttons.get(id), images: [image]},
     window: {print: () => effects.prints++},
     fetch: async () => {effects.fetches++; return {ok, json: async () => ({ok, snapshot, public_code: 'AB123'})};}
