@@ -222,4 +222,79 @@ begin
  then raise exception 'service_role_checkout_execute_missing'; end if;
 end $check$;
 
-select 'PASS postgres identity, stock rollback, immutability, replay and access checks' as result;
+-- No external message is sent: this uses the actual claim function and
+-- synthetic outbox rows to prove a checkout replay cannot claim an already
+-- accepted/sent utility template again.
+insert into public.ops2_whatsapp_outbox_v1(order_id,recipient_kind,status,delivery_mode)
+select (receipt->>'order_id')::uuid,'customer','pending','utility_template'
+from checkout_first;
+
+create temporary table outbox_claim_first as
+select public.ops2_claim_checkout_order_whatsapp_v1(
+ (select (receipt->>'order_id')::uuid from checkout_first)
+) as claim;
+do $outbox$
+begin
+ if (select claim->>'found' from outbox_claim_first)<>'true' then
+   raise exception 'outbox_first_claim_missing';
+ end if;
+ if not exists(select 1 from public.ops2_whatsapp_outbox_v1
+  where order_id=(select (receipt->>'order_id')::uuid from checkout_first)
+  and status='sending' and attempt_count=1) then
+   raise exception 'outbox_first_claim_state_invalid';
+ end if;
+end $outbox$;
+
+create temporary table outbox_claim_while_sending as
+select public.ops2_claim_checkout_order_whatsapp_v1(
+ (select (receipt->>'order_id')::uuid from checkout_first)
+) as claim;
+do $outbox$
+begin
+ if (select claim->>'found' from outbox_claim_while_sending)<>'false'
+ then raise exception 'outbox_claimed_while_sending_twice'; end if;
+end $outbox$;
+
+update public.ops2_whatsapp_outbox_v1 set status='sent',locked_at=null
+where order_id=(select (receipt->>'order_id')::uuid from checkout_first);
+create temporary table outbox_claim_after_sent as
+select public.ops2_claim_checkout_order_whatsapp_v1(
+ (select (receipt->>'order_id')::uuid from checkout_first)
+) as claim;
+do $outbox$
+begin
+ if (select claim->>'found' from outbox_claim_after_sent)<>'false'
+ then raise exception 'outbox_resent_successful_message'; end if;
+ if exists(select 1 from public.ops2_whatsapp_outbox_v1
+  where order_id=(select (receipt->>'order_id')::uuid from checkout_first)
+  and attempt_count<>1) then
+   raise exception 'outbox_incremented_sent_message_attempt_count';
+ end if;
+end $outbox$;
+
+-- The runtime-off mode must not claim any message.
+insert into public.ops2_whatsapp_outbox_v1(order_id,recipient_kind,status,delivery_mode)
+select (receipt->>'order_id')::uuid,'customer','pending','utility_template'
+from checkout_first;
+update public.ops2_whatsapp_order_runtime_v1 set mode='off' where id=1;
+do $outbox$
+declare v_claim jsonb;
+begin
+ v_claim:=public.ops2_claim_checkout_order_whatsapp_v1(
+   (select (receipt->>'order_id')::uuid from checkout_first));
+ if v_claim->>'reason'<>'runtime_off' then
+   raise exception 'outbox_runtime_off_did_not_suppress';
+ end if;
+end $outbox$;
+update public.ops2_whatsapp_order_runtime_v1 set mode='live' where id=1;
+do $outbox$
+declare v_claim jsonb;
+begin
+ v_claim:=public.ops2_claim_checkout_order_whatsapp_v1(
+   (select (receipt->>'order_id')::uuid from checkout_first));
+ if v_claim->>'found'<>'true' then
+   raise exception 'outbox_runtime_resume_not_claimed';
+ end if;
+end $outbox$;
+
+select 'PASS postgres identity, stock rollback, immutability, idempotency and outbox claim' as result;
