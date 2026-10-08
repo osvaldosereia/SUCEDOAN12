@@ -6,6 +6,7 @@ on:
       - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
       - 'supabase/migrations/20261008124500_checkout_attempt_idempotency_v1.sql'
       - 'scripts/sql/orders-public-identity-*.sql'
+      - 'scripts/sql/orders-production-v3-wrapper-v1.sql'
       - '.github/workflows/orders-public-identity-postgres-ci.yml'
   workflow_dispatch:
 permissions:
@@ -45,6 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-public-identity-integration-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-production-v3-wrapper-v1.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261008124500_checkout_attempt_idempotency_v1.sql
           psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-public-identity-assertions-v1.sql
