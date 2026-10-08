@@ -6,12 +6,13 @@ const stops = [
   { id: "stop-b", lat: -15.602, lng: -56.099 },
   { id: "stop-c", lat: -15.603, lng: -56.100 }
 ];
-const window = { startTime: "2026-10-09T08:00:00-04:00", endTime: "2026-10-09T18:00:00-04:00" };
+const depot = { latitude: -15.596, longitude: -56.095 };
+const window = { startTime: "2026-10-09T08:00:00-04:00", endTime: "2026-10-09T18:00:00-04:00", depot };
 const request = buildGoogleOptimizeToursRequest(stops, window);
 assert.equal(request.model.shipments.length, 3);
+assert.deepEqual(request.model.vehicles[0].startLocation, depot);
 assert.equal(request.model.vehicles.length, 1);
 assert.equal(request.model.shipments[0].label, "stop-a");
-const depot = { latitude: -15.596, longitude: -56.095 };
 const roundTrip = buildGoogleOptimizeToursRequest(stops, { ...window, depot });
 assert.deepEqual(roundTrip.model.vehicles[0].startLocation, depot);
 assert.deepEqual(roundTrip.model.vehicles[0].endLocation, depot);
