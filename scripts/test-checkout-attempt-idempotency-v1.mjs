@@ -31,6 +31,17 @@ assert.match(edge, /invalid_checkout_request_id/);
 assert.match(edge, /checkout_attempt_lookup_unavailable/);
 assert.match(edge, /replayExisting\(true\)/, 'stock misses should await concurrent attempts');
 assert.match(edge, /if\(created\.data\?\.replayed===true\)/);
+const initialReplayBlock=edge.slice(edge.indexOf('async function replayExisting('),edge.indexOf('const replay=await replayExisting();'));
+const concurrentReplayBlock=edge.slice(edge.indexOf('if(created.data?.replayed===true)'),edge.indexOf('if(orderId&&ph){try{const linked'));
+assert.match(initialReplayBlock,/if\(ph\)kickWhatsappOrderOutbound\(savedId\)/,
+  'replay after a lost response must resume pending WhatsApp outbox delivery');
+assert.match(concurrentReplayBlock,/if\(ph\)kickWhatsappOrderOutbound\(orderId\)/,
+  'concurrent replay must resume pending outbox without duplicating the order');
+assert.match(initialReplayBlock,/minimum_order_cents:MINIMUM_ORDER_CENTS/,
+  'replayed checkout preserves the minimum order metadata');
+assert.match(concurrentReplayBlock,/minimum_order_cents:MINIMUM_ORDER_CENTS/,
+  'concurrent replay preserves the checkout metadata');
+
 assert.ok(edge.indexOf('if(created.data?.replayed===true)') < edge.indexOf('if(orderId&&ph){try{const linked'), 'concurrent replay must return before CRM and WhatsApp side effects');
 assert.match(client, /body\.checkout_request_id=checkoutAttemptId\(body\)/);
 assert.match(client, /sessionStorage\?\.setItem\(CHECKOUT_ATTEMPT_STORAGE/);
