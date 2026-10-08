@@ -468,7 +468,11 @@ async function submit(req:Request,p:any){
     if(!savedId)return {error:"checkout_attempt_order_missing",status:503};
     const link=await db.rpc("ops2_order_public_link_v1",{p_order_id:savedId});
     if(link.error||!link.data?.public_code)return {error:"checkout_attempt_public_link_unavailable",status:503};
-    return {...result,order_public_url:link.data.public_url||null,order_public_code:link.data.public_code,replayed:true};
+    // The order + outbox are committed before this request finishes. A lost
+    // response must be able to resume the pending utility template delivery.
+    // The outbox claim excludes sent/accepted messages, so re-kicking is safe.
+    if(ph)kickWhatsappOrderOutbound(savedId);
+    return {...result,order_public_url:link.data.public_url||null,order_public_code:link.data.public_code,phone_attached:Boolean(ph),customer_status:result.registration_complete===true?"registered":"pending_registration",minimum_order_cents:MINIMUM_ORDER_CENTS,replayed:true};
   }
   const replay=await replayExisting();
   if(replay)return replay;
@@ -506,7 +510,10 @@ async function submit(req:Request,p:any){
     if(!uid(orderId))return {error:"checkout_attempt_order_missing",status:503};
     const link=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});
     if(link.error||!link.data?.public_code)return {error:"checkout_attempt_public_link_unavailable",status:503};
-    return {...created.data,order_public_url:link.data.public_url||null,order_public_code:link.data.public_code,replayed:true};
+    // Another identical checkout may have committed before our RPC returned.
+    // Resume only pending outbox delivery, never make a second order or event.
+    if(ph)kickWhatsappOrderOutbound(orderId);
+    return {...created.data,order_public_url:link.data.public_url||null,order_public_code:link.data.public_code,phone_attached:Boolean(ph),customer_status:created.data.registration_complete===true?"registered":"pending_registration",minimum_order_cents:MINIMUM_ORDER_CENTS,replayed:true};
   }
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
   if(orderId){try{const publicLink=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});if(!publicLink.error)publicOrderLink=publicLink.data||null}catch(e){console.error("order_public_link",txt((e as any)?.message,180))}}
