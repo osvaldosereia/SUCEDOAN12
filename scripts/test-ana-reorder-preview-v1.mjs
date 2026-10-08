@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {buildAnaReorderPreviewV1 as preview} from '../supabase/functions/_shared/ana-reorder-preview-v1.mjs';
+const original=[{product_id:'rice_1',quantity:2},{product_id:'soap_1',quantity:1}];
+const catalog=[{product_id:'rice_1',price_cents:2500,sellable_stock:8,is_active:true},{product_id:'soap_1',price_cents:350,sellable_stock:0,is_active:true}];
+const result=preview({previousItems:original,catalogItems:catalog});
+assert.equal(result.status,'review_required');
+assert.equal(result.subtotal_cents,5000);
+assert.equal(result.items[1].status,'insufficient_stock');
+assert.equal(result.has_unavailable,true);
+assert.equal(result.checkout_allowed,false);
+assert.equal(result.creates_order,false);
+assert.equal(result.reserves_stock,false);
+assert.equal(preview({previousItems:[{product_id:'rice_1',quantity:1},{product_id:'rice_1',quantity:1}],catalogItems:catalog}).items[0].requested_quantity,2);
+assert.equal(preview({previousItems:[{product_id:'rice_1',quantity:1001}],catalogItems:catalog}).status,'invalid_input');
+assert.equal(preview({previousItems:[{product_id:'rice_1',quantity:1}],catalogItems:[{product_id:'rice_1',price_cents:1.2,sellable_stock:8,is_active:true}]}).items[0].status,'unavailable');
+assert.equal(preview({previousItems:[{product_id:'rice_1',quantity:1}],catalogItems:[]}).items[0].status,'unavailable');
+assert.equal(preview({previousItems:[{product_id:'rice_1',quantity:1}],catalogItems:[{product_id:'rice_1',price_cents:2400,sellable_stock:8,is_active:true}]}).subtotal_cents,2400);
+console.log('PASS: R9 reorder preview requires review, uses canonical prices and never creates an order');
