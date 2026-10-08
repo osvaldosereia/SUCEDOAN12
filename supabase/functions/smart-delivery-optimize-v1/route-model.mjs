@@ -1,3 +1,4 @@
+// Pure Google Route Optimization contract; no secrets, side effects or customer data.
 export function validateRouteStops(stops) {
   if (!Array.isArray(stops) || stops.length < 1 || stops.length > 30) throw new Error("invalid_stop_count");
   const seen = new Set();
@@ -23,11 +24,16 @@ export function buildGoogleRequest(stops) {
 }
 export function parseGoogleResponse(response, stops) {
   if (!Array.isArray(response?.routes) || response.routes.length !== 1 ||
-      response.skippedShipments?.length) throw new Error("invalid_response");
-  const visits = response.routes[0].visits;
+      !Array.isArray(response.skippedShipments || []) || response.skippedShipments?.length)
+    throw new Error("invalid_response");
+  const route = response.routes[0];
+  if (route.vehicleIndex !== undefined && route.vehicleIndex !== 0) throw new Error("unexpected_vehicle");
+  const visits = route.visits;
   if (!Array.isArray(visits) || visits.length !== stops.length) throw new Error("incomplete_response");
   const seen = new Set();
   return visits.map(visit => {
+    if (visit.shipmentIndex == null || visit.isPickup === true ||
+        visit.visitRequestIndex != null && visit.visitRequestIndex !== 0) throw new Error("invalid_visit");
     const index = Number(visit.shipmentIndex);
     if (!Number.isInteger(index) || index < 0 || index >= stops.length || seen.has(index))
       throw new Error("invalid_visit");

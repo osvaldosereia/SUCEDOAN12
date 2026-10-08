@@ -15,6 +15,9 @@ for(const bad of [
  {},{routes:[]},{routes:[{visits:[{shipmentIndex:0}]}]},
  {routes:[{visits:[{shipmentIndex:0},{shipmentIndex:0}]}]},
  {routes:[{visits:[{shipmentIndex:0},{shipmentIndex:2}]}]},
- {routes:[{visits:[{shipmentIndex:0},{shipmentIndex:1}]}],skippedShipments:[{index:1}]}
+ {routes:[{visits:[{shipmentIndex:0},{shipmentIndex:1}]}],skippedShipments:[{index:1}]},
+ {routes:[{vehicleIndex:1,visits:[{shipmentIndex:0},{shipmentIndex:1}]}]},
+ {routes:[{visits:[{}, {shipmentIndex:1}]}]},
+ {routes:[{visits:[{shipmentIndex:0,isPickup:true},{shipmentIndex:1}]}]}
 ]) assert.throws(()=>parseGoogleResponse(bad,stops));
 console.log("Smart Delivery Google optimizer model: ok");
