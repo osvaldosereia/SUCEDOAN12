@@ -7,6 +7,8 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Dona Antônia · Admin da Vitrine</title>
   <link rel="preload" href="/img/logoantonia5.png" as="image">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <style>
     :root{--ink:#18221c;--muted:#66716a;--line:#e5e9e6;--soft:#f5f7f5;--brand:#176b43;--brand2:#0f5836;--danger:#9d2235;--warn:#96650b;--radius:14px}
     *{box-sizing:border-box}
@@ -8170,6 +8172,14 @@
 </script>
 <script src="/vitrine/admin/basket-guided-builder.js?v=guided-v3"></script>
 <script src="/vitrine/admin/basket-admin-section.js?v=canonical-v3"></script>
+
+<script>
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', {scope:'./'}).catch(() => {});
+  }, {once:true});
+}
+</script>
 
 </body>
 </html>
