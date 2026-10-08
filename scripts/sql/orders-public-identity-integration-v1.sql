@@ -141,4 +141,3 @@ create table public.ops2_whatsapp_outbox_v1 (
   updated_at timestamptz not null default now(),
   last_error text
 );
-
