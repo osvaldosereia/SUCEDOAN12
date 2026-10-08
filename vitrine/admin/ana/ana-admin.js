@@ -169,8 +169,8 @@ function renderTests(){
   </section>
   ${renderHistoryMetrics()}
   <section class="ana-card">
-    <h2>Simular mensagem</h2>
-    <p class="ana-muted">Use somente exemplos fictícios. O resultado não pode ser enviado ao cliente.</p>
+    <h2>Homologação sem envio</h2>
+    <p class="ana-muted">A suíte obrigatória roda sempre. A mensagem sintética abaixo é opcional e serve apenas para testar um caso adicional.</p><div class="ana-pills">${badge(latestComplete?`r${state.revision} homologada`:`r${state.revision} aguardando homologação`,latestComplete?'green':'amber')}${badge(`${requiredCount} cenário(s) obrigatório(s)`)}</div>
     <div class="ana-form-grid">
       <label><span>Canal para teste</span><select id="anaTestChannel"><option value="0975">0975</option><option value="1018">1018</option></select></label>
       <label class="ana-check"><input type="checkbox" id="anaTestCustomerLinked"><span>Simular cliente identificado no cadastro</span></label>
