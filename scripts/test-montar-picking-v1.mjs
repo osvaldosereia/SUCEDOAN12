@@ -35,6 +35,8 @@ assert.doesNotMatch(migration,/\b(create trigger|update public\.orders|insert in
 
 
 assert.match(admin,/await manualQueueRpc\('list'\)/,'validar fila manual na entrada do Admin');
+assert.match(admin,/if\(orderCustomerDataPending\(selectedOrder\)\)/,'respeitar checagem existente de dados do cliente');
+assert.match(admin,/state\.orders=\[selectedOrder\]/,'a vitrine acessa somente o pedido selecionado');
 assert.match(admin,/await openOrderSeparationSheet\(sharedSeparationId\)/,'abrir vitrine de separacao existente');
 assert.match(admin,/html\.montar-picker-only #app\{display:none!important\}/,'ocultar menus administrativos');
 assert.match(admin,/if\(close\)close\.onclick=\(\)=>location\.replace\('\/montar\/'\)/,'voltar para fila quando fechar');
