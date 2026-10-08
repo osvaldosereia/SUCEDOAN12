@@ -8117,7 +8117,21 @@
         if(!Array.isArray(allowed.order_ids)||!allowed.order_ids.some(x=>String(x)===sharedSeparationId)){
           location.replace('/montar/?erro=pedido_indisponivel');return;
         }
-        // Existing separation sheet does not require rendering the heavy Admin order list.
+        // Load only this one order, preserving the exact customer/status checks used by
+        // the canonical separation sheet, without rendering the full Admin order list.
+        const detail=await api('order',{id:sharedSeparationId});
+        const selectedOrder=detail?.order||null;
+        if(!selectedOrder||String(selectedOrder.id)!==sharedSeparationId){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        if(orderCustomerDataPending(selectedOrder)){
+          location.replace('/montar/?erro=dados_pendentes');return;
+        }
+        if(!orderV3Milestones(selectedOrder).confirmed||orderV3Milestones(selectedOrder).separated||
+            orderV3Milestones(selectedOrder).cancelled){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        state.orders=[selectedOrder];
         await openOrderSeparationSheet(sharedSeparationId);
         const sheet=document.querySelector('.orders-bottom-sheet-backdrop');
         if(!sheet){location.replace('/montar/?erro=vitrine_indisponivel');return}
