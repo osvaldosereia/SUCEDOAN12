@@ -2673,6 +2673,7 @@
     const returning=o.delivery_return?.status==='returning';
     return '<article class="separation-tablet-card driver-card '+(returning?'problem':'')+'" style="border-width:2px">'+
       '<div class="separation-tablet-top"><div><small>ENTREGA ATUAL · '+(pos+1)+' DE '+rows.length+'</small><strong style="display:block;font-size:1.25rem">#'+esc(orderDisplayCode(o))+' · '+esc(o.customer_name||a.recipient_name||'Sem cliente')+'</strong></div><strong>'+money(o.total_cents)+'</strong></div>'+
+      '<div class="rule-notice" style="margin-top:10px"><strong>RECEBER · '+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Forma não informada')+'</strong><div>Valor do pedido: '+money(o.total_cents)+(o.payment_method_snapshot?.actual?.received?' · Pagamento já registrado':' · confirmar o que foi realmente recebido')+'</div></div>'+
       '<div class="rule-notice '+(confidence==='confirmed'?'':'warn')+'" style="margin-top:10px"><strong>'+(confidence==='confirmed'?'LOCALIZAÇÃO CONFIRMADA':'CONFIRA O ENDEREÇO')+'</strong><div>'+esc(address)+'</div></div>'+
       '<div class="separation-tablet-actions" style="margin-top:12px">'+
         (maps&&!returning?'<a class="primary wide" href="'+esc(maps)+'" target="_blank" rel="noopener">ABRIR MAPS</a>':'')+
