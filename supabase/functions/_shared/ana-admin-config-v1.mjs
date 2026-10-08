@@ -44,6 +44,20 @@ export function normalizeAnaMatchText(value=''){
   return cleanText(value,3000).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').replace(/[^\p{L}\p{N}]+/gu,' ').trim().replace(/\s+/g,' ');
 }
 
+export function requiresDynamicOperationalContext(value=''){
+  const text=normalizeAnaMatchText(value);
+  if(!text)return false;
+  const patterns=[
+    /\b(preco|precos|valor|valores|quanto custa|quanto esta|quanto ta|custa)\b/,
+    /\b(estoque|disponivel|disponibilidade|tem em estoque)\b/,
+    /\b(meu pedido|minha compra|status do pedido|acompanhar pedido|rastrear pedido|numero do pedido)\b/,
+    /\b(quando entrega|prazo de entrega|que dia entrega|horario da entrega|entrega hoje|entrega amanha)\b/,
+    /\b(meu endereco|alterar endereco|endereco da entrega|endereco cadastrado)\b/,
+    /\b(meu pagamento|pagamento recusado|pagamento aprovado|cobranca|cobrou|troco)\b/
+  ];
+  return patterns.some(pattern=>pattern.test(text));
+}
+
 export function validateAnaConfiguration(configuration){
   const errors=[];
   if(!isPlainObject(configuration))return {ok:false,errors:['configuration_object_required']};
