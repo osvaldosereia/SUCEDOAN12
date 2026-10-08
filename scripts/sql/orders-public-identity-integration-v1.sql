@@ -56,17 +56,36 @@ grant usage on schema public to service_role;
 grant select,insert,update on public.orders to service_role;
 grant select,insert,update on public.order_public_snapshots_v1 to service_role;
 grant select,insert on public.order_items to service_role;
--- Stub of the production checkout RPC; validates atomic mapping and trigger
--- behavior, not the production basket/stock business rules.
+-- A deliberately small, transactional inventory ledger provides a reproducible
+-- rollback/idempotency contract. It DOES NOT substitute for the complete
+-- production reservation engine (basket lots, allocations or fiscal triggers).
+create table public._test_stock_reservation_v1 (
+  sku text primary key,
+  available integer not null check (available >= 0)
+);
+insert into public._test_stock_reservation_v1(sku,available) values('X',10);
+grant select,update on public._test_stock_reservation_v1 to service_role;
+-- Stub of the production checkout RPC: tests the atomic wrapper and common
+-- failure behavior while leaving all production business rules out of scope.
 create or replace function public.create_vitrine_cart_order_v3(
  p_phone text,p_payment_method text,p_items jsonb,
  p_customer_snapshot jsonb,p_delivery jsonb
-) returns jsonb language plpgsql security invoker as $$
-declare v_id uuid;
+) returns jsonb language plpgsql security invoker as $
+declare
+ v_id uuid;
+ v_qty integer := coalesce(nullif(p_items->0->>'qty','')::integer,1);
+ v_remaining integer;
 begin
+  if v_qty < 1 then raise exception 'invalid_qty'; end if;
   perform pg_sleep(0.2);
+  update public._test_stock_reservation_v1 set available=available-v_qty
+   where sku='X' and available >= v_qty returning available into v_remaining;
+  if not found then raise exception 'insufficient_stock'; end if;
   insert into public.orders default values returning id into v_id;
   insert into public.order_items(order_id) values(v_id);
+  if p_payment_method='TEST_ERROR' then
+    raise exception 'simulated_reservation_or_order_failure';
+  end if;
   return jsonb_build_object('order_id',v_id,'stock_reserved',true,'total',75);
-end $$;
+end $;
 grant execute on function public.create_vitrine_cart_order_v3(text,text,jsonb,jsonb,jsonb) to service_role;
