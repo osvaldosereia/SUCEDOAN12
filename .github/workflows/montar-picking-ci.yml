@@ -8,7 +8,7 @@ on:
       - 'supabase/sql/20261008_montar_manual_queue_feed_v1.sql'
       - '.github/workflows/montar-picking-ci.yml'
   push:
-    branches: [main]
+    branches: [main, agent/orders-code-identity-fix-20261008]
     paths:
       - 'montar/**'
       - 'scripts/test-montar-picking-v1.mjs'
