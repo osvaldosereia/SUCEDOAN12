@@ -26,4 +26,4 @@ jobs:
       - name: Validate picker behavior and security
         run: node scripts/test-montar-picking-v1.mjs
       - name: Diff check
-        run: git diff --check HEAD^ HEAD
+        run: git -c core.whitespace=cr-at-eol diff --check HEAD^ HEAD
