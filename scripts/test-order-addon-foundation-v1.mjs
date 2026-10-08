@@ -33,6 +33,10 @@ assert.match(sql,/order_separation_completions_v1/i,'eligibility must guard comp
 assert.match(sql,/ops3_create_order_addon_session_v1/i,'server-side session creation RPC required');
 assert.match(sql,/for update/i,'order/session issuance must serialize against status changes');
 assert.match(sql,/ops3_get_order_addon_session_v1/i,'server-side session lookup RPC required');
+assert.match(sql,/trg_order_addon_close_on_order_advance_v1/i,'order advancement must close add-on sessions');
+assert.match(sql,/trg_order_addon_close_on_separation_item_v1/i,'starting separation must close add-on sessions');
+assert.match(sql,/trg_order_addon_close_on_separation_completion_v1/i,'separation completion must close add-on sessions');
+assert.match(sql,/order_addon_close_sessions_for_order_v1/i,'session closure helper required');
 assert.match(sql,/digest|token_hash/i,'lookup must operate on token hash, not raw token');
 
 for(const signature of [
