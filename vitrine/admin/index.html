@@ -1353,7 +1353,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderStatusTab:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderStatusTab:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all',driverFocusStopId:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -2649,14 +2649,43 @@
     const run=activeDeliveryRun(vehicle);if(!run)return [];const byId=new Map(all.map(o=>[o.id,o]));
     return (run.stops||[]).map(s=>{const o=byId.get(s.order_id);return o?{...o,__delivery_stop:s}:null}).filter(Boolean);
   }
+  function driverFocusedOrder(rows){
+    if(!rows.length)return null;
+    const wanted=rows.find(o=>o.__delivery_stop?.stop_id===state.driverFocusStopId);
+    if(wanted)return wanted;
+    const next=rows.find(o=>!o.delivery_return&&['planned','out_for_delivery'].includes(o.__delivery_stop?.status||'out_for_delivery'))||rows[0];
+    state.driverFocusStopId=next?.__delivery_stop?.stop_id||null;return next;
+  }
+  function driverFocusHtml(rows){
+    const o=driverFocusedOrder(rows);if(!o)return '<div class="empty">Nenhuma entrega nesta rota.</div>';
+    const s=o.__delivery_stop||{},a=o.delivery_address_snapshot||{},address=[a.street,a.number,a.complement,a.district,a.city].filter(Boolean).join(', ')||a.raw_text||'Endereço não informado';
+    const maps=deliveryStopMapsHref(s)||mapsHrefFromAddress(a),wa=whatsappHref(o.whatsapp_phone_e164||a.phone||'');
+    const pos=Math.max(0,rows.indexOf(o)),prev=rows[pos-1],next=rows[pos+1],confidence=s.destination_confidence||'';
+    return '<article class="separation-tablet-card driver-card" style="border-width:2px">'+
+      '<div class="separation-tablet-top"><div><small>ENTREGA ATUAL · '+(pos+1)+' DE '+rows.length+'</small><strong style="display:block;font-size:1.25rem">#'+esc(orderDisplayCode(o))+' · '+esc(o.customer_name||a.recipient_name||'Sem cliente')+'</strong></div><strong>'+money(o.total_cents)+'</strong></div>'+
+      '<div class="rule-notice '+(confidence==='confirmed'?'':'warn')+'" style="margin-top:10px"><strong>'+(confidence==='confirmed'?'LOCALIZAÇÃO CONFIRMADA':'CONFIRA O ENDEREÇO')+'</strong><div>'+esc(address)+'</div></div>'+
+      '<div class="separation-tablet-actions" style="margin-top:12px">'+
+        (maps?'<a class="primary wide" href="'+esc(maps)+'" target="_blank" rel="noopener">ABRIR MAPS</a>':'')+
+        (wa?'<a class="secondary" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+        '<button class="primary wide" type="button" data-driver-delivered="'+esc(o.id)+'">✓ ENTREGUE</button>'+
+        '<button class="secondary" type="button" data-driver-failed="'+esc(o.id)+'">NÃO ENTREGOU</button>'+
+      '</div>'+
+      '<div class="dispatch-actions" style="margin-top:10px">'+
+        (prev?'<button class="text" type="button" data-driver-focus="'+esc(prev.__delivery_stop?.stop_id||'')+'">← Anterior</button>':'<span></span>')+
+        '<span class="sub">Pedido permanece #'+esc(orderDisplayCode(o))+'</span>'+
+        (next?'<button class="text" type="button" data-driver-focus="'+esc(next.__delivery_stop?.stop_id||'')+'">Próxima →</button>':'<span></span>')+
+      '</div></article>';
+  }
   function paintDriverQueue(){
     const host=$('#driverQueue');if(!host)return;const q=normalize($('#driverSearch')?.value||'');let rows=driverOrders();if(q)rows=rows.filter(o=>orderSearchMatch(o,q));
     const shell=$('#driverRouteToolbar');if(shell){
       shell.innerHTML=driverVehicleToolbar();
-      shell.querySelectorAll('[data-driver-vehicle]').forEach(b=>b.onclick=()=>{state.driverVehicle=b.dataset.driverVehicle;paintDriverQueue()});
+      shell.querySelectorAll('[data-driver-vehicle]').forEach(b=>b.onclick=()=>{state.driverVehicle=b.dataset.driverVehicle;state.driverFocusStopId=null;paintDriverQueue()});
       shell.querySelectorAll('[data-driver-load]').forEach(b=>b.onclick=()=>confirmRunLoading(b.dataset.driverLoad));
     }
-    host.innerHTML=rows.length?rows.map(driverRow).join(''):'<div class="empty">Nenhuma entrega em rota para esta seleção.</div>';
+    const focused=q?'':driverFocusHtml(rows);
+    host.innerHTML=focused+(rows.length?'<details '+(q?'open':'')+'><summary>Ver todas as entregas · '+rows.length+'</summary><div style="display:grid;gap:10px;margin-top:10px">'+rows.map(driverRow).join('')+'</div></details>':'<div class="empty">Nenhuma entrega em rota para esta seleção.</div>');
+    host.querySelectorAll('[data-driver-focus]').forEach(b=>b.onclick=()=>{state.driverFocusStopId=b.dataset.driverFocus;paintDriverQueue()});
     host.querySelectorAll('[data-driver-delivered]').forEach(b=>b.onclick=()=>confirmDeliveryFromExpedition(b.dataset.driverDelivered));
     host.querySelectorAll('[data-driver-failed]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.driverFailed,false));
     host.querySelectorAll('[data-driver-returned]').forEach(b=>b.onclick=()=>confirmPhysicalDeliveryReturn(b.dataset.driverReturned));
