@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const read=p=>fs.readFileSync(p,'utf8');
+const root='supabase/migrations/';
+const deferred=read(root+'20261008012500_smart_delivery_deferred_sequence_uniqueness_v1.sql');
+const custody=read(root+'20261008012549_smart_delivery_lock_loaded_route_resequence_v1.sql');
+const coords=read(root+'20261008022337_smart_delivery_strict_coordinate_pair_v2.sql');
+const config=read('supabase/config.toml');
+assert.match(deferred,/DEFERRABLE INITIALLY DEFERRED/);
+assert.match(custody,/smart_delivery_guard_route_resequence_v1/);
+assert.match(custody,/BEFORE UPDATE OF run_id, sequence/);
+assert.match(coords,/smart_delivery_coordinate_pair_v2/);
+assert.match(config,/\[functions\.smart-delivery-optimize-v1\]/);
+assert.match(config,/\[functions\.order-addon-public-v1\]/);
+console.log('Smart Delivery migration parity: OK');
