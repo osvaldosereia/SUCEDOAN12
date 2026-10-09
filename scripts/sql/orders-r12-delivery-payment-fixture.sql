@@ -4,6 +4,8 @@
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivered_at timestamptz;
 ALTER TABLE public.order_fiscal_controls
   ADD COLUMN IF NOT EXISTS dispatch_started_at timestamptz;
+ALTER TABLE public.order_fiscal_controls
+  ADD COLUMN IF NOT EXISTS delivery_confirmed_at timestamptz;
 CREATE TABLE public.order_payment_settlements(
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id uuid NOT NULL UNIQUE REFERENCES public.orders(id),
