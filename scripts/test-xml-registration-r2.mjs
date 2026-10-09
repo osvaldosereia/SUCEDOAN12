@@ -35,3 +35,12 @@ assert.match(dispatch,/if\(action==="daily_sync"\)[\s\S]*?finance_skipped:true/,
 assert.match(dispatch,/body\?\.catalog_evidence_only!==true/,
   'legacy product identity mutation requires evidence-only review');
 console.log('PASS R2: Bling/manual catalog-only ingestion; no implicit finance; legacy identity blocked');
+
+const catalogStart=src.indexOf('async function manualCatalogOnlyImport(');
+const catalogEnd=src.indexOf('// Return source evidence',catalogStart);
+const catalog=src.slice(catalogStart,catalogEnd);
+assert.match(catalog,/options:\{source\?:string;runId\?:string\}/,'catalog ingestion supports source and parent run');
+assert.match(catalog,/if\(!externalRunId\)\{/,'avoid creating a nested import run');
+assert.match(catalog,/import_run_id:runId,source/,'persist actual source');
+assert.match(sync,/\{source,runId:id\}/,'Bling passes original source and run');
+console.log('PASS R2: Bling source preserved without nested import runs');
