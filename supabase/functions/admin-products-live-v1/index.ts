@@ -3525,15 +3525,36 @@ async function orderRegistrationLinkIssue(p:any,adminAuthorization:string){
   return {link_id:link.link_id,registration_url:link.registration_url,expires_at:link.expires_at,phone_e164:link.phone_e164,conversation_id:conversationId,papoai_send:papoaiSend};
 }
 
+// R05 feature-gated bridge to the signed Meta customer approval ledger.
+// Run before separation reads (which may initialize rows) and all mutations.
+const ORDER_META_CONFIRMATION_GUARD_ENABLED=(Deno.env.get("ORDER_META_CONFIRMATION_GUARD_ENABLED")||"").trim()==="true";
+async function orderMetaSeparationReadiness(oid:string){
+  if(!ORDER_META_CONFIRMATION_GUARD_ENABLED)return {ok:true,confirmation_required:false,confirmation_verified:null};
+  const result=await db.rpc("ops2_order_meta_confirmation_status_v1",{p_order_id:oid});
+  if(result.error||result.data?.ok!==true){
+    console.error("order_meta_readiness_unavailable",tx(result.error?.message||result.data?.error||"unknown",160));
+    return {ok:false,error:"meta_confirmation_readiness_unavailable",status:503};
+  }
+  return {ok:true,confirmation_required:result.data.confirmation_required===true,
+    confirmation_verified:result.data.confirmation_verified===true};
+}
+async function orderMetaSeparationMutationGuard(oid:string){
+  const readiness=await orderMetaSeparationReadiness(oid);
+  if(readiness.ok!==true)return readiness;
+  if(readiness.confirmation_required===true)return {ok:false,error:"meta_customer_confirmation_required",status:409};
+  return readiness;
+}
 async function orderSeparationGet(rawId:any){
   const oid=id(rawId);if(!oid)return {error:"invalid_order",status:400};
+  const meta=await orderMetaSeparationMutationGuard(oid);if(meta.ok!==true)return meta;
   const q=await db.rpc("ops2_get_order_separation_v2",{p_order_id:oid});if(q.error)throw q.error;
   if(q.data?.ok!==true)return {error:String(q.data?.error||"separation_unavailable"),status:q.data?.error==="order_not_found"?404:409,...q.data};
-  return {separation:q.data};
+  return {separation:{...q.data,meta_confirmation_required:meta.confirmation_required,meta_confirmation_verified:meta.confirmation_verified}};
 }
 async function orderSeparationAssign(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
+  const meta=await orderMetaSeparationMutationGuard(oid);if(meta.ok!==true)return meta;
   const key=tx(p?.separator_key,30).toLowerCase()||null;
   const q=await db.rpc("ops2_set_order_separator_v2",{p_order_id:oid,p_separator_key:key});if(q.error)throw q.error;
   if(q.data?.ok!==true)return {error:String(q.data?.error||"separator_update_failed"),status:409,...q.data};
@@ -3542,6 +3563,7 @@ async function orderSeparationAssign(p:any,auth:any){
 async function orderSeparationItemSet(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id||p?.order_id),itemId=id(p?.order_item_id);if(!oid||!itemId)return {error:"invalid_order_item",status:400};
+  const meta=await orderMetaSeparationMutationGuard(oid);if(meta.ok!==true)return meta;
   const requested=tx(p?.state,20).toLowerCase(),expected=tx(p?.expected_order_updated_at,80),requestedSeparator=tx(p?.separator_key,30).toLowerCase()||null;
   if(!["separated","missing"].includes(requested))return {error:"invalid_separation_state",status:400};
   if(!expected||!Number.isFinite(Date.parse(expected)))return {error:"order_version_required",status:409};
@@ -3670,6 +3692,7 @@ async function runSeparationPostCompletionIntegrations(oid:string,operator:strin
 async function orderSeparationComplete(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
+  const meta=await orderMetaSeparationMutationGuard(oid);if(meta.ok!==true)return meta;
   const expected=tx(p?.expected_order_updated_at,80);if(!expected||!Number.isFinite(Date.parse(expected)))return {error:"order_version_required",status:409};
   let completionOrder=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(completionOrder.error)throw completionOrder.error;if(!completionOrder.data)return {error:"order_not_found",status:404};
   if(String(completionOrder.data.updated_at)!==expected)return {error:"stale_order_version",conflict:"order_version_conflict",status:409,order_updated_at:completionOrder.data.updated_at};
