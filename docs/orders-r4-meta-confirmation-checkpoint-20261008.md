@@ -34,3 +34,11 @@ A CI `orders-r4-meta-confirmation-ci.yml` usa PostgreSQL 17 descartável e Node 
 
 ## Regras de release
 Não fazer merge, deploy, envio nem habilitar as flags em produção só porque CI sintética passou. Fechamento técnico de R04 precisa da confirmação de modelos Meta aprovados, migração gerada e validação real end-to-end no sandbox R02/R05, com roteiro de rollback e canário limitado.
+
+## Resultado CI R04 — 08/10/2026
+- **[GitHub Actions #37874721994 — SUCCESS](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37874721994)**, PostgreSQL 17 descartável e Node 22, sem credenciais nem serviços externos.
+- HMAC contra corpo bruto verificado; payload modificado reprovado. Testes de webhook Meta existentes passaram junto com os casos novos.
+- Respostas estruturadas pelos canais 0975/1018, texto livre rejeitado, botão inválido e WAMID de outro pedido/conta não dão autorização.
+- Prova persistente idempotente; gatilhos impedem atribuição, marcação de itens, conclusão e transição direta de status sem o clique **quando o opt-in está habilitado apenas no laboratório**.
+- **Concorrência**: [workflow #37874721994](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37874721994) executou dois RPCs em paralelo, com mensagens diferentes do mesmo pedido, e conferiu **uma única linha no ledger**.
+- **Situação:** programação e testes sintéticos R04 prontos em PR draft; **Meta não foi configurada**, botão/flags continuam desligados por padrão. Falta aprovação de templates e homologação canônica antes de qualquer deploy.
