@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "./_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared/papoai-commerce-intent-v1.mjs";
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
+import { eligiblePostCheckoutShortageBelowMinimum } from "./_shared/order-bling-r7-manifest-v1.mjs";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -7833,7 +7834,25 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
     if(!physicalStockHandled)operationalBlockers.push("stock_not_consumed");
   }
   if(orderStatus==="cancelled")operationalBlockers.push("order_cancelled");
-  if(Number.isFinite(orderTotal)&&orderTotal<7500)operationalBlockers.push("minimum_order_not_met");
+  if(Number.isFinite(orderTotal)&&orderTotal<7500){
+    // Checkout still requires R$75. A *previously valid* order may finish
+    // below that threshold if missing products were deducted in separation.
+    // Verify proof by fetching the locked-in R06 completion from canonical DB,
+    // not by trusting a claimed pre-checkout amount from the client.
+    let provenPostCheckoutShortage=false;
+    if(queueReason==="ean_verified"&&payload?.r7_reconciliation?.source==="frozen_r6_manifest"
+      &&uuid(sourceOrderId)){
+      const receipt=await sb.from("order_separation_completions_v1")
+        .select("phase,metadata").eq("order_id",sourceOrderId).maybeSingle();
+      if(receipt.error)throw receipt.error;
+      try{
+        provenPostCheckoutShortage=eligiblePostCheckoutShortageBelowMinimum(
+          payload,receipt.data,orderTotal
+        );
+      }catch{}
+    }
+    if(!provenPostCheckoutShortage)operationalBlockers.push("minimum_order_not_met");
+  }
 
   const otherExpenses=Math.max(0,Number.isFinite(delta)?delta:0);
   const discount=Math.max(0,Number.isFinite(delta)?-delta:0);
