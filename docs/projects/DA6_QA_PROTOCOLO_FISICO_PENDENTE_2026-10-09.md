@@ -26,4 +26,34 @@ No computador, selecione impressora térmica de **203 dpi** e papel **100 × 150
 ## Registro para eventual aprovação
 Preencher somente após ensaio físico efetivo, em arquivo distinto `docs/projects/DA6_QA_*.md`, com SHA do código, fabricante/modelo de impressora e celular, amostras de resultados por slot e hashes das evidências mantidas em armazenamento privado. Não adicionar fotografias de clientes ao GitHub. Fixar `evidence_file` e `evidence_sha256` no manifesto de release somente após revisão humana.
 
+## Vinculação obrigatória dos atestados à implementação
+
+Após executar de fato cada um dos sete ensaios e obter resultado `PASS`, cada
+arquivo de evidência distinto `docs/projects/DA6_QA_*.md` precisa começar
+**na primeira linha** com este bloco, substituindo o gate e o fingerprint por
+valores reais do ensaio daquela versão:
+
+```md
+<!-- DA6_ATTESTATION_V1
+gate: physical_thermal_203dpi_print
+source_fingerprint: SUBSTITUIR_PELO_SHA256_DE_64_CARACTERES
+result: PASS
+-->
+# Evidências reais do ensaio físico
+```
+
+O valor de `source_fingerprint` deve ser obtido usando
+`node scripts/da6-release-fingerprint.mjs` na **mesma versão do código**
+efetivamente impressa, fotografada e homologada. O `gate` deve corresponder
+exatamente ao campo de `required_production_gates` aprovado naquele
+documento. O código do release recusa documento com cabeçalho ausente, gate
+divergente, fingerprint antigo, campos duplicados ou resultado diferente de
+`PASS`. Depois, calcular o SHA-256 do arquivo de evidência inteiro e
+registrá-lo no campo `evidence_sha256` do manifesto.
+
+**Atenção:** este exemplo não é evidência, não registra teste realizado e não
+autoriza alterar `passed`, `release_status` ou `release_candidate_fingerprint`.
+A validação automática dos metadados não verifica a veracidade de uma foto
+nem substitui a aprovação humana e a revisão protegida antes do deploy.
+
 **Gate pendente:** sem impressora ou fotos físicas disponibilizadas, a homologação física não é realizada e o PR #987 permanece em rascunho.
