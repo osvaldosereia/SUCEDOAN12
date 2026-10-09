@@ -75,10 +75,21 @@ async function onSubmit(){
    upload:root.DonaAntoniaLabelUpload.uploadSigned,
    onProgress:renderProgress
   };
-  const result=await root.DonaAntoniaLabelUpload.submit(files,services);
+  const shouldResume=$('#da6-resume-batch')?.checked===true;
+  const result=await root.DonaAntoniaLabelUpload.submit(files,services,{
+   batch_id:shouldResume?currentBatch:null
+  });
   currentBatch=result.batch_id;
-  fileInput.value='';
-  toast(result.uploaded+' fotografias confirmadas no armazenamento privado.');
+  if(result.failed){
+   const check=$('#da6-resume-batch');
+   if(check)check.checked=true;
+   toast(result.uploaded+' fotos recebidas, '+result.failed+
+    ' com falha. Selecione as mesmas fotos e tente novamente com este lote.');
+  }else{
+   fileInput.value='';
+   const check=$('#da6-resume-batch');if(check)check.checked=false;
+   toast(result.uploaded+' fotos recebidas e confirmadas no Storage privado.');
+  }
   await loadBatches();
  }catch(e){toast('Envio não concluído: '+String(e.message||e));}
  finally{busy=false;btn.disabled=false;btn.textContent='Enviar fotografias';}
@@ -94,6 +105,7 @@ function mount(){
  const panel=document.createElement('section');panel.id='da6-photo-panel';panel.className='panel da6-photo-panel';panel.hidden=true;
  panel.innerHTML='<div class="page-head"><div><h2>Balanço por fotos das etiquetas</h2><p>Selecione até 100 fotografias. O envio é uma a uma e a leitura ocorrerá no servidor. Não usa inteligência artificial.</p></div></div>'+
   '<label class="da6-upload-drop"><strong>Selecionar fotos das etiquetas</strong><span>JPEG, PNG ou WebP · até 10 MB cada</span><input type="file" id="da6-file-input" accept="image/jpeg,image/png,image/webp" multiple></label>'+
+  '<label class="da6-resume-toggle"><input type="checkbox" id="da6-resume-batch"> Retomar o lote selecionado, sem criar outro</label>'+
   '<button type="button" class="primary" id="da6-send">Enviar fotografias</button>'+
   '<p class="sub">Feche o navegador apenas depois de todas as fotos serem confirmadas como recebidas. A leitura no servidor não altera estoque automaticamente.</p>'+
   '<div id="da6-upload-progress" aria-live="polite"></div><hr>'+
@@ -104,6 +116,11 @@ function mount(){
  $('#da6-send').onclick=onSubmit;
  $('#da6-refresh').onclick=()=>loadBatches().catch(e=>toast(e.message));
  $('#da6-batch-select').onchange=e=>{currentBatch=e.target.value||null;refreshStatus().catch(e=>toast(e.message))};
+ $('#da6-resume-batch').onchange=e=>{
+  if(e.target.checked&&!currentBatch){
+   e.target.checked=false;toast('Primeiro selecione um lote existente.');
+  }
+ };
  setMode(active);
 }
 let raf=0;new MutationObserver(()=>{
