@@ -1422,6 +1422,10 @@ async function orderFiscalStatusV4(rawId:any){
   const h=await hub("fiscal_dispatch_preview",{source_order_id:oid});
   if(h.error)return {error:h.error||"fiscal_status_unavailable",status:h.status||502,detail:h.detail||h.data||null};
   const remote:any=h.data||{},control:any=ctl.data||{},invoice:any=remote.invoice||{};
+  const recoveryQ=await db.from("fiscal_nfe_recovery_events_v1")
+    .select("stage,diagnostics,external_write,created_at").eq("order_id",oid)
+    .order("created_at",{ascending:false}).limit(1).maybeSingle();
+  const recovery:any=!recoveryQ.error?recoveryQ.data:null;
   const authorized=control.dispatch_fiscal_status==="authorized"||control.dispatch_fiscal_status==="not_required"||invoice?.situation?.authorized===true||remote.already_authorized===true;
   const hard=orderFiscalBlockers(remote.hard_blockers);
   if(elig.data?.eligible!==true&&elig.data?.reason)hard.push(tx(elig.data.reason,180));
@@ -1429,7 +1433,13 @@ async function orderFiscalStatusV4(rawId:any){
   const productionIssueEnabled=remote.config?.human_issue_enabled===true&&remote.config?.dispatch_gate_mode==="enforce";
   const selectedCanary=remote.config?.canary_enabled===true&&remote.config?.canary_selected===true;
   const issueEnabled=productionIssueEnabled||selectedCanary;
-  const canIssue=oq.data.status==="ready"&&elig.data?.eligible===true&&!authorized&&uniqueHard.length===0&&issueEnabled;
+  // Never advertise a second generation attempt when the first POST timed
+  // out or was already consumed: the scheduled recovery must first reconcile it.
+  const lastJob:any=remote.job||{};
+  const generationAttempted=Number(lastJob.attempts||0)>0
+    &&!Number(lastJob.bling_invoice_id||remote.invoice_id||0)
+    &&["review_required","generating"].includes(String(lastJob.status||""));
+  const canIssue=oq.data.status==="ready"&&elig.data?.eligible===true&&!authorized&&uniqueHard.length===0&&issueEnabled&&!generationAttempted;
   const canDispatch=oq.data.status==="ready"&&authorized;
   const danfeAvailable=authorized&&Boolean(invoice?.chaveAcesso||remote.job?.access_key||control.bling_invoice_id);
   const terminalFailed=invoice?.situation?.failed===true;
@@ -1439,7 +1449,8 @@ async function orderFiscalStatusV4(rawId:any){
   else if(terminalFailed)stage="rejected";
   else if(invoiceId)stage="processing";
   else if(oq.data.status==="ready"&&elig.data?.eligible===true)stage="pending";
-  const blockers=orderFiscalBlockers(uniqueHard,issueEnabled?[]:["fiscal_human_issue_not_enabled"]);
+  const blockers=orderFiscalBlockers(uniqueHard,issueEnabled?[]:["fiscal_human_issue_not_enabled"],
+    generationAttempted?["invoice_generation_recovery_required"]:[]);
   return {
     order_id:oid,order_number:oq.data.order_number||null,order_status:oq.data.status,stage,authorized,can_issue:canIssue,can_dispatch:canDispatch,
     invoice_id:invoiceId,invoice_number:control.bling_invoice_number||invoice?.numero||remote.job?.bling_invoice_number||null,
@@ -1449,7 +1460,8 @@ async function orderFiscalStatusV4(rawId:any){
     payment_status:control.payment_status||"pending",payment_method:control.payment_method||null,payment_source:control.payment_source||null,
     settled_amount_cents:control.settled_amount==null?null:Math.round(Number(control.settled_amount||0)*100),payment_confirmed_at:control.payment_confirmed_at||null,
     bling_invoice_id:invoiceId,bling_invoice_number:control.bling_invoice_number||invoice?.numero||remote.job?.bling_invoice_number||null,
-    dispatch_gate:remote.dispatch_gate||null,config:remote.config||null,readiness:elig.data||null,provider:remote
+    dispatch_gate:remote.dispatch_gate||null,config:remote.config||null,readiness:elig.data||null,provider:remote,
+    fiscal_recovery:recovery?{stage:recovery.stage,diagnostics:recovery.diagnostics||{},created_at:recovery.created_at,external_write:recovery.external_write===true}:null
   };
 }
 async function orderFiscalIssueV4(p:any,auth:any){

@@ -7675,6 +7675,7 @@
       invoice_generation_failed:'O Bling recebeu a solicitação, mas não conseguiu gerar a NF-e',
       fiscal_dispatch_preflight_failed:'A conferência fiscal encontrou dados inconsistentes',
       fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão',
+      invoice_generation_recovery_required:'Tentativa anterior teve erro ou tempo de resposta excedido. A recuperação automática está verificando a nota antes de permitir novo envio.',
       fiscal_status_unavailable:'Não foi possível consultar o retorno fiscal no Bling'
     };
     return map[code]||String(code||'').replaceAll('_',' ');
@@ -7693,6 +7694,33 @@
     if(detail)lines.push('<div style="margin-top:6px">'+esc(detail)+'</div>');
     if(readiness?.eligible===false&&readiness?.reason)lines.push('<div style="margin-top:6px">Pré-validação: '+esc(fiscalBlockReasonLabel(readiness.reason))+'</div>');
     if(attempts!=null)lines.push('<div style="margin-top:6px">Tentativas registradas: '+attempts+'</div>');
+    const repair=f.fiscal_recovery||null,diagnosis=repair?.diagnostics||{};
+    const repairLabels={
+      started:'Verificação automática iniciada',
+      existing_invoice_reconciled:'NF-e existente encontrada e reconciliada',
+      existing_invoice_needs_authorization_or_review:'NF-e encontrada no Bling: aguarda autorização ou revisão',
+      generation_result_uncertain_manual_reconcile_required:'O Bling não confirmou a geração; nenhuma nova nota foi criada para evitar duplicidade',
+      unverified_ncm_requires_review:'NCM não possui documentação fiscal suficiente para correção automática',
+      proposed_ncm_not_in_official_active_catalog:'Código proposto não consta na tabela NCM vigente',
+      official_classif_unavailable:'Tabela oficial de NCM temporariamente indisponível',
+      official_classif_data_unrecognized:'Tabela oficial de NCM precisa ser validada antes da correção',
+      auto_invoice_authorized:'NF-e corrigida e autorizada automaticamente',
+      auto_invoice_authorization_pending:'NF-e enviada; aguardando retorno da SEFAZ',
+      auto_invoice_retry_failed:'Nova tentativa falhou; erro registrado',
+      fiscal_preflight_blocked:'A conferência fiscal ainda possui bloqueios',
+      unrecognized_fiscal_error:'Erro fiscal não reconhecido com segurança',
+      separation_not_completed:'Separação física ainda não foi concluída',
+      unable_to_identify_fiscal_products:'Não foi possível identificar inequivocamente o item fiscal',
+      ambiguous_product_name:'Há ambiguidade entre os nomes dos produtos; bloqueio preventivo'
+    };
+    if(repair){
+      const label=repairLabels[repair.stage]||String(repair.stage||'').replaceAll('_',' ');
+      lines.push('<div style="margin-top:8px"><strong>Recuperação automática</strong><div>'+esc(label)+'</div></div>');
+      const corrected=Array.isArray(diagnosis.corrected_products)?diagnosis.corrected_products.length:0;
+      if(corrected)lines.push('<div>'+corrected+' produto(s) com NCM corrigido e conferido no Bling.</div>');
+      if(Array.isArray(diagnosis.issues)&&diagnosis.issues.length)lines.push('<div>Itens para revisão: '+diagnosis.issues.length+'. Nenhum NCM será adivinhado.</div>');
+      if(repair.created_at)lines.push('<div class="muted">Última análise: '+esc(dateTime(repair.created_at))+'</div>');
+    }
     if(!lines.length&&f.stage==='pending')lines.push('<strong>Aguardando retorno do Bling</strong><div>A solicitação fiscal ainda não trouxe NF-e nem erro específico.</div>');
     return lines.length?'<div class="rule-notice warn" style="margin-top:8px">'+lines.join('')+'</div>':'';
   }
