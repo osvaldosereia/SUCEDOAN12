@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
 const html=readFileSync(new URL("../vitrine/admin/index.html",import.meta.url),"utf8");
-const from=html.indexOf("  function xmlCatalogFieldReviewMarkup(");
+const from=Math.min(html.indexOf("  function xmlCatalogFieldReviewMarkup("),
+  html.indexOf("  // Read-only: comparisons are evidence"));
 const to=html.indexOf("  function xmlCatalogDetailRefresh(",from);
 assert.ok(from>=0&&to>from);
 const markup=html.slice(from,to);
