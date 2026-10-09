@@ -3,7 +3,7 @@ import fs from "node:fs";
 import test from "node:test";
 import {
   buildReconciledBlingSnapshot,
-  fingerprintBlingPayload,stableJson
+  fingerprintBlingPayload,stableJson,eligiblePostCheckoutShortageBelowMinimum
 } from "../supabase/functions/_shared/order-bling-r7-manifest-v1.mjs";
 const pid="00000000-0000-4000-8000-000000000152";
 const missing="00000000-0000-4000-8000-000000000153";
@@ -116,4 +116,39 @@ test("R07 SQL ledger is private and uncertain outcome cannot auto-retry",()=>{
   assert.match(sql,/IF j\.status<>'pending' THEN/i);
   assert.match(sql,/r7_remote_reconciliation_required/i);
   assert.match(sql,/verified_bling_order_id_required/i);
+});
+
+
+test("R07 permits below R$75 ONLY when a once-valid checkout has proven missing goods",()=>{
+  const payload={
+    source_order_id:oid,status:"ready",queue_reason:"ean_verified",
+    r7_reconciliation:{source:"frozen_r6_manifest",order_id:oid,
+      original_total_cents:8500,missing_subtotal_cents:2000,final_total_cents:6500}
+  };
+  const receipt={phase:"completed",metadata:{stock_applied:true,
+    r6_reconciliation:{ok:true,ready:true,order_id:oid,blockers:[],
+      financial:{original_total:85,missing_subtotal:20,final_total:65}}}};
+  assert.equal(eligiblePostCheckoutShortageBelowMinimum(payload,receipt,6500),true);
+  for(const [changed,rec,final] of [
+    [{...payload,status:"confirmed"},receipt,6500],
+    [{...payload,queue_reason:"approved_early_order"},receipt,6500],
+    [{...payload,r7_reconciliation:{...payload.r7_reconciliation,original_total_cents:7400}},receipt,6500],
+    [{...payload,r7_reconciliation:{...payload.r7_reconciliation,missing_subtotal_cents:0}},receipt,6500],
+    [payload,{...receipt,phase:"prepared"},6500],
+    [payload,{...receipt,metadata:{...receipt.metadata,stock_applied:false}},6500],
+    [payload,{...receipt,metadata:{...receipt.metadata,
+      r6_reconciliation:{...receipt.metadata.r6_reconciliation,
+        financial:{original_total:83,missing_subtotal:20,final_total:63}}}},6500],
+    [payload,receipt,7500],
+    [{...payload,source_order_id:"00000000-0000-4000-8000-000000000060"},receipt,6500]
+  ])assert.equal(eligiblePostCheckoutShortageBelowMinimum(changed,rec,final),false);
+});
+
+test("remote Bling preflight still rejects new under-minimum orders",()=>{
+  const source=fs.readFileSync("supabase/functions/admin-service-intelligence-v1/index.ts","utf8");
+  assert.match(source,/if\(Number\.isFinite\(orderTotal\)&&orderTotal<7500\)/);
+  assert.match(source,/queueReason==="ean_verified"/);
+  assert.match(source,/order_separation_completions_v1/);
+  assert.match(source,/eligiblePostCheckoutShortageBelowMinimum\(\s*payload,receipt\.data,orderTotal/);
+  assert.match(source,/if\(!provenPostCheckoutShortage\)operationalBlockers\.push\("minimum_order_not_met"\)/);
 });
