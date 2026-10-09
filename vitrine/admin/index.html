@@ -6382,6 +6382,11 @@
   }
   // Read-only: comparisons are evidence, not approval to alter products or fiscal.
   function xmlCatalogComparisonMarkup(data){
+    const full=state.xmlCatalogFullComparison;
+    const fullVisible=full?.candidate_key===state.xmlCatalogDetailKey;
+    if(fullVisible)data={...data,field_comparisons:full.field_comparisons,
+      comparison_scope:full.comparison_scope};
+    const scope=data?.comparison_scope||{};
     const comparison=data?.field_comparisons||{};
     const fields=Array.isArray(comparison.fields)?comparison.fields:[];
     if(!fields.length)return '';
@@ -6393,7 +6398,17 @@
     return '<div class="purchase-safe" style="margin:12px 0">'+
       '<strong>Conferência de dados: cadastro × notas fiscais</strong>'+
       '<small>Somente leitura. O valor da NF-e não é automaticamente o valor correto do produto. Use a revisão fiscal existente para corrigir NCM ou CEST.</small>'+
-      (data?.comparison_scope?.partial?'<small class="purchase-danger">Comparação PARCIAL: considera '+esc(data.comparison_scope.compared_observations||0)+' de '+esc(data.comparison_scope.total_observations||'?')+' observações da primeira página. O histórico completo deve ser conferido antes de qualquer decisão.</small>':'')+
+      (data?.comparison_scope?.partial?'<small class="purchase-danger">Comparação PARCIAL: considera '+
+       esc(scope.compared_observations??0)+' de '+esc(scope.total_observations??'?')+
+       ' observações'+(fullVisible?' (limite de análise ou histórico alterado)':' da primeira página')+
+       '. Não usar como validação completa.</small>':'')+
+      (fullVisible&&!scope.partial?'<small>Comparação integral conferida em '+
+       esc(scope.compared_observations??0)+' observações. Somente leitura.</small>':'')+
+      (!fullVisible&&scope.partial?'<button type="button" class="secondary" id="xmlFullComparison" '+
+       (state.xmlCatalogFullComparisonLoading?'disabled':'')+'>'+
+       (state.xmlCatalogFullComparisonLoading?'Conferindo histórico…':'Conferir histórico completo')+'</button>':'')+
+      (state.xmlCatalogFullComparisonError?'<small class="purchase-danger">'+
+       esc(state.xmlCatalogFullComparisonError)+'</small>':'')+
       '<div style="display:grid;gap:8px;margin-top:10px">'+
       fields.map(x=>{
         const vals=Array.isArray(x.xml_values)?x.xml_values:[];
@@ -6407,6 +6422,14 @@
           '<small style="display:block">'+esc(x.notes||'')+'</small>'+
           '</div>';
       }).join('')+'</div>'+
+      '<small style="display:block;margin-top:8px"><b>EAN tributável nos XMLs:</b> '+
+      (Array.isArray(comparison.tax_gtin_evidence?.xml_values)&&comparison.tax_gtin_evidence.xml_values.length?
+       comparison.tax_gtin_evidence.xml_values.map(x=>esc(x.value)).join(' / '):'Não informado')+
+      ' — código da NF-e, não substituir o EAN de venda sem conferir.</small>'+
+      '<small style="display:block"><b>Unidade tributável:</b> '+
+      (Array.isArray(comparison.packaging_evidence?.tax_unit_values)&&comparison.packaging_evidence.tax_unit_values.length?
+       comparison.packaging_evidence.tax_unit_values.map(x=>esc(x.value)).join(' / '):'Não informada')+
+      ' — não aplicar conversão automática.</small>'+
       '<small style="display:block;margin-top:8px"><b>Unidade de compra:</b> '+
       (Array.isArray(comparison.packaging_evidence?.xml_values)&&comparison.packaging_evidence.xml_values.length?
         comparison.packaging_evidence.xml_values.map(x=>esc(x.value)).join(' / '):'Não informada')+
@@ -6511,6 +6534,9 @@
     state.xmlCatalogChosenProduct=null;state.xmlCatalogSelectedObservation=null;
     state.xmlFieldReviewLoaded=false;state.xmlFieldReviewItems=[];
     state.xmlFieldReviewProductId=null;state.xmlFieldReviewError='';
+    state.xmlCatalogFullComparison=null;state.xmlCatalogFullComparisonError='';
+    state.xmlCatalogFullComparisonLoading=false;
+    state.xmlCatalogFullComparisonRequestId=(state.xmlCatalogFullComparisonRequestId||0)+1;
     xmlCatalogDetailRefresh();
     try{
       const r=await purchaseApi('xml_catalog_candidate_detail',{candidate_key:key});
@@ -6520,6 +6546,28 @@
       state.xmlCatalogSelectedObservation=(rows.find(x=>x.purchase_item_id&&!x.linked_product_id)||rows[0]||{}).purchase_item_id||null;
     }catch(e){state.xmlCatalogDetail={error:errorMessage(e.message)}}
     finally{state.xmlCatalogDetailLoading=false;xmlCatalogDetailRefresh()}
+  }
+  async function xmlCatalogFullComparisonLoad(){
+    const key=state.xmlCatalogDetailKey;
+    if(!key||state.xmlCatalogFullComparisonLoading)return;
+    const requestId=(state.xmlCatalogFullComparisonRequestId||0)+1;
+    state.xmlCatalogFullComparisonRequestId=requestId;
+    state.xmlCatalogFullComparisonLoading=true;
+    state.xmlCatalogFullComparisonError='';
+    xmlCatalogDetailRefresh();
+    try{
+      const result=await purchaseApi('xml_catalog_full_comparison',{candidate_key:key});
+      if(state.xmlCatalogDetailKey!==key||state.xmlCatalogFullComparisonRequestId!==requestId)return;
+      if(!result?.ok)throw Error('Não foi possível conferir todo o histórico.');
+      state.xmlCatalogFullComparison=result;
+    }catch(e){
+      if(state.xmlCatalogDetailKey===key&&state.xmlCatalogFullComparisonRequestId===requestId)
+        state.xmlCatalogFullComparisonError=errorMessage(e.message);
+    }finally{
+      if(state.xmlCatalogDetailKey===key&&state.xmlCatalogFullComparisonRequestId===requestId){
+        state.xmlCatalogFullComparisonLoading=false;xmlCatalogDetailRefresh();
+      }
+    }
   }
   async function xmlCatalogDetailLoadMore(){
     const previous=state.xmlCatalogDetail,key=state.xmlCatalogDetailKey;
@@ -6590,6 +6638,8 @@
         toast('Decisão registrada no histórico. Cadastro não alterado.');
       }catch(e){toast(errorMessage(e.message));button.disabled=false}
     });
+    const compareAll=$('#xmlFullComparison');
+    if(compareAll)compareAll.onclick=()=>xmlCatalogFullComparisonLoad();
     const more=$('#xmlDetailMore');
     if(more)more.onclick=()=>xmlCatalogDetailLoadMore();
     host.querySelectorAll('[data-xml-observation]').forEach(b=>b.onclick=()=>{
