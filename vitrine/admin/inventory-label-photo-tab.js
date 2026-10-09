@@ -44,7 +44,9 @@ async function refreshStatus(){
   ].map(x=>'<div><strong>'+x[1]+'</strong><small>'+x[0]+'</small></div>').join('')+'</div>'+
   '<div class="da6-file-list">'+(r.photos||[]).map(x=>'<div class="da6-file-row"><span>'+safe(x.file_name)+'</span><b>'+safe(names[x.status]||x.status)+' · '+x.attempts+'/3</b>'+
     (x.error_code?'<small>'+safe(x.error_code)+(x.error_detail?' — '+safe(x.error_detail):'')+'</small>':'')+
-    (x.parsed?.readings?.length?'<small>'+x.parsed.readings.map(y=>'B'+safe(y.slot)+': '+safe(y.quantity)).join(' · ')+'</small>':'')+'</div>').join('')+'</div>';
+    (x.parsed?.readings?.length?'<small>'+x.parsed.readings.map(y=>'B'+safe(y.slot)+': '+safe(y.quantity)).join(' · ')+'</small>':'')+
+    (window.DonaAntoniaLabelReview?.render(x)||'')+'</div>').join('')+'</div>';
+ window.DonaAntoniaLabelReview?.bind(el,bridge(),refreshStatus);
 }
 async function loadBatches(){
  if(!active)return;
