@@ -7,6 +7,7 @@ on:
       - 'scripts/sql/orders-r2-*.sql'
       - 'scripts/sql/orders-r2-r3-*.sql'
       - 'scripts/sql/orders-security-*.sql'
+      - 'scripts/sql/orders-r2-canonical-bling-stock-*.sql'
       - 'supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql'
       - 'supabase/sql/orders-r2-basket-independent-groups-review-v1.sql'
       - 'supabase/sql/orders-r2-r3-checkout-public-number-readback-review-v1.sql'
@@ -402,5 +403,89 @@ jobs:
             -f scripts/sql/orders-r2-baskets-kit-mold-assertions.sql
           test "$(PGDATABASE=$DB psql -Atc "select count(*) from public.orders")" = 7
           echo 'PASS: real basket availability (categories, assembly, linked stock, component health) combined with live v3 checkout and kits'
+      - name: Real Bling stock/deposit + basket locking/availability (ninth DB)
+        run: |
+          set -euo pipefail
+          createdb synthetic_real_bling_stock_r2
+          DB=synthetic_real_bling_stock_r2
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-availability-fixture.sql
+          # Replace ONLY synthetic views in the disposable DB. All three
+          # resulting stock views have canonical security_invoker definitions.
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-bling-stock-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-bling-stock-views.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-availability-view.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-bling-stock-assertions.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-basket-availability-bling-assertions.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-checkout-gate-assertions.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-assertions.sql
+          test "$(PGDATABASE=$DB psql -Atc "select count(*) from public.orders")" = 7
+          echo 'PASS: actual Bling authority/deposit + locked kit units + full view + real v3 checkout'
+      - name: "Race: Bling virtual stock minus physical kits cannot oversell (tenth DB)"
+        run: |
+          set -euo pipefail
+          createdb synthetic_bling_locked_race_r2
+          DB=synthetic_bling_locked_race_r2
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-availability-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-bling-stock-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-bling-stock-views.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-availability-view.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          # Bling deposit virtual=20; six units locked in premounted food kits;
+          # only 14 avulsas can be sold. Each buyer asks for 8; only one wins.
+          test "$(PGDATABASE=$DB psql -Atc "select loose_sellable_stock::integer from public.ops2_loose_sellable_stock_v1 where product_id='00000000-0000-4000-8000-0000000000e1'")" = 14
+          SQL="select public.create_vitrine_cart_order_v3(null,'PIX','[{\"type\":\"product\",\"id\":\"00000000-0000-4000-8000-0000000000e1\",\"qty\":8}]'::jsonb)->>'order_id';"
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
+            >/tmp/r02-bling-a.out 2>/tmp/r02-bling-a.err &
+          A=$!
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
+            >/tmp/r02-bling-b.out 2>/tmp/r02-bling-b.err &
+          B=$!
+          SUCCEEDED=0
+          if wait "$A"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q insufficient_stock /tmp/r02-bling-a.err; fi
+          if wait "$B"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q insufficient_stock /tmp/r02-bling-b.err; fi
+          test "$SUCCEEDED" = 1
+          test "$(PGDATABASE=$DB psql -Atc "select count(*) from public.orders")" = 1
+          test "$(PGDATABASE=$DB psql -Atc "select sum(quantity)::integer from public.vitrine_stock_reservations where product_id='00000000-0000-4000-8000-0000000000e1'")" = 8
+          test "$(PGDATABASE=$DB psql -Atc "select basket_locked_quantity::integer from public.basket_locked_component_stock_v1 where product_id='00000000-0000-4000-8000-0000000000e1'")" = 6
+          echo 'PASS: concurrent Bling virtual/deposit stock cannot consume 6 physically reserved kits'
       - name: Diff hygiene
         run: git diff --check
