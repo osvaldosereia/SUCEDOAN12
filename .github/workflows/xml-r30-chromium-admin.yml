@@ -1,0 +1,30 @@
+name: XML R30 Chromium Admin Functional Flow
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-xml-admin-browser-r30.mjs'
+      - '.github/workflows/xml-r30-chromium-admin.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser test dependency
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Exercise actual XML Admin DOM handlers offline on desktop and mobile
+        run: |
+          set -eu
+          node --check scripts/test-xml-admin-browser-r30.mjs
+          node scripts/test-xml-admin-browser-r30.mjs
+          node scripts/test-xml-admin-r27.mjs

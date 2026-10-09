@@ -1,0 +1,54 @@
+name: XML R29 Isolated Supabase Auth Smoke
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/xml-r29-isolated-supabase-ci.yml'
+      - 'scripts/test-xml-catalog-integration-r26.pg.sql'
+      - 'supabase/migrations/*purchase_xml*'
+      - 'scripts/xml-release-preflight-r26.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-auth-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.84.2
+      - name: Create a fresh disposable local stack (no remote connections)
+        env:
+          SUPABASE_ACCESS_TOKEN: ''
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/xml-r29-local"
+          cd "$RUNNER_TEMP/xml-r29-local"
+          supabase init --yes
+          supabase start -x studio,imgproxy,inbucket,realtime,storage-api,analytics,vector,edge-runtime
+          supabase status -o env > "$RUNNER_TEMP/xml-r29-local-status.env"
+      - name: Run exact R27 migrations and auth privilege checks against local Supabase
+        env:
+          SUPABASE_ACCESS_TOKEN: ''
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          set -a
+          source "$RUNNER_TEMP/xml-r29-local-status.env"
+          set +a
+          : "${DB_URL:?missing local DB URL}"
+          sed -e '/^create role anon nologin;/d' -e '/^create role authenticated nologin;/d' -e '/^create role service_role nologin bypassrls;/d'             scripts/test-xml-catalog-integration-r26.pg.sql > "$RUNNER_TEMP/xml-r29-local-test.sql"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/xml-r29-local-test.sql"
+          : "${ANON_KEY:?missing local anon key}"
+          : "${API_URL:?missing local API}"
+          response_code=$(curl -sS -o "$RUNNER_TEMP/anon-rpc.json" -w '%{http_code}'             -X POST "$API_URL/rest/v1/rpc/purchase_xml_preview_field_application_v1"             -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY"             -H 'content-type: application/json'             -d '{"p_review_id":"30000000-0000-4000-8000-000000000001"}')
+          test "$response_code" = 401 -o "$response_code" = 403 -o "$response_code" = 404
+          echo "PASS R29: Supabase Auth/PostgREST anon EXECUTE denied ($response_code), R27 apply/rollback SQL tested locally"
+      - name: Stop and remove isolated containers
+        if: always()
+        run: |
+          cd "$RUNNER_TEMP/xml-r29-local" || exit 0
+          supabase stop --no-backup || true

@@ -1,0 +1,58 @@
+# DONA ANTÔNIA — Compras e Catálogo XML — Checkpoint de integração R28 (09/10/2026)
+
+**PR consolidada diretamente contra `main`:** [#1034](https://github.com/osvaldosereia/SUCEDOAN12/pull/1034) — branch `agent/xml-catalog-final-integration-r28-20261009` (**DRAFT, SEM DEPLOY**).
+
+## O que foi efetivamente executado
+
+1. Criei a R28 **a partir da main fiscal atual** (`168558b6b8710ee7feda1b7c6a9360357357b0d3`) em vez de tentar publicar a cadeia de PRs empilhados R18–R27.
+2. Apliquei sobre o `vitrine/admin/index.html` da main os **11 hunks XML** derivados do ancestral comum `d5f3f16b5b6b8ba27823406de0c43628e62d4a78`, **11/11 coincidiram exatamente e zero conflito**. O HTML resultante conservou `RECUPERAR VENDA NO BLING` e `CONSULTAR BLING / NF-e` da main, além dos novos controles XML de dossiê fiscal, prévia, alteração confirmada de nome inativo e rollback.
+3. Na mesma branch, incorporei **88 objetos Git originais** da R27, mais **4 exclusões de arquivos de migration com timestamp antigo**, por criação de árvore Git baseada na main (sem download/manipulação manual do repositório e sem sobrepor alterações paralelas). Resultado: [PR #1034](https://github.com/osvaldosereia/SUCEDOAN12/pull/1034) `ahead` da main, sem perda das funcionalidades Bling/NF-e, pedidos, roteiros, ANA e cestas.
+4. Corrigi **um problema já presente na main** na página pública `pedido/index.html`: o backend já retornava `channel_origin`, mas a página não disponibilizava link para retornar ao número de WhatsApp correto. Agora utiliza `whatsapp://send?phone=...`, somente o canal 0975 ou 1018 enviado pelo servidor. A implementação final mantém compatibilidade com impressão por deep-link e página pública somente leitura. Os dois workflows que inicialmente falhavam (`Admin and Baskets Guard CI` e `Verify admin order WhatsApp UI integration`) **voltaram a aprovar**.
+5. Criei [workflow R28](https://github.com/osvaldosereia/SUCEDOAN12/blob/agent/xml-catalog-final-integration-r28-20261009/.github/workflows/xml-catalog-r28-final-integration.yml) para testar conjuntamente XML/field review, dossiê fiscal, histórico de migrations, fiscal Bling e NF-e, NCM remote gap, public WhatsApp, Deno ambos os backends e PostgreSQL 17 descartável.
+6. **CI integralmente verde no commit `1731d645460ab185173c8eda092c1ceed7dc8bd4`: 22/22 workflows da PR SUCCESS** (incluindo workflow R28 [#37979625811](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37979625811), 3/3 jobs).
+7. A main avançou **novamente** durante a rodada para `8faf18303cab2201d2fe6588296ecce30de3a4b8` (proteção Auth-backoff fiscal R1), mudando apenas quatro arquivos alheios ao XML. Esses quatro blobs exatos foram incorporados à R28 sem modificar o trabalho XML. Workflow R28 passou a executar também `scripts/test-fiscal-recovery-r1-auth-backoff.mjs` no commit `e4a944b05583cb106de365e9c85f92fb2811f96e`. **Checar o CI desse novo commit antes de alegar aprovação integral dele.**
+
+## Segurança e bloqueadores reais
+
+- **Produção íntegra:** nenhuma migration SQL foi executada em `ssbesxgaijknwsjbsbcz`, nenhum deploy Edge/site, merge em main, alteração de produto, estoque, preço, NCM/CEST, dados fiscais, Bling ou financeiro.
+- **Histórico global de migrations diverge severamente:** snapshot R27 era 136 arquivos locais/1.187 versões remotas (34 coincidências, 102 local-only, 1.153 remoto-only, 89 nomes sob timestamps diferentes). O `xml-migration-drift-guard-r27.mjs` proíbe explicitamente o `db push` global. As duas migrations XML novas no repo são `20261009185312_purchase_xml_identity_atomic_r27.sql` e `20261009185314_purchase_xml_field_approval_r27.sql`, mas agora há a migration remota fiscal `20261009190052` posterior a elas. **Renumerar as duas novas somente após congelar histórico remoto e obter nomes pela CLI, em janela de release. Não reexecutar as versões históricas já aplicadas.**
+- **Homologação faltante:** R28 possui testes estáticos, parser Deno e SQL PostgreSQL descartável, **mas não** uma homologação real Supabase Auth/PostgREST/Edge/browser mobile/desktop com dados não pessoais. É incorreto dizer que o fluxo completo já está em produção.
+- **Ambiente homologatório:** a organização Supabase `zrzgcszvvjqdodqzmyrg` consta como **Pro**; `get_cost({type:'branch'})` devolveu **US$ 0,01344 por hora**. Não criei branch, pois o provedor exige informar o valor e confirmar entendimento do custo antes de criar. Não reutilizar outros projetos para staging sem validação.
+- Manter PR #1034 em **draft**, sem merge ou deploy enquanto os gates de homologação/backup/rollback não forem aprovados.
+
+## Plano de conclusão mais curto — R29
+
+1. Obter aprovação explícita da cobrança da branch Supabase de homologação (US$0,01344/h) ou testar numa infraestrutura local isolada sem cobrança se houver bloqueio.
+2. Congelar versão da main + lista de migrations remotas. Gerar dois nomes CLI novos posteriores à última migration aplicada, verificar SQL idêntico ao R27, **aplicar exclusivamente as duas novas migrations numa branch/projeto isolado**, não varrer todo o diretório.
+3. Implantar os endpoints XML no staging, autenticar owner/admin reais e negar operator/viewer/interno/desativado; executar preview, apply do nome de produto **inativo**, rollback CAS, proposta fiscal somente leitura e XML/GTIN/embalagem. Executar navegador mobile/desktop, conflitos, duplicatas, timeout, importação/releitura e Bling simulado.
+4. Confirmar backup/restauração, logs, limites e rollout. Só depois preparar PR main para merge seguro, aplicar SQL seletivo **no canônico produtivo** conforme janela, publicar Edge + HTML com smoke. Garantir nenhum efeito financeiro/fiscal/estoque não autorizado.
+5. Registrar SHA final e CI/rollout no handoff.
+
+## Para continuar sem retrabalho
+
+> **CONTINUAR DONA ANTÔNIA — COMPRAS/CATÁLOGO XML — R29.** GitHub `osvaldosereia/SUCEDOAN12`, **PR draft #1034 contra main**, branch `agent/xml-catalog-final-integration-r28-20261009`. Leia integralmente `docs/projects/PURCHASE_XML_R28_FINAL_INTEGRATION_CHECKPOINT.md` e `docs/projects/HANDOFF_COMPRAS_CATALOGO_XML_2026-10-08.md`. R28 já trouxe todos os 89 arquivos do projeto XML para uma branch baseada na main fiscal e manteve Auth-backoff R1; 22/22 CI da versão `1731d645` aprovados; conferir nova CI após `e4a944b`. Finalizar staging Supabase real, reversionamento CLI de duas migrations e release seletivo. **Não usar db push global, migration repair nem modificar produção antes dos gates.**
+
+
+## R29 — Tentativa real de staging Supabase e bloqueio operacional verificado (mesma data)
+
+1. O usuário solicitou avançar rapidamente. Consultei a organização Pro `zrzgcszvvjqdodqzmyrg`, a API `get_cost` retornou `US$ 0.01344/hour`, e o mecanismo `confirm_cost` forneceu autorização identificável. A branch isolada `xml-catalog-r29-staging-20261009`, `project_ref=errtzfigcytxzzrodqtp`, id `03ad28c3-d6d0-42c4-967a-9e456eb4d424`, foi criada com `with_data=false`.
+2. **A reprodução integral das migrations de produção falhou antes das tabelas XML**, após **145 migrations** até `20260908200406_whatsapp_sales_objective_service_v1`; a próxima `20260908200932_whatsapp_sales_official_resources_homologation_v1` abortou com `live_mode_required` porque exige `automation_config.whatsapp_release_mode='live'`. O log Postgres da branch registrou esse erro. O schema de catálogo XML não chegou a ser criado nesse preview. Outro preview paralelo `da6-qa-20261009` também tinha estado `MIGRATIONS_FAILED`.
+3. **Não forcei `whatsapp_release_mode='live'`**, não pulei migrations, não falseei histórico e não carreguei dados da produção; isso poderia ativar canal externo numa branch. A branch foi **excluída com `delete_branch: success=true`** para encerrar a cobrança. Confirmar no painel se não restou cobrança em aberto relativa às horas efetivamente consumidas.
+4. Conclusão técnica: o mecanismo padrão de branching Supabase atualmente não fornece staging fiel para esse projeto por causa de uma **migration histórica que contém uma pré-condição operacional live**. Isso não é falha das duas migrations R27, que sequer foram aplicadas à branch. Não publicar sem uma alternativa de homologação isolada.
+5. Alternativa mais segura: testar R27 em **Supabase CLI local/dockers** com esquema mínimo e dados de teste, ou provisionar **projeto independente novo** sem replay desse histórico e executar apenas schema de teste controlado. Em ambos, validar Auth/PostgREST/Edge/browser. Mudança ou reparo do histórico produtivo para viabilizar branches exige projeto separado, revisão e autorização específica — não usar `migration repair` na produção.
+
+
+## R29 — Supabase Auth/PostgREST em Docker local: PASSED
+
+Workflow [XML R29 Isolated Supabase Auth Smoke — run #37980712665](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37980712665) executado em `ubuntu-latest`, sem nenhuma chave de produção e sem contato com o banco remoto:
+
+- `supabase init` e `supabase start` concluíram em ambiente local descartável com serviços de DB, Auth e PostgREST.
+- Fixture exata do esquema reduzido + SQL das duas migrations R27 foram aplicados no banco PostgreSQL local hospedado pelo próprio Supabase. Mensagem verificada: `PASS R26 joined R23 + R24: owner/admin, disabled/viewer/operator, RLS/ACL, identity->review->CAS apply->rollback, fiscal and no stock/finance`.
+- Chamada HTTP real via PostgREST com a chave pública `anon` para o RPC privado `purchase_xml_preview_field_application_v1` retornou **HTTP 404**, comprovando indisponibilidade da operação anônima. Log: `PASS R29: Supabase Auth/PostgREST anon EXECUTE denied (404), R27 apply/rollback SQL tested locally`.
+- Containers do ambiente descartável foram encerrados com sucesso.
+- **Escopo correto:** banco/Auth/PostgREST local aprovados; não houve Edge real sob autenticação owner em staging compartilhado nem E2E da interface XML em navegador/telefone. **Não equivale a aceite produtivo.**
+
+O preview Supabase Pro separado `errtzfigcytxzzrodqtp`, que falhou no replay histórico `live_mode_required`, foi **deletado com sucesso** para interromper cobrança; não resta branch R29 de homologação ativa.
+
+
+**Conciliação fiscal adicional:** a main avançou de `7c5505eb010ed490c8dce23da50889c85d403fea` para `2f48f08a7fd87d9d5ee5bb4826d5a0c618ecc2b9`, incorporando `fiscal-r2-sale-link-lookup` no roteador fiscal compartilhado. R28 sincronizada por blobs das 4 alterações paralelas em `8754e5d4dc70f392d533a22ac8fa617e99f17233`; não houve sobreposição com as mudanças XML do Admin. Testes específicos de R2 agora estão presentes na branch, mas qualquer novo avanço da main exige conferência de merge/CI antes da publicação.

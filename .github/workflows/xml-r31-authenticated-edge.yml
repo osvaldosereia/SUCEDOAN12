@@ -1,0 +1,140 @@
+name: XML R31 Local Authenticated Edge Gate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/xml-r31-authenticated-edge.yml'
+      - 'supabase/functions/purchase-xml-v1/**'
+      - 'supabase/migrations/*purchase_xml*'
+      - 'scripts/test-xml-catalog-integration-r26.pg.sql'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-jwt-edge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.84.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Start ephemeral Supabase DB Auth and Edge, never remote
+        env:
+          SUPABASE_ACCESS_TOKEN: ''
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/xml-r31/supabase/functions"
+          cp -a supabase/functions/purchase-xml-v1 "$RUNNER_TEMP/xml-r31/supabase/functions/"
+          # CI-only dependency injection: real handler/auth and gateway, real
+          # GoTrue/PostgREST; no remote JSR/npm runtime fetch on cold start.
+          cp scripts/xml-r31-local-supabase-shim.mjs "$RUNNER_TEMP/xml-r31/supabase/functions/purchase-xml-v1/local-supabase-shim.mjs"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path(__import__('os').environ['RUNNER_TEMP'])/'xml-r31/supabase/functions/purchase-xml-v1/index.ts'
+          original=p.read_text()
+          a='import "jsr:@supabase/functions-js/edge-runtime.d.ts";'
+          b='import { createClient } from "npm:@supabase/supabase-js@2";'
+          assert original.count(a)==1 and original.count(b)==1
+          assert 'export async function handlePurchaseXmlRequest(' in original
+          assert 'Deno.serve(' not in original
+          # index.ts is a service MODULE used by admin-service-intelligence-v1,
+          # not a standalone Edge entrypoint. Add Deno.serve ONLY in CI copy.
+          p.write_text(original.replace(a,'').replace(b,
+            'import { createClient } from "./local-supabase-shim.mjs";')
+            +chr(10)+"Deno.serve(async req => {"
+            +" const body=await req.json().catch(()=>({}));"
+            +" return handlePurchaseXmlRequest(req,body,false); });"+chr(10))
+          print('PASS: CI-only external import replacement; repo production file unchanged')
+          # This action exercises only the field-apply gateway. XML extraction is
+          # tested separately in R19/R28; exclude its npm parser on this path.
+          extractor=p.with_name('xml-catalog-extractor.mjs')
+          source=extractor.read_text()
+          assert 'npm:fast-xml-parser@5.11.2' in source
+          extractor.write_text("export function extractCatalogFromNfe(){throw new Error('xml_extract_not_under_test');}"+chr(10))
+          assert 'npm:' not in extractor.read_text()
+          print('PASS: CI-only XML parser cold-start dependency excluded')
+          PY
+          node --check "$RUNNER_TEMP/xml-r31/supabase/functions/purchase-xml-v1/xml-catalog-extractor.mjs"
+          node --check "$RUNNER_TEMP/xml-r31/supabase/functions/purchase-xml-v1/local-supabase-shim.mjs"
+          cd "$RUNNER_TEMP/xml-r31"
+          supabase init --yes
+          supabase start -x studio,imgproxy,inbucket,realtime,storage-api,analytics,vector
+          supabase status -o env > "$RUNNER_TEMP/r31.env"
+      - name: Apply exact two R27 migrations and provision synthetic local Auth user
+        env:
+          SUPABASE_ACCESS_TOKEN: ''
+        run: |
+          set -euo pipefail
+          set -a; source "$RUNNER_TEMP/r31.env"; set +a
+          : "${DB_URL:?}"; : "${SERVICE_ROLE_KEY:?}"; : "${API_URL:?}"
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          sed -e '/^create role anon nologin;/d' -e '/^create role authenticated nologin;/d' -e '/^create role service_role nologin bypassrls;/d' \
+            scripts/test-xml-catalog-integration-r26.pg.sql > "$RUNNER_TEMP/r31-fixture.sql"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/r31-fixture.sql" >/dev/null
+          curl -fsS --connect-timeout 3 --max-time 20 -X POST "$API_URL/auth/v1/admin/users" \
+            -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+            -H 'content-type: application/json' \
+            --data '{"email":"xml-r31-admin@example.invalid","password":"LocalOnly-2026!test","email_confirm":true}' \
+            > "$RUNNER_TEMP/r31-user.json"
+          id=$(node -e 'const x=require(process.argv[1]);if(!/^[a-f0-9-]{36}$/.test(x.id||""))process.exit(2);process.stdout.write(x.id)' "$RUNNER_TEMP/r31-user.json")
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "insert into public.admin_users(user_id,role,is_active) values ('$id'::uuid,'owner',true) on conflict(user_id) do update set role='owner',is_active=true" >/dev/null
+          curl -fsS --connect-timeout 3 --max-time 20 -X POST "$API_URL/auth/v1/token?grant_type=password" \
+            -H "apikey: $ANON_KEY" -H 'content-type: application/json' \
+            --data '{"email":"xml-r31-admin@example.invalid","password":"LocalOnly-2026!test"}' \
+            > "$RUNNER_TEMP/r31-login.json"
+          node -e 'const x=require(process.argv[1]);if(!x.access_token)process.exit(2)' "$RUNNER_TEMP/r31-login.json"
+          echo 'PASS R31: test user created in isolated Auth and exact XML migrations applied'
+      - name: Serve real purchase-xml-v1 Edge and enforce JWT and database roles
+        env:
+          SUPABASE_ACCESS_TOKEN: ''
+        run: |
+          set -euo pipefail
+          set -a; source "$RUNNER_TEMP/r31.env"; set +a
+          id=$(node -e 'process.stdout.write(require(process.argv[1]).id)' "$RUNNER_TEMP/r31-user.json")
+          token=$(node -e 'process.stdout.write(require(process.argv[1]).access_token)' "$RUNNER_TEMP/r31-login.json")
+          cd "$RUNNER_TEMP/xml-r31"
+          supabase functions serve purchase-xml-v1 --no-verify-jwt > "$RUNNER_TEMP/r31-edge.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/r31-edge.pid"
+          url="$API_URL/functions/v1/purchase-xml-v1"
+          result=000
+          for n in $(seq 1 10); do
+            result=$(curl -sS --connect-timeout 3 --max-time 12 -o "$RUNNER_TEMP/r31-response.json" -w '%{http_code}' -X POST "$url" \
+              -H 'content-type: application/json' -H "Authorization: Bearer $token" -H "apikey: $ANON_KEY" \
+              -d '{"purchase_action":"xml_field_apply_list","product_id":"30000000-0000-4000-8000-000000000010"}' || true)
+            if [ "$result" = 200 ]; then break; fi
+            sleep 2
+          done
+          if [ "$result" != 200 ]; then
+            echo "Owner status $result (local CI harness)"
+            test -f "$RUNNER_TEMP/r31-response.json" && head -c 300 "$RUNNER_TEMP/r31-response.json" || true
+            tail -60 "$RUNNER_TEMP/r31-edge.log"
+            exit 1
+          fi
+          node -e 'const x=require(process.argv[1]);if(x.ok!==true||!Array.isArray(x.items))process.exit(2)' "$RUNNER_TEMP/r31-response.json"
+          echo 'PASS R31: owner JWT accesses real local Edge field-apply list'
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "update public.admin_users set role='viewer' where user_id='$id'::uuid" >/dev/null
+          status=$(curl -sS --connect-timeout 3 --max-time 12 -o "$RUNNER_TEMP/r31-denied.json" -w '%{http_code}' -X POST "$url" \
+            -H 'content-type: application/json' -H "Authorization: Bearer $token" -H "apikey: $ANON_KEY" \
+            -d '{"purchase_action":"xml_field_apply_list","product_id":"30000000-0000-4000-8000-000000000010"}')
+          test "$status" = 403
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "update public.admin_users set role='owner',is_active=false where user_id='$id'::uuid" >/dev/null
+          status=$(curl -sS --connect-timeout 3 --max-time 12 -o "$RUNNER_TEMP/r31-inactive.json" -w '%{http_code}' -X POST "$url" \
+            -H 'content-type: application/json' -H "Authorization: Bearer $token" -H "apikey: $ANON_KEY" \
+            -d '{"purchase_action":"xml_field_apply_list","product_id":"30000000-0000-4000-8000-000000000010"}')
+          test "$status" = 403
+          status=$(curl -sS --connect-timeout 3 --max-time 12 -o "$RUNNER_TEMP/r31-anon.json" -w '%{http_code}' -X POST "$url" \
+            -H 'content-type: application/json' -H "apikey: $ANON_KEY" \
+            -d '{"purchase_action":"xml_field_apply_list","product_id":"30000000-0000-4000-8000-000000000010"}')
+          test "$status" = 401
+          echo 'PASS R31: viewer JWT 403, inactive owner 403, anon 401. No remote Supabase/Bling requests.'
+      - name: Stop local Edge and destroy local containers
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/r31-edge.pid" ]; then kill "$(cat "$RUNNER_TEMP/r31-edge.pid")" || true; fi
+          cd "$RUNNER_TEMP/xml-r31" || exit 0
+          supabase stop --no-backup || true
