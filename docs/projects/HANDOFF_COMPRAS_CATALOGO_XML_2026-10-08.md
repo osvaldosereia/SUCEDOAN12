@@ -130,7 +130,7 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 
 ### Testes realizados de verdade
 
-- [CI XML Catalog R18 Consolidation — run 37934501706](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37934501706): **3/3 jobs concluídos em success**, verificados pelos logs:
+- [CI final XML Catalog R18 Consolidation — run 37934816543](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37934816543): **3/3 jobs concluídos em success**, incluindo verificação de tipos `deno check` de AMBOS os backends XML completos, verificados pelo resultado dos jobs:
   - `source-and-ui`: **11 scripts Node PASS** (catálogo, comparador, falhas, paginação, ficha legada, revisão/auditoria, autenticação, interface, CAS/rollback estático e limites do gateway).
   - `real-parser`: Deno + `fast-xml-parser` real: **PASS** na coerência de chave/protocolo e rejeição XML malformado/DTD.
   - `transactional-ledger`: PostgreSQL 17 em container **descartável**: **PASS** para autorização de proposta, aplicação e reversão apenas de produto inativo, compare-and-swap, idempotência, trilha auditável e bloqueios.
