@@ -21,7 +21,7 @@ create table public.purchase_xml_items(
  commercial_gtin text,tax_gtin text,purchase_unit text,converted_quantity numeric,
  inventory_lot_id uuid,lot_expiration_date date,base_unit text,supplier_item_code text,
  metadata jsonb not null default '{}'::jsonb,
- match_method text
+ match_method text,processing_status text
 );
 create table public.product_identifiers(
  id uuid primary key default gen_random_uuid(),
