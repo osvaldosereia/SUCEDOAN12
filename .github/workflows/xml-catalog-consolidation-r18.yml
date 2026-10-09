@@ -46,6 +46,8 @@ jobs:
           deno-version: v2.x
       - name: Run NF-e integrity tests with fast-xml-parser
         run: deno run --allow-read scripts/test-xml-catalog-protocol-integrity-v6.mjs
+      - name: Type-check both integrated purchase XML Edge modules
+        run: deno check supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
   transactional-ledger:
     runs-on: ubuntu-latest
     services:
