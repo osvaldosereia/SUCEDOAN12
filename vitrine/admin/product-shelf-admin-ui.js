@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const bridge=()=>window.DonaAntoniaAdminBridge;
-const alertUser=s=>bridge()?.toast?.(s)||alert(s);
+const alertUser=s=>{if(typeof bridge()?.toast==='function')bridge().toast(s);else alert(s)};
 const ids=new Set();
 let gondolas=[],loading=false;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
