@@ -1,0 +1,21 @@
+name: XML Catalog Protocol Integrity V6
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/xml-catalog-extractor.mjs'
+      - 'supabase/functions/purchase-xml-v1/xml-catalog-extractor.mjs'
+      - 'scripts/test-xml-catalog-protocol-integrity-v6.mjs'
+      - '.github/workflows/xml-catalog-protocol-integrity-v6.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  protocol-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno run --allow-read scripts/test-xml-catalog-protocol-integrity-v6.mjs
