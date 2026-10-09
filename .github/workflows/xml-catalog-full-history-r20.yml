@@ -37,5 +37,9 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Type-check both integrated source-only XML APIs
-        run: deno check supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
+      - name: Type-check APIs and re-run R19 parser/import regressions
+        run: |
+          set -eu
+          deno check supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
+          deno run --allow-read scripts/test-xml-ingest-integrity-r19.mjs
+          deno run --allow-read scripts/test-xml-catalog-protocol-integrity-v6.mjs
