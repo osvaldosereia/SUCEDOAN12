@@ -170,4 +170,8 @@ test("R06 optional gate is OFF and only protects final snapshot before Bling hub
   assert.ok(build.indexOf("reconcileSeparatedCommercialOrder(")<build.indexOf("return {source_order_id:"),
     "preflight must block snapshot output before sending to Bling");
   assert.match(build,/individual-verdict\.snapshot\.physical_line_cents/);
+  assert.match(build,/commercial_reconciliation_blocked:final_completion_required/);
+  assert.match(build,/commercial_reconciliation_blocked:snapshot_version_changed/);
+  assert.match(build,/String\(latestOrder\.data\?\.updated_at\)!==String\(oq\.data\.updated_at\)/);
+  assert.match(build,/String\(latestCompletion\.data\?\.updated_at\)!==String\(cq\.data\.updated_at\)/);
 });
