@@ -3,9 +3,11 @@ on:
   push:
     branches:
       - 'agent/orders-r2-r7-*'
+      - 'agent/orders-r2-r8-*'
     paths:
       - 'scripts/sql/orders-r2-r7-*.sql'
       - 'scripts/test-orders-r2-r7-*.mjs'
+      - 'scripts/test-orders-r2-r8-*.mjs'
       - '.github/workflows/orders-r2-r7-bling-chain-ci.yml'
 
 
@@ -66,6 +68,11 @@ jobs:
         with:
           ref: 1ab1d7e469ed17abbd1fe6dc92b08fea822e24a2
           path: r07-source
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 88503c966296f9ed84e8334ed46b837dfbe1e9d2
+          path: r08-source
           persist-credentials: false
       # R06 source is pinned: reconciliation contract and canonical RPC exports,
       # without copying or reimplementing the published code.
@@ -184,6 +191,14 @@ jobs:
           test "$BLING_LIVE_ENABLED" = false
           test "$FISCAL_LIVE_ENABLED" = false
           echo 'PASS checkout R02 -> Meta R04/R05 -> frozen R06 -> EXACT R07 separated-only projection SHA256 + one remote intent'
+      - name: R08 real R06/R07 receipts with synthetic fiscal approval
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -c "ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS bling_order_id bigint"
+          psql -v ON_ERROR_STOP=1 -c "UPDATE public.orders o SET bling_order_id=i.bling_order_id FROM public.order_bling_r7_sync_intents_v1 i WHERE i.order_id=o.id AND i.status='verified'"
+          psql -v ON_ERROR_STOP=1 -Atc "SELECT jsonb_build_object('kind',t.kind,'order',to_jsonb(o),'completion',to_jsonb(c),'r7_intent',to_jsonb(i))::text FROM public.r2_r5_meta_test_orders t JOIN public.orders o ON o.id=t.order_id JOIN public.order_separation_completions_v1 c ON c.order_id=o.id JOIN public.order_bling_r7_sync_intents_v1 i ON i.order_id=o.id WHERE t.kind IN ('basket','mold') ORDER BY t.kind" > /tmp/r02-r08-receipts.jsonl
+          node --check scripts/test-orders-r2-r8-genuine-fiscal-preflight.mjs
+          node scripts/test-orders-r2-r8-genuine-fiscal-preflight.mjs /tmp/r02-r08-receipts.jsonl
       - name: Ensure no unsafe transports enabled or changes to tracked files
         run: |
           set -euo pipefail
