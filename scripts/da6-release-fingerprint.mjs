@@ -16,6 +16,10 @@ export function da6SourceFiles(root){
   'vitrine/admin/product-shelf-labels.css',
   'vitrine/admin/product-label-print.css',
   'supabase/functions/admin-products-live-v1/index.ts',
+  'scripts/da6-release-fingerprint.mjs',
+  'scripts/da6-release-gate.mjs',
+  'scripts/da6-release-attestation.mjs',
+  'scripts/da6-staging-preflight.mjs',
   '.github/workflows/da6-inventory-labels-ci.yml'
  ]);
  const scopes=[
