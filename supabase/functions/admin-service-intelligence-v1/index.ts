@@ -4623,8 +4623,30 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
         diagnostics.invoice_draft=probed.ok?probed.report:{
           diagnostic_error:probed.error,http_status:probed.status||null
         };
+        // The sale itself referenced the note and the independent fiscal
+        // evidence confirms identity. Save that document ID to the FAILED JOB
+        // (not order_fiscal_controls, which is reserved for authorization).
+        // This prevents another request to generate a second NF-e after timeout.
+        if(probed.ok&&probed.identity_verified===true
+          &&preview.invoice_lookup?.by==="bling_sale_invoice_reference"
+          &&Number(job.bling_invoice_id||0)===0){
+          const attached=await sb.from("dispatch_fiscal_jobs").update({
+            bling_invoice_id:Number(preview.invoice_id),
+            bling_invoice_number:preview.invoice?.numero||null
+          }).eq("id",job.id).eq("order_id",job.order_id)
+            .eq("bling_order_id",preview.bling_order_id)
+            .eq("status","review_required").is("bling_invoice_id",null)
+            .select("id").maybeSingle();
+          if(attached.error)throw attached.error;
+          if(attached.data)diagnostics.existing_invoice_recorded=Number(preview.invoice_id);
+        }
       }
-      if(preview.hard_blockers?.length){diagnostics.reason="fiscal_preflight_blocked";diagnostics.blockers=preview.hard_blockers;continue;}
+      if(preview.hard_blockers?.length){
+        diagnostics.reason=preview.hard_blockers.includes("invoice_terminal_state")
+          ?"existing_invoice_rejected_or_terminal":"fiscal_preflight_blocked";
+        diagnostics.blockers=preview.hard_blockers;
+        continue;
+      }
       diagnostics.invoice_id=preview.invoice_id||null;
       if(preview.invoice_id||preview.invoice){
         const rec=await blingHubVitrineDispatchFiscalReconcile(sb,job.order_id);

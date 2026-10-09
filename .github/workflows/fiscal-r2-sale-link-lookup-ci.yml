@@ -21,5 +21,6 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/test-fiscal-r2-sale-link-lookup.mjs
+      - run: node scripts/test-fiscal-r2-recovered-link-persistence.mjs
       - run: node scripts/test-fiscal-r2-nfe-draft-inspector.mjs
       - run: node scripts/test-fiscal-recovery-r1-auth-backoff.mjs
