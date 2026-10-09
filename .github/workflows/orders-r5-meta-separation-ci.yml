@@ -1,0 +1,89 @@
+name: Orders R05 - separation Meta gate (offline)
+on:
+  push:
+    branches:
+      - 'agent/orders-r5-*'
+  pull_request:
+    branches:
+      - 'agent/orders-r4-*'
+      - main
+    paths:
+      - 'supabase/sql/orders-r5-separation-meta-gates-v1.sql'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'montar/**'
+      - 'scripts/sql/orders-r5-*'
+      - 'scripts/test-orders-r5-*'
+      - '.github/workflows/orders-r5-meta-separation-ci.yml'
+permissions:
+  contents: read
+jobs:
+  regression:
+    name: Offline Postgres 17 R04-R05 Meta separation regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: orders_meta_r5_synthetic
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d orders_meta_r5_synthetic"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: orders_meta_r5_synthetic
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      META_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+      ORDER_META_CONFIRM_BUTTON_ENABLED: 'false'
+      ORDER_META_CONFIRMATION_GUARD_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assert all live transports and rollout flags OFF
+        run: |
+          test "$META_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          test "$ORDER_META_CONFIRM_BUTTON_ENABLED" = false
+          test "$ORDER_META_CONFIRMATION_GUARD_ENABLED" = false
+      - name: Browser and Node contract tests
+        run: |
+          set -euo pipefail
+          node --check montar/app.js
+          node --check scripts/test-orders-r5-separation-gate-v1.mjs
+          node --test scripts/test-orders-r5-separation-gate-v1.mjs scripts/test-orders-r4-meta-confirmation-v1.mjs
+      - name: Install psql
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client >/dev/null
+          fi
+      - name: Validate signed Meta R04 contract in disposable PostgreSQL
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r4-meta-hml-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r4-meta-button-confirmation-contract-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r4-meta-hml-assertions.sql
+      - name: Prepare and apply R05-only draft contract
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r5-hml-setup.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r5-separation-meta-gates-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r5-hml-assertions.sql
+      - name: Assert one durable confirmation per synthetic order
+        run: |
+          set -euo pipefail
+          test "$(psql -Atc 'select count(*) from public.order_meta_confirmations_v1')" = 2
+          test "$(psql -Atc 'select count(*) from public.orders where status='''ready'''')" = 1
+      - name: Diff hygiene
+        run: git diff --check
