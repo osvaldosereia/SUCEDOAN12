@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-const sql=readFileSync(new URL('../supabase/migrations/20261009160000_separation_ready_reservation_idempotence.sql',import.meta.url),'utf8');
+const sql=readFileSync(new URL('../supabase/migrations/20261009155231_separation_ready_reservation_idempotence_20261009.sql',import.meta.url),'utf8');
 
 assert.match(sql,/create or replace function public\.sync_vitrine_order_stock_reservation_v1\(\)/i);
 assert.match(sql,/new\.status\s*=\s*'ready'/);
