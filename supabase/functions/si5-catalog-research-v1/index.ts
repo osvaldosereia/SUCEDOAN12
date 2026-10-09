@@ -32,8 +32,21 @@ async function save(request,requestState,httpStatus,researchStatus,patch={},erro
 Deno.serve(async(req)=>{
  if(req.method!=="POST")return respond({error:"method_not_allowed"},405);
  const secret=Deno.env.get("SI5_WORKER_SECRET")||"";
- if(!secret)return respond({error:"worker_secret_not_configured"},503);
- if(req.headers.get("x-si5-worker-secret")!==secret)return respond({error:"unauthorized"},401);
+ let authorized=!!secret && req.headers.get("x-si5-worker-secret")===secret;
+ if(!authorized){
+   // Secondary internal trigger credential: SHA-256 fingerprint, raw value remains in Vault.
+   // Supabase Gateway JWT validation remains required on this Edge Function.
+   const trigger=req.headers.get("x-si5-db-trigger")||"";
+   if(/^[0-9a-f]{64}$/.test(trigger)){
+     const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(trigger));
+     const hash=Array.from(new Uint8Array(digest))
+       .map(b=>b.toString(16).padStart(2,"0")).join("");
+     const guard=await db.from("si5_internal_trigger_guard_v1")
+       .select("secret_sha256").eq("id",true).maybeSingle();
+     authorized=!guard.error && !!guard.data && guard.data.secret_sha256===hash;
+   }
+ }
+ if(!authorized)return respond({error:"unauthorized"},401);
  let input={};
  try{input=await req.json()}catch{return respond({error:"invalid_json"},400)}
  const cfg=await db.from("si5_research_config")
