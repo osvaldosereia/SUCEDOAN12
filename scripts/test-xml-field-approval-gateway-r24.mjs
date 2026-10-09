@@ -19,7 +19,7 @@ const sb={rpc:async(name,params)=>{calls.push({name,params});return {data:
  from(name){assert.equal(name,"purchase_xml_field_applications_v1");return {
  select(fields){assert.doesNotMatch(fields,/stock|price|ncm|cest/);return this;},
  eq(k,id){assert.equal(k,"product_id");assert.equal(id,product);return this;},
- order(){return this;},async limit(n){assert.equal(n,50);return {data:[],error:null}};
+ order(){return this;},async limit(n){assert.equal(n,50);return {data:[],error:null}}
  }}};
 for(const who of [null,{...auth,role:"operator"},{...auth,internal:true},{...auth,ok:false}]){
  const n=calls.length;
