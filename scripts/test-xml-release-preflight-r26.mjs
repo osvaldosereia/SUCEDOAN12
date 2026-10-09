@@ -23,15 +23,21 @@ const reversed=auditXmlReleaseR26({localFiles:local.filter(x=>
  "20261009140000_purchase_xml_field_approval_r27.sql"),remoteMigrations:remote});
 assert.ok(reversed.errors.includes("r23_must_precede_r24"));
 const allVerified=Object.fromEntries(R26_REQUIRED_GATES.map(x=>[x,true]));
-const namesReordered=local.map(x=>x
- .replace("20261009185312_purchase_xml_identity_atomic_r27.sql",
- "20261009170000_purchase_xml_identity_atomic_r27.sql")
- .replace("20261009185314_purchase_xml_field_approval_r27.sql",
- "20261009170100_purchase_xml_field_approval_r27.sql"));
+assert.ok(baseline.errors.includes("global_db_push_blocked_by_unreconciled_migration_history"));
+const completeLocal=[
+ "20261009155231_separation_ready_reservation_idempotence_20261009.sql",
+ "20261009185312_purchase_xml_identity_atomic_r27.sql",
+ "20261009185314_purchase_xml_field_approval_r27.sql"
+];
+const completeRemote=[
+ {version:"20261009155231",name:"separation_ready_reservation_idempotence_20261009"},
+ {version:"20261009185312",name:"purchase_xml_identity_atomic_r27"},
+ {version:"20261009185314",name:"purchase_xml_field_approval_r27"}
+];
 const future=auditXmlReleaseR26({
- localFiles:namesReordered,remoteMigrations:remote,verifiedGates:allVerified
+ localFiles:completeLocal,remoteMigrations:completeRemote,verifiedGates:allVerified
 });
-assert.deepEqual(future.errors,[],"Version sequencing is safe only after all independent gates");
+assert.deepEqual(future.errors,[],"Only matched and verified migration histories allow a release");
 assert.equal(future.release_allowed,true);
 assert.equal(baseline.read_only,true);
 const index=readFileSync(new URL("../supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts",import.meta.url),"utf8");
