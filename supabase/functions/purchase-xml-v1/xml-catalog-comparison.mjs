@@ -48,12 +48,12 @@ export function catalogXmlComparison(observations) {
       xml_values:found,status:status(catalog[original],found,identityConflict),
       requires_human_review:true,notes};
   };
-  const numeric=(size)=>(v)=>new RegExp("^\\\\d{"+size+"}$").test(v);
+  const numeric=(size)=>(v)=>/^[0-9]+$/.test(v)&&v.length===size;
   const result=[
     get("xml_ncm","ncm","NCM",numeric(8),"NCM do fornecedor não é homologação fiscal do produto."),
     get("xml_cest","cest","CEST",numeric(7),"CEST exige enquadramento do produto e legislação, não apenas concordância de XMLs."),
     get("commercial_gtin","gtin","EAN comercial",
-      (v)=>/^\\d{8}$|^\\d{12,14}$/.test(v),
+      (v)=>/^(?:[0-9]{8}|[0-9]{12,14})$/.test(v),
       "EAN comercial pode ser da caixa, fardo ou unidade; conferir antes de vincular."),
   ];
   // Never compare uCom to the sellable unit: purchase and sales quantities often differ.
