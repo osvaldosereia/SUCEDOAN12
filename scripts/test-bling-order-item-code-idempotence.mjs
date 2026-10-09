@@ -8,15 +8,15 @@ function extract(startMarker,endMarker){
   assert.ok(start>=0,`Missing source function: ${startMarker}`);
   const end=source.indexOf(endMarker,start+startMarker.length);
   assert.ok(end>start,`Missing end marker: ${endMarker}`);
-  return source.slice(start,end).replace(/:any\\b/g,'').replace(/\\s+as any\\b/g,'');
+  return source.slice(start,end).replace(/:any\b/g,'').replace(/\s+as any\b/g,'');
 }
 const projection=extract('function blingHubOrderManagedProjection(', 'function blingHubRebalanceInstallmentsForTotal(');
 const diff=extract('function blingHubOrderManagedDiff(', 'async function blingHubProcessOrderJobs(');
 const sandbox={
   clean(value,limit){return String(value??'').trim().slice(0,limit);},
-  blingHubDigits(value){return String(value??'').replace(/\\D/g,'');}
+  blingHubDigits(value){return String(value??'').replace(/\D/g,'');}
 };
-const managedDiff=runInNewContext(projection+'\\n'+diff+'\\nblingHubOrderManagedDiff',sandbox);
+const managedDiff=runInNewContext(projection+'\n'+diff+'\nblingHubOrderManagedDiff',sandbox);
 const base={
   contato:{id:123},numeroLoja:'DA-261009-822A74D6',
   totalProdutos:229.07,total:229.07,outrasDespesas:0,
