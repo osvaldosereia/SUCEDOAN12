@@ -1,7 +1,10 @@
 name: Pedidos - PostgreSQL identity and retry
 on:
+  push:
+    branches:
+      - 'agent/orders-r3-*'
   pull_request:
-    branches: [main]
+    branches: [main, 'agent/orders-code-identity-*']
     paths:
       - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
       - 'supabase/migrations/20261008124500_checkout_attempt_idempotency_v1.sql'
@@ -70,6 +73,21 @@ jobs:
           COUNT=$(psql -v ON_ERROR_STOP=1 -Atc "select count(*) from public.order_checkout_attempts_v1 where request_id='$REQUEST_ID';")
           test "$COUNT" = '1'
           echo "PASS simultaneous submissions returned one persisted order"
+      - name: Concurrent weekly numbers serialize and remain unique
+        run: |
+          set -euo pipefail
+          SQL="select public.ops2_next_order_public_code_weekly_v1('2026-10-25 14:00:00-04'::timestamptz);"
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" > /tmp/weekly-a.txt &
+          A=$!
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" > /tmp/weekly-b.txt &
+          B=$!
+          wait "$A"
+          wait "$B"
+          sort /tmp/weekly-a.txt /tmp/weekly-b.txt > /tmp/weekly-both.txt
+          test "$(sed -n '1p' /tmp/weekly-both.txt)" = '25|10|2026 - 001'
+          test "$(sed -n '2p' /tmp/weekly-both.txt)" = '25|10|2026 - 002'
+          test "$(psql -Atc "select last_seq from public.order_public_weekly_counters_v1 where week_start='2026-10-19'")" = 2
+          echo 'PASS weekly code allocation serialized across two independent sessions'
       - name: Two distinct orders cannot reserve the last item twice
         run: |
           set -euo pipefail
