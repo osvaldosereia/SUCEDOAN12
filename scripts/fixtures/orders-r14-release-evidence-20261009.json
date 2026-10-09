@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "project": "Dona Antonia pedidos",
+  "created": "2026-10-09",
+  "references": {
+    "master_issue": "https://github.com/osvaldosereia/SUCEDOAN12/issues/964",
+    "r13_pr": "https://github.com/osvaldosereia/SUCEDOAN12/pull/1024",
+    "r13_ci": "https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37971955620",
+    "basket_pr": "https://github.com/osvaldosereia/SUCEDOAN12/pull/994",
+    "r03_pr": "https://github.com/osvaldosereia/SUCEDOAN12/pull/1026"
+  },
+  "integration": {
+    "merged_to_main": false,
+    "release_commit": null,
+    "unmerged_pr_count": 13,
+    "conflicting_migrations": null,
+    "staging_deploy": {
+      "verified": false
+    }
+  },
+  "schema": {
+    "production_tables_checked": 11,
+    "missing_critical_tables": 0,
+    "rls_mismatches": 11,
+    "missing_triggers": 29,
+    "unsafe_public_privileges": 5,
+    "default_acl_unreviewed": 1,
+    "critical_rpc_signature_mismatches": null,
+    "attestation": {
+      "verified": false
+    }
+  },
+  "checkout": {
+    "real_checkout": false,
+    "minimum_75": false,
+    "concurrent_reservations": false,
+    "linked_food_hygiene": false,
+    "mold_hidden_values": false,
+    "weekly_immutable_number": false,
+    "stock_authority_reconciled": false,
+    "attestation": {
+      "verified": false
+    }
+  },
+  "meta": {
+    "channels": [
+      {
+        "phone_suffix": "0975",
+        "utility_template_approved": false,
+        "signed_webhook_test": false,
+        "confirm_button_accepted": false,
+        "plain_text_rejected": false
+      },
+      {
+        "phone_suffix": "1018",
+        "utility_template_approved": false,
+        "signed_webhook_test": false,
+        "confirm_button_accepted": false,
+        "plain_text_rejected": false
+      }
+    ],
+    "replay_deduplicated": false,
+    "attestation": {
+      "verified": false
+    }
+  },
+  "bling": {
+    "verified_order_id": null,
+    "order_readback_match": false,
+    "picked_only_lines": false,
+    "receipt_hash_stable": false,
+    "no_duplicate_post_after_timeout": false,
+    "existing_order_id_reused": false,
+    "attestation": {
+      "verified": false
+    }
+  },
+  "fiscal": {
+    "tax_approval": {
+      "verified": false
+    },
+    "cfop_validated": false,
+    "cst_csosn_validated": false,
+    "ncm_cest_validated": false,
+    "ibs_cbs_regime_reviewed": false,
+    "payment_treatment_validated": false,
+    "sefaz_attestation": {
+      "verified": false
+    },
+    "single_generation_claim": false,
+    "no_reissue_on_timeout": false,
+    "xml_received_from_bling": false,
+    "access_key_and_cstat_validated": false,
+    "authorized_sefaz_protocol_verified": false
+  },
+  "delivery": {
+    "proof_before_loading": false,
+    "proof_before_driver_handoff": false,
+    "split_payment_supported": false,
+    "return_blocks_release": false,
+    "driver_reconciliation": false,
+    "status_reaches_delivered": false,
+    "attestation": {
+      "verified": false
+    }
+  },
+  "rollout": {
+    "attestation": {
+      "verified": false
+    },
+    "backup_restored_in_staging": false,
+    "migration_rollback_rehearsed": false,
+    "monitoring_alarms_tested": false,
+    "failure_injection_passed": false,
+    "operator_signoff": false,
+    "tax_responsible_signoff": false,
+    "canary_scope_approved": false,
+    "rollback_runbook_url": null
+  },
+  "notes": [
+    "Values marked false are unproven in an integrated live/staging environment, not necessarily absent in individual PRs.",
+    "R13 synthetic CI: 29/30 canonical triggers not reproduced and 11/11 observed RLS toggles differ; unsafe grants on 5 critical tables.",
+    "2026-10-09 audit found only draft fiscal rule set; R10 intentionally refuses the tax approval issuance claim.",
+    "No deployments, migrations, SEFAZ, Bling, Meta or customer operations authorized by this file."
+  ]
+}
