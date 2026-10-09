@@ -761,7 +761,9 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   // A malformed external XML cannot block existing purchase/finance processing.
   try{
     await persistXmlCatalogEvidence(documentId,p.document_key,xml,hash);
+    await resolveXmlCatalogFailure(documentId);
   }catch(e){
+    await recordXmlCatalogFailure(documentId,e);
     console.warn("xml_catalog_observation_deferred",clean((e as Error)?.message||e,160));
   }
   let matched=0,review=0,created=0;
@@ -1296,6 +1298,23 @@ async function docDetail(id:string){
 // Read-only reporting and on-demand, idempotent re-reading of original private XMLs.
 // Never calls Bling, never changes products, prices, NCM master or stock.
 // Used by both new purchases and historical re-reads; extracts evidence only.
+// Record a non-blocking catalog error so no NF-e is silently dropped from review.
+async function recordXmlCatalogFailure(documentId:string,error:unknown){
+  const details=clean((error as Error)?.message||String(error)||"catalog_processing_failed",400)||"catalog_processing_failed";
+  const at=new Date().toISOString();
+  const audit=await sb.from("purchase_xml_catalog_ingest_errors_v1").upsert({
+    document_id:documentId,error_code:"xml_catalog_processing_failed",
+    error_message:details,last_failed_at:at,resolved_at:null
+  },{onConflict:"document_id"});
+  if(audit.error)console.error("xml_catalog_failure_audit_unavailable",audit.error.message);
+}
+async function resolveXmlCatalogFailure(documentId:string){
+  const audit=await sb.from("purchase_xml_catalog_ingest_errors_v1")
+    .update({resolved_at:new Date().toISOString()})
+    .eq("document_id",documentId).is("resolved_at",null);
+  if(audit.error)console.warn("xml_catalog_failure_resolution_not_recorded",audit.error.message);
+}
+
 async function persistXmlCatalogEvidence(documentId:string,documentKey:string,xml:string,hash:string){
       const parsed=extractCatalogFromNfe(xml,documentKey);
       if(parsed.items.length>5000)throw new Error("xml_item_limit");
@@ -1446,6 +1465,11 @@ async function xmlCatalogProgress(){
   const q=await sb.from("purchase_xml_catalog_reconciliation_v1")
     .select("document_id,declared_items,items_staged,observations_captured,xml_verified_items,missing_staging_items,missing_observations,catalog_readiness").limit(5000);
   if(q.error)throw q.error;
+  // Only the Admin can read this service-role-only view.
+  const failures=await sb.from("purchase_xml_catalog_ingest_failures_v1")
+    .select("document_id,error_code,error_message,last_failed_at,supplier_name,source",
+      {count:"exact"}).order("last_failed_at",{ascending:false}).limit(15);
+  if(failures.error)throw failures.error;
   const docs=q.data||[];
   const add=(field:string)=>docs.reduce((a:number,d:any)=>a+Number(d?.[field]||0),0);
   return {ok:true,documents:docs.length,declared_items:add("declared_items"),
@@ -1455,6 +1479,8 @@ async function xmlCatalogProgress(){
     missing_catalog_observations:add("missing_observations"),
     documents_verified:docs.filter((d:any)=>d.catalog_readiness==="complete_from_xml").length,
     documents_still_incomplete:docs.filter((d:any)=>d.catalog_readiness==="incomplete").length,
+    catalog_ingest_failures:failures.count||0,
+    catalog_recent_failures:failures.data||[],
     readonly:true};
 }
 async function xmlCatalogReprocess(body:any){
@@ -1482,6 +1508,7 @@ async function xmlCatalogReprocess(body:any){
       const hash=await sha256(xml);
       if(d.content_sha256&&hash!==d.content_sha256)throw new Error("xml_hash_mismatch");
       const parsed=await persistXmlCatalogEvidence(d.id,d.document_key,xml,hash);
+      await resolveXmlCatalogFailure(d.id);
       const existing=await sb.from("purchase_xml_items").select("item_number").eq("document_id",d.id);
       if(existing.error)throw existing.error;
       const seen=new Set((existing.data||[]).map((x:any)=>Number(x.item_number)));
@@ -1511,6 +1538,7 @@ async function xmlCatalogReprocess(body:any){
         items_declared:Number(d.item_count||0),new_staged_items:missing.length,
         count_mismatch:parsed.items.length!==Number(d.item_count||0)});
     }catch(e){
+      await recordXmlCatalogFailure(d.id,e);
       result.push({document_id:d.id,ok:false,error:clean((e as Error)?.message||e,200)});
     }
   }

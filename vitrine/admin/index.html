@@ -6300,7 +6300,19 @@
        '<span><b>'+esc(progress.catalog_observations||0)+'</b> observações</span>'+
        '<span><b>'+esc(progress.verified_from_xml||0)+'</b> verificadas no XML</span>'+
        '<span><b>'+esc(progress.missing_staging_items||0)+'</b> faltam na fila</span>'+
+       '<span><b>'+esc(progress.catalog_ingest_failures||0)+'</b> falhas de catalogação</span>'+
       '</div>'+
+      (Number(progress.catalog_ingest_failures||0)>0?
+        '<div class="purchase-safe" style="margin:8px 0">'+
+        '<strong>Existem '+esc(progress.catalog_ingest_failures)+' XMLs cuja catalogação precisa de nova leitura.</strong>'+
+        '<small>A compra não foi interrompida. Releia cada XML sem atualizar produtos ou estoque.</small>'+
+        '<div class="purchase-items">'+(progress.catalog_recent_failures||[]).map(e=>
+          '<div class="purchase-item-title" style="margin:6px 0;padding:7px">'+
+          '<div><strong>'+esc(e.supplier_name||'Documento XML')+'</strong>'+
+          '<small>Falha: '+esc(e.error_code||'xml_catalog_processing_failed')+
+          ' · '+esc(e.error_message||'')+'</small></div>'+
+          '<button class="secondary" type="button" data-xml-catalog-retry="'+esc(e.document_id||'')+'">Reler XML</button></div>'
+        ).join('')+'</div></div>':'')+
       '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
        '<input type="search" id="xmlCatalogSearch" placeholder="Buscar nome ou EAN" value="'+esc(state.xmlCatalogSearch||'')+'" style="min-width:180px;flex:1;max-width:420px">'+
        '<select id="xmlCatalogFilter"><option value="">Todos</option>'+
@@ -6496,6 +6508,18 @@
   function bindXmlCatalogInner(){
     const host=$('#xmlCatalogBody');if(!host||!state.xmlCatalogOpen)return;
     xmlCatalogDetailBind();
+    host.querySelectorAll('[data-xml-catalog-retry]').forEach(button=>button.onclick=async()=>{
+      const id=String(button.dataset.xmlCatalogRetry||'');
+      if(!/^[0-9a-f-]{36}$/i.test(id))return;
+      if(!confirm('Reler este XML original e corrigir somente sua catalogação? Nenhum produto ou estoque será modificado.'))return;
+      button.disabled=true;button.textContent='Relendo…';
+      try{
+        const result=await purchaseApi('xml_catalog_reprocess',{document_id:id});
+        const first=(result.results||[])[0];
+        toast(first?.ok?'XML conferido e histórico atualizado':'XML ainda pendente: '+(first?.error||'Erro desconhecido'));
+        await loadXmlCatalog();
+      }catch(e){toast(errorMessage(e.message));button.disabled=false;button.textContent='Reler XML'}
+    });
     const search=$('#xmlCatalogSearch'),filter=$('#xmlCatalogFilter');
     if(search)search.onchange=e=>state.xmlCatalogSearch=e.target.value;
     if(filter)filter.onchange=e=>state.xmlCatalogFilter=e.target.value;
