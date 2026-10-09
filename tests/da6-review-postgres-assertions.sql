@@ -28,7 +28,7 @@ BEGIN
  v_blocked:=false;
  BEGIN
   PERFORM public.inventory_label_review_count_v1(
-   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1,'approve',null,
+   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1::smallint,'approve',null,
    '22222222-2222-4222-8222-222222222222','Outro operador');
  EXCEPTION WHEN others THEN v_blocked:=true;
  END;
@@ -37,7 +37,7 @@ BEGIN
  v_blocked:=false;
  BEGIN
   PERFORM public.inventory_label_review_count_v1(
-   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1,'approve',null,
+   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1::smallint,'approve',null,
    '33333333-3333-4333-8333-333333333333','Viewer');
  EXCEPTION WHEN others THEN v_blocked:=true;
  END;
@@ -65,7 +65,7 @@ BEGIN
  v_blocked:=false;
  BEGIN
   PERFORM public.inventory_label_review_count_v1(
-   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',2,'approve',null,
+   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',2::smallint,'approve',null,
    '11111111-1111-4111-8111-111111111111','Tentativa');
  EXCEPTION WHEN others THEN v_blocked:=true;
  END;
