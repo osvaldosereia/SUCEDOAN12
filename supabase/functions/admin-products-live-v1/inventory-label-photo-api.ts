@@ -29,9 +29,21 @@ export async function inventoryLabelPhotoAction(db:any,action:string,req:Request
   if(!UUID.test(batchId)||!name||!Object.hasOwn(TYPES,mime)||!Number.isInteger(size)||size<1||size>MAX_BYTES||!/^[0-9a-f]{64}$/.test(sha))return bad('invalid_photo');
   const batch=await ownedBatch(db,batchId,user);
   if(!batch)return bad('batch_not_found',404);
-  const same=await db.from('inventory_label_photos').select('id,status').eq('created_by',user).eq('sha256',sha).limit(1).maybeSingle();
+  const same=await db.from('inventory_label_photos')
+   .select('id,status,storage_path,size_bytes').eq('created_by',user).eq('sha256',sha)
+   .limit(1).maybeSingle();
   if(same.error)throw same.error;
-  if(same.data)return {duplicate:true,photo_id:same.data.id,status:same.data.status};
+  if(same.data){
+   if(same.data.status!=='uploading')
+     return {duplicate:true,photo_id:same.data.id,status:same.data.status};
+   // Um upload interrompido não pode ser tratado como duplicado definitivo.
+   const info=await db.storage.from(BUCKET).info(same.data.storage_path);
+   if(!info.error&&Number(info.data?.size)===Number(same.data.size_bytes))
+     return {photo_id:same.data.id,needs_confirmation:true,status:'uploading'};
+   const retry=await db.storage.from(BUCKET).createSignedUploadUrl(same.data.storage_path,{upsert:false});
+   if(retry.error||!retry.data?.signedUrl)return bad('storage_sign_failed',503);
+   return {photo_id:same.data.id,signed_url:retry.data.signedUrl,resumed:true};
+  }
   const existing=await db.from('inventory_label_photos').select('id',{count:'exact',head:true}).eq('batch_id',batchId);
   if(existing.error)throw existing.error;
   if(Number(existing.count||0)>=Number(batch.total_files))return bad('batch_full',409);
