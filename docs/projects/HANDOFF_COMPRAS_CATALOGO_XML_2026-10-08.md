@@ -202,3 +202,33 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 - Nenhum desses arquivos foi sobrescrito pela branch R20. Verificação: o roteamento `action==="purchase_xml"` → `handlePurchaseXmlRequest(req,body,false)` continua igual no roteador pai das duas versões, mas precisa de teste integrado ao rebase final.
 - O Supabase mostra agora Admin v231 (`verify_jwt=false`), atualização **externa à R20**; a R20 não fez deploy. Contagens permanecem 90 XMLs, 214 itens catalogados, 0 faltantes.
 - PR #1001 continua empilhada sobre R19 → R18, baseada na `main` anterior. **Antes de integrar em `main`, atualizar a cadeia a partir do novo commit com reconciliação e CI novamente.** Não fazer `force push`, merge ou deploy nesta rodada.
+
+## Checkpoint R21 — 09/10/2026 — identificação atômica, EAN comercial/tributável, embalagem e cadastro inativo
+
+**PR draft empilhada:** [#1004](https://github.com/osvaldosereia/SUCEDOAN12/pull/1004), branch `agent/xml-catalog-identity-atomic-r21-20261009`, originada de R20 #1001 → R19 #999 → R18 #997. R21: 12 commits, 7 arquivos antes deste checkpoint, zero commits atrás da branch R20. A `main` avançou paralelamente para `6125692fcbbac66c07869b0dba1cf21b0eae1440` por mudanças de orçamento/rotas Admin, alheias à R21; não sobrescrever nem mesclar sem reconciliar a `main` mais nova.
+
+### Diagnóstico real da R21
+- `resolvePurchaseItemIdentity` legado faz escrita em `products`, `product_identifiers` e `purchase_xml_items` em múltiplas transações. Se uma etapa falha, poderia deixar cadastro/identificador órfão, sem vínculo concluído; reexecuções e concorrência podem resultar em estados inconsistentes.
+- O gatilho produtivo `purchase_xml_sync_inventory_lot_v1` escuta alterações em `purchase_xml_items.product_id` e `converted_quantity`, criando/atualizando lotes, inclusive quantidade recebida quando o documento já tem registro de recebimento. Este efeito precisa ser bloqueado no modo **somente evidência XML**, não apenas verificado por testes superficiais.
+- Consulta Supabase somente leitura: `purchase_xml_items` 214 linhas, 59 linhas sem vínculo, **nenhuma das 59** com quantidade convertida positiva ou lote vinculado; `purchase_xml_catalog_candidates_v1` possui 32 **candidatos agrupados** sem vínculo, contagem distinta das 59 linhas operacionais. Produtos, identificadores, itens e embalagens estão com RLS habilitado e sem permissão de UPDATE direto para `anon/authenticated`.
+
+### Código R21
+1. SQL de preparação `docs/projects/purchase-xml-identity-atomic-r21.sql`, **NÃO MIGRAÇÃO/NÃO APLICADO**. RPC `purchase_xml_resolve_catalog_identity_v1` executa em transação única, `SECURITY INVOKER`, revogação de `PUBLIC/anon/authenticated`, concessão a `service_role`. Ledger `purchase_xml_catalog_identity_actions_v1` com RLS, eventos imutáveis e no máximo uma decisão por item.
+2. A função bloqueia a linha de `purchase_xml_items`, serializa EAN com advisory xact lock e rejeita item já vinculado, fonte não verificada, GTIN inválido (inclui dígito verificador), duplicidade entre produtos, documento recebido, lote existente ou `converted_quantity<>0`, unidades por peso/volume e fator inadequado. Suporta EAN **comercial ou tributável escolhido expressamente**, papel `base_unit/package` e fator exato.
+3. Para vínculo existente: **não altera o produto mestre**. Para novo cadastro: cria **inativo**, com WhatsApp desativado, estoque 0, NCM/custo/preço nulos, sem publicação e com revisão fiscal pendente. Atribui apenas `product_id` e metadados de identidade no item; não preenche `converted_quantity`, nem realiza recebimento. Inserções de produto, identificador, vínculo e auditoria são atômicas, sujeitas a rollback da transação.
+4. Os dois `purchase-xml-v1/index.ts` idênticos chamam **somente a RPC** em `catalog_evidence_only=true`. Somente sessão humana owner/admin, confirmação explícita `CRIAR_INATIVO_XML` ou `VINCULAR_ITEM_XML`, ator obtido do JWT e `admin_users`, nunca enviado pelo cliente. Na ausência da RPC, falha fechado com `503 xml_identity_service_unavailable` sem deixar cadastro parcial; o caminho operacional legado sem `catalog_evidence_only` permanece sem alteração.
+5. UI existente no Admin exige escolha explícita de EAN comercial ou tributável (mesmo quando diferentes), tipo unidade/embalagem, fator e confirmação humana. Não há pesquisa Cosmos/SI5, alteração de visual público, criação de cron, Bling, preço, estoque, NCM/CEST ou financeiro por esta rotina.
+
+### Testes efetivos
+- [CI final R21 — run 37941206019](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37941206019): **3/3 jobs success**.
+  - `human-gateway-and-ui`: script Node de autorização/proveniência do ator, erros fail-closed, validação da origem EAN e fator; regressões de identidade/ficha, histórico R20 e R18.
+  - `disposable-postgresql`: PostgreSQL 17 isolado com trigger de lote simulado: criação inativa + vínculo, nenhum lote, teste de duplicado, confirmação obrigatória, fonte XML não verificada, recebimento prévio, peso, quantidade operacional, ator ausente, auditoria e ausência de privilégio público.
+  - `edge-types`: `deno check` nas duas cópias completas.
+- A primeira execução de PostgreSQL revelou teste contraditório (item `CX` como unidade) e a segunda encontrou `UPDATE` negado na auditoria, proteção correta do banco; ambos os fixtures corrigidos **sem afrouxar as regras**. A terceira execução passou.
+- **Não é homologação em produção.** A RPC e o ledger continuam inexistentes no Supabase produtivo, conforme `to_regprocedure/to_regclass` read-only. Admin produtivo chegou à v232 por atualização externa à R21; esta rodada não fez deploy.
+
+### Gates pendentes para R22 e posteriores
+- R22: revisar sintaxe/schema e triggers reais em homologação fiel ao Supabase, substituir SQL de rascunho por migração canônica revisada, resolver orquestração de dependências das PRs empilhadas e migrações anteriores; fazer testes de autenticação real e browser. Não implantar endpoint novo sem RPC.
+- O modo catálogo **não pode tratar itens com lote/recebimento/conversão ativa**; esses casos exigem fluxo operacional de Compras. Não alterar o trigger global para contornar salvaguarda sem projeto separado.
+- R23–R27: ledger de revisão campo a campo, aplicação/reversão com CAS, validação fiscal segregada, testes E2E XML real e publicação controlada com monitoramento.
+- **Nenhum merge na main, migration, deploy, chamada fiscal/comercial, mutação Supabase produtiva, Bling ou cron nesta rodada.**
