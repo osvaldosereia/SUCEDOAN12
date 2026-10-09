@@ -26,7 +26,7 @@ do $check$
 begin
   if not exists(select 1 from public.order_public_snapshots_v1
    where order_id='00000000-0000-4000-8000-000000000002'
-     and public_code ~ '^[0-9]{4}$' and snapshot='{}'::jsonb)
+     and public_code ~ '^[0-9]{2}[|][0-9]{2}[|][0-9]{4} - [0-9]{3}$' and public_code=(select order_number from public.orders where id='00000000-0000-4000-8000-000000000002') and snapshot='{}'::jsonb)
   then raise exception 'identity_not_assigned_at_creation'; end if;
 end $check$;
 insert into public.order_items(order_id)
@@ -40,21 +40,21 @@ begin
  where order_id='00000000-0000-4000-8000-000000000002';
  if (v_row.snapshot->>'item_count')::int <> 1
  then raise exception 'deferred_items_snapshot_was_not_filled'; end if;
- if v_row.public_code !~ '^[0-9]{4}$'
- then raise exception 'numeric_identity_lost'; end if;
+ if v_row.public_code !~ '^[0-9]{2}[|][0-9]{2}[|][0-9]{4} - [0-9]{3}$'
+ then raise exception 'weekly_identity_lost'; end if;
 end $check$;
 
 -- An UPSERT refresh cannot change identity or consume a sequence number.
 do $check$
 declare v_before bigint;v_after bigint;v_code text;
 begin
-  select last_value into v_before from public.order_public_code_4d_seq_v1;
+  select last_seq into v_before from public.order_public_weekly_counters_v1 where week_start=((now() at time zone 'America/Cuiaba')::date-(extract(isodow from (now() at time zone 'America/Cuiaba')::date)::int-1));
   select public_code into v_code from public.order_public_snapshots_v1
     where order_id='00000000-0000-4000-8000-000000000002';
   insert into public.order_public_snapshots_v1(order_id,snapshot)
   values('00000000-0000-4000-8000-000000000002','{"version":4}'::jsonb)
   on conflict(order_id) do update set snapshot=excluded.snapshot;
-  select last_value into v_after from public.order_public_code_4d_seq_v1;
+  select last_seq into v_after from public.order_public_weekly_counters_v1 where week_start=((now() at time zone 'America/Cuiaba')::date-(extract(isodow from (now() at time zone 'America/Cuiaba')::date)::int-1));
   if v_before<>v_after then raise exception 'upsert_consumed_sequence'; end if;
   if (select public_code from public.order_public_snapshots_v1
       where order_id='00000000-0000-4000-8000-000000000002')<>v_code
@@ -70,6 +70,39 @@ begin
   if sqlerrm <> 'order_public_identity_immutable' then raise; end if;
  end;
 end $check$;
+
+-- The date label changes daily while its sequence continues through Sunday.
+do $weekly$
+declare sunday text; monday text; tuesday text;
+begin
+  sunday:=public.ops2_next_order_public_code_weekly_v1('2026-11-01 23:59:00-04'::timestamptz);
+  monday:=public.ops2_next_order_public_code_weekly_v1('2026-11-02 00:01:00-04'::timestamptz);
+  tuesday:=public.ops2_next_order_public_code_weekly_v1('2026-11-03 12:00:00-04'::timestamptz);
+  if sunday<>'01|11|2026 - 001' or monday<>'02|11|2026 - 001' or tuesday<>'03|11|2026 - 002'
+  then raise exception 'weekly_rollover_failed % % %',sunday,monday,tuesday; end if;
+  if public.ops2_next_order_public_code_weekly_v1('2026-11-04 03:00:00+00'::timestamptz)<>'03|11|2026 - 003'
+  then raise exception 'cuiaba_midnight_boundary_failed'; end if;
+end $weekly$;
+
+do $immutable$
+begin
+  begin
+    update public.orders set order_number='15|10|2026 - 999'
+    where id='00000000-0000-4000-8000-000000000002';
+    raise exception 'order_number_was_mutated';
+  exception when others then
+    if SQLERRM<>'order_public_identity_immutable' then raise; end if;
+  end;
+end $immutable$;
+
+do $import$
+declare v_id uuid:='00000000-0000-4000-8000-000000000009';
+begin
+  insert into public.orders(id,source) values(v_id,'bling_import');
+  if (select order_number from public.orders where id=v_id) is not null
+    or exists(select 1 from public.order_public_snapshots_v1 where order_id=v_id)
+  then raise exception 'import_wrongly_allocated_customer_number'; end if;
+end $import$;
 
 -- A successful checkout is one order and the retry returns the same order.
 create temporary table checkout_first as select public.ops2_create_vitrine_checkout_once_v1(
@@ -102,7 +135,7 @@ begin
      where request_id='00000000-0000-4000-8000-000000000003')<>1
  then raise exception 'checkout_attempt_not_unique'; end if;
  if not exists(select 1 from public.order_public_snapshots_v1
-     where order_id=v_order and public_code ~ '^[0-9]{4}$'
+     where order_id=v_order and public_code ~ '^[0-9]{2}[|][0-9]{2}[|][0-9]{4} - [0-9]{3}$'
        and (snapshot->>'item_count')::integer = 1)
  then raise exception 'checkout_snapshot_incomplete'; end if;
 end $check$;
@@ -318,5 +351,15 @@ begin
    raise exception 'outbox_runtime_resume_not_claimed';
  end if;
 end $outbox$;
+
+do $roles$
+begin
+  if has_function_privilege('anon','public.ops2_next_order_public_code_weekly_v1(timestamptz)','EXECUTE')
+  then raise exception 'anonymous_weekly_allocator_exposed'; end if;
+  if has_function_privilege('authenticated','public.ops2_next_order_public_code_weekly_v1(timestamptz)','EXECUTE')
+  then raise exception 'authenticated_weekly_allocator_exposed'; end if;
+  if not has_function_privilege('service_role','public.ops2_next_order_public_code_weekly_v1(timestamptz)','EXECUTE')
+  then raise exception 'service_role_weekly_allocator_missing'; end if;
+end $roles$;
 
 select 'PASS postgres identity, stock rollback, immutability, idempotency and outbox claim' as result;

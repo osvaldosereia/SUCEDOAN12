@@ -7,10 +7,19 @@ create role service_role bypassrls;
 create table public.orders (
   id uuid primary key default gen_random_uuid(),
   payment_method text,
+  order_number text,
+  created_at timestamptz not null default now(),
   source text not null default 'vitrine',
   bling_synced_at timestamptz,
   sync_status text not null default 'pending'
 );
+create unique index orders_order_number_uq on public.orders(order_number) where order_number is not null;
+-- Legacy snapshot fallback is used only for imports without customer number.
+create sequence public.order_public_code_seq_v1;
+create function public.ops2_format_order_public_code_v1(p_seq bigint)
+ returns text language sql immutable as $format$
+  select 'AA' || lpad((p_seq % 1000)::text,3,'0')
+$format$;
 create table public.order_public_snapshots_v1 (
   order_id uuid primary key references public.orders(id) on delete cascade,
   snapshot jsonb not null default '{}'::jsonb,
