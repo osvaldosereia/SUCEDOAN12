@@ -1,0 +1,47 @@
+name: DA6 Etiquetas e Balanço — testes determinísticos
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/inventory-label-*'
+      - 'vitrine/admin/product-shelf-*'
+      - 'vitrine/admin/product-label-print.css'
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/inventory-label-*'
+      - 'supabase/migrations/*da6*'
+      - 'tests/da6-*'
+      - 'tests/inventory-label-*'
+      - '.github/workflows/da6-inventory-labels-ci.yml'
+  push:
+    branches: [agent/gondola-labels-balance-20261009]
+    paths:
+      - 'vitrine/admin/inventory-label-*'
+      - 'vitrine/admin/product-shelf-*'
+      - 'vitrine/admin/product-label-print.css'
+      - 'supabase/functions/admin-products-live-v1/inventory-label-*'
+      - 'supabase/migrations/*da6*'
+      - 'tests/da6-*'
+      - 'tests/inventory-label-*'
+      - '.github/workflows/da6-inventory-labels-ci.yml'
+permissions:
+  contents: read
+jobs:
+  deterministic-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Testar leitura óptica, impressão e upload resiliente
+        run: node --test tests/da6-*.test.cjs tests/inventory-label-*.test.cjs
+      - name: Validar sintaxe dos módulos do navegador
+        run: |
+          node --check vitrine/admin/inventory-label-photo-upload.js
+          node --check vitrine/admin/inventory-label-photo-tab.js
+          node --check vitrine/admin/inventory-label-photo-review.js
+          node --check vitrine/admin/inventory-label-photo-reader.js
+          node --check vitrine/admin/inventory-label-omr-geometry.js
+          node --check vitrine/admin/product-shelf-admin-ui.js
+          node --check vitrine/admin/product-shelf-labels.js
