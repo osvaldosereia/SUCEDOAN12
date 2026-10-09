@@ -91,8 +91,23 @@ test('R2: etiqueta normal e rotação 90°,180°,270°',()=>{
 });
 test('R2: foto inclinada com quatro fiduciais e homografia',()=>{
  const src=fixture();
- const photo=project(src,[{x:153,y:107},{x:1111,y:158},{x:1048,y:1565},{x:88,y:1516}]);
- correct(read(photo));
+ const target=[{x:153,y:107},{x:1111,y:158},{x:1048,y:1565},{x:88,y:1516}];
+ const photo=project(src,target);
+ try{correct(read(photo));}
+ catch(error){
+  const found=root.DonaAntoniaPhotoMarkers.findMarkers(photo);
+  const attempts=[];
+  for(let orientation=0;orientation<4;orientation++){
+   const pts=found.map((_,i)=>found[(i+orientation)%4]);
+   const p=root.DonaAntoniaPhotoGeometry.warp(photo,pts,500,750);
+   const full=root.DonaAntoniaPhotoGeometry.warp(photo,pts,1000,1500);
+   const qr=jsQR(p.data,500,750,{inversionAttempts:'attemptBoth'});
+   const qrf=jsQR(full.data,1000,1500,{inversionAttempts:'attemptBoth'});
+   attempts.push({orientation,preview:qr?.data?.slice(0,60)||null,full:qrf?.data?.slice(0,60)||null});
+  }
+  console.log('DA6_SKEW_DIAGNOSTIC',JSON.stringify({found,target,attempts,reason:String(error)}));
+  throw error;
+ }
 });
 test('R2: sombra gradual na etiqueta não fabrica quantidade',()=>{
  const output=read(shade(fixture()));
