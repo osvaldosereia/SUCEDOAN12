@@ -108,3 +108,17 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 > Continuar o projeto **Dona Antônia — Compras e Catálogo XML** no repositório `osvaldosereia/SUCEDOAN12`, Supabase `ssbesxgaijknwsjbsbcz`. Leia **inteiramente este HANDOFF** no GitHub antes de programar. Consulte a `main` atual e o runtime Supabase, não use branch desatualizada para sobrescrever correções. O catálogo usa exclusivamente XML de NF-e importado do Bling ou enviado manualmente; nada de Cosmos, SI5, pesquisa externa, novas automações ou alteração automática de produtos, preços, fiscal e estoque. Faça primeiro auditoria/CI/teste ponta a ponta das funções já publicadas; depois corrija pendências e implemente revisão campo a campo com aprovação humana. Trabalhe em branch agent/* nova, faça commits atômicos e reporte o que foi testado e publicado.
 
 **Este documento é um checkpoint, não autorização para considerar o projeto concluído.**
+
+## Checkpoint R13 — 09/10/2026 — proteção do protocolo NF-e
+
+**Escopo isolado:** PR [#989](https://github.com/osvaldosereia/SUCEDOAN12/pull/989), branch `agent/xml-catalog-protocol-fix-20261009-r13`, criada da `main` `8d2e187fa3d7`.
+
+- Extrator principal corrigido no commit `fc7dd3e44be0`: `infNFe/@Id` é a única fonte da chave da NF-e; quando existe `protNFe`, sua chave deve corresponder e `cStat` deve ser 100 ou 150.
+- Cópia independente sincronizada no commit `e582f485cc90` (blob idêntico).
+- Regressão criada no commit `97ebfe8a9385`; workflow Deno/fast-xml-parser criado no commit `8793ea882d77`.
+- CI específica: [run 37922434068](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37922434068), conclusão **success**, inclusive `deno run --allow-read scripts/test-xml-catalog-protocol-integrity-v6.mjs`.
+- Testes locais anteriores: 16 casos sintéticos com adaptador lxml — complemento, **não** equivalem a teste de produção.
+- Supabase read-only após a PR: 90 XMLs, 214 itens declarados/catalogados/verificados, faltas zero; candidatos: 113 `linked_reviewable`, 32 `not_linked`, 1 `fiscal_conflict`, 1 `cest_conflict`. Edge Admin segue v230, `verify_jwt=false`.
+- **Produção inalterada:** sem merge, deploy, migração, chamada Bling, atualização de produto, estoque, NCM/CEST ou financeiro. PR permanece draft.
+
+**Próximos gates:** (1) revisão de regressões em documentos reais e segurança de uploads; (2) conciliar PRs #980 (comparação), #983 (falhas) e #986 (paginação) sem sobrescrever arquivos da `main`; (3) homologar cadastrar inativo/vincular; (4) implementar aprovação campo a campo com log e rollback testados. Não considerar o projeto concluído.
