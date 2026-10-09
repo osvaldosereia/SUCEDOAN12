@@ -155,3 +155,31 @@ REVOKE ALL ON FUNCTION public.ops2_finish_fiscal_r9_observation_v1(uuid,uuid,tex
 GRANT EXECUTE ON FUNCTION public.ops2_enqueue_fiscal_r9_observation_v1(uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.ops2_claim_fiscal_r9_observation_v1(integer) TO service_role;
 GRANT EXECUTE ON FUNCTION public.ops2_finish_fiscal_r9_observation_v1(uuid,uuid,text,jsonb,text) TO service_role;
+
+
+-- Small bounded discovery pass; permits R09 to find R07-verified orders
+-- without a person enqueueing each one. Still never changes fiscal jobs.
+CREATE OR REPLACE FUNCTION public.ops2_seed_fiscal_r9_observations_v1(
+  p_limit integer DEFAULT 5
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $r9_seed$
+DECLARE rec record; v jsonb; v_added integer:=0; v_skipped integer:=0;
+BEGIN
+  FOR rec IN
+    SELECT r.order_id FROM public.order_bling_r7_sync_intents_v1 r
+    LEFT JOIN public.order_fiscal_r9_observations_v1 obs ON obs.order_id=r.order_id
+    WHERE r.status='verified' AND obs.order_id IS NULL
+    ORDER BY r.finished_at NULLS LAST,r.order_id
+    LIMIT least(greatest(coalesce(p_limit,5),1),10)
+  LOOP
+    v:=public.ops2_enqueue_fiscal_r9_observation_v1(rec.order_id);
+    IF v->>'ok'='true' THEN v_added:=v_added+1;
+    ELSE v_skipped:=v_skipped+1; END IF;
+  END LOOP;
+  RETURN jsonb_build_object('ok',true,'seeded',v_added,'skipped',v_skipped,
+    'invoice_created',false,'external_write',false);
+END $r9_seed$;
+REVOKE ALL ON FUNCTION public.ops2_seed_fiscal_r9_observations_v1(integer)
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.ops2_seed_fiscal_r9_observations_v1(integer)
+  TO service_role;
