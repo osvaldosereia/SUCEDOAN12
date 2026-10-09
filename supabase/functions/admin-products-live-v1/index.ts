@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { buildReconciledBlingSnapshot, fingerprintBlingPayload, stableJson } from "../_shared/order-bling-r7-manifest-v1.mjs";
 const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -1586,7 +1587,19 @@ async function buildSnapshot(oid:string,reason="first_separation",options:any={}
   if(pids.length){const pq=await db.from("products").select("id,sku,gtin,name").in("id",pids);if(pq.error)throw pq.error;for(const p of pq.data||[])pm.set(p.id,p)}
   const grouped=new Map<string,any>();for(const it of rows){if(!it.product_id)continue;const im=meta(it.metadata),p=pm.get(it.product_id),unit=im.history_kind==="basket_component"&&Number.isFinite(Number(im.unit_price_cents))?Math.round(Number(im.unit_price_cents)):Math.round(Number(it.unit_price||0)*100),qty=Number(it.quantity||0);if(qty<=0)continue;const k=it.product_id+"|"+unit,old=grouped.get(k);if(old)old.quantity=Math.round((old.quantity+qty)*1000)/1000;else grouped.set(k,{product_id:it.product_id,sku:it.sku_snapshot||p?.sku||"",gtin:p?.gtin||"",name:it.name_snapshot||p?.name||"Produto",quantity:qty,unit_price_cents:unit,source_kind:im.history_kind==="basket_component"?"basket_component":"product"})}
   const items=[...grouped.values()],individual=items.reduce((s:number,z:any)=>s+Math.round(Number(z.quantity)*Number(z.unit_price_cents)),0),total=Math.round(Number(oq.data.total||0)*100),rm=await reservationRows([oid]),pay=paySnap(oq.data,rm.get(oid)||[]),d=oq.data.delivery_address||{},c=oq.data.customer_snapshot||{};
-  return {source_order_id:oid,order_number:oq.data.order_number||"",status:uiStatus(oq.data.status),created_at:oq.data.created_at,queue_reason:reason,issues:[],customer:{source_customer_id:oq.data.customer_id||d.source_customer_id||c.customer_id||null,name:c.name||d.customer_name||d.recipient_name||""},delivery:d,payment:pay,items,totals:{individual_products_cents:individual,commercial_order_cents:total,commercial_delta_cents:total-individual}};
+  const baseline={source_order_id:oid,order_number:oq.data.order_number||"",status:uiStatus(oq.data.status),created_at:oq.data.created_at,queue_reason:reason,issues:[],customer:{source_customer_id:oq.data.customer_id||d.source_customer_id||c.customer_id||null,name:c.name||d.customer_name||d.recipient_name||""},delivery:d,payment:pay,items,totals:{individual_products_cents:individual,commercial_order_cents:total,commercial_delta_cents:total-individual}};
+  if(ORDER_R7_BLING_MANIFEST_ENABLED&&reason==="separation_completed"){
+    const q=await db.from("order_separation_completions_v1")
+      .select("phase,metadata").eq("order_id",oid).maybeSingle();
+    if(q.error)throw q.error;
+    if(q.data?.phase!=="completed"||q.data?.metadata?.stock_applied!==true)
+      throw new Error("r7_separation_not_completed");
+    const receipt=q.data?.metadata?.r6_reconciliation;
+    if(!receipt)throw new Error("r6_manifest_not_persisted");
+    const converted=buildReconciledBlingSnapshot(baseline,receipt);
+    return {...converted,r7_source_manifest:receipt};
+  }
+  return baseline;
 }
 async function previewOrder(oid:string){const s=await buildSnapshot(oid,"first_separation"),h=await hub("preview_order_sync",{payload:s});return h.error?{error:h.error,status:h.status,detail:h.detail}:h.data}
 async function queueOrder(oid:string,reason:string){const s=await buildSnapshot(oid,reason),bytes=new TextEncoder().encode(JSON.stringify(s)),hash=await crypto.subtle.digest("SHA-256",bytes),dig=[...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,24);return await hub("enqueue_job",{domain:"order",operation:"sync_order",source_id:oid,idempotency_key:"vitrine_canonical:order:"+oid+":v1:"+dig,payload:{...s,queue_reason:reason,queued_at:new Date().toISOString()}})}
@@ -3640,11 +3653,79 @@ async function autoIssueFiscalAfterSeparation(oid:string){
   const accepted=after?.stage==="processing"||after?.stage==="pending";
   return {attempted:true,ok:accepted,authorized:false,stage:after?.stage||"processing",attempts:5,result:h.data||null,reconcile:reconcile?.data||null,fiscal:after};
 }
+// R07 rollout is separate from R06. Claim the frozen receipt and never send a
+// second remote write after timeout/uncertain result until reconciled manually.
+const ORDER_R7_BLING_MANIFEST_ENABLED=(Deno.env.get("ORDER_R7_BLING_MANIFEST_ENABLED")||"").trim()==="true";
+async function runR7BlingReconciliation(oid:string,snap:any){
+  let claimToken="";
+  try{
+    const hash=await fingerprintBlingPayload(snap);
+    const cq=await db.rpc("ops2_claim_bling_r7_sync_v1",{
+      p_order_id:oid,p_payload_hash:hash
+    });
+    if(cq.error||cq.data?.ok!==true){
+      return {error:cq.data?.error||"r7_sync_claim_unavailable",status:409,
+        reconciliation_required:true};
+    }
+    if(cq.data.already_verified===true){
+      return {data:{bling_order_id:cq.data.bling_order_id,already_verified:true},verified:true};
+    }
+    if(cq.data.claimed!==true||!cq.data.claim_token)return {
+      error:"r7_sync_claim_not_granted",reconciliation_required:true
+    };
+    claimToken=String(cq.data.claim_token);
+    if(stableJson(cq.data.manifest)!==stableJson(snap.r7_source_manifest)){
+      await db.rpc("ops2_finish_bling_r7_sync_v1",{
+        p_order_id:oid,p_claim_token:claimToken,p_status:"review_required",
+        p_error_code:"r6_manifest_changed_during_claim"
+      });
+      return {error:"r6_manifest_changed_during_claim",reconciliation_required:true};
+    }
+    // External ensure uses immutable VITRINE-{uuid} to locate a prior sale,
+    // GETs it, applies only a required PUT and GET-verifies the full projection.
+    const {r7_source_manifest,...safePayload}=snap;
+    const remote=await hub("ops2_ensure_order_state",{
+      payload:safePayload,target_key:"verified",canary:false
+    });
+    const blingOrderId=Number(remote.data?.bling_order_id||0);
+    const success=!remote.error&&blingOrderId>0;
+    const finished=await db.rpc("ops2_finish_bling_r7_sync_v1",{
+      p_order_id:oid,p_claim_token:claimToken,
+      p_status:success?"verified":"uncertain",
+      p_bling_order_id:blingOrderId||null,
+      p_provider_result:{
+        bling_order_id:blingOrderId||null,
+        external_write:remote.data?.external_write===true,
+        remote_error:remote.error||null
+      },
+      p_error_code:success?null:"r7_bling_remote_not_verified"
+    });
+    if(finished.error||finished.data?.ok!==true)return {
+      error:"r7_intent_finish_unverified",reconciliation_required:true
+    };
+    if(!success)return {
+      error:remote.error||"r7_bling_remote_not_verified",
+      reconciliation_required:true,detail:remote.data||remote.detail||null
+    };
+    return {data:{...remote.data,bling_order_id:blingOrderId},verified:true};
+  }catch(e){
+    if(claimToken){
+      try{await db.rpc("ops2_finish_bling_r7_sync_v1",{
+        p_order_id:oid,p_claim_token:claimToken,p_status:"uncertain",
+        p_error_code:"r7_external_outcome_uncertain"
+      })}catch{}
+    }
+    return {error:String((e as Error)?.message||e).slice(0,180),
+      reconciliation_required:true};
+  }
+}
 async function runSeparationPostCompletionIntegrations(oid:string,operator:string){
   let blingVerified:any={attempted:true,ok:false};
   try{
     const snap=await buildSnapshot(oid,"separation_completed");
-    const verified=await hub("ops2_ensure_order_state",{payload:snap,target_key:"verified",canary:false});
+    const verified=ORDER_R7_BLING_MANIFEST_ENABLED
+      ?await runR7BlingReconciliation(oid,snap)
+      :await hub("ops2_ensure_order_state",{payload:snap,target_key:"verified",canary:false});
     if(verified.error){
       blingVerified={attempted:true,ok:false,error:verified.error,detail:verified.data||verified.detail||null};
       await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"completed",p_metadata:{bling_verified:false,bling_verify_error:String(verified.error||"bling_verified_failed"),bling_verify_failed_at:new Date().toISOString()}});
@@ -3659,6 +3740,13 @@ async function runSeparationPostCompletionIntegrations(oid:string,operator:strin
     return {bling_verified:blingVerified,fiscal_auto:{attempted:false,ok:false,error:"bling_not_verified"}};
   }
 
+  if(ORDER_R7_BLING_MANIFEST_ENABLED){
+    // R07 validates Bling sales-order contents, never starts NF-e. R08–R10
+    // provide a durable fiscal outbox and SEFAZ evidence later.
+    return {bling_verified:blingVerified,
+      fiscal_auto:{attempted:false,ok:false,authorized:false,
+        stage:"awaiting_r08_fiscal_preflight"}};
+  }
   let fiscalAuto:any;
   try{fiscalAuto=await autoIssueFiscalAfterSeparation(oid)}
   catch(e){fiscalAuto={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
