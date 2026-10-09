@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "./_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared/papoai-commerce-intent-v1.mjs";
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
-import { inspectBlingNfeR2 } from "./_shared/fiscal-r2-nfe-inspector.mjs";
+import { inspectBlingNfeR2, isFiscalRecoveryNewOrderR2 } from "./_shared/fiscal-r2-nfe-inspector.mjs";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -3925,8 +3925,7 @@ async function blingHubFiscalDraftProbeV2(sb:any,body:any){
     if(oq.error)throw oq.error;
     if(lq.error)throw lq.error;
     if(!oq.data)return {ok:false,error:"source_order_not_found",status:404,external_write:false};
-    if(Date.parse(String(oq.data.created_at||""))<minOrderDate||
-       !Number.isFinite(Date.parse(String(oq.data.created_at||""))))
+    if(!isFiscalRecoveryNewOrderR2(oq.data.created_at,fence.data.min_order_created_at))
       return {ok:false,error:"historical_order_excluded",status:403,external_write:false};
     blingOrderId=Number(oq.data.bling_order_id||0);
     if(!blingOrderId||!lq.data||lq.data.status!=="matched"||Number(lq.data.bling_id||0)!==blingOrderId)
@@ -4623,8 +4622,8 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
     try{
       const oq=await sb.from("orders").select("id,status,bling_order_id,created_at").eq("id",job.order_id).maybeSingle();
       if(oq.error)throw oq.error;
-      if(!oq.data||Date.parse(String(oq.data.created_at||""))<Date.parse(cutover)||
-         Date.parse(String(job.created_at||""))<Date.parse(cutover)){
+      if(!oq.data||!isFiscalRecoveryNewOrderR2(oq.data.created_at,cutover)||
+         !isFiscalRecoveryNewOrderR2(job.created_at,cutover)){
         diagnostics.reason="historical_order_excluded";
         continue;
       }
