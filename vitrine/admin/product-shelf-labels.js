@@ -45,8 +45,8 @@ function printMany(products,existingWindow){
   const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Etiquetas Dona Antônia · '+labels.length+'</title>'+
     '<link rel="stylesheet" href="/vitrine/admin/product-label-print.css?v=da6-v1"></head><body>'+
     labels.join('')+
-    '<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>'+
-    '<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"><\/script></body></html>';
+    '<script src="/vitrine/admin/vendor/JsBarcode.all-3.11.6.min.js?v=da6-r8"><\/script>'+
+    '<script src="/vitrine/admin/vendor/qrcode-generator-2.0.4.js?v=da6-r8"><\/script></body></html>';
   win.document.open();win.document.write(html);win.document.close();
   let started=false;
   async function prepare(){
