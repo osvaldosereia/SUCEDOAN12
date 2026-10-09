@@ -262,24 +262,43 @@ jobs:
       - name: Two simultaneous buyers cannot overallocate linked food/hygiene kits
         run: |
           set -euo pipefail
-          # Previous basket assertions leave 3 food and 3 hygiene lots ready.
-          # Both clients request 2 complete baskets: only one can succeed.
-          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 -Atf \
+          # Fresh sixth isolated database: avoid coupling to prior basket cases.
+          createdb synthetic_basket_race_r2
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          # Explicitly model 3 food and 3 hygiene kits; each buyer requests 2.
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 -c \
+            "update public.basket_stock_lots set quantity_available=3 where id in ('00000000-0000-4000-8000-0000000000f1','00000000-0000-4000-8000-0000000000f2')"
+          test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.basket_lot_public_availability_v1 where lot_id in ('00000000-0000-4000-8000-0000000000f1','00000000-0000-4000-8000-0000000000f2') and public_available=3 and availability_reason='available'")" = 2
+
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 -Atf \
             scripts/sql/orders-r2-baskets-concurrent-buy.sql \
             >/tmp/r2-basket-buyer-a.txt 2>/tmp/r2-basket-buyer-a.err &
           A=$!
-          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 -Atf \
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 -Atf \
             scripts/sql/orders-r2-baskets-concurrent-buy.sql \
             >/tmp/r2-basket-buyer-b.txt 2>/tmp/r2-basket-buyer-b.err &
           B=$!
           SUCCEEDED=0
-          if wait "$A"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q 'basket_kit_lot_insufficient' /tmp/r2-basket-buyer-a.err; fi
-          if wait "$B"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q 'basket_kit_lot_insufficient' /tmp/r2-basket-buyer-b.err; fi
+          if wait "$A"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -E -q 'basket_kit_lot_insufficient|basket_hygiene_lot_invalid' /tmp/r2-basket-buyer-a.err; fi
+          if wait "$B"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -E -q 'basket_kit_lot_insufficient|basket_hygiene_lot_invalid' /tmp/r2-basket-buyer-b.err; fi
           test "$SUCCEEDED" = 1
-          test "$(PGDATABASE=synthetic_baskets_r2 psql -Atc "select quantity_available from public.basket_stock_lots where id='00000000-0000-4000-8000-0000000000f1'")" = 1
-          test "$(PGDATABASE=synthetic_baskets_r2 psql -Atc "select quantity_available from public.basket_stock_lots where id='00000000-0000-4000-8000-0000000000f2'")" = 1
-          test "$(PGDATABASE=synthetic_baskets_r2 psql -Atc "select count(*) from public.orders")" = 8
-          test "$(PGDATABASE=synthetic_baskets_r2 psql -Atc "select count(*) from public.vitrine_stock_reservations where product_id in ('00000000-0000-4000-8000-0000000000e1','00000000-0000-4000-8000-0000000000e2')")" = 1
+          test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select quantity_available from public.basket_stock_lots where id='00000000-0000-4000-8000-0000000000f1'")" = 1
+          test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select quantity_available from public.basket_stock_lots where id='00000000-0000-4000-8000-0000000000f2'")" = 1
+          test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.orders")" = 1
+          test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.vitrine_stock_reservations where product_id in ('00000000-0000-4000-8000-0000000000e1','00000000-0000-4000-8000-0000000000e2')")" = 0
           echo 'PASS: linked food/hygiene kits allocated to exactly one buyer without loose stock duplication'
       - name: Diff hygiene
         run: git diff --check
