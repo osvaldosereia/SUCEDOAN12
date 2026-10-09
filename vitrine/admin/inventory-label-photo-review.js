@@ -60,7 +60,7 @@ function bind(container,bridge,refresh){
      const change=e.decision==='reject'?'Rejeitada':
       (e.old_quantity===null||e.old_quantity===undefined?'Quantidade '+esc(e.new_quantity):
        esc(e.old_quantity)+' → '+esc(e.new_quantity));
-     return '<li><strong>'+name+'</strong> · '+esc(when)+' · '+change+
+     return '<li><strong>'+name+'</strong> · '+esc(when)+' · '+esc(e.actor_name||'Operador')+' · '+change+
        (e.note?' — '+esc(e.note):'')+'</li>';
     }).join('')+'</ol>':'<small>Nenhuma decisão registrada para esta fotografia.</small>';
    }catch(error){panel.textContent='Não foi possível consultar: '+String(error?.message||error)}
