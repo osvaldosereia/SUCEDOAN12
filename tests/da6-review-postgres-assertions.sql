@@ -76,4 +76,3 @@ BEGIN
  END IF;
  RAISE NOTICE 'DA6 PostgreSQL: APPROVED two slots, audit/idempotency/ACL/inactive-slot/reason PASS';
 END $$;
-ROLLBACK;
