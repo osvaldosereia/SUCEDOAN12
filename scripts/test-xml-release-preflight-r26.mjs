@@ -5,8 +5,8 @@ const local=currentLocalMigrations();
 const remote=["20261009035359","20261009133642","20261009155231"];
 const baseline=auditXmlReleaseR26({localFiles:local,remoteMigrations:remote});
 assert.equal(baseline.ok,false,"Never approve real release with unverified operational gates");
-assert.ok(baseline.errors.includes("r23_pending_migration_older_than_remote_head"),
- "R23 version precedes already-applied separation migration");
+assert.ok(!baseline.errors.includes("r23_pending_migration_older_than_remote_head"),
+ "R27 CLI migration now follows the applied separation version");
 assert.ok(baseline.errors.includes("unverified_supabase_isolated_auth_rls_edge"));
 assert.ok(baseline.errors.includes("unverified_browser_mobile_desktop"));
 assert.ok(!baseline.errors.includes("duplicate_separation_migration_must_not_replay"),
@@ -19,15 +19,15 @@ const missing=auditXmlReleaseR26({localFiles:local,
  remoteMigrations:["20261009035359"]});
 assert.ok(missing.errors.includes("remote_separation_applied_version_missing"));
 const reversed=auditXmlReleaseR26({localFiles:local.filter(x=>
- !x.includes("purchase_xml_field_approval_r24.sql")).concat(
- "20261009140000_purchase_xml_field_approval_r24.sql"),remoteMigrations:remote});
+ !x.includes("purchase_xml_field_approval_r27.sql")).concat(
+ "20261009140000_purchase_xml_field_approval_r27.sql"),remoteMigrations:remote});
 assert.ok(reversed.errors.includes("r23_must_precede_r24"));
 const allVerified=Object.fromEntries(R26_REQUIRED_GATES.map(x=>[x,true]));
 const namesReordered=local.map(x=>x
- .replace("20261009145919_purchase_xml_identity_atomic_r23.sql",
- "20261009170000_purchase_xml_identity_atomic_r23.sql")
- .replace("20261009155445_purchase_xml_field_approval_r24.sql",
- "20261009170100_purchase_xml_field_approval_r24.sql"));
+ .replace("20261009185312_purchase_xml_identity_atomic_r27.sql",
+ "20261009170000_purchase_xml_identity_atomic_r27.sql")
+ .replace("20261009185314_purchase_xml_field_approval_r27.sql",
+ "20261009170100_purchase_xml_field_approval_r27.sql"));
 const future=auditXmlReleaseR26({
  localFiles:namesReordered,remoteMigrations:remote,verifiedGates:allVerified
 });
