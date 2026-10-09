@@ -39,7 +39,7 @@ Deno.serve(async(req:Request)=>{
   const anon=createClient(STAGING,publicKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const suffix=crypto.randomUUID();
   const email='da6-qa-'+suffix+'@example.invalid';
-  const password=Array.from(crypto.getRandomValues(new Uint8Array(40)),x=>x.toString(16).padStart(2,'0')).join('');
+  const password=Array.from(crypto.getRandomValues(new Uint8Array(24)),x=>x.toString(16).padStart(2,'0')).join('');
   const created=await db.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{da6_qa_synthetic:true}});
   if(created.error||!created.data.user?.id)throw Error('synthetic_user_creation_failed');
   userId=created.data.user.id; report.steps.push('synthetic_auth_user_created');
