@@ -1,6 +1,7 @@
 // R26: fail-closed migration preflight. Read-only; does not run SQL or deploy.
 // The remote snapshot must come from a fresh Supabase read-only query.
 import {readFileSync,readdirSync} from "node:fs";
+import {classifyMigrationDriftR27} from "./xml-migration-drift-guard-r27.mjs";
 import {resolve,dirname} from "node:path";
 import {fileURLToPath} from "node:url";
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),"..");
@@ -30,8 +31,8 @@ export function auditXmlReleaseR26({localFiles,remoteMigrations,verifiedGates={}
    errors.push("canonical_separation_migration_not_versioned");
  if(local.some(x=>x.startsWith(OLD_DUPLICATE+"_separation_ready_reservation_idempotence")))
    errors.push("duplicate_separation_migration_must_not_replay");
- const identities=local.filter(x=>x.includes("purchase_xml_identity_atomic_r23.sql"));
- const fields=local.filter(x=>x.includes("purchase_xml_field_approval_r24.sql"));
+ const identities=local.filter(x=>x.includes("purchase_xml_identity_atomic_r27.sql"));
+ const fields=local.filter(x=>x.includes("purchase_xml_field_approval_r27.sql"));
  if(identities.length!==1||fields.length!==1)
    errors.push("r23_r24_expected_exactly_once");
  const identityVersion=identities.length===1?versionOf(identities[0]):"";
@@ -45,6 +46,9 @@ export function auditXmlReleaseR26({localFiles,remoteMigrations,verifiedGates={}
  if(identityVersion&&fieldVersion&&remoteVersions.has(fieldVersion)&&!remoteVersions.has(identityVersion))
    errors.push("r24_applied_before_r23");
  if(!maxRemote) errors.push("remote_migration_history_empty");
+ const fullHistory=classifyMigrationDriftR27(localFiles,remoteMigrations);
+ if(!fullHistory.ok_for_global_db_push)
+   errors.push("global_db_push_blocked_by_unreconciled_migration_history");
  for(const gate of R26_REQUIRED_GATES)
    if(verifiedGates[gate]!==true) errors.push("unverified_"+gate);
  return {

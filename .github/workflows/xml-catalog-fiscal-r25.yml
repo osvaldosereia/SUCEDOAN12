@@ -67,5 +67,5 @@ jobs:
           set -eu
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-client
-          sed 's#docs/projects/purchase-xml-field-approval-release-candidate-r24.sql#supabase/migrations/20261009155445_purchase_xml_field_approval_r24.sql#' scripts/test-xml-field-approval-r24.pg.sql >/tmp/xml-r25-postgres.sql
+          sed 's#docs/projects/purchase-xml-field-approval-release-candidate-r24.sql#supabase/migrations/20261009185314_purchase_xml_field_approval_r27.sql#' scripts/test-xml-field-approval-r24.pg.sql >/tmp/xml-r25-postgres.sql
           psql -v ON_ERROR_STOP=1 -f /tmp/xml-r25-postgres.sql

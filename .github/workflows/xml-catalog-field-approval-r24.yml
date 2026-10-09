@@ -57,10 +57,10 @@ jobs:
         run: |
           set -eu
           supabase migration new --help
-          migration_file="supabase/migrations/20261009155445_purchase_xml_field_approval_r24.sql"
+          migration_file="supabase/migrations/20261009185314_purchase_xml_field_approval_r27.sql"
           test -s "$migration_file"
           cmp "$migration_file" docs/projects/purchase-xml-field-approval-release-candidate-r24.sql
-          test -s supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql
+          test -s supabase/migrations/20261009185312_purchase_xml_identity_atomic_r27.sql
           echo "R24_COMMITTED_MIGRATION=$migration_file"
           sha256sum "$migration_file"
       - name: Apply committed migration to disposable PostgreSQL 17
@@ -68,7 +68,7 @@ jobs:
           set -eu
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-client
-          migration_file="supabase/migrations/20261009155445_purchase_xml_field_approval_r24.sql"
+          migration_file="supabase/migrations/20261009185314_purchase_xml_field_approval_r27.sql"
           sed "s#docs/projects/purchase-xml-field-approval-release-candidate-r24.sql#$migration_file#" scripts/test-xml-field-approval-r24.pg.sql >/tmp/xml-field-r24-test.sql
           psql -v ON_ERROR_STOP=1 -f /tmp/xml-field-r24-test.sql
   deno:

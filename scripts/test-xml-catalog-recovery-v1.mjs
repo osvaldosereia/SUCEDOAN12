@@ -8,7 +8,7 @@ const standalone=read("supabase/functions/purchase-xml-v1/index.ts");
 const x=read("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/xml-catalog-extractor.mjs");
 const xOther=read("supabase/functions/purchase-xml-v1/xml-catalog-extractor.mjs");
 const html=read("vitrine/admin/index.html");
-const sql=read("supabase/migrations/20261009051500_purchase_xml_catalog_observations_v1.sql");
+const sql=read("supabase/migrations/20261009023146_purchase_xml_catalog_observations_v1.sql");
 
 assert.equal(b,standalone,"Both purchase XML backend source copies must be identical");
 assert.equal(x,xOther,"Both XML parsers must be identical");

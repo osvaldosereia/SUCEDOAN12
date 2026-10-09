@@ -103,8 +103,8 @@ insert into public.xml_r26_evidence_fixture values
  '4006381333931','5901234123457','19059080','1700101','CX','FOR-1');
 
 -- Real migrations, in the required dependency order, same database/connection.
-\i supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql
-\i supabase/migrations/20261009155445_purchase_xml_field_approval_r24.sql
+\i supabase/migrations/20261009185312_purchase_xml_identity_atomic_r27.sql
+\i supabase/migrations/20261009185314_purchase_xml_field_approval_r27.sql
 
 set role service_role;
 do $$

@@ -82,7 +82,7 @@ jobs:
         run: |
           set -eu
           supabase migration new --help
-          migration_file="supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql"
+          migration_file="supabase/migrations/20261009185312_purchase_xml_identity_atomic_r27.sql"
           test -s "$migration_file"
           test -s supabase/migrations/20261009035359_purchase_xml_ingest_error_audit_v5.sql
           test ! -e supabase/migrations/20261009085000_purchase_xml_ingest_error_audit_v5.sql
@@ -94,6 +94,6 @@ jobs:
           set -eu
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-client
-          migration_file="supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql"
+          migration_file="supabase/migrations/20261009185312_purchase_xml_identity_atomic_r27.sql"
           sed "s#docs/projects/purchase-xml-identity-release-candidate-r22.sql#$migration_file#" scripts/test-xml-catalog-identity-production-schema-r22.pg.sql >/tmp/xml-r23-postgres-integration.sql
           psql -v ON_ERROR_STOP=1 -f /tmp/xml-r23-postgres-integration.sql

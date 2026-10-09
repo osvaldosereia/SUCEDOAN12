@@ -12,8 +12,8 @@ assert.match(applied,/order_separation_completions_v1/);
 assert.match(applied,/stock_applied/);
 assert.match(applied,/return new;/);
 assert.match(read("scripts/test-separation-ready-reservation-idempotence.mjs"),/stock_reservation_released|sync_vitrine_order_stock_reservation_v1/);
-const r23=read("supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql");
-const r24=read("supabase/migrations/20261009155445_purchase_xml_field_approval_r24.sql");
+const r23=read("supabase/migrations/20261009185312_purchase_xml_identity_atomic_r27.sql");
+const r24=read("supabase/migrations/20261009185314_purchase_xml_field_approval_r27.sql");
 assert.match(r23,/purchase_xml_resolve_catalog_identity_v1/);
 assert.match(r24,/purchase_xml_field_review/);
 assert.match(r24,/purchase_xml_apply_field_review_v1/);
@@ -26,3 +26,6 @@ const order=[
 assert.deepEqual(order,["20261009035359","20261009145919","20261009155231","20261009155445"]);
 assert.match(read("supabase/migrations/20261009035359_purchase_xml_ingest_error_audit_v5.sql"),/purchase_xml_catalog_ingest_errors_v1/);
 console.log("PASS R25: applied migration version reconciled; no duplicate order trigger; R23/R24 sequencing documented");
+
+assert.equal(existsSync(new URL("supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql",root)),false);
+assert.equal(existsSync(new URL("supabase/migrations/20261009155445_purchase_xml_field_approval_r24.sql",root)),false);

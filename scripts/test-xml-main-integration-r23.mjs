@@ -42,7 +42,7 @@ assert.equal(archive.split("\n").slice(3).join("\n"),historicalSql,
  "Historical migration content must match the exact SQL already executed remotely");
 assert.match(historicalSql,/purchase_xml_catalog_ingest_errors_v1/);
 assert.match(historicalSql,/security_invoker=true/);
-const generated=read("supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql");
+const generated=read("supabase/migrations/20261009185312_purchase_xml_identity_atomic_r27.sql");
 assert.match(generated,/R23 CANONICAL MIGRATION/);
 assert.equal(generated.split("\n").slice(2).join("\n"),
  sql.split("\n").slice(2).join("\n"),"Committed migration must match audited R22 source SQL");
