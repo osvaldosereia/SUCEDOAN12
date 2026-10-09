@@ -6,6 +6,8 @@ const bridge=()=>root.DonaAntoniaAdminBridge;
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const names={uploading:'Enviando',queued:'Na fila',processing:'Lendo',retry:'Nova tentativa',complete:'Lida',needs_review:'Revisar',failed:'Falhou'};
 let active=false,currentBatch=null,pollTimer=null,busy=false;
+// Preserva a visibilidade dos componentes A4 ao alternar para fotografias.
+const previouslyHidden=new WeakMap();
 function call(action,body){return bridge().api(action,{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
 function toast(s){bridge()?.toast?.(s)}
 function host(){return $('#da6-photo-panel')}
@@ -17,7 +19,13 @@ function setMode(photos){
  const content=$('#content');
  Array.from(content.children).forEach(el=>{
   if(el===panel||el===controls||el.classList.contains('page-head'))return;
-  el.hidden=photos;
+  if(photos){
+   if(!previouslyHidden.has(el))previouslyHidden.set(el,el.hidden);
+   el.hidden=true;
+  }else if(previouslyHidden.has(el)){
+   el.hidden=previouslyHidden.get(el);
+   previouslyHidden.delete(el);
+  }
  });
  panel.hidden=!photos;
  controls.querySelector('[data-da6-mode=photos]').classList.toggle('primary',photos);
