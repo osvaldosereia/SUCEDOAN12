@@ -21,4 +21,20 @@ assert.match(sql,/grant execute on function public\.cosmos_research_reserve_next
 assert.doesNotMatch(worker,/\.from\(["']products["']\)\.update/);
 assert.match(worker,/auto_family_inheritance:false/);
 assert.match(worker,/COSMOS_WORKER_SECRET/);
-console.log("PASS: Cosmos mapping identity, missing dimensions, raw weights and read-only safety controls");
+
+const sqlV2=readFileSync(new URL("../supabase/migrations/20261009021500_cosmos_family_identity_audit_v2.sql",import.meta.url),"utf8");
+const sqlV3=readFileSync(new URL("../supabase/migrations/20261009023000_cosmos_representative_pilot_v3.sql",import.meta.url),"utf8");
+assert.match(sqlV2,/create or replace function public\.cosmos_gtin_valid/,"No check digit validator");
+assert.match(sqlV2,/and public\.cosmos_gtin_valid\(r\.gtin\)/,"The reserve query must reject invalid GTINs");
+assert.match(sqlV2,/security_invoker=true/);
+assert.match(sqlV3,/research_mode text not null default 'representatives_only'/);
+assert.match(sqlV3,/and \(cfg\.research_mode='full' or rep\.representative_product_id is not null\)/);
+assert.match(sqlV3,/a\.gtin_checksum_valid is true/);
+assert.match(worker,/if\(!config\.data\?\.enabled\)/,"The worker must obey kill switch");
+assert.match(worker,/limitedMaxItems/,"The worker must obey max_batch");
+assert.doesNotMatch(worker,/clean\(e\?\.name/,"Undefined error helpers must not recur");
+assert.doesNotMatch(worker,/\.from\(["']product_fiscal_profiles["']\)\.update/);
+assert.doesNotMatch(sqlV2,/update\s+public\.products/i);
+assert.doesNotMatch(sqlV3,/update\s+public\.products/i);
+
+console.log("PASS: Cosmos identity, quota, group-first pilot, data-safety and worker guards");
