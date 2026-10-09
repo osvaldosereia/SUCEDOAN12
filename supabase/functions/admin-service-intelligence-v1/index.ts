@@ -8229,7 +8229,7 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
   };
   if(!jobs.length)return summary;
 
-  const token=await blingHubOauth(sb);
+  let token=""; // Acquire OAuth only when a generic order needs it; target-state recovery has its own token.
   let canaryWriteAttempted=false;
   let canaryWriteFailed=false;
 
@@ -8360,6 +8360,7 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
       }
 
       const externalKey=String(preview.external_key);
+      if(!token)token=await blingHubOauth(sb);
       const existing=await blingHubFindOrderByExternalKey(sb,token,externalKey);
 
       if(!existing.ok){
@@ -8588,13 +8589,16 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
       if(existing.match){summary.existing++;}else{summary.created++;}
     }catch(e){
       const msg=clean((e as Error)?.message||e,500);
+      // A contested OAuth token is transient: retry with backoff, not manual review.
+      const transient=/\\b(oauth_busy|oauth_temporarily_unavailable|rate_limit|timeout)\\b/i.test(msg);
+      const jobStatus=transient?"retry":"review_required";
       await sb.rpc("finish_bling_hub_job_v2",{
-        p_job_id:job.id,p_status:"review_required",p_result:{},
-        p_error_code:"order_worker_exception",p_error_message:msg,
+        p_job_id:job.id,p_status:jobStatus,p_result:{retryable:transient},
+        p_error_code:transient?"order_worker_transient":"order_worker_exception",p_error_message:msg,
         p_http_status:null,p_retry_seconds:120,p_provider_id:null
       });
-      if(firstOrderCanary&&canaryWriteAttempted)canaryWriteFailed=true;
-      summary.review_required++;
+      if(firstOrderCanary&&canaryWriteAttempted&&!transient)canaryWriteFailed=true;
+      summary[jobStatus]++;
     }
   }
 
