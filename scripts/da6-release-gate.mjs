@@ -10,6 +10,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {da6SourceFingerprint} from './da6-release-fingerprint.mjs';
+import {verifyDa6EvidenceHeader} from './da6-release-attestation.mjs';
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const manifestPath='docs/projects/DA6_RELEASE_GATES_2026-10-09.json';
 const manifest=JSON.parse(fs.readFileSync(path.join(repo,manifestPath),'utf8'));
@@ -77,8 +78,14 @@ for(const gate of requiredGates){
   failures.push({gate,reason:'missing_attestation'});
   continue;
  }
- const real=crypto.createHash('sha256').update(fs.readFileSync(full)).digest('hex');
- if(real!==checksum)failures.push({gate,reason:'attestation_changed'});
+ const evidence=fs.readFileSync(full);
+ const real=crypto.createHash('sha256').update(evidence).digest('hex');
+ if(real!==checksum){
+  failures.push({gate,reason:'attestation_changed'});
+  continue;
+ }
+ const linked=verifyDa6EvidenceHeader(evidence.toString('utf8'),gate,fingerprint.sha256);
+ if(!linked.ok)failures.push({gate,reason:linked.reason});
 }
 if(manifest.release_status!=='ready_for_approval')
  failures.push({gate:'release_status',reason:'manual_release_gate_closed'});
