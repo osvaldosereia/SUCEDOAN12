@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "./_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared/papoai-commerce-intent-v1.mjs";
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
-import { eligiblePostCheckoutShortageBelowMinimum } from "./_shared/order-bling-r7-manifest-v1.mjs";
+import { eligiblePostCheckoutShortageBelowMinimum, stableJson } from "./_shared/order-bling-r7-manifest-v1.mjs";
 import { compareBlingR9Order, classifyBlingR9Invoices } from "./_shared/order-fiscal-r9-observer-v1.mjs";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
@@ -3920,7 +3920,7 @@ async function blingHubFiscalR9ObserveReadOnly(sb:any,sourceOrderIdRaw:any){
   if(o?.status!=="ready"||c?.phase!=="completed"
     ||c?.metadata?.stock_applied!==true||r?.status!=="verified"
     ||r?.manifest?.ready!==true||r?.manifest?.order_id!==oid
-    ||JSON.stringify(r?.manifest)!==JSON.stringify(c?.metadata?.r6_reconciliation)
+    ||stableJson(r?.manifest)!==stableJson(c?.metadata?.r6_reconciliation)
     ||!r?.payload_hash||r.bling_order_id!==o.bling_order_id
     ||l?.status!=="matched"||Number(l?.bling_id)!==Number(r.bling_order_id)
     ||l?.identity_value!=="VITRINE-"+oid)
