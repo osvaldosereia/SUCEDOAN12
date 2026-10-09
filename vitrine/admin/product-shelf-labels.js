@@ -36,11 +36,11 @@ function labelHtml(p,serial){
     '<section class="counts">'+rows+'</section>'+
     '<footer><span>6 BALANÇOS · SEM DATA FIXA</span><span>ETIQUETA '+esc(serial)+'</span></footer></article>';
 }
-function printMany(products){
+function printMany(products,existingWindow){
   if(!Array.isArray(products)||!products.length){alert('Selecione produtos para imprimir.');return}
   if(products.length>300){alert('Limite de 300 etiquetas por impressão. Divida em lotes.');return}
   let labels;try{labels=products.map(p=>labelHtml(p,randomSerial()))}catch(e){alert(e.message);return}
-  const win=window.open('','_blank');
+  const win=existingWindow||window.open('','_blank');
   if(!win){alert('Permita pop-ups para imprimir.');return}
   const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Etiquetas Dona Antônia · '+labels.length+'</title>'+
     '<link rel="stylesheet" href="/vitrine/admin/product-label-print.css?v=da6-v1"></head><body>'+
