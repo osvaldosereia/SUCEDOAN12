@@ -3,8 +3,11 @@ on:
   push:
     branches:
       - 'agent/orders-r2-*'
+      - 'agent/orders-r15-*'
     paths:
       - 'scripts/sql/orders-r2-*.sql'
+      - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
+      - 'scripts/test-orders-r15-weekly-unification-v1.mjs'
       - 'scripts/sql/orders-r2-r3-*.sql'
       - 'scripts/sql/orders-security-*.sql'
       - 'scripts/sql/orders-r2-canonical-bling-stock-*.sql'
@@ -22,6 +25,8 @@ on:
       - 'agent/orders-r2-*'
     paths:
       - 'scripts/sql/orders-r2-hml-*.sql'
+      - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
+      - 'scripts/test-orders-r15-weekly-unification-v1.mjs'
       - 'scripts/sql/orders-r2-canonical-*.sql'
       - 'scripts/sql/orders-security-*.sql'
       - 'supabase/sql/orders-security-public-table-privileges-review-v1.sql'
@@ -61,16 +66,13 @@ jobs:
       FISCAL_LIVE_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v4
-      # Pin the existing R03 implementation for an integration test, without
-      # merging or rewriting its separate development branch.
-      - uses: actions/checkout@v4
-        with:
-          ref: e7408ad5cbcd6ae8d5ca16e90f2e287a7d61af4c
-          path: r03-source
-          persist-credentials: false
+      # R15: use locally unified weekly migration, not a pinned external branch.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: R15 weekly ID preserved in Admin, picker and outbound WhatsApp
+        run: |
+          node --test scripts/test-orders-r15-weekly-unification-v1.mjs
       - name: Assert offline mode
         run: |
           set -euo pipefail
@@ -312,7 +314,7 @@ jobs:
             -f scripts/sql/orders-r2-r3-integration-fixture.sql
           # This is the EXACT R03 migration from the pinned checkout above.
           PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
-            -f r03-source/supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql
+            -f supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql
           # Before fixing, demonstrate legacy checkout returns DA-* while
           # R03 has assigned a different weekly identifier in orders.
           PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
