@@ -495,6 +495,31 @@ async function resolvePurchaseItemIdentity(body:any,userId:string|null){
   const q=await sb.from("purchase_xml_items").select("*,purchase_xml_documents(*)").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)return {ok:false,status:404,error:"item_not_found"};
   const item:any=q.data,doc:any=item.purchase_xml_documents,role=clean(body?.gtin_role,30),createNew=body?.create_new===true;
   const catalogEvidenceOnly=body?.catalog_evidence_only===true;
+  if(catalogEvidenceOnly){
+    // R21: never perform multi-table catalog writes from this Edge function.
+    // PostgreSQL owns the transaction and rejects race, fiscal, lot and stock effects.
+    if(!userId||body?.confirmation!==(createNew?"CRIAR_INATIVO_XML":"VINCULAR_ITEM_XML"))
+      return {ok:false,status:409,error:"xml_identity_confirmation_required"};
+    if(!["commercial","tax"].includes(body?.gtin_source))
+      return {ok:false,status:409,error:"xml_identity_gtin_source_required"};
+    const rawFactor=body?.conversion_factor;
+    if(typeof rawFactor!=="number"||!Number.isInteger(rawFactor)||
+       rawFactor<1||rawFactor>100000)
+      return {ok:false,status:409,error:"xml_identity_factor_invalid"};
+    const r=await sb.rpc("purchase_xml_resolve_catalog_identity_v1",{
+      p_item_id:id,p_product_id:createNew?null:body?.product_id||null,
+      p_create_new:createNew,p_proposed_name:createNew?clean(body?.proposed_name,300):null,
+      p_gtin_source:body.gtin_source,p_gtin_role:role,p_conversion_factor:rawFactor,
+      p_actor_id:userId,p_confirmation:body.confirmation
+    });
+    if(r.error){
+      const code=String(r.error.message||"").match(/xml_identity_[a-z_]+/);
+      return {ok:false,status:code?409:503,
+        error:code?code[0]:"xml_identity_service_unavailable"};
+    }
+    return r.data&&r.data.ok===true?r.data:
+      {ok:false,status:503,error:"xml_identity_service_unavailable"};
+  }
   if(!["base_unit","package"].includes(role))return {ok:false,status:409,error:"gtin_role_required"};
   let factor=Number(body?.conversion_factor??item.conversion_factor??0);if(!Number.isFinite(factor)||factor<1)factor=1;
   if(role==="package"&&factor<=1)return {ok:false,status:409,error:"packaging_factor_must_be_greater_than_one"};
@@ -1810,7 +1835,7 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     }
 
     if(action==="search_products")return js(req,await searchPurchaseProducts(body));
-    if(action==="resolve_item_identity"){if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);const r=await resolvePurchaseItemIdentity(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
+    if(action==="resolve_item_identity"){if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);if(body?.catalog_evidence_only===true&&!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);const r=await resolvePurchaseItemIdentity(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="summary")return js(req,await summary(body));
     if(action==="finance_reconcile"){const r=await syncFinanceDocument(clean(body?.document_id||body?.id||u.searchParams.get("id"),80),{allowWrite:false,source:"vitrine_admin_reconcile"});return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="finance_post"||action==="finance_retry"){
