@@ -1,0 +1,105 @@
+name: Orders R07 - Bling picked-only sync (offline)
+on:
+  push:
+    branches: ['agent/orders-r7-*']
+  pull_request:
+    branches: ['agent/orders-r6-*', main]
+    paths:
+      - 'supabase/functions/_shared/order-bling-r7-manifest-v1.mjs'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
+      - 'supabase/sql/orders-r7-bling-manifest-sync-contract-v1.sql'
+      - 'scripts/test-orders-r7-bling-reconciled-v1.mjs'
+      - 'scripts/sql/orders-r7-*'
+      - '.github/workflows/orders-r7-bling-reconciled-ci.yml'
+permissions:
+  contents: read
+jobs:
+  picked-sync:
+    name: Picked-only Bling payload / once-only intent (Postgres 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: orders_r7_synthetic
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres -d orders_r7_synthetic"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: orders_r7_synthetic
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      ORDER_R6_RECONCILIATION_ENABLED: 'false'
+      ORDER_R7_BLING_MANIFEST_ENABLED: 'false'
+      BLING_LIVE_ENABLED: 'false'
+      META_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Guarantee no Bling, Meta, fiscal or order rollout
+        run: |
+          test "$ORDER_R6_RECONCILIATION_ENABLED" = false
+          test "$ORDER_R7_BLING_MANIFEST_ENABLED" = false
+          test "$BLING_LIVE_ENABLED" = false
+          test "$META_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+      - name: Offline Bling adapter contracts
+        run: |
+          node --check supabase/functions/_shared/order-bling-r7-manifest-v1.mjs
+          node --test scripts/test-orders-r7-bling-reconciled-v1.mjs
+      - name: Install PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client >/dev/null
+          fi
+      - name: Reproduce R06 synthetic orders using production-captured separation RPCs
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-canonical-separation-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-canonical-separation-functions.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-hml-extra-fixtures.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r6-picked-manifest-contract-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-hml-assertions.sql
+      - name: Test R07 durable Bling intent with real R06 receipt (no network)
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r7-bling-manifest-sync-contract-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r7-hml-assertions.sql
+      - name: Concurrent R07 worker claim cannot produce second write
+        run: |
+          set -euo pipefail
+          SQL="select public.ops2_claim_bling_r7_sync_v1('00000000-0000-4000-8000-000000000050'::uuid,repeat('c',64))::text;"
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" > /tmp/r7-claim-a.txt &
+          A=$!
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" > /tmp/r7-claim-b.txt &
+          B=$!
+          wait "$A"
+          wait "$B"
+          cat /tmp/r7-claim-a.txt /tmp/r7-claim-b.txt
+          test "$(psql -Atc "select count(*) from public.order_bling_r7_sync_intents_v1 where order_id='00000000-0000-4000-8000-000000000050'")" = 1
+          test "$(psql -Atc "select attempts from public.order_bling_r7_sync_intents_v1 where order_id='00000000-0000-4000-8000-000000000050'")" = 1
+          cat /tmp/r7-claim-a.txt /tmp/r7-claim-b.txt | grep -Ec '"claimed": true' | grep -qx 1
+          cat /tmp/r7-claim-a.txt /tmp/r7-claim-b.txt | grep -Ec 'r7_remote_reconciliation_required' | grep -qx 1
+          # Simulate an unknown outcome. No retry is allowed, even after lock expiry.
+          psql -v ON_ERROR_STOP=1 -c "update public.order_bling_r7_sync_intents_v1 set locked_at=now()-interval '2 days',status='uncertain' where order_id='00000000-0000-4000-8000-000000000050';"
+          psql -Atc "$SQL" | grep -q 'r7_remote_reconciliation_required'
+          test "$(psql -Atc "select attempts from public.order_bling_r7_sync_intents_v1 where order_id='00000000-0000-4000-8000-000000000050'")" = 1
+          echo 'PASS: concurrently only one Bling claim, unknown remote outcome stops another write'
+      - name: Final check
+        run: |
+          set -euo pipefail
+          test "$(psql -Atc "select count(*) from public.order_bling_r7_sync_intents_v1")" = 2
+          test "$(psql -Atc "select count(*) from public.order_bling_r7_sync_intents_v1 where status='verified'")" = 1
+          git diff --check
