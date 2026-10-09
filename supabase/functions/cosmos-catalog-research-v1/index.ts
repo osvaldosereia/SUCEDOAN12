@@ -58,12 +58,18 @@ Deno.serve(async (req) => {
     if(conf.error) return json({error:"configuration_unavailable"},500);
     return json({mode:"preview",config:conf.data,updates_products:false,updates_bling:false,requires_cosmos_credentials:true});
   }
+  const config=await db.from("cosmos_research_config").select("enabled,daily_limit,max_batch")
+    .eq("id",true).maybeSingle();
+  if(config.error) return json({error:"config_read_failed"},500);
+  if(!config.data?.enabled) return json({mode:"disabled",processed_count:0,updates_products:false});
+  // Nunca exceder max_batch mesmo se o pedido HTTP solicitar mais.
+  const limitedMaxItems=Math.min(maxItems,Math.max(1,Math.min(5,Number(config.data.max_batch)||1)));
   const token=Deno.env.get("COSMOS_API_TOKEN")||"";
   const ua=Deno.env.get("COSMOS_USER_AGENT")||"";
   if(!token||!ua) return json({error:"cosmos_credentials_not_configured"},503);
 
   const processed=[];
-  for(let i=0;i<maxItems;i++){
+  for(let i=0;i<limitedMaxItems;i++){
     const reservation=await db.rpc("cosmos_research_reserve_next");
     if(reservation.error) return json({error:"queue_reservation_failed",processed},500);
     const item=reservation.data?.[0];
