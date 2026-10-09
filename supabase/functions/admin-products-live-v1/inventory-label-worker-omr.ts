@@ -173,16 +173,23 @@ function process(img,qrDecoder,omrReader,threshold=105){
  for(let orientation=0;orientation<4;orientation++){
   const points=corners.map((_,i)=>corners[(i+orientation)%4]);
   const preview=warp(img,points,500,750);
+  function verify(qr,width,height){
+    if(!qr?.location)return null;
+    let identity;try{identity=parseQR(qr.data)}catch{return null}
+    const loc=qr.location;
+    const positions=[loc.topLeftCorner,loc.topRightCorner,loc.bottomRightCorner,loc.bottomLeftCorner];
+    if(positions.some(p=>!p||!Number.isFinite(p.x)||!Number.isFinite(p.y)))return null;
+    const x=positions.reduce((sum,p)=>sum+p.x,0)/4/width;
+    const y=positions.reduce((sum,p)=>sum+p.y,0)/4/height;
+    return x>=.55&&x<=.99&&y>=.015&&y<=.42?identity:null;
+  }
   const qr=qrDecoder(preview.data,500,750,{inversionAttempts:'attemptBoth'});
-  if(!qr)continue;
-  let identity;try{identity=parseQR(qr.data)}catch{continue}
-  const loc=qr.location;
-  if(!loc)continue;
-  const positions=[loc.topLeftCorner,loc.topRightCorner,loc.bottomRightCorner,loc.bottomLeftCorner].filter(Boolean);
-  if(positions.length!==4)continue;
-  const x=positions.reduce((sum,p)=>sum+p.x,0)/4;
-  const y=positions.reduce((sum,p)=>sum+p.y,0)/4;
-  if(x<275||y>315)continue;
+  let identity=verify(qr,500,750);
+  if(!identity&&!qr){
+    const enlarged=warp(img,points,1000,1500);
+    identity=verify(qrDecoder(enlarged.data,1000,1500,{inversionAttempts:'attemptBoth'}),1000,1500);
+  }
+  if(!identity)continue;
   selected={points,identity,orientation};break;
  }
  if(!selected)throw Error('label_qr_not_found');
