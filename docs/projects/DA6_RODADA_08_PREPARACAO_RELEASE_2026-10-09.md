@@ -72,3 +72,33 @@ node --test tests/da6-release-gate.test.cjs tests/da6-vendored-print.test.cjs
   ```
 - No momento de homologar, guardar o hash e o SHA de commit nas evidências físicas/hospedadas, sem publicar dados de clientes. Se a implementação mudar após aprovar, **repetir os testes físicos/hospedados afetados**, criar novas evidências e atualizar o fingerprint.
 - A presença de um fingerprint nunca substitui os sete gates existentes, a aprovação protegida nem o bloqueio de merge/deploy.
+
+## Pré-checagem isolada de staging (sem deploy)
+
+Antes de qualquer **ensaio hospedado** em ambiente remoto DA6, o operador
+técnico deve identificar um projeto Supabase SEPARADO dos dois projetos
+existentes da Dona Antônia. Não usar `ssbesxgaijknwsjbsbcz` (canônico) nem
+`qxstkwshuvplmmftrctj` (Vitrine/Admin). Não criar novo serviço pago sem a
+verificação apropriada de custos e condições.
+
+`scripts/da6-staging-preflight.mjs` é totalmente **offline**, não usa
+chaves de API, não chama Supabase e não altera sistemas. Ele exige quatro
+variáveis:
+
+- `DA6_TARGET_ENV=staging`
+- `DA6_STAGING_PROJECT_REF=<ref de 20 caracteres do staging>`
+- `DA6_STAGING_CONFIRM_REF=<a mesma ref verificada separadamente>`
+- `DA6_STAGING_WORKER_URL=https://<ref>.supabase.co/functions/v1/admin-products-live-v1?action=inventory_label_worker_tick`
+
+Para diagnosticar a ausência de configuração: 
+`node scripts/da6-staging-preflight.mjs --report`.
+Antes de executar testes no staging:
+`node scripts/da6-staging-preflight.mjs --enforce`;
+retorno **3 = proibição**, retorno 0 = apenas identidade de destino
+verificada, **não** equivale a homologação remota ou autorização de deploy.
+
+O script rejeita projetos de produção, confirmação divergente,
+outro protocolo/host, rota inadequada e parâmetros extras. Não guardar
+credenciais, URLs com tokens nem fotografias reais no GitHub. O staging
+hospedado continua exigindo Auth/Storage privado, Vault, pg_net, cron,
+métricas de desempenho, limites de recursos, rollback e revisão humana.
