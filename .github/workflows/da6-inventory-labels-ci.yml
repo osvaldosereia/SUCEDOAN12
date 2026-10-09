@@ -35,7 +35,12 @@ jobs:
         with:
           node-version: '22'
       - name: Instalar somente bibliotecas de geração e leitura QR para teste
-        run: npm install --no-save --ignore-scripts --no-audit --no-fund --prefix /tmp/da6-qr-integration jsqr@1.4.0 qrcode-generator@1.4.4
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund --prefix /tmp/da6-qr-integration jsqr@1.4.0 qrcode-generator@1.4.4 jsbarcode@3.11.6 puppeteer-core@24
+      - name: Descobrir Chrome para testar layout impresso
+        run: |
+          CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME_BIN" || (echo "Chrome não instalado no runner" && exit 1)
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
       - name: Testar leitura óptica, impressão e upload resiliente
         env:
           NODE_PATH: /tmp/da6-qr-integration/node_modules
