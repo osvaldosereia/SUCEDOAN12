@@ -1,0 +1,245 @@
+{
+  "title": "R18 candidate SQL source map for 29 distinct canonical trigger functions",
+  "captured_on": "2026-10-09",
+  "method": "GitHub default-branch code-index search; paths are candidates, not source-of-truth until canonical function MD5 and trigger hash are compared",
+  "branch_scope_warning": "Main and PR branches may differ. Search index coverage not exhaustive. Some canonically installed functions can lack a committed source.",
+  "contains_business_data": false,
+  "functions": [
+    {
+      "name": "private.order_addon_orders_close_trigger_v1",
+      "candidates": [
+        "supabase/migrations/20261008015848_order_addon_foundation_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "private.order_addon_separation_close_trigger_v1",
+      "candidates": [
+        "supabase/migrations/20261008015848_order_addon_foundation_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "private.set_updated_at",
+      "candidates": [],
+      "status": "no_github_index_match",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.enforce_order_dispatch_fiscal_gate_trigger_v1",
+      "candidates": [
+        "supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.enforce_storefront_checkout_basics_v1",
+      "candidates": [
+        "supabase/migrations/20261002143000_require_storefront_checkout_basics.sql"
+      ],
+      "status": "pg17_exact_canonical_fingerprint_verified",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.marketing_attribute_order_trigger_v1",
+      "candidates": [
+        "supabase/migrations/20261005191000_marketing_strategy_order_attribution_trigger_v1.sql",
+        "supabase/migrations/20261005192000_marketing_strategy_confirmed_learning_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.marketing_repurchase_order_trigger_v1",
+      "candidates": [
+        "supabase/sql/20260930_marketing_repurchase_10d_canonical_v1.sql",
+        "supabase/sql/20261006_marketing_security_hardening_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_attendance_orders_refresh_delivery_labels_trigger_v1",
+      "candidates": [
+        "supabase/sql/20261006_attendance_delivery_day_auto_labels_v1.sql",
+        "supabase/migrations/20261006054423_attendance_delivery_day_checkout_fallback_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_attendance_product_interest_item_trigger_v1",
+      "candidates": [
+        "supabase/sql/20261006_attendance_product_interest_labels_v1.sql",
+        "supabase/migrations/20261006113000_attendance_product_interest_labels_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_attendance_product_interest_order_trigger_v1",
+      "candidates": [
+        "supabase/sql/20261006_attendance_product_interest_labels_v1.sql",
+        "supabase/migrations/20261006113000_attendance_product_interest_labels_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_enqueue_storefront_order_whatsapp_v1",
+      "candidates": [
+        "supabase/sql/20261001_checkout_whatsapp_outbox_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_guard_dispatch_fiscal_job_v1",
+      "candidates": [
+        "supabase/sql/20260928_ops2_r4_fiscal_job_integrity_v1.sql"
+      ],
+      "status": "pg17_exact_canonical_fingerprint_verified",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_order_delivery_number_fill_v1",
+      "candidates": [],
+      "status": "no_github_index_match",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_order_item_public_snapshot_trigger_v1",
+      "candidates": [
+        "supabase/migrations/20261003024500_order_public_summary.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_order_registration_journey_trigger_v1",
+      "candidates": [
+        "supabase/sql/20260930123332_ops2_customer_registration_journey_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_orders_ensure_site_customer_v1",
+      "candidates": [
+        "supabase/sql/20261001_checkout_optional_fields_and_admin_customer_edit.sql",
+        "supabase/sql/20260930021738_ops2_customer_identity_multichannel_v2.sql",
+        "supabase/sql/20260930023355_ops2_customer_identity_trigger_security_fix.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_refresh_storefront_order_whatsapp_v1",
+      "candidates": [
+        "supabase/sql/20261001_checkout_whatsapp_outbox_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops2_require_separator_completion_v4",
+      "candidates": [
+        "supabase/migrations/20261007120000_order_separation_team_auto_fiscal_v4.sql"
+      ],
+      "status": "pg17_exact_canonical_fingerprint_verified",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops_enforce_delivery_payment_before_delivered_v1",
+      "candidates": [
+        "supabase/sql/20260925_ops2_delivery_payment_db_guard_v1.sql",
+        "supabase/migrations/20261004193000_orders_clean_flow_v3.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops_enforce_order_check_before_ready_v1",
+      "candidates": [
+        "supabase/sql/20260925_ops2_order_ean_check_v1.sql",
+        "supabase/migrations/20261004232000_order_check_gate_accept_separation_v3.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops_sync_delivery_payment_fiscal_trigger_v1",
+      "candidates": [
+        "supabase/sql/20260928_ops2_delivery_payment_fiscal_sync_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.ops_sync_delivery_stop_from_order_trigger_v1",
+      "candidates": [
+        "supabase/sql/20260925_ops2_delivery_route_order_sync_guard_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.set_updated_at",
+      "candidates": [
+        "supabase/migrations/20260930124757_fix_order_items_updated_at_trigger_contract.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.smart_delivery_guard_route_resequence_v1",
+      "candidates": [],
+      "status": "no_github_index_match",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.sync_basket_allocations_from_order_status_v1",
+      "candidates": [
+        "supabase/sql/20260929154951_basket_premounted_lots_v1.sql",
+        "supabase/sql/20260929_basket_premounted_lots_canonical.sql",
+        "supabase/migrations/20261004193000_orders_clean_flow_v3.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.sync_vitrine_order_stock_reservation_v1",
+      "candidates": [
+        "supabase/sql/20260930_order_separation_atomic_v1.sql",
+        "supabase/migrations/20261009160000_separation_ready_reservation_idempotence.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.trg_snapshot_order_hidden_adjustment_v1",
+      "candidates": [],
+      "status": "no_github_index_match",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.vitrine_stock_reservation_lot_delete_v1",
+      "candidates": [
+        "supabase/migrations/20261004040441_purchase_xml_fifo_lots_reservation_completion_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    },
+    {
+      "name": "public.vitrine_stock_reservation_lot_sync_v1",
+      "candidates": [
+        "supabase/migrations/20261004040441_purchase_xml_fifo_lots_reservation_completion_v1.sql"
+      ],
+      "status": "unverified_source_candidates",
+      "requires_dependency_closure": true
+    }
+  ]
+}
