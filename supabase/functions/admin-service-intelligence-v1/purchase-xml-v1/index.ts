@@ -1044,8 +1044,9 @@ async function closeStalePurchaseRuns(){
 async function runBlingSync(source="bling_daily",windowInput:any=null){
   await closeStalePurchaseRuns();
   const token=await oauth(),settings=await sb.from("purchase_xml_settings").select("*").eq("id",1).single();if(settings.error)throw settings.error;
-  await companyDocument(token);
-  const run=await sb.from("purchase_xml_import_runs").insert({source,status:"running"}).select("id").single();if(run.error)throw run.error;
+  // R2: reading incoming XML must never create products, supplier links or payables.
+  // The only import operation is catalog evidence; the user decides changes later.
+  const run=await sb.from("purchase_xml_import_runs").insert({source,status:"running",metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false}}).select("id").single();if(run.error)throw run.error;
   const fallback=source==="bling_daily"?Number(settings.data.daily_lookback_days||3):90,window=purchaseWindow(windowInput,fallback);
   const id=run.data.id,start=window.start,end=window.end,look=window.span_days;
   let seen=0,processed=0,dup=0,failed=0,items=0,matched=0,review=0;
@@ -1065,7 +1066,17 @@ async function runBlingSync(source="bling_daily",windowInput:any=null){
             if(det.ok){detail=det.data?.data||null;if(!x.ok)x=await linkedXml(detail?.xml)}
           }
           if(!x.ok){failed++;continue}
-          const rr=await processXml(token,x.xml,source,id,String(row?.id||""),bid,detail);
+          const catalog=await manualCatalogOnlyImport([{name:"bling-nfe-"+key+".xml",xml:x.xml}]);
+          const result=catalog.results?.[0];
+          if(!result?.ok)throw new Error(result?.error||"bling_catalog_import_failed");
+          // Attach the Bling source reference only; no product/finance/stock mutations.
+          if(bid&&result.document_id){
+            const linked=await sb.from("purchase_xml_documents").update({
+              bling_nfe_id:bid,updated_at:new Date().toISOString()
+            }).eq("id",result.document_id).is("bling_nfe_id",null);
+            if(linked.error)throw linked.error;
+          }
+          const rr={items:result.items||0,matched:0,review:result.items||0,duplicate:result.duplicate===true};
           items+=rr.items||0;matched+=rr.matched||0;review+=rr.review||0;if(rr.duplicate)dup++;else processed++;
         }catch{failed++}
       }
@@ -1798,13 +1809,18 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="daily_sync"){
       if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);
       const sync=await runBlingSync("bling_daily");
-      const payment_backfill=await backfillPaymentMetadata(100);
-      const finance_reconcile=await reconcilePendingFinance(50);
-      return js(req,{...sync,payment_backfill,finance_reconcile});
+      return js(req,{...sync,finance_skipped:true,reason:"xml_catalog_only_no_financial_mutations"});
     }
     if(action==="bling_sync")return js(req,await runBlingSync("bling_manual",body));
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
-    if(action==="manual_import"){const r=await manualImport(body?.files);return js(req,r,r.ok?200:Number(r.status||400))}
+    if(action==="manual_import"){
+      if(a.internal||a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      const files=Array.isArray(body?.files)?body.files:[];
+      // Compatibility action now shares the same safe ingestion as the catalog tab.
+      // Admin uploads >10 are chunked client-side, avoiding oversized Edge requests.
+      const r=await manualCatalogOnlyImport(files);
+      return js(req,r,r.ok?200:Number(r.status||400));
+    }
     if(action==="catalog_queue")return js(req,await catalogQueue(body));
     if(action==="xml_catalog_only_import"){
       if(a.internal||a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
