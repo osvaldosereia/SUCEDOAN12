@@ -100,9 +100,15 @@ create or replace view public.cosmos_family_attribute_preview_v1
 with (security_invoker=true)
 as
 select m.product_id, f.id as family_id,
-  f.shared_attributes - 'ncm' - 'cest' - 'origin_code' - 'cfop'
-  - 'gtin' - 'sku' - 'price' - 'stock' - 'validity'
-  - 'gross_weight' as shared_proposal,
+  jsonb_strip_nulls(jsonb_build_object(
+    'brand',f.shared_attributes->'brand',
+    'product_type',f.shared_attributes->'product_type',
+    'product_line',f.shared_attributes->'product_line',
+    'category',f.shared_attributes->'category',
+    'subcategory',f.shared_attributes->'subcategory',
+    'packaging_type',f.shared_attributes->'packaging_type',
+    'gpc',f.shared_attributes->'gpc'
+  )) as shared_proposal,
   case when m.evidence->>'presentation_verified'='true'
        then f.shared_attributes->'dimensions_raw'
        else null end as dimensions_proposal,
