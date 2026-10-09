@@ -1066,7 +1066,7 @@ async function runBlingSync(source="bling_daily",windowInput:any=null){
             if(det.ok){detail=det.data?.data||null;if(!x.ok)x=await linkedXml(detail?.xml)}
           }
           if(!x.ok){failed++;continue}
-          const catalog=await manualCatalogOnlyImport([{name:"bling-nfe-"+key+".xml",xml:x.xml}]);
+          const catalog=await manualCatalogOnlyImport([{name:"bling-nfe-"+key+".xml",xml:x.xml}],{source,runId:id});
           const result=catalog.results?.[0];
           if(!result?.ok)throw new Error(result?.error||"bling_catalog_import_failed");
           // Attach the Bling source reference only; no product/finance/stock mutations.
@@ -1387,15 +1387,20 @@ async function persistXmlCatalogEvidence(documentId:string,documentKey:string,xm
 }
 // Manual XML catalog-only ingestion. Does not call OAuth, Bling or product mutations.
 // Existing operational manual_import action remains unchanged.
-async function manualCatalogOnlyImport(input:any){
+async function manualCatalogOnlyImport(input:any,options:{source?:string;runId?:string}={}){
   const files=Array.isArray(input)?input:[];
   if(!files.length||files.length>10)return {ok:false,status:400,error:"catalog_xml_1_to_10_files_required"};
-  const source=files.length===1?"manual_xml":"bulk_xml";
-  const run=await sb.from("purchase_xml_import_runs").insert({
-    source,status:"running",documents_seen:files.length,
-    metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false}
-  }).select("id").single();
-  if(run.error)throw run.error;
+  const source=options.source||(files.length===1?"manual_xml":"bulk_xml");
+  const externalRunId=options.runId||null;
+  let runId=externalRunId;
+  if(!runId){
+    const run=await sb.from("purchase_xml_import_runs").insert({
+      source,status:"running",documents_seen:files.length,
+      metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false}
+    }).select("id").single();
+    if(run.error)throw run.error;
+    runId=run.data.id;
+  }
   const results:any[]=[];let processed=0,duplicates=0,failed=0,items=0;
   for(const file of files){
     const filename=clean(file?.name,160);
@@ -1427,7 +1432,7 @@ async function manualCatalogOnlyImport(input:any){
       if(upload.error)throw new Error("xml_storage_failed:"+upload.error.message);
       const personal=original.recipient_kind==="CPF";
       const inserted=await sb.from("purchase_xml_documents").insert({
-        import_run_id:run.data.id,source,source_document_id:filename||null,
+        import_run_id:runId,source,source_document_id:filename||null,
         document_key:evidence.key,content_sha256:hash,storage_path:path,
         issued_at:original.issued_at||null,supplier_document:original.supplier_document||null,
         supplier_name:original.supplier_name||null,
@@ -1453,14 +1458,16 @@ async function manualCatalogOnlyImport(input:any){
       results.push({name:filename,ok:false,error:clean((e as Error)?.message||e,220)});
     }
   }
+  if(!externalRunId){
   const done=await sb.from("purchase_xml_import_runs").update({
     status:failed?"completed_with_review":"completed",finished_at:new Date().toISOString(),
     documents_processed:processed,documents_duplicate:duplicates,documents_failed:failed,
     items_seen:items,items_matched:0,items_review:items,
     metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false},
     updated_at:new Date().toISOString()
-  }).eq("id",run.data.id);
+  }).eq("id",runId);
   if(done.error)throw done.error;
+  }
   return {ok:true,catalog_only:true,processed,duplicates,failed,items,results,
     bling_called:false,products_updated:false,stock_updated:false,finance_updated:false};
 }
