@@ -1,3 +1,5 @@
+// @ts-nocheck
+// Browser-origin pure geometry is tested by Node DA6 CI; TS wrapper below exports readDA6.
 /* DA6 — motor compartilhado do worker; espelho dos algoritmos OMR versionados do Admin. */
 // === inventory-label-photo-homography.js ===
 /* DA6 — homografia para etiqueta fotografada, sem IA. */
