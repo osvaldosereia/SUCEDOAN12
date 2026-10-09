@@ -53,3 +53,6 @@ Workflow [XML R29 Isolated Supabase Auth Smoke — run #37980712665](https://git
 - **Escopo correto:** banco/Auth/PostgREST local aprovados; não houve Edge real sob autenticação owner em staging compartilhado nem E2E da interface XML em navegador/telefone. **Não equivale a aceite produtivo.**
 
 O preview Supabase Pro separado `errtzfigcytxzzrodqtp`, que falhou no replay histórico `live_mode_required`, foi **deletado com sucesso** para interromper cobrança; não resta branch R29 de homologação ativa.
+
+
+**Conciliação fiscal adicional:** a main avançou de `7c5505eb010ed490c8dce23da50889c85d403fea` para `2f48f08a7fd87d9d5ee5bb4826d5a0c618ecc2b9`, incorporando `fiscal-r2-sale-link-lookup` no roteador fiscal compartilhado. R28 sincronizada por blobs das 4 alterações paralelas em `8754e5d4dc70f392d533a22ac8fa617e99f17233`; não houve sobreposição com as mudanças XML do Admin. Testes específicos de R2 agora estão presentes na branch, mas qualquer novo avanço da main exige conferência de merge/CI antes da publicação.
