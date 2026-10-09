@@ -4473,9 +4473,24 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
   for(const job of jobs.data||[]){
     if(result.processed>=limit)break;
     if(!["invoice_generation_uncertain","invoice_generation_failed","invoice_authorization_failed"].includes(String(job.error_code)))continue;
-    // The same failure is evaluated once daily. Changes to the job create a new key.
+    // Retry intermittent OAuth/API errors after 10 minutes; avoid repeatedly
+    // probing deterministic fiscal failures. A changed job is eligible at once.
+    const last=await sb.from("fiscal_nfe_recovery_events_v1")
+      .select("stage,error_code,created_at,diagnostics").eq("dispatch_job_id",job.id)
+      .order("created_at",{ascending:false}).limit(1).maybeSingle();
+    if(last.error)throw last.error;
+    const lastEvent:any=last.data||null;
+    const unchanged=lastEvent&&lastEvent.error_code===job.error_code
+      &&Date.parse(String(lastEvent.created_at||""))>=Date.parse(String(job.updated_at||""));
+    const lastStage=String(lastEvent?.stage||"");
+    const transient=lastStage==="oauth_busy_retry"||lastStage==="invoice_probe_unavailable_retry"
+      ||lastStage==="provider_temporary_retry"
+      ||(lastStage==="worker_exception"&&/oauth_busy|timeout|429|503/i.test(String(lastEvent?.diagnostics?.error||"")));
+    const intervalMs=transient?10*60000:4*3600000;
+    if(unchanged&&Date.now()-Date.parse(String(lastEvent.created_at))<intervalMs)continue;
     const stamp=String(job.updated_at||"").slice(0,19);
-    const key=["fiscal-nfe-recovery-v2",job.id,job.error_code,stamp,new Date().toISOString().slice(0,10)].join(":");
+    const bucket=Math.floor(Date.now()/(5*60000));
+    const key=["fiscal-nfe-recovery-v3",job.id,job.error_code,stamp,bucket].join(":");
     const prior=await sb.from("fiscal_nfe_recovery_events_v1").select("id").eq("event_key",key).maybeSingle();
     if(prior.error)throw prior.error;
     if(prior.data)continue;
@@ -4502,6 +4517,14 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
       }
       const preview=await blingHubVitrineDispatchFiscalPreview(sb,job.order_id);
       if(!preview.ok){diagnostics.reason="fiscal_preview_unavailable";continue;}
+      // Distinguish a successful negative lookup from a failed read. In
+      // particular, HTTP 429/5xx is NOT evidence that no invoice exists.
+      if(preview.invoice_lookup?.performed&&
+         ![200,201].includes(Number(preview.invoice_lookup.http_status||0))){
+        diagnostics.reason="invoice_probe_unavailable_retry";
+        diagnostics.lookup_http_status=preview.invoice_lookup.http_status||0;
+        continue;
+      }
       if(preview.hard_blockers?.length){diagnostics.reason="fiscal_preflight_blocked";diagnostics.blockers=preview.hard_blockers;continue;}
       diagnostics.invoice_id=preview.invoice_id||null;
       if(preview.invoice_id||preview.invoice){
@@ -4665,8 +4688,11 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
       diagnostics.retry_error=issue.ok?null:issue.error||null;
       externalWrite=externalWrite||issue.external_write===true;
     }catch(e){
-      diagnostics.reason="worker_exception";
-      diagnostics.error=clean((e as Error)?.message||e,240);
+      const msg=clean((e as Error)?.message||e,240);
+      diagnostics.reason=/\boauth_busy\b/i.test(msg)?"oauth_busy_retry":
+        /\b(429|502|503|504|timeout)\b/i.test(msg)?"provider_temporary_retry":"worker_exception";
+      diagnostics.error=msg;
+      if(diagnostics.reason!=="worker_exception")diagnostics.retry_after_seconds=600;
     }finally{
       await sb.from("fiscal_nfe_recovery_events_v1").update({
         stage:diagnostics.reason||"review_required",diagnostics,external_write:externalWrite
@@ -5202,9 +5228,17 @@ async function blingHubReserveSlot(sb:any){
 }
 async function blingHubOauth(sb:any){
   const owner=crypto.randomUUID();
-  const lock=await sb.rpc("claim_bling_hub_oauth_lock_v2",{p_owner:owner,p_ttl_seconds:90});
-  if(lock.error)throw new Error("oauth_lock_failed");
-  if(lock.data!==true)throw new Error("oauth_busy");
+  // Other workers share the same rotating refresh token. Wait for the
+  // distributed lock instead of classifying an ordinary overlap as failure.
+  // Never refresh a token without owning the lock.
+  let lockAcquired=false;
+  for(let attempt=0;attempt<4;attempt++){
+    const lock=await sb.rpc("claim_bling_hub_oauth_lock_v2",{p_owner:owner,p_ttl_seconds:90});
+    if(lock.error)throw new Error("oauth_lock_failed");
+    if(lock.data===true){lockAcquired=true;break;}
+    if(attempt<3)await sleep([800,1800,3200][attempt]);
+  }
+  if(!lockAcquired)throw new Error("oauth_busy");
   try{
     const c=await sb.rpc("get_bling_api_credentials_v1");
     if(c.error)throw new Error("credentials_lookup_failed");
