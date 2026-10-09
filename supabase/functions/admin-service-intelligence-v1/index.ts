@@ -4493,18 +4493,38 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
           invoiceId=Number(recovery.match?.id||0)||null;
         }
         if(!invoiceId){
+          const providerDetails=Array.isArray(generated.provider_details)?generated.provider_details:[];
+          const providerError=clean(JSON.stringify(generated.data?.error||generated.data||{}),1600);
+          const providerSummary=providerDetails
+            .map((x:any)=>[clean(x?.field,120),clean(x?.message,240)].filter(Boolean).join(": "))
+            .filter(Boolean).join(" · ");
+          const generationDetail=clean(
+            [generated.error,providerSummary,providerError&&providerError!=="{}"?providerError:""].filter(Boolean).join(" | "),
+            1900
+          )||("HTTP "+generated.status);
           await sb.from("dispatch_fiscal_jobs").update({
             status:"review_required",external_side_effect:generated.ok===true||generated.uncertain===true,
             error_code:generated.uncertain?"invoice_generation_uncertain":"invoice_generation_failed",
-            error_detail:generated.error||("HTTP "+generated.status),
+            error_detail:generationDetail,
             updated_at:new Date().toISOString()
           }).eq("id",job.id);
+          await sb.from("bling_hub_audit_v2").insert({
+            event_type:"dispatch_nfe_generation_failed",severity:"warning",domain:"fiscal",
+            details:{
+              source_order_id:sourceOrderId,canonical_order_id:canonicalOrderId,
+              bling_order_id:blingOrderId,http_status:generated.status,
+              error:generated.error||null,provider_details:providerDetails,
+              provider_error:providerError||null,external_write:generated.uncertain===true,make_used:false
+            }
+          });
           return {
             ok:false,
             error:generated.uncertain?"invoice_generation_uncertain":"invoice_generation_failed",
+            detail:generationDetail,
             status:409,
             http_status:generated.status,
-            provider_details:generated.provider_details||[],
+            provider_details:providerDetails,
+            provider_error:providerError||null,
             external_write:generated.uncertain===true
           };
         }
