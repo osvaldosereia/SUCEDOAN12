@@ -62,7 +62,7 @@ export function verifySefazNfeAuthorizationR10(input){
   if(!/^\d{15}$/.test(String(f.protocol||"")))add("sefaz_protocol_missing");
   const received=new Date(f.received_at||"").getTime();
   const now=new Date(x.as_of??Date.now()).getTime();
-  if(!Number.isFinite(received)||received>Date.now()+300_000
+  if(!Number.isFinite(received)||received>now+300_000
     ||received<Date.UTC(2000,0,1))add("sefaz_protocol_timestamp_invalid");
   if(String(f.environment)!==String(x.expected_environment||"1"))
     add("sefaz_environment_mismatch");
