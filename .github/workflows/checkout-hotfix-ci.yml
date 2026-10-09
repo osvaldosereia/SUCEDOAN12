@@ -8,6 +8,8 @@ on:
       - 'scripts/test-registration-catalog-return.mjs'
       - 'scripts/test-customer-identity-admin-v2.mjs'
       - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
+      - 'supabase/migrations/20261008124500_checkout_attempt_idempotency_v1.sql'
       - 'supabase/functions/admin-service-intelligence-v1/index.ts'
       - 'supabase/functions/admin-orders-v1/index.ts'
       - 'supabase/functions/admin-products-live-v1/index.ts'
@@ -33,6 +35,8 @@ on:
       - 'vitrine/index.html'
       - 'vitrine/admin/index.html'
       - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
+      - 'supabase/migrations/20261008124500_checkout_attempt_idempotency_v1.sql'
       - 'supabase/functions/admin-service-intelligence-v1/index.ts'
       - 'supabase/functions/admin-orders-v1/index.ts'
   workflow_dispatch:
@@ -56,6 +60,8 @@ jobs:
           node --disable-warning=ExperimentalWarning scripts/test-checkout-address-reference.mjs
           node --disable-warning=ExperimentalWarning scripts/test-admin-stock-readiness-pagination.mjs
           node scripts/test-site-only-order-registration.mjs
+          node scripts/test-order-public-identity-at-creation-v1.mjs
+          node scripts/test-checkout-attempt-idempotency-v1.mjs
           node scripts/test-checkout-whatsapp-return.mjs
           node scripts/test-checkout-stock-adjustment-contract.mjs
           node scripts/test-checkout-whatsapp-outbox.mjs

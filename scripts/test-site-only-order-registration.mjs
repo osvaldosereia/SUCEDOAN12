@@ -18,7 +18,8 @@ for (const action of ['customer_lookup','customer_register','delivery_options'])
   assert.ok(sf.includes(action), `storefront-v2 must expose optional helper action ${action}`);
 }
 assert.match(sf, /CUTOFF_HOUR\s*=\s*11/, 'cutoff must be 11:00 Cuiaba');
-assert.match(sf, /const deliveryDate=txt\(p\?\.delivery_date,10\),del=deliveryDate\?selectedDelivery\(deliveryDate\):null/, 'delivery date must be optional at submit');
+assert.match(sf, /const deliveryDate=txt\(p\?\.delivery_date,10\)/, 'delivery date must be read as optional at submit');
+assert.match(sf, /const del=deliveryDate\?selectedDelivery\(deliveryDate\):null/, 'delivery date must remain optional when building delivery');
 assert.match(sf, /p_phone:ph\|\|null/, 'phone must be optional at submit');
 assert.match(sf, /p_payment_method:pay\|\|null/, 'payment method must be optional at submit');
 assert.match(sf, /p_delivery:del\|\|\{\}/, 'delivery selection must be optional at submit');

@@ -1,0 +1,94 @@
+name: Pedidos - PostgreSQL identity and retry
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
+      - 'supabase/migrations/20261008124500_checkout_attempt_idempotency_v1.sql'
+      - 'scripts/sql/orders-public-identity-*.sql'
+      - 'scripts/sql/orders-production-v3-wrapper-v1.sql'
+      - 'scripts/sql/orders-production-stock-reservation-v1.sql'
+      - 'scripts/sql/orders-production-outbox-claim-v1.sql'
+      - '.github/workflows/orders-public-identity-postgres-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: orders_identity_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d orders_identity_test"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: orders_identity_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client >/dev/null
+          fi
+      - name: Bootstrap schema and apply actual migrations
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-public-identity-integration-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-production-stock-reservation-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-production-v3-wrapper-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-production-outbox-claim-v1.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261008124500_checkout_attempt_idempotency_v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-public-identity-assertions-v1.sql
+      - name: Concurrent duplicate submissions create one order
+        run: |
+          set -euo pipefail
+          REQUEST_ID='00000000-0000-4000-8000-000000000004'
+          SQL="select (public.ops2_create_vitrine_checkout_once_v1('$REQUEST_ID','{\"items\":[1]}'::jsonb,'+5565999999999','PIX','[]'::jsonb,'{}'::jsonb,'{}'::jsonb))->>'order_id';"
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" > /tmp/checkout-a.txt &
+          FIRST=$!
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" > /tmp/checkout-b.txt &
+          SECOND=$!
+          wait "$FIRST"
+          wait "$SECOND"
+          test -s /tmp/checkout-a.txt
+          cmp /tmp/checkout-a.txt /tmp/checkout-b.txt
+          COUNT=$(psql -v ON_ERROR_STOP=1 -Atc "select count(*) from public.order_checkout_attempts_v1 where request_id='$REQUEST_ID';")
+          test "$COUNT" = '1'
+          echo "PASS simultaneous submissions returned one persisted order"
+      - name: Two distinct orders cannot reserve the last item twice
+        run: |
+          set -euo pipefail
+          # Prior assertions created two separate one-unit reservations.
+          # With stock=3, exactly ONE of the two new checkouts may succeed.
+          psql -v ON_ERROR_STOP=1 -c "update public.products set stock=3 where id='00000000-0000-4000-8000-0000000000aa';"
+          SQL_A="select (public.ops2_create_vitrine_checkout_once_v1('00000000-0000-4000-8000-000000000007','{}'::jsonb,'+5565999999999','PIX','[]'::jsonb,'{}'::jsonb,'{}'::jsonb))->>'order_id';"
+          SQL_B="select (public.ops2_create_vitrine_checkout_once_v1('00000000-0000-4000-8000-000000000008','{}'::jsonb,'+5565999999999','PIX','[]'::jsonb,'{}'::jsonb,'{}'::jsonb))->>'order_id';"
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL_A" > /tmp/stock-a.out 2> /tmp/stock-a.err &
+          FIRST=$!
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL_B" > /tmp/stock-b.out 2> /tmp/stock-b.err &
+          SECOND=$!
+          FIRST_OK=0
+          SECOND_OK=0
+          if wait "$FIRST"; then FIRST_OK=1; else grep -q insufficient_stock /tmp/stock-a.err; fi
+          if wait "$SECOND"; then SECOND_OK=1; else grep -q insufficient_stock /tmp/stock-b.err; fi
+          test $((FIRST_OK+SECOND_OK)) -eq 1
+          SUCCESS_COUNT=$(psql -v ON_ERROR_STOP=1 -Atc "select count(*) from public.order_checkout_attempts_v1 where request_id in ('00000000-0000-4000-8000-000000000007','00000000-0000-4000-8000-000000000008');")
+          test "$SUCCESS_COUNT" = 1
+          RESERVED=$(psql -v ON_ERROR_STOP=1 -Atc "select coalesce(sum(quantity),0)::integer from public.vitrine_stock_reservations where status='reserved';")
+          test "$RESERVED" = 3
+          echo "PASS separate concurrent checkouts did not oversell Bling-controlled stock"

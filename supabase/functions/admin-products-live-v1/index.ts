@@ -1210,7 +1210,7 @@ async function publicOrderCodeMap(ids:string[]){
   for(let i=0;i<cleanIds.length;i+=100){
     const q=await db.from("order_public_snapshots_v1").select("order_id,public_code").in("order_id",cleanIds.slice(i,i+100));
     if(q.error)throw q.error;
-    for(const row of q.data||[]){const code=tx(row.public_code,5);if(/^[A-Z]{2}[0-9]{3}$/.test(code))out.set(String(row.order_id),code)}
+    for(const row of q.data||[]){const code=tx(row.public_code,5);if(/^(?:[A-Z]{2}[0-9]{3}|[0-9]{4})$/.test(code))out.set(String(row.order_id),code)}
   }
   return out;
 }

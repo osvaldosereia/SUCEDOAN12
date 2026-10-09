@@ -34,6 +34,10 @@ assert.match(admin,/created_at/,'Pedidos precisam continuar ordenáveis por cheg
 assert.match(admin,/CONFIRMADO/,'Card precisa ter marco CONFIRMADO');
 assert.match(admin,/SEPARADO/,'Card precisa ter marco SEPARADO');
 assert.match(admin,/ENTREGUE/,'Card precisa ter marco ENTREGUE');
+assert.match(admin,/NÃO ENTREGUE/,'Entrega sem sucesso deve permanecer acionável');
+assert.match(admin,/data-v3-delivery-fail/,'Falha de entrega deve ter ação própria');
+assert.match(admin,/CONFIRMADO — MONTAR PARA ENTREGAR HOJE/,'Confirmado deve orientar montagem');
+assert.match(admin,/role="progressbar"/,'Separação deve expor progresso acessível');
 assert.match(admin,/INICIAR SEPARA[CÇ][AÃ]O|CONTINUAR SEPARA[CÇ][AÃ]O|ABRIR VITRINE SEPARA[CÇ][AÃ]O/i,'Card precisa abrir/iniciar a separação');
 assert.match(admin,/ABRIR PEDIDO/i,'Card precisa abrir o pedido');
 assert.match(admin,/orders-bottom-sheet/,'Separação deve existir como bottom sheet dentro do Admin');

@@ -7230,7 +7230,7 @@
   function orderSeparationSummary(o){return o?.separation_summary||{}}
 
 
-  function orderV3SearchMatch(o,q){const n=normalize(q||'');if(!n)return true;return normalize([o.order_number,o.customer_name,o.whatsapp_phone_e164,o.delivery_address_snapshot?.street,o.delivery_address_snapshot?.district].filter(Boolean).join(' ')) .includes(n)}
+  function orderV3SearchMatch(o,q){const n=normalize(q||'');if(!n)return true;return normalize([o.public_code,o.public_order_code,o.order_number,o.customer_name,o.whatsapp_phone_e164,o.delivery_address_snapshot?.street,o.delivery_address_snapshot?.district].filter(Boolean).join(' ')) .includes(n)}
   function orderCustomerDataPendingReasons(o){
     const labels=['Cliente não identificado','Telefone pendente','Endereço incompleto','CPF/CNPJ pendente'];
     const a=o?.delivery_address_snapshot||{},missing=(Array.isArray(o?.registration_missing_fields)?o.registration_missing_fields:[]).map(x=>normalize(String(x||'')));
@@ -7271,12 +7271,12 @@
     else if(o.status==='out_for_delivery'){stage='delivery';stageLabel='SAIU PARA ENTREGA'}
     else if(m.separated){stage='separated';stageLabel='PEDIDO JÁ SEPARADO'}
     else if(assigned&&m.confirmed){stage='separating';stageLabel='EM SEPARAÇÃO · '+separator.toUpperCase()}
-    else if(m.confirmed){stage='waiting';stageLabel='AGUARDANDO SEPARAÇÃO'}
+    else if(m.confirmed){stage='waiting';stageLabel='CONFIRMADO — MONTAR PARA ENTREGAR HOJE'}
     const cardClass=['waiting','separating','separated','delivery','done'].includes(stage)?' '+stage:'';
     let progress='';
     if(m.confirmed&&totalItems>0&&!m.delivered&&!m.cancelled){
       const progressTitle=m.separated?'Separação concluída':assigned?'Separação em andamento':'Itens para separar';
-      progress='<div class="order-v3-progress"><div class="order-v3-progress-head"><span>'+esc(progressTitle)+'</span><strong>'+checked+' de '+totalItems+' itens</strong></div><div class="order-v3-progress-bar" aria-label="Progresso da separação" aria-valuemin="0" aria-valuemax="'+totalItems+'" aria-valuenow="'+checked+'"><i style="width:'+progressPct+'%"></i></div><div class="order-v3-progress-foot"><span class="ok">'+separatedCount+' separado'+(separatedCount===1?'':'s')+'</span><span>'+pendingCount+' pendente'+(pendingCount===1?'':'s')+'</span>'+(missingCount?'<span class="missing">'+missingCount+' faltou'+(missingCount===1?'':'aram')+(missingValue>0?' · − '+esc(separationMoney(missingValue)):'')+'</span>':'')+(assigned&&assignment.assigned_at&&!m.separated?'<span>Iniciado '+esc(dateTime(assignment.assigned_at))+'</span>':'')+'</div></div>';
+      progress='<div class="order-v3-progress"><div class="order-v3-progress-head"><span>'+esc(progressTitle)+'</span><strong>'+checked+' de '+totalItems+' itens</strong></div><div class="order-v3-progress-bar" role="progressbar" aria-label="Progresso da separação" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+progressPct+'"><i style="width:'+progressPct+'%"></i></div><div class="order-v3-progress-foot"><span class="ok">'+separatedCount+' separado'+(separatedCount===1?'':'s')+'</span><span>'+pendingCount+' pendente'+(pendingCount===1?'':'s')+'</span>'+(missingCount?'<span class="missing">'+missingCount+' faltou'+(missingCount===1?'':'aram')+(missingValue>0?' · − '+esc(separationMoney(missingValue)):'')+'</span>':'')+(assigned&&assignment.assigned_at&&!m.separated?'<span>Iniciado '+esc(dateTime(assignment.assigned_at))+'</span>':'')+'</div></div>';
     }
     let controls='';
     if(orderCustomerDataPending(o)){
@@ -8400,7 +8400,7 @@
     w.document.close();
   }
 
-  function orderDisplayCode(o){const code=String(o?.public_code||o?.public_order_code||'').trim().toUpperCase();return /^[A-Z]{2}\d{3}$/.test(code)?code:'—'}
+  function orderDisplayCode(o){const code=String(o?.public_code||o?.public_order_code||'').trim().toUpperCase();return /^(?:[A-Z]{2}\d{3}|\d{4})$/.test(code)?code:'—'}
   function phoneDigits(v){
     let d=String(v||'').replace(/\D/g,'');
     if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;
