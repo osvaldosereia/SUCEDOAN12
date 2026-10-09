@@ -1,0 +1,20 @@
+name: XML Field Review Ledger V1
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/projects/purchase-xml-field-review-ledger-v1.sql'
+      - 'scripts/test-xml-field-review-ledger-v1.mjs'
+      - '.github/workflows/xml-field-review-ledger-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safety-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-xml-field-review-ledger-v1.mjs
