@@ -19,7 +19,7 @@ const errorText=(e:unknown)=>String(e instanceof Error?e.message:e).slice(0,140)
 // Metadata never influences the OMR test; each sha256 is genuinely distinct.
 function uniquePng(i:number){
  const source=Uint8Array.from(atob(PNG),ch=>ch.charCodeAt(0));
- const mark=new TextEncoder().encode('DA6QA\\0'+String(i).padStart(3,'0'));
+ const mark=new Uint8Array([...new TextEncoder().encode('DA6QA'),0,...new TextEncoder().encode(String(i).padStart(3,'0'))]);
  const chunk=new Uint8Array(12+mark.length);
  const v=new DataView(chunk.buffer);v.setUint32(0,mark.length);
  chunk.set([116,69,88,116],4);chunk.set(mark,8);
