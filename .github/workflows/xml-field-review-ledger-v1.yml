@@ -5,16 +5,41 @@ on:
     paths:
       - 'docs/projects/purchase-xml-field-review-ledger-v1.sql'
       - 'scripts/test-xml-field-review-ledger-v1.mjs'
+      - 'scripts/test-xml-field-review-ledger-pg-v1.sql'
       - '.github/workflows/xml-field-review-ledger-v1.yml'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  safety-contract:
+  field-review:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node scripts/test-xml-field-review-ledger-v1.mjs
+      - name: Read-only contract guards
+        run: node scripts/test-xml-field-review-ledger-v1.mjs
+      - name: PostgreSQL isolated schema and role tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          psql -v ON_ERROR_STOP=1 -f scripts/test-xml-field-review-ledger-pg-v1.sql
