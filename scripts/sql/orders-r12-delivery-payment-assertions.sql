@@ -67,6 +67,15 @@ BEGIN
  END;
 
  BEGIN
+   UPDATE public.order_payment_settlements SET status='void'
+   WHERE id=first_id;
+   RAISE EXCEPTION 'captured payment could be marked void without review';
+ EXCEPTION WHEN SQLSTATE 'P0001' THEN
+   IF SQLERRM IS DISTINCT FROM 'r12_captured_payment_status_immutable'
+   THEN RAISE; END IF;
+ END;
+
+ BEGIN
    -- Directly adding a third portion would make total > order total.
    -- The deferred constraint must reject it before COMMIT; no partial DML.
    INSERT INTO public.order_payment_parts(
