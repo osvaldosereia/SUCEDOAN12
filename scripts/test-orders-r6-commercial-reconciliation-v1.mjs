@@ -101,6 +101,19 @@ test("R06 accepts FIXED surcharge with all basket components delivered",()=>{
   assert.equal(v.snapshot.commercial_delta_classified_cents,3200);
 });
 
+test("R06 accepts an attributed order discount, including a missing product",()=>{
+  const d=fixture();
+  d.completion.original_total=210;
+  d.completion.final_total=178;
+  d.completion.original_discount=20;
+  d.order.total=178;
+  d.order.discount=20;
+  const r=reconcile(d);
+  assert.equal(r.ok,true,JSON.stringify(r));
+  assert.equal(r.snapshot.commercial_delta_cents,-2000);
+  assert.equal(r.snapshot.commercial_delta_classified_cents,-2000);
+});
+
 blocks("R06 rejects unexplained hidden basket price",d=>{
   d.completion.original_total=255;d.completion.final_total=223;d.order.total=223;
 },"commercial_delta_unattributed");
