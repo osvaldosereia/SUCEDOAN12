@@ -9,10 +9,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
+import {da6SourceFingerprint} from './da6-release-fingerprint.mjs';
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const manifestPath='docs/projects/DA6_RELEASE_GATES_2026-10-09.json';
 const manifest=JSON.parse(fs.readFileSync(path.join(repo,manifestPath),'utf8'));
 const failures=[];
+const fingerprint=da6SourceFingerprint(repo);
+const bound=manifest.release_candidate_fingerprint;
+if(!bound||!/^[a-f0-9]{64}$/.test(String(bound))){
+ failures.push({gate:'source_fingerprint',reason:'release_source_not_pinned'});
+}else if(bound!==fingerprint.sha256){
+ failures.push({gate:'source_fingerprint',reason:'code_changed_since_qa_attestation'});
+}
+
 const localAssets=[
  'vitrine/admin/vendor/JsBarcode.all-3.11.6.min.js',
  'vitrine/admin/vendor/qrcode-generator-2.0.4.js',
@@ -75,6 +84,7 @@ if(manifest.release_status!=='ready_for_approval')
  failures.push({gate:'release_status',reason:'manual_release_gate_closed'});
 const result={
  project:'DA6',branch:manifest.source_branch,
+ source_fingerprint:fingerprint.sha256,source_files:fingerprint.count,release_fingerprint:bound||null,
  ready:failures.length===0,
  ci_verified:manifest.verified_software?.ci_run_url||null,
  missing:failures,
