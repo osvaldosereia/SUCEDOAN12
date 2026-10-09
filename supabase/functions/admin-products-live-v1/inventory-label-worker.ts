@@ -29,7 +29,8 @@ async function rgba(bytes:Uint8Array){
  });
 }
 async function sha256(bytes:Uint8Array){
- const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));
+ const copy=new Uint8Array(bytes.byteLength);copy.set(bytes);
+ const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',copy.buffer));
  return [...hash].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
 async function processPhoto(db:any,claim:any){
@@ -43,7 +44,9 @@ async function processPhoto(db:any,claim:any){
   if(bytes.length!==Number(entry.data.size_bytes)||bytes.length>10*1024*1024)throw Error('image_size_mismatch');
   if(await sha256(bytes)!==entry.data.sha256)throw Error('image_hash_mismatch');
   const pixels=await rgba(bytes);
-  const {default:jsQR}=await import('npm:jsqr@1.4.0');
+  const qrModule=await import('npm:jsqr@1.4.0');
+  const jsQR=(qrModule.default??qrModule) as unknown as (data:Uint8ClampedArray,width:number,height:number,options?:any)=>any;
+  if(typeof jsQR!=='function')throw Error('qr_decoder_unavailable');
   const threshold=[105,90,125][Math.max(0,Math.min(2,Number(claim.attempt_no||1)-1))];
   const reading=readDA6(pixels,jsQR,threshold);
   const finished=await db.rpc('inventory_label_finish_photo',{
@@ -54,7 +57,7 @@ async function processPhoto(db:any,claim:any){
   if(finished.error)throw Error('persist_reading_failed:'+finished.error.code);
   return {photo_id:photoId,status:finished.data?.status||'complete',readings:reading.readings.length};
  }catch(error){
-  const reason=String(error?.message||error).slice(0,200);
+  const reason=String(error instanceof Error?error.message:error).slice(0,200);
   const failed=await db.rpc('inventory_label_fail_photo',{
    p_photo_id:photoId,p_claim_token:token,p_error_code:reason.split(':')[0].slice(0,70),p_error_detail:reason
   });
