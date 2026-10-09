@@ -21,8 +21,7 @@ const extra=id=>({
     bling_invoice_prepare_enabled:true,
     require_fiscal_authorization_before_dispatch:true},
   bling_runtime:{hub_enabled:true,orders_enabled:true},
-  active_rule_sets:[{status:"active",activated_at:"2026-10-01T12:00:00Z",
-    jurisdiction:"MT",tax_kind:"icms",valid_to:null}],
+  active_rule_sets:[],
   approved_sales_tax_rules:[],
   product_links:[],fiscal_profiles:[],
   bling_remote_evidence:null,
@@ -39,6 +38,8 @@ function input(row){
   return preflight;
 }
 function addSyntheticProof(input){
+  input.active_rule_sets=[{status:"active",activated_at:"2026-10-01T12:00:00Z",
+    jurisdiction:"MT",tax_kind:"icms",valid_to:null}];
   // Mirrors the structure of an authorized tax classification and read-back;
   // does NOT imply that a real tax accountant or provider approved anything.
   const manifest=input.completion.metadata.r6_reconciliation;
