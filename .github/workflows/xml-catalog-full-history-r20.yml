@@ -1,0 +1,41 @@
+name: XML Catalog R20 Full History
+on:
+  pull_request:
+    branches:
+      - main
+      - agent/xml-catalog-ingest-integrity-r19-20261009
+    paths:
+      - 'supabase/functions/**/purchase-xml-v1/**'
+      - 'supabase/functions/purchase-xml-v1/**'
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-xml-catalog-full-history-r20.mjs'
+      - '.github/workflows/xml-catalog-full-history-r20.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  comparison-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Full history cap, pagination, tax GTIN/packaging, no writes, lazy UI
+        run: |
+          set -eu
+          node scripts/test-xml-catalog-full-history-r20.mjs
+          node scripts/test-xml-catalog-comparison-v3.mjs
+          node scripts/test-xml-catalog-history-pagination-v3.mjs
+          node scripts/test-xml-catalog-details-v2.mjs
+          node scripts/test-xml-catalog-consolidation-r18.mjs
+          node scripts/test-xml-field-review-admin-r15.mjs
+  edge-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check both integrated source-only XML APIs
+        run: deno check supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
