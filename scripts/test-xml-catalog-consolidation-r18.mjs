@@ -56,7 +56,7 @@ for(const action of ["Cosmos","SI5"]){
 const sql=read("docs/projects/purchase-xml-field-apply-inactive-only-r17.sql");
 requireText(sql,["xml_apply_active_product_blocked","xml_rollback_active_product_blocked","v.product_is_active is false","xml_apply_confirmation_required","xml_rollback_confirmation_required"]);
 assert.doesNotMatch(sql,/\bUPDATE\s+public\.products\s+SET\s+(?:stock|price|cost|ncm|gtin)\b/i);
-const migration=read("supabase/migrations/20261009085000_purchase_xml_ingest_error_audit_v5.sql");
+const migration=read("docs/projects/purchase-xml-ingest-error-audit-applied-r23.sql");
 assert.match(migration,/enable row level security/i);
 assert.match(migration,/service_role/i);
 console.log("PASS R18 consolidated compatibility: 4 aligned backend mirrors, 4 original features, lazy UI, private audit and inactive-only guard");
