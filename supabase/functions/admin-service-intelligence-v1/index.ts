@@ -7499,8 +7499,8 @@ async function blingHubFindContactByDocument(sb:any,token:string,docRaw:any){
 // Consulta administrativa somente leitura. Não cria ou modifica contato.
 async function blingHubContactByDocumentReadonly(sb:any,documentRaw:any){
   const doc=blingHubDigits(documentRaw);
-  if(doc.length!==14||!blingHubValidCpfCnpj(doc))
-    return {ok:false,error:"invalid_cnpj",status:400};
+  if(![11,14].includes(doc.length)||!blingHubValidCpfCnpj(doc))
+    return {ok:false,error:"invalid_document",status:400};
   const token=await blingHubOauth(sb);
   const found=await blingHubFindContactByDocument(sb,token,doc);
   if(found.status==="not_found")return {ok:true,found:false,source:"Bling"};
