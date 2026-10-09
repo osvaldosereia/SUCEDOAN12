@@ -8,6 +8,7 @@ on:
       - 'scripts/sql/orders-security-*.sql'
       - 'supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql'
       - 'supabase/sql/orders-r2-basket-independent-groups-review-v1.sql'
+      - 'supabase/sql/orders-r2-mounted-lot-real-view-review-v1.sql'
       - 'supabase/sql/orders-security-public-table-privileges-review-v1.sql'
       - 'scripts/test-orders-r2-transport-offline.mjs'
       - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
@@ -300,5 +301,36 @@ jobs:
           test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.orders")" = 1
           test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.vitrine_stock_reservations where product_id in ('00000000-0000-4000-8000-0000000000e1','00000000-0000-4000-8000-0000000000e2')")" = 0
           echo 'PASS: linked food/hygiene kits allocated to exactly one buyer without loose stock duplication'
+      - name: Real canonical basket availability view vs mounted physical stock (seventh disposable DB)
+        run: |
+          set -euo pipefail
+          createdb synthetic_real_lot_view_r2
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-real-lot-view-fixture.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-lot-availability-view.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-real-lot-view-baseline.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-mounted-lot-real-view-review-v1.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-real-lot-view-assertions.sql
+          PGDATABASE=synthetic_real_lot_view_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-mounted-lot-real-view-review-v1.sql
+          echo 'PASS: canonical mounted basket view fixed without bypassing inactive/paused/unbuilt restrictions'
       - name: Diff hygiene
         run: git diff --check
