@@ -36,8 +36,8 @@ test('R05 all four critical Admin actions guard BEFORE mutating rows',()=>{
 
 test('R05 SQL guards INSERT, UPDATE and UPSERT on assignments, picks, completion',()=>{
   assert.match(schema,/BEFORE INSERT OR UPDATE ON public\.order_separation_assignments_v1/i);
-  assert.match(schema,/BEFORE INSERT OR UPDATE OF state ON public\.order_separation_items_v1/i);
-  assert.match(schema,/BEFORE INSERT OR UPDATE OF phase ON public\.order_separation_completions_v1/i);
+  assert.match(schema,/BEFORE INSERT OR UPDATE ON public\.order_separation_items_v1/i);
+  assert.match(schema,/BEFORE INSERT OR UPDATE ON public\.order_separation_completions_v1/i);
   assert.match(r4,/BEFORE UPDATE OF status ON public\.orders/i);
   assert.match(schema,/REVOKE ALL ON FUNCTION public\.ops2_order_meta_confirmation_status_v1\(uuid\)\s+FROM PUBLIC,anon,authenticated/i);
   assert.match(schema,/GRANT EXECUTE ON FUNCTION public\.ops2_order_meta_confirmation_status_v1\(uuid\) TO service_role/i);
