@@ -19,7 +19,7 @@ for(const expected of [
   'catalog_repaired_existing_draft_requires_invoice_item_repair',
   'generation_result_uncertain_manual_reconcile_required',
   'preview.invoice_id||preview.invoice',
-  'fiscal-nfe-recovery-v2',
+  'fiscal-nfe-recovery-v3',
 ]) assert.ok(impl.includes(expected),'missing safety feature '+expected);
 const diag=impl.indexOf('parsed.missing_ncm&&!names.length');
 const remote=impl.indexOf('const remoteNcm',diag);
