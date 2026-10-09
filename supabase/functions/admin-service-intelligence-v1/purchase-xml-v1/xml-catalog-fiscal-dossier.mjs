@@ -49,7 +49,7 @@ export function buildFiscalDossier(history){
   if(packagingReview)reasons.push("packaging_or_tax_gtin_review");
   if(malformedGtins.length)reasons.push("gtin_checksum_invalid");
   return {
-    ok:true,readonly:true,source:"xml_verified_supplier_evidence",
+    ok:true,status:200,readonly:true,source:"xml_verified_supplier_evidence",
     review_state:partial?"partial_history":
       isConflict?"conflict_requires_review":"manual_fiscal_review_required",
     comparison_scope:scope,
