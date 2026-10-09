@@ -26,7 +26,7 @@ jobs:
           set -eu
           node scripts/test-xml-field-approval-gateway-r24.mjs
           node scripts/test-xml-field-review-gateway-r15.mjs
-          node scripts/test-xml-catalog-main-integration-r23.mjs
+          node scripts/test-xml-main-integration-r23.mjs
           node scripts/test-xml-field-integrated-r17.mjs
   postgres:
     runs-on: ubuntu-latest
