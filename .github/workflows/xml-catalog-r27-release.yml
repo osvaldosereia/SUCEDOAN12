@@ -1,0 +1,30 @@
+name: XML Catalog R27 Release Engineering
+on:
+  pull_request:
+    branches: [agent/xml-catalog-operational-gates-r26-20261009, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cli-version-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.84.2
+      - name: Generate migration names with Supabase CLI for R27, no remote writes
+        run: |
+          set -euo pipefail
+          supabase --version
+          supabase migration new --help
+          first=$(supabase migration new purchase_xml_identity_atomic_r27 | grep -oE 'supabase/migrations/[0-9]{14}_[^ ]+\.sql' | head -n1)
+          test -n "$first"
+          sleep 2
+          second=$(supabase migration new purchase_xml_field_approval_r27 | grep -oE 'supabase/migrations/[0-9]{14}_[^ ]+\.sql' | head -n1)
+          test -n "$second"
+          echo "R27_GENERATED_IDENTITY=$first"
+          echo "R27_GENERATED_FIELDS=$second"
+          test "$(basename "$first" | cut -c1-14)" -gt 20261009155231
+          test "$(basename "$first" | cut -c1-14)" -lt "$(basename "$second" | cut -c1-14)"
+          echo 'CLI_GENERATED_VALID_VERSIONS_ONLY; NO DEPLOY'
