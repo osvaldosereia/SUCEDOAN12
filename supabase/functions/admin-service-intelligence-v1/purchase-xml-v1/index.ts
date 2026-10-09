@@ -1449,6 +1449,8 @@ async function xmlCatalogCandidateDetail(body:any){
     offset,limit,total_observations:total,has_more:hasMore,
     next_offset:hasMore?offset+observations.length:null,truncated:hasMore,
     field_comparisons:catalogXmlComparison(evidence.data||[]),
+    comparison_scope:{kind:"loaded_page_only",compared_observations:observations.length,
+      total_observations:total,partial:total>observations.length},
     suggested_existing_products:Array.isArray(suggestions.items)?suggestions.items:[],
     can_auto_match:false,can_auto_apply_fiscal:false,can_auto_move_stock:false};
 }
