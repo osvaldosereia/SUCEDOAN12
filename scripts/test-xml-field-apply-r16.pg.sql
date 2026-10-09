@@ -43,7 +43,7 @@ insert into public.xml_review_fixture values
 set role service_role;
 do $$
 declare
- a uuid;b uuid;f uuid;application_id uuid; response jsonb;
+ a uuid;b uuid;f uuid;v_app_id uuid; response jsonb;
 begin
  a:=public.purchase_xml_open_field_review_v1(
   '00000000-0000-4000-8000-000000000011',
@@ -71,15 +71,15 @@ begin
  end;
  response:=public.purchase_xml_apply_field_review_v1(a,1,
   '00000000-0000-4000-8000-000000000092','APLICAR_NOME_APROVADO_XML');
- application_id:=(response->>'application_id')::uuid;
- if application_id is null or response->>'product_updated'<>'true'
+ v_app_id:=(response->>'application_id')::uuid;
+ if v_app_id is null or response->>'product_updated'<>'true'
  or response->>'bling_called'<>'false' or response->>'stock_updated'<>'false'
  or (select name from public.products where id='00000000-0000-4000-8000-000000000001')<>'Novo A'
  then raise exception 'apply_name_failed'; end if;
  if (select stock from public.products where id='00000000-0000-4000-8000-000000000001')<>9 or
     (select price from public.products where id='00000000-0000-4000-8000-000000000001')<>99.9
  then raise exception 'commercial_fields_changed'; end if;
- if (select count(*) from public.purchase_xml_field_application_events_v1 where application_id=application_id)<>1
+ if (select count(*) from public.purchase_xml_field_application_events_v1 where application_id=v_app_id)<>1
  then raise exception 'missing_apply_event'; end if;
  begin
   perform public.purchase_xml_apply_field_review_v1(a,1,
@@ -96,21 +96,21 @@ begin
   if sqlerrm not like '%xml_review_rollback_required%' then raise; end if;
  end;
  begin
-  perform public.purchase_xml_rollback_field_review_v1(application_id,
+  perform public.purchase_xml_rollback_field_review_v1(v_app_id,
    '00000000-0000-4000-8000-000000000093','WRONG');
   raise exception 'rollback_without_confirmation_accepted';
  exception when others then
   if sqlerrm not like '%xml_rollback_confirmation_required%' then raise; end if;
  end;
- response:=public.purchase_xml_rollback_field_review_v1(application_id,
+ response:=public.purchase_xml_rollback_field_review_v1(v_app_id,
   '00000000-0000-4000-8000-000000000093','REVERTER_NOME_APLICADO_XML');
  if response->>'rolled_back'<>'true'
   or (select name from public.products where id='00000000-0000-4000-8000-000000000001')<>'Antigo A'
  then raise exception 'rollback_name_failed'; end if;
- if (select count(*) from public.purchase_xml_field_application_events_v1 where application_id=application_id)<>2
+ if (select count(*) from public.purchase_xml_field_application_events_v1 where application_id=v_app_id)<>2
  then raise exception 'missing_rollback_event'; end if;
  begin
-  perform public.purchase_xml_rollback_field_review_v1(application_id,
+  perform public.purchase_xml_rollback_field_review_v1(v_app_id,
    '00000000-0000-4000-8000-000000000093','REVERTER_NOME_APLICADO_XML');
   raise exception 'double_rollback_accepted';
  exception when others then
