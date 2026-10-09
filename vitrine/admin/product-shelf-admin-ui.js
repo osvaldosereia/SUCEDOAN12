@@ -57,11 +57,13 @@ async function saveGondola(id,number,original){
     if(value&&!Array.from(original.options).some(o=>o.value===value))
       original.add(new Option('Gôndola '+value,value),original.options[original.options.length-1]);
     original.value=value;original.dataset.savedValue=value;
+    const row=original.closest('.product-operational-row,.mobile-product-card');
+    if(row)row.dataset.shelfGondolaValue=value;
   }
   return saved;
 }
 async function askOtherGondola(id,original){
-  const previous=original?.dataset.savedValue||'';
+  const previous=original?.dataset.savedValue??original?.value??'';
   const input=prompt('Número da nova gôndola (1 a 9999):',previous);
   if(input===null){if(original)original.value=previous;return}
   const value=String(input).trim();
@@ -159,6 +161,8 @@ async function listProducts(filters){
 }
 async function printAction(){
   const panel=document.getElementById('shelfPrintPanel'),mode=panel?.querySelector('[data-shelf-mode]')?.value;
+  if(mode==='selected'&&!ids.size){alertUser('Selecione os produtos antes de imprimir.');return}
+  if(mode==='selected'&&ids.size>300){alertUser('Máximo de 300 produtos por impressão.');return}
   const trigger=panel?.querySelector('[data-shelf-run]');
   if(!trigger)return;
   // Impressão deve iniciar diretamente da ação do usuário para funcionar em browsers com bloqueador.
@@ -188,7 +192,7 @@ async function printAction(){
     if(!products.length)throw Error('Nenhum produto encontrado.');
     if(products.length>300)throw Error('Mais de 300 etiquetas. Imprima por gôndola ou filtre os produtos.');
     window.DonaAntoniaShelfLabels.printMany(products,popup);
-    alertUser('Preparadas '+products.length+' etiquetas 10×15 cm');
+    alertUser('Prévia aberta para '+products.length+' etiquetas 10×15 cm. Confira antes de imprimir.');
   }catch(e){popup.close();alertUser('Impressão: '+e.message)}
   finally{trigger.disabled=false;trigger.textContent='🖨 Imprimir etiquetas'}
 }
