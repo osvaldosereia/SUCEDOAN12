@@ -47,10 +47,12 @@ jobs:
           extractor=p.with_name('xml-catalog-extractor.mjs')
           source=extractor.read_text()
           assert 'npm:fast-xml-parser@5.11.2' in source
-          extractor.write_text("export function extractCatalogFromNfe(){throw new Error('xml_extract_not_under_test');}\\n")
+          extractor.write_text("export function extractCatalogFromNfe(){throw new Error('xml_extract_not_under_test');}"+chr(10))
           assert 'npm:' not in extractor.read_text()
           print('PASS: CI-only XML parser cold-start dependency excluded')
           PY
+          node --check "$RUNNER_TEMP/xml-r31/supabase/functions/purchase-xml-v1/xml-catalog-extractor.mjs"
+          node --check "$RUNNER_TEMP/xml-r31/supabase/functions/purchase-xml-v1/local-supabase-shim.mjs"
           cd "$RUNNER_TEMP/xml-r31"
           supabase init --yes
           supabase start -x studio,imgproxy,inbucket,realtime,storage-api,analytics,vector
