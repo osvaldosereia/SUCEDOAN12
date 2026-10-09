@@ -17,6 +17,18 @@ Criada a branch `agent/orders-r2-r3-integration-20261009` **derivada da R02 #994
 3. Após commit de cada pedido, compara `orders.order_number` com `order_public_snapshots_v1.public_code`, confere quantidade de itens no snapshot diferido, formato por data de Cuiabá, unicidade dos quatro números, contador semanal e preservação de `AA001`. Testa que UPSERT no snapshot não consome outro número e que alterar o código de um pedido existente é proibido.
 4. O workflow `.github/workflows/orders-r2-isolated-hml-ci.yml` adicionou o **sétimo banco PostgreSQL 17 descartável**, mantendo seis laboratórios R02 anteriores. Faz checkout do código R03 **fixado no commit `e7408ad5cbcd6ae8d5ca16e90f2e287a7d61af4c`**, usa a migração R03 original, e não uma imitação. Roda os testes integrados sem Bling, Meta, SEFAZ, pedidos ou credenciais reais.
 
+## Defeito real encontrado e correção candidata
+
+Durante a execução conjunta, o trigger `trg_ops2_assign_order_weekly_number_v1` da R03 atualiza `orders.order_number` ao inserir o pedido, mas a função original de checkout R02 ainda montava `v_order_number` no formato `DA-YYMMDD-XXXXXXXX` e retornava essa variável local. **O checkout poderia apresentar o número DA ao cliente enquanto /montar/Admin/Meta mostrariam o número semanal correto**, reproduzindo a diferença que motivou a regra de ID único.
+
+- `scripts/sql/orders-r2-r3-wrong-number-baseline.sql` demonstra essa discrepância com rollback.
+- `supabase/sql/orders-r2-r3-checkout-public-number-readback-review-v1.sql` é uma **proposta de patch SQL não implantada**. Após o `INSERT INTO orders`, lê o `order_number` gerado pelo banco e devolve exatamente esse valor, sem tocar no identificador público depois do registro. Exige presença do trigger R03 e MD5 `927bd6406badc650daff796e69e8ff05` (checkout R02 após as duas correções anteriores), bloqueando alterações silenciosas.
+- As quatro asserções de checkout conferem **também o campo `order_number` da resposta HTTP/RPC**, não somente o banco. Reaplicação da correção não pode mudar novamente a função.
+- Concorrência integrada disputa o último estoque de um produto fictício: um checkout confirmado recebe o próximo número, o checkout rejeitado **não consome sequência nem cria snapshot ou reserva**.
+- Foi removido **apenas deste workflow de integração** um teste redundante de concorrência que utilizava a mesma base já alterada por cenários anteriores. O teste seguinte, mais completo, em base isolada, permanece ativo, cobrindo lotes de alimentação e higiene.
+
+Os testes são todos offline, com dados fictícios. A correção não está ativa no site real.
+
 ## Segurança, limitações e ordem futura
 
 - **Não foi aplicada nenhuma migration em produção.** O SQL do checkout e do número R03 estão sendo executados apenas no PostgreSQL descartável do GitHub Actions.
