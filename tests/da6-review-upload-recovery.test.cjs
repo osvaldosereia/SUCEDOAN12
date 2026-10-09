@@ -47,6 +47,7 @@ async function uploadCase(reservation){
  const result=await mod.submit([file],{
   createBatch:async()=>({batch_id:'batch-1'}),
   hash:async()=> 'a'.repeat(64),
+  inspect:async()=>true, // Arquivos virtuais; validação das assinaturas reais tem testes dedicados.
   reserve:async()=>reservation,
   upload:async()=>{sent++;},
   confirm:async()=>{confirmed++;return {queued:true}}
