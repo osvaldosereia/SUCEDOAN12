@@ -215,7 +215,6 @@ jobs:
           psql -v ON_ERROR_STOP=1 "$DB_URL" \
             -f tests/da6-local-supabase-bootstrap.sql \
             -f supabase/migrations/20261009112000_da6_worker_queue_rpc.sql \
-            -f supabase/migrations/20261009133000_da6_worker_dispatch_cron_v1.sql \
             -f supabase/migrations/20261009150000_da6_upload_atomic_reservation_v1.sql \
             -f supabase/migrations/20261009140500_da6_manual_review_audit_v1.sql
       - name: Upload assinado REAL 10, 50, 100 e leitura pelo worker após fechar navegador
