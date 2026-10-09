@@ -186,6 +186,12 @@ jobs:
           psql -v ON_ERROR_STOP=1 \
             -f tests/da6-worker-postgres-fixture.sql \
             -f supabase/migrations/20261009112000_da6_worker_queue_rpc.sql
+      - name: Verificar agendador sem atingir URL de produção
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/da6-cron-staging-fixture.sql \
+            -f supabase/migrations/20261009133000_da6_worker_dispatch_cron_v1.sql \
+            -f tests/da6-cron-staging-assertions.sql
       - name: Exercitar 100 tarefas e workers concorrentes em sessões reais
         env:
           NODE_PATH: /tmp/da6-pg/node_modules
