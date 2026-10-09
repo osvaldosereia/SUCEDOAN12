@@ -35,6 +35,7 @@ jobs:
           node scripts/test-xml-main-integration-r23.mjs
           node scripts/test-xml-applied-snapshot-r27.mjs
           node scripts/test-xml-migration-drift-r27.mjs
+          node scripts/test-xml-selective-release-r30.mjs
           node scripts/test-xml-release-preflight-r26.mjs
           node scripts/test-admin-fiscal-recovery-v1.mjs
           node scripts/test-fiscal-nfe-autorecovery-v1.mjs
