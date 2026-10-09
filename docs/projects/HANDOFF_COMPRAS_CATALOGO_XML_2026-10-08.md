@@ -146,3 +146,28 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 ### Estado e próxima rodada
 
 **R18 concluída quanto à consolidação de código e regressão integrada em CI; PR #997 permanece draft e não publicada.** Avançar para **R19**: homologar Bling/upload manual apenas sob controle, NF-e reais/anônimas de teste, XML sem protocolo, malformado, lote >10 MB, hash/privacidade/idempotência, consulta da origem e regressão do fluxo financeiro **sem operações fiscais/comerciais reais**. Depois R20 (histórico integral/compilação de comparação além de 60, UI), R21 (vinculação/cadastro inativo), R22–R27 (ledger/atores, aplicação controlada, fiscal, E2E e publicação com gates). Não integrar PRs individuais sobre a PR consolidada sem reconciliar SHAs e CI.
+
+## Checkpoint R19 — 09/10/2026 — integridade de Bling/manual e fonte XML (testes isolados)
+
+**PR draft empilhada:** [#999](https://github.com/osvaldosereia/SUCEDOAN12/pull/999), branch `agent/xml-catalog-ingest-integrity-r19-20261009`, criada a partir da branch consolidada R18 `agent/xml-catalog-consolidation-r18-20261009` (PR #997, derivada da `main` `8d2e187`). Não fazer merge direto na `main` sem conciliar a dependência R18.
+
+### Código gravado
+- Guard `xml-catalog-ingest-guard.mjs` duplicado de forma idêntica nos dois backends. `assertCatalogXmlSize` verifica **bytes UTF-8**, conforme limite da bucket privada `purchase-xml` (10 MiB), em vez de só `String.length`. Entrada inválida/oversize é rejeitada antes de iniciar o parser operacional no `processXml`.
+- `assertCatalogXmlIntegrity` executa o parser real `fast-xml-parser@5.11.2` e valida identidade `infNFe@Id`, chave esperada, coerência de protocolo/cStat, malformação/DTD e número máximo de itens **antes de qualquer gravação de documento, contato, estoque ou financeiro no `processXml`**. O programa de importação pode ter buscado XML/OAuth antes, mas nenhuma atualização comercial é autorizada por esta validação.
+- Na importação manual `catalog_only`, a validação é feita antes do upload ou documento novo. O fluxo preserva `financial_eligible=false`, `finance_reference.accounts=[]`, `receipt_status=review` e não chama Bling.
+- XML já existente com mesmo `document_key` e `content_sha256` divergente é **rejeitado**, sem sobrescrever XML/registro/estoque/financeiro. Para legado sem hash, mantém compatibilidade sem afirmar equivalência. Releitura manual checa bytes, origem e hash antes de catalogar.
+- **Limitação deliberada:** o modo operacional `manual_import` e o `bling_sync` seguem com suas rotinas e efeitos de compra existentes. Não foram executados em produção nesta rodada. Uma serialização diferente do mesmo XML pode alterar o SHA mesmo que a NF-e seja semanticamente equivalente; conflito requer revisão humana, nunca overwrite automático.
+
+### Testes efetivamente realizados
+- [GitHub CI R19 final — run 37937233361](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37937233361): **success** — Deno com parser real, mock isolado que executa a função existente `manualCatalogOnlyImport` por extração do próprio backend, type-check dos dois `index.ts` e regressão de protocolo V6.
+- Casos aprovados: XML simples e sem protocolo, mismatch de chave/protocolo, status SEFAZ não autorizado, DTD, XML malformado, limite 10 MiB ASCII, XML Unicode com mais bytes que caracteres, 11 arquivos rejeitados, duplicação idempotente com SHA igual, rejeição com SHA diferente, sem chamadas a tabelas de produtos/financeiro/estoque nem Bling no mock de `catalog_only`.
+- O mock é um teste de execução isolada do código real da função, **não** uma homologação de rede, bucket real, OAuth, Bling ou UI autenticada.
+
+### Runtime somente leitura
+- Supabase canônico: 90 XMLs registrados, 214 itens conciliados, nenhum faltante. `purchase_xml_documents`: 90 chaves distintas e nenhum hash ausente. Bucket `purchase-xml` é **privada** (`public=false`), limite `10.485.760` bytes, MIME XML/octet-stream. Consulta às políticas diretas de objeto filtradas pela bucket não retornou política aplicável.
+- `purchase_xml_catalog_ingest_failures_v1` possui **0** pendências e ledger de revisão/aplicação continua não instalado. Admin produção v230 / stage XML v10 inalterados.
+- Nenhuma migração, deploy, merge, leitura/transferência de XML privado real, nova pesquisa externa, cron, movimentação fiscal/comercial ou atualização de produto.
+
+### Próximo trabalho — R20
+- Histórico paginado completo: o comparador #980 atualmente considera a **primeira página de 60**, claramente marcada como parcial na R18. Propor/implementar comparação integral e bounded por servidor, sem baixar tudo no início, incluindo testes de >60 linhas, fornecedor, embalagem/GTIN, perdas de conexão e UI lazy.
+- Manter R19/R18 em PRs draft até gates reais, sem substituir alteração recente da main.
