@@ -83,7 +83,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(psql -Atc 'select count(*) from public.order_meta_confirmations_v1')" = 2
-          test "$(psql -Atc 'select count(*) from public.order_meta_confirmations_v1 where proof_kind='''meta_signed_quick_reply'''')" = 2
+          test "$(psql -Atc "select count(*) from public.order_meta_confirmations_v1 where proof_kind='meta_signed_quick_reply'")" = 2
           # Test suite explicitly enabled runtime flag in the ephemeral database.
           test "$(psql -Atc 'select count(*) from public.order_meta_confirmation_runtime_v1 where id=1')" = 1
       - name: Diff hygiene
