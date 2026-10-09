@@ -44,3 +44,10 @@ assert.match(catalog,/if\(!externalRunId\)\{/,'avoid creating a nested import ru
 assert.match(catalog,/import_run_id:runId,source/,'persist actual source');
 assert.match(sync,/\{source,runId:id\}/,'Bling passes original source and run');
 console.log('PASS R2: Bling source preserved without nested import runs');
+
+const ui=readFileSync('vitrine/admin/index.html','utf8');
+assert.doesNotMatch(ui,/data-catalog-update-cost checked>/,'cost checkbox cannot be checked by default');
+assert.match(ui,/if\(saleCheck\)saleCheck\.checked=false/,'retail price checkbox cannot auto-check');
+assert.match(ui,/Produto existente: o nome cadastrado deve permanecer igual/,'existing product name protected in UI');
+assert.match(ui,/Aprovação em massa de custo\/preço desativada/,'unsafe bulk repricing disabled');
+console.log('PASS R2: UI name, price and cost safeguards');
