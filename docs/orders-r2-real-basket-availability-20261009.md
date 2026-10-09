@@ -29,4 +29,4 @@ A homologação sintética do checkout real já cobria cestas, moldes e kits e a
 - Não acrescentar `GRANT SELECT` à view de produção, pois isso altera o modelo de segurança auditado.
 - Não fazer merge em main enquanto R02/R03/R04–R10 estiverem em PRs divergentes ou faltarem aprovações fiscais.
 
-**Resultado:** aguardar confirmação do CI no último commit e então registrar o checkpoint completo na issue #964. Nenhum Bling, SEFAZ, WhatsApp, pedido, estoque ou cliente real foi modificado.
+**Resultado verificado:** [CI push #37935632416 — SUCCESS](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37935632416), PostgreSQL 17 efêmero, oito bancos, todos os passos aprovados. O primeiro teste ampliado falhou porque o checkout real retornou corretamente `basket_kit_lot_unavailable`, enquanto a asserção admitia apenas dois códigos; teste corrigido sem alterar a função comercial. [PR draft #998](https://github.com/osvaldosereia/SUCEDOAN12/pull/998) empilhada sobre [#996](https://github.com/osvaldosereia/SUCEDOAN12/pull/996). Ainda não houve teste de Bling/SEFAZ/Meta reais, migração ou merge. Nenhum pedido, estoque ou cliente produtivo foi modificado.
