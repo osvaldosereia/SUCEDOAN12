@@ -1,0 +1,75 @@
+name: XML Catalog R26 Integrated Release Gates
+on:
+  pull_request:
+    branches:
+      - agent/xml-catalog-fiscal-audit-r25-20261009
+      - main
+    paths:
+      - 'scripts/test-xml-catalog-integration-r26.pg.sql'
+      - 'scripts/test-xml-release-preflight-r26.mjs'
+      - 'scripts/xml-release-preflight-r26.mjs'
+      - 'scripts/test-xml-*.mjs'
+      - 'supabase/migrations/*purchase_xml*.sql'
+      - 'supabase/functions/**/purchase-xml-v1/**'
+      - 'supabase/functions/purchase-xml-v1/**'
+      - '.github/workflows/xml-catalog-operational-r26.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight-and-gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Migration safety gate, no deploy, existing XML regressions
+        run: |
+          set -eu
+          node scripts/test-xml-release-preflight-r26.mjs
+          node scripts/test-xml-migration-reconciliation-r25.mjs
+          node scripts/test-xml-field-approval-gateway-r24.mjs
+          node scripts/test-xml-catalog-fiscal-dossier-r25.mjs
+          node scripts/test-xml-identity-gateway-r21.mjs
+          node scripts/test-xml-main-integration-r23.mjs
+  edge-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Both mirrored XML Edge backends and parser
+        run: |
+          set -eu
+          deno check supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
+          deno run --allow-read scripts/test-xml-catalog-protocol-integrity-v6.mjs
+          deno run --allow-read scripts/test-xml-ingest-integrity-r19.mjs
+  integrated-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run both committed migrations together against disposable PostgreSQL 17
+        run: |
+          set -eu
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          psql -v ON_ERROR_STOP=1 -f scripts/test-xml-catalog-integration-r26.pg.sql
