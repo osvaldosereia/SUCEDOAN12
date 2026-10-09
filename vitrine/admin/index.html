@@ -7622,7 +7622,7 @@
       '<div class="order-v3-section"><h3>Itens</h3>'+(locked?'<div class="muted" style="margin-bottom:8px">Produtos e quantidades estão travados porque o pedido já foi confirmado.</div>':'')+'<div class="order-v3-items">'+(d.items||[]).map(i=>orderV3DetailItemHtml(i,states)).join('')+'</div></div>'+
       '<div class="order-v3-section"><h3>Atendimento</h3><div class="order-v3-ops"><button class="secondary" id="sendCustomerVitrineV3" type="button">VITRINE CLIENTE</button>'+(publicOrderUrlFor(o)?'<button class="secondary" id="openOrderVitrineV3" type="button">ABRIR VITRINE</button>':'')+'</div></div>'+
       '<div class="order-v3-section"><h3>Operação</h3><div class="order-v3-ops">'+(!milestones.confirmed&&!milestones.cancelled?'<button class="primary" id="confirmOrderV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>CONFIRMAR PEDIDO</button>':'')+(milestones.confirmed&&!milestones.delivered&&!milestones.cancelled?'<button class="secondary" id="openSeparationV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>ABRIR VITRINE SEPARAÇÃO</button>':'')+(o.status==='out_for_delivery'&&!milestones.delivered&&!milestones.cancelled?'<button class="primary" id="deliverOrderV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>CONFIRMAR ENTREGA</button><button class="secondary" id="deliveryFailedV4" type="button">ENTREGA NÃO CONCLUÍDA</button>':'')+(o.status==='confirmed'&&!sepStarted?'<button class="secondary" id="reopenOrderV3" type="button">REABRIR PEDIDO</button>':'')+(!milestones.delivered&&!milestones.cancelled?'<button class="text danger" id="cancelOrderV3" type="button">Cancelar pedido</button>':'')+'</div></div>'+fiscal;
-    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>'+(editable?'<button class="primary" id="saveOrder">Salvar dados</button>':'');$('#cancelEditor').onclick=()=>$('#editor').close();if($('#saveOrder'))$('#saveOrder').onclick=saveOrderV3;if($('#sendCustomerVitrineV3'))$('#sendCustomerVitrineV3').onclick=e=>sendOrderCustomerVitrineV3(o.id,e.currentTarget);if($('#openOrderVitrineV3'))$('#openOrderVitrineV3').onclick=openCurrentOrderVitrine;if($('#confirmOrderV3'))$('#confirmOrderV3').onclick=()=>quickConfirmOrder(o.id,$('#confirmOrderV3')).then(()=>openOrder(o.id));if($('#openSeparationV3'))$('#openSeparationV3').onclick=()=>{const id=o.id;$('#editor').close();openOrderSeparationSheet(id)};if($('#deliverOrderV3'))$('#deliverOrderV3').onclick=()=>openOrderDeliveryConfirm(o.id);if($('#deliveryFailedV4'))$('#deliveryFailedV4').onclick=()=>returnOrderToExpedition(o.id,true);if($('#startDispatchV4'))$('#startDispatchV4').onclick=startCurrentOrderDispatchV4;if($('#reopenOrderV3'))$('#reopenOrderV3').onclick=()=>reopenOrderV3(o.id);if($('#cancelOrderV3'))$('#cancelOrderV3').onclick=cancelCurrentOrder;if($('#executeFiscalCanary'))$('#executeFiscalCanary').onclick=executeCurrentOrderFiscalCanary;if($('#refreshFiscalCanary'))$('#refreshFiscalCanary').onclick=()=>loadCurrentOrderFiscal(true);if($('#printDanfe'))$('#printDanfe').onclick=openCurrentDanfe;
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>'+(editable?'<button class="primary" id="saveOrder">Salvar dados</button>':'');$('#cancelEditor').onclick=()=>$('#editor').close();if($('#saveOrder'))$('#saveOrder').onclick=saveOrderV3;if($('#sendCustomerVitrineV3'))$('#sendCustomerVitrineV3').onclick=e=>sendOrderCustomerVitrineV3(o.id,e.currentTarget);if($('#openOrderVitrineV3'))$('#openOrderVitrineV3').onclick=openCurrentOrderVitrine;if($('#confirmOrderV3'))$('#confirmOrderV3').onclick=()=>quickConfirmOrder(o.id,$('#confirmOrderV3')).then(()=>openOrder(o.id));if($('#openSeparationV3'))$('#openSeparationV3').onclick=()=>{const id=o.id;$('#editor').close();openOrderSeparationSheet(id)};if($('#deliverOrderV3'))$('#deliverOrderV3').onclick=()=>openOrderDeliveryConfirm(o.id);if($('#deliveryFailedV4'))$('#deliveryFailedV4').onclick=()=>returnOrderToExpedition(o.id,true);if($('#startDispatchV4'))$('#startDispatchV4').onclick=startCurrentOrderDispatchV4;if($('#reopenOrderV3'))$('#reopenOrderV3').onclick=()=>reopenOrderV3(o.id);if($('#cancelOrderV3'))$('#cancelOrderV3').onclick=cancelCurrentOrder;if($('#executeFiscalCanary'))$('#executeFiscalCanary').onclick=executeCurrentOrderFiscalCanary;if($('#refreshFiscalCanary'))$('#refreshFiscalCanary').onclick=recheckCurrentOrderFiscal;if($('#recoverBlingOrder'))$('#recoverBlingOrder').onclick=recoverCurrentOrderBling;if($('#printDanfe'))$('#printDanfe').onclick=openCurrentDanfe;
   }
 
   function blingPreflightOperationalBlockers(p){
@@ -7708,12 +7708,74 @@
     return '<div class="rule-notice warn"><strong>NF-e PENDENTE</strong><div>A nota ainda não foi autorizada. Veja abaixo o retorno mais recente da integração.</div></div>'+fiscalDiagnosticHtml(f);
   }
   function fiscalCanaryActionHtml(f,o){
-    if(!f||f.error||!o||!['ready','out_for_delivery','delivered'].includes(o.status))return '';
-    if(o.status==='ready'&&(f.authorized===true||f.stage==='authorized'))return '<div class="print-actions"><button class="primary" id="startDispatchV4" type="button">SAIU PARA ENTREGA</button><button class="secondary" id="refreshFiscalCanary" type="button">ATUALIZAR NF-e</button></div>';
-    if(o.status==='ready'&&f.can_issue===true)return '<div class="rule-notice warn" style="margin-top:8px"><strong>NF-e PENDENTE</strong><div>O fluxo automático ainda não concluiu a autorização. Use a tentativa manual somente se a pendência persistir.</div><div class="print-actions"><button class="primary" id="executeFiscalCanary" type="button">TENTAR EMITIR NF-e</button><button class="secondary" id="refreshFiscalCanary" type="button">ATUALIZAR</button></div></div>';
-    if(o.status==='ready')return '<div class="print-actions"><button class="secondary" id="refreshFiscalCanary" type="button">ATUALIZAR NF-e</button></div>';
-    if(o.status==='out_for_delivery')return '<div class="rule-notice"><strong>SAIU PARA ENTREGA</strong><div>NF-e autorizada. Confirme a entrega e o pagamento somente quando a entrega ocorrer.</div></div>';
-    return '';
+    if(!o||!['ready','out_for_delivery','delivered'].includes(o.status))return '';
+    const busy=state.fiscalActionBusy===true,disabled=busy?' disabled':'';
+    const latest=state.fiscalActionByOrder?.[o.id]||'';
+    const feedback=latest?'<div class="rule-notice" role="status" style="margin-top:8px"><strong>Última consulta / tentativa</strong><div>'+esc(latest)+'</div></div>':'';
+    const check='<button class="secondary" id="refreshFiscalCanary" type="button"'+disabled+'>CONSULTAR BLING / NF-e</button>';
+    if(o.status!=='ready')return feedback+(o.status==='out_for_delivery'?'<div class="rule-notice"><strong>SAIU PARA ENTREGA</strong><div>NF-e deve estar autorizada antes da expedição.</div></div>':'')+'<div class="print-actions">'+check+'</div>';
+    if(f?.authorized===true||f?.stage==='authorized')return feedback+'<div class="print-actions"><button class="primary" id="startDispatchV4" type="button">SAIU PARA ENTREGA</button>'+check+'</div>';
+    const blockers=[...(f?.hard_blockers||[]),...(f?.blockers||[])].map(String);
+    const missingLink=blockers.some(x=>['bling_order_not_linked','bling_order_not_verified','external_order_key_missing'].includes(x));
+    const recover=missingLink?'<button class="primary" id="recoverBlingOrder" type="button"'+disabled+'>RECUPERAR VENDA NO BLING</button>':'';
+    const invoiceId=Number(f?.invoice_id||f?.bling_invoice_id||0);
+    const issue=f?.can_issue===true&&!missingLink?'<button class="primary" id="executeFiscalCanary" type="button"'+disabled+'>'+(invoiceId?'TENTAR AUTORIZAR NF-e':'TENTAR EMITIR NF-e')+'</button>':'';
+    const explanation=missingLink
+      ?'<div class="muted" style="margin-top:8px">Recupera a venda existente e confirma o status Verificado. Não cria uma segunda venda para o mesmo pedido.</div>'
+      :invoiceId?'<div class="muted" style="margin-top:8px">NF-e localizada no Bling. Consulte primeiro a situação antes de tentar autorizar; o sistema impede o reenvio quando a transmissão já está em andamento.</div>':'';
+    return feedback+explanation+'<div class="print-actions" style="margin-top:8px">'+recover+issue+check+'</div>';
+  }
+  async function recoverCurrentOrderBling(){
+    const o=state.currentOrder?.order;
+    if(!o||o.status!=='ready'||state.fiscalActionBusy)return;
+    if(!confirm('Recuperar a venda do pedido #'+orderDisplayCode(o)+' no Bling?\\n\\nSerá consultada a venda existente e atualizado seu vínculo e status, sem emitir NF-e nesta etapa.'))return;
+    state.fiscalActionBusy=true;paintOrderDetail();
+    try{
+      const result=await api('order_fiscal_recover_bling_v1',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:o.id,operator:currentOperator()||'Operação'})
+      });
+      state.fiscalActionByOrder??={};
+      state.fiscalActionByOrder[o.id]='Venda no Bling recuperada e confirmada como Verificado. '+(result.fiscal?.can_issue?'A NF-e está liberada para tentativa manual.':result.fiscal?.authorized?'NF-e já autorizada.':'Consulte a situação fiscal antes de prosseguir.');
+      state.currentOrderFiscal=result.fiscal||null;
+      toast('Venda recuperada no Bling · confira a NF-e');
+    }catch(e){
+      state.fiscalActionByOrder??={};
+      state.fiscalActionByOrder[o.id]='Falha na recuperação: '+fiscalBlockReasonLabel(e?.message||'bling_recovery_failed')+'. Os itens separados foram preservados.';
+      toast(state.fiscalActionByOrder[o.id]);
+    }finally{
+      state.fiscalActionBusy=false;
+      await loadCurrentOrderFiscal(false);
+      if(state.currentOrder?.order?.id===o.id)paintOrderDetail();
+    }
+  }
+  async function recheckCurrentOrderFiscal(){
+    const o=state.currentOrder?.order;
+    if(!o||state.fiscalActionBusy)return;
+    state.fiscalActionBusy=true;paintOrderDetail();
+    try{
+      const result=await api('order_fiscal_recheck_v1',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:o.id})
+      });
+      state.currentOrderFiscal=result.fiscal||null;
+      state.fiscalByOrder[o.id]=state.currentOrderFiscal;
+      const f=result.fiscal||{},reason=result.reconcile?.reason||'';
+      state.fiscalActionByOrder??={};
+      state.fiscalActionByOrder[o.id]=f.authorized?'Nota autorizada pela SEFAZ.'
+        :f.invoice_id?'Nota '+(f.invoice_number||f.invoice_id)+' encontrada; situação: '+(f.sefaz_status||f.stage||'pendente')+'.'
+        :reason==='invoice_not_found'?'Consulta concluída: nenhuma NF-e encontrada no Bling para esta venda.'
+        :reason==='fiscal_dispatch_not_eligible'?'Consulta concluída: ainda existe bloqueio de vínculo ou de verificação da venda.'
+        :'Consulta concluída: '+(f.stage||'pendente')+'. Nenhuma NF-e foi enviada nesta consulta.';
+      toast(state.fiscalActionByOrder[o.id]);
+    }catch(e){
+      state.fiscalActionByOrder??={};
+      state.fiscalActionByOrder[o.id]='Não foi possível consultar o Bling: '+fiscalBlockReasonLabel(e?.message||'fiscal_status_unavailable');
+      toast(state.fiscalActionByOrder[o.id]);
+    }finally{
+      state.fiscalActionBusy=false;
+      if(state.currentOrder?.order?.id===o.id)paintOrderDetail();
+    }
   }
   async function executeCurrentOrderFiscalCanary(){
     const o=state.currentOrder?.order;if(!o||o.status!=='ready')return;
