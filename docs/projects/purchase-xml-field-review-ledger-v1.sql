@@ -128,10 +128,10 @@ begin
  then raise exception 'xml_review_identity_required'; end if;
  if p_decision is null or p_decision not in ('approve','reject','reopen')
  then raise exception 'xml_review_decision_invalid'; end if;
- if p_confirmation is distinct from case p_decision
-   when 'approve' then 'APROVAR_CAMPO_XML'
-   when 'reject' then 'REJEITAR_CAMPO_XML'
-   when 'reopen' then 'REABRIR_CAMPO_XML' end
+ if p_confirmation is distinct from
+   (case p_decision when 'approve' then 'APROVAR_CAMPO_XML'
+     when 'reject' then 'REJEITAR_CAMPO_XML'
+     when 'reopen' then 'REABRIR_CAMPO_XML' end)
  then raise exception 'xml_review_confirmation_required'; end if;
  select * into v from public.purchase_xml_field_reviews_v1
  where id=p_review_id for update;
