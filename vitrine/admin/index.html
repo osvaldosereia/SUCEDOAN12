@@ -6393,6 +6393,7 @@
     return '<div class="purchase-safe" style="margin:12px 0">'+
       '<strong>Conferência de dados: cadastro × notas fiscais</strong>'+
       '<small>Somente leitura. O valor da NF-e não é automaticamente o valor correto do produto. Use a revisão fiscal existente para corrigir NCM ou CEST.</small>'+
+      (data?.comparison_scope?.partial?'<small class="purchase-danger">Comparação PARCIAL: considera '+esc(data.comparison_scope.compared_observations||0)+' de '+esc(data.comparison_scope.total_observations||'?')+' observações da primeira página. O histórico completo deve ser conferido antes de qualquer decisão.</small>':'')+
       '<div style="display:grid;gap:8px;margin-top:10px">'+
       fields.map(x=>{
         const vals=Array.isArray(x.xml_values)?x.xml_values:[];
