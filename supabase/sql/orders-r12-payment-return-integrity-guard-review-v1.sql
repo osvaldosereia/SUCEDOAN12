@@ -38,6 +38,10 @@ BEGIN
         OR NEW.captured_total_cents IS DISTINCT FROM OLD.captured_total_cents
         OR NEW.idempotency_key IS DISTINCT FROM OLD.idempotency_key)
     THEN RAISE EXCEPTION 'r12_captured_payment_immutable'; END IF;
+    IF OLD.source='delivery' AND OLD.status IN ('captured','synced','needs_review')
+       AND NEW.status NOT IN ('captured','synced','needs_review') THEN
+      RAISE EXCEPTION 'r12_captured_payment_status_immutable';
+    END IF;
   END IF;
   RETURN NEW;
 END $r12_settlement$;
