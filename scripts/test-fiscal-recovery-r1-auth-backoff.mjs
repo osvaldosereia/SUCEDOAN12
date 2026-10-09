@@ -9,7 +9,8 @@ assert.ok(a>0&&b>a,"OAuth function extraction required");
 const js=source.slice(a,b)
   .replace("blingHubOauth(sb:any)","blingHubOauth(sb)")
   .replace("let response:Response|null=null;","let response=null;")
-  .replace("let data:any={};","let data={};");
+  .replace("let data:any={};","let data={};")
+  .replace("let parsed:any={};","let parsed={};");
 const work=source.slice(source.indexOf("async function blingHubFiscalNfeAutoRecovery("),source.indexOf("async function blingHubVitrineDispatchFiscalCanary("));
 for(const v of [
  "const last=await sb.from(\"fiscal_nfe_recovery_events_v1\")",
