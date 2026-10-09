@@ -58,6 +58,7 @@ jobs:
           node --check supabase/functions/_shared/order-fiscal-r9-observer-v1.mjs
           node --check scripts/test-orders-r9-fiscal-observer-v1.mjs
           node --test scripts/test-orders-r9-fiscal-observer-v1.mjs
+          node --test scripts/test-orders-r8-fiscal-preflight-v1.mjs scripts/test-orders-r7-bling-reconciled-v1.mjs
       - name: Install SQL client
         run: |
           if ! command -v psql >/dev/null; then
