@@ -71,3 +71,23 @@ R27 não realizou mutações em Supabase canônico, compras, lotes, produtos, pr
 ### Comando para nova janela
 
 > CONTINUAR PROJETO DONA ANTÔNIA — COMPRAS/CATÁLOGO XML — R28. GitHub `osvaldosereia/SUCEDOAN12`, branch `agent/xml-catalog-ui-release-r27-20261009`, PR draft #1027. Leia INTEGRALMENTE `docs/projects/PURCHASE_XML_R27_CONTINUATION_CHECKPOINT.md` e `docs/projects/HANDOFF_COMPRAS_CATALOGO_XML_2026-10-08.md`. R27 implementou UI fiscal e aplicação/rollback de nome inativo e reversionou migrations pela Supabase CLI, CI #37977436091 4/4 verde. Global `db push` está BLOQUEADO por drift estrutural entre 136 SQL locais e 1.186 remotos; não usar `migration repair`. Concilie main fiscal `a9289d04`, prepare staging real isolado, Auth/Edge/UI e estratégia de migrations selecionadas, sem tocar produção antes dos gates. Atualize PR e handoff ao final.
+
+
+## 7. Auditoria de SQL aplicado e avanço paralelo no banco — complemento R27
+
+Uma consulta read-only à coluna `supabase_migrations.schema_migrations.statements[1]` confirmou que **três arquivos históricos adicionais** do GitHub eram **idênticos, caractere por caractere**, ao SQL já aplicado no Supabase. Os arquivos foram renomeados apenas nesta branch para as versões remotas exatas (não houve nova execução de SQL):
+
+| Objeto | Versão SQL agora no GitHub | Conteúdo remoto |
+|---|---|---|
+| Observações de Catálogo XML | `20261009023146_purchase_xml_catalog_observations_v1.sql` | **7.782 caracteres; MD5 `bb011848c8abaadb9adf306bf5809dd7`** |
+| Detalhes XML v2 | `20261009025849_purchase_xml_catalog_details_v2.sql` | **2.293 caracteres; MD5 `5f82e39c665ead23429aa1b011c52f42`** |
+| Orçamento → Bling | `20261009133642_sales_quote_bling_conversion_v1.sql` | **2.328 caracteres; MD5 `6e718614829047f2d092b55dba1f3319`** |
+| Separação (já reconciliada na R25) | `20261009155231_separation_ready_reservation_idempotence_20261009.sql` | **2.112 caracteres; MD5 `2392276f2fd061dfbbaedd7a2c5eb59c`** |
+
+Novo teste `scripts/test-xml-applied-snapshot-r27.mjs` fixa esses quatro hashes e comprimentos contra alterações futuras, verifica ausência dos quatro arquivos duplicados de versões antigas; scripts de Catálogo XML v1/v2 foram atualizados para os caminhos canônicos. O workflow R27 passou a executar esse teste junto às demais regressões.
+
+**Novo snapshot após as três reconciliações:** 136 SQL locais, agora **1.187** versões Supabase (um novo evento paralelo), **34** versões presentes dos dois lados, **102** locais sem a mesma versão remota, **1.153** remotas ausentes localmente, **89** nomes locais em timestamps divergentes e **5** nomes não canônicos.
+
+**Atenção à concorrência:** a `main` avançou novamente para `987313e0220b4996f377daac4c83d471fd08d3c6` (nova recuperação automática de NF-e/controle fiscal) e o Supabase recebeu a migration `20261009190052_fiscal_nfe_autorecovery_v1_20261009`. Esta versão remota é **posterior** às versões CLI R27 `20261009185312` e `20261009185314`, que permanecem **não aplicadas**. Logo, antes de qualquer instalação, será necessário **congelar/revalidar o histórico e gerar versões definitivas compatíveis com o novo topo remoto**; não ficar renomeando enquanto outro projeto implanta migrations. O guard de preflight existente já barra migrações pendentes anteriores ao último timestamp remoto.
+
+A branch R27 não incorporou os commits fiscais paralelos `a9289d04` ou `987313e` e não realizou deploy ou escrita em produção. **Não mesclar a R27 sem conciliar ambos** e repetir testes fiscais/da interface.
