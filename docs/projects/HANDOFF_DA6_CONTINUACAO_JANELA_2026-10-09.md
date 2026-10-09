@@ -80,3 +80,22 @@
 **Automação horária:** tarefa “Etiquetas e Balanço Dona Antônia” já encontrada **ATIVA**, em recorrência a cada hora. Preservar; não duplicar.
 
 **PRÓXIMO PASSO:** continuar apenas verificações de release seguras, conciliação não destrutiva da `main`, e preparação do QA. Não publicar antes de imprimir em hardware real 203 dpi, testar fotos com celular real e homologar Edge + cron remotos em staging isolado, além de backup e rollback documentados. Não forjar evidências nem alterar balanços A4, estoque ou Bling.
+
+## 9. R8 — RECONCILIAÇÃO CONCORRENTE DA MAIN E TESTE DE REGRESSÃO (09/10/2026)
+
+**Ponto de partida:** PR #987 não mesclável (2 commits atrás de main); a main adicionou 6 arquivos modificados/novos relacionados a recuperação fiscal Bling, novas telas de fiscal e idempotência de reserva na separação. Os arquivos sobrepostos eram somente `vitrine/admin/index.html` e `supabase/functions/admin-products-live-v1/index.ts`. Merge ingênuo dos dois arquivos grandes não seria seguro.
+
+**Execução efetiva:**
+1. Commit [`8ecc026054ab2ac2a9d2b4137cfcb7cc4784ac17`](https://github.com/osvaldosereia/SUCEDOAN12/commit/8ecc026054ab2ac2a9d2b4137cfcb7cc4784ac17): MERGE EXCLUSIVAMENTE da main `a9289d04b23fcd595e3ba0ac37bcd2876a3dc962` na branch DA6 (primeiro pai `29f4ef070204c862c96b23232e1e5319ce5d32bc`). O procedimento comparou três versões de cada arquivo e reconstruiu 3 hunks DA6 do HTML e 5 do gateway. No gateway, reconciliou explicitamente a união dos conjuntos `LOCAL` e `WRITE_ACTIONS` e preservou simultaneamente rota autenticada do worker DA6 e novas rotas de recuperação fiscal da main. Os outros 4 arquivos da main foram mantidos por SHA de blob original. Validações de integridade e marcadores passaram. **NÃO houve merge do PR na main nem deploy.**
+2. Após o merge, GitHub informou **PR draft `mergeable=true`, ahead da main e `behind=0`**, na consulta registrada. Isso não representa aprovação de release: main continua em desenvolvimento concorrente.
+3. Commit [`87b7833b290c70127a6e3b0870be7011bb7e828d`](https://github.com/osvaldosereia/SUCEDOAN12/commit/87b7833b290c70127a6e3b0870be7011bb7e828d): teste de regressão em `tests/da6-main-integration-gate.test.cjs` exige simultaneamente as oito operações DA6, as duas operações fiscais novas, seis rotas de escrita restritas a não-viewers, ordem worker/operador/revisão/viewer/fiscal e presença das telas. Inspeção direta dos arquivos combinados **PASS**: 10 rotas, 6 bloqueios de escrita, 3 operações históricas read-only, sequência de autenticação e marcadores na UI.
+4. Commit [`eed26e1c1cdf40901404599a51e7956360cc6889`](https://github.com/osvaldosereia/SUCEDOAN12/commit/eed26e1c1cdf40901404599a51e7956360cc6889): removido o gatilho duplicado `push` do CI específico DA6, conservado `pull_request` em `main`. Antes disso um push+PR com mesmo SHA produzia duas execuções no mesmo grupo de concorrência, cancelamentos e gasto desnecessário. Agora a execução única por PR valida a branch draft.
+
+**CI no instante deste registro:**
+- Código anterior da R8: [run #37971817863](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37971817863) PASS 6/6 jobs e 74 testes.
+- Commit final reconciliado `eed26e1c1cdf40901404599a51e7956360cc6889`: [run #37976498877](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37976498877) **QUEUED na consulta**, NÃO marcar como aprovado antes de conferir resultados finais. Próxima execução deve verificar todos os seis jobs e contagem de testes.
+- CI geral Admin and Baskets Guard segue com falha pré-existente `channel_origin` em `pedido/index.html`; o teste falho identificado foi `scripts/test-admin-pending-data-baskets-public-v1.mjs`, linha 39. Não modificar código de pedidos fora do projeto responsável nem silenciar CI.
+
+**Segurança e invariantes:** as sete provas de release continuam pendentes; `release_status=blocked` e `release_candidate_fingerprint=null`. Nada de impressora física, fotos de celular real, Edge/pg_net remoto ou rollback foi homologado. Não aplicar migrações em produção, não fazer merge do PR na main e não alterar estoque ou Bling via contagem histórica. A4 preservado. Automação horária DA6 permanece ativa.
+
+**Próximo checkpoint:** confirmar run #37976498877; se vermelho, identificar e corrigir somente regressões DA6. Se verde, atualizar manifesto `verified_software` com o run e contagem de testes, preservando os sete gates em `false`. Verificar SHA atual da main/PR antes de mais reconciliações. Aguardar homologações físicas e staging sem criar evidências fictícias.
