@@ -1,10 +1,10 @@
 # DA6 — Rodada 7: auditoria e regressões do Admin (09/10/2026)
 
 ## Estado atual
-- **Código e merge de desenvolvimento concluídos; checkpoint de CI final pendente** até o run da última alteração ficar verde.
+- **RODADA 7 CONCLUÍDA EM CÓDIGO E TESTES; SEM PUBLICAÇÃO EM PRODUÇÃO.**
 - Branch `agent/gondola-labels-balance-20261009`, PR #987 **draft** e `mergeable=true` (GitHub verificado depois do commit de merge), zero commits atrás da `main` no checkpoint inicial.
 - Commit de merge seguro `af57f67e10e53f3e7812af16ca124341711c84a1`: pais [`e3c761be557bc236e639036b7c2a7c37b271c172`, `4683d79c2f0985e4c068544d706b475e9d462c53`], fast-forward na branch com `expected_sha`, nenhum `force`, nenhum push à main.
-- CI antes dos últimos testes: [37948939283](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37948939283) passou seis jobs. O CI final posterior aos testes de autenticação deve ser conferido novamente.
+- **CI FINAL DA RODADA: [37949515203](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37949515203), 6/6 jobs SUCCESS**. `deterministic-tests` **60/60 PASS**, 0 FAIL; `edge-types`, `postgres-review`, `postgres-upload`, `postgres-worker` e Supabase local Storage/Auth/worker com dados sintéticos **SUCCESS**. Uma execução paralela anterior foi cancelada pelo `concurrency` de propósito; a execução final de PR passou.
 - **Nenhum deploy Edge/Storage Admin; nenhuma migração DA6 aplicada na produção; estoque e Bling não modificados.**
 
 ## Ajustes
@@ -23,10 +23,15 @@
 - [x] Código DA6 isolado das rotas de estoque e fiscal.
 - [x] Regressão A4 e UI mobile com teste no Chrome.
 - [x] CI seis jobs verde antes da última bateria de autorização.
-- [ ] Confirmar o CI mais recente **posterior aos testes de autorização e concorrência do workflow**: seis jobs SUCCESS, nenhum erro.
-- [ ] A release física/hospedada continua bloqueada por ausência de impressora térmica 203 dpi, fotos reais e Edge/pg_net de staging hospedado, conforme Rodada 6.
+- [x] Confirmado o CI final `37949515203` posterior aos testes de autorização: 6/6 jobs PASS, 60 testes Node PASS, Supabase local E2E PASS.
+- [x] Limitações físicas/hospedadas isoladas como **gates de publicação**, não classificadas falsamente como testes executados. Impressora física 203 dpi, fotos reais e Edge/pg_net de staging hospedado continuam PENDENTES, conforme Rodada 6.
 
 ## Próximo plano após fechar R7
 - R8 planejar release **sem publicar automaticamente** enquanto faltar homologação física/hospedada. Congelar artefatos e calcular checksums; backup e rollback com SQL/Edge, inventário de segredos Vault, playbook gradual com smoke de UI/A4/Admin e proibição absoluta de aplicar balanços históricos ao estoque.
 - Não enviar pedidos/NF-e ao Bling; não habilitar alteração automática de estoque.
 - Somente desligar tarefa horária quando houver publicação real e gates concluídos.
+
+## Encerramento de R7
+- PR #987 permanece draft e `mergeable=true`; branch `behind_by=0` na última verificação após merge com dois pais. Não converter o PR para ready/merge até passar pelos gates de hardware e ambiente hospedado.
+- `Admin and Baskets Guard` falhou em branch de outro projeto por assertiva `channel_origin`; não atribuir essa falha ao DA6 nem modificar pedidos sem reavaliar com proprietário da funcionalidade.
+- A tarefa agendada de hora em hora deve entrar na preparação controlada da R8; sem possibilidade de homologação física/remota, documentar bloqueios e continuar apenas trabalho seguro, jamais afirmar release concluído.
