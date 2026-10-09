@@ -209,7 +209,13 @@ jobs:
           cd /tmp/da6-supabase-ci
           supabase init
           supabase start -x studio,realtime,analytics,vector,inbucket,imgproxy
-          supabase status -o env >> "$GITHUB_ENV"
+          # O CLI retorna valores entre aspas; GITHUB_ENV não as remove automaticamente.
+          # Copiar valores sem aspas sem imprimir tokens efêmeros nos logs.
+          while IFS='=' read -r name value; do
+            value="${value%\"}"
+            value="${value#\"}"
+            printf '%s=%s\n' "$name" "$value" >> "$GITHUB_ENV"
+          done < <(supabase status -o env)
       - name: Preparar schema DA6 isolado para Auth, Storage e PostgREST
         run: |
           psql -v ON_ERROR_STOP=1 "$DB_URL" \
