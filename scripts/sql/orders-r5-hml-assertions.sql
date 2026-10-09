@@ -54,6 +54,7 @@ BEGIN
   END;
   BEGIN
     UPDATE public.order_separation_items_v1 SET state='missing' WHERE order_id=o;
+  UPDATE public.order_separation_items_v1 SET quantity=2 WHERE order_id=o;
     RAISE EXCEPTION 'picking_state_update_bypass';
   EXCEPTION WHEN others THEN
     IF SQLERRM<>'meta_customer_confirmation_required' THEN RAISE; END IF;
@@ -62,6 +63,19 @@ BEGIN
     INSERT INTO public.order_separation_items_v1(id,order_id,state)
       VALUES('50000000-0000-4000-8000-000000000005',o,'separated');
     RAISE EXCEPTION 'picking_state_insert_bypass';
+  EXCEPTION WHEN others THEN
+    IF SQLERRM<>'meta_customer_confirmation_required' THEN RAISE; END IF;
+  END;
+  BEGIN
+    UPDATE public.order_separation_items_v1 SET quantity=99 WHERE order_id=o;
+    RAISE EXCEPTION 'existing_picked_quantity_bypass';
+  EXCEPTION WHEN others THEN
+    IF SQLERRM<>'meta_customer_confirmation_required' THEN RAISE; END IF;
+  END;
+  BEGIN
+    UPDATE public.order_separation_completions_v1
+       SET completed_at=now() WHERE order_id=o;
+    RAISE EXCEPTION 'completion_timestamp_bypass';
   EXCEPTION WHEN others THEN
     IF SQLERRM<>'meta_customer_confirmation_required' THEN RAISE; END IF;
   END;
@@ -89,6 +103,7 @@ BEGIN
   UPDATE public.order_separation_assignments_v1 SET separator_key='NEW' WHERE order_id=o;
   UPDATE public.order_separation_items_v1 SET state='missing' WHERE order_id=o;
   UPDATE public.order_separation_completions_v1 SET phase='completed' WHERE order_id=o;
+  UPDATE public.order_separation_completions_v1 SET completed_at=now() WHERE order_id=o;
   UPDATE public.orders SET status='ready' WHERE id=o;
   v:=public.manual_pick_queue_meta_feed_v1();
   SELECT item.value INTO row_one FROM jsonb_array_elements(v->'orders') item(value)
