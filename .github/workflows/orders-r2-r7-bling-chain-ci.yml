@@ -1,4 +1,4 @@
-name: Orders R02-R10 - checkout, fiscal GET and synthetic SEFAZ gate (offline)
+name: Orders R02-R12 - checkout, fiscal, custody and split payment (offline)
 on:
   push:
     branches:
@@ -8,12 +8,18 @@ on:
       - 'agent/orders-r2-r10-*'
       - 'agent/orders-r2-r10-*'
       - 'agent/orders-r11-*'
+      - 'agent/orders-r12-*'
     paths:
       - 'scripts/sql/orders-r2-r7-*.sql'
       - 'scripts/test-orders-r2-r7-*.mjs'
       - 'scripts/test-orders-r2-r8-*.mjs'
       - 'scripts/sql/orders-r2-r9-*.sql'
+      - 'scripts/sql/orders-r12-*.sql'
+      - 'supabase/sql/orders-r12-*.sql'
       - 'scripts/sql/orders-r11-*.sql'
+      - 'scripts/sql/orders-r12-*.sql'
+      - 'supabase/sql/orders-r12-*.sql'
+      - 'docs/orders-r12-*.md'
       - 'supabase/sql/orders-r11-delivery-custody-fiscal-guard-review-v1.sql'
       - 'docs/orders-r11-*.md'
       - 'scripts/test-orders-r2-r9-*.mjs'
@@ -30,6 +36,7 @@ on:
       - 'agent/orders-r2-r6-*'
       - 'agent/orders-r2-r8-*'
       - 'agent/orders-r2-r9-*'
+      - 'agent/orders-r11-*'
       - main
     paths:
       - 'scripts/sql/orders-r2-r7-*.sql'
@@ -322,6 +329,30 @@ jobs:
           test "$(psql -Atc "SELECT count(*) FROM public.order_fiscal_r10_authorization_evidence_v1")" = 1
           test "$ORDER_R10_SEFAZ_PROOF_ENABLED" = false
           echo 'PASS R11: pre-R11 gap reproduced; route cannot dispatch or load pending NF-e, original driver RPC works with proof'
+      - name: R12 original split payment and delivery RPCs, plus database integrity
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r12-delivery-payment-fixture.sql
+          psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r12-real-delivery-payment-rpcs.sql
+          # Original completion fails on already captured PIX+cash; rollback.
+          psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r12-split-payment-baseline.sql
+          # Replace ONLY the obsolete one-part check in the real function.
+          psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r12-split-payment-delivery-complete-review-v1.sql
+          # Protect all DB write paths, not merely admin handlers.
+          psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r12-payment-return-integrity-guard-review-v1.sql
+          psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r12-delivery-payment-assertions.sql
+          test "$(psql -Atc "SELECT count(*) FROM public.order_payment_settlements")" = 1
+          test "$(psql -Atc "SELECT count(*) FROM public.order_payment_parts")" = 2
+          test "$(psql -Atc "SELECT count(*) FROM public.orders WHERE status='delivered'")" = 1
+          test "$BLING_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          echo 'PASS R12: R02-R11 real checkout IDs, split delivery payment only once, return/fiscal DB guards'
       - name: Ensure no unsafe transports enabled or changes to tracked files
         run: |
           set -euo pipefail
