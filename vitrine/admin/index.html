@@ -5865,7 +5865,7 @@
         '<div class="purchase-price-box"><small>Preço atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
         '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-catalog-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint">'+(p.suggested_sale_price!=null?'Mínimo 40%: '+purchaseMoney(p.suggested_sale_price):'Defina após corrigir a conversão.')+'</div></div>'+
       '</div>'+
-      '<div class="purchase-catalog-actions"><div><div class="purchase-checks"><label><input type="checkbox" data-catalog-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-catalog-update-sale '+(updateSale?'checked':'')+'> Atualizar preço</label></div><div class="purchase-stock-note">Estoque não é alterado nesta etapa.</div></div>'+
+      '<div class="purchase-catalog-actions"><div><div class="purchase-checks"><label><input type="checkbox" data-catalog-update-cost> Atualizar custo</label><label><input type="checkbox" data-catalog-update-sale '+(updateSale?'checked':'')+'> Atualizar preço</label></div><div class="purchase-stock-note">Estoque não é alterado nesta etapa.</div></div>'+
         '<div><button class="primary" type="button" data-catalog-approve="'+esc(x.id)+'" '+(!x.product_id?'disabled':'')+'>'+(flags.approved&&!flags.needs_approval?'Revisar novamente':flags.needs_review?'Revisar e autorizar':'Autorizar')+'</button><span class="purchase-approval-result" data-catalog-result></span></div></div>'+
     '</div>';
   }
@@ -5883,7 +5883,8 @@
     if(costEl)costEl.textContent=purchaseMaybeMoney(cost);
     if(qtyEl)qtyEl.textContent=factor>0?fmtQty(baseQty)+' UN':'—';
     if(sale&&saleValue!=='')sale.value=purchaseNumberInput(saleValue);
-    if(saleCheck)saleCheck.checked=Boolean(!hasCurrent||(minimum!==null&&current+0.005<minimum));
+    // R2: changing retail price is always a deliberate user action.
+    if(saleCheck)saleCheck.checked=false;
   }
   async function applyPurchaseCatalogItemUpdate(itemId,quiet=false,operatorOverride=''){
     const card=document.querySelector('[data-purchase-catalog-item="'+CSS.escape(itemId)+'"]');if(!card)return false;
@@ -5892,6 +5893,9 @@
     const sale=Number(String(card.querySelector('[data-catalog-sale]')?.value||'').replace(',','.'));
     const proposedName=String(card.querySelector('[data-catalog-product-name]')?.value||'').trim();
     const updateCost=Boolean(card.querySelector('[data-catalog-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-catalog-update-sale]')?.checked);
+    // XML descriptions are supplier evidence; existing commercial names are immutable.
+    const existingName=String((state.purchaseCatalogQueue?.items||[]).find(x=>x.id===itemId)?.products?.name||'').trim();
+    if(existingName&&proposedName!==existingName){if(!quiet)toast('Produto existente: o nome cadastrado deve permanecer igual');return false}
     if(!proposedName){if(!quiet)toast('Informe o nome do produto');return false}
     if(!Number.isFinite(factor)||factor<1){if(!quiet)toast('Informe a conversão para UN');return false}
     if(updateSale&&(!Number.isFinite(sale)||sale<0)){if(!quiet)toast('Informe um preço de venda válido');return false}
@@ -5913,6 +5917,8 @@
     }
   }
   async function approveSafeCatalogItems(){
+    toast('Aprovação em massa de custo/preço desativada: revise cada produto e confirme alterações explicitamente.');
+    return;
     const items=(state.purchaseCatalogQueue?.items||[]).filter(x=>x?.flags?.safe_to_approve&&x?.flags?.needs_approval&&!x?.flags?.approved);
     if(!items.length){toast('Nenhum produto seguro aguardando aprovação');return}
     if(!confirm('Autorizar '+items.length+' produto(s) seguros dos últimos 31 dias?\n\nO custo será atualizado pelo custo unitário da NF-e. O preço só será alterado quando estiver abaixo da sugestão mínima de 40%. O estoque não será alterado.'))return;
