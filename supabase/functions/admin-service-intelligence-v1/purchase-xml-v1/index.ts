@@ -1874,7 +1874,7 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     }
 
     if(action==="search_products")return js(req,await searchPurchaseProducts(body));
-    if(action==="resolve_item_identity"){if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);if(body?.catalog_evidence_only===true&&!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);const r=await resolvePurchaseItemIdentity(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
+    if(action==="resolve_item_identity"){if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);if(body?.catalog_evidence_only!==true)return js(req,{ok:false,error:"xml_catalog_evidence_only_required"},409);if(!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);const r=await resolvePurchaseItemIdentity(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="summary")return js(req,await summary(body));
     if(action==="finance_reconcile"){const r=await syncFinanceDocument(clean(body?.document_id||body?.id||u.searchParams.get("id"),80),{allowWrite:false,source:"vitrine_admin_reconcile"});return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="finance_post"||action==="finance_retry"){
