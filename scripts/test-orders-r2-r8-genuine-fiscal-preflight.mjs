@@ -75,13 +75,17 @@ assert.equal(basket.order.order_number,
   basket.completion.metadata.r6_reconciliation.public_order_number);
 let negative=evaluateOrderFiscalR8(basket);
 for(const code of ["product_fiscal_profile_missing",
-  "sales_tax_rule_unapproved","active_mt_tax_rules_not_approved",
+  "active_mt_tax_rules_not_approved",
   "fresh_bling_order_readback_required"]){
  assert.ok(negative.blockers.includes(code),
    "original R08 must be fail closed without external approval: "+code);
 }
 assert.equal(negative.ready,false);
 assert.equal(negative.invoice_created,false);
+const noApprovedSaleTax=addSyntheticProof(input(structuredClone(byKind.basket)));
+noApprovedSaleTax.approved_sales_tax_rules=[];
+assertBlocked(noApprovedSaleTax,"sales_tax_rule_unapproved",
+  "product profile exists but outbound CFOP/CSOSN approval absent");
 console.log("PASS REAL R02-R07 basket, R08 requires real fiscal approval and Bling GET");
 
 const fullySynthetic=addSyntheticProof(input(byKind.basket));
