@@ -1,0 +1,27 @@
+/* DA6 — aba de fotos com leitura e fila persistente */
+.da6-modes{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.da6-modes button{min-height:42px;font-weight:800;flex:0 1 auto}
+.da6-photo-panel{padding:16px;display:grid;gap:12px;background:#fff}
+.da6-photo-panel[hidden],#content>[hidden]{display:none!important}
+.da6-photo-panel h2{font-size:20px;margin:0}
+.da6-upload-drop{border:2px dashed #b8d1bf;border-radius:14px;padding:16px;display:grid;gap:6px;background:#f7fbf7}
+.da6-upload-drop strong{font-size:14px}
+.da6-upload-drop span,.da6-photo-panel .sub{font-size:12px;color:#65746a}
+.da6-upload-drop input{width:100%;margin-top:6px}
+.da6-photo-panel #da6-send{justify-self:start;min-height:42px}
+.da6-photo-panel progress{accent-color:#176b43}
+.da6-error{color:#ac2744;padding:7px 10px;border-radius:8px;background:#fff4f5;margin:4px 0}
+.da6-batch-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px}
+.da6-batch-actions h3{margin:0 auto 0 0;font-size:15px}
+.da6-batch-actions select{min-height:38px;max-width:300px}
+.da6-stat-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.da6-stat-grid>div{border:1px solid #dce5df;border-radius:10px;padding:10px;text-align:center;background:#fbfdfb}
+.da6-stat-grid strong{display:block;font-size:21px;color:#176b43}
+.da6-stat-grid small{display:block;font-size:10px;color:#617167}
+.da6-batch-summary{display:flex;justify-content:space-between;gap:10px;margin:8px 0;font-size:13px}
+.da6-file-list{display:grid;gap:6px;max-height:420px;overflow:auto;margin-top:12px}
+.da6-file-row{border:1px solid #dce5df;border-radius:9px;padding:8px 10px;display:grid;grid-template-columns:1fr auto;gap:3px}
+.da6-file-row span{overflow-wrap:anywhere;font-weight:600}
+.da6-file-row b{font-size:11px;color:#176b43}
+.da6-file-row small{grid-column:1/-1;font-size:11px;color:#626e67;overflow-wrap:anywhere}
+@media(max-width:680px){.da6-modes button{flex:1}.da6-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.da6-batch-actions h3{flex:1 1 100%}.da6-batch-actions select{flex:1}.da6-photo-panel #da6-send{width:100%}.da6-file-row{grid-template-columns:1fr}.da6-file-row b{grid-row:2}}
