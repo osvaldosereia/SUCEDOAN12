@@ -7,6 +7,7 @@ on:
       - 'scripts/sql/orders-r2-*.sql'
       - 'scripts/sql/orders-security-*.sql'
       - 'supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql'
+      - 'supabase/sql/orders-r2-basket-independent-groups-review-v1.sql'
       - 'supabase/sql/orders-security-public-table-privileges-review-v1.sql'
       - 'scripts/test-orders-r2-transport-offline.mjs'
       - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
@@ -210,5 +211,30 @@ jobs:
           test "$(PGDATABASE=synthetic_checkout_full_r2 psql -Atc "select count(*) from public.orders")" = 3
           test "$(PGDATABASE=synthetic_checkout_full_r2 psql -Atc "select count(*) from public.vitrine_stock_reservations")" = 3
           echo 'PASS: actual 40KB checkout base serialized competing buyers, one committed, one rolled back'
+      - name: Real split-kit and mold checkout (fifth disposable DB)
+        run: |
+          set -euo pipefail
+          createdb synthetic_baskets_r2
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-bug-baseline.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-assertions.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          echo 'PASS: real basket checkout in split kits, one group unchanged, legacy stock, selectable mold hidden value'
       - name: Diff hygiene
         run: git diff --check
