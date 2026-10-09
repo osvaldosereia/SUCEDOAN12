@@ -144,3 +144,23 @@
 **CAMINHO CURTO DE CONCLUSÃO:** (a) obter staging remoto Supabase SEPARADO e aprovado em custo, (b) implantar somente staging e homologar Edge/cron/Storage privados/worker, (c) testar com impressora térmica REAL 203dpi 100×150 e celular REAL com seis quantidades e casos difíceis, (d) formalizar backup e executar rollback no staging, (e) repetir CI/fingerprint e resolver CI geral relevante, (f) revisão protegida, rollout gradual e observação. Não afirmar aprovação física/remota sem provas e não alterar manualmente os sete gates.
 
 **Automação horária:** manter ativa com este checkpoint até conclusão realmente homologada/publicada. Não repetir as 12 rodadas antigas.
+
+## 13. R9 — STAGING SUPABASE REMOTO REAL CRIADO, COM HOMOLOGAÇÃO PARCIAL (09/10/2026)
+
+**Autorização expressa do usuário para preparar staging na organização atual.** Conector Supabase consultou preço antes de provisionar: **US$ 0,01344 por hora** para branch temporária (alternativa US$ 10/mês por projeto). Custos podem incluir uso adicional; branch não é coberta por Spend Cap. Confirmação de custo realizada pelo conector.
+
+**Ambiente efetivamente criado:**
+- Branch `da6-qa-20261009` ID `812c1d56-1e8a-4236-8382-b127faac5b0e`, ref de projeto hospedado `jxfxyqcpxoykdxbapswi`; parent canônico `ssbesxgaijknwsjbsbcz` e `with_data=false`.
+- Quatro cron legados foram desativados **apenas** nesse staging. Base DA6 criada por migração staging-only: 3 tabelas, RLS deny-by-default e bucket `inventory-label-photos` privado de 10 MiB JPEG/PNG/WebP.
+- Cinco migrações DA6 reais aplicadas na branch: fila/RPC, segredo do worker em Vault, revisão auditável, reserva transacional e cron pg_net. URL e projeto do worker no Vault apontam à própria branch. **Nunca credenciais em código.**
+- Edge `admin-products-live-v1` versão **163** implantado no staging, com `index.ts` + 3 módulos DA6. `verify_jwt=false` preserva autenticação explícita própria do gateway e chave interna no worker, somente na branch.
+- Cron DA6 criado mas **mantido desativado**; `SELECT public.da6_worker_dispatch_tick_v1()` com fila vazia resultou `{"ok":true,"no_op":true,"reason":"queue_empty"}`. Não houve pg_net HTTP enviado nem processamento remoto de foto.
+- Verificação real de RLS/grants: RPCs DA6 sem EXECUTE para anon/authenticated, somente service_role; bucket não público. Quatro tabelas DA6 da branch contêm zero linhas. Produção permanece com zero lotes/fotos/contagens DA6, e o cron canônico não foi alterado.
+
+**ATENÇÃO — gates ainda bloqueados:**
+- A API de branches mostra `preview_project_status=ACTIVE_HEALTHY` mas `status=MIGRATIONS_FAILED`. As migrações aplicadas manualmente foram bem-sucedidas, porém o pipeline geral do branch acusa falha; investigar antes de dar homologação como concluída.
+- Acesso HTTP do executor desta rodada à URL do staging não foi possível (DNS/ambiente de ferramenta); sem teste real de autenticação por HTTP, signed uploads hospedados 10/50/100, retorno Edge/pg_net, retries, logs ou fila com fotos reais.
+- A impressora térmica 203 dpi 100×150 mm, celular real, backup e rollback continuam **pendentes**. Sete gates `passed:false`, release bloqueado, PR #987 DRAFT e sem merge/deploy à produção.
+- Documentação completa e estado das ações: **`docs/projects/DA6_STAGING_REMOTO_AUDITORIA_2026-10-09.md`**, commit `871101f19a77ce7147f77f164a56d83193da5b13`.
+
+**Próxima rodada:** conferir status da branch e solucionar o `MIGRATIONS_FAILED` sem rebase/reset destrutivo; testar por executor HTTP real staging separado com conta e produtos artificiais, autorizando apenas cron DA6 de forma temporária em homologação; preparar impressora/celular. Não usar produto/estoque de clientes, nem copiar credenciais produtivas. Observar custo horário **US$0,01344/h** e **excluir a branch ao terminar a homologação**. NÃO reabrir R1–R8, código local já aprovado no CI 6/6 e 87/87 da versão `5c75b7f2`.
