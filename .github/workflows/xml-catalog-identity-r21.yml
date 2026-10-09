@@ -1,0 +1,68 @@
+name: XML Catalog Identity R21
+on:
+  pull_request:
+    branches:
+      - main
+      - agent/xml-catalog-full-history-r20-20261009
+    paths:
+      - 'docs/projects/purchase-xml-identity-atomic-r21.sql'
+      - 'scripts/test-xml-catalog-identity-r21.pg.sql'
+      - 'scripts/test-xml-identity-gateway-r21.mjs'
+      - 'supabase/functions/**/purchase-xml-v1/index.ts'
+      - 'supabase/functions/purchase-xml-v1/index.ts'
+      - 'vitrine/admin/index.html'
+      - '.github/workflows/xml-catalog-identity-r21.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  human-gateway-and-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Atomic handoff and browser confirmation mocked in isolation
+        run: |
+          set -eu
+          node scripts/test-xml-identity-gateway-r21.mjs
+          node scripts/test-xml-catalog-details-v2.mjs
+          node scripts/test-xml-catalog-full-history-r20.mjs
+          node scripts/test-xml-catalog-consolidation-r18.mjs
+  disposable-postgresql:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Atomic identity transaction and lot-trigger rejection
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          psql -v ON_ERROR_STOP=1 -f scripts/test-xml-catalog-identity-r21.pg.sql
+  edge-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type check both purchase XML Edge copies
+        run: deno check supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts

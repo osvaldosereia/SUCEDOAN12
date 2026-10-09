@@ -6484,7 +6484,13 @@
        '<div class="purchase-safe" style="margin-top:12px"><strong>Vincular ou cadastrar este item</strong>'+
         '<small>Confirme o que representa o EAN e a conversão da embalagem; nenhuma ação modifica estoque ou preço.</small>'+
         '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
-        '<label>EAN<select id="xmlDetailRole"><option value="">Escolha…</option>'+
+        '<label>EAN de origem<select id="xmlDetailGtinSource"><option value="">Escolha o EAN…</option>'+
+        (typeof active.commercial_gtin==='string'&&/^\d{8,14}$/.test(active.commercial_gtin)?
+          '<option value="commercial">EAN comercial: '+esc(active.commercial_gtin)+'</option>':'')+
+        (typeof active.tax_gtin==='string'&&/^\d{8,14}$/.test(active.tax_gtin)?
+          '<option value="tax">EAN tributável: '+esc(active.tax_gtin)+'</option>':'')+
+        '</select></label>'+
+        '<label>Tipo do EAN<select id="xmlDetailRole"><option value="">Escolha…</option>'+
         '<option value="base_unit">Unidade</option><option value="package">Caixa/fardo/pacote</option></select></label>'+
         '<label>Quantidade por embalagem<input id="xmlDetailFactor" type="number" min="1" step="1" value="1" style="width:110px"></label></div>'+
         '<div class="bling-actions" style="gap:6px;flex-wrap:wrap">'+
@@ -6672,6 +6678,7 @@
     const d=state.xmlCatalogDetail||{};
     const item=(d.observations||[]).find(x=>String(x.purchase_item_id||'')===String(state.xmlCatalogSelectedObservation||''));
     const chosen=state.xmlCatalogChosenProduct,role=String($('#xmlDetailRole')?.value||'');
+    const gtinSource=String($('#xmlDetailGtinSource')?.value||'');
     const factor=Number($('#xmlDetailFactor')?.value||0);
     if(!item?.purchase_item_id||item.linked_product_id){toast('Selecione um item não vinculado');return}
     const unit=String(item.purchase_unit||'').trim().toUpperCase();
@@ -6679,6 +6686,8 @@
     if(!barcodeOk||/^(KG|G|L|LT|LTS|M|MT|TON)$/.test(unit)){
       toast('Unidade de compra ou GTIN requer conferência operacional antes de vincular');return;
     }
+    if(!['commercial','tax'].includes(gtinSource)){
+      toast('Escolha explicitamente o EAN comercial ou tributável da NF-e');return}
     if(!['base_unit','package'].includes(role)){toast('Defina se o EAN é da unidade ou da embalagem');return}
     if(/^(CX|FD|FAR|FARDO|CAIXA|FDO)$/.test(unit)&&role!=='package'){
       toast('A NF-e usa caixa/fardo: confirme a quantidade de unidades e selecione Embalagem');return;
@@ -6698,7 +6707,9 @@
     try{
       await purchaseApi('resolve_item_identity',{item_id:item.purchase_item_id,
         product_id:createNew?null:chosen.id,create_new:createNew,
-        proposed_name:name,gtin_role:role,conversion_factor:factor,catalog_evidence_only:true});
+        proposed_name:name,gtin_role:role,gtin_source:gtinSource,
+        conversion_factor:factor,catalog_evidence_only:true,
+        confirmation:createNew?'CRIAR_INATIVO_XML':'VINCULAR_ITEM_XML'});
       toast(createNew?'Produto criado inativo':'Vínculo confirmado; estoque e preços não alterados');
       await loadXmlCatalog();if(state.xmlCatalogOpen&&key)await xmlCatalogDetailOpen(key);
     }catch(e){toast(errorMessage(e.message));if(button)button.disabled=false}
