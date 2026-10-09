@@ -129,7 +129,18 @@ test('leitura OMR de seis balanços marcados na etiqueta realmente renderizada',
     groups[1].querySelectorAll('.digit i')[n%10].style.backgroundColor='#000';
    }
   },counts);
-  const marked=omr.read(await getImage());
+  const image=await getImage();
+  const marked=omr.read(image);
+  if(marked.readings.length!==counts.length){
+   const diag=counts.map((qty,i)=>{
+    const top=61+i*((76-5)/6+1);
+    return {slot:i+1,quantity:qty,
+     activation:omr.density(image,18.5,top+7.3,1).toFixed(3),
+     tens:omr.density(image,25.09+Math.floor(qty/10)*3.535,top+8.7,.75).toFixed(3),
+     units:omr.density(image,61.09+(qty%10)*3.535,top+8.7,.75).toFixed(3)};
+   });
+   console.log('DA6_LAYOUT_DIAGNOSTIC',JSON.stringify({errors:marked.errors,readings:marked.readings,diag}));
+  }
   assert.deepEqual(Array.from(marked.readings,x=>x.quantity),counts);
   assert.equal(marked.errors.length,0);
  });
