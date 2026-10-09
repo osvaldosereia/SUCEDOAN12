@@ -29,6 +29,20 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/xml-r31/supabase/functions"
           cp -a supabase/functions/purchase-xml-v1 "$RUNNER_TEMP/xml-r31/supabase/functions/"
+          # CI-only dependency injection: real handler/auth and gateway, real
+          # GoTrue/PostgREST; no remote JSR/npm runtime fetch on cold start.
+          cp scripts/xml-r31-local-supabase-shim.mjs "$RUNNER_TEMP/xml-r31/supabase/functions/purchase-xml-v1/local-supabase-shim.mjs"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path(__import__('os').environ['RUNNER_TEMP'])/'xml-r31/supabase/functions/purchase-xml-v1/index.ts'
+          original=p.read_text()
+          a='import "jsr:@supabase/functions-js/edge-runtime.d.ts";'
+          b='import { createClient } from "npm:@supabase/supabase-js@2";'
+          assert original.count(a)==1 and original.count(b)==1
+          p.write_text(original.replace(a,'').replace(b,
+            'import { createClient } from "./local-supabase-shim.mjs";'))
+          print('PASS: CI-only external import replacement; repo production file unchanged')
+          PY
           cd "$RUNNER_TEMP/xml-r31"
           supabase init --yes
           supabase start -x studio,imgproxy,inbucket,realtime,storage-api,analytics,vector
@@ -71,14 +85,19 @@ jobs:
           echo $! > "$RUNNER_TEMP/r31-edge.pid"
           url="$API_URL/functions/v1/purchase-xml-v1"
           result=000
-          for n in $(seq 1 15); do
+          for n in $(seq 1 10); do
             result=$(curl -sS --connect-timeout 3 --max-time 12 -o "$RUNNER_TEMP/r31-response.json" -w '%{http_code}' -X POST "$url" \
               -H 'content-type: application/json' -H "Authorization: Bearer $token" -H "apikey: $ANON_KEY" \
               -d '{"purchase_action":"xml_field_apply_list","product_id":"30000000-0000-4000-8000-000000000010"}' || true)
             if [ "$result" = 200 ]; then break; fi
             sleep 2
           done
-          if [ "$result" != 200 ]; then echo "Owner status $result"; tail -60 "$RUNNER_TEMP/r31-edge.log"; exit 1; fi
+          if [ "$result" != 200 ]; then
+            echo "Owner status $result (local CI harness)"
+            test -f "$RUNNER_TEMP/r31-response.json" && head -c 300 "$RUNNER_TEMP/r31-response.json" || true
+            tail -60 "$RUNNER_TEMP/r31-edge.log"
+            exit 1
+          fi
           node -e 'const x=require(process.argv[1]);if(x.ok!==true||!Array.isArray(x.items))process.exit(2)' "$RUNNER_TEMP/r31-response.json"
           echo 'PASS R31: owner JWT accesses real local Edge field-apply list'
           psql "$DB_URL" -v ON_ERROR_STOP=1 -c "update public.admin_users set role='viewer' where user_id='$id'::uuid" >/dev/null
