@@ -71,6 +71,35 @@ export async function inventoryLabelPhotoAction(db:any,action:string,req:Request
   if(up.error)throw up.error;
   return {queued:true,photo_id:id,status:'queued'};
  }
+ if(action==='inventory_label_photo_review'){
+  if(req.method!=='POST')return bad('method_not_allowed',405);
+  if(auth.role==='viewer')return bad('forbidden',403);
+  const photoId=String(payload?.photo_id||'');
+  const slot=Number(payload?.slot),decision=String(payload?.decision||'');
+  const quantity=payload?.quantity===null||payload?.quantity===undefined?null:Number(payload.quantity);
+  const note=cleanText(payload?.note,500);
+  if(!UUID.test(photoId)||!Number.isInteger(slot)||slot<1||slot>6||
+    !['approve','reject','correct'].includes(decision)||
+    (quantity!==null&&(!Number.isInteger(quantity)||quantity<0||quantity>99)))
+    return bad('invalid_review');
+  if(decision==='correct'&&(quantity===null||note.length<5))return bad('correction_requires_reason');
+  const photo=await db.from('inventory_label_photos').select('id')
+   .eq('id',photoId).eq('created_by',user).maybeSingle();
+  if(photo.error)throw photo.error;
+  if(!photo.data)return bad('photo_not_found',404);
+  const reviewed=await db.rpc('inventory_label_review_count_v1',{
+    p_photo_id:photoId,p_slot:slot,p_decision:decision,p_quantity:quantity,
+    p_actor_id:user,p_note:note
+  });
+  if(reviewed.error){
+    const code=reviewed.error.message||'review_failed';
+    if(reviewed.error.code==='23505')return bad('review_conflict',409);
+    if(reviewed.error.code==='42501')return bad('review_forbidden',403);
+    if(reviewed.error.code==='22023')return bad('invalid_review_state',409);
+    throw reviewed.error;
+  }
+  return {review:reviewed.data};
+ }
  if(action==='inventory_label_batch_status'){
   if(req.method!=='GET')return bad('method_not_allowed',405);
   const batchId=new URL(req.url).searchParams.get('batch_id')||'';
@@ -81,8 +110,22 @@ export async function inventoryLabelPhotoAction(db:any,action:string,req:Request
     .eq('batch_id',batchId).eq('created_by',user).order('created_at',{ascending:true}).limit(MAX_FILES);
   if(photos.error)throw photos.error;
   const counts:Record<string,number>={};
-  for(const photo of photos.data||[])counts[photo.status]=(counts[photo.status]||0)+1;
-  return {batch_id:batchId,total_files:batch.total_files,counts,photos:photos.data||[]};
+  const rows=photos.data||[];
+  for(const photo of rows)counts[photo.status]=(counts[photo.status]||0)+1;
+  const photoIds=rows.map((x:any)=>x.id);
+  let countsByPhoto=new Map<string,any[]>();
+  if(photoIds.length){
+    const existing=await db.from('inventory_label_counts')
+      .select('id,photo_id,balance_slot,quantity,confidence,status,reviewed_at')
+      .in('photo_id',photoIds).order('balance_slot',{ascending:true});
+    if(existing.error)throw existing.error;
+    for(const item of existing.data||[]){
+      const group=countsByPhoto.get(item.photo_id)||[];
+      group.push(item);countsByPhoto.set(item.photo_id,group);
+    }
+  }
+  return {batch_id:batchId,total_files:batch.total_files,counts,
+    photos:rows.map((x:any)=>({...x,review_counts:countsByPhoto.get(x.id)||[]}))};
  }
  if(action==='inventory_label_batches'){
   if(req.method!=='GET')return bad('method_not_allowed',405);
