@@ -93,6 +93,32 @@ BEGIN
  UPDATE public.ops_delivery_runs SET status='dispatched' WHERE id=r_ok;
  IF (SELECT status FROM public.ops_delivery_runs WHERE id=r_ok)<>'dispatched'
  THEN RAISE EXCEPTION 'authorized route could not launch'; END IF;
+ -- An already dispatched vehicle CANNOT accept a new unapproved planned
+ -- stop, including via the original Smart Delivery move-stop RPC. Without
+ -- this trigger, the earlier run.status transition guard would be bypassed.
+ BEGIN
+  PERFORM public.smart_delivery_move_stop_v1(
+    (SELECT id FROM public.ops_delivery_stops WHERE run_id=r_bad LIMIT 1),
+    r_ok,null);
+  RAISE EXCEPTION 'unapproved stop moved into already dispatched vehicle';
+ EXCEPTION WHEN SQLSTATE 'P0001' THEN
+  IF SQLERRM NOT LIKE 'r11_dispatched_route_rejects_unapproved_stop:%'
+  THEN RAISE; END IF;
+ END;
+ BEGIN
+  INSERT INTO public.ops_delivery_stops(run_id,order_id,sequence,status)
+   VALUES(r_ok,unapproved,99,'planned');
+  RAISE EXCEPTION 'unapproved planned stop inserted in dispatched vehicle';
+ EXCEPTION WHEN SQLSTATE 'P0001' THEN
+  IF SQLERRM NOT LIKE 'r11_dispatched_route_rejects_unapproved_stop:%'
+  THEN RAISE; END IF;
+ END;
+ IF (SELECT count(*) FROM public.ops_delivery_stops
+     WHERE run_id=r_ok)<>1
+    OR (SELECT count(*) FROM public.ops_delivery_stops
+        WHERE run_id=r_bad)<>1
+ THEN RAISE EXCEPTION 'failed stop transfer partially modified routes'; END IF;
+
  -- Idempotent repeat does not alter the authorization ledger.
  reply:=public.smart_delivery_confirm_loading_v1(r_ok,null,null);
  IF reply->>'ok' IS DISTINCT FROM 'true'
