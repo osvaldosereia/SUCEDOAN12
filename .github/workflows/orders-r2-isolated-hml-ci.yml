@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/sql/orders-r2-*.sql'
       - 'scripts/sql/orders-security-*.sql'
+      - 'supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql'
       - 'supabase/sql/orders-security-public-table-privileges-review-v1.sql'
       - 'scripts/test-orders-r2-transport-offline.mjs'
       - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
@@ -167,5 +168,27 @@ jobs:
           PGDATABASE=synthetic_security_r2 psql -v ON_ERROR_STOP=1 \
             -f supabase/sql/orders-security-public-table-privileges-review-v1.sql
 
+      - name: Execute actual checkout base + real reservation RPC (fourth disposable DB)
+        run: |
+          set -euo pipefail
+          createdb synthetic_checkout_full_r2
+          PGDATABASE=synthetic_checkout_full_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=synthetic_checkout_full_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=synthetic_checkout_full_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          # Baseline reproduction is rolled back; no persistent unsafe order.
+          PGDATABASE=synthetic_checkout_full_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-unsafe-baseline.sql
+          PGDATABASE=synthetic_checkout_full_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=synthetic_checkout_full_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-assertions.sql
+          PGDATABASE=synthetic_checkout_full_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          test "$(PGDATABASE=synthetic_checkout_full_r2 psql -Atc \
+            "select count(*) from public.orders")" = 2
+          echo 'PASS: real checkout base, minimum R$75 cannot be bypassed by customer snapshot, no orphan reservations'
       - name: Diff hygiene
         run: git diff --check
