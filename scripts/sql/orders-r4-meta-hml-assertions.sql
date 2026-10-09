@@ -31,7 +31,12 @@ BEGIN
      OR public.ops2_meta_order_confirmation_required_v1('10000000-0000-4000-8000-000000000003')
   THEN RAISE EXCEPTION 'gate_scope_incorrect'; END IF;
   BEGIN
-    INSERT INTO public.order_separation_assignments_v1 VALUES(first_order,'TEST');
+    UPDATE public.orders SET status='processing' WHERE id=first_order;
+  IF (SELECT status FROM public.orders WHERE id=first_order)<>'processing' THEN
+    RAISE EXCEPTION 'confirmed_order_cannot_advance';
+  END IF;
+  UPDATE public.orders SET status='confirmed' WHERE id=first_order;
+  INSERT INTO public.order_separation_assignments_v1 VALUES(first_order,'TEST');
     RAISE EXCEPTION 'unconfirmed_assignment_accepted';
   EXCEPTION WHEN others THEN
     IF SQLERRM<>'meta_customer_confirmation_required' THEN RAISE; END IF;
@@ -40,6 +45,13 @@ BEGIN
   BEGIN
     UPDATE public.order_separation_items_v1 SET state='separated' WHERE order_id=first_order;
     RAISE EXCEPTION 'unconfirmed_item_separated';
+  EXCEPTION WHEN others THEN
+    IF SQLERRM<>'meta_customer_confirmation_required' THEN RAISE; END IF;
+  END;
+
+  BEGIN
+    UPDATE public.orders SET status='processing' WHERE id=first_order;
+    RAISE EXCEPTION 'unconfirmed_direct_status_accepted';
   EXCEPTION WHEN others THEN
     IF SQLERRM<>'meta_customer_confirmation_required' THEN RAISE; END IF;
   END;
