@@ -5,6 +5,7 @@ import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
 import { eligiblePostCheckoutShortageBelowMinimum, stableJson } from "./_shared/order-bling-r7-manifest-v1.mjs";
 import { compareBlingR9Order, classifyBlingR9Invoices } from "./_shared/order-fiscal-r9-observer-v1.mjs";
+import { extractNfeAuthorizationProofR10, verifySefazNfeAuthorizationR10 } from "./_shared/order-fiscal-r10-sefaz-proof-v1.mjs";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -4117,6 +4118,67 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
     external_side_effect:false
   };
 }
+// R10 canary proof flag defaults OFF. When enabled, an invoice merely marked
+// "Autorizada" by Bling is not enough: validate the authenticated NF-e XML's
+// protNFe/chNFe/cStat/nProt/dhRecbto/issuer/total before DB authorization.
+// Zero blind POST retries; no substitution of browser-supplied evidence.
+const ORDER_R10_SEFAZ_PROOF_ENABLED=(Deno.env.get("ORDER_R10_SEFAZ_PROOF_ENABLED")||"").trim()==="true";
+async function blingHubR10MarkOrLegacy(sb:any,params:any){
+  if(!ORDER_R10_SEFAZ_PROOF_ENABLED)
+    return sb.rpc("mark_order_dispatch_fiscal_authorized_v1",params);
+  const oid=uuid(params?.p_order_id);
+  const iid=Number(params?.p_bling_invoice_id||0);
+  if(!oid||!Number.isSafeInteger(iid)||iid<=0)
+    return {data:null,error:{message:"r10_order_or_invoice_missing"}};
+  const issuer=Deno.env.get("R10_FISCAL_ISSUER_CNPJ")||"";
+  const environment=Deno.env.get("R10_FISCAL_EXPECTED_ENVIRONMENT")||"1";
+  if(environment!=="1"||!/^\d{14}$/.test(issuer))
+    return {data:null,error:{message:"r10_production_issuer_not_configured"}};
+  const od=await sb.from("orders").select("total").eq("id",oid).maybeSingle();
+  if(od.error||od.data?.total==null)
+    return {data:null,error:{message:"r10_order_total_unavailable"}};
+  const token=await blingHubOauth(sb);
+  const found=await blingHubFindNfeByExternalKey(sb,token,"VITRINE-"+oid);
+  if(!found.ok||found.matches?.length!==1||Number(found.match?.id)!==iid)
+    return {data:null,error:{message:"r10_invoice_identity_ambiguous"}};
+  const d=await blingHubGetNfe(sb,token,iid);
+  if(!d.ok||!d.invoice)
+    return {data:null,error:{message:"r10_invoice_detail_unavailable"}};
+  const key=blingHubDigits(d.invoice.chaveAcesso);
+  if(key.length!==44)return {data:null,error:{message:"r10_access_key_absent"}};
+  const downloaded=await blingHubNfeXml(sb,token,key);
+  const archive=Array.isArray(downloaded.data?.data)?downloaded.data.data:[];
+  const zipped=archive.find((x:any)=>typeof x?.conteudo==="string");
+  if(!downloaded.ok||!zipped)
+    return {data:null,error:{message:"r10_official_xml_unavailable"}};
+  let xml="";
+  try{xml=await blingHubNfeGunzip(String(zipped.conteudo))}
+  catch{return {data:null,error:{message:"r10_official_xml_decode_failed"}}}
+  const parsed=extractNfeAuthorizationProofR10(xml);
+  if(parsed.ok!==true)return {data:null,error:{message:parsed.error||"r10_xml_incomplete"}};
+  const checkedAt=new Date().toISOString();
+  const proof=verifySefazNfeAuthorizationR10({
+    order_id:oid,bling_invoice_id:iid,bling_detail:d.invoice,proof:parsed.proof,
+    expected_emitter_cnpj:issuer,expected_environment:environment,
+    expected_total:od.data.total,bling_fetched_at:checkedAt
+  });
+  if(proof.authorized!==true){
+    return {data:null,error:{message:"r10_sefaz_evidence_rejected",
+      blockers:proof.blockers}};
+  }
+  const hash=await blingHubNfeSha(xml);
+  const marked=await sb.rpc("ops2_r10_finalize_authorized_v1",{
+    p_order_id:oid,p_invoice_id:iid,p_access_key:parsed.proof.key,
+    p_cstat:parsed.proof.cstat,p_protocol:parsed.proof.protocol,
+    p_issuer_cnpj:parsed.proof.emitter_cnpj,p_xml_sha256:hash,
+    p_observed_at:checkedAt
+  });
+  if(marked.error)return marked;
+  if(marked.data?.ok!==true)
+    return {data:null,error:{message:marked.data?.error||"r10_sefaz_finalization_rejected"}};
+  return marked;
+}
+
 async function blingHubVitrineDispatchFiscalReconcile(sb:any,sourceOrderIdRaw:any){
   const preview=await blingHubVitrineDispatchFiscalPreview(sb,sourceOrderIdRaw);
   if(!preview.ok)return preview;
@@ -4154,7 +4216,7 @@ async function blingHubVitrineDispatchFiscalReconcile(sb:any,sourceOrderIdRaw:an
   }
 
   const now=new Date().toISOString();
-  const marked=await sb.rpc("mark_order_dispatch_fiscal_authorized_v1",{
+  const marked=await blingHubR10MarkOrLegacy(sb,{
     p_order_id:preview.canonical_order_id,
     p_source:"bling_nfe_passive_reconcile",
     p_bling_invoice_id:invoiceId,
@@ -4482,6 +4544,16 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
     return {ok:false,error:"fiscal_dispatch_not_eligible",status:409,preview,external_write:false};
   }
 
+  // R10 may not issue while R08 outbound tax rules have no signed approval.
+  // Claim RPC is intentionally fail-closed until server-side tax attestation
+  // is integrated. A previously generated invoice may still be read back.
+  if(ORDER_R10_SEFAZ_PROOF_ENABLED && !Number(preview.invoice_id||0)){
+    const claim=await sb.rpc("ops2_r10_claim_fiscal_generation_v1",{
+      p_order_id:preview.canonical_order_id
+    });
+    return {ok:false,error:claim.data?.error||"r10_generation_not_authorized",
+      status:409,external_write:false,invoice_created:false};
+  }
   const sourceOrderId=preview.source_order_id;
   const canonicalOrderId=preview.canonical_order_id;
   const externalKey=String(preview.external_key||"");
@@ -4513,7 +4585,7 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
   }
 
   if(invoice?.situation?.authorized){
-    const marked=await sb.rpc("mark_order_dispatch_fiscal_authorized_v1",{
+    const marked=await blingHubR10MarkOrLegacy(sb,{
       p_order_id:canonicalOrderId,
       p_source:"bling_nfe_reconcile",
       p_bling_invoice_id:invoiceId,
@@ -4621,7 +4693,7 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
   }
 
   if(invoice?.situation?.authorized){
-    const marked=await sb.rpc("mark_order_dispatch_fiscal_authorized_v1",{
+    const marked=await blingHubR10MarkOrLegacy(sb,{
       p_order_id:canonicalOrderId,p_source:"bling_nfe_verified",
       p_bling_invoice_id:invoiceId,p_bling_invoice_number:invoice.numero,
       p_sefaz_status:invoice.situation.label,p_authorized_at:new Date().toISOString()
@@ -4671,7 +4743,7 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
   if(verified.ok)invoice=verified.invoice;
 
   if(invoice?.situation?.authorized){
-    const marked=await sb.rpc("mark_order_dispatch_fiscal_authorized_v1",{
+    const marked=await blingHubR10MarkOrLegacy(sb,{
       p_order_id:canonicalOrderId,p_source:"bling_nfe_canary",
       p_bling_invoice_id:invoiceId,p_bling_invoice_number:invoice.numero,
       p_sefaz_status:invoice.situation.label,p_authorized_at:new Date().toISOString()
