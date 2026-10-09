@@ -36,12 +36,12 @@ const historical="supabase/migrations/20261009085000_purchase_xml_ingest_error_a
 assert.ok(!existsSync(new URL("../"+historical,import.meta.url)),
  "Do not replay a migration already recorded as version 20261009035359");
 const archive=read("docs/projects/purchase-xml-ingest-error-audit-applied-r23.sql");
-const historical=read("supabase/migrations/20261009035359_purchase_xml_ingest_error_audit_v5.sql");
+const historicalSql=read("supabase/migrations/20261009035359_purchase_xml_ingest_error_audit_v5.sql");
 assert.match(archive,/HISTORICAL REFERENCE ONLY/);
-assert.equal(archive.split("\n").slice(3).join("\n"),historical,
+assert.equal(archive.split("\n").slice(3).join("\n"),historicalSql,
  "Historical migration content must match the exact SQL already executed remotely");
-assert.match(historical,/purchase_xml_catalog_ingest_errors_v1/);
-assert.match(historical,/security_invoker=true/);
+assert.match(historicalSql,/purchase_xml_catalog_ingest_errors_v1/);
+assert.match(historicalSql,/security_invoker=true/);
 const generated=read("supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql");
 assert.match(generated,/R23 CANONICAL MIGRATION/);
 assert.equal(generated.split("\n").slice(2).join("\n"),
