@@ -1,3 +1,11 @@
+// New-orders-only cutover is mandatory for recovery and NF-e item probes.
+// An older order with a new status update must not enter the queue.
+export function isFiscalRecoveryNewOrderR2(createdAt,cutover){
+  const created=Date.parse(String(createdAt||""));
+  const minimum=Date.parse(String(cutover||""));
+  return Number.isFinite(created)&&Number.isFinite(minimum)&&created>=minimum;
+}
+
 // Pure, side-effect-free interpretation of a Bling NF-e detail response.
 // Do not use this report as permission to issue, modify, or authorize invoices.
 const digits = value => String(value ?? "").replace(/\D/g,"");

@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "./_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared/papoai-commerce-intent-v1.mjs";
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
-import { inspectBlingNfeR2 } from "./_shared/fiscal-r2-nfe-inspector.mjs";
+import { inspectBlingNfeR2, isFiscalRecoveryNewOrderR2 } from "./_shared/fiscal-r2-nfe-inspector.mjs";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -3904,19 +3904,27 @@ async function blingHubFiscalDraftProbeV2(sb:any,body:any){
   if(!Number.isSafeInteger(invoiceId)||invoiceId<=0)
     return {ok:false,error:"invalid_invoice_id",status:400,external_write:false};
   const sourceOrderId=uuid(body?.source_order_id);
-  if(body?.source_order_id&&!sourceOrderId)
-    return {ok:false,error:"invalid_source_order_id",status:400,external_write:false};
+  // R2 cannot probe historical invoices by an ID alone.
+  if(!sourceOrderId)
+    return {ok:false,error:"new_source_order_id_required",status:400,external_write:false};
+  const fence=await sb.from("fiscal_nfe_recovery_control_v1")
+    .select("min_order_created_at").eq("id",true).maybeSingle();
+  if(fence.error)throw fence.error;
+  if(!Number.isFinite(Date.parse(String(fence.data?.min_order_created_at||""))))
+    return {ok:false,error:"new_orders_cutover_not_configured",status:503,external_write:false};
   let expected:any={};
   let blingOrderId=0;
   if(sourceOrderId){
     const [oq,lq]=await Promise.all([
-      sb.from("orders").select("id,bling_order_id,total,fiscal_subtotal,status,order_number").eq("id",sourceOrderId).maybeSingle(),
+      sb.from("orders").select("id,created_at,bling_order_id,total,fiscal_subtotal,status,order_number").eq("id",sourceOrderId).maybeSingle(),
       sb.from("bling_hub_entity_links_v2").select("bling_id,identity_value,status")
         .eq("source_system","vitrine_qx").eq("entity_type","order").eq("source_id",sourceOrderId).maybeSingle()
     ]);
     if(oq.error)throw oq.error;
     if(lq.error)throw lq.error;
     if(!oq.data)return {ok:false,error:"source_order_not_found",status:404,external_write:false};
+    if(!isFiscalRecoveryNewOrderR2(oq.data.created_at,fence.data.min_order_created_at))
+      return {ok:false,error:"historical_order_excluded",status:403,external_write:false};
     blingOrderId=Number(oq.data.bling_order_id||0);
     if(!blingOrderId||!lq.data||lq.data.status!=="matched"||Number(lq.data.bling_id||0)!==blingOrderId)
       return {ok:false,error:"order_not_strongly_linked_to_bling",status:409,external_write:false};
@@ -4546,20 +4554,31 @@ async function blingHubFiscalOfficialNcmCodes(){
 }
 async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
   const config=await sb.from("fiscal_nfe_recovery_control_v1")
-    .select("enabled,auto_fix_with_verified_evidence,auto_retry_after_verified_fix,max_attempts").eq("id",true).maybeSingle();
+    .select("enabled,min_order_created_at,auto_fix_with_verified_evidence,auto_retry_after_verified_fix,max_attempts").eq("id",true).maybeSingle();
   if(config.error)throw config.error;
   if(config.data?.enabled!==true)return {ok:true,enabled:false,processed:0,items:[]};
+  const cutover=String(config.data?.min_order_created_at||"");
+  if(!Number.isFinite(Date.parse(cutover)))
+    return {ok:false,error:"new_orders_cutover_not_configured",processed:0,items:[]};
   const runtime=await sb.from("bling_hub_runtime_v2").select("mode,hub_enabled,orders_enabled").eq("id",1).maybeSingle();
   if(runtime.error)throw runtime.error;
   if(runtime.data?.mode!=="live"||runtime.data?.hub_enabled!==true||runtime.data?.orders_enabled!==true)
     return {ok:true,enabled:false,reason:"bling_live_required",items:[]};
   const limit=Math.max(1,Math.min(3,Number(limitRaw)||2));
-  const cutoff=new Date(Date.now()-7*86400000).toISOString();
+  // Hard barrier at the ORDER and fiscal JOB creation dates. Old work
+  // that changed status after cutover remains out of scope permanently.
+  const fresh=await sb.from("orders").select("id,created_at")
+    .gte("created_at",cutover).order("created_at",{ascending:false}).limit(150);
+  if(fresh.error)throw fresh.error;
+  const freshIds=(fresh.data||[]).map((o:any)=>o.id);
+  if(!freshIds.length)
+    return {ok:true,enabled:true,scope:"new_orders_only",cutover,scanned:0,processed:0,items:[]};
   const jobs=await sb.from("dispatch_fiscal_jobs")
-    .select("id,order_id,bling_order_id,bling_invoice_id,status,error_code,error_detail,external_side_effect,attempts,updated_at")
-    .eq("status","review_required").gte("updated_at",cutoff).order("updated_at",{ascending:false}).limit(30);
+    .select("id,created_at,order_id,bling_order_id,bling_invoice_id,status,error_code,error_detail,external_side_effect,attempts,updated_at")
+    .in("order_id",freshIds).gte("created_at",cutover)
+    .eq("status","review_required").order("updated_at",{ascending:false}).limit(30);
   if(jobs.error)throw jobs.error;
-  const result:any={ok:true,enabled:true,scanned:jobs.data?.length||0,processed:0,items:[]};
+  const result:any={ok:true,enabled:true,scope:"new_orders_only",cutover,scanned:jobs.data?.length||0,processed:0,items:[]};
   let token:string|null=null,catalog:Set<string>|null=null,catalogError:string|null=null;
   for(const job of jobs.data||[]){
     if(result.processed>=limit)break;
@@ -4605,8 +4624,13 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
       diagnosis:diagnosis.issues,corrected_products:[],invoice_id:null};
     let externalWrite=false;
     try{
-      const oq=await sb.from("orders").select("id,status,bling_order_id").eq("id",job.order_id).maybeSingle();
+      const oq=await sb.from("orders").select("id,status,bling_order_id,created_at").eq("id",job.order_id).maybeSingle();
       if(oq.error)throw oq.error;
+      if(!oq.data||!isFiscalRecoveryNewOrderR2(oq.data.created_at,cutover)||
+         !isFiscalRecoveryNewOrderR2(job.created_at,cutover)){
+        diagnostics.reason="historical_order_excluded";
+        continue;
+      }
       const check=await sb.from("order_separation_completions_v1").select("completed_at,metadata").eq("order_id",job.order_id).maybeSingle();
       if(check.error)throw check.error;
       if(oq.data?.status!=="ready"||!check.data?.completed_at||check.data?.metadata?.stock_applied!==true){
