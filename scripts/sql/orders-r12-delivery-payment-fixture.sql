@@ -53,14 +53,14 @@ CREATE TABLE public.order_delivery_return_cases(
   metadata jsonb DEFAULT '{}'::jsonb
 );
 -- External support actions are deliberately stubs, NOT customer actions.
-CREATE FUNCTION public.ops_prepare_delivery_payment_bling_shadow_v1(p_settlement_id uuid)
+CREATE OR REPLACE FUNCTION public.ops_prepare_delivery_payment_bling_shadow_v1(p_settlement_id uuid)
 RETURNS jsonb LANGUAGE sql AS $$
   SELECT jsonb_build_object('ok',true,'shadow_only',true,
     'external_write',false,'bling_sync_state','blocked_homologation')
 $$;
-CREATE FUNCTION public.ops2_refresh_order_public_snapshot_v1(p_order_id uuid)
+CREATE OR REPLACE FUNCTION public.ops2_refresh_order_public_snapshot_v1(p_order_id uuid)
 RETURNS jsonb LANGUAGE sql AS $$ SELECT jsonb_build_object('ok',true) $$;
-CREATE FUNCTION public.ops_record_event_v1(
+CREATE OR REPLACE FUNCTION public.ops_record_event_v1(
  p_domain text,p_event_type text,p_summary text,p_actor_type text,
  p_entity_type text,p_entity_id text,p_correlation_id text,p_actor_id text,
  p_actor_label text,p_source_system text,p_severity text,p_payload jsonb,
