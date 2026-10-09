@@ -36,17 +36,27 @@ async function refreshStatus(){
  if(!active||!headingOK()||!currentBatch)return;
  const r=await bridge().api('inventory_label_batch_status',{batch_id:currentBatch});
  const el=$('#da6-batch-details');if(!el)return;
+ const openReviews=new Set([...el.querySelectorAll('details.da6-review[open]')]
+  .map(node=>node.dataset.da6ReviewPhoto));
  const cs=r.counts||{},done=(cs.complete||0)+(cs.needs_review||0)+(cs.failed||0);
+ const balances=(r.photos||[]).flatMap(x=>Array.isArray(x.review_counts)?x.review_counts:[]);
+ const approved=balances.filter(x=>x.status==='approved').length;
+ const rejected=balances.filter(x=>x.status==='rejected').length;
+ const pending=balances.filter(x=>x.status==='pending_review').length;
  const registered=(r.photos||[]).length;
  el.innerHTML='<div class="da6-batch-summary"><strong>Lote '+safe(currentBatch.slice(0,8))+'</strong><span>'+done+'/'+registered+' processadas</span></div>'+
   '<div class="da6-stat-grid">'+[
    ['Na fila',cs.queued||0],['Lendo',cs.processing||0],['Tentativa',cs.retry||0],
-   ['Lidas',cs.complete||0],['Revisar',cs.needs_review||0],['Erro',cs.failed||0]
+   ['Lidas',cs.complete||0],['Revisar',cs.needs_review||0],['Erro',cs.failed||0],
+   ['Contagens pendentes',pending],['Aprovadas',approved],['Rejeitadas',rejected]
   ].map(x=>'<div><strong>'+x[1]+'</strong><small>'+x[0]+'</small></div>').join('')+'</div>'+
   '<div class="da6-file-list">'+(r.photos||[]).map(x=>'<div class="da6-file-row"><span>'+safe(x.file_name)+'</span><b>'+safe(names[x.status]||x.status)+' · '+x.attempts+'/3</b>'+
     (x.error_code?'<small>'+safe(x.error_code)+(x.error_detail?' — '+safe(x.error_detail):'')+'</small>':'')+
     (x.parsed?.readings?.length?'<small>'+x.parsed.readings.map(y=>'B'+safe(y.slot)+': '+safe(y.quantity)).join(' · ')+'</small>':'')+
     (window.DonaAntoniaLabelReview?.render(x)||'')+'</div>').join('')+'</div>';
+ el.querySelectorAll('details.da6-review').forEach(details=>{
+  if(openReviews.has(details.dataset.da6ReviewPhoto))details.open=true;
+ });
  window.DonaAntoniaLabelReview?.bind(el,bridge(),refreshStatus);
 }
 async function loadBatches(){
