@@ -387,13 +387,13 @@ jobs:
           # The production-ready gate remains a distinct deliberate action:
           # node scripts/test-orders-r13-schema-security-parity.mjs --require-parity
           # R16: a green diagnostic job MUST prove that the canonical parity gate is red.
-          node -e "const x=require('/tmp/orders-r13-parity.json'); if(x.proof_kind!=='schema_surface_only'||x.approved_for_production!==false||x.ready_for_canonical_staging!==false||!x.incomplete_snapshot.some(v=>v.includes('missing_or_invalid_role_grants'))) process.exit(5)"
+          node -e "const x=require('/tmp/orders-r13-parity.json'); if(x.proof_kind!=='schema_surface_only'||x.approved_for_production!==false||x.ready_for_canonical_staging!==false||x.canonical_unsafe_public_grant_tables.length<5) process.exit(5)"
           set +e
           node scripts/test-orders-r13-schema-security-parity.mjs --require-parity > /tmp/orders-r13-negative-gate.log 2>&1
           PARITY_EXIT=$?
           set -e
           test "$PARITY_EXIT" -eq 3
-          echo "PASS: R13 strict parity refuses legacy/partial canonical ACL snapshot (exit=3)"
+          echo "PASS: R13 strict parity refuses unsafe canonical grants and incomplete laboratory parity (exit=3)"
           cat /tmp/orders-r13-parity.json
           cp /tmp/orders-r13-parity.json ./orders-r13-schema-parity-report.json
       - name: "R13 regression: remove dangerous public grants, preserve legitimate service permissions"
