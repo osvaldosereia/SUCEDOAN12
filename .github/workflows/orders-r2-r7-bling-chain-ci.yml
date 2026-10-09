@@ -12,6 +12,7 @@ on:
       - 'agent/orders-r12-*'
       - 'agent/orders-r13-*'
       - 'agent/orders-r15-*'
+      - 'agent/orders-r17-*'
     paths:
       - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
       - 'scripts/test-orders-r15-weekly-unification-v1.mjs'
@@ -26,12 +27,18 @@ on:
       - 'scripts/test-orders-r2-r8-*.mjs'
       - 'scripts/sql/orders-r2-r9-*.sql'
       - 'scripts/test-orders-r13-*.mjs'
+      - 'scripts/orders-r17-canonical-preflight.mjs'
+      - 'scripts/test-orders-r17-canonical-preflight.mjs'
+      - 'scripts/fixtures/orders-r17-*.json'
       - 'scripts/sql/orders-security-*.sql'
       - 'supabase/sql/orders-security-*.sql'
       - 'scripts/fixtures/orders-r13-*.json'
       - 'docs/orders-r13-*.md'
       - 'scripts/sql/orders-r12-*.sql'
       - 'scripts/test-orders-r13-*.mjs'
+      - 'scripts/orders-r17-canonical-preflight.mjs'
+      - 'scripts/test-orders-r17-canonical-preflight.mjs'
+      - 'scripts/fixtures/orders-r17-*.json'
       - 'scripts/sql/orders-security-*.sql'
       - 'supabase/sql/orders-security-*.sql'
       - 'scripts/fixtures/orders-r13-*.json'
@@ -400,6 +407,26 @@ jobs:
           echo "PASS: R13 strict parity refuses unsafe canonical grants and incomplete laboratory parity (exit=3)"
           cat /tmp/orders-r13-parity.json
           cp /tmp/orders-r13-parity.json ./orders-r13-schema-parity-report.json
+      - name: "R17 preflight: compare actual ephemeral PG17 trigger definitions/ACL against captured canonical"
+        run: |
+          set -euo pipefail
+          node --check scripts/orders-r17-canonical-preflight.mjs
+          node --test scripts/test-orders-r17-canonical-preflight.mjs
+          node scripts/orders-r17-canonical-preflight.mjs --stage-pg --output ./orders-r17-canonical-preflight-report.json
+          node -e "const x=require('./orders-r17-canonical-preflight-report.json'); if(x.approved_for_production!==false||x.triggers.trigger_parity_complete!==false||x.triggers.missing_triggers.length<20||x.default_acls.canonical_excessive_table_default_grants.length<8||x.migrations.safe_for_global_db_push!==false)process.exit(7)"
+          set +e
+          node scripts/orders-r17-canonical-preflight.mjs --stage-pg --require-trigger-parity > /tmp/orders-r17-blocked.log 2>&1
+          CODE=$?
+          set -e
+          test "$CODE" -eq 3
+          echo "PASS R17: faithful staging still BLOCKED due to unreplicated canonical trigger/ACL; no provider calls"
+      - name: Upload R17 staging discrepancy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: orders-r17-canonical-preflight-report
+          path: orders-r17-canonical-preflight-report.json
+          retention-days: 14
+          if-no-files-found: error
       - name: "R13 regression: remove dangerous public grants, preserve legitimate service permissions"
         run: |
           set -euo pipefail
