@@ -8,6 +8,8 @@ on:
       - 'supabase/functions/admin-service-intelligence-v1/index.ts'
       - 'vitrine/admin/index.html'
       - 'docs/projects/purchase-xml-*.sql'
+      - 'supabase/migrations/*_purchase_xml_ingest_error_audit_v5.sql'
+      - 'supabase/migrations/*_purchase_xml_identity_atomic_r23.sql'
       - 'scripts/test-xml-main-integration-r23.mjs'
       - 'scripts/test-xml-*.mjs'
       - 'scripts/test-xml-catalog-identity-production-schema-r22.pg.sql'
