@@ -13,7 +13,7 @@ const prefix=s.slice(start,boundary)
  .replace("async function resolvePurchaseItemIdentity(body:any,userId:string|null)",
   "async function resolvePurchaseItemIdentity(body,userId)")
  .replace("const item:any=q.data,doc:any=item.purchase_xml_documents","const item=q.data,doc=item.purchase_xml_documents");
-const build=new Function("sb","clean",prefix+"\nreturn {run:resolvePurchaseItemIdentity};");
+const build=new Function("sb","clean",prefix+"\n}\nreturn {run:resolvePurchaseItemIdentity};");
 const ITEM="10000000-0000-4000-8000-000000000011",PRODUCT="10000000-0000-4000-8000-000000000002",ACTOR="10000000-0000-4000-8000-000000000099";
 const clean=(v,n)=>String(v??"").trim().slice(0,n);
 const run=async(body,actor,deny=false)=>{
