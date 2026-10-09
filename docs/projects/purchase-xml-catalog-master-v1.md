@@ -31,3 +31,9 @@ Usar exclusivamente NF-e XML de entrada importados pelo Bling ou enviados manual
 3. Conclusão da interface para produtos de qualquer época (não somente últimos 31 dias), com aprovação individual de atributos.
 4. Testar lotes, XML duplicado, CFOP de devolução/remessa, conversão caixa-unidade, documentos inválidos e alterações de preço Bling.
 5. Revisar qualidade fiscal a partir das notas e das tabelas oficiais antes de sincronizar o Bling.
+
+## Adição da etapa 2: upload somente para catalogar
+- Nova operação humana xml_catalog_only_import: permite selecionar XMLs, conferir NF-e, armazenar origem, registrar todos os itens como evidência e no staging de revisão sem consultar Bling ou criar cadastro, fornecedor, financeiro ou movimentação de estoque.
+- A mesma chave de NF-e é idempotente; divergência de hash é bloqueada. Documentos marcados como catalog_only não serão automaticamente promovidos para fluxo comercial por uma importação posterior do Bling.
+- Interface com botão próprio Enviar XMLs ao catálogo; mantém intactos os botões antigos de importação operacional.
+- Requer validação de upload por usuário autenticado e revisão fiscal humana antes de qualquer publicação.
