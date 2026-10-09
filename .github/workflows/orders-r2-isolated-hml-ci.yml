@@ -442,7 +442,7 @@ jobs:
             -f scripts/sql/orders-r2-baskets-kit-mold-assertions.sql
           test "$(PGDATABASE=$DB psql -Atc "select count(*) from public.orders")" = 7
           echo 'PASS: actual Bling authority/deposit + locked kit units + full view + real v3 checkout'
-      - name: Race: Bling virtual stock minus physical kits cannot oversell (tenth DB)
+      - name: "Race: Bling virtual stock minus physical kits cannot oversell (tenth DB)"
         run: |
           set -euo pipefail
           createdb synthetic_bling_locked_race_r2
