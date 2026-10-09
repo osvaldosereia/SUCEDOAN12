@@ -121,6 +121,10 @@ export function inspectBlingNfeR2(raw, expected={}) {
   const authorized=[5,6,7].includes(sit);
   const pending=[3,8,10].includes(sit);
   const rawDraft=sit===1;
+  const rejected=sit===4;
+  // Bling Help Center permits UI correction of 'Pendente' and 'Rejeitada'
+  // (provided no stock/account postings). This does NOT prove that the
+  // API PUT contract accepts a fiscal rewrite of a rejected/sent note.
   const noteCanEdit=rawDraft&&!authorized&&!pending;
   const hasStockOrFinancePosting=Boolean(nf.lancamentosEstoque?.length||nf.lancamentosContas?.length
     ||nf.lancamentos?.length);
@@ -139,11 +143,17 @@ export function inspectBlingNfeR2(raw, expected={}) {
     validation_source:providerErrors.length?"provider_response":"not_returned_by_provider_get",
     identity:{verified,signals:signal,conflicts,reason:verified?"strong_identity_verified":
       Object.values(conflicts).some(Boolean)?"identity_conflict":"insufficient_independent_identity_signals"},
-    editing:{eligible:noteCanEdit&&!hasStockOrFinancePosting&&verified,
-      draft:rawDraft,has_known_postings:hasStockOrFinancePosting,
+    editing:{
+      // eligible is conservative automated-API tax edit eligibility, NOT UI.
+      eligible:noteCanEdit&&!hasStockOrFinancePosting&&verified,
+      draft:rawDraft,rejected,has_known_postings:hasStockOrFinancePosting,
+      manual_correction_possible:(rawDraft||rejected)&&!hasStockOrFinancePosting&&verified,
+      auto_tax_put_approved:false,
       reason:authorized?"already_authorized":pending?"transmission_in_progress":
-        !rawDraft?"state_not_editable":hasStockOrFinancePosting?"bookkeeping_posted":
-        !verified?"invoice_identity_not_verified":"provider_contract_still_requires_full_payload"},
+        hasStockOrFinancePosting?"bookkeeping_posted":
+        rejected?"rejected_note_manual_edit_possible_api_tax_write_unvalidated":
+        !rawDraft?"state_not_editable":!verified?"invoice_identity_not_verified":
+        "provider_contract_still_requires_full_payload"},
     external_write:false
   };
 }
