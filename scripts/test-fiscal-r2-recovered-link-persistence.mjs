@@ -22,4 +22,7 @@ assert.ok(!portion.includes('blingHubPostOnce('));
 assert.ok(code.includes('const newlyLinkedInvoice=Number(job.bling_invoice_id||0)>0'));
 assert.ok(code.includes('Number(lastEvent?.diagnostics?.invoice_id||0)!==Number(job.bling_invoice_id)'));
 assert.ok(code.includes('if(unchanged&&!newlyLinkedInvoice'));
+const idPos=code.indexOf('diagnostics.invoice_id=Number(preview.invoice_id||0)||null');
+const blockPos=code.indexOf('if(preview.hard_blockers?.length)',idPos);
+assert.ok(idPos>0&&blockPos>idPos,'Recognized invoice ID must be recorded before terminal blocker');
 console.log('PASS: verified sale note is remembered without changing authorization or generating a duplicate.');
