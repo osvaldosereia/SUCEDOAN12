@@ -167,3 +167,113 @@ begin
 end;
 $function$
 ;
+
+-- smart_delivery_move_stop_v1 MD5 8d41993940d7dd30316c49c482401e3f
+CREATE OR REPLACE FUNCTION public.smart_delivery_move_stop_v1(p_stop_id uuid, p_target_run_id uuid, p_actor_user_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+declare
+  v_stop public.ops_delivery_stops%rowtype;
+  v_source_run public.ops_delivery_runs%rowtype;
+  v_target_run public.ops_delivery_runs%rowtype;
+  v_next_sequence integer;
+begin
+  select * into v_stop
+  from public.ops_delivery_stops
+  where id = p_stop_id
+  for update;
+
+  if not found then
+    raise exception 'Entrega não encontrada' using errcode = 'P0002';
+  end if;
+
+  if v_stop.run_id = p_target_run_id then
+    return jsonb_build_object(
+      'ok', true,
+      'stop_id', p_stop_id,
+      'source_run_id', v_stop.run_id,
+      'target_run_id', p_target_run_id,
+      'sequence', v_stop.sequence,
+      'unchanged', true
+    );
+  end if;
+
+  if v_stop.status <> 'planned' then
+    raise exception 'Somente entregas ainda planejadas podem mudar de rota diretamente' using errcode = '22023';
+  end if;
+
+  select * into v_source_run
+  from public.ops_delivery_runs
+  where id = v_stop.run_id
+  for update;
+
+  if not found or v_source_run.status in ('completed', 'cancelled') then
+    raise exception 'Rota de origem inválida para movimentação' using errcode = '22023';
+  end if;
+
+  select * into v_target_run
+  from public.ops_delivery_runs
+  where id = p_target_run_id
+  for update;
+
+  if not found then
+    raise exception 'Rota de destino não encontrada' using errcode = 'P0002';
+  end if;
+  if v_target_run.status in ('completed', 'cancelled') then
+    raise exception 'Rota de destino está encerrada' using errcode = '22023';
+  end if;
+  if v_target_run.service_date <> v_source_run.service_date then
+    raise exception 'Mudança entre datas diferentes exige reagendamento explícito' using errcode = '22023';
+  end if;
+
+  select coalesce(max(sequence), 0) + 1 into v_next_sequence
+  from public.ops_delivery_stops
+  where run_id = p_target_run_id;
+
+  if v_next_sequence > 100 then
+    raise exception 'Rota de destino atingiu o limite de 100 paradas' using errcode = '22023';
+  end if;
+
+  update public.ops_delivery_stops
+  set run_id = p_target_run_id,
+      sequence = v_next_sequence,
+      loaded_at = null,
+      custody_confirmed_at = null,
+      updated_at = now()
+  where id = p_stop_id;
+
+  update public.ops_delivery_runs
+  set loaded_at = null,
+      updated_at = now()
+  where id = p_target_run_id;
+
+  insert into public.admin_audit_logs(admin_user_id, action, entity_type, entity_id, details)
+  values (
+    p_actor_user_id,
+    'smart_delivery.stop_moved',
+    'delivery_stop',
+    p_stop_id::text,
+    jsonb_build_object(
+      'source_run_id', v_source_run.id,
+      'target_run_id', v_target_run.id,
+      'old_sequence', v_stop.sequence,
+      'new_sequence', v_next_sequence,
+      'order_id', v_stop.order_id
+    )
+  );
+
+  return jsonb_build_object(
+    'ok', true,
+    'stop_id', p_stop_id,
+    'order_id', v_stop.order_id,
+    'source_run_id', v_source_run.id,
+    'target_run_id', v_target_run.id,
+    'sequence', v_next_sequence,
+    'unchanged', false
+  );
+end;
+$function$
+;
