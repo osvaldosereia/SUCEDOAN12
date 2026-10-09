@@ -40,6 +40,21 @@ No 10º PostgreSQL 17 efêmero, a função **real** `create_vitrine_cart_order_v
 
 R04/R05 (templates CONFIRMADO e gate de separação), R06/R07 (falta/sync Bling), R08–R10 (tributação, nota e SEFAZ) continuam em PRs de desenvolvimento **sem merge**; nunca publicar as demais flags até E2E completo. R03 já foi combinada em testes no PR #996, não em produção.
 
+## Auditoria adicional do frescor do espelho Bling — 09/10/2026
+
+Consulta agregada **somente leitura** à view canônica em produção identificou:
+
+| Situação | Quantidade |
+|---|---:|
+| Produtos ativos com fonte de estoque `bling` | 1.604 |
+| Ativos com saldo vendável positivo na view atual | 1.515 |
+| Ativos com última observação do mirror anterior a 24 horas | 1.552 |
+| Ativos com última observação do mirror anterior a 72 horas | 1.518 |
+
+Estas são contagens no instante da auditoria, sujeitas à atualização. **Não provam que o estoque esteja incorreto**, mas a definição atual de `ops2_sellable_stock_v1` não utiliza `mirror_observed_at` para decidir disponibilidade: um saldo antigo ainda pode ser exibido como disponível se cumprir os demais requisitos. Isso é uma **pendência de prontidão comercial** antes de lançar a nova integração.
+
+Foi acrescentado `scripts/sql/orders-r2-bling-stock-freshness-readonly.sql`, que calcula esses agregados de forma repetível e **não modifica nada**. A política de idade máxima, frequência de reconciliação e tratamento de API Bling indisponível precisam ser decididos com base no serviço real. Não desativar em massa produtos por regra arbitrária sem avaliação operacional.
+
 ## Próximas verificações
 
 1. Confirmar CI no commit final desta branch; corrigir falhas de fixture sem adulterar a fonte de autoridade Bling.
