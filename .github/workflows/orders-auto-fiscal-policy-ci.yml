@@ -3,6 +3,11 @@ on:
   push:
     branches:
       - agent/orders-auto-fiscal-contract-20261008
+      - 'agent/orders-r1-*'
+    paths:
+      - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
+      - 'scripts/test-order-auto-fiscal-policy-v1.mjs'
+      - '.github/workflows/orders-auto-fiscal-policy-ci.yml'
   pull_request:
     paths:
       - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
@@ -19,5 +24,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs
+          node --check scripts/test-order-auto-fiscal-policy-v1.mjs
       - name: Validate pure policy (no external requests)
         run: node --test scripts/test-order-auto-fiscal-policy-v1.mjs
+      - name: Diff hygiene
+        run: git diff --check
