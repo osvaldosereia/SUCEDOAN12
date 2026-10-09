@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractCatalogFromNfe } from "./xml-catalog-extractor.mjs";
 import { assertCatalogXmlSize, assertCatalogXmlIntegrity, assertExistingXmlDigest } from "./xml-catalog-ingest-guard.mjs";
 import { xmlFieldReviewGateway } from "./xml-catalog-field-review-gateway.mjs";
+import { xmlFieldApplyGateway } from "./xml-catalog-field-apply-gateway.mjs";
 import { catalogXmlComparison } from "./xml-catalog-comparison.mjs";
 import { compareCandidateFullHistory } from "./xml-catalog-full-comparison.mjs";
 
@@ -1826,6 +1827,12 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     // The gateway rejects internal keys and all non-owner/admin sessions.
     if(["xml_field_review_list","xml_field_review_open","xml_field_review_decide"].includes(action)){
       const r=await xmlFieldReviewGateway(sb,action,body,a);
+      return js(req,r,r.ok?200:Number(r.status||400));
+    }
+    // R24: only explicit owner/admin commands can preview/apply/rollback NAME on inactive products.
+    if(["xml_field_apply_list","xml_field_apply_preview",
+        "xml_field_apply_commit","xml_field_apply_rollback"].includes(action)){
+      const r=await xmlFieldApplyGateway(sb,action,body,a);
       return js(req,r,r.ok?200:Number(r.status||400));
     }
     if(action==="xml_catalog_reprocess"){
