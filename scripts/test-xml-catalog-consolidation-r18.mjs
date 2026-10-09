@@ -13,6 +13,8 @@ requireText(backend,[
  'import { catalogXmlComparison } from "./xml-catalog-comparison.mjs";',
  'import { xmlFieldReviewGateway } from "./xml-catalog-field-review-gateway.mjs";',
  'field_comparisons:catalogXmlComparison(evidence.data||[])',
+ 'comparison_scope:{kind:"loaded_page_only"',
+ 'partial:total>observations.length',
  'xmlFieldReviewGateway(sb,action,body,a)',
  'catalog_ingest_failures:',
  'catalog_recent_failures:',
@@ -26,6 +28,8 @@ requireText(backend,[
 requireText(ui,[
  'function xmlCatalogComparisonMarkup(',
  'xmlCatalogComparisonMarkup(data)',
+ 'data?.comparison_scope?.partial',
+ 'Comparação PARCIAL:',
  'function xmlCatalogFieldReviewMarkup(',
  'xmlCatalogFieldReviewMarkup(active)',
  'async function xmlCatalogFieldReviewLoad(',
