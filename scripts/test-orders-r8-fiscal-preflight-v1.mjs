@@ -147,3 +147,21 @@ test("R08 Admin source is guarded, read-only and intentionally has no auto-issue
   assert.match(section,/bling_remote_evidence:null/);
   assert.doesNotMatch(section,/autoIssueFiscalAfterSeparation|fiscal_dispatch_canary_human_execute|ops2_fiscal_dispatch_preflight_v1|\.insert\(|\.update\(|\.upsert\(/);
 });
+
+
+test("R08 flag enforces fiscal gate before BOTH manual and legacy auto issue",()=>{
+  const admin=fs.readFileSync("supabase/functions/admin-products-live-v1/index.ts","utf8");
+  const human=admin.slice(admin.indexOf("async function orderFiscalIssueV4("),
+    admin.indexOf("async function orderDispatchStartV4("));
+  const auto=admin.slice(admin.indexOf("async function autoIssueFiscalAfterSeparation("),
+    admin.indexOf("async function runR7BlingReconciliation("));
+  for(const [name,section] of [["human",human],["automatic",auto]]){
+    assert.match(section,/if\(ORDER_R8_FISCAL_PREFLIGHT_ENABLED\)/,name);
+    assert.match(section,/await orderFiscalR8Preview\(oid,/,name);
+    assert.ok(section.indexOf("await orderFiscalR8Preview")<
+      section.indexOf('db.rpc("ops2_fiscal_dispatch_preflight_v1"'),name+" checks R08 first");
+  }
+  assert.match(human,/r8_fiscal_preflight_blocked/);
+  assert.match(auto,/r8_fiscal_preflight_blocked/);
+  assert.match(human,/confirmation.*EMITIR_NFE/);
+});
