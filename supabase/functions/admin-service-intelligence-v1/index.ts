@@ -7499,8 +7499,8 @@ async function blingHubFindContactByDocument(sb:any,token:string,docRaw:any){
 // Consulta administrativa somente leitura. Não cria ou modifica contato.
 async function blingHubContactByDocumentReadonly(sb:any,documentRaw:any){
   const doc=blingHubDigits(documentRaw);
-  if(doc.length!==14||!blingHubValidCpfCnpj(doc))
-    return {ok:false,error:"invalid_cnpj",status:400};
+  if(![11,14].includes(doc.length)||!blingHubValidCpfCnpj(doc))
+    return {ok:false,error:"invalid_document",status:400};
   const token=await blingHubOauth(sb);
   const found=await blingHubFindContactByDocument(sb,token,doc);
   if(found.status==="not_found")return {ok:true,found:false,source:"Bling"};
@@ -7743,23 +7743,47 @@ async function blingHubQuoteOrderConvert(sb:any,quoteIdRaw:any,previewOnly:boole
   if(!Number.isSafeInteger(totalCents)||totalCents<=0||totalCents>1000000000)failures.push("invalid_quote_total");
   const doc=blingHubDigits(q.client_document||fields.document);
   if(![11,14].includes(doc.length)||!blingHubValidCpfCnpj(doc))failures.push("customer_document_required");
-  let local:any=null;
-  if(doc.length===11||doc.length===14){
+  let local:any=null,remoteContact:any=null,contactId=0;
+  if([11,14].includes(doc.length)&&blingHubValidCpfCnpj(doc)){
     const found=await sb.from("customers").select("id,name,cpf_cnpj,bling_contact_id").eq("cpf_cnpj",doc).limit(2);
     if(found.error)throw found.error;
-    if((found.data||[]).length!==1)failures.push("customer_not_registered_in_admin");
-    else local=found.data[0];
+    if((found.data||[]).length>1)failures.push("customer_document_ambiguous");
+    else if((found.data||[]).length===1)local=found.data[0];
+    if(q.customer_id&&(!local||String(q.customer_id)!==String(local.id)))
+      failures.push("quote_customer_identity_conflict");
+    contactId=Number(local?.bling_contact_id||0);
+    if(!contactId&&!failures.includes("customer_document_ambiguous")){
+      try{
+        // Somente leitura: um contato existente no Bling pode ser usado sem criar cadastro duplicado no Admin.
+        // A busca valida o documento exato no detalhe remoto antes de aceitar o ID.
+        const resolved=await blingHubContactByDocumentReadonly(sb,doc);
+        if(resolved.ok&&resolved.found===true){
+          contactId=Number(resolved.bling_contact_id||0);
+          remoteContact=resolved.company||null;
+        }else if(resolved.ok&&resolved.found===false)
+          failures.push("customer_not_registered_in_bling");
+        else if(resolved.error==="bling_duplicate_documents")
+          failures.push("customer_document_ambiguous");
+        else failures.push("bling_contact_lookup_unavailable");
+      }catch{
+        failures.push("bling_contact_lookup_unavailable");
+      }
+    }
   }
-  if(q.customer_id&&local&&String(q.customer_id)!==String(local.id))failures.push("quote_customer_identity_conflict");
-  if(!local?.bling_contact_id)failures.push("customer_not_synced_to_bling");
+  if(!contactId&&!failures.some((x:string)=>x.startsWith("customer_")||x==="bling_contact_lookup_unavailable"))
+    failures.push("customer_not_synced_to_bling");
   const runtime=await sb.from("bling_hub_runtime_v2").select("mode,hub_enabled,orders_enabled").eq("id",1).maybeSingle();
   if(runtime.error)throw runtime.error;
   if(runtime.data?.hub_enabled!==true||runtime.data?.orders_enabled!==true||runtime.data?.mode!=="live")failures.push("bling_orders_not_enabled");
-  const summary={quote_id:quoteId,quote_number:q.quote_number,customer_name:q.client_name||local?.name||"",
-    customer_id:local?.id||null,bling_contact_id:Number(local?.bling_contact_id||0)||null,
+  const summary={quote_id:quoteId,quote_number:q.quote_number,customer_name:q.client_name||local?.name||remoteContact?.razao_social||"",
+    customer_id:local?.id||null,bling_contact_id:contactId||null,contact_source:local?.bling_contact_id?"Vitrine/Admin":remoteContact?"Bling":null,
     item_count:rawItems.length,multiplier:mult,total_cents:totalCents,items_total_cents:lineCents,
     payment:clean(fields.payment,120),failures};
   if(failures.length)return {ok:false,error:"quote_conversion_blocked",status:409,...summary};
+  if(previewOnly&&linked.data)
+    return {ok:false,error:"quote_conversion_requires_reconciliation",status:409,
+      quote_id:quoteId,conversion_status:linked.data.status,external_key:linked.data.external_key,
+      detail:linked.data.last_error||null};
   if(previewOnly){
     return {ok:true,ready:true,...summary,already_created:false,
       processing:linked.data?.status||null,requires_confirmation:true};
@@ -7794,11 +7818,11 @@ async function blingHubQuoteOrderConvert(sb:any,quoteIdRaw:any,previewOnly:boole
       const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
       const datePart=(kind:string)=>parts.find((x:any)=>x.type===kind)?.value||"";
       const cityDate=datePart("year")+"-"+datePart("month")+"-"+datePart("day");
-      const address={nome:clean(local?.name,180),endereco:clean(fields.street,180),numero:clean(fields.number,40),
+      const address={nome:clean(local?.name||remoteContact?.razao_social||q.client_name,180),endereco:clean(fields.street,180),numero:clean(fields.number,40),
         complemento:clean([fields.block,fields.contact].filter(Boolean).join(" · "),220),
         bairro:clean(fields.district,140),municipio:clean(fields.city,120),
         uf:clean(fields.state,2).toUpperCase(),cep:blingHubDigits(fields.zip)};
-      const payload:any={contato:{id:Number(local.bling_contact_id)},data:cityDate,
+      const payload:any={contato:{id:contactId},data:cityDate,
         numeroLoja:externalKey,totalProdutos:lineCents/100,total:totalCents/100,
         desconto:{valor:Math.max(0,-difference)/100,unidade:"REAL"},
         outrasDespesas:Math.max(0,difference)/100,itens,

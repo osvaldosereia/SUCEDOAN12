@@ -207,7 +207,11 @@
     function quoteBlingErrorText(error){
       const labels={customer_document_required:'Informe CPF/CNPJ do cliente no orçamento.',
         customer_not_registered_in_admin:'Cadastre o cliente no Vitrine/Admin com este CPF/CNPJ.',
-        customer_not_synced_to_bling:'Sincronize o cadastro do cliente com o Bling.',
+        customer_not_synced_to_bling:'Contato ainda não vinculado ao Bling. Consulte o CNPJ no cadastro.',
+        customer_not_registered_in_bling:'O cliente não foi encontrado no Bling. Cadastre-o no ERP antes de criar o pedido.',
+        customer_document_ambiguous:'Há mais de um cadastro com este documento. Corrija a duplicidade antes de converter.',
+        bling_contact_lookup_unavailable:'O Bling não respondeu à consulta do contato. Tente novamente.',
+
         quote_customer_identity_conflict:'O cliente vinculado ao orçamento não corresponde ao documento.',
         invalid_quote_total:'Confira o total do orçamento antes de converter.',
         invalid_quote_items:'O orçamento precisa ter produtos válidos.',
@@ -232,7 +236,7 @@
         const p=await adminPost('quote_bling_preview',{id:state.currentQuoteId});
         const amount=formatMoney(Number(p.total_cents||0)/100);
         if(!confirm('Criar o pedido de venda no Bling para '+String(p.customer_name||'cliente')+
-          '?\\nOrçamento: '+String(p.quote_number||'')+'\\nQuantidade de cestas: '+p.multiplier+
+          '?\\nOrçamento: '+String(p.quote_number||'')+'\\nOrigem do contato: '+String(p.contact_source||'Bling')+'\\nQuantidade de cestas: '+p.multiplier+
           '\\nTotal: '+amount+'\\n\\nEsta ação não emite nota fiscal nem movimenta estoque.'))return;
         notice.textContent='Enviando pedido de venda ao Bling. Aguarde…';
         const order=await adminPost('quote_bling_convert',{id:state.currentQuoteId});
