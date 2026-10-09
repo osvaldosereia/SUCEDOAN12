@@ -4,6 +4,7 @@
  * Executado apenas no runner efêmero do GitHub Actions.
  */
 import {createClient} from 'npm:@supabase/supabase-js@2';
+import qrGenerator from 'npm:qrcode-generator@1.4.4';
 import {inventoryLabelPhotoAction} from '../supabase/functions/admin-products-live-v1/inventory-label-photo-api.ts';
 import {inventoryLabelWorkerTick} from '../supabase/functions/admin-products-live-v1/inventory-label-worker.ts';
 import '../vitrine/admin/inventory-label-photo-upload.js';
@@ -49,6 +50,46 @@ async function png(n){
   chunk('IHDR',header),chunk('tEXt',new TextEncoder().encode('DA6-fixture='+n)),
   chunk('IDAT',compressed),chunk('IEND',new Uint8Array()));
 }
+async function labelPng(productId){
+ const width=1000,height=1500;
+ const bitmap=new Uint8Array(width*height*4);bitmap.fill(255);
+ function rect(x0,y0,x1,y1){
+  for(let y=Math.max(0,Math.floor(y0));y<Math.min(height,Math.ceil(y1));y++)
+   for(let x=Math.max(0,Math.floor(x0));x<Math.min(width,Math.ceil(x1));x++){
+    const i=(y*width+x)*4;bitmap[i]=bitmap[i+1]=bitmap[i+2]=0;
+   }
+ }
+ function dot(cx,cy,r){
+  for(let y=Math.floor(cy-r);y<=cy+r;y++)for(let x=Math.floor(cx-r);x<=cx+r;x++){
+   if((x-cx)**2+(y-cy)**2>r*r||x<0||x>=width||y<0||y>=height)continue;
+   const i=(y*width+x)*4;bitmap[i]=bitmap[i+1]=bitmap[i+2]=0;
+  }
+ }
+ for(const [x,y] of [[31,31],[969,31],[969,1469],[31,1469]])
+  rect(x-16,y-16,x+16,y+16);
+ const serial='CAFEBABE01';
+ const qr=qrGenerator(0,'M');
+ qr.addData('DA6|'+BigInt('0x'+productId.replace(/-/g,'')).toString(36).toUpperCase().padStart(25,'0')+'|'+serial);
+ qr.make();
+ const count=qr.getModuleCount(),cell=170/(count+8),startX=780,startY=170;
+ for(let y=0;y<count;y++)for(let x=0;x<count;x++)if(qr.isDark(y,x)){
+  rect(startX+(x+4)*cell,startY+(y+4)*cell,startX+(x+5)*cell,startY+(y+5)*cell);
+ }
+ for(const [i,q] of [0,1,7,10,23,99].entries()){
+  const top=61+i*((76-5)/6+1);
+  dot(185,(top+7.3)*10,11);
+  dot((25.09+Math.floor(q/10)*3.535)*10,(top+8.7)*10,8);
+  dot((61.09+q%10*3.535)*10,(top+8.7)*10,8);
+ }
+ const raw=new Uint8Array(height*(width*4+1));
+ for(let y=0;y<height;y++)raw.set(bitmap.subarray(y*width*4,(y+1)*width*4),y*(width*4+1)+1);
+ const compressed=new Uint8Array(await new Response(
+  new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+ const head=new Uint8Array(13),dv=new DataView(head.buffer);
+ dv.setUint32(0,width);dv.setUint32(4,height);head[8]=8;head[9]=6;
+ return cat(new Uint8Array([137,80,78,71,13,10,26,10]),
+  chunk('IHDR',head),chunk('IDAT',compressed),chunk('IEND',new Uint8Array()));
+}
 async function call(action,actor,payload=null,params=null){
  const u=new URL('/functions/v1/admin-products-live-v1',API);
  u.searchParams.set('action',action);
@@ -78,8 +119,9 @@ Deno.test('DA6 R6: 10/50/100 URLs assinadas reais, privacidade, polling sem nave
  for(const size of [10,50,100]){
   const files=[];
   for(let index=0;index<size;index++){
-   const bytes=await png(++distinct);
-   files.push(new File([bytes],'label-'+distinct+'.png',{type:'image/png'}));
+   const indexGlobal=++distinct;
+   const bytes=size===10&&index===0?await labelPng(productId):await png(indexGlobal);
+   files.push(new File([bytes],'label-'+indexGlobal+'.png',{type:'image/png'}));
   }
   const services={
    createBatch:payload=>call('inventory_label_batch_create',user.id,payload),
@@ -106,15 +148,27 @@ Deno.test('DA6 R6: 10/50/100 URLs assinadas reais, privacidade, polling sem nave
  }
  const before=dataCheck(await db.from('inventory_label_photos').select('id',{count:'exact',head:true}),'count');
  const total=before?.length??160;
- // Worker em processo separado do contexto de upload: código real decodifica arquivo no Storage.
+ // Worker em processo separado do contexto de upload: lê arquivo no Storage.
  const processed=await inventoryLabelWorkerTick(db,2);
  ensure(processed.processed===2,'server worker did not claim two stored files');
- ensure(processed.results.every(x=>x.status==='retry'),'QR missing must retry, never approve');
- const counted=await db.from('inventory_label_counts').select('id',{count:'exact',head:true});
- ensure(counted.count===0,'invalid photos wrote counts');
+ ensure(processed.results.some(x=>['complete','needs_review'].includes(x.status)),
+  'valid DA6 QR/OMR must be recognized: '+JSON.stringify(processed.results));
+ ensure(processed.results.some(x=>x.status==='retry'),'QR missing must retry, never approve');
+ const counted=await db.from('inventory_label_counts').select('id,photo_id,balance_slot,quantity,status');
+ ensure(!counted.error&&counted.data?.length===6,'six historical QR/OMR readings were not stored: '+JSON.stringify(processed.results));
+ ensure(counted.data.every(x=>x.status==='pending_review'),'worker must not auto approve counts');
+ const first=counted.data.find(x=>x.balance_slot===1);
+ ensure(first?.quantity===0,'slot one should preserve numeric zero');
+ const reviewed=await call('inventory_label_photo_review',user.id,{
+   photo_id:first.photo_id,slot:1,decision:'approve',quantity:null,note:'Conferido no teste integrado'
+ });
+ ensure(reviewed.review?.status==='approved','manual review failed');
+ const history=await call('inventory_label_photo_history',user.id,null,{photo_id:first.photo_id});
+ ensure(history.events?.length===1&&history.events[0].actor_name==='DA6 CI',
+  'audit history must show user display name');
  const withRetry=await db.from('inventory_label_photos').select('id,attempts,status').eq('status','retry');
- ensure(withRetry.data?.length===2&&withRetry.data.every(x=>x.attempts===1),'retry not persisted');
+ ensure(withRetry.data?.length===1&&withRetry.data[0].attempts===1,'retry not persisted');
  const unprocessed=await db.from('inventory_label_photos').select('id',{count:'exact',head:true}).eq('status','queued');
  ensure(unprocessed.count===158,'closing browser lost queued files');
- console.log('DA6_REAL_LOCAL_STORAGE_PASS',JSON.stringify({batches:counts,queuedAfterWorker:unprocessed.count,retries:2,counts:counted.count}));
+  console.log('DA6_REAL_LOCAL_STORAGE_PASS',JSON.stringify({batches:counts,queuedAfterWorker:unprocessed.count,retries:1,counts:counted.data.length,reviewEvents:history.events.length}));
 });
