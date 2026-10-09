@@ -7,7 +7,8 @@ let magickPromise:Promise<any>|null=null;
 async function magick(){
  if(!magickPromise)magickPromise=(async()=>{
   const m=await import('npm:@imagemagick/magick-wasm@0.0.44');
-  const wasm=await Deno.readFile(new URL('magick.wasm',import.meta.resolve('npm:@imagemagick/magick-wasm@0.0.44')));
+  // v0.0.44 exporta WASM em dist/x86; usar o subpath do pacote (não relativo ao index.js).
+  const wasm=await Deno.readFile(new URL(import.meta.resolve('npm:@imagemagick/magick-wasm@0.0.44/magick.wasm')));
   await m.initializeImageMagick(wasm);
   return m;
  })();
