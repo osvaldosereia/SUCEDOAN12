@@ -1,0 +1,106 @@
+name: Orders R02 - isolated synthetic homologation
+on:
+  push:
+    branches:
+      - 'agent/orders-r2-*'
+    paths:
+      - 'scripts/sql/orders-r2-hml-*.sql'
+      - 'scripts/test-orders-r2-transport-offline.mjs'
+      - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
+      - '.github/workflows/orders-r2-isolated-hml-ci.yml'
+  pull_request:
+    branches:
+      - main
+      - 'agent/orders-r1-*'
+    paths:
+      - 'scripts/sql/orders-r2-hml-*.sql'
+      - 'scripts/test-orders-r2-transport-offline.mjs'
+      - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
+      - '.github/workflows/orders-r2-isolated-hml-ci.yml'
+permissions:
+  contents: read
+jobs:
+  offline-postgres:
+    name: Ephemeral Postgres 17 + fake providers (NO NETWORK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: synthetic_orders_r2
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d synthetic_orders_r2"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: synthetic_orders_r2
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      HOMOLOGATION_TRANSPORT: disabled
+      BLING_LIVE_ENABLED: 'false'
+      META_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assert offline mode
+        run: |
+          set -euo pipefail
+          test "$HOMOLOGATION_TRANSPORT" = disabled
+          test "$BLING_LIVE_ENABLED" = false
+          test "$META_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+      - name: Install SQL client if absent
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client >/dev/null
+          fi
+      - name: Build isolated contract schema (no Supabase connection)
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-hml-schema.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-hml-assertions.sql
+      - name: Two concurrent workers must claim just one pending fiscal intent
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -Atc "select coalesce(r2_hml.claim_fiscal_job()::text,'NONE');" > /tmp/r2-worker-a.txt &
+          A=$!
+          psql -v ON_ERROR_STOP=1 -Atc "select coalesce(r2_hml.claim_fiscal_job()::text,'NONE');" > /tmp/r2-worker-b.txt &
+          B=$!
+          wait "$A"
+          wait "$B"
+          FIRST=$(cat /tmp/r2-worker-a.txt)
+          SECOND=$(cat /tmp/r2-worker-b.txt)
+          if [ "$FIRST" = NONE ]; then
+            [[ "$SECOND" =~ ^[0-9]+$ ]]
+          else
+            [[ "$FIRST" =~ ^[0-9]+$ ]]
+            test "$SECOND" = NONE
+          fi
+          test "$(psql -Atc "select count(*) from r2_hml.dispatch_fiscal_jobs where status='processing'")" = 1
+          test "$(psql -Atc "select count(*) from r2_hml.dispatch_fiscal_jobs where status='reconcile' and generation_uncertain")" = 1
+          echo "PASS: worker claim mutually exclusive; uncertain invoice not resent"
+      - name: Check pure policy and simulated provider responses
+        run: |
+          set -euo pipefail
+          node --check scripts/test-orders-r2-transport-offline.mjs
+          node --test scripts/test-orders-r2-transport-offline.mjs scripts/test-order-auto-fiscal-policy-v1.mjs
+      - name: SQL schema only contains synthetic records
+        run: |
+          set -euo pipefail
+          test "$(psql -Atc "select count(*) from r2_hml.orders")" = 2
+          test "$(psql -Atc "select count(*) from r2_hml.dispatch_fiscal_jobs")" = 2
+          psql -Atc "select 'PASS: disposable offline test DB only' "
+      - name: Diff hygiene
+        run: git diff --check
