@@ -36,8 +36,13 @@ async function refreshStatus(){
  if(!active||!headingOK()||!currentBatch)return;
  const r=await bridge().api('inventory_label_batch_status',{batch_id:currentBatch});
  const el=$('#da6-batch-details');if(!el)return;
+ // Não destruir digitação em andamento por causa do polling automático.
+ if(el.contains(document.activeElement)&&document.activeElement?.matches?.('[data-da6-quantity],[data-da6-note]'))return;
  const openReviews=new Set([...el.querySelectorAll('details.da6-review[open]')]
   .map(node=>node.dataset.da6ReviewPhoto));
+ const shownHistory=new Map([...el.querySelectorAll('details.da6-review')].map(details=>[
+  details.dataset.da6ReviewPhoto,details.querySelector('.da6-review-history')?.innerHTML||''
+ ]));
  const cs=r.counts||{},done=(cs.complete||0)+(cs.needs_review||0)+(cs.failed||0);
  const balances=(r.photos||[]).flatMap(x=>Array.isArray(x.review_counts)?x.review_counts:[]);
  const approved=balances.filter(x=>x.status==='approved').length;
@@ -56,6 +61,11 @@ async function refreshStatus(){
     (window.DonaAntoniaLabelReview?.render(x)||'')+'</div>').join('')+'</div>';
  el.querySelectorAll('details.da6-review').forEach(details=>{
   if(openReviews.has(details.dataset.da6ReviewPhoto))details.open=true;
+  const previous=shownHistory.get(details.dataset.da6ReviewPhoto);
+  if(previous){
+   const output=details.querySelector('.da6-review-history');
+   if(output)output.innerHTML=previous;
+  }
  });
  window.DonaAntoniaLabelReview?.bind(el,bridge(),refreshStatus);
 }
