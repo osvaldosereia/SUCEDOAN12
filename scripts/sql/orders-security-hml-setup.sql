@@ -21,11 +21,11 @@ GRANT SELECT ON public.dispatch_fiscal_jobs TO authenticated;
 GRANT INSERT,SELECT ON public.ops_events TO authenticated;
 GRANT SELECT ON public.ops_events TO anon;
 GRANT SELECT ON public.dispatch_fiscal_jobs, public.ops_events TO service_role;
-GRANT TRUNCATE, REFERENCES, TRIGGER ON ALL TABLES IN SCHEMA public TO anon,authenticated;
+GRANT TRUNCATE, REFERENCES, TRIGGER, MAINTAIN ON ALL TABLES IN SCHEMA public TO anon,authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  GRANT TRUNCATE, REFERENCES, TRIGGER ON TABLES TO anon,authenticated;
+  GRANT TRUNCATE, REFERENCES, TRIGGER, MAINTAIN ON TABLES TO anon,authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
-  GRANT TRUNCATE, REFERENCES, TRIGGER ON TABLES TO anon,authenticated;
+  GRANT TRUNCATE, REFERENCES, TRIGGER, MAINTAIN ON TABLES TO anon,authenticated;
 SET ROLE supabase_admin;
 CREATE TABLE public.future_admin_before_hardening(id bigint PRIMARY KEY);
 RESET ROLE;
@@ -35,5 +35,7 @@ BEGIN
  IF NOT has_table_privilege('anon','public.dispatch_fiscal_jobs','TRUNCATE')
    OR NOT has_table_privilege('authenticated','public.ops_events','TRIGGER')
    OR NOT has_table_privilege('anon','public.future_admin_before_hardening','TRUNCATE')
+   OR NOT has_table_privilege('anon','public.ops_events','MAINTAIN')
+   OR NOT has_table_privilege('authenticated','public.future_admin_before_hardening','MAINTAIN')
  THEN RAISE EXCEPTION 'test did not model dangerous live table grants'; END IF;
 END $baseline$;
