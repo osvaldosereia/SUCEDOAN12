@@ -28,6 +28,9 @@ async function rgba(bytes:Uint8Array){
   return {width,height,data:result};
  });
 }
+// Exposto para homologação do codec PNG/JPEG/WebP no próprio Deno Edge Runtime.
+export const decodeDA6ImagePixels=rgba;
+
 async function sha256(bytes:Uint8Array){
  const copy=new Uint8Array(bytes.byteLength);copy.set(bytes);
  const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',copy.buffer));
