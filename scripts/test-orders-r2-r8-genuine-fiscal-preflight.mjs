@@ -135,7 +135,7 @@ assert.equal(mold.completion.metadata.r6_reconciliation.public_order_number,
 console.log("PASS R08: 14 negative controls + genuine uncertain mold; no invoice dispatched");
 // Guard against accidentally wiring real host actions into the CI.
 const workflow=fs.readFileSync(
-  ".github/workflows/orders-r2-r8-fiscal-chain-ci.yml","utf8");
+  ".github/workflows/orders-r2-r7-bling-chain-ci.yml","utf8");
 assert.match(workflow,/FISCAL_LIVE_ENABLED: 'false'/);
 assert.match(workflow,/R08_FISCAL_PRODUCTION_ENABLED: 'false'/);
 assert.doesNotMatch(workflow,/curl.*bling\.com\.br|fiscal_dispatch_canary_human_execute/);
