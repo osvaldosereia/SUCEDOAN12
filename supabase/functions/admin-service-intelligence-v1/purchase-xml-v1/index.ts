@@ -521,6 +521,9 @@ async function resolvePurchaseItemIdentity(body:any,userId:string|null){
     if((identifiers.data||[]).some((x:any)=>createNew||String(x.product_id)!==String(selectedId)))
       return {ok:false,status:409,error:"xml_catalog_identifier_conflict"};
   }
+  // A second click from the evidence-only catalog must not create another product.
+  if(catalogEvidenceOnly&&item.product_id)
+    return {ok:false,status:409,error:"xml_catalog_item_already_linked",product_id:item.product_id};
   let product:any=null,created=false;
   if(createNew){
     const sku="XML-"+String(item.id).replace(/-/g,"").slice(0,12).toUpperCase();
@@ -532,7 +535,8 @@ async function resolvePurchaseItemIdentity(body:any,userId:string|null){
   }else{
     product=await canonicalProduct(clean(body?.product_id,80)||item.product_id);if(!product)return {ok:false,status:404,error:"product_not_found"};
     const upd:any={last_admin_edit_at:new Date().toISOString(),last_admin_edit_by:userId,updated_at:new Date().toISOString()};
-    if(proposedName&&proposedName!==product.name)upd.name=proposedName;
+    // Linking an XML observation may not rename an existing sellable SKU.
+    if(!catalogEvidenceOnly&&proposedName&&proposedName!==product.name)upd.name=proposedName;
     if(role==="package"&&product?.metadata?.purchase_xml_created===true&&digits(product.gtin)===xmlGtin)upd.gtin=null;
     if(Object.keys(upd).length>3){const pu=await sb.from("products").update(upd).eq("id",product.id).select("id,bling_product_id,sku,name,gtin,ncm,cost,price,stock,unit,packaging,supplier,metadata,is_active,image_url,brand,category,subcategory").single();if(pu.error)throw pu.error;product=pu.data}
   }
