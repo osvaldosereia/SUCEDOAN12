@@ -1285,6 +1285,87 @@ async function persistXmlCatalogEvidence(documentId:string,documentKey:string,xm
       if(saved.error)throw new Error("catalog_observation_save_failed:"+saved.error.message);
       return parsed;
 }
+// Manual XML catalog-only ingestion. Does not call OAuth, Bling or product mutations.
+// Existing operational manual_import action remains unchanged.
+async function manualCatalogOnlyImport(input:any){
+  const files=Array.isArray(input)?input:[];
+  if(!files.length||files.length>10)return {ok:false,status:400,error:"catalog_xml_1_to_10_files_required"};
+  const source=files.length===1?"manual_xml":"bulk_xml";
+  const run=await sb.from("purchase_xml_import_runs").insert({
+    source,status:"running",documents_seen:files.length,
+    metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false}
+  }).select("id").single();
+  if(run.error)throw run.error;
+  const results:any[]=[];let processed=0,duplicates=0,failed=0,items=0;
+  for(const file of files){
+    const filename=clean(file?.name,160);
+    try{
+      const xml=String(file?.xml??"");
+      if(!xml||xml.length>10*1024*1024)throw new Error("xml_size_invalid");
+      const original=parseXml(xml);
+      if(original.document_key.length!==44)throw new Error("invalid_nfe_key");
+      if(original.cstat&&![100,150].includes(original.cstat))throw new Error("nfe_not_authorized");
+      const evidence=extractCatalogFromNfe(xml,original.document_key);
+      const hash=await sha256(xml);
+      const exist=await sb.from("purchase_xml_documents").select("id,content_sha256")
+        .eq("document_key",evidence.key).maybeSingle();
+      if(exist.error)throw exist.error;
+      if(exist.data){
+        if(exist.data.content_sha256&&exist.data.content_sha256!==hash)
+          throw new Error("existing_nfe_key_has_different_xml");
+        const replay=await xmlCatalogReprocess({document_id:exist.data.id});
+        if(!replay.results?.[0]?.ok)throw new Error(replay.results?.[0]?.error||"duplicate_replay_failed");
+        duplicates++;
+        results.push({name:filename,ok:true,duplicate:true,items:evidence.items.length,document_id:exist.data.id});
+        continue;
+      }
+      const issued=day(original.issued_at)||new Date().toISOString().slice(0,10);
+      const [year,month]=issued.split("-");
+      const path=year+"/"+month+"/"+evidence.key+".xml";
+      const upload=await sb.storage.from("purchase-xml").upload(path,
+        new Blob([xml],{type:"application/xml"}),
+        {upsert:false,contentType:"application/xml"});
+      if(upload.error)throw new Error("xml_storage_failed:"+upload.error.message);
+      const personal=original.recipient_kind==="CPF";
+      const inserted=await sb.from("purchase_xml_documents").insert({
+        import_run_id:run.data.id,source,source_document_id:filename||null,
+        document_key:evidence.key,content_sha256:hash,storage_path:path,
+        issued_at:original.issued_at||null,supplier_document:original.supplier_document||null,
+        supplier_name:original.supplier_name||null,
+        recipient_document:original.recipient_document||null,
+        recipient_kind:original.recipient_kind||"unknown",
+        financial_eligible:false,
+        finance_status:personal?"blocked_personal":"not_applicable",
+        finance_reference:{accounts:[],reason:"catalog_only_no_finance"},
+        receipt_status:"review",processing_status:"review_required",
+        total_amount:original.total_amount||0,item_count:evidence.items.length,
+        matched_item_count:0,review_item_count:evidence.items.length,
+        metadata:{catalog_only:true,invoice_number:original.invoice_number,
+          series:original.series,catalog_imported_at:new Date().toISOString()}
+      }).select("id").single();
+      if(inserted.error)throw inserted.error;
+      const replay=await xmlCatalogReprocess({document_id:inserted.data.id});
+      if(!replay.results?.[0]?.ok)
+        throw new Error(replay.results?.[0]?.error||"catalog_recovery_pending");
+      processed++;items+=evidence.items.length;
+      results.push({name:filename,ok:true,document_id:inserted.data.id,items:evidence.items.length});
+    }catch(e){
+      failed++;
+      results.push({name:filename,ok:false,error:clean((e as Error)?.message||e,220)});
+    }
+  }
+  const done=await sb.from("purchase_xml_import_runs").update({
+    status:failed?"completed_with_review":"completed",finished_at:new Date().toISOString(),
+    documents_processed:processed,documents_duplicate:duplicates,documents_failed:failed,
+    items_seen:items,items_matched:0,items_review:items,
+    metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false},
+    updated_at:new Date().toISOString()
+  }).eq("id",run.data.id);
+  if(done.error)throw done.error;
+  return {ok:true,catalog_only:true,processed,duplicates,failed,items,results,
+    bling_called:false,products_updated:false,stock_updated:false,finance_updated:false};
+}
+
 async function xmlCatalogList(body:any){
   const limit=Math.max(1,Math.min(100,Math.trunc(Number(body?.limit)||30)));
   const offset=Math.max(0,Math.min(100000,Math.trunc(Number(body?.offset)||0)));
@@ -1588,6 +1669,10 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
     if(action==="manual_import"){const r=await manualImport(body?.files);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="catalog_queue")return js(req,await catalogQueue(body));
+    if(action==="xml_catalog_only_import"){
+      if(a.internal||a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      const result=await manualCatalogOnlyImport(body?.files);return js(req,result,result.ok?200:Number(result.status||400));
+    }
     if(action==="xml_catalog_list")return js(req,await xmlCatalogList(body));
     if(action==="xml_catalog_progress")return js(req,await xmlCatalogProgress());
     if(action==="xml_catalog_reprocess"){
