@@ -1,7 +1,7 @@
 -- R02 synthetic dependency subset for the REAL production separation functions.
 -- Execute ONLY in PostgreSQL 17 ephemeral CI DB, never in Supabase production.
--- ops2_init_order_separation_v2 is intentionally stubbed, because items are
--- materialized below. Initialization itself is outside this test's coverage.
+-- R02+ loads the actual ops2_init_order_separation_v2 definition later; no
+-- stub of initialization is allowed in canonical integration tests.
 \set ON_ERROR_STOP on
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE public.orders (
@@ -14,7 +14,8 @@ CREATE TABLE public.orders (
   fiscal_subtotal numeric(14,2) NOT NULL,
   discount numeric(14,2) DEFAULT 0,
   other_expenses numeric(14,2) DEFAULT 0,
-  basket_hidden_adjustment numeric(14,2) DEFAULT 0
+  basket_hidden_adjustment numeric(14,2) DEFAULT 0,
+  checkout_snapshot jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE TABLE public.order_items (
   id uuid PRIMARY KEY,
@@ -22,6 +23,9 @@ CREATE TABLE public.order_items (
   product_id uuid,
   name_snapshot text NOT NULL,
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  quantity numeric(14,3) NOT NULL DEFAULT 1,
+  unit_price numeric(14,2) NOT NULL DEFAULT 0,
+  line_total numeric(14,2) NOT NULL DEFAULT 0,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE public.order_separation_items_v1 (
@@ -32,7 +36,10 @@ CREATE TABLE public.order_separation_items_v1 (
   state text NOT NULL,
   quantity numeric(14,3) NOT NULL,
   unit_price numeric(14,2) NOT NULL,
-  line_total numeric(14,2) NOT NULL
+  line_total numeric(14,2) NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(order_id,order_item_id)
 );
 CREATE TABLE public.order_separation_assignments_v1 (
   order_id uuid PRIMARY KEY REFERENCES public.orders(id),
@@ -80,10 +87,7 @@ CREATE TABLE public.basket_stock_allocations (
   order_id uuid PRIMARY KEY REFERENCES public.orders(id),
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb
 );
-CREATE FUNCTION public.ops2_init_order_separation_v2(p_order_id uuid)
-RETURNS jsonb LANGUAGE sql AS $$
-  SELECT jsonb_build_object('ok',true,'mocked_init',true)
-$$;
+-- The REAL initializer is loaded from orders-r2-canonical-init-function.sql.
 
 -- Test order is only synthetic; four-digit/weekly production numbering is NOT
 -- implemented here, but this provides the expected immutable public label.

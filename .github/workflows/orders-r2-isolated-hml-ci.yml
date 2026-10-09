@@ -5,6 +5,8 @@ on:
       - 'agent/orders-r2-*'
     paths:
       - 'scripts/sql/orders-r2-*.sql'
+      - 'scripts/sql/orders-security-*.sql'
+      - 'supabase/sql/orders-security-public-table-privileges-review-v1.sql'
       - 'scripts/test-orders-r2-transport-offline.mjs'
       - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
       - '.github/workflows/orders-r2-isolated-hml-ci.yml'
@@ -12,8 +14,12 @@ on:
     branches:
       - main
       - 'agent/orders-r1-*'
+      - 'agent/orders-r2-*'
     paths:
       - 'scripts/sql/orders-r2-hml-*.sql'
+      - 'scripts/sql/orders-r2-canonical-*.sql'
+      - 'scripts/sql/orders-security-*.sql'
+      - 'supabase/sql/orders-security-public-table-privileges-review-v1.sql'
       - 'scripts/test-orders-r2-transport-offline.mjs'
       - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
       - '.github/workflows/orders-r2-isolated-hml-ci.yml'
@@ -133,11 +139,33 @@ jobs:
           PGDATABASE=synthetic_separation_r2 psql -v ON_ERROR_STOP=1 \
             -f scripts/sql/orders-r2-canonical-separation-fixture.sql
           PGDATABASE=synthetic_separation_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-init-function.sql
+          PGDATABASE=synthetic_separation_r2 psql -v ON_ERROR_STOP=1 \
             -f scripts/sql/orders-r2-canonical-separation-functions.sql
           PGDATABASE=synthetic_separation_r2 psql -v ON_ERROR_STOP=1 \
             -f scripts/sql/orders-r2-canonical-separation-assertions.sql
           test "$(PGDATABASE=synthetic_separation_r2 psql -Atc \
             "select count(*) from public.order_separation_completions_v1 where phase='completed'")" = 1
           echo 'PASS: canonical separation functions, missing item adjustment, stock reconciliation and phase persistence'
+      - name: Real R02 basket-aware initializer regression (no stub)
+        run: |
+          set -euo pipefail
+          PGDATABASE=synthetic_separation_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-init-assertions.sql
+          echo 'PASS: canonical init, preserve separated quantities and exclude basket parents'
+      - name: Harden unsafe Postgres grants and defaults in a third synthetic DB
+        run: |
+          set -euo pipefail
+          createdb synthetic_security_r2
+          PGDATABASE=synthetic_security_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-security-hml-setup.sql
+          PGDATABASE=synthetic_security_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-security-public-table-privileges-review-v1.sql
+          PGDATABASE=synthetic_security_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-security-hml-assertions.sql
+          # Idempotent replay of safe ACL restrictions
+          PGDATABASE=synthetic_security_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-security-public-table-privileges-review-v1.sql
+
       - name: Diff hygiene
         run: git diff --check
