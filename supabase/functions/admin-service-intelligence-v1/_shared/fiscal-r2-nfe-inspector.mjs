@@ -1,3 +1,11 @@
+// The autonomous flow operates on new orders only. A changed status or
+// a freshly-created retry for an older order must never cross this boundary.
+export function isFiscalRecoveryNewOrderR2(createdAt,cutover){
+  const created=Date.parse(String(createdAt||""));
+  const minimum=Date.parse(String(cutover||""));
+  return Number.isFinite(created)&&Number.isFinite(minimum)&&created>=minimum;
+}
+
 // Pure, side-effect-free interpretation of a Bling NF-e detail response.
 // Do not use this report as permission to issue, modify, or authorize invoices.
 const digits = value => String(value ?? "").replace(/\D/g,"");
