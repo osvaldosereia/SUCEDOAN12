@@ -38,3 +38,23 @@ test('dupla marcação exige revisão',()=>{
  assert.equal(result.needs_review,true);
  assert.equal(result.readings.length,0);
 });
+
+
+test('não confunde contorno vazio a 203 dpi com segunda bolinha preenchida',()=>{
+ const scores=[.925,.239,.235,.261,.250,.241,.243,.243,.241,.232];
+ const result=omr.markedDigit(scores);
+ assert.equal(result.value,0);
+ assert.ok(result.confidence>.7);
+});
+test('segunda bolinha parcialmente preenchida continua exigindo revisão',()=>{
+ const scores=[.925,.239,.235,.351,.250,.241,.243,.243,.241,.232];
+ const result=omr.markedDigit(scores);
+ assert.equal(result.value,null);
+ assert.equal(result.reason,'multiple_marks');
+});
+test('marcas de contraste muito próximo são sempre incertas',()=>{
+ const scores=[.40,.36,.13,.13,.13,.13,.13,.13,.13,.13];
+ const result=omr.markedDigit(scores);
+ assert.equal(result.value,null);
+ assert.equal(result.reason,'multiple_marks');
+});
