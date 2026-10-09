@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { reconcileSeparatedCommercialOrder } from "../_shared/order-commercial-reconciliation-v1.mjs";
 const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -1581,11 +1582,60 @@ async function updateOrderCanonical(p:any){
 async function buildSnapshot(oid:string,reason="first_separation",options:any={}){
   const oq=await db.from("orders").select("*").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;if(!oq.data)throw new Error("order_not_found");
   const iq=await db.from("order_items").select("*").eq("order_id",oid).order("created_at");if(iq.error)throw iq.error;
-  const cq=options?.include_all_items===true?{data:null,error:null}:await db.from("order_separation_completions_v1").select("deliverable_order_item_ids,phase").eq("order_id",oid).maybeSingle();if(cq.error)throw cq.error;
+  const cq=options?.include_all_items===true?{data:null,error:null}:await db.from("order_separation_completions_v1").select("order_id,deliverable_order_item_ids,phase,completed_at,updated_at,original_total,final_total,missing_subtotal,original_other_expenses,original_discount,original_basket_hidden_adjustment,metadata").eq("order_id",oid).maybeSingle();if(cq.error)throw cq.error;
   const allRows=iq.data||[],deliverableIds=new Set<string>(Array.isArray(cq.data?.deliverable_order_item_ids)?cq.data.deliverable_order_item_ids.map(String):[]),rows=cq.data?allRows.filter((z:any)=>deliverableIds.has(String(z.id))):allRows,pids=[...new Set(rows.map((z:any)=>z.product_id).filter(Boolean))],pm=new Map<string,any>();
   if(pids.length){const pq=await db.from("products").select("id,sku,gtin,name").in("id",pids);if(pq.error)throw pq.error;for(const p of pq.data||[])pm.set(p.id,p)}
   const grouped=new Map<string,any>();for(const it of rows){if(!it.product_id)continue;const im=meta(it.metadata),p=pm.get(it.product_id),unit=im.history_kind==="basket_component"&&Number.isFinite(Number(im.unit_price_cents))?Math.round(Number(im.unit_price_cents)):Math.round(Number(it.unit_price||0)*100),qty=Number(it.quantity||0);if(qty<=0)continue;const k=it.product_id+"|"+unit,old=grouped.get(k);if(old)old.quantity=Math.round((old.quantity+qty)*1000)/1000;else grouped.set(k,{product_id:it.product_id,sku:it.sku_snapshot||p?.sku||"",gtin:p?.gtin||"",name:it.name_snapshot||p?.name||"Produto",quantity:qty,unit_price_cents:unit,source_kind:im.history_kind==="basket_component"?"basket_component":"product"})}
-  const items=[...grouped.values()],individual=items.reduce((s:number,z:any)=>s+Math.round(Number(z.quantity)*Number(z.unit_price_cents)),0),total=Math.round(Number(oq.data.total||0)*100),rm=await reservationRows([oid]),pay=paySnap(oq.data,rm.get(oid)||[]),d=oq.data.delivery_address||{},c=oq.data.customer_snapshot||{};
+  const items=[...grouped.values()],individual=items.reduce((s:number,z:any)=>s+Math.round(Number(z.quantity)*Number(z.unit_price_cents)),0),total=Math.round(Number(oq.data.total||0)*100);
+  // R06: if explicitly activated, final Bling/dispatch snapshots MUST agree
+  // with the actually picked lines, final value, hidden charges and stock
+  // reservations. This is a preflight only: no stock, NF-e or payment writes.
+  // Keep disabled until the R02 canonical HML and end-to-end canary pass.
+  const r6Enabled=(Deno.env.get("ORDER_R6_FINAL_SNAPSHOT_GUARD_ENABLED")||"").trim()==="true";
+  if(r6Enabled && uiStatus(oq.data.status)==="ready"
+     && (options?.include_all_items===true || !cq.data?.completed_at)){
+    throw new Error("commercial_reconciliation_blocked:final_completion_required");
+  }
+  if(r6Enabled && cq.data?.completed_at && options?.include_all_items!==true){
+    const [sepQ,resQ]=await Promise.all([
+      db.from("order_separation_items_v1")
+        .select("order_id,order_item_id,product_id,state,quantity,unit_price,line_total")
+        .eq("order_id",oid),
+      db.from("vitrine_stock_reservations")
+        .select("order_id,product_id,quantity,status").eq("order_id",oid)
+    ]);
+    if(sepQ.error||resQ.error)throw new Error("commercial_reconciliation_inputs_unavailable");
+    const verdict=reconcileSeparatedCommercialOrder({
+      order:oq.data,orderItems:allRows,separationItems:sepQ.data||[],
+      completion:cq.data,reservations:resQ.data||[]
+    });
+    if(verdict.ok!==true){
+      const errors=(verdict.blockers||[]).join(",").slice(0,320);
+      console.error("order_commercial_reconciliation_blocked",oid,errors);
+      throw new Error("commercial_reconciliation_blocked:"+errors);
+    }
+    // The payload built below must not quietly differ from the final
+    // line-level ledger, even if the order total matches.
+    if(Math.abs(individual-verdict.snapshot.physical_line_cents)>1){
+      throw new Error("commercial_reconciliation_blocked:bling_item_value_mismatch");
+    }
+    // Read-back version check narrows the risk that async database reads
+    // assembled a mixed-time order/completion snapshot. R09 still needs a
+    // transactional immutable ledger before unattended fiscal processing.
+    const [latestOrder,latestCompletion]=await Promise.all([
+      db.from("orders").select("updated_at,total").eq("id",oid).single(),
+      db.from("order_separation_completions_v1").select("updated_at,final_total,completed_at").eq("order_id",oid).single()
+    ]);
+    if(latestOrder.error||latestCompletion.error
+       || String(latestOrder.data?.updated_at)!==String(oq.data.updated_at)
+       || String(latestCompletion.data?.updated_at)!==String(cq.data.updated_at)
+       || Number(latestOrder.data?.total)!==Number(oq.data.total)
+       || Number(latestCompletion.data?.final_total)!==Number(cq.data.final_total)
+       || latestCompletion.data?.completed_at!==cq.data.completed_at){
+      throw new Error("commercial_reconciliation_blocked:snapshot_version_changed");
+    }
+  }
+  const rm=await reservationRows([oid]),pay=paySnap(oq.data,rm.get(oid)||[]),d=oq.data.delivery_address||{},c=oq.data.customer_snapshot||{};
   return {source_order_id:oid,order_number:oq.data.order_number||"",status:uiStatus(oq.data.status),created_at:oq.data.created_at,queue_reason:reason,issues:[],customer:{source_customer_id:oq.data.customer_id||d.source_customer_id||c.customer_id||null,name:c.name||d.customer_name||d.recipient_name||""},delivery:d,payment:pay,items,totals:{individual_products_cents:individual,commercial_order_cents:total,commercial_delta_cents:total-individual}};
 }
 async function previewOrder(oid:string){const s=await buildSnapshot(oid,"first_separation"),h=await hub("preview_order_sync",{payload:s});return h.error?{error:h.error,status:h.status,detail:h.detail}:h.data}
