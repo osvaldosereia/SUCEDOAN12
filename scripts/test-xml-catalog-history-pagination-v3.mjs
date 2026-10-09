@@ -19,7 +19,8 @@ assert.match(detail,/next_offset:hasMore\?offset\+observations\.length:null/);
 assert.doesNotMatch(detail,/\.update\(|\.insert\(|\.upsert\(|\.delete\(/,
   "Historical evidence pagination must be read-only");
 
-const markupStart=html.indexOf("  function xmlCatalogDetailMarkup(){");
+const markupStart=Math.min(html.indexOf("  function xmlCatalogFieldReviewMarkup("),
+  html.indexOf("  // Read-only: comparisons are evidence"));
 const markupEnd=html.indexOf("  function xmlCatalogDetailRefresh(){",markupStart);
 const loadStart=html.indexOf("  async function xmlCatalogDetailLoadMore(){");
 const loadEnd=html.indexOf("  function xmlCatalogDetailBind(){",loadStart);
