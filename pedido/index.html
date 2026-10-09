@@ -34,13 +34,7 @@ function render(data){const s=data.snapshot||{},items=Array.isArray(s.items)?s.i
   app.className='';app.innerHTML='<section class="card hero"><h1>Pedido '+esc(code)+'</h1><div class="muted">Acompanhe aqui o que será entregue.</div><span class="status">'+esc(statusLabel(data.current_status))+'</span><div class="summary"><div class="box"><small>Entrega</small><strong>'+esc(d.delivery_label||d.delivery_date||'A confirmar')+'</strong></div><div class="box"><small>Pagamento</small><strong>'+esc(paymentLabel(s.payment_label))+'</strong></div></div></section><section class="card"><h2 class="section-title">Produtos do pedido</h2>'+products+'</section>'+financial+'<section class="card"><h2 class="section-title">Entrega</h2><strong>'+esc(s.customer_name||'Cliente')+'</strong><div class="address muted" style="margin-top:7px">'+esc(address(d))+'</div></section><div class="note">Quando algum produto não estiver disponível, ele aparece marcado como <strong>FALTOU</strong> e o valor é abatido do total final.</div>';
   // Reabrir exatamente o canal que enviou o pedido, sem expor dados do cliente.
   const origin=data.channel_origin==='1018'?'5565984491018':'5565998150975';
-  const back=document.createElement('a');
-  back.href='whatsapp://send?phone='+origin;
-  back.textContent='Voltar à conversa no WhatsApp';
-  back.setAttribute('aria-label','Voltar ao atendimento pelo WhatsApp');
-  back.className='print-button';
-  back.style.cssText='display:block;text-align:center;margin:18px auto;padding:12px 16px;max-width:320px;border-radius:10px;background:#237e4c;color:#fff;text-decoration:none;font-weight:700';
-  app.appendChild(back)
+  app.innerHTML+='<a href="whatsapp://send?phone='+origin+'" aria-label="Voltar ao atendimento pelo WhatsApp" style="display:block;text-align:center;margin:18px auto;padding:12px 16px;max-width:320px;border-radius:10px;background:#237e4c;color:#fff;text-decoration:none;font-weight:700">Voltar à conversa no WhatsApp</a>'
 }
 async function main(){const qs=new URLSearchParams(location.search),k=(qs.get('k')||'').trim(),o=(qs.get('o')||'').trim();let query='';if(token(k))query='?k='+encodeURIComponent(k);else if(uuid(o))query='?o='+encodeURIComponent(o);else{app.className='card error';app.innerHTML='<h2>Pedido não encontrado</h2><p class="muted">Confira se você abriu o link completo recebido no WhatsApp.</p>';return}try{const response=await fetch(API+query,{cache:'no-store',referrerPolicy:'no-referrer'}),data=await response.json();if(!response.ok||data.ok!==true)throw new Error('not_found');render(data);if(qs.get('print')==='1')await printOrderVitrine()}catch{app.className='card error';app.innerHTML='<h2>Não consegui abrir o pedido</h2><p class="muted">Tente novamente em alguns instantes.</p>'}}
 main()})();
