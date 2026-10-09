@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "./_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared/papoai-commerce-intent-v1.mjs";
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
+import { inspectBlingNfeR2 } from "./_shared/fiscal-r2-nfe-inspector.mjs";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -3896,6 +3897,51 @@ async function blingHubVitrineDanfePdf(sb:any,sourceOrderIdRaw:any){
   };
 }
 
+// Read-only probe: an invoice number alone never links the NF-e to an order.
+// Only compare immutable sale/customer/total/numeroLoja evidence; no PUT/POST.
+async function blingHubFiscalDraftProbeV2(sb:any,body:any){
+  const invoiceId=Number(body?.invoice_id||0);
+  if(!Number.isSafeInteger(invoiceId)||invoiceId<=0)
+    return {ok:false,error:"invalid_invoice_id",status:400,external_write:false};
+  const sourceOrderId=uuid(body?.source_order_id);
+  if(body?.source_order_id&&!sourceOrderId)
+    return {ok:false,error:"invalid_source_order_id",status:400,external_write:false};
+  let expected:any={};
+  let blingOrderId=0;
+  if(sourceOrderId){
+    const [oq,lq]=await Promise.all([
+      sb.from("orders").select("id,bling_order_id,total,status,order_number").eq("id",sourceOrderId).maybeSingle(),
+      sb.from("bling_hub_entity_links_v2").select("bling_id,identity_value,status")
+        .eq("source_system","vitrine_qx").eq("entity_type","order").eq("source_id",sourceOrderId).maybeSingle()
+    ]);
+    if(oq.error)throw oq.error;
+    if(lq.error)throw lq.error;
+    if(!oq.data)return {ok:false,error:"source_order_not_found",status:404,external_write:false};
+    blingOrderId=Number(oq.data.bling_order_id||0);
+    if(!blingOrderId||!lq.data||lq.data.status!=="matched"||Number(lq.data.bling_id||0)!==blingOrderId)
+      return {ok:false,error:"order_not_strongly_linked_to_bling",status:409,external_write:false};
+    expected={bling_order_id:blingOrderId,total:Number(oq.data.total),external_key:clean(lq.data.identity_value,160)};
+  }
+  const token=await blingHubOauth(sb);
+  const remote=await blingHubGetNfe(sb,token,invoiceId);
+  if(!remote.ok)return {ok:false,error:"invoice_detail_unavailable",status:remote.status||503,external_write:false,
+    invoice_id:invoiceId,read_failed:true};
+  if(blingOrderId){
+    // Compare the original Bling sales contact with the NF-e's contact if it
+    // is present. Never fabricate a recipient ID from a customer name.
+    const sale=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+    if(!sale.ok)return {ok:false,error:"sale_detail_unavailable",status:sale.status||503,
+      invoice_id:invoiceId,external_write:false,read_failed:true};
+    expected.contact_id=Number(sale.data?.data?.contato?.id||0)||null;
+  }
+  const report=inspectBlingNfeR2(remote.data,expected);
+  if(report.invoice_id!==invoiceId)
+    return {ok:false,error:"provider_invoice_id_mismatch",status:409,external_write:false};
+  return {ok:true,report,source_order_id:sourceOrderId||null,external_write:false,
+    identity_verified:report.identity.verified===true,can_edit_draft:report.editing.eligible===true,
+    requires_full_payload_contract:true};
+}
+
 async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any){
   const resolved=await blingHubResolveVitrineFiscalOrder(sb,sourceOrderIdRaw);
   if(!resolved.ok)return resolved;
@@ -4524,6 +4570,14 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
         diagnostics.reason="invoice_probe_unavailable_retry";
         diagnostics.lookup_http_status=preview.invoice_lookup.http_status||0;
         continue;
+      }
+      if(preview.invoice_id&&preview.invoice&&!preview.invoice?.situation?.authorized){
+        const probed=await blingHubFiscalDraftProbeV2(sb,{
+          invoice_id:preview.invoice_id,source_order_id:job.order_id
+        });
+        diagnostics.invoice_draft=probed.ok?probed.report:{
+          diagnostic_error:probed.error,http_status:probed.status||null
+        };
       }
       if(preview.hard_blockers?.length){diagnostics.reason="fiscal_preflight_blocked";diagnostics.blockers=preview.hard_blockers;continue;}
       diagnostics.invoice_id=preview.invoice_id||null;
@@ -9788,6 +9842,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="fiscal_dispatch_gate"){
         const result=await blingHubVitrineDispatchFiscalGate(sb,body?.source_order_id);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="fiscal_nfe_draft_probe_v2"){
+        const result=await blingHubFiscalDraftProbeV2(sb,body);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="fiscal_nfe_autorecovery_v1"){
