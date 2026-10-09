@@ -344,6 +344,21 @@ jobs:
           SUCCEEDED=0
           if wait "$A"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q insufficient_stock /tmp/r02-r03-a.err; fi
           if wait "$B"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q insufficient_stock /tmp/r02-r03-b.err; fi
+          echo "R02+R03 concurrency: successful buyers=$SUCCEEDED"
+          echo "R02+R03 A output:"; cat /tmp/r02-r03-a.txt
+          echo "R02+R03 B output:"; cat /tmp/r02-r03-b.txt
+          echo "R02+R03 A error:"; cat /tmp/r02-r03-a.err
+          echo "R02+R03 B error:"; cat /tmp/r02-r03-b.err
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 -Atc "
+            select 'weekly_counter',coalesce(max(last_seq),0)::text from public.order_public_weekly_counters_v1
+            union all select 'orders',count(*)::text from public.orders
+            union all select 'vitrine_orders',count(*)::text from public.orders where source='vitrine'
+            union all select 'numbers',count(distinct order_number)::text from public.orders where source='vitrine'
+            union all select 'matching_snapshots',count(*)::text from public.orders o
+                 join public.order_public_snapshots_v1 sn on sn.order_id=o.id
+                 where o.source='vitrine' and o.order_number=sn.public_code
+            union all select 'reserved_bb',coalesce(sum(quantity),0)::text from public.vitrine_stock_reservations
+                 where product_id='00000000-0000-4000-8000-0000000000bb' and status='reserved';"
           test "$SUCCEEDED" = 1
           test "$(PGDATABASE=$DB psql -Atc \
             "select last_seq from public.order_public_weekly_counters_v1 where week_start=(now() at time zone 'America/Cuiaba')::date-(extract(isodow from (now() at time zone 'America/Cuiaba')::date)::integer-1)")" = 5
