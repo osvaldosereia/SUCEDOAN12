@@ -1,7 +1,7 @@
 /* DA6 - independent PNG input + ImageMagick WASM JPEG/WebP decode.
  * Uses an ephemeral 512x768 image, no customer data and no Supabase credentials.
  */
-import {decodeDA6ImagePixels} from '../supabase/functions/admin-products-live-v1/inventory-label-worker.ts';
+import {decodeDA6ImagePixels,isDA6ImageSignature} from '../supabase/functions/admin-products-live-v1/inventory-label-worker.ts';
 import {ImageMagick,MagickFormat} from 'npm:@imagemagick/magick-wasm@0.0.44';
 function check(condition:boolean,message:string){
  if(!condition)throw Error(message);
@@ -56,5 +56,17 @@ Deno.test('DA6: JPEG e WebP verdadeiros decodificam para RGBA no worker WASM',as
  for(const [name,format] of [['jpeg',MagickFormat.Jpeg],['webp',MagickFormat.WebP]] as const){
   const encoded=ImageMagick.read(png,img=>img.write(format,data=>new Uint8Array(data)));
   await assertPixels(new Uint8Array(encoded),name);
+ }
+});
+
+
+Deno.test('DA6: não processa foto com cabeçalho falso ou MIME divergente',async()=>{
+ const png=await originalPng();
+ check(isDA6ImageSignature(png,'image/png'),'PNG correto rejeitado');
+ check(!isDA6ImageSignature(png,'image/jpeg'),'PNG disfarçado de JPEG aceito');
+ check(!isDA6ImageSignature(new TextEncoder().encode('<html>bad</html>'),'image/png'),'HTML aceito');
+ for(const [mime,format] of [['image/jpeg',MagickFormat.Jpeg],['image/webp',MagickFormat.WebP]] as const){
+  const bytes=ImageMagick.read(png,img=>img.write(format,data=>new Uint8Array(data)));
+  check(isDA6ImageSignature(new Uint8Array(bytes),mime),mime+': signature rejeitada');
  }
 });
