@@ -32,6 +32,14 @@ async function rgba(bytes:Uint8Array){
 // Exposto para homologação do codec PNG/JPEG/WebP no próprio Deno Edge Runtime.
 export const decodeDA6ImagePixels=rgba;
 
+export function isDA6ImageSignature(bytes:Uint8Array,mime:string){
+ if(bytes.length<12)return false;
+ const jpeg=bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
+ const png=[137,80,78,71,13,10,26,10].every((n,i)=>bytes[i]===n);
+ const webp=String.fromCharCode(...bytes.subarray(0,4))==='RIFF'
+  &&String.fromCharCode(...bytes.subarray(8,12))==='WEBP';
+ return mime==='image/jpeg'?jpeg:mime==='image/png'?png:mime==='image/webp'?webp:false;
+}
 async function sha256(bytes:Uint8Array){
  const copy=new Uint8Array(bytes.byteLength);copy.set(bytes);
  const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',copy.buffer));
@@ -40,13 +48,14 @@ async function sha256(bytes:Uint8Array){
 async function processPhoto(db:any,claim:any){
  const photoId=claim.photo_id,token=claim.claim_token;
  try{
-  const entry=await db.from('inventory_label_photos').select('sha256,size_bytes').eq('id',photoId).single();
+  const entry=await db.from('inventory_label_photos').select('sha256,size_bytes,mime_type').eq('id',photoId).single();
   if(entry.error||!entry.data)throw Error('photo_record_missing');
   const stored=await db.storage.from(LABEL_BUCKET).download(claim.storage_path);
   if(stored.error||!stored.data)throw Error('storage_read_failed');
   const bytes=new Uint8Array(await stored.data.arrayBuffer());
   if(bytes.length!==Number(entry.data.size_bytes)||bytes.length>10*1024*1024)throw Error('image_size_mismatch');
   if(await sha256(bytes)!==entry.data.sha256)throw Error('image_hash_mismatch');
+  if(!isDA6ImageSignature(bytes,entry.data.mime_type))throw Error('image_format_mismatch');
   const pixels=await rgba(bytes);
   const qrModule=await import('npm:jsqr@1.4.0');
   const jsQR=(qrModule.default??qrModule) as unknown as (data:Uint8ClampedArray,width:number,height:number,options?:any)=>any;
