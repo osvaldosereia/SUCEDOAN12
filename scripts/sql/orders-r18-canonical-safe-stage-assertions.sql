@@ -74,5 +74,47 @@ BEGIN
  IF v_count<>2 THEN RAISE EXCEPTION 'expected_two_authentic_triggers_got_%',v_count;END IF;
 END
 $test$;
+
+DO $checkout$
+DECLARE v_client uuid:='00000000-0000-4000-8000-000000000017'::uuid;
+        v_address jsonb:=jsonb_build_object('street','Rua Teste','number','17','district','Bairro Ficticio','city','Cuiaba','delivery_date','2026-10-13');
+BEGIN
+ -- Nonsite integrations must retain the original source-specific contract.
+ INSERT INTO public.orders(source) VALUES('bling');
+ BEGIN
+  INSERT INTO public.orders(source) VALUES('vitrine');
+  RAISE EXCEPTION 'checkout_missing_fields_not_rejected';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM <> 'required_checkout_data' THEN RAISE; END IF;
+ END;
+ BEGIN
+  INSERT INTO public.orders(source,phone_e164,payment_method,delivery_address)
+  VALUES('vitrine','+5565999999999','pix',v_address);
+  RAISE EXCEPTION 'checkout_no_customer_not_rejected';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM <> 'registration_incomplete' THEN RAISE; END IF;
+ END;
+ INSERT INTO public.customers(id,is_active,name,cpf_cnpj)
+ VALUES(v_client,true,'Cliente Ficticio','00000000000');
+ BEGIN
+  INSERT INTO public.orders(source,phone_e164,payment_method,delivery_address,customer_id)
+  VALUES('vitrine','+5565999999999','pix',v_address,v_client);
+  RAISE EXCEPTION 'checkout_no_active_address_not_rejected';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM <> 'registration_incomplete' THEN RAISE; END IF;
+ END;
+ INSERT INTO public.customer_addresses(customer_id,is_active,street,number,neighborhood,city)
+ VALUES(v_client,true,'Rua Teste','17','Bairro Ficticio','Cuiaba');
+ INSERT INTO public.orders(source,phone_e164,payment_method,delivery_address,customer_id)
+ VALUES('vitrine','+5565999999999','pix',v_address,v_client);
+ BEGIN
+  INSERT INTO public.orders(source,phone_e164,payment_method,delivery_address,customer_id)
+  VALUES('vitrine','+5565999999999','pix',v_address-'delivery_date',v_client);
+  RAISE EXCEPTION 'checkout_missing_delivery_date_not_rejected';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM <> 'required_checkout_data' THEN RAISE; END IF;
+ END;
+END
+$checkout$;
 ROLLBACK;
 SELECT 'PASS: original fiscal and separator triggers enforce fail-closed isolated DB behavior' AS result;
