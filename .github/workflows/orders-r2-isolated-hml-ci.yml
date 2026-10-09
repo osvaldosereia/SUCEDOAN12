@@ -7,6 +7,7 @@ on:
       - 'scripts/sql/orders-r2-*.sql'
       - 'scripts/sql/orders-security-*.sql'
       - 'supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql'
+      - 'supabase/sql/orders-r2-basket-independent-groups-review-v1.sql'
       - 'supabase/sql/orders-security-public-table-privileges-review-v1.sql'
       - 'scripts/test-orders-r2-transport-offline.mjs'
       - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
@@ -210,5 +211,94 @@ jobs:
           test "$(PGDATABASE=synthetic_checkout_full_r2 psql -Atc "select count(*) from public.orders")" = 3
           test "$(PGDATABASE=synthetic_checkout_full_r2 psql -Atc "select count(*) from public.vitrine_stock_reservations")" = 3
           echo 'PASS: actual 40KB checkout base serialized competing buyers, one committed, one rolled back'
+      - name: Real split-kit and mold checkout (fifth disposable DB)
+        run: |
+          set -euo pipefail
+          createdb synthetic_baskets_r2
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-bug-baseline.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-assertions.sql
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          echo 'PASS: real basket checkout in split kits, one group unchanged, legacy stock, selectable mold hidden value'
+      - name: Concurrent buyers cannot allocate same last food/hygiene kit
+        run: |
+          set -euo pipefail
+          # Test uses synthetic lots only. Exactly one complete kit left.
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
+            -c "update public.basket_stock_lots set status='ready',quantity_available=1 where id in ('00000000-0000-4000-8000-0000000000f1','00000000-0000-4000-8000-0000000000f2')"
+          BEFORE="$(PGDATABASE=synthetic_baskets_r2 psql -Atc 'select count(*) from public.orders')"
+          CART='[{"type":"basket","id":"00000000-0000-4000-8000-0000000000d1","food_lot_id":"00000000-0000-4000-8000-0000000000f1","components":[{"component_group":"food","product_id":"00000000-0000-4000-8000-0000000000e1","quantity":1},{"component_group":"hygiene","product_id":"00000000-0000-4000-8000-0000000000e2","quantity":1}]}]'
+          SQL="select public.create_vitrine_cart_order_v3(null,'PIX','$CART'::jsonb)->>'order_id';"
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
+            >/tmp/r2-kit-a.out 2>/tmp/r2-kit-a.err &
+          A=$!
+          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
+            >/tmp/r2-kit-b.out 2>/tmp/r2-kit-b.err &
+          B=$!
+          SUCCEEDED=0
+          if wait "$A"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -Eq 'basket_kit_lot_(unavailable|insufficient)' /tmp/r2-kit-a.err; fi
+          if wait "$B"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -Eq 'basket_kit_lot_(unavailable|insufficient)' /tmp/r2-kit-b.err; fi
+          test "$SUCCEEDED" = 1
+          AFTER="$(PGDATABASE=synthetic_baskets_r2 psql -Atc 'select count(*) from public.orders')"
+          test "$AFTER" -eq "$((BEFORE+1))"
+          test "$(PGDATABASE=synthetic_baskets_r2 psql -Atc "select count(*) from public.basket_stock_lots where id in ('00000000-0000-4000-8000-0000000000f1','00000000-0000-4000-8000-0000000000f2') and quantity_available=0 and status='depleted'")" = 2
+          echo 'PASS: two buyers raced for one full kit; precisely one order committed with both linked lots'
+      - name: Two simultaneous buyers cannot overallocate linked food/hygiene kits
+        run: |
+          set -euo pipefail
+          # Fresh sixth isolated database: avoid coupling to prior basket cases.
+          createdb synthetic_basket_race_r2
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          # Explicitly model 3 food and 3 hygiene kits; each buyer requests 2.
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 -c \
+            "update public.basket_stock_lots set quantity_available=3 where id in ('00000000-0000-4000-8000-0000000000f1','00000000-0000-4000-8000-0000000000f2')"
+          test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.basket_lot_public_availability_v1 where lot_id in ('00000000-0000-4000-8000-0000000000f1','00000000-0000-4000-8000-0000000000f2') and public_available=3 and availability_reason='available'")" = 2
+
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 -Atf \
+            scripts/sql/orders-r2-baskets-concurrent-buy.sql \
+            >/tmp/r2-basket-buyer-a.txt 2>/tmp/r2-basket-buyer-a.err &
+          A=$!
+          PGDATABASE=synthetic_basket_race_r2 psql -v ON_ERROR_STOP=1 -Atf \
+            scripts/sql/orders-r2-baskets-concurrent-buy.sql \
+            >/tmp/r2-basket-buyer-b.txt 2>/tmp/r2-basket-buyer-b.err &
+          B=$!
+          SUCCEEDED=0
+          if wait "$A"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -E -q 'basket_kit_lot_insufficient|basket_hygiene_lot_invalid' /tmp/r2-basket-buyer-a.err; fi
+          if wait "$B"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -E -q 'basket_kit_lot_insufficient|basket_hygiene_lot_invalid' /tmp/r2-basket-buyer-b.err; fi
+          test "$SUCCEEDED" = 1
+          test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select quantity_available from public.basket_stock_lots where id='00000000-0000-4000-8000-0000000000f1'")" = 1
+          test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select quantity_available from public.basket_stock_lots where id='00000000-0000-4000-8000-0000000000f2'")" = 1
+          test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.orders")" = 1
+          test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.vitrine_stock_reservations where product_id in ('00000000-0000-4000-8000-0000000000e1','00000000-0000-4000-8000-0000000000e2')")" = 0
+          echo 'PASS: linked food/hygiene kits allocated to exactly one buyer without loose stock duplication'
       - name: Diff hygiene
         run: git diff --check
