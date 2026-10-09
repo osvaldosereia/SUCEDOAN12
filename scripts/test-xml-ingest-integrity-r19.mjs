@@ -18,6 +18,8 @@ assert.ok(order.every(x=>x>=0));
 const normal=src.slice(order[0],src.indexOf("async function ",order[0]+20));
 const manual=src.slice(order[1],src.indexOf("// Return source evidence",order[1]));
 const replay=src.slice(order[2],src.indexOf("async function catalogQueue(",order[2]));
+assert.ok(normal.indexOf("assertCatalogXmlSize(xml)")<normal.indexOf("const p:any=parseXml(xml)"),
+  "Oversize Bling XML must be rejected before the operational regex parser");
 assert.ok(normal.indexOf("assertCatalogXmlIntegrity(xml,p.document_key)")<
   normal.indexOf('sb.storage.from("purchase-xml").upload('),
   "Bling XML preflight must precede storage write");
