@@ -21,6 +21,16 @@ assert.doesNotMatch(purchase,/if\(item\.ncm\)upd\.ncm=item\.ncm/);
 assert.match(b,/async function persistXmlCatalogEvidence/);
 assert.match(purchase,/await persistXmlCatalogEvidence\(documentId,p\.document_key,xml,hash\)/);
 assert.match(b,/if\(action==="xml_catalog_reprocess"\)/);
+assert.match(b,/async function manualCatalogOnlyImport\(/);
+assert.match(b,/if\(action==="xml_catalog_only_import"\)/);
+const manualOnly=b.slice(b.indexOf("async function manualCatalogOnlyImport("),b.indexOf("async function xmlCatalogList("));
+assert.doesNotMatch(manualOnly,/await oauth\(|await bg\(|await bw\(/);
+assert.doesNotMatch(manualOnly,/\.from\(["']products["']\)/);
+assert.match(manualOnly,/financial_eligible:false/);
+assert.match(manualOnly,/products_updated:false,stock_updated:false,finance_updated:false/);
+assert.match(b,/ex\.data\.metadata\?\.catalog_only===true/,
+ "Catalog-only invoice must not be promoted by later Bling import");
+
 assert.match(b,/await persistXmlCatalogEvidence\(d\.id,d\.document_key,xml,hash\)/);
 assert.match(b,/ignoreDuplicates:true/);
 const reprocess=b.slice(b.indexOf("async function xmlCatalogReprocess("),b.indexOf("async function catalogQueue("));
@@ -47,4 +57,8 @@ assert.match(ui,/if\(state\.xmlCatalogOpen\)await loadXmlCatalog\(\)/);
 assert.match(ui,/if\(!confirm\('Ler até 3 XMLs originais/);
 assert.match(html,/xmlCatalogSectionHtml\(\)\+/);
 assert.match(html,/bindXmlCatalog\(\)/);
+assert.match(html,/Catalogar XML sem cadastrar produtos/);
+assert.match(html,/xml_catalog_only_import/);
+assert.match(html,/purchaseXmlCatalogOnlyInput/);
+
 console.log("PASS XML: ingestion, source catalog, RLS, manual re-read and lazy UI guards");
