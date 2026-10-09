@@ -17,6 +17,11 @@ async function magick(){
 async function rgba(bytes:Uint8Array){
  const m=await magick();
  return m.ImageMagick.read(bytes,(image:any)=>{
+  // A descompressão pode exceder dezenas de MB mesmo para um JPEG pequeno.
+  // Fotos acima de 20 MP exigem recaptura em resolução menor.
+  const sourcePixels=image.width*image.height;
+  if(!Number.isSafeInteger(sourcePixels)||sourcePixels<90000||sourcePixels>20_000_000)
+    throw Error('source_image_dimensions_out_of_range');
   const maxSide=Math.max(image.width,image.height);
   if(maxSide>1400){
    const factor=1400/maxSide;
@@ -80,13 +85,16 @@ async function processPhoto(db:any,claim:any){
 }
 export async function inventoryLabelWorkerTick(db:any,limit=3){
  const results=[];
+ // A invocação HTTP do pg_net expira em 55 s. Reservar margem de 15 s.
+ const startedAt=Date.now(),maxBudgetMs=40000;
  const n=Number.isFinite(Number(limit))?Math.min(4,Math.max(1,Math.floor(Number(limit)))):3;
  for(let i=0;i<n;i++){
+  if(i>0&&Date.now()-startedAt>=maxBudgetMs)break;
   const claim=await db.rpc('inventory_label_claim_next');
   if(claim.error)throw Error('worker_claim_failed:'+claim.error.code);
   const item=Array.isArray(claim.data)?claim.data[0]:claim.data;
   if(!item)break;
   results.push(await processPhoto(db,item));
  }
- return {ok:true,processed:results.length,results};
+ return {ok:true,processed:results.length,budget_exhausted:Date.now()-startedAt>=maxBudgetMs,results};
 }
