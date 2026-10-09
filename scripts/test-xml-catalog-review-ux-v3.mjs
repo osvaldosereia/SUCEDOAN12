@@ -26,6 +26,10 @@ const flagged=app.render();
 assert.match(flagged,/NCM do XML diverge do cadastro/);
 assert.match(flagged,/CEST do XML diverge do perfil fiscal/);
 assert.match(flagged,/nenhum campo será alterado/);
+const fiscalFormatted=app.alerts({...state.xmlCatalogDetail.observations[0],
+  xml_ncm:"3402.20.00",linked_product_ncm:"34022000",
+  xml_cest:"11.011.00",linked_product_cest:"1101100"});
+assert.equal(fiscalFormatted,"","Formatting punctuation alone must not be a fiscal conflict");
 state.xmlCatalogDetail.observations[0].linked_product_id=null;
 const form=app.render();
 assert.match(form,/<option value="package" selected>/);
