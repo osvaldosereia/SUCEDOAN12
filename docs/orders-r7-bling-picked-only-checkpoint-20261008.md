@@ -6,7 +6,7 @@
 - `build_bling_order_draft(order_id)` no canônico ainda agrega todos os `order_items`, sem filtrar itens marcados `missing`.
 - O Admin `buildSnapshot(order_id)` já considera `deliverable_order_item_ids` após conclusão, mas forma as quantidades e preços a partir de `order_items` originais, não da contagem final em `order_separation_items_v1`. Isso pode gerar **diferença na quantidade emitida**.
 - O hub `admin-service-intelligence-v1` já tem processo idempotente **parcial**: consulta a venda pelo identificador externo estável `VITRINE-{uuid}`, cria apenas se ausente, compara os campos, faz `PUT` apenas quando necessário e lê novamente para verificar o estado. Reutilizar esse código é preferível a implementar um segundo cliente Bling.
-- A API existente verifica `minimum_order_not_met` para total inferior a R$75. Isso deverá ser revisto **sem remover a regra de pedido mínimo do checkout** quando faltas legítimas reduzirem o total já confirmado abaixo do mínimo. Não desabilitar o gate fiscal para contornar esse erro.
+- A API existente verifica `minimum_order_not_met` para total inferior a R$75. **Ajuste R07 implementado em branch**: somente o pedido originalmente >=R$75 e reduzido por faltas após separação `completed` com `stock_applied=true`, manifesto R06 presente e valores conferidos no Supabase é elegível ao menor total final. **Checkout novo abaixo do mínimo continua bloqueado.** A alteração ainda depende de CI e homologação, e não desabilita o gate fiscal.
 - O registro de conclusão da R06 já guarda `metadata.r6_reconciliation`, com totais, linhas `separated/missing`, cesta visual e marcadores `deliverable`.
 
 ## Implementado na R07
