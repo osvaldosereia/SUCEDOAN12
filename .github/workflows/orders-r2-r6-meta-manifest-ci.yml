@@ -120,6 +120,11 @@ jobs:
           test "$(psql -Atc "select count(*) from public.orders o join public.r2_r5_meta_test_orders t on t.order_id=o.id join public.order_public_snapshots_v1 s on s.order_id=o.id where s.public_code=o.order_number")" = 3
           test "$(psql -Atc "select count(*) from public.order_separation_completions_v1 where phase='completed'")" = 1
           echo 'PASS R02/R03/R04/R05: two authenticated synthetic button replies, one held order, immutable public codes'
+      - name: Close R05 pending-insert bypass before running R06 canonical initializer
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r5-r6-init-meta-confirmation-guard-review-v1.sql
       - name: Upgrade R02-R05 ephemeral receipts to real R06 schema
         run: |
           set -euo pipefail
