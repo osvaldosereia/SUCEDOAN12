@@ -39,6 +39,7 @@ jobs:
           node scripts/test-admin-fiscal-recovery-v1.mjs
           node scripts/test-fiscal-nfe-autorecovery-v1.mjs
           node scripts/test-fiscal-ncm-remote-gap-v2.mjs
+          node scripts/test-fiscal-recovery-r1-auth-backoff.mjs
           node scripts/test-admin-pending-data-baskets-public-v1.mjs
           node scripts/test-order-public-vitrine-print.mjs
   both-xml-backends:
