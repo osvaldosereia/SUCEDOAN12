@@ -8,11 +8,14 @@ function render(photo){
  const productId=String(photo.parsed?.product_id||'');
  if(!/^[0-9A-F]{10,20}$/.test(serial)||!/^[-a-f0-9]{36}$/i.test(productId))
   return '<small>Identidade não verificada. É necessário fotografar novamente.</small>';
+ const duplicated=Number(photo.parsed?.duplicates||0)>0;
  const rows=Array.isArray(photo.review_counts)?photo.review_counts:[];
  const errors=Array.isArray(photo.parsed?.errors)?photo.parsed.errors:[];
  const issues=new Set(errors.map(x=>Number(x.slot)).filter(n=>n>=1&&n<=6));
  const slots=new Set([...rows.map(x=>Number(x.balance_slot)),...issues]);
- if(!slots.size)return '<small>Nenhum balanço ativado. Nada a confirmar.</small>';
+ if(!slots.size)
+  return duplicated?'<small class="da6-review-warning">Balanço já registrado em outra fotografia. Não foi criada uma segunda contagem.</small>':
+   '<small>Nenhum balanço ativado. Nada a confirmar.</small>';
  const sections=[...slots].sort((a,b)=>a-b).map(slot=>{
   const count=rows.find(x=>Number(x.balance_slot)===slot);
   const finalized=['approved','rejected'].includes(count?.status);
@@ -31,10 +34,39 @@ function render(photo){
  }).join('');
  return '<details class="da6-review" data-da6-review-photo="'+esc(photo.id)+'"><summary>Conferir balanços · '+esc(serial)+'</summary>'+
   '<p>Confira a etiqueta original. Quantidades aprovadas são históricas e não atualizam o estoque automaticamente.</p>'+
-  sections+'</details>';
+  (duplicated?'<p class="da6-review-warning">Há balanços desta etiqueta registrados em outra foto. Não confirme duplicações.</p>':'')+
+  sections+
+  '<button type="button" class="secondary da6-history-btn" data-da6-history>Ver histórico da revisão</button>'+
+  '<div class="da6-review-history" aria-live="polite"></div></details>';
 }
 function bind(container,bridge,refresh){
  if(!container)return;
+ container.querySelectorAll('[data-da6-history]').forEach(button=>{
+  button.onclick=async()=>{
+   if(button.disabled)return;
+   const details=button.closest('[data-da6-review-photo]');
+   const panel=details?.querySelector('.da6-review-history');
+   const id=details?.dataset.da6ReviewPhoto;
+   if(!panel||!id)return;
+   button.disabled=true;
+   panel.textContent='Consultando histórico…';
+   try{
+    const result=await bridge.api('inventory_label_photo_history',{photo_id:id});
+    const entries=Array.isArray(result.events)?result.events:[];
+    panel.innerHTML=entries.length?'<ol>'+entries.map(e=>{
+     const name={approve:'Aprovação',reject:'Rejeição',correct:'Correção'}[e.decision]||'Revisão';
+     const date=new Date(e.created_at);
+     const when=Number.isFinite(date.getTime())?date.toLocaleString('pt-BR'):'Data indisponível';
+     const change=e.decision==='reject'?'Rejeitada':
+      (e.old_quantity===null||e.old_quantity===undefined?'Quantidade '+esc(e.new_quantity):
+       esc(e.old_quantity)+' → '+esc(e.new_quantity));
+     return '<li><strong>'+name+'</strong> · '+esc(when)+' · '+change+
+       (e.note?' — '+esc(e.note):'')+'</li>';
+    }).join('')+'</ol>':'<small>Nenhuma decisão registrada para esta fotografia.</small>';
+   }catch(error){panel.textContent='Não foi possível consultar: '+String(error?.message||error)}
+   finally{button.disabled=false}
+  };
+ });
  container.querySelectorAll('[data-da6-decision]').forEach(button=>{
   button.onclick=async()=>{
    if(button.disabled)return;
