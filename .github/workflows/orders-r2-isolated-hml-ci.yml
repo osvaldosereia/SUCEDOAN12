@@ -334,5 +334,37 @@ jobs:
           PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
             -f scripts/sql/orders-r2-r3-integration-assertions.sql
           echo 'PASS: weekly number R03 coexists with actual R02 v3 checkout, baskets, mold, reservation and snapshot'
+      - name: Concurrent R02 checkouts allocate ONLY committed R03 weekly numbers
+        run: |
+          set -euo pipefail
+          # Two real checkout sessions try purchasing all 2 units of the
+          # same fictitious product, while the R03 weekly trigger allocates
+          # customer numbers inside each checkout transaction.
+          DB=synthetic_r02_r03_checkout
+          BEFORE="$(PGDATABASE=$DB psql -Atc \
+            "select last_seq from public.order_public_weekly_counters_v1 where week_start=(now() at time zone 'America/Cuiaba')::date-(extract(isodow from (now() at time zone 'America/Cuiaba')::date)::integer-1)")"
+          test "$BEFORE" = 4
+          SQL="select public.create_vitrine_cart_order_v3(null,'PIX','[{\"type\":\"product\",\"id\":\"00000000-0000-4000-8000-0000000000bb\",\"qty\":2}]'::jsonb)->>'order_id';"
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
+            >/tmp/r02-r03-a.txt 2>/tmp/r02-r03-a.err &
+          A=$!
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
+            >/tmp/r02-r03-b.txt 2>/tmp/r02-r03-b.err &
+          B=$!
+          SUCCEEDED=0
+          if wait "$A"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q insufficient_stock /tmp/r02-r03-a.err; fi
+          if wait "$B"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q insufficient_stock /tmp/r02-r03-b.err; fi
+          test "$SUCCEEDED" = 1
+          test "$(PGDATABASE=$DB psql -Atc \
+            "select last_seq from public.order_public_weekly_counters_v1 where week_start=(now() at time zone 'America/Cuiaba')::date-(extract(isodow from (now() at time zone 'America/Cuiaba')::date)::integer-1)")" = 5
+          test "$(PGDATABASE=$DB psql -Atc \
+            "select count(*) from public.orders")" = 6
+          test "$(PGDATABASE=$DB psql -Atc \
+            "select count(distinct order_number) from public.orders where source='vitrine'")" = 5
+          test "$(PGDATABASE=$DB psql -Atc \
+            "select count(*) from public.orders o join public.order_public_snapshots_v1 s on s.order_id=o.id where o.source='vitrine' and o.order_number=s.public_code")" = 5
+          test "$(PGDATABASE=$DB psql -Atc \
+            "select coalesce(sum(quantity),0) from public.vitrine_stock_reservations where product_id='00000000-0000-4000-8000-0000000000bb' and status='reserved'")" = 2
+          echo 'PASS: one buyer receives unique weekly number and stock; failed buyer consumes neither'
       - name: Diff hygiene
         run: git diff --check
