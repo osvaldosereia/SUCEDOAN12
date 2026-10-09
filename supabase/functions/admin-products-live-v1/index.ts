@@ -3826,7 +3826,7 @@ async function orderFiscalR8Preview(oid:string,auth:any){
   if(!ORDER_R8_FISCAL_PREFLIGHT_ENABLED)return {
     preflight:{ok:true,enabled:false,ready:false,blockers:["r8_preflight_not_enabled"],external_write:false}
   };
-  const [order,completion,intent,control,link,config,hubRuntime,existingJobs,activeRules]=await Promise.all([
+  const [order,completion,intent,control,link,config,hubRuntime,existingJobs,activeRules,r9Observation]=await Promise.all([
     db.from("orders").select("id,order_number,status,total,fiscal_subtotal,other_expenses,discount,basket_hidden_adjustment,bling_order_id,cancelled_at,returned_at").eq("id",oid).maybeSingle(),
     db.from("order_separation_completions_v1").select("order_id,phase,metadata,completed_at").eq("order_id",oid).maybeSingle(),
     db.from("order_bling_r7_sync_intents_v1").select("order_id,status,bling_order_id,payload_hash,manifest,provider_result").eq("order_id",oid).maybeSingle(),
@@ -3835,9 +3835,12 @@ async function orderFiscalR8Preview(oid:string,auth:any){
     db.from("fiscal_runtime_config").select("enabled,execution_mode,bling_invoice_prepare_enabled,require_fiscal_authorization_before_dispatch").eq("id",1).maybeSingle(),
     db.from("bling_hub_runtime_v2").select("hub_enabled,orders_enabled").eq("id",1).maybeSingle(),
     db.from("dispatch_fiscal_jobs").select("status,bling_invoice_id").eq("order_id",oid),
-    db.from("fiscal_rule_sets").select("jurisdiction,tax_kind,status,activated_at,valid_to").eq("status","active")
+    db.from("fiscal_rule_sets").select("jurisdiction,tax_kind,status,activated_at,valid_to").eq("status","active"),
+    db.from("order_fiscal_r9_observations_v1")
+      .select("status,evidence,observed_at,r7_payload_hash")
+      .eq("order_id",oid).maybeSingle()
   ]);
-  for(const q of [order,completion,intent,control,link,config,hubRuntime,existingJobs,activeRules]){
+  for(const q of [order,completion,intent,control,link,config,hubRuntime,existingJobs,activeRules,r9Observation]){
     if(q.error) return {error:"r8_fiscal_sources_unavailable",status:503};
   }
   const manifest=completion.data?.metadata?.r6_reconciliation;
@@ -3870,7 +3873,9 @@ async function orderFiscalR8Preview(oid:string,auth:any){
     // This explicit empty evidence set MUST block invoice authorization.
     approved_sales_tax_rules:[],
     // Provider read-back is handled by R09, never synthesized from local state.
-    bling_remote_evidence:null
+    bling_remote_evidence:
+      r9Observation.data?.status==="observed_no_invoice"
+        ?r9Observation.data.evidence:null
   });
   return {preflight:{...report,enabled:true,requires_fiscal_review:!report.ready}};
 }
