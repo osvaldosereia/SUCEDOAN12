@@ -1,0 +1,86 @@
+name: Orders R06 - Picked manifest reconciliation (offline)
+on:
+  push:
+    branches:
+      - 'agent/orders-r6-*'
+  pull_request:
+    branches:
+      - 'agent/orders-r5-*'
+      - main
+    paths:
+      - 'supabase/sql/orders-r6-picked-manifest-contract-v1.sql'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'scripts/sql/orders-r6-*'
+      - 'scripts/test-orders-r6-*'
+      - '.github/workflows/orders-r6-picked-manifest-ci.yml'
+permissions:
+  contents: read
+jobs:
+  reconciliation:
+    name: R06 real separation RPCs + picked manifest (Postgres 17 synthetic)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: orders_r6_synthetic
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d orders_r6_synthetic"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: orders_r6_synthetic
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      ORDER_R6_RECONCILIATION_ENABLED: 'false'
+      BLING_LIVE_ENABLED: 'false'
+      META_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify real transports and rollout gate disabled
+        run: |
+          test "$ORDER_R6_RECONCILIATION_ENABLED" = false
+          test "$BLING_LIVE_ENABLED" = false
+          test "$META_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+      - name: Node manifest and flow contract tests
+        run: |
+          node --check scripts/test-orders-r6-manifest-contract-v1.mjs
+          node --test scripts/test-orders-r6-manifest-contract-v1.mjs
+      - name: Install PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client >/dev/null
+          fi
+      - name: Setup R02 captured REAL separation functions in disposable DB
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-canonical-separation-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-canonical-separation-functions.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-hml-extra-fixtures.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r6-picked-manifest-contract-v1.sql
+      - name: Test all missing, baskets, stock replay, discounts and immutable manifest
+        run: |
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-hml-assertions.sql
+      - name: Assert final isolated ledger and absence of duplicate debit
+        run: |
+          set -euo pipefail
+          test "$(psql -Atc "select count(*) from public.order_separation_completions_v1 where metadata ? 'r6_reconciliation'")" = 2
+          test "$(psql -Atc "select count(*) from public.order_separation_completions_v1")" = 2
+          test "$(psql -Atc "select count(*) from public.vitrine_stock_reservations where status='consumed'")" = 2
+          echo "PASS R06 manifest ledger durable on two synthetic orders"
+      - name: Diff hygiene
+        run: git diff --check
