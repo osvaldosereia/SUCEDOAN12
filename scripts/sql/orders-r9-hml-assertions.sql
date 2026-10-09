@@ -16,7 +16,7 @@ BEGIN
   THEN RAISE EXCEPTION 'observer service_role grant missing'; END IF;
 
   v:=public.ops2_enqueue_fiscal_r9_observation_v1(wrong);
-  IF v->>'ok'<>'false' THEN RAISE EXCEPTION 'unknown order enqueued'; END IF;
+  IF v->>'ok' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'unknown order enqueued'; END IF;
   v:=public.ops2_seed_fiscal_r9_observations_v1(10);
   IF (v->>'seeded')::integer<>2 THEN RAISE EXCEPTION 'valid observer seeds missing: %',v; END IF;
   v:=public.ops2_seed_fiscal_r9_observations_v1(10);
@@ -32,15 +32,15 @@ BEGIN
   a:=(v->'claimed'->0->>'order_id')::uuid;
   v:=public.ops2_finish_fiscal_r9_observation_v1(a,wrong,'no_invoice',
       '{}'::jsonb,NULL);
-  IF v->>'error'<>'r9_claim_token_mismatch' THEN
+  IF v->>'error' IS DISTINCT FROM 'r9_claim_token_mismatch' THEN
     RAISE EXCEPTION 'stale token accepted'; END IF;
   v:=public.ops2_finish_fiscal_r9_observation_v1(a,tok,'authorized',
       '{}'::jsonb,NULL);
-  IF v->>'error'<>'invalid_observation_verdict' THEN
+  IF v->>'error' IS DISTINCT FROM 'invalid_observation_verdict' THEN
     RAISE EXCEPTION 'R09 illegally allowed authorization'; END IF;
   v:=public.ops2_finish_fiscal_r9_observation_v1(a,tok,'no_invoice',
       '{"source":"unknown","external_write":false}'::jsonb,NULL);
-  IF v->>'error'<>'r9_observation_proof_invalid' THEN
+  IF v->>'error' IS DISTINCT FROM 'r9_observation_proof_invalid' THEN
     RAISE EXCEPTION 'forged provider proof accepted'; END IF;
   v:=public.ops2_finish_fiscal_r9_observation_v1(a,tok,'no_invoice',
     jsonb_build_object('source','bling_get','order_id',a,
@@ -49,7 +49,7 @@ BEGIN
       'order_read_ok',true,'external_write',false,'checked_at',now(),
       'invoice_count',0,'commercial_match',true),
     NULL);
-  IF v->>'status'<>'observed_no_invoice' THEN
+  IF v->>'status' IS DISTINCT FROM 'observed_no_invoice' THEN
     RAISE EXCEPTION 'valid GET observation failed: %',v;
   END IF;
 
@@ -70,7 +70,7 @@ BEGIN
     RAISE EXCEPTION 'finished observation was not persisted';
   END IF;
   v:=public.ops2_enqueue_fiscal_r9_observation_v1(a);
-  IF v->>'status'<>'observed_no_invoice' THEN
+  IF v->>'status' IS DISTINCT FROM 'observed_no_invoice' THEN
     RAISE EXCEPTION 're-enqueue altered completed observation: %',v;
   END IF;
   IF (SELECT attempts FROM public.order_fiscal_r9_observations_v1 WHERE order_id=a)<>1
