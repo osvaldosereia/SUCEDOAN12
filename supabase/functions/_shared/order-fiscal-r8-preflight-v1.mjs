@@ -61,9 +61,6 @@ export function evaluateOrderFiscalR8(input){
     ||(Array.isArray(manifest.blockers)&&manifest.blockers.length>0))
     add(errors,"r6_frozen_manifest_invalid");
   if(intent.order_id!==orderId||intent.status!=="verified"||n(intent.bling_order_id)<=0
-    ||!digits(intent.payload_hash,64 /* special hex handled below */))
-    ; // checked explicitly below; intentionally no writes
-  if(intent.order_id!==orderId||intent.status!=="verified"||n(intent.bling_order_id)<=0
     ||typeof intent.payload_hash!=="string"||!/^[0-9a-f]{64}$/.test(intent.payload_hash))
     add(errors,"r7_bling_order_not_verified");
   if(manifest&&intent.manifest&&JSON.stringify(intent.manifest)!==JSON.stringify(manifest))
