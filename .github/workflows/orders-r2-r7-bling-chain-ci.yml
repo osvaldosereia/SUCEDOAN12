@@ -1,16 +1,19 @@
-name: Orders R02-R09 - checkout, Bling, fiscal GET-only (offline)
+name: Orders R02-R10 - checkout, fiscal GET and synthetic SEFAZ gate (offline)
 on:
   push:
     branches:
       - 'agent/orders-r2-r7-*'
       - 'agent/orders-r2-r8-*'
       - 'agent/orders-r2-r9-*'
+      - 'agent/orders-r2-r10-*'
     paths:
       - 'scripts/sql/orders-r2-r7-*.sql'
       - 'scripts/test-orders-r2-r7-*.mjs'
       - 'scripts/test-orders-r2-r8-*.mjs'
       - 'scripts/sql/orders-r2-r9-*.sql'
       - 'scripts/test-orders-r2-r9-*.mjs'
+      - 'scripts/sql/orders-r2-r10-*.sql'
+      - 'scripts/test-orders-r2-r10-*.mjs'
       - '.github/workflows/orders-r2-r7-bling-chain-ci.yml'
 
 
@@ -18,6 +21,7 @@ on:
     branches:
       - 'agent/orders-r2-r6-*'
       - 'agent/orders-r2-r8-*'
+      - 'agent/orders-r2-r9-*'
       - main
     paths:
       - 'scripts/sql/orders-r2-r7-*.sql'
@@ -59,6 +63,7 @@ jobs:
       FISCAL_LIVE_ENABLED: 'false'
       R08_FISCAL_PRODUCTION_ENABLED: 'false'
       R9_FISCAL_OBSERVER_ENABLED: 'false'
+      ORDER_R10_SEFAZ_PROOF_ENABLED: 'false'
       ORDER_R4_META_CONFIRMATION_ENABLED: 'false'
       ORDER_R5_SEPARATION_META_GATE_ENABLED: 'false'
     steps:
@@ -87,6 +92,12 @@ jobs:
         with:
           ref: 786a58141a99b54e8da60917e87f86e0d8810465
           path: r09-source
+          persist-credentials: false
+      # Original R10 verifier, SQL draft and regression suite from fixed SHA.
+      - uses: actions/checkout@v4
+        with:
+          ref: a3e7975ba2bc8c3e8707abd12b15c3cae5163a11
+          path: r10-source
           persist-credentials: false
       # R06 source is pinned: reconciliation contract and canonical RPC exports,
       # without copying or reimplementing the published code.
@@ -265,6 +276,28 @@ jobs:
           test "$FISCAL_LIVE_ENABLED" = false
           test "$R9_FISCAL_OBSERVER_ENABLED" = false
           echo 'PASS original R09 observes ONLY R07 verified; R08 fiscal stays blocked without approved tax'
+      - name: Run ORIGINAL R10 verifier with truly separated checkout amount (fake SEFAZ only)
+        run: |
+          set -euo pipefail
+          (cd r10-source && node --test scripts/test-orders-r10-sefaz-proof-v1.mjs)
+          node --check scripts/test-orders-r2-r10-genuine-sefaz-proof.mjs
+          node scripts/test-orders-r2-r10-genuine-sefaz-proof.mjs /tmp/r02-r09-real-receipts.jsonl
+          test "$ORDER_R10_SEFAZ_PROOF_ENABLED" = false
+      - name: Reuse original fiscal outbox, apply ORIGINAL R10 dispatch/evidence draft
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f r10-source/scripts/sql/orders-r10-hml-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f r10-source/supabase/sql/orders-r10-sefaz-authorization-gate-v1.sql
+          test "$(psql -Atc "SELECT count(*) FROM public.dispatch_fiscal_jobs")" = 1
+          echo 'PASS R10 outbox: only verified R07 basket, no second fiscal writer'
+      - name: ORIGINAL R10 SQL guards: deny dispatch, then synthetic SEFAZ protocol, idempotent replay
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f r10-source/scripts/sql/orders-r10-hml-assertions.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-r10-genuine-dispatch-assertions.sql
+          test "$(psql -Atc "SELECT count(*) FROM public.order_fiscal_r10_authorization_evidence_v1")" = 1
+          test "$(psql -Atc "SELECT count(*) FROM public.dispatch_fiscal_jobs WHERE status='authorized'")" = 1
+          echo 'PASS full REAL checkout->Meta fake->R06->R07->R08 blocked->R09 fake GET->R10 fake SEFAZ and delivery gate'
       - name: Ensure no unsafe transports enabled or changes to tracked files
         run: |
           set -euo pipefail
