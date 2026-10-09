@@ -40,7 +40,7 @@ export function inspectBlingNfeProviderErrorsR2(raw, itemSummaries=[]) {
   for(const v of sources)visit(v);
   return messages.map(text=>{
     const ncmMatch=text.match(/\bNCM[\s:]+([0-9]{4}[.]?[0-9]{2}[.]?[0-9]{2})\b/i);
-    const itemMatch=text.match(/\bpara (?:o )?item\s+(.+?)\s+(?:n[aã]o est[aá]|est[aá]|n[aã]o [ée]|possui|cont[eé]m)\b/i);
+    const itemMatch=text.match(/\bpara (?:o )?item\s+(.+?)\s+(?:n[aã]o est[aá]|est[aá]|n[aã]o [ée]|possui|cont[eé]m)/i);
     const itemName=itemMatch?.[1]?.trim()||null;
     const normalized=normalizeName(itemName);
     const candidates=normalized?itemSummaries.filter(x=>normalizeName(x.name)===normalized):[];
