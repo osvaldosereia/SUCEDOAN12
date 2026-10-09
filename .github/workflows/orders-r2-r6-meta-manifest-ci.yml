@@ -1,0 +1,152 @@
+name: Orders R02-R06 - real checkout Meta and reconciliation (offline)
+on:
+  push:
+    branches:
+      - 'agent/orders-r2-r6-*'
+    paths:
+      - 'scripts/sql/orders-r2-r6-*.sql'
+      - '.github/workflows/orders-r2-r6-meta-manifest-ci.yml'
+
+  pull_request:
+    branches:
+      - 'agent/orders-r2-r5-*'
+      - main
+    paths:
+      - 'scripts/sql/orders-r2-r6-*.sql'
+      - '.github/workflows/orders-r2-r6-meta-manifest-ci.yml'
+
+permissions:
+  contents: read
+jobs:
+  checkout-meta-separation:
+    name: Actual checkout + weekly number + R05 Meta + R06 picked receipt/stock
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: real_checkout_meta_r2r5_synthetic
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d real_checkout_meta_r2r5_synthetic"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: real_checkout_meta_r2r5_synthetic
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      BLING_LIVE_ENABLED: 'false'
+      META_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+      ORDER_R4_META_CONFIRMATION_ENABLED: 'false'
+      ORDER_R5_SEPARATION_META_GATE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      # R03: same original immutable-number migration tested in PR #996.
+      - uses: actions/checkout@v4
+        with:
+          ref: e7408ad5cbcd6ae8d5ca16e90f2e287a7d61af4c
+          path: r03-source
+          persist-credentials: false
+      # R06 source is pinned: reconciliation contract and canonical RPC exports,
+      # without copying or reimplementing the published code.
+      - uses: actions/checkout@v4
+        with:
+          ref: d90a7443aae5b374e44c5e570d0c6333c666fb69
+          path: r06-source
+          persist-credentials: false
+      # R05 contains exactly the earlier R04+R05 SQL contracts.
+      - uses: actions/checkout@v4
+        with:
+          ref: e84dd252f9b4e3c0ba4bc151a6d89f298e87604d
+          path: r05-source
+          persist-credentials: false
+      - name: Lock transports and flags OFF
+        run: |
+          set -euo pipefail
+          test "$BLING_LIVE_ENABLED" = false
+          test "$META_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          test "$ORDER_R4_META_CONFIRMATION_ENABLED" = false
+          test "$ORDER_R5_SEPARATION_META_GATE_ENABLED" = false
+      - name: Install PostgreSQL client if missing
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client >/dev/null
+          fi
+      - name: Load actual checkout v3, reservation, two-kit catalogue
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+      - name: Load exact R03 identity migration and checkout read-back patch
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-r3-integration-fixture.sql
+          psql -v ON_ERROR_STOP=1 \
+            -f r03-source/supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql
+          psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-r3-checkout-public-number-readback-review-v1.sql
+      - name: Create three real checkout orders and fake Meta outbox/webhook events
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-r5-real-checkout-meta-fixture.sql
+      - name: Apply ORIGINAL R04/R05 Meta ledger and separation gate drafts
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 \
+            -f r05-source/supabase/sql/orders-r4-meta-button-confirmation-contract-v1.sql
+          psql -v ON_ERROR_STOP=1 \
+            -f r05-source/supabase/sql/orders-r5-separation-meta-gates-v1.sql
+      - name: Verify full checkout -> weekly ID -> Meta button -> picker guard
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-r5-real-checkout-meta-assertions.sql
+          test "$(psql -Atc "select count(*) from public.order_meta_confirmations_v1")" = 2
+          test "$(psql -Atc "select count(*) from public.r2_r5_meta_test_orders")" = 3
+          test "$(psql -Atc "select count(*) from public.orders o join public.r2_r5_meta_test_orders t on t.order_id=o.id join public.order_public_snapshots_v1 s on s.order_id=o.id where s.public_code=o.order_number")" = 3
+          test "$(psql -Atc "select count(*) from public.order_separation_completions_v1 where phase='completed'")" = 1
+          echo 'PASS R02/R03/R04/R05: two authenticated synthetic button replies, one held order, immutable public codes'
+      - name: Close R05 pending-insert bypass before running R06 canonical initializer
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r5-r6-init-meta-confirmation-guard-review-v1.sql
+      - name: Upgrade R02-R05 ephemeral receipts to real R06 schema
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-r6-manifest-chain-fixture.sql
+      - name: Load actual production R02 init/prepare/stock/finish and ORIGINAL R06 manifest
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-canonical-init-function.sql
+          psql -v ON_ERROR_STOP=1 -f r06-source/scripts/sql/orders-r6-canonical-separation-functions.sql
+          psql -v ON_ERROR_STOP=1 -f r06-source/supabase/sql/orders-r6-picked-manifest-contract-v1.sql
+      - name: Test actual checkout through R04/R05 gates to immutable R06 completion
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-r6-manifest-chain-assertions.sql
+          test "$(psql -Atc "select count(*) from public.order_separation_completions_v1 where metadata ? 'r6_reconciliation'")" = 2
+          test "$(psql -Atc "select count(*) from public.r2_r5_meta_test_orders t join public.orders o on o.id=t.order_id where t.kind='basket' and o.total=140")" = 1
+          test "$(psql -Atc "select count(*) from public.r2_r5_meta_test_orders t join public.orders o on o.id=t.order_id where t.kind='mold' and o.total=75")" = 1
+          echo 'PASS R02-R06: real checkout 2 kits and mold, genuine Meta SQL gate, actual R06 reconciliation and immutable weekly code'
+      - name: Ensure no unsafe transports enabled or changes to tracked files
+        run: |
+          set -euo pipefail
+          test "$META_LIVE_ENABLED" = false
+          test "$BLING_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          git diff --check
