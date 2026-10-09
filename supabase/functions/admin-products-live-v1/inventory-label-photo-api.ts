@@ -116,10 +116,23 @@ export async function inventoryLabelPhotoAction(db:any,action:string,req:Request
   if(!owned.data)return bad('photo_not_found',404);
   // Consulta sob demanda: histórico não é recuperado no polling a cada 15 segundos.
   const history=await db.from('inventory_label_review_events')
-   .select('count_id,decision,old_quantity,new_quantity,old_status,new_status,note,created_at')
+   .select('actor_id,count_id,decision,old_quantity,new_quantity,old_status,new_status,note,created_at')
    .eq('photo_id',photoId).order('created_at',{ascending:false}).limit(40);
   if(history.error)throw history.error;
-  return {photo_id:photoId,events:history.data||[]};
+  const events=history.data||[];
+  const actors=[...new Set(events.map((x:any)=>x.actor_id).filter(Boolean))];
+  const names=new Map<string,string>();
+  if(actors.length){
+   const users=await db.from('admin_users').select('user_id,display_name').in('user_id',actors);
+   if(users.error)throw users.error;
+   for(const account of users.data||[])names.set(account.user_id,cleanText(account.display_name,80));
+  }
+  return {photo_id:photoId,events:events.map((event:any)=>({
+   count_id:event.count_id,decision:event.decision,old_quantity:event.old_quantity,
+   new_quantity:event.new_quantity,old_status:event.old_status,new_status:event.new_status,
+   note:event.note,created_at:event.created_at,
+   actor_name:names.get(event.actor_id)||'Operador'
+  }))};
  }
  if(action==='inventory_label_batch_status'){
   if(req.method!=='GET')return bad('method_not_allowed',405);
