@@ -49,13 +49,15 @@ with base as (
  select b.*,
  case when b.content_match is null then null
       when b.content_match[2] in ('l','ml') then
-       trim(trailing '.' from regexp_replace(
-          (replace(b.content_match[1],',','.')::numeric *
-            case when b.content_match[2]='l' then 1000 else 1 end)::text, '(\.[0-9]*?)0+ 'ml'
+        trim(trailing '.' from regexp_replace(
+           (replace(b.content_match[1],',','.')::numeric *
+             case when b.content_match[2]='l' then 1000 else 1 end)::text,
+           '(\.[0-9]*?)0+$', '\1')) || 'ml'
       when b.content_match[2] in ('kg','g') then
-       trim(trailing '.' from regexp_replace(
-          (replace(b.content_match[1],',','.')::numeric *
-            case when b.content_match[2]='kg' then 1000 else 1 end)::text)) || 'g'
+        trim(trailing '.' from regexp_replace(
+           (replace(b.content_match[1],',','.')::numeric *
+             case when b.content_match[2]='kg' then 1000 else 1 end)::text,
+           '(\.[0-9]*?)0+$', '\1')) || 'g'
       else null end as normalized_content
  from base b
 )
