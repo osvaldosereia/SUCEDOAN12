@@ -4,6 +4,9 @@
 -- ops2_init_order_separation_v2 is intentionally stubbed, because items are
 -- materialized below. Initialization itself is outside this test's coverage.
 \set ON_ERROR_STOP on
+CREATE ROLE anon;
+CREATE ROLE authenticated;
+CREATE ROLE service_role BYPASSRLS;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE public.orders (
   id uuid PRIMARY KEY,
