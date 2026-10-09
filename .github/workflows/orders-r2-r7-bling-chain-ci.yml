@@ -11,7 +11,16 @@ on:
       - 'agent/orders-r12-*'
       - 'agent/orders-r12-*'
       - 'agent/orders-r13-*'
+      - 'agent/orders-r15-*'
     paths:
+      - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
+      - 'scripts/test-orders-r15-weekly-unification-v1.mjs'
+      - 'montar/app.js'
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-orders-v1/index.ts'
+      - 'supabase/functions/admin-order-vitrine-send-v1/index.ts'
+      - 'supabase/functions/order-separation-notify-v1/index.ts'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'scripts/sql/orders-r2-r7-*.sql'
       - 'scripts/test-orders-r2-r7-*.mjs'
       - 'scripts/test-orders-r2-r8-*.mjs'
@@ -45,8 +54,17 @@ on:
       - 'agent/orders-r2-r8-*'
       - 'agent/orders-r2-r9-*'
       - 'agent/orders-r11-*'
+      - 'agent/orders-r15-*'
       - main
     paths:
+      - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
+      - 'scripts/test-orders-r15-weekly-unification-v1.mjs'
+      - 'montar/app.js'
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-orders-v1/index.ts'
+      - 'supabase/functions/admin-order-vitrine-send-v1/index.ts'
+      - 'supabase/functions/order-separation-notify-v1/index.ts'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'scripts/sql/orders-r2-r7-*.sql'
       - 'scripts/test-orders-r2-r7-*.mjs'
       - 'scripts/test-orders-r2-r9-*.mjs'
@@ -91,12 +109,7 @@ jobs:
       ORDER_R5_SEPARATION_META_GATE_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v4
-      # R03: same original immutable-number migration tested in PR #996.
-      - uses: actions/checkout@v4
-        with:
-          ref: e7408ad5cbcd6ae8d5ca16e90f2e287a7d61af4c
-          path: r03-source
-          persist-credentials: false
+      # R15: R03 weekly migration is now locally unified and tested from HEAD.
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       # R07 original source: pure manifest-to-Bling adapter and unique-intent SQL.
@@ -135,6 +148,9 @@ jobs:
           ref: e84dd252f9b4e3c0ba4bc151a6d89f298e87604d
           path: r05-source
           persist-credentials: false
+      - name: R15 weekly code contract before the integrated fiscal queue
+        run: |
+          node --test scripts/test-orders-r15-weekly-unification-v1.mjs
       - name: Lock transports and flags OFF
         run: |
           set -euo pipefail
@@ -164,7 +180,7 @@ jobs:
           set -euo pipefail
           psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-r3-integration-fixture.sql
           psql -v ON_ERROR_STOP=1 \
-            -f r03-source/supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql
+            -f supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql
           psql -v ON_ERROR_STOP=1 \
             -f supabase/sql/orders-r2-r3-checkout-public-number-readback-review-v1.sql
       - name: Create three real checkout orders and fake Meta outbox/webhook events
