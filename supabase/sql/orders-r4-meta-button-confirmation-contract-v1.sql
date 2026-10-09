@@ -212,3 +212,24 @@ DROP TRIGGER IF EXISTS trg_ops2_order_meta_completion_guard_v1
 CREATE TRIGGER trg_ops2_order_meta_completion_guard_v1
   BEFORE INSERT ON public.order_separation_completions_v1 FOR EACH ROW
   EXECUTE FUNCTION public.ops2_guard_order_meta_separation_v1();
+
+-- Also prevent a direct order.status transition from bypassing picker/assignment
+-- checks. The flag is default OFF and applies only to new customer orders.
+CREATE OR REPLACE FUNCTION public.ops2_guard_order_meta_status_v1()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $status_gate$
+BEGIN
+  IF NEW.status IS DISTINCT FROM OLD.status
+    AND NEW.status IN ('processing','ready','out_for_delivery','delivered')
+    AND public.ops2_meta_order_confirmation_required_v1(NEW.id) THEN
+    RAISE EXCEPTION 'meta_customer_confirmation_required' USING errcode='P0001';
+  END IF;
+  RETURN NEW;
+END
+$status_gate$;
+REVOKE ALL ON FUNCTION public.ops2_guard_order_meta_status_v1()
+  FROM PUBLIC,anon,authenticated;
+DROP TRIGGER IF EXISTS trg_ops2_order_meta_status_guard_v1 ON public.orders;
+CREATE TRIGGER trg_ops2_order_meta_status_guard_v1
+  BEFORE UPDATE OF status ON public.orders FOR EACH ROW
+  EXECUTE FUNCTION public.ops2_guard_order_meta_status_v1();
