@@ -49,6 +49,9 @@ jobs:
           node scripts/test-xml-release-preflight-r26.mjs
           node scripts/test-xml-migration-drift-r27.mjs
           node scripts/test-xml-migration-reconciliation-r25.mjs
+          node scripts/test-xml-catalog-recovery-v1.mjs
+          node scripts/test-xml-catalog-details-v2.mjs
+          node scripts/test-xml-catalog-identity-guards-v2.mjs
           node scripts/test-xml-field-approval-gateway-r24.mjs
           node scripts/test-xml-catalog-fiscal-dossier-r25.mjs
           node scripts/test-xml-main-integration-r23.mjs
