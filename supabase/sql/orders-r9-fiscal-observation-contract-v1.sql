@@ -106,6 +106,7 @@ CREATE OR REPLACE FUNCTION public.ops2_finish_fiscal_r9_observation_v1(
 AS $r9_finish$
 DECLARE q public.order_fiscal_r9_observations_v1%rowtype;
  v_next text;
+ v_persisted text;
 BEGIN
   IF p_order_id IS NULL OR p_claim_token IS NULL
     OR p_verdict NOT IN ('no_invoice','one_invoice','uncertain','conflict') THEN
@@ -146,8 +147,12 @@ BEGIN
     next_check_at=CASE WHEN v_next='uncertain'
       THEN clock_timestamp()+interval '30 minutes' ELSE next_check_at END,
     updated_at=clock_timestamp()
-  WHERE order_id=p_order_id;
-  RETURN jsonb_build_object('ok',true,'status',v_next,'external_write',false);
+  WHERE order_id=p_order_id
+  RETURNING status INTO v_persisted;
+  IF v_persisted IS DISTINCT FROM v_next THEN
+    RETURN jsonb_build_object('ok',false,'error','r9_observation_update_unconfirmed');
+  END IF;
+  RETURN jsonb_build_object('ok',true,'status',v_persisted,'external_write',false);
 END $r9_finish$;
 
 REVOKE ALL ON FUNCTION public.ops2_enqueue_fiscal_r9_observation_v1(uuid)
