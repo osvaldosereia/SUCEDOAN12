@@ -222,9 +222,12 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      # SHA imutável de supabase/setup-cli v3.0.1; v3 resolve CLI via npm (não via GitHub releases).
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359
         with:
-          version: latest
+          version: 2.120.0
+      - name: Verificar versão instalada do Supabase CLI
+        run: supabase --version
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
@@ -253,5 +256,8 @@ jobs:
       - name: Parar e destruir contêineres da homologação
         if: always()
         run: |
-          cd /tmp/da6-supabase-ci
-          supabase stop --no-backup || true
+          if [ -d /tmp/da6-supabase-ci ]; then
+            (cd /tmp/da6-supabase-ci && supabase stop --no-backup) || true
+          else
+            echo 'Supabase local não foi inicializado; nenhuma limpeza necessária.'
+          fi
