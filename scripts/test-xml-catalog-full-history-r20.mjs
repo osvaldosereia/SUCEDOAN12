@@ -56,6 +56,7 @@ assert.deepEqual([result.comparison_scope.compared_observations,result.compariso
 assert.equal(result.comparison_scope.partial,false);
 assert.equal(result.comparison_scope.kind,"full_history");
 assert.equal(result.comparison_scope.pages,3);
+const full137=result;
 assert.equal(result.field_comparisons.fields.find(f=>f.field==="xml_ncm").status,"supplier_disagreement");
 assert.equal(result.field_comparisons.tax_gtin_evidence.xml_values.length,2);
 assert.equal(result.field_comparisons.packaging_evidence.status,"multiple_purchase_units");
@@ -121,13 +122,13 @@ const render=new Function("state","esc","dateOnly","purchaseMoney",
 assert.match(render(),/id="xmlFullComparison"/);
 assert.match(render(),/Comparação PARCIAL/);
 assert.match(render(),/Conferir histórico completo/);
-model.xmlCatalogFullComparison={...result,candidate_key:KEY,comparison_scope:{
+model.xmlCatalogFullComparison={...full137,candidate_key:KEY,comparison_scope:{
  kind:"full_history",partial:false,compared_observations:137,total_observations:137}};
 assert.doesNotMatch(render(),/id="xmlFullComparison"/);
 assert.match(render(),/Comparação integral conferida/);
 model.xmlCatalogFullComparison={candidate_key:KEY,comparison_scope:{
  kind:"bounded_history",partial:true,compared_observations:5000,total_observations:5001},
- field_comparisons:result.field_comparisons};
+ field_comparisons:full137.field_comparisons};
 assert.match(render(),/Comparação PARCIAL/);
 assert.doesNotMatch(render(),/id="xmlFullComparison"/);
 
