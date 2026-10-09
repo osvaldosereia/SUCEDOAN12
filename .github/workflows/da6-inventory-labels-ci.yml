@@ -8,6 +8,7 @@ on:
       - 'vitrine/admin/product-label-print.css'
       - 'vitrine/admin/index.html'
       - 'supabase/functions/admin-products-live-v1/inventory-label-*'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/migrations/*da6*'
       - 'tests/da6-*'
       - 'tests/inventory-label-*'
@@ -19,6 +20,7 @@ on:
       - 'vitrine/admin/product-shelf-*'
       - 'vitrine/admin/product-label-print.css'
       - 'supabase/functions/admin-products-live-v1/inventory-label-*'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/migrations/*da6*'
       - 'tests/da6-*'
       - 'tests/inventory-label-*'
@@ -67,6 +69,7 @@ jobs:
         run: |
           deno check --node-modules-dir=auto supabase/functions/admin-products-live-v1/inventory-label-worker.ts
           deno check --node-modules-dir=auto supabase/functions/admin-products-live-v1/inventory-label-photo-api.ts
+          deno check --node-modules-dir=auto supabase/functions/admin-products-live-v1/index.ts
       - name: Executar codec real PNG JPEG WebP em WASM/Deno
         run: deno test --allow-read --allow-env --node-modules-dir=auto tests/da6-edge-codec.test.ts tests/da6-worker-edge-queue.test.ts
 
