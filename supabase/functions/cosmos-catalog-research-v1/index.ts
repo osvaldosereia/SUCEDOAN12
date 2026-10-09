@@ -50,7 +50,9 @@ Deno.serve(async (req) => {
 
   let body={};
   try {body=await req.json()} catch {return json({error:"invalid_json"},400)}
-  const maxItems=Math.max(1,Math.min(5,Number(body?.max_items)||1));
+  const parsedMax = Number(body?.max_items);
+  const maxItems=Number.isInteger(parsedMax) && parsedMax>=1
+    ? Math.min(5,parsedMax) : 1;
   if(body?.mode!=="execute") {
     const conf=await db.from("cosmos_research_config").select("enabled,daily_limit,max_batch").eq("id",true).maybeSingle();
     if(conf.error) return json({error:"configuration_unavailable"},500);
@@ -112,7 +114,7 @@ Deno.serve(async (req) => {
     }catch(e){
       await record(item,"network_error",httpStatus,{
         status:"retry",retryAfter:new Date(Date.now()+48*60*60*1000).toISOString()
-      },clean(e?.name||"network_error",50));
+      },String(e instanceof Error ? e.name : "network_error").slice(0,50));
       processed.push({gtin:item.selected_gtin,state:"network_error"});
     }
   }
