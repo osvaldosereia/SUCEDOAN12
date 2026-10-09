@@ -39,3 +39,17 @@
 .da6-review-controls button{min-height:38px;font-size:12px}
 .da6-review-controls button[disabled]{opacity:.5;cursor:wait}
 @media(max-width:680px){.da6-review-slot{grid-template-columns:1fr}.da6-review-controls label{flex:1 1 100%}.da6-review-controls button{flex:1}}
+
+
+/* DA6 R5: histórico somente quando solicitado, sem custo no polling. */
+.da6-review-history{margin-top:8px;font-size:12px;overflow-wrap:anywhere}
+.da6-review-history ol{margin:6px 0;padding-left:20px;display:grid;gap:6px}
+.da6-review-history li{line-height:1.45;border-bottom:1px solid #e1ebe4;padding-bottom:5px}
+.da6-history-btn{margin-top:8px;min-height:36px}
+.da6-review-warning{color:#933b14!important;font-weight:700;background:#fff8e8;padding:7px;border-radius:7px}
+.da6-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:680px){
+ .da6-review-controls{display:grid;grid-template-columns:1fr}
+ .da6-review-controls label,.da6-review-controls button{width:100%;min-width:0}
+ .da6-history-btn{width:100%}
+}
