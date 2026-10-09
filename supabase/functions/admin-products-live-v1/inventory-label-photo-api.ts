@@ -75,6 +75,16 @@ export async function inventoryLabelPhotoAction(db:any,action:string,req:Request
    .update({status:'queued',updated_at:new Date().toISOString()})
    .eq('id',id).eq('created_by',user).eq('status','uploading').select('id').maybeSingle();
   if(up.error)throw up.error;
+  if(!up.data){
+   // Outro processo pode ter confirmado/processado o mesmo arquivo.
+   // Nunca afirmar queued se a atualização CAS não modificou nada.
+   const check=await db.from('inventory_label_photos').select('status')
+    .eq('id',id).eq('created_by',user).maybeSingle();
+   if(check.error)throw check.error;
+   if(['queued','processing','retry','complete','needs_review'].includes(check.data?.status))
+    return {queued:true,photo_id:id,status:check.data.status};
+   return bad('photo_confirmation_conflict',409);
+  }
   return {queued:true,photo_id:id,status:'queued'};
  }
  if(action==='inventory_label_photo_review'){
