@@ -45,14 +45,14 @@ jobs:
           sed -e '/^create role anon nologin;/d' -e '/^create role authenticated nologin;/d' -e '/^create role service_role nologin bypassrls;/d' \
             scripts/test-xml-catalog-integration-r26.pg.sql > "$RUNNER_TEMP/r31-fixture.sql"
           psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/r31-fixture.sql" >/dev/null
-          curl -fsS -X POST "$API_URL/auth/v1/admin/users" \
+          curl -fsS --connect-timeout 3 --max-time 20 -X POST "$API_URL/auth/v1/admin/users" \
             -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
             -H 'content-type: application/json' \
             --data '{"email":"xml-r31-admin@example.invalid","password":"LocalOnly-2026!test","email_confirm":true}' \
             > "$RUNNER_TEMP/r31-user.json"
           id=$(node -e 'const x=require(process.argv[1]);if(!/^[a-f0-9-]{36}$/.test(x.id||""))process.exit(2);process.stdout.write(x.id)' "$RUNNER_TEMP/r31-user.json")
           psql "$DB_URL" -v ON_ERROR_STOP=1 -c "insert into public.admin_users(user_id,role,is_active) values ('$id'::uuid,'owner',true) on conflict(user_id) do update set role='owner',is_active=true" >/dev/null
-          curl -fsS -X POST "$API_URL/auth/v1/token?grant_type=password" \
+          curl -fsS --connect-timeout 3 --max-time 20 -X POST "$API_URL/auth/v1/token?grant_type=password" \
             -H "apikey: $ANON_KEY" -H 'content-type: application/json' \
             --data '{"email":"xml-r31-admin@example.invalid","password":"LocalOnly-2026!test"}' \
             > "$RUNNER_TEMP/r31-login.json"
@@ -71,8 +71,8 @@ jobs:
           echo $! > "$RUNNER_TEMP/r31-edge.pid"
           url="$API_URL/functions/v1/purchase-xml-v1"
           result=000
-          for n in $(seq 1 35); do
-            result=$(curl -sS -o "$RUNNER_TEMP/r31-response.json" -w '%{http_code}' -X POST "$url" \
+          for n in $(seq 1 15); do
+            result=$(curl -sS --connect-timeout 3 --max-time 12 -o "$RUNNER_TEMP/r31-response.json" -w '%{http_code}' -X POST "$url" \
               -H 'content-type: application/json' -H "Authorization: Bearer $token" -H "apikey: $ANON_KEY" \
               -d '{"purchase_action":"xml_field_apply_list","product_id":"30000000-0000-4000-8000-000000000010"}' || true)
             if [ "$result" = 200 ]; then break; fi
@@ -82,16 +82,16 @@ jobs:
           node -e 'const x=require(process.argv[1]);if(x.ok!==true||!Array.isArray(x.items))process.exit(2)' "$RUNNER_TEMP/r31-response.json"
           echo 'PASS R31: owner JWT accesses real local Edge field-apply list'
           psql "$DB_URL" -v ON_ERROR_STOP=1 -c "update public.admin_users set role='viewer' where user_id='$id'::uuid" >/dev/null
-          status=$(curl -sS -o "$RUNNER_TEMP/r31-denied.json" -w '%{http_code}' -X POST "$url" \
+          status=$(curl -sS --connect-timeout 3 --max-time 12 -o "$RUNNER_TEMP/r31-denied.json" -w '%{http_code}' -X POST "$url" \
             -H 'content-type: application/json' -H "Authorization: Bearer $token" -H "apikey: $ANON_KEY" \
             -d '{"purchase_action":"xml_field_apply_list","product_id":"30000000-0000-4000-8000-000000000010"}')
           test "$status" = 403
           psql "$DB_URL" -v ON_ERROR_STOP=1 -c "update public.admin_users set role='owner',is_active=false where user_id='$id'::uuid" >/dev/null
-          status=$(curl -sS -o "$RUNNER_TEMP/r31-inactive.json" -w '%{http_code}' -X POST "$url" \
+          status=$(curl -sS --connect-timeout 3 --max-time 12 -o "$RUNNER_TEMP/r31-inactive.json" -w '%{http_code}' -X POST "$url" \
             -H 'content-type: application/json' -H "Authorization: Bearer $token" -H "apikey: $ANON_KEY" \
             -d '{"purchase_action":"xml_field_apply_list","product_id":"30000000-0000-4000-8000-000000000010"}')
           test "$status" = 403
-          status=$(curl -sS -o "$RUNNER_TEMP/r31-anon.json" -w '%{http_code}' -X POST "$url" \
+          status=$(curl -sS --connect-timeout 3 --max-time 12 -o "$RUNNER_TEMP/r31-anon.json" -w '%{http_code}' -X POST "$url" \
             -H 'content-type: application/json' -H "apikey: $ANON_KEY" \
             -d '{"purchase_action":"xml_field_apply_list","product_id":"30000000-0000-4000-8000-000000000010"}')
           test "$status" = 401
