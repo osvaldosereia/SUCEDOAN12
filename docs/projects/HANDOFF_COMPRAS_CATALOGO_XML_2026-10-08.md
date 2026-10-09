@@ -271,3 +271,14 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 - Supabase canônico continua com **214 itens, 59 sem vínculo**, ledger/RPC de identidade inexistentes; nenhuma migration produtiva nova, deploy Edge, alteração de preço/estoque/tributação, Bling ou publicação de produto. **Produção inalterada pela R23.**
 - **Roteiro completo e limites:** [PURCHASE_XML_R23_INTEGRATION_CHECKPOINT.md](https://github.com/osvaldosereia/SUCEDOAN12/blob/agent/xml-catalog-main-integration-r23-20261009/docs/projects/PURCHASE_XML_R23_INTEGRATION_CHECKPOINT.md).
 - **Próxima R24:** homologação de revisão humana campo a campo, SQL de aplicação/rollback CAS somente em produto inativo, e integração com as migrations R23, tudo sem mutar produção. Após R24, R25 fiscal, R26 E2E real isolado e R27 lançamento controlado com gates.
+
+## Checkpoint R24 — 09/10/2026 — revisão individual, CAS nome inativo, rollback e gate visual
+
+- **PR draft #1018:** [GitHub](https://github.com/osvaldosereia/SUCEDOAN12/pull/1018), base R23 #1012.
+- **SQL + gateway implementados:** ledger de decisões e eventos imutáveis, aplicação e reversão do **nome exclusivamente em produtos inativos**, confirmação independente, revisão otimista e CAS, ator owner/admin ativo verificado no gateway **e no PostgreSQL**, sem mutação fiscal/estoque/Bling. Código espelhado nos dois backends `purchase-xml-v1`.
+- **Migração versionada gerada pela CLI:** `supabase/migrations/20261009155445_purchase_xml_field_approval_r24.sql`, criada com `supabase migration new` no GitHub Actions, não aplicada à produção.
+- **[CI final #37955537001](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37955537001): 3/3 jobs success** (Node gateway/permissões, Deno typecheck, PostgreSQL17 aplicação/rollback seguro). A migration commitada foi aplicada só no PostgreSQL descartável.
+- **Atenção: UI não concluída.** Atualização no `vitrine/admin/index.html` foi bloqueada pela ferramenta de escrita. A tela R23 permanece sem novos controles de prévia/aplicação/reversão. Não afirmar que a ferramenta já está disponível para equipe, e **não publicar o backend/UI em produção**.
+- **Produção intocada:** 214 itens, 59 desvinculados; os novos ledgers/RPCs não existem. `main` avançou paralelamente `d5f3f16b5b6b8ba27823406de0c43628e62d4a78` por projeto de separação. Planejar integração com as novas migrations e histórico antes de qualquer `db push`.
+- **Instruções exatas para continuidade:** [PURCHASE_XML_R24_FIELD_REVIEW_CHECKPOINT.md](https://github.com/osvaldosereia/SUCEDOAN12/blob/agent/xml-catalog-field-approval-r24-20261009/docs/projects/PURCHASE_XML_R24_FIELD_REVIEW_CHECKPOINT.md).
+- **Próxima R25:** completar a UI via caminho de gravação suportado, testes de browser/Auth reais em homologação, reconciliar migrations R23/R24 versus `main` e rever requisitos fiscais NCM/CEST/GTIN sem escrita automática. Só depois R26 E2E e R27 publicação.

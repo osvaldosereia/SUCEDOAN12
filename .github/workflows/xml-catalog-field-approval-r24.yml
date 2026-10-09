@@ -1,0 +1,82 @@
+name: XML Catalog R24 Field Approvals
+on:
+  pull_request:
+    branches: [main,agent/xml-catalog-main-integration-r23-20261009]
+    paths:
+      - 'docs/projects/purchase-xml-field-approval-release-candidate-r24.sql'
+      - 'supabase/migrations/*_purchase_xml_field_approval_r24.sql'
+      - 'scripts/test-xml-field-approval*.mjs'
+      - 'scripts/test-xml-field-approval*.pg.sql'
+      - 'supabase/functions/**/purchase-xml-v1/**'
+      - 'supabase/functions/purchase-xml-v1/**'
+      - '.github/workflows/xml-catalog-field-approval-r24.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Owner-only gateway and immutable approved field contract
+        run: |
+          set -eu
+          node scripts/test-xml-field-approval-gateway-r24.mjs
+          node scripts/test-xml-field-review-gateway-r15.mjs
+          node scripts/test-xml-main-integration-r23.mjs
+          node scripts/test-xml-field-integrated-r17.mjs
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.84.2
+      - name: Validate CLI-generated migration committed verbatim
+        run: |
+          set -eu
+          supabase migration new --help
+          migration_file="supabase/migrations/20261009155445_purchase_xml_field_approval_r24.sql"
+          test -s "$migration_file"
+          cmp "$migration_file" docs/projects/purchase-xml-field-approval-release-candidate-r24.sql
+          test -s supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql
+          echo "R24_COMMITTED_MIGRATION=$migration_file"
+          sha256sum "$migration_file"
+      - name: Apply committed migration to disposable PostgreSQL 17
+        run: |
+          set -eu
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          migration_file="supabase/migrations/20261009155445_purchase_xml_field_approval_r24.sql"
+          sed "s#docs/projects/purchase-xml-field-approval-release-candidate-r24.sql#$migration_file#" scripts/test-xml-field-approval-r24.pg.sql >/tmp/xml-field-r24-test.sql
+          psql -v ON_ERROR_STOP=1 -f /tmp/xml-field-r24-test.sql
+  deno:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Typecheck both XML backends
+        run: deno check supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
