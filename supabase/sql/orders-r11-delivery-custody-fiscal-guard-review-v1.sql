@@ -61,6 +61,25 @@ BEGIN
         AND OLD.custody_confirmed_at IS NULL);
   END IF;
 
+  -- A route already DISPATCHED can also receive a new planned stop via the
+  -- driver's move/transfer RPC. Enforce proof on INSERT or reassignment, even
+  -- before a loading timestamp or a status change is written.
+  IF (
+       TG_OP='INSERT'
+       OR (TG_OP='UPDATE' AND (
+          NEW.run_id IS DISTINCT FROM OLD.run_id
+          OR NEW.order_id IS DISTINCT FROM OLD.order_id))
+     )
+     AND EXISTS (
+       SELECT 1 FROM public.ops_delivery_runs r
+       WHERE r.id=NEW.run_id AND r.status='dispatched'
+     )
+     AND NOT public.ops2_r11_has_dispatch_proof_v1(NEW.order_id)
+  THEN
+    RAISE EXCEPTION 'r11_dispatched_route_rejects_unapproved_stop:%',NEW.order_id
+      USING ERRCODE='P0001';
+  END IF;
+
   IF v_releasing AND NOT public.ops2_r11_has_dispatch_proof_v1(NEW.order_id)
   THEN
     RAISE EXCEPTION 'r11_sefaz_proof_required_before_custody:%',NEW.order_id
@@ -74,7 +93,7 @@ $r11_custody$;
 DROP TRIGGER IF EXISTS trg_ops2_r11_guard_delivery_custody
   ON public.ops_delivery_stops;
 CREATE TRIGGER trg_ops2_r11_guard_delivery_custody
-  BEFORE INSERT OR UPDATE OF status,loaded_at,custody_confirmed_at
+  BEFORE INSERT OR UPDATE OF run_id,order_id,status,loaded_at,custody_confirmed_at
   ON public.ops_delivery_stops
   FOR EACH ROW EXECUTE FUNCTION public.ops2_r11_guard_delivery_custody_v1();
 
