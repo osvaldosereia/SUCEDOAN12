@@ -1,0 +1,106 @@
+name: Pedidos R04 - Meta CONFIRMADO autenticado (offline)
+on:
+  push:
+    branches:
+      - 'agent/orders-r4-*'
+    paths:
+      - 'supabase/functions/_shared/order-meta-confirmation-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-core-v1.mjs'
+      - 'supabase/functions/whatsapp-meta-webhook-v1/index.ts'
+      - 'supabase/functions/admin-orders-v1/index.ts'
+      - 'supabase/sql/orders-r4-meta-button-confirmation-contract-v1.sql'
+      - 'scripts/sql/orders-r4-meta-hml-*.sql'
+      - 'scripts/test-orders-r4-meta-confirmation-v1.mjs'
+      - '.github/workflows/orders-r4-meta-confirmation-ci.yml'
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/order-meta-confirmation-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-core-v1.mjs'
+      - 'supabase/functions/whatsapp-meta-webhook-v1/index.ts'
+      - 'supabase/functions/admin-orders-v1/index.ts'
+      - 'supabase/sql/orders-r4-meta-button-confirmation-contract-v1.sql'
+      - 'scripts/sql/orders-r4-meta-hml-*.sql'
+      - 'scripts/test-orders-r4-meta-confirmation-v1.mjs'
+      - '.github/workflows/orders-r4-meta-confirmation-ci.yml'
+permissions:
+  contents: read
+jobs:
+  meta-confirmation:
+    name: Signed Meta button contract and Postgres gate (offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: orders_meta_r4_synthetic
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d orders_meta_r4_synthetic"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: orders_meta_r4_synthetic
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      ORDER_META_CONFIRM_BUTTON_ENABLED: 'false'
+      META_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify transport disabled
+        run: |
+          test "$ORDER_META_CONFIRM_BUTTON_ENABLED" = false
+          test "$META_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+      - name: Node HMAC and button-reply regression
+        run: |
+          node --check supabase/functions/_shared/order-meta-confirmation-v1.mjs
+          node --check supabase/functions/_shared/whatsapp-core-v1.mjs
+          node --test scripts/test-orders-r4-meta-confirmation-v1.mjs scripts/test-whatsapp-meta-webhook-v1.mjs
+      - name: Install SQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client >/dev/null
+          fi
+      - name: Create synthetic schema and run draft confirmation RPC
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r4-meta-hml-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r4-meta-button-confirmation-contract-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r4-meta-hml-assertions.sql
+      - name: Race two Meta callbacks against one order (unique proof)
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r4-meta-hml-concurrency.sql
+          SQL_A="select public.ops2_apply_order_meta_confirmation_v1('40000000-0000-4000-8000-000000000001');"
+          SQL_B="select public.ops2_apply_order_meta_confirmation_v1('40000000-0000-4000-8000-000000000007');"
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL_A" >/tmp/meta-callback-a.txt &
+          A=$!
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL_B" >/tmp/meta-callback-b.txt &
+          B=$!
+          wait "$A"
+          wait "$B"
+          test "$(psql -Atc "select count(*) from public.order_meta_confirmations_v1 where order_id='10000000-0000-4000-8000-000000000001'")" = 1
+          test "$(psql -Atc "select count(*) from public.order_meta_confirmations_v1")" = 2
+          grep -Eq '"applied": true|"applied":true' /tmp/meta-callback-a.txt /tmp/meta-callback-b.txt
+          echo "PASS: concurrent signed replies created one proof only"
+      - name: Prove durable idempotency and default-OFF release flag
+        run: |
+          set -euo pipefail
+          test "$(psql -Atc 'select count(*) from public.order_meta_confirmations_v1')" = 2
+          test "$(psql -Atc "select count(*) from public.order_meta_confirmations_v1 where proof_kind='meta_signed_quick_reply'")" = 2
+          # Test suite explicitly enabled runtime flag in the ephemeral database.
+          test "$(psql -Atc 'select count(*) from public.order_meta_confirmation_runtime_v1 where id=1')" = 1
+      - name: Diff hygiene
+        run: git diff --check
