@@ -6366,7 +6366,9 @@
         ' · Total: '+(x.line_total==null?'—':purchaseMoney(x.line_total))+'</small>'+
         (x.linked_product_id?'<small style="display:block"><strong>Vinculado:</strong> '+esc(x.linked_product_name||'Produto')+
         ' · NCM cadastro: '+esc(x.linked_product_ncm||'—')+' · CEST fiscal: '+esc(x.linked_product_cest||'—')+'</small>':
-        '<small style="display:block">Sem vínculo com o cadastro de venda</small>')+'</div>').join('')+'</div>'+
+        '<small style="display:block">Sem vínculo com o cadastro de venda</small>')+
+        '<div style="margin-top:6px"><button type="button" class="secondary" data-xml-technical="'+esc(x.observation_id)+'">Ver dados fiscais completos</button>'+
+        '<div data-xml-technical-panel="'+esc(x.observation_id)+'" style="display:none"></div></div></div>').join('')+'</div>'+
       (data.truncated?'<small class="sub">Exibindo até 60 observações mais recentes.</small>':'')+
       (active.linked_product_id?'<div class="purchase-safe"><strong>Item vinculado.</strong>'+
        '<small>Revisão de custo, preço e estoque permanece na tela operacional de Compras/XML.</small></div>':
@@ -6392,6 +6394,57 @@
         '<button id="xmlDetailCreate" type="button" class="secondary">Cadastrar produto inativo</button></div>'+
         '</div>')+
       '<small class="sub">Dados fiscais são evidências do fornecedor e precisam de validação. Não há lançamento de estoque nesta ficha.</small>';
+  }
+  // Extra fiscal fields are fetched for ONE invoice item only when explicitly opened.
+  function xmlCatalogTechnicalMarkup(data){
+    const v=data?.observation||{};
+    if(!data?.ok)return '<small>Detalhamento indisponível.</small>';
+    const groups=[
+      ['Documento e apresentação',[
+        ['CFOP do emitente','xml_cfop'],['Unidade comercial','xml_commercial_unit'],
+        ['Quantidade comercial','xml_commercial_quantity'],['Unidade tributável','xml_tax_unit'],
+        ['Quantidade tributável','xml_tax_quantity'],['Valor unitário tributável','xml_tax_unit_price_text'],
+        ['Referência do pedido','supplier_order_reference'],['Item no pedido','supplier_order_line'],
+        ['Escala de fabricação (XML)','manufacturing_scale_flag'],['Incluído no total NF-e','xml_in_invoice_total_flag']
+      ]],
+      ['Fiscal informado pelo fornecedor',[
+        ['NCM','xml_ncm'],['CEST','xml_cest'],['Benefício fiscal','fiscal_benefit_code'],
+        ['FCI','import_fci_number'],['Origem ICMS','xml_origin_code'],
+        ['Grupo ICMS','icms_group'],['CST ICMS','xml_icms_cst'],['CSOSN','xml_icms_csosn'],
+        ['Alíquota ICMS','xml_icms_rate_text'],['Valor ICMS','xml_icms_amount_text'],
+        ['Alíquota ICMS ST','xml_icms_st_rate_text'],['Valor ICMS ST','xml_icms_st_amount_text'],
+        ['CST PIS','xml_pis_cst'],['Alíquota PIS','xml_pis_rate_text'],['Valor PIS','xml_pis_amount_text'],
+        ['CST Cofins','xml_cofins_cst'],['Alíquota Cofins','xml_cofins_rate_text'],
+        ['Valor Cofins','xml_cofins_amount_text'],['CST IPI','xml_ipi_cst'],
+        ['Alíquota IPI','xml_ipi_rate_text'],['Valor IPI','xml_ipi_amount_text']
+      ]],
+      ['Reforma tributária — IBS/CBS na nota',[
+        ['CST IBS/CBS','xml_ibs_cbs_cst'],['Classificação cClassTrib','xml_ibs_cbs_classification'],
+        ['Base IBS/CBS','xml_ibs_cbs_tax_base_text'],['IBS total','xml_ibs_amount_text'],
+        ['Alíquota IBS estadual','xml_ibs_state_rate_text'],['IBS estadual','xml_ibs_state_amount_text'],
+        ['Alíquota IBS municipal','xml_ibs_city_rate_text'],['IBS municipal','xml_ibs_city_amount_text'],
+        ['Alíquota CBS','xml_cbs_rate_text'],['CBS','xml_cbs_amount_text']
+      ]],
+      ['Custos e rastreabilidade declarados',[
+        ['Total do item','xml_line_total'],['Valor líquido do item','xml_net_line_total'],
+        ['Desconto','xml_discount_text'],['Frete','xml_freight_text'],
+        ['Seguro','xml_insurance_text'],['Outras despesas','xml_other_expenses_text'],
+        ['Quantidade de lotes na NF-e','xml_lot_count']
+      ]]
+    ];
+    const rows=groups.map(([title,fields])=>{
+      const values=fields.filter(([label,key])=>v[key]!==null&&v[key]!==undefined&&v[key]!=='');
+      return '<div style="margin:10px 0"><strong>'+esc(title)+'</strong>'+
+        (values.length?'<div class="purchase-catalog-meta" style="display:flex;flex-wrap:wrap;gap:5px 10px;margin-top:6px">'+
+        values.map(([label,key])=>'<span><small>'+esc(label)+':</small> <b>'+esc(v[key])+'</b></span>').join('')+'</div>':
+        '<small style="display:block">Não informado no XML.</small>')+'</div>';
+    }).join('');
+    return '<div class="purchase-safe" style="padding:10px;margin-top:6px">'+
+      '<strong>Dados técnicos desta NF-e — somente leitura</strong>'+
+      '<small>Tributos declarados pelo fornecedor, sem homologação fiscal. Alíquotas e valores estão na representação original do XML.</small>'+
+      (v.operation_requires_manual_review?'<small style="display:block"><b>CFOP requer análise da operação antes de qualquer recebimento.</b></small>':'')+
+      rows+'<small>Altura, largura, profundidade, peso bruto e validade individual não serão estimados quando ausentes do XML.</small>'+
+    '</div>';
   }
   function xmlCatalogDetailRefresh(){
     const h=$('#xmlCatalogBody');
@@ -6421,6 +6474,28 @@
     });
     const data=state.xmlCatalogDetail;
     if(!data?.candidate)return;
+    host.querySelectorAll('[data-xml-technical]').forEach(b=>b.onclick=async()=>{
+      const id=String(b.dataset.xmlTechnical||'');
+      if(!/^[0-9a-f-]{36}$/i.test(id))return;
+      const panel=Array.from(host.querySelectorAll('[data-xml-technical-panel]'))
+        .find(x=>x.dataset.xmlTechnicalPanel===id);
+      if(!panel)return;
+      if(panel.style.display!=='none'){
+        panel.style.display='none';b.textContent='Ver dados fiscais completos';return;
+      }
+      panel.style.display='block';b.textContent='Ocultar dados fiscais';
+      const cache=state.xmlCatalogTechnicalCache||(state.xmlCatalogTechnicalCache={});
+      if(cache[id]){panel.innerHTML=xmlCatalogTechnicalMarkup(cache[id]);return}
+      panel.innerHTML='<small>Carregando dados fiscais do XML…</small>';
+      b.disabled=true;
+      try{
+        const result=await purchaseApi('xml_catalog_technical_evidence',{observation_id:id});
+        cache[id]=result;
+        panel.innerHTML=xmlCatalogTechnicalMarkup(result);
+      }catch(e){
+        panel.innerHTML='<small>Erro ao carregar: '+esc(errorMessage(e.message))+'</small>';
+      }finally{b.disabled=false}
+    });
     host.querySelectorAll('[data-xml-observation]').forEach(b=>b.onclick=()=>{
       if(!b.dataset.xmlObservation)return;
       state.xmlCatalogSelectedObservation=b.dataset.xmlObservation;
