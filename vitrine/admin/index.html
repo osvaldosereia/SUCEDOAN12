@@ -6331,6 +6331,38 @@
        '<button type="button" class="secondary" id="xmlCatalogNext" '+(offset+items.length>=Number(d.total||0)?'disabled':'')+'>Próximos produtos</button>'+
       '</div>';
   }
+  // Read-only: comparisons are evidence, not approval to alter products or fiscal.
+  function xmlCatalogComparisonMarkup(data){
+    const comparison=data?.field_comparisons||{};
+    const fields=Array.isArray(comparison.fields)?comparison.fields:[];
+    if(!fields.length)return '';
+    const titleByStatus={
+      aligned:'Igual ao cadastro',catalog_disagreement:'Diferente do cadastro',
+      supplier_disagreement:'XMLs divergentes',missing_in_catalog:'Ausente no cadastro',
+      identity_review:'Revisar vínculo do produto',not_in_xml:'Não informado nos XMLs'
+    };
+    return '<div class="purchase-safe" style="margin:12px 0">'+
+      '<strong>Conferência de dados: cadastro × notas fiscais</strong>'+
+      '<small>Somente leitura. O valor da NF-e não é automaticamente o valor correto do produto. Use a revisão fiscal existente para corrigir NCM ou CEST.</small>'+
+      '<div style="display:grid;gap:8px;margin-top:10px">'+
+      fields.map(x=>{
+        const vals=Array.isArray(x.xml_values)?x.xml_values:[];
+        return '<div class="purchase-catalog-card" style="padding:9px">'+
+          '<div class="purchase-item-title"><strong>'+esc(x.label||x.field)+'</strong>'+
+          '<span class="pill '+(x.status==='aligned'?'':'warn')+'">'+esc(titleByStatus[x.status]||'A conferir')+'</span></div>'+
+          '<small style="display:block"><b>No cadastro:</b> '+esc(x.catalog_value||'Não informado')+'</small>'+
+          '<small style="display:block"><b>Nos XMLs:</b> '+
+          (vals.length?vals.map(v=>esc(v.value)+' ('+esc(v.observations||0)+' ocorrência(s), '+
+            esc(v.suppliers||0)+' fornecedor(es))').join(' · '):'Não informado')+'</small>'+
+          '<small style="display:block">'+esc(x.notes||'')+'</small>'+
+          '</div>';
+      }).join('')+'</div>'+
+      '<small style="display:block;margin-top:8px"><b>Unidade de compra:</b> '+
+      (Array.isArray(comparison.packaging_evidence?.xml_values)&&comparison.packaging_evidence.xml_values.length?
+        comparison.packaging_evidence.xml_values.map(x=>esc(x.value)).join(' / '):'Não informada')+
+      ' — não equivale necessariamente à unidade de venda.</small>'+
+      '</div>';
+  }
   function xmlCatalogDetailMarkup(){
     if(state.xmlCatalogDetailLoading)return '<div class="loading">Carregando histórico do XML…</div>';
     const data=state.xmlCatalogDetail||{},c=data.candidate||{};
@@ -6349,6 +6381,7 @@
       '<span>'+esc(c.observations_count||0)+' registros de XML</span>'+
       '<span>'+esc(c.suppliers_count||0)+' fornecedores</span>'+
       '<span>'+esc(c.ncm_variations||0)+' NCM(s) informado(s)</span></div>'+
+      xmlCatalogComparisonMarkup(data)+
       '<div class="purchase-items" style="max-height:300px;overflow-y:auto">'+rows.map(x=>
         '<div class="purchase-item-card" style="padding:10px;margin:5px 0">'+
         '<div class="purchase-item-title"><div><strong>'+esc(x.xml_description||'Produto')+'</strong>'+
