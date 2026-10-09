@@ -30,7 +30,7 @@ function ready(){
       bling_order_id:1001},
     completion:{order_id:oid,phase:"completed",completed_at:clock,
       metadata:{stock_applied:true,r6_reconciliation:manifest}},
-    r7_intent:{order_id:oid,manifest,status:"verified",payload_hash:hash,bling_order_id:1001},
+    r7_intent:{order_id:oid,manifest:structuredClone(manifest),status:"verified",payload_hash:hash,bling_order_id:1001},
     order_bling_link:{source_id:oid,status:"matched",bling_id:1001},
     fiscal_control:{fiscal_status:"ready",dispatch_fiscal_status:"pending"},
     existing_fiscal_jobs:[],
