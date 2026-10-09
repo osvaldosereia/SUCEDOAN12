@@ -108,3 +108,16 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 > Continuar o projeto **Dona Antônia — Compras e Catálogo XML** no repositório `osvaldosereia/SUCEDOAN12`, Supabase `ssbesxgaijknwsjbsbcz`. Leia **inteiramente este HANDOFF** no GitHub antes de programar. Consulte a `main` atual e o runtime Supabase, não use branch desatualizada para sobrescrever correções. O catálogo usa exclusivamente XML de NF-e importado do Bling ou enviado manualmente; nada de Cosmos, SI5, pesquisa externa, novas automações ou alteração automática de produtos, preços, fiscal e estoque. Faça primeiro auditoria/CI/teste ponta a ponta das funções já publicadas; depois corrija pendências e implemente revisão campo a campo com aprovação humana. Trabalhe em branch agent/* nova, faça commits atômicos e reporte o que foi testado e publicado.
 
 **Este documento é um checkpoint, não autorização para considerar o projeto concluído.**
+
+
+## 8. Continuação verificada — 09/10/2026 00h10 (America/Cuiaba)
+
+**Rodada técnica:** Histórico completo sob demanda — [PR #986](https://github.com/osvaldosereia/SUCEDOAN12/pull/986), branch `agent/xml-catalog-historico-paginado-20261009`, aberta como **draft**, sem merge/deploy. Branch partiu da `main` `8d2e187fa3d7a15111cfe1504786e213e9d7b2cf`, sem rebasing da branch antiga.
+
+**Banco (consultas somente leitura, 09/10):** 90 documentos; 214 linhas declaradas, 214 linhas em staging, 214 observações XML, 214 verificadas, zero faltas. 147 candidatos: 113 `linked_reviewable`, 32 `not_linked`, 1 `fiscal_conflict`, 1 `cest_conflict`. 214 IDs distintos na view de detalhes; 83 ocorrências com fator de conversão >1. Vistas do catálogo têm `SELECT` para `service_role`, não para `anon`/`authenticated`. Edge Function de produção `admin-service-intelligence-v1` permanece versão 230, `verify_jwt=false`. **Não houve mutação operacional.**
+
+**Bug corrigido na branch:** ficha retornava no máximo as primeiras 60 observações sem mecanismo de continuar. O endpoint agora pagina 60 por vez com contagem exata, `offset`, `has_more` e `next_offset`; o Admin traz páginas seguintes somente ao clicar em `Carregar mais histórico`. Preserva a escolha anterior, evita respostas atrasadas e elimina IDs repetidos entre páginas. Ambas as cópias do backend continuam idênticas; nenhum preço, estoque, NCM/CEST, Bling, produto ou regra de carregamento inicial foi alterado.
+
+**Evidência:** teste funcional isolado passou. [CI XML Catalog Regression CI](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37882597938) = **success**, cobrindo parser/recuperação, ficha, identidade e paginação. A CI geral Admin/Baskets permanece **vermelha por falha preexistente** em `scripts/test-admin-pending-data-baskets-public-v1.mjs:39` (`channel_origin` na página de pedidos); não corrigir por esta PR sem análise de impacto fora do escopo.
+
+**Ainda falta:** homologação com usuário no Admin mobile/desktop, uma ficha com >60 observações reais quando existir, integração segura de PR após CI/revisão, testes reais de upload somente catálogo versus compras, deduplicação/erros, bloqueios de unidades sem GTIN/caixa/fardo; aprovação campo a campo com trilha e rollback, RLS/permissões. Não confundir CI estática e smoke com produção homologada. Prosseguir por novos commits/PRs sem alterar `main` sem gates.
