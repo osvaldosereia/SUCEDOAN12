@@ -7,6 +7,7 @@ on:
       - 'scripts/sql/orders-r2-*.sql'
       - 'scripts/sql/orders-r2-r3-*.sql'
       - 'scripts/sql/orders-security-*.sql'
+      - 'scripts/sql/orders-r2-canonical-bling-stock-*.sql'
       - 'supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql'
       - 'supabase/sql/orders-r2-basket-independent-groups-review-v1.sql'
       - 'supabase/sql/orders-r2-r3-checkout-public-number-readback-review-v1.sql'
@@ -402,5 +403,44 @@ jobs:
             -f scripts/sql/orders-r2-baskets-kit-mold-assertions.sql
           test "$(PGDATABASE=$DB psql -Atc "select count(*) from public.orders")" = 7
           echo 'PASS: real basket availability (categories, assembly, linked stock, component health) combined with live v3 checkout and kits'
+      - name: Real Bling stock/deposit + basket locking/availability (ninth DB)
+        run: |
+          set -euo pipefail
+          createdb synthetic_real_bling_stock_r2
+          DB=synthetic_real_bling_stock_r2
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-availability-fixture.sql
+          # Replace ONLY synthetic views in the disposable DB. All three
+          # resulting stock views have canonical security_invoker definitions.
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-bling-stock-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-bling-stock-views.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-availability-view.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-bling-stock-assertions.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-availability-assertions.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-checkout-gate-assertions.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-assertions.sql
+          test "$(PGDATABASE=$DB psql -Atc "select count(*) from public.orders")" = 7
+          echo 'PASS: actual Bling authority/deposit + locked kit units + full view + real v3 checkout'
       - name: Diff hygiene
         run: git diff --check
