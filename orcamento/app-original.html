@@ -137,7 +137,7 @@
         return await adminPost(action,payload,false);
       }
       const data=await r.json().catch(()=>({ok:false,error:'invalid_response'}));
-      if(!r.ok||data.ok===false)throw new Error(data.error||'admin_service_error');
+      if(!r.ok||data.ok===false)throw Object.assign(new Error(data.error||'admin_service_error'),{issues:data.issues||[],detail:data.detail||null});
       return data;
     }
     async function customerAdmin(action,payload={},retryAuth=true){
@@ -215,7 +215,7 @@
         quote_not_approved_for_sale:'Não é possível converter um orçamento recusado, vencido ou cancelado.',
         bling_orders_not_enabled:'A integração de pedidos com o Bling está desativada.'};
       const issues=Array.isArray(error?.issues)?error.issues:[];
-      return issues.map(key=>key.includes('_not_linked_to_bling')?'Produto '+key.match(/item_(\\d+)/)?.[1]+' sem vínculo no Bling.':labels[key]||key).join(' ')||
+      return issues.map(key=>key.includes('_not_linked_to_bling')?'Produto '+key.match(/item_(\d+)/)?.[1]+' sem vínculo no Bling.':labels[key]||key).join(' ')||
         ({quote_conversion_review_required:'Não foi possível verificar a criação no Bling. O envio está bloqueado para evitar duplicidade; verifique no ERP.',
           quote_already_submitted_to_bling:'Este orçamento já foi enviado ao Bling. Use Duplicar para criar outro.',
           quote_conversion_requires_reconciliation:'Envio anterior pendente de conferência. Verifique no Bling antes de nova tentativa.'})[error?.message]||
@@ -225,7 +225,7 @@
       if(!state.currentQuoteId||state.currentQuoteBlingId||state.currentQuoteConversionStatus)return;
       const btn=$('convertQuoteBling'),notice=$('quoteBlingState');btn.disabled=true;
       try{
-        notice.textContent='Salvando e conferindo cadastro, produtos e valores…';
+        state.quoteBlingError='';notice.textContent='Salvando e conferindo cadastro, produtos e valores…';
         const saved=await adminPost('quote_save',quoteCloudPayload());
         state.currentQuoteId=saved.quote.id;state.currentQuoteStatus=saved.quote.status||'draft';
         saveDraft(true);
@@ -242,11 +242,12 @@
         showToast('Pedido de venda criado no Bling: '+state.currentQuoteBlingId);
         if(!$('quoteHistoryPanel').hidden)await loadQuoteHistory();
       }catch(e){
-        notice.textContent=quoteBlingErrorText(e);
+        state.quoteBlingError=quoteBlingErrorText(e);
+        notice.textContent=state.quoteBlingError;
         showToast('Conversão não concluída. Veja a explicação abaixo do botão.');
         if(e?.message==='quote_conversion_review_required'||e?.message==='quote_conversion_requires_reconciliation')
           state.currentQuoteConversionStatus='review_required';
-      }finally{paintCloudState();if(!state.currentQuoteBlingId&&!state.currentQuoteConversionStatus&&notice.textContent.includes('Converte os produtos'))notice.textContent='Confira os dados e tente novamente.';}
+      }finally{paintCloudState();if(state.quoteBlingError)notice.textContent=state.quoteBlingError;}
     }
     function quoteHistoryRow(q){return '<button class="quote-history-row" type="button" data-open-quote="'+escapeHtml(q.id)+'"><span class="quote-history-main"><strong>'+escapeHtml(q.quote_number||'Orçamento')+'</strong><small>'+escapeHtml(q.client_name||'Sem cliente')+' · '+escapeHtml(q.item_count||0)+' itens</small></span><span class="quote-history-date">'+escapeHtml(q.updated_at?new Date(q.updated_at).toLocaleDateString('pt-BR'):'—')+'</span><span class="quote-history-total">'+escapeHtml(formatMoney(Number(q.total_cents||0)/100))+'</span><span class="quote-status-badge '+escapeHtml(q.status||'draft')+'">'+escapeHtml(quoteStatusLabel(q.status))+'</span></button>'}
     async function loadQuoteHistory(){const box=$('quoteHistoryList');if(!adminToken()){box.innerHTML='<div class="saved-client-empty">Histórico disponível somente dentro do Vitrine/Admin.</div>';return}box.innerHTML='<div class="saved-client-empty">Carregando histórico…</div>';try{const data=await adminGet('quotes',{q:$('quoteHistorySearch').value.trim(),status:$('quoteHistoryStatus').value,limit:80});state.quoteHistory=Array.isArray(data.quotes)?data.quotes:[];box.innerHTML=state.quoteHistory.length?state.quoteHistory.map(quoteHistoryRow).join(''):'<div class="saved-client-empty">Nenhum orçamento encontrado.</div>'}catch{box.innerHTML='<div class="saved-client-empty">Não foi possível carregar o histórico agora.</div>'}}

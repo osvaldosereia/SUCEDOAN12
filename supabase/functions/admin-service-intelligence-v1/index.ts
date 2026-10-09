@@ -7744,7 +7744,9 @@ async function blingHubQuoteOrderConvert(sb:any,quoteIdRaw:any,previewOnly:boole
     let remoteId=Number(before.match?.id||0),created=false;
     if(!remoteId){
       const difference=totalCents-lineCents;
-      const cityDate=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+      const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+      const datePart=(kind:string)=>parts.find((x:any)=>x.type===kind)?.value||"";
+      const cityDate=datePart("year")+"-"+datePart("month")+"-"+datePart("day");
       const address={nome:clean(local?.name,180),endereco:clean(fields.street,180),numero:clean(fields.number,40),
         complemento:clean([fields.block,fields.contact].filter(Boolean).join(" · "),220),
         bairro:clean(fields.district,140),municipio:clean(fields.city,120),
