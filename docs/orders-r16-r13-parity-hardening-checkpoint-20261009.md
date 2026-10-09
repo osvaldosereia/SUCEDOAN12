@@ -19,10 +19,14 @@ Correções da R16:
 4. Suíte de 15 testes incluindo negativo para FORCE RLS, política a mais/menos, trigger extra, role PUBLIC UPDATE, role MAINTAIN, RLS desligada e snapshot vazio.
 5. Workflow rápido `orders-r13-parity-ci.yml` com Node 22; workflow integrado PostgreSQL 17 `orders-r2-r7-bling-chain-ci.yml` exige que `--require-parity` retorne exit 3 quando ainda falta paridade canônica.
 
-## Limite deliberado do snapshot canônico
-O JSON `scripts/fixtures/orders-r13-canonical-schema-security-20261009.json` traz apenas **concessões unidas para anon/authenticated**, não grants individualizados por role (e não captura `PUBLIC` separadamente). Seria tecnicamente incorreto inventar esses dados. Assim, a R16 **marca snapshot legado incompleto e BLOQUEIA** mesmo se um clone artificial vier a reproduzir tudo o que o JSON já contém.
+## Snapshot canônico atualizado por consulta read-only
+No início da rodada, a fotografia R13 não separava grants por papel e omitia `MAINTAIN`. Em sequência, foi efetuada **nova captura somente de catálogos**, com `pg_class`, `pg_policies`, `pg_trigger` e `pg_catalog.aclexplode`, para as 11 tabelas críticas. A fixture versionada passou a registrar `PUBLIC`, `anon` e `authenticated` separadamente; flags RLS/FORCE, contagem de policies, triggers, owner e relação.
 
-Para fechar R13, ler **somente metadados** em Supabase canônico (`pg_class`, `pg_trigger`, `pg_policy`, `pg_catalog.aclexplode`, permissões herdadas/de default, owners e dependências), gerar novo snapshot versionado sem dados pessoais, reproduzir roles/RLS/ACL/triggers em clone fiel e executar comparação. Verificar também `pg_default_acl`, privilégios efetivos (incluindo membership), funções SECURITY DEFINER e gatilhos dependentes. Sem acesso legítimo a catálogo remoto, manter o gate vermelho; **não preencher valores por suposição**.
+**Resultado real:** 11/11 RLS ativas, FORCE desligado, zero policies, 30 triggers do usuário. Cinco tabelas de fiscal/rotas/pagamentos têm grants explícitos `MAINTAIN`, `TRUNCATE`, `TRIGGER` e `REFERENCES` para `anon` e `authenticated`; `PUBLIC` diretamente não mostrou grants nessas 11 tabelas. A versão anterior omitia `MAINTAIN`. A captura é estruturada, não contém dados de clientes e não mudou nenhuma tabela.
+
+Os 30 triggers também foram ligados, via SELECT, às funções executadas e flags `SECURITY DEFINER`: várias estão em `public` e `private`. **Não transplantar triggers isolados** sem validar as funções, owners, dependências e privilégios efetivos. Essa evidência de catálogo **não é clone completo** nem substitui ensaio de migrações.
+
+O gate R13 **continua BLOCKED**, agora por razões materiais demonstráveis (triggers ausentes no laboratório, políticas/RLS divergentes e concessões diretas de risco canônicas), não mais por omissão do campo role-grants. Falta também auditar membership, default ACL, funções e Storage/Vault antes de decidir paridade completa.
 
 ## Evidências GitHub
 - Patch comparador: `461d3a0e2360b596db2f09b3ed41d65e3bc0dce1`.
@@ -30,12 +34,15 @@ Para fechar R13, ler **somente metadados** em Supabase canônico (`pg_class`, `p
 - Workflow integrado fail-closed: `a4c6eb0df4d2e47a58f80df0d2a01bdd07bfbd0e`.
 - CI unitário: [#37980296009](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37980296009) **SUCCESS**.
 - CI integrado no commit anterior ao reforço do bloqueio: [#37980219599](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37980219599) **SUCCESS**, não prova deploy.
-- CI integrada após reforço: [#37980259353](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37980259353), validar conclusão antes de declarar PASS.
+- CI integrada após reforço: [#37980259353](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37980259353) **SUCCESS**.
+- Snapshot com ACL canônica atualizada: `8d788032abf5ceffdab05638d617e97826ed7381`.
+- CI Node 22 sobre snapshot atualizado: [#37980724544](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37980724544) **SUCCESS**.
+- CI PostgreSQL 17 integrado sobre snapshot atualizado: [#37980724496](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37980724496) **SUCCESS**. A ação prova que o relatório e o bloqueio funcionam, **não paridade**.
 - Todos os testes continuam sintéticos. Nenhum telefone Meta, Bling, SEFAZ ou banco de produção foi alterado.
 
 ## Próxima rodada (R17)
 1. Confirmar CI PostgreSQL 17 no HEAD da PR R16, e gate R14 BLOCKED.
-2. Capturar catálogo real somente leitura **incluindo PUBLIC, default privileges, FORCE RLS, roles, owners e todos os triggers**; mapear 29/30 triggers não reproduzidos.
+2. Completar mapa de dependências dos 30 triggers canônicos e default privileges/roles efetivos (a ACL direta de PUBLIC/anon/authenticated já foi capturada, somente leitura). Construir reprodução fiel das 11 tabelas sem considerar relatórios sintéticos como homologação.
 3. Construir staging fiel descartável, carregar somente migrações selecionadas, testando regressão e rollback sem tocar no Supabase canônico.
 4. Integrar mudanças recentes da main de modo pontual (proteção das demais frentes), atualizar checkpoint da issue #964.
 5. Obter homologações reais controladas Meta 0975/1018, Bling read-back e SEFAZ com aprovação tributária formal; **emissão NF-e e expedição em produção permanecem OFF** até todos os gates R14.
