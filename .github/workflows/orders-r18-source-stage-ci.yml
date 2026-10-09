@@ -67,7 +67,8 @@ jobs:
         run: |
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/20260928_ops2_r4_fiscal_job_integrity_v1.sql
           psql -X -v ON_ERROR_STOP=1 -f /tmp/orders-r18-separator-authentic.sql
-      - name: Exercise fail-closed invoice and separator transactions, ROLLBACK
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261002143000_require_storefront_checkout_basics.sql
+      - name: Exercise fail-closed invoice, separator and checkout transactions, ROLLBACK
         run: psql -X -v ON_ERROR_STOP=1 -f scripts/sql/orders-r18-canonical-safe-stage-assertions.sql
       - name: Fingerprint actual installed functions and triggers against captured canonical
         run: |
