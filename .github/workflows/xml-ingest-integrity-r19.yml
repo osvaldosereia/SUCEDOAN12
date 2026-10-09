@@ -1,0 +1,28 @@
+name: XML R19 Ingest Integrity
+on:
+  pull_request:
+    branches:
+      - main
+      - agent/xml-catalog-consolidation-r18-20261009
+    paths:
+      - 'supabase/functions/**/purchase-xml-v1/**'
+      - 'supabase/functions/purchase-xml-v1/**'
+      - 'scripts/test-xml-ingest-integrity-r19.mjs'
+      - '.github/workflows/xml-ingest-integrity-r19.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrity-and-isolation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Execute real NF-e parser, UTF-8 and mocked entrypoint scenarios
+        run: deno run --allow-read scripts/test-xml-ingest-integrity-r19.mjs
+      - name: Validate both TypeScript Edge XML modules
+        run: deno check supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
+      - name: Re-run original NF-e protocol regression
+        run: deno run --allow-read scripts/test-xml-catalog-protocol-integrity-v6.mjs

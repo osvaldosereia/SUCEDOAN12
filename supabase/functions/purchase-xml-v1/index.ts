@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractCatalogFromNfe } from "./xml-catalog-extractor.mjs";
+import { assertCatalogXmlSize, assertCatalogXmlIntegrity, assertExistingXmlDigest } from "./xml-catalog-ingest-guard.mjs";
 import { xmlFieldReviewGateway } from "./xml-catalog-field-review-gateway.mjs";
 import { catalogXmlComparison } from "./xml-catalog-comparison.mjs";
 
@@ -736,13 +737,19 @@ function stagedReviewItem(documentId:string,item:any,status:"review_required"|"f
   };
 }
 async function processXml(token:string,xml:string,source:string,runId:string|null,sourceId:string|null=null,blingId:number|null=null,detailSupplement:any=null){
+  // Reject oversize inputs before even parsing the operational XML tree.
+  assertCatalogXmlSize(xml);
   const p:any=parseXml(xml);
   if(!p.installments.length&&Array.isArray(detailSupplement?.parcelas))p.installments=detailSupplement.parcelas.map((x:any,i:number)=>({number:String(i+1),due_date:day(x?.data||x?.vencimento),amount:num(x?.valor)})).filter((x:any)=>x.due_date&&Number(x.amount)>0);if(p.document_key.length!==44)throw new Error("invalid_nfe_access_key");
   if(p.cstat&&![100,150].includes(p.cstat))throw new Error("nfe_not_authorized_"+p.cstat);
+  // Validate source identity, SEFAZ protocol and byte limit BEFORE Bling, storage,
+  // contact, product or financial writes. Existing purchase flow follows unchanged.
+  assertCatalogXmlIntegrity(xml,p.document_key);
   const hash=await sha256(xml);
-  const ex=await sb.from("purchase_xml_documents").select("id,processing_status,financial_eligible,finance_status,bling_nfe_id,metadata").eq("document_key",p.document_key).maybeSingle();
+  const ex=await sb.from("purchase_xml_documents").select("id,processing_status,financial_eligible,finance_status,bling_nfe_id,content_sha256,metadata").eq("document_key",p.document_key).maybeSingle();
   if(ex.error)throw ex.error;
   if(ex.data?.id&&(["processed","duplicate"].includes(ex.data.processing_status)||ex.data.metadata?.catalog_only===true)){
+    assertExistingXmlDigest(ex.data.content_sha256,hash);
     if(blingId&&!ex.data.bling_nfe_id)await sb.from("purchase_xml_documents").update({bling_nfe_id:blingId,updated_at:new Date().toISOString()}).eq("id",ex.data.id);
     let financeStatus=ex.data.finance_status;
     if(ex.data.financial_eligible===true&&financeStatus!=="posted"){
@@ -1355,18 +1362,17 @@ async function manualCatalogOnlyImport(input:any){
     const filename=clean(file?.name,160);
     try{
       const xml=String(file?.xml??"");
-      if(!xml||xml.length>10*1024*1024)throw new Error("xml_size_invalid");
+      assertCatalogXmlSize(xml);
       const original=parseXml(xml);
       if(original.document_key.length!==44)throw new Error("invalid_nfe_key");
       if(original.cstat&&![100,150].includes(original.cstat))throw new Error("nfe_not_authorized");
-      const evidence=extractCatalogFromNfe(xml,original.document_key);
+      const evidence=assertCatalogXmlIntegrity(xml,original.document_key);
       const hash=await sha256(xml);
       const exist=await sb.from("purchase_xml_documents").select("id,content_sha256")
         .eq("document_key",evidence.key).maybeSingle();
       if(exist.error)throw exist.error;
       if(exist.data){
-        if(exist.data.content_sha256&&exist.data.content_sha256!==hash)
-          throw new Error("existing_nfe_key_has_different_xml");
+        assertExistingXmlDigest(exist.data.content_sha256,hash);
         const replay=await xmlCatalogReprocess({document_id:exist.data.id});
         if(!replay.results?.[0]?.ok)throw new Error(replay.results?.[0]?.error||"duplicate_replay_failed");
         duplicates++;
@@ -1515,7 +1521,8 @@ async function xmlCatalogReprocess(body:any){
       const downloaded=await sb.storage.from("purchase-xml").download(d.storage_path);
       if(downloaded.error||!downloaded.data)throw new Error("xml_download_failed");
       const xml=await downloaded.data.text();
-      if(xml.length>10*1024*1024)throw new Error("xml_too_large");
+      assertCatalogXmlSize(xml);
+      assertCatalogXmlIntegrity(xml,d.document_key);
       const hash=await sha256(xml);
       if(d.content_sha256&&hash!==d.content_sha256)throw new Error("xml_hash_mismatch");
       const parsed=await persistXmlCatalogEvidence(d.id,d.document_key,xml,hash);
