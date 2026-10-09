@@ -6324,13 +6324,164 @@
        '<span><b>'+esc(x.distinct_invoices||0)+'</b> nota(s)</span>'+
        '<span>Último XML: '+esc(x.last_seen?dateOnly(String(x.last_seen).slice(0,10)):'—')+'</span>'+
        (x.xml_verified?'<span>Origem XML conferida</span>':'<span>Releitura do XML pendente</span>')+
-       '</div></div>').join('')+'</div>':
+       '</div><div style="margin-top:8px"><button class="secondary" type="button" data-xml-open="'+esc(x.candidate_key)+'">'+(state.xmlCatalogDetailKey===x.candidate_key?'Fechar ficha':'Ver ficha e histórico')+'</button></div>'+ (state.xmlCatalogDetailKey===x.candidate_key?'<div style="margin-top:8px">'+xmlCatalogDetailMarkup()+'</div>':'')+'</div>').join('')+'</div>':
        '<div class="empty">Nenhum produto encontrado neste filtro.</div>')+
       '<div class="bling-actions" style="justify-content:flex-end;margin:12px 0 0">'+
        '<button type="button" class="secondary" id="xmlCatalogPrev" '+(offset<=0?'disabled':'')+'>Anterior</button>'+
        '<button type="button" class="secondary" id="xmlCatalogNext" '+(offset+items.length>=Number(d.total||0)?'disabled':'')+'>Próximos produtos</button>'+
       '</div>';
   }
+  function xmlCatalogDetailMarkup(){
+    if(state.xmlCatalogDetailLoading)return '<div class="loading">Carregando histórico do XML…</div>';
+    const data=state.xmlCatalogDetail||{},c=data.candidate||{};
+    if(data.error)return '<div class="empty">'+esc(data.error)+'</div>';
+    const rows=Array.isArray(data.observations)?data.observations:[];
+    const active=rows.find(x=>String(x.purchase_item_id||'')===String(state.xmlCatalogSelectedObservation||''))||
+      rows.find(x=>x.purchase_item_id&&!x.linked_product_id)||rows[0]||{};
+    const options=state.xmlCatalogMatches||data.suggested_existing_products||[];
+    const chosen=state.xmlCatalogChosenProduct||null;
+    const purchaseUnit=String(active.purchase_unit||'').trim().toUpperCase();
+    const itemHasBarcode=[active.commercial_gtin,active.tax_gtin].some(x=>/^\d{8,14}$/.test(String(x||'')));
+    const needsManualUnitReview=!itemHasBarcode||/^(KG|G|L|LT|LTS|M|MT|TON)$/.test(purchaseUnit);
+    return '<div class="purchase-safe"><strong>Ficha de origem · '+esc(c.display_name||'Produto')+'</strong>'+
+      '<small>Os campos abaixo vêm das NF-e. Para corrigir o cadastro é obrigatória uma confirmação humana.</small></div>'+
+      '<div class="purchase-catalog-meta" style="margin:8px 0">'+
+      '<span>'+esc(c.observations_count||0)+' registros de XML</span>'+
+      '<span>'+esc(c.suppliers_count||0)+' fornecedores</span>'+
+      '<span>'+esc(c.ncm_variations||0)+' NCM(s) informado(s)</span></div>'+
+      '<div class="purchase-items" style="max-height:300px;overflow-y:auto">'+rows.map(x=>
+        '<div class="purchase-item-card" style="padding:10px;margin:5px 0">'+
+        '<div class="purchase-item-title"><div><strong>'+esc(x.xml_description||'Produto')+'</strong>'+
+        '<small>'+esc(x.supplier_name||'Fornecedor')+' · '+esc(x.issued_at?dateOnly(String(x.issued_at).slice(0,10)):'—')+
+        ' · Item '+esc(x.item_number||'—')+'</small></div>'+
+        '<button type="button" class="secondary" data-xml-observation="'+esc(x.purchase_item_id||'')+'" '+
+          (!x.purchase_item_id?'disabled':'')+'>'+
+          (String(active.purchase_item_id||'')===String(x.purchase_item_id||'')?'Selecionado':'Selecionar')+'</button></div>'+
+        '<small>EAN comercial: '+esc(x.commercial_gtin||'—')+' · EAN tributável: '+esc(x.tax_gtin||'—')+
+        ' · Cód. fornecedor: '+esc(x.supplier_item_code||'—')+'</small>'+
+        '<small style="display:block">NCM: '+esc(x.xml_ncm||'—')+' · CEST: '+esc(x.xml_cest||'—')+
+        ' · CFOP: '+esc(x.xml_cfop||'—')+'</small>'+
+        '<small style="display:block">Quantidade: '+esc(x.purchase_quantity??'—')+' '+esc(x.purchase_unit||'')+
+        ' · Valor unitário: '+(x.purchase_unit_price==null?'—':purchaseMoney(x.purchase_unit_price))+
+        ' · Total: '+(x.line_total==null?'—':purchaseMoney(x.line_total))+'</small>'+
+        (x.linked_product_id?'<small style="display:block"><strong>Vinculado:</strong> '+esc(x.linked_product_name||'Produto')+
+        ' · NCM cadastro: '+esc(x.linked_product_ncm||'—')+' · CEST fiscal: '+esc(x.linked_product_cest||'—')+'</small>':
+        '<small style="display:block">Sem vínculo com o cadastro de venda</small>')+'</div>').join('')+'</div>'+
+      (data.truncated?'<small class="sub">Exibindo até 60 observações mais recentes.</small>':'')+
+      (active.linked_product_id?'<div class="purchase-safe"><strong>Item vinculado.</strong>'+
+       '<small>Revisão de custo, preço e estoque permanece na tela operacional de Compras/XML.</small></div>':
+       needsManualUnitReview?'<div class="purchase-safe purchase-danger" style="margin-top:10px"><strong>Conferência de EAN/unidade necessária</strong>'+
+       '<small>Este XML não possui código de barras numérico ou utiliza unidade de peso/volume. Para não converter quilos em unidades ou associar códigos incorretos, faça a identificação na revisão operacional de Compras/XML. O item já está preservado no catálogo.</small></div>':
+       '<div class="purchase-safe" style="margin-top:12px"><strong>Vincular ou cadastrar este item</strong>'+
+        '<small>Confirme o que representa o EAN e a conversão da embalagem; nenhuma ação modifica estoque ou preço.</small>'+
+        '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
+        '<label>EAN<select id="xmlDetailRole"><option value="">Escolha…</option>'+
+        '<option value="base_unit">Unidade</option><option value="package">Caixa/fardo/pacote</option></select></label>'+
+        '<label>Quantidade por embalagem<input id="xmlDetailFactor" type="number" min="1" step="1" value="1" style="width:110px"></label></div>'+
+        '<div class="bling-actions" style="gap:6px;flex-wrap:wrap">'+
+        '<input id="xmlDetailProductSearch" type="search" placeholder="EAN ou nome do produto cadastrado" style="min-width:220px;flex:1">'+
+        '<button id="xmlDetailSearch" type="button" class="secondary">Buscar produto</button></div>'+
+        '<div class="purchase-items">'+options.map(p=>
+           '<div class="purchase-item-title" style="margin:5px 0"><div><strong>'+esc(p.name||'Produto')+'</strong>'+
+           '<small>EAN '+esc(p.gtin||'—')+' · '+(p.is_active?'Ativo':'Inativo')+'</small></div>'+
+           '<button class="secondary" type="button" data-xml-pick="'+esc(p.id)+'">Escolher</button></div>').join('')+'</div>'+
+        (chosen?'<small style="display:block;margin:8px 0">Produto escolhido: <b>'+esc(chosen.name)+'</b></small>':'')+
+        '<button id="xmlDetailLink" type="button" class="secondary" '+(!chosen?'disabled':'')+'>Vincular somente esta linha</button>'+
+        '<div style="margin-top:12px"><label>Novo produto (inativo)<input id="xmlDetailNewName" type="text" maxlength="250" style="width:100%" value="'+
+         esc(active.xml_description||c.display_name||'')+'"></label>'+
+        '<button id="xmlDetailCreate" type="button" class="secondary">Cadastrar produto inativo</button></div>'+
+        '</div>')+
+      '<small class="sub">Dados fiscais são evidências do fornecedor e precisam de validação. Não há lançamento de estoque nesta ficha.</small>';
+  }
+  function xmlCatalogDetailRefresh(){
+    const h=$('#xmlCatalogBody');
+    if(!h||!state.xmlCatalogOpen)return;
+    h.innerHTML=xmlCatalogDisplayHtml();bindXmlCatalogInner();
+  }
+  async function xmlCatalogDetailOpen(key){
+    state.xmlCatalogDetailKey=key;state.xmlCatalogDetailLoading=true;
+    state.xmlCatalogDetail=null;state.xmlCatalogMatches=null;
+    state.xmlCatalogChosenProduct=null;state.xmlCatalogSelectedObservation=null;
+    xmlCatalogDetailRefresh();
+    try{
+      const r=await purchaseApi('xml_catalog_candidate_detail',{candidate_key:key});
+      if(state.xmlCatalogDetailKey!==key)return;
+      state.xmlCatalogDetail=r;
+      const rows=r.observations||[];
+      state.xmlCatalogSelectedObservation=(rows.find(x=>x.purchase_item_id&&!x.linked_product_id)||rows[0]||{}).purchase_item_id||null;
+    }catch(e){state.xmlCatalogDetail={error:errorMessage(e.message)}}
+    finally{state.xmlCatalogDetailLoading=false;xmlCatalogDetailRefresh()}
+  }
+  function xmlCatalogDetailBind(){
+    const host=$('#xmlCatalogBody');if(!host)return;
+    host.querySelectorAll('[data-xml-open]').forEach(b=>b.onclick=async()=>{
+      const key=b.dataset.xmlOpen;
+      if(state.xmlCatalogDetailKey===key){state.xmlCatalogDetailKey=null;state.xmlCatalogDetail=null;xmlCatalogDetailRefresh()}
+      else await xmlCatalogDetailOpen(key);
+    });
+    const data=state.xmlCatalogDetail;
+    if(!data?.candidate)return;
+    host.querySelectorAll('[data-xml-observation]').forEach(b=>b.onclick=()=>{
+      if(!b.dataset.xmlObservation)return;
+      state.xmlCatalogSelectedObservation=b.dataset.xmlObservation;
+      state.xmlCatalogChosenProduct=null;xmlCatalogDetailRefresh();
+    });
+    const search=$('#xmlDetailSearch');
+    if(search)search.onclick=async()=>{
+      const q=String($('#xmlDetailProductSearch')?.value||'').trim();
+      if(q.length<2){toast('Informe pelo menos 2 caracteres');return}
+      search.disabled=true;
+      try{
+        const r=await purchaseApi('search_products',{query:q});
+        state.xmlCatalogMatches=Array.isArray(r.items)?r.items:[];
+        state.xmlCatalogChosenProduct=null;xmlCatalogDetailRefresh();
+      }catch(e){toast(errorMessage(e.message));search.disabled=false}
+    };
+    host.querySelectorAll('[data-xml-pick]').forEach(b=>b.onclick=()=>{
+      const options=state.xmlCatalogMatches||data.suggested_existing_products||[];
+      state.xmlCatalogChosenProduct=options.find(x=>String(x.id)===String(b.dataset.xmlPick))||null;
+      xmlCatalogDetailRefresh();
+    });
+    const link=$('#xmlDetailLink'),create=$('#xmlDetailCreate');
+    if(link)link.onclick=()=>xmlCatalogDetailSave(false);
+    if(create)create.onclick=()=>xmlCatalogDetailSave(true);
+  }
+  async function xmlCatalogDetailSave(createNew){
+    const d=state.xmlCatalogDetail||{};
+    const item=(d.observations||[]).find(x=>String(x.purchase_item_id||'')===String(state.xmlCatalogSelectedObservation||''));
+    const chosen=state.xmlCatalogChosenProduct,role=String($('#xmlDetailRole')?.value||'');
+    const factor=Number($('#xmlDetailFactor')?.value||0);
+    if(!item?.purchase_item_id||item.linked_product_id){toast('Selecione um item não vinculado');return}
+    const unit=String(item.purchase_unit||'').trim().toUpperCase();
+    const barcodeOk=[item.commercial_gtin,item.tax_gtin].some(x=>/^\d{8,14}$/.test(String(x||'')));
+    if(!barcodeOk||/^(KG|G|L|LT|LTS|M|MT|TON)$/.test(unit)){
+      toast('Unidade de compra ou GTIN requer conferência operacional antes de vincular');return;
+    }
+    if(!['base_unit','package'].includes(role)){toast('Defina se o EAN é da unidade ou da embalagem');return}
+    if(/^(CX|FD|FAR|FARDO|CAIXA|FDO)$/.test(unit)&&role!=='package'){
+      toast('A NF-e usa caixa/fardo: confirme a quantidade de unidades e selecione Embalagem');return;
+    }
+    if(!Number.isInteger(factor)||factor<1||factor>100000||
+       (role==='base_unit'&&factor!==1)||(role==='package'&&factor<=1)){
+      toast('Confira o fator de conversão: unidade = 1; caixa/fardo exige mais de 1');return}
+    if(!createNew&&!chosen?.id){toast('Escolha um produto existente');return}
+    const name=createNew?String($('#xmlDetailNewName')?.value||'').trim():String(chosen.name||'').trim();
+    if(!name){toast('Informe o nome do produto');return}
+    const msg=createNew?
+      'Criar produto INATIVO com estoque zero? Os dados fiscais continuarão em revisão.':
+      'Vincular SOMENTE esta linha da NF-e ao produto '+name+'? O nome atual será preservado. Não haverá alteração de estoque ou preço.';
+    if(!confirm(msg))return;
+    const button=createNew?$('#xmlDetailCreate'):$('#xmlDetailLink');if(button)button.disabled=true;
+    const key=state.xmlCatalogDetailKey;
+    try{
+      await purchaseApi('resolve_item_identity',{item_id:item.purchase_item_id,
+        product_id:createNew?null:chosen.id,create_new:createNew,
+        proposed_name:name,gtin_role:role,conversion_factor:factor,catalog_evidence_only:true});
+      toast(createNew?'Produto criado inativo':'Vínculo confirmado; estoque e preços não alterados');
+      await loadXmlCatalog();if(state.xmlCatalogOpen&&key)await xmlCatalogDetailOpen(key);
+    }catch(e){toast(errorMessage(e.message));if(button)button.disabled=false}
+  }
+
   function bindXmlCatalog(){
     const toggle=$('#xmlCatalogToggle');
     if(toggle)toggle.onclick=async()=>{
@@ -6344,6 +6495,7 @@
   }
   function bindXmlCatalogInner(){
     const host=$('#xmlCatalogBody');if(!host||!state.xmlCatalogOpen)return;
+    xmlCatalogDetailBind();
     const search=$('#xmlCatalogSearch'),filter=$('#xmlCatalogFilter');
     if(search)search.onchange=e=>state.xmlCatalogSearch=e.target.value;
     if(filter)filter.onchange=e=>state.xmlCatalogFilter=e.target.value;
