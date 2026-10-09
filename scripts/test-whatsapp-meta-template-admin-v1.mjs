@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const helperUrl=new URL('../supabase/functions/_shared/whatsapp-meta-templates-v1.mjs',import.meta.url);
 const edgeUrl=new URL('../supabase/functions/admin-whatsapp-templates-v1/index.ts',import.meta.url);
 
-const {buildTemplateCacheRows}=await import(helperUrl.href);
+const {buildTemplateCacheRows,validateTemplateDraft}=await import(helperUrl.href);
 
 const syncedAt='2026-10-02T22:10:00.000Z';
 const account={id:'11111111-1111-4111-8111-111111111111',waba_id:'1497253794754816',slug:'dona-antonia-0975'};
@@ -29,6 +29,38 @@ assert.equal(rows[0].metadata.local_note,'preservar');
 assert.equal(rows[0].metadata.sync_source,'meta_cloud_api');
 assert.equal(rows[0].metadata.rejected_reason,null);
 
+const media=validateTemplateDraft({name:'oferta_imagem',language:'pt_BR',category:'MARKETING',components:[
+  {type:'HEADER',format:'IMAGE',example:{header_handle:['4::sample-handle']}},
+  {type:'BODY',text:'Olá {{1}}',example:{body_text:[['Maria']]}},
+  {type:'BUTTONS',buttons:[{type:'PHONE_NUMBER',text:'Telefonar',phone_number:'5565998150975'}]}
+]});
+assert.equal(media.components[0].format,'IMAGE');
+assert.equal(media.components[0].example.header_handle[0],'4::sample-handle');
+assert.equal(media.components[2].buttons[0].type,'PHONE_NUMBER');
+
+const location=validateTemplateDraft({name:'localizacao_loja',language:'pt_BR',category:'UTILITY',components:[
+  {type:'HEADER',format:'LOCATION'},
+  {type:'BODY',text:'Confira nossa localização.'}
+]});
+assert.equal(location.components[0].format,'LOCATION');
+
+const catalog=validateTemplateDraft({name:'ver_catalogo',language:'pt_BR',category:'MARKETING',components:[
+  {type:'BODY',text:'Veja nossos produtos.'},
+  {type:'BUTTONS',buttons:[{type:'CATALOG',text:'Ver catálogo'}]}
+]});
+assert.equal(catalog.components[1].buttons[0].type,'CATALOG');
+
+const authTemplate=validateTemplateDraft({name:'codigo_acesso',language:'pt_BR',category:'AUTHENTICATION',components:[
+  {type:'BODY',add_security_recommendation:true},
+  {type:'FOOTER',code_expiration_minutes:10},
+  {type:'BUTTONS',buttons:[{type:'OTP',otp_type:'COPY_CODE',text:'Copiar código'}]}
+]});
+assert.equal(authTemplate.category,'AUTHENTICATION');
+assert.equal(authTemplate.components[0].add_security_recommendation,true);
+assert.equal(authTemplate.components[2].buttons[0].type,'OTP');
+
+assert.throws(()=>validateTemplateDraft({name:'imagem_sem_amostra',language:'pt_BR',category:'MARKETING',components:[{type:'HEADER',format:'IMAGE'},{type:'BODY',text:'Teste'}]}),/meta_template_header_handle_required/);
+
 assert.equal(fs.existsSync(edgeUrl),true,'Edge Function administrativa de templates deve existir');
 const edge=fs.readFileSync(edgeUrl,'utf8');
 assert.match(edge,/adminAuth/);
@@ -40,14 +72,19 @@ assert.match(edge,/createTemplateViaMeta/,'Edge deve importar helper de criaçã
 assert.match(edge,/editTemplateViaMeta/,'Edge deve importar helper de edição');
 assert.match(edge,/deleteTemplateViaMeta/,'Edge deve importar helper de exclusão');
 assert.match(edge,/whatsapp_templates_v1/);
+assert.match(edge,/whatsapp_template_events_v1/,'detalhe deve expor histórico de aprovação/rejeição da Meta');
+assert.match(edge,/async function templateEvents\(/,'histórico deve ficar encapsulado em helper dedicado');
 assert.match(edge,/onConflict:\s*["']waba_id,name,language["']/);
-assert.match(edge,/action\s*!==\s*["']list["'][\s\S]{0,80}action\s*!==\s*["']sync["']/,'GET deve continuar deny-by-default fora de list/sync');
+assert.match(edge,/action\s*!==\s*["']list["'][\s\S]{0,120}action\s*!==\s*["']sync["'][\s\S]{0,120}action\s*!==\s*["']detail["']/,'GET deve continuar deny-by-default fora de list/sync/detail');
 assert.match(edge,/action\s*===\s*["']sync["']/,'sync deve continuar executando atualização remota');
+assert.match(edge,/action\s*===\s*["']detail["']/,'GET detail deve existir');
+assert.match(edge,/detail[\s\S]{0,2400}syncTemplates\(/,'detail deve sincronizar com Meta antes de responder');
+assert.match(edge,/detail[\s\S]{0,2600}templateEvents\(/,'detail deve chamar o helper de histórico depois da sincronização');
 assert.match(edge,/req\.method\s*===\s*["']POST["']/,'POST deve ficar em ramo separado do list/sync');
 assert.match(edge,/action\s*===\s*["']create["']/,'POST create deve existir');
 assert.match(edge,/action\s*===\s*["']edit["']/,'POST edit deve existir');
 assert.match(edge,/action\s*===\s*["']delete["']/,'POST delete deve existir');
-assert.match(edge,/templateById|templateRowById/,'edit/delete devem resolver template local antes da Meta');
+assert.match(edge,/templateById|templateRowById/,'edit/delete/detail devem resolver template local antes da Meta');
 assert.match(edge,/create[\s\S]{0,2200}accountById\(/,'create deve resolver WABA por account local');
 assert.match(edge,/edit[\s\S]{0,2600}syncTemplates\(/,'edit deve sincronizar cache após sucesso');
 assert.match(edge,/delete[\s\S]{0,2600}syncTemplates\(/,'delete deve sincronizar cache após sucesso');

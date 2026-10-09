@@ -48,6 +48,20 @@ async function templateRowById(templateId:string){
   return q.data||null;
 }
 
+async function templateEvents(row:any){
+  if(!row)return [];
+  let q=db.from("whatsapp_template_events_v1")
+    .select("id,event_type,status,quality_rating,reason,occurred_at,received_at")
+    .eq("waba_id",row.waba_id)
+    .order("occurred_at",{ascending:false})
+    .limit(50);
+  if(/^\d{5,30}$/.test(String(row.meta_template_id||"")))q=q.eq("meta_template_id",row.meta_template_id);
+  else q=q.eq("template_name",row.name).eq("language",row.language);
+  const result=await q;
+  if(result.error)throw result.error;
+  return result.data||[];
+}
+
 async function cachedTemplates(accountId:string){
   const q=await db.from("whatsapp_templates_v1")
     .select("id,whatsapp_account_id,waba_id,meta_template_id,name,language,category,status,components,quality_rating,last_synced_at,metadata,updated_at")
@@ -217,7 +231,21 @@ Deno.serve(async(req:Request)=>{
       }
     }
 
-    if(action!=="list"&&action!=="sync")return json(req,{ok:false,error:"action_not_allowed"},404);
+    if(action!=="list"&&action!=="sync"&&action!=="detail")return json(req,{ok:false,error:"action_not_allowed"},404);
+
+    if(action==="detail"){
+      const templateId=validUuid(url.searchParams.get("template_id"));
+      if(!templateId)return json(req,{ok:false,error:"invalid_template_id"},400);
+      const initial=await templateRowById(templateId);
+      if(!initial)return json(req,{ok:false,error:"template_not_found"},404);
+      const account=await accountById(initial.whatsapp_account_id);
+      if(!account)return json(req,{ok:false,error:"account_not_found"},404);
+      const sync=await syncTemplates(account);
+      const item=await templateRowById(templateId)||initial;
+      const events=await templateEvents(item);
+      return json(req,{ok:true,item,events,sync,live:sync?.ok===true},200);
+    }
+
     const accountId=validUuid(url.searchParams.get("account_id"));
     if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
     const account=await accountById(accountId);

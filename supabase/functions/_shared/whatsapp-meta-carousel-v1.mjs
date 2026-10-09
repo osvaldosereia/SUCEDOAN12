@@ -8,7 +8,7 @@ const NAME_RE=/^[a-z0-9_]{1,512}$/;
 const LANGUAGE_RE=/^[a-z]{2,3}(?:_[A-Z]{2})?$/;
 const MEDIA_TYPES=new Set(['IMAGE','VIDEO']);
 const BUTTON_TYPES=new Set(['URL','QUICK_REPLY']);
-const UPLOAD_MIME=new Set(['image/jpeg','image/png','video/mp4']);
+const UPLOAD_MIME=new Set(['image/jpeg','image/png','video/mp4','application/pdf']);
 
 function normalizeButton(raw){
   const value=plain(raw),type=clean(value.type,30).toUpperCase(),text=clean(value.text,25);
