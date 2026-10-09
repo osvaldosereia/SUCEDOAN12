@@ -7,7 +7,11 @@
     return indexes.length===1?indexes[0]:null;
   }
   function decodeCount(active,tens,units){
-    if(active!==true)return {status:'unused'};
+    if(active!==true){
+      if((Array.isArray(tens)&&tens.some(v=>v===true))||(Array.isArray(units)&&units.some(v=>v===true)))
+        return {status:'review',reason:'marks_without_activation'};
+      return {status:'unused'};
+    }
     const d=decodeMarkedDigits(tens),u=decodeMarkedDigits(units);
     return d===null||u===null?{status:'review'}:{status:'read',quantity:d*10+u};
   }
