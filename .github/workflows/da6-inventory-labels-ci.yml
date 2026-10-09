@@ -106,3 +106,41 @@ jobs:
             -f tests/da6-review-postgres-fixture.sql \
             -f supabase/migrations/20261009140500_da6_manual_review_audit_v1.sql \
             -f tests/da6-review-postgres-assertions.sql
+
+
+  postgres-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: da6_upload_homologation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: da6_upload_homologation
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar cliente PostgreSQL
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+      - name: Testar reserva de lote e limite transacional sem credenciais de produção
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/da6-upload-postgres-fixture.sql \
+            -f supabase/migrations/20261009150000_da6_upload_atomic_reservation_v1.sql \
+            -f tests/da6-upload-postgres-assertions.sql
