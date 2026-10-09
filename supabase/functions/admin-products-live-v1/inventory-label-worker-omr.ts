@@ -131,8 +131,8 @@ function read(image){
   for(let slot=1;slot<=6;slot++){
     const top=61+(slot-1)*(rowHeight+1);
     const active=density(image,18.5,top+7.3,1);
-    const tens=Array.from({length:10},(_,n)=>density(image,25.09+n*3.535,top+8.7,.75));
-    const units=Array.from({length:10},(_,n)=>density(image,61.09+n*3.535,top+8.7,.75));
+    const tens=Array.from({length:10},(_,n)=>density(image,25.09+n*3.535,top+8.7,.55));
+    const units=Array.from({length:10},(_,n)=>density(image,61.09+n*3.535,top+8.7,.55));
     if(active<.2){
       if(Math.max(...tens,...units)>.27)errors.push({slot,reason:'marks_without_activation'});
       continue;
