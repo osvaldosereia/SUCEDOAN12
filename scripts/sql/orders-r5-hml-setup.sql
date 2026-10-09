@@ -2,6 +2,10 @@
 \set ON_ERROR_STOP on
 ALTER TABLE public.order_separation_completions_v1
   ADD COLUMN phase text NOT NULL DEFAULT 'prepared';
+ALTER TABLE public.order_separation_completions_v1
+  ADD COLUMN completed_at timestamptz;
+ALTER TABLE public.order_separation_items_v1
+  ADD COLUMN quantity numeric NOT NULL DEFAULT 1;
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
   LANGUAGE sql STABLE AS $$ SELECT '60000000-0000-4000-8000-000000000001'::uuid $$;
