@@ -53,6 +53,8 @@ Deno.serve(async(req)=>{
    .select("enabled,daily_limit,max_batch,research_mode").eq("id",true).maybeSingle();
  if(cfg.error||!cfg.data)return respond({error:"config_unavailable"},500);
  if(input.mode!=="execute")return respond({mode:"preview",config:cfg.data,
+   si5_token_configured:!!Deno.env.get("SI5_API_TOKEN"),
+   worker_secret_configured:!!Deno.env.get("SI5_WORKER_SECRET"),
    updates_products:false,updates_fiscal:false,updates_bling:false});
  if(!cfg.data.enabled)return respond({mode:"disabled",processed_count:0,updates_products:false});
  const token=Deno.env.get("SI5_API_TOKEN")||"";
