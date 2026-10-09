@@ -6331,6 +6331,19 @@
        '<button type="button" class="secondary" id="xmlCatalogNext" '+(offset+items.length>=Number(d.total||0)?'disabled':'')+'>Próximos produtos</button>'+
       '</div>';
   }
+  function xmlCatalogFiscalAlerts(observation){
+    if(!observation?.linked_product_id)return '';
+    const warnings=[];
+    if(observation.xml_ncm&&String(observation.xml_ncm)!==String(observation.linked_product_ncm||'')){
+      warnings.push('NCM do XML diverge do cadastro');
+    }
+    if(observation.xml_cest&&String(observation.xml_cest)!==String(observation.linked_product_cest||'')){
+      warnings.push('CEST do XML diverge do perfil fiscal');
+    }
+    return warnings.length?
+      '<small class="purchase-danger" style="display:block"><strong>'+esc(warnings.join(' · '))+
+      '</strong> — conferência fiscal obrigatória; nenhum campo será alterado nesta ficha.</small>':'';
+  }
   function xmlCatalogDetailMarkup(){
     if(state.xmlCatalogDetailLoading)return '<div class="loading">Carregando histórico do XML…</div>';
     const data=state.xmlCatalogDetail||{},c=data.candidate||{};
@@ -6340,6 +6353,7 @@
       rows.find(x=>x.purchase_item_id&&!x.linked_product_id)||rows[0]||{};
     const options=state.xmlCatalogMatches||data.suggested_existing_products||[];
     const chosen=state.xmlCatalogChosenProduct||null;
+    const draft=state.xmlCatalogDraft||{};
     const purchaseUnit=String(active.purchase_unit||'').trim().toUpperCase();
     const itemHasBarcode=[active.commercial_gtin,active.tax_gtin].some(x=>/^\d{8,14}$/.test(String(x||'')));
     const needsManualUnitReview=!itemHasBarcode||/^(KG|G|L|LT|LTS|M|MT|TON)$/.test(purchaseUnit);
@@ -6365,7 +6379,8 @@
         ' · Valor unitário: '+(x.purchase_unit_price==null?'—':purchaseMoney(x.purchase_unit_price))+
         ' · Total: '+(x.line_total==null?'—':purchaseMoney(x.line_total))+'</small>'+
         (x.linked_product_id?'<small style="display:block"><strong>Vinculado:</strong> '+esc(x.linked_product_name||'Produto')+
-        ' · NCM cadastro: '+esc(x.linked_product_ncm||'—')+' · CEST fiscal: '+esc(x.linked_product_cest||'—')+'</small>':
+        ' · NCM cadastro: '+esc(x.linked_product_ncm||'—')+' · CEST fiscal: '+esc(x.linked_product_cest||'—')+'</small>'+
+        xmlCatalogFiscalAlerts(x):
         '<small style="display:block">Sem vínculo com o cadastro de venda</small>')+'</div>').join('')+'</div>'+
       (data.truncated?'<small class="sub">Exibindo até 60 observações mais recentes.</small>':'')+
       (active.linked_product_id?'<div class="purchase-safe"><strong>Item vinculado.</strong>'+
@@ -6376,10 +6391,11 @@
         '<small>Confirme o que representa o EAN e a conversão da embalagem; nenhuma ação modifica estoque ou preço.</small>'+
         '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
         '<label>EAN<select id="xmlDetailRole"><option value="">Escolha…</option>'+
-        '<option value="base_unit">Unidade</option><option value="package">Caixa/fardo/pacote</option></select></label>'+
-        '<label>Quantidade por embalagem<input id="xmlDetailFactor" type="number" min="1" step="1" value="1" style="width:110px"></label></div>'+
+        '<option value="base_unit" '+(draft.role==='base_unit'?'selected':'')+'>Unidade</option>'+
+        '<option value="package" '+(draft.role==='package'?'selected':'')+'>Caixa/fardo/pacote</option></select></label>'+
+        '<label>Quantidade por embalagem<input id="xmlDetailFactor" type="number" min="1" step="1" value="'+esc(draft.factor||'1')+'" style="width:110px"></label></div>'+
         '<div class="bling-actions" style="gap:6px;flex-wrap:wrap">'+
-        '<input id="xmlDetailProductSearch" type="search" placeholder="EAN ou nome do produto cadastrado" style="min-width:220px;flex:1">'+
+        '<input id="xmlDetailProductSearch" type="search" placeholder="EAN ou nome do produto cadastrado" value="'+esc(draft.search||'')+'" style="min-width:220px;flex:1">'+
         '<button id="xmlDetailSearch" type="button" class="secondary">Buscar produto</button></div>'+
         '<div class="purchase-items">'+options.map(p=>
            '<div class="purchase-item-title" style="margin:5px 0"><div><strong>'+esc(p.name||'Produto')+'</strong>'+
@@ -6388,21 +6404,32 @@
         (chosen?'<small style="display:block;margin:8px 0">Produto escolhido: <b>'+esc(chosen.name)+'</b></small>':'')+
         '<button id="xmlDetailLink" type="button" class="secondary" '+(!chosen?'disabled':'')+'>Vincular somente esta linha</button>'+
         '<div style="margin-top:12px"><label>Novo produto (inativo)<input id="xmlDetailNewName" type="text" maxlength="250" style="width:100%" value="'+
-         esc(active.xml_description||c.display_name||'')+'"></label>'+
+         esc(draft.newName==null?(active.xml_description||c.display_name||''):draft.newName)+'"></label>'+
         '<button id="xmlDetailCreate" type="button" class="secondary">Cadastrar produto inativo</button></div>'+
         '</div>')+
       '<small class="sub">Dados fiscais são evidências do fornecedor e precisam de validação. Não há lançamento de estoque nesta ficha.</small>';
   }
-  function xmlCatalogDetailRefresh(){
+  function xmlCatalogDetailRefresh(preserveInput=true){
     const h=$('#xmlCatalogBody');
     if(!h||!state.xmlCatalogOpen)return;
+    if(preserveInput&&state.xmlCatalogDetail?.candidate){
+      const role=h.querySelector('#xmlDetailRole'),factor=h.querySelector('#xmlDetailFactor');
+      const search=h.querySelector('#xmlDetailProductSearch'),newName=h.querySelector('#xmlDetailNewName');
+      if(role||factor||search||newName){
+        state.xmlCatalogDraft={
+          role:role?.value||'',factor:factor?.value||'1',
+          search:search?.value||'',newName:newName?.value??null
+        };
+      }
+    }
     h.innerHTML=xmlCatalogDisplayHtml();bindXmlCatalogInner();
   }
   async function xmlCatalogDetailOpen(key){
     state.xmlCatalogDetailKey=key;state.xmlCatalogDetailLoading=true;
     state.xmlCatalogDetail=null;state.xmlCatalogMatches=null;
     state.xmlCatalogChosenProduct=null;state.xmlCatalogSelectedObservation=null;
-    xmlCatalogDetailRefresh();
+    state.xmlCatalogDraft=null;
+    xmlCatalogDetailRefresh(false);
     try{
       const r=await purchaseApi('xml_catalog_candidate_detail',{candidate_key:key});
       if(state.xmlCatalogDetailKey!==key)return;
@@ -6424,7 +6451,7 @@
     host.querySelectorAll('[data-xml-observation]').forEach(b=>b.onclick=()=>{
       if(!b.dataset.xmlObservation)return;
       state.xmlCatalogSelectedObservation=b.dataset.xmlObservation;
-      state.xmlCatalogChosenProduct=null;xmlCatalogDetailRefresh();
+      state.xmlCatalogChosenProduct=null;state.xmlCatalogDraft=null;xmlCatalogDetailRefresh(false);
     });
     const search=$('#xmlDetailSearch');
     if(search)search.onclick=async()=>{
