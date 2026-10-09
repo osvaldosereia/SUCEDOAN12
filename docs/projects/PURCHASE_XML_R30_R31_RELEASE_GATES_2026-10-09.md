@@ -27,3 +27,11 @@
 5. Smoke antes de habilitar público; conferir fila, dossiê, retorno 401/403, nenhum efeito fiscal/estoque/financeiro, endpoints de compra e emissão NF-e da main. Registrar resultados, versão e commits no handoff.
 
 **A produção permanece inalterada pelas rodadas R28–R31.**
+
+
+## R31 — diagnóstico real e isolamento das dependências (complemento)
+
+- Execução [#37983122339](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37983122339): **FAILED** na etapa HTTP `purchase-xml-v1`. O Supabase local iniciou; o fixture PostgreSQL/R27 aplicou; o usuário owner no GoTrue foi criado e obteve JWT. Porém, **15 chamadas Edge consecutivas expiraram em 12 segundos (HTTP 000)**. Logs `serving the request` sem resposta útil. Portanto **não existe evidência de owner/viewer/inativo/anônimo aprovada nesta execução**. Isto é um bloqueio da prova de Edge real, não prova de vulnerabilidade ou falha da regra fiscal.
+- A árvore do handler inclui imports externos `npm:@supabase/supabase-js@2`, `jsr:@supabase/functions-js/edge-runtime.d.ts` e `npm:fast-xml-parser@5.11.2` (o parser é importado indiretamente via `xml-catalog-extractor.mjs`). O atraso de resolução/cold-start é **hipótese**, não causa confirmada.
+- Adicionado `scripts/xml-r31-local-supabase-shim.mjs`, usado **apenas na cópia temporária da Edge do GitHub Actions**. Esse adaptador consulta **GoTrue e PostgREST locais de verdade** com token JWT e key de serviço local; o roteador principal TypeScript e o gateway real de aplicação de campo continuam inalterados. A cópia de `xml-catalog-extractor.mjs` no runner substitui a função de extração por uma que **lança erro se chamada**, pois o cenário testa somente `xml_field_apply_list`. O parser de XML continua validado nas suítes R19/R28. A versão versionada/de produção de ambos os arquivos **não foi modificada**. Confirmação de owner/roles deve ser obtida do teste R31 subsequente; não rotular essa prova como full Edge end-to-end do SDK supabase-js.
+- Teste alternativo `R29` real PostgREST Auth e `R30` Chromium já estavam aprovados e continuam independentes dessa falha. Até uma prova adicional positiva, a PR #1034 permanece **draft e sem deploy**.
