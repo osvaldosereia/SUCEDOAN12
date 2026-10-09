@@ -4614,6 +4614,9 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
       }
       const preview=await blingHubVitrineDispatchFiscalPreview(sb,job.order_id);
       if(!preview.ok){diagnostics.reason="fiscal_preview_unavailable";continue;}
+      // Record a discovered invoice even if its terminal SEFAZ state blocks
+      // the remainder of the workflow. This closes the one-time rescan gate.
+      diagnostics.invoice_id=Number(preview.invoice_id||0)||null;
       // Distinguish a successful negative lookup from a failed read. In
       // particular, HTTP 429/5xx is NOT evidence that no invoice exists.
       if(preview.invoice_lookup?.performed&&
