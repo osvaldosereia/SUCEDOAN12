@@ -142,7 +142,7 @@ begin
  end;
  -- Different tax EAN is an explicit independent choice; one new inactive SKU.
  v:=public.purchase_xml_resolve_catalog_identity_v1(
-   '10000000-0000-4000-8000-000000000012',null,true,'Rascunho revisão',
+   '10000000-0000-4000-8000-000000000013',null,true,'Rascunho revisão',
    'tax','base_unit',1,v_actor,'CRIAR_INATIVO_XML');
  product:=(v->>'product_id')::uuid;
  if product is null or (select stock from public.products where id=product)<>0
