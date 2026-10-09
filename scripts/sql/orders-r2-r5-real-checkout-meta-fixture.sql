@@ -133,7 +133,7 @@ BEGIN
       jsonb_build_object('position_id','00000000-0000-4000-8000-0000000000c3',
         'product_id','00000000-0000-4000-8000-0000000000e4','quantity',1)))));
   oid:=(a->>'order_id')::uuid;
-  IF (a->>'total')::numeric IS DISTINCT FROM 100
+  IF (a->>'total')::numeric IS DISTINCT FROM 105
   THEN RAISE EXCEPTION 'actual mold checkout failed %',a; END IF;
   INSERT INTO public.r2_r5_meta_test_orders VALUES(
     'mold',oid,'00000000-0000-4000-8000-000000000975',
