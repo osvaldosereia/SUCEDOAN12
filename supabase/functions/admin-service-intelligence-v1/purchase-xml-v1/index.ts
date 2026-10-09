@@ -705,9 +705,9 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   if(!p.installments.length&&Array.isArray(detailSupplement?.parcelas))p.installments=detailSupplement.parcelas.map((x:any,i:number)=>({number:String(i+1),due_date:day(x?.data||x?.vencimento),amount:num(x?.valor)})).filter((x:any)=>x.due_date&&Number(x.amount)>0);if(p.document_key.length!==44)throw new Error("invalid_nfe_access_key");
   if(p.cstat&&![100,150].includes(p.cstat))throw new Error("nfe_not_authorized_"+p.cstat);
   const hash=await sha256(xml);
-  const ex=await sb.from("purchase_xml_documents").select("id,processing_status,financial_eligible,finance_status,bling_nfe_id").eq("document_key",p.document_key).maybeSingle();
+  const ex=await sb.from("purchase_xml_documents").select("id,processing_status,financial_eligible,finance_status,bling_nfe_id,metadata").eq("document_key",p.document_key).maybeSingle();
   if(ex.error)throw ex.error;
-  if(ex.data?.id&&["processed","duplicate"].includes(ex.data.processing_status)){
+  if(ex.data?.id&&(["processed","duplicate"].includes(ex.data.processing_status)||ex.data.metadata?.catalog_only===true)){
     if(blingId&&!ex.data.bling_nfe_id)await sb.from("purchase_xml_documents").update({bling_nfe_id:blingId,updated_at:new Date().toISOString()}).eq("id",ex.data.id);
     let financeStatus=ex.data.finance_status;
     if(ex.data.financial_eligible===true&&financeStatus!=="posted"){
