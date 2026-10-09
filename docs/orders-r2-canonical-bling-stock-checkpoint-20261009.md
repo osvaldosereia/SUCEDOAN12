@@ -28,6 +28,12 @@ A regressão de cestas legada zera `products.stock` para simular ruptura; isso n
 - `.github/workflows/orders-r2-isolated-hml-ci.yml`: **nono banco PostgreSQL17 descartável** que combina as três views canônicas com `basket_lot_public_availability_v1` original, as funções reais de checkout e reserva e a matriz de cestas.
 - Todas as gravações de dados de teste ocorrem apenas em PostgreSQL temporário da CI. **Nenhum SQL aplicado ao Supabase real, nenhuma venda ou estoque real modificado.**
 
+
+## Teste concorrente de estoque avulso (décima base)
+No 10º PostgreSQL 17 efêmero, a função **real** `create_vitrine_cart_order_v3` + `reserve_vitrine_order_stock_v1` vê saldo **virtual Bling = 20 unidades**, das quais **6 estão presas em kits de alimentos**. Dois compradores simulados tentam comprar **8 unidades avulsas cada**, simultaneamente. Apenas uma transação pode ser aceita; a reserva avulsa fica em 8, a quantidade presa em kits permanece 6 e a operação rejeitada não cria segundo pedido.
+
+**[CI #37937542312 — SUCCESS](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37937542312)** confirmou as dez bases depois da correção do YAML. O experimento não acessa o Bling externo e não prova frescor real de espelho ou sincronização de webhook.
+
 ## Limites conhecidos
 
 **Isto não conclui a homologação R02**: `bling_stock_mirror_v2` está populado com saldos sintéticos. Não executa webhook/atualização reais do Bling, RLS completa e todos os triggers, nem verifica consistência histórica dos lotes. A view real permite saldo `virtual>0` mesmo se `observed_at` não for recente; a **política de frescor** precisa ser decidida antes do canário (não inventar uma validade sem regra aprovada). Eventuais pedidos e links de clientes também não são reproduzidos.
