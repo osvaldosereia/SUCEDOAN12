@@ -75,12 +75,12 @@ end $check$;
 do $weekly$
 declare sunday text; monday text; tuesday text;
 begin
-  sunday:=public.ops2_next_order_public_code_weekly_v1('2026-10-11 23:59:00-04'::timestamptz);
-  monday:=public.ops2_next_order_public_code_weekly_v1('2026-10-12 00:01:00-04'::timestamptz);
-  tuesday:=public.ops2_next_order_public_code_weekly_v1('2026-10-13 12:00:00-04'::timestamptz);
-  if sunday<>'11|10|2026 - 001' or monday<>'12|10|2026 - 001' or tuesday<>'13|10|2026 - 002'
+  sunday:=public.ops2_next_order_public_code_weekly_v1('2026-11-01 23:59:00-04'::timestamptz);
+  monday:=public.ops2_next_order_public_code_weekly_v1('2026-11-02 00:01:00-04'::timestamptz);
+  tuesday:=public.ops2_next_order_public_code_weekly_v1('2026-11-03 12:00:00-04'::timestamptz);
+  if sunday<>'01|11|2026 - 001' or monday<>'02|11|2026 - 001' or tuesday<>'03|11|2026 - 002'
   then raise exception 'weekly_rollover_failed % % %',sunday,monday,tuesday; end if;
-  if public.ops2_next_order_public_code_weekly_v1('2026-10-14 03:00:00+00'::timestamptz)<>'13|10|2026 - 003'
+  if public.ops2_next_order_public_code_weekly_v1('2026-11-04 03:00:00+00'::timestamptz)<>'03|11|2026 - 003'
   then raise exception 'cuiaba_midnight_boundary_failed'; end if;
 end $weekly$;
 
