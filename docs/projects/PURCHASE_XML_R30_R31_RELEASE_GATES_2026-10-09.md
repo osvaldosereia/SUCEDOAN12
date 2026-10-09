@@ -42,3 +42,16 @@
 - Execução [#37984223877](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37984223877) terminou **FAILED** antes de testar autorização, com HTTP 503 `BOOT_ERROR`: o stub temporário de `xml-catalog-extractor.mjs` gravou os caracteres literais `\\n` em vez de uma quebra de linha, causando erro de parse `Expected unicode escape`. Corrigido usando `chr(10)` e adicionados dois `node --check` antes da inicialização dos contêineres. **O arquivo de produção nunca foi editado.**
 - Inspeção do arquivo exato `supabase/functions/purchase-xml-v1/index.ts` confirmou **zero ocorrências de `Deno.serve`**, mas a exportação `handlePurchaseXmlRequest`. Ele é o **módulo usado pelo Admin** e não um endpoint autônomo. O wrapper temporário da CI agora adiciona somente no arquivo copiado `Deno.serve(req => handlePurchaseXmlRequest(...))`; em produção, o endpoint real continua `admin-service-intelligence-v1`.
 - Avaliar o novo resultado da execução R31 após correções. O teste da cópia com adaptador local valida handler/roles com GoTrue/PostgREST, mas não testa carregamento de pacotes remotos nem publicação do serviço pai. Não transformar falha de inicialização da harness em conclusão sobre a lógica de autorização.
+
+
+## R31 — execução final verificada: PASS (09/10/2026)
+
+A nova execução **[GitHub Actions #37984775285](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37984775285)** terminou com **job `local-jwt-edge` `completed/success`**. As mensagens de log do comando efetivamente executado (não apenas o texto do script) confirmaram:
+
+- `PASS R31: test user created in isolated Auth and exact XML migrations applied`
+- `PASS R31: owner JWT accesses real local Edge field-apply list`
+- `PASS R31: viewer JWT 403, inactive owner 403, anon 401. No remote Supabase/Bling requests.`
+
+**Escopo e limitações:** foi usado o handler real `handlePurchaseXmlRequest`, o gateway `xmlFieldApplyGateway` real, usuário/JWT da instância GoTrue local, queries ao PostgREST local e as duas migrations reais R27 no fixture reduzido. A cópia temporária da função recebeu um `Deno.serve` (o original é módulo interno sem entrada própria); pacotes JS externos foram substituídos por adaptador CI que usa HTTP local; o parser de XML foi substituído por função que falha se chamada, pois a extração é testada em R19/R28. **A produção não recebeu nenhuma destas alterações.** A verificação R31 é prova de HTTP/JWT/roles do handler e gateway com Auth/DB reais locais, mas não prova do bundle completo do roteador produtivo `admin-service-intelligence-v1` e nem homologação em ambiente com o histórico inteiro de migrações.
+
+**Gates resolvidos:** R29 PostgREST anônimo, R30 DOM real Chromium desktop/mobile com dados sintéticos, R31 JWT owner/viewer/inativo/anônimo e fluxo SQL PostgreSQL local. **Gates em aberto:** homólogo real do serviço pai, backup/restauração com procedimento documentado, versões canônicas CLI posteriores ao último timestamp remoto, validação de release integrada e smoke de produção depois da implantação. Não executar `db push` global.
