@@ -54,7 +54,7 @@ BEGIN
   END IF;
   v:=public.ops2_enqueue_fiscal_r9_observation_v1(a);
   IF v->>'status'<>'observed_no_invoice' THEN
-    RAISE EXCEPTION 're-enqueue changed completed observation'; END IF;
+    RAISE EXCEPTION 're-enqueue did not retain final state: %, persisted: %',v,(SELECT status FROM public.order_fiscal_r9_observations_v1 WHERE order_id=a); END IF;
   IF (SELECT attempts FROM public.order_fiscal_r9_observations_v1 WHERE order_id=a)<>1
   THEN RAISE EXCEPTION 'first claim replayed'; END IF;
 
