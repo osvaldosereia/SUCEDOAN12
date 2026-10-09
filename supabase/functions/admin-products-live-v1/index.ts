@@ -508,7 +508,7 @@ async function quickProductSave(p:any,auth:any){
   }
   if(Object.prototype.hasOwnProperty.call(p||{},"gondola_number")){
     if(p.gondola_number===null||p.gondola_number==="")patch.gondola=null;
-    else{const g=Number(p.gondola_number);if(!Number.isInteger(g)||g<1||g>30)return {error:"invalid_gondola",status:400};patch.gondola=String(g)}
+    else{const g=Number(p.gondola_number);if(!Number.isInteger(g)||g<1||g>9999)return {error:"invalid_gondola",status:400};patch.gondola=String(g)}
   }
   if(Object.prototype.hasOwnProperty.call(p||{},"expiration_date")){
     const exp=p.expiration_date?dt(p.expiration_date):null;if(p.expiration_date&&!exp)return {error:"invalid_expiration_date",status:400};patch.validity_date=exp;
@@ -526,6 +526,8 @@ async function quickProductSave(p:any,auth:any){
     else if(m.offer_source==="expiry_auto"){patch.is_offer=false;patch.offer_price=null;m.offer_source=null;m.offer_discount_percent=null;metaChanged=true}
   }
   if(!Object.keys(patch).length&&!metaChanged)return {product:await mappedProduct(before)};
+  // Manter o cadastro de gôndolas coerente ao salvar a localização rápida.
+  if(patch.gondola)await ensureInventoryBalanceGondola(Number(patch.gondola));
   if(metaChanged)patch.metadata=m;patch.updated_at=now;
   const r=await db.from("products").update(patch).eq("id",pid).select("*").single();if(r.error)throw r.error;
   await aud(before,r.data,p,"product_quick_save");return {product:await mappedProduct(r.data)};
