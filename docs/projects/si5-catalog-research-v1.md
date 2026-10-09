@@ -25,6 +25,15 @@ Cosmos: foto, marca, GPC, peso bruto e dimensões, também em revisão.
 XML NF-e fornecedor + legislação oficial: evidência fiscal prioritária, sem aceitar NCM/CEST apenas por concordância entre bases privadas.
 GTIN e fragrâncias individuais nunca se tornam idênticos só porque a marca, linha e volume são iguais.
 
+
+## Primeiro piloto REAL — 5 GTINs (08/10/2026, Cuiabá)
+- Preview autenticado pelo mecanismo interno protegido no Supabase Vault: HTTP 200, `SI5_API_TOKEN` presente e `SI5_WORKER_SECRET` não configurado. A invocação alternativa usa segredo gerado aleatoriamente em Vault com SHA-256 guardado numa tabela protegida; o gateway JWT permanece obrigatório.
+- Cinco buscas SI5 executadas com HTTP 200, cinco GTINs correspondentes, cinco resultados no estado `review`; 5/5 nome, marca, NCM, CEST; 2/5 peso numérico sem unidade comprovada; 0/5 imagens aceitas pela validação conservadora da integração.
+- NCM divergente do cadastro em dois: **Downy Brisa de Verão 3 L** (cadastro `34012000`, SI5 `38099190`) e **Limpol Coco 500 ml** (cadastro `34025000`, SI5 `34022000`). São CONFLITOS PARA REVISÃO, não indicação automática de correção.
+- Outros três pesquisados: Downy Água Fresca 1,5 L, Downy Brisa de Verão 500 ml, Mon Bijou Clássico 1,7 L.
+- Ao terminar: `enabled=false`, `daily_limit=5`, `max_batch=5`, `research_mode=representatives_only`. Total de consultas SI5=5; Cosmos=0; nenhum cadastro ou produto fiscal modificado pelo worker.
+- Próximo passo: amostra diversificada de outras classes para medir cobertura; investigação das URLs de imagens e da unidade do campo peso; verificação de NCM e CEST em fontes legais, não por concordância automática. Não ampliar para 100/dia sem nova decisão sobre controle de qualidade e direitos de uso das fontes.
+
 ## Como ativar depois
 1. Confirmar termos de armazenamento e direitos das imagens.
 2. Configurar \`SI5_API_TOKEN\`, \`SI5_WORKER_SECRET\` nos Secrets da Edge Function.
