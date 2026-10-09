@@ -21,8 +21,9 @@ function groups(rows,field,validator){
     suppliers:g.suppliers.size,last_issued_at:g.last_issued_at
   })).sort((a,b)=>b.observations-a.observations||a.value.localeCompare(b.value));
 }
-function status(existing,groups,identityConflict){
+function status(existing,groups,identityConflict,unlinked){
   if(identityConflict)return "identity_review";
+  if(unlinked)return "candidate_unlinked";
   if(!groups.length)return "not_in_xml";
   if(groups.length>1)return "supplier_disagreement";
   if(!existing)return "missing_in_catalog";
@@ -45,7 +46,7 @@ export function catalogXmlComparison(observations) {
   const get=(field,original,label,valid,notes)=>{
     const found=groups(rows,field,valid);
     return {field,label,catalog_value:catalog[original]||null,
-      xml_values:found,status:status(catalog[original],found,identityConflict),
+      xml_values:found,status:status(catalog[original],found,identityConflict,linked.length===0),
       requires_human_review:true,notes};
   };
   const numeric=(size)=>(v)=>/^[0-9]+$/.test(v)&&v.length===size;
