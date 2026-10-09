@@ -8,7 +8,13 @@ BEGIN
   RAISE EXCEPTION 'missing_worker_key_was_not_rejected: %',v;
  END IF;
  INSERT INTO vault.decrypted_secrets(name,decrypted_secret)
- VALUES('da6_label_worker_key_v1',repeat('K',40));
+ VALUES('da6_label_worker_key_v1',repeat('a',64));
+ SELECT public.da6_worker_dispatch_tick_v1() INTO v;
+ IF v->>'error'<>'worker_project_not_configured' THEN
+  RAISE EXCEPTION 'missing_worker_project_not_rejected: %',v;
+ END IF;
+ INSERT INTO vault.decrypted_secrets(name,decrypted_secret)
+ VALUES('da6_label_worker_project_ref_v1','aaaaaaaaaaaaaaaaaaaa');
  SELECT public.da6_worker_dispatch_tick_v1() INTO v;
  IF v->>'error'<>'worker_endpoint_not_configured' THEN
   RAISE EXCEPTION 'missing_worker_url_was_not_rejected: %',v;
@@ -20,7 +26,7 @@ BEGIN
   RAISE EXCEPTION 'unsafe_worker_url_accepted: %',v;
  END IF;
  UPDATE vault.decrypted_secrets
- SET decrypted_secret='https://da6-staging-synthetic.supabase.co/functions/v1/admin-products-live-v1?action=inventory_label_worker_tick'
+ SET decrypted_secret='https://aaaaaaaaaaaaaaaaaaaa.supabase.co/functions/v1/admin-products-live-v1?action=inventory_label_worker_tick'
  WHERE name='da6_label_worker_url_v1';
  SELECT public.da6_worker_dispatch_tick_v1() INTO v;
  IF coalesce((v->>'queued')::boolean,false) IS DISTINCT FROM true THEN
@@ -31,8 +37,8 @@ BEGIN
  END IF;
  IF NOT EXISTS(
   SELECT 1 FROM public.da6_outbound_requests
-  WHERE url='https://da6-staging-synthetic.supabase.co/functions/v1/admin-products-live-v1?action=inventory_label_worker_tick'
-  AND headers->>'x-da6-worker-key'=repeat('K',40)
+  WHERE url='https://aaaaaaaaaaaaaaaaaaaa.supabase.co/functions/v1/admin-products-live-v1?action=inventory_label_worker_tick'
+  AND headers->>'x-da6-worker-key'=repeat('a',64)
   AND body='{"limit":3}'::jsonb AND timeout_ms=55000) THEN
   RAISE EXCEPTION 'wrong_staging_url_or_credentials';
  END IF;
