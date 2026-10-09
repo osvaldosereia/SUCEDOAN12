@@ -6436,6 +6436,52 @@
       ' — não equivale necessariamente à unidade de venda.</small>'+
       '</div>';
   }
+  // R27: XML evidence stays lazy and read-only; applications are NAME-only on INACTIVE products.
+  function xmlCatalogFiscalEvidenceMarkup(){
+    const key=state.xmlCatalogDetailKey,d=state.xmlFiscalKey===key?state.xmlFiscalData:null;
+    const entries=[['ncm','NCM'],['cest','CEST'],['commercial_gtin','EAN comercial'],
+      ['tax_gtin','EAN tributável'],['purchase_unit','Unidade comercial (uCom)'],
+      ['tax_unit','Unidade tributável (uTrib)']];
+    return '<div class="purchase-safe" style="margin:10px 0"><strong>Dossiê fiscal dos XMLs</strong>'+
+      '<small>Somente evidências de fornecedores. Não aprova NCM/CEST, GTIN, embalagem ou tributação.</small>'+
+      '<button class="secondary" type="button" id="xmlFiscalLoad" '+(state.xmlFiscalLoading?'disabled':'')+'>'+
+        (state.xmlFiscalLoading?'Consultando…':d?'Atualizar dossiê fiscal':'Consultar dossiê fiscal')+'</button>'+
+      (state.xmlFiscalError?'<small class="purchase-danger">'+esc(state.xmlFiscalError)+'</small>':'')+
+      (d?'<div style="margin-top:8px">'+
+        (d.comparison_scope?.partial!==false?'<small class="purchase-danger">Histórico PARCIAL. Não utilizar como conferência fiscal integral.</small>':'')+
+        (Array.isArray(d.reasons)&&d.reasons.length?'<small>Alertas de revisão: '+esc(d.reasons.join(' · '))+'</small>':'')+
+        entries.map(([field,title])=>'<small style="display:block"><b>'+esc(title)+':</b> '+
+          (Array.isArray(d.fields?.[field]?.values)&&d.fields[field].values.length?
+           d.fields[field].values.map(v=>esc(v.value)+' ('+esc(v.observations)+' NF-e)').join(' · '):'Não informado')+
+          '</small>').join('')+
+        '<small>Nenhum campo fiscal é aplicado automaticamente ao cadastro nem enviado ao Bling.</small></div>':'')+
+    '</div>';
+  }
+  function xmlCatalogFieldApplicationMarkup(active){
+    const pid=String(active.linked_product_id||'');
+    if(!pid||state.xmlFieldReviewProductId!==pid||!state.xmlFieldReviewLoaded)return '';
+    const reviews=(state.xmlFieldReviewItems||[]).filter(r=>r.field_name==='name'&&r.status==='approved');
+    const applications=state.xmlFieldApplicationProductId===pid?(state.xmlFieldApplications||[]):[];
+    const preview=state.xmlFieldApplyPreview;
+    return '<div class="purchase-safe" style="margin-top:10px"><strong>Aplicação controlada do nome</strong>'+
+      '<small>Disponível exclusivamente para produtos INATIVOS após aprovação. Preço, estoque, NCM, CEST e Bling não são alterados.</small>'+
+      (state.xmlFieldApplyError?'<small class="purchase-danger">'+esc(state.xmlFieldApplyError)+'</small>':'')+
+      (reviews.length?reviews.map(r=>
+        '<div class="purchase-item-card" style="padding:8px;margin-top:6px">'+
+        '<small>Proposta aprovada: '+esc(r.original_value||'—')+' → '+esc(r.proposed_value||'—')+'</small>'+
+        '<button type="button" class="secondary" data-xml-apply-preview="'+esc(r.id)+'" '+(state.xmlFieldApplyBusy?'disabled':'')+'>Ver prévia e verificar bloqueios</button>'+
+        (preview?.review_id===r.id?'<small style="display:block">'+
+          (preview.can_apply===true?'Prévia permitida: produto inativo, valor original preservado.':
+             'Aplicação bloqueada: produto ativo, valor divergente, revisão desatualizada ou já aplicada.')+'</small>'+
+          (preview.can_apply===true?'<button class="secondary" type="button" data-xml-apply-commit="'+esc(r.id)+'" '+(state.xmlFieldApplyBusy?'disabled':'')+'>Confirmar alteração do nome</button>':''):'')+
+        '</div>').join(''):'<small>Não há nomes aprovados para aplicação.</small>')+
+      '<strong style="display:block;margin-top:10px">Histórico de aplicações</strong>'+
+      (applications.length?applications.map(a=>'<div class="purchase-item-card" style="padding:8px;margin-top:6px">'+
+        '<small>Nome: '+esc(a.before_value||'—')+' → '+esc(a.applied_value||'—')+
+         ' · '+esc(a.status==='rolled_back'?'Revertido':'Aplicado')+'</small>'+
+        (a.status==='applied'?'<button type="button" class="secondary" data-xml-apply-rollback="'+esc(a.id)+'" '+(state.xmlFieldApplyBusy?'disabled':'')+'>Reverter nome com conferência</button>':'')+
+        '</div>').join(''):'<small>Sem aplicações registradas.</small>')+'</div>';
+  }
   function xmlCatalogDetailMarkup(){
     if(state.xmlCatalogDetailLoading)return '<div class="loading">Carregando histórico do XML…</div>';
     const data=state.xmlCatalogDetail||{},c=data.candidate||{};
@@ -6454,7 +6500,7 @@
       '<span>'+esc(c.observations_count||0)+' registros de XML</span>'+
       '<span>'+esc(c.suppliers_count||0)+' fornecedores</span>'+
       '<span>'+esc(c.ncm_variations||0)+' NCM(s) informado(s)</span></div>'+
-      xmlCatalogComparisonMarkup(data)+
+      xmlCatalogComparisonMarkup(data)+xmlCatalogFiscalEvidenceMarkup()+
       '<div class="purchase-items" style="max-height:300px;overflow-y:auto">'+rows.map(x=>
         '<div class="purchase-item-card" style="padding:10px;margin:5px 0">'+
         '<div class="purchase-item-title"><div><strong>'+esc(x.xml_description||'Produto')+'</strong>'+
@@ -6478,7 +6524,7 @@
        (state.xmlCatalogDetailMoreLoading?'Carregando…':'Carregar mais histórico')+'</button></div>':'')+
       (active.linked_product_id?'<div class="purchase-safe"><strong>Item vinculado.</strong>'+
        '<small>Revisão de custo, preço e estoque permanece na tela operacional de Compras/XML.</small></div>'+
-       xmlCatalogFieldReviewMarkup(active):
+       xmlCatalogFieldReviewMarkup(active)+xmlCatalogFieldApplicationMarkup(active):
        needsManualUnitReview?'<div class="purchase-safe purchase-danger" style="margin-top:10px"><strong>Conferência de EAN/unidade necessária</strong>'+
        '<small>Este XML não possui código de barras numérico ou utiliza unidade de peso/volume. Para não converter quilos em unidades ou associar códigos incorretos, faça a identificação na revisão operacional de Compras/XML. O item já está preservado no catálogo.</small></div>':
        '<div class="purchase-safe" style="margin-top:12px"><strong>Vincular ou cadastrar este item</strong>'+
@@ -6517,6 +6563,18 @@
       if(state.xmlCatalogDetailKey!==key||state.xmlFieldReviewProductId!==productId)return;
       state.xmlFieldReviewItems=Array.isArray(r.items)?r.items:[];
       state.xmlFieldReviewLoaded=true;
+      state.xmlFieldApplyPreview=null;state.xmlFieldApplyError='';
+      try{
+        const applications=await purchaseApi('xml_field_apply_list',{product_id:productId});
+        if(state.xmlCatalogDetailKey===key&&state.xmlFieldReviewProductId===productId){
+          state.xmlFieldApplicationProductId=productId;
+          state.xmlFieldApplications=Array.isArray(applications.items)?applications.items:[];
+        }
+      }catch(e){
+        if(state.xmlCatalogDetailKey===key&&state.xmlFieldReviewProductId===productId){
+          state.xmlFieldApplications=[];state.xmlFieldApplyError=errorMessage(e.message);
+        }
+      }
     }catch(e){
       if(state.xmlCatalogDetailKey===key&&state.xmlFieldReviewProductId===productId){
         state.xmlFieldReviewLoaded=false;
@@ -6540,6 +6598,10 @@
     state.xmlCatalogChosenProduct=null;state.xmlCatalogSelectedObservation=null;
     state.xmlFieldReviewLoaded=false;state.xmlFieldReviewItems=[];
     state.xmlFieldReviewProductId=null;state.xmlFieldReviewError='';
+    state.xmlFieldApplicationProductId=null;state.xmlFieldApplications=[];
+    state.xmlFieldApplyPreview=null;state.xmlFieldApplyError='';state.xmlFieldApplyBusy=false;
+    state.xmlFiscalKey=null;state.xmlFiscalData=null;state.xmlFiscalError='';state.xmlFiscalLoading=false;
+    state.xmlFiscalRequestId=(state.xmlFiscalRequestId||0)+1;
     state.xmlCatalogFullComparison=null;state.xmlCatalogFullComparisonError='';
     state.xmlCatalogFullComparisonLoading=false;
     state.xmlCatalogFullComparisonRequestId=(state.xmlCatalogFullComparisonRequestId||0)+1;
@@ -6552,6 +6614,25 @@
       state.xmlCatalogSelectedObservation=(rows.find(x=>x.purchase_item_id&&!x.linked_product_id)||rows[0]||{}).purchase_item_id||null;
     }catch(e){state.xmlCatalogDetail={error:errorMessage(e.message)}}
     finally{state.xmlCatalogDetailLoading=false;xmlCatalogDetailRefresh()}
+  }
+  async function xmlCatalogFiscalLoad(){
+    const key=state.xmlCatalogDetailKey;
+    if(!key||state.xmlFiscalLoading)return;
+    const requestId=(state.xmlFiscalRequestId||0)+1;state.xmlFiscalRequestId=requestId;
+    state.xmlFiscalLoading=true;state.xmlFiscalError='';xmlCatalogDetailRefresh();
+    try{
+      const data=await purchaseApi('xml_catalog_fiscal_dossier',{candidate_key:key});
+      if(state.xmlCatalogDetailKey!==key||state.xmlFiscalRequestId!==requestId)return;
+      if(!data?.ok||data.readonly!==true)throw Error('Dossiê fiscal indisponível');
+      state.xmlFiscalData=data;state.xmlFiscalKey=key;
+    }catch(e){
+      if(state.xmlCatalogDetailKey===key&&state.xmlFiscalRequestId===requestId)
+        state.xmlFiscalError=errorMessage(e.message);
+    }finally{
+      if(state.xmlCatalogDetailKey===key&&state.xmlFiscalRequestId===requestId){
+        state.xmlFiscalLoading=false;xmlCatalogDetailRefresh();
+      }
+    }
   }
   async function xmlCatalogFullComparisonLoad(){
     const key=state.xmlCatalogDetailKey;
@@ -6643,6 +6724,62 @@
         await xmlCatalogFieldReviewLoad(productId,state.xmlCatalogDetailKey);
         toast('Decisão registrada no histórico. Cadastro não alterado.');
       }catch(e){toast(errorMessage(e.message));button.disabled=false}
+    });
+    const fiscalLoad=$('#xmlFiscalLoad');
+    if(fiscalLoad)fiscalLoad.onclick=()=>xmlCatalogFiscalLoad();
+    host.querySelectorAll('[data-xml-apply-preview]').forEach(button=>button.onclick=async()=>{
+      const key=state.xmlCatalogDetailKey,productId=String(selected().linked_product_id||'');
+      if(!productId||state.xmlFieldApplyBusy)return;
+      state.xmlFieldApplyBusy=true;state.xmlFieldApplyError='';
+      const reviewId=String(button.dataset.xmlApplyPreview||'');
+      try{
+        const preview=await purchaseApi('xml_field_apply_preview',{review_id:reviewId});
+        if(state.xmlCatalogDetailKey!==key||state.xmlFieldReviewProductId!==productId)return;
+        if(preview.readonly!==true||preview.review_id!==reviewId)throw Error('Prévia inválida');
+        state.xmlFieldApplyPreview=preview;
+      }catch(e){
+        if(state.xmlCatalogDetailKey===key)state.xmlFieldApplyError=errorMessage(e.message);
+      }finally{state.xmlFieldApplyBusy=false;if(state.xmlCatalogDetailKey===key)xmlCatalogDetailRefresh()}
+    });
+    host.querySelectorAll('[data-xml-apply-commit]').forEach(button=>button.onclick=async()=>{
+      const key=state.xmlCatalogDetailKey,productId=String(selected().linked_product_id||'');
+      const reviewId=String(button.dataset.xmlApplyCommit||''),p=state.xmlFieldApplyPreview;
+      if(state.xmlFieldApplyBusy||!p||p.can_apply!==true||p.review_id!==reviewId||
+        p.product_id!==productId){toast('Consulte uma prévia válida antes de aplicar');return}
+      if(!confirm('Aplicar SOMENTE o novo nome ao produto INATIVO? Esta é uma operação auditada.'))return;
+      if(prompt('Digite APLICAR_NOME_APROVADO_XML para confirmar:')!=='APLICAR_NOME_APROVADO_XML'){
+        toast('Confirmação não corresponde. Nenhuma alteração realizada.');return;
+      }
+      state.xmlFieldApplyBusy=true;state.xmlFieldApplyPreview=null;
+      try{
+        await purchaseApi('xml_field_apply_commit',{review_id:reviewId,
+          expected_revision:Number(p.review_revision),confirmation:'APLICAR_NOME_APROVADO_XML'});
+        if(state.xmlCatalogDetailKey===key){
+          await xmlCatalogFieldReviewLoad(productId,key);
+          toast('Nome atualizado somente no cadastro inativo. Verifique o histórico.');
+        }
+      }catch(e){if(state.xmlCatalogDetailKey===key)toast(errorMessage(e.message))}
+      finally{state.xmlFieldApplyBusy=false;if(state.xmlCatalogDetailKey===key)xmlCatalogDetailRefresh()}
+    });
+    host.querySelectorAll('[data-xml-apply-rollback]').forEach(button=>button.onclick=async()=>{
+      const key=state.xmlCatalogDetailKey,productId=String(selected().linked_product_id||'');
+      const applicationId=String(button.dataset.xmlApplyRollback||'');
+      const application=(state.xmlFieldApplications||[]).find(x=>x.id===applicationId);
+      if(state.xmlFieldApplyBusy||!application||application.status!=='applied'||application.product_id!==productId)return;
+      if(!confirm('Reverter SOMENTE o nome aplicado? O servidor bloqueará reversão após alteração concorrente ou ativação do produto.'))return;
+      if(prompt('Digite REVERTER_NOME_APLICADO_XML para confirmar:')!=='REVERTER_NOME_APLICADO_XML'){
+        toast('Confirmação não corresponde. Nenhuma alteração realizada.');return;
+      }
+      state.xmlFieldApplyBusy=true;
+      try{
+        await purchaseApi('xml_field_apply_rollback',{application_id:applicationId,
+          confirmation:'REVERTER_NOME_APLICADO_XML'});
+        if(state.xmlCatalogDetailKey===key){
+          await xmlCatalogFieldReviewLoad(productId,key);
+          toast('Reversão registrada no histórico.');
+        }
+      }catch(e){if(state.xmlCatalogDetailKey===key)toast(errorMessage(e.message))}
+      finally{state.xmlFieldApplyBusy=false;if(state.xmlCatalogDetailKey===key)xmlCatalogDetailRefresh()}
     });
     const compareAll=$('#xmlFullComparison');
     if(compareAll)compareAll.onclick=()=>xmlCatalogFullComparisonLoad();
