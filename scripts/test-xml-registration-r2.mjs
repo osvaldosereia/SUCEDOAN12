@@ -19,3 +19,19 @@ assert.match(fn, /converted_quantity:baseQty,base_unit_cost:baseCost/,
   'conversion keeps unit quantity and unit cost');
 assert.match(fn, /stock_unchanged:true/, 'no stock movement during catalog update');
 console.log('PASS R2: existing name/NCM preserved; price/cost opt-in; name guard precedes writes; unit conversion and no stock');
+
+const syncStart=src.indexOf('async function runBlingSync(');
+const syncEnd=src.indexOf('async function manualImport(',syncStart);
+const sync=src.slice(syncStart,syncEnd);
+assert.match(sync,/manualCatalogOnlyImport\(\[\{name:"bling-nfe-"/,
+  'Bling sync ingests only catalog evidence');
+assert.doesNotMatch(sync,/processXml\(/,
+  'Bling sync cannot call operational importer');
+const dispatch=src.slice(src.indexOf('export async function handlePurchaseXmlRequest('));
+assert.match(dispatch,/if\(action==="manual_import"\)[\s\S]*?manualCatalogOnlyImport\(files\)/,
+  'legacy manual import routes to catalog-only');
+assert.match(dispatch,/if\(action==="daily_sync"\)[\s\S]*?finance_skipped:true/,
+  'daily XML sync does not trigger finance backfill');
+assert.match(dispatch,/body\?\.catalog_evidence_only!==true/,
+  'legacy product identity mutation requires evidence-only review');
+console.log('PASS R2: Bling/manual catalog-only ingestion; no implicit finance; legacy identity blocked');
