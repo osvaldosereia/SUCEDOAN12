@@ -102,7 +102,8 @@ test('etiquetas carregam exatamente 6 campos por produto, sem data pré-marcada'
 
 test('leitura OMR de seis balanços marcados na etiqueta realmente renderizada',async()=>{
  await withPage(async page=>{
-  await page.setViewport({width:880,height:1100,deviceScaleFactor:3});
+  // 96 CSS px/pol × (203/96) = resolução típica de impressora térmica de 203 dpi.
+  await page.setViewport({width:880,height:1100,deviceScaleFactor:203/96});
   const module={Uint8Array,Uint8ClampedArray,Int32Array,Math,BigInt};
   vm.runInNewContext(fs.readFileSync(
     path.join(root,'vitrine/admin/inventory-label-omr-geometry.js'),'utf8'),module);
