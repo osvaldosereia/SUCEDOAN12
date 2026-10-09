@@ -46,9 +46,12 @@ async function submit(files,services){
    item.status='reserving';report();
    const reservation=await services.reserve({batch_id:state.batch_id,file_name:file.name,mime_type:file.type,size_bytes:file.size,sha256:hash});
    if(reservation?.duplicate){item.status='duplicate';state.duplicates++;report();continue}
-   if(!reservation?.photo_id||!reservation?.signed_url)throw Error('Servidor não autorizou o upload.');
-   item.status='uploading';report();
-   await (services.upload||uploadSigned)({signed_url:reservation.signed_url,file});
+   if(!reservation?.photo_id||(!reservation?.signed_url&&!reservation?.needs_confirmation))
+    throw Error('Servidor não autorizou o upload.');
+   if(!reservation.needs_confirmation){
+    item.status='uploading';report();
+    await (services.upload||uploadSigned)({signed_url:reservation.signed_url,file});
+   }
    item.status='confirming';report();
    const ack=await services.confirm({photo_id:reservation.photo_id,sha256:hash});
    if(ack?.queued!==true)throw Error('Arquivo enviado, mas ainda não confirmado pelo servidor.');
