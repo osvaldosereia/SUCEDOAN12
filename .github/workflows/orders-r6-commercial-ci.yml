@@ -1,0 +1,44 @@
+name: Orders R06 - commercial reconciliation (offline)
+on:
+  push:
+    branches:
+      - 'agent/orders-r6-*'
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/order-commercial-reconciliation-v1.mjs'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'scripts/test-orders-r6-commercial-reconciliation-v1.mjs'
+      - '.github/workflows/orders-r6-commercial-ci.yml'
+permissions:
+  contents: read
+jobs:
+  reconciliation:
+    name: R06 commerce and basket/stock contract (offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ORDER_R6_FINAL_SNAPSHOT_GUARD_ENABLED: 'false'
+      BLING_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+      META_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify NO live traffic is possible in this test
+        run: |
+          test "$ORDER_R6_FINAL_SNAPSHOT_GUARD_ENABLED" = false
+          test "$BLING_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          test "$META_LIVE_ENABLED" = false
+      - name: Syntax and invariant suite
+        run: |
+          set -euo pipefail
+          node --check supabase/functions/_shared/order-commercial-reconciliation-v1.mjs
+          node --check scripts/test-orders-r6-commercial-reconciliation-v1.mjs
+          node --test scripts/test-orders-r6-commercial-reconciliation-v1.mjs
+      - name: Ensure no production payload code changes
+        run: |
+          set -euo pipefail
+          git diff --check
