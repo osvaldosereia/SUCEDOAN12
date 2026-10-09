@@ -11,6 +11,7 @@ function toast(s){bridge()?.toast?.(s)}
 function host(){return $('#da6-photo-panel')}
 function headingOK(){return String($('#content .page-head h1')?.textContent||'').trim()==='Balanço'}
 function setMode(photos){
+ const wasActive=active;
  active=photos;
  const panel=host(),controls=$('#da6-balance-modes');if(!panel||!controls)return;
  const content=$('#content');
@@ -22,7 +23,7 @@ function setMode(photos){
  controls.querySelector('[data-da6-mode=photos]').classList.toggle('primary',photos);
  controls.querySelector('[data-da6-mode=scanner]').classList.toggle('primary',!photos);
  if(photos){bridge()?.stopBalanceCamera?.();loadBatches().catch(e=>toast(e.message));}
- else bridge()?.startBalanceCamera?.();
+ else if(wasActive) bridge()?.startBalanceCamera?.();
 }
 function renderProgress(snapshot){
  const el=$('#da6-upload-progress');if(!el)return;
