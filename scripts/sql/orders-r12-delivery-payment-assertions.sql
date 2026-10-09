@@ -67,6 +67,19 @@ BEGIN
  END;
 
  BEGIN
+   -- Directly adding a third portion would make total > order total.
+   -- The deferred constraint must reject it before COMMIT; no partial DML.
+   INSERT INTO public.order_payment_parts(
+     settlement_id,sequence,method,amount_cents)
+   VALUES(first_id,3,'cash',1);
+   SET CONSTRAINTS ALL IMMEDIATE;
+   RAISE EXCEPTION 'deferred payment mismatch not detected';
+ EXCEPTION WHEN SQLSTATE 'P0001' THEN
+   IF SQLERRM IS DISTINCT FROM 'r12_delivery_payment_parts_mismatch'
+   THEN RAISE; END IF;
+ END;
+
+ BEGIN
    INSERT INTO public.order_delivery_return_cases(order_id,status,attempt_number)
    VALUES (oid,'returning',1);
    RAISE EXCEPTION 'failed delivery allowed after money captured';
