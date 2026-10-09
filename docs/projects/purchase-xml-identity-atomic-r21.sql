@@ -52,8 +52,8 @@ declare
 begin
  if p_actor_id is null or p_item_id is null or p_create_new is null
  then raise exception 'xml_identity_human_required'; end if;
- if p_confirmation is distinct from case when p_create_new
-   then 'CRIAR_INATIVO_XML' else 'VINCULAR_ITEM_XML' end
+ if p_confirmation is distinct from (case when p_create_new
+   then 'CRIAR_INATIVO_XML' else 'VINCULAR_ITEM_XML' end)
  then raise exception 'xml_identity_confirmation_required'; end if;
  if p_gtin_source not in ('commercial','tax') or p_gtin_source is null
    or p_gtin_role not in ('base_unit','package') or p_gtin_role is null
