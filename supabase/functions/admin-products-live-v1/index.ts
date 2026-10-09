@@ -3689,6 +3689,29 @@ async function runSeparationPostCompletionIntegrations(oid:string,operator:strin
   }catch{}
   return {bling_verified:blingVerified,fiscal_auto:fiscalAuto};
 }
+// R06: the canary flag remains OFF until isolated + canonical integration
+// approval. Purely prepares a snapshot of the picked lines; NEVER performs
+// Bling, Meta or fiscal network calls.
+const ORDER_R6_RECONCILIATION_ENABLED=(Deno.env.get("ORDER_R6_RECONCILIATION_ENABLED")||"").trim()==="true";
+async function orderR6ManifestPreview(oid:string){
+  const result=await db.rpc("ops2_preview_order_reconciliation_v1",{p_order_id:oid});
+  if(result.error||result.data?.ok!==true)return {
+    ok:false,error:"order_reconciliation_unavailable",status:503
+  };
+  if(result.data.ready!==true)return {
+    ok:false,error:"order_reconciliation_blocked",status:409,
+    blockers:result.data.blockers||[]
+  };
+  return {ok:true,manifest:result.data};
+}
+async function orderR6ManifestRecord(oid:string){
+  const result=await db.rpc("ops2_record_order_reconciliation_v1",{p_order_id:oid});
+  if(result.error||result.data?.ok!==true)return {
+    ok:false,error:result.data?.error||"order_reconciliation_record_failed",
+    status:409,blockers:result.data?.blockers||[]
+  };
+  return {ok:true,recorded:result.data.recorded===true,manifest:result.data.manifest};
+}
 async function orderSeparationComplete(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
@@ -3700,12 +3723,25 @@ async function orderSeparationComplete(p:any,auth:any){
   if(assignmentQ.error)throw assignmentQ.error;
   if(!tx(assignmentQ.data?.separator_key,30))return {error:"separator_required",status:409};
 
+  if(ORDER_R6_RECONCILIATION_ENABLED){
+    const preflight=await orderR6ManifestPreview(oid);
+    if(preflight.ok!==true)return preflight;
+  }
   const prep=await db.rpc("ops2_prepare_order_separation_completion_v2",{p_order_id:oid,p_expected_order_updated_at:expected});if(prep.error){
     const message=String(prep.error.message||"");
     if(message.includes("separator_required_before_completion"))return {error:"separator_required",status:409};
     throw prep.error;
   }
   if(prep.data?.ok!==true){const conflict=["stale_order_version","order_version_conflict"].includes(String(prep.data?.error||prep.data?.conflict||""));return {error:String(prep.data?.error||"separation_prepare_failed"),status:conflict?409:400,...prep.data}}
+  // R06 stores the immutable financial/physical manifest BEFORE consuming
+  // reservations. Errors go to review and never produce a fiscal side effect.
+  if(ORDER_R6_RECONCILIATION_ENABLED){
+    const receipt=await orderR6ManifestRecord(oid);
+    if(receipt.ok!==true){
+      await markSeparationNeedsAttention(oid,"r6_reconciliation",receipt.error,receipt.blockers);
+      return receipt;
+    }
+  }
   const stock=await db.rpc("ops2_apply_order_separation_stock_v2",{p_order_id:oid});if(stock.error)throw stock.error;
   if(stock.data?.ok!==true){await markSeparationNeedsAttention(oid,"stock_applied",stock.data?.error,stock.data);return {error:String(stock.data?.error||"separation_stock_failed"),status:409,recovery_scheduled:true}}
 
