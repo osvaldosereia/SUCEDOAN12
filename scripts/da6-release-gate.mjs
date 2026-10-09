@@ -34,8 +34,22 @@ for(const item of ['product-shelf-labels.js','product-shelf-admin-ui.js',
 }
 if(!html.includes('printInventorySheet')||!html.includes("renderBalance"))
  failures.push({gate:'a4_regression',reason:'A4 controls absent'});
-const changes=manifest.required_production_gates||{};
-for(const [gate,value] of Object.entries(changes)){
+const requiredGates=[
+ 'physical_thermal_203dpi_print',
+ 'real_cell_phone_photos_omr',
+ 'hosted_edge_staging',
+ 'hosted_cron_pgnet_staging',
+ 'latest_main_conflict_review',
+ 'confirmed_predeploy_backup',
+ 'rollback_rehearsal'
+];
+const changes=manifest.required_production_gates;
+if(!changes||typeof changes!=='object'||Array.isArray(changes))
+ failures.push({gate:'manifest',reason:'invalid_required_production_gates'});
+for(const gate of Object.keys(changes&&typeof changes==='object'&&!Array.isArray(changes)?changes:{}))
+ if(!requiredGates.includes(gate))failures.push({gate,reason:'unknown_production_gate'});
+for(const gate of requiredGates){
+ const value=changes?.[gate];
  if(value?.passed!==true){
   failures.push({gate,reason:'pending_physical_or_hosted_evidence'});
   continue;
@@ -48,7 +62,9 @@ for(const [gate,value] of Object.entries(changes)){
   continue;
  }
  const full=path.resolve(repo,file);
- if(!full.startsWith(path.join(repo,'docs','projects')+path.sep)||!fs.existsSync(full)){
+ const evidenceRoot=fs.realpathSync(path.join(repo,'docs','projects'));
+ if(!full.startsWith(path.join(repo,'docs','projects')+path.sep)||!fs.existsSync(full)||
+    !fs.realpathSync(full).startsWith(evidenceRoot+path.sep)){
   failures.push({gate,reason:'missing_attestation'});
   continue;
  }
