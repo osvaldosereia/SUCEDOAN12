@@ -4,6 +4,7 @@ import { extractCatalogFromNfe } from "./xml-catalog-extractor.mjs";
 import { assertCatalogXmlSize, assertCatalogXmlIntegrity, assertExistingXmlDigest } from "./xml-catalog-ingest-guard.mjs";
 import { xmlFieldReviewGateway } from "./xml-catalog-field-review-gateway.mjs";
 import { catalogXmlComparison } from "./xml-catalog-comparison.mjs";
+import { compareCandidateFullHistory } from "./xml-catalog-full-comparison.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -1782,6 +1783,18 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="xml_catalog_candidate_detail"){
       const r=await xmlCatalogCandidateDetail(body);
       return js(req,r,r.ok?200:Number(r.status||400));
+    }
+    if(action==="xml_catalog_full_comparison"){
+      // Explicit human Admin request: high-volume, private, read-only evidence.
+      // Internal hub, viewer and operator tokens must never trigger full scans.
+      if(a.internal||!["owner","admin"].includes(a.role))
+        return js(req,{ok:false,error:"human_admin_required"},403);
+      try{
+        const r=await compareCandidateFullHistory(sb,body?.candidate_key);
+        return js(req,r,r.ok?200:Number(r.status||400));
+      }catch(_e){
+        return js(req,{ok:false,error:"xml_full_comparison_unavailable"},503);
+      }
     }
     if(action==="xml_catalog_progress")return js(req,await xmlCatalogProgress());
     // Decision ledger only. JWT + active Admin role are checked by auth(req).
