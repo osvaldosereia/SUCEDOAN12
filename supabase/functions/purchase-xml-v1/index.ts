@@ -1400,6 +1400,23 @@ async function manualCatalogOnlyImport(input:any){
 }
 
 // Return source evidence and any existing product link; no modification is permitted.
+// Read a single verified XML's detailed fiscal/logistics evidence on demand.
+// No tax policy resolution, no product updates, no Bling calls.
+async function xmlCatalogTechnicalEvidence(body:any){
+  const id=clean(body?.observation_id,80);
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+    return {ok:false,status:400,error:"invalid_observation_id"};
+  const evidence=await sb.from("purchase_xml_catalog_technical_evidence_v4")
+    .select("observation_id,document_id,item_number,document_key,issued_at,document_source,supplier_name,description,commercial_gtin,tax_gtin,supplier_item_code,xml_ncm,xml_cest,xml_cfop,cfop_region_hint,operation_requires_manual_review,xml_commercial_unit,xml_commercial_quantity,xml_commercial_unit_price,xml_tax_unit,xml_tax_quantity,xml_tax_unit_price_text,xml_in_invoice_total_flag,supplier_order_reference,supplier_order_line,manufacturing_scale_flag,fiscal_benefit_code,import_fci_number,manufacturer_document_xml,xml_line_total,xml_net_line_total,xml_discount_text,xml_freight_text,xml_insurance_text,xml_other_expenses_text,icms_group,xml_origin_code,xml_icms_cst,xml_icms_csosn,xml_icms_rate_text,xml_icms_amount_text,xml_icms_st_rate_text,xml_icms_st_amount_text,pis_group,xml_pis_cst,xml_pis_rate_text,xml_pis_amount_text,cofins_group,xml_cofins_cst,xml_cofins_rate_text,xml_cofins_amount_text,ipi_group,xml_ipi_cst,xml_ipi_rate_text,xml_ipi_amount_text,xml_import_duty_detail,xml_ibs_cbs_cst,xml_ibs_cbs_classification,xml_ibs_cbs_tax_base_text,xml_ibs_amount_text,xml_ibs_state_rate_text,xml_ibs_state_amount_text,xml_ibs_city_rate_text,xml_ibs_city_amount_text,xml_cbs_rate_text,xml_cbs_amount_text,xml_destination_icms_detail,xml_lot_count,xml_lot_trace,unconfirmed_package_height_cm,unconfirmed_package_width_cm,unconfirmed_package_depth_cm,unconfirmed_item_gross_weight_kg,fiscal_evidence_status,approved_for_catalog_update,approved_for_stock_movement,source_state,parser_version")
+    .eq("observation_id",id)
+    .maybeSingle();
+  if(evidence.error)throw evidence.error;
+  if(!evidence.data)return {ok:false,status:404,error:"observation_not_found"};
+  return {ok:true,readonly:true,observation:evidence.data,
+    note:"Todas as classificacoes e valores tributarios foram extraidos de NF-e de fornecedor. Nao representam aprovacao para venda nem para estoque.",
+    fiscal_auto_approved:false,catalog_updated:false,stock_updated:false};
+}
+
 async function xmlCatalogCandidateDetail(body:any){
   const key=clean(body?.candidate_key,210);
   if(!key||! /^(?:gtin:|tax_gtin:|supplier:|unidentified:)/.test(key))
@@ -1733,6 +1750,10 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
       const result=await manualCatalogOnlyImport(body?.files);return js(req,result,result.ok?200:Number(result.status||400));
     }
     if(action==="xml_catalog_list")return js(req,await xmlCatalogList(body));
+    if(action==="xml_catalog_technical_evidence"){
+      const r=await xmlCatalogTechnicalEvidence(body);
+      return js(req,r,r.ok?200:Number(r.status||400));
+    }
     if(action==="xml_catalog_candidate_detail"){
       const r=await xmlCatalogCandidateDetail(body);
       return js(req,r,r.ok?200:Number(r.status||400));
