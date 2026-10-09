@@ -170,5 +170,21 @@ Deno.test('DA6 R6: 10/50/100 URLs assinadas reais, privacidade, polling sem nave
  ensure(withRetry.data?.length===1&&withRetry.data[0].attempts===1,'retry not persisted');
  const unprocessed=await db.from('inventory_label_photos').select('id',{count:'exact',head:true}).eq('status','queued');
  ensure(unprocessed.count===158,'closing browser lost queued files');
-  console.log('DA6_REAL_LOCAL_STORAGE_PASS',JSON.stringify({batches:counts,queuedAfterWorker:unprocessed.count,retries:1,counts:counted.data.length,reviewEvents:history.events.length}));
+ let drained=0,invocations=0;
+ while(invocations++<80){
+  const next=await inventoryLabelWorkerTick(db,4);
+  drained+=next.processed;
+  if(!next.processed)break;
+ }
+ const remaining=await db.from('inventory_label_photos').select('id',{count:'exact',head:true}).eq('status','queued');
+ ensure(remaining.count===0,'worker did not drain all 160 real Storage files');
+ const repeatedCounts=await db.from('inventory_label_counts').select('id',{count:'exact',head:true});
+ ensure(repeatedCounts.count===6,'unidentified photos created incorrect counts');
+ const overLimit=await db.from('inventory_label_photos').select('id',{count:'exact',head:true}).gt('attempts',3);
+ ensure(overLimit.count===0,'worker exceeded three attempts');
+ console.log('DA6_REAL_LOCAL_STORAGE_PASS',JSON.stringify({batches:counts,
+  queuedAfterInitialWorker:unprocessed.count,additionalProcessed:drained,
+  remainingQueued:remaining.count,counts:repeatedCounts.count,
+  reviewEvents:history.events.length}));
+
 });
