@@ -56,7 +56,7 @@ test('R8 Chrome gera QR válido e Code128 com bundles locais sem HTTP externo',a
    const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
    const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0);
    const decoded=jsQR(ctx.getImageData(0,0,canvas.width,canvas.height).data,canvas.width,canvas.height);
-   return {barcodeShapes:code.children.length,barcodeValue:code.dataset.barcode,qrDecoded:decoded?.data,
+   return {barcodeShapes:code.querySelectorAll('rect').length,barcodeValue:code.dataset.barcode,qrDecoded:decoded?.data,
      qrExpected:qrEl.dataset.qr,labels:document.querySelectorAll('article.label').length,
      rows:document.querySelectorAll('article.label .count-row').length};
   });
