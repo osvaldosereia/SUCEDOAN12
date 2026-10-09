@@ -106,6 +106,21 @@ export async function inventoryLabelPhotoAction(db:any,action:string,req:Request
   }
   return {review:reviewed.data};
  }
+ if(action==='inventory_label_photo_history'){
+  if(req.method!=='GET')return bad('method_not_allowed',405);
+  const photoId=new URL(req.url).searchParams.get('photo_id')||'';
+  if(!UUID.test(photoId))return bad('invalid_photo');
+  const owned=await db.from('inventory_label_photos').select('id')
+   .eq('id',photoId).eq('created_by',user).maybeSingle();
+  if(owned.error)throw owned.error;
+  if(!owned.data)return bad('photo_not_found',404);
+  // Consulta sob demanda: histórico não é recuperado no polling a cada 15 segundos.
+  const history=await db.from('inventory_label_review_events')
+   .select('count_id,decision,old_quantity,new_quantity,old_status,new_status,note,created_at')
+   .eq('photo_id',photoId).order('created_at',{ascending:false}).limit(40);
+  if(history.error)throw history.error;
+  return {photo_id:photoId,events:history.data||[]};
+ }
  if(action==='inventory_label_batch_status'){
   if(req.method!=='GET')return bad('method_not_allowed',405);
   const batchId=new URL(req.url).searchParams.get('batch_id')||'';
