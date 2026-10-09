@@ -43,3 +43,11 @@ A R09 acrescenta uma **fila separada exclusivamente de observação** e um worke
 ## Próxima rodada
 
 **R10**: processador fiscal exatamente uma vez sobre a fila `dispatch_fiscal_jobs`, verificar o resultado pela SEFAZ e tratar `ambiguous/authorized/rejected` com prova; nunca liberar expedição antes da autorização e nunca repetir POST após timeout sem GET e validação.
+
+## Resultado verificado — CI
+
+[**GitHub Actions R09 #37880789609 — SUCCESS**](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37880789609), PostgreSQL 17 descartável + Node 22, sem credenciais reais. A cobertura inclui funções R02 reais capturadas no laboratório, fechamento R06, intent R07, regressão R08, dois processos concorrentes por `SKIP LOCKED`, finalização com token legítimo, replay, lease expirado, veredicto incerto, consulta repetível **somente leitura**, zero/uma/múltiplas notas e bloqueio de nova autorização.
+
+Durante o desenvolvimento foram identificados e corrigidos: (1) um campo de Bling ausente na fixture mínima de laboratório; (2) expressão regular do timestamp remoto com escape incorreto; (3) asserções SQL que comparavam JSON nulo com `<>` e poderiam deixar passar uma resposta sem estado. Os testes finais usam `IS DISTINCT FROM` e conferem o status persistido em comandos separados. **Nenhum dos testes em CI chamou o Bling real, criou NF-e ou gravou no Supabase de produção.**
+
+**Limite técnico:** a evidência armazenada é atestado de consulta via hub interno, não assinatura SEFAZ, e vence para o R08 após 5 minutos. R10 deverá confirmar o XML autorizado e a chave de acesso de 44 dígitos, implementar emissão única na fila fiscal canônica e reconciliar resultado incerto sem repetir POST. A flag R09 e o cron continuam desligados.
