@@ -9,8 +9,8 @@ function uuid36(v){
   return BigInt('0x'+u).toString(36).toUpperCase().padStart(25,'0');
 }
 function validGtin(v){
-  const s=digits(v);
-  if(![8,12,13,14].includes(s.length))return false;
+  const s=String(v??'').trim();
+  if(!/^\d+$/.test(s)||![8,12,13,14].includes(s.length))return false;
   let sum=0;for(let i=s.length-2,weight=3;i>=0;i--,weight=weight===3?1:3)sum+=Number(s[i])*weight;
   return (10-sum%10)%10===Number(s[s.length-1]);
 }
