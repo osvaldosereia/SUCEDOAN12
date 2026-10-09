@@ -494,7 +494,33 @@ async function resolvePurchaseItemIdentity(body:any,userId:string|null){
   if(!["base_unit","package"].includes(role))return {ok:false,status:409,error:"gtin_role_required"};
   let factor=Number(body?.conversion_factor??item.conversion_factor??0);if(!Number.isFinite(factor)||factor<1)factor=1;
   if(role==="package"&&factor<=1)return {ok:false,status:409,error:"packaging_factor_must_be_greater_than_one"};
-  const proposedName=clean(body?.proposed_name,300)||clean(item.description,300),xmlGtin=digits(item.commercial_gtin||item.tax_gtin);
+  const proposedName=clean(body?.proposed_name,300)||clean(item.description,300),
+    xmlGtin=catalogEvidenceOnly
+      ?(validGtin(digits(item.commercial_gtin))?digits(item.commercial_gtin):digits(item.tax_gtin))
+      :digits(item.commercial_gtin||item.tax_gtin);
+  if(catalogEvidenceOnly){
+    const purchaseUnit=unit(item.purchase_unit);
+    const explicitFactor=Number(body?.conversion_factor);
+    if(!validGtin(xmlGtin))return {ok:false,status:409,error:"xml_catalog_gtin_requires_manual_review"};
+    if(["KG","G","LT","L","LTS","M","MT","TON"].includes(purchaseUnit))
+      return {ok:false,status:409,error:"xml_catalog_weight_unit_requires_manual_review"};
+    if(!Number.isInteger(explicitFactor)||explicitFactor<1||explicitFactor>100000)
+      return {ok:false,status:409,error:"xml_catalog_conversion_factor_required"};
+    if(["CX","FD","FAR","FARDO","CAIXA","FDO"].includes(purchaseUnit)&&role!=="package")
+      return {ok:false,status:409,error:"xml_catalog_outer_pack_role_required"};
+    if(role==="base_unit"&&explicitFactor!==1)
+      return {ok:false,status:409,error:"xml_catalog_unit_factor_must_be_one"};
+    const selectedId=clean(body?.product_id,80)||item.product_id||"";
+    const existing=await sb.from("products").select("id").eq("gtin",xmlGtin).limit(4);
+    if(existing.error)throw existing.error;
+    if((existing.data||[]).some((x:any)=>createNew||String(x.id)!==String(selectedId)))
+      return {ok:false,status:409,error:"xml_catalog_gtin_linked_to_another_product"};
+    const identifiers=await sb.from("product_identifiers")
+      .select("product_id").eq("identifier_value",xmlGtin).eq("status","confirmed").limit(6);
+    if(identifiers.error)throw identifiers.error;
+    if((identifiers.data||[]).some((x:any)=>createNew||String(x.product_id)!==String(selectedId)))
+      return {ok:false,status:409,error:"xml_catalog_identifier_conflict"};
+  }
   let product:any=null,created=false;
   if(createNew){
     const sku="XML-"+String(item.id).replace(/-/g,"").slice(0,12).toUpperCase();
