@@ -123,3 +123,40 @@ test('R2: QR apagado recusa atribuir produto, jamais aceita contagens',()=>{
  }
  assert.throws(()=>read(image),/label_qr_not_found/);
 });
+
+
+function boxBlur(src,r=1){
+ const {width:w,height:h}=src,temp=new Uint8ClampedArray(src.data.length),dst=new Uint8ClampedArray(src.data.length);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  let sum=0,n=0;
+  for(let dx=-r;dx<=r;dx++){const xx=x+dx;if(xx>=0&&xx<w){sum+=src.data[(y*w+xx)*4];n++}}
+  const v=Math.round(sum/n),i=(y*w+x)*4;temp[i]=temp[i+1]=temp[i+2]=v;temp[i+3]=255;
+ }
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  let sum=0,n=0;
+  for(let dy=-r;dy<=r;dy++){const yy=y+dy;if(yy>=0&&yy<h){sum+=temp[(yy*w+x)*4];n++}}
+  const v=Math.round(sum/n),i=(y*w+x)*4;dst[i]=dst[i+1]=dst[i+2]=v;dst[i+3]=255;
+ }
+ return {...src,data:dst};
+}
+test('R2: perda moderada de foco mantém identidade e não inverte quantidades',()=>{
+ const out=read(boxBlur(fixture(),1));
+ assert.equal(out.product_id,uuid);
+ for(const r of out.readings)assert.equal(r.quantity,quantities[r.slot-1]);
+ assert.ok(out.readings.length+out.errors.length<=6);
+});
+test('R2: reflexo encobrindo um círculo não cria contagem incorreta',()=>{
+ const photo=fixture();
+ const slot=3,q=quantities[slot-1],top=61+(slot-1)*((76-5)/6+1);
+ const x=(25.09+Math.floor(q/10)*3.535)*10, y=(top+8.7)*10;
+ for(let iy=Math.floor(y-12);iy<=Math.ceil(y+12);iy++)
+  for(let ix=Math.floor(x-12);ix<=Math.ceil(x+12);ix++){
+   const k=(iy*photo.width+ix)*4;
+   photo.data[k]=photo.data[k+1]=photo.data[k+2]=255;
+  }
+ const out=read(photo);
+ assert.equal(out.product_id,uuid);
+ assert.equal(out.readings.find(r=>r.slot===slot),undefined);
+ assert.ok(out.errors.some(e=>e.slot===slot));
+ for(const r of out.readings)assert.equal(r.quantity,quantities[r.slot-1]);
+});
