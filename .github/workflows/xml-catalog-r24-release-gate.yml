@@ -1,0 +1,24 @@
+name: XML Catalog R24 Release Safety Gate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/xml-catalog-r24-release-gate.mjs'
+      - 'scripts/test-xml-catalog-r24-release-gate.mjs'
+      - '.github/workflows/xml-catalog-r24-release-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-safety-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate release-gate fail-closed behavior without credentials
+        run: |
+          node --test scripts/test-xml-catalog-r24-release-gate.mjs
+          node --check scripts/xml-catalog-r24-release-gate.mjs
+          node --check scripts/test-xml-catalog-r24-release-gate.mjs
