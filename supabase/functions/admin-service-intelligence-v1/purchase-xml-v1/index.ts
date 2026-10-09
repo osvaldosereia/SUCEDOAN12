@@ -1366,6 +1366,32 @@ async function manualCatalogOnlyImport(input:any){
     bling_called:false,products_updated:false,stock_updated:false,finance_updated:false};
 }
 
+// Return source evidence and any existing product link; no modification is permitted.
+async function xmlCatalogCandidateDetail(body:any){
+  const key=clean(body?.candidate_key,210);
+  if(!key||! /^(?:gtin:|tax_gtin:|supplier:|unidentified:)/.test(key))
+    return {ok:false,status:400,error:"invalid_candidate_key"};
+  const candidate=await sb.from("purchase_xml_catalog_candidates_v1")
+    .select("candidate_key,display_name,gtin,tax_gtin,last_observed_ncm,last_observed_cest,last_purchase_unit,observations_count,distinct_invoices,suppliers_count,ncm_variations,cest_variations,matched_product_variations,linked_product_id,xml_verified,first_seen,last_seen,review_status")
+    .eq("candidate_key",key).maybeSingle();
+  if(candidate.error)throw candidate.error;
+  if(!candidate.data)return {ok:false,status:404,error:"candidate_not_found"};
+  const evidence=await sb.from("purchase_xml_catalog_observation_details_v2")
+    .select("observation_id,document_id,item_number,purchase_item_id,linked_product_id,linked_product_name,linked_product_gtin,linked_product_ncm,linked_product_cest,linked_product_active,issued_at,supplier_name,supplier_document,source,catalog_only,xml_description,supplier_item_code,commercial_gtin,tax_gtin,xml_ncm,xml_cest,xml_cfop,purchase_unit,purchase_quantity,purchase_unit_price,line_total,net_line_total,tax_unit,tax_quantity,lot_traces,source_state,conversion_status,conversion_factor,item_status")
+    .eq("candidate_key",key)
+    .order("issued_at",{ascending:false,nullsFirst:false})
+    .order("document_id",{ascending:true}).order("item_number",{ascending:true})
+    .limit(60);
+  if(evidence.error)throw evidence.error;
+  // Product identity suggestions are read-only and require an operator decision.
+  const gtin=clean(candidate.data.gtin||candidate.data.tax_gtin,24);
+  const suggestions=gtin?await searchPurchaseProducts({query:gtin}):{ok:true,items:[]};
+  return {ok:true,readonly:true,candidate:candidate.data,observations:evidence.data||[],
+    truncated:Number(candidate.data.observations_count||0)>60,
+    suggested_existing_products:Array.isArray(suggestions.items)?suggestions.items:[],
+    can_auto_match:false,can_auto_apply_fiscal:false,can_auto_move_stock:false};
+}
+
 async function xmlCatalogList(body:any){
   const limit=Math.max(1,Math.min(100,Math.trunc(Number(body?.limit)||30)));
   const offset=Math.max(0,Math.min(100000,Math.trunc(Number(body?.offset)||0)));
@@ -1674,6 +1700,10 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
       const result=await manualCatalogOnlyImport(body?.files);return js(req,result,result.ok?200:Number(result.status||400));
     }
     if(action==="xml_catalog_list")return js(req,await xmlCatalogList(body));
+    if(action==="xml_catalog_candidate_detail"){
+      const r=await xmlCatalogCandidateDetail(body);
+      return js(req,r,r.ok?200:Number(r.status||400));
+    }
     if(action==="xml_catalog_progress")return js(req,await xmlCatalogProgress());
     if(action==="xml_catalog_reprocess"){
       // Trusted hub requests may perform source-only recovery, but NEVER product, fiscal or stock writes.
