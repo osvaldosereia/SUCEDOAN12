@@ -207,3 +207,17 @@
 - O staging continua remunerado em US$ 0,01344/hora, fora do Spend Cap. Reutilizar somente para QA segura; excluir ao terminar ensaios e nunca deixar indefinidamente cobrando.
 
 **Próxima rodada:** não repetir upload digital 10/50/100 já COMPROVADO; focar validação física com operador/telefone/impressora reais, ensaio controlado do cron remoto, diagnóstico da migração da branch, backup/rollback e conciliação não destrutiva da main. Nunca aprovar prova física por imagem sintética.
+
+## 17. R13 — CRON AUTOMÁTICO STAGING E FISCAL R2 INTEGRADO (09/10/2026)
+
+**Implementação real e evidências:**
+1. Supabase staging exclusivo `jxfxyqcpxoykdxbapswi`: foi ativado apenas o cron `inventory-label-worker-da6-v1` (jobid=5, `* * * * *`) num ensaio com uma foto artificial sem blob; os quatro cron jobs de WhatsApp/atendimento continuaram desligados.
+2. Execuções AUTOMÁTICAS comprovadas em `cron.job_run_details`: runids **5** às **20:25 UTC** e **6** às **20:26 UTC** de 09/10/2026, ambos `status=succeeded`. Foto artificial alterou-se de `queued attempts=0` para `retry attempts=2`, `error_code=storage_read_failed`. Comprovada cadeia pg_cron → dispatcher → pg_net/Vault → Edge Worker → registro de retentativa, sem acionamento manual do worker.
+3. **Cron imediatamente desativado** após observar duas execuções e fixado `active=false`. Fixture foi excluída com validação estrita (foto, lote e auth user). Estado final verificado: **cinco crons da branch desativados**, `auth.users=0`, `batches=0`, `photos=0`, `counts=0`, `storage.objects DA6=0`. Produção não tocada. **Prova é de falha programada**, não de OMR correto em imagem real.
+4. GitHub `main` avançou 12 commits (até `baf21c4280ecb51b6eed4cf704f5ab6143301844`) em 17 arquivos R2 fiscais, ZERO sobreposições com mudanças da DA6 desde base `168558b6...`; merge 2 pais por blobs SHA originais **`fe1c376986306e86ff23a4c5e3c4de6d26a0e89e`** criado e ref da branch atualizado por fast-forward com expected SHA, sem publicação. PR #987 DRAFT, `mergeable=true` e `behind=0` imediatamente após merge.
+5. CI GitHub Actions [#37986675847](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37986675847), commit `fe1c3769`: **COMPLETED SUCCESS, seis jobs SUCCESS e 87/87 testes determinísticos PASS, zero FAIL**, incluindo integração Supabase local, Postgres/Edge. Release manifest `verified_software` atualizado, **sem autorizar nenhum dos 7 gates** (commit `a7904e85bd3b8ba3b1088fe6fd293b39ddf7372c`).
+6. Documento completo com provas e pendências: **`docs/projects/DA6_R13_CRON_AUTOMATICO_INTEGRACAO_MAIN_2026-10-09.md`**, commit `1a2e21e2f19e2d44d92b99dee0fedb906fb984ec`.
+
+**PROJETO AINDA NÃO PUBLICADO:** software CI e batches 10/50/100 digitais hospedados estão validados; porém faltam fotos reais 203 dpi de celular com leitura efetiva QR/OMR, backup restaurável e rollback ensaiado, saneamento transparente do `MIGRATIONS_FAILED` do staging e atualização de main antes do release. Sete gates `passed:false`, `release_status=blocked`, fingerprint null, PR DRAFT. Não usar o canônico para testes nem alterar estoque/Bling. Staging pago US$ 0,01344/hora + uso fora do Spend Cap, excluir ao final dos ensaios.
+
+**PRÓXIMA RODADA:** não repetir testes digitais que já passaram. Planejar suporte ao teste físico de impressora 203dpi e 100×150 e fotos reais; preparar e demonstrar rollback em staging seguro, sem acesso a produção; avaliar possível fechamento do ambiente pago se não houver hardware/operador. CI/PR conferir SHA novo antes de merge; nunca marcar todos gates true com provas sintéticas.
