@@ -1,9 +1,6 @@
 -- R06 isolated PostgreSQL 17. Actual unchanged R02 production functions are
 -- used for prepare, stock apply and completion; only init is a synthetic stub.
 \set ON_ERROR_STOP on
-CREATE ROLE anon;
-CREATE ROLE authenticated;
-CREATE ROLE service_role BYPASSRLS;
 
 DO $r6$
 DECLARE
