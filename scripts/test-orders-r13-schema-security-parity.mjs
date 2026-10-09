@@ -12,7 +12,7 @@ export function compareCanonicalSchema(expected,actual){
   const missingTables=[],missingTriggers=[],rlsDisabled=[],unexpectedPublicGrants=[];
   for(const [name,t] of exp){
     const got=seen.get(name);
-    if(!got){missingTables.push(name);continue;}
+    if(!got||got.exists===false){missingTables.push(name);continue;}
     if(t.rls && !got.rls)rlsDisabled.push(name);
     for(const trg of t.triggers||[]){
       if(!(got.triggers||[]).includes(trg))missingTriggers.push(name+"."+trg);
@@ -48,7 +48,7 @@ function readLocalPgNames(names){
   const sql=[
     "WITH focus AS (SELECT unnest(ARRAY["+quoted+"]::text[]) name)",
     "SELECT COALESCE(jsonb_agg(jsonb_build_object(",
-    " 'name',f.name,'rls',coalesce(c.relrowsecurity,false),",
+    " 'name',f.name,'exists',c.oid IS NOT NULL,'rls',coalesce(c.relrowsecurity,false),",
     " 'policy_count',(SELECT count(*) FROM pg_policies p WHERE p.schemaname='public' AND p.tablename=f.name),",
     " 'triggers',coalesce((SELECT jsonb_agg(t.tgname ORDER BY t.tgname)",
     "    FROM pg_trigger t WHERE t.tgrelid=c.oid AND NOT t.tgisinternal),'[]'::jsonb),",
