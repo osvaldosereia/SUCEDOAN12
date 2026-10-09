@@ -4402,6 +4402,34 @@ function blingHubFiscalFailureItems(detailRaw:any){
   }
   return {failures,missing_ncm:/[ée] necess[áa]rio informar o NCM em todos os itens/i.test(detail),raw:detail};
 }
+// Interpret all reported causes independently; a single NF-e may have several
+// unrelated blockers. Conservative classification does not claim to fix them.
+function blingHubFiscalDiagnoseErrors(job:any){
+  const text=String(job?.error_detail||"").slice(0,7000),code=String(job?.error_code||"");
+  const rules:any[]=[
+    {code:"invalid_ncm",category:"product_tax",test:/\bNCM\b.{0,200}(não est[aá] contido|inv[aá]lido|n[aã]o permitido)|NCM.{0,100}valores permitidos/i,action:"validate_supplier_xml_and_official_classif"},
+    {code:"missing_ncm",category:"product_tax",test:/informar o NCM|NCM.{0,40}(obrigat[oó]rio|n[aã]o informado)/i,action:"validate_supplier_xml_and_official_classif"},
+    {code:"cest",category:"product_tax",test:/\bCEST\b/i,action:"verify_cest_ncm_rule"},
+    {code:"cfop",category:"invoice_tax",test:/\bCFOP\b/i,action:"verify_operation_and_destination"},
+    {code:"cst_csosn",category:"invoice_tax",test:/\bCST\b|\bCSOSN\b/i,action:"verify_fiscal_regime"},
+    {code:"ibs_cbs",category:"invoice_tax",test:/\bIBS\b|\bCBS\b|classifica[çc][aã]o tribut[aá]ria/i,action:"verify_tax_reform_rules"},
+    {code:"destination_address",category:"customer",test:/endere[çc]o.{0,85}(caracter|obrigat|inv[aá]lid|m[ií]nimo)|n[uú]mero do endere[çc]o|\bCEP\b.{0,60}(inv[aá]lid|obrigat)/i,action:"validate_canonical_delivery_address"},
+    {code:"recipient_document",category:"customer",test:/\bCPF\b|\bCNPJ\b|inscri[çc][aã]o estadual|destinat[aá]rio.{0,40}(documento|inv[aá]lido)/i,action:"validate_client_registration"},
+    {code:"invalid_totals",category:"order_amount",test:/total.{0,40}(divergen|inv[aá]lid|n[aã]o confere)|valor.{0,40}(n[aã]o confere|divergen)/i,action:"reconcile_separated_items_and_totals"},
+    {code:"issuer_configuration",category:"issuer",test:/certificado digital|credenciamento|s[eé]rie.{0,30}nota|natureza da opera[çc][aã]o/i,action:"verify_bling_issuer_configuration"},
+    {code:"sefaz_rejection",category:"sefaz",test:/\bSEFAZ\b|rejei[çc][aã]o|denegad/i,action:"read_sefaz_return_before_resend"},
+    {code:"already_exists",category:"idempotence",test:/j[aá] existe|duplicad[ao]|mesma chave|nota j[aá] emitida/i,action:"reconcile_remote_invoice"},
+    {code:"temporary_provider",category:"connectivity",test:/timed out|timeout|rate.limit|429|500|502|503|504|oauth_busy|connection reset|network error/i,action:"retry_only_read_and_reconcile"}
+  ];
+  const issues=rules.filter((r:any)=>r.test.test(text)||r.code==="temporary_provider"&&r.test.test(code))
+    .map((r:any)=>({code:r.code,category:r.category,action:r.action}));
+  if(code==="invoice_generation_uncertain"&&!issues.some((x:any)=>x.code==="temporary_provider"))
+    issues.push({code:"temporary_provider",category:"connectivity",action:"retry_only_read_and_reconcile"});
+  if(!issues.length)issues.push({code:"unclassified_error",category:"unknown",action:"collect_provider_error_for_review"});
+  return {issues,requires_review:issues.some((x:any)=>!["temporary_provider","already_exists"].includes(x.code)),
+    can_reconcile_only:issues.every((x:any)=>["temporary_provider","already_exists"].includes(x.code))};
+}
+
 function blingHubFiscalNormalizeName(s:any){
   return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/gi,"").toLowerCase();
 }
@@ -4460,7 +4488,9 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
       throw start.error;
     }
     result.processed++;
-    const diagnostics:any={job_id:job.id,order_id:job.order_id,reason:"",issues:[],corrected_products:[],invoice_id:null};
+    const diagnosis=blingHubFiscalDiagnoseErrors(job);
+    const diagnostics:any={job_id:job.id,order_id:job.order_id,reason:"",issues:diagnosis.issues,
+      diagnosis:diagnosis.issues,corrected_products:[],invoice_id:null};
     let externalWrite=false;
     try{
       const oq=await sb.from("orders").select("id,status,bling_order_id").eq("id",job.order_id).maybeSingle();
@@ -4490,6 +4520,13 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
         diagnostics.reason="not_a_repairable_generation_error";continue;
       }
       const parsed=blingHubFiscalFailureItems(job.error_detail);
+      // Mixed errors must be solved in dependency order. Never repeat NF-e
+      // with half the errors fixed (e.g. NCM and address failing together).
+      const otherCauses=diagnosis.issues.filter((x:any)=>!["invalid_ncm","missing_ncm"].includes(x.code));
+      if(otherCauses.length){
+        diagnostics.reason="multiple_fiscal_causes_require_coordinated_repair";
+        continue;
+      }
       if(!parsed.failures.length&&!parsed.missing_ncm){
         diagnostics.reason="unrecognized_fiscal_error";continue;
       }
