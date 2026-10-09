@@ -39,8 +39,15 @@ jobs:
           a='import "jsr:@supabase/functions-js/edge-runtime.d.ts";'
           b='import { createClient } from "npm:@supabase/supabase-js@2";'
           assert original.count(a)==1 and original.count(b)==1
+          assert 'export async function handlePurchaseXmlRequest(' in original
+          assert 'Deno.serve(' not in original
+          # index.ts is a service MODULE used by admin-service-intelligence-v1,
+          # not a standalone Edge entrypoint. Add Deno.serve ONLY in CI copy.
           p.write_text(original.replace(a,'').replace(b,
-            'import { createClient } from "./local-supabase-shim.mjs";'))
+            'import { createClient } from "./local-supabase-shim.mjs";')
+            +chr(10)+"Deno.serve(async req => {"
+            +" const body=await req.json().catch(()=>({}));"
+            +" return handlePurchaseXmlRequest(req,body,false); });"+chr(10))
           print('PASS: CI-only external import replacement; repo production file unchanged')
           # This action exercises only the field-apply gateway. XML extraction is
           # tested separately in R19/R28; exclude its npm parser on this path.
