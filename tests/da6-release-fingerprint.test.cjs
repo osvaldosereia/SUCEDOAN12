@@ -23,6 +23,10 @@ function tempSource(){
   'supabase/functions/admin-products-live-v1/index.ts',
   'supabase/functions/admin-products-live-v1/inventory-label-worker.ts',
   'supabase/migrations/20261009150000_da6_upload_atomic_reservation_v1.sql',
+  'scripts/da6-release-fingerprint.mjs',
+  'scripts/da6-release-gate.mjs',
+  'scripts/da6-release-attestation.mjs',
+  'scripts/da6-staging-preflight.mjs',
   '.github/workflows/da6-inventory-labels-ci.yml'
  ])file(p);
  return {dir,file,cleanup:()=>fs.rmSync(dir,{recursive:true,force:true})};
@@ -38,7 +42,11 @@ test('R8 impressão digital mantém lista ordenada e inclui gateway, worker, SQL
   'supabase/functions/admin-products-live-v1/inventory-label-worker.ts',
   'supabase/functions/admin-products-live-v1/inventory-label-photo-api.ts',
   'supabase/migrations/20261009150000_da6_upload_atomic_reservation_v1.sql',
-  'vitrine/admin/vendor/JsBarcode.all-3.11.6.min.js'
+  'vitrine/admin/vendor/JsBarcode.all-3.11.6.min.js',
+  'scripts/da6-release-fingerprint.mjs',
+  'scripts/da6-release-gate.mjs',
+  'scripts/da6-release-attestation.mjs',
+  'scripts/da6-staging-preflight.mjs'
  ])assert.ok(r.files.includes(p),'not covered: '+p);
  assert.deepEqual(r.files,[...r.files].sort());
 });
