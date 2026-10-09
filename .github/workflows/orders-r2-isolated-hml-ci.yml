@@ -328,5 +328,28 @@ jobs:
           PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
             -f scripts/sql/orders-r2-r3-checkout-identity-assertions.sql
           echo 'PASS: immutable weekly number shared with real checkout, split kits and mold snapshots'
+      - name: Concurrent real checkout also assigns exactly one weekly identity per successful order
+        run: |
+          set -euo pipefail
+          # Synthetic SABAO has stock=2, price=R$80. Two sessions can
+          # each buy 1; both need unique weekly numbers and snapshots.
+          SQL="select public.create_vitrine_cart_order_v3(null,'PIX','[{\"type\":\"product\",\"id\":\"00000000-0000-4000-8000-0000000000bb\",\"qty\":1}]'::jsonb)->>'order_id';"
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 -Atc "$SQL" >/tmp/r2r3-a.txt 2>/tmp/r2r3-a.err &
+          A=$!
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 -Atc "$SQL" >/tmp/r2r3-b.txt 2>/tmp/r2r3-b.err &
+          B=$!
+          wait "$A"
+          wait "$B"
+          test "$(wc -l </tmp/r2r3-a.txt)" = 1
+          test "$(wc -l </tmp/r2r3-b.txt)" = 1
+          test "$(PGDATABASE=synthetic_checkout_weekly_r2 psql -Atc "select sum(quantity)::integer from public.vitrine_stock_reservations where product_id='00000000-0000-4000-8000-0000000000bb' and status='reserved'")" = 2
+          test "$(PGDATABASE=synthetic_checkout_weekly_r2 psql -Atc "select count(distinct o.order_number) from public.orders o join public.vitrine_stock_reservations r on r.order_id=o.id where r.product_id='00000000-0000-4000-8000-0000000000bb'")" = 2
+          test "$(PGDATABASE=synthetic_checkout_weekly_r2 psql -Atc "select count(*) from public.orders o join public.vitrine_stock_reservations r on r.order_id=o.id join public.order_public_snapshots_v1 s on s.order_id=o.id where r.product_id='00000000-0000-4000-8000-0000000000bb' and o.order_number=s.public_code and (s.snapshot->>'item_count')::int=1")" = 2
+          if PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 -Atc "$SQL" >/tmp/r2r3-c.txt 2>/tmp/r2r3-c.err; then
+            echo 'FAIL: sold third SABAO unit with stock=2'
+            exit 1
+          fi
+          grep -q 'insufficient_stock' /tmp/r2r3-c.err
+          echo 'PASS: 2 concurrent stock-limited checkouts, 2 immutable numbers, 2 snapshots; no third sale'
       - name: Diff hygiene
         run: git diff --check
