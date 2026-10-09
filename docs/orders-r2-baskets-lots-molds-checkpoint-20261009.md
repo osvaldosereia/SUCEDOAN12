@@ -48,3 +48,12 @@ O patch é preso ao MD5 esperado da função original **após** o hotfix do mín
 5. A próxima rodada deverá substituir a view reduzida de disponibilidade por dependências canônicas onde possível, testar as permissões e a cadeia de stock authoritative, e consolidar PRs na ordem documentada no plano #964.
 
 **Status operacional:** sem merge, deploy, alteração de banco de produção, pedido, estoque, WhatsApp, cliente, entrega ou NF-e. Testes de CI e seus IDs são registrados no PR correspondente e na issue #964.
+
+## Resultado da homologação sintética
+
+- [**CI #37926517565 — SUCCESS**](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37926517565): checkout com as funções reais e view de disponibilidade simplificada, incluindo grupos independentes, lotes antigos, moldes, opções inválidas e valores ocultos.
+- O teste adicional de concorrência revelou que os cenários anteriores consumiam o estoque pré-definido e introduziam dependência de ordem entre testes. Foi **isolado em um sexto banco PG17**, com 3 kits de alimentos e 3 de higiene e duas sessões pedindo 2 de cada. [**CI #37927827366 — SUCCESS**](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37927827366) e [**CI #37927832966 — SUCCESS**](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37927832966) após isolamento, sem sobre-venda ou produto de kit convertido indevidamente em reserva avulsa.
+- Revisão final do SQL de alteração reforçou a guarda idempotente: somente considera o patch já aplicado quando o marcador exato da versão revisada está presente; mudanças não reconhecidas exigem revisão em vez de passar silenciosamente.
+- As duas primeiras tentativas do teste de concorrência **falharam** devido ao isolamento insuficiente da fixture; não eram provas de sobre-venda em produção. O histórico completo permanece disponível no GitHub Actions e não foi omitido.
+
+**PR de acompanhamento:** [#994](https://github.com/osvaldosereia/SUCEDOAN12/pull/994), draft e empilhado sobre [#991](https://github.com/osvaldosereia/SUCEDOAN12/pull/991). O checkpoint e os scripts permanecem apenas em GitHub; nenhum objeto Supabase foi alterado.
