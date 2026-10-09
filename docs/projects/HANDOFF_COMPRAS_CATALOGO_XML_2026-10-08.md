@@ -171,3 +171,28 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 ### Próximo trabalho — R20
 - Histórico paginado completo: o comparador #980 atualmente considera a **primeira página de 60**, claramente marcada como parcial na R18. Propor/implementar comparação integral e bounded por servidor, sem baixar tudo no início, incluindo testes de >60 linhas, fornecedor, embalagem/GTIN, perdas de conexão e UI lazy.
 - Manter R19/R18 em PRs draft até gates reais, sem substituir alteração recente da main.
+
+## Checkpoint R20 — 09/10/2026 — comparação do histórico completo sob demanda
+
+**PR draft empilhada:** [#1001](https://github.com/osvaldosereia/SUCEDOAN12/pull/1001), branch `agent/xml-catalog-full-history-r20-20261009`, originada da R19 [#999](https://github.com/osvaldosereia/SUCEDOAN12/pull/999), que depende da consolidação R18 [#997](https://github.com/osvaldosereia/SUCEDOAN12/pull/997), cuja raiz é a `main` `8d2e187fa3d7`. Sem merge/deploy/migration.
+
+### Funcionalidade implementada na branch
+- Serviço `xml-catalog-full-comparison.mjs` espelhado nos dois backends. Consulta `purchase_xml_catalog_observation_details_v2` com ordenação determinística e `count:exact`, **páginas de 200**, teto rígido de **5.000 observações por candidato**; calcula somente agregados, não devolve linhas XML completas ao navegador.
+- Consulta separada `xml_catalog_full_comparison`, disponível apenas sob ação explícita de sessão humana `owner/admin` autenticada (JWT + `admin_users`). Tokens internos, `viewer` e `operator` rejeitados; falhas de consulta não expõem dados SQL sensíveis.
+- Mantém abertura normal do detalhe em até 60 linhas, com carregamento lazy. Botão **Conferir histórico completo** aparece quando a primeira página não basta. Após clique, a UI mostra resultado integral, ou **PARCIAL** se o teto de 5.000 for atingido, a contagem mudar ou linhas se repetirem. Nunca apresentar resultado parcial como auditoria completa.
+- Comparação inclui NCM, CEST, GTIN/EAN comercial e divergências por fornecedor; inclui EAN tributário `cEANTrib`, unidade comercial `uCom` e unidade tributável `uTrib` como **evidência**, nunca conversão automática de embalagem nem aprovação fiscal.
+- Guardas da interface descartam respostas atrasadas ao mudar de candidato, não pré-carregam comparação integral, e não atualizam produtos/estoque/Bling/financeiro.
+- Sem leitura pública de XMLs brutos, consulta externa, cron, migração, tela adicional, ou mudança no visual da vitrine pública.
+
+### Testes verificados
+- [CI final XML Catalog R20 Full History — run 37938913888](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37938913888): **2/2 jobs success**.
+- Teste `test-xml-catalog-full-history-r20.mjs`: 137 observações com NCM divergente **depois** dos primeiros 60, GTIN tributário, compra/tributação por unidade, leitura paginada, limite máximo de 5.000, candidato vazio, erro SQL, contagem divergente entre páginas, repetição de observação, segurança de escopo, carregamento UI sob clique e descarte de resposta atrasada.
+- CI também executou regressões de comparação v3, paginação v3, ficha v2, consolidação R18, revisão UI R15, `deno check` dos dois módulos XML, parser real e testes isolados da R19. Primeira CI falhou em teste isolado quando `full` e chave ausente eram comparados como iguais; condição corrigida e CI repetida com aprovação. **Não é homologação operacional em produção.**
+
+### Runtime read-only
+- Supabase canônico: 147 candidatos, máximo de **10 observações** por candidato, nenhum com mais de 60; 90 XMLs/214 linhas catalogadas e 0 faltantes. Logo a funcionalidade resolve demanda futura, não um acúmulo real atual.
+- As views `purchase_xml_catalog_candidates_v1` e `purchase_xml_catalog_observation_details_v2` têm `security_invoker=true` e sem `SELECT` direto a `anon`/`authenticated`.
+- Nenhum produto, estoque, custo, preço, fiscal, financeiro, Bling, Supabase de produção ou `main` foi modificado.
+
+### Próximo passo
+**R21:** homologação de identidade, EAN comercial/tributário, unidade/caixa, conversão de embalagem, vinculação humana e criação inativa, com papel/verificação/auditoria e teste E2E isolado, sem publicar ou aplicar dados reais. Após R21, R22–R27 para decisão/aplicação/rollback fiscal segregado, performance, integração e lançamento com gates formais. Não mesclar individualmente PRs #997/#999/#1001 sem respeitar dependências e executar a CI sobre a árvore combinada.
