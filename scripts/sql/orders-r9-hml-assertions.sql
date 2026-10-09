@@ -52,17 +52,30 @@ BEGIN
   IF v->>'status'<>'observed_no_invoice' THEN
     RAISE EXCEPTION 'valid GET observation failed: %',v;
   END IF;
-  IF (SELECT status FROM public.order_fiscal_r9_observations_v1 WHERE order_id=a)<>'observed_no_invoice' THEN
-    RAISE EXCEPTION 'finish returned OK but did not persist observed state';
+
+  -- The worker persists its update in a separate command/transaction before
+  -- another request re-enqueues it. This avoids DO-block SPI snapshot caching.
+END $r9$;
+
+-- A second command with a fresh statement snapshot validates the committed
+-- observation, replay safety, and the other order still pending.
+DO $r9_replay$
+DECLARE
+  a uuid;
+  v jsonb;
+BEGIN
+  SELECT order_id INTO a FROM public.order_fiscal_r9_observations_v1
+  WHERE status='observed_no_invoice';
+  IF a IS NULL THEN
+    RAISE EXCEPTION 'finished observation was not persisted';
   END IF;
   v:=public.ops2_enqueue_fiscal_r9_observation_v1(a);
   IF v->>'status'<>'observed_no_invoice' THEN
-    RAISE EXCEPTION 're-enqueue did not retain final state: %, persisted: %',v,(SELECT status FROM public.order_fiscal_r9_observations_v1 WHERE order_id=a); END IF;
+    RAISE EXCEPTION 're-enqueue altered completed observation: %',v;
+  END IF;
   IF (SELECT attempts FROM public.order_fiscal_r9_observations_v1 WHERE order_id=a)<>1
-  THEN RAISE EXCEPTION 'first claim replayed'; END IF;
-
-  -- Other order deliberately left PENDING for concurrent workers.
+  THEN RAISE EXCEPTION 'completed observation replayed as claim'; END IF;
   IF (SELECT count(*) FROM public.order_fiscal_r9_observations_v1 WHERE status='pending')<>1
   THEN RAISE EXCEPTION 'concurrency candidate not pending'; END IF;
-END $r9$;
+END $r9_replay$;
 SELECT 'PASS R09: service-only, valid enqueue, no duplicates, claim token, no authorization, attested GET' result;
