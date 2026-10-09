@@ -13,10 +13,11 @@ export function classifyMigrationDriftR27(localFiles,remoteMigrations){
  if(!Array.isArray(localFiles)||!Array.isArray(remoteMigrations))
    throw new Error("r27_requires_full_local_and_remote_history");
  const local=localFiles.map(parseLocal),remote=remoteMigrations.map(r=>({
-   version:String(r?.version??""),name:String(r?.name??"")
+   version:String(typeof r==="string"?r:r?.version??""),
+   name:typeof r==="string"?null:String(r?.name??"")
  }));
  const byVersion=new Map(),byName=new Map();
- for(const r of remote){byVersion.set(r.version,r);const versions=byName.get(r.name)||[];versions.push(r.version);byName.set(r.name,versions);}
+ for(const r of remote){byVersion.set(r.version,r);if(r.name!==null){const versions=byName.get(r.name)||[];versions.push(r.version);byName.set(r.name,versions);}}
  const localVersions=new Set(local.map(x=>x.version).filter(Boolean));
  const invalidLocal=local.filter(x=>!x.version).map(x=>x.filename);
  const duplicates=local.filter((x,i)=>x.version&&local.findIndex(y=>y.version===x.version)!==i).map(x=>x.filename);
@@ -27,7 +28,7 @@ export function classifyMigrationDriftR27(localFiles,remoteMigrations){
  const renamed=localUnapplied.filter(x=>byName.has(x.name))
    .map(x=>({local:x.filename,remote_versions:byName.get(x.name)}));
  const wrongName=local.filter(x=>x.version&&byVersion.has(x.version)
-   &&byVersion.get(x.version).name!==x.name).map(x=>({
+   &&byVersion.get(x.version).name!==null&&byVersion.get(x.version).name!==x.name).map(x=>({
      local:x.filename,remote_name:byVersion.get(x.version).name
    }));
  const remoteNotLocallyVersioned=remote.filter(x=>!localVersions.has(x.version));
