@@ -6340,6 +6340,9 @@
       rows.find(x=>x.purchase_item_id&&!x.linked_product_id)||rows[0]||{};
     const options=state.xmlCatalogMatches||data.suggested_existing_products||[];
     const chosen=state.xmlCatalogChosenProduct||null;
+    const purchaseUnit=String(active.purchase_unit||'').trim().toUpperCase();
+    const itemHasBarcode=[active.commercial_gtin,active.tax_gtin].some(x=>/^\d{8,14}$/.test(String(x||'')));
+    const needsManualUnitReview=!itemHasBarcode||/^(KG|G|L|LT|LTS|M|MT|TON)$/.test(purchaseUnit);
     return '<div class="purchase-safe"><strong>Ficha de origem · '+esc(c.display_name||'Produto')+'</strong>'+
       '<small>Os campos abaixo vêm das NF-e. Para corrigir o cadastro é obrigatória uma confirmação humana.</small></div>'+
       '<div class="purchase-catalog-meta" style="margin:8px 0">'+
@@ -6367,6 +6370,8 @@
       (data.truncated?'<small class="sub">Exibindo até 60 observações mais recentes.</small>':'')+
       (active.linked_product_id?'<div class="purchase-safe"><strong>Item vinculado.</strong>'+
        '<small>Revisão de custo, preço e estoque permanece na tela operacional de Compras/XML.</small></div>':
+       needsManualUnitReview?'<div class="purchase-safe purchase-danger" style="margin-top:10px"><strong>Conferência de EAN/unidade necessária</strong>'+
+       '<small>Este XML não possui código de barras numérico ou utiliza unidade de peso/volume. Para não converter quilos em unidades ou associar códigos incorretos, faça a identificação na revisão operacional de Compras/XML. O item já está preservado no catálogo.</small></div>':
        '<div class="purchase-safe" style="margin-top:12px"><strong>Vincular ou cadastrar este item</strong>'+
         '<small>Confirme o que representa o EAN e a conversão da embalagem; nenhuma ação modifica estoque ou preço.</small>'+
         '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
@@ -6447,7 +6452,15 @@
     const chosen=state.xmlCatalogChosenProduct,role=String($('#xmlDetailRole')?.value||'');
     const factor=Number($('#xmlDetailFactor')?.value||0);
     if(!item?.purchase_item_id||item.linked_product_id){toast('Selecione um item não vinculado');return}
+    const unit=String(item.purchase_unit||'').trim().toUpperCase();
+    const barcodeOk=[item.commercial_gtin,item.tax_gtin].some(x=>/^\d{8,14}$/.test(String(x||'')));
+    if(!barcodeOk||/^(KG|G|L|LT|LTS|M|MT|TON)$/.test(unit)){
+      toast('Unidade de compra ou GTIN requer conferência operacional antes de vincular');return;
+    }
     if(!['base_unit','package'].includes(role)){toast('Defina se o EAN é da unidade ou da embalagem');return}
+    if(/^(CX|FD|FAR|FARDO|CAIXA|FDO)$/.test(unit)&&role!=='package'){
+      toast('A NF-e usa caixa/fardo: confirme a quantidade de unidades e selecione Embalagem');return;
+    }
     if(!Number.isInteger(factor)||factor<1||factor>100000||
        (role==='base_unit'&&factor!==1)||(role==='package'&&factor<=1)){
       toast('Confira o fator de conversão: unidade = 1; caixa/fardo exige mais de 1');return}
@@ -6463,7 +6476,7 @@
     try{
       await purchaseApi('resolve_item_identity',{item_id:item.purchase_item_id,
         product_id:createNew?null:chosen.id,create_new:createNew,
-        proposed_name:name,gtin_role:role,conversion_factor:factor});
+        proposed_name:name,gtin_role:role,conversion_factor:factor,catalog_evidence_only:true});
       toast(createNew?'Produto criado inativo':'Vínculo confirmado; estoque e preços não alterados');
       await loadXmlCatalog();if(state.xmlCatalogOpen&&key)await xmlCatalogDetailOpen(key);
     }catch(e){toast(errorMessage(e.message));if(button)button.disabled=false}
