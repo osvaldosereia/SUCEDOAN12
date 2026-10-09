@@ -6334,10 +6334,11 @@
   function xmlCatalogFiscalAlerts(observation){
     if(!observation?.linked_product_id)return '';
     const warnings=[];
-    if(observation.xml_ncm&&String(observation.xml_ncm)!==String(observation.linked_product_ncm||'')){
+    const fiscalCode=v=>String(v??'').replace(/\D/g,'');
+    if(observation.xml_ncm&&fiscalCode(observation.xml_ncm)!==fiscalCode(observation.linked_product_ncm)){
       warnings.push('NCM do XML diverge do cadastro');
     }
-    if(observation.xml_cest&&String(observation.xml_cest)!==String(observation.linked_product_cest||'')){
+    if(observation.xml_cest&&fiscalCode(observation.xml_cest)!==fiscalCode(observation.linked_product_cest)){
       warnings.push('CEST do XML diverge do perfil fiscal');
     }
     return warnings.length?
