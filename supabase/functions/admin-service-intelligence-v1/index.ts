@@ -4475,7 +4475,7 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
     if(!["invoice_generation_uncertain","invoice_generation_failed","invoice_authorization_failed"].includes(String(job.error_code)))continue;
     // The same failure is evaluated once daily. Changes to the job create a new key.
     const stamp=String(job.updated_at||"").slice(0,19);
-    const key=["fiscal-nfe-recovery",job.id,job.error_code,stamp,new Date().toISOString().slice(0,10)].join(":");
+    const key=["fiscal-nfe-recovery-v2",job.id,job.error_code,stamp,new Date().toISOString().slice(0,10)].join(":");
     const prior=await sb.from("fiscal_nfe_recovery_events_v1").select("id").eq("event_key",key).maybeSingle();
     if(prior.error)throw prior.error;
     if(prior.data)continue;
