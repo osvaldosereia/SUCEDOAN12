@@ -17,6 +17,9 @@ BEGIN
   d:=public.create_vitrine_cart_order_v3(null,'PIX',
      jsonb_build_array(jsonb_build_object('type','product','id',sku,'qty',2)));
   oid:=(d->>'order_id')::uuid;
+  IF d->>'order_number' IS DISTINCT FROM
+     (SELECT o.order_number FROM public.orders o WHERE o.id=oid)
+  THEN RAISE EXCEPTION 'checkout_response_order_number_differs_from_database: %',d; END IF;
   IF (d->>'total')::numeric IS DISTINCT FROM 100
      OR d->>'stock_reserved' IS DISTINCT FROM 'true'
      OR (SELECT quantity FROM public.vitrine_stock_reservations WHERE order_id=oid)<>2
@@ -31,6 +34,9 @@ BEGIN
       jsonb_build_object('component_group','hygiene','product_id',clean,'quantity',1))));
   d:=public.create_vitrine_cart_order_v3(null,'PIX',basket);
   oid:=(d->>'order_id')::uuid;
+  IF d->>'order_number' IS DISTINCT FROM
+     (SELECT o.order_number FROM public.orders o WHERE o.id=oid)
+  THEN RAISE EXCEPTION 'checkout_response_order_number_differs_from_database: %',d; END IF;
   IF (d->>'total')::numeric<>160
      OR (SELECT count(*) FROM public.basket_stock_allocations WHERE order_id=oid)<>2
      OR (SELECT count(*) FROM public.vitrine_stock_reservations WHERE order_id=oid)<>0
@@ -45,6 +51,9 @@ BEGIN
       jsonb_build_object('component_group','hygiene','product_id',clean,'quantity',1))));
   d:=public.create_vitrine_cart_order_v3(null,'PIX',basket);
   oid:=(d->>'order_id')::uuid;
+  IF d->>'order_number' IS DISTINCT FROM
+     (SELECT o.order_number FROM public.orders o WHERE o.id=oid)
+  THEN RAISE EXCEPTION 'checkout_response_order_number_differs_from_database: %',d; END IF;
   IF (d->>'total')::numeric<>110
      OR (SELECT count(*) FROM public.basket_stock_allocations WHERE order_id=oid)<>1
      OR (SELECT allocation_role FROM public.basket_stock_allocations WHERE order_id=oid)<>'hygiene'
@@ -60,6 +69,9 @@ BEGIN
           'product_id','00000000-0000-4000-8000-0000000000e4','quantity',1))));
   d:=public.create_vitrine_cart_order_v3(null,'PIX',mold);
   oid:=(d->>'order_id')::uuid;
+  IF d->>'order_number' IS DISTINCT FROM
+     (SELECT o.order_number FROM public.orders o WHERE o.id=oid)
+  THEN RAISE EXCEPTION 'checkout_response_order_number_differs_from_database: %',d; END IF;
   IF (d->>'total')::numeric<>105
      OR (SELECT other_expenses FROM public.orders WHERE id=oid)<>15
      OR (SELECT fiscal_subtotal FROM public.orders WHERE id=oid)<>90
