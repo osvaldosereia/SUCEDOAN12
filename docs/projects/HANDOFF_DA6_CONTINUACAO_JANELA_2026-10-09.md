@@ -99,3 +99,10 @@
 **Segurança e invariantes:** as sete provas de release continuam pendentes; `release_status=blocked` e `release_candidate_fingerprint=null`. Nada de impressora física, fotos de celular real, Edge/pg_net remoto ou rollback foi homologado. Não aplicar migrações em produção, não fazer merge do PR na main e não alterar estoque ou Bling via contagem histórica. A4 preservado. Automação horária DA6 permanece ativa.
 
 **Próximo checkpoint:** confirmar run #37976498877; se vermelho, identificar e corrigir somente regressões DA6. Se verde, atualizar manifesto `verified_software` com o run e contagem de testes, preservando os sete gates em `false`. Verificar SHA atual da main/PR antes de mais reconciliações. Aguardar homologações físicas e staging sem criar evidências fictícias.
+
+## 10. FECHAMENTO DA RODADA DE RECONCILIAÇÃO — CI FINAL VERDE
+
+- **EVIDÊNCIA MAIS RECENTE:** [DA6 CI #37976498877](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37976498877), commit fonte `eed26e1c1cdf40901404599a51e7956360cc6889`, **COMPLETED SUCCESS 6/6 jobs**: `deterministic-tests` **75 PASS, 0 FAIL**, `edge-types`, `postgres-review`, `postgres-upload`, `postgres-worker` e `local-supabase-storage` todos SUCCESS.
+- O manifesto `docs/projects/DA6_RELEASE_GATES_2026-10-09.json` foi atualizado no commit `9315e001c84b870ac1457cc2074cc6c1d6c5c8d1` com essa evidência, **sem modificar** os sete gates `passed:false`, `release_status:blocked` ou `release_candidate_fingerprint:null`.
+- As alterações de documentação posteriores ao commit testado não modificam o código da implementação nem o workflow. PR #987 continua **DRAFT / NÃO MESCLADO**; nenhum deploy/SQL/estoque/Bling foi alterado.
+- **Próximo responsável:** confira a `main` e o último HEAD do PR antes de agir. Se main avançou, repita conciliação cuidadosa; se não, avance exclusivamente homologação física/staging remoto seguro, backup/rollback e proteção de publicação. Não substitua as provas pendentes por testes sintéticos.
