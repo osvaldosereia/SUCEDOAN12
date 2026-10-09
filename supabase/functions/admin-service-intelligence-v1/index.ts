@@ -4578,7 +4578,13 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
       ||lastStage==="provider_temporary_retry"
       ||(lastStage==="worker_exception"&&/oauth_busy|timeout|429|503/i.test(String(lastEvent?.diagnostics?.error||"")));
     const intervalMs=transient?10*60000:4*3600000;
-    if(unchanged&&Date.now()-Date.parse(String(lastEvent.created_at))<intervalMs)continue;
+    // A newly discovered note reference changes the recovery facts even when
+    // the original error timestamp does not. Inspect it immediately exactly
+    // once, then resume the ordinary cooldown. This cannot submit a new NF-e.
+    const newlyLinkedInvoice=Number(job.bling_invoice_id||0)>0
+      &&Number(lastEvent?.diagnostics?.invoice_id||0)!==Number(job.bling_invoice_id);
+    if(unchanged&&!newlyLinkedInvoice
+      &&Date.now()-Date.parse(String(lastEvent.created_at))<intervalMs)continue;
     const stamp=String(job.updated_at||"").slice(0,19);
     const bucket=Math.floor(Date.now()/(5*60000));
     const key=["fiscal-nfe-recovery-v3",job.id,job.error_code,stamp,bucket].join(":");
