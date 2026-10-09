@@ -1579,7 +1579,8 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="xml_catalog_list")return js(req,await xmlCatalogList(body));
     if(action==="xml_catalog_progress")return js(req,await xmlCatalogProgress());
     if(action==="xml_catalog_reprocess"){
-      if(a.internal||a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      // Trusted hub requests may perform source-only recovery, but NEVER product, fiscal or stock writes.
+      if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
       const r=await xmlCatalogReprocess(body);return js(req,r,r.ok?200:400);
     }
 
