@@ -1,0 +1,135 @@
+name: Orders R10 - SEFAZ proof and dispatch gate (offline)
+on:
+  push:
+    branches: ['agent/orders-r10-*']
+  pull_request:
+    branches: ['agent/orders-r9-*',main]
+    paths:
+      - 'supabase/functions/_shared/order-fiscal-r9-observer-v1.mjs'
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
+      - 'supabase/functions/orders-r9-fiscal-observer-v1/index.ts'
+      - 'supabase/sql/orders-r9-fiscal-observation-contract-v1.sql'
+      - 'scripts/sql/orders-r9-*'
+      - 'scripts/test-orders-r9-fiscal-observer-v1.mjs'
+      - 'supabase/functions/_shared/order-fiscal-r10-sefaz-proof-v1.mjs'
+      - 'supabase/sql/orders-r10-sefaz-authorization-gate-v1.sql'
+      - 'scripts/sql/orders-r10-*'
+      - 'scripts/test-orders-r10-sefaz-proof-v1.mjs'
+      - '.github/workflows/orders-r9-fiscal-observer-ci.yml'
+permissions:
+  contents: read
+jobs:
+  observer:
+    name: R10 XML/SEFAZ proof, one-attempt gate and dispatch lock
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: orders_r9_synthetic
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres -d orders_r9_synthetic"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: orders_r9_synthetic
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      R9_FISCAL_OBSERVER_ENABLED: 'false'
+      ORDER_R10_SEFAZ_PROOF_ENABLED: 'false'
+      BLING_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+      META_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Guarantee all remote transports and R09 flag OFF
+        run: |
+          test "$R9_FISCAL_OBSERVER_ENABLED" = false
+          test "$ORDER_R10_SEFAZ_PROOF_ENABLED" = false
+          test "$BLING_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          test "$META_LIVE_ENABLED" = false
+      - name: Pure R09 worker and remote comparison tests
+        run: |
+          set -euo pipefail
+          node --check supabase/functions/_shared/order-fiscal-r9-observer-v1.mjs
+          node --check scripts/test-orders-r9-fiscal-observer-v1.mjs
+          node --test scripts/test-orders-r9-fiscal-observer-v1.mjs
+          node --check supabase/functions/_shared/order-fiscal-r10-sefaz-proof-v1.mjs
+          node --test scripts/test-orders-r10-sefaz-proof-v1.mjs
+          node --test scripts/test-orders-r8-fiscal-preflight-v1.mjs scripts/test-orders-r7-bling-reconciled-v1.mjs
+      - name: Install SQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client >/dev/null
+          fi
+      - name: Prepare real R02 separation, R06 receipts, R07 unique Bling claim
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-canonical-separation-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-canonical-separation-functions.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-hml-extra-fixtures.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r6-picked-manifest-contract-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r6-hml-assertions.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r7-bling-manifest-sync-contract-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r7-hml-assertions.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r9-hml-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r9-fiscal-observation-contract-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r9-hml-assertions.sql
+      - name: Concurrent observer workers must claim one order only
+        run: |
+          set -euo pipefail
+          SQL="select public.ops2_claim_fiscal_r9_observation_v1(1)::text;"
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" >/tmp/r9-claim-a.txt &
+          A=$!
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" >/tmp/r9-claim-b.txt &
+          B=$!
+          wait "$A"
+          wait "$B"
+          echo 'R09 worker A:'
+          cat /tmp/r9-claim-a.txt
+          echo 'R09 worker B:'
+          cat /tmp/r9-claim-b.txt
+          test "$(psql -Atc "select count(*) from public.order_fiscal_r9_observations_v1 where status='observing'")" = 1
+          test "$(psql -Atc "select count(*) from public.order_fiscal_r9_observations_v1 where status='observed_no_invoice'")" = 1
+          test "$(psql -Atc "select sum(attempts) from public.order_fiscal_r9_observations_v1")" = 2
+          cat /tmp/r9-claim-a.txt /tmp/r9-claim-b.txt | grep -c '"claim_token"' | grep -qx 1
+          # Expired lease permits a NEW GET ONLY. Old token must fail.
+          OID="$(psql -Atc "select order_id from public.order_fiscal_r9_observations_v1 where status='observing'")"
+          OLD="$(psql -Atc "select claim_token from public.order_fiscal_r9_observations_v1 where status='observing'")"
+          psql -v ON_ERROR_STOP=1 -c "update public.order_fiscal_r9_observations_v1 set lease_until=now()-interval '1 minute' where order_id='$OID'"
+          NEXT="$(psql -Atc "$SQL")"
+          echo "$NEXT" | grep -q '"claim_token"'
+          test "$(psql -Atc "select attempts from public.order_fiscal_r9_observations_v1 where order_id='$OID'")" = 2
+          psql -Atc "select public.ops2_finish_fiscal_r9_observation_v1('$OID','$OLD','uncertain','{}'::jsonb,'network_timeout')" | grep -q 'r9_claim_token_mismatch'
+          # Unknown result can be observed by GET again; no NF-e operations.
+          NEW="$(psql -Atc "select claim_token from public.order_fiscal_r9_observations_v1 where order_id='$OID'")"
+          psql -Atc "select public.ops2_finish_fiscal_r9_observation_v1('$OID','$NEW','uncertain','{}'::jsonb,'network_timeout')" | grep -q '"status": "uncertain"'
+          psql -v ON_ERROR_STOP=1 -c "update public.order_fiscal_r9_observations_v1 set next_check_at=now()-interval '1 minute' where order_id='$OID'"
+          psql -Atc "$SQL" | grep -q '"claim_token"'
+          echo 'PASS: no duplicate claims, timed-out GET can safely recheck, obsolete token rejected'
+      - name: No invoice was created by R09
+        run: |
+          set -euo pipefail
+          test "$(psql -Atc "select count(*) from public.order_fiscal_r9_observations_v1")" = 2
+          test "$(psql -Atc "select count(*) from public.order_fiscal_r9_observations_v1 where status='observed_no_invoice'")" = 1
+          git diff --check
+
+      - name: R10 existing dispatch outbox and SEFAZ evidence - ONLY synthetic records
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r10-hml-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r10-sefaz-authorization-gate-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r10-hml-assertions.sql
+          test "$(psql -Atc "select count(*) from public.order_fiscal_r10_authorization_evidence_v1")" = 1
+          echo 'PASS: same outbox, no duplicate SEFAZ proof, before-dispatch authorization required'
