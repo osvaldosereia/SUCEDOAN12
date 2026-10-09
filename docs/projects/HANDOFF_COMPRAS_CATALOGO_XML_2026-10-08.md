@@ -108,3 +108,41 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 > Continuar o projeto **Dona Antônia — Compras e Catálogo XML** no repositório `osvaldosereia/SUCEDOAN12`, Supabase `ssbesxgaijknwsjbsbcz`. Leia **inteiramente este HANDOFF** no GitHub antes de programar. Consulte a `main` atual e o runtime Supabase, não use branch desatualizada para sobrescrever correções. O catálogo usa exclusivamente XML de NF-e importado do Bling ou enviado manualmente; nada de Cosmos, SI5, pesquisa externa, novas automações ou alteração automática de produtos, preços, fiscal e estoque. Faça primeiro auditoria/CI/teste ponta a ponta das funções já publicadas; depois corrija pendências e implemente revisão campo a campo com aprovação humana. Trabalhe em branch agent/* nova, faça commits atômicos e reporte o que foi testado e publicado.
 
 **Este documento é um checkpoint, não autorização para considerar o projeto concluído.**
+
+## Checkpoint R18 — 09/10/2026 — consolidação das oito PRs (integração de código concluída em branch)
+
+**Branch canônica desta rodada:** `agent/xml-catalog-consolidation-r18-20261009`, derivada da `main` `8d2e187fa3d7a15111cfe1504786e213e9d7b2cf`. **PR draft [#997](https://github.com/osvaldosereia/SUCEDOAN12/pull/997)**. As PRs originais permanecem abertas; não houve merge na `main`.
+
+### Conteúdo consolidado e decisões sobre conflitos
+
+1. **#980:** comparador NCM/CEST/EAN, implementado no módulo separado e inserido no backend e no detalhe do Admin como **somente leitura**.
+2. **#983:** auditoria de erros de catálogo, resolução de falhas após releitura, painel e confirmação manual. Arquivo de migração pré-existente na PR copiado ao repositório da branch, mas **não executado** nesta rodada.
+3. **#986:** histórico paginado (60 por solicitação), botão Carregar mais, descarte de resposta obsoleta, deduplicação e carregamento lazy.
+4. **#989:** extratores NF-e idênticos exigindo chave do próprio documento e protocolo SEFAZ coerente.
+5. **#990:** ledger SQL de propostas/decisões e histórico **apenas em `docs/projects/`**; sem criar tabelas no Supabase.
+6. **#992:** gateway humano com papel owner/admin, identidade do operador extraída do autenticador, proposta/decisão por campo e interface lazy no Admin.
+7. **#993:** protótipo de aplicação nominal CAS e rollback preservado como documentação/teste, **não implantar isoladamente**.
+8. **#995:** versão substitutiva com bloqueio de produtos ativos em prévia, aplicação e rollback, igualmente **somente SQL de proposta**, sem endpoint executor.
+
+**Conflitos resolvidos:** dois `purchase-xml-v1/index.ts` reconstituídos e sincronizados byte a byte, incorporando as quatro alterações concorrentes da API; `vitrine/admin/index.html` recomposta com histórico, comparação, erro de catálogo e revisão no mesmo detalhe; os dois parsers, dois comparadores e os dois gateways também são espelhos idênticos. Testes originais de renderização isolada adaptados para incluir os helpers adicionais presentes após a integração, sem alterar seu comportamento operacional.
+
+**Proteção de precisão adicionada na R18:** como o comparador #980 trabalha somente com as primeiras 60 evidências da paginação #986, a API expõe `comparison_scope` e a interface avisa explicitamente **Comparação PARCIAL** quando existir mais histórico. Não afirmar que uma comparação parcial representa todas as NF-e.
+
+### Testes realizados de verdade
+
+- [CI final XML Catalog R18 Consolidation — run 37934816543](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37934816543): **3/3 jobs concluídos em success**, incluindo verificação de tipos `deno check` de AMBOS os backends XML completos, verificados pelo resultado dos jobs:
+  - `source-and-ui`: **11 scripts Node PASS** (catálogo, comparador, falhas, paginação, ficha legada, revisão/auditoria, autenticação, interface, CAS/rollback estático e limites do gateway).
+  - `real-parser`: Deno + `fast-xml-parser` real: **PASS** na coerência de chave/protocolo e rejeição XML malformado/DTD.
+  - `transactional-ledger`: PostgreSQL 17 em container **descartável**: **PASS** para autorização de proposta, aplicação e reversão apenas de produto inativo, compare-and-swap, idempotência, trilha auditável e bloqueios.
+- Primeiras tentativas de CI falharam porque fixtures de UI em isolamento não incluíam todos os helpers após a integração. Correções realizadas, regressão reexecutada até a CI verde. Isso **não** equivale a validação ponta a ponta do Admin em produção.
+
+### Runtime e segurança (somente leitura)
+
+- Supabase canônico `ssbesxgaijknwsjbsbcz`: **90** documentos XML, **214** itens declarados e catalogados, **0** faltantes e **0** falhas de catalogação registradas.
+- Auditoria: `purchase_xml_catalog_ingest_errors_v1` e `purchase_xml_catalog_observations_v1` com RLS habilitado; views de falhas e detalhes com `security_invoker=true`; sem leitura direta `anon`/`authenticated` nos objetos examinados.
+- `purchase_xml_field_reviews_v1` e `purchase_xml_field_applications_v1` continuam **ausentes** em produção. Edge Admin ainda v230 (`verify_jwt=false`, autenticação interna), stage XML v10; não houve publicação.
+- **Zero ações operacionais reais:** nenhuma modificação em produtos, estoque, preços, atributos fiscais, financeiro, Bling, vitrine, cron; nenhuma migração, deploy ou merge.
+
+### Estado e próxima rodada
+
+**R18 concluída quanto à consolidação de código e regressão integrada em CI; PR #997 permanece draft e não publicada.** Avançar para **R19**: homologar Bling/upload manual apenas sob controle, NF-e reais/anônimas de teste, XML sem protocolo, malformado, lote >10 MB, hash/privacidade/idempotência, consulta da origem e regressão do fluxo financeiro **sem operações fiscais/comerciais reais**. Depois R20 (histórico integral/compilação de comparação além de 60, UI), R21 (vinculação/cadastro inativo), R22–R27 (ledger/atores, aplicação controlada, fiscal, E2E e publicação com gates). Não integrar PRs individuais sobre a PR consolidada sem reconciliar SHAs e CI.

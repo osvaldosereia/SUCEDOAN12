@@ -1,6 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractCatalogFromNfe } from "./xml-catalog-extractor.mjs";
+import { xmlFieldReviewGateway } from "./xml-catalog-field-review-gateway.mjs";
+import { catalogXmlComparison } from "./xml-catalog-comparison.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -761,7 +763,9 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   // A malformed external XML cannot block existing purchase/finance processing.
   try{
     await persistXmlCatalogEvidence(documentId,p.document_key,xml,hash);
+    await resolveXmlCatalogFailure(documentId);
   }catch(e){
+    await recordXmlCatalogFailure(documentId,e);
     console.warn("xml_catalog_observation_deferred",clean((e as Error)?.message||e,160));
   }
   let matched=0,review=0,created=0;
@@ -1296,6 +1300,23 @@ async function docDetail(id:string){
 // Read-only reporting and on-demand, idempotent re-reading of original private XMLs.
 // Never calls Bling, never changes products, prices, NCM master or stock.
 // Used by both new purchases and historical re-reads; extracts evidence only.
+// Record a non-blocking catalog error so no NF-e is silently dropped from review.
+async function recordXmlCatalogFailure(documentId:string,error:unknown){
+  const details=clean((error as Error)?.message||String(error)||"catalog_processing_failed",400)||"catalog_processing_failed";
+  const at=new Date().toISOString();
+  const audit=await sb.from("purchase_xml_catalog_ingest_errors_v1").upsert({
+    document_id:documentId,error_code:"xml_catalog_processing_failed",
+    error_message:details,last_failed_at:at,resolved_at:null
+  },{onConflict:"document_id"});
+  if(audit.error)console.error("xml_catalog_failure_audit_unavailable",audit.error.message);
+}
+async function resolveXmlCatalogFailure(documentId:string){
+  const audit=await sb.from("purchase_xml_catalog_ingest_errors_v1")
+    .update({resolved_at:new Date().toISOString()})
+    .eq("document_id",documentId).is("resolved_at",null);
+  if(audit.error)console.warn("xml_catalog_failure_resolution_not_recorded",audit.error.message);
+}
+
 async function persistXmlCatalogEvidence(documentId:string,documentKey:string,xml:string,hash:string){
       const parsed=extractCatalogFromNfe(xml,documentKey);
       if(parsed.items.length>5000)throw new Error("xml_item_limit");
@@ -1404,23 +1425,32 @@ async function xmlCatalogCandidateDetail(body:any){
   const key=clean(body?.candidate_key,210);
   if(!key||! /^(?:gtin:|tax_gtin:|supplier:|unidentified:)/.test(key))
     return {ok:false,status:400,error:"invalid_candidate_key"};
+  const offset=Math.max(0,Math.min(100000,Math.trunc(Number(body?.offset)||0)));
+  const limit=60;
   const candidate=await sb.from("purchase_xml_catalog_candidates_v1")
     .select("candidate_key,display_name,gtin,tax_gtin,last_observed_ncm,last_observed_cest,last_purchase_unit,observations_count,distinct_invoices,suppliers_count,ncm_variations,cest_variations,matched_product_variations,linked_product_id,xml_verified,first_seen,last_seen,review_status")
     .eq("candidate_key",key).maybeSingle();
   if(candidate.error)throw candidate.error;
   if(!candidate.data)return {ok:false,status:404,error:"candidate_not_found"};
   const evidence=await sb.from("purchase_xml_catalog_observation_details_v2")
-    .select("observation_id,document_id,item_number,purchase_item_id,linked_product_id,linked_product_name,linked_product_gtin,linked_product_ncm,linked_product_cest,linked_product_active,issued_at,supplier_name,supplier_document,source,catalog_only,xml_description,supplier_item_code,commercial_gtin,tax_gtin,xml_ncm,xml_cest,xml_cfop,purchase_unit,purchase_quantity,purchase_unit_price,line_total,net_line_total,tax_unit,tax_quantity,lot_traces,source_state,conversion_status,conversion_factor,item_status")
+    .select("observation_id,document_id,item_number,purchase_item_id,linked_product_id,linked_product_name,linked_product_gtin,linked_product_ncm,linked_product_cest,linked_product_active,issued_at,supplier_name,supplier_document,source,catalog_only,xml_description,supplier_item_code,commercial_gtin,tax_gtin,xml_ncm,xml_cest,xml_cfop,purchase_unit,purchase_quantity,purchase_unit_price,line_total,net_line_total,tax_unit,tax_quantity,lot_traces,source_state,conversion_status,conversion_factor,item_status",{count:"exact"})
     .eq("candidate_key",key)
     .order("issued_at",{ascending:false,nullsFirst:false})
     .order("document_id",{ascending:true}).order("item_number",{ascending:true})
-    .limit(60);
+    .range(offset,offset+limit-1);
   if(evidence.error)throw evidence.error;
   // Product identity suggestions are read-only and require an operator decision.
   const gtin=clean(candidate.data.gtin||candidate.data.tax_gtin,24);
   const suggestions=gtin?await searchPurchaseProducts({query:gtin}):{ok:true,items:[]};
-  return {ok:true,readonly:true,candidate:candidate.data,observations:evidence.data||[],
-    truncated:Number(candidate.data.observations_count||0)>60,
+  const observations=evidence.data||[];
+  const total=Number(evidence.count??candidate.data.observations_count??0);
+  const hasMore=total>offset+observations.length;
+  return {ok:true,readonly:true,candidate:candidate.data,observations,
+    offset,limit,total_observations:total,has_more:hasMore,
+    next_offset:hasMore?offset+observations.length:null,truncated:hasMore,
+    field_comparisons:catalogXmlComparison(evidence.data||[]),
+    comparison_scope:{kind:"loaded_page_only",compared_observations:observations.length,
+      total_observations:total,partial:total>observations.length},
     suggested_existing_products:Array.isArray(suggestions.items)?suggestions.items:[],
     can_auto_match:false,can_auto_apply_fiscal:false,can_auto_move_stock:false};
 }
@@ -1446,6 +1476,11 @@ async function xmlCatalogProgress(){
   const q=await sb.from("purchase_xml_catalog_reconciliation_v1")
     .select("document_id,declared_items,items_staged,observations_captured,xml_verified_items,missing_staging_items,missing_observations,catalog_readiness").limit(5000);
   if(q.error)throw q.error;
+  // Only the Admin can read this service-role-only view.
+  const failures=await sb.from("purchase_xml_catalog_ingest_failures_v1")
+    .select("document_id,error_code,error_message,last_failed_at,supplier_name,source",
+      {count:"exact"}).order("last_failed_at",{ascending:false}).limit(15);
+  if(failures.error)throw failures.error;
   const docs=q.data||[];
   const add=(field:string)=>docs.reduce((a:number,d:any)=>a+Number(d?.[field]||0),0);
   return {ok:true,documents:docs.length,declared_items:add("declared_items"),
@@ -1455,6 +1490,8 @@ async function xmlCatalogProgress(){
     missing_catalog_observations:add("missing_observations"),
     documents_verified:docs.filter((d:any)=>d.catalog_readiness==="complete_from_xml").length,
     documents_still_incomplete:docs.filter((d:any)=>d.catalog_readiness==="incomplete").length,
+    catalog_ingest_failures:failures.count||0,
+    catalog_recent_failures:failures.data||[],
     readonly:true};
 }
 async function xmlCatalogReprocess(body:any){
@@ -1482,6 +1519,7 @@ async function xmlCatalogReprocess(body:any){
       const hash=await sha256(xml);
       if(d.content_sha256&&hash!==d.content_sha256)throw new Error("xml_hash_mismatch");
       const parsed=await persistXmlCatalogEvidence(d.id,d.document_key,xml,hash);
+      await resolveXmlCatalogFailure(d.id);
       const existing=await sb.from("purchase_xml_items").select("item_number").eq("document_id",d.id);
       if(existing.error)throw existing.error;
       const seen=new Set((existing.data||[]).map((x:any)=>Number(x.item_number)));
@@ -1511,6 +1549,7 @@ async function xmlCatalogReprocess(body:any){
         items_declared:Number(d.item_count||0),new_staged_items:missing.length,
         count_mismatch:parsed.items.length!==Number(d.item_count||0)});
     }catch(e){
+      await recordXmlCatalogFailure(d.id,e);
       result.push({document_id:d.id,ok:false,error:clean((e as Error)?.message||e,200)});
     }
   }
@@ -1738,6 +1777,12 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
       return js(req,r,r.ok?200:Number(r.status||400));
     }
     if(action==="xml_catalog_progress")return js(req,await xmlCatalogProgress());
+    // Decision ledger only. JWT + active Admin role are checked by auth(req).
+    // The gateway rejects internal keys and all non-owner/admin sessions.
+    if(["xml_field_review_list","xml_field_review_open","xml_field_review_decide"].includes(action)){
+      const r=await xmlFieldReviewGateway(sb,action,body,a);
+      return js(req,r,r.ok?200:Number(r.status||400));
+    }
     if(action==="xml_catalog_reprocess"){
       // Trusted hub requests may perform source-only recovery, but NEVER product, fiscal or stock writes.
       if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);

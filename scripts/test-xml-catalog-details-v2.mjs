@@ -26,7 +26,8 @@ assert.match(resolve,/xml_catalog_outer_pack_role_required/);
 assert.match(resolve,/xml_catalog_gtin_linked_to_another_product/);
 assert.match(resolve,/xml_catalog_identifier_conflict/);
 assert.match(resolve,/stock:0,is_active:false/);
-const start=admin.indexOf("  function xmlCatalogDetailMarkup(");
+const start=Math.min(admin.indexOf("  function xmlCatalogFieldReviewMarkup("),
+  admin.indexOf("  // Read-only: comparisons are evidence"));
 const end=admin.indexOf("  function bindXmlCatalog(){",start);
 assert.ok(start>0&&end>start);
 const src=admin.slice(start,end);
