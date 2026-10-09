@@ -14,6 +14,7 @@ on:
     branches:
       - main
       - 'agent/orders-r1-*'
+      - 'agent/orders-r2-*'
     paths:
       - 'scripts/sql/orders-r2-hml-*.sql'
       - 'scripts/sql/orders-r2-canonical-*.sql'
