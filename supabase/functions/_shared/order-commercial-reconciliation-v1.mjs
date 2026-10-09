@@ -17,7 +17,7 @@ const kind = row => String(row?.metadata?.history_kind ?? row?.history_kind ?? "
 const stockLoose = (row, sep) => {
   const q = quantity(sep.quantity);
   if (q === null) return null;
-  if (kind(row) !== "basket_component") return q;
+  if (!["basket_component","basket_mold_component"].includes(kind(row))) return q;
   const preassembled = quantity(row.metadata?.preassembled_units ?? 0);
   return preassembled === null || preassembled > q ? null : Math.max(0, q - preassembled);
 };
