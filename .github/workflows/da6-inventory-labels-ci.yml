@@ -190,3 +190,38 @@ jobs:
         env:
           NODE_PATH: /tmp/da6-pg/node_modules
         run: node --test tests/da6-worker-concurrency.test.cjs
+
+
+  local-supabase-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Subir Supabase LOCAL em diretório descartável
+        run: |
+          mkdir -p /tmp/da6-supabase-ci
+          cd /tmp/da6-supabase-ci
+          supabase init
+          supabase start -x studio,realtime,analytics,vector,inbucket,imgproxy
+          supabase status -o env >> "$GITHUB_ENV"
+      - name: Preparar schema DA6 isolado para Auth, Storage e PostgREST
+        run: |
+          psql -v ON_ERROR_STOP=1 "$DB_URL" \
+            -f tests/da6-local-supabase-bootstrap.sql \
+            -f supabase/migrations/20261009112000_da6_worker_queue_rpc.sql \
+            -f supabase/migrations/20261009133000_da6_worker_dispatch_cron_v1.sql \
+            -f supabase/migrations/20261009150000_da6_upload_atomic_reservation_v1.sql \
+            -f supabase/migrations/20261009140500_da6_manual_review_audit_v1.sql
+      - name: Upload assinado REAL 10, 50, 100 e leitura pelo worker após fechar navegador
+        run: deno test --allow-net --allow-env --allow-read --node-modules-dir=auto tests/da6-local-supabase-e2e.test.ts
+      - name: Parar e destruir contêineres da homologação
+        if: always()
+        run: |
+          cd /tmp/da6-supabase-ci
+          supabase stop --no-backup || true
