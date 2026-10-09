@@ -46,7 +46,8 @@ export async function compareCandidateFullHistory(sb,candidateKey,{
       seen.add(id);rows.push(row);
     }
     offset+=fetched.length;
-    if(!fetched.length||fetched.length<take&&offset<total){endedEarly=true;break;}
+    if(!fetched.length){if(offset<total)endedEarly=true;break;}
+    if(fetched.length<take&&offset<total){endedEarly=true;break;}
   }
   if(rows.length!==Math.min(total??0,cap))unstable=true;
   const partial=unstable||endedEarly||offset<(total??0);
