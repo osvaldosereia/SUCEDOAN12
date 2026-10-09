@@ -1750,6 +1750,9 @@ async function applyItemUpdate(body:any,userId:string|null){
   if(!Number.isFinite(factor)||factor<=0)factor=pack.packaged?0:1;
   if(pack.packaged&&factor<=1)return {ok:false,status:409,error:"packaging_factor_must_be_greater_than_one"};
   if(factor<1||factor>100000)return {ok:false,status:400,error:"invalid_conversion"};
+  const proposedName=clean(body?.proposed_name,300);
+  if(proposedName&&proposedName!==String(product.name||""))
+    return {ok:false,status:409,error:"existing_product_name_preserved"};
   const qty=Number(item.purchase_quantity||0),baseQty=qty*factor;
   const meta=obj(item.metadata);let net=Number(meta.net_line_total);
   if(!Number.isFinite(net)||net<=0)net=Number(item.line_total);
@@ -1772,9 +1775,6 @@ async function applyItemUpdate(body:any,userId:string|null){
   const pmeta={...obj(product.metadata),purchase_catalog_review_required:false,last_purchase_catalog_approval_at:now,last_purchase_catalog_document_key:doc.document_key,last_purchase_catalog_item_id:id,last_purchase_conversion_factor:factor,last_purchase_supplier:doc.supplier_name||null,last_purchase_unit_cost:baseCost};
   // R2: Existing product names and sales tax profiles are never overwritten
   // by the supplier's incoming invoice. Keep XML NCM as evidence for review.
-  const proposedName=clean(body?.proposed_name,300);
-  if(proposedName&&proposedName!==String(product.name||""))
-    return {ok:false,status:409,error:"existing_product_name_preserved"};
   const upd:any={unit:"UN",supplier:doc.supplier_name||product.supplier||null,metadata:pmeta,last_admin_edit_at:now,last_admin_edit_by:userId,updated_at:now};
   if(updateCost)upd.cost=baseCost;
   if(updateSale)upd.price=Math.round(salePrice*100)/100;
