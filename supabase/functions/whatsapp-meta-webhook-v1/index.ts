@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { redactWebhookPayload } from "../_shared/whatsapp-core-v1.mjs";
 import { classifyCustomerConfirmation } from "../_shared/ana-customer-confirmation-v1.mjs";
+import { metaOrderConfirmationCandidate, markSignedMetaOrderConfirmation } from "../_shared/order-meta-confirmation-v1.mjs";
 import {
   extractMetaPhoneNumberIds,
   hasMetaMessageOrStatusEvents,
@@ -235,6 +236,22 @@ async function enqueueAnaForInbound(message: any, ingestResult: any) {
   return true;
 }
 
+// Called ONLY after verifyMetaSignature(rawBody,...) and canonical persistence.
+// SQL independently cross-checks outbound WAMID, account and conversation.
+async function applyOrderMetaConfirmation(candidate: any, ingestResult: any) {
+  if (!candidate || !ingestResult?.message_id) return false;
+  const result = await db.rpc("ops2_apply_order_meta_confirmation_v1", {
+    p_inbound_message_id: ingestResult.message_id,
+  });
+  if (result.error) throw new Error("order_meta_confirmation_rpc_failed: " + errorText(result.error));
+  if (result.data?.ok === false) {
+    console.warn("order_meta_confirmation_rejected", String(result.data.error || "invalid").slice(0,120));
+    return false;
+  }
+  return result.data?.matched === true
+    && (result.data?.applied === true || result.data?.duplicate === true);
+}
+
 async function applyCustomerConfirmationSignal(message: any, ingestResult: any) {
   if (message?.event_type !== "message.received" || message?.message?.direction !== "inbound" || !ingestResult?.message_id) return null;
 
@@ -432,9 +449,14 @@ Deno.serve(async (req: Request) => {
     let echoesNormalized = 0;
     let echoesDuplicates = 0;
     let anaConfirmationsApplied = 0;
+    let orderMetaConfirmationsApplied = 0;
     let anaJobsQueued = 0;
     for (const message of normalized.messages) {
-      const result = await persistMessage(message, normalized.payloadHash, safePayload);
+      // Meta HMAC was checked above. Persist the server-attested button proof
+      // before executing the confirmation RPC. Plain text never qualifies.
+      const orderButton = metaOrderConfirmationCandidate(message, { signatureVerified: true });
+      const canonicalMessage = markSignedMetaOrderConfirmation(message, orderButton);
+      const result = await persistMessage(canonicalMessage, normalized.payloadHash, safePayload);
       const isEcho = message?.message?.direction === "outbound" && message?.message?.metadata?.source_event === "smb_message_echoes";
       if (isEcho) {
         if (result?.duplicate === true) echoesDuplicates += 1;
@@ -443,9 +465,13 @@ Deno.serve(async (req: Request) => {
         if (result?.duplicate === true) inboundDuplicates += 1;
         else inboundNormalized += 1;
       }
-      const confirmation = await applyCustomerConfirmationSignal(message, result);
-      if (confirmation?.ok === true) anaConfirmationsApplied += 1;
-      if (await enqueueAnaForInbound(message, result)) anaJobsQueued += 1;
+      const customerOrderConfirmed = await applyOrderMetaConfirmation(orderButton, result);
+      if (customerOrderConfirmed) orderMetaConfirmationsApplied += 1;
+      if (!customerOrderConfirmed) {
+        const confirmation = await applyCustomerConfirmationSignal(message, result);
+        if (confirmation?.ok === true) anaConfirmationsApplied += 1;
+        if (await enqueueAnaForInbound(message, result)) anaJobsQueued += 1;
+      }
     }
 
     let statusesCaptured = 0;
@@ -465,6 +491,7 @@ Deno.serve(async (req: Request) => {
       echoes_normalized: echoesNormalized,
       echoes_duplicates: echoesDuplicates,
       ana_confirmations_applied: anaConfirmationsApplied,
+      order_meta_confirmations_applied: orderMetaConfirmationsApplied,
       ana_jobs_queued: anaJobsQueued,
       statuses_captured: statusesCaptured,
       statuses_recorded: statusesRecorded,
