@@ -18,8 +18,15 @@ async function sha256(file){
  return Array.from(new Uint8Array(d),x=>x.toString(16).padStart(2,'0')).join('');
 }
 async function uploadSigned({signed_url,file}){
- if(!/^https:\/\//i.test(String(signed_url||'')))throw Error('Endereço de upload inválido');
- const r=await fetch(signed_url,{method:'PUT',headers:{'Content-Type':file.type,'x-upsert':'false'},body:file});
+ const u=new URL(String(signed_url||''));
+ if(u.protocol!=='https:'||u.hostname!=='ssbesxgaijknwsjbsbcz.supabase.co'||
+  !u.pathname.startsWith('/storage/v1/object/upload/sign/inventory-label-photos/')||!u.searchParams.get('token'))
+  throw Error('Endereço de upload inválido');
+ // O Storage JS envia arquivos Blob em multipart PUT, com cacheControl; siga o mesmo contrato.
+ const form=new FormData();
+ form.append('cacheControl','3600');
+ form.append('',file);
+ const r=await fetch(u.toString(),{method:'PUT',headers:{'x-upsert':'false'},body:form});
  if(!r.ok)throw Error('Armazenamento não confirmou o upload (HTTP '+r.status+').');
 }
 async function submit(files,services){
