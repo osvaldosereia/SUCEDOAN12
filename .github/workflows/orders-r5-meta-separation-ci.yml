@@ -84,6 +84,6 @@ jobs:
         run: |
           set -euo pipefail
           test "$(psql -Atc 'select count(*) from public.order_meta_confirmations_v1')" = 2
-          test "$(psql -Atc 'select count(*) from public.orders where status='''ready'''')" = 1
+          test "$(psql -Atc "select count(*) from public.orders where status='ready'")" = 1
       - name: Diff hygiene
         run: git diff --check
