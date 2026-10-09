@@ -137,6 +137,16 @@ test("R06 respects preassembled basket kit stock; consumes only loose residual",
   assert.deepEqual(v.snapshot.expected_loose_stock,[{product_id:"product-rice",quantity:1}]);
 });
 
+test("R06 protects fixed cleaning-kit stock with basket_mold_component too",()=>{
+  const d=fixture();
+  d.orderItems[0].metadata.history_kind="basket_mold_component";
+  d.orderItems[0].metadata.preassembled_units=2;
+  d.reservations[0].quantity=1;
+  const v=reconcile(d);
+  assert.equal(v.ok,true,JSON.stringify(v));
+  assert.deepEqual(v.snapshot.expected_loose_stock,[{product_id:"product-rice",quantity:1}]);
+});
+
 test("R06 optional gate is OFF and only protects final snapshot before Bling hub",()=>{
   const source=fs.readFileSync("supabase/functions/admin-products-live-v1/index.ts","utf8");
   assert.match(source,/ORDER_R6_FINAL_SNAPSHOT_GUARD_ENABLED/);
