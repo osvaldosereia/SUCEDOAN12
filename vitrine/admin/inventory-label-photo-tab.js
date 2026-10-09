@@ -5,7 +5,7 @@ const $=(sel,where=document)=>where.querySelector(sel);
 const bridge=()=>root.DonaAntoniaAdminBridge;
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const names={uploading:'Enviando',queued:'Na fila',processing:'Lendo',retry:'Nova tentativa',complete:'Lida',needs_review:'Revisar',failed:'Falhou'};
-let active=false,currentBatch=null,pollTimer=null,busy=false;
+let active=false,currentBatch=null,pollTimer=null,busy=false,statusSeq=0;
 // Preserva a visibilidade dos componentes A4 ao alternar para fotografias.
 const previouslyHidden=new WeakMap();
 function call(action,body){return bridge().api(action,{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
@@ -13,6 +13,7 @@ function toast(s){bridge()?.toast?.(s)}
 function host(){return $('#da6-photo-panel')}
 function headingOK(){return String($('#content .page-head h1')?.textContent||'').trim()==='Balanço'}
 function setMode(photos){
+ statusSeq++; // invalida respostas antigas ao trocar entre balanço A4 e fotos
  const wasActive=active;
  active=photos;
  const panel=host(),controls=$('#da6-balance-modes');if(!panel||!controls)return;
@@ -42,7 +43,9 @@ function renderProgress(snapshot){
 }
 async function refreshStatus(){
  if(!active||!headingOK()||!currentBatch)return;
- const r=await bridge().api('inventory_label_batch_status',{batch_id:currentBatch});
+ const requestedBatch=currentBatch,requestSeq=++statusSeq;
+ const r=await bridge().api('inventory_label_batch_status',{batch_id:requestedBatch});
+ if(!active||!headingOK()||currentBatch!==requestedBatch||requestSeq!==statusSeq)return;
  const el=$('#da6-batch-details');if(!el)return;
  // Não destruir digitação em andamento por causa do polling automático.
  if(el.contains(document.activeElement)&&document.activeElement?.matches?.('[data-da6-quantity],[data-da6-note]'))return;
@@ -78,8 +81,9 @@ async function refreshStatus(){
  window.DonaAntoniaLabelReview?.bind(el,bridge(),refreshStatus);
 }
 async function loadBatches(){
- if(!active)return;
+ if(!active||!headingOK())return;
  const r=await bridge().api('inventory_label_batches');
+ if(!active||!headingOK())return;
  const select=$('#da6-batch-select');if(!select)return;
  const batches=r.batches||[];
  select.innerHTML='<option value="">Selecione um lote</option>'+batches.map(x=>
@@ -143,7 +147,7 @@ function mount(){
  modes.querySelectorAll('[data-da6-mode]').forEach(btn=>btn.onclick=()=>setMode(btn.dataset.da6Mode==='photos'));
  $('#da6-send').onclick=onSubmit;
  $('#da6-refresh').onclick=()=>loadBatches().catch(e=>toast(e.message));
- $('#da6-batch-select').onchange=e=>{currentBatch=e.target.value||null;refreshStatus().catch(e=>toast(e.message))};
+ $('#da6-batch-select').onchange=e=>{statusSeq++;currentBatch=e.target.value||null;refreshStatus().catch(e=>toast(e.message))};
  $('#da6-resume-batch').onchange=e=>{
   if(e.target.checked&&!currentBatch){
    e.target.checked=false;toast('Primeiro selecione um lote existente.');
