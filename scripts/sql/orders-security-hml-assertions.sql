@@ -13,6 +13,8 @@ BEGIN
   OR has_table_privilege('authenticated',c.oid,'TRIGGER')
   OR has_table_privilege('anon',c.oid,'REFERENCES')
   OR has_table_privilege('authenticated',c.oid,'REFERENCES')
+  OR has_table_privilege('anon',c.oid,'MAINTAIN')
+  OR has_table_privilege('authenticated',c.oid,'MAINTAIN')
  );
  IF num_bad<>0 THEN RAISE EXCEPTION 'unsafe legacy privileges remain: %',num_bad; END IF;
  IF NOT has_table_privilege('authenticated','public.dispatch_fiscal_jobs','SELECT')
@@ -39,10 +41,12 @@ BEGIN
        has_table_privilege('anon',c.oid,'REFERENCES') OR
        has_table_privilege('authenticated',c.oid,'REFERENCES') OR
        has_table_privilege('anon',c.oid,'TRIGGER') OR
-       has_table_privilege('authenticated',c.oid,'TRIGGER'));
+       has_table_privilege('authenticated',c.oid,'TRIGGER') OR
+       has_table_privilege('anon',c.oid,'MAINTAIN') OR
+       has_table_privilege('authenticated',c.oid,'MAINTAIN'));
  IF bad IS NOT NULL THEN RAISE EXCEPTION 'unsafe default privileges on new tables: %',bad; END IF;
 END $future_acl$;
 
 -- Validating idempotent replay makes the contract safe to reapply in an
 -- isolated migration staging environment. This SQL is NOT deployed.
-SELECT 'PASS: TRUNCATE/TRIGGER/REFERENCES restricted, normal access preserved, dangerous defaults disabled' result;
+SELECT 'PASS: TRUNCATE/TRIGGER/REFERENCES/MAINTAIN restricted, normal access preserved, dangerous defaults disabled' result;
