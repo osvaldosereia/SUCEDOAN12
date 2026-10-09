@@ -30,8 +30,8 @@ export function auditXmlReleaseR26({localFiles,remoteMigrations,verifiedGates={}
    errors.push("canonical_separation_migration_not_versioned");
  if(local.some(x=>x.startsWith(OLD_DUPLICATE+"_separation_ready_reservation_idempotence")))
    errors.push("duplicate_separation_migration_must_not_replay");
- const identities=local.filter(x=>x.includes("purchase_xml_identity_atomic_r23.sql"));
- const fields=local.filter(x=>x.includes("purchase_xml_field_approval_r24.sql"));
+ const identities=local.filter(x=>x.includes("purchase_xml_identity_atomic_r27.sql"));
+ const fields=local.filter(x=>x.includes("purchase_xml_field_approval_r27.sql"));
  if(identities.length!==1||fields.length!==1)
    errors.push("r23_r24_expected_exactly_once");
  const identityVersion=identities.length===1?versionOf(identities[0]):"";
