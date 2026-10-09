@@ -29,8 +29,15 @@ async function sha256(file){
 }
 async function uploadSigned({signed_url,file}){
  const u=new URL(String(signed_url||''));
- if(u.protocol!=='https:'||u.hostname!=='ssbesxgaijknwsjbsbcz.supabase.co'||
-  !u.pathname.startsWith('/storage/v1/object/upload/sign/inventory-label-photos/')||!u.searchParams.get('token'))
+ const official=u.protocol==='https:'&&u.hostname==='ssbesxgaijknwsjbsbcz.supabase.co'&&u.port==='';
+ // Integração local descartável para testes: somente o próprio localhost/porta.
+ // Em produção, location não é localhost e o destino permanece restrito ao projeto canônico.
+ const location=root.location;
+ const local=location&&['127.0.0.1','localhost'].includes(location.hostname)
+  &&u.hostname===location.hostname&&u.host===location.host&&u.protocol==='http:';
+ if(!(official||local)||
+  !u.pathname.startsWith('/storage/v1/object/upload/sign/inventory-label-photos/')||
+  !u.searchParams.get('token'))
   throw Error('Endereço de upload inválido');
  // O Storage JS envia arquivos Blob em multipart PUT, com cacheControl; siga o mesmo contrato.
  const form=new FormData();
