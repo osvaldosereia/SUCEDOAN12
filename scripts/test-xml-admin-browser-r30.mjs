@@ -23,7 +23,7 @@ const authentic=[
   'async function xmlCatalogFiscalLoad()',
   'function xmlCatalogDetailBind()'
 ].map(realFunction).join('\n\n');
-const fixture=String.raw\`
+const fixture=String.raw`
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={
@@ -84,7 +84,7 @@ function xmlCatalogDetailRefresh(){
 function testBoot(){xmlCatalogDetailRefresh()}
 window.__xmlTest={state,calls,testBoot,setActive(v){active=Boolean(v)},
   wasApplied(){return applied}};
-\`;
+`;
 const browser=await chromium.launch({headless:true});
 try{
   for(const viewport of [{width:1366,height:900},{width:390,height:844}]){
