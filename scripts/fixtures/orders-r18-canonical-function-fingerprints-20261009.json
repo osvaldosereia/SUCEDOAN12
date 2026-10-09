@@ -1,0 +1,385 @@
+{
+  "title": "R18 canonical trigger function fingerprints (no definitions)",
+  "captured_on": "2026-10-09",
+  "production_changes": false,
+  "contains_business_data": false,
+  "scope": "29 distinct functions called by 30 triggers of 11 critical orders tables",
+  "limit": "pg_depend may not expose PL/pgSQL runtime table/function references; zero catalog_dependencies does NOT mean self-contained",
+  "functions": [
+    {
+      "schema": "private",
+      "function": "order_addon_orders_close_trigger_v1",
+      "args": "",
+      "function_md5": "d9ed785eb0ed480285c26b3345ac190c",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "private",
+      "function": "order_addon_separation_close_trigger_v1",
+      "args": "",
+      "function_md5": "5c49a3b59769fd76e9cda2a978a703fd",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "private",
+      "function": "set_updated_at",
+      "args": "",
+      "function_md5": "257d3997a7b75f77ac9e115af709285a",
+      "security_definer": false,
+      "settings": [
+        "search_path=public, pg_temp"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "enforce_order_dispatch_fiscal_gate_trigger_v1",
+      "args": "",
+      "function_md5": "35a10032db6461d24a47c36e6c592f85",
+      "security_definer": true,
+      "settings": [
+        "search_path=public, pg_temp"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "enforce_storefront_checkout_basics_v1",
+      "args": "",
+      "function_md5": "130c195af7cd313e22547ceb8f83a1e7",
+      "security_definer": false,
+      "settings": [
+        "search_path=public"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "marketing_attribute_order_trigger_v1",
+      "args": "",
+      "function_md5": "85d7576ef4d2b464ff988be53c4c2bbf",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "marketing_repurchase_order_trigger_v1",
+      "args": "",
+      "function_md5": "a008fe226800c85fcfab1670dd5eb735",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_attendance_orders_refresh_delivery_labels_trigger_v1",
+      "args": "",
+      "function_md5": "8db8ac3339de79d4a3405f3097b5384e",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_attendance_product_interest_item_trigger_v1",
+      "args": "",
+      "function_md5": "aa3f1786b461980bac4dfaf51399f6b1",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_attendance_product_interest_order_trigger_v1",
+      "args": "",
+      "function_md5": "d54b4e92489139c716e0e7cb2164e65d",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_enqueue_storefront_order_whatsapp_v1",
+      "args": "",
+      "function_md5": "a8debe7f01286befbbe7083275390edc",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_guard_dispatch_fiscal_job_v1",
+      "args": "",
+      "function_md5": "f3d154dfb7b97206d8c9dd0b7d8c455a",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_order_delivery_number_fill_v1",
+      "args": "",
+      "function_md5": "cbf366f75b91494a43b369efc0f737a1",
+      "security_definer": false,
+      "settings": [],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_order_item_public_snapshot_trigger_v1",
+      "args": "",
+      "function_md5": "26427d1196a995edce24c01ffb8a02d4",
+      "security_definer": true,
+      "settings": [
+        "search_path=public, pg_temp"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_order_registration_journey_trigger_v1",
+      "args": "",
+      "function_md5": "65cc932f46cea5eff71bc4a96ca419c9",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_orders_ensure_site_customer_v1",
+      "args": "",
+      "function_md5": "ca3650ad0279935d6d2ddd0f131d9cb3",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_refresh_storefront_order_whatsapp_v1",
+      "args": "",
+      "function_md5": "b52387dcba91a5999ddc52d6f9f8b52b",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops2_require_separator_completion_v4",
+      "args": "",
+      "function_md5": "01ba81ac2e9e516133369b8808445a2f",
+      "security_definer": true,
+      "settings": [
+        "search_path=public, pg_temp"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops_enforce_delivery_payment_before_delivered_v1",
+      "args": "",
+      "function_md5": "3ba3d64d21fea4c947fbea0a14b054e5",
+      "security_definer": false,
+      "settings": [
+        "search_path=public"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops_enforce_order_check_before_ready_v1",
+      "args": "",
+      "function_md5": "1dfd77dcc784e6d803665605df240a98",
+      "security_definer": false,
+      "settings": [
+        "search_path=public"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops_sync_delivery_payment_fiscal_trigger_v1",
+      "args": "",
+      "function_md5": "6268976e0ecfbc6a85705b92df3bb1ff",
+      "security_definer": true,
+      "settings": [
+        "search_path=public, pg_temp"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "ops_sync_delivery_stop_from_order_trigger_v1",
+      "args": "",
+      "function_md5": "b7308e7c28fc5a8cc55a7c829a5c4843",
+      "security_definer": false,
+      "settings": [
+        "search_path=public"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "set_updated_at",
+      "args": "",
+      "function_md5": "63f977f8e2e3db6a119fcbe248bf3314",
+      "security_definer": false,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "smart_delivery_guard_route_resequence_v1",
+      "args": "",
+      "function_md5": "d685f9727c74f33adf97ac9a8aec7379",
+      "security_definer": false,
+      "settings": [
+        "search_path=pg_catalog, public"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "sync_basket_allocations_from_order_status_v1",
+      "args": "",
+      "function_md5": "2a768e40c63ff7dadeea4b6d27757fdf",
+      "security_definer": false,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "sync_vitrine_order_stock_reservation_v1",
+      "args": "",
+      "function_md5": "5480d1c2ed4310e2af0cf83434616b54",
+      "security_definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "trg_snapshot_order_hidden_adjustment_v1",
+      "args": "",
+      "function_md5": "135141669c8df2c0343e6a12ac313635",
+      "security_definer": true,
+      "settings": [
+        "search_path=public, pg_temp"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "vitrine_stock_reservation_lot_delete_v1",
+      "args": "",
+      "function_md5": "7d3ce30b2b8a95492c3b7bab99f3bf15",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    },
+    {
+      "schema": "public",
+      "function": "vitrine_stock_reservation_lot_sync_v1",
+      "args": "",
+      "function_md5": "7fda61d0444fc453b5ad3ee3d65318c8",
+      "security_definer": true,
+      "settings": [
+        "search_path=public"
+      ],
+      "result_type": "trigger",
+      "owner": "postgres",
+      "catalog_dependencies": []
+    }
+  ]
+}
