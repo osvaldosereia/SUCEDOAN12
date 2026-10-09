@@ -76,22 +76,22 @@ jobs:
       - uses: supabase/setup-cli@v3
         with:
           version: 2.84.2
-      - name: Use Supabase CLI to create canonical migration (test workspace only)
+      - name: Verify committed CLI migration and prevent duplicate historical application
         run: |
           set -eu
           supabase migration new --help
-          supabase migration new purchase_xml_identity_atomic_r23
-          migration_file="$(find supabase/migrations -maxdepth 1 -name '*_purchase_xml_identity_atomic_r23.sql' | sort | tail -1)"
-          test -n "$migration_file"
-          cp docs/projects/purchase-xml-identity-release-candidate-r22.sql "$migration_file"
-          echo "R23_GENERATED_MIGRATION=$migration_file"
-          sha256sum "$migration_file"
+          migration_file="supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql"
+          test -s "$migration_file"
+          test -s supabase/migrations/20261009035359_purchase_xml_ingest_error_audit_v5.sql
           test ! -e supabase/migrations/20261009085000_purchase_xml_ingest_error_audit_v5.sql
-      - name: Apply generated migration to disposable PostgreSQL with real lot trigger
+          diff -u <(tail -n +3 docs/projects/purchase-xml-identity-release-candidate-r22.sql) <(tail -n +3 "$migration_file")
+          echo "R23_COMMITTED_CLI_MIGRATION=$migration_file"
+          sha256sum "$migration_file"
+      - name: Apply committed migration to disposable PostgreSQL with real lot trigger
         run: |
           set -eu
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-client
-          migration_file="$(find supabase/migrations -maxdepth 1 -name '*_purchase_xml_identity_atomic_r23.sql' | sort | tail -1)"
+          migration_file="supabase/migrations/20261009145919_purchase_xml_identity_atomic_r23.sql"
           sed "s#docs/projects/purchase-xml-identity-release-candidate-r22.sql#$migration_file#" scripts/test-xml-catalog-identity-production-schema-r22.pg.sql >/tmp/xml-r23-postgres-integration.sql
           psql -v ON_ERROR_STOP=1 -f /tmp/xml-r23-postgres-integration.sql
