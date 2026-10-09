@@ -6485,9 +6485,9 @@
         '<small>Confirme o que representa o EAN e a conversão da embalagem; nenhuma ação modifica estoque ou preço.</small>'+
         '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
         '<label>EAN de origem<select id="xmlDetailGtinSource"><option value="">Escolha o EAN…</option>'+
-        (typeof active.commercial_gtin==='string'&&/^\\d{8,14}$/.test(active.commercial_gtin)?
+        (typeof active.commercial_gtin==='string'&&/^\d{8,14}$/.test(active.commercial_gtin)?
           '<option value="commercial">EAN comercial: '+esc(active.commercial_gtin)+'</option>':'')+
-        (typeof active.tax_gtin==='string'&&/^\\d{8,14}$/.test(active.tax_gtin)?
+        (typeof active.tax_gtin==='string'&&/^\d{8,14}$/.test(active.tax_gtin)?
           '<option value="tax">EAN tributável: '+esc(active.tax_gtin)+'</option>':'')+
         '</select></label>'+
         '<label>Tipo do EAN<select id="xmlDetailRole"><option value="">Escolha…</option>'+
