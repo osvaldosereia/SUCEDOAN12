@@ -397,6 +397,8 @@ jobs:
           PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
             -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
           PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-checkout-gate-assertions.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
             -f scripts/sql/orders-r2-baskets-kit-mold-assertions.sql
           test "$(PGDATABASE=$DB psql -Atc "select count(*) from public.orders")" = 7
           echo 'PASS: real basket availability (categories, assembly, linked stock, component health) combined with live v3 checkout and kits'
