@@ -4,7 +4,7 @@ const content=readFileSync(new URL("../docs/projects/purchase-xml-field-apply-in
 const fixture=readFileSync(new URL("./fixtures/xml-field-review-ledger-r14.sql",import.meta.url),"utf8");
 const test=readFileSync(new URL("./test-xml-field-integrated-r17.pg.sql",import.meta.url),"utf8");
 const rules=[
- /-- R17 PROPOSAL: NOT A MIGRATION/,
+ /-- R17 INTEGRATION DRAFT: NOT A MIGRATION/,
  /p_confirmation is distinct from 'APLICAR_NOME_APROVADO_XML'/,
  /p_confirmation is distinct from 'REVERTER_NOME_APLICADO_XML'/,
  /v\.status<>'approved' or v\.field_name<>'name'/,
@@ -40,8 +40,8 @@ assert.match(test,/active_preview_must_be_readonly_blocked/);
 assert.match(test,/live_name_updated_without_storefront_gate/);
 assert.match(test,/rollback_changed_active_product/);
 
-assert.match(test,/\i scripts\/fixtures\/xml-field-review-ledger-r14\.sql/);
-assert.match(test,/\i docs\/projects\/purchase-xml-field-apply-inactive-only-r17.sql/);
+assert.match(test,/\\i scripts\/fixtures\/xml-field-review-ledger-r14\.sql/);
+assert.match(test,/\\i docs\/projects\/purchase-xml-field-apply-inactive-only-r17\.sql/);
 let denied=0;
 for(const replacement of ["update public.products set stock=0;","update public.product_fiscal_profiles set ncm='0';",
  "grant execute on function public.purchase_xml_apply_field_review_v1(uuid,integer,uuid,text) to authenticated;"]){
