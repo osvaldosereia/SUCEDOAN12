@@ -48,13 +48,14 @@ function mountedCard(row){
       fields.insertBefore(select,fields.querySelector('[data-mobile-product-status]'));
       ensureGondolas().then(()=>{
         const original=row.querySelector('[data-shelf-gondola]');if(!original?.isConnected)return;
-        const opts=gondolas.filter(x=>x.active!==false).map(x=>Number(x.number)).filter(n=>n>0&&n<=30);
+        const opts=[...new Set(gondolas.filter(x=>x.active!==false).map(x=>Number(x.number)).filter(n=>Number.isInteger(n)&&n>=1&&n<=9999))];
+        // Gôndolas 1–30 permanecem disponíveis para cadastro rápido; as demais são carregadas do servidor.
         for(let n=1;n<=30;n++)if(!opts.includes(n))opts.push(n);
         opts.sort((a,b)=>a-b);
         original.innerHTML='<option value="">Sem gôndola</option>'+opts.map(n=>'<option value="'+n+'">Gôndola '+n+'</option>').join('');
         api('product_detail',{id}).then(detail=>{
           const val=String(detail.product?.gondola_number||'');
-          if(val&&!opts.includes(Number(val))){original.add(new Option('Gôndola '+val+' (edição na aba Gôndolas)',val));}
+          if(val&&!opts.includes(Number(val))){original.add(new Option('Gôndola '+val,val));}
           original.value=val;
           original.dataset.savedValue=val;
         }).catch(()=>{});
