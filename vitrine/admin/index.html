@@ -5674,6 +5674,12 @@
           '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
         '</div>'+
       '</details>'+
+      '<section class="panel" style="margin:0 0 12px;padding:12px">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">'+
+          '<div><strong>Catalogar XML sem cadastrar produtos</strong><div class="sub" style="margin-top:3px">Armazena todos os itens e dados fiscais para revisão. Não movimenta estoque, não altera produtos e não lança financeiro.</div></div>'+
+          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Enviar XMLs ao catálogo</button>'+
+        '</div><input id="purchaseXmlCatalogOnlyInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
+      '</section>'+
       '<div id="purchaseBody"><div class="loading">Carregando compras…</div></div>';
     $('#refreshPurchases').onclick=loadPurchases;
     $('#purchasePeriod').onchange=async e=>{
@@ -5692,6 +5698,8 @@
     $('#purchaseXmlSingle').onclick=()=>{$('#purchaseXmlInput').multiple=false;$('#purchaseXmlInput').click()};
     $('#purchaseXmlBatch').onclick=()=>{$('#purchaseXmlInput').multiple=true;$('#purchaseXmlInput').click()};
     $('#purchaseXmlInput').onchange=e=>importPurchaseXmlFiles([...e.target.files]);
+    $('#purchaseXmlCatalogOnly').onclick=()=>$('#purchaseXmlCatalogOnlyInput').click();
+    $('#purchaseXmlCatalogOnlyInput').onchange=e=>importCatalogOnlyXmlFiles([...e.target.files]);
     syncPurchasePeriodControls();
     await loadPurchases();
   }
@@ -6265,6 +6273,123 @@
     finally{if(b){b.disabled=false;b.textContent='Preparar baixa'}}
   }
 
+  // XML Catalog V1: lightweight, explicitly opened; never preloads with purchases.
+  function xmlCatalogSectionHtml(){
+    const open=Boolean(state.xmlCatalogOpen);
+    return '<section class="panel" style="margin:12px 0;padding:14px">'+
+      '<div class="history-title dispatch-head"><div><strong>Catálogo histórico dos XMLs</strong>'+
+      '<span>Todos os produtos identificados nas notas, inclusive sem cadastro. Abrir não altera cadastro nem estoque.</span></div>'+
+      '<button class="secondary" id="xmlCatalogToggle" type="button">'+(open?'Fechar catálogo':'Abrir catálogo histórico')+'</button></div>'+
+      '<div id="xmlCatalogBody" style="display:'+(open?'block':'none')+'">'+
+      (open?xmlCatalogDisplayHtml():'')+'</div></section>';
+  }
+  function xmlCatalogStatusLabel(s){
+    return ({not_linked:'Ainda não cadastrado',identity_conflict:'Identidade divergente',
+      fiscal_conflict:'Revisão de NCM',cest_conflict:'Revisão de CEST',
+      linked_reviewable:'Vinculado · conferir'}[s]||'A conferir');
+  }
+  function xmlCatalogDisplayHtml(){
+    const d=state.xmlCatalogData||{},progress=state.xmlCatalogProgress||{};
+    const items=Array.isArray(d.items)?d.items:[],offset=Number(state.xmlCatalogOffset||0);
+    return '<div class="purchase-safe" style="margin:8px 0">'+
+       '<strong>Fonte: XMLs do Bling ou enviados manualmente</strong>'+
+       '<small>Esta área cataloga o que aparece na NF-e sem criar vendas, alterar NCM, custo, preço, estoque ou contas.</small></div>'+
+      '<div class="purchase-catalog-summary" style="margin:10px 0;flex-wrap:wrap">'+
+       '<span><b>'+esc(progress.documents||0)+'</b> notas</span>'+
+       '<span><b>'+esc(progress.declared_items||0)+'</b> itens declarados</span>'+
+       '<span><b>'+esc(progress.catalog_observations||0)+'</b> observações</span>'+
+       '<span><b>'+esc(progress.verified_from_xml||0)+'</b> verificadas no XML</span>'+
+       '<span><b>'+esc(progress.missing_staging_items||0)+'</b> faltam na fila</span>'+
+      '</div>'+
+      '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
+       '<input type="search" id="xmlCatalogSearch" placeholder="Buscar nome ou EAN" value="'+esc(state.xmlCatalogSearch||'')+'" style="min-width:180px;flex:1;max-width:420px">'+
+       '<select id="xmlCatalogFilter"><option value="">Todos</option>'+
+       [['not_linked','Sem cadastro'],['fiscal_conflict','Conflito NCM'],['cest_conflict','Conflito CEST'],['identity_conflict','Conflito de identidade'],['linked_reviewable','Vinculados']]
+       .map(([k,v])=>'<option value="'+k+'" '+(state.xmlCatalogFilter===k?'selected':'')+'>'+v+'</option>').join('')+'</select>'+
+       '<button type="button" class="secondary" id="xmlCatalogSearchButton">Buscar</button>'+
+       '<button type="button" class="secondary" id="xmlCatalogReprocess">Conferir próximos XMLs</button>'+
+      '</div>'+
+      (state.xmlCatalogBusy?'<div class="loading">Lendo os documentos…</div>':'')+
+      '<div class="sub" style="margin:8px 0">Exibindo '+esc(items.length)+' de '+esc(d.total||0)+' produtos candidatos. A leitura histórica ocorre somente ao clicar.</div>'+
+      (items.length?'<div class="purchase-catalog-list">'+items.map(x=>
+       '<div class="purchase-catalog-card"><div class="purchase-item-title">'+
+       '<div><strong>'+esc(x.display_name||'Produto sem descrição')+'</strong>'+
+       '<small>EAN '+esc(x.gtin||x.tax_gtin||'não informado')+
+       ' · NCM observado '+esc(x.last_observed_ncm||'—')+
+       ' · CEST observado '+esc(x.last_observed_cest||'—')+'</small></div>'+
+       '<span class="pill '+(x.review_status==='linked_reviewable'?'':'warn')+'">'+
+       esc(xmlCatalogStatusLabel(x.review_status))+'</span></div>'+
+       '<div class="purchase-catalog-meta"><span><b>'+esc(x.observations_count||0)+'</b> observação(ões)</span>'+
+       '<span><b>'+esc(x.suppliers_count||0)+'</b> fornecedor(es)</span>'+
+       '<span><b>'+esc(x.distinct_invoices||0)+'</b> nota(s)</span>'+
+       '<span>Último XML: '+esc(x.last_seen?dateOnly(String(x.last_seen).slice(0,10)):'—')+'</span>'+
+       (x.xml_verified?'<span>Origem XML conferida</span>':'<span>Releitura do XML pendente</span>')+
+       '</div></div>').join('')+'</div>':
+       '<div class="empty">Nenhum produto encontrado neste filtro.</div>')+
+      '<div class="bling-actions" style="justify-content:flex-end;margin:12px 0 0">'+
+       '<button type="button" class="secondary" id="xmlCatalogPrev" '+(offset<=0?'disabled':'')+'>Anterior</button>'+
+       '<button type="button" class="secondary" id="xmlCatalogNext" '+(offset+items.length>=Number(d.total||0)?'disabled':'')+'>Próximos produtos</button>'+
+      '</div>';
+  }
+  function bindXmlCatalog(){
+    const toggle=$('#xmlCatalogToggle');
+    if(toggle)toggle.onclick=async()=>{
+      state.xmlCatalogOpen=!state.xmlCatalogOpen;
+      const host=$('#xmlCatalogBody');
+      if(host)host.style.display=state.xmlCatalogOpen?'block':'none';
+      if(toggle)toggle.textContent=state.xmlCatalogOpen?'Fechar catálogo':'Abrir catálogo histórico';
+      if(state.xmlCatalogOpen)await loadXmlCatalog();
+    };
+    bindXmlCatalogInner();
+  }
+  function bindXmlCatalogInner(){
+    const host=$('#xmlCatalogBody');if(!host||!state.xmlCatalogOpen)return;
+    const search=$('#xmlCatalogSearch'),filter=$('#xmlCatalogFilter');
+    if(search)search.onchange=e=>state.xmlCatalogSearch=e.target.value;
+    if(filter)filter.onchange=e=>state.xmlCatalogFilter=e.target.value;
+    const go=$('#xmlCatalogSearchButton');
+    if(go)go.onclick=async()=>{
+      state.xmlCatalogSearch=String(search?.value||'');state.xmlCatalogFilter=String(filter?.value||'');
+      state.xmlCatalogOffset=0;await loadXmlCatalog();
+    };
+    const prev=$('#xmlCatalogPrev');if(prev)prev.onclick=async()=>{
+      state.xmlCatalogOffset=Math.max(0,Number(state.xmlCatalogOffset||0)-30);await loadXmlCatalog();
+    };
+    const next=$('#xmlCatalogNext');if(next)next.onclick=async()=>{
+      state.xmlCatalogOffset=Number(state.xmlCatalogOffset||0)+30;await loadXmlCatalog();
+    };
+    const reprocess=$('#xmlCatalogReprocess');
+    if(reprocess)reprocess.onclick=async()=>{
+      if(!confirm('Ler até 3 XMLs originais e recuperar somente itens ausentes da fila de revisão? Nenhum produto, preço, estoque ou dado do Bling será alterado.'))return;
+      reprocess.disabled=true;reprocess.textContent='Conferindo XMLs…';
+      try{
+        const offset=Number(state.xmlCatalogScanOffset||0);
+        const r=await purchaseApi('xml_catalog_reprocess',{limit:3,offset});
+        state.xmlCatalogScanOffset=Number(r.next_offset||offset);
+        const recovered=(r.results||[]).reduce((n,x)=>n+Number(x.new_staged_items||0),0);
+        const failed=(r.results||[]).filter(x=>!x.ok).length;
+        toast('XMLs: '+Number(r.processed||0)+' conferidos · '+recovered+' itens recuperados'+(failed?' · '+failed+' erros':''));
+        await loadXmlCatalog();
+      }catch(e){toast(errorMessage(e.message));reprocess.disabled=false;reprocess.textContent='Conferir próximos XMLs'}
+    };
+  }
+  async function loadXmlCatalog(){
+    const host=$('#xmlCatalogBody');if(!host||!state.xmlCatalogOpen)return;
+    host.innerHTML='<div class="loading">Carregando catálogo de XMLs…</div>';
+    try{
+      const values=await Promise.all([
+        purchaseApi('xml_catalog_list',{limit:30,offset:Number(state.xmlCatalogOffset||0),
+          search:state.xmlCatalogSearch||'',status:state.xmlCatalogFilter||''}),
+        purchaseApi('xml_catalog_progress')
+      ]);
+      state.xmlCatalogData=values[0];state.xmlCatalogProgress=values[1];
+      host.innerHTML=xmlCatalogDisplayHtml();bindXmlCatalogInner();
+    }catch(e){
+      host.innerHTML='<div class="empty">Não foi possível carregar o catálogo XML. <button class="secondary" id="xmlCatalogRetry">Tentar novamente</button></div>';
+      if($('#xmlCatalogRetry'))$('#xmlCatalogRetry').onclick=loadXmlCatalog;
+    }
+  }
+
   function paintPurchases(){
     const host=$('#purchaseBody');if(!host)return;
     const d=state.purchaseXml||{},docs=Array.isArray(d.documents)?d.documents:[],reviews=Array.isArray(d.review_items)?d.review_items:[],runs=Array.isArray(d.runs)?d.runs:[],settings=d.settings||{},integration=d.integration||{};
@@ -6292,6 +6417,7 @@
         '<div class="bling-card"><small>Prontas para estoque</small><strong>'+ready+'</strong><span class="sub">aguardam sua confirmação</span></div>'+
       '</div>'+
       purchaseCatalogQueueHtml()+
+      xmlCatalogSectionHtml()+
       purchasePaymentConfigHtml()+
       ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento interrompido corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto a partir dos itens já gravados.':'')+'</small></div>':'')+
       (last?'<div class="bling-banner"><strong>'+esc(runSource)+' · '+esc(runStatus)+'</strong><small>'+dateTime(last.started_at||last.created_at)+' · '+esc(last.documents_processed||0)+' nova(s) · '+esc(last.documents_duplicate||0)+' já existente(s) · '+esc(last.documents_failed||0)+' falha(s)'+(last.items_review?' · '+esc(last.items_review)+' item(ns) para revisar':'')+'</small></div>':'')+
@@ -6322,6 +6448,7 @@
         reviews.map(x=>'<div class="purchase-review"><div class="history-main"><strong>'+esc(x.description||'Produto')+'</strong><small>'+esc(x.processing_status||'')+'</small></div><div><strong>'+esc(fmtQty(x.purchase_quantity||0))+'</strong><span class="sub">'+esc(x.purchase_unit||'')+'</span></div><div><strong>'+esc(x.conversion_factor||'—')+'</strong><span class="sub">fator</span></div><div><strong>'+purchaseMaybeMoney(x.purchase_unit_price)+'</strong><span class="sub">compra</span></div><div><button class="secondary" type="button" data-purchase-conversion="'+esc(x.id)+'">Definir conversão</button></div></div>').join('')+
       '</section>':'');
     bindPurchaseCatalogQueue();
+    bindXmlCatalog();
     host.querySelectorAll('[data-purchase-toggle]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,a,input,label'))return;togglePurchaseDocument(row.dataset.purchaseToggle)});
     host.querySelectorAll('[data-purchase-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();togglePurchaseDocument(b.dataset.purchaseOpen,true)});
     host.querySelectorAll('[data-purchase-xml]').forEach(b=>b.onclick=e=>{e.stopPropagation();downloadPurchaseXml(b.dataset.purchaseXml)});
@@ -6346,6 +6473,28 @@
     }catch(e){toast(errorMessage(e.message))}
     finally{if(b){b.disabled=false;b.textContent='Buscar e importar notas'}}
   }
+  async function importCatalogOnlyXmlFiles(files){
+    const input=$('#purchaseXmlCatalogOnlyInput');if(input)input.value='';
+    const valid=(files||[]).filter(f=>/\.xml$/i.test(f.name)||/xml/i.test(f.type||''));
+    if(!valid.length){toast('Selecione arquivos XML');return}
+    if(!confirm('Catalogar '+valid.length+' XML(s) sem cadastrar produtos, alterar estoque, custos, NCM ou financeiro?'))return;
+    const button=$('#purchaseXmlCatalogOnly');
+    if(button){button.disabled=true;button.textContent='Catalogando XMLs…'}
+    let ok=0,dup=0,fail=0,items=0;
+    try{
+      for(let i=0;i<valid.length;i+=5){
+        const part=valid.slice(i,i+5),payload=[];
+        for(const file of part)payload.push({name:file.name,xml:await file.text()});
+        const r=await purchaseApi('xml_catalog_only_import',{files:payload});
+        ok+=Number(r.processed||0);dup+=Number(r.duplicates||0);
+        fail+=Number(r.failed||0);items+=Number(r.items||0);
+      }
+      toast('Catálogo: '+ok+' nota(s), '+items+' itens'+(dup?' · '+dup+' repetida(s)':'')+(fail?' · '+fail+' erro(s)':''));
+      await loadPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+    finally{if(button){button.disabled=false;button.textContent='Enviar XMLs ao catálogo'}}
+  }
+
   async function importPurchaseXmlFiles(files){
     if(!files?.length)return;
     const input=$('#purchaseXmlInput');if(input)input.value='';

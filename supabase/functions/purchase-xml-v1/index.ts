@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { extractCatalogFromNfe } from "./xml-catalog-extractor.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -679,14 +680,34 @@ async function reconcilePendingFinance(limit=50){
   }
   return {ok:true,write_external:false,count:results.length,results};
 }
+// Every XML item must survive even when its identity is not known.
+function stagedReviewItem(documentId:string,item:any,status:"review_required"|"failed",reason:string){
+  return {
+    document_id:documentId,item_number:item.item_number,
+    supplier_item_code:item.supplier_item_code,description:item.description,
+    commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,
+    ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,
+    purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,
+    purchase_unit_price:item.purchase_unit_price,line_total:item.line_total,
+    base_unit:unit(item.tax_unit||item.purchase_unit)||"UN",
+    conversion_status:"review_required",processing_status:status,
+    match_method:status==="failed"?"processing_failed":reason,
+    metadata:{reason,identity_state:"unresolved",identity_reason:reason,
+      gtin_role:inferredPurchaseGtinRole(item),net_line_total:item.net_line_total,
+      item_discount:item.item_discount,item_freight:item.item_freight,
+      item_insurance:item.item_insurance,item_other:item.item_other,
+      tax_unit:item.tax_unit,tax_quantity:item.tax_quantity,
+      lot_traces:Array.isArray(item.lot_traces)?item.lot_traces:[]}
+  };
+}
 async function processXml(token:string,xml:string,source:string,runId:string|null,sourceId:string|null=null,blingId:number|null=null,detailSupplement:any=null){
   const p:any=parseXml(xml);
   if(!p.installments.length&&Array.isArray(detailSupplement?.parcelas))p.installments=detailSupplement.parcelas.map((x:any,i:number)=>({number:String(i+1),due_date:day(x?.data||x?.vencimento),amount:num(x?.valor)})).filter((x:any)=>x.due_date&&Number(x.amount)>0);if(p.document_key.length!==44)throw new Error("invalid_nfe_access_key");
   if(p.cstat&&![100,150].includes(p.cstat))throw new Error("nfe_not_authorized_"+p.cstat);
   const hash=await sha256(xml);
-  const ex=await sb.from("purchase_xml_documents").select("id,processing_status,financial_eligible,finance_status,bling_nfe_id").eq("document_key",p.document_key).maybeSingle();
+  const ex=await sb.from("purchase_xml_documents").select("id,processing_status,financial_eligible,finance_status,bling_nfe_id,metadata").eq("document_key",p.document_key).maybeSingle();
   if(ex.error)throw ex.error;
-  if(ex.data?.id&&["processed","duplicate"].includes(ex.data.processing_status)){
+  if(ex.data?.id&&(["processed","duplicate"].includes(ex.data.processing_status)||ex.data.metadata?.catalog_only===true)){
     if(blingId&&!ex.data.bling_nfe_id)await sb.from("purchase_xml_documents").update({bling_nfe_id:blingId,updated_at:new Date().toISOString()}).eq("id",ex.data.id);
     let financeStatus=ex.data.finance_status;
     if(ex.data.financial_eligible===true&&financeStatus!=="posted"){
@@ -703,11 +724,25 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   const contact=await ensureContact(token,p);
   const docUp=await sb.from("purchase_xml_documents").upsert({import_run_id:runId,source,source_document_id:sourceId,bling_nfe_id:blingId,document_key:p.document_key,content_sha256:hash,storage_path:storagePath,issued_at:p.issued_at,supplier_document:p.supplier_document,supplier_name:p.supplier_name,supplier_bling_contact_id:contact.id||null,recipient_document:p.recipient_document,recipient_kind:p.recipient_kind,financial_eligible:eligible,finance_status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":p.recipient_kind==="CNPJ"&&!company?"pending_company_match":"not_applicable",receipt_status:"not_received",processing_status:"processing",total_amount:p.total_amount,item_count:p.items.length,metadata:{invoice_number:p.invoice_number,series:p.series,company_document:company||null,contact_created:Boolean(contact.created),installments:p.installments,payments:p.payments||[],payment_summary:p.payment_summary||{},source_mode:source},updated_at:new Date().toISOString()},{onConflict:"document_key"}).select("id").single();
   if(docUp.error)throw docUp.error;const documentId=docUp.data.id;
+  // Event-driven cataloging: no scheduler, no product/cost/stock writes.
+  // A malformed external XML cannot block existing purchase/finance processing.
+  try{
+    await persistXmlCatalogEvidence(documentId,p.document_key,xml,hash);
+  }catch(e){
+    console.warn("xml_catalog_observation_deferred",clean((e as Error)?.message||e,160));
+  }
   let matched=0,review=0,created=0;
   for(const item of p.items){
     try{
       const ep=await ensureProductSafe(token,p,item);
-      if(!ep.ok||!ep.product){review++;await sb.from("purchase_xml_items").upsert({document_id:documentId,item_number:item.item_number,...item,base_unit:unit(item.tax_unit||item.purchase_unit)||"UN",conversion_status:"review_required",processing_status:"review_required",match_method:ep.review||"unmatched",metadata:{reason:ep.review||"unmatched",identity_state:"unresolved",identity_reason:ep.review||"identity_confirmation_required",gtin_role:ep.gtin_role||inferredPurchaseGtinRole(item)}},{onConflict:"document_id,item_number"});continue}
+      if(!ep.ok||!ep.product){
+        review++;
+        const saved=await sb.from("purchase_xml_items").upsert(
+          stagedReviewItem(documentId,item,"review_required",ep.review||"identity_confirmation_required"),
+          {onConflict:"document_id,item_number"});
+        if(saved.error)throw new Error("xml_staging_failed:"+saved.error.message);
+        continue;
+      }
       const conv:any=await conversionFor(ep.product,p,item);
       const bq=conv.factor?Number(item.purchase_quantity||0)*Number(conv.factor):null;
       const buc=bq&&bq>0&&Number.isFinite(Number(item.net_line_total))?Number(item.net_line_total)/bq:(conv.factor&&Number.isFinite(Number(item.purchase_unit_price))?Number(item.purchase_unit_price)/Number(conv.factor):null);
@@ -743,11 +778,16 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
       const ph=await sb.from("product_purchase_history").upsert({document_id:documentId,purchase_item_id:it.data.id,product_id:ep.product.id,document_key:p.document_key,issued_at:p.issued_at,supplier_document:p.supplier_document,supplier_name:p.supplier_name,supplier_bling_contact_id:contact.id||null,original_unit:item.purchase_unit,original_quantity:item.purchase_quantity,conversion_factor:conv.factor,conversion_chain:conv.chain,base_unit:conv.base_unit,base_quantity:bq,line_total:item.line_total,purchase_unit_cost:item.purchase_unit_price,base_unit_cost:buc,source,metadata:{invoice_number:p.invoice_number}},{onConflict:"purchase_item_id"});if(ph.error)throw ph.error;
       const meta={...obj(ep.product.metadata),last_purchase_xml_at:p.issued_at||new Date().toISOString(),last_purchase_document_key:p.document_key,last_purchase_supplier:p.supplier_name||null,last_purchase_unit:item.purchase_unit||null,last_purchase_conversion_factor:conv.factor||null,purchase_catalog_review_required:true,purchase_catalog_review_item_id:it.data.id};
       const upd:any={supplier:p.supplier_name||ep.product.supplier||null,metadata:meta,updated_at:new Date().toISOString()};
-      if(item.ncm)upd.ncm=item.ncm;
+      // XML tax codes are fiscal evidence, not permission to overwrite catalog NCM.
       const pu=await sb.from("products").update(upd).eq("id",ep.product.id);if(pu.error)throw pu.error;
       matched++;if(ep.created)created++;if(conv.status==="review_required")review++;
     }catch(e){
-      review++;await sb.from("purchase_xml_items").upsert({document_id:documentId,item_number:item.item_number,supplier_item_code:item.supplier_item_code,description:item.description,commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,purchase_unit_price:item.purchase_unit_price,line_total:item.line_total,base_unit:unit(item.tax_unit||item.purchase_unit)||"UN",conversion_status:"review_required",processing_status:"failed",metadata:{error:clean((e as Error)?.message||e,500)}},{onConflict:"document_id,item_number"});
+      review++;
+      const reason=clean((e as Error)?.message||e,500);
+      const saved=await sb.from("purchase_xml_items").upsert(
+        stagedReviewItem(documentId,item,"failed",reason),
+        {onConflict:"document_id,item_number"});
+      if(saved.error)throw new Error("xml_item_persist_failed:"+saved.error.message);
     }
   }
   let finance:any={status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":p.recipient_kind==="CNPJ"&&!company?"pending_company_match":"not_applicable",accounts:[]};
@@ -1220,6 +1260,206 @@ async function docDetail(id:string){
   return {ok:true,document:d.data,items,receipt_plan:plan.data||null,receipt_lot_plan:receiptLotPlan,pricing_policy:{default_markup_percent:40,sale_unit:"UN",catalog_updates_require_human_approval:true,stock_receipt_separate:true,stock_authority:"bling",receipt_requires_bling_verification:true,receipt_internal_lot_required:true,receipt_expiration_optional:true,lot_number_required:false,lot_allocation_policy:"fifo"}};
 }
 
+// Read-only reporting and on-demand, idempotent re-reading of original private XMLs.
+// Never calls Bling, never changes products, prices, NCM master or stock.
+// Used by both new purchases and historical re-reads; extracts evidence only.
+async function persistXmlCatalogEvidence(documentId:string,documentKey:string,xml:string,hash:string){
+      const parsed=extractCatalogFromNfe(xml,documentKey);
+      if(parsed.items.length>5000)throw new Error("xml_item_limit");
+      const now=new Date().toISOString();
+      const rows=parsed.items.map((item:any)=>({
+        document_id:documentId,item_number:item.item_number,document_key:documentKey,
+        supplier_item_code:item.supplier_item_code,description:item.description,
+        commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,
+        ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,
+        purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,
+        purchase_unit_price:item.purchase_unit_price,tax_unit:item.tax_unit,
+        tax_quantity:item.tax_quantity,line_total:item.line_total,net_line_total:item.net_line_total,
+        lot_traces:item.lot_traces,tax_detail:item.tax_detail,raw_item:item.raw_item,
+        source_state:"xml_verified",source_content_sha256:hash,parser_version:"fast_xml_parser_5_11_2",
+        extracted_at:now,updated_at:now
+      }));
+      // Catalog data first: independent of recognition, purchase, finance and inventory.
+      const saved=await sb.from("purchase_xml_catalog_observations_v1")
+        .upsert(rows,{onConflict:"document_id,item_number"});
+      if(saved.error)throw new Error("catalog_observation_save_failed:"+saved.error.message);
+      return parsed;
+}
+// Manual XML catalog-only ingestion. Does not call OAuth, Bling or product mutations.
+// Existing operational manual_import action remains unchanged.
+async function manualCatalogOnlyImport(input:any){
+  const files=Array.isArray(input)?input:[];
+  if(!files.length||files.length>10)return {ok:false,status:400,error:"catalog_xml_1_to_10_files_required"};
+  const source=files.length===1?"manual_xml":"bulk_xml";
+  const run=await sb.from("purchase_xml_import_runs").insert({
+    source,status:"running",documents_seen:files.length,
+    metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false}
+  }).select("id").single();
+  if(run.error)throw run.error;
+  const results:any[]=[];let processed=0,duplicates=0,failed=0,items=0;
+  for(const file of files){
+    const filename=clean(file?.name,160);
+    try{
+      const xml=String(file?.xml??"");
+      if(!xml||xml.length>10*1024*1024)throw new Error("xml_size_invalid");
+      const original=parseXml(xml);
+      if(original.document_key.length!==44)throw new Error("invalid_nfe_key");
+      if(original.cstat&&![100,150].includes(original.cstat))throw new Error("nfe_not_authorized");
+      const evidence=extractCatalogFromNfe(xml,original.document_key);
+      const hash=await sha256(xml);
+      const exist=await sb.from("purchase_xml_documents").select("id,content_sha256")
+        .eq("document_key",evidence.key).maybeSingle();
+      if(exist.error)throw exist.error;
+      if(exist.data){
+        if(exist.data.content_sha256&&exist.data.content_sha256!==hash)
+          throw new Error("existing_nfe_key_has_different_xml");
+        const replay=await xmlCatalogReprocess({document_id:exist.data.id});
+        if(!replay.results?.[0]?.ok)throw new Error(replay.results?.[0]?.error||"duplicate_replay_failed");
+        duplicates++;
+        results.push({name:filename,ok:true,duplicate:true,items:evidence.items.length,document_id:exist.data.id});
+        continue;
+      }
+      const issued=day(original.issued_at)||new Date().toISOString().slice(0,10);
+      const [year,month]=issued.split("-");
+      const path=year+"/"+month+"/"+evidence.key+".xml";
+      const upload=await sb.storage.from("purchase-xml").upload(path,
+        new Blob([xml],{type:"application/xml"}),
+        {upsert:false,contentType:"application/xml"});
+      if(upload.error)throw new Error("xml_storage_failed:"+upload.error.message);
+      const personal=original.recipient_kind==="CPF";
+      const inserted=await sb.from("purchase_xml_documents").insert({
+        import_run_id:run.data.id,source,source_document_id:filename||null,
+        document_key:evidence.key,content_sha256:hash,storage_path:path,
+        issued_at:original.issued_at||null,supplier_document:original.supplier_document||null,
+        supplier_name:original.supplier_name||null,
+        recipient_document:original.recipient_document||null,
+        recipient_kind:original.recipient_kind||"unknown",
+        financial_eligible:false,
+        finance_status:personal?"blocked_personal":"not_applicable",
+        finance_reference:{accounts:[],reason:"catalog_only_no_finance"},
+        receipt_status:"review",processing_status:"review_required",
+        total_amount:original.total_amount||0,item_count:evidence.items.length,
+        matched_item_count:0,review_item_count:evidence.items.length,
+        metadata:{catalog_only:true,invoice_number:original.invoice_number,
+          series:original.series,catalog_imported_at:new Date().toISOString()}
+      }).select("id").single();
+      if(inserted.error)throw inserted.error;
+      const replay=await xmlCatalogReprocess({document_id:inserted.data.id});
+      if(!replay.results?.[0]?.ok)
+        throw new Error(replay.results?.[0]?.error||"catalog_recovery_pending");
+      processed++;items+=evidence.items.length;
+      results.push({name:filename,ok:true,document_id:inserted.data.id,items:evidence.items.length});
+    }catch(e){
+      failed++;
+      results.push({name:filename,ok:false,error:clean((e as Error)?.message||e,220)});
+    }
+  }
+  const done=await sb.from("purchase_xml_import_runs").update({
+    status:failed?"completed_with_review":"completed",finished_at:new Date().toISOString(),
+    documents_processed:processed,documents_duplicate:duplicates,documents_failed:failed,
+    items_seen:items,items_matched:0,items_review:items,
+    metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false},
+    updated_at:new Date().toISOString()
+  }).eq("id",run.data.id);
+  if(done.error)throw done.error;
+  return {ok:true,catalog_only:true,processed,duplicates,failed,items,results,
+    bling_called:false,products_updated:false,stock_updated:false,finance_updated:false};
+}
+
+async function xmlCatalogList(body:any){
+  const limit=Math.max(1,Math.min(100,Math.trunc(Number(body?.limit)||30)));
+  const offset=Math.max(0,Math.min(100000,Math.trunc(Number(body?.offset)||0)));
+  const term=clean(body?.search,100).replace(/[%_,().]/g,"").trim();
+  let q=sb.from("purchase_xml_catalog_candidates_v1")
+    .select("candidate_key,display_name,gtin,tax_gtin,last_observed_ncm,last_observed_cest,last_purchase_unit,observations_count,distinct_invoices,suppliers_count,ncm_variations,cest_variations,matched_product_variations,linked_product_id,xml_verified,first_seen,last_seen,review_status",{count:"exact"})
+    .order("last_seen",{ascending:false,nullsFirst:false}).range(offset,offset+limit-1);
+  if(term.length>=2){
+    if(/^\d+$/.test(term))q=q.or("gtin.eq."+term+",tax_gtin.eq."+term+",last_observed_ncm.eq."+term);
+    else q=q.ilike("display_name","%"+term+"%");
+  }
+  if(["identity_conflict","fiscal_conflict","cest_conflict","not_linked","linked_reviewable"].includes(clean(body?.status,40)))q=q.eq("review_status",body.status);
+  const r=await q;
+  if(r.error)throw r.error;
+  return {ok:true,readonly:true,total:r.count||0,offset,limit,items:r.data||[],
+    no_catalog_mutation:true};
+}
+async function xmlCatalogProgress(){
+  const q=await sb.from("purchase_xml_catalog_reconciliation_v1")
+    .select("document_id,declared_items,items_staged,observations_captured,xml_verified_items,missing_staging_items,missing_observations,catalog_readiness").limit(5000);
+  if(q.error)throw q.error;
+  const docs=q.data||[];
+  const add=(field:string)=>docs.reduce((a:number,d:any)=>a+Number(d?.[field]||0),0);
+  return {ok:true,documents:docs.length,declared_items:add("declared_items"),
+    staged_items:add("items_staged"),catalog_observations:add("observations_captured"),
+    verified_from_xml:add("xml_verified_items"),
+    missing_staging_items:add("missing_staging_items"),
+    missing_catalog_observations:add("missing_observations"),
+    documents_verified:docs.filter((d:any)=>d.catalog_readiness==="complete_from_xml").length,
+    documents_still_incomplete:docs.filter((d:any)=>d.catalog_readiness==="incomplete").length,
+    readonly:true};
+}
+async function xmlCatalogReprocess(body:any){
+  const limit=Math.max(1,Math.min(5,Math.trunc(Number(body?.limit)||3)));
+  const offset=Math.max(0,Math.min(100000,Math.trunc(Number(body?.offset)||0)));
+  const id=clean(body?.document_id,80);
+  let query=sb.from("purchase_xml_documents").select("id,document_key,storage_path,item_count,content_sha256,created_at")
+    .order("created_at",{ascending:true}).order("id",{ascending:true});
+  if(id){
+    if(!/^[0-9a-f-]{36}$/i.test(id))return {ok:false,error:"invalid_document"};
+    query=query.eq("id",id).limit(1);
+  }else{
+    query=query.range(offset,offset+limit-1);
+  }
+  const docs=await query;
+  if(docs.error)throw docs.error;
+  const result:any[]=[];
+  for(const d of docs.data||[]){
+    try{
+      if(!d.storage_path)throw new Error("xml_storage_path_missing");
+      const downloaded=await sb.storage.from("purchase-xml").download(d.storage_path);
+      if(downloaded.error||!downloaded.data)throw new Error("xml_download_failed");
+      const xml=await downloaded.data.text();
+      if(xml.length>10*1024*1024)throw new Error("xml_too_large");
+      const hash=await sha256(xml);
+      if(d.content_sha256&&hash!==d.content_sha256)throw new Error("xml_hash_mismatch");
+      const parsed=await persistXmlCatalogEvidence(d.id,d.document_key,xml,hash);
+      const existing=await sb.from("purchase_xml_items").select("item_number").eq("document_id",d.id);
+      if(existing.error)throw existing.error;
+      const seen=new Set((existing.data||[]).map((x:any)=>Number(x.item_number)));
+      const missing=parsed.items.filter((x:any)=>!seen.has(x.item_number));
+      if(missing.length){
+        const staged=missing.map((x:any)=>({
+          document_id:d.id,item_number:x.item_number,
+          supplier_item_code:x.supplier_item_code,description:x.description||("Item "+x.item_number),
+          commercial_gtin:validGtin(x.commercial_gtin)?digits(x.commercial_gtin):null,
+          tax_gtin:validGtin(x.tax_gtin)?digits(x.tax_gtin):null,
+          ncm:x.ncm,cest:x.cest,cfop:x.cfop,tax_code:x.tax_code,
+          origin_code:x.origin_code,purchase_unit:x.purchase_unit,
+          purchase_quantity:x.purchase_quantity,purchase_unit_price:x.purchase_unit_price,
+          line_total:x.line_total,conversion_status:"review_required",
+          processing_status:"review_required",match_method:"xml_raw_recovery",
+          base_unit:unit(x.tax_unit||x.purchase_unit)||"UN",
+          metadata:{identity_state:"unresolved",reason:"xml_raw_recovery",
+            net_line_total:x.net_line_total,tax_unit:x.tax_unit,tax_quantity:x.tax_quantity,
+            lot_traces:x.lot_traces,verified_source_document_key:d.document_key,
+            fiscal_review_required:true}
+        }));
+        const recovered=await sb.from("purchase_xml_items")
+          .upsert(staged,{onConflict:"document_id,item_number",ignoreDuplicates:true});
+        if(recovered.error)throw new Error("recover_purchase_items_failed:"+recovered.error.message);
+      }
+      result.push({document_id:d.id,ok:true,items_in_xml:parsed.items.length,
+        items_declared:Number(d.item_count||0),new_staged_items:missing.length,
+        count_mismatch:parsed.items.length!==Number(d.item_count||0)});
+    }catch(e){
+      result.push({document_id:d.id,ok:false,error:clean((e as Error)?.message||e,200)});
+    }
+  }
+  return {ok:true,processed:result.length,results:result,
+    next_offset:id?null:offset+result.length,has_more:!id&&result.length===limit,
+    products_updated:false,stock_updated:false,bling_called:false,finance_updated:false};
+}
+
 async function catalogQueue(windowInput:any=null){
   const requested=obj(windowInput);
   const window=purchaseWindow(
@@ -1429,6 +1669,18 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
     if(action==="manual_import"){const r=await manualImport(body?.files);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="catalog_queue")return js(req,await catalogQueue(body));
+    if(action==="xml_catalog_only_import"){
+      if(a.internal||a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      const result=await manualCatalogOnlyImport(body?.files);return js(req,result,result.ok?200:Number(result.status||400));
+    }
+    if(action==="xml_catalog_list")return js(req,await xmlCatalogList(body));
+    if(action==="xml_catalog_progress")return js(req,await xmlCatalogProgress());
+    if(action==="xml_catalog_reprocess"){
+      // Trusted hub requests may perform source-only recovery, but NEVER product, fiscal or stock writes.
+      if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      const r=await xmlCatalogReprocess(body);return js(req,r,r.ok?200:400);
+    }
+
     if(action==="search_products")return js(req,await searchPurchaseProducts(body));
     if(action==="resolve_item_identity"){if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);const r=await resolvePurchaseItemIdentity(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="summary")return js(req,await summary(body));
