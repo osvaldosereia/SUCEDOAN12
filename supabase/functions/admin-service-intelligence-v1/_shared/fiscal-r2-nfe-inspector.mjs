@@ -29,6 +29,10 @@ export function inspectBlingNfeR2(raw, expected={}) {
   const itemSummaries=items.map((item,i)=>{
     const fiscal=item?.tributacao&&typeof item.tributacao==="object"?item.tributacao:{};
     const rawNcm=fiscal.ncm??item?.ncm??null;
+    // GET /nfe/{id} can omit taxation details entirely. Absence of a
+    // response field is not evidence that 72 invoices have missing NCM.
+    const ncmExposed=Object.prototype.hasOwnProperty.call(fiscal,"ncm")
+      ||Object.prototype.hasOwnProperty.call(item||{},"ncm");
     const ncm=digits(rawNcm);
     const productId=fieldId(item?.produto);
     const code=str(item?.codigo??item?.sku??"",80);
@@ -36,31 +40,41 @@ export function inspectBlingNfeR2(raw, expected={}) {
     return {
       index:i+1,product_id:productId,code,name,
       ncm:ncm||null,
-      ncm_state:ncm.length===8?"present":!ncm.length?"missing":"malformed",
+      ncm_state:!ncmExposed?"not_exposed":ncm.length===8?"present":!ncm.length?"missing":"malformed",
       quantity:Number(item?.quantidade)||null,
       unit_value:Number(item?.valor??item?.valorUnitario)||null,
       cif_total:money(item?.total??item?.valorTotal)
     };
   });
   const expectedSaleId=positiveId(expected.bling_order_id);
+  const referenceInvoiceId=positiveId(expected.sale_invoice_id);
   const expectedContactId=positiveId(expected.contact_id);
   const expectedTotal=money(expected.total);
+  const expectedSubtotal=money(expected.fiscal_subtotal);
+  const lineSubtotal=itemSummaries.length&&itemSummaries.every(x=>x.cif_total!==null)
+    ?itemSummaries.reduce((sum,x)=>sum+x.cif_total,0):null;
   const expectedExternal=str(expected.external_key,160);
   const signal={
     external:!!expectedExternal&&!!ext&&ext===expectedExternal,
     sale:!!expectedSaleId&&saleIds.includes(expectedSaleId),
     total:expectedTotal!==null&&invoiceTotal!==null&&invoiceTotal===expectedTotal,
-    contact:!!expectedContactId&&!!customerId&&customerId===expectedContactId
+    contact:!!expectedContactId&&!!customerId&&customerId===expectedContactId,
+    sale_invoice:!!referenceInvoiceId&&invoiceId===referenceInvoiceId,
+    subtotal:expectedSubtotal!==null&&lineSubtotal!==null&&lineSubtotal===expectedSubtotal
   };
   const conflicts={
     external:!!expectedExternal&&!!ext&&ext!==expectedExternal,
     sale:!!expectedSaleId&&saleIds.length>0&&!saleIds.includes(expectedSaleId),
     total:expectedTotal!==null&&invoiceTotal!==null&&invoiceTotal!==expectedTotal,
-    contact:!!expectedContactId&&!!customerId&&customerId!==expectedContactId
+    contact:!!expectedContactId&&!!customerId&&customerId!==expectedContactId,
+    sale_invoice:!!referenceInvoiceId&&!!invoiceId&&invoiceId!==referenceInvoiceId,
+    subtotal:expectedSubtotal!==null&&lineSubtotal!==null&&lineSubtotal!==expectedSubtotal
   };
   const verified=!!expectedSaleId&&!Object.values(conflicts).some(Boolean)
-    &&(signal.sale||signal.external)
-    &&((signal.sale&&signal.external)||(signal.sale&&signal.total)||(signal.external&&signal.total&&signal.contact));
+    &&((signal.sale_invoice&&(signal.contact||signal.subtotal||signal.external))
+       ||((signal.sale||signal.external)
+         &&((signal.sale&&signal.external)||(signal.sale&&signal.total)
+           ||(signal.external&&signal.total&&signal.contact))));
   const authorized=[5,6,7].includes(sit);
   const pending=[3,8,10].includes(sit);
   const rawDraft=sit===1;
@@ -74,7 +88,9 @@ export function inspectBlingNfeR2(raw, expected={}) {
     invoice_total_cents:invoiceTotal,
     item_count:Array.isArray(nf.itens)?nf.itens.length:null,
     items:itemSummaries,
-    invalid_ncm_format_count:itemSummaries.filter(x=>x.ncm_state!=="present").length,
+    invalid_ncm_format_count:itemSummaries.filter(x=>x.ncm_state==="missing"||x.ncm_state==="malformed").length,
+    ncm_not_exposed_count:itemSummaries.filter(x=>x.ncm_state==="not_exposed").length,
+    line_subtotal_cents:lineSubtotal,
     identity:{verified,signals:signal,conflicts,reason:verified?"strong_identity_verified":
       Object.values(conflicts).some(Boolean)?"identity_conflict":"insufficient_independent_identity_signals"},
     editing:{eligible:noteCanEdit&&!hasStockOrFinancePosting&&verified,
