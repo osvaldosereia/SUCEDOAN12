@@ -297,3 +297,12 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 ## Retomada em novo chat — R26 (09/10/2026)
 
 **Arquivo de continuação preservado:** [RETOMADA_COMPRAS_CATALOGO_XML_R26_2026-10-09.md](./RETOMADA_COMPRAS_CATALOGO_XML_R26_2026-10-09.md), commit inicial `d520e002f1b55a6cc97db80b3f59299517af4dcf`, branch `agent/xml-catalog-fiscal-audit-r25-20261009`, PR #1022. Leia este arquivo na íntegra ao retomar em outro chat. R25 está com CI 3/3 verde; R26 é a próxima rodada. Não confundir testes isolados com disponibilidade da UI ou homologação de produção. R23/R24 ainda têm migrations pendentes e a UI de aplicar/reverter permanece bloqueada. Sem merge/deploy na main ou produção.
+
+
+## Checkpoint R26 — 09/10/2026 — suite integrada e bloqueio seguro de release
+
+- **PR draft [#1025](https://github.com/osvaldosereia/SUCEDOAN12/pull/1025)**, branch `agent/xml-catalog-operational-gates-r26-20261009`, base R25 #1022; código, dados produtivos e alterações de pedidos na `main` preservados, sem merge/deploy.
+- **[CI final R26 #37972261768](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37972261768): 3/3 SUCCESS**. Suíte Node/Edge e PostgreSQL17 descartável executa as migrations R23 e R24 juntas, com trigger real de lotes reproduzido, jornada humana completa de identidade → revisão → prévia → aplicar nome somente inativo → rollback CAS, permissões owner/admin e bloqueios operator/viewer/owner desativado, RLS/grants, sem alteração de preço, estoque ou fiscal. Primeiro CI falhou por teste R19 executado no Node; foi corrigido para Deno e repetido.
+- **Preflight fail-closed:** módulo e testes R26 barram migração duplicada e R23 anterior à migração remota de separação já aplicada (`20261009155231`); todas as aprovações reais de staging, navegador, Auth, UI e rollback são obrigatórias para liberar.
+- **Supabase apenas leitura:** sem branch homologatória disponível; nenhuma migration R23/R24 executada; UI R24/R25 do Admin continua bloqueada; não afirmar E2E real ou release pronta. Não executar `db push`/`migration repair` de maneira automática.
+- **Handoff operacional detalhado e próximo roteiro:** [PURCHASE_XML_R26_OPERATIONAL_CHECKPOINT.md](./PURCHASE_XML_R26_OPERATIONAL_CHECKPOINT.md). Próximo trabalho é eliminar bloqueios de homologação isolada e UI, gerar versões de migration via CLI após histórico remoto e testar DB→Edge→UI; só então avaliar R27 de publicação.
