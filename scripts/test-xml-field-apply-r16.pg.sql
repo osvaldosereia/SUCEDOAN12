@@ -43,7 +43,7 @@ insert into public.xml_review_fixture values
 set role service_role;
 do $$
 declare
- a uuid;b uuid;f uuid;v_app_id uuid; response jsonb;
+ a uuid;b uuid;c uuid;f uuid;v_app_id uuid;v_conflict_app uuid; response jsonb;
 begin
  a:=public.purchase_xml_open_field_review_v1(
   '00000000-0000-4000-8000-000000000011',
@@ -149,6 +149,43 @@ begin
   raise exception 'fiscal_field_applicable';
  exception when others then
   if sqlerrm not like '%xml_apply_field_not_authorized%' then raise; end if;
+ end;
+
+ -- Post-application conflict: rollback must never overwrite a later human edit.
+ c:=public.purchase_xml_open_field_review_v1(
+  '00000000-0000-4000-8000-000000000013',
+  '00000000-0000-4000-8000-000000000003','name',
+  '00000000-0000-4000-8000-000000000090');
+ perform public.purchase_xml_decide_field_review_v1(c,0,'approve',
+  '00000000-0000-4000-8000-000000000091','APROVAR_CAMPO_XML');
+ response:=public.purchase_xml_apply_field_review_v1(c,1,
+  '00000000-0000-4000-8000-000000000092','APLICAR_NOME_APROVADO_XML');
+ v_conflict_app:=(response->>'application_id')::uuid;
+ update public.products set name='Mudança humana posterior'
+ where id='00000000-0000-4000-8000-000000000003';
+ begin
+  perform public.purchase_xml_rollback_field_review_v1(v_conflict_app,
+   '00000000-0000-4000-8000-000000000093','REVERTER_NOME_APLICADO_XML');
+  raise exception 'rollback_overwrote_intervening_user_change';
+ exception when others then
+  if sqlerrm not like '%xml_rollback_product_changed%' then raise; end if;
+ end;
+ if (select name from public.products
+   where id='00000000-0000-4000-8000-000000000003')<>'Mudança humana posterior'
+ then raise exception 'rollback_conflict_lost_user_edit'; end if;
+ if (select status from public.purchase_xml_field_applications_v1
+     where id=v_conflict_app)<>'applied' or
+    (select count(*) from public.purchase_xml_field_application_events_v1
+     where application_id=v_conflict_app)<>1
+ then raise exception 'rollback_conflict_changed_audit'; end if;
+ -- Audit events must not be mutable (denied UPDATE privilege or trigger).
+ begin
+  update public.purchase_xml_field_application_events_v1
+   set prior_value='tamper' where application_id=v_conflict_app;
+  raise exception 'event_tamper_accepted';
+ exception when others then
+  if sqlerrm not like '%xml_field_review_event_immutable%'
+    and sqlerrm not like '%permission denied%' then raise; end if;
  end;
 
  if has_function_privilege('anon',
