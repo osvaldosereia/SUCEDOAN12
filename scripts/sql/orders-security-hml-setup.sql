@@ -1,10 +1,17 @@
 -- R02+ privilege simulation ONLY in a newly created PostgreSQL CI database.
 -- Never run in the canonical Supabase project.
 \set ON_ERROR_STOP on
-CREATE ROLE anon;
-CREATE ROLE authenticated;
-CREATE ROLE service_role;
-CREATE ROLE supabase_admin;
+-- Roles are cluster-scoped; R02 checkout synthetic DB may have created them.
+DO $test_roles$
+DECLARE role_name text;
+BEGIN
+ FOREACH role_name IN ARRAY ARRAY['anon','authenticated','service_role','supabase_admin']
+ LOOP
+   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname=role_name) THEN
+     EXECUTE format('CREATE ROLE %I',role_name);
+   END IF;
+ END LOOP;
+END $test_roles$;
 GRANT USAGE ON SCHEMA public TO anon,authenticated,service_role;
 GRANT CREATE,USAGE ON SCHEMA public TO supabase_admin;
 CREATE TABLE public.dispatch_fiscal_jobs(order_id uuid PRIMARY KEY, state text);
