@@ -6431,6 +6431,26 @@
         '</div>')+
       '<small class="sub">Dados fiscais são evidências do fornecedor e precisam de validação. Não há lançamento de estoque nesta ficha.</small>';
   }
+  async function xmlCatalogFieldReviewLoad(productId,key){
+    state.xmlFieldReviewProductId=productId;
+    state.xmlFieldReviewLoading=true;state.xmlFieldReviewError='';
+    xmlCatalogDetailRefresh();
+    try{
+      const r=await purchaseApi('xml_field_review_list',{product_id:productId,limit:40,offset:0});
+      if(state.xmlCatalogDetailKey!==key||state.xmlFieldReviewProductId!==productId)return;
+      state.xmlFieldReviewItems=Array.isArray(r.items)?r.items:[];
+      state.xmlFieldReviewLoaded=true;
+    }catch(e){
+      if(state.xmlCatalogDetailKey===key&&state.xmlFieldReviewProductId===productId){
+        state.xmlFieldReviewLoaded=false;
+        state.xmlFieldReviewError=errorMessage(e.message);
+      }
+    }finally{
+      if(state.xmlCatalogDetailKey===key&&state.xmlFieldReviewProductId===productId){
+        state.xmlFieldReviewLoading=false;xmlCatalogDetailRefresh();
+      }
+    }
+  }
   function xmlCatalogDetailRefresh(){
     const h=$('#xmlCatalogBody');
     if(!h||!state.xmlCatalogOpen)return;
@@ -6440,6 +6460,8 @@
     state.xmlCatalogDetailKey=key;state.xmlCatalogDetailLoading=true;
     state.xmlCatalogDetail=null;state.xmlCatalogMatches=null;
     state.xmlCatalogChosenProduct=null;state.xmlCatalogSelectedObservation=null;
+    state.xmlFieldReviewLoaded=false;state.xmlFieldReviewItems=[];
+    state.xmlFieldReviewProductId=null;state.xmlFieldReviewError='';
     xmlCatalogDetailRefresh();
     try{
       const r=await purchaseApi('xml_catalog_candidate_detail',{candidate_key:key});
@@ -6459,9 +6481,48 @@
     });
     const data=state.xmlCatalogDetail;
     if(!data?.candidate)return;
+    const selected=()=>((data.observations||[]).find(x=>
+      String(x.purchase_item_id||'')===String(state.xmlCatalogSelectedObservation||''))||{});
+    const reviewLoad=$('#xmlFieldReviewLoad');
+    if(reviewLoad)reviewLoad.onclick=async()=>{
+      const productId=String(selected().linked_product_id||'');
+      if(productId)await xmlCatalogFieldReviewLoad(productId,state.xmlCatalogDetailKey);
+    };
+    const reviewPrepare=$('#xmlFieldReviewPrepare');
+    if(reviewPrepare)reviewPrepare.onclick=async()=>{
+      const item=selected(),field=String($('#xmlFieldReviewField')?.value||'');
+      const productId=String(item.linked_product_id||'');
+      if(!productId||!item.observation_id||!field){toast('Escolha um campo e um item vinculado');return}
+      if(!confirm('Preparar proposta deste campo, mantendo o cadastro inalterado? A decisão ficará registrada.'))return;
+      reviewPrepare.disabled=true;
+      try{
+        await purchaseApi('xml_field_review_open',{product_id:productId,
+          observation_id:item.observation_id,field_name:field,confirmation:'PREPARAR_CAMPO_XML'});
+        await xmlCatalogFieldReviewLoad(productId,state.xmlCatalogDetailKey);
+        toast('Proposta registrada para revisão. Cadastro não alterado.');
+      }catch(e){toast(errorMessage(e.message));reviewPrepare.disabled=false}
+    };
+    host.querySelectorAll('[data-xml-field-decision]').forEach(button=>button.onclick=async()=>{
+      const item=selected(),productId=String(item.linked_product_id||'');
+      const r=(state.xmlFieldReviewItems||[]).find(x=>String(x.id)===String(button.dataset.xmlFieldReview));
+      const decision=String(button.dataset.xmlFieldDecision||'');
+      const labels={approve:'APROVAR_CAMPO_XML',reject:'REJEITAR_CAMPO_XML',reopen:'REABRIR_CAMPO_XML'};
+      if(!productId||!r||!labels[decision])return;
+      if(r.status==='fiscal_review_required'){toast('Campo fiscal exige revisão específica');return}
+      if(!confirm((decision==='approve'?'Aprovar a proposta':decision==='reject'?'Rejeitar a proposta':'Reabrir a revisão')+
+        ' de '+String(r.field_name||'campo')+'? Esta decisão NÃO modifica o cadastro do produto.'))return;
+      button.disabled=true;
+      try{
+        await purchaseApi('xml_field_review_decide',{review_id:r.id,
+          expected_revision:Number(r.revision),decision,confirmation:labels[decision]});
+        await xmlCatalogFieldReviewLoad(productId,state.xmlCatalogDetailKey);
+        toast('Decisão registrada no histórico. Cadastro não alterado.');
+      }catch(e){toast(errorMessage(e.message));button.disabled=false}
+    });
     host.querySelectorAll('[data-xml-observation]').forEach(b=>b.onclick=()=>{
       if(!b.dataset.xmlObservation)return;
       state.xmlCatalogSelectedObservation=b.dataset.xmlObservation;
+      state.xmlFieldReviewLoaded=false;state.xmlFieldReviewItems=[];
       state.xmlCatalogChosenProduct=null;xmlCatalogDetailRefresh();
     });
     const search=$('#xmlDetailSearch');
