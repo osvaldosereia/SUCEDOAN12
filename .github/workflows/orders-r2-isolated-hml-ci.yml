@@ -190,5 +190,25 @@ jobs:
           test "$(PGDATABASE=synthetic_checkout_full_r2 psql -Atc \
             "select count(*) from public.orders")" = 2
           echo 'PASS: real checkout base, minimum R$75 cannot be bypassed by customer snapshot, no orphan reservations'
+      - name: Race test real v3_base with two concurrent buyers (NO oversell)
+        run: |
+          set -euo pipefail
+          # ARROZ has 10 units; a previous real checkout reserved 2.
+          # Two separate sessions each request 6 units: exactly one wins.
+          SQL="select public.create_vitrine_cart_order_v3(null,'PIX','[{\"type\":\"product\",\"id\":\"00000000-0000-4000-8000-0000000000aa\",\"qty\":6}]'::jsonb)->>'order_id';"
+          PGDATABASE=synthetic_checkout_full_r2 psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
+            > /tmp/r2-real-checkout-a.txt 2>/tmp/r2-real-checkout-a.err &
+          A=$!
+          PGDATABASE=synthetic_checkout_full_r2 psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
+            > /tmp/r2-real-checkout-b.txt 2>/tmp/r2-real-checkout-b.err &
+          B=$!
+          SUCCEEDED=0
+          if wait "$A"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q 'insufficient_stock' /tmp/r2-real-checkout-a.err; fi
+          if wait "$B"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q 'insufficient_stock' /tmp/r2-real-checkout-b.err; fi
+          test "$SUCCEEDED" = 1
+          test "$(PGDATABASE=synthetic_checkout_full_r2 psql -Atc "select sum(quantity)::int from public.vitrine_stock_reservations where product_id='00000000-0000-4000-8000-0000000000aa' and status='reserved'")" = 8
+          test "$(PGDATABASE=synthetic_checkout_full_r2 psql -Atc "select count(*) from public.orders")" = 3
+          test "$(PGDATABASE=synthetic_checkout_full_r2 psql -Atc "select count(*) from public.vitrine_stock_reservations")" = 3
+          echo 'PASS: actual 40KB checkout base serialized competing buyers, one committed, one rolled back'
       - name: Diff hygiene
         run: git diff --check
