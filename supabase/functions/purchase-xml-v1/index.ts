@@ -6,6 +6,7 @@ import { xmlFieldReviewGateway } from "./xml-catalog-field-review-gateway.mjs";
 import { xmlFieldApplyGateway } from "./xml-catalog-field-apply-gateway.mjs";
 import { catalogXmlComparison } from "./xml-catalog-comparison.mjs";
 import { compareCandidateFullHistory } from "./xml-catalog-full-comparison.mjs";
+import { loadFiscalDossier } from "./xml-catalog-fiscal-dossier.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -1809,6 +1810,17 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="xml_catalog_candidate_detail"){
       const r=await xmlCatalogCandidateDetail(body);
       return js(req,r,r.ok?200:Number(r.status||400));
+    }
+    if(action==="xml_catalog_fiscal_dossier"){
+      // Human-only on-demand fiscal EVIDENCE, never a tax/apply operation.
+      if(a.internal||!["owner","admin"].includes(a.role))
+        return js(req,{ok:false,error:"human_admin_required"},403);
+      try{
+        const r=await loadFiscalDossier(sb,body?.candidate_key);
+        return js(req,r,r.ok?200:Number(r.status||400));
+      }catch(_e){
+        return js(req,{ok:false,error:"xml_fiscal_dossier_unavailable"},503);
+      }
     }
     if(action==="xml_catalog_full_comparison"){
       // Explicit human Admin request: high-volume, private, read-only evidence.
