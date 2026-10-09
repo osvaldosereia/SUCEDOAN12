@@ -13,10 +13,28 @@
         "trg_ops2_guard_dispatch_fiscal_job_v1"
       ],
       "public_grants": [
+        "MAINTAIN",
         "REFERENCES",
         "TRIGGER",
         "TRUNCATE"
-      ]
+      ],
+      "role_grants": {
+        "anon": [
+          "MAINTAIN",
+          "REFERENCES",
+          "TRIGGER",
+          "TRUNCATE"
+        ],
+        "PUBLIC": [],
+        "authenticated": [
+          "MAINTAIN",
+          "REFERENCES",
+          "TRIGGER",
+          "TRUNCATE"
+        ]
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     },
     {
       "name": "ops_delivery_runs",
@@ -25,10 +43,28 @@
       "policy_count": 0,
       "triggers": [],
       "public_grants": [
+        "MAINTAIN",
         "REFERENCES",
         "TRIGGER",
         "TRUNCATE"
-      ]
+      ],
+      "role_grants": {
+        "anon": [
+          "MAINTAIN",
+          "REFERENCES",
+          "TRIGGER",
+          "TRUNCATE"
+        ],
+        "PUBLIC": [],
+        "authenticated": [
+          "MAINTAIN",
+          "REFERENCES",
+          "TRIGGER",
+          "TRUNCATE"
+        ]
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     },
     {
       "name": "ops_delivery_stops",
@@ -39,10 +75,28 @@
         "smart_delivery_guard_route_resequence_v1"
       ],
       "public_grants": [
+        "MAINTAIN",
         "REFERENCES",
         "TRIGGER",
         "TRUNCATE"
-      ]
+      ],
+      "role_grants": {
+        "anon": [
+          "MAINTAIN",
+          "REFERENCES",
+          "TRIGGER",
+          "TRUNCATE"
+        ],
+        "PUBLIC": [],
+        "authenticated": [
+          "MAINTAIN",
+          "REFERENCES",
+          "TRIGGER",
+          "TRUNCATE"
+        ]
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     },
     {
       "name": "order_fiscal_controls",
@@ -50,7 +104,14 @@
       "forced": false,
       "policy_count": 0,
       "triggers": [],
-      "public_grants": []
+      "public_grants": [],
+      "role_grants": {
+        "anon": [],
+        "PUBLIC": [],
+        "authenticated": []
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     },
     {
       "name": "order_items",
@@ -62,7 +123,14 @@
         "trg_order_item_public_snapshot_v1",
         "trg_order_items_updated_at"
       ],
-      "public_grants": []
+      "public_grants": [],
+      "role_grants": {
+        "anon": [],
+        "PUBLIC": [],
+        "authenticated": []
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     },
     {
       "name": "order_payment_parts",
@@ -71,10 +139,28 @@
       "policy_count": 0,
       "triggers": [],
       "public_grants": [
+        "MAINTAIN",
         "REFERENCES",
         "TRIGGER",
         "TRUNCATE"
-      ]
+      ],
+      "role_grants": {
+        "anon": [
+          "MAINTAIN",
+          "REFERENCES",
+          "TRIGGER",
+          "TRUNCATE"
+        ],
+        "PUBLIC": [],
+        "authenticated": [
+          "MAINTAIN",
+          "REFERENCES",
+          "TRIGGER",
+          "TRUNCATE"
+        ]
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     },
     {
       "name": "order_payment_settlements",
@@ -85,10 +171,28 @@
         "trg_ops_sync_delivery_payment_fiscal_v1"
       ],
       "public_grants": [
+        "MAINTAIN",
         "REFERENCES",
         "TRIGGER",
         "TRUNCATE"
-      ]
+      ],
+      "role_grants": {
+        "anon": [
+          "MAINTAIN",
+          "REFERENCES",
+          "TRIGGER",
+          "TRUNCATE"
+        ],
+        "PUBLIC": [],
+        "authenticated": [
+          "MAINTAIN",
+          "REFERENCES",
+          "TRIGGER",
+          "TRUNCATE"
+        ]
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     },
     {
       "name": "order_separation_completions_v1",
@@ -99,7 +203,14 @@
         "trg_ops2_require_separator_completion_v4",
         "trg_order_addon_close_on_separation_completion_v1"
       ],
-      "public_grants": []
+      "public_grants": [],
+      "role_grants": {
+        "anon": [],
+        "PUBLIC": [],
+        "authenticated": []
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     },
     {
       "name": "order_separation_items_v1",
@@ -109,7 +220,14 @@
       "triggers": [
         "trg_order_addon_close_on_separation_item_v1"
       ],
-      "public_grants": []
+      "public_grants": [],
+      "role_grants": {
+        "anon": [],
+        "PUBLIC": [],
+        "authenticated": []
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     },
     {
       "name": "orders",
@@ -137,7 +255,14 @@
         "trg_sync_basket_allocations_order_status",
         "trg_sync_vitrine_order_stock_reservation_v1"
       ],
-      "public_grants": []
+      "public_grants": [],
+      "role_grants": {
+        "anon": [],
+        "PUBLIC": [],
+        "authenticated": []
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     },
     {
       "name": "vitrine_stock_reservations",
@@ -148,7 +273,16 @@
         "vitrine_stock_reservation_lot_delete_v1",
         "vitrine_stock_reservation_lot_sync_v1"
       ],
-      "public_grants": []
+      "public_grants": [],
+      "role_grants": {
+        "anon": [],
+        "PUBLIC": [],
+        "authenticated": []
+      },
+      "owner_role": "postgres",
+      "relation_kind": "r"
     }
-  ]
+  ],
+  "capture_method": "read-only catalog query on canonical Supabase; no customer rows",
+  "grant_scope": "Direct acl entries for PUBLIC, anon and authenticated; public_grants is combined three-role union"
 }

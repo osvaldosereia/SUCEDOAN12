@@ -1,0 +1,44 @@
+name: Orders R13 strict metadata parity unit (offline)
+on:
+  push:
+    branches:
+      - 'agent/orders-r15-*'
+    paths:
+      - 'scripts/test-orders-r13-schema-security-parity.mjs'
+      - 'scripts/test-orders-r13-schema-security-unit.mjs'
+      - '.github/workflows/orders-r13-parity-ci.yml'
+  pull_request:
+    branches:
+      - 'agent/orders-r15-*'
+    paths:
+      - 'scripts/test-orders-r13-schema-security-parity.mjs'
+      - 'scripts/test-orders-r13-schema-security-unit.mjs'
+      - '.github/workflows/orders-r13-parity-ci.yml'
+permissions:
+  contents: read
+jobs:
+  strict-parity-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      META_LIVE_ENABLED: 'false'
+      BLING_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify script syntax
+        run: |
+          node --check scripts/test-orders-r13-schema-security-parity.mjs
+          node --check scripts/test-orders-r13-schema-security-unit.mjs
+      - name: Negative and positive RLS/ACL regression tests
+        run: |
+          node --test scripts/test-orders-r13-schema-security-unit.mjs
+      - name: Block remote transports and avoid credentials
+        run: |
+          test "$META_LIVE_ENABLED" = false
+          test "$BLING_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          git diff --check
