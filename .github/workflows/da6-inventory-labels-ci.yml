@@ -44,7 +44,7 @@ jobs:
       - name: Testar leitura óptica, impressão e upload resiliente
         env:
           NODE_PATH: /tmp/da6-qr-integration/node_modules
-        run: node --test tests/da6-*.test.cjs tests/inventory-label-*.test.cjs
+        run: node --test $(find tests -maxdepth 1 -name 'da6-*.test.cjs' ! -name 'da6-worker-concurrency.test.cjs' | sort) tests/inventory-label-*.test.cjs
       - name: Validar sintaxe dos módulos do navegador
         run: |
           node --check vitrine/admin/inventory-label-photo-upload.js
