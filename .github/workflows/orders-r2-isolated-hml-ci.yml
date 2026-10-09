@@ -5,6 +5,7 @@ on:
       - 'agent/orders-r2-*'
     paths:
       - 'scripts/sql/orders-r2-*.sql'
+      - 'scripts/sql/orders-r2-r3-*.sql'
       - 'scripts/sql/orders-security-*.sql'
       - 'supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql'
       - 'supabase/sql/orders-r2-basket-independent-groups-review-v1.sql'
@@ -58,6 +59,13 @@ jobs:
       FISCAL_LIVE_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v4
+      # Pin the existing R03 implementation for an integration test, without
+      # merging or rewriting its separate development branch.
+      - uses: actions/checkout@v4
+        with:
+          ref: e7408ad5cbcd6ae8d5ca16e90f2e287a7d61af4c
+          path: r03-source
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -300,5 +308,31 @@ jobs:
           test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.orders")" = 1
           test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.vitrine_stock_reservations where product_id in ('00000000-0000-4000-8000-0000000000e1','00000000-0000-4000-8000-0000000000e2')")" = 0
           echo 'PASS: linked food/hygiene kits allocated to exactly one buyer without loose stock duplication'
+      - name: Integrate actual R03 weekly-number migration with R02 checkout (seventh DB)
+        run: |
+          set -euo pipefail
+          createdb synthetic_r02_r03_checkout
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-r3-integration-fixture.sql
+          # This is the EXACT R03 migration from the pinned checkout above.
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f r03-source/supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-r3-integration-assertions.sql
+          echo 'PASS: weekly number R03 coexists with actual R02 v3 checkout, baskets, mold, reservation and snapshot'
       - name: Diff hygiene
         run: git diff --check
