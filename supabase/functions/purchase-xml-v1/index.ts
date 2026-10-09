@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractCatalogFromNfe } from "./xml-catalog-extractor.mjs";
+import { xmlFieldReviewGateway } from "./xml-catalog-field-review-gateway.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -1738,6 +1739,12 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
       return js(req,r,r.ok?200:Number(r.status||400));
     }
     if(action==="xml_catalog_progress")return js(req,await xmlCatalogProgress());
+    // Decision ledger only. JWT + active Admin role are checked by auth(req).
+    // The gateway rejects internal keys and all non-owner/admin sessions.
+    if(["xml_field_review_list","xml_field_review_open","xml_field_review_decide"].includes(action)){
+      const r=await xmlFieldReviewGateway(sb,action,body,a);
+      return js(req,r,r.ok?200:Number(r.status||400));
+    }
     if(action==="xml_catalog_reprocess"){
       // Trusted hub requests may perform source-only recovery, but NEVER product, fiscal or stock writes.
       if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);

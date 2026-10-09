@@ -1,0 +1,28 @@
+name: XML Field Review Gateway R15
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
+      - 'supabase/functions/purchase-xml-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/xml-catalog-field-review-gateway.mjs'
+      - 'supabase/functions/purchase-xml-v1/xml-catalog-field-review-gateway.mjs'
+      - 'scripts/test-xml-field-review-gateway-r15.mjs'
+      - 'scripts/test-xml-field-review-admin-r15.mjs'
+      - 'vitrine/admin/index.html'
+      - '.github/workflows/xml-field-review-gateway-r15.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gateway-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          node scripts/test-xml-field-review-gateway-r15.mjs
+          node scripts/test-xml-field-review-admin-r15.mjs
+          node scripts/test-xml-catalog-details-v2.mjs
