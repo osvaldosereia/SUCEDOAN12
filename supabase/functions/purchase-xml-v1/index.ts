@@ -679,6 +679,26 @@ async function reconcilePendingFinance(limit=50){
   }
   return {ok:true,write_external:false,count:results.length,results};
 }
+// Every XML item must survive even when its identity is not known.
+function stagedReviewItem(documentId:string,item:any,status:"review_required"|"failed",reason:string){
+  return {
+    document_id:documentId,item_number:item.item_number,
+    supplier_item_code:item.supplier_item_code,description:item.description,
+    commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,
+    ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,
+    purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,
+    purchase_unit_price:item.purchase_unit_price,line_total:item.line_total,
+    base_unit:unit(item.tax_unit||item.purchase_unit)||"UN",
+    conversion_status:"review_required",processing_status:status,
+    match_method:status==="failed"?"processing_failed":reason,
+    metadata:{reason,identity_state:"unresolved",identity_reason:reason,
+      gtin_role:inferredPurchaseGtinRole(item),net_line_total:item.net_line_total,
+      item_discount:item.item_discount,item_freight:item.item_freight,
+      item_insurance:item.item_insurance,item_other:item.item_other,
+      tax_unit:item.tax_unit,tax_quantity:item.tax_quantity,
+      lot_traces:Array.isArray(item.lot_traces)?item.lot_traces:[]}
+  };
+}
 async function processXml(token:string,xml:string,source:string,runId:string|null,sourceId:string|null=null,blingId:number|null=null,detailSupplement:any=null){
   const p:any=parseXml(xml);
   if(!p.installments.length&&Array.isArray(detailSupplement?.parcelas))p.installments=detailSupplement.parcelas.map((x:any,i:number)=>({number:String(i+1),due_date:day(x?.data||x?.vencimento),amount:num(x?.valor)})).filter((x:any)=>x.due_date&&Number(x.amount)>0);if(p.document_key.length!==44)throw new Error("invalid_nfe_access_key");
@@ -707,7 +727,14 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   for(const item of p.items){
     try{
       const ep=await ensureProductSafe(token,p,item);
-      if(!ep.ok||!ep.product){review++;await sb.from("purchase_xml_items").upsert({document_id:documentId,item_number:item.item_number,...item,base_unit:unit(item.tax_unit||item.purchase_unit)||"UN",conversion_status:"review_required",processing_status:"review_required",match_method:ep.review||"unmatched",metadata:{reason:ep.review||"unmatched",identity_state:"unresolved",identity_reason:ep.review||"identity_confirmation_required",gtin_role:ep.gtin_role||inferredPurchaseGtinRole(item)}},{onConflict:"document_id,item_number"});continue}
+      if(!ep.ok||!ep.product){
+        review++;
+        const saved=await sb.from("purchase_xml_items").upsert(
+          stagedReviewItem(documentId,item,"review_required",ep.review||"identity_confirmation_required"),
+          {onConflict:"document_id,item_number"});
+        if(saved.error)throw new Error("xml_staging_failed:"+saved.error.message);
+        continue;
+      }
       const conv:any=await conversionFor(ep.product,p,item);
       const bq=conv.factor?Number(item.purchase_quantity||0)*Number(conv.factor):null;
       const buc=bq&&bq>0&&Number.isFinite(Number(item.net_line_total))?Number(item.net_line_total)/bq:(conv.factor&&Number.isFinite(Number(item.purchase_unit_price))?Number(item.purchase_unit_price)/Number(conv.factor):null);
@@ -743,11 +770,16 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
       const ph=await sb.from("product_purchase_history").upsert({document_id:documentId,purchase_item_id:it.data.id,product_id:ep.product.id,document_key:p.document_key,issued_at:p.issued_at,supplier_document:p.supplier_document,supplier_name:p.supplier_name,supplier_bling_contact_id:contact.id||null,original_unit:item.purchase_unit,original_quantity:item.purchase_quantity,conversion_factor:conv.factor,conversion_chain:conv.chain,base_unit:conv.base_unit,base_quantity:bq,line_total:item.line_total,purchase_unit_cost:item.purchase_unit_price,base_unit_cost:buc,source,metadata:{invoice_number:p.invoice_number}},{onConflict:"purchase_item_id"});if(ph.error)throw ph.error;
       const meta={...obj(ep.product.metadata),last_purchase_xml_at:p.issued_at||new Date().toISOString(),last_purchase_document_key:p.document_key,last_purchase_supplier:p.supplier_name||null,last_purchase_unit:item.purchase_unit||null,last_purchase_conversion_factor:conv.factor||null,purchase_catalog_review_required:true,purchase_catalog_review_item_id:it.data.id};
       const upd:any={supplier:p.supplier_name||ep.product.supplier||null,metadata:meta,updated_at:new Date().toISOString()};
-      if(item.ncm)upd.ncm=item.ncm;
+      // XML tax codes are fiscal evidence, not permission to overwrite catalog NCM.
       const pu=await sb.from("products").update(upd).eq("id",ep.product.id);if(pu.error)throw pu.error;
       matched++;if(ep.created)created++;if(conv.status==="review_required")review++;
     }catch(e){
-      review++;await sb.from("purchase_xml_items").upsert({document_id:documentId,item_number:item.item_number,supplier_item_code:item.supplier_item_code,description:item.description,commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,purchase_unit_price:item.purchase_unit_price,line_total:item.line_total,base_unit:unit(item.tax_unit||item.purchase_unit)||"UN",conversion_status:"review_required",processing_status:"failed",metadata:{error:clean((e as Error)?.message||e,500)}},{onConflict:"document_id,item_number"});
+      review++;
+      const reason=clean((e as Error)?.message||e,500);
+      const saved=await sb.from("purchase_xml_items").upsert(
+        stagedReviewItem(documentId,item,"failed",reason),
+        {onConflict:"document_id,item_number"});
+      if(saved.error)throw new Error("xml_item_persist_failed:"+saved.error.message);
     }
   }
   let finance:any={status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":p.recipient_kind==="CNPJ"&&!company?"pending_company_match":"not_applicable",accounts:[]};
