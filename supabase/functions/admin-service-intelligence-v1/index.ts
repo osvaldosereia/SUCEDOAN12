@@ -7650,6 +7650,140 @@ async function blingHubFindOrderByExternalKey(sb:any,token:string,externalKey:st
   if(rows.length===1)return {ok:true,status:r.status,match:rows[0],matches:rows};
   return {ok:true,status:r.status,match:null,matches:rows};
 }
+// Comercial: um orçamento salvo gera, no máximo, um pedido de venda no Bling.
+// Não emite NF-e, não movimenta estoque e não cria pedidos do checkout.
+async function blingHubQuoteOrderConvert(sb:any,quoteIdRaw:any,previewOnly:boolean=false){
+  const quoteId=uuid(quoteIdRaw);
+  if(!quoteId)return {ok:false,error:"invalid_quote_id",status:400};
+  const qr=await sb.from("sales_quotes").select("*").eq("id",quoteId).is("archived_at",null).maybeSingle();
+  if(qr.error)throw qr.error;
+  const q=qr.data;
+  if(!q)return {ok:false,error:"quote_not_found",status:404};
+  const linked=await sb.from("sales_quote_bling_orders").select("status,bling_order_id,external_key,last_error").eq("quote_id",quoteId).maybeSingle();
+  if(linked.error)throw linked.error;
+  if(linked.data?.status==="synced"&&Number(linked.data.bling_order_id)>0){
+    return {ok:true,already_created:true,quote_id:quoteId,bling_order_id:Number(linked.data.bling_order_id),external_key:linked.data.external_key};
+  }
+  const snapshot=q.snapshot&&typeof q.snapshot==="object"?q.snapshot:{};
+  const fields=snapshot.fields&&typeof snapshot.fields==="object"?snapshot.fields:{};
+  const rawItems=Array.isArray(snapshot.items)?snapshot.items:[];
+  const multRaw=Number(snapshot.options?.generalMultiplier??1);
+  const mult=Number.isInteger(multRaw)&&multRaw>=1&&multRaw<=10000?multRaw:0;
+  const failures:string[]=[];
+  if(["rejected","expired","cancelled"].includes(String(q.status)))failures.push("quote_not_approved_for_sale");
+  if(!mult)failures.push("invalid_basket_multiplier");
+  if(!rawItems.length||rawItems.length>300)failures.push("invalid_quote_items");
+  const priceCents=(v:any)=>Math.round(Number(v)*100);
+  const ids=rawItems.map((x:any)=>uuid(x?.id)).filter(Boolean);
+  const productRows=ids.length?await sb.from("products").select("id,sku,name,bling_product_id").in("id",ids):{data:[],error:null};
+  if(productRows.error)throw productRows.error;
+  const pmap=new Map((productRows.data||[]).map((x:any)=>[String(x.id),x]));
+  const items:any[]=[];
+  for(const [index,item] of rawItems.entries()){
+    const product=pmap.get(String(item?.id)) as any;
+    const qty=Number(item?.quantity)*mult,price=priceCents(item?.unitPrice);
+    if(!product||!Number(product?.bling_product_id||0)){
+      failures.push("item_"+(index+1)+"_not_linked_to_bling");continue;
+    }
+    if(!Number.isFinite(qty)||qty<=0||qty>100000||!Number.isFinite(price)||price<0){
+      failures.push("item_"+(index+1)+"_invalid_quantity_or_price");continue;
+    }
+    items.push({produto:{id:Number(product.bling_product_id)},codigo:clean(product.sku||item?.code,100),
+      descricao:clean(item?.name||product.name,180),quantidade:qty,valor:price/100});
+  }
+  const totalCents=Number(q.total_cents);
+  const lineCents=items.reduce((sum,x)=>sum+Math.round(x.quantidade*Math.round(x.valor*100)),0);
+  if(!Number.isSafeInteger(totalCents)||totalCents<=0||totalCents>1000000000)failures.push("invalid_quote_total");
+  const doc=blingHubDigits(q.client_document||fields.document);
+  if(![11,14].includes(doc.length)||!blingHubValidCpfCnpj(doc))failures.push("customer_document_required");
+  let local:any=null;
+  if(doc.length===11||doc.length===14){
+    const found=await sb.from("customers").select("id,name,cpf_cnpj,bling_contact_id").eq("cpf_cnpj",doc).limit(2);
+    if(found.error)throw found.error;
+    if((found.data||[]).length!==1)failures.push("customer_not_registered_in_admin");
+    else local=found.data[0];
+  }
+  if(q.customer_id&&local&&String(q.customer_id)!==String(local.id))failures.push("quote_customer_identity_conflict");
+  if(!local?.bling_contact_id)failures.push("customer_not_synced_to_bling");
+  const runtime=await sb.from("bling_hub_runtime_v2").select("mode,hub_enabled,orders_enabled").eq("id",1).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  if(runtime.data?.hub_enabled!==true||runtime.data?.orders_enabled!==true||runtime.data?.mode!=="live")failures.push("bling_orders_not_enabled");
+  const summary={quote_id:quoteId,quote_number:q.quote_number,customer_name:q.client_name||local?.name||"",
+    customer_id:local?.id||null,bling_contact_id:Number(local?.bling_contact_id||0)||null,
+    item_count:rawItems.length,multiplier:mult,total_cents:totalCents,items_total_cents:lineCents,
+    payment:clean(fields.payment,120),failures};
+  if(failures.length)return {ok:false,error:"quote_conversion_blocked",status:409,...summary};
+  if(previewOnly){
+    return {ok:true,ready:true,...summary,already_created:false,
+      processing:linked.data?.status||null,requires_confirmation:true};
+  }
+
+  // Nunca tentar um segundo POST quando já houve tentativa incerta.
+  if(linked.data){
+    return {ok:false,error:"quote_conversion_requires_reconciliation",status:409,
+      quote_id:quoteId,conversion_status:linked.data.status,external_key:linked.data.external_key,
+      detail:linked.data.last_error||null};
+  }
+  const claimed=await sb.rpc("sales_quote_bling_claim_v1",{p_quote_id:quoteId});
+  if(claimed.error)throw claimed.error;
+  if(claimed.data?.ok!==true)return {ok:false,error:claimed.data?.error||"conversion_not_claimed",
+    status:409,...claimed.data};
+  const externalKey=String(claimed.data.external_key);
+  const record=async(status:string,orderId:number|null,reason:string,details:any={})=>{
+    const r=await sb.from("sales_quote_bling_orders").update({
+      status,bling_order_id:orderId,last_error:reason||null,
+      detail:details,updated_at:new Date().toISOString()
+    }).eq("quote_id",quoteId).eq("status","processing");
+    if(r.error)throw r.error;
+  };
+  try{
+    const token=await blingHubOauth(sb);
+    const before=await blingHubFindOrderByExternalKey(sb,token,externalKey);
+    if(!before.ok)throw new Error("order_lookup_http_"+String(before.status));
+    if(before.matches.length>1)throw new Error("external_key_ambiguous");
+    let remoteId=Number(before.match?.id||0),created=false;
+    if(!remoteId){
+      const difference=totalCents-lineCents;
+      const cityDate=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+      const address={nome:clean(local?.name,180),endereco:clean(fields.street,180),numero:clean(fields.number,40),
+        complemento:clean([fields.block,fields.contact].filter(Boolean).join(" · "),220),
+        bairro:clean(fields.district,140),municipio:clean(fields.city,120),
+        uf:clean(fields.state,2).toUpperCase(),cep:blingHubDigits(fields.zip)};
+      const payload:any={contato:{id:Number(local.bling_contact_id)},data:cityDate,
+        numeroLoja:externalKey,totalProdutos:lineCents/100,total:totalCents/100,
+        desconto:{valor:Math.max(0,-difference)/100,unidade:"REAL"},
+        outrasDespesas:Math.max(0,difference)/100,itens,
+        observacoes:clean("Orçamento "+q.quote_number+" · "+externalKey+" · Pagamento: "+String(fields.payment||"não informado")+
+          " · Frete informado: "+String(fields.shipping||"0")+" · Observações: "+String(fields.notes||""),900),
+        transporte:{etiqueta:address}};
+      const sent=await blingHubCreateOrderOnce(sb,token,payload);
+      if(!sent.ok)throw new Error("bling_create_http_"+String(sent.status)+": "+String(sent.error||"unknown"));
+      remoteId=Number(sent.data?.data?.id||sent.data?.id||0);
+      created=true;
+    }
+    if(!remoteId)throw new Error("bling_order_id_missing_after_create");
+    const verified=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(remoteId)));
+    if(!verified.ok)throw new Error("bling_read_after_write_http_"+String(verified.status));
+    const remote=verified.data?.data||{};
+    if(clean(remote.numeroLoja,120)!==externalKey||Math.abs(Math.round(Number(remote.total||0)*100)-totalCents)>1)
+      throw new Error("bling_order_verification_mismatch");
+    await record("synced",remoteId,"",{verified:true,created,quote_number:q.quote_number,total_cents:totalCents,external_key:externalKey});
+    const link=await sb.from("bling_hub_entity_links_v2").upsert({
+      source_system:"vitrine_quotes",entity_type:"order",source_id:quoteId,bling_id:remoteId,
+      identity_kind:"numeroLoja",identity_value:externalKey,status:"matched",
+      last_verified_at:new Date().toISOString(),metadata:{quote_number:q.quote_number,total_cents:totalCents}
+    },{onConflict:"source_system,entity_type,source_id"});
+    if(link.error)throw link.error;
+    return {ok:true,quote_id:quoteId,quote_number:q.quote_number,
+      bling_order_id:remoteId,external_key:externalKey,total_cents:totalCents,created,verified:true};
+  }catch(e){
+    const reason=clean((e as Error)?.message||e,500);
+    await record("review_required",null,reason,{write_may_have_occurred:true,manual_reconciliation_required:true});
+    return {ok:false,error:"quote_conversion_review_required",status:409,detail:reason,
+      quote_id:quoteId,external_key:externalKey,write_may_have_occurred:true};
+  }
+}
+
 async function blingHubCreateOrderOnce(sb:any,token:string,payload:any){
   await blingHubReserveSlot(sb);
   try{
@@ -9292,6 +9426,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="fiscal_confirm_payment"){
         const result=await blingHubVitrineConfirmFiscalPayment(sb,body?.source_order_id,body?.payment_method);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="quote_order_preview"||subaction==="quote_order_convert"){
+        const result=await blingHubQuoteOrderConvert(sb,body?.quote_id,subaction==="quote_order_preview");
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="process_order_jobs"){
