@@ -21,3 +21,16 @@
 @media(min-width:1101px){#productsPanel .products-layout{grid-template-columns:54px minmax(190px,1.35fr) minmax(215px,1.1fr) minmax(215px,1fr) minmax(110px,.64fr) minmax(125px,.72fr);gap:12px}}
 @media(max-width:1100px) and (min-width:641px){#productsPanel .product-operational-row .product-row-actions{grid-column:2/-1;justify-content:flex-start;flex-wrap:wrap}#productsPanel .product-operational-row .product-print-label{min-width:145px}}
 @media(max-width:640px){#productRows{padding:6px 4px}#productRows .mobile-product-card{margin:5px 3px 10px}#productRows .mobile-product-print{min-height:38px}}
+
+/* DA6 / impressão em lote */
+.shelf-print-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding:11px 13px;margin:10px 0;border:1px solid #cbded1;background:#f1f9f3;border-radius:12px}
+.shelf-print-toolbar b{font-size:12px;color:#165a36;margin-right:auto}
+.shelf-print-toolbar select{min-height:38px;border:1px solid #c7d8cc;border-radius:9px;background:#fff;padding:6px 9px;max-width:245px}
+.shelf-print-toolbar small{font-size:11px;color:#4d6d56}
+.shelf-print-toolbar button{min-height:38px!important}
+.label-card-select{display:inline-flex!important;align-items:center;gap:5px;margin-top:6px;font-size:11px;font-weight:800;color:#185d39;cursor:pointer}
+.label-card-select input{width:16px;height:16px;accent-color:#176b43}
+#productsPanel .product-print-label{grid-column:1/-1;min-height:34px!important}
+#productsPanel .product-gondola-inline{grid-column:1/-1}
+#productsPanel .product-gondola-inline select{width:100%;min-height:36px;border:1px solid #d7e4da;border-radius:8px;background:#fff;color:#165a36}
+@media(max-width:640px){.shelf-print-toolbar{align-items:stretch}.shelf-print-toolbar b,.shelf-print-toolbar button,.shelf-print-toolbar select{width:100%;max-width:none}}
