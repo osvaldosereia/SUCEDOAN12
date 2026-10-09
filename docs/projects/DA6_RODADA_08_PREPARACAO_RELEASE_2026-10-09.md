@@ -58,3 +58,17 @@ node --test tests/da6-release-gate.test.cjs tests/da6-vendored-print.test.cjs
 - Bibliotecas QR/Code128 executadas pelo Chrome a partir de arquivos próprios com licença MIT; decodificação do QR por `jsQR` confirmou o payload de identificação DA6 e o SVG Code128 foi renderizado sem acesso HTTP externo.
 - O manifesto de release **permanece BLOQUEADO**, sem qualquer gate físico ou Edge remoto considerado aprovado por testes sintéticos.
 - Este checkpoint altera somente documentos de release, **não** o código fonte testado. Nenhum merge/deploy/SQL no canônico ou chamada ao Bling nesta rodada.
+
+## Proteção nova — evidências vinculadas ao código exato
+
+- `scripts/da6-release-fingerprint.mjs` calcula SHA-256 composto e reprodutível de todos os arquivos críticos da implementação: página do Admin, módulos JS/CSS DA6, bibliotecas QR/Code128 locais, gateway central, worker, RPC/migrações e workflow do CI. Também inclui automaticamente módulos novos `inventory-label-*.js/.css/.ts` e migrações `*_da6_*.sql`.
+- O manifesto `docs/projects/DA6_RELEASE_GATES_2026-10-09.json` inclui `release_candidate_fingerprint`. **Permanece `null` e mantém o release BLOQUEADO.** Não usar o SHA da implementação atual como aprovação física; só fixá-lo no momento do congelamento do código após a homologação dos dispositivos.
+- `scripts/da6-release-gate.mjs --enforce` rejeita tanto o fingerprint ausente quanto qualquer diferença em relação ao código local; não permite que aprovações ou fotos de uma versão anterior sejam reaproveitadas após mudanças na impressão, OMR, Edge ou schema.
+- Testes isolados de mudança de um byte, inclusão de novo módulo, preservação em alteração de documentação e release bloqueado estão em `tests/da6-release-fingerprint.test.cjs`.
+- Para obter o hash antes de capturar fotos reais:
+  ```bash
+  node scripts/da6-release-fingerprint.mjs
+  node scripts/da6-release-gate.mjs --report
+  ```
+- No momento de homologar, guardar o hash e o SHA de commit nas evidências físicas/hospedadas, sem publicar dados de clientes. Se a implementação mudar após aprovar, **repetir os testes físicos/hospedados afetados**, criar novas evidências e atualizar o fingerprint.
+- A presença de um fingerprint nunca substitui os sete gates existentes, a aprovação protegida nem o bloqueio de merge/deploy.
