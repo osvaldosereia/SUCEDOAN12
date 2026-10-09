@@ -1,5 +1,5 @@
 /* DA6 · leitura de marcas em imagem previamente retificada 1000×1500. Sem IA. */
-(function(){
+(function(root){
 'use strict';
 const WIDTH_MM=100,HEIGHT_MM=150;
 function density(image,cx,cy,radius){
@@ -47,5 +47,5 @@ function read(image){
   }
   return {readings,errors,needs_review:errors.length>0};
 }
-window.DonaAntoniaOMRGeometry={density,markedDigit,read,geometry:'DA6-100x150-v1'};
-})();
+root.DonaAntoniaOMRGeometry={density,markedDigit,read,geometry:'DA6-100x150-v1'};
+})(typeof window==='undefined'?globalThis:window);
