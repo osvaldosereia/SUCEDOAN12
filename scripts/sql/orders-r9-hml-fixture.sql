@@ -1,6 +1,8 @@
 -- Synthetic fixture after R06/R07 canonical captured routines and assertions.
 -- Existing R07 tests leave the 001 order VERIFIED with provider order 12345.
 \set ON_ERROR_STOP on
+-- R02 captured minimal schema does not include full production order fields.
+ALTER TABLE public.orders ADD COLUMN bling_order_id bigint;
 CREATE TABLE public.bling_hub_entity_links_v2(
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   source_system text NOT NULL,entity_type text NOT NULL,
