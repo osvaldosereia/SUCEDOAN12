@@ -63,3 +63,42 @@ GRANT EXECUTE ON FUNCTION public.ops2_order_meta_confirmation_status_v1(uuid) TO
 -- Avoid exposing order proof to anonymous store or browser.
 COMMENT ON FUNCTION public.ops2_order_meta_confirmation_status_v1(uuid)
   IS 'Private service-role status of verified Meta order confirmation, not customer authorization by text.';
+
+
+-- Existing queue feed checks active admin. Wrap it to attach server-derived
+-- Meta proof to each queue card, without N+1 requests.
+CREATE OR REPLACE FUNCTION public.manual_pick_queue_meta_feed_v1()
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
+AS $feed$
+DECLARE
+  v_uid uuid:=auth.uid();
+  v_base jsonb;
+  v_rows jsonb;
+BEGIN
+  IF v_uid IS NULL OR NOT EXISTS(
+    SELECT 1 FROM public.admin_users a WHERE a.user_id=v_uid AND a.is_active=true
+  ) THEN
+    RAISE EXCEPTION 'admin_not_authorized' USING errcode='42501';
+  END IF;
+  v_base:=public.manual_pick_queue_feed_v1();
+  IF v_base->>'ok'<>'true' OR jsonb_typeof(v_base->'orders')<>'array' THEN
+    RAISE EXCEPTION 'queue_unavailable';
+  END IF;
+  SELECT coalesce(jsonb_agg(
+      row_obj.obj||jsonb_build_object(
+        'meta_confirmation_required',
+          public.ops2_meta_order_confirmation_required_v1((row_obj.obj->>'id')::uuid),
+        'meta_confirmation_verified',
+          EXISTS(SELECT 1 FROM public.order_meta_confirmations_v1 c
+                 WHERE c.order_id=(row_obj.obj->>'id')::uuid)
+      ) ORDER BY row_obj.ordinal
+    ),'[]'::jsonb)
+  INTO v_rows
+  FROM jsonb_array_elements(v_base->'orders') WITH ORDINALITY row_obj(obj,ordinal);
+  RETURN jsonb_set(v_base,'{orders}',v_rows);
+END
+$feed$;
+REVOKE ALL ON FUNCTION public.manual_pick_queue_meta_feed_v1()
+  FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.manual_pick_queue_meta_feed_v1()
+  TO authenticated,service_role;
