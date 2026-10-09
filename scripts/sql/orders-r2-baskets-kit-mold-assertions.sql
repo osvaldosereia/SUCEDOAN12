@@ -155,8 +155,8 @@ BEGIN
  THEN RAISE EXCEPTION 'legacy preassembled basket path invalid: %',response; END IF;
 
  -- No customer-supplied group should cause an extra phantom reservation.
- IF EXISTS (SELECT 1 FROM public.vitrine_stock_reservations r
-   JOIN public.order_items i ON i.order_id=r.order_id AND i.product_id=r.product_id
+ IF EXISTS (SELECT 1 FROM public.vitrine_stock_reservations res
+   JOIN public.order_items i ON i.order_id=res.order_id AND i.product_id=res.product_id
    WHERE i.metadata->>'history_kind'='basket' )
  THEN RAISE EXCEPTION 'phantom reservation created for visual basket parent'; END IF;
 END $basket_integration$;
