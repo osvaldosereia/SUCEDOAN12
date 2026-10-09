@@ -196,3 +196,9 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 
 ### Próximo passo
 **R21:** homologação de identidade, EAN comercial/tributário, unidade/caixa, conversão de embalagem, vinculação humana e criação inativa, com papel/verificação/auditoria e teste E2E isolado, sem publicar ou aplicar dados reais. Após R21, R22–R27 para decisão/aplicação/rollback fiscal segregado, performance, integração e lançamento com gates formais. Não mesclar individualmente PRs #997/#999/#1001 sem respeitar dependências e executar a CI sobre a árvore combinada.
+
+### Verificação de concorrência após o fechamento da R20
+- Durante a rodada, a `main` passou de `8d2e187fa3d7` para `1c859e27664d`, por commit **alheio à R20** (`feat: ativar orçamento para pedido de venda Bling`). Mudou `orcamento/app-original.html`, `admin-products-live-v1/index.ts`, `admin-service-intelligence-v1/index.ts` (roteador pai) e uma migration de orçamento.
+- Nenhum desses arquivos foi sobrescrito pela branch R20. Verificação: o roteamento `action==="purchase_xml"` → `handlePurchaseXmlRequest(req,body,false)` continua igual no roteador pai das duas versões, mas precisa de teste integrado ao rebase final.
+- O Supabase mostra agora Admin v231 (`verify_jwt=false`), atualização **externa à R20**; a R20 não fez deploy. Contagens permanecem 90 XMLs, 214 itens catalogados, 0 faltantes.
+- PR #1001 continua empilhada sobre R19 → R18, baseada na `main` anterior. **Antes de integrar em `main`, atualizar a cadeia a partir do novo commit com reconciliação e CI novamente.** Não fazer `force push`, merge ou deploy nesta rodada.
