@@ -126,5 +126,18 @@ jobs:
           test "$(psql -Atc 'select stock::integer from public.products where id='\''00000000-0000-4000-8000-0000000000aa'\''')" = 10
           test "$(psql -Atc 'select count(*) from public.orders')" = 3
           echo 'PASS: real checkout and reservation functions serialized stock claims with rollback'
+      - name: Run actual production separation RPCs in a second disposable database
+        run: |
+          set -euo pipefail
+          createdb synthetic_separation_r2
+          PGDATABASE=synthetic_separation_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-separation-fixture.sql
+          PGDATABASE=synthetic_separation_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-separation-functions.sql
+          PGDATABASE=synthetic_separation_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-separation-assertions.sql
+          test "$(PGDATABASE=synthetic_separation_r2 psql -Atc \
+            "select count(*) from public.order_separation_completions_v1 where phase='completed'")" = 1
+          echo 'PASS: canonical separation functions, missing item adjustment, stock reconciliation and phase persistence'
       - name: Diff hygiene
         run: git diff --check
