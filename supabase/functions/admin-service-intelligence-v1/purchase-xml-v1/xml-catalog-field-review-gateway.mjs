@@ -53,7 +53,7 @@ export async function xmlFieldReviewGateway(sb, action, payload, auth){
       return {ok:true,review_id:r.data,product_updated:false,
         fiscal_updated:false,stock_updated:false,bling_called:false,finance_updated:false};
     }
-    const reviewId=id(body.review_id),expectedRevision=Number(body.expected_revision);
+    const reviewId=id(body.review_id),expectedRevision=body.expected_revision;
     const decision=str(body.decision,20);
     if(!reviewId||!Number.isInteger(expectedRevision)||expectedRevision<0||
        expectedRevision>1000000||!Object.hasOwn(DECISIONS,decision))
