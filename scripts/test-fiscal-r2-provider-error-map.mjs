@@ -24,9 +24,9 @@ assert.equal(inspected.editing.manual_correction_possible,false,'No trusted sale
 assert.equal(inspected.editing.auto_tax_put_approved,false,'API fiscal rewriting is not homologated');
 const linked=inspectBlingNfeR2(source,{
   bling_order_id:123,sale_invoice_id:27090735788,
-  contact_id:456,fiscal_subtotal:12.50
+  contact_id:456,fiscal_subtotal:99
 });
-assert.equal(linked.editing.manual_correction_possible,false,'Customer identity or subtotal must be verified');
+assert.equal(linked.editing.manual_correction_possible,false,'Conflicting subtotal must block identity verification');
 const trustedSource={data:{...source.data,contato:{id:456}}};
 const trusted=inspectBlingNfeR2(trustedSource,{
   bling_order_id:123,sale_invoice_id:27090735788,
