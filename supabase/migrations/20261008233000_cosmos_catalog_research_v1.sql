@@ -86,6 +86,33 @@ revoke all on public.cosmos_catalog_family_members from anon, authenticated;
 revoke all on public.cosmos_product_research from anon, authenticated;
 revoke all on public.cosmos_research_requests from anon, authenticated;
 
+-- Regras explícitas para que só o backend privilegiado acesse estas filas.
+grant select,insert,update,delete on public.cosmos_research_config to service_role;
+grant select,insert,update,delete on public.cosmos_catalog_families to service_role;
+grant select,insert,update,delete on public.cosmos_catalog_family_members to service_role;
+grant select,insert,update,delete on public.cosmos_product_research to service_role;
+grant select,insert,update,delete on public.cosmos_research_requests to service_role;
+grant usage,select on sequence public.cosmos_research_requests_id_seq to service_role;
+
+-- Visualização da herança apenas dos atributos previamente homologados.
+-- É uma sugestão de leitura, não faz qualquer UPDATE em produtos.
+create or replace view public.cosmos_family_attribute_preview_v1
+with (security_invoker=true)
+as
+select m.product_id, f.id as family_id,
+  f.shared_attributes - 'ncm' - 'cest' - 'origin_code' - 'cfop'
+  - 'gtin' - 'sku' - 'price' - 'stock' - 'validity'
+  - 'gross_weight' as shared_proposal,
+  case when m.evidence->>'presentation_verified'='true'
+       then f.shared_attributes->'dimensions_raw'
+       else null end as dimensions_proposal,
+  m.evidence as membership_evidence
+from public.cosmos_catalog_families f
+join public.cosmos_catalog_family_members m on m.family_id=f.id
+where f.verification_status='verified' and m.status='confirmed';
+revoke all on public.cosmos_family_attribute_preview_v1 from public,anon,authenticated;
+grant select on public.cosmos_family_attribute_preview_v1 to service_role;
+
 -- A chave de consulta da API é diferente da chave de autorização fiscal:
 -- não há UPDATE em products, product_fiscal_profiles ou Bling nesta migração.
 create or replace function public.cosmos_research_reserve_next()
@@ -115,6 +142,11 @@ begin
    and not exists (select 1 from public.cosmos_product_research r where r.product_id=p.id)
  order by p.id limit 150
  on conflict (product_id) do nothing;
+
+ -- Se a função caiu no meio da chamada, liberar o item para nova tentativa futura.
+ update public.cosmos_product_research r set status='retry',
+   retry_after=now()+interval '24 hours', updated_at=now(),last_error='abandoned_reservation'
+ where r.status='reserved' and r.last_attempt_at<now()-interval '45 minutes';
 
  select count(*) into used_slots from public.cosmos_research_requests
  where quota_date=local_day;
