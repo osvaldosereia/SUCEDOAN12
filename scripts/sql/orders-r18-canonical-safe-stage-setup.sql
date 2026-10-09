@@ -30,3 +30,30 @@ ALTER TABLE public.dispatch_fiscal_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_separation_completions_v1 ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.dispatch_fiscal_jobs,public.order_separation_completions_v1 FROM PUBLIC,anon,authenticated;
 GRANT ALL ON TABLE public.dispatch_fiscal_jobs,public.order_separation_completions_v1 TO service_role;
+-- The third authentic trigger checks vitrine customer registration and address.
+CREATE TABLE public.customers(
+ id uuid PRIMARY KEY,
+ is_active boolean DEFAULT true,
+ name text,
+ cpf_cnpj text
+);
+CREATE TABLE public.customer_addresses(
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ customer_id uuid NOT NULL REFERENCES public.customers(id),
+ is_active boolean DEFAULT true,
+ street text, number text, neighborhood text, city text
+);
+CREATE TABLE public.orders(
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ source text,
+ phone_e164 text,
+ payment_method text,
+ delivery_address jsonb DEFAULT '{}'::jsonb,
+ customer_id uuid REFERENCES public.customers(id)
+);
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customer_addresses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.customers,public.customer_addresses,public.orders FROM PUBLIC,anon,authenticated;
+GRANT ALL ON TABLE public.customers,public.customer_addresses,public.orders TO service_role;
+
