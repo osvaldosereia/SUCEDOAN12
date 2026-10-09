@@ -33,7 +33,6 @@ jobs:
           node scripts/test-xml-catalog-fiscal-dossier-r25.mjs
           node scripts/test-xml-identity-gateway-r21.mjs
           node scripts/test-xml-main-integration-r23.mjs
-          node scripts/test-xml-ingest-integrity-r19.mjs
   edge-typecheck:
     runs-on: ubuntu-latest
     steps:
@@ -46,6 +45,7 @@ jobs:
           set -eu
           deno check supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
           deno run --allow-read scripts/test-xml-catalog-protocol-integrity-v6.mjs
+          deno run --allow-read scripts/test-xml-ingest-integrity-r19.mjs
   integrated-postgres:
     runs-on: ubuntu-latest
     services:
