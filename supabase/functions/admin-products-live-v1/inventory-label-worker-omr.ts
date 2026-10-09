@@ -121,8 +121,14 @@ function markedDigit(scores){
   if(scores.length!==10)throw Error('digits_required');
   const sorted=scores.map((score,digit)=>({score,digit})).sort((a,b)=>b.score-a.score);
   if(sorted[0].score<.32)return {value:null,confidence:0,reason:'unmarked'};
-  if(sorted[1].score>.22)return {value:null,confidence:0,reason:'multiple_marks'};
-  return {value:sorted[0].digit,confidence:Math.min(1,(sorted[0].score-sorted[1].score)*1.4)};
+  // A borda impressa dos círculos vazios interfere na densidade em 203 dpi.
+  // Compare o segundo sinal com a linha de base do próprio grupo de dez dígitos.
+  const reference=sorted.slice(3).map(x=>x.score).sort((a,b)=>a-b);
+  const baseline=reference[Math.floor(reference.length/2)];
+  const contrast=sorted[0].score-sorted[1].score;
+  if(contrast<.24||(sorted[1].score>.28&&sorted[1].score-baseline>.08))
+    return {value:null,confidence:0,reason:'multiple_marks'};
+  return {value:sorted[0].digit,confidence:Math.min(1,contrast*1.4)};
 }
 function read(image){
   if(!image?.data||image.width<500||image.height<750)throw Error('image_too_small');
