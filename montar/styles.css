@@ -17,3 +17,8 @@
 .queue-completed-message{margin:0 18px 18px;border:1px solid #b5d9be;background:#edf9f1;padding:15px 12px;border-radius:12px;text-align:center;color:#165a35;font-size:13px;font-weight:900}
 .queue-completion-notice{background:#dcf3e3;border:2px solid #73b48a;border-left:6px solid #23834b;padding:17px;border-radius:14px;color:#135833;font-weight:950;font-size:16px;line-height:1.5;margin:5px 0 18px;overflow-wrap:anywhere}
 .queue-completion-notice[hidden]{display:none!important}
+
+/* R05: unauthorised orders remain visible but cannot be opened. */
+.queue-card:has(.status.blocked){border:2px solid #c96a60;background:#fff8f7}
+.queue-card .status.blocked{background:#fce5e1;color:#912c25;white-space:normal}
+.queue-blocked-message{margin:0 18px 18px;padding:14px 12px;border:1px solid #e7b3ab;border-radius:12px;background:#fff0ee;color:#8a2d26;font-size:13px;font-weight:900;text-align:center}
