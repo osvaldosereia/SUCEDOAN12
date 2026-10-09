@@ -14,7 +14,7 @@ test('R7: módulos DA6 no final do Admin uma única vez, sem substituir balanço
   assert.equal(occurrence(html,'src="/vitrine/admin/'+file),1,file);
  const order=['product-shelf-labels.js','product-shelf-admin-ui.js','inventory-label-photo-upload.js','inventory-label-photo-review.js','inventory-label-photo-tab.js'].map(f=>html.indexOf('src="/vitrine/admin/'+f));
  assert.deepEqual([...order].sort((a,b)=>a-b),order);
- for(const marker of ['id="printInventorySheet"',"inventory_sheet_create","inventory_sheet_analyze","inventory_sheet_apply","function renderBalance()","function renderProducts()",'data-tab="balance"']){
+ for(const marker of ['id="printInventorySheet"',"inventory_sheet_create","inventory_sheet_analyze","inventory_sheet_apply","function renderBalance()","function renderProducts(q=",'data-tab="balance"']){
   assert.ok(html.includes(marker),'A4/Admin marker absent: '+marker);
  }
  assert.ok(html.includes('basket-admin-section.js'),'Cestas Admin script missing');
