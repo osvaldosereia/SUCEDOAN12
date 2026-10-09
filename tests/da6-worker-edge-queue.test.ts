@@ -55,17 +55,14 @@ function fakeDb(bytes:Uint8Array,mime='image/png'){
      data:{sha256:await hashPromise,size_bytes:bytes.length,mime_type:mime},error:null
    })}}}}};
   },
-  storage(bucket:string){
-   requireCheck(bucket==='inventory-label-photos','wrong bucket');
-   return {from(name:string){
-    requireCheck(name===bucket,'wrong storage bucket');
+  storage:{from(bucket:string){
+    requireCheck(bucket==='inventory-label-photos','wrong bucket');
     return {download:async(path:string)=>{
      requireCheck(path==='ci/label.png','wrong path');
      calls.download++;
      return {data:new Blob([bytes.slice()]),error:null};
     }};
-   }};
-  }
+  }}
  };
  return {db,calls};
 }
@@ -74,7 +71,6 @@ Deno.test('DA6 R4: 3 PNG reais sem QR são recusados e não geram contagens',asy
  const result=await inventoryLabelWorkerTick(db,3);
  requireCheck(result.processed===3,'expected three attempts');
  requireCheck(result.results.map((r:any)=>r.status).join(',')==='retry,retry,failed','retry status incorrect');
- console.log('DA6_EDGE_QUEUE_DIAGNOSTIC',JSON.stringify(calls));
  requireCheck(calls.download===3,'expected downloads');
  requireCheck(calls.fail===3&&calls.finish===0,'invalid photo must not be accepted');
  requireCheck(calls.reasons.every((e:string)=>e.length>0),'missing audit error');
@@ -84,6 +80,5 @@ Deno.test('DA6 R4: PNG rotulado JPEG é rejeitado antes do QR',async()=>{
  const result=await inventoryLabelWorkerTick(db,3);
  requireCheck(result.processed===3,'expected all attempts');
  requireCheck(calls.finish===0,'fake format cannot finish');
- console.log('DA6_EDGE_MIME_DIAGNOSTIC',JSON.stringify(calls));
  requireCheck(calls.reasons.every((e:string)=>e==='image_format_mismatch'),'wrong reason for fake MIME');
 });
