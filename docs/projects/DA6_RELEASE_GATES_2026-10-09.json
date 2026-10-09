@@ -46,6 +46,8 @@
   "notices": [
     "Aprovado em CI local não comprova impressão física ou Edge hospedado.",
     "Não executar merge/deploy de DA6 enquanto qualquer gate estiver pendente.",
-    "Nunca desativar automação horária por mera aprovação de testes digitais."
-  ]
+    "Nunca desativar automação horária por mera aprovação de testes digitais.",
+    "Toda homologação física/remota só vale para o fingerprint do código; alterações posteriores exigem refazer os testes relacionados."
+  ],
+  "release_candidate_fingerprint": null
 }
