@@ -9,12 +9,20 @@ on:
       - 'agent/orders-r2-r10-*'
       - 'agent/orders-r11-*'
       - 'agent/orders-r12-*'
+      - 'agent/orders-r12-*'
+      - 'agent/orders-r13-*'
     paths:
       - 'scripts/sql/orders-r2-r7-*.sql'
       - 'scripts/test-orders-r2-r7-*.mjs'
       - 'scripts/test-orders-r2-r8-*.mjs'
       - 'scripts/sql/orders-r2-r9-*.sql'
+      - 'scripts/test-orders-r13-*.mjs'
+      - 'scripts/fixtures/orders-r13-*.json'
+      - 'docs/orders-r13-*.md'
       - 'scripts/sql/orders-r12-*.sql'
+      - 'scripts/test-orders-r13-*.mjs'
+      - 'scripts/fixtures/orders-r13-*.json'
+      - 'docs/orders-r13-*.md'
       - 'supabase/sql/orders-r12-*.sql'
       - 'scripts/sql/orders-r11-*.sql'
       - 'scripts/sql/orders-r12-*.sql'
@@ -353,6 +361,35 @@ jobs:
           test "$BLING_LIVE_ENABLED" = false
           test "$FISCAL_LIVE_ENABLED" = false
           echo 'PASS R12: R02-R11 real checkout IDs, split delivery payment only once, return/fiscal DB guards'
+      - name: "R13 source-based RLS, trigger and unsafe-grant parity report (read-only)"
+        run: |
+          set -euo pipefail
+          node --check scripts/test-orders-r13-schema-security-parity.mjs
+          node --test scripts/test-orders-r13-schema-security-unit.mjs
+          node scripts/test-orders-r13-schema-security-parity.mjs --output /tmp/orders-r13-parity.json
+          # The production-ready gate remains a distinct deliberate action:
+          # node scripts/test-orders-r13-schema-security-parity.mjs --require-parity
+          node -e "const x=require('/tmp/orders-r13-parity.json'); if(x.proof_kind!=='schema_surface_only'||x.approved_for_production!==false) process.exit(5)"
+          cat /tmp/orders-r13-parity.json
+          cp /tmp/orders-r13-parity.json ./orders-r13-schema-parity-report.json
+      - name: "R13 regression: remove dangerous public grants, preserve legitimate service permissions"
+        run: |
+          set -euo pipefail
+          createdb orders_r13_security_synthetic
+          PGDATABASE=orders_r13_security_synthetic psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-security-hml-setup.sql
+          PGDATABASE=orders_r13_security_synthetic psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-security-public-table-privileges-review-v1.sql
+          PGDATABASE=orders_r13_security_synthetic psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-security-hml-assertions.sql
+          echo 'PASS: synthetic ACL hardening only; production grants remain a migration blocker'
+      - name: Publish R13 structural gaps for staging approval
+        uses: actions/upload-artifact@v4
+        with:
+          name: orders-r13-schema-parity-report
+          path: orders-r13-schema-parity-report.json
+          retention-days: 14
+          if-no-files-found: error
       - name: Ensure no unsafe transports enabled or changes to tracked files
         run: |
           set -euo pipefail
