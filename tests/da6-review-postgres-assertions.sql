@@ -4,7 +4,7 @@ SELECT public.inventory_label_review_count_v1(
  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,1::smallint,'approve',null,
  '11111111-1111-4111-8111-111111111111'::uuid,'Conferido por fotografia');
 SELECT public.inventory_label_review_count_v1(
- 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,2::smallint,'correct',41,
+ 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,2::smallint,'correct',41::smallint,
  '11111111-1111-4111-8111-111111111111'::uuid,'Correção visual de marcação dupla');
 -- Idempotência: aprovação repetida não cria histórico novo.
 SELECT public.inventory_label_review_count_v1(
@@ -46,7 +46,7 @@ BEGIN
  v_blocked:=false;
  BEGIN
   PERFORM public.inventory_label_review_count_v1(
-   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',3,'correct',10,
+   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',3::smallint,'correct',10::smallint,
    '11111111-1111-4111-8111-111111111111','Não há marcação');
  EXCEPTION WHEN others THEN v_blocked:=true;
  END;
@@ -55,7 +55,7 @@ BEGIN
  v_blocked:=false;
  BEGIN
   PERFORM public.inventory_label_review_count_v1(
-   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',2,'correct',20,
+   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',2::smallint,'correct',20::smallint,
    '11111111-1111-4111-8111-111111111111','');
  EXCEPTION WHEN others THEN v_blocked:=true;
  END;
