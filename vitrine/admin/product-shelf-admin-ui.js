@@ -95,36 +95,51 @@ function mountedCard(row){
   if(row.classList.contains('product-operational-row')){
     const fields=row.querySelector('.product-quick-fields');
     if(fields&&!fields.querySelector('[data-shelf-gondola]')){
-      const select=document.createElement('label');select.className='product-inline-field product-gondola-inline';
-      select.innerHTML='<span>Gôndola</span><select data-shelf-gondola="'+esc(id)+'" aria-label="Gôndola editável"><option value="">Carregando…</option></select>';
-      fields.insertBefore(select,fields.querySelector('[data-mobile-product-status]'));
+      const element=document.createElement('label');element.className='product-inline-field product-gondola-inline';
+      element.innerHTML='<span>Gôndola</span><select data-shelf-gondola="'+esc(id)+'" aria-label="Gôndola editável"><option value="">Carregando…</option></select>';
+      fields.insertBefore(element,fields.querySelector('[data-mobile-product-status]'));
       ensureGondolas().then(()=>{
-        const original=row.querySelector('[data-shelf-gondola]');if(!original?.isConnected)return;
+        const picker=row.querySelector('[data-shelf-gondola]');if(!picker?.isConnected)return;
         const opts=[...new Set(gondolas.filter(x=>x.active!==false).map(x=>Number(x.number)).filter(n=>Number.isInteger(n)&&n>=1&&n<=9999))];
-        // Gôndolas 1–30 permanecem disponíveis para cadastro rápido; as demais são carregadas do servidor.
         for(let n=1;n<=30;n++)if(!opts.includes(n))opts.push(n);
         opts.sort((a,b)=>a-b);
-        original.innerHTML='<option value="">Sem gôndola</option>'+opts.map(n=>'<option value="'+n+'">Gôndola '+n+'</option>').join('');
-        api('product_detail',{id}).then(detail=>{
-          const val=String(detail.product?.gondola_number||'');
-          if(val&&!opts.includes(Number(val))){original.add(new Option('Gôndola '+val,val));}
-          original.value=val;
-          original.dataset.savedValue=val;
-        }).catch(()=>{});
-        original.onchange=async()=>{
-          const previous=original.dataset.savedValue??'';
-          original.disabled=true;
+        // O número já veio da listagem, sem uma consulta completa por produto.
+        const value=String(row.dataset.shelfGondolaValue||'');
+        if(value&&!opts.includes(Number(value)))opts.push(Number(value));
+        opts.sort((a,b)=>a-b);
+        picker.innerHTML='<option value="">Sem gôndola</option>'+
+          opts.map(n=>'<option value="'+n+'">Gôndola '+n+'</option>').join('')+
+          '<option value="__new__">+ Outra gôndola…</option>';
+        picker.value=value;picker.dataset.savedValue=value;
+        picker.onchange=async()=>{
+          if(picker.value==='__new__')return askOtherGondola(id,picker);
+          const previous=picker.dataset.savedValue||'';
+          const number=picker.value?Number(picker.value):null;
+          picker.disabled=true;
           try{
-            const value=original.value;
-            const result=await bridge().api('product_quick_save',{},{
-              method:'POST',headers:{'Content-Type':'application/json'},
-              body:JSON.stringify({product_id:id,gondola_number:value?Number(value):null,operator:bridge().operator()})
-            });
-            original.dataset.savedValue=String(result.product?.gondola_number||'');alertUser('Gôndola salva');
-          }catch(e){original.value=previous;alertUser('Gôndola: '+e.message)}
-          finally{original.disabled=false}
+            const saved=await saveGondola(id,number,picker);
+            row.dataset.shelfGondolaValue=saved===null?'':String(saved);
+            alertUser('Gôndola salva');
+          }catch(e){picker.value=previous;alertUser('Gôndola: '+e.message)}
+          finally{picker.disabled=false}
         };
-      }).catch(()=>{select.querySelector('span').textContent='Gôndola (indisponível)'});
+      }).catch(()=>{element.querySelector('span').textContent='Gôndola (indisponível)'});
+    }
+  }else if(row.classList.contains('mobile-product-card')){
+    const foot=row.querySelector('.mobile-product-card-foot');
+    if(foot){
+      const edit=document.createElement('button');edit.type='button';
+      edit.className='product-action-btn product-gondola-other-mobile';
+      edit.textContent='Gôndola 1–9999';edit.title='Cadastrar ou alterar o número da gôndola';
+      edit.onclick=async()=>{
+        const original=row.querySelector('[data-mobile-product-field="gondola"]');
+        // Preserva seleção visual enquanto a escrita é validada no servidor.
+        const previous=original?.value??'';
+        await askOtherGondola(id,original);
+        const value=original?.dataset.savedValue;
+        if(value!==undefined&&value!==previous)row.dataset.shelfGondolaValue=value;
+      };
+      foot.append(edit);
     }
   }
 }
