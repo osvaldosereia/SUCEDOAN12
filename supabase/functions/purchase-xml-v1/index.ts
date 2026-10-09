@@ -724,6 +724,13 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   const contact=await ensureContact(token,p);
   const docUp=await sb.from("purchase_xml_documents").upsert({import_run_id:runId,source,source_document_id:sourceId,bling_nfe_id:blingId,document_key:p.document_key,content_sha256:hash,storage_path:storagePath,issued_at:p.issued_at,supplier_document:p.supplier_document,supplier_name:p.supplier_name,supplier_bling_contact_id:contact.id||null,recipient_document:p.recipient_document,recipient_kind:p.recipient_kind,financial_eligible:eligible,finance_status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":p.recipient_kind==="CNPJ"&&!company?"pending_company_match":"not_applicable",receipt_status:"not_received",processing_status:"processing",total_amount:p.total_amount,item_count:p.items.length,metadata:{invoice_number:p.invoice_number,series:p.series,company_document:company||null,contact_created:Boolean(contact.created),installments:p.installments,payments:p.payments||[],payment_summary:p.payment_summary||{},source_mode:source},updated_at:new Date().toISOString()},{onConflict:"document_key"}).select("id").single();
   if(docUp.error)throw docUp.error;const documentId=docUp.data.id;
+  // Event-driven cataloging: no scheduler, no product/cost/stock writes.
+  // A malformed external XML cannot block existing purchase/finance processing.
+  try{
+    await persistXmlCatalogEvidence(documentId,p.document_key,xml,hash);
+  }catch(e){
+    console.warn("xml_catalog_observation_deferred",clean((e as Error)?.message||e,160));
+  }
   let matched=0,review=0,created=0;
   for(const item of p.items){
     try{
@@ -1255,6 +1262,29 @@ async function docDetail(id:string){
 
 // Read-only reporting and on-demand, idempotent re-reading of original private XMLs.
 // Never calls Bling, never changes products, prices, NCM master or stock.
+// Used by both new purchases and historical re-reads; extracts evidence only.
+async function persistXmlCatalogEvidence(documentId:string,documentKey:string,xml:string,hash:string){
+      const parsed=extractCatalogFromNfe(xml,documentKey);
+      if(parsed.items.length>5000)throw new Error("xml_item_limit");
+      const now=new Date().toISOString();
+      const rows=parsed.items.map((item:any)=>({
+        document_id:documentId,item_number:item.item_number,document_key:documentKey,
+        supplier_item_code:item.supplier_item_code,description:item.description,
+        commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,
+        ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,
+        purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,
+        purchase_unit_price:item.purchase_unit_price,tax_unit:item.tax_unit,
+        tax_quantity:item.tax_quantity,line_total:item.line_total,net_line_total:item.net_line_total,
+        lot_traces:item.lot_traces,tax_detail:item.tax_detail,raw_item:item.raw_item,
+        source_state:"xml_verified",source_content_sha256:hash,parser_version:"fast_xml_parser_5_11_2",
+        extracted_at:now,updated_at:now
+      }));
+      // Catalog data first: independent of recognition, purchase, finance and inventory.
+      const saved=await sb.from("purchase_xml_catalog_observations_v1")
+        .upsert(rows,{onConflict:"document_id,item_number"});
+      if(saved.error)throw new Error("catalog_observation_save_failed:"+saved.error.message);
+      return parsed;
+}
 async function xmlCatalogList(body:any){
   const limit=Math.max(1,Math.min(100,Math.trunc(Number(body?.limit)||30)));
   const offset=Math.max(0,Math.min(100000,Math.trunc(Number(body?.offset)||0)));
@@ -1311,25 +1341,7 @@ async function xmlCatalogReprocess(body:any){
       if(xml.length>10*1024*1024)throw new Error("xml_too_large");
       const hash=await sha256(xml);
       if(d.content_sha256&&hash!==d.content_sha256)throw new Error("xml_hash_mismatch");
-      const parsed=extractCatalogFromNfe(xml,d.document_key);
-      if(parsed.items.length>5000)throw new Error("xml_item_limit");
-      const now=new Date().toISOString();
-      const rows=parsed.items.map((item:any)=>({
-        document_id:d.id,item_number:item.item_number,document_key:d.document_key,
-        supplier_item_code:item.supplier_item_code,description:item.description,
-        commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,
-        ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,
-        purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,
-        purchase_unit_price:item.purchase_unit_price,tax_unit:item.tax_unit,
-        tax_quantity:item.tax_quantity,line_total:item.line_total,net_line_total:item.net_line_total,
-        lot_traces:item.lot_traces,tax_detail:item.tax_detail,raw_item:item.raw_item,
-        source_state:"xml_verified",source_content_sha256:hash,parser_version:"fast_xml_parser_5_11_2",
-        extracted_at:now,updated_at:now
-      }));
-      // Catalog data first: independent of recognition, purchase, finance and inventory.
-      const saved=await sb.from("purchase_xml_catalog_observations_v1")
-        .upsert(rows,{onConflict:"document_id,item_number"});
-      if(saved.error)throw new Error("catalog_observation_save_failed:"+saved.error.message);
+      const parsed=await persistXmlCatalogEvidence(d.id,d.document_key,xml,hash);
       const existing=await sb.from("purchase_xml_items").select("item_number").eq("document_id",d.id);
       if(existing.error)throw existing.error;
       const seen=new Set((existing.data||[]).map((x:any)=>Number(x.item_number)));
