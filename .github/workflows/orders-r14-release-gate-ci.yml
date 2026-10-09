@@ -1,0 +1,77 @@
+name: Orders R14 - Release evidence and mandatory block
+on:
+  push:
+    branches: ['agent/orders-r14-*']
+    paths:
+      - 'scripts/orders-r14-release-gate.mjs'
+      - 'scripts/test-orders-r14-release-gate.mjs'
+      - 'scripts/fixtures/orders-r14-release-evidence-20261009.json'
+      - '.github/workflows/orders-r14-release-gate-ci.yml'
+      - 'docs/orders-r14-release-handoff-20261009.md'
+  pull_request:
+    branches: ['agent/orders-r13-*', main]
+permissions:
+  contents: read
+jobs:
+  release-readiness:
+    name: R14 fail-closed pre-deployment evidence review
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      ORDER_R10_SEFAZ_PROOF_ENABLED: 'false'
+      R9_FISCAL_OBSERVER_ENABLED: 'false'
+      ORDER_R7_BLING_MANIFEST_ENABLED: 'false'
+      ORDER_R8_FISCAL_PREFLIGHT_ENABLED: 'false'
+      BLING_LIVE_ENABLED: 'false'
+      META_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Deny all live transmissions
+        run: |
+          test "$ORDER_R10_SEFAZ_PROOF_ENABLED" = false
+          test "$R9_FISCAL_OBSERVER_ENABLED" = false
+          test "$BLING_LIVE_ENABLED" = false
+          test "$META_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+      - name: Static syntax and gate regression
+        run: |
+          set -euo pipefail
+          node --check scripts/orders-r14-release-gate.mjs
+          node --check scripts/test-orders-r14-release-gate.mjs
+          node --test scripts/test-orders-r14-release-gate.mjs
+      - name: Generate published release block report
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/r14
+          node scripts/orders-r14-release-gate.mjs \
+            --evidence scripts/fixtures/orders-r14-release-evidence-20261009.json \
+            --output artifacts/r14/readiness.json \
+            --summary artifacts/r14/readiness.md \
+            --as-of 2026-10-09T18:00:00Z > /dev/null
+          grep -q '"status": "blocked"' artifacts/r14/readiness.json
+          grep -q '"deployment_authorized": false' artifacts/r14/readiness.json
+          grep -q '"canary_automatically_enabled": false' artifacts/r14/readiness.json
+          cat artifacts/r14/readiness.md >> "$GITHUB_STEP_SUMMARY"
+      - name: R14 STRICT release gate MUST reject unverified staging and fiscal evidence
+        run: |
+          set +e
+          node scripts/orders-r14-release-gate.mjs \
+            --evidence scripts/fixtures/orders-r14-release-evidence-20261009.json \
+            --as-of 2026-10-09T18:00:00Z \
+            --require-ready > /tmp/r14-blocked.json
+          STATUS=$?
+          set -e
+          if [ "$STATUS" -ne 2 ]; then
+            echo "R14 gate unexpectedly permitted release or failed to validate. Return: $STATUS"
+            exit 1
+          fi
+          echo 'PASS: production and canary release remain blocked despite green synthetic CI'
+      - name: Publish read-only evidence artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: orders-r14-release-blockers
+          path: artifacts/r14/
+          retention-days: 14
