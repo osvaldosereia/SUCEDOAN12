@@ -22,6 +22,8 @@ const ORDER_TEMPLATE_BY_CHANNEL:Record<Channel,string>={
   "1018":"pedidoorganizadosite1018v2"
 };
 const ORDER_TEMPLATE_LANGUAGE="pt_BR";
+// Feature remains OFF until approved Meta Utility button templates exist on both channels.
+const ORDER_META_CONFIRM_BUTTON_ENABLED=(Deno.env.get("ORDER_META_CONFIRM_BUTTON_ENABLED")||"").trim()==="true";
 
 const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
   status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}
@@ -383,7 +385,13 @@ Deno.serve(async(req:Request)=>{
     items_text:details.itemsText
   };
 
-  const templateName=ORDER_TEMPLATE_BY_CHANNEL[channel];
+  const templateName=ORDER_META_CONFIRM_BUTTON_ENABLED
+    ? text(Deno.env.get("ORDER_META_CONFIRM_BUTTON_TEMPLATE_"+channel)||"",200)
+    : ORDER_TEMPLATE_BY_CHANNEL[channel];
+  if(!templateName){
+    await finish(outboxId,"failed",null,"approved_confirm_button_template_missing",0);
+    return respond({ok:false,error:"approved_confirm_button_template_missing",outbox_id:outboxId},503);
+  }
   const components=[{type:"body",parameters:[
     {type:"text",text:text(details.orderDate,40)},
     {type:"text",text:publicOrderCode},
@@ -400,6 +408,11 @@ Deno.serve(async(req:Request)=>{
     {type:"text",text:text(details.paymentLabel,50)},
     {type:"text",text:publicOrderUrl}
   ]}];
+  if(ORDER_META_CONFIRM_BUTTON_ENABLED){
+    // Requires a template with an APPROVED quick reply at button index 0.
+    // Exact payload is bound to order by Meta reply context WAMID in the webhook.
+    components.push({type:"button",sub_type:"quick_reply",index:"0",parameters:[{type:"payload",payload:"CONFIRMADO"}]});
+  }
   const metaRequest:JsonRecord={provider:"meta",dispatch_scope:scope,template_name:templateName,language_code:ORDER_TEMPLATE_LANGUAGE,components};
 
   try{
