@@ -38,3 +38,11 @@ O gatilho R10 somente em `orders` **não basta para bloquear mudanças diretas n
 - Continuar R12–R14 com Admin, relatórios de pendências, rotas/pagamento, segurança e implantação canário com rollback.
 
 **Nenhum merge em main, migration Supabase, deploy de Edge, agendamento novo, pedido, estoque, NF-e, SEFAZ, WhatsApp ou rota real foi modificado.**
+
+## Revisão adicional: transferência para rota já despachada
+
+Foi identificado outro caminho de entrada de uma parada: a RPC real `smart_delivery_move_stop_v1` permite transferir uma parada ainda planejada para uma rota que já esteja `dispatched`. A versão inicial do gate R11 cobria apenas a transição de status da rota; sem uma verificação na parada transferida, o bloqueio poderia ser contornado **após** a saída inicial.
+
+O gatilho de `ops_delivery_stops` agora também vigia `run_id` e `order_id` e, em `INSERT` ou mudança de rota, rejeita qualquer pedido R07 sem prova fiscal R10 quando a rota de destino já está despachada. O teste chama a própria `smart_delivery_move_stop_v1` capturada do Supabase e tenta uma inserção direta. As duas operações são rejeitadas sem alterar a rota original.
+
+[**CI após a correção de transferências #37955544516 — SUCCESS**](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37955544516). Mantém aprovação do checkout, R03–R10 e testes de carregamento.
