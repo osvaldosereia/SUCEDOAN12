@@ -25,6 +25,9 @@
 
 **Flag `ORDER_R8_FISCAL_PREFLIGHT_ENABLED=false` por padrão.** Não existe ativação por esta PR.
 
+**Defesa nos fluxos já existentes:** quando essa mesma flag for ativada em uma homologação controlada, tanto `orderFiscalIssueV4` (emissão manual) quanto `autoIssueFiscalAfterSeparation` (rotina automática legada) executam a R08 **antes** de invocar as RPCs históricas com escrita ou o hub fiscal. Quando o parecer retorna impedimento ou está indisponível, a emissão é bloqueada. Isso não substitui a checagem no hub remoto e a verificação do banco, que serão reforçadas em R09/R10.
+
+
 ### Fail-closed intencional
 Duas provas ainda **não existem como fonte aprovada no runtime**: (1) regra de tributação de saída assinada por responsável fiscal e (2) leitura remota e comparação íntegra da venda Bling. O endpoint passa explicitamente `approved_sales_tax_rules=[]` e `bling_remote_evidence=null`, por isso retorna `ready=false` com esses impedimentos até novas integrações; os casos sintéticos positivos demonstram que a função pura funciona com provas apropriadas.
 
