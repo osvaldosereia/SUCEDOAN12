@@ -186,7 +186,7 @@ function process(img,qrDecoder,omrReader,threshold=105){
 root.DonaAntoniaPhotoReader={parseQR,process};
 })(typeof window==='undefined'?globalThis:window);
 
-export function readDA6(image:{width:number,height:number,data:Uint8ClampedArray}, qrDecoder:(data:Uint8ClampedArray,width:number,height:number,options?:any)=>any){
+export function readDA6(image:{width:number,height:number,data:Uint8ClampedArray}, qrDecoder:(data:Uint8ClampedArray,width:number,height:number,options?:any)=>any,threshold=105){
  const rt:any=globalThis as any;
- return rt.DonaAntoniaPhotoReader.process(image,qrDecoder,rt.DonaAntoniaOMRGeometry.read);
+ return rt.DonaAntoniaPhotoReader.process(image,qrDecoder,rt.DonaAntoniaOMRGeometry.read,threshold);
 }
