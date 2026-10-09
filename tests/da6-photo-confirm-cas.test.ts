@@ -39,26 +39,26 @@ Deno.test('R7 confirma uma fotografia já enfileirada por outro processo, sem af
  const mock=fakeDatabase('processing');
  const result=await inventoryLabelPhotoAction(mock.db,'inventory_label_photo_confirm',request,
   {ok:true,user_id:user,role:'operator'},payload);
- check(result.queued===true&&result.status==='processing','must report current server status');
+ check('queued' in result&&result.queued===true&&result.status==='processing','must report current server status');
  check(mock.calls.reads===2&&mock.calls.updates===1,'CAS fallback not checked');
 });
 Deno.test('R7 conflito do CAS deixa fotografia uploading como erro 409',async()=>{
  const mock=fakeDatabase('uploading');
  const result=await inventoryLabelPhotoAction(mock.db,'inventory_label_photo_confirm',request,
   {ok:true,user_id:user,role:'operator'},payload);
- check(result.error==='photo_confirmation_conflict'&&result.status===409,'false success');
+ check('error' in result&&result.error==='photo_confirmation_conflict'&&result.status===409,'false success');
 });
 Deno.test('R7 item excluído durante confirmação retorna erro e não sucesso',async()=>{
  const mock=fakeDatabase(null);
  const result=await inventoryLabelPhotoAction(mock.db,'inventory_label_photo_confirm',request,
   {ok:true,user_id:user,role:'operator'},payload);
- check(result.error==='photo_confirmation_conflict','missing row accepted');
+ check('error' in result&&result.error==='photo_confirmation_conflict','missing row accepted');
 });
 Deno.test('R7 tamanho divergente do Storage bloqueia qualquer atualização',async()=>{
  const mock=fakeDatabase('queued',79);
  const result=await inventoryLabelPhotoAction(mock.db,'inventory_label_photo_confirm',request,
   {ok:true,user_id:user,role:'operator'},payload);
- check(result.error==='photo_size_mismatch'&&mock.calls.updates===0,'wrong size accepted');
+ check('error' in result&&result.error==='photo_size_mismatch'&&mock.calls.updates===0,'wrong size accepted');
 });
 Deno.test('R7 papel viewer não pode confirmar fotos nem buscar Storage',async()=>{
  const mock=fakeDatabase('queued');
