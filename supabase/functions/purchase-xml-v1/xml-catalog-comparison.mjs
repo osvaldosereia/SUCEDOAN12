@@ -59,16 +59,21 @@ export function catalogXmlComparison(observations) {
   ];
   // Never compare uCom to the sellable unit: purchase and sales quantities often differ.
   const units=groups(rows,"purchase_unit",null);
+  const taxUnits=groups(rows,"tax_unit",null);
+  const taxBarcodes=groups(rows,"tax_gtin",(v)=>/^(?:[0-9]{8}|[0-9]{12,14})$/.test(v));
   return {
     compared_product:catalog,
     linked_products_count:linked.length,
     observations_compared:rows.length,
     fields:result,
     packaging_evidence:{
-      field:"purchase_unit",xml_values:units,
+      field:"purchase_unit",xml_values:units,tax_unit_values:taxUnits,
       status:units.length>1?"multiple_purchase_units":"reference_only",
       notes:"Unidade da NF-e é a unidade de COMPRA. Não atualizar a unidade de venda ou fator de conversão sem conferir embalagem."
     },
+    tax_gtin_evidence:{field:"tax_gtin",xml_values:taxBarcodes,
+      status:taxBarcodes.length>1?"multiple_tax_gtins":"reference_only",
+      notes:"EAN tributável da NF-e não pode substituir o EAN comercial sem revisão de embalagem."},
     prices_are_historical_only:true,
     fiscal_auto_approved:false,product_autoupdate_allowed:false,stock_autoupdate_allowed:false
   };
