@@ -82,8 +82,15 @@ DECLARE
   total bigint;
   valid_count integer;
 BEGIN
-  sid:=CASE WHEN TG_TABLE_NAME='order_payment_settlements' THEN NEW.id
-       WHEN TG_OP='DELETE' THEN OLD.settlement_id ELSE NEW.settlement_id END;
+  -- The two trigger tables have distinct record types. Avoid CASE field
+  -- expressions: PostgreSQL may resolve OLD.settlement_id for settlement rows.
+  IF TG_TABLE_NAME='order_payment_settlements' THEN
+    sid:=NEW.id;
+  ELSIF TG_OP='DELETE' THEN
+    sid:=OLD.settlement_id;
+  ELSE
+    sid:=NEW.settlement_id;
+  END IF;
   SELECT * INTO s FROM public.order_payment_settlements WHERE id=sid;
   IF NOT FOUND OR s.source<>'delivery'
      OR s.status NOT IN ('captured','synced','needs_review') THEN RETURN NULL; END IF;
