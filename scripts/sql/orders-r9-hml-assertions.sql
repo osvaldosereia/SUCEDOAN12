@@ -52,6 +52,9 @@ BEGIN
   IF v->>'status'<>'observed_no_invoice' THEN
     RAISE EXCEPTION 'valid GET observation failed: %',v;
   END IF;
+  IF (SELECT status FROM public.order_fiscal_r9_observations_v1 WHERE order_id=a)<>'observed_no_invoice' THEN
+    RAISE EXCEPTION 'finish returned OK but did not persist observed state';
+  END IF;
   v:=public.ops2_enqueue_fiscal_r9_observation_v1(a);
   IF v->>'status'<>'observed_no_invoice' THEN
     RAISE EXCEPTION 're-enqueue did not retain final state: %, persisted: %',v,(SELECT status FROM public.order_fiscal_r9_observations_v1 WHERE order_id=a); END IF;
