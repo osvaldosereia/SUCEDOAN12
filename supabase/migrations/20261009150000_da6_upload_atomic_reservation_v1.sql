@@ -17,7 +17,7 @@ BEGIN
  IF p_batch_id IS NULL OR p_user_id IS NULL OR p_file_name IS NULL
     OR length(btrim(p_file_name))<1 OR length(p_file_name)>180
     OR p_size_bytes NOT BETWEEN 1 AND 10485760
-    OR p_sha256 IS NULL OR p_sha256 !~ '^[a-f0-9]{64}
+    OR p_sha256 IS NULL OR p_sha256 !~ '^[a-f0-9]{64}$'
     OR p_mime_type NOT IN ('image/jpeg','image/png','image/webp') THEN
   RAISE EXCEPTION 'invalid_photo' USING ERRCODE='22023';
  END IF;
