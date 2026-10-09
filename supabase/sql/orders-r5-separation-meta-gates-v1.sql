@@ -10,14 +10,14 @@ CREATE TRIGGER trg_ops2_order_meta_assignment_guard_v1
 DROP TRIGGER IF EXISTS trg_ops2_order_meta_picking_guard_v1
   ON public.order_separation_items_v1;
 CREATE TRIGGER trg_ops2_order_meta_picking_guard_v1
-  BEFORE INSERT OR UPDATE OF state ON public.order_separation_items_v1
+  BEFORE INSERT OR UPDATE ON public.order_separation_items_v1
   FOR EACH ROW WHEN (NEW.state IN ('separated','missing'))
   EXECUTE FUNCTION public.ops2_guard_order_meta_separation_v1();
 
 DROP TRIGGER IF EXISTS trg_ops2_order_meta_completion_guard_v1
   ON public.order_separation_completions_v1;
 CREATE TRIGGER trg_ops2_order_meta_completion_guard_v1
-  BEFORE INSERT OR UPDATE OF phase ON public.order_separation_completions_v1
+  BEFORE INSERT OR UPDATE ON public.order_separation_completions_v1
   FOR EACH ROW
   EXECUTE FUNCTION public.ops2_guard_order_meta_separation_v1();
 
