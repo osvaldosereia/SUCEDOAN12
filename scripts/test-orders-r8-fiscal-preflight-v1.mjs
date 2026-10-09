@@ -144,7 +144,8 @@ test("R08 Admin source is guarded, read-only and intentionally has no auto-issue
   assert.match(section,/db\.from\("product_fiscal_profiles"\)/);
   assert.match(section,/db\.from\("fiscal_rule_sets"\)/);
   assert.match(section,/approved_sales_tax_rules:\[\]/);
-  assert.match(section,/bling_remote_evidence:null/);
+  assert.match(section,/r9Observation\.data\?\.status==="observed_no_invoice"/);
+  assert.match(section,/r9Observation\.data\.evidence:null/);
   assert.doesNotMatch(section,/autoIssueFiscalAfterSeparation|fiscal_dispatch_canary_human_execute|ops2_fiscal_dispatch_preflight_v1|\.insert\(|\.update\(|\.upsert\(/);
 });
 

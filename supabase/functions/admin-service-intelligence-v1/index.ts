@@ -3,7 +3,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "./_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared/papoai-commerce-intent-v1.mjs";
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
-import { eligiblePostCheckoutShortageBelowMinimum } from "./_shared/order-bling-r7-manifest-v1.mjs";
+import { eligiblePostCheckoutShortageBelowMinimum, stableJson } from "./_shared/order-bling-r7-manifest-v1.mjs";
+import { compareBlingR9Order, classifyBlingR9Invoices } from "./_shared/order-fiscal-r9-observer-v1.mjs";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -3894,6 +3895,89 @@ async function blingHubVitrineDanfePdf(sb:any,sourceOrderIdRaw:any){
     base64:doc.content,
     external_write:false,
     external_side_effect:false
+  };
+}
+
+// R09: read-only Bling order/NF-e probe. Does not call legacy preview or
+// reconcile because those can mutate fiscal controls and dispatch state.
+// May refresh OAuth credentials internally; never POST/PUT invoices or orders.
+async function blingHubFiscalR9ObserveReadOnly(sb:any,sourceOrderIdRaw:any){
+  const oid=uuid(sourceOrderIdRaw);
+  if(!oid)return {ok:false,error:"invalid_order_id",status:400,external_write:false};
+  const [order,completion,intent,link]=await Promise.all([
+    sb.from("orders").select("id,status,total,bling_order_id").eq("id",oid).maybeSingle(),
+    sb.from("order_separation_completions_v1").select("phase,metadata").eq("order_id",oid).maybeSingle(),
+    sb.from("order_bling_r7_sync_intents_v1")
+      .select("order_id,status,bling_order_id,payload_hash,manifest").eq("order_id",oid).maybeSingle(),
+    sb.from("bling_hub_entity_links_v2")
+      .select("source_id,bling_id,status,identity_value")
+      .eq("source_system","vitrine_qx").eq("entity_type","order")
+      .eq("source_id",oid).maybeSingle()
+  ]);
+  if([order,completion,intent,link].some(q=>q.error))
+    return {ok:false,error:"r9_canonical_read_failed",status:503,external_write:false};
+  const r=intent.data,c=completion.data,o=order.data,l=link.data;
+  if(o?.status!=="ready"||c?.phase!=="completed"
+    ||c?.metadata?.stock_applied!==true||r?.status!=="verified"
+    ||r?.manifest?.ready!==true||r?.manifest?.order_id!==oid
+    ||stableJson(r?.manifest)!==stableJson(c?.metadata?.r6_reconciliation)
+    ||!r?.payload_hash||r.bling_order_id!==o.bling_order_id
+    ||l?.status!=="matched"||Number(l?.bling_id)!==Number(r.bling_order_id)
+    ||l?.identity_value!=="VITRINE-"+oid)
+    return {ok:false,error:"r9_canonical_preconditions_not_met",status:409,external_write:false};
+  const productIds=[...new Set((r.manifest.lines||[])
+    .filter((x:any)=>x.state==="separated"&&x.deliverable===true&&x.display_only!==true)
+    .map((x:any)=>String(x.product_id||"")).filter(Boolean))];
+  const productLinks:any[]=[];
+  for(let i=0;i<productIds.length;i+=80){
+    const q=await sb.from("bling_hub_entity_links_v2")
+      .select("source_id,status,bling_id")
+      .eq("source_system","vitrine_qx").eq("entity_type","product")
+      .in("source_id",productIds.slice(i,i+80));
+    if(q.error)return {ok:false,error:"r9_product_mapping_read_failed",status:503,external_write:false};
+    productLinks.push(...(q.data||[]));
+  }
+  const token=await blingHubOauth(sb);
+  const remote=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(r.bling_order_id)));
+  if(!remote.ok)return {ok:true,verdict:"uncertain",error:"bling_order_get_failed",
+    external_write:false};
+  const projection=compareBlingR9Order({
+    order_id:oid,bling_order_id:r.bling_order_id,
+    final_total:r.manifest.financial?.final_total,manifest:r.manifest
+  },remote.data?.data,productLinks);
+  if(!projection.match)return {ok:true,verdict:"conflict",
+    error:projection.blockers.join(",").slice(0,160),external_write:false};
+
+  const externalKey="VITRINE-"+oid;
+  const found=await blingHubFindNfeByExternalKey(sb,token,externalKey);
+  // A full first page can hide further matching NF-e: never claim zero/one.
+  if(found.ok&&found.matches?.length>=20)return {ok:true,verdict:"conflict",
+    error:"invoice_listing_page_limit_ambiguous",external_write:false};
+  let detail:any=null;
+  if(found.ok&&found.matches?.length===1){
+    detail=await blingHubGetNfe(sb,token,found.match?.id);
+    if(detail.ok&&detail.invoice?.numeroLoja!==externalKey)return {
+      ok:true,verdict:"conflict",error:"invoice_order_reference_mismatch",external_write:false
+    };
+  }
+  const classified=classifyBlingR9Invoices(found,detail,projection.linked_invoice_id);
+  if(classified.verdict!=="no_invoice"&&classified.verdict!=="one_invoice")
+    return {ok:true,verdict:classified.verdict,error:classified.error||"read_only_review",
+      external_write:false};
+  return {
+    ok:true,verdict:classified.verdict,
+    evidence:{
+      source:"bling_get",order_id:oid,bling_order_id:r.bling_order_id,
+      r7_payload_hash:r.payload_hash,
+      checked_at:new Date().toISOString(),order_read_ok:true,
+      commercial_match:true,
+      invoice_count:classified.invoice_count,invoice_id:classified.invoice_id,
+      invoice_linked:classified.invoice_count===1,
+      access_key_present:classified.access_key_present===true,
+      invoice_situation:classified.sefaz_label||null,
+      external_write:false
+    },
+    external_write:false
   };
 }
 
@@ -9279,6 +9363,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="fiscal_dispatch_reconcile_batch"){
         const result=await blingHubVitrineDispatchFiscalReconcileBatch(sb,body?.limit);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="fiscal_r9_observe_readonly"){
+        const result=await blingHubFiscalR9ObserveReadOnly(sb,body?.source_order_id);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="fiscal_dispatch_preview"){
