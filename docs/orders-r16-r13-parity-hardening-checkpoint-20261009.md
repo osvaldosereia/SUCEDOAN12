@@ -42,6 +42,18 @@ O gate R13 **continua BLOCKED**, agora por razões materiais demonstráveis (tri
 - CI PostgreSQL 17 integrado sobre snapshot atualizado: [#37980724496](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37980724496) **SUCCESS**. A ação prova que o relatório e o bloqueio funcionam, **não paridade**.
 - Todos os testes continuam sintéticos. Nenhum telefone Meta, Bling, SEFAZ ou banco de produção foi alterado.
 
+## Adendo — raiz da recorrência de MAINTAIN e ensaio de REVOKE (R16)
+A consulta read-only a `pg_default_acl` também confirmou que os *default privileges* de tabelas criadas por `postgres` e `supabase_admin` no schema `public` concedem `MAINTAIN/TRUNCATE/TRIGGER/REFERENCES` aos papéis `anon` e `authenticated`. Logo, corrigir apenas tabelas existentes não impede o problema de ressurgir em futuras tabelas. As demais permissões comerciais do owner `supabase_admin` não foram alteradas.
+
+O contrato em rascunho `supabase/sql/orders-security-public-table-privileges-review-v1.sql` revogava anteriormente apenas `TRUNCATE/TRIGGER/REFERENCES`. Foi ampliado **sem tocar em produção** para revogar também `MAINTAIN` nas tabelas existentes e nas duas políticas de default ACL. A fixture de PostgreSQL17 agora **concede `MAINTAIN` antes da correção**, exige sua ausência **depois** em tabelas presentes e futuras, preservando `SELECT/INSERT` de aplicação e service_role. Testes sintéticos aprovados. **Não aplicar esse SQL no Supabase real antes de ensaiar permissões herdadas/owners/migração selecionada e rollback em staging.**
+
+- Commit do SQL rascunho: `eb27e18dc81b0021e75be511727ddec512dcff59`.
+- Fixture e asserções PostgreSQL17: `6c5323762dc804772619eb691899fbf62ba2d19e`, `a33b890babe5d2f68e04773ed1b5fe0960bb71ab`.
+- CI para acionar com alterações nessas fontes: `3572cc0bf08027e04bacc52456dc68ef9f7217b6`.
+- [CI integrada PG17 #37981156657 — SUCCESS](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37981156657) e [#37981164365 — SUCCESS](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37981164365), versão com `MAINTAIN`.
+- [CI unitária R13 #37981164527 — SUCCESS](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37981164527).
+- A verificação read-only da migration `20261008032000` continuou retornando **0** registros aplicados. Isso não autoriza executar `db push`.
+
 ## Próxima rodada (R17)
 1. Confirmar CI PostgreSQL 17 no HEAD da PR R16, e gate R14 BLOCKED.
 2. Completar mapa de dependências dos 30 triggers canônicos e default privileges/roles efetivos (a ACL direta de PUBLIC/anon/authenticated já foi capturada, somente leitura). Construir reprodução fiel das 11 tabelas sem considerar relatórios sintéticos como homologação.
