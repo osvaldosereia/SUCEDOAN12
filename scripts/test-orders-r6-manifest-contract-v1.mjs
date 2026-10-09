@@ -53,7 +53,7 @@ test("R06 preflight before financial prepare; freeze receipt before stock",()=>{
   assert.ok(preview>=0&&prepared>preview&&receipt>prepared&&stock>receipt);
   assert.match(main,/await markSeparationNeedsAttention\(oid,"r6_reconciliation"/);
   assert.match(main,/const integrationTask=runSeparationPostCompletionIntegrations/);
-  assert.match(main,/order_separation_completed/);
+  assert.match(main,/order[.]separation_completed/);
 });
 test("R06 uses R02's production-captured pure PostgreSQL functions",()=>{
   const f=fs.readFileSync("scripts/sql/orders-r6-canonical-separation-functions.sql","utf8");
