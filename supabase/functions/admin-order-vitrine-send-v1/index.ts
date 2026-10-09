@@ -82,8 +82,8 @@ Deno.serve(async(req:Request)=>{
     const orderResult=await db.from("orders").select("id,order_number,customer_id,conversation_id,whatsapp_account_id,phone_e164,delivery_address,customer_snapshot").eq("id",orderId).maybeSingle();
     if(orderResult.error)throw orderResult.error;if(!orderResult.data)return json(req,{ok:false,error:"order_not_found"},404);
     const resolved=await resolveConversation(orderResult.data);if(!resolved.ok)return json(req,{ok:false,error:resolved.error},409);
-    const link=await publicOrderLink(orderId),publicCode=clean(link.public_order_code,5);
-    if(!/^(?:[A-Z]{2}[0-9]{3}|[0-9]{4})$/.test(publicCode))return json(req,{ok:false,error:"public_order_code_missing"},409);
+    const link=await publicOrderLink(orderId),publicCode=clean(link.public_order_code,24);
+    if(!/^(?:[A-Z]{2}[0-9]{3}|[0-9]{4}|[0-9]{2}[|][0-9]{2}[|][0-9]{4} - [0-9]{3})$/.test(publicCode))return json(req,{ok:false,error:"public_order_code_missing"},409);
     const text=`Olá! Aqui está a vitrine do seu pedido Dona Antônia.\nPedido: ${publicCode}\n${link.public_order_url}`;
     const idempotencyKey=`order-vitrine:${orderId}:${requestId||Date.now().toString(36)}`.slice(0,120);
     const response=await fetch(`${U}/functions/v1/admin-whatsapp-ops-v1?action=send_text`,{
