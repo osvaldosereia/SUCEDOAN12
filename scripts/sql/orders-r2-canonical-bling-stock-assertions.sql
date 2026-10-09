@@ -28,14 +28,11 @@ BEGIN
    (SELECT public_available=6 FROM public.basket_lot_public_availability_v1
     WHERE lot_id='00000000-0000-4000-8000-0000000000f1') IS TRUE
  ) THEN RAISE EXCEPTION 'real Bling virtual stock should make mounted kit sellable'; END IF;
- FOR food IN
-   SELECT c.oid FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+ IF NOT EXISTS(
+   SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
    WHERE n.nspname='public' AND c.relname='ops2_sellable_stock_v1'
- LOOP
-   IF NOT EXISTS(SELECT 1 FROM pg_class c WHERE c.oid=food
-       AND 'security_invoker=true'=ANY(c.reloptions))
-   THEN RAISE EXCEPTION 'real stock view must be security_invoker'; END IF;
- END LOOP;
+     AND 'security_invoker=true'=ANY(c.reloptions)
+ ) THEN RAISE EXCEPTION 'real stock view must be security_invoker'; END IF;
  IF has_table_privilege('anon','public.ops2_sellable_stock_v1','SELECT')
     OR has_table_privilege('authenticated','public.ops2_sellable_stock_v1','SELECT')
     OR has_table_privilege('anon','public.basket_lot_public_availability_v1','SELECT')
