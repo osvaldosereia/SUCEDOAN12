@@ -16,6 +16,7 @@ async function browser(run){
   await page.addScriptTag({content:source});
   await page.evaluate(photo=>{
     window.da6Log=[];
+    window.confirm=()=>true; // diálogo explícito confirmado no teste do navegador
     window.__bridge={
       toast:()=>{},
       api:async(action,params,opt)=>{
