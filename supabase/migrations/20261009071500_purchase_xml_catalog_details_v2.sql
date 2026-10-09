@@ -17,7 +17,7 @@ select
  o.id as observation_id,o.document_id,o.item_number,
  i.id as purchase_item_id,i.product_id as linked_product_id,
  p.name as linked_product_name,p.gtin as linked_product_gtin,
- p.ncm as linked_product_ncm,p.cest as linked_product_cest,
+ p.ncm as linked_product_ncm,f.cest as linked_product_cest,
  p.is_active as linked_product_active,
  d.document_key,d.issued_at,d.supplier_name,d.supplier_document,
  d.source,d.metadata->>'catalog_only' as catalog_only,
@@ -33,7 +33,8 @@ from public.purchase_xml_catalog_observations_v1 o
 join public.purchase_xml_documents d on d.id=o.document_id
 left join public.purchase_xml_items i
  on i.document_id=o.document_id and i.item_number=o.item_number
-left join public.products p on p.id=i.product_id;
+left join public.products p on p.id=i.product_id
+left join public.product_fiscal_profiles f on f.product_id=p.id;
 revoke all on public.purchase_xml_catalog_observation_details_v2 from public,anon,authenticated;
 grant select on public.purchase_xml_catalog_observation_details_v2 to service_role;
 comment on view public.purchase_xml_catalog_observation_details_v2 is
