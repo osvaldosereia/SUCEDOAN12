@@ -35,3 +35,37 @@ test('R7 rotas da vitrine e dos produtos A4 permanecem presentes',()=>{
   assert.match(central,new RegExp(name));
  }
 });
+
+test('R8 preserva simultaneamente ACL do DA6 e recuperação fiscal da main',()=>{
+ const readSet=name=>{
+  const line=central.split('\n').find(x=>x.startsWith('const '+name+'=new Set('));
+  assert.ok(line,'Missing gateway permissions set: '+name);
+  return new Set(JSON.parse(line.slice(('const '+name+'=new Set(').length,-2)));
+ };
+ const actions=readSet('LOCAL'),writes=readSet('WRITE_ACTIONS');
+ for(const a of [
+  'inventory_label_photo_history','inventory_label_photo_review','inventory_label_worker_tick',
+  'inventory_label_batch_create','inventory_label_photo_reserve','inventory_label_photo_confirm',
+  'inventory_label_batch_status','inventory_label_batches',
+  'order_fiscal_recover_bling_v1','order_fiscal_recheck_v1'
+ ])assert.ok(actions.has(a),'Lost gateway route: '+a);
+ for(const a of [
+  'inventory_label_photo_review','inventory_label_batch_create','inventory_label_photo_reserve',
+  'inventory_label_photo_confirm','order_fiscal_recover_bling_v1','order_fiscal_recheck_v1'
+ ])assert.ok(writes.has(a),'Missing viewer write protection: '+a);
+ for(const a of ['inventory_label_photo_history','inventory_label_batch_status','inventory_label_batches'])
+  assert.ok(!writes.has(a),'History/query route unexpectedly treated as a write: '+a);
+ const worker=central.indexOf('if(a==="inventory_label_worker_tick"){');
+ const auth=central.indexOf('const auth:any=await adminAuth(r);',worker);
+ const photos=central.indexOf('if(a.startsWith("inventory_label_")){',auth);
+ const viewerGuard=central.indexOf('if(r.method==="POST"&&auth.role==="viewer"&&WRITE_ACTIONS.has(a))',photos);
+ const fiscal=central.indexOf('if(r.method==="POST"&&a==="order_fiscal_recover_bling_v1")',viewerGuard);
+ const recheck=central.indexOf('if(r.method==="POST"&&a==="order_fiscal_recheck_v1")',fiscal);
+ assert.ok(worker>=0&&auth>worker&&photos>auth&&viewerGuard>photos&&fiscal>viewerGuard&&recheck>fiscal,
+   'DA6 worker/auth boundaries or protected fiscal routes changed');
+ for(const mark of [
+  'orderFiscalRecoverBlingV1(p,auth)','orderFiscalRecheckV1(p,auth)',
+  'recoverCurrentOrderBling','recheckCurrentOrderFiscal',
+  'inventory-label-photo-tab.js','inventory-label-photo-review.js'
+ ])assert.ok(central.includes(mark)||html.includes(mark),'Lost concurrent feature: '+mark);
+});
