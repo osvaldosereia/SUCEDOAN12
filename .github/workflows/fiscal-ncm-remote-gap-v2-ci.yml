@@ -1,0 +1,23 @@
+name: Fiscal NCM Remote Gap V2
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/admin-service-intelligence-v1/index.ts"
+      - "scripts/test-fiscal-ncm-remote-gap-v2.mjs"
+      - ".github/workflows/fiscal-ncm-remote-gap-v2-ci.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "supabase/functions/admin-service-intelligence-v1/index.ts"
+      - "scripts/test-fiscal-ncm-remote-gap-v2.mjs"
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/test-fiscal-ncm-remote-gap-v2.mjs
+      - run: node scripts/test-fiscal-nfe-autorecovery-v1.mjs
