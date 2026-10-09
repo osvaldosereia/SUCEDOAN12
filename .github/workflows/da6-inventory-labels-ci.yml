@@ -45,3 +45,16 @@ jobs:
           node --check vitrine/admin/inventory-label-omr-geometry.js
           node --check vitrine/admin/product-shelf-admin-ui.js
           node --check vitrine/admin/product-shelf-labels.js
+
+  edge-types:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Checar tipagem do motor OMR e API de fotos para Supabase Edge
+        run: |
+          deno check --node-modules-dir=auto supabase/functions/admin-products-live-v1/inventory-label-worker.ts
+          deno check --node-modules-dir=auto supabase/functions/admin-products-live-v1/inventory-label-photo-api.ts
