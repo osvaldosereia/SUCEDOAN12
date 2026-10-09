@@ -32,3 +32,11 @@ Cenários: novo número na criação, snapshot único e atualizado após inserir
 - Não fazer merge/implantação na `main` nem alterar Supabase produtivo sem revisão.
 
 **Situação:** desenvolvimento em branch draft; **não ativado para pedidos reais**.
+
+
+## Execução da R03 (branch isolada)
+- **CI PostgreSQL 17 + contratos Node: PASS** — [GitHub Actions #37873246852](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37873246852). Inclui checkout idempotente, estoque concorrente, contadores semanais simultâneos, transição domingo→segunda e preservação dos códigos antigos.
+- Consumidores revisados em commits atômicos: `admin-order-vitrine-send-v1`, `admin-orders-v1`, `order-separation-notify-v1`, `admin-products-live-v1`, `montar/app.js`, `vitrine/admin/index.html`. Os limites antigos de cinco caracteres foram ampliados onde aplicável, e a validação aceita o formato semanal sem rejeitar o legado.
+- [Teste de contrato atualizado](../scripts/test-order-public-identity-at-creation-v1.mjs), executado automaticamente no workflow de PR/branch R03, e sintaxe do picker validada.
+- **Não houve merge/deploy**: todo o código permanece em PR draft #968, sobre PR #953. A auditoria final de consumidores e validação num clone canônico ainda são gates de integração, não resultados comprovados pelo CI sintético.
+- R02 (homologação isolada com dependências canônicas restantes) segue aberta na issue #964. R04 (botão Meta CONFIRMADO autenticado) é a próxima programação de contrato independente.
