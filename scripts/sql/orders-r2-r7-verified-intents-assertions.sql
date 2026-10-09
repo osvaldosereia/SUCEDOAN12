@@ -6,7 +6,7 @@ DO $r02_r07$
 DECLARE
  basket uuid; mold uuid; frozen jsonb;
  basket_hash text; mold_hash text;
- v jsonb; token uuid; total numeric;
+ v jsonb; token uuid; v_order_total numeric;
 BEGIN
  SELECT order_id,payload_hash INTO basket,basket_hash
  FROM public.r2_r7_verified_payloads WHERE kind='basket';
@@ -80,10 +80,10 @@ BEGIN
  -- A tampered historical R06 receipt fails the same hash/manifest gate.
  SELECT metadata->'r6_reconciliation' INTO frozen
  FROM public.order_separation_completions_v1 WHERE order_id=basket;
- total:=(SELECT total FROM public.orders WHERE id=basket);
+ v_order_total:=(SELECT o.total FROM public.orders o WHERE o.id=basket);
  UPDATE public.order_separation_completions_v1
  SET metadata=jsonb_set(metadata,'{r6_reconciliation,financial,final_total}',
-      to_jsonb(total+10))
+      to_jsonb(v_order_total+10))
  WHERE order_id=basket;
  v:=public.ops2_claim_bling_r7_sync_v1(basket,basket_hash);
  IF v->>'error' IS DISTINCT FROM 'r6_frozen_manifest_invalid'
