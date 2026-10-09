@@ -3910,7 +3910,7 @@ async function blingHubFiscalDraftProbeV2(sb:any,body:any){
   let blingOrderId=0;
   if(sourceOrderId){
     const [oq,lq]=await Promise.all([
-      sb.from("orders").select("id,bling_order_id,total,status,order_number").eq("id",sourceOrderId).maybeSingle(),
+      sb.from("orders").select("id,bling_order_id,total,fiscal_subtotal,status,order_number").eq("id",sourceOrderId).maybeSingle(),
       sb.from("bling_hub_entity_links_v2").select("bling_id,identity_value,status")
         .eq("source_system","vitrine_qx").eq("entity_type","order").eq("source_id",sourceOrderId).maybeSingle()
     ]);
@@ -3920,7 +3920,9 @@ async function blingHubFiscalDraftProbeV2(sb:any,body:any){
     blingOrderId=Number(oq.data.bling_order_id||0);
     if(!blingOrderId||!lq.data||lq.data.status!=="matched"||Number(lq.data.bling_id||0)!==blingOrderId)
       return {ok:false,error:"order_not_strongly_linked_to_bling",status:409,external_write:false};
-    expected={bling_order_id:blingOrderId,total:Number(oq.data.total),external_key:clean(lq.data.identity_value,160)};
+    expected={bling_order_id:blingOrderId,total:Number(oq.data.total),
+      fiscal_subtotal:Number(oq.data.fiscal_subtotal),
+      external_key:clean(lq.data.identity_value,160)};
   }
   const token=await blingHubOauth(sb);
   const remote=await blingHubGetNfe(sb,token,invoiceId);
@@ -3933,6 +3935,10 @@ async function blingHubFiscalDraftProbeV2(sb:any,body:any){
     if(!sale.ok)return {ok:false,error:"sale_detail_unavailable",status:sale.status||503,
       invoice_id:invoiceId,external_write:false,read_failed:true};
     expected.contact_id=Number(sale.data?.data?.contato?.id||0)||null;
+    // This link comes from the exact Bling sale ID, not from invoice number.
+    if(Number(sale.data?.data?.id||0)!==blingOrderId)
+      return {ok:false,error:"sale_response_id_mismatch",status:409,external_write:false};
+    expected.sale_invoice_id=Number(sale.data?.data?.notaFiscal?.id||0)||null;
   }
   const report=inspectBlingNfeR2(remote.data,expected);
   if(report.invoice_id!==invoiceId)
@@ -3981,21 +3987,57 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
   let invoice:any=null;
   let invoiceLookup:any={performed:false,match_count:0,http_status:null};
 
-  if(blingOrderId&&externalKey){
+  if(blingOrderId){
     const token=await blingHubOauth(sb);
     if(invoiceId){
       const detail=await blingHubGetNfe(sb,token,invoiceId);
       invoiceLookup={performed:true,by:"id",match_count:detail.ok?1:0,http_status:detail.status};
       if(detail.ok)invoice=detail.invoice;
     }else{
-      const found=await blingHubFindNfeByExternalKey(sb,token,externalKey);
-      invoiceLookup={performed:true,by:"numeroLoja",match_count:found.matches?.length||0,http_status:found.status};
-      if(found.ok&&found.matches.length===1){
-        invoiceId=Number(found.match?.id||0)||null;
-        if(invoiceId){
-          const detail=await blingHubGetNfe(sb,token,invoiceId);
-          invoiceLookup={...invoiceLookup,detail_http_status:detail.status};
-          if(detail.ok)invoice=detail.invoice;
+      if(externalKey){
+        const found=await blingHubFindNfeByExternalKey(sb,token,externalKey);
+        invoiceLookup={performed:true,by:"numeroLoja",match_count:found.matches?.length||0,http_status:found.status};
+        if(found.ok&&found.matches.length===1){
+          invoiceId=Number(found.match?.id||0)||null;
+          if(invoiceId){
+            const detail=await blingHubGetNfe(sb,token,invoiceId);
+            invoiceLookup={...invoiceLookup,detail_http_status:detail.status};
+            if(detail.ok)invoice=detail.invoice;
+          }
+        }
+      }else{
+        invoiceLookup={performed:true,by:"no_external_key",match_count:0,http_status:200};
+      }
+      // A generated NF-e may have numeroLoja=NULL, so GET /nfe?numeroLoja
+      // legitimately returns no match. The SALE itself exposes notaFiscal.id,
+      // which is a strong immutable reference (verified for NF-e 000418).
+      // Never treat a failed search as "not found": only fall back after 200.
+      if(!invoiceId&&invoiceLookup.http_status===200&&invoiceLookup.match_count===0){
+        const sale=await blingHubGet(sb,token,
+          "/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+        if(!sale.ok){
+          invoiceLookup={performed:true,by:"bling_sale_invoice_reference",match_count:0,
+            http_status:sale.status,lookup_error:"sale_detail_unavailable"};
+        }else{
+          const remoteSale=sale.data?.data||{};
+          const remoteSaleKey=clean(remoteSale.numeroLoja,160);
+          const idMatches=Number(remoteSale.id||0)===blingOrderId;
+          if(!idMatches||(remoteSaleKey&&externalKey&&remoteSaleKey!==externalKey)){
+            invoiceLookup={performed:true,by:"bling_sale_invoice_reference",match_count:0,
+              http_status:409,lookup_error:"remote_sale_identity_mismatch"};
+          }else{
+            const fromSale=Number(remoteSale?.notaFiscal?.id||0);
+            if(Number.isSafeInteger(fromSale)&&fromSale>0){
+              invoiceId=fromSale;
+              const detail=await blingHubGetNfe(sb,token,invoiceId);
+              invoiceLookup={performed:true,by:"bling_sale_invoice_reference",
+                match_count:detail.ok?1:0,http_status:detail.status,
+                sale_invoice_id:invoiceId};
+              if(detail.ok)invoice=detail.invoice;
+            }else{
+              invoiceLookup={performed:true,by:"sale_checked_no_invoice",match_count:0,http_status:200};
+            }
+          }
         }
       }
     }
@@ -4021,6 +4063,9 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
   }
   if(!externalKey)hardBlockers.push("external_order_key_missing");
   if(invoiceLookup.performed&&invoiceLookup.match_count>1)hardBlockers.push("multiple_invoices_for_external_key");
+  if(invoiceLookup.performed&&![200,201].includes(Number(invoiceLookup.http_status||0)))
+    hardBlockers.push("invoice_lookup_inconclusive");
+  if(invoiceId&&!invoice)hardBlockers.push("invoice_detail_unavailable");
   if(invoice?.situation?.failed)hardBlockers.push("invoice_terminal_state");
 
   const selectedCanary=uuid(f.dispatch_invoice_canary_source_order_id);

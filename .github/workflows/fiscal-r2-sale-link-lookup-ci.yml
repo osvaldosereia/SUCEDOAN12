@@ -1,0 +1,25 @@
+name: Fiscal R2 Sale Invoice Link
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/_shared/fiscal-r2-nfe-inspector.mjs'
+      - 'scripts/test-fiscal-r2-sale-link-lookup.mjs'
+  push:
+    branches: ['main']
+    paths:
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/_shared/fiscal-r2-nfe-inspector.mjs'
+      - 'scripts/test-fiscal-r2-sale-link-lookup.mjs'
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-fiscal-r2-sale-link-lookup.mjs
+      - run: node scripts/test-fiscal-r2-nfe-draft-inspector.mjs
+      - run: node scripts/test-fiscal-recovery-r1-auth-backoff.mjs
