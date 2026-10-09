@@ -83,13 +83,28 @@ assert.doesNotMatch(compile,/(?:\w+):(?:any|string|number)\b/);
 function harness(existing=null){
  const calls=[],documents=new Map(existing?[[key,existing]]:[]);
  const query=(table)=>({
-  insert(row){calls.push([table,"insert",row]);return {select(){return {async single(){
-    if(table==="purchase_xml_import_runs")return {data:{id:"run-1"},error:null};
-    if(table==="purchase_xml_documents"){documents.set(row.document_key,{id:"document-1",content_sha256:row.content_sha256});return {data:{id:"document-1"},error:null}}
-    throw new Error("unapproved table insert "+table);
-  }}};}},
-  update(row){calls.push([table,"update",row]);return {async eq(){return {data:null,error:null}}}},
-  select(){return {eq(field,value){return {async maybeSingle(){return {data:documents.get(value)||null,error:null}}}}}}
+   insert(row){
+     calls.push([table,"insert",row]);
+     return {select(){
+       return {async single(){
+         if(table==="purchase_xml_import_runs")return {data:{id:"run-1"},error:null};
+         if(table==="purchase_xml_documents"){
+           documents.set(row.document_key,{id:"document-1",content_sha256:row.content_sha256});
+           return {data:{id:"document-1"},error:null};
+         }
+         throw new Error("unapproved table insert "+table);
+       }};
+     }};
+   },
+   update(row){
+     calls.push([table,"update",row]);
+     return {async eq(){return {data:null,error:null};}};
+   },
+   select(){
+     return {eq(field,value){
+       return {async maybeSingle(){return {data:documents.get(value)||null,error:null};}};
+     }};
+   }
  });
  const sb={from:(name)=>{if(!["purchase_xml_import_runs","purchase_xml_documents"].includes(name))
    throw new Error("unapproved table "+name);return query(name)},
