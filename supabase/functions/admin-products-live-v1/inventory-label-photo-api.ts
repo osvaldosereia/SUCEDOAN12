@@ -27,38 +27,32 @@ export async function inventoryLabelPhotoAction(db:any,action:string,req:Request
   const batchId=String(payload?.batch_id||''),name=cleanText(payload?.file_name,180),mime=String(payload?.mime_type||'');
   const size=Number(payload?.size_bytes),sha=String(payload?.sha256||'');
   if(!UUID.test(batchId)||!name||!Object.hasOwn(TYPES,mime)||!Number.isInteger(size)||size<1||size>MAX_BYTES||!/^[0-9a-f]{64}$/.test(sha))return bad('invalid_photo');
-  const batch=await ownedBatch(db,batchId,user);
-  if(!batch)return bad('batch_not_found',404);
-  const same=await db.from('inventory_label_photos')
-   .select('id,status,storage_path,size_bytes').eq('created_by',user).eq('sha256',sha)
-   .limit(1).maybeSingle();
-  if(same.error)throw same.error;
-  if(same.data){
-   if(same.data.status!=='uploading')
-     return {duplicate:true,photo_id:same.data.id,status:same.data.status};
-   // Um upload interrompido não pode ser tratado como duplicado definitivo.
-   const info=await db.storage.from(BUCKET).info(same.data.storage_path);
-   if(!info.error&&Number(info.data?.size)===Number(same.data.size_bytes))
-     return {photo_id:same.data.id,needs_confirmation:true,status:'uploading'};
-   const retry=await db.storage.from(BUCKET).createSignedUploadUrl(same.data.storage_path,{upsert:false});
-   if(retry.error||!retry.data?.signedUrl)return bad('storage_sign_failed',503);
-   return {photo_id:same.data.id,signed_url:retry.data.signedUrl,resumed:true};
+  // Esta RPC bloqueia o lote (FOR UPDATE) e limita a capacidade sem corrida de COUNT.
+  // Também confere a propriedade antes de tocar no Storage privado.
+  const locked=await db.rpc('inventory_label_reserve_photo_v1',{
+   p_batch_id:batchId,p_user_id:user,p_file_name:name,
+   p_mime_type:mime,p_size_bytes:size,p_sha256:sha
+  });
+  if(locked.error){
+   if(locked.error.code==='42501')return bad('batch_not_found',404);
+   if(locked.error.code==='22023')return bad('invalid_photo_or_batch_full',409);
+   if(locked.error.code==='23505')return bad('concurrent_reservation_retry',409);
+   throw locked.error;
   }
-  const existing=await db.from('inventory_label_photos').select('id',{count:'exact',head:true}).eq('batch_id',batchId);
-  if(existing.error)throw existing.error;
-  if(Number(existing.count||0)>=Number(batch.total_files))return bad('batch_full',409);
-  const photoId=crypto.randomUUID(),storage_path=user+'/'+batchId+'/'+photoId+'.'+TYPES[mime];
-  const signed=await db.storage.from(BUCKET).createSignedUploadUrl(storage_path,{upsert:false});
+  const entry=Array.isArray(locked.data)?locked.data[0]:locked.data;
+  if(!entry?.photo_id||!entry?.photo_storage_path)return bad('reservation_unavailable',503);
+  if(entry.is_duplicate)
+   return {duplicate:true,photo_id:entry.photo_id,status:entry.photo_status,
+    previous_batch_id:entry.photo_batch_id};
+  if(entry.photo_status!=='uploading')return bad('unexpected_reservation_state',409);
+  // Após queda do celular, um objeto que já chegou ao Storage só precisa de confirmação.
+  const info=await db.storage.from(BUCKET).info(entry.photo_storage_path);
+  if(!info.error&&Number(info.data?.size)===size)
+   return {photo_id:entry.photo_id,needs_confirmation:true,batch_id:entry.photo_batch_id};
+  const signed=await db.storage.from(BUCKET).createSignedUploadUrl(entry.photo_storage_path,{upsert:false});
   if(signed.error||!signed.data?.signedUrl)return bad('storage_sign_failed',503);
-  const inserted=await db.from('inventory_label_photos').insert({
-   id:photoId,batch_id:batchId,created_by:user,storage_path,file_name:name,mime_type:mime,
-   size_bytes:size,sha256:sha,status:'uploading',attempts:0
-  }).select('id').single();
-  if(inserted.error){
-   if(inserted.error.code==='23505')return {duplicate:true};
-   throw inserted.error;
-  }
-  return {photo_id:photoId,signed_url:signed.data.signedUrl,storage_path};
+  return {photo_id:entry.photo_id,signed_url:signed.data.signedUrl,
+    storage_path:entry.photo_storage_path,batch_id:entry.photo_batch_id};
  }
  if(action==='inventory_label_photo_confirm'){
   if(req.method!=='POST')return bad('method_not_allowed',405);
