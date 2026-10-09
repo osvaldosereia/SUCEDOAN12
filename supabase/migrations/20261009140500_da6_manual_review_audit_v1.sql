@@ -75,6 +75,15 @@ begin
    if p_decision<>'correct' then
      raise exception 'marking_needs_manual_quantity' using errcode='22023';
    end if;
+   -- Não permitir criar balanço em slot inativo: apenas erros OMR registrados.
+   if not exists(
+     select 1 from jsonb_array_elements(
+       case when jsonb_typeof(v_photo.parsed->'errors')='array'
+         then v_photo.parsed->'errors' else '[]'::jsonb end
+     ) as issue(value) where issue.value->>'slot'=p_slot::text
+   ) then
+     raise exception 'slot_has_no_unresolved_mark' using errcode='22023';
+   end if;
    insert into public.inventory_label_counts
      (photo_id,batch_id,product_id,label_serial,balance_slot,quantity,confidence,status,reviewed_at,reviewed_by)
    values(p_photo_id,v_photo.batch_id,v_product,v_serial,p_slot,p_quantity,0,'approved',now(),p_actor_id)
