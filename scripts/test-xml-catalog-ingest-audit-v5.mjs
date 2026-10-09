@@ -7,7 +7,7 @@ const read = path => readFileSync(new URL(path, root), "utf8");
 const backend = read("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts");
 const standalone = read("supabase/functions/purchase-xml-v1/index.ts");
 const ui = read("vitrine/admin/index.html");
-const migration = read("supabase/migrations/20261009085000_purchase_xml_ingest_error_audit_v5.sql");
+const migration = read("docs/projects/purchase-xml-ingest-error-audit-applied-r23.sql");
 
 assert.equal(backend, standalone, "Both XML backend copies must remain identical");
 assert.match(migration, /enable row level security/);
