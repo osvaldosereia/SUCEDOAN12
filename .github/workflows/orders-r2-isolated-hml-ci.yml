@@ -5,6 +5,7 @@ on:
       - 'agent/orders-r2-*'
     paths:
       - 'scripts/sql/orders-r2-*.sql'
+      - 'supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql'
       - 'scripts/sql/orders-security-*.sql'
       - 'supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql'
       - 'supabase/sql/orders-r2-basket-independent-groups-review-v1.sql'
@@ -300,5 +301,32 @@ jobs:
           test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.orders")" = 1
           test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.vitrine_stock_reservations where product_id in ('00000000-0000-4000-8000-0000000000e1','00000000-0000-4000-8000-0000000000e2')")" = 0
           echo 'PASS: linked food/hygiene kits allocated to exactly one buyer without loose stock duplication'
+      - name: Real R02 checkout + R03 weekly code + basket composition (seventh ephemeral DB)
+        run: |
+          set -euo pipefail
+          createdb synthetic_checkout_weekly_r2
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-r3-weekly-bridge-fixture.sql
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-assertions.sql
+          PGDATABASE=synthetic_checkout_weekly_r2 psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-r3-checkout-identity-assertions.sql
+          echo 'PASS: immutable weekly number shared with real checkout, split kits and mold snapshots'
       - name: Diff hygiene
         run: git diff --check
