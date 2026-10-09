@@ -46,7 +46,9 @@
       forbidden: 'Seu acesso não permite esta operação.',
       invalid_order: 'Pedido inválido.',
       failed_to_fetch: 'Sem conexão com o servidor. Confira a internet.',
-      admin_not_authorized: 'Conta sem acesso à operação.'
+      admin_not_authorized: 'Conta sem acesso à operação.',
+      meta_customer_confirmation_required: 'NÃO MONTAR ESSE PEDIDO. Aguarde o cliente clicar em CONFIRMADO no WhatsApp.',
+      meta_confirmation_readiness_unavailable: 'A confirmação do cliente não pôde ser verificada. Nenhuma separação foi liberada.'
     };
     return translations[message.toLowerCase()] || message.replace(/_/g,' ').slice(0,170);
   };
@@ -82,6 +84,17 @@
   const rpc = async name => fetchJson(RPC+name,{
     method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:'{}'
   });
+  // New batch feed reports Meta proof without loading each order separately.
+  // Legacy fallback is explicitly marked unverified and all opens are checked
+  // against the server. A missing R05 deployment never grants approval.
+  const queueFeed = async () => {
+    try { return await rpc('manual_pick_queue_meta_feed_v1'); }
+    catch (err) {
+      if (err?.status!==404 && !String(err?.message||'').includes('PGRST202')) throw err;
+      const legacy = await rpc('manual_pick_queue_feed_v1');
+      return {...legacy,orders:(legacy.orders||[]).map(o=>({...o,meta_confirmation_check_unavailable:true}))};
+    }
+  };
   const toast = (message, failure=false) => {
     const element=$('toast');
     element.textContent=message; element.classList.toggle('error',failure);element.hidden=false;
@@ -106,10 +119,11 @@
     toast(errText(err),true);
   };
   const originalNumber = value => {
-    // The checkout displays order_public_code from order_public_snapshots_v1.
-    // orders.order_number is an internal identifier and must never be shown to pickers.
-    const code = String(value?.public_code || value?.order_public_code || '').trim().toUpperCase();
-    return /^[A-Z]{2}[0-9]{3}$/.test(code) ? code : 'NÚMERO INDISPONÍVEL';
+    // R03/R05: the original customer code never changes during separation.
+    // Prefer the public snapshot; only fall back to the same canonical order code.
+    const code = String(value?.public_code || value?.order_public_code || value?.order_number || '').trim().toUpperCase();
+    return /^(?:[A-Z]{2}[0-9]{3}|[0-9]{4}|[0-9]{2}[|][0-9]{2}[|][0-9]{4} - [0-9]{3})$/.test(code)
+      ? code : 'NÚMERO INDISPONÍVEL';
   };
   const progress = counts => {
     const total = Number(counts?.total||0);
@@ -130,17 +144,19 @@
     $('queueCount').textContent=String(queue.length);
     $('queueList').innerHTML=visible.length?visible.map(o=>{
       const p=progress(o.counts),completed=o.completed===true&&Boolean(o.completed_at),started=Boolean(o.separator_key || p.done);
+      const awaitingMeta=o.meta_confirmation_required===true;
+      const needsVerification=o.meta_confirmation_check_unavailable===true;
       const assignedName=String(o.separator_label||SEPARATORS.find(x=>x.key===o.separator_key)?.label||'').trim();
       const responsible=assignedName||'Responsável não identificado';
       const finishedBy=String(o.completed_separator_label||SEPARATORS.find(x=>x.key===o.completed_separator_key)?.label||responsible);
       const assignmentBanner=started?'<div class="queue-assignment-banner" role="status"><strong>EM SEPARAÇÃO</strong><span aria-hidden="true">—</span><span class="queue-assignment-name">'+esc(responsible)+'</span></div>':'';
       const completionBanner=completed?'<div class="queue-complete-banner"><strong>✓ PEDIDO JÁ SEPARADO POR</strong><span class="queue-complete-name">'+esc(finishedBy)+'</span></div>':'';
       return '<article class="queue-card'+(completed?' is-completed':started?' is-running':'')+'"><div class="queue-card-main">'+
-        '<div class="card-top"><span class="status'+(completed?' completed':started?' running':'')+'">'+(completed?'PEDIDO JÁ SEPARADO':started?'EM ANDAMENTO':'PRONTO PARA SEPARAR')+'</span><span class="card-date">'+esc(formatDate(o.created_at))+'</span></div>'+
+        '<div class="card-top"><span class="status'+(awaitingMeta?' blocked':completed?' completed':started?' running':'')+'">'+(awaitingMeta?'NÃO MONTAR ESSE PEDIDO':completed?'PEDIDO JÁ SEPARADO':started?'EM ANDAMENTO':needsVerification?'VERIFICAR CONFIRMAÇÃO':'PRONTO PARA SEPARAR')+'</span><span class="card-date">'+esc(formatDate(o.created_at))+'</span></div>'+
         (completed?completionBanner:assignmentBanner)+
         '<div class="order-number">#'+esc(originalNumber(o))+'</div><div class="customer">'+esc(o.customer_name||'Cliente')+'</div>'+
         progressHtml(o.counts)+'</div>'+
-        (completed?'<div class="queue-completed-message">✓ Separação registrada · '+esc(formatDate(o.completed_at))+'</div>':'<button type="button" class="queue-open" data-open="'+esc(o.id)+'">'+(started?'CONTINUAR SEPARAÇÃO':'INICIAR SEPARAÇÃO')+' <span aria-hidden="true">→</span></button>')+'</article>';
+        (awaitingMeta?'<div class="queue-blocked-message">Aguardando CONFIRMADO do cliente no WhatsApp.</div>':completed?'<div class="queue-completed-message">✓ Separação registrada · '+esc(formatDate(o.completed_at))+'</div>':'<button type="button" class="queue-open" data-open="'+esc(o.id)+'">'+(needsVerification?'VERIFICAR E ABRIR':started?'CONTINUAR SEPARAÇÃO':'INICIAR SEPARAÇÃO')+' <span aria-hidden="true">→</span></button>')+'</article>';
     }).join(''):'<section class="empty-card"><span class="empty-icon" aria-hidden="true">📦</span><h2>'+(queue.length?'Nenhum pedido encontrado':'Nenhum pedido para separar')+'</h2><p>'+(queue.length?'Tente buscar pelo número ou pelo nome do cliente.':'A fila começa vazia. O responsável deve usar o botão SEPARAR AGORA em um pedido confirmado no Admin.')+'</p></section>';
   };
   const renderCompletionNotice = () => {
@@ -158,7 +174,7 @@
     loading=true;
     if (!silent) $('queueFeedback').textContent='Atualizando fila…';
     try {
-      const data=await rpc('manual_pick_queue_feed_v1');
+      const data=await queueFeed();
       if (!Array.isArray(data.orders)) throw new Error('invalid_queue_feed');
       queue=data.orders.filter(o=>idOk(o.id)&&(['confirmed','processing'].includes(o.status)||(o.status==='ready'&&o.completed===true)));
       $('queueFeedback').textContent='';
@@ -182,7 +198,7 @@
       sessionStorage.setItem(SESSION,verification.access_token);
       $('pin').value='';
       // A valid token alone is not sufficient: feed checks active Admin authorization.
-      const check=await rpc('manual_pick_queue_feed_v1');
+      const check=await queueFeed();
       if(!Array.isArray(check.orders)) throw new Error('invalid_queue_feed');
       queue=check.orders.filter(o=>idOk(o.id)&&(['confirmed','processing'].includes(o.status)||(o.status==='ready'&&o.completed===true)));
       renderQueue();show('queueView');renderCompletionNotice();setConnection('Sincronizado');
@@ -257,8 +273,21 @@
       if(preserveScroll)window.scrollTo(0,y);else window.scrollTo(0,0);
     } catch(err) {fail(err);if(!preserveScroll)await backToQueue()}
   };
-  const openOrder = id => {
-    if(busy||!idOk(id)||!queue.some(o=>o.id===id&&o.completed!==true))return; // Only manually selected orders.
+  const openOrder = async id => {
+    if(busy||!idOk(id)||!queue.some(o=>o.id===id&&o.completed!==true))return;
+    if(queue.some(o=>o.id===id&&o.meta_confirmation_required===true)){
+      toast('NÃO MONTAR ESSE PEDIDO. Aguarde o botão CONFIRMADO.',true);return;
+    }
+    busy=true;
+    try {
+      const approval=await action('order_separation_meta_status',null,{id});
+      if(approval.confirmation_required===true){
+        toast('NÃO MONTAR ESSE PEDIDO. Aguarde o botão CONFIRMADO.',true);
+        await loadQueue(true);return;
+      }
+    }catch(err){fail(err);return;}
+    finally{busy=false}
+    // Server check passed; Admin vitrine still verifies again on each action.
     // Reuse the original Admin separation vitrine, not a second picking implementation.
     // The montar=1 parameter renders only that vitrine and returns to /montar on close.
     const url=new URL('/vitrine/admin/',location.origin);
