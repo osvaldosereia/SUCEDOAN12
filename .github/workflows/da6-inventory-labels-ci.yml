@@ -144,3 +144,48 @@ jobs:
             -f tests/da6-upload-postgres-fixture.sql \
             -f supabase/migrations/20261009150000_da6_upload_atomic_reservation_v1.sql \
             -f tests/da6-upload-postgres-assertions.sql
+
+
+  postgres-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: da6_worker_homologation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: da6_worker_homologation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar cliente SQL e pg somente para teste
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          npm install --no-save --ignore-scripts --no-audit --no-fund --prefix /tmp/da6-pg pg@8.13.3
+      - name: Montar fila e funções em banco PostgreSQL17 efêmero
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/da6-worker-postgres-fixture.sql \
+            -f supabase/migrations/20261009112000_da6_worker_queue_rpc.sql
+      - name: Exercitar 100 tarefas e workers concorrentes em sessões reais
+        env:
+          NODE_PATH: /tmp/da6-pg/node_modules
+        run: node --test tests/da6-worker-concurrency.test.cjs
