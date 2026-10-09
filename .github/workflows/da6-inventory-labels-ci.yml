@@ -105,7 +105,8 @@ jobs:
           psql -v ON_ERROR_STOP=1 \
             -f tests/da6-review-postgres-fixture.sql \
             -f supabase/migrations/20261009140500_da6_manual_review_audit_v1.sql \
-            -f tests/da6-review-postgres-assertions.sql
+            -f tests/da6-review-postgres-assertions.sql \
+            -f tests/da6-review-extended-assertions.sql
 
 
   postgres-upload:
