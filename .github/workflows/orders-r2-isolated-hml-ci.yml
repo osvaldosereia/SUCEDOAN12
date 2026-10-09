@@ -371,5 +371,36 @@ jobs:
           test "$(PGDATABASE=$DB psql -Atc \
             "select coalesce(sum(quantity),0)::integer from public.vitrine_stock_reservations where product_id='00000000-0000-4000-8000-0000000000bb' and status='reserved'")" = 2
           echo 'PASS: one buyer receives unique weekly number and stock; failed buyer consumes neither'
+      - name: Use ACTUAL canonical basket availability view in checkout (eighth DB)
+        run: |
+          set -euo pipefail
+          createdb synthetic_real_basket_availability_r2
+          DB=synthetic_real_basket_availability_r2
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-availability-fixture.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-availability-view.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-availability-assertions.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-checkout-gate-assertions.sql
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-assertions.sql
+          test "$(PGDATABASE=$DB psql -Atc "select count(*) from public.orders")" = 7
+          echo 'PASS: real basket availability (categories, assembly, linked stock, component health) combined with live v3 checkout and kits'
       - name: Diff hygiene
         run: git diff --check
