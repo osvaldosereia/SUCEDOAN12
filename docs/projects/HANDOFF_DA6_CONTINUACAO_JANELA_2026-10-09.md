@@ -59,3 +59,24 @@
 > Continue o projeto DA6 Etiquetas e Balanço da Dona Antônia no repositório GitHub `osvaldosereia/SUCEDOAN12`. **Primeiro leia INTEIRAMENTE** `docs/projects/HANDOFF_DA6_CONTINUACAO_JANELA_2026-10-09.md` na branch `agent/gondola-labels-balance-20261009`; leia também R7, R8, manifesto de gates e protocolo de QA físico, confira main/PR #987/CI. Atue como engenheiro sênior autônomo, trabalhe com commits pequenos, teste e documente. **R1–R7 já concluídas em código e CI; R8 em preparação, release bloqueado por fotos/impressão físicas e staging Edge/cron hospedado. Não publicar nem mexer em estoque/Bling sem homologação segura.** Continue os ajustes seguros e informe impedimentos reais, sem pedir confirmações operacionais intermediárias.
 
 **Nota:** valores de ahead/behind, SHA e CI são fotografia do instante do handoff; sempre revalidar, porque há automação e outras gravações.
+
+## 8. ATUALIZAÇÃO POSTERIOR — R8 / 09-10-2026 (continuação após abrir nova janela)
+
+**Correção concreta do CI, sem deploy:**
+- O workflow [#37971328394](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37971328394) reprovou apenas `local-supabase-storage` por `rate limit exceeded` na consulta `version: latest` da action `supabase/setup-cli@v1`; os outros cinco jobs passaram. A limpeza também falhava se a instalação não havia criado o diretório.
+- Commit [`3477422a3f9c824dd71ebe41102b2ffb2644a321`](https://github.com/osvaldosereia/SUCEDOAN12/commit/3477422a3f9c824dd71ebe41102b2ffb2644a321): action oficial Supabase setup-cli v3.0.1 imutável (`45a513f8c64c0bc8e0e3dfe572b5c95be85f6359`), CLI `2.120.0` via npm, etapa `supabase --version` e limpeza condicional segura. Sem alteração de gateway, impressora, estoque ou Bling.
+- **CI DA6 [#37971817863](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37971817863) APROVADO: 6/6 jobs SUCCESS, 74 PASS e 0 FAIL**; todos os testes Deno/PostgreSQL/Storage local passaram. O código de origem validado era o commit `3477422a3f9c824dd71ebe41102b2ffb2644a321`. As alterações de documentação subsequentes não mudam arquivos críticos de execução.
+- Manifesto de release atualizado com o CI mais recente, **sete gates permanecem `passed:false`**, `release_candidate_fingerprint:null` e `release_status:blocked`. Nenhum teste digital é prova física.
+
+**Supabase canônico consultado em leitura somente:**
+- `ssbesxgaijknwsjbsbcz` está saudável. `inventory_label_batches=0`, `inventory_label_photos=0`, `inventory_label_counts=0`, bucket `inventory-label-photos` privado existente; não foi encontrada a tabela `inventory_label_review_events` da migração de auditoria nova.
+- Agendador `inventory-label-worker-da6-v1` está ativo no banco, embora não haja fotos. NÃO o alterar durante esta preparação sem auditoria/rollout aprovado.
+- A API de branches Supabase mostrou apenas `main` no projeto canônico, **nenhum staging remoto DA6 separado**. Nada foi provisionado ou testado em Edge/cron remoto.
+
+**Conflitos e concorrência:**
+- A `main` avançou após o PR e incorporou alterações de recuperação fiscal e reservas na separação, inclusive em `vitrine/admin/index.html` e `supabase/functions/admin-products-live-v1/index.ts` (arquivos também presentes no diff DA6). O PR passou a exibir `mergeable:false` na nova consulta e deve permanecer draft. Não resolver por sobrescrita dos arquivos grandes, nem fazer merge automático.
+- Descrição do PR #987 foi atualizada para refletir as R1–R7, R8, CI e gates reais, mantendo aberto em draft e sem merge.
+
+**Automação horária:** tarefa “Etiquetas e Balanço Dona Antônia” já encontrada **ATIVA**, em recorrência a cada hora. Preservar; não duplicar.
+
+**PRÓXIMO PASSO:** continuar apenas verificações de release seguras, conciliação não destrutiva da `main`, e preparação do QA. Não publicar antes de imprimir em hardware real 203 dpi, testar fotos com celular real e homologar Edge + cron remotos em staging isolado, além de backup e rollback documentados. Não forjar evidências nem alterar balanços A4, estoque ou Bling.
