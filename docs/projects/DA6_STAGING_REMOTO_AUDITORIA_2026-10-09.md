@@ -36,3 +36,14 @@
 - Com staging aprovado, planejar backup, rollback, freeze SHA exato, `--enforce`, revisão protegida, rollout gradual. **Não executar merge/deploy automático.**
 
 Este documento é um checkpoint do staging REAL, não uma certificação final nem comprovação dos testes físicos.
+
+## 5. Reteste real de HTTP/worker no staging (09/10/2026)
+
+**Atualização posterior com resultados concretos:** a limitação anterior de DNS do executor foi contornada usando o `pg_net` **dentro do próprio projeto staging**. A Edge Function remota foi alcançada por HTTPS:
+- API health `200`; worker sem chave `401`; chave incorreta `401`; com segredo do Vault e fila vazia `200/processed:0`; operador anônimo `401`; método GET no worker `405`.
+- Foto **100% artificial**, sem blob, gerou status `retry` na tentativa 1, `retry` na tentativa 2 e `failed` na 3, erro `storage_read_failed`; 4ª invocação `processed:0`, não ultrapassou 3. Backoff antecipado manualmente na única fixture para realizar ensaio rápido; cron da branch continuou desativado.
+- Fixture foi excluída sob verificação; staging voltou a `auth.users=0`, `batches=0`, `photos=0`, `counts=0`, `review_events=0`. Produção não foi modificada.
+- Investigação de `MIGRATIONS_FAILED`: histórico de produção tem 1187 migrações; branch herdou 145 até `20260908200406`, mais 6 DA6 staging. Primeira ausente: `20260908200932 whatsapp_sales_official_resources_homologation_v1`; exige `whatsapp_release_mode=live` e MVP true, enquanto staging tem `off` e MVP false. **Causa provável, não prova do erro exato do workflow**. Não habilitar WhatsApp nem copiar >1000 migrações para contornar a falha.
+- Documento específico de evidência **não aprovadora**: `docs/projects/DA6_STAGING_HTTP_REAL_WORKER_RETRY_2026-10-09.md` (commit `0196bf3438a0f8c1949427730243ead1f7ab6e11`).
+
+**Limites mantidos:** nenhum upload real de foto no Storage hospedado, QR/OMR real, cron automático com foto, ensaio físico, backup/rollback ou revisão da main; sete gates de produção permanecem bloqueados, PR #987 DRAFT. Staging ativo continua cobrando US$ 0,01344/hora.
