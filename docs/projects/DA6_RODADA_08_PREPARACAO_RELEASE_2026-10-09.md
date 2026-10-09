@@ -50,3 +50,11 @@ node --test tests/da6-release-gate.test.cjs tests/da6-vendored-print.test.cjs
 ## Situação de custos e autonomia
 - Sem IA para ler etiquetas; o CI local pode ser executado sem criar novo Supabase remoto.
 - Validação física exige hardware/amostras reais; Edge hospedado exige staging autorizado. A automação continua implementando verificações seguras, sem inventar aprovação de gates inacessíveis.
+
+## Checkpoint de testes da preparação R8 (verificado)
+
+- **Fonte validada:** commit `bfd40c625870fe4a586ace0e2ef81f497bde5b7d`.
+- **CI GitHub Actions [37952073545](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37952073545): 6/6 jobs SUCCESS** — `deterministic-tests` **65 PASS / 0 FAIL**, `edge-types`, `postgres-review`, `postgres-upload`, `postgres-worker`, `local-supabase-storage` todos verdes.
+- Bibliotecas QR/Code128 executadas pelo Chrome a partir de arquivos próprios com licença MIT; decodificação do QR por `jsQR` confirmou o payload de identificação DA6 e o SVG Code128 foi renderizado sem acesso HTTP externo.
+- O manifesto de release **permanece BLOQUEADO**, sem qualquer gate físico ou Edge remoto considerado aprovado por testes sintéticos.
+- Este checkpoint altera somente documentos de release, **não** o código fonte testado. Nenhum merge/deploy/SQL no canônico ou chamada ao Bling nesta rodada.
