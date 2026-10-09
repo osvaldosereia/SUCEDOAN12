@@ -6383,7 +6383,7 @@
   // Read-only: comparisons are evidence, not approval to alter products or fiscal.
   function xmlCatalogComparisonMarkup(data){
     const full=state.xmlCatalogFullComparison;
-    const fullVisible=full?.candidate_key===state.xmlCatalogDetailKey;
+    const fullVisible=Boolean(full?.candidate_key&&state.xmlCatalogDetailKey&&full.candidate_key===state.xmlCatalogDetailKey);
     if(fullVisible)data={...data,field_comparisons:full.field_comparisons,
       comparison_scope:full.comparison_scope};
     const scope=data?.comparison_scope||{};
