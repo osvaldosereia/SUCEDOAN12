@@ -290,7 +290,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f r10-source/supabase/sql/orders-r10-sefaz-authorization-gate-v1.sql
           test "$(psql -Atc "SELECT count(*) FROM public.dispatch_fiscal_jobs")" = 1
           echo 'PASS R10 outbox: only verified R07 basket, no second fiscal writer'
-      - name: ORIGINAL R10 SQL guards: deny dispatch, then synthetic SEFAZ protocol, idempotent replay
+      - name: "ORIGINAL R10 SQL guards: deny dispatch, then synthetic SEFAZ protocol, idempotent replay"
         run: |
           set -euo pipefail
           psql -v ON_ERROR_STOP=1 -f r10-source/scripts/sql/orders-r10-hml-assertions.sql
