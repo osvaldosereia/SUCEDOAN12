@@ -1,0 +1,89 @@
+name: Orders R18 authentic triggers in isolated PG17 (offline)
+on:
+  push:
+    branches:
+      - 'agent/orders-r18-*'
+    paths:
+      - 'scripts/orders-r18-*'
+      - 'scripts/sql/orders-r18-*'
+      - 'scripts/fixtures/orders-r18-*'
+      - '.github/workflows/orders-r18-source-stage-ci.yml'
+  pull_request:
+    branches:
+      - 'agent/orders-r17-*'
+      - 'agent/orders-r18-*'
+    paths:
+      - 'scripts/orders-r18-*'
+      - 'scripts/sql/orders-r18-*'
+      - 'scripts/fixtures/orders-r18-*'
+      - '.github/workflows/orders-r18-source-stage-ci.yml'
+permissions:
+  contents: read
+jobs:
+  stage-original-guards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: orders_r18_disposable
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d orders_r18_disposable"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: orders_r18_disposable
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      META_LIVE_ENABLED: 'false'
+      BLING_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client >/dev/null
+          fi
+      - name: Recreate only disposable table surfaces
+        run: psql -X -v ON_ERROR_STOP=1 -f scripts/sql/orders-r18-canonical-safe-stage-setup.sql
+      - name: Extract V4 separation trigger without commercial UPDATE
+        run: |
+          node --check scripts/orders-r18-stage-safe-source.mjs
+          node scripts/orders-r18-stage-safe-source.mjs /tmp/orders-r18-separator-authentic.sql
+          test -s /tmp/orders-r18-separator-authentic.sql
+      - name: Load ORIGINAL fiscal and separator source SQL, not rewritten implementations
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/20260928_ops2_r4_fiscal_job_integrity_v1.sql
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/orders-r18-separator-authentic.sql
+      - name: Exercise fail-closed invoice and separator transactions, ROLLBACK
+        run: psql -X -v ON_ERROR_STOP=1 -f scripts/sql/orders-r18-canonical-safe-stage-assertions.sql
+      - name: Fingerprint actual installed functions and triggers against captured canonical
+        run: |
+          node --check scripts/orders-r18-safe-stage-verify.mjs
+          node scripts/orders-r18-safe-stage-verify.mjs --output orders-r18-stage-report.json
+      - name: Preserve source-parity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orders-r18-source-stage-report
+          path: orders-r18-stage-report.json
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Verify external integrations remained disabled
+        run: |
+          test "$META_LIVE_ENABLED" = false
+          test "$BLING_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          git diff --check
