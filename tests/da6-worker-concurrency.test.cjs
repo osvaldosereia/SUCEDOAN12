@@ -128,3 +128,23 @@ test('R4 100 fotos em quatro workers: cada foto é processada exatamente uma vez
   assert.equal(await claim(admin),undefined);
  }finally{await Promise.all([admin.end(),...workers.map(w=>w.end())])}
 });
+
+test('R4 terceiro worker interrompido termina em failed, sem quarta tentativa',async()=>{
+ const db=await connect();
+ try{
+  await reset(db,1);
+  let last=null;
+  for(let i=1;i<=3;i++){
+   const entry=await claim(db);
+   assert.equal(entry.attempt_no,i);
+   last=entry;
+   await db.query("UPDATE public.inventory_label_photos SET claimed_at=now()-interval '6 minutes' WHERE id=$1",[entry.photo_id]);
+  }
+  assert.equal(await claim(db),undefined);
+  const state=(await db.query('SELECT status,attempts,claim_token,finished_at FROM public.inventory_label_photos WHERE id=$1',[last.photo_id])).rows[0];
+  assert.equal(state.status,'failed');assert.equal(Number(state.attempts),3);
+  assert.equal(state.claim_token,null);assert.ok(state.finished_at);
+  await assert.rejects(()=>finish(db,last,1),e=>e.code==='40001');
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM public.inventory_label_counts')).rows[0].n,0);
+ }finally{await db.end()}
+});
