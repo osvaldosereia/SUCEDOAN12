@@ -53,6 +53,8 @@ export function compareTriggerDependencies(expected,stage){
   for(const name of lm.keys())if(!em.has(name))unexpected.push(name);
   const manualReview=sort(exp.filter(t=>t.security_definer &&
     (t.anon_can_execute||t.authenticated_can_execute)).map(key));
+  const manualReviewFunctions=sort(exp.filter(t=>t.security_definer &&
+    (t.anon_can_execute||t.authenticated_can_execute)).map(t=>t.function_schema+"."+t.function_name));
   return {
     canonical_trigger_count:exp.length,stage_trigger_count:local.length,
     invalid_metadata:sort(invalid),missing_triggers:sort(missing),extra_triggers:sort(unexpected),
@@ -60,6 +62,7 @@ export function compareTriggerDependencies(expected,stage){
     function_security_drift:sort(securityDrift),
     canonical_security_definer_count:exp.filter(t=>t.security_definer).length,
     privileged_trigger_functions_with_execute_manual_review:manualReview,
+    privileged_distinct_functions_with_execute_manual_review:manualReviewFunctions,
     trigger_parity_complete:[invalid,missing,unexpected,definitionDrift,bindingDrift,securityDrift].every(a=>a.length===0),
     note:"EXECUTE on a trigger-returning function alone does not prove it is exploitable"
   };
@@ -191,9 +194,10 @@ function reportMd(r){
     "| Verificação | Ocorrências |","|---|---:|",
     ...labels.map(([t,v])=>"| "+t+" | "+v.length+" |"),
     "",
-    "Funções SECURITY DEFINER com EXECUTE nas roles analisadas: "+
+    "Bindings de triggers a funções SECURITY DEFINER com EXECUTE: "+
       r.triggers.privileged_trigger_functions_with_execute_manual_review.length+
-      " (revisão humana, não prova de exploração).",
+      " triggers / "+r.triggers.privileged_distinct_functions_with_execute_manual_review.length+
+      " funções distintas (revisão humana, não prova de exploração).",
     "",
     "Nenhum efeito no Supabase, Meta, Bling ou SEFAZ. Nunca executar db push global.",""
   ].join("\n");
