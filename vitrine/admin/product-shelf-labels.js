@@ -14,7 +14,7 @@ function validGtin(v){
   let sum=0;for(let i=s.length-2,weight=3;i>=0;i--,weight=weight===3?1:3)sum+=Number(s[i])*weight;
   return (10-sum%10)%10===Number(s[s.length-1]);
 }
-const productBarcode=p=>validGtin(p.gtin)?digits(p.gtin):'DAI'+uuid36(p.id);
+const productBarcode=p=>validGtin(p.gtin)?String(p.gtin).trim():'DAI'+uuid36(p.id);
 function randomSerial(){
   const u=new Uint8Array(5);crypto.getRandomValues(u);
   return Array.from(u,x=>x.toString(16).padStart(2,'0')).join('').toUpperCase();
@@ -48,14 +48,41 @@ function printMany(products,existingWindow){
     '<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>'+
     '<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"><\/script></body></html>';
   win.document.open();win.document.write(html);win.document.close();
-  win.addEventListener('load',()=>{
+  let started=false;
+  async function prepare(){
+    if(started||win.closed)return;started=true;
     try{
-      if(typeof win.JsBarcode!=='function'||typeof win.qrcode!=='function')throw Error('Gerador dos códigos não carregou. Verifique a internet.');
-      win.document.querySelectorAll('[data-barcode]').forEach(svg=>win.JsBarcode(svg,svg.dataset.barcode,{format:'CODE128',height:38,width:1.25,displayValue:false,margin:0}));
-      win.document.querySelectorAll('[data-qr]').forEach(el=>{const q=win.qrcode(0,'M');q.addData(el.dataset.qr);q.make();el.innerHTML='<img alt="QR da etiqueta" src="'+q.createDataURL(4,1)+'">'});
-      setTimeout(()=>{if(!win.closed)win.print()},450);
-    }catch(e){const err=win.document.createElement('p');err.className='print-error';err.textContent='Impressão interrompida: '+e.message;win.document.body.prepend(err)}
-  },{once:true});
+      if(typeof win.JsBarcode!=='function'||typeof win.qrcode!=='function')
+        throw Error('Geradores de QR e código de barras indisponíveis. Verifique a internet.');
+      const bars=[...win.document.querySelectorAll('[data-barcode]')];
+      const qrs=[...win.document.querySelectorAll('[data-qr]')];
+      if(bars.length!==labels.length||qrs.length!==labels.length)
+        throw Error('Nem todas as etiquetas foram montadas.');
+      for(const svg of bars)
+        win.JsBarcode(svg,svg.dataset.barcode,{format:'CODE128',height:38,width:1.5,displayValue:false,margin:0});
+      for(const el of qrs){
+        const qr=win.qrcode(0,'M');qr.addData(el.dataset.qr);qr.make();
+        el.innerHTML='<img alt="QR de identificação" src="'+qr.createDataURL(4,1)+'">';
+      }
+      const images=[...win.document.querySelectorAll('.qrcode img')];
+      await Promise.race([
+        Promise.all(images.map(img=>typeof img.decode==='function'?img.decode():Promise.resolve())),
+        new Promise((_,reject)=>setTimeout(()=>reject(Error('Tempo esgotado ao preparar QR.')),7000))
+      ]);
+      if(win.document.fonts?.ready)await win.document.fonts.ready;
+      if(win.closed)return;
+      await new Promise(resolve=>setTimeout(resolve,200));
+      win.print();
+    }catch(error){
+      const warning=win.document.createElement('p');
+      warning.className='print-error';
+      warning.textContent='Impressão interrompida: '+(error?.message||error);
+      win.document.body.prepend(warning);
+    }
+  }
+  win.addEventListener('load',prepare,{once:true});
+  // Cobre o caso de recursos já carregados antes de registrar o listener.
+  if(win.document.readyState==='complete')prepare();
   return {count:labels.length};
 }
 window.DonaAntoniaShelfLabels={print:p=>printMany([p]),printMany,productBarcode,version:'DA6'};
