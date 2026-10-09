@@ -12,6 +12,13 @@ on:
       - 'scripts/sql/orders-production-v3-wrapper-v1.sql'
       - 'scripts/sql/orders-production-stock-reservation-v1.sql'
       - 'scripts/sql/orders-production-outbox-claim-v1.sql'
+      - 'scripts/test-order-public-identity-at-creation-v1.mjs'
+      - 'supabase/functions/admin-orders-v1/index.ts'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-order-vitrine-send-v1/index.ts'
+      - 'supabase/functions/order-separation-notify-v1/index.ts'
+      - 'montar/app.js'
+      - 'vitrine/admin/index.html'
       - '.github/workflows/orders-public-identity-postgres-ci.yml'
   workflow_dispatch:
 permissions:
@@ -41,6 +48,15 @@ jobs:
       PGDATABASE: orders_identity_test
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate weekly code + Admin/Meta/montar consumers
+        run: |
+          node --check scripts/test-order-public-identity-at-creation-v1.mjs
+          node --test scripts/test-order-public-identity-at-creation-v1.mjs
+      - name: Validate picker syntax
+        run: node --check montar/app.js
       - name: Install PostgreSQL client
         run: |
           if ! command -v psql >/dev/null; then
