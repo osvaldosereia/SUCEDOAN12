@@ -22,3 +22,11 @@
 - Execução em função de stage com autenticação: HTTP 200, amostra de feijão sem EAN e unidade KG retornou pendente sem vínculo.
 - Verificações de UI: produto sem EAN/peso não recebe atalhos arriscados de criação/vínculo; EAN numérico e UN recebe ações com confirmação.
 - PR separado da fase 1; publicar apenas após revisão de CI e compatibilidade com mudanças simultâneas.
+
+
+## Rodada V3 — formulário persistente e divergências fiscais
+- O formulário de identificação do Catálogo XML conserva EAN (unidade/embalagem), fator de conversão, busca de produto e nome do rascunho ao atualizar a lista de resultados. Ao trocar a linha de XML, reinicia as escolhas para impedir aplicação ao produto errado.
+- Quando uma observação já está vinculada a um produto, a ficha sinaliza divergência de NCM/CEST entre o documento e o cadastro/perfil fiscal. Não altera o NCM ou CEST nem grava perfil fiscal automaticamente.
+- Criado `scripts/test-xml-catalog-review-ux-v3.mjs` com teste de renderização e preservação do estado, alertas e regras de autorização.
+- A seção permanece carregada sob demanda, sem API externa e sem novo agendamento.
+- Os itens de compra sem GTIN válido ou medidos em KG/L continuam em revisão operacional; nunca converter para unidades por suposição.
