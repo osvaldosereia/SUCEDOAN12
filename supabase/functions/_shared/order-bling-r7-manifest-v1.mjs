@@ -130,3 +130,29 @@ export async function fingerprintBlingPayload(snapshot){
   const hash=await crypto.subtle.digest("SHA-256",encoded);
   return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,"0")).join("");
 }
+
+
+// Exception to order-minimum validation applies ONLY to a post-checkout,
+// completed separation with an immutable R06 receipt proved from the DB.
+// This does NOT waive the R$75 minimum on a new checkout or an unverified order.
+export function eligiblePostCheckoutShortageBelowMinimum(payload,completion,orderTotalCents){
+  const r=payload?.r7_reconciliation;
+  const m=completion?.metadata?.r6_reconciliation;
+  const n=v=>typeof v==="number"&&Number.isFinite(v)&&Number.isSafeInteger(v)?v:null;
+  if(!validUuid(payload?.source_order_id)||payload?.queue_reason!=="ean_verified"
+     ||payload?.status!=="ready"||r?.source!=="frozen_r6_manifest"
+     ||r?.order_id!==payload.source_order_id
+     ||completion?.phase!=="completed"
+     ||completion?.metadata?.stock_applied!==true
+     ||m?.ok!==true||m?.ready!==true||m?.order_id!==payload.source_order_id
+     ||(Array.isArray(m?.blockers)&&m.blockers.length!==0))return false;
+  const orig=n(r.original_total_cents),miss=n(r.missing_subtotal_cents),
+    fin=n(r.final_total_cents),order=n(orderTotalCents);
+  if(orig===null||miss===null||fin===null||order===null
+    ||orig<7500||miss<=0||fin<0||fin>=7500
+    ||orig-miss!==fin||fin!==order)return false;
+  if(cents(m.financial?.original_total,"r6_orig_check")!==orig||
+     cents(m.financial?.missing_subtotal,"r6_missing_check")!==miss||
+     cents(m.financial?.final_total,"r6_final_check")!==fin)return false;
+  return true;
+}
