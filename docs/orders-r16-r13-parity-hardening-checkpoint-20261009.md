@@ -24,6 +24,8 @@ No início da rodada, a fotografia R13 não separava grants por papel e omitia `
 
 **Resultado real:** 11/11 RLS ativas, FORCE desligado, zero policies, 30 triggers do usuário. Cinco tabelas de fiscal/rotas/pagamentos têm grants explícitos `MAINTAIN`, `TRUNCATE`, `TRIGGER` e `REFERENCES` para `anon` e `authenticated`; `PUBLIC` diretamente não mostrou grants nessas 11 tabelas. A versão anterior omitia `MAINTAIN`. A captura é estruturada, não contém dados de clientes e não mudou nenhuma tabela.
 
+**Relatório integrado PostgreSQL 17 sobre o snapshot atualizado:** 29 triggers canônicos faltando no laboratório; 14 triggers extras/sintéticos em relação à fotografia; RLS divergente nas 11 tabelas; zero diferenças de FORCE e zero de policy count; 5 tabelas canônicas ainda com ACLs de risco. O gate `--require-parity` retornou o código **3**, esperado para BLOCKED, dentro de um workflow **SUCCESS** que verifica o bloqueio. [Evidência CI #37980724496](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37980724496). **SUCCESS no workflow não significa PASS em paridade.**
+
 Os 30 triggers também foram ligados, via SELECT, às funções executadas e flags `SECURITY DEFINER`: várias estão em `public` e `private`. **Não transplantar triggers isolados** sem validar as funções, owners, dependências e privilégios efetivos. Essa evidência de catálogo **não é clone completo** nem substitui ensaio de migrações.
 
 O gate R13 **continua BLOCKED**, agora por razões materiais demonstráveis (triggers ausentes no laboratório, políticas/RLS divergentes e concessões diretas de risco canônicas), não mais por omissão do campo role-grants. Falta também auditar membership, default ACL, funções e Storage/Vault antes de decidir paridade completa.
