@@ -79,6 +79,22 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r4-meta-hml-fixture.sql
           psql -v ON_ERROR_STOP=1 -f supabase/sql/orders-r4-meta-button-confirmation-contract-v1.sql
           psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r4-meta-hml-assertions.sql
+      - name: Race two Meta callbacks against one order (unique proof)
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r4-meta-hml-concurrency.sql
+          SQL_A="select public.ops2_apply_order_meta_confirmation_v1('40000000-0000-4000-8000-000000000001');"
+          SQL_B="select public.ops2_apply_order_meta_confirmation_v1('40000000-0000-4000-8000-000000000007');"
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL_A" >/tmp/meta-callback-a.txt &
+          A=$!
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL_B" >/tmp/meta-callback-b.txt &
+          B=$!
+          wait "$A"
+          wait "$B"
+          test "$(psql -Atc "select count(*) from public.order_meta_confirmations_v1 where order_id='10000000-0000-4000-8000-000000000001'")" = 1
+          test "$(psql -Atc "select count(*) from public.order_meta_confirmations_v1")" = 2
+          grep -Eq '"applied": true|"applied":true' /tmp/meta-callback-a.txt /tmp/meta-callback-b.txt
+          echo "PASS: concurrent signed replies created one proof only"
       - name: Prove durable idempotency and default-OFF release flag
         run: |
           set -euo pipefail
