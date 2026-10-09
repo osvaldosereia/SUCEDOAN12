@@ -137,7 +137,9 @@ test('leitura OMR de seis balanços marcados na etiqueta realmente renderizada',
     return {slot:i+1,quantity:qty,
      activation:omr.density(image,18.5,top+7.3,1).toFixed(3),
      tens:omr.density(image,25.09+Math.floor(qty/10)*3.535,top+8.7,.75).toFixed(3),
-     units:omr.density(image,61.09+(qty%10)*3.535,top+8.7,.75).toFixed(3)};
+     units:omr.density(image,61.09+(qty%10)*3.535,top+8.7,.75).toFixed(3),
+     tenScores:Array.from({length:10},(_,n)=>+omr.density(image,25.09+n*3.535,top+8.7,.75).toFixed(3)),
+     unitScores:Array.from({length:10},(_,n)=>+omr.density(image,61.09+n*3.535,top+8.7,.75).toFixed(3))};
    });
    console.log('DA6_LAYOUT_DIAGNOSTIC',JSON.stringify({errors:marked.errors,readings:marked.readings,diag}));
   }
