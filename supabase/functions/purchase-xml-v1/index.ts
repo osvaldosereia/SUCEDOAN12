@@ -490,6 +490,7 @@ async function resolvePurchaseItemIdentity(body:any,userId:string|null){
   const id=clean(body?.item_id,80);if(!/^[0-9a-f-]{36}$/i.test(id))return {ok:false,status:400,error:"invalid_item"};
   const q=await sb.from("purchase_xml_items").select("*,purchase_xml_documents(*)").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)return {ok:false,status:404,error:"item_not_found"};
   const item:any=q.data,doc:any=item.purchase_xml_documents,role=clean(body?.gtin_role,30),createNew=body?.create_new===true;
+  const catalogEvidenceOnly=body?.catalog_evidence_only===true;
   if(!["base_unit","package"].includes(role))return {ok:false,status:409,error:"gtin_role_required"};
   let factor=Number(body?.conversion_factor??item.conversion_factor??0);if(!Number.isFinite(factor)||factor<1)factor=1;
   if(role==="package"&&factor<=1)return {ok:false,status:409,error:"packaging_factor_must_be_greater_than_one"};
@@ -497,7 +498,9 @@ async function resolvePurchaseItemIdentity(body:any,userId:string|null){
   let product:any=null,created=false;
   if(createNew){
     const sku="XML-"+String(item.id).replace(/-/g,"").slice(0,12).toUpperCase();
-    const payload:any={sku,name:proposedName,ncm:item.ncm||null,price:null,cost:null,stock:0,is_active:false,is_whatsapp_active:false,is_offer:false,supplier:doc?.supplier_name||null,unit:"UN",packaging:item.purchase_unit||null,source_system:"operational",sync_status:"local",desired_bling_status:"A",metadata:{purchase_xml_created:true,purchase_xml_document_key:doc?.document_key,new_product_review_required:true,identity_confirmed_at:new Date().toISOString()}};
+    const payload:any={sku,name:proposedName,ncm:catalogEvidenceOnly?null:(item.ncm||null),price:null,cost:null,stock:0,is_active:false,is_whatsapp_active:false,is_offer:false,supplier:doc?.supplier_name||null,unit:"UN",packaging:item.purchase_unit||null,source_system:"operational",sync_status:"local",desired_bling_status:"A",metadata:{purchase_xml_created:true,purchase_xml_document_key:doc?.document_key,
+      new_product_review_required:true,identity_confirmed_at:new Date().toISOString(),
+      ...(catalogEvidenceOnly?{fiscal_review_required:true,xml_ncm_candidate:item.ncm||null,xml_cest_candidate:item.cest||null}:{} )}};
     if(role==="base_unit"&&validGtin(xmlGtin))payload.gtin=xmlGtin;
     const ins=await sb.from("products").insert(payload).select("id,bling_product_id,sku,name,gtin,ncm,cost,price,stock,unit,packaging,supplier,metadata,is_active,image_url,brand,category,subcategory").single();if(ins.error)throw ins.error;product=ins.data;created=true;
   }else{
