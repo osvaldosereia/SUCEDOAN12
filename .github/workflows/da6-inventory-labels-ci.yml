@@ -13,18 +13,6 @@ on:
       - 'tests/da6-*'
       - 'tests/inventory-label-*'
       - '.github/workflows/da6-inventory-labels-ci.yml'
-  push:
-    branches: [agent/gondola-labels-balance-20261009]
-    paths:
-      - 'vitrine/admin/inventory-label-*'
-      - 'vitrine/admin/product-shelf-*'
-      - 'vitrine/admin/product-label-print.css'
-      - 'supabase/functions/admin-products-live-v1/inventory-label-*'
-      - 'supabase/functions/admin-products-live-v1/index.ts'
-      - 'supabase/migrations/*da6*'
-      - 'tests/da6-*'
-      - 'tests/inventory-label-*'
-      - '.github/workflows/da6-inventory-labels-ci.yml'
 concurrency:
   group: da6-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
