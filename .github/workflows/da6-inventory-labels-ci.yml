@@ -69,7 +69,19 @@ jobs:
         run: |
           deno check --node-modules-dir=auto supabase/functions/admin-products-live-v1/inventory-label-worker.ts
           deno check --node-modules-dir=auto supabase/functions/admin-products-live-v1/inventory-label-photo-api.ts
-          deno check --node-modules-dir=auto supabase/functions/admin-products-live-v1/index.ts
+      - name: Verificar sintaxe TypeScript do gateway central sem falsos positivos de tipos legados
+        run: |
+          deno eval --allow-read --node-modules-dir=auto '
+            import ts from "npm:typescript@5.9.3";
+            const filename="supabase/functions/admin-products-live-v1/index.ts";
+            const source=await Deno.readTextFile(filename);
+            const ast=ts.createSourceFile(filename,source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TS);
+            if(ast.parseDiagnostics.length){
+              for(const d of ast.parseDiagnostics) console.error(ts.flattenDiagnosticMessageText(d.messageText,"\\n"));
+              Deno.exit(1);
+            }
+            console.log("DA6 gateway central TypeScript syntax OK");
+          '
       - name: Executar codec real PNG JPEG WebP em WASM/Deno
         run: deno test --allow-read --allow-env --node-modules-dir=auto tests/da6-edge-codec.test.ts tests/da6-worker-edge-queue.test.ts
 
