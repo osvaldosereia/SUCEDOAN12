@@ -1,0 +1,46 @@
+name: Orders R17 canonical dependency preflight (offline)
+on:
+  push:
+    branches:
+      - 'agent/orders-r17-*'
+    paths:
+      - 'scripts/orders-r17-canonical-preflight.mjs'
+      - 'scripts/test-orders-r17-canonical-preflight.mjs'
+      - 'scripts/fixtures/orders-r17-*.json'
+      - '.github/workflows/orders-r17-canonical-preflight-ci.yml'
+  pull_request:
+    branches:
+      - 'agent/orders-r15-*'
+      - 'agent/orders-r17-*'
+    paths:
+      - 'scripts/orders-r17-canonical-preflight.mjs'
+      - 'scripts/test-orders-r17-canonical-preflight.mjs'
+      - 'scripts/fixtures/orders-r17-*.json'
+      - '.github/workflows/orders-r17-canonical-preflight-ci.yml'
+permissions:
+  contents: read
+jobs:
+  snapshot-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      META_LIVE_ENABLED: 'false'
+      BLING_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify R17 source syntax
+        run: |
+          node --check scripts/orders-r17-canonical-preflight.mjs
+          node --check scripts/test-orders-r17-canonical-preflight.mjs
+      - name: Run strict negative/positive snapshot tests
+        run: node --test scripts/test-orders-r17-canonical-preflight.mjs
+      - name: Prevent accidental provider or database calls
+        run: |
+          test "$META_LIVE_ENABLED" = false
+          test "$BLING_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          git diff --check

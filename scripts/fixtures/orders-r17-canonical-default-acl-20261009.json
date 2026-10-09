@@ -1,0 +1,133 @@
+{
+  "title": "R17 canonical default privileges",
+  "captured_on": "2026-10-09",
+  "source": "Supabase catalog only; read-only; owners postgres/supabase_admin, schema public",
+  "contains_business_data": false,
+  "entries": [
+    {
+      "scope": "public",
+      "owner_role": "postgres",
+      "object_type": "r",
+      "grants": [
+        {
+          "role": "anon",
+          "privilege": "MAINTAIN"
+        },
+        {
+          "role": "anon",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "MAINTAIN"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRUNCATE"
+        }
+      ]
+    },
+    {
+      "scope": "public",
+      "owner_role": "supabase_admin",
+      "object_type": "f",
+      "grants": [
+        {
+          "role": "anon",
+          "privilege": "EXECUTE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "EXECUTE"
+        }
+      ]
+    },
+    {
+      "scope": "public",
+      "owner_role": "supabase_admin",
+      "object_type": "r",
+      "grants": [
+        {
+          "role": "anon",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "anon",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "anon",
+          "privilege": "MAINTAIN"
+        },
+        {
+          "role": "anon",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "anon",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "anon",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "MAINTAIN"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "UPDATE"
+        }
+      ]
+    }
+  ]
+}
