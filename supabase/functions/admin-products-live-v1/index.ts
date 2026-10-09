@@ -3816,7 +3816,7 @@ async function orderFiscalR8Preview(oid:string,auth:any){
     db.from("order_bling_r7_sync_intents_v1").select("order_id,status,bling_order_id,payload_hash,manifest,provider_result").eq("order_id",oid).maybeSingle(),
     db.from("order_fiscal_controls").select("order_id,fiscal_status,dispatch_fiscal_status,sefaz_status,bling_invoice_id").eq("order_id",oid).maybeSingle(),
     db.from("bling_hub_entity_links_v2").select("source_id,status,bling_id,metadata").eq("source_system","vitrine_qx").eq("entity_type","order").eq("source_id",oid).maybeSingle(),
-    db.from("fiscal_runtime_config").select("require_fiscal_authorization_before_dispatch").eq("id",1).maybeSingle(),
+    db.from("fiscal_runtime_config").select("enabled,execution_mode,bling_invoice_prepare_enabled,require_fiscal_authorization_before_dispatch").eq("id",1).maybeSingle(),
     db.from("bling_hub_runtime_v2").select("hub_enabled,orders_enabled").eq("id",1).maybeSingle(),
     db.from("dispatch_fiscal_jobs").select("status,bling_invoice_id").eq("order_id",oid),
     db.from("fiscal_rule_sets").select("jurisdiction,tax_kind,status,activated_at,valid_to").eq("status","active")
