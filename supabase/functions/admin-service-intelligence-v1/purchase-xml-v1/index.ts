@@ -1756,7 +1756,9 @@ async function applyItemUpdate(body:any,userId:string|null){
   if((!Number.isFinite(net)||net<=0)&&Number.isFinite(Number(item.purchase_unit_price)))net=Number(item.purchase_unit_price)*qty;
   const baseCost=baseQty>0&&Number.isFinite(net)?net/baseQty:null;
   if(baseCost===null||!Number.isFinite(baseCost)||baseCost<0)return {ok:false,status:409,error:"unit_cost_unavailable"};
-  const updateCost=body?.update_cost!==false,updateSale=body?.update_sale_price!==false;
+  // R2: XML is evidence, not consent to change existing retail prices or costs.
+  // Both mutations require explicit true; an omitted field is always read-only.
+  const updateCost=body?.update_cost===true,updateSale=body?.update_sale_price===true;
   const salePrice=Number(body?.sale_price);
   if(updateSale&&(!Number.isFinite(salePrice)||salePrice<0))return {ok:false,status:400,error:"invalid_sale_price"};
   const chain=factor>1?[{unit:unit(item.purchase_unit)||"EMB",contains:factor,next_unit:"UN"},{unit:"UN",quantity:1}]:[{unit:"UN",quantity:1}];
@@ -1768,10 +1770,12 @@ async function applyItemUpdate(body:any,userId:string|null){
   }
   await sb.from("product_purchase_history").update({conversion_factor:factor,conversion_chain:chain,base_unit:"UN",base_quantity:baseQty,base_unit_cost:baseCost,metadata:{approved_from_admin:true,approved_at:now,operator}}).eq("purchase_item_id",id);
   const pmeta={...obj(product.metadata),purchase_catalog_review_required:false,last_purchase_catalog_approval_at:now,last_purchase_catalog_document_key:doc.document_key,last_purchase_catalog_item_id:id,last_purchase_conversion_factor:factor,last_purchase_supplier:doc.supplier_name||null,last_purchase_unit_cost:baseCost};
+  // R2: Existing product names and sales tax profiles are never overwritten
+  // by the supplier's incoming invoice. Keep XML NCM as evidence for review.
   const proposedName=clean(body?.proposed_name,300);
+  if(proposedName&&proposedName!==String(product.name||""))
+    return {ok:false,status:409,error:"existing_product_name_preserved"};
   const upd:any={unit:"UN",supplier:doc.supplier_name||product.supplier||null,metadata:pmeta,last_admin_edit_at:now,last_admin_edit_by:userId,updated_at:now};
-  if(proposedName)upd.name=proposedName;
-  if(item.ncm)upd.ncm=item.ncm;
   if(updateCost)upd.cost=baseCost;
   if(updateSale)upd.price=Math.round(salePrice*100)/100;
   const pu=await sb.from("products").update(upd).eq("id",item.product_id).select("id,name,cost,price,unit,stock,is_active,bling_product_id").single();if(pu.error)throw pu.error;
