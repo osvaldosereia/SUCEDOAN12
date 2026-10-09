@@ -232,3 +232,32 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 - O modo catálogo **não pode tratar itens com lote/recebimento/conversão ativa**; esses casos exigem fluxo operacional de Compras. Não alterar o trigger global para contornar salvaguarda sem projeto separado.
 - R23–R27: ledger de revisão campo a campo, aplicação/reversão com CAS, validação fiscal segregada, testes E2E XML real e publicação controlada com monitoramento.
 - **Nenhum merge na main, migration, deploy, chamada fiscal/comercial, mutação Supabase produtiva, Bling ou cron nesta rodada.**
+
+## Checkpoint R22 — 09/10/2026 — gates reais de lote, Bling inativo e segurança do ator
+
+**PR draft empilhada:** [#1009](https://github.com/osvaldosereia/SUCEDOAN12/pull/1009), branch `agent/xml-catalog-release-gates-r22-20261009`, baseada na R21 #1004 → R20 #1001 → R19 #999 → R18 #997. Branch sem merge, nenhuma migração/deploy/alteração Supabase executada.
+
+### Correções concluídas
+1. **Bug real no rascunho R21:** cadastro criado `is_active=false`, porém `desired_bling_status='A'` (intenção de ativação no Bling). Novo SQL R22 grava **`'I'`**.
+2. **Faltavam dois sinais de recebimento:** o gatilho produtivo não considera apenas `purchase_xml_documents.receipt_status='received'`, mas também plano `purchase_stock_receipt_plans_v1.status='verified'` e lançamento `purchase_stock_receipts.status='applied'`. O SQL R22 bloqueia os três antes de vincular.
+3. **Lote órfão:** uma linha sem `inventory_lot_id` ainda pode ter `product_inventory_lots.source_ref='purchase-xml-item:<uuid>'` em estado operacional. Bloqueia qualquer lote preexistente por essa referência.
+4. **Autorização:** a RPC agora confirma `admin_users.user_id` ativo com papel `owner/admin` dentro da transação, além do JWT/role verificado no gateway.
+5. **GTIN:** código já confirmado para o mesmo produto, mas com papel `package_gtin` em vez de `base_gtin` (ou inverso), gera conflito e exige revisão, sem reinterpretar silenciosamente.
+6. **Migração candidata:** `docs/projects/purchase-xml-identity-release-candidate-r22.sql` ainda é **PROPOSTA, não migração**, não foi aplicada. Publicação exige geração de migração canônica via CLI em homologação, controle da ordem DB → backend → UI e revisão de impacto.
+
+### Prova de testes
+- [CI XML Catalog R22 Release Gates — execução final 37943285385](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37943285385): **3/3 jobs SUCCESS** (estático/gateway, `deno check`, PostgreSQL 17 descartável).
+- O teste PostgreSQL incorpora arquivo `scripts/fixtures/xml-production-lot-trigger-r22.sql`, copiado da definição real `pg_get_functiondef` + `pg_get_triggerdef` do Supabase canônico, e reproduz campos e tabelas necessárias.
+- Logs contêm **`PASS R22 real lot trigger, active owner, receipt plans, Bling-inactive, audit and role conflicts`**. Cenários: vínculo seguro, cadastro inativo/estoque zero/Bling I, sem lotes, confirmação, replay, status de documento, plano verificado, estoque aplicado, lote desvinculado, EAN com papel divergente, operador/owner inativo, origem não verificada e grants.
+- Primeira CI falhou porque o *fixture* estava sem coluna `purchase_xml_items.processing_status` exigida pelo trigger verdadeiro; completou-se a estrutura de **teste**; segunda CI integral passou. Nenhuma regra produtiva foi afrouxada.
+
+### Produção auditada (somente leitura)
+- `main` durante o fechamento: `6ce76d214a0759e946ddfca65364e19e1991d770` (alterações paralelas em orçamento e roteador pai, preservar na integração).
+- Runtime Edge `admin-service-intelligence-v1` versão **234**, publicado por outros trabalhos, **não** por R22.
+- `purchase_xml_items`: **214** linhas, **59** sem vínculo. View de observações: **214**. A RPC R22 e a tabela de auditoria ainda retornam `NULL` em `to_regprocedure/to_regclass`, isto é, **não implantadas**.
+- `purchase_xml_catalog_observation_details_v2` tem `security_invoker=true`, 214 linhas `source_state='xml_verified'`. Objetos existentes de compra/produto têm RLS; novos grants só foram testados em banco descartável.
+- A auditoria de Advisors do Supabase devolveu lints globais de outros domínios; **não** se deve alegar ausência de alertas de segurança no projeto inteiro. As verificações R22 concentram-se no escopo XML.
+
+### Documentação de transição
+- [Roteiro de publicação R22](https://github.com/osvaldosereia/SUCEDOAN12/blob/agent/xml-catalog-release-gates-r22-20261009/docs/projects/PURCHASE_XML_RELEASE_SEQUENCE_R22.md): depende da consolidação `main`, migração canônica via Supabase CLI (não criar filename arbitrário), Auth e teste E2E em homologação, permissão/rollback e smoke test. Execução R23 pode prosseguir diretamente.
+- **R22 concluída em código e CI isolada**, sem autorizar implantação. Não aplicar SQL de docs, mesclar, fazer deploy, tocar estoque/fiscal/financeiro ou alterar Bling com base somente nestes testes.
