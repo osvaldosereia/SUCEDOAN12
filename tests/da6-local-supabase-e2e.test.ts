@@ -115,7 +115,7 @@ Deno.test('DA6 R6: 10/50/100 URLs assinadas reais, privacidade, polling sem nave
  const forbidden=await anonymous.storage.from(bucket).list('');
  ensure(Boolean(forbidden.error)||!forbidden.data?.length,'anonymous can browse a private bucket');
  const counts=[];
- let distinct=0;
+ let distinct=0,firstBatchId=null,firstPhotoId=null;
  for(const size of [10,50,100]){
   const files=[];
   for(let index=0;index<size;index++){
@@ -136,6 +136,7 @@ Deno.test('DA6 R6: 10/50/100 URLs assinadas reais, privacidade, polling sem nave
   const viewed=await call('inventory_label_batch_status',user.id,null,{batch_id:uploaded.batch_id});
   ensure(viewed.counts?.queued===size&&viewed.photos?.length===size,
    'queued after confirmed Storage '+size+' '+JSON.stringify(viewed.counts));
+  if(!firstBatchId){firstBatchId=uploaded.batch_id;firstPhotoId=viewed.photos[0]?.id;}
   // Simula fechar o celular: nenhuma variável do formulário é usada a partir daqui.
   const list=await call('inventory_label_batches',user.id);
   ensure(list.batches?.some(x=>x.id===uploaded.batch_id),'batch not persisted');
@@ -146,6 +147,29 @@ Deno.test('DA6 R6: 10/50/100 URLs assinadas reais, privacidade, polling sem nave
   ensure(Boolean(rawAnon.error),'anonymous downloaded private photo');
   counts.push({size,queued:viewed.counts.queued,replayDuplicate:replay.duplicates});
  }
+ // Autenticação, separação de operadores e acesso direto ao Storage/REST.
+ const unauthorized=await anonymous.from('inventory_label_photos').select('id').limit(1);
+ ensure(Boolean(unauthorized.error)||!unauthorized.data?.length,'anonymous photo listing not blocked');
+ const other=await db.auth.admin.createUser({
+   email:'da6-other-'+crypto.randomUUID()+'@example.invalid',
+   password:'Test-DA6-Oth3r!4499',email_confirm:true
+ });
+ ensure(other.data?.user?.id&&!other.error,'second isolated operator missing');
+ const otherId=other.data.user.id;
+ const foreignBatch=await inventoryLabelPhotoAction(db,'inventory_label_batch_status',
+   new Request(new URL('/functions/v1/admin-products-live-v1?action=inventory_label_batch_status&batch_id='+firstBatchId,API)),{ok:true,user_id:otherId,role:'admin'},null);
+ ensure(foreignBatch.error==='batch_not_found'&&foreignBatch.status===404,'operator could read another batch');
+ const foreignHistory=await inventoryLabelPhotoAction(db,'inventory_label_photo_history',
+   new Request(new URL('/functions/v1/admin-products-live-v1?action=inventory_label_photo_history&photo_id='+firstPhotoId,API)),{ok:true,user_id:otherId,role:'admin'},null);
+ ensure(foreignHistory.error==='photo_not_found'&&foreignHistory.status===404,'operator could read another audit history');
+ const viewerAttempt=await inventoryLabelPhotoAction(db,'inventory_label_batch_create',
+   new Request(new URL('/functions/v1/admin-products-live-v1?action=inventory_label_batch_create',API),{method:'POST'}),
+   {ok:true,user_id:user.id,role:'viewer'},{total_files:1});
+ ensure(viewerAttempt.error==='forbidden'&&viewerAttempt.status===403,'viewer created batch');
+ const noAuth=await inventoryLabelPhotoAction(db,'inventory_label_batches',
+   new Request(new URL('/functions/v1/admin-products-live-v1?action=inventory_label_batches',API)),
+   {ok:false,user_id:otherId,role:'admin'},null);
+ ensure(noAuth.error==='admin_auth_required'&&noAuth.status===401,'unauthenticated request succeeded');
  const before=dataCheck(await db.from('inventory_label_photos').select('id',{count:'exact',head:true}),'count');
  const total=before?.length??160;
  // Worker em processo separado do contexto de upload: lê arquivo no Storage.
