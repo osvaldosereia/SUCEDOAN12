@@ -1,23 +1,29 @@
-name: Orders R02-R07 - checkout, Meta, picking and Bling receipt (offline)
+name: Orders R02-R09 - checkout, Bling, fiscal GET-only (offline)
 on:
   push:
     branches:
       - 'agent/orders-r2-r7-*'
       - 'agent/orders-r2-r8-*'
+      - 'agent/orders-r2-r9-*'
     paths:
       - 'scripts/sql/orders-r2-r7-*.sql'
       - 'scripts/test-orders-r2-r7-*.mjs'
       - 'scripts/test-orders-r2-r8-*.mjs'
+      - 'scripts/sql/orders-r2-r9-*.sql'
+      - 'scripts/test-orders-r2-r9-*.mjs'
       - '.github/workflows/orders-r2-r7-bling-chain-ci.yml'
 
 
   pull_request:
     branches:
       - 'agent/orders-r2-r6-*'
+      - 'agent/orders-r2-r8-*'
       - main
     paths:
       - 'scripts/sql/orders-r2-r7-*.sql'
       - 'scripts/test-orders-r2-r7-*.mjs'
+      - 'scripts/test-orders-r2-r9-*.mjs'
+      - 'scripts/sql/orders-r2-r9-*.sql'
       - '.github/workflows/orders-r2-r7-bling-chain-ci.yml'
 
 
@@ -52,6 +58,7 @@ jobs:
       META_LIVE_ENABLED: 'false'
       FISCAL_LIVE_ENABLED: 'false'
       R08_FISCAL_PRODUCTION_ENABLED: 'false'
+      R9_FISCAL_OBSERVER_ENABLED: 'false'
       ORDER_R4_META_CONFIRMATION_ENABLED: 'false'
       ORDER_R5_SEPARATION_META_GATE_ENABLED: 'false'
     steps:
@@ -74,6 +81,12 @@ jobs:
         with:
           ref: 88503c966296f9ed84e8334ed46b837dfbe1e9d2
           path: r08-source
+          persist-credentials: false
+      # The ORIGINAL R09 observer SQL and pure getter (not copied).
+      - uses: actions/checkout@v4
+        with:
+          ref: 786a58141a99b54e8da60917e87f86e0d8810465
+          path: r09-source
           persist-credentials: false
       # R06 source is pinned: reconciliation contract and canonical RPC exports,
       # without copying or reimplementing the published code.
@@ -200,6 +213,58 @@ jobs:
           psql -v ON_ERROR_STOP=1 -Atc "SELECT jsonb_build_object('kind',t.kind,'order',to_jsonb(o),'completion',to_jsonb(c),'r7_intent',to_jsonb(i))::text FROM public.r2_r5_meta_test_orders t JOIN public.orders o ON o.id=t.order_id JOIN public.order_separation_completions_v1 c ON c.order_id=o.id JOIN public.order_bling_r7_sync_intents_v1 i ON i.order_id=o.id WHERE t.kind IN ('basket','mold') ORDER BY t.kind" > /tmp/r02-r08-receipts.jsonl
           node --check scripts/test-orders-r2-r8-genuine-fiscal-preflight.mjs
           node scripts/test-orders-r2-r8-genuine-fiscal-preflight.mjs /tmp/r02-r08-receipts.jsonl
+      - name: Create R09 links ONLY from actual R02 checkout/R06/R07 verified receipts
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-r9-observer-chain-fixture.sql
+      - name: Apply ORIGINAL R09 observation RPCs (GET-only; no fiscal POST)
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f r09-source/supabase/sql/orders-r9-fiscal-observation-contract-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-r9-genuine-observer-preclaim.sql
+      - name: Two R09 workers contend over the same original checkout order
+        run: |
+          set -euo pipefail
+          SQL="SELECT public.ops2_claim_fiscal_r9_observation_v1(1)::text"
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" > /tmp/r09-concurrent-a.json 2>/tmp/r09-concurrent-a.err &
+          A=$!
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" > /tmp/r09-concurrent-b.json 2>/tmp/r09-concurrent-b.err &
+          B=$!
+          wait "$A"
+          wait "$B"
+          test "$(cat /tmp/r09-concurrent-a.json /tmp/r09-concurrent-b.json | grep -c '"claim_token"')" = 1
+          test "$(psql -Atc "SELECT count(*) FROM public.order_fiscal_r9_observations_v1 WHERE status='observing'")" = 1
+          test "$(psql -Atc "SELECT sum(attempts) FROM public.order_fiscal_r9_observations_v1")" = 1
+          echo 'PASS two workers: only one may GET-check basket; no write to invoices'
+      - name: Complete R09 fictitious GET receipt and reject forged observations
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-r9-genuine-observer-postclaim.sql
+          test "$(psql -Atc "SELECT count(*) FROM public.order_fiscal_r9_observations_v1 WHERE status='observed_no_invoice'")" = 1
+          test "$(psql -Atc "SELECT count(*) FROM public.order_fiscal_r9_observations_v1")" = 1
+      - name: Feed genuine R06/R07/R09 receipts to ORIGINAL R09 and R08 pure guards
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -Atc "SELECT jsonb_build_object(
+            'kind',t.kind,'order',to_jsonb(o),'completion',to_jsonb(c),
+            'r7_intent',to_jsonb(i),'observation',to_jsonb(obs),
+            'product_links',CASE WHEN t.kind='basket' THEN
+              (SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                'source_id',l.source_id,'status',l.status,'bling_id',l.bling_id)),'[]'::jsonb)
+                FROM public.bling_hub_entity_links_v2 l WHERE l.entity_type='product')
+              ELSE '[]'::jsonb END)::text
+            FROM public.r2_r5_meta_test_orders t
+            JOIN public.orders o ON o.id=t.order_id
+            JOIN public.order_separation_completions_v1 c ON c.order_id=o.id
+            JOIN public.order_bling_r7_sync_intents_v1 i ON i.order_id=o.id
+            LEFT JOIN public.order_fiscal_r9_observations_v1 obs ON obs.order_id=o.id
+            WHERE t.kind IN ('basket','mold') ORDER BY t.kind" > /tmp/r02-r09-real-receipts.jsonl
+          node --check scripts/test-orders-r2-r9-genuine-observer.mjs
+          node scripts/test-orders-r2-r9-genuine-observer.mjs /tmp/r02-r09-real-receipts.jsonl
+          test "$BLING_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          test "$R9_FISCAL_OBSERVER_ENABLED" = false
+          echo 'PASS original R09 observes ONLY R07 verified; R08 fiscal stays blocked without approved tax'
       - name: Ensure no unsafe transports enabled or changes to tracked files
         run: |
           set -euo pipefail
