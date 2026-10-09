@@ -4,7 +4,7 @@ on:
     branches:
       - 'agent/orders-r2-*'
     paths:
-      - 'scripts/sql/orders-r2-hml-*.sql'
+      - 'scripts/sql/orders-r2-*.sql'
       - 'scripts/test-orders-r2-transport-offline.mjs'
       - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
       - '.github/workflows/orders-r2-isolated-hml-ci.yml'
@@ -102,5 +102,29 @@ jobs:
           test "$(psql -Atc "select count(*) from r2_hml.orders")" = 2
           test "$(psql -Atc "select count(*) from r2_hml.dispatch_fiscal_jobs")" = 2
           psql -Atc "select 'PASS: disposable offline test DB only' "
+      - name: Execute canonical checkout and reservation RPCs with synthetic dependencies
+        run: |
+          set -euo pipefail
+          # These SQL function bodies were exported read-only from canonical Supabase.
+          # Their dependencies are explicitly synthetic; never connect to production.
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-canonical-dependencies-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r2-canonical-runtime-assertions.sql
+      - name: Two actual reservation RPC calls cannot oversell the same stock
+        run: |
+          set -euo pipefail
+          SQL="select public.create_vitrine_cart_order_v3('SYNTHETIC-ONLY','PIX','[{\"qty\":6}]'::jsonb,'{}'::jsonb,'{}'::jsonb)->>'order_id';"
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" > /tmp/r2-canonical-a.out 2> /tmp/r2-canonical-a.err &
+          A=$!
+          psql -v ON_ERROR_STOP=1 -Atc "$SQL" > /tmp/r2-canonical-b.out 2> /tmp/r2-canonical-b.err &
+          B=$!
+          SUCCESS=0
+          if wait "$A"; then SUCCESS=$((SUCCESS+1)); else grep -q 'insufficient_stock' /tmp/r2-canonical-a.err; fi
+          if wait "$B"; then SUCCESS=$((SUCCESS+1)); else grep -q 'insufficient_stock' /tmp/r2-canonical-b.err; fi
+          test "$SUCCESS" = 1
+          test "$(psql -Atc 'select sum(quantity)::integer from public.vitrine_stock_reservations where status='\''reserved'\''')" = 8
+          test "$(psql -Atc 'select stock::integer from public.products where id='\''00000000-0000-4000-8000-0000000000aa'\''')" = 10
+          test "$(psql -Atc 'select count(*) from public.orders')" = 3
+          echo 'PASS: real checkout and reservation functions serialized stock claims with rollback'
       - name: Diff hygiene
         run: git diff --check
