@@ -16,6 +16,12 @@ test("R17 canonical snapshot is complete: 30 trigger bindings, no copied PLPGSQL
   assert.equal(canonical.contains_customer_data,false);
   assert.equal("function_body" in canonical.triggers[0],false);
 });
+test("R17 captured trigger names exactly match the R13 canonical 11-table index",()=>{
+  const r13=read("orders-r13-canonical-schema-security-20261009.json");
+  const fromR13=r13.tables.flatMap(t=>(t.triggers||[]).map(name=>t.name+"."+name)).sort();
+  const fromR17=canonical.triggers.map(t=>t.table_name+"."+t.trigger_name).sort();
+  assert.deepEqual(fromR17,fromR13);
+});
 test("R17 exact synthetic copy proves *only* trigger metadata parity",()=>{
   const result=compareTriggerDependencies(canonical,same());
   assert.equal(result.trigger_parity_complete,true);
@@ -62,6 +68,7 @@ test("R17 SECURITY DEFINER and owner/grant changes detected",()=>{
 test("R17 role executable does not automatically claim vulnerability",()=>{
   const r=compareTriggerDependencies(canonical,same());
   assert.equal(r.privileged_trigger_functions_with_execute_manual_review.length,3);
+  assert.equal(r.privileged_distinct_functions_with_execute_manual_review.length,2);
   assert.match(r.note,/does not prove/);
 });
 test("R17 malformed, duplicated, empty metadata always fail",()=>{
