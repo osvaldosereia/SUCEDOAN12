@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractCatalogFromNfe } from "./xml-catalog-extractor.mjs";
+import { catalogXmlComparison } from "./xml-catalog-comparison.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -1421,6 +1422,7 @@ async function xmlCatalogCandidateDetail(body:any){
   const suggestions=gtin?await searchPurchaseProducts({query:gtin}):{ok:true,items:[]};
   return {ok:true,readonly:true,candidate:candidate.data,observations:evidence.data||[],
     truncated:Number(candidate.data.observations_count||0)>60,
+    field_comparisons:catalogXmlComparison(evidence.data||[]),
     suggested_existing_products:Array.isArray(suggestions.items)?suggestions.items:[],
     can_auto_match:false,can_auto_apply_fiscal:false,can_auto_move_stock:false};
 }
