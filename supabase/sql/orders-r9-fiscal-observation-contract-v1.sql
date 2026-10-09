@@ -122,7 +122,7 @@ BEGIN
      OR (p_evidence->>'bling_order_id')::bigint IS DISTINCT FROM q.bling_order_id
      OR p_evidence->>'order_read_ok' IS DISTINCT FROM 'true'
      OR p_evidence->>'commercial_match' IS DISTINCT FROM 'true'
-     OR coalesce(p_evidence->>'checked_at','')!~ '^\\d{4}-\\d{2}-\\d{2}T'
+     OR coalesce(p_evidence->>'checked_at','')!~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T'
      OR (p_evidence->>'checked_at')::timestamptz NOT BETWEEN
        clock_timestamp()-interval '5 minutes' AND clock_timestamp()+interval '30 seconds'
      OR p_evidence->>'external_write' IS DISTINCT FROM 'false'
