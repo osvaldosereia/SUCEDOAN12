@@ -1,0 +1,26 @@
+name: Fiscal NFe Auto Recovery V1
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/admin-service-intelligence-v1/index.ts"
+      - "supabase/functions/admin-products-live-v1/index.ts"
+      - "supabase/migrations/20261009190000_fiscal_nfe_autorecovery_v1.sql"
+      - "vitrine/admin/index.html"
+      - "scripts/test-fiscal-nfe-autorecovery-v1.mjs"
+      - ".github/workflows/fiscal-nfe-autorecovery-v1-ci.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "supabase/functions/admin-service-intelligence-v1/index.ts"
+      - "supabase/functions/admin-products-live-v1/index.ts"
+      - "scripts/test-fiscal-nfe-autorecovery-v1.mjs"
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/test-fiscal-nfe-autorecovery-v1.mjs
