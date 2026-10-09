@@ -40,3 +40,7 @@ Porém `buildSnapshot` no `admin-products-live-v1` reconstrói o pedido externo 
 Separação física concluída **não** se desfaz por pendência fiscal. Se valor/itens/estoque não são reconciláveis, pedido fica separado com uma pendência acionável e **não** é liberado à emissão NF-e/expedição. A autorização SEFAZ, quando obtida, libera expedição documental, mas a saída física permanece evento humano/motorista. Os estados fiscais e workers serão separados em R07–R11.
 
 **Controle de segurança:** nenhum merge na `main`, migration em Supabase produtivo, mensagem de WhatsApp, estoque real, venda Bling, NF-e ou expedição foi alterado na R06.
+
+
+## Endurecimento pós-validação (R06)
+O snapshot final exige `order_separation_completions_v1.completed_at` e rejeita `options.include_all_items=true` quando o pedido já está `ready` e a flag está ligada. Após validar itens e somas, o adapter lê novamente a versão `updated_at` do pedido e da conclusão, o valor final e o carimbo de término; se algum divergir da primeira leitura, aborta com `snapshot_version_changed`, antes de transmitir ao Bling. Essa comparação **reduz** (não elimina) condições de corrida: não substitui um snapshot transacional imutável que será concluído em R09.
