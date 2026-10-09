@@ -34,7 +34,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Instalar somente bibliotecas de geração e leitura QR para teste
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund --prefix /tmp/da6-qr-integration jsqr@1.4.0 qrcode-generator@1.4.4
       - name: Testar leitura óptica, impressão e upload resiliente
+        env:
+          NODE_PATH: /tmp/da6-qr-integration/node_modules
         run: node --test tests/da6-*.test.cjs tests/inventory-label-*.test.cjs
       - name: Validar sintaxe dos módulos do navegador
         run: |
