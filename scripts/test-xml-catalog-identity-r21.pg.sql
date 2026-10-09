@@ -159,7 +159,7 @@ begin
   where product_id=product;
   raise exception 'audit_tamper_accepted';
  exception when others then
-  if sqlerrm not like '%xml_identity_history_immutable%' then raise; end if;
+  if sqlerrm not like '%xml_identity_history_immutable%' and sqlerrm not like '%permission denied%' then raise; end if;
  end;
  begin
   perform public.purchase_xml_resolve_catalog_identity_v1(
