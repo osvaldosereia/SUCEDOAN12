@@ -3440,24 +3440,77 @@ function normalizeCnpjLookup(raw:any){
     socios:partners.slice(0,100).map((x:any)=>({nome:tx(x?.nome_socio||x?.nome,300),qualificacao:tx(x?.qualificacao_socio||x?.qual,180)}))
   };
 }
+// Consulta por prioridade: cadastro local confirmado -> Bling -> BrasilAPI.
+// Uma indisponibilidade de serviço público não impede carregar clientes já cadastrados.
 async function cnpjLookup(u:URL){
   const cnpj=cleanCnpjLookup(u.searchParams.get("cnpj"));
-  if(!/^[0-9A-Z]{12}[0-9]{2}$/.test(cnpj))return {error:"invalid_cnpj",message:"Informe um CNPJ com 14 caracteres.",status:400};
-  try{
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
-    let res:Response;
+  if(!/^[0-9A-Z]{12}[0-9]{2}$/.test(cnpj))
+    return {error:"invalid_cnpj",message:"Informe um CNPJ completo com 14 caracteres.",status:400};
+  const local=await db.from("customers")
+    .select("id,name,cpf_cnpj,primary_whatsapp_e164,bling_contact_id")
+    .eq("cpf_cnpj",cnpj).limit(2);
+  if(local.error)throw local.error;
+  if((local.data||[]).length>1)
+    return {error:"duplicate_customer_document",message:"Há cadastros duplicados para este CNPJ. Revise os clientes no Admin.",status:409};
+  const customer=(local.data||[])[0];
+  if(customer){
+    const customerId=customer.id;
+    const [address,email,phone]=await Promise.all([
+      db.from("customer_addresses")
+        .select("street,number,complement,neighborhood,city,state,postal_code")
+        .eq("customer_id",customerId).eq("is_active",true)
+        .order("is_default",{ascending:false}).limit(1).maybeSingle(),
+      db.from("customer_emails").select("email").eq("customer_id",customerId)
+        .order("is_primary",{ascending:false}).limit(1).maybeSingle(),
+      db.from("customer_phones").select("phone_e164").eq("customer_id",customerId)
+        .order("is_primary",{ascending:false}).limit(1).maybeSingle()
+    ]);
+    if(address.error)throw address.error;
+    if(email.error)throw email.error;
+    if(phone.error)throw phone.error;
+    const a=address.data||{};
+    return {source:customer.bling_contact_id?"Vitrine/Admin + Bling":"Vitrine/Admin",
+      customer_id:customerId,bling_contact_id:customer.bling_contact_id||null,
+      company:{cnpj,razao_social:tx(customer.name,300),
+        logradouro:tx(a.street,300),numero:tx(a.number,60),
+        complemento:tx(a.complement,180),bairro:tx(a.neighborhood,180),
+        municipio:tx(a.city,180),uf:tx(a.state,2).toUpperCase(),
+        cep:tx(a.postal_code,20),
+        telefone_1:tx(customer.primary_whatsapp_e164||phone.data?.phone_e164,60),
+        email:tx(email.data?.email,240)}};
+  }
+
+  let blingError="";
+  // Somente CNPJ numérico é pesquisado pela API atual do Bling.
+  if(/^\d{14}$/.test(cnpj)){
     try{
-      res=await fetch("https://brasilapi.com.br/api/cnpj/v1/"+encodeURIComponent(cnpj),{
-        headers:{"Accept":"application/json","User-Agent":"DonaAntoniaAdmin/1.0"},
-        signal:controller.signal
-      });
+      const h=await hub("contact_lookup_by_document_readonly",{document:cnpj});
+      if(!h.error&&h.data?.found===true&&h.data?.company)
+        return {source:"Bling",company:h.data.company,bling_contact_id:h.data.bling_contact_id||null};
+      if(h.error){
+        blingError=h.error;
+        if(["bling_duplicate_documents","bling_document_mismatch"].includes(h.error))
+          return {error:h.error,message:"Mais de um contato ou um documento divergente encontrado no Bling. Revise o cadastro.",status:409};
+      }
+    }catch(e){blingError=tx((e as Error)?.message||e,100)}
+  }
+  // A Receita é apenas contingência quando o cliente não existe nas bases próprias.
+  if(!/^\d{14}$/.test(cnpj))
+    return {error:"cnpj_not_found",message:"CNPJ não encontrado no Vitrine/Admin ou Bling.",status:404};
+  try{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),9000);
+    let response:Response;
+    try{
+      response=await fetch("https://brasilapi.com.br/api/cnpj/v1/"+encodeURIComponent(cnpj),{
+        headers:{"Accept":"application/json"},signal:controller.signal});
     }finally{clearTimeout(timer)}
-    const raw=await res.json().catch(()=>null);
-    if(res.status===404)return {error:"cnpj_not_found",message:"CNPJ não encontrado na base consultada.",status:404};
-    if(!res.ok||!raw)return {error:"cnpj_provider_error",message:"A consulta de CNPJ está temporariamente indisponível.",status:502};
-    return {company:normalizeCnpjLookup(raw),source:"BrasilAPI / Minha Receita"};
+    const raw=await response.json().catch(()=>null);
+    if(response.ok&&raw)return {company:normalizeCnpjLookup(raw),source:"BrasilAPI / Minha Receita"};
+    return {error:response.status===404?"cnpj_not_found":"cnpj_sources_unavailable",
+      message:response.status===404?"CNPJ não encontrado nas bases consultadas.":"As consultas externas estão temporariamente indisponíveis. Tente novamente.",status:response.status===404?404:503};
   }catch(e){
-    return {error:"cnpj_lookup_failed",message:e instanceof DOMException&&e.name==="AbortError"?"A consulta demorou demais. Tente novamente.":"Não foi possível consultar o CNPJ agora.",status:502};
+    console.warn("quote_cnpj_lookup_fallback",tx(blingError||((e as Error)?.message||e),120));
+    return {error:"cnpj_sources_unavailable",message:"O CNPJ não consta no Admin e as consultas ao Bling/Receita falharam. Tente novamente.",status:503};
   }
 }
 

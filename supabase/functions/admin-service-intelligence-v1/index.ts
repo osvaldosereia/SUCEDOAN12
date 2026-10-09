@@ -7496,6 +7496,33 @@ async function blingHubFindContactByDocument(sb:any,token:string,docRaw:any){
   if(ids.length>1)return {status:"ambiguous",reason:"duplicate_document",bling_id:null,candidates:ids};
   return {status:"not_found",reason:"document_not_found",bling_id:null,candidates:[]};
 }
+// Consulta administrativa somente leitura. Não cria ou modifica contato.
+async function blingHubContactByDocumentReadonly(sb:any,documentRaw:any){
+  const doc=blingHubDigits(documentRaw);
+  if(doc.length!==14||!blingHubValidCpfCnpj(doc))
+    return {ok:false,error:"invalid_cnpj",status:400};
+  const token=await blingHubOauth(sb);
+  const found=await blingHubFindContactByDocument(sb,token,doc);
+  if(found.status==="not_found")return {ok:true,found:false,source:"Bling"};
+  if(found.status!=="matched"||!Number(found.bling_id||0))
+    return {ok:false,error:found.status==="ambiguous"?"bling_duplicate_documents":"bling_contact_lookup_unavailable",
+      status:409,reason:found.reason||null};
+  const detail=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(found.bling_id)));
+  if(!detail.ok)return {ok:false,error:"bling_contact_detail_unavailable",status:502};
+  const contact=detail.data?.data||{};
+  if(blingHubDigits(contact.numeroDocumento)!==doc)
+    return {ok:false,error:"bling_document_mismatch",status:409};
+  const e=contact?.endereco?.geral||contact?.endereco?.cobranca||contact?.endereco||{};
+  return {ok:true,found:true,source:"Bling",bling_contact_id:Number(found.bling_id),company:{
+    cnpj:doc,razao_social:clean(contact.nome,300),nome_fantasia:clean(contact.fantasia,300),
+    logradouro:clean(e.endereco||e.logradouro,300),numero:clean(e.numero,60),
+    complemento:clean(e.complemento,180),bairro:clean(e.bairro,180),
+    cep:blingHubDigits(e.cep).slice(0,8),municipio:clean(e.municipio||e.cidade,180),
+    uf:clean(e.uf,2).toUpperCase(),telefone_1:clean(contact.celular||contact.fone||contact.telefone,60),
+    email:clean(contact.email,240),inscricao_estadual:clean(contact.ie,80),
+    situacao:clean(contact.situacao,60)
+  }};
+}
 async function blingHubEnsureCustomerNow(sb:any,customerIdRaw:any){
   const customerId=uuid(customerIdRaw);
   if(!customerId)return {ok:false,error:"invalid_customer",status:400,external_write:false};
@@ -9325,6 +9352,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="reconcile_customers_readonly"){
         const result=await blingHubReconcileCustomersReadonly(sb,body?.limit);
         return json(result,200);
+      }
+      if(subaction==="contact_lookup_by_document_readonly"){
+        const result=await blingHubContactByDocumentReadonly(sb,body?.document);
+        return json(result,result.ok?200:Number(result.status||502));
       }
       if(subaction==="reconcile_customer_readonly"){
         const result=await blingHubReconcileCustomerReadonly(sb,body?.customer_id);
