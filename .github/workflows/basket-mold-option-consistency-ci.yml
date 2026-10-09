@@ -1,0 +1,24 @@
+name: Basket mold option consistency
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20261006143000_basket_mold_option_consistency_v1.sql'
+      - 'scripts/test-basket-mold-option-consistency-v1.mjs'
+      - '.github/workflows/basket-mold-option-consistency-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261006143000_basket_mold_option_consistency_v1.sql'
+      - 'scripts/test-basket-mold-option-consistency-v1.mjs'
+      - '.github/workflows/basket-mold-option-consistency-ci.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node scripts/test-basket-mold-option-consistency-v1.mjs
