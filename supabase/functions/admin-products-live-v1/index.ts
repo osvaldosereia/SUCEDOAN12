@@ -1454,6 +1454,14 @@ async function orderFiscalIssueV4(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};
   if(tx(p?.confirmation,40)!=="EMITIR_NFE")return {error:"fiscal_human_confirmation_required",status:409};
+  if(ORDER_R8_FISCAL_PREFLIGHT_ENABLED){
+    const audited=await orderFiscalR8Preview(oid,auth);
+    if(audited.error)return {error:audited.error,status:audited.status||503};
+    if(audited.preflight?.ready!==true)return {
+      error:"r8_fiscal_preflight_blocked",status:409,
+      blockers:audited.preflight?.blockers||["r8_preflight_unavailable"]
+    };
+  }
   const pf=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});if(pf.error)throw pf.error;
   if(pf.data?.ready!==true)return {error:"fiscal_dispatch_preflight_failed",status:409,blockers:pf.data?.blockers||[],preflight:pf.data};
   const before:any=await orderFiscalStatusV4(oid);if(before.error)return before;
@@ -3626,6 +3634,14 @@ async function openSeparationIntegrationAttention(oid:string,type:string,summary
   }catch{}
 }
 async function autoIssueFiscalAfterSeparation(oid:string){
+  if(ORDER_R8_FISCAL_PREFLIGHT_ENABLED){
+    const audited=await orderFiscalR8Preview(oid,{role:"admin"});
+    if(audited.error||audited.preflight?.ready!==true){
+      return {attempted:false,ok:false,authorized:false,
+        error:audited.error||"r8_fiscal_preflight_blocked",
+        blockers:audited.preflight?.blockers||["r8_preflight_unavailable"]};
+    }
+  }
   const pf=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});
   if(pf.error)return {attempted:false,ok:false,error:"fiscal_preflight_unavailable",detail:pf.error.message||null};
   if(pf.data?.ready!==true)return {attempted:false,ok:false,error:"fiscal_preflight_blocked",blockers:pf.data?.blockers||[],preflight:pf.data};
