@@ -6367,7 +6367,9 @@
         (x.linked_product_id?'<small style="display:block"><strong>Vinculado:</strong> '+esc(x.linked_product_name||'Produto')+
         ' · NCM cadastro: '+esc(x.linked_product_ncm||'—')+' · CEST fiscal: '+esc(x.linked_product_cest||'—')+'</small>':
         '<small style="display:block">Sem vínculo com o cadastro de venda</small>')+'</div>').join('')+'</div>'+
-      (data.truncated?'<small class="sub">Exibindo até 60 observações mais recentes.</small>':'')+
+      (data.truncated?'<div style="margin:8px 0"><small class="sub">Exibindo '+rows.length+' de '+esc(data.total_observations||c.observations_count||'?')+' observações.</small> '+
+       '<button type="button" class="secondary" id="xmlDetailMore" '+(state.xmlCatalogDetailMoreLoading?'disabled':'')+'>'+
+       (state.xmlCatalogDetailMoreLoading?'Carregando…':'Carregar mais histórico')+'</button></div>':'')+
       (active.linked_product_id?'<div class="purchase-safe"><strong>Item vinculado.</strong>'+
        '<small>Revisão de custo, preço e estoque permanece na tela operacional de Compras/XML.</small></div>':
        needsManualUnitReview?'<div class="purchase-safe purchase-danger" style="margin-top:10px"><strong>Conferência de EAN/unidade necessária</strong>'+
@@ -6401,6 +6403,7 @@
   async function xmlCatalogDetailOpen(key){
     state.xmlCatalogDetailKey=key;state.xmlCatalogDetailLoading=true;
     state.xmlCatalogDetail=null;state.xmlCatalogMatches=null;
+    state.xmlCatalogDetailMoreLoading=false;
     state.xmlCatalogChosenProduct=null;state.xmlCatalogSelectedObservation=null;
     xmlCatalogDetailRefresh();
     try{
@@ -6412,6 +6415,28 @@
     }catch(e){state.xmlCatalogDetail={error:errorMessage(e.message)}}
     finally{state.xmlCatalogDetailLoading=false;xmlCatalogDetailRefresh()}
   }
+  async function xmlCatalogDetailLoadMore(){
+    const previous=state.xmlCatalogDetail,key=state.xmlCatalogDetailKey;
+    if(!key||!previous?.candidate||!previous.has_more||state.xmlCatalogDetailMoreLoading)return;
+    state.xmlCatalogDetailMoreLoading=true;xmlCatalogDetailRefresh();
+    try{
+      const offset=Number(previous.next_offset??(previous.observations||[]).length);
+      const next=await purchaseApi('xml_catalog_candidate_detail',{candidate_key:key,offset});
+      if(state.xmlCatalogDetailKey!==key||state.xmlCatalogDetail!==previous)return;
+      const oldRows=Array.isArray(previous.observations)?previous.observations:[];
+      const seen=new Set(oldRows.map(x=>String(x.observation_id||'')));
+      const added=(Array.isArray(next.observations)?next.observations:[])
+        .filter(x=>!seen.has(String(x.observation_id||'')));
+      state.xmlCatalogDetail={...previous,observations:[...oldRows,...added],
+        total_observations:next.total_observations??previous.total_observations,
+        has_more:next.has_more===true,next_offset:next.next_offset??null,
+        truncated:next.has_more===true};
+    }catch(e){if(state.xmlCatalogDetailKey===key)toast(errorMessage(e.message))}
+    finally{
+      state.xmlCatalogDetailMoreLoading=false;
+      if(state.xmlCatalogDetailKey===key)xmlCatalogDetailRefresh();
+    }
+  }
   function xmlCatalogDetailBind(){
     const host=$('#xmlCatalogBody');if(!host)return;
     host.querySelectorAll('[data-xml-open]').forEach(b=>b.onclick=async()=>{
@@ -6421,6 +6446,8 @@
     });
     const data=state.xmlCatalogDetail;
     if(!data?.candidate)return;
+    const more=$('#xmlDetailMore');
+    if(more)more.onclick=()=>xmlCatalogDetailLoadMore();
     host.querySelectorAll('[data-xml-observation]').forEach(b=>b.onclick=()=>{
       if(!b.dataset.xmlObservation)return;
       state.xmlCatalogSelectedObservation=b.dataset.xmlObservation;

@@ -1,0 +1,27 @@
+name: XML Catalog Regression CI
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/**'
+      - 'supabase/functions/purchase-xml-v1/**'
+      - 'supabase/migrations/*purchase_xml_catalog*'
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-xml-catalog-*.mjs'
+      - '.github/workflows/xml-catalog-regression-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readonly-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          node scripts/test-xml-catalog-recovery-v1.mjs
+          node scripts/test-xml-catalog-details-v2.mjs
+          node scripts/test-xml-catalog-identity-guards-v2.mjs
+          node scripts/test-xml-catalog-history-pagination-v3.mjs
