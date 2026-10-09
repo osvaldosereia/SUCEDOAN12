@@ -27,6 +27,19 @@ BEGIN
    OR NOT public.ops2_meta_order_confirmation_required_v1(mold)
  THEN RAISE EXCEPTION 'Meta R04 preconditions not preserved'; END IF;
 
+ -- A raw database INSERT of a 'pending' line is also a picker initiation.
+ -- It must be rejected for this R04 unconfirmed order; no special-case
+ -- exemption for pending status or SECURITY DEFINER RPC is permitted.
+ BEGIN
+   INSERT INTO public.order_separation_items_v1(
+     order_id,order_item_id,product_id,state,quantity,unit_price,line_total
+   )SELECT mold,i.id,i.product_id,'pending',i.quantity,i.unit_price,i.line_total
+     FROM public.order_items i WHERE i.order_id=mold AND i.product_id IS NOT NULL
+     LIMIT 1;
+   RAISE EXCEPTION 'UNCONFIRMED_PENDING_PICK_CREATED';
+ EXCEPTION WHEN SQLSTATE 'P0001' THEN
+   IF SQLERRM IS DISTINCT FROM 'meta_customer_confirmation_required' THEN RAISE; END IF;
+ END;
  -- Never allow an unconfirmed order to instantiate pick rows by a canonical
  -- SECURITY DEFINER initializer. If a DB guard rejects the operation, the
  -- test must observe the rejection, not a silently created picked row.
