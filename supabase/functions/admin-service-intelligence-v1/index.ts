@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "./_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared/papoai-commerce-intent-v1.mjs";
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
+import { inspectBlingNfeR2, isFiscalRecoveryNewOrderR2 } from "./_shared/fiscal-r2-nfe-inspector.mjs";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -3896,6 +3897,65 @@ async function blingHubVitrineDanfePdf(sb:any,sourceOrderIdRaw:any){
   };
 }
 
+// Read-only probe: an invoice number alone never links the NF-e to an order.
+// Only compare immutable sale/customer/total/numeroLoja evidence; no PUT/POST.
+async function blingHubFiscalDraftProbeV2(sb:any,body:any){
+  const invoiceId=Number(body?.invoice_id||0);
+  if(!Number.isSafeInteger(invoiceId)||invoiceId<=0)
+    return {ok:false,error:"invalid_invoice_id",status:400,external_write:false};
+  const sourceOrderId=uuid(body?.source_order_id);
+  // R2 cannot probe historical invoices by an ID alone.
+  if(!sourceOrderId)
+    return {ok:false,error:"new_source_order_id_required",status:400,external_write:false};
+  const fence=await sb.from("fiscal_nfe_recovery_control_v1")
+    .select("min_order_created_at").eq("id",true).maybeSingle();
+  if(fence.error)throw fence.error;
+  if(!Number.isFinite(Date.parse(String(fence.data?.min_order_created_at||""))))
+    return {ok:false,error:"new_orders_cutover_not_configured",status:503,external_write:false};
+  let expected:any={};
+  let blingOrderId=0;
+  if(sourceOrderId){
+    const [oq,lq]=await Promise.all([
+      sb.from("orders").select("id,created_at,bling_order_id,total,fiscal_subtotal,status,order_number").eq("id",sourceOrderId).maybeSingle(),
+      sb.from("bling_hub_entity_links_v2").select("bling_id,identity_value,status")
+        .eq("source_system","vitrine_qx").eq("entity_type","order").eq("source_id",sourceOrderId).maybeSingle()
+    ]);
+    if(oq.error)throw oq.error;
+    if(lq.error)throw lq.error;
+    if(!oq.data)return {ok:false,error:"source_order_not_found",status:404,external_write:false};
+    if(!isFiscalRecoveryNewOrderR2(oq.data.created_at,fence.data.min_order_created_at))
+      return {ok:false,error:"historical_order_excluded",status:403,external_write:false};
+    blingOrderId=Number(oq.data.bling_order_id||0);
+    if(!blingOrderId||!lq.data||lq.data.status!=="matched"||Number(lq.data.bling_id||0)!==blingOrderId)
+      return {ok:false,error:"order_not_strongly_linked_to_bling",status:409,external_write:false};
+    expected={bling_order_id:blingOrderId,total:Number(oq.data.total),
+      fiscal_subtotal:Number(oq.data.fiscal_subtotal),
+      external_key:clean(lq.data.identity_value,160)};
+  }
+  const token=await blingHubOauth(sb);
+  const remote=await blingHubGetNfe(sb,token,invoiceId);
+  if(!remote.ok)return {ok:false,error:"invoice_detail_unavailable",status:remote.status||503,external_write:false,
+    invoice_id:invoiceId,read_failed:true};
+  if(blingOrderId){
+    // Compare the original Bling sales contact with the NF-e's contact if it
+    // is present. Never fabricate a recipient ID from a customer name.
+    const sale=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+    if(!sale.ok)return {ok:false,error:"sale_detail_unavailable",status:sale.status||503,
+      invoice_id:invoiceId,external_write:false,read_failed:true};
+    expected.contact_id=Number(sale.data?.data?.contato?.id||0)||null;
+    // This link comes from the exact Bling sale ID, not from invoice number.
+    if(Number(sale.data?.data?.id||0)!==blingOrderId)
+      return {ok:false,error:"sale_response_id_mismatch",status:409,external_write:false};
+    expected.sale_invoice_id=Number(sale.data?.data?.notaFiscal?.id||0)||null;
+  }
+  const report=inspectBlingNfeR2(remote.data,expected);
+  if(report.invoice_id!==invoiceId)
+    return {ok:false,error:"provider_invoice_id_mismatch",status:409,external_write:false};
+  return {ok:true,report,source_order_id:sourceOrderId||null,external_write:false,
+    identity_verified:report.identity.verified===true,can_edit_draft:report.editing.eligible===true,
+    requires_full_payload_contract:true};
+}
+
 async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any){
   const resolved=await blingHubResolveVitrineFiscalOrder(sb,sourceOrderIdRaw);
   if(!resolved.ok)return resolved;
@@ -3935,21 +3995,57 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
   let invoice:any=null;
   let invoiceLookup:any={performed:false,match_count:0,http_status:null};
 
-  if(blingOrderId&&externalKey){
+  if(blingOrderId){
     const token=await blingHubOauth(sb);
     if(invoiceId){
       const detail=await blingHubGetNfe(sb,token,invoiceId);
       invoiceLookup={performed:true,by:"id",match_count:detail.ok?1:0,http_status:detail.status};
       if(detail.ok)invoice=detail.invoice;
     }else{
-      const found=await blingHubFindNfeByExternalKey(sb,token,externalKey);
-      invoiceLookup={performed:true,by:"numeroLoja",match_count:found.matches?.length||0,http_status:found.status};
-      if(found.ok&&found.matches.length===1){
-        invoiceId=Number(found.match?.id||0)||null;
-        if(invoiceId){
-          const detail=await blingHubGetNfe(sb,token,invoiceId);
-          invoiceLookup={...invoiceLookup,detail_http_status:detail.status};
-          if(detail.ok)invoice=detail.invoice;
+      if(externalKey){
+        const found=await blingHubFindNfeByExternalKey(sb,token,externalKey);
+        invoiceLookup={performed:true,by:"numeroLoja",match_count:found.matches?.length||0,http_status:found.status};
+        if(found.ok&&found.matches.length===1){
+          invoiceId=Number(found.match?.id||0)||null;
+          if(invoiceId){
+            const detail=await blingHubGetNfe(sb,token,invoiceId);
+            invoiceLookup={...invoiceLookup,detail_http_status:detail.status};
+            if(detail.ok)invoice=detail.invoice;
+          }
+        }
+      }else{
+        invoiceLookup={performed:true,by:"no_external_key",match_count:0,http_status:200};
+      }
+      // A generated NF-e may have numeroLoja=NULL, so GET /nfe?numeroLoja
+      // legitimately returns no match. The SALE itself exposes notaFiscal.id,
+      // which is a strong immutable reference (verified for NF-e 000418).
+      // Never treat a failed search as "not found": only fall back after 200.
+      if(!invoiceId&&invoiceLookup.http_status===200&&invoiceLookup.match_count===0){
+        const sale=await blingHubGet(sb,token,
+          "/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+        if(!sale.ok){
+          invoiceLookup={performed:true,by:"bling_sale_invoice_reference",match_count:0,
+            http_status:sale.status,lookup_error:"sale_detail_unavailable"};
+        }else{
+          const remoteSale=sale.data?.data||{};
+          const remoteSaleKey=clean(remoteSale.numeroLoja,160);
+          const idMatches=Number(remoteSale.id||0)===blingOrderId;
+          if(!idMatches||(remoteSaleKey&&externalKey&&remoteSaleKey!==externalKey)){
+            invoiceLookup={performed:true,by:"bling_sale_invoice_reference",match_count:0,
+              http_status:409,lookup_error:"remote_sale_identity_mismatch"};
+          }else{
+            const fromSale=Number(remoteSale?.notaFiscal?.id||0);
+            if(Number.isSafeInteger(fromSale)&&fromSale>0){
+              invoiceId=fromSale;
+              const detail=await blingHubGetNfe(sb,token,invoiceId);
+              invoiceLookup={performed:true,by:"bling_sale_invoice_reference",
+                match_count:detail.ok?1:0,http_status:detail.status,
+                sale_invoice_id:invoiceId};
+              if(detail.ok)invoice=detail.invoice;
+            }else{
+              invoiceLookup={performed:true,by:"sale_checked_no_invoice",match_count:0,http_status:200};
+            }
+          }
         }
       }
     }
@@ -3975,6 +4071,9 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
   }
   if(!externalKey)hardBlockers.push("external_order_key_missing");
   if(invoiceLookup.performed&&invoiceLookup.match_count>1)hardBlockers.push("multiple_invoices_for_external_key");
+  if(invoiceLookup.performed&&![200,201].includes(Number(invoiceLookup.http_status||0)))
+    hardBlockers.push("invoice_lookup_inconclusive");
+  if(invoiceId&&!invoice)hardBlockers.push("invoice_detail_unavailable");
   if(invoice?.situation?.failed)hardBlockers.push("invoice_terminal_state");
 
   const selectedCanary=uuid(f.dispatch_invoice_canary_source_order_id);
@@ -4455,27 +4554,59 @@ async function blingHubFiscalOfficialNcmCodes(){
 }
 async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
   const config=await sb.from("fiscal_nfe_recovery_control_v1")
-    .select("enabled,auto_fix_with_verified_evidence,auto_retry_after_verified_fix,max_attempts").eq("id",true).maybeSingle();
+    .select("enabled,min_order_created_at,auto_fix_with_verified_evidence,auto_retry_after_verified_fix,max_attempts").eq("id",true).maybeSingle();
   if(config.error)throw config.error;
   if(config.data?.enabled!==true)return {ok:true,enabled:false,processed:0,items:[]};
+  const cutover=String(config.data?.min_order_created_at||"");
+  if(!Number.isFinite(Date.parse(cutover)))
+    return {ok:false,error:"new_orders_cutover_not_configured",processed:0,items:[]};
   const runtime=await sb.from("bling_hub_runtime_v2").select("mode,hub_enabled,orders_enabled").eq("id",1).maybeSingle();
   if(runtime.error)throw runtime.error;
   if(runtime.data?.mode!=="live"||runtime.data?.hub_enabled!==true||runtime.data?.orders_enabled!==true)
     return {ok:true,enabled:false,reason:"bling_live_required",items:[]};
   const limit=Math.max(1,Math.min(3,Number(limitRaw)||2));
-  const cutoff=new Date(Date.now()-7*86400000).toISOString();
+  // Hard barrier at the ORDER and fiscal JOB creation dates. Old work
+  // that changed status after cutover remains out of scope permanently.
+  const fresh=await sb.from("orders").select("id,created_at")
+    .gte("created_at",cutover).order("created_at",{ascending:false}).limit(150);
+  if(fresh.error)throw fresh.error;
+  const freshIds=(fresh.data||[]).map((o:any)=>o.id);
+  if(!freshIds.length)
+    return {ok:true,enabled:true,scope:"new_orders_only",cutover,scanned:0,processed:0,items:[]};
   const jobs=await sb.from("dispatch_fiscal_jobs")
-    .select("id,order_id,bling_order_id,bling_invoice_id,status,error_code,error_detail,external_side_effect,attempts,updated_at")
-    .eq("status","review_required").gte("updated_at",cutoff).order("updated_at",{ascending:false}).limit(30);
+    .select("id,created_at,order_id,bling_order_id,bling_invoice_id,status,error_code,error_detail,external_side_effect,attempts,updated_at")
+    .in("order_id",freshIds).gte("created_at",cutover)
+    .eq("status","review_required").order("updated_at",{ascending:false}).limit(30);
   if(jobs.error)throw jobs.error;
-  const result:any={ok:true,enabled:true,scanned:jobs.data?.length||0,processed:0,items:[]};
+  const result:any={ok:true,enabled:true,scope:"new_orders_only",cutover,scanned:jobs.data?.length||0,processed:0,items:[]};
   let token:string|null=null,catalog:Set<string>|null=null,catalogError:string|null=null;
   for(const job of jobs.data||[]){
     if(result.processed>=limit)break;
     if(!["invoice_generation_uncertain","invoice_generation_failed","invoice_authorization_failed"].includes(String(job.error_code)))continue;
-    // The same failure is evaluated once daily. Changes to the job create a new key.
+    // Retry intermittent OAuth/API errors after 10 minutes; avoid repeatedly
+    // probing deterministic fiscal failures. A changed job is eligible at once.
+    const last=await sb.from("fiscal_nfe_recovery_events_v1")
+      .select("stage,error_code,created_at,diagnostics").eq("dispatch_job_id",job.id)
+      .order("created_at",{ascending:false}).limit(1).maybeSingle();
+    if(last.error)throw last.error;
+    const lastEvent:any=last.data||null;
+    const unchanged=lastEvent&&lastEvent.error_code===job.error_code
+      &&Date.parse(String(lastEvent.created_at||""))>=Date.parse(String(job.updated_at||""));
+    const lastStage=String(lastEvent?.stage||"");
+    const transient=lastStage==="oauth_busy_retry"||lastStage==="invoice_probe_unavailable_retry"
+      ||lastStage==="provider_temporary_retry"
+      ||(lastStage==="worker_exception"&&/oauth_busy|timeout|429|503/i.test(String(lastEvent?.diagnostics?.error||"")));
+    const intervalMs=transient?10*60000:4*3600000;
+    // A newly discovered note reference changes the recovery facts even when
+    // the original error timestamp does not. Inspect it immediately exactly
+    // once, then resume the ordinary cooldown. This cannot submit a new NF-e.
+    const newlyLinkedInvoice=Number(job.bling_invoice_id||0)>0
+      &&Number(lastEvent?.diagnostics?.invoice_id||0)!==Number(job.bling_invoice_id);
+    if(unchanged&&!newlyLinkedInvoice
+      &&Date.now()-Date.parse(String(lastEvent.created_at))<intervalMs)continue;
     const stamp=String(job.updated_at||"").slice(0,19);
-    const key=["fiscal-nfe-recovery-v2",job.id,job.error_code,stamp,new Date().toISOString().slice(0,10)].join(":");
+    const bucket=Math.floor(Date.now()/(5*60000));
+    const key=["fiscal-nfe-recovery-v3",job.id,job.error_code,stamp,bucket].join(":");
     const prior=await sb.from("fiscal_nfe_recovery_events_v1").select("id").eq("event_key",key).maybeSingle();
     if(prior.error)throw prior.error;
     if(prior.data)continue;
@@ -4493,8 +4624,13 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
       diagnosis:diagnosis.issues,corrected_products:[],invoice_id:null};
     let externalWrite=false;
     try{
-      const oq=await sb.from("orders").select("id,status,bling_order_id").eq("id",job.order_id).maybeSingle();
+      const oq=await sb.from("orders").select("id,status,bling_order_id,created_at").eq("id",job.order_id).maybeSingle();
       if(oq.error)throw oq.error;
+      if(!oq.data||!isFiscalRecoveryNewOrderR2(oq.data.created_at,cutover)||
+         !isFiscalRecoveryNewOrderR2(job.created_at,cutover)){
+        diagnostics.reason="historical_order_excluded";
+        continue;
+      }
       const check=await sb.from("order_separation_completions_v1").select("completed_at,metadata").eq("order_id",job.order_id).maybeSingle();
       if(check.error)throw check.error;
       if(oq.data?.status!=="ready"||!check.data?.completed_at||check.data?.metadata?.stock_applied!==true){
@@ -4502,7 +4638,48 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
       }
       const preview=await blingHubVitrineDispatchFiscalPreview(sb,job.order_id);
       if(!preview.ok){diagnostics.reason="fiscal_preview_unavailable";continue;}
-      if(preview.hard_blockers?.length){diagnostics.reason="fiscal_preflight_blocked";diagnostics.blockers=preview.hard_blockers;continue;}
+      // Record a discovered invoice even if its terminal SEFAZ state blocks
+      // the remainder of the workflow. This closes the one-time rescan gate.
+      diagnostics.invoice_id=Number(preview.invoice_id||0)||null;
+      // Distinguish a successful negative lookup from a failed read. In
+      // particular, HTTP 429/5xx is NOT evidence that no invoice exists.
+      if(preview.invoice_lookup?.performed&&
+         ![200,201].includes(Number(preview.invoice_lookup.http_status||0))){
+        diagnostics.reason="invoice_probe_unavailable_retry";
+        diagnostics.lookup_http_status=preview.invoice_lookup.http_status||0;
+        continue;
+      }
+      if(preview.invoice_id&&preview.invoice&&!preview.invoice?.situation?.authorized){
+        const probed=await blingHubFiscalDraftProbeV2(sb,{
+          invoice_id:preview.invoice_id,source_order_id:job.order_id
+        });
+        diagnostics.invoice_draft=probed.ok?probed.report:{
+          diagnostic_error:probed.error,http_status:probed.status||null
+        };
+        // The sale itself referenced the note and the independent fiscal
+        // evidence confirms identity. Save that document ID to the FAILED JOB
+        // (not order_fiscal_controls, which is reserved for authorization).
+        // This prevents another request to generate a second NF-e after timeout.
+        if(probed.ok&&probed.identity_verified===true
+          &&preview.invoice_lookup?.by==="bling_sale_invoice_reference"
+          &&Number(job.bling_invoice_id||0)===0){
+          const attached=await sb.from("dispatch_fiscal_jobs").update({
+            bling_invoice_id:Number(preview.invoice_id),
+            bling_invoice_number:preview.invoice?.numero||null
+          }).eq("id",job.id).eq("order_id",job.order_id)
+            .eq("bling_order_id",preview.bling_order_id)
+            .eq("status","review_required").is("bling_invoice_id",null)
+            .select("id").maybeSingle();
+          if(attached.error)throw attached.error;
+          if(attached.data)diagnostics.existing_invoice_recorded=Number(preview.invoice_id);
+        }
+      }
+      if(preview.hard_blockers?.length){
+        diagnostics.reason=preview.hard_blockers.includes("invoice_terminal_state")
+          ?"existing_invoice_rejected_or_terminal":"fiscal_preflight_blocked";
+        diagnostics.blockers=preview.hard_blockers;
+        continue;
+      }
       diagnostics.invoice_id=preview.invoice_id||null;
       if(preview.invoice_id||preview.invoice){
         const rec=await blingHubVitrineDispatchFiscalReconcile(sb,job.order_id);
@@ -4665,8 +4842,11 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
       diagnostics.retry_error=issue.ok?null:issue.error||null;
       externalWrite=externalWrite||issue.external_write===true;
     }catch(e){
-      diagnostics.reason="worker_exception";
-      diagnostics.error=clean((e as Error)?.message||e,240);
+      const msg=clean((e as Error)?.message||e,240);
+      diagnostics.reason=/\boauth_busy\b/i.test(msg)?"oauth_busy_retry":
+        /\b(429|502|503|504|timeout)\b/i.test(msg)?"provider_temporary_retry":"worker_exception";
+      diagnostics.error=msg;
+      if(diagnostics.reason!=="worker_exception")diagnostics.retry_after_seconds=600;
     }finally{
       await sb.from("fiscal_nfe_recovery_events_v1").update({
         stage:diagnostics.reason||"review_required",diagnostics,external_write:externalWrite
@@ -5202,9 +5382,17 @@ async function blingHubReserveSlot(sb:any){
 }
 async function blingHubOauth(sb:any){
   const owner=crypto.randomUUID();
-  const lock=await sb.rpc("claim_bling_hub_oauth_lock_v2",{p_owner:owner,p_ttl_seconds:90});
-  if(lock.error)throw new Error("oauth_lock_failed");
-  if(lock.data!==true)throw new Error("oauth_busy");
+  // Other workers share the same rotating refresh token. Wait for the
+  // distributed lock instead of classifying an ordinary overlap as failure.
+  // Never refresh a token without owning the lock.
+  let lockAcquired=false;
+  for(let attempt=0;attempt<4;attempt++){
+    const lock=await sb.rpc("claim_bling_hub_oauth_lock_v2",{p_owner:owner,p_ttl_seconds:90});
+    if(lock.error)throw new Error("oauth_lock_failed");
+    if(lock.data===true){lockAcquired=true;break;}
+    if(attempt<3)await sleep([800,1800,3200][attempt]);
+  }
+  if(!lockAcquired)throw new Error("oauth_busy");
   try{
     const c=await sb.rpc("get_bling_api_credentials_v1");
     if(c.error)throw new Error("credentials_lookup_failed");
@@ -9754,6 +9942,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="fiscal_dispatch_gate"){
         const result=await blingHubVitrineDispatchFiscalGate(sb,body?.source_order_id);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="fiscal_nfe_draft_probe_v2"){
+        const result=await blingHubFiscalDraftProbeV2(sb,body);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="fiscal_nfe_autorecovery_v1"){
