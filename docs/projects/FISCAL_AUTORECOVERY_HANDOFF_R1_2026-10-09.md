@@ -1,5 +1,19 @@
 # Dona Antônia — Recuperação inteligente de NF-e — Handoff R1
 
+## REGRA ATUAL — SOMENTE NOVOS PEDIDOS (DECISÃO DO PROPRIETÁRIO EM 09/10/2026)
+
+**ESTA REGRA PREVALECE SOBRE TODO O PLANO HISTÓRICO ABAIXO:** não analisar, corrigir, recriar, retransmitir ou emitir NF-e de pedidos antigos. Evitar qualquer replay em lote ou canário de NF-e 000418 e de outros casos anteriores, mesmo se aparecerem em logs. Esses casos são referência histórica de testes, não alvos de operação.
+
+- Cutover estrito: **2026-10-09 20:08:06.484578 UTC (16h08:06 em Cuiabá)**. Apenas pedidos `orders.created_at >= cutover` e trabalhos `dispatch_fiscal_jobs.created_at >= cutover` podem entrar na recuperação autônoma.
+- Controle persistente: `fiscal_nfe_recovery_control_v1.min_order_created_at`, com restrição SQL que impede retroceder o cutoff.
+- GitHub: PR #1048 integrado à `main`; Edge `admin-service-intelligence-v1` v247 ACTIVE; cron `fiscal-nfe-autorecovery-v1` ativo a cada 5 minutos.
+- Verificação feita durante a mudança: **0 novos pedidos elegíveis**, **0 falhas fiscais novas**, **9 trabalhos antigos excluídos**; os históricos foram preservados, não alterados.
+- A R2 deve priorizar **o fluxo fiscal de novas vendas**, validando o vínculo com a venda e a nota, a correção de dados seguros e a autorização SEFAZ. Não reutilizar notas antigas como canário real.
+- A emissão fiscal global continua dependendo da configuração `fiscal_runtime_config` e não deve ser confundida com o monitoramento de erros.
+
+---
+
+
 Data: 2026-10-09. Repositório: `osvaldosereia/SUCEDOAN12`, fonte `main`.
 Escopo: Bling API v3, Supabase canônico `ssbesxgaijknwsjbsbcz`.
 
