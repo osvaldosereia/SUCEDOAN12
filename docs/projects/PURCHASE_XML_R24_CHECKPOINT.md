@@ -12,3 +12,5 @@ R23 #1012: remains draft; most recent CI run 37949480303 passed 3/3 jobs.
 Runtime read-only: 90 documents, 214 items, 214 observations, 59 items without linked products. All observations verified. Bucket private, 10 MiB cap. The new review/identity RPCs are not installed. Identifier permission audit found six unresolved permissions. This release is blocked.
 
 Next: review database permissions, create isolated field-review migration, verify human authentication, transactional rollback and browser E2E. Do not deploy, merge or change commercial records.
+
+Runtime gate executed against read-only metadata on 2026-10-09T15:15:34Z: ready=false. Missing future review objects and six identifier grants block release. The private XML bucket and current catalog reconciliation passed their checks. No production mutation.
