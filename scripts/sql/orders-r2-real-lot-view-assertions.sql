@@ -9,7 +9,7 @@ UPDATE public.products SET stock=0 WHERE id IN
 
 DO $mounted$
 DECLARE food record; hygiene record; legacy record;
-        response jsonb; order_id uuid;
+        response jsonb; created_order_id uuid;
 BEGIN
  SELECT * INTO food FROM public.basket_lot_public_availability_v1
    WHERE lot_id='00000000-0000-4000-8000-0000000000f1';
@@ -36,10 +36,10 @@ BEGIN
       jsonb_build_object('component_group','hygiene',
         'product_id','00000000-0000-4000-8000-0000000000e2','quantity',1)
    ))));
- order_id:=(response->>'order_id')::uuid;
+ created_order_id:=(response->>'order_id')::uuid;
  IF (response->>'total')::numeric IS DISTINCT FROM 160
     OR (SELECT count(*) FROM public.basket_stock_allocations
-       WHERE order_id=order_id)<>2
+       WHERE order_id=created_order_id)<>2
     OR EXISTS(SELECT 1 FROM public.vitrine_stock_reservations
       WHERE order_id=order_id)
  THEN RAISE EXCEPTION 'mounted kits checkout incorrectly uses loose stock or lost allocation: %',response;
