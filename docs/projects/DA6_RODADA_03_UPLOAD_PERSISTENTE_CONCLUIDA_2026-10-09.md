@@ -30,3 +30,8 @@
 - Revalidar HEAD/CI e migrar atenção para o worker e cron: processamento persistente independente do navegador, 3 tentativas por fotografia, locks/leases de 5 minutos, tratamento de falha e recuperação, timeout/memória de ImageMagick, filas em 100 fotos sem disparos indevidos, métricas e segurança dos tokens.
 - Incluir provas automatizadas de concorrência e `SKIP LOCKED` em banco isolado e testes de recuperação de job interrompido.
 - Manter R1-R3 verdes e documentar. **Não publicar** até passar por homologação física e integridade do Admin.
+
+## Reteste final após ajuste de validação SQL
+- Corrigida e retirada duplicação acidental introduzida em substituição textual do regex SHA256 na migração R3; nenhuma execução dessa migração no banco de produção.
+- **CI definitivo [run 37938819841](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37938819841): 4/4 jobs SUCCESS**, inclusive `postgres-upload` com a migração inteira e todos os testes de segurança, `postgres-review`, `edge-types` e `deterministic-tests`.
+- Testes isolados não substituem o upload assinado real em ambiente integrado e a verificação de concorrência com múltiplas sessões PostgreSQL. Gates permanecem para R4/R6/R8.
