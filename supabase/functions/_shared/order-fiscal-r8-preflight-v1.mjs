@@ -146,7 +146,7 @@ export function evaluateOrderFiscalR8(input){
     add(errors,"bling_order_hub_not_ready");
   // R08 does NOT call external Bling. R09 must perform fresh GET of the
   // exact order and compare its commercial item projection against R7 hash.
-  const remoteAge=new Date(x.as_of||"2026-10-08T22:00:00-04:00").getTime()-new Date(remote.checked_at||0).getTime();
+  const remoteAge=new Date(x.as_of??Date.now()).getTime()-new Date(remote.checked_at||0).getTime();
   if(remote.source!=="bling_get"||remote.commercial_match!==true
      ||n(remote.bling_order_id)!==remoteBlingId
      ||remote.r7_payload_hash!==intent.payload_hash
