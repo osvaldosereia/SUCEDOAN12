@@ -4539,12 +4539,45 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
         .select("id,name,gtin,ncm,bling_product_id").in("id",ids);
       if(products.error)throw products.error;
       const names=parsed.failures.map((x:any)=>blingHubFiscalNormalizeName(x.name));
-      let candidates=(products.data||[]).filter((x:any)=>{
-        if(names.length)return names.includes(blingHubFiscalNormalizeName(x.name));
-        return !/^\d{8}$/.test(blingHubDigits(x.ncm||""));
-      });
-      if(names.length!==new Set(names).size||candidates.length!==names.length && !parsed.missing_ncm){
-        diagnostics.reason="ambiguous_product_name";diagnostics.issues=parsed.failures;continue;
+      // The local NCM can be correct while the Bling product has no NCM.
+      // Diagnose the remote source instead of filtering only by local emptiness.
+      let candidates:any[]=[];
+      if(parsed.missing_ncm&&!names.length){
+        const linked=(products.data||[]).filter((x:any)=>Number(x.bling_product_id)>0);
+        if(linked.length!==ids.length||linked.length>45){
+          diagnostics.reason="tax_items_unmapped_or_exceed_scan_limit";
+          diagnostics.scanned_count=linked.length;
+          continue;
+        }
+        if(!token)token=await blingHubOauth(sb);
+        let readFailure=false;
+        for(const product of linked){
+          const detail=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(product.bling_product_id)));
+          if(!detail.ok){
+            diagnostics.reason="bling_product_tax_scan_http_"+detail.status;
+            diagnostics.remote_scan_product_id=product.id;
+            readFailure=true;break;
+          }
+          const remote=detail.data?.data||{},tax=remote.tributacao||{};
+          const remoteNcm=blingHubDigits(tax.ncm??remote.ncm);
+          if(!/^\d{8}$/.test(remoteNcm)){
+            candidates.push({...product,remote_ncm:remoteNcm});
+          }
+        }
+        diagnostics.products_inspected=linked.length;
+        diagnostics.remote_missing_ncm=candidates.length;
+        if(readFailure)continue;
+        if(!candidates.length){
+          diagnostics.reason="remote_products_have_ncm_check_existing_note_items";
+          continue;
+        }
+      }else{
+        candidates=(products.data||[]).filter((x:any)=>
+          names.includes(blingHubFiscalNormalizeName(x.name))
+        );
+        if(names.length!==new Set(names).size||candidates.length!==names.length){
+          diagnostics.reason="ambiguous_product_name";diagnostics.issues=parsed.failures;continue;
+        }
       }
       if(!candidates.length){diagnostics.reason="unable_to_identify_fiscal_products";continue;}
       const consensus=await sb.from("product_fiscal_evidence_consensus_v1")
@@ -4557,7 +4590,9 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
         const c:any=cm.get(p.id);
         const ncm=blingHubDigits(c?.ncm_consensus||"");
         if(!c||c.ncm_conflict||Number(c.ncm_distinct_count)!==1||Number(c.document_count)<2||
-           !/^\d{8}$/.test(ncm)||!p.bling_product_id||ncm===blingHubDigits(p.ncm)){
+           !/^\d{8}$/.test(ncm)||!p.bling_product_id||
+           (parsed.missing_ncm&&ncm!==blingHubDigits(p.ncm))||
+           (!parsed.missing_ncm&&ncm===blingHubDigits(p.ncm))){
           diagnostics.issues.push({product_id:p.id,name:p.name,reason:"insufficient_independent_tax_evidence",candidate_ncm:ncm||null});
           continue;
         }
@@ -4581,7 +4616,9 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
         if(!previous.ok){diagnostics.reason="bling_product_fetch_failed";break;}
         const product=previous.data?.data||{},tax=product.tributacao||{};
         const remoteNcm=blingHubDigits(tax.ncm??product.ncm);
-        if(remoteNcm!==blingHubDigits(x.product.ncm)){
+        const expectedRemote=Object.prototype.hasOwnProperty.call(x.product,"remote_ncm")
+          ?x.product.remote_ncm:blingHubDigits(x.product.ncm);
+        if(remoteNcm!==expectedRemote){
           diagnostics.reason="remote_tax_changed_since_validation";break;
         }
         const patch=await blingHubWriteIdempotent(sb,token,path,"PATCH",{
@@ -4593,10 +4630,13 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
         if(!verify.ok||blingHubDigits(verify.data?.data?.tributacao?.ncm??verify.data?.data?.ncm)!==x.new_ncm){
           diagnostics.reason="bling_product_tax_verify_failed";break;
         }
-        const saved=await sb.from("products").update({ncm:x.new_ncm})
-          .eq("id",x.product.id).eq("ncm",x.product.ncm).select("id").maybeSingle();
-        if(saved.error||!saved.data){diagnostics.reason="local_tax_compare_and_set_failed";break;}
-        diagnostics.corrected_products.push({product_id:x.product.id,from_ncm:x.product.ncm,to_ncm:x.new_ncm});
+        if(blingHubDigits(x.product.ncm)!==x.new_ncm){
+          const saved=await sb.from("products").update({ncm:x.new_ncm})
+            .eq("id",x.product.id).eq("ncm",x.product.ncm).select("id").maybeSingle();
+          if(saved.error||!saved.data){diagnostics.reason="local_tax_compare_and_set_failed";break;}
+        }
+        diagnostics.corrected_products.push({product_id:x.product.id,from_ncm:x.product.ncm,
+          from_bling_ncm:remoteNcm||null,to_ncm:x.new_ncm});
       }
       if(diagnostics.corrected_products.length!==candidates.length){
         if(!diagnostics.reason)diagnostics.reason="partial_tax_fix_requires_review";
@@ -4606,8 +4646,15 @@ async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
       if(config.data.auto_retry_after_verified_fix!==true||Number(job.attempts||0)>Number(config.data.max_attempts||3)){
         diagnostics.reason="verified_tax_fixed_invoice_retry_disabled";continue;
       }
-      // The original attempt was a deterministic 4xx with no external side effect.
-      // Invoice existence was checked above; one reattempt uses the existing gated flow.
+      // The provider can create an unlinked draft even when /gerar-nfe reports
+      // validation failure. If the error requests manual editing of a note,
+      // do not blindly create another invoice after repairing product metadata.
+      if(/clique na nota fiscal|clique em ['"]?salvar|nota fiscal com erro/i.test(String(job.error_detail||""))){
+        diagnostics.reason="catalog_repaired_existing_draft_requires_invoice_item_repair";
+        continue;
+      }
+      // Only retry when absence of an existing document is proved and the
+      // preceding failure had no external side effect.
       const reset=await sb.from("dispatch_fiscal_jobs")
         .update({status:"held",attempts:0,error_code:null,error_detail:null,updated_at:new Date().toISOString()})
         .eq("id",job.id).eq("status","review_required").eq("external_side_effect",false)
