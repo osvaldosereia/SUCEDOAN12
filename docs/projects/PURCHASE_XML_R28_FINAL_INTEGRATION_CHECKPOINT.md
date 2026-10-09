@@ -40,3 +40,16 @@
 3. **Não forcei `whatsapp_release_mode='live'`**, não pulei migrations, não falseei histórico e não carreguei dados da produção; isso poderia ativar canal externo numa branch. A branch foi **excluída com `delete_branch: success=true`** para encerrar a cobrança. Confirmar no painel se não restou cobrança em aberto relativa às horas efetivamente consumidas.
 4. Conclusão técnica: o mecanismo padrão de branching Supabase atualmente não fornece staging fiel para esse projeto por causa de uma **migration histórica que contém uma pré-condição operacional live**. Isso não é falha das duas migrations R27, que sequer foram aplicadas à branch. Não publicar sem uma alternativa de homologação isolada.
 5. Alternativa mais segura: testar R27 em **Supabase CLI local/dockers** com esquema mínimo e dados de teste, ou provisionar **projeto independente novo** sem replay desse histórico e executar apenas schema de teste controlado. Em ambos, validar Auth/PostgREST/Edge/browser. Mudança ou reparo do histórico produtivo para viabilizar branches exige projeto separado, revisão e autorização específica — não usar `migration repair` na produção.
+
+
+## R29 — Supabase Auth/PostgREST em Docker local: PASSED
+
+Workflow [XML R29 Isolated Supabase Auth Smoke — run #37980712665](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37980712665) executado em `ubuntu-latest`, sem nenhuma chave de produção e sem contato com o banco remoto:
+
+- `supabase init` e `supabase start` concluíram em ambiente local descartável com serviços de DB, Auth e PostgREST.
+- Fixture exata do esquema reduzido + SQL das duas migrations R27 foram aplicados no banco PostgreSQL local hospedado pelo próprio Supabase. Mensagem verificada: `PASS R26 joined R23 + R24: owner/admin, disabled/viewer/operator, RLS/ACL, identity->review->CAS apply->rollback, fiscal and no stock/finance`.
+- Chamada HTTP real via PostgREST com a chave pública `anon` para o RPC privado `purchase_xml_preview_field_application_v1` retornou **HTTP 404**, comprovando indisponibilidade da operação anônima. Log: `PASS R29: Supabase Auth/PostgREST anon EXECUTE denied (404), R27 apply/rollback SQL tested locally`.
+- Containers do ambiente descartável foram encerrados com sucesso.
+- **Escopo correto:** banco/Auth/PostgREST local aprovados; não houve Edge real sob autenticação owner em staging compartilhado nem E2E da interface XML em navegador/telefone. **Não equivale a aceite produtivo.**
+
+O preview Supabase Pro separado `errtzfigcytxzzrodqtp`, que falhou no replay histórico `live_mode_required`, foi **deletado com sucesso** para interromper cobrança; não resta branch R29 de homologação ativa.
