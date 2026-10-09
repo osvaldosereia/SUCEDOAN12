@@ -129,8 +129,8 @@ Deno.serve(async(req:Request)=>{
 
     const publicLinkQ=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});
     if(publicLinkQ.error)throw publicLinkQ.error;
-    const publicCode=clean(publicLinkQ.data?.public_code,5),orderUrl=clean(publicLinkQ.data?.public_url,300);
-    if(!/^(?:[A-Z]{2}[0-9]{3}|[0-9]{4})$/.test(publicCode)||!orderUrl)return respond({ok:false,error:"public_order_identity_missing"},409);
+    const publicCode=clean(publicLinkQ.data?.public_code,24),orderUrl=clean(publicLinkQ.data?.public_url,300);
+    if(!/^(?:[A-Z]{2}[0-9]{3}|[0-9]{4}|[0-9]{2}[|][0-9]{2}[|][0-9]{4} - [0-9]{3})$/.test(publicCode)||!orderUrl)return respond({ok:false,error:"public_order_identity_missing"},409);
 
     const missingItems=Array.isArray(completion.missing_items)?completion.missing_items:[];
     const missingSubtotal=Number(completion.missing_subtotal||0);
