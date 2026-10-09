@@ -5,14 +5,14 @@ Pesquisa progressiva do catálogo da Dona Antônia e preparação para famílias
 
 ## Modelo de compartilhamento
 - Agrupamento `candidate_cohort_key` é **heurístico**, baseado em marca, subcategoria e apresentação. Pode unir produtos diferentes. Não é família confirmada.
-- `cosmos_catalog_families` e `cosmos_catalog_family_members` permitem revisão e confirmação explícitas.
+- `cosmos_catalog_families` e `cosmos_catalog_family_members` permitem revisão e confirmação explícitas. A view `cosmos_family_attribute_preview_v1` sugere herança apenas após família e vínculo confirmados, sem copiar NCM, CEST, preço, estoque ou peso bruto.
 - Dados compartilháveis, **apenas após prova de equivalência**: marca, linha, categoria, forma de embalagem; altura/largura/comprimento da unidade embalada quando comprovadamente igual.
 - Dados exclusivos da variante: EAN/GTIN, fragrância/sabor, fórmula/composição, foto, estoque, preço, validade e vínculos operacionais.
 - Peso bruto pode variar entre fragrâncias, por isso é sugestão mesmo quando volume e formato são iguais.
 - NCM, CEST e tratamento fiscal **não são copiados automaticamente**; exigem enquadramento específico e validação fiscal.
 
 ## Implementação proposta
-1. Revisar o SQL em `supabase/migrations/20261008_cosmos_catalog_research_v1.sql` e aplicar por migration aprovada.
+1. Revisar o SQL em `supabase/migrations/20261008233000_cosmos_catalog_research_v1.sql` e aplicar por migration aprovada.
 2. Verificar os [Termos de Uso](https://cosmos.bluesoft.com.br/termos_de_servico) e [licenças](https://cosmos.bluesoft.com.br/licenses) antes de coletar ou usar os resultados comerciais.
 3. Configurar segredos no Supabase Edge: `COSMOS_API_TOKEN`, `COSMOS_USER_AGENT` e `COSMOS_WORKER_SECRET`. **Nunca no GitHub nem no navegador.**
 4. Publicar `supabase/functions/cosmos-catalog-research-v1/index.ts` com `verify_jwt=true`.
