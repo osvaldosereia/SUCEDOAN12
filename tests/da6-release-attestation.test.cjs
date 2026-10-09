@@ -15,7 +15,7 @@ Este texto não é comprovação de um ensaio real; apenas fixture de parser.`;
 test('R8 header estrito: hash, gate e aprovação explícitos devem corresponder',async()=>{
  const {verifyDa6EvidenceHeader:verify}=await import(url);
  assert.deepEqual(verify(good,gate,fingerprint),{ok:true});
- assert.equal(verify(good.replace(/\\n/g,'\\r\\n'),gate,fingerprint).ok,true);
+ assert.equal(verify(good.replace(/\n/g,'\r\n'),gate,fingerprint).ok,true);
 });
 test('R8 impede reutilizar evidência de outro gate',async()=>{
  const {verifyDa6EvidenceHeader:verify}=await import(url);
@@ -32,13 +32,13 @@ gate: ${gate}
 source_fingerprint: ${fingerprint}
 `;
  assert.equal(verify(note,gate,fingerprint).reason,'attestation_header_missing_or_invalid');
- assert.equal(verify('INFORMAL\\n'+good,gate,fingerprint).reason,'attestation_header_missing_or_invalid');
+ assert.equal(verify('INFORMAL\n'+good,gate,fingerprint).reason,'attestation_header_missing_or_invalid');
 });
 test('R8 rejeita FAIL, campos duplicados, campo vazio e versão desconhecida',async()=>{
  const {verifyDa6EvidenceHeader:verify}=await import(url);
  for(const bad of [
   good.replace('result: PASS','result: FAIL'),
-  good.replace('result: PASS','result: PASS\\ngate: '+gate),
+  good.replace('result: PASS','result: PASS\ngate: '+gate),
   good.replace('gate: '+gate,'gate: '),
   good.replace('DA6_ATTESTATION_V1','DA6_ATTESTATION_V0')
  ]) assert.equal(verify(bad,gate,fingerprint).reason,'attestation_header_missing_or_invalid');
