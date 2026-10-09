@@ -21,7 +21,7 @@ function makeLabel(product){
  api.printMany([product],fakeWin);
  return html
    .replace(/<link rel="stylesheet"[^>]*>/,'<style>'+css+'</style>')
-   .replace(/<script src="[^"]*"><\\/script>/g,'');
+   .replace(/<script[^>]*><\/script>/g,'');
 }
 const chrome=process.env.CHROME_BIN||'/usr/bin/google-chrome';
 async function withPage(fn){
