@@ -8590,7 +8590,7 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
     }catch(e){
       const msg=clean((e as Error)?.message||e,500);
       // A contested OAuth token is transient: retry with backoff, not manual review.
-      const transient=/\\b(oauth_busy|oauth_temporarily_unavailable|rate_limit|timeout)\\b/i.test(msg);
+      const transient=/\b(oauth_busy|oauth_temporarily_unavailable|rate_limit|timeout)\b/i.test(msg);
       const jobStatus=transient?"retry":"review_required";
       await sb.rpc("finish_bling_hub_job_v2",{
         p_job_id:job.id,p_status:jobStatus,p_result:{retryable:transient},
