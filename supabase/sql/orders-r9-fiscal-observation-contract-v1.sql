@@ -120,6 +120,10 @@ BEGIN
      OR p_evidence->>'r7_payload_hash' IS DISTINCT FROM q.r7_payload_hash
      OR (p_evidence->>'bling_order_id')::bigint IS DISTINCT FROM q.bling_order_id
      OR p_evidence->>'order_read_ok' IS DISTINCT FROM 'true'
+     OR p_evidence->>'commercial_match' IS DISTINCT FROM 'true'
+     OR coalesce(p_evidence->>'checked_at','')!~ '^\\d{4}-\\d{2}-\\d{2}T'
+     OR (p_evidence->>'checked_at')::timestamptz NOT BETWEEN
+       clock_timestamp()-interval '5 minutes' AND clock_timestamp()+interval '30 seconds'
      OR p_evidence->>'external_write' IS DISTINCT FROM 'false'
      OR p_evidence->>'checked_at' IS NULL
      OR (p_verdict='no_invoice' AND p_evidence->>'invoice_count' IS DISTINCT FROM '0')
