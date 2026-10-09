@@ -47,3 +47,28 @@ Este exercício valida **invariantes e mocks** em ambiente PostgreSQL isolado, m
 - Produção continua com gate fiscal de saída ativo e emissão fiscal automática desativada.
 
 **Checkpoint:** este arquivo foi escrito como parte do R02 e não é evidência de deploy, comunicação, emissão ou homologação real de NF-e.
+
+
+## Ampliação R02 — Exercício das RPCs reais do checkout, reserva e separação
+
+Após o primeiro checkpoint de mocks, recuperamos **diretamente por SQL read-only `pg_get_functiondef`** os corpos atualmente implantados das seguintes cinco RPCs do projeto canônico:
+
+| Função realmente implantada | MD5 da definição no runtime | Teste isolado |
+|---|---|---|
+| `create_vitrine_cart_order_v3` | `798d9c25e61e2babafa2b21ca8d0e83a` | Reserva atômica e rollback de falha |
+| `reserve_vitrine_order_stock_v1` | `754d532252dd403a2fcbca2e2b267a52` | Reserva repetida, falta de estoque, 2 checkouts concorrentes |
+| `ops2_prepare_order_separation_completion_v2` | `c70404a34b5cf48bc88b5d72eccebf86` | Conclusão com falta, total R$230→R$198, versão desatualizada, item pendente e replay |
+| `ops2_apply_order_separation_stock_v2` | `411be8e90579e966f002acb15dc7652d` | Consome somente item separado, libera falta e não duplica movimento em replay |
+| `ops2_mark_order_separation_completion_v2` | `c90080ab9a6764ee7ab8b2eb7eeff073` | Marca `completed`, preserva código original e carimbo persistido |
+
+As definicões acima são extraídas de **produção somente para leitura** e copiadas sem lógica de negócio alterada para:
+- `scripts/sql/orders-r2-canonical-checkout-reservation.sql` e `scripts/sql/orders-r2-canonical-separation-functions.sql`.
+- `scripts/sql/orders-r2-canonical-dependencies-fixture.sql`: fixture de dependências sintéticas aproveitada do PR #953, **sem reutilizar a migration antiga de quatro dígitos**.
+- `scripts/sql/orders-r2-canonical-runtime-assertions.sql`: testes do código real com falso `create_vitrine_cart_order_v3_base`, sem cliente real.
+- `scripts/sql/orders-r2-canonical-separation-fixture.sql` + `scripts/sql/orders-r2-canonical-separation-assertions.sql`: segunda base efêmera e dados sintéticos; inicialização `ops2_init_order_separation_v2` ainda é dublê explícito; a consolidação, aplicação de reserva e marcação final são **as funções reais**.
+
+**Isolamento:** o CI cria `synthetic_orders_r2` e `synthetic_separation_r2` como bancos descartáveis de PostgreSQL 17. Nenhuma conexão ao Supabase de produção é feita pelo CI; não é criado cliente real, documento fiscal, movimentação física ou envio WhatsApp.
+
+**Limitação expressa:** esses testes executam cinco funções canônicas atuais com dependências selecionadas, **não** as 1.168 migrations/129 Edge Functions, nem todos os triggers reais, nem o checkout completo de `create_vitrine_cart_order_v3_base` ou a inicialização real da separação. Testes da identidade semanal e da integração Meta/Bling/SEFAZ continuam nos marcos posteriores. Se as definições do runtime mudarem, recapturar/validar MD5 antes da homologação final. Isso não é gate para NF-e em produção.
+
+**Evidência:** resultados do workflow `orders-r2-isolated-hml-ci.yml`; verificar conclusão da execução correspondente ao SHA da branch após esta atualização. Não marcar como aprovado um workflow ainda em andamento.
