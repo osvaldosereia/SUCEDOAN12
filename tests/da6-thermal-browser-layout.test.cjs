@@ -4,6 +4,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const puppeteer=require('puppeteer-core');
+const {PNG}=require('pngjs');
+const vm=require('node:vm');
 const root=path.join(__dirname,'..');
 const source=fs.readFileSync(path.join(root,'vitrine/admin/product-shelf-labels.js'),'utf8');
 const css=fs.readFileSync(path.join(root,'vitrine/admin/product-label-print.css'),'utf8');
@@ -95,4 +97,40 @@ test('etiquetas carregam exatamente 6 campos por produto, sem data pré-marcada'
  assert.equal((html.match(/class="count-row"/g)||[]).length,6);
  assert.equal((html.match(/data-qr=/g)||[]).length,1);
  assert.doesNotMatch(html,/20[2-9][0-9]-[01][0-9]-[0-3][0-9]/);
+});
+
+
+test('leitura OMR de seis balanços marcados na etiqueta realmente renderizada',async()=>{
+ await withPage(async page=>{
+  await page.setViewport({width:880,height:1100,deviceScaleFactor:3});
+  const module={Uint8Array,Uint8ClampedArray,Int32Array,Math,BigInt};
+  vm.runInNewContext(fs.readFileSync(
+    path.join(root,'vitrine/admin/inventory-label-omr-geometry.js'),'utf8'),module);
+  const omr=module.DonaAntoniaOMRGeometry;
+  const getImage=async()=>{
+   const clip=await page.$eval('.label',el=>{
+    const r=el.getBoundingClientRect();
+    return {x:r.x,y:r.y,width:r.width,height:r.height};
+   });
+   const shot=await page.screenshot({type:'png',clip});
+   const parsed=PNG.sync.read(shot);
+   return {data:parsed.data,width:parsed.width,height:parsed.height};
+  };
+  const blank=omr.read(await getImage());
+  assert.equal(blank.readings.length,0,'etiqueta não preenchida não pode gerar estoque');
+  assert.equal(blank.errors.length,0);
+  const counts=[0,1,7,10,23,99];
+  await page.evaluate(counts=>{
+   const rows=[...document.querySelectorAll('.count-row')];
+   for(let slot=0;slot<6;slot++){
+    const row=rows[slot],n=counts[slot],groups=row.querySelectorAll('.group');
+    row.querySelector('.activated i').style.backgroundColor='#000';
+    groups[0].querySelectorAll('.digit i')[Math.floor(n/10)].style.backgroundColor='#000';
+    groups[1].querySelectorAll('.digit i')[n%10].style.backgroundColor='#000';
+   }
+  },counts);
+  const marked=omr.read(await getImage());
+  assert.deepEqual(Array.from(marked.readings,x=>x.quantity),counts);
+  assert.equal(marked.errors.length,0);
+ });
 });
