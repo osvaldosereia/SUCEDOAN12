@@ -1,3 +1,4 @@
+import { stableJson } from "./order-bling-r7-manifest-v1.mjs";
 // R08 fiscal preflight: pure, deterministic, read-only, NEVER issues invoices.
 // CEST is conditional on a validated ST decision; a missing CFOP/ICMS tax
 // classification is never guessed from XML or GTIN.
@@ -21,7 +22,8 @@ function fiscalLineStatus(line,record,productLink,taxApproval,blockers){
     add(blockers,"product_origin_missing");
   if(!statuses.has(String(p.review_status||""))||!p.validated_at)
     add(blockers,"product_fiscal_not_approved");
-  if(n(p.open_issue_count)>0)add(blockers,"product_fiscal_issues_open");
+  if(!Number.isInteger(n(p.open_issue_count)))add(blockers,"product_readiness_evidence_missing");
+  else if(n(p.open_issue_count)>0)add(blockers,"product_fiscal_issues_open");
   const st=String(p.st_status||"").toLowerCase();
   if(st==="applicable"){
     if(!digits(p.cest,7))add(blockers,"cest_required_for_st_item");
@@ -63,7 +65,7 @@ export function evaluateOrderFiscalR8(input){
   if(intent.order_id!==orderId||intent.status!=="verified"||n(intent.bling_order_id)<=0
     ||typeof intent.payload_hash!=="string"||!/^[0-9a-f]{64}$/.test(intent.payload_hash))
     add(errors,"r7_bling_order_not_verified");
-  if(manifest&&intent.manifest&&JSON.stringify(intent.manifest)!==JSON.stringify(manifest))
+  if(!manifest||!intent.manifest||stableJson(intent.manifest)!==stableJson(manifest))
     add(errors,"manifest_changed_after_bling_sync");
   const canonicalBlingId=n(order.bling_order_id),remoteBlingId=n(intent.bling_order_id);
   if(!Number.isInteger(canonicalBlingId)||canonicalBlingId<=0||
@@ -137,14 +139,19 @@ export function evaluateOrderFiscalR8(input){
     add(errors,"active_mt_tax_rules_not_approved");
   if(cfg.require_fiscal_authorization_before_dispatch!==true)
     add(errors,"dispatch_fiscal_authorization_gate_disabled");
+  if(cfg.enabled!==true||cfg.bling_invoice_prepare_enabled!==true
+    ||!["homologation","canary","live"].includes(String(cfg.execution_mode||"")))
+    add(errors,"fiscal_runtime_not_ready");
   if(hub.hub_enabled!==true||hub.orders_enabled!==true)
     add(errors,"bling_order_hub_not_ready");
   // R08 does NOT call external Bling. R09 must perform fresh GET of the
   // exact order and compare its commercial item projection against R7 hash.
+  const remoteAge=new Date(x.as_of||"2026-10-08T22:00:00-04:00").getTime()-new Date(remote.checked_at||0).getTime();
   if(remote.source!=="bling_get"||remote.commercial_match!==true
      ||n(remote.bling_order_id)!==remoteBlingId
      ||remote.r7_payload_hash!==intent.payload_hash
-     ||remote.invoice_linked!==false||!remote.checked_at)
+     ||remote.invoice_linked!==false||!remote.checked_at
+     ||!Number.isFinite(remoteAge)||remoteAge<0||remoteAge>300000)
     add(errors,"fresh_bling_order_readback_required");
   return {ok:true,ready:errors.length===0,blockers:errors,
     order_id:orderId,order_number:order.order_number||null,
