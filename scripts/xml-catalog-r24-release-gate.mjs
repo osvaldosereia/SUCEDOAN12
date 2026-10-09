@@ -1,7 +1,7 @@
 /**
  * XML Catalog R24: fail-closed, metadata-only release gate.
  * No network calls, XML bodies, products or customer data.
- * Input: scripts/audit-xml-catalog-r24.sql (read-only SQL).
+ * Input: metadata-only JSON from a reviewed read-only database audit.
  */
 import {readFileSync} from 'node:fs';
 const XML_TABLES=[
