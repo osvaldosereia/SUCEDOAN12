@@ -26,10 +26,21 @@ export function extractCatalogFromNfe(xml,expectedKey) {
  }).parse(xml);
  const nfe=object(root?.nfeProc?.NFe||root?.NFe||root?.enviNFe?.NFe);
  const inf=object(nfe.infNFe);
- const key=digits(String(inf["@_Id"]||"").replace(/^NFe/i,"")||
-    root?.nfeProc?.protNFe?.infProt?.chNFe||"");
- if(key.length!==44||key!==digits(expectedKey))
+ // The NF-e identity must come from infNFe, never from the protocol.
+ const infId=String(inf["@_Id"]??"");
+ const key=digits(infId.replace(/^NFe/i,""));
+ if(!/^NFe[0-9]{44}$/.test(infId)||key!==digits(expectedKey))
    throw new Error("xml_document_key_mismatch");
+ // A protocol, when supplied, must belong to this invoice and authorize it.
+ // Bare NF-e XML remains usable as historical evidence, not fiscal approval.
+ const protocol=root?.nfeProc?.protNFe;
+ if(protocol!==undefined&&protocol!==null){
+   const infProt=object(object(protocol).infProt);
+   if(digits(infProt.chNFe)!==key)
+     throw new Error("xml_protocol_key_mismatch");
+   if(!["100","150"].includes(String(infProt.cStat??"").trim()))
+     throw new Error("xml_protocol_not_authorized");
+ }
  const emit=object(inf.emit),dest=object(inf.dest);
  const extractedItems=[];
  const itemNos=new Set();
