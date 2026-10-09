@@ -5,9 +5,11 @@ on:
       - 'agent/orders-r2-*'
     paths:
       - 'scripts/sql/orders-r2-*.sql'
+      - 'scripts/sql/orders-r2-r3-*.sql'
       - 'scripts/sql/orders-security-*.sql'
       - 'supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql'
       - 'supabase/sql/orders-r2-basket-independent-groups-review-v1.sql'
+      - 'supabase/sql/orders-r2-r3-checkout-public-number-readback-review-v1.sql'
       - 'supabase/sql/orders-security-public-table-privileges-review-v1.sql'
       - 'scripts/test-orders-r2-transport-offline.mjs'
       - 'supabase/functions/_shared/order-auto-fiscal-policy-v1.mjs'
@@ -58,6 +60,13 @@ jobs:
       FISCAL_LIVE_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v4
+      # Pin the existing R03 implementation for an integration test, without
+      # merging or rewriting its separate development branch.
+      - uses: actions/checkout@v4
+        with:
+          ref: e7408ad5cbcd6ae8d5ca16e90f2e287a7d61af4c
+          path: r03-source
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -236,29 +245,9 @@ jobs:
           PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
             -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
           echo 'PASS: real basket checkout in split kits, one group unchanged, legacy stock, selectable mold hidden value'
-      - name: Concurrent buyers cannot allocate same last food/hygiene kit
-        run: |
-          set -euo pipefail
-          # Test uses synthetic lots only. Exactly one complete kit left.
-          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 \
-            -c "update public.basket_stock_lots set status='ready',quantity_available=1 where id in ('00000000-0000-4000-8000-0000000000f1','00000000-0000-4000-8000-0000000000f2')"
-          BEFORE="$(PGDATABASE=synthetic_baskets_r2 psql -Atc 'select count(*) from public.orders')"
-          CART='[{"type":"basket","id":"00000000-0000-4000-8000-0000000000d1","food_lot_id":"00000000-0000-4000-8000-0000000000f1","components":[{"component_group":"food","product_id":"00000000-0000-4000-8000-0000000000e1","quantity":1},{"component_group":"hygiene","product_id":"00000000-0000-4000-8000-0000000000e2","quantity":1}]}]'
-          SQL="select public.create_vitrine_cart_order_v3(null,'PIX','$CART'::jsonb)->>'order_id';"
-          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
-            >/tmp/r2-kit-a.out 2>/tmp/r2-kit-a.err &
-          A=$!
-          PGDATABASE=synthetic_baskets_r2 psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
-            >/tmp/r2-kit-b.out 2>/tmp/r2-kit-b.err &
-          B=$!
-          SUCCEEDED=0
-          if wait "$A"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -Eq 'basket_kit_lot_(unavailable|insufficient)' /tmp/r2-kit-a.err; fi
-          if wait "$B"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -Eq 'basket_kit_lot_(unavailable|insufficient)' /tmp/r2-kit-b.err; fi
-          test "$SUCCEEDED" = 1
-          AFTER="$(PGDATABASE=synthetic_baskets_r2 psql -Atc 'select count(*) from public.orders')"
-          test "$AFTER" -eq "$((BEFORE+1))"
-          test "$(PGDATABASE=synthetic_baskets_r2 psql -Atc "select count(*) from public.basket_stock_lots where id in ('00000000-0000-4000-8000-0000000000f1','00000000-0000-4000-8000-0000000000f2') and quantity_available=0 and status='depleted'")" = 2
-          echo 'PASS: two buyers raced for one full kit; precisely one order committed with both linked lots'
+      # Removed the older race against a DB already mutated by basket
+      # functional assertions. The NEXT test runs the same lot locking
+      # invariants on a NEW isolated database, without fixture-state coupling.
       - name: Two simultaneous buyers cannot overallocate linked food/hygiene kits
         run: |
           set -euo pipefail
@@ -300,5 +289,87 @@ jobs:
           test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.orders")" = 1
           test "$(PGDATABASE=synthetic_basket_race_r2 psql -Atc "select count(*) from public.vitrine_stock_reservations where product_id in ('00000000-0000-4000-8000-0000000000e1','00000000-0000-4000-8000-0000000000e2')")" = 0
           echo 'PASS: linked food/hygiene kits allocated to exactly one buyer without loose stock duplication'
+      - name: Integrate actual R03 weekly-number migration with R02 checkout (seventh DB)
+        run: |
+          set -euo pipefail
+          createdb synthetic_r02_r03_checkout
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-checkout-base-fixture.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-baskets-kit-mold-fixture.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-basket-helpers.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-base.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-canonical-checkout-reservation.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-checkout-minimum-hardening-review-v1.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-basket-independent-groups-review-v1.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-r3-integration-fixture.sql
+          # This is the EXACT R03 migration from the pinned checkout above.
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f r03-source/supabase/migrations/20261008032000_order_public_identity_at_creation_v1.sql
+          # Before fixing, demonstrate legacy checkout returns DA-* while
+          # R03 has assigned a different weekly identifier in orders.
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-r3-wrong-number-baseline.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-r3-checkout-public-number-readback-review-v1.sql
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f scripts/sql/orders-r2-r3-integration-assertions.sql
+          # Replaying the reviewed patch must not rewrite function again.
+          PGDATABASE=synthetic_r02_r03_checkout psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r2-r3-checkout-public-number-readback-review-v1.sql
+          echo 'PASS: weekly number R03 coexists with actual R02 v3 checkout, baskets, mold, reservation and snapshot'
+      - name: Concurrent R02 checkouts allocate ONLY committed R03 weekly numbers
+        run: |
+          set -euo pipefail
+          # Two real checkout sessions try purchasing all 2 units of the
+          # same fictitious product, while the R03 weekly trigger allocates
+          # customer numbers inside each checkout transaction.
+          DB=synthetic_r02_r03_checkout
+          BEFORE="$(PGDATABASE=$DB psql -Atc \
+            "select last_seq from public.order_public_weekly_counters_v1 where week_start=(now() at time zone 'America/Cuiaba')::date-(extract(isodow from (now() at time zone 'America/Cuiaba')::date)::integer-1)")"
+          test "$BEFORE" = 4
+          SQL="select public.create_vitrine_cart_order_v3(null,'PIX','[{\"type\":\"product\",\"id\":\"00000000-0000-4000-8000-0000000000bb\",\"qty\":2}]'::jsonb)->>'order_id';"
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
+            >/tmp/r02-r03-a.txt 2>/tmp/r02-r03-a.err &
+          A=$!
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 -Atc "$SQL" \
+            >/tmp/r02-r03-b.txt 2>/tmp/r02-r03-b.err &
+          B=$!
+          SUCCEEDED=0
+          if wait "$A"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q insufficient_stock /tmp/r02-r03-a.err; fi
+          if wait "$B"; then SUCCEEDED=$((SUCCEEDED+1)); else grep -q insufficient_stock /tmp/r02-r03-b.err; fi
+          echo "R02+R03 concurrency: successful buyers=$SUCCEEDED"
+          echo "R02+R03 A output:"; cat /tmp/r02-r03-a.txt
+          echo "R02+R03 B output:"; cat /tmp/r02-r03-b.txt
+          echo "R02+R03 A error:"; cat /tmp/r02-r03-a.err
+          echo "R02+R03 B error:"; cat /tmp/r02-r03-b.err
+          PGDATABASE=$DB psql -v ON_ERROR_STOP=1 -Atc "
+            select 'weekly_counter',coalesce(max(last_seq),0)::text from public.order_public_weekly_counters_v1
+            union all select 'orders',count(*)::text from public.orders
+            union all select 'vitrine_orders',count(*)::text from public.orders where source='vitrine'
+            union all select 'numbers',count(distinct order_number)::text from public.orders where source='vitrine'
+            union all select 'matching_snapshots',count(*)::text from public.orders o
+                 join public.order_public_snapshots_v1 sn on sn.order_id=o.id
+                 where o.source='vitrine' and o.order_number=sn.public_code
+            union all select 'reserved_bb',coalesce(sum(quantity),0)::text from public.vitrine_stock_reservations
+                 where product_id='00000000-0000-4000-8000-0000000000bb' and status='reserved';"
+          test "$SUCCEEDED" = 1
+          test "$(PGDATABASE=$DB psql -Atc \
+            "select last_seq from public.order_public_weekly_counters_v1 where week_start=(now() at time zone 'America/Cuiaba')::date-(extract(isodow from (now() at time zone 'America/Cuiaba')::date)::integer-1)")" = 5
+          test "$(PGDATABASE=$DB psql -Atc \
+            "select count(*) from public.orders")" = 6
+          test "$(PGDATABASE=$DB psql -Atc \
+            "select count(distinct order_number) from public.orders where source='vitrine'")" = 5
+          test "$(PGDATABASE=$DB psql -Atc \
+            "select count(*) from public.orders o join public.order_public_snapshots_v1 s on s.order_id=o.id where o.source='vitrine' and o.order_number=s.public_code")" = 5
+          test "$(PGDATABASE=$DB psql -Atc \
+            "select coalesce(sum(quantity),0)::integer from public.vitrine_stock_reservations where product_id='00000000-0000-4000-8000-0000000000bb' and status='reserved'")" = 2
+          echo 'PASS: one buyer receives unique weekly number and stock; failed buyer consumes neither'
       - name: Diff hygiene
         run: git diff --check
