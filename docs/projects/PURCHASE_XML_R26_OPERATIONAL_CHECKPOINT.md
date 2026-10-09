@@ -45,3 +45,8 @@ Nenhum merge na `main`, deploy Edge, alteração em esquema ou dados do Supabase
 ### Orientação para próxima janela
 
 > CONTINUAR DONA ANTÔNIA — COMPRAS/CATÁLOGO XML após R26. Leia integralmente `docs/projects/PURCHASE_XML_R26_OPERATIONAL_CHECKPOINT.md` e o handoff longitudinal na branch `agent/xml-catalog-operational-gates-r26-20261009`, PR draft #1025, CI 37972261768 3/3 verde. Avance diretamente os gates de staging real, reversionamento canônico de migrations via CLI e integração de UI por caminho permitido. Não tocar produção nem `main` antes da prova de Auth/Edge/RLS/browser, backup e validação de release. Não reimplantar R18–R25.
+
+
+## Atualização de concorrência na main — pós-CI R26
+
+Depois da suite R26 aprovada, a `main` avançou em **um commit alheio ao XML**, de `d5f3f16b5b6b8ba27823406de0c43628e62d4a78` para `a9289d04b23fcd595e3ba0ac37bcd2876a3dc962` (recuperação fiscal manual Bling e rechecagem NF-e). Arquivos modificados na `main`: `supabase/functions/admin-products-live-v1/index.ts`, `supabase/functions/admin-service-intelligence-v1/index.ts`, `vitrine/admin/index.html` e teste fiscal novo. **A branch R26 não incorpora esse commit novo**. Não usar o `index.html` ou o roteador pai antigos da branch R26 para substituir os atuais da `main`. Antes de qualquer PR final destinada à `main`, reconciliar essas modificações e repetir CI + testes fiscais. Nenhuma tentativa de merge automático ou force-push foi realizada.
