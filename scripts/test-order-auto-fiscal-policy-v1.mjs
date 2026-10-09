@@ -4,7 +4,7 @@ import { AUTO_FISCAL_ACTION as A, decideAutoFiscalAction as decide } from "../su
 
 const ready = () => ({
   order: { id: "synthetic-order", status: "ready", total: 85.5 },
-  confirmation: { confirmed: true, confirmed_at: "2026-10-08T18:00:00Z", proof: "meta_interactive_verified" },
+  confirmation: { confirmed: true, confirmed_at: "2026-10-08T18:00:00Z", proof: "meta_interactive_verified", order_id: "synthetic-order", verified_signature: true, button_id: "CONFIRMADO", channel: "0975", event_id: "wamid-confirm-0001" },
   separation: {
     completed_at: "2026-10-08T18:10:00Z",
     stock_applied: true, pending_count: 0, deliverable_count: 4, final_total: 85.5,
@@ -65,8 +65,62 @@ test("NF-e rejeitada exige tratamento fiscal, sem liberação de expedição", (
   assert.equal(action(change({ fiscal: { rejected: true } })), A.REQUIRES_REVIEW);
 });
 test("autorização SEFAZ libera para expedição sem marcar como saiu", () => {
-  assert.equal(action(change({ fiscal: { invoice_id: "999", authorized: true } })), A.READY_FOR_DISPATCH);
+  assert.equal(action(change({ fiscal: { invoice_id: "999", authorized: true, access_key: "1".repeat(44), sefaz_status: "100" } })), A.READY_FOR_DISPATCH);
 });
 test("pedido cancelado não deve gerar NF-e", () => {
   assert.equal(action(change({ order: { status: "cancelled" } })), A.FINISHED);
+});
+
+test("confirmação interativa autenticada funciona em ambos os canais", () => {
+  assert.equal(action(ready()), A.ISSUE_NFE);
+  assert.equal(action(change({ confirmation: { channel: "1018", event_id: "wamid-confirm-1018" } })), A.ISSUE_NFE);
+});
+test("webhook sem assinatura verificada não confirma a compra", () => {
+  assert.equal(action(change({ confirmation: { verified_signature: false } })), A.WAIT_CONFIRMATION);
+  assert.equal(action(change({ confirmation: { verified_signature: undefined } })), A.WAIT_CONFIRMATION);
+});
+test("confirmação de outro pedido não autoriza emissão fiscal", () => {
+  assert.equal(action(change({ confirmation: { order_id: "different-order" } })), A.WAIT_CONFIRMATION);
+  assert.equal(action(change({ confirmation: { order_id: undefined } })), A.WAIT_CONFIRMATION);
+});
+test("botão, canal e evento inválidos falham de modo fechado", () => {
+  for (const fields of [
+    { button_id: "CANCELADO" },
+    { button_id: "confirmado" },
+    { channel: "9999" },
+    { channel: undefined },
+    { event_id: "short" },
+    { event_id: undefined },
+  ]) {
+    assert.equal(action(change({ confirmation: fields })), A.WAIT_CONFIRMATION);
+  }
+});
+test("somente flag de autorização não libera expedição", () => {
+  for (const fields of [
+    { invoice_id: "999", authorized: true },
+    { invoice_id: "999", authorized: true, access_key: "1234", sefaz_status: "100" },
+    { invoice_id: "999", authorized: true, access_key: "1".repeat(44), sefaz_status: "rejeitada" },
+    { authorized: true, access_key: "1".repeat(44), sefaz_status: "100" },
+  ]) {
+    assert.equal(action(change({ fiscal: fields })), A.RECONCILE_NFE);
+  }
+});
+test("status fiscal autorizado em português exige número e chave válidos", () => {
+  assert.equal(action(change({ fiscal: {
+    invoice_id: "123", authorized: true, access_key: "1".repeat(44), sefaz_status: "autorizada",
+  } })), A.READY_FOR_DISPATCH);
+});
+test("nota incerta é reconciliada mesmo com preflight bloqueado", () => {
+  assert.equal(action(change({ fiscal: { preflight_ready: false, generation_attempts: 1 } })), A.RECONCILE_NFE);
+  assert.equal(action(change({ fiscal: { preflight_ready: false, send_uncertain: true } })), A.RECONCILE_NFE);
+  assert.equal(action(change({ fiscal: { preflight_ready: false, generation_attempts: 0 } })), A.WAIT_DEPENDENCY);
+});
+test("rejeição fiscal prevalece sobre sinal indevido de autorização", () => {
+  assert.equal(action(change({ fiscal: {
+    rejected: true, authorized: true, invoice_id: "123",
+    access_key: "1".repeat(44), sefaz_status: "100",
+  } })), A.REQUIRES_REVIEW);
+});
+test("pedido sem identidade nunca inicia faturamento", () => {
+  assert.equal(action(change({ order: { id: undefined } })), A.REQUIRES_REVIEW);
 });
