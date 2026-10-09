@@ -1,0 +1,49 @@
+# R02 — Laboratório isolado e homologação sintética dos pedidos (08/10/2026)
+
+**Plano:** [issue #964](https://github.com/osvaldosereia/SUCEDOAN12/issues/964) · **Base:** R01 [PR #965](https://github.com/osvaldosereia/SUCEDOAN12/pull/965) · **Branch:** `agent/orders-r2-isolated-hml-20261008`.
+
+## Isolamento demonstrável
+- Banco **PostgreSQL 17 efêmero** iniciado como serviço local do GitHub Actions, nome `synthetic_orders_r2`, sem conexão ao projeto Supabase produtivo. Todos os dados são fictícios e recriados desde zero a cada execução; job descartado ao encerrar.
+- Schema próprio `r2_hml`, usando uma **seleção mínima dos nomes e tipos auditados via SQL read-only do canônico**: `orders`, `order_items`, `order_separation_completions_v1`, `dispatch_fiscal_jobs`. A tabela `confirmation_events` é um **dublê explícito**, não a tabela de outbound Meta em produção.
+- As rotinas `r2_hml.checkout_once`, `r2_hml.apply_verified_confirmation`, `r2_hml.finish_separation` e `r2_hml.claim_fiscal_job` são **dublês criados apenas no CI** para exercícios de contrato, **não** são as RPCs canônicas.
+- Transportes externos falsos no CI: `HOMOLOGATION_TRANSPORT=disabled`, `BLING_LIVE_ENABLED=false`, `META_LIVE_ENABLED=false`, `FISCAL_LIVE_ENABLED=false`. Os testes JS usam **somente métodos fake síncronos** e a função pura de decisão fiscal de R01. Nenhum token, serviço Meta, Bling ou endpoint SEFAZ precisa ser configurado.
+- A geração de `access_key` de 44 dígitos nos testes é **sintética**, sem valor fiscal.
+- **Não** foi criada branch do Supabase, nem se rodaram migrations ou inserts na produção; a implantação real permanece bloqueada.
+
+## Artefatos
+1. [scripts/sql/orders-r2-hml-schema.sql](../scripts/sql/orders-r2-hml-schema.sql): schema do laboratório e funções SQL dublês.
+2. [scripts/sql/orders-r2-hml-assertions.sql](../scripts/sql/orders-r2-hml-assertions.sql): dados sintéticos, falha antes da confirmação, evento Meta falso, replay de checkout, separação com falta, total 230→198, intenção fiscal única e rollback.
+3. [scripts/test-orders-r2-transport-offline.mjs](../scripts/test-orders-r2-transport-offline.mjs): usa a função de política fiscal real e provedores fake para simular timeout, reconciliação de nota anterior, autorização SEFAZ e rejeição. Autorizar a nota **não altera status físico** do pedido.
+4. [.github/workflows/orders-r2-isolated-hml-ci.yml](../.github/workflows/orders-r2-isolated-hml-ci.yml): banco descartável, testes e dois `psql` concorrentes tentando reivindicar a mesma intenção.
+
+## Matriz de validação
+| Situação | Método | Resultado exigido |
+|---|---|---|
+| Pedido abaixo de R$ 75 | SQL sintético | Negar criação |
+| Duplo checkout idempotente | SQL sintético | Mesmo `order_id`, nenhuma segunda linha |
+| Chave idempotente com payload divergente | SQL sintético | Rejeitar replay |
+| Confirmação não assinada/texto diferente | SQL sintético + política real | Não confirmar / não emitir |
+| `CONFIRMADO` nos canais 0975 e 1018 | SQL sintético | Aceitar após verificação no servidor; dedupe por evento |
+| Evento Meta reciclado para outro pedido | SQL sintético | Rejeitar |
+| Falta de item após checkout de R$ 230 | SQL sintético + política fiscal real | Total separado R$ 198, sem segundo checkout |
+| Conclusão repetida | SQL sintético | Um registro e uma única intenção fiscal |
+| Falha antes de `COMMIT` | Transação/ROLLBACK | Nenhum pedido órfão |
+| Dois workers simultâneos | 2 conexões `psql` e `FOR UPDATE SKIP LOCKED` | Exatamente um claim |
+| Emissão de NF-e com timeout incerto | Simulador Node | Consultar nota prévia, **não repetir POST** |
+| Chave NF-e ausente ou rejeição | Política real + fake | Bloquear saída |
+| Nota autorizada com ID, chave 44 dígitos, SEFAZ | Política real + fake | Liberar para expedição **sem** marcar saída física |
+
+## O que falta para R02 ser homologação de verdade
+Este exercício valida **invariantes e mocks** em ambiente PostgreSQL isolado, mas **não prova compatibilidade integral com os 1.168 migrations nem executa as funções/triggers reais do runtime produtivo**. A tentativa anterior de branch Supabase com todas as migrations falhou. Antes de marcar R02 integralmente concluída:
+1. Extrair estrutura canônica das relações/RPCs necessárias por mecanismos read-only e montá-la em sandbox descartável **sem dados pessoais**; resolver dependências determinísticas sem saltar controles.
+2. Reexecutar testes com `create_vitrine_cart_order_v3`, reserva de estoque, funções reais de separação e ledger fiscal **ou demonstrar compatibilidade funcional explicitamente limitada**, mantendo o gate de produção bloqueado.
+3. Registrar conflitos de DDL, gatilhos, grants/RLS e patches propostos; testar concorrência/rollback nos caminhos reais.
+4. Não ativar automaticamente o fiscal por conta do CI de mocks.
+5. Aplicar o gate técnico de R02 somente após os itens acima; até lá: **R02 infraestrutura sintética pronta, homologação canônica pendente**.
+
+## Continuidade
+- R03 será responsável por número público imutável `DD|MM|YYYY - 001`, sequência semanal reiniciando na segunda-feira do fuso `America/Cuiaba`, checkout atômico e compatibilidade com consumidores. O PR #953 contém uma versão de **quatro dígitos**, logo **não pode ser mesclado como está**.
+- Prioridade R04–R10 continua confirmação Meta autenticada, separação, reconciliação Bling, ledger/worker e NF-e sem duplicidade.
+- Produção continua com gate fiscal de saída ativo e emissão fiscal automática desativada.
+
+**Checkpoint:** este arquivo foi escrito como parte do R02 e não é evidência de deploy, comunicação, emissão ou homologação real de NF-e.
