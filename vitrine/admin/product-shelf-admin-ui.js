@@ -56,9 +56,10 @@ function mountedCard(row){
           const val=String(detail.product?.gondola_number||'');
           if(val&&!opts.includes(Number(val))){original.add(new Option('Gôndola '+val+' (edição na aba Gôndolas)',val));}
           original.value=val;
+          original.dataset.savedValue=val;
         }).catch(()=>{});
         original.onchange=async()=>{
-          const previous=original.dataset.savedValue||original.value;
+          const previous=original.dataset.savedValue??'';
           original.disabled=true;
           try{
             const value=original.value;
