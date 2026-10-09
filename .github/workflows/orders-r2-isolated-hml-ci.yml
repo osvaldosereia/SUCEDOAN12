@@ -369,7 +369,7 @@ jobs:
           test "$(PGDATABASE=$DB psql -Atc \
             "select count(*) from public.orders o join public.order_public_snapshots_v1 s on s.order_id=o.id where o.source='vitrine' and o.order_number=s.public_code")" = 5
           test "$(PGDATABASE=$DB psql -Atc \
-            "select coalesce(sum(quantity),0) from public.vitrine_stock_reservations where product_id='00000000-0000-4000-8000-0000000000bb' and status='reserved'")" = 2
+            "select coalesce(sum(quantity),0)::integer from public.vitrine_stock_reservations where product_id='00000000-0000-4000-8000-0000000000bb' and status='reserved'")" = 2
           echo 'PASS: one buyer receives unique weekly number and stock; failed buyer consumes neither'
       - name: Diff hygiene
         run: git diff --check
