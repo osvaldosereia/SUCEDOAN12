@@ -1,0 +1,46 @@
+name: Orders R08 - Fiscal preflight (offline, no invoice)
+on:
+  push:
+    branches: ['agent/orders-r8-*']
+  pull_request:
+    branches: ['agent/orders-r7-*',main]
+    paths:
+      - 'supabase/functions/_shared/order-fiscal-r8-preflight-v1.mjs'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'scripts/test-orders-r8-fiscal-preflight-v1.mjs'
+      - '.github/workflows/orders-r8-fiscal-preflight-ci.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    name: R08 strictly read-only NF-e eligibility checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ORDER_R8_FISCAL_PREFLIGHT_ENABLED: 'false'
+      BLING_LIVE_ENABLED: 'false'
+      FISCAL_LIVE_ENABLED: 'false'
+      META_LIVE_ENABLED: 'false'
+      ORDER_R7_BLING_MANIFEST_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Keep production and invoice transports OFF
+        run: |
+          test "$ORDER_R8_FISCAL_PREFLIGHT_ENABLED" = false
+          test "$BLING_LIVE_ENABLED" = false
+          test "$FISCAL_LIVE_ENABLED" = false
+          test "$META_LIVE_ENABLED" = false
+          test "$ORDER_R7_BLING_MANIFEST_ENABLED" = false
+      - name: Syntax and fiscal preflight regression
+        run: |
+          set -euo pipefail
+          node --check supabase/functions/_shared/order-fiscal-r8-preflight-v1.mjs
+          node --check scripts/test-orders-r8-fiscal-preflight-v1.mjs
+          node --test scripts/test-orders-r8-fiscal-preflight-v1.mjs
+      - name: R07 Bling manifesto regressions
+        run: |
+          node --test scripts/test-orders-r7-bling-reconciled-v1.mjs
+      - name: Diff hygiene
+        run: git diff --check
