@@ -4,7 +4,7 @@
 const bridge=()=>window.DonaAntoniaAdminBridge;
 const alertUser=s=>{if(typeof bridge()?.toast==='function')bridge().toast(s);else alert(s)};
 const ids=new Set();
-let gondolas=[],loading=false;
+let gondolas=[],gondolaRequest=null,loading=false;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 async function api(action,params){return bridge().api(action,params||{})}
 function productId(row){return row.getAttribute('data-mobile-product-card')||row.querySelector('[data-edit-product]')?.dataset.editProduct}
@@ -23,8 +23,60 @@ async function printSingle(id){
   finally{if(btn){btn.disabled=false;btn.textContent='🖨 Etiqueta'}}
 }
 async function ensureGondolas(){
-  if(gondolas.length)return gondolas;
-  const res=await api('gondolas');gondolas=res.gondolas||[];return gondolas;
+  if(gondolaRequest)return gondolaRequest;
+  gondolaRequest=api('gondolas').then(res=>{
+    gondolas=Array.isArray(res.gondolas)?res.gondolas:[];
+    return gondolas;
+  }).catch(error=>{gondolaRequest=null;throw error});
+  return gondolaRequest;
+}
+async function saveGondola(id,number,original){
+  if(number!==null&&(!Number.isInteger(number)||number<1||number>9999))
+    throw Error('Informe uma gôndola de 1 a 9999.');
+  const op=bridge()?.operator?.();
+  if(!op)throw Error('Informe o operador antes de salvar.');
+  if(number!==null){
+    const all=await ensureGondolas();
+    if(!all.some(g=>g.active!==false&&Number(g.number)===number)){
+      const created=await bridge().api('gondola_create',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({number,operator:op})
+      });
+      if(!created?.gondola?.id)throw Error('Não foi possível cadastrar a gôndola.');
+      gondolas.push(created.gondola);
+    }
+  }
+  const result=await bridge().api('product_quick_save',{},{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({product_id:id,gondola_number:number,operator:op})
+  });
+  const saved=result.product?.gondola_number??null;
+  if(saved!==number)throw Error('O servidor não confirmou a gôndola informada.');
+  if(original){
+    const value=saved===null?'':String(saved);
+    if(value&&!Array.from(original.options).some(o=>o.value===value))
+      original.add(new Option('Gôndola '+value,value),original.options[original.options.length-1]);
+    original.value=value;original.dataset.savedValue=value;
+  }
+  return saved;
+}
+async function askOtherGondola(id,original){
+  const previous=original?.dataset.savedValue||'';
+  const input=prompt('Número da nova gôndola (1 a 9999):',previous);
+  if(input===null){if(original)original.value=previous;return}
+  const value=String(input).trim();
+  if(!/^\d{1,4}$/.test(value)||Number(value)<1||Number(value)>9999){
+    if(original)original.value=previous;
+    alertUser('Gôndola inválida. Informe um número entre 1 e 9999.');return;
+  }
+  if(original)original.disabled=true;
+  try{
+    await saveGondola(id,Number(value),original);
+    alertUser('Produto movido para a gôndola '+Number(value)+'.');
+  }catch(e){
+    if(original)original.value=previous;
+    alertUser('Gôndola: '+e.message);
+  }finally{if(original)original.disabled=false}
 }
 function mountedCard(row){
   if(row.dataset.shelfEnhanced)return;
