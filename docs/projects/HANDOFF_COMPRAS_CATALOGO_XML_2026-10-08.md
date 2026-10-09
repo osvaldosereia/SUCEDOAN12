@@ -108,3 +108,156 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 > Continuar o projeto **Dona Antônia — Compras e Catálogo XML** no repositório `osvaldosereia/SUCEDOAN12`, Supabase `ssbesxgaijknwsjbsbcz`. Leia **inteiramente este HANDOFF** no GitHub antes de programar. Consulte a `main` atual e o runtime Supabase, não use branch desatualizada para sobrescrever correções. O catálogo usa exclusivamente XML de NF-e importado do Bling ou enviado manualmente; nada de Cosmos, SI5, pesquisa externa, novas automações ou alteração automática de produtos, preços, fiscal e estoque. Faça primeiro auditoria/CI/teste ponta a ponta das funções já publicadas; depois corrija pendências e implemente revisão campo a campo com aprovação humana. Trabalhe em branch agent/* nova, faça commits atômicos e reporte o que foi testado e publicado.
 
 **Este documento é um checkpoint, não autorização para considerar o projeto concluído.**
+
+## Checkpoint R18 — 09/10/2026 — consolidação das oito PRs (integração de código concluída em branch)
+
+**Branch canônica desta rodada:** `agent/xml-catalog-consolidation-r18-20261009`, derivada da `main` `8d2e187fa3d7a15111cfe1504786e213e9d7b2cf`. **PR draft [#997](https://github.com/osvaldosereia/SUCEDOAN12/pull/997)**. As PRs originais permanecem abertas; não houve merge na `main`.
+
+### Conteúdo consolidado e decisões sobre conflitos
+
+1. **#980:** comparador NCM/CEST/EAN, implementado no módulo separado e inserido no backend e no detalhe do Admin como **somente leitura**.
+2. **#983:** auditoria de erros de catálogo, resolução de falhas após releitura, painel e confirmação manual. Arquivo de migração pré-existente na PR copiado ao repositório da branch, mas **não executado** nesta rodada.
+3. **#986:** histórico paginado (60 por solicitação), botão Carregar mais, descarte de resposta obsoleta, deduplicação e carregamento lazy.
+4. **#989:** extratores NF-e idênticos exigindo chave do próprio documento e protocolo SEFAZ coerente.
+5. **#990:** ledger SQL de propostas/decisões e histórico **apenas em `docs/projects/`**; sem criar tabelas no Supabase.
+6. **#992:** gateway humano com papel owner/admin, identidade do operador extraída do autenticador, proposta/decisão por campo e interface lazy no Admin.
+7. **#993:** protótipo de aplicação nominal CAS e rollback preservado como documentação/teste, **não implantar isoladamente**.
+8. **#995:** versão substitutiva com bloqueio de produtos ativos em prévia, aplicação e rollback, igualmente **somente SQL de proposta**, sem endpoint executor.
+
+**Conflitos resolvidos:** dois `purchase-xml-v1/index.ts` reconstituídos e sincronizados byte a byte, incorporando as quatro alterações concorrentes da API; `vitrine/admin/index.html` recomposta com histórico, comparação, erro de catálogo e revisão no mesmo detalhe; os dois parsers, dois comparadores e os dois gateways também são espelhos idênticos. Testes originais de renderização isolada adaptados para incluir os helpers adicionais presentes após a integração, sem alterar seu comportamento operacional.
+
+**Proteção de precisão adicionada na R18:** como o comparador #980 trabalha somente com as primeiras 60 evidências da paginação #986, a API expõe `comparison_scope` e a interface avisa explicitamente **Comparação PARCIAL** quando existir mais histórico. Não afirmar que uma comparação parcial representa todas as NF-e.
+
+### Testes realizados de verdade
+
+- [CI final XML Catalog R18 Consolidation — run 37934816543](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37934816543): **3/3 jobs concluídos em success**, incluindo verificação de tipos `deno check` de AMBOS os backends XML completos, verificados pelo resultado dos jobs:
+  - `source-and-ui`: **11 scripts Node PASS** (catálogo, comparador, falhas, paginação, ficha legada, revisão/auditoria, autenticação, interface, CAS/rollback estático e limites do gateway).
+  - `real-parser`: Deno + `fast-xml-parser` real: **PASS** na coerência de chave/protocolo e rejeição XML malformado/DTD.
+  - `transactional-ledger`: PostgreSQL 17 em container **descartável**: **PASS** para autorização de proposta, aplicação e reversão apenas de produto inativo, compare-and-swap, idempotência, trilha auditável e bloqueios.
+- Primeiras tentativas de CI falharam porque fixtures de UI em isolamento não incluíam todos os helpers após a integração. Correções realizadas, regressão reexecutada até a CI verde. Isso **não** equivale a validação ponta a ponta do Admin em produção.
+
+### Runtime e segurança (somente leitura)
+
+- Supabase canônico `ssbesxgaijknwsjbsbcz`: **90** documentos XML, **214** itens declarados e catalogados, **0** faltantes e **0** falhas de catalogação registradas.
+- Auditoria: `purchase_xml_catalog_ingest_errors_v1` e `purchase_xml_catalog_observations_v1` com RLS habilitado; views de falhas e detalhes com `security_invoker=true`; sem leitura direta `anon`/`authenticated` nos objetos examinados.
+- `purchase_xml_field_reviews_v1` e `purchase_xml_field_applications_v1` continuam **ausentes** em produção. Edge Admin ainda v230 (`verify_jwt=false`, autenticação interna), stage XML v10; não houve publicação.
+- **Zero ações operacionais reais:** nenhuma modificação em produtos, estoque, preços, atributos fiscais, financeiro, Bling, vitrine, cron; nenhuma migração, deploy ou merge.
+
+### Estado e próxima rodada
+
+**R18 concluída quanto à consolidação de código e regressão integrada em CI; PR #997 permanece draft e não publicada.** Avançar para **R19**: homologar Bling/upload manual apenas sob controle, NF-e reais/anônimas de teste, XML sem protocolo, malformado, lote >10 MB, hash/privacidade/idempotência, consulta da origem e regressão do fluxo financeiro **sem operações fiscais/comerciais reais**. Depois R20 (histórico integral/compilação de comparação além de 60, UI), R21 (vinculação/cadastro inativo), R22–R27 (ledger/atores, aplicação controlada, fiscal, E2E e publicação com gates). Não integrar PRs individuais sobre a PR consolidada sem reconciliar SHAs e CI.
+
+## Checkpoint R19 — 09/10/2026 — integridade de Bling/manual e fonte XML (testes isolados)
+
+**PR draft empilhada:** [#999](https://github.com/osvaldosereia/SUCEDOAN12/pull/999), branch `agent/xml-catalog-ingest-integrity-r19-20261009`, criada a partir da branch consolidada R18 `agent/xml-catalog-consolidation-r18-20261009` (PR #997, derivada da `main` `8d2e187`). Não fazer merge direto na `main` sem conciliar a dependência R18.
+
+### Código gravado
+- Guard `xml-catalog-ingest-guard.mjs` duplicado de forma idêntica nos dois backends. `assertCatalogXmlSize` verifica **bytes UTF-8**, conforme limite da bucket privada `purchase-xml` (10 MiB), em vez de só `String.length`. Entrada inválida/oversize é rejeitada antes de iniciar o parser operacional no `processXml`.
+- `assertCatalogXmlIntegrity` executa o parser real `fast-xml-parser@5.11.2` e valida identidade `infNFe@Id`, chave esperada, coerência de protocolo/cStat, malformação/DTD e número máximo de itens **antes de qualquer gravação de documento, contato, estoque ou financeiro no `processXml`**. O programa de importação pode ter buscado XML/OAuth antes, mas nenhuma atualização comercial é autorizada por esta validação.
+- Na importação manual `catalog_only`, a validação é feita antes do upload ou documento novo. O fluxo preserva `financial_eligible=false`, `finance_reference.accounts=[]`, `receipt_status=review` e não chama Bling.
+- XML já existente com mesmo `document_key` e `content_sha256` divergente é **rejeitado**, sem sobrescrever XML/registro/estoque/financeiro. Para legado sem hash, mantém compatibilidade sem afirmar equivalência. Releitura manual checa bytes, origem e hash antes de catalogar.
+- **Limitação deliberada:** o modo operacional `manual_import` e o `bling_sync` seguem com suas rotinas e efeitos de compra existentes. Não foram executados em produção nesta rodada. Uma serialização diferente do mesmo XML pode alterar o SHA mesmo que a NF-e seja semanticamente equivalente; conflito requer revisão humana, nunca overwrite automático.
+
+### Testes efetivamente realizados
+- [GitHub CI R19 final — run 37937233361](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37937233361): **success** — Deno com parser real, mock isolado que executa a função existente `manualCatalogOnlyImport` por extração do próprio backend, type-check dos dois `index.ts` e regressão de protocolo V6.
+- Casos aprovados: XML simples e sem protocolo, mismatch de chave/protocolo, status SEFAZ não autorizado, DTD, XML malformado, limite 10 MiB ASCII, XML Unicode com mais bytes que caracteres, 11 arquivos rejeitados, duplicação idempotente com SHA igual, rejeição com SHA diferente, sem chamadas a tabelas de produtos/financeiro/estoque nem Bling no mock de `catalog_only`.
+- O mock é um teste de execução isolada do código real da função, **não** uma homologação de rede, bucket real, OAuth, Bling ou UI autenticada.
+
+### Runtime somente leitura
+- Supabase canônico: 90 XMLs registrados, 214 itens conciliados, nenhum faltante. `purchase_xml_documents`: 90 chaves distintas e nenhum hash ausente. Bucket `purchase-xml` é **privada** (`public=false`), limite `10.485.760` bytes, MIME XML/octet-stream. Consulta às políticas diretas de objeto filtradas pela bucket não retornou política aplicável.
+- `purchase_xml_catalog_ingest_failures_v1` possui **0** pendências e ledger de revisão/aplicação continua não instalado. Admin produção v230 / stage XML v10 inalterados.
+- Nenhuma migração, deploy, merge, leitura/transferência de XML privado real, nova pesquisa externa, cron, movimentação fiscal/comercial ou atualização de produto.
+
+### Próximo trabalho — R20
+- Histórico paginado completo: o comparador #980 atualmente considera a **primeira página de 60**, claramente marcada como parcial na R18. Propor/implementar comparação integral e bounded por servidor, sem baixar tudo no início, incluindo testes de >60 linhas, fornecedor, embalagem/GTIN, perdas de conexão e UI lazy.
+- Manter R19/R18 em PRs draft até gates reais, sem substituir alteração recente da main.
+
+## Checkpoint R20 — 09/10/2026 — comparação do histórico completo sob demanda
+
+**PR draft empilhada:** [#1001](https://github.com/osvaldosereia/SUCEDOAN12/pull/1001), branch `agent/xml-catalog-full-history-r20-20261009`, originada da R19 [#999](https://github.com/osvaldosereia/SUCEDOAN12/pull/999), que depende da consolidação R18 [#997](https://github.com/osvaldosereia/SUCEDOAN12/pull/997), cuja raiz é a `main` `8d2e187fa3d7`. Sem merge/deploy/migration.
+
+### Funcionalidade implementada na branch
+- Serviço `xml-catalog-full-comparison.mjs` espelhado nos dois backends. Consulta `purchase_xml_catalog_observation_details_v2` com ordenação determinística e `count:exact`, **páginas de 200**, teto rígido de **5.000 observações por candidato**; calcula somente agregados, não devolve linhas XML completas ao navegador.
+- Consulta separada `xml_catalog_full_comparison`, disponível apenas sob ação explícita de sessão humana `owner/admin` autenticada (JWT + `admin_users`). Tokens internos, `viewer` e `operator` rejeitados; falhas de consulta não expõem dados SQL sensíveis.
+- Mantém abertura normal do detalhe em até 60 linhas, com carregamento lazy. Botão **Conferir histórico completo** aparece quando a primeira página não basta. Após clique, a UI mostra resultado integral, ou **PARCIAL** se o teto de 5.000 for atingido, a contagem mudar ou linhas se repetirem. Nunca apresentar resultado parcial como auditoria completa.
+- Comparação inclui NCM, CEST, GTIN/EAN comercial e divergências por fornecedor; inclui EAN tributário `cEANTrib`, unidade comercial `uCom` e unidade tributável `uTrib` como **evidência**, nunca conversão automática de embalagem nem aprovação fiscal.
+- Guardas da interface descartam respostas atrasadas ao mudar de candidato, não pré-carregam comparação integral, e não atualizam produtos/estoque/Bling/financeiro.
+- Sem leitura pública de XMLs brutos, consulta externa, cron, migração, tela adicional, ou mudança no visual da vitrine pública.
+
+### Testes verificados
+- [CI final XML Catalog R20 Full History — run 37938913888](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37938913888): **2/2 jobs success**.
+- Teste `test-xml-catalog-full-history-r20.mjs`: 137 observações com NCM divergente **depois** dos primeiros 60, GTIN tributário, compra/tributação por unidade, leitura paginada, limite máximo de 5.000, candidato vazio, erro SQL, contagem divergente entre páginas, repetição de observação, segurança de escopo, carregamento UI sob clique e descarte de resposta atrasada.
+- CI também executou regressões de comparação v3, paginação v3, ficha v2, consolidação R18, revisão UI R15, `deno check` dos dois módulos XML, parser real e testes isolados da R19. Primeira CI falhou em teste isolado quando `full` e chave ausente eram comparados como iguais; condição corrigida e CI repetida com aprovação. **Não é homologação operacional em produção.**
+
+### Runtime read-only
+- Supabase canônico: 147 candidatos, máximo de **10 observações** por candidato, nenhum com mais de 60; 90 XMLs/214 linhas catalogadas e 0 faltantes. Logo a funcionalidade resolve demanda futura, não um acúmulo real atual.
+- As views `purchase_xml_catalog_candidates_v1` e `purchase_xml_catalog_observation_details_v2` têm `security_invoker=true` e sem `SELECT` direto a `anon`/`authenticated`.
+- Nenhum produto, estoque, custo, preço, fiscal, financeiro, Bling, Supabase de produção ou `main` foi modificado.
+
+### Próximo passo
+**R21:** homologação de identidade, EAN comercial/tributário, unidade/caixa, conversão de embalagem, vinculação humana e criação inativa, com papel/verificação/auditoria e teste E2E isolado, sem publicar ou aplicar dados reais. Após R21, R22–R27 para decisão/aplicação/rollback fiscal segregado, performance, integração e lançamento com gates formais. Não mesclar individualmente PRs #997/#999/#1001 sem respeitar dependências e executar a CI sobre a árvore combinada.
+
+### Verificação de concorrência após o fechamento da R20
+- Durante a rodada, a `main` passou de `8d2e187fa3d7` para `1c859e27664d`, por commit **alheio à R20** (`feat: ativar orçamento para pedido de venda Bling`). Mudou `orcamento/app-original.html`, `admin-products-live-v1/index.ts`, `admin-service-intelligence-v1/index.ts` (roteador pai) e uma migration de orçamento.
+- Nenhum desses arquivos foi sobrescrito pela branch R20. Verificação: o roteamento `action==="purchase_xml"` → `handlePurchaseXmlRequest(req,body,false)` continua igual no roteador pai das duas versões, mas precisa de teste integrado ao rebase final.
+- O Supabase mostra agora Admin v231 (`verify_jwt=false`), atualização **externa à R20**; a R20 não fez deploy. Contagens permanecem 90 XMLs, 214 itens catalogados, 0 faltantes.
+- PR #1001 continua empilhada sobre R19 → R18, baseada na `main` anterior. **Antes de integrar em `main`, atualizar a cadeia a partir do novo commit com reconciliação e CI novamente.** Não fazer `force push`, merge ou deploy nesta rodada.
+
+## Checkpoint R21 — 09/10/2026 — identificação atômica, EAN comercial/tributável, embalagem e cadastro inativo
+
+**PR draft empilhada:** [#1004](https://github.com/osvaldosereia/SUCEDOAN12/pull/1004), branch `agent/xml-catalog-identity-atomic-r21-20261009`, originada de R20 #1001 → R19 #999 → R18 #997. R21: 12 commits, 7 arquivos antes deste checkpoint, zero commits atrás da branch R20. A `main` avançou paralelamente para `6125692fcbbac66c07869b0dba1cf21b0eae1440` por mudanças de orçamento/rotas Admin, alheias à R21; não sobrescrever nem mesclar sem reconciliar a `main` mais nova.
+
+### Diagnóstico real da R21
+- `resolvePurchaseItemIdentity` legado faz escrita em `products`, `product_identifiers` e `purchase_xml_items` em múltiplas transações. Se uma etapa falha, poderia deixar cadastro/identificador órfão, sem vínculo concluído; reexecuções e concorrência podem resultar em estados inconsistentes.
+- O gatilho produtivo `purchase_xml_sync_inventory_lot_v1` escuta alterações em `purchase_xml_items.product_id` e `converted_quantity`, criando/atualizando lotes, inclusive quantidade recebida quando o documento já tem registro de recebimento. Este efeito precisa ser bloqueado no modo **somente evidência XML**, não apenas verificado por testes superficiais.
+- Consulta Supabase somente leitura: `purchase_xml_items` 214 linhas, 59 linhas sem vínculo, **nenhuma das 59** com quantidade convertida positiva ou lote vinculado; `purchase_xml_catalog_candidates_v1` possui 32 **candidatos agrupados** sem vínculo, contagem distinta das 59 linhas operacionais. Produtos, identificadores, itens e embalagens estão com RLS habilitado e sem permissão de UPDATE direto para `anon/authenticated`.
+
+### Código R21
+1. SQL de preparação `docs/projects/purchase-xml-identity-atomic-r21.sql`, **NÃO MIGRAÇÃO/NÃO APLICADO**. RPC `purchase_xml_resolve_catalog_identity_v1` executa em transação única, `SECURITY INVOKER`, revogação de `PUBLIC/anon/authenticated`, concessão a `service_role`. Ledger `purchase_xml_catalog_identity_actions_v1` com RLS, eventos imutáveis e no máximo uma decisão por item.
+2. A função bloqueia a linha de `purchase_xml_items`, serializa EAN com advisory xact lock e rejeita item já vinculado, fonte não verificada, GTIN inválido (inclui dígito verificador), duplicidade entre produtos, documento recebido, lote existente ou `converted_quantity<>0`, unidades por peso/volume e fator inadequado. Suporta EAN **comercial ou tributável escolhido expressamente**, papel `base_unit/package` e fator exato.
+3. Para vínculo existente: **não altera o produto mestre**. Para novo cadastro: cria **inativo**, com WhatsApp desativado, estoque 0, NCM/custo/preço nulos, sem publicação e com revisão fiscal pendente. Atribui apenas `product_id` e metadados de identidade no item; não preenche `converted_quantity`, nem realiza recebimento. Inserções de produto, identificador, vínculo e auditoria são atômicas, sujeitas a rollback da transação.
+4. Os dois `purchase-xml-v1/index.ts` idênticos chamam **somente a RPC** em `catalog_evidence_only=true`. Somente sessão humana owner/admin, confirmação explícita `CRIAR_INATIVO_XML` ou `VINCULAR_ITEM_XML`, ator obtido do JWT e `admin_users`, nunca enviado pelo cliente. Na ausência da RPC, falha fechado com `503 xml_identity_service_unavailable` sem deixar cadastro parcial; o caminho operacional legado sem `catalog_evidence_only` permanece sem alteração.
+5. UI existente no Admin exige escolha explícita de EAN comercial ou tributável (mesmo quando diferentes), tipo unidade/embalagem, fator e confirmação humana. Não há pesquisa Cosmos/SI5, alteração de visual público, criação de cron, Bling, preço, estoque, NCM/CEST ou financeiro por esta rotina.
+
+### Testes efetivos
+- [CI final R21 — run 37941206019](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37941206019): **3/3 jobs success**.
+  - `human-gateway-and-ui`: script Node de autorização/proveniência do ator, erros fail-closed, validação da origem EAN e fator; regressões de identidade/ficha, histórico R20 e R18.
+  - `disposable-postgresql`: PostgreSQL 17 isolado com trigger de lote simulado: criação inativa + vínculo, nenhum lote, teste de duplicado, confirmação obrigatória, fonte XML não verificada, recebimento prévio, peso, quantidade operacional, ator ausente, auditoria e ausência de privilégio público.
+  - `edge-types`: `deno check` nas duas cópias completas.
+- A primeira execução de PostgreSQL revelou teste contraditório (item `CX` como unidade) e a segunda encontrou `UPDATE` negado na auditoria, proteção correta do banco; ambos os fixtures corrigidos **sem afrouxar as regras**. A terceira execução passou.
+- **Não é homologação em produção.** A RPC e o ledger continuam inexistentes no Supabase produtivo, conforme `to_regprocedure/to_regclass` read-only. Admin produtivo chegou à v232 por atualização externa à R21; esta rodada não fez deploy.
+
+### Gates pendentes para R22 e posteriores
+- R22: revisar sintaxe/schema e triggers reais em homologação fiel ao Supabase, substituir SQL de rascunho por migração canônica revisada, resolver orquestração de dependências das PRs empilhadas e migrações anteriores; fazer testes de autenticação real e browser. Não implantar endpoint novo sem RPC.
+- O modo catálogo **não pode tratar itens com lote/recebimento/conversão ativa**; esses casos exigem fluxo operacional de Compras. Não alterar o trigger global para contornar salvaguarda sem projeto separado.
+- R23–R27: ledger de revisão campo a campo, aplicação/reversão com CAS, validação fiscal segregada, testes E2E XML real e publicação controlada com monitoramento.
+- **Nenhum merge na main, migration, deploy, chamada fiscal/comercial, mutação Supabase produtiva, Bling ou cron nesta rodada.**
+
+## Checkpoint R22 — 09/10/2026 — gates reais de lote, Bling inativo e segurança do ator
+
+**PR draft empilhada:** [#1009](https://github.com/osvaldosereia/SUCEDOAN12/pull/1009), branch `agent/xml-catalog-release-gates-r22-20261009`, baseada na R21 #1004 → R20 #1001 → R19 #999 → R18 #997. Branch sem merge, nenhuma migração/deploy/alteração Supabase executada.
+
+### Correções concluídas
+1. **Bug real no rascunho R21:** cadastro criado `is_active=false`, porém `desired_bling_status='A'` (intenção de ativação no Bling). Novo SQL R22 grava **`'I'`**.
+2. **Faltavam dois sinais de recebimento:** o gatilho produtivo não considera apenas `purchase_xml_documents.receipt_status='received'`, mas também plano `purchase_stock_receipt_plans_v1.status='verified'` e lançamento `purchase_stock_receipts.status='applied'`. O SQL R22 bloqueia os três antes de vincular.
+3. **Lote órfão:** uma linha sem `inventory_lot_id` ainda pode ter `product_inventory_lots.source_ref='purchase-xml-item:<uuid>'` em estado operacional. Bloqueia qualquer lote preexistente por essa referência.
+4. **Autorização:** a RPC agora confirma `admin_users.user_id` ativo com papel `owner/admin` dentro da transação, além do JWT/role verificado no gateway.
+5. **GTIN:** código já confirmado para o mesmo produto, mas com papel `package_gtin` em vez de `base_gtin` (ou inverso), gera conflito e exige revisão, sem reinterpretar silenciosamente.
+6. **Migração candidata:** `docs/projects/purchase-xml-identity-release-candidate-r22.sql` ainda é **PROPOSTA, não migração**, não foi aplicada. Publicação exige geração de migração canônica via CLI em homologação, controle da ordem DB → backend → UI e revisão de impacto.
+
+### Prova de testes
+- [CI XML Catalog R22 Release Gates — execução final 37943285385](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37943285385): **3/3 jobs SUCCESS** (estático/gateway, `deno check`, PostgreSQL 17 descartável).
+- O teste PostgreSQL incorpora arquivo `scripts/fixtures/xml-production-lot-trigger-r22.sql`, copiado da definição real `pg_get_functiondef` + `pg_get_triggerdef` do Supabase canônico, e reproduz campos e tabelas necessárias.
+- Logs contêm **`PASS R22 real lot trigger, active owner, receipt plans, Bling-inactive, audit and role conflicts`**. Cenários: vínculo seguro, cadastro inativo/estoque zero/Bling I, sem lotes, confirmação, replay, status de documento, plano verificado, estoque aplicado, lote desvinculado, EAN com papel divergente, operador/owner inativo, origem não verificada e grants.
+- Primeira CI falhou porque o *fixture* estava sem coluna `purchase_xml_items.processing_status` exigida pelo trigger verdadeiro; completou-se a estrutura de **teste**; segunda CI integral passou. Nenhuma regra produtiva foi afrouxada.
+
+### Produção auditada (somente leitura)
+- `main` durante o fechamento: `6ce76d214a0759e946ddfca65364e19e1991d770` (alterações paralelas em orçamento e roteador pai, preservar na integração).
+- Runtime Edge `admin-service-intelligence-v1` versão **234**, publicado por outros trabalhos, **não** por R22.
+- `purchase_xml_items`: **214** linhas, **59** sem vínculo. View de observações: **214**. A RPC R22 e a tabela de auditoria ainda retornam `NULL` em `to_regprocedure/to_regclass`, isto é, **não implantadas**.
+- `purchase_xml_catalog_observation_details_v2` tem `security_invoker=true`, 214 linhas `source_state='xml_verified'`. Objetos existentes de compra/produto têm RLS; novos grants só foram testados em banco descartável.
+- A auditoria de Advisors do Supabase devolveu lints globais de outros domínios; **não** se deve alegar ausência de alertas de segurança no projeto inteiro. As verificações R22 concentram-se no escopo XML.
+
+### Documentação de transição
+- [Roteiro de publicação R22](https://github.com/osvaldosereia/SUCEDOAN12/blob/agent/xml-catalog-release-gates-r22-20261009/docs/projects/PURCHASE_XML_RELEASE_SEQUENCE_R22.md): depende da consolidação `main`, migração canônica via Supabase CLI (não criar filename arbitrário), Auth e teste E2E em homologação, permissão/rollback e smoke test. Execução R23 pode prosseguir diretamente.
+- **R22 concluída em código e CI isolada**, sem autorizar implantação. Não aplicar SQL de docs, mesclar, fazer deploy, tocar estoque/fiscal/financeiro ou alterar Bling com base somente nestes testes.

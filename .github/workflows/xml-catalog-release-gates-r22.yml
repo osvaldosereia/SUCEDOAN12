@@ -1,0 +1,67 @@
+name: XML Catalog R22 Release Gates
+on:
+  pull_request:
+    branches:
+      - main
+      - agent/xml-catalog-identity-atomic-r21-20261009
+    paths:
+      - 'docs/projects/purchase-xml-identity-release-candidate-r22.sql'
+      - 'scripts/test-xml-catalog-identity-production-schema-r22.pg.sql'
+      - 'scripts/fixtures/xml-production-lot-trigger-r22.sql'
+      - 'scripts/test-xml-release-gates-r22.mjs'
+      - '.github/workflows/xml-catalog-release-gates-r22.yml'
+      - 'supabase/functions/**/purchase-xml-v1/index.ts'
+      - 'supabase/functions/purchase-xml-v1/index.ts'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-and-gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Schema permissions and human identity contracts
+        run: |
+          set -eu
+          node scripts/test-xml-release-gates-r22.mjs
+          node scripts/test-xml-identity-gateway-r21.mjs
+          node scripts/test-xml-catalog-full-history-r20.mjs
+  postgres-production-trigger:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hardened R22 SQL with actual production inventory trigger in temporary PostgreSQL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          psql -v ON_ERROR_STOP=1 -f scripts/test-xml-catalog-identity-production-schema-r22.pg.sql
+  edge-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Verify existing authenticated Edge routes unchanged
+        run: deno check supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
