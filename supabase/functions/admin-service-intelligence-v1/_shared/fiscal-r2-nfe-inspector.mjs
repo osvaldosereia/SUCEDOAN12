@@ -14,6 +14,48 @@ const str = (value,limit=160) => String(value??"").trim().slice(0,limit);
 const fieldId = value => positiveId(value&&typeof value==="object"?(value.id??value.idPedidoVenda):value);
 const nfeObject = raw => raw?.data&&typeof raw.data==="object"&&!Array.isArray(raw.data)?raw.data:(raw||{});
 
+// Extract only recognized fiscal validation messages present in the provider
+// response. Do not infer that a field is wrong merely because Bling omitted it.
+const normalizeName=value=>String(value??"").normalize("NFD")
+  .replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/gi,"").toLowerCase();
+const fiscalMessage=/\b(ncm|cest|cfop|cst|csosn|ibs|cbs|sefaz|rejei[cç][aã]o|tribut[aá]r|classifica[cç][aã]o)\b/i;
+export function inspectBlingNfeProviderErrorsR2(raw, itemSummaries=[]) {
+  const nf=nfeObject(raw);
+  const sources=[raw?.error?.fields,raw?.error?.messages,raw?.alertas,
+    nf?.alertas,nf?.erros,nf?.mensagens,nf?.validacoes,nf?.avisos,
+    nf?.motivosRejeicao,nf?.situacao?.mensagens,nf?.situacao?.motivo];
+  const messages=[],seen=new Set();
+  function visit(value,depth=0){
+    if(depth>4||messages.length>=24||value==null)return;
+    if(typeof value==="string"){
+      const msg=value.replace(/\s+/g," ").trim().slice(0,320);
+      if(fiscalMessage.test(msg)&&!seen.has(msg)){seen.add(msg);messages.push(msg);}
+    }else if(Array.isArray(value)){
+      for(const x of value.slice(0,24))visit(x,depth+1);
+    }else if(typeof value==="object"){
+      for(const key of ["message","mensagem","descricao","motivo","description","error","fields","errors","alertas"])
+        if(Object.prototype.hasOwnProperty.call(value,key))visit(value[key],depth+1);
+    }
+  }
+  for(const v of sources)visit(v);
+  return messages.map(text=>{
+    const ncmMatch=text.match(/\bNCM[\s:]+([0-9]{4}[.]?[0-9]{2}[.]?[0-9]{2})\b/i);
+    const itemMatch=text.match(/\bpara (?:o )?item\s+(.+?)\s+(?:n[aã]o est[aá]|est[aá]|n[aã]o [ée]|possui|cont[eé]m)\b/i);
+    const itemName=itemMatch?.[1]?.trim()||null;
+    const normalized=normalizeName(itemName);
+    const candidates=normalized?itemSummaries.filter(x=>normalizeName(x.name)===normalized):[];
+    return {
+      field:/\bNCM\b/i.test(text)?"ncm":/\bCEST\b/i.test(text)?"cest":/\bCFOP\b/i.test(text)?"cfop":"other_fiscal",
+      message:text,
+      reported_code:ncmMatch?ncmMatch[1].replace(/\D/g,""):null,
+      item_name:itemName,item_index:candidates.length===1?candidates[0].index:null,
+      matched_by:candidates.length===1?"exact_normalized_name":"unresolved",
+      requires_validation:true
+    };
+  });
+}
+
+
 export function inspectBlingNfeR2(raw, expected={}) {
   const nf=nfeObject(raw),invoiceId=positiveId(nf.id??nf.idNotaFiscal);
   const sit=fieldId(nf.situacao);
@@ -46,6 +88,7 @@ export function inspectBlingNfeR2(raw, expected={}) {
       cif_total:money(item?.total??item?.valorTotal)
     };
   });
+  const providerErrors=inspectBlingNfeProviderErrorsR2(raw,itemSummaries);
   const expectedSaleId=positiveId(expected.bling_order_id);
   const referenceInvoiceId=positiveId(expected.sale_invoice_id);
   const expectedContactId=positiveId(expected.contact_id);
@@ -91,6 +134,9 @@ export function inspectBlingNfeR2(raw, expected={}) {
     invalid_ncm_format_count:itemSummaries.filter(x=>x.ncm_state==="missing"||x.ncm_state==="malformed").length,
     ncm_not_exposed_count:itemSummaries.filter(x=>x.ncm_state==="not_exposed").length,
     line_subtotal_cents:lineSubtotal,
+    validation_errors:providerErrors,
+    validation_message_count:providerErrors.length,
+    validation_source:providerErrors.length?"provider_response":"not_returned_by_provider_get",
     identity:{verified,signals:signal,conflicts,reason:verified?"strong_identity_verified":
       Object.values(conflicts).some(Boolean)?"identity_conflict":"insufficient_independent_identity_signals"},
     editing:{eligible:noteCanEdit&&!hasStockOrFinancePosting&&verified,
