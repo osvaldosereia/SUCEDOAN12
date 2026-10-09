@@ -24,7 +24,7 @@ BEGIN
    PERFORM public.create_vitrine_cart_order_v3(null,'PIX',cart);
    RAISE EXCEPTION 'security_bug_inactive_category_was_sold';
  EXCEPTION WHEN OTHERS THEN
-   IF SQLERRM NOT IN ('basket_kit_lot_insufficient','basket_hygiene_lot_invalid')
+   IF SQLERRM NOT IN ('basket_kit_lot_insufficient','basket_kit_lot_unavailable','basket_hygiene_lot_invalid')
    THEN RAISE; END IF;
  END;
  UPDATE public.basket_categories SET is_active=true
@@ -36,7 +36,7 @@ BEGIN
    PERFORM public.create_vitrine_cart_order_v3(null,'PIX',cart);
    RAISE EXCEPTION 'security_bug_paused_linked_kit_was_sold';
  EXCEPTION WHEN OTHERS THEN
-   IF SQLERRM NOT IN ('basket_kit_lot_insufficient','basket_hygiene_lot_invalid')
+   IF SQLERRM NOT IN ('basket_kit_lot_insufficient','basket_kit_lot_unavailable','basket_hygiene_lot_invalid')
    THEN RAISE; END IF;
  END;
  UPDATE public.basket_stock_lots SET sale_enabled=true
@@ -48,7 +48,7 @@ BEGIN
    PERFORM public.create_vitrine_cart_order_v3(null,'PIX',cart);
    RAISE EXCEPTION 'security_bug_unassembled_food_kit_was_sold';
  EXCEPTION WHEN OTHERS THEN
-   IF SQLERRM NOT IN ('basket_kit_lot_insufficient','basket_hygiene_lot_invalid')
+   IF SQLERRM NOT IN ('basket_kit_lot_insufficient','basket_kit_lot_unavailable','basket_hygiene_lot_invalid')
    THEN RAISE; END IF;
  END;
  UPDATE public.basket_stock_lots SET assembly_status='mounted'
