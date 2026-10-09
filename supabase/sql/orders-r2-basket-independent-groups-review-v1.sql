@@ -15,9 +15,9 @@ BEGIN
  WHERE n.nspname='public' AND p.proname='create_vitrine_cart_order_v3_base';
  IF original IS NULL THEN RAISE EXCEPTION 'checkout_missing'; END IF;
  IF position(unsafe in original)=0 THEN
-   IF position('v_food_changed:=not public.basket_group_preserves_original_lot_v1' in original)>0
-     AND position('v_hygiene_changed:=case when v_basket.uses_hygiene_kit' in original)>0
-   THEN
+   -- Do not silently accept an unrelated or partially edited checkout. Only
+   -- the exact marker inserted by this reviewed patch proves prior execution.
+   IF position('-- Independent kit groups retain their own changed flags.' in original)>0 THEN
      RAISE NOTICE 'independent_basket_group_rule_already_applied';
      RETURN;
    END IF;
