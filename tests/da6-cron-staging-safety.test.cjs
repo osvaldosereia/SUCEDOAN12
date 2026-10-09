@@ -6,7 +6,10 @@ test('R6 cron não faz chamadas ao projeto de produção a partir de staging',()
  assert.doesNotMatch(migration,/https:\/\/ssbesxgaijknwsjbsbcz[.]supabase[.]co\/functions/);
  assert.match(migration,/name='da6_label_worker_url_v1'/);
  assert.match(migration,/worker_endpoint_not_configured/);
- assert.match(migration,/IF v_url IS NULL OR v_url !~/);
+ assert.match(migration,/name='da6_label_worker_project_ref_v1'/);
+ assert.match(migration,/worker_project_not_configured/);
+ assert.match(migration,/IF v_url IS DISTINCT FROM/);
+ assert.match(migration,/\^\[a-f0-9\]\{64\}/);
 });
 test('R6 cron exige segredo e nunca atualiza estoque',()=>{
  assert.match(migration,/name='da6_label_worker_key_v1'/);
