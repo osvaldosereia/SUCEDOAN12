@@ -71,7 +71,7 @@ begin
  update public.purchase_xml_field_review_events_v1 set note='tampered' where review_id=a;
  raise exception 'audit_mutation_accepted';
  exception when others then
- if sqlerrm not like '%xml_field_review_event_immutable%' then raise; end if;
+ if sqlerrm not like '%xml_field_review_event_immutable%' and sqlerrm not like '%permission denied%' then raise; end if;
  end;
  fiscal:=public.purchase_xml_open_field_review_v1(
  '00000000-0000-0000-0000-000000000010',
