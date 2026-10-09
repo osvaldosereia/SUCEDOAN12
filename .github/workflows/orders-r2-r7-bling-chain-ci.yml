@@ -6,14 +6,22 @@ on:
       - 'agent/orders-r2-r8-*'
       - 'agent/orders-r2-r9-*'
       - 'agent/orders-r2-r10-*'
+      - 'agent/orders-r2-r10-*'
+      - 'agent/orders-r11-*'
     paths:
       - 'scripts/sql/orders-r2-r7-*.sql'
       - 'scripts/test-orders-r2-r7-*.mjs'
       - 'scripts/test-orders-r2-r8-*.mjs'
       - 'scripts/sql/orders-r2-r9-*.sql'
+      - 'scripts/sql/orders-r11-*.sql'
+      - 'supabase/sql/orders-r11-delivery-custody-fiscal-guard-review-v1.sql'
+      - 'docs/orders-r11-*.md'
       - 'scripts/test-orders-r2-r9-*.mjs'
       - 'scripts/sql/orders-r2-r10-*.sql'
       - 'scripts/test-orders-r2-r10-*.mjs'
+      - 'scripts/sql/orders-r11-*.sql'
+      - 'supabase/sql/orders-r11-delivery-custody-fiscal-guard-review-v1.sql'
+      - 'docs/orders-r11-*.md'
       - '.github/workflows/orders-r2-r7-bling-chain-ci.yml'
 
 
@@ -298,6 +306,22 @@ jobs:
           test "$(psql -Atc "SELECT count(*) FROM public.order_fiscal_r10_authorization_evidence_v1")" = 1
           test "$(psql -Atc "SELECT count(*) FROM public.dispatch_fiscal_jobs WHERE status='authorized'")" = 1
           echo 'PASS full REAL checkout->Meta fake->R06->R07->R08 blocked->R09 fake GET->R10 fake SEFAZ and delivery gate'
+      - name: R11 genuine Smart Delivery loading cannot bypass R10 fiscal proof
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r11-fiscal-delivery-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r11-real-logistics-rpcs.sql
+          # Demonstrate the bypass in the pre-R11 route tables with ROLLBACK:
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r11-delivery-unguarded-baseline.sql
+          # Add custody and route-status guards, without touching live services:
+          psql -v ON_ERROR_STOP=1 \
+            -f supabase/sql/orders-r11-delivery-custody-fiscal-guard-review-v1.sql
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/orders-r11-delivery-custody-assertions.sql
+          test "$(psql -Atc "SELECT count(*) FROM public.ops_delivery_runs WHERE status='dispatched'")" = 2
+          test "$(psql -Atc "SELECT count(*) FROM public.ops_delivery_runs WHERE status='planned'")" = 1
+          test "$(psql -Atc "SELECT count(*) FROM public.order_fiscal_r10_authorization_evidence_v1")" = 1
+          test "$ORDER_R10_SEFAZ_PROOF_ENABLED" = false
+          echo 'PASS R11: pre-R11 gap reproduced; route cannot dispatch or load pending NF-e, original driver RPC works with proof'
       - name: Ensure no unsafe transports enabled or changes to tracked files
         run: |
           set -euo pipefail
