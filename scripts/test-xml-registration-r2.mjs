@@ -102,3 +102,15 @@ assert.match(dispatch,/if\(action==="manual_import"\)\{[\s\S]{0,130}!\["owner","
 assert.match(dispatch,/if\(action==="xml_catalog_only_import"\)\{[\s\S]{0,130}!\["owner","admin"\]\.includes\(a\.role\)/,
   'catalog-only import requires human owner/admin');
 console.log('PASS R2: XML imports and Bling sync restricted to owner/admin');
+
+const {readFileSync:readR2Fixture}=await import('node:fs');
+const r2sql=readR2Fixture('scripts/test-xml-identity-r2.pg.sql','utf8');
+const ci=readR2Fixture('.github/workflows/xml-catalog-r28-final-integration.yml','utf8');
+assert.match(r2sql,/\\i supabase\/migrations\/20261009185312_purchase_xml_identity_atomic_r27\.sql/);
+assert.doesNotMatch(r2sql,/\\i supabase\/migrations\/20261009185314_purchase_xml_field_approval_r27\.sql/,
+ 'R2 release must never include R24 name mutation');
+for(const gate of ['existing_product_mutated','unexpected_lot','replay_was_accepted','public_rpc_access','audit_rls_disabled'])
+ assert.ok(r2sql.includes(gate),'missing PostgreSQL R2 release gate: '+gate);
+assert.match(ci,/PGDATABASE=xml_r2_identity psql -v ON_ERROR_STOP=1 -f scripts\/test-xml-identity-r2\.pg\.sql/,
+ 'R2 PostgreSQL gate must be run on isolated disposable DB');
+console.log('PASS R2: isolated identity-only PostgreSQL release fixture wired into CI; R24 excluded');
