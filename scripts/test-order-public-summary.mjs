@@ -13,7 +13,7 @@ assert.match(migration,/deferrable initially deferred/i,'snapshot must be genera
 assert.match(migration,/if exists \([\s\S]*order_public_snapshots_v1[\s\S]*new\.order_id/i,'later deferred item triggers must no-op after the first immutable snapshot');
 assert.match(edge,/ops2_refresh_order_public_snapshot_v1/,'old orders must be lazily snapshot-able');
 assert.match(edge,/Cache-Control":"private, no-store/,'public endpoint must not cache private order data');
-assert.match(edge,/select\("status,updated_at,whatsapp_account_id"\)/,'public view must read the order channel account as fallback');
+assert.match(edge,/select\("status,updated_at,whatsapp_account_id,phone_e164"\)/,'public view must read the order channel account as fallback');
 assert.match(edge,/from\("whatsapp_accounts"\)/,'public view must resolve historical orders through whatsapp_accounts when no customer outbox exists');
 assert.match(edge,/5565984491018/,'1018 must be explicitly recognized in the historical channel fallback');
 assert.match(page,/name="robots" content="noindex,nofollow,noarchive"/,'order page must not be indexed');
