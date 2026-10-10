@@ -6554,8 +6554,7 @@
            '<button class="secondary" type="button" data-xml-pick="'+esc(p.id)+'">Escolher</button></div>').join('')+'</div>'+
         (chosen?'<small style="display:block;margin:8px 0">Produto escolhido: <b>'+esc(chosen.name)+'</b></small>':'')+
         '<button id="xmlDetailLink" type="button" class="secondary" '+(!chosen?'disabled':'')+'>Vincular somente esta linha</button>'+
-        '<div style="margin-top:12px"><label>Novo produto (inativo)<input id="xmlDetailNewName" type="text" maxlength="250" style="width:100%" value="'+
-         ''+' " placeholder="Nome comercial por unidade, sem CX/FD/FARDO"></label>'+
+        '<div style="margin-top:12px"><label>Novo produto (inativo)<input id="xmlDetailNewName" type="text" maxlength="250" style="width:100%" value="" placeholder="Nome comercial por unidade, sem CX/FD/FARDO"></label>'+
         '<button id="xmlDetailCreate" type="button" class="secondary">Cadastrar produto inativo</button></div>'+
         '</div>')+
       '<small class="sub">Dados fiscais são evidências do fornecedor e precisam de validação. Não há lançamento de estoque nesta ficha.</small>';
