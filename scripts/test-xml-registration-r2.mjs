@@ -67,3 +67,10 @@ console.log('PASS R2: new product name validation enforced at API boundary');
 assert.match(dispatch,/if\(action==="xml_field_apply_commit"\)return js\(req,\{ok:false,error:"existing_product_name_preserved"\},409\)/,'legacy XML rename is blocked');
 assert.match(dispatch,/"xml_field_apply_commit","xml_field_apply_rollback"\]\.includes\(action\)/,'rollback remains available');
 console.log('PASS R2: existing names cannot be overwritten by legacy XML apply');
+
+assert.match(fn,/Number\.isInteger\(factor\)/,'conversion must be integer');
+assert.match(fn,/unit_purchase_factor_must_be_one/,'UN input must never multiply quantity');
+const converted=(cases,units,net)=>({quantity:cases*units,unitCost:net/(cases*units)});
+assert.deepEqual(converted(10,12,240),{quantity:120,unitCost:2},'10 CX of 12 = 120 UN and R$2/UN');
+assert.deepEqual(converted(3,1,45),{quantity:3,unitCost:15},'3 UN remains 3 UN');
+console.log('PASS R2: integer factors, UN=1 and arithmetic examples');
