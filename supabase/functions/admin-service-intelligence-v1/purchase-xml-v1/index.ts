@@ -1748,10 +1748,12 @@ async function refreshDocumentReadiness(documentId:string){
 }
 async function setConversion(body:any){
   const id=clean(body?.item_id,80),factor=Number(body?.conversion_factor),base="UN";
-  if(!/^[0-9a-f-]{36}$/i.test(id)||!Number.isFinite(factor)||factor<1||factor>100000)return {ok:false,status:400,error:"invalid_conversion"};
+  if(!/^[0-9a-f-]{36}$/i.test(id)||!Number.isInteger(factor)||factor<1||factor>100000)return {ok:false,status:400,error:"invalid_conversion"};
   const q=await sb.from("purchase_xml_items").select("*,purchase_xml_documents(*)").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)return {ok:false,status:404,error:"item_not_found"};
   const item:any=q.data,doc:any=item.purchase_xml_documents;if(!item.product_id)return {ok:false,status:409,error:"product_match_required"};
   const pack=itemLooksPackaged(item);
+  if(["UN","UND","UNID","UNIDADE","PC","PÇ"].includes(unit(item.purchase_unit))&&factor!==1)
+    return {ok:false,status:409,error:"unit_purchase_factor_must_be_one"};
   if(pack.packaged&&factor<=1)return {ok:false,status:409,error:"packaging_factor_must_be_greater_than_one"};
   const baseQty=Number(item.purchase_quantity||0)*factor;
   const meta=obj(item.metadata);let net=Number(meta.net_line_total);
@@ -1930,7 +1932,7 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     }
     if(action==="document"){const r=await docDetail(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="xml_url"){const r=await signedXml(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
-    if(action==="set_conversion"){const r=await setConversion(body);return js(req,r,r.ok?200:Number(r.status||400))}
+    if(action==="set_conversion"){if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);const r=await setConversion(body);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="apply_item_update"){if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);const r=await applyItemUpdate(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="save_receipt_lots"){
       if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
