@@ -47,6 +47,7 @@ jobs:
           set -eu
           node scripts/test-xml-admin-r27.mjs
           node scripts/test-xml-registration-r2.mjs
+          node scripts/test-xml-unit-pack-review-r29.mjs
           node scripts/test-xml-catalog-fiscal-dossier-r25.mjs
           node scripts/test-xml-field-approval-gateway-r24.mjs
           node scripts/test-xml-identity-gateway-r21.mjs
@@ -132,3 +133,4 @@ jobs:
           # Separate disposable DB: R2 must not require R24 name mutation.
           createdb xml_r2_identity
           PGDATABASE=xml_r2_identity psql -v ON_ERROR_STOP=1 -f scripts/test-xml-identity-r2.pg.sql
+          PGDATABASE=xml_r2_identity psql -v ON_ERROR_STOP=1 -f scripts/test-xml-identity-unit-pack-r29.pg.sql
