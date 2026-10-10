@@ -47,3 +47,10 @@
 - Produção canônica `ssbesxgaijknwsjbsbcz` possui `purchase_xml_items`, `purchase_xml_documents`, `products`, `admin_users`, `product_identifiers` e view `purchase_xml_catalog_observation_details_v2`; colunas essenciais de R23 confirmadas via `information_schema`. Isso NÃO comprova migração segura.
 - Migração R23 `20261009185312_purchase_xml_identity_atomic_r27.sql` cria RPC de decisão atômica e tabela de auditoria, ainda ausentes na produção. A migração declara expressamente pendência de revisão Auth/RLS. R24 contém operações de revisão e aplicação de campos que não devem renomear produto existente na R2.
 - Próxima ação bloqueante: provisionar QA **com schema compatível** (não branch de migrations quebradas), rodar fixture de PostgreSQL e Auth/RLS, depois aprovar migração seletiva. Sem isso não executar DDL em produção.
+
+## Escopo de release R2 corrigido — 10/10/2026
+- **Descoberta crítica:** o teste antigo `scripts/test-xml-catalog-integration-r26.pg.sql` executa R23+R24 e espera que R24 renomeie um produto existente para `Nome novo via XML`. Isso contradiz expressamente o contrato atual da R2, que proíbe sobrescrever o nome comercial de produto existente.
+- Criado `scripts/test-xml-identity-r2.pg.sql` (commit `6bf8aaa`) para validar **somente R23**, em banco descartável: owner/admin, usuário desativado, não alteração de nome/NCM/custo/preço/estoque, ausência de lote, auditoria imutável, replay e privilégios.
+- CI passa a rodar esse fixture em um **segundo banco descartável isolado** (commit `a119728`). O teste legado R26 continua apenas como regressão histórica, NÃO é autorização para publicar R24.
+- **Decisão de arquitetura:** R2 deve liberar apenas identidade R23; R24 de aplicação de campo/nome está fora da R2 até remoção formal do caminho de renomeação e novos testes. Nunca aplicar R24 diretamente em produção sob a justificativa de concluir R2.
+- Gates ainda não comprovados: execução do CI, Auth/RLS real, migração seletiva com numeração acima da cabeça remota, Edge/Admin autenticados e smoke test.
