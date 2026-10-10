@@ -502,7 +502,7 @@ async function resolvePurchaseItemIdentity(body:any,userId:string|null){
     // Do not fall back to supplier XML descriptions, including on direct API calls.
     if(createNew){
       const newName=clean(body?.proposed_name,300).trim();
-      if(newName.length<3||/^(?:CX|CAIXA|FD|FDO|FAR|FARDO|PCT|PACOTE)\\b/i.test(newName))
+      if(newName.length<3||/^(?:CX|CAIXA|FD|FDO|FAR|FARDO|PCT|PACOTE)\b/i.test(newName))
         return {ok:false,status:409,error:"xml_identity_commercial_unit_name_required"};
     }
     // R21: never perform multi-table catalog writes from this Edge function.
