@@ -63,3 +63,7 @@ assert.match(identity,/newName\.length<3/,'API requires new commercial name');
 assert.match(identity,/xml_identity_commercial_unit_name_required/,'API rejects invalid names');
 assert.match(identity,/PCT\|PACOTE\)\\b\/i\.test\(newName\)/,'API blocks supplier packaging prefix');
 console.log('PASS R2: new product name validation enforced at API boundary');
+
+assert.match(dispatch,/if\(action==="xml_field_apply_commit"\)return js\(req,\{ok:false,error:"existing_product_name_preserved"\},409\)/,'legacy XML rename is blocked');
+assert.match(dispatch,/"xml_field_apply_commit","xml_field_apply_rollback"\]\.includes\(action\)/,'rollback remains available');
+console.log('PASS R2: existing names cannot be overwritten by legacy XML apply');
