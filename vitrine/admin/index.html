@@ -5916,27 +5916,8 @@
       return false;
     }
   }
-  async function approveSafeCatalogItems(){
-    toast('Aprovação em massa de custo/preço desativada: revise cada produto e confirme alterações explicitamente.');
-    return;
-    const items=(state.purchaseCatalogQueue?.items||[]).filter(x=>x?.flags?.safe_to_approve&&x?.flags?.needs_approval&&!x?.flags?.approved);
-    if(!items.length){toast('Nenhum produto seguro aguardando aprovação');return}
-    if(!confirm('Autorizar '+items.length+' produto(s) seguros dos últimos 31 dias?\n\nO custo será atualizado pelo custo unitário da NF-e. O preço só será alterado quando estiver abaixo da sugestão mínima de 40%. O estoque não será alterado.'))return;
-    const operator=requireOperator();if(!operator)return;
-    const b=$('#purchaseCatalogApproveSafe');if(b){b.disabled=true;b.textContent='Aprovando 0 / '+items.length}
-    let ok=0,fail=0;
-    for(let i=0;i<items.length;i++){
-      const x=items[i],p=x.pricing_preview||{},factor=Number(p.suggested_conversion_factor||x.conversion_factor||1),sale=Number(p.recommended_sale_price??x?.products?.price??p.suggested_sale_price??0);
-      try{
-        await purchaseApi('apply_item_update',{item_id:x.id,conversion_factor:factor,sale_price:sale,update_cost:true,update_sale_price:Boolean(p.update_sale_recommended),operator_name:operator});
-        ok++;
-      }catch(e){fail++}
-      if(b)b.textContent='Aprovando '+(i+1)+' / '+items.length;
-    }
-    toast(ok+' produto(s) aprovado(s)'+(fail?' · '+fail+' falha(s)':''));
-    state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
-    state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
-    paintPurchases();
+  function approveSafeCatalogItems(){
+    toast('Aprovação em massa indisponível na R2. Revise cada produto individualmente.');
   }
   function paintPurchaseCatalogList(){
     const host=$('#purchaseCatalogList');if(!host)return;
@@ -5951,7 +5932,7 @@
     const pending=Number(counts.ready_for_approval||0)+Number(counts.needs_review||0);
     return '<section class="panel purchase-catalog-panel">'+
       '<div class="history-title dispatch-head"><div><strong>3. Produtos recebidos · últimos 31 dias</strong><span>Fila única para cadastrar, conferir e aprovar produtos sem abrir NF-e por NF-e.</span></div><b id="purchaseCatalogVisibleCount">'+esc(purchaseCatalogFilteredItems().length)+'</b></div>'+
-      '<div class="purchase-catalog-toolbar"><div class="purchase-catalog-search"><input id="purchaseCatalogSearch" type="search" placeholder="Buscar produto, EAN, fornecedor, NF ou NCM" value="'+esc(state.purchaseCatalogSearch||'')+'"></div><button class="primary" id="purchaseCatalogApproveSafe" type="button" '+(!Number(counts.ready_for_approval||0)?'disabled':'')+'>Autorizar seguros ('+esc(counts.ready_for_approval||0)+')</button></div>'+
+      '<div class="purchase-catalog-toolbar"><div class="purchase-catalog-search"><input id="purchaseCatalogSearch" type="search" placeholder="Buscar produto, EAN, fornecedor, NF ou NCM" value="'+esc(state.purchaseCatalogSearch||'')+'"></div><button class="secondary" id="purchaseCatalogApproveSafe" type="button" disabled title="Aprovação em massa será implementada com confirmação individual na R4">Em lote: indisponível na R2</button></div>'+
       '<div class="purchase-catalog-filters">'+filters.map(([key,label])=>'<button type="button" class="'+(filter===key?'active':'')+'" data-catalog-filter="'+key+'">'+label+'</button>').join('')+'</div>'+
       '<div class="purchase-catalog-summary"><span><b>'+esc(counts.total||0)+'</b> produtos</span><span><b>'+esc(counts.new_products||0)+'</b> novos</span><span><b>'+esc(counts.existing_products||0)+'</b> existentes</span><span><b>'+esc(counts.ready_for_approval||0)+'</b> prontos</span><span><b>'+esc(counts.needs_review||0)+'</b> revisar</span><span><b>'+esc(counts.approved||0)+'</b> aprovados</span><span><b>'+esc(pending)+'</b> pendências operacionais</span></div>'+
       '<div class="purchase-catalog-list" id="purchaseCatalogList">'+purchaseCatalogListHtml()+'</div>'+
