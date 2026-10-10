@@ -498,6 +498,13 @@ async function resolvePurchaseItemIdentity(body:any,userId:string|null){
   const item:any=q.data,doc:any=item.purchase_xml_documents,role=clean(body?.gtin_role,30),createNew=body?.create_new===true;
   const catalogEvidenceOnly=body?.catalog_evidence_only===true;
   if(catalogEvidenceOnly){
+    // New catalog identities must have a human-reviewed commercial unit name.
+    // Do not fall back to supplier XML descriptions, including on direct API calls.
+    if(createNew){
+      const newName=clean(body?.proposed_name,300).trim();
+      if(newName.length<3||/^(?:CX|CAIXA|FD|FDO|FAR|FARDO|PCT|PACOTE)\\b/i.test(newName))
+        return {ok:false,status:409,error:"xml_identity_commercial_unit_name_required"};
+    }
     // R21: never perform multi-table catalog writes from this Edge function.
     // PostgreSQL owns the transaction and rejects race, fiscal, lot and stock effects.
     if(!userId||body?.confirmation!==(createNew?"CRIAR_INATIVO_XML":"VINCULAR_ITEM_XML"))
