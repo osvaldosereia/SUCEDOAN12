@@ -81,3 +81,12 @@ console.log('PASS R2: failed document insert cleans newly uploaded storage objec
 
 assert.doesNotMatch(ui,/await purchaseApi\('apply_item_update',[\s\S]{0,200}update_cost:true,update_sale_price:Boolean\(p\.update_sale_recommended\)/,
   'unreachable bulk repricing loop must be removed');
+
+const conversionStart=src.indexOf('async function setConversion(');
+const conversionEnd=src.indexOf('async function applyItemUpdate(',conversionStart);
+const conversionHandler=src.slice(conversionStart,conversionEnd);
+assert.match(conversionHandler,/Number\.isInteger\(factor\)/,'manual conversion rejects fractional factor');
+assert.match(conversionHandler,/unit_purchase_factor_must_be_one/,'manual conversion cannot multiply UN');
+assert.match(dispatch,/if\(action==="set_conversion"\)\{if\(a\.internal\|\|!\["owner","admin"\]\.includes\(a\.role\)\)/,
+  'manual conversion restricted to human owner/admin');
+console.log('PASS R2: conversion edit permissions and integer unit validation');
