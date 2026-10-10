@@ -1,9 +1,7 @@
 \set ON_ERROR_STOP on
--- R26 integration contract: disposable PostgreSQL 17 ONLY, never run against production.
--- Run as postgres in a fresh database. Loads the exact committed R23 then R24 migrations.
-create role anon nologin;
-create role authenticated nologin;
-create role service_role nologin bypassrls;
+-- R2 identity-only test: disposable PostgreSQL 17 database, never production.
+-- Roles are cluster-global: the R26 fixture already creates them in the same CI service.
+-- Keep separate databases and reuse the cluster roles.
 grant usage on schema public to anon,authenticated,service_role;
 
 create table public.admin_users (
