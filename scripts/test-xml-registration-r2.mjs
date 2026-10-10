@@ -49,7 +49,7 @@ const ui=readFileSync('vitrine/admin/index.html','utf8');
 assert.doesNotMatch(ui,/data-catalog-update-cost checked>/,'cost checkbox cannot be checked by default');
 assert.match(ui,/if\(saleCheck\)saleCheck\.checked=false/,'retail price checkbox cannot auto-check');
 assert.match(ui,/Produto existente: o nome cadastrado deve permanecer igual/,'existing product name protected in UI');
-assert.match(ui,/Aprovação em massa de custo\/preço desativada/,'unsafe bulk repricing disabled');
+assert.match(ui,/id="purchaseCatalogApproveSafe" type="button" disabled/,'unsafe bulk repricing disabled in UI');
 console.log('PASS R2: UI name, price and cost safeguards');
 
 assert.match(ui,/id="xmlDetailNewName"[^>]*value="" placeholder="Nome comercial por unidade/,'new commercial name must be manually entered');
@@ -78,3 +78,6 @@ console.log('PASS R2: integer factors, UN=1 and arithmetic examples');
 assert.match(catalog,/if\(inserted\.error\)\{[\s\S]*?storage\.from\("purchase-xml"\)\.remove\(\[path\]\)/,
   'newly uploaded XML object is cleaned up if DB insert fails');
 console.log('PASS R2: failed document insert cleans newly uploaded storage object');
+
+assert.doesNotMatch(ui,/await purchaseApi\('apply_item_update',[\s\S]{0,200}update_cost:true,update_sale_price:Boolean\(p\.update_sale_recommended\)/,
+  'unreachable bulk repricing loop must be removed');
