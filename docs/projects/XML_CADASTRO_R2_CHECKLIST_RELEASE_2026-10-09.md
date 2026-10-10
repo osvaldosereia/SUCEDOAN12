@@ -23,3 +23,9 @@
 - Se qualquer etapa falhar, bloquear release e registrar evidência.
 
 **R3 bloqueada até todos os gates acima.**
+
+## Continuação desta rodada
+- Commit `5abe25c`: ao falhar a gravação do documento no banco, remove exclusivamente o XML que acabou de ser carregado no Storage para evitar objeto órfão; erro de limpeza fica registrado em log.
+- Commit `2ceba1a`: adiciona regressão de fonte para limpeza de objeto órfão.
+- Limitação de ferramenta: conexão GitHub disponível neste chat não oferece disparo de workflow; não há clone local com dependências nem sessão autenticada no Admin. Sem execução de CI, sem deploy seguro.
+- **Próxima execução obrigatória:** disparar CI do PR #1034, corrigir falhas até ficar verde, homologar R23/R24 em PostgreSQL descartável, revisar schema remoto e histórico de migrações, aplicar migrações seletivas e validar ACL/RLS, publicar Edge/Admin, fazer smoke autenticado. Não iniciar R3 antes.
