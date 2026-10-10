@@ -68,7 +68,7 @@ Deno.serve(async(req:Request)=>{
   if(!row)return json(req,{ok:false,error:"not_found"},404);
 
   const orderId=String(row.order_id||"");
-  const current=await db.from("orders").select("status,updated_at,whatsapp_account_id").eq("id",orderId).maybeSingle();
+  const current=await db.from("orders").select("status,updated_at,whatsapp_account_id,phone_e164").eq("id",orderId).maybeSingle();
   if(current.error)return json(req,{ok:false,error:"order_unavailable"},503);
   const channel=await channelOrigin(orderId,current.data?.whatsapp_account_id);
 
@@ -81,6 +81,7 @@ Deno.serve(async(req:Request)=>{
   delete snapshot.order_id;
   delete snapshot.order_number;
   snapshot.order_code=row.public_code;
+  snapshot.customer_phone=String(current.data?.phone_e164||"").trim();
 
   return json(req,{
     ok:true,
