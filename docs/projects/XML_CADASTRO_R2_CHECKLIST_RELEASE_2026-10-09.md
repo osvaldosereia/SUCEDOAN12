@@ -41,3 +41,9 @@
 - Corrigida autorização da ação `apply_item_update` para proprietário/admin humano (commit `0dcc6f7`, teste `b58b458`). Anteriormente um viewer poderia chegar à mutação via dispatcher.
 - Workflow atualizado para disparar também em push na branch de integração (commit `cc3d8a2`), além do gatilho PR existente. **O conector de consulta retorna apenas runs associados a pull requests; resposta vazia não demonstra ausência de push runs.** Consultar GitHub Actions diretamente antes de afirmar CI verde.
 - Continua proibido marcar R2 como concluída sem CI real, banco de teste e implantação verificada.
+
+## Diagnóstico de ambiente — 10/10/2026
+- Supabase branch de QA `da6-qa-20261009` (`jxfxyqcpxoykdxbapswi`) existe mas está `MIGRATIONS_FAILED`, e `purchase_xml_items` não existe nessa branch. Portanto **não usar como homologação R2**.
+- Produção canônica `ssbesxgaijknwsjbsbcz` possui `purchase_xml_items`, `purchase_xml_documents`, `products`, `admin_users`, `product_identifiers` e view `purchase_xml_catalog_observation_details_v2`; colunas essenciais de R23 confirmadas via `information_schema`. Isso NÃO comprova migração segura.
+- Migração R23 `20261009185312_purchase_xml_identity_atomic_r27.sql` cria RPC de decisão atômica e tabela de auditoria, ainda ausentes na produção. A migração declara expressamente pendência de revisão Auth/RLS. R24 contém operações de revisão e aplicação de campos que não devem renomear produto existente na R2.
+- Próxima ação bloqueante: provisionar QA **com schema compatível** (não branch de migrations quebradas), rodar fixture de PostgreSQL e Auth/RLS, depois aprovar migração seletiva. Sem isso não executar DDL em produção.
