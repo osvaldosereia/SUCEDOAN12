@@ -54,3 +54,6 @@
 - CI passa a rodar esse fixture em um **segundo banco descartável isolado** (commit `a119728`). O teste legado R26 continua apenas como regressão histórica, NÃO é autorização para publicar R24.
 - **Decisão de arquitetura:** R2 deve liberar apenas identidade R23; R24 de aplicação de campo/nome está fora da R2 até remoção formal do caminho de renomeação e novos testes. Nunca aplicar R24 diretamente em produção sob a justificativa de concluir R2.
 - Gates ainda não comprovados: execução do CI, Auth/RLS real, migração seletiva com numeração acima da cabeça remota, Edge/Admin autenticados e smoke test.
+
+## Execução CI solicitada — 10/10/2026
+- Novo push nesta branch para acionar workflow XML R28 (gatilho push da branch). Conferir a execução do commit e os jobs consolidated-admin-fiscal, both-xml-backends, combined-disposable-db antes de liberar R23.
