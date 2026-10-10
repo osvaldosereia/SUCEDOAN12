@@ -36,3 +36,8 @@
 - Inspeção de código em GitHub: regex de proteção, importação Bling sem `processXml`, limpeza de Storage e botão desabilitado encontrados; **verificação estática não substitui executar Node/Deno/PG**.
 - Consulta ao GitHub Actions para SHA `ae0649e`: zero execuções retornadas. Sem homologação integrada e sem deploy.
 - **Próxima rodada obrigatória:** obter execução CI (ou ambiente local completo), corrigir qualquer falha Node/Deno/PG; validar migrations R23/R24 em banco descartável e só depois liberar aplicação seletiva em produção com verificação de permissões. Em seguida publicar Admin e Edge e executar smoke autenticado. R3 continua bloqueada.
+
+## Revisão crítica adicional — 10/10/2026
+- Corrigida autorização da ação `apply_item_update` para proprietário/admin humano (commit `0dcc6f7`, teste `b58b458`). Anteriormente um viewer poderia chegar à mutação via dispatcher.
+- Workflow atualizado para disparar também em push na branch de integração (commit `cc3d8a2`), além do gatilho PR existente. **O conector de consulta retorna apenas runs associados a pull requests; resposta vazia não demonstra ausência de push runs.** Consultar GitHub Actions diretamente antes de afirmar CI verde.
+- Continua proibido marcar R2 como concluída sem CI real, banco de teste e implantação verificada.
