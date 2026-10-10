@@ -6373,7 +6373,7 @@
        needsManualUnitReview?'<div class="purchase-safe purchase-danger" style="margin-top:10px"><strong>Conferência de EAN/unidade necessária</strong>'+
        '<small>Este XML não possui código de barras numérico ou utiliza unidade de peso/volume. Para não converter quilos em unidades ou associar códigos incorretos, faça a identificação na revisão operacional de Compras/XML. O item já está preservado no catálogo.</small></div>':
        '<div class="purchase-safe" style="margin-top:12px"><strong>Vincular ou cadastrar este item</strong>'+
-        '<small>Confirme o que representa o EAN e a conversão da embalagem; nenhuma ação modifica estoque ou preço.</small>'+
+        '<small>EAN da unidade e EAN da embalagem são independentes da unidade de compra (CX, FD, PC, UN). Informe o que o EAN realmente identifica; a embalagem de compra será revisada separadamente. Não altera estoque nem preço.</small>'+
         '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
         '<label>EAN de origem<select id="xmlDetailGtinSource"><option value="">Escolha o EAN…</option>'+
         (typeof active.commercial_gtin==='string'&&/^\d{8,14}$/.test(active.commercial_gtin)?
@@ -6483,9 +6483,7 @@
     if(!['commercial','tax'].includes(gtinSource)){
       toast('Escolha explicitamente o EAN comercial ou tributável da NF-e');return}
     if(!['base_unit','package'].includes(role)){toast('Defina se o EAN é da unidade ou da embalagem');return}
-    if(/^(CX|FD|FAR|FARDO|CAIXA|FDO)$/.test(unit)&&role!=='package'){
-      toast('A NF-e usa caixa/fardo: confirme a quantidade de unidades e selecione Embalagem');return;
-    }
+    // A unidade de compra (CX/FD/PC) não define o tipo do EAN: o EAN da unidade é válido mesmo em nota por caixa.
     if(!Number.isInteger(factor)||factor<1||factor>100000||
        (role==='base_unit'&&factor!==1)||(role==='package'&&factor<=1)){
       toast('EAN individual = 1; somente EAN de caixa/fardo exige mais de 1 unidade');return}
