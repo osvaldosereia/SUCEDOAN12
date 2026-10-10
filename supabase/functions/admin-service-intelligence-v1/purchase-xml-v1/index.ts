@@ -1393,7 +1393,7 @@ async function persistXmlCatalogEvidence(documentId:string,documentKey:string,xm
       return parsed;
 }
 // Manual XML catalog-only ingestion. Does not call OAuth, Bling or product mutations.
-// Existing operational manual_import action remains unchanged.
+// Legacy manual_import is routed here by the dispatcher; no operational writes.
 async function manualCatalogOnlyImport(input:any,options:{source?:string;runId?:string}={}){
   const files=Array.isArray(input)?input:[];
   if(!files.length||files.length>10)return {ok:false,status:400,error:"catalog_xml_1_to_10_files_required"};
@@ -1454,7 +1454,13 @@ async function manualCatalogOnlyImport(input:any,options:{source?:string;runId?:
         metadata:{catalog_only:true,invoice_number:original.invoice_number,
           series:original.series,catalog_imported_at:new Date().toISOString()}
       }).select("id").single();
-      if(inserted.error)throw inserted.error;
+      if(inserted.error){
+        // This request created the storage object, but no DB document owns it.
+        // Remove only that new object so a corrected retry is not blocked.
+        const cleanup=await sb.storage.from("purchase-xml").remove([path]);
+        if(cleanup.error)console.error("xml_catalog_orphan_cleanup_failed",cleanup.error.message);
+        throw inserted.error;
+      }
       const replay=await xmlCatalogReprocess({document_id:inserted.data.id});
       if(!replay.results?.[0]?.ok)
         throw new Error(replay.results?.[0]?.error||"catalog_recovery_pending");
