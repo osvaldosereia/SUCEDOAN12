@@ -90,3 +90,7 @@ assert.match(conversionHandler,/unit_purchase_factor_must_be_one/,'manual conver
 assert.match(dispatch,/if\(action==="set_conversion"\)\{if\(a\.internal\|\|!\["owner","admin"\]\.includes\(a\.role\)\)/,
   'manual conversion restricted to human owner/admin');
 console.log('PASS R2: conversion edit permissions and integer unit validation');
+
+assert.match(dispatch,/if\(action==="apply_item_update"\)\{if\(a\.internal\|\|!\["owner","admin"\]\.includes\(a\.role\)\)/,
+  'catalog product updates require human owner/admin');
+console.log('PASS R2: existing product writes restricted to owner/admin');
