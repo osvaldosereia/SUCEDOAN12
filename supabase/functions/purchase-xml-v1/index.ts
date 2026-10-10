@@ -515,11 +515,18 @@ async function resolvePurchaseItemIdentity(body:any,userId:string|null){
     if(typeof rawFactor!=="number"||!Number.isInteger(rawFactor)||
        rawFactor<1||rawFactor>100000)
       return {ok:false,status:409,error:"xml_identity_factor_invalid"};
-    const r=await sb.rpc("purchase_xml_resolve_catalog_identity_v1",{
+    // Supplier purchase packs are review evidence only. The base-unit EAN factor stays 1.
+    const purchasePack=body?.purchase_pack_units_for_review??null;
+    if(purchasePack!==null&&
+       (role!=="base_unit"||!Number.isInteger(purchasePack)||
+        purchasePack<1||purchasePack>100000))
+      return {ok:false,status:409,error:"xml_identity_purchase_pack_units_invalid"};
+    const r=await sb.rpc("purchase_xml_resolve_catalog_identity_v2",{
       p_item_id:id,p_product_id:createNew?null:body?.product_id||null,
       p_create_new:createNew,p_proposed_name:createNew?clean(body?.proposed_name,300):null,
       p_gtin_source:body.gtin_source,p_gtin_role:role,p_conversion_factor:rawFactor,
-      p_actor_id:userId,p_confirmation:body.confirmation
+      p_actor_id:userId,p_confirmation:body.confirmation,
+      p_purchase_pack_units_for_review:purchasePack
     });
     if(r.error){
       const code=String(r.error.message||"").match(/xml_identity_[a-z_]+/);
