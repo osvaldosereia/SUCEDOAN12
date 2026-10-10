@@ -1,5 +1,7 @@
 name: XML R28 Final Fiscal Integration
 on:
+  push:
+    branches: ['agent/xml-catalog-final-integration-r28-20261009']
   pull_request:
     branches: [main]
     paths:
