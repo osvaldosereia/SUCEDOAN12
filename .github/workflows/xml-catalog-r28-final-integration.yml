@@ -25,6 +25,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify checked-out commit and XML fixture integrity
+        run: |
+          set -eu
+          echo "GitHub event SHA: $GITHUB_SHA"
+          echo "Checked out HEAD: $(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          cmp supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
+          if grep -Eq '^[[:space:]]*create role (anon|authenticated|service_role)' scripts/test-xml-identity-r2.pg.sql; then
+            echo "ERROR: R2 fixture recreates cluster-global roles"
+            exit 1
+          fi
+          grep -Fq 'manualCatalogOnlyImport(input:any,options:' supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts
+          grep -Fq 'manualCatalogOnlyImport(input,options={})' scripts/test-xml-ingest-integrity-r19.mjs
+          echo "PASS: exact commit, mirrored XML backends, role-safe R2 fixture and current harness"
+
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Validate combined XML/Admin/quote/NF-e and WhatsApp public view
@@ -50,6 +65,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify checked-out commit and XML fixture integrity
+        run: |
+          set -eu
+          echo "GitHub event SHA: $GITHUB_SHA"
+          echo "Checked out HEAD: $(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          cmp supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
+          if grep -Eq '^[[:space:]]*create role (anon|authenticated|service_role)' scripts/test-xml-identity-r2.pg.sql; then
+            echo "ERROR: R2 fixture recreates cluster-global roles"
+            exit 1
+          fi
+          grep -Fq 'manualCatalogOnlyImport(input:any,options:' supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts
+          grep -Fq 'manualCatalogOnlyImport(input,options={})' scripts/test-xml-ingest-integrity-r19.mjs
+          echo "PASS: exact commit, mirrored XML backends, role-safe R2 fixture and current harness"
+
       - uses: denoland/setup-deno@v2
         with: {deno-version: v2.x}
       - name: Run typecheck and real XML import parser without remote data
@@ -78,6 +108,21 @@ jobs:
       PGDATABASE: postgres
     steps:
       - uses: actions/checkout@v4
+      - name: Verify checked-out commit and XML fixture integrity
+        run: |
+          set -eu
+          echo "GitHub event SHA: $GITHUB_SHA"
+          echo "Checked out HEAD: $(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          cmp supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts supabase/functions/purchase-xml-v1/index.ts
+          if grep -Eq '^[[:space:]]*create role (anon|authenticated|service_role)' scripts/test-xml-identity-r2.pg.sql; then
+            echo "ERROR: R2 fixture recreates cluster-global roles"
+            exit 1
+          fi
+          grep -Fq 'manualCatalogOnlyImport(input:any,options:' supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts
+          grep -Fq 'manualCatalogOnlyImport(input,options={})' scripts/test-xml-ingest-integrity-r19.mjs
+          echo "PASS: exact commit, mirrored XML backends, role-safe R2 fixture and current harness"
+
       - name: Test R27 XML identity → review → apply → CAS rollback with true lot trigger fixture
         run: |
           set -eu
