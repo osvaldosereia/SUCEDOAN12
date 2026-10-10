@@ -6555,7 +6555,7 @@
         (chosen?'<small style="display:block;margin:8px 0">Produto escolhido: <b>'+esc(chosen.name)+'</b></small>':'')+
         '<button id="xmlDetailLink" type="button" class="secondary" '+(!chosen?'disabled':'')+'>Vincular somente esta linha</button>'+
         '<div style="margin-top:12px"><label>Novo produto (inativo)<input id="xmlDetailNewName" type="text" maxlength="250" style="width:100%" value="'+
-         esc(active.xml_description||c.display_name||'')+'"></label>'+
+         ''+' " placeholder="Nome comercial por unidade, sem CX/FD/FARDO"></label>'+
         '<button id="xmlDetailCreate" type="button" class="secondary">Cadastrar produto inativo</button></div>'+
         '</div>')+
       '<small class="sub">Dados fiscais são evidências do fornecedor e precisam de validação. Não há lançamento de estoque nesta ficha.</small>';
@@ -6841,6 +6841,9 @@
     if(!createNew&&!chosen?.id){toast('Escolha um produto existente');return}
     const name=createNew?String($('#xmlDetailNewName')?.value||'').trim():String(chosen.name||'').trim();
     if(!name){toast('Informe o nome do produto');return}
+    if(createNew&&/^(?:CX|CX\\.|CAIXA|FD|FDO|FARDO|FAR|PCT|PACOTE)\\b/i.test(name)){
+      toast('Escreva o nome comercial da unidade, sem prefixo de caixa/fardo');return;
+    }
     const msg=createNew?
       'Criar produto INATIVO com estoque zero? Os dados fiscais continuarão em revisão.':
       'Vincular SOMENTE esta linha da NF-e ao produto '+name+'? O nome atual será preservado. Não haverá alteração de estoque ou preço.';
