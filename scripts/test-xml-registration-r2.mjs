@@ -51,3 +51,7 @@ assert.match(ui,/if\(saleCheck\)saleCheck\.checked=false/,'retail price checkbox
 assert.match(ui,/Produto existente: o nome cadastrado deve permanecer igual/,'existing product name protected in UI');
 assert.match(ui,/Aprovação em massa de custo\/preço desativada/,'unsafe bulk repricing disabled');
 console.log('PASS R2: UI name, price and cost safeguards');
+
+assert.match(ui,/id="xmlDetailNewName"[^>]*value="" placeholder="Nome comercial por unidade/,'new commercial name must be manually entered');
+assert.match(ui,/if\(createNew&&\/\^\(\?:CX/,'packaging prefix must be rejected for new name');
+console.log('PASS R2: new product name is not prefilled from supplier XML');
