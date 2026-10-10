@@ -1933,7 +1933,7 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="document"){const r=await docDetail(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="xml_url"){const r=await signedXml(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="set_conversion"){if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);const r=await setConversion(body);return js(req,r,r.ok?200:Number(r.status||400))}
-    if(action==="apply_item_update"){if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);const r=await applyItemUpdate(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
+    if(action==="apply_item_update"){if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);const r=await applyItemUpdate(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="save_receipt_lots"){
       if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
       if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
