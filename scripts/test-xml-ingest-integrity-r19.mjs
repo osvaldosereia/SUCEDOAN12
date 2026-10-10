@@ -78,7 +78,7 @@ assert.throws(()=>assertExistingXmlDigest("invalid",digest),/existing_nfe_key_ha
 // Execute the actual catalog-only entrypoint with injected non-network DB/storage mocks.
 // No Bling OAuth, real customer XML, service-role key, finance, product or stock operations.
 const compile=manual
- .replace("async function manualCatalogOnlyImport(input:any)","async function manualCatalogOnlyImport(input)")
+ .replace("async function manualCatalogOnlyImport(input:any,options:{source?:string;runId?:string}={})","async function manualCatalogOnlyImport(input,options={})")
  .replace("const results:any[]=","const results=")
  .replaceAll("(e as Error)","e");
 assert.doesNotMatch(compile,/(?:\w+):(?:any|string|number)\b/);
