@@ -94,3 +94,11 @@ console.log('PASS R2: conversion edit permissions and integer unit validation');
 assert.match(dispatch,/if\(action==="apply_item_update"\)\{if\(a\.internal\|\|!\["owner","admin"\]\.includes\(a\.role\)\)/,
   'catalog product updates require human owner/admin');
 console.log('PASS R2: existing product writes restricted to owner/admin');
+
+assert.match(dispatch,/if\(action==="bling_sync"\)\{if\(a\.internal\|\|!\["owner","admin"\]\.includes\(a\.role\)\)/,
+  'Bling manual sync requires human owner/admin');
+assert.match(dispatch,/if\(action==="manual_import"\)\{[\s\S]{0,130}!\["owner","admin"\]\.includes\(a\.role\)/,
+  'legacy manual XML import requires human owner/admin');
+assert.match(dispatch,/if\(action==="xml_catalog_only_import"\)\{[\s\S]{0,130}!\["owner","admin"\]\.includes\(a\.role\)/,
+  'catalog-only import requires human owner/admin');
+console.log('PASS R2: XML imports and Bling sync restricted to owner/admin');
