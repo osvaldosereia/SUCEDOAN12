@@ -1,0 +1,20 @@
+name: XML R29 UI safety
+on:
+  push:
+    branches: ['agent/xml-r29-admin-unit-pack-release-20261010']
+  pull_request:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-xml-unit-pack-ui-r29.mjs'
+      - '.github/workflows/xml-r29-unit-pack-ui-ci.yml'
+permissions:
+  contents: read
+jobs:
+  unit-pack-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node scripts/test-xml-unit-pack-ui-r29.mjs
