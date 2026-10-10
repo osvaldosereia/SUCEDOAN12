@@ -55,3 +55,11 @@ console.log('PASS R2: UI name, price and cost safeguards');
 assert.match(ui,/id="xmlDetailNewName"[^>]*value="" placeholder="Nome comercial por unidade/,'new commercial name must be manually entered');
 assert.match(ui,/if\(createNew&&\/\^\(\?:CX/,'packaging prefix must be rejected for new name');
 console.log('PASS R2: new product name is not prefilled from supplier XML');
+
+const identityStart=src.indexOf('async function resolvePurchaseItemIdentity(');
+const identityEnd=src.indexOf('async function ',identityStart+15);
+const identity=src.slice(identityStart,identityEnd);
+assert.match(identity,/newName\.length<3/,'API requires new commercial name');
+assert.match(identity,/xml_identity_commercial_unit_name_required/,'API rejects invalid names');
+assert.match(identity,/PCT\|PACOTE\)\\b\/i\.test\(newName\)/,'API blocks supplier packaging prefix');
+console.log('PASS R2: new product name validation enforced at API boundary');
