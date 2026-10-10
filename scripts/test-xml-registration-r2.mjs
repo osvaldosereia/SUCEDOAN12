@@ -74,3 +74,7 @@ const converted=(cases,units,net)=>({quantity:cases*units,unitCost:net/(cases*un
 assert.deepEqual(converted(10,12,240),{quantity:120,unitCost:2},'10 CX of 12 = 120 UN and R$2/UN');
 assert.deepEqual(converted(3,1,45),{quantity:3,unitCost:15},'3 UN remains 3 UN');
 console.log('PASS R2: integer factors, UN=1 and arithmetic examples');
+
+assert.match(catalog,/if\(inserted\.error\)\{[\s\S]*?storage\.from\("purchase-xml"\)\.remove\(\[path\]\)/,
+  'newly uploaded XML object is cleaned up if DB insert fails');
+console.log('PASS R2: failed document insert cleans newly uploaded storage object');
