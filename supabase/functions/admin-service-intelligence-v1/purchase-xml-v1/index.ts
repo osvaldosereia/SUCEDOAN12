@@ -1837,10 +1837,10 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
       const sync=await runBlingSync("bling_daily");
       return js(req,{...sync,finance_skipped:true,reason:"xml_catalog_only_no_financial_mutations"});
     }
-    if(action==="bling_sync")return js(req,await runBlingSync("bling_manual",body));
+    if(action==="bling_sync"){if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);return js(req,await runBlingSync("bling_manual",body))}
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
     if(action==="manual_import"){
-      if(a.internal||a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);
       const files=Array.isArray(body?.files)?body.files:[];
       // Compatibility action now shares the same safe ingestion as the catalog tab.
       // Admin uploads >10 are chunked client-side, avoiding oversized Edge requests.
@@ -1849,7 +1849,7 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     }
     if(action==="catalog_queue")return js(req,await catalogQueue(body));
     if(action==="xml_catalog_only_import"){
-      if(a.internal||a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);
       const result=await manualCatalogOnlyImport(body?.files);return js(req,result,result.ok?200:Number(result.status||400));
     }
     if(action==="xml_catalog_list")return js(req,await xmlCatalogList(body));
