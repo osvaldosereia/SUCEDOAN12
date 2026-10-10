@@ -1775,6 +1775,10 @@ async function applyItemUpdate(body:any,userId:string|null){
   if(!Number.isFinite(factor)||factor<=0)factor=pack.packaged?0:1;
   if(pack.packaged&&factor<=1)return {ok:false,status:409,error:"packaging_factor_must_be_greater_than_one"};
   if(factor<1||factor>100000)return {ok:false,status:400,error:"invalid_conversion"};
+  if(!Number.isInteger(factor))return {ok:false,status:400,error:"conversion_must_be_integer"};
+  const purchaseUnit=unit(item.purchase_unit);
+  if(["UN","UND","UNID","UNIDADE","PC","PÇ"].includes(purchaseUnit)&&factor!==1)
+    return {ok:false,status:409,error:"unit_purchase_factor_must_be_one"};
   const proposedName=clean(body?.proposed_name,300);
   if(proposedName&&proposedName!==String(product.name||""))
     return {ok:false,status:409,error:"existing_product_name_preserved"};
