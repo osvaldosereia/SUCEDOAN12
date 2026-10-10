@@ -1876,6 +1876,9 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
       return js(req,r,r.ok?200:Number(r.status||400));
     }
     // R24: only explicit owner/admin commands can preview/apply/rollback NAME on inactive products.
+    // R2 contract: supplier XML never authorizes renaming an existing product.
+    // Keep rollback available to undo previously applied changes.
+    if(action==="xml_field_apply_commit")return js(req,{ok:false,error:"existing_product_name_preserved"},409);
     if(["xml_field_apply_list","xml_field_apply_preview",
         "xml_field_apply_commit","xml_field_apply_rollback"].includes(action)){
       const r=await xmlFieldApplyGateway(sb,action,body,a);
