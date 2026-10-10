@@ -29,3 +29,10 @@
 - Commit `2ceba1a`: adiciona regressão de fonte para limpeza de objeto órfão.
 - Limitação de ferramenta: conexão GitHub disponível neste chat não oferece disparo de workflow; não há clone local com dependências nem sessão autenticada no Admin. Sem execução de CI, sem deploy seguro.
 - **Próxima execução obrigatória:** disparar CI do PR #1034, corrigir falhas até ficar verde, homologar R23/R24 em PostgreSQL descartável, revisar schema remoto e histórico de migrações, aplicar migrações seletivas e validar ACL/RLS, publicar Edge/Admin, fazer smoke autenticado. Não iniciar R3 antes.
+
+## Rodada seguinte (10/10/2026)
+- `45a8ebd`: botão de aprovação em massa explicitamente desabilitado e remoção do código morto que alterava custo e preço em lote.
+- `ae0649e`: teste ajustado para exigir botão desabilitado e ausência do loop de alteração comercial.
+- Inspeção de código em GitHub: regex de proteção, importação Bling sem `processXml`, limpeza de Storage e botão desabilitado encontrados; **verificação estática não substitui executar Node/Deno/PG**.
+- Consulta ao GitHub Actions para SHA `ae0649e`: zero execuções retornadas. Sem homologação integrada e sem deploy.
+- **Próxima rodada obrigatória:** obter execução CI (ou ambiente local completo), corrigir qualquer falha Node/Deno/PG; validar migrations R23/R24 em banco descartável e só depois liberar aplicação seletiva em produção com verificação de permissões. Em seguida publicar Admin e Edge e executar smoke autenticado. R3 continua bloqueada.
