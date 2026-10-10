@@ -6,29 +6,64 @@ on:
       - 'supabase/functions/_shared/whatsapp-meta-*.mjs'
       - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
       - 'supabase/functions/_shared/ana-policy-v1.mjs'
+      - 'supabase/functions/_shared/ana-live-policy-v1.mjs'
       - 'supabase/functions/whatsapp-ana-worker-v1/**'
+      - 'supabase/functions/whatsapp-marketing-worker-v1/**'
       - 'supabase/functions/admin-whatsapp-ana-preview-v1/**'
       - 'supabase/functions/whatsapp-meta-webhook-v1/**'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
+      - 'supabase/functions/admin-marketing-audiences-v1/**'
+      - 'supabase/functions/admin-marketing-campaigns-v1/**'
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/migrations/20261007202921_smart_delivery_admin_runtime_v1.sql'
+      - 'scripts/test-smart-delivery-admin-runtime-v1.mjs'
+      - 'scripts/test-smart-delivery-admin-ui-v1.mjs'
+      - 'vitrine/admin/basket-lot-image.js'
+      - 'vitrine/admin/marketing/**'
       - 'vitrine/admin/atendimento/**'
       - 'supabase/sql/20261002_admin_attendance_provider_neutral_v3.sql'
       - 'supabase/sql/20261002_whatsapp_meta_canonical_outbound_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_v1.sql'
       - 'supabase/sql/20261002_admin_attendance_meta_template_send_fix_v2.sql'
+      - 'supabase/sql/20261003_admin_attendance_human_ai_state_v1.sql'
       - 'supabase/sql/20261003_admin_attendance_meta_media_send_v1.sql'
       - 'supabase/sql/20261003_admin_attendance_meta_media_safety_v2.sql'
       - 'supabase/sql/20261003_admin_attendance_meta_media_gate_v3.sql'
       - 'supabase/sql/20261004_admin_attendance_meta_media_live_v1.sql'
-      - 'supabase/sql/20261003_attendance_human_ai_state_v1.sql'
+      - 'supabase/sql/20261004_admin_attendance_meta_media_readiness_compat_v2.sql'
+      - 'supabase/sql/20261004_whatsapp_template_events_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_jobs_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_admin_preview_v1.sql'
       - 'supabase/sql/20261003_whatsapp_ana_preview_stale_claim_recovery_v3.sql'
       - 'supabase/sql/20261003_whatsapp_ana_review_observability_v4.sql'
       - 'supabase/sql/20261003_whatsapp_meta_shadow_media_preserve_v1.sql'
+      - 'supabase/migrations/20261004233000_marketing_consent_ledger_v1.sql'
+      - 'supabase/migrations/20261004234500_marketing_audience_preview_v1.sql'
+      - 'supabase/migrations/20261005002000_marketing_audience_candidates_v2.sql'
+      - 'supabase/migrations/20261005004000_marketing_campaign_drafts_v1.sql'
+      - 'supabase/migrations/20261005014000_marketing_campaign_execution_v1.sql'
+      - 'supabase/migrations/20261005018000_marketing_campaign_worker_support_v1.sql'
+      - 'supabase/migrations/20261005021000_marketing_campaign_worker_cron_v1.sql'
+      - 'supabase/migrations/20261005024000_marketing_campaign_execution_controls_v1.sql'
+      - 'supabase/sql/20261006_marketing_security_hardening_v1.sql'
       - 'scripts/test-attendance-*.mjs'
       - 'scripts/test-whatsapp-ana-*.mjs'
+      - 'scripts/test-ana-customer-profile-confirmation-schema-v1.mjs'
+      - 'scripts/test-ana-customer-confirmation-v1.mjs'
+      - 'scripts/test-admin-attendance-customer-profile-ui-v1.mjs'
+      - 'supabase/functions/_shared/ana-customer-confirmation-v1.mjs'
+      - 'supabase/migrations/20261006051000_ana_customer_confirmation_apply_signal_v1.sql'
+      - 'supabase/migrations/20261006120000_whatsapp_ana_live_send_v1.sql'
+      - 'supabase/sql/20261006_whatsapp_ana_live_send_v1.sql'
+      - 'supabase/sql/20261006_ana_customer_confirmation_apply_signal_v1.sql'
+      - 'supabase/migrations/20261005170000_ana_customer_profile_confirmation_v1.sql'
+      - 'supabase/sql/20261005_ana_customer_profile_confirmation_v1.sql'
       - 'scripts/test-whatsapp-meta-*.mjs'
+      - 'scripts/test-whatsapp-marketing-*.mjs'
+      - 'scripts/test-marketing-security-hardening-v1.mjs'
+      - 'scripts/test-admin-marketing-*.mjs'
       - '.github/workflows/whatsapp-meta-central-ci.yml'
   workflow_dispatch:
 permissions:
@@ -48,6 +83,23 @@ jobs:
       - {name: Template PLpgSQL ambiguity regression, run: 'node scripts/test-attendance-meta-template-plpgsql-v1.mjs'}
       - {name: Meta templates contract, run: 'node scripts/test-whatsapp-meta-templates-v1.mjs'}
       - {name: Meta templates admin sync contract, run: 'node scripts/test-whatsapp-meta-template-admin-v1.mjs'}
+      - {name: Meta template mutation contract, run: 'node scripts/test-whatsapp-meta-template-mutations-v1.mjs'}
+      - {name: Marketing Meta template admin UI contract, run: 'node scripts/test-whatsapp-marketing-template-admin-v1.mjs'}
+      - {name: Marketing consent ledger contract, run: 'node scripts/test-whatsapp-marketing-consent-ledger-v1.mjs'}
+      - {name: Marketing security hardening contract, run: 'node scripts/test-marketing-security-hardening-v1.mjs'}
+      - {name: Marketing audience preview contract, run: 'node scripts/test-whatsapp-marketing-audience-preview-v1.mjs'}
+      - {name: Marketing audience shared core contract, run: 'node scripts/test-whatsapp-marketing-audience-core-v2.mjs'}
+      - {name: Marketing campaign drafts contract, run: 'node scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'}
+      - {name: Marketing campaign execution contract, run: 'node scripts/test-whatsapp-marketing-campaign-execution-v1.mjs'}
+      - {name: Marketing campaign worker contract, run: 'node scripts/test-whatsapp-marketing-worker-v1.mjs'}
+      - {name: Marketing campaign worker cron contract, run: 'node scripts/test-whatsapp-marketing-worker-cron-v1.mjs'}
+      - {name: Admin marketing audiences contract, run: 'node scripts/test-admin-marketing-audiences-v1.mjs'}
+      - {name: Admin marketing campaigns contract, run: 'node scripts/test-admin-marketing-campaigns-v1.mjs'}
+      - {name: Admin marketing campaign scheduling contract, run: 'node scripts/test-admin-marketing-campaign-scheduling-v1.mjs'}
+      - {name: Marketing audience UI contract, run: 'node scripts/test-whatsapp-marketing-audience-ui-v1.mjs'}
+      - {name: Marketing campaign UI contract, run: 'node scripts/test-whatsapp-marketing-campaign-ui-v1.mjs'}
+      - {name: Marketing campaign execution UI contract, run: 'node scripts/test-whatsapp-marketing-campaign-execution-ui-v1.mjs'}
+      - {name: Marketing intelligence legacy contract, run: 'python scripts/test-marketing-intelligence-contract.py'}
       - {name: Meta transport contract, run: 'node scripts/test-attendance-meta-send-v1.mjs'}
       - {name: Meta media contract, run: 'node scripts/test-attendance-meta-media-v1.mjs'}
       - {name: Meta media content signature contract, run: 'node scripts/test-attendance-meta-media-content-v1.mjs'}
@@ -57,32 +109,56 @@ jobs:
       - {name: Media canary error contract, run: 'node scripts/test-attendance-media-canary-error-contract-v1.mjs'}
       - {name: Audio media UX contract, run: 'node scripts/test-attendance-media-audio-ux-v1.mjs'}
       - {name: Audio recorder contract, run: 'node scripts/test-attendance-audio-recorder-v1.mjs'}
+      - {name: Audio WebCodecs OGG contract, run: 'node scripts/test-attendance-audio-webcodecs-v1.mjs'}
+      - {name: Audio Ogg mux behavior, run: 'node scripts/test-attendance-audio-ogg-mux-v1.mjs'}
       - {name: Media status UX contract, run: 'node scripts/test-attendance-media-status-ux-v1.mjs'}
       - {name: Media delivery observer contract, run: 'node scripts/test-attendance-media-delivery-observer-v1.mjs'}
       - {name: Human AI state contract, run: 'node scripts/test-attendance-human-ai-state-v1.mjs'}
       - {name: ANA dry-run contract, run: 'node scripts/test-whatsapp-ana-worker-v1.mjs'}
+      - {name: ANA live confidence policy, run: 'node scripts/test-whatsapp-ana-live-policy-v1.mjs'}
+      - {name: ANA live release contract, run: 'node scripts/test-whatsapp-ana-live-release-v1.mjs'}
       - {name: ANA Admin preview contract, run: 'node scripts/test-whatsapp-ana-admin-preview-v1.mjs'}
       - {name: ANA stale preview claim recovery, run: 'node scripts/test-whatsapp-ana-preview-stale-claim-v1.mjs'}
       - {name: ANA immediate claim cleanup regression, run: 'node scripts/test-whatsapp-ana-preview-claim-cleanup-v1.mjs'}
       - {name: ANA review observability contract, run: 'node scripts/test-whatsapp-ana-review-observability-v1.mjs'}
+      - {name: ANA customer confirmation schema contract, run: 'node scripts/test-ana-customer-profile-confirmation-schema-v1.mjs'}
+      - {name: ANA customer confirmation classifier contract, run: 'node scripts/test-ana-customer-confirmation-v1.mjs'}
+      - {name: ANA customer confirmation admin UI contract, run: 'node scripts/test-admin-attendance-customer-profile-ui-v1.mjs'}
       - {name: Meta Phone Number ID strictness, run: 'node scripts/test-attendance-meta-phone-id-v1.mjs'}
       - {name: Meta response-body timeout, run: 'node scripts/test-attendance-meta-body-timeout-v1.mjs'}
       - {name: Meta webhook contract, run: 'node scripts/test-whatsapp-meta-webhook-v1.mjs'}
+      - {name: Smart Delivery Meta location capture, run: 'node scripts/test-smart-delivery-whatsapp-location-capture-v2.mjs'}
+      - {name: Smart Delivery operational RPC guards, run: 'node scripts/test-smart-delivery-operational-rpcs-v1.mjs'}
+      - {name: Smart Delivery admin runtime, run: 'node scripts/test-smart-delivery-admin-runtime-v1.mjs'}
+      - {name: Smart Delivery admin UI, run: 'node scripts/test-smart-delivery-admin-ui-v1.mjs'}
+      - {name: Smart Delivery admin backend syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-products-live-v1/index.ts'}
+      - {name: Meta template webhook events contract, run: 'node scripts/test-whatsapp-meta-template-events-v1.mjs'}
       - {name: Meta shadow media preservation regression, run: 'node scripts/test-whatsapp-meta-shadow-media-preserve-v1.mjs'}
       - {name: Meta webhook TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts'}
       - {name: ANA worker TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-ana-worker-v1/index.ts'}
+      - {name: Marketing worker TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-marketing-worker-v1/index.ts'}
       - {name: ANA preview API TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-ana-preview-v1/index.ts'}
       - {name: ANA policy JavaScript syntax, run: 'node --check supabase/functions/_shared/ana-policy-v1.mjs'}
+      - {name: ANA live policy JavaScript syntax, run: 'node --check supabase/functions/_shared/ana-live-policy-v1.mjs'}
       - {name: Meta canonical outbound contract, run: 'node scripts/test-attendance-meta-dedupe-v1.mjs'}
       - {name: Admin Meta gateway contract, run: 'node scripts/test-admin-attendance-meta-send-ui-v1.mjs'}
       - {name: Admin media dispatcher syntax, run: 'node --check supabase/functions/_shared/admin-attendance-media-send-v1.mjs'}
       - {name: Admin templates TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-templates-v1/index.ts'}
+      - {name: Admin marketing audiences TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-marketing-audiences-v1/index.ts'}
+      - {name: Admin marketing campaigns TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-marketing-campaigns-v1/index.ts'}
       - {name: Admin Meta gateway TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/admin-whatsapp-ops-v1/index.ts'}
       - {name: Native Attendance core JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-app.js'}
+      - {name: Native Attendance DOM binding regression, run: 'node scripts/test-attendance-app-dom-bindings-v1.mjs'}
       - {name: ANA preview UI JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-ana-preview.js'}
       - {name: Admin composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-send.js'}
       - {name: Admin media composer JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-media-send.js'}
       - {name: Audio recorder JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-recorder.js'}
+      - {name: Audio WebCodecs adapter syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-webcodecs-adapter.js'}
+      - {name: Audio PCM worklet syntax, run: 'node --check vitrine/admin/atendimento/attendance-audio-pcm-worklet.js'}
       - {name: Human AI controls JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-human-ai.js'}
       - {name: Attendance templates JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-templates.js'}
+      - {name: Marketing template center syntax, run: 'node --check vitrine/admin/marketing/template-center.js'}
+      - {name: Marketing audience center syntax, run: 'node --check vitrine/admin/marketing/audience-center.js'}
+      - {name: Marketing campaign center syntax, run: 'node --check vitrine/admin/marketing/campaign-center.js'}
       - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}
+

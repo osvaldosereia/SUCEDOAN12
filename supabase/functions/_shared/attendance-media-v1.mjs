@@ -29,7 +29,8 @@ export function isAllowedProviderMediaUrl(value){
 
 export function safeAttendanceFilename(value){
   const raw=String(value??'').replace(/\\/g,'/').split('/').pop()?.trim()||'arquivo';
-  const safe=raw.replace(/[\u0000-\u001f\u007f]/g,'').replace(/[^\p{L}\p{N}._()\- ]/gu,'_').replace(/\s+/g,' ').slice(0,180).trim();
+  const ascii=raw.normalize('NFKD').replace(/\p{M}+/gu,'');
+  const safe=ascii.replace(/[\u0000-\u001f\u007f]/g,'').replace(/[^A-Za-z0-9._()\- ]/g,'_').replace(/\s+/g,' ').slice(0,180).trim();
   return safe||'arquivo';
 }
 

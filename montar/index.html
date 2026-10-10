@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#145b39">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Separação de pedidos | Dona Antônia</title>
+  <link rel="stylesheet" href="/montar/styles.css?v=3">
+  <script src="/montar/app.js?v=4" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Ir para pedidos</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand-mark" aria-hidden="true">DA</div>
+        <div class="brand-text">
+          <strong>Dona Antônia <span class="brand-dot">·</span> Montagem</strong>
+          <span>Separação de mercadorias</span>
+        </div>
+        <div class="topbar-actions">
+          <span class="connection" id="connection"><span class="signal-dot"></span><span id="connectionText">Conectando</span></span>
+          <button type="button" id="reloadBtn" class="icon-button" aria-label="Atualizar pedidos" title="Atualizar pedidos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3.7M4 4v4h4M4 13a8 8 0 0 0 14.9 3.7M20 20v-4h-4"/></svg>
+          </button>
+          <button type="button" id="logoutBtn" class="logout" hidden>Sair</button>
+        </div>
+      </div>
+    </header>
+    <main id="main" class="main">
+      <section id="loginView" class="login-screen" hidden>
+        <div class="login-card">
+          <div class="login-emblem" aria-hidden="true">✓</div>
+          <h1>Acesso à separação</h1>
+          <p>Entre com o código de acesso operacional já configurado. Nenhum pedido será alterado ao entrar.</p>
+          <form id="loginForm">
+            <label for="pin">Código de acesso</label>
+            <input id="pin" type="password" inputmode="numeric" autocomplete="off" minlength="4" maxlength="12" required placeholder="Digite o código">
+            <button type="submit" class="btn primary full" id="loginBtn">Entrar na separação</button>
+          </form>
+          <p id="loginError" class="error-message" role="alert" hidden></p>
+        </div>
+      </section>
+
+      <section id="queueView" class="queue-view" hidden aria-label="Pedidos para separar">
+        <div class="intro">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-dot"></span> FILA MANUAL</div>
+            <h1>Separar agora <span id="queueCount" class="count">0</span></h1>
+            <p>Somente pedidos enviados para esta fila pelo Admin.</p>
+          </div>
+          <div class="intro-hint" aria-hidden="true">
+            <span class="hint-icon">✓</span><span>Escolha um pedido<br><b>e comece a separar</b></span>
+          </div>
+        </div>
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.4 16.4 4 4"/></svg>
+          <input id="queueSearch" type="search" placeholder="Buscar número ou cliente" aria-label="Buscar pedido">
+        </div>
+        <div id="queueCompletionNotice" class="queue-completion-notice" role="status" aria-live="polite" hidden></div>
+        <div id="queueFeedback" class="inline-feedback" role="status"></div>
+        <div id="queueList" class="queue-grid"></div>
+        <div class="queue-note">Os pedidos aparecem somente após a inclusão manual em <strong>Pedidos → Confirmados → SEPARAR AGORA</strong>.</div>
+      </section>
+
+      <section id="detailView" class="detail-view" hidden aria-label="Separar pedido">
+        <div class="detail-toolbar">
+          <button type="button" class="back-button" id="backBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            <span>Voltar à fila</span>
+          </button>
+          <button type="button" class="soft-button" id="detailReload">Atualizar itens</button>
+        </div>
+        <div id="detailContent"></div>
+      </section>
+    </main>
+    <footer class="site-footer">Dona Antônia · Operação de separação</footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <div id="packageModal" class="package-modal" role="dialog" aria-modal="true" aria-labelledby="packageTitle" hidden>
+    <div class="package-box">
+      <div class="package-check" aria-hidden="true">✓</div>
+      <div class="completed-label">SEPARAÇÃO CONCLUÍDA</div>
+      <h2 id="packageTitle">ANOTE O NÚMERO DO PEDIDO NA EMBALAGEM</h2>
+      <div id="packageCode" class="package-code"></div>
+      <p>Este é o número original do pedido. Identifique a embalagem antes de continuar.</p>
+      <button type="button" class="btn primary full" id="packageOk">OK, JÁ ANOTEI</button>
+    </div>
+  </div>
+</body>
+</html>

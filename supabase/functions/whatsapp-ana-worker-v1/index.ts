@@ -1,5 +1,9 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
-import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normalizeAnaDryRunResult} from '../_shared/ana-policy-v1.mjs';
+import {ANA_DRY_RUN_INSTRUCTIONS,ANA_DRY_RUN_SCHEMA,buildAnaDryRunInput,normalizeAnaDryRunResult,isSimpleAnaGreeting,buildAnaCatalogWelcome} from '../_shared/ana-policy-v1.mjs';
+import {shouldSendAnaLiveReply} from '../_shared/ana-live-policy-v1.mjs';
+import {sendTextViaMeta,MetaTransportError} from '../_shared/whatsapp-meta-transport-v1.mjs';
+import {linkedCustomerFirstName} from '../_shared/ana-customer-context-v1.mjs';
+import {buildAnaRuntimeInstructions,routeAnaMessage} from '../_shared/ana-admin-config-v1.mjs';
 
 const cors={
   'Access-Control-Allow-Origin':'*',
@@ -18,11 +22,32 @@ function outputText(data:any){
     .trim();
 }
 
+async function isSimpleGreetingForNewDay(db:any,conversationId:string,inbound:any){
+  if(!isSimpleAnaGreeting(inbound?.text_body))return false;
+  const current=new Date(inbound?.received_at||inbound?.created_at||'');
+  if(!Number.isFinite(current.getTime()))return false;
+  const parts=new Intl.DateTimeFormat('en',{timeZone:'America/Cuiaba',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(current);
+  const values=Object.fromEntries(parts.filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));
+  const dayStart=new Date(Date.UTC(Number(values.year),Number(values.month)-1,Number(values.day),4));
+  const prior=await db.from('whatsapp_messages_v1').select('id').eq('conversation_id',conversationId)
+    .gte('created_at',dayStart.toISOString()).lt('created_at',current.toISOString()).limit(1).maybeSingle();
+  return !prior.error&&!prior.data;
+}
+
+async function personalizedCatalogWelcome(db:any,conversationId:string,phone:string,customerFirstName:string){
+  const link=await db.rpc('ops2_issue_storefront_catalog_link_v1',{
+    p_phone:phone,p_conversation_id:conversationId,p_source_event_key:`ana-first-greeting:${conversationId}:${new Date().toISOString().slice(0,10)}`,
+    p_source:'attendance_ana',p_ttl_minutes:120
+  });
+  if(link.error||link.data?.ok!==true||!link.data?.catalog_path)return null;
+  return buildAnaCatalogWelcome({firstName:customerFirstName,catalogPath:link.data.catalog_path})||null;
+}
+
 export async function generateAnaDryRunSuggestion({
-  apiKey,model,inboundText,history,fetchFn=fetch
-}:{apiKey:string,model:string,inboundText:string,history:any[],fetchFn?:typeof fetch}){
+  apiKey,model,inboundText,history,operationalContext={},instructions=ANA_DRY_RUN_INSTRUCTIONS,fetchFn=fetch
+}:{apiKey:string,model:string,inboundText:string,history:any[],operationalContext?:any,instructions?:string,fetchFn?:typeof fetch}){
   if(!apiKey)return {ok:false,error:'missing_openai_api_key'};
-  const input=buildAnaDryRunInput({inboundText,history});
+  const input=buildAnaDryRunInput({inboundText,history,operationalContext});
   const started=Date.now();
   try{
     const response=await fetchFn('https://api.openai.com/v1/responses',{
@@ -33,7 +58,7 @@ export async function generateAnaDryRunSuggestion({
         store:false,
         max_output_tokens:500,
         reasoning:{effort:'low'},
-        instructions:ANA_DRY_RUN_INSTRUCTIONS,
+        instructions,
         input:[{role:'user',content:[{type:'input_text',text:JSON.stringify(input)}]}],
         text:{format:{type:'json_schema',name:'ana_dry_run_suggestion',strict:true,schema:ANA_DRY_RUN_SCHEMA}}
       }),
@@ -51,6 +76,25 @@ export async function generateAnaDryRunSuggestion({
   }
 }
 
+async function resolveOpenAIKey(db:any){
+  const direct=Deno.env.get('OPENAI_API_KEY')||'';
+  if(direct)return direct;
+  try{
+    const result=await db.rpc('get_conversation_worker_provider_secret_v1');
+    return typeof result.data==='string'?result.data.trim():'';
+  }catch{return ''}
+}
+
+function operationalContext(customerFirstName=''){
+  return {
+    catalog_ordering:'Para consultar produtos e fazer pedido, direcione o cliente ao catálogo/site oficial. O atendimento pode orientar e oferecer atendimento humano, mas esta resposta não cria pedido.',
+    human_support:'Atendimento humano está disponível quando o cliente pedir ajuda, quando faltar contexto confiável ou quando houver exceção operacional.',
+    never_collect_in_chat:['CPF/CNPJ','endereço completo'],
+    dynamic_data_rule:'Preço, estoque, total, composição de cesta, prazo/entrega, pagamento e dados do pedido são dinâmicos. Só afirme esses dados quando vierem explicitamente no contexto; caso contrário, encaminhe para humano ou para o catálogo/site oficial.',
+    known_customer_first_name:customerFirstName
+  };
+}
+
 async function aiGate(db:any,conversationId:string){
   const gate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:conversationId});
   if(gate.error)return {ok:false,allowed:false,error:'ai_gate_rpc_failed'};
@@ -61,6 +105,130 @@ async function finish(db:any,args:any){
   const result=await db.rpc('ops2_ana_finish_dry_run_v1',args);
   if(result.error)throw new Error(`finish_failed:${result.error.message}`);
   return result.data;
+}
+
+async function finishLive(db:any,args:any){
+  const result=await db.rpc('ops2_ana_finish_live_job_v1',args);
+  if(result.error)throw new Error(`live_finish_failed:${result.error.message}`);
+  return result.data;
+}
+
+async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{accessToken:string,graphVersion:string}){
+  const firstGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
+  if(firstGate.error||firstGate.data?.allowed!==true){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'ai_gate_closed_before_generation',p_model:model,p_metadata:{gate:firstGate.data||null}});
+  }
+  const inbound=await db.from('whatsapp_messages_v1').select('id,direction,message_type,text_body,provider_message_id,created_at,received_at')
+    .eq('id',job.inbound_message_id).maybeSingle();
+  if(inbound.error||!inbound.data||inbound.data.direction!=='inbound'||inbound.data.message_type!=='text'||!String(inbound.data.text_body||'').trim()){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'inbound_not_supported',p_model:model});
+  }
+  const activeConfig=await db.rpc('ops2_ana_active_config_v1');
+  if(activeConfig.error||activeConfig.data?.ok!==true){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'active_config_invalid',p_model:model});
+  }
+  const configuration=activeConfig.data.configuration;
+  const account=await db.from('whatsapp_accounts').select('phone_e164').eq('id',job.whatsapp_account_id).maybeSingle();
+  if(account.error||!account.data?.phone_e164){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'active_config_invalid',p_model:model});
+  }
+  const channel=String(account.data.phone_e164).replace(/\D/g,'').slice(-4);
+  const conversation=await db.from('conversations').select('customer_id,wa_contact_e164').eq('id',job.conversation_id).maybeSingle();
+  if(conversation.error||!conversation.data){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'conversation_context_unavailable',p_model:model,
+      p_metadata:{active_version:activeConfig.data.version}});
+  }
+  const routed=routeAnaMessage(configuration,inbound.data.text_body,channel,{humanMode:false,customerLinked:Boolean(conversation.data.customer_id)});
+  const routeMetadata={trigger_key:routed.triggerKey||null,active_version:activeConfig.data.version};
+  if(routed.path==='handoff'){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:routed.reason||'admin_trigger_handoff',p_model:model,
+      p_metadata:{trigger_key:routed.triggerKey||null,active_version:activeConfig.data.version}});
+  }
+  if(routed.path==='actions'){
+    let fixedReply='';
+    for(const action of routed.actions||[]){
+      const actionGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
+      if(actionGate.error||actionGate.data?.allowed!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'human_takeover_during_trigger_actions',p_model:model,p_metadata:{trigger_key:routed.triggerKey,active_version:activeConfig.data.version}});
+      if(action.type==='handoff')return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'admin_trigger_handoff',p_model:model,p_metadata:{trigger_key:routed.triggerKey,active_version:activeConfig.data.version}});
+      if(action.type==='label'){
+        const labeled=await db.rpc('ops2_ana_apply_trigger_label_v1',{p_conversation_id:job.conversation_id,p_label_id:action.labelId,p_trigger_key:routed.triggerKey});
+        if(labeled.error||labeled.data?.ok!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:labeled.data?.error||'trigger_label_failed',p_model:model});
+      }
+      if(action.type==='remove_label'){
+        const unlabeled=await db.rpc('ops2_ana_remove_trigger_label_v1',{p_conversation_id:job.conversation_id,p_label_id:action.labelId,p_trigger_key:routed.triggerKey});
+        if(unlabeled.error||unlabeled.data?.ok!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:unlabeled.data?.error||'trigger_label_remove_failed',p_model:model});
+      }
+      if(action.type==='fixed_reply')fixedReply=action.responseText||fixedReply;
+    }
+    if(fixedReply)routed.path='fixed_reply',routed.responseText=fixedReply;
+    else if((routed.actions||[]).some((action:any)=>action.type==='continue_ai'))routed.path='ai';
+    else return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'no_reply',p_reason:'admin_trigger_actions_completed',p_model:model,p_metadata:{trigger_key:routed.triggerKey,active_version:activeConfig.data.version}});
+  }
+  if(routed.path==='label'||routed.path==='remove_label'){
+    const labelGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
+    if(labelGate.error||labelGate.data?.allowed!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'human_takeover_before_trigger_label',p_model:model});
+    const removing=routed.path==='remove_label';
+    const labeled=await db.rpc(removing?'ops2_ana_remove_trigger_label_v1':'ops2_ana_apply_trigger_label_v1',{p_conversation_id:job.conversation_id,p_label_id:routed.labelId,p_trigger_key:routed.triggerKey});
+    if(labeled.error||labeled.data?.ok!==true)return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:labeled.data?.error||(removing?'trigger_label_remove_failed':'trigger_label_failed'),p_model:model});
+    return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'no_reply',p_reason:removing?'admin_trigger_label_removed':'admin_trigger_label_applied',p_model:model,
+      p_metadata:{trigger_key:routed.triggerKey,active_version:activeConfig.data.version}});
+  }
+  const historyResult=await db.from('whatsapp_messages_v1').select('direction,text_body,sender_kind,created_at,received_at,sent_at')
+    .eq('conversation_id',job.conversation_id).not('text_body','is',null).order('created_at',{ascending:false}).limit(12);
+  if(historyResult.error)throw new Error(`history_failed:${historyResult.error.message}`);
+  const history=(historyResult.data||[]).reverse();
+  const customerFirstName=await linkedCustomerFirstName(db,job.conversation_id);
+  let generated:any;
+  if(routed.path==='fixed_reply'){
+    generated={ok:true,result:normalizeAnaDryRunResult({decision:'suggest',confidence:1,response_text:routed.responseText,reason:'admin_trigger_fixed_reply',missing_context:[]}),latency_ms:0};
+  }else if(await isSimpleGreetingForNewDay(db,job.conversation_id,inbound.data)){
+    const greetingName=configuration?.behavior?.use_known_first_name_on_first_greeting===false?'':customerFirstName;
+    const welcome=conversation.data?.wa_contact_e164?await personalizedCatalogWelcome(db,job.conversation_id,conversation.data.wa_contact_e164,greetingName):null;
+    generated=welcome?{ok:true,result:normalizeAnaDryRunResult({decision:'suggest',confidence:0.99,response_text:welcome,reason:'first_greeting_of_day',missing_context:[]}),latency_ms:0}:null;
+  }
+  if(!generated)generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext(customerFirstName),instructions:buildAnaRuntimeInstructions(configuration)});
+  if(!generated.ok)return await finishLive(db,{p_job_id:job.id,p_status:'failed',p_decision:'handoff',p_reason:generated.error,p_model:model,
+    p_provider_response_id:generated.response_id||null,p_error:generated.error,p_metadata:{...routeMetadata,latency_ms:generated.latency_ms||null}});
+  const secondGate=await db.rpc('ops2_attendance_ai_gate_v1',{p_conversation_id:job.conversation_id});
+  if(secondGate.error||secondGate.data?.allowed!==true){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'human_takeover_during_generation',p_model:model,
+      p_provider_response_id:generated.response_id||null,p_metadata:routeMetadata});
+  }
+  const result=generated.result;
+  if(result.decision==='no_reply')return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'no_reply',p_reason:result.reason,
+    p_model:model,p_provider_response_id:generated.response_id||null,p_metadata:{...routeMetadata,missing_context:result.missing_context,latency_ms:generated.latency_ms||null}});
+  if(!shouldSendAnaLiveReply({decision:result.decision,confidence:result.confidence,responseText:result.response_text})){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_text:result.response_text,p_confidence:result.confidence,
+      p_reason:'human_review_required',p_model:model,p_provider_response_id:generated.response_id||null,
+      p_metadata:{...routeMetadata,source_reason:result.reason,missing_context:result.missing_context,latency_ms:generated.latency_ms||null}});
+  }
+  const prepared=await db.rpc('ops2_ana_begin_live_send_v1',{p_job_id:job.id,p_text:result.response_text});
+  if(prepared.error||prepared.data?.ok!==true){
+    return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_text:result.response_text,p_confidence:result.confidence,
+      p_reason:prepared.data?.error||'live_send_gate_closed',p_model:model,p_provider_response_id:generated.response_id||null,p_metadata:routeMetadata});
+  }
+  let sent:any;
+  try{
+    sent=await sendTextViaMeta({accessToken:meta.accessToken,phoneNumberId:prepared.data.phone_number_id,
+      toE164:prepared.data.to_phone_e164,text:prepared.data.text,graphVersion:meta.graphVersion,timeoutMs:15000});
+  }catch(error:any){
+    const code=error instanceof MetaTransportError?error.code:clean(error?.message||'meta_send_error',180);
+    await db.rpc('ops2_ana_fail_live_send_v1',{p_outbox_id:prepared.data.outbox_id,p_reason:code});
+    return await finishLive(db,{p_job_id:job.id,p_status:'failed',p_decision:'handoff',p_text:result.response_text,p_confidence:result.confidence,
+      p_reason:'meta_send_failed',p_model:model,p_provider_response_id:generated.response_id||null,p_error:code,
+      p_metadata:{...routeMetadata,uncertain:error instanceof MetaTransportError&&error.uncertain===true}});
+  }
+  const acceptedAt=new Date().toISOString();
+  const accepted=await db.rpc('ops2_ana_accept_live_outbound_v1',{p_outbox_id:prepared.data.outbox_id,p_provider_message_id:sent.providerMessageId,p_accepted_at:acceptedAt});
+  if(accepted.error||accepted.data?.ok!==true){
+    await db.rpc('ops2_ana_fail_live_send_v1',{p_outbox_id:prepared.data.outbox_id,p_reason:'meta_accepted_persist_failed'});
+    return await finishLive(db,{p_job_id:job.id,p_status:'failed',p_decision:'handoff',p_reason:'meta_accepted_persist_failed',p_model:model,
+      p_provider_response_id:generated.response_id||null,p_error:'meta_accepted_persist_failed',p_metadata:{...routeMetadata,provider_message_id:sent.providerMessageId}});
+  }
+  return await finishLive(db,{p_job_id:job.id,p_status:'completed',p_decision:'suggest',p_text:result.response_text,p_confidence:result.confidence,
+    p_reason:result.reason,p_model:model,p_provider_response_id:generated.response_id||null,
+    p_metadata:{...routeMetadata,outbox_id:prepared.data.outbox_id,message_id:accepted.data?.message_id,provider_message_id:sent.providerMessageId,
+      missing_context:result.missing_context,latency_ms:generated.latency_ms||null}});
 }
 
 async function processJob(db:any,job:any,apiKey:string,model:string){
@@ -83,7 +251,8 @@ async function processJob(db:any,job:any,apiKey:string,model:string){
   if(historyResult.error)throw new Error(`history_failed:${historyResult.error.message}`);
   const history=(historyResult.data||[]).reverse();
 
-  const generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history});
+  const customerFirstName=await linkedCustomerFirstName(db,job.conversation_id);
+  const generated=await generateAnaDryRunSuggestion({apiKey,model,inboundText:inbound.data.text_body,history,operationalContext:operationalContext(customerFirstName)});
   if(!generated.ok){
     return await finish(db,{p_job_id:job.id,p_status:'failed',p_reason:generated.error,p_model:model,p_provider_response_id:generated.response_id||null,p_last_error:generated.error,p_metadata:{dry_run_not_sendable:true,latency_ms:generated.latency_ms||null,usage:generated.usage||null}});
   }
@@ -116,26 +285,30 @@ Deno.serve(async(req:Request)=>{
   if(!serviceKey||authorization!==`Bearer ${serviceKey}`)return json({ok:false,error:'worker_not_authorized'},401);
 
   const supabaseUrl=Deno.env.get('SUPABASE_URL')||'';
-  const apiKey=Deno.env.get('OPENAI_API_KEY')||'';
-  const model=Deno.env.get('ANA_OPENAI_MODEL')||'gpt-5.6-luna';
+  const model=Deno.env.get('ANA_OPENAI_MODEL')||'gpt-6-luna';
+  const metaAccessToken=Deno.env.get('META_WHATSAPP_ACCESS_TOKEN')||'';
+  const metaGraphVersion=Deno.env.get('META_WHATSAPP_GRAPH_VERSION')||'';
   if(!supabaseUrl||!serviceKey)return json({ok:false,error:'worker_not_configured'},503);
-  if(!apiKey)return json({ok:false,error:'openai_not_configured'},503);
 
   const db=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  const apiKey=await resolveOpenAIKey(db);
+  if(!apiKey)return json({ok:false,error:'openai_not_configured'},503);
   const body=await req.json().catch(()=>({}));
   const limit=Math.max(1,Math.min(3,Number(body?.limit)||1));
-  const claimed=await db.rpc('ops2_ana_claim_dry_run_v1',{p_limit:limit});
+  const live=body?.mode==='live';
+  if(live&&(!metaAccessToken||!/^v\d+\.\d+$/.test(metaGraphVersion)))return json({ok:false,error:'meta_not_configured'},503);
+  const claimed=await db.rpc(live?'ops2_ana_claim_live_v1':'ops2_ana_claim_dry_run_v1',{p_limit:limit});
   if(claimed.error)return json({ok:false,error:'claim_failed',detail:clean(claimed.error.message)},500);
 
   const jobs=Array.isArray(claimed.data)?claimed.data:[];
   const results=[];
   for(const job of jobs){
-    try{results.push(await processJob(db,job,apiKey,model))}
+    try{results.push(await (live?processLiveJob(db,job,apiKey,model,{accessToken:metaAccessToken,graphVersion:metaGraphVersion}):processJob(db,job,apiKey,model)))}
     catch(error:any){
-      try{results.push(await finish(db,{p_job_id:job.id,p_status:'failed',p_reason:'worker_exception',p_model:model,p_last_error:clean(error?.message,500),p_metadata:{dry_run_not_sendable:true}}))}
+      try{results.push(await (live?finishLive(db,{p_job_id:job.id,p_status:'failed',p_decision:'handoff',p_reason:'worker_exception',p_model:model,p_error:clean(error?.message,500)}):finish(db,{p_job_id:job.id,p_status:'failed',p_reason:'worker_exception',p_model:model,p_last_error:clean(error?.message,500),p_metadata:{dry_run_not_sendable:true}})))}
       catch{results.push({ok:false,job_id:job.id,error:'worker_and_finish_failed'})}
     }
   }
 
-  return json({ok:true,dry_run:true,dry_run_not_sendable:true,claimed:jobs.length,results});
+  return json({ok:true,dry_run:!live,dry_run_not_sendable:!live,claimed:jobs.length,results});
 });

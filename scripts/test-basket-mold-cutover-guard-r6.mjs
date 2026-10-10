@@ -1,0 +1,23 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+
+const SQL='supabase/sql/20261006_basket_mold_cutover_guard_r6.sql';
+const MIG='supabase/migrations/20261006114000_basket_mold_cutover_guard_r6.sql';
+const EDGE='supabase/functions/storefront-v2/index.ts';
+assert.equal(fs.existsSync(SQL),true,'R6 guard SQL must exist');
+assert.equal(fs.existsSync(MIG),true,'R6 guard migration must exist');
+const sql=fs.readFileSync(SQL,'utf8'),mig=fs.readFileSync(MIG,'utf8'),edge=fs.readFileSync(EDGE,'utf8');
+assert.equal(sql,mig,'R6 guard SQL/migration must match');
+assert.match(sql,/basket_mold_cutover_ready_v1/i);
+assert.match(sql,/transition_mode/i);
+assert.match(sql,/legacy_first/i);
+assert.match(sql,/legacy_source_basket_ids/i);
+assert.match(sql,/basket_commercial_catalog_v1/i);
+assert.match(sql,/public_available/i);
+assert.match(sql,/basket_mold_legacy_pending/i);
+assert.match(sql,/create_vitrine_cart_order_v3_base/i);
+assert.match(sql,/revoke all on function public\.basket_mold_cutover_ready_v1/i);
+assert.match(sql,/grant execute on function public\.basket_mold_cutover_ready_v1\(uuid\) to service_role/i);
+assert.match(edge,/db\.rpc\("basket_mold_cutover_ready_v1"/i,'mold detail/quote must honor server cutover gate');
+assert.match(edge,/gate\.data!==true/i);
+console.log('Basket mold cutover server guard R6: PASS');

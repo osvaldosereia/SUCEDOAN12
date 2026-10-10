@@ -7,13 +7,26 @@ on:
   pull_request:
     paths:
       - 'scripts/test-admin-attendance-*.mjs'
+      - 'scripts/test-attendance-delivery-day-auto-labels-v1.mjs'
       - 'scripts/test-attendance-meta-media-*.mjs'
+      - 'scripts/test-attendance-weekly-offers-consent-v1.mjs'
+      - 'scripts/test-whatsapp-ana-preview-buttons-v1.mjs'
+      - 'scripts/test-ana-customer-profile-*.mjs'
+      - 'scripts/test-whatsapp-ana-customer-profile-*.mjs'
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/atendimento/**'
+      - 'supabase/config.toml'
       - 'supabase/functions/admin-whatsapp-ops-v1/index.ts'
+      - 'supabase/functions/admin-attendance-customer-v1/**'
+      - 'supabase/functions/admin-whatsapp-ana-customer-profile-v1/**'
+      - 'supabase/functions/admin-whatsapp-weekly-consent-v1/**'
+      - 'supabase/functions/_shared/ana-customer-profile-*.mjs'
+      - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/functions/_shared/admin-attendance-media-send-v1.mjs'
       - 'supabase/functions/_shared/admin-attendance-library-v1.mjs'
       - 'supabase/functions/_shared/admin-attendance-library-send-v1.mjs'
+      - 'supabase/functions/_shared/attendance-media-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-core-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-media-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'supabase/migrations/**'
@@ -22,6 +35,12 @@ on:
       - 'supabase/sql/20261003_admin_attendance_meta_media_send_v1.sql'
       - 'supabase/sql/20261003_attendance_library_v1.sql'
       - 'supabase/sql/20261003_attendance_library_media_transport_expand_v1.sql'
+      - 'supabase/sql/20261004_storefront_catalog_link_v1.sql'
+      - 'supabase/sql/20261005_attendance_customer_link_v1.sql'
+      - 'supabase/sql/20261005_attendance_weekly_offers_consent_v1.sql'
+      - 'supabase/sql/20261005_attendance_weekly_offers_consent_template_v2.sql'
+      - 'supabase/sql/20261005_ana_customer_profile*.sql'
+      - 'supabase/sql/20261006_attendance_delivery_day_auto_labels_v1.sql'
       - '.github/workflows/attendance-papoai-send-ci.yml'
 
 jobs:
@@ -34,7 +53,18 @@ jobs:
           node-version: '22'
       - run: node scripts/test-admin-attendance-papoai-webhook-send-v1.mjs
       - run: node scripts/test-admin-attendance-send-ui-v1.mjs
+      - run: node scripts/test-attendance-delivery-day-auto-labels-v1.mjs
       - run: node scripts/test-admin-attendance-api-v1.mjs
+      - run: node scripts/test-admin-attendance-customer-link-v1.mjs
+      - run: node scripts/test-admin-attendance-customer-rpc-production-v1.mjs
+      - run: node scripts/test-attendance-weekly-offers-consent-v1.mjs
+      - run: node scripts/test-ana-customer-profile-schema-v1.mjs
+      - run: node scripts/test-whatsapp-ana-customer-profile-policy-v1.mjs
+      - run: node scripts/test-whatsapp-ana-customer-profile-api-v1.mjs
+      - run: node scripts/test-admin-attendance-customer-profile-ui-v1.mjs
+      - run: node scripts/test-ana-customer-profile-review-v1.mjs
+      - run: node scripts/test-whatsapp-ana-preview-buttons-v1.mjs
+      - run: node scripts/test-admin-attendance-catalog-link-cutover-v1.mjs
       - run: node scripts/test-admin-attendance-ui-v1.mjs
       - run: node scripts/test-admin-attendance-native-v1.mjs
       - run: node scripts/test-admin-attendance-scroll-layout-v1.mjs
@@ -42,6 +72,8 @@ jobs:
       - run: node scripts/test-admin-attendance-filter-menu-v1.mjs
       - run: node scripts/test-admin-attendance-native-channel-v1.mjs
       - run: node scripts/test-admin-attendance-unsupported-display-v1.mjs
+      - run: node scripts/test-attendance-meta-template-history-v1.mjs
+      - run: node scripts/test-admin-attendance-media-api-v1.mjs
       - run: node scripts/test-admin-attendance-library-schema-v1.mjs
       - run: node scripts/test-admin-attendance-library-send-v1.mjs
       - run: node scripts/test-admin-attendance-library-api-v1.mjs
@@ -53,14 +85,28 @@ jobs:
       - run: node scripts/test-admin-attendance-boot-auth-v1.mjs
       - run: node scripts/test-admin-attendance-auth-all-modules-v2.mjs
       - run: node scripts/test-admin-attendance-product-media-batch-v1.mjs
+      - run: node scripts/test-admin-attendance-offers-tab-v1.mjs
       - run: node scripts/test-attendance-meta-media-v1.mjs
       - run: node scripts/test-attendance-meta-media-retry-v1.mjs
+      - run: node --experimental-strip-types --check supabase/functions/admin-attendance-customer-v1/index.ts
+      - run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ana-customer-profile-v1/index.ts
+      - run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-weekly-consent-v1/index.ts
       - run: node --check supabase/functions/_shared/admin-attendance-library-v1.mjs
       - run: node --check supabase/functions/_shared/admin-attendance-library-send-v1.mjs
+      - run: node --check supabase/functions/_shared/ana-customer-profile-policy-v1.mjs
+      - run: node --check supabase/functions/_shared/whatsapp-core-v1.mjs
       - run: node --check vitrine/admin/atendimento/attendance-library-image.js
       - run: node --check vitrine/admin/atendimento/attendance-library.js
       - run: node --check vitrine/admin/atendimento/attendance-auth.js
       - run: node --check vitrine/admin/atendimento/attendance-product-send.js
+      - run: node --check vitrine/admin/atendimento/attendance-offers.js
+      - run: node --check vitrine/admin/atendimento/attendance-marketing-consent.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer-api.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer-form.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer-search.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer-view.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer-profile.js
+      - run: node --check vitrine/admin/atendimento/attendance-customer.js
       - run: node --check vitrine/admin/atendimento/attendance-app.js
       - run: node --check vitrine/admin/atendimento/attendance-send.js
       - run: node --check vitrine/admin/atendimento/attendance-media-send.js

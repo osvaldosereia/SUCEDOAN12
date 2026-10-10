@@ -3,6 +3,11 @@ project_id = "ssbesxgaijknwsjbsbcz"
 [functions.storefront-v2]
 verify_jwt = false
 
+# Tracking público por capability token opaco; a função só aceita token aleatório,
+# não expõe PII e delega a RPCs service-role-only.
+[functions.marketing-tracking-v1]
+verify_jwt = false
+
 [functions.admin-service-intelligence-v1]
 verify_jwt = false
 
@@ -13,10 +18,29 @@ verify_jwt = false
 [functions.admin-products-live-v1]
 verify_jwt = false
 
+# API dedicada da montagem guiada de Cestas/Kits; valida Bearer + admin_users internamente.
+[functions.admin-basket-guided-v1]
+verify_jwt = false
+
 # Central de Atendimento do Vitrine/Admin. Reaproveita o slot aposentado
 # admin-whatsapp-ops-v1 e valida Bearer do Admin internamente.
 [functions.admin-whatsapp-ops-v1]
 verify_jwt = false
+
+# Identidade/cadastro de cliente dentro do Atendimento. O gateway deixa a sessão
+# chegar à função e a própria Edge valida Bearer + admin_users, igual à Central.
+[functions.admin-attendance-customer-v1]
+verify_jwt = false
+
+# ANA própria: extração cadastral read/suggest. O gateway exige JWT e a função
+# ainda revalida o usuário e a autorização do Admin via RPCs canônicas.
+[functions.admin-whatsapp-ana-customer-profile-v1]
+verify_jwt = true
+
+# Consentimento semanal: envio exclusivamente por template Meta MARKETING com quick replies.
+# Gateway exige JWT e a função também valida admin_users/non-viewer.
+[functions.admin-whatsapp-weekly-consent-v1]
+verify_jwt = true
 
 [functions.whatsapp-order-outbound-v1]
 verify_jwt = true
@@ -25,4 +49,10 @@ verify_jwt = false
 
 # Validates the existing Admin Bearer and active non-viewer membership internally.
 [functions.basket-lot-image-v1]
+verify_jwt = false
+
+
+# Vitrine rápida pós-pedido: capability token opaco validado pela própria Edge Function.
+# Sem JWT público; RPCs de sessão/mutação permanecem service-role-only e o rollout inicia OFF.
+[functions.order-addon-public-v1]
 verify_jwt = false

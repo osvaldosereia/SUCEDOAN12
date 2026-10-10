@@ -33,8 +33,8 @@ async function mappedProduct(p:any){
 }
 const O=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const OP_SOURCES=["vitrine","storefront_v2","manual_whatsapp","papoai","reorder"];
-const LOCAL=new Set(["health","products","product_facets","product_save","product_quick_save","product_stock_set","offer_save","expirations","expiration_save","expiry_alerts","product_lots","product_fefo_preview","product_lifecycle_audit","ean_lookup","inventory_balance_resolve_ean","inventory_balance_status","balance_confirm","inventory_balance_prepare_unknown","inventory_balance_commit","inventory_incidents","inventory_incident_create","stock_recount_queue","stock_reconciliation_classify","stock_cutover_preflight","order_check","gondolas","gondola","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","gondola_clear","gondola_assign_count","orders","order","closure_orders","order_stock_shortages","order_update","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_consume_stock","order_separation_get","order_separation_assign","order_separation_item_set","order_separation_complete","bling_status","bling_status_catalog_probe","bling_oauth_begin","bling_probe_readonly","bling_reconcile_catalog_readonly","bling_reconcile_customers_readonly","bling_preview_order_sync","bling_reconcile_order_dependencies_readonly","bling_create_order_customer","bling_create_order_products","order_fiscal_status","order_fiscal_dispatch_canary_execute","order_fiscal_document_pdf","order_fiscal_confirm_payment","bling_finance_overview","bling_finance_action","history_sync_retry","order_component_replace","ops_summary","ops_attention","ops_shadow_readiness","ops_print_queue","ops_print_presented","manual_order_create","order_whatsapp_send","order_registration_link_issue","order_registration_link_status","ops_papoai_capture_status","papoai_issue_catalog_link","ops_timeline","ops_delivery_runs","ops_delivery_plan","ops2_recover_ean_verified","inventory_sheet_create","inventory_sheet_preview","inventory_sheet_options","inventory_sheet_batches","inventory_sheet_manifest","inventory_sheet_pending_manual","inventory_sheet_cancel_scan","inventory_sheet_analyze","inventory_sheet_apply","baskets_admin","basket_admin","basket_product_search","basket_save","basket_item_save","basket_item_delete","basket_alternative_save","basket_alternative_delete","basket_lot_create","basket_lot_cancel","basket_product_search","basket_kits_admin","basket_kit_product_suggestions","basket_kit_admin","basket_kit_lot_create","basket_kit_lot_cancel","basket_kit_lot_draft_save","basket_kit_lot_draft_delete","basket_kit_lot_draft_activate","basket_legacy_lot_release","basket_lot_sale_toggle","basket_lots_sale_bulk","basket_sales_runtime","basket_sales_mode_set","quotes","quote","quote_save","quote_status_set","cnpj_lookup"]);
-const WRITE_ACTIONS=new Set(["product_save","product_quick_save","product_stock_set","offer_save","expiration_save","product_lot_save","product_lot_tracking_complete","balance_confirm","inventory_balance_prepare_unknown","inventory_balance_commit","inventory_incident_create","stock_reconciliation_classify","order_check_start","order_check_scan","order_check_finish","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","gondola_clear","gondola_assign_count","ops_print_presented","ops_delivery_plan","manual_order_create","order_whatsapp_send","order_registration_link_issue","papoai_issue_catalog_link","order_payment_capture","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_update","order_consume_stock","order_separation_assign","order_separation_item_set","order_separation_complete","bling_create_order_customer","bling_create_order_products","order_fiscal_dispatch_canary_execute","order_fiscal_confirm_payment","bling_finance_action","inventory_sheet_create","inventory_sheet_cancel_scan","inventory_sheet_analyze","inventory_sheet_apply","basket_save","basket_item_save","basket_item_delete","basket_alternative_save","basket_alternative_delete","basket_lot_create","basket_lot_cancel","basket_kit_lot_create","basket_kit_lot_cancel","basket_kit_lot_draft_save","basket_kit_lot_draft_delete","basket_kit_lot_draft_activate","basket_legacy_lot_release","basket_lot_sale_toggle","basket_lots_sale_bulk","basket_sales_mode_set","quote_save","quote_status_set"]);
+const LOCAL=new Set(["health","products","product_detail","product_facets","product_save","product_quick_save","product_stock_set","offer_save","expirations","expiration_save","expiry_alerts","product_lots","product_fefo_preview","product_lifecycle_audit","ean_lookup","inventory_balance_resolve_ean","inventory_balance_status","balance_confirm","inventory_balance_prepare_unknown","inventory_balance_commit","inventory_incidents","inventory_incident_create","stock_recount_queue","stock_reconciliation_classify","stock_cutover_preflight","order_check","gondolas","gondola","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","gondola_clear","gondola_assign_count","orders","order","closure_orders","order_stock_shortages","order_update","order_payment_capture","order_delivery_complete_v3","order_delivery_finalize_v4","order_reopen_v3","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_consume_stock","order_separation_get","order_separation_board","order_separation_assign","order_separation_item_set","order_separation_complete","bling_status","bling_status_catalog_probe","bling_oauth_begin","bling_probe_readonly","bling_reconcile_catalog_readonly","bling_reconcile_customers_readonly","bling_preview_order_sync","bling_reconcile_order_dependencies_readonly","bling_create_order_customer","bling_create_order_products","order_fiscal_status","order_fiscal_issue_v4","order_dispatch_start_v4","order_fiscal_dispatch_canary_execute","order_fiscal_document_pdf","order_fiscal_confirm_payment","bling_finance_overview","bling_finance_action","history_sync_retry","order_component_replace","ops_summary","ops_attention","ops_shadow_readiness","ops_print_queue","ops_print_presented","manual_order_create","order_whatsapp_send","order_registration_link_issue","order_registration_link_status","ops_papoai_capture_status","papoai_issue_catalog_link","ops_timeline","ops_delivery_runs","ops_delivery_plan","smart_delivery_catalog","smart_delivery_region_save","smart_delivery_driver_save","smart_delivery_vehicle_save","smart_delivery_location_confirm","smart_delivery_run_assign","smart_delivery_loading_confirm","smart_delivery_stop_move","ops2_recover_ean_verified","inventory_sheet_create","inventory_sheet_preview","inventory_sheet_options","inventory_sheet_batches","inventory_sheet_manifest","inventory_sheet_pending_manual","inventory_sheet_cancel_scan","inventory_sheet_analyze","inventory_sheet_apply","baskets_admin","basket_admin","basket_categories_admin","basket_category_save","basket_category_delete","basket_category_assign","basket_subcategory_save","basket_subcategory_delete","basket_product_search","basket_save","basket_item_save","basket_item_delete","basket_alternative_save","basket_alternative_delete","basket_lot_create","basket_lot_cancel","basket_product_search","basket_commercial_create","basket_commercial_admin","basket_kits_admin","basket_kit_product_suggestions","basket_kit_admin","basket_kit_lot_create","basket_kit_lot_cancel","basket_kit_lot_delete","basket_kit_lot_draft_save","basket_kit_lot_draft_delete","basket_kit_lot_draft_activate","basket_kit_lot_reopen","basket_kit_template_save","basket_kit_template_archive","basket_archive","basket_legacy_lot_release","basket_lot_sale_toggle","basket_lots_sale_bulk","basket_sales_runtime","basket_sales_mode_set","quotes","quote","quote_save","quote_status_set","quote_bling_preview","quote_bling_convert","cnpj_lookup","order_fiscal_recover_bling_v1","order_fiscal_recheck_v1"]);
+const WRITE_ACTIONS=new Set(["product_save","product_quick_save","product_stock_set","offer_save","expiration_save","product_lot_save","product_lot_tracking_complete","balance_confirm","inventory_balance_prepare_unknown","inventory_balance_commit","inventory_incident_create","stock_reconciliation_classify","order_check_start","order_check_scan","order_check_finish","gondola_create","gondola_assign","gondola_shelf_update","gondola_remove","gondola_clear","gondola_assign_count","ops_print_presented","ops_delivery_plan","smart_delivery_region_save","smart_delivery_driver_save","smart_delivery_vehicle_save","smart_delivery_location_confirm","smart_delivery_run_assign","smart_delivery_loading_confirm","smart_delivery_stop_move","manual_order_create","order_whatsapp_send","order_registration_link_issue","papoai_issue_catalog_link","order_payment_capture","order_delivery_complete_v3","order_delivery_finalize_v4","order_reopen_v3","delivery_fail_register","delivery_return_confirm","delivery_return_resolve","order_update","order_consume_stock","order_separation_assign","order_separation_item_set","order_separation_complete","bling_create_order_customer","bling_create_order_products","order_fiscal_issue_v4","order_dispatch_start_v4","order_fiscal_dispatch_canary_execute","order_fiscal_confirm_payment","bling_finance_action","inventory_sheet_create","inventory_sheet_cancel_scan","inventory_sheet_analyze","inventory_sheet_apply","basket_save","basket_commercial_create","basket_category_save","basket_category_delete","basket_category_assign","basket_subcategory_save","basket_subcategory_delete","basket_item_save","basket_item_delete","basket_alternative_save","basket_alternative_delete","basket_lot_create","basket_lot_cancel","basket_kit_lot_create","basket_kit_lot_cancel","basket_kit_lot_delete","basket_kit_lot_draft_save","basket_kit_lot_draft_delete","basket_kit_lot_draft_activate","basket_kit_lot_reopen","basket_kit_template_save","basket_kit_template_archive","basket_archive","basket_legacy_lot_release","basket_lot_sale_toggle","basket_lots_sale_bulk","basket_sales_mode_set","quote_save","quote_status_set","quote_bling_convert","order_fiscal_recover_bling_v1","order_fiscal_recheck_v1"]);
 const cors=(r:Request)=>{const o=r.headers.get("origin")||"";return {"Access-Control-Allow-Origin":O.has(o)?o:"https://www.donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"content-type,authorization","Access-Control-Allow-Methods":"GET,POST,OPTIONS"}};
 const js=(r:Request,b:any,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{...cors(r),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const tx=(v:any,n=500)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
@@ -48,18 +48,18 @@ function add(d:string,n:number){const x=new Date(d+"T12:00:00Z");x.setUTCDate(x.
 function days(a:string,b:string){return Math.round((Date.parse(b+"T12:00:00Z")-Date.parse(a+"T12:00:00Z"))/86400000)}
 function offer(p:any){if(!p.is_offer||p.offer_price==null)return null;const m=meta(p.metadata);return {id:p.id,product_id:p.id,title:p.name,sale_price_cents:Math.round(Number(p.offer_price||0)*100),starts_at:m.offer_starts_at||null,ends_at:m.offer_ends_at||null,active:true,metadata:{source:m.offer_source||"manual",discount_percent:m.offer_discount_percent??null,duration_mode:m.offer_duration_mode||"stock_zero"}}}
 function mp(p:any){
-  const m=meta(p.metadata),s=meta(p.__stock_breakdown);
+  const m=meta(p.metadata),s=meta(p.__stock_breakdown),o=meta(p.__ops_meta);
   const sellable=Number(p.stock||0),physical=Math.max(0,Number(s.physical_stock??sellable)),locked=Math.max(0,Number(s.basket_locked||0)),loose=Math.max(0,physical-locked),sellableLoose=Math.max(0,Number(s.loose_stock??sellable));
   return {
     id:p.id,sku:p.sku||null,gtin:p.gtin||null,name:p.name||"",description:p.description_short||p.description_long||"",
-    active:p.is_active!==false,sale_price_cents:Math.round(Number(p.price||0)*100),
+    active:p.is_active!==false,sale_price_cents:Math.round(Number(p.price||0)*100),cost_cents:Math.round(Number(p.cost||0)*100),
     stock_quantity:physical,physical_stock_quantity:physical,sellable_stock_quantity:sellable,virtual_stock_quantity:sellable,loose_stock_quantity:loose,sellable_loose_stock_quantity:sellableLoose,basket_locked_quantity:locked,
     stock_breakdown_warning:locked>physical+0.0001,stock_breakdown_difference:Math.max(0,locked-physical),
     bling_stock_ready:s.bling_stock_ready===true,
     image_url:p.image_url||"",image_original_url:p.image_original_url||"",image_ai_url:p.image_ai_url||"",
     image_ai_status:p.image_ai_status||null,image_ai_model:p.image_ai_model||null,image_ai_processed_at:p.image_ai_processed_at||null,
     image_ai_error:p.image_ai_error||null,image_ai_validation:p.image_ai_validation||null,
-    expiration_date:p.validity_date||null,auto_expiry_offer_enabled:m.auto_expiry_offer_enabled===true,
+    expiration_date:p.validity_date||null,next_expiration_date:o.next_expiration_date||p.validity_date||null,active_lot_count:Number(o.active_lot_count||0),linked_kits:Array.isArray(o.linked_kits)?o.linked_kits:[],auto_expiry_offer_enabled:m.auto_expiry_offer_enabled===true,
     lot_tracking_complete:m.lot_tracking_complete===true||m.lot_tracking_complete==="true",
     deactivation_reason:m.deactivation_reason||null,deactivated_at:m.deactivated_at||null,updated_at:p.updated_at,
     packaging:p.packaging||"",subcategory:p.subcategory||"",detailed_subcategory:p.subsubcategory||"",
@@ -68,6 +68,117 @@ function mp(p:any){
   };
 }
 async function one(pid:string){const r=await db.from("products").select("*").eq("id",pid).maybeSingle();if(r.error)throw r.error;return r.data}
+const own=(v:any,k:string)=>Object.prototype.hasOwnProperty.call(v||{},k);
+function editorGtins(v:any){
+  const raw=Array.isArray(v)?v:String(v??"").split(/[\s,;]+/);
+  return [...new Set(raw.map((x:any)=>String(x??"").replace(/\D+/g,"")).filter(Boolean))];
+}
+function editorTags(v:any){
+  const raw=Array.isArray(v)?v:String(v??"").split(/[,;\n]+/);
+  return [...new Set(raw.map((x:any)=>tx(x,80)).filter(Boolean))].slice(0,40);
+}
+function editorGtinValid(v:string){return /^\d{8}$/.test(v)||/^\d{12,14}$/.test(v)}
+function nullableEditorNumber(v:any){if(v===null||v===undefined||String(v).trim()==="")return null;const n=Number(String(v).replace(",","."));return Number.isFinite(n)?n:null}
+function normalizedFiscal(v:any){
+  const f=meta(v),digits=(x:any)=>String(x??"").replace(/\D+/g,"");
+  const origin=String(f.origin_code??"").trim()===""?null:Number(f.origin_code);
+  return {
+    ncm:digits(f.ncm)||null,cest:digits(f.cest)||null,origin_code:origin,
+    commercial_gtin:digits(f.commercial_gtin)||null,tax_gtin:digits(f.tax_gtin)||null,
+    commercial_unit:tx(f.commercial_unit,30)||null,tax_unit:tx(f.tax_unit,30)||null,
+    fiscal_description:tx(f.fiscal_description,500)||null
+  };
+}
+async function validateProductEditorExtras(pid:string,p:any){
+  if(own(p,"min_stock")){
+    const n=nullableEditorNumber(p.min_stock);if(n!==null&&n<0)return {error:"invalid_min_stock",status:400};
+  }
+  if(own(p,"gondola")){
+    const raw=String(p.gondola??"").trim();if(raw){const n=Number(raw);if(!Number.isInteger(n)||n<1||n>30)return {error:"invalid_gondola",status:400}}
+  }
+  if(own(p,"additional_gtins")){
+    const primary=String(p?.gtin??"").replace(/\D+/g,"");
+    const desired=[...new Set([primary,...editorGtins(p.additional_gtins)].filter(Boolean))];
+    const invalid=desired.find(x=>!editorGtinValid(x));if(invalid)return {error:"invalid_additional_gtin",status:400,identifier:invalid};
+    if(desired.length){
+      const q=await db.from("product_identifiers").select("product_id,identifier_value,identifier_kind,status")
+        .in("identifier_kind",["base_gtin","package_gtin"]).eq("status","confirmed").in("identifier_value",desired);
+      if(q.error)throw q.error;
+      const conflict=(q.data||[]).find((x:any)=>String(x.product_id)!==String(pid||""));
+      if(conflict)return {error:"identifier_already_linked",status:409,identifier:conflict.identifier_value,product_id:conflict.product_id};
+    }
+  }
+  if(p?.fiscal&&typeof p.fiscal==="object"){
+    const f=normalizedFiscal(p.fiscal);
+    if(f.ncm&&!/^\d{8}$/.test(f.ncm))return {error:"invalid_ncm",status:400};
+    if(f.cest&&!/^\d{7}$/.test(f.cest))return {error:"invalid_cest",status:400};
+    if(f.origin_code!==null&&(!Number.isInteger(f.origin_code)||f.origin_code<0||f.origin_code>8))return {error:"invalid_origin_code",status:400};
+    if(f.commercial_gtin&&!editorGtinValid(f.commercial_gtin))return {error:"invalid_commercial_gtin",status:400};
+    if(f.tax_gtin&&!editorGtinValid(f.tax_gtin))return {error:"invalid_tax_gtin",status:400};
+  }
+  return null;
+}
+async function syncProductEditorIdentifiers(productId:string,primary:any,extra:any,operator:any){
+  const desired=[...new Set([String(primary??"").replace(/\D+/g,""),...editorGtins(extra)].filter(Boolean))];
+  const q=await db.from("product_identifiers").select("id,identifier_value,status").eq("product_id",productId).eq("identifier_kind","base_gtin");
+  if(q.error)throw q.error;
+  const rows=q.data||[],now=new Date().toISOString();
+  for(const row of rows){
+    const should=desired.includes(String(row.identifier_value));
+    if(should&&row.status!=="confirmed"){
+      const u=await db.from("product_identifiers").update({status:"confirmed",source:"admin_product_editor",confidence:1,updated_at:now,metadata:{source_ui:"product_editor",operator:tx(operator,80)||null}}).eq("id",row.id);if(u.error)throw u.error;
+    }else if(!should&&row.status==="confirmed"){
+      const u=await db.from("product_identifiers").update({status:"inactive",updated_at:now,metadata:{source_ui:"product_editor",operator:tx(operator,80)||null}}).eq("id",row.id);if(u.error)throw u.error;
+    }
+  }
+  const existing=new Set(rows.map((x:any)=>String(x.identifier_value)));
+  for(const value of desired){
+    if(existing.has(value))continue;
+    const ins=await db.from("product_identifiers").insert({product_id:productId,identifier_value:value,identifier_kind:"base_gtin",packaging_unit:null,conversion_factor:null,supplier_document:"",source:"admin_product_editor",confidence:1,status:"confirmed",metadata:{source_ui:"product_editor",operator:tx(operator,80)||null}});
+    if(ins.error){const msg=String(ins.error.message||"");if(msg.includes("product_identifiers_confirmed_global_uidx"))return {error:"identifier_already_linked",status:409,identifier:value};throw ins.error}
+  }
+  return {ok:true};
+}
+async function saveProductEditorFiscal(productId:string,value:any,operator:any){
+  const f=normalizedFiscal(value),now=new Date().toISOString();
+  const q=await db.from("product_fiscal_profiles").select("*").eq("product_id",productId).maybeSingle();if(q.error)throw q.error;
+  const before=q.data||null,keys=["ncm","cest","origin_code","commercial_gtin","tax_gtin","commercial_unit","tax_unit","fiscal_description"];
+  const comparable=(v:any)=>v===null||v===undefined||String(v).trim()===""?null:String(v);
+  const fiscalChanged=keys.some(k=>comparable(before?.[k])!==comparable((f as any)[k]));
+  if(!fiscalChanged)return {ok:true,changed:false};
+  const row:any={
+    ...(before||{}),product_id:productId,ncm:f.ncm,cest:f.cest,origin_code:f.origin_code,
+    commercial_gtin:f.commercial_gtin,tax_gtin:f.tax_gtin,commercial_unit:f.commercial_unit,tax_unit:f.tax_unit,
+    fiscal_description:f.fiscal_description,st_status:before?.st_status||"unknown",
+    classification_source:"admin_product_editor",review_status:"human_validated",validated_at:now,
+    metadata:{...meta(before?.metadata),last_manual_edit_at:now,last_manual_edit_by:tx(operator,80)||"Operação"},updated_at:now
+  };
+  delete row.created_at;
+  const up=await db.from("product_fiscal_profiles").upsert(row,{onConflict:"product_id"});if(up.error)throw up.error;
+  return {ok:true,changed:true};
+}
+async function productDetail(pid:string){
+  if(!pid)return {error:"invalid_product",status:400};
+  const p=await one(pid);if(!p)return {error:"product_not_found",status:404};
+  const [mapped,ids,fiscal]=await Promise.all([
+    mappedProduct(p),
+    db.from("product_identifiers").select("id,identifier_value,identifier_kind,packaging_unit,conversion_factor,supplier_document,source,confidence,status,created_at,updated_at").eq("product_id",pid).order("created_at",{ascending:true}),
+    db.from("product_fiscal_profiles").select("*").eq("product_id",pid).maybeSingle()
+  ]);
+  if(ids.error)throw ids.error;if(fiscal.error)throw fiscal.error;
+  const identifiers=ids.data||[];
+  const additionalGtins=identifiers.filter((x:any)=>x.identifier_kind==="base_gtin"&&x.status==="confirmed"&&String(x.identifier_value)!==String(p.gtin||"")).map((x:any)=>String(x.identifier_value));
+  return {product:{
+    ...mapped,_detail_loaded:true,ncm:p.ncm||"",brand:p.brand||"",supplier:p.supplier||"",unit:p.unit||"",min_stock:p.min_stock??null,
+    detailed_subcategory:p.subsubcategory||"",gondola_number:p.gondola&&/^\d+$/.test(String(p.gondola))?Number(p.gondola):null,shelf_label:p.shelf||"",
+    tags:Array.isArray(p.tags)?p.tags:[],storefront_featured:p.storefront_featured===true,is_upsell:p.is_upsell===true,
+    is_whatsapp_active:p.is_whatsapp_active===true,whatsapp_category:p.whatsapp_category||"",
+    customer_category:p.customer_category||"",customer_subcategory:p.customer_subcategory||"",customer_subsubcategory:p.customer_subsubcategory||"",
+    bling_product_id:p.bling_product_id??null,sync_status:p.sync_status||"",last_bling_sync_at:p.last_bling_sync_at||null,source_system:p.source_system||"",
+    physically_verified:p.physically_verified===true,physically_verified_at:p.physically_verified_at||null,last_counted_at:p.last_counted_at||null,
+    additional_gtins:additionalGtins,identifiers,fiscal:fiscal.data||null
+  },identifiers,fiscal:fiscal.data||null};
+}
 async function aud(b:any,a:any,p:any,src:string){if(!b||!a)return;const ba=b.is_active!==false,aa=a.is_active!==false,bd=b.validity_date||null,ad=a.validity_date||null;if(ba===aa&&bd===ad)return;let ev="expiration_changed",at="operator",al=tx(p?.operator,80)||"Operador não identificado";if(ba!==aa&&aa)ev="reactivated";else if(ba!==aa&&!aa){if(meta(a.metadata).deactivation_reason==="expired"){ev="auto_expired_deactivation";at="system";al="Sistema · regra de validade"}else ev="manual_deactivated"}await db.from("product_lifecycle_audit").insert({product_id:a.id,event:ev,actor_type:at,actor_label:al,previous_active:ba,new_active:aa,previous_expiration_date:bd,new_expiration_date:ad,details:{source:src}})}
 async function rec(){
   const authority=await stockAuthority(),t=today();
@@ -161,6 +272,21 @@ async function basketKitProductIds(){
   }
   return out;
 }
+async function productOperationalMetaMap(ids:string[]){
+  const out=new Map<string,any>(),clean=[...new Set((ids||[]).filter(Boolean))];if(!clean.length)return out;
+  for(const pid of clean)out.set(String(pid),{next_expiration_date:null,active_lot_count:0,linked_kits:[]});
+  const [lots,items]=await Promise.all([
+    db.from("product_inventory_lots").select("product_id,expiration_date,quantity_on_hand,quantity_reserved,status").in("product_id",clean),
+    db.from("basket_kit_template_items").select("product_id,kit_template_id").in("product_id",clean)
+  ]);
+  if(lots.error)throw lots.error;if(items.error)throw items.error;
+  for(const l of lots.data||[]){const pid=String(l.product_id||"");const o=out.get(pid);if(!o||String(l.status||"")!=="active")continue;const available=Number(l.quantity_on_hand||0)-Number(l.quantity_reserved||0);if(available<=0)continue;o.active_lot_count+=1;if(l.expiration_date&&(!o.next_expiration_date||String(l.expiration_date)<String(o.next_expiration_date)))o.next_expiration_date=String(l.expiration_date)}
+  const kitIds=[...new Set((items.data||[]).map((x:any)=>String(x.kit_template_id||"")).filter(Boolean))];let kits:any[]=[];if(kitIds.length){const kr=await db.from("basket_kit_templates").select("id,name,kind,is_active,basket_id").in("id",kitIds);if(kr.error)throw kr.error;kits=kr.data||[]}
+  const kitMap=new Map(kits.map((k:any)=>[String(k.id),k]));
+  for(const x of items.data||[]){const o=out.get(String(x.product_id||"")),k:any=kitMap.get(String(x.kit_template_id||""));if(!o||!k)continue;if(!o.linked_kits.some((z:any)=>String(z.id)===String(k.id)))o.linked_kits.push({id:k.id,basket_id:k.basket_id||null,name:k.name||"Kit",kind:k.kind||null,active:k.is_active!==false})}
+  for(const o of out.values())o.linked_kits.sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+  return out;
+}
 function productSortKey(v:any){
   const x=tx(v,30);return new Set(["name_asc","name_desc","updated_desc","updated_asc","expiry_asc","expiry_desc","gondola_asc","gondola_desc"]).has(x)?x:"";
 }
@@ -206,8 +332,8 @@ async function products(u:URL){
       const complete=meta(x.metadata).lot_tracking_complete===true||meta(x.metadata).lot_tracking_complete==="true";
       if(lotStatus==="complete"&&!complete)return false;if(lotStatus==="pending"&&complete)return false;return true;
     }),sort,lotStatus,memberIds);
-    rows=filtered.slice(off,off+lim);const sm=await stockBreakdownMap(rows.map((x:any)=>x.id));
-    return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s})}),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
+    rows=filtered.slice(off,off+lim);const [sm,om]=await Promise.all([stockBreakdownMap(rows.map((x:any)=>x.id)),productOperationalMetaMap(rows.map((x:any)=>x.id))]);
+    return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s,__ops_meta:o})}),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
   }
   let q=db.from("products").select("*");
   if(sort==="updated_desc")q=q.order("updated_at",{ascending:false}).order("name");
@@ -217,8 +343,8 @@ async function products(u:URL){
   else q=q.order("name",{ascending:sort!=="name_desc"});
   q=q.range(off,off+lim-1);if(sub)q=q.eq("subcategory",sub);if(act==="true")q=q.eq("is_active",true);if(act==="false")q=q.eq("is_active",false);
   if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
-  const r=await q;if(r.error)throw r.error;rows=r.data||[];const sm=await stockBreakdownMap(rows.map((x:any)=>x.id));
-  return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s})}),next_offset:rows.length===lim?off+lim:null};
+  const r=await q;if(r.error)throw r.error;rows=r.data||[];const [sm,om]=await Promise.all([stockBreakdownMap(rows.map((x:any)=>x.id)),productOperationalMetaMap(rows.map((x:any)=>x.id))]);
+  return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s,__ops_meta:o})}),next_offset:rows.length===lim?off+lim:null};
 }
 async function facets(c:string,act=""){
   const all:any[]=[];
@@ -247,6 +373,7 @@ async function saveProduct(p:any){
   const b=pid?await one(pid):null;
   const source=duplicateFromId?await one(duplicateFromId):null;
   if(duplicateFromId&&!source)return {error:"duplicate_source_not_found",status:404};
+  const editorCheck=await validateProductEditorExtras(pid,p);if(editorCheck)return editorCheck;
 
   const sourceMeta=meta(source?.metadata),baseMeta=pid?meta(b?.metadata):duplicateFromId?{...sourceMeta}:{};
   if(duplicateFromId){
@@ -294,12 +421,14 @@ async function saveProduct(p:any){
     customer_taxonomy_review_status:source?.customer_taxonomy_review_status??null
   }:{};
 
+  const fiscalInput=p?.fiscal&&typeof p.fiscal==="object"?normalizedFiscal(p.fiscal):null;
   const patch:any={
     ...inherited,
     name,
     sku:tx(p?.sku,120)||null,
     gtin:dg(p?.gtin)||null,
     price:Number(p?.sale_price_cents||0)/100,
+    ...(own(p,"cost_cents")?{cost:Number(p.cost_cents||0)/100}:{}),
     ...(authority==="bling"&&pid?{}:{stock}),
     is_active:active,
     validity_date:exp,
@@ -307,7 +436,23 @@ async function saveProduct(p:any){
     storefront_category:tx(p?.category,120)||null,
     category:tx(p?.category,120)||null,
     subcategory:tx(p?.subcategory,120)||null,
+    ...(own(p,"subsubcategory")?{subsubcategory:tx(p.subsubcategory,120)||null}:{}),
     packaging:tx(p?.packaging,120)||null,
+    ...(own(p,"brand")?{brand:tx(p.brand,160)||null}:{}),
+    ...(own(p,"supplier")?{supplier:tx(p.supplier,240)||null}:{}),
+    ...(own(p,"unit")?{unit:tx(p.unit,30)||null}:{}),
+    ...(own(p,"min_stock")?{min_stock:nullableEditorNumber(p.min_stock)}:{}),
+    ...(own(p,"gondola")?{gondola:tx(p.gondola,10)||null}:{}),
+    ...(own(p,"shelf")?{shelf:tx(p.shelf,40)||null}:{}),
+    ...(own(p,"tags")?{tags:editorTags(p.tags)}:{}),
+    ...(own(p,"storefront_featured")?{storefront_featured:p.storefront_featured===true}:{}),
+    ...(own(p,"is_upsell")?{is_upsell:p.is_upsell===true}:{}),
+    ...(own(p,"is_whatsapp_active")?{is_whatsapp_active:p.is_whatsapp_active===true}:{}),
+    ...(own(p,"whatsapp_category")?{whatsapp_category:tx(p.whatsapp_category,120)||null}:{}),
+    ...(own(p,"customer_category")?{customer_category:tx(p.customer_category,120)||null}:{}),
+    ...(own(p,"customer_subcategory")?{customer_subcategory:tx(p.customer_subcategory,120)||null}:{}),
+    ...(own(p,"customer_subsubcategory")?{customer_subsubcategory:tx(p.customer_subsubcategory,120)||null}:{}),
+    ...(fiscalInput?{ncm:fiscalInput.ncm}:{}),
     image_url:tx(p?.image_url,1200)||null,
     description_short:tx(p?.description,1000)||null,
     is_offer:io,
@@ -342,6 +487,8 @@ async function saveProduct(p:any){
     if(msg.includes("products_sku")||msg.includes("sku"))return {error:"sku_already_exists",status:409};
     throw r.error;
   }
+  if(own(p,"additional_gtins")){const sr=await syncProductEditorIdentifiers(r.data.id,p?.gtin,p.additional_gtins,p?.operator);if(sr?.error)return sr;}
+  if(p?.fiscal&&typeof p.fiscal==="object")await saveProductEditorFiscal(r.data.id,p.fiscal,p?.operator);
   if(b)await aud(b,r.data,p,"product_save");
   await rec();
   const fr=await one(r.data.id);
@@ -355,6 +502,9 @@ async function quickProductSave(p:any,auth:any){
   const patch:any={},m={...meta(before.metadata)},now=new Date().toISOString();let metaChanged=false;
   if(Object.prototype.hasOwnProperty.call(p||{},"sale_price_cents")){
     const cents=Number(p.sale_price_cents);if(!Number.isFinite(cents)||cents<0)return {error:"invalid_price",status:400};patch.price=Math.round(cents)/100;
+  }
+  if(Object.prototype.hasOwnProperty.call(p||{},"cost_cents")){
+    const cents=Number(p.cost_cents);if(!Number.isFinite(cents)||cents<0)return {error:"invalid_cost",status:400};patch.cost=Math.round(cents)/100;
   }
   if(Object.prototype.hasOwnProperty.call(p||{},"gondola_number")){
     if(p.gondola_number===null||p.gondola_number==="")patch.gondola=null;
@@ -1009,9 +1159,26 @@ async function stockReadiness(orderIds:string[]){
     const d=demand.get(r.order_id)!;d.set(r.product_id,(d.get(r.product_id)||0)+q);pids.add(r.product_id)
   }
   const ids=[...pids];if(!ids.length){for(const oid of orderIds)out.set(oid,{ok:hasKitAlloc.has(oid),shortage_count:0,shortages:[],demand_lines:0,reserved_lines:0,error:hasKitAlloc.has(oid)?null:"empty_order_stock",preassembled_only:hasKitAlloc.has(oid)});return out}
-  const [pr,rr,sm,authority]=await Promise.all([
-    db.from("products").select("id,name,sku,gtin,is_active,gondola,shelf").in("id",ids),
-    db.from("vitrine_stock_reservations").select("order_id,product_id,quantity,status,expires_at").in("product_id",ids),
+  // Keep UUID filters below the gateway URL limit as the order history grows.
+  const readStockRows=async()=>{
+    const products:any[]=[],reservations:any[]=[];
+    for(let i=0;i<ids.length;i+=80){
+      const batch=ids.slice(i,i+80);
+      const pr=await db.from("products").select("id,name,sku,gtin,is_active,gondola,shelf").in("id",batch);
+      if(pr.error)throw pr.error;
+      products.push(...(pr.data||[]));
+      for(let offset=0;;offset+=1000){
+        const rr=await db.from("vitrine_stock_reservations").select("order_id,product_id,quantity,status,expires_at")
+          .in("product_id",batch).order("id",{ascending:true}).range(offset,offset+999);
+        if(rr.error)throw rr.error;
+        reservations.push(...(rr.data||[]));
+        if((rr.data||[]).length<1000)break;
+      }
+    }
+    return [{data:products},{data:reservations}];
+  };
+  const [[pr,rr],sm,authority]=await Promise.all([
+    readStockRows(),
     effectiveStockMap(ids),
     stockAuthority()
   ]);
@@ -1038,9 +1205,67 @@ async function stockReadiness(orderIds:string[]){
   }
   return out;
 }
+async function publicOrderCodeMap(ids:string[]){
+  const out=new Map<string,string>(),cleanIds=[...new Set((ids||[]).filter(Boolean))];
+  for(let i=0;i<cleanIds.length;i+=100){
+    const q=await db.from("order_public_snapshots_v1").select("order_id,public_code").in("order_id",cleanIds.slice(i,i+100));
+    if(q.error)throw q.error;
+    for(const row of q.data||[]){const code=tx(row.public_code,5);if(/^[A-Z]{2}[0-9]{3}$/.test(code))out.set(String(row.order_id),code)}
+  }
+  return out;
+}
+async function separationSummaryMap(ids:string[]){
+  const out=new Map<string,any>(),cleanIds=[...new Set((ids||[]).filter(Boolean))];
+  if(!cleanIds.length)return out;
+  const assignments:any[]=[],completions:any[]=[],items:any[]=[];
+  for(let i=0;i<cleanIds.length;i+=80){
+    const batch=cleanIds.slice(i,i+80);
+    const [a,cp,it]=await Promise.all([
+      db.from("order_separation_assignments_v1").select("order_id,separator_key,separator_label,assigned_at,updated_at").in("order_id",batch),
+      db.from("order_separation_completions_v1").select("order_id,phase,separator_key,missing_subtotal,final_total,completed_at,metadata,updated_at").in("order_id",batch),
+      db.from("order_separation_items_v1").select("order_id,state,line_total").in("order_id",batch)
+    ]);
+    if(a.error)throw a.error;if(cp.error)throw cp.error;if(it.error)throw it.error;
+    assignments.push(...(a.data||[]));completions.push(...(cp.data||[]));items.push(...(it.data||[]));
+  }
+  const am=new Map(assignments.map((x:any)=>[String(x.order_id),x]));
+  const cm=new Map(completions.map((x:any)=>[String(x.order_id),x]));
+  const counts=new Map<string,any>();
+  for(const x of items){
+    const oid=String(x.order_id),row=counts.get(oid)||{pending:0,separated:0,missing:0,total:0,missing_subtotal:0};
+    const state=String(x.state||"pending");
+    if(state==="separated")row.separated++;
+    else if(state==="missing"){row.missing++;row.missing_subtotal+=Number(x.line_total||0)}
+    else row.pending++;
+    row.total++;
+    counts.set(oid,row);
+  }
+  for(const oid of cleanIds){
+    const assignment:any=am.get(String(oid))||null,completion:any=cm.get(String(oid))||null;
+    const row=counts.get(String(oid))||{pending:0,separated:0,missing:0,total:0,missing_subtotal:0};
+    row.missing_subtotal=Math.round(Number(row.missing_subtotal||0)*100)/100;
+    out.set(String(oid),{
+      assignment,
+      counts:row,
+      phase:completion?.phase||null,
+      completed_at:completion?.completed_at||null,
+      missing_subtotal:completion?.missing_subtotal==null?row.missing_subtotal:Number(completion.missing_subtotal||0),
+      final_total:completion?.final_total==null?null:Number(completion.final_total||0),
+      completion_metadata:completion?.metadata||null
+    });
+  }
+  return out;
+}
+async function activeSeparationBoard(){
+  const q=await db.from("orders").select("id,status").in("status",["confirmed","processing","ready"]).order("created_at",{ascending:false}).limit(500);
+  if(q.error)throw q.error;
+  const rows=q.data||[],sm=await separationSummaryMap(rows.map((x:any)=>x.id));
+  return rows.map((x:any)=>({order_id:x.id,status:uiStatus(x.status),separation_summary:sm.get(String(x.id))||null}));
+}
 async function mapOrders(rows:any[]){
   const ids=rows.map((o:any)=>o.id);
-  const [rmap,ready,smap,dmap]=await Promise.all([reservationRows(ids),stockReadiness(ids),paymentSettlementMap(ids),deliveryReturnMap(ids)]);
+  const separationIds=rows.filter((o:any)=>["confirmed","processing","ready","out_for_delivery"].includes(uiStatus(o.status))).map((o:any)=>o.id);
+  const [rmap,ready,smap,dmap,pmap,separationMap]=await Promise.all([reservationRows(ids),stockReadiness(ids),paymentSettlementMap(ids),deliveryReturnMap(ids),publicOrderCodeMap(ids),separationSummaryMap(separationIds)]);
   const cids=[...new Set(rows.map((o:any)=>o.customer_id).filter(Boolean))],cm=new Map<string,any>();
   if(cids.length){
     const cq=await db.from("ops2_admin_customer_registration_v1")
@@ -1055,7 +1280,7 @@ async function mapOrders(rows:any[]){
       if(v!==null&&v!==undefined&&(typeof v!=="string"||v.trim()!==""))address[k]=v;
     }
     return {
-      id:o.id,order_number:o.order_number,status:uiStatus(o.status),total_cents:Math.round(Number(o.total||0)*100),
+      id:o.id,public_code:pmap.get(String(o.id))||null,order_number:o.order_number,status:uiStatus(o.status),total_cents:Math.round(Number(o.total||0)*100),
       payment_method_snapshot:paySnap(o,rmap.get(o.id)||[],smap.get(o.id)||null),delivery_return:dmap.get(o.id)||null,
       delivery_address_snapshot:address,
       whatsapp_phone_e164:o.phone_e164||address.phone||c.primary_whatsapp_e164||"",
@@ -1068,11 +1293,11 @@ async function mapOrders(rows:any[]){
       bling_ready:c.bling_ready===true,
       bling_linked:c.bling_linked===true,
       bling_contact_id:c.bling_contact_id||null,
-      history_sync:{state:"synced",canonical:true},stock_readiness:ready.get(o.id)||null,source:o.source
+      history_sync:{state:"synced",canonical:true},stock_readiness:ready.get(o.id)||null,separation_summary:separationMap.get(String(o.id))||null,source:o.source
     };
   });
 }
-async function ordersList(){const c=await cutover(),q=await db.from("orders").select("*").in("source",OP_SOURCES).gte("created_at",c.live_orders_since).order("created_at",{ascending:false}).limit(250);if(q.error)throw q.error;return await mapOrders(q.data||[])}
+async function ordersList(){const rows:any[]=[];for(let pos=0;pos<5000;pos+=1000){const q=await db.from("orders").select("*").order("created_at",{ascending:false}).range(pos,pos+999);if(q.error)throw q.error;rows.push(...(q.data||[]));if((q.data||[]).length<1000)break}return await mapOrders(rows)}
 async function orderDetailCanonical(orderId:any){
   const oid=id(orderId);if(!oid)return {error:"invalid_order",status:400};const oq=await db.from("orders").select("*").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;if(!oq.data)return {error:"order_not_found",status:404};
   const iq=await db.from("order_items").select("*").eq("order_id",oid).order("created_at");if(iq.error)throw iq.error;const itemRows=iq.data||[],pids=[...new Set(itemRows.map((x:any)=>x.product_id).filter(Boolean))],pm=new Map<string,any>();
@@ -1102,10 +1327,10 @@ async function orderDetailCanonical(orderId:any){
   const separation_plan=(aq.data||[]).map((a:any)=>{const lot:any=Array.isArray(a.lot)?a.lot[0]:a.lot;return {basket_id:a.basket_id,lot_id:a.lot_id,quantity:Number(a.quantity||0),status:a.status,role:a.allocation_role,short_code:lot?.short_code||meta(a.metadata).short_code||null,lot_code:lot?.lot_code||null,lot_kind:lot?.lot_kind||a.allocation_role}});
   const mapped=(await mapOrders([oq.data]))[0];let bl:any=null;try{const h=await hub("order_link_status",{source_order_id:oid});if(!h.error)bl=h.data}catch{}
   let publicLink:any=null;try{const q=await db.rpc("ops2_order_public_link_v1",{p_order_id:oid});if(!q.error)publicLink=q.data||null}catch{}
-  return {order:{...mapped,subtotal_cents:Math.round(Number(oq.data.subtotal||0)*100),discount_cents:Math.round(Number(oq.data.discount||0)*100),delivery_cents:0,public_order_url:publicLink?.public_url||null,public_order_code:publicLink?.public_code||null},customer,history_sync:{state:"synced",canonical:true},stock_readiness:mapped.stock_readiness,bling_link:bl,items:result,separation_plan,checkout_separation_plan:oq.data.checkout_snapshot?.separation_plan||[]};
+  return {order:{...mapped,subtotal_cents:Math.round(Number(oq.data.subtotal||0)*100),discount_cents:Math.round(Number(oq.data.discount||0)*100),delivery_cents:0,public_order_url:publicLink?.public_url||null,public_order_code:publicLink?.public_code||null,public_code:publicLink?.public_code||mapped.public_code||null},customer,history_sync:{state:"synced",canonical:true},stock_readiness:mapped.stock_readiness,bling_link:bl,items:result,separation_plan,checkout_separation_plan:oq.data.checkout_snapshot?.separation_plan||[]};
 }
 async function guardOrder(oid:string){const c=await cutover(),q=await db.from("orders").select("id,created_at,source").eq("id",oid).maybeSingle();if(q.error)throw q.error;if(!q.data)return {error:"order_not_found",status:404};if(!OP_SOURCES.includes(String(q.data.source||""))||(c.legacy_orders_read_only&&Date.parse(q.data.created_at)<Date.parse(c.live_orders_since)))return {error:"legacy_order_read_only",status:409};return {ok:true}}
-function transitionAllowed(a:string,b:string){if(a===b)return true;const m:any={created:["confirmed","cancelled"],confirmed:["processing","cancelled"],processing:["ready","cancelled"],ready:["out_for_delivery","cancelled"],out_for_delivery:["ready","delivered","cancelled"],delivered:[],cancelled:[]};return (m[a]||[]).includes(b)}
+function transitionAllowed(a:string,b:string){if(a===b)return true;const m:any={created:["confirmed","cancelled"],confirmed:["processing","cancelled"],processing:["ready","cancelled"],ready:["cancelled"],out_for_delivery:["ready","delivered","cancelled"],delivered:[],cancelled:[]};return (m[a]||[]).includes(b)}
 async function registerFailedDelivery(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};
@@ -1180,6 +1405,177 @@ async function captureDeliveryPayment(p:any,auth:any){
   return {settlement:q.data};
 }
 
+function orderFiscalBlockers(...groups:any[]){return [...new Set(groups.flatMap((g:any)=>Array.isArray(g)?g:[]).map((x:any)=>tx(x,180)).filter(Boolean))]}
+async function orderFiscalStatusV4(rawId:any){
+  const oid=id(rawId);if(!oid)return {error:"invalid_order",status:400};
+  const [oq,elig,ctl]=await Promise.all([
+    db.from("orders").select("id,status,order_number,total").eq("id",oid).maybeSingle(),
+    db.rpc("preview_bling_invoice_eligibility_v1",{p_order_id:oid}),
+    db.from("order_fiscal_controls").select("fiscal_status,fiscal_block_reason,payment_status,payment_method,payment_source,settled_amount,payment_confirmed_at,dispatch_fiscal_status,dispatch_fiscal_authorized_at,bling_invoice_id,bling_invoice_number,sefaz_status,issued_at,dispatch_started_at").eq("order_id",oid).maybeSingle()
+  ]);
+  if(oq.error)throw oq.error;if(!oq.data)return {error:"order_not_found",status:404};
+  if(elig.error)throw elig.error;if(ctl.error)throw ctl.error;
+  const h=await hub("fiscal_dispatch_preview",{source_order_id:oid});
+  if(h.error)return {error:h.error||"fiscal_status_unavailable",status:h.status||502,detail:h.detail||h.data||null};
+  const remote:any=h.data||{},control:any=ctl.data||{},invoice:any=remote.invoice||{};
+  const recoveryQ=await db.from("fiscal_nfe_recovery_events_v1")
+    .select("stage,diagnostics,external_write,created_at").eq("order_id",oid)
+    .order("created_at",{ascending:false}).limit(1).maybeSingle();
+  const recovery:any=!recoveryQ.error?recoveryQ.data:null;
+  const authorized=control.dispatch_fiscal_status==="authorized"||control.dispatch_fiscal_status==="not_required"||invoice?.situation?.authorized===true||remote.already_authorized===true;
+  const hard=orderFiscalBlockers(remote.hard_blockers);
+  if(elig.data?.eligible!==true&&elig.data?.reason)hard.push(tx(elig.data.reason,180));
+  const uniqueHard=[...new Set(hard.filter(Boolean))];
+  const productionIssueEnabled=remote.config?.human_issue_enabled===true&&remote.config?.dispatch_gate_mode==="enforce";
+  const selectedCanary=remote.config?.canary_enabled===true&&remote.config?.canary_selected===true;
+  const issueEnabled=productionIssueEnabled||selectedCanary;
+  // Never advertise a second generation attempt when the first POST timed
+  // out or was already consumed: the scheduled recovery must first reconcile it.
+  const lastJob:any=remote.job||{};
+  const generationAttempted=Number(lastJob.attempts||0)>0
+    &&!Number(lastJob.bling_invoice_id||remote.invoice_id||0)
+    &&["review_required","generating"].includes(String(lastJob.status||""));
+  const canIssue=oq.data.status==="ready"&&elig.data?.eligible===true&&!authorized&&uniqueHard.length===0&&issueEnabled&&!generationAttempted;
+  const canDispatch=oq.data.status==="ready"&&authorized;
+  const danfeAvailable=authorized&&Boolean(invoice?.chaveAcesso||remote.job?.access_key||control.bling_invoice_id);
+  const terminalFailed=invoice?.situation?.failed===true;
+  const invoiceId=Number(control.bling_invoice_id||remote.invoice_id||invoice?.id||0)||null;
+  let stage="blocked";
+  if(authorized)stage="authorized";
+  else if(terminalFailed)stage="rejected";
+  else if(invoiceId)stage="processing";
+  else if(oq.data.status==="ready"&&elig.data?.eligible===true)stage="pending";
+  const blockers=orderFiscalBlockers(uniqueHard,issueEnabled?[]:["fiscal_human_issue_not_enabled"],
+    generationAttempted?["invoice_generation_recovery_required"]:[]);
+  return {
+    order_id:oid,order_number:oq.data.order_number||null,order_status:oq.data.status,stage,authorized,can_issue:canIssue,can_dispatch:canDispatch,
+    invoice_id:invoiceId,invoice_number:control.bling_invoice_number||invoice?.numero||remote.job?.bling_invoice_number||null,
+    sefaz_status:control.sefaz_status||invoice?.situation?.label||remote.job?.sefaz_status||null,danfe_available:danfeAvailable,
+    dispatch_started_at:control.dispatch_started_at||null,blockers,hard_blockers:uniqueHard,issue_enabled:issueEnabled,
+    fiscal_status:control.fiscal_status||stage,fiscal_block_reason:control.fiscal_block_reason||null,
+    payment_status:control.payment_status||"pending",payment_method:control.payment_method||null,payment_source:control.payment_source||null,
+    settled_amount_cents:control.settled_amount==null?null:Math.round(Number(control.settled_amount||0)*100),payment_confirmed_at:control.payment_confirmed_at||null,
+    bling_invoice_id:invoiceId,bling_invoice_number:control.bling_invoice_number||invoice?.numero||remote.job?.bling_invoice_number||null,
+    dispatch_gate:remote.dispatch_gate||null,config:remote.config||null,readiness:elig.data||null,provider:remote,
+    fiscal_recovery:recovery?{stage:recovery.stage,diagnostics:recovery.diagnostics||{},created_at:recovery.created_at,external_write:recovery.external_write===true}:null
+  };
+}
+async function orderFiscalIssueV4(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};
+  if(tx(p?.confirmation,40)!=="EMITIR_NFE")return {error:"fiscal_human_confirmation_required",status:409};
+  const pf=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});if(pf.error)throw pf.error;
+  if(pf.data?.ready!==true)return {error:"fiscal_dispatch_preflight_failed",status:409,blockers:pf.data?.blockers||[],preflight:pf.data};
+  const before:any=await orderFiscalStatusV4(oid);if(before.error)return before;
+  if(before.authorized===true)return {issued:false,idempotent_replay:true,fiscal:before};
+  if((before.hard_blockers||[]).length)return {error:"fiscal_dispatch_not_eligible",status:409,blockers:before.hard_blockers,fiscal:before};
+  const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});
+  if(h.error){
+    const after:any=await orderFiscalStatusV4(oid).catch(()=>before);
+    return {
+      error:h.error||"fiscal_issue_failed",status:h.status||409,
+      detail:h.data?.detail||h.detail||h.data?.provider_error||h.data||null,
+      provider_details:h.data?.provider_details||[],
+      http_status:h.data?.http_status||null,
+      fiscal:after?.error?before:after
+    };
+  }
+  try{await hub("fiscal_dispatch_reconcile",{source_order_id:oid})}catch{}
+  const after:any=await orderFiscalStatusV4(oid);
+  return {issued:true,result:h.data||null,fiscal:after};
+}
+// User-triggered Bling recovery after a completed physical separation.
+// Reuses the canonical Hub reconciliation; never inserts an order directly.
+async function orderFiscalRecoverBlingV1(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
+  const [oq,cq,iq,lq]=await Promise.all([
+    db.from("orders").select("id,status,bling_order_id").eq("id",oid).maybeSingle(),
+    db.from("order_separation_completions_v1").select("phase,completed_at,metadata").eq("order_id",oid).maybeSingle(),
+    db.from("order_separation_items_v1").select("id,state").eq("order_id",oid),
+    db.from("bling_hub_entity_links_v2").select("bling_id,status,metadata").eq("source_system","vitrine_qx").eq("entity_type","order").eq("source_id",oid).maybeSingle()
+  ]);
+  for(const q of [oq,cq,iq,lq])if(q.error)throw q.error;
+  if(!oq.data)return {error:"order_not_found",status:404};
+  if(oq.data.status!=="ready")return {error:"separation_required_before_bling_recovery",status:409};
+  const m=cq.data?.metadata||{};
+  if(!cq.data?.completed_at||m.stock_applied!==true||!(iq.data||[]).length||(iq.data||[]).some((x:any)=>x.state==="pending")){
+    return {error:"separation_not_fully_completed",status:409};
+  }
+  const gate=await postCutoverOrder(oid);
+  if(!gate.enabled)return {error:"bling_live_recovery_not_enabled",status:409,reason:gate.reason};
+  const snap=await buildSnapshot(oid,"manual_fiscal_recovery");
+  let link:any=lq.data||{},target=tx(link?.metadata?.ops2_target_key,80),phase="ready",steps:any[]=[];
+  if(link.status!=="matched"||!Number(link.bling_id)||!["approved_separation","verified"].includes(target)){
+    phase="approved_separation";
+    const a=await hub("ops2_ensure_order_state",{payload:snap,target_key:"approved_separation",canary:false});
+    if(a.error){
+      try{await opsEvent("order.bling_recovery_failed","Recuperação manual da venda no Bling falhou.","order",oid,{phase,error:a.error,http_status:a.status||null,bling_order_id:a.data?.bling_order_id||null},tx(p?.operator,80)||"Admin","human","bling","order-bling-recovery-failed:"+oid+":"+Date.now())}catch{}
+      return {error:a.error,status:a.status||409,phase,detail:a.data||a.detail||null,steps};
+    }
+    steps.push({phase,bling_order_id:Number(a.data?.bling_order_id||0)||null});
+    target="approved_separation";
+  }
+  if(target!=="verified"){
+    phase="verified";
+    const v=await hub("ops2_ensure_order_state",{payload:snap,target_key:"verified",canary:false});
+    if(v.error){
+      return {error:v.error,status:v.status||409,phase,detail:v.data||v.detail||null,steps,partial_recovery:true};
+    }
+    steps.push({phase,bling_order_id:Number(v.data?.bling_order_id||0)||null});
+  }
+  const reconcile=await hub("fiscal_dispatch_reconcile",{source_order_id:oid});
+  const fiscal:any=await orderFiscalStatusV4(oid);
+  if(fiscal.error)return {error:fiscal.error,status:fiscal.status||502,phase:"fiscal_refresh",steps,detail:fiscal.detail||null};
+  try{await opsEvent("order.bling_recovered_by_admin","Venda vinculada e Verificado confirmado no Bling; situação fiscal consultada.","order",oid,{steps,reconciliation:reconcile.error||reconcile.data?.reason||"ok",bling_order_id:steps.at(-1)?.bling_order_id||Number(link.bling_id||0)||null},tx(p?.operator,80)||"Admin","human","bling","order-bling-recovered-admin:"+oid)}catch{}
+  return {recovered:true,phase:"verified",steps,reconciliation:reconcile.error?{error:reconcile.error}:reconcile.data||null,fiscal};
+}
+// Consultation is intentionally not an NF-e submission. It verifies the remote
+// situation and reconciles an already-authorized invoice without duplicating it.
+async function orderFiscalRecheckV1(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
+  const reconciled=await hub("fiscal_dispatch_reconcile",{source_order_id:oid});
+  const fiscal:any=await orderFiscalStatusV4(oid);
+  if(fiscal.error)return fiscal;
+  return {checked:true,reconcile:reconciled.error?{error:reconciled.error,status:reconciled.status||null}:reconciled.data||null,fiscal};
+}
+
+async function orderDispatchStartV4(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};
+  const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).in("status",["returning","returned_review"]).limit(1).maybeSingle();
+  if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_open",status:409,delivery_return_case_id:ret.data.id};
+  const fiscal:any=await orderFiscalStatusV4(oid);if(fiscal.error)return fiscal;
+  if(fiscal.authorized!==true)return {error:"fiscal_authorization_required_before_dispatch",status:409,fiscal};
+  let physical_stock:any={attempted:false,ok:true,authority:await stockAuthority()};
+  if(physical_stock.authority==="bling"){
+    const snap=await buildSnapshot(oid,"dispatch_physical_stock");
+    const launch=await hub("ops2_launch_physical_stock",{payload:snap});
+    if(launch.error)return {error:launch.error||"physical_stock_launch_failed",status:launch.status||409,detail:launch.detail||launch.data||null,fiscal};
+    physical_stock={attempted:true,ok:true,authority:"bling",result:launch.data||null};
+  }
+  const operator=tx(p?.operator,80)||"Operação";
+  const key=tx(p?.idempotency_key,160)||("dispatch-v4:"+oid);
+  const q=await db.rpc("ops4_start_dispatch_v1",{p_order_id:oid,p_operator_label:operator,p_idempotency_key:key});
+  if(q.error)return {error:tx(q.error.message,260)||"dispatch_start_failed",status:409,detail:q.error.details||null,fiscal,physical_stock};
+  try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"out_for_delivery"})}catch{}
+  return {dispatch:q.data,fiscal,physical_stock};
+}
+async function rejectCriticalStatusBypass(p:any){
+  const requested=p?.status!==undefined?uiStatus(p.status):"";
+  if(requested==="out_for_delivery")return {
+    error:"canonical_dispatch_required",status:409,
+    required_action:"order_dispatch_start_v4",
+    message:"Use o comando canônico de saída para entrega."
+  };
+  if(requested==="delivered")return {
+    error:"canonical_delivery_required",status:409,
+    required_action:"order_delivery_complete_v3",
+    message:"Use o comando canônico de conclusão da entrega."
+  };
+  return null;
+}
 async function updateOrderCanonical(p:any){
   const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};const g=await guardOrder(oid);if(g.error)return g;const q=await db.from("orders").select("*").eq("id",oid).maybeSingle();if(q.error)throw q.error;const o=q.data,cur=uiStatus(o.status),patch:any={updated_at:new Date().toISOString()};
   if(p?.delivery_address!==undefined){const a=p.delivery_address&&typeof p.delivery_address==="object"?p.delivery_address:{};patch.delivery_address={...(o.delivery_address||{}),customer_name:tx(a.customer_name??a.recipient_name??o.delivery_address?.customer_name,180)||null,recipient_name:tx(a.customer_name??a.recipient_name??o.delivery_address?.recipient_name,180)||null,phone:tx(a.phone,40)||o.phone_e164||null,postal_code:tx(a.postal_code,20)||null,street:tx(a.street,180)||null,number:tx(a.number,40)||null,complement:tx(a.complement,140)||null,district:tx(a.district,140)||null,city:tx(a.city,120)||null,state:tx(a.state,2).toUpperCase()||null,raw_text:tx(a.raw_text,400)||null,google_maps_url:tx(a.google_maps_url,800)||null,block:tx(a.block,80)||null}}
@@ -1434,20 +1830,86 @@ async function createManualWhatsappOrder(p:any,auth:any){
 }
 
 async function opsDeliveryRuns(){
-  const r=await db.rpc("get_ops_delivery_runs_today_v1");
+  const r=await db.rpc("get_ops_delivery_runs_today_v2");
   if(r.error)throw r.error;
   return r.data||{};
+}
+async function smartDeliveryCatalog(){
+  const r=await db.rpc("smart_delivery_catalog_v1");
+  if(r.error)throw r.error;
+  return r.data||{regions:[],drivers:[],vehicles:[]};
 }
 async function opsDeliveryPlan(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const vehicle=tx(p?.vehicle_key,20),ids=(Array.isArray(p?.order_ids)?p.order_ids:[]).map((x:any)=>id(x)).filter(Boolean).slice(0,30);
   if(!["car_1","car_2"].includes(vehicle))return {error:"invalid_vehicle",status:400};
   if(!ids.length)return {error:"empty_route",status:400};
-  const q=await db.rpc("ops_plan_delivery_run_v1",{p_vehicle_key:vehicle,p_order_ids:ids,p_operator_label:tx(p?.operator,80)||"Operação"});
+  const regionId=id(p?.region_id)||null,driverId=id(p?.driver_id)||null,vehicleId=id(p?.vehicle_id)||null;
+  const q=await db.rpc("smart_delivery_plan_run_v1",{
+    p_vehicle_key:vehicle,p_order_ids:ids,p_operator_label:tx(p?.operator,80)||"Operação",
+    p_region_id:regionId,p_driver_id:driverId,p_vehicle_id:vehicleId,p_actor_user_id:id(auth?.user_id)||null
+  });
   if(q.error){const m=String(q.error.message||"");if(m.includes("order_not_ready"))return {error:"order_not_ready",status:409};if(m.includes("vehicle_already_dispatched"))return {error:"vehicle_already_dispatched",status:409};if(m.includes("order_already_dispatched"))return {error:"order_already_dispatched",status:409};if(m.includes("delivery_return_review_open"))return {error:"delivery_return_review_open",status:409};if(m.includes("duplicate_order_in_route"))return {error:"duplicate_order_in_route",status:400};throw q.error}
-  const runId=id(q.data);
-  await opsEvent("delivery.run_planned","Rota de entrega preparada.","delivery_run",runId,{vehicle_key:vehicle,order_count:ids.length,order_ids:ids},tx(p?.operator,80)||"Operação","human","dona_antonia","delivery-run:"+runId);
-  return {run_id:runId,vehicle_key:vehicle,order_count:ids.length};
+  const runId=id(q.data?.run_id);
+  await opsEvent("delivery.run_planned","Rota de entrega preparada.","delivery_run",runId,{vehicle_key:vehicle,region_id:regionId,driver_id:driverId,vehicle_id:vehicleId,order_count:ids.length,order_ids:ids},tx(p?.operator,80)||"Operação","human","dona_antonia","delivery-run:"+runId);
+  return q.data||{run_id:runId,vehicle_key:vehicle,order_count:ids.length};
+}
+async function smartDeliveryRegionSave(p:any,auth:any){
+  const code=tx(p?.code,60),name=tx(p?.name,120);if(!code||!name)return {error:"region_required",status:400};
+  const q=await db.rpc("smart_delivery_region_save_v1",{
+    p_id:id(p?.id)||null,p_code:code,p_name:name,p_city:tx(p?.city,120)||null,p_state:tx(p?.state,2)||"MT",
+    p_priority:nm(p?.priority??100,0,10000),p_is_active:p?.is_active!==false,p_notes:tx(p?.notes,500)||null,
+    p_polygon_geojson:p?.polygon_geojson&&typeof p.polygon_geojson==="object"?p.polygon_geojson:null,p_actor_user_id:id(auth?.user_id)||null
+  });
+  if(q.error)throw q.error;return {id:id(q.data)};
+}
+async function smartDeliveryDriverSave(p:any,auth:any){
+  const name=tx(p?.name,120);if(!name)return {error:"driver_name_required",status:400};
+  const q=await db.rpc("smart_delivery_driver_save_v1",{
+    p_id:id(p?.id)||null,p_name:name,p_phone_e164:tx(p?.phone_e164,32)||null,p_home_region_id:id(p?.home_region_id)||null,
+    p_is_active:p?.is_active!==false,p_metadata:meta(p?.metadata),p_actor_user_id:id(auth?.user_id)||null
+  });
+  if(q.error)throw q.error;return {id:id(q.data)};
+}
+async function smartDeliveryVehicleSave(p:any,auth:any){
+  const label=tx(p?.label,120);if(!label)return {error:"vehicle_label_required",status:400};
+  const cap=p?.capacity_units==null||p?.capacity_units===""?null:nm(p.capacity_units,1,10000);
+  const q=await db.rpc("smart_delivery_vehicle_save_v1",{
+    p_id:id(p?.id)||null,p_label:label,p_plate:tx(p?.plate,20)||null,p_vehicle_type:tx(p?.vehicle_type,60)||null,
+    p_capacity_units:cap,p_is_active:p?.is_active!==false,p_metadata:meta(p?.metadata),p_actor_user_id:id(auth?.user_id)||null
+  });
+  if(q.error)throw q.error;return {id:id(q.data)};
+}
+async function smartDeliveryLocationConfirm(p:any,auth:any){
+  const orderId=id(p?.order_id),addressId=id(p?.customer_address_id),evidenceId=id(p?.location_evidence_id);
+  if(!orderId||!addressId||!evidenceId)return {error:"invalid_location_confirmation",status:400};
+  const q=await db.rpc("smart_delivery_confirm_location_v1",{
+    p_order_id:orderId,p_customer_address_id:addressId,p_location_evidence_id:evidenceId,p_region_id:id(p?.region_id)||null,
+    p_confirmation_source:tx(p?.confirmation_source,80)||"admin",p_actor_user_id:id(auth?.user_id)||null
+  });
+  if(q.error)throw q.error;return q.data||{};
+}
+async function smartDeliveryRunAssign(p:any,auth:any){
+  const runId=id(p?.run_id);if(!runId)return {error:"invalid_run",status:400};
+  const q=await db.rpc("smart_delivery_assign_run_v1",{
+    p_run_id:runId,p_region_id:id(p?.region_id)||null,p_driver_id:id(p?.driver_id)||null,p_vehicle_id:id(p?.vehicle_id)||null,
+    p_operator_label:tx(p?.operator,80)||"Operação",p_actor_user_id:id(auth?.user_id)||null
+  });
+  if(q.error)throw q.error;return q.data||{};
+}
+async function smartDeliveryLoadingConfirm(p:any,auth:any){
+  const runId=id(p?.run_id);if(!runId)return {error:"invalid_run",status:400};
+  const q=await db.rpc("smart_delivery_confirm_loading_v1",{
+    p_run_id:runId,p_stop_id:id(p?.stop_id)||null,p_actor_user_id:id(auth?.user_id)||null
+  });
+  if(q.error)throw q.error;return q.data||{};
+}
+async function smartDeliveryStopMove(p:any,auth:any){
+  const stopId=id(p?.stop_id),targetRunId=id(p?.target_run_id);if(!stopId||!targetRunId)return {error:"invalid_stop_move",status:400};
+  const q=await db.rpc("smart_delivery_move_stop_v1",{
+    p_stop_id:stopId,p_target_run_id:targetRunId,p_actor_user_id:id(auth?.user_id)||null
+  });
+  if(q.error)throw q.error;return q.data||{};
 }
 
 async function opsTimeline(limitRaw:any){
@@ -2305,16 +2767,14 @@ function basketKitPackageCompatible(base:any,candidate:any){
 }
 async function basketKitSuggestions(base:any,products:any[],loose:Map<string,any>,qty:number,catalog:Map<string,string>,priceVariation=15){
   const family=catalog.get(String(base?.id));if(!family)return [];
-  const scored:any[]=[];
+  const basePrice=Number(base?.price||0),scored:any[]=[];
   for(const cand of products){
     if(String(cand.id)===String(base?.id)||catalog.get(String(cand.id))!==family)continue;
-    const available=Number(loose.get(String(cand.id))?.loose_sellable_stock||0);
-    const price=Number(base?.price||0),candidatePrice=Number(cand.price||0);
-    if(available<=0||price<=0||candidatePrice<=0||Math.abs(candidatePrice-price)/price*100>priceVariation||!basketKitPackageCompatible(base,cand))continue;
-    scored.push({...cand,loose_stock:available,price_cents:Math.round(candidatePrice*100),capacity:qty>0?Math.floor(available/qty):0,price_delta_pct:Math.abs(candidatePrice-price)/price*100});
+    const available=Number(loose.get(String(cand.id))?.loose_sellable_stock||0),candidatePrice=Number(cand.price||0);
+    scored.push({...cand,loose_stock:available,price_cents:Math.round(candidatePrice*100),capacity:qty>0?Math.floor(available/qty):0,price_delta_pct:basePrice>0?Math.abs(candidatePrice-basePrice)/basePrice*100:null});
   }
-  scored.sort((a,b)=>a.price_delta_pct-b.price_delta_pct||b.loose_stock-a.loose_stock||String(a.name).localeCompare(String(b.name),"pt-BR"));
-  return scored.slice(0,7);
+  scored.sort((a:any,b:any)=>{const aa=Number(a.loose_stock||0)>0?1:0,bb=Number(b.loose_stock||0)>0?1:0,ad=Number.isFinite(Number(a.price_delta_pct))?Number(a.price_delta_pct):Number.POSITIVE_INFINITY,bd=Number.isFinite(Number(b.price_delta_pct))?Number(b.price_delta_pct):Number.POSITIVE_INFINITY;return bb-aa||Number(b.loose_stock||0)-Number(a.loose_stock||0)||ad-bd||String(a.name).localeCompare(String(b.name),"pt-BR")});
+  return scored;
 }
 async function basketKitProductSuggestions(u:URL){
   const pid=id(u.searchParams.get("product_id"));if(!pid)return {error:"invalid_product",status:400};
@@ -2322,29 +2782,97 @@ async function basketKitProductSuggestions(u:URL){
   if(!Number.isInteger(quantity)||quantity<1||quantity>100)return {error:"invalid_quantity",status:400};
   const membership=await db.from("basket_lot_substitution_products").select("family_key").eq("product_id",pid).maybeSingle();
   if(membership.error)throw membership.error;
-  const family=membership.data?.family_key;if(!family)return {suggestions:[]};
-  const [rule,members,settings]=await Promise.all([
-    db.from("basket_lot_substitution_rules").select("enabled").eq("family_key",family).maybeSingle(),
-    db.from("basket_lot_substitution_products").select("product_id").eq("family_key",family).order("product_id"),
-    db.from("basket_lot_automation_settings").select("price_variation_pct").eq("id",1).maybeSingle()
+  const family=membership.data?.family_key;if(!family)return {family_key:null,suggestions:[]};
+  const [rule,members]=await Promise.all([
+    db.from("basket_lot_substitution_rules").select("enabled,label").eq("family_key",family).maybeSingle(),
+    db.from("basket_lot_substitution_products").select("product_id").eq("family_key",family).order("product_id")
   ]);
-  if(rule.error)throw rule.error;if(members.error)throw members.error;if(settings.error)throw settings.error;
-  if(rule.data?.enabled!==true)return {suggestions:[]};
+  if(rule.error)throw rule.error;if(members.error)throw members.error;
+  if(rule.data?.enabled!==true)return {family_key:family,family_label:rule.data?.label||family,suggestions:[]};
   const ids=(members.data||[]).map((m:any)=>String(m.product_id)),products:any[]=[];
-  // Only fetch this family's products. Keep URL sizes below the gateway limit.
   for(let i=0;i<ids.length;i+=60){
     const q=await db.from("products").select("id,name,sku,gtin,image_url,price,packaging,unit,brand").eq("is_active",true).in("id",ids.slice(i,i+60));
     if(q.error)throw q.error;products.push(...(q.data||[]));
   }
-  const base=products.find(p=>String(p.id)===pid);if(!base)return {suggestions:[]};
+  const base=products.find(p=>String(p.id)===pid);if(!base)return {family_key:family,family_label:rule.data?.label||family,suggestions:[]};
   const loose=await basketLooseStockMap(products.map(p=>p.id));
-  return {suggestions:await basketKitSuggestions(base,products,loose,quantity,new Map(ids.map((x:string)=>[x,family])),Number(settings.data?.price_variation_pct??15))};
+  const basePrice=Number(base.price||0);
+  const suggestions=products.filter(p=>String(p.id)!==pid).map((cand:any)=>{
+    const available=Number(loose.get(String(cand.id))?.loose_sellable_stock||0),candidatePrice=Number(cand.price||0);
+    return {...cand,loose_stock:available,price_cents:Math.round(candidatePrice*100),capacity:quantity>0?Math.floor(available/quantity):0,price_delta_pct:basePrice>0?Math.abs(candidatePrice-basePrice)/basePrice*100:null};
+  });
+  suggestions.sort((a:any,b:any)=>{
+    const aa=Number(a.loose_stock||0)>0?1:0,bb=Number(b.loose_stock||0)>0?1:0;
+    const ad=Number.isFinite(Number(a.price_delta_pct))?Number(a.price_delta_pct):Number.POSITIVE_INFINITY;
+    const bd=Number.isFinite(Number(b.price_delta_pct))?Number(b.price_delta_pct):Number.POSITIVE_INFINITY;
+    return bb-aa||Number(b.loose_stock||0)-Number(a.loose_stock||0)||ad-bd||String(a.name).localeCompare(String(b.name),"pt-BR");
+  });
+  return {family_key:family,family_label:rule.data?.label||family,suggestions};
+}
+function nextBasketKitShortCodeFromLots(prefix:string,lots:any[]){
+  const used=new Set((lots||[]).filter((l:any)=>["draft","ready"].includes(String(l.status))).map((l:any)=>String(l.short_code||"")));
+  for(const digit of ["1","2","3","4","5","6","7","8","9","0"]){const code=String(prefix||"")+digit;if(!used.has(code))return code}
+  return null;
+}
+async function basketCommercialCreate(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const name=tx(p?.name,220),categoryId=id(p?.category_id),priceCents=Number(p?.base_price_cents);
+  if(!name)return {error:"name_required",status:400};
+  if(!categoryId)return {error:"category_required",status:400};
+  if(!Number.isFinite(priceCents)||priceCents<0)return {error:"price_invalid",status:400};
+  const operator=tx(p?.operator,80)||"Operação";
+  const q=await db.rpc("create_basket_commercial_model_v1",{
+    p_name:name,p_category_id:categoryId,p_base_price:Math.round(priceCents)/100,p_operator:operator
+  });
+  if(q.error){
+    const m=String(q.error.message||"");
+    const code=m.includes("basket_category_required")?"category_required":m.includes("basket_price_invalid")?"price_invalid":m.includes("basket_name_required")?"name_required":"basket_commercial_create_failed";
+    return {error:code,status:400};
+  }
+  const model=q.data||{};
+  await opsEvent("basket.commercial_created","Cesta/Kit criada.","basket",model.basket_id||null,{...model},operator,"human","dona_antonia");
+  return {model};
+}
+async function basketCommercialAdmin(){
+  const [catalogQ,availabilityQ,categoriesQ,kitMapQ]=await Promise.all([
+    db.from("basket_commercial_catalog_v1").select("*").order("category_sort_order").order("model_name"),
+    db.from("basket_lot_public_availability_v1").select("lot_id,basket_id,kit_template_id,status,short_code,public_name,sale_price_override,public_available,availability_reason,built_at,created_at,sale_enabled,linked_lot_id").order("built_at",{ascending:true}),
+    db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order"),
+    db.from("basket_kit_templates").select("id,basket_id,kind,is_active").eq("is_active",true)
+  ]);
+  if(catalogQ.error)throw catalogQ.error;if(availabilityQ.error)throw availabilityQ.error;if(categoriesQ.error)throw categoriesQ.error;if(kitMapQ.error)throw kitMapQ.error;
+  const availability=availabilityQ.data||[],kitMap=kitMapQ.data||[];
+  const models=(catalogQ.data||[]).map((m:any)=>{
+    const cid=String(m.commercial_id||"");
+    const lots=availability.filter((l:any)=>m.source_kind==="basket"?String(l.basket_id||"")===cid:(String(l.kit_template_id||"")===cid&&!l.basket_id));
+    const ready=lots.filter((l:any)=>l.status==="ready"),drafts=lots.filter((l:any)=>l.status==="draft");
+    const publicLot=lots.find((l:any)=>String(l.lot_id)===String(m.public_lot_id||""))||null;
+    const operational=publicLot||ready.find((l:any)=>l.availability_reason==="paused")||ready.find((l:any)=>l.availability_reason!=="depleted")||ready[0]||drafts[0]||lots[0]||null;
+    const editorKit=m.source_kind==="basket"?kitMap.find((k:any)=>String(k.basket_id||"")===cid&&k.kind==="food"):kitMap.find((k:any)=>String(k.id)===cid);
+    const editorLots=editorKit?availability.filter((l:any)=>String(l.kit_template_id||"")===String(editorKit.id)):[];
+    const duplicate=[...editorLots].filter((l:any)=>["draft","ready"].includes(String(l.status))).sort((a:any,b:any)=>Date.parse(b.built_at||b.created_at||0)-Date.parse(a.built_at||a.created_at||0))[0]||null;
+    const reason=String(publicLot?.availability_reason||operational?.availability_reason||m.availability_reason||"depleted");
+    const state=reason==="draft"?"Em edição":reason==="paused"?"Pausado":reason==="depleted"?"Esgotado":["model_inactive","category_inactive"].includes(reason)?"Indisponível":"Montado";
+    return {
+      commercial_id:m.commercial_id,source_kind:m.source_kind,name:m.public_name||m.model_name,
+      category_id:m.category_id,category_name:m.category_name,category_slug:m.category_slug,
+      price:Number(m.sale_price??m.default_price??0),image_url:m.image_url||"",
+      public_lot_id:m.public_lot_id||null,public_lot_code:m.public_lot_code||null,
+      public_available:Number(m.public_available||0),availability_reason:reason,state,
+      operational_lot_id:operational?.lot_id||null,operational_lot_code:operational?.short_code||null,
+      editor_kit_template_id:editorKit?.id||null,duplicate_lot_id:duplicate?.lot_id||null,
+      lot_count:lots.length,ready_lot_count:ready.length,draft_lot_count:drafts.length,
+      ready_units:ready.reduce((n:number,l:any)=>n+Number(l.public_available||0),0),
+      model_active:m.model_active===true,category_active:m.category_active===true
+    };
+  });
+  return {categories:categoriesQ.data||[],models};
 }
 async function basketKitsAdmin(){
   const [kq,iq,lq]=await Promise.all([
-    db.from("basket_kit_templates").select("id,kind,basket_id,name,code_prefix,is_active,sort_order,metadata,basket:basket_templates(id,name,image_url,base_price,uses_hygiene_kit,split_kits_enabled)").eq("is_active",true).order("sort_order").order("name"),
+    db.from("basket_kit_templates").select("id,kind,basket_id,name,code_prefix,is_active,sort_order,metadata,basket:basket_templates(id,name,image_url,base_price,category_id,uses_hygiene_kit,split_kits_enabled)").eq("is_active",true).order("sort_order").order("name"),
     db.from("basket_kit_template_items").select("id,kit_template_id,product_id,quantity").order("sort_order"),
-    db.from("basket_stock_lots").select("id,kit_template_id,basket_id,lot_kind,short_code,status,sale_enabled,quantity_built,quantity_available,built_at,built_by,duplicated_from_lot_id").not("kit_template_id","is",null).order("built_at",{ascending:true})
+    db.from("basket_stock_lots").select("id,kit_template_id,basket_id,lot_kind,short_code,status,sale_enabled,quantity_built,quantity_available,built_at,built_by,duplicated_from_lot_id,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,public_name,linked_hygiene_lot_id,business_type,linked_lot_id,own_sale_price_override,own_component_sum_snapshot,own_hidden_adjustment_snapshot,own_cost_sum_snapshot,cost_sum_snapshot").not("kit_template_id","is",null).order("built_at",{ascending:true})
   ]);
   if(kq.error)throw kq.error;if(iq.error)throw iq.error;if(lq.error)throw lq.error;
   const items=iq.data||[],lots=lq.data||[],stock=await basketLooseStockMap(items.map((x:any)=>x.product_id));
@@ -2355,32 +2883,34 @@ async function basketKitsAdmin(){
     let cap=999999;
     for(const [pid,qty] of demand){const s:any=stock.get(pid)||{};if(qty>0)cap=Math.min(cap,Math.floor(Number(s.loose_sellable_stock||0)/qty))}
     if(cap===999999)cap=0;
-    const ready=lots.filter((x:any)=>x.kit_template_id===k.id&&x.status==="ready"&&Number(x.quantity_available||0)>0);
+    const kitLots=lots.filter((x:any)=>x.kit_template_id===k.id);
+    const ready=kitLots.filter((x:any)=>x.status==="ready"&&Number(x.quantity_available||0)>0);
+    const drafts=kitLots.filter((x:any)=>x.status==="draft");
     const saleReady=ready.filter((x:any)=>x.sale_enabled===true);
     const current=saleReady[0]||null;
-    const nx=await db.rpc("next_basket_kit_short_code_v1",{p_kit_template_id:k.id});
     kits.push({...k,basket:Array.isArray(k.basket)?k.basket[0]:k.basket,template_item_count:ki.length,
-      ready_quantity:ready.reduce((s:number,x:any)=>s+Number(x.quantity_available||0),0),ready_lot_count:ready.length,
-      sale_ready_quantity:saleReady.reduce((s:number,x:any)=>s+Number(x.quantity_available||0),0),sale_ready_lot_count:saleReady.length,
-      current_lot:current,next_short_code:nx.error?null:nx.data,max_build_from_template:Math.max(0,cap)});
+      ready_quantity:ready.reduce((sum:number,x:any)=>sum+Number(x.quantity_available||0),0),ready_lot_count:ready.length,
+      draft_quantity:drafts.reduce((sum:number,x:any)=>sum+Number(x.quantity_built||0),0),draft_lot_count:drafts.length,
+      sale_ready_quantity:saleReady.reduce((sum:number,x:any)=>sum+Number(x.quantity_available||0),0),sale_ready_lot_count:saleReady.length,
+      current_lot:current,next_short_code:nextBasketKitShortCodeFromLots(k.code_prefix,kitLots),max_build_from_template:Math.max(0,cap)});
   }
-  return {kits,summary:{kit_templates:kits.length,ready_units:kits.reduce((s:number,k:any)=>s+Number(k.ready_quantity||0),0),ready_lots:kits.reduce((s:number,k:any)=>s+Number(k.ready_lot_count||0),0)}};
+  return {kits,summary:{kit_templates:kits.length,ready_units:kits.reduce((sum:number,k:any)=>sum+Number(k.ready_quantity||0),0),ready_lots:kits.reduce((sum:number,k:any)=>sum+Number(k.ready_lot_count||0),0),draft_units:kits.reduce((sum:number,k:any)=>sum+Number(k.draft_quantity||0),0),draft_lots:kits.reduce((sum:number,k:any)=>sum+Number(k.draft_lot_count||0),0)}};
 }
 async function basketKitAdminDetail(rawId:any){
   const kid=id(rawId);if(!kid)return {error:"invalid_kit_template",status:400};
   const kq=await db.from("basket_kit_templates")
-    .select("*,basket:basket_templates(id,name,image_url,base_price,uses_hygiene_kit,split_kits_enabled)")
+    .select("*,basket:basket_templates(id,name,image_url,base_price,category_id,uses_hygiene_kit,split_kits_enabled)")
     .eq("id",kid).eq("is_active",true).maybeSingle();
   if(kq.error)throw kq.error;if(!kq.data)return {error:"kit_template_not_found",status:404};
   const [iq,lq]=await Promise.all([
-    db.from("basket_kit_template_items").select("*,product:products(id,name,sku,gtin,image_url,price,packaging,unit,brand,category,sales_category,storefront_category,subcategory,customer_subcategory,subsubcategory,customer_subsubcategory,is_active)").eq("kit_template_id",kid).order("sort_order").order("created_at"),
-    db.from("basket_stock_lots").select("id,basket_id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,composition_hash,built_at,built_by,notes,source,duplicated_from_lot_id,metadata,created_at").eq("kit_template_id",kid).order("built_at",{ascending:false}).limit(40)
+    db.from("basket_kit_template_items").select("*,product:products(id,name,sku,gtin,image_url,price,cost,packaging,unit,brand,category,sales_category,storefront_category,subcategory,customer_subcategory,subsubcategory,customer_subsubcategory,is_active)").eq("kit_template_id",kid).order("sort_order").order("created_at"),
+    db.from("basket_stock_lots").select("id,basket_id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,composition_hash,built_at,built_by,notes,source,duplicated_from_lot_id,metadata,created_at,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,public_name,linked_hygiene_lot_id,business_type,linked_lot_id,own_sale_price_override,own_component_sum_snapshot,own_hidden_adjustment_snapshot,own_cost_sum_snapshot,cost_sum_snapshot").eq("kit_template_id",kid).order("built_at",{ascending:false}).limit(40)
   ]);
   if(iq.error)throw iq.error;if(lq.error)throw lq.error;
   const lots=lq.data||[],templateItems=iq.data||[];
   const lotIds=lots.map((x:any)=>x.id);
   const liq=lotIds.length?await db.from("basket_stock_lot_items")
-    .select("id,lot_id,kit_template_item_id,source_template_item_id,product_id,quantity_per_basket,position_order,substitution_reason,metadata,product:products(id,name,sku,gtin,image_url,price,packaging,unit,brand)")
+    .select("id,lot_id,kit_template_item_id,source_template_item_id,product_id,quantity_per_basket,position_order,substitution_reason,metadata,product:products(id,name,sku,gtin,image_url,price,cost,packaging,unit,brand)")
     .in("lot_id",lotIds).order("position_order"):{data:[],error:null} as any;
   if(liq.error)throw liq.error;
   const loose=await basketLooseStockMap([
@@ -2397,13 +2927,43 @@ async function basketKitAdminDetail(rawId:any){
   const lotItems=liq.data||[];
   const lotRows=lots.map((l:any)=>({...l,quantity_built:Number(l.quantity_built||0),quantity_available:Number(l.quantity_available||0),
     items:lotItems.filter((x:any)=>x.lot_id===l.id).map((x:any)=>{const p:any=Array.isArray(x.product)?x.product[0]:x.product,s:any=loose.get(String(x.product_id))||{};return {...x,product:p,quantity_per_kit:Number(x.quantity_per_basket||0),loose_stock:Number(s.loose_sellable_stock||0)}})}));
-  const ready=[...lotRows].filter((x:any)=>x.status==="ready"&&x.quantity_available>0).sort((a:any,b:any)=>Date.parse(a.built_at)-Date.parse(b.built_at));
+  const mountedLots=[...lotRows].filter((x:any)=>x.status==="ready").sort((a:any,b:any)=>Date.parse(a.built_at)-Date.parse(b.built_at));
+  const ready=mountedLots.filter((x:any)=>x.quantity_available>0);
+  const drafts=lotRows.filter((x:any)=>x.status==="draft");
   const saleReady=ready.filter((x:any)=>x.sale_enabled===true);
+  let linkableLots:any[]=[];
+  const basket:any=Array.isArray(kq.data.basket)?kq.data.basket[0]:kq.data.basket;
+  const hq=await db.from("basket_stock_lots").select("id,kit_template_id,lot_kind,short_code,lot_code,status,sale_enabled,quantity_built,quantity_available,built_at,public_name,business_type,linked_lot_id,sale_price_override,component_sum_snapshot,hidden_adjustment_snapshot,own_sale_price_override,own_component_sum_snapshot,own_hidden_adjustment_snapshot,own_cost_sum_snapshot,cost_sum_snapshot").not("kit_template_id","is",null).in("status",["draft","ready"]).order("built_at",{ascending:true});
+  if(hq.error)throw hq.error;linkableLots=hq.data||[];
+  if(linkableLots.length){
+    const hi=await db.from("basket_stock_lot_items")
+      .select("lot_id,product_id,quantity_per_basket,position_order,product:products(id,name,sku,image_url,price,cost,packaging)")
+      .in("lot_id",linkableLots.map((x:any)=>x.id)).order("position_order");
+    if(hi.error)throw hi.error;
+    const linkedStock=await basketLooseStockMap((hi.data||[]).map((x:any)=>x.product_id));
+    linkableLots=linkableLots.map((h:any)=>({...h,items:(hi.data||[]).filter((x:any)=>String(x.lot_id)===String(h.id)).map((x:any)=>{const s:any=linkedStock.get(String(x.product_id))||{};return {...x,quantity_per_kit:Number(x.quantity_per_basket||0),loose_stock:Number(s.loose_sellable_stock||0)}})}));
+  }
   const nx=await db.rpc("next_basket_kit_short_code_v1",{p_kit_template_id:kid});
-  return {kit:{...kq.data,basket:Array.isArray(kq.data.basket)?kq.data.basket[0]:kq.data.basket},items,lots:lotRows,
-    current_lot:saleReady[0]||null,last_lot:lotRows[0]||null,ready_quantity:ready.reduce((s:number,x:any)=>s+x.quantity_available,0),
-    sale_ready_quantity:saleReady.reduce((s:number,x:any)=>s+x.quantity_available,0),
+  return {kit:{...kq.data,basket},items,lots:lotRows,linkable_lots:linkableLots,hygiene_lots:linkableLots.filter((x:any)=>x.lot_kind==="hygiene"),default_hygiene_lot_id:null,
+    current_lot:saleReady[0]||null,last_lot:lotRows[0]||null,ready_quantity:ready.reduce((sum:number,x:any)=>sum+x.quantity_available,0),ready_lot_count:mountedLots.length,
+    existing_lot_count:mountedLots.length+drafts.length,draft_quantity:drafts.reduce((sum:number,x:any)=>sum+Number(x.quantity_built||0),0),draft_lot_count:drafts.length,
+    sale_ready_quantity:saleReady.reduce((sum:number,x:any)=>sum+x.quantity_available,0),
     next_short_code:nx.error?null:nx.data};
+}
+async function basketKitTemplateSave(p:any,auth:any){
+  const kid=id(p?.kit_template_id||p?.id),items=Array.isArray(p?.items)?p.items.slice(0,120):[];
+  if(!kid)return {error:"invalid_kit_template",status:400};
+  const q=await db.rpc("save_basket_kit_template_admin_v1",{p_kit_template_id:kid,p_name:tx(p?.name,180),p_code_prefix:tx(p?.code_prefix,2).toUpperCase(),p_items:items,p_operator:tx(p?.operator,80)||"Operação"});
+  if(q.error){const m=String(q.error.message||"").split("\n")[0];const code=["kit_template_not_found","kit_template_name_invalid","kit_template_prefix_invalid","kit_template_items_invalid","kit_template_product_invalid","kit_template_product_duplicate","kit_template_product_unavailable","kit_template_quantity_invalid","kit_template_item_invalid","kit_template_source_item_invalid"].find(x=>m.includes(x))||"kit_template_save_failed";return {error:code,status:code==="kit_template_not_found"?404:400}}
+  await opsEvent("basket.kit_template_updated","Modelo de kit atualizado.","basket",kid,{kit_template_id:kid,item_count:q.data?.item_count},tx(p?.operator,80)||"Operação","human","dona_antonia");
+  return {template:q.data};
+}
+async function basketKitTemplateArchive(p:any,auth:any){
+  const kid=id(p?.kit_template_id||p?.id);if(!kid)return {error:"invalid_kit_template",status:400};
+  const q=await db.rpc("archive_basket_kit_template_admin_v1",{p_kit_template_id:kid,p_operator:tx(p?.operator,80)||"Operação"});
+  if(q.error){const m=String(q.error.message||"");if(m.includes("kit_template_has_live_lots"))return {error:"kit_template_has_live_lots",status:409};if(m.includes("kit_template_not_found"))return {error:"kit_template_not_found",status:404};throw q.error}
+  await opsEvent("basket.kit_template_archived","Modelo de kit arquivado.","basket",kid,{kit_template_id:kid},tx(p?.operator,80)||"Operação","human","dona_antonia");
+  return {template:q.data};
 }
 async function basketKitLotCreate(p:any,auth:any){
   const kid=id(p?.kit_template_id),quantity=Math.floor(Number(p?.quantity||0)),items=Array.isArray(p?.items)?p.items.slice(0,120):[];
@@ -2419,11 +2979,12 @@ async function basketKitLotCreate(p:any,auth:any){
     change_note:tx(x?.change_note,300)||null
   }));
   if(clean.some((x:any)=>!x.product_id||!Number.isFinite(x.quantity_per_kit)||x.quantity_per_kit<=0))return {error:"invalid_kit_lot_items",status:400};
-  const q=await db.rpc("create_basket_kit_lot_v2",{
+  const q=await db.rpc("create_basket_kit_lot_v4",{
     p_kit_template_id:kid,p_quantity:quantity,p_items:clean,p_operator:tx(p?.operator,80)||"Operação",
     p_notes:tx(p?.notes,800)||null,p_short_code:tx(p?.short_code,3).toUpperCase()||null,
     p_duplicated_from_lot_id:id(p?.duplicated_from_lot_id)||null,
-    p_public_name:tx(p?.public_name,120)||null,p_sale_price:p?.sale_price==null?null:Number(p.sale_price)
+    p_public_name:tx(p?.public_name,120)||null,p_sale_price:p?.sale_price==null?null:Number(p.sale_price),
+    p_business_type:tx(p?.business_type,40)||null,p_linked_lot_id:id(p?.linked_lot_id)||null
   });
   if(q.error){
     const m=String(q.error.message||"").split("\n")[0];
@@ -2455,12 +3016,13 @@ async function basketKitLotDraftSave(p:any,auth:any){
     change_note:tx(x?.change_note,300)||null
   }));
   if(clean.some((x:any)=>!x.product_id||!Number.isFinite(x.quantity_per_kit)||x.quantity_per_kit<=0))return {error:"invalid_kit_lot_items",status:400};
-  const q=await db.rpc("save_basket_kit_lot_draft_v2",{
+  const q=await db.rpc("save_basket_kit_lot_draft_v4",{
     p_lot_id:lid,p_kit_template_id:kid,p_quantity:quantity,p_items:clean,
     p_operator:tx(p?.operator,80)||"Operação",p_notes:tx(p?.notes,800)||null,
     p_short_code:tx(p?.short_code,3).toUpperCase()||null,
     p_duplicated_from_lot_id:id(p?.duplicated_from_lot_id)||null,
-    p_public_name:tx(p?.public_name,120)||null,p_sale_price:p?.sale_price==null?null:Number(p.sale_price)
+    p_public_name:tx(p?.public_name,120)||null,p_sale_price:p?.sale_price==null?null:Number(p.sale_price),
+    p_business_type:tx(p?.business_type,40)||null,p_linked_lot_id:id(p?.linked_lot_id)||null
   });
   if(q.error){
     const m=String(q.error.message||"").split("\n")[0];
@@ -2479,21 +3041,32 @@ async function basketKitLotDraftSave(p:any,auth:any){
 }
 async function basketKitLotDraftActivate(p:any,auth:any){
   const lid=id(p?.lot_id);if(!lid)return {error:"invalid_lot",status:400};
-  const q=await db.rpc("activate_basket_kit_lot_draft_v1",{p_lot_id:lid,p_operator:tx(p?.operator,80)||"Operação"});
+  const q=await db.rpc("activate_basket_kit_lot_draft_v2",{p_lot_id:lid,p_operator:tx(p?.operator,80)||"Operação"});
   if(q.error){
     const m=String(q.error.message||"").split("\n")[0];
     const code=m.includes("insufficient_loose_stock")?"insufficient_loose_stock":
       m.includes("draft_lot_not_found")?"draft_lot_not_found":
       m.includes("draft_lot_required")?"draft_lot_required":
       m.includes("empty_lot_composition")?"empty_lot_composition":
-      m.includes("lot_product_unavailable")?"lot_product_unavailable":
+      m.includes("lot_product_unavailable")?"lot_product_unavailable":m.includes("linked_lot_unavailable")?"linked_lot_unavailable":
       tx(m,240)||"kit_lot_draft_activate_failed";
-    return {error:code,status:["insufficient_loose_stock","lot_product_unavailable"].includes(code)?409:400};
+    return {error:code,status:["insufficient_loose_stock","lot_product_unavailable","linked_lot_unavailable"].includes(code)?409:400};
   }
   await opsEvent("basket.kit_lot_built","Rascunho concluído como lote real, ainda fora do site.","basket",lid,
     {lot_id:lid,short_code:q.data?.short_code,quantity:q.data?.quantity_built,sale_enabled:false},
     tx(p?.operator,80)||"Operação","human","dona_antonia","basket-kit-activate:"+lid);
   return {lot:q.data};
+}
+async function basketKitLotReopen(p:any,auth:any){
+  const lid=id(p?.lot_id);if(!lid)return {error:"invalid_lot",status:400};
+  const q=await db.rpc("reopen_basket_kit_lot_for_edit_v1",{p_lot_id:lid,p_operator:tx(p?.operator,80)||"Operação"});
+  if(q.error){
+    const m=String(q.error.message||"");
+    for(const code of ["lot_sale_must_be_disabled","lot_has_order_history","lot_already_changed","lot_is_dependency","lot_not_editable","kit_lot_required"]){if(m.includes(code))return {error:code,status:409}}
+    if(m.includes("lot_not_found"))return {error:"lot_not_found",status:404};throw q.error;
+  }
+  await opsEvent("basket.kit_lot_reopened","Lote reaberto para edição antes de novo fechamento da montagem.","basket",lid,{lot_id:lid,short_code:q.data?.short_code},tx(p?.operator,80)||"Operação","human","dona_antonia");
+  return {draft:q.data};
 }
 async function basketKitLotDraftDelete(p:any,auth:any){
   const lid=id(p?.lot_id);if(!lid)return {error:"invalid_lot",status:400};
@@ -2507,6 +3080,19 @@ async function basketKitLotDraftDelete(p:any,auth:any){
   return {deleted:true,lot_id:lid};
 }
 
+async function basketKitLotDelete(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const lid=id(p?.lot_id);if(!lid)return {error:"invalid_lot",status:400};
+  const q=await db.rpc("basket_kit_lot_delete_v1",{p_lot_id:lid,p_operator:tx(p?.operator,80)||"Operação"});
+  if(q.error){
+    const m=String(q.error.message||"");
+    if(m.includes("lot_has_order_history"))return {error:"lot_has_order_history",status:409};
+    if(m.includes("lot_linked_to_food_lot"))return {error:"lot_linked_to_food_lot",status:409};
+    if(m.includes("lot_not_found"))return {error:"lot_not_found",status:404};
+    throw q.error;
+  }
+  return {result:q.data};
+}
 async function basketKitLotCancel(p:any,auth:any){
   const lid=id(p?.lot_id);if(!lid)return {error:"invalid_lot",status:400};
   const l=await db.from("basket_stock_lots").select("id,basket_id,kit_template_id,lot_kind,short_code,status,quantity_available,metadata").eq("id",lid).maybeSingle();
@@ -2535,7 +3121,7 @@ async function basketSalesRuntime(){
   if(rt.error)throw rt.error;if(lots.error)throw lots.error;if(bq.error)throw bq.error;if(avq.error)throw avq.error;if(legacyq.error)throw legacyq.error;
   const av=new Map((avq.data||[]).map((x:any)=>[String(x.basket_id),x]));
   const legacy=new Set((legacyq.data||[]).map((x:any)=>String(x.basket_id)));
-  const missingSplit=(bq.data||[]).filter((b:any)=>{const a:any=av.get(String(b.id));return !a?.food_lot_id||(b.uses_hygiene_kit===true&&!a?.hygiene_lot_id)}).map((b:any)=>b.name);
+  const missingSplit=(bq.data||[]).filter((b:any)=>{const a:any=av.get(String(b.id));return !a?.food_lot_id||Number(a?.split_available||0)<=0}).map((b:any)=>b.name);
   const missingLegacy=(bq.data||[]).filter((b:any)=>!legacy.has(String(b.id))).map((b:any)=>b.name);
   const rows=lots.data||[];
   return {
@@ -2556,7 +3142,7 @@ async function basketLotSaleToggle(p:any,auth:any){
   const q=await db.rpc("set_basket_lot_sale_enabled_v1",{p_lot_id:lid,p_enabled:enabled,p_operator:tx(p?.operator,80)||"Operação"});
   if(q.error){
     const m=String(q.error.message||"");
-    const code=m.includes("lot_not_available_for_sale")?"lot_not_available_for_sale":m.includes("lot_not_found")?"lot_not_found":"lot_sale_toggle_failed";
+    const code=m.includes("linked_lot_unavailable")?"linked_lot_unavailable":m.includes("linked_hygiene_lot_required")?"linked_hygiene_lot_required":m.includes("linked_hygiene_lot_unavailable")?"linked_hygiene_lot_unavailable":m.includes("lot_not_available_for_sale")?"lot_not_available_for_sale":m.includes("lot_not_found")?"lot_not_found":"lot_sale_toggle_failed";
     return {error:code,status:code==="lot_not_found"?404:409};
   }
   await opsEvent(enabled?"basket.lot_sale_enabled":"basket.lot_sale_disabled",enabled?"Lote liberado para venda no site.":"Lote retirado da venda no site.","basket",lid,
@@ -2591,7 +3177,7 @@ async function basketSalesModeSet(p:any,auth:any){
 async function basketProductSearch(u:URL){
   const qv=tx(u.searchParams.get("q"),100).replace(/[,()%]/g," "),lim=Math.floor(nm(u.searchParams.get("limit")||15,1,30));
   if(qv.length<2)return {products:[]};
-  let q=db.from("products").select("id,name,sku,gtin,image_url,price,packaging,unit,brand,sales_category,storefront_category,category,subcategory,customer_subcategory,subsubcategory,customer_subsubcategory").eq("is_active",true);
+  let q=db.from("products").select("id,name,sku,gtin,image_url,price,cost,packaging,unit,brand,sales_category,storefront_category,category,subcategory,customer_subcategory,subsubcategory,customer_subsubcategory").eq("is_active",true);
   for(const term of qv.split(/\s+/).filter(Boolean).slice(0,4))q=q.or("name.ilike.%"+term+"%,gtin.ilike.%"+term+"%,sku.ilike.%"+term+"%,brand.ilike.%"+term+"%");
   const r=await q.order("name").limit(lim);if(r.error)throw r.error;
   const rows=r.data||[],sm=await basketLooseStockMap(rows.map((x:any)=>x.id));
@@ -2657,6 +3243,79 @@ async function basketAdminDetail(rawId:any){
   const activeReady=[...lotRows].filter((x:any)=>x.status==="ready"&&x.quantity_available>0).sort((a:any,b:any)=>Date.parse(a.built_at)-Date.parse(b.built_at));
   return {basket:{...bq.data,base_price_cents:Math.round(Number(bq.data.base_price||0)*100)},items,lots:lotRows,current_lot:activeReady[0]||null,last_lot:lotRows[0]||null,
     ready_quantity:activeReady.reduce((s:number,x:any)=>s+x.quantity_available,0)};
+}
+function basketCategorySlug(v:any){
+  return tx(v,80).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,90);
+}
+async function basketCategoriesAdmin(){
+  const [cq,sq,bq,kq]=await Promise.all([
+    db.from("basket_categories").select("id,name,slug,sort_order,is_active,created_at,updated_at").order("sort_order").order("name"),
+    db.from("basket_subcategories").select("id,category_id,name,sort_order,is_active").order("sort_order").order("name"),
+    db.from("basket_templates").select("id,name,category_id,subcategory_id"),
+    db.from("basket_kit_templates").select("id,name,category_id,subcategory_id")
+  ]);
+  if(cq.error)throw cq.error;if(sq.error)throw sq.error;if(bq.error)throw bq.error;if(kq.error)throw kq.error;
+  const baskets=[...(bq.data||[]).map((x:any)=>({...x,kind:"basket"})),...(kq.data||[]).map((x:any)=>({...x,kind:"kit"}))];
+  return {categories:(cq.data||[]).map((c:any)=>({...c,subcategories:(sq.data||[]).filter((s:any)=>String(s.category_id)===String(c.id)).map((s:any)=>({...s,item_count:baskets.filter((b:any)=>String(b.subcategory_id||"")===String(s.id)).length})),item_count:baskets.filter((b:any)=>String(b.category_id||"")===String(c.id)).length}))};
+}
+async function basketSubcategorySave(p:any,auth:any){
+  const sid=id(p?.id),categoryId=id(p?.category_id),name=tx(p?.name,80);if(!categoryId)return {error:"subcategory_category_required",status:400};if(!name)return {error:"subcategory_name_required",status:400};
+  const cat=await db.from("basket_categories").select("id").eq("id",categoryId).maybeSingle();if(cat.error)throw cat.error;if(!cat.data)return {error:"category_not_found",status:404};
+  const patch={category_id:categoryId,name,sort_order:Math.round(nm(p?.sort_order,0,9999)),is_active:p?.is_active===true,updated_at:new Date().toISOString()};
+  const q=sid?await db.from("basket_subcategories").update(patch).eq("id",sid).select("*").maybeSingle():await db.from("basket_subcategories").insert(patch).select("*").single();
+  if(q.error){if(String(q.error.code)==="23505")return {error:"subcategory_name_exists",status:409};throw q.error}
+  if(sid&&!q.data)return {error:"subcategory_not_found",status:404};
+  await opsEvent("basket.subcategory_saved","Subdivisão da vitrine salva.","basket_subcategory",q.data?.id||sid,{name,category_id:categoryId},tx(p?.operator,80)||auth?.user?.email||"Operação","human","dona_antonia");
+  return {subcategory:q.data};
+}
+async function basketSubcategoryDelete(p:any,auth:any){
+  const sid=id(p?.id);if(!sid)return {error:"invalid_subcategory",status:400};
+  const [b,k]=await Promise.all([db.from("basket_templates").select("id,name",{count:"exact"}).eq("subcategory_id",sid).limit(20),db.from("basket_kit_templates").select("id,name",{count:"exact"}).eq("subcategory_id",sid).limit(20)]);
+  if(b.error)throw b.error;if(k.error)throw k.error;const count=Number(b.count||0)+Number(k.count||0);
+  if(count)return {error:"subcategory_in_use",status:409,item_count:count,items:[...(b.data||[]),...(k.data||[])]};
+  const q=await db.from("basket_subcategories").delete().eq("id",sid).select("id,name").maybeSingle();if(q.error)throw q.error;if(!q.data)return {error:"subcategory_not_found",status:404};
+  await opsEvent("basket.subcategory_deleted","Subdivisão da vitrine excluída.","basket_subcategory",sid,{name:q.data.name},tx(p?.operator,80)||auth?.user?.email||"Operação","human","dona_antonia");
+  return {deleted:true,id:sid};
+}
+async function basketCategorySave(p:any,auth:any){
+  const cid=id(p?.id),name=tx(p?.name,80);if(!name)return {error:"category_name_required",status:400};
+  const slug=basketCategorySlug(name);if(!slug)return {error:"category_name_invalid",status:400};
+  const patch={name,slug,sort_order:Math.round(nm(p?.sort_order,0,9999)),is_active:p?.is_active===true,updated_at:new Date().toISOString()};
+  const q=cid?await db.from("basket_categories").update(patch).eq("id",cid).select("*").maybeSingle():await db.from("basket_categories").insert(patch).select("*").single();
+  if(q.error){if(String(q.error.code)==="23505")return {error:"category_name_exists",status:409};throw q.error}
+  if(cid&&!q.data)return {error:"category_not_found",status:404};
+  await opsEvent("basket.category_saved","Categoria de cestas salva.","basket_category",q.data?.id||cid,{name,slug},tx(p?.operator,80)||auth?.user?.email||"Operação","human","dona_antonia");
+  return {category:q.data};
+}
+async function basketCategoryDelete(p:any,auth:any){
+  const cid=id(p?.id);if(!cid)return {error:"invalid_category",status:400};
+  const [used,kits]=await Promise.all([
+    db.from("basket_templates").select("id,name",{count:"exact"}).eq("category_id",cid).limit(20),
+    db.from("basket_kit_templates").select("id,name",{count:"exact"}).eq("category_id",cid).limit(20)
+  ]);
+  if(used.error)throw used.error;if(kits.error)throw kits.error;
+  const count=Number(used.count||0)+Number(kits.count||0);
+  if(count>0)return {error:"category_in_use",status:409,basket_count:count,baskets:[...(used.data||[]),...(kits.data||[])]};
+  const q=await db.from("basket_categories").delete().eq("id",cid).select("id,name").maybeSingle();if(q.error)throw q.error;if(!q.data)return {error:"category_not_found",status:404};
+  await opsEvent("basket.category_deleted","Categoria de cestas excluída.","basket_category",cid,{name:q.data.name},tx(p?.operator,80)||auth?.user?.email||"Operação","human","dona_antonia");
+  return {deleted:true,id:cid};
+}
+async function basketCategoryAssign(p:any,auth:any){
+  const bid=id(p?.basket_id);if(!bid)return {error:"invalid_basket",status:400};
+  const raw=p?.category_id,categoryId=raw===null||raw===""?null:id(raw);if(raw&& !categoryId)return {error:"invalid_category",status:400};
+  const rawSub=p?.subcategory_id,subcategoryId=rawSub===null||rawSub===""?null:id(rawSub);if(rawSub&&!subcategoryId)return {error:"invalid_subcategory",status:400};
+  if(categoryId){const c=await db.from("basket_categories").select("id,name").eq("id",categoryId).eq("is_active",true).maybeSingle();if(c.error)throw c.error;if(!c.data)return {error:"category_not_found",status:404}}
+  if(subcategoryId){const s=await db.from("basket_subcategories").select("id").eq("id",subcategoryId).eq("category_id",categoryId).eq("is_active",true).maybeSingle();if(s.error)throw s.error;if(!s.data)return {error:"subcategory_not_found",status:404}}
+  const q=await db.from("basket_templates").update({category_id:categoryId,subcategory_id:subcategoryId,updated_at:new Date().toISOString(),updated_by:auth.user.id}).eq("id",bid).select("id,name,category_id,subcategory_id").maybeSingle();if(q.error)throw q.error;if(!q.data)return {error:"basket_not_found",status:404};
+  await opsEvent("basket.category_assigned","Categoria e subdivisão da cesta atualizadas.","basket",bid,{category_id:categoryId,subcategory_id:subcategoryId},tx(p?.operator,80)||auth?.user?.email||"Operação","human","dona_antonia");
+  return {basket:q.data};
+}
+async function basketArchive(p:any,auth:any){
+  const bid=id(p?.basket_id||p?.id);if(!bid)return {error:"invalid_basket",status:400};
+  const q=await db.rpc("archive_basket_template_admin_v1",{p_basket_id:bid,p_operator:tx(p?.operator,80)||"Operação"});
+  if(q.error){const m=String(q.error.message||"");if(m.includes("basket_has_active_kit_templates"))return {error:"basket_has_active_kit_templates",status:409};if(m.includes("basket_has_live_lots"))return {error:"basket_has_live_lots",status:409};if(m.includes("basket_not_found"))return {error:"basket_not_found",status:404};throw q.error}
+  await opsEvent("basket.template_archived","Modelo de cesta arquivado.","basket",bid,{basket_id:bid},tx(p?.operator,80)||"Operação","human","dona_antonia");
+  return {basket:q.data};
 }
 async function basketSave(p:any,auth:any){
   const bid=id(p?.id);if(!bid)return {error:"invalid_basket",status:400};
@@ -2757,13 +3416,24 @@ async function quoteHistory(u:URL){
   if(status&&QUOTE_STATUSES.has(status))q=q.eq("status",status);
   if(qv)q=q.or("quote_number.ilike.%"+qv+"%,client_name.ilike.%"+qv+"%,client_document.ilike.%"+qv+"%");
   const r=await q.order("updated_at",{ascending:false}).limit(lim);if(r.error)throw r.error;
-  return {quotes:(r.data||[]).map(quoteSummaryRow)};
+  const rows:any[]=(r.data||[]).map(quoteSummaryRow);
+  if(rows.length){
+    const links=await db.from("sales_quote_bling_orders").select("quote_id,status,bling_order_id").in("quote_id",rows.map((x:any)=>x.id));
+    if(links.error)throw links.error;
+    const lm=new Map((links.data||[]).map((x:any)=>[x.quote_id,x]));
+    for(const x of rows){const link:any=lm.get(x.id);x.bling_order_id=Number(link?.bling_order_id||0)||null;x.conversion_status=link?.status||null;}
+  }
+  return {quotes:rows};
 }
 async function quoteGet(rawId:any){
   const qid=id(rawId);if(!qid)return {error:"invalid_quote",status:400};
   const r=await db.from("sales_quotes").select("*").eq("id",qid).is("archived_at",null).maybeSingle();
   if(r.error)throw r.error;if(!r.data)return {error:"quote_not_found",status:404};
-  return {quote:{...quoteSummaryRow(r.data),snapshot:meta(r.data.snapshot)}};
+  const link=await db.from("sales_quote_bling_orders").select("status,bling_order_id,external_key,last_error").eq("quote_id",qid).maybeSingle();
+  if(link.error)throw link.error;
+  return {quote:{...quoteSummaryRow(r.data),snapshot:meta(r.data.snapshot),
+    bling_order_id:Number(link.data?.bling_order_id||0)||null,conversion_status:link.data?.status||null,
+    conversion_key:link.data?.external_key||null,conversion_error:link.data?.last_error||null}};
 }
 async function quoteSave(p:any,auth:any){
   const snapshot=meta(p?.snapshot),fields=meta(snapshot.fields),items=Array.isArray(snapshot.items)?snapshot.items:[];
@@ -2773,6 +3443,9 @@ async function quoteSave(p:any,auth:any){
   const subtotal=Math.round(nm(p?.subtotal_cents,0,999999999999)),total=Math.round(nm(p?.total_cents,0,999999999999));
   const payload:any={quote_number:quoteNumber,customer_id:customerId||null,client_name:tx(p?.client_name||fields.clientName,300)||null,client_document:tx(p?.client_document||fields.document,40)||null,status:quoteStatus(p?.status),issued_on:issued,valid_until:valid,subtotal_cents:subtotal,total_cents:total,item_count:items.length,snapshot,updated_by:auth?.user_id||null,updated_at:new Date().toISOString()};
   if(qid){
+    const converted=await db.from("sales_quote_bling_orders").select("status").eq("quote_id",qid).maybeSingle();
+    if(converted.error)throw converted.error;
+    if(converted.data)return {error:"quote_already_submitted_to_bling",status:409,conversion_status:converted.data.status};
     const before=await db.from("sales_quotes").select("id").eq("id",qid).is("archived_at",null).maybeSingle();if(before.error)throw before.error;if(!before.data)return {error:"quote_not_found",status:404};
     const r=await db.from("sales_quotes").update(payload).eq("id",qid).select("*").single();if(r.error)throw r.error;
     await opsEvent("quote.updated","Orçamento atualizado.","quote",qid,{quote_number:quoteNumber,total_cents:total,status:payload.status},tx(fields.seller,80)||"Operação","human","dona_antonia");
@@ -2782,9 +3455,20 @@ async function quoteSave(p:any,auth:any){
   await opsEvent("quote.created","Orçamento salvo.","quote",r.data.id,{quote_number:quoteNumber,total_cents:total,status:payload.status},tx(fields.seller,80)||"Operação","human","dona_antonia");
   return {quote:{...quoteSummaryRow(r.data),snapshot:meta(r.data.snapshot)},created:true};
 }
+async function quoteBlingAction(p:any,convert:boolean){
+  const qid=id(p?.id);if(!qid)return {error:"invalid_quote",status:400};
+  const h=await hub(convert?"quote_order_convert":"quote_order_preview",{quote_id:qid});
+  if(h.error)return {error:h.error,status:h.status||409,issues:h.data?.failures||[],
+    detail:h.detail||h.data?.detail||null,conversion_status:h.data?.conversion_status||null,
+    bling_order_id:h.data?.bling_order_id||null,external_key:h.data?.external_key||null};
+  return h.data||{error:"bling_conversion_unavailable",status:502};
+}
 async function quoteStatusSet(p:any,auth:any){
   const qid=id(p?.id);if(!qid)return {error:"invalid_quote",status:400};
   const requested=tx(p?.status,20).toLowerCase();if(!QUOTE_STATUSES.has(requested))return {error:"invalid_quote_status",status:400};
+  const converted=await db.from("sales_quote_bling_orders").select("status").eq("quote_id",qid).maybeSingle();
+  if(converted.error)throw converted.error;
+  if(converted.data)return {error:"quote_already_submitted_to_bling",status:409,conversion_status:converted.data.status};
   const r=await db.from("sales_quotes").update({status:requested,updated_by:auth?.user_id||null,updated_at:new Date().toISOString()}).eq("id",qid).is("archived_at",null).select("*").maybeSingle();
   if(r.error)throw r.error;if(!r.data)return {error:"quote_not_found",status:404};
   await opsEvent("quote.status_changed","Status do orçamento atualizado.","quote",qid,{quote_number:r.data.quote_number,status:requested},tx(p?.operator,80)||"Operação","human","dona_antonia");
@@ -2825,24 +3509,77 @@ function normalizeCnpjLookup(raw:any){
     socios:partners.slice(0,100).map((x:any)=>({nome:tx(x?.nome_socio||x?.nome,300),qualificacao:tx(x?.qualificacao_socio||x?.qual,180)}))
   };
 }
+// Consulta por prioridade: cadastro local confirmado -> Bling -> BrasilAPI.
+// Uma indisponibilidade de serviço público não impede carregar clientes já cadastrados.
 async function cnpjLookup(u:URL){
   const cnpj=cleanCnpjLookup(u.searchParams.get("cnpj"));
-  if(!/^[0-9A-Z]{12}[0-9]{2}$/.test(cnpj))return {error:"invalid_cnpj",message:"Informe um CNPJ com 14 caracteres.",status:400};
-  try{
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
-    let res:Response;
+  if(!/^[0-9A-Z]{12}[0-9]{2}$/.test(cnpj))
+    return {error:"invalid_cnpj",message:"Informe um CNPJ completo com 14 caracteres.",status:400};
+  const local=await db.from("customers")
+    .select("id,name,cpf_cnpj,primary_whatsapp_e164,bling_contact_id")
+    .eq("cpf_cnpj",cnpj).limit(2);
+  if(local.error)throw local.error;
+  if((local.data||[]).length>1)
+    return {error:"duplicate_customer_document",message:"Há cadastros duplicados para este CNPJ. Revise os clientes no Admin.",status:409};
+  const customer=(local.data||[])[0];
+  if(customer){
+    const customerId=customer.id;
+    const [address,email,phone]=await Promise.all([
+      db.from("customer_addresses")
+        .select("street,number,complement,neighborhood,city,state,postal_code")
+        .eq("customer_id",customerId).eq("is_active",true)
+        .order("is_default",{ascending:false}).limit(1).maybeSingle(),
+      db.from("customer_emails").select("email").eq("customer_id",customerId)
+        .order("is_primary",{ascending:false}).limit(1).maybeSingle(),
+      db.from("customer_phones").select("phone_e164").eq("customer_id",customerId)
+        .order("is_primary",{ascending:false}).limit(1).maybeSingle()
+    ]);
+    if(address.error)throw address.error;
+    if(email.error)throw email.error;
+    if(phone.error)throw phone.error;
+    const a=address.data||{};
+    return {source:customer.bling_contact_id?"Vitrine/Admin + Bling":"Vitrine/Admin",
+      customer_id:customerId,bling_contact_id:customer.bling_contact_id||null,
+      company:{cnpj,razao_social:tx(customer.name,300),
+        logradouro:tx(a.street,300),numero:tx(a.number,60),
+        complemento:tx(a.complement,180),bairro:tx(a.neighborhood,180),
+        municipio:tx(a.city,180),uf:tx(a.state,2).toUpperCase(),
+        cep:tx(a.postal_code,20),
+        telefone_1:tx(customer.primary_whatsapp_e164||phone.data?.phone_e164,60),
+        email:tx(email.data?.email,240)}};
+  }
+
+  let blingError="";
+  // Somente CNPJ numérico é pesquisado pela API atual do Bling.
+  if(/^\d{14}$/.test(cnpj)){
     try{
-      res=await fetch("https://brasilapi.com.br/api/cnpj/v1/"+encodeURIComponent(cnpj),{
-        headers:{"Accept":"application/json","User-Agent":"DonaAntoniaAdmin/1.0"},
-        signal:controller.signal
-      });
+      const h=await hub("contact_lookup_by_document_readonly",{document:cnpj});
+      if(!h.error&&h.data?.found===true&&h.data?.company)
+        return {source:"Bling",company:h.data.company,bling_contact_id:h.data.bling_contact_id||null};
+      if(h.error){
+        blingError=h.error;
+        if(["bling_duplicate_documents","bling_document_mismatch"].includes(h.error))
+          return {error:h.error,message:"Mais de um contato ou um documento divergente encontrado no Bling. Revise o cadastro.",status:409};
+      }
+    }catch(e){blingError=tx((e as Error)?.message||e,100)}
+  }
+  // A Receita é apenas contingência quando o cliente não existe nas bases próprias.
+  if(!/^\d{14}$/.test(cnpj))
+    return {error:"cnpj_not_found",message:"CNPJ não encontrado no Vitrine/Admin ou Bling.",status:404};
+  try{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),9000);
+    let response:Response;
+    try{
+      response=await fetch("https://brasilapi.com.br/api/cnpj/v1/"+encodeURIComponent(cnpj),{
+        headers:{"Accept":"application/json"},signal:controller.signal});
     }finally{clearTimeout(timer)}
-    const raw=await res.json().catch(()=>null);
-    if(res.status===404)return {error:"cnpj_not_found",message:"CNPJ não encontrado na base consultada.",status:404};
-    if(!res.ok||!raw)return {error:"cnpj_provider_error",message:"A consulta de CNPJ está temporariamente indisponível.",status:502};
-    return {company:normalizeCnpjLookup(raw),source:"BrasilAPI / Minha Receita"};
+    const raw=await response.json().catch(()=>null);
+    if(response.ok&&raw)return {company:normalizeCnpjLookup(raw),source:"BrasilAPI / Minha Receita"};
+    return {error:response.status===404?"cnpj_not_found":"cnpj_sources_unavailable",
+      message:response.status===404?"CNPJ não encontrado nas bases consultadas.":"As consultas externas estão temporariamente indisponíveis. Tente novamente.",status:response.status===404?404:503};
   }catch(e){
-    return {error:"cnpj_lookup_failed",message:e instanceof DOMException&&e.name==="AbortError"?"A consulta demorou demais. Tente novamente.":"Não foi possível consultar o CNPJ agora.",status:502};
+    console.warn("quote_cnpj_lookup_fallback",tx(blingError||((e as Error)?.message||e),120));
+    return {error:"cnpj_sources_unavailable",message:"O CNPJ não consta no Admin e as consultas ao Bling/Receita falharam. Tente novamente.",status:503};
   }
 }
 
@@ -2952,74 +3689,273 @@ async function orderSeparationAssign(p:any,auth:any){
 async function orderSeparationItemSet(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id||p?.order_id),itemId=id(p?.order_item_id);if(!oid||!itemId)return {error:"invalid_order_item",status:400};
-  const requested=tx(p?.state,20).toLowerCase(),expected=tx(p?.expected_order_updated_at,80),separator=tx(p?.separator_key,30).toLowerCase()||null;
+  const requested=tx(p?.state,20).toLowerCase(),expected=tx(p?.expected_order_updated_at,80),requestedSeparator=tx(p?.separator_key,30).toLowerCase()||null;
   if(!["separated","missing"].includes(requested))return {error:"invalid_separation_state",status:400};
   if(!expected||!Number.isFinite(Date.parse(expected)))return {error:"order_version_required",status:409};
+  const assignmentQ=await db.from("order_separation_assignments_v1").select("separator_key,separator_label,assigned_at").eq("order_id",oid).maybeSingle();
+  if(assignmentQ.error)throw assignmentQ.error;
+  const separator=tx(assignmentQ.data?.separator_key,30).toLowerCase()||null;
+  if(!separator)return {error:"separator_required",status:409};
+  if(requestedSeparator&&requestedSeparator!==separator)return {error:"separator_assignment_changed",status:409,separator_key:separator,separator_label:assignmentQ.data?.separator_label||null};
   let oq=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;if(!oq.data)return {error:"order_not_found",status:404};
   if(String(oq.data.updated_at)!==expected)return {error:"stale_order_version",conflict:"order_version_conflict",status:409,order_updated_at:oq.data.updated_at};
-  if(uiStatus(oq.data.status)==="confirmed"){
-    let approval:any=null;try{approval=await syncConfirmedOrderToBling(oid,separator||tx(p?.operator,80)||"Separação")}catch(e){approval={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
-    if(!approval?.ok)return {error:"bling_approval_required_before_separation",status:409,bling_sync:approval};
-    const moved=await db.from("orders").update({status:"processing",updated_at:new Date().toISOString()}).eq("id",oid).eq("status","confirmed").select("updated_at").maybeSingle();if(moved.error)throw moved.error;
-    oq=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;
-  }
-  const q=await db.rpc("ops2_set_order_separation_item_v2",{p_order_id:oid,p_order_item_id:itemId,p_state:requested,p_expected_order_updated_at:oq.data?.updated_at,p_separator_key:separator});if(q.error)throw q.error;
+
+  const q=await db.rpc("ops2_set_order_separation_item_v2",{p_order_id:oid,p_order_item_id:itemId,p_state:requested,p_expected_order_updated_at:oq.data.updated_at,p_separator_key:separator});if(q.error)throw q.error;
   if(q.data?.ok!==true){const conflict=["stale_order_version","order_version_conflict"].includes(String(q.data?.error||q.data?.conflict||""));return {error:String(q.data?.error||"separation_item_update_failed"),status:conflict?409:400,...q.data}}
+
+  let blingSync:any=null,warning:string|null=null,orderUpdatedAt=q.data?.order_updated_at||null;
+  if(uiStatus(oq.data.status)==="confirmed"){
+    try{blingSync=await syncConfirmedOrderToBling(oid,separator||tx(p?.operator,80)||"Separação")}
+    catch(e){blingSync={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
+    if(blingSync?.ok){
+      const moved=await db.from("orders").update({status:"processing",updated_at:new Date().toISOString()}).eq("id",oid).eq("status","confirmed").select("updated_at").maybeSingle();if(moved.error)throw moved.error;
+      orderUpdatedAt=moved.data?.updated_at||orderUpdatedAt;
+    }else{
+      warning="bling_approval_pending";
+      await openSeparationIntegrationAttention(
+        oid,"order_bling_approval_pending",
+        "Item da separação foi salvo; aprovação do pedido no Bling está pendente.",
+        "Regularize a sincronização com o Bling antes de concluir a separação.",
+        {item_state:requested,order_item_id:itemId,bling_sync:blingSync}
+      );
+    }
+  }
   try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
-  return {item:q.data};
+  try{await opsEvent("order.separation_item_recorded","Item da separação registrado no Supabase.","order",oid,{order_item_id:itemId,state:requested,separator_key:separator,bling_sync:blingSync,warning},assignmentQ.data?.separator_label||separator,"human","dona_antonia","order-separation-item:"+oid+":"+itemId+":"+requested+":"+String(q.data?.order_updated_at||""))}catch{}
+  return {item:q.data,persisted:true,order_updated_at:orderUpdatedAt,bling_sync:blingSync,warning};
 }
 async function markSeparationNeedsAttention(oid:string,resumeFrom:string,error:any,detail:any=null){
   try{await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"needs_attention",p_metadata:{resume_from:resumeFrom,last_error:String(error||"separation_completion_failed"),last_error_detail:detail||null,last_error_at:new Date().toISOString()}})}catch{}
+}
+async function openSeparationIntegrationAttention(oid:string,type:string,summary:string,action:string,evidence:any={}){
+  try{
+    await db.rpc("ops_open_attention_v1",{
+      p_type:type,p_summary:summary,p_entity_type:"order",p_entity_id:oid,p_correlation_id:oid,
+      p_priority:"high",p_owner_role:"supervisor",p_recommended_action:action,
+      p_evidence:evidence||{},p_source_system:"bling",p_idempotency_key:"orders-v4:"+type+":"+oid,p_due_at:null
+    });
+  }catch{}
+}
+async function autoIssueFiscalAfterSeparation(oid:string){
+  const pf=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});
+  if(pf.error)return {attempted:false,ok:false,error:"fiscal_preflight_unavailable",detail:pf.error.message||null};
+  if(pf.data?.ready!==true)return {attempted:false,ok:false,error:"fiscal_preflight_blocked",blockers:pf.data?.blockers||[],preflight:pf.data};
+  const before:any=await orderFiscalStatusV4(oid);
+  if(before.error)return {attempted:false,ok:false,error:before.error,detail:before.detail||null};
+  if(before.authorized===true)return {attempted:false,ok:true,authorized:true,stage:"authorized",idempotent_replay:true,fiscal:before};
+  if((before.hard_blockers||[]).length)return {attempted:false,ok:false,error:"fiscal_dispatch_not_eligible",blockers:before.hard_blockers,fiscal:before};
+  if(before.issue_enabled!==true)return {attempted:false,ok:false,error:"fiscal_auto_issue_not_enabled",fiscal:before};
+
+  const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});
+  if(h.error)return {attempted:true,ok:false,error:h.error||"fiscal_issue_failed",detail:h.detail||h.data||null,fiscal:before};
+
+  let after:any=null,reconcile:any=null;
+  for(let attempt=1;attempt<=5;attempt++){
+    try{reconcile=await hub("fiscal_dispatch_reconcile",{source_order_id:oid})}catch{}
+    after=await orderFiscalStatusV4(oid);
+    if(after?.authorized===true||after?.stage==="authorized"){
+      return {attempted:true,ok:true,authorized:true,stage:"authorized",attempts:attempt,result:h.data||null,reconcile:reconcile?.data||null,fiscal:after};
+    }
+    if(after?.stage==="rejected"){
+      return {attempted:true,ok:false,authorized:false,stage:"rejected",attempts:attempt,error:"fiscal_rejected",result:h.data||null,reconcile:reconcile?.data||null,fiscal:after};
+    }
+    if(attempt<5)await new Promise(resolve=>setTimeout(resolve,2000));
+  }
+  if(after?.error)return {attempted:true,ok:true,authorized:false,stage:"processing",attempts:5,result:h.data||null};
+  const accepted=after?.stage==="processing"||after?.stage==="pending";
+  return {attempted:true,ok:accepted,authorized:false,stage:after?.stage||"processing",attempts:5,result:h.data||null,reconcile:reconcile?.data||null,fiscal:after};
+}
+async function runSeparationPostCompletionIntegrations(oid:string,operator:string){
+  let blingVerified:any={attempted:true,ok:false};
+  try{
+    const snap=await buildSnapshot(oid,"separation_completed");
+    const verified=await hub("ops2_ensure_order_state",{payload:snap,target_key:"verified",canary:false});
+    if(verified.error){
+      blingVerified={attempted:true,ok:false,error:verified.error,detail:verified.data||verified.detail||null};
+      await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"completed",p_metadata:{bling_verified:false,bling_verify_error:String(verified.error||"bling_verified_failed"),bling_verify_failed_at:new Date().toISOString()}});
+      await openSeparationIntegrationAttention(oid,"order_bling_verified_pending","Separação concluída; sincronização Verificado no Bling está pendente.","Revisar a integração do pedido com o Bling. A separação física já está concluída.",blingVerified);
+      return {bling_verified:blingVerified,fiscal_auto:{attempted:false,ok:false,error:"bling_not_verified"}};
+    }
+    blingVerified={attempted:true,ok:true,bling_order_id:verified.data?.bling_order_id||null,result:verified.data||null};
+    await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"completed",p_metadata:{bling_verified:true,bling_order_id:verified.data?.bling_order_id||null,verified_at:new Date().toISOString()}});
+  }catch(e){
+    blingVerified={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)};
+    await openSeparationIntegrationAttention(oid,"order_bling_verified_pending","Separação concluída; sincronização Verificado no Bling está pendente.","Revisar a integração do pedido com o Bling. A separação física já está concluída.",blingVerified);
+    return {bling_verified:blingVerified,fiscal_auto:{attempted:false,ok:false,error:"bling_not_verified"}};
+  }
+
+  let fiscalAuto:any;
+  try{fiscalAuto=await autoIssueFiscalAfterSeparation(oid)}
+  catch(e){fiscalAuto={attempted:true,ok:false,error:tx((e as Error)?.message||e,300)}}
+  try{
+    await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"completed",p_metadata:{
+      fiscal_auto_attempted:fiscalAuto?.attempted===true,
+      fiscal_auto_ok:fiscalAuto?.ok===true,
+      fiscal_auto_authorized:fiscalAuto?.authorized===true,
+      fiscal_auto_stage:fiscalAuto?.stage||null,
+      fiscal_auto_error:fiscalAuto?.ok===true?null:String(fiscalAuto?.error||""),
+      fiscal_auto_at:new Date().toISOString()
+    }});
+  }catch{}
+  if(fiscalAuto?.ok!==true){
+    await openSeparationIntegrationAttention(
+      oid,"order_fiscal_auto_issue_pending",
+      "Pedido separado; NF-e automática precisa de atenção.",
+      "Abra o pedido e revise a pendência fiscal. A expedição continuará bloqueada até a autorização da NF-e.",
+      fiscalAuto
+    );
+  }
+  try{
+    await opsEvent(
+      fiscalAuto?.authorized===true?"order.fiscal_auto_authorized":"order.fiscal_auto_processed",
+      fiscalAuto?.authorized===true?"NF-e autorizada automaticamente após a separação.":"Emissão fiscal automática processada após a separação.",
+      "order",oid,{bling_verified:blingVerified,fiscal_auto:fiscalAuto},operator||"Separação","automation","bling","order-fiscal-auto-v4:"+oid
+    );
+  }catch{}
+  return {bling_verified:blingVerified,fiscal_auto:fiscalAuto};
 }
 async function orderSeparationComplete(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
   const expected=tx(p?.expected_order_updated_at,80);if(!expected||!Number.isFinite(Date.parse(expected)))return {error:"order_version_required",status:409};
-  const prep=await db.rpc("ops2_prepare_order_separation_completion_v2",{p_order_id:oid,p_expected_order_updated_at:expected});if(prep.error)throw prep.error;
-  if(prep.data?.ok!==true){const conflict=["stale_order_version","order_version_conflict"].includes(String(prep.data?.error||prep.data?.conflict||""));return {error:String(prep.data?.error||"separation_prepare_failed"),status:conflict?409:400,...prep.data}}
+  let completionOrder=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(completionOrder.error)throw completionOrder.error;if(!completionOrder.data)return {error:"order_not_found",status:404};
+  if(String(completionOrder.data.updated_at)!==expected)return {error:"stale_order_version",conflict:"order_version_conflict",status:409,order_updated_at:completionOrder.data.updated_at};
+  const assignmentQ=await db.from("order_separation_assignments_v1").select("separator_key,separator_label,assigned_at").eq("order_id",oid).maybeSingle();
+  if(assignmentQ.error)throw assignmentQ.error;
+  if(!tx(assignmentQ.data?.separator_key,30))return {error:"separator_required",status:409};
 
+  const prep=await db.rpc("ops2_prepare_order_separation_completion_v2",{p_order_id:oid,p_expected_order_updated_at:expected});if(prep.error){
+    const message=String(prep.error.message||"");
+    if(message.includes("separator_required_before_completion"))return {error:"separator_required",status:409};
+    throw prep.error;
+  }
+  if(prep.data?.ok!==true){const conflict=["stale_order_version","order_version_conflict"].includes(String(prep.data?.error||prep.data?.conflict||""));return {error:String(prep.data?.error||"separation_prepare_failed"),status:conflict?409:400,...prep.data}}
   const stock=await db.rpc("ops2_apply_order_separation_stock_v2",{p_order_id:oid});if(stock.error)throw stock.error;
   if(stock.data?.ok!==true){await markSeparationNeedsAttention(oid,"stock_applied",stock.data?.error,stock.data);return {error:String(stock.data?.error||"separation_stock_failed"),status:409,recovery_scheduled:true}}
+
+  const oq=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;
+  if(uiStatus(oq.data?.status)!=="ready"){await markSeparationNeedsAttention(oid,"stock_applied","ready_transition_failed",oq.data);return {error:"ready_transition_failed",status:409,recovery_scheduled:true}}
+  try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"ready"})}catch{}
+
+  const operator=tx(assignmentQ.data?.separator_label,80)||tx(p?.operator,80)||"Separação";
+  const done=await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"completed",p_metadata:{
+    completed_by:auth?.user_id||null,
+    separated_at:new Date().toISOString(),
+    separator_key:assignmentQ.data?.separator_key||null,
+    separator_label:assignmentQ.data?.separator_label||null,
+    operational_completion:true,
+    external_integrations_pending:true,
+    physical_stock_launch_point:"dispatch"
+  }});if(done.error)throw done.error;
   try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
 
-  const snap=await buildSnapshot(oid,"separation_verified");
-  const verified=await hub("ops2_ensure_order_state",{payload:snap,target_key:"verified",canary:false});
-  if(verified.error){await markSeparationNeedsAttention(oid,"bling_verified",verified.error,verified.data||verified.detail);return {error:"bling_verified_failed",status:verified.status||409,detail:verified.data||verified.detail||null,recovery_scheduled:true}}
-  await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"bling_verified",p_metadata:{bling_verified:true,bling_order_id:verified.data?.bling_order_id||null,verified_at:new Date().toISOString()}});
+  let customerNotification:any={attempted:true,ok:false};
+  try{
+    const notifyResponse=await fetch(`${U}/functions/v1/order-separation-notify-v1`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-internal-key":K},
+      body:JSON.stringify({order_id:oid}),
+      signal:AbortSignal.timeout(18000)
+    });
+    customerNotification={attempted:true,ok:notifyResponse.ok,status:notifyResponse.status};
+    if(!notifyResponse.ok){const detail=await notifyResponse.text().catch(()=>"");customerNotification.detail=tx(detail,300);console.error("order_separation_customer_notify",oid,notifyResponse.status,tx(detail,300))}
+  }catch(error){customerNotification={attempted:true,ok:false,error:tx((error as Error)?.message||error,300)};console.error("order_separation_customer_notify",oid,customerNotification.error)}
+  try{await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"completed",p_metadata:{customer_notification_ok:customerNotification.ok===true,customer_notification_at:new Date().toISOString()}})}catch{}
 
-  let order=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(order.error)throw order.error;if(!order.data)return {error:"order_not_found",status:404};
-  if(uiStatus(order.data.status)==="confirmed"){
-    const processing=await db.from("orders").update({status:"processing",updated_at:new Date().toISOString()}).eq("id",oid).eq("status","confirmed");if(processing.error)throw processing.error;
-    order=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(order.error)throw order.error;
-  }
-  if(uiStatus(order.data?.status)==="processing"){
-    const ready=await db.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",oid).eq("status","processing");if(ready.error)throw ready.error;
-    try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"ready"})}catch{}
-  }
-  await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"ready",p_metadata:{ready_at:new Date().toISOString()}});
+  const integrationTask=runSeparationPostCompletionIntegrations(oid,operator).catch(async error=>{
+    await openSeparationIntegrationAttention(oid,"order_post_separation_integration_pending","Separação concluída; integrações posteriores precisam de atenção.","Revisar Bling/NF-e. Não refaça a separação física.",{error:tx((error as Error)?.message||error,300)});
+    return null;
+  });
+  const edgeRuntime=(globalThis as any).EdgeRuntime;
+  let integrationsQueued=false,integrations:any=null;
+  if(edgeRuntime&&typeof edgeRuntime.waitUntil==="function"){edgeRuntime.waitUntil(integrationTask);integrationsQueued=true}
+  else integrations=await integrationTask;
 
-  const preflight=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});if(preflight.error)throw preflight.error;
-  if(preflight.data?.ready!==true){await markSeparationNeedsAttention(oid,"ready",preflight.data?.blockers||"fiscal_preflight_failed",preflight.data);return {error:"fiscal_dispatch_not_ready",status:409,fiscal_preflight:preflight.data,recovery_scheduled:true}}
-  const fiscal=await hub("fiscal_dispatch_gate",{source_order_id:oid});
-  if(fiscal.error||fiscal.data?.allowed!==true){await markSeparationNeedsAttention(oid,"ready",fiscal.error||"fiscal_dispatch_not_authorized",fiscal.data||fiscal.detail);return {error:fiscal.error?"fiscal_dispatch_gate_unavailable":"fiscal_dispatch_not_authorized",status:fiscal.status||409,fiscal_dispatch_gate:fiscal.data||null,recovery_scheduled:true}}
-
-  const completionQ=await db.from("order_separation_completions_v1").select("phase,metadata").eq("order_id",oid).maybeSingle();if(completionQ.error)throw completionQ.error;
-  if(completionQ.data?.metadata?.physical_stock_launched!==true){
-    const dispatchSnap=await buildSnapshot(oid,"dispatch_physical_stock");
-    const launch=await hub("ops2_launch_physical_stock",{payload:dispatchSnap});
-    if(launch.error){await markSeparationNeedsAttention(oid,"ready",launch.error,launch.data||launch.detail);return {error:launch.error||"physical_stock_launch_failed",status:launch.status||409,detail:launch.data||launch.detail||null,recovery_scheduled:true}}
-    await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"physical_stock_launched",p_metadata:{physical_stock_launched:true,physical_stock_result:launch.data||null,physical_stock_launched_at:new Date().toISOString()}});
-  }
-
-  const moved=await db.from("orders").update({status:"out_for_delivery",updated_at:new Date().toISOString()}).eq("id",oid).eq("status","ready").select("id,status,updated_at").maybeSingle();if(moved.error)throw moved.error;
-  const finalOrder=moved.data||((await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle()).data);
-  if(uiStatus(finalOrder?.status)!=="out_for_delivery"){await markSeparationNeedsAttention(oid,"physical_stock_launched","out_for_delivery_transition_failed",finalOrder);return {error:"out_for_delivery_transition_failed",status:409,recovery_scheduled:true}}
-  try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"out_for_delivery"})}catch{}
-  try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
-  const done=await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"completed",p_metadata:{completed_by:auth?.user_id||null,out_for_delivery_at:new Date().toISOString()}});if(done.error)throw done.error;
-  await opsEvent("order.separation_completed","Separação concluída e pedido liberado para entrega.","order",oid,{missing_subtotal:prep.data?.missing_subtotal||0,final_total:prep.data?.final_total||null,status:"out_for_delivery"},tx(p?.operator,80)||"Separação","human","dona_antonia","order-separation-v2-complete:"+oid);
-  return {order_id:oid,status:"out_for_delivery",completion:done.data,missing_subtotal:prep.data?.missing_subtotal||0,final_total:prep.data?.final_total||null,recovery_scheduled:false};
+  await opsEvent("order.separation_completed","Separação concluída. Pedido pronto; integrações fiscais seguem em segundo plano.","order",oid,{
+    missing_subtotal:prep.data?.missing_subtotal||0,final_total:prep.data?.final_total||null,status:"ready",
+    separator_key:assignmentQ.data?.separator_key||null,separator_label:assignmentQ.data?.separator_label||null,
+    customer_notification:customerNotification,integrations_queued:integrationsQueued
+  },operator,"human","dona_antonia","order-separation-v4-complete:"+oid);
+  return {
+    order_id:oid,order_number:prep.data?.order_number||null,status:"ready",completion:done.data,
+    missing_subtotal:prep.data?.missing_subtotal||0,final_total:prep.data?.final_total||null,
+    separator:assignmentQ.data||null,customer_notification:customerNotification,
+    integrations_queued:integrationsQueued,integrations,recovery_scheduled:false
+  };
 }
+
+async function completeDeliveryV3(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
+  const method=tx(p?.method,40).toLowerCase(),amount=Math.round(Number(p?.amount_cents||0));
+  const q=await db.rpc("ops3_complete_delivery_v1",{p_order_id:oid,p_method:method,p_amount_cents:amount,p_operator_label:tx(p?.operator,80)||"Entrega",p_idempotency_key:tx(p?.idempotency_key,120)||("delivery-v3:"+oid)});
+  if(q.error){const m=String(q.error.message||"");for(const code of ["invalid_payment_method","payment_total_mismatch","payment_already_captured","order_not_ready_for_delivery","separation_not_completed","delivery_return_open"]){if(m.includes(code))return {error:code,status:code.startsWith("invalid_")?400:409}}throw q.error}
+  try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"delivered"})}catch{}
+  try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
+
+  let bling_completion:any=null;
+  try{
+    try{await hub("fiscal_status",{source_order_id:oid})}catch{}
+    const h=await hub("ops2_ensure_delivered_attended",{source_order_id:oid});
+    if(h.error){
+      await db.from("orders").update({sync_status:"review_bling",sync_error:tx(h.error||"bling_attended_failed",300),updated_at:new Date().toISOString()}).eq("id",oid);
+      try{await db.rpc("ops_open_attention_v1",{p_type:"bling_delivery_sync_review",p_summary:"Entrega confirmada; Bling precisa de revisão.",p_entity_type:"order",p_entity_id:oid,p_correlation_id:oid,p_priority:"high",p_owner_role:"supervisor",p_recommended_action:"Abra o pedido entregue e revise a situação no Bling.",p_evidence:{error:h.error,detail:h.detail||h.data||null},p_source_system:"bling",p_idempotency_key:"ops3:bling_delivery_review:"+oid,p_due_at:null})}catch{}
+      bling_completion={attempted:true,ok:false,error:h.error,detail:h.detail||h.data||null,recovery_scheduled:true};
+    }else{
+      bling_completion={attempted:true,ok:true,result:h.data};
+      await opsEvent("order.bling_attended","Pedido entregue confirmado como Atendido no Bling.","order",oid,{bling_completion},tx(p?.operator,80)||"Entrega","automation","bling","order-bling-attended-v3:"+oid);
+    }
+  }catch(e){
+    await db.from("orders").update({sync_status:"review_bling",sync_error:tx((e as Error)?.message||e,300),updated_at:new Date().toISOString()}).eq("id",oid);
+    bling_completion={attempted:true,ok:false,error:tx((e as Error)?.message||e,300),recovery_scheduled:true};
+  }
+  return {...(q.data||{ok:true,order_id:oid,status:"delivered"}),bling_completion};
+}
+
+async function finalizeCapturedDeliveryV4(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
+  const operator=tx(p?.operator,80)||"Entrega";
+  const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).in("status",["returning","returned_review"]).limit(1).maybeSingle();
+  if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_open",status:409,delivery_return_case_id:ret.data.id};
+  const oq=await db.from("orders").select("id,status,total").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;if(!oq.data)return {error:"order_not_found",status:404};
+  if(uiStatus(oq.data.status)!=="out_for_delivery")return {error:"order_not_in_delivery",status:409};
+  const pay=await db.from("order_payment_settlements").select("id,status,source,expected_total_cents,captured_total_cents").eq("order_id",oid).in("status",["captured","synced","needs_review"]).limit(1).maybeSingle();
+  if(pay.error)throw pay.error;if(!pay.data?.id||pay.data.source!=="delivery")return {error:"delivery_payment_required",status:409};
+  const expected=Math.round(Number(oq.data.total||0)*100);
+  if(Number(pay.data.expected_total_cents)!==expected||Number(pay.data.captured_total_cents)!==expected)return {error:"delivery_payment_mismatch",status:409};
+  const u=await db.from("orders").update({status:"delivered",delivered_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",oid).eq("status","out_for_delivery").select("id,updated_at").maybeSingle();
+  if(u.error)throw u.error;if(!u.data?.id)return {error:"delivery_state_conflict",status:409};
+  try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"delivered"})}catch{}
+  try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
+  await opsEvent("order.status_changed","Pedido alterado de out_for_delivery para delivered.","order",oid,{from:"out_for_delivery",to:"delivered",canonical_action:"order_delivery_finalize_v4"},operator,"human","dona_antonia","delivery-finalize-v4:"+oid);
+  let bling_completion:any=null;
+  try{
+    try{await hub("fiscal_status",{source_order_id:oid})}catch{}
+    const h=await hub("ops2_ensure_delivered_attended",{source_order_id:oid});
+    if(h.error){
+      await db.from("orders").update({sync_status:"review_bling",sync_error:tx(h.error||"bling_attended_failed",300),updated_at:new Date().toISOString()}).eq("id",oid);
+      try{await db.rpc("ops_open_attention_v1",{p_type:"bling_delivery_sync_review",p_summary:"Entrega confirmada; Bling precisa de revisão.",p_entity_type:"order",p_entity_id:oid,p_correlation_id:oid,p_priority:"high",p_owner_role:"supervisor",p_recommended_action:"Abra o pedido entregue e revise a situação no Bling.",p_evidence:{error:h.error,detail:h.detail||h.data||null},p_source_system:"bling",p_idempotency_key:"ops4:bling_delivery_review:"+oid,p_due_at:null})}catch{}
+      bling_completion={attempted:true,ok:false,error:h.error,detail:h.detail||h.data||null,recovery_scheduled:true};
+    }else{
+      bling_completion={attempted:true,ok:true,result:h.data};
+      await opsEvent("order.bling_attended","Pedido entregue confirmado como Atendido no Bling.","order",oid,{bling_completion},operator,"automation","bling","order-bling-attended-v4:"+oid);
+    }
+  }catch(e){
+    await db.from("orders").update({sync_status:"review_bling",sync_error:tx((e as Error)?.message||e,300),updated_at:new Date().toISOString()}).eq("id",oid);
+    bling_completion={attempted:true,ok:false,error:tx((e as Error)?.message||e,300),recovery_scheduled:true};
+  }
+  return {ok:true,order_id:oid,status:"delivered",payment_settlement_id:pay.data.id,bling_completion};
+}
+
+async function reopenOrderV3(p:any,auth:any){
+  if(auth?.role==="viewer")return {error:"forbidden",status:403};
+  const oid=id(p?.id||p?.order_id);if(!oid)return {error:"invalid_order",status:400};
+  const q=await db.rpc("ops3_reopen_order_v1",{p_order_id:oid,p_operator_label:tx(p?.operator,80)||"Operação"});
+  if(q.error){const m=String(q.error.message||"");for(const code of ["order_not_confirmed","separation_already_started","stock_release_failed"]){if(m.includes(code))return {error:code,status:409}}throw q.error}
+  return q.data||{ok:true,order_id:oid,status:"storefront_received"};
+}
+
 
 async function adminAuth(r:Request){
   const token=(r.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
@@ -3031,7 +3967,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:60,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:61,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
@@ -3041,9 +3977,12 @@ Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{
   const out=await recoverPendingEanVerified(internalBody?.limit??3);
   return js(r,out,out.ok===false?500:200);
 }
-const auth:any=await adminAuth(r);if(!auth.ok)return js(r,{ok:false,error:auth.error},auth.status||401);if(r.method==="POST"&&auth.role==="viewer"&&WRITE_ACTIONS.has(a))return js(r,{ok:false,error:"forbidden"},403);if(r.method==="GET"&&a==="cnpj_lookup"){const x:any=await cnpjLookup(u);return x.error?js(r,{ok:false,error:x.error,message:x.message},x.status||400):js(r,{ok:true,company:x.company,source:x.source})}if(r.method==="GET"&&a==="quotes")return js(r,{ok:true,...await quoteHistory(u)});if(r.method==="GET"&&a==="quote"){const x:any=await quoteGet(u.searchParams.get("id"));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="basket_sales_runtime")return js(r,{ok:true,runtime:await basketSalesRuntime()});if(r.method==="GET"&&a==="basket_product_search")return js(r,{ok:true,...await basketProductSearch(u)});if(r.method==="GET"&&a==="basket_kit_product_suggestions"){const x:any=await basketKitProductSuggestions(u);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="basket_kits_admin")return js(r,{ok:true,...await basketKitsAdmin()});if(r.method==="GET"&&a==="basket_kit_admin"){const x:any=await basketKitAdminDetail(u.searchParams.get("id"));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="baskets_admin")return js(r,{ok:true,...await basketsAdminList()});if(r.method==="GET"&&a==="basket_admin"){const x:any=await basketAdminDetail(u.searchParams.get("id"));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="ops_summary")return js(r,{ok:true,summary:await opsSummary()});if(r.method==="GET"&&a==="ops_shadow_readiness")return js(r,{ok:true,readiness:await opsShadowReadiness()});if(r.method==="GET"&&a==="ops_print_queue")return js(r,{ok:true,queue:await opsPrintQueue(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="ops_papoai_capture_status")return js(r,{ok:true,papoai:await opsPapoAiCaptureStatus()});if(r.method==="GET"&&a==="ops_timeline")return js(r,{ok:true,events:await opsTimeline(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="ops_delivery_runs")return js(r,{ok:true,delivery:await opsDeliveryRuns()});if(r.method==="GET"&&a==="ops_attention")return js(r,{ok:true,attention:await opsAttention(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="products")return js(r,{ok:true,...await products(u)});if(r.method==="GET"&&a==="product_facets")return js(r,{ok:true,...await facets(tx(u.searchParams.get("category"),120),tx(u.searchParams.get("active"),12))});if(r.method==="GET"&&a==="expirations")return js(r,{ok:true,...await exps()});if(r.method==="GET"&&a==="expiry_alerts"){const x=await exps();return js(r,{ok:true,summary:x.summary,products:x.products.slice(0,12),expired_deactivated:x.expired_deactivated})}if(r.method==="GET"&&a==="product_lots"){const x:any=await productLots(u.searchParams.get("id"));return x.error?js(r,{ok:false,error:x.error},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="product_fefo_preview"){const x:any=await fefoPreview(u.searchParams.get("id"),u.searchParams.get("quantity"));return x.error?js(r,{ok:false,error:x.error},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="product_lifecycle_audit")return js(r,{ok:true,audit:await auditList(Math.floor(nm(u.searchParams.get("limit")||40,1,100)))});if(r.method==="GET"&&a==="inventory_incidents")return js(r,{ok:true,inventory:await inventoryIncidents(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="stock_recount_queue")return js(r,{ok:true,recount:await stockRecountQueue()});if(r.method==="GET"&&a==="inventory_balance_resolve_ean"){const x:any=await resolveInventoryBalanceEan({ean:u.searchParams.get("ean"),operator:u.searchParams.get("operator")},auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="inventory_balance_status"){const x:any=await inventoryBalanceStatus({product_id:u.searchParams.get("product_id")});return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="ean_lookup"){const x:any=await ean(u.searchParams.get("ean"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="gondolas")return js(r,{ok:true,...await glist()});if(r.method==="GET"&&a==="gondola"){const x:any=await gone(u.searchParams.get("id"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="orders")return js(r,{ok:true,orders:await ordersList()});if(r.method==="GET"&&a==="order"){const x:any=await orderDetailCanonical(u.searchParams.get("id"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_separation_get"){const x:any=await orderSeparationGet(u.searchParams.get("id"));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_registration_link_status"){const x:any=await orderWhatsappRegistrationStatus(u.searchParams.get("id"));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_stock_shortages")return js(r,{ok:true,...await orderShortages()});if(r.method==="GET"&&a==="closure_orders")return js(r,{ok:true,...await closureOrders()});if(r.method==="GET"&&a==="bling_status"){const h=await hub("readiness");return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,bling:h.data?.readiness??h.data})}if(r.method==="POST"&&a==="bling_status_catalog_probe"){const x:any=await blingStatusCatalogProbe(auth);return x.error?js(r,{ok:false,...x},x.status||502):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_oauth_begin"){const x:any=await blingOauthBegin(auth);return x.error?js(r,{ok:false,...x},x.status||500):js(r,{ok:true,...x})}let p:any={};try{p=await r.json()}catch{}if(r.method==="POST"&&a==="order_separation_assign"){const x:any=await orderSeparationAssign(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_separation_item_set"){const x:any=await orderSeparationItemSet(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_separation_complete"){const x:any=await orderSeparationComplete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="quote_save"){const x:any=await quoteSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="quote_status_set"){const x:any=await quoteStatusSet(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_lot_sale_toggle"){const x:any=await basketLotSaleToggle(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_lots_sale_bulk"){const x:any=await basketLotsSaleBulk(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_sales_mode_set"){const x:any=await basketSalesModeSet(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_draft_save"){const x:any=await basketKitLotDraftSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_draft_activate"){const x:any=await basketKitLotDraftActivate(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_draft_delete"){const x:any=await basketKitLotDraftDelete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_create"){const x:any=await basketKitLotCreate(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_legacy_lot_release"){const x:any=await basketLegacyLotRelease(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_cancel"){const x:any=await basketKitLotCancel(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_save"){const x:any=await basketSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_item_save"){const x:any=await basketItemSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_item_delete"){const x:any=await basketItemDelete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_alternative_save"){const x:any=await basketAlternativeSave(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_alternative_delete"){const x:any=await basketAlternativeDelete(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_lot_create"){const x:any=await basketLotCreate(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_lot_cancel"){const x:any=await basketLotCancel(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_whatsapp_send"){const x:any=await orderWhatsappSend(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_registration_link_issue"){const x:any=await orderRegistrationLinkIssue(p,r.headers.get("Authorization")||"");return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="papoai_issue_catalog_link"){const x:any=await opsPapoAiIssueCatalogLink(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="inventory_sheet_options"){return js(r,{ok:true,...await inventorySheetOptions()})}if(r.method==="GET"&&a==="inventory_sheet_batches"){return js(r,{ok:true,...await inventorySheetBatches()})}if(r.method==="POST"&&a==="inventory_sheet_manifest"){const x:any=await inventorySheetManifest(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="inventory_sheet_pending_manual"){return js(r,{ok:true,...await inventorySheetPendingManual()})}if(r.method==="POST"&&a==="inventory_sheet_cancel_scan"){const x:any=await inventorySheetCancelScan(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="inventory_sheet_preview"){return js(r,{ok:true,...await inventorySheetPreview(p)})}if(r.method==="POST"&&a==="inventory_sheet_create"){const x:any=await inventorySheetCreate(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="inventory_sheet_analyze"){const x:any=await inventorySheetAnalyze(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="inventory_sheet_apply"){const x:any=await inventorySheetApply(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="product_lot_save"){const x:any=await saveProductLot(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="product_lot_tracking_complete"){const x:any=await setLotTrackingComplete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="history_sync_retry"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const g:any=await guardOrder(oid);return g.error?js(r,{ok:false,...g},g.status||409):js(r,{ok:true,order_id:oid,history_synced:true,canonical:true})}
+const auth:any=await adminAuth(r);if(!auth.ok)return js(r,{ok:false,error:auth.error},auth.status||401);if(r.method==="POST"&&auth.role==="viewer"&&WRITE_ACTIONS.has(a))return js(r,{ok:false,error:"forbidden"},403);if(r.method==="GET"&&a==="cnpj_lookup"){const x:any=await cnpjLookup(u);return x.error?js(r,{ok:false,error:x.error,message:x.message},x.status||400):js(r,{ok:true,company:x.company,source:x.source})}if(r.method==="GET"&&a==="quotes")return js(r,{ok:true,...await quoteHistory(u)});if(r.method==="GET"&&a==="quote"){const x:any=await quoteGet(u.searchParams.get("id"));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="basket_sales_runtime")return js(r,{ok:true,runtime:await basketSalesRuntime()});if(r.method==="GET"&&a==="basket_product_search")return js(r,{ok:true,...await basketProductSearch(u)});if(r.method==="GET"&&a==="basket_kit_product_suggestions"){const x:any=await basketKitProductSuggestions(u);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="basket_commercial_admin")return js(r,{ok:true,...await basketCommercialAdmin()});if(r.method==="GET"&&a==="basket_kits_admin")return js(r,{ok:true,...await basketKitsAdmin()});if(r.method==="GET"&&a==="basket_kit_admin"){const x:any=await basketKitAdminDetail(u.searchParams.get("id"));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="baskets_admin")return js(r,{ok:true,...await basketsAdminList()});if(r.method==="GET"&&a==="basket_categories_admin")return js(r,{ok:true,...await basketCategoriesAdmin()});if(r.method==="GET"&&a==="basket_admin"){const x:any=await basketAdminDetail(u.searchParams.get("id"));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="ops_summary")return js(r,{ok:true,summary:await opsSummary()});if(r.method==="GET"&&a==="ops_shadow_readiness")return js(r,{ok:true,readiness:await opsShadowReadiness()});if(r.method==="GET"&&a==="ops_print_queue")return js(r,{ok:true,queue:await opsPrintQueue(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="ops_papoai_capture_status")return js(r,{ok:true,papoai:await opsPapoAiCaptureStatus()});if(r.method==="GET"&&a==="ops_timeline")return js(r,{ok:true,events:await opsTimeline(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="ops_delivery_runs")return js(r,{ok:true,delivery:await opsDeliveryRuns()});if(r.method==="GET"&&a==="smart_delivery_catalog")return js(r,{ok:true,catalog:await smartDeliveryCatalog()});if(r.method==="GET"&&a==="ops_attention")return js(r,{ok:true,attention:await opsAttention(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="product_detail"){const x:any=await productDetail(id(u.searchParams.get("id")));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="products")return js(r,{ok:true,...await products(u)});if(r.method==="GET"&&a==="product_facets")return js(r,{ok:true,...await facets(tx(u.searchParams.get("category"),120),tx(u.searchParams.get("active"),12))});if(r.method==="GET"&&a==="expirations")return js(r,{ok:true,...await exps()});if(r.method==="GET"&&a==="expiry_alerts"){const x=await exps();return js(r,{ok:true,summary:x.summary,products:x.products.slice(0,12),expired_deactivated:x.expired_deactivated})}if(r.method==="GET"&&a==="product_lots"){const x:any=await productLots(u.searchParams.get("id"));return x.error?js(r,{ok:false,error:x.error},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="product_fefo_preview"){const x:any=await fefoPreview(u.searchParams.get("id"),u.searchParams.get("quantity"));return x.error?js(r,{ok:false,error:x.error},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="product_lifecycle_audit")return js(r,{ok:true,audit:await auditList(Math.floor(nm(u.searchParams.get("limit")||40,1,100)))});if(r.method==="GET"&&a==="inventory_incidents")return js(r,{ok:true,inventory:await inventoryIncidents(u.searchParams.get("limit"))});if(r.method==="GET"&&a==="stock_recount_queue")return js(r,{ok:true,recount:await stockRecountQueue()});if(r.method==="GET"&&a==="inventory_balance_resolve_ean"){const x:any=await resolveInventoryBalanceEan({ean:u.searchParams.get("ean"),operator:u.searchParams.get("operator")},auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="inventory_balance_status"){const x:any=await inventoryBalanceStatus({product_id:u.searchParams.get("product_id")});return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="ean_lookup"){const x:any=await ean(u.searchParams.get("ean"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="gondolas")return js(r,{ok:true,...await glist()});if(r.method==="GET"&&a==="gondola"){const x:any=await gone(u.searchParams.get("id"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="orders")return js(r,{ok:true,orders:await ordersList()});if(r.method==="GET"&&a==="order"){const x:any=await orderDetailCanonical(u.searchParams.get("id"));return x.error?js(r,{ok:false,error:x.error},x.status):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_separation_get"){const x:any=await orderSeparationGet(u.searchParams.get("id"));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_separation_board")return js(r,{ok:true,board:await activeSeparationBoard()});if(r.method==="GET"&&a==="order_registration_link_status"){const x:any=await orderWhatsappRegistrationStatus(u.searchParams.get("id"));return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_stock_shortages")return js(r,{ok:true,...await orderShortages()});if(r.method==="GET"&&a==="closure_orders")return js(r,{ok:true,...await closureOrders()});if(r.method==="GET"&&a==="bling_status"){const h=await hub("readiness");return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,bling:h.data?.readiness??h.data})}if(r.method==="POST"&&a==="bling_status_catalog_probe"){const x:any=await blingStatusCatalogProbe(auth);return x.error?js(r,{ok:false,...x},x.status||502):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_oauth_begin"){const x:any=await blingOauthBegin(auth);return x.error?js(r,{ok:false,...x},x.status||500):js(r,{ok:true,...x})}let p:any={};try{p=await r.json()}catch{}if(r.method==="POST"&&a==="order_separation_assign"){const x:any=await orderSeparationAssign(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_separation_item_set"){const x:any=await orderSeparationItemSet(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_fiscal_recover_bling_v1"){const x:any=await orderFiscalRecoverBlingV1(p,auth);return x.error?js(r,{ok:false,...x},x.status||409):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_fiscal_recheck_v1"){const x:any=await orderFiscalRecheckV1(p,auth);return x.error?js(r,{ok:false,...x},x.status||409):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_separation_complete"){const x:any=await orderSeparationComplete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_delivery_complete_v3"){const x:any=await completeDeliveryV3(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_delivery_finalize_v4"){const x:any=await finalizeCapturedDeliveryV4(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_reopen_v3"){const x:any=await reopenOrderV3(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="quote_save"){const x:any=await quoteSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&(a==="quote_bling_preview"||a==="quote_bling_convert")){
+  const x:any=await quoteBlingAction(p,a==="quote_bling_convert");
+  return x.error?js(r,{ok:false,...x},x.status||409):js(r,{ok:true,...x});
+}if(r.method==="POST"&&a==="quote_status_set"){const x:any=await quoteStatusSet(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_commercial_create"){const x:any=await basketCommercialCreate(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_lot_sale_toggle"){const x:any=await basketLotSaleToggle(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_lots_sale_bulk"){const x:any=await basketLotsSaleBulk(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_sales_mode_set"){const x:any=await basketSalesModeSet(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_draft_save"){const x:any=await basketKitLotDraftSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_draft_activate"){const x:any=await basketKitLotDraftActivate(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_reopen"){const x:any=await basketKitLotReopen(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_template_save"){const x:any=await basketKitTemplateSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_template_archive"){const x:any=await basketKitTemplateArchive(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_draft_delete"){const x:any=await basketKitLotDraftDelete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_create"){const x:any=await basketKitLotCreate(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_legacy_lot_release"){const x:any=await basketLegacyLotRelease(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_cancel"){const x:any=await basketKitLotCancel(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_kit_lot_delete"){const x:any=await basketKitLotDelete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_category_save"){const x:any=await basketCategorySave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_category_delete"){const x:any=await basketCategoryDelete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_category_assign"){const x:any=await basketCategoryAssign(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_subcategory_save"){const x:any=await basketSubcategorySave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_subcategory_delete"){const x:any=await basketSubcategoryDelete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_archive"){const x:any=await basketArchive(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_save"){const x:any=await basketSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_item_save"){const x:any=await basketItemSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_item_delete"){const x:any=await basketItemDelete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_alternative_save"){const x:any=await basketAlternativeSave(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_alternative_delete"){const x:any=await basketAlternativeDelete(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_lot_create"){const x:any=await basketLotCreate(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="basket_lot_cancel"){const x:any=await basketLotCancel(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_whatsapp_send"){const x:any=await orderWhatsappSend(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_registration_link_issue"){const x:any=await orderRegistrationLinkIssue(p,r.headers.get("Authorization")||"");return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="papoai_issue_catalog_link"){const x:any=await opsPapoAiIssueCatalogLink(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="inventory_sheet_options"){return js(r,{ok:true,...await inventorySheetOptions()})}if(r.method==="GET"&&a==="inventory_sheet_batches"){return js(r,{ok:true,...await inventorySheetBatches()})}if(r.method==="POST"&&a==="inventory_sheet_manifest"){const x:any=await inventorySheetManifest(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="inventory_sheet_pending_manual"){return js(r,{ok:true,...await inventorySheetPendingManual()})}if(r.method==="POST"&&a==="inventory_sheet_cancel_scan"){const x:any=await inventorySheetCancelScan(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="inventory_sheet_preview"){return js(r,{ok:true,...await inventorySheetPreview(p)})}if(r.method==="POST"&&a==="inventory_sheet_create"){const x:any=await inventorySheetCreate(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="inventory_sheet_analyze"){const x:any=await inventorySheetAnalyze(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="inventory_sheet_apply"){const x:any=await inventorySheetApply(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="product_lot_save"){const x:any=await saveProductLot(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="product_lot_tracking_complete"){const x:any=await setLotTrackingComplete(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="history_sync_retry"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const g:any=await guardOrder(oid);return g.error?js(r,{ok:false,...g},g.status||409):js(r,{ok:true,order_id:oid,history_synced:true,canonical:true})}
   if(r.method==="POST"&&a==="order_component_replace"){const oid=id(p?.order_id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const g:any=await guardOrder(oid);if(g.error)return js(r,{ok:false,...g},g.status||409);return js(r,{ok:false,error:"order_component_edit_requires_unreserved_order",canonical:true},409)}
-  if(r.method==="POST"&&a==="ops_print_presented"){const x:any=await opsPrintPresented(p?.id);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="ops_delivery_plan"){const x:any=await opsDeliveryPlan(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="manual_order_create"){const x:any=await createManualWhatsappOrder(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_payment_capture"){const x:any=await captureDeliveryPayment(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="delivery_fail_register"){const x:any=await registerFailedDelivery(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="delivery_return_confirm"){const x:any=await confirmDeliveryReturn(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="delivery_return_resolve"){const x:any=await resolveDeliveryReturnReview(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_check"){const oid=id(new URL(r.url).searchParams.get("id"));if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const z=await db.rpc("ops_get_order_check_v1",{p_order_id:oid});if(z.error)throw z.error;return js(r,{ok:true,check:z.data})}
+  if(r.method==="POST"&&a==="ops_print_presented"){const x:any=await opsPrintPresented(p?.id);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="ops_delivery_plan"){const x:any=await opsDeliveryPlan(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="smart_delivery_region_save"){const x:any=await smartDeliveryRegionSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="smart_delivery_driver_save"){const x:any=await smartDeliveryDriverSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="smart_delivery_vehicle_save"){const x:any=await smartDeliveryVehicleSave(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="smart_delivery_location_confirm"){const x:any=await smartDeliveryLocationConfirm(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="smart_delivery_run_assign"){const x:any=await smartDeliveryRunAssign(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="smart_delivery_loading_confirm"){const x:any=await smartDeliveryLoadingConfirm(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="smart_delivery_stop_move"){const x:any=await smartDeliveryStopMove(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="manual_order_create"){const x:any=await createManualWhatsappOrder(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_payment_capture"){const x:any=await captureDeliveryPayment(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="delivery_fail_register"){const x:any=await registerFailedDelivery(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="delivery_return_confirm"){const x:any=await confirmDeliveryReturn(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="delivery_return_resolve"){const x:any=await resolveDeliveryReturnReview(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="GET"&&a==="order_check"){const oid=id(new URL(r.url).searchParams.get("id"));if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const z=await db.rpc("ops_get_order_check_v1",{p_order_id:oid});if(z.error)throw z.error;return js(r,{ok:true,check:z.data})}
   if(r.method==="POST"&&a==="order_check_start"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const g:any=await guardOrder(oid);if(g.error)return js(r,{ok:false,...g},g.status||409);const z=await db.rpc("ops_start_order_check_v1",{p_order_id:oid,p_operator_label:tx(p?.operator,80)||"Operação"});if(z.error)return js(r,{ok:false,error:String(z.error.message||"check_start_failed")},409);return js(r,{ok:true,check:z.data})}
   if(r.method==="POST"&&a==="order_check_scan"){const sid=id(p?.session_id),gtin=dg(p?.gtin,30),qty=Number(p?.quantity??1);if(!sid||!gtin)return js(r,{ok:false,error:"invalid_check_scan"},400);const z=await db.rpc("ops_scan_order_check_v1",{p_session_id:sid,p_gtin:gtin,p_quantity:qty});if(z.error){const m=String(z.error.message||"");return js(r,{ok:false,error:m.includes("ean_not_in_order")?"ean_not_in_order":m.includes("checked_quantity_exceeds_expected")?"checked_quantity_exceeds_expected":m.includes("duplicate_ean_in_order")?"duplicate_ean_in_order":"check_scan_failed"},409)}return js(r,{ok:true,item:z.data})}
   if(r.method==="POST"&&a==="order_check_finish"){
@@ -3089,4 +4028,4 @@ const auth:any=await adminAuth(r);if(!auth.ok)return js(r,{ok:false,error:auth.e
     }
     return js(r,{ok:true,verified:true,order_id:oid,check:z.data,bling_verified});
   }
-  if(r.method==="POST"&&a==="order_update"){const x:any=await updateOrderCanonical(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_consume_stock"){const x:any=await consumeOrder(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_probe_readonly"){const h=await hub("probe_readonly");return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,probe:h.data})}if(r.method==="POST"&&a==="bling_reconcile_catalog_readonly"){const h=await reconcileCatalog();return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_reconcile_customers_readonly"){const h=await hub("reconcile_customers_readonly",{limit:p?.limit??650});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_preview_order_sync"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await previewOrder(oid);return x.error?js(r,{ok:false,error:x.error,detail:x.detail},x.status||502):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_reconcile_order_dependencies_readonly"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);return js(r,{ok:true,...await reconcileDeps(oid)})}if(r.method==="POST"&&a==="bling_create_order_customer"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await ensureOrderCustomer(oid);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_create_order_products"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await createOrderProducts(oid);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_fiscal_status"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const h=await hub("fiscal_status",{source_order_id:oid});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_dispatch_canary_execute"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);if(tx(p?.confirmation,40)!=="EMITIR_NFE")return js(r,{ok:false,error:"fiscal_human_confirmation_required"},409);const pf=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});if(pf.error)throw pf.error;if(pf.data?.ready!==true)return js(r,{ok:false,error:"fiscal_dispatch_preflight_failed",preflight:pf.data,detail:"Pedido ainda não está pronto para emissão fiscal."},409);const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_document_pdf"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const h=await hub("fiscal_document_pdf",{source_order_id:oid});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_confirm_payment"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);return js(r,{ok:false,error:"fiscal_payment_confirmation_deprecated",detail:"O pagamento fiscal agora vem do settlement real da entrega. Esta ação antiga foi desativada para evitar conflito com o gate de NF-e antes da expedição."},409)}if(r.method==="POST"&&a==="bling_finance_overview"){const auth=r.headers.get("Authorization")||"",h=await hub("finance_overview",{},auth);return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_finance_action"){const auth=r.headers.get("Authorization")||"",h=await hub("finance_action",p||{},auth);return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="GET"&&a==="stock_cutover_preflight"){const z=await db.rpc("get_ops2_stock_cutover_preflight_v1");if(z.error)throw z.error;return js(r,{ok:true,preflight:z.data})}if(r.method==="POST"&&a==="stock_reconciliation_classify"){const z:any=await classifyStockReconciliation(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_incident_create"){const z:any=await createInventoryIncident(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_balance_prepare_unknown"){const z:any=await prepareInventoryBalanceUnknown(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_balance_commit"){const z:any=await commitInventoryBalance(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}let x:any;if(a==="product_save")x=await saveProduct(p);else if(a==="product_quick_save")x=await quickProductSave(p,auth);else if(a==="product_stock_set")x=await setProductStockOfficial(p,auth);else if(a==="offer_save")x=await saveOffer(p);else if(a==="expiration_save")x=await expSave(p);else if(a==="balance_confirm")x=await bal(p);else if(a==="gondola_create")x=await gcreate(p);else if(a==="gondola_assign")x=await gassign(p);else if(a==="gondola_shelf_update")x=await gshelf(p);else if(a==="gondola_remove")x=await grem(p);else if(a==="gondola_clear")x=await gclear(p);else if(a==="gondola_assign_count")x=await gassignCount(p);else return js(r,{ok:false,error:"method_not_allowed"},405);return x?.error?js(r,{ok:false,error:x.error},x.status||400):js(r,{ok:true,...x})}catch(e){console.error("canonical_admin_error",a,String(e?.message||e));return js(r,{ok:false,error:"service_error",detail:String(e?.message||e)},500)}});
+  if(r.method==="POST"&&a==="order_update"){const bypass:any=await rejectCriticalStatusBypass(p);if(bypass)return js(r,{ok:false,...bypass},bypass.status||409);const x:any=await updateOrderCanonical(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_consume_stock"){const x:any=await consumeOrder(p);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_probe_readonly"){const h=await hub("probe_readonly");return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,probe:h.data})}if(r.method==="POST"&&a==="bling_reconcile_catalog_readonly"){const h=await reconcileCatalog();return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_reconcile_customers_readonly"){const h=await hub("reconcile_customers_readonly",{limit:p?.limit??650});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_preview_order_sync"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await previewOrder(oid);return x.error?js(r,{ok:false,error:x.error,detail:x.detail},x.status||502):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_reconcile_order_dependencies_readonly"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);return js(r,{ok:true,...await reconcileDeps(oid)})}if(r.method==="POST"&&a==="bling_create_order_customer"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await ensureOrderCustomer(oid);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="bling_create_order_products"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const x:any=await createOrderProducts(oid);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_fiscal_status"){const x:any=await orderFiscalStatusV4(p?.id);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_fiscal_issue_v4"){const x:any=await orderFiscalIssueV4(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_dispatch_start_v4"){const x:any=await orderDispatchStartV4(p,auth);return x.error?js(r,{ok:false,...x},x.status||400):js(r,{ok:true,...x})}if(r.method==="POST"&&a==="order_fiscal_dispatch_canary_execute"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);if(tx(p?.confirmation,40)!=="EMITIR_NFE")return js(r,{ok:false,error:"fiscal_human_confirmation_required"},409);const pf=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});if(pf.error)throw pf.error;if(pf.data?.ready!==true)return js(r,{ok:false,error:"fiscal_dispatch_preflight_failed",preflight:pf.data,detail:"Pedido ainda não está pronto para emissão fiscal."},409);const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_document_pdf"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);const h=await hub("fiscal_document_pdf",{source_order_id:oid});return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="order_fiscal_confirm_payment"){const oid=id(p?.id);if(!oid)return js(r,{ok:false,error:"invalid_order"},400);return js(r,{ok:false,error:"fiscal_payment_confirmation_deprecated",detail:"O pagamento fiscal agora vem do settlement real da entrega. Esta ação antiga foi desativada para evitar conflito com o gate de NF-e antes da expedição."},409)}if(r.method==="POST"&&a==="bling_finance_overview"){const auth=r.headers.get("Authorization")||"",h=await hub("finance_overview",{},auth);return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="POST"&&a==="bling_finance_action"){const auth=r.headers.get("Authorization")||"",h=await hub("finance_action",p||{},auth);return h.error?js(r,{ok:false,error:h.error,detail:h.detail},h.status||502):js(r,{ok:true,...(h.data||{})})}if(r.method==="GET"&&a==="stock_cutover_preflight"){const z=await db.rpc("get_ops2_stock_cutover_preflight_v1");if(z.error)throw z.error;return js(r,{ok:true,preflight:z.data})}if(r.method==="POST"&&a==="stock_reconciliation_classify"){const z:any=await classifyStockReconciliation(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_incident_create"){const z:any=await createInventoryIncident(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_balance_prepare_unknown"){const z:any=await prepareInventoryBalanceUnknown(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}if(r.method==="POST"&&a==="inventory_balance_commit"){const z:any=await commitInventoryBalance(p,auth);return z.error?js(r,{ok:false,...z},z.status||400):js(r,{ok:true,...z})}let x:any;if(a==="product_save")x=await saveProduct(p);else if(a==="product_quick_save")x=await quickProductSave(p,auth);else if(a==="product_stock_set")x=await setProductStockOfficial(p,auth);else if(a==="offer_save")x=await saveOffer(p);else if(a==="expiration_save")x=await expSave(p);else if(a==="balance_confirm")x=await bal(p);else if(a==="gondola_create")x=await gcreate(p);else if(a==="gondola_assign")x=await gassign(p);else if(a==="gondola_shelf_update")x=await gshelf(p);else if(a==="gondola_remove")x=await grem(p);else if(a==="gondola_clear")x=await gclear(p);else if(a==="gondola_assign_count")x=await gassignCount(p);else return js(r,{ok:false,error:"method_not_allowed"},405);return x?.error?js(r,{ok:false,error:x.error},x.status||400):js(r,{ok:true,...x})}catch(e){console.error("canonical_admin_error",a,String(e?.message||e));return js(r,{ok:false,error:"service_error",detail:String(e?.message||e)},500)}});

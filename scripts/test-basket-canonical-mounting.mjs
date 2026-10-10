@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const p='supabase/sql/20261004_basket_canonical_mounting_v1.sql';
+assert.ok(fs.existsSync(p),'canonical mounting SQL must exist');
+const s=fs.readFileSync(p,'utf8');
+assert.match(s,/create or replace function public\.activate_basket_kit_lot_draft_v1/i);
+assert.match(s,/set status='ready',[\s\S]{0,240}sale_enabled=true/i,'mounting must make the new lot sellable by default');
+assert.match(s,/linked_lot_unavailable/i,'linked lot must still be validated before mounting');
+assert.match(s,/basket_lot_public_availability_v1/i,'linked validation must use canonical availability');
+assert.match(s,/'sale_enabled',true/i,'activation response must report sellable state');
+assert.doesNotMatch(s,/set status='ready'[\s\S]{0,240}sale_enabled=false/i);
+console.log('basket canonical mounting: PASS');

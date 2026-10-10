@@ -26,8 +26,13 @@ assert.match(sql,/revoke all on function public\.ops2_admin_ana_preview_start_v1
 assert.match(sql,/grant execute on function public\.ops2_admin_ana_preview_start_v1/i,'somente authenticated deve chamar start');
 assert.match(sql,/grant execute on function public\.ops2_admin_ana_preview_finish_v1/i,'somente authenticated deve chamar finish');
 
-assert.match(api,/SUPABASE_ANON_KEY/,'preview deve usar somente chave pública para agir em nome do JWT do Admin');
-assert.doesNotMatch(api,/SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEYS/i,'preview não pode depender de service-role');
+assert.match(api,/SUPABASE_ANON_KEY/,'preview deve manter cliente autenticado pelo JWT do Admin');
+assert.match(api,/SUPABASE_SERVICE_ROLE_KEY/,'preview deve permitir cliente server-side isolado para recuperar o segredo do provedor');
+assert.match(api,/get_conversation_worker_provider_secret_v1/,'preview deve usar o segredo OpenAI já configurado no backend quando OPENAI_API_KEY não estiver no ambiente');
+assert.match(api,/OPENAI_API_KEY[\s\S]{0,800}?get_conversation_worker_provider_secret_v1/i,'fallback do segredo só deve acontecer quando a chave de ambiente não estiver disponível');
+assert.match(api,/dbFor\(req\)/,'operações administrativas devem continuar usando o cliente autenticado do Admin');
+assert.doesNotMatch(api,/serviceDb\(\)\.rpc\(["']ops2_admin_ana_preview_(start|finish|observe|review|metrics)_v1/i,'service-role não pode executar RPCs administrativas da prévia');
+assert.doesNotMatch(api,/privileged\.rpc\(["']ops2_admin_ana_preview_(start|finish|observe|review|metrics)_v1/i,'cliente privilegiado da gestão ANA não pode executar RPCs administrativas da prévia');
 assert.match(api,/adminAuth/,'preview deve validar a sessão administrativa');
 assert.match(api,/ops2_admin_ana_preview_start_v1/,'preview deve obter contexto pelo RPC administrativo');
 assert.match(api,/ops2_admin_ana_preview_finish_v1/,'preview deve persistir resultado pelo RPC administrativo');

@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const path='vitrine/admin/store-baskets-builder.js';
+assert.ok(fs.existsSync(path));
+const ui=fs.readFileSync(path,'utf8');
+for(const action of ['list','editor','save','preview','builds','reserve','mount','cancel']) assert.ok(ui.includes(`'${action}'`)||ui.includes(`"${action}"`),`missing ${action}`);
+for(const text of ['Cestas do Site','Quantidade a montar','Montar / Reservar','Em montagem','Marcar como montado','Cancelar reserva','Histórico de montagem']) assert.ok(ui.includes(text),`missing ${text}`);
+for(const marker of ['data-store-reserve','data-store-builds','data-store-mount','data-store-cancel']) assert.ok(ui.includes(marker),`missing ${marker}`);
+assert.ok(!ui.includes('lot_reserve'));
+console.log('store baskets builder UI v1: PASS');

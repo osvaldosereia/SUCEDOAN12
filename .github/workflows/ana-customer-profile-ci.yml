@@ -1,0 +1,45 @@
+name: ANA Customer Profile CI
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/test-ana-customer-profile-*.mjs'
+      - 'scripts/test-whatsapp-ana-customer-profile-*.mjs'
+      - 'scripts/test-admin-attendance-customer-profile-*.mjs'
+      - 'supabase/migrations/20261005*_ana_customer_profile*.sql'
+      - 'supabase/sql/20261005_ana_customer_profile*.sql'
+      - 'supabase/functions/_shared/ana-customer-profile-*.mjs'
+      - 'supabase/functions/admin-whatsapp-ana-customer-profile-v1/**'
+      - 'vitrine/admin/atendimento/attendance-customer-profile.js'
+      - 'vitrine/admin/atendimento/attendance-customer-api.js'
+      - 'vitrine/admin/atendimento/attendance-customer-view.js'
+      - 'vitrine/admin/atendimento/attendance-customer.js'
+      - 'vitrine/admin/atendimento/attendance-customer.css'
+      - '.github/workflows/ana-customer-profile-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: ANA customer profile schema
+        run: node scripts/test-ana-customer-profile-schema-v1.mjs
+      - name: ANA customer profile policy
+        run: node scripts/test-whatsapp-ana-customer-profile-policy-v1.mjs
+      - name: ANA customer profile API
+        run: node scripts/test-whatsapp-ana-customer-profile-api-v1.mjs
+      - name: Attendance customer profile UI
+        run: node scripts/test-admin-attendance-customer-profile-ui-v1.mjs
+      - name: ANA customer profile review
+        run: node scripts/test-ana-customer-profile-review-v1.mjs
+      - name: Profile policy syntax
+        run: node --check supabase/functions/_shared/ana-customer-profile-policy-v1.mjs
+      - name: Profile Edge syntax
+        run: node --experimental-strip-types --check supabase/functions/admin-whatsapp-ana-customer-profile-v1/index.ts

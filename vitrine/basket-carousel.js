@@ -1,17 +1,70 @@
 /* Original catalog photographs; the selected sale-lot composition supplies quantities. */
+(() => {
+  'use strict';
+  const TOKEN_RE=/^[0-9a-f]{36}$/i;
+  const TRACKING_STORE='da_marketing_tracking_v1';
+  const MARKETING_CONTEXT_KEY='da_vitrine_marketing_context_v1';
+  const TRACKING_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/marketing-tracking-v1';
+  const WINDOW_MS=7*24*60*60*1000;
+  let trackingToken='';
+
+  function cleanToken(value){const token=String(value??'').trim().toLowerCase();return TOKEN_RE.test(token)?token:''}
+  function storedToken(){
+    try{
+      const saved=JSON.parse(localStorage.getItem(TRACKING_STORE)||'null');
+      if(!saved||Number(saved.expires_at||0)<=Date.now()){localStorage.removeItem(TRACKING_STORE);return ''}
+      return cleanToken(saved.token);
+    }catch{return ''}
+  }
+  function rememberToken(token){try{localStorage.setItem(TRACKING_STORE,JSON.stringify({token,expires_at:Date.now()+WINDOW_MS}))}catch{}}
+  function syncMarketingContext(){
+    if(!trackingToken)return;
+    try{
+      let ctx=JSON.parse(sessionStorage.getItem(MARKETING_CONTEXT_KEY)||'null');
+      const fresh=ctx&&typeof ctx==='object'&&!Array.isArray(ctx)&&Date.now()-Number(ctx.captured_at||0)<=4*60*60*1000;
+      if(!fresh)ctx={};
+      ctx.tracking_token=trackingToken;
+      ctx.captured_at=Date.now();
+      sessionStorage.setItem(MARKETING_CONTEXT_KEY,JSON.stringify(ctx));
+    }catch{}
+  }
+  async function track(action){
+    if(!trackingToken)return;
+    try{await fetch(`${TRACKING_API}?action=${encodeURIComponent(action)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:trackingToken}),cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer'})}catch{}
+  }
+
+  try{
+    const url=new URL(location.href),incoming=cleanToken(url.searchParams.get('mt'));
+    trackingToken=incoming||storedToken();
+    if(incoming){rememberToken(incoming);url.searchParams.delete('mt');history.replaceState(null,'',url.pathname+(url.search?'?'+url.searchParams.toString():'')+url.hash)}
+  }catch{trackingToken=storedToken()}
+
+  if(trackingToken){
+    syncMarketingContext();
+    window.setTimeout(syncMarketingContext,0);
+    void track('open');
+    document.addEventListener('click',event=>{const target=event.target instanceof Element?event.target.closest('#sendWhats'):null;if(target)void track('checkout')},true);
+  }
+  window.DAMarketingTracking={get tracking_token(){return trackingToken},syncMarketingContext};
+})();
+
 window.BasketCarousel={
   card(b,esc,money,basketName){
-    const items=Array.isArray(b.carousel_items)?b.carousel_items:[];
-    const name=basketName(b.name),region='basket-products-'+b.id;
-    const photos=items.map((p,i)=>{
-      const quantity=Number(p.quantity),label=Number.isInteger(quantity)?String(quantity):quantity.toLocaleString('pt-BR');
-      const url=/^(https?:\/\/|\/(?!\/))/i.test(String(p.image_url||''))?p.image_url:'';
-      return '<div class="basket-product" title="'+esc(p.name)+'"><span class="basket-quantity">'+esc(label)+' un.</span>'+(url?'<img data-product-index="'+i+'" data-basket-src="'+esc(url)+'" width="108" height="138" decoding="async" alt="'+esc(p.name)+'">':'<span class="basket-photo-missing">'+esc(p.name)+'</span>')+'</div>';
-    }).join('');
-    return '<article class="card basket-card"><div class="basket-card-title name">'+esc(name)+'</div><div class="basket-carousel"><div class="basket-product-strip" id="'+esc(region)+'" tabindex="0" role="region" aria-label="Produtos da '+esc(name)+'">'+(photos||'<span class="basket-photo-missing">Confira os produtos em Ver cesta</span>')+'</div><div class="basket-scroll-track" role="scrollbar" tabindex="0" aria-label="Percorrer produtos da '+esc(name)+'" aria-controls="'+esc(region)+'" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="basket-scroll-thumb"></span></div></div><div class="card-body basket-card-info"><button type="button" class="add" data-basket="'+esc(b.id)+'" aria-label="Ver cesta '+esc(name)+'">Ver cesta</button><div class="price">'+money(b.display_price_cents)+'</div></div></article>';
+    const items=Array.isArray(b.carousel_items)?b.carousel_items:[],first=items[0]||null;
+    const name=basketName(b.name),key=String(b.card_key||b.id);
+    const url=/^(https?:\/\/|\/(?!\/))/i.test(String(first?.image_url||''))?first.image_url:'';
+    const photo=first&&url?'<img data-basket-src="'+esc(url)+'" width="420" height="280" decoding="async" alt="'+esc(first.name||'Arroz da cesta')+'">':'<span class="basket-photo-missing">'+esc(first?.name||'Foto indisponível')+'</span>';
+    return '<article class="card basket-card"><div class="basket-card-photo">'+photo+'</div><div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div><div class="price">'+money(b.display_price_cents)+'</div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="Ver cesta '+esc(name)+'">Ver cesta</button></div></article>';
+  },
+  prepareHome(host){
+    const section=host?.closest?.('.section');if(!section)return;
+    section.querySelector('.basket-category-list')?.remove();
+    const heading=section.querySelector('.section-head h2');
+    if(heading?.textContent?.trim()==='Cestas e Kits')heading.closest('.section-head')?.remove();
   },
   mount(host){
     this.dispose?.();if(!host)return;
+    this.prepareHome(host);
     const abort=new AbortController(),signal=abort.signal;
     const images=host.querySelectorAll('img[data-basket-src]');
     const load=img=>{img.src=img.dataset.basketSrc;img.removeAttribute('data-basket-src')};

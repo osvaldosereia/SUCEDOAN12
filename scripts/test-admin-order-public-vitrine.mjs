@@ -3,7 +3,10 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
 const admin = fs.readFileSync('vitrine/admin/index.html', 'utf8');
-const block = admin.slice(admin.indexOf('function publicOrderUrlFor'), admin.indexOf('function currentOrderCompanyWhatsappMessage'));
+const blockStart = admin.indexOf('function publicOrderUrlFor');
+const blockEnd = admin.indexOf('async function openOrder(id)', blockStart);
+assert.ok(blockStart >= 0 && blockEnd > blockStart, 'bloco canônico da vitrine pública do pedido precisa existir');
+const block = admin.slice(blockStart, blockEnd);
 const orderId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const shortUrl = 'https://donaantonia.com.br/p/?k=1234567890abcdef';
 const legacyUrl = 'https://donaantonia.com.br/pedido/?o=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';

@@ -1,91 +1,46 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
-const require=createRequire(import.meta.url);
-const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
-const code=html.slice(html.indexOf('  async function openBasketKitAdmin('),html.indexOf('  async function openBasketAdmin('));
-const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
-try {
- const page=await browser.newPage();
- await page.setContent('<main id="content"></main><dialog id="editor"><h2 id="editorTitle"></h2><div id="editorBody"></div><div id="editorActions"></div></dialog>');
- await page.addStyleTag({content:html.match(/<style[^>]*>([\s\S]*?)<\/style>/)[1]});
- await page.addScriptTag({content:`const $=s=>document.querySelector(s);const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');const fmtQty=v=>String(v);const dateTime=v=>String(v);const toast=()=>{};const requireOperator=()=> 'Teste';const renderBaskets=()=>{};const toggleBasketLotSale=()=>{};let api=async(action,params,options)=>{window.calls.push({action,params,body:options?JSON.parse(options.body):null});return action==='basket_kit_lot_draft_save'?{draft:{lot_id:'saved',short_code:'EB1'}}:action==='basket_kit_admin'?window.fixture:{products:[],suggestions:[]}};window.calls=[];const state={basketKitDetail:null};window.fixture={kit:{id:'kit',code_prefix:'EB',kind:'food',basket:{name:'Econômica',base_price:79.9}},ready_quantity:0,next_short_code:'EB1',lots:[],items:[{id:'item',product_id:'rice',quantity:1,loose_stock:20,product:{name:'Arroz 5kg',sku:'P1',price:20},suggestions:[{id:'jelly',name:'Geleia',loose_stock:10}]}]};state.basketKitDetail=window.fixture;${code};paintBasketKitAdmin();`});
- await page.click('#newKitLot');
- await page.waitForFunction(()=>document.querySelector('#basketKitLotComposer strong')?.getBoundingClientRect().width>0);
- assert.equal(await page.locator('#content').getByText('Arroz 5kg',{exact:true}).filter({visible:true}).count(),1,'a criação deve mostrar somente uma composição');
- assert.equal(await page.locator('[data-kit-suggest]').count(),0,'alternativas devem aparecer apenas em Trocar');
- assert.equal(await page.locator('#kitLotPublicName').inputValue(),'Econômica','nome público começa com o nome atual da cesta');
- assert.equal(await page.locator('#kitLotSalePrice').inputValue(),'79.90','preço começa com o valor comercial atual');
- await page.locator('#kitLotPublicName').fill('Cesta Econômica Outubro');
- await page.locator('#kitLotSalePrice').fill('89.90');
- await page.locator('#kitLotQty').fill('15');
- assert.equal(await page.evaluate(()=>document.activeElement.id),'kitLotQty','digitar quantidade não pode substituir o campo e perder foco');
- await page.locator('#kitLotQty').fill('25');
- assert.equal(await page.locator('#activateKitLotDraft').isDisabled(),true,'montagem acima do estoque deve ficar bloqueada');
- await page.locator('#kitLotQty').fill('501');
- assert.equal(await page.locator('#saveKitLotDraft').isDisabled(),true,'rascunho acima de 500 deve ficar bloqueado');
- await page.locator('#kitLotQty').fill('10');
- await page.click('[data-kit-other]');
- assert.equal(await page.locator('#editor').isVisible(),true);
- assert.equal(await page.locator('#content').getByText('Geleia',{exact:true}).count(),0,'sugestões antigas não devem ser reutilizadas');
- await page.click('#closeKitProductPicker');
- await page.click('#saveKitLotDraft');
- await page.waitForFunction(()=>window.calls.some(c=>c.action==='basket_kit_admin'));
- assert.equal(await page.evaluate(()=>window.calls.find(c=>c.action==='basket_kit_lot_draft_save').body.quantity),10);
- assert.equal(await page.evaluate(()=>window.calls.find(c=>c.action==='basket_kit_lot_draft_save').body.public_name),'Cesta Econômica Outubro');
- assert.equal(await page.evaluate(()=>window.calls.find(c=>c.action==='basket_kit_lot_draft_save').body.sale_price),89.9);
- assert.equal(await page.evaluate(()=>window.calls.some(c=>c.action==='basket_kit_lot_draft_activate')),false,'rascunho não confirma montagem');
- await page.evaluate(()=>{state.basketKitDetail=window.fixture;startBasketKitLotDraft();});
- await page.click('#activateKitLotDraft');
- await page.waitForFunction(()=>window.calls.some(c=>c.action==='basket_kit_lot_draft_activate'));
- assert.equal(await page.evaluate(()=>window.calls.some(c=>c.action==='basket_lot_sale_toggle')),false,'montagem não pode ativar venda');
- await page.evaluate(()=>{state.basketKitDetail={...window.fixture,lots:[{id:'source',status:'ready',short_code:'EB2',quantity_built:12,public_name:'Cesta Econômica Lote 2',sale_price_override:92.5,items:[{product_id:'beans',quantity_per_kit:2,loose_stock:30,product:{name:'Feijão 1kg'}}]}]};startBasketKitLotDraft('source');});
- assert.equal(await page.locator('#kitLotQty').inputValue(),'12');
- assert.equal(await page.locator('#kitLotPublicName').inputValue(),'Cesta Econômica Lote 2','duplicar herda o nome público como ponto de partida');
- assert.equal(await page.locator('#kitLotSalePrice').inputValue(),'92.50','duplicar herda o preço do lote como ponto de partida');
- assert.equal(await page.locator('[data-kit-line-qty]').inputValue(),'2');
- assert.equal(await page.locator('#basketKitLotComposer').getByText('Feijão 1kg',{exact:true}).count(),1,'duplicar deve usar a composição real');
- assert.equal(await page.evaluate(()=>state.basketKitDetail.lots[0].items[0].quantity_per_kit),2);
- await page.locator('[data-kit-line-qty]').fill('3');
- assert.equal(await page.evaluate(()=>document.activeElement.hasAttribute('data-kit-line-qty')),true);
- assert.equal(await page.locator('#kitLotCapacity').textContent(),'10','capacidade acompanha quantidade por produto');
- await page.locator('[data-kit-line-qty]').fill('101');
- assert.equal(await page.locator('#saveKitLotDraft').isDisabled(),true,'produto acima de 100 bloqueia o rascunho');
- await page.locator('[data-kit-line-qty]').fill('3');
- assert.equal(await page.evaluate(()=>state.basketKitDetail.lots[0].items[0].quantity_per_kit),2,'edição não altera o lote original');
- await page.evaluate(()=>{state.basketKitDetail.lots[0]={...state.basketKitDetail.lots[0],status:'draft',notes:'continuar'};startBasketKitLotDraft('source');});
- assert.equal(await page.locator('#kitLotNotes').inputValue(),'continuar');
- assert.equal(await page.locator('#kitLotPublicName').inputValue(),'Cesta Econômica Lote 2');
- assert.equal(await page.locator('#kitLotSalePrice').inputValue(),'92.50');
- assert.equal(await page.evaluate(()=>state.basketKitLotDraft.draft_lot_id),'source','retomar mantém a identidade do rascunho');
- // A request from a closed picker must never mutate a different line.
- await page.evaluate(()=>{state.basketKitDetail=window.fixture;startBasketKitLotDraft();state.basketKitLotDraft.items.push({...state.basketKitLotDraft.items[0],product_id:'beans',name:'Feijão'});paintBasketKitLotComposer();window.pending=[];api=async(action,params)=>action==='basket_product_search'?await new Promise((resolve,reject)=>window.pending.push({params,resolve,reject})):{suggestions:[]};});
- await page.click('[data-kit-other="0"]');
- await page.locator('#kitProductSearch').fill('arroz');
- await page.waitForFunction(()=>window.pending.length===1);
- await page.click('#closeKitProductPicker');
- await page.click('[data-kit-other="1"]');
- await page.locator('#kitProductSearch').fill('arroz');
- await page.waitForFunction(()=>window.pending.length===2);
- await page.evaluate(()=>window.pending[1].resolve({products:[{id:'new-rice',name:'Arroz novo',loose_stock:20}]}));
- await page.waitForSelector('[data-kit-pick="new-rice"]');
- await page.evaluate(()=>window.pending[0].reject(new Error('old request')));
- await page.waitForTimeout(50);
- assert.equal(await page.locator('[data-kit-pick="new-rice"]').count(),1,'falha de busca antiga não deve apagar resultados atuais');
- await page.click('[data-kit-pick="new-rice"]');
- assert.equal(await page.evaluate(()=>state.basketKitLotDraft.items[0].product_id),'rice');
- assert.equal(await page.evaluate(()=>state.basketKitLotDraft.items[1].product_id),'new-rice');
- await page.click('[data-kit-other="0"]');
- await page.locator('#kitProductSearch').fill('feijao');
- await page.click('#closeKitProductPicker');
- await page.click('[data-kit-other="1"]');
- await page.waitForTimeout(300);
- assert.equal(await page.evaluate(()=>window.pending.length),2,'fechar cancela a busca ainda no debounce');
- await page.click('#closeKitProductPicker');
- await page.setViewportSize({width:390,height:844});
- assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=390),true,'editor deve caber no celular');
- await page.setViewportSize({width:1440,height:1000});
- if(process.env.BASKET_SCREENSHOT)await page.screenshot({path:process.env.BASKET_SCREENSHOT,fullPage:true});
- console.log('basket kit editor: PASS');
-} finally {await browser.close();}
+
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
+const guided=fs.readFileSync('vitrine/admin/basket-guided-builder.js','utf8');
+
+// O compositor antigo embutido no index permanece aposentado.
+for(const legacy of [
+  'id="newKitLot"',
+  'id="basketKitLotComposer"',
+  'function startBasketKitLotDraft(',
+  'async function openBasketKitAdmin(',
+  'function paintBasketKitLotComposer(',
+  'id="kitLotPublicName"',
+  'id="kitLotSalePrice"'
+]){
+  assert.equal(admin.includes(legacy),false,`legacy basket composer must stay retired: ${legacy}`);
+}
+
+assert.match(admin,/basket-admin-section\.js\?v=canonical-v3/,'Admin must load one Cestas/Kits section controller');
+assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'technical guided editor may remain loaded during migration');
+assert.match(admin,/DonaAntoniaBasketAdmin\?\.render/,'renderBaskets must delegate to the section controller');
+assert.doesNotMatch(admin,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not return');
+
+assert.match(section,/Criador de Kits/,'normal operation must expose Criador de Kits');
+assert.match(section,/Cestas do Site/,'normal operation must expose Cestas do Site');
+assert.match(section,/DonaAntoniaKitBuilder/,'section must delegate internal recipes');
+assert.match(section,/DonaAntoniaStoreBaskets/,'section must delegate external baskets');
+for(const retired of ['data-basket-edit','data-basket-new-lot','data-basket-edit-lot','data-basket-print','data-basket-archive','DonaAntoniaBasketGuided']){
+  assert.doesNotMatch(section,new RegExp(retired),`normal operation must stay free of ${retired}`);
+}
+assert.doesNotMatch(section,/startBasketKitLotDraft|openBasketKitAdmin|paintBasketKitLotComposer/,'section must never call legacy composers');
+
+// Technical compatibility module still protects historical lot behavior.
+for(const id of ['bgLotPublicName','bgLotSalePrice','bgLotQty','bgLotLinkedType','bgLotLinkedLot']){
+  assert.match(guided,new RegExp(id),`guided compatibility editor must own ${id}`);
+}
+for(const action of ['model_save','lot_preview','lot_reserve','lot_update','lot_mount','lot_cancel','lot_reopen']){
+  assert.match(guided,new RegExp(`["']${action}["']`),`guided compatibility editor must own ${action}`);
+}
+assert.match(guided,/applyDuplicateSeed/,'guided editor must preserve historical lot snapshot logic');
+assert.match(guided,/IntersectionObserver/,'guided editor must lazy-load technical product carousels');
+assert.match(guided,/Total[\s\S]*Reservado[\s\S]*Avulso/,'guided technical product cards must expose stock breakdown');
+
+console.log('basket legacy editors retired; simple tabs are normal operation: PASS');

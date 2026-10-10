@@ -98,6 +98,42 @@ assert.equal(inbound.messages.length, 1);
 assert.equal(inbound.messages[0].message.direction, 'inbound');
 assert.equal(inbound.messages[0].message.text_body, 'Mensagem de teste');
 
+const echoFixture = {
+  object: 'whatsapp_business_account',
+  entry: [{
+    id: '840102181903253',
+    changes: [{
+      field: 'smb_message_echoes',
+      value: {
+        messaging_product: 'whatsapp',
+        metadata: { display_phone_number: '+55 65 8449-1018', phone_number_id: '1218939807961094' },
+        message_echoes: [{
+          from: '5565984491018',
+          to: '5565998150975',
+          id: 'wamid.ECHO1',
+          timestamp: '1790968020',
+          type: 'text',
+          text: { body: 'Resposta enviada pelo celular' },
+        }],
+      },
+    }],
+  }],
+};
+assert.equal(hasMetaMessageOrStatusEvents(echoFixture), true, 'echo do WhatsApp Business App deve ser tratado como evento de mensagem');
+const echo = await normalizeMetaWebhook({
+  payload: echoFixture,
+  rawBody: JSON.stringify(echoFixture),
+  accountByPhoneNumberId: new Map([['1218939807961094', '00000000-0000-0000-0000-000000000018']]),
+});
+assert.equal(echo.messages.length, 1);
+assert.equal(echo.messages[0].event_type, 'message.sent');
+assert.equal(echo.messages[0].phone_e164, '+5565998150975', 'echo deve associar a conversa pelo destinatário, não pelo número da empresa');
+assert.equal(echo.messages[0].message.direction, 'outbound');
+assert.equal(echo.messages[0].message.sender_kind, 'human');
+assert.equal(echo.messages[0].message.sender_ref, 'whatsapp_business_app');
+assert.equal(echo.messages[0].message.text_body, 'Resposta enviada pelo celular');
+assert.equal(echo.messages[0].message.metadata.source_event, 'smb_message_echoes');
+
 const edge = fs.readFileSync(edgePath, 'utf8');
 assert.match(edge, /META_WHATSAPP_APP_SECRET/);
 assert.match(edge, /META_WHATSAPP_VERIFY_TOKEN/);
@@ -106,6 +142,17 @@ assert.match(edge, /MAX_BODY_BYTES/);
 assert.match(edge, /whatsapp_ingest_event_v1/);
 assert.match(edge, /whatsapp_record_status_v1/);
 assert.match(edge, /hasMetaMessageOrStatusEvents/);
+assert.match(edge, /echoes_normalized/);
+assert.match(edge, /smb_message_echoes/);
+assert.match(edge, /META_APP_ID/,'webhook deve conhecer o Meta App ID apenas no backend');
+assert.match(edge, /META_WHATSAPP_ACCESS_TOKEN/,'webhook deve poder descobrir o app pela assinatura ativa da WABA');
+assert.match(edge, /subscribed_apps/,'descoberta deve consultar apps já inscritos nas WABAs ativas');
+assert.match(edge, /whatsapp_business_api_data/,'descoberta deve ler o app id retornado pela Meta');
+assert.match(edge, /discoverMetaAppSubscription/,'webhook deve resolver o app mesmo sem META_APP_ID explícito');
+assert.match(edge, /\/subscriptions/,'webhook deve auditar a assinatura de campos do app Meta');
+assert.match(edge, /ensureCoexistenceEchoSubscription/,'webhook deve autocorrigir assinatura de coexistência');
+assert.match(edge, /fields:[\s\S]{0,160}mergedFields\.join/,'reparo deve preservar campos existentes e adicionar coexistência');
+assert.match(edge, /EdgeRuntime\.waitUntil\(ensureCoexistenceEchoSubscription\(\)\)/,'reparo não deve atrasar o ACK do webhook');
 assert.match(edge, /meta_account_unresolved/);
 assert.match(edge, /phone_number_id/);
 assert.match(edge, /normalized\.unknownPhoneNumberIds[\s\S]{0,700}ok:\s*true,\s*ignored:\s*true,\s*reason:\s*"meta_account_unresolved"[\s\S]{0,220}unknown_phone_number_ids[\s\S]{0,80},\s*200/i,

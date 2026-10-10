@@ -1,9 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { sendTemplateViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
 
 const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
-const PROVIDER_TOKEN=Deno.env.get("PAPOAI_ORDER_WEBHOOK_TOKEN")||"";
+const META_WHATSAPP_ACCESS_TOKEN=(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"").trim();
+const META_WHATSAPP_GRAPH_VERSION=(Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"").trim();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
 
 type Channel="0975"|"1018";
@@ -14,30 +16,33 @@ type OrderRow={
   id?:unknown;order_number?:unknown;customer_id?:unknown;phone_e164?:unknown;total?:unknown;payment_method?:unknown;
   created_at?:unknown;customer_snapshot?:unknown;delivery_address?:unknown;checkout_snapshot?:unknown;basket_name_snapshot?:unknown;
 };
-const providerUrl=async(channel:Channel)=>{
-  const envUrl=channel==="1018"
-    ? (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_1018_URL")||"")
-    : (Deno.env.get("PAPOAI_ORDER_TEMPLATE_WEBHOOK_0975_URL")||"");
-  if(envUrl)return envUrl;
-  const r=await db.rpc("ops2_papoai_order_provider_url_v1",{p_channel:channel});
-  if(r.error)return "";
-  return text(r.data,2000);
+
+const ORDER_TEMPLATE_BY_CHANNEL:Record<Channel,string>={
+  "0975":"pedidoorganizadosite0975v2",
+  "1018":"pedidoorganizadosite1018v2"
 };
-const providerReadiness=async()=>{
-  const [u0975,u1018]=await Promise.all([providerUrl("0975"),providerUrl("1018")]);
-  const p0975=Boolean(u0975),p1018=Boolean(u1018);
-  return {ready:p0975&&p1018,providers:{"0975":p0975,"1018":p1018}};
-};
+const ORDER_TEMPLATE_LANGUAGE="pt_BR";
 
 const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
   status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}
 });
 const text=(v:unknown,n=500)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
+const metaErrorDiagnostic=(error:MetaTransportError)=>{
+  const digits=(value:unknown)=>String(value??"").replace(/\D+/g,"").slice(0,16);
+  const parts=[text(error.code,80)||"meta_error"];
+  const httpStatus=digits(error.httpStatus),providerCode=digits(error.providerCode),providerSubcode=digits(error.providerSubcode);
+  if(httpStatus)parts.push(`http_${httpStatus}`);
+  if(providerCode)parts.push(`provider_code_${providerCode}`);
+  if(providerSubcode)parts.push(`provider_subcode_${providerSubcode}`);
+  return parts.join(":");
+};
 const uid=(v:unknown)=>{const s=text(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""};
 const money=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(n):""};
 const quantityLabel=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3}).format(n):""};
 const obj=(v:unknown):JsonRecord=>v&&typeof v==="object"&&!Array.isArray(v)?v as JsonRecord:{};
 const arr=(v:unknown):unknown[]=>Array.isArray(v)?v:[];
+const channelKeyFromPhone=(v:unknown):Channel|null=>{const d=String(v??"").replace(/\D+/g,"");if(d.endsWith("0975"))return "0975";if(d.endsWith("1018"))return "1018";return null};
+const metaConfigReady=()=>Boolean(META_WHATSAPP_ACCESS_TOKEN&&/^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION));
 const paymentLabel=(v:unknown)=>{
   const raw=text(v,80),key=raw.toLowerCase();
   const labels:Record<string,string>={pix:"PIX",dinheiro:"Dinheiro",cash:"Dinheiro",credito:"Cartão de crédito",credit_card:"Cartão de crédito",alimentacao:"Cartão alimentação",refeicao:"Cartão refeição",food_card:"Cartão alimentação/refeição"};
@@ -63,6 +68,28 @@ const deliveryLabel=(delivery:JsonRecord,checkoutDelivery:JsonRecord)=>text(
   delivery.delivery_label||delivery.label||checkoutDelivery.label||checkoutDelivery.delivery_label||checkoutDelivery.delivery_date||delivery.delivery_date||"NAO INFORMADA",
   160
 );
+
+async function activeMetaAccounts(){
+  const r=await db.from("whatsapp_accounts").select("id,phone_e164,phone_number_id,is_active").eq("is_active",true);
+  if(r.error)throw new Error(`meta_accounts_query_failed: ${text(r.error.message,220)}`);
+  return r.data||[];
+}
+async function metaAccountForItem(item:any,channel:Channel){
+  if(!metaConfigReady())return null;
+  const rows=await activeMetaAccounts();
+  const accountId=uid(item?.whatsapp_account_id);
+  const account=accountId?rows.find((row:any)=>String(row.id)===accountId):rows.find((row:any)=>channelKeyFromPhone(row.phone_e164)===channel);
+  if(!account||channelKeyFromPhone(account.phone_e164)!==channel)return null;
+  if(!/^\d{5,30}$/.test(String(account.phone_number_id||"")))return null;
+  return account;
+}
+async function providerReadiness(){
+  if(!metaConfigReady())return {ready:false,provider:"meta",providers:{"0975":false,"1018":false},reason:"meta_transport_not_configured"};
+  const rows=await activeMetaAccounts();
+  const ready=(channel:Channel)=>rows.some((row:any)=>channelKeyFromPhone(row.phone_e164)===channel&&/^\d{5,30}$/.test(String(row.phone_number_id||"")));
+  const p0975=ready("0975"),p1018=ready("1018");
+  return {ready:p0975&&p1018,provider:"meta",providers:{"0975":p0975,"1018":p1018}};
+}
 
 const marketingSlug=(v:unknown)=>text(v,220).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
 const MARKETING_CTA_PRIORITY=["BEBE","CABELOS","BELEZA","LIMPEZA","LAVANDERIA","PET"];
@@ -223,21 +250,14 @@ async function finish(outboxId:string,status:"accepted"|"sent"|"retry"|"failed"|
   if(r.error||r.data?.ok!==true)throw new Error(`finish_failed: ${text(r.error?.message||r.data?.error)}`);
   return r.data;
 }
-async function enqueuePapoAiOrderSignals(orderId:string,channel:Channel,phone:unknown,details:Awaited<ReturnType<typeof orderDetails>>){
-  const keys=["PEDIDO_SITE",...details.marketingInterests.map((v:string)=>`INT_${v}`),...details.marketingBrands.map((v:string)=>`BR_${v}`)];
-  if(details.marketingCta&&details.marketingCta!=="NENHUM")keys.push(`CTA_${details.marketingCta}`);
-  if(!keys.length)return;
-  try{
-    const r=await db.rpc("ops2_enqueue_papoai_order_signals_v1",{p_order_id:orderId,p_channel_origin:channel,p_phone_e164:text(phone,40),p_signal_keys:[...new Set(keys)]});
-    if(r.error||Number(r.data?.enqueued||0)<=0)return;
-    const task=fetch(`${U}/functions/v1/papoai-order-signals-v1`,{method:"POST",headers:{"Content-Type":"application/json","x-internal-key":K},body:"{}"}).catch(error=>console.error("papoai_signal_worker_kick",text((error as Error)?.message||error,180)));
-    const runtime=(globalThis as any).EdgeRuntime;if(runtime?.waitUntil)runtime.waitUntil(task);
-  }catch(error){console.error("papoai_signal_enqueue",text((error as Error)?.message||error,180))}
-}
-
-function providerFailureIsTransient(status:number,detail:unknown){
-  const message=text(detail,400).toLowerCase();
-  return status===429||status===502||status===503||status===504||(status===500&&/(timeout|timed out|connect|connection|temporar|upstream)/.test(message));
+async function markMetaUncertain(outboxId:string,item:any,providerPayload:JsonRecord,metaRequest:JsonRecord,providerMessageId:string|null,errorCode:string){
+  const code=`meta_send_uncertain:${text(errorCode,180)||"unknown"}`;
+  const updated=await db.from("ops2_whatsapp_outbox_v1").update({
+    status:"failed",external_message_id:providerMessageId||null,last_error:code,locked_at:null,updated_at:new Date().toISOString(),
+    payload:{...obj(item?.payload),provider_request:providerPayload,meta_request:metaRequest,meta_send_uncertain:{code,provider_message_id:providerMessageId||null,recorded_at:new Date().toISOString()}}
+  }).eq("id",outboxId).eq("status","sending");
+  if(updated.error)throw new Error(`meta_uncertain_audit_failed: ${text(updated.error.message,220)}`);
+  return code;
 }
 
 Deno.serve(async(req:Request)=>{
@@ -262,12 +282,18 @@ Deno.serve(async(req:Request)=>{
   if(!item)return respond({ok:true,status:"idle",sent:false,order_id:orderId,dispatch_scope:scope});
 
   const outboxId=uid(item.id),channel=(text(item.channel_origin,4)==="1018"?"1018":"0975") as Channel;
-  const url=await providerUrl(channel);
-  if(!url){
-    const errorText=`provider_not_configured_${channel}`;
+  let account:any=null;
+  try{account=await metaAccountForItem(item,channel)}catch(error){
+    const errorText=text((error as Error)?.message||error,300);
     const nextStatus=scope==="checkout_auto"?"retry":"failed";
     try{await finish(outboxId,nextStatus,null,errorText,300)}catch{}
-    return respond({ok:false,error:"provider_not_configured",status:nextStatus,channel_origin:channel,recipient_kind:item.recipient_kind||null,outbox_id:outboxId},503);
+    return respond({ok:false,error:"meta_transport_not_configured",status:nextStatus,channel_origin:channel,outbox_id:outboxId},503);
+  }
+  if(!account){
+    const errorText=`meta_transport_not_configured_${channel}`;
+    const nextStatus=scope==="checkout_auto"?"retry":"failed";
+    try{await finish(outboxId,nextStatus,null,errorText,300)}catch{}
+    return respond({ok:false,error:"meta_transport_not_configured",status:nextStatus,channel_origin:channel,recipient_kind:item.recipient_kind||null,outbox_id:outboxId},503);
   }
 
   let details:Awaited<ReturnType<typeof orderDetails>>;
@@ -291,6 +317,13 @@ Deno.serve(async(req:Request)=>{
     const publicLinkResult=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});
     if(!publicLinkResult.error)publicOrderLink=publicLinkResult.data||null;
   }catch(error){console.error("order_public_link",text((error as Error)?.message||error,180))}
+  const publicOrderCode=text(publicOrderLink?.public_code,5);
+  const publicOrderUrl=text(publicOrderLink?.public_url,300);
+  if(!/^[A-Z]{2}[0-9]{3}$/.test(publicOrderCode)||!publicOrderUrl){
+    const nextStatus=scope==="checkout_auto"?"retry":"failed";
+    try{await finish(outboxId,nextStatus,null,"public_order_identity_missing",scope==="checkout_auto"?30:0)}catch{}
+    return respond({ok:false,error:"public_order_identity_missing",status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:409);
+  }
 
   const providerPayload={
     event:"order_received",
@@ -298,8 +331,8 @@ Deno.serve(async(req:Request)=>{
     event_id:outboxId,
     order_id:item.order_id,
     order_public_token:text(publicOrderLink?.public_token,32),
-    order_public_code:text(publicOrderLink?.public_code,5),
-    order_url:text(publicOrderLink?.public_url,220)||`https://donaantonia.com.br/pedido/?o=${orderId}`,
+    order_public_code:publicOrderCode,
+    order_url:publicOrderUrl,
     recipient_kind:text(item.recipient_kind,30),
     phone_e164:item.phone_e164,
     order_number:details.orderNumber,
@@ -350,55 +383,81 @@ Deno.serve(async(req:Request)=>{
     items_text:details.itemsText
   };
 
-  const headers:Record<string,string>={"Content-Type":"application/json"};
-  if(PROVIDER_TOKEN)headers.Authorization=`Bearer ${PROVIDER_TOKEN}`;
+  const templateName=ORDER_TEMPLATE_BY_CHANNEL[channel];
+  const components=[{type:"body",parameters:[
+    {type:"text",text:text(details.orderDate,40)},
+    {type:"text",text:publicOrderCode},
+    {type:"text",text:text(details.customerStatus,30)},
+    {type:"text",text:text(details.customerName,80)},
+    {type:"text",text:text(details.customerPhone,30)},
+    {type:"text",text:text(details.addressLabel,90)},
+    {type:"text",text:text(details.districtLabel,40)},
+    {type:"text",text:text(details.cityLabel,40)},
+    {type:"text",text:text(details.deliveryLabel,80)},
+    {type:"text",text:text(details.basketTextTemplate,80)},
+    {type:"text",text:text(details.itemsText,180)},
+    {type:"text",text:text(details.totalFormatted,30)},
+    {type:"text",text:text(details.paymentLabel,50)},
+    {type:"text",text:publicOrderUrl}
+  ]}];
+  const metaRequest:JsonRecord={provider:"meta",dispatch_scope:scope,template_name:templateName,language_code:ORDER_TEMPLATE_LANGUAGE,components};
 
   try{
     const audit=await db.from("ops2_whatsapp_outbox_v1")
-      .update({payload:{...obj(item.payload),provider_request:providerPayload}})
+      .update({whatsapp_account_id:account.id,channel_phone_e164:account.phone_e164,payload:{...obj(item.payload),provider_request:providerPayload,meta_request:metaRequest}})
       .eq("id",outboxId).eq("status","sending");
     if(audit.error)throw new Error(`provider_payload_audit_failed: ${text(audit.error.message,240)}`);
 
     const providerAttempts=scope==="checkout_auto"?2:1;
     for(let providerAttempt=1;providerAttempt<=providerAttempts;providerAttempt++){
-      const response=await fetch(url,{method:"POST",headers,body:JSON.stringify(providerPayload)});
-      const data=await response.json().catch(()=>({}));
-      if(response.ok){
-        const rawExternalId=text(data?.external_message_id||data?.message_id||data?.id||"",200)||null;
-        const externalId=rawExternalId?.startsWith("wamid.")?rawExternalId:null;
-        const providerAcceptanceId=text(data?.data?.event_id||data?.event_id||"",200)||null;
-        const nextStatus=externalId?"sent":"accepted";
-        if(!externalId){
-          const acceptanceAudit=await db.from("ops2_whatsapp_outbox_v1")
-            .update({payload:{...obj(item.payload),provider_request:providerPayload,provider_acceptance:{http_status:response.status,event_id:providerAcceptanceId,queued:data?.data?.queued===true,accepted_at:new Date().toISOString()}}})
-            .eq("id",outboxId).eq("status","sending");
-          if(acceptanceAudit.error)throw new Error(`provider_acceptance_audit_failed: ${text(acceptanceAudit.error.message,240)}`);
+      try{
+        const result=await sendTemplateViaMeta({
+          accessToken:META_WHATSAPP_ACCESS_TOKEN,
+          phoneNumberId:String(account.phone_number_id||""),
+          toE164:item.phone_e164,
+          templateName,
+          languageCode:ORDER_TEMPLATE_LANGUAGE,
+          components,
+          graphVersion:META_WHATSAPP_GRAPH_VERSION,
+          timeoutMs:15000
+        });
+        const acceptedAt=new Date().toISOString();
+        const accepted=await db.rpc("ops2_accept_order_whatsapp_meta_v1",{
+          p_outbox_id:outboxId,p_provider_message_id:result.providerMessageId,p_accepted_at:acceptedAt
+        });
+        if(accepted.error||accepted.data?.ok!==true){
+          const detail=text(accepted.error?.message||accepted.data?.error||"canonical_persist_failed",240);
+          await markMetaUncertain(outboxId,item,providerPayload,metaRequest,result.providerMessageId,`canonical_persist_failed:${detail}`);
+          return respond({ok:false,error:"meta_send_uncertain",status:"failed",uncertain:true,outbox_id:outboxId,recipient_kind:item.recipient_kind,channel_origin:channel,dispatch_scope:scope,external_message_id:result.providerMessageId},502);
         }
-        await finish(outboxId,nextStatus,externalId,null);
-        void enqueuePapoAiOrderSignals(orderId,channel,item.phone_e164,details);
-        return respond({ok:true,status:nextStatus,outbox_id:outboxId,recipient_kind:item.recipient_kind,channel_origin:channel,dispatch_scope:scope,provider_acceptance_id:providerAcceptanceId,external_message_id:externalId});
+        return respond({
+          ok:true,status:"sent",provider:"meta",outbox_id:outboxId,recipient_kind:item.recipient_kind,
+          channel_origin:channel,dispatch_scope:scope,external_message_id:result.providerMessageId,
+          canonical_message_id:accepted.data?.message_id||null,status_current:accepted.data?.status_current||"accepted"
+        });
+      }catch(error){
+        if(error instanceof MetaTransportError){
+          if(error.uncertain){
+            await markMetaUncertain(outboxId,item,providerPayload,metaRequest,null,metaErrorDiagnostic(error));
+            return respond({ok:false,error:"meta_send_uncertain",status:"failed",uncertain:true,outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},503);
+          }
+          const retryable=error.retryable===true&&Number(item.attempt_count||0)<5;
+          if(scope==="checkout_auto"&&retryable&&providerAttempt<providerAttempts){
+            await new Promise(resolve=>setTimeout(resolve,750));
+            continue;
+          }
+          const state=retryable?"retry":"failed";
+          await finish(outboxId,state,null,metaErrorDiagnostic(error),error.httpStatus===429?300:30);
+          return respond({ok:false,error:error.code,status:state,retryable,uncertain:false,outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope,http_status:error.httpStatus},retryable?503:502);
+        }
+        await markMetaUncertain(outboxId,item,providerPayload,metaRequest,null,"unexpected_transport_error");
+        return respond({ok:false,error:"meta_send_uncertain",status:"failed",uncertain:true,outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},503);
       }
-
-      const providerDetail=data?.error||data?.message||response.statusText;
-      const transient=providerFailureIsTransient(response.status,providerDetail);
-      if(scope==="checkout_auto"&&transient&&providerAttempt<providerAttempts){
-        await new Promise(resolve=>setTimeout(resolve,750));
-        continue;
-      }
-
-      const retryable=(scope==="checkout_auto"&&transient)||response.status===429;
-      const state=retryable&&Number(item.attempt_count||0)<5?"retry":"failed";
-      const errorText=`provider_http_${response.status}: ${text(providerDetail,300)}`;
-      await finish(outboxId,state,null,errorText,retryable?(response.status===429?300:30):0);
-      return respond({ok:false,error:"provider_rejected",status:state,outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},retryable?503:502);
     }
     throw new Error("provider_attempt_loop_exhausted");
   }catch(error){
-    const errorText=`provider_ambiguous_failure: ${text((error as Error)?.message||error,300)}`;
-    const state=scope==="checkout_auto"&&Number(item.attempt_count||0)<5?"retry":"failed";
-    try{await finish(outboxId,state,null,errorText,state==="retry"?30:0)}catch(finishError){
-      return respond({ok:false,error:"provider_failure_and_finish_failed",outbox_id:outboxId,detail:text((finishError as Error)?.message||finishError)},500);
-    }
-    return respond({ok:false,error:"provider_unreachable",status:state,outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},503);
+    const errorText=text((error as Error)?.message||error,300);
+    try{await finish(outboxId,"failed",null,`provider_internal_failure:${errorText}`,0)}catch{}
+    return respond({ok:false,error:"provider_internal_failure",status:"failed",outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},500);
   }
 });

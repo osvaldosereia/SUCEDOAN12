@@ -1,0 +1,117 @@
+name: Marketing Professional UI CI
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'vitrine/index.html'
+      - 'vitrine/basket-carousel.js'
+      - 'vitrine/admin/marketing/**'
+      - 'vitrine/admin/marketing/strategy-center.js'
+      - 'vitrine/admin/marketing/strategy-center.css'
+      - 'supabase/config.toml'
+      - 'supabase/functions/storefront-v2/**'
+      - 'supabase/functions/marketing-tracking-v1/**'
+      - 'supabase/functions/admin-whatsapp-templates-v1/**'
+      - 'supabase/functions/admin-whatsapp-template-carousel-v1/**'
+      - 'supabase/functions/admin-marketing-campaigns-v1/**'
+      - 'supabase/functions/admin-marketing-strategy-v1/**'
+      - 'supabase/functions/admin-marketing-strategy-campaign-v1/**'
+      - 'supabase/functions/admin-marketing-strategy-learnings-v1/**'
+      - 'supabase/functions/whatsapp-marketing-worker-v1/**'
+      - 'supabase/functions/_shared/marketing-strategy-engine-v1.mjs'
+      - 'supabase/functions/_shared/marketing-template-strategy-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-meta-carousel-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
+      - 'supabase/migrations/*marketing_strategy*'
+      - 'scripts/test-marketing-strategy-foundation-v1.mjs'
+      - 'scripts/test-marketing-strategy-engine-v1.mjs'
+      - 'scripts/test-admin-marketing-strategy-v1.mjs'
+      - 'scripts/test-marketing-strategy-template-gate-v1.mjs'
+      - 'scripts/test-marketing-strategy-campaign-bridge-v1.mjs'
+      - 'scripts/test-marketing-strategy-attribution-learning-v1.mjs'
+      - 'scripts/test-marketing-strategy-carousel-media-v1.mjs'
+      - 'scripts/test-admin-marketing-campaigns-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-worker-v1.mjs'
+      - 'scripts/test-whatsapp-meta-template-admin-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-strategy-ui-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-professional-ui-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-papoai-shell-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-papoai-responsive-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-simple-list-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-template-carousel-v1.mjs'
+      - 'scripts/test-admin-whatsapp-template-carousel-v1.mjs'
+      - 'scripts/test-admin-marketing-campaign-report-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-campaign-report-ui-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-audience-progressive-v1.mjs'
+      - '.github/workflows/marketing-professional-ui-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Marketing strategy foundation contract
+        run: node scripts/test-marketing-strategy-foundation-v1.mjs
+      - name: Marketing strategy deterministic engine contract
+        run: node scripts/test-marketing-strategy-engine-v1.mjs
+      - name: Marketing strategy Admin API contract
+        run: node scripts/test-admin-marketing-strategy-v1.mjs
+      - name: Marketing strategy template gate contract
+        run: node scripts/test-marketing-strategy-template-gate-v1.mjs
+      - name: Marketing strategy campaign bridge contract
+        run: node scripts/test-marketing-strategy-campaign-bridge-v1.mjs
+      - name: Marketing strategy attribution and learning contract
+        run: node scripts/test-marketing-strategy-attribution-learning-v1.mjs
+      - name: Marketing strategy carousel media contract
+        run: node scripts/test-marketing-strategy-carousel-media-v1.mjs
+      - name: Existing simple Meta template regression
+        run: node scripts/test-whatsapp-meta-template-admin-v1.mjs
+      - name: Marketing strategy UI contract
+        run: node scripts/test-whatsapp-marketing-strategy-ui-v1.mjs
+      - name: Existing campaigns backend regression
+        run: node scripts/test-admin-marketing-campaigns-v1.mjs
+      - name: Existing campaign drafts regression
+        run: node scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs
+      - name: Existing marketing worker regression
+        run: node scripts/test-whatsapp-marketing-worker-v1.mjs
+      - name: Marketing professional UI contract
+        run: node scripts/test-whatsapp-marketing-professional-ui-v1.mjs
+      - name: Marketing PapoAI-like shell contract
+        run: node scripts/test-whatsapp-marketing-papoai-shell-v1.mjs
+      - name: Marketing simple templates contract
+        run: node scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs
+      - name: Marketing overview and responsive contract
+        run: node scripts/test-whatsapp-marketing-papoai-responsive-v1.mjs
+      - name: Marketing simple campaign audience contract
+        run: node scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs
+      - name: Marketing simple campaign list contract
+        run: node scripts/test-whatsapp-marketing-campaign-simple-list-v1.mjs
+      - name: Marketing carousel UI contract
+        run: node scripts/test-whatsapp-marketing-template-carousel-v1.mjs
+      - name: Marketing carousel backend contract
+        run: node scripts/test-admin-whatsapp-template-carousel-v1.mjs
+      - name: Marketing campaign report backend contract
+        run: node scripts/test-admin-marketing-campaign-report-v1.mjs
+      - name: Marketing campaign report UI contract
+        run: node scripts/test-whatsapp-marketing-campaign-report-ui-v1.mjs
+      - name: Marketing audience progressive contract
+        run: node scripts/test-whatsapp-marketing-audience-progressive-v1.mjs
+      - name: Storefront tracking collector syntax
+        run: node --check vitrine/basket-carousel.js
+      - name: Marketing polish syntax
+        run: node --check vitrine/admin/marketing/marketing-polish.js
+      - name: Marketing strategy center syntax
+        run: node --check vitrine/admin/marketing/strategy-center.js
+      - name: Campaign entry syntax
+        run: node --check vitrine/admin/marketing/campaign-entry.js
+      - name: Existing audience UI regression
+        run: node scripts/test-whatsapp-marketing-audience-ui-v1.mjs
+      - name: Existing campaign UI regression
+        run: node scripts/test-whatsapp-marketing-campaign-ui-v1.mjs

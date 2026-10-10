@@ -1,10 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { redactWebhookPayload } from "../_shared/whatsapp-core-v1.mjs";
+import { classifyCustomerConfirmation } from "../_shared/ana-customer-confirmation-v1.mjs";
 import {
   extractMetaPhoneNumberIds,
   hasMetaMessageOrStatusEvents,
   normalizeMetaWebhook,
+  templateEventsFromMeta,
   verifyMetaChallenge,
   verifyMetaSignature,
 } from "../_shared/whatsapp-meta-webhook-v1.mjs";
@@ -19,6 +21,9 @@ const SERVICE_KEY = (() => {
 })();
 const APP_SECRET = Deno.env.get("META_WHATSAPP_APP_SECRET") || "";
 const VERIFY_TOKEN = Deno.env.get("META_WHATSAPP_VERIFY_TOKEN") || "";
+const META_APP_ID = (Deno.env.get("META_APP_ID") || Deno.env.get("WHATSAPP_APP_ID") || "").trim();
+const META_ACCESS_TOKEN = (Deno.env.get("META_WHATSAPP_ACCESS_TOKEN") || "").trim();
+const META_GRAPH_VERSION = (Deno.env.get("META_WHATSAPP_GRAPH_VERSION") || "v24.0").trim();
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
@@ -27,6 +32,130 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
   status,
   headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
 });
+
+let coexistenceSubscriptionCheckedAt = 0;
+let coexistenceSubscriptionCheck: Promise<void> | null = null;
+
+function subscriptionFields(row: any) {
+  const raw = Array.isArray(row?.fields) ? row.fields : [];
+  return raw.map((field: any) => {
+    if (typeof field === "string") return field.trim();
+    if (field && typeof field === "object") return String(field.name || field.field || "").trim();
+    return "";
+  }).filter(Boolean);
+}
+
+async function discoverMetaAppSubscription() {
+  if (!APP_SECRET) return null;
+
+  const directCandidates = META_APP_ID ? [META_APP_ID] : [];
+  const candidates = new Set(directCandidates);
+
+  if (!META_APP_ID && META_ACCESS_TOKEN) {
+    const accounts = await db.from("whatsapp_accounts")
+      .select("waba_id")
+      .eq("is_active", true)
+      .not("waba_id", "is", null);
+    if (!accounts.error) {
+      for (const row of accounts.data || []) {
+        const wabaId = String((row as any)?.waba_id || "").trim();
+        if (!/^\d{5,30}$/.test(wabaId)) continue;
+        try {
+          const response = await fetch(
+            `https://graph.facebook.com/${META_GRAPH_VERSION}/${wabaId}/subscribed_apps`,
+            {
+              headers: { Authorization: `Bearer ${META_ACCESS_TOKEN}`, Accept: "application/json" },
+              signal: AbortSignal.timeout(10000),
+            },
+          );
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) continue;
+          for (const item of Array.isArray(body?.data) ? body.data : []) {
+            const candidate = String(item?.whatsapp_business_api_data?.id || "").trim();
+            if (/^\d{5,30}$/.test(candidate)) candidates.add(candidate);
+          }
+        } catch {
+          // Best-effort discovery; the next subscribed WABA may still identify the app.
+        }
+      }
+    }
+  }
+
+  for (const appId of candidates) {
+    const appAccessToken = `${appId}|${APP_SECRET}`;
+    const endpoint = `https://graph.facebook.com/${META_GRAPH_VERSION}/${appId}/subscriptions`;
+    try {
+      const response = await fetch(endpoint, {
+        headers: { Authorization: `Bearer ${appAccessToken}`, Accept: "application/json" },
+        signal: AbortSignal.timeout(10000),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) return { appId, endpoint, appAccessToken, body };
+    } catch {
+      // Candidate belongs to another provider/app; continue without exposing IDs.
+    }
+  }
+
+  return null;
+}
+
+async function ensureCoexistenceEchoSubscription() {
+  const now = Date.now();
+  if (now - coexistenceSubscriptionCheckedAt < 6 * 60 * 60 * 1000) return;
+  if (coexistenceSubscriptionCheck) return coexistenceSubscriptionCheck;
+
+  coexistenceSubscriptionCheck = (async () => {
+    coexistenceSubscriptionCheckedAt = now;
+    if (!APP_SECRET || !VERIFY_TOKEN || !SUPABASE_URL) {
+      console.warn("whatsapp-meta-webhook-v1 coexistence subscription not configured");
+      return;
+    }
+
+    const discovered = await discoverMetaAppSubscription();
+    if (!discovered) {
+      console.warn("whatsapp-meta-webhook-v1 coexistence app unresolved");
+      return;
+    }
+
+    const subscription = (Array.isArray(discovered.body?.data) ? discovered.body.data : [])
+      .find((row: any) => String(row?.object || "") === "whatsapp_business_account");
+    const fields = subscriptionFields(subscription);
+    if (fields.includes("smb_message_echoes")) {
+      console.info("whatsapp-meta-webhook-v1 coexistence subscription ok");
+      return;
+    }
+
+    const callbackUrl = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/whatsapp-meta-webhook-v1`;
+    const mergedFields = [...new Set([...fields, "messages", "smb_message_echoes"])];
+    const body = new URLSearchParams({
+      object: "whatsapp_business_account",
+      callback_url: callbackUrl,
+      verify_token: VERIFY_TOKEN,
+      fields: mergedFields.join(","),
+    });
+    const updated = await fetch(discovered.endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${discovered.appAccessToken}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+      signal: AbortSignal.timeout(10000),
+    });
+    const updatedBody = await updated.json().catch(() => ({}));
+    if (!updated.ok || updatedBody?.success !== true) {
+      console.warn("whatsapp-meta-webhook-v1 coexistence subscription update failed", updated.status);
+      return;
+    }
+    console.info("whatsapp-meta-webhook-v1 coexistence subscription repaired", mergedFields.join(","));
+  })().catch((error) => {
+    console.warn("whatsapp-meta-webhook-v1 coexistence subscription exception", errorText(error).slice(0, 180));
+  }).finally(() => {
+    coexistenceSubscriptionCheck = null;
+  });
+
+  return coexistenceSubscriptionCheck;
+}
 
 async function readBodyLimited(req: Request, maxBytes = MAX_BODY_BYTES) {
   const declared = Number(req.headers.get("content-length") || 0);
@@ -61,7 +190,7 @@ async function accountMap(phoneNumberIds: string[]) {
   return new Map((q.data || []).map((row: any) => [String(row.phone_number_id), String(row.id)]));
 }
 
-async function persistInbound(message: any, payloadHash: string, safePayload: unknown) {
+async function persistMessage(message: any, payloadHash: string, safePayload: unknown) {
   const result = await db.rpc("whatsapp_ingest_event_v1", {
     p_whatsapp_account_id: message.whatsapp_account_id,
     p_provider: "meta",
@@ -77,6 +206,92 @@ async function persistInbound(message: any, payloadHash: string, safePayload: un
   if (result.error) throw result.error;
   if (result.data?.ok !== true) throw new Error(String(result.data?.error || "meta_ingest_failed"));
   return result.data;
+}
+
+async function enqueueAnaForInbound(message: any, ingestResult: any) {
+  if (message?.event_type !== "message.received" || message?.message?.direction !== "inbound" || !ingestResult?.message_id) return false;
+  const queued = await db.rpc("ops2_ana_enqueue_live_job_v1", { p_inbound_message_id: ingestResult.message_id });
+  if (queued.error) {
+    console.error("whatsapp-meta-webhook-v1 ana enqueue failed", errorText(queued.error).slice(0, 300));
+    return false;
+  }
+  if (queued.data?.ok !== true || !queued.data?.job_id) return false;
+
+  // Queue execution after acknowledging Meta's webhook; duplicate callbacks are
+  // collapsed by the canonical message and job idempotency constraints.
+  EdgeRuntime.waitUntil((async () => {
+    try {
+      const response = await fetch(`${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/whatsapp-ana-worker-v1`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_KEY}` },
+        body: JSON.stringify({ mode: "live", limit: 1 }),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!response.ok) console.error("whatsapp-meta-webhook-v1 ana worker status", response.status);
+    } catch (error) {
+      console.error("whatsapp-meta-webhook-v1 ana worker invoke failed", errorText(error).slice(0, 300));
+    }
+  })());
+  return true;
+}
+
+async function applyCustomerConfirmationSignal(message: any, ingestResult: any) {
+  if (message?.event_type !== "message.received" || message?.message?.direction !== "inbound" || !ingestResult?.message_id) return null;
+
+  // Read the canonical row written by whatsapp_ingest_event_v1; do not make
+  // confirmation decisions from raw provider JSON or an unpersisted payload.
+  const canonicalResult = await db.from("whatsapp_messages_v1")
+    .select("id,conversation_id,direction,message_type,text_body,received_at,created_at")
+    .eq("id", ingestResult.message_id)
+    .maybeSingle();
+  if (canonicalResult.error) throw canonicalResult.error;
+  const canonicalMessage = canonicalResult.data;
+  if (!canonicalMessage || canonicalMessage.direction !== "inbound" || !["text","button","interactive"].includes(String(canonicalMessage.message_type || ""))) return null;
+
+  const requestResult = await db.from("customer_profile_confirmation_requests_v1")
+    .select("id,conversation_id,status,suggestion_ids,expires_at,outbound_message_id,confirmation_summary")
+    .eq("conversation_id", canonicalMessage.conversation_id)
+    .eq("status", "pending")
+    .gt("expires_at", canonicalMessage.received_at || canonicalMessage.created_at)
+    .maybeSingle();
+  if (requestResult.error) throw requestResult.error;
+  const request = requestResult.data;
+  if (!request || !request.outbound_message_id) return null;
+
+  const outboundResult = await db.from("whatsapp_messages_v1")
+    .select("id,conversation_id,direction,sent_at,created_at")
+    .eq("id", request.outbound_message_id)
+    .maybeSingle();
+  if (outboundResult.error) throw outboundResult.error;
+  const outbound = outboundResult.data;
+  if (!outbound || outbound.direction !== "outbound" || outbound.conversation_id !== canonicalMessage.conversation_id) return null;
+
+  const ids = Array.isArray(request.suggestion_ids) ? request.suggestion_ids : [];
+  const suggestionsResult = ids.length
+    ? await db.from("customer_profile_suggestions_v1").select("field_name,normalized_value").in("id", ids)
+    : { data: [], error: null };
+  if (suggestionsResult.error) throw suggestionsResult.error;
+
+  const classified = classifyCustomerConfirmation({
+    message: canonicalMessage,
+    pendingRequest: {
+      ...request,
+      outbound_sent_at: outbound.sent_at || outbound.created_at,
+      suggestions: suggestionsResult.data || [],
+    },
+  });
+  if (classified.decision === "none" || !classified.request_id) return null;
+
+  const applied = await db.rpc("ops2_ana_customer_confirmation_apply_signal_v1", {
+    p_request_id: classified.request_id,
+    p_message_id: canonicalMessage.id,
+    p_decision: classified.decision,
+  });
+  if (applied.error) throw applied.error;
+  if (applied.data?.ok !== true && !["confirmation_request_expired","confirmation_message_before_request","confirmation_request_not_pending"].includes(String(applied.data?.error || ""))) {
+    throw new Error(String(applied.data?.error || "ana_confirmation_signal_failed"));
+  }
+  return applied.data?.ok === true ? applied.data : null;
 }
 
 async function persistStatus(status: any, payloadHash: string) {
@@ -126,6 +341,25 @@ async function persistStatus(status: any, payloadHash: string) {
   };
 }
 
+async function persistTemplateEvent(event: any) {
+  const applied = await db.rpc("whatsapp_apply_template_event_v1", {
+    p_waba_id: event.waba_id,
+    p_meta_template_id: event.meta_template_id,
+    p_template_name: event.template_name,
+    p_language: event.language,
+    p_event_type: event.event_type,
+    p_status: event.status,
+    p_quality_rating: event.quality_rating,
+    p_reason: event.reason,
+    p_provider_event_key: event.provider_event_key,
+    p_payload: event.payload,
+    p_occurred_at: event.occurred_at,
+  });
+  if (applied.error) throw applied.error;
+  if (applied.data?.ok !== true) throw new Error(String(applied.data?.error || "meta_template_event_apply_failed"));
+  return applied.data;
+}
+
 Deno.serve(async (req: Request) => {
   try {
     if (req.method === "GET") {
@@ -151,10 +385,38 @@ Deno.serve(async (req: Request) => {
     try { payload = JSON.parse(rawBody); } catch { return json({ ok: false, error: "invalid_json" }, 400); }
     if (payload?.object !== "whatsapp_business_account") return json({ ok: false, error: "unsupported_object" }, 400);
 
+    // Keep the app-level WhatsApp Business Account webhook subscription healthy.
+    // This is required in Coexistence mode so messages typed in the WhatsApp
+    // Business mobile app arrive here as smb_message_echoes.
+    EdgeRuntime.waitUntil(ensureCoexistenceEchoSubscription());
+
+    const templateEvents = templateEventsFromMeta(payload);
+    let templateEventsCaptured = 0;
+    let templateEventsUnmatched = 0;
+    let templateEventsDuplicates = 0;
+    for (const event of templateEvents) {
+      const result = await persistTemplateEvent(event);
+      templateEventsCaptured += 1;
+      if (result?.unmatched === true) templateEventsUnmatched += 1;
+      if (result?.duplicate === true) templateEventsDuplicates += 1;
+    }
+
+    const messageOrStatusEvents = hasMetaMessageOrStatusEvents(payload);
     const phoneNumberIds = extractMetaPhoneNumberIds(payload);
     if (!phoneNumberIds.length) {
-      if (hasMetaMessageOrStatusEvents(payload)) return json({ ok: false, error: "meta_account_unresolved", unknown_phone_number_ids: [] }, 422);
-      return json({ ok: true, ignored: true, reason: "no_message_phone_number_id" });
+      if (messageOrStatusEvents) return json({ ok: false, error: "meta_account_unresolved", unknown_phone_number_ids: [] }, 422);
+      if (templateEventsCaptured > 0) return json({
+        ok: true,
+        inbound_normalized: 0,
+        inbound_duplicates: 0,
+        statuses_captured: 0,
+        statuses_recorded: 0,
+        statuses_pending: 0,
+        template_events_captured: templateEventsCaptured,
+        template_events_unmatched: templateEventsUnmatched,
+        template_events_duplicates: templateEventsDuplicates,
+      });
+      return json({ ok: true, ignored: true, reason: "no_message_phone_number_id", template_events_captured: 0, template_events_unmatched: 0 });
     }
 
     const accounts = await accountMap(phoneNumberIds);
@@ -167,10 +429,23 @@ Deno.serve(async (req: Request) => {
     const safePayload = redactWebhookPayload(payload);
     let inboundNormalized = 0;
     let inboundDuplicates = 0;
+    let echoesNormalized = 0;
+    let echoesDuplicates = 0;
+    let anaConfirmationsApplied = 0;
+    let anaJobsQueued = 0;
     for (const message of normalized.messages) {
-      const result = await persistInbound(message, normalized.payloadHash, safePayload);
-      if (result?.duplicate === true) inboundDuplicates += 1;
-      else inboundNormalized += 1;
+      const result = await persistMessage(message, normalized.payloadHash, safePayload);
+      const isEcho = message?.message?.direction === "outbound" && message?.message?.metadata?.source_event === "smb_message_echoes";
+      if (isEcho) {
+        if (result?.duplicate === true) echoesDuplicates += 1;
+        else echoesNormalized += 1;
+      } else {
+        if (result?.duplicate === true) inboundDuplicates += 1;
+        else inboundNormalized += 1;
+      }
+      const confirmation = await applyCustomerConfirmationSignal(message, result);
+      if (confirmation?.ok === true) anaConfirmationsApplied += 1;
+      if (await enqueueAnaForInbound(message, result)) anaJobsQueued += 1;
     }
 
     let statusesCaptured = 0;
@@ -187,12 +462,20 @@ Deno.serve(async (req: Request) => {
       ok: true,
       inbound_normalized: inboundNormalized,
       inbound_duplicates: inboundDuplicates,
+      echoes_normalized: echoesNormalized,
+      echoes_duplicates: echoesDuplicates,
+      ana_confirmations_applied: anaConfirmationsApplied,
+      ana_jobs_queued: anaJobsQueued,
       statuses_captured: statusesCaptured,
       statuses_recorded: statusesRecorded,
       statuses_pending: statusesPending,
+      template_events_captured: templateEventsCaptured,
+      template_events_unmatched: templateEventsUnmatched,
+      template_events_duplicates: templateEventsDuplicates,
     });
   } catch (error) {
     console.error("whatsapp-meta-webhook-v1", errorText(error).slice(0, 500));
     return json({ ok: false, error: "webhook_internal_error" }, 500);
   }
 });
+

@@ -12,6 +12,11 @@ export class MetaTemplatesError extends Error {
 const fail=(code,opts)=>new MetaTemplatesError(code,opts);
 const clean=(value,max=500)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,max);
 const plainObject=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+const TEMPLATE_NAME_RE=/^[a-z0-9_]{1,512}$/;
+const LANGUAGE_RE=/^[a-z]{2,3}(?:_[A-Z]{2})?$/;
+const TEMPLATE_CATEGORIES=new Set(['MARKETING','UTILITY']);
+const TEMPLATE_COMPONENT_TYPES=new Set(['HEADER','BODY','FOOTER','BUTTONS']);
+const TEMPLATE_BUTTON_TYPES=new Set(['URL','QUICK_REPLY','CATALOG']);
 
 export function normalizeMetaTemplate(raw){
   const item=raw&&typeof raw==='object'?raw:{};
@@ -65,6 +70,107 @@ export function buildTemplateCacheRows({items,account,existingByKey=new Map(),sy
   });
 }
 
+function extractPlaceholders(text){
+  const values=[];
+  for(const match of String(text||'').matchAll(/\{\{(\d+)\}\}/g))values.push(Number(match[1]));
+  if(!values.length)return [];
+  const unique=[...new Set(values)].sort((a,b)=>a-b);
+  for(let i=0;i<unique.length;i++)if(unique[i]!==i+1)throw fail('meta_template_variables_invalid');
+  return unique;
+}
+
+function normalizeBodyExample(example,placeholderCount){
+  if(!placeholderCount)return undefined;
+  const rows=example?.body_text;
+  if(!Array.isArray(rows)||!Array.isArray(rows[0])||rows[0].length<placeholderCount)throw fail('meta_template_examples_required');
+  const first=rows[0].slice(0,placeholderCount).map(value=>clean(value,1024));
+  if(first.some(value=>!value))throw fail('meta_template_examples_required');
+  return {body_text:[first]};
+}
+
+function normalizeHeaderExample(example,placeholderCount){
+  if(!placeholderCount)return undefined;
+  const values=example?.header_text;
+  if(!Array.isArray(values)||values.length<placeholderCount)throw fail('meta_template_examples_required');
+  const normalized=values.slice(0,placeholderCount).map(value=>clean(value,60));
+  if(normalized.some(value=>!value))throw fail('meta_template_examples_required');
+  return {header_text:normalized};
+}
+
+function normalizeButtons(rawButtons){
+  if(!Array.isArray(rawButtons)||rawButtons.length<1||rawButtons.length>10)throw fail('meta_template_buttons_invalid');
+  return rawButtons.map(raw=>{
+    const type=clean(raw?.type,30).toUpperCase();
+    if(!TEMPLATE_BUTTON_TYPES.has(type))throw fail('meta_template_component_unsupported');
+    if(type==='CATALOG'){
+      const text=clean(raw?.text,25);
+      return text?{type,text}:{type};
+    }
+    const text=clean(raw?.text,25);
+    if(!text)throw fail('meta_template_buttons_invalid');
+    if(type==='QUICK_REPLY')return {type,text};
+    const urlRaw=clean(raw?.url,2000);
+    if(!urlRaw||/\{\{\d+\}\}/.test(urlRaw))throw fail('meta_template_buttons_invalid');
+    let url;
+    try{url=new URL(urlRaw);}catch{throw fail('meta_template_buttons_invalid')}
+    if(url.protocol!=='https:'||url.username||url.password)throw fail('meta_template_buttons_invalid');
+    return {type,text,url:url.toString()};
+  });
+}
+
+export function validateTemplateDraft(input){
+  const draft=plainObject(input);
+  const name=clean(draft.name,512);
+  const language=clean(draft.language,20);
+  const category=clean(draft.category,40).toUpperCase();
+  if(!TEMPLATE_NAME_RE.test(name))throw fail('meta_template_name_invalid');
+  if(!LANGUAGE_RE.test(language))throw fail('meta_template_language_invalid');
+  if(!TEMPLATE_CATEGORIES.has(category))throw fail('meta_template_category_unsupported');
+  if(!Array.isArray(draft.components)||draft.components.length<1||draft.components.length>10)throw fail('meta_template_components_invalid');
+
+  let bodyCount=0;
+  let headerCount=0;
+  let footerCount=0;
+  let buttonsCount=0;
+  const components=draft.components.map(raw=>{
+    const component=plainObject(raw);
+    const type=clean(component.type,30).toUpperCase();
+    if(!TEMPLATE_COMPONENT_TYPES.has(type))throw fail('meta_template_component_unsupported');
+    if(type==='BODY'){
+      bodyCount++;
+      if(bodyCount>1)throw fail('meta_template_components_invalid');
+      const text=clean(component.text,1024);
+      if(!text||text.length>1024)throw fail('meta_template_body_invalid');
+      const placeholders=extractPlaceholders(text);
+      const example=normalizeBodyExample(component.example,placeholders.length);
+      return example?{type,text,example}:{type,text};
+    }
+    if(type==='HEADER'){
+      headerCount++;
+      if(headerCount>1)throw fail('meta_template_components_invalid');
+      const format=clean(component.format,20).toUpperCase();
+      if(format!=='TEXT')throw fail('meta_template_component_unsupported');
+      const text=clean(component.text,60);
+      if(!text)throw fail('meta_template_header_invalid');
+      const placeholders=extractPlaceholders(text);
+      const example=normalizeHeaderExample(component.example,placeholders.length);
+      return example?{type,format,text,example}:{type,format,text};
+    }
+    if(type==='FOOTER'){
+      footerCount++;
+      if(footerCount>1)throw fail('meta_template_components_invalid');
+      const text=clean(component.text,60);
+      if(!text)throw fail('meta_template_footer_invalid');
+      return {type,text};
+    }
+    buttonsCount++;
+    if(buttonsCount>1)throw fail('meta_template_components_invalid');
+    return {type,buttons:normalizeButtons(component.buttons)};
+  });
+  if(bodyCount!==1)throw fail('meta_template_body_required');
+  return {name,language,category,components};
+}
+
 function validateConfig({accessToken,wabaId,graphVersion,fetchImpl,timeoutMs,maxPages}){
   const token=typeof accessToken==='string'?accessToken.trim():'';
   const waba=String(wabaId??'').trim();
@@ -74,6 +180,19 @@ function validateConfig({accessToken,wabaId,graphVersion,fetchImpl,timeoutMs,max
   if(!token||!/^\d{5,30}$/.test(waba)||!/^v\d+\.\d+$/.test(version)||typeof fetchImpl!=='function')throw fail('meta_templates_invalid_request');
   if(!Number.isFinite(timeout)||timeout<1||timeout>60000||!Number.isInteger(pages)||pages<1||pages>50)throw fail('meta_templates_invalid_request');
   return {token,waba,version,timeout,pages};
+}
+
+function validateMutationConfig({accessToken,graphVersion,fetchImpl,timeoutMs,wabaId=null,templateId=null}){
+  const token=typeof accessToken==='string'?accessToken.trim():'';
+  const version=typeof graphVersion==='string'?graphVersion.trim():'';
+  const timeout=Number(timeoutMs??10000);
+  const waba=wabaId===null?null:String(wabaId??'').trim();
+  const template=templateId===null?null:String(templateId??'').trim();
+  if(!token||!/^v\d+\.\d+$/.test(version)||typeof fetchImpl!=='function')throw fail('meta_templates_invalid_request');
+  if(!Number.isFinite(timeout)||timeout<1||timeout>60000)throw fail('meta_templates_invalid_request');
+  if(waba!==null&&!/^\d{5,30}$/.test(waba))throw fail('meta_templates_invalid_request');
+  if(template!==null&&!/^\d{5,30}$/.test(template))throw fail('meta_templates_invalid_request');
+  return {token,version,timeout,waba,template};
 }
 
 function initialUrl(version,waba){
@@ -119,6 +238,61 @@ async function fetchPage(url,{token,timeout,fetchImpl}){
   }
   if(!payload||!Array.isArray(payload.data))throw fail('meta_templates_invalid_response');
   return payload;
+}
+
+async function mutateJson(url,{token,timeout,fetchImpl,method,body}){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeout);
+  let response;
+  let payload;
+  try{
+    response=await fetchImpl(url.toString(),{
+      method,
+      headers:{Authorization:`Bearer ${token}`,Accept:'application/json','Content-Type':'application/json'},
+      ...(body===undefined?{}:{body:JSON.stringify(body)}),
+      signal:controller.signal,
+    });
+    payload=await response.json().catch(()=>null);
+  }catch(error){
+    if(controller.signal.aborted||error?.name==='AbortError')throw fail('meta_templates_timeout',{retryable:true});
+    throw fail('meta_templates_network_error',{retryable:true});
+  }finally{clearTimeout(timer)}
+  if(!response.ok){
+    throw fail('meta_templates_http_error',{
+      httpStatus:Number(response.status)||null,
+      retryable:response.status===408||response.status===429||response.status>=500,
+      providerCode:payload?.error?.code??null,
+    });
+  }
+  if(!payload||typeof payload!=='object'||Array.isArray(payload))throw fail('meta_templates_invalid_response');
+  return payload;
+}
+
+export async function createTemplateViaMeta({accessToken,wabaId,graphVersion,template,fetchImpl=globalThis.fetch,timeoutMs=10000}={}){
+  const cfg=validateMutationConfig({accessToken,wabaId,graphVersion,fetchImpl,timeoutMs});
+  const draft=validateTemplateDraft(template);
+  const url=new URL(`https://graph.facebook.com/${cfg.version}/${cfg.waba}/message_templates`);
+  const payload=await mutateJson(url,{token:cfg.token,timeout:cfg.timeout,fetchImpl,method:'POST',body:draft});
+  return {ok:true,waba_id:cfg.waba,payload};
+}
+
+export async function editTemplateViaMeta({accessToken,templateId,graphVersion,template,fetchImpl=globalThis.fetch,timeoutMs=10000}={}){
+  const cfg=validateMutationConfig({accessToken,templateId,graphVersion,fetchImpl,timeoutMs});
+  const draft=validateTemplateDraft(template);
+  const url=new URL(`https://graph.facebook.com/${cfg.version}/${cfg.template}`);
+  const payload=await mutateJson(url,{token:cfg.token,timeout:cfg.timeout,fetchImpl,method:'POST',body:draft});
+  return {ok:true,meta_template_id:cfg.template,payload};
+}
+
+export async function deleteTemplateViaMeta({accessToken,wabaId,graphVersion,name,templateId=null,fetchImpl=globalThis.fetch,timeoutMs=10000}={}){
+  const cfg=validateMutationConfig({accessToken,wabaId,templateId:templateId===null?null:templateId,graphVersion,fetchImpl,timeoutMs});
+  const templateName=clean(name,512);
+  if(!TEMPLATE_NAME_RE.test(templateName))throw fail('meta_template_name_invalid');
+  const url=new URL(`https://graph.facebook.com/${cfg.version}/${cfg.waba}/message_templates`);
+  url.searchParams.set('name',templateName);
+  if(cfg.template)url.searchParams.set('hsm_id',cfg.template);
+  const payload=await mutateJson(url,{token:cfg.token,timeout:cfg.timeout,fetchImpl,method:'DELETE'});
+  return {ok:true,waba_id:cfg.waba,name:templateName,meta_template_id:cfg.template,payload};
 }
 
 export async function listTemplatesViaMeta({

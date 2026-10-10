@@ -98,3 +98,15 @@ window.BasketLotImage={
   }
 };
 
+/* Progressive bootstrap for isolated Marketing modules. */
+(()=>{
+  if(!document.querySelector('link[data-da-marketing-template-center]')){
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='/vitrine/admin/marketing/template-center.css?v=meta-template-center-v1';
+    link.dataset.daMarketingTemplateCenter='1';
+    document.head.appendChild(link);
+  }
+  import('/vitrine/admin/marketing/template-center.js?v=meta-template-center-v1').catch(error=>console.warn('marketing-template-center-load',String(error?.message||error).slice(0,160)));
+  import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-v1').catch(error=>console.warn('marketing-campaign-entry-load',String(error?.message||error).slice(0,160)));
+})();

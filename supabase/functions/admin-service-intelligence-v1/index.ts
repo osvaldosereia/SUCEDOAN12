@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "./_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared/papoai-commerce-intent-v1.mjs";
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
+import { inspectBlingNfeR2, isFiscalRecoveryNewOrderR2 } from "./_shared/fiscal-r2-nfe-inspector.mjs";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -2794,7 +2795,19 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
     if(!local.data||local.data.status!=="ready")return {ok:false,error:"local_order_not_ready",status:409,external_write:false};
     const checked=await sb.from("ops_order_check_sessions").select("id,verified_at").eq("order_id",sourceOrderId).eq("status","verified").not("verified_at","is",null).order("verified_at",{ascending:false}).limit(1).maybeSingle();
     if(checked.error)throw checked.error;
-    if(!checked.data?.id)return {ok:false,error:"order_check_required_before_bling_verified",status:409,external_write:false};
+    let separationVerified=false;
+    if(!checked.data?.id){
+      const [completion,items,pending]=await Promise.all([
+        sb.from("order_separation_completions_v1").select("metadata").eq("order_id",sourceOrderId).maybeSingle(),
+        sb.from("order_separation_items_v1").select("id",{count:"exact",head:true}).eq("order_id",sourceOrderId),
+        sb.from("order_separation_items_v1").select("id",{count:"exact",head:true}).eq("order_id",sourceOrderId).eq("state","pending")
+      ]);
+      if(completion.error)throw completion.error;
+      if(items.error)throw items.error;
+      if(pending.error)throw pending.error;
+      separationVerified=completion.data?.metadata?.stock_applied===true&&Number(items.count||0)>0&&Number(pending.count||0)===0;
+    }
+    if(!checked.data?.id&&!separationVerified)return {ok:false,error:"order_check_required_before_bling_verified",status:409,external_write:false};
   }
   const selectedDepositId=Number(meta?.selected_deposit_id||0)||0;
   if(targetKey==="approved_separation"&&!selectedDepositId){
@@ -3376,7 +3389,19 @@ async function blingHubOps2CanaryOrderStatus(sb:any,sourceOrderIdRaw:any,targetK
     if(!local.data||local.data.status!=="ready")return {ok:false,error:"local_order_not_ready",status:409,external_write:false};
     const checked=await sb.from("ops_order_check_sessions").select("id,verified_at").eq("order_id",sourceOrderId).eq("status","verified").not("verified_at","is",null).order("verified_at",{ascending:false}).limit(1).maybeSingle();
     if(checked.error)throw checked.error;
-    if(!checked.data?.id)return {ok:false,error:"order_check_required_before_bling_verified",status:409,external_write:false};
+    let separationVerified=false;
+    if(!checked.data?.id){
+      const [completion,items,pending]=await Promise.all([
+        sb.from("order_separation_completions_v1").select("metadata").eq("order_id",sourceOrderId).maybeSingle(),
+        sb.from("order_separation_items_v1").select("id",{count:"exact",head:true}).eq("order_id",sourceOrderId),
+        sb.from("order_separation_items_v1").select("id",{count:"exact",head:true}).eq("order_id",sourceOrderId).eq("state","pending")
+      ]);
+      if(completion.error)throw completion.error;
+      if(items.error)throw items.error;
+      if(pending.error)throw pending.error;
+      separationVerified=completion.data?.metadata?.stock_applied===true&&Number(items.count||0)>0&&Number(pending.count||0)===0;
+    }
+    if(!checked.data?.id&&!separationVerified)return {ok:false,error:"order_check_required_before_bling_verified",status:409,external_write:false};
   }
 
   const token=await blingHubOauth(sb);
@@ -3872,6 +3897,65 @@ async function blingHubVitrineDanfePdf(sb:any,sourceOrderIdRaw:any){
   };
 }
 
+// Read-only probe: an invoice number alone never links the NF-e to an order.
+// Only compare immutable sale/customer/total/numeroLoja evidence; no PUT/POST.
+async function blingHubFiscalDraftProbeV2(sb:any,body:any){
+  const invoiceId=Number(body?.invoice_id||0);
+  if(!Number.isSafeInteger(invoiceId)||invoiceId<=0)
+    return {ok:false,error:"invalid_invoice_id",status:400,external_write:false};
+  const sourceOrderId=uuid(body?.source_order_id);
+  // R2 cannot probe historical invoices by an ID alone.
+  if(!sourceOrderId)
+    return {ok:false,error:"new_source_order_id_required",status:400,external_write:false};
+  const fence=await sb.from("fiscal_nfe_recovery_control_v1")
+    .select("min_order_created_at").eq("id",true).maybeSingle();
+  if(fence.error)throw fence.error;
+  if(!Number.isFinite(Date.parse(String(fence.data?.min_order_created_at||""))))
+    return {ok:false,error:"new_orders_cutover_not_configured",status:503,external_write:false};
+  let expected:any={};
+  let blingOrderId=0;
+  if(sourceOrderId){
+    const [oq,lq]=await Promise.all([
+      sb.from("orders").select("id,created_at,bling_order_id,total,fiscal_subtotal,status,order_number").eq("id",sourceOrderId).maybeSingle(),
+      sb.from("bling_hub_entity_links_v2").select("bling_id,identity_value,status")
+        .eq("source_system","vitrine_qx").eq("entity_type","order").eq("source_id",sourceOrderId).maybeSingle()
+    ]);
+    if(oq.error)throw oq.error;
+    if(lq.error)throw lq.error;
+    if(!oq.data)return {ok:false,error:"source_order_not_found",status:404,external_write:false};
+    if(!isFiscalRecoveryNewOrderR2(oq.data.created_at,fence.data.min_order_created_at))
+      return {ok:false,error:"historical_order_excluded",status:403,external_write:false};
+    blingOrderId=Number(oq.data.bling_order_id||0);
+    if(!blingOrderId||!lq.data||lq.data.status!=="matched"||Number(lq.data.bling_id||0)!==blingOrderId)
+      return {ok:false,error:"order_not_strongly_linked_to_bling",status:409,external_write:false};
+    expected={bling_order_id:blingOrderId,total:Number(oq.data.total),
+      fiscal_subtotal:Number(oq.data.fiscal_subtotal),
+      external_key:clean(lq.data.identity_value,160)};
+  }
+  const token=await blingHubOauth(sb);
+  const remote=await blingHubGetNfe(sb,token,invoiceId);
+  if(!remote.ok)return {ok:false,error:"invoice_detail_unavailable",status:remote.status||503,external_write:false,
+    invoice_id:invoiceId,read_failed:true};
+  if(blingOrderId){
+    // Compare the original Bling sales contact with the NF-e's contact if it
+    // is present. Never fabricate a recipient ID from a customer name.
+    const sale=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+    if(!sale.ok)return {ok:false,error:"sale_detail_unavailable",status:sale.status||503,
+      invoice_id:invoiceId,external_write:false,read_failed:true};
+    expected.contact_id=Number(sale.data?.data?.contato?.id||0)||null;
+    // This link comes from the exact Bling sale ID, not from invoice number.
+    if(Number(sale.data?.data?.id||0)!==blingOrderId)
+      return {ok:false,error:"sale_response_id_mismatch",status:409,external_write:false};
+    expected.sale_invoice_id=Number(sale.data?.data?.notaFiscal?.id||0)||null;
+  }
+  const report=inspectBlingNfeR2(remote.data,expected);
+  if(report.invoice_id!==invoiceId)
+    return {ok:false,error:"provider_invoice_id_mismatch",status:409,external_write:false};
+  return {ok:true,report,source_order_id:sourceOrderId||null,external_write:false,
+    identity_verified:report.identity.verified===true,can_edit_draft:report.editing.eligible===true,
+    requires_full_payload_contract:true};
+}
+
 async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any){
   const resolved=await blingHubResolveVitrineFiscalOrder(sb,sourceOrderIdRaw);
   if(!resolved.ok)return resolved;
@@ -3911,21 +3995,57 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
   let invoice:any=null;
   let invoiceLookup:any={performed:false,match_count:0,http_status:null};
 
-  if(blingOrderId&&externalKey){
+  if(blingOrderId){
     const token=await blingHubOauth(sb);
     if(invoiceId){
       const detail=await blingHubGetNfe(sb,token,invoiceId);
       invoiceLookup={performed:true,by:"id",match_count:detail.ok?1:0,http_status:detail.status};
       if(detail.ok)invoice=detail.invoice;
     }else{
-      const found=await blingHubFindNfeByExternalKey(sb,token,externalKey);
-      invoiceLookup={performed:true,by:"numeroLoja",match_count:found.matches?.length||0,http_status:found.status};
-      if(found.ok&&found.matches.length===1){
-        invoiceId=Number(found.match?.id||0)||null;
-        if(invoiceId){
-          const detail=await blingHubGetNfe(sb,token,invoiceId);
-          invoiceLookup={...invoiceLookup,detail_http_status:detail.status};
-          if(detail.ok)invoice=detail.invoice;
+      if(externalKey){
+        const found=await blingHubFindNfeByExternalKey(sb,token,externalKey);
+        invoiceLookup={performed:true,by:"numeroLoja",match_count:found.matches?.length||0,http_status:found.status};
+        if(found.ok&&found.matches.length===1){
+          invoiceId=Number(found.match?.id||0)||null;
+          if(invoiceId){
+            const detail=await blingHubGetNfe(sb,token,invoiceId);
+            invoiceLookup={...invoiceLookup,detail_http_status:detail.status};
+            if(detail.ok)invoice=detail.invoice;
+          }
+        }
+      }else{
+        invoiceLookup={performed:true,by:"no_external_key",match_count:0,http_status:200};
+      }
+      // A generated NF-e may have numeroLoja=NULL, so GET /nfe?numeroLoja
+      // legitimately returns no match. The SALE itself exposes notaFiscal.id,
+      // which is a strong immutable reference (verified for NF-e 000418).
+      // Never treat a failed search as "not found": only fall back after 200.
+      if(!invoiceId&&invoiceLookup.http_status===200&&invoiceLookup.match_count===0){
+        const sale=await blingHubGet(sb,token,
+          "/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+        if(!sale.ok){
+          invoiceLookup={performed:true,by:"bling_sale_invoice_reference",match_count:0,
+            http_status:sale.status,lookup_error:"sale_detail_unavailable"};
+        }else{
+          const remoteSale=sale.data?.data||{};
+          const remoteSaleKey=clean(remoteSale.numeroLoja,160);
+          const idMatches=Number(remoteSale.id||0)===blingOrderId;
+          if(!idMatches||(remoteSaleKey&&externalKey&&remoteSaleKey!==externalKey)){
+            invoiceLookup={performed:true,by:"bling_sale_invoice_reference",match_count:0,
+              http_status:409,lookup_error:"remote_sale_identity_mismatch"};
+          }else{
+            const fromSale=Number(remoteSale?.notaFiscal?.id||0);
+            if(Number.isSafeInteger(fromSale)&&fromSale>0){
+              invoiceId=fromSale;
+              const detail=await blingHubGetNfe(sb,token,invoiceId);
+              invoiceLookup={performed:true,by:"bling_sale_invoice_reference",
+                match_count:detail.ok?1:0,http_status:detail.status,
+                sale_invoice_id:invoiceId};
+              if(detail.ok)invoice=detail.invoice;
+            }else{
+              invoiceLookup={performed:true,by:"sale_checked_no_invoice",match_count:0,http_status:200};
+            }
+          }
         }
       }
     }
@@ -3951,6 +4071,9 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
   }
   if(!externalKey)hardBlockers.push("external_order_key_missing");
   if(invoiceLookup.performed&&invoiceLookup.match_count>1)hardBlockers.push("multiple_invoices_for_external_key");
+  if(invoiceLookup.performed&&![200,201].includes(Number(invoiceLookup.http_status||0)))
+    hardBlockers.push("invoice_lookup_inconclusive");
+  if(invoiceId&&!invoice)hardBlockers.push("invoice_detail_unavailable");
   if(invoice?.situation?.failed)hardBlockers.push("invoice_terminal_state");
 
   const selectedCanary=uuid(f.dispatch_invoice_canary_source_order_id);
@@ -4108,6 +4231,26 @@ async function blingHubVitrineDispatchFiscalReconcile(sb:any,sourceOrderIdRaw:an
     }
   });
 
+  let operationClosed=false;
+  if(preview.config?.canary_enabled===true
+     && preview.config?.canary_selected===true
+     && preview.config?.human_issue_enabled===true
+     && preview.config?.dispatch_gate_mode==="enforce"){
+    const closed=await sb.from("fiscal_runtime_config").update({
+      dispatch_fiscal_canary_enabled:false,
+      dispatch_fiscal_canary_armed_at:null,
+      dispatch_invoice_generate_enabled:false,
+      dispatch_invoice_authorize_enabled:false,
+      dispatch_invoice_canary_source_order_id:null,
+      dispatch_gate_mode:"enforce",
+      updated_at:now
+    }).eq("id",1)
+      .eq("dispatch_invoice_canary_source_order_id",preview.source_order_id)
+      .eq("dispatch_gate_mode","enforce");
+    if(closed.error)throw closed.error;
+    operationClosed=true;
+  }
+
   return {
     ok:true,reconciled:true,authorized:true,
     source_order_id:preview.source_order_id,
@@ -4117,6 +4260,7 @@ async function blingHubVitrineDispatchFiscalReconcile(sb:any,sourceOrderIdRaw:an
     invoice_number:invoice?.numero||null,
     sefaz_status:invoice?.situation?.label||"Autorizada",
     dispatch_gate:marked.data||null,
+    operation_closed:operationClosed,
     external_write:false,external_side_effect:false
   };
 }
@@ -4345,6 +4489,374 @@ async function blingHubVitrineDispatchFiscalHumanExecute(sb:any,sourceOrderIdRaw
   return {...result,operation_closed:true,fail_closed:true,production_mode:productionEligible};
 }
 
+// Autonomous fiscal recovery: never infer classification from a product name.
+// Only two independent supplier XML documents, one unanimous code, and
+// an active code in Receita Federal's Classif catalogue can authorize a patch.
+function blingHubFiscalFailureItems(detailRaw:any){
+  const detail=String(detailRaw||"").slice(0,5000);
+  const failures:any[]=[];
+  const re=/O NCM\s+([\d.]{8,12})\s+para o item\s+(.+?)\s+não est[aá]\s+contido/gi;
+  for(const match of detail.matchAll(re)){
+    failures.push({ncm:blingHubDigits(match[1]),name:clean(match[2],200)});
+  }
+  return {failures,missing_ncm:/[ée] necess[áa]rio informar o NCM em todos os itens/i.test(detail),raw:detail};
+}
+// Interpret all reported causes independently; a single NF-e may have several
+// unrelated blockers. Conservative classification does not claim to fix them.
+function blingHubFiscalDiagnoseErrors(job:any){
+  const text=String(job?.error_detail||"").slice(0,7000),code=String(job?.error_code||"");
+  const rules:any[]=[
+    {code:"invalid_ncm",category:"product_tax",test:/\bNCM\b.{0,200}(não est[aá] contido|inv[aá]lido|n[aã]o permitido)|NCM.{0,100}valores permitidos/i,action:"validate_supplier_xml_and_official_classif"},
+    {code:"missing_ncm",category:"product_tax",test:/informar o NCM|NCM.{0,40}(obrigat[oó]rio|n[aã]o informado)/i,action:"validate_supplier_xml_and_official_classif"},
+    {code:"cest",category:"product_tax",test:/\bCEST\b/i,action:"verify_cest_ncm_rule"},
+    {code:"cfop",category:"invoice_tax",test:/\bCFOP\b/i,action:"verify_operation_and_destination"},
+    {code:"cst_csosn",category:"invoice_tax",test:/\bCST\b|\bCSOSN\b/i,action:"verify_fiscal_regime"},
+    {code:"ibs_cbs",category:"invoice_tax",test:/\bIBS\b|\bCBS\b|classifica[çc][aã]o tribut[aá]ria/i,action:"verify_tax_reform_rules"},
+    {code:"destination_address",category:"customer",test:/endere[çc]o.{0,85}(caracter|obrigat|inv[aá]lid|m[ií]nimo)|n[uú]mero do endere[çc]o|\bCEP\b.{0,60}(inv[aá]lid|obrigat)/i,action:"validate_canonical_delivery_address"},
+    {code:"recipient_document",category:"customer",test:/\bCPF\b|\bCNPJ\b|inscri[çc][aã]o estadual|destinat[aá]rio.{0,40}(documento|inv[aá]lido)/i,action:"validate_client_registration"},
+    {code:"invalid_totals",category:"order_amount",test:/total.{0,40}(divergen|inv[aá]lid|n[aã]o confere)|valor.{0,40}(n[aã]o confere|divergen)/i,action:"reconcile_separated_items_and_totals"},
+    {code:"issuer_configuration",category:"issuer",test:/certificado digital|credenciamento|s[eé]rie.{0,30}nota|natureza da opera[çc][aã]o/i,action:"verify_bling_issuer_configuration"},
+    {code:"sefaz_rejection",category:"sefaz",test:/\bSEFAZ\b|rejei[çc][aã]o|denegad/i,action:"read_sefaz_return_before_resend"},
+    {code:"already_exists",category:"idempotence",test:/j[aá] existe|duplicad[ao]|mesma chave|nota j[aá] emitida/i,action:"reconcile_remote_invoice"},
+    {code:"temporary_provider",category:"connectivity",test:/timed out|timeout|rate.limit|429|500|502|503|504|oauth_busy|connection reset|network error/i,action:"retry_only_read_and_reconcile"}
+  ];
+  const issues=rules.filter((r:any)=>r.test.test(text)||r.code==="temporary_provider"&&r.test.test(code))
+    .map((r:any)=>({code:r.code,category:r.category,action:r.action}));
+  if(code==="invoice_generation_uncertain"&&!issues.some((x:any)=>x.code==="temporary_provider"))
+    issues.push({code:"temporary_provider",category:"connectivity",action:"retry_only_read_and_reconcile"});
+  if(!issues.length)issues.push({code:"unclassified_error",category:"unknown",action:"collect_provider_error_for_review"});
+  return {issues,requires_review:issues.some((x:any)=>!["temporary_provider","already_exists"].includes(x.code)),
+    can_reconcile_only:issues.every((x:any)=>["temporary_provider","already_exists"].includes(x.code))};
+}
+
+function blingHubFiscalNormalizeName(s:any){
+  return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/gi,"").toLowerCase();
+}
+async function blingHubFiscalOfficialNcmCodes(){
+  const r=await fetch("https://portalunico.siscomex.gov.br/classif/api/publico/nomenclatura/download/json",{
+    headers:{Accept:"application/json"},signal:AbortSignal.timeout(12000)
+  });
+  if(!r.ok)throw new Error("official_classif_unavailable_"+r.status);
+  const data=await r.json();
+  const found=new Set<string>();
+  let visited=0;
+  const walk=(value:any,depth:number)=>{
+    if(depth>13||++visited>60000)return;
+    if(Array.isArray(value)){for(const e of value)walk(e,depth+1);return;}
+    if(!value||typeof value!=="object")return;
+    const code=blingHubDigits(value.codigo??value.codigoNcm??value.codigoNCM??value.Codigo??value.CODIGO??"");
+    if(/^\d{8}$/.test(code))found.add(code);
+    for(const child of Object.values(value))if(typeof child==="object"&&child!==null)walk(child,depth+1);
+  };
+  walk(data,0);
+  if(found.size<5000)throw new Error("official_classif_data_unrecognized");
+  return found;
+}
+async function blingHubFiscalNfeAutoRecovery(sb:any,limitRaw:any){
+  const config=await sb.from("fiscal_nfe_recovery_control_v1")
+    .select("enabled,min_order_created_at,auto_fix_with_verified_evidence,auto_retry_after_verified_fix,max_attempts").eq("id",true).maybeSingle();
+  if(config.error)throw config.error;
+  if(config.data?.enabled!==true)return {ok:true,enabled:false,processed:0,items:[]};
+  const cutover=String(config.data?.min_order_created_at||"");
+  if(!Number.isFinite(Date.parse(cutover)))
+    return {ok:false,error:"new_orders_cutover_not_configured",processed:0,items:[]};
+  const runtime=await sb.from("bling_hub_runtime_v2").select("mode,hub_enabled,orders_enabled").eq("id",1).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  if(runtime.data?.mode!=="live"||runtime.data?.hub_enabled!==true||runtime.data?.orders_enabled!==true)
+    return {ok:true,enabled:false,reason:"bling_live_required",items:[]};
+  const limit=Math.max(1,Math.min(3,Number(limitRaw)||2));
+  // Hard barrier at the ORDER and fiscal JOB creation dates. Old work
+  // that changed status after cutover remains out of scope permanently.
+  const fresh=await sb.from("orders").select("id,created_at")
+    .gte("created_at",cutover).order("created_at",{ascending:false}).limit(150);
+  if(fresh.error)throw fresh.error;
+  const freshIds=(fresh.data||[]).map((o:any)=>o.id);
+  if(!freshIds.length)
+    return {ok:true,enabled:true,scope:"new_orders_only",cutover,scanned:0,processed:0,items:[]};
+  const jobs=await sb.from("dispatch_fiscal_jobs")
+    .select("id,created_at,order_id,bling_order_id,bling_invoice_id,status,error_code,error_detail,external_side_effect,attempts,updated_at")
+    .in("order_id",freshIds).gte("created_at",cutover)
+    .eq("status","review_required").order("updated_at",{ascending:false}).limit(30);
+  if(jobs.error)throw jobs.error;
+  const result:any={ok:true,enabled:true,scope:"new_orders_only",cutover,scanned:jobs.data?.length||0,processed:0,items:[]};
+  let token:string|null=null,catalog:Set<string>|null=null,catalogError:string|null=null;
+  for(const job of jobs.data||[]){
+    if(result.processed>=limit)break;
+    if(!["invoice_generation_uncertain","invoice_generation_failed","invoice_authorization_failed"].includes(String(job.error_code)))continue;
+    // Retry intermittent OAuth/API errors after 10 minutes; avoid repeatedly
+    // probing deterministic fiscal failures. A changed job is eligible at once.
+    const last=await sb.from("fiscal_nfe_recovery_events_v1")
+      .select("stage,error_code,created_at,diagnostics").eq("dispatch_job_id",job.id)
+      .order("created_at",{ascending:false}).limit(1).maybeSingle();
+    if(last.error)throw last.error;
+    const lastEvent:any=last.data||null;
+    const unchanged=lastEvent&&lastEvent.error_code===job.error_code
+      &&Date.parse(String(lastEvent.created_at||""))>=Date.parse(String(job.updated_at||""));
+    const lastStage=String(lastEvent?.stage||"");
+    const transient=lastStage==="oauth_busy_retry"||lastStage==="invoice_probe_unavailable_retry"
+      ||lastStage==="provider_temporary_retry"
+      ||(lastStage==="worker_exception"&&/oauth_busy|timeout|429|503/i.test(String(lastEvent?.diagnostics?.error||"")));
+    const intervalMs=transient?10*60000:4*3600000;
+    // A newly discovered note reference changes the recovery facts even when
+    // the original error timestamp does not. Inspect it immediately exactly
+    // once, then resume the ordinary cooldown. This cannot submit a new NF-e.
+    const newlyLinkedInvoice=Number(job.bling_invoice_id||0)>0
+      &&Number(lastEvent?.diagnostics?.invoice_id||0)!==Number(job.bling_invoice_id);
+    if(unchanged&&!newlyLinkedInvoice
+      &&Date.now()-Date.parse(String(lastEvent.created_at))<intervalMs)continue;
+    const stamp=String(job.updated_at||"").slice(0,19);
+    const bucket=Math.floor(Date.now()/(5*60000));
+    const key=["fiscal-nfe-recovery-v3",job.id,job.error_code,stamp,bucket].join(":");
+    const prior=await sb.from("fiscal_nfe_recovery_events_v1").select("id").eq("event_key",key).maybeSingle();
+    if(prior.error)throw prior.error;
+    if(prior.data)continue;
+    const start=await sb.from("fiscal_nfe_recovery_events_v1").insert({
+      event_key:key,order_id:job.order_id,dispatch_job_id:job.id,stage:"started",
+      error_code:job.error_code,error_detail:clean(job.error_detail,1800)
+    }).select("id").maybeSingle();
+    if(start.error){
+      if(start.error.code==="23505")continue;
+      throw start.error;
+    }
+    result.processed++;
+    const diagnosis=blingHubFiscalDiagnoseErrors(job);
+    const diagnostics:any={job_id:job.id,order_id:job.order_id,reason:"",issues:diagnosis.issues,
+      diagnosis:diagnosis.issues,corrected_products:[],invoice_id:null};
+    let externalWrite=false;
+    try{
+      const oq=await sb.from("orders").select("id,status,bling_order_id,created_at").eq("id",job.order_id).maybeSingle();
+      if(oq.error)throw oq.error;
+      if(!oq.data||!isFiscalRecoveryNewOrderR2(oq.data.created_at,cutover)||
+         !isFiscalRecoveryNewOrderR2(job.created_at,cutover)){
+        diagnostics.reason="historical_order_excluded";
+        continue;
+      }
+      const check=await sb.from("order_separation_completions_v1").select("completed_at,metadata").eq("order_id",job.order_id).maybeSingle();
+      if(check.error)throw check.error;
+      if(oq.data?.status!=="ready"||!check.data?.completed_at||check.data?.metadata?.stock_applied!==true){
+        diagnostics.reason="separation_not_completed";continue;
+      }
+      const preview=await blingHubVitrineDispatchFiscalPreview(sb,job.order_id);
+      if(!preview.ok){diagnostics.reason="fiscal_preview_unavailable";continue;}
+      // Record a discovered invoice even if its terminal SEFAZ state blocks
+      // the remainder of the workflow. This closes the one-time rescan gate.
+      diagnostics.invoice_id=Number(preview.invoice_id||0)||null;
+      // Distinguish a successful negative lookup from a failed read. In
+      // particular, HTTP 429/5xx is NOT evidence that no invoice exists.
+      if(preview.invoice_lookup?.performed&&
+         ![200,201].includes(Number(preview.invoice_lookup.http_status||0))){
+        diagnostics.reason="invoice_probe_unavailable_retry";
+        diagnostics.lookup_http_status=preview.invoice_lookup.http_status||0;
+        continue;
+      }
+      if(preview.invoice_id&&preview.invoice&&!preview.invoice?.situation?.authorized){
+        const probed=await blingHubFiscalDraftProbeV2(sb,{
+          invoice_id:preview.invoice_id,source_order_id:job.order_id
+        });
+        diagnostics.invoice_draft=probed.ok?probed.report:{
+          diagnostic_error:probed.error,http_status:probed.status||null
+        };
+        // The sale itself referenced the note and the independent fiscal
+        // evidence confirms identity. Save that document ID to the FAILED JOB
+        // (not order_fiscal_controls, which is reserved for authorization).
+        // This prevents another request to generate a second NF-e after timeout.
+        if(probed.ok&&probed.identity_verified===true
+          &&preview.invoice_lookup?.by==="bling_sale_invoice_reference"
+          &&Number(job.bling_invoice_id||0)===0){
+          const attached=await sb.from("dispatch_fiscal_jobs").update({
+            bling_invoice_id:Number(preview.invoice_id),
+            bling_invoice_number:preview.invoice?.numero||null
+          }).eq("id",job.id).eq("order_id",job.order_id)
+            .eq("bling_order_id",preview.bling_order_id)
+            .eq("status","review_required").is("bling_invoice_id",null)
+            .select("id").maybeSingle();
+          if(attached.error)throw attached.error;
+          if(attached.data)diagnostics.existing_invoice_recorded=Number(preview.invoice_id);
+        }
+      }
+      if(preview.hard_blockers?.length){
+        diagnostics.reason=preview.hard_blockers.includes("invoice_terminal_state")
+          ?"existing_invoice_rejected_or_terminal":"fiscal_preflight_blocked";
+        diagnostics.blockers=preview.hard_blockers;
+        continue;
+      }
+      diagnostics.invoice_id=preview.invoice_id||null;
+      if(preview.invoice_id||preview.invoice){
+        const rec=await blingHubVitrineDispatchFiscalReconcile(sb,job.order_id);
+        diagnostics.reason=rec?.reconciled?"existing_invoice_reconciled":"existing_invoice_needs_authorization_or_review";
+        diagnostics.invoice_status=preview.invoice?.situation||null;
+        // Never create a second note when Bling already has one.
+        continue;
+      }
+      // A timed-out POST may have created an NF-e. No automatic new POST.
+      if(job.external_side_effect===true||job.error_code==="invoice_generation_uncertain"){
+        diagnostics.reason="generation_result_uncertain_manual_reconcile_required";
+        continue;
+      }
+      if(job.error_code!=="invoice_generation_failed"){
+        diagnostics.reason="not_a_repairable_generation_error";continue;
+      }
+      const parsed=blingHubFiscalFailureItems(job.error_detail);
+      // Mixed errors must be solved in dependency order. Never repeat NF-e
+      // with half the errors fixed (e.g. NCM and address failing together).
+      const otherCauses=diagnosis.issues.filter((x:any)=>!["invalid_ncm","missing_ncm"].includes(x.code));
+      if(otherCauses.length){
+        diagnostics.reason="multiple_fiscal_causes_require_coordinated_repair";
+        continue;
+      }
+      if(!parsed.failures.length&&!parsed.missing_ncm){
+        diagnostics.reason="unrecognized_fiscal_error";continue;
+      }
+      const orderItems=await sb.from("order_items")
+        .select("id,product_id,name_snapshot").eq("order_id",job.order_id);
+      if(orderItems.error)throw orderItems.error;
+      const ids=[...new Set((orderItems.data||[]).map((x:any)=>x.product_id).filter(Boolean))];
+      if(!ids.length){diagnostics.reason="no_product_links";continue;}
+      const products=await sb.from("products")
+        .select("id,name,gtin,ncm,bling_product_id").in("id",ids);
+      if(products.error)throw products.error;
+      const names=parsed.failures.map((x:any)=>blingHubFiscalNormalizeName(x.name));
+      // The local NCM can be correct while the Bling product has no NCM.
+      // Diagnose the remote source instead of filtering only by local emptiness.
+      let candidates:any[]=[];
+      if(parsed.missing_ncm&&!names.length){
+        const linked=(products.data||[]).filter((x:any)=>Number(x.bling_product_id)>0);
+        if(linked.length!==ids.length||linked.length>45){
+          diagnostics.reason="tax_items_unmapped_or_exceed_scan_limit";
+          diagnostics.scanned_count=linked.length;
+          continue;
+        }
+        if(!token)token=await blingHubOauth(sb);
+        let readFailure=false;
+        for(const product of linked){
+          const detail=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(product.bling_product_id)));
+          if(!detail.ok){
+            diagnostics.reason="bling_product_tax_scan_http_"+detail.status;
+            diagnostics.remote_scan_product_id=product.id;
+            readFailure=true;break;
+          }
+          const remote=detail.data?.data||{},tax=remote.tributacao||{};
+          const remoteNcm=blingHubDigits(tax.ncm??remote.ncm);
+          if(!/^\d{8}$/.test(remoteNcm)){
+            candidates.push({...product,remote_ncm:remoteNcm});
+          }
+        }
+        diagnostics.products_inspected=linked.length;
+        diagnostics.remote_missing_ncm=candidates.length;
+        if(readFailure)continue;
+        if(!candidates.length){
+          diagnostics.reason="remote_products_have_ncm_check_existing_note_items";
+          continue;
+        }
+      }else{
+        candidates=(products.data||[]).filter((x:any)=>
+          names.includes(blingHubFiscalNormalizeName(x.name))
+        );
+        if(names.length!==new Set(names).size||candidates.length!==names.length){
+          diagnostics.reason="ambiguous_product_name";diagnostics.issues=parsed.failures;continue;
+        }
+      }
+      if(!candidates.length){diagnostics.reason="unable_to_identify_fiscal_products";continue;}
+      const consensus=await sb.from("product_fiscal_evidence_consensus_v1")
+        .select("product_id,ncm_consensus,ncm_distinct_count,ncm_conflict,document_count")
+        .in("product_id",candidates.map((x:any)=>x.id));
+      if(consensus.error)throw consensus.error;
+      const cm=new Map((consensus.data||[]).map((x:any)=>[x.product_id,x]));
+      const approved:any[]=[];
+      for(const p of candidates){
+        const c:any=cm.get(p.id);
+        const ncm=blingHubDigits(c?.ncm_consensus||"");
+        if(!c||c.ncm_conflict||Number(c.ncm_distinct_count)!==1||Number(c.document_count)<2||
+           !/^\d{8}$/.test(ncm)||!p.bling_product_id||
+           (parsed.missing_ncm&&ncm!==blingHubDigits(p.ncm))||
+           (!parsed.missing_ncm&&ncm===blingHubDigits(p.ncm))){
+          diagnostics.issues.push({product_id:p.id,name:p.name,reason:"insufficient_independent_tax_evidence",candidate_ncm:ncm||null});
+          continue;
+        }
+        approved.push({product:p,new_ncm:ncm});
+      }
+      if(approved.length!==candidates.length||config.data.auto_fix_with_verified_evidence!==true){
+        diagnostics.reason="unverified_ncm_requires_review";continue;
+      }
+      if(!catalog&&!catalogError){
+        try{catalog=await blingHubFiscalOfficialNcmCodes();}
+        catch(e){catalogError=clean((e as Error)?.message||e,170);}
+      }
+      if(!catalog){diagnostics.reason=catalogError||"official_classif_unavailable";continue;}
+      if(approved.some(x=>!catalog!.has(x.new_ncm))){
+        diagnostics.reason="proposed_ncm_not_in_official_active_catalog";continue;
+      }
+      if(!token)token=await blingHubOauth(sb);
+      for(const x of approved){
+        const path="/produtos/"+encodeURIComponent(String(x.product.bling_product_id));
+        const previous=await blingHubGet(sb,token,path);
+        if(!previous.ok){diagnostics.reason="bling_product_fetch_failed";break;}
+        const product=previous.data?.data||{},tax=product.tributacao||{};
+        const remoteNcm=blingHubDigits(tax.ncm??product.ncm);
+        const expectedRemote=Object.prototype.hasOwnProperty.call(x.product,"remote_ncm")
+          ?x.product.remote_ncm:blingHubDigits(x.product.ncm);
+        if(remoteNcm!==expectedRemote){
+          diagnostics.reason="remote_tax_changed_since_validation";break;
+        }
+        const patch=await blingHubWriteIdempotent(sb,token,path,"PATCH",{
+          tributacao:{...tax,ncm:x.new_ncm}
+        });
+        if(!patch.ok){diagnostics.reason="bling_product_tax_patch_failed";diagnostics.provider_status=patch.status;break;}
+        externalWrite=true;
+        const verify=await blingHubGet(sb,token,path);
+        if(!verify.ok||blingHubDigits(verify.data?.data?.tributacao?.ncm??verify.data?.data?.ncm)!==x.new_ncm){
+          diagnostics.reason="bling_product_tax_verify_failed";break;
+        }
+        if(blingHubDigits(x.product.ncm)!==x.new_ncm){
+          const saved=await sb.from("products").update({ncm:x.new_ncm})
+            .eq("id",x.product.id).eq("ncm",x.product.ncm).select("id").maybeSingle();
+          if(saved.error||!saved.data){diagnostics.reason="local_tax_compare_and_set_failed";break;}
+        }
+        diagnostics.corrected_products.push({product_id:x.product.id,from_ncm:x.product.ncm,
+          from_bling_ncm:remoteNcm||null,to_ncm:x.new_ncm});
+      }
+      if(diagnostics.corrected_products.length!==candidates.length){
+        if(!diagnostics.reason)diagnostics.reason="partial_tax_fix_requires_review";
+        continue;
+      }
+      // Product tax changes do not retroactively edit already-generated invoices.
+      if(config.data.auto_retry_after_verified_fix!==true||Number(job.attempts||0)>Number(config.data.max_attempts||3)){
+        diagnostics.reason="verified_tax_fixed_invoice_retry_disabled";continue;
+      }
+      // The provider can create an unlinked draft even when /gerar-nfe reports
+      // validation failure. If the error requests manual editing of a note,
+      // do not blindly create another invoice after repairing product metadata.
+      if(/clique na nota fiscal|clique em ['"]?salvar|nota fiscal com erro/i.test(String(job.error_detail||""))){
+        diagnostics.reason="catalog_repaired_existing_draft_requires_invoice_item_repair";
+        continue;
+      }
+      // Only retry when absence of an existing document is proved and the
+      // preceding failure had no external side effect.
+      const reset=await sb.from("dispatch_fiscal_jobs")
+        .update({status:"held",attempts:0,error_code:null,error_detail:null,updated_at:new Date().toISOString()})
+        .eq("id",job.id).eq("status","review_required").eq("external_side_effect",false)
+        .select("id").maybeSingle();
+      if(reset.error||!reset.data){diagnostics.reason="invoice_retry_claim_failed";continue;}
+      const issue=await blingHubVitrineDispatchFiscalHumanExecute(sb,job.order_id,"EMITIR_NFE");
+      diagnostics.reason=issue.authorized?"auto_invoice_authorized":issue.pending?"auto_invoice_authorization_pending":issue.ok?"auto_invoice_generated":"auto_invoice_retry_failed";
+      diagnostics.retry_error=issue.ok?null:issue.error||null;
+      externalWrite=externalWrite||issue.external_write===true;
+    }catch(e){
+      const msg=clean((e as Error)?.message||e,240);
+      diagnostics.reason=/\boauth_busy\b/i.test(msg)?"oauth_busy_retry":
+        /\b(429|502|503|504|timeout)\b/i.test(msg)?"provider_temporary_retry":"worker_exception";
+      diagnostics.error=msg;
+      if(diagnostics.reason!=="worker_exception")diagnostics.retry_after_seconds=600;
+    }finally{
+      await sb.from("fiscal_nfe_recovery_events_v1").update({
+        stage:diagnostics.reason||"review_required",diagnostics,external_write:externalWrite
+      }).eq("id",start.data?.id);
+      result.items.push(diagnostics);
+    }
+  }
+  return result;
+}
+
 async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
   let preview=await blingHubVitrineDispatchFiscalPreview(sb,sourceOrderIdRaw);
   if(!preview.ok)return preview;
@@ -4448,18 +4960,38 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
           invoiceId=Number(recovery.match?.id||0)||null;
         }
         if(!invoiceId){
+          const providerDetails=Array.isArray(generated.provider_details)?generated.provider_details:[];
+          const providerError=clean(JSON.stringify(generated.data?.error||generated.data||{}),1600);
+          const providerSummary=providerDetails
+            .map((x:any)=>[clean(x?.field,120),clean(x?.message,240)].filter(Boolean).join(": "))
+            .filter(Boolean).join(" · ");
+          const generationDetail=clean(
+            [generated.error,providerSummary,providerError&&providerError!=="{}"?providerError:""].filter(Boolean).join(" | "),
+            1900
+          )||("HTTP "+generated.status);
           await sb.from("dispatch_fiscal_jobs").update({
             status:"review_required",external_side_effect:generated.ok===true||generated.uncertain===true,
             error_code:generated.uncertain?"invoice_generation_uncertain":"invoice_generation_failed",
-            error_detail:generated.error||("HTTP "+generated.status),
+            error_detail:generationDetail,
             updated_at:new Date().toISOString()
           }).eq("id",job.id);
+          await sb.from("bling_hub_audit_v2").insert({
+            event_type:"dispatch_nfe_generation_failed",severity:"warning",domain:"fiscal",
+            details:{
+              source_order_id:sourceOrderId,canonical_order_id:canonicalOrderId,
+              bling_order_id:blingOrderId,http_status:generated.status,
+              error:generated.error||null,provider_details:providerDetails,
+              provider_error:providerError||null,external_write:generated.uncertain===true,make_used:false
+            }
+          });
           return {
             ok:false,
             error:generated.uncertain?"invoice_generation_uncertain":"invoice_generation_failed",
+            detail:generationDetail,
             status:409,
             http_status:generated.status,
-            provider_details:generated.provider_details||[],
+            provider_details:providerDetails,
+            provider_error:providerError||null,
             external_write:generated.uncertain===true
           };
         }
@@ -4850,9 +5382,17 @@ async function blingHubReserveSlot(sb:any){
 }
 async function blingHubOauth(sb:any){
   const owner=crypto.randomUUID();
-  const lock=await sb.rpc("claim_bling_hub_oauth_lock_v2",{p_owner:owner,p_ttl_seconds:90});
-  if(lock.error)throw new Error("oauth_lock_failed");
-  if(lock.data!==true)throw new Error("oauth_busy");
+  // Other workers share the same rotating refresh token. Wait for the
+  // distributed lock instead of classifying an ordinary overlap as failure.
+  // Never refresh a token without owning the lock.
+  let lockAcquired=false;
+  for(let attempt=0;attempt<4;attempt++){
+    const lock=await sb.rpc("claim_bling_hub_oauth_lock_v2",{p_owner:owner,p_ttl_seconds:90});
+    if(lock.error)throw new Error("oauth_lock_failed");
+    if(lock.data===true){lockAcquired=true;break;}
+    if(attempt<3)await sleep([800,1800,3200][attempt]);
+  }
+  if(!lockAcquired)throw new Error("oauth_busy");
   try{
     const c=await sb.rpc("get_bling_api_credentials_v1");
     if(c.error)throw new Error("credentials_lookup_failed");
@@ -7431,6 +7971,33 @@ async function blingHubFindContactByDocument(sb:any,token:string,docRaw:any){
   if(ids.length>1)return {status:"ambiguous",reason:"duplicate_document",bling_id:null,candidates:ids};
   return {status:"not_found",reason:"document_not_found",bling_id:null,candidates:[]};
 }
+// Consulta administrativa somente leitura. Não cria ou modifica contato.
+async function blingHubContactByDocumentReadonly(sb:any,documentRaw:any){
+  const doc=blingHubDigits(documentRaw);
+  if(![11,14].includes(doc.length)||!blingHubValidCpfCnpj(doc))
+    return {ok:false,error:"invalid_document",status:400};
+  const token=await blingHubOauth(sb);
+  const found=await blingHubFindContactByDocument(sb,token,doc);
+  if(found.status==="not_found")return {ok:true,found:false,source:"Bling"};
+  if(found.status!=="matched"||!Number(found.bling_id||0))
+    return {ok:false,error:found.status==="ambiguous"?"bling_duplicate_documents":"bling_contact_lookup_unavailable",
+      status:409,reason:found.reason||null};
+  const detail=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(found.bling_id)));
+  if(!detail.ok)return {ok:false,error:"bling_contact_detail_unavailable",status:502};
+  const contact=detail.data?.data||{};
+  if(blingHubDigits(contact.numeroDocumento)!==doc)
+    return {ok:false,error:"bling_document_mismatch",status:409};
+  const e=contact?.endereco?.geral||contact?.endereco?.cobranca||contact?.endereco||{};
+  return {ok:true,found:true,source:"Bling",bling_contact_id:Number(found.bling_id),company:{
+    cnpj:doc,razao_social:clean(contact.nome,300),nome_fantasia:clean(contact.fantasia,300),
+    logradouro:clean(e.endereco||e.logradouro,300),numero:clean(e.numero,60),
+    complemento:clean(e.complemento,180),bairro:clean(e.bairro,180),
+    cep:blingHubDigits(e.cep).slice(0,8),municipio:clean(e.municipio||e.cidade,180),
+    uf:clean(e.uf,2).toUpperCase(),telefone_1:clean(contact.celular||contact.fone||contact.telefone,60),
+    email:clean(contact.email,240),inscricao_estadual:clean(contact.ie,80),
+    situacao:clean(contact.situacao,60)
+  }};
+}
 async function blingHubEnsureCustomerNow(sb:any,customerIdRaw:any){
   const customerId=uuid(customerIdRaw);
   if(!customerId)return {ok:false,error:"invalid_customer",status:400,external_write:false};
@@ -7605,6 +8172,166 @@ async function blingHubFindOrderByExternalKey(sb:any,token:string,externalKey:st
   if(rows.length===1)return {ok:true,status:r.status,match:rows[0],matches:rows};
   return {ok:true,status:r.status,match:null,matches:rows};
 }
+// Comercial: um orçamento salvo gera, no máximo, um pedido de venda no Bling.
+// Não emite NF-e, não movimenta estoque e não cria pedidos do checkout.
+async function blingHubQuoteOrderConvert(sb:any,quoteIdRaw:any,previewOnly:boolean=false){
+  const quoteId=uuid(quoteIdRaw);
+  if(!quoteId)return {ok:false,error:"invalid_quote_id",status:400};
+  const qr=await sb.from("sales_quotes").select("*").eq("id",quoteId).is("archived_at",null).maybeSingle();
+  if(qr.error)throw qr.error;
+  const q=qr.data;
+  if(!q)return {ok:false,error:"quote_not_found",status:404};
+  const linked=await sb.from("sales_quote_bling_orders").select("status,bling_order_id,external_key,last_error").eq("quote_id",quoteId).maybeSingle();
+  if(linked.error)throw linked.error;
+  if(linked.data?.status==="synced"&&Number(linked.data.bling_order_id)>0){
+    return {ok:true,already_created:true,quote_id:quoteId,bling_order_id:Number(linked.data.bling_order_id),external_key:linked.data.external_key};
+  }
+  const snapshot=q.snapshot&&typeof q.snapshot==="object"?q.snapshot:{};
+  const fields=snapshot.fields&&typeof snapshot.fields==="object"?snapshot.fields:{};
+  const rawItems=Array.isArray(snapshot.items)?snapshot.items:[];
+  const multRaw=Number(snapshot.options?.generalMultiplier??1);
+  const mult=Number.isInteger(multRaw)&&multRaw>=1&&multRaw<=10000?multRaw:0;
+  const failures:string[]=[];
+  if(["rejected","expired","cancelled"].includes(String(q.status)))failures.push("quote_not_approved_for_sale");
+  if(!mult)failures.push("invalid_basket_multiplier");
+  if(!rawItems.length||rawItems.length>300)failures.push("invalid_quote_items");
+  const priceCents=(v:any)=>Math.round(Number(v)*100);
+  const ids=rawItems.map((x:any)=>uuid(x?.id)).filter(Boolean);
+  const productRows=ids.length?await sb.from("products").select("id,sku,name,bling_product_id").in("id",ids):{data:[],error:null};
+  if(productRows.error)throw productRows.error;
+  const pmap=new Map((productRows.data||[]).map((x:any)=>[String(x.id),x]));
+  const items:any[]=[];
+  for(const [index,item] of rawItems.entries()){
+    const product=pmap.get(String(item?.id)) as any;
+    const qty=Number(item?.quantity)*mult,price=priceCents(item?.unitPrice);
+    if(!product||!Number(product?.bling_product_id||0)){
+      failures.push("item_"+(index+1)+"_not_linked_to_bling");continue;
+    }
+    if(!Number.isFinite(qty)||qty<=0||qty>100000||!Number.isFinite(price)||price<0){
+      failures.push("item_"+(index+1)+"_invalid_quantity_or_price");continue;
+    }
+    items.push({produto:{id:Number(product.bling_product_id)},codigo:clean(product.sku||item?.code,100),
+      descricao:clean(item?.name||product.name,180),quantidade:qty,valor:price/100});
+  }
+  const totalCents=Number(q.total_cents);
+  const lineCents=items.reduce((sum,x)=>sum+Math.round(x.quantidade*Math.round(x.valor*100)),0);
+  if(!Number.isSafeInteger(totalCents)||totalCents<=0||totalCents>1000000000)failures.push("invalid_quote_total");
+  const doc=blingHubDigits(q.client_document||fields.document);
+  if(![11,14].includes(doc.length)||!blingHubValidCpfCnpj(doc))failures.push("customer_document_required");
+  let local:any=null,remoteContact:any=null,contactId=0;
+  if([11,14].includes(doc.length)&&blingHubValidCpfCnpj(doc)){
+    const found=await sb.from("customers").select("id,name,cpf_cnpj,bling_contact_id").eq("cpf_cnpj",doc).limit(2);
+    if(found.error)throw found.error;
+    if((found.data||[]).length>1)failures.push("customer_document_ambiguous");
+    else if((found.data||[]).length===1)local=found.data[0];
+    if(q.customer_id&&(!local||String(q.customer_id)!==String(local.id)))
+      failures.push("quote_customer_identity_conflict");
+    contactId=Number(local?.bling_contact_id||0);
+    if(!contactId&&!failures.includes("customer_document_ambiguous")){
+      try{
+        // Somente leitura: um contato existente no Bling pode ser usado sem criar cadastro duplicado no Admin.
+        // A busca valida o documento exato no detalhe remoto antes de aceitar o ID.
+        const resolved=await blingHubContactByDocumentReadonly(sb,doc);
+        if(resolved.ok&&resolved.found===true){
+          contactId=Number(resolved.bling_contact_id||0);
+          remoteContact=resolved.company||null;
+        }else if(resolved.ok&&resolved.found===false)
+          failures.push("customer_not_registered_in_bling");
+        else if(resolved.error==="bling_duplicate_documents")
+          failures.push("customer_document_ambiguous");
+        else failures.push("bling_contact_lookup_unavailable");
+      }catch{
+        failures.push("bling_contact_lookup_unavailable");
+      }
+    }
+  }
+  if(!contactId&&!failures.some((x:string)=>x.startsWith("customer_")||x==="bling_contact_lookup_unavailable"))
+    failures.push("customer_not_synced_to_bling");
+  const runtime=await sb.from("bling_hub_runtime_v2").select("mode,hub_enabled,orders_enabled").eq("id",1).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  if(runtime.data?.hub_enabled!==true||runtime.data?.orders_enabled!==true||runtime.data?.mode!=="live")failures.push("bling_orders_not_enabled");
+  const summary={quote_id:quoteId,quote_number:q.quote_number,customer_name:q.client_name||local?.name||remoteContact?.razao_social||"",
+    customer_id:local?.id||null,bling_contact_id:contactId||null,contact_source:local?.bling_contact_id?"Vitrine/Admin":remoteContact?"Bling":null,
+    item_count:rawItems.length,multiplier:mult,total_cents:totalCents,items_total_cents:lineCents,
+    payment:clean(fields.payment,120),failures};
+  if(failures.length)return {ok:false,error:"quote_conversion_blocked",status:409,...summary};
+  if(previewOnly&&linked.data)
+    return {ok:false,error:"quote_conversion_requires_reconciliation",status:409,
+      quote_id:quoteId,conversion_status:linked.data.status,external_key:linked.data.external_key,
+      detail:linked.data.last_error||null};
+  if(previewOnly){
+    return {ok:true,ready:true,...summary,already_created:false,
+      processing:linked.data?.status||null,requires_confirmation:true};
+  }
+
+  // Nunca tentar um segundo POST quando já houve tentativa incerta.
+  if(linked.data){
+    return {ok:false,error:"quote_conversion_requires_reconciliation",status:409,
+      quote_id:quoteId,conversion_status:linked.data.status,external_key:linked.data.external_key,
+      detail:linked.data.last_error||null};
+  }
+  const claimed=await sb.rpc("sales_quote_bling_claim_v1",{p_quote_id:quoteId});
+  if(claimed.error)throw claimed.error;
+  if(claimed.data?.ok!==true)return {ok:false,error:claimed.data?.error||"conversion_not_claimed",
+    status:409,...claimed.data};
+  const externalKey=String(claimed.data.external_key);
+  const record=async(status:string,orderId:number|null,reason:string,details:any={})=>{
+    const r=await sb.from("sales_quote_bling_orders").update({
+      status,bling_order_id:orderId,last_error:reason||null,
+      detail:details,updated_at:new Date().toISOString()
+    }).eq("quote_id",quoteId).eq("status","processing");
+    if(r.error)throw r.error;
+  };
+  try{
+    const token=await blingHubOauth(sb);
+    const before=await blingHubFindOrderByExternalKey(sb,token,externalKey);
+    if(!before.ok)throw new Error("order_lookup_http_"+String(before.status));
+    if(before.matches.length>1)throw new Error("external_key_ambiguous");
+    let remoteId=Number(before.match?.id||0),created=false;
+    if(!remoteId){
+      const difference=totalCents-lineCents;
+      const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+      const datePart=(kind:string)=>parts.find((x:any)=>x.type===kind)?.value||"";
+      const cityDate=datePart("year")+"-"+datePart("month")+"-"+datePart("day");
+      const address={nome:clean(local?.name||remoteContact?.razao_social||q.client_name,180),endereco:clean(fields.street,180),numero:clean(fields.number,40),
+        complemento:clean([fields.block,fields.contact].filter(Boolean).join(" · "),220),
+        bairro:clean(fields.district,140),municipio:clean(fields.city,120),
+        uf:clean(fields.state,2).toUpperCase(),cep:blingHubDigits(fields.zip)};
+      const payload:any={contato:{id:contactId},data:cityDate,
+        numeroLoja:externalKey,totalProdutos:lineCents/100,total:totalCents/100,
+        desconto:{valor:Math.max(0,-difference)/100,unidade:"REAL"},
+        outrasDespesas:Math.max(0,difference)/100,itens,
+        observacoes:clean("Orçamento "+q.quote_number+" · "+externalKey+" · Pagamento: "+String(fields.payment||"não informado")+
+          " · Frete informado: "+String(fields.shipping||"0")+" · Observações: "+String(fields.notes||""),900),
+        transporte:{etiqueta:address}};
+      const sent=await blingHubCreateOrderOnce(sb,token,payload);
+      if(!sent.ok)throw new Error("bling_create_http_"+String(sent.status)+": "+String(sent.error||"unknown"));
+      remoteId=Number(sent.data?.data?.id||sent.data?.id||0);
+      created=true;
+    }
+    if(!remoteId)throw new Error("bling_order_id_missing_after_create");
+    const verified=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(remoteId)));
+    if(!verified.ok)throw new Error("bling_read_after_write_http_"+String(verified.status));
+    const remote=verified.data?.data||{};
+    if(clean(remote.numeroLoja,120)!==externalKey||Math.abs(Math.round(Number(remote.total||0)*100)-totalCents)>1)
+      throw new Error("bling_order_verification_mismatch");
+    await record("synced",remoteId,"",{verified:true,created,quote_number:q.quote_number,total_cents:totalCents,external_key:externalKey});
+    const link=await sb.from("bling_hub_entity_links_v2").upsert({
+      source_system:"vitrine_quotes",entity_type:"order",source_id:quoteId,bling_id:remoteId,
+      identity_kind:"numeroLoja",identity_value:externalKey,status:"matched",
+      last_verified_at:new Date().toISOString(),metadata:{quote_number:q.quote_number,total_cents:totalCents}
+    },{onConflict:"source_system,entity_type,source_id"});
+    if(link.error)throw link.error;
+    return {ok:true,quote_id:quoteId,quote_number:q.quote_number,
+      bling_order_id:remoteId,external_key:externalKey,total_cents:totalCents,created,verified:true};
+  }catch(e){
+    const reason=clean((e as Error)?.message||e,500);
+    await record("review_required",null,reason,{write_may_have_occurred:true,manual_reconciliation_required:true});
+    return {ok:false,error:"quote_conversion_review_required",status:409,detail:reason,
+      quote_id:quoteId,external_key:externalKey,write_may_have_occurred:true};
+  }
+}
+
 async function blingHubCreateOrderOnce(sb:any,token:string,payload:any){
   await blingHubReserveSlot(sb);
   try{
@@ -7625,6 +8352,52 @@ async function blingHubCreateOrderOnce(sb:any,token:string,payload:any){
   }catch(e){
     return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500),provider_details:[],uncertain:true};
   }
+}
+
+function blingHubSeparationEvidenceReady(orderStatus:any,completion:any,itemsRaw:any,reservationsRaw:any,basketAllocationsRaw:any){
+  if(String(orderStatus||"").trim().toLowerCase()!=="ready")return false;
+  const separationItems=Array.isArray(itemsRaw)?itemsRaw:[];
+  const stockRows=[
+    ...(Array.isArray(reservationsRaw)?reservationsRaw:[]),
+    ...(Array.isArray(basketAllocationsRaw)?basketAllocationsRaw:[])
+  ];
+  const separationFinalized=separationItems.length>0
+    &&separationItems.every((item:any)=>["separated","missing"].includes(String(item?.state||"").trim()));
+  const stockFinalized=stockRows.length>0
+    &&stockRows.every((row:any)=>["consumed","released"].includes(String(row?.status||"").trim()));
+
+  return completion?.metadata?.stock_applied===true
+    &&separationFinalized
+    &&stockFinalized;
+}
+
+async function blingHubVerifiedSeparationStockGate(sb:any,payload:any){
+  const sourceOrderId=uuid(payload?.source_order_id);
+  if(!sourceOrderId)return false;
+
+  const [completion,items,reservations,basketAllocations]=await Promise.all([
+    sb.from("order_separation_completions_v1")
+      .select("metadata")
+      .eq("order_id",sourceOrderId)
+      .maybeSingle(),
+    sb.from("order_separation_items_v1")
+      .select("state")
+      .eq("order_id",sourceOrderId),
+    sb.from("vitrine_stock_reservations")
+      .select("status")
+      .eq("order_id",sourceOrderId),
+    sb.from("basket_stock_allocations")
+      .select("status")
+      .eq("order_id",sourceOrderId)
+  ]);
+  if(completion.error)throw completion.error;
+  if(items.error)throw items.error;
+  if(reservations.error)throw reservations.error;
+  if(basketAllocations.error)throw basketAllocations.error;
+
+  return blingHubSeparationEvidenceReady(
+    payload?.status,completion.data,items.data,reservations.data,basketAllocations.data
+  );
 }
 
 async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
@@ -7722,9 +8495,16 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
   const earlyAwaiting=["awaiting_confirmation","awaiting_confirmation_canary"].includes(queueReason);
   const earlyApproved=queueReason==="approved_early_order";
   const earlyOrder=earlyAwaiting||earlyApproved;
-  const separationStarted=queueReason==="first_separation" || payment?.stock_consumed===true;
-  const physicalStockHandled=payment?.stock_consumed===true || (separationStarted && payment?.stock_reserved===true);
   const orderStatus=clean(payload?.status,40).toLowerCase();
+  const verifiedSeparationStockReady=queueReason==="ean_verified"
+    ?await blingHubVerifiedSeparationStockGate(sb,payload)
+    :false;
+  const separationStarted=queueReason==="first_separation"
+    || payment?.stock_consumed===true
+    || verifiedSeparationStockReady;
+  const physicalStockHandled=payment?.stock_consumed===true
+    || (separationStarted && payment?.stock_reserved===true)
+    || verifiedSeparationStockReady;
 
   if(earlyAwaiting){
     if(!["created","storefront_received"].includes(orderStatus))operationalBlockers.push("awaiting_confirmation_status_required");
@@ -7839,14 +8619,30 @@ function blingHubOrderManagedProjection(order:any){
     },
     itens:items.map((i:any)=>({
       produto_id:Number(i?.produto?.id||0)||null,
-      codigo:clean(i?.codigo,120),
-      // O Bling normaliza a descrição conforme o cadastro do produto.
-      // A identidade operacional da linha é produto/código/quantidade/valor;
-      // diferenças cosméticas de descrição não devem disparar PUT nem revisão.
+      // Com ID Bling resolvido, codigo e somente atributo cadastral: a API pode
+      // devolver codigo vazio ou normalizado mesmo mantendo o mesmo produto.
+      // Comparar codigo apenas sem ID; quantidade e valor continuam obrigatorios.
+      codigo:Number(i?.produto?.id||0)>0?"":clean(i?.codigo,120),
       quantidade:Math.round(Number(i?.quantidade||0)*1000)/1000,
       valor_cents:moneyCents(i?.valor)
     })).sort((a:any,b:any)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))
   };
+}
+function blingHubRebalanceInstallmentsForTotal(parcelas:any,totalRaw:number){
+  const rows=Array.isArray(parcelas)?parcelas.map((p:any)=>({...p})):[];
+  const total=Math.round(Number(totalRaw||0)*100)/100;
+  if(!rows.length||!Number.isFinite(total)||total<0)return rows;
+  const values=rows.map((p:any)=>Math.max(0,Number(p?.valor||0)));
+  const current=Math.round(values.reduce((sum:number,v:number)=>sum+v,0)*100)/100;
+  if(Math.abs(current-total)<0.005)return rows;
+  const denominator=current>0?current:rows.length;
+  let used=0;
+  return rows.map((p:any,index:number)=>{
+    const weight=current>0?values[index]/denominator:1/rows.length;
+    const valor=index===rows.length-1?Math.round((total-used)*100)/100:Math.round((total*weight)*100)/100;
+    used=Math.round((used+valor)*100)/100;
+    return {...p,valor};
+  });
 }
 function blingHubOrderPutPayload(current:any,desired:any){
   const keep=["dataSaida","dataPrevista","numeroPedidoCompra","loja","vendedor","situacao","unidadeNegocio","categoria","tributacao","intermediador","taxas","parcelas"];
@@ -7855,6 +8651,7 @@ function blingHubOrderPutPayload(current:any,desired:any){
     if(current?.[key]!==undefined&&current?.[key]!==null)payload[key]=current[key];
   }
   Object.assign(payload,desired||{});
+  if(Array.isArray(payload.parcelas)&&Number.isFinite(Number(desired?.total)))payload.parcelas=blingHubRebalanceInstallmentsForTotal(payload.parcelas,Number(desired?.total));
   payload.transporte={
     ...(current?.transporte&&typeof current.transporte==="object"?current.transporte:{}),
     ...(desired?.transporte&&typeof desired.transporte==="object"?desired.transporte:{})
@@ -7907,7 +8704,7 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
   };
   if(!jobs.length)return summary;
 
-  const token=await blingHubOauth(sb);
+  let token=""; // Acquire OAuth only when a generic order needs it; target-state recovery has its own token.
   let canaryWriteAttempted=false;
   let canaryWriteFailed=false;
 
@@ -8038,6 +8835,7 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
       }
 
       const externalKey=String(preview.external_key);
+      if(!token)token=await blingHubOauth(sb);
       const existing=await blingHubFindOrderByExternalKey(sb,token,externalKey);
 
       if(!existing.ok){
@@ -8266,13 +9064,16 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
       if(existing.match){summary.existing++;}else{summary.created++;}
     }catch(e){
       const msg=clean((e as Error)?.message||e,500);
+      // A contested OAuth token is transient: retry with backoff, not manual review.
+      const transient=/\b(oauth_busy|oauth_temporarily_unavailable|rate_limit|timeout)\b/i.test(msg);
+      const jobStatus=transient?"retry":"review_required";
       await sb.rpc("finish_bling_hub_job_v2",{
-        p_job_id:job.id,p_status:"review_required",p_result:{},
-        p_error_code:"order_worker_exception",p_error_message:msg,
+        p_job_id:job.id,p_status:jobStatus,p_result:{retryable:transient},
+        p_error_code:transient?"order_worker_transient":"order_worker_exception",p_error_message:msg,
         p_http_status:null,p_retry_seconds:120,p_provider_id:null
       });
-      if(firstOrderCanary&&canaryWriteAttempted)canaryWriteFailed=true;
-      summary.review_required++;
+      if(firstOrderCanary&&canaryWriteAttempted&&!transient)canaryWriteFailed=true;
+      summary[jobStatus]++;
     }
   }
 
@@ -9055,6 +9856,10 @@ Deno.serve(async(req:Request)=>{
         const result=await blingHubReconcileCustomersReadonly(sb,body?.limit);
         return json(result,200);
       }
+      if(subaction==="contact_lookup_by_document_readonly"){
+        const result=await blingHubContactByDocumentReadonly(sb,body?.document);
+        return json(result,result.ok?200:Number(result.status||502));
+      }
       if(subaction==="reconcile_customer_readonly"){
         const result=await blingHubReconcileCustomerReadonly(sb,body?.customer_id);
         return json(result,result.ok?200:Number(result.status||409));
@@ -9139,6 +9944,14 @@ Deno.serve(async(req:Request)=>{
         const result=await blingHubVitrineDispatchFiscalGate(sb,body?.source_order_id);
         return json(result,result.ok?200:Number(result.status||409));
       }
+      if(subaction==="fiscal_nfe_draft_probe_v2"){
+        const result=await blingHubFiscalDraftProbeV2(sb,body);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="fiscal_nfe_autorecovery_v1"){
+        const result=await blingHubFiscalNfeAutoRecovery(sb,body?.limit);
+        return json(result,result.ok?200:409);
+      }
       if(subaction==="fiscal_dispatch_reconcile"){
         const result=await blingHubVitrineDispatchFiscalReconcile(sb,body?.source_order_id);
         return json(result,result.ok?200:Number(result.status||409));
@@ -9177,6 +9990,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="fiscal_confirm_payment"){
         const result=await blingHubVitrineConfirmFiscalPayment(sb,body?.source_order_id,body?.payment_method);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="quote_order_preview"||subaction==="quote_order_convert"){
+        const result=await blingHubQuoteOrderConvert(sb,body?.quote_id,subaction==="quote_order_preview");
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="process_order_jobs"){

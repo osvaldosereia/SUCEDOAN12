@@ -30,6 +30,10 @@ assert.equal(media.isAllowedAttendanceMime('audio/ogg; codecs=opus'),true);
 assert.equal(media.isAllowedAttendanceMime('application/pdf'),true);
 assert.equal(media.isAllowedAttendanceMime('text/html'),false,'HTML ativo não deve ser cacheado como mídia');
 assert.equal(media.safeAttendanceFilename('../../Comprovante.pdf'),'Comprovante.pdf');
+assert.equal(media.safeAttendanceFilename('Achocolatado-em-Pó-Nescau-550-g.jpg'),'Achocolatado-em-Po-Nescau-550-g.jpg','chave do Storage não pode manter acentos');
+assert.equal(media.safeAttendanceFilename('Água-Sanitária-Cloro-Ativo-Ypê-5-L.jpg'),'Agua-Sanitaria-Cloro-Ativo-Ype-5-L.jpg','acentos portugueses devem ser transliterados para ASCII');
+assert.equal(media.safeAttendanceFilename('Açúcar Cristal 2 kg.png'),'Acucar Cristal 2 kg.png','cedilha deve ser removida sem perder o nome');
+assert.doesNotMatch(media.safeAttendanceFilename('Água Sanitária Ypê.jpg'),/[^\x20-\x7E]/,'filename seguro precisa ser ASCII para chave do Supabase Storage');
 
 assert.match(api,/READ_ACTIONS[^\n]*"media"/);
 assert.match(api,/MEDIA_BUCKET\s*=\s*["']attendance-media-v1["']/);
