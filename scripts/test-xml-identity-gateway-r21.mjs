@@ -5,7 +5,9 @@ const dirs=["supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/",
  "supabase/functions/purchase-xml-v1/"];
 const s=read(dirs[0]+"index.ts"),ui=read("vitrine/admin/index.html");
 assert.equal(s,read(dirs[1]+"index.ts"),"backend mirrors not identical");
-assert.match(s,/if\(body\?\.catalog_evidence_only===true&&!\["owner","admin"\]\.includes\(a\.role\)\)/);
+assert.match(s,/if\(action==="resolve_item_identity"\)\{if\(a\.internal\)return js\(req,\{ok:false,error:"human_confirmation_required"\},409\)/);
+assert.match(s,/if\(body\?\.catalog_evidence_only!==true\)return js\(req,\{ok:false,error:"xml_catalog_evidence_only_required"\},409\)/);
+assert.match(s,/if\(!\["owner","admin"\]\.includes\(a\.role\)\)return js\(req,\{ok:false,error:"human_admin_required"\},403\)/);
 const start=s.indexOf("async function resolvePurchaseItemIdentity("),
  boundary=s.indexOf('  if(!["base_unit","package"].includes(role))',start);
 assert.ok(start>=0&&boundary>start,"No isolated catalog branch");
