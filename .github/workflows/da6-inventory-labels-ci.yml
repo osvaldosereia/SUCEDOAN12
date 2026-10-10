@@ -1,0 +1,251 @@
+name: DA6 Etiquetas e Balanço — testes determinísticos
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/inventory-label-*'
+      - 'vitrine/admin/product-shelf-*'
+      - 'vitrine/admin/product-label-print.css'
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/inventory-label-*'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/migrations/*da6*'
+      - 'tests/da6-*'
+      - 'tests/inventory-label-*'
+      - '.github/workflows/da6-inventory-labels-ci.yml'
+concurrency:
+  group: da6-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+jobs:
+  deterministic-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar somente bibliotecas de geração e leitura QR para teste
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund --prefix /tmp/da6-qr-integration jsqr@1.4.0 qrcode-generator@1.4.4 jsbarcode@3.11.6 puppeteer-core@24 pngjs@7.0.0
+      - name: Descobrir Chrome para testar layout impresso
+        run: |
+          CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME_BIN" || (echo "Chrome não instalado no runner" && exit 1)
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+      - name: Testar leitura óptica, impressão e upload resiliente
+        env:
+          NODE_PATH: /tmp/da6-qr-integration/node_modules
+        run: node --test $(find tests -maxdepth 1 -name 'da6-*.test.cjs' ! -name 'da6-worker-concurrency.test.cjs' | sort) tests/inventory-label-*.test.cjs
+      - name: Validar sintaxe dos módulos do navegador
+        run: |
+          node --check vitrine/admin/inventory-label-photo-upload.js
+          node --check vitrine/admin/inventory-label-photo-tab.js
+          node --check vitrine/admin/inventory-label-photo-review.js
+          node --check vitrine/admin/inventory-label-photo-reader.js
+          node --check vitrine/admin/inventory-label-omr-geometry.js
+          node --check vitrine/admin/product-shelf-admin-ui.js
+          node --check vitrine/admin/product-shelf-labels.js
+
+  edge-types:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Checar tipagem do motor OMR e API de fotos para Supabase Edge
+        run: |
+          deno check --node-modules-dir=auto supabase/functions/admin-products-live-v1/inventory-label-worker.ts
+          deno check --node-modules-dir=auto supabase/functions/admin-products-live-v1/inventory-label-photo-api.ts
+      - name: Verificar sintaxe TypeScript do gateway central sem falsos positivos de tipos legados
+        run: |
+          deno eval --allow-read --node-modules-dir=auto '
+            import ts from "npm:typescript@5.9.3";
+            const filename="supabase/functions/admin-products-live-v1/index.ts";
+            const source=await Deno.readTextFile(filename);
+            const ast=ts.createSourceFile(filename,source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TS);
+            if(ast.parseDiagnostics.length){
+              for(const d of ast.parseDiagnostics) console.error(ts.flattenDiagnosticMessageText(d.messageText,"\\n"));
+              Deno.exit(1);
+            }
+            console.log("DA6 gateway central TypeScript syntax OK");
+          '
+      - name: Executar codec real PNG JPEG WebP em WASM/Deno
+        run: deno test --allow-read --allow-env --node-modules-dir=auto tests/da6-edge-codec.test.ts tests/da6-worker-edge-queue.test.ts tests/da6-photo-confirm-cas.test.ts
+
+  postgres-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: da6_homologation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: da6_homologation
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar cliente PostgreSQL, se ausente
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+      - name: Validar migração de revisão com rollback e ACL
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/da6-review-postgres-fixture.sql \
+            -f supabase/migrations/20261009140500_da6_manual_review_audit_v1.sql \
+            -f tests/da6-review-postgres-assertions.sql \
+            -f tests/da6-review-extended-assertions.sql
+
+
+  postgres-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: da6_upload_homologation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: da6_upload_homologation
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar cliente PostgreSQL
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+      - name: Testar reserva de lote e limite transacional sem credenciais de produção
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/da6-upload-postgres-fixture.sql \
+            -f supabase/migrations/20261009150000_da6_upload_atomic_reservation_v1.sql \
+            -f tests/da6-upload-postgres-assertions.sql
+
+
+  postgres-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: da6_worker_homologation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: da6_worker_homologation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar cliente SQL e pg somente para teste
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          npm install --no-save --ignore-scripts --no-audit --no-fund --prefix /tmp/da6-pg pg@8.13.3
+      - name: Montar fila e funções em banco PostgreSQL17 efêmero
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/da6-worker-postgres-fixture.sql \
+            -f supabase/migrations/20261009112000_da6_worker_queue_rpc.sql
+      - name: Verificar agendador sem atingir URL de produção
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/da6-cron-staging-fixture.sql \
+            -f supabase/migrations/20261009133000_da6_worker_dispatch_cron_v1.sql \
+            -f tests/da6-cron-staging-assertions.sql
+      - name: Exercitar 100 tarefas e workers concorrentes em sessões reais
+        env:
+          NODE_PATH: /tmp/da6-pg/node_modules
+        run: node --test tests/da6-worker-concurrency.test.cjs
+
+
+  local-supabase-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      # SHA imutável de supabase/setup-cli v3.0.1; v3 resolve CLI via npm (não via GitHub releases).
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359
+        with:
+          version: 2.120.0
+      - name: Verificar versão instalada do Supabase CLI
+        run: supabase --version
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Subir Supabase LOCAL em diretório descartável
+        run: |
+          mkdir -p /tmp/da6-supabase-ci
+          cd /tmp/da6-supabase-ci
+          supabase init
+          supabase start -x studio,realtime,analytics,vector,inbucket,imgproxy
+          # O CLI retorna valores entre aspas; GITHUB_ENV não as remove automaticamente.
+          # Copiar valores sem aspas sem imprimir tokens efêmeros nos logs.
+          while IFS='=' read -r name value; do
+            value="${value%\"}"
+            value="${value#\"}"
+            printf '%s=%s\n' "$name" "$value" >> "$GITHUB_ENV"
+          done < <(supabase status -o env)
+      - name: Preparar schema DA6 isolado para Auth, Storage e PostgREST
+        run: |
+          psql -v ON_ERROR_STOP=1 "$DB_URL" \
+            -f tests/da6-local-supabase-bootstrap.sql \
+            -f supabase/migrations/20261009112000_da6_worker_queue_rpc.sql \
+            -f supabase/migrations/20261009150000_da6_upload_atomic_reservation_v1.sql \
+            -f supabase/migrations/20261009140500_da6_manual_review_audit_v1.sql
+      - name: Upload assinado REAL 10, 50, 100 e leitura pelo worker após fechar navegador
+        run: deno test --allow-net --allow-env --allow-read --node-modules-dir=auto tests/da6-local-supabase-e2e.test.ts
+      - name: Parar e destruir contêineres da homologação
+        if: always()
+        run: |
+          if [ -d /tmp/da6-supabase-ci ]; then
+            (cd /tmp/da6-supabase-ci && supabase stop --no-backup) || true
+          else
+            echo 'Supabase local não foi inicializado; nenhuma limpeza necessária.'
+          fi
