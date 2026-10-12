@@ -314,6 +314,16 @@ function bindTemplateView(root){
   root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');setSyncButtonState('idle',activeChannel);templates=[];templatesLoaded=false;renderList(root);loadTemplates({channel:activeChannel}).catch(()=>{})});
   root.querySelector('[data-template-sync]')?.addEventListener('click',()=>loadTemplates({sync:true,channel:activeChannel}));
   root.querySelector('[data-template-create]')?.addEventListener('click',()=>openBuilder('create'));
+  root.querySelector('[data-postorder-provision]')?.addEventListener('click',async()=>{
+    const btn=root.querySelector('[data-postorder-provision]');if(btn.disabled)return;
+    btn.disabled=true;btn.textContent='Solicitando...';
+    try{
+      const reply=await adminPost(TEMPLATE_API,'postorder_provision',{});
+      notify((reply.results||[]).map(r=>r.channel+': '+r.status).join(' · '),'success');
+      await loadTemplates({sync:true,channel:activeChannel});
+    }catch(e){notify('Falha na preparação dos templates: '+String(e.message||e).slice(0,120),'error')}
+    finally{btn.disabled=false;btn.textContent='Preparar botões dos pedidos'}
+  });
   root.querySelectorAll('[data-template-filter]').forEach(input=>input.addEventListener(input.tagName==='INPUT'?'input':'change',()=>renderList(root)));
 }
 
@@ -323,7 +333,7 @@ async function mountTemplateView(root=document.querySelector('#content')){
   root.innerHTML=`<div class="marketing-template-center">
     <div class="page-head"><div><h1>Marketing</h1><p>Templates oficiais da Meta. Gestão separada de campanhas.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
     <div class="marketing-template-subnav" data-marketing-subnav>${marketingNavHtml('templates')}</div>
-    <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync data-sync-state="idle" aria-busy="false">Sincronizar</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
+    <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync data-sync-state="idle" aria-busy="false">Sincronizar</button><button type="button" data-postorder-provision>Preparar botões dos pedidos</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
     ${renderFilters(root)}
     <div class="marketing-template-status" data-template-center-status>Carregando somente quando esta aba é aberta…</div>
     <div class="marketing-template-list" data-template-list></div>

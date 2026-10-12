@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {buildTemplateCacheRows,listTemplatesViaMeta,createTemplateViaMeta,editTemplateViaMeta,deleteTemplateViaMeta,MetaTemplatesError} from "../_shared/whatsapp-meta-templates-v1.mjs";
 import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
+import {buildPostorderTemplate} from "../_shared/customer-postorder-template-v3.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -27,10 +28,10 @@ async function adminAuth(req:Request){
   if(!token)return {ok:false as const,status:401,error:"admin_auth_required"};
   const user=await db.auth.getUser(token);
   if(user.error||!user.data?.user?.id)return {ok:false as const,status:401,error:"admin_session_invalid"};
-  const row=await db.from("admin_users").select("user_id,is_active").eq("user_id",user.data.user.id).eq("is_active",true).maybeSingle();
+  const row=await db.from("admin_users").select("user_id,role,is_active").eq("user_id",user.data.user.id).eq("is_active",true).maybeSingle();
   if(row.error)return {ok:false as const,status:500,error:"admin_auth_lookup_failed"};
   if(!row.data?.user_id)return {ok:false as const,status:403,error:"admin_not_authorized"};
-  return {ok:true as const,status:200,user_id:user.data.user.id};
+  return {ok:true as const,status:200,user_id:user.data.user.id,role:String(row.data.role||"viewer")};
 }
 
 async function accountById(accountId:string){
@@ -112,6 +113,37 @@ async function markUncertain(claim:any,errorCode:string){
   return {ok:false,error:"meta_send_uncertain",uncertain:true,retryable:false,outbox_id:claim?.outbox_id};
 }
 
+async function provisionPostorderTemplates(){
+  if(!metaReady())return {ok:false,error:"meta_transport_not_configured"};
+  const results:any[]=[];
+  for(const channel of ["0975","1018"] as const){
+    const q=await db.from("whatsapp_accounts").select("id,slug,display_name,waba_id,phone_number_id,is_active")
+      .eq("slug","dona-antonia-"+channel).eq("is_active",true).maybeSingle();
+    if(q.error)throw q.error;
+    const account=q.data;
+    if(!account){results.push({channel,error:"account_not_found"});continue}
+    const sync=await syncTemplates(account);
+    if(sync?.ok!==true){results.push({channel,error:sync?.error||"template_sync_failed"});continue}
+    const draft=buildPostorderTemplate(channel);
+    const saved=(await cachedTemplates(account.id)).find((t:any)=>t.name===draft.name&&t.language==="pt_BR");
+    if(saved){results.push({channel,name:draft.name,status:saved.status,created:false});continue}
+    try{
+      await createTemplateViaMeta({
+        accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,
+        graphVersion:META_WHATSAPP_GRAPH_VERSION,template:draft,timeoutMs:20000
+      });
+      const synced=await syncTemplates(account);
+      const row=synced?.ok===true?(await cachedTemplates(account.id)).find((t:any)=>t.name===draft.name):null;
+      results.push({channel,name:draft.name,status:row?.status||"PENDING",created:true,sync_pending:synced?.ok!==true});
+    }catch(error){
+      if(error instanceof MetaTemplatesError){
+        results.push({channel,name:draft.name,error:error.code,requires_sync:error.retryable===true});
+      }else throw error;
+    }
+  }
+  return {ok:results.every(x=>!x.error),results};
+}
+
 async function dispatchTemplate(outboxId:string){
   const claimed=await db.rpc("ops2_admin_attendance_claim_template_outbox_v1",{p_outbox_id:outboxId});
   if(claimed.error)throw claimed.error;
@@ -183,6 +215,12 @@ Deno.serve(async(req:Request)=>{
         return json(req,dispatched,dispatched?.ok===true?200:502);
       }
 
+      if(action==="postorder_provision"){
+        if(auth.role!=="owner")return json(req,{ok:false,error:"forbidden"},403);
+        if(Object.keys(body||{}).length)return json(req,{ok:false,error:"unexpected_fields"},400);
+        const result=await provisionPostorderTemplates();
+        return json(req,result,result.ok===true?200:502);
+      }
       if(action!=="create"&&action!=="edit"&&action!=="delete")return json(req,{ok:false,error:"action_not_allowed"},404);
       if(mutationFieldsBlocked(body,action))return json(req,{ok:false,error:"mutation_fields_not_allowed"},400);
       if(!metaReady())return json(req,{ok:false,error:"meta_transport_not_configured"},503);
