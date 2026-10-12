@@ -2,7 +2,7 @@
 (()=>{'use strict';
 const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/order-customer-actions-v1';
 const KEY_PREFIX='da_customer_action_v1:',HEX=/^[a-f0-9]{64}$/i,VIEW=/^[a-f0-9]{16}$/i;
-const state={token:'',viewToken:'',data:null,busy:false,loaded:false};
+const state={token:'',viewToken:'',data:null,busy:false,loaded:false,notice:'',noticeError:false};
 const $=s=>document.querySelector(s);
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const escapeText=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -54,19 +54,20 @@ panel.id='postorderCustomerActions';
 panel.className='card';
 panel.style.cssText='margin-top:16px;padding:18px;border-radius:14px;display:none';
 function setStatus(message,error=false){
+ state.notice=message;state.noticeError=error;
  const target=panel.querySelector('[data-customer-status]');
  if(target){target.textContent=message;target.style.color=error?'#a02f27':'#276b43'}
 }
 async function startAddon(){
- if(state.busy)return;state.busy=true;renderPanel();
+ if(state.busy)return;state.notice='';state.busy=true;renderPanel();
  try{
   const info=await api('addon_session','POST',{});
   location.href='/adicionar/?k='+encodeURIComponent(state.viewToken)+'#t='+encodeURIComponent(info.addon_token);
- }catch(e){setStatus(label(e.code),true);state.busy=false;renderPanel()}
+ }catch(e){state.busy=false;renderPanel();setStatus(label(e.code),true)}
 }
 async function confirm(){
  if(state.busy||!state.data?.can_confirm)return;
- const agreed=window.confirm('Confirmar seu pedido no valor total de '+money(state.data.total)+'? Depois de confirmar, não será possível acrescentar ofertas.');
+ state.notice='';const agreed=window.confirm('Confirmar seu pedido no valor total de '+money(state.data.total)+'? Depois de confirmar, não será possível acrescentar ofertas.');
  if(!agreed)return;
  state.busy=true;renderPanel();
  try{
@@ -104,6 +105,7 @@ function renderPanel(){
   '<p data-customer-status role="status" aria-live="polite" style="font-size:13px;margin:8px 0 0"></p>';
  $('#postorderOffers').onclick=startAddon;
  $('#postorderConfirm').onclick=confirm;
+ if(state.notice)setStatus(state.notice,state.noticeError);
 }
 function render(data){
  if(!state.loaded||!state.data)return;
