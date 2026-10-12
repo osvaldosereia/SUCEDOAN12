@@ -22,6 +22,18 @@ const ORDER_TEMPLATE_BY_CHANNEL:Record<Channel,string>={
   "1018":"pedidoorganizadosite1018v2"
 };
 const ORDER_TEMPLATE_LANGUAGE="pt_BR";
+const ORDER_CUSTOMER_ACTION_BY_CHANNEL:Record<Channel,string>={
+  "0975":"pedidoorganizadosite0975v3",
+  "1018":"pedidoorganizadosite1018v3"
+};
+const customerActionToken=()=>{
+  const bytes=crypto.getRandomValues(new Uint8Array(32));
+  return [...bytes].map(x=>x.toString(16).padStart(2,"0")).join("");
+};
+async function sha256Hex(value:string){
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
 
 const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
   status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}
@@ -383,7 +395,31 @@ Deno.serve(async(req:Request)=>{
     items_text:details.itemsText
   };
 
-  const templateName=ORDER_TEMPLATE_BY_CHANNEL[channel];
+  let templateName=ORDER_TEMPLATE_BY_CHANNEL[channel];
+  // Never switch to an unapproved template. Legacy v2 remains the safe fallback.
+  let customerActionCode:string|null=null;
+  try{
+    const candidateName=ORDER_CUSTOMER_ACTION_BY_CHANNEL[channel];
+    const candidateQ=await db.from("whatsapp_templates_v1")
+      .select("name,status,components").eq("whatsapp_account_id",account.id).eq("name",candidateName).eq("language","pt_BR").maybeSingle();
+    if(!candidateQ.error&&candidateQ.data?.status==="APPROVED"){
+      const blocks=Array.isArray(candidateQ.data.components)?candidateQ.data.components:[];
+      const buttons=blocks.find((c:any)=>String(c.type||"").toUpperCase()==="BUTTONS");
+      const urlBtn=(Array.isArray(buttons?.buttons)?buttons.buttons:[]).find((b:any)=>
+        String(b.type||"").toUpperCase()==="URL"&&String(b.url||"")==="https://donaantonia.com.br/pedido/?c={{1}}" );
+      const body=blocks.find((c:any)=>String(c.type||"").toUpperCase()==="BODY");
+      if(urlBtn&&String(body?.text||"").includes("{{13}}")&&!String(body?.text||"").includes("{{14}}")){
+        const secret=customerActionToken();
+        const issued=await db.rpc("ops3_issue_customer_order_action_v1",{
+          p_order_id:orderId,p_token_hash:await sha256Hex(secret)
+        });
+        if(issued.error||issued.data?.ok!==true)throw new Error("customer_action_issue_failed");
+        templateName=candidateName;
+        customerActionCode=secret;
+      }
+    }
+  }catch(e){console.error("customer_action_template_gate",text((e as Error)?.message||e,130));}
+
   const components=[{type:"body",parameters:[
     {type:"text",text:text(details.orderDate,40)},
     {type:"text",text:publicOrderCode},
@@ -398,9 +434,13 @@ Deno.serve(async(req:Request)=>{
     {type:"text",text:text(details.itemsText,180)},
     {type:"text",text:text(details.totalFormatted,30)},
     {type:"text",text:text(details.paymentLabel,50)},
-    {type:"text",text:publicOrderUrl}
-  ]}];
-  const metaRequest:JsonRecord={provider:"meta",dispatch_scope:scope,template_name:templateName,language_code:ORDER_TEMPLATE_LANGUAGE,components};
+    ...(customerActionCode?[]:[{type:"text",text:publicOrderUrl}])
+  ]},...(customerActionCode?[{
+    type:"button",sub_type:"url",index:"0",parameters:[{type:"text",text:customerActionCode}]
+  }]:[])];
+  const metaRequest:JsonRecord={provider:"meta",dispatch_scope:scope,template_name:templateName,language_code:ORDER_TEMPLATE_LANGUAGE,
+    components:components.map((component:any)=>component.type==="button"?{...component,parameters:[{type:"text",text:"[REDACTED]"}]}:component),
+    customer_action_button:customerActionCode!==null};
 
   try{
     const audit=await db.from("ops2_whatsapp_outbox_v1")

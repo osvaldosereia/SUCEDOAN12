@@ -110,10 +110,21 @@ function normalizeButtons(rawButtons){
     if(!text)throw fail('meta_template_buttons_invalid');
     if(type==='QUICK_REPLY')return {type,text};
     const urlRaw=clean(raw?.url,2000);
-    if(!urlRaw||/\{\{\d+\}\}/.test(urlRaw))throw fail('meta_template_buttons_invalid');
+    const dynamic=/\{\{1\}\}$/.test(urlRaw);
+    if(!urlRaw||(/\{\{\d+\}\}/.test(urlRaw)&&!dynamic))throw fail('meta_template_buttons_invalid');
     let url;
-    try{url=new URL(urlRaw);}catch{throw fail('meta_template_buttons_invalid')}
+    try{url=new URL(dynamic?urlRaw.replace(/\{\{1\}\}$/,'0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'):urlRaw);}
+    catch{throw fail('meta_template_buttons_invalid')}
     if(url.protocol!=='https:'||url.username||url.password)throw fail('meta_template_buttons_invalid');
+    if(dynamic){
+      // Dynamic customer-action links are limited to this approved, first-party path.
+      if(url.hostname!=='donaantonia.com.br'||url.pathname!=='/pedido/'||url.searchParams.size!==1||
+         !url.searchParams.has('c')||url.hash)throw fail('meta_template_buttons_invalid');
+      const examples=raw?.example;
+      if(!Array.isArray(examples)||examples.length!==1||!/^[a-f0-9]{64}$/.test(String(examples[0]||'')))
+        throw fail('meta_template_examples_required');
+      return {type,text,url:urlRaw,example:examples};
+    }
     return {type,text,url:url.toString()};
   });
 }
@@ -139,7 +150,7 @@ export function validateTemplateDraft(input){
     if(type==='BODY'){
       bodyCount++;
       if(bodyCount>1)throw fail('meta_template_components_invalid');
-      const text=clean(component.text,1024);
+      const text=String(component.text??'').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g,' ').trim().slice(0,1024);
       if(!text||text.length>1024)throw fail('meta_template_body_invalid');
       const placeholders=extractPlaceholders(text);
       const example=normalizeBodyExample(component.example,placeholders.length);

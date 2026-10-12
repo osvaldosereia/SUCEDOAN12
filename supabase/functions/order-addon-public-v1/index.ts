@@ -99,6 +99,8 @@ async function productsForSession(tokenHash:string,url:URL){
   let query=db.from("products")
     .select("id,name,image_url,price,offer_price,is_offer,packaging,brand")
     .eq("is_active",true)
+    .eq("is_offer",true)
+    .not("offer_price","is",null)
     .order("name")
     .range(offset,offset+fetchLimit-1);
   if(search)query=query.ilike("name",`%${search}%`);

@@ -8,6 +8,14 @@ on:
       - 'montar/**'
       - 'scripts/test-montar-picking-v1.mjs'
       - 'pedido/index.html'
+      - 'pedido/customer-actions.js'
+      - 'supabase/functions/order-customer-actions-v1/index.ts'
+      - 'supabase/migrations/*customer_postorder_confirmation_v1.sql'
+      - 'supabase/migrations/*order_addon_offers_only_v1.sql'
+      - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
+      - 'scripts/test-customer-postorder-flow-v1.mjs'
+      - 'scripts/meta-postorder-templates-v3.mjs'
       - 'p/index.html'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
       - 'scripts/test-order-manual-queue-v1.mjs'
@@ -45,6 +53,14 @@ on:
       - 'montar/**'
       - 'scripts/test-montar-picking-v1.mjs'
       - 'pedido/index.html'
+      - 'pedido/customer-actions.js'
+      - 'supabase/functions/order-customer-actions-v1/index.ts'
+      - 'supabase/migrations/*customer_postorder_confirmation_v1.sql'
+      - 'supabase/migrations/*order_addon_offers_only_v1.sql'
+      - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
+      - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
+      - 'scripts/test-customer-postorder-flow-v1.mjs'
+      - 'scripts/meta-postorder-templates-v3.mjs'
       - 'p/index.html'
       - 'scripts/test-admin-orders-clean-flow-v3.mjs'
       - 'scripts/test-order-manual-queue-v1.mjs'
@@ -89,6 +105,7 @@ jobs:
           node scripts/test-order-addon-foundation-v1.mjs
           node scripts/test-order-addon-atomic-v1.mjs
           node scripts/test-order-addon-public-storefront-v1.mjs
+          node scripts/test-customer-postorder-flow-v1.mjs
       - name: Existing WhatsApp transport contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
       - name: Public order storefront and printing
