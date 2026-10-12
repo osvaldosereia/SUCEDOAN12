@@ -78,4 +78,15 @@ await sendTemplateViaMeta({
 });
 assert.equal(sent[0].template.components[1].sub_type,'url');
 assert.equal(sent[0].template.components[1].parameters[0].text,token);
+const templatesApi=read('supabase/functions/admin-whatsapp-templates-v1/index.ts');
+const templatesAdmin=read('vitrine/admin/marketing/template-center.js');
+const canonicalMeta=read('supabase/functions/_shared/customer-postorder-template-v3.mjs');
+assert.match(templatesApi,/postorder_provision/,'owner-only provisioning endpoint must exist');
+assert.match(templatesApi,/auth\.role!=="owner"/,'only owner may submit official templates');
+assert.match(templatesApi,/await syncTemplates\(account\)/,'remote sync required before create to prevent duplicate templates');
+assert.match(templatesApi,/buildPostorderTemplate\(channel\)/,'provider uses canonical template builder');
+assert.match(templatesAdmin,/data-postorder-provision/,'admin exposes official CTA creation');
+assert.match(templatesAdmin,/adminPost\(TEMPLATE_API,'postorder_provision',\{\}\)/,'admin submits via authenticated endpoint');
+new vm.Script(templatesAdmin.replace(/^import[^\n]*\n/gm,''),{filename:'template-center.js'});
+new vm.Script(canonicalMeta.replace(/^export /gm,''),{filename:'canonical-template.mjs'});
 console.log('PASS: Meta Utility URL, 256-bit capability, offers only, CAS confirmation, storefront JS');
