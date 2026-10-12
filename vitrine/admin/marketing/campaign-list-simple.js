@@ -57,8 +57,7 @@ async function buildSimpleList(center,legacyHost){
   finally{refreshing=false}
 }
 
-function enhanceCampaignList(root=document.querySelector('#content')){const center=root?.querySelector?.('.marketing-campaign-center');const legacyHost=center?.querySelector?.('[data-campaign-list]');if(!center||!legacyHost||legacyHost.classList.contains('marketing-campaign-loading'))return;buildSimpleList(center,legacyHost)}
-function observe(){if(observerStarted)return;observerStarted=true;const observer=new MutationObserver(()=>queueMicrotask(()=>enhanceCampaignList()));observer.observe(document.documentElement,{subtree:true,childList:true});enhanceCampaignList()}
-observe();
+function enhanceCampaignList(root=document.querySelector('#content')){const center=root?.querySelector?.('.marketing-campaign-center');const legacyHost=center?.querySelector?.('[data-campaign-list]');if(!center||!legacyHost||legacyHost.classList.contains('marketing-campaign-loading')||center.querySelector('[data-simple-campaign-list]'))return;buildSimpleList(center,legacyHost)}
+// Do not reload the campaign list in response to mutations that rendering itself creates.
 window.DAMarketingCampaignListSimple={enhanceCampaignList,loadRecentCampaigns};
 export {enhanceCampaignList,loadRecentCampaigns};
