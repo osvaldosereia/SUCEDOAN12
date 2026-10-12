@@ -276,9 +276,21 @@ Deno.serve(async(req:Request)=>{
     }
 
     if(action!=="list"&&action!=="sync")return json(req,{ok:false,error:"action_not_allowed"},404);
+    // GET list/sync resolves the official channel server-side; it does not depend on
+    // the Attendance queue or a separate client-side accounts lookup.
     const accountId=validUuid(url.searchParams.get("account_id"));
-    if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
-    const account=await accountById(accountId);
+    const channel=String(url.searchParams.get("channel")||"");
+    if(!accountId&&!["0975","1018"].includes(channel))
+      return json(req,{ok:false,error:"channel_or_account_required"},400);
+    let account:any=null;
+    if(accountId)account=await accountById(accountId);
+    else{
+      const q=await db.from("whatsapp_accounts")
+        .select("id,slug,display_name,waba_id,phone_number_id,is_active")
+        .eq("slug","dona-antonia-"+channel).eq("is_active",true).maybeSingle();
+      if(q.error)throw q.error;
+      account=q.data||null;
+    }
     if(!account)return json(req,{ok:false,error:"account_not_found"},404);
     let sync=null;
     if(action==="sync"){
