@@ -5,7 +5,9 @@ const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
 const page=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
 const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
 
-assert.doesNotMatch(admin,/attendanceFrame|<iframe[^>]+atendimento/i,'Atendimento não pode ser embutido em iframe');
+assert.doesNotMatch(admin,/id=["']attendanceFrame["']|<iframe[^>]+id=["']attendanceFrame["']/i,'A navegação principal do Atendimento deve permanecer nativa');
+assert.match(admin,/id="orderChatFrame"/,'O painel temporário de pedido pode reutilizar o Atendimento sob demanda');
+assert.match(admin,/frame\.src='\/vitrine\/admin\/atendimento\/\?'/,'O painel de pedido só carrega Atendimento após clique');
 assert.doesNotMatch(admin,/data\?\.type\s*!==\s*['"]da-attendance['"]|parent\.postMessage/,'Admin não deve depender de bridge postMessage para Atendimento');
 assert.match(admin,/location\.(?:assign|href)\s*\(?['"]\/vitrine\/admin\/atendimento\//,'menu Atendimento deve navegar para a rota administrativa nativa');
 
