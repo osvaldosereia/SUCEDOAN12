@@ -1350,6 +1350,13 @@
   .order-chat-close{width:42px;height:42px;flex:0 0 auto;border:1px solid #d6e2d9;background:#fff;border-radius:12px;color:#263d30;font-size:24px;line-height:1}
   .order-chat-sheet iframe{border:0;width:100%;flex:1;min-height:0;background:#f6faf7}
   @media(max-width:700px){.order-chat-sheet{height:94dvh;height:94svh;border-radius:17px 17px 0 0}.order-chat-head{padding:8px 12px}.order-chat-heading strong{font-size:14px}.order-chat-close{width:40px;height:40px}}
+  .purchase-review-reminder{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px solid #e7d9ad;border-radius:12px;background:#fffaf0;padding:13px 15px;margin:0 0 12px}
+  .purchase-review-reminder strong{display:block;color:var(--ink);font-size:13px;margin-bottom:4px}
+  .purchase-review-reminder small{display:block;line-height:1.5;font-size:11px;color:var(--muted)}
+  .purchase-review-reminder.reviewed{background:#f6faf7;border-color:#d4e2d8}
+  .purchase-review-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .purchase-review-actions button{min-height:40px}
+  @media(max-width:620px){.purchase-review-actions{width:100%}.purchase-review-actions button{flex:1 1 125px}}
 </style>
 </head>
 <body>
@@ -5741,6 +5748,7 @@
         '</div>'+
       '</section>'+
       '<div class="purchase-source-note"><strong>Importação automática:</strong> o Admin importa notas já registradas como <b>Notas de compra</b> no Bling. As notas apenas <b>Ciente</b> na aba Notas recebidas não estão disponíveis por esta API. Para incluir uma dessas notas, importe o XML obtido pelo Bling quando disponível ou confirme a operação no Bling somente após verificar a compra e o recebimento. Não confirme apenas para fazê-la aparecer aqui.</div>'+
+      '<div id="purchaseBlingReceivedReview" class="purchase-review-reminder" role="status" aria-live="polite"><span class="sub">Verificando conferência diária do Bling…</span></div>'+
       '<details class="panel purchase-import-options"><summary>Outras opções de importação</summary>'+
         '<div class="purchase-toolbar-actions">'+
           '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar apenas 1 XML</button>'+
@@ -5773,6 +5781,40 @@
     syncPurchasePeriodControls();
     await loadPurchases();
   }
+  // Lembrete diário compartilhado entre operadores. Não é uma contagem real de NF-e.
+  function paintBlingReceivedReview(){
+    const host=$('#purchaseBlingReceivedReview');if(!host)return;
+    const r=state.purchaseBlingReceivedReview;
+    if(!r||r.ok!==true){
+      host.innerHTML='<span class="sub">Não foi possível verificar a conferência diária da equipe.</span>'+
+        '<button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Notas recebidas no Bling ↗</button>';
+    }else if(r.reviewed_today){
+      host.classList.add('reviewed');
+      const label=r.reviewed_by_name?' por '+esc(r.reviewed_by_name):'';
+      host.innerHTML='<span><strong>Notas recebidas conferidas hoje</strong><small>Registrado'+label+' às '+esc(dateTime(r.reviewed_at||''))+'. Isso não significa ausência de notas fiscais pendentes.</small></span>'+
+        '<button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Bling ↗</button>';
+    }else{
+      host.classList.remove('reviewed');
+      host.innerHTML='<span><strong>Conferir notas recebidas no Bling</strong>'+
+        '<small>Lembrete diário: veja se há novas NF-e para sua empresa. Não há contagem automática de notas pendentes.</small></span>'+
+        '<div class="purchase-review-actions"><button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Bling ↗</button>'+
+        '<button class="primary" type="button" id="purchaseReviewConfirm">Já conferi hoje</button></div>';
+    }
+    const open=$('#purchaseReviewOpenBling');
+    if(open)open.onclick=()=>window.open('https://www.bling.com.br/notas.entrada.php#list','_blank','noopener');
+    const confirm=$('#purchaseReviewConfirm');
+    if(confirm)confirm.onclick=async()=>{
+      if(confirm.disabled)return;
+      confirm.disabled=true;confirm.textContent='Registrando…';
+      try{
+        const check=await purchaseApi('bling_received_review_confirm');
+        if(!check?.ok)throw new Error('Não foi possível registrar a conferência.');
+        state.purchaseBlingReceivedReview=check;
+        paintBlingReceivedReview();
+        toast('Conferência diária registrada para a equipe');
+      }catch(e){confirm.disabled=false;confirm.textContent='Já conferi hoje';toast(errorMessage(e?.message||e))}
+    };
+  }
   async function loadPurchases(){
     const host=$('#purchaseBody');if(!host)return;
     if(!purchaseCustomRangeReady()){host.innerHTML='<div class="empty">Escolha as duas datas do período personalizado e clique em Aplicar.</div>';return}
@@ -5783,13 +5825,16 @@
         purchaseApi('summary',filter),
         purchaseApi('browse_bling',filter),
         purchaseApi('payment_accounts',{}),
-        purchaseApi('catalog_queue',{lookback_days:31})
+        purchaseApi('catalog_queue',{lookback_days:31}),
+        purchaseApi('bling_received_review_status',{})
       ]);
       if(results[0].status!=='fulfilled')throw results[0].reason;
       state.purchaseXml=results[0].value;
       state.purchaseBlingBrowse=results[1].status==='fulfilled'?results[1].value:{ok:false,error:results[1].reason?.message,documents:[],count:0};
       state.purchasePaymentAccounts=results[2].status==='fulfilled'?results[2].value:{ok:false,accounts:[],mappings:{},error:results[2].reason?.message};
       state.purchaseCatalogQueue=results[3].status==='fulfilled'?results[3].value:{ok:false,items:[],counts:{},error:results[3].reason?.message};
+      state.purchaseBlingReceivedReview=results[4].status==='fulfilled'?results[4].value:{ok:false};
+      paintBlingReceivedReview();
       paintPurchases();
     }catch(e){
       host.innerHTML='<div class="empty">Não consegui carregar Compras/XML. <button class="text" id="retryPurchases">Tentar novamente</button></div>';
