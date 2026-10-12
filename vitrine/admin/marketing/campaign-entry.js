@@ -12,7 +12,7 @@ function ensureMarketingPolish(){
   if(!marketingPolishPromise)marketingPolishPromise=import('/vitrine/admin/marketing/marketing-polish.js?v=marketing-polish-stable-v1').catch(error=>{console.warn('marketing-polish-load',String(error?.message||error).slice(0,160));return null});
   return marketingPolishPromise;
 }
-function ensureCampaignSimple(){if(!campaignSimplePromise)campaignSimplePromise=import('/vitrine/admin/marketing/campaign-simple-ui.js?v=marketing-campaign-simple-v1').catch(error=>{console.warn('marketing-campaign-simple-load',String(error?.message||error).slice(0,160));return null});return campaignSimplePromise}
+function ensureCampaignSimple(){if(!campaignSimplePromise)campaignSimplePromise=import('/vitrine/admin/marketing/campaign-simple-ui.js?v=marketing-campaign-stable-v1').catch(error=>{console.warn('marketing-campaign-simple-load',String(error?.message||error).slice(0,160));return null});return campaignSimplePromise}
 function ensureCampaignList(){if(!campaignListPromise)campaignListPromise=import('/vitrine/admin/marketing/campaign-list-simple.js?v=marketing-campaign-stable-v1').catch(error=>{console.warn('marketing-campaign-list-load',String(error?.message||error).slice(0,160));return null});return campaignListPromise}
 function ensureCarouselEditor(){if(!carouselEditorPromise)carouselEditorPromise=import('/vitrine/admin/marketing/template-carousel-editor.js?v=marketing-carousel-v1').catch(error=>{console.warn('marketing-carousel-load',String(error?.message||error).slice(0,160));return null});return carouselEditorPromise}
 function loadCampaignModule(){if(!campaignModulePromise)campaignModulePromise=import('/vitrine/admin/marketing/campaign-center.js?v=marketing-campaign-v1');return campaignModulePromise}
