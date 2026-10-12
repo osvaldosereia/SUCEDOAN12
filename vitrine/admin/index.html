@@ -5872,9 +5872,10 @@
       ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
       :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
     const existing=Boolean(prod?.id),inactive=existing&&prod.is_active===false,newFromXml=Boolean(prod?.metadata?.purchase_xml_created);
-    const approved=Boolean(x?.metadata?.catalog_approved_at),sync=x?.metadata?.bling_sale_status||'';
+    const approved=Boolean(x?.metadata?.catalog_approved_at),sync=x?.metadata?.bling_sale_status||'',costSync=x?.metadata?.bling_supplier_cost_status||'';
     const statusText=approved
-      ?'<div class="purchase-sync-status"><strong>✓ Atualizado no Admin</strong> · '+(sync==='confirmed'?'Preço confirmado no Bling':sync==='pending'||sync==='missing_link'?'Preço no Bling pendente':sync==='not_requested'?'Preço do Bling mantido':'Confira a sincronização no Bling')+'</div>'
+      ?'<div class="purchase-sync-status"><strong>✓ Atualizado no Admin</strong> · '+(sync==='confirmed'?'Preço confirmado no Bling':sync==='pending'||sync==='missing_link'?'Preço no Bling pendente':sync==='not_requested'?'Preço do Bling não foi alterado':'Preço no Bling não conferido')+
+      (costSync==='submitted'?' · custo enviado ao fornecedor no Bling (não verificado)':costSync==='pending'||costSync==='missing_supplier_link'||costSync==='missing_product_link'?' · custo Bling pendente':'')+'</div>'
       :'';
     const matchHtml=existing?'':'<div class="purchase-match-panel" data-purchase-match-panel>'+
       '<strong>1 · Identificar produto da nota</strong>'+
@@ -6058,7 +6059,7 @@
         '<span class="pill '+statusCls+'">'+esc(status)+'</span>'+
       '</div></div>'+
       (reason?'<div class="purchase-factor-hint warn-text" style="margin-bottom:8px">'+esc(reason)+'</div>':'')+
-      '<div class="purchase-field" style="margin-bottom:8px"><label>Nome do produto</label><input type="text" maxlength="300" data-catalog-product-name value="'+esc(prod.name||x.description||'')+'"><div class="purchase-factor-hint">Você pode editar o nome antes de salvar.</div></div>'+
+      '<div class="purchase-field" style="margin-bottom:8px"><label>Nome cadastrado (não alterado pela NF-e)</label><input type="text" maxlength="300" data-catalog-product-name readonly value="'+esc(prod.name||x.description||'')+'"><div class="purchase-factor-hint">O nome oficial permanece o mesmo. Para vincular um produto não identificado, abra a nota na lista acima.</div></div>'+
       '<div class="purchase-price-grid">'+
         '<div class="purchase-field"><label>Conversão para UN</label><input type="number" min="1" step="1" data-catalog-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint">'+(p.requires_conversion_confirmation?'Confira quantas UN existem em 1 '+esc(x.purchase_unit||'embalagem')+'.':'Compra: '+qtyText)+'</div></div>'+
         '<div class="purchase-price-box"><small>Quantidade final</small><strong data-catalog-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
@@ -6102,7 +6103,7 @@
       await purchaseApi('apply_item_update',{item_id:itemId,proposed_name:proposedName,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
       const result=card.querySelector('[data-catalog-result]');if(result)result.textContent='Atualizado';
       if(!quiet){
-        toast('Cadastro atualizado');
+        toast('Cadastro atualizado. Confira sincronização com Bling.');
         state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
         state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
         paintPurchases();
@@ -6852,7 +6853,6 @@
       '<details class="panel purchase-extra"><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
       purchaseCatalogQueueHtml()+
       xmlCatalogSectionHtml()+
-      purchasePaymentConfigHtml()+
       ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto.':'')+'</small></div>':'')+
       (last?'<div class="bling-banner"><strong>'+esc(runSource)+' · '+esc(runStatus)+'</strong><small>'+dateTime(last.started_at||last.created_at)+' · '+esc(last.documents_processed||0)+' nova(s) · '+esc(last.documents_duplicate||0)+' já existente(s) · '+esc(last.documents_failed||0)+' falha(s)</small></div>':'')+
       '<details class="panel" style="margin-top:14px"><summary class="history-title" style="cursor:pointer;padding:12px 14px"><div><strong>Comparar com as notas do Bling</strong><span>Lista somente para conferência; não é outra fila de trabalho.</span></div><b>'+blingDocs.length+'</b></summary>'+
@@ -8932,6 +8932,8 @@
 <script id="purchase-identity-ui-v1">
 // PURCHASE_IDENTITY_UI_V1
 (function(){
+  // A identificação funcional agora está no item da nota.
+  if(typeof paintPurchaseCatalogList==='undefined')return;
   const identityReasonLabel=(v)=>({base_gtin_confirmed:'Encontrado pelo EAN da unidade',package_gtin_confirmed:'Encontrado pelo EAN da caixa/embalagem',supplier_code_confirmed:'Encontrado pelo código deste fornecedor',legacy_gtin_exact:'Encontrado pelo EAN já cadastrado',human_confirmed_existing:'Vínculo confirmado manualmente',human_created_inactive:'Produto novo confirmado e criado inativo',created_from_gtin:'EAN importado sem confirmação de unidade/caixa',identity_confirmation_required:'Nenhuma correspondência confiável confirmada'})[v]||String(v||'Identificação pendente').replaceAll('_',' ');
   const inferredRole=(x)=>{const p=x.pricing_preview||{};if(x.gtin_role)return x.gtin_role;if(p.requires_conversion_confirmation||Number(p.suggested_conversion_factor||x.conversion_factor||0)>1||['CX','FD','PCT','DP'].includes(String(x.purchase_unit||'').toUpperCase()))return 'package';return 'base_unit'};
   const isIdentityUnresolved=(x)=>{const reasons=x?.flags?.review_reasons||[];return !x.product_id||x.match_method==='created_from_gtin'||x.identity_state==='unresolved'||reasons.includes('identity_confirmation_required')};
