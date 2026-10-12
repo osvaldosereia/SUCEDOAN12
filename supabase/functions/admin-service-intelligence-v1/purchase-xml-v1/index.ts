@@ -1726,7 +1726,7 @@ async function catalogQueue(windowInput:any=null){
       suggested_sale_price:suggestedSale,
       recommended_sale_price:recommendedSale,
       proposed_base_quantity:baseQty,
-      update_sale_recommended:Boolean(suggestedSale!==null&&(!Number.isFinite(currentSale)||Number(currentSale)<=0||Number(currentSale)+0.005<suggestedSale)),
+      update_sale_recommended:Boolean(needsBlingRetry||(suggestedSale!==null&&(!Number.isFinite(currentSale)||Number(currentSale)<=0||Number(currentSale)+0.005<suggestedSale))),
       base_unit:"UN",
       can_apply:safe
     }};
