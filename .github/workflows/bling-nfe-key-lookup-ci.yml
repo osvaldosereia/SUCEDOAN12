@@ -1,0 +1,28 @@
+name: Bling NF-e key lookup safety
+on:
+  push:
+    branches: ['agent/bling-nfe-key-catalog-20261012']
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
+      - 'supabase/functions/purchase-xml-v1/index.ts'
+      - 'scripts/test-purchase-bling-key-catalog-v1.mjs'
+      - '.github/workflows/bling-nfe-key-lookup-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
+      - 'supabase/functions/purchase-xml-v1/index.ts'
+      - 'scripts/test-purchase-bling-key-catalog-v1.mjs'
+      - '.github/workflows/bling-nfe-key-lookup-ci.yml'
+permissions:
+  contents: read
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node scripts/test-purchase-bling-key-catalog-v1.mjs
