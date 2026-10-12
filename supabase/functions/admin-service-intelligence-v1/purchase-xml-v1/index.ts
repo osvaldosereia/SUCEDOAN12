@@ -1712,7 +1712,7 @@ async function catalogQueue(windowInput:any=null){
       review_reasons:reasons,
       safe_to_approve:safe,
       needs_approval:needsApproval,
-      approved:Boolean(approvedAt&&!productNeedsReview),
+      approved:Boolean(approvedAt&&!productNeedsReview&&!needsBlingRetry),
       approved_at:approvedAt
     },pricing_preview:{
       markup_percent:40,
