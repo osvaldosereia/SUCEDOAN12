@@ -5871,6 +5871,22 @@
       ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
       :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
     const existing=Boolean(prod?.id),inactive=existing&&prod.is_active===false,newFromXml=Boolean(prod?.metadata?.purchase_xml_created);
+    const approved=Boolean(x?.metadata?.catalog_approved_at),sync=x?.metadata?.bling_sale_status||'';
+    const statusText=approved
+      ?'<div class="purchase-sync-status"><strong>✓ Atualizado no Admin</strong> · '+(sync==='confirmed'?'Preço confirmado no Bling':sync==='pending'||sync==='missing_link'?'Preço no Bling pendente':sync==='not_requested'?'Preço do Bling mantido':'Confira a sincronização no Bling')+'</div>'
+      :'';
+    const matchHtml=existing?'':'<div class="purchase-match-panel" data-purchase-match-panel>'+
+      '<strong>1 · Identificar produto da nota</strong>'+
+      '<p>Este item ainda não está ligado ao cadastro. Busque pelo EAN ou nome e confirme qual produto você vende por unidade. A vinculação não altera estoque, preço ou dados fiscais.</p>'+
+      '<div class="purchase-match-search"><input type="search" data-purchase-match-query placeholder="EAN ou nome do produto" value="'+esc(x.commercial_gtin||x.tax_gtin||x.description||'')+'"><button class="secondary" type="button" data-purchase-match-search>Buscar produto</button></div>'+
+      '<div data-purchase-match-results class="purchase-match-results"></div>'+
+      '<div data-purchase-match-selected class="purchase-match-selection">Nenhum produto selecionado.</div>'+
+      '<div class="purchase-match-options"><label>Este EAN é da <select data-purchase-match-role><option value="base_unit">Unidade vendida</option><option value="package">Embalagem fechada</option></select></label>'+
+      '<label>EAN usado <select data-purchase-match-source><option value="commercial">Comercial: '+esc(x.commercial_gtin||'—')+'</option><option value="tax">Tributável: '+esc(x.tax_gtin||'—')+'</option></select></label></div>'+
+      '<button class="primary" type="button" data-purchase-match-confirm disabled>Confirmar vínculo com o produto escolhido</button>'+
+      '<details class="purchase-create-item"><summary>Não encontrou? Criar produto novo inativo</summary><label>Nome da unidade vendida <input data-purchase-create-name value="'+esc(x.description||'')+'"></label><button type="button" class="secondary" data-purchase-match-create>Criar produto inativo e vincular</button></details>'+
+      '<div class="purchase-match-feedback" role="status" data-purchase-match-feedback></div>'+
+      '</div>';
     const needsFactor=Boolean(p.requires_conversion_confirmation);
     const evidence=p.conversion_suggestion_evidence?' · leitura: '+esc(p.conversion_suggestion_evidence):'';
     const factorHint=needsFactor
@@ -5884,13 +5900,13 @@
         '<small>'+esc(x.description||'')+' · EAN '+esc(x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado')+'</small>'+
         '<small><b>Compra:</b> '+qtyText+'</small></div>'+
         '<div class="purchase-item-badges">'+
-          '<span class="pill '+(existing?'':'warn')+'">'+(existing?'Vinculado':'Sem vínculo')+'</span>'+
+          '<span class="pill '+(existing?'':'warn')+'">'+(existing?'Produto identificado':'1. Vincular produto')+'</span>'+
           (newFromXml?'<span class="pill warn">Novo pelo XML</span>':'')+
           (inactive?'<span class="pill off">Inativo</span>':'')+
-          (needsFactor?'<span class="pill warn">Confirmar embalagem</span>':'<span class="pill">UN</span>')+
-        '</div></div>'+
+          (needsFactor?'<span class="pill warn">2. Conferir unidades da embalagem</span>':'<span class="pill">Unidade de venda</span>')+
+        '</div></div>'+statusText+matchHtml+
       '<div class="purchase-price-grid">'+
-        '<div class="purchase-field"><label>Conversão para unidade (UN)</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
+        '<div class="purchase-field"><label>Unidades vendidas em cada '+esc(x.purchase_unit||'embalagem')+'</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
         '<div class="purchase-price-box"><small>Quantidade final</small><strong data-purchase-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
         '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
         '<div class="purchase-price-box"><small>Custo novo / UN</small><strong class="accent" data-purchase-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
@@ -5898,8 +5914,78 @@
         '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-purchase-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint" data-purchase-sale-hint>'+esc(saleHint)+'</div></div>'+
       '</div>'+
       '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · autorizar este item não altera o estoque.</div></div>'+
-        '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'">Autorizar atualização</button><span class="purchase-approval-result" data-purchase-result></span></div></div>'+
+        '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'" '+(!existing?'disabled title="Vincule primeiro o produto acima"':'')+'>'+(approved?'Revisar atualização':'3. Salvar no Admin e sincronizar preço')+'</button><span class="purchase-approval-result" data-purchase-result role="status"></span></div></div>'+
     '</div>';
+  }
+  function purchaseXmlError(e){
+    const code=String(e?.message||e||'');
+    const map={
+      product_match_required:'Vincule primeiro o produto da nota com o cadastro.',
+      xml_catalog_evidence_only_required:'A identificação precisa passar pela confirmação segura.',
+      xml_identity_confirmation_required:'Confirme a identificação do produto.',
+      xml_identity_gtin_invalid:'O EAN da nota está inválido: verifique o produto antes de vincular.',
+      xml_identity_gtin_conflict:'Este EAN já pertence a outro produto. Selecione o produto correto.',
+      xml_identity_existing_gtin_mismatch:'EAN diferente do cadastro. Não altere a unidade sem conferir.',
+      xml_identity_already_resolved:'Esse produto já foi vinculado. Atualize a nota.',
+      xml_identity_verified_source_required:'XML original ainda não validado. Reimporte ou revise a nota.',
+      xml_identity_service_unavailable:'Não foi possível confirmar o vínculo no banco. Tente novamente.',
+      packaging_factor_must_be_greater_than_one:'Informe quantas unidades existem no fardo ou caixa (maior que 1).',
+      invalid_sale_price:'Digite um preço de venda válido.',
+      existing_product_name_preserved:'O nome cadastrado não é alterado pela nota de compra.',
+      xml_identity_operational_lot_review_required:'Já existe um recebimento vinculado a este item. Precisa de revisão antes de trocar o produto.'
+    };
+    return map[code]||((errorMessage(code)!=='Não consegui salvar agora.')?errorMessage(code):code.replace(/_/g,' ').slice(0,230));
+  }
+  async function purchaseSearchMatch(card){
+    const input=card.querySelector('[data-purchase-match-query]'),results=card.querySelector('[data-purchase-match-results]');
+    const query=String(input?.value||'').trim();
+    if(query.length<2){results.textContent='Digite o EAN ou pelo menos duas letras do nome.';return}
+    results.textContent='Procurando no cadastro…';
+    try{
+      const found=await purchaseApi('search_products',{query});
+      const products=found.items||[];
+      results.innerHTML=products.length?products.map(p=>
+        '<button type="button" class="purchase-match-choice" data-purchase-select-id="'+esc(p.id)+'">'+
+        '<strong>'+esc(p.name)+'</strong><small>EAN '+esc(p.gtin||'—')+' · '+(p.is_active===false?'inativo':'ativo')+'</small></button>'
+      ).join(''):'<small>Não encontrado. Confira a escrita ou utilize “Criar produto novo inativo”.</small>';
+      card._purchaseCandidates=products;
+      results.querySelectorAll('[data-purchase-select-id]').forEach(btn=>btn.onclick=()=>{
+        const product=products.find(p=>p.id===btn.dataset.purchaseSelectId);
+        if(!product)return;
+        card.dataset.purchaseSelectedId=product.id;
+        card.querySelector('[data-purchase-match-selected]').textContent='Selecionado: '+product.name+' · EAN '+(product.gtin||'sem EAN');
+        const detail=state.purchaseDetailCache?.[card.dataset.documentId],item=(detail?.items||[]).find(x=>x.id===card.dataset.purchaseItem);
+        const raw=String(product.gtin||''),commercial=String(item?.commercial_gtin||''),tax=String(item?.tax_gtin||'');
+        const source=card.querySelector('[data-purchase-match-source]');
+        if(source)source.value=raw&&raw===tax&&raw!==commercial?'tax':'commercial';
+        card.querySelector('[data-purchase-match-confirm]').disabled=false;
+        results.querySelectorAll('.purchase-match-choice').forEach(b=>b.classList.toggle('selected',b===btn));
+      });
+    }catch(e){results.textContent=purchaseXmlError(e)}
+  }
+  async function purchaseConfirmMatch(card,createNew=false){
+    const id=card.dataset.purchaseItem,docId=card.dataset.documentId,
+      productId=card.dataset.purchaseSelectedId||null,feedback=card.querySelector('[data-purchase-match-feedback]'),
+      factor=Number(card.querySelector('[data-purchase-factor]')?.value||0),
+      role=card.querySelector('[data-purchase-match-role]')?.value||'base_unit',
+      source=card.querySelector('[data-purchase-match-source]')?.value||'commercial',
+      name=String(card.querySelector('[data-purchase-create-name]')?.value||'').trim();
+    if(!createNew&&!productId){feedback.textContent='Busque e selecione um produto primeiro.';return}
+    if(!Number.isInteger(factor)||factor<1){feedback.textContent='Informe a quantidade de unidades por embalagem.';return}
+    if(role==='package'&&factor<=1){feedback.textContent='Se o EAN é da embalagem, ela precisa conter mais de uma unidade.';return}
+    if(createNew&&name.length<3){feedback.textContent='Informe o nome completo da unidade vendida.';return}
+    const button=card.querySelector(createNew?'[data-purchase-match-create]':'[data-purchase-match-confirm]');
+    button.disabled=true;feedback.textContent='Confirmando vínculo sem alterar estoque…';
+    try{
+      const payload={item_id:id,product_id:productId,create_new:createNew,proposed_name:createNew?name:null,
+        catalog_evidence_only:true,gtin_source:source,gtin_role:role,
+        conversion_factor:role==='package'?factor:1,
+        purchase_pack_units_for_review:role==='base_unit'&&factor>1?factor:null,
+        confirmation:createNew?'CRIAR_INATIVO_XML':'VINCULAR_ITEM_XML'};
+      await purchaseApi('resolve_item_identity',payload);
+      feedback.textContent='Produto vinculado. Carregando custo e preço…';
+      await refreshPurchaseAfterApproval(docId);
+    }catch(e){feedback.textContent=purchaseXmlError(e);button.disabled=false}
   }
   function recalcPurchaseItemCard(card,resetSale=true){
     if(!card)return;
@@ -6174,12 +6260,20 @@
       '<div class="purchase-detail-head"><div><h3>Produtos e preços</h3><p>'+esc(d.supplier_name||'Fornecedor')+' · '+items.length+' item(ns) · custos sempre calculados na unidade de venda (UN).</p></div>'+
       '<div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-inline-xml="'+esc(id)+'">Ver XML</button></div></div>'+
       '<div class="purchase-safe '+(d.recipient_kind==='CPF'?'purchase-danger':'')+'"><strong>Confira antes de atualizar o produto</strong><small>O custo vem da NF-e convertido para unidade. A margem de 40% é apenas o mínimo sugerido; se o preço atual já for maior, ele é mantido automaticamente.</small></div>'+
-      '<div class="purchase-items">'+(items.length?items.map(purchaseItemCardHtml).join(''):'<div class="empty">Nenhum item encontrado na nota.</div>')+'</div>'+
+      '<div class="purchase-items">'+(items.length?items.slice().sort((a,b)=>Number(Boolean(a?.metadata?.catalog_approved_at))-Number(Boolean(b?.metadata?.catalog_approved_at))).map(purchaseItemCardHtml).join(''):'<div class="empty">Nenhum item encontrado na nota.</div>')+'</div>'+
       '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Autorizar itens prontos</button></div>'+
-      purchaseFinanceBlockHtml(d)+
+      '<details class="purchase-receipt-stage"><summary>Etapa seguinte: recebimento e lotes do estoque (sem alterar estoque agora)</summary>'+
       purchaseReceiptLotsHtml(d,items,data?.receipt_lot_plan||null)+
-      purchaseStockBlockHtml(d,data?.receipt_plan||null,data?.receipt_lot_plan||null);
+      purchaseStockBlockHtml(d,data?.receipt_plan||null,data?.receipt_lot_plan||null)+'</details>';
     bindPurchaseReceiptLots(id);
+    host.querySelectorAll('[data-purchase-match-search]').forEach(b=>b.onclick=()=>purchaseSearchMatch(b.closest('.purchase-item-card')));
+    host.querySelectorAll('[data-purchase-match-query]').forEach(inp=>inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();purchaseSearchMatch(inp.closest('.purchase-item-card'))}});
+    host.querySelectorAll('[data-purchase-match-confirm]').forEach(b=>b.onclick=()=>purchaseConfirmMatch(b.closest('.purchase-item-card')));
+    host.querySelectorAll('[data-purchase-match-create]').forEach(b=>b.onclick=()=>purchaseConfirmMatch(b.closest('.purchase-item-card'),true));
+    host.querySelectorAll('[data-purchase-match-panel]').forEach(panel=>{
+      const card=panel.closest('.purchase-item-card');
+      if(card?.querySelector('[data-purchase-match-query]')?.value)purchaseSearchMatch(card);
+    });
     host.querySelectorAll('[data-purchase-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseItemCard(inp.closest('.purchase-item-card'),true));
     host.querySelectorAll('[data-purchase-approve-item]').forEach(b=>b.onclick=()=>applyPurchaseItemUpdate(b.dataset.purchaseApproveItem));
     const xmlBtn=host.querySelector('[data-purchase-inline-xml]');if(xmlBtn)xmlBtn.onclick=()=>downloadPurchaseXml(id);
@@ -6274,13 +6368,19 @@
     if(updateSale&&(!Number.isFinite(sale)||sale<0)){if(!quiet)toast('Informe um preço de venda válido');return false}
     const btn=card.querySelector('[data-purchase-approve-item]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
     try{
-      await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
-      const result=card.querySelector('[data-purchase-result]');if(result)result.textContent='Atualizado';
-      if(!quiet){toast('Cadastro do produto atualizado');await refreshPurchaseAfterApproval(docId)}
+      const response=await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+      const sync=response.catalog_sync||{},result=card.querySelector('[data-purchase-result]');
+      const message=sync.bling_price==='confirmed'?'✓ Admin e preço Bling confirmados':
+        sync.bling_price==='pending'||sync.bling_price==='missing_link'?'Admin atualizado · Bling pendente: '+(sync.bling_price_message||'revisar vínculo'):
+        '✓ Admin atualizado · preço Bling mantido'+(sync.bling_supplier_cost==='pending'?' · custo no Bling pendente':'');
+      if(result)result.textContent=message;
+      if(!quiet){toast(message.slice(0,130));await refreshPurchaseAfterApproval(docId)}
       return true;
     }catch(e){
-      if(!quiet)toast(errorMessage(e.message));
-      if(btn){btn.disabled=false;btn.textContent='Autorizar atualização'}
+      const message=purchaseXmlError(e),result=card.querySelector('[data-purchase-result]');
+      if(result)result.textContent='Não atualizado: '+message;
+      if(!quiet)toast(message);
+      if(btn){btn.disabled=false;btn.textContent='Tentar atualizar novamente'}
       return false;
     }
   }
@@ -6288,6 +6388,8 @@
     const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(!host)return;
     const cards=[...host.querySelectorAll('.purchase-item-card')];
     const ready=cards.filter(card=>{
+      const item=(state.purchaseDetailCache?.[id]?.items||[]).find(x=>x.id===card.dataset.purchaseItem);
+      if(!item?.product_id||item?.metadata?.catalog_approved_at)return false;
       const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
       const sale=Number(card.querySelector('[data-purchase-sale]')?.value||0);
       const updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
@@ -6304,9 +6406,9 @@
       const updateCost=Boolean(card.querySelector('[data-purchase-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
       const btn=card.querySelector('[data-purchase-approve-item]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
       try{
-        await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
-        ok++;const result=card.querySelector('[data-purchase-result]');if(result)result.textContent='Atualizado';
-      }catch(e){fail++;if(btn){btn.disabled=false;btn.textContent='Autorizar atualização'}}
+        const response=await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+        ok++;const result=card.querySelector('[data-purchase-result]');if(result)result.textContent='Admin atualizado · Bling '+(response.catalog_sync?.bling_price||'sem atualização de preço');
+      }catch(e){fail++;const result=card.querySelector('[data-purchase-result]');if(result)result.textContent=purchaseXmlError(e);if(btn){btn.disabled=false;btn.textContent='Tentar novamente'}}
     }
     toast(ok+' item(ns) atualizado(s)'+(fail?' · '+fail+' falha(s)':''));
     await refreshPurchaseAfterApproval(id);
@@ -6702,7 +6804,7 @@
     const posted=docs.filter(x=>x.finance_status==='posted'&&x.finance_reconciled_at).length;
     const paidConfirmed=docs.filter(x=>Boolean(x?.metadata?.settlement?.verified)).length;
     const paymentToConfirm=docs.filter(x=>purchasePaymentSummary(x)?.paid_at_purchase_likely&&x.finance_status==='posted'&&!x?.metadata?.settlement?.verified).length;
-    const attentionDocs=docs.filter(x=>x.processing_status==='review_required'||x.processing_status==='failed'||x.finance_status==='review'||x.finance_status==='pending_company_match'||x.receipt_status==='review'||(purchasePaymentSummary(x)?.paid_at_purchase_likely&&x.finance_status==='posted'&&!x?.metadata?.settlement?.verified));
+    const attentionDocs=docs.filter(x=>x.processing_status==='review_required'||x.processing_status==='failed'||x.receipt_status==='review');
     const ready=docs.filter(x=>x.receipt_status==='ready').length;
     const last=runs[0]||null;
     const lastAutomatic=runs.find(x=>x.source==='bling_daily')||null;
@@ -6740,13 +6842,13 @@
             '<div class="purchase-doc-row purchase-simple-row purchase-doc-clickable '+(state.purchaseExpandedId===x.id?'expanded':'')+'" data-purchase-toggle="'+esc(x.id)+'">'+
               '<div class="purchase-note-ref"><strong>'+esc(docRef)+'</strong><small>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</small></div>'+
               '<div class="history-main"><strong>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns) · '+esc(x.recipient_kind||'NF-e')+'</small></div>'+
-              '<div class="purchase-note-status"><span class="pill '+primaryClass+'">'+primaryStatus+'</span><small>'+esc(x.receipt_status==='received'?'Estoque verificado':x.finance_status==='review'?'Financeiro para revisar':'Produtos e recebimento')+'</small></div>'+
+              '<div class="purchase-note-status"><span class="pill '+primaryClass+'">'+primaryStatus+'</span><small>'+esc(x.receipt_status==='received'?'Estoque verificado':'Produtos e recebimento')+'</small></div>'+
               '<div class="purchase-actions"><button class="secondary" type="button" data-purchase-open="'+esc(x.id)+'">Conferir</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button></div>'+
             '</div><div class="purchase-doc-expanded" data-purchase-detail="'+esc(x.id)+'" style="display:none"></div></div>';
         }).join(''):'<div class="empty">Nenhuma nota importada neste período. Clique em “Buscar no Bling” ou “Importar XML”.</div>')+
         '<div class="empty" id="purchaseNoFilterResults" style="display:none">Nenhuma nota corresponde à pesquisa.</div>'+
       '</section>'+
-      '<details class="panel purchase-extra"><summary>Ferramentas avançadas: produtos, catálogo, financeiro e integração</summary>'+
+      '<details class="panel purchase-extra"><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
       purchaseCatalogQueueHtml()+
       xmlCatalogSectionHtml()+
       purchasePaymentConfigHtml()+
