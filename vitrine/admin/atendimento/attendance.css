@@ -59,3 +59,12 @@ body.order-embedded .context-pane{position:absolute;right:0;top:0;bottom:0;z-ind
 body.order-embedded .context-pane.open{transform:translateX(0)}
 body.order-embedded .order-chat-candidate{display:block;width:100%;max-width:450px;margin:7px auto 0;padding:12px 15px;min-height:44px;border-radius:10px;border:1px solid #c5d9ca;background:#f0f8f2;color:#176b43;font-weight:750;text-align:left}
 @media(max-width:680px){body.order-embedded .attendance-workspace{height:100%}body.order-embedded .context-pane{top:0}body.order-embedded .conversation-head{padding:7px 9px}body.order-embedded .composer{padding-bottom:calc(8px + env(safe-area-inset-bottom))}}
+
+/* Conversas com pedidos na aba Recebidos (últimas 72 horas) */
+.queue-card.received-order-priority{border-left:4px solid #e1a526;background:#fff8e9;box-shadow:inset 0 0 0 1px #f4e1af}
+.queue-card.received-order-priority.selected{background:#f8ecd2;border-left-color:#b87b0a}
+.chip.received-order{background:#ffe7b1;border:1px solid #e9ba61;color:#755009;font-weight:900}
+.chip.received-order-count{background:#fff0cf;color:#70541a}
+#openReceivedOrderBtn{min-height:37px;padding:7px 11px;border:1px solid #b47814;border-radius:9px;background:#fff3d6;color:#694608;font-size:11px;font-weight:900;white-space:nowrap}
+#openReceivedOrderBtn:hover{background:#fce3a7}
+@media(max-width:680px){#openReceivedOrderBtn{min-height:40px;padding:8px 10px;max-width:100%;overflow:hidden;text-overflow:ellipsis}}

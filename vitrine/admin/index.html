@@ -8759,6 +8759,16 @@
       }
       return;
     }
+    // Link direto vindo do Atendimento: exibir pedido no modal para revisão e confirmação humana.
+    const directOrderId=params.get('pedido')||'';
+    if(directOrderId){
+      if(!uuid.test(directOrderId)){setTab('today');toast('Link de pedido inválido');return}
+      state.orderStatusTab='received';
+      await setTab('orders');
+      await openOrder(directOrderId);
+      history.replaceState({},'',location.pathname+location.hash);
+      return;
+    }
     if(!uuid.test(sharedSeparationId)){setTab('today');return}
     await setTab('orders');
     await openOrderSeparationSheet(sharedSeparationId);

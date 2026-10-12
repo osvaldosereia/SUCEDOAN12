@@ -25,7 +25,8 @@ assert.match(app,/quickFilter:'recent'/);
 assert.match(app,/state\.quickFilter==='recent'\?true/);
 assert.match(app,/state\.quickFilter==='order'\?Boolean\(item\.has_recent_order\)/);
 assert.match(app,/state\.quickFilter==='pending'\?Boolean\(item\.has_recent_order&&item\.registration_incomplete\)/);
-assert.match(app,/canonical_last_message_at[\s\S]*sort\(\(a,b\)=>new Date\(b\./,'fila deve continuar ordenada pela conversa mais recente');
+assert.match(app,/sort\(\(a,b\)=>Number\(Boolean\(receivedOrder\(b\)\)\)-Number\(Boolean\(receivedOrder\(a\)\)\)/,'pedidos em Recebidos devem preceder conversas comuns');
+assert.match(app,/priorityOrderDate\(b\)-priorityOrderDate\(a\)\|\|new Date\(b\.canonical_last_message_at/,'demais conversas continuam ordenadas por mensagem recente');
 assert.doesNotMatch(app,/quickCounts\(/,'filtros não devem mostrar contagens');
 
 // Editor de etiquetas precisa ser funcional de verdade.
