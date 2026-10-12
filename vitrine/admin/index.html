@@ -1334,6 +1334,8 @@
     .purchase-simple-row .purchase-actions{grid-column:2;grid-row:1/4;align-self:center;flex-direction:column}
     .purchase-simple-row .purchase-actions button{min-height:38px}
   }
+  .purchase-source-note{font-size:12px;line-height:1.5;color:var(--muted);margin:0 0 13px;padding:0 4px}
+  .purchase-source-note strong,.purchase-source-note b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -5710,9 +5712,10 @@
         '<div class="purchase-toolbar-actions">'+
           '<button class="primary" id="purchaseBlingSync" type="button">Buscar no Bling</button>'+
           '<button class="secondary" id="purchaseXmlBatch" type="button">Importar XML</button>'+
-          '<button class="secondary" id="purchaseBlingReceived" type="button">Abrir Bling ↗</button>'+
+          '<button class="secondary" id="purchaseBlingReceived" type="button">Notas recebidas no Bling ↗</button>'+
         '</div>'+
       '</section>'+
+      '<div class="purchase-source-note"><strong>Importação automática:</strong> o Admin importa notas já registradas como <b>Notas de compra</b> no Bling. As notas apenas <b>Ciente</b> na aba Notas recebidas não estão disponíveis por esta API. Para incluir uma dessas notas, importe o XML obtido pelo Bling quando disponível ou confirme a operação no Bling somente após verificar a compra e o recebimento. Não confirme apenas para fazê-la aparecer aqui.</div>'+
       '<details class="panel purchase-import-options"><summary>Outras opções de importação</summary>'+
         '<div class="purchase-toolbar-actions">'+
           '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar apenas 1 XML</button>'+
@@ -6638,9 +6641,9 @@
       '<div class="purchase-simple-stats" aria-label="Resumo das notas">'+
         '<div><small>Notas importadas</small><strong>'+docs.length+'</strong></div>'+
         '<div><small>Para conferir</small><strong>'+attentionDocs.length+'</strong></div>'+
-        '<div><small>'+(browse.ok===false?'Consulta ao Bling':'Faltam importar')+'</small><strong>'+(browse.ok===false?'—':notImported.length)+'</strong></div>'+
+        '<div><small>'+(browse.ok===false?'Consulta ao Bling':'Compras a importar')+'</small><strong>'+(browse.ok===false?'—':notImported.length)+'</strong></div>'+
       '</div>'+
-      (notImported.length?'<div class="purchase-safe purchase-danger"><strong>'+notImported.length+' nota(s) ainda não importada(s)</strong><small>Use “Buscar no Bling” para importar as notas de compra/entrada encontradas no período.</small></div>':'')+
+      (notImported.length?'<div class="purchase-safe purchase-danger"><strong>'+notImported.length+' nota(s) de compra ainda não importada(s)</strong><small>Use “Buscar no Bling” para importar as notas de compra/entrada encontradas no período.</small></div>':'')+
       '<section class="panel purchase-notes-panel">'+
         '<div class="purchase-notes-header"><div><strong>Notas de entrada</strong><span class="sub" id="purchaseVisibleCount">'+docs.length+' nota(s) na lista</span></div>'+
           '<div class="purchase-notes-search"><input id="purchaseQuickSearch" type="search" aria-label="Pesquisar notas" placeholder="Buscar fornecedor, NF-e ou CNPJ/CPF" value="'+esc(state.purchaseQuery||'')+'">'+
@@ -6729,7 +6732,7 @@
     const b=$('#purchaseBlingSync');if(b){b.disabled=true;b.textContent='Buscando e importando…'}
     try{
       const r=await purchaseApi('bling_sync',purchaseFilterPayload());
-      if(Number(r.documents_seen||0)===0)toast('Nenhuma nota de compra/entrada encontrada no Bling em '+String(r.window?.label||purchasePeriodLabel())+'.');
+      if(Number(r.documents_seen||0)===0)toast('Nenhuma nota de compra/entrada encontrada pela API do Bling. Notas apenas Ciente não estão incluídas.');
       else toast('Importação concluída: '+String(r.processed||0)+' nova(s) · '+String(r.duplicates||0)+' já existente(s)'+(Number(r.failed||0)?' · '+String(r.failed)+' falha(s)':''));
       state.purchaseDetailCache={};state.purchaseExpandedId=null;
       await loadPurchases();
