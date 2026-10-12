@@ -1337,6 +1337,19 @@
   .purchase-source-note{font-size:12px;line-height:1.5;color:var(--muted);margin:0 0 13px;padding:0 4px}
   .purchase-source-note strong,.purchase-source-note b{color:var(--ink)}
   .purchase-sync-timestamp{font-size:11px;color:var(--muted);padding:0 3px;margin:-3px 0 12px}
+  /* Consulta rápida do Atendimento a partir dos cards de Pedidos */
+  .order-chat-overlay[hidden],.order-chat-sheet[hidden]{display:none!important}
+  .order-chat-overlay{position:fixed;inset:0;z-index:6000;background:rgba(13,30,20,.55);opacity:0;transition:opacity .22s ease}
+  .order-chat-overlay.open{opacity:1}
+  .order-chat-sheet{position:fixed;z-index:6001;left:50%;bottom:0;width:min(1080px,100%);height:min(88dvh,920px);min-height:300px;display:flex;flex-direction:column;overflow:hidden;border:1px solid #dae4dd;border-radius:20px 20px 0 0;background:#fff;box-shadow:0 -16px 56px rgba(14,38,23,.24);transform:translate(-50%,105%);transition:transform .23s ease}
+  .order-chat-sheet.open{transform:translate(-50%,0)}
+  .order-chat-head{flex:0 0 auto;min-height:60px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #e2e9e4;background:#f6faf7}
+  .order-chat-heading{min-width:0;display:flex;flex-direction:column;gap:2px}
+  .order-chat-heading strong{color:#173f2a;font-size:15px}
+  .order-chat-heading small{color:#66766c;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .order-chat-close{width:42px;height:42px;flex:0 0 auto;border:1px solid #d6e2d9;background:#fff;border-radius:12px;color:#263d30;font-size:24px;line-height:1}
+  .order-chat-sheet iframe{border:0;width:100%;flex:1;min-height:0;background:#f6faf7}
+  @media(max-width:700px){.order-chat-sheet{height:94dvh;height:94svh;border-radius:17px 17px 0 0}.order-chat-head{padding:8px 12px}.order-chat-heading strong{font-size:14px}.order-chat-close{width:40px;height:40px}}
 </style>
 </head>
 <body>
@@ -1401,6 +1414,17 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <div class="order-chat-overlay" id="orderChatOverlay" hidden></div>
+  <section class="order-chat-sheet" id="orderChatSheet" role="dialog" aria-modal="true" aria-labelledby="orderChatTitle" hidden>
+    <header class="order-chat-head">
+      <div class="order-chat-heading"><strong id="orderChatTitle">Conversa do cliente</strong><small id="orderChatSubtitle">Atendimento Dona Antônia</small></div>
+      <button type="button" class="order-chat-close" id="orderChatClose" aria-label="Fechar conversa">×</button>
+    </header>
+    <iframe id="orderChatFrame" title="Atendimento do cliente" referrerpolicy="same-origin"></iframe>
+  </section>
+
+
+
 
   <dialog id="editor">
     <div class="modal-head"><strong id="editorTitle">Editar</strong><button class="close" id="closeEditor" type="button" aria-label="Fechar">×</button></div>
@@ -7414,7 +7438,7 @@
     const manualSelected=state.manualQueueIds.has(String(o.id));
     const manualEligible=orderStatusTabKey(o)==='confirmed'&&o.status==='confirmed';
     const manualQueueButton=(manualEligible||(manualSelected&&state.orderStatusTab==='manual'&&!m.separated))?'<button class="order-v3-action secondary-action" type="button" data-manual-queue-'+(manualSelected?'remove':'add')+'="'+esc(o.id)+'">'+(manualSelected?'RETIRAR DE SEPARAR AGORA':'SEPARAR AGORA')+'</button>':'';
-    return '<article class="order-v3-card'+cardClass+'"><div class="order-v3-topline"><span class="order-v3-stage '+esc(stage)+'">'+esc(stageLabel)+'</span><strong class="order-v3-money">'+money(o.total_cents||0)+'</strong></div><div class="order-v3-identity"><strong>#'+esc(orderDisplayCode(o))+' · '+esc(o.customer_name||'Sem cliente')+'</strong><small><span class="order-v3-phone">Tel. '+esc(orderCardPhone(o))+'</span><span>'+esc(dateTime(o.created_at))+'</span></small></div>'+(!m.confirmed&&!m.cancelled?'<div class="order-v3-do-not-build">NÃO MONTAR ESSE PEDIDO</div>':'')+progress+(supportTags?'<div class="order-v3-tags">'+supportTags+'</div>':'')+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions">'+primaryAction+manualQueueButton+'<button class="order-v3-action '+(primaryAction?'secondary-action':'primary')+'" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
+    return '<article class="order-v3-card'+cardClass+'"><div class="order-v3-topline"><span class="order-v3-stage '+esc(stage)+'">'+esc(stageLabel)+'</span><strong class="order-v3-money">'+money(o.total_cents||0)+'</strong></div><div class="order-v3-identity"><strong>#'+esc(orderDisplayCode(o))+' · '+esc(o.customer_name||'Sem cliente')+'</strong><small><span class="order-v3-phone">Tel. '+esc(orderCardPhone(o))+'</span><span>'+esc(dateTime(o.created_at))+'</span></small></div>'+(!m.confirmed&&!m.cancelled?'<div class="order-v3-do-not-build">NÃO MONTAR ESSE PEDIDO</div>':'')+progress+(supportTags?'<div class="order-v3-tags">'+supportTags+'</div>':'')+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions">'+primaryAction+manualQueueButton+'<button class="order-v3-action secondary-action" type="button" data-order-chat="'+esc(o.id)+'">💬 VER CONVERSA</button><button class="order-v3-action '+(primaryAction?'secondary-action':'primary')+'" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
   }
   const ORDER_STATUS_TABS=[
     {key:'manual',label:'SEPARAR AGORA'},
@@ -7507,7 +7531,41 @@
   }
   if(!window.__orderSeparationBoardTimer)window.__orderSeparationBoardTimer=setInterval(refreshOrderSeparationBoard,5000);
   if(!window.__orderSeparationBoardVisibilityBound){window.__orderSeparationBoardVisibilityBound=true;document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.tab==='orders')refreshOrderSeparationBoard()})}
-  function paintOrderRows(){const host=$('#orderRows');if(!host)return;const rows=state.orders.filter(o=>orderV3SearchMatch(o,state.orderQuery)&&orderStatusTabMatch(o)).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">'+(state.orderStatusTab==='manual'?(state.manualQueueError?'Fila manual indisponível. Tente selecionar esta aba novamente.':'Nenhum pedido na fila. Em CONFIRMADOS, clique em SEPARAR AGORA no pedido desejado.'):'Nenhum pedido encontrado neste status.')+'</div>';const top=$('#orderStatusTabsTop'),mobile=$('#orderStatusTabsMobile');if(top)top.innerHTML=orderStatusTabsHtml('orders-status-desktop');if(mobile)mobile.innerHTML=orderStatusTabsHtml('orders-status-mobile');bindOrderStatusTabs();host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));host.querySelectorAll('[data-manual-queue-add],[data-manual-queue-remove]').forEach(b=>b.onclick=()=>setManualPickQueue(b.dataset.manualQueueAdd||b.dataset.manualQueueRemove,Boolean(b.dataset.manualQueueAdd),b));host.querySelectorAll('[data-copy-separation]').forEach(b=>b.onclick=()=>copyOrderSeparationLink(b.dataset.copySeparation,b));host.querySelectorAll('[data-v3-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.v3Confirm,b));host.querySelectorAll('[data-v3-separate],[data-v3-separation]').forEach(b=>b.onclick=()=>openOrderSeparationSheet(b.dataset.v3Separate||b.dataset.v3Separation));host.querySelectorAll('[data-v3-dispatch]').forEach(b=>b.onclick=()=>startOrderDispatchV4(b.dataset.v3Dispatch,b));host.querySelectorAll('[data-v3-deliver]').forEach(b=>b.onclick=()=>openOrderDeliveryConfirm(b.dataset.v3Deliver));host.querySelectorAll('[data-v3-delivery-fail]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.v3DeliveryFail,false))}
+  // O painel preserva a página e reusa integralmente o Atendimento existente.
+  let orderChatOpener=null,orderChatClosingTimer=null,orderChatPreviousOverflow='';
+  function closeOrderChatSheet(){
+    const sheet=$('#orderChatSheet'),overlay=$('#orderChatOverlay');
+    if(!sheet||sheet.hidden)return;
+    sheet.classList.remove('open');overlay.classList.remove('open');
+    document.documentElement.style.overflow=orderChatPreviousOverflow;
+    clearTimeout(orderChatClosingTimer);
+    orderChatClosingTimer=setTimeout(()=>{if(sheet.classList.contains('open'))return;sheet.hidden=true;overlay.hidden=true;$('#orderChatFrame').removeAttribute('src');},240);
+    if(orderChatOpener?.isConnected)orderChatOpener.focus({preventScroll:true});
+    orderChatOpener=null;
+  }
+  function openOrderChatSheet(orderId,trigger){
+    const order=state.orders.find(x=>String(x.id)===String(orderId));
+    if(!order){toast('Pedido não localizado');return}
+    const phone=String(order.whatsapp_phone_e164||order.delivery_address_snapshot?.phone||'').replace(/\D/g,'');
+    if(![10,11,12,13].includes(phone.length)){toast('Este pedido não possui telefone válido para localizar a conversa');return}
+    const params=new URLSearchParams({embedded:'order',phone,order:orderDisplayCode(order)});
+    if(order.customer_id)params.set('customer_id',String(order.customer_id));
+    const sheet=$('#orderChatSheet'),overlay=$('#orderChatOverlay'),frame=$('#orderChatFrame');
+    clearTimeout(orderChatClosingTimer);
+    orderChatOpener=trigger||null;
+    $('#orderChatTitle').textContent='#'+orderDisplayCode(order)+' · '+(order.customer_name||'Cliente');
+    $('#orderChatSubtitle').textContent='Conversa pelo WhatsApp · '+(orderCardPhone(order)||'');
+    sheet.hidden=false;overlay.hidden=false;
+    orderChatPreviousOverflow=document.documentElement.style.overflow;
+    document.documentElement.style.overflow='hidden';
+    // O iframe só é carregado após o clique, evitando consultas extras na fila de pedidos.
+    frame.src='/vitrine/admin/atendimento/?'+params.toString();
+    requestAnimationFrame(()=>{sheet.classList.add('open');overlay.classList.add('open');$('#orderChatClose').focus({preventScroll:true})});
+  }
+  $('#orderChatClose').onclick=closeOrderChatSheet;
+  $('#orderChatOverlay').onclick=closeOrderChatSheet;
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('#orderChatSheet').hidden){event.preventDefault();closeOrderChatSheet()}});
+  function paintOrderRows(){const host=$('#orderRows');if(!host)return;const rows=state.orders.filter(o=>orderV3SearchMatch(o,state.orderQuery)&&orderStatusTabMatch(o)).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">'+(state.orderStatusTab==='manual'?(state.manualQueueError?'Fila manual indisponível. Tente selecionar esta aba novamente.':'Nenhum pedido na fila. Em CONFIRMADOS, clique em SEPARAR AGORA no pedido desejado.'):'Nenhum pedido encontrado neste status.')+'</div>';const top=$('#orderStatusTabsTop'),mobile=$('#orderStatusTabsMobile');if(top)top.innerHTML=orderStatusTabsHtml('orders-status-desktop');if(mobile)mobile.innerHTML=orderStatusTabsHtml('orders-status-mobile');bindOrderStatusTabs();host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));host.querySelectorAll('[data-order-chat]').forEach(b=>b.onclick=()=>openOrderChatSheet(b.dataset.orderChat,b));host.querySelectorAll('[data-manual-queue-add],[data-manual-queue-remove]').forEach(b=>b.onclick=()=>setManualPickQueue(b.dataset.manualQueueAdd||b.dataset.manualQueueRemove,Boolean(b.dataset.manualQueueAdd),b));host.querySelectorAll('[data-copy-separation]').forEach(b=>b.onclick=()=>copyOrderSeparationLink(b.dataset.copySeparation,b));host.querySelectorAll('[data-v3-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.v3Confirm,b));host.querySelectorAll('[data-v3-separate],[data-v3-separation]').forEach(b=>b.onclick=()=>openOrderSeparationSheet(b.dataset.v3Separate||b.dataset.v3Separation));host.querySelectorAll('[data-v3-dispatch]').forEach(b=>b.onclick=()=>startOrderDispatchV4(b.dataset.v3Dispatch,b));host.querySelectorAll('[data-v3-deliver]').forEach(b=>b.onclick=()=>openOrderDeliveryConfirm(b.dataset.v3Deliver));host.querySelectorAll('[data-v3-delivery-fail]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.v3DeliveryFail,false))}
   async function startOrderDispatchV4(id,btn){
     const current=state.orders.find(o=>String(o.id)===String(id));
     if(!current||current.status!=='ready'){toast('Este pedido não está pronto para saída');return}

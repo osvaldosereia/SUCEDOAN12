@@ -45,3 +45,17 @@
   #mediaFileNote{display:none}
   .context-pane{top:0;z-index:90}
 }
+
+
+/* Atendimento dentro do painel deslizante da tela Pedidos */
+body.order-embedded .attendance-shell{display:block;height:100dvh;min-height:0;overflow:hidden}
+body.order-embedded .native-rail,body.order-embedded .page-topbar,body.order-embedded .queue-column{display:none!important}
+body.order-embedded .attendance-page{width:100%;height:100dvh;padding:0;min-width:0}
+body.order-embedded .attendance-workspace{display:flex;width:100%;height:100%;min-height:0;border:0;border-radius:0;box-shadow:none;overflow:hidden}
+body.order-embedded .conversation-pane{position:relative!important;inset:auto!important;transform:none!important;transition:none!important;display:flex!important;flex:1;min-width:0;min-height:0;width:100%;height:100%;max-height:100%;z-index:auto}
+body.order-embedded .conversation-empty{overflow:auto;padding:24px 14px;gap:9px}
+body.order-embedded .mobile-chat-back{display:none!important}
+body.order-embedded .context-pane{position:absolute;right:0;top:0;bottom:0;z-index:91;width:min(400px,100%);max-width:100%;display:flex;transform:translateX(105%);transition:transform .2s ease;box-shadow:-8px 0 30px rgba(20,40,26,.12)}
+body.order-embedded .context-pane.open{transform:translateX(0)}
+body.order-embedded .order-chat-candidate{display:block;width:100%;max-width:450px;margin:7px auto 0;padding:12px 15px;min-height:44px;border-radius:10px;border:1px solid #c5d9ca;background:#f0f8f2;color:#176b43;font-weight:750;text-align:left}
+@media(max-width:680px){body.order-embedded .attendance-workspace{height:100%}body.order-embedded .context-pane{top:0}body.order-embedded .conversation-head{padding:7px 9px}body.order-embedded .composer{padding-bottom:calc(8px + env(safe-area-inset-bottom))}}
