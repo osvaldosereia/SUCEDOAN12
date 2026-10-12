@@ -7,6 +7,64 @@ const QUEUE_PAGE_SIZE=50;
 const MESSAGE_PAGE_SIZE=30;
 const REFRESH_MS=15000;
 
+
+const embeddedOrderParams=new URLSearchParams(location.search);
+const EMBEDDED_ORDER=embeddedOrderParams.get('embedded')==='order';
+if(EMBEDDED_ORDER)document.body.classList.add('order-embedded');
+function canonicalOrderPhone(value){
+  let digits=String(value||'').replace(/\D/g,'');
+  if(digits.length===10||digits.length===11)digits='55'+digits;
+  return digits.startsWith('55')&&(digits.length===12||digits.length===13)?digits:'';
+}
+function embeddedOrderNotice(title,message,candidates=[]){
+  const empty=$('#conversationEmpty'),messages=$('#messages');
+  messages.hidden=true;
+  empty.hidden=false;
+  empty.replaceChildren();
+  const heading=document.createElement('strong');heading.textContent=title;
+  const hint=document.createElement('span');hint.textContent=message;
+  empty.append(heading,hint);
+  for(const item of candidates){
+    const button=document.createElement('button');
+    button.type='button';button.className='order-chat-candidate';
+    button.textContent=(item.display_name||item.phone_e164||'Conversa')+' · Canal '+item.__channel;
+    button.onclick=()=>selectConversation(item.conversation_id,item.__channel).catch(()=>{});
+    empty.append(button);
+  }
+}
+async function openEmbeddedOrderConversation(){
+  const phone=canonicalOrderPhone(embeddedOrderParams.get('phone'));
+  const customerId=String(embeddedOrderParams.get('customer_id')||'').trim();
+  if(!phone){
+    embeddedOrderNotice('Telefone indisponível','Não foi possível identificar o telefone do pedido.');
+    return;
+  }
+  // Buscar ambos os canais, sem depender das 50 conversas mais recentes.
+  state.activeChannel='all';
+  state.search=phone.slice(-9);
+  $('#globalSearch').value=state.search;
+  await loadQueue();
+  if($('#queueList .queue-state.error')){
+    embeddedOrderNotice('Atendimento indisponível','Não foi possível consultar as conversas. Feche e tente novamente.');
+    return;
+  }
+  const samePhone=state.queue.filter(item=>canonicalOrderPhone(item.phone_e164)===phone);
+  const sameCustomer=customerId?samePhone.filter(item=>String(item.customer_id||'')===customerId):[];
+  const matches=sameCustomer.length?sameCustomer:samePhone;
+  if(matches.length===1&&(!customerId||!matches[0].customer_id||String(matches[0].customer_id)===customerId)){
+    await selectConversation(matches[0].conversation_id,matches[0].__channel);
+    return;
+  }
+  if(matches.length>1){
+    embeddedOrderNotice('Escolha a conversa','Há mais de uma conversa neste telefone. Selecione o canal correto:',matches);
+    return;
+  }
+  if(matches.length===1){
+    embeddedOrderNotice('Confirmar vínculo','A conversa encontrada está vinculada a outro cadastro. Confirme antes de abrir:',matches);
+    return;
+  }
+  embeddedOrderNotice('Conversa não localizada','Não existe uma conversa do WhatsApp identificada com o telefone deste pedido nos canais 0975 ou 1018.');
+}
 const state={accounts:{},activeChannel:'all',search:'',quickFilter:'recent',labelFilter:'',queue:[],selected:null,conversation:null,context:null,contextTab:'customer',labels:[],conversationLabelIds:[],quickReplies:[],conversationOpen:false,loadingOlder:false,refreshing:false};
 const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -93,6 +151,6 @@ async function clearFollowUp(){await api('follow_up',{conversation_id:selectedId
 async function optOut(){if(!state.context?.customer?.id||!confirm('Parar de enviar ofertas para este cliente?'))return;await api('marketing_opt_out',{conversation_id:selectedId()},'POST');state.context.customer.marketing_opt_in=false;renderContext();showNote('Ofertas desativadas','success')}
 async function copyDraft(){const text=$('#messageDraft').value.trim();if(!text)return;try{await navigator.clipboard.writeText(text);showNote('Resposta copiada','success')}catch{showNote('Não consegui copiar automaticamente','error')}}
 function bind(){const mobileBack=$('#mobileChatBackBtn');if(mobileBack)mobileBack.onclick=closeMobileConversation;window.addEventListener('keydown',event=>{if(event.key==='Escape'&&window.matchMedia('(max-width:680px)').matches&&state.conversationOpen)closeMobileConversation()});$('#messages').onscroll=e=>{if(e.currentTarget.scrollTop<36)loadOlder().catch(()=>{})};$('#globalSearch').oninput=e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{state.search=e.target.value.trim();loadQueue().catch(()=>{})},250)};$$('[data-channel-switch]').forEach(b=>b.onclick=()=>switchChannel(b.dataset.channelSwitch).catch(()=>{}));$$('[data-queue-filter]').forEach(b=>b.onclick=()=>applyQueueFilter(b.dataset.queueFilter).catch(()=>{}));$('#queueFilterMenuBtn').onclick=e=>{e.stopPropagation();toggleQueueFilterMenu()};$('#queueFilterMenu').onclick=e=>e.stopPropagation();$$('.context-tabs [data-context-tab]').forEach(b=>b.onclick=()=>{$$('.context-tabs [data-context-tab]').forEach(x=>x.classList.toggle('active',x===b));state.contextTab=b.dataset.contextTab;renderContext()});$('#openContextBtn').onclick=()=>$('#contextPane').classList.add('open');$('#closeContextBtn').onclick=()=>$('#contextPane').classList.remove('open');$('#quickRepliesBtn').onclick=()=>{const p=$('#quickRepliesMenu'),open=p.hidden;closePanels();p.hidden=!open};$('#productsBtn').onclick=()=>{state.contextTab='products';$$('.context-tabs [data-context-tab]').forEach(x=>x.classList.toggle('active',x.dataset.contextTab==='products'));renderContext();$('#contextPane').classList.add('open')};$('#moreToolsBtn').onclick=()=>{const p=$('#moreToolsMenu'),open=p.hidden;closePanels();p.hidden=!open};$('#conversationLabelsBtn').onclick=()=>{renderConversationLabels();const p=$('#conversationLabelsMenu'),open=p.hidden;closePanels();p.hidden=!open};$('#saveConversationLabelsBtn').onclick=()=>saveConversationLabels().catch(()=>showNote('Não consegui salvar etiquetas','error'));$('#catalogBtn').onclick=()=>prepareCatalog().catch(()=>{});$('#quoteBtn').onclick=()=>{const id=state.context?.customer?.id;if(id)location.assign(adminLink('quotes',{customer_id:id,source:'attendance'}))};$('#saleBtn').onclick=()=>{const id=state.context?.customer?.id;if(id)location.assign(adminLink('quotes',{customer_id:id,source:'attendance',new_sale:'1'}))};$('#followUpBtn').onclick=openFollowUp;$('#saveFollowUpBtn').onclick=()=>saveFollowUp().catch(()=>showNote('Não consegui marcar retorno','error'));$('#clearFollowUpBtn').onclick=()=>clearFollowUp().catch(()=>showNote('Não consegui limpar retorno','error'));$('#cancelFollowUpBtn').onclick=()=>$('#followUpPanel').hidden=true;$('#optOutBtn').onclick=()=>optOut().catch(()=>showNote('Não consegui atualizar marketing','error'));$('#copyReplyBtn').onclick=()=>copyDraft().catch(()=>{});$('#messageDraft').oninput=syncFallback;$('#manageLabelsBtn').onclick=()=>{const menu=$('#queueFilterMenu');if(menu)menu.hidden=true;$('#queueFilterMenuBtn')?.setAttribute('aria-expanded','false');openLabelManager()};$('#closeLabelManagerBtn').onclick=closeLabelManager;$('#labelForm').onsubmit=e=>saveLabelForm(e).catch(()=>showNote('Não consegui salvar etiqueta','error'));$('#labelManager').onclick=e=>{if(e.target===$('#labelManager'))closeLabelManager()};document.addEventListener('click',e=>{const wrap=$('#queueFilterWrap');if(wrap&&!wrap.contains(e.target)){const menu=$('#queueFilterMenu');if(menu)menu.hidden=true;$('#queueFilterMenuBtn')?.setAttribute('aria-expanded','false')}});$('#manageQuickRepliesBtn').onclick=()=>showNote('Respostas rápidas permanecem disponíveis nesta central.');document.addEventListener('visibilitychange',()=>{if(!document.hidden)backgroundRefresh().catch(()=>{})});window.addEventListener('beforeunload',()=>{if(refreshTimer)clearInterval(refreshTimer)})}
-async function boot(){bind();syncFallback();try{await ensureAttendanceToken();await loadAccounts();await Promise.allSettled([loadLabels(),loadQuickReplies()]);await loadQueue();if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(()=>backgroundRefresh().catch(()=>{}),REFRESH_MS)}catch(error){setConnection('Não foi possível iniciar o atendimento','error');queueState('Falha ao conectar o Atendimento. Sua sessão pode ter expirado.',true)}}
+async function boot(){bind();syncFallback();try{await ensureAttendanceToken();await loadAccounts();await Promise.allSettled([loadLabels(),loadQuickReplies()]);if(EMBEDDED_ORDER)await openEmbeddedOrderConversation();else await loadQueue();if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(()=>backgroundRefresh().catch(()=>{}),REFRESH_MS)}catch(error){setConnection('Não foi possível iniciar o atendimento','error');queueState('Falha ao conectar o Atendimento. Sua sessão pode ter expirado.',true);if(EMBEDDED_ORDER)embeddedOrderNotice('Atendimento indisponível','Não foi possível carregar o chat. Verifique a sessão do Admin e tente novamente.')}}
 boot();
 
