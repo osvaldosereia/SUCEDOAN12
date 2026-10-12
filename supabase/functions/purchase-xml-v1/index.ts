@@ -906,6 +906,43 @@ async function blingXml(token:string,key:string){
   if(!d?.conteudo)return {ok:false,status:502,xml:""};
   try{return {ok:true,status:r.status,xml:await unzipBase64(String(d.conteudo))}}catch{return {ok:false,status:502,xml:""}}
 }
+// Somente API oficial Bling: consulta por chave não manifesta, não chama a SEFAZ.
+function validBlingNfeKey(value:any){
+  const key=String(value??"");
+  if(!/^\d{44}$/.test(key))return false;
+  let sum=0,weight=2;
+  for(let i=42;i>=0;i--){sum+=Number(key[i])*weight;weight=weight===9?2:weight+1}
+  const mod=sum%11;
+  return Number(key[43])===(mod<=1?0:11-mod);
+}
+async function blingKeyDocument(body:any){
+  const key=String(body?.key??"").trim();
+  if(!validBlingNfeKey(key))return {ok:false,status:400,error:"invalid_nfe_access_key"};
+  const settings=await sb.from("purchase_xml_settings").select("company_document").eq("id",1).single();
+  if(settings.error)throw settings.error;
+  const company=digits(settings.data?.company_document);
+  if(company.length!==14)return {ok:false,status:409,error:"company_cnpj_not_configured"};
+  const xmlResponse=await blingXml(await oauth(),key);
+  if(!xmlResponse.ok){
+    // A falta do XML no Bling não significa que a NF-e não exista na SEFAZ.
+    if(xmlResponse.status===404)return {ok:true,readonly:true,available:false,source:"bling_official_api",bling_http_status:404};
+    return {ok:false,status:502,error:"bling_document_unavailable",bling_http_status:xmlResponse.status};
+  }
+  const xml=xmlResponse.xml;
+  assertCatalogXmlSize(xml);
+  const parsed=parseXml(xml);
+  if(parsed.document_key!==key)return {ok:false,status:409,error:"bling_document_key_mismatch"};
+  if(parsed.recipient_document!==company||parsed.recipient_kind!=="CNPJ")
+    return {ok:false,status:409,error:"nfe_recipient_cnpj_mismatch"};
+  if(parsed.cstat&&![100,150].includes(parsed.cstat))return {ok:false,status:409,error:"nfe_not_authorized"};
+  const evidence=assertCatalogXmlIntegrity(xml,key);
+  const exists=await sb.from("purchase_xml_documents").select("id").eq("document_key",key).maybeSingle();
+  if(exists.error)throw exists.error;
+  return {ok:true,readonly:true,available:true,source:"bling_official_api",
+    number:parsed.invoice_number||null,issued_at:parsed.issued_at||null,
+    supplier_name:parsed.supplier_name||null,total_amount:parsed.total_amount||0,
+    items_count:evidence.items.length,already_cataloged:Boolean(exists.data),xml};
+}
 function cuiabaDate(offset=0){
   const d=new Date(Date.now()+offset*86400000),p=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d),m:any={};for(const x of p)m[x.type]=x.value;return m.year+"-"+m.month+"-"+m.day;
 }
@@ -1846,6 +1883,22 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     }
     if(action==="bling_sync"){if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);return js(req,await runBlingSync("bling_manual",body))}
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
+    if(action==="bling_key_check"||action==="bling_key_catalog"){
+      if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);
+      if(action==="bling_key_catalog"&&body?.confirmation!=="CATALOGAR_XML_BLING")
+        return js(req,{ok:false,error:"confirmation_required"},409);
+      const r=await blingKeyDocument(body);
+      if(!r.ok)return js(req,r,Number(r.status||400));
+      if(!r.available)return js(req,r);
+      if(action==="bling_key_check"){
+        const {xml:_xml,...safe}=r;
+        return js(req,safe);
+      }
+      const key=String(body?.key||"");
+      const result=await manualCatalogOnlyImport([{name:"bling-chave-"+key.slice(-10)+".xml",xml:r.xml}],{source:"bling_manual"});
+      return js(req,{...result,source:"bling_official_api",key_suffix:key.slice(-8)},result.ok?200:Number(result.status||400));
+    }
+
     if(action==="manual_import"){
       if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);
       const files=Array.isArray(body?.files)?body.files:[];
