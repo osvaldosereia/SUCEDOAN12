@@ -1,5 +1,8 @@
 name: XML R31 deploy Supabase CLI (one-shot)
 on:
+  pull_request:
+    paths:
+      - .github/workflows/xml-r31-supabase-deploy-once.yml
   push:
     branches:
       - agent/xml-operacao-simples-20261012
