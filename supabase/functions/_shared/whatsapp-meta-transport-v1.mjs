@@ -126,7 +126,16 @@ function validateTemplateRequest({ accessToken, phoneNumberId, toE164, templateN
       return { type: 'body', parameters: parameters.map((parameter) => safeTextParameter(parameter, 1024)) };
     }
 
-    if (type === 'button') return safeQuickReplyButton(component);
+    if (type === 'button') {
+      if (String(component.sub_type||'').toLowerCase()==='url') {
+        const index=String(component.index??''),parameters=component.parameters??[];
+        if(!/^[0-9]$/.test(index)||!Array.isArray(parameters)||parameters.length!==1)throw invalidRequest();
+        const item=safeTextParameter(parameters[0],2000);
+        if(!/^[a-f0-9]{64}$/.test(item.text))throw invalidRequest();
+        return {type:'button',sub_type:'url',index,parameters:[item]};
+      }
+      return safeQuickReplyButton(component);
+    }
     if (type === 'carousel') return safeCarouselComponent(component);
 
     throw invalidRequest();
