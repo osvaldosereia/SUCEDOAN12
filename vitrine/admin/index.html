@@ -6638,7 +6638,7 @@
       '<div class="purchase-simple-stats" aria-label="Resumo das notas">'+
         '<div><small>Notas importadas</small><strong>'+docs.length+'</strong></div>'+
         '<div><small>Para conferir</small><strong>'+attentionDocs.length+'</strong></div>'+
-        '<div><small>Faltam importar</small><strong>'+notImported.length+'</strong></div>'+
+        '<div><small>'+(browse.ok===false?'Consulta ao Bling':'Faltam importar')+'</small><strong>'+(browse.ok===false?'—':notImported.length)+'</strong></div>'+
       '</div>'+
       (notImported.length?'<div class="purchase-safe purchase-danger"><strong>'+notImported.length+' nota(s) ainda não importada(s)</strong><small>Use “Buscar no Bling” para importar as notas de compra/entrada encontradas no período.</small></div>':'')+
       '<section class="panel purchase-notes-panel">'+
@@ -6657,11 +6657,12 @@
           const primaryStatus=needsReview?'Para conferir':isReceived?'Recebida':isReady?'Pronta para entrada':'Importada';
           const primaryClass=needsReview?'warn':'';
           const filterStatus=needsReview?'attention':isReceived?'received':isReady?'ready':'other';
-          const docRef=String(x.number||x.document_number||x.document_key||'').slice(-10)||'—';
-          const searchable=[x.supplier_name,x.supplier_document,x.recipient_document,x.document_key,x.number,x.document_number].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR');
-          return '<div class="purchase-doc-block" data-purchase-filter-row data-purchase-search="'+esc(searchable)+'" data-purchase-status="'+filterStatus+'">'+
+          const invoiceNumber=x.number||x.document_number||x.invoice_number||null;
+          const docRef=invoiceNumber?'NF '+String(invoiceNumber):'NF-e · '+String(x.document_key||'').slice(-8);
+          const searchable=[x.supplier_name,x.supplier_document,x.supplier_tax_id,x.recipient_document,x.document_key,x.number,x.document_number,x.invoice_number].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR');
+          return '<div class="purchase-doc-block" data-purchase-filter-row data-purchase-search="'+esc(searchable)+'" data-purchase-status="'+filterStatus+'" data-purchase-attention="'+(needsReview?'1':'0')+'" data-purchase-ready="'+(isReady?'1':'0')+'" data-purchase-received="'+(isReceived?'1':'0')+'">'+
             '<div class="purchase-doc-row purchase-simple-row purchase-doc-clickable '+(state.purchaseExpandedId===x.id?'expanded':'')+'" data-purchase-toggle="'+esc(x.id)+'">'+
-              '<div class="purchase-note-ref"><strong>NF '+esc(docRef)+'</strong><small>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</small></div>'+
+              '<div class="purchase-note-ref"><strong>'+esc(docRef)+'</strong><small>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</small></div>'+
               '<div class="history-main"><strong>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns) · '+esc(x.recipient_kind||'NF-e')+'</small></div>'+
               '<div class="purchase-note-status"><span class="pill '+primaryClass+'">'+primaryStatus+'</span><small>'+esc(x.receipt_status==='received'?'Estoque verificado':x.finance_status==='review'?'Financeiro para revisar':'Produtos e recebimento')+'</small></div>'+
               '<div class="purchase-actions"><button class="secondary" type="button" data-purchase-open="'+esc(x.id)+'">Conferir</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button></div>'+
@@ -6698,7 +6699,7 @@
       let shown=0;
       host.querySelectorAll('[data-purchase-filter-row]').forEach(row=>{
         const matchesText=!state.purchaseQuery||String(row.dataset.purchaseSearch||'').includes(state.purchaseQuery);
-        const matchesStatus=state.purchaseQuickStatus==='all'||row.dataset.purchaseStatus===state.purchaseQuickStatus;
+        const matchesStatus=state.purchaseQuickStatus==='all'||row.dataset['purchase'+state.purchaseQuickStatus[0].toUpperCase()+state.purchaseQuickStatus.slice(1)]==='1';
         const show=matchesText&&matchesStatus;
         row.style.display=show?'':'none';
         if(show)shown++;
