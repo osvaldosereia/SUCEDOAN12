@@ -1336,6 +1336,7 @@
   }
   .purchase-source-note{font-size:12px;line-height:1.5;color:var(--muted);margin:0 0 13px;padding:0 4px}
   .purchase-source-note strong,.purchase-source-note b{color:var(--ink)}
+  .purchase-sync-timestamp{font-size:11px;color:var(--muted);padding:0 3px;margin:-3px 0 12px}
 </style>
 </head>
 <body>
@@ -6635,6 +6636,7 @@
     const attentionDocs=docs.filter(x=>x.processing_status==='review_required'||x.processing_status==='failed'||x.finance_status==='review'||x.finance_status==='pending_company_match'||x.receipt_status==='review'||(purchasePaymentSummary(x)?.paid_at_purchase_likely&&x.finance_status==='posted'&&!x?.metadata?.settlement?.verified));
     const ready=docs.filter(x=>x.receipt_status==='ready').length;
     const last=runs[0]||null;
+    const lastAutomatic=runs.find(x=>x.source==='bling_daily')||null;
     const runSource=last?.source==='bling_daily'?'Rotina automática':last?.source==='bling_manual'?'Importação manual':last?.source==='manual_xml'||last?.source==='bulk_xml'?'XML enviado':'Execução';
     const runStatus=last?.status==='completed'?'Concluída':last?.status==='completed_with_review'?'Concluída com revisão':last?.status==='failed'?'Falhou':last?.status==='running'?'Em andamento':String(last?.status||'');
     host.innerHTML=
@@ -6643,6 +6645,8 @@
         '<div><small>Para conferir</small><strong>'+attentionDocs.length+'</strong></div>'+
         '<div><small>'+(browse.ok===false?'Consulta ao Bling':'Compras a importar')+'</small><strong>'+(browse.ok===false?'—':notImported.length)+'</strong></div>'+
       '</div>'+
+      (lastAutomatic?'<div class="purchase-sync-timestamp">Última sincronização automática: '+esc(dateTime(lastAutomatic.started_at||lastAutomatic.created_at))+
+        ' · '+esc(lastAutomatic.documents_seen||0)+' notas consultadas · '+esc(lastAutomatic.documents_failed||0)+' falhas</div>':'')+
       (notImported.length?'<div class="purchase-safe purchase-danger"><strong>'+notImported.length+' nota(s) de compra ainda não importada(s)</strong><small>Use “Buscar no Bling” para importar as notas de compra/entrada encontradas no período.</small></div>':'')+
       '<section class="panel purchase-notes-panel">'+
         '<div class="purchase-notes-header"><div><strong>Notas de entrada</strong><span class="sub" id="purchaseVisibleCount">'+docs.length+' nota(s) na lista</span></div>'+
