@@ -101,7 +101,7 @@ async function validateGenerated(key:string,sourceUrl:string,generated:Uint8Arra
   return {accepted,validation,usage:obj(data?.usage),responseId:clean(data?.id,180)};
 }
 async function productRow(sb:any,productId:string){
-  const q=await sb.from("products").select("id,name,brand,packaging,gtin,price,cost,category,sales_category,storefront_category,image_url,image_original_url,image_ai_url,image_ai_status,image_ai_attempts,metadata").eq("id",productId).maybeSingle();
+  const q=await sb.from("products").select("id,name,brand,packaging,gtin,price,cost,category,sales_category,storefront_category,image_url,image_original_url,image_ai_url,image_ai_status,image_ai_error,image_ai_attempts,metadata").eq("id",productId).maybeSingle();
   if(q.error||!q.data)throw new Error("product_not_found");return q.data;
 }
 async function uploadSource(req:Request,sb:any,auth:any,providedForm?:FormData){
