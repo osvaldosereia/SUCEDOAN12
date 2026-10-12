@@ -101,11 +101,11 @@ async function validateGenerated(key:string,sourceUrl:string,generated:Uint8Arra
   return {accepted,validation,usage:obj(data?.usage),responseId:clean(data?.id,180)};
 }
 async function productRow(sb:any,productId:string){
-  const q=await sb.from("products").select("id,name,brand,packaging,gtin,price,cost,category,sales_category,storefront_category,image_url,image_original_url,image_ai_url,image_ai_status,image_ai_attempts,metadata").eq("id",productId).maybeSingle();
+  const q=await sb.from("products").select("id,name,brand,packaging,gtin,price,cost,category,sales_category,storefront_category,image_url,image_original_url,image_ai_url,image_ai_status,image_ai_error,image_ai_attempts,metadata").eq("id",productId).maybeSingle();
   if(q.error||!q.data)throw new Error("product_not_found");return q.data;
 }
-async function uploadSource(req:Request,sb:any,auth:any){
-  const form=await req.formData();
+async function uploadSource(req:Request,sb:any,auth:any,providedForm?:FormData){
+  const form=providedForm||await req.formData();
   const productId=uuid(form.get("product_id"));if(!productId)return json(req,{ok:false,error:"product_id_required"},400);
   const product=await productRow(sb,productId);
   const file=form.get("file");
@@ -128,6 +128,49 @@ async function uploadSource(req:Request,sb:any,auth:any){
   if(u.error)throw new Error("product_update_"+clean(u.error.message,160));
   return json(req,{ok:true,event:"upload_source",product_id:productId,image_url:publicUrl,image_original_url:publicUrl,storage_path:path});
 }
+
+/**
+ * Fallback somente após rejeição visual: o navegador enquadra a FOTO ORIGINAL
+ * sem recriar rótulos. O servidor conserva a URL de origem e registra o método real.
+ */
+async function uploadSafeFallback(req:Request,sb:any,auth:any,form:FormData){
+  const productId=uuid(form.get("product_id"));
+  if(!productId)return json(req,{ok:false,error:"product_id_required"},400);
+  const product=await productRow(sb,productId);
+  const sourceUrl=clean(product.image_original_url||"",1800);
+  const submittedSource=clean(form.get("source_url"),1800);
+  if(!sourceUrl||submittedSource!==sourceUrl)return json(req,{ok:false,error:"original_image_changed_retry"},409);
+  if(product.image_ai_status!=="error"||!String(product.image_ai_error||"").startsWith("visual_validation_failed_")){
+    return json(req,{ok:false,error:"safe_fallback_not_applicable"},409);
+  }
+  const file=form.get("file");
+  if(!(file instanceof File)||file.type!=="image/jpeg")return json(req,{ok:false,error:"safe_fallback_jpeg_required"},415);
+  if(!file.size||file.size>6_000_000)return json(req,{ok:false,error:"image_size_invalid"},413);
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  if(bytes[0]!==0xff||bytes[1]!==0xd8||bytes[bytes.length-2]!==0xff||bytes[bytes.length-1]!==0xd9){
+    return json(req,{ok:false,error:"safe_fallback_invalid_jpeg"},415);
+  }
+  const path=`manual/safe-framing-v1/final/${productId}/${Date.now()}-${safeName(product.name)}.jpg`;
+  const up=await sb.storage.from(BUCKET).upload(path,bytes,{contentType:"image/jpeg",cacheControl:"31536000",upsert:false});
+  if(up.error)throw new Error("storage_"+clean(up.error.message,160));
+  const publicUrl=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  const now=new Date().toISOString();
+  const validation={mode:"original_safe_framing",validated_by_ai:false,source_preserved:true};
+  const u=await sb.from("products").update({
+    image_url:publicUrl,image_ai_url:publicUrl,image_ai_status:"completed",
+    image_ai_model:"original-safe-framing-v1",image_ai_processed_at:now,
+    image_ai_error:null,image_ai_validation:validation,
+    image_ai_pipeline_version:"manual-admin-v1",
+    image_ai_manual_review_required:false,image_ai_manual_review_reason:null,
+    image_ai_admin_note:"Fallback sem IA: foto original enquadrada em 816x816; embalagem sem redesenho.",
+    image_ai_admin_updated_at:now,updated_at:now
+  }).eq("id",productId).eq("image_original_url",sourceUrl);
+  if(u.error)throw new Error("product_update_"+clean(u.error.message,160));
+  return json(req,{ok:true,event:"upload_safe_fallback",method:"original_safe_framing",
+    product_id:productId,image_url:publicUrl,image_original_url:sourceUrl,
+    model:"original-safe-framing-v1",validation,storage_path:path});
+}
+
 async function standardize(req:Request,sb:any,auth:any,body:any){
   const productId=uuid(body?.product_id);if(!productId)return json(req,{ok:false,error:"product_id_required"},400);
   const product=await productRow(sb,productId);
@@ -157,7 +200,8 @@ async function standardize(req:Request,sb:any,auth:any,body:any){
     const message=clean(e instanceof Error?e.message:e,300);
     const current=await sb.from("products").select("image_ai_attempts").eq("id",productId).maybeSingle();
     await sb.from("products").update({image_ai_status:"error",image_ai_error:message,image_ai_attempts:Number(current.data?.image_ai_attempts||0)+1,image_ai_admin_updated_at:new Date().toISOString()}).eq("id",productId);
-    return json(req,{ok:false,error:message},500);
+    const visualRejected=message.startsWith("visual_validation_failed_");
+    return json(req,{ok:false,error:message,safe_fallback:visualRejected,original_url:visualRejected?sourceUrl:undefined},visualRejected?422:500);
   }
 }
 
@@ -199,7 +243,7 @@ Deno.serve(async(req:Request)=>{
   const ct=req.headers.get("content-type")||"";
   if(ct.includes("multipart/form-data")){
     const auth=await adminAuth(req,sb);if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);
-    try{return await uploadSource(req,sb,auth)}catch(e){return json(req,{ok:false,error:clean(e instanceof Error?e.message:e,300)},500)}
+    try{const form=await req.formData();return clean(form.get("event"),60)==="upload_safe_fallback"?await uploadSafeFallback(req,sb,auth,form):await uploadSource(req,sb,auth,form)}catch(e){return json(req,{ok:false,error:clean(e instanceof Error?e.message:e,300)},500)}
   }
   let body:any={};try{body=await req.json()}catch{return json(req,{ok:false,error:"invalid_json"},400)}
   event=clean(body?.event,60);
