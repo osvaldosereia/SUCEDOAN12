@@ -142,15 +142,15 @@ async function submitSimpleTemplate(event,dialog){
 function simplifyToolbar(center){
   const toolbar=center.querySelector('.marketing-template-toolbar');if(!toolbar)return;
   const language=toolbar.querySelector('[data-template-filter="language"]')?.closest('label');if(language)language.hidden=true;
-  const category=toolbar.querySelector('[data-template-filter="category"]')?.closest('label');if(category)category.querySelector('span').textContent='Tipo';
-  const search=toolbar.querySelector('[data-template-filter="search"]')?.closest('label');if(search)search.querySelector('span').textContent='Pesquisar';
+  const category=toolbar.querySelector('[data-template-filter="category"]')?.closest('label');if(category){const span=category.querySelector('span');if(span&&span.textContent!=='Tipo')span.textContent='Tipo'};
+  const search=toolbar.querySelector('[data-template-filter="search"]')?.closest('label');if(search){const span=search.querySelector('span');if(span&&span.textContent!=='Pesquisar')span.textContent='Pesquisar'};
 }
 
 function updateCount(center){
   const head=center.querySelector('.marketing-template-head');if(!head)return;
   const count=center.querySelectorAll('.marketing-template-row').length;
-  const title=head.querySelector('h2');if(title)title.textContent='Modelos de mensagem';
-  const subtitle=head.querySelector('p');if(subtitle)subtitle.textContent=`${count} modelo(s) encontrado(s)`;
+  const title=head.querySelector('h2');if(title&&title.textContent!=='Modelos de mensagem')title.textContent='Modelos de mensagem';
+  const subtitle=head.querySelector('p');if(subtitle&&subtitle.textContent!==`${count} modelo(s) encontrado(s)`)subtitle.textContent=`${count} modelo(s) encontrado(s)`;
 }
 
 function enhanceTemplateCenter(root=document.querySelector('#content')){
@@ -162,16 +162,9 @@ function enhanceTemplateCenter(root=document.querySelector('#content')){
     original.replaceWith(replacement);
     replacement.addEventListener('click',()=>openTemplateTypePicker());
   }
-  const sync=center.querySelector('[data-template-sync]');if(sync)sync.textContent=sync.dataset.syncState==='syncing'?sync.textContent:'Sincronizar';
+  const sync=center.querySelector('[data-template-sync]');if(sync&&sync.dataset.syncState!=='syncing'&&sync.textContent!=='Sincronizar')sync.textContent='Sincronizar';
 }
 
-function observe(){
-  if(observerStarted)return;observerStarted=true;
-  const observer=new MutationObserver(()=>enhanceTemplateCenter());
-  observer.observe(document.documentElement,{subtree:true,childList:true});
-  enhanceTemplateCenter();
-}
-
-observe();
+// The marketing coordinator invokes this on mount and after a list changes. Do not observe own mutations.
 window.DAMarketingTemplateSimple={openTemplateTypePicker,openSimpleTemplateEditor,submitSimpleTemplate,enhanceTemplateCenter};
 export {openTemplateTypePicker,openSimpleTemplateEditor,submitSimpleTemplate,enhanceTemplateCenter};
