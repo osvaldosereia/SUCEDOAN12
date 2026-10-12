@@ -38,13 +38,13 @@ function loadConsentModule(){
 
 function loadTemplateSimpleModule(){
   if(window.DAMarketingTemplateSimple?.enhanceTemplateCenter)return Promise.resolve(window.DAMarketingTemplateSimple);
-  if(!templateSimpleModulePromise)templateSimpleModulePromise=import('/vitrine/admin/marketing/template-type-picker.js?v=marketing-template-simple-v1');
+  if(!templateSimpleModulePromise)templateSimpleModulePromise=import('/vitrine/admin/marketing/template-type-picker.js?v=marketing-template-stable-v1');
   return templateSimpleModulePromise;
 }
 
 function loadRecentCampaignModule(){
   if(window.DAMarketingCampaignListSimple?.loadRecentCampaigns)return Promise.resolve(window.DAMarketingCampaignListSimple);
-  if(!recentCampaignModulePromise)recentCampaignModulePromise=import('/vitrine/admin/marketing/campaign-list-simple.js?v=marketing-campaign-list-v1');
+  if(!recentCampaignModulePromise)recentCampaignModulePromise=import('/vitrine/admin/marketing/campaign-list-simple.js?v=marketing-campaign-stable-v1');
   return recentCampaignModulePromise;
 }
 
@@ -88,7 +88,7 @@ function polishNav(root){
     const view=String(button.dataset.marketingView||'');
     if(!PRIMARY_MARKETING_VIEWS.includes(view)){button.remove();return}
     setText(button,PRIMARY_MARKETING_LABELS[view]);
-    if(button.classList.contains('active'))button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+    if(button.classList.contains('active')){if(button.getAttribute('aria-current')!=='page')button.setAttribute('aria-current','page')}else if(button.hasAttribute('aria-current'))button.removeAttribute('aria-current');
   });
   ensureAdminConsentsAction(root,nav);
   const gate=nav.querySelector('.marketing-campaign-gate');
@@ -125,7 +125,7 @@ async function openOverviewView(root,view,{create=false}={}){
       return module?.mountStrategyView?.(root);
     }
     if(view==='campaigns'){
-      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-v1');
+      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-stable-v1');
       return entry?.openCampaigns?.();
     }
     if(view==='templates'){
@@ -242,7 +242,7 @@ function polishTemplates(root){
   center.querySelectorAll('[data-template-detail]').forEach(button=>setText(button,'Ver'));
   const status=center.querySelector('[data-template-center-status]');
   if(status&&text(status).startsWith('Carregando templates'))setText(status,'Carregando modelos…');
-  loadTemplateSimpleModule().then(module=>module.enhanceTemplateCenter(root)).catch(error=>console.warn('marketing-template-simple-load',String(error?.message||error).slice(0,160)));
+  loadTemplateSimpleModule().then(module=>{if(root.isConnected)module.enhanceTemplateCenter(root)}).catch(error=>console.warn('marketing-template-simple-load',String(error?.message||error).slice(0,160)));
 }
 
 function groupAdvancedAudienceFilters(form){
@@ -326,20 +326,27 @@ function polishShared(root){
   polishCampaigns(root);
 }
 
+// Marketing has one bounded, frame-based coordinator. No observer processes its own DOM writes.
+const observedNode=document.querySelector(ROOT_SELECTOR)||document.documentElement;
+const observer=new MutationObserver(()=>schedule());
 function apply(){
   scheduled=false;
-  const root=marketingRoot();
-  if(root)polishShared(root);
+  observer.disconnect();
+  try{
+    const root=marketingRoot();
+    if(root){
+      polishShared(root);
+      window.DAMarketingCampaignEntry?.enhance?.();
+    }
+  }catch(error){console.warn('marketing-polish',String(error?.message||error).slice(0,180))}
+  finally{observer.observe(observedNode,{subtree:true,childList:true})}
 }
-
 function schedule(){
   if(scheduled)return;
   scheduled=true;
-  queueMicrotask(apply);
+  requestAnimationFrame(apply);
 }
-
-const observer=new MutationObserver(schedule);
-observer.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
+observer.observe(observedNode,{subtree:true,childList:true});
 schedule();
 
 window.DAMarketingPolish={apply};
