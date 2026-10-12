@@ -56,3 +56,7 @@ verify_jwt = false
 # Sem JWT público; RPCs de sessão/mutação permanecem service-role-only e o rollout inicia OFF.
 [functions.order-addon-public-v1]
 verify_jwt = false
+
+# Public post-order capability validates a 256-bit secret internally; no Supabase JWT required.
+[functions.order-customer-actions-v1]
+verify_jwt = false
