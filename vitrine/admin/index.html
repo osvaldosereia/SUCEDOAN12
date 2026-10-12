@@ -1281,6 +1281,60 @@
       document.documentElement.classList.add('montar-picker-only');
     }
   </script>
+<style>
+
+  /* Compras/XML: lista de notas em primeiro plano, fluxo familiar ao Bling. */
+  .purchase-simple-toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap;padding:12px 14px;margin-bottom:10px}
+  .purchase-toolbar-period{display:flex;flex-direction:column;gap:4px}
+  .purchase-toolbar-period label{font-size:11px;font-weight:700;color:var(--muted)}
+  .purchase-toolbar-period select{min-height:42px;min-width:160px}
+  .purchase-custom-range{align-items:end;gap:8px;flex-wrap:wrap}
+  .purchase-custom-range label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
+  .purchase-custom-range input{min-height:42px}
+  .purchase-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .purchase-import-options{padding:11px 14px;margin:0 0 14px}
+  .purchase-import-options summary,.purchase-extra summary{cursor:pointer;font-weight:700;font-size:12px}
+  .purchase-import-options .purchase-toolbar-actions{margin:12px 0}
+  .purchase-simple-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+  .purchase-simple-stats>div{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:13px}
+  .purchase-simple-stats small{display:block;color:var(--muted);font-size:11px}
+  .purchase-simple-stats strong{display:block;font-size:23px;line-height:1.25;margin-top:4px}
+  .purchase-notes-panel{overflow:hidden}
+  .purchase-notes-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px;border-bottom:1px solid var(--line)}
+  .purchase-notes-header>div:first-child{display:flex;flex-direction:column;gap:4px}
+  .purchase-notes-search{display:flex;gap:8px;flex-wrap:wrap;flex:1;justify-content:flex-end}
+  .purchase-notes-search input{min-width:220px;max-width:390px;flex:1}
+  .purchase-notes-search select{min-width:150px}
+  .purchase-simple-row{display:grid;grid-template-columns:minmax(90px,130px) minmax(140px,1fr) minmax(128px,170px) auto;gap:12px;align-items:center}
+  .purchase-note-ref small,.purchase-note-status small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+  .purchase-note-status .pill{white-space:nowrap}
+  .purchase-simple-row .purchase-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+  .purchase-simple-row .purchase-actions button{min-height:36px}
+  .purchase-extra{margin-top:12px;padding:13px}
+  .purchase-extra>summary{padding:3px 0}
+  .purchase-extra>section,.purchase-extra>details{margin-top:12px}
+  @media(max-width:800px){
+    .purchase-simple-row{grid-template-columns:minmax(90px,120px) minmax(130px,1fr) auto}
+    .purchase-simple-row .purchase-note-status{grid-column:2}
+    .purchase-simple-row .purchase-actions{grid-column:3;grid-row:1/3}
+  }
+  @media(max-width:620px){
+    .purchase-simple-toolbar{align-items:stretch}
+    .purchase-toolbar-period{flex:1;min-width:130px}
+    .purchase-toolbar-period select{width:100%}
+    .purchase-toolbar-actions{width:100%}
+    .purchase-toolbar-actions button{flex:1 1 140px}
+    .purchase-simple-stats{gap:6px}
+    .purchase-simple-stats>div{padding:10px}
+    .purchase-simple-stats small{font-size:10px}
+    .purchase-simple-stats strong{font-size:20px}
+    .purchase-notes-search,.purchase-notes-search input,.purchase-notes-search select{width:100%;max-width:none;min-width:0}
+    .purchase-simple-row{grid-template-columns:1fr auto;gap:8px}
+    .purchase-simple-row .history-main,.purchase-simple-row .purchase-note-status{grid-column:1}
+    .purchase-simple-row .purchase-actions{grid-column:2;grid-row:1/4;align-self:center;flex-direction:column}
+    .purchase-simple-row .purchase-actions button{min-height:38px}
+  }
+</style>
 </head>
 <body>
   <div id="app">
@@ -5629,58 +5683,46 @@
     const f=state.purchaseFilter||{};
     const custom=f.period==='custom';
     const box=$('#purchaseCustomDates');if(box)box.style.display=custom?'flex':'none';
-    const b=$('#purchaseBlingSync');if(b)b.textContent='Buscar e importar notas';
+    const b=$('#purchaseBlingSync');if(b)b.textContent='Buscar no Bling';
   }
   async function renderPurchases(){
     const content=$('#content');
     if(!state.purchaseFilter)state.purchaseFilter={period:'this_month',start_date:'',end_date:''};
     const pf=state.purchaseFilter;
     content.innerHTML=
-      '<div class="page-head"><div><h1>Compras do Bling</h1><p>Importe as notas e use a fila de produtos dos últimos 31 dias para cadastrar, conferir e aprovar alterações com rapidez.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar tela</button></div>'+
-      '<div class="purchase-safe"><strong>Importação segura</strong><small>Importar não dá entrada no estoque. Notas em CPF nunca geram contas a pagar. Para notas da empresa, o financeiro é conciliado com o Bling e qualquer dúvida fica marcada para revisão.</small></div>'+
-      '<section class="panel" style="margin:0 0 12px;padding:12px">'+
-        '<div style="display:flex;gap:12px;align-items:end;justify-content:space-between;flex-wrap:wrap">'+
-          '<div><strong>1. Escolha o período</strong><div class="sub" style="margin-top:3px">Veja ou importe somente as notas do período escolhido.</div></div>'+
-          '<div class="bling-actions" style="justify-content:flex-start;align-items:center;margin:0;gap:8px;flex-wrap:wrap">'+
-            '<select id="purchasePeriod" style="min-height:40px;border:1px solid var(--line);border-radius:10px;padding:0 12px;background:var(--surface);color:var(--text)">'+
-              '<option value="this_month" '+(pf.period==='this_month'?'selected':'')+'>Este mês</option>'+
-              '<option value="last_month" '+(pf.period==='last_month'?'selected':'')+'>Mês passado</option>'+
-              '<option value="days_90" '+(pf.period==='days_90'?'selected':'')+'>Últimos 90 dias</option>'+
-              '<option value="days_120" '+(pf.period==='days_120'?'selected':'')+'>Últimos 120 dias</option>'+
-              '<option value="days_180" '+(pf.period==='days_180'?'selected':'')+'>Últimos 180 dias</option>'+
-              '<option value="custom" '+(pf.period==='custom'?'selected':'')+'>Escolher datas</option>'+
-            '</select>'+
-            '<div id="purchaseCustomDates" style="display:'+(pf.period==='custom'?'flex':'none')+';gap:8px;align-items:center;flex-wrap:wrap">'+
-              '<label class="sub">De <input id="purchaseDateStart" type="date" value="'+esc(pf.start_date||'')+'" style="min-height:38px"></label>'+
-              '<label class="sub">Até <input id="purchaseDateEnd" type="date" value="'+esc(pf.end_date||'')+'" style="min-height:38px"></label>'+
-              '<button class="secondary" id="purchaseApplyDates" type="button">Aplicar</button>'+
-            '</div>'+
-          '</div>'+
+      '<div class="page-head"><div><h1>Notas fiscais de entrada</h1><p>Confira suas compras e os produtos recebidos. Integração com o Bling.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar</button></div>'+
+      '<section class="panel purchase-simple-toolbar" aria-label="Importação de notas fiscais">'+
+        '<div class="purchase-toolbar-period"><label for="purchasePeriod">Período</label>'+
+          '<select id="purchasePeriod">'+
+            '<option value="this_month" '+(pf.period==='this_month'?'selected':'')+'>Este mês</option>'+
+            '<option value="last_month" '+(pf.period==='last_month'?'selected':'')+'>Mês passado</option>'+
+            '<option value="days_90" '+(pf.period==='days_90'?'selected':'')+'>Últimos 90 dias</option>'+
+            '<option value="days_120" '+(pf.period==='days_120'?'selected':'')+'>Últimos 120 dias</option>'+
+            '<option value="days_180" '+(pf.period==='days_180'?'selected':'')+'>Últimos 180 dias</option>'+
+            '<option value="custom" '+(pf.period==='custom'?'selected':'')+'>Escolher datas</option>'+
+          '</select>'+
+        '</div>'+
+        '<div id="purchaseCustomDates" class="purchase-custom-range" style="display:'+(pf.period==='custom'?'flex':'none')+'">'+
+          '<label>De <input id="purchaseDateStart" type="date" value="'+esc(pf.start_date||'')+'"></label>'+
+          '<label>Até <input id="purchaseDateEnd" type="date" value="'+esc(pf.end_date||'')+'"></label>'+
+          '<button class="secondary" id="purchaseApplyDates" type="button">Aplicar</button>'+
+        '</div>'+
+        '<div class="purchase-toolbar-actions">'+
+          '<button class="primary" id="purchaseBlingSync" type="button">Buscar no Bling</button>'+
+          '<button class="secondary" id="purchaseXmlBatch" type="button">Importar XML</button>'+
+          '<button class="secondary" id="purchaseBlingReceived" type="button">Abrir Bling ↗</button>'+
         '</div>'+
       '</section>'+
-      '<section class="panel" style="margin:0 0 12px;padding:12px">'+
-        '<div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">'+
-          '<div><strong>2. Busque e importe</strong><div class="sub" style="margin-top:3px">O sistema compara com o que já está no Admin e não duplica a mesma NF-e.</div></div>'+
-          '<div class="bling-actions" style="justify-content:flex-end;margin:0;gap:8px;flex-wrap:wrap">'+
-            '<button class="primary" id="purchaseBlingSync" type="button">Buscar e importar notas</button>'+
-            '<button class="secondary" id="purchaseBlingReceived" type="button">Ver notas recebidas no Bling</button>'+
-          '</div>'+
+      '<details class="panel purchase-import-options"><summary>Outras opções de importação</summary>'+
+        '<div class="purchase-toolbar-actions">'+
+          '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar apenas 1 XML</button>'+
+          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Catalogar XML sem cadastrar produtos</button>'+
         '</div>'+
-      '</section>'+
-      '<details class="panel" style="margin:0 0 12px;padding:12px"><summary style="cursor:pointer;font-weight:700">Outras formas de importar XML</summary>'+
-        '<div class="bling-actions" style="justify-content:flex-start;margin:10px 0 0">'+
-          '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar 1 XML</button>'+
-          '<button class="secondary" id="purchaseXmlBatch" type="button">Enviar vários XMLs</button>'+
-          '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
-        '</div>'+
+        '<p class="sub">Importar uma nota não lança estoque automaticamente. A opção de catalogar serve apenas para pesquisa e revisão, sem alterar produtos, preços, estoque ou financeiro. Notas em CPF não geram contas a pagar.</p>'+
       '</details>'+
-      '<section class="panel" style="margin:0 0 12px;padding:12px">'+
-        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">'+
-          '<div><strong>Catalogar XML sem cadastrar produtos</strong><div class="sub" style="margin-top:3px">Armazena todos os itens e dados fiscais para revisão. Não movimenta estoque, não altera produtos e não lança financeiro.</div></div>'+
-          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Enviar XMLs ao catálogo</button>'+
-        '</div><input id="purchaseXmlCatalogOnlyInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
-      '</section>'+
-      '<div id="purchaseBody"><div class="loading">Carregando compras…</div></div>';
+      '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
+      '<input id="purchaseXmlCatalogOnlyInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
+      '<div id="purchaseBody"><div class="loading">Carregando notas fiscais…</div></div>';
     $('#refreshPurchases').onclick=loadPurchases;
     $('#purchasePeriod').onchange=async e=>{
       state.purchaseFilter.period=e.target.value;
@@ -6593,33 +6635,46 @@
     const runSource=last?.source==='bling_daily'?'Rotina automática':last?.source==='bling_manual'?'Importação manual':last?.source==='manual_xml'||last?.source==='bulk_xml'?'XML enviado':'Execução';
     const runStatus=last?.status==='completed'?'Concluída':last?.status==='completed_with_review'?'Concluída com revisão':last?.status==='failed'?'Falhou':last?.status==='running'?'Em andamento':String(last?.status||'');
     host.innerHTML=
-      '<div class="bling-grid">'+
-        '<div class="bling-card"><small>No Bling</small><strong>'+blingDocs.length+'</strong><span class="sub">nota(s) no período</span></div>'+
-        '<div class="bling-card"><small>Já importadas</small><strong>'+docs.length+'</strong><span class="sub">disponíveis para revisão</span></div>'+
-        '<div class="bling-card"><small>Ainda não importadas</small><strong class="'+(notImported.length?'warn-text':'ok-text')+'">'+notImported.length+'</strong><span class="sub">encontradas no Bling</span></div>'+
-        '<div class="bling-card"><small>Precisam de atenção</small><strong class="'+(attentionDocs.length?'warn-text':'ok-text')+'">'+attentionDocs.length+'</strong><span class="sub">produto, financeiro ou recebimento</span></div>'+
-        '<div class="bling-card"><small>Contas no Bling</small><strong class="ok-text">'+posted+'</strong><span class="sub">lançadas/conciliadas</span></div>'+
-        '<div class="bling-card"><small>Pagamentos confirmados</small><strong class="ok-text">'+paidConfirmed+'</strong><span class="sub">baixa verificada no Bling</span></div>'+
-        '<div class="bling-card"><small>Confirmar baixa</small><strong class="'+(paymentToConfirm?'warn-text':'ok-text')+'">'+paymentToConfirm+'</strong><span class="sub">pagamento na hora identificado na NF-e</span></div>'+
-        '<div class="bling-card"><small>Prontas para estoque</small><strong>'+ready+'</strong><span class="sub">aguardam sua confirmação</span></div>'+
+      '<div class="purchase-simple-stats" aria-label="Resumo das notas">'+
+        '<div><small>Notas importadas</small><strong>'+docs.length+'</strong></div>'+
+        '<div><small>Para conferir</small><strong>'+attentionDocs.length+'</strong></div>'+
+        '<div><small>Faltam importar</small><strong>'+notImported.length+'</strong></div>'+
       '</div>'+
+      (notImported.length?'<div class="purchase-safe purchase-danger"><strong>'+notImported.length+' nota(s) ainda não importada(s)</strong><small>Use “Buscar no Bling” para importar as notas de compra/entrada encontradas no período.</small></div>':'')+
+      '<section class="panel purchase-notes-panel">'+
+        '<div class="purchase-notes-header"><div><strong>Notas de entrada</strong><span class="sub" id="purchaseVisibleCount">'+docs.length+' nota(s) na lista</span></div>'+
+          '<div class="purchase-notes-search"><input id="purchaseQuickSearch" type="search" aria-label="Pesquisar notas" placeholder="Buscar fornecedor, NF-e ou CNPJ/CPF" value="'+esc(state.purchaseQuery||'')+'">'+
+          '<select id="purchaseQuickStatus" aria-label="Filtrar notas">'+
+            '<option value="all" '+(!state.purchaseQuickStatus||state.purchaseQuickStatus==='all'?'selected':'')+'>Todas</option>'+
+            '<option value="attention" '+(state.purchaseQuickStatus==='attention'?'selected':'')+'>Para conferir</option>'+
+            '<option value="ready" '+(state.purchaseQuickStatus==='ready'?'selected':'')+'>Prontas para entrada</option>'+
+            '<option value="received" '+(state.purchaseQuickStatus==='received'?'selected':'')+'>Recebidas</option>'+
+          '</select></div></div>'+
+        (docs.length?docs.map(x=>{
+          const needsReview=attentionDocs.some(y=>y.id===x.id);
+          const isReceived=x.receipt_status==='received';
+          const isReady=x.receipt_status==='ready';
+          const primaryStatus=needsReview?'Para conferir':isReceived?'Recebida':isReady?'Pronta para entrada':'Importada';
+          const primaryClass=needsReview?'warn':'';
+          const filterStatus=needsReview?'attention':isReceived?'received':isReady?'ready':'other';
+          const docRef=String(x.number||x.document_number||x.document_key||'').slice(-10)||'—';
+          const searchable=[x.supplier_name,x.supplier_document,x.recipient_document,x.document_key,x.number,x.document_number].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR');
+          return '<div class="purchase-doc-block" data-purchase-filter-row data-purchase-search="'+esc(searchable)+'" data-purchase-status="'+filterStatus+'">'+
+            '<div class="purchase-doc-row purchase-simple-row purchase-doc-clickable '+(state.purchaseExpandedId===x.id?'expanded':'')+'" data-purchase-toggle="'+esc(x.id)+'">'+
+              '<div class="purchase-note-ref"><strong>NF '+esc(docRef)+'</strong><small>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</small></div>'+
+              '<div class="history-main"><strong>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns) · '+esc(x.recipient_kind||'NF-e')+'</small></div>'+
+              '<div class="purchase-note-status"><span class="pill '+primaryClass+'">'+primaryStatus+'</span><small>'+esc(x.receipt_status==='received'?'Estoque verificado':x.finance_status==='review'?'Financeiro para revisar':'Produtos e recebimento')+'</small></div>'+
+              '<div class="purchase-actions"><button class="secondary" type="button" data-purchase-open="'+esc(x.id)+'">Conferir</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button></div>'+
+            '</div><div class="purchase-doc-expanded" data-purchase-detail="'+esc(x.id)+'" style="display:none"></div></div>';
+        }).join(''):'<div class="empty">Nenhuma nota importada neste período. Clique em “Buscar no Bling” ou “Importar XML”.</div>')+
+        '<div class="empty" id="purchaseNoFilterResults" style="display:none">Nenhuma nota corresponde à pesquisa.</div>'+
+      '</section>'+
+      '<details class="panel purchase-extra"><summary>Ferramentas avançadas: produtos, catálogo, financeiro e integração</summary>'+
       purchaseCatalogQueueHtml()+
       xmlCatalogSectionHtml()+
       purchasePaymentConfigHtml()+
-      ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento interrompido corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto a partir dos itens já gravados.':'')+'</small></div>':'')+
-      (last?'<div class="bling-banner"><strong>'+esc(runSource)+' · '+esc(runStatus)+'</strong><small>'+dateTime(last.started_at||last.created_at)+' · '+esc(last.documents_processed||0)+' nova(s) · '+esc(last.documents_duplicate||0)+' já existente(s) · '+esc(last.documents_failed||0)+' falha(s)'+(last.items_review?' · '+esc(last.items_review)+' item(ns) para revisar':'')+'</small></div>':'')+
-      (notImported.length?'<div class="purchase-safe purchase-danger"><strong>'+notImported.length+' nota(s) do Bling ainda não estão no Admin</strong><small>Clique em <b>Buscar e importar notas</b>. A mesma NF-e não é duplicada. Se a nota estiver apenas em “Notas recebidas” no Bling, primeiro ela precisa entrar como nota de compra/entrada no próprio Bling.</small></div>':
-        '<div class="purchase-safe"><strong>Período sincronizado</strong><small>Todas as notas que a API do Bling retornou neste período já aparecem no Admin.</small></div>')+
-      '<section class="panel"><div class="history-title dispatch-head"><div><strong>4. Revise as notas importadas</strong><span>Clique em uma nota para ver produtos, custo, preço, financeiro e recebimento.</span></div><b>'+docs.length+'</b></div>'+
-        (docs.length?docs.map(x=>'<div class="purchase-doc-block">'+
-          '<div class="purchase-doc-row purchase-doc-clickable '+(state.purchaseExpandedId===x.id?'expanded':'')+'" data-purchase-toggle="'+esc(x.id)+'">'+
-            '<div><strong>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</strong><span class="sub">'+esc(String(x.document_key||'').slice(-10))+'</span></div>'+
-            '<div class="history-main"><strong><span class="purchase-chevron">'+(state.purchaseExpandedId===x.id?'−':'+')+'</span>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns)</small></div>'+
-            '<div><span class="pill '+(x.recipient_kind==='CPF'?'off':'')+'">'+esc(x.recipient_kind||'—')+'</span></div>'+
-            '<div>'+purchaseStatusLabel(x.processing_status)+'</div><div>'+purchaseFinanceRowLabel(x)+'</div><div>'+purchaseReceiptLabel(x.receipt_status)+'</div>'+
-            '<div class="purchase-actions"><button class="text" type="button" data-purchase-open="'+esc(x.id)+'">Abrir</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button></div>'+
-          '</div><div class="purchase-doc-expanded" data-purchase-detail="'+esc(x.id)+'" style="display:none"></div></div>').join(''):'<div class="empty">Nenhuma nota importada neste período.</div>')+
-      '</section>'+
+      ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto.':'')+'</small></div>':'')+
+      (last?'<div class="bling-banner"><strong>'+esc(runSource)+' · '+esc(runStatus)+'</strong><small>'+dateTime(last.started_at||last.created_at)+' · '+esc(last.documents_processed||0)+' nova(s) · '+esc(last.documents_duplicate||0)+' já existente(s) · '+esc(last.documents_failed||0)+' falha(s)</small></div>':'')+
       '<details class="panel" style="margin-top:14px"><summary class="history-title" style="cursor:pointer;padding:12px 14px"><div><strong>Comparar com as notas do Bling</strong><span>Lista somente para conferência; não é outra fila de trabalho.</span></div><b>'+blingDocs.length+'</b></summary>'+
         (blingDocs.length?blingDocs.map(x=>{
           const imported=importedIds.has(Number(x.bling_nfe_id||0))||(x.access_key&&importedKeys.has(String(x.access_key)));
@@ -6633,7 +6688,27 @@
       '</details>'+
       (reviews.length?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Itens que ainda precisam de conversão/vínculo</strong><span>Caixa, fardo e pacote precisam estar convertidos para unidade antes de atualizar cadastro ou estoque.</span></div><b>'+reviews.length+'</b></div>'+
         reviews.map(x=>'<div class="purchase-review"><div class="history-main"><strong>'+esc(x.description||'Produto')+'</strong><small>'+esc(x.processing_status||'')+'</small></div><div><strong>'+esc(fmtQty(x.purchase_quantity||0))+'</strong><span class="sub">'+esc(x.purchase_unit||'')+'</span></div><div><strong>'+esc(x.conversion_factor||'—')+'</strong><span class="sub">fator</span></div><div><strong>'+purchaseMaybeMoney(x.purchase_unit_price)+'</strong><span class="sub">compra</span></div><div><button class="secondary" type="button" data-purchase-conversion="'+esc(x.id)+'">Definir conversão</button></div></div>').join('')+
-      '</section>':'');
+      '</section>':'')+
+      '</details>';
+    const purchaseQuickSearch=$('#purchaseQuickSearch');
+    const purchaseQuickStatus=$('#purchaseQuickStatus');
+    const filterPurchasesOnScreen=()=>{
+      state.purchaseQuery=String(purchaseQuickSearch?.value||'').trim().toLocaleLowerCase('pt-BR');
+      state.purchaseQuickStatus=String(purchaseQuickStatus?.value||'all');
+      let shown=0;
+      host.querySelectorAll('[data-purchase-filter-row]').forEach(row=>{
+        const matchesText=!state.purchaseQuery||String(row.dataset.purchaseSearch||'').includes(state.purchaseQuery);
+        const matchesStatus=state.purchaseQuickStatus==='all'||row.dataset.purchaseStatus===state.purchaseQuickStatus;
+        const show=matchesText&&matchesStatus;
+        row.style.display=show?'':'none';
+        if(show)shown++;
+      });
+      const count=$('#purchaseVisibleCount');if(count)count.textContent=shown+' nota(s) na lista';
+      const empty=$('#purchaseNoFilterResults');if(empty)empty.style.display=docs.length&&shown===0?'block':'none';
+    };
+    if(purchaseQuickSearch)purchaseQuickSearch.oninput=filterPurchasesOnScreen;
+    if(purchaseQuickStatus)purchaseQuickStatus.onchange=filterPurchasesOnScreen;
+    filterPurchasesOnScreen();
     bindPurchaseCatalogQueue();
     bindXmlCatalog();
     host.querySelectorAll('[data-purchase-toggle]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,a,input,label'))return;togglePurchaseDocument(row.dataset.purchaseToggle)});
@@ -6658,7 +6733,7 @@
       state.purchaseDetailCache={};state.purchaseExpandedId=null;
       await loadPurchases();
     }catch(e){toast(errorMessage(e.message))}
-    finally{if(b){b.disabled=false;b.textContent='Buscar e importar notas'}}
+    finally{if(b){b.disabled=false;b.textContent='Buscar no Bling'}}
   }
   async function importCatalogOnlyXmlFiles(files){
     const input=$('#purchaseXmlCatalogOnlyInput');if(input)input.value='';
