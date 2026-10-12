@@ -1440,6 +1440,7 @@
   </dialog>
 
 <script src="/vitrine/admin/basket-lot-image.js?v=studio-v2"></script>
+<script src="/vitrine/admin/product-image-safe-fallback.js?v=20261012-1"></script>
 <script>
 (()=>{
   const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-products-live-v1';
@@ -1505,11 +1506,11 @@
       return await productImageApi(event,payload,false);
     }
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
-    if(!response.ok||data.ok===false)throw new Error(data.error||'product_image_service_error');
+    if(!response.ok||data.ok===false){const err=new Error(data.error||'product_image_service_error');err.payload=data;throw err;}
     return data;
   }
   function productImageStatusText(p){
-    if(p?.image_ai_status==='completed')return 'Imagem padronizada pela IA'+(p.image_ai_processed_at?' · '+dateTime(p.image_ai_processed_at):'');
+    if(p?.image_ai_status==='completed')return (p.image_ai_model==='original-safe-framing-v1'?'Foto original enquadrada sem IA':'Imagem padronizada pela IA')+(p.image_ai_processed_at?' · '+dateTime(p.image_ai_processed_at):'');
     if(p?.image_ai_status==='processing')return 'Padronização em andamento…';
     if(p?.image_ai_status==='error')return 'Última padronização falhou. A foto original continua preservada.';
     if(p?.image_original_url)return 'Foto original salva. Você pode padronizar quando quiser.';
@@ -1523,7 +1524,21 @@
     const form=new FormData();form.append('product_id',productId);form.append('file',file,file.name||'produto.jpg');
     return await productImageApi('upload_source',form);
   }
-  async function standardizeProductImage(productId){return await productImageApi('standardize',{product_id:productId})}
+  async function standardizeProductImage(productId){
+    try{return await productImageApi('standardize',{product_id:productId})}
+    catch(err){
+      if(err?.payload?.safe_fallback!==true||!err.payload.original_url)throw err;
+      if(!window.DonaAntoniaProductImageSafe?.prepare)throw err;
+      // Resultado da IA foi reprovado: reenquadrar pixels da foto original, sem redesenhar marca/rótulo.
+      const file=await window.DonaAntoniaProductImageSafe.prepare(err.payload.original_url);
+      const form=new FormData();
+      form.append('event','upload_safe_fallback');
+      form.append('product_id',productId);
+      form.append('source_url',err.payload.original_url);
+      form.append('file',file,file.name);
+      return await productImageApi('upload_safe_fallback',form);
+    }
+  }
 
   async function customerApi(action,payload={},retryAuth=true){
     const token=await adminStepUp();
@@ -3969,7 +3984,7 @@
       };
       if($('#standardizeProductImage'))$('#standardizeProductImage').onclick=async()=>{
         const btn=$('#standardizeProductImage'),choose=$('#chooseProductImage'),status=$('#productImageStatus');btn.disabled=true;choose.disabled=true;status.className='product-image-status warn';status.textContent='Padronizando e conferindo fidelidade da embalagem… isso pode levar alguns segundos.';
-        try{const data=await standardizeProductImage(p.id);p.image_url=data.image_url;p.image_ai_url=data.image_url;p.image_ai_status='completed';p.image_original_url=data.image_original_url||p.image_original_url;p.image_ai_validation=data.validation||null;p.image_ai_processed_at=new Date().toISOString();$('#productImagePreview').src=data.image_url;$('#productForm [name="image_url"]').value=data.image_url;const v=data.validation||{};status.className='product-image-status ok';status.textContent='Imagem padronizada e aprovada'+(v.fidelity_score!=null?' · fidelidade '+Math.round(Number(v.fidelity_score)*100)+'%':'')+'.';toast('Imagem padronizada e substituída no produto')}
+        try{const data=await standardizeProductImage(p.id);p.image_url=data.image_url;p.image_ai_url=data.image_url;p.image_ai_status='completed';p.image_ai_model=data.model||'';p.image_original_url=data.image_original_url||p.image_original_url;p.image_ai_validation=data.validation||null;p.image_ai_processed_at=new Date().toISOString();$('#productImagePreview').src=data.image_url;$('#productForm [name="image_url"]').value=data.image_url;const v=data.validation||{};status.className='product-image-status ok';status.textContent=data.method==='original_safe_framing'?'Foto original enquadrada sem alterar a embalagem.':'Imagem padronizada e aprovada'+(v.fidelity_score!=null?' · fidelidade '+Math.round(Number(v.fidelity_score)*100)+'%':'')+'.';toast(data.method==='original_safe_framing'?'Imagem enquadrada com a foto original':'Imagem padronizada e substituída no produto')}
         catch(err){status.className='product-image-status error';status.textContent='A automação não substituiu a foto: '+errorMessage(err.message);toast('A imagem original foi mantida. A padronização não passou na validação.')}finally{btn.disabled=false;choose.disabled=false}
       };
     }
