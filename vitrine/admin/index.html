@@ -5718,6 +5718,12 @@
           '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar apenas 1 XML</button>'+
           '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Catalogar XML sem cadastrar produtos</button>'+
         '</div>'+
+        '<div class="purchase-key-lookup" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:12px 0">'+
+          '<label style="display:flex;flex-direction:column;gap:5px;flex:1 1 290px;font-size:12px">Consultar nota por chave de acesso no Bling'+
+            '<input id="purchaseBlingAccessKey" inputmode="numeric" autocomplete="off" maxlength="54" placeholder="Cole os 44 dígitos da chave NF-e" style="min-height:42px;width:100%"></label>'+
+          '<button class="secondary" id="purchaseBlingKeyCheck" type="button">Consultar chave</button>'+
+        '</div>'+
+        '<div id="purchaseBlingKeyResult" class="sub" role="status" aria-live="polite"></div>'+
         '<p class="sub">Importar uma nota não lança estoque automaticamente. A opção de catalogar serve apenas para pesquisa e revisão, sem alterar produtos, preços, estoque ou financeiro. Notas em CPF não geram contas a pagar.</p>'+
       '</details>'+
       '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
@@ -5742,8 +5748,47 @@
     $('#purchaseXmlInput').onchange=e=>importPurchaseXmlFiles([...e.target.files]);
     $('#purchaseXmlCatalogOnly').onclick=()=>$('#purchaseXmlCatalogOnlyInput').click();
     $('#purchaseXmlCatalogOnlyInput').onchange=e=>importCatalogOnlyXmlFiles([...e.target.files]);
+    bindPurchaseBlingKeyLookup();
     syncPurchasePeriodControls();
     await loadPurchases();
+  }
+  // O Bling é a única fonte: consulta por chave não manifesta nota e não baixa estoque.
+  function bindPurchaseBlingKeyLookup(){
+    const input=$('#purchaseBlingAccessKey'),button=$('#purchaseBlingKeyCheck'),result=$('#purchaseBlingKeyResult');
+    if(!input||!button||!result)return;
+    let checkedKey='';
+    input.oninput=()=>{checkedKey='';result.textContent=''};
+    button.onclick=async()=>{
+      const key=String(input.value||'').replace(/\D/g,'');
+      if(!/^\d{44}$/.test(key)){result.textContent='Informe uma chave de acesso com 44 dígitos.';return}
+      button.disabled=true;button.textContent='Consultando Bling…';result.textContent='';
+      try{
+        const r=await purchaseApi('bling_key_check',{key});
+        if(!r.available){
+          result.textContent='O Bling não disponibilizou o XML por esta chave. A NF-e pode estar apenas em Notas recebidas. Nenhuma manifestação foi realizada.';
+          return;
+        }
+        checkedKey=key;
+        result.innerHTML='<div class="purchase-safe" style="margin:8px 0"><strong>'+esc(r.supplier_name||'Fornecedor')+
+          ' · NF '+esc(r.number||key.slice(-9))+'</strong><small>'+purchaseMoney(r.total_amount)+
+          ' · '+esc(r.items_count||0)+' itens. '+(r.already_cataloged?'Já consta no catálogo.':'XML disponível pela API Bling; nenhuma alteração realizada.')+'</small>'+
+          (r.already_cataloged?'':'<button class="secondary" type="button" id="purchaseBlingKeyCatalog" style="margin-top:9px">Catalogar esta NF-e</button>')+'</div>';
+        const cat=$('#purchaseBlingKeyCatalog');
+        if(cat)cat.onclick=async()=>{
+          if(checkedKey!==String(input.value||'').replace(/\D/g,'')){result.textContent='Consulte a chave novamente.';return}
+          if(!confirm('Catalogar este XML obtido do Bling? Não altera produtos, NCM, preços, estoque, financeiro ou situação fiscal.'))return;
+          cat.disabled=true;cat.textContent='Catalogando…';
+          try{
+            const x=await purchaseApi('bling_key_catalog',{key:checkedKey,confirmation:'CATALOGAR_XML_BLING'});
+            if(x.failed){result.textContent='Não foi possível catalogar: '+String(x.results?.[0]?.error||'erro na importação');return}
+            result.textContent=x.duplicates?'Esta NF-e já estava catalogada.':'NF-e adicionada ao catálogo XML para conferência, sem movimentação de estoque.';
+            await loadPurchases();
+          }catch(e){result.textContent='Erro ao catalogar: '+errorMessage(e.message)}
+          finally{cat.disabled=false;cat.textContent='Catalogar esta NF-e'}
+        };
+      }catch(e){result.textContent='Consulta ao Bling não concluída: '+errorMessage(e.message)}
+      finally{button.disabled=false;button.textContent='Consultar chave'}
+    };
   }
   async function loadPurchases(){
     const host=$('#purchaseBody');if(!host)return;
