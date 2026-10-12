@@ -1830,6 +1830,30 @@ async function applyItemUpdate(body:any,userId:string|null){
   await sb.from("bling_hub_audit_v2").insert({event_type:"purchase_catalog_item_approved",severity:"info",domain:"catalog",source_system:"vitrine_admin",source_id:id,details:{document_id:item.document_id,document_key:doc.document_key,product_id:item.product_id,operator,user_id:userId,conversion_factor:factor,base_unit_cost:baseCost,old_cost:product.cost,old_price:product.price,new_cost:updateCost?baseCost:product.cost,new_price:updateSale?Math.round(salePrice*100)/100:product.price,update_cost:updateCost,update_sale_price:updateSale,stock_unchanged:true}});
   return {ok:true,item_id:id,document_id:item.document_id,product:pu.data,conversion_factor:factor,base_unit_cost:baseCost,stock_unchanged:true,...readiness};
 }
+// Conferência diária humana da aba Notas recebidas no Bling. Não representa
+// contagem ou confirmação de NF-e pendente e não chama Bling/SEFAZ.
+async function blingReceivedReviewStatus(){
+  const today=cuiabaDate();
+  const check=await sb.from("purchase_bling_received_review_v1")
+    .select("review_date,reviewed_at,reviewed_by").eq("review_date",today).maybeSingle();
+  if(check.error)throw check.error;
+  const record=check.data;
+  let operator_name:string|null=null;
+  if(record?.reviewed_by){
+    const a=await sb.from("admin_users").select("display_name").eq("user_id",record.reviewed_by).maybeSingle();
+    if(!a.error)operator_name=clean(a.data?.display_name,80)||null;
+  }
+  return {ok:true,review_date:today,reviewed_today:Boolean(record),reviewed_at:record?.reviewed_at||null,reviewed_by_name:operator_name,
+    scope:"human_bling_received_list_check",verified_pending_count:null,source:"admin_manual_ack"};
+}
+async function confirmBlingReceivedReview(userId:string){
+  const today=cuiabaDate();
+  // Primeira confirmação do dia vence; uma equipe inteira vê o mesmo resultado.
+  const save=await sb.from("purchase_bling_received_review_v1")
+    .upsert({review_date:today,reviewed_by:userId},{onConflict:"review_date",ignoreDuplicates:true});
+  if(save.error)throw save.error;
+  return await blingReceivedReviewStatus();
+}
 export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedInternal=false){
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   const a:any=trustedInternal?{ok:true,internal:true,user_id:null,role:"system"}:await auth(req);if(!a.ok)return js(req,{ok:false,error:a.error},a.status);
@@ -1846,6 +1870,11 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     }
     if(action==="bling_sync"){if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);return js(req,await runBlingSync("bling_manual",body))}
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
+    if(action==="bling_received_review_status")return js(req,await blingReceivedReviewStatus());
+    if(action==="bling_received_review_confirm"){
+      if(a.internal||!a.user_id||a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      return js(req,await confirmBlingReceivedReview(a.user_id));
+    }
     if(action==="manual_import"){
       if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);
       const files=Array.isArray(body?.files)?body.files:[];
