@@ -150,7 +150,7 @@ export function validateTemplateDraft(input){
     if(type==='BODY'){
       bodyCount++;
       if(bodyCount>1)throw fail('meta_template_components_invalid');
-      const text=clean(component.text,1024);
+      const text=String(component.text??'').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g,' ').trim().slice(0,1024);
       if(!text||text.length>1024)throw fail('meta_template_body_invalid');
       const placeholders=extractPlaceholders(text);
       const example=normalizeBodyExample(component.example,placeholders.length);
