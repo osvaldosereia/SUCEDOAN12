@@ -1,0 +1,46 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const canonical=readFileSync("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts","utf8");
+const standalone=readFileSync("supabase/functions/purchase-xml-v1/index.ts","utf8");
+const html=readFileSync("vitrine/admin/index.html","utf8");
+
+assert.equal(canonical,standalone,"Both purchase XML modules must remain identical");
+const start=canonical.indexOf("function validBlingNfeKey(");
+const end=canonical.indexOf("async function blingKeyDocument(",start);
+assert.ok(start>=0&&end>start,"Key checksum guard must exist");
+const valid=new Function(canonical.slice(start,end).replace("value:any","value")+";return validBlingNfeKey")();
+const example="51261006057223029153553000003007981574823410";
+assert.equal(example.length,44);
+assert.equal(valid(example),true,"Example NF-e should have valid check digit");
+assert.equal(valid(example.slice(0,-1)+"1"),false,"Adulterated check digit must be rejected");
+assert.equal(valid("x".repeat(44)),false,"Non numeric keys must be rejected");
+
+const block=canonical.slice(start,canonical.indexOf("function cuiabaDate(",start));
+assert.match(block,/await blingXml\(await oauth\(\),key\)/,"Only authorized Bling document API");
+assert.match(block,/parsed\.document_key!==key/,"Do not accept another NF-e");
+assert.match(block,/parsed\.recipient_document!==company/,"Validate destination CNPJ");
+assert.match(block,/parsed\.recipient_kind!=="CNPJ"/,"Only company documents");
+assert.match(block,/assertCatalogXmlIntegrity\(xml,key\)/,"Verify raw XML");
+assert.match(block,/available:false/,"Unavailable by Bling is not absent in SEFAZ");
+assert.doesNotMatch(block,/\.from\(["']products["']\)\.update/);
+assert.doesNotMatch(block,/sefaz\.|nfe\.fazenda\.gov\.br/);
+const dispatcher=canonical.slice(canonical.indexOf('if(action==="bling_key_check"'),canonical.indexOf('if(action==="manual_import"'));
+assert.match(dispatcher,/a\.internal\|\|!\["owner","admin"\]\.includes\(a\.role\)/,"Only admin/owner");
+assert.match(dispatcher,/body\?\.confirmation!=="CATALOGAR_XML_BLING"/,"Explicit human confirmation");
+assert.match(dispatcher,/const \{xml:_xml,\.\.\.safe\}=r/,"Never expose raw XML in check response");
+assert.match(dispatcher,/manualCatalogOnlyImport/,"Use proven catalog-only import");
+assert.match(dispatcher,/source:"bling_manual"/,"Allowed DB source value");
+assert.doesNotMatch(dispatcher,/confirm_receipt|lancar-estoque|finance_post|manifest/);
+
+const uiStart=html.indexOf("  async function renderPurchases(){");
+const uiEnd=html.indexOf("  function purchaseMaybeMoney(",uiStart);
+assert.ok(uiStart>0&&uiEnd>uiStart);
+assert.doesNotThrow(()=>new Function(html.slice(uiStart,uiEnd)));
+assert.match(html,/id="purchaseBlingAccessKey"/);
+assert.match(html,/id="purchaseBlingKeyCheck"/);
+assert.match(html,/purchaseApi\('bling_key_check'/);
+assert.match(html,/purchaseApi\('bling_key_catalog'/);
+assert.match(html,/if\(!confirm\('Catalogar este XML/);
+assert.match(html,/XML disponível pela API Bling/);
+console.log("PASS Bling NF-e key: checksum, company isolation, read-only probe, explicit catalog-only gate, UI JS");
