@@ -56,9 +56,13 @@ function closed(reason){
     'Este pedido já avançou para a próxima etapa e não pode mais receber produtos por esta vitrine.';
   app.innerHTML='<section class="panel closed"><h1>Vitrine encerrada</h1><p class="muted">'+esc(message)+'</p><a class="back" href="/">Voltar para a Dona Antônia</a></section>';
 }
+function returnToOrderLink(){
+ const code=new URLSearchParams(location.search).get('k')||'';
+ return /^[a-f0-9]{16}$/i.test(code)?'<a class="back" href="/pedido/?k='+encodeURIComponent(code)+'">↩ Voltar ao pedido</a>':'';
+}
 function renderHero(){
   const s=state.session||{};
-  return '<section class="hero"><h1>Acrescentar ao pedido</h1><p class="muted">Escolha o que faltou. Os produtos serão incluídos no mesmo pedido, sem criar uma nova compra.</p><span class="order-chip">Pedido '+esc(s.order_number||'')+'</span><div id="timer" class="timer"></div></section>';
+  return '<section class="hero"><h1>Ofertas para o seu pedido</h1><p class="muted">Apenas ofertas disponíveis. Escolha o que faltou. Os produtos serão incluídos no mesmo pedido, sem criar uma nova compra.</p><span class="order-chip">Pedido '+esc(s.order_number||'')+'</span>'+returnToOrderLink()+'<div id="timer" class="timer"></div></section>';
 }
 function productCard(p){
   const q=Number(state.cart.get(p.product_id)||0),regular=p.regular_price_cents?'<span class="regular-price">'+esc(moneyCents(p.regular_price_cents))+'</span>':'';
@@ -119,7 +123,7 @@ async function loadProducts(append){
   finally{state.loading=false}
 }
 function showSuccess(data){
-  const box='<div id="successMessage" class="success"><strong>Itens adicionados ao mesmo pedido '+esc(data.order_number||'')+'.</strong><div>Valor acrescentado: '+esc(money(data.added_total))+' · Novo total: '+esc(money(data.total))+'</div></div>';
+  const box='<div id="successMessage" class="success"><strong>Itens adicionados ao mesmo pedido '+esc(data.order_number||'')+'.</strong><div>Valor acrescentado: '+esc(money(data.added_total))+' · Novo total: '+esc(money(data.total))+'</div>'+returnToOrderLink()+'</div>';
   const hero=app.querySelector('.hero');if(hero)hero.insertAdjacentHTML('afterend',box);
 }
 async function submit(isRetry=false){
