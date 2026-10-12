@@ -901,7 +901,11 @@ async function linkedXml(urlRaw:any){
 }
 async function blingXml(token:string,key:string){
   const r=await bg(token,"/nfe/documento/"+encodeURIComponent(key)+"?formato=xml");
-  if(!r.ok)return {ok:false,status:r.status,xml:""};
+  if(!r.ok){
+    const err=r.data?.error||r.data?.message||{};
+    const diagnostic=clean(typeof err==="string"?err:(err?.message||err?.description||err?.type||err?.code||""),180);
+    return {ok:false,status:r.status,xml:"",diagnostic};
+  }
   const d=Array.isArray(r.data?.data)?r.data.data.find((x:any)=>x?.conteudo):null;
   if(!d?.conteudo)return {ok:false,status:502,xml:""};
   try{return {ok:true,status:r.status,xml:await unzipBase64(String(d.conteudo))}}catch{return {ok:false,status:502,xml:""}}
@@ -926,7 +930,7 @@ async function blingKeyDocument(body:any){
   if(!xmlResponse.ok){
     // A falta do XML no Bling não significa que a NF-e não exista na SEFAZ.
     if(xmlResponse.status===404)return {ok:true,readonly:true,available:false,source:"bling_official_api",bling_http_status:404};
-    return {ok:false,status:502,error:"bling_document_unavailable",bling_http_status:xmlResponse.status};
+    return {ok:false,status:502,error:"bling_document_unavailable",bling_http_status:xmlResponse.status,bling_diagnostic:xmlResponse.diagnostic||null};
   }
   const xml=xmlResponse.xml;
   assertCatalogXmlSize(xml);
