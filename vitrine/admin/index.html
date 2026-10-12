@@ -5723,6 +5723,7 @@
   async function renderPurchases(){
     const content=$('#content');
     if(!state.purchaseFilter)state.purchaseFilter={period:'this_month',start_date:'',end_date:''};
+    if(!state.purchaseQuickStatus)state.purchaseQuickStatus='attention';
     const pf=state.purchaseFilter;
     content.innerHTML=
       '<div class="page-head"><div><h1>Notas fiscais de entrada</h1><p>Confira suas compras e os produtos recebidos. Integração com o Bling.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar</button></div>'+
@@ -6263,7 +6264,8 @@
       '<div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-inline-xml="'+esc(id)+'">Ver XML</button></div></div>'+
       '<div class="purchase-safe '+(d.recipient_kind==='CPF'?'purchase-danger':'')+'"><strong>Confira antes de atualizar o produto</strong><small>O custo vem da NF-e convertido para unidade. A margem de 40% é apenas o mínimo sugerido; se o preço atual já for maior, ele é mantido automaticamente.</small></div>'+
       '<div class="purchase-items">'+(items.length?items.slice().sort((a,b)=>Number(Boolean(a?.metadata?.catalog_approved_at&&!['pending','missing_link'].includes(a?.metadata?.bling_sale_status)))-Number(Boolean(b?.metadata?.catalog_approved_at&&!['pending','missing_link'].includes(b?.metadata?.bling_sale_status)))).map(purchaseItemCardHtml).join(''):'<div class="empty">Nenhum item encontrado na nota.</div>')+'</div>'+
-      '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Autorizar itens prontos</button></div>'+
+      (items.some(x=>x.product_id&&!x?.metadata?.catalog_approved_at)
+        ?'<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Salvar todos os produtos já identificados</button></div>':'')+
       '<details class="purchase-receipt-stage"><summary>Etapa seguinte: recebimento e lotes do estoque (sem alterar estoque agora)</summary>'+
       purchaseReceiptLotsHtml(d,items,data?.receipt_lot_plan||null)+
       purchaseStockBlockHtml(d,data?.receipt_plan||null,data?.receipt_lot_plan||null)+'</details>';
@@ -6830,7 +6832,11 @@
             '<option value="ready" '+(state.purchaseQuickStatus==='ready'?'selected':'')+'>Prontas para entrada</option>'+
             '<option value="received" '+(state.purchaseQuickStatus==='received'?'selected':'')+'>Recebidas</option>'+
           '</select></div></div>'+
-        (docs.length?docs.map(x=>{
+        (docs.length?docs.slice().sort((a,b)=>{
+          const rank=x=>x.receipt_status==='received'?3:x.receipt_status==='ready'?2:
+            attentionDocs.some(y=>y.id===x.id)?0:1;
+          return rank(a)-rank(b)||String(b.issued_at||'').localeCompare(String(a.issued_at||''));
+        }).map(x=>{
           const needsReview=attentionDocs.some(y=>y.id===x.id);
           const isReceived=x.receipt_status==='received';
           const isReady=x.receipt_status==='ready';
