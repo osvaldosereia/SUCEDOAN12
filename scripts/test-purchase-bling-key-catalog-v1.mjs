@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 const canonical=readFileSync("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts","utf8");
 const standalone=readFileSync("supabase/functions/purchase-xml-v1/index.ts","utf8");
 const html=readFileSync("vitrine/admin/index.html","utf8");
+const adminRouter=readFileSync("supabase/functions/admin-service-intelligence-v1/index.ts","utf8");
 
 assert.equal(canonical,standalone,"Both purchase XML modules must remain identical");
 const start=canonical.indexOf("function validBlingNfeKey(");
@@ -26,7 +27,8 @@ assert.match(block,/available:false/,"Unavailable by Bling is not absent in SEFA
 assert.doesNotMatch(block,/\.from\(["']products["']\)\.update/);
 assert.doesNotMatch(block,/sefaz\.|nfe\.fazenda\.gov\.br/);
 const dispatcher=canonical.slice(canonical.indexOf('if(action==="bling_key_check"'),canonical.indexOf('if(action==="manual_import"'));
-assert.match(dispatcher,/a\.internal\|\|!\["owner","admin"\]\.includes\(a\.role\)/,"Only admin/owner");
+assert.match(dispatcher,/a\.internal&&action!=="bling_key_check"/,"Internal can only check, never catalog");
+assert.match(dispatcher,/!a\.internal&&!\["owner","admin"\]\.includes\(a\.role\)/,"Only owner/admin can check interactively");
 assert.match(dispatcher,/body\?\.confirmation!=="CATALOGAR_XML_BLING"/,"Explicit human confirmation");
 assert.match(dispatcher,/const \{xml:_xml,\.\.\.safe\}=r/,"Never expose raw XML in check response");
 assert.match(dispatcher,/manualCatalogOnlyImport/,"Use proven catalog-only import");
@@ -43,4 +45,6 @@ assert.match(html,/purchaseApi\('bling_key_check'/);
 assert.match(html,/purchaseApi\('bling_key_catalog'/);
 assert.match(html,/if\(!confirm\('Catalogar este XML/);
 assert.match(html,/XML disponível pela API Bling/);
+assert.match(adminRouter,/subaction==="purchase_xml_bling_key_probe"/,"Internal probe route must exist");
+assert.match(adminRouter,/purchase_action:"bling_key_check"/,"Internal probe must not catalog");
 console.log("PASS Bling NF-e key: checksum, company isolation, read-only probe, explicit catalog-only gate, UI JS");
