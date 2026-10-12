@@ -1884,7 +1884,7 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="bling_sync"){if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);return js(req,await runBlingSync("bling_manual",body))}
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
     if(action==="bling_key_check"||action==="bling_key_catalog"){
-      if(a.internal||!["owner","admin"].includes(a.role))return js(req,{ok:false,error:"human_admin_required"},403);
+      if((a.internal&&action!=="bling_key_check")||(!a.internal&&!["owner","admin"].includes(a.role)))return js(req,{ok:false,error:"human_admin_required"},403);
       if(action==="bling_key_catalog"&&body?.confirmation!=="CATALOGAR_XML_BLING")
         return js(req,{ok:false,error:"confirmation_required"},409);
       const r=await blingKeyDocument(body);
