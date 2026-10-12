@@ -129,7 +129,7 @@ async function openOverviewView(root,view,{create=false}={}){
       return entry?.openCampaigns?.();
     }
     if(view==='templates'){
-      const module=window.DAMarketingTemplateCenter||await import('/vitrine/admin/marketing/template-center.js?v=meta-template-postorder-v1');
+      const module=window.DAMarketingTemplateCenter||await import('/vitrine/admin/marketing/template-center.js?v=meta-template-stable-v1');
       await module?.mountTemplateView?.(root);
       if(create)queueMicrotask(()=>root.querySelector('[data-template-create]')?.click());
       return;
