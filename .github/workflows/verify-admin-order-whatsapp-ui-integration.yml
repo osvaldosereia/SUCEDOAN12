@@ -15,6 +15,8 @@ on:
       - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'scripts/test-customer-postorder-flow-v1.mjs'
+      - 'scripts/test-meta-server-provision-v1.mjs'
+      - 'supabase/migrations/*meta_postorder_server_dispatch_v1.sql'
       - 'scripts/meta-postorder-templates-v3.mjs'
       - 'supabase/functions/_shared/customer-postorder-template-v3.mjs'
       - 'supabase/functions/admin-whatsapp-templates-v1/index.ts'
@@ -63,6 +65,8 @@ on:
       - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'scripts/test-customer-postorder-flow-v1.mjs'
+      - 'scripts/test-meta-server-provision-v1.mjs'
+      - 'supabase/migrations/*meta_postorder_server_dispatch_v1.sql'
       - 'scripts/meta-postorder-templates-v3.mjs'
       - 'supabase/functions/_shared/customer-postorder-template-v3.mjs'
       - 'supabase/functions/admin-whatsapp-templates-v1/index.ts'
@@ -112,6 +116,7 @@ jobs:
           node scripts/test-order-addon-atomic-v1.mjs
           node scripts/test-order-addon-public-storefront-v1.mjs
           node scripts/test-customer-postorder-flow-v1.mjs
+          node scripts/test-meta-server-provision-v1.mjs
       - name: Existing WhatsApp transport contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
       - name: Public order storefront and printing
