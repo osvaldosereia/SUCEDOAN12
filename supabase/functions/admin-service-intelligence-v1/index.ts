@@ -9790,6 +9790,10 @@ Deno.serve(async(req:Request)=>{
         return json(result,result.ok?200:Number(result.status||409));
       }
 
+      // Apenas prova read-only pela API oficial do Bling. Nenhuma manifestacao ou XML bruto ao chamador.
+      if(subaction==="purchase_xml_bling_key_probe"){
+        return await handlePurchaseXmlRequest(req,{purchase_action:"bling_key_check",key:String(body?.key||"")},true);
+      }
       if(subaction==="purchase_xml_daily_sync"){
         return await handlePurchaseXmlRequest(req,{purchase_action:"daily_sync"},true);
       }
