@@ -176,10 +176,30 @@ async function dispatchTemplate(outboxId:string){
   }
 }
 
+async function sha256MetaCommand(input:string){
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(input));
+  return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   if(req.method!=="GET"&&req.method!=="POST")return json(req,{ok:false,error:"method_not_allowed"},405);
   if(!SUPABASE_URL||!SERVICE_KEY)return json(req,{ok:false,error:"server_config"},500);
+  // Internal Meta template provisioning is a one-time, time-limited, service-only command.
+  // No user JWT or browser cookie is reused. This route never sends WhatsApp messages.
+  if(req.method==="POST"&&new URL(req.url).searchParams.get("action")==="postorder_provision_system"){
+    const token=String(req.headers.get("x-meta-provision-once")||"");
+    if(!/^[a-f0-9]{64}$/.test(token))return json(req,{ok:false,error:"unauthorized_command"},403);
+    try{
+      const claimed=await db.rpc("ops4_claim_meta_postorder_command_v1",{p_token_hash:await sha256MetaCommand(token)});
+      if(claimed.error||claimed.data!==true)return json(req,{ok:false,error:"command_invalid_or_expired"},403);
+      const result=await provisionPostorderTemplates();
+      return json(req,result,result.ok===true?200:502);
+    }catch(error){
+      console.error("postorder_provision_system",error instanceof MetaTemplatesError?error.code:"provision_failed");
+      return json(req,{ok:false,error:"provision_failed"},502);
+    }
+  }
   const auth=await adminAuth(req);
   if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);
 
