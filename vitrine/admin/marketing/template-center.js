@@ -7,6 +7,13 @@ const CHANNELS=['0975','1018'];
 let accountsByChannel={};
 let templates=[];
 let templatesLoaded=false;
+let lastLoadError='';
+const LOAD_TIMEOUT_MS=17000;
+async function bounded(promise,ms=LOAD_TIMEOUT_MS){
+  let timer;
+  try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('timeout_marketing_api')),ms)})])}
+  finally{clearTimeout(timer)}
+}
 let activeChannel='0975';
 let currentRoot=null;
 let busy=false;
@@ -49,7 +56,7 @@ function setSyncButtonState(state='idle',channel=activeChannel){
 async function adminGet(baseUrl,params={}){
   const url=new URL(baseUrl);
   for(const [key,value] of Object.entries(params))if(value!==null&&value!==undefined&&value!=='')url.searchParams.set(key,String(value));
-  const response=await attendanceAuthorizedFetch(url,{method:'GET',headers:{apikey:ADMIN_PUBLIC_KEY},cache:'no-store'});
+  const response=await bounded(attendanceAuthorizedFetch(url,{method:'GET',headers:{apikey:ADMIN_PUBLIC_KEY},cache:'no-store'}),url.searchParams.get('action')==='sync'?45000:LOAD_TIMEOUT_MS);
   const data=await response.json().catch(()=>({}));
   if(!response.ok||data?.ok===false)throw new Error(data?.error||`templates_${response.status}`);
   return data;
@@ -58,7 +65,7 @@ async function adminGet(baseUrl,params={}){
 async function adminPost(baseUrl,action,body){
   const url=new URL(baseUrl);
   url.searchParams.set('action',action);
-  const response=await attendanceAuthorizedFetch(url,{method:'POST',headers:{apikey:ADMIN_PUBLIC_KEY,'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});
+  const response=await bounded(attendanceAuthorizedFetch(url,{method:'POST',headers:{apikey:ADMIN_PUBLIC_KEY,'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'}),45000);
   const data=await response.json().catch(()=>({}));
   if(!response.ok||data?.ok===false){const error=new Error(data?.error||`templates_${response.status}`);error.payload=data;throw error}
   return data;
@@ -66,11 +73,16 @@ async function adminPost(baseUrl,action,body){
 
 async function ensureAccounts(){
   if(Object.keys(accountsByChannel).length)return accountsByChannel;
-  const data=await attendanceJsonApi('accounts',{},'GET');
-  const next={};
-  for(const account of data.items||[]){const channel=channelByPhone(account.phone_e164);if(channel)next[channel]=account}
-  accountsByChannel=next;
-  return next;
+  // Template management resolves its channels using its own authenticated endpoint.
+  // Attendance availability must never block opening Marketing.
+  const missing=CHANNELS.filter(channel=>!accountsByChannel[channel]?.id);
+  const found=await Promise.all(missing.map(channel=>
+    adminGet(TEMPLATE_API,{action:'list',channel})
+      .then(data=>({channel,account:data.account})).catch(error=>({channel,error}))
+  ));
+  for(const item of found)if(item.account?.id)accountsByChannel[item.channel]={...item.account};
+  if(!Object.keys(accountsByChannel).length)throw (found.find(x=>x.error)?.error||new Error('account_not_found'));
+  return accountsByChannel;
 }
 
 function overviewButton(){return document.querySelector('[data-tab="marketing"]')}
@@ -137,7 +149,12 @@ function renderList(root){
   const list=root.querySelector('[data-template-list]');
   if(!list)return;
   const items=filteredTemplates(root);
-  if(!templatesLoaded){list.innerHTML='<div class="marketing-template-empty">Abra esta área para carregar os templates.</div>';return}
+  if(!templatesLoaded){list.innerHTML='<div class="marketing-template-empty" role="status">Carregando modelos da Meta…</div>';return}
+  if(lastLoadError&&!templates.length){
+    list.innerHTML='<div class="marketing-template-empty" role="alert">Não foi possível carregar os templates: '+esc(lastLoadError)+'. <button type="button" data-template-retry>Tentar novamente</button></div>';
+    list.querySelector('[data-template-retry]')?.addEventListener('click',()=>loadTemplates({channel:activeChannel}));
+    return;
+  }
   if(!items.length){list.innerHTML='<div class="marketing-template-empty">Nenhum template encontrado com estes filtros.</div>';return}
   list.innerHTML=items.map(item=>{
     const reason=rejectedReason(item);
@@ -184,11 +201,11 @@ async function loadTemplates({sync=false,channel=activeChannel}={}){
       if(sync)setSyncButtonState('syncing',requestedChannel);
       notify(sync?`Sincronizando templates do ${requestedChannel}…`:`Carregando templates do ${requestedChannel}…`);
     }
-    const accounts=await ensureAccounts(),account=accounts[requestedChannel];
-    if(!account?.id)throw new Error('account_not_found');
-    const data=await adminGet(TEMPLATE_API,{action:sync?'sync':'list',account_id:account.id});
-    if(requestedChannel!==activeChannel)return;
+    const data=await adminGet(TEMPLATE_API,{action:sync?'sync':'list',channel:requestedChannel});
+    if(requestedChannel!==activeChannel||currentRoot!==root||!root?.isConnected)return;
+    if(data.account?.id)accountsByChannel[requestedChannel]=data.account;
     templates=Array.isArray(data.items)?data.items:[];
+    lastLoadError='';
     templatesLoaded=true;
     renderList(root);
     if(sync)setSyncButtonState('success',requestedChannel);
@@ -196,7 +213,8 @@ async function loadTemplates({sync=false,channel=activeChannel}={}){
   }catch(error){
     if(requestedChannel===activeChannel){
       if(sync)setSyncButtonState('error',requestedChannel);
-      templates=[];templatesLoaded=true;renderList(root);notify(sync?`Falha ao sincronizar o canal ${requestedChannel}: ${String(error?.message||error)}`:`Não foi possível carregar os templates: ${String(error?.message||error)}`,'error');
+      lastLoadError=String(error?.message||error);
+      templatesLoaded=true;renderList(root);notify(sync?`Falha ao sincronizar o canal ${requestedChannel}: ${String(error?.message||error)}`:`Não foi possível carregar os templates: ${String(error?.message||error)}`,'error');
     }
   }finally{busy=false;drainPendingTemplateLoad()}
 }
@@ -311,7 +329,7 @@ async function removeTemplate(id){
 function bindTemplateView(root){
   bindMarketingNav(root);
   root.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>{});
-  root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');setSyncButtonState('idle',activeChannel);templates=[];templatesLoaded=false;renderList(root);loadTemplates({channel:activeChannel}).catch(()=>{})});
+  root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');setSyncButtonState('idle',activeChannel);templates=[];templatesLoaded=false;lastLoadError='';renderList(root);loadTemplates({channel:activeChannel}).catch(()=>{})});
   root.querySelector('[data-template-sync]')?.addEventListener('click',()=>loadTemplates({sync:true,channel:activeChannel}));
   root.querySelector('[data-template-create]')?.addEventListener('click',()=>openBuilder('create'));
   root.querySelector('[data-postorder-provision]')?.addEventListener('click',async()=>{
@@ -339,7 +357,7 @@ async function mountTemplateView(root=document.querySelector('#content')){
     <div class="marketing-template-list" data-template-list></div>
   </div>`;
   bindTemplateView(root);
-  templates=[];templatesLoaded=false;renderList(root);
+  templates=[];templatesLoaded=false;lastLoadError='';renderList(root);
   await loadTemplates({channel:activeChannel});
 }
 
