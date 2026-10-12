@@ -644,6 +644,26 @@ async function syncSupplierLink(token:string,blingProductId:number,supplierId:nu
   const w=existing?.id?await bw(token,"/produtos/fornecedores/"+Number(existing.id),"PUT",payload):await bw(token,"/produtos/fornecedores","POST",payload);
   return {ok:w.ok,status:w.status,id:Number(existing?.id||w.data?.data?.id||0)||null,error:w.ok?null:w.error};
 }
+
+// Sincronização limitada ao preço de venda: PATCH evita zerar tributação, imagens e estoque.
+// O custo do produto Bling é de fornecedor padrão (readOnly na API de Produtos).
+async function verifyBlingSalePrice(blingId:number,price:number){
+  if(!Number.isSafeInteger(blingId)||blingId<=0)return {status:"missing_link",message:"Produto sem ID do Bling"};
+  try{
+    const token=await oauth();
+    const changed=await bw(token,"/produtos/"+blingId,"PATCH",{preco:price});
+    if(!changed.ok)return {status:"pending",message:"Bling recusou o preço (HTTP "+changed.status+"): "+clean(changed.error,180)};
+    const check=await bg(token,"/produtos/"+blingId);
+    if(!check.ok)return {status:"pending",message:"Preço enviado, mas não foi possível conferir no Bling (HTTP "+check.status+")"};
+    const confirmed=Number(check.data?.data?.preco);
+    return Number.isFinite(confirmed)&&Math.abs(confirmed-price)<0.011
+      ?{status:"confirmed",message:"Preço confirmado no Bling",verified_price:confirmed}
+      :{status:"pending",message:"Preço enviado, porém o Bling ainda não retornou o valor esperado"};
+  }catch(e){
+    return {status:"pending",message:"Bling indisponível: "+clean((e as Error)?.message||e,180)};
+  }
+}
+
 async function evidence(p:any,item:any,productId:string){
   const ev={evidence_key:["purchase_xml",p.document_key,productId,item.item_number,item.ncm||"-",item.cest||"-"].join(":"),product_id:productId,evidence_type:"company_purchase_nfe_xml",source_name:"NF-e de compra",document_key:p.document_key,supplier_document:p.supplier_document||null,gtin:item.commercial_gtin||item.tax_gtin||null,ncm:item.ncm||null,cest:item.cest||null,origin_code:item.origin_code,cfop:item.cfop||null,tax_code:item.tax_code||null,fiscal_description:item.description,evidence_confidence:.97,observed_at:p.issued_at,evidence_payload:{source:"purchase_xml_v1",recipient_kind:p.recipient_kind,purchase_unit:item.purchase_unit,tax_unit:item.tax_unit,raw_xml_stored:true}};
   const q=await sb.from("product_fiscal_evidence").upsert(ev,{onConflict:"evidence_key"});if(q.error)throw q.error;
@@ -1682,8 +1702,9 @@ async function catalogQueue(windowInput:any=null){
     const isNew=Boolean(prod?.metadata?.purchase_xml_created===true||prod?.metadata?.purchase_xml_created==="true");
     const approvedAt=clean(meta.catalog_approved_at,80)||null;
     const productNeedsReview=Boolean(prod?.metadata?.purchase_catalog_review_required===true||prod?.metadata?.purchase_catalog_review_required==="true");
+    const needsBlingRetry=meta.bling_sale_status==="pending"||meta.bling_sale_status==="missing_link";
     const safe=Boolean(x.product_id&&reasons.length===0);
-    const needsApproval=productNeedsReview||!approvedAt;
+    const needsApproval=productNeedsReview||!approvedAt||needsBlingRetry;
     return {...x,identity_state:identityNeedsReview?"unresolved":"resolved",match_reason:meta.identity_reason||x.match_method||(identityNeedsReview?"identity_confirmation_required":"gtin_exact"),gtin_role:gtinRole,products:prod||null,document:doc,flags:{
       is_new:isNew,
       is_existing:Boolean(prod?.id&&!isNew),
@@ -1691,7 +1712,7 @@ async function catalogQueue(windowInput:any=null){
       review_reasons:reasons,
       safe_to_approve:safe,
       needs_approval:needsApproval,
-      approved:Boolean(approvedAt&&!productNeedsReview),
+      approved:Boolean(approvedAt&&!productNeedsReview&&!needsBlingRetry),
       approved_at:approvedAt
     },pricing_preview:{
       markup_percent:40,
@@ -1705,7 +1726,7 @@ async function catalogQueue(windowInput:any=null){
       suggested_sale_price:suggestedSale,
       recommended_sale_price:recommendedSale,
       proposed_base_quantity:baseQty,
-      update_sale_recommended:Boolean(suggestedSale!==null&&(!Number.isFinite(currentSale)||Number(currentSale)<=0||Number(currentSale)+0.005<suggestedSale)),
+      update_sale_recommended:Boolean(needsBlingRetry||(suggestedSale!==null&&(!Number.isFinite(currentSale)||Number(currentSale)<=0||Number(currentSale)+0.005<suggestedSale))),
       base_unit:"UN",
       can_apply:safe
     }};
@@ -1823,12 +1844,32 @@ async function applyItemUpdate(body:any,userId:string|null){
   if(updateCost)upd.cost=baseCost;
   if(updateSale)upd.price=Math.round(salePrice*100)/100;
   const pu=await sb.from("products").update(upd).eq("id",item.product_id).select("id,name,cost,price,unit,stock,is_active,bling_product_id").single();if(pu.error)throw pu.error;
-  if(updateCost&&item.bling_product_id&&doc.supplier_bling_contact_id){
-    try{await syncSupplierLink(await oauth(),Number(item.bling_product_id),Number(doc.supplier_bling_contact_id),item,{base_unit_cost:baseCost})}catch(e){console.error("purchase_supplier_link_sync",String((e as Error)?.message||e))}
+  let supplierStatus="not_requested",supplierMessage="";
+  if(updateCost){
+    if(!product.bling_product_id)supplierStatus="missing_product_link";
+    else if(!doc.supplier_bling_contact_id)supplierStatus="missing_supplier_link";
+    else {
+      try{
+        const supplier=await syncSupplierLink(await oauth(),Number(product.bling_product_id),Number(doc.supplier_bling_contact_id),item,{base_unit_cost:baseCost});
+        supplierStatus=supplier.ok?"submitted":"pending";
+        supplierMessage=supplier.ok?"Custo enviado ao cadastro de fornecedor do Bling (sem leitura de confirmação).":"Bling não confirmou o custo: "+clean(supplier.error,140);
+      }catch(e){supplierStatus="pending";supplierMessage="Bling indisponível: "+clean((e as Error)?.message||e,140)}
+    }
   }
+  const blingSale=updateSale
+    ?await verifyBlingSalePrice(Number(product.bling_product_id||0),Math.round(salePrice*100)/100)
+    :{status:"not_requested",message:"Preço de venda mantido"};
+  const sync={admin:"confirmed",bling_price:blingSale.status,bling_price_message:blingSale.message,
+    bling_supplier_cost:supplierStatus,bling_supplier_message:supplierMessage,stock:"unchanged"};
+  const itemSyncMeta={...itemMeta,bling_sale_status:blingSale.status,bling_sale_message:blingSale.message,
+    bling_supplier_cost_status:supplierStatus,bling_supplier_cost_message:supplierMessage,
+    bling_sync_checked_at:new Date().toISOString()};
+  const im=await sb.from("purchase_xml_items").update({metadata:itemSyncMeta}).eq("id",id);
+  if(im.error)console.error("purchase_item_bling_sync_audit",im.error.message);
   const readiness=await refreshDocumentReadiness(item.document_id);
   await sb.from("bling_hub_audit_v2").insert({event_type:"purchase_catalog_item_approved",severity:"info",domain:"catalog",source_system:"vitrine_admin",source_id:id,details:{document_id:item.document_id,document_key:doc.document_key,product_id:item.product_id,operator,user_id:userId,conversion_factor:factor,base_unit_cost:baseCost,old_cost:product.cost,old_price:product.price,new_cost:updateCost?baseCost:product.cost,new_price:updateSale?Math.round(salePrice*100)/100:product.price,update_cost:updateCost,update_sale_price:updateSale,stock_unchanged:true}});
-  return {ok:true,item_id:id,document_id:item.document_id,product:pu.data,conversion_factor:factor,base_unit_cost:baseCost,stock_unchanged:true,...readiness};
+  return {ok:true,item_id:id,document_id:item.document_id,product:pu.data,conversion_factor:factor,
+    base_unit_cost:baseCost,stock_unchanged:true,catalog_sync:sync,...readiness};
 }
 // Conferência diária humana da aba Notas recebidas no Bling. Não representa
 // contagem ou confirmação de NF-e pendente e não chama Bling/SEFAZ.
