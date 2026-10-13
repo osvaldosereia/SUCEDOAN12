@@ -16,7 +16,7 @@ try{
       const reply=(data,status=200)=>Promise.resolve({ok:status<400,status,json:async()=>data});
       if(body.action==='list')return reply({ok:true,baskets:[{id:'4069e5be-10bf-4f5a-9b39-ebcce77cd9a9',name:'Economica Bonini',mold_configured:false,public_composition_count:2,hidden_adjustment:0,category_id:'00000000-0000-4000-8000-000000000001',category_name:'Cestas Completas'}],categories:[{id:'00000000-0000-4000-8000-000000000001',name:'Cestas Completas',slug:'cestas-completas',sort_order:10}],subcategories:[{id:'00000000-0000-4000-8000-000000000002',category_id:'00000000-0000-4000-8000-000000000001',name:'Média',slug:'media',sort_order:10}]});
       if(body.action==='editor')return reply({ok:true,editor:{basket_id:body.basket_id,basket_name:'Economica Bonini',category_id:'00000000-0000-4000-8000-000000000001',subcategory_id:'00000000-0000-4000-8000-000000000002',hidden_adjustment:0,public_composition_count:2,positions:[]}});
-      if(body.action==='products')return reply({ok:true,products:[{id:'7c1a9999-1df2-4d8e-b729-d7492a8c20a9',name:'Arroz Teste 5 kg',sku:'AR5',gtin:'7890000000000',loose_sellable_stock:20,image_url:''}]});
+      if(body.action==='products')return reply({ok:true,products:[{id:'7c1a9999-1df2-4d8e-b729-d7492a8c20a9',name:'Arroz Teste 5 kg',sku:'AR5',gtin:'7890000000000',loose_sellable_stock:20,image_url:''},{id:'ca43a836-6e81-41c3-83c1-78704562cbcd',name:'Arroz Alternativo 5 kg',sku:'AR6',gtin:'7890000000001',loose_sellable_stock:12,image_url:''}]});
       if(body.action==='save')return reply({ok:true,editor:{basket_id:body.basket_id,basket_name:body.name,category_id:body.category_id,subcategory_id:body.subcategory_id,hidden_adjustment:body.hidden_adjustment,public_composition_count:body.public_composition_count,positions:body.positions}});
       return reply({ok:false,error:'unexpected'},400);
     };
@@ -41,7 +41,14 @@ try{
   const editLink=page.locator('[data-mold-selected-product] a[target="_blank"]');
   assert.equal(await editLink.getAttribute('href'),'/vitrine/admin/?editar_produto=7c1a9999-1df2-4d8e-b729-d7492a8c20a9');
   await page.click('[data-mold-prefer-option="0"]');
-  assert.equal(await page.locator('[data-mold-prefer-option="0"]').getAttribute('aria-pressed'),'true');
+  assert.equal(await page.locator('[data-mold-prefer-option="0"][data-option-index="0"]').getAttribute('aria-pressed'),'true');
+  await page.click('[data-mold-product-search-go="0"]');
+  await page.click('[data-mold-product-option="ca43a836-6e81-41c3-83c1-78704562cbcd"]');
+  await page.click('[data-mold-prefer-option="0"][data-option-index="1"]');
+  assert.deepEqual(await page.locator('[data-mold-prefer-option="0"]').evaluateAll(els=>els.map(el=>el.getAttribute('aria-pressed'))),['true','true'],'multiple products must remain preferred');
+  await page.click('[data-mold-prefer-option="0"][data-option-index="1"]');
+  assert.deepEqual(await page.locator('[data-mold-prefer-option="0"]').evaluateAll(els=>els.map(el=>el.getAttribute('aria-pressed'))),['true','false'],'unselecting one cannot clear another preferred');
+  await page.click('[data-mold-prefer-option="0"][data-option-index="1"]');
   await page.click('[data-mold-conditional-enabled]');
   await page.fill('[data-mold-conditional-hidden-adjustment]','3.75');
   await page.fill('[data-mold-conditional-product-search]','Arroz');
@@ -60,7 +67,7 @@ try{
   assert.equal(save.positions.length,1);
   assert.equal(save.positions[0].label,'Arroz 5 kg');
   assert.equal(save.positions[0].quantity,1);
-  assert.deepEqual(save.positions[0].options,[{product_id:'7c1a9999-1df2-4d8e-b729-d7492a8c20a9',metadata:{preferred:true}}]);
+  assert.deepEqual(save.positions[0].options,[{product_id:'7c1a9999-1df2-4d8e-b729-d7492a8c20a9',metadata:{preferred:true}},{product_id:'ca43a836-6e81-41c3-83c1-78704562cbcd',metadata:{preferred:true}}]);
   assert.equal((await page.locator('body').innerText()).includes('kit'),false,'normal mold editor must not expose internal kit concepts');
   console.log('basket mold admin browser v1: PASS');
 }finally{await browser.close()}
