@@ -73,9 +73,12 @@ test('Unknown session is rejected after correct authentication',()=>{
  assert.equal(result.status,427);
 });
 test('Business-logic error is encrypted rather than exposed in HTTP text',()=>{
- const input=request({action:'data_exchange',flow_token:token,screen:'CHOOSE_MODE',
+ const isolated=createLabFlowStore({catalog,inventory:makeFakeStock(catalog)});
+ const errorToken='lab-flow-transport-error-999';
+ isolated.register(errorToken,'lab-2',1);
+ const input=request({action:'data_exchange',flow_token:errorToken,screen:'CHOOSE_MODE',
    data:{task:'unknown_task'}});
- const result=handleSignedEncryptedLabRequest({...input,appSecret,privateKey:keys.privateKey,store});
+ const result=handleSignedEncryptedLabRequest({...input,appSecret,privateKey:keys.privateKey,store:isolated});
  assert.equal(result.status,200);
  assert.notEqual(result.body,'');
  assert.ok(!result.body.includes('unknown_task'));
