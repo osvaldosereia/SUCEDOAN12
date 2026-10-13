@@ -224,7 +224,8 @@
     #homeOfferGrid .product-card{background:#fff;border:1px solid #ece9e1;border-radius:16px;overflow:hidden}#homeOfferGrid .photo{background:#fff;border-radius:0;aspect-ratio:1.15}#homeOfferGrid .card-body{padding:10px}#homeOfferGrid .quick-add{border-radius:50%}#homeOfferGrid .price{color:#174a30}.home-view #allOffers{padding-left:0}
     /* Mobile-first: show a usable basket card above the fold on modest phones. */
     @media(max-width:759px){
-      .home-hero{min-height:105px;margin-top:8px;padding:10px 12px}
+      /* Mobile uses a light gradient: no decorative background image download on 4G. */
+      .home-hero{min-height:105px;margin-top:8px;padding:10px 12px;background-image:none;background-color:#eee5d5}
       .home-hero-copy{max-width:70%}
       .home-hero h1{font-size:19px}
       .home-hero p{font-size:12px;margin:3px 0 7px}
@@ -719,7 +720,13 @@
     }
     function bindHomeIntro(){document.querySelector('#heroOffers')?.addEventListener('click',renderOffers);content.querySelectorAll('[data-category-label]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.dataset.categoryLabel));}
 
-    function renderInitialShell(){state.view='home';renderNav();const categories=STATIC_CATEGORIES;content.innerHTML=homeIntro(categories)+section('Escolha suas Cestas e Kits','Escolha uma opção para conferir.','<p class="home-loading-status" role="status" aria-live="polite">Preparando suas cestas…</p><div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>')+section('Categorias','Você já pode entrar direto em uma categoria.','<div class="category-list">'+categories.map(c=>'<button class="category" type="button" data-category="'+esc(c.key)+'">'+esc(c.label)+'<span>›</span></button>').join('')+'</div>');content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));bindHomeIntro()}
+    function renderInitialShell(){
+      state.view='home';renderNav();const categories=STATIC_CATEGORIES;
+      // Build the same outer shell used by renderHome: preserve hero and shortcuts
+      // when the first priority response arrives instead of painting them twice.
+      content.innerHTML=homeIntro(categories)+'<div id="basketSections">'+section('Escolha suas Cestas e Kits','Escolha uma opção para conferir.','<p class="home-loading-status" role="status" aria-live="polite">Preparando suas cestas…</p><div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>')+'</div>'+section('Ofertas da semana','Preços promocionais ativos agora.','<div id="homeOffersMount">'+offersSkeleton()+'</div>');
+      bindHomeIntro();
+    }
     function basketCategoryControls(categories,active){
       const list=Array.isArray(categories)?categories:[];if(!list.length)return '';
       return '<div class="category-list basket-category-list" style="margin-bottom:12px"><button class="category" type="button" data-basket-category="" aria-pressed="'+(!active?'true':'false')+'">Todas<span>›</span></button>'+list.map(c=>'<button class="category" type="button" data-basket-category="'+esc(c.slug)+'" aria-pressed="'+(active===String(c.slug)?'true':'false')+'">'+esc(c.name)+'<span>›</span></button>').join('')+'</div>';
@@ -809,6 +816,11 @@
       if(!canPatch){
         if(state.offersLoaded)paintHomeOffers();
         else observeOffers();
+      }else if(!state.offersLoaded&&!state.offersObserver){
+        // On the initial shell we postpone offers until the first baskets appear.
+        observeOffers();
+      }else if(state.offersLoaded&&!content.querySelector('#homeOfferGrid')&&!content.querySelector('#homeOffersMount .empty')){
+        paintHomeOffers();
       }
     }
     function paintOffersPage(){const grid=$('#offerGrid');if(!grid)return;grid.innerHTML=state.offers.length?state.offers.map((p,i)=>productCard(p,true,i)).join(''):'<div class="empty">Nenhuma oferta ativa agora.</div>';attachProductControls(grid,state.offers)}
