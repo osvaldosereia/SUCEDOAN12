@@ -67,3 +67,59 @@ stale compositions and idempotency.
   mold-specific rule. Do not substitute legacy template adjustments.
 - Validate all 5 baskets and each public composition against the official
   quoting behavior before connecting customers to the lab.
+
+
+## R34 progress: offline WhatsApp-like purchase journey
+
+- Pure engine and flow-independent session state machine.
+- Five basket sizes, three synthetic compositions each (15 journeys).
+- Ready-to-buy and customized paths; sequential selection, brand changes,
+  quantities, removals, extras, registration, delivery, payment and confirmation.
+- A client-safe public quote strips private commercial adjustments.
+- All orders produced by the test harness have status SIMULATED_ONLY.
+- The preview uses a fake catalog and Content Security Policy connect-src 'none'.
+- Meta Flow JSON 7.3 candidate in flows/pilot.draft.flow.json. **DRAFT ONLY**:
+  one product screen for pilot validation, not the full 23–27 position traversal.
+  This candidate has NOT been validated by Meta nor submitted for approval.
+- No real photos are loaded in the offline preview. The brand/product thumbnails
+  are placeholders until the safe, read-only image normalization stage.
+
+### Run locally
+
+At the repository root:
+
+    python3 -m http.server 4173
+
+Then open http://localhost:4173/labs/whatsapp-commerce/preview/index.html
+in a modern mobile or desktop browser. This only serves local files.
+
+Run tests with:
+
+    node --test labs/whatsapp-commerce/tests/*.test.mjs
+
+### Read-only production schema verification (2026-10-13)
+
+Inspected the public basket mold composition RPC for all five commercial
+basket models, with three compositions per model (15 combinations).
+Each selected option was present in its mold options, active, and with
+positive configured quantity when checked. The configured conditional
+adjustment's target was selected in composition 2 for each of the five
+models, but not selected in compositions 1 and 3 at inspection time.
+No raw catalog, customer, stock or private adjustment data was committed.
+
+This is **structural validation, not real quote parity or stock homologation**.
+The official basket_mold_quote behavior must still be compared with a
+server-side adapter. A read-only snapshot does not prove availability at
+the moment a user confirms an order.
+
+### Pending before sending any Flow for Meta review
+
+1. Meta-compatible two-screen/toggled-product pagination proof for all
+   public positions. No assumption that looping the same screen is allowed.
+2. Per-session encrypted data exchange endpoint, correct signing, auth,
+   idempotency, and native WhatsApp flow reply handling.
+3. Image compression to Meta component constraints. Photos must be sourced
+   from current catalog dynamically and must not disclose internal pricing.
+4. Verify eligibility and price reconciliation for substitutions/removals.
+5. Dedicated Meta TEST WABA/number connection; never publish or send
+   using the existing 0975/1018 production numbers during lab work.
