@@ -69,5 +69,8 @@ assert.match(scheduler,/DA4:E:/);
 assert.match(webhook,/findPostorderReply/);
 assert.match(webhook,/ops4_apply_postorder_quickreply_v1/);
 assert.match(webhook,/postorder\?\.recognized/);
+assert.match(webhook,/acknowledgePostorderQuickReply/,'quick replies receive explicit feedback');
+assert.match(webhook,/sendTextViaMeta/,'Meta text transport sends the acknowledgement');
+assert.match(webhook,/matchedPostorderButton&&result\?\.duplicate===true/,'repeated events never send duplicate replies');
 assert.doesNotMatch(webhook,/text_body\s*===\s*['"]SIM/i,'plain messages must not confirm orders');
 console.log('PASS: 3-step WhatsApp templates, order queue, exact version confirmation and signed quick replies');
