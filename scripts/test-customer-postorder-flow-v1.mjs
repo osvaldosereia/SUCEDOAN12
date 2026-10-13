@@ -141,4 +141,57 @@ async function simulateCustomerPanel(canAddOffers){
 await simulateCustomerPanel(false);
 await simulateCustomerPanel(true);
 console.log('PASS: mocked public order UI: with and without eligible offers');
+// Customer offer deep-link smoke test: Meta URL token must create a new
+// server-authorized quick-add session and never reuse or expose order_id.
+const offerBridge=read('ofertas/index.html');
+assert.match(offerBridge,/name="referrer" content="no-referrer"/);
+assert.match(offerBridge,/name="robots" content="noindex,nofollow,noarchive"/);
+assert.match(offerBridge,/history\.replaceState\(null,'',location\.pathname\)/);
+assert.match(offerBridge,/action=.*encodeURIComponent\(action\)/);
+assert.match(offerBridge,/api\('addon_session','POST'\)/);
+assert.doesNotMatch(offerBridge,/order_id\s*:/,'no browser-controlled order identity');
+const bridgeSource=[...offerBridge.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)]
+  .map(x=>x[1]).find(Boolean);
+assert.ok(bridgeSource,'bridge needs an inline script');
+new vm.Script(bridgeSource,{filename:'ofertas/index.html'});
+async function simulateOfferBridge({token,eligible=true,failPost=false}){
+  const callLog=[],replaces=[],historyCalls=[];
+  const status={textContent:''},anchor={href:''};
+  const back={hidden:true,querySelector:()=>anchor};
+  const document={getElementById:id=>id==='status'?status:id==='back'?back:null};
+  const ctx={
+    URL,URLSearchParams,document,
+    location:{pathname:'/ofertas/',search:'?c='+token,replace:url=>replaces.push(url)},
+    history:{replaceState:(...a)=>historyCalls.push(a)},
+    fetch:async(url,options)=>{
+      const action=new URL(url).searchParams.get('action');
+      callLog.push({action,method:options.method,token:options.headers['X-Customer-Action-Token']});
+      if(action==='session')return {ok:true,json:async()=>({
+        ok:true,can_add_offers:eligible,public_token:'a'.repeat(16)
+      })};
+      return {ok:!failPost,json:async()=>failPost?
+        {ok:false,error:'addon_window_expired'}:
+        {ok:true,addon_token:'b'.repeat(64)}};
+    }
+  };
+  await vm.runInNewContext(bridgeSource,ctx);
+  return {callLog,replaces,historyCalls,status,back,anchor};
+}
+const direct=await simulateOfferBridge({token:'c'.repeat(64)});
+assert.equal(direct.callLog.length,2);
+assert.deepEqual(direct.callLog.map(x=>x.action),['session','addon_session']);
+assert.equal(direct.callLog[1].method,'POST');
+assert.equal(direct.replaces[0],'/adicionar/?k='+ 'a'.repeat(16)+'#t='+'b'.repeat(64));
+assert.equal(direct.historyCalls[0][2],'/ofertas/');
+assert.equal(direct.anchor.href,'/pedido/?k='+ 'a'.repeat(16));
+const blocked=await simulateOfferBridge({token:'c'.repeat(64),eligible:false});
+assert.equal(blocked.callLog.length,1,'ineligible customer must not receive an add-on session');
+assert.equal(blocked.replaces.length,0);
+const invalid=await simulateOfferBridge({token:'bad'});
+assert.equal(invalid.callLog.length,0,'invalid capability must not hit the API');
+assert.equal(invalid.replaces.length,0);
+const expired=await simulateOfferBridge({token:'c'.repeat(64),failPost:true});
+assert.equal(expired.replaces.length,0,'failed sessions must not redirect');
+console.log('PASS: secure offer button: eligible, expired, invalid, failed session');
+
 console.log('PASS: Meta Utility URL, 256-bit capability, offers only, CAS confirmation, storefront JS');
