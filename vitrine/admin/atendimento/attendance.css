@@ -68,3 +68,9 @@ body.order-embedded .order-chat-candidate{display:block;width:100%;max-width:450
 #openReceivedOrderBtn{min-height:37px;padding:7px 11px;border:1px solid #b47814;border-radius:9px;background:#fff3d6;color:#694608;font-size:11px;font-weight:900;white-space:nowrap}
 #openReceivedOrderBtn:hover{background:#fce3a7}
 @media(max-width:680px){#openReceivedOrderBtn{min-height:40px;padding:8px 10px;max-width:100%;overflow:hidden;text-overflow:ellipsis}}
+
+/* Confirmação manual imediata no contexto do pedido */
+.context-actions .confirm-order-quick{background:#146943;border-color:#146943;color:#fff;cursor:pointer;min-height:32px;font-size:10px}
+.context-actions .confirm-order-quick:hover:not(:disabled){background:#0e5234}
+.context-actions .confirm-order-quick:disabled{opacity:.6;cursor:wait}
+.context-actions .order-confirm-feedback{flex-basis:100%;font-size:11px;line-height:1.4;color:#b42318;padding:4px 0}
