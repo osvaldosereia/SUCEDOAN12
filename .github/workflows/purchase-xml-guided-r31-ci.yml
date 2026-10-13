@@ -6,6 +6,7 @@ on:
       - 'vitrine/admin/purchase-xml-simple.css'
       - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
       - 'scripts/test-purchase-xml-guided-r31.mjs'
+      - 'scripts/test-purchase-xml-compact-r32.mjs'
       - '.github/workflows/purchase-xml-guided-r31-ci.yml'
   push:
     branches: [main]
@@ -25,4 +26,5 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/test-purchase-xml-guided-r31.mjs
+      - run: node scripts/test-purchase-xml-compact-r32.mjs
       - run: git diff --check
