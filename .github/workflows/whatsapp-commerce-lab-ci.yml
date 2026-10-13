@@ -8,6 +8,9 @@ on:
       - '.github/workflows/whatsapp-commerce-lab-ci.yml'
 permissions:
   contents: read
+concurrency:
+  group: whatsapp-commerce-lab-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test-lab-only:
     runs-on: ubuntu-latest
