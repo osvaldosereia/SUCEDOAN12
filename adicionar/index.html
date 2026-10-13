@@ -25,18 +25,25 @@
 const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/order-addon-public-v1';
 const app=document.getElementById('app'),bottom=document.getElementById('bottom'),submitBtn=document.getElementById('submitBtn'),countLabel=document.getElementById('countLabel'),addValue=document.getElementById('addValue');
 const TOKEN_KEY='da_order_addon_token_v1',PENDING_KEY='da_order_addon_pending_v1';
+// Keep capability and any in-flight retry tied to one public order view,
+// never re-use a pending addition while opening a different customer's order.
+const publicOrderCode=(new URLSearchParams(location.search).get('k')||'').trim();
+const scopedKey=prefix=>/^[a-f0-9]{16}$/i.test(publicOrderCode)?prefix+':'+publicOrderCode:'';
+
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const moneyCents=v=>(Number(v||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const state={token:'',session:null,products:[],cart:new Map(),offset:0,nextOffset:null,query:'',loading:false,pending:null,timer:null};
+const state={token:'',session:null,products:[],cart:new Map(),priceByProduct:new Map(),offset:0,nextOffset:null,query:'',loading:false,requestSeq:0,pending:null,timer:null};
 function takeToken(){
+  const key=scopedKey(TOKEN_KEY);
+  if(!key)return '';
   const hash=new URLSearchParams(location.hash.replace(/^#/,''));
   const fromHash=(hash.get('t')||'').trim();
-  if(fromHash){sessionStorage.setItem(TOKEN_KEY,fromHash);history.replaceState(null,'',location.pathname+location.search)}
-  return fromHash||sessionStorage.getItem(TOKEN_KEY)||'';
+  if(fromHash){sessionStorage.setItem(key,fromHash);history.replaceState(null,'',location.pathname+location.search)}
+  return fromHash||sessionStorage.getItem(key)||'';
 }
-function loadPending(){try{const raw=sessionStorage.getItem(PENDING_KEY);return raw?JSON.parse(raw):null}catch{return null}}
-function savePending(value){state.pending=value;if(value)sessionStorage.setItem(PENDING_KEY,JSON.stringify(value));else sessionStorage.removeItem(PENDING_KEY)}
+function loadPending(){try{const key=scopedKey(PENDING_KEY),raw=key?sessionStorage.getItem(key):null;return raw?JSON.parse(raw):null}catch{return null}}
+function savePending(value){state.pending=value;const key=scopedKey(PENDING_KEY);if(!key)return;if(value)sessionStorage.setItem(key,JSON.stringify(value));else sessionStorage.removeItem(key)}
 async function api(action,{method='GET',body=null,query=''}={}){
   const response=await fetch(API+'?action='+encodeURIComponent(action)+(query?'&'+query:''),{
     method,
@@ -93,7 +100,7 @@ function cartRows(){
   return [...state.cart.entries()].map(([product_id,quantity])=>({product_id,quantity}));
 }
 function updateBottom(){
-  const rows=cartRows(),byId=new Map(state.products.map(p=>[p.product_id,p])),cents=rows.reduce((sum,row)=>sum+Number(byId.get(row.product_id)?.price_cents||0)*row.quantity,0),count=rows.reduce((sum,row)=>sum+row.quantity,0);
+  const rows=cartRows(),cents=rows.reduce((sum,row)=>sum+Number(state.priceByProduct.get(row.product_id)||0)*row.quantity,0),count=rows.reduce((sum,row)=>sum+row.quantity,0);
   countLabel.textContent=count?count+' item(ns) para acrescentar':'Nenhum item selecionado';
   addValue.textContent=moneyCents(cents);
   submitBtn.disabled=!count||Boolean(state.pending);bottom.hidden=false;
@@ -110,17 +117,22 @@ async function loadSession(){
   return true;
 }
 async function loadProducts(append){
-  if(state.loading)return;state.loading=true;
+  if(append&&state.loading)return;
+  const requestSeq=++state.requestSeq;
+  state.loading=true;
   try{
     const offset=append&&state.nextOffset!=null?state.nextOffset:0;
     const params=new URLSearchParams({limit:'12',offset:String(offset)});if(state.query)params.set('q',state.query);
     const data=await api('products',{query:params.toString()});
+    if(requestSeq!==state.requestSeq)return; // Ignore older searches finishing out of order.
     state.session=data.session;
     if(data.session?.eligible!==true){closed(data.session?.reason);return}
+    for(const product of data.products||[])state.priceByProduct.set(product.product_id,product.price_cents);
     state.products=append?[...state.products,...(data.products||[])]:data.products||[];
     state.nextOffset=data.next_offset??null;renderCatalog();
-  }catch(error){app.innerHTML=renderHero()+'<div class="panel error">Não consegui carregar os produtos. Tente novamente.</div>'}
-  finally{state.loading=false}
+  }catch(error){
+    if(requestSeq===state.requestSeq)app.innerHTML=renderHero()+'<div class="panel error">Não consegui carregar os produtos. Tente novamente.</div>';
+  }finally{if(requestSeq===state.requestSeq)state.loading=false}
 }
 function showSuccess(data){
   const box='<div id="successMessage" class="success"><strong>Itens adicionados ao mesmo pedido '+esc(data.order_number||'')+'.</strong><div>Valor acrescentado: '+esc(money(data.added_total))+' · Novo total: '+esc(money(data.total))+'</div>'+returnToOrderLink()+'</div>';
@@ -134,7 +146,7 @@ async function submit(isRetry=false){
   submitBtn.disabled=true;submitBtn.textContent='Adicionando…';
   try{
     const data=await api('add_items',{method:'POST',body:{action:'add_items',request_key:state.pending.request_key,items:state.pending.items}});
-    savePending(null);state.cart.clear();state.session={...state.session,operation_count:data.operation_count,expires_at:data.expires_at,current_total:data.total};
+    savePending(null);state.cart.clear();state.priceByProduct.clear();state.session={...state.session,operation_count:data.operation_count,expires_at:data.expires_at,current_total:data.total};
     renderCatalog();showSuccess(data);updateBottom();
   }catch(error){
     if(error?.status===409&&['session_closed','session_expired','order_status_closed','order_already_confirmed','bling_sync_started','separation_started','stock_already_consumed','operation_limit_reached','feature_disabled'].includes(error?.data?.error)){savePending(null);closed(error.data.error);return}
@@ -144,7 +156,7 @@ async function submit(isRetry=false){
 }
 async function init(){
   state.token=takeToken();state.pending=loadPending();
-  if(!/^[A-Za-z0-9_-]{32,96}$/.test(state.token)){sessionStorage.removeItem(TOKEN_KEY);closed('invalid_token');return}
+  if(!/^[A-Za-z0-9_-]{32,96}$/.test(state.token)){const key=scopedKey(TOKEN_KEY);if(key)sessionStorage.removeItem(key);closed('invalid_token');return}
   try{if(!await loadSession())return;await loadProducts(false)}catch{app.innerHTML='<section class="panel closed"><h1>Não consegui abrir a vitrine</h1><p class="muted">Tente novamente pelo link recebido.</p></section>'}
 }
 submitBtn.addEventListener('click',()=>submit(false));
