@@ -87,7 +87,13 @@ begin
   with candidate as (
     select f.order_id from private.ops4_postorder_followups_v1 f
     where f.confirm_status='pending' and f.confirm_due_at<=now()
-      and f.attempts<2
+      and f.attempts<2 and f.expires_at>now()
+      and exists(
+        select 1 from public.whatsapp_templates_v1 t
+        where t.whatsapp_account_id=f.whatsapp_account_id
+          and t.name='pedidoconfirmacao'||f.channel||'v1'
+          and t.language='pt_BR' and t.status='APPROVED'
+      )
     order by f.confirm_due_at,f.created_at
     limit greatest(1,least(coalesce(p_limit,10),15))
     for update skip locked
