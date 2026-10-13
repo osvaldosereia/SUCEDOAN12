@@ -191,12 +191,12 @@ async function moldQuote(payload:any){const id=uid(payload?.basket_id),n=Math.tr
 // expensive view prevents PostgreSQL statement timeouts on public home requests.
 async function needsLegacyBasketCatalog():Promise<boolean>{
   const [tq,mq]=await Promise.all([
-    db.from("basket_templates").select("id").eq("is_active",true),
+    db.from("basket_templates").select("id,category_id,subcategory_id").eq("is_active",true),
     db.from("basket_molds").select("basket_id,metadata")
   ]);
   if(tq.error)throw tq.error;if(mq.error)throw mq.error;
   const moldOnly=new Set((mq.data||[]).filter((m:any)=>String(m?.metadata?.transition_mode||"")==="mold_only").map((m:any)=>String(m.basket_id)));
-  return (tq.data||[]).some((t:any)=>!moldOnly.has(String(t.id)));
+  return (tq.data||[]).some((t:any)=>Boolean(t.category_id&&t.subcategory_id)&&!moldOnly.has(String(t.id)));
 }
 async function home(priorityOnly=false){
   const [moldCards,needsLegacy]=await Promise.all([moldHomeCards(priorityOnly),needsLegacyBasketCatalog()]);
