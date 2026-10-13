@@ -1,0 +1,123 @@
+{
+  "status": "DRAFT_ONLY_NOT_SUBMITTED",
+  "notes": "Exclusive lab templates. No existing approved production template may be deleted or modified. META approval/reclassification pending.",
+  "requires": "Dedicated test WABA authorization; no production Meta phones 0975 or 1018.",
+  "templates": [
+    {
+      "name": "da_lab_pedido_recebido",
+      "category": "UTILITY",
+      "language": "pt_BR",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Dona Antônia: recebemos seu pedido {{1}} no valor de {{2}}. Entrega: {{3}}. Pagamento: {{4}}.",
+          "example": {
+            "body_text": [
+              [
+                "1234",
+                "R$ 175,00",
+                "Amanhã",
+                "PIX na entrega"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Consultar pedido"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Preciso de ajuda"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "da_lab_pedido_separado",
+      "category": "UTILITY",
+      "language": "pt_BR",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Dona Antônia: seu pedido {{1}} foi separado. Aguarde a confirmação da saída para entrega.",
+          "example": {
+            "body_text": [
+              [
+                "1234"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Consultar entrega"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "da_lab_saiu_entrega",
+      "category": "UTILITY",
+      "language": "pt_BR",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Dona Antônia: seu pedido {{1}} saiu para entrega. Previsão informada: {{2}}.",
+          "example": {
+            "body_text": [
+              [
+                "1234",
+                "Hoje à tarde"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Falar com atendente"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "da_lab_ofertas_opcional",
+      "category": "MARKETING",
+      "language": "pt_BR",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Dona Antônia: selecionamos algumas ofertas. Deseja ver os produtos disponíveis?",
+          "example": {
+            "body_text": []
+          }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Ver ofertas"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Agora não"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
