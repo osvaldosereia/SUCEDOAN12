@@ -13,12 +13,12 @@ const CATEGORIES=[
   {key:"higiene_beleza",label:"Higiene e beleza"},
   {key:"casa_pet",label:"Casa e pet"}
 ];
-const HOME_CACHE_TTL_MS=30_000;
+const HOME_CACHE_TTL_MS=120_000;
 let homeCache:{expiresAt:number,data:any}|null=null;
 let homePromise:Promise<any>|null=null;
 let homePriorityCache:{expiresAt:number,data:any}|null=null;
 let homePriorityPromise:Promise<any>|null=null;
-const MOLD_COMPOSITION_CACHE_TTL_MS=30_000;
+const MOLD_COMPOSITION_CACHE_TTL_MS=120_000;
 const moldCompositionCache=new Map<string,{expiresAt:number,data:any}>();
 const moldCompositionInFlight=new Map<string,Promise<any[]>>();
 const ALLOWED_ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
@@ -186,10 +186,23 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
 async function moldQuote(payload:any){const id=uid(payload?.basket_id),n=Math.trunc(Number(payload?.composition_number||1));if(!id)return {error:"invalid_basket",status:400};try{const d=await moldDetail(id,n,Array.isArray(payload?.items)?payload.items:[]);if(!d)return {error:"basket_mold_unavailable",status:409};return {ok:true,total_cents:d.basket.display_price_cents,basket:d.basket,items:d.items}}catch(e:any){const code=txt(e?.message,100);return {error:["basket_mold_option_invalid","basket_mold_component_invalid"].includes(code)?code:"basket_mold_unavailable",status:409}}
 }
 
+// The catalog view computes lot availability for every basket. It is unnecessary when
+// every active basket is explicitly configured as a mold-only basket. Avoiding this
+// expensive view prevents PostgreSQL statement timeouts on public home requests.
+async function needsLegacyBasketCatalog():Promise<boolean>{
+  const [tq,mq]=await Promise.all([
+    db.from("basket_templates").select("id").eq("is_active",true),
+    db.from("basket_molds").select("basket_id,metadata")
+  ]);
+  if(tq.error)throw tq.error;if(mq.error)throw mq.error;
+  const moldOnly=new Set((mq.data||[]).filter((m:any)=>String(m?.metadata?.transition_mode||"")==="mold_only").map((m:any)=>String(m.basket_id)));
+  return (tq.data||[]).some((t:any)=>!moldOnly.has(String(t.id)));
+}
 async function home(priorityOnly=false){
-  const moldCards=await moldHomeCards(priorityOnly),moldBasketIds=new Set(moldCards.map((x:any)=>String(x.id)));
+  const [moldCards,needsLegacy]=await Promise.all([moldHomeCards(priorityOnly),needsLegacyBasketCatalog()]);
+  const moldBasketIds=new Set(moldCards.map((x:any)=>String(x.id)));
   const [catalogQ,categoriesQ,subcategoriesQ]=await Promise.all([
-    db.from("basket_commercial_catalog_v1").select("*").eq("source_kind","basket").gt("public_available",0).order("category_sort_order").order("public_name"),
+    needsLegacy?db.from("basket_commercial_catalog_v1").select("*").eq("source_kind","basket").gt("public_available",0).order("category_sort_order").order("public_name"):Promise.resolve({data:[],error:null}),
     db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order"),
     db.from("basket_subcategories").select("id,category_id,name,sort_order,is_active").eq("is_active",true).order("sort_order")
   ]);
@@ -221,14 +234,14 @@ async function home(priorityOnly=false){
 async function cachedHome(){
   if(homeCache&&homeCache.expiresAt>Date.now())return homeCache.data;
   if(!homePromise){
-    homePromise=home().then(data=>{homeCache={expiresAt:Date.now()+HOME_CACHE_TTL_MS,data};return data}).finally(()=>{homePromise=null});
+    homePromise=home().then(data=>{homeCache={expiresAt:Date.now()+HOME_CACHE_TTL_MS,data};return data}).catch(error=>{if(homeCache&&homeCache.expiresAt+15*60_000>Date.now())return {...homeCache.data,catalog_stale:true};throw error}).finally(()=>{homePromise=null});
   }
   return homePromise;
 }
 async function cachedHomePriority(){
   if(homePriorityCache&&homePriorityCache.expiresAt>Date.now())return homePriorityCache.data;
   if(!homePriorityPromise){
-    homePriorityPromise=home(true).then(data=>{homePriorityCache={expiresAt:Date.now()+HOME_CACHE_TTL_MS,data};return data}).finally(()=>{homePriorityPromise=null});
+    homePriorityPromise=home(true).then(data=>{homePriorityCache={expiresAt:Date.now()+HOME_CACHE_TTL_MS,data};return data}).catch(error=>{if(homePriorityCache&&homePriorityCache.expiresAt+15*60_000>Date.now())return {...homePriorityCache.data,catalog_stale:true};throw error}).finally(()=>{homePriorityPromise=null});
   }
   return homePriorityPromise;
 }
@@ -238,9 +251,9 @@ async function sellableMap(ids:string[]){
   if(error)throw error;for(const r of data||[])out.set(String(r.product_id),Math.max(0,Number(r.loose_sellable_stock||0)));return out;
 }
 async function offerList(){
-  const {data,error}=await db.from("products").select("id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit").eq("is_active",true).eq("is_offer",true).not("offer_price","is",null).order("name").limit(160);
+  const {data,error}=await db.from("products").select("id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,metadata").eq("is_active",true).eq("is_offer",true).not("offer_price","is",null).order("name").limit(200);
   if(error)throw error;const rows=data||[],sm=await sellableMap(rows.map((p:any)=>p.id));
-  return {ok:true,offers:rows.map((p:any)=>({...pub(p,sm.get(p.id)||0),product_id:p.id})).filter((p:any)=>p.stock_quantity>0).slice(0,80)};
+  return {ok:true,offers:rows.map((p:any)=>({...pub(p,sm.get(p.id)||0),product_id:p.id,offer_priority:p.metadata?.offer_source==="auto_expiry"?0:1})).filter((p:any)=>p.stock_quantity>0).sort((a:any,b:any)=>a.offer_priority-b.offer_priority||a.name.localeCompare(b.name,"pt-BR")).slice(0,160)};
 }
 async function subcats(url:URL){
   const c=txt(url.searchParams.get("category"),48);if(!c)return {ok:true,subcategories:[]};
