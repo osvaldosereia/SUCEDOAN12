@@ -54,7 +54,7 @@ test('Ready basket skips 27 product decisions and returns to correct screen',()=
  assert.equal(advance(ctx,before).step,'CUSTOMER');
 });
 test('Brand switch and removal do not reveal or reset hidden adjustments',()=>{
- let s=chooseMode(ctx,newSession('lab-2'),'customize');
+ let s=chooseMode(ctx,newSession('lab-2',2),'customize');
  const p=publicView(ctx,s).current_position;
  const baseline=publicView(ctx,s).total_cents;
  s=chooseProduct(ctx,s,{positionId:p.id,productId:p.options[1].id});
