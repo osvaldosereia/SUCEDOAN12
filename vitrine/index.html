@@ -387,7 +387,7 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <script src="/vitrine/basket-carousel.js?v=20261013-mobile-r3"></script>
+  <script src="/vitrine/basket-carousel.js?v=20261013-mobile-r4"></script>
   <script>
   (() => {
     'use strict';
@@ -909,6 +909,38 @@
       toast('Pedido recebido. Enviaremos no WhatsApp o link para conferir seu pedido.')
     }
     $('#globalSearchForm').onsubmit=e=>{e.preventDefault();const q=$('#globalSearchInput').value.trim();if(q)renderSearch(q)};
+    // Local Web Vitals diagnostics: no customer data or telemetry is transmitted.
+    const homePerf={fcpMs:null,lcpMs:null,firstBasketImageMs:null};
+    function observeHomePerformance(){
+      if(!('PerformanceObserver' in window))return;
+      try{
+        const paints=new PerformanceObserver(list=>{
+          for(const item of list.getEntries())if(item.name==='first-contentful-paint')homePerf.fcpMs=Math.round(item.startTime);
+        });
+        paints.observe({type:'paint',buffered:true});
+      }catch{}
+      try{
+        const lcp=new PerformanceObserver(list=>{
+          for(const item of list.getEntries())homePerf.lcpMs=Math.round(item.startTime);
+        });
+        lcp.observe({type:'largest-contentful-paint',buffered:true});
+      }catch{}
+      try{
+        const images=new PerformanceObserver(list=>{
+          for(const item of list.getEntries())if(item.name&&item.name.includes('/storage/v1/object/public/product-images/')&&homePerf.firstBasketImageMs===null)homePerf.firstBasketImageMs=Math.round(item.responseEnd);
+        });
+        images.observe({type:'resource',buffered:true});
+      }catch{}
+    }
+    window.DAStorefrontPerf={snapshot:()=>({
+      fcpMs:homePerf.fcpMs,lcpMs:homePerf.lcpMs,firstBasketImageMs:homePerf.firstBasketImageMs,
+      shellMs:performance.getEntriesByName('da-home-shell').at(-1)?.startTime??null,
+      cachedCestasMs:performance.getEntriesByName('da-home-cached-cestas').at(-1)?.startTime??null,
+      firstCestasMs:performance.getEntriesByName('da-home-first-cestas').at(-1)?.startTime??null,
+      fullCatalogMs:performance.getEntriesByName('da-home-full-catalog').at(-1)?.startTime??null
+    })};
+    observeHomePerformance();
+
     async function start(){
       captureMarketingEntryContext();renderInitialShell();try{performance.mark('da-home-shell')}catch{}
       const cachedHome=readCache(HOME_CACHE_KEY,24*60*60*1000),hadCached=Boolean(cachedHome?.baskets?.length);
