@@ -37,3 +37,11 @@ test('No location attaches to a finished order',()=>{
  assert.throws(()=>attachSimulatedLocation({status:'CONFIRMED'},
  {customer_phone:'5565998887777'},'5565998887777'),/draft_finalized/);
 });
+
+test('Standard WhatsApp wamid identifiers with Base64 separators remain supported',()=>{
+ const sample={messages:[{
+  type:'location',from:'5565998887777',id:'wamid.HBgMNTU2NTk5ODg4Nzc3NxUCABIYFjNF+AQ==',
+  location:{latitude:-15.6,longitude:-56.0}
+ }]};
+ assert.match(readInboundLocation(sample,{expectedPhone:'5565998887777'}).message_id,/^wamid/);
+});
