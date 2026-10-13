@@ -249,6 +249,54 @@ async function orderDetails(orderId:string){
   };
 }
 
+// Non-blocking post-checkout follow-up. The main order message has already
+// been accepted before this runs; follow-up failures never roll it back.
+// The raw URL capability lives only in this request and is never persisted.
+async function sendPostorderOffersOnce(
+  orderId:string, account:any, toE164:string, channel:Channel, capability:string
+){
+  if(!/^[a-f0-9]{64}$/.test(capability))return {status:"unavailable"};
+  const digits=String(toE164||"").replace(/\D/g,"");
+  const registered=await db.rpc("ops4_register_postorder_followup_v1",{
+    p_order_id:orderId,p_whatsapp_account_id:account.id,p_phone_e164:digits,p_channel:channel
+  });
+  if(registered.error||registered.data?.ok!==true){
+    throw new Error("postorder_register_failed");
+  }
+  if(registered.data.created!==true)return {status:"already_registered"};
+  const templateName="pedidoofertas"+channel+"v1";
+  const candidate=await db.from("whatsapp_templates_v1")
+    .select("name,status,components").eq("whatsapp_account_id",account.id)
+    .eq("name",templateName).eq("language","pt_BR").maybeSingle();
+  const components=Array.isArray(candidate.data?.components)?candidate.data.components:[];
+  const buttons=components.find((c:any)=>String(c.type||"").toUpperCase()==="BUTTONS");
+  const allowed=(Array.isArray(buttons?.buttons)?buttons.buttons:[]).some((b:any)=>
+    b.type==="URL"&&b.url==="https://donaantonia.com.br/ofertas/?c={{1}}");
+  if(candidate.error||candidate.data?.status!=="APPROVED"||!allowed){
+    await db.rpc("ops4_offer_send_result_v1",{p_order_id:orderId,p_status:"skipped"});
+    return {status:"template_not_approved"};
+  }
+  try{
+    const result=await sendTemplateViaMeta({
+      accessToken:META_WHATSAPP_ACCESS_TOKEN,
+      phoneNumberId:String(account.phone_number_id||""),toE164:digits,
+      templateName,languageCode:"pt_BR",
+      components:[{type:"button",sub_type:"url",index:"0",
+        parameters:[{type:"text",text:capability}]}],
+      graphVersion:META_WHATSAPP_GRAPH_VERSION,timeoutMs:15000
+    });
+    await db.rpc("ops4_offer_send_result_v1",{
+      p_order_id:orderId,p_status:"sent",p_provider_message_id:result.providerMessageId
+    });
+    return {status:"sent"};
+  }catch(error){
+    const uncertain=!(error instanceof MetaTransportError)||error.uncertain===true;
+    await db.rpc("ops4_offer_send_result_v1",{
+      p_order_id:orderId,p_status:uncertain?"uncertain":"failed"
+    });
+    return {status:uncertain?"uncertain":"failed"};
+  }
+}
 async function claim(orderId:string,scope:DispatchScope){
   const rpc=scope==="checkout_auto"?"ops2_claim_checkout_order_whatsapp_v1":"ops2_claim_order_whatsapp_outbox_v1";
   const r=await db.rpc(rpc,{p_order_id:orderId});
@@ -469,6 +517,15 @@ Deno.serve(async(req:Request)=>{
           const detail=text(accepted.error?.message||accepted.data?.error||"canonical_persist_failed",240);
           await markMetaUncertain(outboxId,item,providerPayload,metaRequest,result.providerMessageId,`canonical_persist_failed:${detail}`);
           return respond({ok:false,error:"meta_send_uncertain",status:"failed",uncertain:true,outbox_id:outboxId,recipient_kind:item.recipient_kind,channel_origin:channel,dispatch_scope:scope,external_message_id:result.providerMessageId},502);
+        }
+        // Stage 2: offer message, only after Meta accepted the canonical order
+        // message. Stage 3 is separately scheduled from this new-only ledger.
+        if(customerActionCode){
+          try{
+            await sendPostorderOffersOnce(orderId,account,item.phone_e164,channel,customerActionCode);
+          }catch(error){
+            console.error("postorder_followup_register",text((error as Error)?.message||error,120));
+          }
         }
         return respond({
           ok:true,status:"sent",provider:"meta",outbox_id:outboxId,recipient_kind:item.recipient_kind,
