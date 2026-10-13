@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { redactWebhookPayload } from "../_shared/whatsapp-core-v1.mjs";
 import { classifyCustomerConfirmation } from "../_shared/ana-customer-confirmation-v1.mjs";
+import { findPostorderReply } from "../_shared/order-postorder-quickreply-v1.mjs";
 import {
   extractMetaPhoneNumberIds,
   hasMetaMessageOrStatusEvents,
@@ -294,6 +295,28 @@ async function applyCustomerConfirmationSignal(message: any, ingestResult: any) 
   return applied.data?.ok === true ? applied.data : null;
 }
 
+// Reply actions are accepted only from signed Meta webhook events. The sender,
+// channel, one-time nonce and the order's unchanged amount/version are verified
+// again by a service-only SQL function before confirmation is committed.
+async function applyPostorderQuickReply(payload:any,message:any,ingest:any){
+  if(message?.message?.direction!=="inbound"||ingest?.duplicate===true)return null;
+  const parsed=findPostorderReply(payload,message?.provider_message_id);
+  if(!parsed)return null;
+  const encoded=new TextEncoder().encode(parsed.nonce);
+  const digest=await crypto.subtle.digest("SHA-256",encoded);
+  const nonceHash=[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,"0")).join("");
+  const applied=await db.rpc("ops4_apply_postorder_quickreply_v1",{
+    p_order_id:parsed.orderId,
+    p_account_id:message.whatsapp_account_id,
+    p_phone_e164:String(message.phone_e164||"").replace(/\D/g,""),
+    p_action:parsed.action,
+    p_nonce_hash:nonceHash,
+    p_provider_message_id:message.provider_message_id
+  });
+  if(applied.error)throw new Error("order_quickreply_apply_failed");
+  return {recognized:true,action:parsed.action,ok:applied.data?.ok===true,
+    error:String(applied.data?.error||"").slice(0,80)};
+}
 async function persistStatus(status: any, payloadHash: string) {
   const eventKey = `status:${status.provider_message_id}:${status.status}:${status.occurred_at || "unknown"}`;
   const capture = await db.rpc("whatsapp_ingest_event_v1", {
@@ -433,6 +456,7 @@ Deno.serve(async (req: Request) => {
     let echoesDuplicates = 0;
     let anaConfirmationsApplied = 0;
     let anaJobsQueued = 0;
+    let postorderRepliesApplied = 0;
     for (const message of normalized.messages) {
       const result = await persistMessage(message, normalized.payloadHash, safePayload);
       const isEcho = message?.message?.direction === "outbound" && message?.message?.metadata?.source_event === "smb_message_echoes";
@@ -442,6 +466,12 @@ Deno.serve(async (req: Request) => {
       } else {
         if (result?.duplicate === true) inboundDuplicates += 1;
         else inboundNormalized += 1;
+      }
+      const postorder = await applyPostorderQuickReply(payload,message,result);
+      if(postorder?.recognized===true){
+        if(postorder.ok)postorderRepliesApplied+=1;
+        // Do not send a second ANA answer to a structured purchase button.
+        continue;
       }
       const confirmation = await applyCustomerConfirmationSignal(message, result);
       if (confirmation?.ok === true) anaConfirmationsApplied += 1;
@@ -466,6 +496,7 @@ Deno.serve(async (req: Request) => {
       echoes_duplicates: echoesDuplicates,
       ana_confirmations_applied: anaConfirmationsApplied,
       ana_jobs_queued: anaJobsQueued,
+      postorder_quickreplies_applied: postorderRepliesApplied,
       statuses_captured: statusesCaptured,
       statuses_recorded: statusesRecorded,
       statuses_pending: statusesPending,
