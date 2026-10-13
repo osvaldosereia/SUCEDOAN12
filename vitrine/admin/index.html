@@ -6073,6 +6073,7 @@
       else if(filter==='new')ok=Boolean(f.is_new);
       else if(filter==='existing')ok=Boolean(f.is_existing);
       else if(filter==='review')ok=Boolean(f.needs_review);
+      else if(filter==='unlinked')ok=Boolean(f.is_unlinked);
       else if(filter==='ready')ok=Boolean(f.safe_to_approve&&f.needs_approval&&!f.approved);
       else if(filter==='approved')ok=Boolean(f.approved&&!f.needs_approval);
       if(!ok)return false;
@@ -6082,41 +6083,37 @@
     });
   }
   // PURCHASE_XML_EDIT_NAME_V1
+  // Advanced view is a compact index, not a second product editing interface.
+  // All mutations belong to the original invoice item to avoid conflicting forms.
   function purchaseCatalogCardHtml(x){
-    const p=x.pricing_preview||{},prod=x.products||{},flags=x.flags||{};
-    const factor=p.suggested_conversion_factor??x.conversion_factor??(p.requires_conversion_confirmation?'':1);
-    const unitCost=p.proposed_unit_cost??purchaseItemUnitCost(x,factor);
-    const saleValue=p.recommended_sale_price??prod.price??p.suggested_sale_price??'';
-    const updateSale=Boolean(p.update_sale_recommended);
-    const invoice=x?.document?.metadata?.invoice_number||String(x?.document?.document_key||'').slice(-10)||'—';
-    const gtin=x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado';
-    const status=flags.needs_review?'Revisar':flags.approved&&!flags.needs_approval?'Aprovado':flags.safe_to_approve?'Pronto':'Pendente';
-    const statusCls=flags.needs_review?'warn':flags.approved&&!flags.needs_approval?'':'';
-    const cardCls=flags.needs_review?'review':flags.approved&&!flags.needs_approval?'approved':'';
+    const flags=x.flags||{},prod=x.products||{},doc=x.document||{};
     const reason=(flags.review_reasons||[]).map(purchaseCatalogReasonLabel).join(' · ');
-    const qtyText=(factor&&Number(factor)>0)?fmtQty(x.purchase_quantity||0)+' '+esc(x.purchase_unit||'')+' × '+fmtQty(factor)+' = '+fmtQty(Number(x.purchase_quantity||0)*Number(factor))+' UN':fmtQty(x.purchase_quantity||0)+' '+esc(x.purchase_unit||'');
-    return '<div class="purchase-catalog-card '+cardCls+'" data-purchase-catalog-item="'+esc(x.id)+'">'+
-      '<div class="purchase-item-title"><div><strong>'+esc(prod.name||x.description||'Produto')+'</strong>'+
-        '<small>'+esc(x.description||'')+'</small>'+
-        '<div class="purchase-catalog-meta"><span><b>EAN</b> '+esc(gtin)+'</span><span><b>NCM</b> '+esc(x.ncm||'—')+'</span><span><b>Última NF</b> '+esc(invoice)+' · '+esc(dateOnly(String(x?.document?.issued_at||'').slice(0,10)))+'</span><span><b>Fornecedor</b> '+esc(x?.document?.supplier_name||'—')+'</span>'+(Number(x.occurrence_count||0)>1?'<span><b>'+esc(x.occurrence_count)+'</b> compras no período</span>':'')+'</div>'+
-      '</div><div class="purchase-item-badges">'+
-        '<span class="pill '+(flags.is_new?'warn':'')+'">'+(flags.is_new?'Produto novo':'Já cadastrado')+'</span>'+
-        (prod.is_active===false?'<span class="pill off">Inativo</span>':'')+
-        '<span class="pill '+statusCls+'">'+esc(status)+'</span>'+
-      '</div></div>'+
-      (reason?'<div class="purchase-factor-hint warn-text" style="margin-bottom:8px">'+esc(reason)+'</div>':'')+
-      '<div class="purchase-field" style="margin-bottom:8px"><label>Nome cadastrado (não alterado pela NF-e)</label><input type="text" maxlength="300" data-catalog-product-name readonly value="'+esc(prod.name||x.description||'')+'"><div class="purchase-factor-hint">O nome oficial permanece o mesmo. Para vincular um produto não identificado, abra a nota na lista acima.</div></div>'+
-      '<div class="purchase-price-grid">'+
-        '<div class="purchase-field"><label>Conversão para UN</label><input type="number" min="1" step="1" data-catalog-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint">'+(p.requires_conversion_confirmation?'Confira quantas UN existem em 1 '+esc(x.purchase_unit||'embalagem')+'.':'Compra: '+qtyText)+'</div></div>'+
-        '<div class="purchase-price-box"><small>Quantidade final</small><strong data-catalog-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
-        '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
-        '<div class="purchase-price-box"><small>Custo novo / UN</small><strong class="accent" data-catalog-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
-        '<div class="purchase-price-box"><small>Preço atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
-        '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-catalog-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint">'+(p.suggested_sale_price!=null?'Mínimo 40%: '+purchaseMoney(p.suggested_sale_price):'Defina após corrigir a conversão.')+'</div></div>'+
-      '</div>'+
-      '<div class="purchase-catalog-actions"><div><div class="purchase-checks"><label><input type="checkbox" data-catalog-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-catalog-update-sale '+(updateSale?'checked':'')+'> Atualizar preço</label></div><div class="purchase-stock-note">Estoque não é alterado nesta etapa.</div></div>'+
-        '<div><button class="primary" type="button" data-catalog-approve="'+esc(x.id)+'" '+(!x.product_id?'disabled':'')+'>'+(flags.approved&&!flags.needs_approval?'Revisar novamente':flags.needs_review?'Revisar e autorizar':'Autorizar')+'</button><span class="purchase-approval-result" data-catalog-result></span></div></div>'+
+    const status=flags.is_unlinked?'Sem vínculo':flags.needs_review?'Revisar':flags.approved?'Concluído':'Conferir';
+    const name=prod.name||x.description||'Produto';
+    const stamp=String(doc.issued_at||'').slice(0,10);
+    const meta=[x.commercial_gtin||x.tax_gtin||'',doc.supplier_name||'',stamp?dateOnly(stamp):''].filter(Boolean).join(' · ');
+    return '<div class="purchase-catalog-index-row">'+
+      '<div class="purchase-catalog-index-main"><strong>'+esc(name)+'</strong><small>'+esc(meta)+'</small>'+
+        (reason?'<small class="purchase-catalog-index-reason">'+esc(reason)+'</small>':'')+'</div>'+
+      '<span class="pill '+(flags.needs_review?'warn':'')+'">'+esc(status)+'</span>'+
+      '<button class="secondary" type="button" data-catalog-open-note="'+esc(x.document_id||'')+'" '+(!x.document_id?'disabled':'')+'>Abrir NF-e</button>'+
     '</div>';
+  }
+  async function openPurchaseCatalogNote(docId){
+    const item=(state.purchaseCatalogQueue?.items||[]).find(x=>String(x.document_id)===String(docId));
+    if(!docId)return;
+    const exists=(state.purchaseXml?.documents||[]).some(x=>String(x.id)===String(docId));
+    if(!exists){
+      const issued=String(item?.document?.issued_at||'').slice(0,10);
+      if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(issued)){toast('Data da NF-e não disponível. Busque na lista de notas.');return}
+      state.purchaseFilter={period:'custom',start_date:issued,end_date:issued};
+      await loadPurchases();
+    }
+    state.purchaseQuickStatus='all';
+    state.purchaseQuery='';
+    paintPurchases();
+    await togglePurchaseDocument(docId,true);
+    document.querySelector('[data-purchase-toggle="'+CSS.escape(docId)+'"]')?.scrollIntoView({behavior:'smooth',block:'start'});
   }
   function purchaseCatalogListHtml(){
     const items=purchaseCatalogFilteredItems();
@@ -6185,18 +6182,18 @@
     const host=$('#purchaseCatalogList');if(!host)return;
     host.innerHTML=purchaseCatalogListHtml();
     const count=$('#purchaseCatalogVisibleCount');if(count)count.textContent=String(purchaseCatalogFilteredItems().length);
-    host.querySelectorAll('[data-catalog-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseCatalogCard(inp.closest('.purchase-catalog-card')));
-    host.querySelectorAll('[data-catalog-approve]').forEach(b=>b.onclick=()=>applyPurchaseCatalogItemUpdate(b.dataset.catalogApprove));
+    host.querySelectorAll('[data-catalog-open-note]').forEach(btn=>btn.onclick=()=>openPurchaseCatalogNote(btn.dataset.catalogOpenNote));
+    // No approvals in this duplicate index; review the item inside its NF-e.
   }
   function purchaseCatalogQueueHtml(){
     const q=state.purchaseCatalogQueue||{},counts=q.counts||{},filter=state.purchaseCatalogFilter||'pending';
-    const filters=[['pending','Pendentes'],['new','Novos'],['existing','Já cadastrados'],['review','Revisar'],['ready','Prontos'],['approved','Aprovados'],['all','Todos']];
+    const filters=[['pending','Pendentes'],['unlinked','Sem vínculo'],['review','Revisar'],['approved','Concluídos'],['all','Todos']];
     const pending=Number(counts.ready_for_approval||0)+Number(counts.needs_review||0);
     return '<section class="panel purchase-catalog-panel">'+
       '<div class="history-title dispatch-head"><div><strong>3. Produtos recebidos · últimos 31 dias</strong><span>Fila única para cadastrar, conferir e aprovar produtos sem abrir NF-e por NF-e.</span></div><b id="purchaseCatalogVisibleCount">'+esc(purchaseCatalogFilteredItems().length)+'</b></div>'+
-      '<div class="purchase-catalog-toolbar"><div class="purchase-catalog-search"><input id="purchaseCatalogSearch" type="search" placeholder="Buscar produto, EAN, fornecedor, NF ou NCM" value="'+esc(state.purchaseCatalogSearch||'')+'"></div><button class="primary" id="purchaseCatalogApproveSafe" type="button" '+(!Number(counts.ready_for_approval||0)?'disabled':'')+'>Autorizar seguros ('+esc(counts.ready_for_approval||0)+')</button></div>'+
+      '<div class="purchase-catalog-toolbar"><div class="purchase-catalog-search"><input id="purchaseCatalogSearch" type="search" placeholder="Buscar produto, EAN ou fornecedor" value="'+esc(state.purchaseCatalogSearch||'')+'"></div></div>'+
       '<div class="purchase-catalog-filters">'+filters.map(([key,label])=>'<button type="button" class="'+(filter===key?'active':'')+'" data-catalog-filter="'+key+'">'+label+'</button>').join('')+'</div>'+
-      '<div class="purchase-catalog-summary"><span><b>'+esc(counts.total||0)+'</b> produtos</span><span><b>'+esc(counts.new_products||0)+'</b> novos</span><span><b>'+esc(counts.existing_products||0)+'</b> existentes</span><span><b>'+esc(counts.ready_for_approval||0)+'</b> prontos</span><span><b>'+esc(counts.needs_review||0)+'</b> revisar</span><span><b>'+esc(counts.approved||0)+'</b> aprovados</span><span><b>'+esc(pending)+'</b> pendências operacionais</span></div>'+
+      '<div class="purchase-catalog-summary"><span><b>'+esc(counts.total||0)+'</b> registros</span><span><b>'+esc(counts.unlinked_products||0)+'</b> sem vínculo</span><span><b>'+esc(counts.needs_review||0)+'</b> revisar</span><span><b>'+esc(counts.approved||0)+'</b> concluídos</span></div>'+
       '<div class="purchase-catalog-list" id="purchaseCatalogList">'+purchaseCatalogListHtml()+'</div>'+
     '</section>';
   }
@@ -6917,9 +6914,6 @@
           '</div>';
         }).join(''):'<div class="empty">'+(browse.ok===false?'Não consegui consultar o Bling agora.':'Nenhuma nota registrada no Bling nesse período.')+'</div>')+
       '</details>'+
-      (reviews.length?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Itens que ainda precisam de conversão/vínculo</strong><span>Caixa, fardo e pacote precisam estar convertidos para unidade antes de atualizar cadastro ou estoque.</span></div><b>'+reviews.length+'</b></div>'+
-        reviews.map(x=>'<div class="purchase-review"><div class="history-main"><strong>'+esc(x.description||'Produto')+'</strong><small>'+esc(x.processing_status||'')+'</small></div><div><strong>'+esc(fmtQty(x.purchase_quantity||0))+'</strong><span class="sub">'+esc(x.purchase_unit||'')+'</span></div><div><strong>'+esc(x.conversion_factor||'—')+'</strong><span class="sub">fator</span></div><div><strong>'+purchaseMaybeMoney(x.purchase_unit_price)+'</strong><span class="sub">compra</span></div><div><button class="secondary" type="button" data-purchase-conversion="'+esc(x.id)+'">Definir conversão</button></div></div>').join('')+
-      '</section>':'')+
       '</details>';
     const purchaseQuickSearch=$('#purchaseQuickSearch');
     const purchaseQuickStatus=$('#purchaseQuickStatus');
