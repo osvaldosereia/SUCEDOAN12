@@ -35,6 +35,8 @@ try{
  let releaseFirstQuote;
  const firstQuoteGate=new Promise(resolve=>{releaseFirstQuote=resolve});
  let quoteCount=0;
+ let releaseCategoryProducts;
+ const categoryProductsGate=new Promise(resolve=>{releaseCategoryProducts=resolve});
  const offered={...basket,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub',category_slug:'cestas-completas',category_name:'Cestas Completas'};
  const later={...offered,id:'33333333-3333-4333-8333-333333333333',lot_id:'44444444-4444-4444-8444-444444444444',subcategory_id:'sub2',name:'Cesta depois'};
  await app.route('**/*',async route=>{
@@ -44,6 +46,8 @@ try{
      const taxonomy=[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'},{id:'sub2',name:'Média'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}];
      if(action==='home_priority'){await priorityCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,priority:true,baskets:[offered],basket_categories:taxonomy,categories:[]})});}
      if(action==='home'){await fullCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,baskets:[offered,later],basket_categories:taxonomy,categories:[]})})}
+     if(action==='products'){await categoryProductsGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,products:[],next_offset:null})})}
+     if(action==='subcategories')return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,subcategories:[]})});
      if(action==='basket_quote'){
        quoteCount++;
        if(quoteCount===1)await firstQuoteGate;
@@ -111,6 +115,10 @@ try{
  await app.locator('.home-shortcuts [data-category="mercearia"]').click();
  await app.locator('#productGrid').waitFor();
  await app.locator('#backHome').click();
+ // A delayed category response must not mutate the home view or throw.
+ releaseCategoryProducts();
+ await app.waitForTimeout(180);
+ assert.deepEqual(errors,[],'late category responses must not render into a destroyed grid');
  await app.locator('#basketSections [data-basket]').first().click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
  // R5: edit a basket on a slow connection; adding must wait for the final server quote.
@@ -127,5 +135,8 @@ try{
  assert.equal(quoteCount,1,'basket edit should quote exactly once');
  assert.deepEqual(errors,[],'no JavaScript errors during basket edit and checkout navigation');
  for(const entry of ['index.html','vitrine/index.html']){const pageSource=fs.readFileSync(entry,'utf8');assert.ok(pageSource.includes('BasketCarousel.mount('));assert.ok(pageSource.includes('da_storefront_home_carousel_v1'));assert.ok(pageSource.includes('/vitrine/basket-carousel.js?v='))}
+ const p=await app.evaluate(()=>window.DAStorefrontPerf?.snapshot?.()||null);
+ assert.ok(p?.firstCestasMs!==null && p?.firstCestasMs!==undefined,'first baskets mark must exist');
+ console.log('R6 synthetic browser paint:',JSON.stringify(p));
  console.log('Basket storefront browser: one photo per basket, responsive grid, home and basket navigation passed');
 }finally{await browser.close()}
