@@ -99,7 +99,7 @@ function renderPanel(){
  panel.innerHTML='<h2 style="margin:0 0 5px;font-size:18px">Confirme seu pedido</h2>'+
   '<p style="margin:0 0 12px;color:#647469;font-size:14px">Confira os produtos e o valor antes de autorizar a preparação.</p>'+
   '<div style="display:flex;justify-content:space-between;gap:12px;margin:0 0 14px"><strong>Total do pedido</strong><strong>'+escapeText(money(s.total))+'</strong></div>'+
-  '<button type="button" id="postorderOffers" style="width:100%;min-height:49px;background:#fff;color:#176b43;border:1px solid #176b43;border-radius:10px;font-weight:750;margin-bottom:10px" '+(state.busy?'disabled':'')+'>🛍️ Ver ofertas e acrescentar à sacola</button>'+
+  (s.can_add_offers===true?'<button type="button" id="postorderOffers" style="width:100%;min-height:49px;background:#fff;color:#176b43;border:1px solid #176b43;border-radius:10px;font-weight:750;margin-bottom:10px" '+(state.busy?'disabled':'')+'>🛍️ Ver ofertas e acrescentar à sacola</button>':'')+
   '<button type="button" id="postorderConfirm" style="width:100%;min-height:52px;background:#176b43;color:white;border:0;border-radius:10px;font-weight:800" '+(state.busy?'disabled':'')+'>✅ CONFIRMAR MEU PEDIDO</button>'+
   '<p style="font-size:13px;margin:10px 0 0;color:#65736b">Você também pode confirmar sem acrescentar ofertas.</p>'+
   '<p data-customer-status role="status" aria-live="polite" style="font-size:13px;margin:8px 0 0"></p>';
