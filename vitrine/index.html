@@ -433,6 +433,8 @@
       view: 'home',
       cart: loadCart(),
       basketDraft: null,
+      sheetSeq: 0,
+      orderSubmitting: false,
       category: null,
       basketCategory: '',
       nextOffset: null,
@@ -635,8 +637,8 @@
     function maxBasketQty(item,itemIndex){if(item?.type==='basket_mold'){let max=30;for(const comp of item.components||[]){const remaining=remainingStock(comp.product_id,itemIndex,comp.stock_quantity);if(remaining!==null)max=Math.min(max,Math.floor((remaining+1e-9)/Math.max(.001,Number(comp.quantity||1))))}return Math.max(0,max)}if(item?.split_mode){let max=30;const foodChanged=basketGroupChanged(item,'food');if(foodChanged)max=Math.min(max,splitBasketGroupLooseCapacity(item,itemIndex,'food'));else max=Math.min(max,Math.max(0,Math.floor(Number(item.food_lot_quantity||item.basket_stock_quantity||0)-cartLotUsed(item.food_lot_id,itemIndex,'food'))));if(item.uses_hygiene_kit){const hygieneChanged=basketGroupChanged(item,'hygiene');if(hygieneChanged)max=Math.min(max,splitBasketGroupLooseCapacity(item,itemIndex,'hygiene'));else max=Math.min(max,Math.max(0,Math.floor(Number(item.hygiene_lot_quantity||item.basket_stock_quantity||0)-cartLotUsed(item.hygiene_lot_id,itemIndex,'hygiene'))))}return Math.max(0,max)}if(item?.lot_id)return Math.max(0,Math.min(30,Math.floor(Number(item.basket_stock_quantity||0)-cartLotUsed(item.lot_id,itemIndex,''))));const comps=(item.components||[]).filter(c=>Number(c.quantity||0)>0);if(!comps.length)return 0;let max=30;for(const comp of comps){const base=Number(comp.base_quantity||0),extra=Math.max(0,Number(comp.quantity||0)-base),remaining=remainingStock(comp.product_id,itemIndex,comp.stock_quantity);if(extra>0&&remaining!==null)max=Math.min(max,Math.floor((remaining+1e-9)/extra))}return Math.max(0,max)}
     function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800)}
     function paintCart(){const count=itemCount();$('#cartBadge').textContent=String(count);$('#cartSummary').textContent=count+(count===1?' item':' itens')+' · '+money(cartTotal());$('#cartbar').classList.toggle('show',count>0)}
-    function openSheet(title,bodyHtml,actionHtml=''){state.lastFocus=document.activeElement;sheetTitle.textContent=title;sheetBody.innerHTML=bodyHtml;sheetAction.innerHTML=actionHtml;overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';requestAnimationFrame(()=>$('#closeSheet')?.focus())}
-    function closeSheet(){overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';state.basketDraft=null;if(state.lastFocus?.focus)state.lastFocus.focus()}
+    function openSheet(title,bodyHtml,actionHtml=''){state.sheetSeq++;state.lastFocus=document.activeElement;sheetTitle.textContent=title;sheetBody.innerHTML=bodyHtml;sheetAction.innerHTML=actionHtml;overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';requestAnimationFrame(()=>$('#closeSheet')?.focus())}
+    function closeSheet(){state.sheetSeq++;if(state.basketDraft?.quoteTimer)clearTimeout(state.basketDraft.quoteTimer);overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';state.basketDraft=null;if(state.lastFocus?.focus)state.lastFocus.focus()}
     $('#closeSheet').onclick=closeSheet;overlay.addEventListener('click',e=>{if(e.target===overlay)closeSheet()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open'))closeSheet()});$('#cartTop').onclick=renderCart;$('#openCart').onclick=renderCart;
 
     async function api(action,params={},options={}){
@@ -844,7 +846,22 @@
     }
     async function renderSearch(q){const term=String(q||'').trim();if(!term)return;state.view='search';state.category=null;state.query=term;renderNav();$('#globalSearchInput').value=term;content.innerHTML='<section class="section"><div class="section-head"><div><h2>Busca</h2><p>Resultados para “'+esc(term)+'”</p></div><button class="text-btn" type="button" id="backHome">Voltar</button></div><div class="grid" id="productGrid"><div class="loader"></div><div class="loader"></div></div><div id="moreHost"></div></section>';$('#backHome').onclick=renderHome;try{const data=await api('products',{q:term,limit:24,offset:0});state.nextOffset=data.next_offset;const grid=$('#productGrid');grid.innerHTML=data.products.length?data.products.map((p,i)=>productCard(p,false,i)).join(''):'<div class="empty">Não encontrei esse produto. Tente outro nome ou uma palavra mais curta.</div>';attachProductControls(grid,data.products);if(state.nextOffset!=null)renderMoreButton('','Busca',term,'')}catch(e){$('#productGrid').innerHTML='<div class="empty">Não consegui buscar agora. <button class="text-btn" id="retrySearch">Tentar novamente</button></div>';$('#retrySearch').onclick=()=>renderSearch(term)}window.scrollTo({top:0,behavior:'smooth'})}
     function renderMoreButton(key,label,q,subcategory=''){const host=$('#moreHost');host.innerHTML='<button class="primary" type="button" id="loadMore" style="margin-top:14px">Mostrar mais</button>';$('#loadMore').onclick=async()=>{const btn=$('#loadMore');btn.disabled=true;btn.textContent='Carregando…';try{const data=await api('products',{category:key,subcategory,q,limit:24,offset:state.nextOffset});state.nextOffset=data.next_offset;const grid=$('#productGrid'),temp=document.createElement('div');temp.innerHTML=data.products.map((p,i)=>productCard(p,false,i+2)).join('');attachProductControls(temp,data.products);[...temp.children].forEach(n=>grid.appendChild(n));if(state.nextOffset==null)host.innerHTML='';else{btn.disabled=false;btn.textContent='Mostrar mais'}}catch{btn.disabled=false;btn.textContent='Tentar novamente'}}}
-    async function openBasket(id){openSheet('Cesta básica','<div class="loader"></div>','');try{const data=await api('basket',{basket_id:id});state.basketDraft={basket:data.basket,items:data.items.map(x=>({...x,base_quantity:Number(x.base_quantity??x.quantity??0),quantity:Number(x.quantity??0)})),total_cents:Number(data.basket.display_price_cents||0),quoteTimer:null};paintBasketSheet()}catch(e){openSheet('Cesta básica','<div class="empty">Não consegui abrir esta cesta agora.</div>','<button class="primary" type="button" id="closeError">Fechar</button>');$('#closeError').onclick=closeSheet}}
+    async function openBasket(id){
+      openSheet('Cesta básica','<div class="loader" role="status" aria-label="Carregando cesta"></div>','');
+      const requestId=state.sheetSeq;
+      try{
+        const data=await api('basket',{basket_id:id});
+        if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
+        if(!data?.basket||!Array.isArray(data.items))throw new Error('invalid_basket_response');
+        state.basketDraft={basket:data.basket,items:data.items.map(x=>({...x,base_quantity:Number(x.base_quantity??x.quantity??0),quantity:Number(x.quantity??0)})),total_cents:Number(data.basket.display_price_cents||0),quoteTimer:null,quoteRevision:0,quotePending:false,quoteError:false,optionPending:false};
+        paintBasketSheet();
+      }catch(e){
+        if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
+        sheetBody.innerHTML='<div class="empty">Não consegui abrir esta cesta agora. Verifique a conexão e tente novamente.</div>';
+        sheetAction.innerHTML='<button class="primary" type="button" id="retryBasket">Tentar novamente</button>';
+        $('#retryBasket').onclick=()=>openBasket(id);
+      }
+    }
     function basketGroupTitle(group,basket){const slug=String(basket?.category_slug||'');if(group==='food')return slug.startsWith('kits-')?'Itens do kit':'Alimentos';return group==='hygiene'?'Limpeza e higiene':'Itens da cesta'}
     // R5_MOLD_CART_V1
     function moldOptionShortName(name,max=48){const s=String(name||'Produto').replace(/\s+/g,' ').trim();return s.length>max?s.slice(0,max-1).trimEnd()+'…':s}
