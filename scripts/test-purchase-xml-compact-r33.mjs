@@ -69,9 +69,9 @@ assert.match(api,/lot_expiration_date:exp\|\|null/);
   assert.ok(start>0&&comparison>start&&stop>comparison);
   const advanced=html.slice(start,comparison);
   const bling=html.slice(comparison,stop);
-  assert.match(advanced,/purchaseApi\\('catalog_queue'/);
+  assert.ok(advanced.includes("purchaseApi('catalog_queue'"),'catalog queue loads only when expanded');
   assert.doesNotMatch(advanced,/browse_bling|payment_accounts/);
-  assert.match(bling,/purchaseApi\\('browse_bling'/);
+  assert.ok(bling.includes("purchaseApi('browse_bling'"),'Bling comparison is on demand');
   let calls=[];
   const state={purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,
     purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false};
