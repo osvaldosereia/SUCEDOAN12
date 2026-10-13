@@ -43,7 +43,7 @@ for(const [name,html] of [['root',root],['vitrine',vitrine]]){
   assert.match(html,/food_lot_id:item\.type===['"]basket['"]\?\(item\.food_lot_id\|\|null\):null/i,`${name} split food lot id must remain gated to physical baskets only`);
   assert.doesNotMatch(html,/lot_id:item\.type===['"]basket_mold['"]/i,`${name} must not attach a physical lot to mold compositions`);
   assert.doesNotMatch(html,/food_lot_id:item\.type===['"]basket_mold['"]/i,`${name} must not attach a split physical lot to mold compositions`);
-  assert.match(html,/const previous=\{\.\.\.item\}[^\n]+if\(!ok\)Object\.assign\(item,previous\)/i,`${name} must roll back a mold option rejected during re-quote`);
+  assert.match(html,/const previous=\{\.\.\.item\}[\s\S]*?if\(!ok\)Object\.assign\(item,previous\)/i,`${name} must roll back a mold option rejected during re-quote`);
 }
 
 console.log('basket mold storefront R5: PASS');
