@@ -151,8 +151,7 @@ const altState={basketDraft:{
   optionPending:false
 }};
 const originalBasketDraft=altState.basketDraft;
-const moldFns=new Function('state','api','stockNumber','paintMoldBasketSheet','closeMoldOptionMenus','moldDraftTotalCents','
-,'toast',optionSource+'return {changeMoldOption};')(
+const moldFns=new Function('state','api','stockNumber','paintMoldBasketSheet','closeMoldOptionMenus','moldDraftTotalCents',String.fromCharCode(36),'toast',optionSource+'return {changeMoldOption};')(
   altState,()=>{moldCalls++;return altWait.promise},x=>Number(x),stub,stub,()=>800,()=>null,m=>toasts.push(m)
 );
 const firstChange=moldFns.changeMoldOption(0,'other');
