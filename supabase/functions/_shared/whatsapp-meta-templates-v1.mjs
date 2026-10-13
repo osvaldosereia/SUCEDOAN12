@@ -117,8 +117,8 @@ function normalizeButtons(rawButtons){
     catch{throw fail('meta_template_buttons_invalid')}
     if(url.protocol!=='https:'||url.username||url.password)throw fail('meta_template_buttons_invalid');
     if(dynamic){
-      // Dynamic customer-action links are limited to this approved, first-party path.
-      if(url.hostname!=='donaantonia.com.br'||url.pathname!=='/pedido/'||url.searchParams.size!==1||
+      // Only approved order-action and offer deep-link paths may carry dynamic capabilities.
+      if(url.hostname!=='donaantonia.com.br'||!['/pedido/','/ofertas/'].includes(url.pathname)||url.searchParams.size!==1||
          !url.searchParams.has('c')||url.hash)throw fail('meta_template_buttons_invalid');
       const examples=raw?.example;
       if(!Array.isArray(examples)||examples.length!==1||!/^[a-f0-9]{64}$/.test(String(examples[0]||'')))
