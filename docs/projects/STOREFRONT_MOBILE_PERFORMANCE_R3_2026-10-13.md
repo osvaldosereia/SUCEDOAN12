@@ -21,7 +21,7 @@ Preservar os elementos já visíveis da vitrine durante o carregamento progressi
 
 ## Publicação / rollback
 - Alterações restritas à vitrine pública e ao JS do carousel. Não há migração, deploy Supabase ou alteração fiscal.
-- Integrar o PR à branch main; o domínio `donaantonia.com.br` utiliza GitHub Pages pelo arquivo `CNAME` (confirmar cache/publicação).
+- Integrar o PR à branch main; o repositório contém `CNAME` para `donaantonia.com.br`; confirmar se a hospedagem sincronizou o `main` e se o cache público foi invalidado.
 - Reverter o PR de R3 para voltar ao render completo, sem mexer nas rodadas R1/R2.
 
 ## Próximos passos
