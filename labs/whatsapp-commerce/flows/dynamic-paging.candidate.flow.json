@@ -159,6 +159,10 @@
         "quantity": {
           "type": "number",
           "__example__": 1
+        },
+        "quantity_label": {
+          "type": "string",
+          "__example__": "1"
         }
       },
       "layout": {
@@ -192,6 +196,13 @@
                 }
               },
               {
+                "type": "TextInput",
+                "name": "product_quantity",
+                "label": "Quantidade",
+                "required": true,
+                "input-type": "number"
+              },
+              {
                 "type": "TextBody",
                 "text": "${data.total_label}"
               },
@@ -203,13 +214,15 @@
                   "payload": {
                     "task": "commit_product",
                     "position_id": "${data.position_id}",
-                    "product_id": "${form.product_choice}"
+                    "product_id": "${form.product_choice}",
+                    "quantity": "${form.product_quantity}"
                   }
                 }
               }
             ],
             "init-values": {
-              "product_choice": "${data.selected_id}"
+              "product_choice": "${data.selected_id}",
+              "product_quantity": "${data.quantity_label}"
             }
           }
         ]
