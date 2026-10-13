@@ -11,7 +11,9 @@ assert.ok(inline,'public inline app script must exist');
 new vm.Script(inline,{filename:'index.html'});
 new vm.Script(carousel,{filename:'vitrine/basket-carousel.js'});
 
-const mobileRules=root.slice(root.indexOf('@media(max-width:759px){'),root.indexOf('@media(min-width:760px){',root.indexOf('@media(max-width:759px){')));
+const mobileStart=root.indexOf('@media(max-width:759px){\n      /* Mobile uses a light gradient');
+assert.ok(mobileStart>=0,'mobile CSS should isolate the decorative banner');
+const mobileRules=root.slice(mobileStart,root.indexOf('@media(min-width:760px){',mobileStart));
 assert.match(mobileRules,/\.home-hero\{[^}]*background-image:none/,'4G/mobile should never fetch decorative hero image');
 assert.match(root,/\.home-hero\{[^}]*home-grocery\.webp/,'desktop should retain existing hero photo');
 assert.match(root,/basket-carousel\.js\?v=20261013-mobile-r4/,'changed image JS must bust browser caches');
