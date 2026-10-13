@@ -38,6 +38,10 @@ try{
   await page.waitForSelector('[data-mold-product-option="7c1a9999-1df2-4d8e-b729-d7492a8c20a9"]');
   await page.click('[data-mold-product-option="7c1a9999-1df2-4d8e-b729-d7492a8c20a9"]');
   await page.waitForSelector('[data-mold-selected-product]');
+  const editLink=page.locator('[data-mold-selected-product] a[target="_blank"]');
+  assert.equal(await editLink.getAttribute('href'),'/vitrine/admin/?editar_produto=7c1a9999-1df2-4d8e-b729-d7492a8c20a9');
+  await page.click('[data-mold-prefer-option="0"]');
+  assert.equal(await page.locator('[data-mold-prefer-option="0"]').getAttribute('aria-pressed'),'true');
   await page.click('[data-mold-conditional-enabled]');
   await page.fill('[data-mold-conditional-hidden-adjustment]','3.75');
   await page.fill('[data-mold-conditional-product-search]','Arroz');
@@ -56,7 +60,7 @@ try{
   assert.equal(save.positions.length,1);
   assert.equal(save.positions[0].label,'Arroz 5 kg');
   assert.equal(save.positions[0].quantity,1);
-  assert.deepEqual(save.positions[0].options,[{product_id:'7c1a9999-1df2-4d8e-b729-d7492a8c20a9'}]);
+  assert.deepEqual(save.positions[0].options,[{product_id:'7c1a9999-1df2-4d8e-b729-d7492a8c20a9',metadata:{preferred:true}}]);
   assert.equal((await page.locator('body').innerText()).includes('kit'),false,'normal mold editor must not expose internal kit concepts');
   console.log('basket mold admin browser v1: PASS');
 }finally{await browser.close()}
