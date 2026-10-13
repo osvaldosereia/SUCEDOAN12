@@ -44,7 +44,11 @@ test('Interactive mock UI cannot connect to external systems',()=>{
  const p=read('preview/index.html');
  assert.ok(p.includes("connect-src 'none'"));
  assert.match(p,/simula(?:ç|c)(?:ã|a)o|simulado/i);
- assert.ok(p.includes('../fixtures/fake-catalog.mjs'));
+ assert.ok(p.includes('type="module" src="./app.mjs"'));
+ assert.ok(!p.includes('<script type="module">'), 'CSP forbids inline ES modules');
+ const app=read('preview/app.mjs');
+ assert.ok(app.includes('../fixtures/fake-catalog.mjs'));
+ assert.ok(!/https?:\\/\\/|wss?:\\/\\/|fetch\\(|WebSocket\\(|sendBeacon\\(/.test(app),'Preview module must remain offline');
  assert.ok(p.includes('Sem mensagens')||p.includes('sem mensagens'));
  assert.ok(!/https?:\/\/|wss?:\/\//.test(p),'Preview must not fetch from external hosts');
  assert.ok(!p.includes('fetch('));
