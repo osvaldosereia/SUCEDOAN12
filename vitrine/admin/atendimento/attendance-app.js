@@ -74,6 +74,10 @@ const fmtDate=v=>{const d=new Date(v);return v&&!Number.isNaN(+d)?new Intl.DateT
 const dayKey=v=>{const d=new Date(v);return Number.isNaN(+d)?'':`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 let refreshTimer=null,searchTimer=null,productTimer=null;
+// Keep the latest successful snapshot of each channel/filter across transient timeouts.
+// Do not allow overlapping refreshes or stale responses to replace newer selections.
+const queueCache=new Map(),queueRequests=new Map();
+let queueSequence=0;
 let productBatchSending=false;
 
 async function api(action,params={},method='GET'){return await attendanceJsonApi(action,params,method)}
@@ -81,7 +85,7 @@ function channelByPhone(v){const d=String(v||'').replace(/\D/g,'');return d.ends
 function selectedId(){return state.selected?.id||''}
 function showNote(text,tone='neutral'){const n=$('#composerNote');if(n){n.textContent=text;n.dataset.tone=tone}}
 function setConnection(text,tone='neutral'){const n=$('#connectionStatus');if(n){n.textContent=text;n.dataset.tone=tone}}
-function queueState(text,error=false){const box=$('#queueList');box.replaceChildren();const el=document.createElement('div');el.className=`queue-state${error?' error':''}`;el.textContent=text;if(error){const retry=document.createElement('button');retry.type='button';retry.textContent='Tentar novamente';retry.onclick=()=>boot().catch(()=>{});el.append(retry)}box.append(el)}
+function queueState(text,error=false){const box=$('#queueList');box.replaceChildren();const el=document.createElement('div');el.className=`queue-state${error?' error':''}`;el.textContent=text;if(error){const retry=document.createElement('button');retry.type='button';retry.textContent='Tentar novamente';retry.onclick=()=>Object.keys(state.accounts).length?loadQueue().catch(()=>{}):location.reload();el.append(retry)}box.append(el)}
 function setDraft(text){const d=$('#messageDraft');if(!d)return;d.value=text;d.dispatchEvent(new Event('input',{bubbles:true}));d.focus()}
 function syncFallback(){const selected=Boolean(selectedId()),draft=Boolean($('#messageDraft')?.value.trim());$('#copyReplyBtn').disabled=!selected||!draft}
 function syncMobile(){$('#conversationPane')?.classList.toggle('mobile-open',Boolean(state.conversationOpen&&selectedId()))}
@@ -89,7 +93,25 @@ function closeMobileConversation(){if(!state.conversationOpen)return;state.conve
 
 async function loadAccounts(){const data=await api('accounts');state.accounts={};for(const a of data.items||[]){const c=channelByPhone(a.phone_e164);if(c)state.accounts[c]=a}const count=CHANNELS.filter(c=>state.accounts[c]?.id).length;if(!count)throw new Error('accounts_unavailable');setConnection(count===2?'2 canais conectados · Meta + histórico canônico':`${count} canal conectado · operação parcial`,count===2?'success':'warning');syncSwitcher()}
 function syncSwitcher(){$$('[data-channel-switch]').forEach(b=>{const c=b.dataset.channelSwitch;b.classList.toggle('active',c===state.activeChannel);b.setAttribute('aria-selected',String(c===state.activeChannel));b.disabled=c!=='all'&&!state.accounts[c]?.id});$('#activeChannelStatus').textContent=state.activeChannel==='all'?'0975 e 1018 juntos':`Canal ${state.activeChannel}`}
-async function channelQueue(channel){const a=state.accounts[channel];if(!a?.id)return {channel,items:[],error:true};try{const data=await api('queue',{account_id:a.id,limit:QUEUE_PAGE_SIZE,search:state.search,label_id:state.labelFilter});return {channel,items:(data.items||[]).map(x=>({...x,__channel:channel})),error:false}}catch{return {channel,items:[],error:true}}}
+async function channelQueue(channel){
+  const a=state.accounts[channel];
+  if(!a?.id)return {channel,items:[],error:true,hasCache:false};
+  const search=state.search,labelFilter=state.labelFilter,key=JSON.stringify([channel,search,labelFilter]);
+  if(queueRequests.has(key))return await queueRequests.get(key);
+  const request=(async()=>{
+    try{
+      const data=await api('queue',{account_id:a.id,limit:QUEUE_PAGE_SIZE,search,label_id:labelFilter});
+      const items=(data.items||[]).map(x=>({...x,__channel:channel}));
+      queueCache.set(key,items);
+      return {channel,items,error:false,hasCache:true};
+    }catch(error){
+      console.warn('[atendimento] Falha temporária na fila',channel,error?.status||error?.message||'network_error');
+      return {channel,items:queueCache.get(key)||[],error:true,hasCache:queueCache.has(key)};
+    }
+  })().finally(()=>queueRequests.delete(key));
+  queueRequests.set(key,request);
+  return await request;
+}
 function filtered(item){return state.quickFilter==='recent'?true:state.quickFilter==='order'?Boolean(item.has_recent_order):state.quickFilter==='pending'?Boolean(item.has_recent_order&&item.registration_incomplete):state.quickFilter==='label'?true:true}
 function chip(text,kind=''){const c=document.createElement('span');c.className=`chip ${kind}`.trim();c.textContent=text;return c}
 function receivedOrder(item){return item?.received_order_id&&/^[0-9a-f-]{36}$/i.test(String(item.received_order_id))?item:null}
@@ -102,7 +124,27 @@ function syncQueueFilterMenu(){const title=$('#queueFilterMenuLabel');if(title)t
 async function applyQueueFilter(kind,labelId=''){state.quickFilter=kind||'recent';state.labelFilter=kind==='label'?labelId:'';syncQueueFilterMenu();const menu=$('#queueFilterMenu');if(menu)menu.hidden=true;const trigger=$('#queueFilterMenuBtn');if(trigger)trigger.setAttribute('aria-expanded','false');await loadQueue()}
 function renderQueueLabelFilters(){const box=$('#queueLabelFilters');if(!box)return;box.replaceChildren();for(const l of state.labels){const b=document.createElement('button');b.type='button';b.className='queue-filter-label';b.dataset.labelId=l.id;b.setAttribute('role','menuitem');const dot=document.createElement('span');dot.className='queue-filter-label-dot';dot.style.background=l.color||'#5f6368';const name=document.createElement('span');name.textContent=l.name;b.append(dot,name);b.onclick=()=>applyQueueFilter('label',l.id).catch(()=>{});box.append(b)}if(!box.children.length){const e=document.createElement('span');e.className='queue-filter-empty';e.textContent='Nenhuma etiqueta criada.';box.append(e)}syncQueueFilterMenu()}
 function toggleQueueFilterMenu(){const menu=$('#queueFilterMenu'),trigger=$('#queueFilterMenuBtn');if(!menu||!trigger)return;menu.hidden=!menu.hidden;trigger.setAttribute('aria-expanded',String(!menu.hidden));if(!menu.hidden)syncQueueFilterMenu()}
-async function loadQueue({silent=false}={}){if(!silent)queueState('Carregando conversas…');const channels=state.activeChannel==='all'?CHANNELS:[state.activeChannel],parts=await Promise.all(channels.map(channelQueue)),ok=parts.filter(x=>!x.error),bad=parts.filter(x=>x.error);if(!ok.length){queueState('Não foi possível carregar as conversas.',true);return}state.queue=ok.flatMap(x=>x.items).sort((a,b)=>Number(Boolean(receivedOrder(b)))-Number(Boolean(receivedOrder(a)))||priorityOrderDate(b)-priorityOrderDate(a)||new Date(b.canonical_last_message_at||b.last_message_at||0)-new Date(a.canonical_last_message_at||a.last_message_at||0));syncQueueFilterMenu();syncReceivedOrderButton();const visible=state.queue.filter(filtered),box=$('#queueList');box.replaceChildren();for(const item of visible)box.append(queueCard(item));if(!visible.length)queueState('Nenhuma conversa neste filtro.');$('#activeChannelCount').textContent=String(visible.length);const base=state.activeChannel==='all'?'0975 e 1018 juntos':`Canal ${state.activeChannel}`;$('#activeChannelStatus').textContent=bad.length?`${base} · operação parcial`:base}
+async function loadQueue({silent=false}={}){
+  const requestId=++queueSequence;
+  if(!silent&&!state.queue.length)queueState('Carregando conversas…');
+  const channels=state.activeChannel==='all'?CHANNELS:[state.activeChannel];
+  const parts=await Promise.all(channels.map(channelQueue));
+  if(requestId!==queueSequence)return; // newer channel, search or refresh won
+  const usable=parts.filter(p=>!p.error||p.hasCache),bad=parts.filter(p=>p.error);
+  const base=state.activeChannel==='all'?'0975 e 1018 juntos':`Canal ${state.activeChannel}`;
+  if(!usable.length){
+    $('#activeChannelStatus').textContent=`${base} · reconectando…`;
+    if(!state.queue.length)queueState('Não foi possível carregar as conversas.',true);
+    return;
+  }
+  state.queue=usable.flatMap(x=>x.items).sort((a,b)=>Number(Boolean(receivedOrder(b)))-Number(Boolean(receivedOrder(a)))||priorityOrderDate(b)-priorityOrderDate(a)||new Date(b.canonical_last_message_at||b.last_message_at||0)-new Date(a.canonical_last_message_at||a.last_message_at||0));
+  syncQueueFilterMenu();syncReceivedOrderButton();
+  const visible=state.queue.filter(filtered),box=$('#queueList');box.replaceChildren();
+  for(const item of visible)box.append(queueCard(item));
+  if(!visible.length)queueState('Nenhuma conversa neste filtro.');
+  $('#activeChannelCount').textContent=String(visible.length);
+  $('#activeChannelStatus').textContent=bad.length?`${base} · conexão instável (lista preservada)`:base;
+}
 async function switchChannel(channel){if(!['all',...CHANNELS].includes(channel)||channel!=='all'&&!state.accounts[channel]?.id)return;state.activeChannel=channel;syncSwitcher();resetConversation();await loadQueue()}
 
 function resetConversation(){clearAttendanceProductSelection();$('#openReceivedOrderBtn').hidden=true;$('#openReceivedOrderBtn').dataset.orderId='';state.selected=null;state.conversation=null;state.context=null;state.conversationLabelIds=[];state.conversationOpen=false;syncMobile();$('#messages').replaceChildren();$('#messages').hidden=true;$('#conversationEmpty').hidden=false;$('#conversationEmpty').innerHTML='<strong>Escolha uma conversa</strong><span>As mensagens aparecerão aqui.</span>';const head=$('#conversationHead');head.querySelector('strong').textContent='Selecione uma conversa';head.querySelector('small').textContent=state.activeChannel==='all'?'0975 e 1018 em uma única central':`Canal ${state.activeChannel}`;$('#conversationAvatar').textContent='…';for(const id of ['catalogBtn','quickRepliesBtn','productsBtn','moreToolsBtn','conversationLabelsBtn','quoteBtn','saleBtn','followUpBtn','optOutBtn','openContextBtn'])$(`#${id}`).disabled=true;$('#serviceWindow').className='service-window neutral';$('#serviceWindow').textContent='Nenhuma conversa selecionada';renderContext();syncFallback()}
