@@ -27,7 +27,7 @@ const qs=new URLSearchParams(location.search);
 const token=(qs.get('c')||'').trim();
 const status=document.getElementById('status');
 const back=document.getElementById('back');
-const close=message=>{status.textContent=message;back.hidden=false;};
+const close=message=>{status.textContent=message;};
 if(!valid.test(token)){close('Este link não é válido. Abra o pedido pelo WhatsApp.');return;}
 // Remove the 256-bit capability from address/history before any network request.
 history.replaceState(null,'',location.pathname);
@@ -42,6 +42,10 @@ async function api(action,method){
 }
 try{
   const session=await api('session');
+  if(/^[a-f0-9]{16}$/i.test(String(session.public_token||''))){
+    back.querySelector('a').href='/pedido/?k='+encodeURIComponent(session.public_token);
+    back.hidden=false;
+  }
   if(session.can_add_offers!==true){
     close('O prazo de ofertas terminou ou o pedido já está confirmado. Consulte seu pedido.');
     return;
