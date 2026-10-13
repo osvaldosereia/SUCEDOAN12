@@ -156,7 +156,12 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now()}={})
   }
   function confirmSimulatedOnly(token,key){
     const record=get(token);
-    const result=confirmSimulated(ctx,record.session,{idempotencyKey:key,orders});
+    const safeKey=reqText(key,'idempotency_key');
+    if(safeKey.length<8||safeKey.length>120)throw Error('idempotency_invalid');
+    const scopedKey=token+':'+safeKey;
+    if(orders.has(scopedKey))
+      return {existing:true,order:orders.get(scopedKey),session:record.session};
+    const result=confirmSimulated(ctx,record.session,{idempotencyKey:scopedKey,orders});
     record.session=result.session;
     return result;
   }
