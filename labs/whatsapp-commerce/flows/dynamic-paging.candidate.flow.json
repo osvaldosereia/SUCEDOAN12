@@ -1,0 +1,397 @@
+{
+  "version": "7.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "CHOOSE_MODE": [
+      "PRODUCT_PILOT",
+      "UPSELL"
+    ],
+    "PRODUCT_PILOT": [
+      "UPSELL"
+    ],
+    "UPSELL": [
+      "CHECKOUT"
+    ],
+    "CHECKOUT": [
+      "SIMULATED_FINISH"
+    ],
+    "SIMULATED_FINISH": []
+  },
+  "screens": [
+    {
+      "id": "CHOOSE_MODE",
+      "title": "Sua cesta",
+      "data": {
+        "basket_name": {
+          "type": "string",
+          "__example__": "Mini Completa"
+        },
+        "total_label": {
+          "type": "string",
+          "__example__": "R$ 175,00"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_choose_mode",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "${data.basket_name}"
+              },
+              {
+                "type": "TextBody",
+                "text": "Total: ${data.total_label}"
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "mode",
+                "label": "Como prefere?",
+                "required": true,
+                "data-source": [
+                  {
+                    "id": "ready",
+                    "title": "Quero como está"
+                  },
+                  {
+                    "id": "customize",
+                    "title": "Personalizar marcas"
+                  }
+                ]
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "task": "choose_mode",
+                    "mode": "${form.mode}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUCT_PILOT",
+      "title": "Personalizar cesta",
+      "refresh_on_back": true,
+      "data": {
+        "basket_name": {
+          "type": "string",
+          "__example__": "Mini Completa"
+        },
+        "position_id": {
+          "type": "string",
+          "__example__": "position-demo"
+        },
+        "position_title": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "position_number": {
+          "type": "string",
+          "__example__": "1 de 23"
+        },
+        "total_label": {
+          "type": "string",
+          "__example__": "R$ 175,00"
+        },
+        "selected_id": {
+          "type": "string",
+          "__example__": "product-demo"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "lab-1",
+              "title": "Marca ilustrativa",
+              "description": "R$ 12,00"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_product_pilot",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "${data.position_title}"
+              },
+              {
+                "type": "TextCaption",
+                "text": "Produto ${data.position_number}"
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "product_choice",
+                "label": "Escolha a marca",
+                "required": true,
+                "data-source": "${data.options}",
+                "on-select-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "task": "preview_product",
+                    "position_id": "${data.position_id}",
+                    "product_id": "${form.product_choice}"
+                  }
+                }
+              },
+              {
+                "type": "TextBody",
+                "text": "Total atualizado: ${data.total_label}"
+              },
+              {
+                "type": "Footer",
+                "label": "Próximo produto",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "task": "commit_product",
+                    "position_id": "${data.position_id}",
+                    "product_id": "${form.product_choice}"
+                  }
+                }
+              }
+            ],
+            "init-values": {
+              "product_choice": "${data.selected_id}"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "UPSELL",
+      "title": "Mais produtos?",
+      "data": {
+        "basket_name": {
+          "type": "string",
+          "__example__": "Mini Completa"
+        },
+        "total_label": {
+          "type": "string",
+          "__example__": "R$ 175,00"
+        },
+        "extra_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "lab-1",
+              "title": "Marca ilustrativa",
+              "description": "R$ 12,00"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_upsell",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Deseja acrescentar algo?"
+              },
+              {
+                "type": "TextBody",
+                "text": "Total até agora: ${data.total_label}"
+              },
+              {
+                "type": "CheckboxGroup",
+                "name": "selected_extras",
+                "label": "Produtos extras",
+                "required": false,
+                "data-source": "${data.extra_options}"
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "task": "select_upsell",
+                    "extras": "${form.selected_extras}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CHECKOUT",
+      "title": "Finalizar pedido",
+      "data": {
+        "basket_name": {
+          "type": "string",
+          "__example__": "Mini Completa"
+        },
+        "total_label": {
+          "type": "string",
+          "__example__": "R$ 175,00"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_checkout",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Confira seus dados"
+              },
+              {
+                "type": "TextBody",
+                "text": "Total: ${data.total_label}"
+              },
+              {
+                "type": "TextInput",
+                "name": "customer_name",
+                "label": "Seu nome",
+                "required": true,
+                "input-type": "text"
+              },
+              {
+                "type": "TextInput",
+                "name": "address",
+                "label": "Endereço",
+                "required": true,
+                "input-type": "text"
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "payment",
+                "label": "Pagamento na entrega",
+                "required": true,
+                "data-source": [
+                  {
+                    "id": "pix",
+                    "title": "PIX"
+                  },
+                  {
+                    "id": "cash",
+                    "title": "Dinheiro"
+                  },
+                  {
+                    "id": "credit",
+                    "title": "Cartão de crédito"
+                  },
+                  {
+                    "id": "food",
+                    "title": "Alimentação/refeição"
+                  }
+                ]
+              },
+              {
+                "type": "Footer",
+                "label": "Revisar simulação",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "task": "checkout",
+                    "name": "${form.customer_name}",
+                    "address": "${form.address}",
+                    "payment": "${form.payment}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SIMULATED_FINISH",
+      "title": "Simulação",
+      "terminal": true,
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Simulação concluída"
+        },
+        "summary_label": {
+          "type": "string",
+          "__example__": "Mini Completa · R$ 175,00"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_simulated_finish",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "${data.message}"
+              },
+              {
+                "type": "TextBody",
+                "text": "${data.summary_label}"
+              },
+              {
+                "type": "TextCaption",
+                "text": "Nenhum pedido real será criado."
+              },
+              {
+                "type": "Footer",
+                "label": "Fechar",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "lab_only": "true"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
