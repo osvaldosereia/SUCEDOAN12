@@ -135,4 +135,36 @@ assert.equal(orderState.cart.length,0,'cart clears only after a confirmed respon
 assert.equal(rendered,1);
 assert.equal(saved,1);
 
+
+// A delayed checkout preparation must not replace another view or reopen a closed sheet.
+const checkoutOpen=source('async function renderCheckout(){','function paintCheckout(){');
+assert.match(checkoutOpen,/requestId!==state\.sheetSeq/,'checkout navigation must invalidate pending preparation');
+
+// Mold alternative responses must not overlap or replace a basket that was closed.
+let moldCalls=0;
+const altWait=deferred();
+const altState={basketDraft:{
+  basket:{mold_mode:true,id:'basket',composition_number:1,hidden_adjustment_cents:0},
+  items:[{position_id:'pos1',product_id:'original',name:'Arroz original',quantity:1,stock_quantity:5,
+    alternatives:[{product_id:'other',name:'Arroz alternativo',stock_quantity:5,price_cents:800}]}],
+  total_cents:1200,
+  optionPending:false
+}};
+const originalBasketDraft=altState.basketDraft;
+const moldFns=new Function('state','api','stockNumber','paintMoldBasketSheet','closeMoldOptionMenus','moldDraftTotalCents','
+,'toast',optionSource+'return {changeMoldOption};')(
+  altState,()=>{moldCalls++;return altWait.promise},x=>Number(x),stub,stub,()=>800,()=>null,m=>toasts.push(m)
+);
+const firstChange=moldFns.changeMoldOption(0,'other');
+await moldFns.changeMoldOption(0,'original');
+assert.equal(moldCalls,1,'a second mold change cannot overlap the first');
+assert.equal(originalBasketDraft.optionPending,true);
+altWait.resolve({basket:{...originalBasketDraft.basket},items:[{
+  position_id:'pos1',product_id:'other',name:'Arroz alternativo',quantity:1,stock_quantity:5,
+  alternatives:originalBasketDraft.items[0].alternatives
+}]});
+await firstChange;
+assert.equal(originalBasketDraft.optionPending,false);
+assert.equal(originalBasketDraft.items[0].product_id,'other');
+
 console.log('R5: basket quote races, mold guards, checkout and single order submission passed');
