@@ -14,10 +14,13 @@ const CATEGORIES=[
   {key:"casa_pet",label:"Casa e pet"}
 ];
 const HOME_CACHE_TTL_MS=120_000;
+const HOME_SNAPSHOT_TABLE="storefront_public_home_snapshot_v1";
+const HOME_SNAPSHOT_MAX_STALE_MS=2*60*60_000;
+const HOME_SNAPSHOT_LEASE_MS=120_000;
 let homeCache:{expiresAt:number,data:any}|null=null;
 let homePromise:Promise<any>|null=null;
-let homePriorityCache:{expiresAt:number,data:any}|null=null;
-let homePriorityPromise:Promise<any>|null=null;
+let homeRefreshPromise:Promise<void>|null=null;
+let homeRefreshNextAttemptAt=0;
 const MOLD_COMPOSITION_CACHE_TTL_MS=120_000;
 const moldCompositionCache=new Map<string,{expiresAt:number,data:any}>();
 const moldCompositionInFlight=new Map<string,Promise<any[]>>();
@@ -231,19 +234,111 @@ async function home(priorityOnly=false){
   const allBaskets=[...moldCards,...await basketCarouselItems(baskets)].sort((a:any,b:any)=>Number(a.category_sort_order||0)-Number(b.category_sort_order||0)||Number(a.subcategory_sort_order||0)-Number(b.subcategory_sort_order||0)||Number(a.composition_number||0)-Number(b.composition_number||0));
   return {ok:true,version:"canonical-basket-commerce-v1",priority:priorityOnly,split_kits:baskets.some((b:any)=>b.split_mode===true),baskets:allBaskets,categories:CATEGORIES,basket_categories:basketTaxonomy};
 }
+// R2: Persist a public, read-only catalog snapshot between Edge Function instances.
+// Never trust snapshot prices/stock when quoting a basket or submitting an order.
+function isValidPublicHome(value:any):boolean{
+  return Boolean(value?.ok===true&&value?.priority!==true&&Array.isArray(value.baskets)&&value.baskets.length>0&&Array.isArray(value.basket_categories));
+}
+function priorityFromPublicHome(full:any){
+  const group=(full.basket_categories||[]).find((c:any)=>c.slug==="cestas-completas");
+  const largeIds=new Set((group?.subcategories||[]).filter((s:any)=>String(s.name||"").trim().toLocaleLowerCase("pt-BR")==="grande").map((s:any)=>String(s.id)));
+  return {...full,priority:true,baskets:(full.baskets||[]).filter((b:any)=>String(b.category_id)===String(group?.id)&&largeIds.has(String(b.subcategory_id)))};
+}
+function keepHomeInMemory(value:any,ttlMs=HOME_CACHE_TTL_MS){
+  homeCache={expiresAt:Date.now()+ttlMs,data:value};
+  return value;
+}
+async function readPublicHomeSnapshot(){
+  const {data,error}=await db.from(HOME_SNAPSHOT_TABLE).select("payload,generated_at").eq("snapshot_key","home").maybeSingle();
+  if(error)throw error;
+  return data;
+}
+function parsePublicHomeSnapshot(row:any){
+  if(!isValidPublicHome(row?.payload))return null;
+  const timestamp=Date.parse(String(row.generated_at||""));
+  if(!Number.isFinite(timestamp))return null;
+  return {data:row.payload,ageMs:Math.max(0,Date.now()-timestamp)};
+}
+async function claimPublicHomeRefresh():Promise<string|null>{
+  const now=Date.now(),token=crypto.randomUUID();
+  const {data,error}=await db.from(HOME_SNAPSHOT_TABLE)
+    .update({refresh_token:token,refresh_lease_until:new Date(now+HOME_SNAPSHOT_LEASE_MS).toISOString()})
+    .eq("snapshot_key","home").lt("refresh_lease_until",new Date(now).toISOString())
+    .select("snapshot_key").maybeSingle();
+  if(error)throw error;
+  return data?token:null;
+}
+async function releasePublicHomeRefresh(token:string){
+  const {error}=await db.from(HOME_SNAPSHOT_TABLE)
+    .update({refresh_token:null,refresh_lease_until:new Date(0).toISOString()})
+    .eq("snapshot_key","home").eq("refresh_token",token);
+  if(error)console.warn("storefront-home-release-lease",error.message);
+}
+async function rebuildPublicHomeSnapshot():Promise<any|null>{
+  const token=await claimPublicHomeRefresh();
+  if(!token)return null; // Another instance holds the lease; do not duplicate costly work.
+  try{
+    const full=await home(false);
+    if(!isValidPublicHome(full))throw new Error("storefront_home_snapshot_invalid");
+    const {data,error}=await db.from(HOME_SNAPSHOT_TABLE)
+      .update({payload:full,generated_at:new Date().toISOString(),refresh_token:null,refresh_lease_until:new Date(0).toISOString()})
+      .eq("snapshot_key","home").eq("refresh_token",token)
+      .select("snapshot_key").maybeSingle();
+    if(error)throw error;
+    // Another instance may have acquired the lease after expiry; do not overwrite its cache.
+    if(data)return keepHomeInMemory(full);
+    return full;
+  }finally{
+    await releasePublicHomeRefresh(token);
+  }
+}
+function refreshPublicHomeInBackground(){
+  if(homeRefreshPromise||Date.now()<homeRefreshNextAttemptAt)return;
+  homeRefreshNextAttemptAt=Date.now()+30_000;
+  const task=(async()=>{
+    try{await rebuildPublicHomeSnapshot()}
+    catch(error){console.error("storefront-home-background-refresh",error)}
+  })().finally(()=>{homeRefreshPromise=null});
+  homeRefreshPromise=task;
+  // Supabase keeps the worker alive while the refresh completes, without delaying visitors.
+  if(typeof EdgeRuntime!=="undefined")EdgeRuntime.waitUntil(task);
+}
+async function loadPublicHome(){
+  let stored:any=null;
+  try{stored=parsePublicHomeSnapshot(await readPublicHomeSnapshot())}
+  catch(error){console.warn("storefront-home-snapshot-read",error)}
+  if(stored&&stored.ageMs<HOME_SNAPSHOT_MAX_STALE_MS){
+    const stale=stored.ageMs>=HOME_CACHE_TTL_MS;
+    const response=stale?{...stored.data,catalog_stale:true}:stored.data;
+    keepHomeInMemory(response,stale?15_000:Math.max(5_000,HOME_CACHE_TTL_MS-stored.ageMs));
+    if(stale)refreshPublicHomeInBackground();
+    return response;
+  }
+  try{
+    const rebuilt=await rebuildPublicHomeSnapshot();
+    if(rebuilt)return rebuilt;
+    // A different cold instance is preparing the first snapshot; wait briefly for it.
+    for(const ms of [300,500,800,1400,2000]){
+      await new Promise(resolve=>setTimeout(resolve,ms));
+      const row=parsePublicHomeSnapshot(await readPublicHomeSnapshot());
+      if(row)return keepHomeInMemory(row.data,15_000);
+    }
+    // Graceful fallback if the lease holder has stalled: do not leave the store blank.
+    return keepHomeInMemory(await home(false),30_000);
+  }catch(error){
+    if(stored)return keepHomeInMemory({...stored.data,catalog_stale:true},15_000);
+    if(homeCache?.data)return {...homeCache.data,catalog_stale:true};
+    throw error;
+  }
+}
 async function cachedHome(){
   if(homeCache&&homeCache.expiresAt>Date.now())return homeCache.data;
-  if(!homePromise){
-    homePromise=home().then(data=>{homeCache={expiresAt:Date.now()+HOME_CACHE_TTL_MS,data};return data}).catch(error=>{if(homeCache&&homeCache.expiresAt+15*60_000>Date.now())return {...homeCache.data,catalog_stale:true};throw error}).finally(()=>{homePromise=null});
-  }
+  if(!homePromise)homePromise=loadPublicHome().finally(()=>{homePromise=null});
   return homePromise;
 }
 async function cachedHomePriority(){
-  if(homePriorityCache&&homePriorityCache.expiresAt>Date.now())return homePriorityCache.data;
-  if(!homePriorityPromise){
-    homePriorityPromise=home(true).then(data=>{homePriorityCache={expiresAt:Date.now()+HOME_CACHE_TTL_MS,data};return data}).catch(error=>{if(homePriorityCache&&homePriorityCache.expiresAt+15*60_000>Date.now())return {...homePriorityCache.data,catalog_stale:true};throw error}).finally(()=>{homePriorityPromise=null});
-  }
-  return homePriorityPromise;
+  // Both public endpoints share the same snapshot and cold-build promise.
+  return priorityFromPublicHome(await cachedHome());
 }
 async function sellableMap(ids:string[]){
   const out=new Map<string,number>();if(!ids.length)return out;
@@ -502,8 +597,8 @@ Deno.serve(async(req:Request)=>{
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
     if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:27},200,{"Cache-Control":"no-store"});
-    if(req.method==="GET"&&action==="home")return json(req,await cachedHome(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
-    if(req.method==="GET"&&action==="home_priority")return json(req,await cachedHomePriority(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
+    if(req.method==="GET"&&action==="home")return json(req,await cachedHome(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=120"});
+    if(req.method==="GET"&&action==="home_priority")return json(req,await cachedHomePriority(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=120"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="products")return json(req,await productList(u),200,{"Cache-Control":"no-store"});
