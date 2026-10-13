@@ -148,3 +148,55 @@ the moment a user confirms an order.
   or Meta submission. They are not configured by this branch. Do NOT reuse
   Meta credentials or sender IDs associated with currently operating 0975
   or 1018 messaging.
+
+
+## R36: Native Flow contract, location and delivery tests (2026-10-13)
+
+Code added in this branch, STILL NOT DEPLOYED:
+
+- Server-side same-screen validation errors now include `screen`, the required
+  `data` dictionary (brand choices, current product and visible total), plus
+  a Portuguese error message. The client never receives price-adjustment internals.
+- Contract tests compare the response fields of each step against those declared
+  in the candidate Flow JSON. Avoid undeclared dynamic fields, which Meta may drop.
+- `src/location.mjs` builds but DOES NOT SEND a native WhatsApp
+  `location_request_message` using `action.name=send_location`; parsing binds a
+  received coordinate to a preselected customer phone, and home location remains
+  unconfirmed until the customer validates the delivery address.
+- `src/delivery-policy.mjs` simulates 12:00 cutoff in America/Cuiaba,
+  Cuiabá/Várzea Grande service-area guard, Sunday closure and injected holiday
+  / non-operating dates. Holiday calendars MUST come from verified Admin data
+  before enabling any actual delivery promise.
+- `src/lab-release-gate.mjs` fails closed unless the test WABA, test phone
+  and allowed test recipients are configured separately from production.
+  Customer messaging and writes to production must remain disabled.
+
+### Open blockers (not yet production-ready)
+
+1. **Meta validator/device test:** Repeating `PRODUCT_PILOT` 23–27 times via
+   same-screen `data_exchange` works in the isolated protocol simulator.
+   This behavior has NOT been validated on Meta Android/iOS clients.
+   A fallback screen-layout plan is mandatory if rejected.
+2. **Official pricing parity:** Current public mold-only quote requires a
+   selected product for every position and fixed configured quantities.
+   The laboratory's custom removal/quantity behavior must be implemented in an
+   isolated backend and reconciled with the production quote algorithm. Do not
+   silently call a production order endpoint.
+3. **Meta test resources:** No dedicated test WABA/phone integration is connected
+   to this code. No template or Flow was sent for Meta approval.
+4. **Persistent sandbox:** Sessions/orders are in-memory only, not durable
+   across hosts or serverless restarts. Use an isolated database only after
+   approving the associated resource/cost.
+5. **Photo conversion:** Flow options accept bounded Base64 prepared bytes.
+   The standalone lab DOES NOT download or convert live product images yet.
+6. **Security history:** An old branch commit contained a snapshot with raw
+   commercial data, then its branch ref was reset. That commit remains
+   retrievable in the public repo's object history. Removal from the branch
+   is not enough. Obtain GitHub-supported object removal before considering
+   the repository sanitized.
+7. **No billing claim:** Messages, subscriptions and templates must be priced
+   using the current provider/Meta account policies before commercialization.
+
+Reference: AWS End User Messaging documentation for encrypted WhatsApp
+Dynamic Flows, Meta-compatible endpoint pings and status codes. This is
+not an attestation that the candidate JSON has passed Meta validation.
