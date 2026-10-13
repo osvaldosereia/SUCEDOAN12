@@ -8942,6 +8942,15 @@
       }
       return;
     }
+    // Abre o cadastro completo em nova aba a partir dos mini cards de Cestas Molde.
+    const directProductId=params.get('editar_produto')||'';
+    if(directProductId){
+      if(!uuid.test(directProductId)){setTab('products');toast('Link de produto inválido');return}
+      setTab('products');
+      await openProductEditor({id:directProductId});
+      history.replaceState({},'',location.pathname+location.hash);
+      return;
+    }
     // Link direto vindo do Atendimento: exibir pedido no modal para revisão e confirmação humana.
     const directOrderId=params.get('pedido')||'';
     if(directOrderId){
