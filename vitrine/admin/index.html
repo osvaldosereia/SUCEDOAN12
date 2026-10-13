@@ -6190,7 +6190,7 @@
     const filters=[['pending','Pendentes'],['unlinked','Sem vínculo'],['review','Revisar'],['approved','Concluídos'],['all','Todos']];
     const pending=Number(counts.ready_for_approval||0)+Number(counts.needs_review||0);
     return '<section class="panel purchase-catalog-panel">'+
-      '<div class="history-title dispatch-head"><div><strong>3. Produtos recebidos · últimos 31 dias</strong><span>Fila única para cadastrar, conferir e aprovar produtos sem abrir NF-e por NF-e.</span></div><b id="purchaseCatalogVisibleCount">'+esc(purchaseCatalogFilteredItems().length)+'</b></div>'+
+      '<div class="history-title dispatch-head"><div><strong>3. Produtos recebidos · últimos 31 dias</strong><span>Índice de pendências. Abra a NF-e para editar o produto em um só lugar.</span></div><b id="purchaseCatalogVisibleCount">'+esc(purchaseCatalogFilteredItems().length)+'</b></div>'+
       '<div class="purchase-catalog-toolbar"><div class="purchase-catalog-search"><input id="purchaseCatalogSearch" type="search" placeholder="Buscar produto, EAN ou fornecedor" value="'+esc(state.purchaseCatalogSearch||'')+'"></div></div>'+
       '<div class="purchase-catalog-filters">'+filters.map(([key,label])=>'<button type="button" class="'+(filter===key?'active':'')+'" data-catalog-filter="'+key+'">'+label+'</button>').join('')+'</div>'+
       '<div class="purchase-catalog-summary"><span><b>'+esc(counts.total||0)+'</b> registros</span><span><b>'+esc(counts.unlinked_products||0)+'</b> sem vínculo</span><span><b>'+esc(counts.needs_review||0)+'</b> revisar</span><span><b>'+esc(counts.approved||0)+'</b> concluídos</span></div>'+
@@ -6354,7 +6354,9 @@
     state.purchaseDetailCache[id]=await purchaseApi('document',{id});
     state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
     state.purchaseExpandedId=id;
+    state.purchaseAdvancedLoaded=false;
     paintPurchases();
+    if(state.purchaseAdvancedOpen&&!state.purchaseAdvancedLoading)loadPurchaseAdvanced().catch(e=>toast(purchaseXmlError(e)));
   }
   async function resolvePurchaseFinance(id){
     const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');
@@ -6898,7 +6900,7 @@
         '<div class="empty" id="purchaseNoFilterResults" style="display:none">Nenhuma nota corresponde à pesquisa.</div>'+
       '</section>'+
       '<details id="purchaseAdvanced" class="panel purchase-extra" '+(state.purchaseAdvancedOpen?'open':'')+'><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
-      (!state.purchaseAdvancedLoaded?'<div class="purchase-compact-note">'+(state.purchaseAdvancedError||'Abra para carregar a conferência avançada.')+'</div>':'')+
+      (!state.purchaseAdvancedLoaded||state.purchaseAdvancedError?'<div class="purchase-compact-note">'+esc(state.purchaseAdvancedError||'Abra para carregar a conferência avançada.')+'</div>':'')+
       purchaseCatalogQueueHtml()+
       xmlCatalogSectionHtml()+
       ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto.':'')+'</small></div>':'')+
@@ -6965,6 +6967,7 @@
       if(Number(r.documents_seen||0)===0)toast('Nenhuma nota de compra/entrada encontrada pela API do Bling. Notas apenas Ciente não estão incluídas.');
       else toast('Importação concluída: '+String(r.processed||0)+' nova(s) · '+String(r.duplicates||0)+' já existente(s)'+(Number(r.failed||0)?' · '+String(r.failed)+' falha(s)':''));
       state.purchaseDetailCache={};state.purchaseExpandedId=null;
+      state.purchaseAdvancedLoaded=false;
       await loadPurchases();
     }catch(e){toast(errorMessage(e.message))}
     finally{if(b){b.disabled=false;b.textContent='Buscar no Bling'}}
@@ -7006,6 +7009,7 @@
       }
       toast('XML: '+ok+' concluído(s)'+(fail?' · '+fail+' falha(s)':''));
       state.purchaseDetailCache={};state.purchaseExpandedId=null;
+      state.purchaseAdvancedLoaded=false;
       await loadPurchases();
     }catch(e){toast(errorMessage(e.message))}
   }
