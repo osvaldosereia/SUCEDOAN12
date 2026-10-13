@@ -724,17 +724,92 @@
       const list=Array.isArray(categories)?categories:[];if(!list.length)return '';
       return '<div class="category-list basket-category-list" style="margin-bottom:12px"><button class="category" type="button" data-basket-category="" aria-pressed="'+(!active?'true':'false')+'">Todas<span>›</span></button>'+list.map(c=>'<button class="category" type="button" data-basket-category="'+esc(c.slug)+'" aria-pressed="'+(active===String(c.slug)?'true':'false')+'">'+esc(c.name)+'<span>›</span></button>').join('')+'</div>';
     }
+    // Preserve DOM nodes of previously displayed baskets while more catalog groups arrive.
+    // In particular, the priority Grande cards and their already-loaded images must survive
+    // the transition from the priority response to the complete catalog.
+    const homeSubgroupSignatures=new WeakMap();
+    function homeBasketGroupRecords(baskets,basketGroups){
+      let imageIndex=0;
+      return basketGroups.map(group=>({
+        id:String(group.id),name:group.name,
+        subgroups:(group.subcategories||[]).map(sub=>{
+          const items=baskets.filter(b=>String(b.category_id||'')===String(group.id)&&String(b.subcategory_id||'')===String(sub.id));
+          const firstIndex=imageIndex;imageIndex+=items.length;
+          return {
+            id:String(sub.id),
+            signature:JSON.stringify([sub,items,firstIndex]),
+            markup:()=>'<div class="basket-subgroup" data-home-subgroup="'+esc(sub.id)+'"><h3 class="basket-subgroup-title">'+esc(sub.name)+'</h3><div class="grid basket-grid">'+(items.length?items.map((b,i)=>basketCard(b,firstIndex+i)).join(''):'<div class="empty">Nenhum item disponível nesta subdivisão agora.</div>')+'</div></div>'
+          };
+        })
+      }));
+    }
+    function fragmentElement(markup){
+      const template=document.createElement('template');template.innerHTML=markup.trim();
+      return template.content.firstElementChild;
+    }
+    function syncHomeBasketGroups(host,records){
+      let changed=false;
+      const wantedGroups=new Set();
+      records.forEach((group,index)=>{
+        let sectionNode=[...host.children].find(node=>node.dataset.homeBasketGroup===group.id);
+        if(!sectionNode){
+          sectionNode=fragmentElement(section(group.name,'',''));
+          sectionNode.dataset.homeBasketGroup=group.id;
+          changed=true;
+        }
+        wantedGroups.add(sectionNode);
+        const heading=sectionNode.querySelector('.section-head h2');
+        if(heading&&heading.textContent!==group.name){heading.textContent=group.name;changed=true}
+        const wantedSubgroups=new Set();
+        group.subgroups.forEach((sub,subIndex)=>{
+          let subgroup=[...sectionNode.children].find(node=>node.dataset.homeSubgroup===sub.id);
+          if(!subgroup||homeSubgroupSignatures.get(subgroup)!==sub.signature){
+            const replacement=fragmentElement(sub.markup());
+            homeSubgroupSignatures.set(replacement,sub.signature);
+            if(subgroup)subgroup.replaceWith(replacement);
+            subgroup=replacement;changed=true;
+          }
+          wantedSubgroups.add(subgroup);
+          const current=[...sectionNode.children].filter(node=>node.classList.contains('basket-subgroup'))[subIndex];
+          if(current!==subgroup){sectionNode.insertBefore(subgroup,current||null);changed=true}
+        });
+        [...sectionNode.children].filter(node=>node.classList.contains('basket-subgroup')).forEach(node=>{
+          if(!wantedSubgroups.has(node)){node.remove();changed=true}
+        });
+        if(host.children[index]!==sectionNode){host.insertBefore(sectionNode,host.children[index]||null);changed=true}
+      });
+      [...host.children].forEach(node=>{if(!wantedGroups.has(node)){node.remove();changed=true}});
+      if(changed){
+        host.querySelectorAll('[data-basket]').forEach(btn=>btn.onclick=()=>openBasket(btn.dataset.basket));
+        BasketCarousel.mount(host);
+      }
+      return changed;
+    }
     function renderHome(){
-      state.view='home';state.category=null;state.query='';renderNav();$('#globalSearchInput').value='';
+      const existingHost=state.view==='home'?content.querySelector('#basketSections'):null;
+      const canPatch=Boolean(existingHost&&content.querySelector('#homeOffersMount'));
+      state.view='home';state.category=null;state.query='';
       const baskets=state.home?.baskets||[],categories=state.home?.categories?.length?state.home.categories:STATIC_CATEGORIES;
       let basketGroups=Array.isArray(state.home?.basket_categories)?state.home.basket_categories:[];
       if(state.homePartial)basketGroups=basketGroups.filter(group=>group.slug==='cestas-completas').map(group=>({...group,subcategories:(group.subcategories||[]).filter(sub=>String(sub.name||'').trim().toLocaleLowerCase('pt-BR')==='grande')}));
-      const basketGroupMarkup='<div id="basketSections">'+basketGroups.map(group=>section(group.name,'',(group.subcategories||[]).map(sub=>{const items=baskets.filter(b=>String(b.category_id||'')===String(group.id)&&String(b.subcategory_id||'')===String(sub.id));return '<div class="basket-subgroup"><h3 class="basket-subgroup-title">'+esc(sub.name)+'</h3><div class="grid basket-grid">'+(items.length?items.map((b,i)=>basketCard(b,i)).join(''):'<div class="empty">Nenhum item disponível nesta subdivisão agora.</div>')+'</div></div>'}).join(''))).join('')+'</div>';
+      const records=homeBasketGroupRecords(baskets,basketGroups);
       const remainingBasketMarkup=state.homePartial?section('Outras cestas','Carregando as demais opções…','<div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>','homeRemainingBaskets'):'';
-      content.innerHTML=homeIntro(categories)+basketGroupMarkup+remainingBasketMarkup+section('Ofertas da semana','Preços promocionais ativos agora.','<div id="homeOffersMount">'+(state.offersLoaded?'':offersSkeleton())+'</div>');
-      content.querySelectorAll('[data-basket]').forEach(btn=>btn.onclick=()=>openBasket(btn.dataset.basket));
-      content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));
-      bindHomeIntro();BasketCarousel.mount(document.querySelector('#basketSections'));if(state.offersLoaded)paintHomeOffers();else observeOffers();
+      if(!canPatch){
+        renderNav();$('#globalSearchInput').value='';
+        content.innerHTML=homeIntro(categories)+'<div id="basketSections"></div>'+remainingBasketMarkup+section('Ofertas da semana','Preços promocionais ativos agora.','<div id="homeOffersMount">'+(state.offersLoaded?'':offersSkeleton())+'</div>');
+        content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));
+        bindHomeIntro();
+      }
+      const host=content.querySelector('#basketSections');
+      syncHomeBasketGroups(host,records);
+      const existingRemaining=content.querySelector('#homeRemainingBaskets');
+      if(state.homePartial&&!existingRemaining)host.insertAdjacentHTML('afterend',remainingBasketMarkup);
+      if(!state.homePartial&&existingRemaining)existingRemaining.remove();
+      // Keep the hero, loaded offer cards, and observed offer mount intact on catalog refresh.
+      if(!canPatch){
+        if(state.offersLoaded)paintHomeOffers();
+        else observeOffers();
+      }
     }
     function paintOffersPage(){const grid=$('#offerGrid');if(!grid)return;grid.innerHTML=state.offers.length?state.offers.map((p,i)=>productCard(p,true,i)).join(''):'<div class="empty">Nenhuma oferta ativa agora.</div>';attachProductControls(grid,state.offers)}
     async function renderOffers(){state.view='offers';state.category=null;state.query='';renderNav();$('#globalSearchInput').value='';content.innerHTML=section('Ofertas','Produtos com preço promocional ativo.','<div class="grid" id="offerGrid">'+(state.offersLoaded?'':'<div class="loader"></div><div class="loader"></div>')+'</div>');if(state.offersLoaded)paintOffersPage();else{try{await loadOffers();paintOffersPage()}catch{const grid=$('#offerGrid');if(grid)grid.innerHTML='<div class="empty">Não consegui carregar as ofertas agora. <button class="text-btn" id="retryOffersPage" type="button">Tentar novamente</button></div>';if($('#retryOffersPage'))$('#retryOffersPage').onclick=()=>{state.offersPromise=null;renderOffers()}}}window.scrollTo({top:0,behavior:'smooth'})}
