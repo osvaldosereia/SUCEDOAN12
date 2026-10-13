@@ -48,7 +48,10 @@ function customerData(ctx,session){
     data.position_id=p.id;
     data.position_title=cap(p.label,70);
     data.position_number=v.step_number+' de '+v.step_total;
-    data.options=p.options.map(o=>toFlowOption(o,ctx.imagesByProductId));
+    data.options=p.options.map(o=>toFlowOption({
+      ...o,enabled:o.enabled!==false&&
+        Number(ctx.inventory?.[o.id]??0)>=Math.max(1,p.quantity)*(session.draft.basket_quantity||1)
+    },ctx.imagesByProductId));
     // Keep 'remove' explicit. The production-equivalent mold quote does not
     // yet support removal; this lab choice is only a simulation.
     if(p.removable)data.options.push({id:'__REMOVE__',title:'Retirar produto',description:'Não incluir este item'});
@@ -129,6 +132,10 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now()}={})
         const pid=data.product_id==='__REMOVE__'?null:reqText(data.product_id,'product_id');
         updated=chooseProduct(ctx,s,{positionId:reqText(data.position_id,'position_id'),
           productId:pid,quantity:pid===null?0:undefined});
+        if(publicView(ctx,updated).quote_status==='unavailable'){
+          record.session=updated;
+          throw Error('insufficient_stock');
+        }
         updated=advance(ctx,updated);
         break;
       }
@@ -179,7 +186,7 @@ export function safeLabFlowError(error){
   const allowed=new Set([
     'session_expired','session_missing','invalid_lab_flow_token','screen_out_of_sync',
     'wrong_step','option_not_available','position_out_of_order','quantity_invalid',
-    'quote_not_confirmable','invalid_action_data','upsell_items_invalid',
+    'quote_not_confirmable','insufficient_stock','invalid_action_data','upsell_items_invalid',
     'product_id_required','name_required','address_required',
     'payment_required','unsupported_action','unknown_task','item_not_removable'
   ]);
