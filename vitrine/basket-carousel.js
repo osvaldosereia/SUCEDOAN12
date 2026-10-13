@@ -53,8 +53,12 @@ window.BasketCarousel={
     const items=Array.isArray(b.carousel_items)?b.carousel_items:[],first=items[0]||null;
     const name=basketName(b.name),key=String(b.card_key||b.id);
     const url=/^(https?:\/\/|\/(?!\/))/i.test(String(first?.image_url||''))?first.image_url:'';
-    const priority=index===0?' loading="eager" fetchpriority="high"':' loading="lazy"';
-    const photo=first&&url?'<img data-basket-src="'+esc(url)+'" width="420" height="280" decoding="async"'+priority+' alt="'+esc(first.name||'Arroz da cesta')+'">':'<span class="basket-photo-missing">'+esc(first?.name||'Foto indisponível')+'</span>';
+    const firstVisible=index===0;
+    const priority=firstVisible?' loading="eager" fetchpriority="high"':' loading="lazy"';
+    // Only the first basket starts its image request as soon as HTML is inserted.
+    // Subsequent cards stay under the IntersectionObserver, including horizontal clips.
+    const srcAttr=firstVisible?' src="'+esc(url)+'"':' data-basket-src="'+esc(url)+'"';
+    const photo=first&&url?'<img'+srcAttr+' width="420" height="280" decoding="async"'+priority+' alt="'+esc(first.name||'Arroz da cesta')+'">':'<span class="basket-photo-missing">'+esc(first?.name||'Foto indisponível')+'</span>';
     return '<article class="card basket-card"><div class="basket-card-photo">'+photo+'</div><div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div><div class="price">'+money(b.display_price_cents)+'</div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="Ver cesta '+esc(name)+'">Ver cesta</button></div></article>';
   },
   prepareHome(host){
