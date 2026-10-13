@@ -3,6 +3,7 @@ import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {buildTemplateCacheRows,listTemplatesViaMeta,createTemplateViaMeta,editTemplateViaMeta,deleteTemplateViaMeta,MetaTemplatesError} from "../_shared/whatsapp-meta-templates-v1.mjs";
 import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
 import {buildPostorderTemplate} from "../_shared/customer-postorder-template-v3.mjs";
+import {buildPostorderOffersTemplate,buildPostorderConfirmTemplate} from "../_shared/customer-postorder-followup-templates-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -124,21 +125,24 @@ async function provisionPostorderTemplates(){
     if(!account){results.push({channel,error:"account_not_found"});continue}
     const sync=await syncTemplates(account);
     if(sync?.ok!==true){results.push({channel,error:sync?.error||"template_sync_failed"});continue}
-    const draft=buildPostorderTemplate(channel);
-    const saved=(await cachedTemplates(account.id)).find((t:any)=>t.name===draft.name&&t.language==="pt_BR");
-    if(saved){results.push({channel,name:draft.name,status:saved.status,created:false});continue}
-    try{
-      await createTemplateViaMeta({
-        accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,
-        graphVersion:META_WHATSAPP_GRAPH_VERSION,template:draft,timeoutMs:20000
-      });
-      const synced=await syncTemplates(account);
-      const row=synced?.ok===true?(await cachedTemplates(account.id)).find((t:any)=>t.name===draft.name):null;
-      results.push({channel,name:draft.name,status:row?.status||"PENDING",created:true,sync_pending:synced?.ok!==true});
-    }catch(error){
-      if(error instanceof MetaTemplatesError){
-        results.push({channel,name:draft.name,error:error.code,requires_sync:error.retryable===true});
-      }else throw error;
+    // One provisioning action per channel prepares the order, offers and final
+    // confirmation templates. Each template is created only if absent in Meta.
+    for(const draft of [buildPostorderTemplate(channel),buildPostorderOffersTemplate(channel),buildPostorderConfirmTemplate(channel)]){
+      const saved=(await cachedTemplates(account.id)).find((t:any)=>t.name===draft.name&&t.language==="pt_BR");
+      if(saved){results.push({channel,name:draft.name,status:saved.status,created:false});continue}
+      try{
+        await createTemplateViaMeta({
+          accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,
+          graphVersion:META_WHATSAPP_GRAPH_VERSION,template:draft,timeoutMs:20000
+        });
+        const synced=await syncTemplates(account);
+        const row=synced?.ok===true?(await cachedTemplates(account.id)).find((t:any)=>t.name===draft.name):null;
+        results.push({channel,name:draft.name,status:row?.status||"PENDING",created:true,sync_pending:synced?.ok!==true});
+      }catch(error){
+        if(error instanceof MetaTemplatesError){
+          results.push({channel,name:draft.name,error:error.code,requires_sync:error.retryable===true});
+        }else throw error;
+      }
     }
   }
   return {ok:results.every(x=>!x.error),results};
