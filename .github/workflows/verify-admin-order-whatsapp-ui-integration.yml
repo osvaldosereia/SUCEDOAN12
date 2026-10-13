@@ -15,6 +15,15 @@ on:
       - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'scripts/test-customer-postorder-flow-v1.mjs'
+      - 'scripts/test-whatsapp-postorder-followup-v1.mjs'
+      - 'supabase/functions/_shared/customer-postorder-followup-templates-v1.mjs'
+      - 'supabase/functions/_shared/order-postorder-quickreply-v1.mjs'
+      - 'supabase/functions/whatsapp-meta-webhook-v1/index.ts'
+      - 'supabase/functions/order-postorder-confirm-v1/index.ts'
+      - 'supabase/migrations/*ops3_auto_queue_on_storefront_confirmation.sql'
+      - 'supabase/migrations/*ops3_customer_confirmation_queue_origin.sql'
+      - 'supabase/migrations/*ops4_postorder_followup_ledger.sql'
+      - 'supabase/migrations/*ops4_postorder_dispatch_command.sql'
       - 'scripts/test-meta-server-provision-v1.mjs'
       - 'supabase/migrations/*meta_postorder_server_dispatch_v1.sql'
       - 'scripts/meta-postorder-templates-v3.mjs'
@@ -65,6 +74,15 @@ on:
       - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'scripts/test-customer-postorder-flow-v1.mjs'
+      - 'scripts/test-whatsapp-postorder-followup-v1.mjs'
+      - 'supabase/functions/_shared/customer-postorder-followup-templates-v1.mjs'
+      - 'supabase/functions/_shared/order-postorder-quickreply-v1.mjs'
+      - 'supabase/functions/whatsapp-meta-webhook-v1/index.ts'
+      - 'supabase/functions/order-postorder-confirm-v1/index.ts'
+      - 'supabase/migrations/*ops3_auto_queue_on_storefront_confirmation.sql'
+      - 'supabase/migrations/*ops3_customer_confirmation_queue_origin.sql'
+      - 'supabase/migrations/*ops4_postorder_followup_ledger.sql'
+      - 'supabase/migrations/*ops4_postorder_dispatch_command.sql'
       - 'scripts/test-meta-server-provision-v1.mjs'
       - 'supabase/migrations/*meta_postorder_server_dispatch_v1.sql'
       - 'scripts/meta-postorder-templates-v3.mjs'
@@ -116,6 +134,7 @@ jobs:
           node scripts/test-order-addon-atomic-v1.mjs
           node scripts/test-order-addon-public-storefront-v1.mjs
           node scripts/test-customer-postorder-flow-v1.mjs
+          node scripts/test-whatsapp-postorder-followup-v1.mjs
           node scripts/test-meta-server-provision-v1.mjs
       - name: Existing WhatsApp transport contract
         run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
@@ -137,5 +156,11 @@ jobs:
           NODE
       - name: Quick-add Edge syntax
         run: node --experimental-strip-types --check supabase/functions/order-addon-public-v1/index.ts
+      - name: WhatsApp follow-up Edge syntax
+        run: |
+          node --experimental-strip-types --check supabase/functions/whatsapp-meta-webhook-v1/index.ts
+          node --experimental-strip-types --check supabase/functions/order-postorder-confirm-v1/index.ts
+          node --experimental-strip-types --check supabase/functions/admin-orders-v1/index.ts
+
       - name: Diff check
         run: git diff --check HEAD^ HEAD || git diff --check
