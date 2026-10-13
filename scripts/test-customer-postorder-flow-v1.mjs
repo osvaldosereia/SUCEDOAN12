@@ -208,3 +208,68 @@ assert.match(templatesApiSource,/buildPostorderOffersTemplate\(channel\)/);
 assert.match(templatesApiSource,/buildPostorderConfirmTemplate\(channel\)/);
 console.log('PASS: Meta templates for three-message WhatsApp flow in two channels');
 console.log('PASS: Meta Utility URL, 256-bit capability, offers only, CAS confirmation, storefront JS');
+
+
+// GitHub Pages delivers /404.html for unrecognized static routes.
+// The fallback must retain the same authorized offer behavior rather than
+// silently redirect the customer to the homepage/new checkout.
+const pages404=read('404.html');
+const pagesSource=[...pages404.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)]
+  .map(x=>x[1]).find(Boolean);
+assert.ok(pagesSource,'Pages fallback must contain working route handling');
+new vm.Script(pagesSource,{filename:'404.html'});
+assert.match(pages404,/name="referrer" content="no-referrer"/);
+assert.match(pagesSource,/ops3|order-customer-actions-v1/);
+async function simulatePages404(path,search=''){
+  const token='c'.repeat(64),calls=[],navigations=[],historyCalls=[];
+  const notice={textContent:''},back={href:'',textContent:'',hidden:true},
+    spinner={hidden:false},saved=new Map();
+  const ctx={
+    URLSearchParams,
+    location:{pathname:path,search,replace:url=>navigations.push(url)},
+    history:{replaceState:(...args)=>historyCalls.push(args)},
+    document:{
+      title:'',
+      getElementById:id=>id==='notice'?notice:id==='back'?back:null,
+      querySelector:selector=>selector==='.spinner'?spinner:null
+    },
+    sessionStorage:{setItem:(key,value)=>saved.set(key,value)},
+    fetch:async (url,options)=>{
+      calls.push({url,options});
+      const action=new URL(url).searchParams.get('action');
+      if(action==='session')return {ok:true,json:async()=>({
+        ok:true,can_add_offers:true,public_token:'a'.repeat(16)
+      })};
+      if(action==='addon_session')return {ok:true,json:async()=>({
+        ok:true,addon_token:'b'.repeat(64)
+      })};
+      return {ok:true,json:async()=>({phone_e164:'5565999999999'})};
+    }
+  };
+  await vm.runInNewContext(pagesSource,ctx);
+  return {token,calls,navigations,historyCalls,notice,back,spinner,saved};
+}
+const pagesPreview=await simulatePages404('/ofertas/');
+assert.deepEqual(pagesPreview.navigations,['/?ofertas=1']);
+assert.equal(pagesPreview.calls.length,0);
+const pagesPersonal=await simulatePages404('/ofertas/','?c='+'c'.repeat(64));
+assert.deepEqual(pagesPersonal.calls.map(c=>new URL(c.url).searchParams.get('action')),
+  ['session','addon_session']);
+assert.equal(pagesPersonal.calls[1].options.method,'POST');
+assert.equal(pagesPersonal.calls[0].options.headers['X-Customer-Action-Token'],'c'.repeat(64));
+assert.equal(pagesPersonal.historyCalls[0][2],'/ofertas/');
+assert.deepEqual(pagesPersonal.navigations,
+  ['/adicionar/?k='+'a'.repeat(16)+'#t='+'b'.repeat(64)]);
+const pagesBad=await simulatePages404('/ofertas/','?c=wrong');
+assert.equal(pagesBad.calls.length,0);
+assert.equal(pagesBad.navigations.length,0);
+assert.match(pagesBad.notice.textContent,/não é válido/i);
+const pagesCart=await simulatePages404('/catalogo_1234/');
+assert.deepEqual(pagesCart.navigations,['/']);
+assert.equal(pagesCart.saved.get('da_vitrine_whatsapp_phone_v1'),'5565999999999');
+const pagesAdd=await simulatePages404('/adicionar/');
+assert.equal(pagesAdd.navigations.length,0,'addon route must not silently redirect to a new checkout');
+assert.match(pagesAdd.notice.textContent,/não está disponível/);
+const pagesUnknown=await simulatePages404('/not-found-elsewhere/');
+assert.deepEqual(pagesUnknown.navigations,['/']);
+console.log('PASS: GitHub Pages 404 offer fallback, preview, secure order and legacy catalog links');
