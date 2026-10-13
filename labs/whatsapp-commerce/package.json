@@ -1,0 +1,13 @@
+{
+  "name": "dona-antonia-whatsapp-lab",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline-only isolated WhatsApp mobile lab preview and tests",
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}
