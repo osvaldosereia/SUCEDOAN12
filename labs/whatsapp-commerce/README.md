@@ -200,3 +200,60 @@ Code added in this branch, STILL NOT DEPLOYED:
 Reference: AWS End User Messaging documentation for encrypted WhatsApp
 Dynamic Flows, Meta-compatible endpoint pings and status codes. This is
 not an attestation that the candidate JSON has passed Meta validation.
+
+
+## R37 — resumable Flow, signed completion and local endpoint (2026-10-13)
+
+**All features below are LAB ONLY. No Meta publication, no production send,
+no live order, no changes to Vitrine/Admin, Bling or the ANA agents.**
+
+- Dynamic Flow JSON candidate now uses full-value data bindings rather than
+  interpolated strings. A test enforces that every referenced data property is
+  declared in the correct screen.
+- The candidate product screen now includes a native numeric quantity input,
+  allowing selection of a brand, quantity change, or item removal before
+  proceeding to the next position. The server recomputes the visible total.
+- `src/flow-protocol.mjs` optionally snapshots fictitious sessions and simulated
+  orders after each state transition. State reload preserves selections and
+  deduplicates completion messages after an isolated process restart.
+- `src/lab-file-storage.mjs` is an atomic single-process local JSON snapshot
+  with 0600 file permissions. **NEVER use it for real customer data or
+  multi-instance production hosting**. A transactional persistent database
+  with encryption, audit logs, controlled retention and row-level access
+  controls must replace it prior to any live customer use.
+- `src/flow-completion.mjs` parses signed WhatsApp `nfm_reply` webhook
+  completion, enforces separate test WABA/phone, test recipient allowlist,
+  session-phone binding and the unique WhatsApp message id. Only creates a
+  `SIMULATED_ONLY` record, never a real order.
+- `src/lab-http-server.mjs` provides a local HTTP facade for encrypted Flow
+  data exchange, completion webhooks and health checks. It **only binds to
+  127.0.0.1**, never a public network interface. Production HTTPS is not
+  configured. Tests exercise signed + encrypted HTTP round trips.
+- `src/flow-quantity.mjs` does not exist: quantity validation resides in
+  `src/flow-protocol.mjs` and `src/engine.mjs`; there is intentionally a
+  single source of basket calculation rules.
+
+### Safe verification
+
+From the repository root:
+
+    node --test labs/whatsapp-commerce/tests/*.test.mjs
+
+The GitHub Action workflow runs this command automatically for laboratory
+branch commits. Its safety check fails if any non-lab production source
+appears in this branch diff.
+
+### Still required before Meta submission / real phone tests
+
+1. A separate TEST WABA/Meta app and controlled test number, plus permissions
+   to register the public Flow encryption key and configure a test endpoint.
+2. Meta Flow JSON validation, especially same-screen 23–27-position paging,
+   form initialization, photo option formatting, and native numeric quantity.
+3. Independently hosted HTTPS endpoint with transaction-safe persistent
+   database; **not** the local-only simulator.
+4. Direct parity checks with the active storefront quote for all five basket
+   models and their three generated compositions (including product removals,
+   offer price, optional quantities and hidden adjustments).
+5. Mobile field tests on Android and iOS using only allowlisted test phones.
+6. A separate final deployment authorization after homologation; production
+   channels 0975/1018 remain untouched throughout these tests.
