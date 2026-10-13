@@ -1,0 +1,21 @@
+/* Compras/XML R31 — operação guiada sem mexer no cadastro financeiro */
+.purchase-match-panel{border:1px solid #c5e4d0;border-radius:13px;padding:14px;margin:12px 0;background:#f5faf6;display:grid;gap:10px}
+.purchase-match-panel>strong{font-size:15px;color:#155e39}
+.purchase-match-panel p{margin:0;font-size:13px;line-height:1.5;color:#506a59}
+.purchase-match-search{display:flex;gap:8px;flex-wrap:wrap}
+.purchase-match-search input{flex:1 1 220px;min-height:40px;border:1px solid #cfdcd3;border-radius:8px;padding:8px 10px}
+.purchase-match-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:7px}
+.purchase-match-choice{border:1px solid #c9d6cb;background:#fff;padding:9px 12px;border-radius:9px;text-align:left;cursor:pointer;display:grid;gap:3px}
+.purchase-match-choice strong{font-size:13px}.purchase-match-choice small{color:#5c6c60;font-size:12px}
+.purchase-match-choice.selected{border:2px solid #177044;background:#e6f5ea}
+.purchase-match-selection,.purchase-match-feedback{font-size:13px;font-weight:600;color:#245c3e}
+.purchase-match-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.purchase-match-options label,.purchase-create-item label{font-weight:700;font-size:12px;display:grid;gap:5px}
+.purchase-match-options select,.purchase-create-item input{width:100%;min-height:39px;padding:7px;border:1px solid #d0dcd3;border-radius:8px;background:white}
+.purchase-create-item{margin-top:5px;border-top:1px solid #dce6df;padding-top:8px}
+.purchase-create-item summary{font-size:12px;cursor:pointer}.purchase-create-item button{margin-top:8px}
+.purchase-sync-status{padding:10px 12px;border:1px solid #cee1d0;border-radius:9px;background:#f0f9f2;margin:10px 0;font-size:13px}
+.purchase-receipt-stage{border:1px solid #dce4dd;border-radius:12px;margin-top:15px;padding:12px;background:#fafcfb}
+.purchase-receipt-stage>summary{font-weight:700;cursor:pointer;padding:4px;color:#1d5337}
+.purchase-approval-result{display:block;max-width:380px;font-size:12px;line-height:1.5;margin-top:7px}
+@media(max-width:720px){.purchase-match-options{grid-template-columns:1fr}.purchase-match-search input,.purchase-match-search button{flex:1 1 100%}.purchase-match-panel{padding:10px}}
