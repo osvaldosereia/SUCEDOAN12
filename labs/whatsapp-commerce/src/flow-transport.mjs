@@ -6,7 +6,7 @@
 import {Buffer} from 'node:buffer';
 import {verifyMetaRequestSignature} from './meta-signature.mjs';
 import {decryptMetaFlowRequest,encryptMetaFlowResponse} from './meta-crypto.mjs';
-import {safeLabFlowError} from './flow-protocol.mjs';
+import {safeLabFlowScreenError} from './flow-protocol.mjs';
 
 const noBody=(status)=>({status,contentType:'text/plain',body:''});
 export function handleSignedEncryptedLabRequest({
@@ -28,7 +28,8 @@ export function handleSignedEncryptedLabRequest({
    const message=String(e?.message||'');
    if(/^(invalid_lab_flow_token|session_missing|session_expired|flow_token_required)$/.test(message))
      return noBody(427);
-   response=safeLabFlowError(e);
+   try { response=safeLabFlowScreenError(e,store,context.request?.flow_token); }
+   catch { return noBody(427); }
  }
  try{
    return {status:200,contentType:'text/plain',
