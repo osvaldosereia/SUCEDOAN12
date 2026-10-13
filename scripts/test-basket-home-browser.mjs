@@ -118,7 +118,7 @@ try{
  assert.equal(await app.locator('#addBasket').isDisabled(),true,'unconfirmed price cannot be added to cart');
  assert.equal(await app.locator('#addBasket').innerText(),'Calculando…');
  releaseFirstQuote();
- await app.locator('#addBasket').isEnabled();
+ await app.waitForFunction(()=>document.querySelector('#addBasket')?.disabled===false);
  await app.locator('#addBasket').click();
  assert.equal(await app.locator('#cartBadge').innerText(),'1');
  await app.locator('#cartTop').click();
