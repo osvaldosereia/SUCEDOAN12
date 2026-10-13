@@ -11,7 +11,7 @@ import {
 export function createLabSession({catalog,inventory,extrasCatalog={},modelId,composition=1}){
   const draft=beginDraft(catalog,modelId,composition);
   return {id:'SIMULATED',step:'MODE',position:0,draft,
-    customer:null,delivery:null,payment:null,version:0};
+    customer:null,delivery:null,payment:null,mode:null,version:0};
 }
 const currentModel=(ctx,s)=>ctx.catalog.models.find(m=>m.id===s.draft.model_id&&m.composition===s.draft.composition);
 function checkSession(ctx,s){
@@ -26,7 +26,7 @@ function next(s,step){return {...s,step,version:s.version+1}}
 export function chooseMode(ctx,s,mode){
   checkSession(ctx,s);assert(s.step==='MODE','wrong_step');
   assert(mode==='ready'||mode==='customize','invalid_mode');
-  return next({...s,position:0},mode==='ready'?'UPSELL':'PRODUCT');
+  return next({...s,position:0,mode},mode==='ready'?'UPSELL':'PRODUCT');
 }
 export function chooseProduct(ctx,s,{positionId,productId,quantity}){
   const m=checkSession(ctx,s);
@@ -63,7 +63,7 @@ export function back(ctx,s){
   switch(s.step){
     case 'PRODUCT':
       return s.position===0?next(s,'MODE'):{...s,position:s.position-1,version:s.version+1};
-    case 'UPSELL':return {...s,step:'PRODUCT',position:m.positions.length-1,version:s.version+1};
+    case 'UPSELL':return s.mode==='ready'?next(s,'MODE'):{...s,step:'PRODUCT',position:m.positions.length-1,version:s.version+1};
     case 'CUSTOMER':return next(s,'UPSELL');
     case 'DELIVERY':return next(s,'CUSTOMER');
     case 'PAYMENT':return next(s,'DELIVERY');
