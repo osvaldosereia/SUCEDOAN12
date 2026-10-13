@@ -37,7 +37,7 @@ export function readInboundLocation(value,{expectedPhone}){
   if(!Number.isFinite(latitude)||latitude< -90||latitude>90||
      !Number.isFinite(longitude)||longitude< -180||longitude>180)
        invalid('coordinates_invalid');
-  if(!/^[A-Za-z0-9._-]{5,300}$/.test(String(message.id||'')))invalid('location_message_id_invalid');
+  if(!/^[A-Za-z0-9._:+/=-]{5,300}$/.test(String(message.id||'')))invalid('location_message_id_invalid');
   // Coordinates don't certify that the customer entered their home address.
   // The customer must still confirm the residence and delivery number.
   return {message_id:String(message.id),customer_phone:expected,
