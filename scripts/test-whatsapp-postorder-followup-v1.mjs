@@ -62,7 +62,7 @@ assert.ok(sender.indexOf('await sendPostorderOffersOnce(')>sender.indexOf('ops2_
   'offer only after Meta accepted canonical order');
 assert.match(sender,/p_order_id:orderId,p_status:"skipped"/);
 assert.match(scheduler,/pedidoconfirmacao/);
-assert.match(scheduler,/confirm_status/);
+assert.match(scheduler,/ops4_claim_due_postorder_followups_v1/);
 assert.match(scheduler,/ops4_complete_postorder_confirm_send_v1/);
 assert.match(scheduler,/DA4:C:/);
 assert.match(scheduler,/DA4:E:/);
