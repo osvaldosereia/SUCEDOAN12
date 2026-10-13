@@ -1671,7 +1671,7 @@ async function catalogQueue(windowInput:any=null){
   const docMap=new Map(docRows.map((d:any)=>[String(d.id),d]));
   const ids=docRows.map((d:any)=>d.id);
   const iq=await sb.from("purchase_xml_items")
-    .select("id,document_id,item_number,supplier_item_code,description,commercial_gtin,tax_gtin,ncm,cest,cfop,purchase_unit,purchase_quantity,purchase_unit_price,line_total,base_unit,conversion_status,conversion_factor,converted_quantity,base_unit_cost,product_id,bling_product_id,processing_status,metadata,created_at,products(id,name,gtin,bling_product_id,cost,price,stock,unit,is_active,category,subcategory,packaging,supplier,metadata)")
+    .select("id,document_id,item_number,supplier_item_code,description,commercial_gtin,tax_gtin,ncm,cest,cfop,purchase_unit,purchase_quantity,purchase_unit_price,line_total,base_unit,conversion_status,conversion_factor,converted_quantity,base_unit_cost,product_id,bling_product_id,match_method,processing_status,metadata,created_at,products(id,name,gtin,bling_product_id,cost,price,stock,unit,is_active,category,subcategory,packaging,supplier,metadata)")
     .in("document_id",ids)
     .limit(3000);
   if(iq.error)throw iq.error;
@@ -1699,7 +1699,8 @@ async function catalogQueue(windowInput:any=null){
     if(x.conversion_status==="review_required")reasons.push("conversion_review_required");
     if(pack.packaged&&!(Number(proposedFactor)>1))reasons.push("packaging_factor_required");
     if(proposedCost===null||!Number.isFinite(Number(proposedCost)))reasons.push("unit_cost_unavailable");
-    const isNew=Boolean(prod?.metadata?.purchase_xml_created===true||prod?.metadata?.purchase_xml_created==="true");
+    const isNew=Boolean(prod?.id&&(prod?.metadata?.purchase_xml_created===true||prod?.metadata?.purchase_xml_created==="true"));
+    const isUnlinked=!x.product_id;
     const approvedAt=clean(meta.catalog_approved_at,80)||null;
     const productNeedsReview=Boolean(prod?.metadata?.purchase_catalog_review_required===true||prod?.metadata?.purchase_catalog_review_required==="true");
     const needsBlingRetry=meta.bling_sale_status==="pending"||meta.bling_sale_status==="missing_link";
@@ -1707,6 +1708,7 @@ async function catalogQueue(windowInput:any=null){
     const needsApproval=productNeedsReview||!approvedAt||needsBlingRetry;
     return {...x,identity_state:identityNeedsReview?"unresolved":"resolved",match_reason:meta.identity_reason||x.match_method||(identityNeedsReview?"identity_confirmation_required":"gtin_exact"),gtin_role:gtinRole,products:prod||null,document:doc,flags:{
       is_new:isNew,
+      is_unlinked:isUnlinked,
       is_existing:Boolean(prod?.id&&!isNew),
       needs_review:reasons.length>0,
       review_reasons:reasons,
@@ -1749,6 +1751,7 @@ async function catalogQueue(windowInput:any=null){
     total:items.length,
     new_products:items.filter((x:any)=>x.flags.is_new).length,
     existing_products:items.filter((x:any)=>x.flags.is_existing).length,
+    unlinked_products:items.filter((x:any)=>x.flags.is_unlinked).length,
     needs_review:items.filter((x:any)=>x.flags.needs_review).length,
     ready_for_approval:items.filter((x:any)=>x.flags.safe_to_approve&&x.flags.needs_approval&&!x.flags.approved).length,
     approved:items.filter((x:any)=>x.flags.approved&&!x.flags.needs_approval).length

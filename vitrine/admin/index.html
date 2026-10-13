@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Dona Antônia · Admin da Vitrine</title>
   <link rel="preload" href="/img/logoantonia5.png" as="image">
-  <link rel="stylesheet" href="/vitrine/admin/purchase-xml-simple.css?v=xml-r32">
+  <link rel="stylesheet" href="/vitrine/admin/purchase-xml-simple.css?v=xml-r33">
   <style>
     :root{--ink:#18221c;--muted:#66716a;--line:#e5e9e6;--soft:#f5f7f5;--brand:#176b43;--brand2:#0f5836;--danger:#9d2235;--warn:#96650b;--radius:14px}
     *{box-sizing:border-box}
@@ -1459,7 +1459,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -5823,24 +5823,70 @@
     host.innerHTML='<div class="loading">Carregando compras de '+esc(purchasePeriodLabel())+'…</div>';
     try{
       const filter=purchaseFilterPayload();
-      const results=await Promise.allSettled([
-        purchaseApi('summary',filter),
-        purchaseApi('browse_bling',filter),
-        purchaseApi('payment_accounts',{}),
-        purchaseApi('catalog_queue',{lookback_days:31}),
-        purchaseApi('bling_received_review_status',{})
-      ]);
-      if(results[0].status!=='fulfilled')throw results[0].reason;
-      state.purchaseXml=results[0].value;
-      state.purchaseBlingBrowse=results[1].status==='fulfilled'?results[1].value:{ok:false,error:results[1].reason?.message,documents:[],count:0};
-      state.purchasePaymentAccounts=results[2].status==='fulfilled'?results[2].value:{ok:false,accounts:[],mappings:{},error:results[2].reason?.message};
-      state.purchaseCatalogQueue=results[3].status==='fulfilled'?results[3].value:{ok:false,items:[],counts:{},error:results[3].reason?.message};
-      state.purchaseBlingReceivedReview=results[4].status==='fulfilled'?results[4].value:{ok:false};
+      const filterKey=JSON.stringify(filter);
+      if(state.purchaseBlingCompareKey!==filterKey){
+        state.purchaseBlingCompareKey=filterKey;
+        state.purchaseBlingCompareLoaded=false;
+        state.purchaseBlingCompareError='';
+        state.purchaseBlingBrowse={ok:null,documents:[],count:0};
+      }
+      // Fast path: opening Compras/XML must not wait for Bling OAuth, pricing
+      // configuration or the 31-day product queue. Advanced data loads on demand.
+      const result=await purchaseApi('summary',filter);
+      state.purchaseXml=result;
+      if(!state.purchaseAdvancedLoaded){
+        state.purchaseCatalogQueue={ok:true,items:[],counts:{}};
+      }
+      // Daily reminder is best-effort and must not delay the note list.
+      if(!state.purchaseBlingReceivedReview)state.purchaseBlingReceivedReview={ok:false};
+      purchaseApi('bling_received_review_status',{}).then(value=>{
+        state.purchaseBlingReceivedReview=value;
+        paintBlingReceivedReview();
+      }).catch(()=>{});
+      if(state.purchaseAdvancedOpen&&!state.purchaseAdvancedLoaded&&!state.purchaseAdvancedLoading){
+        queueMicrotask(()=>loadPurchaseAdvanced());
+      }
       paintBlingReceivedReview();
       paintPurchases();
     }catch(e){
       host.innerHTML='<div class="empty">Não consegui carregar Compras/XML. <button class="text" id="retryPurchases">Tentar novamente</button></div>';
       if($('#retryPurchases'))$('#retryPurchases').onclick=loadPurchases;
+    }
+  }
+  async function loadPurchaseAdvanced(){
+    if(state.purchaseAdvancedLoading||state.purchaseAdvancedLoaded)return;
+    state.purchaseAdvancedLoading=true;
+    state.purchaseAdvancedError='';
+    try{
+      state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
+      state.purchaseAdvancedLoaded=true;
+    }catch(e){
+      state.purchaseAdvancedError=purchaseXmlError(e);
+      state.purchaseAdvancedLoaded=false;
+    }finally{
+      state.purchaseAdvancedLoading=false;
+      if($('#purchaseBody'))paintPurchases();
+    }
+  }
+  async function loadPurchaseBlingComparison(){
+    if(state.purchaseBlingCompareLoading||state.purchaseBlingCompareLoaded)return;
+    const filter=purchaseFilterPayload(), key=JSON.stringify(filter);
+    state.purchaseBlingCompareKey=key;
+    state.purchaseBlingCompareLoading=true;
+    state.purchaseBlingCompareError='';
+    try{
+      const result=await purchaseApi('browse_bling',filter);
+      if(state.purchaseBlingCompareKey!==key)return;
+      state.purchaseBlingBrowse=result;
+      state.purchaseBlingCompareLoaded=true;
+    }catch(e){
+      if(state.purchaseBlingCompareKey!==key)return;
+      state.purchaseBlingCompareError=purchaseXmlError(e);
+      state.purchaseBlingCompareLoaded=false;
+      state.purchaseBlingBrowse={ok:false,documents:[],count:0};
+    }finally{
+      state.purchaseBlingCompareLoading=false;
+      if($('#purchaseBody'))paintPurchases();
     }
   }
   function purchaseMaybeMoney(v){
@@ -5898,7 +5944,9 @@
     const qtyText=(factor&&Number(factor)>0)
       ?esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'')+' × '+esc(fmtQty(factor))+' = '+esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN'
       :esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'');
+    const workflowStatus=!existing?'Vincular':approved?(sync==='pending'||sync==='missing_link'?'Bling pendente':'Salvo'):needsFactor?'Conferir embalagem':'Conferir';
     return '<div class="purchase-item-card" data-purchase-item="'+esc(x.id)+'" data-document-id="'+esc(x.document_id)+'">'+
+      '<details class="purchase-item-collapsible"><summary class="purchase-item-compact-summary"><span class="purchase-item-compact-name"><strong>'+esc(prod.name||x.description||'Produto')+'</strong><small>'+esc(x.description||'')+'</small></span><span class="purchase-item-compact-qty">'+qtyText+'</span><span class="pill '+(!existing||needsFactor?'warn':approved?'':'warn')+'">'+esc(workflowStatus)+'</span></summary><div class="purchase-item-compact-body">'+
       '<div class="purchase-item-title"><div><strong>'+esc(prod.name||x.description||'Produto')+'</strong>'+
         '<small>'+esc(x.description||'')+' · EAN '+esc(x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado')+'</small>'+
         '<small><b>Compra:</b> '+qtyText+'</small></div>'+
@@ -5918,7 +5966,7 @@
       '</div>'+
       '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · autorizar este item não altera o estoque.</div></div>'+
         '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'" '+(!existing?'disabled title="Vincule primeiro o produto acima"':'')+'>'+(approved&&['pending','missing_link'].includes(sync)?'Reenviar ao Bling':approved?'Revisar atualização':'Salvar e sincronizar')+'</button><span class="purchase-approval-result" data-purchase-result role="status"></span></div></div>'+
-    '</div>';
+      '</div></details></div>';
   }
   function purchaseXmlError(e){
     const code=String(e?.message||e||'');
@@ -6049,6 +6097,7 @@
       else if(filter==='new')ok=Boolean(f.is_new);
       else if(filter==='existing')ok=Boolean(f.is_existing);
       else if(filter==='review')ok=Boolean(f.needs_review);
+      else if(filter==='unlinked')ok=Boolean(f.is_unlinked);
       else if(filter==='ready')ok=Boolean(f.safe_to_approve&&f.needs_approval&&!f.approved);
       else if(filter==='approved')ok=Boolean(f.approved&&!f.needs_approval);
       if(!ok)return false;
@@ -6058,41 +6107,37 @@
     });
   }
   // PURCHASE_XML_EDIT_NAME_V1
+  // Advanced view is a compact index, not a second product editing interface.
+  // All mutations belong to the original invoice item to avoid conflicting forms.
   function purchaseCatalogCardHtml(x){
-    const p=x.pricing_preview||{},prod=x.products||{},flags=x.flags||{};
-    const factor=p.suggested_conversion_factor??x.conversion_factor??(p.requires_conversion_confirmation?'':1);
-    const unitCost=p.proposed_unit_cost??purchaseItemUnitCost(x,factor);
-    const saleValue=p.recommended_sale_price??prod.price??p.suggested_sale_price??'';
-    const updateSale=Boolean(p.update_sale_recommended);
-    const invoice=x?.document?.metadata?.invoice_number||String(x?.document?.document_key||'').slice(-10)||'—';
-    const gtin=x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado';
-    const status=flags.needs_review?'Revisar':flags.approved&&!flags.needs_approval?'Aprovado':flags.safe_to_approve?'Pronto':'Pendente';
-    const statusCls=flags.needs_review?'warn':flags.approved&&!flags.needs_approval?'':'';
-    const cardCls=flags.needs_review?'review':flags.approved&&!flags.needs_approval?'approved':'';
+    const flags=x.flags||{},prod=x.products||{},doc=x.document||{};
     const reason=(flags.review_reasons||[]).map(purchaseCatalogReasonLabel).join(' · ');
-    const qtyText=(factor&&Number(factor)>0)?fmtQty(x.purchase_quantity||0)+' '+esc(x.purchase_unit||'')+' × '+fmtQty(factor)+' = '+fmtQty(Number(x.purchase_quantity||0)*Number(factor))+' UN':fmtQty(x.purchase_quantity||0)+' '+esc(x.purchase_unit||'');
-    return '<div class="purchase-catalog-card '+cardCls+'" data-purchase-catalog-item="'+esc(x.id)+'">'+
-      '<div class="purchase-item-title"><div><strong>'+esc(prod.name||x.description||'Produto')+'</strong>'+
-        '<small>'+esc(x.description||'')+'</small>'+
-        '<div class="purchase-catalog-meta"><span><b>EAN</b> '+esc(gtin)+'</span><span><b>NCM</b> '+esc(x.ncm||'—')+'</span><span><b>Última NF</b> '+esc(invoice)+' · '+esc(dateOnly(String(x?.document?.issued_at||'').slice(0,10)))+'</span><span><b>Fornecedor</b> '+esc(x?.document?.supplier_name||'—')+'</span>'+(Number(x.occurrence_count||0)>1?'<span><b>'+esc(x.occurrence_count)+'</b> compras no período</span>':'')+'</div>'+
-      '</div><div class="purchase-item-badges">'+
-        '<span class="pill '+(flags.is_new?'warn':'')+'">'+(flags.is_new?'Produto novo':'Já cadastrado')+'</span>'+
-        (prod.is_active===false?'<span class="pill off">Inativo</span>':'')+
-        '<span class="pill '+statusCls+'">'+esc(status)+'</span>'+
-      '</div></div>'+
-      (reason?'<div class="purchase-factor-hint warn-text" style="margin-bottom:8px">'+esc(reason)+'</div>':'')+
-      '<div class="purchase-field" style="margin-bottom:8px"><label>Nome cadastrado (não alterado pela NF-e)</label><input type="text" maxlength="300" data-catalog-product-name readonly value="'+esc(prod.name||x.description||'')+'"><div class="purchase-factor-hint">O nome oficial permanece o mesmo. Para vincular um produto não identificado, abra a nota na lista acima.</div></div>'+
-      '<div class="purchase-price-grid">'+
-        '<div class="purchase-field"><label>Conversão para UN</label><input type="number" min="1" step="1" data-catalog-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint">'+(p.requires_conversion_confirmation?'Confira quantas UN existem em 1 '+esc(x.purchase_unit||'embalagem')+'.':'Compra: '+qtyText)+'</div></div>'+
-        '<div class="purchase-price-box"><small>Quantidade final</small><strong data-catalog-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
-        '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
-        '<div class="purchase-price-box"><small>Custo novo / UN</small><strong class="accent" data-catalog-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
-        '<div class="purchase-price-box"><small>Preço atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
-        '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-catalog-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint">'+(p.suggested_sale_price!=null?'Mínimo 40%: '+purchaseMoney(p.suggested_sale_price):'Defina após corrigir a conversão.')+'</div></div>'+
-      '</div>'+
-      '<div class="purchase-catalog-actions"><div><div class="purchase-checks"><label><input type="checkbox" data-catalog-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-catalog-update-sale '+(updateSale?'checked':'')+'> Atualizar preço</label></div><div class="purchase-stock-note">Estoque não é alterado nesta etapa.</div></div>'+
-        '<div><button class="primary" type="button" data-catalog-approve="'+esc(x.id)+'" '+(!x.product_id?'disabled':'')+'>'+(flags.approved&&!flags.needs_approval?'Revisar novamente':flags.needs_review?'Revisar e autorizar':'Autorizar')+'</button><span class="purchase-approval-result" data-catalog-result></span></div></div>'+
+    const status=flags.is_unlinked?'Sem vínculo':flags.needs_review?'Revisar':flags.approved?'Concluído':'Conferir';
+    const name=prod.name||x.description||'Produto';
+    const stamp=String(doc.issued_at||'').slice(0,10);
+    const meta=[x.commercial_gtin||x.tax_gtin||'',doc.supplier_name||'',stamp?dateOnly(stamp):''].filter(Boolean).join(' · ');
+    return '<div class="purchase-catalog-index-row">'+
+      '<div class="purchase-catalog-index-main"><strong>'+esc(name)+'</strong><small>'+esc(meta)+'</small>'+
+        (reason?'<small class="purchase-catalog-index-reason">'+esc(reason)+'</small>':'')+'</div>'+
+      '<span class="pill '+(flags.needs_review?'warn':'')+'">'+esc(status)+'</span>'+
+      '<button class="secondary" type="button" data-catalog-open-note="'+esc(x.document_id||'')+'" '+(!x.document_id?'disabled':'')+'>Abrir NF-e</button>'+
     '</div>';
+  }
+  async function openPurchaseCatalogNote(docId){
+    const item=(state.purchaseCatalogQueue?.items||[]).find(x=>String(x.document_id)===String(docId));
+    if(!docId)return;
+    const exists=(state.purchaseXml?.documents||[]).some(x=>String(x.id)===String(docId));
+    if(!exists){
+      const issued=String(item?.document?.issued_at||'').slice(0,10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(issued)){toast('Data da NF-e não disponível. Busque na lista de notas.');return}
+      state.purchaseFilter={period:'custom',start_date:issued,end_date:issued};
+      await loadPurchases();
+    }
+    state.purchaseQuickStatus='all';
+    state.purchaseQuery='';
+    paintPurchases();
+    await togglePurchaseDocument(docId,true);
+    document.querySelector('[data-purchase-toggle="'+CSS.escape(docId)+'"]')?.scrollIntoView({behavior:'smooth',block:'start'});
   }
   function purchaseCatalogListHtml(){
     const items=purchaseCatalogFilteredItems();
@@ -6161,18 +6206,18 @@
     const host=$('#purchaseCatalogList');if(!host)return;
     host.innerHTML=purchaseCatalogListHtml();
     const count=$('#purchaseCatalogVisibleCount');if(count)count.textContent=String(purchaseCatalogFilteredItems().length);
-    host.querySelectorAll('[data-catalog-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseCatalogCard(inp.closest('.purchase-catalog-card')));
-    host.querySelectorAll('[data-catalog-approve]').forEach(b=>b.onclick=()=>applyPurchaseCatalogItemUpdate(b.dataset.catalogApprove));
+    host.querySelectorAll('[data-catalog-open-note]').forEach(btn=>btn.onclick=()=>openPurchaseCatalogNote(btn.dataset.catalogOpenNote));
+    // No approvals in this duplicate index; review the item inside its NF-e.
   }
   function purchaseCatalogQueueHtml(){
     const q=state.purchaseCatalogQueue||{},counts=q.counts||{},filter=state.purchaseCatalogFilter||'pending';
-    const filters=[['pending','Pendentes'],['new','Novos'],['existing','Já cadastrados'],['review','Revisar'],['ready','Prontos'],['approved','Aprovados'],['all','Todos']];
+    const filters=[['pending','Pendentes'],['unlinked','Sem vínculo'],['review','Revisar'],['approved','Concluídos'],['all','Todos']];
     const pending=Number(counts.ready_for_approval||0)+Number(counts.needs_review||0);
     return '<section class="panel purchase-catalog-panel">'+
-      '<div class="history-title dispatch-head"><div><strong>3. Produtos recebidos · últimos 31 dias</strong><span>Fila única para cadastrar, conferir e aprovar produtos sem abrir NF-e por NF-e.</span></div><b id="purchaseCatalogVisibleCount">'+esc(purchaseCatalogFilteredItems().length)+'</b></div>'+
-      '<div class="purchase-catalog-toolbar"><div class="purchase-catalog-search"><input id="purchaseCatalogSearch" type="search" placeholder="Buscar produto, EAN, fornecedor, NF ou NCM" value="'+esc(state.purchaseCatalogSearch||'')+'"></div><button class="primary" id="purchaseCatalogApproveSafe" type="button" '+(!Number(counts.ready_for_approval||0)?'disabled':'')+'>Autorizar seguros ('+esc(counts.ready_for_approval||0)+')</button></div>'+
+      '<div class="history-title dispatch-head"><div><strong>3. Produtos recebidos · últimos 31 dias</strong><span>Índice de pendências. Abra a NF-e para editar o produto em um só lugar.</span></div><b id="purchaseCatalogVisibleCount">'+esc(purchaseCatalogFilteredItems().length)+'</b></div>'+
+      '<div class="purchase-catalog-toolbar"><div class="purchase-catalog-search"><input id="purchaseCatalogSearch" type="search" placeholder="Buscar produto, EAN ou fornecedor" value="'+esc(state.purchaseCatalogSearch||'')+'"></div></div>'+
       '<div class="purchase-catalog-filters">'+filters.map(([key,label])=>'<button type="button" class="'+(filter===key?'active':'')+'" data-catalog-filter="'+key+'">'+label+'</button>').join('')+'</div>'+
-      '<div class="purchase-catalog-summary"><span><b>'+esc(counts.total||0)+'</b> produtos</span><span><b>'+esc(counts.new_products||0)+'</b> novos</span><span><b>'+esc(counts.existing_products||0)+'</b> existentes</span><span><b>'+esc(counts.ready_for_approval||0)+'</b> prontos</span><span><b>'+esc(counts.needs_review||0)+'</b> revisar</span><span><b>'+esc(counts.approved||0)+'</b> aprovados</span><span><b>'+esc(pending)+'</b> pendências operacionais</span></div>'+
+      '<div class="purchase-catalog-summary"><span><b>'+esc(counts.total||0)+'</b> registros</span><span><b>'+esc(counts.unlinked_products||0)+'</b> sem vínculo</span><span><b>'+esc(counts.needs_review||0)+'</b> revisar</span><span><b>'+esc(counts.approved||0)+'</b> concluídos</span></div>'+
       '<div class="purchase-catalog-list" id="purchaseCatalogList">'+purchaseCatalogListHtml()+'</div>'+
     '</section>';
   }
@@ -6209,33 +6254,22 @@
     if(!Array.isArray(items)||!items.length)return '';
     const complete=lotPlan?.complete===true;
     const planItems=Array.isArray(lotPlan?.items)?lotPlan.items:[];
-    return '<div class="purchase-safe '+(complete?'':'purchase-danger')+'" style="margin:14px 0 0">'+
-      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">'+
-        '<div><strong>Lotes internos desta entrada</strong><small>Cada item desta NF-e recebe automaticamente um lote interno. Não é necessário informar número de lote real; a validade é opcional.</small></div>'+
-        '<span class="pill '+(complete?'':'warn')+'">'+(complete?'Lotes gerados':'Preparando lotes')+'</span>'+
-      '</div>'+
-      '<div class="purchase-items" style="margin-top:10px">'+items.map((item,idx)=>{
+    return '<div class="purchase-lot-compact">'+
+      '<div class="purchase-lot-head"><strong>Lotes desta entrada</strong><span>Validade opcional · '+(complete?'Lotes preparados':'Conferir identificação e quantidade')+'</span></div>'+
+      '<div class="purchase-lot-rows">'+items.map((item,idx)=>{
         const planItem=planItems.find(x=>String(x.item_id)===String(item.id))||{};
         const lot=item.entry_inventory_lot||planItem.inventory_lot||null;
         const lotId=String(lot?.id||item.inventory_lot_id||planItem.inventory_lot_id||'');
-        const expected=Number(item.converted_quantity||item?.pricing_preview?.proposed_base_quantity||planItem.expected_base_quantity||0);
+        const expected=Number(item.converted_quantity||planItem.expected_base_quantity||0);
         const expiry=String(item.lot_expiration_date||lot?.expiration_date||planItem.expiration_date||'').slice(0,10);
         const ref=purchaseInternalLotShort({...item,entry_inventory_lot:lot,inventory_lot_id:lotId});
-        const status=purchaseInternalLotStatus(lot?.status);
-        return '<div class="purchase-item-card" data-receipt-lot-item="'+esc(item.id)+'">'+
-          '<div class="purchase-item-title"><div><strong>'+esc(item?.products?.name||item.description||('Item '+(idx+1)))+'</strong><small>Entrada: '+esc(fmtQty(expected))+' UN</small></div><span class="pill '+(lot?.status==='quarantine'?'warn':'')+'">Lote interno '+esc(ref)+'</span></div>'+
-          '<div class="purchase-factor-hint" title="'+esc(lotId)+'" style="margin:6px 0 10px">Status: '+esc(status)+' · '+(expiry?'Validade '+esc(dateOnly(expiry)):'Sem validade informada')+'</div>'+
-          purchaseCurrentInventoryLotsHtml(item)+
-          '<div class="purchase-price-grid">'+
-            '<div class="purchase-field"><label>Validade desta entrada (opcional)</label><input type="date" data-receipt-lot-exp value="'+esc(expiry)+'"><div class="purchase-factor-hint">Pode ficar em branco. Informar uma data não altera a quantidade recebida.</div></div>'+
-            '<div class="purchase-price-box"><small>Lote interno</small><strong title="'+esc(lotId)+'">'+esc(ref)+'</strong></div>'+
-            '<div class="purchase-price-box"><small>Quantidade da NF-e</small><strong>'+esc(fmtQty(expected))+' UN</strong></div>'+
-            '<div class="purchase-price-box"><small>Ordem de saída</small><strong>FIFO</strong></div>'+
-          '</div>'+
-        '</div>';
+        return '<div class="purchase-lot-row" data-receipt-lot-item="'+esc(item.id)+'">'+
+          '<div class="purchase-lot-product"><strong>'+esc(item?.products?.name||item.description||('Item '+(idx+1)))+'</strong><small>'+esc(fmtQty(expected))+' UN · Lote '+esc(ref)+' · '+esc(purchaseInternalLotStatus(lot?.status))+'</small></div>'+
+          '<label class="purchase-lot-exp"><span>Validade (opcional)</span><input type="date" data-receipt-lot-exp value="'+esc(expiry)+'" aria-label="Validade opcional para '+esc(item.description||'produto')+'"></label>'+
+          '<details class="purchase-lot-prior"><summary>Ver lotes anteriores</summary>'+purchaseCurrentInventoryLotsHtml(item)+'</details>'+
+          '</div>';
       }).join('')+'</div>'+
-      '<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="primary" type="button" data-save-receipt-lots="'+esc(d.id)+'">Salvar validade</button></div>'+
-      '<small class="sub" style="display:block;margin-top:8px">Deixe a validade em branco quando ela não for conhecida ou não se aplicar. O saldo físico continua sendo do Bling e o consumo interno dos lotes segue FIFO.</small>'+
+      '<div class="purchase-lot-footer"><span>Em branco = validade não informada. Sem alteração no estoque.</span><button class="secondary" type="button" data-save-receipt-lots="'+esc(d.id)+'">Salvar validades</button></div>'+
     '</div>';
   }
   function bindPurchaseReceiptLots(docId){
@@ -6303,9 +6337,13 @@
     host.querySelectorAll('[data-purchase-match-query]').forEach(inp=>inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();purchaseSearchMatch(inp.closest('.purchase-item-card'))}});
     host.querySelectorAll('[data-purchase-match-confirm]').forEach(b=>b.onclick=()=>purchaseConfirmMatch(b.closest('.purchase-item-card')));
     host.querySelectorAll('[data-purchase-match-create]').forEach(b=>b.onclick=()=>purchaseConfirmMatch(b.closest('.purchase-item-card'),true));
-    host.querySelectorAll('[data-purchase-match-panel]').forEach(panel=>{
-      const card=panel.closest('.purchase-item-card');
-      if(card?.querySelector('[data-purchase-match-query]')?.value)purchaseSearchMatch(card);
+    host.querySelectorAll('.purchase-item-collapsible').forEach(detail=>{
+      detail.ontoggle=()=>{
+        if(!detail.open||detail.dataset.searched==='1')return;
+        detail.dataset.searched='1';
+        const card=detail.closest('.purchase-item-card');
+        if(card?.querySelector('[data-purchase-match-query]')?.value)purchaseSearchMatch(card);
+      };
     });
     host.querySelectorAll('[data-purchase-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseItemCard(inp.closest('.purchase-item-card'),true));
     host.querySelectorAll('[data-purchase-approve-item]').forEach(b=>b.onclick=()=>applyPurchaseItemUpdate(b.dataset.purchaseApproveItem));
@@ -6340,7 +6378,9 @@
     state.purchaseDetailCache[id]=await purchaseApi('document',{id});
     state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
     state.purchaseExpandedId=id;
+    state.purchaseAdvancedLoaded=false;
     paintPurchases();
+    if(state.purchaseAdvancedOpen&&!state.purchaseAdvancedLoading)loadPurchaseAdvanced().catch(e=>toast(purchaseXmlError(e)));
   }
   async function resolvePurchaseFinance(id){
     const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');
@@ -6834,9 +6874,7 @@
     const importedIds=new Set(docs.map(x=>Number(x.bling_nfe_id||0)).filter(Boolean));
     const importedKeys=new Set(docs.map(x=>String(x.document_key||'')).filter(Boolean));
     const notImported=blingDocs.filter(x=>!importedIds.has(Number(x.bling_nfe_id||0))&&!(x.access_key&&importedKeys.has(String(x.access_key))));
-    const posted=docs.filter(x=>x.finance_status==='posted'&&x.finance_reconciled_at).length;
-    const paidConfirmed=docs.filter(x=>Boolean(x?.metadata?.settlement?.verified)).length;
-    const paymentToConfirm=docs.filter(x=>purchasePaymentSummary(x)?.paid_at_purchase_likely&&x.finance_status==='posted'&&!x?.metadata?.settlement?.verified).length;
+    // Financial details do not belong in the daily purchase list.
     const attentionDocs=docs.filter(x=>x.processing_status==='review_required'||x.processing_status==='failed'||x.receipt_status==='review');
     const ready=docs.filter(x=>x.receipt_status==='ready').length;
     const last=runs[0]||null;
@@ -6845,9 +6883,9 @@
     const runStatus=last?.status==='completed'?'Concluída':last?.status==='completed_with_review'?'Concluída com revisão':last?.status==='failed'?'Falhou':last?.status==='running'?'Em andamento':String(last?.status||'');
     host.innerHTML=
       '<div class="purchase-simple-stats" aria-label="Resumo das notas">'+
-        '<div><small>Notas importadas</small><strong>'+docs.length+'</strong></div>'+
+        '<div><small>Notas</small><strong>'+docs.length+'</strong></div>'+
         '<div><small>Para conferir</small><strong>'+attentionDocs.length+'</strong></div>'+
-        '<div><small>'+(browse.ok===false?'Consulta ao Bling':'Compras a importar')+'</small><strong>'+(browse.ok===false?'—':notImported.length)+'</strong></div>'+
+        '<div><small>Prontas</small><strong>'+ready+'</strong></div>'+
       '</div>'+
       (lastAutomatic?'<div class="purchase-sync-timestamp">Última sincronização automática: '+esc(dateTime(lastAutomatic.started_at||lastAutomatic.created_at))+
         ' · '+esc(lastAutomatic.documents_seen||0)+' notas consultadas · '+esc(lastAutomatic.documents_failed||0)+' falhas</div>':'')+
@@ -6885,13 +6923,18 @@
         }).join(''):'<div class="empty">Nenhuma nota importada neste período. Clique em “Buscar no Bling” ou “Importar XML”.</div>')+
         '<div class="empty" id="purchaseNoFilterResults" style="display:none">Nenhuma nota corresponde à pesquisa.</div>'+
       '</section>'+
-      '<details class="panel purchase-extra"><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
+      '<details id="purchaseAdvanced" class="panel purchase-extra" '+(state.purchaseAdvancedOpen?'open':'')+'><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
+      (!state.purchaseAdvancedLoaded||state.purchaseAdvancedError?'<div class="purchase-compact-note">'+esc(state.purchaseAdvancedError|| (state.purchaseAdvancedLoading?'Carregando índice…':'Abra para carregar a conferência avançada.'))+'</div>'+(state.purchaseAdvancedError?'<button class="secondary" type="button" id="purchaseRetryAdvanced">Tentar novamente</button>':''):'')+
       purchaseCatalogQueueHtml()+
       xmlCatalogSectionHtml()+
       ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto.':'')+'</small></div>':'')+
       (last?'<div class="bling-banner"><strong>'+esc(runSource)+' · '+esc(runStatus)+'</strong><small>'+dateTime(last.started_at||last.created_at)+' · '+esc(last.documents_processed||0)+' nova(s) · '+esc(last.documents_duplicate||0)+' já existente(s) · '+esc(last.documents_failed||0)+' falha(s)</small></div>':'')+
-      '<details class="panel" style="margin-top:14px"><summary class="history-title" style="cursor:pointer;padding:12px 14px"><div><strong>Comparar com as notas do Bling</strong><span>Lista somente para conferência; não é outra fila de trabalho.</span></div><b>'+blingDocs.length+'</b></summary>'+
-        (blingDocs.length?blingDocs.map(x=>{
+      '<details id="purchaseBlingCompare" class="panel" style="margin-top:8px" '+(state.purchaseBlingCompareOpen?'open':'')+'><summary class="history-title" style="cursor:pointer;padding:8px 10px"><div><strong>Comparar com o Bling</strong><span>Consulta sob demanda, não bloqueia a lista de notas.</span></div><b>'+(state.purchaseBlingCompareLoaded?blingDocs.length:'—')+'</b></summary>'+
+      (!state.purchaseBlingCompareLoaded?
+        '<div class="purchase-compact-note">'+esc(state.purchaseBlingCompareError|| (state.purchaseBlingCompareLoading?'Consultando o Bling…':'Abra para consultar as notas registradas no Bling.'))+'</div>'+
+        (state.purchaseBlingCompareError?'<button type="button" class="secondary" id="purchaseRetryBlingCompare">Tentar novamente</button>':'')
+        :'')+
+        (state.purchaseBlingCompareLoaded && blingDocs.length?blingDocs.map(x=>{
           const imported=importedIds.has(Number(x.bling_nfe_id||0))||(x.access_key&&importedKeys.has(String(x.access_key)));
           return '<div class="purchase-doc-row">'+
             '<div><strong>'+esc(x.issued_at?dateOnly(String(x.issued_at).slice(0,10)):'—')+'</strong><span class="sub">#'+esc(x.number||x.bling_nfe_id||'—')+'</span></div>'+
@@ -6899,11 +6942,8 @@
             '<div><span class="pill '+(imported?'':'warn')+'">'+(imported?'Já importada':'Falta importar')+'</span></div>'+
             '<div class="sub">'+esc(x.access_key?String(x.access_key).slice(-10):'—')+'</div><div></div><div></div><div></div>'+
           '</div>';
-        }).join(''):'<div class="empty">'+(browse.ok===false?'Não consegui consultar o Bling agora.':'Nenhuma nota registrada no Bling nesse período.')+'</div>')+
+        }).join(''):state.purchaseBlingCompareLoaded?'<div class="empty">Nenhuma nota registrada no Bling nesse período.</div>':'')+
       '</details>'+
-      (reviews.length?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Itens que ainda precisam de conversão/vínculo</strong><span>Caixa, fardo e pacote precisam estar convertidos para unidade antes de atualizar cadastro ou estoque.</span></div><b>'+reviews.length+'</b></div>'+
-        reviews.map(x=>'<div class="purchase-review"><div class="history-main"><strong>'+esc(x.description||'Produto')+'</strong><small>'+esc(x.processing_status||'')+'</small></div><div><strong>'+esc(fmtQty(x.purchase_quantity||0))+'</strong><span class="sub">'+esc(x.purchase_unit||'')+'</span></div><div><strong>'+esc(x.conversion_factor||'—')+'</strong><span class="sub">fator</span></div><div><strong>'+purchaseMaybeMoney(x.purchase_unit_price)+'</strong><span class="sub">compra</span></div><div><button class="secondary" type="button" data-purchase-conversion="'+esc(x.id)+'">Definir conversão</button></div></div>').join('')+
-      '</section>':'')+
       '</details>';
     const purchaseQuickSearch=$('#purchaseQuickSearch');
     const purchaseQuickStatus=$('#purchaseQuickStatus');
@@ -6926,6 +6966,26 @@
     filterPurchasesOnScreen();
     bindPurchaseCatalogQueue();
     bindXmlCatalog();
+    const advanced=$('#purchaseAdvanced');
+    if(advanced)advanced.ontoggle=()=>{
+      state.purchaseAdvancedOpen=advanced.open;
+      if(advanced.open&&!state.purchaseAdvancedLoaded&&!state.purchaseAdvancedLoading&&!state.purchaseAdvancedError)loadPurchaseAdvanced();
+    };
+    const advancedRetry=$('#purchaseRetryAdvanced');
+    if(advancedRetry)advancedRetry.onclick=()=>{
+      state.purchaseAdvancedError='';
+      loadPurchaseAdvanced();
+    };
+    const compare=$('#purchaseBlingCompare');
+    if(compare)compare.ontoggle=()=>{
+      state.purchaseBlingCompareOpen=compare.open;
+      if(compare.open&&!state.purchaseBlingCompareLoaded&&!state.purchaseBlingCompareLoading&&!state.purchaseBlingCompareError)loadPurchaseBlingComparison();
+    };
+    const compareRetry=$('#purchaseRetryBlingCompare');
+    if(compareRetry)compareRetry.onclick=()=>{
+      state.purchaseBlingCompareError='';
+      loadPurchaseBlingComparison();
+    };
     host.querySelectorAll('[data-purchase-toggle]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,a,input,label'))return;togglePurchaseDocument(row.dataset.purchaseToggle)});
     host.querySelectorAll('[data-purchase-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();togglePurchaseDocument(b.dataset.purchaseOpen,true)});
     host.querySelectorAll('[data-purchase-xml]').forEach(b=>b.onclick=e=>{e.stopPropagation();downloadPurchaseXml(b.dataset.purchaseXml)});
@@ -6946,6 +7006,7 @@
       if(Number(r.documents_seen||0)===0)toast('Nenhuma nota de compra/entrada encontrada pela API do Bling. Notas apenas Ciente não estão incluídas.');
       else toast('Importação concluída: '+String(r.processed||0)+' nova(s) · '+String(r.duplicates||0)+' já existente(s)'+(Number(r.failed||0)?' · '+String(r.failed)+' falha(s)':''));
       state.purchaseDetailCache={};state.purchaseExpandedId=null;
+      state.purchaseAdvancedLoaded=false;
       await loadPurchases();
     }catch(e){toast(errorMessage(e.message))}
     finally{if(b){b.disabled=false;b.textContent='Buscar no Bling'}}
@@ -6987,6 +7048,7 @@
       }
       toast('XML: '+ok+' concluído(s)'+(fail?' · '+fail+' falha(s)':''));
       state.purchaseDetailCache={};state.purchaseExpandedId=null;
+      state.purchaseAdvancedLoaded=false;
       await loadPurchases();
     }catch(e){toast(errorMessage(e.message))}
   }
@@ -8970,48 +9032,7 @@
 })();
 </script>
 
-<style id="purchase-identity-ui-v1-style">
-.purchase-identity-v1{border:1px solid #dbe8df;background:#f8fbf9;border-radius:14px;padding:12px;margin:10px 0}.purchase-identity-v1 h4{margin:0 0 8px;font-size:13px}.purchase-identity-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px}.purchase-identity-grid label{font-size:11px;font-weight:700;display:block;margin-bottom:4px}.purchase-identity-grid input,.purchase-identity-grid select{width:100%;min-height:38px;border:1px solid #d6ded8;border-radius:9px;padding:7px 9px;background:#fff}.purchase-identity-meta{font-size:12px;color:#58635d;line-height:1.45}.purchase-identity-status{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800;margin-bottom:7px}.purchase-identity-status.ok{background:#e4f4e9;color:#176b3a}.purchase-identity-status.warn{background:#fff2cf;color:#855b00}.purchase-identity-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.purchase-identity-actions button{min-height:36px}.purchase-identity-results{display:grid;gap:6px;margin-top:7px}.purchase-identity-candidate{display:flex;justify-content:space-between;gap:10px;text-align:left;border:1px solid #dce4df;background:white;border-radius:9px;padding:8px 10px;cursor:pointer}.purchase-identity-selected{font-size:12px;font-weight:700;color:#176b3a;margin-top:5px}@media(max-width:760px){.purchase-identity-grid{grid-template-columns:1fr}.purchase-identity-actions button{flex:1 1 150px}}
-</style>
-<script id="purchase-identity-ui-v1">
-// PURCHASE_IDENTITY_UI_V1
-(function(){
-  // A identificação funcional agora está no item da nota.
-  if(typeof paintPurchaseCatalogList==='undefined')return;
-  const identityReasonLabel=(v)=>({base_gtin_confirmed:'Encontrado pelo EAN da unidade',package_gtin_confirmed:'Encontrado pelo EAN da caixa/embalagem',supplier_code_confirmed:'Encontrado pelo código deste fornecedor',legacy_gtin_exact:'Encontrado pelo EAN já cadastrado',human_confirmed_existing:'Vínculo confirmado manualmente',human_created_inactive:'Produto novo confirmado e criado inativo',created_from_gtin:'EAN importado sem confirmação de unidade/caixa',identity_confirmation_required:'Nenhuma correspondência confiável confirmada'})[v]||String(v||'Identificação pendente').replaceAll('_',' ');
-  const inferredRole=(x)=>{const p=x.pricing_preview||{};if(x.gtin_role)return x.gtin_role;if(p.requires_conversion_confirmation||Number(p.suggested_conversion_factor||x.conversion_factor||0)>1||['CX','FD','PCT','DP'].includes(String(x.purchase_unit||'').toUpperCase()))return 'package';return 'base_unit'};
-  const isIdentityUnresolved=(x)=>{const reasons=x?.flags?.review_reasons||[];return !x.product_id||x.match_method==='created_from_gtin'||x.identity_state==='unresolved'||reasons.includes('identity_confirmation_required')};
-  function enhance(){
-    document.querySelectorAll('[data-purchase-catalog-item]').forEach(card=>{
-      if(card.querySelector('.purchase-identity-v1'))return;
-      const id=card.dataset.purchaseCatalogItem,x=(state.purchaseCatalogQueue?.items||[]).find(y=>y.id===id);if(!x)return;
-      const prod=x.products||{},unresolved=isIdentityUnresolved(x),role=inferredRole(x),factor=x.pricing_preview?.suggested_conversion_factor??x.conversion_factor??(role==='package'?'':1),status=unresolved?'Possível correspondência':(x.match_method==='human_created_inactive'?'Produto novo confirmado':'Produto existente');
-      const reason=identityReasonLabel(x.match_reason||x.match_method||(unresolved?'identity_confirmation_required':'gtin_exact'));
-      const panel=document.createElement('div');panel.className='purchase-identity-v1';panel.innerHTML=`<h4>Identificação</h4><span class="purchase-identity-status ${unresolved?'warn':'ok'}">${esc(status)}</span><div class="purchase-identity-meta" style="margin-bottom:8px">${esc(reason)}</div><div class="purchase-identity-grid"><div><label>Nome no cadastro</label><input data-catalog-identity-name value="${esc(prod.name||x.description||'')}"><div class="purchase-identity-meta">NF-e: ${esc(x.description||'—')}</div></div><div><label>EAN interpretado como</label><select data-catalog-gtin-role><option value="base_unit" ${role==='base_unit'?'selected':''}>Unidade vendida</option><option value="package" ${role==='package'?'selected':''}>Caixa / embalagem</option></select><div class="purchase-identity-meta">EAN comercial: ${esc(x.commercial_gtin||'—')}<br>EAN tributável: ${esc(x.tax_gtin||'—')}</div></div><div><label>Produto canônico atual</label><div class="purchase-identity-meta"><strong>${esc(prod.name||'Ainda não confirmado')}</strong><br>EAN unidade: ${esc(prod.gtin||'—')} · SKU: ${esc(prod.sku||'—')}<br>${prod.id?(prod.is_active===false?'Inativo':'Ativo'):'Sem vínculo'}</div></div></div><h4 style="margin-top:12px">Compra e conversão</h4><div class="purchase-identity-meta">${esc(String(x.purchase_quantity||0))} ${esc(x.purchase_unit||'')} × ${esc(String(factor||'?'))} = ${factor?esc(String(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'revisar conversão'} · código fornecedor: ${esc(x.supplier_item_code||'—')}</div><h4 style="margin-top:12px">Alterações propostas</h4><div class="purchase-identity-grid"><div><label>Buscar produto existente</label><input data-catalog-product-search placeholder="Nome, EAN ou SKU"></div><div style="align-self:end"><button class="secondary" type="button" data-catalog-search-product>Buscar</button></div><div><div class="purchase-identity-selected" data-catalog-selected-product>${prod.id?'Atual: '+esc(prod.name||prod.id):'Nenhum produto selecionado'}</div></div></div><div class="purchase-identity-results" data-catalog-product-results></div><div class="purchase-identity-actions"><button type="button" class="primary" data-catalog-save-identity>Salvar identificação</button><button type="button" class="secondary" data-catalog-create-new>Criar novo produto inativo</button></div>`;
-      card.prepend(panel);card.dataset.identityProductId=prod.id||'';
-      const approve=card.querySelector('[data-catalog-approve]');if(approve&&unresolved){approve.disabled=true;approve.title='Confirme primeiro qual produto é este e se o EAN é da unidade ou da embalagem.'}
-      panel.querySelector('[data-catalog-search-product]').onclick=()=>searchCandidates(card,x);
-      panel.querySelector('[data-catalog-product-search]').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchCandidates(card,x)}};
-      panel.querySelector('[data-catalog-save-identity]').onclick=()=>saveIdentity(card,x,false);
-      panel.querySelector('[data-catalog-create-new]').onclick=()=>saveIdentity(card,x,true);
-    });
-  }
-  async function searchCandidates(card,x){
-    const input=card.querySelector('[data-catalog-product-search]'),host=card.querySelector('[data-catalog-product-results]'),q=String(input?.value||'').trim();if(q.length<2){toast('Digite ao menos 2 caracteres');return}
-    host.innerHTML='<div class="purchase-identity-meta">Buscando…</div>';
-    try{const r=await purchaseApi('search_products',{query:q}),items=r?.items||[];host.innerHTML=items.length?items.map(p=>`<button type="button" class="purchase-identity-candidate" data-product-id="${esc(p.id)}"><span><strong>${esc(p.name)}</strong><br><small>EAN ${esc(p.gtin||'—')} · SKU ${esc(p.sku||'—')}</small></span><small>${p.is_active===false?'Inativo':'Ativo'}</small></button>`).join(''):'<div class="purchase-identity-meta">Nenhum candidato encontrado.</div>';host.querySelectorAll('[data-product-id]').forEach(b=>b.onclick=()=>{card.dataset.identityProductId=b.dataset.productId;card.querySelector('[data-catalog-selected-product]').textContent='Selecionado: '+b.querySelector('strong').textContent;host.innerHTML=''})}catch(e){host.innerHTML='<div class="warn-text">'+esc(errorMessage(e.message))+'</div>'}
-  }
-  async function saveIdentity(card,x,createNew){
-    const name=String(card.querySelector('[data-catalog-identity-name]')?.value||'').trim(),role=card.querySelector('[data-catalog-gtin-role]')?.value||'',factor=Number(String(card.querySelector('[data-catalog-factor]')?.value||x.conversion_factor||1).replace(',','.')),productId=card.dataset.identityProductId||x.product_id||'';
-    if(!createNew&&!productId){toast('Busque e selecione o produto existente ou use Criar novo produto inativo');return}if(role==='package'&&(!Number.isFinite(factor)||factor<=1)){toast('Informe quantas unidades existem na caixa/embalagem');return}
-    const btn=createNew?card.querySelector('[data-catalog-create-new]'):card.querySelector('[data-catalog-save-identity]');if(btn){btn.disabled=true;btn.textContent='Salvando…'}
-    try{await purchaseApi('resolve_item_identity',{item_id:x.id,product_id:productId||null,create_new:createNew,proposed_name:name,gtin_role:role,conversion_factor:factor});toast(createNew?'Produto criado inativo e vinculado':'Identificação salva');state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});paintPurchaseCatalogList()}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent=createNew?'Criar novo produto inativo':'Salvar identificação'}}
-  }
-  const originalPaint=paintPurchaseCatalogList;paintPurchaseCatalogList=function(){originalPaint();enhance()};
-  const originalReason=purchaseCatalogReasonLabel;purchaseCatalogReasonLabel=function(v){if(v==='identity_confirmation_required')return 'Confirme qual produto é este e se o EAN é da unidade ou da embalagem';return originalReason(v)};
-  setTimeout(enhance,250);
-})();
-</script>
+<!-- R33: legacy identity overlay removed; use the note's single verified linking workflow. -->
 <script src="/vitrine/admin/basket-guided-builder.js?v=guided-v3"></script>
 <script src="/vitrine/admin/basket-admin-section.js?v=canonical-v3"></script>
 
