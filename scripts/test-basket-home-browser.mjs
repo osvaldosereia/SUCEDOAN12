@@ -28,6 +28,8 @@ try{
  await page.setViewportSize({width:320,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  // Run the complete public page too: test script loading, home wiring and existing detail navigation.
  const app=await browser.newPage({viewport:{width:390,height:844}}),errors=[];app.on('pageerror',e=>errors.push(e.message));
+ let releasePriorityCatalog;
+ const priorityCatalogGate=new Promise(resolve=>{releasePriorityCatalog=resolve});
  let releaseFullCatalog;
  const fullCatalogGate=new Promise(resolve=>{releaseFullCatalog=resolve});
  const offered={...basket,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub',category_slug:'cestas-completas',category_name:'Cestas Completas'};
@@ -37,7 +39,7 @@ try{
    if(u.pathname.includes('/functions/v1/storefront-v2')){
      const action=u.searchParams.get('action');
      const taxonomy=[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'},{id:'sub2',name:'Média'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}];
-     if(action==='home_priority')return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,priority:true,baskets:[offered],basket_categories:taxonomy,categories:[]})});
+     if(action==='home_priority'){await priorityCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,priority:true,baskets:[offered],basket_categories:taxonomy,categories:[]})});}
      if(action==='home'){await fullCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,baskets:[offered,later],basket_categories:taxonomy,categories:[]})})}
      const response=action==='basket'?{ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))}:{ok:true,offers:[]};
      return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(response)});
@@ -47,7 +49,23 @@ try{
    if(u.pathname.endsWith('.js'))return route.fulfill({contentType:'application/javascript',body:''});
    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"/>'});
  });
- await app.goto('https://app.test/');await app.locator('.basket-card-photo img').first().waitFor();
+ await app.goto('https://app.test/');
+ await app.locator('#basketSections .home-loading-status').waitFor();
+ const firstShell=await app.evaluate(()=>{
+   window.__r4ShellHero=document.querySelector('.home-hero');
+   window.__r4ShellOffers=document.querySelector('#homeOffersMount');
+   return {
+     sections:document.querySelectorAll('#basketSections').length,
+     hasHero:Boolean(window.__r4ShellHero),
+     hasOffers:Boolean(window.__r4ShellOffers)
+   };
+ });
+ assert.deepEqual(firstShell,{sections:1,hasHero:true,hasOffers:true},'initial loading shell must include the final homepage containers');
+ releasePriorityCatalog();
+ await app.locator('.basket-card-photo img').first().waitFor();
+ assert.equal(await app.evaluate(()=>document.querySelector('.home-hero')===window.__r4ShellHero),true,'priority cards must not recreate initial hero');
+ assert.equal(await app.evaluate(()=>document.querySelector('#homeOffersMount')===window.__r4ShellOffers),true,'priority cards must preserve offers mount');
+ assert.ok(await app.locator('#basketSections .basket-card-photo img').first().getAttribute('src'),'first photo must start loading immediately');
  assert.equal(await app.locator('.basket-card-photo img').count(),1,'priority basket subgroup should render before the full catalog response');
  assert.deepEqual(await app.locator('#basketSections .basket-subgroup-title').allTextContents(),['Grande'],'first render should only show the first visible subgroup');
  assert.ok(await app.locator('#homeRemainingBaskets').isVisible(),'remaining basket groups should have a non-blocking loading placeholder');
