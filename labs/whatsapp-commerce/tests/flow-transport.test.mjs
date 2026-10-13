@@ -83,5 +83,9 @@ test('Business-logic error is encrypted rather than exposed in HTTP text',()=>{
  assert.notEqual(result.body,'');
  assert.ok(!result.body.includes('unknown_task'));
  const decrypted=decode(result.body,input.aesKey,input.iv);
- assert.equal(decrypted.error_message,'unknown_task');
+ assert.equal(decrypted.screen,'CHOOSE_MODE');
+ assert.ok(decrypted.data?.error_message?.length>0);
+ assert.ok(decrypted.data?.basket_name);
+ assert.ok(decrypted.data?.total_label);
+ assert.ok(!JSON.stringify(decrypted).includes('hidden_adjustment'));
 });
