@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { redactWebhookPayload } from "../_shared/whatsapp-core-v1.mjs";
 import { classifyCustomerConfirmation } from "../_shared/ana-customer-confirmation-v1.mjs";
 import { findPostorderReply } from "../_shared/order-postorder-quickreply-v1.mjs";
+import {sendTextViaMeta} from "../_shared/whatsapp-meta-transport-v1.mjs";
 import {
   extractMetaPhoneNumberIds,
   hasMetaMessageOrStatusEvents,
@@ -298,6 +299,25 @@ async function applyCustomerConfirmationSignal(message: any, ingestResult: any) 
 // Reply actions are accepted only from signed Meta webhook events. The sender,
 // channel, one-time nonce and the order's unchanged amount/version are verified
 // again by a service-only SQL function before confirmation is committed.
+async function acknowledgePostorderQuickReply(message:any,decision:any){
+  if(!META_ACCESS_TOKEN||!decision?.recognized)return;
+  const text=decision.ok
+    ?decision.action==="confirm"
+      ?"✅ Pedido confirmado! Já foi encaminhado para a separação."
+      :"✏️ Seu pedido continua aguardando confirmação. Para acrescentar produtos, use a mensagem de ofertas. Para retirar ou trocar um item, descreva o ajuste aqui."
+    :"⚠️ Não foi possível concluir esta ação. Abra o link do seu pedido recebido anteriormente e confira os dados.";
+  try{
+    await sendTextViaMeta({
+      accessToken:META_ACCESS_TOKEN,phoneNumberId:String(message.phone_number_id||""),
+      toE164:String(message.phone_e164||""),text,graphVersion:META_GRAPH_VERSION,
+      timeoutMs:9000
+    });
+  }catch(error){
+    // An acknowledgement is never a reason to replay a successful order
+    // confirmation or request that Meta retry the inbound button event.
+    console.warn("postorder_reply_ack_failed",String((error as Error)?.name||"unavailable").slice(0,80));
+  }
+}
 async function applyPostorderQuickReply(payload:any,message:any,ingest:any){
   if(message?.message?.direction!=="inbound"||ingest?.duplicate===true)return null;
   const parsed=findPostorderReply(payload,message?.provider_message_id);
@@ -467,9 +487,13 @@ Deno.serve(async (req: Request) => {
         if (result?.duplicate === true) inboundDuplicates += 1;
         else inboundNormalized += 1;
       }
+      const matchedPostorderButton=findPostorderReply(payload,message?.provider_message_id);
+      // A repeated delivery of the same Meta event never triggers new messages.
+      if(matchedPostorderButton&&result?.duplicate===true)continue;
       const postorder = await applyPostorderQuickReply(payload,message,result);
       if(postorder?.recognized===true){
         if(postorder.ok)postorderRepliesApplied+=1;
+        await acknowledgePostorderQuickReply(message,postorder);
         // Do not send a second ANA answer to a structured purchase button.
         continue;
       }
