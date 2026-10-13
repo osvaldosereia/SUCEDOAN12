@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Dona Antônia · Admin da Vitrine</title>
   <link rel="preload" href="/img/logoantonia5.png" as="image">
-  <link rel="stylesheet" href="/vitrine/admin/purchase-xml-simple.css?v=xml-r32">
+  <link rel="stylesheet" href="/vitrine/admin/purchase-xml-simple.css?v=xml-r33">
   <style>
     :root{--ink:#18221c;--muted:#66716a;--line:#e5e9e6;--soft:#f5f7f5;--brand:#176b43;--brand2:#0f5836;--danger:#9d2235;--warn:#96650b;--radius:14px}
     *{box-sizing:border-box}
@@ -1459,7 +1459,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -5823,24 +5823,46 @@
     host.innerHTML='<div class="loading">Carregando compras de '+esc(purchasePeriodLabel())+'…</div>';
     try{
       const filter=purchaseFilterPayload();
-      const results=await Promise.allSettled([
-        purchaseApi('summary',filter),
-        purchaseApi('browse_bling',filter),
-        purchaseApi('payment_accounts',{}),
-        purchaseApi('catalog_queue',{lookback_days:31}),
-        purchaseApi('bling_received_review_status',{})
-      ]);
-      if(results[0].status!=='fulfilled')throw results[0].reason;
-      state.purchaseXml=results[0].value;
-      state.purchaseBlingBrowse=results[1].status==='fulfilled'?results[1].value:{ok:false,error:results[1].reason?.message,documents:[],count:0};
-      state.purchasePaymentAccounts=results[2].status==='fulfilled'?results[2].value:{ok:false,accounts:[],mappings:{},error:results[2].reason?.message};
-      state.purchaseCatalogQueue=results[3].status==='fulfilled'?results[3].value:{ok:false,items:[],counts:{},error:results[3].reason?.message};
-      state.purchaseBlingReceivedReview=results[4].status==='fulfilled'?results[4].value:{ok:false};
+      // Fast path: opening Compras/XML must not wait for Bling OAuth, pricing
+      // configuration or the 31-day product queue. Advanced data loads on demand.
+      const result=await purchaseApi('summary',filter);
+      state.purchaseXml=result;
+      if(!state.purchaseAdvancedLoaded){
+        state.purchaseBlingBrowse={ok:null,documents:[],count:0};
+        state.purchaseCatalogQueue={ok:true,items:[],counts:{}};
+      }
+      // Daily reminder is best-effort and must not delay the note list.
+      if(!state.purchaseBlingReceivedReview)state.purchaseBlingReceivedReview={ok:false};
+      purchaseApi('bling_received_review_status',{}).then(value=>{
+        state.purchaseBlingReceivedReview=value;
+        paintBlingReceivedReview();
+      }).catch(()=>{});
+      if(state.purchaseAdvancedOpen&&!state.purchaseAdvancedLoaded&&!state.purchaseAdvancedLoading){
+        queueMicrotask(()=>loadPurchaseAdvanced());
+      }
       paintBlingReceivedReview();
       paintPurchases();
     }catch(e){
       host.innerHTML='<div class="empty">Não consegui carregar Compras/XML. <button class="text" id="retryPurchases">Tentar novamente</button></div>';
       if($('#retryPurchases'))$('#retryPurchases').onclick=loadPurchases;
+    }
+  }
+  async function loadPurchaseAdvanced(){
+    if(state.purchaseAdvancedLoading||state.purchaseAdvancedLoaded)return;
+    state.purchaseAdvancedLoading=true;
+    state.purchaseAdvancedError='';
+    try{
+      const values=await Promise.allSettled([
+        purchaseApi('catalog_queue',{lookback_days:31}),
+        purchaseApi('browse_bling',purchaseFilterPayload())
+      ]);
+      state.purchaseCatalogQueue=values[0].status==='fulfilled'?values[0].value:{ok:false,items:[],counts:{},error:String(values[0].reason?.message||'Falha ao carregar catálogo')};
+      state.purchaseBlingBrowse=values[1].status==='fulfilled'?values[1].value:{ok:false,documents:[],count:0,error:String(values[1].reason?.message||'Falha na consulta ao Bling')};
+      state.purchaseAdvancedLoaded=true;
+      if(values.some(x=>x.status!=='fulfilled'))state.purchaseAdvancedError='Algumas consultas avançadas falharam. Tente novamente.';
+    }finally{
+      state.purchaseAdvancedLoading=false;
+      if(state.tab==='purchases')paintPurchases();
     }
   }
   function purchaseMaybeMoney(v){
@@ -6885,7 +6907,8 @@
         }).join(''):'<div class="empty">Nenhuma nota importada neste período. Clique em “Buscar no Bling” ou “Importar XML”.</div>')+
         '<div class="empty" id="purchaseNoFilterResults" style="display:none">Nenhuma nota corresponde à pesquisa.</div>'+
       '</section>'+
-      '<details class="panel purchase-extra"><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
+      '<details id="purchaseAdvanced" class="panel purchase-extra" '+(state.purchaseAdvancedOpen?'open':'')+'><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
+      (!state.purchaseAdvancedLoaded?'<div class="purchase-compact-note">'+(state.purchaseAdvancedError||'Abra para carregar a conferência avançada.')+'</div>':'')+
       purchaseCatalogQueueHtml()+
       xmlCatalogSectionHtml()+
       ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto.':'')+'</small></div>':'')+
@@ -6926,6 +6949,15 @@
     filterPurchasesOnScreen();
     bindPurchaseCatalogQueue();
     bindXmlCatalog();
+    const advanced=$('#purchaseAdvanced');
+    if(advanced)advanced.ontoggle=()=>{
+      state.purchaseAdvancedOpen=advanced.open;
+      if(advanced.open&&!state.purchaseAdvancedLoaded)loadPurchaseAdvanced().catch(e=>{
+        state.purchaseAdvancedError=purchaseXmlError(e);
+        state.purchaseAdvancedLoading=false;
+        toast(state.purchaseAdvancedError);
+      });
+    };
     host.querySelectorAll('[data-purchase-toggle]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,a,input,label'))return;togglePurchaseDocument(row.dataset.purchaseToggle)});
     host.querySelectorAll('[data-purchase-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();togglePurchaseDocument(b.dataset.purchaseOpen,true)});
     host.querySelectorAll('[data-purchase-xml]').forEach(b=>b.onclick=e=>{e.stopPropagation();downloadPurchaseXml(b.dataset.purchaseXml)});
@@ -8970,48 +9002,7 @@
 })();
 </script>
 
-<style id="purchase-identity-ui-v1-style">
-.purchase-identity-v1{border:1px solid #dbe8df;background:#f8fbf9;border-radius:14px;padding:12px;margin:10px 0}.purchase-identity-v1 h4{margin:0 0 8px;font-size:13px}.purchase-identity-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px}.purchase-identity-grid label{font-size:11px;font-weight:700;display:block;margin-bottom:4px}.purchase-identity-grid input,.purchase-identity-grid select{width:100%;min-height:38px;border:1px solid #d6ded8;border-radius:9px;padding:7px 9px;background:#fff}.purchase-identity-meta{font-size:12px;color:#58635d;line-height:1.45}.purchase-identity-status{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800;margin-bottom:7px}.purchase-identity-status.ok{background:#e4f4e9;color:#176b3a}.purchase-identity-status.warn{background:#fff2cf;color:#855b00}.purchase-identity-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.purchase-identity-actions button{min-height:36px}.purchase-identity-results{display:grid;gap:6px;margin-top:7px}.purchase-identity-candidate{display:flex;justify-content:space-between;gap:10px;text-align:left;border:1px solid #dce4df;background:white;border-radius:9px;padding:8px 10px;cursor:pointer}.purchase-identity-selected{font-size:12px;font-weight:700;color:#176b3a;margin-top:5px}@media(max-width:760px){.purchase-identity-grid{grid-template-columns:1fr}.purchase-identity-actions button{flex:1 1 150px}}
-</style>
-<script id="purchase-identity-ui-v1">
-// PURCHASE_IDENTITY_UI_V1
-(function(){
-  // A identificação funcional agora está no item da nota.
-  if(typeof paintPurchaseCatalogList==='undefined')return;
-  const identityReasonLabel=(v)=>({base_gtin_confirmed:'Encontrado pelo EAN da unidade',package_gtin_confirmed:'Encontrado pelo EAN da caixa/embalagem',supplier_code_confirmed:'Encontrado pelo código deste fornecedor',legacy_gtin_exact:'Encontrado pelo EAN já cadastrado',human_confirmed_existing:'Vínculo confirmado manualmente',human_created_inactive:'Produto novo confirmado e criado inativo',created_from_gtin:'EAN importado sem confirmação de unidade/caixa',identity_confirmation_required:'Nenhuma correspondência confiável confirmada'})[v]||String(v||'Identificação pendente').replaceAll('_',' ');
-  const inferredRole=(x)=>{const p=x.pricing_preview||{};if(x.gtin_role)return x.gtin_role;if(p.requires_conversion_confirmation||Number(p.suggested_conversion_factor||x.conversion_factor||0)>1||['CX','FD','PCT','DP'].includes(String(x.purchase_unit||'').toUpperCase()))return 'package';return 'base_unit'};
-  const isIdentityUnresolved=(x)=>{const reasons=x?.flags?.review_reasons||[];return !x.product_id||x.match_method==='created_from_gtin'||x.identity_state==='unresolved'||reasons.includes('identity_confirmation_required')};
-  function enhance(){
-    document.querySelectorAll('[data-purchase-catalog-item]').forEach(card=>{
-      if(card.querySelector('.purchase-identity-v1'))return;
-      const id=card.dataset.purchaseCatalogItem,x=(state.purchaseCatalogQueue?.items||[]).find(y=>y.id===id);if(!x)return;
-      const prod=x.products||{},unresolved=isIdentityUnresolved(x),role=inferredRole(x),factor=x.pricing_preview?.suggested_conversion_factor??x.conversion_factor??(role==='package'?'':1),status=unresolved?'Possível correspondência':(x.match_method==='human_created_inactive'?'Produto novo confirmado':'Produto existente');
-      const reason=identityReasonLabel(x.match_reason||x.match_method||(unresolved?'identity_confirmation_required':'gtin_exact'));
-      const panel=document.createElement('div');panel.className='purchase-identity-v1';panel.innerHTML=`<h4>Identificação</h4><span class="purchase-identity-status ${unresolved?'warn':'ok'}">${esc(status)}</span><div class="purchase-identity-meta" style="margin-bottom:8px">${esc(reason)}</div><div class="purchase-identity-grid"><div><label>Nome no cadastro</label><input data-catalog-identity-name value="${esc(prod.name||x.description||'')}"><div class="purchase-identity-meta">NF-e: ${esc(x.description||'—')}</div></div><div><label>EAN interpretado como</label><select data-catalog-gtin-role><option value="base_unit" ${role==='base_unit'?'selected':''}>Unidade vendida</option><option value="package" ${role==='package'?'selected':''}>Caixa / embalagem</option></select><div class="purchase-identity-meta">EAN comercial: ${esc(x.commercial_gtin||'—')}<br>EAN tributável: ${esc(x.tax_gtin||'—')}</div></div><div><label>Produto canônico atual</label><div class="purchase-identity-meta"><strong>${esc(prod.name||'Ainda não confirmado')}</strong><br>EAN unidade: ${esc(prod.gtin||'—')} · SKU: ${esc(prod.sku||'—')}<br>${prod.id?(prod.is_active===false?'Inativo':'Ativo'):'Sem vínculo'}</div></div></div><h4 style="margin-top:12px">Compra e conversão</h4><div class="purchase-identity-meta">${esc(String(x.purchase_quantity||0))} ${esc(x.purchase_unit||'')} × ${esc(String(factor||'?'))} = ${factor?esc(String(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'revisar conversão'} · código fornecedor: ${esc(x.supplier_item_code||'—')}</div><h4 style="margin-top:12px">Alterações propostas</h4><div class="purchase-identity-grid"><div><label>Buscar produto existente</label><input data-catalog-product-search placeholder="Nome, EAN ou SKU"></div><div style="align-self:end"><button class="secondary" type="button" data-catalog-search-product>Buscar</button></div><div><div class="purchase-identity-selected" data-catalog-selected-product>${prod.id?'Atual: '+esc(prod.name||prod.id):'Nenhum produto selecionado'}</div></div></div><div class="purchase-identity-results" data-catalog-product-results></div><div class="purchase-identity-actions"><button type="button" class="primary" data-catalog-save-identity>Salvar identificação</button><button type="button" class="secondary" data-catalog-create-new>Criar novo produto inativo</button></div>`;
-      card.prepend(panel);card.dataset.identityProductId=prod.id||'';
-      const approve=card.querySelector('[data-catalog-approve]');if(approve&&unresolved){approve.disabled=true;approve.title='Confirme primeiro qual produto é este e se o EAN é da unidade ou da embalagem.'}
-      panel.querySelector('[data-catalog-search-product]').onclick=()=>searchCandidates(card,x);
-      panel.querySelector('[data-catalog-product-search]').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchCandidates(card,x)}};
-      panel.querySelector('[data-catalog-save-identity]').onclick=()=>saveIdentity(card,x,false);
-      panel.querySelector('[data-catalog-create-new]').onclick=()=>saveIdentity(card,x,true);
-    });
-  }
-  async function searchCandidates(card,x){
-    const input=card.querySelector('[data-catalog-product-search]'),host=card.querySelector('[data-catalog-product-results]'),q=String(input?.value||'').trim();if(q.length<2){toast('Digite ao menos 2 caracteres');return}
-    host.innerHTML='<div class="purchase-identity-meta">Buscando…</div>';
-    try{const r=await purchaseApi('search_products',{query:q}),items=r?.items||[];host.innerHTML=items.length?items.map(p=>`<button type="button" class="purchase-identity-candidate" data-product-id="${esc(p.id)}"><span><strong>${esc(p.name)}</strong><br><small>EAN ${esc(p.gtin||'—')} · SKU ${esc(p.sku||'—')}</small></span><small>${p.is_active===false?'Inativo':'Ativo'}</small></button>`).join(''):'<div class="purchase-identity-meta">Nenhum candidato encontrado.</div>';host.querySelectorAll('[data-product-id]').forEach(b=>b.onclick=()=>{card.dataset.identityProductId=b.dataset.productId;card.querySelector('[data-catalog-selected-product]').textContent='Selecionado: '+b.querySelector('strong').textContent;host.innerHTML=''})}catch(e){host.innerHTML='<div class="warn-text">'+esc(errorMessage(e.message))+'</div>'}
-  }
-  async function saveIdentity(card,x,createNew){
-    const name=String(card.querySelector('[data-catalog-identity-name]')?.value||'').trim(),role=card.querySelector('[data-catalog-gtin-role]')?.value||'',factor=Number(String(card.querySelector('[data-catalog-factor]')?.value||x.conversion_factor||1).replace(',','.')),productId=card.dataset.identityProductId||x.product_id||'';
-    if(!createNew&&!productId){toast('Busque e selecione o produto existente ou use Criar novo produto inativo');return}if(role==='package'&&(!Number.isFinite(factor)||factor<=1)){toast('Informe quantas unidades existem na caixa/embalagem');return}
-    const btn=createNew?card.querySelector('[data-catalog-create-new]'):card.querySelector('[data-catalog-save-identity]');if(btn){btn.disabled=true;btn.textContent='Salvando…'}
-    try{await purchaseApi('resolve_item_identity',{item_id:x.id,product_id:productId||null,create_new:createNew,proposed_name:name,gtin_role:role,conversion_factor:factor});toast(createNew?'Produto criado inativo e vinculado':'Identificação salva');state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});paintPurchaseCatalogList()}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent=createNew?'Criar novo produto inativo':'Salvar identificação'}}
-  }
-  const originalPaint=paintPurchaseCatalogList;paintPurchaseCatalogList=function(){originalPaint();enhance()};
-  const originalReason=purchaseCatalogReasonLabel;purchaseCatalogReasonLabel=function(v){if(v==='identity_confirmation_required')return 'Confirme qual produto é este e se o EAN é da unidade ou da embalagem';return originalReason(v)};
-  setTimeout(enhance,250);
-})();
-</script>
+<!-- R33: legacy identity overlay removed; use the note's single verified linking workflow. -->
 <script src="/vitrine/admin/basket-guided-builder.js?v=guided-v3"></script>
 <script src="/vitrine/admin/basket-admin-section.js?v=canonical-v3"></script>
 
