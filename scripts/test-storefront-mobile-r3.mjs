@@ -59,4 +59,59 @@ assert.match(lazyPhoto,/loading="lazy"/);
 assert.match(priorityPhoto,/data-basket-src=/,'images should still be gated by viewport intersection');
 assert.equal((priorityPhoto.match(/<img\b/g)||[]).length,1,'only one image per basket card');
 
+
+// Execute the actual DOM reconciliation code against a minimal DOM test double.
+// This catches accidental replacement of existing cards and redundant remounts.
+class TestElement {
+  constructor(type='section',heading=''){
+    this.children=[];this.dataset={};this.parentNode=null;
+    this.classList={contains:name=>name===type};
+    if(type==='section'){
+      const head=new TestElement('section-head');head.parentNode=this;this.children.push(head);
+      this.heading={textContent:heading};
+    }
+  }
+  insertBefore(node,reference){
+    if(node.parentNode){const old=node.parentNode.children.indexOf(node);if(old>=0)node.parentNode.children.splice(old,1)}
+    const index=reference?this.children.indexOf(reference):-1;
+    this.children.splice(index<0?this.children.length:index,0,node);
+    node.parentNode=this;return node;
+  }
+  replaceWith(node){const parent=this.parentNode;if(!parent)throw Error('missing parent');parent.insertBefore(node,this);this.remove()}
+  remove(){if(this.parentNode){const i=this.parentNode.children.indexOf(this);if(i>=0)this.parentNode.children.splice(i,1);this.parentNode=null}}
+  querySelector(query){return query==='.section-head h2'?this.heading||null:null}
+  querySelectorAll(query){return query==='[data-basket]'?[]:[]}
+}
+const fakeDocument={createElement(type){
+  assert.equal(type,'template');
+  const element={content:{firstElementChild:null}};
+  Object.defineProperty(element,'innerHTML',{set(html){
+    const isSection=html.startsWith('<section'),title=(html.match(/<h2>(.*?)<\/h2>/)||[])[1]||'';
+    const node=new TestElement(isSection?'section':'basket-subgroup',title);
+    if(!isSection)node.dataset.homeSubgroup=(html.match(/data-home-subgroup="([^"]+)"/)||[])[1];
+    element.content.firstElementChild=node;
+  }});
+  return element;
+}};
+const carouselSpy={mountCalls:0,mount(){this.mountCalls++}};
+const domFunctions=page.slice(page.indexOf('const homeSubgroupSignatures='),page.indexOf('function renderHome(){'));
+const runtime=new Function('document','section','esc','basketCard','BasketCarousel','openBasket',domFunctions+'return {homeBasketGroupRecords,syncHomeBasketGroups};')(
+  fakeDocument,(name,subtitle,content)=>'<section class="section"><h2>'+name+'</h2>'+content+'</section>',
+  esc,(basket,index)=>'<article data-index="'+index+'">'+basket.name+'</article>',carouselSpy,()=>{}
+);
+const host=new TestElement('host');
+runtime.syncHomeBasketGroups(host,runtime.homeBasketGroupRecords([largeBasket],initial));
+const savedSection=host.children[0],savedGrande=savedSection.children[1];
+assert.equal(carouselSpy.mountCalls,1,'initial mount required');
+runtime.syncHomeBasketGroups(host,runtime.homeBasketGroupRecords([largeBasket,smallBasket],complete));
+const savedMini=savedSection.children[2],mountsAfterFull=carouselSpy.mountCalls;
+assert.equal(host.children[0],savedSection,'the category section must stay mounted');
+assert.equal(savedSection.children[1],savedGrande,'priority Grande card DOM must survive full response');
+assert.equal(savedSection.children.length,3,'second subgroup must be appended after the priority card');
+runtime.syncHomeBasketGroups(host,runtime.homeBasketGroupRecords([largeBasket,smallBasket],complete));
+assert.equal(carouselSpy.mountCalls,mountsAfterFull,'unchanged catalog must not reinitialize image observers');
+runtime.syncHomeBasketGroups(host,runtime.homeBasketGroupRecords([{...largeBasket,display_price_cents:9900},smallBasket],complete));
+assert.notEqual(savedSection.children[1],savedGrande,'changed Grande card must refresh');
+assert.equal(savedSection.children[2],savedMini,'unmodified Mini card must not be discarded');
+
 console.log('Mobile storefront R3 incremental-render contract passed');
