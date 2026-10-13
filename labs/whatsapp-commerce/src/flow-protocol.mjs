@@ -87,8 +87,9 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now()}={})
     return ok(SCREENS[session.step],customerData(ctx,session));
   }
   function handle(request){
-    const action=normalizeAction(request),token=reqText(request.flow_token,'flow_token');
+    const action=normalizeAction(request);
     if(action==='PING')return {version:'3.0',data:{status:'active'}};
+    const token=reqText(request.flow_token,'flow_token');
     const record=get(token);
     if(action==='INIT'||action==='ACK')return refresh(token);
     if(action==='BACK'){
