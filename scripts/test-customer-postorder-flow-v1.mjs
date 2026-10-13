@@ -160,7 +160,7 @@ async function simulateOfferBridge({token,eligible=true,failPost=false}){
   const back={hidden:true,querySelector:()=>anchor};
   const document={getElementById:id=>id==='status'?status:id==='back'?back:null};
   const ctx={
-    URLSearchParams,document,
+    URL,URLSearchParams,document,
     location:{pathname:'/ofertas/',search:'?c='+token,replace:url=>replaces.push(url)},
     history:{replaceState:(...a)=>historyCalls.push(a)},
     fetch:async(url,options)=>{
