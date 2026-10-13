@@ -48,6 +48,12 @@ jobs:
       - run: node scripts/test-basket-home-browser.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
+      - name: Live mobile Chrome smoke at 320px and 390px (4G-like)
+        continue-on-error: true
+        run: node scripts/test-storefront-mobile-r6-live-browser.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
+
       - name: Validate mobile storefront R1-R5 contracts
         run: |
           node scripts/test-home-performance-contract.mjs
