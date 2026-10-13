@@ -11,7 +11,7 @@ function chatStart(){
 }
 function openFlow(){$('#flow').classList.remove('hidden');render()}
 function control(text,fn,cls='btn') {const b=document.createElement('button');b.className=cls;b.type='button';b.textContent=text;b.onclick=fn;return b}
-function decorate({title,body,backFn,nextFn,nextText='Continuar'}){
+function decorate(title,body,backFn=null,nextFn=null,nextText='Continuar'){
  $('#flowTitle').textContent=title;
  $('#screen').innerHTML=body;
  const footer=$('#actions');footer.innerHTML='';
@@ -27,7 +27,7 @@ function render(){
  const tot='<div class="total"><span>Total da cesta</span><b>'+format(v.total_cents)+'</b></div>';
  const goBack=()=>{session=back(ctx,session);render()};
  if(v.step==='MODE'){
-  decorate(v.basket_name,{toString(){return ''}}.toString()+
+  decorate(v.basket_name,
    '<h2>'+esc(v.basket_name)+'</h2><p>Escolha como deseja montar sua cesta. Preços deste laboratório são fictícios.</p>'+
    tot+
    '<button class="choice" data-mode="ready"><span class="mark"></span><span class="label">Quero como está<small>Mais rápido — sem alterações</small></span></button>'+
