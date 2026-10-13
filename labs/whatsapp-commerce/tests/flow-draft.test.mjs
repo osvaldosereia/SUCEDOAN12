@@ -52,7 +52,7 @@ test('Interactive mock UI cannot connect to external systems',()=>{
  // which is a data-URI declaration, not an outgoing request.
  const noSvgNamespace=app.replaceAll('http://www.w3.org/2000/svg','');
  assert.ok(!/https?:\/\/|wss?:\/\/|fetch\(|WebSocket\(|sendBeacon\(/.test(noSvgNamespace),'Preview module must remain offline');
- assert.ok(p.includes('Sem mensagens')||p.includes('sem mensagens'));
+ assert.match(p,/(?:sem mensagens|nenhuma mensagem)/i);
  assert.ok(!/https?:\/\/|wss?:\/\//.test(p),'Preview must not fetch from external hosts');
  assert.ok(!p.includes('fetch('));
  assert.ok(!p.includes('navigator.sendBeacon'));
