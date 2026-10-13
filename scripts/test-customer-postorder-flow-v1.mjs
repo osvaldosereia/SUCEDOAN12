@@ -96,4 +96,49 @@ assert.match(templatesAdmin,/data-postorder-provision/,'admin exposes official C
 assert.match(templatesAdmin,/adminPost\(TEMPLATE_API,'postorder_provision',\{\}\)/,'admin submits via authenticated endpoint');
 new vm.Script(templatesAdmin.replace(/^import[^\n]*\n/gm,''),{filename:'template-center.js'});
 new vm.Script(canonicalMeta.replace(/^export /gm,''),{filename:'canonical-template.mjs'});
+// Behavioral smoke tests: execute the public panel with a mocked DOM and API.
+// A hidden optional button must not crash the confirmation panel.
+async function simulateCustomerPanel(canAddOffers){
+  const viewToken='a'.repeat(16),capability='b'.repeat(64);
+  const storage=new Map();
+  const parent={insertBefore(element){element.parentNode=this}};
+  const panel={style:{},innerHTML:'',parentNode:null,querySelector(){return null}};
+  const app={parentNode:parent,nextSibling:null};
+  const buttons=new Map();
+  const document={
+    createElement(){return panel},
+    querySelector(selector){
+      if(selector==='#app')return app;
+      const id=selector.replace(/^#/,'');
+      if(!panel.innerHTML.includes('id="'+id+'"'))return null;
+      if(!buttons.has(id))buttons.set(id,{onclick:null});
+      return buttons.get(id);
+    }
+  };
+  const payload={ok:true,public_token:viewToken,status:'storefront_received',
+    total:150,updated_at:'2026-10-12T20:00:00Z',can_confirm:true,
+    can_add_offers:canAddOffers};
+  const ctx={
+    document,location:{search:'?c='+capability,pathname:'/pedido/'},
+    URLSearchParams,sessionStorage:{
+      getItem:key=>storage.get(key)||null,
+      setItem:(key,value)=>storage.set(key,value),
+      removeItem:key=>storage.delete(key)
+    },
+    history:{replaceState(){}},fetch:async()=>({
+      ok:true,json:async()=>payload
+    }),
+    window:{confirm:()=>false},console,setTimeout:()=>{},Math
+  };
+  vm.runInNewContext(customer,ctx);
+  await ctx.window.DACustomerActions.bootstrap();
+  ctx.window.DACustomerActions.render({current_status:'storefront_received',snapshot:{final_total:150}});
+  assert.equal(panel.innerHTML.includes('id="postorderOffers"'),canAddOffers);
+  assert.ok(panel.innerHTML.includes('id="postorderConfirm"'));
+  assert.equal(typeof buttons.get('postorderConfirm')?.onclick,'function');
+  assert.equal(Boolean(buttons.get('postorderOffers')),canAddOffers);
+}
+await simulateCustomerPanel(false);
+await simulateCustomerPanel(true);
+console.log('PASS: mocked public order UI: with and without eligible offers');
 console.log('PASS: Meta Utility URL, 256-bit capability, offers only, CAS confirmation, storefront JS');

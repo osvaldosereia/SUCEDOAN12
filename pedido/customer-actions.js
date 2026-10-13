@@ -103,8 +103,10 @@ function renderPanel(){
   '<button type="button" id="postorderConfirm" style="width:100%;min-height:52px;background:#176b43;color:white;border:0;border-radius:10px;font-weight:800" '+(state.busy?'disabled':'')+'>✅ CONFIRMAR MEU PEDIDO</button>'+
   '<p style="font-size:13px;margin:10px 0 0;color:#65736b">Você também pode confirmar sem acrescentar ofertas.</p>'+
   '<p data-customer-status role="status" aria-live="polite" style="font-size:13px;margin:8px 0 0"></p>';
- $('#postorderOffers').onclick=startAddon;
- $('#postorderConfirm').onclick=confirm;
+ const offersButton=$('#postorderOffers');
+ if(offersButton)offersButton.onclick=startAddon;
+ const confirmButton=$('#postorderConfirm');
+ if(confirmButton)confirmButton.onclick=confirm;
  if(state.notice)setStatus(state.notice,state.noticeError);
 }
 function render(data){
