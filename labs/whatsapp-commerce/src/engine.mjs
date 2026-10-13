@@ -30,7 +30,7 @@ export function validateModel(model){
   }
   return model;
 }
-function modelById(catalog,id){
+function modelById(catalog,id,composition=null){
   assert(Array.isArray(catalog?.models),'catalog_missing');
   const m=catalog.models.find(m=>m.id===id&&(composition===null||m.composition===composition))
     ||catalog.models.find(m=>m.id===id);assert(m,'model_not_found');
