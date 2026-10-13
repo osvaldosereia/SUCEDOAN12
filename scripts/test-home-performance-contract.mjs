@@ -22,8 +22,8 @@ assert.match(storefrontApi,/invalid_catalog_response/,'invalid successful respon
 assert.match(storefrontApi,/status>=400&&status<500/,'client errors must not be retried');
 assert.match(storefrontApi,/retryableRead&&!options[.]signal[?]2:1/,'catalog retries must be restricted to safe reads');
 const renderHome=page.slice(page.indexOf('function renderHome(){'),page.indexOf('function paintOffersPage('));
-assert.match(renderHome,/homePartial[\\s\\S]*Grande/i,'priority response should show the Grande group');
-assert.match(renderHome,/aria-busy="true"[\\s\\S]*homeRemainingBaskets/,'partial response should show remaining group placeholders');
+assert.match(renderHome,/homePartial[\s\S]*Grande/i,'priority response should show the Grande group');
+assert.match(renderHome,/aria-busy="true"[\s\S]*homeRemainingBaskets/,'partial response should show remaining group placeholders');
 
 const service=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 const home=service.slice(service.indexOf('async function home('),service.indexOf('async function sellableMap('));
