@@ -24,6 +24,12 @@ const cap=(s,n)=>String(s??'').trim().slice(0,n);
 const ok=(screen,data)=>({version:'3.0',screen,data});
 const reqText=(x,name)=>{if(typeof x!=='string'||!x.trim())throw Error(name+'_required');return x.trim()};
 const finiteTime=(now)=>{if(!Number.isFinite(now)||now<0)throw Error('lab_clock_invalid');return now};
+function inputQuantity(value){
+  if(value===undefined||value===null||value==='')return undefined;
+  const n=Number(value);
+  if(!Number.isSafeInteger(n)||n<0||n>100)throw Error('quantity_invalid');
+  return n;
+}
 const toFlowOption=(o,images)=> {
   const base={
     id:o.id,title:cap(o.title||o.name,30),
@@ -57,6 +63,7 @@ function customerData(ctx,session){
     if(p.removable)data.options.push({id:'__REMOVE__',title:'Retirar produto',description:'Não incluir este item'});
     data.selected_id=p.selected_id||'__REMOVE__';
     data.quantity=p.quantity;
+    data.quantity_label=String(p.quantity);
   }
   if(session.step==='UPSELL'){
     data.extra_options=Object.values(ctx.extrasCatalog||{}).filter(o=>o.active!==false)
@@ -150,8 +157,10 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now(),stor
       case 'preview_product': {
         if(s.step!=='PRODUCT')throw Error('wrong_step');
         const pid=data.product_id==='__REMOVE__'?null:reqText(data.product_id,'product_id');
+        const current=s.draft.selections[data.position_id];
+        const requested=inputQuantity(data.quantity);
         updated=chooseProduct(ctx,s,{positionId:reqText(data.position_id,'position_id'),
-          productId:pid,quantity:pid===null?0:undefined});
+          productId:pid,quantity:pid===null?0:(requested===undefined&&current?.quantity>0?current.quantity:requested)});
         break;
       }
       case 'commit_product': {
@@ -160,7 +169,7 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now(),stor
         // without on-select data exchange support. Always reprice server-side.
         const pid=data.product_id==='__REMOVE__'?null:reqText(data.product_id,'product_id');
         updated=chooseProduct(ctx,s,{positionId:reqText(data.position_id,'position_id'),
-          productId:pid,quantity:pid===null?0:undefined});
+          productId:pid,quantity:pid===null?0:inputQuantity(data.quantity)});
         if(publicView(ctx,updated).quote_status==='unavailable'){
           record.session=updated;
           persist();
