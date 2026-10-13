@@ -17,7 +17,7 @@ assert.match(start,/if\(!Array\.isArray\(data\?\.baskets\)\|\|!data\.baskets\.le
 assert.match(root,/home-loading-status.*Preparando suas cestas/,'skeleton must explain what is loading');
 assert.match(root,/@media\(max-width:759px\)/,'mobile-first compact hero is expected');
 assert.match(edge,/async function needsLegacyBasketCatalog\(\):Promise<boolean>/,'legacy fallback detection is required');
-assert.match(edge,/m\.metadata\?\.transition_mode\|\|""\)==="mold_only"/,'skip legacy view only for mold-only templates');
+assert.match(edge,/String\(m\?\.metadata\?\.transition_mode\|\|""\)==="mold_only"/,'skip legacy view only for mold-only templates');
 assert.match(edge,/needsLegacy\?db\.from\("basket_commercial_catalog_v1"\)/,'catalog view must run when a legacy template exists');
 assert.match(edge,/Promise\.all\(\[moldHomeCards\(priorityOnly\),needsLegacyBasketCatalog\(\)\]\)/,'parallelize independent lightweight checks');
 assert.match(edge,/HOME_CACHE_TTL_MS=120_000/,'cached home should be shared between requests');
