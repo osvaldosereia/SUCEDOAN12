@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Dona Antônia · Admin da Vitrine</title>
   <link rel="preload" href="/img/logoantonia5.png" as="image">
-  <link rel="stylesheet" href="/vitrine/admin/purchase-xml-simple.css?v=xml-r31">
+  <link rel="stylesheet" href="/vitrine/admin/purchase-xml-simple.css?v=xml-r32">
   <style>
     :root{--ink:#18221c;--muted:#66716a;--line:#e5e9e6;--soft:#f5f7f5;--brand:#176b43;--brand2:#0f5836;--danger:#9d2235;--warn:#96650b;--radius:14px}
     *{box-sizing:border-box}
@@ -5879,14 +5879,14 @@
       (costSync==='submitted'?' · custo enviado ao fornecedor no Bling (não verificado)':costSync==='pending'||costSync==='missing_supplier_link'||costSync==='missing_product_link'?' · custo Bling pendente':'')+'</div>'
       :'';
     const matchHtml=existing?'':'<div class="purchase-match-panel" data-purchase-match-panel>'+
-      '<strong>1 · Identificar produto da nota</strong>'+
-      '<p>Este item ainda não está ligado ao cadastro. Busque pelo EAN ou nome e confirme qual produto você vende por unidade. A vinculação não altera estoque, preço ou dados fiscais.</p>'+
+      '<strong>Identificar produto</strong>'+
+      '<small class="purchase-match-help">Selecione a unidade vendida. Vincular não altera estoque nem dados fiscais.</small>'+
       '<div class="purchase-match-search"><input type="search" data-purchase-match-query placeholder="EAN ou nome do produto" value="'+esc(x.commercial_gtin||x.tax_gtin||x.description||'')+'"><button class="secondary" type="button" data-purchase-match-search>Buscar produto</button></div>'+
       '<div data-purchase-match-results class="purchase-match-results"></div>'+
-      '<div data-purchase-match-selected class="purchase-match-selection">Nenhum produto selecionado.</div>'+
+      '<div data-purchase-match-selected class="purchase-match-selection" aria-live="polite">Aguardando correspondência…</div>'+
       '<div class="purchase-match-options"><label>Este EAN é da <select data-purchase-match-role><option value="base_unit">Unidade vendida</option><option value="package">Embalagem fechada</option></select></label>'+
-      '<label>EAN usado <select data-purchase-match-source><option value="commercial">Comercial: '+esc(x.commercial_gtin||'—')+'</option><option value="tax">Tributável: '+esc(x.tax_gtin||'—')+'</option></select></label></div>'+
-      '<button class="primary" type="button" data-purchase-match-confirm disabled>Confirmar vínculo com o produto escolhido</button>'+
+      '<label class="purchase-match-source-label" '+(x.commercial_gtin&&x.commercial_gtin===x.tax_gtin?'hidden':'')+'>EAN da nota <select data-purchase-match-source><option value="commercial">Comercial: '+esc(x.commercial_gtin||'—')+'</option><option value="tax">Tributável: '+esc(x.tax_gtin||'—')+'</option></select></label></div>'+
+      '<button class="primary" type="button" data-purchase-match-confirm disabled>Confirmar vínculo</button>'+
       '<details class="purchase-create-item"><summary>Não encontrou? Criar produto novo inativo</summary><label>Nome da unidade vendida <input data-purchase-create-name value="'+esc(x.description||'')+'"></label><button type="button" class="secondary" data-purchase-match-create>Criar produto inativo e vincular</button></details>'+
       '<div class="purchase-match-feedback" role="status" data-purchase-match-feedback></div>'+
       '</div>';
@@ -5917,7 +5917,7 @@
         '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-purchase-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint" data-purchase-sale-hint>'+esc(saleHint)+'</div></div>'+
       '</div>'+
       '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · autorizar este item não altera o estoque.</div></div>'+
-        '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'" '+(!existing?'disabled title="Vincule primeiro o produto acima"':'')+'>'+(approved&&['pending','missing_link'].includes(sync)?'Reenviar preço ao Bling':approved?'Revisar atualização':'3. Salvar no Admin e sincronizar preço')+'</button><span class="purchase-approval-result" data-purchase-result role="status"></span></div></div>'+
+        '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'" '+(!existing?'disabled title="Vincule primeiro o produto acima"':'')+'>'+(approved&&['pending','missing_link'].includes(sync)?'Reenviar ao Bling':approved?'Revisar atualização':'Salvar e sincronizar')+'</button><span class="purchase-approval-result" data-purchase-result role="status"></span></div></div>'+
     '</div>';
   }
   function purchaseXmlError(e){
@@ -5941,30 +5941,51 @@
   }
   async function purchaseSearchMatch(card){
     const input=card.querySelector('[data-purchase-match-query]'),results=card.querySelector('[data-purchase-match-results]');
-    const query=String(input?.value||'').trim();
-    if(query.length<2){results.textContent='Digite o EAN ou pelo menos duas letras do nome.';return}
-    results.textContent='Procurando no cadastro…';
+    const query=String(input?.value||'').trim(),token=(card._purchaseSearchToken||0)+1;
+    card._purchaseSearchToken=token;
+    if(query.length<2){results.textContent='Digite o EAN ou nome do produto.';return}
+    card.dataset.purchaseSelectedId='';
+    const confirm=card.querySelector('[data-purchase-match-confirm]');
+    if(confirm)confirm.disabled=true;
+    const selected=card.querySelector('[data-purchase-match-selected]');
+    if(selected)selected.textContent='Procurando correspondência…';
+    results.textContent='Buscando…';
     try{
       const found=await purchaseApi('search_products',{query});
-      const products=found.items||[];
+      if(!card.isConnected||card._purchaseSearchToken!==token)return;
+      const products=Array.isArray(found.items)?found.items:[];
       results.innerHTML=products.length?products.map(p=>
         '<button type="button" class="purchase-match-choice" data-purchase-select-id="'+esc(p.id)+'">'+
         '<strong>'+esc(p.name)+'</strong><small>EAN '+esc(p.gtin||'—')+' · '+(p.is_active===false?'inativo':'ativo')+'</small></button>'
-      ).join(''):'<small>Não encontrado. Confira a escrita ou utilize “Criar produto novo inativo”.</small>';
+      ).join(''):'<small>Produto não encontrado. Busque pelo nome ou crie um cadastro inativo.</small>';
       card._purchaseCandidates=products;
-      results.querySelectorAll('[data-purchase-select-id]').forEach(btn=>btn.onclick=()=>{
+      const choose=(btn,automatic=false)=>{
         const product=products.find(p=>p.id===btn.dataset.purchaseSelectId);
         if(!product)return;
         card.dataset.purchaseSelectedId=product.id;
-        card.querySelector('[data-purchase-match-selected]').textContent='Selecionado: '+product.name+' · EAN '+(product.gtin||'sem EAN');
+        if(selected)selected.textContent=(automatic?'EAN exato encontrado: ':'Selecionado: ')+product.name+' · confira e confirme.';
         const detail=state.purchaseDetailCache?.[card.dataset.documentId],item=(detail?.items||[]).find(x=>x.id===card.dataset.purchaseItem);
         const raw=String(product.gtin||''),commercial=String(item?.commercial_gtin||''),tax=String(item?.tax_gtin||'');
         const source=card.querySelector('[data-purchase-match-source]');
         if(source)source.value=raw&&raw===tax&&raw!==commercial?'tax':'commercial';
-        card.querySelector('[data-purchase-match-confirm]').disabled=false;
+        if(confirm)confirm.disabled=false;
         results.querySelectorAll('.purchase-match-choice').forEach(b=>b.classList.toggle('selected',b===btn));
-      });
-    }catch(e){results.textContent=purchaseXmlError(e)}
+      };
+      results.querySelectorAll('[data-purchase-select-id]').forEach(btn=>btn.onclick=()=>choose(btn));
+      // Um único EAN exato já fica selecionado na tela, sem gravação automática.
+      const detail=state.purchaseDetailCache?.[card.dataset.documentId],item=(detail?.items||[]).find(x=>x.id===card.dataset.purchaseItem);
+      const gtins=[item?.commercial_gtin,item?.tax_gtin].map(x=>String(x||'').replace(/[^0-9]/g,'')).filter(Boolean);
+      const exact=products.filter(p=>gtins.includes(String(p.gtin||'').replace(/[^0-9]/g,'')));
+      if(exact.length===1&&gtins.length){
+        const btn=[...results.querySelectorAll('[data-purchase-select-id]')].find(b=>b.dataset.purchaseSelectId===exact[0].id);
+        if(btn)choose(btn,true);
+      }else if(selected)selected.textContent=products.length?'Escolha uma correspondência acima.':'Nenhum produto selecionado.';
+    }catch(e){
+      if(card.isConnected&&card._purchaseSearchToken===token){
+        results.textContent=purchaseXmlError(e);
+        if(selected)selected.textContent='Busca não concluída. Tente novamente.';
+      }
+    }
   }
   async function purchaseConfirmMatch(card,createNew=false){
     const id=card.dataset.purchaseItem,docId=card.dataset.documentId,
@@ -6258,12 +6279,20 @@
   function renderPurchaseDocumentInline(id,data){
     const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(!host)return;
     const d=data?.document||{},items=data?.items||[];
+    // Cadastro concluído é diferente de pendência de sincronização com Bling.
+    const finished=items.filter(x=>Boolean(x?.metadata?.catalog_approved_at)&&
+      ['confirmed','not_requested'].includes(String(x?.metadata?.bling_sale_status||'')));
+    const pending=items.filter(x=>!finished.includes(x)).sort((a,b)=>
+      Number(Boolean(a?.product_id))-Number(Boolean(b?.product_id))||Number(a.item_number||0)-Number(b.item_number||0));
+    const pendingBling=pending.filter(x=>x?.metadata?.catalog_approved_at).length;
     host.style.display='block';
     host.innerHTML=
       '<div class="purchase-detail-head"><div><h3>Produtos e preços</h3><p>'+esc(d.supplier_name||'Fornecedor')+' · '+items.length+' item(ns) · custos sempre calculados na unidade de venda (UN).</p></div>'+
       '<div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-inline-xml="'+esc(id)+'">Ver XML</button></div></div>'+
-      '<div class="purchase-safe '+(d.recipient_kind==='CPF'?'purchase-danger':'')+'"><strong>Confira antes de atualizar o produto</strong><small>O custo vem da NF-e convertido para unidade. A margem de 40% é apenas o mínimo sugerido; se o preço atual já for maior, ele é mantido automaticamente.</small></div>'+
-      '<div class="purchase-items">'+(items.length?items.slice().sort((a,b)=>Number(Boolean(a?.metadata?.catalog_approved_at&&!['pending','missing_link'].includes(a?.metadata?.bling_sale_status)))-Number(Boolean(b?.metadata?.catalog_approved_at&&!['pending','missing_link'].includes(b?.metadata?.bling_sale_status)))).map(purchaseItemCardHtml).join(''):'<div class="empty">Nenhum item encontrado na nota.</div>')+'</div>'+
+      '<div class="purchase-compact-note">Custos da NF-e por unidade · margem sugerida de 40% · salvar não altera estoque.</div>'+
+      '<div class="purchase-review-counts" role="status"><strong>'+pending.length+' para conferir</strong>'+(pendingBling?' · '+pendingBling+' pendente(s) no Bling':'')+' · '+finished.length+' concluído(s)</div>'+
+      '<div class="purchase-items">'+(pending.length?pending.map(purchaseItemCardHtml).join(''):(items.length?'<div class="purchase-compact-note">Nenhum produto pendente nesta nota.</div>':'<div class="empty">Nenhum item encontrado na nota.</div>'))+'</div>'+
+      (finished.length?'<details class="purchase-completed-items"><summary>✓ '+finished.length+' produto(s) concluído(s) — ver histórico</summary><div class="purchase-items">'+finished.map(purchaseItemCardHtml).join('')+'</div></details>':'')+
       (items.some(x=>x.product_id&&!x?.metadata?.catalog_approved_at)
         ?'<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Salvar todos os produtos já identificados</button></div>':'')+
       '<details class="purchase-receipt-stage"><summary>Etapa seguinte: recebimento e lotes do estoque (sem alterar estoque agora)</summary>'+
