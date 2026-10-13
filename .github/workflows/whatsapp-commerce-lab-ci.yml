@@ -1,0 +1,35 @@
+name: Dona Antonia WhatsApp Commerce Lab (isolated)
+on:
+  push:
+    branches:
+      - lab/whatsapp-commerce-isolated-20261013
+    paths:
+      - 'labs/whatsapp-commerce/**'
+      - '.github/workflows/whatsapp-commerce-lab-ci.yml'
+permissions:
+  contents: read
+jobs:
+  test-lab-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reject edits outside laboratory and this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --quiet
+          while IFS= read -r path; do
+            case "$path" in
+              labs/whatsapp-commerce/*|.github/workflows/whatsapp-commerce-lab-ci.yml) ;;
+              *) echo "::error::Forbidden production path modified: $path"; exit 1 ;;
+            esac
+          done < <(git diff --name-only origin/main...HEAD)
+      - name: Run isolated lab tests
+        run: node --test labs/whatsapp-commerce/tests/*.test.mjs
+      - name: Check whitespace and patch integrity
+        run: git diff --check origin/main...HEAD
