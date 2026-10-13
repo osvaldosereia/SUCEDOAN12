@@ -308,7 +308,7 @@ async function applyPostorderQuickReply(payload:any,message:any,ingest:any){
   const applied=await db.rpc("ops4_apply_postorder_quickreply_v1",{
     p_order_id:parsed.orderId,
     p_account_id:message.whatsapp_account_id,
-    p_phone_e164:String(message.phone_e164||"").replace(/\\D/g,""),
+    p_phone_e164:String(message.phone_e164||"").replace(/\D/g,""),
     p_action:parsed.action,
     p_nonce_hash:nonceHash,
     p_provider_message_id:message.provider_message_id
