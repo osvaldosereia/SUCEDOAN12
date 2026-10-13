@@ -32,12 +32,13 @@ export function validateModel(model){
 }
 function modelById(catalog,id){
   assert(Array.isArray(catalog?.models),'catalog_missing');
-  const m=catalog.models.find(m=>m.id===id);assert(m,'model_not_found');
+  const m=catalog.models.find(m=>m.id===id&&(composition===null||m.composition===composition))
+    ||catalog.models.find(m=>m.id===id);assert(m,'model_not_found');
   return validateModel(m);
 }
 const positionById=(m,id)=>{const p=m.positions.find(x=>x.id===id);assert(p,'position_not_found');return p};
 export function beginDraft(catalog,modelId,composition=1){
-  const m=modelById(catalog,modelId);
+  const m=modelById(catalog,modelId,composition);
   assert(int(composition)&&composition>0,'composition_invalid');
   assert(composition===m.composition,'composition_not_in_snapshot');
   return {model_id:m.id,composition,revision:0,status:'draft',basket_quantity:1,
@@ -51,7 +52,7 @@ function allowedOption(position,optionId){
 }
 export function changeSelection(catalog,draft,positionId,productId,quantity){
   assert(draft.status==='draft','draft_locked');
-  const m=modelById(catalog,draft.model_id),p=positionById(m,positionId),o=allowedOption(p,productId);
+  const m=modelById(catalog,draft.model_id,draft.composition),p=positionById(m,positionId),o=allowedOption(p,productId);
   const qty=quantity===undefined?(o?p.quantity:0):quantity;
   assert(int(qty)&&qty>=0&&qty<=100,'quantity_invalid');
   assert(Boolean(o)||qty===0,'removed_quantity_must_be_zero');
@@ -117,7 +118,7 @@ function lineTotal(model,draft,stock,extraCatalog){
 }
 export function quoteInternal(catalog,draft,inventory={},extraCatalog={}){
   assert(int(draft.basket_quantity)&&draft.basket_quantity>0&&draft.basket_quantity<=20,'invalid_basket_quantity');
-  const m=modelById(catalog,draft.model_id);
+  const m=modelById(catalog,draft.model_id,draft.composition);
   assert(draft.composition===m.composition,'composition_version_changed');
   const data=lineTotal(m,draft,inventory,extraCatalog);
   // The fixed adjustment applies to every basket, including empty/replaced components.
