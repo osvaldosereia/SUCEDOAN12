@@ -34,6 +34,23 @@ assert.match(ui,/data-mold-product-option/);
 assert.match(ui,/data-mold-save/);
 assert.equal(/kit interno|kit base|assembly_kit/i.test(ui),false,'normal mold editor must not teach internal kits');
 
+// Preferred option is saved as position-option metadata and never requires a schema change.
+assert.match(ui,/data-mold-prefer-option/);
+assert.match(ui,/data-mold-selected-product/);
+assert.match(ui,/preferred:o\.metadata\?\.preferred===true/);
+assert.match(ui,/metadata:\{\.\.\.\(o\.metadata\|\|\{\}\),preferred:o\.preferred===true\}/);
+assert.match(ui,/editar_produto/);
+const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
+assert.match(adminHtml,/params\.get\('editar_produto'\)/);
+assert.match(adminHtml,/uuid\.test\(directProductId\)/);
+assert.match(adminHtml,/openProductEditor\(\{id:directProductId\}\)/);
+const compositionSQL=fs.readFileSync('supabase/migrations/20261013122000_basket_mold_preferred_product_v1.sql','utf8');
+assert.match(compositionSQL,/metadata.*preferred/);
+assert.match(compositionSQL,/bool_or\(s\.is_preferred\)/);
+assert.match(compositionSQL,/when r\.has_preferred then 1/);
+assert.match(compositionSQL,/preferred_in_stock/);
+assert.match(compositionSQL,/available_stock/);
+
 // Gateway forwards the logged-in admin JWT and never loads a privileged server key.
 assert.match(api,/SUPABASE_ANON_KEY/);
 assert.equal(/SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEYS/.test(api),false,'mold gateway must not load privileged database secrets');
