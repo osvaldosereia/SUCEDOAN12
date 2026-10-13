@@ -28,6 +28,8 @@ try{
  await page.setViewportSize({width:320,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  // Run the complete public page too: test script loading, home wiring and existing detail navigation.
  const app=await browser.newPage({viewport:{width:390,height:844}}),errors=[];app.on('pageerror',e=>errors.push(e.message));
+ let releaseFullCatalog;
+ const fullCatalogGate=new Promise(resolve=>{releaseFullCatalog=resolve});
  const offered={...basket,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub',category_slug:'cestas-completas',category_name:'Cestas Completas'};
  const later={...offered,id:'33333333-3333-4333-8333-333333333333',lot_id:'44444444-4444-4444-8444-444444444444',subcategory_id:'sub2',name:'Cesta depois'};
  await app.route('**/*',async route=>{
@@ -36,7 +38,7 @@ try{
      const action=u.searchParams.get('action');
      const taxonomy=[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'},{id:'sub2',name:'Média'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}];
      if(action==='home_priority')return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,priority:true,baskets:[offered],basket_categories:taxonomy,categories:[]})});
-     if(action==='home'){await new Promise(resolve=>setTimeout(resolve,180));return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,baskets:[offered,later],basket_categories:taxonomy,categories:[]})})}
+     if(action==='home'){await fullCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,baskets:[offered,later],basket_categories:taxonomy,categories:[]})})}
      const response=action==='basket'?{ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))}:{ok:true,offers:[]};
      return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(response)});
    }
@@ -49,9 +51,28 @@ try{
  assert.equal(await app.locator('.basket-card-photo img').count(),1,'priority basket subgroup should render before the full catalog response');
  assert.deepEqual(await app.locator('#basketSections .basket-subgroup-title').allTextContents(),['Grande'],'first render should only show the first visible subgroup');
  assert.ok(await app.locator('#homeRemainingBaskets').isVisible(),'remaining basket groups should have a non-blocking loading placeholder');
+ // Wait until the priority basket is visible before releasing the full API response.
+ await app.evaluate(()=>{
+   window.__r3PriorityCard=document.querySelector('#basketSections .basket-card');
+   window.__r3PriorityPhoto=document.querySelector('#basketSections .basket-card-photo img');
+   window.__r3Hero=document.querySelector('.home-hero');
+   window.__r3Offers=document.querySelector('#homeOffersMount');
+   window.__r3Offers.dataset.r3Sentinel='kept';
+ });
+ assert.equal(await app.locator('#basketSections .basket-card-photo img').first().getAttribute('fetchpriority'),'high');
+ releaseFullCatalog();
  await app.locator('#basketSections .basket-subgroup-title').filter({hasText:'Média'}).waitFor();
  assert.equal(await app.locator('.basket-card-photo img').count(),2,'the full basket list should fill in after the priority subgroup');
  assert.equal(await app.locator('#homeRemainingBaskets').count(),0,'the loading placeholder should be replaced by the full basket list');
+ const preserved=await app.evaluate(()=>({
+   card:document.querySelector('#basketSections .basket-card')===window.__r3PriorityCard,
+   photo:document.querySelector('#basketSections .basket-card-photo img')===window.__r3PriorityPhoto,
+   hero:document.querySelector('.home-hero')===window.__r3Hero,
+   offers:document.querySelector('#homeOffersMount')===window.__r3Offers,
+   offersSentinel:document.querySelector('#homeOffersMount')?.dataset.r3Sentinel
+ }));
+ assert.deepEqual(preserved,{card:true,photo:true,hero:true,offers:true,offersSentinel:'kept'},'full catalog must not recreate visible cards, images, hero or offers');
+ assert.equal(await app.locator('#basketSections .basket-card-photo img').nth(1).getAttribute('loading'),'lazy','non-priority photos must load lazily');
  assert.equal(await app.locator('.home-shortcuts button').count(),4);
  assert.equal(await app.locator('.home-hero h1').innerText(),'Sua compra do dia a dia');
  assert.equal(await app.locator('.nav-shell').isVisible(),false);
