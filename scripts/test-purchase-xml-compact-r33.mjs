@@ -75,22 +75,10 @@ assert.match(api,/lot_expiration_date:exp\|\|null/);
   let calls=[];
   const state={purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,
     purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false};
-  const load=new Function('state','purchaseApi','
+  const load=new Function('state','purchaseApi','$','paintPurchases','purchaseXmlError','purchaseFilterPayload',
     advanced+bling+'return {loadPurchaseAdvanced,loadPurchaseBlingComparison};')(
       state,async (action)=>{calls.push(action);return {ok:true,items:[],documents:[]}},
       ()=>null,()=>{},String,()=>({period:'this_month'})
-    );
-  await load.loadPurchaseAdvanced();
-  assert.deepEqual(calls,['catalog_queue'],'expanding the index must not query Bling');
-  await load.loadPurchaseBlingComparison();
-  assert.deepEqual(calls,['catalog_queue','browse_bling'],'Bling loads only after explicit comparison');
-}
-
-console.log('PASS R33: JS parsing, lightweight initial load, safe identity linking, compact cards, optional lot expiration and single invoice editor');
-,'paintPurchases','purchaseXmlError','purchaseFilterPayload',
-    advanced+bling+'return {loadPurchaseAdvanced,loadPurchaseBlingComparison};')(
-      state,async (action)=>{calls.push(action);return {ok:true,items:[],documents:[]}},
-      ()=>null,()=>{},String
     );
   await load.loadPurchaseAdvanced();
   assert.deepEqual(calls,['catalog_queue'],'expanding the index must not query Bling');
