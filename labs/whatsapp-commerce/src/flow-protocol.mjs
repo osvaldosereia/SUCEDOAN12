@@ -108,11 +108,13 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now(),stor
     if(record.expiresAt<=finiteTime(now())){sessions.delete(token);persist();throw Error('session_expired')}
     return record;
   }
-  function register(token,modelId,composition=1){
+  function register(token,modelId,composition=1,recipientPhone=null){
     if(!VALID_TOKEN.test(token))throw Error('invalid_lab_flow_token');
     if(sessions.has(token))throw Error('token_already_in_use');
+    if(recipientPhone!==null&&!/^55\d{10,11}$/.test(recipientPhone))
+      throw Error('lab_recipient_invalid');
     const session=createLabSession({...ctx,modelId,composition});
-    sessions.set(token,{session,expiresAt:finiteTime(now())+ttlMs});
+    sessions.set(token,{session,recipientPhone,expiresAt:finiteTime(now())+ttlMs});
     persist();
     return {token,screen:SCREENS[session.step],data:customerData(ctx,session)};
   }
@@ -208,7 +210,16 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now(),stor
     persist();
     return result;
   }
-  return {register,handle,refresh,confirmSimulatedOnly,
+  function confirmFromSignedReply(token,messageId,senderPhone){
+    const record=get(token);
+    if(!record.recipientPhone||record.recipientPhone!==senderPhone)
+      throw Error('lab_reply_phone_mismatch_or_unbound');
+    if(typeof messageId!=='string'||messageId.length<8||messageId.length>250||
+      !/^wamid\.[A-Za-z0-9._:+/=-]+$/.test(messageId))
+      throw Error('lab_reply_message_id_invalid');
+    return confirmSimulatedOnly(token,messageId);
+  }
+  return {register,handle,refresh,confirmSimulatedOnly,confirmFromSignedReply,
     stats:()=>({sessions:sessions.size,simulatedOrders:orders.size})};
 }
 export function safeLabFlowError(error){
