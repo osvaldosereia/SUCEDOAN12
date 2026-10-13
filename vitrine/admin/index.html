@@ -1459,7 +1459,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -5823,12 +5823,18 @@
     host.innerHTML='<div class="loading">Carregando compras de '+esc(purchasePeriodLabel())+'…</div>';
     try{
       const filter=purchaseFilterPayload();
+      const filterKey=JSON.stringify(filter);
+      if(state.purchaseBlingCompareKey!==filterKey){
+        state.purchaseBlingCompareKey=filterKey;
+        state.purchaseBlingCompareLoaded=false;
+        state.purchaseBlingCompareError='';
+        state.purchaseBlingBrowse={ok:null,documents:[],count:0};
+      }
       // Fast path: opening Compras/XML must not wait for Bling OAuth, pricing
       // configuration or the 31-day product queue. Advanced data loads on demand.
       const result=await purchaseApi('summary',filter);
       state.purchaseXml=result;
       if(!state.purchaseAdvancedLoaded){
-        state.purchaseBlingBrowse={ok:null,documents:[],count:0};
         state.purchaseCatalogQueue={ok:true,items:[],counts:{}};
       }
       // Daily reminder is best-effort and must not delay the note list.
@@ -5852,16 +5858,34 @@
     state.purchaseAdvancedLoading=true;
     state.purchaseAdvancedError='';
     try{
-      const values=await Promise.allSettled([
-        purchaseApi('catalog_queue',{lookback_days:31}),
-        purchaseApi('browse_bling',purchaseFilterPayload())
-      ]);
-      state.purchaseCatalogQueue=values[0].status==='fulfilled'?values[0].value:{ok:false,items:[],counts:{},error:String(values[0].reason?.message||'Falha ao carregar catálogo')};
-      state.purchaseBlingBrowse=values[1].status==='fulfilled'?values[1].value:{ok:false,documents:[],count:0,error:String(values[1].reason?.message||'Falha na consulta ao Bling')};
+      state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
       state.purchaseAdvancedLoaded=true;
-      if(values.some(x=>x.status!=='fulfilled'))state.purchaseAdvancedError='Algumas consultas avançadas falharam. Tente novamente.';
+    }catch(e){
+      state.purchaseAdvancedError=purchaseXmlError(e);
+      state.purchaseAdvancedLoaded=false;
     }finally{
       state.purchaseAdvancedLoading=false;
+      if($('#purchaseBody'))paintPurchases();
+    }
+  }
+  async function loadPurchaseBlingComparison(){
+    if(state.purchaseBlingCompareLoading||state.purchaseBlingCompareLoaded)return;
+    const filter=purchaseFilterPayload(), key=JSON.stringify(filter);
+    state.purchaseBlingCompareKey=key;
+    state.purchaseBlingCompareLoading=true;
+    state.purchaseBlingCompareError='';
+    try{
+      const result=await purchaseApi('browse_bling',filter);
+      if(state.purchaseBlingCompareKey!==key)return;
+      state.purchaseBlingBrowse=result;
+      state.purchaseBlingCompareLoaded=true;
+    }catch(e){
+      if(state.purchaseBlingCompareKey!==key)return;
+      state.purchaseBlingCompareError=purchaseXmlError(e);
+      state.purchaseBlingCompareLoaded=false;
+      state.purchaseBlingBrowse={ok:false,documents:[],count:0};
+    }finally{
+      state.purchaseBlingCompareLoading=false;
       if($('#purchaseBody'))paintPurchases();
     }
   }
@@ -6900,13 +6924,17 @@
         '<div class="empty" id="purchaseNoFilterResults" style="display:none">Nenhuma nota corresponde à pesquisa.</div>'+
       '</section>'+
       '<details id="purchaseAdvanced" class="panel purchase-extra" '+(state.purchaseAdvancedOpen?'open':'')+'><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
-      (!state.purchaseAdvancedLoaded||state.purchaseAdvancedError?'<div class="purchase-compact-note">'+esc(state.purchaseAdvancedError||'Abra para carregar a conferência avançada.')+'</div>':'')+
+      (!state.purchaseAdvancedLoaded||state.purchaseAdvancedError?'<div class="purchase-compact-note">'+esc(state.purchaseAdvancedError|| (state.purchaseAdvancedLoading?'Carregando índice…':'Abra para carregar a conferência avançada.'))+'</div>'+(state.purchaseAdvancedError?'<button class="secondary" type="button" id="purchaseRetryAdvanced">Tentar novamente</button>':''):'')+
       purchaseCatalogQueueHtml()+
       xmlCatalogSectionHtml()+
       ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto.':'')+'</small></div>':'')+
       (last?'<div class="bling-banner"><strong>'+esc(runSource)+' · '+esc(runStatus)+'</strong><small>'+dateTime(last.started_at||last.created_at)+' · '+esc(last.documents_processed||0)+' nova(s) · '+esc(last.documents_duplicate||0)+' já existente(s) · '+esc(last.documents_failed||0)+' falha(s)</small></div>':'')+
-      '<details class="panel" style="margin-top:14px"><summary class="history-title" style="cursor:pointer;padding:12px 14px"><div><strong>Comparar com as notas do Bling</strong><span>Lista somente para conferência; não é outra fila de trabalho.</span></div><b>'+blingDocs.length+'</b></summary>'+
-        (blingDocs.length?blingDocs.map(x=>{
+      '<details id="purchaseBlingCompare" class="panel" style="margin-top:8px" '+(state.purchaseBlingCompareOpen?'open':'')+'><summary class="history-title" style="cursor:pointer;padding:8px 10px"><div><strong>Comparar com o Bling</strong><span>Consulta sob demanda, não bloqueia a lista de notas.</span></div><b>'+(state.purchaseBlingCompareLoaded?blingDocs.length:'—')+'</b></summary>'+
+      (!state.purchaseBlingCompareLoaded?
+        '<div class="purchase-compact-note">'+esc(state.purchaseBlingCompareError|| (state.purchaseBlingCompareLoading?'Consultando o Bling…':'Abra para consultar as notas registradas no Bling.'))+'</div>'+
+        (state.purchaseBlingCompareError?'<button type="button" class="secondary" id="purchaseRetryBlingCompare">Tentar novamente</button>':'')
+        :'')+
+        (state.purchaseBlingCompareLoaded && blingDocs.length?blingDocs.map(x=>{
           const imported=importedIds.has(Number(x.bling_nfe_id||0))||(x.access_key&&importedKeys.has(String(x.access_key)));
           return '<div class="purchase-doc-row">'+
             '<div><strong>'+esc(x.issued_at?dateOnly(String(x.issued_at).slice(0,10)):'—')+'</strong><span class="sub">#'+esc(x.number||x.bling_nfe_id||'—')+'</span></div>'+
@@ -6914,7 +6942,7 @@
             '<div><span class="pill '+(imported?'':'warn')+'">'+(imported?'Já importada':'Falta importar')+'</span></div>'+
             '<div class="sub">'+esc(x.access_key?String(x.access_key).slice(-10):'—')+'</div><div></div><div></div><div></div>'+
           '</div>';
-        }).join(''):'<div class="empty">'+(browse.ok===false?'Não consegui consultar o Bling agora.':'Nenhuma nota registrada no Bling nesse período.')+'</div>')+
+        }).join(''):state.purchaseBlingCompareLoaded?'<div class="empty">Nenhuma nota registrada no Bling nesse período.</div>':'')+
       '</details>'+
       '</details>';
     const purchaseQuickSearch=$('#purchaseQuickSearch');
@@ -6941,11 +6969,22 @@
     const advanced=$('#purchaseAdvanced');
     if(advanced)advanced.ontoggle=()=>{
       state.purchaseAdvancedOpen=advanced.open;
-      if(advanced.open&&!state.purchaseAdvancedLoaded)loadPurchaseAdvanced().catch(e=>{
-        state.purchaseAdvancedError=purchaseXmlError(e);
-        state.purchaseAdvancedLoading=false;
-        toast(state.purchaseAdvancedError);
-      });
+      if(advanced.open&&!state.purchaseAdvancedLoaded&&!state.purchaseAdvancedLoading&&!state.purchaseAdvancedError)loadPurchaseAdvanced();
+    };
+    const advancedRetry=$('#purchaseRetryAdvanced');
+    if(advancedRetry)advancedRetry.onclick=()=>{
+      state.purchaseAdvancedError='';
+      loadPurchaseAdvanced();
+    };
+    const compare=$('#purchaseBlingCompare');
+    if(compare)compare.ontoggle=()=>{
+      state.purchaseBlingCompareOpen=compare.open;
+      if(compare.open&&!state.purchaseBlingCompareLoaded&&!state.purchaseBlingCompareLoading&&!state.purchaseBlingCompareError)loadPurchaseBlingComparison();
+    };
+    const compareRetry=$('#purchaseRetryBlingCompare');
+    if(compareRetry)compareRetry.onclick=()=>{
+      state.purchaseBlingCompareError='';
+      loadPurchaseBlingComparison();
     };
     host.querySelectorAll('[data-purchase-toggle]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,a,input,label'))return;togglePurchaseDocument(row.dataset.purchaseToggle)});
     host.querySelectorAll('[data-purchase-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();togglePurchaseDocument(b.dataset.purchaseOpen,true)});
