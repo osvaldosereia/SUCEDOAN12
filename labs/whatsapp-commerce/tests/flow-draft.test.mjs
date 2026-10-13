@@ -48,7 +48,10 @@ test('Interactive mock UI cannot connect to external systems',()=>{
  assert.ok(!p.includes('<script type="module">'), 'CSP forbids inline ES modules');
  const app=read('preview/app.mjs');
  assert.ok(app.includes('../fixtures/fake-catalog.mjs'));
- assert.ok(!/https?:\/\/|wss?:\/\/|fetch\(|WebSocket\(|sendBeacon\(/.test(app),'Preview module must remain offline');
+ // The only literal HTTP URL in the UI source is the standard static SVG XML namespace,
+ // which is a data-URI declaration, not an outgoing request.
+ const noSvgNamespace=app.replaceAll('http://www.w3.org/2000/svg','');
+ assert.ok(!/https?:\/\/|wss?:\/\/|fetch\(|WebSocket\(|sendBeacon\(/.test(noSvgNamespace),'Preview module must remain offline');
  assert.ok(p.includes('Sem mensagens')||p.includes('sem mensagens'));
  assert.ok(!/https?:\/\/|wss?:\/\//.test(p),'Preview must not fetch from external hosts');
  assert.ok(!p.includes('fetch('));
