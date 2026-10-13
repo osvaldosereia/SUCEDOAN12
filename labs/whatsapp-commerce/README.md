@@ -123,3 +123,28 @@ the moment a user confirms an order.
 4. Verify eligibility and price reconciliation for substitutions/removals.
 5. Dedicated Meta TEST WABA/number connection; never publish or send
    using the existing 0975/1018 production numbers during lab work.
+
+
+## R35: Meta integration preparation — still not deployed
+
+- Prepared a DRAFT Flow JSON 7.3 pilot with six screen definitions. This is
+  deliberately one product-screen for API validation; no unsupported
+  assumption that 27 sequential product steps can loop through a single Flow
+  screen. Full paging design is blocked until Meta's validator confirms it.
+- Prepared four da_lab_* template review payloads in templates/drafts.json.
+  Three Utility drafts relate strictly to order status; one separate Marketing
+  draft is for optional offers. None was submitted, sent or approved by Meta.
+  The Meta account may reclassify template categories on review.
+- Implemented src/meta-crypto.mjs as an isolated Node crypto reference for
+  encrypted Flow requests: RSA-OAEP SHA-256, AES-128-GCM, flipped IV for
+  encrypted responses. All test keys are ephemeral and generated in memory.
+  The file is NOT a production endpoint and must not be exposed to the web.
+- Added a server-only adapter in src/mold-adapter.mjs to map real commercial
+  basket molds, currently selected composition IDs, effective offer prices,
+  and hidden fixed/conditional adjustments into the isolated price engine.
+  All adapter tests use fabricated model data; no confidential snapshots
+  are stored in this repository.
+- A test WABA and dedicated test sender are needed before Graph API creation
+  or Meta submission. They are not configured by this branch. Do NOT reuse
+  Meta credentials or sender IDs associated with currently operating 0975
+  or 1018 messaging.
