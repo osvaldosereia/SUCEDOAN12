@@ -121,6 +121,9 @@
 #content .purchase-item-collapsible {margin:0}
 #content .purchase-item-compact-summary {list-style:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(105px,auto) auto;gap:9px;align-items:center;padding:7px 10px;cursor:pointer;min-height:42px;background:#fff}
 #content .purchase-item-compact-summary::-webkit-details-marker {display:none}
+#content .purchase-item-compact-summary {position:relative;padding-right:27px}
+#content .purchase-item-compact-summary::after {content:'⌄';position:absolute;right:10px;top:50%;transform:translateY(-60%);font-size:17px;font-weight:700;color:#607067;line-height:1}
+#content .purchase-item-collapsible[open] > .purchase-item-compact-summary::after {transform:translateY(-35%) rotate(180deg)}
 #content .purchase-item-compact-summary:focus-visible {outline:2px solid #176b43;outline-offset:-2px}
 #content .purchase-item-collapsible[open] > .purchase-item-compact-summary {background:#f1f7f3;border-bottom:1px solid #dce8e0}
 #content .purchase-item-compact-summary .pill {white-space:nowrap;font-size:10px;padding:3px 6px}
