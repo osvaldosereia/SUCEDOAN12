@@ -43,7 +43,7 @@ test('Native radio choices, dynamic data exchange and real WhatsApp privacy guar
 test('Interactive mock UI cannot connect to external systems',()=>{
  const p=read('preview/index.html');
  assert.ok(p.includes("connect-src 'none'"));
- assert.ok(p.includes('SIMULATED')||p.includes('Simulação'));
+ assert.match(p,/simula(?:ç|c)(?:ã|a)o|simulado/i);
  assert.ok(p.includes('../fixtures/fake-catalog.mjs'));
  assert.ok(p.includes('Sem mensagens')||p.includes('sem mensagens'));
  assert.ok(!/https?:\/\/|wss?:\/\//.test(p),'Preview must not fetch from external hosts');
