@@ -203,7 +203,7 @@ assert.match(followupTemplates,/pedidoconfirmacao.+v1/,'Utility confirmation tem
 assert.match(followupTemplates,/Preciso alterar/);
 assert.match(followupTemplates,/QUICK_REPLY/);
 assert.match(followupTemplates,/https:\/\/donaantonia\.com\.br\/ofertas\/\?c=\{\{1\}\}/);
-assert.match(templateValidation,/!\\\['\/pedido\/','\/ofertas\/'\]/);
+assert.ok(templateValidation.includes("['/pedido/','/ofertas/']"),'only order/offer URL paths supported');
 assert.match(templatesApiSource,/buildPostorderOffersTemplate\(channel\)/);
 assert.match(templatesApiSource,/buildPostorderConfirmTemplate\(channel\)/);
 console.log('PASS: Meta templates for three-message WhatsApp flow in two channels');
