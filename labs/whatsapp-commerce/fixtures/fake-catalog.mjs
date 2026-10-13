@@ -12,23 +12,26 @@ export function makeFakeCatalog(){
     version:'lab-fake-1',
     models:sizes.flatMap(([name,size,base],i)=>
       [1,2,3].map(composition=>{
+        const conditionalProductId='lab-conditional-'+(i+1);
         const positions=Array.from({length:size},(_,j)=>{
           const id='pos-'+j,price=150+(j%7)*130+(i*50),key=(i+1)+'-'+composition+'-'+j;
+          const options=[
+            {id:j===0&&composition===2?conditionalProductId:key+'-a',name:'Marca A • '+(j+1),price_cents:price,active:true,image_url:''},
+            {id:key+'-b',name:'Marca B • '+(j+1),price_cents:price+125,active:true,image_url:''},
+            {id:key+'-c',name:'Marca C • '+(j+1),price_cents:price+250,active:true,image_url:''}
+          ];
+          if(j===0&&composition!==2)options.push({id:conditionalProductId,name:'Marca condicional',price_cents:price,active:true,image_url:''});
           return {id,label:['Arroz','Feijão','Café','Óleo','Açúcar','Macarrão','Higiene'][j%7],
-            quantity:1,removable:true,default_id:key+'-a',options:[
-              {id:key+'-a',name:'Marca A • '+(j+1),price_cents:price,active:true,image_url:''},
-              {id:key+'-b',name:'Marca B • '+(j+1),price_cents:price+125,active:true,image_url:''},
-              {id:key+'-c',name:'Marca C • '+(j+1),price_cents:price+250,active:true,image_url:''}
-            ]};
+            quantity:1,removable:true,default_id:options[0].id,options};
         });
-        const productSum=positions.reduce((t,p)=>t+p.options[0].price_cents*p.quantity,0);
+        const productSum=positions.reduce((t,p)=>t+p.options.find(o=>o.id===p.default_id).price_cents*p.quantity,0);
         const target=base+(composition-1)*350;
         return {
           id:'lab-'+(i+1), name,composition,
           pricing:{
-            fixed_hidden_cents:target-productSum,
-            conditional_enabled:composition===2,
-            conditional_product_id:positions[0].default_id,
+            fixed_hidden_cents:target-productSum-(composition===2?275:0),
+            conditional_enabled:true,
+            conditional_product_id:conditionalProductId,
             conditional_cents:275
           },
           positions
