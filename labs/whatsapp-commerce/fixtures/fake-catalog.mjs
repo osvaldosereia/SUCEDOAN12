@@ -43,6 +43,9 @@ export function makeFakeCatalog(){
 export function makeFakeStock(catalog,amount=50){
   const s={};for(const m of catalog.models)for(const p of m.positions)
     for(const o of p.options)s[o.id]=amount;
+  // All extra products in this fixture are fictitious too. Without mock stock,
+  // completing an upsell would be rejected despite the selectable checkbox.
+  for(const id of Object.keys(fakeExtraCatalog))s[id]=amount;
   return s;
 }
 export const fakeExtraCatalog={
