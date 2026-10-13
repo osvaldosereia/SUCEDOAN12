@@ -258,8 +258,7 @@ begin
     'items',v_rows
   );
 end;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.ops2_admin_attendance_reconcile_customer_v1(p_conversation_id uuid)
  RETURNS jsonb
@@ -381,4 +380,4 @@ begin
     'phone_e164',v_phone
   );
 end;
-$function$
+$function$;
