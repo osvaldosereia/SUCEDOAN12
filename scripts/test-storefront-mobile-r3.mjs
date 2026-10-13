@@ -10,7 +10,7 @@ const inline=[...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
 assert.ok(inline,'public inline script must be present');
 new vm.Script(inline,{filename:'index.html'});
 new vm.Script(carousel,{filename:'basket-carousel.js'});
-assert.match(page,/basket-carousel\.js\?v=20261013-mobile-r3/,'asset URL must invalidate previous cached script');
+assert.match(page,/basket-carousel\.js\?v=20261013-mobile-r4/,'asset URL must invalidate previous cached script');
 const region=page.slice(page.indexOf('const homeSubgroupSignatures='),page.indexOf('function paintOffersPage()'));
 assert.match(region,/const homeSubgroupSignatures=new WeakMap/);
 assert.match(region,/homeSubgroupSignatures\.get\(subgroup\)!==sub\.signature/,'unchanged subgroups must be reused');
@@ -56,7 +56,9 @@ assert.match(priorityPhoto,/fetchpriority="high"/,'first basket image should hav
 assert.match(priorityPhoto,/loading="eager"/);
 assert.doesNotMatch(lazyPhoto,/fetchpriority="high"/,'only first card should be high priority');
 assert.match(lazyPhoto,/loading="lazy"/);
-assert.match(priorityPhoto,/data-basket-src=/,'images should still be gated by viewport intersection');
+assert.match(priorityPhoto,/\ssrc="https:\/\/example\.test\/arroz\.webp"/,'the priority image must load immediately without an observer');
+assert.doesNotMatch(priorityPhoto,/data-basket-src=/,'priority photo must not wait for observer');
+assert.match(lazyPhoto,/data-basket-src=/,'non-priority photos must stay viewport gated');
 assert.equal((priorityPhoto.match(/<img\b/g)||[]).length,1,'only one image per basket card');
 
 
