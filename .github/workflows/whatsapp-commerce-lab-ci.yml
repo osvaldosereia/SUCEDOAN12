@@ -32,7 +32,9 @@ jobs:
               *) echo "::error::Forbidden production path modified: $path"; exit 1 ;;
             esac
           done < <(git diff --name-only origin/main...HEAD)
-      - name: Run isolated lab tests
+      - name: Install isolated DOM test dependencies
+        run: npm install --prefix labs/whatsapp-commerce --ignore-scripts --no-audit --no-fund
+      - name: Run isolated lab tests and mobile preview UI smoke test
         run: node --test labs/whatsapp-commerce/tests/*.test.mjs
       - name: Check whitespace and patch integrity
         run: git diff --check origin/main...HEAD
