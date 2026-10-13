@@ -1,38 +1,104 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="robots" content="noindex,nofollow">
-  <meta name="theme-color" content="#ffffff">
-  <title>Abrindo sua vitrine · Dona Antônia</title>
-  <style>
-    html,body{height:100%;margin:0;font-family:Arial,sans-serif;background:#fff;color:#18221c}
-    body{display:grid;place-items:center}
-    main{text-align:center;padding:28px}
-    .spinner{width:34px;height:34px;margin:0 auto 14px;border:3px solid #e7ebe8;border-top-color:#285f44;border-radius:50%;animation:s .8s linear infinite}
-    @keyframes s{to{transform:rotate(360deg)}}
-    p{margin:0;color:#66716a;font-size:14px}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#f7f8f6">
+<title>Abrindo sua vitrine · Dona Antônia</title>
+<style>
+html,body{height:100%;margin:0;font-family:Arial,sans-serif;background:#f7f8f6;color:#18221c}
+body{display:grid;place-items:center}
+main{text-align:center;padding:28px;max-width:440px}
+.spinner{width:34px;height:34px;margin:0 auto 14px;border:3px solid #e7ebe8;border-top-color:#285f44;border-radius:50%;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+p{margin:0;color:#66716a;font-size:14px;line-height:1.5}
+a{display:inline-block;margin-top:16px;color:#176b43;font-weight:bold}
+</style>
 </head>
 <body>
-  <main><div class="spinner"></div><p>Abrindo sua vitrine…</p></main>
-  <script>
-    (async function(){
-      var match=location.pathname.match(/^\/catalogo_(\d{4})\/?$/i);
-      if(!match){ location.replace('/'); return; }
-      var code=match[1];
-      try{
-        var url='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2?action=resolve_identity_code&code='+encodeURIComponent(code);
-        var response=await fetch(url,{cache:'no-store'});
-        var data=await response.json().catch(function(){return {}});
-        if(!response.ok || data.ok===false || !data.phone_e164) throw new Error('invalid_catalog_code');
-        try{sessionStorage.setItem('da_vitrine_whatsapp_phone_v1',String(data.phone_e164))}catch(e){}
-        location.replace('/');
-      }catch(e){
-        location.replace('/');
+<main role="status" aria-live="polite">
+  <div class="spinner"></div>
+  <p id="notice">Abrindo sua vitrine…</p>
+  <a id="back" href="/?ofertas=1" hidden>Ver ofertas do site</a>
+</main>
+<script>
+(async function(){
+  'use strict';
+  const path=location.pathname;
+  const notice=document.getElementById('notice');
+  const back=document.getElementById('back');
+  const showError=(message,href,label)=>{
+    document.querySelector('.spinner').hidden=true;
+    notice.textContent=message;
+    if(href){back.href=href;back.textContent=label||'Voltar';back.hidden=false;}
+  };
+  // GitHub Pages serves 404.html on missing routes. Never send a WhatsApp
+  // offer link to the homepage: make the fallback behave like /ofertas/.
+  if(/^\/ofertas(?:\/|\/index\.html)?$/i.test(path)){
+    document.title='Ofertas do seu pedido · Dona Antônia';
+    const token=(new URLSearchParams(location.search).get('c')||'').trim();
+    if(!token){location.replace('/?ofertas=1');return;}
+    if(!/^[a-f0-9]{64}$/i.test(token)){
+      showError('Este link de pedido não é válido. Consulte o link recebido no WhatsApp.',
+        '/?ofertas=1','Ver ofertas disponíveis');return;
+    }
+    // Remove bearer credential before contacting other services or navigating.
+    history.replaceState(null,'','/ofertas/');
+    const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/order-customer-actions-v1';
+    async function api(action,method='GET'){
+      const response=await fetch(API+'?action='+encodeURIComponent(action),{
+        method,cache:'no-store',referrerPolicy:'no-referrer',
+        headers:{'X-Customer-Action-Token':token}
+      });
+      const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+      if(!response.ok||data.ok!==true)throw new Error('unavailable');
+      return data;
+    }
+    try{
+      const session=await api('session');
+      const publicToken=String(session.public_token||'');
+      const orderLink=/^[a-f0-9]{16}$/i.test(publicToken)
+        ?'/pedido/?k='+encodeURIComponent(publicToken):'/?ofertas=1';
+      if(session.can_add_offers!==true){
+        showError('O prazo das ofertas terminou ou este pedido já foi confirmado.',
+          orderLink,'Ver meu pedido');return;
       }
-    })();
-  </script>
+      if(!/^[a-f0-9]{16}$/i.test(publicToken))throw new Error('invalid_order_link');
+      const added=await api('addon_session','POST');
+      const addonToken=String(added.addon_token||'');
+      if(!/^[A-Za-z0-9_-]{32,96}$/.test(addonToken))throw new Error('invalid_addon_token');
+      location.replace('/adicionar/?k='+encodeURIComponent(publicToken)+'#t='+encodeURIComponent(addonToken));
+    }catch{
+      showError('Não foi possível abrir as ofertas deste pedido agora.',
+        '/?ofertas=1','Ver ofertas disponíveis');
+    }
+    return;
+  }
+  // Keep the existing personalized catalog-link resolver intact.
+  const match=path.match(/^\/catalogo_(\d{4})\/?$/i);
+  if(!match){
+    // The postorder quick-add route must never silently turn into a new checkout.
+    if(/^\/adicionar(?:\/|\/index\.html)?$/i.test(path)){
+      showError('A vitrine de acréscimos não está disponível neste endereço.',
+        '/?ofertas=1','Ver ofertas disponíveis');
+    }else{
+      location.replace('/');
+    }
+    return;
+  }
+  try{
+    const url='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2?action=resolve_identity_code&code='+encodeURIComponent(match[1]);
+    const response=await fetch(url,{cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||data.ok===false||!data.phone_e164)throw new Error('invalid_catalog_code');
+    try{sessionStorage.setItem('da_vitrine_whatsapp_phone_v1',String(data.phone_e164))}catch{}
+    location.replace('/');
+  }catch{
+    location.replace('/');
+  }
+})();
+</script>
 </body>
 </html>
