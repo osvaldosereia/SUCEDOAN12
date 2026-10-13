@@ -12,6 +12,7 @@ import {
   setCustomer,setDelivery,setPayment,publicView,confirmSimulated
 } from './session.mjs';
 import {money} from './engine.mjs';
+import {addFlowOptionImage} from './flow-images.mjs';
 
 const SCREENS={
   MODE:'CHOOSE_MODE',PRODUCT:'PRODUCT_PILOT',UPSELL:'UPSELL',
@@ -23,12 +24,17 @@ const cap=(s,n)=>String(s??'').trim().slice(0,n);
 const ok=(screen,data)=>({version:'3.0',screen,data});
 const reqText=(x,name)=>{if(typeof x!=='string'||!x.trim())throw Error(name+'_required');return x.trim()};
 const finiteTime=(now)=>{if(!Number.isFinite(now)||now<0)throw Error('lab_clock_invalid');return now};
-const toFlowOption=(o)=>({
-  id:o.id,
-  title:cap(o.title||o.name,30),
-  description:cap(o.price_cents===undefined?'':money(o.price_cents),300),
-  ...(o.enabled===false?{enabled:false}:{})
-});
+const toFlowOption=(o,images)=> {
+  const base={
+    id:o.id,title:cap(o.title||o.name,30),
+    description:cap(o.price_cents===undefined?'':money(o.price_cents),300),
+    ...(o.enabled===false?{enabled:false}:{})
+  };
+  const image=images?.[o.id];
+  if(!image)return base;
+  try{return addFlowOptionImage(base,image)}
+  catch{return base} // Image failures never prevent buying the basket.
+};
 function customerData(ctx,session){
   const v=publicView(ctx,session);
   const p=v.current_position;
@@ -42,7 +48,7 @@ function customerData(ctx,session){
     data.position_id=p.id;
     data.position_title=cap(p.label,70);
     data.position_number=v.step_number+' de '+v.step_total;
-    data.options=p.options.map(toFlowOption);
+    data.options=p.options.map(o=>toFlowOption(o,ctx.imagesByProductId));
     // Keep 'remove' explicit. The production-equivalent mold quote does not
     // yet support removal; this lab choice is only a simulation.
     if(p.removable)data.options.push({id:'__REMOVE__',title:'Retirar produto',description:'Não incluir este item'});
@@ -51,7 +57,7 @@ function customerData(ctx,session){
   }
   if(session.step==='UPSELL'){
     data.extra_options=Object.values(ctx.extrasCatalog||{}).filter(o=>o.active!==false)
-      .map(o=>toFlowOption({id:o.id,title:o.name,price_cents:o.price_cents}));
+      .map(o=>toFlowOption({id:o.id,title:o.name,price_cents:o.price_cents},ctx.imagesByProductId));
   }
   if(session.step==='REVIEW'){
     data.message='Simulação concluída — não é um pedido real';
