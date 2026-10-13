@@ -72,15 +72,40 @@ function normalizeAction(r){
   if(!r||typeof r!=='object'||Array.isArray(r))throw Error('request_invalid');
   return cap(r.action,40).toUpperCase();
 }
-export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now()}={}){
+export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now(),storage=null}={}){
   if(!ctx?.catalog||!ctx.inventory)throw Error('lab_context_required');
   if(!Number.isSafeInteger(ttlMs)||ttlMs<1000)throw Error('lab_ttl_invalid');
   const sessions=new Map(),orders=new Map();
+  // Lab-only snapshot adapter. It must NOT be reused for real customer PII:
+  // production requires encrypted, transactional, multi-worker storage.
+  function snapshot(){
+    return {version:1,sessions:[...sessions],orders:[...orders]};
+  }
+  function persist(){if(storage)storage.save(snapshot());}
+  if(storage){
+    if(typeof storage.load!=='function'||typeof storage.save!=='function')
+      throw Error('lab_storage_contract_invalid');
+    const restored=storage.load();
+    if(restored!==null&&restored!==undefined){
+      if(restored.version!==1||!Array.isArray(restored.sessions)||!Array.isArray(restored.orders))
+        throw Error('lab_storage_snapshot_invalid');
+      for(const [token,record] of restored.sessions){
+        if(!VALID_TOKEN.test(token)||!record||!Number.isFinite(record.expiresAt)||
+          record.session?.id!=='SIMULATED')throw Error('lab_storage_session_invalid');
+        if(record.expiresAt>finiteTime(now()))sessions.set(token,record);
+      }
+      for(const [key,order] of restored.orders){
+        if(typeof key!=='string'||order?.status!=='SIMULATED_ONLY')
+          throw Error('lab_storage_order_invalid');
+        orders.set(key,order);
+      }
+    }
+  }
   function get(token){
     if(!VALID_TOKEN.test(token))throw Error('invalid_lab_flow_token');
     const record=sessions.get(token);
     if(!record)throw Error('session_missing');
-    if(record.expiresAt<=finiteTime(now())){sessions.delete(token);throw Error('session_expired')}
+    if(record.expiresAt<=finiteTime(now())){sessions.delete(token);persist();throw Error('session_expired')}
     return record;
   }
   function register(token,modelId,composition=1){
@@ -88,6 +113,7 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now()}={})
     if(sessions.has(token))throw Error('token_already_in_use');
     const session=createLabSession({...ctx,modelId,composition});
     sessions.set(token,{session,expiresAt:finiteTime(now())+ttlMs});
+    persist();
     return {token,screen:SCREENS[session.step],data:customerData(ctx,session)};
   }
   function refresh(token){
@@ -103,6 +129,7 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now()}={})
     if(action==='INIT'||action==='ACK')return refresh(token);
     if(action==='BACK'){
       record.session=back(ctx,record.session);
+      persist();
       return refresh(token);
     }
     if(action!=='DATA_EXCHANGE')throw Error('unsupported_action');
@@ -134,6 +161,7 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now()}={})
           productId:pid,quantity:pid===null?0:undefined});
         if(publicView(ctx,updated).quote_status==='unavailable'){
           record.session=updated;
+          persist();
           throw Error('insufficient_stock');
         }
         updated=advance(ctx,updated);
@@ -165,6 +193,7 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now()}={})
       default:throw Error('unknown_task');
     }
     record.session=updated;
+    persist();
     return refresh(token);
   }
   function confirmSimulatedOnly(token,key){
@@ -176,6 +205,7 @@ export function createLabFlowStore(ctx,{ttlMs=15*60*1000,now=()=>Date.now()}={})
       return {existing:true,order:orders.get(scopedKey),session:record.session};
     const result=confirmSimulated(ctx,record.session,{idempotencyKey:scopedKey,orders});
     record.session=result.session;
+    persist();
     return result;
   }
   return {register,handle,refresh,confirmSimulatedOnly,
