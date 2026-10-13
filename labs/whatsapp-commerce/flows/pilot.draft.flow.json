@@ -1,0 +1,427 @@
+{
+  "version": "7.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "SELECT_BASKET": [
+      "CHOOSE_MODE"
+    ],
+    "CHOOSE_MODE": [
+      "PRODUCT_PILOT",
+      "UPSELL"
+    ],
+    "PRODUCT_PILOT": [
+      "UPSELL"
+    ],
+    "UPSELL": [
+      "CHECKOUT"
+    ],
+    "CHECKOUT": [
+      "SIMULATED_FINISH"
+    ],
+    "SIMULATED_FINISH": []
+  },
+  "screens": [
+    {
+      "id": "SELECT_BASKET",
+      "title": "Escolha sua cesta",
+      "data": {
+        "basket_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "sample",
+              "title": "Opção de teste",
+              "description": "Preço de teste"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_select_basket",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Qual cesta você quer?"
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "basket_choice",
+                "label": "Tamanho",
+                "required": true,
+                "data-source": "${data.basket_options}"
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "task": "select_basket",
+                    "basket_id": "${form.basket_choice}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CHOOSE_MODE",
+      "title": "Sua cesta",
+      "data": {
+        "basket_name": {
+          "type": "string",
+          "__example__": "Mini Completa"
+        },
+        "total_label": {
+          "type": "string",
+          "__example__": "R$ 175,00"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_choose_mode",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "${data.basket_name}"
+              },
+              {
+                "type": "TextBody",
+                "text": "Total estimado: ${data.total_label}"
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "mode",
+                "label": "Como prefere?",
+                "required": true,
+                "data-source": [
+                  {
+                    "id": "ready",
+                    "title": "Quero como está"
+                  },
+                  {
+                    "id": "customize",
+                    "title": "Quero personalizar"
+                  }
+                ]
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "task": "choose_mode",
+                    "mode": "${form.mode}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUCT_PILOT",
+      "title": "Escolha do produto",
+      "data": {
+        "position_id": {
+          "type": "string",
+          "__example__": "position-demo"
+        },
+        "position_title": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "position_number": {
+          "type": "string",
+          "__example__": "1 de 23"
+        },
+        "total_label": {
+          "type": "string",
+          "__example__": "R$ 175,00"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "sample",
+              "title": "Opção de teste",
+              "description": "Preço de teste"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_product_pilot",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "${data.position_title}"
+              },
+              {
+                "type": "TextBody",
+                "text": "Item ${data.position_number}"
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "product_choice",
+                "label": "Escolha a marca",
+                "required": true,
+                "data-source": "${data.options}"
+              },
+              {
+                "type": "TextBody",
+                "text": "Total atual: ${data.total_label}"
+              },
+              {
+                "type": "Footer",
+                "label": "Aplicar escolha",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "task": "select_product",
+                    "position_id": "${data.position_id}",
+                    "product_id": "${form.product_choice}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "UPSELL",
+      "title": "Acrescentar produtos",
+      "data": {
+        "total_label": {
+          "type": "string",
+          "__example__": "R$ 175,00"
+        },
+        "extra_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "sample",
+              "title": "Opção de teste",
+              "description": "Preço de teste"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_upsell",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Deseja mais produtos?"
+              },
+              {
+                "type": "TextBody",
+                "text": "Total até agora: ${data.total_label}"
+              },
+              {
+                "type": "CheckboxGroup",
+                "name": "selected_extras",
+                "label": "Adicionais (opcional)",
+                "required": false,
+                "data-source": "${data.extra_options}"
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "task": "select_upsell",
+                    "extras": "${form.selected_extras}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CHECKOUT",
+      "title": "Conferir a entrega",
+      "data": {
+        "total_label": {
+          "type": "string",
+          "__example__": "R$ 175,00"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_checkout",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Finalizar pedido"
+              },
+              {
+                "type": "TextBody",
+                "text": "Total: ${data.total_label}"
+              },
+              {
+                "type": "TextInput",
+                "name": "customer_name",
+                "label": "Nome",
+                "required": true,
+                "input-type": "text"
+              },
+              {
+                "type": "TextInput",
+                "name": "delivery_address",
+                "label": "Endereço",
+                "required": true,
+                "input-type": "text"
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "payment",
+                "label": "Pagamento na entrega",
+                "required": true,
+                "data-source": [
+                  {
+                    "id": "pix",
+                    "title": "PIX"
+                  },
+                  {
+                    "id": "cash",
+                    "title": "Dinheiro"
+                  },
+                  {
+                    "id": "credit",
+                    "title": "Crédito"
+                  },
+                  {
+                    "id": "food",
+                    "title": "Alimentação/refeição"
+                  }
+                ]
+              },
+              {
+                "type": "Footer",
+                "label": "Conferir dados",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "task": "checkout",
+                    "name": "${form.customer_name}",
+                    "address": "${form.delivery_address}",
+                    "payment": "${form.payment}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SIMULATED_FINISH",
+      "title": "Fim da simulação",
+      "terminal": true,
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Simulação concluída"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form_simulated_finish",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "${data.message}"
+              },
+              {
+                "type": "TextBody",
+                "text": "Nenhum pedido real foi criado."
+              },
+              {
+                "type": "Footer",
+                "label": "Fechar",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "lab_only": "true"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
