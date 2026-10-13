@@ -50,8 +50,16 @@ Deno.serve(async(req:Request)=>{
     const current=await session(tokenHash);
     if(current?.ok!==true)return response(req,{ok:false,error:"not_found"},404);
     if(action==="session"){
-      // Only the holder of the 256-bit capability receives the public view token.
-      return response(req,{...current},200);
+      // The read-only public token remains separate from this 256-bit action capability.
+      // Eligibility is evaluated on every session read, including the live feature gate,
+      // order status, Bling sync, separation locks and the add-on expiry window.
+      const eligibility=await db.rpc("ops3_order_addon_eligibility_v1",{p_order_id:current.order_id});
+      return response(req,{
+        ...current,
+        can_add_offers:!eligibility.error&&eligibility.data?.ok===true&&eligibility.data?.eligible===true,
+        add_offers_until:!eligibility.error&&eligibility.data?.eligible===true
+          ?eligibility.data.expires_at:null
+      },200);
     }
     if(action==="addon_session"){
       if(current.can_confirm!==true)return response(req,{ok:false,error:"order_not_editable"},409);
