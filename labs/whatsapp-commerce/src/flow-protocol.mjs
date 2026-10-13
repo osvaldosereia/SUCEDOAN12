@@ -192,3 +192,27 @@ export function safeLabFlowError(error){
   ]);
   return {version:'3.0',error_message:allowed.has(err)?err:'Falha na simulação. Tente novamente.'};
 }
+
+/**
+ * WhatsApp endpoint validation errors must return the CURRENT screen with all
+ * fields it needs to render. A bare error_message outside "data" is not a
+ * functional Flow UI response. This deliberately returns only publicView.
+ */
+export function safeLabFlowScreenError(error,store,token){
+  const message=safeLabFlowError(error).error_message;
+  const clean=({
+    'insufficient_stock':'Produto sem estoque. Selecione outra marca.',
+    'quote_not_confirmable':'Confira os produtos, o estoque e o valor mínimo.',
+    'screen_out_of_sync':'Essa etapa mudou. Confira as opções atualizadas.',
+    'position_out_of_order':'Atualizamos a cesta. Confira o produto atual.',
+    'option_not_available':'Essa marca não está disponível.',
+    'wrong_step':'Atualizamos a etapa da compra.',
+    'item_not_removable':'Este produto não pode ser retirado.',
+    'upsell_items_invalid':'Revise os produtos adicionais.',
+    'quantity_invalid':'Confira a quantidade escolhida.',
+    'product_id_required':'Selecione uma marca.'
+  })[message]||'Não foi possível atualizar. Confira sua escolha.';
+  const current=store.refresh(token);
+  return {version:'3.0',screen:current.screen,
+    data:{...current.data,error_message:clean}};
+}
