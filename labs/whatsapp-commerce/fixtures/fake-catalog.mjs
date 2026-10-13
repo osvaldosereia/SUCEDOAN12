@@ -27,7 +27,7 @@ export function makeFakeCatalog(){
           id:'lab-'+(i+1), name,composition,
           pricing:{
             fixed_hidden_cents:target-productSum,
-            conditional_enabled:true,
+            conditional_enabled:composition===2,
             conditional_product_id:positions[0].default_id,
             conditional_cents:275
           },
