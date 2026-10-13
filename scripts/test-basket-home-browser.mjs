@@ -27,7 +27,7 @@ try{
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  await page.setViewportSize({width:320,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  // Run the complete public page too: test script loading, home wiring and existing detail navigation.
- const app=await browser.newPage({viewport:{width:390,height:844}}),errors=[];app.on('pageerror',e=>errors.push(e.message));
+ const app=await browser.newPage({viewport:{width:390,height:844}}),errors=[];app.on('pageerror',e=>errors.push(e.stack||e.message));
  let releasePriorityCatalog;
  const priorityCatalogGate=new Promise(resolve=>{releasePriorityCatalog=resolve});
  let releaseFullCatalog;
