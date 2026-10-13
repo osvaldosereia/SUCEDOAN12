@@ -6105,7 +6105,7 @@
     const exists=(state.purchaseXml?.documents||[]).some(x=>String(x.id)===String(docId));
     if(!exists){
       const issued=String(item?.document?.issued_at||'').slice(0,10);
-      if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(issued)){toast('Data da NF-e não disponível. Busque na lista de notas.');return}
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(issued)){toast('Data da NF-e não disponível. Busque na lista de notas.');return}
       state.purchaseFilter={period:'custom',start_date:issued,end_date:issued};
       await loadPurchases();
     }
