@@ -288,7 +288,13 @@ async function productOperationalMetaMap(ids:string[]){
   return out;
 }
 function productSortKey(v:any){
-  const x=tx(v,30);return new Set(["name_asc","name_desc","updated_desc","updated_asc","expiry_asc","expiry_desc","gondola_asc","gondola_desc"]).has(x)?x:"";
+  const x=tx(v,30);return new Set(["name_asc","name_desc","updated_desc","updated_asc","expiry_asc","expiry_desc","expiry_expired","gondola_asc","gondola_desc"]).has(x)?x:"";
+}
+function filterProductsByValidity(q:any,sort:string,today:string){
+  // Use the local business date; products expiring today are NOT expired.
+  if(sort==="expiry_asc"||sort==="expiry_desc")return q.gte("validity_date",today);
+  if(sort==="expiry_expired")return q.lt("validity_date",today);
+  return q;
 }
 function productRowsSort(rows:any[],sort:string,lotStatus:string,memberIds:Set<string>|null){
   return rows.sort((a:any,b:any)=>{
@@ -301,8 +307,8 @@ function productRowsSort(rows:any[],sort:string,lotStatus:string,memberIds:Set<s
     if(sort==="updated_desc"||sort==="updated_asc"){
       const av=String(a.updated_at||""),bv=String(b.updated_at||"");if(av!==bv)return sort==="updated_desc"?bv.localeCompare(av):av.localeCompare(bv);
     }
-    if(sort==="expiry_asc"||sort==="expiry_desc"){
-      const av=dt(a.validity_date),bv=dt(b.validity_date);if(av!==bv){if(!av)return 1;if(!bv)return -1;return sort==="expiry_desc"?bv.localeCompare(av):av.localeCompare(bv)}
+    if(sort==="expiry_asc"||sort==="expiry_desc"||sort==="expiry_expired"){
+      const av=dt(a.validity_date),bv=dt(b.validity_date);if(av!==bv){if(!av)return 1;if(!bv)return -1;return sort==="expiry_asc"?av.localeCompare(bv):bv.localeCompare(av)}
     }
     if(sort==="gondola_asc"||sort==="gondola_desc"){
       const av=/^\d+$/.test(String(a.gondola||""))?Number(a.gondola):null,bv=/^\d+$/.test(String(b.gondola||""))?Number(b.gondola):null;
@@ -315,12 +321,13 @@ async function products(u:URL){
   const off=Math.floor(nm(u.searchParams.get("offset"),0,100000)),lim=Math.floor(nm(u.searchParams.get("limit")||60,1,100));
   const qv=tx(u.searchParams.get("q"),100).replace(/[,%()]/g," "),cat=tx(u.searchParams.get("category"),120),sub=tx(u.searchParams.get("subcategory"),120),act=tx(u.searchParams.get("active"),12),basketKit=tx(u.searchParams.get("basket_kit"),12)==="true",lotStatus=tx(u.searchParams.get("lot_status"),20),sort=productSortKey(u.searchParams.get("sort"));
   let rows:any[]=[];
+  const today=new Intl.DateTimeFormat("sv-SE",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
   const manual=Boolean(cat||basketKit||lotStatus||sort==="gondola_asc"||sort==="gondola_desc");
   if(manual){
     const memberIds=(basketKit||lotStatus==="pending")?await basketKitProductIds():null;
     const all:any[]=[];
     for(let pos=0;pos<10000;pos+=1000){
-      let q=db.from("products").select("*").order("id").range(pos,pos+999);
+      let q=filterProductsByValidity(db.from("products").select("*").order("id").range(pos,pos+999),sort,today);
       if(sub)q=q.eq("subcategory",sub);if(act==="true")q=q.eq("is_active",true);if(act==="false")q=q.eq("is_active",false);
       if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
       const r=await q;if(r.error)throw r.error;all.push(...(r.data||[]));if((r.data||[]).length<1000)break;
@@ -335,11 +342,11 @@ async function products(u:URL){
     rows=filtered.slice(off,off+lim);const [sm,om]=await Promise.all([stockBreakdownMap(rows.map((x:any)=>x.id)),productOperationalMetaMap(rows.map((x:any)=>x.id))]);
     return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s,__ops_meta:o})}),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
   }
-  let q=db.from("products").select("*");
+  let q=filterProductsByValidity(db.from("products").select("*"),sort,today);
   if(sort==="updated_desc")q=q.order("updated_at",{ascending:false}).order("name");
   else if(sort==="updated_asc")q=q.order("updated_at",{ascending:true}).order("name");
   else if(sort==="expiry_asc")q=q.order("validity_date",{ascending:true,nullsFirst:false}).order("name");
-  else if(sort==="expiry_desc")q=q.order("validity_date",{ascending:false,nullsFirst:false}).order("name");
+  else if(sort==="expiry_desc"||sort==="expiry_expired")q=q.order("validity_date",{ascending:false,nullsFirst:false}).order("name");
   else q=q.order("name",{ascending:sort!=="name_desc"});
   q=q.range(off,off+lim-1);if(sub)q=q.eq("subcategory",sub);if(act==="true")q=q.eq("is_active",true);if(act==="false")q=q.eq("is_active",false);
   if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
