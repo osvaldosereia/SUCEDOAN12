@@ -986,7 +986,39 @@
       state.checkoutQuoteTimers.set(item,timer);
       saveCart();paintCheckout();
     }
-    async function requoteCheckoutBasket(itemIndex){const item=state.cart[itemIndex];if(!item||item.type!=='basket')return;try{const payload=item.split_mode?{basket_id:item.id,food_lot_id:item.food_lot_id,hygiene_lot_id:item.hygiene_lot_id,food_lot_code:item.food_lot_code,hygiene_lot_code:item.hygiene_lot_code,items:(item.components||[]).map(c=>({product_id:c.product_id,quantity:Number(c.quantity||0),component_group:c.component_group}))}:{basket_id:item.id,lot_id:item.lot_id,items:(item.components||[]).map(c=>({product_id:c.product_id,quantity:Number(c.quantity||0)}))},data=await api('basket_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});item.unit_cents=Number(data.total_cents||0);item.food_changed=data.food_changed===true;item.hygiene_changed=data.hygiene_changed===true;saveCart();if(overlay.classList.contains('open')&&sheetTitle.textContent==='Seu pedido')paintCheckout()}catch(e){toast(e?.message==='insufficient_stock'?'Essa personalização não tem estoque disponível.':'Não consegui recalcular a cesta agora')}}
+    async function requoteCheckoutBasket(itemOrIndex){
+      const item=typeof itemOrIndex==='number'?state.cart[itemOrIndex]:itemOrIndex;
+      if(!item||item.type!=='basket'||!state.cart.includes(item))return false;
+      const quote=checkoutQuoteStatus(item),revision=quote.revision;
+      quote.pending=true;quote.error=false;updateCheckoutSubmitState();
+      try{
+        const payload=item.split_mode?{basket_id:item.id,food_lot_id:item.food_lot_id,hygiene_lot_id:item.hygiene_lot_id,food_lot_code:item.food_lot_code,hygiene_lot_code:item.hygiene_lot_code,items:(item.components||[]).map(c=>({product_id:c.product_id,quantity:Number(c.quantity||0),component_group:c.component_group}))}:{basket_id:item.id,lot_id:item.lot_id,items:(item.components||[]).map(c=>({product_id:c.product_id,quantity:Number(c.quantity||0)}))};
+        const data=await api('basket_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        // Another adjustment or removal may have occurred before this HTTP response.
+        if(!state.cart.includes(item)||checkoutQuoteStatus(item).revision!==revision)return false;
+        if(!Number.isFinite(Number(data.total_cents))||Number(data.total_cents)<0)throw new Error('invalid_basket_quote');
+        item.unit_cents=Number(data.total_cents);
+        item.food_changed=data.food_changed===true;item.hygiene_changed=data.hygiene_changed===true;
+        quote.pending=false;quote.error=false;
+        saveCart();
+        if(overlay.classList.contains('open')&&sheetTitle.textContent==='Seu pedido')paintCheckout();
+        return true;
+      }catch(e){
+        if(!state.cart.includes(item)||checkoutQuoteStatus(item).revision!==revision)return false;
+        quote.pending=false;quote.error=true;
+        if(overlay.classList.contains('open')&&sheetTitle.textContent==='Seu pedido')paintCheckout();
+        toast(e?.message==='insufficient_stock'?'Essa personalização não tem estoque disponível.':'Não consegui recalcular a cesta. Toque em Recalcular.');
+        return false;
+      }
+    }
+    function retryCheckoutQuotes(){
+      for(const item of state.cart){
+        if(item.type!=='basket')continue;
+        const status=checkoutQuoteStatus(item);
+        if(status.error&&!status.pending){status.revision++;status.pending=true;status.error=false;void requoteCheckoutBasket(item)}
+      }
+      updateCheckoutSubmitState();
+    }
     function pay(value,label){return '<label class="pay"><input type="radio" name="payment" value="'+esc(value)+'"><strong>'+esc(label)+'</strong></label>'}
     function orderDatePartsCuiaba(){const longParts=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Cuiaba',day:'numeric',month:'long',year:'numeric'}).formatToParts(new Date()),numericParts=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Cuiaba',day:'2-digit',month:'2-digit',year:'numeric'}).formatToParts(new Date()),get=(parts,type)=>parts.find(p=>p.type===type)?.value||'',month=get(longParts,'month'),monthTitle=month?month.charAt(0).toUpperCase()+month.slice(1):'';return {long:get(longParts,'day')+' de '+monthTitle+' de '+get(longParts,'year'),month:monthTitle,numeric:get(numericParts,'day')+'/'+get(numericParts,'month')+'/'+get(numericParts,'year')}}
     function formatOrderDateCuiaba(){return orderDatePartsCuiaba().long}
