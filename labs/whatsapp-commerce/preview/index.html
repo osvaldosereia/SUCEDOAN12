@@ -1,76 +1,39 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; script-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; connect-src 'none'">
-<title>WhatsApp Lab • Dona Antônia (simulação offline)</title>
-<style>
-:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#15241b;background:#edf1ec}
-*{box-sizing:border-box}body{margin:0;display:grid;justify-items:center;padding:12px;gap:10px}
-.notice{max-width:410px;color:#4a574e;font-size:12px;line-height:1.4}
-.device{width:min(100%,410px);height:min(800px,calc(100dvh - 84px));min-height:580px;display:flex;flex-direction:column;position:relative;border:6px solid #202323;border-radius:32px;overflow:hidden;background:#f6f4ef;box-shadow:0 12px 38px #182f2232}
-.chat-head{background:#075e44;color:white;padding:22px 13px 12px;display:flex;align-items:center;gap:10px;min-height:80px}
-.logo{width:34px;height:34px;display:grid;place-items:center;background:#eef7ee;border-radius:100%;font-size:18px}
-.chat-head b{display:block;font-size:15px}.chat-head small{color:#ddf2e3;font-size:11px}.spacer{flex:1}
-.chat-area{padding:18px 12px;flex:1;overflow:auto;background-color:#ebe8df;background-image:radial-gradient(#b6c3b3 0.6px,transparent .6px);background-size:25px 25px}
-.bubble{background:white;max-width:93%;padding:10px 12px;margin-bottom:8px;border-radius:9px 9px 9px 2px;box-shadow:0 1px 2px #20382a22}
-.bubble small{color:#68786f;font-size:11px}.chat-input{margin:auto 8px 9px;background:white;color:#77867c;padding:10px 14px;border-radius:50px;font-size:13px}
-.choice{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px;background:white;border:1px solid #e0e6e1;text-align:left;border-radius:9px;gap:10px;margin:7px 0;color:#26352c;cursor:pointer}
-.choice:focus-visible,button:focus-visible{outline:3px solid #9fe4b5}
-.choice.selected{border:2px solid #12804b;background:#effaf2}
-.choice .mark{height:18px;width:18px;border:2px solid #949f99;border-radius:50%;flex:none}
-.choice.selected .mark{border:6px solid #12804b}
-.choice .label{flex:1;font-weight:600;font-size:14px;line-height:1.35}
-.choice .label small{display:block;font-size:12px;font-weight:400;color:#607068;margin-top:2px}
-.product-symbol{font-size:23px;background:#edf4eb;border-radius:7px;padding:8px;min-width:44px;text-align:center}
-.price{font-size:13px;color:#146b43;font-weight:700}
-.btn{border:0;background:#07824c;color:white;border-radius:9px;padding:14px 12px;font-size:14px;font-weight:700;cursor:pointer}
-.btn.secondary{background:#eff4f0;color:#195638;border:1px solid #c4d7cb}
-.chat-cta{width:100%;margin-top:10px}
-.flow{position:absolute;inset:0;background:white;z-index:10;display:flex;flex-direction:column}
-.hidden{display:none!important}
-.flow-head{padding:25px 18px 10px;border-bottom:1px solid #eef2ef}
-.flow-head-top{display:flex;align-items:center;gap:12px;font-size:15px;font-weight:700}
-.close{border:0;background:none;font-size:25px;cursor:pointer;padding:0 8px 0 0;color:#32463a}
-.progress{height:5px;background:#e8edea;border-radius:8px;margin:10px 0 0;overflow:hidden}
-.progress span{display:block;background:#07814d;height:100%;border-radius:8px}
-.flow-body{overflow:auto;padding:15px 16px;flex:1}
-.flow-body h2{margin:0 0 6px;font-size:19px}
-.flow-body p{margin:0 0 14px;font-size:13px;color:#65736a;line-height:1.5}
-.total{display:flex;justify-content:space-between;align-items:center;background:#e6f6e9;border-radius:10px;padding:11px;margin:10px 0}
-.total b{font-size:18px;color:#076636}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.caption{font-size:11px;color:#66766b}
-.flow-footer{padding:11px 14px 19px;border-top:1px solid #e6ebe6;display:flex;gap:10px;background:white}
-.flow-footer .btn{flex:1}
-.select{border:1px solid #cad7cf;border-radius:8px;padding:12px;width:100%;font:inherit;margin:8px 0 16px;background:white}
-.warning{background:#fff4df;border:1px solid #f1d9a6;border-radius:8px;padding:10px;font-size:12px}
-.line{border-bottom:1px solid #edf0ed;padding:9px 0;font-size:13px}
-.step-count{font-size:11px;color:#62776a}
-.qty{display:flex;gap:12px;align-items:center;margin-top:9px}
-.qty button{background:#eaf5ec;color:#076a3c;border:0;border-radius:8px;min-width:42px;height:35px;font-size:21px}
-.lab{display:inline-block;background:#fff2bd;color:#735319;border-radius:5px;padding:3px 6px;font-size:10px;font-weight:800}
-</style>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta name="color-scheme" content="light">
+ <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'; connect-src 'none'">
+ <link rel="stylesheet" href="./native.css">
+ <title>Dona Antônia · Simulador WhatsApp Lab</title>
 </head>
 <body>
-<div class="notice"><span class="lab">LABORATÓRIO — FICTÍCIO</span> Prévia offline inspirada nos controles do WhatsApp. Sem mensagens, sem clientes reais e sem conexão à Meta ou ao Supabase.</div>
-<div class="device">
- <header class="chat-head"><span style="font-size:23px">‹</span><span class="logo">🛒</span><span><b>Dona Antônia • LAB</b><small>Simulação de atendimento</small></span><span class="spacer"></span><span>⋮</span></header>
- <div class="chat-area" id="chat">
-  <div class="bubble">Olá! 👋<br>Qual cesta você deseja?<small style="display:block;text-align:right">09:41</small></div>
-  <div class="bubble">
-   <b style="font-size:14px">Escolha um tamanho</b>
-   <div id="basketChoices"></div>
-  </div>
+ <div class="notice"><span class="lab-tag">SIMULAÇÃO · NÃO É O WHATSAPP REAL</span> Reprodução visual de mensagens, lista interativa e componentes de Flow. Produtos e valores fictícios; nenhuma mensagem ou pedido real.</div>
+ <div class="device" role="application" aria-label="Simulador móvel do WhatsApp">
+  <header class="chat-header">
+   <span class="back" aria-hidden="true">‹</span><div class="avatar" aria-hidden="true">🛒</div>
+   <div class="contact"><strong>Dona Antônia · Teste</strong><small>Conta comercial (simulação)</small></div>
+   <div class="top-actions" aria-hidden="true">⋮</div>
+  </header>
+  <main class="chat" id="chat">
+   <div class="chat-day">HOJE</div>
+   <div class="msg">Olá! 👋<br>Qual cesta você deseja?<div class="stamp">09:41</div>
+    <button type="button" class="chat-button" id="openList">☰ &nbsp; Ver cestas</button>
+   </div>
+  </main>
+  <div class="chat-input" aria-hidden="true"><span>☺</span><span class="pill">Mensagem</span><span>📎</span><span class="mic">🎙</span></div>
+  <div class="shade hidden" id="shade"></div>
+  <section class="list-sheet hidden" id="basketSheet" aria-label="Lista interativa de cestas">
+   <div class="sheet-handle"></div>
+   <div class="sheet-header"><strong>Escolha uma cesta</strong><button type="button" class="close" id="closeList" aria-label="Fechar lista">×</button></div>
+   <div class="sheet-rows"><div class="sheet-label">CESTAS BÁSICAS</div><div id="basketRows"></div></div>
+  </section>
+  <section class="flow hidden" id="flow" aria-label="Prévia de WhatsApp Flow">
+   <header class="flow-header"><button type="button" class="close" id="closeFlow" aria-label="Fechar Flow">×</button><h1 id="flowTitle">Montar cesta</h1><span class="dots" aria-hidden="true">⋮</span></header>
+   <main class="flow-content" id="flowBody" aria-live="polite"></main>
+   <footer class="flow-footer"><button class="footer-main" type="button" id="flowNext">Continuar</button><div class="managed">Gerenciado pela empresa · <u>Saiba mais</u></div></footer>
+  </section>
  </div>
- <div class="chat-input">Mensagem <span style="float:right">🎙️</span></div>
- <section class="flow hidden" id="flow">
-  <div class="flow-head"><div class="flow-head-top"><button type="button" class="close" id="closeFlow" aria-label="Fechar">×</button><span id="flowTitle">Cesta básica</span><span class="spacer"></span><span class="lab">TESTE</span></div>
-  <div class="progress"><span id="progressBar" style="width:0%"></span></div></div>
-  <main class="flow-body" id="screen" aria-live="polite"></main>
-  <footer class="flow-footer" id="actions"></footer>
- </section>
-</div>
-<script type="module" src="./app.mjs"></script>
-</body></html>
+ <script type="module" src="./app.mjs"></script>
+</body>
+</html>
