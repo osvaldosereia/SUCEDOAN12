@@ -89,3 +89,18 @@ test('Cannot finish without customer, delivery, payment and review',()=>{
  const s=chooseMode(ctx,newSession('lab-2'),'ready');
  assert.throws(()=>confirmSimulated(ctx,s,{idempotencyKey:'sample-event-001',orders:new Map()}),/wrong_step/);
 });
+
+
+test('conditional hidden value follows its product across all compositions',()=>{
+ for(const composition of [1,3]){
+  const current=chooseMode(ctx,newSession('lab-2',composition),'customize');
+  const p=publicView(ctx,current).current_position;
+  const previous=publicView(ctx,current).total_cents;
+  const conditional=p.options.find(x=>x.id==='lab-conditional-2');
+  assert.ok(conditional,'conditional option exists even when not selected initially');
+  const changed=chooseProduct(ctx,current,{positionId:p.id,productId:conditional.id});
+  assert.equal(publicView(ctx,changed).total_cents,previous+275);
+ }
+ const middle=chooseMode(ctx,newSession('lab-2',2),'customize');
+ assert.equal(publicView(ctx,middle).current_position.selected_id,'lab-conditional-2');
+});
