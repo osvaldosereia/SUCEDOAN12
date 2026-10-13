@@ -900,20 +900,20 @@
     async function start(){
       captureMarketingEntryContext();renderInitialShell();try{performance.mark('da-home-shell')}catch{}
       const cachedHome=readCache(HOME_CACHE_KEY,24*60*60*1000),hadCached=Boolean(cachedHome?.baskets?.length);
-      if(hadCached){state.home={...state.home,...cachedHome,categories:cachedHome.categories?.length?cachedHome.categories:STATIC_CATEGORIES};renderHome()}
+      if(hadCached){state.home={...state.home,...cachedHome,categories:cachedHome.categories?.length?cachedHome.categories:STATIC_CATEGORIES};renderHome();try{performance.mark('da-home-cached-cestas')}catch{}}
       void resolveEntryWhatsappPhone().then(phone=>{state.whatsappPhone=phone;if(phone){const d=phoneDigits(phone).replace(/^55/,'');if(d.length===11){state.checkoutDdd=d.slice(0,2);state.checkoutPhone=d.slice(2)}}}).catch(()=>{state.whatsappPhone=''});
       paintCart();
       let fullFinished=false,received=false;
       const accept=(data,partial)=>{
         if(!Array.isArray(data?.baskets)||!data.baskets.length||partial&&fullFinished)return false;
         received=true;
-        try{performance.mark(partial?'da-home-first-cestas':'da-home-full-catalog')}catch{}
         const prev=JSON.stringify([state.home?.baskets,state.home?.basket_categories,state.home?.categories]);
         state.home={...state.home,...data,categories:data.categories?.length?data.categories:STATIC_CATEGORIES};
         state.homePartial=partial;
         if(!partial)writeCache(HOME_CACHE_KEY,state.home);
         const next=JSON.stringify([state.home.baskets,state.home.basket_categories,state.home.categories]);
         if(state.view==='home'&&(prev!==next||!hadCached||partial))renderHome();
+        try{performance.mark(partial?'da-home-first-cestas':'da-home-full-catalog')}catch{}
         applyMarketingEntryContext();
         return true;
       };
