@@ -28,6 +28,7 @@ const token=(qs.get('c')||'').trim();
 const status=document.getElementById('status');
 const back=document.getElementById('back');
 const close=message=>{status.textContent=message;};
+if(!token){location.replace('/?ofertas=1');return;}
 if(!valid.test(token)){close('Este link não é válido. Abra o pedido pelo WhatsApp.');return;}
 // Remove the 256-bit capability from address/history before any network request.
 history.replaceState(null,'',location.pathname);

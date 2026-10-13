@@ -8,6 +8,8 @@ on:
       - 'montar/**'
       - 'scripts/test-montar-picking-v1.mjs'
       - 'pedido/index.html'
+      - '404.html'
+      - 'ofertas/index.html'
       - 'pedido/customer-actions.js'
       - 'supabase/functions/order-customer-actions-v1/index.ts'
       - 'supabase/migrations/*customer_postorder_confirmation_v1.sql'
@@ -67,6 +69,8 @@ on:
       - 'montar/**'
       - 'scripts/test-montar-picking-v1.mjs'
       - 'pedido/index.html'
+      - '404.html'
+      - 'ofertas/index.html'
       - 'pedido/customer-actions.js'
       - 'supabase/functions/order-customer-actions-v1/index.ts'
       - 'supabase/migrations/*customer_postorder_confirmation_v1.sql'
@@ -147,7 +151,7 @@ jobs:
         run: |
           node <<'NODE'
           const fs=require('fs'),cp=require('child_process');
-          for(const file of ['vitrine/admin/index.html','pedido/index.html','p/index.html','adicionar/index.html']){
+          for(const file of ['vitrine/admin/index.html','pedido/index.html','p/index.html','adicionar/index.html','ofertas/index.html','404.html']){
             const html=fs.readFileSync(file,'utf8');
             const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
             scripts.forEach((src,i)=>{const path=`/tmp/${file.replaceAll('/','-')}-${i}.js`;fs.writeFileSync(path,src);cp.execFileSync(process.execPath,['--check',path],{stdio:'inherit'})});
