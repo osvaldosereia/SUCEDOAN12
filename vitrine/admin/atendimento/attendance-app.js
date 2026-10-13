@@ -1,6 +1,8 @@
-import {attendanceJsonApi,ensureAttendanceToken} from './attendance-auth.js';
+import {attendanceJsonApi,ensureAttendanceToken,attendanceAuthorizedFetch} from './attendance-auth.js';
 import {MAX_PRODUCT_BATCH,attendanceProductSelection,attendanceProductFailedSelection,isAttendanceProductSelected,toggleAttendanceProductSelection,clearAttendanceProductSelection,sendAttendanceProductBatch,retryFailedAttendanceProducts} from './attendance-product-send.js?v=product-media-v1';
 const ADMIN_ATTENDANCE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ops-v1';
+const ORDERS_ADMIN_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-products-live-v1';
+const orderConfirmingIds=new Set();
 const ADMIN_TOKEN_KEY='da_finance_access_token_v1';
 const CHANNELS=['0975','1018'];
 const QUEUE_PAGE_SIZE=50;
@@ -184,8 +186,105 @@ async function backgroundRefresh(){if(document.hidden)return;await loadQueue({si
 
 function adminLink(tab,params={}){const u=new URL('/vitrine/admin/',location.origin);u.searchParams.set('tab',tab);for(const [k,v] of Object.entries(params))if(v)u.searchParams.set(k,v);return u.toString()}
 function actionLink(label,href,primary=false){const a=document.createElement('a');a.href=href;a.textContent=label;if(primary)a.className='primary-action';return a}
-function renderOverview(box){box.replaceChildren();const c=state.context?.customer,conversationPhone=state.conversation?.conversation?.phone_e164||'',a=state.context?.address,r=state.context?.registration,orders=[...(state.context?.orders||[])];const customer=document.createElement('section');customer.className='context-card';customer.innerHTML='<h3>Cliente</h3>';if(c){const hero=document.createElement('div');hero.className='customer-hero';hero.innerHTML=`<span class="avatar">${initials(c.name||c.phone_e164)}</span><div><strong>${c.name||'Cliente'}</strong><small>${conversationPhone}</small>${r?.registration_complete?'':'<span class="status-chip">Cadastro pendente</span>'}</div>`;customer.append(hero);for(const [label,value] of [['Endereço',a?[a.street,a.number,a.neighborhood,a.city].filter(Boolean).join(', '):'Não informado'],['Documento',c.masked_document||'Não informado'],['Comprado',money(c.lifetime_value||0)],['Marketing',c.marketing_opt_in?'Autorizado':'Não autorizado']]){const row=document.createElement('div');row.className='context-row';const l=document.createElement('span');l.textContent=label;const v=document.createElement('strong');v.textContent=value;row.append(l,v);customer.append(row)}const actions=document.createElement('div');actions.className='context-actions';actions.append(actionLink('Abrir cliente',adminLink('customers',{customer_id:c.id})),actionLink('Criar orçamento',adminLink('quotes',{customer_id:c.id,source:'attendance'})));customer.append(actions)}else customer.innerHTML+='<div class="context-empty">Conversa sem cliente vinculado. O chat continua disponível pelo telefone.</div>';box.append(customer);const order=document.createElement('section');order.className='context-card';order.innerHTML='<h3>Pedido atual</h3>';const current=orders[0];if(current){const head=document.createElement('div');head.className='order-head';head.innerHTML=`<strong>${current.public_order_code||current.order_number||'Pedido'}</strong><small>${fmtDate(current.confirmed_at||current.created_at)}</small>`;order.append(head);const row=document.createElement('div');row.className='context-row';row.innerHTML=`<span>${current.status||'Pedido'}</span><strong>${money(current.total)}</strong>`;order.append(row);const actions=document.createElement('div');actions.className='context-actions';actions.append(actionLink('Abrir pedido',adminLink('orders',{order_id:current.id}),true));const publicUrl=String(current.public_order_url||'').trim()||`https://donaantonia.com.br/pedido/?o=${encodeURIComponent(current.id)}`;actions.append(actionLink('Abrir vitrine',publicUrl));const copy=document.createElement('button');copy.type='button';copy.textContent='Copiar link';copy.onclick=async()=>{try{await navigator.clipboard.writeText(publicUrl);copy.textContent='Copiado'}catch{}setTimeout(()=>{if(copy.isConnected)copy.textContent='Copiar link'},1200)};actions.append(copy);order.append(actions)}else order.innerHTML+='<div class="context-empty">Nenhum pedido encontrado.</div>';box.append(order)}
-function renderOrders(box){box.replaceChildren();const orders=state.context?.orders||[];if(!orders.length){box.innerHTML='<div class="context-empty">Nenhum pedido encontrado.</div>';return}for(const o of orders){const card=document.createElement('article');card.className='order-card';card.innerHTML=`<div class="order-head"><strong>${o.public_order_code||o.order_number||'Pedido'}</strong><small>${fmtDate(o.confirmed_at||o.created_at)}</small></div><div class="context-row"><span>${o.status||'—'}</span><strong>${money(o.total)}</strong></div>`;card.append(actionLink('Abrir pedido',adminLink('orders',{order_id:o.id})));box.append(card)}}
+const VALID_ORDER_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isConfirmableOrder(order){
+  return Boolean(order&&VALID_ORDER_ID.test(String(order.id||''))&&['storefront_received','created'].includes(String(order.status||'').toLowerCase())&&!order.confirmed_at&&!order.cancelled_at);
+}
+function orderStatusLabel(status){
+  const labels={storefront_received:'Recebido · aguardando confirmação',created:'Recebido · aguardando confirmação',confirmed:'Confirmado',processing:'Em separação',ready:'Separado',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado'};
+  return labels[String(status||'').toLowerCase()]||status||'—';
+}
+function confirmOrderErrorMessage(error){
+  const code=String(error?.payload?.error||error?.message||'');
+  if(code==='order_operational_data_incomplete'){
+    const names={customer_required:'nome do cliente',delivery_street_required:'rua',delivery_number_required:'número',delivery_city_required:'cidade',delivery_state_required:'estado',payment_method_required:'forma de pagamento'};
+    const fields=(error?.payload?.blockers||[]).map(key=>names[key]||key);
+    return 'Confirmação impedida. Preencha no pedido: '+(fields.join(', ')||'dados obrigatórios')+'.';
+  }
+  if(code==='invalid_status_transition')return 'O pedido mudou de situação. Atualize a lista antes de confirmar.';
+  if(['stock_unavailable','insufficient_stock','stock_reservation_failed'].includes(code))return 'Não há estoque suficiente. Abra o pedido para conferir os itens.';
+  if(code==='forbidden')return 'Sua sessão não tem permissão para confirmar pedidos.';
+  if(code==='order_not_found')return 'Pedido não localizado. Atualize a lista.';
+  if(code==='legacy_order_read_only')return 'Este pedido é somente leitura no sistema.';
+  if(code==='confirmation_state_changed')return 'O pedido já foi alterado. Atualize a lista para conferir.';
+  return 'Não foi possível confirmar o pedido ('+(code||'erro de comunicação')+'). Abra o pedido para conferir.';
+}
+async function adminOrderRequest(action,id,payload=null){
+  const url=new URL(ORDERS_ADMIN_API);
+  url.searchParams.set('action',action);
+  if(payload===null)url.searchParams.set('id',id);
+  const options=payload===null?{method:'GET'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)};
+  const response=await attendanceAuthorizedFetch(url,options);
+  const data=await response.json().catch(()=>({ok:false,error:'resposta_invalida'}));
+  if(!response.ok||data?.ok===false){const error=new Error(String(data?.error||'service_error'));error.payload=data;error.status=response.status;throw error}
+  return data;
+}
+function createConfirmOrderButton(order){
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='confirm-order-quick';
+  button.textContent='✓ Confirmar pedido';
+  button.disabled=orderConfirmingIds.has(String(order.id));
+  button.title='Confirma imediatamente este pedido e move para Confirmados';
+  button.onclick=()=>confirmOrderFromAttendance(order.id,button);
+  return button;
+}
+async function confirmOrderFromAttendance(orderId,button){
+  const id=String(orderId||''),conversationId=selectedId();
+  if(!VALID_ORDER_ID.test(id)||orderConfirmingIds.has(id))return;
+  const order=(state.context?.orders||[]).find(x=>String(x.id)===id);
+  if(!conversationId||!isConfirmableOrder(order))return;
+  orderConfirmingIds.add(id);
+  button.disabled=true;button.textContent='Confirmando…';
+  try{
+    // Confira novamente o estado canônico antes da única gravação.
+    const latest=(await adminOrderRequest('order',id)).order;
+    if(!isConfirmableOrder(latest))throw Object.assign(new Error('confirmation_state_changed'),{payload:{error:'confirmation_state_changed'}});
+    await adminOrderRequest('order_update',id,{id,status:'confirmed',operator:'Atendimento'});
+    if(selectedId()===conversationId&&state.context){
+      state.context.orders=(state.context.orders||[]).map(o=>String(o.id)===id?{...o,status:'confirmed',confirmed_at:new Date().toISOString()}:o);
+      renderContext();
+      showNote('Pedido '+(order.public_order_code||order.order_number||'')+' confirmado. Está em Confirmados.','success');
+      const refreshed=await Promise.allSettled([api('context',{conversation_id:conversationId}),loadQueue({silent:true})]);
+      if(selectedId()===conversationId&&refreshed[0].status==='fulfilled'){
+        state.context=refreshed[0].value;
+        renderContext();
+      }
+    }
+  }catch(error){
+    if(button.isConnected){
+      button.disabled=false;button.textContent='✓ Confirmar pedido';
+      let note=button.parentElement?.querySelector('.order-confirm-feedback');
+      if(!note){note=document.createElement('div');note.className='order-confirm-feedback';note.setAttribute('role','alert');button.parentElement?.append(note)}
+      if(note)note.textContent=confirmOrderErrorMessage(error);
+    }
+    showNote(confirmOrderErrorMessage(error),'error');
+    if(error?.payload?.error==='invalid_status_transition'||error?.payload?.error==='confirmation_state_changed'){
+      api('context',{conversation_id:conversationId}).then(data=>{if(selectedId()===conversationId){state.context=data;renderContext()}}).catch(()=>{});
+      loadQueue({silent:true}).catch(()=>{});
+    }
+  }finally{
+    orderConfirmingIds.delete(id);
+  }
+}
+
+function renderOverview(box){box.replaceChildren();const c=state.context?.customer,conversationPhone=state.conversation?.conversation?.phone_e164||'',a=state.context?.address,r=state.context?.registration,orders=[...(state.context?.orders||[])];const customer=document.createElement('section');customer.className='context-card';customer.innerHTML='<h3>Cliente</h3>';if(c){const hero=document.createElement('div');hero.className='customer-hero';hero.innerHTML=`<span class="avatar">${initials(c.name||c.phone_e164)}</span><div><strong>${c.name||'Cliente'}</strong><small>${conversationPhone}</small>${r?.registration_complete?'':'<span class="status-chip">Cadastro pendente</span>'}</div>`;customer.append(hero);for(const [label,value] of [['Endereço',a?[a.street,a.number,a.neighborhood,a.city].filter(Boolean).join(', '):'Não informado'],['Documento',c.masked_document||'Não informado'],['Comprado',money(c.lifetime_value||0)],['Marketing',c.marketing_opt_in?'Autorizado':'Não autorizado']]){const row=document.createElement('div');row.className='context-row';const l=document.createElement('span');l.textContent=label;const v=document.createElement('strong');v.textContent=value;row.append(l,v);customer.append(row)}const actions=document.createElement('div');actions.className='context-actions';actions.append(actionLink('Abrir cliente',adminLink('customers',{customer_id:c.id})),actionLink('Criar orçamento',adminLink('quotes',{customer_id:c.id,source:'attendance'})));customer.append(actions)}else customer.innerHTML+='<div class="context-empty">Conversa sem cliente vinculado. O chat continua disponível pelo telefone.</div>';box.append(customer);const order=document.createElement('section');order.className='context-card';order.innerHTML='<h3>Pedido atual</h3>';const current=orders[0];if(current){const head=document.createElement('div');head.className='order-head';head.innerHTML=`<strong>${current.public_order_code||current.order_number||'Pedido'}</strong><small>${fmtDate(current.confirmed_at||current.created_at)}</small>`;order.append(head);const row=document.createElement('div');row.className='context-row';row.innerHTML=`<span>${current.status||'Pedido'}</span><strong>${money(current.total)}</strong>`;order.append(row);const actions=document.createElement('div');actions.className='context-actions';actions.append(actionLink('Abrir pedido',adminLink('orders',{pedido:current.id}),true));if(isConfirmableOrder(current))actions.append(createConfirmOrderButton(current));const publicUrl=String(current.public_order_url||'').trim()||`https://donaantonia.com.br/pedido/?o=${encodeURIComponent(current.id)}`;actions.append(actionLink('Abrir vitrine',publicUrl));const copy=document.createElement('button');copy.type='button';copy.textContent='Copiar link';copy.onclick=async()=>{try{await navigator.clipboard.writeText(publicUrl);copy.textContent='Copiado'}catch{}setTimeout(()=>{if(copy.isConnected)copy.textContent='Copiar link'},1200)};actions.append(copy);order.append(actions)}else order.innerHTML+='<div class="context-empty">Nenhum pedido encontrado.</div>';box.append(order)}
+function renderOrders(box){
+  box.replaceChildren();
+  const orders=state.context?.orders||[];
+  if(!orders.length){box.innerHTML='<div class="context-empty">Nenhum pedido encontrado.</div>';return}
+  for(const order of orders){
+    const card=document.createElement('article');
+    card.className='order-card';
+    card.innerHTML=`<div class="order-head"><strong>${order.public_order_code||order.order_number||'Pedido'}</strong><small>${fmtDate(order.confirmed_at||order.created_at)}</small></div><div class="context-row"><span>${orderStatusLabel(order.status)}</span><strong>${money(order.total)}</strong></div>`;
+    const actions=document.createElement('div');
+    actions.className='context-actions';
+    actions.append(actionLink('Abrir pedido',adminLink('orders',{pedido:order.id})));
+    if(isConfirmableOrder(order))actions.append(createConfirmOrderButton(order));
+    card.append(actions);
+    box.append(card);
+  }
+}
 function syncProductCards(list){for(const card of list.querySelectorAll('.product-card[data-product-id]')){const active=isAttendanceProductSelected(card.dataset.productId);card.classList.toggle('selected',active);const button=card.querySelector('.product-select-btn');if(button){button.classList.toggle('active',active);button.textContent=active?'Selecionado':'Selecionar'}}}
 function syncProductBatchBar(list,message=''){const bar=list.parentElement?.querySelector('.product-batch-bar');if(!bar)return;const items=attendanceProductSelection(),failedItems=attendanceProductFailedSelection(),count=items.length,status=bar.querySelector('[data-product-batch-status]'),clear=bar.querySelector('[data-product-batch-clear]'),send=bar.querySelector('[data-product-batch-send]'),windowOpen=state.conversation?.service_window?.open===true;if(status){if(message)status.textContent=message;else if(!windowOpen&&count)status.textContent='Janela de 24h encerrada. Produtos não podem ser enviados.';else status.textContent=count?count+' de '+MAX_PRODUCT_BATCH+' selecionado'+(count===1?'':'s'):'Selecione até '+MAX_PRODUCT_BATCH+' produtos.'}if(clear)clear.disabled=productBatchSending||count===0;if(send){const retry=failedItems.length>0&&failedItems.length===count;bar.dataset.retry=retry?'true':'false';send.textContent=retry?'Tentar novamente '+failedItems.length:'Enviar '+count+' produto'+(count===1?'':'s');send.disabled=productBatchSending||count===0||!windowOpen}syncProductCards(list)}
 async function sendSelectedProducts(list,retry=false){if(productBatchSending)return;const conversationId=selectedId(),windowOpen=state.conversation?.service_window?.open===true;if(!conversationId){syncProductBatchBar(list,'Selecione uma conversa antes de enviar.');return}if(!windowOpen){syncProductBatchBar(list,'Janela de 24h encerrada. Produtos não podem ser enviados.');return}const products=retry?attendanceProductFailedSelection():attendanceProductSelection();if(!products.length){syncProductBatchBar(list);return}productBatchSending=true;syncProductBatchBar(list,'Preparando '+products.length+' produto'+(products.length===1?'':'s')+'…');try{const runner=retry?retryFailedAttendanceProducts:sendAttendanceProductBatch;const options={conversationId,serviceWindowOpen:windowOpen,onProgress:info=>{if(selectedId()!==conversationId)return;if(info.phase==='sending')syncProductBatchBar(list,'Enviando '+info.current+' de '+info.total+'…')}};if(!retry)options.products=products;const result=await runner(options);if(selectedId()!==conversationId)return;const sentCount=result.sent?.length||0,failedCount=result.failed?.length||0;syncProductBatchBar(list,failedCount?sentCount+' enviado'+(sentCount===1?'':'s')+' · '+failedCount+' falhou':sentCount+' produto'+(sentCount===1?' enviado':'s enviados'));const fresh=await api('conversation',{conversation_id:conversationId,limit:MESSAGE_PAGE_SIZE}).catch(()=>null);if(fresh&&selectedId()===conversationId){state.conversation=fresh;renderMessages()}loadQueue({silent:true}).catch(()=>{})}catch(error){if(selectedId()===conversationId)syncProductBatchBar(list,String(error?.message||'Falha ao enviar produtos.'))}finally{productBatchSending=false;if(selectedId()===conversationId)syncProductBatchBar(list)}}
