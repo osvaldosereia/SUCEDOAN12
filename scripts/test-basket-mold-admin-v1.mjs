@@ -51,6 +51,17 @@ assert.match(compositionSQL,/when r\.has_preferred then 1/);
 assert.match(compositionSQL,/preferred_in_stock/);
 assert.match(compositionSQL,/available_stock/);
 
+// Multiple preferences do not cancel one another; SQL distributes preferred SKUs.
+assert.match(ui,/option\.preferred=option\.preferred!==true/);
+assert.doesNotMatch(ui,/options\.forEach\(\(o,i\)=>\{o\.preferred=/);
+assert.match(ui,/Marque quantos produtos preferenciais quiser/);
+const multiPreferredSQL=fs.readFileSync('supabase/migrations/20261013164500_basket_mold_multi_preferred_v1.sql','utf8');
+assert.match(multiPreferredSQL,/count\(\*\) filter \(where s\.is_preferred\)/);
+assert.match(multiPreferredSQL,/\(\(sl\.composition_number - 1\) % r\.preferred_count\) \+ 1/);
+assert.match(multiPreferredSQL,/when c\.is_preferred then 'preferred_in_stock'/);
+assert.match(multiPreferredSQL,/where greatest\(0, coalesce\(s\.loose_sellable_stock/);
+assert.match(section,/20261013-multi-preferred-v1/);
+
 // Gateway forwards the logged-in admin JWT and never loads a privileged server key.
 assert.match(api,/SUPABASE_ANON_KEY/);
 assert.equal(/SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEYS/.test(api),false,'mold gateway must not load privileged database secrets');
