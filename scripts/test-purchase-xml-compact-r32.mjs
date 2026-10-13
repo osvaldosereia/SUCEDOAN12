@@ -8,7 +8,7 @@ const a=html.indexOf('  async function purchaseSearchMatch(card){');
 const b=html.indexOf('  async function purchaseConfirmMatch(',a);
 assert.ok(a>0&&b>a,'purchase matcher exists');
 const source=html.slice(a,b);
-assert.match(html,/purchase-xml-simple\.css\?v=xml-r32/);
+assert.match(html,/purchase-xml-simple\.css\?v=xml-r(?:32|33)/);
 assert.match(html,/purchase-completed-items/);
 assert.match(html,/pending\.map\(purchaseItemCardHtml\)/);
 assert.match(html,/finished\.map\(purchaseItemCardHtml\)/);
