@@ -9,6 +9,7 @@ on:
       - 'scripts/test-whatsapp-1018-pilot-release-v1.mjs'
       - 'scripts/test-whatsapp-1018-pilot-fixture-v1.mjs'
       - 'scripts/test-whatsapp-1018-simulator-v1.mjs'
+      - 'scripts/build-whatsapp-1018-simulator-standalone-v1.mjs'
       - 'scripts/test-whatsapp-1018-meta-flow-draft-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-intent-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-flow-intent-v1.mjs'
@@ -55,6 +56,14 @@ jobs:
         run: node scripts/test-whatsapp-1018-pilot-fixture-v1.mjs
       - name: Offline mobile simulator contract
         run: node scripts/test-whatsapp-1018-simulator-v1.mjs
+      - name: Build offline mobile simulator
+        run: node scripts/build-whatsapp-1018-simulator-standalone-v1.mjs
+      - name: Upload standalone mobile simulator
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatsapp-1018-simulador-offline
+          path: dist/whatsapp-1018-simulator/index.html
+          retention-days: 14
       - name: Draft Meta Flow contract
         run: node scripts/test-whatsapp-1018-meta-flow-draft-v1.mjs
       - name: Verified Flow intent classifier
