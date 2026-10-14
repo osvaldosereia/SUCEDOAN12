@@ -48,6 +48,7 @@ async function refreshCapability(conversationId=selectedFromDom()){
     const data=await api('conversation',{conversation_id:conversationId,limit:1});
     if(selectedConversationId!==conversationId)return;
     currentCapability=data?.send_capability||{enabled:false,reason:data?.service_window?.open===false?'service_window_closed':'human_send_not_homologated',provider:null};
+    if(data?.service_window?.open!==true){currentCapability={...currentCapability,enabled:false,reason:data?.service_window?.open===false?'service_window_closed':'capability_unavailable'};}
   }catch{
     if(selectedConversationId!==conversationId)return;
     currentCapability={enabled:false,reason:'capability_unavailable',provider:null};
