@@ -3,7 +3,7 @@ import {canonicalMessagesFromMeta} from '../supabase/functions/_shared/whatsapp-
 import {classify1018MetaFlowMessage} from '../supabase/functions/_shared/ana-1018-meta-flow-completion-v1.mjs';
 
 const account='11111111-1111-4111-8111-111111111111';
-const token='A'.repeat(48);
+const token='da1018_'+ 'A'.repeat(40);
 const reply=(intent='offers',extra={})=>JSON.stringify({flow_token:token,intent,...extra});
 const payload=(responseJson,phone='65984491018')=>({
  entry:[{id:'1234567890',changes:[{field:'messages',value:{metadata:{phone_number_id:'99887766',display_phone_number:phone},messages:[{id:'wamid.mock-flow-01',from:'5565999999999',timestamp:'1791900000',type:'interactive',interactive:{type:'nfm_reply',nfm_reply:{name:'flow',body:'Concluído',response_json:responseJson}}}]}}]}]
