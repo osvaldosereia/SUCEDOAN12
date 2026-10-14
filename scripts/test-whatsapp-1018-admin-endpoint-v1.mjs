@@ -7,7 +7,7 @@ assert.match(endpoint,/admin_users/);assert.match(endpoint,/role\.data\.role!=="
 assert.match(endpoint,/pilot_write_locked_until_secure_auth/);
 assert.match(endpoint,/1646700793791407/);
 assert.match(endpoint,/action==="meta_status"/);
-assert.match(endpoint,/body\?\.action==="preview_checkout"/);
+assert.match(endpoint,/"preview_checkout"/);assert.match(endpoint,/"submit_pilot_order"/);
 assert.match(endpoint,/prepare1018CheckoutConfirmation/);
 assert.match(endpoint,/build1018CanonicalOrderPayload/);
 assert.match(endpoint,/WHATSAPP_1018_PILOT_ORDER_WRITES_ENABLED/);
