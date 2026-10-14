@@ -10,10 +10,11 @@ const db={rpc:async(name,args)=>{registrations++;assert.equal(name,'ops2_1018_fl
  assert.equal(args.p_token_sha256,await sha2561018FlowToken(payload.interactive.action.parameters.flow_token));
  return {data:{ok:true,session_id:'session-123'},error:null}}};
 const input={enabled:true,accountId:account,expectedAccountId:account,
- customerPhone:'+5565999999999',flowId:'1234567890',release:{mode:'pilot',generation:5},send,db};
+ customerPhone:'+5565999999999',flowId:'1234567890',release:{mode:'pilot',generation:5},serviceWindowVerified:true,send,db};
 assert.equal((await send1018PilotFlow({...input,enabled:false})).reason,'disabled');
 assert.equal((await send1018PilotFlow({...input,expectedAccountId:'0975'})).reason,'wrong_account');
 assert.equal((await send1018PilotFlow({...input,release:{mode:'current',generation:5}})).reason,'pilot_inactive');
+assert.equal((await send1018PilotFlow({...input,serviceWindowVerified:false})).reason,'service_window_unverified');
 assert.equal(sends,0);assert.equal(registrations,0);
 const good=await send1018PilotFlow(input);
 assert.equal(good.ok,true);assert.equal(good.sessionId,'session-123');
