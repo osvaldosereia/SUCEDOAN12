@@ -70,7 +70,7 @@ Deno.serve(async(req:Request)=>{
  }
  if(req.method==="POST"){
   const body=await req.json().catch(()=>null);
-  if(body?.action==="preview_cart"||body?.action==="preview_checkout"){
+  if(["preview_cart","preview_checkout","submit_pilot_order"].includes(body?.action)){
    const lines=body.lines,city=body.city;
    if(!Array.isArray(lines)||lines.length<1||lines.length>12||typeof city!=="string")return reply(req,{ok:false,error:"invalid_cart"},400);
    const unique=new Map<string,{kind:string,id:string}>();
@@ -97,7 +97,7 @@ Deno.serve(async(req:Request)=>{
      stock:p?.stock_quantity};
    });
    const preview=quote1018CanonicalCart({lines,catalog,city});
-   if(body.action==="preview_checkout"){
+   if(body.action==="preview_checkout"||body.action==="submit_pilot_order"){
     if(!preview.ok)return reply(req,{...preview,source:"storefront-v2",channel:"1018"},409);
     const confirmation=prepare1018CheckoutConfirmation({quote:preview,customer:body.customer,delivery:body.delivery,paymentMethod:body.paymentMethod,customerConfirmed:body.customerConfirmed});
     if(!confirmation.ok)return reply(req,{...confirmation,source:"storefront-v2"},409);
@@ -107,6 +107,49 @@ Deno.serve(async(req:Request)=>{
     if(!Array.isArray(delivery.data?.options)||!delivery.data.options.some((x:any)=>x.date===date))return reply(req,{ok:false,error:"delivery_date_unavailable"},409);
     const prepared=build1018CanonicalOrderPayload({lines,basketDetails,quote:preview,phone:confirmation.confirmation.phone,paymentMethod:confirmation.confirmation.paymentMethod,deliveryDate:date});
     if(!prepared.ok)return reply(req,{ok:false,error:prepared.reason},409);
+    if(body.action==="submit_pilot_order"){
+     // No public or Flow-triggered writes. Owner-authenticated explicit opt-in only.
+     if(Deno.env.get("WHATSAPP_1018_PILOT_ORDER_WRITES_ENABLED")!=="true")
+      return reply(req,{ok:false,error:"pilot_order_writes_disabled"},423);
+     const key=String(body.requestKey||"");
+     if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key))
+      return reply(req,{ok:false,error:"request_key_required"},400);
+     const encoded=new TextEncoder().encode(JSON.stringify(prepared.payload));
+     const digest=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",encoded))).map(b=>b.toString(16).padStart(2,"0")).join("");
+     const claim=await db.from("whatsapp_1018_checkout_attempts_v1").insert({
+      request_key:key,actor_user_id:auth.data.user.id,payload_hash:digest,status:"processing"
+     }).select("id").single();
+     if(claim.error){
+      if(claim.error.code!=="23505")return reply(req,{ok:false,error:"idempotency_storage_unavailable"},503);
+      const existing=await db.from("whatsapp_1018_checkout_attempts_v1")
+       .select("payload_hash,status,result").eq("request_key",key).maybeSingle();
+      if(existing.error||!existing.data)return reply(req,{ok:false,error:"idempotency_lookup_failed"},503);
+      if(existing.data.payload_hash!==digest)return reply(req,{ok:false,error:"request_key_reused"},409);
+      if(existing.data.status==="succeeded")return reply(req,{ok:true,replayed:true,order:existing.data.result},200);
+      return reply(req,{ok:false,error:"order_attempt_already_started",status:existing.data.status},409);
+     }
+     let result:any=null,status=503;
+     try{
+      const upstream=await fetch(source+"?action=submit_order",{
+       method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+service,"apikey":service},
+       body:JSON.stringify(prepared.payload),signal:AbortSignal.timeout(25000)
+      });
+      result=await upstream.json().catch(()=>null);status=upstream.status;
+      if(!upstream.ok||!result?.ok||!result?.order_id){
+       await db.from("whatsapp_1018_checkout_attempts_v1").update({status:"failed",result:{error:String(result?.error||"canonical_order_rejected").slice(0,120)},updated_at:new Date().toISOString()}).eq("id",claim.data.id);
+       return reply(req,{ok:false,error:"canonical_order_rejected",reason:result?.error||"unknown"},upstream.ok?409:status);
+      }
+      const publicResult={order_id:result.order_id,order_number:result.order_number||null,
+       order_public_url:result.order_public_url||null,total:result.total||null};
+      const saved=await db.from("whatsapp_1018_checkout_attempts_v1").update({status:"succeeded",order_id:result.order_id,
+       result:publicResult,updated_at:new Date().toISOString()}).eq("id",claim.data.id);
+      if(saved.error)return reply(req,{ok:false,error:"order_created_but_receipt_unavailable",requestKey:key},503);
+      return reply(req,{ok:true,orderCreated:true,order:publicResult},200);
+     }catch{
+      // Fail closed: an upstream timeout might still have created an order. Never retry automatically.
+      return reply(req,{ok:false,error:"order_result_uncertain_do_not_retry",requestKey:key},503);
+     }
+    }
     // Internal owner-only staging; never submit automatically or expose basket adjustments to customers.
     return reply(req,{...confirmation,source:"storefront-v2",canonicalOrderPrepared:true,canonicalOrder:prepared});
    }
