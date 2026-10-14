@@ -10,7 +10,8 @@ const payload=(responseJson,phone='65984491018')=>({
 });
 const canonical=canonicalMessagesFromMeta(payload(reply()),()=>account)[0];
 assert.equal(canonical.message.metadata.interactive.type,'nfm_reply');
-const classify=(m,phone='+5565984491018',verified=true)=>classify1018MetaFlowMessage({canonicalMessage:m,channelPhone:phone,signatureVerified:verified});
+const classify=(m,phone='+5565984491018',verified=true,signedPayload=payload(reply()))=>classify1018MetaFlowMessage({canonicalMessage:m,signedPayload,channelPhone:phone,signatureVerified:verified});
+assert.equal(JSON.stringify(canonical).includes(token),false,'canonical payload must not expose token');
 const valid=await classify(canonical);
 assert.equal(valid.ok,true);
 assert.equal(valid.intent,'offers');
@@ -23,7 +24,7 @@ assert.equal(valid.allowMessageSend,false);
 assert.equal((await classify(canonical,'+5565998150975')).ok,false);
 assert.equal((await classify(canonical,'+5565984491018',false)).ok,false);
 for(const bad of ['{broken', JSON.stringify({intent:'offers'}),JSON.stringify({flow_token:'short',intent:'offers'}),reply('human',{order_id:'1'}),reply('delete_order'),'x'.repeat(4097)]){
- assert.equal((await classify(canonicalMessagesFromMeta(payload(bad),()=>account)[0])).ok,false,bad.slice(0,70));
+ assert.equal((await classify(canonicalMessagesFromMeta(payload(bad),()=>account)[0],'+5565984491018',true,payload(bad))).ok,false,bad.slice(0,70));
 }
 assert.equal((await classify({...canonical,provider:'papoai'})).ok,false);
 assert.equal((await classify({...canonical,message:{...canonical.message,message_type:'text'}})).ok,false);
