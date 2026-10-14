@@ -6,7 +6,7 @@ const outbound=readFileSync('supabase/functions/_shared/ana-1018-flow-outbound-v
 assert.match(webhook,/WHATSAPP_1018_FLOW_HOOK_ENABLED/);
 assert.match(webhook,/WHATSAPP_1018_FLOW_ACCOUNT_ID/);
 assert.match(webhook,/WHATSAPP_1018_META_FLOW_ID/);
-assert.match(webhook,/signedPayload:\s*payload/,'the signed raw payload must be forwarded to parser');
+assert.equal((webhook.match(/signedPayload:\s*payload/g)||[]).length,1,'signed payload must be forwarded once, without duplicate keys');
 assert.match(webhook,/signatureVerified:\s*true/);
 assert.match(adapter,/locateSignedMetaFlowReply\(\{canonicalMessage,signedPayload\}\)/);
 assert.match(adapter,/ops2_1018_flow_session_consume_v1/);
