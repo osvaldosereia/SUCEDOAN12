@@ -21,11 +21,11 @@ const removal={...config,triggers:[{key:'remove-interest',name:'Remover interess
 assert.equal(routeAnaMessage(removal,'não quero mais','0975').path,'remove_label');
 assert.equal(routeAnaMessage(null,'oi','0975').reason,'active_config_invalid');
 const worker=fs.readFileSync('supabase/functions/whatsapp-ana-worker-v1/index.ts','utf8');
-assert.match(worker,/ops2_ana_active_config_v1/);
+assert.match(worker,/ops2_ana_channel_active_config_v1/);
 assert.match(worker,/buildAnaRuntimeInstructions/);
 assert.match(worker,/evaluateAnaTriggers|routeAnaMessage/);
 assert.match(worker,/ops2_attendance_ai_gate_v1[\s\S]*generateAnaDryRunSuggestion[\s\S]*ops2_attendance_ai_gate_v1/);
-assert.match(worker,/ops2_ana_begin_live_send_v1[\s\S]*sendTextViaMeta[\s\S]*ops2_ana_accept_live_outbound_v1/);
+assert.match(worker,/ops2_ana_channel_begin_live_send_v1[\s\S]*sendTextViaMeta[\s\S]*ops2_ana_accept_live_outbound_v1/);
 assert.match(worker,/active_config_invalid[\s\S]*finishLive/);
 assert.match(worker,/human_takeover_during_trigger_actions/);
 assert.match(worker,/ops2_ana_remove_trigger_label_v1/,'worker must use provenance-safe label removal RPC');
