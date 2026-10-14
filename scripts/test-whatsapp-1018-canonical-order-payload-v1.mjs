@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {build1018CanonicalOrderPayload as build} from '../supabase/functions/_shared/ana-1018-canonical-order-payload-v1.mjs';
+const id='11111111-1111-4111-8111-111111111111',pid='22222222-2222-4222-8222-222222222222',pos='33333333-3333-4333-8333-333333333333',lot='44444444-4444-4444-8444-444444444444';
+const quote={ok:true,readOnly:true,orderCreated:false};
+const base={quote,phone:'65999999999',paymentMethod:'pix_delivery',deliveryDate:'2026-10-15'};
+const mold={basket:{id,mold_mode:true,composition_number:2,stock_quantity:4},items:[{position_id:pos,product_id:pid,quantity:1}]};
+const a=build({...base,lines:[{kind:'basket',id:id+'@2',quantity:1}],basketDetails:new Map([[id+'@2',mold]])});
+assert.equal(a.ok,true);assert.equal(a.payload.items[0].type,'basket_mold');assert.equal(a.payload.items[0].composition_number,2);assert.equal(a.orderCreated,false);
+const split={basket:{id,split_mode:true,food_lot_id:lot,stock_quantity:2},items:[{product_id:pid,base_quantity:1,component_group:'food'}]};
+const b=build({...base,lines:[{kind:'basket',id,quantity:1}],basketDetails:new Map([[id,{basket:split.basket,items:split.items}]])});
+assert.equal(b.ok,true);assert.equal(b.payload.items[0].food_lot_id,lot);
+assert.equal(build({...base,lines:[{kind:'basket',id:id+'@2',quantity:1}],basketDetails:new Map([[id+'@2',{...mold,basket:{...mold.basket,composition_number:3}}]])}).reason,'composition_mismatch');
+assert.equal(build({...base,lines:[{kind:'product',id:pid,quantity:1}],deliveryDate:'2026-10-15',paymentMethod:'boleto'}).reason,'invalid_payment_method');
+console.log('PASS 1018 canonical order payload: mold, split lots, composition mismatch, payment restrictions, no writes');
