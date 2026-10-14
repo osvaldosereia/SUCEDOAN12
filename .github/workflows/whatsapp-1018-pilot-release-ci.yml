@@ -14,6 +14,10 @@ on:
       - 'supabase/functions/_shared/ana-1018-flow-intent-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-meta-flow-completion-v1.mjs'
       - 'scripts/test-whatsapp-1018-meta-flow-completion-v1.mjs'
+      - 'supabase/functions/_shared/ana-1018-meta-flow-webhook-v1.mjs'
+      - 'scripts/test-whatsapp-1018-flow-webhook-v1.mjs'
+      - 'supabase/functions/whatsapp-meta-webhook-v1/index.ts'
+      - 'supabase/functions/_shared/whatsapp-core-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-flow-session-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-session-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-session-schema-v1.mjs'
@@ -51,6 +55,8 @@ jobs:
         run: node scripts/test-whatsapp-1018-flow-session-v1.mjs
       - name: Flow session SQL contract
         run: node scripts/test-whatsapp-1018-flow-session-schema-v1.mjs
+      - name: Isolated webhook pilot and redaction guards
+        run: node scripts/test-whatsapp-1018-flow-webhook-v1.mjs
       - name: ANA admin worker contracts
         run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs
       - name: ANA live release contracts
