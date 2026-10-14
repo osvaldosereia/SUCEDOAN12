@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {provision1018MetaFlowDraft} from "../_shared/ana-1018-meta-flow-provision-v1.mjs";
 import draft from "./meta-flow-intent-draft.json" with {type:"json"};
+import {fetch1018CanonicalStorefront} from "../_shared/ana-1018-storefront-bridge-v1.mjs";
 const url=Deno.env.get("SUPABASE_URL")||"";
 const service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const token=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"";
@@ -25,8 +26,20 @@ Deno.serve(async(req:Request)=>{
  const account=await db.from("whatsapp_accounts").select("id,slug,phone_e164,waba_id,is_active")
   .eq("slug","dona-antonia-1018").eq("is_active",true).maybeSingle();
  if(account.error||!account.data)return reply(req,{ok:false,error:"account_1018_unavailable"},503);
- if(req.method==="GET")return reply(req,{ok:true,channel:"1018",deployment:"pilot_only",flow_published:false,
-  flow_submitted:false,live_activation:false,flow_json:draft});
+ if(req.method==="GET"){
+  const action=new URL(req.url).searchParams.get("action")||"status";
+  if(action==="catalog_preview"){
+   const preview=await fetch1018CanonicalStorefront({action:"offers",baseUrl:url+"/functions/v1/storefront-v2"});
+   if(!preview.ok)return reply(req,{ok:false,error:preview.reason},503);
+   const offers=Array.isArray(preview.data.offers)?preview.data.offers:[];
+   const rows=offers.filter((p:any)=>Number(p.stock_quantity)>0&&Number.isSafeInteger(p.price_cents)&&p.price_cents>=0)
+    .slice(0,20).map((p:any)=>({id:p.id,name:String(p.name||"").slice(0,100),price_cents:p.price_cents,stock_quantity:p.stock_quantity}));
+   return reply(req,{ok:true,channel:"1018",source:"storefront-v2",read_only:true,offers:rows});
+  }
+  if(action!=="status")return reply(req,{ok:false,error:"invalid_action"},400);
+  return reply(req,{ok:true,channel:"1018",deployment:"pilot_only",flow_published:false,
+   flow_submitted:false,live_activation:false,flow_json:draft});
+ }
  const body=await req.json().catch(()=>({}));
  if(body?.action!=="submit_draft"||Object.keys(body).some((key:string)=>key!=="action"))
   return reply(req,{ok:false,error:"invalid_action"},400);
