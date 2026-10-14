@@ -72,6 +72,8 @@ function sendErrorMessage(error){
 async function sendDraft(){
   const conversationId=selectedFromDom(),text=draftText();
   if(!conversationId||!text||currentCapability?.enabled!==true||sending){syncSendButton({updateNote:true});return}
+  await refreshCapability(conversationId);
+  if(selectedFromDom()!==conversationId||currentCapability?.enabled!==true){syncSendButton({updateNote:true});return}
   selectedConversationId=conversationId;sending=true;syncSendButton();showNote(`Enviando via ${providerLabel()}…`);
   try{
     const result=await api('send_text',{conversation_id:conversationId,text,idempotency_key:idempotencyKey()},'POST');
