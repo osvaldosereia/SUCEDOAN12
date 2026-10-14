@@ -3,11 +3,12 @@ import {create1018FlowToken,sha2561018FlowToken,build1018FlowDraftMessage} from 
 // Pilot-only send coordinator. Injected dependencies make this testable without Meta.
 // Never retries a Meta send after an ambiguous network result.
 export async function send1018PilotFlow({enabled=false,accountId,expectedAccountId,
- customerPhone,flowId,release,db,send,mode='draft'}={}){
+ customerPhone,flowId,release,db,send,mode='draft',serviceWindowVerified=false}={}){
  if(!enabled)return {ok:false,reason:'disabled'};
  if(!accountId||accountId!==expectedAccountId)return {ok:false,reason:'wrong_account'};
  if(release?.mode!=='pilot'||!Number.isSafeInteger(release.generation)||release.generation<1)
   return {ok:false,reason:'pilot_inactive'};
+ if(serviceWindowVerified!==true)return {ok:false,reason:'service_window_unverified'};
  if(typeof db?.rpc!=='function'||typeof send!=='function')
   return {ok:false,reason:'dependencies_missing'};
  const token=create1018FlowToken();
