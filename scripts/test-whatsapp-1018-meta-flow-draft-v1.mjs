@@ -5,7 +5,7 @@ const screens=new Map(flow.screens.map(s=>[s.id,s]));
 assert.equal(screens.size,2);
 assert.equal(screens.get('SELECT_PATH').terminal,true);
 assert.equal(screens.get('SELECT_PATH').success,true);
-assert.equal(screens.get('SELECT_PATH').layout.children.at(-1).on_click_action.name,'complete');
+assert.equal(screens.get('SELECT_PATH').layout.children.at(-1)['on-click-action'].name,'complete');
 const group=screens.get('SELECT_PATH').layout.children.find(c=>c.type==='Form').children.find(c=>c.type==='RadioButtonsGroup');
 assert.equal(group.required,true);
 assert.deepEqual(group['data-source'].map(x=>x.id),['new_order','offers','existing_order','human']);
