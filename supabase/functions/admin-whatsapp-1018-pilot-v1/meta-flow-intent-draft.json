@@ -27,7 +27,7 @@
           {
             "type": "Footer",
             "label": "Continuar",
-            "on_click_action": {
+            "on-click-action": {
               "name": "navigate",
               "next": {
                 "type": "screen",
@@ -80,7 +80,7 @@
           {
             "type": "Footer",
             "label": "Concluir",
-            "on_click_action": {
+            "on-click-action": {
               "name": "complete",
               "payload": {
                 "intent": "${form.intent}"
