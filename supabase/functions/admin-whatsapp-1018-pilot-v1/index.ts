@@ -5,6 +5,7 @@ import draft from "./meta-flow-intent-draft.json" with {type:"json"};
 import {fetch1018CanonicalStorefront} from "../_shared/ana-1018-storefront-bridge-v1.mjs";
 import {map1018CanonicalProducts} from "../_shared/ana-1018-canonical-product-preview-v1.mjs";
 import {map1018CanonicalBaskets} from "../_shared/ana-1018-canonical-basket-preview-v1.mjs";
+import {quote1018CanonicalCart} from "../_shared/ana-1018-canonical-cart-quote-v1.mjs";
 const url=Deno.env.get("SUPABASE_URL")||"";
 const service=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const token=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"";
@@ -54,6 +55,36 @@ Deno.serve(async(req:Request)=>{
   if(action!=="status")return reply(req,{ok:false,error:"invalid_action"},400);
   return reply(req,{ok:true,channel:"1018",deployment:"pilot_only",flow_id:"1646700793791407",flow_submitted:true,
    live_activation:false,flow_json:draft});
+ }
+ if(req.method==="POST"){
+  const body=await req.json().catch(()=>null);
+  if(body?.action==="preview_cart"){
+   const lines=body.lines,city=body.city;
+   if(!Array.isArray(lines)||lines.length<1||lines.length>12||typeof city!=="string")return reply(req,{ok:false,error:"invalid_cart"},400);
+   const unique=new Map<string,{kind:string,id:string}>();
+   const idPattern=/^[0-9a-f]{8}-[0-9a-f-]{27,28}(?:@[1-6])?$/i;
+   for(const line of lines){
+    if(!line||!["product","basket"].includes(line.kind)||typeof line.id!=="string"||!idPattern.test(line.id)||!Number.isInteger(line.quantity)||line.quantity<1||line.quantity>50)return reply(req,{ok:false,error:"invalid_item"},400);
+    if(line.kind==="product"&&line.id.includes("@"))return reply(req,{ok:false,error:"invalid_item"},400);
+    unique.set(line.kind+":"+line.id,{kind:line.kind,id:line.id});
+   }
+   if(unique.size>8)return reply(req,{ok:false,error:"too_many_items"},400);
+   const all=[...unique.values()];
+   const needsBasket=all.some(x=>x.kind==="basket");
+   const source=url+"/functions/v1/storefront-v2";
+   const requests=await Promise.all(all.filter(x=>x.kind==="product").map(x=>fetch1018CanonicalStorefront({action:"product",params:{product_id:x.id},baseUrl:source})));
+   const home=needsBasket?await fetch1018CanonicalStorefront({action:"home",baseUrl:source}):null;
+   if(requests.some(x=>!x.ok)||(home&&!home.ok))return reply(req,{ok:false,error:"canonical_unavailable"},503);
+   const products=new Map(all.filter(x=>x.kind==="product").map((x,i)=>[x.id,requests[i]?.data?.product]));
+   const baskets=home?.data?.baskets||[];
+   const catalog=all.map(x=>{
+    const p=x.kind==="product"?products.get(x.id):baskets.find((b:any)=>String(b.card_key||b.id)===x.id);
+    return {key:x.kind+":"+x.id,name:String(p?.name||""),priceCents:x.kind==="product"?p?.price_cents:p?.display_price_cents,
+     stock:p?.stock_quantity};
+   });
+   const preview=quote1018CanonicalCart({lines,catalog,city});
+   return reply(req,{...preview,source:"storefront-v2",channel:"1018"},preview.ok?200:409);
+  }
  }
  return reply(req,{ok:false,error:"pilot_write_locked_until_secure_auth"},423);
 });
