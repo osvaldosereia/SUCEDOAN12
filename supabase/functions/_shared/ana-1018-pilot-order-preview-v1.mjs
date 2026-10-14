@@ -1,5 +1,4 @@
 // Pure read-only preview for WhatsApp 1018. Authoritative price/stock is resolved by Vitrine/Admin.
-const money=n=>Math.round(Number(n)*100);
 const cents=n=>Number.isSafeInteger(n)&&n>=0;
 export function preview1018Cart({lines=[],catalog=[],deliveryCity='',nowHour=0,holiday=false,sunday=false,minimumCents=7500}={}){
  if(!Array.isArray(lines)||!Array.isArray(catalog)||lines.length>100||catalog.length>5000)
@@ -7,13 +6,15 @@ export function preview1018Cart({lines=[],catalog=[],deliveryCity='',nowHour=0,h
  if(!['Cuiabá','Varzea Grande','Várzea Grande'].includes(deliveryCity))
   return {ok:false,reason:'delivery_outside_service_area'};
  const map=new Map(catalog.map(p=>[String(p.id),p]));
- let total=0;const preview=[];
+ let total=0;const preview=[];const requested=new Map();
  for(const line of lines){
   const id=String(line?.productId||'');const qty=Number(line?.quantity);
   if(!Number.isSafeInteger(qty)||qty<1||qty>100)return {ok:false,reason:'invalid_quantity'};
   const product=map.get(id);
   if(!product||product.active!==true)return {ok:false,reason:'product_unavailable'};
-  if(!Number.isSafeInteger(product.stock)||product.stock<qty)return {ok:false,reason:'insufficient_stock',productId:id};
+  const cumulative=(requested.get(id)||0)+qty;
+  if(!Number.isSafeInteger(cumulative)||!Number.isSafeInteger(product.stock)||product.stock<cumulative)return {ok:false,reason:'insufficient_stock',productId:id};
+  requested.set(id,cumulative);
   const priceCents=Number(product.priceCents);
   if(!cents(priceCents))return {ok:false,reason:'invalid_price'};
   // Hidden basket adjustments remain server-side and are never broken down in customer previews.
