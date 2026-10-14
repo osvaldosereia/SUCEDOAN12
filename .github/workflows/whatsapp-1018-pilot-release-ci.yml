@@ -20,6 +20,8 @@ on:
       - 'scripts/test-whatsapp-1018-storefront-bridge-v1.mjs'
       - 'scripts/test-whatsapp-1018-canonical-product-preview-v1.mjs'
       - 'scripts/test-whatsapp-1018-canonical-basket-preview-v1.mjs'
+      - 'scripts/test-whatsapp-1018-canonical-cart-quote-v1.mjs'
+      - 'supabase/functions/_shared/ana-1018-canonical-cart-quote-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-canonical-basket-preview-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-canonical-product-preview-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-storefront-bridge-v1.mjs'
@@ -93,6 +95,8 @@ jobs:
             dist/whatsapp-1018-simulator/index.html
             dist/whatsapp-1018-simulator/readiness.json
           retention-days: 14
+      - name: Real-catalog mixed cart quote
+        run: node scripts/test-whatsapp-1018-canonical-cart-quote-v1.mjs
       - name: Private basket adjustment stripping
         run: node scripts/test-whatsapp-1018-canonical-basket-preview-v1.mjs
       - name: Canonical product preview and hidden basket protection
