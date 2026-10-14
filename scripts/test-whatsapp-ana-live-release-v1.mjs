@@ -18,7 +18,7 @@ assert.match(migration,/sender_kind,sender_ref,sent_at,metadata[\s\S]*'ana_ai','
 assert.match(migration,/revoke all on function public\.ops2_ana_enqueue_live_job_v1\(uuid\) from public,anon,authenticated/i,'live enqueue RPC must not be public');
 assert.match(policy,/score>=minConfidence/,'automatic send must require the high-confidence threshold');
 assert.match(worker,/shouldSendAnaLiveReply/,'worker must apply live-send confidence policy');
-assert.match(worker,/ops2_attendance_ai_gate_v1[\s\S]*generateAnaDryRunSuggestion[\s\S]*ops2_attendance_ai_gate_v1[\s\S]*ops2_ana_begin_live_send_v1/i,'worker must check human control before and after generation and before send');
+assert.match(worker,/ops2_attendance_ai_gate_v1[\s\S]*generateAnaDryRunSuggestion[\s\S]*ops2_attendance_ai_gate_v1[\s\S]*ops2_ana_channel_begin_live_send_v1/i,'worker must check human control before and after generation and before send');
 assert.match(worker,/sendTextViaMeta/,'live worker must use the existing Meta transport');
 assert.match(worker,/get_conversation_worker_provider_secret_v1/,'live worker must use the existing server-side OpenAI key fallback');
 assert.match(worker,/gpt-6-luna/,'live worker default model must match ANA preview');

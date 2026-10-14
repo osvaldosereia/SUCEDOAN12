@@ -31,7 +31,7 @@ export function redactWebhookPayload(value,depth=0){
     for(const [key,val] of Object.entries(value)){
       if(count++>=200){out.__truncated__=true;break}
       const normalized=String(key).toLowerCase().replace(/[^a-z0-9_\-]/g,'');
-      out[key]=SECRET_KEYS.has(normalized)||normalized.includes('password')||normalized.includes('secret')||normalized.includes('authorization')?'[redacted]':redactWebhookPayload(val,depth+1);
+      out[key]=normalized==='response_json'?'[flow_response_redacted]':(SECRET_KEYS.has(normalized)||normalized==='flow_token'||normalized.includes('password')||normalized.includes('secret')||normalized.includes('authorization')?'[redacted]':redactWebhookPayload(val,depth+1));
     }
     return out;
   }

@@ -21,11 +21,11 @@ const removal={...config,triggers:[{key:'remove-interest',name:'Remover interess
 assert.equal(routeAnaMessage(removal,'não quero mais','0975').path,'remove_label');
 assert.equal(routeAnaMessage(null,'oi','0975').reason,'active_config_invalid');
 const worker=fs.readFileSync('supabase/functions/whatsapp-ana-worker-v1/index.ts','utf8');
-assert.match(worker,/ops2_ana_active_config_v1/);
+assert.match(worker,/ops2_ana_channel_active_config_v1/);
 assert.match(worker,/buildAnaRuntimeInstructions/);
 assert.match(worker,/evaluateAnaTriggers|routeAnaMessage/);
 assert.match(worker,/ops2_attendance_ai_gate_v1[\s\S]*generateAnaDryRunSuggestion[\s\S]*ops2_attendance_ai_gate_v1/);
-assert.match(worker,/ops2_ana_begin_live_send_v1[\s\S]*sendTextViaMeta[\s\S]*ops2_ana_accept_live_outbound_v1/);
+assert.match(worker,/ops2_ana_channel_begin_live_send_v1[\s\S]*sendTextViaMeta[\s\S]*ops2_ana_accept_live_outbound_v1/);
 assert.match(worker,/active_config_invalid[\s\S]*finishLive/);
 assert.match(worker,/human_takeover_during_trigger_actions/);
 assert.match(worker,/ops2_ana_remove_trigger_label_v1/,'worker must use provenance-safe label removal RPC');
@@ -33,6 +33,6 @@ assert.match(worker,/admin_trigger_label_removed/,'worker must record determinis
 assert.match(worker,/select\('customer_id,wa_contact_e164'\)/,'worker must read only the explicit conversation customer link');
 assert.match(worker,/customerLinked:Boolean\(conversation\.data\.customer_id\)/,'worker must pass explicit customer linkage to trigger routing');
 assert.match(worker,/conversation_context_unavailable/,'missing conversation context must fail closed');
-assert.match(worker,/const routeMetadata=\{trigger_key:routed\.triggerKey\|\|null,active_version:activeConfig\.data\.version\}/,'live outcomes must retain the matched trigger key for metrics');
+assert.match(worker,/const routeMetadata=\{trigger_key:routed\.triggerKey\|\|null,active_version:activeConfig\.data\.version,release_mode:activeConfig\.data\.release_mode,release_generation:activeConfig\.data\.release_generation\}/,'live outcomes must retain trigger identity and release generation');
 assert.match(worker,/p_metadata:\{\.\.\.routeMetadata,outbox_id:/,'successful sends must persist trigger metadata');
 console.log('PASS: worker published configuration, deterministic routing and fail-closed contract');

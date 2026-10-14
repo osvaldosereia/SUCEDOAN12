@@ -123,7 +123,7 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
   if(inbound.error||!inbound.data||inbound.data.direction!=='inbound'||inbound.data.message_type!=='text'||!String(inbound.data.text_body||'').trim()){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'inbound_not_supported',p_model:model});
   }
-  const activeConfig=await db.rpc('ops2_ana_active_config_v1');
+  const activeConfig=await db.rpc('ops2_ana_channel_active_config_v1',{p_whatsapp_account_id:job.whatsapp_account_id});
   if(activeConfig.error||activeConfig.data?.ok!==true){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:'active_config_invalid',p_model:model});
   }
@@ -139,7 +139,7 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
       p_metadata:{active_version:activeConfig.data.version}});
   }
   const routed=routeAnaMessage(configuration,inbound.data.text_body,channel,{humanMode:false,customerLinked:Boolean(conversation.data.customer_id)});
-  const routeMetadata={trigger_key:routed.triggerKey||null,active_version:activeConfig.data.version};
+  const routeMetadata={trigger_key:routed.triggerKey||null,active_version:activeConfig.data.version,release_mode:activeConfig.data.release_mode,release_generation:activeConfig.data.release_generation};
   if(routed.path==='handoff'){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_reason:routed.reason||'admin_trigger_handoff',p_model:model,
       p_metadata:{trigger_key:routed.triggerKey||null,active_version:activeConfig.data.version}});
@@ -202,7 +202,7 @@ async function processLiveJob(db:any,job:any,apiKey:string,model:string,meta:{ac
       p_reason:'human_review_required',p_model:model,p_provider_response_id:generated.response_id||null,
       p_metadata:{...routeMetadata,source_reason:result.reason,missing_context:result.missing_context,latency_ms:generated.latency_ms||null}});
   }
-  const prepared=await db.rpc('ops2_ana_begin_live_send_v1',{p_job_id:job.id,p_text:result.response_text});
+  const prepared=await db.rpc('ops2_ana_channel_begin_live_send_v1',{p_job_id:job.id,p_text:result.response_text,p_release_mode:activeConfig.data.release_mode,p_release_generation:activeConfig.data.release_generation});
   if(prepared.error||prepared.data?.ok!==true){
     return await finishLive(db,{p_job_id:job.id,p_status:'skipped',p_decision:'handoff',p_text:result.response_text,p_confidence:result.confidence,
       p_reason:prepared.data?.error||'live_send_gate_closed',p_model:model,p_provider_response_id:generated.response_id||null,p_metadata:routeMetadata});

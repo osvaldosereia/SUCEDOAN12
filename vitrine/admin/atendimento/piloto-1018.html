@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Piloto 1018 · Vitrine/Admin</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#1a3025;background:#f4f7f5}*{box-sizing:border-box}
+body{margin:0}.wrap{max-width:1080px;margin:auto;padding:16px}header{background:#fff;border-bottom:1px solid #dce7df;padding:15px}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px}a{color:#176b43}
+h1{font-size:21px;margin:0}h2{font-size:16px;margin:0 0 10px}.muted{color:#60766a;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.card{background:white;border:1px solid #dce7df;border-radius:13px;padding:16px}
+.pill{display:inline-block;border:1px solid #dfc47b;background:#fff8e6;padding:5px 9px;border-radius:20px;font-weight:700;font-size:12px}
+button{padding:10px 13px;border:1px solid #b4cfc0;background:#f5faf7;color:#155438;border-radius:9px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}button+button{margin-left:6px}
+.pilot-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pilot-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600}.pilot-form input,.pilot-form select{width:100%;min-width:0;border:1px solid #c4d8cc;border-radius:7px;padding:9px;font:inherit}.pilot-form .wide{grid-column:1/-1}.pilot-form label.pilot-check{flex-direction:row;align-items:center}.pilot-form label.pilot-check input{width:auto}.pilot-check{display:flex;gap:9px;align-items:flex-start;margin:12px 0;font-size:13px}@media(max-width:540px){.pilot-form{grid-template-columns:1fr}}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;background:#f5f7f5;border-radius:9px;padding:10px;max-height:330px;overflow:auto}
+ul{padding-left:20px}li{margin:8px 0}.steps{display:grid;gap:7px}.step{border:1px solid #e1e8e3;padding:10px;border-radius:9px;font-size:13px}
+.status{font-size:13px;padding:10px;background:#f5f7f5;border-radius:8px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}header .wrap{align-items:flex-start;flex-direction:column}}
+</style></head><body>
+<header><div class="wrap"><div><h1>Atendimento WhatsApp · Piloto 1018</h1><div class="muted">Gestão centralizada no Vitrine/Admin — ambiente de homologação</div></div><a href="/vitrine/admin/atendimento/">← Voltar ao atendimento</a></div></header>
+<main class="wrap">
+<div class="card"><span class="pill">Não ativado para clientes</span>
+<p>Este painel organiza a preparação do novo atendimento do 1018. Não altera o 0975, o atendimento atual, os pedidos ou o estoque.</p>
+<div class="status" id="summary" role="status">Aguardando verificação local dos artefatos.</div></div>
+<div class="grid">
+<section class="card"><h2>Flow de entrada</h2><div class="steps" id="steps">
+<div class="step">1. Montar compra ou cesta</div><div class="step">2. Ver ofertas</div>
+<div class="step">3. Consultar ou alterar pedido</div><div class="step">4. Falar com atendente</div></div>
+<p class="muted">Menu de intenção somente. Não é checkout completo e não envia mensagens.</p>
+<button id="draftBtn">Ver JSON do Flow</button><button id="copyBtn" disabled>Copiar JSON</button>
+<pre id="draft" hidden></pre></section>
+<section class="card"><h2>Prévia de ofertas do catálogo oficial</h2><p class="muted">Consulta somente leitura ao storefront-v2, pelo backend do Admin. Não cria pedidos.</p><button id="catalogBtn" type="button">Ofertas</button><button id="productsBtn" type="button">Produtos</button><button id="basketsBtn" type="button">Cestas</button><div id="catalogResult" class="steps" aria-live="polite">Ainda não consultado.</div></section>
+<section class="card"><h2>Carrinho de teste · sem criar pedido</h2><p class="muted">Selecione produtos e cestas acima. A simulação consulta novamente o preço e estoque oficial antes de calcular.</p><div id="cartList" class="steps">Nenhum produto selecionado.</div><label for="pilotCity">Entrega</label> <select id="pilotCity"><option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option></select> <button type="button" id="quoteBtn">Conferir total e estoque</button><button type="button" id="clearCartBtn">Limpar</button><pre id="quoteResult" aria-live="polite"></pre></section>
+<section class="card" id="checkoutTestCard"><h2>Homologação · conferência do pedido 1018</h2>
+<p class="muted">Use dados de teste autorizados ou de cliente interno. As opções de entrega vêm do Vitrine/Admin.
+A prévia não cria pedido. A gravação real tem bloqueio adicional no servidor.</p>
+<form id="pilotCheckoutForm" class="pilot-form" autocomplete="off">
+<label>Nome completo<input name="customerName" required maxlength="120" placeholder="Nome do responsável"></label>
+<label>WhatsApp de teste<input name="customerPhone" required inputmode="tel" maxlength="24" placeholder="65 9xxxx-xxxx"></label>
+<label>CPF/CNPJ para validar cadastro (opcional para cadastro já existente)<input name="customerDocument" inputmode="numeric" maxlength="18" placeholder="Somente para teste autorizado"></label>
+<label>Rua<input name="street" required maxlength="180" placeholder="Rua e nome"></label>
+<label>Número<input name="number" required maxlength="40" placeholder="Nº"></label>
+<label>Bairro<input name="neighborhood" required maxlength="120"></label>
+<label>Complemento<input name="complement" maxlength="180"></label>
+<label>CEP<input name="postalCode" inputmode="numeric" maxlength="12"></label>
+<label class="wide">Referência de entrega<input name="reference" maxlength="220"></label>
+<label>Pagamento na entrega<select name="payment" required><option value="pix_delivery">PIX</option><option value="cash_delivery">Dinheiro</option><option value="credit_delivery">Crédito</option><option value="meal_card_delivery">Alimentação/refeição</option></select></label>
+<label>Dia da entrega<select name="deliveryDate" required><option value="">Carregando opções…</option></select></label>
+<label class="wide pilot-check"><input type="checkbox" name="confirmed" required> Conferi os dados, valor, endereço e composição do pedido.</label>
+<div class="wide"><button id="pilotPreviewBtn" type="submit">Validar pedido (sem gravar)</button></div>
+</form>
+<pre id="pilotCheckoutResult" aria-live="polite"></pre>
+<div class="pilot-check"><input id="pilotRealTestConsent" type="checkbox"><label for="pilotRealTestConsent">Confirmo a criação de <strong>um pedido real de teste</strong> que poderá reservar estoque e acionar a rotina normal de mensagens.</label></div>
+<button id="pilotSubmitBtn" type="button" disabled>Criar pedido de teste autorizado</button>
+<pre id="pilotSubmitResult" aria-live="polite"></pre>
+</section>
+<section class="card"><h2>Preparação para Meta</h2>
+<ul><li>Conta Meta: somente 1018</li><li>Envio de JSON: Flow criado e validado pela Meta (1646700793791407)</li>
+<li>Validação Meta: aprovada, sem erros de JSON</li><li>Publicação: Meta confirmou PUBLISHED</li><li>Envio aos clientes: bloqueado</li></ul>
+<button id="downloadBtn" disabled>Salvar JSON para revisão</button><button id="metaStatusBtn" type="button">Conferir status Meta</button><button id="metaPreviewBtn" type="button">Prévia oficial Meta</button><pre id="metaStatus" aria-live="polite"></pre><div id="metaPreviewResult" class="muted"></div>
+<p class="muted">A publicação não é um botão de teste. Só será habilitada após autenticação administrativa, validação Meta e aprovação de implantação.</p></section>
+<section class="card"><h2>Regras que precisam ser preservadas</h2><ul>
+<li>Preços, estoque, cestas e pedidos sempre na base oficial do Vitrine/Admin</li>
+<li>Valor oculto das cestas nunca enviado como campo separado ao cliente</li>
+<li>Pedido mínimo de R$ 75, entregas Cuiabá/Várzea Grande, pagamento na entrega</li>
+<li>Pedidos após 12h para o próximo dia útil de entrega; domingos e feriados fechados</li>
+<li>Sem venda de produto sem estoque; confirmação explícita do pedido</li></ul></section>
+<section class="card"><h2>Critérios para ativar o 1018</h2><ul>
+<li>Flow criado, validado e publicado na Meta</li><li>Teste real com número interno autorizado</li>
+<li>Catálogo, cestas, ofertas e pedidos integrados ao backoffice</li>
+<li>Segurança, duplicidade, atendimento humano e rollback homologados</li>
+<li>Autorização final do responsável</li></ul><p class="muted">Até concluir estes itens, o atendimento atual permanece como está.</p></section>
+</div></main>
+<script type="module">
+import {attendanceAuthorizedFetch} from "./attendance-auth.js?v=auth-refresh-v2";
+const $=id=>document.getElementById(id);let draft=null;
+const path='/docs/whatsapp-1018-simulator/meta-flow-intent-draft.json';
+const META_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-1018-pilot-v1';
+const pilotCart=new Map();let pilotValidated=false,pilotRequestKey=null;
+const checkoutForm=document.getElementById('pilotCheckoutForm');
+function invalidatePilotCheckout(){pilotValidated=false;document.getElementById('pilotSubmitBtn').disabled=true;}
+checkoutForm.addEventListener('input',invalidatePilotCheckout);
+$('pilotCity').addEventListener('change',invalidatePilotCheckout);
+const money=cents=>(Number(cents)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function renderPilotCart(){
+ invalidatePilotCheckout();
+ const el=$('cartList');el.replaceChildren();
+ if(!pilotCart.size){el.textContent='Nenhum produto selecionado.';return;}
+ for(const line of pilotCart.values()){
+  const item=document.createElement('div');item.className='step';item.textContent=line.name+' · '+line.quantity+' un.';
+  const remove=document.createElement('button');remove.type='button';remove.textContent='−';remove.addEventListener('click',()=>{pilotCart.delete(line.kind+':'+line.id);renderPilotCart();});item.append(' ',remove);el.appendChild(item);
+ }
+}
+$('quoteBtn').addEventListener('click',async()=>{
+ const out=$('quoteResult');out.textContent='Revalidando preços e estoque...';
+ if(!pilotCart.size){out.textContent='Selecione pelo menos um produto.';return;}
+ try{
+ const lines=[...pilotCart.values()].map(({kind,id,quantity})=>({kind,id,quantity}));
+ const res=await attendanceAuthorizedFetch(META_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'preview_cart',city:$('pilotCity').value,lines})});
+ const data=await res.json().catch(()=>({}));
+ if(!data.items){out.textContent='Prévia indisponível: '+(data.error||data.reason||res.status);return;}
+ out.textContent=(data.items||[]).map(x=>x.quantity+' × '+x.name+' — '+money(x.lineTotalCents)).join('\n')+'\nTOTAL: '+money(data.totalCents)+'\n'+(data.ok?'Simulação válida, sem pedido criado.':'Pedido não atendido: '+data.reason);
+ }catch{out.textContent='Não foi possível conferir o carrinho.';}
+});
+$('clearCartBtn').addEventListener('click',()=>{pilotCart.clear();renderPilotCart();$('quoteResult').textContent='';});
+async function loadCatalog(kind){
+ const el=$('catalogResult');el.textContent='Consultando '+kind+'...';
+ try{
+ const res=await attendanceAuthorizedFetch(META_API+'?action=catalog_preview&kind='+kind,{method:'GET'});
+ const data=await res.json().catch(()=>({}));
+ if(!res.ok||!data.ok){el.textContent='Prévia indisponível: '+(data.error||res.status);return;}
+ el.replaceChildren();
+ const rows=data.rows||[];if(!rows.length){el.textContent='Nenhum item disponível.';return;}
+ for(const p of rows){
+  const item=document.createElement('div');item.className='step';
+  const price=p.price_cents??p.priceCents,stock=p.stock_quantity??p.stock;
+  const desc=document.createElement('span');desc.textContent=p.name+' — '+money(price)+' · estoque '+stock;
+  const add=document.createElement('button');add.type='button';add.textContent='+ Adicionar';
+  add.addEventListener('click',()=>{
+   const itemKind=kind==='baskets'?'basket':'product',id=kind==='baskets'?p.cardKey:p.id;
+   const key=itemKind+':'+id,existing=pilotCart.get(key);
+   if(existing&&existing.quantity>=Math.min(stock,50))return;
+   pilotCart.set(key,{kind:itemKind,id,name:p.name,quantity:(existing?.quantity||0)+1});renderPilotCart();
+  });
+  item.append(desc,' ',add);el.appendChild(item);
+ }
+ }catch{el.textContent='Backend indisponível ou sessão expirada.';}
+}
+$('catalogBtn').addEventListener('click',()=>loadCatalog('offers'));
+$('productsBtn').addEventListener('click',()=>loadCatalog('products'));
+$('basketsBtn').addEventListener('click',()=>loadCatalog('baskets'));
+async function loadPilotDeliveryDates(){
+ const select=checkoutForm.elements.deliveryDate;
+ select.replaceChildren(new Option('Selecione a entrega',''));
+ try{
+  const res=await attendanceAuthorizedFetch(META_API+'?action=delivery_preview',{method:'GET'});
+  const body=await res.json().catch(()=>({}));
+  if(!res.ok||!body.ok||!Array.isArray(body.options))throw Error(body.error||'delivery_options_unavailable');
+  for(const option of body.options)select.appendChild(new Option(option.label,option.date));
+ }catch{select.replaceChildren(new Option('Entrega indisponível — tente novamente',''));}
+}
+loadPilotDeliveryDates();
+function pilotCheckoutBody(action){
+ const f=checkoutForm.elements;
+ return {action,city:$('pilotCity').value,
+  lines:[...pilotCart.values()].map(({kind,id,quantity})=>({kind,id,quantity})),
+  customer:{name:f.customerName.value.trim(),phone:f.customerPhone.value.trim(),document:f.customerDocument.value.trim()},
+  delivery:{city:$('pilotCity').value,street:f.street.value.trim(),number:f.number.value.trim(),
+   neighborhood:f.neighborhood.value.trim(),complement:f.complement.value.trim(),
+   postal_code:f.postalCode.value.trim(),reference:f.reference.value.trim()},
+  paymentMethod:f.payment.value,deliveryDate:f.deliveryDate.value,
+  customerConfirmed:f.confirmed.checked};
+}
+checkoutForm.addEventListener('submit',async e=>{
+ e.preventDefault();invalidatePilotCheckout();$('pilotCheckoutResult').textContent='Revalidando preço, cadastro e entrega...';
+ if(!pilotCart.size){$('pilotCheckoutResult').textContent='Adicione uma cesta ou produto.';return;}
+ try{
+  const res=await attendanceAuthorizedFetch(META_API,{method:'POST',
+   headers:{'Content-Type':'application/json'},body:JSON.stringify(pilotCheckoutBody('preview_checkout'))});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||!data.ok||!data.canonicalOrderPrepared){$('pilotCheckoutResult').textContent='Não aprovado: '+(data.error||data.reason||res.status);return;}
+  pilotValidated=true;pilotRequestKey=crypto.randomUUID();
+  $('pilotCheckoutResult').textContent='PRÉVIA APROVADA\nTotal: '+money(data.confirmation.totalCents)+
+   '\nEntrega: '+data.deliveryDate+'\nForma: '+data.paymentLabel+
+   '\nItens: '+data.canonicalItemCount+'\nNão foi criado nenhum pedido.';
+  $('pilotSubmitBtn').disabled=!$('pilotRealTestConsent').checked;
+ }catch{$('pilotCheckoutResult').textContent='Não foi possível consultar o Vitrine/Admin.';}
+});
+$('pilotRealTestConsent').addEventListener('change',()=>{$('pilotSubmitBtn').disabled=!pilotValidated||!$('pilotRealTestConsent').checked;});
+$('pilotSubmitBtn').addEventListener('click',async()=>{
+ if(!pilotValidated||!$('pilotRealTestConsent').checked||!pilotRequestKey)return;
+ $('pilotSubmitBtn').disabled=true;$('pilotSubmitResult').textContent='Enviando somente o pedido de teste autorizado...';
+ try{
+  const body=pilotCheckoutBody('submit_pilot_order');body.requestKey=pilotRequestKey;
+  const res=await attendanceAuthorizedFetch(META_API,{method:'POST',
+   headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||!data.ok){
+   $('pilotSubmitResult').textContent='Pedido não confirmado: '+(data.error||data.reason||res.status)+
+    '\nEm caso de resposta incerta, confira no Admin antes de reenviar.';
+   return;
+  }
+  pilotValidated=false;
+  $('pilotSubmitResult').textContent='Pedido de teste recebido pelo Vitrine/Admin\nNúmero: '+
+   (data.order?.order_number||'consultar pedidos')+'\nID: '+(data.order?.order_id||'indisponível')+
+   '\nConfira e cancele no painel de pedidos.';
+ }catch{$('pilotSubmitResult').textContent='Resultado incerto: confira o painel de pedidos. Não reenvie.';}
+});
+$('metaPreviewBtn').addEventListener('click',async()=>{
+ const el=$('metaPreviewResult');el.textContent='Obtendo prévia...';
+ try{
+  const res=await attendanceAuthorizedFetch(META_API+'?action=meta_preview',{method:'GET'});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||!data.ok){el.textContent='Prévia indisponível: '+(data.error||res.status);return;}
+  const link=document.createElement('a');
+  link.href=data.preview_url;link.rel='noopener noreferrer';link.target='_blank';link.textContent='Abrir Flow 1018 na Meta';
+  el.replaceChildren(link);
+ }catch{el.textContent='Não foi possível consultar a prévia.';}
+});
+$('metaStatusBtn').addEventListener('click',async()=>{const el=$('metaStatus');el.textContent='Verificando...';try{const res=await attendanceAuthorizedFetch(META_API+'?action=meta_status',{method:'GET'});const data=await res.json().catch(()=>({}));el.textContent=JSON.stringify({http_status:res.status,ok:data.ok===true,channel:data.channel||null,error:data.error||null,flow_id:data.flow_id||null,status:data.status||null,validation_errors:data.validation_errors||[],live_activation:data.live_activation??null},null,2);}catch{el.textContent='Não foi possível consultar a função administrativa.';}});
+async function load(){if(draft)return draft;const res=await fetch(path,{cache:'no-store'});
+if(!res.ok)throw Error('Arquivo JSON não publicado neste ambiente');
+const json=await res.json();if(json.version!=='7.3'||!Array.isArray(json.screens)||json.screens.length!==2)throw Error('Versão inválida');
+draft=json;return json;}
+$('draftBtn').addEventListener('click',async()=>{try{const json=await load();$('draft').textContent=JSON.stringify(json,null,2);
+$('draft').hidden=false;$('copyBtn').disabled=false;$('downloadBtn').disabled=false;$('summary').textContent='JSON local validado estruturalmente. Meta ainda não consultada.';}
+catch(e){$('summary').textContent='Rascunho indisponível: '+e.message;}});
+$('copyBtn').addEventListener('click',async()=>{if(draft)await navigator.clipboard.writeText(JSON.stringify(draft,null,2));});
+$('downloadBtn').addEventListener('click',()=>{if(!draft)return;const url=URL.createObjectURL(new Blob([JSON.stringify(draft,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='flow-piloto-1018.json';a.click();URL.revokeObjectURL(url);});
+</script></body></html>

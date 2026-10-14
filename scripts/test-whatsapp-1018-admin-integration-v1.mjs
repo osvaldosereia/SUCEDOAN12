@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';
+const page=fs.readFileSync('vitrine/admin/atendimento/piloto-1018.html','utf8');
+const hub=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
+assert.match(hub,/href="\.\/piloto-1018\.html"/);
+assert.match(page,/Não ativado para clientes/);
+assert.match(page,/Valor oculto das cestas/);
+assert.match(page,/Meta ainda não consultada/);
+assert.match(page,/Autorização final/);
+assert.doesNotMatch(page,/fetch\([^)]*\bPOST\b/);
+assert.doesNotMatch(page,/sendTemplateViaMeta|dispatchTemplate|send1018PilotFlow/);
+assert.match(page,/navigator\.clipboard\.writeText/);
+console.log('PASS admin 1018 hub: staging-only, no Meta mutation, no order mutation, hidden basket preserved');

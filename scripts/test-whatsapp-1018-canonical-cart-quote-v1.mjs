@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {quote1018CanonicalCart} from '../supabase/functions/_shared/ana-1018-canonical-cart-quote-v1.mjs';
+const catalog=[{key:'product:rice',name:'Arroz',priceCents:3000,stock:3},{key:'basket:kit@1',name:'Cesta Completa',priceCents:7900,stock:2,hidden_adjustment_cents:2500}];
+const base={city:'Cuiabá',catalog,lines:[{kind:'product',id:'rice',quantity:1},{kind:'basket',id:'kit@1',quantity:1}]};
+const a=quote1018CanonicalCart(base);
+assert.equal(a.ok,true);assert.equal(a.totalCents,10900);assert.equal(a.orderCreated,false);
+assert.doesNotMatch(JSON.stringify(a),/hidden|2500/);
+assert.equal(quote1018CanonicalCart({...base,lines:[{kind:'product',id:'rice',quantity:2},{kind:'product',id:'rice',quantity:2}]}).reason,'insufficient_stock');
+assert.equal(quote1018CanonicalCart({...base,lines:[{kind:'product',id:'rice',quantity:1}]}).reason,'minimum_not_met');
+assert.equal(quote1018CanonicalCart({...base,city:'Brasília'}).reason,'delivery_outside_service_area');
+assert.equal(quote1018CanonicalCart({...base,lines:[{kind:'product',id:'rice',quantity:1},{kind:'basket',id:'kit@1',quantity:2}]}).ok,true);
+assert.equal(quote1018CanonicalCart({...base,lines:[{kind:'product',id:'fake',quantity:1}]}).reason,'unavailable_item');
+console.log('PASS 1018 canonical mixed-cart quote: stock, minimum, city, privacy, no order');

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {preview1018Cart} from '../supabase/functions/_shared/ana-1018-pilot-order-preview-v1.mjs';
+const catalog=[{id:'basket',name:'Cesta econômica',active:true,stock:4,kind:'basket',priceCents:6500,customerBasketPriceCents:7800,hiddenAdjustmentCents:1300},{id:'rice',name:'Arroz',active:true,stock:10,priceCents:2200}];
+const base={catalog,deliveryCity:'Cuiabá',lines:[{productId:'basket',quantity:1},{productId:'rice',quantity:1}]};
+const ok=preview1018Cart(base);
+assert.equal(ok.ok,true);assert.equal(ok.totalCents,10000);assert.equal(ok.orderCreated,false);
+assert.doesNotMatch(JSON.stringify(ok),/hidden|Adjustment|1300/);
+assert.equal(preview1018Cart({...base,deliveryCity:'São Paulo'}).reason,'delivery_outside_service_area');
+assert.equal(preview1018Cart({...base,lines:[{productId:'basket',quantity:5}]}).reason,'insufficient_stock');
+assert.equal(preview1018Cart({...base,lines:[{productId:'basket',quantity:3},{productId:'basket',quantity:2}]}).reason,'insufficient_stock');
+assert.equal(preview1018Cart({...base,lines:[{productId:'rice',quantity:1}]}).reason,'minimum_not_met');
+assert.equal(preview1018Cart({...base,lines:[{productId:'basket',quantity:1}],nowHour:13}).ok,true);
+assert.equal(preview1018Cart({...base,lines:[{productId:'basket',quantity:1}],holiday:true}).readOnly,true);
+console.log('PASS: 1018 cart preview, locality, stock, minimum, hidden basket and read-only semantics');
