@@ -4,6 +4,7 @@ import {provision1018MetaFlowDraft} from "../_shared/ana-1018-meta-flow-provisio
 import draft from "./meta-flow-intent-draft.json" with {type:"json"};
 import {fetch1018CanonicalStorefront} from "../_shared/ana-1018-storefront-bridge-v1.mjs";
 import {map1018CanonicalProducts} from "../_shared/ana-1018-canonical-product-preview-v1.mjs";
+import {map1018CanonicalBaskets} from "../_shared/ana-1018-canonical-basket-preview-v1.mjs";
 const url=Deno.env.get("SUPABASE_URL")||"";
 const service=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const token=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"";
@@ -30,11 +31,16 @@ Deno.serve(async(req:Request)=>{
  if(req.method==="GET"){
   const action=new URL(req.url).searchParams.get("action")||"status";
   if(action==="catalog_preview"){
-   const preview=await fetch1018CanonicalStorefront({action:"offers",baseUrl:url+"/functions/v1/storefront-v2"});
+   const kind=new URL(req.url).searchParams.get("kind")||"offers";
+   if(!["offers","products","baskets"].includes(kind))return reply(req,{ok:false,error:"invalid_catalog_kind"},400);
+   const sourceAction=kind==="baskets"?"home":kind;
+   const params=kind==="products"?{limit:20}:{};
+   const preview=await fetch1018CanonicalStorefront({action:sourceAction,params,baseUrl:url+"/functions/v1/storefront-v2"});
    if(!preview.ok)return reply(req,{ok:false,error:preview.reason},503);
-   const mapped=map1018CanonicalProducts({payload:preview.data,limit:20});
+   const mapped=kind==="baskets"?map1018CanonicalBaskets({payload:preview.data,limit:20}):map1018CanonicalProducts({payload:preview.data,limit:20});
    if(!mapped.ok)return reply(req,{ok:false,error:mapped.reason},503);
-   return reply(req,{ok:true,channel:"1018",source:"storefront-v2",read_only:true,offers:mapped.rows});
+   return reply(req,{ok:true,channel:"1018",source:"storefront-v2",read_only:true,kind,
+    rows:mapped.rows});
   }
   if(action==="meta_status"){
    if(!token||!/^v\d+\.\d+$/.test(version))return reply(req,{ok:false,error:"meta_not_configured"},503);
