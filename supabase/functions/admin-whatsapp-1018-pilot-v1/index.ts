@@ -43,6 +43,16 @@ Deno.serve(async(req:Request)=>{
    return reply(req,{ok:true,channel:"1018",source:"storefront-v2",read_only:true,kind,
     rows:mapped.rows});
   }
+  if(action==="meta_preview"){
+   if(!token||!/^v\d+\.\d+$/.test(version))return reply(req,{ok:false,error:"meta_not_configured"},503);
+   try{
+    const meta=await fetch("https://graph.facebook.com/"+version+"/1646700793791407?fields=preview.invalidate(false)",{headers:{Authorization:"Bearer "+token},signal:AbortSignal.timeout(12000)});
+    const body=await meta.json().catch(()=>({}));
+    const link=String(body.preview?.preview_url||"");
+    if(!meta.ok||!/^https:\/\/business\.facebook\.com\/wa\/manage\/flows\/1646700793791407\/preview\//.test(link))return reply(req,{ok:false,error:"meta_preview_unavailable"},502);
+    return reply(req,{ok:true,channel:"1018",flow_id:"1646700793791407",preview_url:link,expires_at:body.preview?.expires_at||null,live_activation:false});
+   }catch{return reply(req,{ok:false,error:"meta_preview_connection_failed"},503)}
+  }
   if(action==="meta_status"){
    if(!token||!/^v\d+\.\d+$/.test(version))return reply(req,{ok:false,error:"meta_not_configured"},503);
    try{
