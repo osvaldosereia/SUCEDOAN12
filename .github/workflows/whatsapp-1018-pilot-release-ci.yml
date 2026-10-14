@@ -7,6 +7,8 @@ on:
       - 'supabase/sql/20261013_whatsapp_1018_pilot_release_v1.sql'
       - 'supabase/functions/whatsapp-ana-worker-v1/**'
       - 'scripts/test-whatsapp-1018-pilot-release-v1.mjs'
+      - 'scripts/test-whatsapp-1018-pilot-fixture-v1.mjs'
+      - 'supabase/functions/_shared/ana-1018-pilot-fixture-v1.mjs'
       - '.github/workflows/whatsapp-1018-pilot-release-ci.yml'
   push:
     branches:
@@ -23,6 +25,8 @@ jobs:
           node-version: '22'
       - name: Pilot isolation and rollback contracts
         run: node scripts/test-whatsapp-1018-pilot-release-v1.mjs
+      - name: Synthetic 1018 pilot conversations
+        run: node scripts/test-whatsapp-1018-pilot-fixture-v1.mjs
       - name: ANA admin worker contracts
         run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs
       - name: ANA live release contracts
