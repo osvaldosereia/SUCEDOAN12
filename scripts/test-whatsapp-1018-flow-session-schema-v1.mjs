@@ -10,6 +10,8 @@ for(const text of [
  "slug='dona-antonia-1018'","phone_e164='+5565984491018'",
  "auth.role() is distinct from 'service_role'",
  'ops2_1018_flow_session_register_v1','ops2_1018_flow_session_consume_v1',
+ 'release_generation bigint not null',"mode='pilot' for share",
+ 'pilot_rolled_back_or_changed','pilot_not_active_or_generation_changed',
  'revoke all on function','grant execute on function'
 ])assert.ok(migration.includes(text),text);
 assert.doesNotMatch(migration,/grant (?:all|execute) on .* to (?:anon|authenticated)/i);
