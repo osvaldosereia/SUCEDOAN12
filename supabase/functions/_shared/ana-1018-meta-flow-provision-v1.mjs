@@ -59,8 +59,10 @@ export async function provision1018MetaFlowDraft({
   const form=new FormData();form.set('name','flow.json');form.set('asset_type','FLOW_JSON');
   form.set('file',new Blob([serialized],{type:'application/json'}),'flow.json');
   const uploaded=await request(root+'/'+flowId+'/assets',{method:'POST',body:form});
+  if(uploaded?.success!==true)return {ok:false,reason:'upload_unconfirmed',flowId:String(flowId),requiresReconciliation:true};
   const state=await request(root+'/'+flowId+'?fields=id,name,status,validation_errors,json_version',{method:'GET'});
-  return {ok:true,flowId:String(flowId),status:String(state.status||'UNKNOWN'),
+  return {ok:!Array.isArray(state.validation_errors)||state.validation_errors.length===0,
+   flowId:String(flowId),status:String(state.status||'UNKNOWN'),
    validationErrors:Array.isArray(state.validation_errors)?state.validation_errors:[],
    uploaded:!!uploaded, published:false, customerMessagesSent:false};
  }catch(error){
