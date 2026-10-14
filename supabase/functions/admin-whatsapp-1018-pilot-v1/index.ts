@@ -5,7 +5,7 @@ import draft from "./meta-flow-intent-draft.json" with {type:"json"};
 import {fetch1018CanonicalStorefront} from "../_shared/ana-1018-storefront-bridge-v1.mjs";
 import {map1018CanonicalProducts} from "../_shared/ana-1018-canonical-product-preview-v1.mjs";
 const url=Deno.env.get("SUPABASE_URL")||"";
-const service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+const service=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const token=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"";
 const version=Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"";
 const db=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -26,7 +26,7 @@ Deno.serve(async(req:Request)=>{
  if(role.error||!role.data||role.data.role!=="owner")return reply(req,{ok:false,error:"owner_required"},403);
  const account=await db.from("whatsapp_accounts").select("id,slug,phone_e164,waba_id,is_active")
   .eq("slug","dona-antonia-1018").eq("is_active",true).maybeSingle();
- if(account.error||!account.data)return reply(req,{ok:false,error:"account_1018_unavailable"},503);
+ if(account.error||!account.data||account.data.phone_e164!=="+5565984491018"||!account.data.waba_id)return reply(req,{ok:false,error:"account_1018_unavailable"},503);
  if(req.method==="GET"){
   const action=new URL(req.url).searchParams.get("action")||"status";
   if(action==="catalog_preview"){
