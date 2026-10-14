@@ -32,6 +32,8 @@ on:
       - 'scripts/fixtures/whatsapp-1018-flow-postgres-setup-v1.sql'
       - 'scripts/fixtures/whatsapp-1018-flow-postgres-test-v1.sql'
       - 'scripts/fixtures/whatsapp-1018-pilot-postgres-test-v1.sql'
+      - 'scripts/fixtures/whatsapp-1018-outbox-postgres-test-v1.sql'
+      - 'supabase/migrations/20261013_whatsapp_1018_flow_outbox_v1.sql'
       - 'supabase/functions/_shared/ana-1018-pilot-fixture-v1.mjs'
       - '.github/workflows/whatsapp-1018-pilot-release-ci.yml'
   push:
@@ -115,3 +117,7 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261013_whatsapp_1018_flow_sessions_v1.sql
       - name: Test atomic consume, replay, security and rollback
         run: psql -v ON_ERROR_STOP=1 -f scripts/fixtures/whatsapp-1018-flow-postgres-test-v1.sql
+      - name: Apply pre-send outbox migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261013_whatsapp_1018_flow_outbox_v1.sql
+      - name: Test outbox, WAMID finalization and rollback
+        run: psql -v ON_ERROR_STOP=1 -f scripts/fixtures/whatsapp-1018-outbox-postgres-test-v1.sql
