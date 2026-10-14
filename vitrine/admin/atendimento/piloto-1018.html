@@ -31,7 +31,7 @@ ul{padding-left:20px}li{margin:8px 0}.steps{display:grid;gap:7px}.step{border:1p
 <section class="card"><h2>Preparação para Meta</h2>
 <ul><li>Conta Meta: somente 1018</li><li>Envio de JSON: módulo de backend isolado, ainda não implantado</li>
 <li>Validação Meta: pendente</li><li>Publicação: pendente</li><li>Envio aos clientes: bloqueado</li></ul>
-<button id="downloadBtn" disabled>Salvar JSON para revisão</button>
+<button id="downloadBtn" disabled>Salvar JSON para revisão</button><button id="metaStatusBtn" type="button">Verificar conexão administrativa</button><pre id="metaStatus" aria-live="polite"></pre>
 <p class="muted">A publicação não é um botão de teste. Só será habilitada após autenticação administrativa, validação Meta e aprovação de implantação.</p></section>
 <section class="card"><h2>Regras que precisam ser preservadas</h2><ul>
 <li>Preços, estoque, cestas e pedidos sempre na base oficial do Vitrine/Admin</li>
@@ -46,8 +46,11 @@ ul{padding-left:20px}li{margin:8px 0}.steps{display:grid;gap:7px}.step{border:1p
 <li>Autorização final do responsável</li></ul><p class="muted">Até concluir estes itens, o atendimento atual permanece como está.</p></section>
 </div></main>
 <script type="module">
+import {attendanceAuthorizedFetch} from "./attendance-auth.js?v=auth-refresh-v2";
 const $=id=>document.getElementById(id);let draft=null;
 const path='/docs/whatsapp-1018-simulator/meta-flow-intent-draft.json';
+const META_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-1018-pilot-v1';
+$('metaStatusBtn').addEventListener('click',async()=>{const el=$('metaStatus');el.textContent='Verificando...';try{const res=await attendanceAuthorizedFetch(META_API,{method:'GET'});const data=await res.json().catch(()=>({}));el.textContent=JSON.stringify({http_status:res.status,ok:data.ok===true,channel:data.channel||null,error:data.error||null,live_activation:data.live_activation??null},null,2);}catch{el.textContent='Não foi possível consultar a função administrativa.';}});
 async function load(){if(draft)return draft;const res=await fetch(path,{cache:'no-store'});
 if(!res.ok)throw Error('Arquivo JSON não publicado neste ambiente');
 const json=await res.json();if(json.version!=='7.3'||!Array.isArray(json.screens)||json.screens.length!==2)throw Error('Versão inválida');
