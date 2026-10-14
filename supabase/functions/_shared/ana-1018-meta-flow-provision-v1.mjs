@@ -10,7 +10,7 @@ function checkDraft(draft){
  if(!terminal?.terminal||!terminal.success||!group?.required
   ||group['data-source']?.length!==4
   ||group['data-source'].some(x=>!allowed.has(x.id))
-  ||terminal.layout.children.at(-1)?.on_click_action?.name!=='complete')
+  ||terminal.layout.children.at(-1)?.['on-click-action']?.name!=='complete')
   throw new TypeError('invalid_draft');
  const payload=JSON.stringify(draft);
  if(/cpf|cnpj|endereço|payment|valor.oculto|hidden|http:\/\/|https:\/\//i.test(payload))
@@ -47,7 +47,10 @@ export async function provision1018MetaFlowDraft({
    const listing=await request(root+'/'+account.waba_id+'/flows?fields=id,name,status&limit=100',{method:'GET'});
    const matches=(listing.data||[]).filter(x=>x.name===name);
    if(matches.length>1)return {ok:false,reason:'ambiguous_existing_flow'};
-   if(matches.length===1)flowId=matches[0].id;
+   if(matches.length===1){
+    if(matches[0].status!=='DRAFT')return {ok:false,reason:'existing_flow_not_draft',flowId:String(matches[0].id||'')};
+    flowId=matches[0].id;
+   }
    if(listing.paging?.next)return {ok:false,reason:'pagination_requires_review'};
   }
   if(!flowId){
