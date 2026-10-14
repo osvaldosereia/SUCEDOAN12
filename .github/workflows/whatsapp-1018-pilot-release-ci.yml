@@ -13,6 +13,9 @@ on:
       - 'scripts/test-whatsapp-1018-simulator-standalone-v1.mjs'
       - 'scripts/audit-whatsapp-1018-pilot-readiness-v1.mjs'
       - 'scripts/test-whatsapp-1018-meta-flow-provision-v1.mjs'
+      - 'scripts/test-whatsapp-1018-admin-integration-v1.mjs'
+      - 'vitrine/admin/atendimento/piloto-1018.html'
+      - 'vitrine/admin/atendimento/index.html'
       - 'supabase/functions/_shared/ana-1018-meta-flow-provision-v1.mjs'
       - 'scripts/test-whatsapp-1018-meta-flow-draft-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-intent-v1.mjs'
@@ -76,6 +79,8 @@ jobs:
             dist/whatsapp-1018-simulator/index.html
             dist/whatsapp-1018-simulator/readiness.json
           retention-days: 14
+      - name: Vitrine/Admin 1018 isolated integration contract
+        run: node scripts/test-whatsapp-1018-admin-integration-v1.mjs
       - name: Test Meta Flow 1018 draft provisioning with mock transport
         run: node scripts/test-whatsapp-1018-meta-flow-provision-v1.mjs
       - name: Draft Meta Flow contract
