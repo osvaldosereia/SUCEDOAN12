@@ -18,13 +18,16 @@ const db={rpc:async(name,args)=>{
 const input={enabled:true,accountId:account,expectedAccountId:account,
  customerPhone:'+5565999999999',flowId:'1234567890',
  release:{mode:'pilot',generation:5},serviceWindowVerified:true,
- sendAuthorization:{channel:'1018',accountId:account,generation:5,verified:true},send,db};
+ sendAuthorization:{channel:'1018',accountId:account,generation:5,verified:true,
+ customerPhone:'+5565999999999',flowId:'1234567890',verifiedAtMs:Date.now()},send,db};
 assert.equal((await send1018PilotFlow({...input,enabled:false})).reason,'disabled');
 assert.equal((await send1018PilotFlow({...input,expectedAccountId:'0975'})).reason,'wrong_account');
 assert.equal((await send1018PilotFlow({...input,release:{mode:'current',generation:5}})).reason,'pilot_inactive');
 assert.equal((await send1018PilotFlow({...input,serviceWindowVerified:false})).reason,'service_window_unverified');
 assert.equal((await send1018PilotFlow({...input,sendAuthorization:null})).reason,'authorization_missing');
 assert.equal((await send1018PilotFlow({...input,sendAuthorization:{channel:'0975',accountId:account,generation:5,verified:true}})).reason,'authorization_missing');
+assert.equal((await send1018PilotFlow({...input,sendAuthorization:{...input.sendAuthorization,customerPhone:'+5565988888888'}})).reason,'authorization_missing');
+assert.equal((await send1018PilotFlow({...input,sendAuthorization:{...input.sendAuthorization,verifiedAtMs:Date.now()-120000}})).reason,'authorization_missing');
 assert.equal(sends,0);assert.equal(calls.length,0);
 const good=await send1018PilotFlow(input);
 assert.equal(good.ok,true);
