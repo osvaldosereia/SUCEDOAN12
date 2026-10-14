@@ -1,0 +1,29 @@
+name: WhatsApp 1018 Pilot Release CI
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20261013_whatsapp_1018_pilot_release_v1.sql'
+      - 'supabase/sql/20261013_whatsapp_1018_pilot_release_v1.sql'
+      - 'supabase/functions/whatsapp-ana-worker-v1/**'
+      - 'scripts/test-whatsapp-1018-pilot-release-v1.mjs'
+      - '.github/workflows/whatsapp-1018-pilot-release-ci.yml'
+  push:
+    branches:
+      - 'agent/whatsapp-1018-reversible-pilot-20261013'
+  workflow_dispatch:
+
+jobs:
+  verify-pilot-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pilot isolation and rollback contracts
+        run: node scripts/test-whatsapp-1018-pilot-release-v1.mjs
+      - name: ANA admin worker contracts
+        run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs
+      - name: ANA live release contracts
+        run: node scripts/test-whatsapp-ana-live-release-v1.mjs
