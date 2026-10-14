@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const migration=fs.readFileSync('supabase/migrations/20261013_whatsapp_1018_pilot_release_v1.sql','utf8');
+const mirror=fs.readFileSync('supabase/sql/20261013_whatsapp_1018_pilot_release_v1.sql','utf8');
+const worker=fs.readFileSync('supabase/functions/whatsapp-ana-worker-v1/index.ts','utf8');
+assert.equal(migration,mirror,'migration and SQL mirror must be identical');
+assert.match(migration,/create table if not exists private\.whatsapp_ana_channel_release_v1/i);
+assert.match(migration,/baseline_version_id bigint not null references private\.whatsapp_ana_admin_versions_v1/i);
+assert.match(migration,/mode text not null default 'current'/i,'new pilot must be disabled by default');
+assert.match(migration,/pilot_required_when_active/i);
+assert.match(migration,/create table if not exists private\.whatsapp_ana_channel_pilot_versions_v1/i);
+assert.match(migration,/unique \(whatsapp_account_id,version\)/i);
+assert.match(migration,/foreign key \(whatsapp_account_id,pilot_version_id\)/i,'pilot version may not belong to a different account');
+assert.match(migration,/on conflict \(whatsapp_account_id\) do nothing/i,'baseline must not be overwritten');
+assert.match(migration,/slug='dona-antonia-1018'/i);
+assert.match(migration,/pilot_only_1018/i);
+assert.match(migration,/generation_conflict/i);
+assert.match(migration,/for update/i,'stage, activation and rollback must be serialized');
+assert.match(migration,/for share/i,'send gate must lock the selected release');
+assert.match(migration,/mode='current',generation=generation\+1/i,'rollback must revert mode and invalidate in-flight generation');
+assert.match(migration,/v_release\.mode is distinct from p_release_mode or v_release\.generation is distinct from p_release_generation/i);
+assert.match(migration,/return public\.ops2_ana_begin_live_send_v1\(p_job_id,p_text\)/i,'normal send path must be preserved');
+assert.match(migration,/revoke all on function public\.ops2_ana_channel_pilot_control_v1\(uuid,text,bigint,jsonb\) from public,anon,authenticated/i,'no public release control');
+assert.match(migration,/grant execute on function public\.ops2_ana_channel_pilot_control_v1\(uuid,text,bigint,jsonb\) to service_role/i);
+assert.match(worker,/db\.rpc\('ops2_ana_channel_active_config_v1',\{p_whatsapp_account_id:job\.whatsapp_account_id\}\)/,'each live job must resolve configuration per account');
+assert.match(worker,/db\.rpc\('ops2_ana_channel_begin_live_send_v1',\{p_job_id:job\.id,p_text:result\.response_text,p_release_mode:activeConfig\.data\.release_mode,p_release_generation:activeConfig\.data\.release_generation\}\)/);
+assert.match(worker,/ops2_attendance_ai_gate_v1[\s\S]*generateAnaDryRunSuggestion[\s\S]*ops2_attendance_ai_gate_v1[\s\S]*ops2_ana_channel_begin_live_send_v1/i);
+assert.doesNotMatch(migration,/update public\.whatsapp_channel_runtime_v1/i,'release must never change Meta transport gates');
+assert.doesNotMatch(migration,/update public\.whatsapp_accounts/i,'phone routing must be preserved');
+assert.doesNotMatch(migration,/papoai/i,'legacy fallback must not be reintroduced');
+
+// Dry, dependency-free model of the compare-and-swap release state machine.
+const original={channel:'1018',mode:'current',generation:1,baseline:2,pilot:null};
+const stage=(s,expected,version)=>{if(expected!==s.generation)throw Error('generation_conflict');if(s.mode!=='current')throw Error('rollback_first');return {...s,pilot:version,generation:s.generation+1}};
+const activate=(s,expected)=>{if(expected!==s.generation)throw Error('generation_conflict');if(!s.pilot||s.mode!=='current')throw Error('pilot_not_staged');return {...s,mode:'pilot',generation:s.generation+1}};
+const rollback=(s,expected)=>{if(expected!==s.generation)throw Error('generation_conflict');if(s.mode!=='pilot')throw Error('pilot_not_active');return {...s,mode:'current',generation:s.generation+1}};
+const canSend=(s,mode,generation)=>s.mode===mode&&s.generation===generation;
+const staged=stage(original,1,7);
+const pilot=activate(staged,2);
+assert.equal(pilot.mode,'pilot');assert.equal(canSend(pilot,'current',1),false);
+const restored=rollback(pilot,3);
+assert.equal(restored.baseline,2);assert.equal(restored.mode,'current');
+assert.equal(canSend(restored,'pilot',3),false);
+assert.equal(canSend(restored,'current',4),true);
+assert.throws(()=>stage(restored,1,8),/generation_conflict/);
+assert.equal(original.mode,'current','baseline state was not modified');
+console.log('PASS: 1018 isolated release schema, runtime gate, rollback, no production mutation');
