@@ -102,7 +102,12 @@
       "title": "Solicitação recebida",
       "terminal": true,
       "success": true,
-      "data": {},
+      "data": {
+        "intent": {
+          "type": "string",
+          "__example": "new_order"
+        }
+      },
       "layout": {
         "type": "SingleColumnLayout",
         "children": [
