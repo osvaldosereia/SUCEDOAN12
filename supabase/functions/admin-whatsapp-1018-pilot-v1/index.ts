@@ -6,6 +6,7 @@ import {fetch1018CanonicalStorefront} from "../_shared/ana-1018-storefront-bridg
 import {map1018CanonicalProducts} from "../_shared/ana-1018-canonical-product-preview-v1.mjs";
 import {map1018CanonicalBaskets} from "../_shared/ana-1018-canonical-basket-preview-v1.mjs";
 import {quote1018CanonicalCart} from "../_shared/ana-1018-canonical-cart-quote-v1.mjs";
+import {prepare1018CheckoutConfirmation} from "../_shared/ana-1018-checkout-confirmation-v1.mjs";
 const url=Deno.env.get("SUPABASE_URL")||"";
 const service=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const token=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"";
@@ -68,7 +69,7 @@ Deno.serve(async(req:Request)=>{
  }
  if(req.method==="POST"){
   const body=await req.json().catch(()=>null);
-  if(body?.action==="preview_cart"){
+  if(body?.action==="preview_cart"||body?.action==="preview_checkout"){
    const lines=body.lines,city=body.city;
    if(!Array.isArray(lines)||lines.length<1||lines.length>12||typeof city!=="string")return reply(req,{ok:false,error:"invalid_cart"},400);
    const unique=new Map<string,{kind:string,id:string}>();
@@ -93,6 +94,11 @@ Deno.serve(async(req:Request)=>{
      stock:p?.stock_quantity};
    });
    const preview=quote1018CanonicalCart({lines,catalog,city});
+   if(body.action==="preview_checkout"){
+    if(!preview.ok)return reply(req,{...preview,source:"storefront-v2",channel:"1018"},409);
+    const confirmation=prepare1018CheckoutConfirmation({quote:preview,customer:body.customer,delivery:body.delivery,paymentMethod:body.paymentMethod,customerConfirmed:body.customerConfirmed});
+    return reply(req,{...confirmation,source:"storefront-v2"},confirmation.ok?200:409);
+   }
    return reply(req,{...preview,source:"storefront-v2",channel:"1018"},preview.ok?200:409);
   }
  }
