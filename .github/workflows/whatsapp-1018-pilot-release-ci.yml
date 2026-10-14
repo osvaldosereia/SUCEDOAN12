@@ -19,6 +19,8 @@ on:
       - 'scripts/test-whatsapp-1018-webhook-wiring-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-flow-outbound-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-outbound-v1.mjs'
+      - 'supabase/functions/_shared/ana-1018-flow-send-v1.mjs'
+      - 'scripts/test-whatsapp-1018-flow-send-v1.mjs'
       - 'supabase/functions/whatsapp-meta-webhook-v1/index.ts'
       - 'supabase/functions/_shared/whatsapp-core-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-flow-session-v1.mjs'
@@ -67,6 +69,8 @@ jobs:
         run: node scripts/test-whatsapp-1018-flow-outbound-v1.mjs
       - name: Signed Meta webhook wiring contract
         run: node scripts/test-whatsapp-1018-webhook-wiring-v1.mjs
+      - name: Outbound WAMID session registration contract
+        run: node scripts/test-whatsapp-1018-flow-send-v1.mjs
       - name: ANA admin worker contracts
         run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs
       - name: ANA live release contracts
