@@ -109,6 +109,8 @@ jobs:
         run: node scripts/test-whatsapp-1018-canonical-cart-quote-v1.mjs
       - name: Staged checkout confirmation, no order write
         run: node scripts/test-whatsapp-1018-checkout-confirmation-v1.mjs
+      - name: Canonical basket-to-order mapping
+        run: node scripts/test-whatsapp-1018-canonical-order-payload-v1.mjs
       - name: Private basket adjustment stripping
         run: node scripts/test-whatsapp-1018-canonical-basket-preview-v1.mjs
       - name: Canonical product preview and hidden basket protection
