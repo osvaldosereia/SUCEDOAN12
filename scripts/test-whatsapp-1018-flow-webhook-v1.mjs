@@ -14,7 +14,7 @@ const message=canonicalMessagesFromMeta(payload,()=>account)[0];
 let calls=[];
 const db={rpc:async(name,args)=>{calls.push({name,args});return {data:{ok:true,replayed:false},error:null}}};
 const args={enabled:true,expectedAccountId:account,expectedFlowId:'1234567890',
-  canonicalMessage:message,ingestResult:{message_id:'11111111-2222-4333-8444-555555555555'},db,signatureVerified:true};
+  canonicalMessage:message,signedPayload:payload,ingestResult:{message_id:'11111111-2222-4333-8444-555555555555'},db,signatureVerified:true};
 assert.equal((await handle({...args,enabled:false})).handled,false);
 assert.equal((await handle({...args,expectedAccountId:'bad-account'})).handled,false);
 assert.equal((await handle({...args,signatureVerified:false})).rejected,true);
@@ -37,7 +37,7 @@ assert.equal((await handle({...args,db:{rpc:async()=>({data:{ok:true,replayed:tr
 const other={...message,message:{...message.message,metadata:{...message.message.metadata,interactive:{
  type:'nfm_reply',nfm_reply:{response_json:JSON.stringify({flow_token:'existing_flow_token',intent:'human'})}
 }}}};
-assert.equal((await handle({...args,canonicalMessage:other})).handled,false,'unrelated Meta Flows pass through');
+assert.equal((await handle({...args,canonicalMessage:other,signedPayload:{...payload,entry:[{...payload.entry[0],changes:[{...payload.entry[0].changes[0],value:{...payload.entry[0].changes[0].value,messages:[{...payload.entry[0].changes[0].value.messages[0],interactive:{type:'nfm_reply',nfm_reply:{response_json:JSON.stringify({flow_token:'existing_flow_token',intent:'human'})}}}]}}]}]}})).handled,false,'unrelated Meta Flows pass through');
 const redacted=redactWebhookPayload(payload);
 assert.equal(JSON.stringify(redacted).includes(token),false,'raw payload must not store the Flow token');
 console.log('PASS: disabled-by-default pilot webhook gates, no raw token, no sends, no duplicate/rollback effects');
