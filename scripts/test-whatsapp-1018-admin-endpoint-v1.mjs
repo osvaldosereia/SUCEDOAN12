@@ -7,6 +7,8 @@ assert.match(endpoint,/admin_users/);assert.match(endpoint,/role\.data\.role!=="
 assert.match(endpoint,/pilot_write_locked_until_secure_auth/);
 assert.match(endpoint,/1646700793791407/);
 assert.match(endpoint,/action==="meta_status"/);
+assert.match(endpoint,/body\?\.action==="preview_checkout"/);
+assert.match(endpoint,/prepare1018CheckoutConfirmation/);
 assert.doesNotMatch(endpoint,/\/publish|sendTemplateViaMeta|send1018PilotFlow|dispatchTemplate/);
 assert.match(endpoint,/dona-antonia-1018/);
 console.log('PASS: owner-only isolated Meta draft endpoint, default off, no live activation');
