@@ -28,10 +28,10 @@ ul{padding-left:20px}li{margin:8px 0}.steps{display:grid;gap:7px}.step{border:1p
 <p class="muted">Menu de intenção somente. Não é checkout completo e não envia mensagens.</p>
 <button id="draftBtn">Ver JSON do Flow</button><button id="copyBtn" disabled>Copiar JSON</button>
 <pre id="draft" hidden></pre></section>
-<section class="card"><h2>Prévia de ofertas do catálogo oficial</h2><p class="muted">Consulta somente leitura ao storefront-v2, pelo backend do Admin. Não cria pedidos.</p><button id="catalogBtn" type="button">Consultar ofertas reais</button><pre id="catalogResult" aria-live="polite">Ainda não consultado.</pre></section>
+<section class="card"><h2>Prévia de ofertas do catálogo oficial</h2><p class="muted">Consulta somente leitura ao storefront-v2, pelo backend do Admin. Não cria pedidos.</p><button id="catalogBtn" type="button">Ofertas</button><button id="productsBtn" type="button">Produtos</button><button id="basketsBtn" type="button">Cestas</button><pre id="catalogResult" aria-live="polite">Ainda não consultado.</pre></section>
 <section class="card"><h2>Preparação para Meta</h2>
 <ul><li>Conta Meta: somente 1018</li><li>Envio de JSON: Flow criado e validado pela Meta (1646700793791407)</li>
-<li>Validação Meta: aprovada, sem erros de JSON</li><li>Publicação: pendente</li><li>Envio aos clientes: bloqueado</li></ul>
+<li>Validação Meta: aprovada, sem erros de JSON</li><li>Publicação: Meta confirmou PUBLISHED</li><li>Envio aos clientes: bloqueado</li></ul>
 <button id="downloadBtn" disabled>Salvar JSON para revisão</button><button id="metaStatusBtn" type="button">Verificar conexão administrativa</button><pre id="metaStatus" aria-live="polite"></pre>
 <p class="muted">A publicação não é um botão de teste. Só será habilitada após autenticação administrativa, validação Meta e aprovação de implantação.</p></section>
 <section class="card"><h2>Regras que precisam ser preservadas</h2><ul>
@@ -51,7 +51,18 @@ import {attendanceAuthorizedFetch} from "./attendance-auth.js?v=auth-refresh-v2"
 const $=id=>document.getElementById(id);let draft=null;
 const path='/docs/whatsapp-1018-simulator/meta-flow-intent-draft.json';
 const META_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-1018-pilot-v1';
-$('catalogBtn').addEventListener('click',async()=>{const el=$('catalogResult');el.textContent='Consultando...';try{const res=await attendanceAuthorizedFetch(META_API+'?action=catalog_preview',{method:'GET'});const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok){el.textContent='Prévia indisponível: '+(data.error||res.status);return;}el.textContent=(data.offers||[]).map(p=>p.name+' — R$ '+(p.price_cents/100).toFixed(2).replace('.',',')+' · estoque '+p.stock_quantity).join('\\n')||'Nenhuma oferta disponível.';}catch{el.textContent='Backend ainda não publicado ou conexão indisponível.';}});
+async function loadCatalog(kind){
+ const el=$('catalogResult');el.textContent='Consultando '+kind+'...';
+ try{
+ const res=await attendanceAuthorizedFetch(META_API+'?action=catalog_preview&kind='+kind,{method:'GET'});
+ const data=await res.json().catch(()=>({}));
+ if(!res.ok||!data.ok){el.textContent='Prévia indisponível: '+(data.error||res.status);return;}
+ el.textContent=(data.rows||[]).map(p=>p.name+' — R$ '+((p.price_cents??p.priceCents)/100).toFixed(2).replace('.',',')+' · estoque '+(p.stock_quantity??p.stock)).join('\\n')||'Nenhum item disponível.';
+ }catch{el.textContent='Backend indisponível ou sessão expirada.';}
+}
+$('catalogBtn').addEventListener('click',()=>loadCatalog('offers'));
+$('productsBtn').addEventListener('click',()=>loadCatalog('products'));
+$('basketsBtn').addEventListener('click',()=>loadCatalog('baskets'));
 $('metaStatusBtn').addEventListener('click',async()=>{const el=$('metaStatus');el.textContent='Verificando...';try{const res=await attendanceAuthorizedFetch(META_API+'?action=meta_status',{method:'GET'});const data=await res.json().catch(()=>({}));el.textContent=JSON.stringify({http_status:res.status,ok:data.ok===true,channel:data.channel||null,error:data.error||null,flow_id:data.flow_id||null,status:data.status||null,validation_errors:data.validation_errors||[],live_activation:data.live_activation??null},null,2);}catch{el.textContent='Não foi possível consultar a função administrativa.';}});
 async function load(){if(draft)return draft;const res=await fetch(path,{cache:'no-store'});
 if(!res.ok)throw Error('Arquivo JSON não publicado neste ambiente');
