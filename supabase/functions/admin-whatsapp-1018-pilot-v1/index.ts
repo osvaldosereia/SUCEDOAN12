@@ -7,6 +7,7 @@ import {map1018CanonicalProducts} from "../_shared/ana-1018-canonical-product-pr
 import {map1018CanonicalBaskets} from "../_shared/ana-1018-canonical-basket-preview-v1.mjs";
 import {quote1018CanonicalCart} from "../_shared/ana-1018-canonical-cart-quote-v1.mjs";
 import {prepare1018CheckoutConfirmation} from "../_shared/ana-1018-checkout-confirmation-v1.mjs";
+import {build1018CanonicalOrderPayload} from "../_shared/ana-1018-canonical-order-payload-v1.mjs";
 const url=Deno.env.get("SUPABASE_URL")||"";
 const service=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const token=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"";
@@ -88,7 +89,8 @@ Deno.serve(async(req:Request)=>{
    const basketRequests=await Promise.all(all.filter(x=>x.kind==="basket").map(x=>fetch1018CanonicalStorefront({action:"basket",params:{basket_id:x.id},baseUrl:source})));
    if(requests.some(x=>!x.ok)||basketRequests.some(x=>!x.ok))return reply(req,{ok:false,error:"canonical_unavailable"},503);
    const products=new Map(all.filter(x=>x.kind==="product").map((x,i)=>[x.id,requests[i]?.data?.product]));
-   const baskets=new Map(all.filter(x=>x.kind==="basket").map((x,i)=>[x.id,basketRequests[i]?.data?.basket]));
+   const basketDetails=new Map(all.filter(x=>x.kind==="basket").map((x,i)=>[x.id,basketRequests[i]?.data]));
+   const baskets=new Map([...basketDetails].map(([id,detail])=>[id,detail?.basket]));
    const catalog=all.map(x=>{
     const p=x.kind==="product"?products.get(x.id):baskets.get(x.id);
     return {key:x.kind+":"+x.id,name:String(p?.name||""),priceCents:x.kind==="product"?p?.price_cents:p?.display_price_cents,
@@ -98,7 +100,15 @@ Deno.serve(async(req:Request)=>{
    if(body.action==="preview_checkout"){
     if(!preview.ok)return reply(req,{...preview,source:"storefront-v2",channel:"1018"},409);
     const confirmation=prepare1018CheckoutConfirmation({quote:preview,customer:body.customer,delivery:body.delivery,paymentMethod:body.paymentMethod,customerConfirmed:body.customerConfirmed});
-    return reply(req,{...confirmation,source:"storefront-v2"},confirmation.ok?200:409);
+    if(!confirmation.ok)return reply(req,{...confirmation,source:"storefront-v2"},409);
+    const delivery=await fetch1018CanonicalStorefront({action:"delivery_options",baseUrl:source});
+    if(!delivery.ok)return reply(req,{ok:false,error:"delivery_options_unavailable"},503);
+    const date=body.deliveryDate;
+    if(!Array.isArray(delivery.data?.options)||!delivery.data.options.some((x:any)=>x.date===date))return reply(req,{ok:false,error:"delivery_date_unavailable"},409);
+    const prepared=build1018CanonicalOrderPayload({lines,basketDetails,quote:preview,phone:confirmation.confirmation.phone,paymentMethod:confirmation.confirmation.paymentMethod,deliveryDate:date});
+    if(!prepared.ok)return reply(req,{ok:false,error:prepared.reason},409);
+    // Internal owner-only staging; never submit automatically or expose basket adjustments to customers.
+    return reply(req,{...confirmation,source:"storefront-v2",canonicalOrderPrepared:true,canonicalOrder:prepared});
    }
    return reply(req,{...preview,source:"storefront-v2",channel:"1018"},preview.ok?200:409);
   }
