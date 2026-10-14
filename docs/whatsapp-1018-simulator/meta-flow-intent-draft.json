@@ -5,10 +5,7 @@
     "START": [
       "SELECT_PATH"
     ],
-    "SELECT_PATH": [
-      "END"
-    ],
-    "END": []
+    "SELECT_PATH": []
   },
   "screens": [
     {
@@ -45,7 +42,7 @@
     {
       "id": "SELECT_PATH",
       "title": "Atendimento",
-      "terminal": false,
+      "terminal": true,
       "data": {},
       "layout": {
         "type": "SingleColumnLayout",
@@ -82,55 +79,17 @@
           },
           {
             "type": "Footer",
-            "label": "Enviar escolha",
+            "label": "Concluir",
             "on_click_action": {
-              "name": "navigate",
-              "next": {
-                "type": "screen",
-                "name": "END"
-              },
+              "name": "complete",
               "payload": {
                 "intent": "${form.intent}"
               }
             }
           }
         ]
-      }
-    },
-    {
-      "id": "END",
-      "title": "Solicitação recebida",
-      "terminal": true,
-      "success": true,
-      "data": {
-        "intent": {
-          "type": "string",
-          "__example": "new_order"
-        }
       },
-      "layout": {
-        "type": "SingleColumnLayout",
-        "children": [
-          {
-            "type": "TextHeading",
-            "text": "Pronto!"
-          },
-          {
-            "type": "TextBody",
-            "text": "Recebemos sua escolha. Continue pelo atendimento para abrir o catálogo ou consultar seu pedido."
-          },
-          {
-            "type": "Footer",
-            "label": "Concluir",
-            "on_click_action": {
-              "name": "complete",
-              "payload": {
-                "intent": "${data.intent}"
-              }
-            }
-          }
-        ]
-      }
+      "success": true
     }
   ]
 }
