@@ -35,3 +35,10 @@
 - O módulo `ana-1018-flow-send-v1.mjs` exige explicitamente `enabled=true`, conta correta, piloto ativo e janela de 24h previamente verificada. O remetente Meta é injetado; **não existe chamada real nem ligação ao worker**.
 - Testes em `scripts/test-whatsapp-1018-flow-send-v1.mjs` e PostgreSQL isolado em `scripts/fixtures/whatsapp-1018-outbox-postgres-test-v1.sql`.
 - Pendente: conciliação manual/assistida de WAMIDs incertos, checagem real de janela de serviço, validação Meta, teste em aparelhos, hospedagem pública isolada do simulador e autorização de liberação.
+
+## Rodada de conciliação — 14/10
+- Migração não aplicada `20261014_whatsapp_1018_flow_reconciliation_v1.sql`: RPC de consulta de envios `reserved`/`uncertain` do 1018, apenas para service_role, com paginação limitada a 100 registros e telefone mascarado (4 últimos dígitos).
+- A consulta não retorna token/hash nem telefone completo e não realiza reenvio, cancelamento ou alteração de pedido.
+- A finalização `uncertain`→`sent` continua exigindo WAMID explícito e geração ativa, usando a RPC transacional da etapa anterior. **Não reconciliar por suposição; só mediante WAMID confirmado.**
+- Testes PostgreSQL: `scripts/fixtures/whatsapp-1018-reconciliation-postgres-test-v1.sql`.
+- A publicação do Flow na Meta e teste real continuam pendentes. A integração ainda não está ativa.
