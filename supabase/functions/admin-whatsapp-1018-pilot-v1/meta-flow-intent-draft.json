@@ -1,0 +1,95 @@
+{
+  "version": "7.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "START": [
+      "SELECT_PATH"
+    ],
+    "SELECT_PATH": []
+  },
+  "screens": [
+    {
+      "id": "START",
+      "title": "Dona Antônia",
+      "terminal": false,
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Como podemos ajudar?"
+          },
+          {
+            "type": "TextBody",
+            "text": "Escolha uma opção para continuar."
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on_click_action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "SELECT_PATH"
+              },
+              "payload": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "SELECT_PATH",
+      "title": "Atendimento",
+      "terminal": true,
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "choice_form",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "name": "intent",
+                "label": "O que deseja fazer?",
+                "required": true,
+                "data-source": [
+                  {
+                    "id": "new_order",
+                    "title": "Montar uma cesta ou compra"
+                  },
+                  {
+                    "id": "offers",
+                    "title": "Ver ofertas"
+                  },
+                  {
+                    "id": "existing_order",
+                    "title": "Consultar ou alterar pedido"
+                  },
+                  {
+                    "id": "human",
+                    "title": "Falar com atendente"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Concluir",
+            "on_click_action": {
+              "name": "complete",
+              "payload": {
+                "intent": "${form.intent}"
+              }
+            }
+          }
+        ]
+      },
+      "success": true
+    }
+  ]
+}
