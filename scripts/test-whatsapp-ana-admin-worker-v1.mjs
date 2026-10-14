@@ -33,6 +33,6 @@ assert.match(worker,/admin_trigger_label_removed/,'worker must record determinis
 assert.match(worker,/select\('customer_id,wa_contact_e164'\)/,'worker must read only the explicit conversation customer link');
 assert.match(worker,/customerLinked:Boolean\(conversation\.data\.customer_id\)/,'worker must pass explicit customer linkage to trigger routing');
 assert.match(worker,/conversation_context_unavailable/,'missing conversation context must fail closed');
-assert.match(worker,/const routeMetadata=\{trigger_key:routed\.triggerKey\|\|null,active_version:activeConfig\.data\.version\}/,'live outcomes must retain the matched trigger key for metrics');
+assert.match(worker,/const routeMetadata=\{trigger_key:routed\.triggerKey\|\|null,active_version:activeConfig\.data\.version,release_mode:activeConfig\.data\.release_mode,release_generation:activeConfig\.data\.release_generation\}/,'live outcomes must retain trigger identity and release generation');
 assert.match(worker,/p_metadata:\{\.\.\.routeMetadata,outbox_id:/,'successful sends must persist trigger metadata');
 console.log('PASS: worker published configuration, deterministic routing and fail-closed contract');
