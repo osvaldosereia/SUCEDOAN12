@@ -52,7 +52,9 @@ const directModules=['attendance-library.js','attendance-ana-preview.js','attend
 assert.match(html,/attendance-app\.js\?v=[a-z0-9][a-z0-9-]+/,'core deve ter cache-bust explícito compatível com sessão renovável');
 for(const module of directModules){
   const escaped=module.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  assert.match(html,new RegExp(`${escaped}\\?v=auth-refresh-v2`),`${module} deve receber cache-bust v2`);
+  assert.match(html,new RegExp(`${escaped}\\?v=[A-Za-z0-9][A-Za-z0-9._-]*`),`${module} deve receber cache-bust versionado`);
 }
 
-console.log('OK · toda a Central, inclusive Produtos, converge para uma instância canônica versionada de sessão e preserva o boot autenticado.');
+const sendSource=files.send.slice(files.send.indexOf('async function sendDraft(){'));
+assert.ok(sendSource.indexOf('sending=true')>=0&&sendSource.indexOf('sending=true')<sendSource.indexOf('await refreshCapability(conversationId)'), 'composer must lock before asynchronous permission revalidation');
+console.log('OK · toda a Central compartilha sessão autenticada, renova cache e protege envio contra duplo clique.');
