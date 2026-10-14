@@ -28,6 +28,7 @@ on:
       - 'docs/whatsapp-1018-simulator/**'
       - 'scripts/fixtures/whatsapp-1018-flow-postgres-setup-v1.sql'
       - 'scripts/fixtures/whatsapp-1018-flow-postgres-test-v1.sql'
+      - 'scripts/fixtures/whatsapp-1018-pilot-postgres-test-v1.sql'
       - 'supabase/functions/_shared/ana-1018-pilot-fixture-v1.mjs'
       - '.github/workflows/whatsapp-1018-pilot-release-ci.yml'
   push:
@@ -99,6 +100,10 @@ jobs:
           fi
       - name: Prepare isolated 1018 test schema
         run: psql -v ON_ERROR_STOP=1 -f scripts/fixtures/whatsapp-1018-flow-postgres-setup-v1.sql
+      - name: Apply 1018 pilot release migration in disposable database
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261013_whatsapp_1018_pilot_release_v1.sql
+      - name: Test staged pilot, rollback and 0975 isolation
+        run: psql -v ON_ERROR_STOP=1 -f scripts/fixtures/whatsapp-1018-pilot-postgres-test-v1.sql
       - name: Apply 1018 sessions migration to disposable database
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261013_whatsapp_1018_flow_sessions_v1.sql
       - name: Test atomic consume, replay, security and rollback
