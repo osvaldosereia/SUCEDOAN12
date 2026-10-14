@@ -81,7 +81,6 @@ Deno.serve(async(req:Request)=>{
    }
    if(unique.size>8)return reply(req,{ok:false,error:"too_many_items"},400);
    const all=[...unique.values()];
-   const needsBasket=all.some(x=>x.kind==="basket");
    const source=url+"/functions/v1/storefront-v2";
    const requests=await Promise.all(all.filter(x=>x.kind==="product").map(x=>fetch1018CanonicalStorefront({action:"product",params:{product_id:x.id},baseUrl:source})));
    // Resolve every selected basket against the authoritative detail endpoint, never a cached home snapshot.
