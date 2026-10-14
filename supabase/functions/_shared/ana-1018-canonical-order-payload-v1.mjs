@@ -41,7 +41,7 @@ export function build1018CanonicalOrderPayload({lines=[],basketDetails=new Map()
   if(!asUuid(basket.lot_id))return {ok:false,reason:'invalid_lot'};
   rows.push({type:'basket',id,qty,lot_id:basket.lot_id,components:items});
  }
- if(!/^\+?55[1-9][0-9]{9,10}$/.test(String(phone).replace(/\D/g,''))&&!/^[1-9][0-9]{9,10}$/.test(String(phone).replace(/\D/g,'')))
+ if(!/^(?:55)?[1-9][0-9]{9,10}$/.test(String(phone).replace(/\D/g,'')))
   return {ok:false,reason:'invalid_phone'};
  if(!/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate))return {ok:false,reason:'delivery_date_required'};
  if(!['pix_delivery','cash_delivery','credit_delivery','meal_card_delivery'].includes(paymentMethod))
