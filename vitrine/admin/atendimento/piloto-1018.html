@@ -32,7 +32,7 @@ ul{padding-left:20px}li{margin:8px 0}.steps{display:grid;gap:7px}.step{border:1p
 <section class="card"><h2>Preparação para Meta</h2>
 <ul><li>Conta Meta: somente 1018</li><li>Envio de JSON: Flow criado e validado pela Meta (1646700793791407)</li>
 <li>Validação Meta: aprovada, sem erros de JSON</li><li>Publicação: Meta confirmou PUBLISHED</li><li>Envio aos clientes: bloqueado</li></ul>
-<button id="downloadBtn" disabled>Salvar JSON para revisão</button><button id="metaStatusBtn" type="button">Verificar conexão administrativa</button><pre id="metaStatus" aria-live="polite"></pre>
+<button id="downloadBtn" disabled>Salvar JSON para revisão</button><button id="metaStatusBtn" type="button">Conferir status Meta</button><button id="metaPreviewBtn" type="button">Prévia oficial Meta</button><pre id="metaStatus" aria-live="polite"></pre><div id="metaPreviewResult" class="muted"></div>
 <p class="muted">A publicação não é um botão de teste. Só será habilitada após autenticação administrativa, validação Meta e aprovação de implantação.</p></section>
 <section class="card"><h2>Regras que precisam ser preservadas</h2><ul>
 <li>Preços, estoque, cestas e pedidos sempre na base oficial do Vitrine/Admin</li>
@@ -63,6 +63,17 @@ async function loadCatalog(kind){
 $('catalogBtn').addEventListener('click',()=>loadCatalog('offers'));
 $('productsBtn').addEventListener('click',()=>loadCatalog('products'));
 $('basketsBtn').addEventListener('click',()=>loadCatalog('baskets'));
+$('metaPreviewBtn').addEventListener('click',async()=>{
+ const el=$('metaPreviewResult');el.textContent='Obtendo prévia...';
+ try{
+  const res=await attendanceAuthorizedFetch(META_API+'?action=meta_preview',{method:'GET'});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||!data.ok){el.textContent='Prévia indisponível: '+(data.error||res.status);return;}
+  const link=document.createElement('a');
+  link.href=data.preview_url;link.rel='noopener noreferrer';link.target='_blank';link.textContent='Abrir Flow 1018 na Meta';
+  el.replaceChildren(link);
+ }catch{el.textContent='Não foi possível consultar a prévia.';}
+});
 $('metaStatusBtn').addEventListener('click',async()=>{const el=$('metaStatus');el.textContent='Verificando...';try{const res=await attendanceAuthorizedFetch(META_API+'?action=meta_status',{method:'GET'});const data=await res.json().catch(()=>({}));el.textContent=JSON.stringify({http_status:res.status,ok:data.ok===true,channel:data.channel||null,error:data.error||null,flow_id:data.flow_id||null,status:data.status||null,validation_errors:data.validation_errors||[],live_activation:data.live_activation??null},null,2);}catch{el.textContent='Não foi possível consultar a função administrativa.';}});
 async function load(){if(draft)return draft;const res=await fetch(path,{cache:'no-store'});
 if(!res.ok)throw Error('Arquivo JSON não publicado neste ambiente');
