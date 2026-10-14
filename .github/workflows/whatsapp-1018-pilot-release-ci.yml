@@ -16,6 +16,7 @@ on:
       - 'scripts/test-whatsapp-1018-meta-flow-completion-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-meta-flow-webhook-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-webhook-v1.mjs'
+      - 'scripts/test-whatsapp-1018-webhook-wiring-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-flow-outbound-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-outbound-v1.mjs'
       - 'supabase/functions/whatsapp-meta-webhook-v1/index.ts'
@@ -64,6 +65,8 @@ jobs:
         run: node scripts/test-whatsapp-1018-flow-webhook-v1.mjs
       - name: Outbound draft and signed inbound token roundtrip
         run: node scripts/test-whatsapp-1018-flow-outbound-v1.mjs
+      - name: Signed Meta webhook wiring contract
+        run: node scripts/test-whatsapp-1018-webhook-wiring-v1.mjs
       - name: ANA admin worker contracts
         run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs
       - name: ANA live release contracts
