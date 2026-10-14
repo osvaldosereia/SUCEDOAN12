@@ -4,8 +4,8 @@ const now=new Date('2026-10-13T16:00:00.000Z');
 const completion={ok:true,actionable:false,requiresSessionVerification:true,intent:'offers',kind:'offers_navigation',requiresHuman:false,requiresOrderLookup:false};
 const session={status:'pending',whatsapp_account_id:'account-1018',customer_phone_e164:'+5565999999999',
  flow_id:'1234567890',outbound_message_id:'wamid.example123456',
- flow_token_sha256:'a'.repeat(64),issued_at:'2026-10-13T15:55:00Z',expires_at:'2026-10-13T16:25:00Z',inbound_message_id:null};
-const input={completion,session,channelPhone:'+5565984491018',accountId:'account-1018',customerPhone:'+5565999999999',now};
+ flow_token_sha256:'a'.repeat(64),release_generation:8,issued_at:'2026-10-13T15:55:00Z',expires_at:'2026-10-13T16:25:00Z',inbound_message_id:null};
+const input={completion,session,release:{mode:'pilot',generation:8},channelPhone:'+5565984491018',accountId:'account-1018',customerPhone:'+5565999999999',now};
 const valid=verify(input);
 assert.equal(valid.ok,true);
 assert.equal(valid.requiresAtomicConsume,true);
@@ -17,6 +17,9 @@ for(const [name,change] of [
  ['unsigned result',{completion:{...completion,ok:false}}],
  ['already actionable',{completion:{...completion,actionable:true}}],
  ['wrong status',{session:{...session,status:'completed'}}],
+ ['rollback',{release:{mode:'current',generation:9}}],
+ ['restaged',{release:{mode:'pilot',generation:9}}],
+ ['missing release',{release:null}],
  ['replayed inbound',{session:{...session,inbound_message_id:'wamid.replayed'}}],
  ['missing token',{session:{...session,flow_token_sha256:null}}],
  ['no outbound',{session:{...session,outbound_message_id:null}}],
