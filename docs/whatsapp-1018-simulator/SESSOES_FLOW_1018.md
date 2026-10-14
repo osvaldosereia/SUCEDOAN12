@@ -20,3 +20,9 @@
 - Nenhum efeito colateral no verificador puro.
 
 **Não garantido ainda:** execução real das migrações, persistência e consumo atômico em PostgreSQL, autenticação do cliente no pedido, Meta Flow aprovado e envio real. O hook está programado, mas não implantado nem habilitado.
+
+## Preparação do envio — 13/10
+- `ana-1018-flow-send-v1.mjs` agora coordena, em módulo isolado, a construção do payload, o envio via função injetada e o registro de WAMID, hash do token e geração do piloto.
+- A função retorna bloqueio quando o piloto está desligado, conta é diferente ou a janela de atendimento não foi previamente verificada. Ela não verifica a janela por conta própria; o chamador deverá comprovar a janela de 24 horas.
+- Se a resposta do envio ou o registro forem incertos, retorna `requiresReconciliation=true` e **não repete o envio automaticamente**, evitando mensagens duplicadas.
+- **Limitação arquitetural ainda aberta:** enviar primeiro e registrar depois deixa uma janela de falha. Para uso real, será necessário criar registro de intenção de envio persistente e mecanismo de conciliação com o WAMID, sem reenviar após timeout incerto. O módulo ainda não está ligado ao worker real.
