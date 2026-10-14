@@ -3,6 +3,7 @@ import fs from 'node:fs';
 const flow=JSON.parse(fs.readFileSync('docs/whatsapp-1018-simulator/meta-flow-intent-draft.json','utf8'));
 const screens=new Map(flow.screens.map(s=>[s.id,s]));
 assert.equal(screens.size,2);
+assert.equal(Object.prototype.hasOwnProperty.call(flow,'data_api_version'),false,'static Flow must not require an endpoint');
 assert.equal(screens.get('SELECT_PATH').terminal,true);
 assert.equal(screens.get('SELECT_PATH').success,true);
 assert.equal(screens.get('SELECT_PATH').layout.children.at(-1)['on-click-action'].name,'complete');
