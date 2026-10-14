@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const html=fs.readFileSync('dist/whatsapp-1018-simulator/index.html','utf8');
+assert.match(html,/id="flowOverlay"/);
+assert.match(html,/class="flow-screen"/);
+assert.match(html,/flowSubmit/);
+assert.match(html,/flowStep===0/);
+assert.match(html,/NÃO É O WHATSAPP REAL/);
+assert.doesNotMatch(html,/<script[^>]*type="module"/);
+assert.doesNotMatch(html,/<script[^>]*src=/);
+assert.doesNotMatch(html,/fetch\s*\(|https?:\/\/[^"' ]*supabase|graph\.facebook\.com|localStorage|sessionStorage/i);
+const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+assert.equal(scripts.length,1);
+new vm.Script(scripts[0][1],{filename:'1018-standalone.js'});
+assert.match(scripts[0][1],/function routeAnaMessage/);
+assert.match(scripts[0][1],/const pilot1018/);
+console.log('PASS: standalone HTML parses, contains native-like Flow overlay and no network dependencies');
