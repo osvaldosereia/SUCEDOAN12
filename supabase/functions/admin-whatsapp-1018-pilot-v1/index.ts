@@ -87,7 +87,7 @@ Deno.serve(async(req:Request)=>{
    const home=needsBasket?await fetch1018CanonicalStorefront({action:"home",baseUrl:source}):null;
    if(requests.some(x=>!x.ok)||(home&&!home.ok))return reply(req,{ok:false,error:"canonical_unavailable"},503);
    const products=new Map(all.filter(x=>x.kind==="product").map((x,i)=>[x.id,requests[i]?.data?.product]));
-   const baskets=home?.data?.baskets||[];
+   const baskets=Array.isArray(home?.data?.baskets)?home.data.baskets:[];
    const catalog=all.map(x=>{
     const p=x.kind==="product"?products.get(x.id):baskets.find((b:any)=>String(b.card_key||b.id)===x.id);
     return {key:x.kind+":"+x.id,name:String(p?.name||""),priceCents:x.kind==="product"?p?.price_cents:p?.display_price_cents,
