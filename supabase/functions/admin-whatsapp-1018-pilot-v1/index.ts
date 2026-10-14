@@ -45,6 +45,12 @@ Deno.serve(async(req:Request)=>{
    return reply(req,{ok:true,channel:"1018",source:"storefront-v2",read_only:true,kind,
     rows:mapped.rows});
   }
+  if(action==="delivery_preview"){
+   const upstream=await fetch1018CanonicalStorefront({action:"delivery_options",baseUrl:url+"/functions/v1/storefront-v2"});
+   if(!upstream.ok||!Array.isArray(upstream.data?.options))return reply(req,{ok:false,error:"delivery_options_unavailable"},503);
+   return reply(req,{ok:true,channel:"1018",options:upstream.data.options,time_zone:upstream.data.time_zone,
+    read_only:true});
+  }
   if(action==="meta_preview"){
    if(!token||!/^v\d+\.\d+$/.test(version))return reply(req,{ok:false,error:"meta_not_configured"},503);
    try{
@@ -76,7 +82,7 @@ Deno.serve(async(req:Request)=>{
    const unique=new Map<string,{kind:string,id:string}>();
    const idPattern=/^[0-9a-f]{8}-[0-9a-f-]{27,28}(?:@[1-6])?$/i;
    for(const line of lines){
-    if(!line||!["product","basket"].includes(line.kind)||typeof line.id!=="string"||!idPattern.test(line.id)||!Number.isInteger(line.quantity)||line.quantity<1||line.quantity>50)return reply(req,{ok:false,error:"invalid_item"},400);
+    if(!line||!["product","basket"].includes(line.kind)||typeof line.id!=="string"||!idPattern.test(line.id)||!Number.isInteger(line.quantity)||line.quantity<1||line.quantity>30)return reply(req,{ok:false,error:"invalid_item"},400);
     if(line.kind==="product"&&line.id.includes("@"))return reply(req,{ok:false,error:"invalid_item"},400);
     unique.set(line.kind+":"+line.id,{kind:line.kind,id:line.id});
    }
@@ -105,7 +111,9 @@ Deno.serve(async(req:Request)=>{
     if(!delivery.ok)return reply(req,{ok:false,error:"delivery_options_unavailable"},503);
     const date=body.deliveryDate;
     if(!Array.isArray(delivery.data?.options)||!delivery.data.options.some((x:any)=>x.date===date))return reply(req,{ok:false,error:"delivery_date_unavailable"},409);
-    const prepared=build1018CanonicalOrderPayload({lines,basketDetails,quote:preview,phone:confirmation.confirmation.phone,paymentMethod:confirmation.confirmation.paymentMethod,deliveryDate:date});
+    const prepared=build1018CanonicalOrderPayload({lines,basketDetails,quote:preview,
+     customer:body.customer,delivery:body.delivery,
+     paymentMethod:confirmation.confirmation.paymentMethod,deliveryDate:date});
     if(!prepared.ok)return reply(req,{ok:false,error:prepared.reason},409);
     if(body.action==="submit_pilot_order"){
      // No public or Flow-triggered writes. Owner-authenticated explicit opt-in only.
@@ -151,7 +159,11 @@ Deno.serve(async(req:Request)=>{
      }
     }
     // Internal owner-only staging; never submit automatically or expose basket adjustments to customers.
-    return reply(req,{...confirmation,source:"storefront-v2",canonicalOrderPrepared:true,canonicalOrder:prepared});
+    return reply(req,{...confirmation,source:"storefront-v2",canonicalOrderPrepared:true,
+     canonicalItemCount:prepared.payload.items.length,deliveryDate:date,
+     paymentLabel:prepared.payload.payment_method,
+     // No document or hidden basket adjustment is returned in the preview.
+     orderCreated:false});
    }
    return reply(req,{...preview,source:"storefront-v2",channel:"1018"},preview.ok?200:409);
   }
