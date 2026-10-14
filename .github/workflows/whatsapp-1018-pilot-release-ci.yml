@@ -11,6 +11,7 @@ on:
       - 'scripts/test-whatsapp-1018-simulator-v1.mjs'
       - 'scripts/build-whatsapp-1018-simulator-standalone-v1.mjs'
       - 'scripts/test-whatsapp-1018-simulator-standalone-v1.mjs'
+      - 'scripts/audit-whatsapp-1018-pilot-readiness-v1.mjs'
       - 'scripts/test-whatsapp-1018-meta-flow-draft-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-intent-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-flow-intent-v1.mjs'
@@ -63,11 +64,15 @@ jobs:
         run: node scripts/build-whatsapp-1018-simulator-standalone-v1.mjs
       - name: Validate standalone mobile simulator
         run: node scripts/test-whatsapp-1018-simulator-standalone-v1.mjs
+      - name: Audit pilot release guards and hidden basket data
+        run: node scripts/audit-whatsapp-1018-pilot-readiness-v1.mjs
       - name: Upload standalone mobile simulator
         uses: actions/upload-artifact@v4
         with:
           name: whatsapp-1018-simulador-offline
-          path: dist/whatsapp-1018-simulator/index.html
+          path: |
+            dist/whatsapp-1018-simulator/index.html
+            dist/whatsapp-1018-simulator/readiness.json
           retention-days: 14
       - name: Draft Meta Flow contract
         run: node scripts/test-whatsapp-1018-meta-flow-draft-v1.mjs
