@@ -16,6 +16,10 @@ on:
       - 'scripts/test-whatsapp-1018-admin-integration-v1.mjs'
       - 'scripts/test-whatsapp-1018-admin-endpoint-v1.mjs'
       - 'scripts/test-whatsapp-1018-pilot-order-preview-v1.mjs'
+      - 'scripts/test-whatsapp-1018-catalog-adapter-v1.mjs'
+      - 'scripts/test-whatsapp-1018-intent-routing-v1.mjs'
+      - 'supabase/functions/_shared/ana-1018-catalog-adapter-v1.mjs'
+      - 'supabase/functions/_shared/ana-1018-intent-routing-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-pilot-order-preview-v1.mjs'
       - 'supabase/functions/admin-whatsapp-1018-pilot-v1/**'
       - 'vitrine/admin/atendimento/piloto-1018.html'
@@ -83,6 +87,10 @@ jobs:
             dist/whatsapp-1018-simulator/index.html
             dist/whatsapp-1018-simulator/readiness.json
           retention-days: 14
+      - name: Canonical 1018 catalog projection
+        run: node scripts/test-whatsapp-1018-catalog-adapter-v1.mjs
+      - name: Verified 1018 intent routing
+        run: node scripts/test-whatsapp-1018-intent-routing-v1.mjs
       - name: Read-only 1018 cart and hidden basket preview
         run: node scripts/test-whatsapp-1018-pilot-order-preview-v1.mjs
       - name: Owner-only Meta 1018 endpoint contract
