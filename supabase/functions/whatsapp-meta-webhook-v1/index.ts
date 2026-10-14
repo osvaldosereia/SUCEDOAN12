@@ -512,6 +512,7 @@ Deno.serve(async (req: Request) => {
         const flow1018 = await handle1018FlowWebhook({
           enabled: true, expectedAccountId: FLOW_1018_ACCOUNT_ID,
           expectedFlowId: FLOW_1018_META_FLOW_ID, canonicalMessage: message,
+          signedPayload: payload,
           ingestResult: result, db, signatureVerified: true,
         });
         if (flow1018.handled) {
