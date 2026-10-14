@@ -26,3 +26,12 @@
 - A função retorna bloqueio quando o piloto está desligado, conta é diferente ou a janela de atendimento não foi previamente verificada. Ela não verifica a janela por conta própria; o chamador deverá comprovar a janela de 24 horas.
 - Se a resposta do envio ou o registro forem incertos, retorna `requiresReconciliation=true` e **não repete o envio automaticamente**, evitando mensagens duplicadas.
 - **Limitação arquitetural ainda aberta:** enviar primeiro e registrar depois deixa uma janela de falha. Para uso real, será necessário criar registro de intenção de envio persistente e mecanismo de conciliação com o WAMID, sem reenviar após timeout incerto. O módulo ainda não está ligado ao worker real.
+
+## Rodada ampla de pré-implantação — outbox (13/10)
+- Criada migração **isolada, não aplicada em produção**: `supabase/migrations/20261013_whatsapp_1018_flow_outbox_v1.sql`.
+- Antes de chamar a Meta, `ops2_1018_flow_outbox_reserve_v1` persiste a intenção de envio, o hash SHA-256, cliente, Flow ID e geração ativa do piloto. Sem reserva, não há envio.
+- `ops2_1018_flow_outbox_finalize_v1` registra o WAMID e a sessão **na mesma transação**, com proteção contra duplicidade, expiração, troca de geração e rollback.
+- Erro/timeout de envio deixa estado `uncertain` para conciliação; **não há repetição automática**.
+- O módulo `ana-1018-flow-send-v1.mjs` exige explicitamente `enabled=true`, conta correta, piloto ativo e janela de 24h previamente verificada. O remetente Meta é injetado; **não existe chamada real nem ligação ao worker**.
+- Testes em `scripts/test-whatsapp-1018-flow-send-v1.mjs` e PostgreSQL isolado em `scripts/fixtures/whatsapp-1018-outbox-postgres-test-v1.sql`.
+- Pendente: conciliação manual/assistida de WAMIDs incertos, checagem real de janela de serviço, validação Meta, teste em aparelhos, hospedagem pública isolada do simulador e autorização de liberação.
