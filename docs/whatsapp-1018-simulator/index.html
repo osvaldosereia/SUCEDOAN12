@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dona Antônia · Simulador WhatsApp 1018</title>
+<style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#172b26;background:#e9edea}*{box-sizing:border-box}body{margin:0;padding:16px}
+header{max-width:940px;margin:auto auto 12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:20px;margin:0}.notice{font-size:12px;background:#fff3d5;border:1px solid #d7a94d;border-radius:8px;padding:10px;max-width:940px;margin:0 auto 14px}
+main{max-width:940px;margin:auto;display:grid;grid-template-columns:minmax(300px,1fr) minmax(230px,300px);gap:16px}
+.phone{max-width:430px;width:100%;margin:auto;background:#efeae2;border:1px solid #c3cbc7;border-radius:16px;overflow:hidden;min-height:620px;display:flex;flex-direction:column;box-shadow:0 12px 30px #0001}
+.bar{background:#075e54;color:white;display:flex;gap:10px;align-items:center;padding:13px}.avatar{width:35px;height:35px;border-radius:50%;background:#c9e8d3;color:#075e54;display:grid;place-items:center;font-weight:800}.name{font-weight:700}.sub{font-size:11px;opacity:.9}
+.chat{flex:1;padding:18px 12px;min-height:430px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(135deg,#efeae2,#e4e9df)}
+.msg{padding:9px 12px;border-radius:9px;max-width:88%;box-shadow:0 1px 2px #0002;font-size:14px;white-space:pre-line;overflow-wrap:anywhere}.incoming{background:white;align-self:flex-start}.outgoing{background:#d9fdd3;align-self:flex-end}
+.msg small{display:block;text-align:right;font-size:10px;color:#6b7770;margin-top:5px}
+.actions{display:grid;gap:5px;margin-top:9px}.actions button{background:white;color:#087b71;border:0;border-top:1px solid #e6e6e6;padding:10px;font-weight:600;cursor:pointer}.actions button:hover{background:#e8f8f4}
+.compose{display:flex;gap:8px;background:#f4f4f4;padding:10px}.compose input{flex:1;min-width:0;border:0;border-radius:20px;padding:12px}.compose button,.panel button{border:0;border-radius:9px;background:#087a6b;color:white;padding:10px 12px;cursor:pointer}
+.panel{background:white;border:1px solid #cbd3ce;border-radius:12px;padding:16px;height:fit-content}.panel h2{font-size:16px;margin:0 0 12px}.panel p{font-size:13px;line-height:1.5}.panel button{display:block;width:100%;margin:8px 0;text-align:left}.panel button.secondary{background:#edf3ef;color:#154c40}
+.tag{font-size:12px;color:#33665b;background:#e9f5f0;padding:6px;border-radius:5px;display:inline-block}
+.flow{background:#fff;border-radius:12px;border:1px solid #c5d2cb;padding:15px;max-width:88%;align-self:flex-start}.flow h3{font-size:16px;margin:0 0 10px}.flow p{font-size:13px}.flow label{display:block;font-size:12px;margin:12px 0 4px}.flow select{width:100%;padding:10px;border:1px solid #b7c9bf;border-radius:7px}.flow button{margin-top:12px;background:#087a6b;color:white;border:0;padding:10px;border-radius:7px;width:100%}
+@media(max-width:700px){main{grid-template-columns:1fr}.phone{min-height:580px}.panel{order:-1}header{align-items:start}}
+</style></head><body>
+<header><h1>Simulador de atendimento · 1018</h1><span class="tag">Somente demonstração local</span></header>
+<div class="notice"><strong>NÃO É O WHATSAPP REAL.</strong> Prévia visual aproximada de mensagens interativas e tela de Flow. Não usa Meta, Supabase, pedidos ou clientes reais. Os botões são simulados.</div>
+<main><section class="phone" aria-label="Simulação de conversa">
+<div class="bar"><div class="avatar">DA</div><div><div class="name">Dona Antônia</div><div class="sub">Atendimento · final 1018 (simulação)</div></div></div>
+<div class="chat" id="chat" aria-live="polite"></div>
+<form class="compose" id="composer"><input id="typed" aria-label="Mensagem" placeholder="Digite uma mensagem" autocomplete="off"><button type="submit">Enviar</button></form>
+</section><aside class="panel"><h2>Testar cenários</h2><p>Escolha uma etapa. Nenhuma ação será enviada à Meta.</p>
+<button data-scenario="start">Iniciar atendimento</button>
+<button data-scenario="basket">Comprar cesta</button>
+<button data-scenario="order">Consultar pedido</button>
+<button data-scenario="change">Alterar pedido</button>
+<button data-scenario="human">Falar com atendente</button>
+<button data-scenario="flow">Abrir Flow simulado</button>
+<button class="secondary" data-scenario="rollback">Simular rollback</button>
+<button class="secondary" data-scenario="reset">Reiniciar conversa</button>
+<p id="state" class="tag">Motor: atual (simulado)</p>
+<p>O Flow de compra é apenas um protótipo de navegação. A integração definitiva com cestas, valores ocultos, ofertas e pedidos ainda precisa de homologação.</p></aside></main>
+<script type="module">
+import {pilot1018} from '../../supabase/functions/_shared/ana-1018-pilot-fixture-v1.mjs';
+import {routeAnaMessage} from '../../supabase/functions/_shared/ana-admin-config-v1.mjs';
+const chat=document.getElementById('chat'),state=document.getElementById('state');let mode='pilot';
+const escapeText=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function bubble(text,side='incoming',buttons=[]){const box=document.createElement('div');box.className='msg '+side;const txt=document.createElement('span');txt.textContent=text;box.append(txt);if(buttons.length){const area=document.createElement('div');area.className='actions';for(const [label,action] of buttons){const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',action);area.append(b)}box.append(area)}const time=document.createElement('small');time.textContent='simulação';box.append(time);chat.append(box);chat.scrollTop=chat.scrollHeight}
+function incoming(text){bubble(text,'outgoing');if(mode==='current'){bubble('Atendimento anterior preservado (resposta ilustrativa).');return}const result=routeAnaMessage(pilot1018,text,'1018',{humanMode:false,customerLinked:false});if(result.path==='fixed_reply')bubble(result.responseText);else if(result.path==='handoff')bubble('Vou encaminhar sua solicitação para o atendimento humano.');else bubble('Como posso ajudar? Se quiser comprar, use o catálogo; para informações do pedido, fale com um atendente.')}
+function menu(){bubble('Olá! Como podemos ajudar?', 'incoming', [['🛒 Comprar cesta',()=>incoming('Quero comprar')],['📦 Meu pedido',()=>incoming('Status do pedido')],['✏️ Alterar pedido',()=>incoming('Preciso alterar o pedido')],['👤 Atendente',()=>incoming('Quero falar com atendente')],['📋 Abrir Flow',flow]])}
+function flow(){const box=document.createElement('div');box.className='flow';box.innerHTML='<h3>Catálogo · Flow demonstrativo</h3><p>Exemplo visual da navegação por etapas. Não consulta produtos ou preços.</p><label for="type">O que deseja?</label><select id="type"><option>Cesta básica</option><option>Ofertas</option><option>Mercearia</option></select><button id="flowNext" type="button">Continuar</button>';chat.append(box);box.querySelector('button').addEventListener('click',()=>{const value=box.querySelector('select').value;box.remove();bubble('Selecionado: '+value,'outgoing');bubble('Esta etapa exige integração com catálogo, estoque e pedido real. No simulador, nenhuma compra é criada.')});chat.scrollTop=chat.scrollHeight}
+const handlers={start:menu,basket:()=>incoming('Quero comprar'),order:()=>incoming('Status do pedido'),change:()=>incoming('Preciso alterar o pedido'),human:()=>incoming('Quero falar com atendente'),flow,rollback:()=>{mode=mode==='pilot'?'current':'pilot';state.textContent='Motor: '+(mode==='pilot'?'piloto':'atual')+' (simulado)';bubble('Versão selecionada: '+(mode==='pilot'?'piloto':'atual')+'. Nenhuma configuração real foi alterada.')},reset:()=>{chat.replaceChildren();menu()}};
+document.querySelectorAll('[data-scenario]').forEach(b=>b.addEventListener('click',()=>handlers[b.dataset.scenario]()));
+document.getElementById('composer').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('typed');const v=input.value.trim();if(v)incoming(v);input.value=''});
+menu();
+</script></body></html>
