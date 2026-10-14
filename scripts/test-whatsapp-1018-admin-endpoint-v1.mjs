@@ -4,9 +4,9 @@ const draft=JSON.parse(fs.readFileSync('supabase/functions/admin-whatsapp-1018-p
 const source=JSON.parse(fs.readFileSync('docs/whatsapp-1018-simulator/meta-flow-intent-draft.json','utf8'));
 assert.deepEqual(draft,source,'server Flow must equal admin preview');
 assert.match(endpoint,/admin_users/);assert.match(endpoint,/role\.data\.role!=="owner"/);
-assert.match(endpoint,/WHATSAPP_1018_META_DRAFT_PROVISION_ENABLED/);
-assert.match(endpoint,/provision1018MetaFlowDraft/);
-assert.match(endpoint,/action!=="submit_draft"/);
+assert.match(endpoint,/pilot_write_locked_until_secure_auth/);
+assert.match(endpoint,/1646700793791407/);
+assert.match(endpoint,/action==="meta_status"/);
 assert.doesNotMatch(endpoint,/\/publish|sendTemplateViaMeta|send1018PilotFlow|dispatchTemplate/);
 assert.match(endpoint,/dona-antonia-1018/);
 console.log('PASS: owner-only isolated Meta draft endpoint, default off, no live activation');
