@@ -32,6 +32,8 @@ on:
       - 'supabase/functions/admin-whatsapp-1018-pilot-v1/**'
       - 'vitrine/admin/atendimento/piloto-1018.html'
       - 'vitrine/admin/atendimento/index.html'
+      - 'vitrine/admin/atendimento/attendance-human-ai.js'
+      - 'scripts/test-attendance-human-ai-channel-regression-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-meta-flow-provision-v1.mjs'
       - 'scripts/test-whatsapp-1018-meta-flow-draft-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-intent-v1.mjs'
@@ -75,6 +77,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Attendance AI channel isolation regression
+        run: node scripts/test-attendance-human-ai-channel-regression-v1.mjs
       - name: Pilot isolation and rollback contracts
         run: node scripts/test-whatsapp-1018-pilot-release-v1.mjs
       - name: Synthetic 1018 pilot conversations
