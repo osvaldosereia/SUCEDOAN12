@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const flow=JSON.parse(fs.readFileSync('docs/whatsapp-1018-simulator/meta-flow-intent-draft.json','utf8'));
+const screens=new Map(flow.screens.map(s=>[s.id,s]));
+assert.equal(screens.size,3);
+assert.equal(screens.get('END').terminal,true);
+assert.equal(screens.get('END').success,true);
+assert.equal(screens.get('END').data.intent.type,'string');
+const group=screens.get('SELECT_PATH').layout.children.find(c=>c.type==='Form').children.find(c=>c.type==='RadioButtonsGroup');
+assert.equal(group.required,true);
+assert.deepEqual(group['data-source'].map(x=>x.id),['new_order','offers','existing_order','human']);
+assert.equal(flow.screens.every(s=>s.layout.type==='SingleColumnLayout'),true);
+const json=JSON.stringify(flow);
+assert.doesNotMatch(json,/CPF|CNPJ|endereço|pagamento|estoque real|valor oculto/i);
+assert.doesNotMatch(json,/graph\.facebook|supabase\.co|https?:\/\//i,'draft must not call APIs');
+assert.match(json,/\\u0024\{form.intent\}|\$\{form.intent\}/);
+console.log('PASS: draft Meta Flow collects only intent; no sensitive data or backend side effects');
