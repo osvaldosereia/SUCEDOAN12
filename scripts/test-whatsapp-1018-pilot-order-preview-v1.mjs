@@ -7,6 +7,7 @@ assert.equal(ok.ok,true);assert.equal(ok.totalCents,10000);assert.equal(ok.order
 assert.doesNotMatch(JSON.stringify(ok),/hidden|Adjustment|1300/);
 assert.equal(preview1018Cart({...base,deliveryCity:'São Paulo'}).reason,'delivery_outside_service_area');
 assert.equal(preview1018Cart({...base,lines:[{productId:'basket',quantity:5}]}).reason,'insufficient_stock');
+assert.equal(preview1018Cart({...base,lines:[{productId:'basket',quantity:3},{productId:'basket',quantity:2}]}).reason,'insufficient_stock');
 assert.equal(preview1018Cart({...base,lines:[{productId:'rice',quantity:1}]}).reason,'minimum_not_met');
 assert.equal(preview1018Cart({...base,lines:[{productId:'basket',quantity:1}],nowHour:13}).ok,true);
 assert.equal(preview1018Cart({...base,lines:[{productId:'basket',quantity:1}],holiday:true}).readOnly,true);
