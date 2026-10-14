@@ -68,3 +68,10 @@ Permitir experimentar nova lógica de atendimento **somente no 1018**, preservan
 - A suíte `WhatsApp Meta Central CI` ainda tem falha anterior ao piloto em teste de DOM; não considerar todos os checks verdes.
 
 **Continuam pendentes:** validação real do arquivo Flow na Meta, cadastro/publicação de Flow/templates, criação de vínculos outbound token↔WAMID na operação efetiva de envio, testes com contatos internos, autenticação do cliente para consulta/alteração de pedido e homologação dos valores ocultos/estoque. **Nenhuma migração, Edge Function ou Flow do piloto foi implantado.**
+
+## Simulador móvel independente — 14/10
+- Interface de Flow em modal de tela inteira com seleção por rádio, confirmação e envio simulado, sem acesso a dados reais.
+- `scripts/build-whatsapp-1018-simulator-standalone-v1.mjs` gera HTML autossuficiente, com motor ANA e fixtures sintéticas embutidos.
+- Workflow `WhatsApp 1018 Pilot Release CI` valida a sintaxe do HTML e publica o artefato `whatsapp-1018-simulador-offline` (ZIP) no GitHub Actions. O arquivo abre offline após extração.
+- Link da execução de referência: https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/38509536777
+- **Ainda não é hospedagem web pública nem WhatsApp/Meta Flow real.** Não alteramos configurações de GitHub Pages ou domínio da operação.
