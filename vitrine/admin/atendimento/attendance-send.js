@@ -72,10 +72,12 @@ function sendErrorMessage(error){
 async function sendDraft(){
   const conversationId=selectedFromDom(),text=draftText();
   if(!conversationId||!text||currentCapability?.enabled!==true||sending){syncSendButton({updateNote:true});return}
-  await refreshCapability(conversationId);
-  if(selectedFromDom()!==conversationId||currentCapability?.enabled!==true){syncSendButton({updateNote:true});return}
-  selectedConversationId=conversationId;sending=true;syncSendButton();showNote(`Enviando via ${providerLabel()}…`);
+  // Lock synchronously before the network check: Enter + click cannot race into two sends.
+  sending=true;syncSendButton();
   try{
+    await refreshCapability(conversationId);
+    if(selectedFromDom()!==conversationId||currentCapability?.enabled!==true){syncSendButton({updateNote:true});return}
+    selectedConversationId=conversationId;showNote(`Enviando via ${providerLabel()}…`);
     const result=await api('send_text',{conversation_id:conversationId,text,idempotency_key:idempotencyKey()},'POST');
     if(selectedConversationId!==conversationId)return;
     $('#messageDraft').value='';
