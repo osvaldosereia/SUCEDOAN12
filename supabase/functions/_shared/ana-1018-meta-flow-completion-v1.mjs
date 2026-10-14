@@ -1,6 +1,6 @@
 import {classify1018FlowCompletion} from './ana-1018-flow-intent-v1.mjs';
 
-const tokenPattern=/^[A-Za-z0-9_-]{32,128}$/;
+const tokenPattern=/^da1018_[A-Za-z0-9_-]{32,80}$/;
 const hex=bytes=>[...bytes].map(value=>value.toString(16).padStart(2,'0')).join('');
 
 // This must receive an event whose raw-body signature was already verified
