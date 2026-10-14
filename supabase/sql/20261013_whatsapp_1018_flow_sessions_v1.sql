@@ -3,7 +3,7 @@ begin;
 create table if not exists private.whatsapp_1018_flow_sessions_v1 (
   id uuid primary key default gen_random_uuid(),
   whatsapp_account_id uuid not null references public.whatsapp_accounts(id),
-  customer_phone_e164 text not null check (customer_phone_e164 ~ '^\\+55[0-9]{10,11}$'),
+  customer_phone_e164 text not null check (customer_phone_e164 ~ '^[+]55[0-9]{10,11}$'),
   flow_id text not null check (length(flow_id) between 6 and 128),
   outbound_message_id text not null check (length(outbound_message_id) between 6 and 256),
   flow_token_sha256 text not null unique check (flow_token_sha256 ~ '^[0-9a-f]{64}$'),
@@ -35,7 +35,7 @@ begin
  if not exists(select 1 from public.whatsapp_accounts where id=p_whatsapp_account_id
    and slug='dona-antonia-1018' and phone_e164='+5565984491018')
  then return jsonb_build_object('ok',false,'error','not_1018'); end if;
- if p_customer_phone_e164 is null or p_customer_phone_e164 !~ '^\\+55[0-9]{10,11}$'
+ if p_customer_phone_e164 is null or p_customer_phone_e164 !~ '^[+]55[0-9]{10,11}$'
    or p_flow_id is null or length(p_flow_id) not between 6 and 128
    or p_outbound_message_id is null or length(p_outbound_message_id) not between 6 and 256
    or p_token_sha256 is null or p_token_sha256 !~ '^[0-9a-f]{64}$'
