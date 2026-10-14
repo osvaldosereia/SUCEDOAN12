@@ -84,12 +84,14 @@ Deno.serve(async(req:Request)=>{
    const needsBasket=all.some(x=>x.kind==="basket");
    const source=url+"/functions/v1/storefront-v2";
    const requests=await Promise.all(all.filter(x=>x.kind==="product").map(x=>fetch1018CanonicalStorefront({action:"product",params:{product_id:x.id},baseUrl:source})));
-   const home=needsBasket?await fetch1018CanonicalStorefront({action:"home",baseUrl:source}):null;
-   if(requests.some(x=>!x.ok)||(home&&!home.ok))return reply(req,{ok:false,error:"canonical_unavailable"},503);
+   // Resolve every selected basket against the authoritative detail endpoint, never a cached home snapshot.
+   // Mold @1..@6 resolves the exact composition and its conditional hidden adjustment server-side.
+   const basketRequests=await Promise.all(all.filter(x=>x.kind==="basket").map(x=>fetch1018CanonicalStorefront({action:"basket",params:{basket_id:x.id},baseUrl:source})));
+   if(requests.some(x=>!x.ok)||basketRequests.some(x=>!x.ok))return reply(req,{ok:false,error:"canonical_unavailable"},503);
    const products=new Map(all.filter(x=>x.kind==="product").map((x,i)=>[x.id,requests[i]?.data?.product]));
-   const baskets=Array.isArray(home?.data?.baskets)?home.data.baskets:[];
+   const baskets=new Map(all.filter(x=>x.kind==="basket").map((x,i)=>[x.id,basketRequests[i]?.data?.basket]));
    const catalog=all.map(x=>{
-    const p=x.kind==="product"?products.get(x.id):baskets.find((b:any)=>String(b.card_key||b.id)===x.id);
+    const p=x.kind==="product"?products.get(x.id):baskets.get(x.id);
     return {key:x.kind+":"+x.id,name:String(p?.name||""),priceCents:x.kind==="product"?p?.price_cents:p?.display_price_cents,
      stock:p?.stock_quantity};
    });
