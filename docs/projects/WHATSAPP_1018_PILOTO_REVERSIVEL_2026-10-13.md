@@ -56,3 +56,15 @@ Permitir experimentar nova lógica de atendimento **somente no 1018**, preservan
 - Integração de controles operacionais na UI ainda não incluída neste PR.
 - Os Flows e templates reais do novo atendimento precisam de análise e aprovação próprias; este PR prepara o **motor de reversão**, não implanta a nova experiência.
 - Até passar testes de homologação, **não aplicar a migration em produção e não implantar a Edge Function alterada**.
+
+## Continuação — correlação de Flows e testes reais em PostgreSQL isolado
+- Simulador local mobile em `docs/whatsapp-1018-simulator/index.html`, sem chamadas Meta/Supabase.
+- Rascunho de Flow de intenção em `docs/whatsapp-1018-simulator/meta-flow-intent-draft.json`. **Não submetido à Meta.**
+- Gerador de token criptográfico `da1018_` + 256 bits, construtor de mensagem interativa em modo draft, parser da resposta do Flow e hash SHA-256.
+- A resposta `nfm_reply.response_json` contém o token original. Para não armazená-lo em claro, o código encontra a mensagem pelo WAMID/telefone/WABA/phone_number_id no evento com assinatura Meta verificada, e grava somente metadados redigidos.
+- O webhook experimental está integrado no branch, mas **desligado por padrão**: exige `WHATSAPP_1018_FLOW_HOOK_ENABLED=true`, `WHATSAPP_1018_FLOW_ACCOUNT_ID` e `WHATSAPP_1018_META_FLOW_ID`. Sem os três parâmetros, segue o comportamento anterior.
+- As RPCs de sessões registram e consomem o evento de modo transacional e idempotente, verificando conta 1018, cliente, token, Flow, WAMID, TTL e mesma geração ativa do piloto.
+- Testes de PostgreSQL 16 via serviço efêmero no GitHub Actions verificam **ambas** as migrações: preparar/ativar/reverter com CAS e preservação do 0975; registro/consumo/replay/expiração/rollback de sessão. Esta suíte passou no run [38508400845](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/38508400845). O teste não acessa a base real.
+- A suíte `WhatsApp Meta Central CI` ainda tem falha anterior ao piloto em teste de DOM; não considerar todos os checks verdes.
+
+**Continuam pendentes:** validação real do arquivo Flow na Meta, cadastro/publicação de Flow/templates, criação de vínculos outbound token↔WAMID na operação efetiva de envio, testes com contatos internos, autenticação do cliente para consulta/alteração de pedido e homologação dos valores ocultos/estoque. **Nenhuma migração, Edge Function ou Flow do piloto foi implantado.**
