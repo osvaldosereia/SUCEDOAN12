@@ -4,12 +4,15 @@ import {create1018FlowToken,sha2561018FlowToken,build1018FlowDraftMessage} from 
 // Never retries an ambiguous Meta send. Does not call Meta unless caller injects
 // an approved sender, verified service window, and active 1018 pilot generation.
 export async function send1018PilotFlow({enabled=false,accountId,expectedAccountId,
- customerPhone,flowId,release,db,send,mode='draft',serviceWindowVerified=false}={}){
+ customerPhone,flowId,release,db,send,mode='draft',serviceWindowVerified=false,sendAuthorization=null}={}){
  if(!enabled)return {ok:false,reason:'disabled'};
  if(!accountId||accountId!==expectedAccountId)return {ok:false,reason:'wrong_account'};
  if(release?.mode!=='pilot'||!Number.isSafeInteger(release.generation)||release.generation<1)
   return {ok:false,reason:'pilot_inactive'};
  if(serviceWindowVerified!==true)return {ok:false,reason:'service_window_unverified'};
+ if(sendAuthorization?.channel!=='1018'||sendAuthorization?.accountId!==accountId
+  ||sendAuthorization?.generation!==release.generation||sendAuthorization?.verified!==true)
+  return {ok:false,reason:'authorization_missing'};
  if(typeof db?.rpc!=='function'||typeof send!=='function')
   return {ok:false,reason:'dependencies_missing'};
  const token=create1018FlowToken(),hash=await sha2561018FlowToken(token);
