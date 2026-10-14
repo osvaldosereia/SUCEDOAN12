@@ -9,6 +9,7 @@ on:
       - 'scripts/test-whatsapp-1018-pilot-release-v1.mjs'
       - 'scripts/test-whatsapp-1018-pilot-fixture-v1.mjs'
       - 'scripts/test-whatsapp-1018-simulator-v1.mjs'
+      - 'scripts/test-whatsapp-1018-meta-flow-draft-v1.mjs'
       - 'docs/whatsapp-1018-simulator/**'
       - 'supabase/functions/_shared/ana-1018-pilot-fixture-v1.mjs'
       - '.github/workflows/whatsapp-1018-pilot-release-ci.yml'
@@ -31,6 +32,8 @@ jobs:
         run: node scripts/test-whatsapp-1018-pilot-fixture-v1.mjs
       - name: Offline mobile simulator contract
         run: node scripts/test-whatsapp-1018-simulator-v1.mjs
+      - name: Draft Meta Flow contract
+        run: node scripts/test-whatsapp-1018-meta-flow-draft-v1.mjs
       - name: ANA admin worker contracts
         run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs
       - name: ANA live release contracts
