@@ -16,6 +16,9 @@ on:
       - 'scripts/test-whatsapp-1018-meta-flow-completion-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-flow-session-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-session-v1.mjs'
+      - 'scripts/test-whatsapp-1018-flow-session-schema-v1.mjs'
+      - 'supabase/migrations/20261013_whatsapp_1018_flow_sessions_v1.sql'
+      - 'supabase/sql/20261013_whatsapp_1018_flow_sessions_v1.sql'
       - 'docs/whatsapp-1018-simulator/**'
       - 'supabase/functions/_shared/ana-1018-pilot-fixture-v1.mjs'
       - '.github/workflows/whatsapp-1018-pilot-release-ci.yml'
@@ -46,6 +49,8 @@ jobs:
         run: node scripts/test-whatsapp-1018-meta-flow-completion-v1.mjs
       - name: Flow session replay and expiry guard
         run: node scripts/test-whatsapp-1018-flow-session-v1.mjs
+      - name: Flow session SQL contract
+        run: node scripts/test-whatsapp-1018-flow-session-schema-v1.mjs
       - name: ANA admin worker contracts
         run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs
       - name: ANA live release contracts
