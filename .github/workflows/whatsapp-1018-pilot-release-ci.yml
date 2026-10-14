@@ -10,6 +10,7 @@ on:
       - 'scripts/test-whatsapp-1018-pilot-fixture-v1.mjs'
       - 'scripts/test-whatsapp-1018-simulator-v1.mjs'
       - 'scripts/build-whatsapp-1018-simulator-standalone-v1.mjs'
+      - 'scripts/test-whatsapp-1018-simulator-standalone-v1.mjs'
       - 'scripts/test-whatsapp-1018-meta-flow-draft-v1.mjs'
       - 'scripts/test-whatsapp-1018-flow-intent-v1.mjs'
       - 'supabase/functions/_shared/ana-1018-flow-intent-v1.mjs'
@@ -58,6 +59,8 @@ jobs:
         run: node scripts/test-whatsapp-1018-simulator-v1.mjs
       - name: Build offline mobile simulator
         run: node scripts/build-whatsapp-1018-simulator-standalone-v1.mjs
+      - name: Validate standalone mobile simulator
+        run: node scripts/test-whatsapp-1018-simulator-standalone-v1.mjs
       - name: Upload standalone mobile simulator
         uses: actions/upload-artifact@v4
         with:
