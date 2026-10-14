@@ -36,18 +36,18 @@ Deno.serve(async(req:Request)=>{
    if(!mapped.ok)return reply(req,{ok:false,error:mapped.reason},503);
    return reply(req,{ok:true,channel:"1018",source:"storefront-v2",read_only:true,offers:mapped.rows});
   }
+  if(action==="meta_status"){
+   if(!token||!/^v\d+\.\d+$/.test(version))return reply(req,{ok:false,error:"meta_not_configured"},503);
+   try{
+    const meta=await fetch("https://graph.facebook.com/"+version+"/1646700793791407?fields=id,name,status,validation_errors",{headers:{Authorization:"Bearer "+token},signal:AbortSignal.timeout(12000)});
+    const body=await meta.json().catch(()=>({}));
+    if(!meta.ok)return reply(req,{ok:false,error:"meta_status_unavailable",http_status:meta.status},502);
+    return reply(req,{ok:true,channel:"1018",flow_id:String(body.id||""),status:String(body.status||"UNKNOWN"),validation_errors:Array.isArray(body.validation_errors)?body.validation_errors:[],live_activation:false});
+   }catch{return reply(req,{ok:false,error:"meta_connection_failed"},503)}
+  }
   if(action!=="status")return reply(req,{ok:false,error:"invalid_action"},400);
-  return reply(req,{ok:true,channel:"1018",deployment:"pilot_only",flow_published:false,
-   flow_submitted:false,live_activation:false,flow_json:draft});
+  return reply(req,{ok:true,channel:"1018",deployment:"pilot_only",flow_id:"1646700793791407",flow_submitted:true,
+   live_activation:false,flow_json:draft});
  }
- const body=await req.json().catch(()=>({}));
- if(body?.action!=="submit_draft"||Object.keys(body).some((key:string)=>key!=="action"))
-  return reply(req,{ok:false,error:"invalid_action"},400);
- // Explicit owner action: Meta draft creation only. Never publish or send.
- if(Deno.env.get("WHATSAPP_1018_META_DRAFT_PROVISION_ENABLED")!=="true")
-  return reply(req,{ok:false,error:"provision_not_enabled"},409);
- if(!token||!version)return reply(req,{ok:false,error:"meta_not_configured"},503);
- const result=await provision1018MetaFlowDraft({enabled:true,account:account.data,
-  expectedAccountId:account.data.id,accessToken:token,graphVersion:version,draft});
- return reply(req,result,result.ok?200:409);
+ return reply(req,{ok:false,error:"pilot_write_locked_until_secure_auth"},423);
 });
