@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {quote1018CanonicalCart} from '../supabase/functions/_shared/ana-1018-canonical-cart-quote-v1.mjs';
+import {prepare1018CheckoutConfirmation} from '../supabase/functions/_shared/ana-1018-checkout-confirmation-v1.mjs';
+const quote=quote1018CanonicalCart({city:'Cuiabá',catalog:[{key:'basket:kit@1',name:'Cesta',priceCents:8000,stock:3,hidden_adjustment_cents:2000},{key:'product:rice',name:'Arroz',priceCents:3000,stock:2}],lines:[{kind:'basket',id:'kit@1',quantity:1},{kind:'product',id:'rice',quantity:1}]});
+const input={quote,customer:{name:'Cliente teste',phone:'65999999999'},delivery:{city:'Cuiabá',address:'Rua Exemplo 100'},paymentMethod:'pix_delivery',customerConfirmed:true};
+const result=prepare1018CheckoutConfirmation(input);
+assert.equal(result.ok,true);assert.equal(result.stage,'ready_for_authorized_checkout');assert.equal(result.orderCreated,false);
+assert.equal(result.confirmation.totalCents,11000);
+for(const term of ['hidden','2000','adjustment'])assert.ok(!JSON.stringify(result).includes(term),'private basket leakage: '+term);
+assert.equal(prepare1018CheckoutConfirmation({...input,customerConfirmed:false}).reason,'customer_confirmation_required');
+assert.equal(prepare1018CheckoutConfirmation({...input,paymentMethod:'boleto'}).reason,'invalid_payment_method');
+assert.equal(prepare1018CheckoutConfirmation({...input,delivery:{...input.delivery,city:'São Paulo'}}).reason,'delivery_address_required');
+assert.equal(prepare1018CheckoutConfirmation({...input,quote:{...quote,totalCents:10}}).reason,'canonical_quote_required');
+console.log('PASS 1018: checkout confirmation remains read-only, validates identity, payment, location and hidden prices');
