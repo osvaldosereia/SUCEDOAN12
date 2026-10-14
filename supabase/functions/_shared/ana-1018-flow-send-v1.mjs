@@ -11,7 +11,11 @@ export async function send1018PilotFlow({enabled=false,accountId,expectedAccount
   return {ok:false,reason:'pilot_inactive'};
  if(serviceWindowVerified!==true)return {ok:false,reason:'service_window_unverified'};
  if(sendAuthorization?.channel!=='1018'||sendAuthorization?.accountId!==accountId
-  ||sendAuthorization?.generation!==release.generation||sendAuthorization?.verified!==true)
+  ||sendAuthorization?.generation!==release.generation||sendAuthorization?.verified!==true
+  ||sendAuthorization?.customerPhone!==customerPhone||sendAuthorization?.flowId!==flowId
+  ||!Number.isFinite(sendAuthorization?.verifiedAtMs)
+  ||Date.now()-sendAuthorization.verifiedAtMs<0
+  ||Date.now()-sendAuthorization.verifiedAtMs>60000)
   return {ok:false,reason:'authorization_missing'};
  if(typeof db?.rpc!=='function'||typeof send!=='function')
   return {ok:false,reason:'dependencies_missing'};
