@@ -1221,6 +1221,8 @@
     .product-kit-menu[open] .product-kit-popover{display:grid}.product-kit-popover{position:absolute;right:0;z-index:15;display:none;gap:5px;min-width:230px;max-width:320px;padding:8px;background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 14px 35px rgba(0,0,0,.16)}
     .product-kit-link{border:0;background:#f7faf8;border-radius:8px;padding:8px 9px;text-align:left;color:var(--ink);font-weight:750;font-size:11px}.product-kit-link:hover{background:#eaf3ed;color:var(--brand)}.product-no-kits{font-size:10px;color:var(--muted)}
     .product-row-actions{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;align-content:start}.product-action-btn{border:1px solid var(--line)!important;background:#fff!important;color:var(--brand)!important;border-radius:9px!important;min-height:34px!important;padding:5px 7px!important;font-size:11px!important;font-weight:850!important}.product-action-btn.primary-action{grid-column:1/-1;background:#edf6f0!important;border-color:#cfe2d6!important}
+    .product-zero-stock-btn{border-color:#e9b8b4!important;color:#ae2727!important}
+    .mobile-product-zero-btn{color:#ae2727!important;white-space:nowrap;font-size:10px}
     .product-save-inline{grid-column:1/-1;font-size:9px;color:#28704a;min-height:14px}.product-save-inline.error{color:var(--danger)}.product-save-inline.saving{color:var(--warn)}
     @media(max-width:1100px) and (min-width:641px){.products-layout{grid-template-columns:48px minmax(210px,1.35fr) minmax(220px,1fr) minmax(190px,.9fr) minmax(135px,.65fr)}.product-row-actions{grid-column:2/-1;display:flex!important;justify-content:flex-end}.product-row-actions .product-action-btn{min-width:90px}}
     @media(max-width:640px){.product-kit-menu{margin-top:7px}.product-kit-popover{position:static;min-width:0;max-width:none;margin-top:5px}.mobile-product-quick-grid{grid-template-columns:1fr 1fr}.mobile-product-kit-count{display:block;margin-top:6px}}
@@ -3510,6 +3512,7 @@
       host.innerHTML=state.products.length?state.products.map(mobile?productMobileCard:productRow).join(''):'<div class="empty">Nenhum produto encontrado com esses filtros.</div>';
       host.querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>openProductEditor(state.products.find(p=>p.id===b.dataset.editProduct)));
       if(!mobile){host.querySelectorAll('[data-product-lots]').forEach(b=>b.onclick=()=>openProductLotsEditor(state.products.find(p=>p.id===b.dataset.productLots)));host.querySelectorAll('[data-duplicate-product]').forEach(b=>b.onclick=()=>openProductEditor(state.products.find(p=>p.id===b.dataset.duplicateProduct),true));host.querySelectorAll('[data-product-active]').forEach(b=>b.onclick=()=>toggleProductActive(b.dataset.productActive,b))}bindMobileProductCards(host);
+      host.querySelectorAll('[data-zero-product-stock]').forEach(b=>b.onclick=()=>zeroProductStock(b.dataset.zeroProductStock,b));
       const more=$('#productMore');more.innerHTML=state.productNext!=null?'<button class="secondary" id="moreProducts">'+'Ver mais 5'+'</button>':'';if($('#moreProducts'))$('#moreProducts').onclick=()=>loadProducts(q,true);
     }catch(e){host.innerHTML='<div class="empty">Erro ao carregar produtos. <button class="text" id="retryProducts">Tentar novamente</button></div>';if($('#retryProducts'))$('#retryProducts').onclick=()=>loadProducts(q,false)}
   }
@@ -3699,7 +3702,7 @@
         '<label class="mobile-product-field"><span>Estoque</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+
         '<label class="mobile-product-field"><span>Gôndola</span><select data-mobile-product-field="gondola" data-product-id="'+esc(p.id)+'">'+gondolas+'</select></label>'+
         '<label class="mobile-product-field full"><span>Validade</span><input data-mobile-product-field="expiration" data-product-id="'+esc(p.id)+'" type="date" value="'+esc(p.expiration_date||'')+'"></label>'+
-      '</div>'+productKitLinks(p,true)+'<div class="mobile-product-card-foot"><span class="mobile-product-save-status saved" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span><button class="mobile-product-detail" type="button" data-edit-product="'+esc(p.id)+'">Detalhes</button></div></article>';
+      '</div>'+productKitLinks(p,true)+'<div class="mobile-product-card-foot"><span class="mobile-product-save-status saved" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span><button class="mobile-product-detail mobile-product-zero-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="mobile-product-detail" type="button" data-edit-product="'+esc(p.id)+'">Detalhes</button></div></article>';
   }
   function scheduleMobileProductQuickSave(id,field,value){
     const product=state.products.find(p=>String(p.id)===String(id));if(!product)return;let draft=mobileProductQuickDrafts.get(id)||{};
@@ -3716,12 +3719,70 @@
     const quick={};for(const k of ['sale_price_cents','cost_cents','gondola_number','expiration_date'])if(Object.prototype.hasOwnProperty.call(draft,k))quick[k]=draft[k];
     if(Object.keys(quick).length){try{const data=await api('product_quick_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,...quick,operator})});const p=state.products.find(x=>String(x.id)===String(id));if(p&&data.product){p.sale_price_cents=data.product.sale_price_cents;p.cost_cents=data.product.cost_cents;p.gondola_number=data.product.gondola_number;p.expiration_date=data.product.expiration_date;p.active=data.product.active}setMobileProductSaveState(id,'quick',false)}catch(e){setMobileProductSaveState(id,'quick',false,errorMessage(e.message))}}
     else setMobileProductSaveState(id,'quick',false);
-    if(Object.prototype.hasOwnProperty.call(draft,'stock_quantity')){mobileProductStockQueue.set(id,{quantity:draft.stock_quantity,operator});processMobileProductStockQueue()}
+    if(Object.prototype.hasOwnProperty.call(draft,'stock_quantity')&&!stockZeroPending.has(String(id))){mobileProductStockQueue.set(id,{quantity:draft.stock_quantity,operator});processMobileProductStockQueue()}
     if(mobileProductQuickDrafts.has(id)){clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.set(id,setTimeout(()=>flushMobileProductQuickSave(id),180))}
   }
+  // Atalho de estoque: mesma operação oficial do editor, que valida o saldo no Bling.
+  const stockZeroPending=new Set();
+  function zeroProductStock(id,button){
+    const key=String(id),product=state.products.find(p=>String(p.id)===key);
+    if(!product||stockZeroPending.has(key))return;
+    const operator=requireOperator();
+    if(!operator)return;
+    stockZeroPending.add(key);
+    const draft=mobileProductQuickDrafts.get(id);
+    if(draft)delete draft.stock_quantity;
+    // Se já houver ajuste pendente, zero deve ser a última escrita.
+    mobileProductStockQueue.set(id,{quantity:0,operator,zeroButton:button});
+    button.disabled=true;
+    button.textContent='Zerando…';
+    processMobileProductStockQueue();
+  }
   async function processMobileProductStockQueue(){
-    if(mobileProductStockBusy)return;mobileProductStockBusy=true;
-    try{while(mobileProductStockQueue.size){const [id,item]=mobileProductStockQueue.entries().next().value;mobileProductStockQueue.delete(id);setMobileProductSaveState(id,'stock',true);try{const data=await api('product_stock_set',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,stock_quantity:item.quantity,operator:item.operator})});const p=state.products.find(x=>String(x.id)===String(id));if(p&&data.product)p.stock_quantity=data.product.stock_quantity;setMobileProductSaveState(id,'stock',false)}catch(e){setMobileProductSaveState(id,'stock',false,errorMessage(e.message))}}}finally{mobileProductStockBusy=false;if(mobileProductStockQueue.size)processMobileProductStockQueue()}
+    if(mobileProductStockBusy)return;
+    mobileProductStockBusy=true;
+    try{
+      while(mobileProductStockQueue.size){
+        const [id,item]=mobileProductStockQueue.entries().next().value;
+        mobileProductStockQueue.delete(id);
+        setMobileProductSaveState(id,'stock',true);
+        try{
+          const data=await api('product_stock_set',{},{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({product_id:id,stock_quantity:item.quantity,operator:item.operator})
+          });
+          if(data.verified!==true)throw new Error('stock_update_unverified');
+          const p=state.products.find(x=>String(x.id)===String(id));
+          if(p&&data.product){
+            p.stock_quantity=data.product.stock_quantity;
+            p.loose_stock_quantity=data.product.loose_stock_quantity;
+            p.basket_locked_quantity=data.product.basket_locked_quantity;
+          }
+          if(item.zeroButton){
+            const stockInput=document.querySelector('[data-mobile-product-field="stock"][data-product-id="'+CSS.escape(String(id))+'"]');
+            if(stockInput)stockInput.value='0';
+            const stockRow=item.zeroButton.closest('.product-operational-row');
+            const breakdown=stockRow?.querySelector('.product-stock-breakdown-inline');
+            if(breakdown&&data.product)breakdown.textContent=fmtQty(data.product.loose_stock_quantity??0)+' avulso · '+fmtQty(data.product.basket_locked_quantity||0)+' em cestas/kits';
+            item.zeroButton.textContent='✓ Zerado';
+            toast('Estoque zerado e confirmado no Bling');
+          }
+          setMobileProductSaveState(id,'stock',false);
+        }catch(e){
+          setMobileProductSaveState(id,'stock',false,errorMessage(e.message));
+          if(item.zeroButton){
+            item.zeroButton.disabled=false;
+            item.zeroButton.textContent='Zerar estoque';
+            toast('Falha ao zerar estoque: '+errorMessage(e.message));
+          }
+        }finally{
+          if(item.zeroButton)stockZeroPending.delete(String(id));
+        }
+      }
+    }finally{
+      mobileProductStockBusy=false;
+      if(mobileProductStockQueue.size)processMobileProductStockQueue();
+    }
   }
   async function saveMobileProductActive(id,checked,input){
     const product=state.products.find(p=>String(p.id)===String(id));if(!product)return;const previous=product.active!==false;product.active=checked;const label=document.querySelector('[data-mobile-product-active-label="'+CSS.escape(String(id))+'"]');if(label)label.textContent=checked?'ATIVO':'INATIVO';setMobileProductSaveState(id,'quick',true);
@@ -3751,7 +3812,7 @@
       '<div class="product-quick-fields"><label class="product-inline-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label><label class="product-inline-field"><span>Custo</span><input data-mobile-product-field="cost" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(cost)+'"></label><span class="mobile-product-save-status saved product-save-inline" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span></div>'+
       '<div class="product-stock-validity"><label class="product-inline-field"><span>Estoque total</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+validity+'<span class="product-stock-breakdown-inline">'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+' avulso · '+esc(fmtQty(p.basket_locked_quantity||0))+' em cestas/kits</span></div>'+
       '<div class="product-operational-status"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(desktopStatus)+'</button>'+productKitLinks(p)+'</div>'+
-      '<div class="product-row-actions"><button class="product-action-btn" data-product-lots="'+esc(p.id)+'">Lotes</button><button class="product-action-btn" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="product-action-btn primary-action" data-edit-product="'+esc(p.id)+'">Editar completo</button></div></div>';
+      '<div class="product-row-actions"><button class="product-action-btn product-zero-stock-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="product-action-btn" data-product-lots="'+esc(p.id)+'">Lotes</button><button class="product-action-btn" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="product-action-btn primary-action" data-edit-product="'+esc(p.id)+'">Editar completo</button></div></div>';
   }
 
   async function toggleProductActive(id,btn){
