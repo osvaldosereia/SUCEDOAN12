@@ -6,6 +6,8 @@ const ADMIN_API=API_BASE+'/functions/v1/admin-products-live-v1';
 const PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
 const ACCESS_KEY='da_finance_access_token_v1'; // compatibilidade com módulos existentes
 const REFRESH_KEY='da_admin_refresh_token_v2';
+const PROOF_KEY='da_admin_verified_session_v2';
+const ALLOWED_PATHS=new Set(['/vitrine/admin/','/vitrine/admin/atendimento/','/orcamento/','/montar/']);
 let inFlight=null;
 
 function storage(){return globalThis.sessionStorage}
@@ -23,14 +25,20 @@ export function tokenExpiresSoon(token,skewSeconds=90){
   const exp=Number(decodePayload(token).exp||0);
   return !Number.isFinite(exp)||exp<=Math.floor(Date.now()/1000)+skewSeconds;
 }
-export function currentAdminToken(){const token=read(ACCESS_KEY);return token&&!tokenExpiresSoon(token)?token:''}
+export function currentAdminToken(){
+  // A JWT left by the legacy owner bootstrap is not proof of individual sign-in.
+  if(read(PROOF_KEY)!=='verified')return '';
+  const token=read(ACCESS_KEY);
+  return token&&!tokenExpiresSoon(token)?token:'';
+}
 export function clearAdminSession(){
-  try{storage().removeItem(ACCESS_KEY);storage().removeItem(REFRESH_KEY)}catch{}
+  try{storage().removeItem(ACCESS_KEY);storage().removeItem(REFRESH_KEY);storage().removeItem(PROOF_KEY)}catch{}
 }
 function saveSession(data){
   if(!data?.access_token||tokenExpiresSoon(data.access_token,0))throw new Error('admin_session_invalid');
   write(ACCESS_KEY,data.access_token);
   write(REFRESH_KEY,data.refresh_token);
+  write(PROOF_KEY,'verified');
 }
 async function sendAuth(path,body){
   const response=await fetch(API_BASE+path,{
@@ -57,8 +65,10 @@ async function verifyAdminAccess(token){
 export async function beginEmailLogin(email,redirectUrl){
   const address=String(email||'').trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)||address.length>254)throw new Error('admin_email_invalid');
-  const destination=redirectUrl||location.origin+location.pathname;
-  const url='/auth/v1/otp?redirect_to='+encodeURIComponent(destination);
+  const destination=new URL(redirectUrl||location.origin+location.pathname);
+  if(destination.origin!==location.origin||!ALLOWED_PATHS.has(destination.pathname)||destination.hash||destination.search)
+    throw new Error('admin_redirect_invalid');
+  const url='/auth/v1/otp?redirect_to='+encodeURIComponent(destination.href);
   await sendAuth(url,{email:address,create_user:false});
   return true;
 }
@@ -67,9 +77,11 @@ export async function finishEmailLogin(email,token){
   const code=String(token||'').trim();
   if(!/^[0-9]{6,8}$/.test(code))throw new Error('admin_otp_invalid');
   const data=await sendAuth('/auth/v1/verify',{email:address,token:code,type:'email'});
-  await verifyAdminAccess(data.access_token);
-  saveSession(data);
-  return data.access_token;
+  try{
+    await verifyAdminAccess(data.access_token);
+    saveSession(data);
+    return data.access_token;
+  }catch(error){clearAdminSession();throw error}
 }
 function cleanAuthCallbackUrl(query){
   const params=new URLSearchParams(query||'');
@@ -81,13 +93,15 @@ export async function completeRedirectSession(){
   if(typeof location==='undefined'||typeof history==='undefined')return '';
   const frag=new URLSearchParams(location.hash.startsWith('#')?location.hash.slice(1):'');
   const qs=new URLSearchParams(location.search);
+  const rejected=frag.has('error')||qs.has('error');
   const token=frag.get('access_token');
   const refresh=frag.get('refresh_token');
   const hash=qs.get('token_hash');
   const type=qs.get('type');
-  if(!token&&!hash)return '';
-  // Remove credenciais da URL antes de qualquer requisição à rede.
+  if(!token&&!hash&&!rejected)return '';
+  // Remove credentials (and error details) from the URL before network activity.
   cleanAuthCallbackUrl(location.search);
+  if(rejected)throw new Error('admin_login_link_invalid');
   let result;
   if(token&&refresh){result={access_token:token,refresh_token:refresh}}
   else if(hash&&type==='email'){result=await sendAuth('/auth/v1/verify',{token_hash:hash,type:'email'})}
@@ -173,7 +187,7 @@ export async function ensureAdminToken({forceRefresh=false,interactive=true}={})
       const existing=currentAdminToken();
       if(existing)return existing;
     }
-    if(read(REFRESH_KEY)){
+    if(read(PROOF_KEY)==='verified'&&read(REFRESH_KEY)){
       try{return await refreshAdminToken()}catch{clearAdminSession()}
     }
     if(!interactive)throw new Error('admin_login_required');
