@@ -14,7 +14,9 @@ assert.doesNotMatch(page,/<nav\b|href="\/vitrine\/admin\/"/i,'tela sem navegacao
 assert.match(page,/id="queueView"/);
 assert.match(page,/id="detailView"/);
 assert.match(page,/id="packageModal"/);
-assert.match(page,/id="pin" type="password"/);
+assert.match(page,/id="loginForm"/);
+assert.match(page,/Entrar com e-mail autorizado/);
+assert.doesNotMatch(page,/id="pin" type="password"/,'separação não deve aceitar PIN compartilhado');
 assert.match(css,/min-height:52px/,'toques grandes');
 assert.match(css,/@media\(max-width:760px\)/,'responsive');
 assert.match(script,/manual_pick_queue_feed_v1/);
