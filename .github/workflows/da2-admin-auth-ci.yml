@@ -1,0 +1,32 @@
+name: DA2 Security — admin auth regression
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/**'
+      - 'montar/**'
+      - 'orcamento/**'
+      - 'supabase/functions/admin-pin-auth-v1/**'
+      - 'scripts/test-admin-auth-hardening-da2.mjs'
+      - '.github/workflows/da2-admin-auth-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Security and session mock tests
+        run: node --test scripts/test-admin-auth-hardening-da2.mjs
+      - name: Attendance authentication contracts
+        run: |
+          node scripts/test-admin-attendance-auth-refresh-v1.mjs
+          node scripts/test-admin-attendance-auth-all-modules-v2.mjs
+      - name: Picking operational regression
+        run: node scripts/test-montar-picking-v1.mjs
+      - name: Verify diff
+        run: git diff --check HEAD^ HEAD
