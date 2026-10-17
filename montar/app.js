@@ -2,8 +2,6 @@
   'use strict';
   const API = 'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-products-live-v1';
   const RPC = 'https://ssbesxgaijknwsjbsbcz.supabase.co/rest/v1/rpc/';
-  const AUTH = 'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1';
-  const VERIFY = 'https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/verify';
   // Publishable/anon key from the existing Admin. This is NOT a service-role key.
   const KEY = 'sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
   const SESSION = 'da_finance_access_token_v1';
@@ -98,7 +96,7 @@
   const fail = err => {
     if (err?.status===401 || err?.message==='session_expired' || err?.message==='admin_session_invalid') {
       sessionStorage.removeItem(SESSION); detail=null; selectedId=null; show('loginView');
-      $('loginError').textContent='A sessão expirou. Informe novamente o código de acesso.';
+      $('loginError').textContent='A sessão expirou. Entre novamente com seu e-mail autorizado.';
       $('loginError').hidden=false;
       setConnection('Acesso expirado','error'); return;
     }
@@ -172,25 +170,20 @@
   };
   const signIn = async event => {
     event.preventDefault();
-    const button=$('loginBtn'),code=$('pin').value.trim();
-    if(!code)return;
-    button.disabled=true;button.textContent='Validando acesso…';$('loginError').hidden=true;
-    try {
-      const issued=await fetchJson(AUTH,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({pin:code})});
-      const verification=await fetchJson(VERIFY,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token_hash:issued.token_hash,type:issued.verification_type||'email'})});
-      if(!tokenValid(verification.access_token)) throw new Error('invalid_session_token');
-      sessionStorage.setItem(SESSION,verification.access_token);
-      $('pin').value='';
-      // A valid token alone is not sufficient: feed checks active Admin authorization.
+    const button=$('loginBtn');
+    button.disabled=true;button.textContent='Abrindo autenticação…';$('loginError').hidden=true;
+    try{
+      const {ensureAdminToken}=await import('/vitrine/admin/admin-auth-session.mjs?v=da2-auth-r1');
+      const token=await ensureAdminToken();
+      if(!tokenValid(token))throw new Error('admin_session_invalid');
       const check=await rpc('manual_pick_queue_feed_v1');
-      if(!Array.isArray(check.orders)) throw new Error('invalid_queue_feed');
+      if(!Array.isArray(check.orders))throw new Error('invalid_queue_feed');
       queue=check.orders.filter(o=>idOk(o.id)&&(['confirmed','processing'].includes(o.status)||(o.status==='ready'&&o.completed===true)));
       renderQueue();show('queueView');renderCompletionNotice();setConnection('Sincronizado');
-    } catch(err) {
-      sessionStorage.removeItem(SESSION);
-      $('loginError').textContent='Acesso não autorizado. Verifique o código e tente novamente.';
+    }catch(err){
+      $('loginError').textContent='Não foi possível autenticar. Entre com o e-mail autorizado para continuar.';
       $('loginError').hidden=false;setConnection('Acesso necessário','error');
-    } finally {button.disabled=false;button.textContent='Entrar na separação'}
+    }finally{button.disabled=false;button.textContent='Entrar com e-mail autorizado'}
   };
   const visibleItems = data => {
     const items=Array.isArray(data?.items)?data.items:[];
@@ -324,7 +317,7 @@
     } finally {busy=false;renderDetail()}
   };
   $('loginForm').addEventListener('submit',signIn);
-  $('logoutBtn').addEventListener('click',()=>{sessionStorage.removeItem(SESSION);queue=[];detail=null;selectedId=null;show('loginView');setConnection('Acesso necessário','error');});
+  $('logoutBtn').addEventListener('click',()=>{sessionStorage.removeItem(SESSION);sessionStorage.removeItem('da_admin_refresh_token_v2');queue=[];detail=null;selectedId=null;show('loginView');setConnection('Acesso necessário','error');});
   $('reloadBtn').addEventListener('click',()=>{if(selectedId)loadDetail(selectedId,{preserveScroll:true});else loadQueue()});
   $('detailReload').addEventListener('click',()=>{if(selectedId&&!busy)loadDetail(selectedId,{preserveScroll:true})});
   $('backBtn').addEventListener('click',backToQueue);

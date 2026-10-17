@@ -1,5 +1,4 @@
 const TOKEN_KEY='da_finance_access_token_v1';
-const AUTH_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1?exchange=1';
 const ATTENDANCE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ops-v1';
 const REFRESH_SKEW_SECONDS=90;
 const canonicalAuth=import.meta.url.includes('v=auth-refresh-v2')?null:import('./attendance-auth.js?v=auth-refresh-v2');
@@ -24,11 +23,9 @@ function clearToken(expectedToken=''){
   if(expectedToken&&current&&current!==expectedToken)return false;
   sessionStorage.removeItem(TOKEN_KEY);return true;
 }
-async function issueAdminToken(){
-  const response=await fetch(AUTH_API,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',cache:'no-store'});
-  const data=await response.json().catch(()=>({}));
-  const token=String(data?.access_token||'').trim();
-  if(!response.ok||!data?.ok||!token)throw new Error(data?.error||'admin_auto_session_failed');
+async function issueAdminToken(forceRefresh=false){
+  const {ensureAdminToken}=await import('../admin-auth-session.mjs?v=da2-auth-r1');
+  const token=await ensureAdminToken({forceRefresh});
   sessionStorage.setItem(TOKEN_KEY,token);
   return token;
 }
@@ -37,7 +34,7 @@ export async function ensureAttendanceToken({forceRefresh=false}={}){
   const existing=storedToken();
   if(!forceRefresh&&existing&&!tokenExpiresSoon(existing))return existing;
   if(refreshPromise)return await refreshPromise;
-  refreshPromise=(async()=>{try{return await issueAdminToken()}finally{refreshPromise=null}})();
+  refreshPromise=(async()=>{try{return await issueAdminToken(forceRefresh)}finally{refreshPromise=null}})();
   return await refreshPromise;
 }
 export async function attendanceAuthorizedFetch(input,options={}, {forceRefresh=false}={}){

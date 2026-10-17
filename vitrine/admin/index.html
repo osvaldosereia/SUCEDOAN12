@@ -1451,8 +1451,6 @@
   const CUSTOMER_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1';
   const STOREFRONT_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
   const PRODUCT_IMAGE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/product-image-openai-v1';
-  const FINANCE_AUTH_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1';
-  const FINANCE_VERIFY_API='https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/verify';
   const FINANCE_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
   const BASKET_AUTO_RPC='https://ssbesxgaijknwsjbsbcz.supabase.co/rest/v1/rpc/';
   const $=s=>document.querySelector(s);
@@ -2998,35 +2996,9 @@
   }
   async function adminStepUp(){return await financeStepUp()}
   async function financeStepUp(){
-    const existing=financeSessionToken();
-    if(existing)return existing;
-    if(state.financeAuthPromise)return await state.financeAuthPromise;
-    state.financeAuthPromise=(async()=>{
-      try{
-        const authRes=await fetch(FINANCE_AUTH_API,{
-          method:'POST',
-          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
-          body:JSON.stringify({pin:'000000'}),
-          cache:'no-store'
-        });
-        const auth=await authRes.json().catch(()=>({}));
-        if(!authRes.ok||!auth?.ok)throw new Error(auth?.error||'admin_auto_auth_failed');
-        const verifyRes=await fetch(FINANCE_VERIFY_API,{
-          method:'POST',
-          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
-          body:JSON.stringify({token_hash:auth.token_hash,type:auth.verification_type||'email'}),
-          cache:'no-store'
-        });
-        const verified=await verifyRes.json().catch(()=>({}));
-        const token=String(verified?.access_token||'').trim();
-        if(!verifyRes.ok||!token)throw new Error(verified?.msg||verified?.error_description||verified?.error||'admin_auto_session_failed');
-        sessionStorage.setItem('da_finance_access_token_v1',token);
-        return token;
-      }finally{
-        state.financeAuthPromise=null;
-      }
-    })();
-    return await state.financeAuthPromise;
+    // Única fonte de autenticação; nenhum endpoint emite credencial de proprietário.
+    const auth=await import('/vitrine/admin/admin-auth-session.mjs?v=da2-auth-r1');
+    return await auth.ensureAdminToken();
   }
   async function financeApi(operation,payload={},retryAuth=true){
     const token=await financeStepUp();
