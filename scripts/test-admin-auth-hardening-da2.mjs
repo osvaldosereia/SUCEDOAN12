@@ -78,6 +78,7 @@ test('expired JWT refresh uses refresh_token, then re-checks admin role',async()
   });
   env.values.set('da_finance_access_token_v1',token(-10));
   env.values.set('da_admin_refresh_token_v2','old-refresh');
+  env.values.set('da_admin_verified_session_v2','verified');
   const result=await auth.ensureAdminToken({interactive:false});
   assert.equal(result,jwt);
   assert.equal(env.calls[0].body.refresh_token,'old-refresh');
@@ -89,6 +90,7 @@ test('revoked refresh fails closed and clears both tokens',async()=>{
   const env=makeEnv(()=>reject(401));
   env.values.set('da_finance_access_token_v1',token(-10));
   env.values.set('da_admin_refresh_token_v2','revoked-refresh');
+  env.values.set('da_admin_verified_session_v2','verified');
   await assert.rejects(()=>auth.ensureAdminToken({interactive:false}),/admin_login_required/);
   assert.equal(env.values.size,0);
 });
@@ -109,6 +111,7 @@ test('logout clears session and refresh credentials',()=>{
   const env=makeEnv(()=>success());
   env.values.set('da_finance_access_token_v1',token());
   env.values.set('da_admin_refresh_token_v2','refresh');
+  env.values.set('da_admin_verified_session_v2','verified');
   auth.clearAdminSession();
   assert.equal(env.values.size,0);
 });
@@ -148,4 +151,66 @@ test('Admin, Orçamentos and picking JavaScript remain syntactically valid',()=>
     for(const [i,script] of scripts.entries())
       new vm.Script(script,{filename:path+'#'+(i+1)});
   }
+});
+
+
+test('legacy privileged JWT is not silently accepted as individual sign-in',async()=>{
+  const env=makeEnv(()=>{throw new Error('Legacy session must never request an API');});
+  env.values.set('da_finance_access_token_v1',token());
+  assert.equal(auth.currentAdminToken(),'');
+  await assert.rejects(()=>auth.ensureAdminToken({interactive:false}),/admin_login_required/);
+  assert.equal(env.calls.length,0);
+});
+
+test('unverified refresh token cannot silently mint operator session',async()=>{
+  const env=makeEnv(()=>{throw new Error('Unverified refresh must not be used');});
+  env.values.set('da_finance_access_token_v1',token(-1));
+  env.values.set('da_admin_refresh_token_v2','unverified-refresh');
+  await assert.rejects(()=>auth.ensureAdminToken({interactive:false}),/admin_login_required/);
+  assert.equal(env.calls.length,0);
+});
+
+test('reject external and malicious login redirect destinations before sending any email',async()=>{
+  const env=makeEnv(()=>{throw new Error('No auth email must be sent to bad URL');});
+  for(const url of [
+    'https://evil.example/vitrine/admin/',
+    'https://www.donaantonia.com.br/other/',
+    'https://www.donaantonia.com.br/vitrine/admin/#access_token=bad',
+    'https://www.donaantonia.com.br/vitrine/admin/?next=https://evil.example'
+  ])await assert.rejects(()=>auth.beginEmailLogin('operator@example.com',url),/admin_redirect_invalid/);
+  assert.equal(env.calls.length,0);
+});
+
+test('denied magic link does not persist credentials and cleans URL',async()=>{
+  const jwt=token();
+  const env=makeEnv(()=>reject(403));
+  location.hash='#access_token='+jwt+'&refresh_token=test-refresh';
+  await assert.rejects(()=>auth.completeRedirectSession(),/admin_not_authorized/);
+  assert.equal(location.hash,'');
+  assert.equal(env.values.size,0);
+});
+
+test('error callback sanitizes tokens and error description before any network request',async()=>{
+  const env=makeEnv(()=>{throw new Error('Error callback should not call backend');});
+  location.search='?tab=orders&error=access_denied&error_description=secret';
+  location.hash='#error=access_denied&error_description=secret';
+  await assert.rejects(()=>auth.completeRedirectSession(),/admin_login_link_invalid/);
+  assert.equal(location.search,'?tab=orders');
+  assert.equal(location.hash,'');
+  assert.equal(env.calls.length,0);
+});
+
+test('expired OTP access token cannot be persisted',async()=>{
+  const env=makeEnv(u=>u.pathname==='/auth/v1/verify'
+    ?success({access_token:token(-5),refresh_token:'fake'}):success({ok:true}));
+  await assert.rejects(()=>auth.finishEmailLogin('operator@example.com','123456'),/admin_session_invalid/);
+  assert.equal(env.values.size,0);
+  assert.equal(env.calls.length,1);
+});
+
+test('unknown OTP error rejects login and never writes credentials',async()=>{
+  const env=makeEnv(()=>reject(401));
+  await assert.rejects(()=>auth.finishEmailLogin('operator@example.com','123456'),/admin_auth_rejected/);
+  assert.equal(env.values.size,0);
+  assert.equal(env.calls.length,1);
 });
