@@ -15,8 +15,8 @@ assert.match(auth,/response\.status\s*===\s*401/,'401 deve disparar recuperaçã
 assert.match(auth,/(?:forceRefresh|force\s*:\s*true)/,'401 deve forçar renovação do token');
 assert.match(auth,/JSON\.stringify\(params/,'POST deve enviar corpo JSON explicitamente');
 assert.match(auth,/sessionStorage\.setItem\([^,]+,\s*token\)/,'novo token deve ser persistido no sessionStorage');
-assert.match(bootstrap,/searchParams\.get\("exchange"\)\s*===\s*"1"/,'bootstrap deve ter modo de troca server-side opcional');
-assert.match(bootstrap,/auth\.verifyOtp/,'bootstrap deve trocar token hash por sessão somente no modo exchange');
+assert.match(bootstrap,/status:410/,'endpoint antigo deve recusar emissão de sessão privilegiada');
+assert.doesNotMatch(bootstrap,/generateLink|verifyOtp|SUPABASE_SERVICE_ROLE_KEY/,'endpoint antigo não pode criar sessão');
 assert.match(app,/attendanceJsonApi/,'core do Atendimento deve usar o cliente compartilhado');
 assert.match(library,/attendanceJsonApi/,'Biblioteca deve usar o cliente compartilhado');
 assert.match(html,/attendance-app\.js\?v=[a-z0-9][a-z0-9-]+/,'core deve receber cache-bust explícito e atual');
