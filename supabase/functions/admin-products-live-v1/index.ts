@@ -1011,7 +1011,11 @@ async function hub(subaction:string,extra:any={},authorization=""){
   if(key.error||!key.data)return {error:"bling_bridge_not_configured",status:503};
   const res=await fetch(HUB_API,{method:"POST",headers:{"Content-Type":"application/json","x-dona-antonia-bling-hub-key":String(key.data),...(authorization?{"Authorization":authorization}:{})},body:JSON.stringify({action:"vitrine_bling_hub_internal",subaction,...extra}),signal:AbortSignal.timeout(120000)});
   const data=await res.json().catch(()=>({ok:false,error:"invalid_bling_response"}));
-  if(!res.ok||data?.ok===false)return {error:String(data?.error||"bling_hub_unavailable"),status:res.status||502,detail:data?.detail||null,data};
+  if(!res.ok||data?.ok===false){
+    const remoteError=String(data?.error||"bling_hub_unavailable");
+    if(/^oauth_http_(400|401|403)(?:\b|:)/.test(remoteError))return {error:"bling_reauthentication_required",status:409,detail:{reason:"bling_oauth_expired"},data};
+    return {error:remoteError,status:res.status||502,detail:data?.detail||null,data};
+  }
   return {data};
 }
 async function ops2LiveRuntime(){
