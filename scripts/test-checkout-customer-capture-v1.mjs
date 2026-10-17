@@ -20,7 +20,7 @@ assert.match(capture,/(Dados da entrega|3\. Endereço da entrega|Endereço)/,'ch
 assert.match(capture,/Data de entrega/,'checkout must visibly separate delivery date');
 assert.match(capture,/(Forma de pagamento|Pagamento na entrega)/,'checkout must visibly separate payment');
 assert.match(capture,/body\.whatsapp_phone=phone\.full/,'live phone must be injected in submit_order');
-assert.match(capture,/url\.searchParams\.set\('action','customer_register'\)/,'capture layer must reuse canonical customer_register');
+assert.match(capture,/body\.checkout_registration=draft/,'capture layer must send registration for validation within the canonical submit');
 for(const field of ['checkoutName','checkoutDocument','checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity']){
   assert.ok(capture.includes(field),`required capture layer missing ${field}`);
 }

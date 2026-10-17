@@ -63,17 +63,6 @@
   }
   function validDocument(value){const d=digits(value,14);return d.length===11?validCpf(d):d.length===14?validCnpj(d):false}
 
-  async function persistRegistrationBeforeOrder(requestUrl,phone,draft){
-    if(!phone.valid||!registrationDraftComplete(draft))return {ok:false,error:'registration_incomplete'};
-    try{
-      const url=new URL(requestUrl);
-      url.searchParams.set('action','customer_register');
-      const response=await originalFetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'checkout',phone:phone.full,...draft}),cache:'no-store'});
-      const data=await response.json().catch(()=>({ok:false,error:'registration_unavailable'}));
-      return response.ok&&data?.ok!==false?{ok:true,...data}:{ok:false,error:data?.error||'registration_unavailable'};
-    }catch{return {ok:false,error:'registration_unavailable'}}
-  }
-
   function injectCheckoutStyles(){
     if(byId('daCheckoutRequiredStyles')||!document.head)return;
     const style=document.createElement('style');
@@ -274,8 +263,9 @@
           const phone=liveCheckoutPhone(),draft=checkoutRegistrationDraft();
           if(phone.valid)body.whatsapp_phone=phone.full;
           if(!existingRegistrationComplete()){
-            const saved=await persistRegistrationBeforeOrder(requestUrl,phone,draft);
-            if(saved?.ok!==true){pendingSubmitError={error:saved?.error||'registration_incomplete'};showRegistrationServerError(pendingSubmitError.error);throw new Error(pendingSubmitError.error)}
+            // The server validates these fields to preserve the selected identity
+            // even if a legacy phone lookup is ambiguous. A customer ID is not proof.
+            body.checkout_registration=draft;
           }
           options={...options,body:JSON.stringify(body)};args=[input,options];
         }
@@ -320,3 +310,12 @@
 
   window.__DA_CHECKOUT_RESILIENCE__={CUTOFF_HOUR,applyStockAdjustment,confirmStockAdjustment,formatUnifiedPhone,liveCheckoutPhone,checkoutRegistrationDraft,registrationDraftComplete,existingRegistrationComplete,validateCheckoutBasics,showCheckoutValidation};
 })();
+
+// Public storefront recovery for constrained in-app browsers (Instagram/Facebook webviews).
+if (!window.__DA_INSTAGRAM_RESILIENCE_LOADED__) {
+  window.__DA_INSTAGRAM_RESILIENCE_LOADED__ = true;
+  const s=document.createElement('script');
+  s.src='/vitrine/instagram-resilience.js?v=20261005-1';
+  s.defer=true;
+  document.head.appendChild(s);
+}

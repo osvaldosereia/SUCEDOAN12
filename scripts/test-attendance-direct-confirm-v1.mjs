@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+
+const app=fs.readFileSync('vitrine/admin/atendimento/attendance-app.js','utf8');
+const page=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
+const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
+const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+
+assert.match(app,/adminLink\('orders',\{pedido:order\.id\}\)/,'order cards deep-link with canonical pedido param');
+assert.match(app,/adminLink\('orders',\{pedido:current\.id\}\)/,'overview deep-links to same order');
+assert.doesNotMatch(app,/adminLink\('orders',\{order_id:/,'do not use obsolete link parameter');
+assert.match(admin,/params\.get\('pedido'\)/,'orders admin reads direct order parameter');
+assert.match(admin,/await openOrder\(directOrderId\)/,'orders admin opens exact order');
+assert.match(app,/await adminOrderRequest\('order',id\)/,'recheck canonical status before confirming');
+assert.match(app,/await adminOrderRequest\('order_update',id,\{id,status:'confirmed',operator:'Atendimento'\}\)/,'same transition as orders admin');
+assert.match(app,/await attendanceAuthorizedFetch\(url,options\)/,'authenticated canonical endpoint');
+assert.match(app,/orderConfirmingIds\.add\(id\)/,'prevent duplicate submissions');
+assert.match(app,/orderConfirmingIds\.delete\(id\)/,'release confirmation lock');
+assert.match(app,/if\(isConfirmableOrder\(order\)\)actions\.append\(createConfirmOrderButton\(order\)\)/,'confirm button only for pending');
+assert.match(css,/\.context-actions \.confirm-order-quick/,'quick confirm has button style');
+assert.match(page,/attendance-app\.js\?v=attendance-direct-confirm-v1/,'fresh JS asset');
+assert.match(page,/attendance\.css\?v=attendance-direct-confirm-v1/,'fresh CSS asset');
+assert.match(backend,/if\(!transitionAllowed\(cur,next\)\)/,'canonical server validates transitions');
+assert.match(backend,/order_operational_data_incomplete/,'canonical server validates delivery and payment');
+assert.match(backend,/reserve_vitrine_order_stock_v1/,'confirmation uses canonical stock reservation');
+
+const parsedApp=app.replace(/^import[^\n]*\n/gm,'');
+new vm.Script(parsedApp,{filename:'attendance-app.js'});
+const section=app.slice(app.indexOf('const VALID_ORDER_ID='),app.indexOf('function renderOverview(box){'));
+assert.ok(section.length>1000,'direct confirm helper code exists');
+const context=vm.createContext({});
+const guards=new vm.Script(section+';({isConfirmableOrder,orderStatusLabel,confirmOrderErrorMessage})').runInContext(context);
+const id='baac307e-7dbd-482c-a6bb-3b88a9f2cf2d';
+assert.equal(guards.isConfirmableOrder({id,status:'storefront_received',confirmed_at:null}),true);
+assert.equal(guards.isConfirmableOrder({id,status:'created',confirmed_at:null}),true);
+assert.equal(guards.isConfirmableOrder({id,status:'confirmed',confirmed_at:'2026-10-12'}),false);
+assert.equal(guards.isConfirmableOrder({id,status:'cancelled'}),false);
+assert.equal(guards.isConfirmableOrder({id:'not-uuid',status:'storefront_received'}),false);
+assert.equal(guards.orderStatusLabel('confirmed'),'Confirmado');
+assert.match(guards.confirmOrderErrorMessage({payload:{error:'order_operational_data_incomplete',blockers:['payment_method_required']}}),/forma de pagamento/);
+console.log('PASS Atendimento · pedido direto · confirmação manual segura');

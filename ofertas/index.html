@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#f7f8f6">
+<title>Ofertas do seu pedido · Dona Antônia</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:18px;background:#f7f8f6;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:#1d2e23}
+main{width:min(100%,440px);border:1px solid #dbe7dd;background:#fff;border-radius:18px;padding:24px;text-align:center;box-shadow:0 7px 30px #153c2510}
+h1{font-size:22px;margin:0 0 10px}p{margin:0;color:#5d6b60}a{color:#176b43;font-weight:700}
+</style>
+</head>
+<body>
+<main role="status" aria-live="polite">
+<h1>🛍️ Ofertas do seu pedido</h1>
+<p id="status">Abrindo ofertas disponíveis…</p>
+<p id="back" hidden style="margin-top:18px"><a href="/pedido/">Voltar ao pedido</a></p>
+</main>
+<script>
+(async()=>{'use strict';
+const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/order-customer-actions-v1';
+const valid=/^[a-f0-9]{64}$/i;
+const qs=new URLSearchParams(location.search);
+const token=(qs.get('c')||'').trim();
+const status=document.getElementById('status');
+const back=document.getElementById('back');
+const close=message=>{status.textContent=message;};
+if(!token){location.replace('/?ofertas=1');return;}
+if(!valid.test(token)){close('Este link não é válido. Abra o pedido pelo WhatsApp.');return;}
+// Remove the 256-bit capability from address/history before any network request.
+history.replaceState(null,'',location.pathname);
+async function api(action,method){
+  const response=await fetch(API+'?action='+encodeURIComponent(action),{
+    method:method||'GET',cache:'no-store',referrerPolicy:'no-referrer',
+    headers:{'X-Customer-Action-Token':token}
+  });
+  const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+  if(!response.ok||data.ok!==true)throw new Error(String(data.error||'unavailable'));
+  return data;
+}
+try{
+  const session=await api('session');
+  if(/^[a-f0-9]{16}$/i.test(String(session.public_token||''))){
+    back.querySelector('a').href='/pedido/?k='+encodeURIComponent(session.public_token);
+    back.hidden=false;
+  }
+  if(session.can_add_offers!==true){
+    close('O prazo de ofertas terminou ou o pedido já está confirmado. Consulte seu pedido.');
+    return;
+  }
+  if(!/^[a-f0-9]{16}$/i.test(String(session.public_token||'')))throw new Error('invalid_order_link');
+  const added=await api('addon_session','POST');
+  if(!/^[A-Za-z0-9_-]{32,96}$/.test(String(added.addon_token||'')))throw new Error('invalid_addon_token');
+  const url='/adicionar/?k='+encodeURIComponent(session.public_token)+'#t='+encodeURIComponent(added.addon_token);
+  location.replace(url);
+}catch{
+  close('Não foi possível abrir as ofertas agora. Abra novamente o pedido pelo WhatsApp.');
+}
+})();
+</script>
+</body>
+</html>

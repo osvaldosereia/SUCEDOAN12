@@ -1,0 +1,21 @@
+name: Basket family picker UX v1
+on:
+  push:
+    branches: [fix/basket-family-picker-20261004]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-basket-family-picker-ux-v1.mjs'
+      - '.github/workflows/test-basket-family-picker-ux-v1.yml'
+  pull_request:
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-basket-family-picker-ux-v1.mjs'
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/test-basket-family-picker-ux-v1.mjs
+# independent post-patch verification trigger

@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const migration=fs.readFileSync('supabase/migrations/20261007_whatsapp_ana_admin_v1.sql','utf8');
+const api=fs.readFileSync('supabase/functions/admin-whatsapp-ana-preview-v1/index.ts','utf8');
+const ui=fs.readFileSync('vitrine/admin/ana/ana-admin.js','utf8');
+assert.match(migration,/ops2_ana_admin_record_test_run_v1/);
+assert.match(migration,/failed_count <> 0/);
+assert.match(migration,/draft_revision/);
+assert.doesNotMatch(migration,/CREATE TABLE IF NOT EXISTS private\.whatsapp_ana_admin_test_runs_v1\s*\([\s\S]{0,500}(phone|conversation_text|message_text|customer_id)/i);
+assert.match(api,/admin_test[\s\S]*dry_run_not_sendable/);
+assert.match(api,/scenario_keys/);
+assert.match(api,/admin_history/);
+assert.match(api,/suggestion_text|p_suggestion_text/);
+assert.match(ui,/Executar .* testes obrigatórios/);
+assert.match(ui,/test_run_id/);
+assert.match(ui,/não envia WhatsApp/);
+assert.match(api,/dry_run_not_sendable/);
+assert.match(api,/ops2_ana_admin_record_test_run_v1/);
+assert.match(api,/trigger_label_not_active/);
+const simulator=api.slice(api.indexOf('if(action==="admin_test")'),api.indexOf('return json(req,{ok:false,error:"admin_action_invalid"}'));
+assert.doesNotMatch(simulator,/sendTextViaMeta|whatsapp_outbox|MetaTransport/);
+const history=api.slice(api.indexOf('if(action==="admin_history")'),api.indexOf('if(action==="admin_save_draft")'));
+assert.doesNotMatch(history,/suggestion_text|text_body|wa_contact_e164|customer_id/);
+console.log('PASS: ANA synthetic tests, stale publication guard and privacy-minimized history contracts');
+

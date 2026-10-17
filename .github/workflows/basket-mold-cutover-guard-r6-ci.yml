@@ -1,0 +1,26 @@
+name: Basket mold cutover server guard R6
+on:
+  pull_request:
+    paths:
+      - 'supabase/sql/20261006_basket_mold_cutover_guard_r6.sql'
+      - 'supabase/migrations/20261006114000_basket_mold_cutover_guard_r6.sql'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'scripts/test-basket-mold-cutover-guard-r6.mjs'
+      - '.github/workflows/basket-mold-cutover-guard-r6-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/sql/20261006_basket_mold_cutover_guard_r6.sql'
+      - 'supabase/migrations/20261006114000_basket_mold_cutover_guard_r6.sql'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'scripts/test-basket-mold-cutover-guard-r6.mjs'
+      - '.github/workflows/basket-mold-cutover-guard-r6-ci.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-basket-mold-cutover-guard-r6.mjs

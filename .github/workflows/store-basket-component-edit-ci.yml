@@ -1,0 +1,30 @@
+name: Store basket component edit
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/store-baskets-builder.js'
+      - 'supabase/functions/admin-store-baskets-v1/**'
+      - 'supabase/sql/20261006_store_basket_component_edit_v1.sql'
+      - 'supabase/migrations/20261006030000_store_basket_component_edit_v1.sql'
+      - 'scripts/test-store-baskets-component-edit-v1.mjs'
+      - '.github/workflows/store-basket-component-edit-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/store-baskets-builder.js'
+      - 'supabase/functions/admin-store-baskets-v1/**'
+      - 'supabase/sql/20261006_store_basket_component_edit_v1.sql'
+      - 'supabase/migrations/20261006030000_store_basket_component_edit_v1.sql'
+      - 'scripts/test-store-baskets-component-edit-v1.mjs'
+      - '.github/workflows/store-basket-component-edit-ci.yml'
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-component-edit-v1.mjs

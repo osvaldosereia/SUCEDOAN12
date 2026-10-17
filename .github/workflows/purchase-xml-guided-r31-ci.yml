@@ -1,0 +1,33 @@
+name: XML purchase guided R31
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/purchase-xml-simple.css'
+      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
+      - 'scripts/test-purchase-xml-guided-r31.mjs'
+      - 'scripts/test-purchase-xml-compact-r32.mjs'
+      - 'scripts/test-purchase-xml-compact-r33.mjs'
+      - '.github/workflows/purchase-xml-guided-r31-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/purchase-xml-simple.css'
+      - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
+      - 'scripts/test-purchase-xml-guided-r31.mjs'
+      - 'scripts/test-purchase-xml-compact-r33.mjs'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-purchase-xml-guided-r31.mjs
+      - run: node scripts/test-purchase-xml-compact-r32.mjs
+      - run: node scripts/test-purchase-xml-compact-r33.mjs
+      - run: git diff --check

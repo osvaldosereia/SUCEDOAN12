@@ -1,0 +1,24 @@
+name: Fiscal Recovery R1 Auth Backoff
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/admin-service-intelligence-v1/index.ts"
+      - "scripts/test-fiscal-recovery-r1-auth-backoff.mjs"
+      - ".github/workflows/fiscal-recovery-r1-auth-backoff-ci.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "supabase/functions/admin-service-intelligence-v1/index.ts"
+      - "scripts/test-fiscal-recovery-r1-auth-backoff.mjs"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/test-fiscal-recovery-r1-auth-backoff.mjs
+      - run: node scripts/test-fiscal-nfe-autorecovery-v1.mjs
+      - run: node scripts/test-fiscal-ncm-remote-gap-v2.mjs

@@ -2,22 +2,68 @@ name: Basket kit editor
 on:
   pull_request:
     paths:
+      - 'index.html'
+      - 'vitrine/index.html'
       - 'vitrine/admin/index.html'
-      - 'supabase/functions/admin-products-live-v1/index.ts'
-      - 'scripts/test-basket-kit-*.mjs'
-      - 'supabase/functions/basket-lot-image-v1/**'
+      - 'vitrine/basket-carousel.js'
       - 'vitrine/admin/basket-lot-image.js'
+      - 'vitrine/admin/basket-guided-builder.js'
+      - 'vitrine/admin/basket-admin-section.js'
+      - 'vitrine/admin/kit-builder.js'
+      - 'vitrine/admin/store-baskets-builder.js'
+      - 'vitrine/admin/store-baskets-ops-overview.js'
+      - 'vitrine/admin/product-basket-link-cutover.js'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-basket-guided-v1/**'
+      - 'supabase/functions/admin-kit-builder-v1/**'
+      - 'supabase/functions/admin-store-baskets-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/functions/basket-lot-image-v1/**'
+      - 'supabase/sql/2026100*_basket_*.sql'
+      - 'supabase/sql/202610*_assembly_*.sql'
+      - 'supabase/sql/202610*_store_baskets_*.sql'
+      - 'supabase/sql/20261006_store_basket_ops_overview_v1.sql'
+      - 'supabase/migrations/2026100*_basket_*.sql'
+      - 'supabase/migrations/202610*_assembly_*.sql'
+      - 'supabase/migrations/202610*_store_baskets_*.sql'
+      - 'supabase/migrations/20261006043000_store_basket_ops_overview_v1.sql'
+      - 'scripts/test-basket-*.mjs'
+      - 'scripts/test-assembly-*.mjs'
+      - 'scripts/test-kit-builder-*.mjs'
+      - 'scripts/test-store-baskets-*.mjs'
       - '.github/workflows/basket-kit-editor-ci.yml'
   push:
     branches: [main]
     paths:
+      - 'index.html'
+      - 'vitrine/index.html'
       - 'vitrine/admin/index.html'
-      - 'supabase/functions/admin-products-live-v1/index.ts'
-      - 'scripts/test-basket-kit-*.mjs'
-      - 'supabase/functions/basket-lot-image-v1/**'
+      - 'vitrine/basket-carousel.js'
       - 'vitrine/admin/basket-lot-image.js'
+      - 'vitrine/admin/basket-guided-builder.js'
+      - 'vitrine/admin/basket-admin-section.js'
+      - 'vitrine/admin/kit-builder.js'
+      - 'vitrine/admin/store-baskets-builder.js'
+      - 'vitrine/admin/store-baskets-ops-overview.js'
+      - 'vitrine/admin/product-basket-link-cutover.js'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-basket-guided-v1/**'
+      - 'supabase/functions/admin-kit-builder-v1/**'
+      - 'supabase/functions/admin-store-baskets-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/functions/basket-lot-image-v1/**'
+      - 'supabase/sql/2026100*_basket_*.sql'
+      - 'supabase/sql/202610*_assembly_*.sql'
+      - 'supabase/sql/202610*_store_baskets_*.sql'
+      - 'supabase/sql/20261006_store_basket_ops_overview_v1.sql'
+      - 'supabase/migrations/2026100*_basket_*.sql'
+      - 'supabase/migrations/202610*_assembly_*.sql'
+      - 'supabase/migrations/202610*_store_baskets_*.sql'
+      - 'supabase/migrations/20261006043000_store_basket_ops_overview_v1.sql'
+      - 'scripts/test-basket-*.mjs'
+      - 'scripts/test-assembly-*.mjs'
+      - 'scripts/test-kit-builder-*.mjs'
+      - 'scripts/test-store-baskets-*.mjs'
       - '.github/workflows/basket-kit-editor-ci.yml'
 permissions:
   contents: read
@@ -31,9 +77,68 @@ jobs:
           node-version: '24'
       - run: npm install --prefix "$RUNNER_TEMP/basket-tests" --no-save --package-lock=false playwright@1.62.1
       - run: node "$RUNNER_TEMP/basket-tests/node_modules/playwright/cli.js" install --with-deps chromium
+      - run: node --disable-warning=ExperimentalWarning scripts/test-assembly-kits-domain-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-assembly-kits-legacy-bootstrap-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-recipe-kit-links-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-recipe-kits-ui-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-recipe-domain-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-admin-api-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-builder-ui-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-store-baskets-visible-composition-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-simple-tabs-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-product-link-cutover-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-admin-api-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-basket-products-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-product-quick-edit-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-ui-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-search-chips-ui-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-kit-builder-most-used-column-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-suggestions.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-image-service.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-commercial-fields.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-ops-rules.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-kit-financials-categories.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-lot-types-links-financials.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-mounted-edit-print-models.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-commerce.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-zero-price-fallback.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-postdeploy-hardening.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-mounting.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-canonical-checkout.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-api.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-admin-simple-flow.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-guided-positions-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-reservation-domain-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-guided-lot-flow-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-guided-admin-api-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-guided-builder-ui-v1.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-admin-canonical-runtime-v2.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-commercial-model-edit-v2.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-order-engine.mjs
+      - run: node scripts/test-kit-builder-browser-v1.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
+      - run: node scripts/test-store-baskets-builder-browser-v1.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
+      - run: node scripts/test-store-baskets-ops-overview-browser-v1.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
+      - run: node scripts/test-basket-product-link-cutover-browser-v1.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
+      - run: node scripts/test-basket-simple-tabs-browser-v1.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
+      - run: node scripts/test-basket-admin-runtime-browser-v2.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
+      - run: node scripts/test-basket-guided-builder-browser.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright
       - run: node scripts/test-basket-kit-image-browser.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/basket-tests/node_modules/playwright

@@ -1,0 +1,23 @@
+name: Fiscal R2 Provider Errors
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/admin-service-intelligence-v1/_shared/fiscal-r2-nfe-inspector.mjs"
+      - "scripts/test-fiscal-r2-provider-error-map.mjs"
+      - ".github/workflows/fiscal-r2-provider-error-map-ci.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "supabase/functions/admin-service-intelligence-v1/_shared/fiscal-r2-nfe-inspector.mjs"
+      - "scripts/test-fiscal-r2-provider-error-map.mjs"
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/test-fiscal-r2-provider-error-map.mjs
+      - run: node scripts/test-fiscal-r2-nfe-draft-inspector.mjs

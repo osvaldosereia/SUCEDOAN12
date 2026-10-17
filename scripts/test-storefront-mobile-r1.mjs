@@ -1,0 +1,27 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+
+const root=fs.readFileSync('index.html','utf8');
+const nested=fs.readFileSync('vitrine/index.html','utf8');
+const edge=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
+assert.equal(root,nested,'both public URLs must use the exact same storefront');
+const inline=[...root.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
+assert.ok(inline,'inline storefront JavaScript exists');
+new vm.Script(inline);
+const start=root.slice(root.indexOf('async function start(){'),root.indexOf('\n    start();'));
+assert.ok(start.includes("const priority=hadCached?Promise.resolve(false):api('home_priority')"),'priority should be requested on cold visits');
+assert.ok(start.includes("const full=api('home')"),'full should start without a dependency on priority');
+assert.ok(!start.includes("await api('home_priority')"),'full load must not wait for priority');
+assert.match(start,/if\(!Array\.isArray\(data\?\.baskets\)\|\|!data\.baskets\.length\|\|partial&&fullFinished\)/,'late priority must not replace a completed catalog');
+assert.match(root,/home-loading-status.*Preparando suas cestas/,'skeleton must explain what is loading');
+assert.match(root,/@media\(max-width:759px\)/,'mobile-first compact hero is expected');
+assert.match(edge,/async function needsLegacyBasketCatalog\(\):Promise<boolean>/,'legacy fallback detection is required');
+assert.match(edge,/String\(m\?\.metadata\?\.transition_mode\|\|""\)==="mold_only"/,'skip legacy view only for mold-only templates');
+assert.match(edge,/needsLegacy\?db\.from\("basket_commercial_catalog_v1"\)/,'catalog view must run when a legacy template exists');
+assert.match(edge,/Boolean\(t\.category_id&&t\.subcategory_id\)/,'ignore non-displayable kits without subcategory in legacy detection');
+assert.match(edge,/Promise\.all\(\[moldHomeCards\(priorityOnly\),needsLegacyBasketCatalog\(\)\]\)/,'parallelize independent lightweight checks');
+assert.match(edge,/HOME_CACHE_TTL_MS=120_000/,'cached home should be shared between requests');
+assert.match(edge,/catalog_stale:true/,'a temporary database error must preserve the last successful response');
+assert.match(edge,/offer_priority:p\.metadata\?\.offer_source/,'live expiry offer prioritization must be preserved');
+console.log('Mobile storefront R1 static contract passed');

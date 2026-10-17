@@ -1,0 +1,73 @@
+name: Pedidos Fiscal Flow V4
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/orders-fiscal-flow-v4-*'
+      - 'fix/separation-verified-gate-v4-*'
+      - 'fix/separation-completion-feedback-v4-*'
+      - 'fix/separation-stock-gate-v1-*'
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'pedido/index.html'
+      - 'p/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
+      - 'supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql'
+      - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
+      - 'scripts/test-admin-orders-clean-flow-v3.mjs'
+      - 'scripts/test-order-separation-verified-gate-v4.mjs'
+      - 'scripts/test-order-separation-completion-feedback-v4.mjs'
+      - 'scripts/test-bling-hub-separation-stock-gate-v1.mjs'
+      - '.github/workflows/test-admin-orders-fiscal-flow-v4.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'pedido/index.html'
+      - 'p/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
+      - 'supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql'
+      - 'scripts/test-admin-orders-fiscal-flow-v4.mjs'
+      - 'scripts/test-admin-orders-clean-flow-v3.mjs'
+      - 'scripts/test-order-separation-verified-gate-v4.mjs'
+      - 'scripts/test-order-separation-completion-feedback-v4.mjs'
+      - 'scripts/test-bling-hub-separation-stock-gate-v1.mjs'
+      - '.github/workflows/test-admin-orders-fiscal-flow-v4.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pedidos V4 contract
+        run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
+      - name: Separação aceita como conferência para Verificado
+        run: node scripts/test-order-separation-verified-gate-v4.mjs
+      - name: Conclusão da separação e parcelas Bling
+        run: node scripts/test-order-separation-completion-feedback-v4.mjs
+      - name: Reserva/alocação de estoque na sincronização Bling
+        run: node scripts/test-bling-hub-separation-stock-gate-v1.mjs
+      - name: Pedidos V3 regression
+        run: node scripts/test-admin-orders-clean-flow-v3.mjs
+      - name: Browser JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs=require('fs'),cp=require('child_process');
+          for(const file of ['vitrine/admin/index.html','pedido/index.html','p/index.html']){
+            const html=fs.readFileSync(file,'utf8');
+            const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+            scripts.forEach((src,i)=>{const path=`/tmp/${file.replaceAll('/','-')}-${i}.js`;fs.writeFileSync(path,src);cp.execFileSync(process.execPath,['--check',path],{stdio:'inherit'})});
+            console.log(`${file}: inline syntax OK (${scripts.length} script blocks)`);
+          }
+          NODE
+      - name: Diff hygiene
+        run: git diff --check

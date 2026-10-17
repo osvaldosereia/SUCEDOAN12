@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const ui=fs.readFileSync('vitrine/admin/store-baskets-builder.js','utf8');
+const api=fs.readFileSync('supabase/functions/admin-store-baskets-v1/index.ts','utf8');
+const sql=fs.readFileSync('supabase/sql/20261005_store_basket_build_detail_v1.sql','utf8');
+assert.match(ui,/data-store-print/,'mounted build must expose print action');
+assert.match(ui,/function printBuild/,'print implementation required');
+assert.match(ui,/@page\s*\{[^}]*size:\s*A4/i,'print must target A4');
+assert.match(ui,/grid-template-columns:\s*repeat\(4,\s*1fr\)/,'print product cards must use four columns');
+assert.match(ui,/window\.print\(\)/,'print must use browser print dialog');
+assert.match(api,/action===?['"]build_detail['"]/,'admin API must expose build detail');
+assert.match(sql,/'items'.*product_id.*name.*image_url.*quantity_per_basket/s,'build detail must include product identity, image and quantity');
+console.log('store baskets A4 print v1: PASS');

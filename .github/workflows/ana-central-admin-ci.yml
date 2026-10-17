@@ -1,0 +1,74 @@
+name: ANA Central Admin CI
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/ana-admin-config-v1.mjs'
+      - 'supabase/functions/_shared/ana-policy-v1.mjs'
+      - 'supabase/functions/admin-whatsapp-ana-preview-v1/**'
+      - 'supabase/functions/whatsapp-ana-worker-v1/**'
+      - 'supabase/migrations/*ana*.sql'
+      - 'supabase/sql/*ana*.sql'
+      - 'vitrine/admin/ana/**'
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-*ana*.mjs'
+      - '.github/workflows/ana-central-admin-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/ana-admin-config-v1.mjs'
+      - 'supabase/functions/_shared/ana-policy-v1.mjs'
+      - 'supabase/functions/admin-whatsapp-ana-preview-v1/**'
+      - 'supabase/functions/whatsapp-ana-worker-v1/**'
+      - 'supabase/migrations/*ana*.sql'
+      - 'supabase/sql/*ana*.sql'
+      - 'vitrine/admin/ana/**'
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-*ana*.mjs'
+      - '.github/workflows/ana-central-admin-ci.yml'
+
+jobs:
+  ana-central-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate ANA admin schema and SQL mirror
+        run: node scripts/test-whatsapp-ana-admin-schema-v1.mjs
+
+      - name: Validate ANA admin configuration and deterministic triggers
+        run: node scripts/test-whatsapp-ana-admin-config-v1.mjs
+
+      - name: Validate ANA admin authentication and API contracts
+        run: node scripts/test-whatsapp-ana-admin-api-v1.mjs
+
+      - name: Validate ANA live worker configuration routing
+        run: node scripts/test-whatsapp-ana-admin-worker-v1.mjs
+
+      - name: Validate ANA label-removal provenance contract
+        run: node scripts/test-whatsapp-ana-label-removal-v1.mjs
+
+      - name: Validate ANA automation template library
+        run: node scripts/test-ana-automation-library-v1.mjs
+
+      - name: Validate ANA knowledge admin
+        run: node scripts/test-ana-knowledge-admin-v1.mjs
+
+      - name: Validate ANA draft diagnostics
+        run: node scripts/test-ana-diagnostics-v1.mjs
+
+      - name: Validate ANA history metrics
+        run: node scripts/test-ana-history-metrics-v1.mjs
+
+      - name: Validate ANA publication gate
+        run: node scripts/test-ana-publish-full-suite-gate-v1.mjs
+
+      - name: Validate ANA required suite determinism
+        run: node scripts/test-ana-required-suite-determinism-v1.mjs
+
+      - name: Validate ANA simulator, history privacy and publish guards
+        run: node scripts/test-ana-central-admin-ci-v1.mjs
+      - name: Validate ANA Admin UI
+        run: node scripts/test-admin-ana-section-v1.mjs

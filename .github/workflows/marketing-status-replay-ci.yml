@@ -1,0 +1,22 @@
+name: Marketing Status Replay CI
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/test-whatsapp-marketing-status-replay-v1.mjs'
+      - 'supabase/migrations/20261005031500_marketing_campaign_status_replay_v1.sql'
+      - '.github/workflows/marketing-status-replay-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Marketing campaign Meta status replay contract
+        run: node scripts/test-whatsapp-marketing-status-replay-v1.mjs

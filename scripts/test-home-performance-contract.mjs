@@ -1,0 +1,42 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+
+const page=fs.readFileSync('index.html','utf8');
+const nested=fs.readFileSync('vitrine/index.html','utf8');
+assert.equal(page,nested,'public root and nested storefront must remain identical');
+new vm.Script([...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1],{filename:'index.html'});
+const start=page.slice(page.indexOf('async function start(){'),page.indexOf('\n    start();'));
+assert.ok(start.indexOf('renderInitialShell()')<start.indexOf('resolveEntryWhatsappPhone()'),'initial shell must render before identity lookup');
+assert.match(start,/void resolveEntryWhatsappPhone\(\)\.then/,'identity lookup cannot block public catalog');
+assert.match(start,/const priority=hadCached\?Promise\.resolve\(false\):api\('home_priority'\)/,'priority catalog must load independently');
+assert.match(start,/const full=api\('home'\)/,'full catalog must start without awaiting priority');
+assert.doesNotMatch(start,/await api\('home_priority'\)[\s\S]*await api\('home'\)/,'do not serialize expensive catalog queries');
+assert.match(start,/writeCache\(HOME_CACHE_KEY,state\.home\)/,'cache only complete catalog responses');
+assert.match(start,/fullFinished/,'late partial catalogs must not overwrite completed responses');
+assert.match(start,/performance\.mark/,'home load performance markers must exist');
+assert.match(page,/home-loading-status[^\n]*Preparando suas cestas/,'mobile loading status must be understandable');
+const storefrontApi=page.slice(page.indexOf('async function api('),page.indexOf('async function productExtra('));
+assert.match(storefrontApi,/retryableRead/,'safe catalog reads must retry transient failures');
+assert.match(storefrontApi,/invalid_catalog_response/,'invalid successful responses must not erase catalog data');
+assert.match(storefrontApi,/status>=400&&status<500/,'client errors must not be retried');
+assert.match(storefrontApi,/retryableRead&&!options[.]signal[?]2:1/,'catalog retries must be restricted to safe reads');
+const renderHome=page.slice(page.indexOf('function renderHome(){'),page.indexOf('function paintOffersPage('));
+assert.match(renderHome,/homePartial[\s\S]*Grande/i,'priority response should show the Grande group');
+assert.match(renderHome,/aria-busy="true"[\s\S]*homeRemainingBaskets/,'partial response should show remaining group placeholders');
+
+const service=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
+const home=service.slice(service.indexOf('async function home('),service.indexOf('async function sellableMap('));
+const carousel=service.slice(service.indexOf('async function basketCarouselItems('),service.indexOf('function basketCategoryFields('));
+const molds=service.slice(service.indexOf('async function moldHomeCards('),service.indexOf('async function moldDetail('));
+assert.match(carousel,/carousel_items:\[\.\.\.items\.values\(\)\]\.slice\(0,1\)/,'home payload should keep only the lead photo shown for legacy baskets');
+assert.match(molds,/carousel_items:carousel\.slice\(0,1\)/,'home payload should keep only the lead photo shown for molded baskets');
+assert.match(home,/basketCarouselItems\(baskets\)/,'legacy basket cards should keep their lead photo');
+assert.match(home,/home\(priorityOnly=false\)/,'home builder should support a separately scoped priority response');
+assert.match(home,/priorityOnly[\s\S]*cestas-completas[\s\S]*grande/i,'priority response should include only Cestas Completas > Grande');
+assert.match(molds,/moldHomeCards\(priorityOnly=false\)/,'mold cards should be filtered before public compositions are generated');
+assert.match(service,/action==="home_priority"\)return json\(req,await cachedHomePriority\(\)/,'priority endpoint should use its own shared cache');
+assert.match(service,/async function cachedHome\(\)/,'home response should be cached per warm function instance');
+assert.match(service,/homePromise/,'simultaneous cold requests should share one catalog build');
+
+console.log('Homepage performance contract passed');

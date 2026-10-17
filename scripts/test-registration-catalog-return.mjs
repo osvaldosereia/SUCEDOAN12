@@ -7,15 +7,23 @@ const exists = p => fs.existsSync(p);
 for (const sqlPath of [
   'supabase/sql/20261001_registration_catalog_return_v1.sql',
   'supabase/sql/20261001_registration_catalog_return_rate_limit_v2.sql',
-  'supabase/sql/20261001_registration_catalog_return_service_role_v3.sql'
+  'supabase/sql/20261001_registration_catalog_return_service_role_v3.sql',
+  'supabase/sql/20261004_registration_catalog_return_storefront_v4.sql'
 ]) assert.ok(exists(sqlPath), `missing migration: ${sqlPath}`);
 
 const sql = read('supabase/sql/20261001_registration_catalog_return_rate_limit_v2.sql');
-assert.match(sql, /ops2_issue_papoai_catalog_link_v1/i, 'must issue canonical catalog identity link');
 assert.match(sql, /bling_hub_jobs_v2/i, 'must validate registration receipt capability');
 assert.match(sql, /channel_phone_e164/i, 'must resolve the WhatsApp channel from the recent conversation');
 assert.match(sql, /registration_complete/i, 'must refuse incomplete registrations');
 assert.match(sql, /consume_public_rate_limit/i, 'rate limit must live inside the protected RPC');
+
+const cutover = read('supabase/sql/20261004_registration_catalog_return_storefront_v4.sql');
+assert.match(cutover, /create\s+or\s+replace\s+function\s+public\.ops2_issue_registration_catalog_return_v1/i, 'v4 must replace the registration return RPC');
+assert.match(cutover, /ops2_issue_storefront_catalog_link_v1/i, 'registration return must issue catalog through the provider-neutral Storefront RPC');
+assert.doesNotMatch(cutover, /ops2_issue_papoai_catalog_link_v1/i, 'registration return must not depend on the PapoAI catalog RPC');
+assert.match(cutover, /consume_public_rate_limit/i, 'v4 must preserve rate limiting');
+assert.match(cutover, /registration_complete/i, 'v4 must preserve registration-complete validation');
+assert.match(cutover, /registration-return:/i, 'v4 must preserve the registration-return source event key');
 
 const hardening = read('supabase/sql/20261001_registration_catalog_return_service_role_v3.sql');
 assert.match(hardening, /revoke\s+all[\s\S]*from\s+[^;\n]*\banon\b/i, 'anon must not execute the SECURITY DEFINER RPC directly');

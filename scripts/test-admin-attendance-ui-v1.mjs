@@ -24,9 +24,10 @@ assert.match(html,/id="queueList"/);
 assert.equal((html.match(/class="queue-list"/g)||[]).length,1,'deve existir uma única fila visual');
 assert.match(html,/id="conversationPane"/);
 assert.match(html,/id="contextPane"/);
+assert.match(html,/id="mobileChatBackBtn"/,'mobile precisa ter volta explícita para a lista de conversas');
 for(const tab of ['Visão geral','Pedidos','Produtos','Assistente'])assert.match(html,new RegExp(`>${tab}<`));
-assert.match(html,/id="copyReplyBtn"/);
-assert.match(html,/id="openPapoAiBtn"/);
+assert.match(html,/id="copyReplyBtn"/,'cópia de resposta deve continuar disponível');
+assert.doesNotMatch(html,/openPapoAiBtn|Abrir PapoAI/i,'atendimento não deve exibir acesso ao PapoAI');
 assert.match(html,/id="sendBtn"[^>]*disabled/);
 assert.doesNotMatch(html,/iframe|embedded=1|attendance-layout-v3/i,'tela nativa não pode carregar arquitetura antiga');
 
@@ -42,6 +43,10 @@ assert.match(js,/function\s+switchChannel\s*\(/);
 assert.match(js,/data\.items\|\|\[\]/);
 assert.match(js,/conversationOpen:false/);
 assert.match(js,/state\.conversationOpen=true/);
+assert.match(js,/function\s+closeMobileConversation\s*\(/,'chat mobile deve poder voltar sem recarregar a página');
+assert.match(js,/media-load/,'mídias devem nascer como controles leves');
+assert.match(js,/trigger\.onclick=async/,'mídia só deve resolver depois do toque');
+assert.doesNotMatch(js,/resolveMedia\(msg\.id\)\.then/,'chat não pode buscar imagem/áudio automaticamente ao renderizar histórico');
 assert.match(js,/message-date-separator/);
 assert.match(js,/canonical_last_message_at\|\|b\.last_message_at/,'fila deve ordenar pela recência canônica');
 assert.match(js,/attendanceJsonApi/,'core deve delegar autenticação ao cliente compartilhado');
@@ -53,6 +58,8 @@ assert.doesNotMatch(js,/parent\.document|parent\.postMessage|postMessage\(/,'cor
 assert.match(css,/\.attendance-workspace\{/);
 assert.match(css,/\.messages\{[^}]*min-height:0[^}]*overflow:auto/,'histórico deve rolar internamente');
 assert.match(css,/@media\(max-width:680px\)/,'mobile deve possuir layout próprio');
+assert.match(css,/\.mobile-chat-back\{/,'mobile deve exibir botão de voltar');
+assert.match(css,/\.media-load\{/,'mídias devem usar placeholder clicável');
 assert.match(css,/grid-template-columns:var\(--queue\) minmax\(430px,1fr\) var\(--context\)/,'desktop deve priorizar conversa central');
 
-console.log('OK · Atendimento nativo usa inbox unificada, sessão compartilhada renovável, filtros operacionais e contexto integrado.');
+console.log('OK · Atendimento nativo usa inbox unificada, cópia de resposta e não oferece acesso ao PapoAI.');
