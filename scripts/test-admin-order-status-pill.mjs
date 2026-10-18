@@ -1,0 +1,17 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const source=fs.readFileSync('vitrine/admin/orders/status-pill.js','utf8');
+assert.ok(html.includes('/vitrine/admin/orders/status-pill.js?v=refactor-20261018'));
+const ctx={window:{},Object};
+vm.runInNewContext(source,ctx);
+const f=ctx.window.DonaAntoniaAdminOrderStatusPill.createOrderStatusPill(v=>String(v).replaceAll('<','&lt;')).statusPill;
+assert.match(f('created'),/class="pill warn">Novo/);
+assert.match(f('cancelled'),/class="pill danger">Cancelado/);
+assert.match(f('processing'),/>Separando<\/span>/);
+assert.match(f('out_for_delivery'),/>Em entrega<\/span>/);
+assert.match(f('returned'),/>Devolvido<\/span>/);
+assert.match(f('unknown'),/>unknown<\/span>/);
+assert.match(f('<script>'),/&lt;script>/);
+console.log('Admin order status pill: PASS');
