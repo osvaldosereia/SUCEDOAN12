@@ -36,6 +36,10 @@ on:
       - 'supabase/sql/20260928_ops2_r1_reservation_horizon.sql'
       - 'supabase/sql/20260928_ops2_r6_product_lots_fefo_v1.sql'
       - 'supabase/sql/20260928_ops2_r6_lot_tracking_reconciliation_guard_v1.sql'
+      - 'scripts/test-admin-inventory-receipt-contract.mjs'
+      - 'scripts/test-admin-inventory-balance-contract.mjs'
+      - 'scripts/test-admin-stock-adjustment-contract.mjs'
+      - 'supabase/functions/purchase-xml-v1/index.ts'
       - '.github/workflows/admin-print-queue-panel.yml'
   workflow_dispatch:
 permissions:
@@ -70,6 +74,9 @@ jobs:
       - run: node scripts/test-admin-stock-physical-available-contract.mjs
       - run: node scripts/test-admin-stock-reservation-consumption-contract.mjs
       - run: node scripts/test-admin-lots-fefo-contract.mjs
+      - run: node scripts/test-admin-inventory-receipt-contract.mjs
+      - run: node scripts/test-admin-inventory-balance-contract.mjs
+      - run: node scripts/test-admin-stock-adjustment-contract.mjs
       - run: node scripts/test-admin-orders-clean-flow-v3.mjs
       - run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
       - run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
