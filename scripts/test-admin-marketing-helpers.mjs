@@ -36,4 +36,7 @@ assert.equal(f.marketingSegmentOf({}),'Outros');
 assert.equal(f.marketingSegmentOf(null),'Outros');
 assert.equal(f.marketingCampaignSlug('---'),'');
 assert.equal(f.marketingCampaignSlug('  SEM ACENTOS  '),'sem-acentos');
+assert.equal(f.marketingSegmentOf({subcategory:'Beleza'}),'Beleza e cuidados');
+assert.equal(f.marketingSegmentOf({subsubcategory:'Cães'}),'Pet');
+assert.equal(f.marketingCampaignSlug('Promoção 100%'),'promocao-100');
 console.log('Admin marketing helpers: PASS');
