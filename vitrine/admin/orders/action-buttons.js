@@ -3,7 +3,8 @@
   function createOrderActionButtonsHtml(deps){
     const {orderProblemReasons,orderNextAction,esc}=deps;
     return function orderActionButtonsHtml(o,dispatchGate){
-      // Keep stock-consumption and fiscal gates explicit; button order is operationally significant.\n      const consumed=o.payment_method_snapshot?.stock_consumed===true;
+      // Keep stock-consumption and fiscal gates explicit; button order is operationally significant.
+      const consumed=o.payment_method_snapshot?.stock_consumed===true;
       const problems=orderProblemReasons(o);
       const mustFix=problems.length>0&&['created','confirmed','ready','out_for_delivery'].includes(o.status);
       const fiscalDispatchBlocked=o.status==='ready'&&dispatchGate?.enforced===true&&dispatchGate?.allowed!==true;

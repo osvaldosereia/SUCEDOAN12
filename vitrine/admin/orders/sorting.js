@@ -1,6 +1,7 @@
 // Ordenação de pedidos: implementação original preservada.
 (function(global){
-  // Ordena uma cópia, preservando a lista original.\n  function sortOperationalOrders(rows){
+  // Ordena uma cópia, preservando a lista original.
+  function sortOperationalOrders(rows){
     return [...rows].sort((a,b)=>{
       const at=Date.parse(a?.created_at||0)||0;
       const bt=Date.parse(b?.created_at||0)||0;

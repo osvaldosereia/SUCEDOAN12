@@ -1,6 +1,7 @@
 // Busca textual de pedidos: regra original com normalizador injetado.
 (function(global){
-  // The caller supplies normalization to keep search consistent across the Admin.\n  function createOrderSearch(normalize){
+  // The caller supplies normalization to keep search consistent across the Admin.
+  function createOrderSearch(normalize){
     function orderSearchMatch(o,q){
       const needle=normalize(q);
       if(!needle)return true;
