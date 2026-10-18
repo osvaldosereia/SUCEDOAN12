@@ -84,4 +84,10 @@ assert.equal(render(),'');
 // The renderer may be constructed before the Admin state is initialized.
 const uninitialized=ctx.window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePanel(null,escapeHtml,()=> '—').renderOpsPrintQueue;
 assert.equal(uninitialized(),'');
+// Each visible job must resolve its own order without reordering jobs.
+const pairState={orders:[{id:'a',order_number:'101'},{id:'b',order_number:'202'}],opsPrintQueue:{jobs:[{status:'claimed',entity_id:'b'},{status:'pending',entity_id:'a'}]}};
+const pairRender=ctx.window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePanel(pairState,escapeHtml,o=>o?.order_number||'—').renderOpsPrintQueue;
+const pairHtml=pairRender();
+assert.ok(pairHtml.indexOf('Separação · #202')<pairHtml.indexOf('Separação · #101'));
+assert.ok(pairHtml.indexOf('data-print-order="b"')<pairHtml.indexOf('data-print-order="a"'));
 console.log('Admin print queue panel: PASS');
