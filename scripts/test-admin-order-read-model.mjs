@@ -40,4 +40,14 @@ assert.equal(f.orderFilterMatch(null,'delivery'),false);
 assert.equal(f.orderFilterMatch(null,'finalized'),false);
 assert.equal(f.orderFilterMatch(null,'backlog'),false);
 assert.equal(f.orderFilterMatch(null,'problems'),false);
+// Canonical registration fields and stock/history problems must remain visible.
+const canonical={...good,registration_complete:false,registration_missing_fields:['name','phone','address'],document_only_pending:true};
+const canonicalProblems=Array.from(f.orderProblemReasons(canonical));
+assert.ok(canonicalProblems.includes('Cliente não identificado'));
+assert.ok(canonicalProblems.includes('Telefone pendente'));
+assert.ok(canonicalProblems.includes('Endereço incompleto'));
+assert.ok(canonicalProblems.includes('CPF/CNPJ pendente'));
+assert.ok(Array.from(f.orderProblemReasons({...good,stock_readiness:{ok:false}})).includes('Estoque insuficiente'));
+assert.ok(Array.from(f.orderProblemReasons({...good,history_sync:{state:'failed'}})).includes('Histórico pendente do cliente'));
+assert.ok(Array.from(f.orderProblemReasons({...good,delivery_return:{status:'returned_review'}})).includes('Retorno aguardando revisão'));
 console.log('Admin order read model: PASS');
