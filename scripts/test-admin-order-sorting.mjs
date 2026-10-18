@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const source=fs.readFileSync('vitrine/admin/orders/sorting.js','utf8');
+const tag='<script src="/vitrine/admin/orders/sorting.js?v=refactor-20261018"></script>';
+assert.ok(html.includes(tag));
+assert.ok(html.indexOf(tag)<html.indexOf('<script>\n(()=>{'));
+assert.ok(html.includes('const {sortOperationalOrders}=window.DonaAntoniaAdminOrderSorting;'));
+assert.ok(!html.includes('function sortOperationalOrders(rows){'));
+const context={window:{},Date,Object};
+vm.runInNewContext(source,context);
+const sorter=context.window.DonaAntoniaAdminOrderSorting.sortOperationalOrders;
+const input=[{id:'old',created_at:'2026-01-01T10:00:00Z'},{id:'new',created_at:'2026-10-18T10:00:00Z'},{id:'middle',created_at:'2026-06-01T10:00:00Z'}];
+assert.equal(Array.from(sorter(input),x=>x.id).join(','),'new,middle,old');
+assert.equal(input[0].id,'old','original array must remain unchanged');
+assert.equal(sorter([]).length,0);
+console.log('Admin order sorting extraction: PASS');
