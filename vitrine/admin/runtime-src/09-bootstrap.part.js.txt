@@ -1,0 +1,624 @@
+  }
+
+  function orderBlingPreviewHtml(p){
+    if(!p)return '<div class="rule-notice"><strong>Prévia ainda não verificada</strong><div>Use o botão abaixo para conferir o pedido. Esta verificação não envia nem altera nada no Bling.</div></div>';
+    const totals=p.totals||{};
+    const blockers=Array.isArray(p.write_blockers)&&p.write_blockers.length?p.write_blockers:(p.blockers||[]);
+    const stateText=p.write_eligible?'Apto tecnicamente':'Envio bloqueado com segurança';
+    const stateClass=p.write_eligible?'ok-text':'warn-text';
+    return '<div class="rule-notice">'+
+      '<strong class="'+stateClass+'">'+esc(stateText)+'</strong>'+
+      '<div>'+esc(p.resolved_items_count||0)+' itens individualizados · Produtos '+money(totals.product_lines_cents||0)+' · Ajuste '+money((totals.other_expenses_cents||0)-(totals.discount_cents||0))+' · Total '+money(totals.order_total_cents||0)+'</div>'+
+      (blockers.length?'<div class="sub" style="margin-top:6px">'+blockers.map(x=>'• '+esc(blingOrderBlockerLabel(x))).join('<br>')+'</div>':'<div class="sub" style="margin-top:6px">Sem bloqueios de dados. O processamento continua controlado pelo Hub Bling.</div>')+
+      ((p.unresolved_products||[]).length?'<div class="sub" style="margin-top:6px"><b>Produtos sem vínculo:</b> '+(p.unresolved_products||[]).slice(0,5).map(x=>esc(x.name||x.sku||x.gtin||'Produto')).join(' · ')+((p.unresolved_products||[]).length>5?' · +'+((p.unresolved_products||[]).length-5):'')+'</div>':'')+
+      '<div class="sub" style="margin-top:6px">Somente prévia: nenhuma alteração externa é feita por esta tela.</div>'+
+    '</div>';
+  }
+
+  async function previewCurrentOrderBling(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const btn=$('#previewBlingOrder');if(btn){btn.disabled=true;btn.textContent='Verificando…'}
+    try{
+      const data=await api('bling_preview_order_sync',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data;
+      paintOrderDetail();
+      toast(data.write_eligible?'Pedido apto para o fluxo Bling':'Prévia conferida · envio continua bloqueado');
+    }catch(e){
+      toast('Não consegui verificar a prévia do Bling agora');
+      if(btn){btn.disabled=false;btn.textContent='Verificar prévia Bling'}
+    }
+  }
+
+  async function createCurrentOrderCustomerInBling(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const d=state.currentOrder||{},o=d.order||{},c=d.customer||{};
+    const customerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
+    let customer=state.customers.find(x=>x.id===customerId)||null;
+    if(!customer&&customerId){
+      try{
+        const one=await customerApi('vitrine_customer_get',{id:customerId});
+        customer=one.customer||null;
+        if(customer)state.customers=[customer];
+      }catch{}
+    }
+    const name=customer?.display_name||o.delivery_address_snapshot?.customer_name||o.delivery_address_snapshot?.recipient_name||'Cliente';
+    const cpf=customer?.cpf||o.delivery_address_snapshot?.cpf||'';
+    if(!cpf){toast('Informe o CPF do cliente antes de cadastrar no Bling');return}
+    if(!confirm('Cadastrar este cliente no Bling?\n\n'+name+' · CPF '+formatCpf(cpf)+'\n\nO Hub confere o CPF antes de criar para evitar duplicidade.'))return;
+    const btn=$('#createBlingOrderCustomer');if(btn){btn.disabled=true;btn.textContent='Cadastrando…'}
+    try{
+      const data=await api('bling_create_order_customer',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data.preview||state.currentOrderBlingPreview;
+      paintOrderDetail();
+      const blockers=blingPreflightOperationalBlockers(state.currentOrderBlingPreview);
+      toast(blockers.includes('customer_missing_bling_contact_id')?'Cadastro solicitado · vínculo ainda está processando':'Cliente vinculado ao Bling · pedido revalidado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Cadastrar cliente no Bling'}
+    }
+  }
+
+  async function createCurrentOrderProductsInBling(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    let preview=state.currentOrderBlingPreview;
+    if(!preview||preview.error){
+      try{
+        preview=await api('bling_preview_order_sync',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+        });
+        state.currentOrderBlingPreview=preview;
+      }catch{toast('Não consegui conferir os produtos agora');return}
+    }
+    const missing=(preview.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
+    if(!missing.length){toast('Nenhum produto precisa ser cadastrado no Bling');return}
+    const names=missing.slice(0,5).map(x=>'• '+(x.name||x.sku||x.gtin||'Produto')).join('\n');
+    const extra=missing.length>5?'\n• +'+(missing.length-5)+' produto(s)':'';
+    if(!confirm('Cadastrar '+missing.length+' produto(s) ausente(s) no Bling?\n\n'+names+extra+'\n\nO Hub verifica GTIN/código antes de criar para evitar duplicidade.'))return;
+    const btn=$('#createBlingOrderProducts');if(btn){btn.disabled=true;btn.textContent='Cadastrando…'}
+    try{
+      const data=await api('bling_create_order_products',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data.preview||state.currentOrderBlingPreview;
+      paintOrderDetail();
+      const remaining=(state.currentOrderBlingPreview?.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
+      toast(remaining.length?'Cadastro solicitado · ainda há produto(s) pendente(s)':'Produtos vinculados · pedido revalidado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Cadastrar produtos no Bling'}
+    }
+  }
+
+  async function resolveCurrentOrderBlingDependencies(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const btn=$('#resolveBlingDependencies');if(btn){btn.disabled=true;btn.textContent='Conferindo vínculos…'}
+    try{
+      const data=await api('bling_reconcile_order_dependencies_readonly',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data.preview||null;
+      const remaining=blingPreflightOperationalBlockers(state.currentOrderBlingPreview);
+      paintOrderDetail();
+      toast(remaining.length?'Vínculos conferidos · ainda há pendências':'Vínculos conferidos · pedido apto para separar');
+    }catch(e){
+      toast('Não consegui conferir os vínculos agora');
+      if(btn){btn.disabled=false;btn.textContent='Tentar resolver vínculos'}
+    }
+  }
+  async function completeCurrentOrderCustomerDocument(){
+    const orderId=state.currentOrder?.order?.id;if(!orderId)return;
+    const d=state.currentOrder||{},o=d.order||{},c=d.customer||{};
+    const customerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
+    if(!customerId){focusOrderCustomerForBling();return}
+    let customer=state.customers.find(x=>x.id===customerId)||null;
+    if(!customer){
+      try{
+        const one=await customerApi('vitrine_customer_get',{id:customerId});
+        customer=one.customer||null;
+        if(customer)state.customers=[customer];
+      }catch{}
+    }
+    if(!customer){toast('Não consegui abrir o cadastro do cliente agora');return}
+    openCustomerEditor(customer,orderId);
+  }
+
+  function focusOrderCustomerForBling(){
+    const input=$('#orderCustomerSearch');
+    if(!input)return;
+    input.focus();
+    input.scrollIntoView({behavior:'smooth',block:'center'});
+    toast('Localize e vincule o cliente correto');
+  }
+
+  async function retryHistorySync(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const btn=$('#retryHistorySync');if(btn){btn.disabled=true;btn.textContent='Sincronizando…'}
+    try{
+      await api('history_sync_retry',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      const fresh=await api('order',{id});state.currentOrder=fresh;paintOrderDetail();loadOrders();
+      toast('Histórico sincronizado');
+    }catch(e){
+      toast('Não consegui sincronizar agora');
+      if(btn){btn.disabled=false;btn.textContent='Tentar novamente'}
+    }
+  }
+
+  function orderActionButtonsHtml(o){
+    const consumed=o.payment_method_snapshot?.stock_consumed===true;
+    const problems=orderProblemReasons(o);
+    const mustFix=problems.length>0&&['created','confirmed','ready','out_for_delivery'].includes(o.status);
+    const dispatchGate=state.currentOrderFiscal?.dispatch_gate||null;
+    const fiscalDispatchBlocked=o.status==='ready'&&dispatchGate?.enforced===true&&dispatchGate?.allowed!==true;
+    let primary='';
+    if(mustFix)primary='<button class="primary" type="button" disabled>Corrija os dados antes de avançar</button>';
+    if(!mustFix&&o.status==='created')primary='<button class="primary" id="advanceOrder" data-next="confirmed" type="button">Confirmar pedido</button>';
+    else if(!mustFix&&o.status==='confirmed'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Iniciar separação</button>';
+    else if(!mustFix&&o.status==='confirmed'&&consumed)primary='<button class="primary" id="advanceOrder" data-next="processing" type="button">Continuar separação</button>';
+    else if(o.status==='processing'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Regularizar separação</button>';
+    else if(o.status==='processing')primary='<button class="primary" id="advanceOrder" data-next="ready" type="button">Finalizar separação</button>';
+    else if(!mustFix&&o.status==='ready'&&fiscalDispatchBlocked)primary='<button class="primary" type="button" disabled>Fiscal pendente antes da saída</button>';
+    else if(!mustFix&&o.status==='ready')primary='<button class="primary" id="advanceOrder" data-next="out_for_delivery" type="button">Marcar saída para entrega</button>';
+    else if(!mustFix&&o.status==='out_for_delivery')primary='<button class="primary" id="advanceOrder" data-next="delivered" type="button">Confirmar entrega</button>';
+    const docs=[];
+    if(o.status==='out_for_delivery')docs.push('<button class="secondary" id="returnToExpedition" type="button">Entrega não concluída</button>');
+    if(consumed)docs.push('<button class="secondary" id="reprintSeparation" type="button">Reimprimir separação</button>');
+    if(['ready','out_for_delivery','delivered'].includes(o.status))docs.push('<button class="secondary" id="printDelivery" type="button">Imprimir via do entregador</button>');
+    const cancel=!['delivered','cancelled'].includes(o.status)?'<button class="text danger" id="cancelOrder" type="button">Cancelar pedido</button>':'';
+    return '<div class="order-action-zone"><strong>'+esc(orderNextAction(o))+'</strong><small>Use a próxima ação abaixo; o sistema atualiza estoque e integrações quando necessário.</small><div class="print-actions">'+(primary||'')+docs.join('')+'</div>'+cancel+'</div>';
+  }
+  function orderItemHtml(i){
+    const o=state.currentOrder?.order||{};
+    const payment=o.payment_method_snapshot||{};
+    const editable=o.status==='created'&&!(payment.stock_reserved===true&&payment.stock_released!==true);
+    const shortages=state.currentOrder?.stock_readiness?.shortages||[];
+    const shortageIds=new Set(shortages.map(x=>x.product_id));
+    const comp=i.components?.length?'<div class="composition">'+i.components.map(c=>{
+      const totalQty=Number(c.quantity)*Number(i.quantity);
+      const shortage=shortageIds.has(c.product_id);
+      return '<div class="component-line"><span>'+fmtQty(totalQty)+'× '+esc(c.name_snapshot)+(shortage?' <b class="danger-text">· falta estoque</b>':'')+'</span>'+
+        (editable&&shortage?'<button class="text" type="button" data-replace-component="'+esc(c.id)+'" data-order-item="'+esc(i.id)+'" data-component-name="'+esc(c.name_snapshot)+'">Substituir</button>':'')+
+      '</div>';
+    }).join('')+'</div>':'';
+    return '<div class="order-item"><div class="order-item-head"><strong>'+fmtQty(i.quantity)+'× '+esc(i.name_snapshot)+'</strong><b>'+money(i.total_cents)+'</b></div>'+comp+'</div>';
+  }
+  function openComponentReplacement(orderItemId,componentId,currentName){
+    const host=$('#componentReplacementPanel');if(!host)return;
+    state.componentReplacement={order_item_id:orderItemId,component_id:componentId,current_name:currentName||''};
+    host.innerHTML='<div class="replacement-panel"><strong>Substituir '+esc(currentName||'item da cesta')+'</strong><span class="sub">O valor da cesta não muda. Escolha um produto físico com estoque disponível.</span><div class="replacement-search"><input id="componentReplacementSearch" type="search" placeholder="Nome, EAN ou código"><button class="secondary" id="searchComponentReplacement" type="button">Buscar</button><button class="text" id="cancelComponentReplacement" type="button">Fechar</button></div><div class="replacement-results" id="componentReplacementResults"></div></div>';
+    $('#searchComponentReplacement').onclick=searchComponentReplacement;
+    $('#cancelComponentReplacement').onclick=()=>{state.componentReplacement=null;host.innerHTML=''};
+    $('#componentReplacementSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchComponentReplacement()}};
+    $('#componentReplacementSearch').focus();
+    host.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  async function searchComponentReplacement(){
+    const ctx=state.componentReplacement;if(!ctx)return;
+    const q=String($('#componentReplacementSearch')?.value||'').trim();
+    const host=$('#componentReplacementResults');if(!host)return;
+    if(q.length<2){host.innerHTML='<div class="sub">Digite pelo menos 2 caracteres.</div>';return}
+    host.innerHTML='<div class="loading">Buscando produtos…</div>';
+    try{
+      const data=await api('products',{q,limit:12});
+      const rows=(data.products||[]).filter(p=>p.active!==false&&Number(p.stock_quantity||0)>0);
+      host.innerHTML=rows.length?rows.map(p=>'<div class="replacement-option"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.gtin||p.sku||'Sem código')+' · estoque físico '+esc(fmtQty(p.stock_quantity||0))+'</small></div><button class="secondary" type="button" data-replacement-product="'+esc(p.id)+'">Usar</button></div>').join(''):'<div class="sub">Nenhum produto ativo com estoque encontrado.</div>';
+      host.querySelectorAll('[data-replacement-product]').forEach(b=>b.onclick=()=>replaceComponentWithProduct(b.dataset.replacementProduct,b));
+    }catch(e){
+      host.innerHTML='<div class="sub">Não consegui buscar agora. Tente novamente.</div>';
+    }
+  }
+  async function replaceComponentWithProduct(productId,btn){
+    const ctx=state.componentReplacement,o=state.currentOrder?.order;
+    if(!ctx||!o)return;
+    if(!confirm('Substituir este item da cesta pelo produto escolhido?\n\nO valor comercial da cesta permanecerá o mesmo.'))return;
+    if(btn){btn.disabled=true;btn.textContent='Substituindo…'}
+    try{
+      await persistCurrentOrder();
+      const data=await api('order_component_replace',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          order_id:o.id,
+          order_item_id:ctx.order_item_id,
+          component_id:ctx.component_id,
+          replacement_product_id:productId
+        })
+      });
+      state.currentOrder=data.detail||await api('order',{id:o.id});
+      state.componentReplacement=null;
+      await loadCurrentOrderBlingPreview(false);
+      paintOrderDetail();
+      loadOrders();
+      toast('Item da cesta substituído · valor mantido');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Usar'}
+    }
+  }
+
+  function customerOptions(current){
+    return state.customers.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===current?'selected':'')+'>'+esc(c.display_name||'Sem nome')+(c.phone?' · '+esc(formatPhone(c.phone)):'')+(c.cpf?' · CPF '+esc(formatCpf(c.cpf)):'')+'</option>').join('');
+  }
+  function setOrderDeliveryField(id,value){
+    const el=$(id);if(el)el.value=value??'';
+  }
+  function applySelectedCustomerToDelivery(){
+    const id=$('#orderCustomer')?.value||'';
+    const customer=state.customers.find(c=>c.id===id);
+    if(!customer)return;
+    const a=customer.address||{};
+    setOrderDeliveryField('#orderDeliveryName',customer.display_name||'');
+    setOrderDeliveryField('#orderDeliveryPhone',formatPhone(customer.phone||''));
+    setOrderDeliveryField('#orderDeliveryPostalCode',a.postal_code||'');
+    setOrderDeliveryField('#orderDeliveryStreet',a.street||'');
+    setOrderDeliveryField('#orderDeliveryNumber',a.number||'');
+    setOrderDeliveryField('#orderDeliveryDistrict',a.district||'');
+    setOrderDeliveryField('#orderDeliveryComplement',a.complement||'');
+    setOrderDeliveryField('#orderDeliveryCity',a.city||'Cuiabá');
+    setOrderDeliveryField('#orderDeliveryState',a.state||'MT');
+    setOrderDeliveryField('#orderDeliveryRawText',a.raw_text||'');
+    toast('Dados de entrega preenchidos pelo cliente selecionado');
+  }
+  function mergeOrderCustomerResults(rows,currentId){
+    const current=state.customers.find(c=>c.id===currentId)||null;
+    const map=new Map();
+    if(current)map.set(current.id,current);
+    for(const c of rows||[])if(c?.id)map.set(c.id,c);
+    state.customers=[...map.values()];
+  }
+  function scheduleOrderCustomerSearch(value){
+    clearTimeout(state.orderCustomerSearchTimer);
+    const q=String(value||'').trim();
+    const hint=$('#orderCustomerSearchHint');
+    if(q.length<2){
+      if(hint)hint.textContent='Digite pelo menos 2 caracteres. A busca consulta a base oficial.';
+      return;
+    }
+    if(hint)hint.textContent='Buscando…';
+    state.orderCustomerSearchTimer=setTimeout(()=>searchOrderCustomers(q),250);
+  }
+  async function searchOrderCustomers(q){
+    const select=$('#orderCustomer');if(!select)return;
+    const selectedId=select.value;
+    const hint=$('#orderCustomerSearchHint');
+    try{
+      const data=await customerApi('vitrine_customers_list',{q,limit:30});
+      mergeOrderCustomerResults(data.customers||[],selectedId);
+      select.innerHTML='<option value="">Sem cliente vinculado</option>'+customerOptions(selectedId);
+      if(selectedId)select.value=selectedId;
+      if(hint)hint.textContent=(data.customers||[]).length+' cliente(s) encontrado(s). Selecione acima.';
+    }catch(e){
+      if(hint)hint.textContent='Não consegui buscar agora. Tente novamente.';
+    }
+  }
+  function canonicalOrderPayment(value){
+    const raw=String(value||'').trim(),key=normalize(raw);
+    const map={pix:'pix',dinheiro:'cash',cash:'cash','cartao de credito':'credit_card',credit:'credit_card',credit_card:'credit_card','cartao alimentacao':'food_card','cartao alimentacao/refeicao':'food_card',food_card:'food_card','cartao refeicao':'meal_card',meal_card:'meal_card'};
+    return map[key]||map[raw]||'';
+  }
+  function paymentOptions(current){
+    const selected=canonicalOrderPayment(current);
+    const standard=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição']];
+    return standard.map(([value,label])=>'<option value="'+value+'" '+(value===selected?'selected':'')+'>'+esc(label)+'</option>').join('');
+  }
+  function currentOrderEditablePayload(status){
+    const order=state.currentOrder?.order||{};
+    const currentCustomer=state.currentOrder?.customer||{};
+    const currentCustomerId=currentCustomer.source_customer_id||order.delivery_address_snapshot?.source_customer_id||order.customer_id||'';
+    const id=order.id;
+    const selectedId=$('#orderCustomer')?.value||'';
+    const selectedCustomer=state.customers.find(c=>c.id===selectedId)||null;
+    const payload={id,payment_method:$('#orderPayment')?.value||''};
+    if(selectedCustomer)payload.customer_snapshot=selectedCustomer;
+    else if(!currentCustomerId)payload.customer_snapshot=null;
+    if($('#orderDeliveryStreet'))payload.delivery_address={
+      customer_name:$('#orderDeliveryName')?.value||'',
+      phone:$('#orderDeliveryPhone')?.value||'',
+      postal_code:$('#orderDeliveryPostalCode')?.value||'',
+      street:$('#orderDeliveryStreet')?.value||'',
+      number:$('#orderDeliveryNumber')?.value||'',
+      district:$('#orderDeliveryDistrict')?.value||'',
+      complement:$('#orderDeliveryComplement')?.value||'',
+      city:$('#orderDeliveryCity')?.value||'',
+      state:$('#orderDeliveryState')?.value||'',
+      raw_text:$('#orderDeliveryRawText')?.value||''
+    };
+    if(status)payload.status=status;
+    return payload;
+  }
+  async function persistCurrentOrder(status,extra={}){
+    const payload={...currentOrderEditablePayload(status),...(extra&&typeof extra==='object'?extra:{})};
+    await api('order_update',{},{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const fresh=await api('order',{id:payload.id});state.currentOrder=fresh;
+    await loadCurrentOrderFiscal(false);
+    await loadCurrentOrderBlingPreview(false);
+    return fresh;
+  }
+  async function advanceCurrentOrder(next){
+    const btn=$('#advanceOrder');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+    try{
+      await persistCurrentOrder(next);
+      paintOrderDetail();loadOrders();
+      toast('Pedido atualizado · '+orderNextAction(state.currentOrder.order));
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Tentar novamente'}
+    }
+  }
+  async function cancelCurrentOrder(){
+    const linked=state.currentOrder?.bling_link?.linked===true;
+    const choice=prompt(
+      'Motivo do cancelamento:\n\n1 - Cliente desistiu\n2 - Produto indisponível\n3 - Endereço / área de entrega\n4 - Pedido duplicado\n5 - Problema de pagamento\n6 - Erro no pedido\n7 - Outro\n\nDigite o número ou escreva o motivo:'
+    );
+    if(choice===null)return;
+    const value=String(choice||'').trim();
+    const reasons={
+      '1':'Cliente desistiu',
+      '2':'Produto indisponível',
+      '3':'Endereço / área de entrega',
+      '4':'Pedido duplicado',
+      '5':'Problema de pagamento',
+      '6':'Erro no pedido',
+      '7':'Outro'
+    };
+    const reason=reasons[value]||value;
+    if(!reason){toast('Informe o motivo do cancelamento');return}
+    const noteInput=prompt('Observação opcional sobre o cancelamento:', '');
+    if(noteInput===null)return;
+    const note=String(noteInput||'').trim();
+    const message=linked
+      ? 'Cancelar este pedido por "'+reason+'"?\n\nO estoque reservado será devolvido quando aplicável. Como o pedido já está vinculado ao Bling, qualquer situação que não puder ser atualizada automaticamente ficará registrada para revisão.'
+      : 'Cancelar este pedido por "'+reason+'"? O estoque reservado será devolvido quando aplicável.';
+    if(!confirm(message))return;
+    try{
+      await persistCurrentOrder('cancelled',{cancellation_reason:reason,cancellation_note:note});
+      paintOrderDetail();loadOrders();
+      toast(linked?'Pedido cancelado · Bling será conferido':'Pedido cancelado');
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  async function saveOrder(){
+    const btn=$('#saveOrder');btn.disabled=true;btn.textContent='Salvando…';
+    try{
+      await persistCurrentOrder();
+      paintOrderDetail();toast('Dados do pedido salvos');loadOrders();
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar dados'}
+  }
+
+  function customerSummary(c,snapshot){
+    const a=snapshot||c?.address||{};
+    if(!c?.id&&!snapshot)return '<span class="muted">Cliente ainda não vinculado. Cadastre em Clientes e selecione acima.</span>';
+    const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||'Endereço não informado';
+    return '<strong>'+esc(c.display_name||a.recipient_name||'Cliente')+'</strong><br>'+
+      (c.phone?'Telefone: '+esc(formatPhone(c.phone))+'<br>':'')+
+      (c.cpf?'CPF: '+esc(formatCpf(c.cpf))+'<br>':'')+
+      (c.email?'E-mail: '+esc(c.email)+'<br>':'')+
+      'Endereço: '+esc(address);
+  }
+
+  function separationItems(detail){
+    const map=new Map();
+    const add=(key,name,qty,image,gondola,shelf,gtin='',prefix='')=>{
+      const n=Number(qty||0);if(n<=0)return;
+      const k=String(key||name)+'|'+prefix;const old=map.get(k);
+      if(old)old.quantity+=n;
+      else map.set(k,{name:(prefix?prefix+' · ':'')+(name||'Produto'),quantity:n,image_url:image||'/img/logoantonia5.png',gondola_number:gondola??null,shelf_label:String(shelf||'').trim()||null,gtin:String(gtin||'').replace(/\D/g,'')});
+    };
+    for(const item of detail?.items||[]){
+      if(item?.item_kind==='basket'){
+        for(const c of item.components||[]){
+          const m=c?.metadata||{},loose=Number(m.loose_quantity??c.quantity??0),preassembled=Number(m.preassembled_units||0);
+          if(loose<=0)continue;
+          add(c.product_id||c.id||c.name_snapshot,c.name_snapshot,loose,c.image_url,c.gondola_number,c.shelf_label,c.gtin,preassembled>0?'EXTRA':'MONTAR');
+        }
+        continue;
+      }
+      add(item.product_id||item.id||item.name_snapshot,item.name_snapshot,item.quantity,item.image_url,item.gondola_number,item.shelf_label,item.gtin,'');
+    }
+    return [...map.values()].sort((a,b)=>{
+      const ga=Number.isFinite(Number(a.gondola_number))?Number(a.gondola_number):999999,gb=Number.isFinite(Number(b.gondola_number))?Number(b.gondola_number):999999;
+      return ga-gb||String(a.shelf_label||'').localeCompare(String(b.shelf_label||''),'pt-BR',{numeric:true})||String(a.name||'').localeCompare(String(b.name||''),'pt-BR');
+    });
+  }
+  function separationKitRefs(detail){
+    const out=[];
+    for(const plan of detail?.checkout_separation_plan||[]){
+      const qty=Number(plan?.quantity||1),food=plan?.food||{},hygiene=plan?.hygiene||{};
+      if(food.mode==='lot'){
+        const codes=[food.short_code,hygiene.mode==='lot'?hygiene.short_code:null].filter(Boolean).join(' + ');
+        out.push({label:'CESTA ORIGINAL · permanece original',code:codes||'LOTE',quantity:qty,basket:plan.basket_name||'Cesta'});
+      }
+    }
+    return out;
+  }
+  function separationTicketBody(detail){
+    const o=detail.order,items=separationItems(detail),kitRefs=separationKitRefs(detail),groups=[];
+    for(const item of items){
+      const key=item.gondola_number??'none';
+      let group=groups.find(g=>g.key===key);
+      if(!group){group={key,label:item.gondola_number?'GÔNDOLA '+item.gondola_number:'SEM GÔNDOLA',shelves:[]};groups.push(group)}
+      const shelfKey=item.shelf_label||'none';
+      let shelf=group.shelves.find(s=>s.key===shelfKey);
+      if(!shelf){shelf={key:shelfKey,label:item.shelf_label?'PRATELEIRA '+item.shelf_label:'SEM PRATELEIRA',items:[]};group.shelves.push(shelf)}
+      shelf.items.push(item);
+    }
+    const kitBlock=kitRefs.length?'<div class="block"><b>PEGAR PRONTO</b>'+kitRefs.map(x=>'<div style="border:2px solid #000;padding:1.5mm;margin:1mm 0;font-size:13px;font-weight:900">'+esc(fmtQty(x.quantity))+'× '+esc(x.label)+' · '+esc(x.code)+(x.basket?'<div style="font-size:8px;font-weight:600;margin-top:.5mm">'+esc(x.basket)+'</div>':'')+'</div>').join('')+'</div>':'';
+    const sections=groups.map(g=>'<div class="gondola-title">'+esc(g.label)+'</div>'+g.shelves.map(s=>'<div class="shelf-title-print">'+esc(s.label)+'</div><div class="sep-grid">'+s.items.map(i=>'<div class="sep-card"><img src="'+esc(i.image_url||'/img/logoantonia5.png')+'" alt=""><div class="sep-name">'+esc(i.name)+'</div>'+(i.gtin?'<div class="sep-ean">EAN '+esc(i.gtin)+'</div>':'<div class="sep-ean missing">SEM EAN</div>')+'<div class="sep-qty">'+esc(fmtQty(i.quantity))+'×</div></div>').join('')+'</div>').join('')).join('');
+    const units=items.reduce((sum,i)=>sum+Number(i.quantity||0),0),kitUnits=kitRefs.reduce((sum,x)=>sum+Number(x.quantity||0),0);
+    return '<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>SEPARAÇÃO · Pedido #'+esc(orderDisplayCode(o))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+kitBlock+sections+'<div class="foot">'+kitRefs.length+' referência(s) pronta(s) · '+items.length+' produto(s) avulso(s) · '+esc(fmtQty(kitUnits+units))+' unidades/volumes</div>';
+  }
+  async function markPickingPresented(orderId){
+    try{await api('ops_print_presented',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})})}catch{}
+  }
+  function printSeparationOnly(detail,existingWindow=null){
+    const o=detail.order,w=existingWindow||window.open('','_blank','width=420,height=700');
+    if(!w){toast('Libere pop-ups para imprimir');return false}
+    openPrint('Separação #'+orderDisplayCode(o),separationTicketBody(detail),'separation',w);
+    markPickingPresented(o.id);
+    return true;
+  }
+  async function startSeparationFlow(detail,existingWindow=null){
+    const o=detail.order,w=existingWindow||window.open('','_blank','width=420,height=700');
+    if(!w){toast('Libere pop-ups para imprimir');return}
+    try{
+      w.document.open();
+      w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando separação</title></head><body style="font:16px system-ui;padding:30px;text-align:center"><strong>Preparando separação…</strong><p>Validando pedido e estoque antes de imprimir.</p></body></html>');
+      w.document.close();
+      await persistCurrentOrder();
+      const blingReady=await validateBlingBeforeSeparation(o.id);
+      if(!blingReady){try{w.close()}catch{};return}
+      await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'processing',operator:currentOperator()||'Operação'})});
+      printSeparationOnly(detail,w);
+      toast('Separação iniciada · estoque e status atualizados juntos');
+      const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
+      await loadCurrentOrderFiscal(false);
+      paintOrderDetail();loadOrders();
+    }catch(e){try{w.close()}catch{};toast(errorMessage(e.message))}
+  }
+  function printDelivery(detail){
+    const o=detail.order,c=detail.customer||{},a=o.delivery_address_snapshot||c.address||{},payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
+    const products=separationItems(detail).map(i=>'<div class="delivery-item"><b>'+esc(fmtQty(i.quantity))+'×</b><span>'+esc(i.name)+'</span></div>').join('');
+    const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||'NÃO INFORMADO';
+    const body='<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>ENTREGA · Pedido #'+esc(orderDisplayCode(o))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+
+      '<div class="block"><b>CLIENTE</b><div>'+esc(c.display_name||a.recipient_name||'NÃO VINCULADO')+'</div>'+(c.phone?'<div>Tel: '+esc(formatPhone(c.phone))+'</div>':'')+(c.cpf?'<div>CPF: '+esc(formatCpf(c.cpf))+'</div>':'')+(c.email?'<div>E-mail: '+esc(c.email)+'</div>':'')+'</div>'+
+      '<div class="block"><b>ENDEREÇO</b><div>'+esc(address)+'</div>'+(a.postal_code?'<div>CEP: '+esc(a.postal_code)+'</div>':'')+'</div>'+
+      '<div class="block"><b>PAGAMENTO</b><div>'+esc(payment)+'</div><div>Status: '+esc(o.status||'')+'</div><div class="big-total">TOTAL: '+money(o.total_cents)+'</div></div>'+
+      '<div class="block"><b>PRODUTOS</b>'+products+'</div>'+
+      '<div class="block lines"><div>Observações:</div><br><br><div>Recebido por: __________________</div></div>';
+    openPrint('Entrega #'+orderDisplayCode(o),body,'delivery');
+  }
+  function openPrint(title,body,mode,existingWindow=null){
+    const w=existingWindow||window.open('','_blank','width=420,height=700');
+    if(!w){toast('Libere pop-ups para imprimir');return}
+    const css='@page{size:85mm auto;margin:2mm}*{box-sizing:border-box}html,body{margin:0;padding:0;width:81mm;background:#fff;color:#000;font-family:Arial,sans-serif}body{font-size:10px}.ticket-head{text-align:center;border-bottom:1px dashed #000;padding:1mm 0 2mm;margin-bottom:2mm}.ticket-head strong{display:block;font-size:15px}.ticket-head span{display:block;font-weight:700;font-size:11px;margin-top:1mm}.ticket-head small{display:block;margin-top:.6mm}.gondola-title{font-weight:900;font-size:13px;border:2px solid #000;padding:1.5mm;margin:2mm 0 1.5mm;text-align:center}.shelf-title-print{font-weight:800;font-size:10px;border-bottom:1px solid #000;padding:1mm 0 .8mm;margin:1.5mm 0 1mm}.sep-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.8mm}.sep-card{border:1px solid #000;padding:1mm;min-height:48mm;display:flex;flex-direction:column;align-items:center;text-align:center;break-inside:avoid}.sep-card img{width:32mm;height:26mm;object-fit:contain;filter:grayscale(1);margin:auto}.sep-name{font-weight:700;font-size:9px;line-height:1.15;min-height:9mm}.sep-ean{font:700 8px monospace;line-height:1.2;margin:.6mm 0;word-break:break-all}.sep-ean.missing{font-family:Arial,sans-serif;font-weight:700}.sep-qty{font-weight:900;font-size:20px;line-height:1}.foot{text-align:center;border-top:1px dashed #000;margin-top:2mm;padding-top:1.5mm}.block{border-bottom:1px dashed #000;padding:2mm 0}.block>b{display:block;font-size:10px;margin-bottom:1mm}.big-total{font-size:15px;font-weight:900;margin-top:1mm}.delivery-item{display:grid;grid-template-columns:9mm 1fr;gap:1mm;padding:1mm 0;border-bottom:1px dotted #777}.delivery-item b{font-size:11px}.lines{min-height:28mm}@media print{button{display:none!important}}';
+    w.document.open();
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body class="'+esc(mode)+'">'+body+'<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),350));<\/script></body></html>');
+    w.document.close();
+  }
+
+  function orderDisplayCode(o){const code=String(o?.public_code||o?.public_order_code||'').trim().toUpperCase();return /^[A-Z]{2}\d{3}$/.test(code)?code:'—'}
+  function phoneDigits(v){
+    let d=String(v||'').replace(/\D/g,'');
+    if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;
+    return d;
+  }
+  function formatPhone(v){
+    const d=String(v||'').replace(/\D/g,'');
+    const local=d.startsWith('55')?d.slice(2):d;
+    if(local.length===11)return '('+local.slice(0,2)+') '+local.slice(2,7)+'-'+local.slice(7);
+    if(local.length===10)return '('+local.slice(0,2)+') '+local.slice(2,6)+'-'+local.slice(6);
+    return v||'';
+  }
+  function formatCpf(v){const d=String(v||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9):v||''}
+  function errorMessage(code){
+    if(/^bling_reauthentication_required$|^oauth_http_(400|401|403)/.test(String(code||'')))return 'Conexão com Bling expirada. Clique em Reconectar Bling na tela de Produtos e autorize novamente. Estoque NÃO foi salvo.';
+    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',gtin_already_exists:'Este EAN já pertence a outro produto.',sku_already_exists:'Este SKU já pertence a outro produto.',duplicate_source_not_found:'O produto original não foi encontrado.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',lot_tracking_requires_lot:'Cadastre pelo menos um lote antes de ativar o FEFO.',lot_tracking_has_unquantified_lot:'Todos os lotes precisam ter quantidade informada.',lot_tracking_bling_physical_missing:'Ainda não consegui conferir o estoque físico deste produto no Bling.',lot_tracking_physical_mismatch:'A soma dos lotes ainda não confere com o estoque físico do Bling.',receipt_lots_required:'Defina e salve as validades/lotes de todos os itens antes de preparar a entrada.',expiration_lot_required:'Informe ao menos uma validade para este produto.',expiration_date_required:'Informe a data de validade.',lot_quantity_required:'Informe a quantidade deste lote.',lot_quantity_mismatch:'A soma das quantidades dos lotes precisa ser igual à quantidade recebida.',all_receipt_items_required:'Revise os lotes de todos os itens da nota.',product_inactive:'Produto inativo não pode ter oferta ativa.',product_expired:'Produto vencido não pode ter oferta ativa.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',invalid_product:'Produto inválido.',gondola_not_found:'Gôndola não encontrada.',gondola_clear_confirmation_required:'Confirme a limpeza da gôndola novamente.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',ean_not_in_order:'Este produto não pertence ao pedido.',checked_quantity_exceeds_expected:'Esta quantidade já foi totalmente conferida.',duplicate_ean_in_order:'EAN duplicado no pedido. Revise o cadastro.',check_incomplete:'Ainda faltam produtos para conferir.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',delivery_payment_required:'Registre o pagamento recebido antes de confirmar a entrega.',delivery_payment_mismatch:'O pagamento registrado não confere com o total do pedido.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.',stale_order_version:'A tela mudou desde a última leitura. Atualizei e tentei salvar novamente.',order_version_conflict:'A tela mudou desde a última leitura. Atualize e tente novamente.',separator_assignment_changed:'O responsável pela separação foi alterado.',separator_required:'Escolha quem está separando este pedido.',invalid_separator:'Separador inválido. Atualize a tela.',separation_incomplete:'Ainda existem produtos pendentes na separação.',bling_approval_required_before_separation:'O pedido ainda precisa ser liberado no Bling antes de concluir a separação.'};
+    return map[code]||'Não consegui salvar agora.';
+  }
+
+  const scanner={buffer:'',timer:null};
+  document.addEventListener('keydown',e=>{
+    if(!['balance','gondolas'].includes(state.tab))return;
+    const tag=e.target?.tagName||'';
+    if(['INPUT','TEXTAREA','SELECT'].includes(tag))return;
+    if(/^\d$/.test(e.key)){
+      scanner.buffer+=e.key;
+      clearTimeout(scanner.timer);
+      scanner.timer=setTimeout(()=>{scanner.buffer=''},900);
+      e.preventDefault();
+      return;
+    }
+    if(e.key==='Enter'||e.key==='Tab'){
+      const ean=scanner.buffer;scanner.buffer='';clearTimeout(scanner.timer);
+      if(ean.length>=4){
+        if(state.tab==='balance')handleBalanceScan(ean);
+        if(state.tab==='gondolas')handleGondolaScan(ean);
+      }
+      e.preventDefault();
+    }
+  });
+
+  $('#closeEditor').onclick=()=>$('#editor').close();
+  $('#editor').addEventListener('click',e=>{if(e.target===$('#editor'))$('#editor').close()});
+
+  window.DonaAntoniaAdminBridge={
+    api,
+    token:adminStepUp,
+    operator:requireOperator,
+    toast,
+    refresh:renderBaskets,
+    errorMessage
+  };
+
+  async function start(){
+    const params=new URLSearchParams(location.search),sharedSeparationId=params.get('separacao')||'',pickerMode=params.get('montar')==='1';
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if(pickerMode){
+      if(!uuid.test(sharedSeparationId)){location.replace('/montar/?erro=pedido_invalido');return}
+      try{
+        // Verify current membership server-side. Do not show other Admin orders.
+        const allowed=await manualQueueRpc('list');
+        if(!Array.isArray(allowed.order_ids)||!allowed.order_ids.some(x=>String(x)===sharedSeparationId)){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        // Load only this one order, preserving the exact customer/status checks used by
+        // the canonical separation sheet, without rendering the full Admin order list.
+        const detail=await api('order',{id:sharedSeparationId});
+        const selectedOrder=detail?.order||null;
+        if(!selectedOrder||String(selectedOrder.id)!==sharedSeparationId){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        if(orderCustomerDataPending(selectedOrder)){
+          location.replace('/montar/?erro=dados_pendentes');return;
+        }
+        if(!orderV3Milestones(selectedOrder).confirmed||orderV3Milestones(selectedOrder).separated||
+            orderV3Milestones(selectedOrder).cancelled){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        state.orders=[selectedOrder];
+        await openOrderSeparationSheet(sharedSeparationId);
+        const sheet=document.querySelector('.orders-bottom-sheet-backdrop');
+        if(!sheet){location.replace('/montar/?erro=vitrine_indisponivel');return}
+        const close=sheet.querySelector('.orders-sheet-close');
+        if(close)close.onclick=()=>location.replace('/montar/');
+        sheet.addEventListener('click',e=>{
+          if(e.target===sheet){e.stopImmediatePropagation();location.replace('/montar/')}
+        },true);
+      }catch(error){
+        console.error('montar_existing_vitrine',error);
+        location.replace('/montar/?erro=acesso');
+      }
+      return;
+    }
+    // Abre o cadastro completo em nova aba a partir dos mini cards de Cestas Molde.
+    const directProductId=params.get('editar_produto')||'';
+    if(directProductId){
+      if(!uuid.test(directProductId)){setTab('products');toast('Link de produto inválido');return}
+      setTab('products');
+      await openProductEditor({id:directProductId});
+      history.replaceState({},'',location.pathname+location.hash);
+      return;
+    }
+    // Link direto vindo do Atendimento: exibir pedido no modal para revisão e confirmação humana.
+    const directOrderId=params.get('pedido')||'';
+    if(directOrderId){
+      if(!uuid.test(directOrderId)){setTab('today');toast('Link de pedido inválido');return}
+      state.orderStatusTab='received';
+      await setTab('orders');
+      await openOrder(directOrderId);
+      history.replaceState({},'',location.pathname+location.hash);
+      return;
+    }
+    if(!uuid.test(sharedSeparationId)){setTab('today');return}
+    await setTab('orders');
+    await openOrderSeparationSheet(sharedSeparationId);
+    history.replaceState({},'',location.pathname+location.hash);
+  }
+  start();
+})();
