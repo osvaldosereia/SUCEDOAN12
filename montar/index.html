@@ -34,11 +34,11 @@
         <div class="login-card">
           <div class="login-emblem" aria-hidden="true">✓</div>
           <h1>Acesso à separação</h1>
-          <p>Entre com o código de acesso operacional já configurado. Nenhum pedido será alterado ao entrar.</p>
+          <p>Entre com a conta administrativa por e-mail. Nenhum pedido será alterado ao entrar.</p>
           <form id="loginForm">
-            <label for="pin">Código de acesso</label>
-            <input id="pin" type="password" inputmode="numeric" autocomplete="off" minlength="4" maxlength="12" required placeholder="Digite o código">
-            <button type="submit" class="btn primary full" id="loginBtn">Entrar na separação</button>
+            <label for="pin" style="display:none">Código de acesso antigo (desativado)</label>
+            <input id="pin" type="password" inputmode="numeric" autocomplete="off" minlength="4" maxlength="12" placeholder="Código desativado" style="display:none" aria-hidden="true">
+            <button type="submit" class="btn primary full" id="loginBtn">Entrar com e-mail</button>
           </form>
           <p id="loginError" class="error-message" role="alert" hidden></p>
         </div>
@@ -90,5 +90,5 @@
       <button type="button" class="btn primary full" id="packageOk">OK, JÁ ANOTEI</button>
     </div>
   </div>
-</body>
+<script src="/vitrine/admin/admin-secure-auth.js?v=p0-20261018"></script></body>
 </html>

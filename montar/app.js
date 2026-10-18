@@ -98,7 +98,7 @@
   const fail = err => {
     if (err?.status===401 || err?.message==='session_expired' || err?.message==='admin_session_invalid') {
       sessionStorage.removeItem(SESSION); detail=null; selectedId=null; show('loginView');
-      $('loginError').textContent='A sessão expirou. Informe novamente o código de acesso.';
+      $('loginError').textContent='A sessão expirou. Entre novamente com o acesso por e-mail.';
       $('loginError').hidden=false;
       setConnection('Acesso expirado','error'); return;
     }
@@ -172,15 +172,11 @@
   };
   const signIn = async event => {
     event.preventDefault();
-    const button=$('loginBtn'),code=$('pin').value.trim();
-    if(!code)return;
+    const button=$('loginBtn');
     button.disabled=true;button.textContent='Validando acesso…';$('loginError').hidden=true;
     try {
-      const issued=await fetchJson(AUTH,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({pin:code})});
-      const verification=await fetchJson(VERIFY,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token_hash:issued.token_hash,type:issued.verification_type||'email'})});
-      if(!tokenValid(verification.access_token)) throw new Error('invalid_session_token');
-      sessionStorage.setItem(SESSION,verification.access_token);
-      $('pin').value='';
+      const access=await window.DonaAntoniaSecureAuth.ensureToken();
+      if(!tokenValid(access)) throw new Error('invalid_session_token');
       // A valid token alone is not sufficient: feed checks active Admin authorization.
       const check=await rpc('manual_pick_queue_feed_v1');
       if(!Array.isArray(check.orders)) throw new Error('invalid_queue_feed');
@@ -188,9 +184,9 @@
       renderQueue();show('queueView');renderCompletionNotice();setConnection('Sincronizado');
     } catch(err) {
       sessionStorage.removeItem(SESSION);
-      $('loginError').textContent='Acesso não autorizado. Verifique o código e tente novamente.';
+      $('loginError').textContent='Acesso não autorizado. Verifique o e-mail ou o código e tente novamente.';
       $('loginError').hidden=false;setConnection('Acesso necessário','error');
-    } finally {button.disabled=false;button.textContent='Entrar na separação'}
+    } finally {button.disabled=false;button.textContent='Entrar com e-mail'}
   };
   const visibleItems = data => {
     const items=Array.isArray(data?.items)?data.items:[];
