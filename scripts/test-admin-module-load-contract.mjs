@@ -37,6 +37,7 @@ const names=[
 ];
 for(const name of names)assert.ok(html.includes('window.'+name),'missing bridge '+name);
 const orderedScripts=scripts.filter(src=>modules.some(module=>src.split('?')[0]==='/vitrine/admin/'+module));
+assert.equal(orderedScripts.length,modules.length,'duplicate or missing module in dependency sequence');
 assert.deepEqual(orderedScripts.map(src=>src.split('?')[0]),modules.map(module=>'/vitrine/admin/'+module),'module dependency load order changed');
 const afterMain=['basket-guided-builder.js','basket-admin-section.js'];
 assert.equal(scripts.filter(src=>src.split('?')[0]==='/vitrine/admin/basket-lot-image.js').length,1,'basket lot image script must load once before main');
