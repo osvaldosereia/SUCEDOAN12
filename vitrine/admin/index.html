@@ -1449,6 +1449,7 @@
 <script src="/vitrine/admin/core/errors.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/components/printing.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/marketing/helpers.js?v=refactor-20261018"></script>
+<script src="/vitrine/admin/orders/sorting.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/basket-lot-image.js?v=marketing-stable-20261012"></script>
 <script>
 (()=>{
@@ -1789,12 +1790,7 @@
     const rank={created:2,confirmed:3,processing:4,ready:5,out_for_delivery:6,delivered:7,cancelled:8};
     return rank[o?.status]??8;
   }
-    function sortOperationalOrders(rows){
-  return [...rows].sort((a,b)=>{
-    const at=Date.parse(a?.created_at||0)||0,bt=Date.parse(b?.created_at||0)||0;
-    return bt-at;
-  });
-}
+  const {sortOperationalOrders}=window.DonaAntoniaAdminOrderSorting;
   function orderNextAction(o){
     const problems=orderProblemReasons(o);
     if(problems.length)return 'Corrigir: '+problems[0];
