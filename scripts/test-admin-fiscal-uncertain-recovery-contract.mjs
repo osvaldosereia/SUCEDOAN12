@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
+const migration=fs.readFileSync('supabase/migrations/20261009190000_fiscal_nfe_autorecovery_v1.sql','utf8');
+const between=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j)};
+const status=between(edge,'async function orderFiscalStatusV4(','async function orderFiscalIssueV4(');
+const issue=between(edge,'async function orderFiscalIssueV4(','async function orderFiscalRecoverBlingV1(');
+const recover=between(edge,'async function orderFiscalRecoverBlingV1(','async function orderFiscalRecheckV1(');
+const recheck=between(edge,'async function orderFiscalRecheckV1(','async function orderDispatchStartV4(');
+for(const p of [/fiscal_nfe_recovery_events_v1/,/generationAttempted/,/review_required/,/generating/,/invoice_generation_recovery_required/,/canIssue=.*!generationAttempted/])assert.match(status,p);
+for(const p of [/EMITIR_NFE/,/ops2_fiscal_dispatch_preflight_v1/,/idempotent_replay:true/,/fiscal_dispatch_canary_human_execute/,/fiscal_dispatch_reconcile/,/orderFiscalStatusV4\(oid\)/])assert.match(issue,p);
+for(const p of [/order_separation_completions_v1/,/stock_applied!==true/,/ops2_ensure_order_state/,/order\.bling_recovery_failed/])assert.match(recover,p);
+assert.match(recheck,/fiscal_dispatch_reconcile/);
+assert.match(recheck,/orderFiscalStatusV4\(oid\)/);
+for(const p of [/fiscal_nfe_recovery_control_v1/,/max_attempts integer not null default 3/,/fiscal_nfe_recovery_events_v1/,/event_key text not null unique/,/external_write boolean not null default false/,/enable row level security/])assert.match(migration,p);
+console.log('Fiscal uncertain state and recovery contract: PASS');
