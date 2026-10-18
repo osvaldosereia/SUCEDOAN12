@@ -28,4 +28,16 @@ state.orders=[good,missing];
 assert.equal(f.orderIssueCount('all'),1);
 assert.equal(f.orderFilterMatch(missing,'problems'),true);
 assert.equal(f.orderProblemReasons({...missing,status:'delivered'}).length,0);
+// Incomplete API data must not crash operational filters or counters.
+state.orders=null;
+assert.equal(f.orderIssueCount('all'),0);
+state.orders=[null,missing,good];
+assert.equal(f.orderIssueCount('all'),1);
+assert.equal(f.orderFilterMatch(null,'new'),false);
+assert.equal(f.orderFilterMatch(null,'separate'),false);
+assert.equal(f.orderFilterMatch(null,'ready'),false);
+assert.equal(f.orderFilterMatch(null,'delivery'),false);
+assert.equal(f.orderFilterMatch(null,'finalized'),false);
+assert.equal(f.orderFilterMatch(null,'backlog'),false);
+assert.equal(f.orderFilterMatch(null,'problems'),false);
 console.log('Admin order read model: PASS');
