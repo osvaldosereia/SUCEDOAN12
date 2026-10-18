@@ -8,8 +8,8 @@ assert.ok(html.indexOf('createOrderReadModel(cuiabaDayKey,state)')<html.indexOf(
 const ctx={window:{},String,Array,Object,encodeURIComponent};
 vm.runInNewContext(source,ctx);
 const issues=o=>o.problems||[];
-const wa=p=>'https://wa.me/'+p;
-const msg=(p,m)=>wa(p)+'?text='+encodeURIComponent(m);
+const wa=p=>p?'https://wa.me/'+p:'';
+const msg=(p,m)=>wa(p)?wa(p)+'?text='+encodeURIComponent(m):'';
 const f=ctx.window.DonaAntoniaAdminOrderContactActions.createOrderContactActions(issues,wa,msg,o=>o.order_number,v=>String(v));
 const order={order_number:'123',customer_name:'Ana Silva',whatsapp_phone_e164:'5565999999999',delivery_address_snapshot:{street:'Rua A',number:'1',district:'Centro',city:'Cuiabá'},problems:['Endereço incompleto']};
 const request=f.orderMissingDataRequest(order);
