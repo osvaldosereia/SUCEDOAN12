@@ -12,7 +12,7 @@ Ambos os fluxos agora exigem `before.can_issue === true` **antes da escrita fisc
 - `scripts/test-admin-fiscal-eligibility-issuance-contract.mjs`: contratos reforçados para os caminhos manual e automático, incluindo ordem de validação antes do Hub.
 - `scripts/test-admin-fiscal-runtime-guards.mjs`: execução das funções reais extraídas do endpoint com dependências simuladas, verificando ausência de chamadas externas para recuperação pendente, emissão desabilitada, bloqueio financeiro, replay autorizado, usuário viewer e ausência de confirmação humana.
 - `.github/workflows/admin-print-queue-panel.yml`: novo teste registrado no workflow.
-- **Pendente até resultado do CI**: não considerar a nova suíte aprovada apenas por ter sido escrita. A rodada 01 tem homologação SQL isolada registrada separadamente; isso não homologa fiscal ponta a ponta.
+- **PASSOU na execução direta com funções reais extraídas do endpoint e Hub simulado**: `FISCAL_RUNTIME_GUARDS_PASSED` (três estados bloqueados × dois fluxos, replay autorizado, viewer, confirmação; zero chamadas ao Hub). CI do commit anterior `94b0db8` verificado: 25/25 workflows aprovados. O novo workflow que inclui a suíte executável ainda exige verificação própria. A rodada 01 tem homologação SQL isolada registrada separadamente; isso não homologa fiscal ponta a ponta.
 
 ### Limites objetivos
 - O Hub Bling e o serviço de emissão fiscal não foram executados em sandbox; não existe prova de emissão, rejeição SEFAZ, timeout real nem conciliação pós-falha com API externa.
