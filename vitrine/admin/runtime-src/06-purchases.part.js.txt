@@ -1,0 +1,950 @@
+      native_launch_error_but_reconciled:'O Bling mostrou um aviso, mas as contas foram confirmadas.',
+      payables_missing_or_ambiguous:'Não encontrei uma conta a pagar que corresponda com segurança a esta nota.',
+      bling_nfe_id_missing_for_native_payables:'Esta nota ainda não tem a referência necessária no Bling para lançar o financeiro.',
+      supplier_contact_missing:'O fornecedor desta nota ainda precisa ser vinculado corretamente no Bling.',
+      installments_missing:'A nota não trouxe parcelas/vencimentos suficientes para montar o financeiro com segurança.',
+      installment_total_mismatch:'O total das parcelas é diferente do total da NF-e.',
+      automatic_payables_disabled:'O lançamento automático de contas está desativado.'
+    };
+    const key=String(v||'');
+    if(/^nfe_lancar_contas_http_/.test(key))return 'O Bling não aceitou o lançamento das contas desta NF-e.';
+    if(/^payable_reconcile_http_/.test(key))return 'Não consegui consultar as contas a pagar no Bling agora.';
+    return map[key]||'O financeiro desta nota precisa de conferência.';
+  }
+  function purchaseFinanceProblemHtml(d){
+    const f=d?.finance_reference||{},r=f.reconciliation||{};
+    const reason=String(f.reason||d?.finance_last_error||'');
+    if(reason==='installment_total_mismatch'){
+      const invoice=Number(r.invoice_total??d?.total_amount),parts=Number(r.installment_total);
+      const diff=Number.isFinite(invoice)&&Number.isFinite(parts)?Math.round((parts-invoice)*100)/100:null;
+      const ps=purchasePaymentSummary(d);
+      if(ps?.paid_at_purchase_likely&&ps?.total_matches){
+        return '<div class="purchase-price-grid" style="margin-top:10px">'+
+          '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
+          '<div class="purchase-price-box"><small>Pagamento efetivo no XML</small><strong class="ok-text">'+purchaseMoney(ps.payment_total)+'</strong></div>'+
+          (Number(ps.change||0)>0?'<div class="purchase-price-box"><small>Troco informado</small><strong>'+purchaseMoney(ps.change)+'</strong></div>':'')+
+          '<div class="purchase-price-box"><small>Parcela/cobrança</small><strong class="warn-text">'+purchaseMoney(parts)+'</strong></div>'+
+        '</div><small class="warn-text" style="margin-top:7px">O pagamento da NF-e fecha corretamente. A divergência está somente na parcela/cobrança do Bling/XML. Confira essa conta antes da baixa.</small>';
+      }
+      return '<div class="purchase-price-grid" style="margin-top:10px">'+
+        '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Total das parcelas</small><strong>'+purchaseMoney(parts)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Diferença</small><strong class="warn-text">'+(diff===null?'—':purchaseMoney(diff))+'</strong></div>'+
+      '</div><small class="warn-text" style="margin-top:7px">Corrija as parcelas no Bling para que a soma fique igual ao total da nota. Depois clique em <b>Resolver financeiro</b> novamente.</small>';
+    }
+    if(reason==='payables_missing_or_ambiguous'){
+      return '<small style="margin-top:7px">Ao clicar em <b>Resolver financeiro</b>, o sistema confere novamente. Se não existir conta correspondente, ele pedirá sua confirmação antes de solicitar o lançamento ao Bling.</small>';
+    }
+    if(reason==='installments_missing'){
+      return '<small class="warn-text" style="margin-top:7px">Confira no Bling os vencimentos e parcelas desta compra. O sistema não cria valores por aproximação.</small>';
+    }
+    if(reason==='supplier_contact_missing'){
+      return '<small class="warn-text" style="margin-top:7px">É preciso corrigir o vínculo do fornecedor no Bling antes de lançar as contas.</small>';
+    }
+    return '';
+  }
+  function purchaseFinanceBlockHtml(d){
+    const f=d?.finance_reference||{},posted=d?.finance_status==='posted'&&Boolean(d?.finance_reconciled_at);
+    const eligible=d?.recipient_kind==='CNPJ'&&d?.financial_eligible===true;
+    const reason=purchaseFinanceReasonLabel(f.reason||d?.finance_last_error);
+    const paymentHint=purchasePaymentAtPurchaseHtml(d);
+    if(d?.recipient_kind==='CPF'){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Nota em CPF: não gera contas a pagar da empresa.</small></div>'+paymentHint;
+    }
+    if(!eligible){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Esta nota não está marcada para gerar contas a pagar da empresa.</small></div>'+paymentHint;
+    }
+    if(posted){
+      const ps=purchasePaymentSummary(d);
+      const title=ps?.paid_at_purchase_likely?'Conta registrada no Bling · baixa ainda precisa ser conferida':'Conta a pagar registrada no Bling';
+      const text=ps?.paid_at_purchase_likely
+        ?'A obrigação da compra existe no Bling, mas a NF-e indica pagamento no ato. Confirme a baixa para que ela não permaneça como vencida/atrasada.'
+        :'A conta desta NF-e foi encontrada e conciliada no Bling.';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>'+esc(title)+'</strong><small>'+esc(text)+'</small></div>'+paymentHint;
+    }
+    return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+
+        '<strong>Financeiro precisa de atenção</strong>'+
+        '<small>'+esc(reason)+'</small>'+
+        purchaseFinanceProblemHtml(d)+
+      '</div><div class="purchase-detail-actions">'+
+        '<button class="primary" type="button" data-purchase-finance-resolve="'+esc(d.id)+'">Resolver financeiro</button>'+
+      '</div></div>'+
+      '<details style="margin-top:8px"><summary class="sub" style="cursor:pointer">Detalhes técnicos</summary><small>NF-e Bling #'+esc(d?.bling_nfe_id||'—')+' · tentativas: '+esc(Number(d?.finance_attempt_count||0))+(d?.finance_last_attempt_at?' · última '+esc(dateTime(d.finance_last_attempt_at)):'')+'.</small></details>'+
+    '</div>'+paymentHint;
+  }
+
+  function purchaseStatusLabel(v){
+    const map={processed:'Processada',review_required:'Revisar',failed:'Falhou',duplicate:'Duplicada',processing:'Processando',pending:'Pendente'};
+    const cls=v==='review_required'||v==='failed'?'warn':'';
+    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
+  }
+  function purchaseReceiptLabel(v){
+    const map={ready:'Pronta para entrada',received:'Estoque recebido',review:'Revisar antes da entrada',not_received:'Não recebido'};
+    const cls=v==='ready'?'':v==='received'?'':v==='review'?'warn':'off';
+    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
+  }
+  function purchaseMoney(v){
+    const n=Number(v||0);
+    return Number.isFinite(n)?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—';
+  }
+  async function purchaseApi(purchase_action,payload={}){
+    return customerApi('purchase_xml',{purchase_action,...payload});
+  }
+  function purchaseFilterPayload(){
+    const f=state.purchaseFilter||{period:'this_month',start_date:'',end_date:''};
+    return {period:f.period||'this_month',start_date:f.start_date||null,end_date:f.end_date||null};
+  }
+  function purchasePeriodLabel(){
+    const f=state.purchaseFilter||{};
+    const labels={this_month:'Este mês',last_month:'Mês passado',days_90:'Últimos 90 dias',days_120:'Últimos 120 dias',days_180:'Últimos 180 dias',custom:'Período personalizado'};
+    if(f.period==='custom'&&f.start_date&&f.end_date)return dateOnly(f.start_date)+' a '+dateOnly(f.end_date);
+    return labels[f.period]||'Este mês';
+  }
+  function purchaseCustomRangeReady(){
+    const f=state.purchaseFilter||{};
+    return f.period!=='custom'||(/^\d{4}-\d{2}-\d{2}$/.test(f.start_date||'')&&/^\d{4}-\d{2}-\d{2}$/.test(f.end_date||'')&&f.start_date<=f.end_date);
+  }
+  function syncPurchasePeriodControls(){
+    const f=state.purchaseFilter||{};
+    const custom=f.period==='custom';
+    const box=$('#purchaseCustomDates');if(box)box.style.display=custom?'flex':'none';
+    const b=$('#purchaseBlingSync');if(b)b.textContent='Buscar no Bling';
+  }
+  async function renderPurchases(){
+    const content=$('#content');
+    if(!state.purchaseFilter)state.purchaseFilter={period:'this_month',start_date:'',end_date:''};
+    if(!state.purchaseQuickStatus)state.purchaseQuickStatus='attention';
+    const pf=state.purchaseFilter;
+    content.innerHTML=
+      '<div class="page-head"><div><h1>Notas fiscais de entrada</h1><p>Confira suas compras e os produtos recebidos. Integração com o Bling.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar</button></div>'+
+      '<section class="panel purchase-simple-toolbar" aria-label="Importação de notas fiscais">'+
+        '<div class="purchase-toolbar-period"><label for="purchasePeriod">Período</label>'+
+          '<select id="purchasePeriod">'+
+            '<option value="this_month" '+(pf.period==='this_month'?'selected':'')+'>Este mês</option>'+
+            '<option value="last_month" '+(pf.period==='last_month'?'selected':'')+'>Mês passado</option>'+
+            '<option value="days_90" '+(pf.period==='days_90'?'selected':'')+'>Últimos 90 dias</option>'+
+            '<option value="days_120" '+(pf.period==='days_120'?'selected':'')+'>Últimos 120 dias</option>'+
+            '<option value="days_180" '+(pf.period==='days_180'?'selected':'')+'>Últimos 180 dias</option>'+
+            '<option value="custom" '+(pf.period==='custom'?'selected':'')+'>Escolher datas</option>'+
+          '</select>'+
+        '</div>'+
+        '<div id="purchaseCustomDates" class="purchase-custom-range" style="display:'+(pf.period==='custom'?'flex':'none')+'">'+
+          '<label>De <input id="purchaseDateStart" type="date" value="'+esc(pf.start_date||'')+'"></label>'+
+          '<label>Até <input id="purchaseDateEnd" type="date" value="'+esc(pf.end_date||'')+'"></label>'+
+          '<button class="secondary" id="purchaseApplyDates" type="button">Aplicar</button>'+
+        '</div>'+
+        '<div class="purchase-toolbar-actions">'+
+          '<button class="primary" id="purchaseBlingSync" type="button">Buscar no Bling</button>'+
+          '<button class="secondary" id="purchaseXmlBatch" type="button">Importar XML</button>'+
+          '<button class="secondary" id="purchaseBlingReceived" type="button">Notas recebidas no Bling ↗</button>'+
+        '</div>'+
+      '</section>'+
+      '<div class="purchase-source-note"><strong>Importação automática:</strong> o Admin importa notas já registradas como <b>Notas de compra</b> no Bling. As notas apenas <b>Ciente</b> na aba Notas recebidas não estão disponíveis por esta API. Para incluir uma dessas notas, importe o XML obtido pelo Bling quando disponível ou confirme a operação no Bling somente após verificar a compra e o recebimento. Não confirme apenas para fazê-la aparecer aqui.</div>'+
+      '<div id="purchaseBlingReceivedReview" class="purchase-review-reminder" role="status" aria-live="polite"><span class="sub">Verificando conferência diária do Bling…</span></div>'+
+      '<details class="panel purchase-import-options"><summary>Outras opções de importação</summary>'+
+        '<div class="purchase-toolbar-actions">'+
+          '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar apenas 1 XML</button>'+
+          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Catalogar XML sem cadastrar produtos</button>'+
+        '</div>'+
+        '<p class="sub">Importar uma nota não lança estoque automaticamente. A opção de catalogar serve apenas para pesquisa e revisão, sem alterar produtos, preços, estoque ou financeiro. Notas em CPF não geram contas a pagar.</p>'+
+      '</details>'+
+      '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
+      '<input id="purchaseXmlCatalogOnlyInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
+      '<div id="purchaseBody"><div class="loading">Carregando notas fiscais…</div></div>';
+    $('#refreshPurchases').onclick=loadPurchases;
+    $('#purchasePeriod').onchange=async e=>{
+      state.purchaseFilter.period=e.target.value;
+      syncPurchasePeriodControls();
+      if(e.target.value!=='custom')await loadPurchases();
+    };
+    if($('#purchaseDateStart'))$('#purchaseDateStart').onchange=e=>state.purchaseFilter.start_date=e.target.value;
+    if($('#purchaseDateEnd'))$('#purchaseDateEnd').onchange=e=>state.purchaseFilter.end_date=e.target.value;
+    if($('#purchaseApplyDates'))$('#purchaseApplyDates').onclick=async()=>{
+      if(!purchaseCustomRangeReady()){toast('Informe um período válido');return}
+      await loadPurchases();
+    };
+    $('#purchaseBlingSync').onclick=runPurchaseBlingSync;
+    $('#purchaseBlingReceived').onclick=()=>window.open('https://www.bling.com.br/notas.entrada.php#list','_blank','noopener');
+    $('#purchaseXmlSingle').onclick=()=>{$('#purchaseXmlInput').multiple=false;$('#purchaseXmlInput').click()};
+    $('#purchaseXmlBatch').onclick=()=>{$('#purchaseXmlInput').multiple=true;$('#purchaseXmlInput').click()};
+    $('#purchaseXmlInput').onchange=e=>importPurchaseXmlFiles([...e.target.files]);
+    $('#purchaseXmlCatalogOnly').onclick=()=>$('#purchaseXmlCatalogOnlyInput').click();
+    $('#purchaseXmlCatalogOnlyInput').onchange=e=>importCatalogOnlyXmlFiles([...e.target.files]);
+    syncPurchasePeriodControls();
+    await loadPurchases();
+  }
+  // Lembrete diário compartilhado entre operadores. Não é uma contagem real de NF-e.
+  function paintBlingReceivedReview(){
+    const host=$('#purchaseBlingReceivedReview');if(!host)return;
+    const r=state.purchaseBlingReceivedReview;
+    if(!r||r.ok!==true){
+      host.innerHTML='<span class="sub">Não foi possível verificar a conferência diária da equipe.</span>'+
+        '<button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Notas recebidas no Bling ↗</button>';
+    }else if(r.reviewed_today){
+      host.classList.add('reviewed');
+      const label=r.reviewed_by_name?' por '+esc(r.reviewed_by_name):'';
+      host.innerHTML='<span><strong>Notas recebidas conferidas hoje</strong><small>Registrado'+label+' às '+esc(dateTime(r.reviewed_at||''))+'. Isso não significa ausência de notas fiscais pendentes.</small></span>'+
+        '<button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Bling ↗</button>';
+    }else{
+      host.classList.remove('reviewed');
+      host.innerHTML='<span><strong>Conferir notas recebidas no Bling</strong>'+
+        '<small>Lembrete diário: veja se há novas NF-e para sua empresa. Não há contagem automática de notas pendentes.</small></span>'+
+        '<div class="purchase-review-actions"><button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Bling ↗</button>'+
+        '<button class="primary" type="button" id="purchaseReviewConfirm">Já conferi hoje</button></div>';
+    }
+    const open=$('#purchaseReviewOpenBling');
+    if(open)open.onclick=()=>window.open('https://www.bling.com.br/notas.entrada.php#list','_blank','noopener');
+    const confirm=$('#purchaseReviewConfirm');
+    if(confirm)confirm.onclick=async()=>{
+      if(confirm.disabled)return;
+      confirm.disabled=true;confirm.textContent='Registrando…';
+      try{
+        const check=await purchaseApi('bling_received_review_confirm');
+        if(!check?.ok)throw new Error('Não foi possível registrar a conferência.');
+        state.purchaseBlingReceivedReview=check;
+        paintBlingReceivedReview();
+        toast('Conferência diária registrada para a equipe');
+      }catch(e){confirm.disabled=false;confirm.textContent='Já conferi hoje';toast(errorMessage(e?.message||e))}
+    };
+  }
+  async function loadPurchases(){
+    const host=$('#purchaseBody');if(!host)return;
+    if(!purchaseCustomRangeReady()){host.innerHTML='<div class="empty">Escolha as duas datas do período personalizado e clique em Aplicar.</div>';return}
+    host.innerHTML='<div class="loading">Carregando compras de '+esc(purchasePeriodLabel())+'…</div>';
+    try{
+      const filter=purchaseFilterPayload();
+      const filterKey=JSON.stringify(filter);
+      if(state.purchaseBlingCompareKey!==filterKey){
+        state.purchaseBlingCompareKey=filterKey;
+        state.purchaseBlingCompareLoaded=false;
+        state.purchaseBlingCompareError='';
+        state.purchaseBlingBrowse={ok:null,documents:[],count:0};
+      }
+      // Fast path: opening Compras/XML must not wait for Bling OAuth, pricing
+      // configuration or the 31-day product queue. Advanced data loads on demand.
+      const result=await purchaseApi('summary',filter);
+      state.purchaseXml=result;
+      if(!state.purchaseAdvancedLoaded){
+        state.purchaseCatalogQueue={ok:true,items:[],counts:{}};
+      }
+      // Daily reminder is best-effort and must not delay the note list.
+      if(!state.purchaseBlingReceivedReview)state.purchaseBlingReceivedReview={ok:false};
+      purchaseApi('bling_received_review_status',{}).then(value=>{
+        state.purchaseBlingReceivedReview=value;
+        paintBlingReceivedReview();
+      }).catch(()=>{});
+      if(state.purchaseAdvancedOpen&&!state.purchaseAdvancedLoaded&&!state.purchaseAdvancedLoading){
+        queueMicrotask(()=>loadPurchaseAdvanced());
+      }
+      paintBlingReceivedReview();
+      paintPurchases();
+    }catch(e){
+      host.innerHTML='<div class="empty">Não consegui carregar Compras/XML. <button class="text" id="retryPurchases">Tentar novamente</button></div>';
+      if($('#retryPurchases'))$('#retryPurchases').onclick=loadPurchases;
+    }
+  }
+  async function loadPurchaseAdvanced(){
+    if(state.purchaseAdvancedLoading||state.purchaseAdvancedLoaded)return;
+    state.purchaseAdvancedLoading=true;
+    state.purchaseAdvancedError='';
+    try{
+      state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
+      state.purchaseAdvancedLoaded=true;
+    }catch(e){
+      state.purchaseAdvancedError=purchaseXmlError(e);
+      state.purchaseAdvancedLoaded=false;
+    }finally{
+      state.purchaseAdvancedLoading=false;
+      if($('#purchaseBody'))paintPurchases();
+    }
+  }
+  async function loadPurchaseBlingComparison(){
+    if(state.purchaseBlingCompareLoading||state.purchaseBlingCompareLoaded)return;
+    const filter=purchaseFilterPayload(), key=JSON.stringify(filter);
+    state.purchaseBlingCompareKey=key;
+    state.purchaseBlingCompareLoading=true;
+    state.purchaseBlingCompareError='';
+    try{
+      const result=await purchaseApi('browse_bling',filter);
+      if(state.purchaseBlingCompareKey!==key)return;
+      state.purchaseBlingBrowse=result;
+      state.purchaseBlingCompareLoaded=true;
+    }catch(e){
+      if(state.purchaseBlingCompareKey!==key)return;
+      state.purchaseBlingCompareError=purchaseXmlError(e);
+      state.purchaseBlingCompareLoaded=false;
+      state.purchaseBlingBrowse={ok:false,documents:[],count:0};
+    }finally{
+      state.purchaseBlingCompareLoading=false;
+      if($('#purchaseBody'))paintPurchases();
+    }
+  }
+  function purchaseMaybeMoney(v){
+    if(v===null||v===undefined||v==='')return '—';
+    const n=Number(v);return Number.isFinite(n)?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—';
+  }
+  function purchaseNumberInput(v){
+    const n=Number(v);return Number.isFinite(n)?String(Math.round(n*1000000)/1000000):'';
+  }
+  function purchaseItemNetTotal(x){
+    const m=x?.metadata||{};
+    let n=Number(m.net_line_total);
+    if(!Number.isFinite(n)||n<=0)n=Number(x?.line_total);
+    if((!Number.isFinite(n)||n<=0)&&Number.isFinite(Number(x?.purchase_unit_price)))n=Number(x.purchase_unit_price)*Number(x.purchase_quantity||0);
+    return Number.isFinite(n)?n:null;
+  }
+  function purchaseItemUnitCost(x,factor){
+    const qty=Number(x?.purchase_quantity||0),f=Number(factor),net=purchaseItemNetTotal(x);
+    return net!==null&&qty>0&&f>0?net/(qty*f):null;
+  }
+  function purchaseItemCardHtml(x){
+    const p=x.pricing_preview||{},prod=x.products||{},factor=p.suggested_conversion_factor??x.conversion_factor??1;
+    const unitCost=p.proposed_unit_cost??purchaseItemUnitCost(x,factor);
+    const minimum=p.suggested_sale_price??(unitCost!==null?Math.round(unitCost*1.4*100)/100:null);
+    const currentSale=Number(prod?.price),hasCurrent=Number.isFinite(currentSale)&&currentSale>0;
+    const hasMinimum=Number.isFinite(Number(minimum));
+    const saleValue=hasCurrent&&hasMinimum?Math.max(currentSale,Number(minimum)):hasCurrent?currentSale:minimum;
+    const shouldUpdateSale=!hasCurrent||(hasMinimum&&currentSale+0.005<Number(minimum))||['pending','missing_link'].includes(String(x?.metadata?.bling_sale_status||''));
+    const saleHint=hasCurrent&&hasMinimum&&currentSale>=Number(minimum)
+      ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
+      :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
+    const existing=Boolean(prod?.id),inactive=existing&&prod.is_active===false,newFromXml=Boolean(prod?.metadata?.purchase_xml_created);
+    const approved=Boolean(x?.metadata?.catalog_approved_at),sync=x?.metadata?.bling_sale_status||'',costSync=x?.metadata?.bling_supplier_cost_status||'';
+    const statusText=approved
+      ?'<div class="purchase-sync-status"><strong>✓ Atualizado no Admin</strong> · '+(sync==='confirmed'?'Preço confirmado no Bling':sync==='pending'||sync==='missing_link'?'Preço no Bling pendente':sync==='not_requested'?'Preço do Bling não foi alterado':'Preço no Bling não conferido')+
+      (costSync==='submitted'?' · custo enviado ao fornecedor no Bling (não verificado)':costSync==='pending'||costSync==='missing_supplier_link'||costSync==='missing_product_link'?' · custo Bling pendente':'')+'</div>'
+      :'';
+    const matchHtml=existing?'':'<div class="purchase-match-panel" data-purchase-match-panel>'+
+      '<strong>Identificar produto</strong>'+
+      '<small class="purchase-match-help">Selecione a unidade vendida. Vincular não altera estoque nem dados fiscais.</small>'+
+      '<div class="purchase-match-search"><input type="search" data-purchase-match-query placeholder="EAN ou nome do produto" value="'+esc(x.commercial_gtin||x.tax_gtin||x.description||'')+'"><button class="secondary" type="button" data-purchase-match-search>Buscar produto</button></div>'+
+      '<div data-purchase-match-results class="purchase-match-results"></div>'+
+      '<div data-purchase-match-selected class="purchase-match-selection" aria-live="polite">Aguardando correspondência…</div>'+
+      '<div class="purchase-match-options"><label>Este EAN é da <select data-purchase-match-role><option value="base_unit">Unidade vendida</option><option value="package">Embalagem fechada</option></select></label>'+
+      '<label class="purchase-match-source-label" '+(x.commercial_gtin&&x.commercial_gtin===x.tax_gtin?'hidden':'')+'>EAN da nota <select data-purchase-match-source><option value="commercial">Comercial: '+esc(x.commercial_gtin||'—')+'</option><option value="tax">Tributável: '+esc(x.tax_gtin||'—')+'</option></select></label></div>'+
+      '<button class="primary" type="button" data-purchase-match-confirm disabled>Confirmar vínculo</button>'+
+      '<details class="purchase-create-item"><summary>Não encontrou? Criar produto novo inativo</summary><label>Nome da unidade vendida <input data-purchase-create-name value="'+esc(x.description||'')+'"></label><button type="button" class="secondary" data-purchase-match-create>Criar produto inativo e vincular</button></details>'+
+      '<div class="purchase-match-feedback" role="status" data-purchase-match-feedback></div>'+
+      '</div>';
+    const needsFactor=Boolean(p.requires_conversion_confirmation);
+    const evidence=p.conversion_suggestion_evidence?' · leitura: '+esc(p.conversion_suggestion_evidence):'';
+    const factorHint=needsFactor
+      ?(factor&&Number(factor)>1?'Sugestão detectada: '+esc(fmtQty(factor))+' UN por '+esc(x.purchase_unit||'embalagem')+evidence:'Informe quantas unidades de venda existem em 1 '+esc(x.purchase_unit||'embalagem')+'.')
+      :'Venda em unidade · fator '+esc(fmtQty(factor||1))+'.';
+    const qtyText=(factor&&Number(factor)>0)
+      ?esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'')+' × '+esc(fmtQty(factor))+' = '+esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN'
+      :esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'');
+    const workflowStatus=!existing?'Vincular':approved?(sync==='pending'||sync==='missing_link'?'Bling pendente':'Salvo'):needsFactor?'Conferir embalagem':'Conferir';
+    return '<div class="purchase-item-card" data-purchase-item="'+esc(x.id)+'" data-document-id="'+esc(x.document_id)+'">'+
+      '<details class="purchase-item-collapsible"><summary class="purchase-item-compact-summary"><span class="purchase-item-compact-name"><strong>'+esc(prod.name||x.description||'Produto')+'</strong><small>'+esc(x.description||'')+'</small></span><span class="purchase-item-compact-qty">'+qtyText+'</span><span class="pill '+(!existing||needsFactor?'warn':approved?'':'warn')+'">'+esc(workflowStatus)+'</span></summary><div class="purchase-item-compact-body">'+
+      '<div class="purchase-item-title"><div><strong>'+esc(prod.name||x.description||'Produto')+'</strong>'+
+        '<small>'+esc(x.description||'')+' · EAN '+esc(x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado')+'</small>'+
+        '<small><b>Compra:</b> '+qtyText+'</small></div>'+
+        '<div class="purchase-item-badges">'+
+          '<span class="pill '+(existing?'':'warn')+'">'+(existing?'Produto identificado':'1. Vincular produto')+'</span>'+
+          (newFromXml?'<span class="pill warn">Novo pelo XML</span>':'')+
+          (inactive?'<span class="pill off">Inativo</span>':'')+
+          (needsFactor?'<span class="pill warn">2. Conferir unidades da embalagem</span>':'<span class="pill">Unidade de venda</span>')+
+        '</div></div>'+statusText+matchHtml+
+      '<div class="purchase-price-grid">'+
+        '<div class="purchase-field"><label>Unidades vendidas em cada '+esc(x.purchase_unit||'embalagem')+'</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
+        '<div class="purchase-price-box"><small>Quantidade final</small><strong data-purchase-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Custo novo / UN</small><strong class="accent" data-purchase-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Preço atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
+        '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-purchase-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint" data-purchase-sale-hint>'+esc(saleHint)+'</div></div>'+
+      '</div>'+
+      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · autorizar este item não altera o estoque.</div></div>'+
+        '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'" '+(!existing?'disabled title="Vincule primeiro o produto acima"':'')+'>'+(approved&&['pending','missing_link'].includes(sync)?'Reenviar ao Bling':approved?'Revisar atualização':'Salvar e sincronizar')+'</button><span class="purchase-approval-result" data-purchase-result role="status"></span></div></div>'+
+      '</div></details></div>';
+  }
+  function purchaseXmlError(e){
+    const code=String(e?.message||e||'');
+    const map={
+      product_match_required:'Vincule primeiro o produto da nota com o cadastro.',
+      xml_catalog_evidence_only_required:'A identificação precisa passar pela confirmação segura.',
+      xml_identity_confirmation_required:'Confirme a identificação do produto.',
+      xml_identity_gtin_invalid:'O EAN da nota está inválido: verifique o produto antes de vincular.',
+      xml_identity_gtin_conflict:'Este EAN já pertence a outro produto. Selecione o produto correto.',
+      xml_identity_existing_gtin_mismatch:'EAN diferente do cadastro. Não altere a unidade sem conferir.',
+      xml_identity_already_resolved:'Esse produto já foi vinculado. Atualize a nota.',
+      xml_identity_verified_source_required:'XML original ainda não validado. Reimporte ou revise a nota.',
+      xml_identity_service_unavailable:'Não foi possível confirmar o vínculo no banco. Tente novamente.',
+      packaging_factor_must_be_greater_than_one:'Informe quantas unidades existem no fardo ou caixa (maior que 1).',
+      invalid_sale_price:'Digite um preço de venda válido.',
+      existing_product_name_preserved:'O nome cadastrado não é alterado pela nota de compra.',
+      xml_identity_operational_lot_review_required:'Já existe um recebimento vinculado a este item. Precisa de revisão antes de trocar o produto.'
+    };
+    return map[code]||((errorMessage(code)!=='Não consegui salvar agora.')?errorMessage(code):code.replace(/_/g,' ').slice(0,230));
+  }
+  async function purchaseSearchMatch(card){
+    const input=card.querySelector('[data-purchase-match-query]'),results=card.querySelector('[data-purchase-match-results]');
+    const query=String(input?.value||'').trim(),token=(card._purchaseSearchToken||0)+1;
+    card._purchaseSearchToken=token;
+    if(query.length<2){results.textContent='Digite o EAN ou nome do produto.';return}
+    card.dataset.purchaseSelectedId='';
+    const confirm=card.querySelector('[data-purchase-match-confirm]');
+    if(confirm)confirm.disabled=true;
+    const selected=card.querySelector('[data-purchase-match-selected]');
+    if(selected)selected.textContent='Procurando correspondência…';
+    results.textContent='Buscando…';
+    try{
+      const found=await purchaseApi('search_products',{query});
+      if(!card.isConnected||card._purchaseSearchToken!==token)return;
+      const products=Array.isArray(found.items)?found.items:[];
+      results.innerHTML=products.length?products.map(p=>
+        '<button type="button" class="purchase-match-choice" data-purchase-select-id="'+esc(p.id)+'">'+
+        '<strong>'+esc(p.name)+'</strong><small>EAN '+esc(p.gtin||'—')+' · '+(p.is_active===false?'inativo':'ativo')+'</small></button>'
+      ).join(''):'<small>Produto não encontrado. Busque pelo nome ou crie um cadastro inativo.</small>';
+      card._purchaseCandidates=products;
+      const choose=(btn,automatic=false)=>{
+        const product=products.find(p=>p.id===btn.dataset.purchaseSelectId);
+        if(!product)return;
+        card.dataset.purchaseSelectedId=product.id;
+        if(selected)selected.textContent=(automatic?'EAN exato encontrado: ':'Selecionado: ')+product.name+' · confira e confirme.';
+        const detail=state.purchaseDetailCache?.[card.dataset.documentId],item=(detail?.items||[]).find(x=>x.id===card.dataset.purchaseItem);
+        const raw=String(product.gtin||''),commercial=String(item?.commercial_gtin||''),tax=String(item?.tax_gtin||'');
+        const source=card.querySelector('[data-purchase-match-source]');
+        if(source)source.value=raw&&raw===tax&&raw!==commercial?'tax':'commercial';
+        if(confirm)confirm.disabled=false;
+        results.querySelectorAll('.purchase-match-choice').forEach(b=>b.classList.toggle('selected',b===btn));
+      };
+      results.querySelectorAll('[data-purchase-select-id]').forEach(btn=>btn.onclick=()=>choose(btn));
+      // Um único EAN exato já fica selecionado na tela, sem gravação automática.
+      const detail=state.purchaseDetailCache?.[card.dataset.documentId],item=(detail?.items||[]).find(x=>x.id===card.dataset.purchaseItem);
+      const gtins=[item?.commercial_gtin,item?.tax_gtin].map(x=>String(x||'').replace(/[^0-9]/g,'')).filter(Boolean);
+      const exact=products.filter(p=>gtins.includes(String(p.gtin||'').replace(/[^0-9]/g,'')));
+      if(exact.length===1&&gtins.length){
+        const btn=[...results.querySelectorAll('[data-purchase-select-id]')].find(b=>b.dataset.purchaseSelectId===exact[0].id);
+        if(btn)choose(btn,true);
+      }else if(selected)selected.textContent=products.length?'Escolha uma correspondência acima.':'Nenhum produto selecionado.';
+    }catch(e){
+      if(card.isConnected&&card._purchaseSearchToken===token){
+        results.textContent=purchaseXmlError(e);
+        if(selected)selected.textContent='Busca não concluída. Tente novamente.';
+      }
+    }
+  }
+  async function purchaseConfirmMatch(card,createNew=false){
+    const id=card.dataset.purchaseItem,docId=card.dataset.documentId,
+      productId=card.dataset.purchaseSelectedId||null,feedback=card.querySelector('[data-purchase-match-feedback]'),
+      factor=Number(card.querySelector('[data-purchase-factor]')?.value||0),
+      role=card.querySelector('[data-purchase-match-role]')?.value||'base_unit',
+      source=card.querySelector('[data-purchase-match-source]')?.value||'commercial',
+      name=String(card.querySelector('[data-purchase-create-name]')?.value||'').trim();
+    if(!createNew&&!productId){feedback.textContent='Busque e selecione um produto primeiro.';return}
+    if(!Number.isInteger(factor)||factor<1){feedback.textContent='Informe a quantidade de unidades por embalagem.';return}
+    if(role==='package'&&factor<=1){feedback.textContent='Se o EAN é da embalagem, ela precisa conter mais de uma unidade.';return}
+    if(createNew&&name.length<3){feedback.textContent='Informe o nome completo da unidade vendida.';return}
+    const button=card.querySelector(createNew?'[data-purchase-match-create]':'[data-purchase-match-confirm]');
+    button.disabled=true;feedback.textContent='Confirmando vínculo sem alterar estoque…';
+    try{
+      const payload={item_id:id,product_id:productId,create_new:createNew,proposed_name:createNew?name:null,
+        catalog_evidence_only:true,gtin_source:source,gtin_role:role,
+        conversion_factor:role==='package'?factor:1,
+        purchase_pack_units_for_review:role==='base_unit'&&factor>1?factor:null,
+        confirmation:createNew?'CRIAR_INATIVO_XML':'VINCULAR_ITEM_XML'};
+      await purchaseApi('resolve_item_identity',payload);
+      feedback.textContent='Produto vinculado. Carregando custo e preço…';
+      await refreshPurchaseAfterApproval(docId);
+    }catch(e){feedback.textContent=purchaseXmlError(e);button.disabled=false}
+  }
+  function recalcPurchaseItemCard(card,resetSale=true){
+    if(!card)return;
+    const itemId=card.dataset.purchaseItem,detail=state.purchaseDetailCache?.[card.dataset.documentId],item=(detail?.items||[]).find(x=>x.id===itemId);
+    if(!item)return;
+    const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
+    const cost=purchaseItemUnitCost(item,factor);
+    const baseQty=Number(item.purchase_quantity||0)*(factor>0?factor:0);
+    const minimum=cost!==null?Math.round(cost*1.4*100)/100:null;
+    const currentSale=Number(item?.products?.price),hasCurrent=Number.isFinite(currentSale)&&currentSale>0;
+    const hasMinimum=Number.isFinite(Number(minimum));
+    const saleValue=hasCurrent&&hasMinimum?Math.max(currentSale,Number(minimum)):hasCurrent?currentSale:minimum;
+    const shouldUpdateSale=!hasCurrent||(hasMinimum&&currentSale+0.005<Number(minimum))||['pending','missing_link'].includes(String(item?.metadata?.bling_sale_status||''));
+    const costEl=card.querySelector('[data-purchase-unit-cost]'),qtyEl=card.querySelector('[data-purchase-base-qty]'),sale=card.querySelector('[data-purchase-sale]'),saleCheck=card.querySelector('[data-purchase-update-sale]'),hint=card.querySelector('[data-purchase-sale-hint]');
+    if(costEl)costEl.textContent=purchaseMaybeMoney(cost);
+    if(qtyEl)qtyEl.textContent=factor>0?fmtQty(baseQty)+' UN':'—';
+    if(resetSale&&sale&&saleValue!==null&&saleValue!==undefined)sale.value=purchaseNumberInput(saleValue);
+    if(resetSale&&saleCheck)saleCheck.checked=Boolean(shouldUpdateSale);
+    if(hint){
+      hint.textContent=hasCurrent&&hasMinimum&&currentSale>=Number(minimum)
+        ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
+        :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
+    }
+  }
+
+
+  function purchaseCatalogReasonLabel(v){
+    const map={product_match_required:'Produto sem vínculo',processing_failed:'Falha no processamento',item_review_required:'Item precisa de revisão',conversion_review_required:'Conversão precisa de revisão',packaging_factor_required:'Informe unidades por embalagem',unit_cost_unavailable:'Custo unitário indisponível'};
+    return map[v]||v||'Revisar';
+  }
+  function purchaseCatalogFilteredItems(){
+    const q=state.purchaseCatalogQueue||{},items=Array.isArray(q.items)?q.items:[],filter=state.purchaseCatalogFilter||'pending',term=normalize(state.purchaseCatalogSearch||'');
+    return items.filter(x=>{
+      const f=x.flags||{};
+      let ok=true;
+      if(filter==='pending')ok=Boolean(f.needs_review||(f.needs_approval&&!f.approved));
+      else if(filter==='new')ok=Boolean(f.is_new);
+      else if(filter==='existing')ok=Boolean(f.is_existing);
+      else if(filter==='review')ok=Boolean(f.needs_review);
+      else if(filter==='unlinked')ok=Boolean(f.is_unlinked);
+      else if(filter==='ready')ok=Boolean(f.safe_to_approve&&f.needs_approval&&!f.approved);
+      else if(filter==='approved')ok=Boolean(f.approved&&!f.needs_approval);
+      if(!ok)return false;
+      if(!term)return true;
+      const hay=[x?.products?.name,x.description,x.commercial_gtin,x.tax_gtin,x?.document?.supplier_name,x?.document?.metadata?.invoice_number,x.ncm].map(normalize).join(' ');
+      return hay.includes(term);
+    });
+  }
+  // PURCHASE_XML_EDIT_NAME_V1
+  // Advanced view is a compact index, not a second product editing interface.
+  // All mutations belong to the original invoice item to avoid conflicting forms.
+  function purchaseCatalogCardHtml(x){
+    const flags=x.flags||{},prod=x.products||{},doc=x.document||{};
+    const reason=(flags.review_reasons||[]).map(purchaseCatalogReasonLabel).join(' · ');
+    const status=flags.is_unlinked?'Sem vínculo':flags.needs_review?'Revisar':flags.approved?'Concluído':'Conferir';
+    const name=prod.name||x.description||'Produto';
+    const stamp=String(doc.issued_at||'').slice(0,10);
+    const meta=[x.commercial_gtin||x.tax_gtin||'',doc.supplier_name||'',stamp?dateOnly(stamp):''].filter(Boolean).join(' · ');
+    return '<div class="purchase-catalog-index-row">'+
+      '<div class="purchase-catalog-index-main"><strong>'+esc(name)+'</strong><small>'+esc(meta)+'</small>'+
+        (reason?'<small class="purchase-catalog-index-reason">'+esc(reason)+'</small>':'')+'</div>'+
+      '<span class="pill '+(flags.needs_review?'warn':'')+'">'+esc(status)+'</span>'+
+      '<button class="secondary" type="button" data-catalog-open-note="'+esc(x.document_id||'')+'" '+(!x.document_id?'disabled':'')+'>Abrir NF-e</button>'+
+    '</div>';
+  }
+  async function openPurchaseCatalogNote(docId){
+    const item=(state.purchaseCatalogQueue?.items||[]).find(x=>String(x.document_id)===String(docId));
+    if(!docId)return;
+    const exists=(state.purchaseXml?.documents||[]).some(x=>String(x.id)===String(docId));
+    if(!exists){
+      const issued=String(item?.document?.issued_at||'').slice(0,10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(issued)){toast('Data da NF-e não disponível. Busque na lista de notas.');return}
+      state.purchaseFilter={period:'custom',start_date:issued,end_date:issued};
+      await loadPurchases();
+    }
+    state.purchaseQuickStatus='all';
+    state.purchaseQuery='';
+    paintPurchases();
+    await togglePurchaseDocument(docId,true);
+    document.querySelector('[data-purchase-toggle="'+CSS.escape(docId)+'"]')?.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function purchaseCatalogListHtml(){
+    const items=purchaseCatalogFilteredItems();
+    return items.length?items.map(purchaseCatalogCardHtml).join(''):'<div class="empty">Nenhum produto neste filtro.</div>';
+  }
+  function recalcPurchaseCatalogCard(card){
+    if(!card)return;
+    const itemId=card.dataset.purchaseCatalogItem,item=(state.purchaseCatalogQueue?.items||[]).find(x=>x.id===itemId);if(!item)return;
+    const factor=Number(card.querySelector('[data-catalog-factor]')?.value||0),cost=purchaseItemUnitCost(item,factor),baseQty=Number(item.purchase_quantity||0)*(factor>0?factor:0);
+    const minimum=cost!==null?Math.round(cost*1.4*100)/100:null,current=Number(item?.products?.price),hasCurrent=Number.isFinite(current)&&current>0;
+    const saleValue=minimum===null?(hasCurrent?current:''):(hasCurrent?Math.max(current,minimum):minimum);
+    const costEl=card.querySelector('[data-catalog-unit-cost]'),qtyEl=card.querySelector('[data-catalog-base-qty]'),sale=card.querySelector('[data-catalog-sale]'),saleCheck=card.querySelector('[data-catalog-update-sale]');
+    if(costEl)costEl.textContent=purchaseMaybeMoney(cost);
+    if(qtyEl)qtyEl.textContent=factor>0?fmtQty(baseQty)+' UN':'—';
+    if(sale&&saleValue!=='')sale.value=purchaseNumberInput(saleValue);
+    if(saleCheck)saleCheck.checked=Boolean(!hasCurrent||(minimum!==null&&current+0.005<minimum));
+  }
+  async function applyPurchaseCatalogItemUpdate(itemId,quiet=false,operatorOverride=''){
+    const card=document.querySelector('[data-purchase-catalog-item="'+CSS.escape(itemId)+'"]');if(!card)return false;
+    const operator=operatorOverride||requireOperator();if(!operator)return false;
+    const factor=Number(String(card.querySelector('[data-catalog-factor]')?.value||'').replace(',','.'));
+    const sale=Number(String(card.querySelector('[data-catalog-sale]')?.value||'').replace(',','.'));
+    const proposedName=String(card.querySelector('[data-catalog-product-name]')?.value||'').trim();
+    const updateCost=Boolean(card.querySelector('[data-catalog-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-catalog-update-sale]')?.checked);
+    if(!proposedName){if(!quiet)toast('Informe o nome do produto');return false}
+    if(!Number.isFinite(factor)||factor<1){if(!quiet)toast('Informe a conversão para UN');return false}
+    if(updateSale&&(!Number.isFinite(sale)||sale<0)){if(!quiet)toast('Informe um preço de venda válido');return false}
+    const btn=card.querySelector('[data-catalog-approve]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+    try{
+      await purchaseApi('apply_item_update',{item_id:itemId,proposed_name:proposedName,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+      const result=card.querySelector('[data-catalog-result]');if(result)result.textContent='Atualizado';
+      if(!quiet){
+        toast('Cadastro atualizado. Confira sincronização com Bling.');
+        state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
+        state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+        paintPurchases();
+      }
+      return true;
+    }catch(e){
+      if(!quiet)toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Autorizar'}
+      return false;
+    }
+  }
+  async function approveSafeCatalogItems(){
+    const items=(state.purchaseCatalogQueue?.items||[]).filter(x=>x?.flags?.safe_to_approve&&x?.flags?.needs_approval&&!x?.flags?.approved);
+    if(!items.length){toast('Nenhum produto seguro aguardando aprovação');return}
+    if(!confirm('Autorizar '+items.length+' produto(s) seguros dos últimos 31 dias?\n\nO custo será atualizado pelo custo unitário da NF-e. O preço só será alterado quando estiver abaixo da sugestão mínima de 40%. O estoque não será alterado.'))return;
+    const operator=requireOperator();if(!operator)return;
+    const b=$('#purchaseCatalogApproveSafe');if(b){b.disabled=true;b.textContent='Aprovando 0 / '+items.length}
+    let ok=0,fail=0;
+    for(let i=0;i<items.length;i++){
+      const x=items[i],p=x.pricing_preview||{},factor=Number(p.suggested_conversion_factor||x.conversion_factor||1),sale=Number(p.recommended_sale_price??x?.products?.price??p.suggested_sale_price??0);
+      try{
+        await purchaseApi('apply_item_update',{item_id:x.id,conversion_factor:factor,sale_price:sale,update_cost:true,update_sale_price:Boolean(p.update_sale_recommended),operator_name:operator});
+        ok++;
+      }catch(e){fail++}
+      if(b)b.textContent='Aprovando '+(i+1)+' / '+items.length;
+    }
+    toast(ok+' produto(s) aprovado(s)'+(fail?' · '+fail+' falha(s)':''));
+    state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
+    state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+    paintPurchases();
+  }
+  function paintPurchaseCatalogList(){
+    const host=$('#purchaseCatalogList');if(!host)return;
+    host.innerHTML=purchaseCatalogListHtml();
+    const count=$('#purchaseCatalogVisibleCount');if(count)count.textContent=String(purchaseCatalogFilteredItems().length);
+    host.querySelectorAll('[data-catalog-open-note]').forEach(btn=>btn.onclick=()=>openPurchaseCatalogNote(btn.dataset.catalogOpenNote));
+    // No approvals in this duplicate index; review the item inside its NF-e.
+  }
+  function purchaseCatalogQueueHtml(){
+    const q=state.purchaseCatalogQueue||{},counts=q.counts||{},filter=state.purchaseCatalogFilter||'pending';
+    const filters=[['pending','Pendentes'],['unlinked','Sem vínculo'],['review','Revisar'],['approved','Concluídos'],['all','Todos']];
+    const pending=Number(counts.ready_for_approval||0)+Number(counts.needs_review||0);
+    return '<section class="panel purchase-catalog-panel">'+
+      '<div class="history-title dispatch-head"><div><strong>3. Produtos recebidos · últimos 31 dias</strong><span>Índice de pendências. Abra a NF-e para editar o produto em um só lugar.</span></div><b id="purchaseCatalogVisibleCount">'+esc(purchaseCatalogFilteredItems().length)+'</b></div>'+
+      '<div class="purchase-catalog-toolbar"><div class="purchase-catalog-search"><input id="purchaseCatalogSearch" type="search" placeholder="Buscar produto, EAN ou fornecedor" value="'+esc(state.purchaseCatalogSearch||'')+'"></div></div>'+
+      '<div class="purchase-catalog-filters">'+filters.map(([key,label])=>'<button type="button" class="'+(filter===key?'active':'')+'" data-catalog-filter="'+key+'">'+label+'</button>').join('')+'</div>'+
+      '<div class="purchase-catalog-summary"><span><b>'+esc(counts.total||0)+'</b> registros</span><span><b>'+esc(counts.unlinked_products||0)+'</b> sem vínculo</span><span><b>'+esc(counts.needs_review||0)+'</b> revisar</span><span><b>'+esc(counts.approved||0)+'</b> concluídos</span></div>'+
+      '<div class="purchase-catalog-list" id="purchaseCatalogList">'+purchaseCatalogListHtml()+'</div>'+
+    '</section>';
+  }
+  function bindPurchaseCatalogQueue(){
+    document.querySelectorAll('[data-catalog-filter]').forEach(b=>b.onclick=()=>{state.purchaseCatalogFilter=b.dataset.catalogFilter;paintPurchases()});
+    const search=$('#purchaseCatalogSearch');if(search)search.oninput=e=>{state.purchaseCatalogSearch=e.target.value;paintPurchaseCatalogList()};
+    const bulk=$('#purchaseCatalogApproveSafe');if(bulk)bulk.onclick=approveSafeCatalogItems;
+    paintPurchaseCatalogList();
+  }
+
+
+  function purchaseInternalLotShort(item){
+    const id=String(item?.entry_inventory_lot?.id||item?.inventory_lot_id||'').replace(/-/g,'');
+    return id?id.slice(0,8).toUpperCase():'PENDENTE';
+  }
+  function purchaseInternalLotStatus(v){
+    return ({quarantine:'Aguardando entrada',active:'Ativo',depleted:'Esgotado',expired:'Vencido',cancelled:'Cancelado'})[String(v||'')]||'Preparando';
+  }
+  function purchaseCurrentInventoryLotsHtml(item){
+    const currentId=String(item?.inventory_lot_id||item?.entry_inventory_lot?.id||'');
+    const lots=(item?.current_inventory_lots||[])
+      .filter(x=>String(x.id||'')!==currentId&&Number(x.quantity_on_hand||0)>Number(x.quantity_reserved||0))
+      .sort((a,b)=>String(a.received_at||a.created_at||'').localeCompare(String(b.received_at||b.created_at||'')));
+    if(!lots.length)return '<div class="purchase-factor-hint" style="margin:6px 0 10px">Nenhum lote anterior com saldo disponível.</div>';
+    return '<div style="margin:8px 0 10px"><small class="sub" style="display:block;margin-bottom:6px">Estoque anterior por lote · FIFO</small><div style="display:flex;gap:6px;flex-wrap:wrap">'+
+      lots.map((x,i)=>{
+        const available=Math.max(0,Number(x.quantity_on_hand||0)-Number(x.quantity_reserved||0));
+        const ref=String(x.lot_code||String(x.id||'').replace(/-/g,'').slice(0,8).toUpperCase()||'INTERNO');
+        const exp=x.expiration_date?'Val. '+dateOnly(String(x.expiration_date)):'Sem validade';
+        return '<span class="pill '+(i===0?'warn':'')+'" title="'+esc(String(x.id||''))+'">Lote '+esc(ref)+' · '+esc(exp)+' · '+esc(fmtQty(available))+' UN'+(i===0?' · FIFO: sai primeiro':'')+'</span>';
+      }).join('')+'</div><small class="sub" style="display:block;margin-top:6px">A ordem de saída considera a data de recebimento do lote, não a validade.</small></div>';
+  }
+  function purchaseReceiptLotsHtml(d,items,lotPlan){
+    if(!Array.isArray(items)||!items.length)return '';
+    const complete=lotPlan?.complete===true;
+    const planItems=Array.isArray(lotPlan?.items)?lotPlan.items:[];
+    return '<div class="purchase-lot-compact">'+
+      '<div class="purchase-lot-head"><strong>Lotes desta entrada</strong><span>Validade opcional · '+(complete?'Lotes preparados':'Conferir identificação e quantidade')+'</span></div>'+
+      '<div class="purchase-lot-rows">'+items.map((item,idx)=>{
+        const planItem=planItems.find(x=>String(x.item_id)===String(item.id))||{};
+        const lot=item.entry_inventory_lot||planItem.inventory_lot||null;
+        const lotId=String(lot?.id||item.inventory_lot_id||planItem.inventory_lot_id||'');
+        const expected=Number(item.converted_quantity||planItem.expected_base_quantity||0);
+        const expiry=String(item.lot_expiration_date||lot?.expiration_date||planItem.expiration_date||'').slice(0,10);
+        const ref=purchaseInternalLotShort({...item,entry_inventory_lot:lot,inventory_lot_id:lotId});
+        return '<div class="purchase-lot-row" data-receipt-lot-item="'+esc(item.id)+'">'+
+          '<div class="purchase-lot-product"><strong>'+esc(item?.products?.name||item.description||('Item '+(idx+1)))+'</strong><small>'+esc(fmtQty(expected))+' UN · Lote '+esc(ref)+' · '+esc(purchaseInternalLotStatus(lot?.status))+'</small></div>'+
+          '<label class="purchase-lot-exp"><span>Validade (opcional)</span><input type="date" data-receipt-lot-exp value="'+esc(expiry)+'" aria-label="Validade opcional para '+esc(item.description||'produto')+'"></label>'+
+          '<details class="purchase-lot-prior"><summary>Ver lotes anteriores</summary>'+purchaseCurrentInventoryLotsHtml(item)+'</details>'+
+          '</div>';
+      }).join('')+'</div>'+
+      '<div class="purchase-lot-footer"><span>Em branco = validade não informada. Sem alteração no estoque.</span><button class="secondary" type="button" data-save-receipt-lots="'+esc(d.id)+'">Salvar validades</button></div>'+
+    '</div>';
+  }
+  function bindPurchaseReceiptLots(docId){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(docId)+'"]');if(!host)return;
+    const save=host.querySelector('[data-save-receipt-lots]');if(save)save.onclick=()=>savePurchaseReceiptLots(docId);
+  }
+  async function savePurchaseReceiptLots(docId){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(docId)+'"]');if(!host)return;
+    const items=[...host.querySelectorAll('[data-receipt-lot-item]')].map(item=>({
+      item_id:item.dataset.receiptLotItem,
+      expiration_date:String(item.querySelector('[data-receipt-lot-exp]')?.value||'').trim()
+    }));
+    const btn=host.querySelector('[data-save-receipt-lots]');if(btn){btn.disabled=true;btn.textContent='Salvando…'}
+    try{
+      await purchaseApi('save_receipt_lots',{document_id:docId,items});
+      toast('Validade opcional salva');
+      await refreshPurchaseAfterApproval(docId);
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Salvar validade'}}
+  }
+
+  function purchaseStockBlockHtml(d,plan=null,lotPlan=null){
+    if(d?.receipt_status==='received'||plan?.status==='verified'){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Entrada confirmada no Bling</strong><small>O aumento do estoque físico foi verificado depois da preparação desta NF-e. O Admin não alterou o estoque local.</small></div>';
+    }
+    if(plan?.status==='awaiting_bling_receipt'||plan?.status==='review_required'){
+      const review=plan?.status==='review_required';
+      const reason=String(plan?.review_reason||'');
+      const detail=review
+        ?(reason==='bling_stock_mirror_not_refreshed_after_plan'
+          ?'O espelho do Bling ainda não trouxe uma leitura posterior à preparação.'
+          :'O aumento esperado ainda não foi confirmado integralmente no estoque físico do Bling.')
+        :'Plano preparado. Faça ou confirme o recebimento/check-in no Bling; depois verifique aqui.';
+      return '<div class="purchase-safe '+(review?'purchase-danger':'')+'" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>'+(review?'Entrada ainda não confirmada':'Aguardando entrada no Bling')+'</strong><small>'+esc(detail)+'</small></div><button class="primary" type="button" data-purchase-verify-receipt="'+esc(d.id)+'">Verificar entrada no Bling</button></div></div>';
+    }
+    if(d?.receipt_status==='ready'){
+      if(lotPlan?.complete!==true)return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>O lote interno de algum item ainda não foi gerado. Revise o vínculo do produto e a conversão antes de preparar a entrada.</small></div>';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Recebimento físico</strong><small>Produtos e lotes internos estão prontos. A validade é opcional. Preparar cria um marco de conferência; não soma estoque local. O recebimento deve aparecer no estoque físico do Bling antes de ser concluído.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Preparar entrada</button></div></div>';
+    }
+    return '<div class="purchase-safe '+(d?.receipt_status==='review'?'purchase-danger':'')+'" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>'+(d?.receipt_status==='review'?'Finalize primeiro as revisões de embalagem, conversão ou vínculo dos produtos.':'A entrada física ainda não está liberada para esta nota.')+'</small></div>';
+  }
+  function renderPurchaseDocumentInline(id,data){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(!host)return;
+    const d=data?.document||{},items=data?.items||[];
+    // Cadastro concluído é diferente de pendência de sincronização com Bling.
+    const finished=items.filter(x=>Boolean(x?.metadata?.catalog_approved_at)&&
+      ['confirmed','not_requested'].includes(String(x?.metadata?.bling_sale_status||'')));
+    const pending=items.filter(x=>!finished.includes(x)).sort((a,b)=>
+      Number(Boolean(a?.product_id))-Number(Boolean(b?.product_id))||Number(a.item_number||0)-Number(b.item_number||0));
+    const pendingBling=pending.filter(x=>x?.metadata?.catalog_approved_at).length;
+    host.style.display='block';
+    host.innerHTML=
+      '<div class="purchase-detail-head"><div><h3>Produtos e preços</h3><p>'+esc(d.supplier_name||'Fornecedor')+' · '+items.length+' item(ns) · custos sempre calculados na unidade de venda (UN).</p></div>'+
+      '<div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-inline-xml="'+esc(id)+'">Ver XML</button></div></div>'+
+      '<div class="purchase-compact-note">Custos da NF-e por unidade · margem sugerida de 40% · salvar não altera estoque.</div>'+
+      '<div class="purchase-review-counts" role="status"><strong>'+pending.length+' para conferir</strong>'+(pendingBling?' · '+pendingBling+' pendente(s) no Bling':'')+' · '+finished.length+' concluído(s)</div>'+
+      '<div class="purchase-items">'+(pending.length?pending.map(purchaseItemCardHtml).join(''):(items.length?'<div class="purchase-compact-note">Nenhum produto pendente nesta nota.</div>':'<div class="empty">Nenhum item encontrado na nota.</div>'))+'</div>'+
+      (finished.length?'<details class="purchase-completed-items"><summary>✓ '+finished.length+' produto(s) concluído(s) — ver histórico</summary><div class="purchase-items">'+finished.map(purchaseItemCardHtml).join('')+'</div></details>':'')+
+      (items.some(x=>x.product_id&&!x?.metadata?.catalog_approved_at)
+        ?'<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Salvar todos os produtos já identificados</button></div>':'')+
+      '<details class="purchase-receipt-stage"><summary>Etapa seguinte: recebimento e lotes do estoque (sem alterar estoque agora)</summary>'+
+      purchaseReceiptLotsHtml(d,items,data?.receipt_lot_plan||null)+
+      purchaseStockBlockHtml(d,data?.receipt_plan||null,data?.receipt_lot_plan||null)+'</details>';
+    bindPurchaseReceiptLots(id);
+    host.querySelectorAll('[data-purchase-match-search]').forEach(b=>b.onclick=()=>purchaseSearchMatch(b.closest('.purchase-item-card')));
+    host.querySelectorAll('[data-purchase-match-query]').forEach(inp=>inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();purchaseSearchMatch(inp.closest('.purchase-item-card'))}});
+    host.querySelectorAll('[data-purchase-match-confirm]').forEach(b=>b.onclick=()=>purchaseConfirmMatch(b.closest('.purchase-item-card')));
+    host.querySelectorAll('[data-purchase-match-create]').forEach(b=>b.onclick=()=>purchaseConfirmMatch(b.closest('.purchase-item-card'),true));
+    host.querySelectorAll('.purchase-item-collapsible').forEach(detail=>{
+      detail.ontoggle=()=>{
+        if(!detail.open||detail.dataset.searched==='1')return;
+        detail.dataset.searched='1';
+        const card=detail.closest('.purchase-item-card');
+        if(card?.querySelector('[data-purchase-match-query]')?.value)purchaseSearchMatch(card);
+      };
+    });
+    host.querySelectorAll('[data-purchase-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseItemCard(inp.closest('.purchase-item-card'),true));
+    host.querySelectorAll('[data-purchase-approve-item]').forEach(b=>b.onclick=()=>applyPurchaseItemUpdate(b.dataset.purchaseApproveItem));
+    const xmlBtn=host.querySelector('[data-purchase-inline-xml]');if(xmlBtn)xmlBtn.onclick=()=>downloadPurchaseXml(id);
+    const recv=host.querySelector('[data-purchase-inline-receive]');if(recv)recv.onclick=()=>receivePurchaseDocument(id);
+    const verifyReceipt=host.querySelector('[data-purchase-verify-receipt]');if(verifyReceipt)verifyReceipt.onclick=()=>verifyPurchaseReceipt(id);
+    const bulk=host.querySelector('[data-purchase-approve-ready]');if(bulk)bulk.onclick=()=>approveReadyPurchaseItems(id);
+    const fin=host.querySelector('[data-purchase-finance-resolve]');if(fin)fin.onclick=()=>resolvePurchaseFinance(id);
+    host.querySelectorAll('[data-purchase-open-payables]').forEach(b=>b.onclick=()=>window.open('https://www.bling.com.br/contas.pagar.php','_blank','noopener'));
+    host.querySelectorAll('[data-purchase-settlement-preview]').forEach(b=>b.onclick=()=>previewPurchaseSettlement(id));
+  }
+
+  async function togglePurchaseDocument(id,forceOpen=false){
+    if(state.purchaseExpandedId===id&&!forceOpen){
+      state.purchaseExpandedId=null;
+      const h=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(h)h.style.display='none';
+      const row=document.querySelector('[data-purchase-toggle="'+CSS.escape(id)+'"]');if(row)row.classList.remove('expanded');
+      return;
+    }
+    state.purchaseExpandedId=id;
+    document.querySelectorAll('[data-purchase-detail]').forEach(x=>x.style.display='none');
+    document.querySelectorAll('[data-purchase-toggle]').forEach(x=>x.classList.remove('expanded'));
+    const row=document.querySelector('[data-purchase-toggle="'+CSS.escape(id)+'"]');if(row)row.classList.add('expanded');
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(host)host.innerHTML='<div class="loading">Carregando produtos da nota…</div>';
+    try{
+      const data=state.purchaseDetailCache?.[id]||await purchaseApi('document',{id});
+      state.purchaseDetailCache[id]=data;state.purchaseXmlDetail=data;
+      renderPurchaseDocumentInline(id,data);
+    }catch(e){if(host)host.innerHTML='<div class="empty">Não consegui abrir os produtos desta nota.</div>';toast(errorMessage(e.message))}
+  }
+  async function refreshPurchaseAfterApproval(id){
+    state.purchaseDetailCache[id]=await purchaseApi('document',{id});
+    state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+    state.purchaseExpandedId=id;
+    state.purchaseAdvancedLoaded=false;
+    paintPurchases();
+    if(state.purchaseAdvancedOpen&&!state.purchaseAdvancedLoading)loadPurchaseAdvanced().catch(e=>toast(purchaseXmlError(e)));
+  }
+  async function resolvePurchaseFinance(id){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');
+    const btn=host?.querySelector('[data-purchase-finance-resolve]');
+    if(btn){btn.disabled=true;btn.textContent='Verificando…'}
+    try{
+      const check=await purchaseApi('finance_reconcile',{document_id:id});
+      const finance=check?.finance||{},reason=String(finance.reason||'');
+      if(finance.status==='posted'&&finance.reconciled!==false){
+        toast('Financeiro confirmado no Bling');
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      const rec=finance.reconciliation||{};
+      if(reason==='installment_total_mismatch'){
+        const invoice=Number(rec.invoice_total),parts=Number(rec.installment_total),diff=(Number.isFinite(invoice)&&Number.isFinite(parts))?Math.round((parts-invoice)*100)/100:null;
+        const detail=state.purchaseDetailCache?.[id],ps=purchasePaymentSummary(detail?.document||{});
+        if(ps?.paid_at_purchase_likely&&ps?.total_matches){
+          alert('O pagamento informado na NF-e fecha corretamente.\n\nTotal da NF-e: '+purchaseMoney(invoice)+'\nPagamento efetivo: '+purchaseMoney(ps.payment_total)+(Number(ps.change||0)>0?'\nTroco: '+purchaseMoney(ps.change):'')+'\nParcela/cobrança: '+purchaseMoney(parts)+'\n\nAjuste ou dê baixa na conta correta no Bling; o sistema não criará outra conta enquanto existir essa divergência.');
+        }else{
+          alert('O financeiro não pode ser lançado ainda.\n\nTotal da NF-e: '+purchaseMoney(invoice)+'\nTotal das parcelas: '+purchaseMoney(parts)+(diff===null?'':'\nDiferença: '+purchaseMoney(diff))+'\n\nCorrija as parcelas no Bling e depois clique em “Resolver financeiro” novamente.');
+        }
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      if(['installments_missing','supplier_contact_missing','bling_nfe_id_missing_for_native_payables'].includes(reason)){
+        alert(purchaseFinanceReasonLabel(reason)+'\n\nCorrija essa informação no Bling e depois clique em “Resolver financeiro” novamente.');
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      if(reason==='payables_missing_or_ambiguous'||finance.status==='review'){
+        if(!confirm('Não encontrei uma conta a pagar correspondente com segurança.\n\nDeseja pedir ao Bling para lançar as contas desta NF-e agora? O sistema fará uma nova conferência antes da gravação.')){
+          await refreshPurchaseAfterApproval(id);
+          return;
+        }
+        if(btn)btn.textContent='Lançando…';
+        const post=await purchaseApi('finance_post',{document_id:id,confirmation:'CONFIRMAR_CONTAS'});
+        if(post?.finance?.status==='posted'&&post?.finance?.reconciled!==false)toast('Financeiro confirmado no Bling');
+        else toast(purchaseFinanceReasonLabel(post?.finance?.reason||''));
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      toast(purchaseFinanceReasonLabel(reason));
+      await refreshPurchaseAfterApproval(id);
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Resolver financeiro'}
+    }
+  }
+
+  async function applyPurchaseItemUpdate(itemId,quiet=false){
+    const card=document.querySelector('[data-purchase-item="'+CSS.escape(itemId)+'"]');if(!card)return false;
+    const docId=card.dataset.documentId,operator=requireOperator();if(!operator)return false;
+    const factor=Number(String(card.querySelector('[data-purchase-factor]')?.value||'').replace(',','.'));
+    const sale=Number(String(card.querySelector('[data-purchase-sale]')?.value||'').replace(',','.'));
+    const updateCost=Boolean(card.querySelector('[data-purchase-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
+    if(!Number.isFinite(factor)||factor<1){if(!quiet)toast('Informe a conversão para UN');return false}
+    if(updateSale&&(!Number.isFinite(sale)||sale<0)){if(!quiet)toast('Informe um preço de venda válido');return false}
+    const btn=card.querySelector('[data-purchase-approve-item]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+    try{
+      const response=await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+      const sync=response.catalog_sync||{},result=card.querySelector('[data-purchase-result]');
+      const message=sync.bling_price==='confirmed'?'✓ Admin e preço Bling confirmados':
+        sync.bling_price==='pending'||sync.bling_price==='missing_link'?'Admin atualizado · Bling pendente: '+(sync.bling_price_message||'revisar vínculo'):
+        '✓ Admin atualizado · preço Bling mantido'+(sync.bling_supplier_cost==='pending'?' · custo no Bling pendente':'');
+      if(result)result.textContent=message;
+      if(!quiet){toast(message.slice(0,130));await refreshPurchaseAfterApproval(docId)}
+      return true;
+    }catch(e){
+      const message=purchaseXmlError(e),result=card.querySelector('[data-purchase-result]');
+      if(result)result.textContent='Não atualizado: '+message;
+      if(!quiet)toast(message);
+      if(btn){btn.disabled=false;btn.textContent='Tentar atualizar novamente'}
+      return false;
+    }
+  }
+  async function approveReadyPurchaseItems(id){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(!host)return;
+    const cards=[...host.querySelectorAll('.purchase-item-card')];
+    const ready=cards.filter(card=>{
+      const item=(state.purchaseDetailCache?.[id]?.items||[]).find(x=>x.id===card.dataset.purchaseItem);
+      if(!item?.product_id||item?.metadata?.catalog_approved_at)return false;
+      const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
+      const sale=Number(card.querySelector('[data-purchase-sale]')?.value||0);
+      const updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
+      return factor>=1&&(!updateSale||Number.isFinite(sale));
+    });
+    if(!ready.length){toast('Nenhum item pronto para autorizar');return}
+    if(!confirm('Autorizar a atualização dos '+ready.length+' item(ns) prontos desta nota?\n\nPreços atuais que já estiverem acima da margem mínima de 40% serão mantidos. O estoque não será alterado.'))return;
+    const operator=requireOperator();if(!operator)return;
+    let ok=0,fail=0;
+    for(const card of ready){
+      const itemId=card.dataset.purchaseItem;
+      const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
+      const sale=Number(card.querySelector('[data-purchase-sale]')?.value||0);
+      const updateCost=Boolean(card.querySelector('[data-purchase-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
+      const btn=card.querySelector('[data-purchase-approve-item]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+      try{
+        const response=await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+        ok++;const result=card.querySelector('[data-purchase-result]');if(result)result.textContent='Admin atualizado · Bling '+(response.catalog_sync?.bling_price||'sem atualização de preço');
+      }catch(e){fail++;const result=card.querySelector('[data-purchase-result]');if(result)result.textContent=purchaseXmlError(e);if(btn){btn.disabled=false;btn.textContent='Tentar novamente'}}
+    }
+    toast(ok+' item(ns) atualizado(s)'+(fail?' · '+fail+' falha(s)':''));
+    await refreshPurchaseAfterApproval(id);
+  }
+  const PURCHASE_PAYMENT_MAPPING_LABELS={
+    credit_card:'Cartão de crédito',
+    debit_card:'Cartão de débito',
+    pix:'PIX',
+    cash:'Dinheiro',
+    voucher:'Vale alimentação/refeição',
+    bank_transfer:'Transferência / depósito',
+    other:'Outros'
+  };
+  function purchasePaymentConfigHtml(){
+    const cfg=state.purchasePaymentAccounts||{},accounts=Array.isArray(cfg.accounts)?cfg.accounts:[],mappings=cfg.mappings||{};
+    const keys=['credit_card','debit_card','pix','cash','voucher','bank_transfer'];
+    const options=(selected)=>'<option value="">Não configurado</option>'+accounts.map(a=>'<option value="'+esc(a.id)+'" '+(Number(selected)===Number(a.id)?'selected':'')+'>'+esc(a.description||('Conta '+a.id))+'</option>').join('');
+    const missing=keys.filter(k=>!Number(mappings?.[k]?.bling_account_id||0));
+    const onlyCash=accounts.length===1&&String(accounts[0]?.description||'').trim().toLowerCase()==='caixa';
+    return '<details class="panel" style="margin:0 0 14px"><summary class="history-title" style="cursor:pointer;padding:12px 14px"><div><strong>Contas financeiras para baixa</strong><span>Mapeie cada forma de pagamento para a conta correta do Bling.</span></div><b>'+(keys.length-missing.length)+' / '+keys.length+'</b></summary>'+
+      '<div style="padding:0 14px 14px">'+
+        (onlyCash?'<div class="purchase-safe purchase-danger"><strong>Seu Bling expõe apenas a conta “Caixa”</strong><small>Não vou usar Caixa para cartão, PIX ou débito. Cadastre as contas financeiras correspondentes no Bling e depois clique em Atualizar contas abaixo.</small></div>':'')+
+        (!accounts.length?'<div class="purchase-safe purchase-danger"><strong>Não consegui listar contas financeiras do Bling</strong><small>Sem esse cadastro, o Admin não prepara baixas automáticas.</small></div>':'')+
+        '<div class="purchase-price-grid" style="margin-top:10px">'+keys.map(k=>'<div class="purchase-field"><label>'+esc(PURCHASE_PAYMENT_MAPPING_LABELS[k])+'</label><select data-payment-map="'+esc(k)+'" style="min-height:40px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:var(--surface);color:var(--text)">'+options(mappings?.[k]?.bling_account_id)+'</select></div>').join('')+'</div>'+
+        '<div class="bling-actions" style="justify-content:flex-end;margin:12px 0 0"><button class="secondary" type="button" id="refreshPaymentAccounts">Atualizar contas do Bling</button><button class="primary" type="button" id="savePaymentAccounts">Salvar mapeamento</button></div>'+
+        '<small class="sub">Salvar aqui não dá baixa em nenhuma conta; apenas define qual conta financeira deverá ser usada quando você confirmar uma baixa no futuro.</small>'+
+      '</div></details>';
+  }
+  async function refreshPurchasePaymentAccounts(){
+    const b=$('#refreshPaymentAccounts');if(b){b.disabled=true;b.textContent='Atualizando…'}
+    try{
+      state.purchasePaymentAccounts=await purchaseApi('payment_accounts',{});
+      toast('Contas financeiras atualizadas');
+      paintPurchases();
+    }catch(e){toast(errorMessage(e.message));if(b){b.disabled=false;b.textContent='Atualizar contas do Bling'}}
+  }
+  async function savePurchasePaymentAccounts(){
+    const mappings={};
+    document.querySelectorAll('[data-payment-map]').forEach(s=>{
+      const id=Number(s.value||0);if(id)mappings[s.dataset.paymentMap]={bling_account_id:id};
+    });
+    if(!confirm('Salvar este mapeamento de formas de pagamento para contas financeiras do Bling?\n\nIsso não dá baixa em nenhuma conta.'))return;
+    const b=$('#savePaymentAccounts');if(b){b.disabled=true;b.textContent='Salvando…'}
+    try{
+      state.purchasePaymentAccounts=await purchaseApi('payment_accounts_save',{mappings});
+      toast('Mapeamento salvo');
+      paintPurchases();
+    }catch(e){toast(errorMessage(e.message));if(b){b.disabled=false;b.textContent='Salvar mapeamento'}}
+  }
+  async function previewPurchaseSettlement(id){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');
+    const b=host?.querySelector('[data-purchase-settlement-preview]');if(b){b.disabled=true;b.textContent='Preparando…'}
+    try{
+      const r=await purchaseApi('payment_settlement_preview',{document_id:id});
+      if(r.ready){
+        const msg='Prévia da baixa\n\nForma: '+String(r.payment_method||'—')+'\nConta financeira: '+String(r.financial_account?.description||r.financial_account?.id||'—')+'\nValor: '+purchaseMoney(r.preview?.valorRecebido)+'\nData: '+String(r.preview?.data||'—')+'\n\nDeseja confirmar a baixa desta conta no Bling?';
+        if(confirm(msg)){
+          if(b)b.textContent='Confirmando baixa…';
+          const done=await purchaseApi('payment_settlement_execute',{document_id:id,confirmation:'CONFIRMAR_BAIXA'});
+          if(done?.verified)toast('Pagamento baixado e confirmado no Bling');
+          else if(done?.already_settled)toast('Esta conta já estava baixada no Bling');
+          else toast('Baixa enviada ao Bling; confira a confirmação');
+        }else toast('Prévia conferida. Nenhuma baixa foi executada.');
+      }else{
+        const reasons={
+          financial_account_mapping_missing:'Falta escolher a conta financeira para esta forma de pagamento.',
+          split_payment_requires_review:'Esta compra tem pagamento dividido e precisa de revisão antes da baixa.',
+          requires_single_payable:'A NF-e está vinculada a mais de uma conta a pagar e precisa de revisão.',
+          payable_not_reconciled:'A conta a pagar ainda não está conciliada com segurança.',
+          payment_and_payable_amount_mismatch:'O valor pago e o saldo da conta a pagar não conferem.',
+          already_settled:'Esta conta já aparece como baixada no Bling.',
+          payable_status_not_settleable:'A situação atual da conta não permite preparar uma baixa.',
+          not_paid_at_purchase_likely:'A NF-e não indica pagamento no ato.'
+        };
+        alert((reasons[r.reason]||'A baixa ainda não está pronta para ser preparada.')+'\n\nNenhuma alteração foi feita no Bling.');
