@@ -1,266 +1,3 @@
-    const appliedRows=rows.filter(r=>r.review_state==='applied');
-    const confirmedRows=rows.filter(r=>r.review_state==='confirmed');
-    const errorRows=rows.filter(r=>r.review_state==='error');
-    const reviewRows=rows.filter(r=>!inventorySheetRowApproved(r)&&!['applied','confirmed','error'].includes(r.review_state));
-    const readyRows=rows.filter(r=>inventorySheetRowApproved(r)&&!['applied','confirmed','error'].includes(r.review_state));
-    const activeRows=rows.filter(r=>r.review_state!=='applied');
-    const allDone=rows.length>0&&appliedRows.length===rows.length;
-
-    let banner='';
-    if(allDone){
-      banner='<div style="border:1px solid #9bc8ad;background:#eef8f1;border-radius:14px;padding:16px;margin-bottom:10px">'+
-        '<strong style="display:block;font-size:18px">✓ Balanço concluído</strong>'+
-        '<small style="display:block;margin-top:5px">'+esc(rows.length)+'/'+esc(rows.length)+' produtos atualizados e verificados no Bling · '+esc(scan.batch_code)+' · Página '+esc(scan.page_number)+'/'+esc(scan.page_count)+'. Se notar algum erro, pode ler esta mesma folha novamente e aplicar a correção.</small>'+
-        '</div>';
-    }else{
-      const pieces=[];
-      if(appliedRows.length)pieces.push(appliedRows.length+' concluído(s)');
-      if(confirmedRows.length)pieces.push(confirmedRows.length+' aguardando Bling');
-      if(readyRows.length)pieces.push(readyRows.length+' pronto(s) para aplicar');
-      if(reviewRows.length)pieces.push(reviewRows.length+' para conferir');
-      if(errorRows.length)pieces.push(errorRows.length+' com erro');
-      banner='<div class="bling-banner" style="margin-bottom:10px"><strong>'+esc(scan.batch_code)+' · Página '+esc(scan.page_number)+'/'+esc(scan.page_count)+'</strong>'+
-        '<small>'+pieces.join(' · ')+' · '+appliedRows.length+'/'+rows.length+' finalizados</small></div>';
-    }
-
-    if(allDone){
-      host.innerHTML=banner+'<div class="history-empty"><strong>Nada mais precisa ser feito nesta leitura.</strong><br>Os produtos concluídos foram retirados da lista. Use “Ler esta folha novamente” somente se quiser fazer uma correção.</div>';
-    }else{
-      host.innerHTML=banner+
-        (appliedRows.length?'<div class="muted" style="margin:0 0 10px">Os '+esc(appliedRows.length)+' produto(s) já concluídos foram ocultados. Abaixo aparecem somente os que ainda exigem alguma ação.</div>':'')+
-        activeRows.map(r=>{
-          const needsConfirm=!inventorySheetRowApproved(r)&&!['applied','confirmed','error'].includes(r.review_state);
-          const locked=r.review_state==='confirmed';
-          const detail=[
-            'REF '+String(r.printed_index||'').padStart(4,'0'),
-            'EAN '+(r.gtin||'—'),
-            r.mark_kind==='local_ocr'?'OCR local':(r.mark_kind==='local_ocr+ai_fallback'?'OCR local + IA no campo duvidoso':(r.mark_kind==='page_ai_fallback'?'IA de segurança na folha inteira':'')),
-            r.review_state==='confirmed'?'Estoque já confirmado no envio; falta concluir a sincronização interna':'',
-            r.reason?String(r.reason).replaceAll('_',' '):'',
-            r.apply_error||''
-          ].filter(Boolean).join(' · ');
-          return '<div class="simple-row inventory-review-row" data-sheet-row="'+esc(r.result_id)+'">'+
-            '<div class="simple-main"><strong>'+esc(r.name)+'</strong><small>'+esc(detail)+'</small></div>'+
-            '<label class="inventory-field"><span>ESTOQUE</span><input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque" title="Estoque" placeholder="0" data-sheet-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'" '+(locked?'disabled':'')+'></label>'+
-            '<label class="inventory-field"><span>GÔNDOLA</span><input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola" title="Gôndola" placeholder="0" data-sheet-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'" '+(locked?'disabled':'')+'></label>'+
-            '<div style="display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:wrap"><span data-sheet-label="'+esc(r.result_id)+'">'+inventorySheetReviewLabel(r)+'</span><button class="secondary" type="button" data-sheet-confirm="'+esc(r.result_id)+'" '+(needsConfirm?'':'hidden')+' style="min-height:36px;padding:0 9px">Confirmar</button></div>'+
-          '</div>';
-        }).join('');
-    }
-
-    host.querySelectorAll('[data-sheet-qty]').forEach(el=>el.oninput=e=>{
-      const row=rows.find(x=>x.result_id===e.currentTarget.dataset.sheetQty);if(!row||row.review_state==='confirmed')return;
-      const raw=e.currentTarget.value;row.quantity=raw===''?null:Number(raw);row.user_edited=true;row.manual_confirmed=false;
-      inventorySheetQueueSyncScan(state.inventorySheetScan);
-      inventorySheetRefreshRowControls(row.result_id);
-    });
-    host.querySelectorAll('[data-sheet-gondola]').forEach(el=>el.oninput=e=>{
-      const row=rows.find(x=>x.result_id===e.currentTarget.dataset.sheetGondola);if(!row||row.review_state==='confirmed')return;
-      const raw=e.currentTarget.value;row.gondola=raw===''?null:Number(raw);row.user_edited=true;row.manual_confirmed=false;
-      inventorySheetQueueSyncScan(state.inventorySheetScan);
-      inventorySheetRefreshRowControls(row.result_id);
-    });
-    host.querySelectorAll('[data-sheet-confirm]').forEach(b=>b.onclick=()=>{
-      const row=rows.find(x=>x.result_id===b.dataset.sheetConfirm);if(!row)return;
-      if(!Number.isInteger(Number(row.quantity))||Number(row.quantity)<0){toast('Informe uma quantidade inteira válida');return}
-      if(!Number.isInteger(Number(row.gondola))||Number(row.gondola)<1||Number(row.gondola)>9999){toast('Informe um número de gôndola válido');return}
-      row.manual_confirmed=true;
-      inventorySheetQueueSyncScan(state.inventorySheetScan);
-      inventorySheetRefreshRowControls(row.result_id);
-    });
-
-    inventorySheetRefreshPhotoControls();
-  }
-
-  async function cancelOrRereadInventorySheet(){
-    const scan=state.inventorySheetScan;if(!scan||state.inventorySheetBusy)return;
-    const canCancel=!inventorySheetHasAppliedSideEffect(scan);
-    const scanId=scan.scan_id;
-    state.inventorySheetScan=null;
-    state.inventorySheetQueue=(state.inventorySheetQueue||[]).filter(x=>x.scan?.scan_id!==scanId);
-    paintInventorySheetQueue();paintInventorySheetPhoto();
-    const status=$('#inventorySheetPhotoStatus');
-    if(status)status.textContent=canCancel
-      ?'Leitura descartada. Tire uma nova foto da folha para corrigir.'
-      :'Leitura anterior preservada. Tire uma nova foto da mesma folha; a nova leitura poderá corrigir estoque e gôndola.';
-    const camera=$('#inventorySheetCamera');
-    if(camera){camera.value='';camera.click()}
-    if(canCancel&&scanId){
-      try{
-        await api('inventory_sheet_cancel_scan',{},{
-          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scan_id:scanId})
-        });
-        await loadInventorySheetPendingManual();
-      }catch(e){
-        toast('A nova leitura foi liberada, mas não consegui limpar a tentativa anterior.');
-      }
-    }
-  }
-
-
-  function inventorySheetErrorMessage(error){
-    const raw=String(error?.message||error||'').trim();
-    if(!raw)return 'Erro desconhecido ao processar a foto.';
-    const known=errorMessage(raw);
-    if(known!=='Não consegui salvar agora.')return known;
-    if(raw==='Failed to fetch')return 'Sem conexão com o serviço agora. Verifique a internet e tente novamente.';
-    if(raw.includes('OpenCV'))return 'O leitor de imagem não conseguiu iniciar neste celular. Recarregue a página e tente novamente.';
-    if(raw.includes('QR Code'))return raw;
-    if(raw.includes('quatro bordas'))return raw;
-    if(raw.includes('imagem'))return raw;
-    if(raw.includes('Leitor de QR'))return raw;
-    return raw.length<=180?raw:'Não consegui processar esta foto. Tente novamente com a folha inteira visível.';
-  }
-
-  function inventorySheetQueueBadge(status){
-    const map={
-      queued:['Aguardando',''],
-      processing:['Lendo','warn'],
-      ready:['Pronta',''],
-      review:['Conferir','warn'],
-      duplicate:['Já enviada','off'],
-      applying:['Aplicando','warn'],
-      submitted:['Aguardando Bling','warn'],
-      applied:['Concluída',''],
-      error:['Erro','danger']
-    };
-    const x=map[status]||[status||'—','off'];
-    return '<span class="pill '+x[1]+'">'+esc(x[0])+'</span>';
-  }
-
-  function inventorySheetQueueSummary(){
-    const rows=state.inventorySheetQueue||[];
-    const counts={};
-    rows.forEach(x=>counts[x.status]=(counts[x.status]||0)+1);
-    return {total:rows.length,ready:counts.ready||0,review:counts.review||0,duplicate:counts.duplicate||0,error:counts.error||0,applied:(counts.applied||0)+(counts.submitted||0)};
-  }
-
-  function paintInventorySheetQueue(){
-    const host=$('#inventorySheetUploadQueue');if(!host)return;
-    const rows=state.inventorySheetQueue||[];
-    if(!rows.length){
-      host.innerHTML='<div class="history-empty">Você pode selecionar várias fotos de uma vez, mesmo fora de ordem. Cada folha é identificada automaticamente pelo QR Code.</div>';
-    }else{
-      host.innerHTML=rows.map((x,index)=>{
-        const title=x.batch_code?x.batch_code+' · Página '+x.page_number+(x.page_count?'/'+x.page_count:''):(x.file_name||('Foto '+(index+1)));
-        const detail=x.status==='duplicate'
-          ?'Leitura antiga detectada. Você pode tirar uma nova foto desta mesma folha.'
-          :x.status==='error'
-            ?(x.error||'Não foi possível processar esta foto.')
-            :x.status==='review'
-              ?'Há números que precisam de conferência humana.'
-              :x.status==='ready'
-                ?'Todos os campos foram lidos e estão prontos para aplicar.'
-                :x.status==='processing'
-                  ?'Identificando QR, corrigindo a foto e lendo os números…'
-                  :x.status==='submitted'
-                    ?'Contagens registradas; falta concluir a sincronização com o Bling.'
-                    :x.status==='applied'
-                      ?'Concluída: estoque e gôndolas verificados. Nenhuma ação pendente.'
-                      :'';
-        return '<div class="simple-row inventory-upload-row">'+
-          '<div class="simple-main"><strong>'+esc(title)+'</strong><small>'+esc(detail)+'</small></div>'+
-          inventorySheetQueueBadge(x.status)+
-          (x.scan?'<button class="secondary" type="button" data-sheet-open="'+esc(x.id)+'" style="min-height:36px;padding:0 9px">'+(x.status==='review'?'Conferir':'Abrir')+'</button>':'<span></span>')+
-        '</div>';
-      }).join('');
-      host.querySelectorAll('[data-sheet-open]').forEach(b=>b.onclick=()=>{
-        const item=rows.find(x=>x.id===b.dataset.sheetOpen);if(!item?.scan)return;
-        state.inventorySheetScan=item.scan;paintInventorySheetPhoto();
-        $('#inventorySheetReview')?.scrollIntoView({behavior:'smooth',block:'start'});
-      });
-    }
-    const s=inventorySheetQueueSummary();
-    const retry=$('#inventorySheetRetryErrors');
-    if(retry){
-      const retryable=rows.filter(x=>x.status==='error'&&x.file instanceof File).length;
-      retry.hidden=!s.error;
-      retry.disabled=state.inventorySheetBusy||!retryable;
-      retry.textContent=retryable?'Reenviar '+retryable+' foto(s) com erro':(s.error?'Fotos com erro precisam ser selecionadas novamente':'Reenviar fotos com erro');
-    }
-    const bulk=$('#inventorySheetApplyReady');
-    if(bulk){
-      bulk.disabled=state.inventorySheetBusy||!s.ready;
-      bulk.textContent=s.ready?'Aplicar '+s.ready+' folha(s) prontas':'Nenhuma folha pronta para aplicar';
-    }
-  }
-
-
-  function paintInventorySheetPendingManual(){
-    const host=$('#inventorySheetPendingManual');if(!host)return;
-    const rows=state.inventorySheetPendingManual||[],s=state.inventorySheetPendingSummary||{};
-    const badge=$('#inventorySheetPendingBadge');
-    if(badge){
-      badge.textContent=rows.length?rows.length+' pendência(s)':'Sem pendências';
-      badge.className='pill '+(rows.length?'warn':'');
-    }
-    if(!rows.length){
-      host.innerHTML='<div class="history-empty">Nenhum produto aguardando contagem manual. Todas as leituras recebidas foram resolvidas.</div>';
-      return;
-    }
-    host.innerHTML='<div class="bling-banner" style="margin-bottom:10px"><strong>'+esc(s.count||rows.length)+' produto(s) precisam de conferência manual</strong><small>'+
-      esc(s.quantity_missing||0)+' sem estoque legível · '+esc(s.gondola_missing||0)+' sem gôndola legível'+(s.apply_errors?' · '+esc(s.apply_errors)+' falha(s) de atualização':'')+
-      '</small></div>'+
-      rows.map(r=>{
-        const detail=[
-          r.batch_code?String(r.batch_code)+' · pág. '+r.page_number+(r.page_count?'/'+r.page_count:''):'',
-          r.printed_index?'REF '+String(r.printed_index).padStart(4,'0'):'',
-          r.gtin?'EAN '+r.gtin:'SEM EAN',
-          r.operator_label?'enviado por '+r.operator_label:'',
-          r.reason||''
-        ].filter(Boolean).join(' · ');
-        return '<div class="simple-row inventory-pending-row">'+
-          '<div class="simple-main"><strong>'+esc(r.name||'Produto')+'</strong><small>'+esc(detail)+'</small></div>'+
-          '<label class="inventory-field"><span>ESTOQUE</span><input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque manual" title="Estoque contado manualmente" placeholder="0" data-pending-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'"></label>'+
-          '<label class="inventory-field"><span>GÔNDOLA</span><input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola manual" title="Gôndola conferida manualmente" placeholder="0" data-pending-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'"></label>'+
-          '<button class="primary" type="button" data-pending-resolve="'+esc(r.result_id)+'" style="min-height:40px;padding:0 10px">Resolver manualmente</button>'+
-        '</div>';
-      }).join('');
-    host.querySelectorAll('[data-pending-resolve]').forEach(btn=>btn.onclick=async()=>{
-      const row=rows.find(x=>String(x.result_id)===String(btn.dataset.pendingResolve));if(!row)return;
-      const qEl=host.querySelector('[data-pending-qty="'+CSS.escape(String(row.result_id))+'"]');
-      const gEl=host.querySelector('[data-pending-gondola="'+CSS.escape(String(row.result_id))+'"]');
-      const quantity=Number(qEl?.value),gondola=Number(gEl?.value);
-      if(!Number.isInteger(quantity)||quantity<0){toast('Faça a contagem manual e informe o estoque inteiro');return}
-      if(!Number.isInteger(gondola)||gondola<1||gondola>9999){toast('Confira manualmente e informe a gôndola');return}
-      const operator=requireOperator();if(!operator)return;
-      btn.disabled=true;btn.textContent='Salvando…';
-      try{
-        const data=await api('inventory_sheet_apply',{},{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({scan_id:row.scan_id,operator,items:[{
-            result_id:row.result_id,quantity,gondola,manual_confirmed:true
-          }]})
-        });
-        const result=(data.rows||[])[0];
-        if(result?.review_state==='error'||result?.ok===false)throw new Error(result?.apply_error||result?.error||'manual_apply_failed');
-        toast(row.name+' · contagem manual registrada');
-        await loadInventorySheetPendingManual();
-        loadStockRecountQueue();loadOrderStockShortages();
-      }catch(e){
-        toast('Não consegui concluir manualmente: '+errorMessage(e.message));
-        btn.disabled=false;btn.textContent='Resolver manualmente';
-      }
-    });
-  }
-
-  async function loadInventorySheetPendingManual(){
-    const host=$('#inventorySheetPendingManual');
-    if(host)host.innerHTML='<div class="loading">Verificando pendências de leitura…</div>';
-    try{
-      const data=await api('inventory_sheet_pending_manual');
-      state.inventorySheetPendingManual=data.items||[];
-      state.inventorySheetPendingSummary={
-        count:Number(data.count||0),quantity_missing:Number(data.quantity_missing||0),
-        gondola_missing:Number(data.gondola_missing||0),apply_errors:Number(data.apply_errors||0)
-      };
-      paintInventorySheetPendingManual();
-    }catch(e){
-      if(host)host.innerHTML='<div class="history-empty">Não consegui carregar as pendências agora. <button class="text" id="retryInventoryPending" type="button">Tentar novamente</button></div>';
-      if($('#retryInventoryPending'))$('#retryInventoryPending').onclick=loadInventorySheetPendingManual;
-    }
-  }
-
   async function processInventorySheetEntries(entries,operator){
     if(state.inventorySheetProcessing){toast('Já estou processando outro grupo de fotos');return}
     if(!entries?.length)return;
@@ -948,3 +685,213 @@
     const map={
       reconciled_existing:'Financeiro já encontrado e confirmado no Bling.',
       native_nfe_accounts_launched:'Contas a pagar lançadas e confirmadas pelo Bling.',
+      native_launch_error_but_reconciled:'O Bling mostrou um aviso, mas as contas foram confirmadas.',
+      payables_missing_or_ambiguous:'Não encontrei uma conta a pagar que corresponda com segurança a esta nota.',
+      bling_nfe_id_missing_for_native_payables:'Esta nota ainda não tem a referência necessária no Bling para lançar o financeiro.',
+      supplier_contact_missing:'O fornecedor desta nota ainda precisa ser vinculado corretamente no Bling.',
+      installments_missing:'A nota não trouxe parcelas/vencimentos suficientes para montar o financeiro com segurança.',
+      installment_total_mismatch:'O total das parcelas é diferente do total da NF-e.',
+      automatic_payables_disabled:'O lançamento automático de contas está desativado.'
+    };
+    const key=String(v||'');
+    if(/^nfe_lancar_contas_http_/.test(key))return 'O Bling não aceitou o lançamento das contas desta NF-e.';
+    if(/^payable_reconcile_http_/.test(key))return 'Não consegui consultar as contas a pagar no Bling agora.';
+    return map[key]||'O financeiro desta nota precisa de conferência.';
+  }
+  function purchaseFinanceProblemHtml(d){
+    const f=d?.finance_reference||{},r=f.reconciliation||{};
+    const reason=String(f.reason||d?.finance_last_error||'');
+    if(reason==='installment_total_mismatch'){
+      const invoice=Number(r.invoice_total??d?.total_amount),parts=Number(r.installment_total);
+      const diff=Number.isFinite(invoice)&&Number.isFinite(parts)?Math.round((parts-invoice)*100)/100:null;
+      const ps=purchasePaymentSummary(d);
+      if(ps?.paid_at_purchase_likely&&ps?.total_matches){
+        return '<div class="purchase-price-grid" style="margin-top:10px">'+
+          '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
+          '<div class="purchase-price-box"><small>Pagamento efetivo no XML</small><strong class="ok-text">'+purchaseMoney(ps.payment_total)+'</strong></div>'+
+          (Number(ps.change||0)>0?'<div class="purchase-price-box"><small>Troco informado</small><strong>'+purchaseMoney(ps.change)+'</strong></div>':'')+
+          '<div class="purchase-price-box"><small>Parcela/cobrança</small><strong class="warn-text">'+purchaseMoney(parts)+'</strong></div>'+
+        '</div><small class="warn-text" style="margin-top:7px">O pagamento da NF-e fecha corretamente. A divergência está somente na parcela/cobrança do Bling/XML. Confira essa conta antes da baixa.</small>';
+      }
+      return '<div class="purchase-price-grid" style="margin-top:10px">'+
+        '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Total das parcelas</small><strong>'+purchaseMoney(parts)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Diferença</small><strong class="warn-text">'+(diff===null?'—':purchaseMoney(diff))+'</strong></div>'+
+      '</div><small class="warn-text" style="margin-top:7px">Corrija as parcelas no Bling para que a soma fique igual ao total da nota. Depois clique em <b>Resolver financeiro</b> novamente.</small>';
+    }
+    if(reason==='payables_missing_or_ambiguous'){
+      return '<small style="margin-top:7px">Ao clicar em <b>Resolver financeiro</b>, o sistema confere novamente. Se não existir conta correspondente, ele pedirá sua confirmação antes de solicitar o lançamento ao Bling.</small>';
+    }
+    if(reason==='installments_missing'){
+      return '<small class="warn-text" style="margin-top:7px">Confira no Bling os vencimentos e parcelas desta compra. O sistema não cria valores por aproximação.</small>';
+    }
+    if(reason==='supplier_contact_missing'){
+      return '<small class="warn-text" style="margin-top:7px">É preciso corrigir o vínculo do fornecedor no Bling antes de lançar as contas.</small>';
+    }
+    return '';
+  }
+  function purchaseFinanceBlockHtml(d){
+    const f=d?.finance_reference||{},posted=d?.finance_status==='posted'&&Boolean(d?.finance_reconciled_at);
+    const eligible=d?.recipient_kind==='CNPJ'&&d?.financial_eligible===true;
+    const reason=purchaseFinanceReasonLabel(f.reason||d?.finance_last_error);
+    const paymentHint=purchasePaymentAtPurchaseHtml(d);
+    if(d?.recipient_kind==='CPF'){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Nota em CPF: não gera contas a pagar da empresa.</small></div>'+paymentHint;
+    }
+    if(!eligible){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Esta nota não está marcada para gerar contas a pagar da empresa.</small></div>'+paymentHint;
+    }
+    if(posted){
+      const ps=purchasePaymentSummary(d);
+      const title=ps?.paid_at_purchase_likely?'Conta registrada no Bling · baixa ainda precisa ser conferida':'Conta a pagar registrada no Bling';
+      const text=ps?.paid_at_purchase_likely
+        ?'A obrigação da compra existe no Bling, mas a NF-e indica pagamento no ato. Confirme a baixa para que ela não permaneça como vencida/atrasada.'
+        :'A conta desta NF-e foi encontrada e conciliada no Bling.';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>'+esc(title)+'</strong><small>'+esc(text)+'</small></div>'+paymentHint;
+    }
+    return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+
+        '<strong>Financeiro precisa de atenção</strong>'+
+        '<small>'+esc(reason)+'</small>'+
+        purchaseFinanceProblemHtml(d)+
+      '</div><div class="purchase-detail-actions">'+
+        '<button class="primary" type="button" data-purchase-finance-resolve="'+esc(d.id)+'">Resolver financeiro</button>'+
+      '</div></div>'+
+      '<details style="margin-top:8px"><summary class="sub" style="cursor:pointer">Detalhes técnicos</summary><small>NF-e Bling #'+esc(d?.bling_nfe_id||'—')+' · tentativas: '+esc(Number(d?.finance_attempt_count||0))+(d?.finance_last_attempt_at?' · última '+esc(dateTime(d.finance_last_attempt_at)):'')+'.</small></details>'+
+    '</div>'+paymentHint;
+  }
+
+  function purchaseStatusLabel(v){
+    const map={processed:'Processada',review_required:'Revisar',failed:'Falhou',duplicate:'Duplicada',processing:'Processando',pending:'Pendente'};
+    const cls=v==='review_required'||v==='failed'?'warn':'';
+    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
+  }
+  function purchaseReceiptLabel(v){
+    const map={ready:'Pronta para entrada',received:'Estoque recebido',review:'Revisar antes da entrada',not_received:'Não recebido'};
+    const cls=v==='ready'?'':v==='received'?'':v==='review'?'warn':'off';
+    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
+  }
+  function purchaseMoney(v){
+    const n=Number(v||0);
+    return Number.isFinite(n)?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—';
+  }
+  async function purchaseApi(purchase_action,payload={}){
+    return customerApi('purchase_xml',{purchase_action,...payload});
+  }
+  function purchaseFilterPayload(){
+    const f=state.purchaseFilter||{period:'this_month',start_date:'',end_date:''};
+    return {period:f.period||'this_month',start_date:f.start_date||null,end_date:f.end_date||null};
+  }
+  function purchasePeriodLabel(){
+    const f=state.purchaseFilter||{};
+    const labels={this_month:'Este mês',last_month:'Mês passado',days_90:'Últimos 90 dias',days_120:'Últimos 120 dias',days_180:'Últimos 180 dias',custom:'Período personalizado'};
+    if(f.period==='custom'&&f.start_date&&f.end_date)return dateOnly(f.start_date)+' a '+dateOnly(f.end_date);
+    return labels[f.period]||'Este mês';
+  }
+  function purchaseCustomRangeReady(){
+    const f=state.purchaseFilter||{};
+    return f.period!=='custom'||(/^\d{4}-\d{2}-\d{2}$/.test(f.start_date||'')&&/^\d{4}-\d{2}-\d{2}$/.test(f.end_date||'')&&f.start_date<=f.end_date);
+  }
+  function syncPurchasePeriodControls(){
+    const f=state.purchaseFilter||{};
+    const custom=f.period==='custom';
+    const box=$('#purchaseCustomDates');if(box)box.style.display=custom?'flex':'none';
+    const b=$('#purchaseBlingSync');if(b)b.textContent='Buscar no Bling';
+  }
+  async function renderPurchases(){
+    const content=$('#content');
+    if(!state.purchaseFilter)state.purchaseFilter={period:'this_month',start_date:'',end_date:''};
+    if(!state.purchaseQuickStatus)state.purchaseQuickStatus='attention';
+    const pf=state.purchaseFilter;
+    content.innerHTML=
+      '<div class="page-head"><div><h1>Notas fiscais de entrada</h1><p>Confira suas compras e os produtos recebidos. Integração com o Bling.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar</button></div>'+
+      '<section class="panel purchase-simple-toolbar" aria-label="Importação de notas fiscais">'+
+        '<div class="purchase-toolbar-period"><label for="purchasePeriod">Período</label>'+
+          '<select id="purchasePeriod">'+
+            '<option value="this_month" '+(pf.period==='this_month'?'selected':'')+'>Este mês</option>'+
+            '<option value="last_month" '+(pf.period==='last_month'?'selected':'')+'>Mês passado</option>'+
+            '<option value="days_90" '+(pf.period==='days_90'?'selected':'')+'>Últimos 90 dias</option>'+
+            '<option value="days_120" '+(pf.period==='days_120'?'selected':'')+'>Últimos 120 dias</option>'+
+            '<option value="days_180" '+(pf.period==='days_180'?'selected':'')+'>Últimos 180 dias</option>'+
+            '<option value="custom" '+(pf.period==='custom'?'selected':'')+'>Escolher datas</option>'+
+          '</select>'+
+        '</div>'+
+        '<div id="purchaseCustomDates" class="purchase-custom-range" style="display:'+(pf.period==='custom'?'flex':'none')+'">'+
+          '<label>De <input id="purchaseDateStart" type="date" value="'+esc(pf.start_date||'')+'"></label>'+
+          '<label>Até <input id="purchaseDateEnd" type="date" value="'+esc(pf.end_date||'')+'"></label>'+
+          '<button class="secondary" id="purchaseApplyDates" type="button">Aplicar</button>'+
+        '</div>'+
+        '<div class="purchase-toolbar-actions">'+
+          '<button class="primary" id="purchaseBlingSync" type="button">Buscar no Bling</button>'+
+          '<button class="secondary" id="purchaseXmlBatch" type="button">Importar XML</button>'+
+          '<button class="secondary" id="purchaseBlingReceived" type="button">Notas recebidas no Bling ↗</button>'+
+        '</div>'+
+      '</section>'+
+      '<div class="purchase-source-note"><strong>Importação automática:</strong> o Admin importa notas já registradas como <b>Notas de compra</b> no Bling. As notas apenas <b>Ciente</b> na aba Notas recebidas não estão disponíveis por esta API. Para incluir uma dessas notas, importe o XML obtido pelo Bling quando disponível ou confirme a operação no Bling somente após verificar a compra e o recebimento. Não confirme apenas para fazê-la aparecer aqui.</div>'+
+      '<div id="purchaseBlingReceivedReview" class="purchase-review-reminder" role="status" aria-live="polite"><span class="sub">Verificando conferência diária do Bling…</span></div>'+
+      '<details class="panel purchase-import-options"><summary>Outras opções de importação</summary>'+
+        '<div class="purchase-toolbar-actions">'+
+          '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar apenas 1 XML</button>'+
+          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Catalogar XML sem cadastrar produtos</button>'+
+        '</div>'+
+        '<p class="sub">Importar uma nota não lança estoque automaticamente. A opção de catalogar serve apenas para pesquisa e revisão, sem alterar produtos, preços, estoque ou financeiro. Notas em CPF não geram contas a pagar.</p>'+
+      '</details>'+
+      '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
+      '<input id="purchaseXmlCatalogOnlyInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
+      '<div id="purchaseBody"><div class="loading">Carregando notas fiscais…</div></div>';
+    $('#refreshPurchases').onclick=loadPurchases;
+    $('#purchasePeriod').onchange=async e=>{
+      state.purchaseFilter.period=e.target.value;
+      syncPurchasePeriodControls();
+      if(e.target.value!=='custom')await loadPurchases();
+    };
+    if($('#purchaseDateStart'))$('#purchaseDateStart').onchange=e=>state.purchaseFilter.start_date=e.target.value;
+    if($('#purchaseDateEnd'))$('#purchaseDateEnd').onchange=e=>state.purchaseFilter.end_date=e.target.value;
+    if($('#purchaseApplyDates'))$('#purchaseApplyDates').onclick=async()=>{
+      if(!purchaseCustomRangeReady()){toast('Informe um período válido');return}
+      await loadPurchases();
+    };
+    $('#purchaseBlingSync').onclick=runPurchaseBlingSync;
+    $('#purchaseBlingReceived').onclick=()=>window.open('https://www.bling.com.br/notas.entrada.php#list','_blank','noopener');
+    $('#purchaseXmlSingle').onclick=()=>{$('#purchaseXmlInput').multiple=false;$('#purchaseXmlInput').click()};
+    $('#purchaseXmlBatch').onclick=()=>{$('#purchaseXmlInput').multiple=true;$('#purchaseXmlInput').click()};
+    $('#purchaseXmlInput').onchange=e=>importPurchaseXmlFiles([...e.target.files]);
+    $('#purchaseXmlCatalogOnly').onclick=()=>$('#purchaseXmlCatalogOnlyInput').click();
+    $('#purchaseXmlCatalogOnlyInput').onchange=e=>importCatalogOnlyXmlFiles([...e.target.files]);
+    syncPurchasePeriodControls();
+    await loadPurchases();
+  }
+  // Lembrete diário compartilhado entre operadores. Não é uma contagem real de NF-e.
+  function paintBlingReceivedReview(){
+    const host=$('#purchaseBlingReceivedReview');if(!host)return;
+    const r=state.purchaseBlingReceivedReview;
+    if(!r||r.ok!==true){
+      host.innerHTML='<span class="sub">Não foi possível verificar a conferência diária da equipe.</span>'+
+        '<button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Notas recebidas no Bling ↗</button>';
+    }else if(r.reviewed_today){
+      host.classList.add('reviewed');
+      const label=r.reviewed_by_name?' por '+esc(r.reviewed_by_name):'';
+      host.innerHTML='<span><strong>Notas recebidas conferidas hoje</strong><small>Registrado'+label+' às '+esc(dateTime(r.reviewed_at||''))+'. Isso não significa ausência de notas fiscais pendentes.</small></span>'+
+        '<button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Bling ↗</button>';
+    }else{
+      host.classList.remove('reviewed');
+      host.innerHTML='<span><strong>Conferir notas recebidas no Bling</strong>'+
+        '<small>Lembrete diário: veja se há novas NF-e para sua empresa. Não há contagem automática de notas pendentes.</small></span>'+
+        '<div class="purchase-review-actions"><button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Bling ↗</button>'+
+        '<button class="primary" type="button" id="purchaseReviewConfirm">Já conferi hoje</button></div>';
+    }
+    const open=$('#purchaseReviewOpenBling');
+    if(open)open.onclick=()=>window.open('https://www.bling.com.br/notas.entrada.php#list','_blank','noopener');
+    const confirm=$('#purchaseReviewConfirm');
+    if(confirm)confirm.onclick=async()=>{
+      if(confirm.disabled)return;
+      confirm.disabled=true;confirm.textContent='Registrando…';
+      try{
+        const check=await purchaseApi('bling_received_review_confirm');
+        if(!check?.ok)throw new Error('Não foi possível registrar a conferência.');
+        state.purchaseBlingReceivedReview=check;
+        paintBlingReceivedReview();
+        toast('Conferência diária registrada para a equipe');
+      }catch(e){confirm.disabled=false;confirm.textContent='Já conferi hoje';toast(errorMessage(e?.message||e))}
+    };
+  }
