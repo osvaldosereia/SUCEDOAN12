@@ -8155,12 +8155,15 @@
     try{
       const result=await api('order_fiscal_issue_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,confirmation:'EMITIR_NFE',operator:currentOperator()||'Operação'})});
       state.currentOrderFiscal=result.fiscal||result;state.fiscalByOrder[o.id]=state.currentOrderFiscal;
-      toast(state.currentOrderFiscal?.authorized?'NF-e autorizada':state.currentOrderFiscal?.stage==='rejected'?'NF-e não gerada · veja o motivo no pedido':'Solicitação enviada ao Bling · consultando retorno');
+      toast(state.currentOrderFiscal?.authorized?'NF-e autorizada':state.currentOrderFiscal?.stage==='rejected'?'NF-e rejeitada · consulte a situação fiscal':result.requires_reconciliation?'Resultado da emissão ainda não confirmado · reconsulte antes de tentar novamente':'Solicitação enviada ao Bling · aguardando confirmação');
       await loadCurrentOrderFiscal(true);
     }catch(e){
-      await loadCurrentOrderFiscal(true);
+      try{await loadCurrentOrderFiscal(true)}catch{}
       const current=state.currentOrderFiscal||{},job=current.provider?.job||{},reason=job.error_detail||job.error_code||e?.message||'fiscal_issue_failed';
-      toast('NF-e NÃO GERADA · '+fiscalBlockReasonLabel(reason));
+      const uncertain=(current.blockers||[]).includes('invoice_generation_recovery_required')
+        ||['generating','authorizing'].includes(String(job.status||''))
+        ||/uncertain|timeout|result.*unknown|resultado.*incerto/i.test(String(reason||''));
+      toast(current.authorized?'NF-e autorizada após reconciliação':uncertain?'Resultado fiscal incerto · reconsulte/reconcilie a NF-e antes de tentar outra emissão':'Emissão fiscal não confirmada · '+fiscalBlockReasonLabel(reason));
     }
   }
   async function startCurrentOrderDispatchV4(){
