@@ -176,11 +176,8 @@
     if(!code)return;
     button.disabled=true;button.textContent='Validando acesso…';$('loginError').hidden=true;
     try {
-      const issued=await fetchJson(AUTH,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({pin:code})});
-      const verification=await fetchJson(VERIFY,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token_hash:issued.token_hash,type:issued.verification_type||'email'})});
-      if(!tokenValid(verification.access_token)) throw new Error('invalid_session_token');
-      sessionStorage.setItem(SESSION,verification.access_token);
-      $('pin').value='';
+      const access=await window.DonaAntoniaSecureAuth.ensureToken();
+      if(!tokenValid(access)) throw new Error('invalid_session_token');
       // A valid token alone is not sufficient: feed checks active Admin authorization.
       const check=await rpc('manual_pick_queue_feed_v1');
       if(!Array.isArray(check.orders)) throw new Error('invalid_queue_feed');
