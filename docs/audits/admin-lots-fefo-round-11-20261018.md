@@ -14,7 +14,7 @@ Branch: refactor/admin-print-queue-panel-20261018. PR #1121.
 ## Riscos e lacunas
 
 1. A função FEFO é uma prévia read-only. Ela não reserva lotes nem demonstra alocação transacional em uma separação concorrente.
-2. A prévia não possui verificação explícita de p_quantity positivo; um parâmetro zero ou negativo pode produzir fully_allocatable sem alocações. A validação de entrada deve ser auditada no endpoint e na RPC antes de modificar regras.
+2. A RPC SQL de prévia não valida p_quantity diretamente, mas o endpoint fefoPreview exige quantidade numérica finita e estritamente positiva e retorna invalid_fefo_request caso contrário. Chamadas diretas à RPC por outros serviços exigem a mesma validação no chamador.
 3. A reconciliação de lote é necessária para habilitar rastreamento completo; não presumir que todos os produtos estejam reconciliados.
 4. O cálculo depende de status e quantity_reserved corretos; validar com testes de concorrência e cenários de lotes parciais.
 5. SQL de migrações posteriores pode substituir funções; o teste estático sobre arquivos versionados não prova a versão implantada.
