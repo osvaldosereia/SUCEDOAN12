@@ -16,3 +16,12 @@
 
 ## Critério para encerrar
 Criar staging equivalente sem dados reais, executar testes concorrentes e rollback com resultados, validar CI e corrigir falhas. Até lá: **Rodada 01 não concluída**, apesar da implementação na branch.
+
+## Homologação executada em 18/10/2026
+- Staging `trglbjtbkdkyqocufusw` recebeu esquema **isolado de estoque**, com tabelas orders, order_items, products, vitrine_stock_reservations, bling_hub_runtime_v2, view ops2_sellable_stock_v1 e RPCs versionadas do repositório. Não é clone integral da produção.
+- Migração `admin_atomic_stock_isolated_staging_20261018` aplicada com sucesso.
+- SQL com BEGIN/ROLLBACK: confirmação, reserva, insuficiência, status obsoleto e cancelamento pelo trigger passaram.
+- Duas requisições simultâneas à mesma confirmação: uma `ok:true`, outra `stale_order_status`; exatamente uma reserva persistida.
+- Cancelamento posterior: reserva mudou para `released`.
+- CI no commit `15eb3f65560278ede0670244be9d33c2fcfc3134`: 25/25 workflows com sucesso.
+- Limitação: esquema reduzido, sem os outros 20 triggers de orders e sem integração real de Bling/impressão/WhatsApp; não houve deploy da Edge Function. Homologação integral da operação ainda requer esses cenários.
