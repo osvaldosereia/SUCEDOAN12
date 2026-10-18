@@ -4941,9 +4941,17 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
     if(before.matches.length===1){
       invoiceId=Number(before.match?.id||0)||null;
     }else{
-      await sb.from("dispatch_fiscal_jobs").update({
+      // Persist an exclusive claim before the irreversible provider POST.
+      // A concurrent request must reconcile, never issue a second generation.
+      const generateClaim=await sb.from("dispatch_fiscal_jobs").update({
         status:"generating",attempts:1,updated_at:new Date().toISOString()
-      }).eq("id",job.id);
+      }).eq("id",job.id).eq("status","held").eq("attempts",0)
+        .select("id").maybeSingle();
+      if(generateClaim.error)throw generateClaim.error;
+      if(!generateClaim.data){
+        return {ok:false,error:"fiscal_generation_claim_conflict",status:409,
+          requires_reconciliation:true,external_write:false};
+      }
 
       const generated=await blingHubPostOnce(
         sb,token,
@@ -5059,9 +5067,17 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
     };
   }
 
-  await sb.from("dispatch_fiscal_jobs").update({
+  // Claim authorization exactly once. Concurrent requests and uncertain
+  // authorizations must reconcile the existing invoice rather than POST again.
+  const authorizeClaim=await sb.from("dispatch_fiscal_jobs").update({
     status:"authorizing",external_side_effect:true,updated_at:new Date().toISOString()
-  }).eq("id",job.id);
+  }).eq("id",job.id).in("status",["held","generated"])
+    .select("id").maybeSingle();
+  if(authorizeClaim.error)throw authorizeClaim.error;
+  if(!authorizeClaim.data){
+    return {ok:false,error:"fiscal_authorization_claim_conflict",status:409,
+      requires_reconciliation:true,external_write:false};
+  }
 
   const sent=await blingHubPostOnce(
     sb,token,
