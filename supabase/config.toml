@@ -42,6 +42,10 @@ verify_jwt = true
 [functions.admin-whatsapp-weekly-consent-v1]
 verify_jwt = true
 
+# Pós-entrega: encerra a compra no WhatsApp e, se elegível, pede consentimento semanal.
+[functions.admin-order-delivery-comms-v1]
+verify_jwt = true
+
 [functions.whatsapp-order-outbound-v1]
 verify_jwt = true
 [functions.papoai-order-signals-v1]
