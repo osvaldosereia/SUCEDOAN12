@@ -20,4 +20,7 @@ assert.equal(f.whatsappHref('+55 (65) 99999-1234'),'https://wa.me/5565999991234'
 assert.equal(f.whatsappMessageHref(null,'Olá'),'');
 assert.equal(f.whatsappMessageHref('5565999991234',''),'https://wa.me/5565999991234?text=');
 assert.equal(f.whatsappMessageHref('5565999991234','& = ?'),'https://wa.me/5565999991234?text=%26%20%3D%20%3F');
+assert.equal(f.whatsappHref('(65) 3333-4444'),'https://wa.me/556533334444');
+assert.equal(f.whatsappHref('abc'), '');
+assert.equal(f.whatsappMessageHref('5565999991234','Pedido #123'),'https://wa.me/5565999991234?text=Pedido%20%23123');
 console.log('Admin WhatsApp links: PASS');
