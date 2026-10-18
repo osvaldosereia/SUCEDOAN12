@@ -11,6 +11,8 @@ for(const x of [
 assert.ok(sql.indexOf('for update')<sql.indexOf('reserve_vitrine_order_stock_v1'));
 assert.ok(sql.indexOf('raise exception')<sql.indexOf('update public.orders'));
 assert.match(sql,/v_source <> 'vitrine'/);
+assert.match(sql,/p_expected_status in \('created','storefront_received'\)/);
+assert.match(sql,/empty_order/);
 assert.match(sql,/deferred_to_existing_status_trigger/);
 assert.ok(sql.indexOf('v_source <>') < sql.indexOf('release_vitrine_order_stock_v1'));
 
