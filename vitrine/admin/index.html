@@ -1646,14 +1646,19 @@
     }catch(e){if(!isCurrent())return;content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades.</p></div></div><div class="empty">Não consegui carregar as ofertas agora.<br><button class="text" id="retryMarketing">Tentar novamente</button></div>';if($('#retryMarketing'))$('#retryMarketing').onclick=renderMarketing}
   }
 
+  let quotesRenderGeneration=0;
   async function renderQuotes(){
+    const generation=++quotesRenderGeneration;
     const content=$('#content');
+    const isCurrent=()=>generation===quotesRenderGeneration&&state.tab==='quotes'&&content===$('#content');
     content.innerHTML='<div class="page-head"><div><h1>Orçamentos</h1><p>Crie propostas usando produtos, clientes e cestas atuais do Supabase.</p></div><a class="store-link" href="/orcamento/" title="Abre nesta aba para manter a sessão administrativa">Abrir em tela inteira</a></div><div class="quote-admin-shell"><div class="loading" id="quoteAdminLoading">Validando sessão administrativa…</div></div>';
     try{
       await adminStepUp();
+      if(!isCurrent())return;
       const shell=content.querySelector('.quote-admin-shell');
       if(shell)shell.innerHTML='<iframe class="quote-admin-frame" src="/orcamento/?embedded=1" title="Criador de Orçamentos Dona Antônia"></iframe>';
     }catch(e){
+      if(!isCurrent())return;
       const shell=content.querySelector('.quote-admin-shell');
       if(shell)shell.innerHTML='<div class="empty">Não foi possível abrir Orçamentos sem uma sessão administrativa válida.<br><button class="text" id="retryQuotes">Tentar novamente</button></div>';
       if($('#retryQuotes'))$('#retryQuotes').onclick=renderQuotes;
@@ -5202,18 +5207,26 @@
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent=state.balanceMode==='incident'?'Registrar ocorrência':'Confirmar e ler próximo'}
   }
 
+  let gondolasRenderGeneration=0;
   async function renderGondolas(){
+    const generation=++gondolasRenderGeneration;
     const content=$('#content');
+    const host=()=>$('#gondolaHost');
+    const isCurrent=()=>generation===gondolasRenderGeneration&&state.tab==='gondolas'&&content===$('#content')&&Boolean(host());
     content.innerHTML='<div class="page-head"><div><h1>Gôndolas</h1><p>Localize produtos rapidamente ou cadastre a localização já registrando a contagem física.</p></div><button class="primary" id="newGondola">+ Nova gôndola</button></div><div id="gondolaHost"><div class="panel loading">Carregando…</div></div>';
     $('#newGondola').onclick=openGondolaCreator;
     try{
-      const data=await api('gondolas');state.gondolas=data.gondolas||[];
+      const data=await api('gondolas');
+      if(!isCurrent())return;
+      state.gondolas=data.gondolas||[];
       if(state.gondola){
-        const fresh=await api('gondola',{id:state.gondola.id});
+        const id=state.gondola.id;
+        const fresh=await api('gondola',{id});
+        if(!isCurrent()||state.gondola?.id!==id)return;
         state.gondola=fresh.gondola;state.gondolaProducts=fresh.products||[];
       }
-      paintGondolas();
-    }catch(e){$('#gondolaHost').innerHTML='<div class="panel empty">Não consegui carregar as gôndolas.</div>'}
+      if(isCurrent())paintGondolas();
+    }catch(e){if(isCurrent())host().innerHTML='<div class="panel empty">Não consegui carregar as gôndolas.</div>'}
   }
 
   function setGondolaMode(mode){
@@ -6979,14 +6992,19 @@
     '</div></div>';
   }
 
+  let blingStatusGeneration=0;
   async function loadBlingStatus(){
-    const host=$('#blingStatus');if(!host)return;
+    const host=$('#blingStatus');if(!host||state.tab!=='bling')return;
+    const generation=++blingStatusGeneration;
+    const isCurrent=()=>generation===blingStatusGeneration&&state.tab==='bling'&&host===$('#blingStatus');
     host.innerHTML='<div class="loading">Carregando status…</div>';
     try{
       const data=await api('bling_status');
+      if(!isCurrent())return;
       state.bling=data.bling||{};
       paintBling();
     }catch(e){
+      if(!isCurrent())return;
       host.innerHTML='<div class="empty">Não consegui carregar o estado do Bling. <button class="text" id="retryBling">Tentar novamente</button></div>';
       if($('#retryBling'))$('#retryBling').onclick=loadBlingStatus;
     }
