@@ -1490,7 +1490,9 @@ async function orderFiscalIssueV4(p:any,auth:any){
   if(pf.data?.ready!==true)return {error:"fiscal_dispatch_preflight_failed",status:409,blockers:pf.data?.blockers||[],preflight:pf.data};
   const before:any=await orderFiscalStatusV4(oid);if(before.error)return before;
   if(before.authorized===true)return {issued:false,idempotent_replay:true,fiscal:before};
-  if((before.hard_blockers||[]).length)return {error:"fiscal_dispatch_not_eligible",status:409,blockers:before.hard_blockers,fiscal:before};
+  // The eligibility flag also covers unresolved generation attempts, runtime gates,
+  // and disabled human issuance; hard_blockers alone does not cover these states.
+  if(before.can_issue!==true)return {error:"fiscal_dispatch_not_eligible",status:409,blockers:before.blockers||before.hard_blockers||[],fiscal:before};
   const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});
   if(h.error){
     const after:any=await orderFiscalStatusV4(oid).catch(()=>before);
