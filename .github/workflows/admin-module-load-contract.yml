@@ -1,0 +1,28 @@
+name: Admin module load contract
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/core/**'
+      - 'vitrine/admin/components/**'
+      - 'vitrine/admin/marketing/helpers.js'
+      - 'scripts/test-admin-module-load-contract.mjs'
+      - '.github/workflows/admin-module-load-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  load-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-admin-module-load-contract.mjs
+      - run: node scripts/test-admin-formatters-extraction.mjs
+      - run: node scripts/test-admin-identifiers-extraction.mjs
+      - run: node scripts/test-admin-errors-extraction.mjs
+      - run: node scripts/test-admin-printing-extraction.mjs
+      - run: node scripts/test-admin-marketing-helpers.mjs
