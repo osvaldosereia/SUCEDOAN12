@@ -32,3 +32,5 @@ Criar staging equivalente sem dados reais, executar testes concorrentes e rollba
 - Teste com pedido fictício `received -> confirmed`: inserção na fila `customer_confirmed` passou; transação de fixture revertida.
 - Importante: a RPC administrativa suporta `created -> confirmed`, mas o gatilho de fila de vitrine só enfileira `received/storefront_received -> confirmed`; esses caminhos têm regras distintas e não devem ser confundidos.
 - Não foi possível afirmar paridade com todos os gatilhos, que dependem de subsistemas ainda ausentes no staging. Não há homologação ponta a ponta da Edge Function.
+
+- Teste adicional: gatilho AFTER UPDATE forçado a falhar após a reserva; a exceção reverteu tanto status quanto reserva. Fixture e gatilho temporários desapareceram com ROLLBACK (contagens zero verificadas).
