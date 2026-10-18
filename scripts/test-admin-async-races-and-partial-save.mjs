@@ -92,4 +92,38 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
  assert.equal(paints,1);
 }
 
+
+{
+ const scenarios=[
+  ['previewCurrentOrderBling','  async function createCurrentOrderCustomerInBling(','bling_preview_order_sync'],
+  ['resolveCurrentOrderBlingDependencies','  async function completeCurrentOrderCustomerDocument(','bling_reconcile_order_dependencies_readonly']
+ ];
+ for(const [name,next,action] of scenarios){
+  const state={currentOrder:{order:{id:'old'}},currentOrderBlingPreview:null};
+  const button={disabled:false,textContent:''};let finish,paints=0;
+  const api=called=>{assert.equal(called,action);return new Promise(resolve=>finish=resolve)};
+  const fn=new Function('state','api','
+,'paintOrderDetail','toast','blingPreflightOperationalBlockers',
+    part('  async function '+name+'(',next)+';return '+name)(state,api,()=>button,()=>paints++,()=>{},()=>[]);
+  const pending=fn();
+  state.currentOrder={order:{id:'new'}};
+  finish({preview:{id:'old'},write_eligible:true});
+  await pending;
+  assert.equal(state.currentOrderBlingPreview,null);
+  assert.equal(paints,0);
+ }
+}
+{
+ const state={currentOrder:{order:{id:'old'}}};let finish,paints=0,refreshes=0;
+ const api=action=>new Promise(resolve=>{if(action==='history_sync_retry')resolve({ok:true});else if(action==='order')finish=resolve;else throw Error(action)});
+ const fn=new Function('state','api','
+,'paintOrderDetail','loadOrders','toast',
+  part('  async function retryHistorySync(','  const renderOrderActionButtons')+';return retryHistorySync')(
+    state,api,()=>({disabled:false,textContent:''}),()=>paints++,()=>refreshes++,()=>{});
+ const pending=fn();await Promise.resolve();
+ state.currentOrder={order:{id:'new'}};
+ finish({order:{id:'old'}});await pending;
+ assert.equal(state.currentOrder.order.id,'new');
+ assert.equal(paints,0);assert.equal(refreshes,0);
+}
 console.log('Admin async races and partial save: PASS');
