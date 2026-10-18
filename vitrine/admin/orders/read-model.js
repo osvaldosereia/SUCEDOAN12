@@ -3,6 +3,7 @@
   function createOrderReadModel(cuiabaDayKey,state){
     function orderProblemReasons(o){
   const reasons=[];
+  if(!o||typeof o!=='object')return reasons;
   if(o?.history_sync?.state==='failed')reasons.push('Histórico pendente do cliente');
   if(['delivered','cancelled'].includes(o?.status))return reasons;
   const a=o?.delivery_address_snapshot||{};
@@ -42,7 +43,7 @@
     };
     return reasons.includes(labels[key]||'');
   }
-  function orderIssueCount(key){return (Array.isArray(state?.orders)?state.orders:[]).filter(o=>o&&orderIssueMatch(o,key)).length}
+  function orderIssueCount(key){return (Array.isArray(state?.orders)?state.orders:[]).filter(o=>o&&typeof o==='object'&&orderIssueMatch(o,key)).length}
   function orderOperationalPriority(o){
     if(orderProblemReasons(o).length)return 0;
     if(isBacklogOrder(o))return 1;
@@ -65,7 +66,7 @@
     return map[o?.status]||'Revisar pedido';
   }
   function orderFilterMatch(o,filter){
-    if(!o)return false;
+    if(!o||typeof o!=='object')return false;
     if(filter==='all')return true;
     if(filter==='new')return o.status==='created';
     if(filter==='separate')return ['confirmed','processing'].includes(o.status);
