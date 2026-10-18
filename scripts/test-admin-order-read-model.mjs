@@ -50,4 +50,13 @@ assert.ok(canonicalProblems.includes('CPF/CNPJ pendente'));
 assert.ok(Array.from(f.orderProblemReasons({...good,stock_readiness:{ok:false}})).includes('Estoque insuficiente'));
 assert.ok(Array.from(f.orderProblemReasons({...good,history_sync:{state:'failed'}})).includes('Histórico pendente do cliente'));
 assert.ok(Array.from(f.orderProblemReasons({...good,delivery_return:{status:'returned_review'}})).includes('Retorno aguardando revisão'));
+// Lifecycle routing remains stable across every operational stage.
+assert.equal(f.orderNextAction({...good,status:'ready'}),'Liberar para entrega');
+assert.equal(f.orderNextAction({...good,status:'out_for_delivery'}),'Confirmar entrega');
+assert.equal(f.orderNextAction({...good,status:'delivered'}),'Conferir pagamento / fiscal');
+assert.equal(f.orderNextAction({...good,status:'cancelled'}),'Nenhuma ação');
+assert.equal(f.orderFilterMatch({...good,status:'ready'},'ready'),true);
+assert.equal(f.orderFilterMatch({...good,status:'out_for_delivery'},'delivery'),true);
+assert.equal(f.orderFilterMatch({...good,status:'delivered'},'finalized'),true);
+assert.equal(f.orderFilterMatch({...good,status:'created'},'new'),true);
 console.log('Admin order read model: PASS');
