@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
+const between=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j)};
+const status=between(edge,'async function updateOrderCanonical(','async function ');
+const balance=between(edge,'async function commitInventoryBalance(','async function stockRecountQueue(');
+const beforeWrite=balance.indexOf('const g=await ensureInventoryBalanceGondola(gondola)');
+const check=balance.indexOf('if(expiration){');
+assert.ok(check>=0&&check<beforeWrite,'lot validation must precede location write');
+for(const p of [/if\(lotId&&!active\.some/,/lot_not_found/,/if\(!lotId&&active\.length>1\)/,/lot_selection_required/])assert.match(balance.slice(0,beforeWrite),p);
+for(const p of [/reserve_vitrine_order_stock_v1/,/release_vitrine_order_stock_v1/,/patch\.status=next/,/db\.from\("orders"\)\.update\(patch\)/])assert.match(status,p);
+assert.ok(status.indexOf('reserve_vitrine_order_stock_v1')<status.indexOf('db.from("orders").update(patch)'));
+assert.ok(status.indexOf('release_vitrine_order_stock_v1')<status.indexOf('db.from("orders").update(patch)'));
+console.log('Stock balance preflight and order stock transition contract: PASS');
