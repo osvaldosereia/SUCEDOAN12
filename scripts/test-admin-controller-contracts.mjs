@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 const script=html.slice(html.indexOf('<script>\n(()=>{')+8,html.lastIndexOf('</script>'));
+const readModel=fs.readFileSync('vitrine/admin/orders/read-model.js','utf8');
+const controllerSource=script+'\n'+readModel;
 const functions=[...script.matchAll(/^\s{2,4}(?:async )?function ([A-Za-z_$][\w$]*)\(/gm)].map(m=>m[1]);
 const unique=new Set(functions);
 assert.equal(unique.size,functions.length,'duplicate named function declaration in main script');
