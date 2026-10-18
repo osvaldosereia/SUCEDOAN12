@@ -23,6 +23,19 @@ on:
       - 'scripts/test-admin-core-errors.mjs'
       - 'scripts/test-admin-marketing-helpers.mjs'
       - 'scripts/test-admin-printing-window.mjs'
+      - 'scripts/test-admin-manual-order-create-contract.mjs'
+      - 'scripts/test-admin-customer-address-payment-contract.mjs'
+      - 'scripts/test-admin-confirmation-separation-print-contract.mjs'
+      - 'scripts/test-admin-delivery-cancellation-history-contract.mjs'
+      - 'scripts/test-admin-stock-physical-available-contract.mjs'
+      - 'scripts/test-admin-stock-reservation-consumption-contract.mjs'
+      - 'scripts/test-admin-lots-fefo-contract.mjs'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/migrations/20261005031000_basket_component_reservations_v1.sql'
+      - 'supabase/sql/20260928_ops2_r1_live_stock_reservations.sql'
+      - 'supabase/sql/20260928_ops2_r1_reservation_horizon.sql'
+      - 'supabase/sql/20260928_ops2_r6_product_lots_fefo_v1.sql'
+      - 'supabase/sql/20260928_ops2_r6_lot_tracking_reconciliation_guard_v1.sql'
       - '.github/workflows/admin-print-queue-panel.yml'
   workflow_dispatch:
 permissions:
@@ -54,6 +67,9 @@ jobs:
       - run: node scripts/test-admin-customer-address-payment-contract.mjs
       - run: node scripts/test-admin-confirmation-separation-print-contract.mjs
       - run: node scripts/test-admin-delivery-cancellation-history-contract.mjs
+      - run: node scripts/test-admin-stock-physical-available-contract.mjs
+      - run: node scripts/test-admin-stock-reservation-consumption-contract.mjs
+      - run: node scripts/test-admin-lots-fefo-contract.mjs
       - run: node scripts/test-admin-orders-clean-flow-v3.mjs
       - run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
       - run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
