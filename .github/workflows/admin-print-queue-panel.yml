@@ -44,6 +44,7 @@ on:
       - 'scripts/test-admin-transactional-baseline-contract.mjs'
       - 'supabase/functions/purchase-xml-v1/index.ts'
       - 'scripts/test-admin-audit-consolidation-contract.mjs'
+      - 'scripts/test-admin-fiscal-runtime-guards.mjs'
       - 'docs/audits/**'
       - '.github/workflows/admin-print-queue-panel.yml'
   workflow_dispatch:
@@ -92,6 +93,7 @@ jobs:
       - run: node scripts/test-admin-customer-history-traceability-contract.mjs
       - run: node scripts/test-admin-integrations-hardening-contract.mjs
       - run: node scripts/test-admin-fiscal-eligibility-issuance-contract.mjs
+      - run: node scripts/test-admin-fiscal-runtime-guards.mjs
       - run: node scripts/test-admin-fiscal-uncertain-recovery-contract.mjs
       - run: node scripts/test-admin-danfe-document-contract.mjs
       - run: node scripts/test-admin-audit-consolidation-contract.mjs
