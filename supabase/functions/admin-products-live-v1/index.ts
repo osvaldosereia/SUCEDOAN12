@@ -885,6 +885,16 @@ async function commitInventoryBalance(input:any,auth:any){
   const before=await one(pid);if(!before)return {error:"product_not_found",status:404};
   if(ean&&before.gtin&&dg(before.gtin)!==ean)return {error:"ean_product_mismatch",status:409};
 
+  // Validate lot selection before changing product location. A rejected balance
+  // must not leave a gondola update behind.
+  if(expiration){
+    const check=await db.from("product_inventory_lots").select("id").eq("product_id",pid).gt("quantity_on_hand",0);
+    if(check.error)throw check.error;
+    const active=check.data||[];
+    if(lotId&&!active.some((x:any)=>x.id===lotId))return {error:"lot_not_found",status:404};
+    if(!lotId&&active.length>1)return {error:"lot_selection_required",status:409,lots:active};
+  }
+
   const g=await ensureInventoryBalanceGondola(gondola);
   const loc=await db.from("products").update({gondola:String(g.number),updated_at:new Date().toISOString()}).eq("id",pid);if(loc.error)throw loc.error;
   let validity:any={mode:"unchanged"};
