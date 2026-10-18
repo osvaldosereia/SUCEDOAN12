@@ -1,8 +1,6 @@
--- NOT DEPLOYED. Requires staging equivalence and transaction/rollback tests.
--- Atomic stock + status transition. Does not handle customer/address patch fields.
--- CAUTION: production orders has an AFTER UPDATE OF status trigger
--- trg_sync_vitrine_order_stock_reservation_v1. Verify its behavior and
--- avoid double reservation/release before any staging execution.
+-- NOT DEPLOYED TO PRODUCTION. Isolated staging tested; full trigger parity pending.
+-- Atomic stock + status transition with whitelisted customer/address/payment patch.
+-- Vitrine cancellation release is performed by existing AFTER UPDATE status trigger.
 create or replace function public.admin_order_stock_transition_atomic_v1(
   p_order_id uuid, p_expected_status text, p_next_status text,
   p_patch jsonb default '{}'::jsonb
