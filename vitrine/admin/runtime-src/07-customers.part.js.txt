@@ -1,138 +1,3 @@
-      }
-      await refreshPurchaseAfterApproval(id);
-    }catch(e){toast(errorMessage(e.message))}
-    finally{if(b){b.disabled=false;b.textContent='Preparar baixa'}}
-  }
-
-  // XML Catalog V1: lightweight, explicitly opened; never preloads with purchases.
-  function xmlCatalogSectionHtml(){
-    const open=Boolean(state.xmlCatalogOpen);
-    return '<section class="panel" style="margin:12px 0;padding:14px">'+
-      '<div class="history-title dispatch-head"><div><strong>Catálogo histórico dos XMLs</strong>'+
-      '<span>Todos os produtos identificados nas notas, inclusive sem cadastro. Abrir não altera cadastro nem estoque.</span></div>'+
-      '<button class="secondary" id="xmlCatalogToggle" type="button">'+(open?'Fechar catálogo':'Abrir catálogo histórico')+'</button></div>'+
-      '<div id="xmlCatalogBody" style="display:'+(open?'block':'none')+'">'+
-      (open?xmlCatalogDisplayHtml():'')+'</div></section>';
-  }
-  function xmlCatalogStatusLabel(s){
-    return ({not_linked:'Ainda não cadastrado',identity_conflict:'Identidade divergente',
-      fiscal_conflict:'Revisão de NCM',cest_conflict:'Revisão de CEST',
-      linked_reviewable:'Vinculado · conferir'}[s]||'A conferir');
-  }
-  function xmlCatalogDisplayHtml(){
-    const d=state.xmlCatalogData||{},progress=state.xmlCatalogProgress||{};
-    const items=Array.isArray(d.items)?d.items:[],offset=Number(state.xmlCatalogOffset||0);
-    return '<div class="purchase-safe" style="margin:8px 0">'+
-       '<strong>Fonte: XMLs do Bling ou enviados manualmente</strong>'+
-       '<small>Esta área cataloga o que aparece na NF-e sem criar vendas, alterar NCM, custo, preço, estoque ou contas.</small></div>'+
-      '<div class="purchase-catalog-summary" style="margin:10px 0;flex-wrap:wrap">'+
-       '<span><b>'+esc(progress.documents||0)+'</b> notas</span>'+
-       '<span><b>'+esc(progress.declared_items||0)+'</b> itens declarados</span>'+
-       '<span><b>'+esc(progress.catalog_observations||0)+'</b> observações</span>'+
-       '<span><b>'+esc(progress.verified_from_xml||0)+'</b> verificadas no XML</span>'+
-       '<span><b>'+esc(progress.missing_staging_items||0)+'</b> faltam na fila</span>'+
-      '</div>'+
-      '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
-       '<input type="search" id="xmlCatalogSearch" placeholder="Buscar nome ou EAN" value="'+esc(state.xmlCatalogSearch||'')+'" style="min-width:180px;flex:1;max-width:420px">'+
-       '<select id="xmlCatalogFilter"><option value="">Todos</option>'+
-       [['not_linked','Sem cadastro'],['fiscal_conflict','Conflito NCM'],['cest_conflict','Conflito CEST'],['identity_conflict','Conflito de identidade'],['linked_reviewable','Vinculados']]
-       .map(([k,v])=>'<option value="'+k+'" '+(state.xmlCatalogFilter===k?'selected':'')+'>'+v+'</option>').join('')+'</select>'+
-       '<button type="button" class="secondary" id="xmlCatalogSearchButton">Buscar</button>'+
-       '<button type="button" class="secondary" id="xmlCatalogReprocess">Conferir próximos XMLs</button>'+
-      '</div>'+
-      (state.xmlCatalogBusy?'<div class="loading">Lendo os documentos…</div>':'')+
-      '<div class="sub" style="margin:8px 0">Exibindo '+esc(items.length)+' de '+esc(d.total||0)+' produtos candidatos. A leitura histórica ocorre somente ao clicar.</div>'+
-      (items.length?'<div class="purchase-catalog-list">'+items.map(x=>
-       '<div class="purchase-catalog-card"><div class="purchase-item-title">'+
-       '<div><strong>'+esc(x.display_name||'Produto sem descrição')+'</strong>'+
-       '<small>EAN '+esc(x.gtin||x.tax_gtin||'não informado')+
-       ' · NCM observado '+esc(x.last_observed_ncm||'—')+
-       ' · CEST observado '+esc(x.last_observed_cest||'—')+'</small></div>'+
-       '<span class="pill '+(x.review_status==='linked_reviewable'?'':'warn')+'">'+
-       esc(xmlCatalogStatusLabel(x.review_status))+'</span></div>'+
-       '<div class="purchase-catalog-meta"><span><b>'+esc(x.observations_count||0)+'</b> observação(ões)</span>'+
-       '<span><b>'+esc(x.suppliers_count||0)+'</b> fornecedor(es)</span>'+
-       '<span><b>'+esc(x.distinct_invoices||0)+'</b> nota(s)</span>'+
-       '<span>Último XML: '+esc(x.last_seen?dateOnly(String(x.last_seen).slice(0,10)):'—')+'</span>'+
-       (x.xml_verified?'<span>Origem XML conferida</span>':'<span>Releitura do XML pendente</span>')+
-       '</div><div style="margin-top:8px"><button class="secondary" type="button" data-xml-open="'+esc(x.candidate_key)+'">'+(state.xmlCatalogDetailKey===x.candidate_key?'Fechar ficha':'Ver ficha e histórico')+'</button></div>'+ (state.xmlCatalogDetailKey===x.candidate_key?'<div style="margin-top:8px">'+xmlCatalogDetailMarkup()+'</div>':'')+'</div>').join('')+'</div>':
-       '<div class="empty">Nenhum produto encontrado neste filtro.</div>')+
-      '<div class="bling-actions" style="justify-content:flex-end;margin:12px 0 0">'+
-       '<button type="button" class="secondary" id="xmlCatalogPrev" '+(offset<=0?'disabled':'')+'>Anterior</button>'+
-       '<button type="button" class="secondary" id="xmlCatalogNext" '+(offset+items.length>=Number(d.total||0)?'disabled':'')+'>Próximos produtos</button>'+
-      '</div>';
-  }
-  function xmlCatalogDetailMarkup(){
-    if(state.xmlCatalogDetailLoading)return '<div class="loading">Carregando histórico do XML…</div>';
-    const data=state.xmlCatalogDetail||{},c=data.candidate||{};
-    if(data.error)return '<div class="empty">'+esc(data.error)+'</div>';
-    const rows=Array.isArray(data.observations)?data.observations:[];
-    const active=rows.find(x=>String(x.purchase_item_id||'')===String(state.xmlCatalogSelectedObservation||''))||
-      rows.find(x=>x.purchase_item_id&&!x.linked_product_id)||rows[0]||{};
-    const options=state.xmlCatalogMatches||data.suggested_existing_products||[];
-    const chosen=state.xmlCatalogChosenProduct||null;
-    const purchaseUnit=String(active.purchase_unit||'').trim().toUpperCase();
-    const itemHasBarcode=[active.commercial_gtin,active.tax_gtin].some(x=>/^\d{8,14}$/.test(String(x||'')));
-    const needsManualUnitReview=!itemHasBarcode||/^(KG|G|L|LT|LTS|M|MT|TON)$/.test(purchaseUnit);
-    return '<div class="purchase-safe"><strong>Ficha de origem · '+esc(c.display_name||'Produto')+'</strong>'+
-      '<small>Os campos abaixo vêm das NF-e. Para corrigir o cadastro é obrigatória uma confirmação humana.</small></div>'+
-      '<div class="purchase-catalog-meta" style="margin:8px 0">'+
-      '<span>'+esc(c.observations_count||0)+' registros de XML</span>'+
-      '<span>'+esc(c.suppliers_count||0)+' fornecedores</span>'+
-      '<span>'+esc(c.ncm_variations||0)+' NCM(s) informado(s)</span></div>'+
-      '<div class="purchase-items" style="max-height:300px;overflow-y:auto">'+rows.map(x=>
-        '<div class="purchase-item-card" style="padding:10px;margin:5px 0">'+
-        '<div class="purchase-item-title"><div><strong>'+esc(x.xml_description||'Produto')+'</strong>'+
-        '<small>'+esc(x.supplier_name||'Fornecedor')+' · '+esc(x.issued_at?dateOnly(String(x.issued_at).slice(0,10)):'—')+
-        ' · Item '+esc(x.item_number||'—')+'</small></div>'+
-        '<button type="button" class="secondary" data-xml-observation="'+esc(x.purchase_item_id||'')+'" '+
-          (!x.purchase_item_id?'disabled':'')+'>'+
-          (String(active.purchase_item_id||'')===String(x.purchase_item_id||'')?'Selecionado':'Selecionar')+'</button></div>'+
-        '<small>EAN comercial: '+esc(x.commercial_gtin||'—')+' · EAN tributável: '+esc(x.tax_gtin||'—')+
-        ' · Cód. fornecedor: '+esc(x.supplier_item_code||'—')+'</small>'+
-        '<small style="display:block">NCM: '+esc(x.xml_ncm||'—')+' · CEST: '+esc(x.xml_cest||'—')+
-        ' · CFOP: '+esc(x.xml_cfop||'—')+'</small>'+
-        '<small style="display:block">Quantidade: '+esc(x.purchase_quantity??'—')+' '+esc(x.purchase_unit||'')+
-        ' · Valor unitário: '+(x.purchase_unit_price==null?'—':purchaseMoney(x.purchase_unit_price))+
-        ' · Total: '+(x.line_total==null?'—':purchaseMoney(x.line_total))+'</small>'+
-        (x.linked_product_id?'<small style="display:block"><strong>Vinculado:</strong> '+esc(x.linked_product_name||'Produto')+
-        ' · NCM cadastro: '+esc(x.linked_product_ncm||'—')+' · CEST fiscal: '+esc(x.linked_product_cest||'—')+'</small>':
-        '<small style="display:block">Sem vínculo com o cadastro de venda</small>')+'</div>').join('')+'</div>'+
-      (data.truncated?'<small class="sub">Exibindo até 60 observações mais recentes.</small>':'')+
-      (active.linked_product_id?'<div class="purchase-safe"><strong>Item vinculado.</strong>'+
-       '<small>Revisão de custo, preço e estoque permanece na tela operacional de Compras/XML.</small></div>':
-       needsManualUnitReview?'<div class="purchase-safe purchase-danger" style="margin-top:10px"><strong>Conferência de EAN/unidade necessária</strong>'+
-       '<small>Este XML não possui código de barras numérico ou utiliza unidade de peso/volume. Para não converter quilos em unidades ou associar códigos incorretos, faça a identificação na revisão operacional de Compras/XML. O item já está preservado no catálogo.</small></div>':
-       '<div class="purchase-safe" style="margin-top:12px"><strong>Vincular ou cadastrar este item</strong>'+
-        '<small>EAN da unidade e EAN da embalagem são independentes da unidade de compra (CX, FD, PC, UN). Informe o que o EAN realmente identifica; a embalagem de compra será revisada separadamente. Não altera estoque nem preço.</small>'+
-        '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
-        '<label>EAN de origem<select id="xmlDetailGtinSource"><option value="">Escolha o EAN…</option>'+
-        (typeof active.commercial_gtin==='string'&&/^\d{8,14}$/.test(active.commercial_gtin)?
-          '<option value="commercial">EAN comercial: '+esc(active.commercial_gtin)+'</option>':'')+
-        (typeof active.tax_gtin==='string'&&/^\d{8,14}$/.test(active.tax_gtin)?
-          '<option value="tax">EAN tributável: '+esc(active.tax_gtin)+'</option>':'')+
-        '</select></label>'+
-        '<label>Tipo do EAN<select id="xmlDetailRole"><option value="">Escolha…</option>'+
-        '<option value="base_unit">Unidade</option><option value="package">Caixa/fardo/pacote</option></select></label>'+
-        '<label id="xmlDetailFactorWrap" style="display:none">Unidades representadas pelo EAN da embalagem<input id="xmlDetailFactor" type="number" min="1" max="100000" step="1" value="1" style="width:110px"></label></div>'+
-        '<div id="xmlDetailPurchasePackWrap" style="display:none;margin:10px 0">'+
-        '<label>Unidades por embalagem de compra (opcional; para revisão)<input id="xmlDetailPurchasePackUnits" type="number" min="1" max="100000" step="1" placeholder="Não confirmado" style="width:150px"></label>'+
-        '<small style="display:block">Informe somente se souber quantas unidades vêm em cada unidade de compra da NF-e. PC pode significar peça, não pacote. Não calcula nem lança estoque.</small>'+
-        '</div>'+
-        '<div class="bling-actions" style="gap:6px;flex-wrap:wrap">'+
-        '<input id="xmlDetailProductSearch" type="search" placeholder="EAN ou nome do produto cadastrado" style="min-width:220px;flex:1">'+
-        '<button id="xmlDetailSearch" type="button" class="secondary">Buscar produto</button></div>'+
-        '<div class="purchase-items">'+options.map(p=>
-           '<div class="purchase-item-title" style="margin:5px 0"><div><strong>'+esc(p.name||'Produto')+'</strong>'+
-           '<small>EAN '+esc(p.gtin||'—')+' · '+(p.is_active?'Ativo':'Inativo')+'</small></div>'+
-           '<button class="secondary" type="button" data-xml-pick="'+esc(p.id)+'">Escolher</button></div>').join('')+'</div>'+
-        (chosen?'<small style="display:block;margin:8px 0">Produto escolhido: <b>'+esc(chosen.name)+'</b></small>':'')+
-        '<button id="xmlDetailLink" type="button" class="secondary" '+(!chosen?'disabled':'')+'>Vincular somente esta linha</button>'+
-        '<div style="margin-top:12px"><label>Novo produto (inativo)<input id="xmlDetailNewName" type="text" maxlength="250" style="width:100%" value="" placeholder="Nome comercial por unidade, sem CX/FD/FARDO"></label>'+
-        '<button id="xmlDetailCreate" type="button" class="secondary">Cadastrar produto inativo</button></div>'+
-        '</div>')+
-      '<small class="sub">Dados fiscais são evidências do fornecedor e precisam de validação. Não há lançamento de estoque nesta ficha.</small>';
-  }
   function xmlCatalogDetailRefresh(){
     const h=$('#xmlCatalogBody');
     if(!h||!state.xmlCatalogOpen)return;
@@ -948,3 +813,33 @@
     host.querySelectorAll('[data-manual-remove]').forEach(b=>b.onclick=()=>{state.manualSale.cart.splice(Number(b.dataset.manualRemove),1);paintManualSaleCart()});
   }
   async function searchManualCustomers(){
+    const q=manualSaleFormValue('#manualCustomerSearch'),host=$('#manualCustomerResults');if(!host)return;
+    if(q.length<2){host.innerHTML='<div class="sub">Digite pelo menos 2 caracteres.</div>';return}
+    host.innerHTML='<div class="loading">Buscando cliente…</div>';
+    try{
+      const data=await customerApi('vitrine_customers_list',{q,limit:12});
+      const rows=data.customers||[];state.manualSale.customerResults=rows;
+      host.innerHTML=rows.length?rows.map((x,i)=>'<button class="history-row" type="button" data-manual-customer="'+i+'" style="grid-template-columns:1fr 140px"><div class="history-main"><strong>'+esc(x.display_name||'Sem nome')+'</strong><small>'+esc(formatPhone(x.phone||''))+(x.cpf?' · CPF '+esc(formatCpf(x.cpf)):'')+'</small></div><span>Selecionar</span></button>').join(''):'<div class="history-empty">Cliente não encontrado. Preencha os dados abaixo e o pedido será criado sem cadastro vinculado.</div>';
+      host.querySelectorAll('[data-manual-customer]').forEach(b=>b.onclick=()=>manualSaleFillCustomer(rows[Number(b.dataset.manualCustomer)]));
+    }catch{host.innerHTML='<div class="history-empty">Não consegui buscar clientes agora.</div>'}
+  }
+  async function searchManualItems(){
+    const q=manualSaleFormValue('#manualItemSearch'),host=$('#manualItemResults');if(!host)return;
+    if(q.length<2){host.innerHTML='<div class="sub">Digite nome, EAN ou código.</div>';return}
+    host.innerHTML='<div class="loading">Buscando produtos e cestas…</div>';
+    try{
+      const products=await api('products',{q,limit:16,active:'true'});
+      const pn=normalize(q),baskets=(state.manualSale.baskets||[]).filter(b=>normalize(b.name).includes(pn)).slice(0,8);
+      const rows=(products.products||[]).filter(p=>Number(p.stock_quantity||0)>0);
+      host.innerHTML=(baskets.length?'<div class="section-title">Cestas</div>'+baskets.map(b=>'<div class="replacement-option"><div><strong>'+esc(b.name)+'</strong><small>'+money(b.display_price_cents)+' · personalizável</small></div><button class="secondary" type="button" data-manual-basket="'+esc(b.id)+'">Configurar</button></div>').join(''):'')+
+        (rows.length?'<div class="section-title">Produtos</div>'+rows.map(p=>'<div class="replacement-option"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.gtin||p.sku||'Sem código')+' · '+money(p.sale_price_cents)+' · estoque '+esc(fmtQty(p.stock_quantity||0))+'</small></div><button class="secondary" type="button" data-manual-product="'+esc(p.id)+'">Adicionar</button></div>').join(''):'')+
+        (!baskets.length&&!rows.length?'<div class="history-empty">Nenhum item encontrado.</div>':'');
+      host.querySelectorAll('[data-manual-product]').forEach(b=>b.onclick=()=>{
+        const p=rows.find(x=>x.id===b.dataset.manualProduct);if(!p)return;
+        const existing=state.manualSale.cart.find(x=>x.type==='product'&&x.id===p.id);
+        if(existing)existing.qty=Math.min(30,existing.qty+1);else state.manualSale.cart.push({type:'product',id:p.id,name:p.name,qty:1,price_cents:Number(p.sale_price_cents||0)});
+        paintManualSaleCart();toast('Produto adicionado');
+      });
+      host.querySelectorAll('[data-manual-basket]').forEach(b=>b.onclick=()=>openManualBasketConfig(b.dataset.manualBasket));
+    }catch{host.innerHTML='<div class="history-empty">Não consegui buscar itens agora.</div>'}
+  }
