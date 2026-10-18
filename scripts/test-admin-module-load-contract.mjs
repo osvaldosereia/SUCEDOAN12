@@ -8,7 +8,7 @@ const modules=[
   'core/formatters.js','core/identifiers.js','core/errors.js',
   'components/printing.js','marketing/helpers.js','orders/sorting.js',
   'orders/read-model.js','components/today-cards.js','orders/time.js',
-  'orders/search.js','orders/whatsapp-links.js','orders/contact-actions.js',
+  'orders/search.js','orders/whatsapp-links.js','orders/action-buttons.js','orders/contact-actions.js',
   'components/expiry-alert.js','components/ops-attention.js',
   'components/print-queue-panel.js'
 ];
@@ -32,7 +32,7 @@ const names=[
   'DonaAntoniaAdminMarketingHelpers','DonaAntoniaAdminOrderSorting',
   'DonaAntoniaAdminOrderReadModel','DonaAntoniaAdminTodayCards',
   'DonaAntoniaAdminOrderTime','DonaAntoniaAdminOrderSearch',
-  'DonaAntoniaAdminWhatsappLinks','DonaAntoniaAdminOrderContactActions',
+  'DonaAntoniaAdminWhatsappLinks','DonaAntoniaAdminOrderActionButtons','DonaAntoniaAdminOrderContactActions',
   'DonaAntoniaAdminExpiryAlert','DonaAntoniaAdminOpsAttention',
   'DonaAntoniaAdminPrintQueuePanel'
 ];
