@@ -71,4 +71,4 @@ end;
 $$;
 
 revoke all on function public.admin_order_stock_transition_atomic_v1(uuid,text,text,jsonb) from public, anon, authenticated;
-grant execute on function public.admin_order_stock_transition_atomic_v1(uuid,text,text) to service_role;
+grant execute on function public.admin_order_stock_transition_atomic_v1(uuid,text,text,jsonb) to service_role;
