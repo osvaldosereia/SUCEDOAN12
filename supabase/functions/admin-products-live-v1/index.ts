@@ -3784,7 +3784,8 @@ async function autoIssueFiscalAfterSeparation(oid:string){
   const before:any=await orderFiscalStatusV4(oid);
   if(before.error)return {attempted:false,ok:false,error:before.error,detail:before.detail||null};
   if(before.authorized===true)return {attempted:false,ok:true,authorized:true,stage:"authorized",idempotent_replay:true,fiscal:before};
-  if((before.hard_blockers||[]).length)return {attempted:false,ok:false,error:"fiscal_dispatch_not_eligible",blockers:before.hard_blockers,fiscal:before};
+  // Automatic issuance must respect the same recovery/idempotency guard as manual issuance.
+  if(before.can_issue!==true)return {attempted:false,ok:false,error:"fiscal_dispatch_not_eligible",blockers:before.blockers||before.hard_blockers||[],fiscal:before};
   if(before.issue_enabled!==true)return {attempted:false,ok:false,error:"fiscal_auto_issue_not_enabled",fiscal:before};
 
   const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});
