@@ -20,7 +20,7 @@ Método: árvore Git completa (SHA e tamanhos), leitura dos pontos de entrada HT
 | Sem fonte nesse diretório **convencional** | 101 |
 | Funções SQL em `public` e `private` inventariadas | 570 |
 | Funções SQL com referência à tabela ausente `public.cart_items` | 7 |
-| Famílias versionadas com mais de uma função | 15 (total 42 variantes) |
+| Famílias versionadas com mais de uma função | 15 (total 40 variantes) |
 | Grupos de blobs com SHA idêntico | 66 |
 
 Arquivos auxiliares exportados: [inventario_admin_63.csv](inventario_admin_63.csv), [edge_functions_138.csv](edge_functions_138.csv), [rotinas_sql.csv](rotinas_sql.csv), [duplicacoes_exatas.csv](duplicacoes_exatas.csv), [familias_sql.csv](familias_sql.csv).
