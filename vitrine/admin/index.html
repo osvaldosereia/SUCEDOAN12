@@ -7226,8 +7226,10 @@
 
   async function loadCustomerHistory(customerId,append=false){
     const offset=append?state.customerHistoryOffset:0;
+    const requestSeq=state.customerHistoryRequestSeq=(state.customerHistoryRequestSeq||0)+1;
     try{
       const data=await customerApi('vitrine_customer_history',{id:customerId,limit:20,offset});
+      if(requestSeq!==state.customerHistoryRequestSeq||state.customerProfile?.customer?.id!==customerId)return;
       if(!append){
         state.customerProfile={customer:data.customer,summary:data.summary,orders:data.orders||[],top_products:data.top_products||[],next_offset:data.pagination?.next_offset??null};
       }else{
@@ -7237,6 +7239,7 @@
       state.customerHistoryOffset=data.pagination?.next_offset??offset;
       paintCustomerProfile();
     }catch(e){
+      if(requestSeq!==state.customerHistoryRequestSeq||state.customerProfile?.customer?.id!==customerId)return;
       $('#editorBody').innerHTML='<div class="empty">Não consegui carregar o histórico deste cliente.<br><button class="text" id="retryCustomerHistory">Tentar novamente</button></div>';
       if($('#retryCustomerHistory'))$('#retryCustomerHistory').onclick=()=>loadCustomerHistory(customerId,false);
     }
