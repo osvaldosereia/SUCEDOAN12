@@ -33,6 +33,7 @@ state.orders=null;
 assert.equal(f.orderIssueCount('all'),0);
 state.orders=[null,missing,good];
 assert.equal(f.orderIssueCount('all'),1);
+assert.equal(f.orderFilterMatch(null,'all'),false);
 assert.equal(f.orderFilterMatch(null,'new'),false);
 assert.equal(f.orderFilterMatch(null,'separate'),false);
 assert.equal(f.orderFilterMatch(null,'ready'),false);
