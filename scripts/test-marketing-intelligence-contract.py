@@ -64,7 +64,9 @@ required_admin_markers = [
 ]
 for marker in required_admin_markers:
     assert marker in admin, f'missing admin marker: {marker}'
-admin_brand_block = admin[admin.index('const MARKETING_BRANDS='):admin.index('const MARKETING_SEGMENTS=')]
+helpers = Path('vitrine/admin/marketing/helpers.js').read_text(encoding='utf-8')
+assert 'DonaAntoniaAdminMarketingHelpers.createMarketingHelpers(normalize)' in admin, 'admin must load extracted marketing helpers'
+admin_brand_block = helpers[helpers.index('const MARKETING_BRANDS='):helpers.index('const MARKETING_SEGMENTS=')]
 assert "nivea" in admin_brand_block and "elseve" in admin_brand_block
 for unsupported in ["seda", "monange", "lola-cosmetics", "skala", "dove", "omo", "ype", "downy"]:
     assert unsupported not in admin_brand_block, f'unsupported active PapoAI brand in admin contract: {unsupported}'
