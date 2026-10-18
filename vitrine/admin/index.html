@@ -1460,6 +1460,7 @@
 <script src="/vitrine/admin/components/ops-attention.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/components/print-queue-panel.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/orders/status-pill.js?v=refactor-20261018"></script>
+<script src="/vitrine/admin/orders/counts.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/basket-lot-image.js?v=marketing-stable-20261012"></script>
 <script>
 (()=>{
@@ -1664,14 +1665,7 @@
   const {sortOperationalOrders}=window.DonaAntoniaAdminOrderSorting;
   const {orderProblemReasons,isBacklogOrder,orderIssueMatch,orderIssueCount,orderOperationalPriority,orderNextAction,orderFilterMatch}=window.DonaAntoniaAdminOrderReadModel.createOrderReadModel(cuiabaDayKey,state);
   const {orderMissingDataRequest,orderAddressRequestHref,mapsHrefFromAddress,orderContactActionsHtml}=window.DonaAntoniaAdminOrderContactActions.createOrderContactActions(orderProblemReasons,whatsappHref,whatsappMessageHref,orderDisplayCode,esc);
-  function orderFilterCount(filter){
-    if(filter==='problems')return state.orders.filter(o=>orderProblemReasons(o).length>0).length;
-    return state.orders.filter(o=>orderFilterMatch(o,filter)).length;
-  }
-  function todayCardCount(key){
-    if(key==='closure')return Number(state.closurePendingCount||0);
-    return orderFilterCount(key);
-  }
+  const {orderFilterCount,todayCardCount}=window.DonaAntoniaAdminOrderCounts.createOrderCounts(state,orderProblemReasons,orderFilterMatch);
   const {renderTodayCards,renderTodayIssueBreakdown}=window.DonaAntoniaAdminTodayCards.createTodayCards(esc,todayCardCount,orderIssueCount);
   const {renderTodayExpiryAlert}=window.DonaAntoniaAdminExpiryAlert.createExpiryAlert(state,esc);
   async function reconnectBlingOauth(){

@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const source=fs.readFileSync('vitrine/admin/orders/counts.js','utf8');
+assert.ok(html.includes('/vitrine/admin/orders/counts.js?v=refactor-20261018'));
+const ctx={window:{},Number,Object};
+vm.runInNewContext(source,ctx);
+const state={orders:[{status:'created',problem:true},{status:'confirmed'},{status:'created'}],closurePendingCount:4};
+const f=ctx.window.DonaAntoniaAdminOrderCounts.createOrderCounts(state,o=>o.problem?['missing']:[],(o,key)=>key==='all'||key==='new'&&o.status==='created');
+assert.equal(f.orderFilterCount('all'),3);
+assert.equal(f.orderFilterCount('new'),2);
+assert.equal(f.orderFilterCount('problems'),1);
+assert.equal(f.todayCardCount('closure'),4);
+assert.equal(f.todayCardCount('new'),2);
+state.orders=[];
+assert.equal(f.orderFilterCount('all'),0);
+console.log('Admin order counters: PASS');
