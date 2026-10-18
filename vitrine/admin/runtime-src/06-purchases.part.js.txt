@@ -1,213 +1,3 @@
-      native_launch_error_but_reconciled:'O Bling mostrou um aviso, mas as contas foram confirmadas.',
-      payables_missing_or_ambiguous:'Não encontrei uma conta a pagar que corresponda com segurança a esta nota.',
-      bling_nfe_id_missing_for_native_payables:'Esta nota ainda não tem a referência necessária no Bling para lançar o financeiro.',
-      supplier_contact_missing:'O fornecedor desta nota ainda precisa ser vinculado corretamente no Bling.',
-      installments_missing:'A nota não trouxe parcelas/vencimentos suficientes para montar o financeiro com segurança.',
-      installment_total_mismatch:'O total das parcelas é diferente do total da NF-e.',
-      automatic_payables_disabled:'O lançamento automático de contas está desativado.'
-    };
-    const key=String(v||'');
-    if(/^nfe_lancar_contas_http_/.test(key))return 'O Bling não aceitou o lançamento das contas desta NF-e.';
-    if(/^payable_reconcile_http_/.test(key))return 'Não consegui consultar as contas a pagar no Bling agora.';
-    return map[key]||'O financeiro desta nota precisa de conferência.';
-  }
-  function purchaseFinanceProblemHtml(d){
-    const f=d?.finance_reference||{},r=f.reconciliation||{};
-    const reason=String(f.reason||d?.finance_last_error||'');
-    if(reason==='installment_total_mismatch'){
-      const invoice=Number(r.invoice_total??d?.total_amount),parts=Number(r.installment_total);
-      const diff=Number.isFinite(invoice)&&Number.isFinite(parts)?Math.round((parts-invoice)*100)/100:null;
-      const ps=purchasePaymentSummary(d);
-      if(ps?.paid_at_purchase_likely&&ps?.total_matches){
-        return '<div class="purchase-price-grid" style="margin-top:10px">'+
-          '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
-          '<div class="purchase-price-box"><small>Pagamento efetivo no XML</small><strong class="ok-text">'+purchaseMoney(ps.payment_total)+'</strong></div>'+
-          (Number(ps.change||0)>0?'<div class="purchase-price-box"><small>Troco informado</small><strong>'+purchaseMoney(ps.change)+'</strong></div>':'')+
-          '<div class="purchase-price-box"><small>Parcela/cobrança</small><strong class="warn-text">'+purchaseMoney(parts)+'</strong></div>'+
-        '</div><small class="warn-text" style="margin-top:7px">O pagamento da NF-e fecha corretamente. A divergência está somente na parcela/cobrança do Bling/XML. Confira essa conta antes da baixa.</small>';
-      }
-      return '<div class="purchase-price-grid" style="margin-top:10px">'+
-        '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
-        '<div class="purchase-price-box"><small>Total das parcelas</small><strong>'+purchaseMoney(parts)+'</strong></div>'+
-        '<div class="purchase-price-box"><small>Diferença</small><strong class="warn-text">'+(diff===null?'—':purchaseMoney(diff))+'</strong></div>'+
-      '</div><small class="warn-text" style="margin-top:7px">Corrija as parcelas no Bling para que a soma fique igual ao total da nota. Depois clique em <b>Resolver financeiro</b> novamente.</small>';
-    }
-    if(reason==='payables_missing_or_ambiguous'){
-      return '<small style="margin-top:7px">Ao clicar em <b>Resolver financeiro</b>, o sistema confere novamente. Se não existir conta correspondente, ele pedirá sua confirmação antes de solicitar o lançamento ao Bling.</small>';
-    }
-    if(reason==='installments_missing'){
-      return '<small class="warn-text" style="margin-top:7px">Confira no Bling os vencimentos e parcelas desta compra. O sistema não cria valores por aproximação.</small>';
-    }
-    if(reason==='supplier_contact_missing'){
-      return '<small class="warn-text" style="margin-top:7px">É preciso corrigir o vínculo do fornecedor no Bling antes de lançar as contas.</small>';
-    }
-    return '';
-  }
-  function purchaseFinanceBlockHtml(d){
-    const f=d?.finance_reference||{},posted=d?.finance_status==='posted'&&Boolean(d?.finance_reconciled_at);
-    const eligible=d?.recipient_kind==='CNPJ'&&d?.financial_eligible===true;
-    const reason=purchaseFinanceReasonLabel(f.reason||d?.finance_last_error);
-    const paymentHint=purchasePaymentAtPurchaseHtml(d);
-    if(d?.recipient_kind==='CPF'){
-      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Nota em CPF: não gera contas a pagar da empresa.</small></div>'+paymentHint;
-    }
-    if(!eligible){
-      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Esta nota não está marcada para gerar contas a pagar da empresa.</small></div>'+paymentHint;
-    }
-    if(posted){
-      const ps=purchasePaymentSummary(d);
-      const title=ps?.paid_at_purchase_likely?'Conta registrada no Bling · baixa ainda precisa ser conferida':'Conta a pagar registrada no Bling';
-      const text=ps?.paid_at_purchase_likely
-        ?'A obrigação da compra existe no Bling, mas a NF-e indica pagamento no ato. Confirme a baixa para que ela não permaneça como vencida/atrasada.'
-        :'A conta desta NF-e foi encontrada e conciliada no Bling.';
-      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>'+esc(title)+'</strong><small>'+esc(text)+'</small></div>'+paymentHint;
-    }
-    return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0">'+
-      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+
-        '<strong>Financeiro precisa de atenção</strong>'+
-        '<small>'+esc(reason)+'</small>'+
-        purchaseFinanceProblemHtml(d)+
-      '</div><div class="purchase-detail-actions">'+
-        '<button class="primary" type="button" data-purchase-finance-resolve="'+esc(d.id)+'">Resolver financeiro</button>'+
-      '</div></div>'+
-      '<details style="margin-top:8px"><summary class="sub" style="cursor:pointer">Detalhes técnicos</summary><small>NF-e Bling #'+esc(d?.bling_nfe_id||'—')+' · tentativas: '+esc(Number(d?.finance_attempt_count||0))+(d?.finance_last_attempt_at?' · última '+esc(dateTime(d.finance_last_attempt_at)):'')+'.</small></details>'+
-    '</div>'+paymentHint;
-  }
-
-  function purchaseStatusLabel(v){
-    const map={processed:'Processada',review_required:'Revisar',failed:'Falhou',duplicate:'Duplicada',processing:'Processando',pending:'Pendente'};
-    const cls=v==='review_required'||v==='failed'?'warn':'';
-    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
-  }
-  function purchaseReceiptLabel(v){
-    const map={ready:'Pronta para entrada',received:'Estoque recebido',review:'Revisar antes da entrada',not_received:'Não recebido'};
-    const cls=v==='ready'?'':v==='received'?'':v==='review'?'warn':'off';
-    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
-  }
-  function purchaseMoney(v){
-    const n=Number(v||0);
-    return Number.isFinite(n)?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—';
-  }
-  async function purchaseApi(purchase_action,payload={}){
-    return customerApi('purchase_xml',{purchase_action,...payload});
-  }
-  function purchaseFilterPayload(){
-    const f=state.purchaseFilter||{period:'this_month',start_date:'',end_date:''};
-    return {period:f.period||'this_month',start_date:f.start_date||null,end_date:f.end_date||null};
-  }
-  function purchasePeriodLabel(){
-    const f=state.purchaseFilter||{};
-    const labels={this_month:'Este mês',last_month:'Mês passado',days_90:'Últimos 90 dias',days_120:'Últimos 120 dias',days_180:'Últimos 180 dias',custom:'Período personalizado'};
-    if(f.period==='custom'&&f.start_date&&f.end_date)return dateOnly(f.start_date)+' a '+dateOnly(f.end_date);
-    return labels[f.period]||'Este mês';
-  }
-  function purchaseCustomRangeReady(){
-    const f=state.purchaseFilter||{};
-    return f.period!=='custom'||(/^\d{4}-\d{2}-\d{2}$/.test(f.start_date||'')&&/^\d{4}-\d{2}-\d{2}$/.test(f.end_date||'')&&f.start_date<=f.end_date);
-  }
-  function syncPurchasePeriodControls(){
-    const f=state.purchaseFilter||{};
-    const custom=f.period==='custom';
-    const box=$('#purchaseCustomDates');if(box)box.style.display=custom?'flex':'none';
-    const b=$('#purchaseBlingSync');if(b)b.textContent='Buscar no Bling';
-  }
-  async function renderPurchases(){
-    const content=$('#content');
-    if(!state.purchaseFilter)state.purchaseFilter={period:'this_month',start_date:'',end_date:''};
-    if(!state.purchaseQuickStatus)state.purchaseQuickStatus='attention';
-    const pf=state.purchaseFilter;
-    content.innerHTML=
-      '<div class="page-head"><div><h1>Notas fiscais de entrada</h1><p>Confira suas compras e os produtos recebidos. Integração com o Bling.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar</button></div>'+
-      '<section class="panel purchase-simple-toolbar" aria-label="Importação de notas fiscais">'+
-        '<div class="purchase-toolbar-period"><label for="purchasePeriod">Período</label>'+
-          '<select id="purchasePeriod">'+
-            '<option value="this_month" '+(pf.period==='this_month'?'selected':'')+'>Este mês</option>'+
-            '<option value="last_month" '+(pf.period==='last_month'?'selected':'')+'>Mês passado</option>'+
-            '<option value="days_90" '+(pf.period==='days_90'?'selected':'')+'>Últimos 90 dias</option>'+
-            '<option value="days_120" '+(pf.period==='days_120'?'selected':'')+'>Últimos 120 dias</option>'+
-            '<option value="days_180" '+(pf.period==='days_180'?'selected':'')+'>Últimos 180 dias</option>'+
-            '<option value="custom" '+(pf.period==='custom'?'selected':'')+'>Escolher datas</option>'+
-          '</select>'+
-        '</div>'+
-        '<div id="purchaseCustomDates" class="purchase-custom-range" style="display:'+(pf.period==='custom'?'flex':'none')+'">'+
-          '<label>De <input id="purchaseDateStart" type="date" value="'+esc(pf.start_date||'')+'"></label>'+
-          '<label>Até <input id="purchaseDateEnd" type="date" value="'+esc(pf.end_date||'')+'"></label>'+
-          '<button class="secondary" id="purchaseApplyDates" type="button">Aplicar</button>'+
-        '</div>'+
-        '<div class="purchase-toolbar-actions">'+
-          '<button class="primary" id="purchaseBlingSync" type="button">Buscar no Bling</button>'+
-          '<button class="secondary" id="purchaseXmlBatch" type="button">Importar XML</button>'+
-          '<button class="secondary" id="purchaseBlingReceived" type="button">Notas recebidas no Bling ↗</button>'+
-        '</div>'+
-      '</section>'+
-      '<div class="purchase-source-note"><strong>Importação automática:</strong> o Admin importa notas já registradas como <b>Notas de compra</b> no Bling. As notas apenas <b>Ciente</b> na aba Notas recebidas não estão disponíveis por esta API. Para incluir uma dessas notas, importe o XML obtido pelo Bling quando disponível ou confirme a operação no Bling somente após verificar a compra e o recebimento. Não confirme apenas para fazê-la aparecer aqui.</div>'+
-      '<div id="purchaseBlingReceivedReview" class="purchase-review-reminder" role="status" aria-live="polite"><span class="sub">Verificando conferência diária do Bling…</span></div>'+
-      '<details class="panel purchase-import-options"><summary>Outras opções de importação</summary>'+
-        '<div class="purchase-toolbar-actions">'+
-          '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar apenas 1 XML</button>'+
-          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Catalogar XML sem cadastrar produtos</button>'+
-        '</div>'+
-        '<p class="sub">Importar uma nota não lança estoque automaticamente. A opção de catalogar serve apenas para pesquisa e revisão, sem alterar produtos, preços, estoque ou financeiro. Notas em CPF não geram contas a pagar.</p>'+
-      '</details>'+
-      '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
-      '<input id="purchaseXmlCatalogOnlyInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
-      '<div id="purchaseBody"><div class="loading">Carregando notas fiscais…</div></div>';
-    $('#refreshPurchases').onclick=loadPurchases;
-    $('#purchasePeriod').onchange=async e=>{
-      state.purchaseFilter.period=e.target.value;
-      syncPurchasePeriodControls();
-      if(e.target.value!=='custom')await loadPurchases();
-    };
-    if($('#purchaseDateStart'))$('#purchaseDateStart').onchange=e=>state.purchaseFilter.start_date=e.target.value;
-    if($('#purchaseDateEnd'))$('#purchaseDateEnd').onchange=e=>state.purchaseFilter.end_date=e.target.value;
-    if($('#purchaseApplyDates'))$('#purchaseApplyDates').onclick=async()=>{
-      if(!purchaseCustomRangeReady()){toast('Informe um período válido');return}
-      await loadPurchases();
-    };
-    $('#purchaseBlingSync').onclick=runPurchaseBlingSync;
-    $('#purchaseBlingReceived').onclick=()=>window.open('https://www.bling.com.br/notas.entrada.php#list','_blank','noopener');
-    $('#purchaseXmlSingle').onclick=()=>{$('#purchaseXmlInput').multiple=false;$('#purchaseXmlInput').click()};
-    $('#purchaseXmlBatch').onclick=()=>{$('#purchaseXmlInput').multiple=true;$('#purchaseXmlInput').click()};
-    $('#purchaseXmlInput').onchange=e=>importPurchaseXmlFiles([...e.target.files]);
-    $('#purchaseXmlCatalogOnly').onclick=()=>$('#purchaseXmlCatalogOnlyInput').click();
-    $('#purchaseXmlCatalogOnlyInput').onchange=e=>importCatalogOnlyXmlFiles([...e.target.files]);
-    syncPurchasePeriodControls();
-    await loadPurchases();
-  }
-  // Lembrete diário compartilhado entre operadores. Não é uma contagem real de NF-e.
-  function paintBlingReceivedReview(){
-    const host=$('#purchaseBlingReceivedReview');if(!host)return;
-    const r=state.purchaseBlingReceivedReview;
-    if(!r||r.ok!==true){
-      host.innerHTML='<span class="sub">Não foi possível verificar a conferência diária da equipe.</span>'+
-        '<button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Notas recebidas no Bling ↗</button>';
-    }else if(r.reviewed_today){
-      host.classList.add('reviewed');
-      const label=r.reviewed_by_name?' por '+esc(r.reviewed_by_name):'';
-      host.innerHTML='<span><strong>Notas recebidas conferidas hoje</strong><small>Registrado'+label+' às '+esc(dateTime(r.reviewed_at||''))+'. Isso não significa ausência de notas fiscais pendentes.</small></span>'+
-        '<button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Bling ↗</button>';
-    }else{
-      host.classList.remove('reviewed');
-      host.innerHTML='<span><strong>Conferir notas recebidas no Bling</strong>'+
-        '<small>Lembrete diário: veja se há novas NF-e para sua empresa. Não há contagem automática de notas pendentes.</small></span>'+
-        '<div class="purchase-review-actions"><button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Bling ↗</button>'+
-        '<button class="primary" type="button" id="purchaseReviewConfirm">Já conferi hoje</button></div>';
-    }
-    const open=$('#purchaseReviewOpenBling');
-    if(open)open.onclick=()=>window.open('https://www.bling.com.br/notas.entrada.php#list','_blank','noopener');
-    const confirm=$('#purchaseReviewConfirm');
-    if(confirm)confirm.onclick=async()=>{
-      if(confirm.disabled)return;
-      confirm.disabled=true;confirm.textContent='Registrando…';
-      try{
-        const check=await purchaseApi('bling_received_review_confirm');
-        if(!check?.ok)throw new Error('Não foi possível registrar a conferência.');
-        state.purchaseBlingReceivedReview=check;
-        paintBlingReceivedReview();
-        toast('Conferência diária registrada para a equipe');
-      }catch(e){confirm.disabled=false;confirm.textContent='Já conferi hoje';toast(errorMessage(e?.message||e))}
-    };
-  }
   async function loadPurchases(){
     const host=$('#purchaseBody');if(!host)return;
     if(!purchaseCustomRangeReady()){host.innerHTML='<div class="empty">Escolha as duas datas do período personalizado e clique em Aplicar.</div>';return}
@@ -948,3 +738,138 @@
           not_paid_at_purchase_likely:'A NF-e não indica pagamento no ato.'
         };
         alert((reasons[r.reason]||'A baixa ainda não está pronta para ser preparada.')+'\n\nNenhuma alteração foi feita no Bling.');
+      }
+      await refreshPurchaseAfterApproval(id);
+    }catch(e){toast(errorMessage(e.message))}
+    finally{if(b){b.disabled=false;b.textContent='Preparar baixa'}}
+  }
+
+  // XML Catalog V1: lightweight, explicitly opened; never preloads with purchases.
+  function xmlCatalogSectionHtml(){
+    const open=Boolean(state.xmlCatalogOpen);
+    return '<section class="panel" style="margin:12px 0;padding:14px">'+
+      '<div class="history-title dispatch-head"><div><strong>Catálogo histórico dos XMLs</strong>'+
+      '<span>Todos os produtos identificados nas notas, inclusive sem cadastro. Abrir não altera cadastro nem estoque.</span></div>'+
+      '<button class="secondary" id="xmlCatalogToggle" type="button">'+(open?'Fechar catálogo':'Abrir catálogo histórico')+'</button></div>'+
+      '<div id="xmlCatalogBody" style="display:'+(open?'block':'none')+'">'+
+      (open?xmlCatalogDisplayHtml():'')+'</div></section>';
+  }
+  function xmlCatalogStatusLabel(s){
+    return ({not_linked:'Ainda não cadastrado',identity_conflict:'Identidade divergente',
+      fiscal_conflict:'Revisão de NCM',cest_conflict:'Revisão de CEST',
+      linked_reviewable:'Vinculado · conferir'}[s]||'A conferir');
+  }
+  function xmlCatalogDisplayHtml(){
+    const d=state.xmlCatalogData||{},progress=state.xmlCatalogProgress||{};
+    const items=Array.isArray(d.items)?d.items:[],offset=Number(state.xmlCatalogOffset||0);
+    return '<div class="purchase-safe" style="margin:8px 0">'+
+       '<strong>Fonte: XMLs do Bling ou enviados manualmente</strong>'+
+       '<small>Esta área cataloga o que aparece na NF-e sem criar vendas, alterar NCM, custo, preço, estoque ou contas.</small></div>'+
+      '<div class="purchase-catalog-summary" style="margin:10px 0;flex-wrap:wrap">'+
+       '<span><b>'+esc(progress.documents||0)+'</b> notas</span>'+
+       '<span><b>'+esc(progress.declared_items||0)+'</b> itens declarados</span>'+
+       '<span><b>'+esc(progress.catalog_observations||0)+'</b> observações</span>'+
+       '<span><b>'+esc(progress.verified_from_xml||0)+'</b> verificadas no XML</span>'+
+       '<span><b>'+esc(progress.missing_staging_items||0)+'</b> faltam na fila</span>'+
+      '</div>'+
+      '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
+       '<input type="search" id="xmlCatalogSearch" placeholder="Buscar nome ou EAN" value="'+esc(state.xmlCatalogSearch||'')+'" style="min-width:180px;flex:1;max-width:420px">'+
+       '<select id="xmlCatalogFilter"><option value="">Todos</option>'+
+       [['not_linked','Sem cadastro'],['fiscal_conflict','Conflito NCM'],['cest_conflict','Conflito CEST'],['identity_conflict','Conflito de identidade'],['linked_reviewable','Vinculados']]
+       .map(([k,v])=>'<option value="'+k+'" '+(state.xmlCatalogFilter===k?'selected':'')+'>'+v+'</option>').join('')+'</select>'+
+       '<button type="button" class="secondary" id="xmlCatalogSearchButton">Buscar</button>'+
+       '<button type="button" class="secondary" id="xmlCatalogReprocess">Conferir próximos XMLs</button>'+
+      '</div>'+
+      (state.xmlCatalogBusy?'<div class="loading">Lendo os documentos…</div>':'')+
+      '<div class="sub" style="margin:8px 0">Exibindo '+esc(items.length)+' de '+esc(d.total||0)+' produtos candidatos. A leitura histórica ocorre somente ao clicar.</div>'+
+      (items.length?'<div class="purchase-catalog-list">'+items.map(x=>
+       '<div class="purchase-catalog-card"><div class="purchase-item-title">'+
+       '<div><strong>'+esc(x.display_name||'Produto sem descrição')+'</strong>'+
+       '<small>EAN '+esc(x.gtin||x.tax_gtin||'não informado')+
+       ' · NCM observado '+esc(x.last_observed_ncm||'—')+
+       ' · CEST observado '+esc(x.last_observed_cest||'—')+'</small></div>'+
+       '<span class="pill '+(x.review_status==='linked_reviewable'?'':'warn')+'">'+
+       esc(xmlCatalogStatusLabel(x.review_status))+'</span></div>'+
+       '<div class="purchase-catalog-meta"><span><b>'+esc(x.observations_count||0)+'</b> observação(ões)</span>'+
+       '<span><b>'+esc(x.suppliers_count||0)+'</b> fornecedor(es)</span>'+
+       '<span><b>'+esc(x.distinct_invoices||0)+'</b> nota(s)</span>'+
+       '<span>Último XML: '+esc(x.last_seen?dateOnly(String(x.last_seen).slice(0,10)):'—')+'</span>'+
+       (x.xml_verified?'<span>Origem XML conferida</span>':'<span>Releitura do XML pendente</span>')+
+       '</div><div style="margin-top:8px"><button class="secondary" type="button" data-xml-open="'+esc(x.candidate_key)+'">'+(state.xmlCatalogDetailKey===x.candidate_key?'Fechar ficha':'Ver ficha e histórico')+'</button></div>'+ (state.xmlCatalogDetailKey===x.candidate_key?'<div style="margin-top:8px">'+xmlCatalogDetailMarkup()+'</div>':'')+'</div>').join('')+'</div>':
+       '<div class="empty">Nenhum produto encontrado neste filtro.</div>')+
+      '<div class="bling-actions" style="justify-content:flex-end;margin:12px 0 0">'+
+       '<button type="button" class="secondary" id="xmlCatalogPrev" '+(offset<=0?'disabled':'')+'>Anterior</button>'+
+       '<button type="button" class="secondary" id="xmlCatalogNext" '+(offset+items.length>=Number(d.total||0)?'disabled':'')+'>Próximos produtos</button>'+
+      '</div>';
+  }
+  function xmlCatalogDetailMarkup(){
+    if(state.xmlCatalogDetailLoading)return '<div class="loading">Carregando histórico do XML…</div>';
+    const data=state.xmlCatalogDetail||{},c=data.candidate||{};
+    if(data.error)return '<div class="empty">'+esc(data.error)+'</div>';
+    const rows=Array.isArray(data.observations)?data.observations:[];
+    const active=rows.find(x=>String(x.purchase_item_id||'')===String(state.xmlCatalogSelectedObservation||''))||
+      rows.find(x=>x.purchase_item_id&&!x.linked_product_id)||rows[0]||{};
+    const options=state.xmlCatalogMatches||data.suggested_existing_products||[];
+    const chosen=state.xmlCatalogChosenProduct||null;
+    const purchaseUnit=String(active.purchase_unit||'').trim().toUpperCase();
+    const itemHasBarcode=[active.commercial_gtin,active.tax_gtin].some(x=>/^\d{8,14}$/.test(String(x||'')));
+    const needsManualUnitReview=!itemHasBarcode||/^(KG|G|L|LT|LTS|M|MT|TON)$/.test(purchaseUnit);
+    return '<div class="purchase-safe"><strong>Ficha de origem · '+esc(c.display_name||'Produto')+'</strong>'+
+      '<small>Os campos abaixo vêm das NF-e. Para corrigir o cadastro é obrigatória uma confirmação humana.</small></div>'+
+      '<div class="purchase-catalog-meta" style="margin:8px 0">'+
+      '<span>'+esc(c.observations_count||0)+' registros de XML</span>'+
+      '<span>'+esc(c.suppliers_count||0)+' fornecedores</span>'+
+      '<span>'+esc(c.ncm_variations||0)+' NCM(s) informado(s)</span></div>'+
+      '<div class="purchase-items" style="max-height:300px;overflow-y:auto">'+rows.map(x=>
+        '<div class="purchase-item-card" style="padding:10px;margin:5px 0">'+
+        '<div class="purchase-item-title"><div><strong>'+esc(x.xml_description||'Produto')+'</strong>'+
+        '<small>'+esc(x.supplier_name||'Fornecedor')+' · '+esc(x.issued_at?dateOnly(String(x.issued_at).slice(0,10)):'—')+
+        ' · Item '+esc(x.item_number||'—')+'</small></div>'+
+        '<button type="button" class="secondary" data-xml-observation="'+esc(x.purchase_item_id||'')+'" '+
+          (!x.purchase_item_id?'disabled':'')+'>'+
+          (String(active.purchase_item_id||'')===String(x.purchase_item_id||'')?'Selecionado':'Selecionar')+'</button></div>'+
+        '<small>EAN comercial: '+esc(x.commercial_gtin||'—')+' · EAN tributável: '+esc(x.tax_gtin||'—')+
+        ' · Cód. fornecedor: '+esc(x.supplier_item_code||'—')+'</small>'+
+        '<small style="display:block">NCM: '+esc(x.xml_ncm||'—')+' · CEST: '+esc(x.xml_cest||'—')+
+        ' · CFOP: '+esc(x.xml_cfop||'—')+'</small>'+
+        '<small style="display:block">Quantidade: '+esc(x.purchase_quantity??'—')+' '+esc(x.purchase_unit||'')+
+        ' · Valor unitário: '+(x.purchase_unit_price==null?'—':purchaseMoney(x.purchase_unit_price))+
+        ' · Total: '+(x.line_total==null?'—':purchaseMoney(x.line_total))+'</small>'+
+        (x.linked_product_id?'<small style="display:block"><strong>Vinculado:</strong> '+esc(x.linked_product_name||'Produto')+
+        ' · NCM cadastro: '+esc(x.linked_product_ncm||'—')+' · CEST fiscal: '+esc(x.linked_product_cest||'—')+'</small>':
+        '<small style="display:block">Sem vínculo com o cadastro de venda</small>')+'</div>').join('')+'</div>'+
+      (data.truncated?'<small class="sub">Exibindo até 60 observações mais recentes.</small>':'')+
+      (active.linked_product_id?'<div class="purchase-safe"><strong>Item vinculado.</strong>'+
+       '<small>Revisão de custo, preço e estoque permanece na tela operacional de Compras/XML.</small></div>':
+       needsManualUnitReview?'<div class="purchase-safe purchase-danger" style="margin-top:10px"><strong>Conferência de EAN/unidade necessária</strong>'+
+       '<small>Este XML não possui código de barras numérico ou utiliza unidade de peso/volume. Para não converter quilos em unidades ou associar códigos incorretos, faça a identificação na revisão operacional de Compras/XML. O item já está preservado no catálogo.</small></div>':
+       '<div class="purchase-safe" style="margin-top:12px"><strong>Vincular ou cadastrar este item</strong>'+
+        '<small>EAN da unidade e EAN da embalagem são independentes da unidade de compra (CX, FD, PC, UN). Informe o que o EAN realmente identifica; a embalagem de compra será revisada separadamente. Não altera estoque nem preço.</small>'+
+        '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
+        '<label>EAN de origem<select id="xmlDetailGtinSource"><option value="">Escolha o EAN…</option>'+
+        (typeof active.commercial_gtin==='string'&&/^\d{8,14}$/.test(active.commercial_gtin)?
+          '<option value="commercial">EAN comercial: '+esc(active.commercial_gtin)+'</option>':'')+
+        (typeof active.tax_gtin==='string'&&/^\d{8,14}$/.test(active.tax_gtin)?
+          '<option value="tax">EAN tributável: '+esc(active.tax_gtin)+'</option>':'')+
+        '</select></label>'+
+        '<label>Tipo do EAN<select id="xmlDetailRole"><option value="">Escolha…</option>'+
+        '<option value="base_unit">Unidade</option><option value="package">Caixa/fardo/pacote</option></select></label>'+
+        '<label id="xmlDetailFactorWrap" style="display:none">Unidades representadas pelo EAN da embalagem<input id="xmlDetailFactor" type="number" min="1" max="100000" step="1" value="1" style="width:110px"></label></div>'+
+        '<div id="xmlDetailPurchasePackWrap" style="display:none;margin:10px 0">'+
+        '<label>Unidades por embalagem de compra (opcional; para revisão)<input id="xmlDetailPurchasePackUnits" type="number" min="1" max="100000" step="1" placeholder="Não confirmado" style="width:150px"></label>'+
+        '<small style="display:block">Informe somente se souber quantas unidades vêm em cada unidade de compra da NF-e. PC pode significar peça, não pacote. Não calcula nem lança estoque.</small>'+
+        '</div>'+
+        '<div class="bling-actions" style="gap:6px;flex-wrap:wrap">'+
+        '<input id="xmlDetailProductSearch" type="search" placeholder="EAN ou nome do produto cadastrado" style="min-width:220px;flex:1">'+
+        '<button id="xmlDetailSearch" type="button" class="secondary">Buscar produto</button></div>'+
+        '<div class="purchase-items">'+options.map(p=>
+           '<div class="purchase-item-title" style="margin:5px 0"><div><strong>'+esc(p.name||'Produto')+'</strong>'+
+           '<small>EAN '+esc(p.gtin||'—')+' · '+(p.is_active?'Ativo':'Inativo')+'</small></div>'+
+           '<button class="secondary" type="button" data-xml-pick="'+esc(p.id)+'">Escolher</button></div>').join('')+'</div>'+
+        (chosen?'<small style="display:block;margin:8px 0">Produto escolhido: <b>'+esc(chosen.name)+'</b></small>':'')+
+        '<button id="xmlDetailLink" type="button" class="secondary" '+(!chosen?'disabled':'')+'>Vincular somente esta linha</button>'+
+        '<div style="margin-top:12px"><label>Novo produto (inativo)<input id="xmlDetailNewName" type="text" maxlength="250" style="width:100%" value="" placeholder="Nome comercial por unidade, sem CX/FD/FARDO"></label>'+
+        '<button id="xmlDetailCreate" type="button" class="secondary">Cadastrar produto inativo</button></div>'+
+        '</div>')+
+      '<small class="sub">Dados fiscais são evidências do fornecedor e precisam de validação. Não há lançamento de estoque nesta ficha.</small>';
+  }
