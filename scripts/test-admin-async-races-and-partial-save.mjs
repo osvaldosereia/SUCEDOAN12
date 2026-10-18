@@ -69,8 +69,7 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
  const state={tab:'driver',orders:[]},host={innerHTML:''};
  let painted=0,queue=0;
  const api=async()=>({orders:[{id:'driver-order',status:'confirmed'}]});
- const loadOrders=new Function('state','
-,'api','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
+ const loadOrders=new Function('state','$','api','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
   part('  let ordersLoadGeneration=0;','  async function refreshOrderSeparationBoard')+';return loadOrders')(
     state,()=>null,api,async()=>queue++,()=>painted++,async()=>{});
  await loadOrders();
@@ -83,8 +82,7 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
  const state={tab:'orders',orders:[]},host={innerHTML:'',querySelectorAll:()=>[]};
  const pending=[];let paints=0;
  const api=()=>{const d=deferred();pending.push(d);return d.promise};
- const loadOrders=new Function('state','
-,'api','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
+ const loadOrders=new Function('state','$','api','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
   part('  let ordersLoadGeneration=0;','  async function refreshOrderSeparationBoard')+';return loadOrders')(
     state,k=>k==='#orderRows'?host:null,api,async()=>{},()=>paints++,async()=>{});
  const old=loadOrders(),fresh=loadOrders();
