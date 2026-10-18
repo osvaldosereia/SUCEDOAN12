@@ -18,8 +18,8 @@ assert.ok(Array.from(f.orderProblemReasons(missing)).includes('Endereço incompl
 assert.ok(Array.from(f.orderProblemReasons(missing)).includes('Pagamento não informado'));
 assert.equal(f.orderNextAction(good),'Confirmar pedido');
 assert.equal(f.orderNextAction({...good,status:'confirmed'}),'Iniciar separação');
-assert.equal(f.orderNextAction({...good,status:'confirmed',payment_method_snapshot:{stock_consumed:true}}),'Continuar separação');
-assert.equal(f.orderNextAction({...good,status:'processing',payment_method_snapshot:{stock_consumed:true}}),'Finalizar separação');
+assert.equal(f.orderNextAction({...good,status:'confirmed',payment_method_snapshot:{label:'Pix',stock_consumed:true}}),'Continuar separação');
+assert.equal(f.orderNextAction({...good,status:'processing',payment_method_snapshot:{label:'Pix',stock_consumed:true}}),'Finalizar separação');
 assert.equal(f.orderOperationalPriority(missing),0);
 assert.equal(f.isBacklogOrder({...good,created_at:'2026-10-17T10:00:00Z'}),true);
 assert.equal(f.orderFilterMatch({...good,status:'confirmed'},'separate'),true);
