@@ -81,4 +81,7 @@ assert.match(render(),/Em impressão/);
 // Queue with no active jobs must not render an empty section.
 state.opsPrintQueue.jobs=[{status:'completed',entity_id:'o1'},{status:'cancelled',entity_id:'o1'}];
 assert.equal(render(),'');
+// The renderer may be constructed before the Admin state is initialized.
+const uninitialized=ctx.window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePanel(null,escapeHtml,()=> '—').renderOpsPrintQueue;
+assert.equal(uninitialized(),'');
 console.log('Admin print queue panel: PASS');
