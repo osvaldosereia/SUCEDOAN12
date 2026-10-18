@@ -31,7 +31,7 @@
     <main class="attendance-page" id="attendanceApp">
       <header class="page-topbar">
         <div><h1>Atendimento</h1><p id="connectionStatus">Iniciando atendimento…</p></div>
-        <a class="back-admin" href="/vitrine/admin/">Admin completo ↗</a>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><a class="back-admin" href="./piloto-1018.html" title="Homologação isolada do novo atendimento 1018">Piloto 1018 · testes</a><a class="back-admin" href="/vitrine/admin/">Admin completo ↗</a></div>
       </header>
 
       <section class="attendance-workspace">
@@ -154,14 +154,14 @@
     </main>
   </div>
 
-  <script type="module" src="./attendance-app.js?v=attendance-direct-confirm-v1"></script>
+  <script type="module" src="./attendance-app.js?v=attendance-refresh-v2"></script>
   <script type="module" src="./attendance-offers.js?v=offers-v1"></script>
   <script type="module" src="./attendance-library.js?v=auth-refresh-v2"></script>
   <script type="module" src="./attendance-ana-preview.js?v=auth-refresh-v2"></script>
-  <script type="module" src="./attendance-send.js?v=auth-refresh-v2"></script>
+  <script type="module" src="./attendance-send.js?v=send-atomic-v3"></script>
   <script type="module" src="./attendance-audio-recorder.js?v=auth-refresh-v2"></script>
   <script type="module" src="./attendance-media-send.js?v=auth-refresh-v2"></script>
   <script type="module" src="./attendance-templates.js?v=auth-refresh-v2"></script>
-  <script type="module" src="./attendance-human-ai.js?v=auth-refresh-v2"></script>
+  <script type="module" src="./attendance-human-ai.js?v=state-guard-v2"></script>
 </body>
 </html>

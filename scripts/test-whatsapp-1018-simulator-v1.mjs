@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const html=fs.readFileSync('docs/whatsapp-1018-simulator/index.html','utf8');
+assert.match(html,/<meta name="viewport"/);
+assert.match(html,/NÃO É O WHATSAPP REAL/);
+assert.match(html,/\.\.\/\.\.\/supabase\/functions\/_shared\/ana-1018-pilot-fixture-v1\.mjs/);
+assert.match(html,/routeAnaMessage\(pilot1018,text,'1018'/);
+for(const scenario of ['start','basket','order','change','human','flow','rollback','reset'])assert.match(html,new RegExp('data-scenario="'+scenario+'"'));
+assert.match(html,/mode=mode==='pilot'\?'current':'pilot'/);
+assert.doesNotMatch(html,/fetch\s*\(|supabase\.co|graph\.facebook\.com|whatsapp\.com\/send|localStorage|sessionStorage/i,'simulator must not access live APIs or persist user data');
+console.log('PASS: local-only mobile 1018 simulator has eight scenarios and no live integrations');

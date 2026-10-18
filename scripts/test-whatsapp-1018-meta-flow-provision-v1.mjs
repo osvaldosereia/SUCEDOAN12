@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';
+import {provision1018MetaFlowDraft} from '../supabase/functions/_shared/ana-1018-meta-flow-provision-v1.mjs';
+const draft=JSON.parse(fs.readFileSync('docs/whatsapp-1018-simulator/meta-flow-intent-draft.json','utf8'));
+const account={id:'00000000-0000-4000-8000-000000000018',slug:'dona-antonia-1018',phone_e164:'+5565984491018',waba_id:'1234567891011'};
+let calls=[];
+const transport=async(url,opts)=>{calls.push({url,method:opts.method});return {ok:true,status:200,json:async()=>{
+ if(url.includes('?fields=id,name,status&'))return {data:[]};
+ if(url.endsWith('/flows'))return {id:'123456789012345'};
+ if(url.endsWith('/assets'))return {success:true};
+ return {id:'123456789012345',status:'DRAFT',validation_errors:[]};
+}}};
+const base={enabled:true,account,expectedAccountId:account.id,accessToken:'test-token-must-not-leak-123456',graphVersion:'v23.0',draft,transport};
+assert.equal((await provision1018MetaFlowDraft({...base,enabled:false})).reason,'disabled');
+assert.equal((await provision1018MetaFlowDraft({...base,account:{...account,slug:'dona-antonia-0975'}})).reason,'wrong_account');
+assert.equal((await provision1018MetaFlowDraft({...base,draft:{...draft,screens:[]}})).reason,'invalid_draft');
+assert.equal(calls.length,0);
+const out=await provision1018MetaFlowDraft(base);
+assert.equal(out.ok,true);assert.equal(out.published,false);assert.equal(out.customerMessagesSent,false);
+assert.equal(calls.length,4);assert.deepEqual(calls.map(x=>x.method),['GET','POST','POST','GET']);
+assert.doesNotMatch(JSON.stringify(out),/test-token/);
+console.log('PASS 1018 Meta Flow provisioning dry-run: only draft create/upload/status, no send/publish');

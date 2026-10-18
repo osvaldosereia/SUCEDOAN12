@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {mergeAttendanceConversation} from '../vitrine/admin/atendimento/attendance-conversation-merge.js';
+const msg=(id,status='received')=>({id,message_at:`2026-10-14T12:00:${String(id).padStart(2,'0')}Z`,direction:'inbound',text_body:'Teste',status_current:status});
+const earlier={messages:[msg(1),msg(2),msg(3)],next_before:'cursor-older',service_window:{open:true}};
+const latest={messages:[msg(2,'delivered'),msg(3),msg(4)],next_before:'cursor-latest',service_window:{open:false}};
+const merged=mergeAttendanceConversation(earlier,latest);
+assert.deepEqual(merged.messages.map(m=>m.id),[1,2,3,4],'keep history and append only new IDs');
+assert.equal(merged.messages[1].status_current,'delivered','status updates replace previously rendered message');
+assert.equal(merged.next_before,'cursor-older','preserve older-page cursor');
+assert.equal(merged.service_window.open,false,'use current window and conversation metadata');
+assert.equal(mergeAttendanceConversation(null,latest),latest);
+assert.equal(mergeAttendanceConversation(earlier,{...latest,messages:[]}).messages.length,0);
+assert.deepEqual(mergeAttendanceConversation(earlier,latest,2).messages.map(m=>m.id),[3,4]);
+console.log('PASS: attendance refresh retains history, updates existing messages and window, no duplicate IDs');

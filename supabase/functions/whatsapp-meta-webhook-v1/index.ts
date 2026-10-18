@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { redactWebhookPayload } from "../_shared/whatsapp-core-v1.mjs";
+import { handle1018FlowWebhook } from "../_shared/ana-1018-meta-flow-webhook-v1.mjs";
 import { classifyCustomerConfirmation } from "../_shared/ana-customer-confirmation-v1.mjs";
 import { findPostorderReply } from "../_shared/order-postorder-quickreply-v1.mjs";
 import {sendTextViaMeta} from "../_shared/whatsapp-meta-transport-v1.mjs";
@@ -27,6 +28,10 @@ const META_APP_ID = (Deno.env.get("META_APP_ID") || Deno.env.get("WHATSAPP_APP_I
 const META_ACCESS_TOKEN = (Deno.env.get("META_WHATSAPP_ACCESS_TOKEN") || "").trim();
 const META_GRAPH_VERSION = (Deno.env.get("META_WHATSAPP_GRAPH_VERSION") || "v24.0").trim();
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
+// OFF unless explicitly configured for the approved 1018 pilot.
+const FLOW_1018_HOOK_ENABLED = Deno.env.get("WHATSAPP_1018_FLOW_HOOK_ENABLED") === "true";
+const FLOW_1018_ACCOUNT_ID = (Deno.env.get("WHATSAPP_1018_FLOW_ACCOUNT_ID") || "").trim();
+const FLOW_1018_META_FLOW_ID = (Deno.env.get("WHATSAPP_1018_META_FLOW_ID") || "").trim();
 const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
 const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
@@ -203,7 +208,11 @@ async function persistMessage(message: any, payloadHash: string, safePayload: un
     p_received_at: message.received_at,
     p_payload_hash: payloadHash,
     p_payload: safePayload,
-    p_message: message.message,
+    // Persist no raw flow_token or response_json: parse only in signed webhook memory.
+    p_message: message?.message?.metadata?.interactive?.type === "nfm_reply"
+      ? {...message.message,metadata:{...message.message.metadata,
+          interactive:redactWebhookPayload(message.message.metadata.interactive)}}
+      : message.message,
   });
   if (result.error) throw result.error;
   if (result.data?.ok !== true) throw new Error(String(result.data?.error || "meta_ingest_failed"));
@@ -477,6 +486,7 @@ Deno.serve(async (req: Request) => {
     let anaConfirmationsApplied = 0;
     let anaJobsQueued = 0;
     let postorderRepliesApplied = 0;
+    let flow1018SessionsConsumed = 0;
     for (const message of normalized.messages) {
       const result = await persistMessage(message, normalized.payloadHash, safePayload);
       const isEcho = message?.message?.direction === "outbound" && message?.message?.metadata?.source_event === "smb_message_echoes";
@@ -496,6 +506,20 @@ Deno.serve(async (req: Request) => {
         await acknowledgePostorderQuickReply(message,postorder);
         // Do not send a second ANA answer to a structured purchase button.
         continue;
+      }
+      // Existing channels and Flows pass through unchanged. No automatic sends.
+      if (FLOW_1018_HOOK_ENABLED && message.whatsapp_account_id === FLOW_1018_ACCOUNT_ID) {
+        const flow1018 = await handle1018FlowWebhook({
+          enabled: true, expectedAccountId: FLOW_1018_ACCOUNT_ID,
+          expectedFlowId: FLOW_1018_META_FLOW_ID, canonicalMessage: message,
+          signedPayload: payload,
+          ingestResult: result, db, signatureVerified: true,
+        });
+        if (flow1018.handled) {
+          if (flow1018.consumed) flow1018SessionsConsumed += 1;
+          // Never route a pilot Flow completion to the ordinary ANA responder.
+          continue;
+        }
       }
       const confirmation = await applyCustomerConfirmationSignal(message, result);
       if (confirmation?.ok === true) anaConfirmationsApplied += 1;
@@ -521,6 +545,7 @@ Deno.serve(async (req: Request) => {
       ana_confirmations_applied: anaConfirmationsApplied,
       ana_jobs_queued: anaJobsQueued,
       postorder_quickreplies_applied: postorderRepliesApplied,
+      flow_1018_sessions_consumed: flow1018SessionsConsumed,
       statuses_captured: statusesCaptured,
       statuses_recorded: statusesRecorded,
       statuses_pending: statusesPending,

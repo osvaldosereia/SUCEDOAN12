@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {fetch1018CanonicalStorefront} from '../supabase/functions/_shared/ana-1018-storefront-bridge-v1.mjs';
+const baseUrl='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
+let called=0;
+const fetcher=async(url,opts)=>{called++;assert.match(url,/action=offers/);assert.equal(opts.method,'GET');return {ok:true,json:async()=>({ok:true,offers:[{id:'1',price_cents:1000,stock_quantity:2}]})}};
+const r=await fetch1018CanonicalStorefront({action:'offers',baseUrl,fetcher});
+assert.equal(r.ok,true);assert.equal(r.canonical,true);assert.equal(called,1);
+assert.equal((await fetch1018CanonicalStorefront({action:'customer_lookup',baseUrl,fetcher})).reason,'action_not_allowed');
+assert.equal((await fetch1018CanonicalStorefront({action:'products',baseUrl,params:{phone:'123'},fetcher})).reason,'invalid_param');
+assert.equal((await fetch1018CanonicalStorefront({action:'offers',baseUrl:'https://evil.example/api',fetcher})).reason,'invalid_endpoint');
+assert.equal((await fetch1018CanonicalStorefront({action:'offers',baseUrl,fetcher:async()=>({ok:false,status:503})})).reason,'canonical_unavailable');
+assert.equal((await fetch1018CanonicalStorefront({action:'offers',baseUrl,fetcher:async()=>{throw Error('offline')}})).reason,'canonical_unavailable');
+console.log('PASS 1018 canonical storefront bridge: read-only, strict endpoint and fail-closed');

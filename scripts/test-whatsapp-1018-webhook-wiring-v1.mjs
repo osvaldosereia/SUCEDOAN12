@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const webhook=readFileSync('supabase/functions/whatsapp-meta-webhook-v1/index.ts','utf8');
+const adapter=readFileSync('supabase/functions/_shared/ana-1018-meta-flow-webhook-v1.mjs','utf8');
+const outbound=readFileSync('supabase/functions/_shared/ana-1018-flow-outbound-v1.mjs','utf8');
+assert.match(webhook,/WHATSAPP_1018_FLOW_HOOK_ENABLED/);
+assert.match(webhook,/WHATSAPP_1018_FLOW_ACCOUNT_ID/);
+assert.match(webhook,/WHATSAPP_1018_META_FLOW_ID/);
+assert.equal((webhook.match(/signedPayload:\s*payload/g)||[]).length,1,'signed payload must be forwarded once, without duplicate keys');
+assert.match(webhook,/signatureVerified:\s*true/);
+assert.match(adapter,/locateSignedMetaFlowReply\(\{canonicalMessage,signedPayload\}\)/);
+assert.match(adapter,/ops2_1018_flow_session_consume_v1/);
+assert.match(adapter,/allowOrderMutation:false,allowMessageSend:false/);
+assert.match(outbound,/create1018FlowToken/);
+assert.match(outbound,/sha2561018FlowToken/);
+assert.doesNotMatch(outbound,/\bfetch\s*\(/);
+console.log('PASS: 1018 Flow webhook signed payload wiring and disabled-by-default outbound contracts');
