@@ -124,4 +124,39 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
  assert.equal(state.currentOrder.order.id,'new');
  assert.equal(paints,0);assert.equal(refreshes,0);
 }
+
+{
+ const state={componentReplacement:{component_id:'part-1'}},host={innerHTML:'',querySelectorAll:()=>[]},input={value:'first'},pending=new Map();
+ const api=(_,{q})=>{const d=deferred();pending.set(q,d);return d.promise};
+ const fn=new Function('state','
+,'api','esc','fmtQty','replaceComponentWithProduct',
+  part('  let componentReplacementSearchGeneration=0;','  async function replaceComponentWithProduct')+';return searchComponentReplacement')(
+  state,k=>k==='#componentReplacementSearch'?input:k==='#componentReplacementResults'?host:null,api,String,String,()=>{});
+ const old=fn();input.value='second';const latest=fn();
+ pending.get('second').resolve({products:[{id:'2',name:'Second',stock_quantity:2}]});await latest;
+ const result=host.innerHTML;
+ pending.get('first').resolve({products:[{id:'1',name:'First',stock_quantity:2}]});await old;
+ assert.equal(host.innerHTML,result);assert.ok(result.includes('Second'));assert.ok(!result.includes('First'));
+}
+{
+ const state={tab:'purchases',purchaseAdvancedLoading:false,purchaseAdvancedLoaded:false,purchaseAdvancedError:''},host={innerHTML:''},d=deferred();let paints=0;
+ const fn=new Function('state','purchaseApi','purchaseXmlError','
+,'paintPurchases',
+  part('  let purchaseAdvancedGeneration=0;','  async function loadPurchaseBlingComparison')+';return loadPurchaseAdvanced')(
+  state,()=>d.promise,String,k=>k==='#purchaseBody'?host:null,()=>paints++);
+ const pending=fn();state.tab='customers';d.resolve({documents:[{id:'queue'}]});await pending;
+ assert.equal(state.purchaseAdvancedLoaded,true);assert.equal(paints,0);
+}
+{
+ const state={tab:'orders',orders:[{id:'a',status:'confirmed'}],orderStatusTab:'all'},d=deferred(),document={hidden:false};let paints=0;
+ const src=part('  let ordersLoadGeneration=0;','  if(!window.__orderSeparationBoardTimer)');
+ const {refreshOrderSeparationBoard,reload}=new Function('state','api','
+,'document','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
+  src+';return {refreshOrderSeparationBoard,reload:()=>++ordersLoadGeneration}')(
+  state,()=>d.promise,()=>null,document,async()=>{},()=>paints++,async()=>{});
+ const pending=refreshOrderSeparationBoard();reload();
+ d.resolve({board:[{order_id:'a',status:'ready'}]});await pending;
+ assert.equal(state.orders[0].status,'confirmed');assert.equal(paints,0);
+}
+
 console.log('Admin async races and partial save: PASS');
