@@ -2,6 +2,7 @@
 (()=>{
 "use strict";
 const ROOT="https://ssbesxgaijknwsjbsbcz.supabase.co",API=ROOT+"/functions/v1/admin-pin-auth-v1";
+const PUBLISHABLE="sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8";
 const A="da_finance_access_token_v1",R="da_finance_refresh_token_v1";
 let pending=null;
 const get=k=>String(sessionStorage.getItem(k)||"");
@@ -24,7 +25,7 @@ async function redirectToken(){
 async function renew(){
  const rt=get(R);if(!rt)return "";
  try{
-  const r=await fetch(ROOT+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({refresh_token:rt}),cache:"no-store"});
+  const r=await fetch(ROOT+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{"Content-Type":"application/json","apikey":PUBLISHABLE},body:JSON.stringify({refresh_token:rt}),cache:"no-store"});
   const d=await r.json().catch(()=>({}));if(!r.ok||!d.access_token)throw Error("refresh_failed");
   return await accept(d.access_token,d.refresh_token);
  }catch{sessionStorage.removeItem(R);return ""}
