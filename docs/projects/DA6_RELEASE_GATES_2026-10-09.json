@@ -1,0 +1,53 @@
+{
+  "project": "DA6 - Etiquetas e Balanço Dona Antônia",
+  "updated_at": "2026-10-09",
+  "source_branch": "agent/gondola-labels-balance-20261009",
+  "release_status": "blocked",
+  "verified_software": {
+    "ci_run_url": "https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37986675847",
+    "postgres_storage_local": true,
+    "barcode_qr_digital": true,
+    "a4_admin_regressions": true,
+    "review_and_idempotency": true,
+    "deterministic_tests_pass": 87,
+    "ci_jobs_green": 6
+  },
+  "required_production_gates": {
+    "physical_thermal_203dpi_print": {
+      "passed": false,
+      "evidence_file": null
+    },
+    "real_cell_phone_photos_omr": {
+      "passed": false,
+      "evidence_file": null
+    },
+    "hosted_edge_staging": {
+      "passed": false,
+      "evidence_file": null
+    },
+    "hosted_cron_pgnet_staging": {
+      "passed": false,
+      "evidence_file": null
+    },
+    "latest_main_conflict_review": {
+      "passed": false,
+      "evidence_file": null
+    },
+    "confirmed_predeploy_backup": {
+      "passed": false,
+      "evidence_file": null
+    },
+    "rollback_rehearsal": {
+      "passed": false,
+      "evidence_file": null
+    }
+  },
+  "invariant": "Historical DA6 counts must not change stock or Bling automatically.",
+  "notices": [
+    "Aprovado em CI local não comprova impressão física ou Edge hospedado.",
+    "Não executar merge/deploy de DA6 enquanto qualquer gate estiver pendente.",
+    "Nunca desativar automação horária por mera aprovação de testes digitais.",
+    "Toda homologação física/remota só vale para o fingerprint do código; alterações posteriores exigem refazer os testes relacionados."
+  ],
+  "release_candidate_fingerprint": null
+}
