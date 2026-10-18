@@ -37,4 +37,15 @@ assert.ok(safeHtml.includes('&lt;img src=x&gt;'));
 assert.ok(safeHtml.includes('&lt;b&gt;erro&lt;/b&gt;'));
 assert.ok(!safeHtml.includes('<script>'));
 assert.ok(!safeHtml.includes('<img src=x>'));
+// The panel is read-only: rendering must not change queue data or order records.
+const immutableJobs=[{status:'pending',entity_id:'o1',printer_profile:'85 mm'}];
+const immutableOrders=[{id:'o1',order_number:'321'}];
+const readOnlyState={orders:immutableOrders,opsPrintQueue:{jobs:immutableJobs}};
+const readOnlyRender=ctx.window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePanel(readOnlyState,escapeHtml,o=>o?.order_number||'—').renderOpsPrintQueue;
+readOnlyRender();
+assert.equal(immutableJobs[0].status,'pending');
+assert.equal(immutableJobs.length,1);
+assert.equal(immutableOrders[0].order_number,'321');
+assert.equal(readOnlyState.opsPrintQueue.jobs,immutableJobs);
+assert.equal(readOnlyState.orders,immutableOrders);
 console.log('Admin print queue panel: PASS');
