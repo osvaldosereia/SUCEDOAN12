@@ -5,6 +5,8 @@ on:
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/components/print-queue-panel.js'
       - 'scripts/test-admin-print-queue-panel.mjs'
+      - 'scripts/test-admin-core-identifiers.mjs'
+      - 'scripts/test-admin-core-errors.mjs'
       - '.github/workflows/admin-print-queue-panel.yml'
   workflow_dispatch:
 permissions:
@@ -18,6 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: node scripts/test-admin-core-identifiers.mjs
+      - run: node scripts/test-admin-core-errors.mjs
       - run: node scripts/test-admin-print-queue-panel.mjs
       - run: node scripts/test-admin-today-operational-panels.mjs
       - run: node scripts/test-admin-order-contact-actions.mjs
