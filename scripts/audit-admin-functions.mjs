@@ -23,6 +23,11 @@ function domain(file,name,line){
   if(file.includes('/marketing/'))return 'Marketing';
   if(/basket|kit-builder/i.test(file))return 'Cestas';
   if(file.includes('/orders/'))return 'Pedidos';
+  if(/closure|closing|closeout/i.test(name))return 'Fechamento';
+  if(/driver|vehicle|smartDelivery|deliveryStop|deliveryRun/i.test(name))return 'Entregador';
+  if(/expedition|separation|picking/i.test(name))return 'Expedição';
+  if(/basket|kit/i.test(name))return 'Cestas';
+  if(/marketing|campaign|audience/i.test(name))return 'Marketing';
   if(/fiscal|order|danfe/i.test(name))return 'Pedidos';
   if(/gondola/i.test(name))return 'Gôndolas';
   if(/inventor|balance|scan/i.test(name))return 'Balanço';
@@ -35,7 +40,9 @@ function domain(file,name,line){
   if(/quote|budget/i.test(name))return 'Orçamentos';
   if(file==='vitrine/admin/index.html'){
     if(line<1900)return 'Central';
-    if(line<2600)return 'Expedição';
+    if(line<2500)return 'Expedição';
+    if(line<2558)return 'Entregador';
+    if(line<2670)return 'Fechamento';
     if(line<3200)return 'Financeiro';
     if(line<4000)return 'Produtos';
     if(line<4160)return 'Validades';
