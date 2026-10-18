@@ -35,13 +35,16 @@ begin
     return jsonb_build_object('ok',false,'error','stale_order_status','current_status',v_current);
   end if;
   if not (
-    (p_expected_status='created' and p_next_status='confirmed') or
-    (p_next_status='cancelled' and p_expected_status in ('created','confirmed','processing','ready','out_for_delivery'))
+    (p_expected_status in ('created','storefront_received') and p_next_status='confirmed') or
+    (p_next_status='cancelled' and p_expected_status in ('created','storefront_received','confirmed','processing','ready','out_for_delivery'))
   ) then
     return jsonb_build_object('ok',false,'error','transition_not_supported');
   end if;
 
   if p_next_status='confirmed' then
+    if not exists (select 1 from public.order_items oi where oi.order_id=p_order_id) then
+      return jsonb_build_object('ok',false,'error','empty_order');
+    end if;
     v_stock:=public.reserve_vitrine_order_stock_v1(p_order_id);
   elsif v_source <> 'vitrine' then
     -- The existing orders AFTER UPDATE trigger releases vitrine orders.
