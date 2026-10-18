@@ -1,0 +1,565 @@
+
+(()=>{
+  const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-products-live-v1';
+  const CUSTOMER_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1';
+  const STOREFRONT_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
+  const PRODUCT_IMAGE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/product-image-openai-v1';
+  const FINANCE_AUTH_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1';
+  const FINANCE_VERIFY_API='https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/verify';
+  const FINANCE_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
+  const BASKET_AUTO_RPC='https://ssbesxgaijknwsjbsbcz.supabase.co/rest/v1/rpc/';
+  const $=s=>document.querySelector(s);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const money=c=>(Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const cents=v=>Math.round(Number(v||0)*100);
+  const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
+  const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
+  const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
+  const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
+  function toast(msg){
+    const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
+  }
+  const MARKETING_BRANDS=[{key:'nivea',label:'NIVEA'},{key:'elseve',label:'Elseve'}];
+  const MARKETING_SEGMENTS=[{key:'bebe',label:'Bebê'},{key:'cabelos',label:'Cabelos'},{key:'beleza',label:'Beleza e cuidados'},{key:'higiene',label:'Higiene pessoal'},{key:'limpeza',label:'Limpeza'},{key:'lavanderia',label:'Lavanderia'},{key:'pet',label:'Pet'},{key:'casa',label:'Casa'},{key:'doces-lanches',label:'Doces e lanches'}];
+  function marketingSegmentOf(p){const sub=normalize(p?.subcategory||''),leaf=normalize(p?.subsubcategory||'');if(sub.includes('bebe')||leaf.includes('fralda')||leaf.includes('bebe'))return 'Bebê';if(sub==='cabelos')return 'Cabelos';if(sub.includes('beleza'))return 'Beleza e cuidados';if(sub.includes('higiene pessoal'))return 'Higiene pessoal';if(sub==='limpeza')return 'Limpeza';if(sub==='lavanderia')return 'Lavanderia';if(sub==='pets'||leaf.includes('pet')||leaf==='caes'||leaf==='gatos')return 'Pet';if(sub.includes('casa e utilidades'))return 'Casa';if(['biscoitos','chocolates e doces','balas e chicletes','salgadinhos e petiscos','bebidas','cereais e barras'].includes(leaf))return 'Doces e lanches';return 'Outros'}
+  function marketingCampaignSlug(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)}
+  const OPERATOR_KEY='da_operator_name_v1';
+  function currentOperator(){return 'Operação'}
+  function paintOperatorBadge(){
+    const b=$('#operatorBadge');if(!b)return;
+    const name=currentOperator();
+    b.innerHTML='<span class="operator-prefix">Operador: </span><span class="operator-name">'+esc(name||'Identificar')+'</span>';
+    b.title=name?'Operador atual: '+name:'Identifique o operador para registrar as alterações';
+    b.classList.toggle('unset',!name);
+  }
+  function changeOperator(){return 'Operação'}
+  function requireOperator(){return 'Operação'}
+  if($('#operatorBadge'))$('#operatorBadge').onclick=changeOperator;
+  paintOperatorBadge();
+  async function api(action,params={},options={},retryAuth=true){
+    const token=await adminStepUp();
+    const u=new URL(API);u.searchParams.set('action',action);
+    Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
+    const response=await fetch(u,{...options,headers:{...(options.headers||{}),'Authorization':'Bearer '+token},cache:'no-store'});
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await api(action,params,options,false);
+    }
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
+  async function productImageApi(event,payload=null,retryAuth=true){
+    const token=await adminStepUp();
+    let response;
+    if(payload instanceof FormData){
+      response=await fetch(PRODUCT_IMAGE_API,{method:'POST',headers:{'Authorization':'Bearer '+token},body:payload,cache:'no-store'});
+    }else{
+      response=await fetch(PRODUCT_IMAGE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({event,...(payload||{})}),cache:'no-store'});
+    }
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await productImageApi(event,payload,false);
+    }
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'product_image_service_error');
+    return data;
+  }
+  function productImageStatusText(p){
+    if(p?.image_ai_status==='completed')return 'Imagem padronizada pela IA'+(p.image_ai_processed_at?' · '+dateTime(p.image_ai_processed_at):'');
+    if(p?.image_ai_status==='processing')return 'Padronização em andamento…';
+    if(p?.image_ai_status==='error')return 'Última padronização falhou. A foto original continua preservada.';
+    if(p?.image_original_url)return 'Foto original salva. Você pode padronizar quando quiser.';
+    return p?.image_url?'Imagem atual do produto. Envie uma foto original para poder padronizar.':'Produto ainda sem foto.';
+  }
+  async function uploadProductImageSource(productId,file){
+    if(!productId)throw new Error('Salve o produto antes de enviar a foto.');
+    if(!file)throw new Error('Escolha uma imagem.');
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('Use JPG, PNG ou WEBP.');
+    if(file.size>6*1024*1024)throw new Error('A imagem deve ter no máximo 6 MB.');
+    const form=new FormData();form.append('product_id',productId);form.append('file',file,file.name||'produto.jpg');
+    return await productImageApi('upload_source',form);
+  }
+  async function standardizeProductImage(productId){return await productImageApi('standardize',{product_id:productId})}
+
+  async function customerApi(action,payload={},retryAuth=true){
+    const token=await adminStepUp();
+    const response=await fetch(CUSTOMER_API,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({action,...payload}),
+      cache:'no-store'
+    });
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await customerApi(action,payload,false);
+    }
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
+  async function storefrontApi(action,params={},options={}){
+    const u=new URL(STOREFRONT_API);u.searchParams.set('action',action);
+    Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
+    const response=await fetch(u,{...options,cache:'no-store'});
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'storefront_error');
+    return data;
+  }
+
+  const OAUTH_PARAMS=new URLSearchParams(location.search);
+  const OAUTH_RESULT=OAUTH_PARAMS.get('bling_oauth');
+  const OAUTH_DETAIL=OAUTH_PARAMS.get('detail')||'';
+  if(OAUTH_RESULT==='success'){
+    history.replaceState({},'',location.pathname+location.hash);
+    const msg=OAUTH_DETAIL==='status_catalog_ok'
+      ?'Bling reconectado e Situações validadas.'
+      :'Bling reconectado, mas o acesso a Situações ainda precisa ser liberado.';
+    setTimeout(()=>toast(msg),500)
+  }
+  if(OAUTH_RESULT==='error'){const d=OAUTH_DETAIL||'erro';history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Falha ao reconectar Bling: '+d),500)}
+
+
+  const adminNavIsMobile=()=>window.matchMedia('(max-width:760px)').matches;
+  function setAdminNavOpen(open){
+    const shouldOpen=Boolean(open&&adminNavIsMobile());
+    document.body.classList.toggle('admin-nav-open',shouldOpen);
+    const toggle=$('#adminNavToggle');
+    if(toggle){
+      toggle.setAttribute('aria-expanded',shouldOpen?'true':'false');
+      toggle.setAttribute('aria-label',shouldOpen?'Fechar menu':'Abrir menu');
+    }
+  }
+  function closeNavMenus(){setAdminNavOpen(false)}
+  function syncNavGroups(){
+    document.querySelectorAll('.admin-sidebar-section').forEach(section=>{
+      section.classList.toggle('active',Boolean(section.querySelector('[data-tab="'+state.tab+'"]')));
+    });
+    document.querySelectorAll('#adminNav [data-tab]').forEach(item=>{
+      if(item.dataset.tab===state.tab)item.setAttribute('aria-current','page');
+      else item.removeAttribute('aria-current');
+    });
+  }
+  if($('#adminNavToggle'))$('#adminNavToggle').onclick=()=>setAdminNavOpen(!document.body.classList.contains('admin-nav-open'));
+  if($('#adminNavBackdrop'))$('#adminNavBackdrop').onclick=()=>setAdminNavOpen(false);
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')setAdminNavOpen(false)});
+  window.addEventListener('resize',()=>{if(!adminNavIsMobile())setAdminNavOpen(false)});
+
+
+  function renderAttendance(){
+    location.assign('/vitrine/admin/atendimento/');
+  }
+
+  function setTab(tab){
+    if(tab!=='products'){disconnectProductScrollObserver();productListGeneration++}
+    if(state.tab==='balance'&&tab!=='balance')stopBalanceCamera();
+    if(tab!=='orders')document.body.classList.remove('orders-tab-active');
+    state.tab=tab;
+    document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    syncNavGroups();
+    closeNavMenus();
+    if(tab==='today')renderToday();
+    if(tab==='attendance')renderAttendance();
+    if(tab==='ana')import('/vitrine/admin/ana/ana-admin.js?v=1').then(module=>module.mountAnaAdmin($('#content'))).catch(error=>{$('#content').innerHTML='<section class="panel"><h1>ANA</h1><p>Não foi possível abrir a gestão da ANA.</p></section>';console.error('admin_ana_load',error)});
+    if(tab==='products')renderProducts();
+    if(tab==='baskets')renderBaskets();
+    if(tab==='quotes')renderQuotes();
+    if(tab==='marketing')renderMarketing();
+    if(tab==='expiry')renderExpirations();
+    if(tab==='purchases')renderPurchases();
+    if(tab==='balance')renderBalance();
+    if(tab==='gondolas')renderGondolas();
+    if(tab==='customers')renderCustomers();
+    if(tab==='finance')renderFinance();
+    if(tab==='bling')renderBling();
+    if(tab==='orders')return renderOrders();
+    if(tab==='expedition')renderExpedition();
+    if(tab==='driver')renderDriver();
+    if(tab==='closure')renderClosure();
+  }
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+
+  async function renderMarketing(){
+    const content=$('#content');content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades, segmentação e links de campanha. Nenhum envio é feito por esta tela.</p></div><button class="secondary" type="button" id="refreshMarketing">Atualizar</button></div><div class="panel"><div class="loading" id="marketingLoading">Lendo ofertas ativas do catálogo…</div></div>';
+    if($('#refreshMarketing'))$('#refreshMarketing').onclick=renderMarketing;
+    try{const data=await storefrontApi('offers'),offers=Array.isArray(data.offers)?data.offers:[],groups=new Map();for(const p of offers){const name=marketingSegmentOf(p),x=groups.get(name)||{name,offers:0,stock:0,brands:new Set()};x.offers++;x.stock+=Number(p.stock_quantity||0);if(p.brand)x.brands.add(p.brand);groups.set(name,x)}const cards=[...groups.values()].sort((a,b)=>b.offers-a.offers).map(x=>'<div class="marketing-card"><h3>'+esc(x.name)+'</h3><p>Oportunidade baseada nas ofertas públicas ativas agora.</p><div class="marketing-kpis"><span>'+x.offers+' ofertas</span><span>'+fmtQty(x.stock)+' un. disponíveis</span>'+(x.brands.size?'<span>'+esc([...x.brands].slice(0,3).join(' · '))+'</span>':'')+'</div></div>').join('')||'<div class="empty">Nenhuma oferta ativa para montar radar agora.</div>';
+      content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Inteligência comercial sem disparo automático.</p></div><button class="secondary" type="button" id="refreshMarketing">Atualizar</button></div><section><div class="section-title" style="border-top:0;margin-top:0">Radar de Marketing</div><div class="marketing-grid">'+cards+'</div></section><section class="marketing-section"><div class="section-title">Segmentação</div><p class="muted">Os componentes automáticos das cestas não contam para afinidade de categoria ou marca. Só produtos avulsos alimentam os sinais do pedido.</p><div class="marketing-chip-list" style="margin-top:9px">'+MARKETING_SEGMENTS.map(x=>'<span class="marketing-chip">INT_'+esc(x.key.replace('-','_').toUpperCase())+'</span>').join('')+'</div><div class="section-title">Marcas autorizadas</div><div class="marketing-chip-list">'+MARKETING_BRANDS.map(x=>'<span class="marketing-chip">'+esc(x.label)+'</span>').join('')+'</div><p class="muted" style="margin-top:8px">A allowlist persistente já está preparada no banco. Enquanto o projeto está no limite de Edge Functions, esta versão usa a mesma lista fixa no site/Admin e não cria dependência de função nova.</p></section><section class="marketing-section"><div class="section-title">Links / Campanhas</div><div class="marketing-builder"><label><span>Canal</span><select id="mktChannel"><option value="0975">0975</option><option value="1018">1018</option></select></label><label><span>Destino</span><select id="mktTarget"><option value="offers">Ofertas</option>'+MARKETING_SEGMENTS.map(x=>'<option value="category:'+esc(x.key)+'">'+esc(x.label)+'</option>').join('')+'</select></label><label><span>Marca (opcional)</span><select id="mktBrand"><option value="">Nenhuma</option>'+MARKETING_BRANDS.map(x=>'<option value="'+esc(x.key)+'">'+esc(x.label)+'</option>').join('')+'</select></label><label style="grid-column:1/-1"><span>Nome da campanha (opcional)</span><input id="mktCampaign" placeholder="ex.: semana_bebe_out26"></label><div class="marketing-url"><input id="mktUrl" readonly><button class="primary" type="button" id="copyMktUrl">Copiar link</button></div></div></section><section class="marketing-section"><div class="section-title">Configuração</div><div class="panel" style="padding:12px"><strong>Prioridade atual de CTA pós-pedido</strong><p class="muted">Bebê → Cabelos → Beleza → Limpeza → Lavanderia → Pet → Ofertas para cesta.</p><p class="muted">O CTA só é sinalizado quando o cliente autorizou ofertas pelo WhatsApp.</p></div></section>';
+      const updateLink=()=>{const channel=$('#mktChannel')?.value||'0975',target=$('#mktTarget')?.value||'offers',brand=$('#mktBrand')?.value||'',campaign=marketingCampaignSlug($('#mktCampaign')?.value||''),u=new URL('https://www.donaantonia.com.br/');u.searchParams.set('origem',channel);if(brand)u.searchParams.set('marca',brand);else if(target==='offers')u.searchParams.set('ofertas','1');else if(target.startsWith('category:'))u.searchParams.set('categoria',target.slice(9));if(campaign)u.searchParams.set('campanha',campaign);if($('#mktUrl'))$('#mktUrl').value=u.toString()};['mktChannel','mktTarget','mktBrand','mktCampaign'].forEach(id=>$('#'+id)?.addEventListener(id==='mktCampaign'?'input':'change',updateLink));$('#mktTarget')?.addEventListener('change',()=>{if($('#mktBrand'))$('#mktBrand').value='';updateLink()});$('#mktBrand')?.addEventListener('change',()=>updateLink());if($('#copyMktUrl'))$('#copyMktUrl').onclick=async()=>{updateLink();const value=$('#mktUrl')?.value||'';try{await navigator.clipboard.writeText(value);toast('Link copiado')}catch{const i=$('#mktUrl');i?.select();document.execCommand('copy');toast('Link copiado')}};if($('#refreshMarketing'))$('#refreshMarketing').onclick=renderMarketing;updateLink();
+    }catch(e){content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades.</p></div></div><div class="empty">Não consegui carregar as ofertas agora.<br><button class="text" id="retryMarketing">Tentar novamente</button></div>';if($('#retryMarketing'))$('#retryMarketing').onclick=renderMarketing}
+  }
+
+  async function renderQuotes(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Orçamentos</h1><p>Crie propostas usando produtos, clientes e cestas atuais do Supabase.</p></div><a class="store-link" href="/orcamento/" title="Abre nesta aba para manter a sessão administrativa">Abrir em tela inteira</a></div><div class="quote-admin-shell"><div class="loading" id="quoteAdminLoading">Validando sessão administrativa…</div></div>';
+    try{
+      await adminStepUp();
+      const shell=content.querySelector('.quote-admin-shell');
+      if(shell)shell.innerHTML='<iframe class="quote-admin-frame" src="/orcamento/?embedded=1" title="Criador de Orçamentos Dona Antônia"></iframe>';
+    }catch(e){
+      const shell=content.querySelector('.quote-admin-shell');
+      if(shell)shell.innerHTML='<div class="empty">Não foi possível abrir Orçamentos sem uma sessão administrativa válida.<br><button class="text" id="retryQuotes">Tentar novamente</button></div>';
+      if($('#retryQuotes'))$('#retryQuotes').onclick=renderQuotes;
+    }
+  }
+
+  function statusPill(status){
+    const map={created:'Novo',storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Bling',processing:'Separando',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'};
+    const cls=status==='cancelled'?'danger':status==='created'?'warn':'';
+    return '<span class="pill '+cls+'">'+esc(map[status]||status||'—')+'</span>';
+  }
+
+  function cuiabaDayKey(v){
+    const d=v instanceof Date?v:new Date(v||Date.now());
+    if(!Number.isFinite(d.getTime()))return '';
+    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Cuiaba',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+    const map=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+    return map.year+'-'+map.month+'-'+map.day;
+  }
+  function deliveredToday(o){
+    return o?.status==='delivered'&&Boolean(o?.delivered_at)&&cuiabaDayKey(o.delivered_at)===cuiabaDayKey(new Date());
+  }
+  function relativeAge(v){
+    if(!v)return '';
+    const ms=Date.now()-new Date(v).getTime();
+    if(!Number.isFinite(ms)||ms<0)return '';
+    const min=Math.floor(ms/60000);
+    if(min<1)return 'agora';
+    if(min<60)return 'há '+min+' min';
+    const hours=Math.floor(min/60);
+    if(hours<24)return 'há '+hours+' h';
+    return 'há '+Math.floor(hours/24)+' d';
+  }
+  function orderSearchMatch(o,q){
+    const needle=normalize(q);
+    if(!needle)return true;
+    const a=o?.delivery_address_snapshot||{};
+    const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
+    const haystack=[
+      o?.order_number,o?.customer_name,o?.whatsapp_phone_e164,a.phone,a.customer_name,a.recipient_name,
+      a.street,a.number,a.district,a.city,a.state,payment
+    ].map(normalize).join(' ');
+    return haystack.includes(needle);
+  }
+  function whatsappHref(value){
+    let d=String(value||'').replace(/\D/g,'');
+    if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;
+    return d.length>=12?'https://wa.me/'+d:'';
+  }
+  function whatsappMessageHref(value,message){
+    const base=whatsappHref(value);
+    return base?base+'?text='+encodeURIComponent(String(message||'')):'';
+  }
+  function orderMissingDataRequest(o){
+    const problems=orderProblemReasons(o);
+    const needName=problems.includes('Cliente não identificado');
+    const needAddress=problems.includes('Endereço incompleto');
+    if(!needName&&!needAddress)return null;
+    const a=o?.delivery_address_snapshot||{};
+    const phone=o?.whatsapp_phone_e164||a.phone||'';
+    if(!whatsappHref(phone))return null;
+    const rawName=String(o?.customer_name||a.customer_name||a.recipient_name||'').trim();
+    const firstName=rawName?rawName.split(/\s+/)[0]:'';
+    const greeting=firstName?'Olá, '+firstName+'!':'Olá!';
+    let label='Pedir dados',request='';
+    if(needName&&needAddress){
+      label='Pedir dados';
+      request='pode me enviar seu nome completo e seu endereço completo (rua, número, bairro e uma referência)?';
+    }else if(needName){
+      label='Pedir nome';
+      request='pode me informar seu nome completo?';
+    }else{
+      label='Pedir endereço';
+      request='pode me enviar seu endereço completo (rua, número, bairro e uma referência)?';
+    }
+    const message=greeting+' Para concluirmos seu pedido #'+orderDisplayCode(o)+' da Dona Antônia, '+request+(needAddress?' Se preferir, envie sua localização pelo WhatsApp.':'');
+    return {href:whatsappMessageHref(phone,message),label};
+  }
+  function orderAddressRequestHref(o){
+    const request=orderMissingDataRequest(o);
+    return request&&orderProblemReasons(o).includes('Endereço incompleto')?request.href:'';
+  }
+  function mapsHrefFromAddress(a){
+    const data=a&&typeof a==='object'?a:{};
+    const provided=String(data.google_maps_url||'').trim();
+    if(/^https:\/\/(?:www\.)?google\.(?:com|com\.br)\/maps/i.test(provided)||/^https:\/\/maps\.app\.goo\.gl\//i.test(provided))return provided;
+    const parts=[data.street,data.number,data.district,data.city,data.state].filter(Boolean);
+    return parts.length>=3?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(parts.join(', ')):'';
+  }
+  function orderContactActionsHtml(o,c={}){
+    const a=o?.delivery_address_snapshot||c?.address||{};
+    const phone=c?.phone||o?.whatsapp_phone_e164||a.phone||'';
+    const wa=whatsappHref(phone),maps=mapsHrefFromAddress(a),dataRequest=orderMissingDataRequest(o);
+    if(!wa&&!maps&&!dataRequest)return '';
+    return '<div class="dispatch-actions" style="justify-content:flex-start;margin-top:10px">'+
+      (dataRequest?'<a class="quick-link primary-link" href="'+esc(dataRequest.href)+'" target="_blank" rel="noopener">'+esc(dataRequest.label)+'</a>':'')+
+      (wa?'<a class="quick-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+      (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Abrir no Maps</a>':'')+
+    '</div>';
+  }
+
+    function orderProblemReasons(o){
+  const reasons=[];
+  if(o?.history_sync?.state==='failed')reasons.push('Histórico pendente do cliente');
+  if(['delivered','cancelled'].includes(o?.status))return reasons;
+  const a=o?.delivery_address_snapshot||{};
+  const canonicalKnown=typeof o?.registration_complete==='boolean';
+  if(canonicalKnown){
+    const missing=Array.isArray(o?.registration_missing_fields)?o.registration_missing_fields:[];
+    if(missing.includes('name'))reasons.push('Cliente não identificado');
+    if(missing.includes('phone'))reasons.push('Telefone pendente');
+    if(missing.includes('address')||missing.includes('city'))reasons.push('Endereço incompleto');
+    if(o?.document_only_pending===true)reasons.push('CPF/CNPJ pendente');
+  }else{
+    const customerName=o?.customer_name||a.customer_name||a.recipient_name||'';
+    if(!String(customerName).trim())reasons.push('Cliente não identificado');
+    if(!String(a.street||'').trim()||!String(a.city||'').trim())reasons.push('Endereço incompleto');
+  }
+  const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
+  if(!String(payment).trim())reasons.push('Pagamento não informado');
+  if(o?.stock_readiness?.ok===false)reasons.push('Estoque insuficiente');
+  if(o?.delivery_return?.status==='returned_review')reasons.push('Retorno aguardando revisão');
+  return reasons;
+}
+  function isBacklogOrder(o){
+    if(!o||!['created','confirmed','processing','ready','out_for_delivery'].includes(o.status))return false;
+    const orderDay=cuiabaDayKey(o.created_at);
+    const today=cuiabaDayKey(new Date());
+    return Boolean(orderDay&&today&&orderDay<today);
+  }
+  function orderIssueMatch(o,key='all'){
+    const reasons=orderProblemReasons(o);
+    if(key==='all')return reasons.length>0;
+    const labels={
+      address:'Endereço incompleto',
+      customer:'Cliente não identificado',
+      payment:'Pagamento não informado',
+      history:'Histórico pendente do cliente',
+      stock:'Estoque insuficiente'
+    };
+    return reasons.includes(labels[key]||'');
+  }
+  function orderIssueCount(key){return state.orders.filter(o=>orderIssueMatch(o,key)).length}
+  function orderOperationalPriority(o){
+    if(orderProblemReasons(o).length)return 0;
+    if(isBacklogOrder(o))return 1;
+    const rank={created:2,confirmed:3,processing:4,ready:5,out_for_delivery:6,delivered:7,cancelled:8};
+    return rank[o?.status]??8;
+  }
+    function sortOperationalOrders(rows){
+  return [...rows].sort((a,b)=>{
+    const at=Date.parse(a?.created_at||0)||0,bt=Date.parse(b?.created_at||0)||0;
+    return bt-at;
+  });
+}
+  function orderNextAction(o){
+    const problems=orderProblemReasons(o);
+    if(problems.length)return 'Corrigir: '+problems[0];
+    const consumed=o?.payment_method_snapshot?.stock_consumed===true;
+    const map={
+      created:'Confirmar pedido',
+      confirmed:consumed?'Continuar separação':'Iniciar separação',
+      processing:consumed?'Finalizar separação':'Regularizar separação',
+      ready:'Liberar para entrega',
+      out_for_delivery:'Confirmar entrega',
+      delivered:'Conferir pagamento / fiscal',
+      cancelled:'Nenhuma ação'
+    };
+    return map[o?.status]||'Revisar pedido';
+  }
+  function orderFilterMatch(o,filter){
+    if(filter==='all')return true;
+    if(filter==='new')return o.status==='created';
+    if(filter==='separate')return ['confirmed','processing'].includes(o.status);
+    if(filter==='ready')return o.status==='ready';
+    if(filter==='delivery')return o.status==='out_for_delivery';
+    if(filter==='finalized')return o.status==='delivered';
+    if(filter==='backlog')return isBacklogOrder(o);
+    if(filter==='problems')return orderIssueMatch(o,state.orderIssueFilter);
+    return true;
+  }
+  function orderFilterCount(filter){
+    if(filter==='problems')return state.orders.filter(o=>orderProblemReasons(o).length>0).length;
+    return state.orders.filter(o=>orderFilterMatch(o,filter)).length;
+  }
+  function todayCardCount(key){
+    if(key==='closure')return Number(state.closurePendingCount||0);
+    return orderFilterCount(key);
+  }
+  function renderTodayCards(){
+    const cards=[
+      ['new','Novos','Pedidos para confirmar'],
+      ['separate','Separação','Pedidos para separar'],
+      ['ready','Prontos','Aguardando saída'],
+      ['delivery','Em entrega','Pedidos na rua'],
+      ['delivered','Entregues hoje','Conferir fechamento'],
+      ['closure','Fechamento','Recebimento ou fiscal pendente'],
+      ['backlog','De dias anteriores','Não deixar pedido para trás'],
+      ['problems','Precisa de você','Pendências operacionais']
+    ];
+    return '<div class="ops-cards">'+cards.map(([key,label,sub])=>{
+      const count=todayCardCount(key);
+      const danger=(key==='problems'||key==='backlog'||key==='closure')&&count;
+      const target=key==='closure'?' data-today-tab="closure"':' data-today-filter="'+key+'"';
+      return '<button class="ops-card '+(danger?'danger':'')+'" type="button"'+target+'><small>'+esc(label)+'</small><strong>'+count+'</strong><span>'+esc(sub)+'</span></button>';
+    }).join('')+'</div>'+
+      renderTodayIssueBreakdown();
+  }
+  function renderTodayIssueBreakdown(){
+    const issues=[
+      ['address','Endereço'],
+      ['customer','Cliente'],
+      ['payment','Pagamento'],
+      ['history','Histórico'],
+      ['stock','Estoque']
+    ].map(([key,label])=>[key,label,orderIssueCount(key)]).filter(([, ,count])=>count>0);
+    if(!issues.length)return '';
+    return '<div class="order-filters" style="margin:-2px 0 14px"><span class="filter-count">Pendências:</span>'+
+      issues.map(([key,label,count])=>'<button class="filter-chip danger" type="button" data-today-issue="'+key+'">'+esc(label)+' · '+count+'</button>').join('')+
+    '</div>';
+  }
+  function renderTodayExpiryAlert(){
+    const data=state.expiryAlerts||{},s=data.summary||{},total=Number(s.total||0);
+    if(!total)return '';
+    const urgent=Number(s.due_today||0)+Number(s.days_1_7||0);
+    const cls=urgent?' danger':'';
+    const parts=[];
+    if(Number(s.due_today||0))parts.push(s.due_today+' vence(m) hoje');
+    if(Number(s.days_1_7||0))parts.push(s.days_1_7+' em até 7 dias');
+    if(Number(s.days_8_15||0))parts.push(s.days_8_15+' em 8–15 dias');
+    if(Number(s.days_16_30||0))parts.push(s.days_16_30+' em 16–30 dias');
+    return '<div class="bling-banner expiry-alert-banner'+cls+'"><strong>Validades exigem atenção · '+esc(total)+' produto(s) vencem em até 30 dias</strong><small>'+esc(parts.join(' · '))+'</small><div class="bling-actions"><button class="secondary" type="button" data-today-expiry>Ver validades</button></div></div>';
+  }
+
+  async function reconnectBlingOauth(){
+    const ok=confirm('Reconectar o Bling agora?\n\nUse este botão depois de salvar os novos escopos no aplicativo do Bling. Você será enviado ao Bling para autorizar novamente e depois voltará automaticamente para este Admin.');
+    if(!ok)return;
+    try{
+      const data=await api('bling_oauth_begin',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      if(!data.authorization_url)throw new Error('oauth_url_missing');
+      window.location.href=data.authorization_url;
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
+  async function retryBlingStatusCatalog(){
+    const btn=document.querySelector('[data-retry-bling-status]');
+    if(btn){btn.disabled=true;btn.textContent='Testando…'}
+    try{
+      const data=await api('bling_status_catalog_probe',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      toast('Permissão do Bling validada');
+      await renderToday();
+      return data;
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Testar novamente'}
+    }
+  }
+
+  function attentionTargetTab(a){
+    if(a?.type==='product_location_incomplete')return 'gondolas';
+    if(a?.type==='bling_scope_missing')return 'bling';
+    if(a?.type==='papoai_legacy_endpoint')return 'more';
+    return 'today';
+  }
+  function renderOpsAttention(){
+    if(state.opsAttention===null)return '<section class="panel" style="margin-bottom:14px"><div class="loading">Carregando pendências…</div></section>';
+    const items=Array.isArray(state.opsAttention)?state.opsAttention:[];
+    const rankLabel={critical:'Crítica',high:'Alta',normal:'Normal',low:'Baixa'};
+    if(!items.length)return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px"><strong>Precisa de você</strong><span class="muted">Nenhuma pendência aberta.</span></div></section>';
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Precisa de você</strong><span class="muted">'+items.length+' pendência'+(items.length===1?'':'s')+' aberta'+(items.length===1?'':'s')+'</span></div><div style="padding:8px 14px 14px">'+items.slice(0,8).map(a=>'<div class="history-row" style="align-items:center"><div><span class="pill '+(a.priority==='critical'||a.priority==='high'?'danger':'')+'">'+esc(rankLabel[a.priority]||a.priority)+'</span></div><div class="history-main"><strong>'+esc(a.summary)+'</strong><small>'+esc(a.recommended_action||'Abrir para revisar')+'</small></div><button class="quick-link" type="button" data-attention-open="'+esc(a.id)+'" data-attention-tab="'+esc(attentionTargetTab(a))+'">Abrir</button></div>').join('')+'</div></section>';
+  }
+
+  function renderOpsPrintQueue(){
+    const q=state.opsPrintQueue||{},jobs=Array.isArray(q.jobs)?q.jobs:[];
+    if(!jobs.length)return '';
+    const active=jobs.filter(j=>['pending','failed','claimed'].includes(j.status));
+    if(!active.length)return '';
+    const label={pending:'Aguardando',failed:'Falhou',claimed:'Em impressão'};
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Fila de impressão</strong><span class="muted">a impressão automática ainda está em homologação</span></div><div style="padding:8px 14px 14px">'+active.slice(0,8).map(j=>'<div class="history-row" style="align-items:center"><span class="pill '+(j.status==='failed'?'danger':'')+'">'+esc(label[j.status]||j.status)+'</span><div class="history-main"><strong>Separação · #'+esc(orderDisplayCode(state.orders.find(o=>String(o.id)===String(j.entity_id))))+'</strong><small>'+esc(j.printer_profile||'85 mm')+(j.last_error?' · '+esc(j.last_error):'')+'</small></div><button class="quick-link" type="button" data-print-order="'+esc(j.entity_id)+'">Abrir pedido</button></div>').join('')+'</div></section>';
+  }
+
+  function renderOpsTimeline(){
+    const rows=Array.isArray(state.opsTimeline)?state.opsTimeline:[];
+    if(!rows.length)return '';
+    const sourceLabel={dona_antonia:'Dona Antônia',storefront:'Site',bling:'Bling',papoai:'PapoAI',chatgpt:'ChatGPT'};
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Atividade recente</strong><span class="muted">eventos importantes · sem log técnico bruto</span></div><div style="padding:8px 14px 14px">'+rows.slice(0,12).map(e=>'<div class="history-row"><div><span class="pill '+(e.severity==='error'||e.severity==='critical'?'danger':'')+'">'+esc(sourceLabel[e.source_system]||e.source_system||'Sistema')+'</span></div><div class="history-main"><strong>'+esc(e.summary||e.event_type||'Evento')+'</strong><small>'+esc(e.actor_label||e.actor_type||'Sistema')+' · '+esc(dateTime(e.occurred_at))+'</small></div></div>').join('')+'</div></section>';
+  }
+
+  function renderOps2Summary(){
+    if(state.opsSummary===null)return '<section class="panel" style="margin-bottom:14px"><div class="loading">Carregando indicadores operacionais…</div></section>';
+    const s=state.opsSummary||{};
+    const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{},pr=s.printing||{},pay=s.payments||{},del=s.delivery||{},pa=state.opsPapoAi||{};
+    const printNeeds=Number(pr.pending||0)+Number(pr.failed||0);
+    const papoSeen=Number(pa.captured_24h||0),identity=pa.identity||{};
+    const cards=[
+      ['Precisa de humano',Number(w.human_required||0),'Conversas WhatsApp'],
+      ['Atenções',Number(a.open||0),'Fila da Central'],
+      ['Aprovações',Number(ap.pending||0),'Ações aguardando decisão'],
+      ['Ocorrências estoque',Number(i.incidents_open||0),'Avaria / vencido / retorno'],
+      ['Diferenças balanço',Number(i.count_differences_pending||0),'Aguardando reconciliação'],
+      ['Pagamentos p/ Bling',Number(pay.captured_unsynced||0),'Recebidos · sincronização pendente'],
+      ['Retornando',Number(del.returning||0),'Mercadoria voltando ao depósito'],
+      ['Retorno em revisão',Number(del.return_review||0),'Bloqueado para nova saída'],
+      ['PapoAI',papoSeen,pa.capture_enabled?(Number(pa.review_required||0)?Number(pa.review_required||0)+' precisa(m) revisão':Number(pa.conversation_unlinked_24h||0)?Number(pa.conversation_unlinked_24h||0)+' sem conversa':'ponte ok · '+Number(pa.conversation_linked_24h||0)+' vinculado(s)'):'captura desligada'],
+      ['Cadastros pendentes',Number(identity.provisional_without_name||0),Number(identity.site_orders_without_customer_with_phone_31d||0)?Number(identity.site_orders_without_customer_with_phone_31d||0)+' pedido(s) sem cliente':'todos os pedidos com telefone têm cliente'],
+      ['Impressões',printNeeds,printNeeds?'Fila de separação':'Fila em dia'],
+      ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
+      ['Vencem em 90 dias',Number(i.expires_90d||0),'Revisar lotes/validade']
+    ];
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Central de Controle</strong><span class="muted">visão rápida · sem consultas externas extras</span></div><div class="ops-cards" style="padding:14px">'+cards.map(c=>'<div class="ops-card"><small>'+esc(c[0])+'</small><strong>'+esc(c[1])+'</strong><span>'+esc(c[2])+'</span></div>').join('')+'</div></section>';
+  }
+
+  function renderPapoAiBridgePanel(){
+    if(state.opsPapoAi===null)return '<section class="panel" style="margin-bottom:14px"><div class="loading">Carregando PapoAI / WhatsApp…</div></section>';
+    const p=state.opsPapoAi||{};
+    if(!p.capture_enabled)return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px"><strong>PapoAI / WhatsApp</strong><span class="danger-text">ponte desligada</span></div></section>';
+    const lastFlow=p.last_flow||{},lastLink=p.last_identity_link||{},identity=p.identity||{};
+    const stateLabel=p.bridge_state==='attention'?'Atenção':'Online';
+    const stateClass=p.bridge_state==='attention'?'warn-text':'ok-text';
+    const flowText=lastFlow.created_at
+      ? dateTime(lastFlow.created_at)+' · '+(lastFlow.status==='processed'?'processado':'revisar')+(Number(lastFlow.orders_linked||0)?' · '+Number(lastFlow.orders_linked)+' pedido(s) associado(s)':'')
+      :'Nenhum Flow estruturado recebido ainda';
+    const linkText=lastLink.created_at
+      ? (lastLink.catalog_path||'')+' · '+(lastLink.redeemed_at?'aberto pelo cliente':'aguardando abertura')+' · vence '+dateTime(lastLink.expires_at)
+      :'Nenhum link personalizado emitido ainda';
+    return '<section class="panel" style="margin-bottom:14px">'+
+      '<div class="history-title" style="padding:14px 14px 0"><div><strong>PapoAI / WhatsApp</strong><span class="muted">ponte operacional · sem IA de atendimento no Admin</span></div><b class="'+stateClass+'">'+stateLabel+'</b></div>'+
+      '<div class="bling-grid" style="padding:14px;margin-bottom:0">'+
+        '<div class="bling-card"><small>Eventos 24h</small><strong>'+Number(p.events_24h||p.captured_24h||0)+'</strong><span class="sub">'+Number(p.events_conversation_linked||0)+' vinculados a conversa no total</span></div>'+
+        '<div class="bling-card"><small>Clientes reconhecidos</small><strong>'+Number(p.events_customer_linked||0)+'</strong><span class="sub">por identidade telefônica canônica</span></div>'+
+        '<div class="bling-card"><small>Flows</small><strong>'+Number(identity.flow_events_total||p.flow_events_total||0)+'</strong><span class="sub">'+Number(identity.flow_events_review||p.flow_events_review||0)+' em revisão</span></div>'+
+        '<div class="bling-card"><small>Cadastros provisórios</small><strong>'+Number(identity.provisional_customers||0)+'</strong><span class="sub">'+Number(identity.provisional_without_name||0)+' ainda sem nome · '+Number(identity.verified_flow_customers||0)+' confirmado(s) pelo Flow</span></div>'+
+        '<div class="bling-card"><small>Links catálogo</small><strong>'+Number(p.identity_tokens_total||0)+'</strong><span class="sub">'+Number(p.identity_tokens_redeemed||0)+' aberto(s) pelo cliente</span></div>'+
+      '</div>'+
+      '<div style="padding:0 14px 14px;display:grid;gap:8px">'+
+        '<div class="purchase-safe" style="margin:0"><strong>Último Flow</strong><small>'+esc(flowText)+'</small></div>'+
+        '<div class="purchase-safe" style="margin:0"><strong>Último link</strong><small>'+esc(linkText)+'</small></div>'+
+        (p.last_error?'<div class="purchase-safe purchase-danger" style="margin:0"><strong>Último erro</strong><small>'+esc(p.last_error)+'</small></div>':'')+
+        (Number(identity.site_orders_without_customer_31d||0)?'<div class="purchase-safe '+(Number(identity.site_orders_without_customer_with_phone_31d||0)?'purchase-danger':'')+'" style="margin:0"><strong>Pedidos sem cliente</strong><small>'+Number(identity.site_orders_without_customer_31d||0)+' pedido(s) nos últimos 31 dias · '+(Number(identity.site_orders_without_customer_with_phone_31d||0)?'há telefone disponível para revisar':'sem telefone disponível; legado não pode ser vinculado com segurança')+'</small></div>':'')+
+        '<div class="dispatch-actions" style="justify-content:flex-start"><button class="primary" type="button" data-papoai-create-link>Criar link catálogo</button></div>'+
+        '<small class="muted">Pedido automático vindo de evento estruturado: '+(p.structured_order_commit_enabled?'HABILITADO':'bloqueado até homologação real')+'. Mensagem livre nunca cria pedido.</small>'+
+      '</div>'+
+    '</section>';
+  }
+  async function createPapoAiCatalogLink(){
+    const raw=prompt('Telefone do cliente com DDD:','');
+    if(raw===null)return;
+    const phone=String(raw||'').replace(/\D/g,'');
+    if(phone.length<10){toast('Informe um telefone válido com DDD');return}
+    try{
+      const r=await api('papoai_issue_catalog_link',{},{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({phone})
+      });
+      const url=String(r.url||'');
+      if(url){
+        try{await navigator.clipboard.writeText(url);toast('Link criado e copiado: '+String(r.catalog_path||''))}
+        catch{prompt('Link criado. Copie abaixo:',url)}
+      }else toast('Link criado');
+      const fresh=await api('ops_papoai_capture_status').catch(()=>null);
+      if(fresh?.papoai){state.opsPapoAi=fresh.papoai;const host=$('#papoAiBridgeSlot');if(host)host.innerHTML=renderPapoAiBridgePanel()}
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
+  async function renderToday(){
