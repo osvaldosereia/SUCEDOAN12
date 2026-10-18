@@ -3,7 +3,15 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 const scripts=[...html.matchAll(/<script\s+src="([^"]+)"/g)].map(m=>m[1]);
-const modules=['core/formatters.js','core/identifiers.js','core/errors.js','components/printing.js','marketing/helpers.js'];
+const modules=[
+  'core/formatters.js','core/identifiers.js','core/errors.js',
+  'components/printing.js','marketing/helpers.js',
+  'orders/sorting.js','orders/read-model.js','components/today-cards.js',
+  'orders/time.js','orders/search.js','orders/whatsapp-links.js',
+  'orders/contact-actions.js','components/expiry-alert.js',
+  'components/ops-attention.js','components/print-queue-panel.js',
+  'orders/status-pill.js','orders/counts.js','components/ops-timeline.js'
+];
 const mainIndex=html.indexOf('<script>\n(()=>{');
 assert.ok(mainIndex>0,'main admin script not found');
 for(const module of modules){
@@ -18,6 +26,16 @@ for(const src of scripts){
   const local=src.split('?')[0].slice(1);
   assert.ok(fs.existsSync(local),'missing local script '+local);
 }
-const names=['DonaAntoniaAdminFormatters','DonaAntoniaAdminIdentifiers','DonaAntoniaAdminErrors','DonaAntoniaAdminPrinting','DonaAntoniaAdminMarketingHelpers'];
+const names=[
+  'DonaAntoniaAdminFormatters','DonaAntoniaAdminIdentifiers','DonaAntoniaAdminErrors',
+  'DonaAntoniaAdminPrinting','DonaAntoniaAdminMarketingHelpers',
+  'DonaAntoniaAdminOrderSorting','DonaAntoniaAdminOrderReadModel',
+  'DonaAntoniaAdminTodayCards','DonaAntoniaAdminOrderTime',
+  'DonaAntoniaAdminOrderSearch','DonaAntoniaAdminWhatsappLinks',
+  'DonaAntoniaAdminOrderContactActions','DonaAntoniaAdminExpiryAlert',
+  'DonaAntoniaAdminOpsAttention','DonaAntoniaAdminPrintQueuePanel',
+  'DonaAntoniaAdminOrderStatusPill','DonaAntoniaAdminOrderCounts',
+  'DonaAntoniaAdminOpsTimeline'
+];
 for(const name of names)assert.ok(html.includes('window.'+name),'missing bridge '+name);
 console.log('Admin module load contract: PASS');
