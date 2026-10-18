@@ -4,9 +4,9 @@ const src=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','
 const section=(a,b)=>{const i=src.indexOf(a),j=src.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return src.slice(i,j).replaceAll(':any','').replaceAll(':string','').replaceAll(' as Error','')};
 const manual=section('async function orderFiscalIssueV4(','async function orderFiscalRecoverBlingV1(').replace('async function orderFiscalIssueV4','async function');
 const automatic=section('async function autoIssueFiscalAfterSeparation(','async function runSeparationPostCompletionIntegrations(').replace('async function autoIssueFiscalAfterSeparation','async function');
-let calls=[],state={};
+let calls=[],state={},providerFault=false;
 let preflight={data:{ready:true}};
-const db={rpc:async()=>preflight},hub=async a=>{calls.push(a);return {data:{accepted:true}}};
+const db={rpc:async()=>preflight},hub=async a=>{calls.push(a);if(providerFault&&a==='fiscal_dispatch_canary_human_execute')throw new Error('mock_timeout');return {data:{accepted:true}}};
 const orderFiscalStatusV4=async()=>({...state}),id=x=>x||null,tx=x=>String(x||'');
 const issue=new Function('db','hub','orderFiscalStatusV4','id','tx',`return (${manual})`)(db,hub,orderFiscalStatusV4,id,tx);
 const auto=new Function('db','hub','orderFiscalStatusV4',`return (${automatic})`)(db,hub,orderFiscalStatusV4);
@@ -43,4 +43,14 @@ for(const blockedPreflight of [
  assert.ok(m.error||m.thrown,'manual issuance must reject preflight failure');
 }
 preflight={data:{ready:true}};
+state={authorized:false,can_issue:true,issue_enabled:true,hard_blockers:[],blockers:[]};
+providerFault=true;calls=[];
+const uncertainManual=await issue({id:'test-order',confirmation:'EMITIR_NFE'},{role:'owner'});
+assert.equal(uncertainManual.error,'fiscal_issue_result_uncertain');
+assert.equal(uncertainManual.requires_reconciliation,true);
+const uncertainAuto=await auto('test-order');
+assert.equal(uncertainAuto.error,'fiscal_issue_result_uncertain');
+assert.equal(uncertainAuto.requires_reconciliation,true);
+assert.equal(calls.filter(x=>x==='fiscal_dispatch_canary_human_execute').length,2);
+providerFault=false;
 console.log('Fiscal manual/automatic runtime guards: PASS (mocked Hub; no external writes)');
