@@ -90,4 +90,9 @@ const pairRender=ctx.window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePane
 const pairHtml=pairRender();
 assert.ok(pairHtml.indexOf('Separação · #202')<pairHtml.indexOf('Separação · #101'));
 assert.ok(pairHtml.indexOf('data-print-order="b"')<pairHtml.indexOf('data-print-order="a"'));
+const orphanState={orders:[],opsPrintQueue:{jobs:[{status:'pending'},{status:'failed',entity_id:null},{status:'claimed',entity_id:''}]}};
+const orphanRender=ctx.window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePanel(orphanState,escapeHtml,()=> '—').renderOpsPrintQueue;
+assert.match(orphanRender(),/Fila de impressão/);
+assert.equal(orphanRender().split('data-print-order=').length-1,0);
+assert.ok(!orphanRender().includes('data-print-order="undefined"'));
 console.log('Admin print queue panel: PASS');
