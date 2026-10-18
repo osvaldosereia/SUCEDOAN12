@@ -65,8 +65,8 @@
     return map[o?.status]||'Revisar pedido';
   }
   function orderFilterMatch(o,filter){
-    if(filter==='all')return true;
     if(!o)return false;
+    if(filter==='all')return true;
     if(filter==='new')return o.status==='created';
     if(filter==='separate')return ['confirmed','processing'].includes(o.status);
     if(filter==='ready')return o.status==='ready';
