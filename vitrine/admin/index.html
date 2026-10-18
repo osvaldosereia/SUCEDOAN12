@@ -1461,6 +1461,7 @@
 <script src="/vitrine/admin/components/print-queue-panel.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/orders/status-pill.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/orders/counts.js?v=refactor-20261018"></script>
+<script src="/vitrine/admin/components/ops-timeline.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/basket-lot-image.js?v=marketing-stable-20261012"></script>
 <script>
 (()=>{
@@ -1694,13 +1695,7 @@
 
   const {attentionTargetTab,renderOpsAttention}=window.DonaAntoniaAdminOpsAttention.createOpsAttention(state,esc);
   const {renderOpsPrintQueue}=window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePanel(state,esc,orderDisplayCode);
-  function renderOpsTimeline(){
-    const rows=Array.isArray(state.opsTimeline)?state.opsTimeline:[];
-    if(!rows.length)return '';
-    const sourceLabel={dona_antonia:'Dona Antônia',storefront:'Site',bling:'Bling',papoai:'PapoAI',chatgpt:'ChatGPT'};
-    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Atividade recente</strong><span class="muted">eventos importantes · sem log técnico bruto</span></div><div style="padding:8px 14px 14px">'+rows.slice(0,12).map(e=>'<div class="history-row"><div><span class="pill '+(e.severity==='error'||e.severity==='critical'?'danger':'')+'">'+esc(sourceLabel[e.source_system]||e.source_system||'Sistema')+'</span></div><div class="history-main"><strong>'+esc(e.summary||e.event_type||'Evento')+'</strong><small>'+esc(e.actor_label||e.actor_type||'Sistema')+' · '+esc(dateTime(e.occurred_at))+'</small></div></div>').join('')+'</div></section>';
-  }
-
+  const {renderOpsTimeline}=window.DonaAntoniaAdminOpsTimeline.createOpsTimeline(state,esc,dateTime);
   function renderOps2Summary(){
     if(state.opsSummary===null)return '<section class="panel" style="margin-bottom:14px"><div class="loading">Carregando indicadores operacionais…</div></section>';
     const s=state.opsSummary||{};
