@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
+const webhook=fs.readFileSync('supabase/functions/whatsapp-meta-webhook-v1/index.ts','utf8');
+const between=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j)};
+const send=between(edge,'async function orderWhatsappSend(','async function orderRegistrationLinkIssue(');
+const gateway=between(edge,'async function orderWhatsappGatewayReadiness(','async function orderWhatsappRegistrationStatus(');
+const dispatch=between(edge,'async function dispatchOrderWhatsapp(','async function orderWhatsappSend(');
+for(const p of [/orderWhatsappGatewayReadiness/,/provider_not_configured/,/ops2_enqueue_admin_order_whatsapp_v1/,/dispatchOrderWhatsapp/,/delivery_ok/,/status_snapshot/])assert.match(send,p);
+for(const p of [/admin-orders-v1/,/AbortSignal\.timeout\(8000\)/,/gateway_unreachable/])assert.match(gateway,p);
+for(const p of [/for\(let i=0;i<2;i\+\+\)/,/admin-orders-v1/,/AbortSignal\.timeout\(20000\)/,/gateway_unreachable/])assert.match(dispatch,p);
+for(const p of [/readBodyLimited\(req\)/,/payload_too_large/,/verifyMetaSignature\(rawBody, signature, APP_SECRET\)/,/invalid_signature/,/unsupported_object/,/normalizeMetaWebhook/,/redactWebhookPayload/,/persistMessage/,/enqueueAnaForInbound/,/persistStatus/,/smb_message_echoes/])assert.match(webhook,p);
+console.log('Admin WhatsApp and attendance contract: PASS');
