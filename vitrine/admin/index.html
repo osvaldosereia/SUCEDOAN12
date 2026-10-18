@@ -1456,6 +1456,7 @@
 <script src="/vitrine/admin/orders/search.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/orders/whatsapp-links.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/orders/contact-actions.js?v=refactor-20261018"></script>
+<script src="/vitrine/admin/components/expiry-alert.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/basket-lot-image.js?v=marketing-stable-20261012"></script>
 <script>
 (()=>{
@@ -1674,19 +1675,7 @@
     return orderFilterCount(key);
   }
   const {renderTodayCards,renderTodayIssueBreakdown}=window.DonaAntoniaAdminTodayCards.createTodayCards(esc,todayCardCount,orderIssueCount);
-  function renderTodayExpiryAlert(){
-    const data=state.expiryAlerts||{},s=data.summary||{},total=Number(s.total||0);
-    if(!total)return '';
-    const urgent=Number(s.due_today||0)+Number(s.days_1_7||0);
-    const cls=urgent?' danger':'';
-    const parts=[];
-    if(Number(s.due_today||0))parts.push(s.due_today+' vence(m) hoje');
-    if(Number(s.days_1_7||0))parts.push(s.days_1_7+' em até 7 dias');
-    if(Number(s.days_8_15||0))parts.push(s.days_8_15+' em 8–15 dias');
-    if(Number(s.days_16_30||0))parts.push(s.days_16_30+' em 16–30 dias');
-    return '<div class="bling-banner expiry-alert-banner'+cls+'"><strong>Validades exigem atenção · '+esc(total)+' produto(s) vencem em até 30 dias</strong><small>'+esc(parts.join(' · '))+'</small><div class="bling-actions"><button class="secondary" type="button" data-today-expiry>Ver validades</button></div></div>';
-  }
-
+  const {renderTodayExpiryAlert}=window.DonaAntoniaAdminExpiryAlert.createExpiryAlert(state,esc);
   async function reconnectBlingOauth(){
     const ok=confirm('Reconectar o Bling agora?\n\nUse este botão depois de salvar os novos escopos no aplicativo do Bling. Você será enviado ao Bling para autorizar novamente e depois voltará automaticamente para este Admin.');
     if(!ok)return;
