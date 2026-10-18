@@ -31,4 +31,9 @@ assert.equal(f.marketingSegmentOf({subsubcategory:'Fraldas'}),'Bebê');
 assert.equal(f.marketingSegmentOf({subsubcategory:'Biscoitos'}),'Doces e lanches');
 assert.equal(f.marketingCampaignSlug('A & B / 2026'),'a-b-2026');
 assert.equal(f.marketingCampaignSlug('a'.repeat(80)).length,60);
+// A missing category must remain in the neutral segment.
+assert.equal(f.marketingSegmentOf({}),'Outros');
+assert.equal(f.marketingSegmentOf(null),'Outros');
+assert.equal(f.marketingCampaignSlug('---'),'');
+assert.equal(f.marketingCampaignSlug('  SEM ACENTOS  '),'sem-acentos');
 console.log('Admin marketing helpers: PASS');
