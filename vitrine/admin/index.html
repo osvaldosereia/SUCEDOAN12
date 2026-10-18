@@ -1448,6 +1448,7 @@
 <script src="/vitrine/admin/core/identifiers.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/core/errors.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/components/printing.js?v=refactor-20261018"></script>
+<script src="/vitrine/admin/marketing/helpers.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/basket-lot-image.js?v=marketing-stable-20261012"></script>
 <script>
 (()=>{
@@ -1465,10 +1466,7 @@
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
-  const MARKETING_BRANDS=[{key:'nivea',label:'NIVEA'},{key:'elseve',label:'Elseve'}];
-  const MARKETING_SEGMENTS=[{key:'bebe',label:'Bebê'},{key:'cabelos',label:'Cabelos'},{key:'beleza',label:'Beleza e cuidados'},{key:'higiene',label:'Higiene pessoal'},{key:'limpeza',label:'Limpeza'},{key:'lavanderia',label:'Lavanderia'},{key:'pet',label:'Pet'},{key:'casa',label:'Casa'},{key:'doces-lanches',label:'Doces e lanches'}];
-  function marketingSegmentOf(p){const sub=normalize(p?.subcategory||''),leaf=normalize(p?.subsubcategory||'');if(sub.includes('bebe')||leaf.includes('fralda')||leaf.includes('bebe'))return 'Bebê';if(sub==='cabelos')return 'Cabelos';if(sub.includes('beleza'))return 'Beleza e cuidados';if(sub.includes('higiene pessoal'))return 'Higiene pessoal';if(sub==='limpeza')return 'Limpeza';if(sub==='lavanderia')return 'Lavanderia';if(sub==='pets'||leaf.includes('pet')||leaf==='caes'||leaf==='gatos')return 'Pet';if(sub.includes('casa e utilidades'))return 'Casa';if(['biscoitos','chocolates e doces','balas e chicletes','salgadinhos e petiscos','bebidas','cereais e barras'].includes(leaf))return 'Doces e lanches';return 'Outros'}
-  function marketingCampaignSlug(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)}
+  const {MARKETING_BRANDS,MARKETING_SEGMENTS,marketingSegmentOf,marketingCampaignSlug}=window.DonaAntoniaAdminMarketingHelpers.createMarketingHelpers(normalize);
   const OPERATOR_KEY='da_operator_name_v1';
   function currentOperator(){return 'Operação'}
   function paintOperatorBadge(){
