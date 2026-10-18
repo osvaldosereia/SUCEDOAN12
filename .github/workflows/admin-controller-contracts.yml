@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'vitrine/admin/index.html'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'scripts/test-admin-async-races-and-partial-save.mjs'
+      - 'scripts/test-admin-gateway-action-contract.mjs'
       - 'scripts/test-admin-controller-contracts.mjs'
       - '.github/workflows/admin-controller-contracts.yml'
   workflow_dispatch:
@@ -18,6 +21,8 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/test-admin-controller-contracts.mjs
+      - run: node scripts/test-admin-async-races-and-partial-save.mjs
+      - run: node scripts/test-admin-gateway-action-contract.mjs
       - run: node scripts/test-admin-module-load-contract.mjs
       - run: node scripts/test-admin-orders-clean-flow-v3.mjs
       - run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
