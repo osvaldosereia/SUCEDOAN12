@@ -1,0 +1,7724 @@
+
+(()=>{
+  const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-products-live-v1';
+  const CUSTOMER_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1';
+  const STOREFRONT_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
+  const PRODUCT_IMAGE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/product-image-openai-v1';
+  const FINANCE_AUTH_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1';
+  const FINANCE_VERIFY_API='https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/verify';
+  const FINANCE_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
+  const BASKET_AUTO_RPC='https://ssbesxgaijknwsjbsbcz.supabase.co/rest/v1/rpc/';
+  const $=s=>document.querySelector(s);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const money=c=>(Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const cents=v=>Math.round(Number(v||0)*100);
+  const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
+  const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
+  const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
+  const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
+  function toast(msg){
+    const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
+  }
+  const MARKETING_BRANDS=[{key:'nivea',label:'NIVEA'},{key:'elseve',label:'Elseve'}];
+  const MARKETING_SEGMENTS=[{key:'bebe',label:'Bebê'},{key:'cabelos',label:'Cabelos'},{key:'beleza',label:'Beleza e cuidados'},{key:'higiene',label:'Higiene pessoal'},{key:'limpeza',label:'Limpeza'},{key:'lavanderia',label:'Lavanderia'},{key:'pet',label:'Pet'},{key:'casa',label:'Casa'},{key:'doces-lanches',label:'Doces e lanches'}];
+  function marketingSegmentOf(p){const sub=normalize(p?.subcategory||''),leaf=normalize(p?.subsubcategory||'');if(sub.includes('bebe')||leaf.includes('fralda')||leaf.includes('bebe'))return 'Bebê';if(sub==='cabelos')return 'Cabelos';if(sub.includes('beleza'))return 'Beleza e cuidados';if(sub.includes('higiene pessoal'))return 'Higiene pessoal';if(sub==='limpeza')return 'Limpeza';if(sub==='lavanderia')return 'Lavanderia';if(sub==='pets'||leaf.includes('pet')||leaf==='caes'||leaf==='gatos')return 'Pet';if(sub.includes('casa e utilidades'))return 'Casa';if(['biscoitos','chocolates e doces','balas e chicletes','salgadinhos e petiscos','bebidas','cereais e barras'].includes(leaf))return 'Doces e lanches';return 'Outros'}
+  function marketingCampaignSlug(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)}
+  const OPERATOR_KEY='da_operator_name_v1';
+  function currentOperator(){return 'Operação'}
+  function paintOperatorBadge(){
+    const b=$('#operatorBadge');if(!b)return;
+    const name=currentOperator();
+    b.innerHTML='<span class="operator-prefix">Operador: </span><span class="operator-name">'+esc(name||'Identificar')+'</span>';
+    b.title=name?'Operador atual: '+name:'Identifique o operador para registrar as alterações';
+    b.classList.toggle('unset',!name);
+  }
+  function changeOperator(){return 'Operação'}
+  function requireOperator(){return 'Operação'}
+  if($('#operatorBadge'))$('#operatorBadge').onclick=changeOperator;
+  paintOperatorBadge();
+  async function api(action,params={},options={},retryAuth=true){
+    const token=await adminStepUp();
+    const u=new URL(API);u.searchParams.set('action',action);
+    Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
+    const response=await fetch(u,{...options,headers:{...(options.headers||{}),'Authorization':'Bearer '+token},cache:'no-store'});
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await api(action,params,options,false);
+    }
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
+  async function productImageApi(event,payload=null,retryAuth=true){
+    const token=await adminStepUp();
+    let response;
+    if(payload instanceof FormData){
+      response=await fetch(PRODUCT_IMAGE_API,{method:'POST',headers:{'Authorization':'Bearer '+token},body:payload,cache:'no-store'});
+    }else{
+      response=await fetch(PRODUCT_IMAGE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({event,...(payload||{})}),cache:'no-store'});
+    }
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await productImageApi(event,payload,false);
+    }
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'product_image_service_error');
+    return data;
+  }
+  function productImageStatusText(p){
+    if(p?.image_ai_status==='completed')return 'Imagem padronizada pela IA'+(p.image_ai_processed_at?' · '+dateTime(p.image_ai_processed_at):'');
+    if(p?.image_ai_status==='processing')return 'Padronização em andamento…';
+    if(p?.image_ai_status==='error')return 'Última padronização falhou. A foto original continua preservada.';
+    if(p?.image_original_url)return 'Foto original salva. Você pode padronizar quando quiser.';
+    return p?.image_url?'Imagem atual do produto. Envie uma foto original para poder padronizar.':'Produto ainda sem foto.';
+  }
+  async function uploadProductImageSource(productId,file){
+    if(!productId)throw new Error('Salve o produto antes de enviar a foto.');
+    if(!file)throw new Error('Escolha uma imagem.');
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('Use JPG, PNG ou WEBP.');
+    if(file.size>6*1024*1024)throw new Error('A imagem deve ter no máximo 6 MB.');
+    const form=new FormData();form.append('product_id',productId);form.append('file',file,file.name||'produto.jpg');
+    return await productImageApi('upload_source',form);
+  }
+  async function standardizeProductImage(productId){return await productImageApi('standardize',{product_id:productId})}
+
+  async function customerApi(action,payload={},retryAuth=true){
+    const token=await adminStepUp();
+    const response=await fetch(CUSTOMER_API,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({action,...payload}),
+      cache:'no-store'
+    });
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await customerApi(action,payload,false);
+    }
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
+  async function storefrontApi(action,params={},options={}){
+    const u=new URL(STOREFRONT_API);u.searchParams.set('action',action);
+    Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
+    const response=await fetch(u,{...options,cache:'no-store'});
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'storefront_error');
+    return data;
+  }
+
+  const OAUTH_PARAMS=new URLSearchParams(location.search);
+  const OAUTH_RESULT=OAUTH_PARAMS.get('bling_oauth');
+  const OAUTH_DETAIL=OAUTH_PARAMS.get('detail')||'';
+  if(OAUTH_RESULT==='success'){
+    history.replaceState({},'',location.pathname+location.hash);
+    const msg=OAUTH_DETAIL==='status_catalog_ok'
+      ?'Bling reconectado e Situações validadas.'
+      :'Bling reconectado, mas o acesso a Situações ainda precisa ser liberado.';
+    setTimeout(()=>toast(msg),500)
+  }
+  if(OAUTH_RESULT==='error'){const d=OAUTH_DETAIL||'erro';history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Falha ao reconectar Bling: '+d),500)}
+
+
+  const adminNavIsMobile=()=>window.matchMedia('(max-width:760px)').matches;
+  function setAdminNavOpen(open){
+    const shouldOpen=Boolean(open&&adminNavIsMobile());
+    document.body.classList.toggle('admin-nav-open',shouldOpen);
+    const toggle=$('#adminNavToggle');
+    if(toggle){
+      toggle.setAttribute('aria-expanded',shouldOpen?'true':'false');
+      toggle.setAttribute('aria-label',shouldOpen?'Fechar menu':'Abrir menu');
+    }
+  }
+  function closeNavMenus(){setAdminNavOpen(false)}
+  function syncNavGroups(){
+    document.querySelectorAll('.admin-sidebar-section').forEach(section=>{
+      section.classList.toggle('active',Boolean(section.querySelector('[data-tab="'+state.tab+'"]')));
+    });
+    document.querySelectorAll('#adminNav [data-tab]').forEach(item=>{
+      if(item.dataset.tab===state.tab)item.setAttribute('aria-current','page');
+      else item.removeAttribute('aria-current');
+    });
+  }
+  if($('#adminNavToggle'))$('#adminNavToggle').onclick=()=>setAdminNavOpen(!document.body.classList.contains('admin-nav-open'));
+  if($('#adminNavBackdrop'))$('#adminNavBackdrop').onclick=()=>setAdminNavOpen(false);
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')setAdminNavOpen(false)});
+  window.addEventListener('resize',()=>{if(!adminNavIsMobile())setAdminNavOpen(false)});
+
+
+  function renderAttendance(){
+    location.assign('/vitrine/admin/atendimento/');
+  }
+
+  function setTab(tab){
+    if(tab!=='products'){disconnectProductScrollObserver();productListGeneration++}
+    if(state.tab==='balance'&&tab!=='balance')stopBalanceCamera();
+    if(tab!=='orders')document.body.classList.remove('orders-tab-active');
+    state.tab=tab;
+    document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    syncNavGroups();
+    closeNavMenus();
+    if(tab==='today')renderToday();
+    if(tab==='attendance')renderAttendance();
+    if(tab==='ana')import('/vitrine/admin/ana/ana-admin.js?v=1').then(module=>module.mountAnaAdmin($('#content'))).catch(error=>{$('#content').innerHTML='<section class="panel"><h1>ANA</h1><p>Não foi possível abrir a gestão da ANA.</p></section>';console.error('admin_ana_load',error)});
+    if(tab==='products')renderProducts();
+    if(tab==='baskets')renderBaskets();
+    if(tab==='quotes')renderQuotes();
+    if(tab==='marketing')renderMarketing();
+    if(tab==='expiry')renderExpirations();
+    if(tab==='purchases')renderPurchases();
+    if(tab==='balance')renderBalance();
+    if(tab==='gondolas')renderGondolas();
+    if(tab==='customers')renderCustomers();
+    if(tab==='finance')renderFinance();
+    if(tab==='bling')renderBling();
+    if(tab==='orders')return renderOrders();
+    if(tab==='expedition')renderExpedition();
+    if(tab==='driver')renderDriver();
+    if(tab==='closure')renderClosure();
+  }
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+
+  async function renderMarketing(){
+    const content=$('#content');content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades, segmentação e links de campanha. Nenhum envio é feito por esta tela.</p></div><button class="secondary" type="button" id="refreshMarketing">Atualizar</button></div><div class="panel"><div class="loading" id="marketingLoading">Lendo ofertas ativas do catálogo…</div></div>';
+    if($('#refreshMarketing'))$('#refreshMarketing').onclick=renderMarketing;
+    try{const data=await storefrontApi('offers'),offers=Array.isArray(data.offers)?data.offers:[],groups=new Map();for(const p of offers){const name=marketingSegmentOf(p),x=groups.get(name)||{name,offers:0,stock:0,brands:new Set()};x.offers++;x.stock+=Number(p.stock_quantity||0);if(p.brand)x.brands.add(p.brand);groups.set(name,x)}const cards=[...groups.values()].sort((a,b)=>b.offers-a.offers).map(x=>'<div class="marketing-card"><h3>'+esc(x.name)+'</h3><p>Oportunidade baseada nas ofertas públicas ativas agora.</p><div class="marketing-kpis"><span>'+x.offers+' ofertas</span><span>'+fmtQty(x.stock)+' un. disponíveis</span>'+(x.brands.size?'<span>'+esc([...x.brands].slice(0,3).join(' · '))+'</span>':'')+'</div></div>').join('')||'<div class="empty">Nenhuma oferta ativa para montar radar agora.</div>';
+      content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Inteligência comercial sem disparo automático.</p></div><button class="secondary" type="button" id="refreshMarketing">Atualizar</button></div><section><div class="section-title" style="border-top:0;margin-top:0">Radar de Marketing</div><div class="marketing-grid">'+cards+'</div></section><section class="marketing-section"><div class="section-title">Segmentação</div><p class="muted">Os componentes automáticos das cestas não contam para afinidade de categoria ou marca. Só produtos avulsos alimentam os sinais do pedido.</p><div class="marketing-chip-list" style="margin-top:9px">'+MARKETING_SEGMENTS.map(x=>'<span class="marketing-chip">INT_'+esc(x.key.replace('-','_').toUpperCase())+'</span>').join('')+'</div><div class="section-title">Marcas autorizadas</div><div class="marketing-chip-list">'+MARKETING_BRANDS.map(x=>'<span class="marketing-chip">'+esc(x.label)+'</span>').join('')+'</div><p class="muted" style="margin-top:8px">A allowlist persistente já está preparada no banco. Enquanto o projeto está no limite de Edge Functions, esta versão usa a mesma lista fixa no site/Admin e não cria dependência de função nova.</p></section><section class="marketing-section"><div class="section-title">Links / Campanhas</div><div class="marketing-builder"><label><span>Canal</span><select id="mktChannel"><option value="0975">0975</option><option value="1018">1018</option></select></label><label><span>Destino</span><select id="mktTarget"><option value="offers">Ofertas</option>'+MARKETING_SEGMENTS.map(x=>'<option value="category:'+esc(x.key)+'">'+esc(x.label)+'</option>').join('')+'</select></label><label><span>Marca (opcional)</span><select id="mktBrand"><option value="">Nenhuma</option>'+MARKETING_BRANDS.map(x=>'<option value="'+esc(x.key)+'">'+esc(x.label)+'</option>').join('')+'</select></label><label style="grid-column:1/-1"><span>Nome da campanha (opcional)</span><input id="mktCampaign" placeholder="ex.: semana_bebe_out26"></label><div class="marketing-url"><input id="mktUrl" readonly><button class="primary" type="button" id="copyMktUrl">Copiar link</button></div></div></section><section class="marketing-section"><div class="section-title">Configuração</div><div class="panel" style="padding:12px"><strong>Prioridade atual de CTA pós-pedido</strong><p class="muted">Bebê → Cabelos → Beleza → Limpeza → Lavanderia → Pet → Ofertas para cesta.</p><p class="muted">O CTA só é sinalizado quando o cliente autorizou ofertas pelo WhatsApp.</p></div></section>';
+      const updateLink=()=>{const channel=$('#mktChannel')?.value||'0975',target=$('#mktTarget')?.value||'offers',brand=$('#mktBrand')?.value||'',campaign=marketingCampaignSlug($('#mktCampaign')?.value||''),u=new URL('https://www.donaantonia.com.br/');u.searchParams.set('origem',channel);if(brand)u.searchParams.set('marca',brand);else if(target==='offers')u.searchParams.set('ofertas','1');else if(target.startsWith('category:'))u.searchParams.set('categoria',target.slice(9));if(campaign)u.searchParams.set('campanha',campaign);if($('#mktUrl'))$('#mktUrl').value=u.toString()};['mktChannel','mktTarget','mktBrand','mktCampaign'].forEach(id=>$('#'+id)?.addEventListener(id==='mktCampaign'?'input':'change',updateLink));$('#mktTarget')?.addEventListener('change',()=>{if($('#mktBrand'))$('#mktBrand').value='';updateLink()});$('#mktBrand')?.addEventListener('change',()=>updateLink());if($('#copyMktUrl'))$('#copyMktUrl').onclick=async()=>{updateLink();const value=$('#mktUrl')?.value||'';try{await navigator.clipboard.writeText(value);toast('Link copiado')}catch{const i=$('#mktUrl');i?.select();document.execCommand('copy');toast('Link copiado')}};if($('#refreshMarketing'))$('#refreshMarketing').onclick=renderMarketing;updateLink();
+    }catch(e){content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades.</p></div></div><div class="empty">Não consegui carregar as ofertas agora.<br><button class="text" id="retryMarketing">Tentar novamente</button></div>';if($('#retryMarketing'))$('#retryMarketing').onclick=renderMarketing}
+  }
+
+  async function renderQuotes(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Orçamentos</h1><p>Crie propostas usando produtos, clientes e cestas atuais do Supabase.</p></div><a class="store-link" href="/orcamento/" title="Abre nesta aba para manter a sessão administrativa">Abrir em tela inteira</a></div><div class="quote-admin-shell"><div class="loading" id="quoteAdminLoading">Validando sessão administrativa…</div></div>';
+    try{
+      await adminStepUp();
+      const shell=content.querySelector('.quote-admin-shell');
+      if(shell)shell.innerHTML='<iframe class="quote-admin-frame" src="/orcamento/?embedded=1" title="Criador de Orçamentos Dona Antônia"></iframe>';
+    }catch(e){
+      const shell=content.querySelector('.quote-admin-shell');
+      if(shell)shell.innerHTML='<div class="empty">Não foi possível abrir Orçamentos sem uma sessão administrativa válida.<br><button class="text" id="retryQuotes">Tentar novamente</button></div>';
+      if($('#retryQuotes'))$('#retryQuotes').onclick=renderQuotes;
+    }
+  }
+
+  function statusPill(status){
+    const map={created:'Novo',storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Bling',processing:'Separando',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'};
+    const cls=status==='cancelled'?'danger':status==='created'?'warn':'';
+    return '<span class="pill '+cls+'">'+esc(map[status]||status||'—')+'</span>';
+  }
+
+  function cuiabaDayKey(v){
+    const d=v instanceof Date?v:new Date(v||Date.now());
+    if(!Number.isFinite(d.getTime()))return '';
+    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Cuiaba',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+    const map=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+    return map.year+'-'+map.month+'-'+map.day;
+  }
+  function deliveredToday(o){
+    return o?.status==='delivered'&&Boolean(o?.delivered_at)&&cuiabaDayKey(o.delivered_at)===cuiabaDayKey(new Date());
+  }
+  function relativeAge(v){
+    if(!v)return '';
+    const ms=Date.now()-new Date(v).getTime();
+    if(!Number.isFinite(ms)||ms<0)return '';
+    const min=Math.floor(ms/60000);
+    if(min<1)return 'agora';
+    if(min<60)return 'há '+min+' min';
+    const hours=Math.floor(min/60);
+    if(hours<24)return 'há '+hours+' h';
+    return 'há '+Math.floor(hours/24)+' d';
+  }
+  function orderSearchMatch(o,q){
+    const needle=normalize(q);
+    if(!needle)return true;
+    const a=o?.delivery_address_snapshot||{};
+    const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
+    const haystack=[
+      o?.order_number,o?.customer_name,o?.whatsapp_phone_e164,a.phone,a.customer_name,a.recipient_name,
+      a.street,a.number,a.district,a.city,a.state,payment
+    ].map(normalize).join(' ');
+    return haystack.includes(needle);
+  }
+  function whatsappHref(value){
+    let d=String(value||'').replace(/\D/g,'');
+    if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;
+    return d.length>=12?'https://wa.me/'+d:'';
+  }
+  function whatsappMessageHref(value,message){
+    const base=whatsappHref(value);
+    return base?base+'?text='+encodeURIComponent(String(message||'')):'';
+  }
+  function orderMissingDataRequest(o){
+    const problems=orderProblemReasons(o);
+    const needName=problems.includes('Cliente não identificado');
+    const needAddress=problems.includes('Endereço incompleto');
+    if(!needName&&!needAddress)return null;
+    const a=o?.delivery_address_snapshot||{};
+    const phone=o?.whatsapp_phone_e164||a.phone||'';
+    if(!whatsappHref(phone))return null;
+    const rawName=String(o?.customer_name||a.customer_name||a.recipient_name||'').trim();
+    const firstName=rawName?rawName.split(/\s+/)[0]:'';
+    const greeting=firstName?'Olá, '+firstName+'!':'Olá!';
+    let label='Pedir dados',request='';
+    if(needName&&needAddress){
+      label='Pedir dados';
+      request='pode me enviar seu nome completo e seu endereço completo (rua, número, bairro e uma referência)?';
+    }else if(needName){
+      label='Pedir nome';
+      request='pode me informar seu nome completo?';
+    }else{
+      label='Pedir endereço';
+      request='pode me enviar seu endereço completo (rua, número, bairro e uma referência)?';
+    }
+    const message=greeting+' Para concluirmos seu pedido #'+orderDisplayCode(o)+' da Dona Antônia, '+request+(needAddress?' Se preferir, envie sua localização pelo WhatsApp.':'');
+    return {href:whatsappMessageHref(phone,message),label};
+  }
+  function orderAddressRequestHref(o){
+    const request=orderMissingDataRequest(o);
+    return request&&orderProblemReasons(o).includes('Endereço incompleto')?request.href:'';
+  }
+  function mapsHrefFromAddress(a){
+    const data=a&&typeof a==='object'?a:{};
+    const provided=String(data.google_maps_url||'').trim();
+    if(/^https:\/\/(?:www\.)?google\.(?:com|com\.br)\/maps/i.test(provided)||/^https:\/\/maps\.app\.goo\.gl\//i.test(provided))return provided;
+    const parts=[data.street,data.number,data.district,data.city,data.state].filter(Boolean);
+    return parts.length>=3?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(parts.join(', ')):'';
+  }
+  function orderContactActionsHtml(o,c={}){
+    const a=o?.delivery_address_snapshot||c?.address||{};
+    const phone=c?.phone||o?.whatsapp_phone_e164||a.phone||'';
+    const wa=whatsappHref(phone),maps=mapsHrefFromAddress(a),dataRequest=orderMissingDataRequest(o);
+    if(!wa&&!maps&&!dataRequest)return '';
+    return '<div class="dispatch-actions" style="justify-content:flex-start;margin-top:10px">'+
+      (dataRequest?'<a class="quick-link primary-link" href="'+esc(dataRequest.href)+'" target="_blank" rel="noopener">'+esc(dataRequest.label)+'</a>':'')+
+      (wa?'<a class="quick-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+      (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Abrir no Maps</a>':'')+
+    '</div>';
+  }
+
+    function orderProblemReasons(o){
+  const reasons=[];
+  if(o?.history_sync?.state==='failed')reasons.push('Histórico pendente do cliente');
+  if(['delivered','cancelled'].includes(o?.status))return reasons;
+  const a=o?.delivery_address_snapshot||{};
+  const canonicalKnown=typeof o?.registration_complete==='boolean';
+  if(canonicalKnown){
+    const missing=Array.isArray(o?.registration_missing_fields)?o.registration_missing_fields:[];
+    if(missing.includes('name'))reasons.push('Cliente não identificado');
+    if(missing.includes('phone'))reasons.push('Telefone pendente');
+    if(missing.includes('address')||missing.includes('city'))reasons.push('Endereço incompleto');
+    if(o?.document_only_pending===true)reasons.push('CPF/CNPJ pendente');
+  }else{
+    const customerName=o?.customer_name||a.customer_name||a.recipient_name||'';
+    if(!String(customerName).trim())reasons.push('Cliente não identificado');
+    if(!String(a.street||'').trim()||!String(a.city||'').trim())reasons.push('Endereço incompleto');
+  }
+  const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
+  if(!String(payment).trim())reasons.push('Pagamento não informado');
+  if(o?.stock_readiness?.ok===false)reasons.push('Estoque insuficiente');
+  if(o?.delivery_return?.status==='returned_review')reasons.push('Retorno aguardando revisão');
+  return reasons;
+}
+  function isBacklogOrder(o){
+    if(!o||!['created','confirmed','processing','ready','out_for_delivery'].includes(o.status))return false;
+    const orderDay=cuiabaDayKey(o.created_at);
+    const today=cuiabaDayKey(new Date());
+    return Boolean(orderDay&&today&&orderDay<today);
+  }
+  function orderIssueMatch(o,key='all'){
+    const reasons=orderProblemReasons(o);
+    if(key==='all')return reasons.length>0;
+    const labels={
+      address:'Endereço incompleto',
+      customer:'Cliente não identificado',
+      payment:'Pagamento não informado',
+      history:'Histórico pendente do cliente',
+      stock:'Estoque insuficiente'
+    };
+    return reasons.includes(labels[key]||'');
+  }
+  function orderIssueCount(key){return state.orders.filter(o=>orderIssueMatch(o,key)).length}
+  function orderOperationalPriority(o){
+    if(orderProblemReasons(o).length)return 0;
+    if(isBacklogOrder(o))return 1;
+    const rank={created:2,confirmed:3,processing:4,ready:5,out_for_delivery:6,delivered:7,cancelled:8};
+    return rank[o?.status]??8;
+  }
+    function sortOperationalOrders(rows){
+  return [...rows].sort((a,b)=>{
+    const at=Date.parse(a?.created_at||0)||0,bt=Date.parse(b?.created_at||0)||0;
+    return bt-at;
+  });
+}
+  function orderNextAction(o){
+    const problems=orderProblemReasons(o);
+    if(problems.length)return 'Corrigir: '+problems[0];
+    const consumed=o?.payment_method_snapshot?.stock_consumed===true;
+    const map={
+      created:'Confirmar pedido',
+      confirmed:consumed?'Continuar separação':'Iniciar separação',
+      processing:consumed?'Finalizar separação':'Regularizar separação',
+      ready:'Liberar para entrega',
+      out_for_delivery:'Confirmar entrega',
+      delivered:'Conferir pagamento / fiscal',
+      cancelled:'Nenhuma ação'
+    };
+    return map[o?.status]||'Revisar pedido';
+  }
+  function orderFilterMatch(o,filter){
+    if(filter==='all')return true;
+    if(filter==='new')return o.status==='created';
+    if(filter==='separate')return ['confirmed','processing'].includes(o.status);
+    if(filter==='ready')return o.status==='ready';
+    if(filter==='delivery')return o.status==='out_for_delivery';
+    if(filter==='finalized')return o.status==='delivered';
+    if(filter==='backlog')return isBacklogOrder(o);
+    if(filter==='problems')return orderIssueMatch(o,state.orderIssueFilter);
+    return true;
+  }
+  function orderFilterCount(filter){
+    if(filter==='problems')return state.orders.filter(o=>orderProblemReasons(o).length>0).length;
+    return state.orders.filter(o=>orderFilterMatch(o,filter)).length;
+  }
+  function todayCardCount(key){
+    if(key==='closure')return Number(state.closurePendingCount||0);
+    return orderFilterCount(key);
+  }
+  function renderTodayCards(){
+    const cards=[
+      ['new','Novos','Pedidos para confirmar'],
+      ['separate','Separação','Pedidos para separar'],
+      ['ready','Prontos','Aguardando saída'],
+      ['delivery','Em entrega','Pedidos na rua'],
+      ['delivered','Entregues hoje','Conferir fechamento'],
+      ['closure','Fechamento','Recebimento ou fiscal pendente'],
+      ['backlog','De dias anteriores','Não deixar pedido para trás'],
+      ['problems','Precisa de você','Pendências operacionais']
+    ];
+    return '<div class="ops-cards">'+cards.map(([key,label,sub])=>{
+      const count=todayCardCount(key);
+      const danger=(key==='problems'||key==='backlog'||key==='closure')&&count;
+      const target=key==='closure'?' data-today-tab="closure"':' data-today-filter="'+key+'"';
+      return '<button class="ops-card '+(danger?'danger':'')+'" type="button"'+target+'><small>'+esc(label)+'</small><strong>'+count+'</strong><span>'+esc(sub)+'</span></button>';
+    }).join('')+'</div>'+
+      renderTodayIssueBreakdown();
+  }
+  function renderTodayIssueBreakdown(){
+    const issues=[
+      ['address','Endereço'],
+      ['customer','Cliente'],
+      ['payment','Pagamento'],
+      ['history','Histórico'],
+      ['stock','Estoque']
+    ].map(([key,label])=>[key,label,orderIssueCount(key)]).filter(([, ,count])=>count>0);
+    if(!issues.length)return '';
+    return '<div class="order-filters" style="margin:-2px 0 14px"><span class="filter-count">Pendências:</span>'+
+      issues.map(([key,label,count])=>'<button class="filter-chip danger" type="button" data-today-issue="'+key+'">'+esc(label)+' · '+count+'</button>').join('')+
+    '</div>';
+  }
+  function renderTodayExpiryAlert(){
+    const data=state.expiryAlerts||{},s=data.summary||{},total=Number(s.total||0);
+    if(!total)return '';
+    const urgent=Number(s.due_today||0)+Number(s.days_1_7||0);
+    const cls=urgent?' danger':'';
+    const parts=[];
+    if(Number(s.due_today||0))parts.push(s.due_today+' vence(m) hoje');
+    if(Number(s.days_1_7||0))parts.push(s.days_1_7+' em até 7 dias');
+    if(Number(s.days_8_15||0))parts.push(s.days_8_15+' em 8–15 dias');
+    if(Number(s.days_16_30||0))parts.push(s.days_16_30+' em 16–30 dias');
+    return '<div class="bling-banner expiry-alert-banner'+cls+'"><strong>Validades exigem atenção · '+esc(total)+' produto(s) vencem em até 30 dias</strong><small>'+esc(parts.join(' · '))+'</small><div class="bling-actions"><button class="secondary" type="button" data-today-expiry>Ver validades</button></div></div>';
+  }
+
+  async function reconnectBlingOauth(){
+    const ok=confirm('Reconectar o Bling agora?\n\nUse este botão depois de salvar os novos escopos no aplicativo do Bling. Você será enviado ao Bling para autorizar novamente e depois voltará automaticamente para este Admin.');
+    if(!ok)return;
+    try{
+      const data=await api('bling_oauth_begin',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      if(!data.authorization_url)throw new Error('oauth_url_missing');
+      window.location.href=data.authorization_url;
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
+  async function retryBlingStatusCatalog(){
+    const btn=document.querySelector('[data-retry-bling-status]');
+    if(btn){btn.disabled=true;btn.textContent='Testando…'}
+    try{
+      const data=await api('bling_status_catalog_probe',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      toast('Permissão do Bling validada');
+      await renderToday();
+      return data;
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Testar novamente'}
+    }
+  }
+
+  function attentionTargetTab(a){
+    if(a?.type==='product_location_incomplete')return 'gondolas';
+    if(a?.type==='bling_scope_missing')return 'bling';
+    if(a?.type==='papoai_legacy_endpoint')return 'more';
+    return 'today';
+  }
+  function renderOpsAttention(){
+    if(state.opsAttention===null)return '<section class="panel" style="margin-bottom:14px"><div class="loading">Carregando pendências…</div></section>';
+    const items=Array.isArray(state.opsAttention)?state.opsAttention:[];
+    const rankLabel={critical:'Crítica',high:'Alta',normal:'Normal',low:'Baixa'};
+    if(!items.length)return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px"><strong>Precisa de você</strong><span class="muted">Nenhuma pendência aberta.</span></div></section>';
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Precisa de você</strong><span class="muted">'+items.length+' pendência'+(items.length===1?'':'s')+' aberta'+(items.length===1?'':'s')+'</span></div><div style="padding:8px 14px 14px">'+items.slice(0,8).map(a=>'<div class="history-row" style="align-items:center"><div><span class="pill '+(a.priority==='critical'||a.priority==='high'?'danger':'')+'">'+esc(rankLabel[a.priority]||a.priority)+'</span></div><div class="history-main"><strong>'+esc(a.summary)+'</strong><small>'+esc(a.recommended_action||'Abrir para revisar')+'</small></div><button class="quick-link" type="button" data-attention-open="'+esc(a.id)+'" data-attention-tab="'+esc(attentionTargetTab(a))+'">Abrir</button></div>').join('')+'</div></section>';
+  }
+
+  function renderOpsPrintQueue(){
+    const q=state.opsPrintQueue||{},jobs=Array.isArray(q.jobs)?q.jobs:[];
+    if(!jobs.length)return '';
+    const active=jobs.filter(j=>['pending','failed','claimed'].includes(j.status));
+    if(!active.length)return '';
+    const label={pending:'Aguardando',failed:'Falhou',claimed:'Em impressão'};
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Fila de impressão</strong><span class="muted">a impressão automática ainda está em homologação</span></div><div style="padding:8px 14px 14px">'+active.slice(0,8).map(j=>'<div class="history-row" style="align-items:center"><span class="pill '+(j.status==='failed'?'danger':'')+'">'+esc(label[j.status]||j.status)+'</span><div class="history-main"><strong>Separação · #'+esc(orderDisplayCode(state.orders.find(o=>String(o.id)===String(j.entity_id))))+'</strong><small>'+esc(j.printer_profile||'85 mm')+(j.last_error?' · '+esc(j.last_error):'')+'</small></div><button class="quick-link" type="button" data-print-order="'+esc(j.entity_id)+'">Abrir pedido</button></div>').join('')+'</div></section>';
+  }
+
+  function renderOpsTimeline(){
+    const rows=Array.isArray(state.opsTimeline)?state.opsTimeline:[];
+    if(!rows.length)return '';
+    const sourceLabel={dona_antonia:'Dona Antônia',storefront:'Site',bling:'Bling',papoai:'PapoAI',chatgpt:'ChatGPT'};
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Atividade recente</strong><span class="muted">eventos importantes · sem log técnico bruto</span></div><div style="padding:8px 14px 14px">'+rows.slice(0,12).map(e=>'<div class="history-row"><div><span class="pill '+(e.severity==='error'||e.severity==='critical'?'danger':'')+'">'+esc(sourceLabel[e.source_system]||e.source_system||'Sistema')+'</span></div><div class="history-main"><strong>'+esc(e.summary||e.event_type||'Evento')+'</strong><small>'+esc(e.actor_label||e.actor_type||'Sistema')+' · '+esc(dateTime(e.occurred_at))+'</small></div></div>').join('')+'</div></section>';
+  }
+
+  function renderOps2Summary(){
+    if(state.opsSummary===null)return '<section class="panel" style="margin-bottom:14px"><div class="loading">Carregando indicadores operacionais…</div></section>';
+    const s=state.opsSummary||{};
+    const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{},pr=s.printing||{},pay=s.payments||{},del=s.delivery||{},pa=state.opsPapoAi||{};
+    const printNeeds=Number(pr.pending||0)+Number(pr.failed||0);
+    const papoSeen=Number(pa.captured_24h||0),identity=pa.identity||{};
+    const cards=[
+      ['Precisa de humano',Number(w.human_required||0),'Conversas WhatsApp'],
+      ['Atenções',Number(a.open||0),'Fila da Central'],
+      ['Aprovações',Number(ap.pending||0),'Ações aguardando decisão'],
+      ['Ocorrências estoque',Number(i.incidents_open||0),'Avaria / vencido / retorno'],
+      ['Diferenças balanço',Number(i.count_differences_pending||0),'Aguardando reconciliação'],
+      ['Pagamentos p/ Bling',Number(pay.captured_unsynced||0),'Recebidos · sincronização pendente'],
+      ['Retornando',Number(del.returning||0),'Mercadoria voltando ao depósito'],
+      ['Retorno em revisão',Number(del.return_review||0),'Bloqueado para nova saída'],
+      ['PapoAI',papoSeen,pa.capture_enabled?(Number(pa.review_required||0)?Number(pa.review_required||0)+' precisa(m) revisão':Number(pa.conversation_unlinked_24h||0)?Number(pa.conversation_unlinked_24h||0)+' sem conversa':'ponte ok · '+Number(pa.conversation_linked_24h||0)+' vinculado(s)'):'captura desligada'],
+      ['Cadastros pendentes',Number(identity.provisional_without_name||0),Number(identity.site_orders_without_customer_with_phone_31d||0)?Number(identity.site_orders_without_customer_with_phone_31d||0)+' pedido(s) sem cliente':'todos os pedidos com telefone têm cliente'],
+      ['Impressões',printNeeds,printNeeds?'Fila de separação':'Fila em dia'],
+      ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
+      ['Vencem em 90 dias',Number(i.expires_90d||0),'Revisar lotes/validade']
+    ];
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Central de Controle</strong><span class="muted">visão rápida · sem consultas externas extras</span></div><div class="ops-cards" style="padding:14px">'+cards.map(c=>'<div class="ops-card"><small>'+esc(c[0])+'</small><strong>'+esc(c[1])+'</strong><span>'+esc(c[2])+'</span></div>').join('')+'</div></section>';
+  }
+
+  function renderPapoAiBridgePanel(){
+    if(state.opsPapoAi===null)return '<section class="panel" style="margin-bottom:14px"><div class="loading">Carregando PapoAI / WhatsApp…</div></section>';
+    const p=state.opsPapoAi||{};
+    if(!p.capture_enabled)return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px"><strong>PapoAI / WhatsApp</strong><span class="danger-text">ponte desligada</span></div></section>';
+    const lastFlow=p.last_flow||{},lastLink=p.last_identity_link||{},identity=p.identity||{};
+    const stateLabel=p.bridge_state==='attention'?'Atenção':'Online';
+    const stateClass=p.bridge_state==='attention'?'warn-text':'ok-text';
+    const flowText=lastFlow.created_at
+      ? dateTime(lastFlow.created_at)+' · '+(lastFlow.status==='processed'?'processado':'revisar')+(Number(lastFlow.orders_linked||0)?' · '+Number(lastFlow.orders_linked)+' pedido(s) associado(s)':'')
+      :'Nenhum Flow estruturado recebido ainda';
+    const linkText=lastLink.created_at
+      ? (lastLink.catalog_path||'')+' · '+(lastLink.redeemed_at?'aberto pelo cliente':'aguardando abertura')+' · vence '+dateTime(lastLink.expires_at)
+      :'Nenhum link personalizado emitido ainda';
+    return '<section class="panel" style="margin-bottom:14px">'+
+      '<div class="history-title" style="padding:14px 14px 0"><div><strong>PapoAI / WhatsApp</strong><span class="muted">ponte operacional · sem IA de atendimento no Admin</span></div><b class="'+stateClass+'">'+stateLabel+'</b></div>'+
+      '<div class="bling-grid" style="padding:14px;margin-bottom:0">'+
+        '<div class="bling-card"><small>Eventos 24h</small><strong>'+Number(p.events_24h||p.captured_24h||0)+'</strong><span class="sub">'+Number(p.events_conversation_linked||0)+' vinculados a conversa no total</span></div>'+
+        '<div class="bling-card"><small>Clientes reconhecidos</small><strong>'+Number(p.events_customer_linked||0)+'</strong><span class="sub">por identidade telefônica canônica</span></div>'+
+        '<div class="bling-card"><small>Flows</small><strong>'+Number(identity.flow_events_total||p.flow_events_total||0)+'</strong><span class="sub">'+Number(identity.flow_events_review||p.flow_events_review||0)+' em revisão</span></div>'+
+        '<div class="bling-card"><small>Cadastros provisórios</small><strong>'+Number(identity.provisional_customers||0)+'</strong><span class="sub">'+Number(identity.provisional_without_name||0)+' ainda sem nome · '+Number(identity.verified_flow_customers||0)+' confirmado(s) pelo Flow</span></div>'+
+        '<div class="bling-card"><small>Links catálogo</small><strong>'+Number(p.identity_tokens_total||0)+'</strong><span class="sub">'+Number(p.identity_tokens_redeemed||0)+' aberto(s) pelo cliente</span></div>'+
+      '</div>'+
+      '<div style="padding:0 14px 14px;display:grid;gap:8px">'+
+        '<div class="purchase-safe" style="margin:0"><strong>Último Flow</strong><small>'+esc(flowText)+'</small></div>'+
+        '<div class="purchase-safe" style="margin:0"><strong>Último link</strong><small>'+esc(linkText)+'</small></div>'+
+        (p.last_error?'<div class="purchase-safe purchase-danger" style="margin:0"><strong>Último erro</strong><small>'+esc(p.last_error)+'</small></div>':'')+
+        (Number(identity.site_orders_without_customer_31d||0)?'<div class="purchase-safe '+(Number(identity.site_orders_without_customer_with_phone_31d||0)?'purchase-danger':'')+'" style="margin:0"><strong>Pedidos sem cliente</strong><small>'+Number(identity.site_orders_without_customer_31d||0)+' pedido(s) nos últimos 31 dias · '+(Number(identity.site_orders_without_customer_with_phone_31d||0)?'há telefone disponível para revisar':'sem telefone disponível; legado não pode ser vinculado com segurança')+'</small></div>':'')+
+        '<div class="dispatch-actions" style="justify-content:flex-start"><button class="primary" type="button" data-papoai-create-link>Criar link catálogo</button></div>'+
+        '<small class="muted">Pedido automático vindo de evento estruturado: '+(p.structured_order_commit_enabled?'HABILITADO':'bloqueado até homologação real')+'. Mensagem livre nunca cria pedido.</small>'+
+      '</div>'+
+    '</section>';
+  }
+  async function createPapoAiCatalogLink(){
+    const raw=prompt('Telefone do cliente com DDD:','');
+    if(raw===null)return;
+    const phone=String(raw||'').replace(/\D/g,'');
+    if(phone.length<10){toast('Informe um telefone válido com DDD');return}
+    try{
+      const r=await api('papoai_issue_catalog_link',{},{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({phone})
+      });
+      const url=String(r.url||'');
+      if(url){
+        try{await navigator.clipboard.writeText(url);toast('Link criado e copiado: '+String(r.catalog_path||''))}
+        catch{prompt('Link criado. Copie abaixo:',url)}
+      }else toast('Link criado');
+      const fresh=await api('ops_papoai_capture_status').catch(()=>null);
+      if(fresh?.papoai){state.opsPapoAi=fresh.papoai;const host=$('#papoAiBridgeSlot');if(host)host.innerHTML=renderPapoAiBridgePanel()}
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
+  async function renderToday(){
+    // CENTRAL_LAZY_ON_DEMAND_V1
+    const content=$('#content');
+    const sectionState=new Map();
+    const sections=[
+      ['orders','Pedidos e expedição','Separação, prontos, entrega e fechamento'],
+      ['health','Saúde do sistema','Produtos, Bling, fiscal, filas e automações'],
+      ['attention','Precisa de atenção','Pendências operacionais que exigem ação'],
+      ['expiry','Estoque e validades','Alertas de validade para revisar'],
+      ['integrations','WhatsApp e integrações','Situação dos canais e integrações'],
+      ['printing','Impressão','Fila de impressão operacional']
+    ];
+    const sectionHtml=sections.map(([key,title,subtitle])=>
+      '<section class="panel" style="margin-bottom:10px">'+
+        '<button class="secondary" type="button" data-central-toggle="'+key+'" aria-expanded="false" style="width:100%;border:0;border-radius:0;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:12px 14px">'+
+          '<span><strong style="display:block">'+esc(title)+'</strong><small class="muted" style="display:block;margin-top:2px">'+esc(subtitle)+'</small></span>'+
+          '<span data-central-status="'+key+'" class="muted" style="white-space:nowrap">Carregar</span>'+
+        '</button>'+
+        '<div id="centralSection-'+key+'" hidden style="border-top:1px solid var(--line);padding:12px 14px"></div>'+
+      '</section>'
+    ).join('');
+    content.innerHTML=
+      '<div class="page-head"><div><h1>Central</h1><p>Acessos rápidos e informações carregadas somente quando você precisar.</p></div><button class="secondary" id="refreshToday">Atualizar</button></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px">'+
+        '<button class="secondary" type="button" data-central-shortcut="orders">Pedidos</button>'+
+        '<button class="secondary" type="button" data-central-shortcut="attendance">Atendimento</button>'+
+        '<button class="secondary" type="button" data-central-shortcut="products">Produtos</button>'+
+      '</div>'+sectionHtml;
+    $('#refreshToday').onclick=renderToday;
+    content.querySelectorAll('[data-central-shortcut]').forEach(b=>b.onclick=()=>setTab(b.dataset.centralShortcut));
+
+  async function loadCentralSection(name,body){
+      if(name==='orders'){
+        const [data,closureData]=await Promise.all([
+          api('orders'),
+          api('closure_orders').catch(()=>null)
+        ]);
+        state.orders=data.orders||[];
+        if(closureData){
+          state.closureOrders=closureData.orders||[];
+          state.closurePendingCount=Number(closureData.pending_count||0);
+          state.fiscalByOrder={...state.fiscalByOrder,...(closureData.fiscal_by_order||{})};
+        }else state.closurePendingCount=0;
+        const pending=sortOperationalOrders(state.orders.filter(o=>!['delivered','cancelled'].includes(o.status))).slice(0,8);
+        body.innerHTML=renderTodayCards()+
+          '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
+        const todayOrders=body.querySelector('#todayOrders');
+        if(todayOrders){
+          todayOrders.innerHTML=pending.length?pending.map(o=>'<button class="history-row today-order-row" type="button" data-today-order="'+esc(o.id)+'"><strong>#'+esc(orderDisplayCode(o))+'</strong><div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+money(o.total_cents)+' · '+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div><span class="next-action">'+esc(orderNextAction(o))+'</span><span class="today-status">'+statusPill(o.status)+'</span></button>').join(''):'<div class="history-empty">Nenhum pedido pendente agora.</div>';
+          todayOrders.querySelectorAll('[data-today-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.todayOrder));
+        }
+        body.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;if(state.orderFilter!=='problems')state.orderIssueFilter='all';setTab('orders')});
+        body.querySelectorAll('[data-today-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.todayTab));
+        body.querySelectorAll('[data-today-issue]').forEach(b=>b.onclick=()=>{state.orderFilter='problems';state.orderIssueFilter=b.dataset.todayIssue;setTab('orders')});
+        return;
+      }
+      if(name==='attention'){
+        const attentionData=await api('ops_attention',{limit:20});
+        state.opsAttention=attentionData?.attention||[];
+        body.innerHTML=renderOpsAttention();
+        body.querySelectorAll('[data-attention-open]').forEach(b=>b.onclick=()=>setTab(b.dataset.attentionTab||'today'));
+        return;
+      }
+      if(name==='expiry'){
+        const expiryAlerts=await api('expiry_alerts');
+        state.expiryAlerts=expiryAlerts||null;
+        body.innerHTML=renderTodayExpiryAlert()||'<div class="history-empty">Nenhum alerta de validade agora.</div>';
+        body.querySelectorAll('[data-today-expiry]').forEach(b=>b.onclick=()=>setTab('expiry'));
+        return;
+      }
+      if(name==='integrations'){
+        const papoData=await api('ops_papoai_capture_status').catch(()=>null);
+        state.opsPapoAi=papoData?.papoai||null;
+        body.innerHTML='<div id="integrationOperationalAlert"></div><div id="papoAiBridgeSlot">'+renderPapoAiBridgePanel()+'</div>';
+        const papoLinkBtn=body.querySelector('[data-papoai-create-link]');if(papoLinkBtn)papoLinkBtn.onclick=createPapoAiCatalogLink;
+        body.querySelectorAll('[data-retry-bling-status]').forEach(b=>b.onclick=retryBlingStatusCatalog);
+        await loadOperationalIntegrationAlert();
+        return;
+      }
+      if(name==='printing'){
+        const printData=await api('ops_print_queue',{limit:20});
+        state.opsPrintQueue=printData?.queue||null;
+        body.innerHTML=renderOpsPrintQueue()||'<div class="history-empty">Nenhuma impressão pendente agora.</div>';
+        body.querySelectorAll('[data-print-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.printOrder));
+      }
+    }
+
+    async function toggleCentralSection(name){
+      const body=$('#centralSection-'+name);
+      const button=content.querySelector('[data-central-toggle="'+name+'"]');
+      const status=content.querySelector('[data-central-status="'+name+'"]');
+      if(!body||!button)return;
+      if(!body.hidden){
+        body.hidden=true;
+        button.setAttribute('aria-expanded','false');
+        if(status)status.textContent=sectionState.get(name)==='loaded'?'Abrir':'Carregar';
+        return;
+      }
+      body.hidden=false;
+      button.setAttribute('aria-expanded','true');
+      if(sectionState.get(name)==='loaded'){
+        if(status)status.textContent='Fechar';
+        return;
+      }
+      sectionState.set(name,'loading');
+      if(status)status.textContent='Carregando…';
+      body.innerHTML='<div class="loading">Carregando…</div>';
+      try{
+        await loadCentralSection(name,body);
+        sectionState.set(name,'loaded');
+        if(status)status.textContent='Fechar';
+      }catch(e){
+        sectionState.delete(name);
+        if(status)status.textContent='Tentar novamente';
+        body.innerHTML='<div class="empty">Não consegui carregar este bloco. <button class="text" type="button" data-central-retry> Tentar novamente</button></div>';
+        const retry=body.querySelector('[data-central-retry]');
+        if(retry)retry.onclick=async()=>{body.hidden=true;await toggleCentralSection(name)};
+      }
+    }
+
+    content.querySelectorAll('[data-central-toggle]').forEach(b=>b.onclick=()=>toggleCentralSection(b.dataset.centralToggle));
+  }
+  function expeditionFiscalState(o){
+    if(o?.status==='ready'&&o?.delivery_return?.dispatch_blocked===true)return {authorized:false,title:'Retorno em revisão',detail:'Inspecionar mercadoria antes de nova saída',kind:'warn'};
+    if(o?.status!=='ready')return {authorized:true,title:'',detail:'',kind:'ok'};
+    const f=state.fiscalByOrder[o.id];
+    if(!f)return {authorized:false,title:'Fiscal carregando',detail:'Aguardando conferência',kind:'warn'};
+    if(f.error)return {authorized:false,title:'Fiscal indisponível',detail:'Abra o pedido para revisar',kind:'warn'};
+    const gate=f.dispatch_gate||{};
+    if(gate.authorized===true&&gate.allowed===true){
+      return {
+        authorized:true,
+        title:'Fiscal autorizado',
+        detail:(gate.bling_invoice_number?'NF-e '+gate.bling_invoice_number:'Liberado para saída'),
+        kind:'ok'
+      };
+    }
+    return {
+      authorized:false,
+      title:'Fiscal pendente',
+      detail:'Emitir NF-e antes da saída',
+      kind:'warn'
+    };
+  }
+  function fiscalAuthorizedForDispatch(o){
+    return expeditionFiscalState(o).authorized===true;
+  }
+
+  function expeditionRow(o){
+    const a=o.delivery_address_snapshot||{};
+    const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ')||'Endereço não informado';
+    const payment=actualPaymentText(o)||(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado');
+    const fiscal=expeditionFiscalState(o),ret=o.delivery_return||null;
+    const returnNote=ret
+      ? '<small class="warn-text">'+(ret.status==='returning'?'Retornando ao depósito':ret.status==='returned_review'?'Retorno em revisão':'Retorno')+' · '+esc(ret.reason_label||'Motivo não informado')+'</small>'
+      : '';
+    const wa=whatsappHref(o.whatsapp_phone_e164||a.phone||'');
+    const maps=mapsHrefFromAddress(a);
+    const selected=state.expeditionSelected.includes(o.id);
+    const deliveryActions=o.status==='out_for_delivery'
+      ? (ret?.status==='returning'
+        ? '<button class="quick-link primary-link" type="button" data-confirm-return="'+esc(o.id)+'">Confirmar retorno</button>'
+        : '<button class="quick-link primary-link" type="button" data-confirm-delivery="'+esc(o.id)+'">Confirmar entrega</button><button class="quick-link" type="button" data-return-expedition="'+esc(o.id)+'">Não entregou</button>')
+      : '';
+    return '<div class="history-row dispatch-row">'+
+      '<div>'+(o.status==='ready'&&fiscal.authorized?'<label class="dispatch-select"><input type="checkbox" data-dispatch-select="'+esc(o.id)+'" '+(selected?'checked':'')+'>#'+esc(orderDisplayCode(o))+'</label>':'<strong>#'+esc(orderDisplayCode(o))+'</strong>')+'<span class="sub">'+esc(relativeAge(o.created_at))+'</span>'+(o.status==='ready'?'<span class="sub '+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.title)+'</span>':'')+'</div>'+
+      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(address)+'</small>'+returnNote+'</div>'+
+      '<div class="history-main"><strong>'+money(o.total_cents)+'</strong><small>'+esc(payment)+'</small>'+(o.status==='ready'?'<small class="'+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.detail)+'</small>':'')+'</div>'+
+      '<span>'+statusPill(o.status)+'</span>'+
+      '<div class="dispatch-actions">'+
+        (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+        (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
+        (ret?.status==='returned_review'?'<button class="quick-link primary-link" type="button" data-resolve-return="'+esc(o.id)+'">Resolver retorno</button>':'')+
+        (o.status==='ready'&&!fiscal.authorized&&ret?.status!=='returned_review'?'<button class="quick-link primary-link" type="button" data-expedition-fiscal="'+esc(o.id)+'">Resolver fiscal</button>':'')+
+        (o.status==='ready'&&fiscal.authorized?'<button class="quick-link" type="button" data-expedition-danfe="'+esc(o.id)+'">Imprimir DANFE</button>':'')+
+        deliveryActions+
+        '<button class="quick-link" type="button" data-expedition-order="'+esc(o.id)+'">Abrir</button>'+
+      '</div>'+
+    '</div>';
+  }
+  function expeditionSection(title,subtitle,rows,empty){
+    return '<section class="panel dispatch-section"><div class="history-title dispatch-head"><div><strong>'+esc(title)+'</strong><span>'+esc(subtitle)+'</span></div><b>'+rows.length+'</b></div>'+
+      '<div>'+(rows.length?rows.map(expeditionRow).join(''):'<div class="history-empty">'+esc(empty)+'</div>')+'</div></section>';
+  }
+  async function returnOrderToExpedition(id,fromDetail=false){
+    const o=(fromDetail?state.currentOrder?.order:null)||state.orders.find(x=>x.id===id);
+    if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
+    if(o.delivery_return?.status==='returning'){toast('Este pedido já está retornando ao depósito');return}
+    const choice=prompt(
+      'Por que a entrega não foi concluída?\n\n1 - Cliente ausente\n2 - Endereço não encontrado\n3 - Cliente pediu reagendamento\n4 - Problema no pagamento\n5 - Cliente recusou / desistiu\n6 - Veículo / rota\n7 - Outro\n\nDigite o número:'
+    );
+    if(choice===null)return;
+    const reasons={
+      '1':['customer_absent','Cliente ausente'],
+      '2':['address_not_found','Endereço não encontrado'],
+      '3':['reschedule','Cliente pediu reagendamento'],
+      '4':['payment_failed','Problema no pagamento'],
+      '5':['customer_refused','Cliente recusou / desistiu'],
+      '6':['vehicle_route','Veículo / rota'],
+      '7':['other','Outro']
+    };
+    const selected=reasons[String(choice||'').trim()];
+    if(!selected){toast('Escolha uma opção de 1 a 7');return}
+    const noteInput=prompt('Observação opcional sobre a tentativa de entrega:','');
+    if(noteInput===null)return;
+    if(!confirm('Registrar como não entregue por "'+selected[1]+'"?\n\nA mercadoria continuará fora do estoque vendável até o retorno físico ser confirmado.'))return;
+    try{
+      await api('delivery_fail_register',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:o.id,reason_code:selected[0],note:String(noteInput||'').trim(),operator:currentOperator()||'Entrega'})
+      });
+      const data=await api('orders');state.orders=data.orders||[];
+      if(fromDetail){
+        const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
+        await loadCurrentOrderFiscal(false);paintOrderDetail();loadOrders();
+      }
+      if(state.tab==='driver')paintDriverQueue();else if(state.tab==='expedition')paintExpeditionBody();
+      toast('Não entrega registrada · aguardando retorno físico');
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  async function confirmPhysicalDeliveryReturn(id){
+    const o=state.orders.find(x=>x.id===id)||state.currentOrder?.order;
+    const ret=o?.delivery_return;
+    if(!o||!ret||ret.status!=='returning'){toast('Não existe retorno físico pendente para este pedido');return}
+    const suggested=ret.recommended_disposition==='redelivery'?'redelivery':'review';
+    const promptText=suggested==='redelivery'
+      ? 'A mercadoria voltou fisicamente ao depósito?\n\nOK = voltou íntegra e continuará separada para REENTREGA.\nCancelar = não registrar agora.'
+      : 'A mercadoria voltou fisicamente ao depósito?\n\nOK = enviar para REVISÃO, sem voltar ao estoque geral e sem nova saída.\nCancelar = não registrar agora.';
+    if(!confirm(promptText))return;
+    const operator=requireOperator();if(!operator)return;
+    try{
+      await api('delivery_return_confirm',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({case_id:ret.id,disposition:suggested,operator})
+      });
+      const data=await api('orders');state.orders=data.orders||[];
+      if(state.tab==='driver')paintDriverQueue();else if(state.tab==='expedition')paintExpeditionBody();
+      if(state.currentOrder?.order?.id===id){const fresh=await api('order',{id});state.currentOrder=fresh;paintOrderDetail()}
+      toast(suggested==='redelivery'?'Retorno confirmado · pedido pronto para reentrega':'Retorno confirmado · bloqueado para revisão');
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  function returnCurrentOrderToExpedition(){
+    const id=state.currentOrder?.order?.id;if(id)returnOrderToExpedition(id,true);
+  }
+
+  async function resolveDeliveryReturnReview(id){
+    const o=state.orders.find(x=>x.id===id)||state.currentOrder?.order,ret=o?.delivery_return;
+    if(!o||!ret||ret.status!=='returned_review'){toast('Este retorno não está mais aguardando revisão');return}
+    $('#editorTitle').textContent='Revisar retorno';
+    $('#editorBody').innerHTML='<div class="rule-notice warn"><strong>Pedido #'+esc(orderDisplayCode(o))+'</strong><div>'+esc(ret.reason_label||'Não entregue')+(ret.note?' · '+esc(ret.note):'')+'<br>A mercadoria já voltou fisicamente, mas continua fora do estoque vendável.</div></div>'+
+      '<div class="section-title">O que aconteceu com a mercadoria?</div>'+
+      '<div class="panel" style="padding:14px;margin-bottom:10px"><strong>Tudo íntegro e haverá nova tentativa</strong><p class="sub">Mantém os itens alocados ao mesmo pedido e libera para reentrega.</p><button class="primary" id="returnResolveRedelivery" type="button">LIBERAR PARA REENTREGA</button></div>'+
+      '<div class="panel" style="padding:14px;margin-bottom:10px"><strong>Cliente desistiu e tudo voltou íntegro</strong><p class="sub">Cancela comercialmente e restaura todo o estoque local. O fiscal fica pendente de revisão no Bling.</p><button class="secondary" id="returnResolveCancel" type="button">CANCELAR E DEVOLVER AO ESTOQUE</button></div>'+
+      '<div class="panel" style="padding:14px"><strong>Há avaria, falta ou item impróprio</strong><p class="sub">Não faça restauração total. Registre os itens no Estoque mobile para revisão.</p><button class="secondary" id="returnResolveDamage" type="button">IR PARA ESTOQUE MOBILE</button></div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="returnResolveClose" type="button">Fechar</button>';
+    $('#returnResolveClose').onclick=()=>$('#editor').close();
+    $('#returnResolveDamage').onclick=()=>{$('#editor').close();state.balanceMode='incident';setTab('balance');toast('Leia cada item avariado ou faltante antes de resolver o retorno')};
+    $('#returnResolveRedelivery').onclick=()=>submitDeliveryReturnResolution(o,'redelivery');
+    $('#returnResolveCancel').onclick=()=>{
+      if(!confirm('Confirme somente se TODOS os produtos voltaram fisicamente íntegros.\n\nO pedido será cancelado e o estoque local será restaurado por completo. O tratamento fiscal continuará pendente no Bling.'))return;
+      submitDeliveryReturnResolution(o,'cancel_intact');
+    };
+    $('#editor').showModal();
+  }
+  async function submitDeliveryReturnResolution(o,action){
+    const ret=o?.delivery_return;if(!ret)return;
+    const operator=requireOperator();if(!operator)return;
+    const buttons=[...document.querySelectorAll('#returnResolveRedelivery,#returnResolveCancel')];buttons.forEach(b=>b.disabled=true);
+    try{
+      const data=await api('delivery_return_resolve',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({case_id:ret.id,resolution_action:action,operator})
+      });
+      $('#editor').close();
+      const rows=await api('orders');state.orders=rows.orders||[];
+      if(state.tab==='expedition')paintExpeditionBody();else if(state.tab==='today')renderToday();
+      toast(action==='redelivery'?'Retorno revisado · liberado para reentrega':'Pedido cancelado · estoque íntegro restaurado · fiscal pendente');
+      return data;
+    }catch(e){toast(errorMessage(e.message));buttons.forEach(b=>b.disabled=false)}
+  }
+
+  function deliveryPaymentMethodOptions(selected=''){
+    const rows=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição'],['other','Outro']];
+    return rows.map(([v,l])=>'<option value="'+v+'" '+(v===selected?'selected':'')+'>'+l+'</option>').join('');
+  }
+  function deliveryPaymentDefaultMethod(o){
+    const raw=String(o?.payment_method_snapshot?.method||'').toLowerCase();
+    const map={pix:'pix',cash:'cash',dinheiro:'cash',credit:'credit_card',credit_card:'credit_card',card:'credit_card',food_card:'food_card',meal_card:'meal_card'};
+    return map[raw]||'pix';
+  }
+  function paymentAmountInput(cents){return (Number(cents||0)/100).toFixed(2).replace('.',',')}
+  function parsePaymentAmountCents(value){
+    let s=String(value||'').trim().replace(/R\$/gi,'').replace(/\s+/g,'');
+    if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');
+    const n=Number(s);return Number.isFinite(n)?Math.round(n*100):0;
+  }
+  function actualPaymentText(o){
+    const parts=o?.payment_method_snapshot?.actual?.parts||[];
+    return parts.length?parts.map(p=>(p.label||p.method)+' '+money(p.amount_cents)).join(' + '):'';
+  }
+  function paintDeliveryPaymentDraft(){
+    const d=state.deliveryPaymentDraft;if(!d)return;
+    const host=$('#deliveryPaymentParts');if(!host)return;
+    host.innerHTML=d.parts.map((p,index)=>'<div class="form-grid delivery-payment-row" data-payment-index="'+index+'" style="align-items:end;margin-bottom:10px">'+
+      '<label><span>Forma '+(d.parts.length>1?index+1:'')+'</span><select data-payment-method>'+deliveryPaymentMethodOptions(p.method)+'</select></label>'+
+      '<label><span>Valor</span><input data-payment-amount inputmode="decimal" value="'+esc(paymentAmountInput(p.amount_cents))+'"></label>'+
+      (index>0?'<button class="text danger" type="button" data-remove-payment-part="'+index+'">Remover</button>':'')+
+    '</div>').join('');
+    const sum=d.parts.reduce((s,p)=>s+Number(p.amount_cents||0),0),diff=Number(d.order.total_cents||0)-sum;
+    $('#deliveryPaymentSum').innerHTML='<strong>'+money(sum)+'</strong><span class="'+(diff===0?'ok-text':'warn-text')+'">'+(diff===0?'Total confere':'Diferença '+money(Math.abs(diff))+(diff>0?' faltando':' a mais'))+'</span>';
+    host.querySelectorAll('[data-payment-method]').forEach((el,index)=>el.onchange=()=>{d.parts[index].method=el.value});
+    host.querySelectorAll('[data-payment-amount]').forEach((el,index)=>el.oninput=()=>{d.parts[index].amount_cents=parsePaymentAmountCents(el.value);const sum2=d.parts.reduce((s,p)=>s+Number(p.amount_cents||0),0),diff2=Number(d.order.total_cents||0)-sum2;$('#deliveryPaymentSum').innerHTML='<strong>'+money(sum2)+'</strong><span class="'+(diff2===0?'ok-text':'warn-text')+'">'+(diff2===0?'Total confere':'Diferença '+money(Math.abs(diff2))+(diff2>0?' faltando':' a mais'))+'</span>'});
+    host.querySelectorAll('[data-remove-payment-part]').forEach(b=>b.onclick=()=>{d.parts.splice(Number(b.dataset.removePaymentPart),1);paintDeliveryPaymentDraft()});
+    const split=$('#addDeliveryPaymentPart');if(split)split.disabled=d.parts.length>=2;
+  }
+  async function finalizeDeliveredOrder(o){
+    const actual=o?.payment_method_snapshot?.actual||{};
+    const parts=Array.isArray(actual.parts)?actual.parts:[];
+    if(parts.length!==1)throw new Error('delivery_already_captured_requires_canonical_review');
+    const method=String(parts[0]?.method||'').trim();
+    const amount=Number(parts[0]?.amount_cents||0);
+    if(!method||amount!==Number(o.total_cents||0))throw new Error('delivery_already_captured_requires_canonical_review');
+    await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,method,amount_cents:amount,operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+o.id})});
+    const data=await api('orders');state.orders=data.orders||[];paintExpeditionBody();
+  }
+  async function captureDeliveryPaymentAndFinish(){
+    const d=state.deliveryPaymentDraft;if(!d)return;
+    const rows=[...document.querySelectorAll('.delivery-payment-row')];
+    const parts=rows.map(row=>({method:row.querySelector('[data-payment-method]')?.value||'',amount_cents:parsePaymentAmountCents(row.querySelector('[data-payment-amount]')?.value||'')}));
+    const total=parts.reduce((s,p)=>s+p.amount_cents,0);
+    if(parts.some(p=>!p.method||p.amount_cents<=0)){toast('Informe a forma e o valor de cada pagamento');return}
+    if(total!==Number(d.order.total_cents||0)){toast('Os pagamentos precisam somar exatamente '+money(d.order.total_cents));return}
+    const operator=requireOperator();if(!operator)return;
+    const btn=$('#deliveryPaymentConfirm');if(btn){btn.disabled=true;btn.textContent='SALVANDO…'}
+    try{
+      if(parts.length===1){
+        await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,method:parts[0].method,amount_cents:parts[0].amount_cents,operator,idempotency_key:'delivery-v3:'+d.order.id})});
+      }else{
+        await api('order_payment_capture',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,parts,operator})});
+        await api('order_delivery_finalize_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,operator,idempotency_key:'delivery-finalize-v4:'+d.order.id})});
+      }
+      const data=await api('orders');state.orders=data.orders||[];paintExpeditionBody();
+      $('#editor').close();state.deliveryPaymentDraft=null;
+      toast('Entrega e pagamento registrados');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='CONFIRMAR ENTREGA E PAGAMENTO'}
+    }
+  }
+  async function confirmDeliveryFromExpedition(id){
+    const o=state.orders.find(x=>x.id===id);
+    if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
+    if(o.payment_method_snapshot?.actual?.received){
+      if(!confirm('O pagamento deste pedido já está registrado. Confirmar a entrega agora?'))return;
+      try{await finalizeDeliveredOrder(o);toast('Entrega confirmada')}catch(e){toast(errorMessage(e.message))}
+      return;
+    }
+    const planned=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Não informado';
+    state.deliveryPaymentDraft={order:o,parts:[{method:deliveryPaymentDefaultMethod(o),amount_cents:Number(o.total_cents||0)}]};
+    $('#editorTitle').textContent='Confirmar entrega';
+    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Pedido #'+esc(orderDisplayCode(o))+'</strong><div>'+esc(o.customer_name||'Cliente')+' · '+money(o.total_cents)+'<br>Previsto: '+esc(planned)+'</div></div>'+
+      '<div class="section-title">Pagamento realmente recebido</div><div id="deliveryPaymentParts"></div>'+
+      '<div class="dispatch-actions" style="justify-content:flex-start"><button class="secondary" id="addDeliveryPaymentPart" type="button">Dividir em 2 formas</button></div>'+
+      '<div class="order-summary" style="margin-top:12px"><div class="summary-box"><small>Total do pedido</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Pagamentos</small><div id="deliveryPaymentSum"></div></div></div>'+
+      '<div class="rule-notice" style="margin-top:12px"><strong>Se o pagamento falhou</strong><div>Não confirme a entrega. Feche esta janela e use “Não entregou” no pedido.</div></div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="deliveryPaymentCancel" type="button">Cancelar</button><button class="primary" id="deliveryPaymentConfirm" type="button">CONFIRMAR ENTREGA E PAGAMENTO</button>';
+    $('#deliveryPaymentCancel').onclick=()=>{state.deliveryPaymentDraft=null;$('#editor').close()};
+    $('#deliveryPaymentConfirm').onclick=captureDeliveryPaymentAndFinish;
+    $('#addDeliveryPaymentPart').onclick=()=>{const d=state.deliveryPaymentDraft;if(!d||d.parts.length>=2)return;d.parts.push({method:'credit_card',amount_cents:0});paintDeliveryPaymentDraft()};
+    paintDeliveryPaymentDraft();$('#editor').showModal();
+  }
+
+  function selectedDispatchOrders(readyRows=null){
+    const source=readyRows||state.orders.filter(o=>o.status==='ready');
+    const ids=new Set(state.expeditionSelected);
+    return source.filter(o=>ids.has(o.id));
+  }
+  function toggleDispatchSelection(id,checked){
+    const ids=new Set(state.expeditionSelected);
+    if(checked)ids.add(id);else ids.delete(id);
+    state.expeditionSelected=[...ids];
+    paintExpeditionBody();
+  }
+  function toggleAllReady(rows,checked){
+    const ids=new Set(state.expeditionSelected);
+    for(const o of rows)checked?ids.add(o.id):ids.delete(o.id);
+    state.expeditionSelected=[...ids];
+    paintExpeditionBody();
+  }
+  function dispatchPaymentSummary(rows){
+    const map=new Map();
+    for(const o of rows||[]){
+      const label=String(o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'Não informado').trim()||'Não informado';
+      map.set(label,(map.get(label)||0)+Number(o?.total_cents||0));
+    }
+    return [...map.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'pt-BR'));
+  }
+  function dispatchPaymentSummaryText(rows){
+    return dispatchPaymentSummary(rows).map(([label,total])=>label+': '+money(total)).join(' · ');
+  }
+
+  function printDispatchManifest(){
+    const selected=state.orders.filter(o=>o.status==='ready'&&state.expeditionSelected.includes(o.id));
+    if(!selected.length){toast('Selecione ao menos um pedido pronto');return}
+    const total=selected.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
+    const rows=selected.map((o,index)=>{
+      const a=o.delivery_address_snapshot||{};
+      const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||'ENDEREÇO NÃO INFORMADO';
+      const phone=o.whatsapp_phone_e164||a.phone||'';
+      const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'NÃO INFORMADO';
+      return '<tr>'+
+        '<td>'+(index+1)+'</td>'+
+        '<td><b>#'+esc(orderDisplayCode(o))+'</b><br>'+esc(o.customer_name||a.customer_name||a.recipient_name||'SEM CLIENTE')+(phone?'<br>'+esc(formatPhone(phone)):'')+'</td>'+
+        '<td>'+esc(address)+'</td>'+
+        '<td>'+esc(payment)+'</td>'+
+        '<td class="right"><b>'+money(o.total_cents)+'</b></td>'+
+        '<td class="sign"></td>'+
+      '</tr>';
+    }).join('');
+    const paymentSummary=dispatchPaymentSummaryText(selected);
+    const body='<div class="manifest-head"><h1>Dona Antônia · Romaneio de saída</h1><div>Gerado em '+esc(dateTime(new Date().toISOString()))+'</div><div><b>'+selected.length+' pedido(s)</b> · Total '+money(total)+'</div><div class="manifest-payments"><b>A receber:</b> '+esc(paymentSummary||'Nenhum pagamento informado')+'</div></div>'+
+      '<table><thead><tr><th>#</th><th>Pedido / cliente</th><th>Endereço</th><th>Pagamento</th><th>Valor</th><th>Conferência</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      '<div class="manifest-foot"><div>Motorista: ____________________________________</div><div>Saída: ____:____</div><div>Retorno: ____:____</div></div>';
+    openManifestPrint('Romaneio de saída',body);
+  }
+  function openManifestPrint(title,body){
+    const w=window.open('','_blank','width=1000,height=760');
+    if(!w){toast('Libere pop-ups para imprimir');return}
+    const css='@page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}body{margin:0;color:#000;font:11px Arial,sans-serif}.manifest-head{display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:end;margin-bottom:8mm;border-bottom:2px solid #000;padding-bottom:4mm}.manifest-head h1{grid-column:1/-1;margin:0;font-size:20px}.manifest-head div:last-child{text-align:right}.manifest-payments{grid-column:1/-1;text-align:left!important;margin-top:2mm;padding-top:2mm;border-top:1px solid #000}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #000;padding:2.5mm;vertical-align:top}th{background:#eee;font-size:10px;text-align:left}th:nth-child(1),td:nth-child(1){width:6%}th:nth-child(2),td:nth-child(2){width:21%}th:nth-child(3),td:nth-child(3){width:30%}th:nth-child(4),td:nth-child(4){width:14%}th:nth-child(5),td:nth-child(5){width:12%}th:nth-child(6),td:nth-child(6){width:17%}.right{text-align:right}.sign{height:18mm}.manifest-foot{display:grid;grid-template-columns:1fr auto auto;gap:12mm;margin-top:8mm;padding-top:4mm;border-top:1px solid #000}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
+    w.document.open();
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body>'+body+'<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),300));<\/script></body></html>');
+    w.document.close();
+  }
+
+  async function loadDeliveryRuns(){
+    try{
+      const data=await api('ops_delivery_runs'),delivery=data.delivery||{};
+      state.deliveryRuns=delivery.runs||[];
+      state.deliveryCatalog=delivery.catalog||state.deliveryCatalog||{regions:[],drivers:[],vehicles:[]};
+      for(const key of ['region_id','driver_id','vehicle_id']){
+        const bucket=key==='region_id'?'regions':key==='driver_id'?'drivers':'vehicles';
+        const selected=state.deliveryPlan?.[key]||'';
+        if(selected&&!(state.deliveryCatalog?.[bucket]||[]).some(x=>x.id===selected&&x.is_active!==false))state.deliveryPlan[key]='';
+      }
+      return state.deliveryRuns;
+    }catch{
+      state.deliveryRuns=[];return [];
+    }
+  }
+  function activeDeliveryRun(vehicle){return (state.deliveryRuns||[]).find(r=>r.vehicle_key===vehicle&&['planned','dispatched'].includes(r.status))||null}
+  function deliveryStopAddress(stop){const a=stop?.address||{};return [a.street,a.number,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||''}
+  function deliveryStopTarget(stop){
+    const lat=Number(stop?.destination_latitude),lng=Number(stop?.destination_longitude);
+    if(Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180&&stop?.destination_confidence)return lat.toFixed(7)+','+lng.toFixed(7);
+    return deliveryStopAddress(stop);
+  }
+  function deliveryStopMapsHref(stop){
+    const target=deliveryStopTarget(stop);
+    return target?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(target):String(stop?.maps_url||'');
+  }
+  function runMapsHref(run){
+    const stops=(run?.stops||[]).filter(s=>!['delivered','failed','cancelled'].includes(s.status)).slice(0,9);if(!stops.length)return '';
+    if(stops.length===1)return deliveryStopMapsHref(stops[0]);
+    const destination=deliveryStopTarget(stops[stops.length-1]);if(!destination)return '';
+    const waypoints=stops.slice(0,-1).map(deliveryStopTarget).filter(Boolean);let url='https://www.google.com/maps/dir/?api=1&travelmode=driving&destination='+encodeURIComponent(destination);
+    if(waypoints.length)url+='&waypoints='+encodeURIComponent(waypoints.join('|'));return url;
+  }
+  function smartDeliveryActive(kind){return (state.deliveryCatalog?.[kind]||[]).filter(x=>x.is_active!==false)}
+  function smartDeliveryOptionHtml(kind,selected){
+    const rows=smartDeliveryActive(kind),label=x=>kind==='regions'?(x.name+(x.city?' · '+x.city:'')):kind==='drivers'?x.name:(x.label+(x.plate?' · '+x.plate:''));
+    return '<option value="">Não definido</option>'+rows.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===selected?'selected':'')+'>'+esc(label(x))+'</option>').join('');
+  }
+  function smartDeliveryPlannerHtml(){
+    const catalog=state.deliveryCatalog||{},empty=!(catalog.regions||[]).length&&!(catalog.drivers||[]).length&&!(catalog.vehicles||[]).length;
+    return '<div class="panel" style="margin:0 0 12px;padding:12px"><div class="history-title"><div><strong>Organização da rota</strong><span>Região, entregador e veículo reais. Os campos podem ser ajustados depois.</span></div><button class="secondary" id="smartDeliverySettings" type="button">Configurar</button></div>'+
+      (empty?'<div class="rule-notice warn" style="margin-top:10px"><strong>Cadastros ainda vazios</strong><div>A operação atual continua funcionando. Cadastre regiões, entregadores e veículos para ativar a organização inteligente.</div></div>':'')+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:10px">'+
+        '<label><span class="sub">Região da rota</span><select id="deliveryPlanRegion" style="width:100%;min-height:42px">'+smartDeliveryOptionHtml('regions',state.deliveryPlan.region_id)+'</select></label>'+
+        '<label><span class="sub">Entregador</span><select id="deliveryPlanDriver" style="width:100%;min-height:42px">'+smartDeliveryOptionHtml('drivers',state.deliveryPlan.driver_id)+'</select></label>'+
+        '<label><span class="sub">Veículo</span><select id="deliveryPlanVehicle" style="width:100%;min-height:42px">'+smartDeliveryOptionHtml('vehicles',state.deliveryPlan.vehicle_id)+'</select></label>'+
+      '</div></div>';
+  }
+  function smartDeliverySlug(v){return normalize(v).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)}
+  function smartDeliveryCatalogRows(kind){
+    const rows=state.deliveryCatalog?.[kind]||[];
+    if(!rows.length)return '<div class="history-empty">Nenhum cadastro ainda.</div>';
+    const label=x=>kind==='regions'?x.name:kind==='drivers'?x.name:x.label;
+    const meta=x=>kind==='regions'?[x.code,x.city,x.state].filter(Boolean).join(' · '):kind==='drivers'?[x.phone_e164,x.home_region_id?'Região base definida':'Sem região base'].filter(Boolean).join(' · '):[x.plate,x.vehicle_type,x.capacity_units?'Cap. '+x.capacity_units:''].filter(Boolean).join(' · ');
+    return rows.map(x=>'<button type="button" class="secondary" data-smart-edit="'+kind+'" data-smart-id="'+esc(x.id)+'" style="display:flex;width:100%;justify-content:space-between;text-align:left;margin:6px 0;padding:10px"><span><strong>'+esc(label(x))+'</strong><small style="display:block">'+esc(meta(x)||'Sem detalhes')+'</small></span><span>'+(x.is_active===false?'Inativo':'Editar')+'</span></button>').join('');
+  }
+  function openSmartDeliverySettings(){
+    $('#editorTitle').textContent='Configuração das entregas';
+    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Smart Delivery</strong><div>Cadastre somente dados reais. Nada aqui altera pedidos ou o Bling.</div></div>'+
+      '<div class="section-title">Regiões <button class="text" type="button" data-smart-new="regions">+ Adicionar</button></div>'+smartDeliveryCatalogRows('regions')+
+      '<div class="section-title">Entregadores <button class="text" type="button" data-smart-new="drivers">+ Adicionar</button></div>'+smartDeliveryCatalogRows('drivers')+
+      '<div class="section-title">Veículos <button class="text" type="button" data-smart-new="vehicles">+ Adicionar</button></div>'+smartDeliveryCatalogRows('vehicles');
+    $('#editor').showModal();
+    $('#editorBody').querySelectorAll('[data-smart-new]').forEach(b=>b.onclick=()=>openSmartDeliveryEntityForm(b.dataset.smartNew,null));
+    $('#editorBody').querySelectorAll('[data-smart-edit]').forEach(b=>{
+      const kind=b.dataset.smartEdit,row=(state.deliveryCatalog?.[kind]||[]).find(x=>x.id===b.dataset.smartId);
+      b.onclick=()=>openSmartDeliveryEntityForm(kind,row||null);
+    });
+  }
+  function openSmartDeliveryEntityForm(kind,row){
+    const isRegion=kind==='regions',isDriver=kind==='drivers',title=isRegion?'Região':isDriver?'Entregador':'Veículo';
+    const regionOptions='<option value="">Sem região base</option>'+smartDeliveryActive('regions').map(x=>'<option value="'+esc(x.id)+'" '+(x.id===row?.home_region_id?'selected':'')+'>'+esc(x.name)+'</option>').join('');
+    $('#editorTitle').textContent=(row?'Editar ':'Novo ')+title.toLowerCase();
+    if(isRegion){
+      $('#editorBody').innerHTML='<div style="display:grid;gap:12px"><label>Nome<input id="smartName" value="'+esc(row?.name||'')+'" style="width:100%"></label><label>Código<input id="smartCode" value="'+esc(row?.code||'')+'" placeholder="gerado pelo nome se vazio" style="width:100%"></label><label>Cidade<input id="smartCity" value="'+esc(row?.city||'')+'" placeholder="Cuiabá ou Várzea Grande" style="width:100%"></label><label>Prioridade<input id="smartPriority" type="number" min="0" max="10000" value="'+esc(row?.priority??100)+'" style="width:100%"></label><label><input id="smartActive" type="checkbox" '+(row?.is_active===false?'':'checked')+'> Ativa</label><button class="primary" id="smartSave" type="button">Salvar região</button><button class="secondary" id="smartBack" type="button">Voltar</button></div>';
+    }else if(isDriver){
+      $('#editorBody').innerHTML='<div style="display:grid;gap:12px"><label>Nome<input id="smartName" value="'+esc(row?.name||'')+'" style="width:100%"></label><label>WhatsApp / telefone<input id="smartPhone" value="'+esc(row?.phone_e164||'')+'" placeholder="+5565..." style="width:100%"></label><label>Região base<select id="smartHomeRegion" style="width:100%">'+regionOptions+'</select></label><label><input id="smartActive" type="checkbox" '+(row?.is_active===false?'':'checked')+'> Ativo</label><button class="primary" id="smartSave" type="button">Salvar entregador</button><button class="secondary" id="smartBack" type="button">Voltar</button></div>';
+    }else{
+      $('#editorBody').innerHTML='<div style="display:grid;gap:12px"><label>Nome do veículo<input id="smartLabel" value="'+esc(row?.label||'')+'" placeholder="Ex.: Fiorino branca" style="width:100%"></label><label>Placa<input id="smartPlate" value="'+esc(row?.plate||'')+'" style="width:100%"></label><label>Tipo<input id="smartType" value="'+esc(row?.vehicle_type||'')+'" placeholder="Carro, utilitário..." style="width:100%"></label><label>Capacidade em volumes<input id="smartCapacity" type="number" min="1" value="'+esc(row?.capacity_units||'')+'" style="width:100%"></label><label><input id="smartActive" type="checkbox" '+(row?.is_active===false?'':'checked')+'> Ativo</label><button class="primary" id="smartSave" type="button">Salvar veículo</button><button class="secondary" id="smartBack" type="button">Voltar</button></div>';
+    }
+    $('#smartBack').onclick=openSmartDeliverySettings;
+    $('#smartSave').onclick=async()=>{
+      const btn=$('#smartSave');btn.disabled=true;btn.textContent='Salvando…';
+      try{
+        if(isRegion){
+          const name=$('#smartName').value.trim(),code=$('#smartCode').value.trim()||smartDeliverySlug(name);
+          await api('smart_delivery_region_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:row?.id||null,name,code,city:$('#smartCity').value.trim(),state:'MT',priority:Number($('#smartPriority').value||100),is_active:$('#smartActive').checked})});
+        }else if(isDriver){
+          await api('smart_delivery_driver_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:row?.id||null,name:$('#smartName').value.trim(),phone_e164:$('#smartPhone').value.trim(),home_region_id:$('#smartHomeRegion').value||null,is_active:$('#smartActive').checked})});
+        }else{
+          await api('smart_delivery_vehicle_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:row?.id||null,label:$('#smartLabel').value.trim(),plate:$('#smartPlate').value.trim(),vehicle_type:$('#smartType').value.trim(),capacity_units:$('#smartCapacity').value?Number($('#smartCapacity').value):null,is_active:$('#smartActive').checked})});
+        }
+        const data=await api('smart_delivery_catalog');state.deliveryCatalog=data.catalog||{regions:[],drivers:[],vehicles:[]};toast(title+' salvo');openSmartDeliverySettings();
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar '+title.toLowerCase()}
+    };
+  }
+  async function planSelectedDeliveryRun(vehicle){
+    const selected=state.expeditionSelected.map(id=>state.orders.find(o=>o.id===id)).filter(o=>o&&o.status==='ready'&&fiscalAuthorizedForDispatch(o)&&!o.delivery_return?.dispatch_blocked);
+    if(!selected.length){toast('Selecione os pedidos fiscalmente liberados');return}
+    const label=vehicle==='car_1'?'Rota 1':'Rota 2',plan=state.deliveryPlan||{};
+    const driver=smartDeliveryActive('drivers').find(x=>x.id===plan.driver_id),realVehicle=smartDeliveryActive('vehicles').find(x=>x.id===plan.vehicle_id),region=smartDeliveryActive('regions').find(x=>x.id===plan.region_id);
+    const assignment=[region?.name,driver?.name,realVehicle?.label].filter(Boolean).join(' · ')||'sem atribuição operacional';
+    if(!confirm('Preparar '+label+' com '+selected.length+' pedido(s)?\n\n'+assignment+'\n\nA ordem atual da seleção será usada como sequência inicial. Isso não marca a saída ainda.'))return;
+    try{
+      await api('ops_delivery_plan',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        vehicle_key:vehicle,order_ids:selected.map(o=>o.id),operator:currentOperator()||'Operação',
+        region_id:plan.region_id||null,driver_id:plan.driver_id||null,vehicle_id:plan.vehicle_id||null
+      })});
+      await loadDeliveryRuns();toast(label+' preparada · '+selected.length+' parada(s)');paintExpeditionBody();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  async function confirmRunLoading(runId){
+    const run=(state.deliveryRuns||[]).find(x=>x.id===runId);if(!run)return;
+    const pending=(run.stops||[]).filter(s=>['planned','out_for_delivery'].includes(s.status)&&!s.loaded_at).length;
+    if(!pending){toast('Carga desta rota já está confirmada');return}
+    if(!confirm('Confirmar '+pending+' parada(s) carregada(s) e sob custódia do entregador?'))return;
+    try{
+      await api('smart_delivery_loading_confirm',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({run_id:runId})});
+      await loadDeliveryRuns();toast('Carga confirmada');if(state.tab==='driver')paintDriverQueue();else paintExpeditionBody();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
+  function smartRunSlotLabel(run){return run?.vehicle_key==='car_1'?'Rota 1':run?.vehicle_key==='car_2'?'Rota 2':'Rota'}
+  function smartRunAssignmentText(run){return [run?.region?.name,run?.driver?.name,run?.vehicle?.label].filter(Boolean).join(' · ')||'Atribuição operacional pendente'}
+  function smartRunCardHtml(run){
+    const stops=run?.stops||[],pendingLoad=stops.filter(s=>['planned','out_for_delivery'].includes(s.status)&&!s.loaded_at).length,loaded=stops.filter(s=>s.loaded_at).length,maps=runMapsHref(run);
+    const movable=run.status==='planned';
+    return '<article class="panel" style="padding:12px;margin:0">'+
+      '<div class="history-title"><div><strong>'+esc(smartRunSlotLabel(run))+' · '+esc(run.status==='dispatched'?'Em entrega':'Preparada')+'</strong><span>'+esc(smartRunAssignmentText(run))+'</span></div><b>'+stops.length+' parada(s)</b></div>'+
+      '<div class="sub" style="margin:8px 0">'+loaded+' carregada(s)'+(pendingLoad?' · '+pendingLoad+' aguardando carga':' · carga conferida')+'</div>'+
+      '<div class="dispatch-actions" style="margin-bottom:10px">'+
+        (movable?'<button class="quick-link" type="button" data-smart-run-edit="'+esc(run.id)+'">Ajustar rota</button>':'')+
+        (pendingLoad?'<button class="quick-link primary-link" type="button" data-smart-run-load="'+esc(run.id)+'">Confirmar carga</button>':'')+
+        (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
+      '</div>'+
+      '<div style="display:grid;gap:6px">'+stops.map(s=>'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 8px;border:1px solid #e1e6e3;border-radius:9px"><span><strong>'+esc(String(s.sequence||'—'))+'. #'+esc(s.order_number||'—')+'</strong><small style="display:block">'+esc(s.customer_name||'Sem cliente')+(s.destination_confidence==='confirmed'?' · GPS confirmado':'')+'</small></span>'+(movable&&s.status==='planned'?'<button class="text" type="button" data-smart-stop-move="'+esc(s.stop_id)+'" data-smart-source-run="'+esc(run.id)+'">Mover</button>':'')+'</div>').join('')+'</div>'+
+    '</article>';
+  }
+  function smartDeliveryRunsHtml(){
+    const runs=(state.deliveryRuns||[]).filter(r=>['planned','dispatched'].includes(r.status));
+    if(!runs.length)return '';
+    return '<section style="margin:0 0 14px"><div class="history-title" style="margin-bottom:8px"><div><strong>Rotas de hoje</strong><span>Ajuste equipe, veículo, carga e distribuição das paradas.</span></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px">'+runs.map(smartRunCardHtml).join('')+'</div></section>';
+  }
+  function openSmartRunAssignment(runId){
+    const run=(state.deliveryRuns||[]).find(r=>r.id===runId);if(!run)return;
+    $('#editorTitle').textContent='Ajustar '+smartRunSlotLabel(run);
+    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Pedido não muda</strong><div>Esta ação só troca região, entregador ou veículo da rota.</div></div><div style="display:grid;gap:12px">'+
+      '<label>Região<select id="smartRunRegion" style="width:100%">'+smartDeliveryOptionHtml('regions',run.region_id||'')+'</select></label>'+
+      '<label>Entregador<select id="smartRunDriver" style="width:100%">'+smartDeliveryOptionHtml('drivers',run.driver_id||'')+'</select></label>'+
+      '<label>Veículo<select id="smartRunVehicle" style="width:100%">'+smartDeliveryOptionHtml('vehicles',run.vehicle_id||'')+'</select></label>'+
+      '<button class="primary" id="smartRunSave" type="button">Salvar atribuição</button></div>';
+    $('#editor').showModal();
+    $('#smartRunSave').onclick=async()=>{
+      const btn=$('#smartRunSave');btn.disabled=true;btn.textContent='Salvando…';
+      try{
+        await api('smart_delivery_run_assign',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          run_id:run.id,region_id:$('#smartRunRegion').value||null,driver_id:$('#smartRunDriver').value||null,vehicle_id:$('#smartRunVehicle').value||null,operator:currentOperator()||'Operação'
+        })});
+        $('#editor').close();await loadDeliveryRuns();paintExpeditionBody();toast('Rota atualizada');
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar atribuição'}
+    };
+  }
+  function openSmartStopMove(stopId,sourceRunId){
+    const source=(state.deliveryRuns||[]).find(r=>r.id===sourceRunId),stop=source?.stops?.find(s=>s.stop_id===stopId);
+    const targets=(state.deliveryRuns||[]).filter(r=>r.id!==sourceRunId&&r.status==='planned'&&r.service_date===source?.service_date);
+    if(!stop||!targets.length){toast('Não existe outra rota preparada para receber esta parada');return}
+    $('#editorTitle').textContent='Mover parada #'+String(stop.order_number||'');
+    $('#editorBody').innerHTML='<div class="rule-notice warn"><strong>Somente a rota muda</strong><div>O pedido e seu número permanecem os mesmos. A parada irá para o final da rota escolhida.</div></div><label>Rota de destino<select id="smartTargetRun" style="width:100%;min-height:42px">'+targets.map(r=>'<option value="'+esc(r.id)+'">'+esc(smartRunSlotLabel(r)+' · '+smartRunAssignmentText(r))+'</option>').join('')+'</select></label><button class="primary" id="smartMoveSave" type="button" style="margin-top:12px">Mover parada</button>';
+    $('#editor').showModal();
+    $('#smartMoveSave').onclick=async()=>{
+      const btn=$('#smartMoveSave');btn.disabled=true;btn.textContent='Movendo…';
+      try{
+        await api('smart_delivery_stop_move',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stop_id:stopId,target_run_id:$('#smartTargetRun').value})});
+        $('#editor').close();await loadDeliveryRuns();paintExpeditionBody();toast('Parada movida sem alterar o pedido');
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Mover parada'}
+    };
+  }
+
+  async function bulkDispatchSelected(){
+    const selected=state.orders.filter(o=>o.status==='ready'&&fiscalAuthorizedForDispatch(o)&&state.expeditionSelected.includes(o.id));
+    if(!selected.length){toast('Selecione ao menos um pedido pronto');return}
+    const total=selected.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
+    if(!confirm('Marcar '+selected.length+' pedido(s) como saiu para entrega?\n\nTotal da saída: '+money(total)))return;
+    const btn=$('#bulkDispatchBtn');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+    let ok=0;const failed=[];
+    for(const o of selected){
+      try{
+        await api('order_dispatch_start_v4',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:o.id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+o.id})
+        });
+        ok++;
+        state.expeditionSelected=state.expeditionSelected.filter(id=>id!==o.id);
+      }catch(e){failed.push('#'+orderDisplayCode(o))}
+    }
+    try{const data=await api('orders');state.orders=data.orders||[]}catch{}
+    paintExpeditionBody();
+    if(failed.length)toast(ok+' atualizado(s) · '+failed.length+' precisa(m) revisão');
+    else toast(ok+' pedido(s) saíram para entrega');
+  }
+  function paintExpeditionBody(){
+    const host=$('#expeditionBody');if(!host)return;
+    const visible=state.orders.filter(o=>orderSearchMatch(o,state.expeditionQuery));
+    const ready=visible.filter(o=>o.status==='ready');
+    const dispatchableReady=ready.filter(fiscalAuthorizedForDispatch);
+    const fiscalPendingReady=ready.filter(o=>!fiscalAuthorizedForDispatch(o));
+    const readyIds=new Set(dispatchableReady.map(o=>o.id));
+    state.expeditionSelected=state.expeditionSelected.filter(id=>readyIds.has(id));
+    const delivery=visible.filter(o=>o.status==='out_for_delivery');
+    const delivered=visible.filter(deliveredToday).slice(0,10);
+    host.innerHTML='<div class="ops-cards">'+
+        '<div class="ops-card"><small>Aguardando saída</small><strong>'+ready.length+'</strong><span>Pedidos já separados</span></div>'+
+        '<div class="ops-card"><small>Em entrega</small><strong>'+delivery.length+'</strong><span>Pedidos na rua</span></div>'+
+        '<div class="ops-card"><small>Entregues hoje</small><strong>'+visible.filter(deliveredToday).length+'</strong><span>Fechamento e fiscal</span></div>'+
+      '</div>'+
+      (ready.length?smartDeliveryPlannerHtml():'')+
+      smartDeliveryRunsHtml()+
+      (ready.length?(()=>{
+        const selected=selectedDispatchOrders(dispatchableReady);
+        const selectedTotal=selected.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
+        const paymentSummary=dispatchPaymentSummaryText(selected);
+        return '<div class="dispatch-bulk"><label class="check"><input id="selectAllReady" type="checkbox" '+(dispatchableReady.length&&selected.length===dispatchableReady.length?'checked':'')+' '+(dispatchableReady.length?'':'disabled')+'><span>Selecionar os fiscalmente liberados desta lista</span></label><div class="dispatch-bulk-actions"><div><strong>'+selected.length+' selecionado(s) · '+money(selectedTotal)+'</strong>'+(paymentSummary?'<span class="sub">A receber: '+esc(paymentSummary)+'</span>':'')+(fiscalPendingReady.length?'<span class="sub warn-text">'+fiscalPendingReady.length+' com fiscal pendente</span>':'')+'</div><button class="secondary" id="planCar1" type="button" '+(selected.length?'':'disabled')+'>Preparar Rota 1</button><button class="secondary" id="planCar2" type="button" '+(selected.length?'':'disabled')+'>Preparar Rota 2</button><button class="secondary" id="printDispatchManifest" type="button" '+(selected.length?'':'disabled')+'>Imprimir romaneio</button><button class="primary" id="bulkDispatchBtn" type="button" '+(selected.length?'':'disabled')+'>Marcar saída</button></div></div>';
+      })():'')+
+      '<div class="dispatch-grid">'+
+        expeditionSection('Aguardando saída','prontos para expedir',ready,'Nenhum pedido aguardando saída.')+
+        expeditionSection('Em entrega','acompanhar até a confirmação',delivery,'Nenhum pedido em entrega.')+
+        expeditionSection('Entregues hoje','Últimos entregues do dia · pagamento e fiscal',delivered,'Nenhuma entrega concluída hoje.')+
+      '</div>';
+    document.querySelectorAll('[data-expedition-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionOrder));
+    document.querySelectorAll('[data-expedition-fiscal]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionFiscal));
+    document.querySelectorAll('[data-expedition-danfe]').forEach(b=>b.onclick=()=>{const o=state.orders.find(x=>x.id===b.dataset.expeditionDanfe);if(o)openDanfeForOrder(o.id,orderDisplayCode(o))});
+    document.querySelectorAll('[data-confirm-delivery]').forEach(b=>b.onclick=()=>confirmDeliveryFromExpedition(b.dataset.confirmDelivery));
+    document.querySelectorAll('[data-return-expedition]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.returnExpedition,false));
+    document.querySelectorAll('[data-confirm-return]').forEach(b=>b.onclick=()=>confirmPhysicalDeliveryReturn(b.dataset.confirmReturn));
+    document.querySelectorAll('[data-resolve-return]').forEach(b=>b.onclick=()=>resolveDeliveryReturnReview(b.dataset.resolveReturn));
+    document.querySelectorAll('[data-dispatch-select]').forEach(el=>el.onchange=e=>toggleDispatchSelection(el.dataset.dispatchSelect,e.target.checked));
+    if($('#selectAllReady'))$('#selectAllReady').onchange=e=>toggleAllReady(dispatchableReady,e.target.checked);
+    if($('#deliveryPlanRegion'))$('#deliveryPlanRegion').onchange=e=>state.deliveryPlan.region_id=e.target.value;
+    if($('#deliveryPlanDriver'))$('#deliveryPlanDriver').onchange=e=>state.deliveryPlan.driver_id=e.target.value;
+    if($('#deliveryPlanVehicle'))$('#deliveryPlanVehicle').onchange=e=>state.deliveryPlan.vehicle_id=e.target.value;
+    if($('#smartDeliverySettings'))$('#smartDeliverySettings').onclick=openSmartDeliverySettings;
+    document.querySelectorAll('[data-smart-run-edit]').forEach(b=>b.onclick=()=>openSmartRunAssignment(b.dataset.smartRunEdit));
+    document.querySelectorAll('[data-smart-run-load]').forEach(b=>b.onclick=()=>confirmRunLoading(b.dataset.smartRunLoad));
+    document.querySelectorAll('[data-smart-stop-move]').forEach(b=>b.onclick=()=>openSmartStopMove(b.dataset.smartStopMove,b.dataset.smartSourceRun));
+    if($('#planCar1'))$('#planCar1').onclick=()=>planSelectedDeliveryRun('car_1');
+    if($('#planCar2'))$('#planCar2').onclick=()=>planSelectedDeliveryRun('car_2');
+    if($('#printDispatchManifest'))$('#printDispatchManifest').onclick=printDispatchManifest;
+    if($('#bulkDispatchBtn'))$('#bulkDispatchBtn').onclick=bulkDispatchSelected;
+  }
+  function driverRow(o,index){
+    const a=o.delivery_address_snapshot||{},ret=o.delivery_return||null,stop=o.__delivery_stop||null;
+    const address=[a.street,a.number,a.complement,a.district,a.city].filter(Boolean).join(', ')||a.raw_text||'Endereço não informado';
+    const wa=whatsappHref(o.whatsapp_phone_e164||a.phone||''),maps=stop?deliveryStopMapsHref(stop):mapsHrefFromAddress(a);
+    const payment=actualPaymentText(o)||(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado');
+    const returning=ret?.status==='returning',confidence=stop?.destination_confidence||'';
+    const locationLabel=confidence==='confirmed'?'LOCALIZAÇÃO CONFIRMADA':confidence==='saved'?'LOCALIZAÇÃO SALVA':'ENDEREÇO SEM GPS CONFIRMADO';
+    return '<article class="separation-tablet-card driver-card '+(returning?'problem':'')+'">'+
+      '<div class="separation-tablet-top"><div><strong>Parada '+esc(stop?.sequence||index+1)+' · #'+esc(orderDisplayCode(o))+'</strong><div class="customer">'+esc(o.customer_name||a.customer_name||a.recipient_name||'Sem cliente')+'</div></div><strong>'+money(o.total_cents)+'</strong></div>'+
+      '<div class="meta"><span>'+esc(payment)+'</span><span>'+esc(formatPhone(o.whatsapp_phone_e164||a.phone||''))+'</span></div>'+
+      '<div class="rule-notice '+(returning?'warn':'')+'" style="margin-top:10px"><strong>'+(returning?'RETORNANDO · '+esc(ret.reason_label||'Não entregue'):esc(locationLabel))+'</strong><div>'+esc(address)+'</div></div>'+
+      '<div class="separation-tablet-actions">'+
+        (maps&&!returning?'<a class="primary wide" href="'+esc(maps)+'" target="_blank" rel="noopener">ABRIR MAPS</a>':'')+
+        (wa?'<a class="secondary" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+        (returning
+          ? '<button class="primary wide" type="button" data-driver-returned="'+esc(o.id)+'">CONFIRMAR RETORNO AO DEPÓSITO</button>'
+          : '<button class="primary wide" type="button" data-driver-delivered="'+esc(o.id)+'">✓ ENTREGUE</button><button class="secondary" type="button" data-driver-failed="'+esc(o.id)+'">NÃO ENTREGOU</button>')+
+        '<button class="secondary" type="button" data-driver-open="'+esc(o.id)+'">Abrir pedido</button>'+
+      '</div></article>';
+  }
+  function runOperationalLabel(run,fallback){
+    if(!run)return fallback;
+    return [run.region?.name,run.driver?.name,run.vehicle?.label].filter(Boolean).join(' · ')||fallback;
+  }
+  function driverVehicleToolbar(){
+    const selected=state.driverVehicle||'all',r1=activeDeliveryRun('car_1'),r2=activeDeliveryRun('car_2'),run=selected==='all'?null:activeDeliveryRun(selected),maps=runMapsHref(run);
+    const loadPending=run?(run.stops||[]).filter(s=>['planned','out_for_delivery'].includes(s.status)&&!s.loaded_at).length:0;
+    return '<div class="dispatch-bulk" style="margin-bottom:12px"><div class="dispatch-bulk-actions">'+
+      '<button class="secondary '+(selected==='all'?'active':'')+'" type="button" data-driver-vehicle="all">Todos</button>'+
+      '<button class="secondary '+(selected==='car_1'?'active':'')+'" type="button" data-driver-vehicle="car_1">'+esc(runOperationalLabel(r1,'Rota 1'))+(r1?' · '+(r1.stops||[]).length:'')+'</button>'+
+      '<button class="secondary '+(selected==='car_2'?'active':'')+'" type="button" data-driver-vehicle="car_2">'+esc(runOperationalLabel(r2,'Rota 2'))+(r2?' · '+(r2.stops||[]).length:'')+'</button>'+
+      (run&&loadPending?'<button class="secondary" type="button" data-driver-load="'+esc(run.id)+'">CONFIRMAR CARGA · '+loadPending+'</button>':'')+
+      (run&&run.loaded_at?'<span class="pill">Carga conferida</span>':'')+
+      (maps?'<a class="primary" href="'+esc(maps)+'" target="_blank" rel="noopener">ABRIR ROTA NO MAPS</a>':'')+
+      '</div></div>';
+  }
+  function driverOrders(){
+    const all=state.orders.filter(o=>o.status==='out_for_delivery'),vehicle=state.driverVehicle||'all';if(vehicle==='all')return all;
+    const run=activeDeliveryRun(vehicle);if(!run)return [];const byId=new Map(all.map(o=>[o.id,o]));
+    return (run.stops||[]).map(s=>{const o=byId.get(s.order_id);return o?{...o,__delivery_stop:s}:null}).filter(Boolean);
+  }
+  function paintDriverQueue(){
+    const host=$('#driverQueue');if(!host)return;const q=normalize($('#driverSearch')?.value||'');let rows=driverOrders();if(q)rows=rows.filter(o=>orderSearchMatch(o,q));
+    const shell=$('#driverRouteToolbar');if(shell){
+      shell.innerHTML=driverVehicleToolbar();
+      shell.querySelectorAll('[data-driver-vehicle]').forEach(b=>b.onclick=()=>{state.driverVehicle=b.dataset.driverVehicle;paintDriverQueue()});
+      shell.querySelectorAll('[data-driver-load]').forEach(b=>b.onclick=()=>confirmRunLoading(b.dataset.driverLoad));
+    }
+    host.innerHTML=rows.length?rows.map(driverRow).join(''):'<div class="empty">Nenhuma entrega em rota para esta seleção.</div>';
+    host.querySelectorAll('[data-driver-delivered]').forEach(b=>b.onclick=()=>confirmDeliveryFromExpedition(b.dataset.driverDelivered));
+    host.querySelectorAll('[data-driver-failed]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.driverFailed,false));
+    host.querySelectorAll('[data-driver-returned]').forEach(b=>b.onclick=()=>confirmPhysicalDeliveryReturn(b.dataset.driverReturned));
+    host.querySelectorAll('[data-driver-open]').forEach(b=>b.onclick=()=>openOrder(b.dataset.driverOpen));
+  }
+  async function loadDriverQueue(){const [data]=await Promise.all([api('orders'),loadDeliveryRuns()]);state.orders=data.orders||[];paintDriverQueue()}
+  async function renderDriver(){
+    const content=$('#content');content.innerHTML='<div class="separation-tablet"><div class="page-head"><div><h1>Entregador</h1><p>Rota, endereço, navegação e conclusão da entrega.</p></div><button class="secondary" id="refreshDriver" type="button">Atualizar</button></div><div id="driverRouteToolbar"></div><div class="separation-tablet-toolbar"><input id="driverSearch" type="search" inputmode="search" autocomplete="off" placeholder="Pedido, cliente, telefone ou endereço"><button class="secondary" id="clearDriver" type="button">Limpar</button></div><div class="separation-tablet-list" id="driverQueue"><div class="loading">Carregando rota…</div></div></div>';
+    $('#refreshDriver').onclick=loadDriverQueue;$('#driverSearch').oninput=paintDriverQueue;$('#clearDriver').onclick=()=>{$('#driverSearch').value='';paintDriverQueue();$('#driverSearch').focus()};
+    try{await loadDriverQueue()}catch(e){$('#driverQueue').innerHTML='<div class="empty">Não consegui carregar as entregas. <button class="text" id="retryDriver">Tentar novamente</button></div>';if($('#retryDriver'))$('#retryDriver').onclick=loadDriverQueue}
+  }
+
+  async function renderExpedition(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Expedição</h1><p>Pedidos prontos, em entrega e entregues em uma única fila operacional.</p></div><button class="secondary" id="refreshExpedition">Atualizar</button></div>'+
+      '<div class="toolbar"><input id="expeditionSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.expeditionQuery)+'"><button class="secondary" id="clearExpeditionSearch" type="button">Limpar</button></div>'+
+      '<div id="expeditionBody"><div class="loading">Carregando expedição…</div></div>';
+    $('#refreshExpedition').onclick=renderExpedition;
+    $('#expeditionSearch').oninput=e=>{state.expeditionQuery=e.target.value;paintExpeditionBody()};
+    $('#clearExpeditionSearch').onclick=()=>{state.expeditionQuery='';$('#expeditionSearch').value='';paintExpeditionBody()};
+    try{
+      const [data]=await Promise.all([api('orders'),loadDeliveryRuns()]);state.orders=data.orders||[];
+      const readyRows=state.orders.filter(o=>o.status==='ready');
+      await loadFiscalForOrders(readyRows);
+      paintExpeditionBody();
+    }catch(e){
+      $('#expeditionBody').innerHTML='<div class="empty">Não consegui carregar a expedição. <button class="text" id="retryExpedition">Tentar novamente</button></div>';
+      if($('#retryExpedition'))$('#retryExpedition').onclick=renderExpedition;
+    }
+  }
+
+  function fiscalClosureLabel(f,o){
+    const actual=o?.payment_method_snapshot?.actual||null;
+    if(!f||f.error)return actual?.received
+      ? {title:'Recebido · revisar Bling',detail:'Pagamento real registrado; controle fiscal indisponível',kind:'warn'}
+      : {title:'Verificar',detail:'Controle fiscal indisponível',kind:'warn'};
+    if(f.payment_status!=='confirmed'){
+      if(actual?.received){
+        const parts=actualPaymentText(o)||money(actual.captured_total_cents||o?.total_cents||0);
+        return {title:'Recebido · Bling pendente',detail:parts,kind:'warn'};
+      }
+      return {title:'Pagamento pendente',detail:'Confirmar recebimento legado',kind:'warn'};
+    }
+    if(f.fiscal_status==='issued'||f.bling_invoice_id)return {title:'Concluído',detail:f.bling_invoice_number?'NF-e '+f.bling_invoice_number:'Fiscal concluído',kind:'ok'};
+    if(f.fiscal_status==='review_required')return {title:'Precisa de revisão',detail:f.fiscal_block_reason?fiscalBlockReasonLabel(f.fiscal_block_reason):'Revisar fiscal',kind:'warn'};
+    if(f.fiscal_status==='ready')return {title:'Fiscal pronto',detail:f.config?.send_enabled?'Pronto para emissão':'Emissão permanece desligada',kind:'ok'};
+    return {title:'Fiscal bloqueado',detail:f.fiscal_block_reason?fiscalBlockReasonLabel(f.fiscal_block_reason):'Aguardando requisitos',kind:'warn'};
+  }
+  function closureBucket(o){
+    const f=state.fiscalByOrder[o.id],actual=o?.payment_method_snapshot?.actual||null;
+    if(!f||f.error)return 'fiscal';
+    if(f.payment_status!=='confirmed')return actual?.received?'fiscal':'payment';
+    if(f.fiscal_status==='issued'||f.bling_invoice_id)return 'complete';
+    return 'fiscal';
+  }
+  function closurePriority(o){
+    const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f,o);
+    if(label.title==='Pagamento pendente')return 0;
+    if(label.title==='Precisa de revisão'||label.title==='Verificar')return 1;
+    if(label.title==='Fiscal pronto'||label.title==='Fiscal bloqueado')return 2;
+    return 3;
+  }
+  function closureRow(o){
+    const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f,o);
+    const cls=label.kind==='ok'?'ok-text':'warn-text';
+    const actual=o?.payment_method_snapshot?.actual||null;
+    const canConfirmPayment=o.status==='delivered'&&!actual?.received&&f&&!f.error&&f.payment_status!=='confirmed';
+    return '<div class="closure-row">'+
+      '<div><strong>#'+esc(orderDisplayCode(o))+'</strong><span class="sub">'+esc(dateTime(o.delivered_at))+'</span></div>'+
+      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(actualPaymentText(o)||(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado'))+'</small></div>'+
+      '<strong>'+money(o.total_cents)+'</strong>'+
+      '<div class="closure-status"><strong class="'+cls+'">'+esc(label.title)+'</strong><small>'+esc(label.detail)+'</small></div>'+
+      '<div class="dispatch-actions">'+
+        (canConfirmPayment?'<button class="quick-link primary-link" type="button" data-closure-payment="'+esc(o.id)+'">Confirmar recebimento</button>':'')+
+        '<button class="text" type="button" data-closure-order="'+esc(o.id)+'">Abrir</button>'+
+      '</div>'+
+    '</div>';
+  }
+  async function confirmClosurePayment(id){
+    const o=state.closureOrders.find(x=>x.id===id)||state.orders.find(x=>x.id===id);
+    const f=state.fiscalByOrder[id];
+    if(!o||o.status!=='delivered'||o.payment_method_snapshot?.actual?.received||!f||f.error||f.payment_status==='confirmed'){
+      toast(o?.payment_method_snapshot?.actual?.received?'O pagamento real já foi registrado; falta conciliar com o Bling.':'Este recebimento não está mais pendente');return;
+    }
+    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
+    if(!confirm('Confirmar recebimento de '+money(o.total_cents)+' via '+payment+'?\n\nPedido #'+orderDisplayCode(o)))return;
+    const btn=document.querySelector('[data-closure-payment="'+CSS.escape(id)+'"]');
+    if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
+    try{
+      state.fiscalByOrder[id]=await api('order_fiscal_confirm_payment',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id,payment_method:payment})
+      });
+      renderClosure();
+      toast(state.fiscalByOrder[id]?.fiscal_status==='ready'?'Recebimento confirmado · fiscal pronto':'Recebimento confirmado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Confirmar recebimento'}
+    }
+  }
+  async function loadFiscalForOrders(rows){
+    const queue=(rows||[]).filter(o=>!state.fiscalByOrder[o.id]);
+    let cursor=0;
+    async function worker(){
+      while(cursor<queue.length){
+        const o=queue[cursor++];
+        if(state.fiscalByOrder[o.id])continue;
+        try{
+          state.fiscalByOrder[o.id]=await api('order_fiscal_status',{},{
+            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id})
+          });
+        }catch(e){
+          state.fiscalByOrder[o.id]={error:String(e?.message||'fiscal_unavailable')};
+        }
+      }
+    }
+    await Promise.all([worker(),worker(),worker()]);
+  }
+  async function renderClosure(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Fechamento</h1><p>Entregas concluídas que precisam de recebimento, revisão fiscal ou conferência final.</p></div><button class="secondary" id="refreshClosure">Atualizar</button></div><div id="closureBody"><div class="loading">Carregando fechamento…</div></div>';
+    $('#refreshClosure').onclick=()=>{state.fiscalByOrder={};renderClosure()};
+    try{
+      const data=await api('closure_orders');
+      const delivered=data.orders||[];
+      state.closureOrders=delivered;
+      state.fiscalByOrder={...state.fiscalByOrder,...(data.fiscal_by_order||{})};
+      await loadFiscalForOrders(delivered);
+      delivered.sort((a,b)=>closurePriority(a)-closurePriority(b)||((Date.parse(b.delivered_at||0)||0)-(Date.parse(a.delivered_at||0)||0)));
+      const paymentPending=delivered.filter(o=>closureBucket(o)==='payment');
+      const fiscalPending=delivered.filter(o=>closureBucket(o)==='fiscal');
+      const complete=delivered.filter(o=>closureBucket(o)==='complete');
+      $('#closureBody').innerHTML='<div class="ops-cards">'+
+        '<div class="ops-card warn"><small>Recebimento legado</small><strong>'+paymentPending.length+'</strong><span>Entregas antigas sem captura real</span></div>'+
+        '<div class="ops-card warn"><small>Fiscal / revisão</small><strong>'+fiscalPending.length+'</strong><span>Pagamento já tratado · revisar fiscal</span></div>'+
+        '<div class="ops-card"><small>Concluídos</small><strong>'+complete.length+'</strong><span>Fechamento encerrado</span></div>'+
+      '</div><div class="closure-grid">'+
+        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Recebimento legado</strong><span>somente pedidos sem captura do pagamento real</span></div><b>'+paymentPending.length+'</b></div>'+(paymentPending.length?paymentPending.map(closureRow).join(''):'<div class="history-empty">Nenhum recebimento pendente.</div>')+'</section>'+
+        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Fiscal / revisão</strong><span>pagamento real registrado ou confirmado; falta conciliar/revisar o fiscal</span></div><b>'+fiscalPending.length+'</b></div>'+(fiscalPending.length?fiscalPending.map(closureRow).join(''):'<div class="history-empty">Nenhuma revisão fiscal pendente.</div>')+'</section>'+
+        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Concluídos recentes</strong><span>pagamento e fiscal conferidos</span></div><b>'+complete.length+'</b></div>'+(complete.length?complete.slice(0,10).map(closureRow).join(''):'<div class="history-empty">Nenhum fechamento concluído recente.</div>')+'</section>'+
+      '</div>';
+      document.querySelectorAll('[data-closure-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.closureOrder));
+      document.querySelectorAll('[data-closure-payment]').forEach(b=>b.onclick=()=>confirmClosurePayment(b.dataset.closurePayment));
+    }catch(e){
+      $('#closureBody').innerHTML='<div class="empty">Não consegui carregar os fechamentos. <button class="text" id="retryClosure">Tentar novamente</button></div>';
+      if($('#retryClosure'))$('#retryClosure').onclick=renderClosure;
+    }
+  }
+
+  function blingOperationalIssues(b){
+    const issues=[];
+    const cred=b?.credentials||{},domains=b?.domains||{},queue=b?.hub_queue||{},orderLinks=b?.order_links||{};
+    if(cred.ready===false)issues.push('Credenciais do Bling precisam de atenção');
+    if(b?.hub_enabled===false)issues.push('Integração direta com o Bling está pausada');
+    if(b?.hub_enabled!==false&&domains.orders===false)issues.push('Envio de pedidos ao Bling está pausado');
+    const queueReview=Number(queue.review_required||0)+Number(queue.failed||0);
+    if(queueReview>0)issues.push(queueReview+' item(ns) da fila precisam de revisão');
+    const orderReview=Number(orderLinks.review_required||0);
+    if(orderReview>0)issues.push(orderReview+' pedido(s) precisam de revisão no Bling');
+    return [...new Set(issues)];
+  }
+  async function loadOperationalIntegrationAlert(){
+    const host=$('#integrationOperationalAlert');if(!host)return;
+    host.innerHTML='';
+    try{
+      const data=await api('bling_status');
+      state.bling=data.bling||{};
+      const issues=blingOperationalIssues(state.bling);
+      if(!issues.length)return;
+      host.innerHTML='<div class="operational-alert"><div><strong>Integração precisa de atenção</strong><small>'+issues.map(esc).join(' · ')+'</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }catch(e){
+      host.innerHTML='<div class="operational-alert"><div><strong>Não consegui verificar a integração</strong><small>Os pedidos continuam visíveis. Abra o diagnóstico para conferir o Bling.</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }
+  }
+
+  function financeSummaryCard(label,value,detail,kind=''){
+    return '<div class="bling-card '+esc(kind)+'"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong><span class="sub">'+esc(detail)+'</span></div>';
+  }
+  function financePriorityRow(r,today){
+    const isReceive=r.kind==='receivable';
+    const overdue=Boolean(r.due_date&&r.due_date<today);
+    const title=r.contact_name||r.document_number||r.origin_number||('Lançamento #'+String(r.id||''));
+    const detail=[r.document_number?'Doc. '+r.document_number:'',r.origin_number?'Origem '+r.origin_number:'',r.boleto_url?'Boleto emitido':'',r.pix_url?'PIX disponível':''].filter(Boolean).join(' · ');
+    return '<div class="closure-row">'+
+      '<div><strong class="'+(isReceive?'ok-text':'warn-text')+'">'+(isReceive?'Receber':'Pagar')+'</strong><span class="sub">'+(overdue?'<span class="danger-text">Vencido</span>':'Em aberto')+'</span></div>'+
+      '<div class="history-main"><strong>'+esc(title)+'</strong><small>'+esc(detail||'Sem observação')+'</small><div class="dispatch-actions" style="justify-content:flex-start;margin-top:6px">'+
+        '<button class="text" type="button" data-finance-detail="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Detalhes</button>'+
+        '<button class="text" type="button" data-finance-edit="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Editar</button>'+
+        '<button class="text" type="button" data-finance-settle="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Dar baixa</button>'+
+        (isReceive&&r.origin_id?'<button class="text" type="button" data-finance-boleto="'+esc(r.origin_id)+'">Boletos</button>':'')+
+      '</div></div>'+
+      '<div><strong>'+esc(dateOnly(r.due_date))+'</strong><span class="sub">'+(r.due_date===today?'Vence hoje':'Vencimento')+'</span></div>'+
+      '<strong>'+money(r.amount_cents)+'</strong>'+
+      '<span class="pill '+(overdue?'danger':'')+'">'+(r.boleto_url?'Boleto':r.pix_url?'PIX':'Aberto')+'</span>'+
+    '</div>';
+  }
+  function paintFinance(){
+    const host=$('#financeBody');if(!host)return;
+    const f=state.finance||{},rec=f.receivable||{},pay=f.payable||{},realized=f.realized_30d||{},today=f.window?.today||'';
+    const priorities=Array.isArray(f.priority)?f.priority:[];
+    const accounts=Array.isArray(f.financial_accounts)?f.financial_accounts:[];
+    host.innerHTML=
+      (f.truncated?'<div class="rule-notice warn"><strong>Volume alto de lançamentos</strong><div>O painel exibiu o limite seguro desta versão. Nenhum dado foi alterado.</div></div>':'')+
+      (realized.truncated?'<div class="rule-notice warn"><strong>Histórico de 30 dias parcial</strong><div>O volume de contas pagas/recebidas ultrapassou o limite seguro de leitura; os totais exibidos podem ser parciais.</div></div>':'')+
+      '<div class="bling-grid">'+
+        financeSummaryCard('A receber',money(rec.total_cents),String(rec.count||0)+' conta(s) em aberto')+
+        financeSummaryCard('A pagar',money(pay.total_cents),String(pay.count||0)+' conta(s) em aberto')+
+        financeSummaryCard('Saldo projetado',money(f.projected_cents),(Number(f.projected_cents||0)>=0?'Recebimentos acima dos pagamentos':'Pagamentos acima dos recebimentos'),Number(f.projected_cents||0)<0?'danger':'')+
+        financeSummaryCard('Recebido · 30 dias',money(realized.received_cents),String(realized.received_count||0)+' conta(s) recebida(s)')+
+        financeSummaryCard('Pago · 30 dias',money(realized.paid_cents),String(realized.paid_count||0)+' conta(s) paga(s)')+
+        financeSummaryCard('Líquido realizado · 30 dias',money(realized.net_cents),(Number(realized.net_cents||0)>=0?'Entradas acima das saídas':'Saídas acima das entradas'),Number(realized.net_cents||0)<0?'danger':'')+
+        financeSummaryCard('Vencidos a receber',money(rec.overdue_cents),String(rec.overdue_count||0)+' vencido(s)',Number(rec.overdue_count||0)>0?'warn':'')+
+        financeSummaryCard('Vencidos a pagar',money(pay.overdue_cents),String(pay.overdue_count||0)+' vencido(s)',Number(pay.overdue_count||0)>0?'danger':'')+
+        financeSummaryCard('Próximos 7 dias',money(Number(rec.next_7_cents||0)-Number(pay.next_7_cents||0)),String(rec.next_7_count||0)+' a receber · '+String(pay.next_7_count||0)+' a pagar')+
+        financeSummaryCard('Boletos',String(f.boleto_count||0),String(f.pix_count||0)+' conta(s) também com PIX')+
+        financeSummaryCard('Contas financeiras',String(accounts.length),f.financial_accounts_access?.ok?'Acesso confirmado':'Acesso parcial')+
+      '</div>'+
+      '<section class="panel"><div class="history-title dispatch-head"><div><strong>Prioridades financeiras</strong><span>vencidos primeiro, depois próximos vencimentos · somente leitura</span></div><b>'+priorities.length+'</b></div>'+
+        (priorities.length?priorities.map(r=>financePriorityRow(r,today)).join(''):'<div class="history-empty">Nenhuma conta em aberto no período consultado.</div>')+
+      '</section>'+
+      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Contas financeiras do Bling</strong><span>bancos, caixas e integrações disponíveis</span></div><b>'+accounts.length+'</b></div>'+
+        (accounts.length?'<div style="padding:12px 14px">'+accounts.map(a=>'<button class="pill" type="button" data-financial-account-detail="'+esc(a.id)+'" style="margin:3px">'+esc(a.description||('Conta #'+a.id))+' · '+esc(a.type||'tipo não informado')+'</button>').join('')+'</div>':'<div class="history-empty">Nenhuma conta financeira retornada.</div>')+
+      '</section>';
+    host.querySelectorAll('[data-finance-detail]').forEach(b=>b.onclick=()=>openFinanceDetail(b.dataset.financeKind,Number(b.dataset.financeDetail)));
+    host.querySelectorAll('[data-finance-edit]').forEach(b=>b.onclick=()=>openFinanceEditor(b.dataset.financeKind,Number(b.dataset.financeEdit)));
+    host.querySelectorAll('[data-finance-settle]').forEach(b=>b.onclick=()=>openFinanceSettlement(b.dataset.financeKind,Number(b.dataset.financeSettle)));
+    host.querySelectorAll('[data-finance-boleto]').forEach(b=>b.onclick=()=>openFinanceBoletos(Number(b.dataset.financeBoleto)));
+    host.querySelectorAll('[data-financial-account-detail]').forEach(b=>b.onclick=()=>openFinancialAccountDetail(Number(b.dataset.financialAccountDetail)));
+  }
+  function financeTokenPayload(token){
+    try{
+      const raw=String(token||'').split('.')[1]||'';
+      const pad=raw.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-raw.length%4)%4);
+      return JSON.parse(atob(pad));
+    }catch{return {}}
+  }
+  function financeSessionToken(){
+    const token=sessionStorage.getItem('da_finance_access_token_v1')||'';
+    if(!token)return '';
+    const exp=Number(financeTokenPayload(token)?.exp||0);
+    if(!exp||exp<=Math.floor(Date.now()/1000)+60){
+      sessionStorage.removeItem('da_finance_access_token_v1');
+      return '';
+    }
+    return token;
+  }
+  function clearFinanceSession(expectedToken=''){
+    const current=financeSessionToken();
+    if(expectedToken&&current&&current!==expectedToken)return false;
+    sessionStorage.removeItem('da_finance_access_token_v1');
+    state.financeCatalogs=null;
+    return true;
+  }
+  async function adminStepUp(){return await financeStepUp()}
+  async function financeStepUp(){
+    const existing=financeSessionToken();
+    if(existing)return existing;
+    if(state.financeAuthPromise)return await state.financeAuthPromise;
+    state.financeAuthPromise=(async()=>{
+      try{
+        const authRes=await fetch(FINANCE_AUTH_API,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
+          body:JSON.stringify({pin:'000000'}),
+          cache:'no-store'
+        });
+        const auth=await authRes.json().catch(()=>({}));
+        if(!authRes.ok||!auth?.ok)throw new Error(auth?.error||'admin_auto_auth_failed');
+        const verifyRes=await fetch(FINANCE_VERIFY_API,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
+          body:JSON.stringify({token_hash:auth.token_hash,type:auth.verification_type||'email'}),
+          cache:'no-store'
+        });
+        const verified=await verifyRes.json().catch(()=>({}));
+        const token=String(verified?.access_token||'').trim();
+        if(!verifyRes.ok||!token)throw new Error(verified?.msg||verified?.error_description||verified?.error||'admin_auto_session_failed');
+        sessionStorage.setItem('da_finance_access_token_v1',token);
+        return token;
+      }finally{
+        state.financeAuthPromise=null;
+      }
+    })();
+    return await state.financeAuthPromise;
+  }
+  async function financeApi(operation,payload={},retryAuth=true){
+    const token=await financeStepUp();
+    const u=new URL(API);u.searchParams.set('action','bling_finance_action');
+    const response=await fetch(u,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({operation,...payload}),
+      cache:'no-store'
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await financeApi(operation,payload,false);
+    }
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
+  async function loadFinanceCatalogs(force=false){
+    if(state.financeCatalogs&&!force)return state.financeCatalogs;
+    const data=await financeApi('catalogs');
+    state.financeCatalogs={
+      payment_methods:Array.isArray(data.payment_methods)?data.payment_methods:[],
+      categories:Array.isArray(data.categories)?data.categories:[],
+      financial_accounts:Array.isArray(data.financial_accounts)?data.financial_accounts:[],
+      truncated:Boolean(data.truncated)
+    };
+    return state.financeCatalogs;
+  }
+  function financeFieldValue(v){
+    return v==null?'':String(v);
+  }
+  function financeMoneyInput(v){
+    const n=Number(v);
+    return Number.isFinite(n)?n.toFixed(2).replace('.',','):'';
+  }
+  function financeSelectOptions(list,currentId,placeholder='Não informado'){
+    const current=Number(currentId||0);
+    const rows=(Array.isArray(list)?list:[]).filter(x=>Number(x?.id||0)>0);
+    const hasCurrent=current&&rows.some(x=>Number(x.id)===current);
+    const extra=current&&!hasCurrent?[{id:current,description:'Atual #'+current}]:[];
+    return '<option value="">'+esc(placeholder)+'</option>'+
+      [...extra,...rows].map(x=>'<option value="'+esc(x.id)+'" '+(Number(x.id)===current?'selected':'')+'>'+esc(x.description||x.name||('ID '+x.id))+'</option>').join('');
+  }
+  function financeCategoryRows(kind,catalogs){
+    return (catalogs?.categories||[]).filter(c=>{
+      const t=Number(c?.type||0);
+      return !t||t===3||(kind==='payable'&&t===1)||(kind==='receivable'&&t===2);
+    });
+  }
+  function financeCatalogDescription(area,id){
+    const n=Number(id||0);if(!n)return '';
+    const c=state.financeCatalogs||{};
+    const rows=area==='payment'?c.payment_methods:area==='account'?c.financial_accounts:c.categories;
+    return (rows||[]).find(x=>Number(x.id)===n)?.description||('#'+n);
+  }
+  function financeFormPayload(form){
+    const value=name=>form.querySelector('[name="'+name+'"]')?.value?.trim()||'';
+    const number=name=>{const raw=value(name).replace(/\./g,'').replace(',','.');const n=Number(raw);return Number.isFinite(n)&&n>0?n:null};
+    const payload={
+      vencimento:value('vencimento'),
+      valor:number('valor'),
+      contato_id:number('contato_id'),
+      forma_pagamento_id:number('forma_pagamento_id'),
+      dataEmissao:value('dataEmissao'),
+      numeroDocumento:value('numeroDocumento'),
+      competencia:value('competencia'),
+      historico:value('historico'),
+      portador_id:number('portador_id'),
+      categoria_id:number('categoria_id')
+    };
+    Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]===null)delete payload[k]});
+    return payload;
+  }
+  function financeExtractDetail(kind,account){
+    const a=account||{};
+    return {
+      vencimento:a.vencimento||'',
+      valor:a.valor??'',
+      contato_id:a.contato?.id||'',
+      contato_nome:a.contato?.nome||'',
+      forma_pagamento_id:a.formaPagamento?.id||'',
+      dataEmissao:a.dataEmissao||'',
+      numeroDocumento:a.numeroDocumento||'',
+      competencia:a.competencia||'',
+      historico:a.historico||'',
+      portador_id:a.portador?.id||a.contaContabil?.id||'',
+      categoria_id:a.categoria?.id||''
+    };
+  }
+  function financeOpenDialog(title,body,actions=''){
+    $('#editorTitle').textContent=title;
+    $('#editorBody').innerHTML=body;
+    $('#editorActions').innerHTML=actions||'<button class="secondary" id="financeClose" type="button">Fechar</button>';
+    if($('#financeClose'))$('#financeClose').onclick=()=>$('#editor').close();
+    if(!$('#editor').open)$('#editor').showModal();
+  }
+  function financeContactLabel(c){
+    const parts=[c?.name||'',c?.trade_name||'',c?.document||''].filter(Boolean);
+    return parts.join(' · ')||('Contato #'+String(c?.id||''));
+  }
+  function attachFinanceContactSearch(current={}){
+    const input=$('#financeContactSearch'),hidden=$('#financeContactId'),host=$('#financeContactResults');
+    if(!input||!hidden||!host)return;
+    hidden.value=financeFieldValue(current.contato_id);
+    if(current.contato_id){
+      state.financeSelectedContact={id:Number(current.contato_id),name:current.contato_nome||('Contato #'+current.contato_id)};
+      input.value=current.contato_nome||('Contato #'+current.contato_id);
+    }else state.financeSelectedContact=null;
+
+    input.oninput=()=>{
+      hidden.value='';
+      state.financeSelectedContact=null;
+      clearTimeout(state.financeContactSearchTimer);
+      const q=input.value.trim();
+      if(q.length<2){
+        host.innerHTML=q?'<small class="sub">Digite pelo menos 2 caracteres.</small>':'';
+        return;
+      }
+      host.innerHTML='<small class="sub">Buscando no Bling…</small>';
+      state.financeContactSearchTimer=setTimeout(async()=>{
+        try{
+          const data=await financeApi('contact_search',{query:q});
+          const contacts=Array.isArray(data.contacts)?data.contacts:[];
+          host.innerHTML=contacts.length
+            ?'<div class="panel" style="margin-top:6px;padding:6px">'+contacts.map(c=>'<button type="button" class="text" data-finance-contact-id="'+esc(c.id)+'" style="display:block;width:100%;text-align:left;padding:9px 8px">'+esc(financeContactLabel(c))+'</button>').join('')+'</div>'
+            :'<small class="sub">Nenhum contato encontrado.</small>';
+          host.querySelectorAll('[data-finance-contact-id]').forEach(btn=>btn.onclick=()=>{
+            const contact=contacts.find(c=>Number(c.id)===Number(btn.dataset.financeContactId));
+            if(!contact)return;
+            hidden.value=String(contact.id);
+            input.value=financeContactLabel(contact);
+            state.financeSelectedContact={id:Number(contact.id),name:financeContactLabel(contact)};
+            host.innerHTML='';
+          });
+        }catch(e){
+          host.innerHTML='<small class="danger-text">Não foi possível buscar contatos agora.</small>';
+        }
+      },320);
+    };
+  }
+  function financeActionErrorMessage(error){
+    const code=String(error?.message||error||'');
+    const map={
+      boleto_validation_failed:'Para usar boleto, informe histórico, selecione uma conta financeira apta, use vencimento de hoje em diante e mantenha o contato do Bling com e-mail e endereço completos.',
+      validation_failed:'Revise os campos obrigatórios antes de continuar.',
+      bling_finance_write_uncertain:'Resultado incerto. Não tente novamente sem revisar o lançamento no Bling.',
+      finance_owner_required:'Somente o proprietário pode operar o financeiro.',
+      finance_session_invalid:'A sessão financeira expirou. Tente novamente.'
+    };
+    return map[code]||code||'Não foi possível concluir a operação.';
+  }
+  async function openFinanceEditor(kind,id=0){
+    const isReceive=kind==='receivable';
+    let current={},catalogs={payment_methods:[],categories:[],financial_accounts:[]},catalogError=false;
+    financeOpenDialog('Carregando…','<div class="loading">Consultando o Bling…</div>');
+    try{
+      catalogs=await loadFinanceCatalogs();
+      if(id){
+        const detail=await financeApi('detail',{kind,id});
+        current=financeExtractDetail(kind,detail.account);
+      }
+    }catch(e){
+      if(id){financeOpenDialog('Financeiro','<div class="empty">Não consegui carregar esse lançamento.</div>');return}
+      catalogError=true;
+    }
+    const title=(id?'Editar ':'Novo ')+(isReceive?'conta a receber':'conta a pagar');
+    const today=cuiabaDayKey(new Date());
+    const categories=financeCategoryRows(kind,catalogs);
+    financeOpenDialog(title,
+      (catalogError?'<div class="rule-notice warn"><strong>Listas do Bling indisponíveis</strong><div>Tente novamente em instantes antes de salvar.</div></div>':'')+
+      (catalogs.truncated?'<div class="rule-notice warn"><strong>Lista grande</strong><div>Alguns cadastros podem não aparecer. Use a busca de contato e revise os dados antes de confirmar.</div></div>':'')+
+      '<form id="financeForm" class="form-grid">'+
+        '<label><span>Vencimento *</span><input name="vencimento" type="date" required value="'+esc(current.vencimento||today)+'"></label>'+
+        '<label><span>Valor *</span><input name="valor" inputmode="decimal" required value="'+esc(financeMoneyInput(current.valor))+'"></label>'+
+        '<label class="span-2"><span>Contato no Bling *</span><input id="financeContactSearch" type="search" autocomplete="off" placeholder="Digite nome, CPF/CNPJ, e-mail ou código" value="'+esc(current.contato_nome||'')+'"><input id="financeContactId" name="contato_id" type="hidden" value="'+esc(financeFieldValue(current.contato_id))+'"><div id="financeContactResults"></div></label>'+
+        '<label><span>Forma de pagamento</span><select id="financePaymentMethod" name="forma_pagamento_id">'+financeSelectOptions(catalogs.payment_methods,current.forma_pagamento_id,'Não informar')+'</select></label>'+
+        '<label><span>Conta financeira / portador</span><select id="financePortador" name="portador_id">'+financeSelectOptions(catalogs.financial_accounts,current.portador_id,'Não informar')+'</select></label>'+
+        '<label><span>Categoria</span><select name="categoria_id">'+financeSelectOptions(categories,current.categoria_id,'Não informar')+'</select></label>'+
+        '<label><span>Data de emissão</span><input name="dataEmissao" type="date" value="'+esc(current.dataEmissao||today)+'"></label>'+
+        '<label><span>Nº documento</span><input name="numeroDocumento" value="'+esc(current.numeroDocumento||'')+'"></label>'+
+        '<label><span>Competência</span><input name="competencia" type="date" value="'+esc(current.competencia||'')+'"></label>'+
+        '<label class="span-2"><span>Histórico</span><textarea id="financeHistory" name="historico">'+esc(current.historico||'')+'</textarea></label>'+
+        '<div class="span-2 rule-notice warn" id="financeBoletoNote" style="display:none"><strong>Boleto exige conferência extra</strong><div>O contato precisa ter e-mail e endereço completos no Bling, o vencimento não pode estar no passado, e deve existir uma conta financeira apta para boleto. Salvar a conta não emite o boleto: a emissão continua sendo feita no Bling.</div></div>'+
+      '</form>',
+      '<button class="secondary" id="financeCancel" type="button">Cancelar</button><button class="primary" id="financePreview" type="button">Revisar antes de salvar</button>'
+    );
+    attachFinanceContactSearch(current);
+    const paymentSelect=$('#financePaymentMethod'),portadorSelect=$('#financePortador'),historyField=$('#financeHistory'),dueField=$('#financeForm [name="vencimento"]'),boletoNote=$('#financeBoletoNote');
+    const syncBoletoUi=()=>{
+      const selected=(catalogs.payment_methods||[]).find(x=>Number(x.id)===Number(paymentSelect?.value||0));
+      const boleto=Number(selected?.type||0)===15;
+      if(boletoNote)boletoNote.style.display=boleto?'block':'none';
+      if(portadorSelect)portadorSelect.required=boleto;
+      if(historyField)historyField.required=boleto;
+      if(dueField){
+        if(boleto)dueField.min=today;
+        else dueField.removeAttribute('min');
+      }
+    };
+    if(paymentSelect)paymentSelect.onchange=syncBoletoUi;
+    syncBoletoUi();
+    $('#financeCancel').onclick=()=>$('#editor').close();
+    $('#financePreview').onclick=async()=>{
+      const form=$('#financeForm');
+      const payload=financeFormPayload(form);
+      if(!payload.contato_id){toast('Selecione um contato do Bling');return}
+      try{
+        const preview=await financeApi(id?'update_preview':'create_preview',{kind,id:id||undefined,payload});
+        openFinanceConfirmation(preview,id?'update_execute':'create_execute',{kind,id:id||undefined,payload});
+      }catch(e){toast(financeActionErrorMessage(e))}
+    };
+  }
+  function financePreviewHtml(preview){
+    const p=preview?.payload||{};
+    const contactId=Number(p.contato?.id||0);
+    const contactLabel=state.financeSelectedContact&&Number(state.financeSelectedContact.id)===contactId
+      ?state.financeSelectedContact.name
+      :(contactId?('Contato #'+contactId):'—');
+    const rows=[
+      ['Tipo',preview.kind==='receivable'?'Conta a receber':'Conta a pagar'],
+      ['Operação',preview.operation==='settle'?'Baixa':preview.operation==='update'?'Edição':'Criação'],
+      ['Vencimento',p.vencimento||'—'],
+      ['Valor',p.valor!=null?Number(p.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'],
+      ['Contato',contactLabel],
+      ['Forma de pagamento',p.formaPagamento?.id?financeCatalogDescription('payment',p.formaPagamento.id):'—'],
+      ['Conta financeira',p.portador?.id?financeCatalogDescription('account',p.portador.id):'—'],
+      ['Categoria',p.categoria?.id?financeCatalogDescription('category',p.categoria.id):'—'],
+      ['Data da baixa',p.data||'—']
+    ];
+    const boleto=preview?.boleto_policy?.is_boleto===true;
+    return '<div class="rule-notice warn"><strong>Confirmação obrigatória</strong><div>Confira os dados. Esta ação será enviada ao Bling somente após você digitar CONFIRMAR.</div></div>'+
+      (boleto?'<div class="rule-notice"><strong>Boleto preparado, não emitido</strong><div>Esta confirmação salva a conta a receber. A emissão do boleto é uma etapa separada no Bling e não será executada automaticamente por este Admin.</div></div>':'')+
+      '<div class="panel" style="padding:12px">'+rows.filter(x=>x[1]!=='—').map(x=>'<div class="history-title"><span>'+esc(x[0])+'</span><strong>'+esc(x[1])+'</strong></div>').join('')+'</div>'+
+      (preview.warning?'<div class="rule-notice"><strong>Atenção</strong><div>'+esc(preview.warning)+'</div></div>':'')+
+      '<label style="display:block;margin-top:12px"><span>Digite CONFIRMAR</span><input id="financeConfirmText" autocomplete="off"></label>';
+  }
+  function openFinanceConfirmation(preview,executeOperation,context){
+    const idempotencyKey=crypto.randomUUID();
+    financeOpenDialog('Confirmar operação financeira',financePreviewHtml(preview),
+      '<button class="secondary" id="financeBack" type="button">Voltar</button><button class="primary" id="financeExecute" type="button" disabled>Confirmar no Bling</button>'
+    );
+    const input=$('#financeConfirmText'),button=$('#financeExecute');
+    input.oninput=()=>button.disabled=input.value.trim()!=='CONFIRMAR';
+    $('#financeBack').onclick=()=>$('#editor').close();
+    button.onclick=async()=>{
+      if(input.value.trim()!=='CONFIRMAR')return;
+      button.disabled=true;button.textContent='Enviando…';
+      try{
+        await financeApi(executeOperation,{...context,confirmation:'CONFIRMAR',idempotency_key:idempotencyKey});
+        $('#editor').close();toast('Operação registrada no Bling');state.finance=null;await renderFinance();
+      }catch(e){
+        button.disabled=false;button.textContent='Confirmar no Bling';
+        toast(financeActionErrorMessage(e));
+      }
+    };
+  }
+  async function openFinanceSettlement(kind,id){
+    financeOpenDialog('Baixa financeira','<div class="loading">Consultando o lançamento…</div>');
+    try{
+      const catalogs=await loadFinanceCatalogs();
+      const detail=await financeApi('detail',{kind,id});
+      const a=financeExtractDetail(kind,detail.account);
+      const today=cuiabaDayKey(new Date());
+      const categories=financeCategoryRows(kind,catalogs);
+      financeOpenDialog(kind==='receivable'?'Registrar recebimento':'Registrar pagamento',
+        '<div class="rule-notice warn"><strong>Baixa manual</strong><div>Isso registra a baixa no Bling. Não movimenta banco, PIX ou cartão.</div></div>'+
+        '<form id="financeSettleForm" class="form-grid">'+
+          '<label><span>Data da baixa *</span><input name="data" type="date" required value="'+esc(today)+'"></label>'+
+          '<label><span>Valor recebido/pago</span><input name="valorRecebido" inputmode="decimal" value="'+esc(financeMoneyInput(detail.account?.valor))+'"></label>'+
+          '<label><span>Conta financeira / portador *</span><select name="portador_id" required>'+financeSelectOptions(catalogs.financial_accounts,a.portador_id,'Selecione')+'</select></label>'+
+          '<label><span>Categoria *</span><select name="categoria_id" required>'+financeSelectOptions(categories,a.categoria_id,'Selecione')+'</select></label>'+
+          '<label><span>Juros</span><input name="juros" inputmode="decimal"></label>'+
+          '<label><span>Desconto</span><input name="desconto" inputmode="decimal"></label>'+
+          '<label><span>Acréscimo</span><input name="acrescimo" inputmode="decimal"></label>'+
+          '<label><span>Tarifa</span><input name="tarifa" inputmode="decimal"></label>'+
+          '<label class="span-2"><span>Histórico</span><textarea name="historico">'+esc(a.historico||'')+'</textarea></label>'+
+        '</form>',
+        '<button class="secondary" id="financeCancel" type="button">Cancelar</button><button class="primary" id="financeSettlePreview" type="button">Revisar baixa</button>'
+      );
+      $('#financeCancel').onclick=()=>$('#editor').close();
+      $('#financeSettlePreview').onclick=async()=>{
+        const form=$('#financeSettleForm');
+        const get=name=>form.querySelector('[name="'+name+'"]')?.value?.trim()||'';
+        const decimal=name=>{const v=get(name).replace(/\./g,'').replace(',','.');const n=Number(v);return v!==''&&Number.isFinite(n)&&n>=0?n:undefined};
+        const portadorId=Number(get('portador_id'))||0,categoriaId=Number(get('categoria_id'))||0;
+        if(!portadorId||!categoriaId){toast('Selecione conta financeira e categoria');return}
+        const payload={
+          data:get('data'),usarDataVencimento:false,portador_id:portadorId,categoria_id:categoriaId,
+          historico:get('historico'),valorRecebido:decimal('valorRecebido'),juros:decimal('juros'),desconto:decimal('desconto'),acrescimo:decimal('acrescimo'),tarifa:decimal('tarifa')
+        };
+        Object.keys(payload).forEach(k=>payload[k]===undefined&&delete payload[k]);
+        try{
+          const preview=await financeApi('settle_preview',{kind,id,payload});
+          openFinanceConfirmation(preview,'settle_execute',{kind,id,payload});
+        }catch(e){toast(String(e?.message||'Não foi possível validar a baixa'))}
+      };
+    }catch(e){financeOpenDialog('Baixa financeira','<div class="empty">Não consegui carregar esse lançamento.</div>')}
+  }
+  async function openFinanceDetail(kind,id){
+    financeOpenDialog('Detalhes financeiros','<div class="loading">Consultando o Bling…</div>');
+    try{
+      const d=await financeApi('detail',{kind,id});
+      const a=d.account||{};
+      financeOpenDialog(kind==='receivable'?'Conta a receber':'Conta a pagar',
+        '<div class="panel" style="padding:14px">'+
+          '<div class="history-title"><span>ID</span><strong>'+esc(a.id||id)+'</strong></div>'+
+          '<div class="history-title"><span>Vencimento</span><strong>'+esc(dateOnly(a.vencimento))+'</strong></div>'+
+          '<div class="history-title"><span>Valor</span><strong>'+esc(Number(a.valor||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}))+'</strong></div>'+
+          '<div class="history-title"><span>Contato</span><strong>'+esc(a.contato?.nome||a.contato?.id||'—')+'</strong></div>'+
+          '<div class="history-title"><span>Documento</span><strong>'+esc(a.numeroDocumento||'—')+'</strong></div>'+
+          '<div class="history-title"><span>Histórico</span><strong>'+esc(a.historico||'—')+'</strong></div>'+
+        '</div>',
+        '<button class="secondary" id="financeClose" type="button">Fechar</button><button class="secondary" id="financeEditFromDetail" type="button">Editar</button><button class="primary" id="financeSettleFromDetail" type="button">Dar baixa</button>'
+      );
+      $('#financeClose').onclick=()=>$('#editor').close();
+      $('#financeEditFromDetail').onclick=()=>openFinanceEditor(kind,id);
+      $('#financeSettleFromDetail').onclick=()=>openFinanceSettlement(kind,id);
+    }catch(e){financeOpenDialog('Detalhes financeiros','<div class="empty">Não consegui carregar os detalhes.</div>')}
+  }
+  function financeBoletoStatusLabel(v){
+    return ({open:'Em aberto',received:'Recebido',partial:'Parcialmente recebido',returned:'Devolvido',partial_returned:'Parcialmente devolvido',cancelled:'Cancelado',unknown:'Situação não identificada'})[v]||v||'—';
+  }
+  async function openFinanceBoletos(originId){
+    financeOpenDialog('Boletos','<div class="loading">Consultando o Bling…</div>');
+    try{
+      const d=await financeApi('boletos',{kind:'receivable',origin_id:originId});
+      const rows=Array.isArray(d.boletos)?d.boletos:[],summary=d.summary||{};
+      financeOpenDialog('Boletos vinculados',
+        '<div class="rule-notice"><strong>Somente consulta</strong><div>Este Admin não emite nem cancela boletos. Emissão e cancelamento continuam no Bling.</div></div>'+
+        (rows.length?'<div class="panel" style="padding:14px">'+
+          (summary.total_cents?'<div class="history-title"><span>Total</span><strong>'+money(summary.total_cents)+'</strong></div>':'')+
+          rows.map((b,i)=>'<div class="history-title" style="align-items:flex-start"><div><strong>Boleto '+(i+1)+'</strong><span class="sub">'+esc(b.external_number?'Código '+b.external_number:'ID '+(b.id||'—'))+'</span></div><div style="text-align:right"><strong>'+money(b.amount_cents)+'</strong><span class="sub">'+esc(dateOnly(b.due_date))+' · '+esc(financeBoletoStatusLabel(b.status_label))+'</span></div></div>').join('')+
+        '</div>':'<div class="empty">Nenhum boleto retornado para essa origem.</div>')
+      );
+    }catch(e){financeOpenDialog('Boletos','<div class="empty">Não consegui consultar os boletos.</div>')}
+  }
+  async function openFinancialAccountDetail(id){
+    financeOpenDialog('Conta financeira','<div class="loading">Consultando o Bling…</div>');
+    try{
+      const d=await financeApi('financial_account_detail',{id});
+      const a=d.financial_account||{};
+      financeOpenDialog('Conta financeira do Bling',
+        '<div class="panel" style="padding:14px"><div class="history-title"><span>ID</span><strong>'+esc(a.id||id)+'</strong></div><div class="history-title"><span>Descrição</span><strong>'+esc(a.descricao||'—')+'</strong></div><div class="history-title"><span>Tipo</span><strong>'+esc(a.tipo||'—')+'</strong></div></div>'
+      );
+    }catch(e){financeOpenDialog('Conta financeira','<div class="empty">Não consegui carregar essa conta financeira.</div>')}
+  }
+
+  async function financeOverviewApi(token,retryAuth=true){
+    const u=new URL(API);u.searchParams.set('action','bling_finance_overview');
+    const response=await fetch(u,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:'{}',
+      cache:'no-store'
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await financeOverviewApi(await financeStepUp(),false);
+    }
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
+  async function renderFinance(){
+    let token='';
+    try{
+      token=await financeStepUp();
+    }catch(e){
+      if(String(e?.message||'')==='finance_auth_cancelled'){
+        toast('Financeiro continua bloqueado');
+        renderMore();
+        return;
+      }
+      toast(String(e?.message||'Não foi possível liberar o financeiro'));
+      renderMore();
+      return;
+    }
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Financeiro · Bling</h1><p>Área protegida. Bling é a fonte oficial; inclusões, edições e baixas exigem prévia e confirmação humana.</p></div><div class="dispatch-actions"><button class="secondary" id="newPayable" type="button">+ A pagar</button><button class="secondary" id="newReceivable" type="button">+ A receber</button><button class="secondary" id="lockFinance" type="button">Bloquear financeiro</button><button class="secondary" id="refreshFinance">Atualizar</button></div></div>'+
+      '<div class="rule-notice"><strong>Operação controlada</strong><div>Baixa apenas registra pagamento/recebimento no Bling. O sistema não faz transferência bancária e não cancela boletos automaticamente.</div></div>'+
+      '<div id="financeBody"><div class="loading">Consultando financeiro no Bling…</div></div>';
+    $('#refreshFinance').onclick=renderFinance;
+    $('#lockFinance').onclick=()=>{clearFinanceSession();toast('Financeiro bloqueado');renderMore()};
+    $('#newPayable').onclick=()=>openFinanceEditor('payable');
+    $('#newReceivable').onclick=()=>openFinanceEditor('receivable');
+    try{
+      const data=await financeOverviewApi(token);
+      state.finance=data.finance||{};
+      paintFinance();
+    }catch(e){
+      const scope=String(e?.message||'')==='bling_finance_scope_missing';
+      const auth=['finance_auth_required','finance_session_invalid','finance_owner_required'].includes(String(e?.message||''));
+      $('#financeBody').innerHTML='<div class="empty">'+(scope?'A conexão atual do Bling ainda não possui permissão para o módulo financeiro.':auth?'A sessão financeira expirou ou não tem permissão.':'Não consegui carregar o financeiro do Bling agora.')+' <button class="text" id="retryFinance">Tentar novamente</button></div>';
+      if($('#retryFinance'))$('#retryFinance').onclick=renderFinance;
+    }
+  }
+
+
+  async function renderBaskets(){
+    const host=$('#content');
+    if(!window.DonaAntoniaBasketAdmin?.render){
+      if(host)host.innerHTML='<div class="empty">O módulo de Cestas/Kits não carregou. <button class="text" id="retryBasketModule" type="button">Tentar novamente</button></div>';
+      $('#retryBasketModule')?.addEventListener('click',renderBaskets);
+      return;
+    }
+    return await window.DonaAntoniaBasketAdmin.render();
+  }
+
+  async function renderProducts(q=''){
+    disconnectProductScrollObserver();
+    productListGeneration++;
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Produtos</h1><p>Consulte por categoria, subcategoria, nome, EAN ou código.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="secondary" id="printInventorySheet" type="button">Imprimir balanço A4</button><button class="secondary" id="reconnectBlingProducts" type="button">Reconectar Bling</button><button class="primary" id="newProduct">+ Produto</button></div></div>'+
+      '<div class="toolbar product-toolbar">'+
+        '<input id="productSearch" type="search" placeholder="Buscar nome, EAN, código…">'+
+        '<select id="productCategory" aria-label="Categoria"><option value="">Todas as categorias</option></select>'+
+        '<select id="productSubcategory" aria-label="Subcategoria"><option value="">Todas as subcategorias</option></select>'+
+        '<select id="productActive" aria-label="Status"><option value="">Todos os status</option><option value="true">Ativos</option><option value="false">Inativos</option></select>'+
+        '<select id="productBasketKit" aria-label="Cestas e kits"><option value="">Todos os produtos</option><option value="true">Somente produtos de cestas/kits</option></select>'+
+        '<select id="productLotStatus" aria-label="Controle de validade"><option value="">Todos os controles de validade</option><option value="pending">Lotes/FEFO pendente · prioridade automática</option><option value="complete">Lotes/FEFO completo</option></select>'+
+        '<select id="productSort" aria-label="Ordenação"><option value="">Ordenação padrão</option><option value="name_asc">Nome A–Z</option><option value="name_desc">Nome Z–A</option><option value="updated_desc">Atualizados recentemente</option><option value="updated_asc">Não atualizados recentemente</option><option value="expiry_asc">Validade mais próxima</option><option value="expiry_desc">Validade mais distante</option><option value="expiry_expired">Somente produtos vencidos</option><option value="gondola_asc">Gôndola 1→30</option><option value="gondola_desc">Gôndola 30→1</option></select>'+
+        '<button class="secondary" id="productSearchBtn">Buscar</button>'+
+      '</div>'+
+      '<div class="panel" id="productsPanel"><div class="list-head products-layout"><span></span><span>Produto</span><span>Venda / custo</span><span>Estoque / validade</span><span>Status / kits</span><span>Ações</span></div><div id="productRows"><div class="loading">Carregando…</div></div><div class="more" id="productMore"></div></div>';
+    $('#newProduct').onclick=()=>openProductEditor();
+    $('#printInventorySheet').onclick=openInventoryPrintSelector;
+    $('#reconnectBlingProducts').onclick=reconnectBlingOauth;
+    $('#productSearch').value=q;
+    await loadProductFacets(state.productFilters.category,state.productFilters.active);
+    $('#productSearchBtn').onclick=()=>loadProducts($('#productSearch').value.trim(),false);
+    $('#productSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadProducts(e.currentTarget.value.trim(),false)}};
+    $('#productCategory').onchange=async e=>{
+      state.productFilters.category=e.currentTarget.value;
+      state.productFilters.subcategory='';
+      await loadProductFacets(state.productFilters.category,state.productFilters.active);
+      await loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productSubcategory').onchange=e=>{
+      state.productFilters.subcategory=e.currentTarget.value;
+      loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productActive').value=state.productFilters.active||'';
+    $('#productActive').onchange=async e=>{
+      state.productFilters.active=e.currentTarget.value;
+      await loadProductFacets(state.productFilters.category,state.productFilters.active);
+      await loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productBasketKit').value=state.productFilters.basketKit||'';
+    $('#productBasketKit').onchange=e=>{
+      state.productFilters.basketKit=e.currentTarget.value;
+      loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productLotStatus').value=state.productFilters.lotStatus||'';
+    $('#productLotStatus').onchange=e=>{
+      state.productFilters.lotStatus=e.currentTarget.value;
+      loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productSort').value=state.productSort||'';
+    $('#productSort').onchange=e=>{state.productSort=e.currentTarget.value;loadProducts($('#productSearch').value.trim(),false)};
+    await loadProducts(q,false);
+  }
+
+  async function loadProductFacets(category='',active=state.productFilters.active||''){
+    try{
+      const data=await api('product_facets',{category,active});
+      state.productFacets=data;
+      const cat=$('#productCategory'),sub=$('#productSubcategory');
+      if(cat){
+        const current=state.productFilters.category;
+        cat.innerHTML='<option value="">Todas as categorias</option>'+(data.categories||[]).map(x=>'<option value="'+esc(x.value)+'" '+(x.value===current?'selected':'')+'>'+esc(x.label)+' ('+esc(x.count)+')</option>').join('');
+        cat.value=current;
+      }
+      if(sub){
+        const current=state.productFilters.subcategory;
+        sub.innerHTML='<option value="">Todas as subcategorias</option>'+(data.subcategories||[]).map(x=>'<option value="'+esc(x.value)+'" '+(x.value===current?'selected':'')+'>'+esc(x.label)+' ('+esc(x.count)+')</option>').join('');
+        sub.value=current;
+      }
+    }catch(e){toast('Não consegui carregar os filtros de produtos')}
+  }
+
+  // Paginação mobile: lotes de 6 e carregamento por aproximação do fim da lista.
+  let productScrollObserver=null,productListGeneration=0,productAppendLoading=false;
+  function disconnectProductScrollObserver(){
+    if(productScrollObserver){productScrollObserver.disconnect();productScrollObserver=null}
+  }
+  function bindProductListActions(root,mobile){
+    root.querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>openProductEditor(state.products.find(p=>String(p.id)===b.dataset.editProduct)));
+    if(!mobile){
+      root.querySelectorAll('[data-product-lots]').forEach(b=>b.onclick=()=>openProductLotsEditor(state.products.find(p=>String(p.id)===b.dataset.productLots)));
+      root.querySelectorAll('[data-duplicate-product]').forEach(b=>b.onclick=()=>openProductEditor(state.products.find(p=>String(p.id)===b.dataset.duplicateProduct),true));
+      root.querySelectorAll('[data-product-active]').forEach(b=>b.onclick=()=>toggleProductActive(b.dataset.productActive,b));
+    }
+    bindMobileProductCards(root);
+    root.querySelectorAll('[data-zero-product-stock]').forEach(b=>b.onclick=()=>zeroProductStock(b.dataset.zeroProductStock,b));
+  }
+  function watchNextProducts(q,mobile){
+    disconnectProductScrollObserver();
+    const more=$('#productMore');
+    if(!more)return;
+    if(state.productNext==null){more.innerHTML='';return}
+    if(mobile&&'IntersectionObserver' in window){
+      more.innerHTML='<div class="product-scroll-loader" role="status">Role para carregar mais produtos…</div>';
+      productScrollObserver=new IntersectionObserver(entries=>{
+        if(!entries.some(entry=>entry.isIntersecting)||productAppendLoading||state.productNext==null||state.tab!=='products')return;
+        disconnectProductScrollObserver();
+        loadProducts(q,true);
+      },{root:null,rootMargin:'0px 0px 280px 0px',threshold:0});
+      productScrollObserver.observe(more);
+    }else{
+      const limit=mobile?6:5;
+      more.innerHTML='<button class="secondary" id="moreProducts" type="button">Ver mais '+limit+'</button>';
+      $('#moreProducts').onclick=()=>loadProducts(q,true);
+    }
+  }
+  async function loadProducts(q='',append=false){
+    const host=$('#productRows'),more=$('#productMore');
+    if(!host||!more||state.tab!=='products')return;
+    if(append&&(productAppendLoading||state.productNext==null))return;
+    const generation=append?productListGeneration:++productListGeneration;
+    if(!append){disconnectProductScrollObserver();host.innerHTML='<div class="loading">Carregando…</div>';more.innerHTML=''}
+    else{productAppendLoading=true;disconnectProductScrollObserver();more.innerHTML='<div class="product-scroll-loader" role="status">Carregando mais produtos…</div>'}
+    try{
+      const mobile=isProductsMobile(),offset=append?state.productNext:0,limit=mobile?6:5;
+      const filters={...state.productFilters},sort=state.productSort||'';
+      const data=await api('products',{q,category:filters.category,subcategory:filters.subcategory,active:filters.active,basket_kit:filters.basketKit,lot_status:filters.lotStatus,sort,offset,limit});
+      if(generation!==productListGeneration||host!==$('#productRows')||state.tab!=='products')return;
+      const products=Array.isArray(data.products)?data.products:[];
+      state.products=append?[...state.products,...products]:products;
+      state.productNext=products.length?data.next_offset:null;
+      host.classList.toggle('mobile-product-grid',mobile);
+      const markup=products.map(mobile?productMobileCard:productRow).join('');
+      if(append){
+        const oldCount=host.children.length;
+        host.insertAdjacentHTML('beforeend',markup);
+        [...host.children].slice(oldCount).forEach(row=>bindProductListActions(row,mobile));
+      }else{
+        host.innerHTML=markup||'<div class="empty">Nenhum produto encontrado com esses filtros.</div>';
+        bindProductListActions(host,mobile);
+      }
+      watchNextProducts(q,mobile);
+    }catch(e){
+      if(generation!==productListGeneration||host!==$('#productRows')||state.tab!=='products')return;
+      disconnectProductScrollObserver();
+      if(append){
+        more.innerHTML='<button class="secondary" id="moreProducts" type="button">Tentar carregar mais produtos</button>';
+        $('#moreProducts').onclick=()=>loadProducts(q,true);
+      }else{
+        host.innerHTML='<div class="empty">Erro ao carregar produtos. <button class="text" id="retryProducts">Tentar novamente</button></div>';
+        more.innerHTML='';
+        $('#retryProducts').onclick=()=>loadProducts(q,false);
+      }
+    }finally{
+      if(append)productAppendLoading=false;
+    }
+  }
+
+  function inventoryPrintEscape(v){
+    return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function inventoryPrintCard(p){
+    const img=inventoryPrintEscape(p.image_url||'/img/logoantonia5.png');
+    return '<article class="count-card">'+
+      '<div class="card-ref">REF '+String(p.printed_index).padStart(4,'0')+'</div>'+
+      '<div class="product-photo"><img src="'+img+'" alt=""></div>'+
+      '<div class="product-name">'+inventoryPrintEscape(p.name||'')+'</div>'+
+      '<div class="product-ean">EAN '+inventoryPrintEscape(p.gtin||'SEM EAN')+'</div>'+
+      '<div class="write-pair">'+
+        '<div class="write-field"><b>ESTOQUE</b><span title="Escreva a quantidade em estoque"></span></div>'+
+        '<div class="write-field"><b>GÔNDOLA</b><span title="Escreva o número da gôndola"></span></div>'+
+      '</div>'+
+    '</article>';
+  }
+
+  function inventoryPrintSelectedFilters(){
+    const mode=document.querySelector('input[name="inventoryPrintMode"]:checked')?.value||'category';
+    const values=[...document.querySelectorAll(mode==='category'?'[data-print-category]:checked':'[data-print-gondola]:checked')].map(x=>x.value);
+    return mode==='category'
+      ? {active:'true',categories:values}
+      : {active:'true',gondolas:values};
+  }
+
+  function inventoryPrintSelectedLabel(){
+    const mode=document.querySelector('input[name="inventoryPrintMode"]:checked')?.value||'category';
+    const checked=[...document.querySelectorAll(mode==='category'?'[data-print-category]:checked':'[data-print-gondola]:checked')];
+    if(mode==='category')return checked.map(x=>x.dataset.label||categoryLabel(x.value)).join(', ');
+    return checked.map(x=>'Gôndola '+x.value).join(', ');
+  }
+
+  async function refreshInventoryPrintPreview(){
+    const summary=$('#inventoryPrintSummary'),go=$('#inventoryPrintGo');
+    if(!summary||!go)return;
+    const filters=inventoryPrintSelectedFilters();
+    const selected=(filters.categories||filters.gondolas||[]);
+    if(!selected.length){
+      summary.innerHTML='<strong>Selecione pelo menos uma opção.</strong><small>Você pode marcar uma ou várias.</small>';
+      go.disabled=true;go.textContent='Imprimir seleção';return;
+    }
+    summary.innerHTML='<strong>Calculando…</strong><small>Conferindo quantos produtos entrarão na impressão.</small>';
+    go.disabled=true;
+    try{
+      const data=await api('inventory_sheet_preview',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filters})
+      });
+      const count=Number(data.product_count||0),pages=Number(data.page_count||0);
+      summary.innerHTML='<strong>'+esc(count)+' produto'+(count===1?'':'s')+' · '+esc(pages)+' folha'+(pages===1?'':'s')+' A4</strong><small>'+esc(inventoryPrintSelectedLabel())+'</small>';
+      go.disabled=count<1;
+      go.textContent=count?('Imprimir '+pages+' folha'+(pages===1?'':'s')):'Imprimir seleção';
+    }catch(e){
+      summary.innerHTML='<strong>Não consegui calcular a impressão.</strong><small>'+esc(errorMessage(e.message))+'</small>';
+      go.disabled=true;
+    }
+  }
+
+  async function openInventoryPrintSelector(){
+    const editor=$('#editor');
+    $('#editorTitle').textContent='Imprimir balanço A4';
+    $('#editorBody').innerHTML='<div class="loading">Carregando categorias e gôndolas…</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button><button class="primary" id="inventoryPrintGo" disabled>Imprimir seleção</button>';
+    $('#cancelEditor').onclick=()=>editor.close();
+    editor.showModal();
+    try{
+      const options=await api('inventory_sheet_options');
+      const cats=options.categories||[],gondolas=options.gondolas||[];
+      const currentCategory=state.productFilters.category||'';
+      $('#editorBody').innerHTML=
+        '<div class="offer-note" style="margin-bottom:12px"><strong>Imprima somente o que vai contar agora.</strong><br>Escolha uma ou várias categorias, ou uma ou várias gôndolas. A prévia mostra quantas folhas serão geradas.</div>'+
+        '<div class="order-filters" style="margin-bottom:12px">'+
+          '<label class="filter-chip active" id="printModeCategoryLabel"><input type="radio" name="inventoryPrintMode" value="category" checked style="display:none">Por categoria</label>'+
+          '<label class="filter-chip" id="printModeGondolaLabel"><input type="radio" name="inventoryPrintMode" value="gondola" style="display:none">Por gôndola</label>'+
+        '</div>'+
+        '<div id="inventoryPrintCategoryChoices" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px">'+
+          (cats.length?cats.map(x=>'<label class="check" style="border:1px solid #ddd;border-radius:10px;padding:10px 12px;background:#fff"><input type="checkbox" data-print-category value="'+esc(x.value)+'" data-label="'+esc(categoryLabel(x.value))+'" '+(x.value===currentCategory?'checked':'')+'><span><strong>'+esc(categoryLabel(x.value))+'</strong><small>'+esc(x.count)+' produto(s) ativos para imprimir</small></span></label>').join(''):'<div class="history-empty">Nenhuma categoria com produto ativo.</div>')+
+        '</div>'+
+        '<div id="inventoryPrintGondolaChoices" style="display:none;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px">'+
+          (gondolas.length?gondolas.map(g=>'<label class="check" style="border:1px solid #ddd;border-radius:10px;padding:10px 12px;background:#fff"><input type="checkbox" data-print-gondola value="'+esc(g.value)+'"><span><strong>Gôndola '+esc(g.value)+'</strong><small>'+esc(g.count)+' produto(s) ativos para imprimir</small></span></label>').join(''):'<div class="history-empty">Nenhuma gôndola com produto ativo.</div>')+
+        '</div>'+
+        '<div class="bling-banner" id="inventoryPrintSummary" style="margin-top:14px"><strong>Selecione pelo menos uma opção.</strong><small>Você pode marcar uma ou várias.</small></div>';
+
+      const syncMode=()=>{
+        const mode=document.querySelector('input[name="inventoryPrintMode"]:checked')?.value||'category';
+        $('#inventoryPrintCategoryChoices').style.display=mode==='category'?'grid':'none';
+        $('#inventoryPrintGondolaChoices').style.display=mode==='gondola'?'grid':'none';
+        $('#printModeCategoryLabel').classList.toggle('active',mode==='category');
+        $('#printModeGondolaLabel').classList.toggle('active',mode==='gondola');
+        refreshInventoryPrintPreview();
+      };
+      document.querySelectorAll('input[name="inventoryPrintMode"]').forEach(x=>x.onchange=syncMode);
+      document.querySelectorAll('[data-print-category],[data-print-gondola]').forEach(x=>x.onchange=refreshInventoryPrintPreview);
+      $('#inventoryPrintGo').onclick=async()=>{
+        const filters=inventoryPrintSelectedFilters(),label=inventoryPrintSelectedLabel();
+        const selected=(filters.categories||filters.gondolas||[]);
+        if(!selected.length)return;
+        editor.close();
+        await printInventorySheet(filters,label);
+      };
+      await refreshInventoryPrintPreview();
+    }catch(e){
+      $('#editorBody').innerHTML='<div class="empty">Não consegui carregar as opções de impressão.<br><small>'+esc(errorMessage(e.message))+'</small></div>';
+    }
+  }
+
+
+  function inventorySheetQrPayload(batchCode,pageNumber){
+    return 'DA_BAL1|'+String(batchCode||'').toUpperCase()+'|'+String(Number(pageNumber||0));
+  }
+
+  async function inventorySheetQrDataUrl(payload){
+    await inventorySheetLoadScript('inventoryQrGenerator','https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js');
+    if(typeof window.qrcode!=='function')throw new Error('Gerador de QR não iniciou.');
+    const qr=window.qrcode(0,'M');qr.addData(payload);qr.make();
+    return qr.createDataURL(5,2);
+  }
+
+  async function printInventorySheet(filters,filterLabel){
+    const operator=requireOperator();if(!operator)return;
+    const w=window.open('','_blank');
+    if(!w){toast('Permita pop-ups para imprimir a folha de balanço');return}
+    w.document.write('<!doctype html><html><body style="font-family:Arial;padding:24px">Preparando folhas do balanço…</body></html>');
+    try{
+      const data=await api('inventory_sheet_create',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({filters:{active:'true',...(filters||{})},operator})
+      });
+      const batch=data.batch,items=data.items||[];
+      if(!batch||!items.length){w.close();toast('Nenhum produto encontrado na seleção');return}
+      const pages=[];
+      for(let page=1;page<=Number(batch.page_count||1);page++)pages.push(items.filter(x=>Number(x.page_number)===page));
+      const printedAt=new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+      const filterBits=filterLabel||'Produtos selecionados';
+      const qrImages=await Promise.all(pages.map((_,pageIndex)=>inventorySheetQrDataUrl(inventorySheetQrPayload(batch.batch_code,pageIndex+1))));
+      const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Balanço '+inventoryPrintEscape(batch.batch_code)+'</title>'+
+        '<style>'+
+        '@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box}html,body{margin:0;padding:0;color:#111;font-family:Arial,Helvetica,sans-serif;background:#fff}'+
+        '.sheet-page{width:200mm;height:287mm;overflow:hidden;break-after:page;page-break-after:always;display:flex;flex-direction:column}.sheet-page:last-child{break-after:auto;page-break-after:auto}'+
+        '.sheet-head{height:18mm;flex:0 0 18mm;display:grid;grid-template-columns:1fr auto;gap:3mm;align-items:end;border-bottom:.35mm solid #111;padding:0 0 2mm;margin:0 0 2mm}.sheet-head h1{font-size:11pt;margin:0}.sheet-head p{margin:.8mm 0 0;font-size:6.5pt}.sheet-code-wrap{display:flex;align-items:center;justify-content:flex-end;gap:2mm}.sheet-qr{width:15mm;height:15mm;object-fit:contain;image-rendering:pixelated}.sheet-code{text-align:right;font-size:7.2pt;line-height:1.35;max-width:68mm}.sheet-code strong{display:block;font-size:9pt;letter-spacing:.4px}'+
+        '.count-sheet{height:265mm;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(5,minmax(0,1fr));gap:1.15mm;align-items:stretch}'+
+        '.count-card{position:relative;border:.3mm solid #222;border-radius:1mm;padding:.5mm;overflow:hidden;background:#fff;display:flex;flex-direction:column;min-width:0}.card-ref{position:absolute;top:.35mm;right:.55mm;font-size:5pt;font-weight:800;background:#fff;padding-left:.35mm}.product-photo{height:30mm;flex:0 0 30mm;display:flex;align-items:center;justify-content:center;margin-bottom:.1mm}.product-photo img{display:block;max-width:100%;max-height:30mm;object-fit:contain}.product-name{height:6.2mm;flex:0 0 6.2mm;overflow:hidden;font-weight:700;font-size:6pt;line-height:1.02;text-align:center}.product-ean{text-align:center;font-size:5.1pt;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.05mm}.write-pair{display:grid;grid-template-columns:1fr 1fr;gap:.6mm;margin-top:auto;padding-top:.15mm}.write-field{min-width:0}.write-field b{display:block;text-align:center;font-size:4.7pt;line-height:1;margin-bottom:.12mm;letter-spacing:.05px}.write-field span{display:block;height:8.4mm;border:.45mm solid #111;background:#fff}'+
+        '</style></head><body>'+
+        pages.map((rows,pageIndex)=>'<section class="sheet-page">'+
+          '<header class="sheet-head"><div><h1>Dona Antônia · Balanço físico</h1><p>Escreva a quantidade no quadro ESTOQUE e o número da localização no quadro GÔNDOLA. Fotografe a folha A4 inteira.</p></div>'+
+          '<div class="sheet-code-wrap"><img class="sheet-qr" src="'+inventoryPrintEscape(qrImages[pageIndex])+'" alt="QR da folha"><div class="sheet-code"><strong>'+inventoryPrintEscape(batch.batch_code)+'</strong><b>Página '+(pageIndex+1)+'/'+pages.length+'</b><br>'+inventoryPrintEscape(filterBits)+' · '+inventoryPrintEscape(printedAt)+'</div></div></header>'+
+          '<main class="count-sheet">'+rows.map(inventoryPrintCard).join('')+'</main>'+
+        '</section>').join('')+
+        '<script>async function ready(){const imgs=[...document.images];await Promise.race([Promise.all(imgs.map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=r;i.onerror=r}))),new Promise(r=>setTimeout(r,5000))]);setTimeout(()=>window.print(),200)}window.addEventListener("load",ready);<\/script>'+
+        '</body></html>';
+      w.document.open();w.document.write(html);w.document.close();
+      toast(batch.product_count+' produtos · '+batch.page_count+' folha(s) · '+batch.batch_code);
+    }catch(e){w.close();toast('Não consegui preparar a impressão: '+errorMessage(e.message))}
+  }
+
+  function categoryLabel(value){
+    const map={mercearia:'Mercearia',limpeza_lavanderia:'Limpeza e lavanderia',higiene_beleza:'Higiene e beleza',casa_pet:'Casa e pet'};
+    return map[value]||value||'Sem categoria';
+  }
+
+  const mobileProductQuickDrafts=new Map(),mobileProductQuickTimers=new Map(),mobileProductStockQueue=new Map(),mobileProductSaveStates=new Map();
+  let mobileProductStockBusy=false;
+  function isProductsMobile(){return window.matchMedia&&window.matchMedia('(max-width:640px)').matches}
+  function mobileProductPriceCents(v){let s=String(v??'').trim().replace(/R\$/gi,'').replace(/\s+/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=Number(s);return Number.isFinite(n)&&n>=0?Math.round(n*100):null}
+  function mobileProductSaveState(id){if(!mobileProductSaveStates.has(id))mobileProductSaveStates.set(id,{quick:false,stock:false,error:''});return mobileProductSaveStates.get(id)}
+  function paintMobileProductSaveStatus(id){const el=document.querySelector('[data-mobile-product-status="'+CSS.escape(String(id))+'"]');if(!el)return;const s=mobileProductSaveState(id);el.className='mobile-product-save-status '+(s.error?'error':(s.quick||s.stock?'saving':'saved'));el.textContent=s.error?'⚠ '+s.error:(s.stock?'Sincronizando estoque…':(s.quick?'Salvando…':'✓ Salvo'))}
+  function setMobileProductSaveState(id,key,value,error=''){const s=mobileProductSaveState(id);s[key]=value;if(error)s.error=error;else if(value)s.error='';paintMobileProductSaveStatus(id)}
+  function productLinkedKits(p){return Array.isArray(p?.linked_kits)?p.linked_kits:[]}
+  function productExpiryLabel(p){const d=p?.next_expiration_date||p?.expiration_date||null;return d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'Sem validade'}
+  function productKitLinks(p,compact=false){
+    const kits=productLinkedKits(p);if(!kits.length)return '<span class="product-no-kits">Sem kits</span>';
+    return '<details class="product-kit-menu '+(compact?'mobile-product-kit-count':'')+'"><summary>'+esc(kits.length)+' '+(kits.length===1?'cesta/kit':'cestas/kits')+'</summary><div class="product-kit-popover">'+kits.map(k=>k.basket_id?'<button type="button" class="product-kit-link" data-open-product-basket="'+esc(k.basket_id)+'">'+esc(k.name||'Cesta/Kit')+'</button>':'<span class="product-kit-link" aria-disabled="true">'+esc(k.name||'Cesta/Kit')+'</span>').join('')+'</div></details>';
+  }
+  function productMobileCard(p){
+    const price=(Number(p.sale_price_cents||0)/100).toFixed(2).replace('.',','),cost=(Number(p.cost_cents||0)/100).toFixed(2).replace('.',','),g=Number(p.gondola_number||0),identity=p.gtin||p.sku||'Sem EAN';
+    const gondolas='<option value="">—</option>'+Array.from({length:30},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(g===n?'selected':'')+'>'+n+'</option>').join('');
+    return '<article class="mobile-product-card" data-mobile-product-card="'+esc(p.id)+'">'+
+      '<div class="mobile-product-card-head"><img class="mobile-product-thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy"><div><div class="mobile-product-card-name">'+esc(p.name)+'</div><span class="mobile-product-card-id">'+esc(identity)+'</span></div></div>'+
+      '<label class="mobile-product-switch"><input type="checkbox" data-mobile-product-active="'+esc(p.id)+'" '+(p.active!==false?'checked':'')+'><span class="mobile-product-switch-track"><span class="mobile-product-switch-knob"></span></span><b data-mobile-product-active-label="'+esc(p.id)+'">'+(p.active!==false?'ATIVO':'INATIVO')+'</b></label>'+
+      '<div class="mobile-product-quick-grid">'+
+        '<label class="mobile-product-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label>'+
+        '<label class="mobile-product-field"><span>Custo</span><input data-mobile-product-field="cost" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(cost)+'"></label>'+
+        '<label class="mobile-product-field"><span>Estoque</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+
+        '<label class="mobile-product-field"><span>Gôndola</span><select data-mobile-product-field="gondola" data-product-id="'+esc(p.id)+'">'+gondolas+'</select></label>'+
+        '<label class="mobile-product-field full"><span>Validade</span><input data-mobile-product-field="expiration" data-product-id="'+esc(p.id)+'" type="date" value="'+esc(p.expiration_date||'')+'"></label>'+
+      '</div>'+productKitLinks(p,true)+'<div class="mobile-product-card-foot"><span class="mobile-product-save-status saved" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span><button class="mobile-product-detail mobile-product-zero-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="mobile-product-detail" type="button" data-edit-product="'+esc(p.id)+'">Detalhes</button></div></article>';
+  }
+  function scheduleMobileProductQuickSave(id,field,value){
+    const product=state.products.find(p=>String(p.id)===String(id));if(!product)return;let draft=mobileProductQuickDrafts.get(id)||{};
+    if(field==='price'){const cents=mobileProductPriceCents(value);if(cents===null){setMobileProductSaveState(id,'quick',false,'Preço inválido');return}draft.sale_price_cents=cents;product.sale_price_cents=cents;setMobileProductSaveState(id,'quick',true)}
+    else if(field==='cost'){const cents=mobileProductPriceCents(value);if(cents===null){setMobileProductSaveState(id,'quick',false,'Custo inválido');return}draft.cost_cents=cents;product.cost_cents=cents;setMobileProductSaveState(id,'quick',true)}
+    else if(field==='stock'){const qty=Number(String(value).replace(',','.'));if(!Number.isFinite(qty)||qty<0){setMobileProductSaveState(id,'stock',false,'Estoque inválido');return}draft.stock_quantity=qty;setMobileProductSaveState(id,'stock',true)}
+    else if(field==='gondola'){draft.gondola_number=value===''?null:Number(value);product.gondola_number=value===''?null:Number(value);setMobileProductSaveState(id,'quick',true)}
+    else if(field==='expiration'){draft.expiration_date=value||null;product.expiration_date=value||null;setMobileProductSaveState(id,'quick',true)}
+    mobileProductQuickDrafts.set(id,draft);clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.set(id,setTimeout(()=>flushMobileProductQuickSave(id),650));
+  }
+  async function flushMobileProductQuickSave(id){
+    clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.delete(id);const draft=mobileProductQuickDrafts.get(id);if(!draft)return;mobileProductQuickDrafts.delete(id);
+    const operator=currentOperator()||requireOperator();if(!operator){setMobileProductSaveState(id,'quick',false,'Operador necessário');setMobileProductSaveState(id,'stock',false,'Operador necessário');return}
+    const quick={};for(const k of ['sale_price_cents','cost_cents','gondola_number','expiration_date'])if(Object.prototype.hasOwnProperty.call(draft,k))quick[k]=draft[k];
+    if(Object.keys(quick).length){try{const data=await api('product_quick_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,...quick,operator})});const p=state.products.find(x=>String(x.id)===String(id));if(p&&data.product){p.sale_price_cents=data.product.sale_price_cents;p.cost_cents=data.product.cost_cents;p.gondola_number=data.product.gondola_number;p.expiration_date=data.product.expiration_date;p.active=data.product.active}setMobileProductSaveState(id,'quick',false)}catch(e){setMobileProductSaveState(id,'quick',false,errorMessage(e.message))}}
+    else setMobileProductSaveState(id,'quick',false);
+    if(Object.prototype.hasOwnProperty.call(draft,'stock_quantity')&&!stockZeroPending.has(String(id))){mobileProductStockQueue.set(id,{quantity:draft.stock_quantity,operator});processMobileProductStockQueue()}
+    if(mobileProductQuickDrafts.has(id)){clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.set(id,setTimeout(()=>flushMobileProductQuickSave(id),180))}
+  }
+  // Atalho de estoque: mesma operação oficial do editor, que valida o saldo no Bling.
+  const stockZeroPending=new Set();
+  function zeroProductStock(id,button){
+    const key=String(id),product=state.products.find(p=>String(p.id)===key);
+    if(!product||stockZeroPending.has(key))return;
+    const operator=requireOperator();
+    if(!operator)return;
+    stockZeroPending.add(key);
+    const draft=mobileProductQuickDrafts.get(id);
+    if(draft)delete draft.stock_quantity;
+    // Se já houver ajuste pendente, zero deve ser a última escrita.
+    mobileProductStockQueue.set(id,{quantity:0,operator,zeroButton:button});
+    button.disabled=true;
+    button.textContent='Zerando…';
+    processMobileProductStockQueue();
+  }
+  async function processMobileProductStockQueue(){
+    if(mobileProductStockBusy)return;
+    mobileProductStockBusy=true;
+    try{
+      while(mobileProductStockQueue.size){
+        const [id,item]=mobileProductStockQueue.entries().next().value;
+        mobileProductStockQueue.delete(id);
+        setMobileProductSaveState(id,'stock',true);
+        try{
+          const data=await api('product_stock_set',{},{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({product_id:id,stock_quantity:item.quantity,operator:item.operator})
+          });
+          if(data.verified!==true)throw new Error('stock_update_unverified');
+          const p=state.products.find(x=>String(x.id)===String(id));
+          if(p&&data.product){
+            p.stock_quantity=data.product.stock_quantity;
+            p.loose_stock_quantity=data.product.loose_stock_quantity;
+            p.basket_locked_quantity=data.product.basket_locked_quantity;
+          }
+          if(!item.zeroButton&&data.product){
+            const stockInput=document.querySelector('[data-mobile-product-field="stock"][data-product-id="'+CSS.escape(String(id))+'"]');
+            if(stockInput&&Number(String(stockInput.value).replace(',','.'))===Number(item.quantity))stockInput.value=fmtQty(data.product.stock_quantity);
+          }
+          if(item.zeroButton){
+            const stockInput=document.querySelector('[data-mobile-product-field="stock"][data-product-id="'+CSS.escape(String(id))+'"]');
+            if(stockInput)stockInput.value='0';
+            const stockRow=item.zeroButton.closest('.product-operational-row');
+            const breakdown=stockRow?.querySelector('.product-stock-breakdown-inline');
+            if(breakdown&&data.product)breakdown.textContent=fmtQty(data.product.loose_stock_quantity??0)+' avulso · '+fmtQty(data.product.basket_locked_quantity||0)+' em cestas/kits';
+            item.zeroButton.textContent='✓ Zerado';
+            toast('Estoque zerado e confirmado no Bling');
+          }
+          setMobileProductSaveState(id,'stock',false);
+        }catch(e){
+          setMobileProductSaveState(id,'stock',false,errorMessage(e.message));
+          if(!item.zeroButton){
+            const stockInput=document.querySelector('[data-mobile-product-field="stock"][data-product-id="'+CSS.escape(String(id))+'"]');
+            const current=state.products.find(x=>String(x.id)===String(id));
+            if(stockInput&&current&&!mobileProductQuickDrafts.has(id)&&!mobileProductStockQueue.has(id)&&Number(String(stockInput.value).replace(',','.'))===Number(item.quantity))stockInput.value=fmtQty(current.stock_quantity||0);
+            toast(errorMessage(e.message));
+          }
+          if(item.zeroButton){
+            item.zeroButton.disabled=false;
+            item.zeroButton.textContent='Zerar estoque';
+            toast('Falha ao zerar estoque: '+errorMessage(e.message));
+          }
+        }finally{
+          if(item.zeroButton)stockZeroPending.delete(String(id));
+        }
+      }
+    }finally{
+      mobileProductStockBusy=false;
+      if(mobileProductStockQueue.size)processMobileProductStockQueue();
+    }
+  }
+  async function saveMobileProductActive(id,checked,input){
+    const product=state.products.find(p=>String(p.id)===String(id));if(!product)return;const previous=product.active!==false;product.active=checked;const label=document.querySelector('[data-mobile-product-active-label="'+CSS.escape(String(id))+'"]');if(label)label.textContent=checked?'ATIVO':'INATIVO';setMobileProductSaveState(id,'quick',true);
+    const operator=currentOperator()||requireOperator();if(!operator){input.checked=previous;product.active=previous;setMobileProductSaveState(id,'quick',false,'Operador necessário');return}
+    try{const data=await api('product_quick_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,active:checked,operator})});product.active=data.product?.active!==false;input.checked=product.active;if(label)label.textContent=product.active?'ATIVO':'INATIVO';setMobileProductSaveState(id,'quick',false)}catch(e){product.active=previous;input.checked=previous;if(label)label.textContent=previous?'ATIVO':'INATIVO';setMobileProductSaveState(id,'quick',false,errorMessage(e.message));toast(errorMessage(e.message))}
+  }
+  function bindMobileProductCards(host){
+    host.querySelectorAll('[data-mobile-product-field]').forEach(el=>{const event=el.tagName==='SELECT'||el.type==='date'?'change':'input';el.addEventListener(event,()=>scheduleMobileProductQuickSave(el.dataset.productId,el.dataset.mobileProductField,el.value))});
+    host.querySelectorAll('[data-mobile-product-active]').forEach(el=>el.onchange=()=>saveMobileProductActive(el.dataset.mobileProductActive,el.checked,el));
+    host.querySelectorAll('[data-open-product-basket]').forEach(el=>el.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const basketId=el.dataset.openProductBasket;if(window.DonaAntoniaBasketGuided?.open&&basketId)window.DonaAntoniaBasketGuided.open(basketId,{mode:'model'});else toast('O editor de Cestas/Kits não carregou. Atualize a página e tente novamente.')});
+  }
+
+  function productRow(p){
+    const classification=[categoryLabel(p.category),p.detailed_subcategory||p.subcategory].filter(Boolean).join(' › ');
+    const identity=[p.sku,p.gtin,p.packaging].filter(Boolean).join(' · ');
+    const expiredInactive=p.active===false&&p.deactivation_reason==='expired';
+    const statusTitle=p.active?'Clique para desativar':expiredInactive?'Vencido: corrija a validade antes de ativar':'Clique para ativar';
+    const desktopStatus=p.active?'Ativo':expiredInactive?'Vencido · inativo':'Inativo';
+    const price=(Number(p.sale_price_cents||0)/100).toFixed(2).replace('.',','),cost=(Number(p.cost_cents||0)/100).toFixed(2).replace('.',',');
+    const expiry=p.next_expiration_date||p.expiration_date||'';
+    const validity=p.lot_tracking_complete
+      ?'<div class="product-validity-summary"><span>Próxima validade</span><strong>'+esc(productExpiryLabel(p))+'</strong><small>'+esc(p.active_lot_count||0)+' lotes · editar em Lotes</small></div>'
+      :'<label class="product-inline-field"><span>Validade</span><input data-mobile-product-field="expiration" data-product-id="'+esc(p.id)+'" type="date" value="'+esc(expiry)+'"></label>';
+    return '<div class="list-row products-layout product-operational-row">'+
+      '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
+      '<div class="product-main"><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<span class="sub"><span class="pill '+(p.lot_tracking_complete?'':'warn')+'">'+(p.lot_tracking_complete?'Lotes controlados':'Validade simples')+'</span></span></div>'+
+      '<div class="product-quick-fields"><label class="product-inline-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label><label class="product-inline-field"><span>Custo</span><input data-mobile-product-field="cost" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(cost)+'"></label><span class="mobile-product-save-status saved product-save-inline" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span></div>'+
+      '<div class="product-stock-validity"><label class="product-inline-field"><span>Estoque total</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+validity+'<span class="product-stock-breakdown-inline">'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+' avulso · '+esc(fmtQty(p.basket_locked_quantity||0))+' em cestas/kits</span></div>'+
+      '<div class="product-operational-status"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(desktopStatus)+'</button>'+productKitLinks(p)+'</div>'+
+      '<div class="product-row-actions"><button class="product-action-btn product-zero-stock-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="product-action-btn" data-product-lots="'+esc(p.id)+'">Lotes</button><button class="product-action-btn" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="product-action-btn primary-action" data-edit-product="'+esc(p.id)+'">Editar completo</button></div></div>';
+  }
+
+  async function toggleProductActive(id,btn){
+    const product=state.products.find(p=>p.id===id);
+    if(!product)return;
+    const next=product.active===false;
+    const expired=Boolean(product.expiration_date&&String(product.expiration_date)<cuiabaDayKey(new Date()));
+    if(next&&expired){
+      toast('Produto vencido · corrija a validade antes de ativar');
+      openProductEditor(product);
+      return;
+    }
+    if(!next&&!confirm('Desativar "'+product.name+'"?\n\nEle sairá da vitrine e a validade deixará de entrar nos controles e ofertas automáticas enquanto estiver inativo.'))return;
+    const operator=requireOperator();if(!operator)return;
+    btn.disabled=true;
+    try{
+      const data=await api('product_save',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,
+        sale_price_cents:Number(product.sale_price_cents||0),stock_quantity:Number(product.stock_quantity||0),
+        expiration_date:product.expiration_date||null,
+        auto_expiry_offer_enabled:product.auto_expiry_offer_enabled===true,
+        category:product.category||'',subcategory:product.subcategory||'',packaging:product.packaging||'',
+        image_url:product.image_url||'',description:product.description||'',active:next,operator
+      })});
+      const saved=data.product;
+      if(next&&saved?.active===false&&saved?.deactivation_reason==='expired'){
+        toast('Produto vencido · permanece inativo');
+      }else{
+        toast(next?'Produto ativado':'Produto desativado · fora da vitrine e das validades');
+      }
+      await loadProducts($('#productSearch')?.value.trim()||'',false);
+    }catch(e){
+      toast(errorMessage(e.message));
+      btn.disabled=false;
+    }
+  }
+
+  async function openProductLotsEditor(p){
+    if(!p?.id)return;
+    $('#editorTitle').textContent='Lotes e validades · '+(p.name||'Produto');
+    $('#editorBody').innerHTML='<div class="loading">Carregando lotes…</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="closeLotsEditor">Fechar</button>';
+    $('#closeLotsEditor').onclick=()=>$('#editor').close();
+    $('#editor').showModal();
+    try{
+      const data=await api('product_lots',{id:p.id});
+      paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
+    }catch(e){
+      $('#editorBody').innerHTML='<div class="empty">Não consegui carregar os lotes.<br><small>'+esc(errorMessage(e.message))+'</small></div>';
+    }
+  }
+  function paintProductLotsEditor(p,lots,summary){
+    const complete=p?.lot_tracking_complete===true||summary?.lot_tracking_complete===true;
+    const physical=summary?.bling_physical_qty??p?.stock_quantity??0;
+    const tracked=summary?.tracked_physical_qty??lots.reduce((s,x)=>s+Number(x.quantity_on_hand||0),0);
+    const diff=Number(physical||0)-Number(tracked||0);
+    $('#editorBody').innerHTML=
+      '<div class="offer-note" style="margin-bottom:12px"><strong>'+(complete?'FEFO completo neste produto':'Migração progressiva')+'</strong><br>'+
+      (complete?'A separação pode usar os lotes deste produto pela validade mais próxima.':'Cadastre os lotes quando for conveniente. Só ative o FEFO quando a soma dos lotes bater com o estoque físico do Bling.')+'</div>'+
+      '<div class="product-stock-breakdown" style="margin-bottom:12px">'+
+        '<div class="product-stock-box"><small>Estoque físico / Bling</small><strong>'+esc(fmtQty(physical))+'</strong></div>'+
+        '<div class="product-stock-box"><small>Somado em lotes</small><strong>'+esc(fmtQty(tracked))+'</strong></div>'+
+        '<div class="product-stock-box"><small>Falta distribuir</small><strong>'+esc(fmtQty(Math.max(0,diff)))+'</strong></div>'+
+      '</div>'+
+      '<div class="panel" style="padding:12px;margin-bottom:12px">'+
+        '<strong>Adicionar ou ajustar lote</strong>'+
+        '<div class="purchase-price-grid" style="margin-top:10px">'+
+          '<div class="purchase-field"><label>Lote</label><input id="lotCode" placeholder="Opcional"></div>'+
+          '<div class="purchase-field"><label>Validade</label><input id="lotExpiry" type="date"></div>'+
+          '<div class="purchase-field"><label>Quantidade UN</label><input id="lotQty" type="number" min="0" step="0.001"></div>'+
+        '</div>'+
+        '<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="primary" id="saveProductLot" type="button">Salvar lote</button></div>'+
+      '</div>'+
+      '<div class="history-title"><div><strong>Lotes cadastrados</strong><span class="sub">Mais próxima primeiro.</span></div><b>'+esc(lots.length)+'</b></div>'+
+      '<div class="history-list">'+(lots.length?lots.map((l,i)=>'<div class="history-row"><div><span class="pill '+(i===0&&l.status==="active"?'warn':'')+'">'+esc(l.status||'')+'</span></div><div class="history-main"><strong>Validade '+esc(dateOnly(l.expiration_date))+'</strong><small>Lote '+esc(l.lot_code||'sem código')+' · '+esc(fmtQty(l.quantity_on_hand||0))+' UN'+(i===0&&l.status==="active"?' · sair primeiro quando FEFO estiver ativo':'')+'</small></div></div>').join(''):'<div class="history-empty">Nenhum lote cadastrado ainda.</div>')+'</div>'+
+      '<div class="bling-banner '+(complete?'':'')+'" style="margin-top:12px"><strong>'+(complete?'Controle por lotes ativo':'Ativar quando terminar este produto')+'</strong><small>'+(complete?'Este produto já está no modo FEFO.':'O botão só funciona quando todos os lotes têm quantidade e a soma fecha com o estoque físico do Bling.')+'</small><div class="bling-actions"><button class="primary" id="activateProductFefo" type="button" '+(complete?'disabled':'')+'>'+(complete?'FEFO ativo':'Ativar FEFO neste produto')+'</button></div></div>';
+    $('#saveProductLot').onclick=async()=>{
+      const code=$('#lotCode').value.trim(),exp=$('#lotExpiry').value,qty=Number(String($('#lotQty').value||'').replace(',','.'));
+      if(!exp){toast('Informe a validade');return}
+      if(!Number.isFinite(qty)||qty<0){toast('Informe uma quantidade válida');return}
+      const btn=$('#saveProductLot');btn.disabled=true;btn.textContent='Salvando…';
+      try{
+        const sourceRef='manual-ui:'+p.id+':'+(code||'sem-lote')+':'+exp;
+        const data=await api('product_lot_save',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:p.id,lot_code:code||null,expiration_date:exp,quantity_on_hand:qty,source:'manual',source_ref:sourceRef,received_at:null,metadata:{source_ui:'product_editor'}})
+        });
+        toast('Lote salvo');
+        paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar lote'}
+    };
+    $('#activateProductFefo').onclick=async()=>{
+      if(complete)return;
+      const op=requireOperator();if(!op)return;
+      const btn=$('#activateProductFefo');btn.disabled=true;btn.textContent='Conferindo…';
+      try{
+        const data=await api('product_lot_tracking_complete',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:p.id,complete:true,operator:op})
+        });
+        toast('FEFO ativado neste produto');
+        paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
+        await loadProducts($('#productSearch')?.value.trim()||'',false);
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Ativar FEFO neste produto'}
+    };
+  }
+
+  // PRODUCT_EDITOR_COMPLETE_V1
+  async function openProductEditor(p=null,duplicate=false){
+    const isDuplicate=Boolean(duplicate&&p?.id);
+    const productEditor=$('#editor');
+    if(p?.id&&p?._detail_loaded!==true){
+      $('#editorTitle').textContent=isDuplicate?'Duplicar produto':'Editar produto';
+      $('#editorBody').innerHTML='<div class="loading">Carregando cadastro completo…</div>';
+      $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button>';
+      $('#cancelEditor').onclick=()=>productEditor.close();
+      productEditor.classList.add('product-editor-dialog');
+      if(!productEditor.open){productEditor.addEventListener('close',()=>productEditor.classList.remove('product-editor-dialog'),{once:true});productEditor.showModal()}
+      try{
+        const data=await api('product_detail',{id:p.id});
+        return openProductEditor({...p,...(data.product||{}),identifiers:data.identifiers||[],fiscal:data.fiscal||data.product?.fiscal||null,_detail_loaded:true},duplicate);
+      }catch(e){
+        $('#editorBody').innerHTML='<div class="empty">Não consegui carregar o cadastro completo.<br><small>'+esc(errorMessage(e.message))+'</small><br><button class="secondary" id="retryProductDetail" type="button">Tentar novamente</button></div>';
+        if($('#retryProductDetail'))$('#retryProductDetail').onclick=()=>openProductEditor({...p,_detail_loaded:false},duplicate);
+        return;
+      }
+    }
+    const autoExpiry=isDuplicate?false:Boolean(p?.auto_expiry_offer_enabled);
+    const offer=isDuplicate?null:(p?.offer||null);
+    const manualOffer=offer&&offer?.metadata?.source!=='expiry_auto'?offer:null;
+    const regular=Number(p?.sale_price_cents||0);
+    const derivedDiscount=manualOffer&&regular>0?Math.max(0,Math.round((1-Number(manualOffer.sale_price_cents||0)/regular)*1000)/10):'';
+    const offerDiscount=manualOffer?.metadata?.discount_percent??derivedDiscount;
+    const offerPrice=manualOffer?((Number(manualOffer.sale_price_cents||0)/100).toFixed(2)).replace('.',','):'';
+    const offerDuration=manualOffer?.metadata?.duration_mode||'stock_zero';
+    const fiscal=isDuplicate?{ncm:p?.ncm||p?.fiscal?.ncm||''}:(p?.fiscal||{}),additionalGtins=isDuplicate?[]:(Array.isArray(p?.additional_gtins)?p.additional_gtins:[]);
+    const editorSection=(title,body,open=false)=>'<details class="product-editor-section" data-product-editor-section '+(open?'open':'')+'><summary>'+title+'</summary><div class="product-editor-section-grid">'+body+'</div></details>';
+    $('#editorTitle').textContent=isDuplicate?'Duplicar produto':(p?'Editar produto':'Novo produto');
+    const expiredLifecycle=!isDuplicate&&p?.active===false&&p?.deactivation_reason==='expired';
+    const identification=
+      '<label class="span-2"><span>Nome *</span><input name="name" required value="'+esc(p?.name||'')+'"></label>'+
+      '<label><span>Código / SKU</span><input name="sku" value="'+esc(isDuplicate?'':(p?.sku||''))+'" placeholder="'+(isDuplicate?'Informe o novo SKU':'')+'"></label>'+
+      '<label><span>EAN / GTIN principal</span><input name="gtin" inputmode="numeric" value="'+esc(isDuplicate?'':(p?.gtin||''))+'" placeholder="'+(isDuplicate?'Informe o novo EAN':'')+'"></label>'+
+      '<label class="span-2"><span>EANs adicionais</span><textarea name="additional_gtins" placeholder="Um EAN por linha">'+esc(additionalGtins.join('\n'))+'</textarea><small>Use para EAN antigo/novo do mesmo produto. O sistema impede vincular um EAN já confirmado em outro produto.</small></label>'+
+      '<label><span>Marca</span><input name="brand" value="'+esc(p?.brand||'')+'"></label>'+
+      '<label><span>Embalagem</span><input name="packaging" value="'+esc(p?.packaging||'')+'"></label>';
+    const commercial=
+      '<label><span>Preço de venda</span><input name="price" inputmode="decimal" value="'+esc(((Number(p?.sale_price_cents||0)/100).toFixed(2)).replace('.',','))+'"></label>'+
+      '<label><span>Preço de custo</span><input name="cost" inputmode="decimal" value="'+esc(((Number(p?.cost_cents||0)/100).toFixed(2)).replace('.',','))+'"></label>'+
+      '<label><span>Unidade</span><input name="unit" value="'+esc(p?.unit||'')+'" placeholder="UN, KG, LT…"></label>'+
+      '<label><span>Estoque mínimo</span><input name="min_stock" inputmode="decimal" value="'+esc(p?.min_stock??'')+'"></label>'+
+      '<label class="span-2"><span>Fornecedor principal</span><input name="supplier" value="'+esc(p?.supplier||'')+'"></label>';
+    const classification=
+      '<label><span>Categoria da vitrine</span><select name="category">'+categoryOptions(p?.category||'')+'</select></label>'+
+      '<label><span>Subcategoria</span><input name="subcategory" value="'+esc(p?.subcategory||'')+'"></label>'+
+      '<label><span>Subcategoria detalhada</span><input name="subsubcategory" value="'+esc(p?.detailed_subcategory||'')+'"></label>'+
+      '<label><span>Tags</span><input name="tags" value="'+esc(Array.isArray(p?.tags)?p.tags.join(', '):'')+'" placeholder="Separe por vírgula"></label>'+
+      '<label><span>Categoria para o cliente</span><input name="customer_category" value="'+esc(p?.customer_category||'')+'"></label>'+
+      '<label><span>Subcategoria para o cliente</span><input name="customer_subcategory" value="'+esc(p?.customer_subcategory||'')+'"></label>'+
+      '<label class="span-2"><span>Detalhe para o cliente</span><input name="customer_subsubcategory" value="'+esc(p?.customer_subsubcategory||'')+'"></label>'+
+      '<label class="check"><input name="storefront_featured" type="checkbox" '+(p?.storefront_featured?'checked':'')+'><strong>Destaque na vitrine</strong></label>'+
+      '<label class="check"><input name="is_upsell" type="checkbox" '+(p?.is_upsell?'checked':'')+'><strong>Produto de sugestão/upsell</strong></label>'+
+      '<label class="check"><input name="is_whatsapp_active" type="checkbox" '+(p?.is_whatsapp_active?'checked':'')+'><strong>Ativo no catálogo WhatsApp</strong></label>'+
+      '<label><span>Categoria WhatsApp</span><input name="whatsapp_category" value="'+esc(p?.whatsapp_category||'')+'"></label>';
+    const stock=
+      '<label><span>Estoque físico'+(p&&!isDuplicate?' · Bling':'')+'</span><input name="stock" inputmode="decimal" value="'+esc(isDuplicate?'0':fmtQty(p?.stock_quantity||0))+'">'+(p&&!isDuplicate?'<small>Ao salvar, qualquer alteração continua sendo enviada e conferida no Bling.</small>':'')+'</label>'+
+      '<label><span>Data de validade</span><input name="expiration_date" type="date" value="'+esc(isDuplicate?'':(p?.expiration_date||''))+'"></label>'+
+      '<label><span>Gôndola</span><input name="gondola" type="number" min="1" max="30" step="1" value="'+esc(isDuplicate?'':(p?.gondola_number??''))+'"></label>'+
+      '<label><span>Prateleira</span><input name="shelf" value="'+esc(isDuplicate?'':(p?.shelf_label||''))+'"></label>'+
+      (p&&!isDuplicate?'<div class="product-stock-breakdown span-2"><div class="product-stock-box"><small>Estoque físico / Bling</small><strong>'+esc(fmtQty(p.stock_quantity||0))+'</strong></div><div class="product-stock-box"><small>Estoque avulso vendável</small><strong>'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+'</strong></div><div class="product-stock-box"><small>Registrado em cestas/kits</small><strong>'+esc(fmtQty(p.basket_locked_quantity||0))+'</strong></div>'+(p.stock_breakdown_warning?'<div class="product-stock-warning"><strong>Atenção: há divergência de montagem.</strong> Os lotes registram '+esc(fmtQty(p.basket_locked_quantity||0))+' unidade(s) deste produto em cestas/kits, mas o Bling informa '+esc(fmtQty(p.stock_quantity||0))+' unidade(s) físicas.</div>':'')+'</div>':'');
+    const fiscalBody=
+      '<label><span>NCM</span><input name="fiscal_ncm" inputmode="numeric" maxlength="8" value="'+esc(fiscal?.ncm||p?.ncm||'')+'"></label>'+
+      '<label><span>CEST</span><input name="fiscal_cest" inputmode="numeric" maxlength="7" value="'+esc(fiscal?.cest||'')+'"></label>'+
+      '<label><span>Origem</span><select name="fiscal_origin_code">'+originOptions(fiscal?.origin_code)+'</select></label>'+
+      '<label><span>GTIN comercial</span><input name="fiscal_commercial_gtin" inputmode="numeric" value="'+esc(isDuplicate?'':(fiscal?.commercial_gtin||p?.gtin||''))+'"></label>'+
+      '<label><span>GTIN tributável</span><input name="fiscal_tax_gtin" inputmode="numeric" value="'+esc(fiscal?.tax_gtin||'')+'"></label>'+
+      '<label><span>Unidade comercial</span><input name="fiscal_commercial_unit" value="'+esc(fiscal?.commercial_unit||'')+'"></label>'+
+      '<label><span>Unidade tributável</span><input name="fiscal_tax_unit" value="'+esc(fiscal?.tax_unit||'')+'"></label>'+
+      '<label class="span-2"><span>Descrição fiscal</span><textarea name="fiscal_description">'+esc(fiscal?.fiscal_description||'')+'</textarea></label>'+
+      '<div class="product-editor-readonly-grid"><div class="product-editor-readonly"><small>Situação ST</small><strong>'+esc(fiscal?.st_status||'Não classificado')+'</strong></div><div class="product-editor-readonly"><small>Revisão fiscal</small><strong>'+esc(fiscal?.review_status||'Pendente')+'</strong></div><div class="product-editor-readonly"><small>Segmento fiscal</small><strong>'+esc(fiscal?.tax_segment_name||'—')+'</strong></div></div>'+
+      '<div class="product-editor-helper">Ao salvar alterações fiscais por aqui, a revisão fica registrada como validação humana. Regras derivadas e evidências continuam preservadas.</div>';
+    const imageBody=
+      '<div class="product-image-admin span-2" id="productImagePanel"><div class="product-image-preview"><img id="productImagePreview" src="'+esc(p?.image_url||'/img/sem-foto.svg')+'" alt="Foto do produto" onerror="this.onerror=null;this.src=\'/img/sem-foto.svg\'"></div><div class="product-image-tools"><strong>Foto do produto</strong><small>Envie a foto original. A automação pode padronizar a imagem para a vitrine.</small>'+
+      (!isDuplicate&&p?.id?'<input id="productImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="product-image-actions"><button class="secondary" id="chooseProductImage" type="button">'+(p?.image_url?'Trocar foto original':'Adicionar foto')+'</button><a class="secondary product-google-images-link" id="productGoogleImages" data-google-product-name="'+esc(p?.name||'')+'" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(p?.name||'')+'">Google Imagens ↗</a><button class="primary" id="standardizeProductImage" type="button" '+(!(p?.image_original_url||p?.image_url)?'disabled':'')+'>Padronizar com IA</button></div><div class="product-image-status '+(p?.image_ai_status==='completed'?'ok':p?.image_ai_status==='error'?'error':p?.image_ai_status==='processing'?'warn':'')+'" id="productImageStatus">'+esc(productImageStatusText(p))+'</div>':'<div class="product-image-status">Salve o produto primeiro. Depois você poderá enviar e padronizar a foto aqui.</div>')+
+      '</div></div><label class="span-2"><span>URL da imagem</span><input name="image_url" value="'+esc(p?.image_url||'')+'"><small>Campo técnico; normalmente use os botões acima.</small></label><label class="span-2"><span>Descrição</span><textarea name="description">'+esc(p?.description||'')+'</textarea></label>';
+    const integrationBody=!p||isDuplicate?'<div class="product-editor-helper">Os identificadores de integração aparecem depois que o produto é criado.</div>':
+      '<div class="product-editor-readonly-grid"><div class="product-editor-readonly"><small>ID Bling</small><strong>'+esc(p?.bling_product_id||'—')+'</strong></div><div class="product-editor-readonly"><small>Status de sincronização</small><strong>'+esc(p?.sync_status||'—')+'</strong></div><div class="product-editor-readonly"><small>Origem</small><strong>'+esc(p?.source_system||'—')+'</strong></div><div class="product-editor-readonly"><small>Última sincronização Bling</small><strong>'+(p?.last_bling_sync_at?esc(dateTime(p.last_bling_sync_at)):'—')+'</strong></div><div class="product-editor-readonly"><small>Última contagem</small><strong>'+(p?.last_counted_at?esc(dateTime(p.last_counted_at)):'—')+'</strong></div><div class="product-editor-readonly"><small>Verificação física</small><strong>'+(p?.physically_verified?'Confirmada':'Não confirmada')+'</strong></div></div>';
+    const offerBody=
+      '<label class="check span-2"><input name="active" type="checkbox" '+(!isDuplicate&&p?.active!==false?'checked':'')+'><strong>Produto ativo na vitrine</strong></label>'+
+      '<label class="check span-2"><input name="auto_expiry_offer_enabled" type="checkbox" '+(autoExpiry?'checked':'')+'><span><strong>Ativar oferta automática pela validade</strong><small>60–90 dias: 10% · 30–59 dias: 20% · menos de 30 dias: 40%</small></span></label>'+
+      '<div class="offer-note span-2" id="autoOfferNote">'+(autoExpiry?'A oferta automática está ligada. Desative-a acima para configurar uma oferta manual.':'Você pode definir uma oferta manual. Ao ativá-la, a oferta automática por validade será desligada.')+'</div>'+
+      '<label class="check span-2"><input name="offer_active" type="checkbox" '+(manualOffer?.active?'checked':'')+'><strong>Oferta manual ativa</strong></label>'+
+      '<label><span>Desconto (%)</span><input name="offer_discount" type="number" min="1" max="95" step="0.1" inputmode="decimal" value="'+esc(offerDiscount)+'"></label>'+
+      '<label><span>Valor da oferta</span><input name="offer_price" inputmode="decimal" value="'+esc(offerPrice)+'"></label>'+
+      '<label class="span-2"><span>Validade da oferta</span><select name="offer_duration">'+offerDurationOptions(offerDuration)+'</select></label>';
+    $('#editorBody').innerHTML='<form id="productForm" class="form-grid">'+
+      (isDuplicate?'<div class="offer-note span-2"><strong>Novo produto baseado em '+esc(p?.name||'produto')+'.</strong><br>SKU/EAN, estoque, validade, EANs adicionais e ofertas foram limpos. Os demais dados ficam disponíveis para revisão antes de criar.</div>':'')+
+      (expiredLifecycle?'<div class="offer-note span-2"><strong>Produto desativado automaticamente por vencimento.</strong><br>Corrija a validade antes de reativá-lo.</div>':'')+
+      editorSection('Identificação',identification,true)+editorSection('Comercial',commercial,true)+editorSection('Classificação e canais',classification,true)+editorSection('Estoque, localização e validade',stock,true)+editorSection('Fiscal',fiscalBody,false)+editorSection('Imagem e descrição',imageBody,false)+editorSection('Integrações e auditoria',integrationBody,false)+editorSection('Status e ofertas',offerBody,false)+'</form>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button>'+(p&&!isDuplicate?'<button class="secondary" id="manageProductLots">Lotes/validades</button><button class="secondary" id="duplicateFromEditor">Duplicar</button>':'')+'<button class="primary" id="saveProduct">'+(isDuplicate?'Criar produto duplicado':'Salvar produto')+'</button>';
+    $('#cancelEditor').onclick=()=>productEditor.close();
+    if($('#manageProductLots'))$('#manageProductLots').onclick=()=>openProductLotsEditor(p);
+    if($('#duplicateFromEditor'))$('#duplicateFromEditor').onclick=()=>openProductEditor(p,true);
+    $('#saveProduct').onclick=()=>saveProduct(isDuplicate?'':(p?.id||''),isDuplicate?p.id:'');
+    productEditor.classList.add('product-editor-dialog');
+    if(!productEditor.open){productEditor.addEventListener('close',()=>productEditor.classList.remove('product-editor-dialog'),{once:true});productEditor.showModal()}
+
+    if(!isDuplicate&&p?.id&&$('#chooseProductImage')){
+      $('#chooseProductImage').onclick=()=>$('#productImageFile').click();
+      $('#productImageFile').onchange=async e=>{
+        const file=e.currentTarget.files?.[0];if(!file)return;
+        const choose=$('#chooseProductImage'),std=$('#standardizeProductImage'),status=$('#productImageStatus');
+        choose.disabled=true;if(std)std.disabled=true;status.className='product-image-status warn';status.textContent='Enviando e salvando a foto original…';
+        try{const data=await uploadProductImageSource(p.id,file);p.image_url=data.image_url;p.image_original_url=data.image_original_url;p.image_ai_status=null;p.image_ai_url='';p.image_ai_error=null;$('#productImagePreview').src=data.image_url;$('#productForm [name="image_url"]').value=data.image_url;status.className='product-image-status ok';status.textContent='Foto original salva. Agora você pode padronizar com IA.';choose.textContent='Trocar foto original';if(std)std.disabled=false;toast('Foto original salva')}
+        catch(err){status.className='product-image-status error';status.textContent=errorMessage(err.message);toast(errorMessage(err.message))}finally{choose.disabled=false;e.currentTarget.value=''}
+      };
+      if($('#standardizeProductImage'))$('#standardizeProductImage').onclick=async()=>{
+        const btn=$('#standardizeProductImage'),choose=$('#chooseProductImage'),status=$('#productImageStatus');btn.disabled=true;choose.disabled=true;status.className='product-image-status warn';status.textContent='Padronizando e conferindo fidelidade da embalagem… isso pode levar alguns segundos.';
+        try{const data=await standardizeProductImage(p.id);p.image_url=data.image_url;p.image_ai_url=data.image_url;p.image_ai_status='completed';p.image_original_url=data.image_original_url||p.image_original_url;p.image_ai_validation=data.validation||null;p.image_ai_processed_at=new Date().toISOString();$('#productImagePreview').src=data.image_url;$('#productForm [name="image_url"]').value=data.image_url;const v=data.validation||{};status.className='product-image-status ok';status.textContent='Imagem padronizada e aprovada'+(v.fidelity_score!=null?' · fidelidade '+Math.round(Number(v.fidelity_score)*100)+'%':'')+'.';toast('Imagem padronizada e substituída no produto')}
+        catch(err){status.className='product-image-status error';status.textContent='A automação não substituiu a foto: '+errorMessage(err.message);toast('A imagem original foi mantida. A padronização não passou na validação.')}finally{btn.disabled=false;choose.disabled=false}
+      };
+    }
+    const form=$('#productForm');
+    form.dataset.fiscalOriginal=JSON.stringify(productFiscalDraft(form));
+    const auto=form.querySelector('[name="auto_expiry_offer_enabled"]');
+    const manualControls=[...form.querySelectorAll('[name="offer_active"],[name="offer_discount"],[name="offer_price"],[name="offer_duration"]')];
+    const syncAutoState=()=>{const disabled=auto.checked;manualControls.forEach(el=>el.disabled=disabled);$('#autoOfferNote').textContent=disabled?'A oferta automática está ligada. Desative-a acima para configurar uma oferta manual.':'Você pode definir uma oferta manual. Ao ativá-la, a oferta automática por validade será desligada.'};
+    auto.onchange=syncAutoState;syncAutoState();
+    const discount=form.querySelector('[name="offer_discount"]'),offerPriceEl=form.querySelector('[name="offer_price"]'),regularPrice=form.querySelector('[name="price"]');
+    discount.oninput=()=>{const base=centsFromInput(regularPrice.value),d=Number(discount.value);if(base>0&&Number.isFinite(d)&&d>0&&d<100)offerPriceEl.value=((Math.round(base*(100-d)/100))/100).toFixed(2).replace('.',',')};
+    offerPriceEl.oninput=()=>{const base=centsFromInput(regularPrice.value),sale=centsFromInput(offerPriceEl.value);if(base>0&&sale>0&&sale<base)discount.value=(Math.round((1-sale/base)*1000)/10).toString()};
+    regularPrice.oninput=()=>{if(discount.value)discount.oninput()};
+  }
+
+  function originOptions(current){
+    const labels=['0 · Nacional','1 · Estrangeira · importação direta','2 · Estrangeira · mercado interno','3 · Nacional · conteúdo importado > 40%','4 · Nacional · processos produtivos básicos','5 · Nacional · conteúdo importado ≤ 40%','6 · Estrangeira · importação direta sem similar','7 · Estrangeira · mercado interno sem similar','8 · Nacional · conteúdo importado > 70%'];
+    return '<option value="">Não informado</option>'+labels.map((l,i)=>'<option value="'+i+'" '+(String(current??'')===String(i)?'selected':'')+'>'+l+'</option>').join('');
+  }
+
+  function categoryOptions(current){
+    const cats=[['','Sem categoria'],['mercearia','Mercearia'],['limpeza_lavanderia','Limpeza e lavanderia'],['higiene_beleza','Higiene e beleza'],['casa_pet','Casa e pet']];
+    return cats.map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
+  }
+  function productFiscalDraft(form){return {ncm:form.querySelector('[name="fiscal_ncm"]')?.value||'',cest:form.querySelector('[name="fiscal_cest"]')?.value||'',origin_code:form.querySelector('[name="fiscal_origin_code"]')?.value||'',commercial_gtin:form.querySelector('[name="fiscal_commercial_gtin"]')?.value||'',tax_gtin:form.querySelector('[name="fiscal_tax_gtin"]')?.value||'',commercial_unit:form.querySelector('[name="fiscal_commercial_unit"]')?.value||'',tax_unit:form.querySelector('[name="fiscal_tax_unit"]')?.value||'',fiscal_description:form.querySelector('[name="fiscal_description"]')?.value||''}}
+  function centsFromInput(v){
+    const clean=String(v||'0').replace(/\./g,'').replace(',','.');
+    const n=Number(clean);return Number.isFinite(n)?Math.max(0,Math.round(n*100)):0;
+  }
+  function offerDurationOptions(current){
+    return [['stock_zero','Até zerar o estoque'],['5','5 dias'],['10','10 dias'],['15','15 dias']]
+      .map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
+  }
+  async function saveProduct(id,duplicateFromId=""){
+    const formEl=$('#productForm'),form=new FormData(formEl),btn=$('#saveProduct');
+    const fiscalDraft=productFiscalDraft(formEl),fiscalOriginal=formEl.dataset.fiscalOriginal||'',fiscalChanged=JSON.stringify(fiscalDraft)!==fiscalOriginal;
+    const operator=requireOperator();if(!operator)return;
+    const requestedStock=Number(String(form.get('stock')||0).replace(',','.'))||0;
+    let productSaved=false,stockUpdateStarted=false;
+    btn.disabled=true;btn.textContent='Salvando…';
+    try{
+      const autoExpiry=form.get('auto_expiry_offer_enabled')==='on';
+      const data=await api('product_save',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          id,duplicate_from_id:duplicateFromId||null,name:form.get('name'),sku:form.get('sku'),gtin:form.get('gtin'),
+          sale_price_cents:centsFromInput(form.get('price')),cost_cents:centsFromInput(form.get('cost')),
+          stock_quantity:requestedStock,
+          expiration_date:form.get('expiration_date')||null,
+          auto_expiry_offer_enabled:autoExpiry,
+          category:form.get('category'),subcategory:form.get('subcategory'),subsubcategory:form.get('subsubcategory'),packaging:form.get('packaging'),
+          brand:form.get('brand'),supplier:form.get('supplier'),unit:form.get('unit'),min_stock:form.get('min_stock'),
+          gondola:form.get('gondola'),shelf:form.get('shelf'),tags:String(form.get('tags')||'').split(/[,;]+/).map(x=>x.trim()).filter(Boolean),
+          storefront_featured:form.get('storefront_featured')==='on',is_upsell:form.get('is_upsell')==='on',is_whatsapp_active:form.get('is_whatsapp_active')==='on',whatsapp_category:form.get('whatsapp_category'),
+          customer_category:form.get('customer_category'),customer_subcategory:form.get('customer_subcategory'),customer_subsubcategory:form.get('customer_subsubcategory'),
+          additional_gtins:String(form.get('additional_gtins')||'').split(/[\s,;]+/).map(x=>x.replace(/\D+/g,'')).filter(Boolean),
+          ...(fiscalChanged?{fiscal:fiscalDraft}:{}),
+          image_url:form.get('image_url'),description:form.get('description'),active:form.get('active')==='on',operator
+        })
+      });
+      productSaved=true;
+      let stockResult=null;
+      const currentEffective=Number(data.product?.stock_quantity??requestedStock);
+      if(id&&Math.abs(currentEffective-requestedStock)>0.0001){
+        stockUpdateStarted=true;btn.textContent='Atualizando estoque no Bling…';
+        stockResult=await api('product_stock_set',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:data.product_id,stock_quantity:requestedStock,operator})
+        });
+      }
+      if(!autoExpiry&&document.querySelector('#productForm [name="offer_active"]')){
+        await api('offer_save',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            product_id:data.product_id,
+            active:form.get('offer_active')==='on',
+            discount_percent:Number(String(form.get('offer_discount')||'').replace(',','.'))||0,
+            sale_price_cents:centsFromInput(form.get('offer_price')),
+            duration:form.get('offer_duration')||'stock_zero'
+          })
+        });
+      }
+      $('#editor').close();
+      toast(stockResult?.verified===true?'Produto salvo · estoque '+fmtQty(requestedStock)+' confirmado no Bling':(duplicateFromId?'Produto duplicado e criado':'Produto salvo'));
+      if(state.tab==='expiry')renderExpirations();else renderProducts($('#productSearch')?.value.trim()||'');
+    }catch(e){
+      if(productSaved&&stockUpdateStarted)toast('Dados do produto salvos, mas estoque NÃO salvo: '+errorMessage(e.message));
+      else toast(errorMessage(e.message));
+      btn.disabled=false;btn.textContent='Salvar produto';
+    }
+  }
+
+  function expiryDaysText(days){
+    if(days<0)return 'Vencido há '+Math.abs(days)+' dia'+(Math.abs(days)===1?'':'s');
+    if(days===0)return 'Vence hoje';
+    return days+' dia'+(days===1?'':'s');
+  }
+  function expiryDaysClass(days){
+    return days<0?'danger':days<30?'danger':days<60?'warn':'ok';
+  }
+  function renderExpirySummary(summary={}){
+    return '<div class="expiry-summary">'+
+      '<div class="expiry-card danger"><small>Vencidos desativados</small><strong>'+esc(summary.expired_deactivated??summary.expired??0)+'</strong></div>'+
+      '<div class="expiry-card danger"><small>Menos de 30 dias</small><strong>'+esc(summary.under_30||0)+'</strong></div>'+
+      '<div class="expiry-card warn"><small>30 a 59 dias</small><strong>'+esc(summary.days_30_59||0)+'</strong></div>'+
+      '<div class="expiry-card"><small>60 a 90 dias</small><strong>'+esc(summary.days_60_90||0)+'</strong></div>'+
+      '<div class="expiry-card"><small>Sem validade</small><strong>'+esc(summary.without_expiration||0)+'</strong></div>'+
+      '<div class="expiry-card"><small>Oferta auto ligada</small><strong>'+esc(summary.auto_enabled||0)+'</strong></div>'+
+    '</div>';
+  }
+  function expiryRow(p){
+    const days=Number(p.days_left||0),expired=days<0;
+    const offer=p.offer||null;
+    const offerActive=offer?.active===true;
+    const offerSource=offer?.metadata?.source==='expiry_auto'?'Automática':'Manual';
+    const offerInfo=offerActive
+      ? offerSource+' · '+money(offer.sale_price_cents)
+      : (p.auto_expiry_offer_enabled&&days>=0?'Regra '+esc(p.suggested_discount_percent)+'%':'Sem oferta ativa');
+    return '<div class="expiry-row '+(expired?'expired':'')+'" data-expiry-row="'+esc(p.id)+'">'+
+      '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
+      '<div class="expiry-main"><span class="row-title">'+esc(p.name)+'</span><span class="sub">Estoque '+esc(fmtQty(p.stock_quantity||0))+' · '+esc(p.gtin||p.sku||'sem EAN')+'</span><span class="sub">'+offerInfo+'</span></div>'+
+      '<div class="expiry-date-wrap"><input class="expiry-date-input" type="date" data-expiry-date value="'+esc(p.expiration_date||'')+'" aria-label="Data de validade de '+esc(p.name)+'"></div>'+
+      '<div class="expiry-days '+expiryDaysClass(days)+'">'+esc(expiryDaysText(days))+(expired?'<span class="sub" style="color:#b3261e">Estoque zerado</span>':'')+'</div>'+
+      '<label class="expiry-auto"><input type="checkbox" data-expiry-auto '+(p.auto_expiry_offer_enabled?'checked':'')+'><span><strong>Oferta automática</strong><small>'+(days>=0?'Regra atual: '+esc(p.suggested_discount_percent)+'%':'Vencido · oferta desligada')+'</small></span></label>'+
+      '<button class="text expiry-edit" type="button" data-expiry-edit="'+esc(p.id)+'">Editar</button>'+
+    '</div>';
+  }
+  async function renderExpirations(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Validades</h1><p>Produtos ativos com vencimento até 90 dias, do mais próximo para o mais distante.</p></div><button class="secondary" id="refreshExpiry">Atualizar</button></div>'+
+      '<div id="expirySummary">'+renderExpirySummary({})+'</div>'+
+      '<div class="expiry-help"><strong>Regra de vencimento:</strong> ao vencer, o produto é desativado automaticamente, sai da vitrine, tem o estoque zerado e as ofertas desligadas. Produtos inativos não entram nos cálculos futuros de validade.</div>'+
+      '<div id="expiryExpiredNotice"></div>'+
+      '<div class="panel"><div id="expiryRows"><div class="loading">Carregando validades…</div></div></div>'+
+      '<section class="panel" style="margin-top:14px"><div class="history-title" style="padding:12px 12px 0"><div><strong>Histórico de validade e ativação</strong><span class="sub">Quem alterou, reativou ou foi desativado pela regra automática</span></div><button class="text" id="refreshExpiryAudit" type="button">Atualizar</button></div><div id="expiryAudit"><div class="loading">Carregando histórico…</div></div></section>';
+    $('#refreshExpiry').onclick=loadExpirations;
+    $('#refreshExpiryAudit').onclick=loadExpiryAudit;
+    await loadExpirations();
+    loadExpiryAudit();
+  }
+  function expiryRangeSummary(products,inventory={}){
+    return {
+      expired:products.filter(p=>Number(p.days_left)<0).length,
+      under_30:products.filter(p=>Number(p.days_left)>=0&&Number(p.days_left)<30).length,
+      days_30_59:products.filter(p=>Number(p.days_left)>=30&&Number(p.days_left)<60).length,
+      days_60_90:products.filter(p=>Number(p.days_left)>=60&&Number(p.days_left)<=90).length,
+      without_expiration:inventory.without_expiration??'—',
+      auto_enabled:inventory.auto_enabled??'—',
+      total_products:inventory.total_products??'—'
+    };
+  }
+  async function activeValidityInventorySummary(){
+    let offset=0,pages=0,total=0,without=0,auto=0;
+    while(offset!=null&&pages<100){
+      const page=await api('products',{offset,limit:100});
+      const rows=page.products||[];
+      for(const p of rows){
+        if(p.active===false)continue;
+        total++;
+        if(!p.expiration_date)without++;
+        if(p.auto_expiry_offer_enabled===true)auto++;
+      }
+      offset=page.next_offset;
+      pages++;
+    }
+    return {total_products:total,without_expiration:without,auto_enabled:auto};
+  }
+  function renderExpiredDeactivatedNotice(rows=[],summary={}){
+    const total=Number(summary.expired_deactivated??summary.expired??0);
+    if(!total)return '';
+    const examples=rows.slice(0,6).map(p=>esc(p.name)+' · '+esc(fmtDate(p.expiration_date))).join(' · ');
+    return '<div class="bling-banner" style="margin-bottom:14px"><strong>'+esc(total)+' produto(s) vencido(s) já foram desativados automaticamente</strong><small>Estão fora da vitrine, com estoque zerado e ofertas desligadas.'+(examples?' Recentes: '+examples+(total>rows.length?'…':''):'')+'</small></div>';
+  }
+
+  function lifecycleEventLabel(event){
+    return {reactivated:'Reativado',manual_deactivated:'Desativado manualmente',auto_expired_deactivation:'Desativado por vencimento',expiration_changed:'Validade alterada'}[event]||event||'Alteração';
+  }
+  function lifecycleAuditRow(r){
+    const p=r.product||{},before=r.previous_expiration_date?dateOnly(r.previous_expiration_date):'sem validade',after=r.new_expiration_date?dateOnly(r.new_expiration_date):'sem validade';
+    const change=before!==after?'Validade: '+before+' → '+after:(r.previous_active!==r.new_active?(r.new_active?'Inativo → ativo':'Ativo → inativo'):'');
+    return '<div class="audit-row"><div><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc(lifecycleEventLabel(r.event))+(change?' · '+esc(change):'')+'</small></div><div><strong>'+esc(r.actor_label||'Não identificado')+'</strong><small>'+(r.actor_type==='system'?'Automático':'Operador')+'</small></div><div class="audit-time"><strong>'+esc(dateTime(r.created_at))+'</strong><small>'+esc(p.gtin||p.sku||'')+'</small></div></div>';
+  }
+  async function loadExpiryAudit(){
+    const host=$('#expiryAudit');if(!host)return;
+    try{
+      const data=await api('product_lifecycle_audit',{limit:40});
+      state.productAudit=data.audit||[];
+      host.innerHTML=state.productAudit.length?'<div class="audit-list">'+state.productAudit.map(lifecycleAuditRow).join('')+'</div>':'<div class="empty">Ainda não há alterações registradas.</div>';
+    }catch(e){
+      host.innerHTML='<div class="empty">Não consegui carregar o histórico agora.</div>';
+    }
+  }
+
+  async function loadExpirations(){
+    const host=$('#expiryRows');
+    try{
+      const data=await api('expirations');
+      state.expiryProducts=(data.products||[]).filter(p=>p.active!==false);
+      state.expiredDeactivated=data.expired_deactivated||[];
+      if(data.active_only===true){
+        state.expirySummary=data.summary||{};
+      }else{
+        let inventory={};
+        try{inventory=await activeValidityInventorySummary()}catch{}
+        state.expirySummary=expiryRangeSummary(state.expiryProducts,inventory);
+      }
+      $('#expirySummary').innerHTML=renderExpirySummary(state.expirySummary);
+      if($('#expiryExpiredNotice'))$('#expiryExpiredNotice').innerHTML=renderExpiredDeactivatedNotice(state.expiredDeactivated,state.expirySummary);
+      host.innerHTML=state.expiryProducts.length?state.expiryProducts.map(expiryRow).join(''):'<div class="empty">Nenhum produto ativo com validade nos próximos 90 dias.</div>';
+      host.querySelectorAll('[data-expiry-date]').forEach(el=>el.onchange=()=>saveExpiryRow(el.closest('[data-expiry-row]')));
+      host.querySelectorAll('[data-expiry-auto]').forEach(el=>el.onchange=()=>saveExpiryRow(el.closest('[data-expiry-row]')));
+      host.querySelectorAll('[data-expiry-edit]').forEach(btn=>btn.onclick=()=>openProductEditor(state.expiryProducts.find(p=>p.id===btn.dataset.expiryEdit)));
+    }catch(e){
+      host.innerHTML='<div class="empty">Não consegui carregar as validades. <button class="text" id="retryExpiry">Tentar novamente</button></div>';
+      if($('#retryExpiry'))$('#retryExpiry').onclick=loadExpirations;
+    }
+  }
+  async function saveExpiryRow(row){
+    if(!row)return;
+    const id=row.dataset.expiryRow,date=row.querySelector('[data-expiry-date]')?.value||'',auto=row.querySelector('[data-expiry-auto]')?.checked===true;
+    const operator=requireOperator();if(!operator)return;
+    row.querySelectorAll('input,button').forEach(el=>el.disabled=true);
+    try{
+      const data=await api('expiration_save',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({product_id:id,expiration_date:date||null,auto_expiry_offer_enabled:auto,operator})
+      });
+      const p=data.product;
+      if(p?.active===false&&p?.deactivation_reason==='expired')toast('Validade vencida · produto desativado automaticamente');
+      else toast(auto?'Validade salva · oferta automática ligada':'Validade salva');
+      await loadExpirations();
+    }catch(e){
+      toast(errorMessage(e.message));
+      row.querySelectorAll('input,button').forEach(el=>el.disabled=false);
+    }
+  }
+
+
+  function numericPadHtml(prefix){
+    return '<div class="keypad">'+
+      [1,2,3,4,5,6,7,8,9].map(n=>'<button type="button" data-'+prefix+'-key="'+n+'">'+n+'</button>').join('')+
+      '<button class="utility" type="button" data-'+prefix+'-key="clear">Limpar</button>'+
+      '<button type="button" data-'+prefix+'-key="0">0</button>'+
+      '<button class="utility" type="button" data-'+prefix+'-key="back">⌫</button>'+
+    '</div>';
+  }
+
+  function inventoryIncidentLabel(v){
+    return ({damage:'Avaria',expired:'Vencido',loss:'Perda / extravio',return:'Retorno',other:'Outro'})[v]||v||'Ocorrência';
+  }
+  function setBalanceMode(mode){
+    stopBalanceCamera();
+    state.balanceMode=mode==='incident'?'incident':'count';
+    state.balanceProduct=null;state.balanceQty='';
+    renderBalance();
+  }
+  async function loadInventoryIncidents(){
+    try{
+      const data=await api('inventory_incidents',{limit:30});
+      state.inventoryIncidentSummary=data.inventory||{};
+      state.inventoryIncidents=data.inventory?.incidents||[];
+      paintBalance();
+    }catch{}
+  }
+  async function inventorySheetImageData(file){
+    if(!file||!String(file.type||'').startsWith('image/'))throw new Error('Selecione uma foto da folha A4.');
+    let bitmap=null,img=null,src='';
+    try{bitmap=await createImageBitmap(file,{imageOrientation:'from-image'})}catch{}
+    if(!bitmap){
+      src=URL.createObjectURL(file);
+      img=await new Promise((resolve,reject)=>{const el=new Image();el.onload=()=>resolve(el);el.onerror=reject;el.src=src});
+    }
+    const sw=bitmap?.width||img.naturalWidth,sh=bitmap?.height||img.naturalHeight;
+    if(!sw||!sh){if(src)URL.revokeObjectURL(src);throw new Error('Não consegui abrir a foto.')}
+    const encode=(maxSide,quality)=>{
+      const scale=Math.min(1,maxSide/Math.max(sw,sh)),w=Math.max(1,Math.round(sw*scale)),h=Math.max(1,Math.round(sh*scale));
+      const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(bitmap||img,0,0,w,h);
+      return canvas.toDataURL('image/jpeg',quality);
+    };
+    let data=encode(3200,.90);
+    if(data.length>10500000)data=encode(2700,.85);
+    if(data.length>12500000)data=encode(2300,.82);
+    bitmap?.close?.();if(src)URL.revokeObjectURL(src);
+    if(data.length>14000000)throw new Error('A foto ficou grande demais. Tente novamente um pouco mais distante.');
+    return data;
+  }
+
+
+  let inventorySheetCvPromise=null,inventorySheetTesseractPromise=null;
+
+  const INVENTORY_SCRIPT_TIMEOUT_MS=6500;
+  const INVENTORY_SHEET_READ_TIMEOUT_MS=45000;
+
+  function inventorySheetWithTimeout(promise,ms,message){
+    let timer=null;
+    const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(message)),ms)});
+    return Promise.race([promise,timeout]).finally(()=>{if(timer)clearTimeout(timer)});
+  }
+
+  function inventorySheetLoadScript(id,src){
+    const existing=document.getElementById(id);
+    if(existing?.dataset?.ready==='1')return Promise.resolve();
+    return new Promise((resolve,reject)=>{
+      let script=existing;
+      let finished=false;
+      const cleanup=()=>{
+        if(timer)clearTimeout(timer);
+        script?.removeEventListener?.('load',onload);
+        script?.removeEventListener?.('error',onerror);
+      };
+      const done=()=>{if(finished)return;finished=true;if(script)script.dataset.ready='1';cleanup();resolve()};
+      const fail=(error)=>{if(finished)return;finished=true;cleanup();if(script&&script.dataset.ready!=='1')script.remove();reject(error)};
+      const onload=()=>done();
+      const onerror=()=>fail(new Error('Falha ao carregar '+id));
+      const timer=setTimeout(()=>fail(new Error('Tempo limite ao carregar '+id)),INVENTORY_SCRIPT_TIMEOUT_MS);
+      if(!script){
+        script=document.createElement('script');script.id=id;script.src=src;script.async=true;
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load',onload,{once:true});
+      script.addEventListener('error',onerror,{once:true});
+      if(script.dataset.ready==='1')done();
+    });
+  }
+
+
+  async function inventorySheetFileCanvas(file,maxSide=1800){
+    let bitmap=null,img=null,url='';
+    try{bitmap=await createImageBitmap(file,{imageOrientation:'from-image'})}catch{}
+    if(!bitmap){
+      url=URL.createObjectURL(file);
+      img=await new Promise((resolve,reject)=>{
+        const el=new Image();
+        el.onload=()=>resolve(el);
+        el.onerror=()=>reject(new Error('Não consegui abrir esta imagem no celular.'));
+        el.src=url;
+      });
+    }
+    try{
+      const sw=bitmap?.width||img.naturalWidth,sh=bitmap?.height||img.naturalHeight;
+      if(!sw||!sh)throw new Error('A imagem está vazia ou em formato incompatível.');
+      const scale=Math.min(1,maxSide/Math.max(sw,sh)),cw=Math.max(1,Math.round(sw*scale)),ch=Math.max(1,Math.round(sh*scale));
+      const canvas=document.createElement('canvas');canvas.width=cw;canvas.height=ch;
+      const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,cw,ch);ctx.drawImage(bitmap||img,0,0,cw,ch);
+      return canvas;
+    }finally{
+      bitmap?.close?.();if(url)URL.revokeObjectURL(url);
+    }
+  }
+
+  async function inventorySheetOpenCv(){
+    if(inventorySheetCvPromise)return inventorySheetCvPromise;
+    inventorySheetCvPromise=(async()=>{
+      await inventorySheetLoadScript('inventoryOpenCv','https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js');
+      let lib=window.cv;
+      if(lib instanceof Promise)lib=await lib;
+      for(let i=0;i<200&&!(lib&&lib.Mat);i++){await new Promise(r=>setTimeout(r,25));lib=window.cv;if(lib instanceof Promise)lib=await lib}
+      if(!(lib&&lib.Mat))throw new Error('OpenCV local não iniciou.');
+      return lib;
+    })();
+    return inventorySheetCvPromise;
+  }
+
+  async function inventorySheetOcrWorkers(){
+    if(state.inventorySheetOcrWorkers)return state.inventorySheetOcrWorkers;
+    if(inventorySheetTesseractPromise)return inventorySheetTesseractPromise;
+    inventorySheetTesseractPromise=(async()=>{
+      await inventorySheetLoadScript('inventoryTesseract','https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js');
+      if(!window.Tesseract?.createWorker)throw new Error('OCR local não iniciou.');
+      const workers=[];
+      for(let i=0;i<2;i++){
+        const w=await window.Tesseract.createWorker('eng',1);
+        await w.setParameters({
+          tessedit_char_whitelist:'0123456789',
+          tessedit_pageseg_mode:window.Tesseract.PSM.SINGLE_WORD,
+          user_defined_dpi:'300'
+        });
+        workers.push(w);
+      }
+      state.inventorySheetOcrWorkers=workers;
+      return workers;
+    })();
+    try{return await inventorySheetTesseractPromise}finally{inventorySheetTesseractPromise=null}
+  }
+
+  function inventorySheetOrderCorners(points){
+    const sums=points.map((p,i)=>({i,v:p.x+p.y})),diffs=points.map((p,i)=>({i,v:p.y-p.x}));
+    const tl=points[sums.reduce((a,b)=>a.v<b.v?a:b).i],br=points[sums.reduce((a,b)=>a.v>b.v?a:b).i];
+    const tr=points[diffs.reduce((a,b)=>a.v<b.v?a:b).i],bl=points[diffs.reduce((a,b)=>a.v>b.v?a:b).i];
+    return [tl,tr,br,bl];
+  }
+
+  async function inventorySheetWarpPage(file,sourceCanvas=null){
+    const cv=await inventorySheetOpenCv();
+    const input=sourceCanvas||await inventorySheetFileCanvas(file,1800);
+    const cw=input.width,ch=input.height;
+    const src=cv.imread(input),gray=new cv.Mat(),blur=new cv.Mat(),edges=new cv.Mat(),contours=new cv.MatVector(),hierarchy=new cv.Mat();
+    let best=null,bestArea=0;
+    try{
+      cv.cvtColor(src,gray,cv.COLOR_RGBA2GRAY,0);
+      cv.GaussianBlur(gray,blur,new cv.Size(5,5),0,0,cv.BORDER_DEFAULT);
+      cv.Canny(blur,edges,45,140,3,false);
+      cv.findContours(edges,contours,hierarchy,cv.RETR_LIST,cv.CHAIN_APPROX_SIMPLE);
+      const imageArea=cw*ch;
+      for(let i=0;i<contours.size();i++){
+        const cnt=contours.get(i),peri=cv.arcLength(cnt,true),approx=new cv.Mat();
+        try{
+          cv.approxPolyDP(cnt,approx,0.02*peri,true);
+          if(approx.rows!==4)continue;
+          const area=Math.abs(cv.contourArea(approx));
+          if(area<imageArea*.28||area<=bestArea)continue;
+          const pts=[];
+          for(let r=0;r<4;r++){const p=approx.intPtr(r,0);pts.push({x:p[0],y:p[1]})}
+          best=inventorySheetOrderCorners(pts);bestArea=area;
+        }finally{approx.delete();cnt.delete()}
+      }
+      if(!best)throw new Error('Não consegui localizar as quatro bordas da folha. Tire a foto com a folha inteira visível e fundo contrastante.');
+      const outW=1260,outH=1782;
+      const srcPts=cv.matFromArray(4,1,cv.CV_32FC2,best.flatMap(p=>[p.x,p.y]));
+      const dstPts=cv.matFromArray(4,1,cv.CV_32FC2,[0,0,outW-1,0,outW-1,outH-1,0,outH-1]);
+      const M=cv.getPerspectiveTransform(srcPts,dstPts),dst=new cv.Mat();
+      try{
+        cv.warpPerspective(src,dst,M,new cv.Size(outW,outH),cv.INTER_CUBIC,cv.BORDER_CONSTANT,new cv.Scalar(255,255,255,255));
+        const canvas=document.createElement('canvas');canvas.width=outW;canvas.height=outH;cv.imshow(canvas,dst);
+        const ratio=bestArea/(cw*ch),confidence=Math.max(.90,Math.min(.99,.90+(ratio-.28)*.12));
+        return {canvas,confidence};
+      }finally{srcPts.delete();dstPts.delete();M.delete();dst.delete()}
+    }finally{src.delete();gray.delete();blur.delete();edges.delete();contours.delete();hierarchy.delete()}
+  }
+
+  function inventorySheetFieldCrop(pageCanvas,slot,field){
+    const row=Math.floor((slot-1)/5),col=(slot-1)%5;
+    const pageW=210,pageH=297,gridLeft=5,gridTop=25,gridW=200,gridH=265,gap=1.15;
+    const cardW=(gridW-gap*4)/5,cardH=(gridH-gap*4)/5;
+    const cardX=gridLeft+col*(cardW+gap),cardY=gridTop+row*(cardH+gap);
+    const contentW=cardW-1,fieldGap=.6,fieldW=(contentW-fieldGap)/2;
+    let x=cardX+.5+(field==='gondola'?fieldW+fieldGap:0),y=cardY+cardH-.5-8.4,w=fieldW,h=8.4;
+    x+=.65;y+=.65;w-=1.3;h-=1.3;
+    const sx=x/pageW*pageCanvas.width,sy=y/pageH*pageCanvas.height,sw=w/pageW*pageCanvas.width,sh=h/pageH*pageCanvas.height;
+    const out=document.createElement('canvas');out.width=420;out.height=170;
+    const ctx=out.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,out.width,out.height);
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    ctx.drawImage(pageCanvas,sx,sy,sw,sh,12,12,out.width-24,out.height-24);
+    return out;
+  }
+
+  function inventorySheetThresholdCanvas(source){
+    const out=document.createElement('canvas');out.width=source.width;out.height=source.height;
+    const ctx=out.getContext('2d',{alpha:false});ctx.drawImage(source,0,0);
+    const im=ctx.getImageData(0,0,out.width,out.height),d=im.data,hist=new Uint32Array(256);
+    for(let i=0;i<d.length;i+=4){const y=Math.max(0,Math.min(255,Math.round(.299*d[i]+.587*d[i+1]+.114*d[i+2])));hist[y]++}
+    const total=out.width*out.height;let sum=0;for(let i=0;i<256;i++)sum+=i*hist[i];
+    let sumB=0,wB=0,maxVar=0,threshold=180;
+    for(let t=0;t<256;t++){wB+=hist[t];if(!wB)continue;const wF=total-wB;if(!wF)break;sumB+=t*hist[t];const mB=sumB/wB,mF=(sum-sumB)/wF,v=wB*wF*(mB-mF)*(mB-mF);if(v>maxVar){maxVar=v;threshold=t}}
+    threshold=Math.max(115,Math.min(215,threshold));
+    for(let i=0;i<d.length;i+=4){const y=.299*d[i]+.587*d[i+1]+.114*d[i+2],v=y<threshold?0:255;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255}
+    ctx.putImageData(im,0,0);return out;
+  }
+
+  function inventorySheetParseDigits(text,field,confidence){
+    const raw=String(text||'').trim(),digits=raw.replace(/\D+/g,'');
+    const value=digits?Number(digits):null,max=field==='quantity'?100000:9999,min=field==='quantity'?0:1;
+    const valid=Number.isInteger(value)&&value>=min&&value<=max;
+    return {value:valid?value:null,confidence:Math.max(0,Math.min(1,Number(confidence||0)/100)),ambiguous:!valid};
+  }
+
+
+  function inventorySheetParseQrText(raw){
+    const text=String(raw||'').trim().toUpperCase();
+    const m=text.match(/^DA_BAL1\|(BAL-[A-Z0-9-]{6,40})\|(\d{1,5})$/);
+    if(!m)return null;
+    const page=Number(m[2]);
+    return Number.isInteger(page)&&page>=1?{sheet_token:text,batch_code:m[1],page_number:page}:null;
+  }
+
+  async function inventorySheetDecodeQr(pageCanvas){
+    const canvases=[pageCanvas];
+    const regions=[
+      [0,0,1,.28],
+      [.55,0,.45,.34],
+      [0,0,.45,.34]
+    ];
+    for(const [rx,ry,rw,rh] of regions){
+      const crop=document.createElement('canvas');
+      crop.width=Math.max(320,Math.round(pageCanvas.width*rw));
+      crop.height=Math.max(180,Math.round(pageCanvas.height*rh));
+      crop.getContext('2d',{alpha:false}).drawImage(
+        pageCanvas,
+        Math.round(pageCanvas.width*rx),Math.round(pageCanvas.height*ry),
+        Math.round(pageCanvas.width*rw),Math.round(pageCanvas.height*rh),
+        0,0,crop.width,crop.height
+      );
+      canvases.push(crop);
+    }
+
+    if('BarcodeDetector' in window){
+      try{
+        const detector=new window.BarcodeDetector({formats:['qr_code']});
+        for(const canvas of canvases){
+          const found=await detector.detect(canvas);
+          for(const code of found||[]){
+            const parsed=inventorySheetParseQrText(code.rawValue);
+            if(parsed)return parsed;
+          }
+        }
+      }catch{}
+    }
+
+    await inventorySheetLoadScript('inventoryJsQr','https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js');
+    if(typeof window.jsQR!=='function')throw new Error('Leitor de QR não carregou. Verifique a internet do celular e tente novamente.');
+    const tryCanvas=canvas=>{
+      const ctx=canvas.getContext('2d',{willReadFrequently:true}),im=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const hit=window.jsQR(im.data,canvas.width,canvas.height,{inversionAttempts:'attemptBoth'});
+      return inventorySheetParseQrText(hit?.data);
+    };
+    for(const canvas of canvases){
+      const parsed=tryCanvas(canvas);
+      if(parsed)return parsed;
+    }
+    return null;
+  }
+
+  async function inventorySheetReadLocal(file,statusEl){
+    if(statusEl)statusEl.textContent='Abrindo a imagem e procurando o QR Code…';
+    const source=await inventorySheetFileCanvas(file,1800);
+    let identity=await inventorySheetDecodeQr(source);
+    let warped=null,forcePageFallback=false;
+
+    if(statusEl)statusEl.textContent=identity
+      ?'QR identificado. Preparando a folha…'
+      :'QR ainda não identificado. Tentando preparar a folha…';
+
+    try{
+      warped=await inventorySheetWarpPage(file,source);
+    }catch(e){
+      if(identity){
+        forcePageFallback=true;
+        const canvas=document.createElement('canvas');
+        canvas.width=1260;canvas.height=1782;
+        const ctx=canvas.getContext('2d',{alpha:false});
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+        const scale=Math.min(canvas.width/source.width,canvas.height/source.height);
+        const dw=Math.round(source.width*scale),dh=Math.round(source.height*scale);
+        const dx=Math.round((canvas.width-dw)/2),dy=Math.round((canvas.height-dh)/2);
+        ctx.drawImage(source,0,0,source.width,source.height,dx,dy,dw,dh);
+        warped={canvas,confidence:.90,opencv_failed:true};
+        if(statusEl)statusEl.textContent='QR identificado. O leitor local de imagem não abriu neste celular; vou usar a IA de segurança na folha inteira.';
+      }else{
+        // Mesmo sem OpenCV, ainda tentamos o QR diretamente na foto original.
+        identity=await inventorySheetDecodeQr(source);
+        if(!identity)throw new Error('QR Code não encontrado e o leitor local de imagem não abriu neste celular. Tente novamente com a folha inteira visível.');
+        forcePageFallback=true;
+        const canvas=document.createElement('canvas');
+        canvas.width=1260;canvas.height=1782;
+        const ctx=canvas.getContext('2d',{alpha:false});
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+        const scale=Math.min(canvas.width/source.width,canvas.height/source.height);
+        const dw=Math.round(source.width*scale),dh=Math.round(source.height*scale);
+        ctx.drawImage(source,0,0,source.width,source.height,Math.round((canvas.width-dw)/2),Math.round((canvas.height-dh)/2),dw,dh);
+        warped={canvas,confidence:.90,opencv_failed:true};
+      }
+    }
+
+    if(!identity)identity=await inventorySheetDecodeQr(warped.canvas);
+    if(!identity)throw new Error('QR Code não encontrado. Esta foto precisa mostrar o cabeçalho inteiro e a folha precisa ser uma impressão nova com QR Code.');
+
+    const manifest=await api('inventory_sheet_manifest',{},{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheet_token:identity.sheet_token})
+    });
+    const slotCount=Math.max(1,Math.min(25,Number(manifest.slot_count||25)));
+    const localItems=Array.from({length:slotCount},(_,i)=>({
+      slot_number:i+1,quantity:null,gondola:null,quantity_confidence:0,gondola_confidence:0,
+      ambiguous_quantity:true,ambiguous_gondola:true,note:forcePageFallback?'opencv_unavailable':''
+    }));
+    const fallbackFields=[];
+
+    if(!forcePageFallback){
+      const tasks=[];
+      for(let slot=1;slot<=slotCount;slot++){
+        for(const field of ['quantity','gondola']){
+          const crop=inventorySheetFieldCrop(warped.canvas,slot,field),processed=inventorySheetThresholdCanvas(crop);
+          tasks.push({slot,field,crop,processed});
+        }
+      }
+      let workers=null;
+      try{workers=await inventorySheetOcrWorkers()}catch{}
+      let done=0;
+      if(workers?.length){
+        await Promise.all(workers.map(async(worker,wi)=>{
+          for(let i=wi;i<tasks.length;i+=workers.length){
+            const t=tasks[i],res=await worker.recognize(t.processed),parsed=inventorySheetParseDigits(res?.data?.text,t.field,res?.data?.confidence);
+            const row=localItems[t.slot-1];
+            row[t.field]=parsed.value;row[t.field+'_confidence']=parsed.confidence;
+            row['ambiguous_'+t.field]=parsed.ambiguous||parsed.confidence<.88;
+            done++;if(statusEl&&done%5===0)statusEl.textContent='OCR local · '+identity.batch_code+' · página '+identity.page_number+' · '+done+'/'+tasks.length+' campos';
+          }
+        }));
+      }
+      for(const t of tasks){
+        const row=localItems[t.slot-1];
+        if(row['ambiguous_'+t.field]===true||Number(row[t.field+'_confidence']||0)<.88){
+          fallbackFields.push({slot_number:t.slot,field:t.field,image_data_url:t.crop.toDataURL('image/jpeg',.88)});
+        }
+      }
+    }
+
+    const pageImage=source.toDataURL('image/jpeg',.84);
+    return {
+      duplicate:false,sheet_token:identity.sheet_token,manifest,local_items:localItems,fallback_fields:fallbackFields,
+      page_image_data_url:pageImage,force_page_fallback:forcePageFallback,
+      page_confidence:warped.confidence,page_complete:true
+    };
+  }
+
+  function inventorySheetRowApproved(row){
+    const q=Number(row.quantity),g=Number(row.gondola);
+    if(!Number.isInteger(q)||q<0||!Number.isInteger(g)||g<1||g>9999)return false;
+    if(row.review_state==='applied'||row.review_state==='confirmed')return true;
+    if(row.manual_confirmed===true)return true;
+    return row.review_state==='ready'&&Number(row.ai_quantity)===q&&Number(row.ai_gondola)===g&&!row.user_edited;
+  }
+
+  function inventorySheetReviewLabel(row){
+    if(row.review_state==='applied')return '<span class="pill">Concluído no Bling</span>';
+    if(row.review_state==='confirmed')return '<span class="pill warn">Aguardando conclusão no Bling</span>';
+    if(row.review_state==='error')return '<span class="pill danger">Erro · precisa revisar</span>';
+    if(inventorySheetRowApproved(row))return '<span class="pill">Leitura conferida</span>';
+    return '<span class="pill warn">Confirmar leitura</span>';
+  }
+
+  function inventorySheetHasAppliedSideEffect(scan=state.inventorySheetScan){
+    return Boolean(scan&&(scan.rows||[]).some(r=>['confirmed','applied'].includes(String(r.review_state||''))));
+  }
+
+  function inventorySheetRefreshPhotoControls(){
+    const scan=state.inventorySheetScan,apply=$('#inventorySheetApply'),cancel=$('#inventorySheetCancelRead');
+    if(!scan){
+      if(apply){apply.disabled=true;apply.hidden=false;apply.textContent='Aplicar folha aberta'}
+      if(cancel)cancel.hidden=true;
+      return;
+    }
+    const rows=scan.rows||[],pending=rows.filter(r=>r.review_state!=='applied');
+    const allDone=rows.length>0&&pending.length===0;
+    if(apply){
+      apply.hidden=allDone;
+      if(allDone){
+        apply.disabled=true;apply.textContent='Balanço concluído';
+      }else{
+        const hasConfirmed=pending.some(r=>r.review_state==='confirmed');
+        const hasError=pending.some(r=>r.review_state==='error');
+        apply.disabled=state.inventorySheetBusy||!pending.length||pending.some(r=>!inventorySheetRowApproved(r));
+        apply.textContent=hasError?'Tentar novamente os itens com erro':(hasConfirmed?'Concluir sincronização com o Bling':'Atualizar estoque no Bling');
+      }
+    }
+    if(cancel){
+      cancel.hidden=false;
+      cancel.disabled=state.inventorySheetBusy;
+      cancel.textContent=allDone
+        ?'Ler esta folha novamente'
+        :(inventorySheetHasAppliedSideEffect(scan)?'Ler novamente para corrigir':'Cancelar esta leitura e ler novamente');
+    }
+  }
+
+  function inventorySheetRefreshRowControls(resultId){
+    const scan=state.inventorySheetScan,row=(scan?.rows||[]).find(x=>String(x.result_id)===String(resultId));if(!row)return;
+    const label=document.querySelector('[data-sheet-label="'+String(resultId)+'"]');
+    if(label)label.innerHTML=inventorySheetReviewLabel(row);
+    const confirm=document.querySelector('[data-sheet-confirm="'+String(resultId)+'"]');
+    if(confirm){
+      const needsConfirm=!inventorySheetRowApproved(row)&&!['applied','confirmed','error'].includes(row.review_state);
+      confirm.hidden=!needsConfirm;
+    }
+    inventorySheetRefreshPhotoControls();
+  }
+
+  function paintInventorySheetPhoto(){
+    const host=$('#inventorySheetReview');if(!host||state.tab!=='balance'||state.balanceMode!=='count')return;
+    const scan=state.inventorySheetScan;
+    if(!scan){
+      host.innerHTML='<div class="history-empty">Depois da contagem, fotografe <strong>a folha A4 inteira</strong>, com as quatro bordas visíveis, boa luz e a câmera o mais paralela possível. A mesma folha pode ser lida novamente sempre que precisar corrigir uma leitura.</div>';
+      inventorySheetRefreshPhotoControls();
+      return;
+    }
+
+    const rows=scan.rows||[];
+    const appliedRows=rows.filter(r=>r.review_state==='applied');
+    const confirmedRows=rows.filter(r=>r.review_state==='confirmed');
+    const errorRows=rows.filter(r=>r.review_state==='error');
+    const reviewRows=rows.filter(r=>!inventorySheetRowApproved(r)&&!['applied','confirmed','error'].includes(r.review_state));
+    const readyRows=rows.filter(r=>inventorySheetRowApproved(r)&&!['applied','confirmed','error'].includes(r.review_state));
+    const activeRows=rows.filter(r=>r.review_state!=='applied');
+    const allDone=rows.length>0&&appliedRows.length===rows.length;
+
+    let banner='';
+    if(allDone){
+      banner='<div style="border:1px solid #9bc8ad;background:#eef8f1;border-radius:14px;padding:16px;margin-bottom:10px">'+
+        '<strong style="display:block;font-size:18px">✓ Balanço concluído</strong>'+
+        '<small style="display:block;margin-top:5px">'+esc(rows.length)+'/'+esc(rows.length)+' produtos atualizados e verificados no Bling · '+esc(scan.batch_code)+' · Página '+esc(scan.page_number)+'/'+esc(scan.page_count)+'. Se notar algum erro, pode ler esta mesma folha novamente e aplicar a correção.</small>'+
+        '</div>';
+    }else{
+      const pieces=[];
+      if(appliedRows.length)pieces.push(appliedRows.length+' concluído(s)');
+      if(confirmedRows.length)pieces.push(confirmedRows.length+' aguardando Bling');
+      if(readyRows.length)pieces.push(readyRows.length+' pronto(s) para aplicar');
+      if(reviewRows.length)pieces.push(reviewRows.length+' para conferir');
+      if(errorRows.length)pieces.push(errorRows.length+' com erro');
+      banner='<div class="bling-banner" style="margin-bottom:10px"><strong>'+esc(scan.batch_code)+' · Página '+esc(scan.page_number)+'/'+esc(scan.page_count)+'</strong>'+
+        '<small>'+pieces.join(' · ')+' · '+appliedRows.length+'/'+rows.length+' finalizados</small></div>';
+    }
+
+    if(allDone){
+      host.innerHTML=banner+'<div class="history-empty"><strong>Nada mais precisa ser feito nesta leitura.</strong><br>Os produtos concluídos foram retirados da lista. Use “Ler esta folha novamente” somente se quiser fazer uma correção.</div>';
+    }else{
+      host.innerHTML=banner+
+        (appliedRows.length?'<div class="muted" style="margin:0 0 10px">Os '+esc(appliedRows.length)+' produto(s) já concluídos foram ocultados. Abaixo aparecem somente os que ainda exigem alguma ação.</div>':'')+
+        activeRows.map(r=>{
+          const needsConfirm=!inventorySheetRowApproved(r)&&!['applied','confirmed','error'].includes(r.review_state);
+          const locked=r.review_state==='confirmed';
+          const detail=[
+            'REF '+String(r.printed_index||'').padStart(4,'0'),
+            'EAN '+(r.gtin||'—'),
+            r.mark_kind==='local_ocr'?'OCR local':(r.mark_kind==='local_ocr+ai_fallback'?'OCR local + IA no campo duvidoso':(r.mark_kind==='page_ai_fallback'?'IA de segurança na folha inteira':'')),
+            r.review_state==='confirmed'?'Estoque já confirmado no envio; falta concluir a sincronização interna':'',
+            r.reason?String(r.reason).replaceAll('_',' '):'',
+            r.apply_error||''
+          ].filter(Boolean).join(' · ');
+          return '<div class="simple-row inventory-review-row" data-sheet-row="'+esc(r.result_id)+'">'+
+            '<div class="simple-main"><strong>'+esc(r.name)+'</strong><small>'+esc(detail)+'</small></div>'+
+            '<label class="inventory-field"><span>ESTOQUE</span><input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque" title="Estoque" placeholder="0" data-sheet-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'" '+(locked?'disabled':'')+'></label>'+
+            '<label class="inventory-field"><span>GÔNDOLA</span><input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola" title="Gôndola" placeholder="0" data-sheet-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'" '+(locked?'disabled':'')+'></label>'+
+            '<div style="display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:wrap"><span data-sheet-label="'+esc(r.result_id)+'">'+inventorySheetReviewLabel(r)+'</span><button class="secondary" type="button" data-sheet-confirm="'+esc(r.result_id)+'" '+(needsConfirm?'':'hidden')+' style="min-height:36px;padding:0 9px">Confirmar</button></div>'+
+          '</div>';
+        }).join('');
+    }
+
+    host.querySelectorAll('[data-sheet-qty]').forEach(el=>el.oninput=e=>{
+      const row=rows.find(x=>x.result_id===e.currentTarget.dataset.sheetQty);if(!row||row.review_state==='confirmed')return;
+      const raw=e.currentTarget.value;row.quantity=raw===''?null:Number(raw);row.user_edited=true;row.manual_confirmed=false;
+      inventorySheetQueueSyncScan(state.inventorySheetScan);
+      inventorySheetRefreshRowControls(row.result_id);
+    });
+    host.querySelectorAll('[data-sheet-gondola]').forEach(el=>el.oninput=e=>{
+      const row=rows.find(x=>x.result_id===e.currentTarget.dataset.sheetGondola);if(!row||row.review_state==='confirmed')return;
+      const raw=e.currentTarget.value;row.gondola=raw===''?null:Number(raw);row.user_edited=true;row.manual_confirmed=false;
+      inventorySheetQueueSyncScan(state.inventorySheetScan);
+      inventorySheetRefreshRowControls(row.result_id);
+    });
+    host.querySelectorAll('[data-sheet-confirm]').forEach(b=>b.onclick=()=>{
+      const row=rows.find(x=>x.result_id===b.dataset.sheetConfirm);if(!row)return;
+      if(!Number.isInteger(Number(row.quantity))||Number(row.quantity)<0){toast('Informe uma quantidade inteira válida');return}
+      if(!Number.isInteger(Number(row.gondola))||Number(row.gondola)<1||Number(row.gondola)>9999){toast('Informe um número de gôndola válido');return}
+      row.manual_confirmed=true;
+      inventorySheetQueueSyncScan(state.inventorySheetScan);
+      inventorySheetRefreshRowControls(row.result_id);
+    });
+
+    inventorySheetRefreshPhotoControls();
+  }
+
+  async function cancelOrRereadInventorySheet(){
+    const scan=state.inventorySheetScan;if(!scan||state.inventorySheetBusy)return;
+    const canCancel=!inventorySheetHasAppliedSideEffect(scan);
+    const scanId=scan.scan_id;
+    state.inventorySheetScan=null;
+    state.inventorySheetQueue=(state.inventorySheetQueue||[]).filter(x=>x.scan?.scan_id!==scanId);
+    paintInventorySheetQueue();paintInventorySheetPhoto();
+    const status=$('#inventorySheetPhotoStatus');
+    if(status)status.textContent=canCancel
+      ?'Leitura descartada. Tire uma nova foto da folha para corrigir.'
+      :'Leitura anterior preservada. Tire uma nova foto da mesma folha; a nova leitura poderá corrigir estoque e gôndola.';
+    const camera=$('#inventorySheetCamera');
+    if(camera){camera.value='';camera.click()}
+    if(canCancel&&scanId){
+      try{
+        await api('inventory_sheet_cancel_scan',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scan_id:scanId})
+        });
+        await loadInventorySheetPendingManual();
+      }catch(e){
+        toast('A nova leitura foi liberada, mas não consegui limpar a tentativa anterior.');
+      }
+    }
+  }
+
+
+  function inventorySheetErrorMessage(error){
+    const raw=String(error?.message||error||'').trim();
+    if(!raw)return 'Erro desconhecido ao processar a foto.';
+    const known=errorMessage(raw);
+    if(known!=='Não consegui salvar agora.')return known;
+    if(raw==='Failed to fetch')return 'Sem conexão com o serviço agora. Verifique a internet e tente novamente.';
+    if(raw.includes('OpenCV'))return 'O leitor de imagem não conseguiu iniciar neste celular. Recarregue a página e tente novamente.';
+    if(raw.includes('QR Code'))return raw;
+    if(raw.includes('quatro bordas'))return raw;
+    if(raw.includes('imagem'))return raw;
+    if(raw.includes('Leitor de QR'))return raw;
+    return raw.length<=180?raw:'Não consegui processar esta foto. Tente novamente com a folha inteira visível.';
+  }
+
+  function inventorySheetQueueBadge(status){
+    const map={
+      queued:['Aguardando',''],
+      processing:['Lendo','warn'],
+      ready:['Pronta',''],
+      review:['Conferir','warn'],
+      duplicate:['Já enviada','off'],
+      applying:['Aplicando','warn'],
+      submitted:['Aguardando Bling','warn'],
+      applied:['Concluída',''],
+      error:['Erro','danger']
+    };
+    const x=map[status]||[status||'—','off'];
+    return '<span class="pill '+x[1]+'">'+esc(x[0])+'</span>';
+  }
+
+  function inventorySheetQueueSummary(){
+    const rows=state.inventorySheetQueue||[];
+    const counts={};
+    rows.forEach(x=>counts[x.status]=(counts[x.status]||0)+1);
+    return {total:rows.length,ready:counts.ready||0,review:counts.review||0,duplicate:counts.duplicate||0,error:counts.error||0,applied:(counts.applied||0)+(counts.submitted||0)};
+  }
+
+  function paintInventorySheetQueue(){
+    const host=$('#inventorySheetUploadQueue');if(!host)return;
+    const rows=state.inventorySheetQueue||[];
+    if(!rows.length){
+      host.innerHTML='<div class="history-empty">Você pode selecionar várias fotos de uma vez, mesmo fora de ordem. Cada folha é identificada automaticamente pelo QR Code.</div>';
+    }else{
+      host.innerHTML=rows.map((x,index)=>{
+        const title=x.batch_code?x.batch_code+' · Página '+x.page_number+(x.page_count?'/'+x.page_count:''):(x.file_name||('Foto '+(index+1)));
+        const detail=x.status==='duplicate'
+          ?'Leitura antiga detectada. Você pode tirar uma nova foto desta mesma folha.'
+          :x.status==='error'
+            ?(x.error||'Não foi possível processar esta foto.')
+            :x.status==='review'
+              ?'Há números que precisam de conferência humana.'
+              :x.status==='ready'
+                ?'Todos os campos foram lidos e estão prontos para aplicar.'
+                :x.status==='processing'
+                  ?'Identificando QR, corrigindo a foto e lendo os números…'
+                  :x.status==='submitted'
+                    ?'Contagens registradas; falta concluir a sincronização com o Bling.'
+                    :x.status==='applied'
+                      ?'Concluída: estoque e gôndolas verificados. Nenhuma ação pendente.'
+                      :'';
+        return '<div class="simple-row inventory-upload-row">'+
+          '<div class="simple-main"><strong>'+esc(title)+'</strong><small>'+esc(detail)+'</small></div>'+
+          inventorySheetQueueBadge(x.status)+
+          (x.scan?'<button class="secondary" type="button" data-sheet-open="'+esc(x.id)+'" style="min-height:36px;padding:0 9px">'+(x.status==='review'?'Conferir':'Abrir')+'</button>':'<span></span>')+
+        '</div>';
+      }).join('');
+      host.querySelectorAll('[data-sheet-open]').forEach(b=>b.onclick=()=>{
+        const item=rows.find(x=>x.id===b.dataset.sheetOpen);if(!item?.scan)return;
+        state.inventorySheetScan=item.scan;paintInventorySheetPhoto();
+        $('#inventorySheetReview')?.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+    }
+    const s=inventorySheetQueueSummary();
+    const retry=$('#inventorySheetRetryErrors');
+    if(retry){
+      const retryable=rows.filter(x=>x.status==='error'&&x.file instanceof File).length;
+      retry.hidden=!s.error;
+      retry.disabled=state.inventorySheetBusy||!retryable;
+      retry.textContent=retryable?'Reenviar '+retryable+' foto(s) com erro':(s.error?'Fotos com erro precisam ser selecionadas novamente':'Reenviar fotos com erro');
+    }
+    const bulk=$('#inventorySheetApplyReady');
+    if(bulk){
+      bulk.disabled=state.inventorySheetBusy||!s.ready;
+      bulk.textContent=s.ready?'Aplicar '+s.ready+' folha(s) prontas':'Nenhuma folha pronta para aplicar';
+    }
+  }
+
+
+  function paintInventorySheetPendingManual(){
+    const host=$('#inventorySheetPendingManual');if(!host)return;
+    const rows=state.inventorySheetPendingManual||[],s=state.inventorySheetPendingSummary||{};
+    const badge=$('#inventorySheetPendingBadge');
+    if(badge){
+      badge.textContent=rows.length?rows.length+' pendência(s)':'Sem pendências';
+      badge.className='pill '+(rows.length?'warn':'');
+    }
+    if(!rows.length){
+      host.innerHTML='<div class="history-empty">Nenhum produto aguardando contagem manual. Todas as leituras recebidas foram resolvidas.</div>';
+      return;
+    }
+    host.innerHTML='<div class="bling-banner" style="margin-bottom:10px"><strong>'+esc(s.count||rows.length)+' produto(s) precisam de conferência manual</strong><small>'+
+      esc(s.quantity_missing||0)+' sem estoque legível · '+esc(s.gondola_missing||0)+' sem gôndola legível'+(s.apply_errors?' · '+esc(s.apply_errors)+' falha(s) de atualização':'')+
+      '</small></div>'+
+      rows.map(r=>{
+        const detail=[
+          r.batch_code?String(r.batch_code)+' · pág. '+r.page_number+(r.page_count?'/'+r.page_count:''):'',
+          r.printed_index?'REF '+String(r.printed_index).padStart(4,'0'):'',
+          r.gtin?'EAN '+r.gtin:'SEM EAN',
+          r.operator_label?'enviado por '+r.operator_label:'',
+          r.reason||''
+        ].filter(Boolean).join(' · ');
+        return '<div class="simple-row inventory-pending-row">'+
+          '<div class="simple-main"><strong>'+esc(r.name||'Produto')+'</strong><small>'+esc(detail)+'</small></div>'+
+          '<label class="inventory-field"><span>ESTOQUE</span><input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque manual" title="Estoque contado manualmente" placeholder="0" data-pending-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'"></label>'+
+          '<label class="inventory-field"><span>GÔNDOLA</span><input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola manual" title="Gôndola conferida manualmente" placeholder="0" data-pending-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'"></label>'+
+          '<button class="primary" type="button" data-pending-resolve="'+esc(r.result_id)+'" style="min-height:40px;padding:0 10px">Resolver manualmente</button>'+
+        '</div>';
+      }).join('');
+    host.querySelectorAll('[data-pending-resolve]').forEach(btn=>btn.onclick=async()=>{
+      const row=rows.find(x=>String(x.result_id)===String(btn.dataset.pendingResolve));if(!row)return;
+      const qEl=host.querySelector('[data-pending-qty="'+CSS.escape(String(row.result_id))+'"]');
+      const gEl=host.querySelector('[data-pending-gondola="'+CSS.escape(String(row.result_id))+'"]');
+      const quantity=Number(qEl?.value),gondola=Number(gEl?.value);
+      if(!Number.isInteger(quantity)||quantity<0){toast('Faça a contagem manual e informe o estoque inteiro');return}
+      if(!Number.isInteger(gondola)||gondola<1||gondola>9999){toast('Confira manualmente e informe a gôndola');return}
+      const operator=requireOperator();if(!operator)return;
+      btn.disabled=true;btn.textContent='Salvando…';
+      try{
+        const data=await api('inventory_sheet_apply',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({scan_id:row.scan_id,operator,items:[{
+            result_id:row.result_id,quantity,gondola,manual_confirmed:true
+          }]})
+        });
+        const result=(data.rows||[])[0];
+        if(result?.review_state==='error'||result?.ok===false)throw new Error(result?.apply_error||result?.error||'manual_apply_failed');
+        toast(row.name+' · contagem manual registrada');
+        await loadInventorySheetPendingManual();
+        loadStockRecountQueue();loadOrderStockShortages();
+      }catch(e){
+        toast('Não consegui concluir manualmente: '+errorMessage(e.message));
+        btn.disabled=false;btn.textContent='Resolver manualmente';
+      }
+    });
+  }
+
+  async function loadInventorySheetPendingManual(){
+    const host=$('#inventorySheetPendingManual');
+    if(host)host.innerHTML='<div class="loading">Verificando pendências de leitura…</div>';
+    try{
+      const data=await api('inventory_sheet_pending_manual');
+      state.inventorySheetPendingManual=data.items||[];
+      state.inventorySheetPendingSummary={
+        count:Number(data.count||0),quantity_missing:Number(data.quantity_missing||0),
+        gondola_missing:Number(data.gondola_missing||0),apply_errors:Number(data.apply_errors||0)
+      };
+      paintInventorySheetPendingManual();
+    }catch(e){
+      if(host)host.innerHTML='<div class="history-empty">Não consegui carregar as pendências agora. <button class="text" id="retryInventoryPending" type="button">Tentar novamente</button></div>';
+      if($('#retryInventoryPending'))$('#retryInventoryPending').onclick=loadInventorySheetPendingManual;
+    }
+  }
+
+  async function processInventorySheetEntries(entries,operator){
+    if(state.inventorySheetProcessing){toast('Já estou processando outro grupo de fotos');return}
+    if(!entries?.length)return;
+    state.inventorySheetProcessing=true;state.inventorySheetBusy=true;
+    const status=$('#inventorySheetPhotoStatus'),cameraBtn=$('#inventorySheetAnalyzeButton'),chooseBtn=$('#inventorySheetChooseButton'),retryBtn=$('#inventorySheetRetryErrors');
+    if(cameraBtn)cameraBtn.disabled=true;if(chooseBtn)chooseBtn.disabled=true;if(retryBtn)retryBtn.disabled=true;
+    paintInventorySheetQueue();paintInventorySheetPhoto();
+
+    try{
+      for(let index=0;index<entries.length;index++){
+        const entry=entries[index];
+        if(!(entry.file instanceof File)){
+          entry.status='error';entry.error='A foto original não está mais disponível neste navegador. Selecione esta imagem novamente.';
+          paintInventorySheetQueue();continue;
+        }
+        entry.status='processing';entry.error='';entry.scan=null;
+        paintInventorySheetQueue();
+        if(status)status.textContent='Processando foto '+(index+1)+' de '+entries.length+' · identificando a folha automaticamente…';
+        try{
+          const local=await inventorySheetWithTimeout(inventorySheetReadLocal(entry.file,status),INVENTORY_SHEET_READ_TIMEOUT_MS,'A leitura desta foto demorou demais. Tente novamente; se persistir, atualize a página e repita a foto.');
+          const m=local.manifest||{};
+          entry.batch_code=m.batch_code||'';entry.page_number=m.page_number??null;entry.page_count=m.page_count??null;
+          if(local.duplicate){
+            entry.status='error';entry.error='Leitura antiga detectada; tire uma nova foto desta mesma folha.';
+            entry.file=null;
+            continue;
+          }
+          const unresolved=local.fallback_fields.length;
+          if(status)status.textContent=unresolved
+            ?'Foto '+(index+1)+'/'+entries.length+' · '+entry.batch_code+' página '+entry.page_number+' · '+unresolved+' campo(s) duvidosos; IA somente nesses recortes.'
+            :'Foto '+(index+1)+'/'+entries.length+' · '+entry.batch_code+' página '+entry.page_number+' · leitura local concluída sem IA.';
+          const data=await api('inventory_sheet_analyze',{},{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              sheet_token:local.sheet_token,page_confidence:local.page_confidence,page_complete:local.page_complete,
+              operator,client_upload_id:entry.id,local_items:local.local_items,fallback_fields:local.fallback_fields,
+              page_image_data_url:local.page_image_data_url,force_page_fallback:local.force_page_fallback===true
+            })
+          });
+          if(data.duplicate){
+            entry.status='error';entry.error='Leitura antiga detectada; tire uma nova foto desta mesma folha.';
+            entry.file=null;
+            continue;
+          }
+          const scan={...data,rows:(data.rows||[]).map(r=>({...r,gondola:r.gondola??r.ai_gondola??null,manual_confirmed:false,user_edited:false}))};
+          entry.scan=scan;entry.batch_code=data.batch_code||entry.batch_code;entry.page_number=data.page_number??entry.page_number;entry.page_count=data.page_count??entry.page_count;
+          entry.status=(scan.rows||[]).every(inventorySheetRowApproved)?'ready':'review';
+          entry.file=null;
+          state.inventorySheetScan=scan;
+        }catch(e){
+          entry.status='error';
+          entry.error=inventorySheetErrorMessage(e);
+          // Mantém o File em memória para permitir "Reenviar fotos com erro"
+          // sem pedir nova seleção enquanto esta tela continuar aberta.
+        }finally{
+          paintInventorySheetQueue();paintInventorySheetPhoto();
+        }
+      }
+      const s=inventorySheetQueueSummary();
+      if(status)status.textContent='Lote de fotos concluído: '+s.total+' foto(s) · '+s.ready+' pronta(s) · '+s.review+' para conferir · '+s.duplicate+' duplicada(s) · '+s.error+' com erro.';
+    }finally{
+      state.inventorySheetProcessing=false;state.inventorySheetBusy=false;
+      if(cameraBtn)cameraBtn.disabled=false;if(chooseBtn)chooseBtn.disabled=false;
+      if($('#inventorySheetCamera'))$('#inventorySheetCamera').value='';
+      if($('#inventorySheetFile'))$('#inventorySheetFile').value='';
+      paintInventorySheetQueue();paintInventorySheetPhoto();await loadInventorySheetPendingManual();
+    }
+  }
+
+  async function analyzeInventorySheetPhotos(files){
+    if(state.inventorySheetProcessing){toast('Já estou processando outro grupo de fotos');return}
+    const selected=Array.from(files||[]).filter(f=>String(f?.type||'').startsWith('image/')).slice(0,100);
+    if(!selected.length){toast('Selecione uma ou mais fotos das folhas A4');return}
+    const operator=requireOperator();if(!operator)return;
+    const entries=selected.map((file,i)=>({
+      id:(crypto.randomUUID?crypto.randomUUID():(Date.now()+'-'+i+'-'+Math.random().toString(16).slice(2))),
+      file,file_name:file.name||('Foto '+(i+1)),status:'queued',batch_code:'',page_number:null,page_count:null,scan:null,error:''
+    }));
+    state.inventorySheetQueue.push(...entries);
+    paintInventorySheetQueue();
+    await processInventorySheetEntries(entries,operator);
+  }
+
+  async function retryInventorySheetErrors(){
+    if(state.inventorySheetProcessing)return;
+    const failed=(state.inventorySheetQueue||[]).filter(x=>x.status==='error'&&x.file instanceof File);
+    if(!failed.length){
+      toast('As fotos antigas não estão mais na memória. Selecione novamente apenas as que falharam.');
+      return;
+    }
+    const operator=requireOperator();if(!operator)return;
+    failed.forEach(x=>{x.status='queued';x.error=''});
+    paintInventorySheetQueue();
+    await processInventorySheetEntries(failed,operator);
+  }
+
+  function mergeInventorySheetApplyResponse(data,scan=state.inventorySheetScan){
+    if(!scan)return;
+    const updates=new Map((data.rows||[]).map(x=>[String(x.id),x]));
+    scan.rows.forEach(row=>{
+      const u=updates.get(String(row.result_id));if(!u)return;
+      row.review_state=u.review_state||row.review_state;row.apply_error=u.apply_error||'';
+      if(u.confirmed_quantity!=null)row.quantity=Number(u.confirmed_quantity);
+      if(u.confirmed_gondola!=null)row.gondola=Number(u.confirmed_gondola);
+      if(['applied','confirmed','error'].includes(row.review_state))row.manual_confirmed=true;
+    });
+  }
+
+  async function applyInventorySheetScan(scan,operator){
+    const pending=(scan?.rows||[]).filter(r=>r.review_state!=='applied');
+    if(!pending.length)return scan;
+    if(pending.some(r=>!inventorySheetRowApproved(r)))throw new Error('manual_confirmation_required');
+    for(let i=0;i<pending.length;i+=5){
+      const chunk=pending.slice(i,i+5);
+      const data=await api('inventory_sheet_apply',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({scan_id:scan.scan_id,operator,items:chunk.map(r=>({
+          result_id:r.result_id,quantity:Number(r.quantity),gondola:Number(r.gondola),
+          manual_confirmed:r.manual_confirmed===true||r.user_edited===true
+        }))})
+      });
+      mergeInventorySheetApplyResponse(data,scan);
+    }
+    return scan;
+  }
+
+  function inventorySheetQueueSyncScan(scan){
+    const item=(state.inventorySheetQueue||[]).find(x=>x.scan?.scan_id===scan?.scan_id);
+    if(!item)return;
+    const states=(scan.rows||[]).map(r=>r.review_state);
+    if(states.length&&states.every(x=>x==='applied'))item.status='applied';
+    else if(states.some(x=>x==='error'))item.status='error';
+    else if(states.every(x=>['applied','confirmed'].includes(x)))item.status='submitted';
+    else if((scan.rows||[]).every(inventorySheetRowApproved))item.status='ready';
+    else item.status='review';
+  }
+
+  async function applyInventorySheetPhoto(){
+    const scan=state.inventorySheetScan;if(!scan||state.inventorySheetBusy)return;
+    const pending=(scan.rows||[]).filter(r=>r.review_state!=='applied');
+    if(!pending.length){toast('Esta folha já foi aplicada');return}
+    if(pending.some(r=>!inventorySheetRowApproved(r))){toast('Confirme primeiro os itens destacados em amarelo');return}
+    const operator=requireOperator();if(!operator)return;
+    state.inventorySheetBusy=true;paintInventorySheetPhoto();paintInventorySheetQueue();
+    const btn=$('#inventorySheetApply');if(btn){btn.disabled=true;btn.textContent='Atualizando estoque…'}
+    try{
+      let previousApplied=-1;
+      for(let attempt=1;attempt<=3;attempt++){
+        const status=$('#inventorySheetPhotoStatus');
+        if(status)status.textContent=attempt===1?'Atualizando e verificando no Bling…':'Concluindo sincronização no Bling · tentativa '+attempt+'/3…';
+        await applyInventorySheetScan(scan,operator);
+        inventorySheetQueueSyncScan(scan);
+        const appliedNow=scan.rows.filter(r=>r.review_state==='applied').length;
+        const waitingNow=scan.rows.filter(r=>r.review_state==='confirmed').length;
+        if(!waitingNow||scan.rows.some(r=>r.review_state==='error'))break;
+        if(appliedNow===previousApplied&&attempt>=2)break;
+        previousApplied=appliedNow;
+        await new Promise(r=>setTimeout(r,900));
+      }
+      const left=scan.rows.filter(r=>r.review_state!=='applied');
+      if(!left.length){
+        toast('Concluído · todos os produtos foram verificados no Bling');
+        const status=$('#inventorySheetPhotoStatus');if(status)status.textContent='✓ CONCLUÍDO · '+scan.rows.length+'/'+scan.rows.length+' produtos atualizados e verificados no Bling. Nada mais precisa ser feito nesta folha.';
+        loadStockRecountQueue();loadOrderStockShortages();
+      }else if(left.some(r=>r.review_state==='error')){
+        const errors=left.filter(r=>r.review_state==='error').length;
+        toast(errors+' item(ns) com erro · veja somente os itens pendentes abaixo');
+        const status=$('#inventorySheetPhotoStatus');if(status)status.textContent='Atenção: '+errors+' item(ns) ainda precisam de revisão. Os concluídos já foram ocultados.';
+      }else{
+        const waiting=left.filter(r=>r.review_state==='confirmed').length;
+        toast(waiting+' item(ns) ainda aguardam o Bling');
+        const status=$('#inventorySheetPhotoStatus');if(status)status.textContent='Ainda não terminou: '+waiting+' item(ns) aguardam o Bling. Os concluídos já foram ocultados; use “Concluir sincronização com o Bling” somente se esta mensagem permanecer.';
+      }
+    }catch(e){toast('Não consegui concluir a folha: '+errorMessage(e.message))}
+    finally{state.inventorySheetBusy=false;paintInventorySheetPhoto();paintInventorySheetQueue();await loadInventorySheetPendingManual()}
+  }
+
+  async function applyInventorySheetReadyQueue(){
+    if(state.inventorySheetBusy)return;
+    const ready=(state.inventorySheetQueue||[]).filter(x=>x.status==='ready'&&x.scan);
+    if(!ready.length){toast('Não há folhas prontas para aplicar');return}
+    const operator=requireOperator();if(!operator)return;
+    state.inventorySheetBusy=true;paintInventorySheetQueue();paintInventorySheetPhoto();
+    const status=$('#inventorySheetPhotoStatus');
+    try{
+      for(let i=0;i<ready.length;i++){
+        const item=ready[i];item.status='applying';paintInventorySheetQueue();
+        if(status)status.textContent='Aplicando folha '+(i+1)+' de '+ready.length+' · '+item.batch_code+' página '+item.page_number+'…';
+        try{
+          await applyInventorySheetScan(item.scan,operator);
+          inventorySheetQueueSyncScan(item.scan);
+        }catch(e){item.status='error';item.error=errorMessage(e.message)}
+        paintInventorySheetQueue();
+      }
+      const s=inventorySheetQueueSummary();
+      if(status)status.textContent='Aplicação em lote concluída · '+s.applied+' enviada(s)/aplicada(s) · '+s.review+' para conferir · '+s.error+' com erro.';
+      loadStockRecountQueue();loadOrderStockShortages();
+    }finally{
+      state.inventorySheetBusy=false;paintInventorySheetQueue();paintInventorySheetPhoto();await loadInventorySheetPendingManual();
+    }
+  }
+
+  function bindInventorySheetPhoto(){
+    const camera=$('#inventorySheetCamera'),file=$('#inventorySheetFile');
+    if($('#inventorySheetAnalyzeButton'))$('#inventorySheetAnalyzeButton').onclick=()=>camera?.click();
+    if($('#inventorySheetChooseButton'))$('#inventorySheetChooseButton').onclick=()=>file?.click();
+    if(camera)camera.onchange=e=>{const files=Array.from(e.currentTarget.files||[]);if(files.length)analyzeInventorySheetPhotos(files)};
+    if(file)file.onchange=e=>{const files=Array.from(e.currentTarget.files||[]);if(files.length)analyzeInventorySheetPhotos(files)};
+    if($('#inventorySheetApply'))$('#inventorySheetApply').onclick=applyInventorySheetPhoto;
+    if($('#inventorySheetCancelRead'))$('#inventorySheetCancelRead').onclick=cancelOrRereadInventorySheet;
+    if($('#inventorySheetApplyReady'))$('#inventorySheetApplyReady').onclick=applyInventorySheetReadyQueue;
+    if($('#inventorySheetRetryErrors'))$('#inventorySheetRetryErrors').onclick=retryInventorySheetErrors;
+    paintInventorySheetQueue();paintInventorySheetPhoto();
+  }
+
+
+  function setBalanceSubtab(){
+    state.balanceSubtab='scanner';state.balanceProduct=null;state.balanceQty='';state.balanceNeedsPhoto=false;state.balanceReadiness=null;
+    renderBalance();
+  }
+  function stopBalanceCamera(){
+    state.balanceCameraRunning=false;
+    if(state.balanceCameraStream){for(const t of state.balanceCameraStream.getTracks?.()||[])try{t.stop()}catch{}state.balanceCameraStream=null}
+    state.balanceCameraDetector=null;
+    const v=$('#balanceCameraVideo');if(v)try{v.srcObject=null}catch{}
+  }
+  let balanceScanAudioCtx=null;
+  function balanceScanAudioContext(){
+    const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return null;
+    if(!balanceScanAudioCtx)balanceScanAudioCtx=new Ctx();return balanceScanAudioCtx;
+  }
+  async function unlockBalanceScanAudio(){try{const ctx=balanceScanAudioContext();if(ctx?.state==='suspended')await ctx.resume()}catch{}}
+  function playBalanceScanBeep(){
+    try{const ctx=balanceScanAudioContext();if(!ctx)return;const fire=()=>{const now=ctx.currentTime,osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='square';osc.frequency.setValueAtTime(1500,now);gain.gain.setValueAtTime(1,now);gain.gain.setValueAtTime(1,now+.10);gain.gain.exponentialRampToValueAtTime(.0001,now+.18);osc.connect(gain);gain.connect(ctx.destination);osc.start(now);osc.stop(now+.19)};if(ctx.state==='suspended')ctx.resume().then(fire).catch(()=>{});else fire()}catch{}
+  }
+  async function startBalanceCamera(){
+    unlockBalanceScanAudio();
+    if(state.tab!=='balance'||state.balanceMode==='incident'||state.balanceSubtab!=='scanner')return;
+    const status=$('#balanceCameraStatus'),video=$('#balanceCameraVideo');if(!video)return;
+    if(!navigator.mediaDevices?.getUserMedia){if(status)status.textContent='Este navegador não liberou câmera. Use a busca por nome/EAN abaixo.';return}
+    stopBalanceCamera();
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:960},height:{ideal:540}},audio:false});
+      state.balanceCameraStream=stream;video.srcObject=stream;await video.play();state.balanceCameraRunning=true;
+      if('BarcodeDetector' in window){state.balanceCameraDetector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});if(status)status.textContent='Câmera ativa · aponte o código de barras para o quadro.';balanceCameraTick()}
+      else{if(status)status.textContent='Câmera ativa, mas leitura automática de código não é suportada neste navegador. Digite o EAN ou busque pelo nome.'}
+    }catch(e){if(status)status.textContent='Não consegui abrir a câmera. Libere a permissão ou use a busca manual.'}
+  }
+  async function balanceCameraTick(){
+    if(!state.balanceCameraRunning||state.tab!=='balance'||state.balanceSubtab!=='scanner')return;
+    const detector=state.balanceCameraDetector,video=$('#balanceCameraVideo');
+    if(detector&&video&&video.readyState>=2&&!state.balanceProduct){
+      try{
+        const codes=await detector.detect(video);const raw=String(codes?.[0]?.rawValue||'').replace(/\D+/g,'');
+        if(raw.length>=4){const now=Date.now();if(raw!==state.balanceLastCameraEan||now-state.balanceLastCameraAt>2500){state.balanceLastCameraEan=raw;state.balanceLastCameraAt=now;if(navigator.vibrate)navigator.vibrate(70);playBalanceScanBeep();await handleBalanceScan(raw)}}
+      }catch{}
+    }
+    if(state.balanceCameraRunning)setTimeout(balanceCameraTick,120);
+  }
+  function bindBalanceManualSearch(){
+    const input=$('#balanceManualSearch'),host=$('#balanceManualResults');if(!input||!host)return;
+    input.oninput=()=>{clearTimeout(state.balanceManualSearchTimer);const q=String(input.value||'').trim();if(q.length<2){host.innerHTML='';return}state.balanceManualSearchTimer=setTimeout(()=>searchBalanceProducts(q),220)};
+  }
+  async function searchBalanceProducts(q){
+    const host=$('#balanceManualResults');if(!host)return;host.innerHTML='<div class="loading">Buscando…</div>';
+    try{const data=await api('products',{q,limit:10});const rows=data.products||[];host.innerHTML=rows.length?rows.map(p=>'<button class="balance-search-result" type="button" data-balance-pick="'+esc(p.id)+'"><img src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt=""><span><strong>'+esc(p.name)+'</strong><small class="sub">EAN '+esc(p.gtin||'—')+' · '+(p.is_active===false?'inativo':'ativo')+'</small></span></button>').join(''):'<div class="history-empty">Nenhum produto encontrado.</div>';host.querySelectorAll('[data-balance-pick]').forEach(b=>b.onclick=()=>{const p=rows.find(x=>x.id===b.dataset.balancePick);if(p)selectBalanceProduct(p,{photo_required:!p.image_url,readiness:null})})}catch{host.innerHTML='<div class="history-empty">Não consegui buscar agora.</div>'}
+  }
+  function selectBalanceProduct(p,metaInfo={}){
+    const same=state.balanceProduct?.id===p?.id;
+    const keepQty=same?state.balanceQty:'';
+    const keepGondola=same?state.balanceGondola:'';
+    const keepValidity=same?state.balanceValidity:'';
+    const keepLot=same?state.balanceLotId:'';
+    state.balanceProduct=p;
+    state.balanceQty=keepQty;
+    state.balanceGondola=keepGondola||String(p.gondola_number??p.gondola??'').replace(/\D+/g,'');
+    state.balanceValidity=keepValidity||p.expiration_date||p.validity_date||'';
+    state.balanceLotId=keepLot;
+    state.balanceNeedsPhoto=metaInfo.photo_required===true;
+    state.balanceReadiness=metaInfo.readiness||metaInfo.commercial_readiness||null;
+    paintBalance();
+  }
+  async function uploadBalanceProductPhoto(file){
+    const p=state.balanceProduct;if(!p||!file)return;const status=$('#balancePhotoStatus');if(status)status.textContent='Enviando foto real…';
+    try{
+      await uploadProductImageSource(p.id,file);if(status)status.textContent='Foto salva · identificando produto…';
+      try{await productImageApi('identify',{product_id:p.id})}catch{}
+      try{const fresh=await api('inventory_balance_status',{product_id:p.id});if(fresh.product)selectBalanceProduct(fresh.product,{photo_required:false,readiness:fresh.readiness})}catch{}
+      state.balanceNeedsPhoto=false;if(status)status.textContent='Foto salva. A imagem de catálogo está sendo preparada.';
+      standardizeProductImage(p.id).then(()=>api('inventory_balance_status',{product_id:p.id})).then(f=>{if(f?.product&&state.balanceProduct?.id===p.id)selectBalanceProduct(f.product,{photo_required:false,readiness:f.readiness})}).catch(()=>{});
+    }catch(e){if(status)status.textContent='Não consegui salvar a foto: '+errorMessage(e.message)}
+  }
+
+  async function renderBalance(){
+    const content=$('#content'),incident=state.balanceMode==='incident',scanner=!incident;
+    const photoPanel='',manualPendingPanel='';
+    const cameraPanel=scanner?'<section class=\"panel balance-camera-shell\"><div class=\"balance-camera-view\"><video id=\"balanceCameraVideo\" playsinline muted autoplay></video><div class=\"balance-camera-frame\"></div></div><div class=\"balance-camera-status\" id=\"balanceCameraStatus\">Abrindo câmera…</div><details class=\"balance-manual-search\"><summary>Buscar manualmente por nome ou EAN</summary><label style=\"display:block;margin-top:6px\"><input id=\"balanceManualSearch\" type=\"search\" inputmode=\"search\" autocomplete=\"off\" placeholder=\"Nome ou EAN\"></label><div id=\"balanceManualResults\" class=\"balance-search-results\"></div></details></section>':'';
+    const work=(incident||scanner)?'<div class="tool-grid balance-tool-grid"><section class="panel tool-card">'+(incident?'<div class="form-grid" style="margin-bottom:12px"><label><span>Tipo</span><select id="inventoryIncidentType"><option value="damage">Avaria</option><option value="expired">Vencido</option><option value="loss">Perda / extravio</option><option value="return">Retorno para inspeção</option><option value="other">Outro</option></select></label><label><span>Observação opcional</span><input id="inventoryIncidentNote" maxlength="500" placeholder="Ex.: embalagem rasgada"></label></div>':'')+'<div id="balanceScanner" class="scanner-hero"><div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">'+(incident?'Depois informe a quantidade afetada.':'A câmera fica pronta para o próximo produto.')+'</div></div><div id="balanceProductExtras"></div><div class="qty-label">'+(incident?'Quantidade afetada':'Quantidade contada')+'</div><div class="qty-display" id="balanceQty">—</div>'+numericPadHtml('balance')+'<button class="confirm-wide" id="balanceConfirm" type="button" disabled>'+(incident?'Registrar ocorrência':'Salvar e próximo')+'</button></section><section class="panel"><div class="list-head" style="display:block">'+(incident?'Ocorrências abertas':'Contagens desta sessão')+'</div><div id="balanceHistory"></div></section></div>':'';
+    content.innerHTML='<div class="page-head"><div><h1>Balanço</h1><p>'+(incident?'Registre avaria, vencimento, perda ou retorno.':'Conte estoque, localização e validade usando a câmera do celular.')+'</p></div><span class="pill">'+(scanner?'Câmera':'Balanço')+'</span></div><div class="order-filters" style="margin-bottom:12px"><button class="filter-chip '+(!incident?'active':'')+'" id="balanceModeCount" type="button">Balanço</button><button class="filter-chip '+(incident?'active':'')+'" id="balanceModeIncident" type="button">Avaria / Vencido / Retorno</button></div>'+cameraPanel+photoPanel+manualPendingPanel+work+(!incident?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Recontagem para Bling</strong><span>Itens que precisam de conferência física</span></div><button class="secondary" id="refreshStockRecount" type="button">Atualizar</button></div><div id="stockRecountRows"><div class="loading">Carregando recontagens…</div></div></section><section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Faltas dos pedidos</strong><span>Priorize o que está travando pedidos</span></div><button class="secondary" id="refreshStockShortages" type="button">Atualizar</button></div><div id="stockShortageRows"><div class="loading">Calculando faltas…</div></div></section>':'<div class="rule-notice" style="margin-top:14px"><strong>Ocorrências</strong><div>Avaria, vencido e perda seguem para reconciliação operacional/fiscal.</div></div>');
+    $('#balanceModeCount').onclick=()=>setBalanceMode('count');$('#balanceModeIncident').onclick=()=>setBalanceMode('incident');
+    if(incident){$('#inventoryIncidentType').value=state.inventoryIncidentType||'damage';$('#inventoryIncidentType').onchange=e=>state.inventoryIncidentType=e.currentTarget.value;$('#inventoryIncidentNote').value=state.inventoryIncidentNote||'';$('#inventoryIncidentNote').oninput=e=>state.inventoryIncidentNote=e.currentTarget.value}
+    if(incident||scanner){bindBalancePad();paintBalance()}
+    if(scanner){bindBalanceManualSearch();startBalanceCamera()}
+    if(incident)loadInventoryIncidents();
+  }
+
+  async function loadStockRecountQueue(){
+    const host=$('#stockRecountRows');if(!host)return;
+    host.innerHTML='<div class="loading">Carregando recontagens…</div>';
+    try{
+      const data=await api('stock_recount_queue');
+      const q=data.recount||{},rows=q.items||[];
+      if(!rows.length){host.innerHTML='<div class="history-empty">Nenhuma recontagem pendente para o cutover.</div>';return}
+      host.innerHTML='<div class="bling-banner" style="margin:12px"><strong>'+esc(q.count||rows.length)+' produto(s) para recontar · '+esc(q.high||0)+' prioridade alta</strong><small>Esta etapa só registra a quantidade física. Nenhum saldo é enviado automaticamente ao Bling.</small></div>'+rows.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.name)+'</strong><small>'+(x.priority==='high'?'PRIORIDADE ALTA · ':'')+'EAN '+esc(x.gtin||'—')+' · local '+esc(fmtQty(x.legacy_stock))+' · Bling físico '+esc(fmtQty(x.bling_physical))+' · virtual '+esc(fmtQty(x.bling_virtual))+(x.shelf_label?' · prateleira '+esc(x.shelf_label):'')+'</small></div><button class="secondary" type="button" data-count-reconcile="'+esc(x.product_id)+'">Contar</button></div>').join('');
+      host.querySelectorAll('[data-count-reconcile]').forEach(b=>b.onclick=()=>selectRecountForBalance(b.dataset.countReconcile,rows));
+    }catch(e){host.innerHTML='<div class="history-empty">Não consegui carregar as recontagens agora.</div>'}
+  }
+  function selectRecountForBalance(productId,rows){
+    const x=(rows||[]).find(r=>r.product_id===productId);if(!x)return;
+    state.balanceProduct={id:x.product_id,name:x.name,gtin:x.gtin||'',stock_quantity:x.legacy_stock,gondola_number:x.gondola_number??null};
+    state.balanceQty='';paintBalance();$('#balanceScanner')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Recontagem selecionada · informe a quantidade física atual');
+  }
+  async function loadOrderStockShortages(){
+    const host=$('#stockShortageRows');if(!host)return;
+    host.innerHTML='<div class="loading">Calculando faltas…</div>';
+    try{
+      const data=await api('order_stock_shortages');
+      state.stockShortages=data.products||[];
+      state.stockShortageSummary=data.summary||{products:0,shortage_units:0,pending_orders:0};
+      paintOrderStockShortages();
+    }catch(e){
+      host.innerHTML='<div class="history-empty">Não consegui calcular as faltas agora. <button class="text" id="retryStockShortages" type="button">Tentar novamente</button></div>';
+      if($('#retryStockShortages'))$('#retryStockShortages').onclick=loadOrderStockShortages;
+    }
+  }
+  function paintOrderStockShortages(){
+    const host=$('#stockShortageRows');if(!host)return;
+    const rows=state.stockShortages||[],s=state.stockShortageSummary||{};
+    if(!rows.length){host.innerHTML='<div class="history-empty">Nenhuma falta de estoque está bloqueando pedidos.</div>';return}
+    host.innerHTML='<div class="bling-banner" style="margin:12px"><strong>'+esc(s.products||rows.length)+' produto(s) em falta · '+esc(s.pending_orders||0)+' pedido(s) aguardando</strong><small>Reposição mínima calculada: '+esc(fmtQty(s.shortage_units||0))+' unidade(s). Reservas já protegidas foram descontadas.</small></div>'+rows.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.name)+'</strong><small>Faltam '+esc(fmtQty(x.shortage))+' · livre '+esc(fmtQty(x.free_stock))+' · físico '+esc(fmtQty(x.physical_stock))+' · reservado '+esc(fmtQty(x.reserved_stock))+' · demanda '+esc(fmtQty(x.pending_demand))+' · '+esc(x.pending_orders)+' pedido(s)'+(x.gondola_number?' · Gôndola '+esc(x.gondola_number):'')+(x.shelf_label?' · prateleira '+esc(x.shelf_label):'')+'</small></div><button class="secondary" type="button" data-count-shortage="'+esc(x.product_id)+'">Contar</button></div>').join('');
+    host.querySelectorAll('[data-count-shortage]').forEach(b=>b.onclick=()=>selectShortageForBalance(b.dataset.countShortage));
+  }
+  function selectShortageForBalance(productId){
+    const x=(state.stockShortages||[]).find(r=>r.product_id===productId);if(!x)return;
+    state.balanceProduct={id:x.product_id,name:x.name,gtin:x.gtin||'',stock_quantity:x.physical_stock,gondola_number:x.gondola_number??null};state.balanceQty='';paintBalance();$('#balanceScanner')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Produto selecionado · informe a quantidade física contada');
+  }
+  function bindBalancePad(){document.querySelectorAll('[data-balance-key]').forEach(b=>b.onclick=()=>balanceKey(b.dataset.balanceKey));$('#balanceConfirm').onclick=confirmBalance}
+  function balanceKey(key){if(!state.balanceProduct)return;if(key==='clear')state.balanceQty='';else if(key==='back')state.balanceQty=state.balanceQty.slice(0,-1);else if(/^\d$/.test(key)&&state.balanceQty.length<7)state.balanceQty=(state.balanceQty==='0'?'':state.balanceQty)+key;paintBalance()}
+  function paintBalance(){
+    if(state.tab!=='balance')return;
+    const hero=$('#balanceScanner'),qty=$('#balanceQty'),confirm=$('#balanceConfirm'),history=$('#balanceHistory');if(!hero||!qty||!confirm||!history)return;
+    const incident=state.balanceMode==='incident',extras=$('#balanceProductExtras');
+    if(state.balanceProduct){
+      const p=state.balanceProduct;hero.className='scanner-hero ready';hero.innerHTML='<div class="scan-title"><span class="scan-dot"></span>PRODUTO LIDO</div><div class="scan-value">'+esc(p.name)+'</div><div class="scan-sub">EAN '+esc(p.gtin||'—')+' · estoque atual '+esc(fmtQty(p.stock_quantity||0))+(p.is_active===false?' · INATIVO':'')+'</div>';qty.textContent=state.balanceQty||'0';confirm.disabled=state.balanceQty==='';
+      if(extras&&!incident){const blockers=state.balanceReadiness?.blockers||[];extras.innerHTML='<div class="balance-product-fields"><label><span>Gôndola</span><input id="balanceGondola" type="number" min="1" max="9999" inputmode="numeric" value="'+esc(state.balanceGondola||'')+'" placeholder="Ex.: 12"></label><label><span>Validade</span><input id="balanceValidity" type="date" value="'+esc(state.balanceValidity||'')+'"></label></div>'+(state.balanceNeedsPhoto?'<div class="balance-photo-callout"><strong>Produto sem foto adequada</strong><div class="sub">Se for produto novo, tire uma foto frontal da embalagem para completar o cadastro automaticamente.</div><button class="primary" id="balanceTakeProductPhoto" type="button" style="margin-top:8px">Tirar foto do produto</button><input id="balanceProductPhotoInput" type="file" accept="image/*" capture="environment" hidden><div id="balancePhotoStatus" class="balance-readiness"></div></div>':'')+'<div class="balance-readiness '+(state.balanceReadiness?.ready?'ok':'')+'">'+(state.balanceReadiness?.ready?'Cadastro comercial completo':(blockers.length?'Cadastro operacional pronto · pendente para o site: '+blockers.join(', '):'Cadastro pronto para balanço'))+'</div>';$('#balanceGondola').oninput=e=>state.balanceGondola=String(e.currentTarget.value||'').replace(/\D+/g,'').slice(0,4);$('#balanceValidity').onchange=e=>state.balanceValidity=e.currentTarget.value||'';const photoBtn=$('#balanceTakeProductPhoto'),photoInput=$('#balanceProductPhotoInput');if(photoBtn&&photoInput){photoBtn.onclick=()=>photoInput.click();photoInput.onchange=e=>{const file=e.currentTarget.files?.[0];if(file)uploadBalanceProductPhoto(file)}}}
+    }else{hero.className='scanner-hero';hero.innerHTML='<div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">'+(incident?'Depois informe a quantidade afetada.':'Aponte a câmera para o código de barras.')+'</div>';qty.textContent='—';confirm.disabled=true;if(extras)extras.innerHTML=''}
+    if(incident){const rows=state.inventoryIncidents||[];history.innerHTML=rows.length?rows.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.product_name)+'</strong><small>'+esc(inventoryIncidentLabel(x.incident_type))+' · '+esc(dateTime(x.created_at))+(x.note?' · '+esc(x.note):'')+'</small></div><div class="simple-number">'+esc(fmtQty(x.quantity))+'</div></div>').join(''):'<div class="history-empty">Nenhuma ocorrência aberta.</div>'}
+    else history.innerHTML=state.balanceHistory.length?state.balanceHistory.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.name)+'</strong><small>'+esc(x.gtin||'')+(x.gondola_number?' · Gôndola '+esc(x.gondola_number):'')+(x.difference!=null&&Number(x.difference)!==0?' · diferença '+esc(fmtQty(x.difference)):'')+'</small></div><div class="simple-number">'+esc(fmtQty(x.stock_quantity))+'</div></div>').join(''):'<div class="history-empty">Nenhum produto contado nesta sessão.</div>';
+  }
+
+  async function handleBalanceScan(ean){
+    if(state.tab!=='balance')return;
+    if(state.balanceProduct){toast('Salve o produto atual antes de ler o próximo.');return}
+    try{const data=await api('inventory_balance_resolve_ean',{ean,operator:currentOperator()||'Operação'});if(!data.product)throw new Error('product_not_found');selectBalanceProduct(data.product,{photo_required:data.photo_required===true,readiness:data.readiness||data.commercial_readiness});const status=$('#balanceCameraStatus');if(status)status.textContent=data.state==='photo_required'?'Produto novo cadastrado · tire uma foto se possível.':'Produto encontrado · informe quantidade, gôndola e validade.'}catch(e){state.balanceProduct=null;state.balanceQty='';paintBalance();toast(errorMessage(e.message))}
+  }
+  async function confirmBalance(){
+    if(!state.balanceProduct||state.balanceQty==='')return;
+    const btn=$('#balanceConfirm'),operator=requireOperator();if(!operator)return;btn.disabled=true;btn.textContent='Salvando…';
+    try{
+      if(state.balanceMode==='incident'){
+        const data=await api('inventory_incident_create',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:state.balanceProduct.id,incident_type:state.inventoryIncidentType,quantity:Number(state.balanceQty),operator,note:state.inventoryIncidentNote||''})});
+        const applied=data.incident?.local_stock_applied===true;
+        toast(inventoryIncidentLabel(data.incident?.incident_type)+' registrada'+(applied?' · fora do estoque vendável':' · aguardando inspeção'));
+        state.balanceProduct=null;state.balanceQty='';state.inventoryIncidentNote='';paintBalance();await loadInventoryIncidents();loadOrderStockShortages();
+      }else{
+        if(!/^\d{1,4}$/.test(String(state.balanceGondola||''))||Number(state.balanceGondola)<1){toast('Informe a gôndola antes de salvar');btn.disabled=false;btn.textContent='Salvar e próximo';return}
+        const data=await api('inventory_balance_commit',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:state.balanceProduct.id,ean:state.balanceProduct.gtin,counted_quantity:Number(state.balanceQty),gondola_number:Number(state.balanceGondola),expiration_date:state.balanceValidity||null,lot_id:state.balanceLotId||null,operator,source:'scanner_ean'})});
+        const item={...data.product,difference:data.count?.difference??0,reconciliation_state:data.stock?.state||data.count?.reconciliation_state||'matched'};
+        state.balanceHistory.unshift(item);state.balanceHistory=state.balanceHistory.slice(0,40);
+        const diff=Number(data.count?.difference||0);toast(diff===0?data.product.name+' · conferido':data.product.name+' · diferença '+fmtQty(diff)+' registrada para revisão');
+        state.balanceProduct=null;state.balanceQty='';state.balanceGondola='';state.balanceValidity='';state.balanceLotId='';state.balanceNeedsPhoto=false;state.balanceReadiness=null;paintBalance();loadStockRecountQueue();loadOrderStockShortages();if(state.balanceSubtab==='scanner')startBalanceCamera();
+      }
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent=state.balanceMode==='incident'?'Registrar ocorrência':'Confirmar e ler próximo'}
+  }
+
+  async function renderGondolas(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Gôndolas</h1><p>Localize produtos rapidamente ou cadastre a localização já registrando a contagem física.</p></div><button class="primary" id="newGondola">+ Nova gôndola</button></div><div id="gondolaHost"><div class="panel loading">Carregando…</div></div>';
+    $('#newGondola').onclick=openGondolaCreator;
+    try{
+      const data=await api('gondolas');state.gondolas=data.gondolas||[];
+      if(state.gondola){
+        const fresh=await api('gondola',{id:state.gondola.id});
+        state.gondola=fresh.gondola;state.gondolaProducts=fresh.products||[];
+      }
+      paintGondolas();
+    }catch(e){$('#gondolaHost').innerHTML='<div class="panel empty">Não consegui carregar as gôndolas.</div>'}
+  }
+
+  function setGondolaMode(mode){
+    state.gondolaMode=mode==='count'?'count':'assign';
+    state.gondolaCountProduct=null;state.gondolaCountQty='';
+    paintGondolas();
+  }
+
+  function gondolaCountWorkspaceHtml(){
+    const p=state.gondolaCountProduct;
+    const scanner=p
+      ? '<div id="gondolaScanner" class="scanner-hero ready"><div class="scan-title"><span class="scan-dot"></span>PRODUTO LIDO · BALANÇO</div><div class="scan-value">'+esc(p.name)+'</div><div class="scan-sub">EAN '+esc(p.gtin||'—')+' · estoque atual '+esc(fmtQty(p.stock_quantity||0))+(p.gondola_number?' · hoje na Gôndola '+esc(p.gondola_number):' · ainda sem gôndola')+'</div></div>'
+      : '<div id="gondolaScanner" class="scanner-hero"><div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">A localização só será salva depois de confirmar a quantidade física.</div></div><input id="gondolaScannerInput" class="gondola-scanner-input" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Leitor EAN da gôndola" placeholder="Leia o EAN aqui"><div class="gondola-scan-help">Leitor pronto · aceita Enter ou Tab no final do código.</div>';
+    return scanner+
+      '<div class="qty-label">Quantidade física contada</div><div class="qty-display" id="gondolaCountQty">'+(p?esc(state.gondolaCountQty||'0'):'—')+'</div>'+
+      numericPadHtml('gondolacount')+
+      '<button class="confirm-wide" id="gondolaCountConfirm" type="button" '+(!p||state.gondolaCountQty===''?'disabled':'')+'>Salvar localização e balanço</button>';
+  }
+
+  function paintGondolas(){
+    if(state.tab!=='gondolas')return;
+    const host=$('#gondolaHost'),countMode=state.gondolaMode==='count';
+    const workspace=state.gondola?'<section class="panel gondola-workspace tool-card">'+
+      '<div class="gondola-toolbar"><div class="gondola-badge">GÔNDOLA '+esc(state.gondola.number)+'</div><button class="secondary danger-action" id="clearGondola" type="button" '+(state.gondolaProducts.length?'':'disabled')+'>Limpar gôndola</button></div>'+
+      '<div class="order-filters" style="margin:12px 0"><button class="filter-chip '+(!countMode?'active':'')+'" id="gondolaModeAssign" type="button">Só localizar</button><button class="filter-chip '+(countMode?'active':'')+'" id="gondolaModeCount" type="button">Localizar + balanço</button></div>'+
+      (countMode?gondolaCountWorkspaceHtml():
+        '<div class="scanner-hero ready" id="gondolaScanner"><div class="scan-title"><span class="scan-dot"></span>LEITOR ATIVO</div><div class="scan-value">Leia os produtos da Gôndola '+esc(state.gondola.number)+'</div><div class="scan-sub">Cada leitura salva somente a localização. Não altera o estoque.</div></div><input id="gondolaScannerInput" class="gondola-scanner-input" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Leitor EAN da gôndola" placeholder="Leia o EAN aqui"><div class="gondola-scan-help">Leitor pronto · o foco volta automaticamente depois de cada produto.</div>')+
+      '<div class="section-title">Produtos nesta gôndola · '+esc(state.gondolaProducts.length)+'</div>'+
+      '<div class="panel" id="gondolaProducts">'+(state.gondolaProducts.length?state.gondolaProducts.map(gondolaProductRow).join(''):'<div class="history-empty">Nenhum produto nesta gôndola.</div>')+'</div>'+
+    '</section>':'';
+    const cards=state.gondolas.length?'<section class="panel"><div class="gondola-grid">'+state.gondolas.map(g=>
+      '<button class="gondola-card" type="button" data-open-gondola="'+esc(g.id)+'"><strong>Gôndola '+esc(g.number)+'</strong><span>'+esc(g.id===state.gondola?.id?state.gondolaProducts.length:g.product_count||0)+' produtos</span></button>'
+    ).join('')+'</div></section>':'<section class="panel"><div class="history-empty">Nenhuma gôndola cadastrada. Clique em “Nova gôndola”.</div></section>';
+    host.innerHTML=workspace+cards;
+    host.querySelectorAll('[data-open-gondola]').forEach(b=>b.onclick=()=>openGondola(b.dataset.openGondola));
+    host.querySelectorAll('[data-save-gondola-shelf]').forEach(b=>b.onclick=()=>saveGondolaShelf(b.dataset.saveGondolaShelf,b));
+    host.querySelectorAll('[data-remove-gondola-product]').forEach(b=>b.onclick=()=>removeGondolaProduct(b.dataset.removeGondolaProduct));
+    if(state.gondola){
+      $('#gondolaModeAssign').onclick=()=>setGondolaMode('assign');
+      $('#gondolaModeCount').onclick=()=>setGondolaMode('count');
+      $('#clearGondola').onclick=clearGondola;
+      if(countMode){
+        host.querySelectorAll('[data-gondolacount-key]').forEach(b=>b.onclick=()=>gondolaCountKey(b.dataset.gondolacountKey));
+        $('#gondolaCountConfirm').onclick=confirmGondolaCount;
+      }
+      bindGondolaScannerInput();
+    }
+  }
+
+  function gondolaProductRow(p){
+    return '<div class="simple-row"><div class="simple-main"><strong>'+esc(p.name)+'</strong><small>EAN '+esc(p.gtin||'—')+' · estoque '+esc(fmtQty(p.stock_quantity||0))+(p.shelf_label?' · prateleira '+esc(p.shelf_label):' · sem prateleira')+'</small></div><div class="shelf-control"><input type="text" maxlength="24" data-gondola-shelf-input="'+esc(p.id)+'" value="'+esc(p.shelf_label||'')+'" placeholder="Prateleira"><button class="text" type="button" data-save-gondola-shelf="'+esc(p.id)+'">Salvar</button><button class="text danger" type="button" data-remove-gondola-product="'+esc(p.id)+'">Remover</button></div></div>';
+  }
+
+  async function openGondola(id){
+    try{
+      const data=await api('gondola',{id});
+      state.gondola=data.gondola;state.gondolaProducts=data.products||[];
+      state.gondolaCountProduct=null;state.gondolaCountQty='';
+      paintGondolas();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
+  function openGondolaCreator(){
+    state.gondolaCreateNumber='';
+    $('#editorTitle').textContent='Nova gôndola';
+    $('#editorBody').innerHTML='<div class="muted">Digite somente o número da gôndola usando os botões abaixo.</div><div class="big-number" id="gondolaCreateDisplay">—</div>'+numericPadHtml('gcreate');
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button><button class="primary" id="createGondola" disabled>Criar gôndola</button>';
+    $('#cancelEditor').onclick=()=>$('#editor').close();
+    document.querySelectorAll('[data-gcreate-key]').forEach(b=>b.onclick=()=>gondolaCreateKey(b.dataset.gcreateKey));
+    $('#createGondola').onclick=createGondola;
+    $('#editor').showModal();
+  }
+
+  function gondolaCreateKey(key){
+    if(key==='clear')state.gondolaCreateNumber='';
+    else if(key==='back')state.gondolaCreateNumber=state.gondolaCreateNumber.slice(0,-1);
+    else if(/^\d$/.test(key)&&state.gondolaCreateNumber.length<4)state.gondolaCreateNumber=(state.gondolaCreateNumber==='0'?'':state.gondolaCreateNumber)+key;
+    $('#gondolaCreateDisplay').textContent=state.gondolaCreateNumber||'—';
+    $('#createGondola').disabled=!Number(state.gondolaCreateNumber);
+  }
+
+  async function createGondola(){
+    const btn=$('#createGondola');btn.disabled=true;btn.textContent='Criando…';
+    try{
+      const data=await api('gondola_create',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({number:Number(state.gondolaCreateNumber)})
+      });
+      $('#editor').close();state.gondola=data.gondola;state.gondolaProducts=[];
+      state.gondolaCountProduct=null;state.gondolaCountQty='';
+      toast('Gôndola '+data.gondola.number+' pronta');
+      await renderGondolas();
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Criar gôndola'}
+  }
+
+  let gondolaScanTimer=null;
+  function focusGondolaScanner(){
+    if(state.tab!=='gondolas'||!state.gondola||state.gondolaCountProduct)return;
+    setTimeout(()=>{
+      const input=$('#gondolaScannerInput');
+      if(input&&!document.querySelector('dialog[open]')){
+        try{input.focus({preventScroll:true})}catch{input.focus()}
+        input.select();
+      }
+    },50);
+  }
+  function submitGondolaScannerValue(raw){
+    clearTimeout(gondolaScanTimer);
+    const input=$('#gondolaScannerInput');
+    const ean=String(raw??input?.value??'').replace(/\D+/g,'').slice(0,30);
+    if(input)input.value='';
+    if(ean.length<4){if(ean)toast('EAN inválido');focusGondolaScanner();return}
+    handleGondolaScan(ean);
+  }
+  function bindGondolaScannerInput(){
+    const input=$('#gondolaScannerInput');if(!input)return;
+    input.onkeydown=e=>{
+      if(e.key==='Enter'||e.key==='Tab'){
+        e.preventDefault();e.stopPropagation();submitGondolaScannerValue(input.value);
+      }
+    };
+    input.oninput=()=>{
+      input.value=String(input.value||'').replace(/\D+/g,'').slice(0,30);
+      clearTimeout(gondolaScanTimer);
+      const digits=input.value.length;
+      if(digits>=4)gondolaScanTimer=setTimeout(()=>submitGondolaScannerValue(input.value),700);
+    };
+    input.onpaste=()=>setTimeout(()=>{const digits=String(input.value||'').replace(/\D+/g,'');if(digits.length>=4)submitGondolaScannerValue(digits)},0);
+    input.onblur=()=>{const digits=String(input.value||'').replace(/\D+/g,'');if(digits.length>=4)setTimeout(()=>submitGondolaScannerValue(digits),0)};
+    focusGondolaScanner();
+  }
+
+  async function handleGondolaScan(ean){
+    if(state.tab!=='gondolas'||!state.gondola){toast('Abra uma gôndola antes de ler os produtos.');return}
+    if(state.gondolaMode==='count'){
+      if(state.gondolaCountProduct){toast('Confirme a quantidade do produto atual antes de ler o próximo.');return}
+      try{
+        const data=await api('ean_lookup',{ean});
+        state.gondolaCountProduct=data.product;state.gondolaCountQty='';
+        paintGondolas();toast('Produto lido · informe a quantidade física');
+      }catch(e){state.gondolaCountProduct=null;state.gondolaCountQty='';paintGondolas();toast(errorMessage(e.message))}
+      return;
+    }
+    try{
+      const data=await api('gondola_assign',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({gondola_id:state.gondola.id,ean})
+      });
+      state.gondolaProducts=state.gondolaProducts.filter(p=>p.id!==data.product.id);
+      state.gondolaProducts.unshift(data.product);
+      const moved=data.previous_gondola_number&&Number(data.previous_gondola_number)!==Number(state.gondola.number)?' · movido da Gôndola '+data.previous_gondola_number:'';
+      toast(data.product.name+moved);paintGondolas();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
+  function gondolaCountKey(key){
+    if(!state.gondolaCountProduct)return;
+    if(key==='clear')state.gondolaCountQty='';
+    else if(key==='back')state.gondolaCountQty=state.gondolaCountQty.slice(0,-1);
+    else if(/^\d$/.test(key)&&state.gondolaCountQty.length<7)state.gondolaCountQty=(state.gondolaCountQty==='0'?'':state.gondolaCountQty)+key;
+    const display=$('#gondolaCountQty'),btn=$('#gondolaCountConfirm');
+    if(display)display.textContent=state.gondolaCountQty||'0';
+    if(btn)btn.disabled=state.gondolaCountQty==='';
+  }
+
+  async function confirmGondolaCount(){
+    if(!state.gondola||!state.gondolaCountProduct||state.gondolaCountQty==='')return;
+    const operator=requireOperator();if(!operator)return;
+    const btn=$('#gondolaCountConfirm');if(btn){btn.disabled=true;btn.textContent='Salvando…'}
+    const pending=state.gondolaCountProduct;
+    try{
+      const data=await api('gondola_assign_count',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({gondola_id:state.gondola.id,product_id:pending.id,quantity:Number(state.gondolaCountQty),operator})
+      });
+      state.gondolaProducts=state.gondolaProducts.filter(p=>p.id!==data.product.id);
+      state.gondolaProducts.unshift(data.product);
+      const moved=data.previous_gondola_number&&Number(data.previous_gondola_number)!==Number(state.gondola.number)?' · movido da Gôndola '+data.previous_gondola_number:'';
+      const diff=Number(data.count?.difference||0);
+      const countText=diff===0?' · estoque conferido':' · diferença '+fmtQty(diff)+' registrada';
+      state.gondolaCountProduct=null;state.gondolaCountQty='';
+      paintGondolas();toast(data.product.name+countText+moved);
+      loadStockRecountQueue();loadOrderStockShortages();
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='Salvar localização e balanço'}
+    }
+  }
+
+  async function clearGondola(){
+    if(!state.gondola||!state.gondolaProducts.length)return;
+    const number=state.gondola.number,count=state.gondolaProducts.length;
+    const ok=window.confirm('Limpar a Gôndola '+number+'?\n\nIsso vai retirar a gôndola e a prateleira dos '+count+' produto(s) desta gôndola. Os produtos NÃO serão apagados e o estoque NÃO será alterado.');
+    if(!ok)return;
+    const btn=$('#clearGondola');if(btn){btn.disabled=true;btn.textContent='Limpando…'}
+    try{
+      const data=await api('gondola_clear',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({gondola_id:state.gondola.id,confirmation:'LIMPAR_GONDOLA_'+number,operator:currentOperator()||'Operação'})
+      });
+      state.gondolaProducts=[];state.gondolaCountProduct=null;state.gondolaCountQty='';
+      const card=state.gondolas.find(g=>g.id===state.gondola.id);if(card)card.product_count=0;
+      paintGondolas();toast('Gôndola '+number+' limpa · '+Number(data.removed_count||count)+' produto(s) sem localização');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='Limpar gôndola'}
+    }
+  }
+
+  async function saveGondolaShelf(productId,btn){
+    if(!state.gondola)return;
+    const input=document.querySelector('[data-gondola-shelf-input="'+CSS.escape(productId)+'"]');
+    if(!input)return;
+    if(btn){btn.disabled=true;btn.textContent='Salvando…'}
+    try{
+      const data=await api('gondola_shelf_update',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({gondola_id:state.gondola.id,product_id:productId,shelf_label:input.value})
+      });
+      const product=state.gondolaProducts.find(p=>p.id===productId);
+      if(product)product.shelf_label=data.shelf_label||null;
+      paintGondolas();toast(data.shelf_label?'Prateleira '+data.shelf_label+' salva':'Prateleira removida');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Salvar'}
+    }
+  }
+
+  async function removeGondolaProduct(productId){
+    if(!state.gondola)return;
+    try{
+      await api('gondola_remove',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({gondola_id:state.gondola.id,product_id:productId})
+      });
+      state.gondolaProducts=state.gondolaProducts.filter(p=>p.id!==productId);
+      const card=state.gondolas.find(g=>g.id===state.gondola.id);if(card)card.product_count=state.gondolaProducts.length;
+      paintGondolas();toast('Produto removido da gôndola');
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
+
+  function purchaseFinanceLabel(v){
+    const map={blocked_personal:'CPF · fora do financeiro',pending_company_match:'Aguardando fornecedor',eligible:'Elegível',posted:'Conta no Bling',review:'Financeiro pendente',not_applicable:'Não aplicável'};
+    const cls=v==='posted'?'':v==='blocked_personal'?'off':v==='review'||v==='pending_company_match'?'warn':'';
+    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
+  }
+  function purchasePaymentSummary(d){
+    return d?.metadata?.payment_summary&&typeof d.metadata.payment_summary==='object'?d.metadata.payment_summary:{};
+  }
+  function purchasePaymentMethodsText(ps){
+    const labels=Array.isArray(ps?.method_labels)?ps.method_labels.filter(Boolean):[];
+    return labels.length?labels.join(' + '):'Forma de pagamento não identificada';
+  }
+  function purchasePaymentAtPurchaseHtml(d){
+    const ps=purchasePaymentSummary(d),settlement=d?.metadata?.settlement||{};
+    if(!ps?.paid_at_purchase_likely)return '';
+    const method=purchasePaymentMethodsText(ps),amount=purchaseMoney(ps.payment_total??d?.total_amount);
+    if(settlement?.verified){
+      return '<div class="purchase-safe" style="margin:10px 0 0"><strong>Pagamento baixado no Bling</strong><small>'+esc(method)+' · '+amount+(settlement.payment_date?' · baixa em '+esc(dateOnly(settlement.payment_date)):'')+(settlement.financial_account?.description?' · '+esc(settlement.financial_account.description):'')+'.</small></div>';
+    }
+    let guidance='A NF-e indica que o fornecedor provavelmente foi pago no ato da compra.';
+    if(ps.guidance==='credit_card')guidance+=' No Bling, confirme a baixa usando a conta financeira do cartão de crédito; a fatura do cartão deve ser controlada separadamente.';
+    else if(ps.guidance==='debit_card')guidance+=' No Bling, confirme a baixa usando a conta bancária/cartão de débito utilizado.';
+    else if(ps.guidance==='pix')guidance+=' No Bling, confirme a baixa na conta bancária de onde saiu o PIX.';
+    else if(ps.guidance==='cash')guidance+=' No Bling, confirme a baixa usando o caixa/dinheiro correspondente.';
+    else if(ps.guidance==='bank_transfer')guidance+=' No Bling, confirme a baixa na conta bancária utilizada.';
+    else guidance+=' Confirme a baixa na conta financeira correta do Bling.';
+    return '<div class="purchase-safe purchase-danger" style="margin:10px 0 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+
+        '<strong>Pagamento informado na NF-e: '+esc(method)+'</strong>'+
+        '<small>'+amount+' · '+esc(guidance)+'</small>'+
+      '</div><div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-open-payables>Ver no Bling</button><button class="primary" type="button" data-purchase-settlement-preview>Preparar baixa</button></div></div>'+
+    '</div>';
+  }
+  function purchaseFinanceRowLabel(d){
+    const ps=purchasePaymentSummary(d),settlement=d?.metadata?.settlement||{};
+    if(settlement?.verified){
+      return '<span class="pill">Pago confirmado</span>';
+    }
+    if(ps?.paid_at_purchase_likely&&d?.finance_status==='posted'){
+      return '<span class="pill warn">Confirmar baixa</span>';
+    }
+    return purchaseFinanceLabel(d?.finance_status);
+  }
+
+  function purchaseFinanceReasonLabel(v){
+    const map={
+      reconciled_existing:'Financeiro já encontrado e confirmado no Bling.',
+      native_nfe_accounts_launched:'Contas a pagar lançadas e confirmadas pelo Bling.',
+      native_launch_error_but_reconciled:'O Bling mostrou um aviso, mas as contas foram confirmadas.',
+      payables_missing_or_ambiguous:'Não encontrei uma conta a pagar que corresponda com segurança a esta nota.',
+      bling_nfe_id_missing_for_native_payables:'Esta nota ainda não tem a referência necessária no Bling para lançar o financeiro.',
+      supplier_contact_missing:'O fornecedor desta nota ainda precisa ser vinculado corretamente no Bling.',
+      installments_missing:'A nota não trouxe parcelas/vencimentos suficientes para montar o financeiro com segurança.',
+      installment_total_mismatch:'O total das parcelas é diferente do total da NF-e.',
+      automatic_payables_disabled:'O lançamento automático de contas está desativado.'
+    };
+    const key=String(v||'');
+    if(/^nfe_lancar_contas_http_/.test(key))return 'O Bling não aceitou o lançamento das contas desta NF-e.';
+    if(/^payable_reconcile_http_/.test(key))return 'Não consegui consultar as contas a pagar no Bling agora.';
+    return map[key]||'O financeiro desta nota precisa de conferência.';
+  }
+  function purchaseFinanceProblemHtml(d){
+    const f=d?.finance_reference||{},r=f.reconciliation||{};
+    const reason=String(f.reason||d?.finance_last_error||'');
+    if(reason==='installment_total_mismatch'){
+      const invoice=Number(r.invoice_total??d?.total_amount),parts=Number(r.installment_total);
+      const diff=Number.isFinite(invoice)&&Number.isFinite(parts)?Math.round((parts-invoice)*100)/100:null;
+      const ps=purchasePaymentSummary(d);
+      if(ps?.paid_at_purchase_likely&&ps?.total_matches){
+        return '<div class="purchase-price-grid" style="margin-top:10px">'+
+          '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
+          '<div class="purchase-price-box"><small>Pagamento efetivo no XML</small><strong class="ok-text">'+purchaseMoney(ps.payment_total)+'</strong></div>'+
+          (Number(ps.change||0)>0?'<div class="purchase-price-box"><small>Troco informado</small><strong>'+purchaseMoney(ps.change)+'</strong></div>':'')+
+          '<div class="purchase-price-box"><small>Parcela/cobrança</small><strong class="warn-text">'+purchaseMoney(parts)+'</strong></div>'+
+        '</div><small class="warn-text" style="margin-top:7px">O pagamento da NF-e fecha corretamente. A divergência está somente na parcela/cobrança do Bling/XML. Confira essa conta antes da baixa.</small>';
+      }
+      return '<div class="purchase-price-grid" style="margin-top:10px">'+
+        '<div class="purchase-price-box"><small>Total da NF-e</small><strong>'+purchaseMoney(invoice)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Total das parcelas</small><strong>'+purchaseMoney(parts)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Diferença</small><strong class="warn-text">'+(diff===null?'—':purchaseMoney(diff))+'</strong></div>'+
+      '</div><small class="warn-text" style="margin-top:7px">Corrija as parcelas no Bling para que a soma fique igual ao total da nota. Depois clique em <b>Resolver financeiro</b> novamente.</small>';
+    }
+    if(reason==='payables_missing_or_ambiguous'){
+      return '<small style="margin-top:7px">Ao clicar em <b>Resolver financeiro</b>, o sistema confere novamente. Se não existir conta correspondente, ele pedirá sua confirmação antes de solicitar o lançamento ao Bling.</small>';
+    }
+    if(reason==='installments_missing'){
+      return '<small class="warn-text" style="margin-top:7px">Confira no Bling os vencimentos e parcelas desta compra. O sistema não cria valores por aproximação.</small>';
+    }
+    if(reason==='supplier_contact_missing'){
+      return '<small class="warn-text" style="margin-top:7px">É preciso corrigir o vínculo do fornecedor no Bling antes de lançar as contas.</small>';
+    }
+    return '';
+  }
+  function purchaseFinanceBlockHtml(d){
+    const f=d?.finance_reference||{},posted=d?.finance_status==='posted'&&Boolean(d?.finance_reconciled_at);
+    const eligible=d?.recipient_kind==='CNPJ'&&d?.financial_eligible===true;
+    const reason=purchaseFinanceReasonLabel(f.reason||d?.finance_last_error);
+    const paymentHint=purchasePaymentAtPurchaseHtml(d);
+    if(d?.recipient_kind==='CPF'){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Nota em CPF: não gera contas a pagar da empresa.</small></div>'+paymentHint;
+    }
+    if(!eligible){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Financeiro</strong><small>Esta nota não está marcada para gerar contas a pagar da empresa.</small></div>'+paymentHint;
+    }
+    if(posted){
+      const ps=purchasePaymentSummary(d);
+      const title=ps?.paid_at_purchase_likely?'Conta registrada no Bling · baixa ainda precisa ser conferida':'Conta a pagar registrada no Bling';
+      const text=ps?.paid_at_purchase_likely
+        ?'A obrigação da compra existe no Bling, mas a NF-e indica pagamento no ato. Confirme a baixa para que ela não permaneça como vencida/atrasada.'
+        :'A conta desta NF-e foi encontrada e conciliada no Bling.';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>'+esc(title)+'</strong><small>'+esc(text)+'</small></div>'+paymentHint;
+    }
+    return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+
+        '<strong>Financeiro precisa de atenção</strong>'+
+        '<small>'+esc(reason)+'</small>'+
+        purchaseFinanceProblemHtml(d)+
+      '</div><div class="purchase-detail-actions">'+
+        '<button class="primary" type="button" data-purchase-finance-resolve="'+esc(d.id)+'">Resolver financeiro</button>'+
+      '</div></div>'+
+      '<details style="margin-top:8px"><summary class="sub" style="cursor:pointer">Detalhes técnicos</summary><small>NF-e Bling #'+esc(d?.bling_nfe_id||'—')+' · tentativas: '+esc(Number(d?.finance_attempt_count||0))+(d?.finance_last_attempt_at?' · última '+esc(dateTime(d.finance_last_attempt_at)):'')+'.</small></details>'+
+    '</div>'+paymentHint;
+  }
+
+  function purchaseStatusLabel(v){
+    const map={processed:'Processada',review_required:'Revisar',failed:'Falhou',duplicate:'Duplicada',processing:'Processando',pending:'Pendente'};
+    const cls=v==='review_required'||v==='failed'?'warn':'';
+    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
+  }
+  function purchaseReceiptLabel(v){
+    const map={ready:'Pronta para entrada',received:'Estoque recebido',review:'Revisar antes da entrada',not_received:'Não recebido'};
+    const cls=v==='ready'?'':v==='received'?'':v==='review'?'warn':'off';
+    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
+  }
+  function purchaseMoney(v){
+    const n=Number(v||0);
+    return Number.isFinite(n)?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—';
+  }
+  async function purchaseApi(purchase_action,payload={}){
+    return customerApi('purchase_xml',{purchase_action,...payload});
+  }
+  function purchaseFilterPayload(){
+    const f=state.purchaseFilter||{period:'this_month',start_date:'',end_date:''};
+    return {period:f.period||'this_month',start_date:f.start_date||null,end_date:f.end_date||null};
+  }
+  function purchasePeriodLabel(){
+    const f=state.purchaseFilter||{};
+    const labels={this_month:'Este mês',last_month:'Mês passado',days_90:'Últimos 90 dias',days_120:'Últimos 120 dias',days_180:'Últimos 180 dias',custom:'Período personalizado'};
+    if(f.period==='custom'&&f.start_date&&f.end_date)return dateOnly(f.start_date)+' a '+dateOnly(f.end_date);
+    return labels[f.period]||'Este mês';
+  }
+  function purchaseCustomRangeReady(){
+    const f=state.purchaseFilter||{};
+    return f.period!=='custom'||(/^\d{4}-\d{2}-\d{2}$/.test(f.start_date||'')&&/^\d{4}-\d{2}-\d{2}$/.test(f.end_date||'')&&f.start_date<=f.end_date);
+  }
+  function syncPurchasePeriodControls(){
+    const f=state.purchaseFilter||{};
+    const custom=f.period==='custom';
+    const box=$('#purchaseCustomDates');if(box)box.style.display=custom?'flex':'none';
+    const b=$('#purchaseBlingSync');if(b)b.textContent='Buscar no Bling';
+  }
+  async function renderPurchases(){
+    const content=$('#content');
+    if(!state.purchaseFilter)state.purchaseFilter={period:'this_month',start_date:'',end_date:''};
+    if(!state.purchaseQuickStatus)state.purchaseQuickStatus='attention';
+    const pf=state.purchaseFilter;
+    content.innerHTML=
+      '<div class="page-head"><div><h1>Notas fiscais de entrada</h1><p>Confira suas compras e os produtos recebidos. Integração com o Bling.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar</button></div>'+
+      '<section class="panel purchase-simple-toolbar" aria-label="Importação de notas fiscais">'+
+        '<div class="purchase-toolbar-period"><label for="purchasePeriod">Período</label>'+
+          '<select id="purchasePeriod">'+
+            '<option value="this_month" '+(pf.period==='this_month'?'selected':'')+'>Este mês</option>'+
+            '<option value="last_month" '+(pf.period==='last_month'?'selected':'')+'>Mês passado</option>'+
+            '<option value="days_90" '+(pf.period==='days_90'?'selected':'')+'>Últimos 90 dias</option>'+
+            '<option value="days_120" '+(pf.period==='days_120'?'selected':'')+'>Últimos 120 dias</option>'+
+            '<option value="days_180" '+(pf.period==='days_180'?'selected':'')+'>Últimos 180 dias</option>'+
+            '<option value="custom" '+(pf.period==='custom'?'selected':'')+'>Escolher datas</option>'+
+          '</select>'+
+        '</div>'+
+        '<div id="purchaseCustomDates" class="purchase-custom-range" style="display:'+(pf.period==='custom'?'flex':'none')+'">'+
+          '<label>De <input id="purchaseDateStart" type="date" value="'+esc(pf.start_date||'')+'"></label>'+
+          '<label>Até <input id="purchaseDateEnd" type="date" value="'+esc(pf.end_date||'')+'"></label>'+
+          '<button class="secondary" id="purchaseApplyDates" type="button">Aplicar</button>'+
+        '</div>'+
+        '<div class="purchase-toolbar-actions">'+
+          '<button class="primary" id="purchaseBlingSync" type="button">Buscar no Bling</button>'+
+          '<button class="secondary" id="purchaseXmlBatch" type="button">Importar XML</button>'+
+          '<button class="secondary" id="purchaseBlingReceived" type="button">Notas recebidas no Bling ↗</button>'+
+        '</div>'+
+      '</section>'+
+      '<div class="purchase-source-note"><strong>Importação automática:</strong> o Admin importa notas já registradas como <b>Notas de compra</b> no Bling. As notas apenas <b>Ciente</b> na aba Notas recebidas não estão disponíveis por esta API. Para incluir uma dessas notas, importe o XML obtido pelo Bling quando disponível ou confirme a operação no Bling somente após verificar a compra e o recebimento. Não confirme apenas para fazê-la aparecer aqui.</div>'+
+      '<div id="purchaseBlingReceivedReview" class="purchase-review-reminder" role="status" aria-live="polite"><span class="sub">Verificando conferência diária do Bling…</span></div>'+
+      '<details class="panel purchase-import-options"><summary>Outras opções de importação</summary>'+
+        '<div class="purchase-toolbar-actions">'+
+          '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar apenas 1 XML</button>'+
+          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Catalogar XML sem cadastrar produtos</button>'+
+        '</div>'+
+        '<p class="sub">Importar uma nota não lança estoque automaticamente. A opção de catalogar serve apenas para pesquisa e revisão, sem alterar produtos, preços, estoque ou financeiro. Notas em CPF não geram contas a pagar.</p>'+
+      '</details>'+
+      '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
+      '<input id="purchaseXmlCatalogOnlyInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
+      '<div id="purchaseBody"><div class="loading">Carregando notas fiscais…</div></div>';
+    $('#refreshPurchases').onclick=loadPurchases;
+    $('#purchasePeriod').onchange=async e=>{
+      state.purchaseFilter.period=e.target.value;
+      syncPurchasePeriodControls();
+      if(e.target.value!=='custom')await loadPurchases();
+    };
+    if($('#purchaseDateStart'))$('#purchaseDateStart').onchange=e=>state.purchaseFilter.start_date=e.target.value;
+    if($('#purchaseDateEnd'))$('#purchaseDateEnd').onchange=e=>state.purchaseFilter.end_date=e.target.value;
+    if($('#purchaseApplyDates'))$('#purchaseApplyDates').onclick=async()=>{
+      if(!purchaseCustomRangeReady()){toast('Informe um período válido');return}
+      await loadPurchases();
+    };
+    $('#purchaseBlingSync').onclick=runPurchaseBlingSync;
+    $('#purchaseBlingReceived').onclick=()=>window.open('https://www.bling.com.br/notas.entrada.php#list','_blank','noopener');
+    $('#purchaseXmlSingle').onclick=()=>{$('#purchaseXmlInput').multiple=false;$('#purchaseXmlInput').click()};
+    $('#purchaseXmlBatch').onclick=()=>{$('#purchaseXmlInput').multiple=true;$('#purchaseXmlInput').click()};
+    $('#purchaseXmlInput').onchange=e=>importPurchaseXmlFiles([...e.target.files]);
+    $('#purchaseXmlCatalogOnly').onclick=()=>$('#purchaseXmlCatalogOnlyInput').click();
+    $('#purchaseXmlCatalogOnlyInput').onchange=e=>importCatalogOnlyXmlFiles([...e.target.files]);
+    syncPurchasePeriodControls();
+    await loadPurchases();
+  }
+  // Lembrete diário compartilhado entre operadores. Não é uma contagem real de NF-e.
+  function paintBlingReceivedReview(){
+    const host=$('#purchaseBlingReceivedReview');if(!host)return;
+    const r=state.purchaseBlingReceivedReview;
+    if(!r||r.ok!==true){
+      host.innerHTML='<span class="sub">Não foi possível verificar a conferência diária da equipe.</span>'+
+        '<button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Notas recebidas no Bling ↗</button>';
+    }else if(r.reviewed_today){
+      host.classList.add('reviewed');
+      const label=r.reviewed_by_name?' por '+esc(r.reviewed_by_name):'';
+      host.innerHTML='<span><strong>Notas recebidas conferidas hoje</strong><small>Registrado'+label+' às '+esc(dateTime(r.reviewed_at||''))+'. Isso não significa ausência de notas fiscais pendentes.</small></span>'+
+        '<button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Bling ↗</button>';
+    }else{
+      host.classList.remove('reviewed');
+      host.innerHTML='<span><strong>Conferir notas recebidas no Bling</strong>'+
+        '<small>Lembrete diário: veja se há novas NF-e para sua empresa. Não há contagem automática de notas pendentes.</small></span>'+
+        '<div class="purchase-review-actions"><button class="secondary" type="button" id="purchaseReviewOpenBling">Abrir Bling ↗</button>'+
+        '<button class="primary" type="button" id="purchaseReviewConfirm">Já conferi hoje</button></div>';
+    }
+    const open=$('#purchaseReviewOpenBling');
+    if(open)open.onclick=()=>window.open('https://www.bling.com.br/notas.entrada.php#list','_blank','noopener');
+    const confirm=$('#purchaseReviewConfirm');
+    if(confirm)confirm.onclick=async()=>{
+      if(confirm.disabled)return;
+      confirm.disabled=true;confirm.textContent='Registrando…';
+      try{
+        const check=await purchaseApi('bling_received_review_confirm');
+        if(!check?.ok)throw new Error('Não foi possível registrar a conferência.');
+        state.purchaseBlingReceivedReview=check;
+        paintBlingReceivedReview();
+        toast('Conferência diária registrada para a equipe');
+      }catch(e){confirm.disabled=false;confirm.textContent='Já conferi hoje';toast(errorMessage(e?.message||e))}
+    };
+  }
+  async function loadPurchases(){
+    const host=$('#purchaseBody');if(!host)return;
+    if(!purchaseCustomRangeReady()){host.innerHTML='<div class="empty">Escolha as duas datas do período personalizado e clique em Aplicar.</div>';return}
+    host.innerHTML='<div class="loading">Carregando compras de '+esc(purchasePeriodLabel())+'…</div>';
+    try{
+      const filter=purchaseFilterPayload();
+      const filterKey=JSON.stringify(filter);
+      if(state.purchaseBlingCompareKey!==filterKey){
+        state.purchaseBlingCompareKey=filterKey;
+        state.purchaseBlingCompareLoaded=false;
+        state.purchaseBlingCompareError='';
+        state.purchaseBlingBrowse={ok:null,documents:[],count:0};
+      }
+      // Fast path: opening Compras/XML must not wait for Bling OAuth, pricing
+      // configuration or the 31-day product queue. Advanced data loads on demand.
+      const result=await purchaseApi('summary',filter);
+      state.purchaseXml=result;
+      if(!state.purchaseAdvancedLoaded){
+        state.purchaseCatalogQueue={ok:true,items:[],counts:{}};
+      }
+      // Daily reminder is best-effort and must not delay the note list.
+      if(!state.purchaseBlingReceivedReview)state.purchaseBlingReceivedReview={ok:false};
+      purchaseApi('bling_received_review_status',{}).then(value=>{
+        state.purchaseBlingReceivedReview=value;
+        paintBlingReceivedReview();
+      }).catch(()=>{});
+      if(state.purchaseAdvancedOpen&&!state.purchaseAdvancedLoaded&&!state.purchaseAdvancedLoading){
+        queueMicrotask(()=>loadPurchaseAdvanced());
+      }
+      paintBlingReceivedReview();
+      paintPurchases();
+    }catch(e){
+      host.innerHTML='<div class="empty">Não consegui carregar Compras/XML. <button class="text" id="retryPurchases">Tentar novamente</button></div>';
+      if($('#retryPurchases'))$('#retryPurchases').onclick=loadPurchases;
+    }
+  }
+  async function loadPurchaseAdvanced(){
+    if(state.purchaseAdvancedLoading||state.purchaseAdvancedLoaded)return;
+    state.purchaseAdvancedLoading=true;
+    state.purchaseAdvancedError='';
+    try{
+      state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
+      state.purchaseAdvancedLoaded=true;
+    }catch(e){
+      state.purchaseAdvancedError=purchaseXmlError(e);
+      state.purchaseAdvancedLoaded=false;
+    }finally{
+      state.purchaseAdvancedLoading=false;
+      if($('#purchaseBody'))paintPurchases();
+    }
+  }
+  async function loadPurchaseBlingComparison(){
+    if(state.purchaseBlingCompareLoading||state.purchaseBlingCompareLoaded)return;
+    const filter=purchaseFilterPayload(), key=JSON.stringify(filter);
+    state.purchaseBlingCompareKey=key;
+    state.purchaseBlingCompareLoading=true;
+    state.purchaseBlingCompareError='';
+    try{
+      const result=await purchaseApi('browse_bling',filter);
+      if(state.purchaseBlingCompareKey!==key)return;
+      state.purchaseBlingBrowse=result;
+      state.purchaseBlingCompareLoaded=true;
+    }catch(e){
+      if(state.purchaseBlingCompareKey!==key)return;
+      state.purchaseBlingCompareError=purchaseXmlError(e);
+      state.purchaseBlingCompareLoaded=false;
+      state.purchaseBlingBrowse={ok:false,documents:[],count:0};
+    }finally{
+      state.purchaseBlingCompareLoading=false;
+      if($('#purchaseBody'))paintPurchases();
+    }
+  }
+  function purchaseMaybeMoney(v){
+    if(v===null||v===undefined||v==='')return '—';
+    const n=Number(v);return Number.isFinite(n)?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—';
+  }
+  function purchaseNumberInput(v){
+    const n=Number(v);return Number.isFinite(n)?String(Math.round(n*1000000)/1000000):'';
+  }
+  function purchaseItemNetTotal(x){
+    const m=x?.metadata||{};
+    let n=Number(m.net_line_total);
+    if(!Number.isFinite(n)||n<=0)n=Number(x?.line_total);
+    if((!Number.isFinite(n)||n<=0)&&Number.isFinite(Number(x?.purchase_unit_price)))n=Number(x.purchase_unit_price)*Number(x.purchase_quantity||0);
+    return Number.isFinite(n)?n:null;
+  }
+  function purchaseItemUnitCost(x,factor){
+    const qty=Number(x?.purchase_quantity||0),f=Number(factor),net=purchaseItemNetTotal(x);
+    return net!==null&&qty>0&&f>0?net/(qty*f):null;
+  }
+  function purchaseItemCardHtml(x){
+    const p=x.pricing_preview||{},prod=x.products||{},factor=p.suggested_conversion_factor??x.conversion_factor??1;
+    const unitCost=p.proposed_unit_cost??purchaseItemUnitCost(x,factor);
+    const minimum=p.suggested_sale_price??(unitCost!==null?Math.round(unitCost*1.4*100)/100:null);
+    const currentSale=Number(prod?.price),hasCurrent=Number.isFinite(currentSale)&&currentSale>0;
+    const hasMinimum=Number.isFinite(Number(minimum));
+    const saleValue=hasCurrent&&hasMinimum?Math.max(currentSale,Number(minimum)):hasCurrent?currentSale:minimum;
+    const shouldUpdateSale=!hasCurrent||(hasMinimum&&currentSale+0.005<Number(minimum))||['pending','missing_link'].includes(String(x?.metadata?.bling_sale_status||''));
+    const saleHint=hasCurrent&&hasMinimum&&currentSale>=Number(minimum)
+      ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
+      :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
+    const existing=Boolean(prod?.id),inactive=existing&&prod.is_active===false,newFromXml=Boolean(prod?.metadata?.purchase_xml_created);
+    const approved=Boolean(x?.metadata?.catalog_approved_at),sync=x?.metadata?.bling_sale_status||'',costSync=x?.metadata?.bling_supplier_cost_status||'';
+    const statusText=approved
+      ?'<div class="purchase-sync-status"><strong>✓ Atualizado no Admin</strong> · '+(sync==='confirmed'?'Preço confirmado no Bling':sync==='pending'||sync==='missing_link'?'Preço no Bling pendente':sync==='not_requested'?'Preço do Bling não foi alterado':'Preço no Bling não conferido')+
+      (costSync==='submitted'?' · custo enviado ao fornecedor no Bling (não verificado)':costSync==='pending'||costSync==='missing_supplier_link'||costSync==='missing_product_link'?' · custo Bling pendente':'')+'</div>'
+      :'';
+    const matchHtml=existing?'':'<div class="purchase-match-panel" data-purchase-match-panel>'+
+      '<strong>Identificar produto</strong>'+
+      '<small class="purchase-match-help">Selecione a unidade vendida. Vincular não altera estoque nem dados fiscais.</small>'+
+      '<div class="purchase-match-search"><input type="search" data-purchase-match-query placeholder="EAN ou nome do produto" value="'+esc(x.commercial_gtin||x.tax_gtin||x.description||'')+'"><button class="secondary" type="button" data-purchase-match-search>Buscar produto</button></div>'+
+      '<div data-purchase-match-results class="purchase-match-results"></div>'+
+      '<div data-purchase-match-selected class="purchase-match-selection" aria-live="polite">Aguardando correspondência…</div>'+
+      '<div class="purchase-match-options"><label>Este EAN é da <select data-purchase-match-role><option value="base_unit">Unidade vendida</option><option value="package">Embalagem fechada</option></select></label>'+
+      '<label class="purchase-match-source-label" '+(x.commercial_gtin&&x.commercial_gtin===x.tax_gtin?'hidden':'')+'>EAN da nota <select data-purchase-match-source><option value="commercial">Comercial: '+esc(x.commercial_gtin||'—')+'</option><option value="tax">Tributável: '+esc(x.tax_gtin||'—')+'</option></select></label></div>'+
+      '<button class="primary" type="button" data-purchase-match-confirm disabled>Confirmar vínculo</button>'+
+      '<details class="purchase-create-item"><summary>Não encontrou? Criar produto novo inativo</summary><label>Nome da unidade vendida <input data-purchase-create-name value="'+esc(x.description||'')+'"></label><button type="button" class="secondary" data-purchase-match-create>Criar produto inativo e vincular</button></details>'+
+      '<div class="purchase-match-feedback" role="status" data-purchase-match-feedback></div>'+
+      '</div>';
+    const needsFactor=Boolean(p.requires_conversion_confirmation);
+    const evidence=p.conversion_suggestion_evidence?' · leitura: '+esc(p.conversion_suggestion_evidence):'';
+    const factorHint=needsFactor
+      ?(factor&&Number(factor)>1?'Sugestão detectada: '+esc(fmtQty(factor))+' UN por '+esc(x.purchase_unit||'embalagem')+evidence:'Informe quantas unidades de venda existem em 1 '+esc(x.purchase_unit||'embalagem')+'.')
+      :'Venda em unidade · fator '+esc(fmtQty(factor||1))+'.';
+    const qtyText=(factor&&Number(factor)>0)
+      ?esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'')+' × '+esc(fmtQty(factor))+' = '+esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN'
+      :esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'');
+    const workflowStatus=!existing?'Vincular':approved?(sync==='pending'||sync==='missing_link'?'Bling pendente':'Salvo'):needsFactor?'Conferir embalagem':'Conferir';
+    return '<div class="purchase-item-card" data-purchase-item="'+esc(x.id)+'" data-document-id="'+esc(x.document_id)+'">'+
+      '<details class="purchase-item-collapsible"><summary class="purchase-item-compact-summary"><span class="purchase-item-compact-name"><strong>'+esc(prod.name||x.description||'Produto')+'</strong><small>'+esc(x.description||'')+'</small></span><span class="purchase-item-compact-qty">'+qtyText+'</span><span class="pill '+(!existing||needsFactor?'warn':approved?'':'warn')+'">'+esc(workflowStatus)+'</span></summary><div class="purchase-item-compact-body">'+
+      '<div class="purchase-item-title"><div><strong>'+esc(prod.name||x.description||'Produto')+'</strong>'+
+        '<small>'+esc(x.description||'')+' · EAN '+esc(x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado')+'</small>'+
+        '<small><b>Compra:</b> '+qtyText+'</small></div>'+
+        '<div class="purchase-item-badges">'+
+          '<span class="pill '+(existing?'':'warn')+'">'+(existing?'Produto identificado':'1. Vincular produto')+'</span>'+
+          (newFromXml?'<span class="pill warn">Novo pelo XML</span>':'')+
+          (inactive?'<span class="pill off">Inativo</span>':'')+
+          (needsFactor?'<span class="pill warn">2. Conferir unidades da embalagem</span>':'<span class="pill">Unidade de venda</span>')+
+        '</div></div>'+statusText+matchHtml+
+      '<div class="purchase-price-grid">'+
+        '<div class="purchase-field"><label>Unidades vendidas em cada '+esc(x.purchase_unit||'embalagem')+'</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
+        '<div class="purchase-price-box"><small>Quantidade final</small><strong data-purchase-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Custo novo / UN</small><strong class="accent" data-purchase-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
+        '<div class="purchase-price-box"><small>Preço atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
+        '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-purchase-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint" data-purchase-sale-hint>'+esc(saleHint)+'</div></div>'+
+      '</div>'+
+      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · autorizar este item não altera o estoque.</div></div>'+
+        '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'" '+(!existing?'disabled title="Vincule primeiro o produto acima"':'')+'>'+(approved&&['pending','missing_link'].includes(sync)?'Reenviar ao Bling':approved?'Revisar atualização':'Salvar e sincronizar')+'</button><span class="purchase-approval-result" data-purchase-result role="status"></span></div></div>'+
+      '</div></details></div>';
+  }
+  function purchaseXmlError(e){
+    const code=String(e?.message||e||'');
+    const map={
+      product_match_required:'Vincule primeiro o produto da nota com o cadastro.',
+      xml_catalog_evidence_only_required:'A identificação precisa passar pela confirmação segura.',
+      xml_identity_confirmation_required:'Confirme a identificação do produto.',
+      xml_identity_gtin_invalid:'O EAN da nota está inválido: verifique o produto antes de vincular.',
+      xml_identity_gtin_conflict:'Este EAN já pertence a outro produto. Selecione o produto correto.',
+      xml_identity_existing_gtin_mismatch:'EAN diferente do cadastro. Não altere a unidade sem conferir.',
+      xml_identity_already_resolved:'Esse produto já foi vinculado. Atualize a nota.',
+      xml_identity_verified_source_required:'XML original ainda não validado. Reimporte ou revise a nota.',
+      xml_identity_service_unavailable:'Não foi possível confirmar o vínculo no banco. Tente novamente.',
+      packaging_factor_must_be_greater_than_one:'Informe quantas unidades existem no fardo ou caixa (maior que 1).',
+      invalid_sale_price:'Digite um preço de venda válido.',
+      existing_product_name_preserved:'O nome cadastrado não é alterado pela nota de compra.',
+      xml_identity_operational_lot_review_required:'Já existe um recebimento vinculado a este item. Precisa de revisão antes de trocar o produto.'
+    };
+    return map[code]||((errorMessage(code)!=='Não consegui salvar agora.')?errorMessage(code):code.replace(/_/g,' ').slice(0,230));
+  }
+  async function purchaseSearchMatch(card){
+    const input=card.querySelector('[data-purchase-match-query]'),results=card.querySelector('[data-purchase-match-results]');
+    const query=String(input?.value||'').trim(),token=(card._purchaseSearchToken||0)+1;
+    card._purchaseSearchToken=token;
+    if(query.length<2){results.textContent='Digite o EAN ou nome do produto.';return}
+    card.dataset.purchaseSelectedId='';
+    const confirm=card.querySelector('[data-purchase-match-confirm]');
+    if(confirm)confirm.disabled=true;
+    const selected=card.querySelector('[data-purchase-match-selected]');
+    if(selected)selected.textContent='Procurando correspondência…';
+    results.textContent='Buscando…';
+    try{
+      const found=await purchaseApi('search_products',{query});
+      if(!card.isConnected||card._purchaseSearchToken!==token)return;
+      const products=Array.isArray(found.items)?found.items:[];
+      results.innerHTML=products.length?products.map(p=>
+        '<button type="button" class="purchase-match-choice" data-purchase-select-id="'+esc(p.id)+'">'+
+        '<strong>'+esc(p.name)+'</strong><small>EAN '+esc(p.gtin||'—')+' · '+(p.is_active===false?'inativo':'ativo')+'</small></button>'
+      ).join(''):'<small>Produto não encontrado. Busque pelo nome ou crie um cadastro inativo.</small>';
+      card._purchaseCandidates=products;
+      const choose=(btn,automatic=false)=>{
+        const product=products.find(p=>p.id===btn.dataset.purchaseSelectId);
+        if(!product)return;
+        card.dataset.purchaseSelectedId=product.id;
+        if(selected)selected.textContent=(automatic?'EAN exato encontrado: ':'Selecionado: ')+product.name+' · confira e confirme.';
+        const detail=state.purchaseDetailCache?.[card.dataset.documentId],item=(detail?.items||[]).find(x=>x.id===card.dataset.purchaseItem);
+        const raw=String(product.gtin||''),commercial=String(item?.commercial_gtin||''),tax=String(item?.tax_gtin||'');
+        const source=card.querySelector('[data-purchase-match-source]');
+        if(source)source.value=raw&&raw===tax&&raw!==commercial?'tax':'commercial';
+        if(confirm)confirm.disabled=false;
+        results.querySelectorAll('.purchase-match-choice').forEach(b=>b.classList.toggle('selected',b===btn));
+      };
+      results.querySelectorAll('[data-purchase-select-id]').forEach(btn=>btn.onclick=()=>choose(btn));
+      // Um único EAN exato já fica selecionado na tela, sem gravação automática.
+      const detail=state.purchaseDetailCache?.[card.dataset.documentId],item=(detail?.items||[]).find(x=>x.id===card.dataset.purchaseItem);
+      const gtins=[item?.commercial_gtin,item?.tax_gtin].map(x=>String(x||'').replace(/[^0-9]/g,'')).filter(Boolean);
+      const exact=products.filter(p=>gtins.includes(String(p.gtin||'').replace(/[^0-9]/g,'')));
+      if(exact.length===1&&gtins.length){
+        const btn=[...results.querySelectorAll('[data-purchase-select-id]')].find(b=>b.dataset.purchaseSelectId===exact[0].id);
+        if(btn)choose(btn,true);
+      }else if(selected)selected.textContent=products.length?'Escolha uma correspondência acima.':'Nenhum produto selecionado.';
+    }catch(e){
+      if(card.isConnected&&card._purchaseSearchToken===token){
+        results.textContent=purchaseXmlError(e);
+        if(selected)selected.textContent='Busca não concluída. Tente novamente.';
+      }
+    }
+  }
+  async function purchaseConfirmMatch(card,createNew=false){
+    const id=card.dataset.purchaseItem,docId=card.dataset.documentId,
+      productId=card.dataset.purchaseSelectedId||null,feedback=card.querySelector('[data-purchase-match-feedback]'),
+      factor=Number(card.querySelector('[data-purchase-factor]')?.value||0),
+      role=card.querySelector('[data-purchase-match-role]')?.value||'base_unit',
+      source=card.querySelector('[data-purchase-match-source]')?.value||'commercial',
+      name=String(card.querySelector('[data-purchase-create-name]')?.value||'').trim();
+    if(!createNew&&!productId){feedback.textContent='Busque e selecione um produto primeiro.';return}
+    if(!Number.isInteger(factor)||factor<1){feedback.textContent='Informe a quantidade de unidades por embalagem.';return}
+    if(role==='package'&&factor<=1){feedback.textContent='Se o EAN é da embalagem, ela precisa conter mais de uma unidade.';return}
+    if(createNew&&name.length<3){feedback.textContent='Informe o nome completo da unidade vendida.';return}
+    const button=card.querySelector(createNew?'[data-purchase-match-create]':'[data-purchase-match-confirm]');
+    button.disabled=true;feedback.textContent='Confirmando vínculo sem alterar estoque…';
+    try{
+      const payload={item_id:id,product_id:productId,create_new:createNew,proposed_name:createNew?name:null,
+        catalog_evidence_only:true,gtin_source:source,gtin_role:role,
+        conversion_factor:role==='package'?factor:1,
+        purchase_pack_units_for_review:role==='base_unit'&&factor>1?factor:null,
+        confirmation:createNew?'CRIAR_INATIVO_XML':'VINCULAR_ITEM_XML'};
+      await purchaseApi('resolve_item_identity',payload);
+      feedback.textContent='Produto vinculado. Carregando custo e preço…';
+      await refreshPurchaseAfterApproval(docId);
+    }catch(e){feedback.textContent=purchaseXmlError(e);button.disabled=false}
+  }
+  function recalcPurchaseItemCard(card,resetSale=true){
+    if(!card)return;
+    const itemId=card.dataset.purchaseItem,detail=state.purchaseDetailCache?.[card.dataset.documentId],item=(detail?.items||[]).find(x=>x.id===itemId);
+    if(!item)return;
+    const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
+    const cost=purchaseItemUnitCost(item,factor);
+    const baseQty=Number(item.purchase_quantity||0)*(factor>0?factor:0);
+    const minimum=cost!==null?Math.round(cost*1.4*100)/100:null;
+    const currentSale=Number(item?.products?.price),hasCurrent=Number.isFinite(currentSale)&&currentSale>0;
+    const hasMinimum=Number.isFinite(Number(minimum));
+    const saleValue=hasCurrent&&hasMinimum?Math.max(currentSale,Number(minimum)):hasCurrent?currentSale:minimum;
+    const shouldUpdateSale=!hasCurrent||(hasMinimum&&currentSale+0.005<Number(minimum))||['pending','missing_link'].includes(String(item?.metadata?.bling_sale_status||''));
+    const costEl=card.querySelector('[data-purchase-unit-cost]'),qtyEl=card.querySelector('[data-purchase-base-qty]'),sale=card.querySelector('[data-purchase-sale]'),saleCheck=card.querySelector('[data-purchase-update-sale]'),hint=card.querySelector('[data-purchase-sale-hint]');
+    if(costEl)costEl.textContent=purchaseMaybeMoney(cost);
+    if(qtyEl)qtyEl.textContent=factor>0?fmtQty(baseQty)+' UN':'—';
+    if(resetSale&&sale&&saleValue!==null&&saleValue!==undefined)sale.value=purchaseNumberInput(saleValue);
+    if(resetSale&&saleCheck)saleCheck.checked=Boolean(shouldUpdateSale);
+    if(hint){
+      hint.textContent=hasCurrent&&hasMinimum&&currentSale>=Number(minimum)
+        ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
+        :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
+    }
+  }
+
+
+  function purchaseCatalogReasonLabel(v){
+    const map={product_match_required:'Produto sem vínculo',processing_failed:'Falha no processamento',item_review_required:'Item precisa de revisão',conversion_review_required:'Conversão precisa de revisão',packaging_factor_required:'Informe unidades por embalagem',unit_cost_unavailable:'Custo unitário indisponível'};
+    return map[v]||v||'Revisar';
+  }
+  function purchaseCatalogFilteredItems(){
+    const q=state.purchaseCatalogQueue||{},items=Array.isArray(q.items)?q.items:[],filter=state.purchaseCatalogFilter||'pending',term=normalize(state.purchaseCatalogSearch||'');
+    return items.filter(x=>{
+      const f=x.flags||{};
+      let ok=true;
+      if(filter==='pending')ok=Boolean(f.needs_review||(f.needs_approval&&!f.approved));
+      else if(filter==='new')ok=Boolean(f.is_new);
+      else if(filter==='existing')ok=Boolean(f.is_existing);
+      else if(filter==='review')ok=Boolean(f.needs_review);
+      else if(filter==='unlinked')ok=Boolean(f.is_unlinked);
+      else if(filter==='ready')ok=Boolean(f.safe_to_approve&&f.needs_approval&&!f.approved);
+      else if(filter==='approved')ok=Boolean(f.approved&&!f.needs_approval);
+      if(!ok)return false;
+      if(!term)return true;
+      const hay=[x?.products?.name,x.description,x.commercial_gtin,x.tax_gtin,x?.document?.supplier_name,x?.document?.metadata?.invoice_number,x.ncm].map(normalize).join(' ');
+      return hay.includes(term);
+    });
+  }
+  // PURCHASE_XML_EDIT_NAME_V1
+  // Advanced view is a compact index, not a second product editing interface.
+  // All mutations belong to the original invoice item to avoid conflicting forms.
+  function purchaseCatalogCardHtml(x){
+    const flags=x.flags||{},prod=x.products||{},doc=x.document||{};
+    const reason=(flags.review_reasons||[]).map(purchaseCatalogReasonLabel).join(' · ');
+    const status=flags.is_unlinked?'Sem vínculo':flags.needs_review?'Revisar':flags.approved?'Concluído':'Conferir';
+    const name=prod.name||x.description||'Produto';
+    const stamp=String(doc.issued_at||'').slice(0,10);
+    const meta=[x.commercial_gtin||x.tax_gtin||'',doc.supplier_name||'',stamp?dateOnly(stamp):''].filter(Boolean).join(' · ');
+    return '<div class="purchase-catalog-index-row">'+
+      '<div class="purchase-catalog-index-main"><strong>'+esc(name)+'</strong><small>'+esc(meta)+'</small>'+
+        (reason?'<small class="purchase-catalog-index-reason">'+esc(reason)+'</small>':'')+'</div>'+
+      '<span class="pill '+(flags.needs_review?'warn':'')+'">'+esc(status)+'</span>'+
+      '<button class="secondary" type="button" data-catalog-open-note="'+esc(x.document_id||'')+'" '+(!x.document_id?'disabled':'')+'>Abrir NF-e</button>'+
+    '</div>';
+  }
+  async function openPurchaseCatalogNote(docId){
+    const item=(state.purchaseCatalogQueue?.items||[]).find(x=>String(x.document_id)===String(docId));
+    if(!docId)return;
+    const exists=(state.purchaseXml?.documents||[]).some(x=>String(x.id)===String(docId));
+    if(!exists){
+      const issued=String(item?.document?.issued_at||'').slice(0,10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(issued)){toast('Data da NF-e não disponível. Busque na lista de notas.');return}
+      state.purchaseFilter={period:'custom',start_date:issued,end_date:issued};
+      await loadPurchases();
+    }
+    state.purchaseQuickStatus='all';
+    state.purchaseQuery='';
+    paintPurchases();
+    await togglePurchaseDocument(docId,true);
+    document.querySelector('[data-purchase-toggle="'+CSS.escape(docId)+'"]')?.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function purchaseCatalogListHtml(){
+    const items=purchaseCatalogFilteredItems();
+    return items.length?items.map(purchaseCatalogCardHtml).join(''):'<div class="empty">Nenhum produto neste filtro.</div>';
+  }
+  function recalcPurchaseCatalogCard(card){
+    if(!card)return;
+    const itemId=card.dataset.purchaseCatalogItem,item=(state.purchaseCatalogQueue?.items||[]).find(x=>x.id===itemId);if(!item)return;
+    const factor=Number(card.querySelector('[data-catalog-factor]')?.value||0),cost=purchaseItemUnitCost(item,factor),baseQty=Number(item.purchase_quantity||0)*(factor>0?factor:0);
+    const minimum=cost!==null?Math.round(cost*1.4*100)/100:null,current=Number(item?.products?.price),hasCurrent=Number.isFinite(current)&&current>0;
+    const saleValue=minimum===null?(hasCurrent?current:''):(hasCurrent?Math.max(current,minimum):minimum);
+    const costEl=card.querySelector('[data-catalog-unit-cost]'),qtyEl=card.querySelector('[data-catalog-base-qty]'),sale=card.querySelector('[data-catalog-sale]'),saleCheck=card.querySelector('[data-catalog-update-sale]');
+    if(costEl)costEl.textContent=purchaseMaybeMoney(cost);
+    if(qtyEl)qtyEl.textContent=factor>0?fmtQty(baseQty)+' UN':'—';
+    if(sale&&saleValue!=='')sale.value=purchaseNumberInput(saleValue);
+    if(saleCheck)saleCheck.checked=Boolean(!hasCurrent||(minimum!==null&&current+0.005<minimum));
+  }
+  async function applyPurchaseCatalogItemUpdate(itemId,quiet=false,operatorOverride=''){
+    const card=document.querySelector('[data-purchase-catalog-item="'+CSS.escape(itemId)+'"]');if(!card)return false;
+    const operator=operatorOverride||requireOperator();if(!operator)return false;
+    const factor=Number(String(card.querySelector('[data-catalog-factor]')?.value||'').replace(',','.'));
+    const sale=Number(String(card.querySelector('[data-catalog-sale]')?.value||'').replace(',','.'));
+    const proposedName=String(card.querySelector('[data-catalog-product-name]')?.value||'').trim();
+    const updateCost=Boolean(card.querySelector('[data-catalog-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-catalog-update-sale]')?.checked);
+    if(!proposedName){if(!quiet)toast('Informe o nome do produto');return false}
+    if(!Number.isFinite(factor)||factor<1){if(!quiet)toast('Informe a conversão para UN');return false}
+    if(updateSale&&(!Number.isFinite(sale)||sale<0)){if(!quiet)toast('Informe um preço de venda válido');return false}
+    const btn=card.querySelector('[data-catalog-approve]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+    try{
+      await purchaseApi('apply_item_update',{item_id:itemId,proposed_name:proposedName,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+      const result=card.querySelector('[data-catalog-result]');if(result)result.textContent='Atualizado';
+      if(!quiet){
+        toast('Cadastro atualizado. Confira sincronização com Bling.');
+        state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
+        state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+        paintPurchases();
+      }
+      return true;
+    }catch(e){
+      if(!quiet)toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Autorizar'}
+      return false;
+    }
+  }
+  async function approveSafeCatalogItems(){
+    const items=(state.purchaseCatalogQueue?.items||[]).filter(x=>x?.flags?.safe_to_approve&&x?.flags?.needs_approval&&!x?.flags?.approved);
+    if(!items.length){toast('Nenhum produto seguro aguardando aprovação');return}
+    if(!confirm('Autorizar '+items.length+' produto(s) seguros dos últimos 31 dias?\n\nO custo será atualizado pelo custo unitário da NF-e. O preço só será alterado quando estiver abaixo da sugestão mínima de 40%. O estoque não será alterado.'))return;
+    const operator=requireOperator();if(!operator)return;
+    const b=$('#purchaseCatalogApproveSafe');if(b){b.disabled=true;b.textContent='Aprovando 0 / '+items.length}
+    let ok=0,fail=0;
+    for(let i=0;i<items.length;i++){
+      const x=items[i],p=x.pricing_preview||{},factor=Number(p.suggested_conversion_factor||x.conversion_factor||1),sale=Number(p.recommended_sale_price??x?.products?.price??p.suggested_sale_price??0);
+      try{
+        await purchaseApi('apply_item_update',{item_id:x.id,conversion_factor:factor,sale_price:sale,update_cost:true,update_sale_price:Boolean(p.update_sale_recommended),operator_name:operator});
+        ok++;
+      }catch(e){fail++}
+      if(b)b.textContent='Aprovando '+(i+1)+' / '+items.length;
+    }
+    toast(ok+' produto(s) aprovado(s)'+(fail?' · '+fail+' falha(s)':''));
+    state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
+    state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+    paintPurchases();
+  }
+  function paintPurchaseCatalogList(){
+    const host=$('#purchaseCatalogList');if(!host)return;
+    host.innerHTML=purchaseCatalogListHtml();
+    const count=$('#purchaseCatalogVisibleCount');if(count)count.textContent=String(purchaseCatalogFilteredItems().length);
+    host.querySelectorAll('[data-catalog-open-note]').forEach(btn=>btn.onclick=()=>openPurchaseCatalogNote(btn.dataset.catalogOpenNote));
+    // No approvals in this duplicate index; review the item inside its NF-e.
+  }
+  function purchaseCatalogQueueHtml(){
+    const q=state.purchaseCatalogQueue||{},counts=q.counts||{},filter=state.purchaseCatalogFilter||'pending';
+    const filters=[['pending','Pendentes'],['unlinked','Sem vínculo'],['review','Revisar'],['approved','Concluídos'],['all','Todos']];
+    const pending=Number(counts.ready_for_approval||0)+Number(counts.needs_review||0);
+    return '<section class="panel purchase-catalog-panel">'+
+      '<div class="history-title dispatch-head"><div><strong>3. Produtos recebidos · últimos 31 dias</strong><span>Índice de pendências. Abra a NF-e para editar o produto em um só lugar.</span></div><b id="purchaseCatalogVisibleCount">'+esc(purchaseCatalogFilteredItems().length)+'</b></div>'+
+      '<div class="purchase-catalog-toolbar"><div class="purchase-catalog-search"><input id="purchaseCatalogSearch" type="search" placeholder="Buscar produto, EAN ou fornecedor" value="'+esc(state.purchaseCatalogSearch||'')+'"></div></div>'+
+      '<div class="purchase-catalog-filters">'+filters.map(([key,label])=>'<button type="button" class="'+(filter===key?'active':'')+'" data-catalog-filter="'+key+'">'+label+'</button>').join('')+'</div>'+
+      '<div class="purchase-catalog-summary"><span><b>'+esc(counts.total||0)+'</b> registros</span><span><b>'+esc(counts.unlinked_products||0)+'</b> sem vínculo</span><span><b>'+esc(counts.needs_review||0)+'</b> revisar</span><span><b>'+esc(counts.approved||0)+'</b> concluídos</span></div>'+
+      '<div class="purchase-catalog-list" id="purchaseCatalogList">'+purchaseCatalogListHtml()+'</div>'+
+    '</section>';
+  }
+  function bindPurchaseCatalogQueue(){
+    document.querySelectorAll('[data-catalog-filter]').forEach(b=>b.onclick=()=>{state.purchaseCatalogFilter=b.dataset.catalogFilter;paintPurchases()});
+    const search=$('#purchaseCatalogSearch');if(search)search.oninput=e=>{state.purchaseCatalogSearch=e.target.value;paintPurchaseCatalogList()};
+    const bulk=$('#purchaseCatalogApproveSafe');if(bulk)bulk.onclick=approveSafeCatalogItems;
+    paintPurchaseCatalogList();
+  }
+
+
+  function purchaseInternalLotShort(item){
+    const id=String(item?.entry_inventory_lot?.id||item?.inventory_lot_id||'').replace(/-/g,'');
+    return id?id.slice(0,8).toUpperCase():'PENDENTE';
+  }
+  function purchaseInternalLotStatus(v){
+    return ({quarantine:'Aguardando entrada',active:'Ativo',depleted:'Esgotado',expired:'Vencido',cancelled:'Cancelado'})[String(v||'')]||'Preparando';
+  }
+  function purchaseCurrentInventoryLotsHtml(item){
+    const currentId=String(item?.inventory_lot_id||item?.entry_inventory_lot?.id||'');
+    const lots=(item?.current_inventory_lots||[])
+      .filter(x=>String(x.id||'')!==currentId&&Number(x.quantity_on_hand||0)>Number(x.quantity_reserved||0))
+      .sort((a,b)=>String(a.received_at||a.created_at||'').localeCompare(String(b.received_at||b.created_at||'')));
+    if(!lots.length)return '<div class="purchase-factor-hint" style="margin:6px 0 10px">Nenhum lote anterior com saldo disponível.</div>';
+    return '<div style="margin:8px 0 10px"><small class="sub" style="display:block;margin-bottom:6px">Estoque anterior por lote · FIFO</small><div style="display:flex;gap:6px;flex-wrap:wrap">'+
+      lots.map((x,i)=>{
+        const available=Math.max(0,Number(x.quantity_on_hand||0)-Number(x.quantity_reserved||0));
+        const ref=String(x.lot_code||String(x.id||'').replace(/-/g,'').slice(0,8).toUpperCase()||'INTERNO');
+        const exp=x.expiration_date?'Val. '+dateOnly(String(x.expiration_date)):'Sem validade';
+        return '<span class="pill '+(i===0?'warn':'')+'" title="'+esc(String(x.id||''))+'">Lote '+esc(ref)+' · '+esc(exp)+' · '+esc(fmtQty(available))+' UN'+(i===0?' · FIFO: sai primeiro':'')+'</span>';
+      }).join('')+'</div><small class="sub" style="display:block;margin-top:6px">A ordem de saída considera a data de recebimento do lote, não a validade.</small></div>';
+  }
+  function purchaseReceiptLotsHtml(d,items,lotPlan){
+    if(!Array.isArray(items)||!items.length)return '';
+    const complete=lotPlan?.complete===true;
+    const planItems=Array.isArray(lotPlan?.items)?lotPlan.items:[];
+    return '<div class="purchase-lot-compact">'+
+      '<div class="purchase-lot-head"><strong>Lotes desta entrada</strong><span>Validade opcional · '+(complete?'Lotes preparados':'Conferir identificação e quantidade')+'</span></div>'+
+      '<div class="purchase-lot-rows">'+items.map((item,idx)=>{
+        const planItem=planItems.find(x=>String(x.item_id)===String(item.id))||{};
+        const lot=item.entry_inventory_lot||planItem.inventory_lot||null;
+        const lotId=String(lot?.id||item.inventory_lot_id||planItem.inventory_lot_id||'');
+        const expected=Number(item.converted_quantity||planItem.expected_base_quantity||0);
+        const expiry=String(item.lot_expiration_date||lot?.expiration_date||planItem.expiration_date||'').slice(0,10);
+        const ref=purchaseInternalLotShort({...item,entry_inventory_lot:lot,inventory_lot_id:lotId});
+        return '<div class="purchase-lot-row" data-receipt-lot-item="'+esc(item.id)+'">'+
+          '<div class="purchase-lot-product"><strong>'+esc(item?.products?.name||item.description||('Item '+(idx+1)))+'</strong><small>'+esc(fmtQty(expected))+' UN · Lote '+esc(ref)+' · '+esc(purchaseInternalLotStatus(lot?.status))+'</small></div>'+
+          '<label class="purchase-lot-exp"><span>Validade (opcional)</span><input type="date" data-receipt-lot-exp value="'+esc(expiry)+'" aria-label="Validade opcional para '+esc(item.description||'produto')+'"></label>'+
+          '<details class="purchase-lot-prior"><summary>Ver lotes anteriores</summary>'+purchaseCurrentInventoryLotsHtml(item)+'</details>'+
+          '</div>';
+      }).join('')+'</div>'+
+      '<div class="purchase-lot-footer"><span>Em branco = validade não informada. Sem alteração no estoque.</span><button class="secondary" type="button" data-save-receipt-lots="'+esc(d.id)+'">Salvar validades</button></div>'+
+    '</div>';
+  }
+  function bindPurchaseReceiptLots(docId){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(docId)+'"]');if(!host)return;
+    const save=host.querySelector('[data-save-receipt-lots]');if(save)save.onclick=()=>savePurchaseReceiptLots(docId);
+  }
+  async function savePurchaseReceiptLots(docId){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(docId)+'"]');if(!host)return;
+    const items=[...host.querySelectorAll('[data-receipt-lot-item]')].map(item=>({
+      item_id:item.dataset.receiptLotItem,
+      expiration_date:String(item.querySelector('[data-receipt-lot-exp]')?.value||'').trim()
+    }));
+    const btn=host.querySelector('[data-save-receipt-lots]');if(btn){btn.disabled=true;btn.textContent='Salvando…'}
+    try{
+      await purchaseApi('save_receipt_lots',{document_id:docId,items});
+      toast('Validade opcional salva');
+      await refreshPurchaseAfterApproval(docId);
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Salvar validade'}}
+  }
+
+  function purchaseStockBlockHtml(d,plan=null,lotPlan=null){
+    if(d?.receipt_status==='received'||plan?.status==='verified'){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Entrada confirmada no Bling</strong><small>O aumento do estoque físico foi verificado depois da preparação desta NF-e. O Admin não alterou o estoque local.</small></div>';
+    }
+    if(plan?.status==='awaiting_bling_receipt'||plan?.status==='review_required'){
+      const review=plan?.status==='review_required';
+      const reason=String(plan?.review_reason||'');
+      const detail=review
+        ?(reason==='bling_stock_mirror_not_refreshed_after_plan'
+          ?'O espelho do Bling ainda não trouxe uma leitura posterior à preparação.'
+          :'O aumento esperado ainda não foi confirmado integralmente no estoque físico do Bling.')
+        :'Plano preparado. Faça ou confirme o recebimento/check-in no Bling; depois verifique aqui.';
+      return '<div class="purchase-safe '+(review?'purchase-danger':'')+'" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>'+(review?'Entrada ainda não confirmada':'Aguardando entrada no Bling')+'</strong><small>'+esc(detail)+'</small></div><button class="primary" type="button" data-purchase-verify-receipt="'+esc(d.id)+'">Verificar entrada no Bling</button></div></div>';
+    }
+    if(d?.receipt_status==='ready'){
+      if(lotPlan?.complete!==true)return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>O lote interno de algum item ainda não foi gerado. Revise o vínculo do produto e a conversão antes de preparar a entrada.</small></div>';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Recebimento físico</strong><small>Produtos e lotes internos estão prontos. A validade é opcional. Preparar cria um marco de conferência; não soma estoque local. O recebimento deve aparecer no estoque físico do Bling antes de ser concluído.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Preparar entrada</button></div></div>';
+    }
+    return '<div class="purchase-safe '+(d?.receipt_status==='review'?'purchase-danger':'')+'" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>'+(d?.receipt_status==='review'?'Finalize primeiro as revisões de embalagem, conversão ou vínculo dos produtos.':'A entrada física ainda não está liberada para esta nota.')+'</small></div>';
+  }
+  function renderPurchaseDocumentInline(id,data){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(!host)return;
+    const d=data?.document||{},items=data?.items||[];
+    // Cadastro concluído é diferente de pendência de sincronização com Bling.
+    const finished=items.filter(x=>Boolean(x?.metadata?.catalog_approved_at)&&
+      ['confirmed','not_requested'].includes(String(x?.metadata?.bling_sale_status||'')));
+    const pending=items.filter(x=>!finished.includes(x)).sort((a,b)=>
+      Number(Boolean(a?.product_id))-Number(Boolean(b?.product_id))||Number(a.item_number||0)-Number(b.item_number||0));
+    const pendingBling=pending.filter(x=>x?.metadata?.catalog_approved_at).length;
+    host.style.display='block';
+    host.innerHTML=
+      '<div class="purchase-detail-head"><div><h3>Produtos e preços</h3><p>'+esc(d.supplier_name||'Fornecedor')+' · '+items.length+' item(ns) · custos sempre calculados na unidade de venda (UN).</p></div>'+
+      '<div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-inline-xml="'+esc(id)+'">Ver XML</button></div></div>'+
+      '<div class="purchase-compact-note">Custos da NF-e por unidade · margem sugerida de 40% · salvar não altera estoque.</div>'+
+      '<div class="purchase-review-counts" role="status"><strong>'+pending.length+' para conferir</strong>'+(pendingBling?' · '+pendingBling+' pendente(s) no Bling':'')+' · '+finished.length+' concluído(s)</div>'+
+      '<div class="purchase-items">'+(pending.length?pending.map(purchaseItemCardHtml).join(''):(items.length?'<div class="purchase-compact-note">Nenhum produto pendente nesta nota.</div>':'<div class="empty">Nenhum item encontrado na nota.</div>'))+'</div>'+
+      (finished.length?'<details class="purchase-completed-items"><summary>✓ '+finished.length+' produto(s) concluído(s) — ver histórico</summary><div class="purchase-items">'+finished.map(purchaseItemCardHtml).join('')+'</div></details>':'')+
+      (items.some(x=>x.product_id&&!x?.metadata?.catalog_approved_at)
+        ?'<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Salvar todos os produtos já identificados</button></div>':'')+
+      '<details class="purchase-receipt-stage"><summary>Etapa seguinte: recebimento e lotes do estoque (sem alterar estoque agora)</summary>'+
+      purchaseReceiptLotsHtml(d,items,data?.receipt_lot_plan||null)+
+      purchaseStockBlockHtml(d,data?.receipt_plan||null,data?.receipt_lot_plan||null)+'</details>';
+    bindPurchaseReceiptLots(id);
+    host.querySelectorAll('[data-purchase-match-search]').forEach(b=>b.onclick=()=>purchaseSearchMatch(b.closest('.purchase-item-card')));
+    host.querySelectorAll('[data-purchase-match-query]').forEach(inp=>inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();purchaseSearchMatch(inp.closest('.purchase-item-card'))}});
+    host.querySelectorAll('[data-purchase-match-confirm]').forEach(b=>b.onclick=()=>purchaseConfirmMatch(b.closest('.purchase-item-card')));
+    host.querySelectorAll('[data-purchase-match-create]').forEach(b=>b.onclick=()=>purchaseConfirmMatch(b.closest('.purchase-item-card'),true));
+    host.querySelectorAll('.purchase-item-collapsible').forEach(detail=>{
+      detail.ontoggle=()=>{
+        if(!detail.open||detail.dataset.searched==='1')return;
+        detail.dataset.searched='1';
+        const card=detail.closest('.purchase-item-card');
+        if(card?.querySelector('[data-purchase-match-query]')?.value)purchaseSearchMatch(card);
+      };
+    });
+    host.querySelectorAll('[data-purchase-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseItemCard(inp.closest('.purchase-item-card'),true));
+    host.querySelectorAll('[data-purchase-approve-item]').forEach(b=>b.onclick=()=>applyPurchaseItemUpdate(b.dataset.purchaseApproveItem));
+    const xmlBtn=host.querySelector('[data-purchase-inline-xml]');if(xmlBtn)xmlBtn.onclick=()=>downloadPurchaseXml(id);
+    const recv=host.querySelector('[data-purchase-inline-receive]');if(recv)recv.onclick=()=>receivePurchaseDocument(id);
+    const verifyReceipt=host.querySelector('[data-purchase-verify-receipt]');if(verifyReceipt)verifyReceipt.onclick=()=>verifyPurchaseReceipt(id);
+    const bulk=host.querySelector('[data-purchase-approve-ready]');if(bulk)bulk.onclick=()=>approveReadyPurchaseItems(id);
+    const fin=host.querySelector('[data-purchase-finance-resolve]');if(fin)fin.onclick=()=>resolvePurchaseFinance(id);
+    host.querySelectorAll('[data-purchase-open-payables]').forEach(b=>b.onclick=()=>window.open('https://www.bling.com.br/contas.pagar.php','_blank','noopener'));
+    host.querySelectorAll('[data-purchase-settlement-preview]').forEach(b=>b.onclick=()=>previewPurchaseSettlement(id));
+  }
+
+  async function togglePurchaseDocument(id,forceOpen=false){
+    if(state.purchaseExpandedId===id&&!forceOpen){
+      state.purchaseExpandedId=null;
+      const h=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(h)h.style.display='none';
+      const row=document.querySelector('[data-purchase-toggle="'+CSS.escape(id)+'"]');if(row)row.classList.remove('expanded');
+      return;
+    }
+    state.purchaseExpandedId=id;
+    document.querySelectorAll('[data-purchase-detail]').forEach(x=>x.style.display='none');
+    document.querySelectorAll('[data-purchase-toggle]').forEach(x=>x.classList.remove('expanded'));
+    const row=document.querySelector('[data-purchase-toggle="'+CSS.escape(id)+'"]');if(row)row.classList.add('expanded');
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(host)host.innerHTML='<div class="loading">Carregando produtos da nota…</div>';
+    try{
+      const data=state.purchaseDetailCache?.[id]||await purchaseApi('document',{id});
+      state.purchaseDetailCache[id]=data;state.purchaseXmlDetail=data;
+      renderPurchaseDocumentInline(id,data);
+    }catch(e){if(host)host.innerHTML='<div class="empty">Não consegui abrir os produtos desta nota.</div>';toast(errorMessage(e.message))}
+  }
+  async function refreshPurchaseAfterApproval(id){
+    state.purchaseDetailCache[id]=await purchaseApi('document',{id});
+    state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+    state.purchaseExpandedId=id;
+    state.purchaseAdvancedLoaded=false;
+    paintPurchases();
+    if(state.purchaseAdvancedOpen&&!state.purchaseAdvancedLoading)loadPurchaseAdvanced().catch(e=>toast(purchaseXmlError(e)));
+  }
+  async function resolvePurchaseFinance(id){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');
+    const btn=host?.querySelector('[data-purchase-finance-resolve]');
+    if(btn){btn.disabled=true;btn.textContent='Verificando…'}
+    try{
+      const check=await purchaseApi('finance_reconcile',{document_id:id});
+      const finance=check?.finance||{},reason=String(finance.reason||'');
+      if(finance.status==='posted'&&finance.reconciled!==false){
+        toast('Financeiro confirmado no Bling');
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      const rec=finance.reconciliation||{};
+      if(reason==='installment_total_mismatch'){
+        const invoice=Number(rec.invoice_total),parts=Number(rec.installment_total),diff=(Number.isFinite(invoice)&&Number.isFinite(parts))?Math.round((parts-invoice)*100)/100:null;
+        const detail=state.purchaseDetailCache?.[id],ps=purchasePaymentSummary(detail?.document||{});
+        if(ps?.paid_at_purchase_likely&&ps?.total_matches){
+          alert('O pagamento informado na NF-e fecha corretamente.\n\nTotal da NF-e: '+purchaseMoney(invoice)+'\nPagamento efetivo: '+purchaseMoney(ps.payment_total)+(Number(ps.change||0)>0?'\nTroco: '+purchaseMoney(ps.change):'')+'\nParcela/cobrança: '+purchaseMoney(parts)+'\n\nAjuste ou dê baixa na conta correta no Bling; o sistema não criará outra conta enquanto existir essa divergência.');
+        }else{
+          alert('O financeiro não pode ser lançado ainda.\n\nTotal da NF-e: '+purchaseMoney(invoice)+'\nTotal das parcelas: '+purchaseMoney(parts)+(diff===null?'':'\nDiferença: '+purchaseMoney(diff))+'\n\nCorrija as parcelas no Bling e depois clique em “Resolver financeiro” novamente.');
+        }
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      if(['installments_missing','supplier_contact_missing','bling_nfe_id_missing_for_native_payables'].includes(reason)){
+        alert(purchaseFinanceReasonLabel(reason)+'\n\nCorrija essa informação no Bling e depois clique em “Resolver financeiro” novamente.');
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      if(reason==='payables_missing_or_ambiguous'||finance.status==='review'){
+        if(!confirm('Não encontrei uma conta a pagar correspondente com segurança.\n\nDeseja pedir ao Bling para lançar as contas desta NF-e agora? O sistema fará uma nova conferência antes da gravação.')){
+          await refreshPurchaseAfterApproval(id);
+          return;
+        }
+        if(btn)btn.textContent='Lançando…';
+        const post=await purchaseApi('finance_post',{document_id:id,confirmation:'CONFIRMAR_CONTAS'});
+        if(post?.finance?.status==='posted'&&post?.finance?.reconciled!==false)toast('Financeiro confirmado no Bling');
+        else toast(purchaseFinanceReasonLabel(post?.finance?.reason||''));
+        await refreshPurchaseAfterApproval(id);
+        return;
+      }
+      toast(purchaseFinanceReasonLabel(reason));
+      await refreshPurchaseAfterApproval(id);
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Resolver financeiro'}
+    }
+  }
+
+  async function applyPurchaseItemUpdate(itemId,quiet=false){
+    const card=document.querySelector('[data-purchase-item="'+CSS.escape(itemId)+'"]');if(!card)return false;
+    const docId=card.dataset.documentId,operator=requireOperator();if(!operator)return false;
+    const factor=Number(String(card.querySelector('[data-purchase-factor]')?.value||'').replace(',','.'));
+    const sale=Number(String(card.querySelector('[data-purchase-sale]')?.value||'').replace(',','.'));
+    const updateCost=Boolean(card.querySelector('[data-purchase-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
+    if(!Number.isFinite(factor)||factor<1){if(!quiet)toast('Informe a conversão para UN');return false}
+    if(updateSale&&(!Number.isFinite(sale)||sale<0)){if(!quiet)toast('Informe um preço de venda válido');return false}
+    const btn=card.querySelector('[data-purchase-approve-item]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+    try{
+      const response=await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+      const sync=response.catalog_sync||{},result=card.querySelector('[data-purchase-result]');
+      const message=sync.bling_price==='confirmed'?'✓ Admin e preço Bling confirmados':
+        sync.bling_price==='pending'||sync.bling_price==='missing_link'?'Admin atualizado · Bling pendente: '+(sync.bling_price_message||'revisar vínculo'):
+        '✓ Admin atualizado · preço Bling mantido'+(sync.bling_supplier_cost==='pending'?' · custo no Bling pendente':'');
+      if(result)result.textContent=message;
+      if(!quiet){toast(message.slice(0,130));await refreshPurchaseAfterApproval(docId)}
+      return true;
+    }catch(e){
+      const message=purchaseXmlError(e),result=card.querySelector('[data-purchase-result]');
+      if(result)result.textContent='Não atualizado: '+message;
+      if(!quiet)toast(message);
+      if(btn){btn.disabled=false;btn.textContent='Tentar atualizar novamente'}
+      return false;
+    }
+  }
+  async function approveReadyPurchaseItems(id){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(!host)return;
+    const cards=[...host.querySelectorAll('.purchase-item-card')];
+    const ready=cards.filter(card=>{
+      const item=(state.purchaseDetailCache?.[id]?.items||[]).find(x=>x.id===card.dataset.purchaseItem);
+      if(!item?.product_id||item?.metadata?.catalog_approved_at)return false;
+      const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
+      const sale=Number(card.querySelector('[data-purchase-sale]')?.value||0);
+      const updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
+      return factor>=1&&(!updateSale||Number.isFinite(sale));
+    });
+    if(!ready.length){toast('Nenhum item pronto para autorizar');return}
+    if(!confirm('Autorizar a atualização dos '+ready.length+' item(ns) prontos desta nota?\n\nPreços atuais que já estiverem acima da margem mínima de 40% serão mantidos. O estoque não será alterado.'))return;
+    const operator=requireOperator();if(!operator)return;
+    let ok=0,fail=0;
+    for(const card of ready){
+      const itemId=card.dataset.purchaseItem;
+      const factor=Number(card.querySelector('[data-purchase-factor]')?.value||0);
+      const sale=Number(card.querySelector('[data-purchase-sale]')?.value||0);
+      const updateCost=Boolean(card.querySelector('[data-purchase-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
+      const btn=card.querySelector('[data-purchase-approve-item]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+      try{
+        const response=await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+        ok++;const result=card.querySelector('[data-purchase-result]');if(result)result.textContent='Admin atualizado · Bling '+(response.catalog_sync?.bling_price||'sem atualização de preço');
+      }catch(e){fail++;const result=card.querySelector('[data-purchase-result]');if(result)result.textContent=purchaseXmlError(e);if(btn){btn.disabled=false;btn.textContent='Tentar novamente'}}
+    }
+    toast(ok+' item(ns) atualizado(s)'+(fail?' · '+fail+' falha(s)':''));
+    await refreshPurchaseAfterApproval(id);
+  }
+  const PURCHASE_PAYMENT_MAPPING_LABELS={
+    credit_card:'Cartão de crédito',
+    debit_card:'Cartão de débito',
+    pix:'PIX',
+    cash:'Dinheiro',
+    voucher:'Vale alimentação/refeição',
+    bank_transfer:'Transferência / depósito',
+    other:'Outros'
+  };
+  function purchasePaymentConfigHtml(){
+    const cfg=state.purchasePaymentAccounts||{},accounts=Array.isArray(cfg.accounts)?cfg.accounts:[],mappings=cfg.mappings||{};
+    const keys=['credit_card','debit_card','pix','cash','voucher','bank_transfer'];
+    const options=(selected)=>'<option value="">Não configurado</option>'+accounts.map(a=>'<option value="'+esc(a.id)+'" '+(Number(selected)===Number(a.id)?'selected':'')+'>'+esc(a.description||('Conta '+a.id))+'</option>').join('');
+    const missing=keys.filter(k=>!Number(mappings?.[k]?.bling_account_id||0));
+    const onlyCash=accounts.length===1&&String(accounts[0]?.description||'').trim().toLowerCase()==='caixa';
+    return '<details class="panel" style="margin:0 0 14px"><summary class="history-title" style="cursor:pointer;padding:12px 14px"><div><strong>Contas financeiras para baixa</strong><span>Mapeie cada forma de pagamento para a conta correta do Bling.</span></div><b>'+(keys.length-missing.length)+' / '+keys.length+'</b></summary>'+
+      '<div style="padding:0 14px 14px">'+
+        (onlyCash?'<div class="purchase-safe purchase-danger"><strong>Seu Bling expõe apenas a conta “Caixa”</strong><small>Não vou usar Caixa para cartão, PIX ou débito. Cadastre as contas financeiras correspondentes no Bling e depois clique em Atualizar contas abaixo.</small></div>':'')+
+        (!accounts.length?'<div class="purchase-safe purchase-danger"><strong>Não consegui listar contas financeiras do Bling</strong><small>Sem esse cadastro, o Admin não prepara baixas automáticas.</small></div>':'')+
+        '<div class="purchase-price-grid" style="margin-top:10px">'+keys.map(k=>'<div class="purchase-field"><label>'+esc(PURCHASE_PAYMENT_MAPPING_LABELS[k])+'</label><select data-payment-map="'+esc(k)+'" style="min-height:40px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:var(--surface);color:var(--text)">'+options(mappings?.[k]?.bling_account_id)+'</select></div>').join('')+'</div>'+
+        '<div class="bling-actions" style="justify-content:flex-end;margin:12px 0 0"><button class="secondary" type="button" id="refreshPaymentAccounts">Atualizar contas do Bling</button><button class="primary" type="button" id="savePaymentAccounts">Salvar mapeamento</button></div>'+
+        '<small class="sub">Salvar aqui não dá baixa em nenhuma conta; apenas define qual conta financeira deverá ser usada quando você confirmar uma baixa no futuro.</small>'+
+      '</div></details>';
+  }
+  async function refreshPurchasePaymentAccounts(){
+    const b=$('#refreshPaymentAccounts');if(b){b.disabled=true;b.textContent='Atualizando…'}
+    try{
+      state.purchasePaymentAccounts=await purchaseApi('payment_accounts',{});
+      toast('Contas financeiras atualizadas');
+      paintPurchases();
+    }catch(e){toast(errorMessage(e.message));if(b){b.disabled=false;b.textContent='Atualizar contas do Bling'}}
+  }
+  async function savePurchasePaymentAccounts(){
+    const mappings={};
+    document.querySelectorAll('[data-payment-map]').forEach(s=>{
+      const id=Number(s.value||0);if(id)mappings[s.dataset.paymentMap]={bling_account_id:id};
+    });
+    if(!confirm('Salvar este mapeamento de formas de pagamento para contas financeiras do Bling?\n\nIsso não dá baixa em nenhuma conta.'))return;
+    const b=$('#savePaymentAccounts');if(b){b.disabled=true;b.textContent='Salvando…'}
+    try{
+      state.purchasePaymentAccounts=await purchaseApi('payment_accounts_save',{mappings});
+      toast('Mapeamento salvo');
+      paintPurchases();
+    }catch(e){toast(errorMessage(e.message));if(b){b.disabled=false;b.textContent='Salvar mapeamento'}}
+  }
+  async function previewPurchaseSettlement(id){
+    const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');
+    const b=host?.querySelector('[data-purchase-settlement-preview]');if(b){b.disabled=true;b.textContent='Preparando…'}
+    try{
+      const r=await purchaseApi('payment_settlement_preview',{document_id:id});
+      if(r.ready){
+        const msg='Prévia da baixa\n\nForma: '+String(r.payment_method||'—')+'\nConta financeira: '+String(r.financial_account?.description||r.financial_account?.id||'—')+'\nValor: '+purchaseMoney(r.preview?.valorRecebido)+'\nData: '+String(r.preview?.data||'—')+'\n\nDeseja confirmar a baixa desta conta no Bling?';
+        if(confirm(msg)){
+          if(b)b.textContent='Confirmando baixa…';
+          const done=await purchaseApi('payment_settlement_execute',{document_id:id,confirmation:'CONFIRMAR_BAIXA'});
+          if(done?.verified)toast('Pagamento baixado e confirmado no Bling');
+          else if(done?.already_settled)toast('Esta conta já estava baixada no Bling');
+          else toast('Baixa enviada ao Bling; confira a confirmação');
+        }else toast('Prévia conferida. Nenhuma baixa foi executada.');
+      }else{
+        const reasons={
+          financial_account_mapping_missing:'Falta escolher a conta financeira para esta forma de pagamento.',
+          split_payment_requires_review:'Esta compra tem pagamento dividido e precisa de revisão antes da baixa.',
+          requires_single_payable:'A NF-e está vinculada a mais de uma conta a pagar e precisa de revisão.',
+          payable_not_reconciled:'A conta a pagar ainda não está conciliada com segurança.',
+          payment_and_payable_amount_mismatch:'O valor pago e o saldo da conta a pagar não conferem.',
+          already_settled:'Esta conta já aparece como baixada no Bling.',
+          payable_status_not_settleable:'A situação atual da conta não permite preparar uma baixa.',
+          not_paid_at_purchase_likely:'A NF-e não indica pagamento no ato.'
+        };
+        alert((reasons[r.reason]||'A baixa ainda não está pronta para ser preparada.')+'\n\nNenhuma alteração foi feita no Bling.');
+      }
+      await refreshPurchaseAfterApproval(id);
+    }catch(e){toast(errorMessage(e.message))}
+    finally{if(b){b.disabled=false;b.textContent='Preparar baixa'}}
+  }
+
+  // XML Catalog V1: lightweight, explicitly opened; never preloads with purchases.
+  function xmlCatalogSectionHtml(){
+    const open=Boolean(state.xmlCatalogOpen);
+    return '<section class="panel" style="margin:12px 0;padding:14px">'+
+      '<div class="history-title dispatch-head"><div><strong>Catálogo histórico dos XMLs</strong>'+
+      '<span>Todos os produtos identificados nas notas, inclusive sem cadastro. Abrir não altera cadastro nem estoque.</span></div>'+
+      '<button class="secondary" id="xmlCatalogToggle" type="button">'+(open?'Fechar catálogo':'Abrir catálogo histórico')+'</button></div>'+
+      '<div id="xmlCatalogBody" style="display:'+(open?'block':'none')+'">'+
+      (open?xmlCatalogDisplayHtml():'')+'</div></section>';
+  }
+  function xmlCatalogStatusLabel(s){
+    return ({not_linked:'Ainda não cadastrado',identity_conflict:'Identidade divergente',
+      fiscal_conflict:'Revisão de NCM',cest_conflict:'Revisão de CEST',
+      linked_reviewable:'Vinculado · conferir'}[s]||'A conferir');
+  }
+  function xmlCatalogDisplayHtml(){
+    const d=state.xmlCatalogData||{},progress=state.xmlCatalogProgress||{};
+    const items=Array.isArray(d.items)?d.items:[],offset=Number(state.xmlCatalogOffset||0);
+    return '<div class="purchase-safe" style="margin:8px 0">'+
+       '<strong>Fonte: XMLs do Bling ou enviados manualmente</strong>'+
+       '<small>Esta área cataloga o que aparece na NF-e sem criar vendas, alterar NCM, custo, preço, estoque ou contas.</small></div>'+
+      '<div class="purchase-catalog-summary" style="margin:10px 0;flex-wrap:wrap">'+
+       '<span><b>'+esc(progress.documents||0)+'</b> notas</span>'+
+       '<span><b>'+esc(progress.declared_items||0)+'</b> itens declarados</span>'+
+       '<span><b>'+esc(progress.catalog_observations||0)+'</b> observações</span>'+
+       '<span><b>'+esc(progress.verified_from_xml||0)+'</b> verificadas no XML</span>'+
+       '<span><b>'+esc(progress.missing_staging_items||0)+'</b> faltam na fila</span>'+
+      '</div>'+
+      '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
+       '<input type="search" id="xmlCatalogSearch" placeholder="Buscar nome ou EAN" value="'+esc(state.xmlCatalogSearch||'')+'" style="min-width:180px;flex:1;max-width:420px">'+
+       '<select id="xmlCatalogFilter"><option value="">Todos</option>'+
+       [['not_linked','Sem cadastro'],['fiscal_conflict','Conflito NCM'],['cest_conflict','Conflito CEST'],['identity_conflict','Conflito de identidade'],['linked_reviewable','Vinculados']]
+       .map(([k,v])=>'<option value="'+k+'" '+(state.xmlCatalogFilter===k?'selected':'')+'>'+v+'</option>').join('')+'</select>'+
+       '<button type="button" class="secondary" id="xmlCatalogSearchButton">Buscar</button>'+
+       '<button type="button" class="secondary" id="xmlCatalogReprocess">Conferir próximos XMLs</button>'+
+      '</div>'+
+      (state.xmlCatalogBusy?'<div class="loading">Lendo os documentos…</div>':'')+
+      '<div class="sub" style="margin:8px 0">Exibindo '+esc(items.length)+' de '+esc(d.total||0)+' produtos candidatos. A leitura histórica ocorre somente ao clicar.</div>'+
+      (items.length?'<div class="purchase-catalog-list">'+items.map(x=>
+       '<div class="purchase-catalog-card"><div class="purchase-item-title">'+
+       '<div><strong>'+esc(x.display_name||'Produto sem descrição')+'</strong>'+
+       '<small>EAN '+esc(x.gtin||x.tax_gtin||'não informado')+
+       ' · NCM observado '+esc(x.last_observed_ncm||'—')+
+       ' · CEST observado '+esc(x.last_observed_cest||'—')+'</small></div>'+
+       '<span class="pill '+(x.review_status==='linked_reviewable'?'':'warn')+'">'+
+       esc(xmlCatalogStatusLabel(x.review_status))+'</span></div>'+
+       '<div class="purchase-catalog-meta"><span><b>'+esc(x.observations_count||0)+'</b> observação(ões)</span>'+
+       '<span><b>'+esc(x.suppliers_count||0)+'</b> fornecedor(es)</span>'+
+       '<span><b>'+esc(x.distinct_invoices||0)+'</b> nota(s)</span>'+
+       '<span>Último XML: '+esc(x.last_seen?dateOnly(String(x.last_seen).slice(0,10)):'—')+'</span>'+
+       (x.xml_verified?'<span>Origem XML conferida</span>':'<span>Releitura do XML pendente</span>')+
+       '</div><div style="margin-top:8px"><button class="secondary" type="button" data-xml-open="'+esc(x.candidate_key)+'">'+(state.xmlCatalogDetailKey===x.candidate_key?'Fechar ficha':'Ver ficha e histórico')+'</button></div>'+ (state.xmlCatalogDetailKey===x.candidate_key?'<div style="margin-top:8px">'+xmlCatalogDetailMarkup()+'</div>':'')+'</div>').join('')+'</div>':
+       '<div class="empty">Nenhum produto encontrado neste filtro.</div>')+
+      '<div class="bling-actions" style="justify-content:flex-end;margin:12px 0 0">'+
+       '<button type="button" class="secondary" id="xmlCatalogPrev" '+(offset<=0?'disabled':'')+'>Anterior</button>'+
+       '<button type="button" class="secondary" id="xmlCatalogNext" '+(offset+items.length>=Number(d.total||0)?'disabled':'')+'>Próximos produtos</button>'+
+      '</div>';
+  }
+  function xmlCatalogDetailMarkup(){
+    if(state.xmlCatalogDetailLoading)return '<div class="loading">Carregando histórico do XML…</div>';
+    const data=state.xmlCatalogDetail||{},c=data.candidate||{};
+    if(data.error)return '<div class="empty">'+esc(data.error)+'</div>';
+    const rows=Array.isArray(data.observations)?data.observations:[];
+    const active=rows.find(x=>String(x.purchase_item_id||'')===String(state.xmlCatalogSelectedObservation||''))||
+      rows.find(x=>x.purchase_item_id&&!x.linked_product_id)||rows[0]||{};
+    const options=state.xmlCatalogMatches||data.suggested_existing_products||[];
+    const chosen=state.xmlCatalogChosenProduct||null;
+    const purchaseUnit=String(active.purchase_unit||'').trim().toUpperCase();
+    const itemHasBarcode=[active.commercial_gtin,active.tax_gtin].some(x=>/^\d{8,14}$/.test(String(x||'')));
+    const needsManualUnitReview=!itemHasBarcode||/^(KG|G|L|LT|LTS|M|MT|TON)$/.test(purchaseUnit);
+    return '<div class="purchase-safe"><strong>Ficha de origem · '+esc(c.display_name||'Produto')+'</strong>'+
+      '<small>Os campos abaixo vêm das NF-e. Para corrigir o cadastro é obrigatória uma confirmação humana.</small></div>'+
+      '<div class="purchase-catalog-meta" style="margin:8px 0">'+
+      '<span>'+esc(c.observations_count||0)+' registros de XML</span>'+
+      '<span>'+esc(c.suppliers_count||0)+' fornecedores</span>'+
+      '<span>'+esc(c.ncm_variations||0)+' NCM(s) informado(s)</span></div>'+
+      '<div class="purchase-items" style="max-height:300px;overflow-y:auto">'+rows.map(x=>
+        '<div class="purchase-item-card" style="padding:10px;margin:5px 0">'+
+        '<div class="purchase-item-title"><div><strong>'+esc(x.xml_description||'Produto')+'</strong>'+
+        '<small>'+esc(x.supplier_name||'Fornecedor')+' · '+esc(x.issued_at?dateOnly(String(x.issued_at).slice(0,10)):'—')+
+        ' · Item '+esc(x.item_number||'—')+'</small></div>'+
+        '<button type="button" class="secondary" data-xml-observation="'+esc(x.purchase_item_id||'')+'" '+
+          (!x.purchase_item_id?'disabled':'')+'>'+
+          (String(active.purchase_item_id||'')===String(x.purchase_item_id||'')?'Selecionado':'Selecionar')+'</button></div>'+
+        '<small>EAN comercial: '+esc(x.commercial_gtin||'—')+' · EAN tributável: '+esc(x.tax_gtin||'—')+
+        ' · Cód. fornecedor: '+esc(x.supplier_item_code||'—')+'</small>'+
+        '<small style="display:block">NCM: '+esc(x.xml_ncm||'—')+' · CEST: '+esc(x.xml_cest||'—')+
+        ' · CFOP: '+esc(x.xml_cfop||'—')+'</small>'+
+        '<small style="display:block">Quantidade: '+esc(x.purchase_quantity??'—')+' '+esc(x.purchase_unit||'')+
+        ' · Valor unitário: '+(x.purchase_unit_price==null?'—':purchaseMoney(x.purchase_unit_price))+
+        ' · Total: '+(x.line_total==null?'—':purchaseMoney(x.line_total))+'</small>'+
+        (x.linked_product_id?'<small style="display:block"><strong>Vinculado:</strong> '+esc(x.linked_product_name||'Produto')+
+        ' · NCM cadastro: '+esc(x.linked_product_ncm||'—')+' · CEST fiscal: '+esc(x.linked_product_cest||'—')+'</small>':
+        '<small style="display:block">Sem vínculo com o cadastro de venda</small>')+'</div>').join('')+'</div>'+
+      (data.truncated?'<small class="sub">Exibindo até 60 observações mais recentes.</small>':'')+
+      (active.linked_product_id?'<div class="purchase-safe"><strong>Item vinculado.</strong>'+
+       '<small>Revisão de custo, preço e estoque permanece na tela operacional de Compras/XML.</small></div>':
+       needsManualUnitReview?'<div class="purchase-safe purchase-danger" style="margin-top:10px"><strong>Conferência de EAN/unidade necessária</strong>'+
+       '<small>Este XML não possui código de barras numérico ou utiliza unidade de peso/volume. Para não converter quilos em unidades ou associar códigos incorretos, faça a identificação na revisão operacional de Compras/XML. O item já está preservado no catálogo.</small></div>':
+       '<div class="purchase-safe" style="margin-top:12px"><strong>Vincular ou cadastrar este item</strong>'+
+        '<small>EAN da unidade e EAN da embalagem são independentes da unidade de compra (CX, FD, PC, UN). Informe o que o EAN realmente identifica; a embalagem de compra será revisada separadamente. Não altera estoque nem preço.</small>'+
+        '<div class="bling-actions" style="gap:8px;flex-wrap:wrap;margin:10px 0">'+
+        '<label>EAN de origem<select id="xmlDetailGtinSource"><option value="">Escolha o EAN…</option>'+
+        (typeof active.commercial_gtin==='string'&&/^\d{8,14}$/.test(active.commercial_gtin)?
+          '<option value="commercial">EAN comercial: '+esc(active.commercial_gtin)+'</option>':'')+
+        (typeof active.tax_gtin==='string'&&/^\d{8,14}$/.test(active.tax_gtin)?
+          '<option value="tax">EAN tributável: '+esc(active.tax_gtin)+'</option>':'')+
+        '</select></label>'+
+        '<label>Tipo do EAN<select id="xmlDetailRole"><option value="">Escolha…</option>'+
+        '<option value="base_unit">Unidade</option><option value="package">Caixa/fardo/pacote</option></select></label>'+
+        '<label id="xmlDetailFactorWrap" style="display:none">Unidades representadas pelo EAN da embalagem<input id="xmlDetailFactor" type="number" min="1" max="100000" step="1" value="1" style="width:110px"></label></div>'+
+        '<div id="xmlDetailPurchasePackWrap" style="display:none;margin:10px 0">'+
+        '<label>Unidades por embalagem de compra (opcional; para revisão)<input id="xmlDetailPurchasePackUnits" type="number" min="1" max="100000" step="1" placeholder="Não confirmado" style="width:150px"></label>'+
+        '<small style="display:block">Informe somente se souber quantas unidades vêm em cada unidade de compra da NF-e. PC pode significar peça, não pacote. Não calcula nem lança estoque.</small>'+
+        '</div>'+
+        '<div class="bling-actions" style="gap:6px;flex-wrap:wrap">'+
+        '<input id="xmlDetailProductSearch" type="search" placeholder="EAN ou nome do produto cadastrado" style="min-width:220px;flex:1">'+
+        '<button id="xmlDetailSearch" type="button" class="secondary">Buscar produto</button></div>'+
+        '<div class="purchase-items">'+options.map(p=>
+           '<div class="purchase-item-title" style="margin:5px 0"><div><strong>'+esc(p.name||'Produto')+'</strong>'+
+           '<small>EAN '+esc(p.gtin||'—')+' · '+(p.is_active?'Ativo':'Inativo')+'</small></div>'+
+           '<button class="secondary" type="button" data-xml-pick="'+esc(p.id)+'">Escolher</button></div>').join('')+'</div>'+
+        (chosen?'<small style="display:block;margin:8px 0">Produto escolhido: <b>'+esc(chosen.name)+'</b></small>':'')+
+        '<button id="xmlDetailLink" type="button" class="secondary" '+(!chosen?'disabled':'')+'>Vincular somente esta linha</button>'+
+        '<div style="margin-top:12px"><label>Novo produto (inativo)<input id="xmlDetailNewName" type="text" maxlength="250" style="width:100%" value="" placeholder="Nome comercial por unidade, sem CX/FD/FARDO"></label>'+
+        '<button id="xmlDetailCreate" type="button" class="secondary">Cadastrar produto inativo</button></div>'+
+        '</div>')+
+      '<small class="sub">Dados fiscais são evidências do fornecedor e precisam de validação. Não há lançamento de estoque nesta ficha.</small>';
+  }
+  function xmlCatalogDetailRefresh(){
+    const h=$('#xmlCatalogBody');
+    if(!h||!state.xmlCatalogOpen)return;
+    h.innerHTML=xmlCatalogDisplayHtml();bindXmlCatalogInner();
+  }
+  async function xmlCatalogDetailOpen(key){
+    state.xmlCatalogDetailKey=key;state.xmlCatalogDetailLoading=true;
+    state.xmlCatalogDetail=null;state.xmlCatalogMatches=null;
+    state.xmlCatalogChosenProduct=null;state.xmlCatalogSelectedObservation=null;
+    xmlCatalogDetailRefresh();
+    try{
+      const r=await purchaseApi('xml_catalog_candidate_detail',{candidate_key:key});
+      if(state.xmlCatalogDetailKey!==key)return;
+      state.xmlCatalogDetail=r;
+      const rows=r.observations||[];
+      state.xmlCatalogSelectedObservation=(rows.find(x=>x.purchase_item_id&&!x.linked_product_id)||rows[0]||{}).purchase_item_id||null;
+    }catch(e){state.xmlCatalogDetail={error:errorMessage(e.message)}}
+    finally{state.xmlCatalogDetailLoading=false;xmlCatalogDetailRefresh()}
+  }
+  function xmlCatalogDetailBind(){
+    const host=$('#xmlCatalogBody');if(!host)return;
+    host.querySelectorAll('[data-xml-open]').forEach(b=>b.onclick=async()=>{
+      const key=b.dataset.xmlOpen;
+      if(state.xmlCatalogDetailKey===key){state.xmlCatalogDetailKey=null;state.xmlCatalogDetail=null;xmlCatalogDetailRefresh()}
+      else await xmlCatalogDetailOpen(key);
+    });
+    const data=state.xmlCatalogDetail;
+    if(!data?.candidate)return;
+    host.querySelectorAll('[data-xml-observation]').forEach(b=>b.onclick=()=>{
+      if(!b.dataset.xmlObservation)return;
+      state.xmlCatalogSelectedObservation=b.dataset.xmlObservation;
+      state.xmlCatalogChosenProduct=null;xmlCatalogDetailRefresh();
+    });
+    const search=$('#xmlDetailSearch');
+    if(search)search.onclick=async()=>{
+      const q=String($('#xmlDetailProductSearch')?.value||'').trim();
+      if(q.length<2){toast('Informe pelo menos 2 caracteres');return}
+      search.disabled=true;
+      try{
+        const r=await purchaseApi('search_products',{query:q});
+        state.xmlCatalogMatches=Array.isArray(r.items)?r.items:[];
+        state.xmlCatalogChosenProduct=null;xmlCatalogDetailRefresh();
+      }catch(e){toast(errorMessage(e.message));search.disabled=false}
+    };
+    host.querySelectorAll('[data-xml-pick]').forEach(b=>b.onclick=()=>{
+      const options=state.xmlCatalogMatches||data.suggested_existing_products||[];
+      state.xmlCatalogChosenProduct=options.find(x=>String(x.id)===String(b.dataset.xmlPick))||null;
+      xmlCatalogDetailRefresh();
+    });
+    const roleSelect=$('#xmlDetailRole'),factor=$('#xmlDetailFactor');
+    const factorWrap=$('#xmlDetailFactorWrap'),packWrap=$('#xmlDetailPurchasePackWrap');
+    const packField=$('#xmlDetailPurchasePackUnits');
+    if(roleSelect)roleSelect.onchange=()=>{
+      const base=roleSelect.value==='base_unit',outer=roleSelect.value==='package';
+      if(factorWrap)factorWrap.style.display=outer?'':'none';
+      if(packWrap)packWrap.style.display=base?'':'none';
+      if(!outer&&factor)factor.value='1'; // individual EAN always counts as one unit
+      if(!base&&packField)packField.value='';
+    };
+    if(roleSelect)roleSelect.onchange();
+    const link=$('#xmlDetailLink'),create=$('#xmlDetailCreate');
+    if(link)link.onclick=()=>xmlCatalogDetailSave(false);
+    if(create)create.onclick=()=>xmlCatalogDetailSave(true);
+  }
+  async function xmlCatalogDetailSave(createNew){
+    const d=state.xmlCatalogDetail||{};
+    const item=(d.observations||[]).find(x=>String(x.purchase_item_id||'')===String(state.xmlCatalogSelectedObservation||''));
+    const chosen=state.xmlCatalogChosenProduct,role=String($('#xmlDetailRole')?.value||'');
+    const gtinSource=String($('#xmlDetailGtinSource')?.value||'');
+    const factor=Number($('#xmlDetailFactor')?.value||0);
+    const packRaw=String($('#xmlDetailPurchasePackUnits')?.value??'').trim();
+    const packUnits=packRaw===''?null:Number(packRaw);
+    if(!item?.purchase_item_id||item.linked_product_id){toast('Selecione um item não vinculado');return}
+    const unit=String(item.purchase_unit||'').trim().toUpperCase();
+    const barcodeOk=[item.commercial_gtin,item.tax_gtin].some(x=>/^\d{8,14}$/.test(String(x||'')));
+    if(!barcodeOk||/^(KG|G|L|LT|LTS|M|MT|TON)$/.test(unit)){
+      toast('Unidade de compra ou GTIN requer conferência operacional antes de vincular');return;
+    }
+    if(!['commercial','tax'].includes(gtinSource)){
+      toast('Escolha explicitamente o EAN comercial ou tributável da NF-e');return}
+    if(!['base_unit','package'].includes(role)){toast('Defina se o EAN é da unidade ou da embalagem');return}
+    // A unidade de compra (CX/FD/PC) não define o tipo do EAN: o EAN da unidade é válido mesmo em nota por caixa.
+    if(!Number.isInteger(factor)||factor<1||factor>100000||
+       (role==='base_unit'&&factor!==1)||(role==='package'&&factor<=1)){
+      toast('EAN individual = 1; somente EAN de caixa/fardo exige mais de 1 unidade');return}
+    if(packUnits!==null&&
+       (role!=='base_unit'||!Number.isInteger(packUnits)||packUnits<1||packUnits>100000)){
+      toast('Confira as unidades por embalagem de compra ou deixe em branco se não sabe');return}
+    if(!createNew&&!chosen?.id){toast('Escolha um produto existente');return}
+    const name=createNew?String($('#xmlDetailNewName')?.value||'').trim():String(chosen.name||'').trim();
+    if(!name){toast('Informe o nome do produto');return}
+    if(createNew&&/^(?:CX|CX\\.|CAIXA|FD|FDO|FARDO|FAR|PCT|PACOTE)\\b/i.test(name)){
+      toast('Escreva o nome comercial da unidade, sem prefixo de caixa/fardo');return;
+    }
+    const packagingNotice=packUnits===null?
+      ' A embalagem de compra permanecerá sem conversão confirmada.':
+      ' Quantidade por embalagem anotada apenas para futura revisão: '+packUnits+' UN. NÃO será aplicada ao estoque.';
+    const msg=createNew?
+      'Criar produto INATIVO com estoque zero? Os dados fiscais continuarão em revisão.'+packagingNotice:
+      'Vincular SOMENTE esta linha da NF-e ao produto '+name+'? O nome atual será preservado. Não haverá alteração de estoque ou preço.'+packagingNotice;
+    if(!confirm(msg))return;
+    const button=createNew?$('#xmlDetailCreate'):$('#xmlDetailLink');if(button)button.disabled=true;
+    const key=state.xmlCatalogDetailKey;
+    try{
+      await purchaseApi('resolve_item_identity',{item_id:item.purchase_item_id,
+        product_id:createNew?null:chosen.id,create_new:createNew,
+        proposed_name:name,gtin_role:role,gtin_source:gtinSource,
+        conversion_factor:factor,purchase_pack_units_for_review:packUnits,
+        catalog_evidence_only:true,
+        confirmation:createNew?'CRIAR_INATIVO_XML':'VINCULAR_ITEM_XML'});
+      toast(createNew?'Produto criado inativo':'Vínculo confirmado; estoque e preços não alterados');
+      await loadXmlCatalog();if(state.xmlCatalogOpen&&key)await xmlCatalogDetailOpen(key);
+    }catch(e){toast(errorMessage(e.message));if(button)button.disabled=false}
+  }
+
+  function bindXmlCatalog(){
+    const toggle=$('#xmlCatalogToggle');
+    if(toggle)toggle.onclick=async()=>{
+      state.xmlCatalogOpen=!state.xmlCatalogOpen;
+      const host=$('#xmlCatalogBody');
+      if(host)host.style.display=state.xmlCatalogOpen?'block':'none';
+      if(toggle)toggle.textContent=state.xmlCatalogOpen?'Fechar catálogo':'Abrir catálogo histórico';
+      if(state.xmlCatalogOpen)await loadXmlCatalog();
+    };
+    bindXmlCatalogInner();
+  }
+  function bindXmlCatalogInner(){
+    const host=$('#xmlCatalogBody');if(!host||!state.xmlCatalogOpen)return;
+    xmlCatalogDetailBind();
+    const search=$('#xmlCatalogSearch'),filter=$('#xmlCatalogFilter');
+    if(search)search.onchange=e=>state.xmlCatalogSearch=e.target.value;
+    if(filter)filter.onchange=e=>state.xmlCatalogFilter=e.target.value;
+    const go=$('#xmlCatalogSearchButton');
+    if(go)go.onclick=async()=>{
+      state.xmlCatalogSearch=String(search?.value||'');state.xmlCatalogFilter=String(filter?.value||'');
+      state.xmlCatalogOffset=0;await loadXmlCatalog();
+    };
+    const prev=$('#xmlCatalogPrev');if(prev)prev.onclick=async()=>{
+      state.xmlCatalogOffset=Math.max(0,Number(state.xmlCatalogOffset||0)-30);await loadXmlCatalog();
+    };
+    const next=$('#xmlCatalogNext');if(next)next.onclick=async()=>{
+      state.xmlCatalogOffset=Number(state.xmlCatalogOffset||0)+30;await loadXmlCatalog();
+    };
+    const reprocess=$('#xmlCatalogReprocess');
+    if(reprocess)reprocess.onclick=async()=>{
+      if(!confirm('Ler até 3 XMLs originais e recuperar somente itens ausentes da fila de revisão? Nenhum produto, preço, estoque ou dado do Bling será alterado.'))return;
+      reprocess.disabled=true;reprocess.textContent='Conferindo XMLs…';
+      try{
+        const offset=Number(state.xmlCatalogScanOffset||0);
+        const r=await purchaseApi('xml_catalog_reprocess',{limit:3,offset});
+        state.xmlCatalogScanOffset=Number(r.next_offset||offset);
+        const recovered=(r.results||[]).reduce((n,x)=>n+Number(x.new_staged_items||0),0);
+        const failed=(r.results||[]).filter(x=>!x.ok).length;
+        toast('XMLs: '+Number(r.processed||0)+' conferidos · '+recovered+' itens recuperados'+(failed?' · '+failed+' erros':''));
+        await loadXmlCatalog();
+      }catch(e){toast(errorMessage(e.message));reprocess.disabled=false;reprocess.textContent='Conferir próximos XMLs'}
+    };
+  }
+  async function loadXmlCatalog(){
+    const host=$('#xmlCatalogBody');if(!host||!state.xmlCatalogOpen)return;
+    host.innerHTML='<div class="loading">Carregando catálogo de XMLs…</div>';
+    try{
+      const values=await Promise.all([
+        purchaseApi('xml_catalog_list',{limit:30,offset:Number(state.xmlCatalogOffset||0),
+          search:state.xmlCatalogSearch||'',status:state.xmlCatalogFilter||''}),
+        purchaseApi('xml_catalog_progress')
+      ]);
+      state.xmlCatalogData=values[0];state.xmlCatalogProgress=values[1];
+      host.innerHTML=xmlCatalogDisplayHtml();bindXmlCatalogInner();
+    }catch(e){
+      host.innerHTML='<div class="empty">Não foi possível carregar o catálogo XML. <button class="secondary" id="xmlCatalogRetry">Tentar novamente</button></div>';
+      if($('#xmlCatalogRetry'))$('#xmlCatalogRetry').onclick=loadXmlCatalog;
+    }
+  }
+
+  function paintPurchases(){
+    const host=$('#purchaseBody');if(!host)return;
+    const d=state.purchaseXml||{},docs=Array.isArray(d.documents)?d.documents:[],reviews=Array.isArray(d.review_items)?d.review_items:[],runs=Array.isArray(d.runs)?d.runs:[],settings=d.settings||{},integration=d.integration||{};
+    const browse=state.purchaseBlingBrowse||{},blingDocs=Array.isArray(browse.documents)?browse.documents:[],window=d.filter||browse.window||{};
+    const importedIds=new Set(docs.map(x=>Number(x.bling_nfe_id||0)).filter(Boolean));
+    const importedKeys=new Set(docs.map(x=>String(x.document_key||'')).filter(Boolean));
+    const notImported=blingDocs.filter(x=>!importedIds.has(Number(x.bling_nfe_id||0))&&!(x.access_key&&importedKeys.has(String(x.access_key))));
+    // Financial details do not belong in the daily purchase list.
+    const attentionDocs=docs.filter(x=>x.processing_status==='review_required'||x.processing_status==='failed'||x.receipt_status==='review');
+    const ready=docs.filter(x=>x.receipt_status==='ready').length;
+    const last=runs[0]||null;
+    const lastAutomatic=runs.find(x=>x.source==='bling_daily')||null;
+    const runSource=last?.source==='bling_daily'?'Rotina automática':last?.source==='bling_manual'?'Importação manual':last?.source==='manual_xml'||last?.source==='bulk_xml'?'XML enviado':'Execução';
+    const runStatus=last?.status==='completed'?'Concluída':last?.status==='completed_with_review'?'Concluída com revisão':last?.status==='failed'?'Falhou':last?.status==='running'?'Em andamento':String(last?.status||'');
+    host.innerHTML=
+      '<div class="purchase-simple-stats" aria-label="Resumo das notas">'+
+        '<div><small>Notas</small><strong>'+docs.length+'</strong></div>'+
+        '<div><small>Para conferir</small><strong>'+attentionDocs.length+'</strong></div>'+
+        '<div><small>Prontas</small><strong>'+ready+'</strong></div>'+
+      '</div>'+
+      (lastAutomatic?'<div class="purchase-sync-timestamp">Última sincronização automática: '+esc(dateTime(lastAutomatic.started_at||lastAutomatic.created_at))+
+        ' · '+esc(lastAutomatic.documents_seen||0)+' notas consultadas · '+esc(lastAutomatic.documents_failed||0)+' falhas</div>':'')+
+      (notImported.length?'<div class="purchase-safe purchase-danger"><strong>'+notImported.length+' nota(s) de compra ainda não importada(s)</strong><small>Use “Buscar no Bling” para importar as notas de compra/entrada encontradas no período.</small></div>':'')+
+      '<section class="panel purchase-notes-panel">'+
+        '<div class="purchase-notes-header"><div><strong>Notas de entrada</strong><span class="sub" id="purchaseVisibleCount">'+docs.length+' nota(s) na lista</span></div>'+
+          '<div class="purchase-notes-search"><input id="purchaseQuickSearch" type="search" aria-label="Pesquisar notas" placeholder="Buscar fornecedor, NF-e ou CNPJ/CPF" value="'+esc(state.purchaseQuery||'')+'">'+
+          '<select id="purchaseQuickStatus" aria-label="Filtrar notas">'+
+            '<option value="all" '+(!state.purchaseQuickStatus||state.purchaseQuickStatus==='all'?'selected':'')+'>Todas</option>'+
+            '<option value="attention" '+(state.purchaseQuickStatus==='attention'?'selected':'')+'>Para conferir</option>'+
+            '<option value="ready" '+(state.purchaseQuickStatus==='ready'?'selected':'')+'>Prontas para entrada</option>'+
+            '<option value="received" '+(state.purchaseQuickStatus==='received'?'selected':'')+'>Recebidas</option>'+
+          '</select></div></div>'+
+        (docs.length?docs.slice().sort((a,b)=>{
+          const rank=x=>x.receipt_status==='received'?3:x.receipt_status==='ready'?2:
+            attentionDocs.some(y=>y.id===x.id)?0:1;
+          return rank(a)-rank(b)||String(b.issued_at||'').localeCompare(String(a.issued_at||''));
+        }).map(x=>{
+          const needsReview=attentionDocs.some(y=>y.id===x.id);
+          const isReceived=x.receipt_status==='received';
+          const isReady=x.receipt_status==='ready';
+          const primaryStatus=needsReview?'Para conferir':isReceived?'Recebida':isReady?'Pronta para entrada':'Importada';
+          const primaryClass=needsReview?'warn':'';
+          const filterStatus=needsReview?'attention':isReceived?'received':isReady?'ready':'other';
+          const invoiceNumber=x.number||x.document_number||x.invoice_number||null;
+          const docRef=invoiceNumber?'NF '+String(invoiceNumber):'NF-e · '+String(x.document_key||'').slice(-8);
+          const searchable=[x.supplier_name,x.supplier_document,x.supplier_tax_id,x.recipient_document,x.document_key,x.number,x.document_number,x.invoice_number].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR');
+          return '<div class="purchase-doc-block" data-purchase-filter-row data-purchase-search="'+esc(searchable)+'" data-purchase-status="'+filterStatus+'" data-purchase-attention="'+(needsReview?'1':'0')+'" data-purchase-ready="'+(isReady?'1':'0')+'" data-purchase-received="'+(isReceived?'1':'0')+'">'+
+            '<div class="purchase-doc-row purchase-simple-row purchase-doc-clickable '+(state.purchaseExpandedId===x.id?'expanded':'')+'" data-purchase-toggle="'+esc(x.id)+'">'+
+              '<div class="purchase-note-ref"><strong>'+esc(docRef)+'</strong><small>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</small></div>'+
+              '<div class="history-main"><strong>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns) · '+esc(x.recipient_kind||'NF-e')+'</small></div>'+
+              '<div class="purchase-note-status"><span class="pill '+primaryClass+'">'+primaryStatus+'</span><small>'+esc(x.receipt_status==='received'?'Estoque verificado':'Produtos e recebimento')+'</small></div>'+
+              '<div class="purchase-actions"><button class="secondary" type="button" data-purchase-open="'+esc(x.id)+'">Conferir</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button></div>'+
+            '</div><div class="purchase-doc-expanded" data-purchase-detail="'+esc(x.id)+'" style="display:none"></div></div>';
+        }).join(''):'<div class="empty">Nenhuma nota importada neste período. Clique em “Buscar no Bling” ou “Importar XML”.</div>')+
+        '<div class="empty" id="purchaseNoFilterResults" style="display:none">Nenhuma nota corresponde à pesquisa.</div>'+
+      '</section>'+
+      '<details id="purchaseAdvanced" class="panel purchase-extra" '+(state.purchaseAdvancedOpen?'open':'')+'><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
+      (!state.purchaseAdvancedLoaded||state.purchaseAdvancedError?'<div class="purchase-compact-note">'+esc(state.purchaseAdvancedError|| (state.purchaseAdvancedLoading?'Carregando índice…':'Abra para carregar a conferência avançada.'))+'</div>'+(state.purchaseAdvancedError?'<button class="secondary" type="button" id="purchaseRetryAdvanced">Tentar novamente</button>':''):'')+
+      purchaseCatalogQueueHtml()+
+      xmlCatalogSectionHtml()+
+      ((d.stale_runs_closed||d.stale_documents_repaired)?'<div class="bling-banner"><strong>Processamento corrigido</strong><small>'+(d.stale_runs_closed?esc(d.stale_runs_closed)+' importação antiga encerrada. ':'')+(d.stale_documents_repaired?esc(d.stale_documents_repaired)+' nota(s) tiveram o status recomposto.':'')+'</small></div>':'')+
+      (last?'<div class="bling-banner"><strong>'+esc(runSource)+' · '+esc(runStatus)+'</strong><small>'+dateTime(last.started_at||last.created_at)+' · '+esc(last.documents_processed||0)+' nova(s) · '+esc(last.documents_duplicate||0)+' já existente(s) · '+esc(last.documents_failed||0)+' falha(s)</small></div>':'')+
+      '<details id="purchaseBlingCompare" class="panel" style="margin-top:8px" '+(state.purchaseBlingCompareOpen?'open':'')+'><summary class="history-title" style="cursor:pointer;padding:8px 10px"><div><strong>Comparar com o Bling</strong><span>Consulta sob demanda, não bloqueia a lista de notas.</span></div><b>'+(state.purchaseBlingCompareLoaded?blingDocs.length:'—')+'</b></summary>'+
+      (!state.purchaseBlingCompareLoaded?
+        '<div class="purchase-compact-note">'+esc(state.purchaseBlingCompareError|| (state.purchaseBlingCompareLoading?'Consultando o Bling…':'Abra para consultar as notas registradas no Bling.'))+'</div>'+
+        (state.purchaseBlingCompareError?'<button type="button" class="secondary" id="purchaseRetryBlingCompare">Tentar novamente</button>':'')
+        :'')+
+        (state.purchaseBlingCompareLoaded && blingDocs.length?blingDocs.map(x=>{
+          const imported=importedIds.has(Number(x.bling_nfe_id||0))||(x.access_key&&importedKeys.has(String(x.access_key)));
+          return '<div class="purchase-doc-row">'+
+            '<div><strong>'+esc(x.issued_at?dateOnly(String(x.issued_at).slice(0,10)):'—')+'</strong><span class="sub">#'+esc(x.number||x.bling_nfe_id||'—')+'</span></div>'+
+            '<div class="history-main"><strong>'+esc(x.contact_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+(x.contact_document?' · '+esc(x.contact_document):'')+'</small></div>'+
+            '<div><span class="pill '+(imported?'':'warn')+'">'+(imported?'Já importada':'Falta importar')+'</span></div>'+
+            '<div class="sub">'+esc(x.access_key?String(x.access_key).slice(-10):'—')+'</div><div></div><div></div><div></div>'+
+          '</div>';
+        }).join(''):state.purchaseBlingCompareLoaded?'<div class="empty">Nenhuma nota registrada no Bling nesse período.</div>':'')+
+      '</details>'+
+      '</details>';
+    const purchaseQuickSearch=$('#purchaseQuickSearch');
+    const purchaseQuickStatus=$('#purchaseQuickStatus');
+    const filterPurchasesOnScreen=()=>{
+      state.purchaseQuery=String(purchaseQuickSearch?.value||'').trim().toLocaleLowerCase('pt-BR');
+      state.purchaseQuickStatus=String(purchaseQuickStatus?.value||'all');
+      let shown=0;
+      host.querySelectorAll('[data-purchase-filter-row]').forEach(row=>{
+        const matchesText=!state.purchaseQuery||String(row.dataset.purchaseSearch||'').includes(state.purchaseQuery);
+        const matchesStatus=state.purchaseQuickStatus==='all'||row.dataset['purchase'+state.purchaseQuickStatus[0].toUpperCase()+state.purchaseQuickStatus.slice(1)]==='1';
+        const show=matchesText&&matchesStatus;
+        row.style.display=show?'':'none';
+        if(show)shown++;
+      });
+      const count=$('#purchaseVisibleCount');if(count)count.textContent=shown+' nota(s) na lista';
+      const empty=$('#purchaseNoFilterResults');if(empty)empty.style.display=docs.length&&shown===0?'block':'none';
+    };
+    if(purchaseQuickSearch)purchaseQuickSearch.oninput=filterPurchasesOnScreen;
+    if(purchaseQuickStatus)purchaseQuickStatus.onchange=filterPurchasesOnScreen;
+    filterPurchasesOnScreen();
+    bindPurchaseCatalogQueue();
+    bindXmlCatalog();
+    const advanced=$('#purchaseAdvanced');
+    if(advanced)advanced.ontoggle=()=>{
+      state.purchaseAdvancedOpen=advanced.open;
+      if(advanced.open&&!state.purchaseAdvancedLoaded&&!state.purchaseAdvancedLoading&&!state.purchaseAdvancedError)loadPurchaseAdvanced();
+    };
+    const advancedRetry=$('#purchaseRetryAdvanced');
+    if(advancedRetry)advancedRetry.onclick=()=>{
+      state.purchaseAdvancedError='';
+      loadPurchaseAdvanced();
+    };
+    const compare=$('#purchaseBlingCompare');
+    if(compare)compare.ontoggle=()=>{
+      state.purchaseBlingCompareOpen=compare.open;
+      if(compare.open&&!state.purchaseBlingCompareLoaded&&!state.purchaseBlingCompareLoading&&!state.purchaseBlingCompareError)loadPurchaseBlingComparison();
+    };
+    const compareRetry=$('#purchaseRetryBlingCompare');
+    if(compareRetry)compareRetry.onclick=()=>{
+      state.purchaseBlingCompareError='';
+      loadPurchaseBlingComparison();
+    };
+    host.querySelectorAll('[data-purchase-toggle]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,a,input,label'))return;togglePurchaseDocument(row.dataset.purchaseToggle)});
+    host.querySelectorAll('[data-purchase-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();togglePurchaseDocument(b.dataset.purchaseOpen,true)});
+    host.querySelectorAll('[data-purchase-xml]').forEach(b=>b.onclick=e=>{e.stopPropagation();downloadPurchaseXml(b.dataset.purchaseXml)});
+    host.querySelectorAll('[data-purchase-conversion]').forEach(b=>b.onclick=()=>setPurchaseConversion(b.dataset.purchaseConversion));
+    if($('#refreshPaymentAccounts'))$('#refreshPaymentAccounts').onclick=refreshPurchasePaymentAccounts;
+    if($('#savePaymentAccounts'))$('#savePaymentAccounts').onclick=savePurchasePaymentAccounts;
+    const expanded=state.purchaseExpandedId;
+    if(expanded&&state.purchaseDetailCache?.[expanded]){
+      const row=document.querySelector('[data-purchase-toggle="'+CSS.escape(expanded)+'"]');if(row)row.classList.add('expanded');
+      renderPurchaseDocumentInline(expanded,state.purchaseDetailCache[expanded]);
+    }
+  }
+  async function runPurchaseBlingSync(){
+    if(!purchaseCustomRangeReady()){toast('Informe um período válido');return}
+    const b=$('#purchaseBlingSync');if(b){b.disabled=true;b.textContent='Buscando e importando…'}
+    try{
+      const r=await purchaseApi('bling_sync',purchaseFilterPayload());
+      if(Number(r.documents_seen||0)===0)toast('Nenhuma nota de compra/entrada encontrada pela API do Bling. Notas apenas Ciente não estão incluídas.');
+      else toast('Importação concluída: '+String(r.processed||0)+' nova(s) · '+String(r.duplicates||0)+' já existente(s)'+(Number(r.failed||0)?' · '+String(r.failed)+' falha(s)':''));
+      state.purchaseDetailCache={};state.purchaseExpandedId=null;
+      state.purchaseAdvancedLoaded=false;
+      await loadPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+    finally{if(b){b.disabled=false;b.textContent='Buscar no Bling'}}
+  }
+  async function importCatalogOnlyXmlFiles(files){
+    const input=$('#purchaseXmlCatalogOnlyInput');if(input)input.value='';
+    const valid=(files||[]).filter(f=>/\.xml$/i.test(f.name)||/xml/i.test(f.type||''));
+    if(!valid.length){toast('Selecione arquivos XML');return}
+    if(!confirm('Catalogar '+valid.length+' XML(s) sem cadastrar produtos, alterar estoque, custos, NCM ou financeiro?'))return;
+    const button=$('#purchaseXmlCatalogOnly');
+    if(button){button.disabled=true;button.textContent='Catalogando XMLs…'}
+    let ok=0,dup=0,fail=0,items=0;
+    try{
+      for(let i=0;i<valid.length;i+=5){
+        const part=valid.slice(i,i+5),payload=[];
+        for(const file of part)payload.push({name:file.name,xml:await file.text()});
+        const r=await purchaseApi('xml_catalog_only_import',{files:payload});
+        ok+=Number(r.processed||0);dup+=Number(r.duplicates||0);
+        fail+=Number(r.failed||0);items+=Number(r.items||0);
+      }
+      toast('Catálogo: '+ok+' nota(s), '+items+' itens'+(dup?' · '+dup+' repetida(s)':'')+(fail?' · '+fail+' erro(s)':''));
+      await loadPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+    finally{if(button){button.disabled=false;button.textContent='Enviar XMLs ao catálogo'}}
+  }
+
+  async function importPurchaseXmlFiles(files){
+    if(!files?.length)return;
+    const input=$('#purchaseXmlInput');if(input)input.value='';
+    const valid=files.filter(f=>/\.xml$/i.test(f.name)||/xml/i.test(f.type||''));
+    if(!valid.length){toast('Selecione arquivos XML');return}
+    let ok=0,fail=0;
+    try{
+      for(let i=0;i<valid.length;i+=10){
+        const chunk=valid.slice(i,i+10),payload=[];
+        for(const file of chunk)payload.push({name:file.name,xml:await file.text()});
+        const r=await purchaseApi('manual_import',{files:payload});
+        ok+=Number(r.processed||0)+Number(r.duplicates||0);fail+=Number(r.failed||0);
+      }
+      toast('XML: '+ok+' concluído(s)'+(fail?' · '+fail+' falha(s)':''));
+      state.purchaseDetailCache={};state.purchaseExpandedId=null;
+      state.purchaseAdvancedLoaded=false;
+      await loadPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  async function openPurchaseDocument(id){return togglePurchaseDocument(id,true)}
+  async function downloadPurchaseXml(id){
+    try{const r=await purchaseApi('xml_url',{id});if(r.url)window.open(r.url,'_blank','noopener')}catch(e){toast(errorMessage(e.message))}
+  }
+  async function receivePurchaseDocument(id){
+    if(!confirm('Preparar esta nota para conferência de entrada no Bling? O Admin não soma estoque local. Confirme somente depois de revisar produtos, quantidades, lotes e validades.'))return;
+    try{
+      const r=await purchaseApi('confirm_receipt',{document_id:id,confirmation:'CONFIRMAR_ENTRADA'});
+      if(r?.result?.status==='awaiting_bling_receipt'){
+        toast('Entrada preparada. Faça ou confirme o recebimento no Bling e depois clique em “Verificar entrada no Bling”.');
+      }else{
+        toast(r?.message||'Recebimento preparado');
+      }
+      state.purchaseDetailCache[id]=await purchaseApi('document',{id});
+      state.purchaseExpandedId=id;
+      state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+      paintPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  async function verifyPurchaseReceipt(id){
+    const btn=document.querySelector('[data-purchase-verify-receipt="'+CSS.escape(id)+'"]');
+    if(btn){btn.disabled=true;btn.textContent='Verificando Bling…'}
+    try{
+      const r=await purchaseApi('verify_receipt_plan',{document_id:id,confirmation:'VERIFICAR_ENTRADA_BLING'});
+      if(r?.result?.verified===true){
+        toast(r?.lot_materialization?.materialized_lots!=null?'Entrada confirmada · '+r.lot_materialization.materialized_lots+' lote(s) registrado(s)':'Entrada confirmada pelo estoque físico do Bling');
+      }else if(Number(r?.result?.stale_items||0)>0){
+        toast('O Bling ainda não atualizou o saldo depois da preparação. Atualize novamente após o recebimento.');
+      }else{
+        toast('A entrada ainda não apareceu integralmente no estoque físico do Bling.');
+      }
+      state.purchaseDetailCache[id]=await purchaseApi('document',{id});
+      state.purchaseExpandedId=id;
+      state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+      paintPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+    finally{if(btn){btn.disabled=false;btn.textContent='Verificar entrada no Bling'}}
+  }
+  async function setPurchaseConversion(id){
+    const row=(state.purchaseXml?.review_items||[]).find(x=>x.id===id)||{};
+    const suggested=Number(row?.metadata?.suggested_conversion_factor||0)>1?String(row.metadata.suggested_conversion_factor):'';
+    const factorRaw=prompt('Quantas UNIDADES de venda existem em 1 '+String(row.purchase_unit||'embalagem')+'? Ex.: caixa com 24 unidades = 24.',suggested);
+    if(factorRaw===null)return;
+    const factor=Number(String(factorRaw).replace(',','.'));
+    if(!Number.isFinite(factor)||factor<=1){toast('Para caixa/fardo/pacote, o fator deve ser maior que 1');return}
+    try{
+      await purchaseApi('set_conversion',{item_id:id,conversion_factor:factor,base_unit:'UN'});
+      toast('Conversão para UN salva. Revise custo e preço na nota.');
+      const docId=row.document_id;
+      if(docId){state.purchaseDetailCache[docId]=await purchaseApi('document',{id:docId});state.purchaseExpandedId=docId}
+      state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+      paintPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
+  async function renderBling(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Integração Bling · Técnico</h1><p>Diagnóstico da integração. A operação normal de pedidos, produtos e clientes não deve depender desta tela. Os cenários antigos do Make permanecem preservados, mas ficam fora do novo runtime.</p></div><button class="secondary" id="refreshBling">Atualizar</button></div>'+
+      '<div class="bling-banner" id="blingRuntimeBanner"><strong>Carregando estado do Hub…</strong><small>Consultando quais domínios estão ativos e quais continuam bloqueados.</small></div>'+
+      '<div id="blingStatus"><div class="loading">Carregando status…</div></div>';
+    $('#refreshBling').onclick=()=>loadBlingStatus();
+    await Promise.all([loadBlingStatus(),loadOpsShadowReadiness()]);
+    if($('#blingStatus')&&state.opsShadow)$('#blingStatus').insertAdjacentHTML('beforebegin',renderOpsShadowReadiness());
+  }
+
+  function yesNo(value,yes='OK',no='Pendente'){
+    return value?'<span class="ok-text">'+esc(yes)+'</span>':'<span class="warn-text">'+esc(no)+'</span>';
+  }
+
+  async function loadOpsShadowReadiness(){
+    try{const data=await api('ops_shadow_readiness');state.opsShadow=data.readiness||{};return state.opsShadow}catch{state.opsShadow=null;return null}
+  }
+  function renderOpsShadowReadiness(){
+    const s=state.opsShadow;if(!s)return '';
+    const total=Number(s.total||0),ready=Number(s.erp_ready||0),blocked=Number(s.blocked||0);
+    return '<div class="panel" style="margin-bottom:14px"><div class="history-title dispatch-head"><div><strong>Prontidão do novo fluxo</strong><span>shadow mode · nenhuma escrita externa</span></div><b>'+ready+' / '+total+'</b></div><div class="bling-grid" style="padding:14px">'+
+      '<div class="bling-card"><small>Prontos para ERP</small><strong class="ok-text">'+ready+'</strong><span class="sub">cliente + endereço + pagamento + produtos vinculados</span></div>'+
+      '<div class="bling-card"><small>Bloqueados</small><strong class="'+(blocked?'warn-text':'ok-text')+'">'+blocked+'</strong><span class="sub">antes do canário</span></div>'+
+      '<div class="bling-card"><small>Cliente/vínculo</small><strong>'+Number(s.unresolved_customer||0)+'</strong><span class="sub">precisam consolidação</span></div>'+
+      '<div class="bling-card"><small>Endereço</small><strong>'+Number(s.incomplete_address||0)+'</strong><span class="sub">incompletos</span></div>'+
+      '<div class="bling-card"><small>Produtos</small><strong>'+Number(s.unresolved_products||0)+'</strong><span class="sub">sem vínculo Bling</span></div>'+
+    '</div></div>';
+  }
+
+  async function loadBlingStatus(){
+    const host=$('#blingStatus');if(!host)return;
+    host.innerHTML='<div class="loading">Carregando status…</div>';
+    try{
+      const data=await api('bling_status');
+      state.bling=data.bling||{};
+      paintBling();
+    }catch(e){
+      host.innerHTML='<div class="empty">Não consegui carregar o estado do Bling. <button class="text" id="retryBling">Tentar novamente</button></div>';
+      if($('#retryBling'))$('#retryBling').onclick=loadBlingStatus;
+    }
+  }
+
+  function paintBling(){
+    const host=$('#blingStatus');if(!host)return;
+    const b=state.bling||{},cred=b.credentials||{},legacy=b.legacy||{},queue=b.hub_queue||{},domains=b.domains||{},probe=state.blingProbe||{},links=b.product_links||{},customerLinks=b.customer_links||{},orderLinks=b.order_links||{},rollout=b.order_rollout||{},statusCatalog=b.order_status_catalog||{},webhooks=b.webhook_inbox||{},fiscal=b.fiscal_readiness||{},fiscalCfg=fiscal.config||{},fiscalControls=fiscal.controls||{},fiscalJobs=fiscal.jobs||{};
+    const probes=probe.probes||{};
+    const banner=$('#blingRuntimeBanner');
+    if(banner){
+      const active=[
+        domains.products?'Produtos':null,
+        domains.stock?'Estoque':null,
+        domains.customers?'Clientes':null,
+        domains.orders?'Pedidos':null
+      ].filter(Boolean);
+      const firstOrderCanary=Boolean(domains.orders)&&String(rollout.state||'')==='armed_first_canary';
+      const headline=b.hub_enabled
+        ? 'Integração direta Bling ativa'
+        : 'Integração direta Bling pausada';
+      const detail=[
+        active.length?'Ativos: '+active.join(', '):'Nenhum domínio de escrita ativo',
+        firstOrderCanary?'Pedidos aguardando o primeiro canário real':'',
+        domains.webhooks?'Webhooks ON':'Webhooks OFF',
+        domains.fiscal?'Fiscal ON':'Fiscal OFF',
+        'Make preservado e fora do novo runtime'
+      ].filter(Boolean).join(' · ');
+      banner.innerHTML='<strong>'+esc(headline)+'</strong><small>'+esc(detail)+'</small>';
+    }
+    const scope=(key,label)=>{
+      const p=probes[key];
+      if(!p)return '<div class="bling-scope"><strong>'+esc(label)+'</strong><small>Ainda não verificado</small></div>';
+      const cls=p.ok?'ok-text':'danger-text';
+      const txt=p.ok?'Acesso confirmado':p.insufficient_scope?'Escopo ausente':'HTTP '+esc(p.http_status||'erro');
+      return '<div class="bling-scope"><strong>'+esc(label)+'</strong><small class="'+cls+'">'+txt+'</small></div>';
+    };
+    host.innerHTML=
+      '<div class="bling-grid">'+
+        '<div class="bling-card"><small>Credenciais OAuth</small><strong>'+yesNo(cred.ready,'Configuradas','Incompletas')+'</strong><span class="sub">Client ID · Secret · Refresh token</span></div>'+
+        '<div class="bling-card"><small>Filas antigas</small><strong>'+yesNo(b.legacy_queues_frozen,'Congeladas','ATENÇÃO')+'</strong><span class="sub">'+esc(legacy.bling_commands_pending||0)+' comandos · '+esc(legacy.order_sync_pending_or_error||0)+' pedidos</span></div>'+
+        '<div class="bling-card"><small>Novo Hub</small><strong>'+esc(String(b.mode||'observe').toUpperCase())+'</strong><span class="sub">'+esc(queue.pending||0)+' pendentes · '+esc(queue.processing||0)+' processando</span></div>'+
+        '<div class="bling-card"><small>Produtos vinculados</small><strong>'+esc(links.matched||0)+' / '+esc(links.total||0)+'</strong><span class="sub">'+esc(links.not_found||0)+' não encontrados · '+esc((links.ambiguous||0)+(links.review_required||0))+' revisar</span></div>'+
+        '<div class="bling-card"><small>Clientes vinculados</small><strong>'+esc(customerLinks.matched||0)+' / '+esc(customerLinks.total||0)+'</strong><span class="sub">'+esc(customerLinks.not_found||0)+' não encontrados · '+esc((customerLinks.ambiguous||0)+(customerLinks.review_required||0))+' revisar</span></div>'+
+        '<div class="bling-card"><small>Pedidos vinculados</small><strong>'+esc(orderLinks.matched||0)+' / '+esc(orderLinks.total||0)+'</strong><span class="sub">'+esc(orderLinks.review_required||0)+' para revisar</span></div>'+
+        '<div class="bling-card"><small>Pedidos · homologação</small><strong class="'+(String(rollout.state||'')==='canary_passed'?'ok-text':String(rollout.state||'')==='paused_after_canary_failure'?'danger-text':'warn-text')+'">'+esc(String(rollout.state||'')==='canary_passed'?'Canário validado':String(rollout.state||'')==='paused_after_canary_failure'?'Pausado após falha':String(rollout.state||'')==='armed_first_canary'?'Aguardando 1º pedido real':'Ainda não validado')+'</strong><span class="sub">'+(String(rollout.state||'')==='armed_first_canary'?'O primeiro pedido elegível será processado sozinho e verificado antes de liberar a sequência.':String(rollout.state||'')==='canary_passed'?'Primeiro pedido real criado/verificado com segurança.':String(rollout.state||'')==='paused_after_canary_failure'?'Novos pedidos ficam protegidos até revisão técnica.':'Estado do rollout ainda não foi confirmado.')+'</span></div>'+
+        '<div class="bling-card"><small>Situações do pedido</small><strong class="'+(statusCatalog.status_updates_enabled===true?'ok-text':'warn-text')+'">'+(statusCatalog.status_updates_enabled===true?'Ativas':String(statusCatalog.state||'')==='scope_missing'?'Sem permissão':'Bloqueadas')+'</strong><span class="sub">'+(statusCatalog.status_updates_enabled===true?'Mapeamento de situações autorizado.':String(statusCatalog.state||'')==='scope_missing'?'Bling negou acesso a situações/modulos'+(statusCatalog.http_status?' · HTTP '+esc(statusCatalog.http_status):'')+'. Cancelamentos ficam sinalizados para conferência manual.':'Nenhum mapeamento de situações foi ativado.')+'</span></div>'+
+        '<div class="bling-card"><small>Webhooks Bling</small><strong>'+esc(domains.webhooks?'ON':'OFF')+'</strong><span class="sub">'+esc(webhooks.held||0)+' aguardando · '+esc(webhooks.review_required||0)+' revisar · '+esc(webhooks.processed||0)+' processados</span></div>'+
+        '<div class="bling-card"><small>Fiscal / NF-e</small><strong class="'+(fiscal.safe_off?'ok-text':'warn-text')+'">'+(fiscal.safe_off?'OFF seguro':esc(String(fiscalCfg.execution_mode||'off').toUpperCase()))+'</strong><span class="sub">'+esc(fiscalControls.ready||0)+' prontos · '+esc(fiscalJobs.total||0)+' jobs · emissão '+(fiscalCfg.bling_invoice_send_enabled?'ON':'OFF')+'</span></div>'+
+        '<div class="bling-card"><small>Escritas externas</small><strong class="'+(b.hub_enabled?'ok-text':'warn-text')+'">'+(b.hub_enabled?'Ativas com proteção':'Bloqueadas')+'</strong><span class="sub">Produtos '+(domains.products?'ON':'OFF')+' · Estoque '+(domains.stock?'ON':'OFF')+' · Clientes '+(domains.customers?'ON':'OFF')+' · Pedidos '+(domains.orders?'ON':'OFF')+' · Fiscal '+(domains.fiscal?'ON':'OFF')+'</span></div>'+
+      '</div>'+
+      (String(statusCatalog.state||'')==='scope_missing'?'<div class="rule-notice warn"><strong>Permissão de Situações pendente</strong><div>No aplicativo da Dona Antônia no Bling, adicione os escopos de Situações / Situações - Módulos / Situações - Transições, salve o aplicativo e autorize novamente. Ao salvar escopos, o Bling revoga a autorização anterior. Depois use <b>Reconectar Bling</b> nesta tela e, ao voltar, clique em <b>Testar novamente</b> na Central.</div></div>':'')+'<div class="panel"><div class="history-title"><strong>Permissões e leitura da API</strong><span class="muted">teste sem alterar dados</span></div>'+
+        '<div class="bling-scopes">'+scope('products','Produtos')+scope('contacts','Clientes')+scope('sales_orders','Pedidos')+scope('deposits','Depósitos')+scope('invoice','NF-e')+'</div>'+
+        (Array.isArray(probe.deposit_candidates)&&probe.deposit_candidates.length?'<div class="rule-notice"><strong>Depósitos encontrados</strong>'+probe.deposit_candidates.map(d=>esc((d.default?'★ ':'')+(d.name||'Depósito')+' #'+d.id)).join(' · ')+'</div>':'')+
+        '<div class="bling-actions"><button class="secondary" id="reconcileBlingCatalog">Reconciliar produtos</button><button class="secondary" id="reconcileBlingCustomers">Reconciliar clientes</button><button class="secondary" id="reconnectBlingOauth">Reconectar Bling</button><button class="primary" id="probeBling">Verificar conexão com o Bling</button></div>'+
+      '</div>';
+    if($('#probeBling'))$('#probeBling').onclick=probeBlingReadonly;if($('#reconnectBlingOauth'))$('#reconnectBlingOauth').onclick=reconnectBlingOauth;
+    if($('#reconcileBlingCatalog'))$('#reconcileBlingCatalog').onclick=reconcileBlingCatalogReadonly;
+    if($('#reconcileBlingCustomers'))$('#reconcileBlingCustomers').onclick=reconcileBlingCustomersReadonly;
+  }
+
+  async function reconcileBlingCatalogReadonly(){
+    const btn=$('#reconcileBlingCatalog');if(btn){btn.disabled=true;btn.textContent='Reconciliando…'}
+    try{
+      const data=await api('bling_reconcile_catalog_readonly',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:'{}'
+      });
+      toast('Produtos: '+Number(data.summary?.matched||0)+' vinculados · '+Number(data.summary?.not_found||0)+' não encontrados');
+      await loadBlingStatus();
+    }catch(e){
+      toast('Não consegui reconciliar os produtos agora');
+      if(btn){btn.disabled=false;btn.textContent='Reconciliar produtos'}
+    }
+  }
+
+  async function reconcileBlingCustomersReadonly(){
+    const btn=$('#reconcileBlingCustomers');if(btn){btn.disabled=true;btn.textContent='Reconciliando…'}
+    try{
+      const data=await api('bling_reconcile_customers_readonly',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({limit:650})});
+      toast('Clientes: '+Number(data.summary?.matched||0)+' vinculados · '+Number(data.summary?.not_found||0)+' não encontrados · '+Number((data.summary?.ambiguous||0)+(data.summary?.review_required||0))+' revisar');
+      await loadBlingStatus();
+    }catch(e){
+      toast('Não consegui reconciliar os clientes agora');
+      if(btn){btn.disabled=false;btn.textContent='Reconciliar clientes'}
+    }
+  }
+
+  async function probeBlingReadonly(){
+    const btn=$('#probeBling');if(btn){btn.disabled=true;btn.textContent='Verificando…'}
+    try{
+      const data=await api('bling_probe_readonly',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:'{}'
+      });
+      state.blingProbe=data.probe||{};
+      if(data.probe?.readiness)state.bling=data.probe.readiness;
+      paintBling();
+      toast(data.probe?.ok?'Conexão com Bling confirmada':'Conexão parcial: há permissões para revisar');
+    }catch(e){
+      toast('Não consegui verificar o Bling agora');
+      if(btn){btn.disabled=false;btn.textContent='Verificar conexão com o Bling'}
+    }
+  }
+
+  async function renderCustomers(q=''){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Clientes</h1><p>Base oficial de clientes da Dona Antônia no Supabase.</p></div><button class="primary" id="newCustomer">+ Cliente</button></div>'+
+      '<div class="toolbar"><input id="customerSearch" type="search" placeholder="Buscar nome, telefone, CPF…"><button class="secondary" id="customerSearchBtn">Buscar</button></div>'+
+      '<div class="panel"><div class="list-head customers-layout"><span>Cliente</span><span>Telefone</span><span>CPF</span><span>Endereço</span><span></span></div><div id="customerRows"><div class="loading">Carregando…</div></div></div>';
+    $('#newCustomer').onclick=()=>openCustomerEditor();
+    $('#customerSearch').value=q;
+    $('#customerSearchBtn').onclick=()=>loadCustomers($('#customerSearch').value.trim());
+    $('#customerSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadCustomers(e.currentTarget.value.trim())}};
+    await loadCustomers(q);
+  }
+  async function loadCustomers(q=''){
+    const host=$('#customerRows');host.innerHTML='<div class="loading">Carregando…</div>';
+    try{
+      const data=await customerApi('vitrine_customers_list',{q,limit:120});state.customers=data.customers||[];
+      host.innerHTML=state.customers.length?state.customers.map(customerRow).join(''):'<div class="empty">Nenhum cliente encontrado.</div>';
+      host.querySelectorAll('[data-history-customer]').forEach(b=>b.onclick=()=>openCustomerProfile(state.customers.find(c=>c.id===b.dataset.historyCustomer)));
+      host.querySelectorAll('[data-edit-customer]').forEach(b=>b.onclick=()=>openCustomerEditor(state.customers.find(c=>c.id===b.dataset.editCustomer)));
+      host.querySelectorAll('[data-delete-customer]').forEach(b=>b.onclick=()=>{const c=state.customers.find(x=>x.id===b.dataset.deleteCustomer);deleteCustomer(c?.id||'',c?.display_name||'')});
+    }catch(e){host.innerHTML='<div class="empty">Erro ao carregar clientes. <button class="text" id="retryCustomers">Tentar novamente</button></div>';if($('#retryCustomers'))$('#retryCustomers').onclick=()=>loadCustomers(q)}
+  }
+  function customerRow(c){
+    const a=c.address||{};const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ');
+    const orders=Number(c.orders_count||0),ltv=Math.round(Number(c.lifetime_value||0)*100);
+    return '<div class="list-row customers-layout">'+
+      '<div><span class="row-title">'+esc(c.display_name||'Sem nome')+'</span><span class="sub">'+esc(c.email||'')+(orders>0?' · '+esc(orders)+' compras · '+money(ltv):' · sem compras')+'</span></div>'+
+      '<span class="mobile-wide">'+esc(formatPhone(c.phone))+'</span>'+
+      '<span class="desktop-extra">'+esc(formatCpf(c.cpf))+'</span>'+
+      '<span class="desktop-extra">'+esc(address||'—')+'</span>'+
+      '<div class="customer-row-actions"><button class="text" data-history-customer="'+esc(c.id)+'">Histórico</button><button class="text" data-edit-customer="'+esc(c.id)+'">Editar</button><button class="text danger" data-delete-customer="'+esc(c.id)+'">Excluir</button></div></div>';
+  }
+
+  function historySourceLabel(source){
+    const map={
+      vitrine:'Vitrine',
+      whatsapp:'WhatsApp',
+      papoai:'WhatsApp',
+      shopping_room:'WhatsApp',
+      bling:'Bling',
+      bling_import:'Bling',
+      manual:'Manual',
+      storefront:'Site',
+      storefront_v2:'Site antigo'
+    };
+    return map[String(source||'').toLowerCase()]||String(source||'—').replaceAll('_',' ');
+  }
+
+  async function openCustomerProfile(c){
+    if(!c)return;
+    state.customerProfile={customer:c,summary:null,orders:[],top_products:[],next_offset:null};
+    state.customerHistoryOffset=0;
+    $('#editorTitle').textContent='Cliente';
+    $('#editorBody').innerHTML='<div class="loading">Carregando histórico…</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="profileClose">Fechar</button><button class="primary" id="profileEdit">Editar cliente</button>';
+    $('#profileClose').onclick=()=>$('#editor').close();
+    $('#profileEdit').onclick=()=>openCustomerEditor(c);
+    $('#editor').showModal();
+    await loadCustomerHistory(c.id,false);
+  }
+
+  async function loadCustomerHistory(customerId,append=false){
+    const offset=append?state.customerHistoryOffset:0;
+    try{
+      const data=await customerApi('vitrine_customer_history',{id:customerId,limit:20,offset});
+      if(!append){
+        state.customerProfile={customer:data.customer,summary:data.summary,orders:data.orders||[],top_products:data.top_products||[],next_offset:data.pagination?.next_offset??null};
+      }else{
+        state.customerProfile.orders=[...(state.customerProfile.orders||[]),...(data.orders||[])];
+        state.customerProfile.next_offset=data.pagination?.next_offset??null;
+      }
+      state.customerHistoryOffset=data.pagination?.next_offset??offset;
+      paintCustomerProfile();
+    }catch(e){
+      $('#editorBody').innerHTML='<div class="empty">Não consegui carregar o histórico deste cliente.<br><button class="text" id="retryCustomerHistory">Tentar novamente</button></div>';
+      if($('#retryCustomerHistory'))$('#retryCustomerHistory').onclick=()=>loadCustomerHistory(customerId,false);
+    }
+  }
+
+  function paintCustomerProfile(){
+    const p=state.customerProfile;if(!p)return;
+    const c=p.customer||{},a=c.address||{},s=p.summary||{};
+    $('#editorTitle').textContent='Cliente';
+    $('#editorActions').innerHTML='<button class="secondary" id="profileClose">Fechar</button><button class="primary" id="profileEdit">Editar cliente</button>';
+    $('#profileClose').onclick=()=>$('#editor').close();
+    $('#profileEdit').onclick=()=>openCustomerEditor(c);
+    const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ');
+    const summary='<div class="customer-summary">'+
+      '<div class="summary-box"><small>Compras</small><strong>'+esc(s.order_count||0)+'</strong></div>'+
+      '<div class="summary-box"><small>Total comprado</small><strong>'+money(s.lifetime_value_cents||0)+'</strong></div>'+
+      '<div class="summary-box"><small>Ticket médio</small><strong>'+money(s.average_ticket_cents||0)+'</strong></div>'+
+      '<div class="summary-box"><small>Última compra</small><strong>'+esc(s.last_order_at?new Date(s.last_order_at).toLocaleDateString('pt-BR'):'—')+'</strong></div>'+
+    '</div>';
+    const products=(p.top_products||[]).length
+      ? '<div class="history-products">'+p.top_products.map(x=>'<div class="history-product"><strong>'+esc(x.name)+'</strong><small>'+esc(fmtQty(x.total_quantity))+' un · '+esc(x.purchase_count)+' compras · última '+esc(x.last_purchase_at?new Date(x.last_purchase_at).toLocaleDateString('pt-BR'):'—')+'</small></div>').join('')+'</div>'
+      : '<div class="history-empty">Ainda não há produtos recorrentes.</div>';
+    const orders=(p.orders||[]).length
+      ? '<div class="history-list">'+p.orders.map(historyOrderRow).join('')+'</div>'
+      : '<div class="history-empty">Este cliente ainda não possui compras registradas.</div>';
+    $('#editorBody').innerHTML=
+      '<div class="customer-profile-head"><div><h2>'+esc(c.display_name||'Sem nome')+'</h2><div class="customer-profile-meta">'+esc(formatPhone(c.phone)||'Sem telefone')+(c.cpf?' · CPF '+esc(formatCpf(c.cpf)):'')+'<br>'+esc(address||'Sem endereço cadastrado')+'</div></div>'+(c.status==='inactive'?'<span class="pill off">Inativo</span>':'<span class="pill">Ativo</span>')+'</div>'+
+      summary+
+      '<div class="history-section"><div class="history-title"><strong>Histórico de compras</strong><span class="muted">'+esc((p.orders||[]).length)+' carregadas</span></div>'+orders+'<div class="more" id="historyMore">'+(p.next_offset!=null?'<button class="secondary" id="loadMoreHistory">Mostrar mais</button>':'')+'</div></div>'+
+      '<div class="history-section"><div class="history-title"><strong>Produtos mais comprados</strong><span class="muted">por quantidade</span></div>'+products+'</div>';
+    document.querySelectorAll('[data-history-order]').forEach(b=>b.onclick=()=>openCustomerHistoryOrder(c.id,b.dataset.historyOrder));
+    if($('#loadMoreHistory'))$('#loadMoreHistory').onclick=()=>loadCustomerHistory(c.id,true);
+  }
+
+  function historyOrderRow(o){
+    return '<button type="button" class="history-row" data-history-order="'+esc(o.order_id)+'">'+
+      '<span>'+esc(new Date(o.confirmed_at||o.created_at).toLocaleDateString('pt-BR'))+'</span>'+
+      '<span class="history-main"><strong>#'+esc(o.order_number||'—')+(o.basket_name?' · '+esc(o.basket_name):'')+'</strong><small>'+esc(o.item_count)+' itens'+(!o.counts_as_purchase?' · não soma nas métricas':'')+'</small></span>'+
+      '<span class="history-source">'+esc(historySourceLabel(o.source))+'</span>'+
+      '<span class="history-status">'+statusPill(o.status)+'</span>'+
+      '<span class="history-value">'+money(o.total_cents)+'</span></button>';
+  }
+
+  async function openCustomerHistoryOrder(customerId,orderId){
+    $('#editorBody').innerHTML='<div class="loading">Carregando pedido…</div>';
+    try{
+      const data=await customerApi('vitrine_customer_order_detail',{customer_id:customerId,order_id:orderId});
+      paintCustomerHistoryOrder(data);
+    }catch(e){
+      $('#editorBody').innerHTML='<div class="empty">Não consegui abrir esta compra.<br><button class="text" id="backCustomerHistory">Voltar ao histórico</button></div>';
+      if($('#backCustomerHistory'))$('#backCustomerHistory').onclick=paintCustomerProfile;
+    }
+  }
+
+  function paintCustomerHistoryOrder(data){
+    const o=data.order||{},items=data.items||[];
+    const components=items.filter(i=>i.metadata?.history_kind==='basket_component');
+    const visible=items.filter(i=>i.metadata?.history_kind!=='basket_component');
+    const itemHtml=visible.map(i=>{
+      const nested=i.metadata?.history_kind==='basket'
+        ? components.filter(c=>c.metadata?.parent_basket_name===i.name)
+        : [];
+      return '<div class="history-item"><div class="history-item-line"><div><div class="history-item-name">'+esc(i.name)+'</div><div class="history-item-meta">'+esc(fmtQty(i.quantity))+' × '+money(i.unit_price_cents)+'</div></div><strong>'+money(i.line_total_cents)+'</strong></div>'+
+        (nested.length?'<div class="history-components">'+nested.map(c=>'<div class="history-component"><span>'+esc(c.name)+'</span><strong>'+esc(fmtQty(c.quantity))+'×</strong></div>').join('')+'</div>':'')+
+      '</div>';
+    }).join('');
+    const d=o.delivery_address||{};
+    const address=[d.street,d.number,d.complement,d.district||d.neighborhood,d.city,d.state].filter(Boolean).join(', ');
+    $('#editorBody').innerHTML=
+      '<div class="history-detail-head"><div><strong>Pedido #'+esc(o.order_number||'—')+'</strong><div class="history-detail-meta">'+esc(dateTime(o.confirmed_at||o.created_at))+' · '+esc(historySourceLabel(o.source))+' · '+esc(o.payment_method||'Pagamento não informado')+(address?'<br>'+esc(address):'')+'</div></div><div>'+statusPill(o.status)+'</div></div>'+
+      '<div class="order-summary"><div class="summary-box"><small>Total</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Itens</small><strong>'+esc(visible.length)+'</strong></div><div class="summary-box"><small>Conta nas métricas</small><strong>'+(o.counts_as_purchase?'Sim':'Não')+'</strong></div></div>'+
+      '<div class="history-items">'+(itemHtml||'<div class="history-empty">Sem itens.</div>')+'</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="backCustomerHistory">Voltar ao histórico</button><button class="primary" id="historyEditCustomer">Editar cliente</button>';
+    $('#backCustomerHistory').onclick=paintCustomerProfile;
+    $('#historyEditCustomer').onclick=()=>openCustomerEditor(state.customerProfile?.customer);
+  }
+
+  function openCustomerEditor(c=null,returnOrderId=''){
+    const a=c?.address||{};
+    $('#editorTitle').textContent=c?'Editar cliente':'Novo cliente';
+    $('#editorBody').innerHTML='<form id="customerForm" class="form-grid">'+
+      '<label class="span-2"><span>Nome *</span><input name="display_name" required value="'+esc(c?.display_name||'')+'"></label>'+
+      '<label><span>WhatsApp / telefone</span><input name="phone" inputmode="tel" value="'+esc(formatPhone(c?.phone||''))+'"></label>'+
+      '<label><span>CPF</span><input name="cpf" inputmode="numeric" value="'+esc(formatCpf(c?.cpf||''))+'"></label>'+
+      '<label class="span-2"><span>E-mail</span><input name="email" type="email" value="'+esc(c?.email||'')+'"></label>'+
+      '<label><span>Aniversário · dia</span><input name="birthday_day" type="number" inputmode="numeric" min="1" max="31" value="'+esc(c?.birthday_day??'')+'"></label>'+
+      '<label><span>Aniversário · mês</span><input name="birthday_month" type="number" inputmode="numeric" min="1" max="12" value="'+esc(c?.birthday_month??'')+'"></label>'+
+      '<label class="span-2"><span>Status</span><select name="status">'+customerStatusOptions(c?.status||'active')+'</select></label>'+
+      '<div class="section-title span-2">Endereço de entrega</div>'+
+      '<label><span>CEP</span><input name="postal_code" inputmode="numeric" value="'+esc(a.postal_code||'')+'"></label>'+
+      '<label><span>Cidade</span><input name="city" value="'+esc(a.city||'Cuiabá')+'"></label>'+
+      '<label class="span-2"><span>Rua / avenida</span><input name="street" value="'+esc(a.street||'')+'"></label>'+
+      '<label><span>Número</span><input name="number" value="'+esc(a.number||'')+'"></label>'+
+      '<label><span>Bairro</span><input name="district" value="'+esc(a.district||'')+'"></label>'+
+      '<label><span>Complemento</span><input name="complement" value="'+esc(a.complement||'')+'"></label>'+
+      '<label><span>UF</span><input name="state" maxlength="2" value="'+esc(a.state||'MT')+'"></label>'+
+      '<label class="span-2"><span>Referência</span><input name="raw_text" value="'+esc(a.raw_text||'')+'"></label>'+
+      '</form>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button>'+(c?'<button class="text danger" id="deleteCustomer">Excluir definitivamente</button>':'')+'<button class="primary" id="saveCustomer">Salvar cliente</button>';
+    $('#cancelEditor').onclick=()=>{
+      $('#editor').close();
+      if(returnOrderId)openOrder(returnOrderId);
+    };
+    if(c&&$('#deleteCustomer'))$('#deleteCustomer').onclick=()=>deleteCustomer(c.id,c.display_name||'',true);
+    $('#saveCustomer').onclick=()=>saveCustomer(c?.id||'',returnOrderId);
+    if(!$('#editor').open)$('#editor').showModal();
+    if(returnOrderId){
+      const cpf=$('#customerForm [name="cpf"]');
+      if(cpf){cpf.focus();cpf.scrollIntoView({behavior:'smooth',block:'center'})}
+    }
+  }
+  async function deleteCustomer(id,name='',fromEditor=false){
+    if(!id)return;
+    const label=String(name||'este cliente').trim()||'este cliente';
+    if(!confirm('Excluir definitivamente o cadastro de '+label+'?\n\nOs pedidos históricos serão mantidos, mas os dados de cadastro e contato serão apagados. Esta ação não pode ser desfeita.'))return;
+    const q=$('#customerSearch')?.value.trim()||'';
+    try{
+      await customerApi('vitrine_customer_delete',{id,customer_id:id});
+      if(fromEditor&&$('#editor')?.open)$('#editor').close();
+      state.customerProfile=null;
+      state.customers=(state.customers||[]).filter(c=>c.id!==id);
+      toast('Cadastro do cliente excluído definitivamente');
+      await renderCustomers(q);
+    }catch(e){
+      console.error('customer_delete_failed',e);
+      toast('Não foi possível excluir o cadastro.');
+    }
+  }
+
+  function customerStatusOptions(current){
+    return [['active','Ativo'],['inactive','Inativo']].map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
+  }
+  async function saveCustomer(id,returnOrderId=''){
+    const f=new FormData($('#customerForm')),btn=$('#saveCustomer');btn.disabled=true;btn.textContent='Salvando…';
+    try{
+      await customerApi('vitrine_customer_save',{
+        id,
+        display_name:f.get('display_name'),
+        phone:f.get('phone'),
+        cpf:f.get('cpf'),
+        email:f.get('email'),
+        birthday_day:f.get('birthday_day'),
+        birthday_month:f.get('birthday_month'),
+        status:f.get('status'),
+        address:{
+          postal_code:f.get('postal_code'),street:f.get('street'),number:f.get('number'),
+          district:f.get('district'),complement:f.get('complement'),city:f.get('city'),
+          state:f.get('state'),raw_text:f.get('raw_text')
+        }
+      });
+      $('#editor').close();
+      toast(returnOrderId?'Cliente salvo · sincronização com Bling enfileirada':'Cliente salvo na base oficial');
+      if(returnOrderId)await openOrder(returnOrderId);
+      else renderCustomers($('#customerSearch')?.value.trim()||'');
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar cliente'}
+  }
+
+
+  function manualSaleTotalCents(){
+    return (state.manualSale?.cart||[]).reduce((s,x)=>s+Number(x.price_cents||0)*Number(x.qty||0),0);
+  }
+  function manualSaleFormValue(id){return String($(id)?.value||'').trim()}
+  function manualSaleFillCustomer(customer){
+    if(!customer)return;state.manualSale.customer=customer;
+    const a=customer.address||{};
+    if($('#manualName'))$('#manualName').value=customer.display_name||'';
+    if($('#manualPhone'))$('#manualPhone').value=formatPhone(customer.phone||'');
+    if($('#manualStreet'))$('#manualStreet').value=a.street||'';
+    if($('#manualNumber'))$('#manualNumber').value=a.number||'';
+    if($('#manualDistrict'))$('#manualDistrict').value=a.district||a.neighborhood||'';
+    if($('#manualComplement'))$('#manualComplement').value=a.complement||'';
+    if($('#manualCity'))$('#manualCity').value=a.city||'Cuiabá';
+    if($('#manualState'))$('#manualState').value=a.state||'MT';
+    if($('#manualCustomerResults'))$('#manualCustomerResults').innerHTML='<div class="rule-notice"><strong>Cliente selecionado: '+esc(customer.display_name||'Sem nome')+'</strong><div>'+esc(formatPhone(customer.phone||''))+(customer.cpf?' · CPF '+esc(formatCpf(customer.cpf)):'')+'</div></div>';
+  }
+  function paintManualSaleCart(){
+    const host=$('#manualSaleCart');if(!host||!state.manualSale)return;
+    const cart=state.manualSale.cart||[];
+    host.innerHTML=cart.length?cart.map((x,i)=>'<div class="replacement-option"><div><strong>'+esc(x.name)+'</strong><small>'+esc(x.type==='basket'?'Cesta personalizada':'Produto')+' · '+money(x.price_cents)+' cada</small></div><div class="dispatch-actions"><button class="secondary" type="button" data-manual-dec="'+i+'">−</button><span class="pill">'+esc(x.qty)+'</span><button class="secondary" type="button" data-manual-inc="'+i+'">+</button><button class="text danger" type="button" data-manual-remove="'+i+'">Remover</button></div></div>').join(''):'<div class="history-empty">Nenhum item adicionado.</div>';
+    const total=manualSaleTotalCents();
+    if($('#manualSaleTotal'))$('#manualSaleTotal').textContent=money(total);
+    if($('#manualSaleMinimum'))$('#manualSaleMinimum').textContent=total>=7500?'Pedido mínimo atingido':'Faltam '+money(7500-total)+' para o mínimo';
+    host.querySelectorAll('[data-manual-inc]').forEach(b=>b.onclick=()=>{const x=state.manualSale.cart[Number(b.dataset.manualInc)];if(x&&x.qty<30){x.qty++;paintManualSaleCart()}});
+    host.querySelectorAll('[data-manual-dec]').forEach(b=>b.onclick=()=>{const x=state.manualSale.cart[Number(b.dataset.manualDec)];if(x&&x.qty>1){x.qty--;paintManualSaleCart()}});
+    host.querySelectorAll('[data-manual-remove]').forEach(b=>b.onclick=()=>{state.manualSale.cart.splice(Number(b.dataset.manualRemove),1);paintManualSaleCart()});
+  }
+  async function searchManualCustomers(){
+    const q=manualSaleFormValue('#manualCustomerSearch'),host=$('#manualCustomerResults');if(!host)return;
+    if(q.length<2){host.innerHTML='<div class="sub">Digite pelo menos 2 caracteres.</div>';return}
+    host.innerHTML='<div class="loading">Buscando cliente…</div>';
+    try{
+      const data=await customerApi('vitrine_customers_list',{q,limit:12});
+      const rows=data.customers||[];state.manualSale.customerResults=rows;
+      host.innerHTML=rows.length?rows.map((x,i)=>'<button class="history-row" type="button" data-manual-customer="'+i+'" style="grid-template-columns:1fr 140px"><div class="history-main"><strong>'+esc(x.display_name||'Sem nome')+'</strong><small>'+esc(formatPhone(x.phone||''))+(x.cpf?' · CPF '+esc(formatCpf(x.cpf)):'')+'</small></div><span>Selecionar</span></button>').join(''):'<div class="history-empty">Cliente não encontrado. Preencha os dados abaixo e o pedido será criado sem cadastro vinculado.</div>';
+      host.querySelectorAll('[data-manual-customer]').forEach(b=>b.onclick=()=>manualSaleFillCustomer(rows[Number(b.dataset.manualCustomer)]));
+    }catch{host.innerHTML='<div class="history-empty">Não consegui buscar clientes agora.</div>'}
+  }
+  async function searchManualItems(){
+    const q=manualSaleFormValue('#manualItemSearch'),host=$('#manualItemResults');if(!host)return;
+    if(q.length<2){host.innerHTML='<div class="sub">Digite nome, EAN ou código.</div>';return}
+    host.innerHTML='<div class="loading">Buscando produtos e cestas…</div>';
+    try{
+      const products=await api('products',{q,limit:16,active:'true'});
+      const pn=normalize(q),baskets=(state.manualSale.baskets||[]).filter(b=>normalize(b.name).includes(pn)).slice(0,8);
+      const rows=(products.products||[]).filter(p=>Number(p.stock_quantity||0)>0);
+      host.innerHTML=(baskets.length?'<div class="section-title">Cestas</div>'+baskets.map(b=>'<div class="replacement-option"><div><strong>'+esc(b.name)+'</strong><small>'+money(b.display_price_cents)+' · personalizável</small></div><button class="secondary" type="button" data-manual-basket="'+esc(b.id)+'">Configurar</button></div>').join(''):'')+
+        (rows.length?'<div class="section-title">Produtos</div>'+rows.map(p=>'<div class="replacement-option"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.gtin||p.sku||'Sem código')+' · '+money(p.sale_price_cents)+' · estoque '+esc(fmtQty(p.stock_quantity||0))+'</small></div><button class="secondary" type="button" data-manual-product="'+esc(p.id)+'">Adicionar</button></div>').join(''):'')+
+        (!baskets.length&&!rows.length?'<div class="history-empty">Nenhum item encontrado.</div>':'');
+      host.querySelectorAll('[data-manual-product]').forEach(b=>b.onclick=()=>{
+        const p=rows.find(x=>x.id===b.dataset.manualProduct);if(!p)return;
+        const existing=state.manualSale.cart.find(x=>x.type==='product'&&x.id===p.id);
+        if(existing)existing.qty=Math.min(30,existing.qty+1);else state.manualSale.cart.push({type:'product',id:p.id,name:p.name,qty:1,price_cents:Number(p.sale_price_cents||0)});
+        paintManualSaleCart();toast('Produto adicionado');
+      });
+      host.querySelectorAll('[data-manual-basket]').forEach(b=>b.onclick=()=>openManualBasketConfig(b.dataset.manualBasket));
+    }catch{host.innerHTML='<div class="history-empty">Não consegui buscar itens agora.</div>'}
+  }
+  async function openManualBasketConfig(basketId){
+    const host=$('#manualBasketConfig');if(!host)return;host.innerHTML='<div class="loading">Carregando cesta…</div>';
+    try{
+      const data=await storefrontApi('basket',{basket_id:basketId});
+      state.manualSale.basketConfig={basket:data.basket,items:(data.items||[]).map(x=>({...x,selected_quantity:Number(x.quantity||0)}))};
+      const cfg=state.manualSale.basketConfig;
+      host.innerHTML='<div class="panel" style="padding:12px"><div class="history-title"><div><strong>'+esc(cfg.basket.name)+'</strong><span class="muted">Ajuste as quantidades permitidas</span></div><button class="text" id="manualBasketClose" type="button">Fechar</button></div><div>'+cfg.items.map((x,i)=>{
+        const editable=x.quantity_editable===true||x.removable===true;
+        const max=Math.max(Number(x.quantity||0),Math.min(Number((x.max_quantity??x.stock_quantity??x.quantity)||0),Number(x.stock_quantity??9999)));
+        const min=Math.max(0,Number((x.min_quantity??(x.removable?0:x.quantity))||0));
+        return '<div class="replacement-option"><div><strong>'+esc(x.name)+'</strong><small>Base '+esc(fmtQty(x.quantity))+' · estoque '+esc(fmtQty(x.stock_quantity||0))+(x.removable?' · removível':'')+'</small></div><input style="width:86px" type="number" inputmode="numeric" min="'+esc(min)+'" max="'+esc(max)+'" step="1" value="'+esc(x.selected_quantity)+'" data-manual-basket-qty="'+i+'" '+(editable?'':'disabled')+'></div>';
+      }).join('')+'</div><div class="dispatch-actions" style="justify-content:flex-end;margin-top:12px"><button class="primary" id="manualBasketAdd" type="button">Adicionar cesta</button></div></div>';
+      $('#manualBasketClose').onclick=()=>{state.manualSale.basketConfig=null;host.innerHTML=''};
+      $('#manualBasketAdd').onclick=addConfiguredManualBasket;
+    }catch(e){host.innerHTML='<div class="history-empty">Não consegui abrir a cesta.</div>'}
+  }
+  async function addConfiguredManualBasket(){
+    const cfg=state.manualSale?.basketConfig;if(!cfg)return;
+    const inputs=[...document.querySelectorAll('[data-manual-basket-qty]')];
+    for(const input of inputs){const i=Number(input.dataset.manualBasketQty),x=cfg.items[i];if(x)x.selected_quantity=Math.max(0,Math.floor(Number(input.value||0)))}
+    const components=cfg.items.map(x=>({product_id:x.product_id,quantity:x.selected_quantity,component_group:x.component_group||'legacy'}));
+    const btn=$('#manualBasketAdd');if(btn){btn.disabled=true;btn.textContent='Calculando…'}
+    try{
+      const payload=cfg.basket.split_mode?{
+        basket_id:cfg.basket.id,food_lot_id:cfg.basket.food_lot_id,hygiene_lot_id:cfg.basket.hygiene_lot_id,
+        food_lot_code:cfg.basket.food_lot_code,hygiene_lot_code:cfg.basket.hygiene_lot_code,items:components
+      }:{basket_id:cfg.basket.id,lot_id:cfg.basket.lot_id,items:components};
+      const quote=await storefrontApi('basket_quote',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      state.manualSale.cart.push({
+        type:'basket',id:cfg.basket.id,name:cfg.basket.name,qty:1,price_cents:Number(quote.total_cents||0),components,
+        split_mode:cfg.basket.split_mode===true,lot_id:cfg.basket.lot_id||null,
+        food_lot_id:cfg.basket.food_lot_id||null,hygiene_lot_id:cfg.basket.hygiene_lot_id||null
+      });
+      state.manualSale.basketConfig=null;$('#manualBasketConfig').innerHTML='';paintManualSaleCart();toast('Cesta adicionada');
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Adicionar cesta'}}
+  }
+  async function openManualSale(){
+    state.manualSale={customer:null,customerResults:[],cart:[],baskets:[],basketConfig:null};
+    $('#editorTitle').textContent='Nova venda WhatsApp';
+    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Mesmo motor do site</strong><div>Cadastre o pedido recebido no WhatsApp. Ele entra como Novo, sem reservar estoque até a confirmação.</div></div>'+
+      '<div class="section-title">Cliente</div><div class="toolbar"><input id="manualCustomerSearch" type="search" placeholder="Buscar nome, telefone ou CPF"><button class="secondary" id="manualCustomerSearchBtn" type="button">Buscar</button></div><div id="manualCustomerResults"></div>'+
+      '<div class="form-grid" style="margin-top:12px"><label><span>Nome</span><input id="manualName" required></label><label><span>WhatsApp</span><input id="manualPhone" inputmode="tel" required></label><label><span>Rua</span><input id="manualStreet" required></label><label><span>Número</span><input id="manualNumber" required></label><label><span>Bairro</span><input id="manualDistrict"></label><label><span>Complemento</span><input id="manualComplement"></label><label><span>Cidade</span><input id="manualCity" value="Cuiabá" required></label><label><span>UF</span><input id="manualState" value="MT" maxlength="2" required></label><label class="span-2"><span>Pagamento na entrega</span><select id="manualPayment"><option>PIX</option><option>Dinheiro</option><option>Cartão de crédito</option><option>Cartão alimentação/refeição</option></select></label></div>'+
+      '<div class="section-title">Produtos e cestas</div><div class="toolbar"><input id="manualItemSearch" type="search" placeholder="Buscar produto, EAN ou cesta"><button class="secondary" id="manualItemSearchBtn" type="button">Buscar</button></div><div id="manualItemResults"></div><div id="manualBasketConfig" style="margin-top:10px"></div>'+
+      '<div class="section-title">Pedido</div><div id="manualSaleCart"></div><div class="order-summary" style="margin-top:12px"><div class="summary-box"><small>Total estimado</small><strong id="manualSaleTotal">'+money(0)+'</strong></div><div class="summary-box"><small>Mínimo</small><strong>R$ 75,00</strong></div><div class="summary-box"><small>Status</small><strong id="manualSaleMinimum">Adicione itens</strong></div></div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="manualSaleCancel" type="button">Cancelar</button><button class="primary" id="manualSaleCreate" type="button">Criar pedido</button>';
+    $('#manualSaleCancel').onclick=()=>$('#editor').close();
+    $('#manualSaleCreate').onclick=createManualSale;
+    $('#manualCustomerSearchBtn').onclick=searchManualCustomers;$('#manualCustomerSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchManualCustomers()}};
+    $('#manualItemSearchBtn').onclick=searchManualItems;$('#manualItemSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchManualItems()}};
+    paintManualSaleCart();$('#editor').showModal();
+    try{const home=await storefrontApi('home');if(state.manualSale)state.manualSale.baskets=home.baskets||[]}catch{}
+  }
+  async function createManualSale(){
+    if(!state.manualSale)return;
+    const name=manualSaleFormValue('#manualName'),phone=manualSaleFormValue('#manualPhone'),street=manualSaleFormValue('#manualStreet'),number=manualSaleFormValue('#manualNumber'),city=manualSaleFormValue('#manualCity'),uf=manualSaleFormValue('#manualState').toUpperCase(),payment=manualSaleFormValue('#manualPayment');
+    if(!name||!phone||!street||!number||!city||uf.length!==2){toast('Preencha nome, WhatsApp e endereço completo');return}
+    if(!state.manualSale.cart.length){toast('Adicione pelo menos um item');return}
+    if(manualSaleTotalCents()<7500){toast('O pedido mínimo é R$ 75,00');return}
+    const items=state.manualSale.cart.map(x=>({type:x.type,id:x.id,qty:x.qty,...(x.type==='basket'?{
+      components:x.components,lot_id:x.lot_id||null,split_mode:x.split_mode===true,
+      food_lot_id:x.food_lot_id||null,hygiene_lot_id:x.hygiene_lot_id||null
+    }: {})}));
+    const customer=state.manualSale.customer;
+    const customer_snapshot={id:customer?.id||null,display_name:name,phone,address:{street,number,district:manualSaleFormValue('#manualDistrict'),complement:manualSaleFormValue('#manualComplement'),city,state:uf}};
+    const btn=$('#manualSaleCreate');if(btn){btn.disabled=true;btn.textContent='Criando…'}
+    try{
+      const data=await api('manual_order_create',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,payment_method:payment,items,customer_snapshot,delivery:{},operator:currentOperator()||'Operação'})});
+      $('#editor').close();state.manualSale=null;state.orderFilter='new';await renderOrders();await openOrder(data.order_id);toast('Pedido WhatsApp criado · aguardando confirmação');
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Criar pedido'}}
+  }
+
+  const ORDER_SEPARATORS=[{key:'jose',label:'José'},{key:'claudio',label:'Cláudio'},{key:'jovenil',label:'Jovenil'},{key:'kelly',label:'Kelly'}];
+
+
+  function separatorLabel(key){return ORDER_SEPARATORS.find(x=>x.key===String(key||'').toLowerCase())?.label||''}
+
+
+  function orderSeparationSummary(o){return o?.separation_summary||{}}
+
+
+  function orderV3SearchMatch(o,q){const n=normalize(q||'');if(!n)return true;return normalize([o.order_number,o.customer_name,o.whatsapp_phone_e164,o.delivery_address_snapshot?.street,o.delivery_address_snapshot?.district].filter(Boolean).join(' ')) .includes(n)}
+  function orderCustomerDataPendingReasons(o){
+    const labels=['Cliente não identificado','Telefone pendente','Endereço incompleto','CPF/CNPJ pendente'];
+    const a=o?.delivery_address_snapshot||{},missing=(Array.isArray(o?.registration_missing_fields)?o.registration_missing_fields:[]).map(x=>normalize(String(x||'')));
+    const reasons=[];
+    if(!o?.customer_id)reasons.push(labels[0]);
+    if(!String(o?.whatsapp_phone_e164||a.phone||'').replace(/\D/g,''))reasons.push(labels[1]);
+    if(![a.street,a.number,a.city,a.state].every(v=>String(v||'').trim()))reasons.push(labels[2]);
+    if(o?.document_only_pending===true||missing.some(x=>x.includes('cpf')||x.includes('cnpj')||x.includes('document')))reasons.push(labels[3]);
+    return [...new Set(reasons)];
+  }
+  function orderCustomerDataPending(o){return orderCustomerDataPendingReasons(o).length>0}
+  function orderSeparationCompletedV4(o){const s=String(o?.status||''),summary=orderSeparationSummary(o),meta=summary?.completion_metadata||{};if(summary?.completed_at||summary?.phase==='completed'||meta?.operational_completion===true)return true;if(summary?.phase==='needs_attention'&&meta?.stock_applied===true)return true;if(['out_for_delivery','delivered'].includes(s))return true;const f=state.fiscalByOrder[o?.id]||(state.currentOrder?.order?.id===o?.id?state.currentOrderFiscal:null);return s==='ready'&&f?.readiness?.separation_completed===true}
+  function orderV3Milestones(o){const s=String(o?.status||'');return {confirmed:['confirmed','processing','ready','out_for_delivery','delivered'].includes(s),separated:orderSeparationCompletedV4(o),dispatched:['out_for_delivery','delivered'].includes(s),delivered:s==='delivered',cancelled:s==='cancelled'}}
+  function orderFiscalTagV4(o){
+    const f=state.fiscalByOrder[o?.id]||null;
+    if(o?.status==='ready'){
+      if(!f)return '<span class="order-v3-tag neutral">NF-e…</span>';
+      if(f.error)return '<span class="order-v3-tag warn">NF-e INDISPONÍVEL</span>';
+      if(f.authorized===true||f.stage==='authorized')return '<span class="order-v3-tag ok">NF-e AUTORIZADA</span>';
+      if(f.stage==='processing')return '<span class="order-v3-tag warn">NF-e EM PROCESSAMENTO</span>';
+      if(f.stage==='rejected')return '<span class="order-v3-tag danger">NF-e REJEITADA</span>';
+      if(f.stage==='blocked')return '<span class="order-v3-tag warn">NF-e BLOQUEADA</span>';
+      return '<span class="order-v3-tag warn">NF-e PENDENTE</span>';
+    }
+    if(o?.status==='out_for_delivery')return '<span class="order-v3-tag ok">NF-e AUTORIZADA</span><span class="order-v3-tag">SAIU PARA ENTREGA</span>';
+    return '';
+  }
+  function orderV3Tags(o){const m=orderV3Milestones(o),tags=[],f=state.fiscalByOrder[o?.id]||(state.currentOrder?.order?.id===o?.id?state.currentOrderFiscal:null);if(m.confirmed)tags.push('<span class="order-v3-tag">CONFIRMADO</span>');if(m.separated)tags.push('<span class="order-v3-tag">SEPARADO</span>');else if(o?.status==='ready'&&f?.readiness?.separation_completed===false)tags.push('<span class="order-v3-tag warn">SEPARAÇÃO PENDENTE</span>');const fiscalTag=orderFiscalTagV4(o);if(fiscalTag)tags.push(fiscalTag);if(m.delivered)tags.push('<span class="order-v3-tag ok">ENTREGUE</span>');if(m.cancelled)tags.push('<span class="order-v3-tag cancelled">CANCELADO</span>');if(!tags.length)tags.push('<span class="order-v3-tag neutral">RECEBIDO</span>');if(orderCustomerDataPending(o))tags.push('<span class="order-v3-tag neutral" title="'+esc(orderCustomerDataPendingReasons(o).join(' · '))+'">AGUARDANDO DADOS DO CLIENTE</span>');return tags.join('')}
+  function orderCardOperationalTags(o,m=orderV3Milestones(o)){const tags=[],sep=orderSeparationSummary(o);if(m.confirmed&&!m.separated&&!m.delivered&&!m.cancelled)tags.push('<span class="order-v3-tag ok">MONTAR PARA ENTREGAR HOJE</span>');if(m.separated&&sep?.phase==='needs_attention')tags.push('<span class="order-v3-tag warn">INTEGRAÇÃO PENDENTE</span>');const fiscalTag=orderFiscalTagV4(o);if(fiscalTag)tags.push(fiscalTag);if(orderCustomerDataPending(o))tags.push('<span class="order-v3-tag neutral" title="'+esc(orderCustomerDataPendingReasons(o).join(' · '))+'">DADOS DO CLIENTE PENDENTES</span>');return tags.join('')}
+  function orderCardPhone(o){return formatPhone(o?.whatsapp_phone_e164||o?.delivery_address_snapshot?.phone||'')||'Telefone não informado'}
+  function orderSeparationUrlFor(id){const url=new URL('/vitrine/admin/',location.origin);url.searchParams.set('separacao',String(id||''));return url.toString()}
+  async function copyOrderSeparationLink(id,btn){const url=orderSeparationUrlFor(id);try{await navigator.clipboard.writeText(url)}catch{const input=document.createElement('textarea');input.value=url;input.style.position='fixed';input.style.opacity='0';document.body.appendChild(input);input.select();document.execCommand('copy');input.remove()}toast('Link da vitrine de separação copiado');if(btn){btn.textContent='LINK COPIADO';setTimeout(()=>{if(document.contains(btn))btn.textContent='COPIAR LINK SEPARAÇÃO'},1800)}}
+  function orderRow(o){
+    const m=orderV3Milestones(o),f=state.fiscalByOrder[o.id]||null,sep=orderSeparationSummary(o),assignment=sep.assignment||{},counts=sep.counts||{},assigned=Boolean(assignment.separator_key),separator=assignment.separator_label||separatorLabel(assignment.separator_key),separatedCount=Number(counts.separated||0),missingCount=Number(counts.missing||0),checked=separatedCount+missingCount,totalItems=Number(counts.total||0),pendingCount=Math.max(0,Number(counts.pending??(totalItems-checked))||0),missingValue=Number(sep.missing_subtotal||counts.missing_subtotal||0),progressPct=totalItems>0?Math.max(0,Math.min(100,Math.round((checked/totalItems)*100))):0;
+    let stage='received',stageLabel='RECEBIDO';
+    if(m.cancelled){stage='cancelled';stageLabel='CANCELADO'}
+    else if(m.delivered){stage='done';stageLabel='ENTREGUE'}
+    else if(o.status==='out_for_delivery'){stage='delivery';stageLabel='SAIU PARA ENTREGA'}
+    else if(m.separated){stage='separated';stageLabel='PEDIDO JÁ SEPARADO'}
+    else if(assigned&&m.confirmed){stage='separating';stageLabel='EM SEPARAÇÃO · '+separator.toUpperCase()}
+    else if(m.confirmed){stage='waiting';stageLabel='AGUARDANDO SEPARAÇÃO'}
+    const cardClass=['waiting','separating','separated','delivery','done'].includes(stage)?' '+stage:'';
+    let progress='';
+    if(m.confirmed&&totalItems>0&&!m.delivered&&!m.cancelled){
+      const progressTitle=m.separated?'Separação concluída':assigned?'Separação em andamento':'Itens para separar';
+      progress='<div class="order-v3-progress"><div class="order-v3-progress-head"><span>'+esc(progressTitle)+'</span><strong>'+checked+' de '+totalItems+' itens</strong></div><div class="order-v3-progress-bar" aria-label="Progresso da separação" aria-valuemin="0" aria-valuemax="'+totalItems+'" aria-valuenow="'+checked+'"><i style="width:'+progressPct+'%"></i></div><div class="order-v3-progress-foot"><span class="ok">'+separatedCount+' separado'+(separatedCount===1?'':'s')+'</span><span>'+pendingCount+' pendente'+(pendingCount===1?'':'s')+'</span>'+(missingCount?'<span class="missing">'+missingCount+' faltou'+(missingCount===1?'':'aram')+(missingValue>0?' · − '+esc(separationMoney(missingValue)):'')+'</span>':'')+(assigned&&assignment.assigned_at&&!m.separated?'<span>Iniciado '+esc(dateTime(assignment.assigned_at))+'</span>':'')+'</div></div>';
+    }
+    let controls='';
+    if(orderCustomerDataPending(o)){
+      controls='<button class="order-v3-control" type="button" disabled title="'+esc(orderCustomerDataPendingReasons(o).join(' · '))+'">AGUARDANDO DADOS DO CLIENTE</button>';
+    }else if(!m.confirmed&&!m.cancelled){
+      controls='<button class="order-v3-control" type="button" data-v3-confirm="'+esc(o.id)+'">CONFIRMAR PEDIDO</button>';
+    }else if(o.status==='ready'&&!m.cancelled){
+      if(f?.authorized===true||f?.stage==='authorized')controls='<button class="order-v3-control" type="button" data-v3-dispatch="'+esc(o.id)+'">SAIU PARA ENTREGA</button>';
+      else if(f)controls='<button class="order-v3-control" type="button" data-open-order="'+esc(o.id)+'">'+(f.stage==='blocked'||f.stage==='rejected'?'REVISAR NF-e':'ACOMPANHAR NF-e')+'</button>';
+      else controls='<button class="order-v3-control" type="button" disabled>NF-e automática…</button>';
+    }else if(o.status==='out_for_delivery'&&!m.delivered&&!m.cancelled){
+      controls='<button class="order-v3-control" type="button" data-v3-deliver="'+esc(o.id)+'">ENTREGUE</button><button class="order-v3-control" type="button" data-v3-delivery-fail="'+esc(o.id)+'">NÃO ENTREGUE</button>';
+    }
+    const separationLabel=m.separated?'VER SEPARAÇÃO':assigned?'CONTINUAR SEPARAÇÃO':'INICIAR SEPARAÇÃO';
+    const primaryAction=m.confirmed&&!m.delivered&&!m.cancelled?'<button class="order-v3-action main '+(m.separated?'secondary-action':'primary')+'" type="button" data-v3-separation="'+esc(o.id)+'">'+separationLabel+'</button>':'';
+    const supportTags=orderCardOperationalTags(o,m);
+    const manualSelected=state.manualQueueIds.has(String(o.id));
+    const manualEligible=orderStatusTabKey(o)==='confirmed'&&o.status==='confirmed';
+    const manualQueueButton=(manualEligible||(manualSelected&&state.orderStatusTab==='manual'&&!m.separated))?'<button class="order-v3-action secondary-action" type="button" data-manual-queue-'+(manualSelected?'remove':'add')+'="'+esc(o.id)+'">'+(manualSelected?'RETIRAR DE SEPARAR AGORA':'SEPARAR AGORA')+'</button>':'';
+    return '<article class="order-v3-card'+cardClass+'"><div class="order-v3-topline"><span class="order-v3-stage '+esc(stage)+'">'+esc(stageLabel)+'</span><strong class="order-v3-money">'+money(o.total_cents||0)+'</strong></div><div class="order-v3-identity"><strong>#'+esc(orderDisplayCode(o))+' · '+esc(o.customer_name||'Sem cliente')+'</strong><small><span class="order-v3-phone">Tel. '+esc(orderCardPhone(o))+'</span><span>'+esc(dateTime(o.created_at))+'</span></small></div>'+(!m.confirmed&&!m.cancelled?'<div class="order-v3-do-not-build">NÃO MONTAR ESSE PEDIDO</div>':'')+progress+(supportTags?'<div class="order-v3-tags">'+supportTags+'</div>':'')+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions">'+primaryAction+manualQueueButton+'<button class="order-v3-action secondary-action" type="button" data-order-chat="'+esc(o.id)+'">💬 VER CONVERSA</button><button class="order-v3-action '+(primaryAction?'secondary-action':'primary')+'" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
+  }
+  const ORDER_STATUS_TABS=[
+    {key:'manual',label:'SEPARAR AGORA'},
+    {key:'received',label:'Recebidos'},
+    {key:'confirmed',label:'Confirmados'},
+    {key:'separating',label:'Em separação'},
+    {key:'separated',label:'Separados'},
+    {key:'delivery',label:'Em entrega'},
+    {key:'delivered',label:'Entregues'},
+    {key:'cancelled',label:'Cancelados'}
+  ];
+  function orderStatusTabKey(o){
+    const m=orderV3Milestones(o),sep=orderSeparationSummary(o),assigned=Boolean(sep?.assignment?.separator_key);
+    if(m.cancelled)return 'cancelled';
+    if(m.delivered)return 'delivered';
+    if(o?.status==='out_for_delivery')return 'delivery';
+    if(m.separated)return 'separated';
+    if(assigned&&m.confirmed)return 'separating';
+    if(m.confirmed)return 'confirmed';
+    return 'received';
+  }
+  function orderStatusTabMatch(o,key=state.orderStatusTab||'manual'){
+    if(key==='manual'){
+      const m=orderV3Milestones(o);
+      return state.manualQueueIds.has(String(o.id))&&m.confirmed&&!m.separated&&!m.delivered&&!m.cancelled&&o.status!=='out_for_delivery';
+    }
+    return key==='all'||orderStatusTabKey(o)===key;
+  }
+  function orderStatusTabCounts(){
+    const counts=Object.fromEntries(ORDER_STATUS_TABS.map(x=>[x.key,0]));
+    counts.all=state.orders.length;
+    state.orders.forEach(o=>{const key=orderStatusTabKey(o);if(Object.prototype.hasOwnProperty.call(counts,key))counts[key]++});
+    counts.manual=state.orders.filter(o=>orderStatusTabMatch(o,'manual')).length;
+    return counts;
+  }
+  function orderStatusTabsHtml(extraClass=''){
+    const counts=orderStatusTabCounts(),active=state.orderStatusTab||'all';
+    return '<div class="orders-status-tabs '+extraClass+'" role="tablist" aria-label="Filtrar pedidos por status">'+ORDER_STATUS_TABS.map(x=>'<button type="button" class="orders-status-tab'+(active===x.key?' active':'')+'" data-order-status-tab="'+x.key+'" role="tab" aria-selected="'+(active===x.key?'true':'false')+'">'+esc(x.label)+' <span class="count">'+Number(counts[x.key]||0)+'</span></button>').join('')+'</div>';
+  }
+  async function manualQueueRpc(action,orderId=null){
+    const token=await adminStepUp();
+    const res=await fetch(BASKET_AUTO_RPC+'manual_pick_queue_action_v1',{
+      method:'POST',headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY,'Authorization':'Bearer '+token},
+      body:JSON.stringify({p_action:action,p_order_id:orderId}),cache:'no-store'
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||!Array.isArray(data.order_ids))throw new Error(data.message||data.error||'manual_queue_unavailable');
+    state.manualQueueIds=new Set(data.order_ids.map(String));
+    state.manualQueueLoaded=true;state.manualQueueError=false;state.manualQueueLastSync=Date.now();
+    return data;
+  }
+  async function loadManualPickQueue(){
+    try{return await manualQueueRpc('list')}
+    catch(error){state.manualQueueError=true;state.manualQueueLoaded=false;throw error}
+  }
+  async function setManualPickQueue(orderId,enable,button){
+    if(button){button.disabled=true;button.textContent=enable?'ADICIONANDO…':'RETIRANDO…'}
+    try{
+      await manualQueueRpc(enable?'add':'remove',orderId);
+      toast(enable?'Pedido incluído em SEPARAR AGORA':'Pedido retirado de SEPARAR AGORA');
+    }catch(error){toast('Não foi possível atualizar a fila manual: '+errorMessage(error.message))}
+    finally{paintOrderRows()}
+  }
+  function bindOrderStatusTabs(){document.querySelectorAll('[data-order-status-tab]').forEach(b=>b.onclick=async()=>{state.orderStatusTab=b.dataset.orderStatusTab||'manual';paintOrderRows();if(state.orderStatusTab==='manual'){try{await loadManualPickQueue()}catch{}paintOrderRows()}})}
+  async function renderOrders(){const content=$('#content');document.body.classList.add('orders-tab-active');content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Escolha manualmente quais pedidos confirmados devem aparecer em SEPARAR AGORA.</p></div></div><div id="orderStatusTabsTop">'+orderStatusTabsHtml('orders-status-desktop')+'</div><div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery||'')+'"></div><div id="orderRows" class="orders-v3-list"><div class="loading">Carregando pedidos…</div></div><div id="orderStatusTabsMobile">'+orderStatusTabsHtml('orders-status-mobile')+'</div>';bindOrderStatusTabs();$('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;paintOrderRows()};await loadOrders()}
+  async function loadOrders(){
+    try{
+      const data=await api('orders');state.orders=Array.isArray(data.orders)?data.orders:[];try{await loadManualPickQueue()}catch{}paintOrderRows();
+      const fiscalRows=state.orders.filter(o=>o.status==='ready').sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)).slice(0,8);
+      if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);paintOrderRows()}
+    }catch(e){const host=$('#orderRows');if(host)host.innerHTML='<div class="empty">Não consegui carregar os pedidos.</div>'}
+  }
+  async function refreshOrderSeparationBoard(){
+    if(state.tab!=='orders'||document.hidden||!state.orders.length)return;
+    try{
+      const data=await api('order_separation_board'),map=new Map((data.board||[]).map(x=>[String(x.order_id),x]));
+      let changed=false;
+      state.orders=state.orders.map(o=>{
+        const row=map.get(String(o.id));if(!row)return o;
+        const nextSummary=row.separation_summary||null,nextStatus=row.status||o.status;
+        if(nextStatus!==o.status||JSON.stringify(nextSummary)!==JSON.stringify(o.separation_summary||null))changed=true;
+        return {...o,status:nextStatus,separation_summary:nextSummary};
+      });
+      if(state.orderStatusTab==='manual'&&Date.now()-Number(state.manualQueueLastSync||0)>=15000){
+        const previous=[...state.manualQueueIds].sort().join(',');
+        try{await loadManualPickQueue();if(previous!==[...state.manualQueueIds].sort().join(','))changed=true}catch{}
+      }
+      if(changed)paintOrderRows();
+    }catch{}
+  }
+  if(!window.__orderSeparationBoardTimer)window.__orderSeparationBoardTimer=setInterval(refreshOrderSeparationBoard,5000);
+  if(!window.__orderSeparationBoardVisibilityBound){window.__orderSeparationBoardVisibilityBound=true;document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.tab==='orders')refreshOrderSeparationBoard()})}
+  // O painel preserva a página e reusa integralmente o Atendimento existente.
+  let orderChatOpener=null,orderChatClosingTimer=null,orderChatPreviousOverflow='';
+  function closeOrderChatSheet(){
+    const sheet=$('#orderChatSheet'),overlay=$('#orderChatOverlay');
+    if(!sheet||sheet.hidden)return;
+    sheet.classList.remove('open');overlay.classList.remove('open');
+    document.documentElement.style.overflow=orderChatPreviousOverflow;
+    clearTimeout(orderChatClosingTimer);
+    orderChatClosingTimer=setTimeout(()=>{if(sheet.classList.contains('open'))return;sheet.hidden=true;overlay.hidden=true;$('#orderChatFrame').removeAttribute('src');},240);
+    if(orderChatOpener?.isConnected)orderChatOpener.focus({preventScroll:true});
+    orderChatOpener=null;
+  }
+  function openOrderChatSheet(orderId,trigger){
+    const order=state.orders.find(x=>String(x.id)===String(orderId));
+    if(!order){toast('Pedido não localizado');return}
+    const phone=String(order.whatsapp_phone_e164||order.delivery_address_snapshot?.phone||'').replace(/\D/g,'');
+    if(![10,11,12,13].includes(phone.length)){toast('Este pedido não possui telefone válido para localizar a conversa');return}
+    const params=new URLSearchParams({embedded:'order',phone,order:orderDisplayCode(order)});
+    if(order.customer_id)params.set('customer_id',String(order.customer_id));
+    const sheet=$('#orderChatSheet'),overlay=$('#orderChatOverlay'),frame=$('#orderChatFrame');
+    clearTimeout(orderChatClosingTimer);
+    orderChatOpener=trigger||null;
+    $('#orderChatTitle').textContent='#'+orderDisplayCode(order)+' · '+(order.customer_name||'Cliente');
+    $('#orderChatSubtitle').textContent='Conversa pelo WhatsApp · '+(orderCardPhone(order)||'');
+    sheet.hidden=false;overlay.hidden=false;
+    orderChatPreviousOverflow=document.documentElement.style.overflow;
+    document.documentElement.style.overflow='hidden';
+    // O iframe só é carregado após o clique, evitando consultas extras na fila de pedidos.
+    frame.src='/vitrine/admin/atendimento/?'+params.toString();
+    requestAnimationFrame(()=>{sheet.classList.add('open');overlay.classList.add('open');$('#orderChatClose').focus({preventScroll:true})});
+  }
+  $('#orderChatClose').onclick=closeOrderChatSheet;
+  $('#orderChatOverlay').onclick=closeOrderChatSheet;
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('#orderChatSheet').hidden){event.preventDefault();closeOrderChatSheet()}});
+  function paintOrderRows(){const host=$('#orderRows');if(!host)return;const rows=state.orders.filter(o=>orderV3SearchMatch(o,state.orderQuery)&&orderStatusTabMatch(o)).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">'+(state.orderStatusTab==='manual'?(state.manualQueueError?'Fila manual indisponível. Tente selecionar esta aba novamente.':'Nenhum pedido na fila. Em CONFIRMADOS, clique em SEPARAR AGORA no pedido desejado.'):'Nenhum pedido encontrado neste status.')+'</div>';const top=$('#orderStatusTabsTop'),mobile=$('#orderStatusTabsMobile');if(top)top.innerHTML=orderStatusTabsHtml('orders-status-desktop');if(mobile)mobile.innerHTML=orderStatusTabsHtml('orders-status-mobile');bindOrderStatusTabs();host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));host.querySelectorAll('[data-order-chat]').forEach(b=>b.onclick=()=>openOrderChatSheet(b.dataset.orderChat,b));host.querySelectorAll('[data-manual-queue-add],[data-manual-queue-remove]').forEach(b=>b.onclick=()=>setManualPickQueue(b.dataset.manualQueueAdd||b.dataset.manualQueueRemove,Boolean(b.dataset.manualQueueAdd),b));host.querySelectorAll('[data-copy-separation]').forEach(b=>b.onclick=()=>copyOrderSeparationLink(b.dataset.copySeparation,b));host.querySelectorAll('[data-v3-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.v3Confirm,b));host.querySelectorAll('[data-v3-separate],[data-v3-separation]').forEach(b=>b.onclick=()=>openOrderSeparationSheet(b.dataset.v3Separate||b.dataset.v3Separation));host.querySelectorAll('[data-v3-dispatch]').forEach(b=>b.onclick=()=>startOrderDispatchV4(b.dataset.v3Dispatch,b));host.querySelectorAll('[data-v3-deliver]').forEach(b=>b.onclick=()=>openOrderDeliveryConfirm(b.dataset.v3Deliver));host.querySelectorAll('[data-v3-delivery-fail]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.v3DeliveryFail,false))}
+  async function startOrderDispatchV4(id,btn){
+    const current=state.orders.find(o=>String(o.id)===String(id));
+    if(!current||current.status!=='ready'){toast('Este pedido não está pronto para saída');return}
+    const f=state.fiscalByOrder[id]||{};if(f.authorized!==true&&f.stage!=='authorized'){toast('A NF-e precisa estar autorizada antes da saída');return}
+    if(!confirm('Confirmar que o pedido #'+orderDisplayCode(current)+' SAIU PARA ENTREGA?'))return;
+    if(btn){btn.disabled=true;btn.textContent='REGISTRANDO SAÍDA…'}
+    try{await api('order_dispatch_start_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+id})});toast('Saída para entrega registrada');delete state.fiscalByOrder[id];await loadOrders();if(state.currentOrder?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
+  }
+  async function quickConfirmOrder(id,btn){const current=state.orders.find(o=>String(o.id)===String(id));if(current&&orderCustomerDataPending(current)){toast('Complete os dados essenciais do cliente antes de confirmar');return}if(btn){btn.disabled=true;btn.textContent='CONFIRMANDO…'}try{await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'confirmed',operator:currentOperator()||'Operação'})});toast('Pedido confirmado');await loadOrders()}catch(e){toast(errorMessage(e.message))}finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='CONFIRMADO'}}}
+  function closeOrderSeparationSheet(){document.querySelector('.orders-bottom-sheet-backdrop')?.remove()}
+  function separationMoney(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+  async function openOrderSeparationSheet(id){const order=state.orders.find(o=>String(o.id)===String(id));if(order&&orderCustomerDataPending(order)){toast('Complete os dados essenciais do cliente antes da separação');return}if(order&&!orderV3Milestones(order).confirmed){toast('Confirme o pedido antes de iniciar a separação');return}const originalPublicCode=orderDisplayCode(order);closeOrderSeparationSheet();const back=document.createElement('div');back.className='orders-bottom-sheet-backdrop';back.innerHTML='<section class="orders-bottom-sheet" role="dialog" aria-modal="true"><header class="orders-sheet-head"><div><h2>Separação do pedido'+(originalPublicCode==='—'?'':' #'+esc(originalPublicCode))+'</h2><p>Marque cada produto como SEPARADO ou FALTOU.</p></div><button class="orders-sheet-close" type="button" aria-label="Fechar">×</button></header><div class="orders-sheet-body"><div class="loading">Carregando produtos…</div></div><footer class="orders-sheet-foot" hidden></footer></section>';document.body.appendChild(back);back.querySelector('.orders-sheet-close').onclick=closeOrderSeparationSheet;back.onclick=e=>{if(e.target===back){closeOrderSeparationSheet();return}const button=e.target.closest?.('[data-separation-state]');if(!button||button.disabled||back.dataset.separationBusy==='1'||!back.contains(button))return;e.preventDefault();setOrderSeparationItem(id,button.dataset.orderItem,button.dataset.separationState,back.dataset.orderUpdatedAt||'',back.dataset.separatorKey||'',back,button)};await loadOrderSeparationSheet(id,back)}
+  async function assignOrderSeparator(orderId,key,current,back,btn){
+    const next=ORDER_SEPARATORS.find(x=>x.key===key);if(!next)return;
+    if(current?.separator_key===key||back?.dataset.separationBusy==='1')return;
+    if(current?.separator_key&&!confirm('Este pedido está com '+(current.separator_label||separatorLabel(current.separator_key))+'.\n\nTrocar a separação para '+next.label+'?'))return;
+    back.dataset.separationBusy='1';
+    back.querySelectorAll('[data-separator-key]').forEach(button=>button.disabled=true);
+    if(btn){btn.disabled=true;btn.textContent='SALVANDO…'}
+    try{
+      await api('order_separation_assign',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:orderId,separator_key:key})});
+      toast('Separação atribuída a '+next.label);
+      await loadOrderSeparationSheet(orderId,back);
+      await refreshOrderSeparationBoard();
+    }catch(e){toast(e.message==='invalid_separator'?'Responsável inválido. Atualize a página e tente novamente.':errorMessage(e.message));await loadOrderSeparationSheet(orderId,back)}
+    finally{delete back.dataset.separationBusy}
+  }
+  async function loadOrderSeparationSheet(id,back=document.querySelector('.orders-bottom-sheet-backdrop')){
+    if(!back)return;const body=back.querySelector('.orders-sheet-body'),foot=back.querySelector('.orders-sheet-foot');
+    const savedScroll=back.dataset.separationOrderId===String(id)?Number(body.scrollTop||0):0;
+    back.dataset.separationOrderId=String(id);
+    try{
+      const response=await api('order_separation_get',{id}),data=response.separation||response,items=Array.isArray(data.items)?data.items:[],componentBasketKeys=new Set(items.filter(x=>['basket_component','basket_mold_component'].includes(String(x.kind||''))).map(x=>String(x.basket_id||x.basket_name||'')).filter(Boolean)),visibleItems=items.filter(x=>!(['basket','basket_mold'].includes(String(x.kind||''))&&componentBasketKeys.has(String(x.basket_id||x.basket_name||x.name||'')))),completed=Boolean(data.completion?.completed_at),assignment=data.assignment&&data.assignment.separator_key?data.assignment:null,assigned=Boolean(assignment?.separator_key),pending=Number(data.counts?.pending||0),separated=Number(data.counts?.separated||0),missing=Number(data.counts?.missing||0),liveMissing=Number(data.missing_subtotal??data.completion?.missing_subtotal??visibleItems.filter(x=>String(x.state)==='missing').reduce((sum,x)=>sum+Number(x.line_total||0),0)),originalTotal=Number(data.original_total??data.completion?.original_total??data.total??0),finalTotal=Number(data.final_total??data.completion?.final_total??Math.max(0,originalTotal-liveMissing));back.dataset.orderUpdatedAt=String(data.order_updated_at||'');back.dataset.separatorKey=String(assignment?.separator_key||'');
+      const picker='<section class="orders-separator-panel '+(completed?'completed':assigned?'assigned':'')+'"><div class="orders-separator-panel-head"><div><strong>'+(completed?'✓ Separação concluída por '+esc(assignment?.separator_label||separatorLabel(data.completion?.separator_key)||'separador'):assigned?'EM SEPARAÇÃO · '+esc(String(assignment.separator_label||separatorLabel(assignment.separator_key)).toUpperCase()):'Quem vai separar este pedido?')+'</strong><small>'+(completed?'Responsável registrado no histórico.':assigned?'Outro funcionário só deve trocar o responsável se realmente for assumir este pedido.':'Escolha o responsável antes de marcar os produtos.')+'</small></div></div>'+(!completed?'<div class="orders-separator-picker">'+ORDER_SEPARATORS.map(x=>'<button type="button" data-separator-key="'+x.key+'" class="'+(assignment?.separator_key===x.key?'active':'')+'">'+esc(x.label)+'</button>').join('')+'</div>':'')+'</section>';
+      body.innerHTML=picker+'<div class="orders-separation-grid">'+visibleItems.map(x=>{
+        const st=String(x.state||'pending'),klass=st==='separated'?' separated':st==='missing'?' missing':'',stateTag=st==='separated'?'<span class="orders-separation-state-tag separated">✓ SEPARADO</span>':st==='missing'?'<span class="orders-separation-state-tag missing">× FALTOU</span>':'';
+        return '<article class="orders-separation-item'+klass+'"><div class="orders-separation-photo-wrap">'+(x.image_url?'<img src="'+esc(x.image_url)+'" alt="'+esc(x.name||'Produto')+'">':'<div class="orders-separation-placeholder"></div>')+stateTag+'</div><div class="orders-separation-name">'+esc(x.name||'Produto')+'</div><div class="orders-separation-info"><div class="orders-separation-qty"><span>QTD.</span><strong>'+esc(fmtQty(x.quantity))+'</strong></div><div class="orders-separation-price">'+esc(separationMoney(x.line_total))+'</div></div><div class="orders-separation-buttons"><button type="button" data-separation-state="separated" data-order-item="'+esc(x.order_item_id)+'" class="'+(st==='separated'?'active':'')+'" '+(completed||!assigned?'disabled':'')+'>SEPARADO</button><button type="button" data-separation-state="missing" data-order-item="'+esc(x.order_item_id)+'" class="'+(st==='missing'?'active':'')+'" '+(completed||!assigned?'disabled':'')+'>FALTOU</button></div></article>';
+      }).join('')+'</div>'+(completed?'<div class="rule-notice" style="margin-top:10px"><strong>Separação concluída</strong><div>Cliente atualizado. A NF-e segue automaticamente para o fluxo fiscal; a expedição só será liberada após autorização.</div></div>':'');
+      body.querySelectorAll('[data-separator-key]').forEach(button=>button.onclick=()=>assignOrderSeparator(id,button.dataset.separatorKey,assignment,back,button));
+      body.scrollTop=savedScroll;
+      foot.hidden=false;
+      foot.innerHTML='<div class="orders-sheet-summary"><span>Pendentes: <strong>'+pending+'</strong></span><span>Separados: <strong>'+separated+'</strong></span><span>Faltou: <strong>'+missing+'</strong></span></div><div class="orders-sheet-financial"><span>Total original<strong>'+separationMoney(originalTotal)+'</strong></span><span class="discount">Abatimento por falta<strong>− '+separationMoney(liveMissing)+'</strong></span><span>Total atual<strong>'+separationMoney(finalTotal)+'</strong></span></div><button class="orders-sheet-complete" type="button" '+(pending||completed||!assigned?'disabled':'')+'>'+(completed?'SEPARAÇÃO CONCLUÍDA':!assigned?'ESCOLHA O SEPARADOR':'CONCLUIR SEPARAÇÃO')+'</button>';
+      const complete=foot.querySelector('.orders-sheet-complete');if(!completed&&assigned)complete.onclick=()=>completeOrderSeparation(id,data.order_updated_at,assignment,back,complete);
+    }catch(e){body.innerHTML='<div class="empty">Não consegui carregar a separação. '+esc(errorMessage(e.message))+'</div>';foot.hidden=true}
+  }
+  async function setOrderSeparationItem(orderId,itemId,separationState,expected,separatorKey,back,btn){
+    if(!separatorKey){toast('Escolha quem está separando este pedido');return}
+    if(!btn||btn.dataset.saving==='1'||back.dataset.separationBusy==='1')return;
+    back.dataset.separationBusy='1';
+    const actionLabel=separationState==='missing'?'FALTOU':'SEPARADO',buttons=[...back.querySelectorAll('[data-separation-state]')];
+    btn.dataset.saving='1';btn.classList.add('saving');btn.classList.remove('saved','failed');btn.textContent='SALVANDO…';buttons.forEach(x=>x.disabled=true);
+    const save=async(version,key)=>api('order_separation_item_set',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:orderId,order_item_id:itemId,state:separationState,expected_order_updated_at:version,separator_key:key,operator:separatorLabel(key)||'Separação'})});
+    try{
+      let result;
+      try{result=await save(expected,separatorKey)}
+      catch(e){
+        if(!['stale_order_version','order_version_conflict'].includes(String(e.message||'')))throw e;
+        const latestResponse=await api('order_separation_get',{id:orderId}),latest=latestResponse.separation||latestResponse,currentKey=latest.assignment?.separator_key||'';
+        if(!currentKey||currentKey!==separatorKey)throw new Error('separator_assignment_changed');
+        back.dataset.orderUpdatedAt=String(latest.order_updated_at||'');back.dataset.separatorKey=String(currentKey);
+        result=await save(latest.order_updated_at,currentKey);
+      }
+      btn.classList.remove('saving');btn.classList.add('saved');btn.textContent='✓ SALVO';
+      const nextVersion=result?.order_updated_at||result?.item?.order_updated_at||'';if(nextVersion)back.dataset.orderUpdatedAt=String(nextVersion);
+      if(result?.warning==='bling_approval_pending')toast('✓ '+actionLabel+' salvo · Bling pendente, continue a separação');
+      else toast('✓ '+actionLabel+' salvo');
+      await refreshOrderSeparationBoard();
+      await new Promise(resolve=>setTimeout(resolve,260));
+      await loadOrderSeparationSheet(orderId,back);
+    }catch(e){
+      btn.classList.remove('saving');btn.classList.add('failed');btn.textContent='NÃO SALVO';
+      const code=String(e.message||'');
+      toast(code==='separator_assignment_changed'?'O responsável pela separação mudou. A marcação NÃO foi salva.':code==='bling_approval_required_before_separation'?'A marcação NÃO foi salva porque o Bling ainda não liberou o pedido.':('NÃO SALVO · '+errorMessage(code)));
+      await new Promise(resolve=>setTimeout(resolve,700));
+      await loadOrderSeparationSheet(orderId,back);
+    }finally{
+      if(btn)delete btn.dataset.saving;
+      delete back.dataset.separationBusy;
+    }
+  }
+  async function resolveOriginalOrderCodeForPackaging(orderId){
+    let current=state.orders.find(o=>String(o.id)===String(orderId));
+    let code=orderDisplayCode(current);
+    if(code&&code!=='—')return code;
+    try{
+      const data=await api('order',{id:orderId});
+      current=data?.order||null;
+      code=orderDisplayCode(current);
+      if(code&&code!=='—')return code;
+    }catch{}
+    return '';
+  }
+  async function showSeparationPackagingNotice(orderId,back){
+    document.querySelector('.orders-packaging-backdrop')?.remove();
+    const display=await resolveOriginalOrderCodeForPackaging(orderId);
+    const pickerMode=document.documentElement.classList.contains('montar-picker-only');
+    if(!display&&!pickerMode){
+      toast('Separação concluída, mas não encontrei o número original do pedido. Abra o pedido antes de etiquetar a embalagem.');
+      if(back?.isConnected)back.remove();else closeOrderSeparationSheet();
+      await loadOrders();
+      return;
+    }
+    const overlay=document.createElement('div');overlay.className='orders-packaging-backdrop';
+    overlay.innerHTML='<section class="orders-packaging-sheet" role="dialog" aria-modal="true" aria-labelledby="packagingNoticeTitle"><div class="orders-packaging-kicker">Separação concluída</div><strong class="orders-packaging-number">#'+esc(display||'NÚMERO NÃO DISPONÍVEL')+'</strong><h2 class="orders-packaging-message" id="packagingNoticeTitle">ANOTE O NÚMERO DO PEDIDO NA EMBALAGEM</h2><button class="orders-packaging-ok" type="button">OK</button></section>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('.orders-packaging-ok').onclick=async()=>{
+      overlay.querySelector('.orders-packaging-ok').disabled=true;
+      overlay.remove();
+      if(back?.isConnected)back.remove();else closeOrderSeparationSheet();
+      if(document.documentElement.classList.contains('montar-picker-only')){
+        clearTimeout(overlay.__pickerReturnTimer);
+        location.replace('/montar/?concluido='+encodeURIComponent(orderId));
+        return;
+      }
+      await loadOrders();
+      await refreshOrderSeparationBoard();
+    };
+    overlay.querySelector('.orders-packaging-ok').focus();
+    if(document.documentElement.classList.contains('montar-picker-only')){
+      const summary=document.createElement('p');
+      summary.className='orders-packaging-auto-return';
+      summary.textContent='A vitrine voltará à lista automaticamente em 12 segundos. Toque em OK para voltar agora.';
+      overlay.querySelector('.orders-packaging-message').after(summary);
+      overlay.__pickerReturnTimer=setTimeout(()=>{
+        if(overlay.isConnected)location.replace('/montar/?concluido='+encodeURIComponent(orderId));
+      },12000);
+    }
+  }
+  async function completeOrderSeparation(id,expected,assignment,back,btn){
+    if(!assignment?.separator_key){toast('Escolha quem está separando este pedido');return}
+    if(btn.disabled)return;
+    if(!confirm('Concluir a separação deste pedido como '+(assignment.separator_label||separatorLabel(assignment.separator_key))+'?\n\nA separação só será considerada concluída após a confirmação do servidor.'))return;
+    btn.disabled=true;btn.textContent='CONCLUINDO…';
+    let persisted=false;
+    try{
+      const result=await api('order_separation_complete',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:id,expected_order_updated_at:expected,separator_key:assignment.separator_key,operator:assignment.separator_label||separatorLabel(assignment.separator_key)||'Separação'})});
+      if(result?.status!=='ready')throw new Error('separation_completion_unconfirmed');
+      persisted=true;
+      btn.textContent='✓ PEDIDO JÁ SEPARADO';
+      // Post-save refresh must never suppress the completion receipt.
+      refreshOrderSeparationBoard().catch(()=>{});
+      await showSeparationPackagingNotice(id,back);
+      if(!document.documentElement.classList.contains('montar-picker-only')){
+        setTimeout(async()=>{try{const o=state.orders.find(x=>String(x.id)===String(id));if(o?.status==='ready'){await loadFiscalForOrders([o]);paintOrderRows()}}catch{}},5000);
+      }
+    }catch(e){
+      if(persisted){
+        toast('Separação salva, mas não foi possível abrir o aviso de embalagem.');
+        if(document.documentElement.classList.contains('montar-picker-only'))location.replace('/montar/?concluido='+encodeURIComponent(id));
+        return;
+      }
+      const reason=e.message==='separator_required'?'escolha o separador responsável':errorMessage(e.message);
+      await loadOrderSeparationSheet(id,back);
+      // The global toast is behind the full-screen vitrine: always show errors
+      // inside the sticky footer, next to the completion action.
+      const foot=back?.querySelector('.orders-sheet-foot');
+      if(foot){
+        const alert=document.createElement('div');
+        alert.className='orders-sheet-completion-error';
+        alert.setAttribute('role','alert');
+        alert.textContent='NÃO FOI CONCLUÍDO. '+reason+'. Confira e tente novamente.';
+        foot.prepend(alert);
+      }else toast('A separação NÃO foi concluída · '+reason);
+    }
+  }
+  function deliveryMethodV3(value){const s=normalize(value||'');if(s.includes('pix'))return 'pix';if(s.includes('dinheiro')||s==='cash')return 'cash';if(s.includes('credito')||s.includes('crédito')||s.includes('credit'))return 'credit_card';if(s.includes('refeicao')||s.includes('refeição')||s.includes('meal'))return 'meal_card';if(s.includes('alimentacao')||s.includes('alimentação')||s.includes('food'))return 'food_card';return 'other'}
+  function deliveryMethodOptionsV3(current){const rows=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição'],['other','Outro']];return rows.map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('')}
+  async function openOrderDeliveryConfirm(id){let order=state.orders.find(o=>String(o.id)===String(id));if(!order){await loadOrders();order=state.orders.find(o=>String(o.id)===String(id))}if(order&&orderCustomerDataPending(order)){toast('Complete os dados essenciais do cliente antes da entrega');return}if(!order||order.status!=='out_for_delivery'||orderV3Milestones(order).delivered){toast('O pedido precisa ter SAÍDO PARA ENTREGA antes da confirmação');return}const planned=order.payment_method_snapshot?.label||order.payment_method_snapshot?.method||'A confirmar',method=deliveryMethodV3(order.payment_method_snapshot?.method||planned);const dlg=document.createElement('dialog');dlg.className='delivery-v3-dialog';dlg.innerHTML='<div class="delivery-v3-body"><h2>Confirmar entrega</h2><div class="muted">Pedido #'+esc(orderDisplayCode(order))+'</div><div class="delivery-v3-grid"><label><span>Forma prevista</span><input value="'+esc(planned)+'" readonly></label><label><span>Forma recebida</span><select id="deliveryV3Method">'+deliveryMethodOptionsV3(method)+'</select></label><label><span>Valor recebido</span><input value="'+esc(money(order.total_cents||0))+'" readonly></label></div></div><div class="delivery-v3-actions"><button class="delivery-v3-cancel" type="button">Cancelar</button><button class="delivery-v3-confirm" type="button">CONFIRMAR ENTREGA</button></div>';document.body.appendChild(dlg);const close=()=>{dlg.close();dlg.remove()};dlg.querySelector('.delivery-v3-cancel').onclick=close;dlg.querySelector('.delivery-v3-confirm').onclick=async()=>{const btn=dlg.querySelector('.delivery-v3-confirm');btn.disabled=true;btn.textContent='CONFIRMANDO…';try{await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,method:dlg.querySelector('#deliveryV3Method').value,amount_cents:Number(order.total_cents||0),operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+id})});toast('Entrega e recebimento confirmados');close();await loadOrders();if(state.currentOrder?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='CONFIRMAR ENTREGA'}};dlg.showModal()}
+  async function sendOrderCustomerVitrineV3(id,btn){const access=String(sessionStorage.getItem('da_finance_access_token_v1')||'').trim();if(!access){toast('Sua sessão do Admin expirou');return}if(btn){btn.disabled=true;btn.textContent='ENVIANDO…'}try{const response=await fetch('https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-order-vitrine-send-v1',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+access},body:JSON.stringify({order_id:id,request_id:(crypto.randomUUID?.()||String(Date.now())).replace(/[^A-Za-z0-9-]/g,'').slice(0,80)})}),data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||'vitrine_send_failed');toast('Vitrine enviada ao cliente pelo WhatsApp '+(String(data.channel_phone_e164||'').replace(/\D/g,'').endsWith('1018')?'1018':'0975'))}catch(e){toast(e.message==='conversation_not_found'||e.message==='channel_unavailable'?'Não encontrei com segurança a conversa 0975/1018 deste pedido.':errorMessage(e.message))}finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='VITRINE CLIENTE'}}}
+  async function reopenOrderV3(id){if(!confirm('Reabrir este pedido para edição? A reserva será liberada.'))return;try{await api('order_reopen_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Operação'})});toast('Pedido reaberto para edição');await loadOrders();await openOrder(id)}catch(e){toast(errorMessage(e.message))}}
+
+  function publicOrderUrlFor(o){const short=String(o?.public_order_url||'').trim();if(/^https:\/\/donaantonia\.com\.br\/p\/\?k=[a-f0-9]{16}$/i.test(short))return short;const id=String(o?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}
+  function orderPublicVitrineHtml(o){
+    const url=publicOrderUrlFor(o);
+    return '<div class="section-title">Vitrine do pedido</div><div class="rule-notice">'+
+      '<strong>Fotos e quantidades do pedido salvo</strong><div class="sub">A mesma página criada pelo checkout. Disponível mesmo com estoque zerado ou negativo.</div>'+
+      '<div class="order-public-link"><label><span>Link da vitrine do pedido</span><input id="orderPublicLink" type="text" readonly value="'+esc(url)+'" placeholder="Gere a vitrine para obter o link"></label><button class="primary" id="copyOrderPublicLink" type="button" '+(url?'':'disabled')+'>Copiar link</button></div>'+
+      '<div class="order-public-actions"><button class="secondary" id="openOrderVitrine" type="button" '+(url?'':'disabled')+'>Abrir vitrine</button><button class="secondary" id="printOrderVitrine" type="button" '+(url?'':'disabled')+'>Imprimir vitrine</button><button class="secondary" id="generateOrderVitrine" type="button" '+(o?.id?'':'disabled')+'>Gerar vitrine</button></div></div>';
+  }
+  function bindCurrentOrderVitrine(){
+    if($('#copyOrderPublicLink'))$('#copyOrderPublicLink').onclick=copyCurrentOrderPublicLink;
+    if($('#openOrderVitrine'))$('#openOrderVitrine').onclick=openCurrentOrderVitrine;
+    if($('#printOrderVitrine'))$('#printOrderVitrine').onclick=printCurrentOrderVitrine;
+    if($('#generateOrderVitrine'))$('#generateOrderVitrine').onclick=generateCurrentOrderVitrine;
+  }
+  async function generateCurrentOrderVitrine(){
+    const id=state.currentOrder?.order?.id,btn=$('#generateOrderVitrine');if(!id||btn?.disabled)return;
+    if(btn){btn.disabled=true;btn.textContent='Gerando…'}
+    try{
+      const data=await api('order',{id});
+      if(state.currentOrder?.order?.id!==id)return;
+      if(data.order?.id!==id||!publicOrderUrlFor(data.order))throw new Error('link_unavailable');
+      Object.assign(state.currentOrder.order,{public_order_url:data.order.public_order_url,public_order_code:data.order.public_order_code});
+      const panel=$('#orderPublicVitrinePanel');if(panel){panel.innerHTML=orderPublicVitrineHtml(state.currentOrder.order);bindCurrentOrderVitrine()}
+      toast('Vitrine do pedido disponível');
+    }catch{if(state.currentOrder?.order?.id===id)toast('Não consegui gerar a vitrine agora. Tente novamente.')}
+    finally{if(btn){btn.disabled=false;btn.textContent='Gerar vitrine'}}
+  }
+  async function copyCurrentOrderPublicLink(){
+    const url=publicOrderUrlFor(state.currentOrder?.order);if(!url)return;
+    try{await navigator.clipboard.writeText(url);toast('Link da vitrine copiado')}
+    catch{
+      const input=$('#orderPublicLink');input?.focus();input?.select();
+      let copied=false;try{copied=document.execCommand('copy')}catch{}
+      toast(copied?'Link da vitrine copiado':'O link está selecionado. Copie pelo teclado ou mantenha pressionado para copiar.');
+    }
+  }
+  function openCurrentOrderVitrine(){
+    const url=publicOrderUrlFor(state.currentOrder?.order);if(url)window.open(url,'_blank','noopener,noreferrer');
+  }
+  function printCurrentOrderVitrine(){
+    const url=publicOrderUrlFor(state.currentOrder?.order);if(!url)return;
+    const printUrl=new URL(url);printUrl.searchParams.set('print','1');
+    window.open(printUrl.toString(),'_blank','noopener,noreferrer');
+  }
+  async function openOrder(id){
+    $('#editorTitle').textContent='Pedido';$('#editorBody').innerHTML='<div class="loading">Carregando pedido…</div>';$('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>';$('#cancelEditor').onclick=()=>$('#editor').close();if(!$('#editor').open)$('#editor').showModal();
+    try{const data=await api('order',{id});state.currentOrder=data;state.currentOrderFiscal=null;try{if(['confirmed','processing','ready','out_for_delivery','delivered'].includes(data.order?.status)){const sep=await api('order_separation_get',{id});data.separation=sep.separation||sep}}catch{}if(['ready','out_for_delivery','delivered'].includes(data.order?.status))await loadCurrentOrderFiscal(false);paintOrderDetail()}catch(e){$('#editorBody').innerHTML='<div class="empty">Não consegui abrir este pedido.</div>'}
+  }
+  function orderV3SeparationMap(){return new Map((state.currentOrder?.separation?.items||[]).map(x=>[String(x.order_item_id),String(x.state||'pending')]))}
+  function orderV3DetailItemHtml(item,states){const st=states.get(String(item.id))||'',missing=st==='missing';const components=Array.isArray(item.components)?item.components:[];const componentHtml=components.length?'<div style="margin-top:7px">'+components.map(c=>{const cs=states.get(String(c.id))||'',cm=cs==='missing';return '<div class="muted" style="padding:3px 0">• '+esc(fmtQty(c.quantity))+' × '+esc(c.name_snapshot||'Produto')+(cm?'<span class="order-v3-missing">FALTOU</span>':'')+'</div>'}).join('')+'</div>':'';return '<div class="order-v3-item'+(missing?' missing':'')+'">'+(item.image_url?'<img src="'+esc(item.image_url)+'" alt="">':'<div class="order-v3-item-ph"></div>')+'<div><strong>'+esc(item.name_snapshot||'Produto')+'</strong>'+(missing?'<span class="order-v3-missing">FALTOU</span>':'')+'<small>Quantidade: '+esc(fmtQty(item.quantity||1))+'</small>'+componentHtml+'</div><strong>'+money(item.total_cents||Math.round(Number(item.line_total||0)*100))+'</strong></div>'}
+  function orderV3PaymentOptions(current){const cur=deliveryMethodV3(current),rows=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição']];return rows.map(([v,l])=>'<option value="'+v+'" '+(v===cur?'selected':'')+'>'+l+'</option>').join('')}
+  async function saveOrderV3(){const o=state.currentOrder?.order;if(!o||o.status==='delivered'||o.status==='cancelled')return;const btn=$('#saveOrder');if(btn){btn.disabled=true;btn.textContent='SALVANDO…'}try{await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,payment_method:$('#orderPayment')?.value||'',delivery_address:{customer_name:$('#orderDeliveryName')?.value||'',phone:$('#orderDeliveryPhone')?.value||'',postal_code:$('#orderDeliveryPostalCode')?.value||'',street:$('#orderDeliveryStreet')?.value||'',number:$('#orderDeliveryNumber')?.value||'',district:$('#orderDeliveryDistrict')?.value||'',complement:$('#orderDeliveryComplement')?.value||'',city:$('#orderDeliveryCity')?.value||'',state:$('#orderDeliveryState')?.value||'',raw_text:$('#orderDeliveryRawText')?.value||''},operator:currentOperator()||'Operação'})});toast('Dados do pedido atualizados');await openOrder(o.id);await loadOrders()}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Salvar dados'}}}
+  function paintOrderDetail(){
+    const d=state.currentOrder,o=d.order,c=d.customer||{},delivery=o.delivery_address_snapshot||c.address||{},milestones=orderV3Milestones(o),states=orderV3SeparationMap(),sep=d.separation||{},completion=sep.completion||{},original=Number(sep.original_total??completion.original_total??o.total_cents/100??0),missing=Number(sep.missing_subtotal??completion.missing_subtotal??0),finalTotal=Number(sep.final_total??completion.final_total??o.total_cents/100??0),sepStarted=Boolean(completion?.prepared_at||completion?.completed_at)||(sep.items||[]).some(x=>String(x.state||'pending')!=='pending'),locked=milestones.confirmed,editable=!milestones.delivered&&!milestones.cancelled,customerPending=orderCustomerDataPending(o),customerPendingReasons=orderCustomerDataPendingReasons(o);
+    const fiscal=['ready','out_for_delivery','delivered'].includes(o.status)?'<div class="order-v3-section"><h3>Fiscal / NF-e</h3><div id="orderFiscalStatus">'+orderFiscalHtml(state.currentOrderFiscal,o)+'</div>'+fiscalCanaryActionHtml(state.currentOrderFiscal,o)+'<div class="print-actions">'+((state.currentOrderFiscal?.danfe_available||state.currentOrderFiscal?.authorized===true||state.currentOrderFiscal?.dispatch_gate?.authorized===true||state.currentOrderFiscal?.bling_invoice_id)?'<button class="secondary" id="printDanfe" type="button">Imprimir DANFE</button>':'')+'</div></div>':'';
+    $('#editorBody').innerHTML=(customerPending?'<div class="rule-notice warn"><strong>AGUARDANDO DADOS DO CLIENTE</strong><div>'+esc(customerPendingReasons.join(' · '))+'</div></div>':'')+'<div class="order-v3-detail-head"><div><h2 style="margin:0">Pedido #'+esc(orderDisplayCode(o))+'</h2><div class="muted">'+esc(dateTime(o.created_at))+' · '+esc(o.customer_name||c.display_name||'Cliente')+'</div><div class="order-v3-tags">'+orderV3Tags(o)+'</div></div><div class="order-v3-total">'+separationMoney(missing>0?finalTotal:Number(o.total_cents||0)/100)+'</div></div>'+
+      (missing>0?'<div class="order-v3-financial"><span>Total original: <strong>'+separationMoney(original)+'</strong></span><span class="discount">Abatimento por falta: <strong>− '+separationMoney(missing)+'</strong></span><span>Total final: <strong>'+separationMoney(finalTotal)+'</strong></span></div>':'')+
+      '<div class="order-v3-section"><h3>Cliente e entrega</h3><div class="form-grid"><label class="span-2"><span>Nome</span><input id="orderDeliveryName" value="'+esc(delivery.customer_name||delivery.recipient_name||c.display_name||'')+'" '+(editable?'':'disabled')+'></label><label><span>Telefone / WhatsApp</span><input id="orderDeliveryPhone" value="'+esc(formatPhone(delivery.phone||c.phone||o.whatsapp_phone_e164||''))+'" '+(editable?'':'disabled')+'></label><label><span>Pagamento previsto</span><select id="orderPayment" '+(editable?'':'disabled')+'>'+orderV3PaymentOptions(o.payment_method_snapshot?.method||o.payment_method_snapshot?.label||'')+'</select></label><label class="span-2"><span>Rua / avenida</span><input id="orderDeliveryStreet" value="'+esc(delivery.street||'')+'" '+(editable?'':'disabled')+'></label><label><span>Número</span><input id="orderDeliveryNumber" value="'+esc(delivery.number||'')+'" '+(editable?'':'disabled')+'></label><label><span>Bairro</span><input id="orderDeliveryDistrict" value="'+esc(delivery.district||'')+'" '+(editable?'':'disabled')+'></label><label><span>Complemento</span><input id="orderDeliveryComplement" value="'+esc(delivery.complement||'')+'" '+(editable?'':'disabled')+'></label><label><span>CEP</span><input id="orderDeliveryPostalCode" value="'+esc(delivery.postal_code||'')+'" '+(editable?'':'disabled')+'></label><label><span>Cidade</span><input id="orderDeliveryCity" value="'+esc(delivery.city||'Cuiabá')+'" '+(editable?'':'disabled')+'></label><label><span>UF</span><input id="orderDeliveryState" maxlength="2" value="'+esc(delivery.state||'MT')+'" '+(editable?'':'disabled')+'></label><label class="span-2"><span>Referência</span><input id="orderDeliveryRawText" value="'+esc(delivery.raw_text||delivery.reference||'')+'" '+(editable?'':'disabled')+'></label></div></div>'+
+      '<div class="order-v3-section"><h3>Itens</h3>'+(locked?'<div class="muted" style="margin-bottom:8px">Produtos e quantidades estão travados porque o pedido já foi confirmado.</div>':'')+'<div class="order-v3-items">'+(d.items||[]).map(i=>orderV3DetailItemHtml(i,states)).join('')+'</div></div>'+
+      '<div class="order-v3-section"><h3>Atendimento</h3><div class="order-v3-ops"><button class="secondary" id="sendCustomerVitrineV3" type="button">VITRINE CLIENTE</button>'+(publicOrderUrlFor(o)?'<button class="secondary" id="openOrderVitrineV3" type="button">ABRIR VITRINE</button>':'')+'</div></div>'+
+      '<div class="order-v3-section"><h3>Operação</h3><div class="order-v3-ops">'+(!milestones.confirmed&&!milestones.cancelled?'<button class="primary" id="confirmOrderV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>CONFIRMAR PEDIDO</button>':'')+(milestones.confirmed&&!milestones.delivered&&!milestones.cancelled?'<button class="secondary" id="openSeparationV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>ABRIR VITRINE SEPARAÇÃO</button>':'')+(o.status==='out_for_delivery'&&!milestones.delivered&&!milestones.cancelled?'<button class="primary" id="deliverOrderV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>CONFIRMAR ENTREGA</button><button class="secondary" id="deliveryFailedV4" type="button">ENTREGA NÃO CONCLUÍDA</button>':'')+(o.status==='confirmed'&&!sepStarted?'<button class="secondary" id="reopenOrderV3" type="button">REABRIR PEDIDO</button>':'')+(!milestones.delivered&&!milestones.cancelled?'<button class="text danger" id="cancelOrderV3" type="button">Cancelar pedido</button>':'')+'</div></div>'+fiscal;
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>'+(editable?'<button class="primary" id="saveOrder">Salvar dados</button>':'');$('#cancelEditor').onclick=()=>$('#editor').close();if($('#saveOrder'))$('#saveOrder').onclick=saveOrderV3;if($('#sendCustomerVitrineV3'))$('#sendCustomerVitrineV3').onclick=e=>sendOrderCustomerVitrineV3(o.id,e.currentTarget);if($('#openOrderVitrineV3'))$('#openOrderVitrineV3').onclick=openCurrentOrderVitrine;if($('#confirmOrderV3'))$('#confirmOrderV3').onclick=()=>quickConfirmOrder(o.id,$('#confirmOrderV3')).then(()=>openOrder(o.id));if($('#openSeparationV3'))$('#openSeparationV3').onclick=()=>{const id=o.id;$('#editor').close();openOrderSeparationSheet(id)};if($('#deliverOrderV3'))$('#deliverOrderV3').onclick=()=>openOrderDeliveryConfirm(o.id);if($('#deliveryFailedV4'))$('#deliveryFailedV4').onclick=()=>returnOrderToExpedition(o.id,true);if($('#startDispatchV4'))$('#startDispatchV4').onclick=startCurrentOrderDispatchV4;if($('#reopenOrderV3'))$('#reopenOrderV3').onclick=()=>reopenOrderV3(o.id);if($('#cancelOrderV3'))$('#cancelOrderV3').onclick=cancelCurrentOrder;if($('#executeFiscalCanary'))$('#executeFiscalCanary').onclick=executeCurrentOrderFiscalCanary;if($('#refreshFiscalCanary'))$('#refreshFiscalCanary').onclick=recheckCurrentOrderFiscal;if($('#recoverBlingOrder'))$('#recoverBlingOrder').onclick=recoverCurrentOrderBling;if($('#printDanfe'))$('#printDanfe').onclick=openCurrentDanfe;
+  }
+
+  function blingPreflightOperationalBlockers(p){
+    if(!p||p.error)return [];
+    const expected=new Set(['first_separation_required','stock_not_consumed']);
+    const blockers=Array.isArray(p.write_blockers)&&p.write_blockers.length?p.write_blockers:(p.blockers||[]);
+    return [...new Set(blockers)].filter(code=>!expected.has(code));
+  }
+  function blingPreflightAlertHtml(p){
+    const blockers=blingPreflightOperationalBlockers(p);
+    if(!blockers.length)return '';
+    const canReconcile=blockers.some(x=>['customer_missing_bling_contact_id','unresolved_products'].includes(x));
+    const needsCustomer=blockers.includes('customer_not_linked');
+    const needsDocument=blockers.includes('customer_document_required');
+    const needsBlingCustomer=blockers.includes('customer_missing_bling_contact_id');
+    const needsProducts=blockers.includes('unresolved_products');
+    const actions=(needsDocument?'<button class="secondary" id="completeCustomerDocument" type="button">Completar CPF</button>':'')+
+      (needsBlingCustomer?'<button class="secondary" id="createBlingOrderCustomer" type="button">Cadastrar cliente no Bling</button>':'')+
+      (needsProducts?'<button class="secondary" id="createBlingOrderProducts" type="button">Cadastrar produtos no Bling</button>':'')+
+      (canReconcile?'<button class="secondary" id="resolveBlingDependencies" type="button">Tentar resolver vínculos</button>':'')+
+      (needsCustomer?'<button class="secondary" id="focusOrderCustomer" type="button">Vincular cliente</button>':'');
+    return '<div class="sync-alert"><div><strong>Antes de separar, revise o Bling</strong><small>'+blockers.slice(0,3).map(blingOrderBlockerLabel).map(esc).join(' · ')+(blockers.length>3?' · +'+(blockers.length-3):'')+'</small></div><div class="dispatch-actions">'+actions+'<span class="pill warn">Somente leitura</span></div></div>';
+  }
+  async function loadCurrentOrderBlingPreview(repaint=true){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    try{
+      state.currentOrderBlingPreview=await api('bling_preview_order_sync',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+    }catch(e){
+      state.currentOrderBlingPreview={error:String(e?.message||'bling_preview_unavailable')};
+    }
+    if(repaint&&state.currentOrder?.order?.id===id&&$('#editor')?.open)paintOrderDetail();
+  }
+
+  function fiscalBlockReasonLabel(code){
+    const map={
+      delivery_not_confirmed:'Aguardando confirmação da entrega',
+      payment_not_confirmed:'Aguardando confirmação do pagamento',
+      payment_review_required:'Pagamento precisa de revisão',
+      settled_amount_missing:'Valor recebido não informado',
+      settled_amount_mismatch:'Valor recebido diferente do pedido',
+      order_cancelled:'Pedido cancelado',
+      order_returned:'Pedido devolvido',
+      fiscal_control_missing:'Controle fiscal ainda não iniciado',
+      fiscal_subtotal_item_sum_mismatch:'A soma dos produtos não confere com o subtotal fiscal',
+      canonical_total_not_balanced:'O total do pedido não confere com subtotal, acréscimos e descontos',
+      bling_order_not_linked:'O pedido ainda não está vinculado à venda no Bling',
+      bling_order_not_verified:'A venda ainda não chegou ao status Verificado no Bling',
+      invoice_generation_failed:'O Bling recebeu a solicitação, mas não conseguiu gerar a NF-e',
+      fiscal_dispatch_preflight_failed:'A conferência fiscal encontrou dados inconsistentes',
+      fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão',
+      invoice_generation_recovery_required:'Tentativa anterior teve erro ou tempo de resposta excedido. A recuperação automática está verificando a nota antes de permitir novo envio.',
+      fiscal_status_unavailable:'Não foi possível consultar o retorno fiscal no Bling'
+    };
+    return map[code]||String(code||'').replaceAll('_',' ');
+  }
+  function fiscalDiagnosticHtml(f){
+    if(!f||f.authorized===true)return '';
+    const provider=f.provider||{},job=provider.job||{},readiness=f.readiness||{},raw=[
+      ...(Array.isArray(f.hard_blockers)?f.hard_blockers:[]),
+      ...(Array.isArray(f.blockers)?f.blockers:[]),
+      job.error_code,f.fiscal_block_reason
+    ].filter(Boolean),reasons=[...new Set(raw)].map(fiscalBlockReasonLabel);
+    const detail=job.error_detail||provider.error_detail||provider.detail||'';
+    const attempts=job.attempts!=null?Number(job.attempts):null;
+    const lines=[];
+    if(reasons.length)lines.push('<strong>Motivo identificado</strong><div>'+reasons.map(esc).join(' · ')+'</div>');
+    if(detail)lines.push('<div style="margin-top:6px">'+esc(detail)+'</div>');
+    if(readiness?.eligible===false&&readiness?.reason)lines.push('<div style="margin-top:6px">Pré-validação: '+esc(fiscalBlockReasonLabel(readiness.reason))+'</div>');
+    if(attempts!=null)lines.push('<div style="margin-top:6px">Tentativas registradas: '+attempts+'</div>');
+    const repair=f.fiscal_recovery||null,diagnosis=repair?.diagnostics||{};
+    const repairLabels={
+      started:'Verificação automática iniciada',
+      existing_invoice_reconciled:'NF-e existente encontrada e reconciliada',
+      existing_invoice_needs_authorization_or_review:'NF-e encontrada no Bling: aguarda autorização ou revisão',
+      generation_result_uncertain_manual_reconcile_required:'O Bling não confirmou a geração; nenhuma nova nota foi criada para evitar duplicidade',
+      unverified_ncm_requires_review:'NCM não possui documentação fiscal suficiente para correção automática',
+      proposed_ncm_not_in_official_active_catalog:'Código proposto não consta na tabela NCM vigente',
+      official_classif_unavailable:'Tabela oficial de NCM temporariamente indisponível',
+      official_classif_data_unrecognized:'Tabela oficial de NCM precisa ser validada antes da correção',
+      auto_invoice_authorized:'NF-e corrigida e autorizada automaticamente',
+      auto_invoice_authorization_pending:'NF-e enviada; aguardando retorno da SEFAZ',
+      auto_invoice_retry_failed:'Nova tentativa falhou; erro registrado',
+      fiscal_preflight_blocked:'A conferência fiscal ainda possui bloqueios',
+      unrecognized_fiscal_error:'Erro fiscal não reconhecido com segurança',
+      separation_not_completed:'Separação física ainda não foi concluída',
+      unable_to_identify_fiscal_products:'Não foi possível identificar inequivocamente o item fiscal',
+      ambiguous_product_name:'Há ambiguidade entre os nomes dos produtos; bloqueio preventivo'
+    };
+    if(repair){
+      const label=repairLabels[repair.stage]||String(repair.stage||'').replaceAll('_',' ');
+      lines.push('<div style="margin-top:8px"><strong>Recuperação automática</strong><div>'+esc(label)+'</div></div>');
+      const corrected=Array.isArray(diagnosis.corrected_products)?diagnosis.corrected_products.length:0;
+      if(corrected)lines.push('<div>'+corrected+' produto(s) com NCM corrigido e conferido no Bling.</div>');
+      if(Array.isArray(diagnosis.issues)&&diagnosis.issues.length)lines.push('<div>Itens para revisão: '+diagnosis.issues.length+'. Nenhum NCM será adivinhado.</div>');
+      if(repair.created_at)lines.push('<div class="muted">Última análise: '+esc(dateTime(repair.created_at))+'</div>');
+    }
+    if(!lines.length&&f.stage==='pending')lines.push('<strong>Aguardando retorno do Bling</strong><div>A solicitação fiscal ainda não trouxe NF-e nem erro específico.</div>');
+    return lines.length?'<div class="rule-notice warn" style="margin-top:8px">'+lines.join('')+'</div>':'';
+  }
+
+  function orderFiscalHtml(f,o){
+    if(!f)return '<div class="rule-notice"><strong>Carregando controle fiscal…</strong><div>Consultando a situação da NF-e.</div></div>';
+    if(f.error)return '<div class="rule-notice warn"><strong>NF-e INDISPONÍVEL</strong><div>A saída continua bloqueada até o controle fiscal voltar.</div></div>';
+    const blockers=Array.isArray(f.blockers)?f.blockers:[];
+    if(f.authorized===true||f.stage==='authorized')return '<div class="rule-notice"><strong>NF-e AUTORIZADA</strong><div>'+(f.invoice_number?'Nota '+esc(f.invoice_number)+' · ':'')+esc(f.sefaz_status||'Autorizada pela SEFAZ')+'</div></div>';
+    if(f.stage==='processing')return '<div class="rule-notice warn"><strong>NF-e EM PROCESSAMENTO</strong><div>Aguarde a autorização. Não repita a geração da nota.</div></div>';
+    if(f.stage==='rejected')return '<div class="rule-notice warn"><strong>NF-e REJEITADA</strong><div>'+esc(f.sefaz_status||blockers.map(fiscalBlockReasonLabel).join(' · ')||'Revise o retorno fiscal antes de tentar novamente.')+'</div></div>'+fiscalDiagnosticHtml(f);
+    if(f.stage==='blocked')return '<div class="rule-notice warn"><strong>NF-e BLOQUEADA</strong><div>'+esc(blockers.map(fiscalBlockReasonLabel).join(' · ')||'Existem requisitos pendentes para emissão.')+'</div></div>'+fiscalDiagnosticHtml(f);
+    return '<div class="rule-notice warn"><strong>NF-e PENDENTE</strong><div>A nota ainda não foi autorizada. Veja abaixo o retorno mais recente da integração.</div></div>'+fiscalDiagnosticHtml(f);
+  }
+  function fiscalCanaryActionHtml(f,o){
+    if(!o||!['ready','out_for_delivery','delivered'].includes(o.status))return '';
+    const busy=state.fiscalActionBusy===true,disabled=busy?' disabled':'';
+    const latest=state.fiscalActionByOrder?.[o.id]||'';
+    const feedback=latest?'<div class="rule-notice" role="status" style="margin-top:8px"><strong>Última consulta / tentativa</strong><div>'+esc(latest)+'</div></div>':'';
+    const check='<button class="secondary" id="refreshFiscalCanary" type="button"'+disabled+'>CONSULTAR BLING / NF-e</button>';
+    if(o.status!=='ready')return feedback+(o.status==='out_for_delivery'?'<div class="rule-notice"><strong>SAIU PARA ENTREGA</strong><div>NF-e deve estar autorizada antes da expedição.</div></div>':'')+'<div class="print-actions">'+check+'</div>';
+    if(f?.authorized===true||f?.stage==='authorized')return feedback+'<div class="print-actions"><button class="primary" id="startDispatchV4" type="button">SAIU PARA ENTREGA</button>'+check+'</div>';
+    const blockers=[...(f?.hard_blockers||[]),...(f?.blockers||[])].map(String);
+    const missingLink=blockers.some(x=>['bling_order_not_linked','bling_order_not_verified','external_order_key_missing'].includes(x));
+    const recover=missingLink?'<button class="primary" id="recoverBlingOrder" type="button"'+disabled+'>RECUPERAR VENDA NO BLING</button>':'';
+    const invoiceId=Number(f?.invoice_id||f?.bling_invoice_id||0);
+    const issue=f?.can_issue===true&&!missingLink?'<button class="primary" id="executeFiscalCanary" type="button"'+disabled+'>'+(invoiceId?'TENTAR AUTORIZAR NF-e':'TENTAR EMITIR NF-e')+'</button>':'';
+    const explanation=missingLink
+      ?'<div class="muted" style="margin-top:8px">Recupera a venda existente e confirma o status Verificado. Não cria uma segunda venda para o mesmo pedido.</div>'
+      :invoiceId?'<div class="muted" style="margin-top:8px">NF-e localizada no Bling. Consulte primeiro a situação antes de tentar autorizar; o sistema impede o reenvio quando a transmissão já está em andamento.</div>':'';
+    return feedback+explanation+'<div class="print-actions" style="margin-top:8px">'+recover+issue+check+'</div>';
+  }
+  async function recoverCurrentOrderBling(){
+    const o=state.currentOrder?.order;
+    if(!o||o.status!=='ready'||state.fiscalActionBusy)return;
+    if(!confirm('Recuperar a venda do pedido #'+orderDisplayCode(o)+' no Bling?\\n\\nSerá consultada a venda existente e atualizado seu vínculo e status, sem emitir NF-e nesta etapa.'))return;
+    state.fiscalActionBusy=true;paintOrderDetail();
+    try{
+      const result=await api('order_fiscal_recover_bling_v1',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:o.id,operator:currentOperator()||'Operação'})
+      });
+      state.fiscalActionByOrder??={};
+      state.fiscalActionByOrder[o.id]='Venda no Bling recuperada e confirmada como Verificado. '+(result.fiscal?.can_issue?'A NF-e está liberada para tentativa manual.':result.fiscal?.authorized?'NF-e já autorizada.':'Consulte a situação fiscal antes de prosseguir.');
+      state.currentOrderFiscal=result.fiscal||null;
+      toast('Venda recuperada no Bling · confira a NF-e');
+    }catch(e){
+      state.fiscalActionByOrder??={};
+      state.fiscalActionByOrder[o.id]='Falha na recuperação: '+fiscalBlockReasonLabel(e?.message||'bling_recovery_failed')+'. Os itens separados foram preservados.';
+      toast(state.fiscalActionByOrder[o.id]);
+    }finally{
+      state.fiscalActionBusy=false;
+      await loadCurrentOrderFiscal(false);
+      if(state.currentOrder?.order?.id===o.id)paintOrderDetail();
+    }
+  }
+  async function recheckCurrentOrderFiscal(){
+    const o=state.currentOrder?.order;
+    if(!o||state.fiscalActionBusy)return;
+    state.fiscalActionBusy=true;paintOrderDetail();
+    try{
+      const result=await api('order_fiscal_recheck_v1',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:o.id})
+      });
+      state.currentOrderFiscal=result.fiscal||null;
+      state.fiscalByOrder[o.id]=state.currentOrderFiscal;
+      const f=result.fiscal||{},reason=result.reconcile?.reason||'';
+      state.fiscalActionByOrder??={};
+      state.fiscalActionByOrder[o.id]=f.authorized?'Nota autorizada pela SEFAZ.'
+        :f.invoice_id?'Nota '+(f.invoice_number||f.invoice_id)+' encontrada; situação: '+(f.sefaz_status||f.stage||'pendente')+'.'
+        :reason==='invoice_not_found'?'Consulta concluída: nenhuma NF-e encontrada no Bling para esta venda.'
+        :reason==='fiscal_dispatch_not_eligible'?'Consulta concluída: ainda existe bloqueio de vínculo ou de verificação da venda.'
+        :'Consulta concluída: '+(f.stage||'pendente')+'. Nenhuma NF-e foi enviada nesta consulta.';
+      toast(state.fiscalActionByOrder[o.id]);
+    }catch(e){
+      state.fiscalActionByOrder??={};
+      state.fiscalActionByOrder[o.id]='Não foi possível consultar o Bling: '+fiscalBlockReasonLabel(e?.message||'fiscal_status_unavailable');
+      toast(state.fiscalActionByOrder[o.id]);
+    }finally{
+      state.fiscalActionBusy=false;
+      if(state.currentOrder?.order?.id===o.id)paintOrderDetail();
+    }
+  }
+  async function executeCurrentOrderFiscalCanary(){
+    const o=state.currentOrder?.order;if(!o||o.status!=='ready')return;
+    const f=state.currentOrderFiscal||{};if(f.can_issue!==true){toast('A NF-e ainda não está liberada para emissão');return}
+    if(!confirm('EMITIR NF-e do pedido #'+orderDisplayCode(o)+' agora?\n\nA emissão será enviada ao Bling/SEFAZ.'))return;
+    const btn=$('#executeFiscalCanary');if(btn){btn.disabled=true;btn.textContent='EMITINDO NF-e…'}
+    try{
+      const result=await api('order_fiscal_issue_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,confirmation:'EMITIR_NFE',operator:currentOperator()||'Operação'})});
+      state.currentOrderFiscal=result.fiscal||result;state.fiscalByOrder[o.id]=state.currentOrderFiscal;
+      toast(state.currentOrderFiscal?.authorized?'NF-e autorizada':state.currentOrderFiscal?.stage==='rejected'?'NF-e não gerada · veja o motivo no pedido':'Solicitação enviada ao Bling · consultando retorno');
+      await loadCurrentOrderFiscal(true);
+    }catch(e){
+      await loadCurrentOrderFiscal(true);
+      const current=state.currentOrderFiscal||{},job=current.provider?.job||{},reason=job.error_detail||job.error_code||e?.message||'fiscal_issue_failed';
+      toast('NF-e NÃO GERADA · '+fiscalBlockReasonLabel(reason));
+    }
+  }
+  async function startCurrentOrderDispatchV4(){
+    const o=state.currentOrder?.order;if(!o||o.status!=='ready')return;
+    const f=state.currentOrderFiscal||{};if(f.authorized!==true&&f.stage!=='authorized'){toast('A NF-e precisa estar autorizada antes da saída');return}
+    if(!confirm('Confirmar que o pedido #'+orderDisplayCode(o)+' SAIU PARA ENTREGA?'))return;
+    const btn=$('#startDispatchV4');if(btn){btn.disabled=true;btn.textContent='REGISTRANDO SAÍDA…'}
+    try{await api('order_dispatch_start_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+o.id})});toast('Saída para entrega registrada');delete state.fiscalByOrder[o.id];await loadOrders();await openOrder(o.id)}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
+  }
+  async function openDanfeForOrder(id,orderCode=''){
+    if(!id)return;
+    const w=window.open('','_blank','width=900,height=900');
+    if(!w){toast('Libere pop-ups para abrir o DANFE');return}
+    try{
+      w.document.open();
+      w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>DANFE</title></head><body style="font:16px system-ui;padding:30px;text-align:center"><strong>Carregando DANFE…</strong><p>Buscando o PDF oficial no Bling.</p></body></html>');
+      w.document.close();
+      const data=await api('order_fiscal_document_pdf',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      const raw=atob(String(data.base64||''));
+      if(!raw)throw new Error('fiscal_document_empty');
+      const bytes=new Uint8Array(raw.length);
+      for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+      const blob=new Blob([bytes],{type:'application/pdf'});
+      const url=URL.createObjectURL(blob);
+      w.location.replace(url);
+      setTimeout(()=>URL.revokeObjectURL(url),120000);
+      toast('DANFE '+(data.invoice_number?data.invoice_number+' ':orderCode?'#'+orderCode+' ':'')+'aberto para impressão');
+    }catch(e){
+      try{w.close()}catch{}
+      toast(errorMessage(e?.message||'fiscal_document_download_failed'));
+    }
+  }
+  async function openCurrentDanfe(){
+    const o=state.currentOrder?.order;if(!o)return;
+    const fiscal=state.currentOrderFiscal||{};
+    const gate=fiscal.dispatch_gate||{};
+    if(fiscal.authorized!==true&&gate.authorized!==true&&!fiscal.bling_invoice_id&&!fiscal.invoice_id){
+      toast('A NF-e ainda não está autorizada');return;
+    }
+    return openDanfeForOrder(o.id,orderDisplayCode(o));
+  }
+
+  async function loadCurrentOrderFiscal(repaint=true){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    try{
+      state.currentOrderFiscal=await api('order_fiscal_status',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.fiscalByOrder[id]=state.currentOrderFiscal;
+    }catch(e){
+      state.currentOrderFiscal={error:String(e?.message||'fiscal_unavailable')};
+    }
+    if(repaint)paintOrderDetail();
+  }
+
+  async function confirmCurrentOrderPayment(){
+    const o=state.currentOrder?.order;if(!o)return;
+    if(o.status!=='delivered'){toast('Confirme a entrega antes do pagamento');return}
+    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
+    const amount=money(o.total_cents);
+    const ok=confirm('Confirmar recebimento de '+amount+' via '+payment+'?\n\nEsta ação registra o pagamento do pedido #'+orderDisplayCode(o)+'.');
+    if(!ok)return;
+    const btn=$('#confirmFiscalPayment');
+    if(btn){btn.disabled=true;btn.textContent='Confirmando recebimento…'}
+    try{
+      state.currentOrderFiscal=await api('order_fiscal_confirm_payment',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:o.id,payment_method:payment})
+      });
+      state.fiscalByOrder[o.id]=state.currentOrderFiscal;
+      paintOrderDetail();
+      if(state.tab==='closure')renderClosure();
+      toast(state.currentOrderFiscal?.fiscal_status==='ready'?'Recebimento confirmado · fiscal pronto':'Recebimento confirmado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Confirmar '+amount+' recebido · '+payment}
+    }
+  }
+
+  function orderStockAlertHtml(readiness){
+    const focused=state.orderFocusIssue==='stock';
+    if(!readiness)return focused?'<div class="rule-notice warn" id="orderStockAlert" tabindex="-1"><strong>⚠️ Não consegui conferir o estoque agora</strong><div>Feche o pedido, clique em Atualizar e tente novamente.</div></div>':'';
+    if(readiness.ok!==false)return focused?'<div class="rule-notice" id="orderStockAlert" tabindex="-1" style="border-color:#b9dec9;background:#f2fbf5"><strong style="color:#176b43">✓ Estoque conferido agora</strong><div>Nenhuma falta de estoque foi encontrada neste momento. O aviso da lista estava desatualizado; ao fechar este pedido, clique em Atualizar.</div></div>':'';
+    const rows=Array.isArray(readiness.shortages)?readiness.shortages:[];
+    const cards=rows.map(x=>{
+      const required=Number(x.required??x.requested??0)||0;
+      const available=Number(x.available||0)||0;
+      const shortage=Number(x.shortage??Math.max(0,required-available))||0;
+      const locator=[x.gondola_number!=null?'Gôndola '+x.gondola_number:'',x.shelf_label?'Prateleira '+x.shelf_label:''].filter(Boolean).join(' · ');
+      const code=x.gtin||x.sku||'';
+      return '<div style="border:1px solid #f0c8c3;background:#fff;border-radius:10px;padding:10px 12px;margin-top:8px">'+
+        '<strong style="display:block;color:#18221c;font-size:13px">'+esc(x.name||'Produto')+'</strong>'+
+        '<div style="margin-top:4px;color:#5f6962;font-size:12px">Precisa <b>'+esc(fmtQty(required))+'</b> · Disponível <b>'+esc(fmtQty(available))+'</b> · <b style="color:#b3261e">Faltam '+esc(fmtQty(shortage))+'</b></div>'+
+        ((code||locator)?'<div style="margin-top:3px;color:#66716a;font-size:11px">'+(code?'Código '+esc(code):'')+(code&&locator?' · ':'')+esc(locator)+'</div>':'')+
+      '</div>';
+    }).join('');
+    const total=Number(readiness.shortage_count||rows.length||0);
+    const extra=total>rows.length?'<div style="margin-top:7px;font-size:11px;color:#66716a">Há mais '+esc(String(total-rows.length))+' item(ns) com falta além dos exibidos.</div>':'';
+    return '<div class="rule-notice warn" id="orderStockAlert" tabindex="-1" style="border-color:#e6a9a2;background:#fff8f7">'+
+      '<strong style="display:block;color:#b3261e;font-size:14px">⚠️ Revisar estoque antes de confirmar</strong>'+
+      '<div style="margin-top:3px">O pedido está bloqueado porque o estoque disponível não cobre todos os itens abaixo.</div>'+
+      (cards||'<div style="margin-top:8px">Não há estoque disponível suficiente para este pedido.</div>')+extra+
+      '<div class="print-actions" style="margin-top:10px"><button class="secondary" id="openBalanceFromOrder" type="button">Abrir Balanço para corrigir estoque</button></div>'+
+    '</div>';
+  }
+
+  function orderBlingLinkHtml(link){
+    if(!link)return '<div class="rule-notice"><strong>Aguardando primeira separação</strong><div>O pedido ainda não foi enviado ao Bling. O envio acontece automaticamente quando a separação começar e todas as validações estiverem corretas.</div></div>';
+    const job=link.job||{};
+    const jobAttention=job.status==='review_required'||job.status==='failed';
+    const statusAttention=job.operation==='sync_order_status'&&jobAttention;
+    if(link.linked&&statusAttention){
+      return '<div class="rule-notice warn"><strong>Pedido vinculado · situação pendente no Bling</strong><div>'+esc(blingOrderJobErrorLabel(job.error_code))+'</div><div class="sub" style="margin-top:6px">O pedido continua válido no Admin. Confira a situação no Bling enquanto essa permissão estiver indisponível.</div></div>';
+    }
+    if(link.linked){
+      return '<div class="rule-notice"><strong class="ok-text">Bling #'+esc(link.bling_order_id)+' ✓</strong><div>Pedido vinculado e verificado'+(link.last_verified_at?' · '+esc(dateTime(link.last_verified_at)):'')+'.</div></div>';
+    }
+    if(job.status==='pending'||job.status==='processing'||job.status==='retry'){
+      return '<div class="rule-notice"><strong>Sincronização Bling em andamento</strong><div>Status: '+esc(job.status||'pendente')+'.</div></div>';
+    }
+    if(jobAttention){
+      return '<div class="rule-notice warn"><strong>Bling precisa de revisão</strong><div>'+esc(blingOrderJobErrorLabel(job.error_code))+'</div></div>';
+    }
+    return '<div class="rule-notice"><strong>Ainda não vinculado</strong><div>Será processado automaticamente após a primeira separação elegível.</div></div>';
+  }
+
+  function blingOrderJobErrorLabel(code){
+    const map={
+      order_not_write_eligible:'Pedido ainda não estava apto para envio',
+      duplicate_external_order_key:'Foi encontrado mais de um pedido com a mesma chave no Bling',
+      order_creation_uncertain:'O resultado da criação precisa ser conferido',
+      bling_order_id_missing:'O Bling não retornou um identificador seguro',
+      post_create_order_mismatch:'O pedido criado no Bling não conferiu com o total local',
+      order_status_updates_disabled:'A situação foi atualizada no Admin, mas o aplicativo Bling ainda não tem permissão para alterar situações de pedidos',
+      order_status_mapping_not_approved:'A situação foi atualizada no Admin, mas o mapeamento de situações do Bling ainda não foi aprovado',
+      fiscal_dispatch_gate_unavailable:'Não consegui conferir o fiscal antes da saída. Tente novamente.',
+      fiscal_dispatch_not_authorized:'A saída está bloqueada até a autorização fiscal.',
+      customer_not_linked:'Cliente ainda não vinculado ao Bling',
+      unresolved_products:'Há produtos sem vínculo com o Bling'
+    };
+    return map[code]||'A sincronização foi interrompida com segurança.';
+  }
+
+  function blingOrderBlockerLabel(code){
+    const map={
+      first_separation_required:'A separação ainda não começou',
+      stock_not_consumed:'Estoque ainda não foi tratado na separação',
+      order_cancelled:'Pedido cancelado',
+      minimum_order_not_met:'Pedido abaixo do mínimo de R$ 75',
+      customer_not_linked:'Cliente ainda não vinculado',
+      customer_not_found:'Cliente não encontrado',
+      customer_missing_bling_contact_id:'Cliente ainda precisa ser vinculado ao Bling',
+      customer_document_required:'Informe um CPF válido no cadastro do cliente para vincular ao Bling',
+      customer_inactive:'Cliente inativo',
+      unresolved_products:'Há produto sem vínculo seguro com o Bling',
+      product_total_mismatch:'Subtotal dos produtos não confere',
+      commercial_delta_mismatch:'Diferença comercial não confere',
+      invalid_order_total:'Total do pedido inválido',
+      order_without_items:'Pedido sem itens',
+      delivery_street_required:'Rua de entrega ausente',
+      delivery_number_required:'Número de entrega ausente',
+      delivery_city_required:'Cidade de entrega ausente',
+      delivery_state_required:'UF de entrega ausente'
+    };
+    return map[code]||String(code||'').replaceAll('_',' ');
+  }
+
+  function orderBlingPreviewHtml(p){
+    if(!p)return '<div class="rule-notice"><strong>Prévia ainda não verificada</strong><div>Use o botão abaixo para conferir o pedido. Esta verificação não envia nem altera nada no Bling.</div></div>';
+    const totals=p.totals||{};
+    const blockers=Array.isArray(p.write_blockers)&&p.write_blockers.length?p.write_blockers:(p.blockers||[]);
+    const stateText=p.write_eligible?'Apto tecnicamente':'Envio bloqueado com segurança';
+    const stateClass=p.write_eligible?'ok-text':'warn-text';
+    return '<div class="rule-notice">'+
+      '<strong class="'+stateClass+'">'+esc(stateText)+'</strong>'+
+      '<div>'+esc(p.resolved_items_count||0)+' itens individualizados · Produtos '+money(totals.product_lines_cents||0)+' · Ajuste '+money((totals.other_expenses_cents||0)-(totals.discount_cents||0))+' · Total '+money(totals.order_total_cents||0)+'</div>'+
+      (blockers.length?'<div class="sub" style="margin-top:6px">'+blockers.map(x=>'• '+esc(blingOrderBlockerLabel(x))).join('<br>')+'</div>':'<div class="sub" style="margin-top:6px">Sem bloqueios de dados. O processamento continua controlado pelo Hub Bling.</div>')+
+      ((p.unresolved_products||[]).length?'<div class="sub" style="margin-top:6px"><b>Produtos sem vínculo:</b> '+(p.unresolved_products||[]).slice(0,5).map(x=>esc(x.name||x.sku||x.gtin||'Produto')).join(' · ')+((p.unresolved_products||[]).length>5?' · +'+((p.unresolved_products||[]).length-5):'')+'</div>':'')+
+      '<div class="sub" style="margin-top:6px">Somente prévia: nenhuma alteração externa é feita por esta tela.</div>'+
+    '</div>';
+  }
+
+  async function previewCurrentOrderBling(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const btn=$('#previewBlingOrder');if(btn){btn.disabled=true;btn.textContent='Verificando…'}
+    try{
+      const data=await api('bling_preview_order_sync',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data;
+      paintOrderDetail();
+      toast(data.write_eligible?'Pedido apto para o fluxo Bling':'Prévia conferida · envio continua bloqueado');
+    }catch(e){
+      toast('Não consegui verificar a prévia do Bling agora');
+      if(btn){btn.disabled=false;btn.textContent='Verificar prévia Bling'}
+    }
+  }
+
+  async function createCurrentOrderCustomerInBling(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const d=state.currentOrder||{},o=d.order||{},c=d.customer||{};
+    const customerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
+    let customer=state.customers.find(x=>x.id===customerId)||null;
+    if(!customer&&customerId){
+      try{
+        const one=await customerApi('vitrine_customer_get',{id:customerId});
+        customer=one.customer||null;
+        if(customer)state.customers=[customer];
+      }catch{}
+    }
+    const name=customer?.display_name||o.delivery_address_snapshot?.customer_name||o.delivery_address_snapshot?.recipient_name||'Cliente';
+    const cpf=customer?.cpf||o.delivery_address_snapshot?.cpf||'';
+    if(!cpf){toast('Informe o CPF do cliente antes de cadastrar no Bling');return}
+    if(!confirm('Cadastrar este cliente no Bling?\n\n'+name+' · CPF '+formatCpf(cpf)+'\n\nO Hub confere o CPF antes de criar para evitar duplicidade.'))return;
+    const btn=$('#createBlingOrderCustomer');if(btn){btn.disabled=true;btn.textContent='Cadastrando…'}
+    try{
+      const data=await api('bling_create_order_customer',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data.preview||state.currentOrderBlingPreview;
+      paintOrderDetail();
+      const blockers=blingPreflightOperationalBlockers(state.currentOrderBlingPreview);
+      toast(blockers.includes('customer_missing_bling_contact_id')?'Cadastro solicitado · vínculo ainda está processando':'Cliente vinculado ao Bling · pedido revalidado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Cadastrar cliente no Bling'}
+    }
+  }
+
+  async function createCurrentOrderProductsInBling(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    let preview=state.currentOrderBlingPreview;
+    if(!preview||preview.error){
+      try{
+        preview=await api('bling_preview_order_sync',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+        });
+        state.currentOrderBlingPreview=preview;
+      }catch{toast('Não consegui conferir os produtos agora');return}
+    }
+    const missing=(preview.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
+    if(!missing.length){toast('Nenhum produto precisa ser cadastrado no Bling');return}
+    const names=missing.slice(0,5).map(x=>'• '+(x.name||x.sku||x.gtin||'Produto')).join('\n');
+    const extra=missing.length>5?'\n• +'+(missing.length-5)+' produto(s)':'';
+    if(!confirm('Cadastrar '+missing.length+' produto(s) ausente(s) no Bling?\n\n'+names+extra+'\n\nO Hub verifica GTIN/código antes de criar para evitar duplicidade.'))return;
+    const btn=$('#createBlingOrderProducts');if(btn){btn.disabled=true;btn.textContent='Cadastrando…'}
+    try{
+      const data=await api('bling_create_order_products',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data.preview||state.currentOrderBlingPreview;
+      paintOrderDetail();
+      const remaining=(state.currentOrderBlingPreview?.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
+      toast(remaining.length?'Cadastro solicitado · ainda há produto(s) pendente(s)':'Produtos vinculados · pedido revalidado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Cadastrar produtos no Bling'}
+    }
+  }
+
+  async function resolveCurrentOrderBlingDependencies(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const btn=$('#resolveBlingDependencies');if(btn){btn.disabled=true;btn.textContent='Conferindo vínculos…'}
+    try{
+      const data=await api('bling_reconcile_order_dependencies_readonly',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data.preview||null;
+      const remaining=blingPreflightOperationalBlockers(state.currentOrderBlingPreview);
+      paintOrderDetail();
+      toast(remaining.length?'Vínculos conferidos · ainda há pendências':'Vínculos conferidos · pedido apto para separar');
+    }catch(e){
+      toast('Não consegui conferir os vínculos agora');
+      if(btn){btn.disabled=false;btn.textContent='Tentar resolver vínculos'}
+    }
+  }
+  async function completeCurrentOrderCustomerDocument(){
+    const orderId=state.currentOrder?.order?.id;if(!orderId)return;
+    const d=state.currentOrder||{},o=d.order||{},c=d.customer||{};
+    const customerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
+    if(!customerId){focusOrderCustomerForBling();return}
+    let customer=state.customers.find(x=>x.id===customerId)||null;
+    if(!customer){
+      try{
+        const one=await customerApi('vitrine_customer_get',{id:customerId});
+        customer=one.customer||null;
+        if(customer)state.customers=[customer];
+      }catch{}
+    }
+    if(!customer){toast('Não consegui abrir o cadastro do cliente agora');return}
+    openCustomerEditor(customer,orderId);
+  }
+
+  function focusOrderCustomerForBling(){
+    const input=$('#orderCustomerSearch');
+    if(!input)return;
+    input.focus();
+    input.scrollIntoView({behavior:'smooth',block:'center'});
+    toast('Localize e vincule o cliente correto');
+  }
+
+  async function retryHistorySync(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const btn=$('#retryHistorySync');if(btn){btn.disabled=true;btn.textContent='Sincronizando…'}
+    try{
+      await api('history_sync_retry',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      const fresh=await api('order',{id});state.currentOrder=fresh;paintOrderDetail();loadOrders();
+      toast('Histórico sincronizado');
+    }catch(e){
+      toast('Não consegui sincronizar agora');
+      if(btn){btn.disabled=false;btn.textContent='Tentar novamente'}
+    }
+  }
+
+  function orderActionButtonsHtml(o){
+    const consumed=o.payment_method_snapshot?.stock_consumed===true;
+    const problems=orderProblemReasons(o);
+    const mustFix=problems.length>0&&['created','confirmed','ready','out_for_delivery'].includes(o.status);
+    const dispatchGate=state.currentOrderFiscal?.dispatch_gate||null;
+    const fiscalDispatchBlocked=o.status==='ready'&&dispatchGate?.enforced===true&&dispatchGate?.allowed!==true;
+    let primary='';
+    if(mustFix)primary='<button class="primary" type="button" disabled>Corrija os dados antes de avançar</button>';
+    if(!mustFix&&o.status==='created')primary='<button class="primary" id="advanceOrder" data-next="confirmed" type="button">Confirmar pedido</button>';
+    else if(!mustFix&&o.status==='confirmed'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Iniciar separação</button>';
+    else if(!mustFix&&o.status==='confirmed'&&consumed)primary='<button class="primary" id="advanceOrder" data-next="processing" type="button">Continuar separação</button>';
+    else if(o.status==='processing'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Regularizar separação</button>';
+    else if(o.status==='processing')primary='<button class="primary" id="advanceOrder" data-next="ready" type="button">Finalizar separação</button>';
+    else if(!mustFix&&o.status==='ready'&&fiscalDispatchBlocked)primary='<button class="primary" type="button" disabled>Fiscal pendente antes da saída</button>';
+    else if(!mustFix&&o.status==='ready')primary='<button class="primary" id="advanceOrder" data-next="out_for_delivery" type="button">Marcar saída para entrega</button>';
+    else if(!mustFix&&o.status==='out_for_delivery')primary='<button class="primary" id="advanceOrder" data-next="delivered" type="button">Confirmar entrega</button>';
+    const docs=[];
+    if(o.status==='out_for_delivery')docs.push('<button class="secondary" id="returnToExpedition" type="button">Entrega não concluída</button>');
+    if(consumed)docs.push('<button class="secondary" id="reprintSeparation" type="button">Reimprimir separação</button>');
+    if(['ready','out_for_delivery','delivered'].includes(o.status))docs.push('<button class="secondary" id="printDelivery" type="button">Imprimir via do entregador</button>');
+    const cancel=!['delivered','cancelled'].includes(o.status)?'<button class="text danger" id="cancelOrder" type="button">Cancelar pedido</button>':'';
+    return '<div class="order-action-zone"><strong>'+esc(orderNextAction(o))+'</strong><small>Use a próxima ação abaixo; o sistema atualiza estoque e integrações quando necessário.</small><div class="print-actions">'+(primary||'')+docs.join('')+'</div>'+cancel+'</div>';
+  }
+  function orderItemHtml(i){
+    const o=state.currentOrder?.order||{};
+    const payment=o.payment_method_snapshot||{};
+    const editable=o.status==='created'&&!(payment.stock_reserved===true&&payment.stock_released!==true);
+    const shortages=state.currentOrder?.stock_readiness?.shortages||[];
+    const shortageIds=new Set(shortages.map(x=>x.product_id));
+    const comp=i.components?.length?'<div class="composition">'+i.components.map(c=>{
+      const totalQty=Number(c.quantity)*Number(i.quantity);
+      const shortage=shortageIds.has(c.product_id);
+      return '<div class="component-line"><span>'+fmtQty(totalQty)+'× '+esc(c.name_snapshot)+(shortage?' <b class="danger-text">· falta estoque</b>':'')+'</span>'+
+        (editable&&shortage?'<button class="text" type="button" data-replace-component="'+esc(c.id)+'" data-order-item="'+esc(i.id)+'" data-component-name="'+esc(c.name_snapshot)+'">Substituir</button>':'')+
+      '</div>';
+    }).join('')+'</div>':'';
+    return '<div class="order-item"><div class="order-item-head"><strong>'+fmtQty(i.quantity)+'× '+esc(i.name_snapshot)+'</strong><b>'+money(i.total_cents)+'</b></div>'+comp+'</div>';
+  }
+  function openComponentReplacement(orderItemId,componentId,currentName){
+    const host=$('#componentReplacementPanel');if(!host)return;
+    state.componentReplacement={order_item_id:orderItemId,component_id:componentId,current_name:currentName||''};
+    host.innerHTML='<div class="replacement-panel"><strong>Substituir '+esc(currentName||'item da cesta')+'</strong><span class="sub">O valor da cesta não muda. Escolha um produto físico com estoque disponível.</span><div class="replacement-search"><input id="componentReplacementSearch" type="search" placeholder="Nome, EAN ou código"><button class="secondary" id="searchComponentReplacement" type="button">Buscar</button><button class="text" id="cancelComponentReplacement" type="button">Fechar</button></div><div class="replacement-results" id="componentReplacementResults"></div></div>';
+    $('#searchComponentReplacement').onclick=searchComponentReplacement;
+    $('#cancelComponentReplacement').onclick=()=>{state.componentReplacement=null;host.innerHTML=''};
+    $('#componentReplacementSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchComponentReplacement()}};
+    $('#componentReplacementSearch').focus();
+    host.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  async function searchComponentReplacement(){
+    const ctx=state.componentReplacement;if(!ctx)return;
+    const q=String($('#componentReplacementSearch')?.value||'').trim();
+    const host=$('#componentReplacementResults');if(!host)return;
+    if(q.length<2){host.innerHTML='<div class="sub">Digite pelo menos 2 caracteres.</div>';return}
+    host.innerHTML='<div class="loading">Buscando produtos…</div>';
+    try{
+      const data=await api('products',{q,limit:12});
+      const rows=(data.products||[]).filter(p=>p.active!==false&&Number(p.stock_quantity||0)>0);
+      host.innerHTML=rows.length?rows.map(p=>'<div class="replacement-option"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.gtin||p.sku||'Sem código')+' · estoque físico '+esc(fmtQty(p.stock_quantity||0))+'</small></div><button class="secondary" type="button" data-replacement-product="'+esc(p.id)+'">Usar</button></div>').join(''):'<div class="sub">Nenhum produto ativo com estoque encontrado.</div>';
+      host.querySelectorAll('[data-replacement-product]').forEach(b=>b.onclick=()=>replaceComponentWithProduct(b.dataset.replacementProduct,b));
+    }catch(e){
+      host.innerHTML='<div class="sub">Não consegui buscar agora. Tente novamente.</div>';
+    }
+  }
+  async function replaceComponentWithProduct(productId,btn){
+    const ctx=state.componentReplacement,o=state.currentOrder?.order;
+    if(!ctx||!o)return;
+    if(!confirm('Substituir este item da cesta pelo produto escolhido?\n\nO valor comercial da cesta permanecerá o mesmo.'))return;
+    if(btn){btn.disabled=true;btn.textContent='Substituindo…'}
+    try{
+      await persistCurrentOrder();
+      const data=await api('order_component_replace',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          order_id:o.id,
+          order_item_id:ctx.order_item_id,
+          component_id:ctx.component_id,
+          replacement_product_id:productId
+        })
+      });
+      state.currentOrder=data.detail||await api('order',{id:o.id});
+      state.componentReplacement=null;
+      await loadCurrentOrderBlingPreview(false);
+      paintOrderDetail();
+      loadOrders();
+      toast('Item da cesta substituído · valor mantido');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Usar'}
+    }
+  }
+
+  function customerOptions(current){
+    return state.customers.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===current?'selected':'')+'>'+esc(c.display_name||'Sem nome')+(c.phone?' · '+esc(formatPhone(c.phone)):'')+(c.cpf?' · CPF '+esc(formatCpf(c.cpf)):'')+'</option>').join('');
+  }
+  function setOrderDeliveryField(id,value){
+    const el=$(id);if(el)el.value=value??'';
+  }
+  function applySelectedCustomerToDelivery(){
+    const id=$('#orderCustomer')?.value||'';
+    const customer=state.customers.find(c=>c.id===id);
+    if(!customer)return;
+    const a=customer.address||{};
+    setOrderDeliveryField('#orderDeliveryName',customer.display_name||'');
+    setOrderDeliveryField('#orderDeliveryPhone',formatPhone(customer.phone||''));
+    setOrderDeliveryField('#orderDeliveryPostalCode',a.postal_code||'');
+    setOrderDeliveryField('#orderDeliveryStreet',a.street||'');
+    setOrderDeliveryField('#orderDeliveryNumber',a.number||'');
+    setOrderDeliveryField('#orderDeliveryDistrict',a.district||'');
+    setOrderDeliveryField('#orderDeliveryComplement',a.complement||'');
+    setOrderDeliveryField('#orderDeliveryCity',a.city||'Cuiabá');
+    setOrderDeliveryField('#orderDeliveryState',a.state||'MT');
+    setOrderDeliveryField('#orderDeliveryRawText',a.raw_text||'');
+    toast('Dados de entrega preenchidos pelo cliente selecionado');
+  }
+  function mergeOrderCustomerResults(rows,currentId){
+    const current=state.customers.find(c=>c.id===currentId)||null;
+    const map=new Map();
+    if(current)map.set(current.id,current);
+    for(const c of rows||[])if(c?.id)map.set(c.id,c);
+    state.customers=[...map.values()];
+  }
+  function scheduleOrderCustomerSearch(value){
+    clearTimeout(state.orderCustomerSearchTimer);
+    const q=String(value||'').trim();
+    const hint=$('#orderCustomerSearchHint');
+    if(q.length<2){
+      if(hint)hint.textContent='Digite pelo menos 2 caracteres. A busca consulta a base oficial.';
+      return;
+    }
+    if(hint)hint.textContent='Buscando…';
+    state.orderCustomerSearchTimer=setTimeout(()=>searchOrderCustomers(q),250);
+  }
+  async function searchOrderCustomers(q){
+    const select=$('#orderCustomer');if(!select)return;
+    const selectedId=select.value;
+    const hint=$('#orderCustomerSearchHint');
+    try{
+      const data=await customerApi('vitrine_customers_list',{q,limit:30});
+      mergeOrderCustomerResults(data.customers||[],selectedId);
+      select.innerHTML='<option value="">Sem cliente vinculado</option>'+customerOptions(selectedId);
+      if(selectedId)select.value=selectedId;
+      if(hint)hint.textContent=(data.customers||[]).length+' cliente(s) encontrado(s). Selecione acima.';
+    }catch(e){
+      if(hint)hint.textContent='Não consegui buscar agora. Tente novamente.';
+    }
+  }
+  function canonicalOrderPayment(value){
+    const raw=String(value||'').trim(),key=normalize(raw);
+    const map={pix:'pix',dinheiro:'cash',cash:'cash','cartao de credito':'credit_card',credit:'credit_card',credit_card:'credit_card','cartao alimentacao':'food_card','cartao alimentacao/refeicao':'food_card',food_card:'food_card','cartao refeicao':'meal_card',meal_card:'meal_card'};
+    return map[key]||map[raw]||'';
+  }
+  function paymentOptions(current){
+    const selected=canonicalOrderPayment(current);
+    const standard=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição']];
+    return standard.map(([value,label])=>'<option value="'+value+'" '+(value===selected?'selected':'')+'>'+esc(label)+'</option>').join('');
+  }
+  function currentOrderEditablePayload(status){
+    const order=state.currentOrder?.order||{};
+    const currentCustomer=state.currentOrder?.customer||{};
+    const currentCustomerId=currentCustomer.source_customer_id||order.delivery_address_snapshot?.source_customer_id||order.customer_id||'';
+    const id=order.id;
+    const selectedId=$('#orderCustomer')?.value||'';
+    const selectedCustomer=state.customers.find(c=>c.id===selectedId)||null;
+    const payload={id,payment_method:$('#orderPayment')?.value||''};
+    if(selectedCustomer)payload.customer_snapshot=selectedCustomer;
+    else if(!currentCustomerId)payload.customer_snapshot=null;
+    if($('#orderDeliveryStreet'))payload.delivery_address={
+      customer_name:$('#orderDeliveryName')?.value||'',
+      phone:$('#orderDeliveryPhone')?.value||'',
+      postal_code:$('#orderDeliveryPostalCode')?.value||'',
+      street:$('#orderDeliveryStreet')?.value||'',
+      number:$('#orderDeliveryNumber')?.value||'',
+      district:$('#orderDeliveryDistrict')?.value||'',
+      complement:$('#orderDeliveryComplement')?.value||'',
+      city:$('#orderDeliveryCity')?.value||'',
+      state:$('#orderDeliveryState')?.value||'',
+      raw_text:$('#orderDeliveryRawText')?.value||''
+    };
+    if(status)payload.status=status;
+    return payload;
+  }
+  async function persistCurrentOrder(status,extra={}){
+    const payload={...currentOrderEditablePayload(status),...(extra&&typeof extra==='object'?extra:{})};
+    await api('order_update',{},{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const fresh=await api('order',{id:payload.id});state.currentOrder=fresh;
+    await loadCurrentOrderFiscal(false);
+    await loadCurrentOrderBlingPreview(false);
+    return fresh;
+  }
+  async function advanceCurrentOrder(next){
+    const btn=$('#advanceOrder');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
+    try{
+      await persistCurrentOrder(next);
+      paintOrderDetail();loadOrders();
+      toast('Pedido atualizado · '+orderNextAction(state.currentOrder.order));
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Tentar novamente'}
+    }
+  }
+  async function cancelCurrentOrder(){
+    const linked=state.currentOrder?.bling_link?.linked===true;
+    const choice=prompt(
+      'Motivo do cancelamento:\n\n1 - Cliente desistiu\n2 - Produto indisponível\n3 - Endereço / área de entrega\n4 - Pedido duplicado\n5 - Problema de pagamento\n6 - Erro no pedido\n7 - Outro\n\nDigite o número ou escreva o motivo:'
+    );
+    if(choice===null)return;
+    const value=String(choice||'').trim();
+    const reasons={
+      '1':'Cliente desistiu',
+      '2':'Produto indisponível',
+      '3':'Endereço / área de entrega',
+      '4':'Pedido duplicado',
+      '5':'Problema de pagamento',
+      '6':'Erro no pedido',
+      '7':'Outro'
+    };
+    const reason=reasons[value]||value;
+    if(!reason){toast('Informe o motivo do cancelamento');return}
+    const noteInput=prompt('Observação opcional sobre o cancelamento:', '');
+    if(noteInput===null)return;
+    const note=String(noteInput||'').trim();
+    const message=linked
+      ? 'Cancelar este pedido por "'+reason+'"?\n\nO estoque reservado será devolvido quando aplicável. Como o pedido já está vinculado ao Bling, qualquer situação que não puder ser atualizada automaticamente ficará registrada para revisão.'
+      : 'Cancelar este pedido por "'+reason+'"? O estoque reservado será devolvido quando aplicável.';
+    if(!confirm(message))return;
+    try{
+      await persistCurrentOrder('cancelled',{cancellation_reason:reason,cancellation_note:note});
+      paintOrderDetail();loadOrders();
+      toast(linked?'Pedido cancelado · Bling será conferido':'Pedido cancelado');
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  async function saveOrder(){
+    const btn=$('#saveOrder');btn.disabled=true;btn.textContent='Salvando…';
+    try{
+      await persistCurrentOrder();
+      paintOrderDetail();toast('Dados do pedido salvos');loadOrders();
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar dados'}
+  }
+
+  function customerSummary(c,snapshot){
+    const a=snapshot||c?.address||{};
+    if(!c?.id&&!snapshot)return '<span class="muted">Cliente ainda não vinculado. Cadastre em Clientes e selecione acima.</span>';
+    const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||'Endereço não informado';
+    return '<strong>'+esc(c.display_name||a.recipient_name||'Cliente')+'</strong><br>'+
+      (c.phone?'Telefone: '+esc(formatPhone(c.phone))+'<br>':'')+
+      (c.cpf?'CPF: '+esc(formatCpf(c.cpf))+'<br>':'')+
+      (c.email?'E-mail: '+esc(c.email)+'<br>':'')+
+      'Endereço: '+esc(address);
+  }
+
+  function separationItems(detail){
+    const map=new Map();
+    const add=(key,name,qty,image,gondola,shelf,gtin='',prefix='')=>{
+      const n=Number(qty||0);if(n<=0)return;
+      const k=String(key||name)+'|'+prefix;const old=map.get(k);
+      if(old)old.quantity+=n;
+      else map.set(k,{name:(prefix?prefix+' · ':'')+(name||'Produto'),quantity:n,image_url:image||'/img/logoantonia5.png',gondola_number:gondola??null,shelf_label:String(shelf||'').trim()||null,gtin:String(gtin||'').replace(/\D/g,'')});
+    };
+    for(const item of detail?.items||[]){
+      if(item?.item_kind==='basket'){
+        for(const c of item.components||[]){
+          const m=c?.metadata||{},loose=Number(m.loose_quantity??c.quantity??0),preassembled=Number(m.preassembled_units||0);
+          if(loose<=0)continue;
+          add(c.product_id||c.id||c.name_snapshot,c.name_snapshot,loose,c.image_url,c.gondola_number,c.shelf_label,c.gtin,preassembled>0?'EXTRA':'MONTAR');
+        }
+        continue;
+      }
+      add(item.product_id||item.id||item.name_snapshot,item.name_snapshot,item.quantity,item.image_url,item.gondola_number,item.shelf_label,item.gtin,'');
+    }
+    return [...map.values()].sort((a,b)=>{
+      const ga=Number.isFinite(Number(a.gondola_number))?Number(a.gondola_number):999999,gb=Number.isFinite(Number(b.gondola_number))?Number(b.gondola_number):999999;
+      return ga-gb||String(a.shelf_label||'').localeCompare(String(b.shelf_label||''),'pt-BR',{numeric:true})||String(a.name||'').localeCompare(String(b.name||''),'pt-BR');
+    });
+  }
+  function separationKitRefs(detail){
+    const out=[];
+    for(const plan of detail?.checkout_separation_plan||[]){
+      const qty=Number(plan?.quantity||1),food=plan?.food||{},hygiene=plan?.hygiene||{};
+      if(food.mode==='lot'){
+        const codes=[food.short_code,hygiene.mode==='lot'?hygiene.short_code:null].filter(Boolean).join(' + ');
+        out.push({label:'CESTA ORIGINAL · permanece original',code:codes||'LOTE',quantity:qty,basket:plan.basket_name||'Cesta'});
+      }
+    }
+    return out;
+  }
+  function separationTicketBody(detail){
+    const o=detail.order,items=separationItems(detail),kitRefs=separationKitRefs(detail),groups=[];
+    for(const item of items){
+      const key=item.gondola_number??'none';
+      let group=groups.find(g=>g.key===key);
+      if(!group){group={key,label:item.gondola_number?'GÔNDOLA '+item.gondola_number:'SEM GÔNDOLA',shelves:[]};groups.push(group)}
+      const shelfKey=item.shelf_label||'none';
+      let shelf=group.shelves.find(s=>s.key===shelfKey);
+      if(!shelf){shelf={key:shelfKey,label:item.shelf_label?'PRATELEIRA '+item.shelf_label:'SEM PRATELEIRA',items:[]};group.shelves.push(shelf)}
+      shelf.items.push(item);
+    }
+    const kitBlock=kitRefs.length?'<div class="block"><b>PEGAR PRONTO</b>'+kitRefs.map(x=>'<div style="border:2px solid #000;padding:1.5mm;margin:1mm 0;font-size:13px;font-weight:900">'+esc(fmtQty(x.quantity))+'× '+esc(x.label)+' · '+esc(x.code)+(x.basket?'<div style="font-size:8px;font-weight:600;margin-top:.5mm">'+esc(x.basket)+'</div>':'')+'</div>').join('')+'</div>':'';
+    const sections=groups.map(g=>'<div class="gondola-title">'+esc(g.label)+'</div>'+g.shelves.map(s=>'<div class="shelf-title-print">'+esc(s.label)+'</div><div class="sep-grid">'+s.items.map(i=>'<div class="sep-card"><img src="'+esc(i.image_url||'/img/logoantonia5.png')+'" alt=""><div class="sep-name">'+esc(i.name)+'</div>'+(i.gtin?'<div class="sep-ean">EAN '+esc(i.gtin)+'</div>':'<div class="sep-ean missing">SEM EAN</div>')+'<div class="sep-qty">'+esc(fmtQty(i.quantity))+'×</div></div>').join('')+'</div>').join('')).join('');
+    const units=items.reduce((sum,i)=>sum+Number(i.quantity||0),0),kitUnits=kitRefs.reduce((sum,x)=>sum+Number(x.quantity||0),0);
+    return '<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>SEPARAÇÃO · Pedido #'+esc(orderDisplayCode(o))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+kitBlock+sections+'<div class="foot">'+kitRefs.length+' referência(s) pronta(s) · '+items.length+' produto(s) avulso(s) · '+esc(fmtQty(kitUnits+units))+' unidades/volumes</div>';
+  }
+  async function markPickingPresented(orderId){
+    try{await api('ops_print_presented',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})})}catch{}
+  }
+  function printSeparationOnly(detail,existingWindow=null){
+    const o=detail.order,w=existingWindow||window.open('','_blank','width=420,height=700');
+    if(!w){toast('Libere pop-ups para imprimir');return false}
+    openPrint('Separação #'+orderDisplayCode(o),separationTicketBody(detail),'separation',w);
+    markPickingPresented(o.id);
+    return true;
+  }
+  async function startSeparationFlow(detail,existingWindow=null){
+    const o=detail.order,w=existingWindow||window.open('','_blank','width=420,height=700');
+    if(!w){toast('Libere pop-ups para imprimir');return}
+    try{
+      w.document.open();
+      w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando separação</title></head><body style="font:16px system-ui;padding:30px;text-align:center"><strong>Preparando separação…</strong><p>Validando pedido e estoque antes de imprimir.</p></body></html>');
+      w.document.close();
+      await persistCurrentOrder();
+      const blingReady=await validateBlingBeforeSeparation(o.id);
+      if(!blingReady){try{w.close()}catch{};return}
+      await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'processing',operator:currentOperator()||'Operação'})});
+      printSeparationOnly(detail,w);
+      toast('Separação iniciada · estoque e status atualizados juntos');
+      const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
+      await loadCurrentOrderFiscal(false);
+      paintOrderDetail();loadOrders();
+    }catch(e){try{w.close()}catch{};toast(errorMessage(e.message))}
+  }
+  function printDelivery(detail){
+    const o=detail.order,c=detail.customer||{},a=o.delivery_address_snapshot||c.address||{},payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
+    const products=separationItems(detail).map(i=>'<div class="delivery-item"><b>'+esc(fmtQty(i.quantity))+'×</b><span>'+esc(i.name)+'</span></div>').join('');
+    const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||'NÃO INFORMADO';
+    const body='<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>ENTREGA · Pedido #'+esc(orderDisplayCode(o))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+
+      '<div class="block"><b>CLIENTE</b><div>'+esc(c.display_name||a.recipient_name||'NÃO VINCULADO')+'</div>'+(c.phone?'<div>Tel: '+esc(formatPhone(c.phone))+'</div>':'')+(c.cpf?'<div>CPF: '+esc(formatCpf(c.cpf))+'</div>':'')+(c.email?'<div>E-mail: '+esc(c.email)+'</div>':'')+'</div>'+
+      '<div class="block"><b>ENDEREÇO</b><div>'+esc(address)+'</div>'+(a.postal_code?'<div>CEP: '+esc(a.postal_code)+'</div>':'')+'</div>'+
+      '<div class="block"><b>PAGAMENTO</b><div>'+esc(payment)+'</div><div>Status: '+esc(o.status||'')+'</div><div class="big-total">TOTAL: '+money(o.total_cents)+'</div></div>'+
+      '<div class="block"><b>PRODUTOS</b>'+products+'</div>'+
+      '<div class="block lines"><div>Observações:</div><br><br><div>Recebido por: __________________</div></div>';
+    openPrint('Entrega #'+orderDisplayCode(o),body,'delivery');
+  }
+  function openPrint(title,body,mode,existingWindow=null){
+    const w=existingWindow||window.open('','_blank','width=420,height=700');
+    if(!w){toast('Libere pop-ups para imprimir');return}
+    const css='@page{size:85mm auto;margin:2mm}*{box-sizing:border-box}html,body{margin:0;padding:0;width:81mm;background:#fff;color:#000;font-family:Arial,sans-serif}body{font-size:10px}.ticket-head{text-align:center;border-bottom:1px dashed #000;padding:1mm 0 2mm;margin-bottom:2mm}.ticket-head strong{display:block;font-size:15px}.ticket-head span{display:block;font-weight:700;font-size:11px;margin-top:1mm}.ticket-head small{display:block;margin-top:.6mm}.gondola-title{font-weight:900;font-size:13px;border:2px solid #000;padding:1.5mm;margin:2mm 0 1.5mm;text-align:center}.shelf-title-print{font-weight:800;font-size:10px;border-bottom:1px solid #000;padding:1mm 0 .8mm;margin:1.5mm 0 1mm}.sep-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.8mm}.sep-card{border:1px solid #000;padding:1mm;min-height:48mm;display:flex;flex-direction:column;align-items:center;text-align:center;break-inside:avoid}.sep-card img{width:32mm;height:26mm;object-fit:contain;filter:grayscale(1);margin:auto}.sep-name{font-weight:700;font-size:9px;line-height:1.15;min-height:9mm}.sep-ean{font:700 8px monospace;line-height:1.2;margin:.6mm 0;word-break:break-all}.sep-ean.missing{font-family:Arial,sans-serif;font-weight:700}.sep-qty{font-weight:900;font-size:20px;line-height:1}.foot{text-align:center;border-top:1px dashed #000;margin-top:2mm;padding-top:1.5mm}.block{border-bottom:1px dashed #000;padding:2mm 0}.block>b{display:block;font-size:10px;margin-bottom:1mm}.big-total{font-size:15px;font-weight:900;margin-top:1mm}.delivery-item{display:grid;grid-template-columns:9mm 1fr;gap:1mm;padding:1mm 0;border-bottom:1px dotted #777}.delivery-item b{font-size:11px}.lines{min-height:28mm}@media print{button{display:none!important}}';
+    w.document.open();
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body class="'+esc(mode)+'">'+body+'<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),350));<\/script></body></html>');
+    w.document.close();
+  }
+
+  function orderDisplayCode(o){const code=String(o?.public_code||o?.public_order_code||'').trim().toUpperCase();return /^[A-Z]{2}\d{3}$/.test(code)?code:'—'}
+  function phoneDigits(v){
+    let d=String(v||'').replace(/\D/g,'');
+    if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;
+    return d;
+  }
+  function formatPhone(v){
+    const d=String(v||'').replace(/\D/g,'');
+    const local=d.startsWith('55')?d.slice(2):d;
+    if(local.length===11)return '('+local.slice(0,2)+') '+local.slice(2,7)+'-'+local.slice(7);
+    if(local.length===10)return '('+local.slice(0,2)+') '+local.slice(2,6)+'-'+local.slice(6);
+    return v||'';
+  }
+  function formatCpf(v){const d=String(v||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9):v||''}
+  function errorMessage(code){
+    if(/^bling_reauthentication_required$|^oauth_http_(400|401|403)/.test(String(code||'')))return 'Conexão com Bling expirada. Clique em Reconectar Bling na tela de Produtos e autorize novamente. Estoque NÃO foi salvo.';
+    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',gtin_already_exists:'Este EAN já pertence a outro produto.',sku_already_exists:'Este SKU já pertence a outro produto.',duplicate_source_not_found:'O produto original não foi encontrado.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',lot_tracking_requires_lot:'Cadastre pelo menos um lote antes de ativar o FEFO.',lot_tracking_has_unquantified_lot:'Todos os lotes precisam ter quantidade informada.',lot_tracking_bling_physical_missing:'Ainda não consegui conferir o estoque físico deste produto no Bling.',lot_tracking_physical_mismatch:'A soma dos lotes ainda não confere com o estoque físico do Bling.',receipt_lots_required:'Defina e salve as validades/lotes de todos os itens antes de preparar a entrada.',expiration_lot_required:'Informe ao menos uma validade para este produto.',expiration_date_required:'Informe a data de validade.',lot_quantity_required:'Informe a quantidade deste lote.',lot_quantity_mismatch:'A soma das quantidades dos lotes precisa ser igual à quantidade recebida.',all_receipt_items_required:'Revise os lotes de todos os itens da nota.',product_inactive:'Produto inativo não pode ter oferta ativa.',product_expired:'Produto vencido não pode ter oferta ativa.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',invalid_product:'Produto inválido.',gondola_not_found:'Gôndola não encontrada.',gondola_clear_confirmation_required:'Confirme a limpeza da gôndola novamente.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',ean_not_in_order:'Este produto não pertence ao pedido.',checked_quantity_exceeds_expected:'Esta quantidade já foi totalmente conferida.',duplicate_ean_in_order:'EAN duplicado no pedido. Revise o cadastro.',check_incomplete:'Ainda faltam produtos para conferir.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',delivery_payment_required:'Registre o pagamento recebido antes de confirmar a entrega.',delivery_payment_mismatch:'O pagamento registrado não confere com o total do pedido.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.',stale_order_version:'A tela mudou desde a última leitura. Atualizei e tentei salvar novamente.',order_version_conflict:'A tela mudou desde a última leitura. Atualize e tente novamente.',separator_assignment_changed:'O responsável pela separação foi alterado.',separator_required:'Escolha quem está separando este pedido.',invalid_separator:'Separador inválido. Atualize a tela.',separation_incomplete:'Ainda existem produtos pendentes na separação.',bling_approval_required_before_separation:'O pedido ainda precisa ser liberado no Bling antes de concluir a separação.'};
+    return map[code]||'Não consegui salvar agora.';
+  }
+
+  const scanner={buffer:'',timer:null};
+  document.addEventListener('keydown',e=>{
+    if(!['balance','gondolas'].includes(state.tab))return;
+    const tag=e.target?.tagName||'';
+    if(['INPUT','TEXTAREA','SELECT'].includes(tag))return;
+    if(/^\d$/.test(e.key)){
+      scanner.buffer+=e.key;
+      clearTimeout(scanner.timer);
+      scanner.timer=setTimeout(()=>{scanner.buffer=''},900);
+      e.preventDefault();
+      return;
+    }
+    if(e.key==='Enter'||e.key==='Tab'){
+      const ean=scanner.buffer;scanner.buffer='';clearTimeout(scanner.timer);
+      if(ean.length>=4){
+        if(state.tab==='balance')handleBalanceScan(ean);
+        if(state.tab==='gondolas')handleGondolaScan(ean);
+      }
+      e.preventDefault();
+    }
+  });
+
+  $('#closeEditor').onclick=()=>$('#editor').close();
+  $('#editor').addEventListener('click',e=>{if(e.target===$('#editor'))$('#editor').close()});
+
+  window.DonaAntoniaAdminBridge={
+    api,
+    token:adminStepUp,
+    operator:requireOperator,
+    toast,
+    refresh:renderBaskets,
+    errorMessage
+  };
+
+  async function start(){
+    const params=new URLSearchParams(location.search),sharedSeparationId=params.get('separacao')||'',pickerMode=params.get('montar')==='1';
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if(pickerMode){
+      if(!uuid.test(sharedSeparationId)){location.replace('/montar/?erro=pedido_invalido');return}
+      try{
+        // Verify current membership server-side. Do not show other Admin orders.
+        const allowed=await manualQueueRpc('list');
+        if(!Array.isArray(allowed.order_ids)||!allowed.order_ids.some(x=>String(x)===sharedSeparationId)){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        // Load only this one order, preserving the exact customer/status checks used by
+        // the canonical separation sheet, without rendering the full Admin order list.
+        const detail=await api('order',{id:sharedSeparationId});
+        const selectedOrder=detail?.order||null;
+        if(!selectedOrder||String(selectedOrder.id)!==sharedSeparationId){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        if(orderCustomerDataPending(selectedOrder)){
+          location.replace('/montar/?erro=dados_pendentes');return;
+        }
+        if(!orderV3Milestones(selectedOrder).confirmed||orderV3Milestones(selectedOrder).separated||
+            orderV3Milestones(selectedOrder).cancelled){
+          location.replace('/montar/?erro=pedido_indisponivel');return;
+        }
+        state.orders=[selectedOrder];
+        await openOrderSeparationSheet(sharedSeparationId);
+        const sheet=document.querySelector('.orders-bottom-sheet-backdrop');
+        if(!sheet){location.replace('/montar/?erro=vitrine_indisponivel');return}
+        const close=sheet.querySelector('.orders-sheet-close');
+        if(close)close.onclick=()=>location.replace('/montar/');
+        sheet.addEventListener('click',e=>{
+          if(e.target===sheet){e.stopImmediatePropagation();location.replace('/montar/')}
+        },true);
+      }catch(error){
+        console.error('montar_existing_vitrine',error);
+        location.replace('/montar/?erro=acesso');
+      }
+      return;
+    }
+    // Abre o cadastro completo em nova aba a partir dos mini cards de Cestas Molde.
+    const directProductId=params.get('editar_produto')||'';
+    if(directProductId){
+      if(!uuid.test(directProductId)){setTab('products');toast('Link de produto inválido');return}
+      setTab('products');
+      await openProductEditor({id:directProductId});
+      history.replaceState({},'',location.pathname+location.hash);
+      return;
+    }
+    // Link direto vindo do Atendimento: exibir pedido no modal para revisão e confirmação humana.
+    const directOrderId=params.get('pedido')||'';
+    if(directOrderId){
+      if(!uuid.test(directOrderId)){setTab('today');toast('Link de pedido inválido');return}
+      state.orderStatusTab='received';
+      await setTab('orders');
+      await openOrder(directOrderId);
+      history.replaceState({},'',location.pathname+location.hash);
+      return;
+    }
+    if(!uuid.test(sharedSeparationId)){setTab('today');return}
+    await setTab('orders');
+    await openOrderSeparationSheet(sharedSeparationId);
+    history.replaceState({},'',location.pathname+location.hash);
+  }
+  start();
+})();
