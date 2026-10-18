@@ -131,7 +131,7 @@
         '<label><span class="sub">Veículo</span><select id="deliveryPlanVehicle" style="width:100%;min-height:42px">'+smartDeliveryOptionHtml('vehicles',state.deliveryPlan.vehicle_id)+'</select></label>'+
       '</div></div>';
   }
-  function smartDeliverySlug(v){return normalize(v).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)}
+  function smartDeliverySlug(v){return adminSlug(v)}
   function smartDeliveryCatalogRows(kind){
     const rows=state.deliveryCatalog?.[kind]||[];
     if(!rows.length)return '<div class="history-empty">Nenhum cadastro ainda.</div>';
