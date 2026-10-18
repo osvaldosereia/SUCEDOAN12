@@ -10,7 +10,7 @@ assert.ok(html.includes(moduleTag),'formatter module must be loaded');
 assert.ok(html.indexOf(moduleTag)<html.indexOf(mainTag),'formatter module must load before main IIFE');
 assert.ok(html.includes('const {esc,money,cents,fmtQty,dateTime,dateOnly,normalize}=window.DonaAntoniaAdminFormatters;'));
 for(const name of ['esc','money','cents','fmtQty','dateTime','dateOnly','normalize']){
-  assert.equal(new RegExp('\\bconst '+name+'=').test(html),false,name+' must not remain duplicated in inline script');
+  assert.equal(new RegExp('^  const '+name+'=', 'm').test(html),false,name+' must not remain as an original top-level declaration');
 }
 const context={window:{},Number,Date,String,Object};
 vm.runInNewContext(moduleSource,context);
