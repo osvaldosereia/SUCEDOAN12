@@ -1,0 +1,50 @@
+name: XML Catalog R17 Integrated Safety
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/projects/purchase-xml-field-apply-inactive-only-r17.sql'
+      - 'scripts/fixtures/xml-field-review-ledger-r14.sql'
+      - 'scripts/fixtures/xml-field-review-gateway-r15.mjs'
+      - 'scripts/test-xml-field-integrated-r17.pg.sql'
+      - 'scripts/test-xml-field-integrated-r17.mjs'
+      - 'scripts/test-xml-field-r17-gateway-boundary.mjs'
+      - '.github/workflows/xml-field-integrated-safety-r17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration-safety:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: SQL and human authorization boundary tests
+        run: |
+          node scripts/test-xml-field-integrated-r17.mjs
+          node scripts/test-xml-field-r17-gateway-boundary.mjs
+      - name: Apply R14/R17 proposals in disposable PostgreSQL 17 and test CAS
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          psql -v ON_ERROR_STOP=1 -f scripts/test-xml-field-integrated-r17.pg.sql
