@@ -98,23 +98,8 @@
     function deleteClient(id){const c=state.clients.find(x=>x.id===id);if(!c)return;if(!confirm(`Excluir o cadastro de ${c.clientName}?`))return;state.clients=state.clients.filter(x=>x.id!==id);if(state.activeClientId===id)state.activeClientId='';persistClients();renderClientList();showToast('Cliente excluído do cadastro local.')}
     function adminToken(){return String(sessionStorage.getItem(ADMIN_TOKEN_KEY)||'').trim()}
     let adminTokenPromise=null;
-    async function ensureAdminToken(){
-      const existing=adminToken();if(existing)return existing;
-      if(adminTokenPromise)return await adminTokenPromise;
-      adminTokenPromise=(async()=>{
-        try{
-          const ar=await fetch(ADMIN_AUTH_API,{method:'POST',headers:{'Content-Type':'application/json','apikey':ADMIN_PUBLIC_KEY},body:JSON.stringify({pin:'000000'}),cache:'no-store'});
-          const a=await ar.json().catch(()=>({}));
-          if(!ar.ok||!a?.ok)throw new Error(a?.error||'admin_auto_auth_failed');
-          const vr=await fetch(ADMIN_VERIFY_API,{method:'POST',headers:{'Content-Type':'application/json','apikey':ADMIN_PUBLIC_KEY},body:JSON.stringify({token_hash:a.token_hash,type:a.verification_type||'email'}),cache:'no-store'});
-          const v=await vr.json().catch(()=>({}));
-          const token=String(v?.access_token||'').trim();
-          if(!vr.ok||!token)throw new Error(v?.msg||v?.error_description||v?.error||'admin_auto_session_failed');
-          sessionStorage.setItem(ADMIN_TOKEN_KEY,token);return token;
-        }finally{adminTokenPromise=null}
-      })();
-      return await adminTokenPromise;
-    }
+    async function ensureAdminToken(){return await window.DonaAntoniaSecureAuth.ensureToken()}
+
     async function adminGet(action,params={},retryAuth=true){
       const token=await ensureAdminToken();
       const u=new URL(ADMIN_API);u.searchParams.set('action',action);
@@ -265,5 +250,5 @@
     initialize();
   })();
   </script>
-</body>
+<script src="/vitrine/admin/admin-secure-auth.js?v=p0-20261018"></script></body>
 </html>
