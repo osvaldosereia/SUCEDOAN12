@@ -20,11 +20,11 @@ const packaging=section(html,'  async function showSeparationPackagingNotice(','
 for(const pattern of [
   /transitionAllowed\(cur,next\)/,
   /order_operational_data_incomplete/,
-  /reserve_vitrine_order_stock_v1/,
+  /admin_order_stock_transition_atomic_v1/,
   /next==="confirmed"&&cur==="created"/,
   /print_queued=await enqueuePickingPrint/,
   /syncConfirmedOrderToBling/,
-  /release_vitrine_order_stock_v1/,
+  /p_next_status:next/,
   /cancelPendingPrints\(oid\)/
 ])assert.match(update,pattern);
 for(const pattern of [
