@@ -13,7 +13,7 @@ assert.match(issue,/before\.can_issue!==true/,'issue endpoint must respect unres
 assert.ok(issue.indexOf('before.can_issue!==true')<issue.indexOf('hub("fiscal_dispatch_canary_human_execute"'),'fiscal eligibility must be checked before external write');
 for(const p of [/ops2_fiscal_dispatch_preflight_v1/,/before\.authorized===true/,/before\.issue_enabled!==true/,/fiscal_dispatch_canary_human_execute/,/attempt<=5/,/stage:"unknown"/])assert.match(auto,p);
 assert.match(auto,/before\.can_issue!==true/,'automatic issuance must respect uncertain-generation recovery guard');
-assert.ok(auto.indexOf('before.can_issue!==true')<auto.indexOf('const h=await hub("fiscal_dispatch_canary_human_execute"'),'automatic eligibility must precede external write');
+assert.ok(auto.indexOf('before.can_issue!==true')<auto.indexOf('hub("fiscal_dispatch_canary_human_execute"'),'automatic eligibility must precede external write');
 for(const p of [/f\.can_issue!==true/,/confirm\(/,/order_fiscal_issue_v4/,/confirmation:'EMITIR_NFE'/,/loadCurrentOrderFiscal\(true\)/])assert.match(ui,p);
 // Legacy direct-canary action must not bypass the guarded, reconciliable V4 endpoint.
 assert.match(edge,/a==="order_fiscal_dispatch_canary_execute"\)\{const x:any=await orderFiscalIssueV4\(p,auth\)/);
