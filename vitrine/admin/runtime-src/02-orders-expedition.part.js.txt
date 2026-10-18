@@ -1,351 +1,3 @@
-    // CENTRAL_LAZY_ON_DEMAND_V1
-    const content=$('#content');
-    const sectionState=new Map();
-    const sections=[
-      ['orders','Pedidos e expedição','Separação, prontos, entrega e fechamento'],
-      ['health','Saúde do sistema','Produtos, Bling, fiscal, filas e automações'],
-      ['attention','Precisa de atenção','Pendências operacionais que exigem ação'],
-      ['expiry','Estoque e validades','Alertas de validade para revisar'],
-      ['integrations','WhatsApp e integrações','Situação dos canais e integrações'],
-      ['printing','Impressão','Fila de impressão operacional']
-    ];
-    const sectionHtml=sections.map(([key,title,subtitle])=>
-      '<section class="panel" style="margin-bottom:10px">'+
-        '<button class="secondary" type="button" data-central-toggle="'+key+'" aria-expanded="false" style="width:100%;border:0;border-radius:0;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:12px 14px">'+
-          '<span><strong style="display:block">'+esc(title)+'</strong><small class="muted" style="display:block;margin-top:2px">'+esc(subtitle)+'</small></span>'+
-          '<span data-central-status="'+key+'" class="muted" style="white-space:nowrap">Carregar</span>'+
-        '</button>'+
-        '<div id="centralSection-'+key+'" hidden style="border-top:1px solid var(--line);padding:12px 14px"></div>'+
-      '</section>'
-    ).join('');
-    content.innerHTML=
-      '<div class="page-head"><div><h1>Central</h1><p>Acessos rápidos e informações carregadas somente quando você precisar.</p></div><button class="secondary" id="refreshToday">Atualizar</button></div>'+
-      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px">'+
-        '<button class="secondary" type="button" data-central-shortcut="orders">Pedidos</button>'+
-        '<button class="secondary" type="button" data-central-shortcut="attendance">Atendimento</button>'+
-        '<button class="secondary" type="button" data-central-shortcut="products">Produtos</button>'+
-      '</div>'+sectionHtml;
-    $('#refreshToday').onclick=renderToday;
-    content.querySelectorAll('[data-central-shortcut]').forEach(b=>b.onclick=()=>setTab(b.dataset.centralShortcut));
-
-  async function loadCentralSection(name,body){
-      if(name==='orders'){
-        const [data,closureData]=await Promise.all([
-          api('orders'),
-          api('closure_orders').catch(()=>null)
-        ]);
-        state.orders=data.orders||[];
-        if(closureData){
-          state.closureOrders=closureData.orders||[];
-          state.closurePendingCount=Number(closureData.pending_count||0);
-          state.fiscalByOrder={...state.fiscalByOrder,...(closureData.fiscal_by_order||{})};
-        }else state.closurePendingCount=0;
-        const pending=sortOperationalOrders(state.orders.filter(o=>!['delivered','cancelled'].includes(o.status))).slice(0,8);
-        body.innerHTML=renderTodayCards()+
-          '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
-        const todayOrders=body.querySelector('#todayOrders');
-        if(todayOrders){
-          todayOrders.innerHTML=pending.length?pending.map(o=>'<button class="history-row today-order-row" type="button" data-today-order="'+esc(o.id)+'"><strong>#'+esc(orderDisplayCode(o))+'</strong><div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+money(o.total_cents)+' · '+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div><span class="next-action">'+esc(orderNextAction(o))+'</span><span class="today-status">'+statusPill(o.status)+'</span></button>').join(''):'<div class="history-empty">Nenhum pedido pendente agora.</div>';
-          todayOrders.querySelectorAll('[data-today-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.todayOrder));
-        }
-        body.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;if(state.orderFilter!=='problems')state.orderIssueFilter='all';setTab('orders')});
-        body.querySelectorAll('[data-today-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.todayTab));
-        body.querySelectorAll('[data-today-issue]').forEach(b=>b.onclick=()=>{state.orderFilter='problems';state.orderIssueFilter=b.dataset.todayIssue;setTab('orders')});
-        return;
-      }
-      if(name==='attention'){
-        const attentionData=await api('ops_attention',{limit:20});
-        state.opsAttention=attentionData?.attention||[];
-        body.innerHTML=renderOpsAttention();
-        body.querySelectorAll('[data-attention-open]').forEach(b=>b.onclick=()=>setTab(b.dataset.attentionTab||'today'));
-        return;
-      }
-      if(name==='expiry'){
-        const expiryAlerts=await api('expiry_alerts');
-        state.expiryAlerts=expiryAlerts||null;
-        body.innerHTML=renderTodayExpiryAlert()||'<div class="history-empty">Nenhum alerta de validade agora.</div>';
-        body.querySelectorAll('[data-today-expiry]').forEach(b=>b.onclick=()=>setTab('expiry'));
-        return;
-      }
-      if(name==='integrations'){
-        const papoData=await api('ops_papoai_capture_status').catch(()=>null);
-        state.opsPapoAi=papoData?.papoai||null;
-        body.innerHTML='<div id="integrationOperationalAlert"></div><div id="papoAiBridgeSlot">'+renderPapoAiBridgePanel()+'</div>';
-        const papoLinkBtn=body.querySelector('[data-papoai-create-link]');if(papoLinkBtn)papoLinkBtn.onclick=createPapoAiCatalogLink;
-        body.querySelectorAll('[data-retry-bling-status]').forEach(b=>b.onclick=retryBlingStatusCatalog);
-        await loadOperationalIntegrationAlert();
-        return;
-      }
-      if(name==='printing'){
-        const printData=await api('ops_print_queue',{limit:20});
-        state.opsPrintQueue=printData?.queue||null;
-        body.innerHTML=renderOpsPrintQueue()||'<div class="history-empty">Nenhuma impressão pendente agora.</div>';
-        body.querySelectorAll('[data-print-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.printOrder));
-      }
-    }
-
-    async function toggleCentralSection(name){
-      const body=$('#centralSection-'+name);
-      const button=content.querySelector('[data-central-toggle="'+name+'"]');
-      const status=content.querySelector('[data-central-status="'+name+'"]');
-      if(!body||!button)return;
-      if(!body.hidden){
-        body.hidden=true;
-        button.setAttribute('aria-expanded','false');
-        if(status)status.textContent=sectionState.get(name)==='loaded'?'Abrir':'Carregar';
-        return;
-      }
-      body.hidden=false;
-      button.setAttribute('aria-expanded','true');
-      if(sectionState.get(name)==='loaded'){
-        if(status)status.textContent='Fechar';
-        return;
-      }
-      sectionState.set(name,'loading');
-      if(status)status.textContent='Carregando…';
-      body.innerHTML='<div class="loading">Carregando…</div>';
-      try{
-        await loadCentralSection(name,body);
-        sectionState.set(name,'loaded');
-        if(status)status.textContent='Fechar';
-      }catch(e){
-        sectionState.delete(name);
-        if(status)status.textContent='Tentar novamente';
-        body.innerHTML='<div class="empty">Não consegui carregar este bloco. <button class="text" type="button" data-central-retry> Tentar novamente</button></div>';
-        const retry=body.querySelector('[data-central-retry]');
-        if(retry)retry.onclick=async()=>{body.hidden=true;await toggleCentralSection(name)};
-      }
-    }
-
-    content.querySelectorAll('[data-central-toggle]').forEach(b=>b.onclick=()=>toggleCentralSection(b.dataset.centralToggle));
-  }
-  function expeditionFiscalState(o){
-    if(o?.status==='ready'&&o?.delivery_return?.dispatch_blocked===true)return {authorized:false,title:'Retorno em revisão',detail:'Inspecionar mercadoria antes de nova saída',kind:'warn'};
-    if(o?.status!=='ready')return {authorized:true,title:'',detail:'',kind:'ok'};
-    const f=state.fiscalByOrder[o.id];
-    if(!f)return {authorized:false,title:'Fiscal carregando',detail:'Aguardando conferência',kind:'warn'};
-    if(f.error)return {authorized:false,title:'Fiscal indisponível',detail:'Abra o pedido para revisar',kind:'warn'};
-    const gate=f.dispatch_gate||{};
-    if(gate.authorized===true&&gate.allowed===true){
-      return {
-        authorized:true,
-        title:'Fiscal autorizado',
-        detail:(gate.bling_invoice_number?'NF-e '+gate.bling_invoice_number:'Liberado para saída'),
-        kind:'ok'
-      };
-    }
-    return {
-      authorized:false,
-      title:'Fiscal pendente',
-      detail:'Emitir NF-e antes da saída',
-      kind:'warn'
-    };
-  }
-  function fiscalAuthorizedForDispatch(o){
-    return expeditionFiscalState(o).authorized===true;
-  }
-
-  function expeditionRow(o){
-    const a=o.delivery_address_snapshot||{};
-    const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ')||'Endereço não informado';
-    const payment=actualPaymentText(o)||(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado');
-    const fiscal=expeditionFiscalState(o),ret=o.delivery_return||null;
-    const returnNote=ret
-      ? '<small class="warn-text">'+(ret.status==='returning'?'Retornando ao depósito':ret.status==='returned_review'?'Retorno em revisão':'Retorno')+' · '+esc(ret.reason_label||'Motivo não informado')+'</small>'
-      : '';
-    const wa=whatsappHref(o.whatsapp_phone_e164||a.phone||'');
-    const maps=mapsHrefFromAddress(a);
-    const selected=state.expeditionSelected.includes(o.id);
-    const deliveryActions=o.status==='out_for_delivery'
-      ? (ret?.status==='returning'
-        ? '<button class="quick-link primary-link" type="button" data-confirm-return="'+esc(o.id)+'">Confirmar retorno</button>'
-        : '<button class="quick-link primary-link" type="button" data-confirm-delivery="'+esc(o.id)+'">Confirmar entrega</button><button class="quick-link" type="button" data-return-expedition="'+esc(o.id)+'">Não entregou</button>')
-      : '';
-    return '<div class="history-row dispatch-row">'+
-      '<div>'+(o.status==='ready'&&fiscal.authorized?'<label class="dispatch-select"><input type="checkbox" data-dispatch-select="'+esc(o.id)+'" '+(selected?'checked':'')+'>#'+esc(orderDisplayCode(o))+'</label>':'<strong>#'+esc(orderDisplayCode(o))+'</strong>')+'<span class="sub">'+esc(relativeAge(o.created_at))+'</span>'+(o.status==='ready'?'<span class="sub '+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.title)+'</span>':'')+'</div>'+
-      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(address)+'</small>'+returnNote+'</div>'+
-      '<div class="history-main"><strong>'+money(o.total_cents)+'</strong><small>'+esc(payment)+'</small>'+(o.status==='ready'?'<small class="'+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.detail)+'</small>':'')+'</div>'+
-      '<span>'+statusPill(o.status)+'</span>'+
-      '<div class="dispatch-actions">'+
-        (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
-        (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
-        (ret?.status==='returned_review'?'<button class="quick-link primary-link" type="button" data-resolve-return="'+esc(o.id)+'">Resolver retorno</button>':'')+
-        (o.status==='ready'&&!fiscal.authorized&&ret?.status!=='returned_review'?'<button class="quick-link primary-link" type="button" data-expedition-fiscal="'+esc(o.id)+'">Resolver fiscal</button>':'')+
-        (o.status==='ready'&&fiscal.authorized?'<button class="quick-link" type="button" data-expedition-danfe="'+esc(o.id)+'">Imprimir DANFE</button>':'')+
-        deliveryActions+
-        '<button class="quick-link" type="button" data-expedition-order="'+esc(o.id)+'">Abrir</button>'+
-      '</div>'+
-    '</div>';
-  }
-  function expeditionSection(title,subtitle,rows,empty){
-    return '<section class="panel dispatch-section"><div class="history-title dispatch-head"><div><strong>'+esc(title)+'</strong><span>'+esc(subtitle)+'</span></div><b>'+rows.length+'</b></div>'+
-      '<div>'+(rows.length?rows.map(expeditionRow).join(''):'<div class="history-empty">'+esc(empty)+'</div>')+'</div></section>';
-  }
-  async function returnOrderToExpedition(id,fromDetail=false){
-    const o=(fromDetail?state.currentOrder?.order:null)||state.orders.find(x=>x.id===id);
-    if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
-    if(o.delivery_return?.status==='returning'){toast('Este pedido já está retornando ao depósito');return}
-    const choice=prompt(
-      'Por que a entrega não foi concluída?\n\n1 - Cliente ausente\n2 - Endereço não encontrado\n3 - Cliente pediu reagendamento\n4 - Problema no pagamento\n5 - Cliente recusou / desistiu\n6 - Veículo / rota\n7 - Outro\n\nDigite o número:'
-    );
-    if(choice===null)return;
-    const reasons={
-      '1':['customer_absent','Cliente ausente'],
-      '2':['address_not_found','Endereço não encontrado'],
-      '3':['reschedule','Cliente pediu reagendamento'],
-      '4':['payment_failed','Problema no pagamento'],
-      '5':['customer_refused','Cliente recusou / desistiu'],
-      '6':['vehicle_route','Veículo / rota'],
-      '7':['other','Outro']
-    };
-    const selected=reasons[String(choice||'').trim()];
-    if(!selected){toast('Escolha uma opção de 1 a 7');return}
-    const noteInput=prompt('Observação opcional sobre a tentativa de entrega:','');
-    if(noteInput===null)return;
-    if(!confirm('Registrar como não entregue por "'+selected[1]+'"?\n\nA mercadoria continuará fora do estoque vendável até o retorno físico ser confirmado.'))return;
-    try{
-      await api('delivery_fail_register',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:o.id,reason_code:selected[0],note:String(noteInput||'').trim(),operator:currentOperator()||'Entrega'})
-      });
-      const data=await api('orders');state.orders=data.orders||[];
-      if(fromDetail){
-        const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
-        await loadCurrentOrderFiscal(false);paintOrderDetail();loadOrders();
-      }
-      if(state.tab==='driver')paintDriverQueue();else if(state.tab==='expedition')paintExpeditionBody();
-      toast('Não entrega registrada · aguardando retorno físico');
-    }catch(e){toast(errorMessage(e.message))}
-  }
-  async function confirmPhysicalDeliveryReturn(id){
-    const o=state.orders.find(x=>x.id===id)||state.currentOrder?.order;
-    const ret=o?.delivery_return;
-    if(!o||!ret||ret.status!=='returning'){toast('Não existe retorno físico pendente para este pedido');return}
-    const suggested=ret.recommended_disposition==='redelivery'?'redelivery':'review';
-    const promptText=suggested==='redelivery'
-      ? 'A mercadoria voltou fisicamente ao depósito?\n\nOK = voltou íntegra e continuará separada para REENTREGA.\nCancelar = não registrar agora.'
-      : 'A mercadoria voltou fisicamente ao depósito?\n\nOK = enviar para REVISÃO, sem voltar ao estoque geral e sem nova saída.\nCancelar = não registrar agora.';
-    if(!confirm(promptText))return;
-    const operator=requireOperator();if(!operator)return;
-    try{
-      await api('delivery_return_confirm',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({case_id:ret.id,disposition:suggested,operator})
-      });
-      const data=await api('orders');state.orders=data.orders||[];
-      if(state.tab==='driver')paintDriverQueue();else if(state.tab==='expedition')paintExpeditionBody();
-      if(state.currentOrder?.order?.id===id){const fresh=await api('order',{id});state.currentOrder=fresh;paintOrderDetail()}
-      toast(suggested==='redelivery'?'Retorno confirmado · pedido pronto para reentrega':'Retorno confirmado · bloqueado para revisão');
-    }catch(e){toast(errorMessage(e.message))}
-  }
-  function returnCurrentOrderToExpedition(){
-    const id=state.currentOrder?.order?.id;if(id)returnOrderToExpedition(id,true);
-  }
-
-  async function resolveDeliveryReturnReview(id){
-    const o=state.orders.find(x=>x.id===id)||state.currentOrder?.order,ret=o?.delivery_return;
-    if(!o||!ret||ret.status!=='returned_review'){toast('Este retorno não está mais aguardando revisão');return}
-    $('#editorTitle').textContent='Revisar retorno';
-    $('#editorBody').innerHTML='<div class="rule-notice warn"><strong>Pedido #'+esc(orderDisplayCode(o))+'</strong><div>'+esc(ret.reason_label||'Não entregue')+(ret.note?' · '+esc(ret.note):'')+'<br>A mercadoria já voltou fisicamente, mas continua fora do estoque vendável.</div></div>'+
-      '<div class="section-title">O que aconteceu com a mercadoria?</div>'+
-      '<div class="panel" style="padding:14px;margin-bottom:10px"><strong>Tudo íntegro e haverá nova tentativa</strong><p class="sub">Mantém os itens alocados ao mesmo pedido e libera para reentrega.</p><button class="primary" id="returnResolveRedelivery" type="button">LIBERAR PARA REENTREGA</button></div>'+
-      '<div class="panel" style="padding:14px;margin-bottom:10px"><strong>Cliente desistiu e tudo voltou íntegro</strong><p class="sub">Cancela comercialmente e restaura todo o estoque local. O fiscal fica pendente de revisão no Bling.</p><button class="secondary" id="returnResolveCancel" type="button">CANCELAR E DEVOLVER AO ESTOQUE</button></div>'+
-      '<div class="panel" style="padding:14px"><strong>Há avaria, falta ou item impróprio</strong><p class="sub">Não faça restauração total. Registre os itens no Estoque mobile para revisão.</p><button class="secondary" id="returnResolveDamage" type="button">IR PARA ESTOQUE MOBILE</button></div>';
-    $('#editorActions').innerHTML='<button class="secondary" id="returnResolveClose" type="button">Fechar</button>';
-    $('#returnResolveClose').onclick=()=>$('#editor').close();
-    $('#returnResolveDamage').onclick=()=>{$('#editor').close();state.balanceMode='incident';setTab('balance');toast('Leia cada item avariado ou faltante antes de resolver o retorno')};
-    $('#returnResolveRedelivery').onclick=()=>submitDeliveryReturnResolution(o,'redelivery');
-    $('#returnResolveCancel').onclick=()=>{
-      if(!confirm('Confirme somente se TODOS os produtos voltaram fisicamente íntegros.\n\nO pedido será cancelado e o estoque local será restaurado por completo. O tratamento fiscal continuará pendente no Bling.'))return;
-      submitDeliveryReturnResolution(o,'cancel_intact');
-    };
-    $('#editor').showModal();
-  }
-  async function submitDeliveryReturnResolution(o,action){
-    const ret=o?.delivery_return;if(!ret)return;
-    const operator=requireOperator();if(!operator)return;
-    const buttons=[...document.querySelectorAll('#returnResolveRedelivery,#returnResolveCancel')];buttons.forEach(b=>b.disabled=true);
-    try{
-      const data=await api('delivery_return_resolve',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({case_id:ret.id,resolution_action:action,operator})
-      });
-      $('#editor').close();
-      const rows=await api('orders');state.orders=rows.orders||[];
-      if(state.tab==='expedition')paintExpeditionBody();else if(state.tab==='today')renderToday();
-      toast(action==='redelivery'?'Retorno revisado · liberado para reentrega':'Pedido cancelado · estoque íntegro restaurado · fiscal pendente');
-      return data;
-    }catch(e){toast(errorMessage(e.message));buttons.forEach(b=>b.disabled=false)}
-  }
-
-  function deliveryPaymentMethodOptions(selected=''){
-    const rows=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição'],['other','Outro']];
-    return rows.map(([v,l])=>'<option value="'+v+'" '+(v===selected?'selected':'')+'>'+l+'</option>').join('');
-  }
-  function deliveryPaymentDefaultMethod(o){
-    const raw=String(o?.payment_method_snapshot?.method||'').toLowerCase();
-    const map={pix:'pix',cash:'cash',dinheiro:'cash',credit:'credit_card',credit_card:'credit_card',card:'credit_card',food_card:'food_card',meal_card:'meal_card'};
-    return map[raw]||'pix';
-  }
-  function paymentAmountInput(cents){return (Number(cents||0)/100).toFixed(2).replace('.',',')}
-  function parsePaymentAmountCents(value){
-    let s=String(value||'').trim().replace(/R\$/gi,'').replace(/\s+/g,'');
-    if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');
-    const n=Number(s);return Number.isFinite(n)?Math.round(n*100):0;
-  }
-  function actualPaymentText(o){
-    const parts=o?.payment_method_snapshot?.actual?.parts||[];
-    return parts.length?parts.map(p=>(p.label||p.method)+' '+money(p.amount_cents)).join(' + '):'';
-  }
-  function paintDeliveryPaymentDraft(){
-    const d=state.deliveryPaymentDraft;if(!d)return;
-    const host=$('#deliveryPaymentParts');if(!host)return;
-    host.innerHTML=d.parts.map((p,index)=>'<div class="form-grid delivery-payment-row" data-payment-index="'+index+'" style="align-items:end;margin-bottom:10px">'+
-      '<label><span>Forma '+(d.parts.length>1?index+1:'')+'</span><select data-payment-method>'+deliveryPaymentMethodOptions(p.method)+'</select></label>'+
-      '<label><span>Valor</span><input data-payment-amount inputmode="decimal" value="'+esc(paymentAmountInput(p.amount_cents))+'"></label>'+
-      (index>0?'<button class="text danger" type="button" data-remove-payment-part="'+index+'">Remover</button>':'')+
-    '</div>').join('');
-    const sum=d.parts.reduce((s,p)=>s+Number(p.amount_cents||0),0),diff=Number(d.order.total_cents||0)-sum;
-    $('#deliveryPaymentSum').innerHTML='<strong>'+money(sum)+'</strong><span class="'+(diff===0?'ok-text':'warn-text')+'">'+(diff===0?'Total confere':'Diferença '+money(Math.abs(diff))+(diff>0?' faltando':' a mais'))+'</span>';
-    host.querySelectorAll('[data-payment-method]').forEach((el,index)=>el.onchange=()=>{d.parts[index].method=el.value});
-    host.querySelectorAll('[data-payment-amount]').forEach((el,index)=>el.oninput=()=>{d.parts[index].amount_cents=parsePaymentAmountCents(el.value);const sum2=d.parts.reduce((s,p)=>s+Number(p.amount_cents||0),0),diff2=Number(d.order.total_cents||0)-sum2;$('#deliveryPaymentSum').innerHTML='<strong>'+money(sum2)+'</strong><span class="'+(diff2===0?'ok-text':'warn-text')+'">'+(diff2===0?'Total confere':'Diferença '+money(Math.abs(diff2))+(diff2>0?' faltando':' a mais'))+'</span>'});
-    host.querySelectorAll('[data-remove-payment-part]').forEach(b=>b.onclick=()=>{d.parts.splice(Number(b.dataset.removePaymentPart),1);paintDeliveryPaymentDraft()});
-    const split=$('#addDeliveryPaymentPart');if(split)split.disabled=d.parts.length>=2;
-  }
-  async function finalizeDeliveredOrder(o){
-    const actual=o?.payment_method_snapshot?.actual||{};
-    const parts=Array.isArray(actual.parts)?actual.parts:[];
-    if(parts.length!==1)throw new Error('delivery_already_captured_requires_canonical_review');
-    const method=String(parts[0]?.method||'').trim();
-    const amount=Number(parts[0]?.amount_cents||0);
-    if(!method||amount!==Number(o.total_cents||0))throw new Error('delivery_already_captured_requires_canonical_review');
-    await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,method,amount_cents:amount,operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+o.id})});
-    const data=await api('orders');state.orders=data.orders||[];paintExpeditionBody();
-  }
-  async function captureDeliveryPaymentAndFinish(){
-    const d=state.deliveryPaymentDraft;if(!d)return;
-    const rows=[...document.querySelectorAll('.delivery-payment-row')];
-    const parts=rows.map(row=>({method:row.querySelector('[data-payment-method]')?.value||'',amount_cents:parsePaymentAmountCents(row.querySelector('[data-payment-amount]')?.value||'')}));
-    const total=parts.reduce((s,p)=>s+p.amount_cents,0);
-    if(parts.some(p=>!p.method||p.amount_cents<=0)){toast('Informe a forma e o valor de cada pagamento');return}
-    if(total!==Number(d.order.total_cents||0)){toast('Os pagamentos precisam somar exatamente '+money(d.order.total_cents));return}
-    const operator=requireOperator();if(!operator)return;
-    const btn=$('#deliveryPaymentConfirm');if(btn){btn.disabled=true;btn.textContent='SALVANDO…'}
-    try{
-      if(parts.length===1){
-        await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,method:parts[0].method,amount_cents:parts[0].amount_cents,operator,idempotency_key:'delivery-v3:'+d.order.id})});
-      }else{
-        await api('order_payment_capture',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,parts,operator})});
-        await api('order_delivery_finalize_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,operator,idempotency_key:'delivery-finalize-v4:'+d.order.id})});
-      }
-      const data=await api('orders');state.orders=data.orders||[];paintExpeditionBody();
-      $('#editor').close();state.deliveryPaymentDraft=null;
-      toast('Entrega e pagamento registrados');
-    }catch(e){
-      toast(errorMessage(e.message));
-      if(btn){btn.disabled=false;btn.textContent='CONFIRMAR ENTREGA E PAGAMENTO'}
-    }
-  }
   async function confirmDeliveryFromExpedition(id){
     const o=state.orders.find(x=>x.id===id);
     if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
@@ -883,3 +535,287 @@
     const cred=b?.credentials||{},domains=b?.domains||{},queue=b?.hub_queue||{},orderLinks=b?.order_links||{};
     if(cred.ready===false)issues.push('Credenciais do Bling precisam de atenção');
     if(b?.hub_enabled===false)issues.push('Integração direta com o Bling está pausada');
+    if(b?.hub_enabled!==false&&domains.orders===false)issues.push('Envio de pedidos ao Bling está pausado');
+    const queueReview=Number(queue.review_required||0)+Number(queue.failed||0);
+    if(queueReview>0)issues.push(queueReview+' item(ns) da fila precisam de revisão');
+    const orderReview=Number(orderLinks.review_required||0);
+    if(orderReview>0)issues.push(orderReview+' pedido(s) precisam de revisão no Bling');
+    return [...new Set(issues)];
+  }
+  async function loadOperationalIntegrationAlert(){
+    const host=$('#integrationOperationalAlert');if(!host)return;
+    host.innerHTML='';
+    try{
+      const data=await api('bling_status');
+      state.bling=data.bling||{};
+      const issues=blingOperationalIssues(state.bling);
+      if(!issues.length)return;
+      host.innerHTML='<div class="operational-alert"><div><strong>Integração precisa de atenção</strong><small>'+issues.map(esc).join(' · ')+'</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }catch(e){
+      host.innerHTML='<div class="operational-alert"><div><strong>Não consegui verificar a integração</strong><small>Os pedidos continuam visíveis. Abra o diagnóstico para conferir o Bling.</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }
+  }
+
+  function financeSummaryCard(label,value,detail,kind=''){
+    return '<div class="bling-card '+esc(kind)+'"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong><span class="sub">'+esc(detail)+'</span></div>';
+  }
+  function financePriorityRow(r,today){
+    const isReceive=r.kind==='receivable';
+    const overdue=Boolean(r.due_date&&r.due_date<today);
+    const title=r.contact_name||r.document_number||r.origin_number||('Lançamento #'+String(r.id||''));
+    const detail=[r.document_number?'Doc. '+r.document_number:'',r.origin_number?'Origem '+r.origin_number:'',r.boleto_url?'Boleto emitido':'',r.pix_url?'PIX disponível':''].filter(Boolean).join(' · ');
+    return '<div class="closure-row">'+
+      '<div><strong class="'+(isReceive?'ok-text':'warn-text')+'">'+(isReceive?'Receber':'Pagar')+'</strong><span class="sub">'+(overdue?'<span class="danger-text">Vencido</span>':'Em aberto')+'</span></div>'+
+      '<div class="history-main"><strong>'+esc(title)+'</strong><small>'+esc(detail||'Sem observação')+'</small><div class="dispatch-actions" style="justify-content:flex-start;margin-top:6px">'+
+        '<button class="text" type="button" data-finance-detail="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Detalhes</button>'+
+        '<button class="text" type="button" data-finance-edit="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Editar</button>'+
+        '<button class="text" type="button" data-finance-settle="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Dar baixa</button>'+
+        (isReceive&&r.origin_id?'<button class="text" type="button" data-finance-boleto="'+esc(r.origin_id)+'">Boletos</button>':'')+
+      '</div></div>'+
+      '<div><strong>'+esc(dateOnly(r.due_date))+'</strong><span class="sub">'+(r.due_date===today?'Vence hoje':'Vencimento')+'</span></div>'+
+      '<strong>'+money(r.amount_cents)+'</strong>'+
+      '<span class="pill '+(overdue?'danger':'')+'">'+(r.boleto_url?'Boleto':r.pix_url?'PIX':'Aberto')+'</span>'+
+    '</div>';
+  }
+  function paintFinance(){
+    const host=$('#financeBody');if(!host)return;
+    const f=state.finance||{},rec=f.receivable||{},pay=f.payable||{},realized=f.realized_30d||{},today=f.window?.today||'';
+    const priorities=Array.isArray(f.priority)?f.priority:[];
+    const accounts=Array.isArray(f.financial_accounts)?f.financial_accounts:[];
+    host.innerHTML=
+      (f.truncated?'<div class="rule-notice warn"><strong>Volume alto de lançamentos</strong><div>O painel exibiu o limite seguro desta versão. Nenhum dado foi alterado.</div></div>':'')+
+      (realized.truncated?'<div class="rule-notice warn"><strong>Histórico de 30 dias parcial</strong><div>O volume de contas pagas/recebidas ultrapassou o limite seguro de leitura; os totais exibidos podem ser parciais.</div></div>':'')+
+      '<div class="bling-grid">'+
+        financeSummaryCard('A receber',money(rec.total_cents),String(rec.count||0)+' conta(s) em aberto')+
+        financeSummaryCard('A pagar',money(pay.total_cents),String(pay.count||0)+' conta(s) em aberto')+
+        financeSummaryCard('Saldo projetado',money(f.projected_cents),(Number(f.projected_cents||0)>=0?'Recebimentos acima dos pagamentos':'Pagamentos acima dos recebimentos'),Number(f.projected_cents||0)<0?'danger':'')+
+        financeSummaryCard('Recebido · 30 dias',money(realized.received_cents),String(realized.received_count||0)+' conta(s) recebida(s)')+
+        financeSummaryCard('Pago · 30 dias',money(realized.paid_cents),String(realized.paid_count||0)+' conta(s) paga(s)')+
+        financeSummaryCard('Líquido realizado · 30 dias',money(realized.net_cents),(Number(realized.net_cents||0)>=0?'Entradas acima das saídas':'Saídas acima das entradas'),Number(realized.net_cents||0)<0?'danger':'')+
+        financeSummaryCard('Vencidos a receber',money(rec.overdue_cents),String(rec.overdue_count||0)+' vencido(s)',Number(rec.overdue_count||0)>0?'warn':'')+
+        financeSummaryCard('Vencidos a pagar',money(pay.overdue_cents),String(pay.overdue_count||0)+' vencido(s)',Number(pay.overdue_count||0)>0?'danger':'')+
+        financeSummaryCard('Próximos 7 dias',money(Number(rec.next_7_cents||0)-Number(pay.next_7_cents||0)),String(rec.next_7_count||0)+' a receber · '+String(pay.next_7_count||0)+' a pagar')+
+        financeSummaryCard('Boletos',String(f.boleto_count||0),String(f.pix_count||0)+' conta(s) também com PIX')+
+        financeSummaryCard('Contas financeiras',String(accounts.length),f.financial_accounts_access?.ok?'Acesso confirmado':'Acesso parcial')+
+      '</div>'+
+      '<section class="panel"><div class="history-title dispatch-head"><div><strong>Prioridades financeiras</strong><span>vencidos primeiro, depois próximos vencimentos · somente leitura</span></div><b>'+priorities.length+'</b></div>'+
+        (priorities.length?priorities.map(r=>financePriorityRow(r,today)).join(''):'<div class="history-empty">Nenhuma conta em aberto no período consultado.</div>')+
+      '</section>'+
+      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Contas financeiras do Bling</strong><span>bancos, caixas e integrações disponíveis</span></div><b>'+accounts.length+'</b></div>'+
+        (accounts.length?'<div style="padding:12px 14px">'+accounts.map(a=>'<button class="pill" type="button" data-financial-account-detail="'+esc(a.id)+'" style="margin:3px">'+esc(a.description||('Conta #'+a.id))+' · '+esc(a.type||'tipo não informado')+'</button>').join('')+'</div>':'<div class="history-empty">Nenhuma conta financeira retornada.</div>')+
+      '</section>';
+    host.querySelectorAll('[data-finance-detail]').forEach(b=>b.onclick=()=>openFinanceDetail(b.dataset.financeKind,Number(b.dataset.financeDetail)));
+    host.querySelectorAll('[data-finance-edit]').forEach(b=>b.onclick=()=>openFinanceEditor(b.dataset.financeKind,Number(b.dataset.financeEdit)));
+    host.querySelectorAll('[data-finance-settle]').forEach(b=>b.onclick=()=>openFinanceSettlement(b.dataset.financeKind,Number(b.dataset.financeSettle)));
+    host.querySelectorAll('[data-finance-boleto]').forEach(b=>b.onclick=()=>openFinanceBoletos(Number(b.dataset.financeBoleto)));
+    host.querySelectorAll('[data-financial-account-detail]').forEach(b=>b.onclick=()=>openFinancialAccountDetail(Number(b.dataset.financialAccountDetail)));
+  }
+  function financeTokenPayload(token){
+    try{
+      const raw=String(token||'').split('.')[1]||'';
+      const pad=raw.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-raw.length%4)%4);
+      return JSON.parse(atob(pad));
+    }catch{return {}}
+  }
+  function financeSessionToken(){
+    const token=sessionStorage.getItem('da_finance_access_token_v1')||'';
+    if(!token)return '';
+    const exp=Number(financeTokenPayload(token)?.exp||0);
+    if(!exp||exp<=Math.floor(Date.now()/1000)+60){
+      sessionStorage.removeItem('da_finance_access_token_v1');
+      return '';
+    }
+    return token;
+  }
+  function clearFinanceSession(expectedToken=''){
+    const current=financeSessionToken();
+    if(expectedToken&&current&&current!==expectedToken)return false;
+    sessionStorage.removeItem('da_finance_access_token_v1');
+    state.financeCatalogs=null;
+    return true;
+  }
+  async function adminStepUp(){return await financeStepUp()}
+  async function financeStepUp(){
+    const existing=financeSessionToken();
+    if(existing)return existing;
+    if(state.financeAuthPromise)return await state.financeAuthPromise;
+    state.financeAuthPromise=(async()=>{
+      try{
+        const authRes=await fetch(FINANCE_AUTH_API,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
+          body:JSON.stringify({pin:'000000'}),
+          cache:'no-store'
+        });
+        const auth=await authRes.json().catch(()=>({}));
+        if(!authRes.ok||!auth?.ok)throw new Error(auth?.error||'admin_auto_auth_failed');
+        const verifyRes=await fetch(FINANCE_VERIFY_API,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
+          body:JSON.stringify({token_hash:auth.token_hash,type:auth.verification_type||'email'}),
+          cache:'no-store'
+        });
+        const verified=await verifyRes.json().catch(()=>({}));
+        const token=String(verified?.access_token||'').trim();
+        if(!verifyRes.ok||!token)throw new Error(verified?.msg||verified?.error_description||verified?.error||'admin_auto_session_failed');
+        sessionStorage.setItem('da_finance_access_token_v1',token);
+        return token;
+      }finally{
+        state.financeAuthPromise=null;
+      }
+    })();
+    return await state.financeAuthPromise;
+  }
+  async function financeApi(operation,payload={},retryAuth=true){
+    const token=await financeStepUp();
+    const u=new URL(API);u.searchParams.set('action','bling_finance_action');
+    const response=await fetch(u,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({operation,...payload}),
+      cache:'no-store'
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await financeApi(operation,payload,false);
+    }
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
+  async function loadFinanceCatalogs(force=false){
+    if(state.financeCatalogs&&!force)return state.financeCatalogs;
+    const data=await financeApi('catalogs');
+    state.financeCatalogs={
+      payment_methods:Array.isArray(data.payment_methods)?data.payment_methods:[],
+      categories:Array.isArray(data.categories)?data.categories:[],
+      financial_accounts:Array.isArray(data.financial_accounts)?data.financial_accounts:[],
+      truncated:Boolean(data.truncated)
+    };
+    return state.financeCatalogs;
+  }
+  function financeFieldValue(v){
+    return v==null?'':String(v);
+  }
+  function financeMoneyInput(v){
+    const n=Number(v);
+    return Number.isFinite(n)?n.toFixed(2).replace('.',','):'';
+  }
+  function financeSelectOptions(list,currentId,placeholder='Não informado'){
+    const current=Number(currentId||0);
+    const rows=(Array.isArray(list)?list:[]).filter(x=>Number(x?.id||0)>0);
+    const hasCurrent=current&&rows.some(x=>Number(x.id)===current);
+    const extra=current&&!hasCurrent?[{id:current,description:'Atual #'+current}]:[];
+    return '<option value="">'+esc(placeholder)+'</option>'+
+      [...extra,...rows].map(x=>'<option value="'+esc(x.id)+'" '+(Number(x.id)===current?'selected':'')+'>'+esc(x.description||x.name||('ID '+x.id))+'</option>').join('');
+  }
+  function financeCategoryRows(kind,catalogs){
+    return (catalogs?.categories||[]).filter(c=>{
+      const t=Number(c?.type||0);
+      return !t||t===3||(kind==='payable'&&t===1)||(kind==='receivable'&&t===2);
+    });
+  }
+  function financeCatalogDescription(area,id){
+    const n=Number(id||0);if(!n)return '';
+    const c=state.financeCatalogs||{};
+    const rows=area==='payment'?c.payment_methods:area==='account'?c.financial_accounts:c.categories;
+    return (rows||[]).find(x=>Number(x.id)===n)?.description||('#'+n);
+  }
+  function financeFormPayload(form){
+    const value=name=>form.querySelector('[name="'+name+'"]')?.value?.trim()||'';
+    const number=name=>{const raw=value(name).replace(/\./g,'').replace(',','.');const n=Number(raw);return Number.isFinite(n)&&n>0?n:null};
+    const payload={
+      vencimento:value('vencimento'),
+      valor:number('valor'),
+      contato_id:number('contato_id'),
+      forma_pagamento_id:number('forma_pagamento_id'),
+      dataEmissao:value('dataEmissao'),
+      numeroDocumento:value('numeroDocumento'),
+      competencia:value('competencia'),
+      historico:value('historico'),
+      portador_id:number('portador_id'),
+      categoria_id:number('categoria_id')
+    };
+    Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]===null)delete payload[k]});
+    return payload;
+  }
+  function financeExtractDetail(kind,account){
+    const a=account||{};
+    return {
+      vencimento:a.vencimento||'',
+      valor:a.valor??'',
+      contato_id:a.contato?.id||'',
+      contato_nome:a.contato?.nome||'',
+      forma_pagamento_id:a.formaPagamento?.id||'',
+      dataEmissao:a.dataEmissao||'',
+      numeroDocumento:a.numeroDocumento||'',
+      competencia:a.competencia||'',
+      historico:a.historico||'',
+      portador_id:a.portador?.id||a.contaContabil?.id||'',
+      categoria_id:a.categoria?.id||''
+    };
+  }
+  function financeOpenDialog(title,body,actions=''){
+    $('#editorTitle').textContent=title;
+    $('#editorBody').innerHTML=body;
+    $('#editorActions').innerHTML=actions||'<button class="secondary" id="financeClose" type="button">Fechar</button>';
+    if($('#financeClose'))$('#financeClose').onclick=()=>$('#editor').close();
+    if(!$('#editor').open)$('#editor').showModal();
+  }
+  function financeContactLabel(c){
+    const parts=[c?.name||'',c?.trade_name||'',c?.document||''].filter(Boolean);
+    return parts.join(' · ')||('Contato #'+String(c?.id||''));
+  }
+  function attachFinanceContactSearch(current={}){
+    const input=$('#financeContactSearch'),hidden=$('#financeContactId'),host=$('#financeContactResults');
+    if(!input||!hidden||!host)return;
+    hidden.value=financeFieldValue(current.contato_id);
+    if(current.contato_id){
+      state.financeSelectedContact={id:Number(current.contato_id),name:current.contato_nome||('Contato #'+current.contato_id)};
+      input.value=current.contato_nome||('Contato #'+current.contato_id);
+    }else state.financeSelectedContact=null;
+
+    input.oninput=()=>{
+      hidden.value='';
+      state.financeSelectedContact=null;
+      clearTimeout(state.financeContactSearchTimer);
+      const q=input.value.trim();
+      if(q.length<2){
+        host.innerHTML=q?'<small class="sub">Digite pelo menos 2 caracteres.</small>':'';
+        return;
+      }
+      host.innerHTML='<small class="sub">Buscando no Bling…</small>';
+      state.financeContactSearchTimer=setTimeout(async()=>{
+        try{
+          const data=await financeApi('contact_search',{query:q});
+          const contacts=Array.isArray(data.contacts)?data.contacts:[];
+          host.innerHTML=contacts.length
+            ?'<div class="panel" style="margin-top:6px;padding:6px">'+contacts.map(c=>'<button type="button" class="text" data-finance-contact-id="'+esc(c.id)+'" style="display:block;width:100%;text-align:left;padding:9px 8px">'+esc(financeContactLabel(c))+'</button>').join('')+'</div>'
+            :'<small class="sub">Nenhum contato encontrado.</small>';
+          host.querySelectorAll('[data-finance-contact-id]').forEach(btn=>btn.onclick=()=>{
+            const contact=contacts.find(c=>Number(c.id)===Number(btn.dataset.financeContactId));
+            if(!contact)return;
+            hidden.value=String(contact.id);
+            input.value=financeContactLabel(contact);
+            state.financeSelectedContact={id:Number(contact.id),name:financeContactLabel(contact)};
+            host.innerHTML='';
+          });
+        }catch(e){
+          host.innerHTML='<small class="danger-text">Não foi possível buscar contatos agora.</small>';
+        }
+      },320);
+    };
+  }
+  function financeActionErrorMessage(error){
+    const code=String(error?.message||error||'');
+    const map={
+      boleto_validation_failed:'Para usar boleto, informe histórico, selecione uma conta financeira apta, use vencimento de hoje em diante e mantenha o contato do Bling com e-mail e endereço completos.',
+      validation_failed:'Revise os campos obrigatórios antes de continuar.',
+      bling_finance_write_uncertain:'Resultado incerto. Não tente novamente sem revisar o lançamento no Bling.',
+      finance_owner_required:'Somente o proprietário pode operar o financeiro.',
+      finance_session_invalid:'A sessão financeira expirou. Tente novamente.'
+    };
+    return map[code]||code||'Não foi possível concluir a operação.';
+  }
