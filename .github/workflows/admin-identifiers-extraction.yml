@@ -1,0 +1,25 @@
+name: Admin identifier extraction
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/core/identifiers.js'
+      - 'scripts/test-admin-identifiers-extraction.mjs'
+      - '.github/workflows/admin-identifiers-extraction.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  identifier-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-admin-formatters-extraction.mjs
+      - run: node scripts/test-admin-identifiers-extraction.mjs
+      - run: node scripts/test-admin-orders-clean-flow-v3.mjs
+      - run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
+      - run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
