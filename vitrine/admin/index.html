@@ -5755,19 +5755,26 @@
       if($('#retryPurchases'))$('#retryPurchases').onclick=loadPurchases;
     }
   }
+  let purchaseAdvancedGeneration=0;
   async function loadPurchaseAdvanced(){
     if(state.purchaseAdvancedLoading||state.purchaseAdvancedLoaded)return;
+    const generation=++purchaseAdvancedGeneration;
     state.purchaseAdvancedLoading=true;
     state.purchaseAdvancedError='';
     try{
-      state.purchaseCatalogQueue=await purchaseApi('catalog_queue',{lookback_days:31});
+      const queue=await purchaseApi('catalog_queue',{lookback_days:31});
+      if(generation!==purchaseAdvancedGeneration)return;
+      state.purchaseCatalogQueue=queue;
       state.purchaseAdvancedLoaded=true;
     }catch(e){
+      if(generation!==purchaseAdvancedGeneration)return;
       state.purchaseAdvancedError=purchaseXmlError(e);
       state.purchaseAdvancedLoaded=false;
     }finally{
-      state.purchaseAdvancedLoading=false;
-      if(state.tab==='purchases'&&$('#purchaseBody'))paintPurchases();
+      if(generation===purchaseAdvancedGeneration){
+        state.purchaseAdvancedLoading=false;
+        if(state.tab==='purchases'&&$('#purchaseBody'))paintPurchases();
+      }
     }
   }
   async function loadPurchaseBlingComparison(){
@@ -7648,10 +7655,15 @@
       if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);if(canPaint())paintOrderRows()}
     }catch(e){if(canPaint())host.innerHTML='<div class="empty">Não consegui carregar os pedidos.</div>'}
   }
+  let orderBoardRefreshGeneration=0;
   async function refreshOrderSeparationBoard(){
     if(state.tab!=='orders'||document.hidden||!state.orders.length)return;
+    const generation=++orderBoardRefreshGeneration,ordersGeneration=ordersLoadGeneration;
+    const isCurrent=()=>generation===orderBoardRefreshGeneration&&ordersGeneration===ordersLoadGeneration&&state.tab==='orders'&&!document.hidden;
     try{
-      const data=await api('order_separation_board'),map=new Map((data.board||[]).map(x=>[String(x.order_id),x]));
+      const data=await api('order_separation_board');
+      if(!isCurrent())return;
+      const map=new Map((data.board||[]).map(x=>[String(x.order_id),x]));
       let changed=false;
       state.orders=state.orders.map(o=>{
         const row=map.get(String(o.id));if(!row)return o;
@@ -7661,9 +7673,13 @@
       });
       if(state.orderStatusTab==='manual'&&Date.now()-Number(state.manualQueueLastSync||0)>=15000){
         const previous=[...state.manualQueueIds].sort().join(',');
-        try{await loadManualPickQueue();if(previous!==[...state.manualQueueIds].sort().join(','))changed=true}catch{}
+        try{
+          await loadManualPickQueue();
+          if(!isCurrent())return;
+          if(previous!==[...state.manualQueueIds].sort().join(','))changed=true;
+        }catch{}
       }
-      if(changed)paintOrderRows();
+      if(changed&&isCurrent())paintOrderRows();
     }catch{}
   }
   if(!window.__orderSeparationBoardTimer)window.__orderSeparationBoardTimer=setInterval(refreshOrderSeparationBoard,5000);
@@ -8428,7 +8444,9 @@
     $('#componentReplacementSearch').focus();
     host.scrollIntoView({behavior:'smooth',block:'center'});
   }
+  let componentReplacementSearchGeneration=0;
   async function searchComponentReplacement(){
+    const generation=++componentReplacementSearchGeneration;
     const ctx=state.componentReplacement;if(!ctx)return;
     const q=String($('#componentReplacementSearch')?.value||'').trim();
     const host=$('#componentReplacementResults');if(!host)return;
@@ -8436,11 +8454,13 @@
     host.innerHTML='<div class="loading">Buscando produtos…</div>';
     try{
       const data=await api('products',{q,limit:12});
+      if(generation!==componentReplacementSearchGeneration||state.componentReplacement!==ctx||host!==$('#componentReplacementResults'))return;
       const rows=(data.products||[]).filter(p=>p.active!==false&&Number(p.stock_quantity||0)>0);
       host.innerHTML=rows.length?rows.map(p=>'<div class="replacement-option"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.gtin||p.sku||'Sem código')+' · estoque físico '+esc(fmtQty(p.stock_quantity||0))+'</small></div><button class="secondary" type="button" data-replacement-product="'+esc(p.id)+'">Usar</button></div>').join(''):'<div class="sub">Nenhum produto ativo com estoque encontrado.</div>';
       host.querySelectorAll('[data-replacement-product]').forEach(b=>b.onclick=()=>replaceComponentWithProduct(b.dataset.replacementProduct,b));
     }catch(e){
-      host.innerHTML='<div class="sub">Não consegui buscar agora. Tente novamente.</div>';
+      if(generation===componentReplacementSearchGeneration&&state.componentReplacement===ctx&&host===$('#componentReplacementResults'))
+        host.innerHTML='<div class="sub">Não consegui buscar agora. Tente novamente.</div>';
     }
   }
   async function replaceComponentWithProduct(productId,btn){
