@@ -102,8 +102,7 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
   const state={currentOrder:{order:{id:'old'}},currentOrderBlingPreview:null};
   const button={disabled:false,textContent:''};let finish,paints=0;
   const api=called=>{assert.equal(called,action);return new Promise(resolve=>finish=resolve)};
-  const fn=new Function('state','api','
-,'paintOrderDetail','toast','blingPreflightOperationalBlockers',
+  const fn=new Function('state','api',String.fromCharCode(36),'paintOrderDetail','toast','blingPreflightOperationalBlockers',
     part('  async function '+name+'(',next)+';return '+name)(state,api,()=>button,()=>paints++,()=>{},()=>[]);
   const pending=fn();
   state.currentOrder={order:{id:'new'}};
@@ -116,8 +115,7 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
 {
  const state={currentOrder:{order:{id:'old'}}};let finish,paints=0,refreshes=0;
  const api=action=>new Promise(resolve=>{if(action==='history_sync_retry')resolve({ok:true});else if(action==='order')finish=resolve;else throw Error(action)});
- const fn=new Function('state','api','
-,'paintOrderDetail','loadOrders','toast',
+ const fn=new Function('state','api',String.fromCharCode(36),'paintOrderDetail','loadOrders','toast',
   part('  async function retryHistorySync(','  const renderOrderActionButtons')+';return retryHistorySync')(
     state,api,()=>({disabled:false,textContent:''}),()=>paints++,()=>refreshes++,()=>{});
  const pending=fn();await Promise.resolve();
