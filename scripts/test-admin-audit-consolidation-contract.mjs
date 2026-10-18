@@ -16,7 +16,7 @@ const safeGate=/if\s*\(\s*fiscal\.authorized!==true\s*&&\s*gate\.authorized!==tr
 const legacyBypass=/&&\s*!fiscal\.bling_invoice_id\s*&&\s*!fiscal\.invoice_id/.test(open);
 if(!safeGate){
   assert.ok(legacyBypass,'DANFE gate changed: review authorization behavior');
-  assert.match(audit,/Não foi corrigido/,'unfixed DANFE authorization gate must remain documented');
+  assert.match(audit,/Não foi corrigido/,'historical round-18 report must document original issue');
 }
 assert.match(edge,/hub\("fiscal_document_pdf",\{source_order_id:oid\}\)/);
 console.log('Admin consolidated audit regression inventory: PASS; DANFE gate remediation pending:',!safeGate);
