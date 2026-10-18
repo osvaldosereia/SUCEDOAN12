@@ -108,3 +108,16 @@ Criar a próxima branch de programação **a partir da `main` mais recente**, ob
 > Continuar o projeto **Dona Antônia — Compras e Catálogo XML** no repositório `osvaldosereia/SUCEDOAN12`, Supabase `ssbesxgaijknwsjbsbcz`. Leia **inteiramente este HANDOFF** no GitHub antes de programar. Consulte a `main` atual e o runtime Supabase, não use branch desatualizada para sobrescrever correções. O catálogo usa exclusivamente XML de NF-e importado do Bling ou enviado manualmente; nada de Cosmos, SI5, pesquisa externa, novas automações ou alteração automática de produtos, preços, fiscal e estoque. Faça primeiro auditoria/CI/teste ponta a ponta das funções já publicadas; depois corrija pendências e implemente revisão campo a campo com aprovação humana. Trabalhe em branch agent/* nova, faça commits atômicos e reporte o que foi testado e publicado.
 
 **Este documento é um checkpoint, não autorização para considerar o projeto concluído.**
+
+## Checkpoint R14 — 09/10/2026 — decisões de revisão campo a campo (pré-implantação)
+
+**Entrega:** PR draft [#990](https://github.com/osvaldosereia/SUCEDOAN12/pull/990), branch `agent/xml-catalog-field-review-ledger-r14-20261009`, criada da `main` `8d2e187fa3d7`.
+
+1. SQL de preparação em `docs/projects/purchase-xml-field-review-ledger-v1.sql` (deliberadamente **não** migração aplicada): propostas por observação XML verificada, produto e campo; valores propostos extraídos da evidência, não do cliente; tabela de eventos imutáveis; RLS e grants `service_role` apenas; funções `SECURITY INVOKER`.
+2. Decisões `approve/reject/reopen` com confirmação explícita, lock `FOR UPDATE`, controle de revisão, idempotência na proposta e log por decisão. NCM, CEST e EAN tributável não têm aprovação fiscal genérica.
+3. **Nenhum campo do produto mestre é alterado nesta etapa**, inclusive após o status `approved`; não há chamadas Bling, preços, estoque, dados fiscais, financeiro ou vitrine.
+4. Tests: `scripts/test-xml-field-review-ledger-v1.mjs` (guard estático com negativos) e `scripts/test-xml-field-review-ledger-pg-v1.sql` com PostgreSQL 17 descartável, roles `anon/authenticated/service_role`, caso positivo, reabertura, concorrência por revisão, permissões e proteção de auditoria.
+5. CI: [XML Field Review Ledger V1, run 37924081765](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/37924081765), job `field-review` com **sucesso** nos passos Node e PostgreSQL isolado. Falha anterior de parsing da expressão `CASE` foi corrigida no commit `a695ab0034d6` e reexecutada com sucesso.
+6. Supabase produtivo **não modificado**; `main` e Edge Admin v230 preservados.
+
+**Ainda falta para concluir esta funcionalidade:** revisar PR, preparar migração canônica após testes, implementar endpoints com identidade humana validada e interface lazy no Admin; criar aplicação por campo ao produto mestre com compare-and-swap, confirmação e compensação/rollback seguro; validar fiscal separadamente; testes de compatibilidade com Bling, gatilhos de produto, permissões e fluxo completo em ambiente isolado; integrar somente após gates de aceite. Não confundir aprovação no ledger com atualização do cadastro.
