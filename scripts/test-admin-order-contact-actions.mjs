@@ -23,4 +23,15 @@ assert.match(f.mapsHrefFromAddress(order.delivery_address_snapshot),/google.com\
 assert.equal(f.mapsHrefFromAddress({street:'Rua A'}),'');
 assert.match(f.orderContactActionsHtml(order),/Pedir endereço/);
 assert.match(f.orderContactActionsHtml(order),/Abrir no Maps/);
+// Missing contact information must not produce a broken WhatsApp link.
+assert.equal(f.orderMissingDataRequest({...order,whatsapp_phone_e164:'',delivery_address_snapshot:{}}),null);
+assert.equal(f.orderContactActionsHtml({problems:[],delivery_address_snapshot:{}}),'');
+// Both missing name and address must request both pieces of information.
+const both=f.orderMissingDataRequest({...order,problems:['Cliente não identificado','Endereço incompleto']});
+assert.equal(both.label,'Pedir dados');
+assert.match(decodeURIComponent(both.href),/nome completo e seu endereço completo/);
+// Preserve explicit map links and reject unrelated map hosts.
+assert.equal(f.mapsHrefFromAddress({google_maps_url:'https://maps.app.goo.gl/abc'}),'https://maps.app.goo.gl/abc');
+assert.equal(f.mapsHrefFromAddress({google_maps_url:'https://www.google.com/maps/place/Teste'}),'https://www.google.com/maps/place/Teste');
+assert.equal(f.mapsHrefFromAddress({google_maps_url:'https://evil.example/maps'}),'');
 console.log('Admin order contact actions: PASS');
