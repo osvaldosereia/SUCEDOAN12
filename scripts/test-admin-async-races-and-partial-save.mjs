@@ -62,4 +62,36 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
  assert.ok(messages[0].includes('Produto salvo, mas a atualização de oferta NÃO foi concluída.'));
 }
 
+
+// Orders are also refreshed from the driver/expedition tab; their shared state
+// must update without attempting to repaint a non-existent orders table.
+{
+ const state={tab:'driver',orders:[]},host={innerHTML:''};
+ let painted=0,queue=0;
+ const api=async()=>({orders:[{id:'driver-order',status:'confirmed'}]});
+ const loadOrders=new Function('state','
+,'api','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
+  part('  let ordersLoadGeneration=0;','  async function refreshOrderSeparationBoard')+';return loadOrders')(
+    state,()=>null,api,async()=>queue++,()=>painted++,async()=>{});
+ await loadOrders();
+ assert.equal(state.orders[0].id,'driver-order');
+ assert.equal(queue,1);
+ assert.equal(painted,0);
+}
+// Two overlapping order-list refreshes must not restore an older dataset.
+{
+ const state={tab:'orders',orders:[]},host={innerHTML:'',querySelectorAll:()=>[]};
+ const pending=[];let paints=0;
+ const api=()=>{const d=deferred();pending.push(d);return d.promise};
+ const loadOrders=new Function('state','
+,'api','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
+  part('  let ordersLoadGeneration=0;','  async function refreshOrderSeparationBoard')+';return loadOrders')(
+    state,k=>k==='#orderRows'?host:null,api,async()=>{},()=>paints++,async()=>{});
+ const old=loadOrders(),fresh=loadOrders();
+ pending[1].resolve({orders:[{id:'fresh',status:'confirmed'}]});await fresh;
+ pending[0].resolve({orders:[{id:'old',status:'confirmed'}]});await old;
+ assert.equal(state.orders[0].id,'fresh');
+ assert.equal(paints,1);
+}
+
 console.log('Admin async races and partial save: PASS');
