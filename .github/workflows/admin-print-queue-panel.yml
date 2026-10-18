@@ -84,6 +84,7 @@ jobs:
       - run: node scripts/test-admin-inventory-balance-contract.mjs
       - run: node scripts/test-admin-stock-adjustment-contract.mjs
       - run: node scripts/test-admin-transactional-baseline-contract.mjs
+      - run: node scripts/test-admin-atomic-stock-sql-draft.mjs
       - run: node scripts/test-admin-stock-hardening-contract.mjs
       - run: node scripts/test-admin-stock-receipt-hardening-contract.mjs
       - run: node scripts/test-admin-bling-integration-contract.mjs
