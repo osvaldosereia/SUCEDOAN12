@@ -41,6 +41,7 @@ on:
       - 'scripts/test-admin-inventory-receipt-contract.mjs'
       - 'scripts/test-admin-inventory-balance-contract.mjs'
       - 'scripts/test-admin-stock-adjustment-contract.mjs'
+      - 'scripts/test-admin-transactional-baseline-contract.mjs'
       - 'supabase/functions/purchase-xml-v1/index.ts'
       - 'scripts/test-admin-audit-consolidation-contract.mjs'
       - 'docs/audits/**'
@@ -82,6 +83,7 @@ jobs:
       - run: node scripts/test-admin-inventory-receipt-contract.mjs
       - run: node scripts/test-admin-inventory-balance-contract.mjs
       - run: node scripts/test-admin-stock-adjustment-contract.mjs
+      - run: node scripts/test-admin-transactional-baseline-contract.mjs
       - run: node scripts/test-admin-stock-hardening-contract.mjs
       - run: node scripts/test-admin-stock-receipt-hardening-contract.mjs
       - run: node scripts/test-admin-bling-integration-contract.mjs
