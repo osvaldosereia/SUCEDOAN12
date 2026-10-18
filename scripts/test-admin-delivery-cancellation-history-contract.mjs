@@ -10,7 +10,7 @@ function between(source,startToken,endToken){
   assert.ok(end>start,'missing end '+endToken+' after '+startToken);
   return source.slice(start,end);
 }
-const dispatch=between(api,'async function orderDispatchStartV4(','\nfunction rejectCriticalStatusBypass');
+const dispatch=between(api,'async function orderDispatchStartV4(','function rejectCriticalStatusBypass');
 const bypass=between(api,'function rejectCriticalStatusBypass(','\nasync function updateOrderCanonical');
 const fail=between(api,'async function registerFailedDelivery(','\nasync function confirmDeliveryReturn');
 const ret=between(api,'async function confirmDeliveryReturn(','\nasync function reverseDeliveryReturnStockIfNeeded');
