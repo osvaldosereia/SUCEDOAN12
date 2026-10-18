@@ -42,7 +42,7 @@
     };
     return reasons.includes(labels[key]||'');
   }
-  function orderIssueCount(key){return (Array.isArray(state.orders)?state.orders:[]).filter(o=>o&&orderIssueMatch(o,key)).length}
+  function orderIssueCount(key){return (Array.isArray(state?.orders)?state.orders:[]).filter(o=>o&&orderIssueMatch(o,key)).length}
   function orderOperationalPriority(o){
     if(orderProblemReasons(o).length)return 0;
     if(isBacklogOrder(o))return 1;
@@ -73,7 +73,7 @@
     if(filter==='delivery')return o.status==='out_for_delivery';
     if(filter==='finalized')return o.status==='delivered';
     if(filter==='backlog')return isBacklogOrder(o);
-    if(filter==='problems')return orderIssueMatch(o,state.orderIssueFilter);
+    if(filter==='problems')return orderIssueMatch(o,state?.orderIssueFilter);
     return true;
   }
     return {orderProblemReasons,isBacklogOrder,orderIssueMatch,orderIssueCount,orderOperationalPriority,orderNextAction,orderFilterMatch};
