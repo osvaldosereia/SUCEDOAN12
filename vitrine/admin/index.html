@@ -7703,17 +7703,18 @@
   let ordersLoadGeneration=0;
   async function loadOrders(){
     const generation=++ordersLoadGeneration,host=$('#orderRows');
-    const isCurrent=()=>generation===ordersLoadGeneration&&state.tab==='orders'&&host===$('#orderRows');
+    const isLatest=()=>generation===ordersLoadGeneration;
+    const canPaint=()=>isLatest()&&state.tab==='orders'&&host&&host===$('#orderRows');
     try{
       const data=await api('orders');
-      if(!isCurrent())return;
+      if(!isLatest())return;
       state.orders=Array.isArray(data.orders)?data.orders:[];
       try{await loadManualPickQueue()}catch{}
-      if(!isCurrent())return;
-      paintOrderRows();
+      if(!isLatest())return;
+      if(canPaint())paintOrderRows();
       const fiscalRows=state.orders.filter(o=>o.status==='ready').sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)).slice(0,8);
-      if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);if(isCurrent())paintOrderRows()}
-    }catch(e){if(isCurrent())host.innerHTML='<div class="empty">Não consegui carregar os pedidos.</div>'}
+      if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);if(canPaint())paintOrderRows()}
+    }catch(e){if(canPaint())host.innerHTML='<div class="empty">Não consegui carregar os pedidos.</div>'}
   }
   async function refreshOrderSeparationBoard(){
     if(state.tab!=='orders'||document.hidden||!state.orders.length)return;
