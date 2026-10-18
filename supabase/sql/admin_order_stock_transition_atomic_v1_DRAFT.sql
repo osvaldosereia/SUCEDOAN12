@@ -4,7 +4,8 @@
 -- trg_sync_vitrine_order_stock_reservation_v1. Verify its behavior and
 -- avoid double reservation/release before any staging execution.
 create or replace function public.admin_order_stock_transition_atomic_v1(
-  p_order_id uuid, p_expected_status text, p_next_status text
+  p_order_id uuid, p_expected_status text, p_next_status text,
+  p_patch jsonb default '{}'::jsonb
 ) returns jsonb
 language plpgsql
 security invoker
@@ -14,18 +15,23 @@ declare
   v_current text;
   v_stock jsonb;
   v_source text;
+  v_patch jsonb := coalesce(p_patch,'{}'::jsonb);
 begin
   if p_order_id is null or p_expected_status is null or p_next_status is null then
     return jsonb_build_object('ok',false,'error','invalid_arguments');
+  end if;
+
+  if jsonb_typeof(v_patch)<>'object' or exists (
+    select 1 from jsonb_object_keys(v_patch) k
+    where k not in ('delivery_address','payment_method','customer_id','customer_snapshot')
+  ) then
+    return jsonb_build_object('ok',false,'error','invalid_patch');
   end if;
 
   select status,source into v_current,v_source
   from public.orders where id=p_order_id for update;
   if not found then
     return jsonb_build_object('ok',false,'error','order_not_found');
-  end if;
-  if v_current=p_next_status then
-    return jsonb_build_object('ok',true,'already_applied',true,'status',v_current);
   end if;
   if v_current is distinct from p_expected_status then
     return jsonb_build_object('ok',false,'error','stale_order_status','current_status',v_current);
@@ -55,10 +61,14 @@ begin
     set status=p_next_status,updated_at=now(),
         confirmed_at=case when p_next_status='confirmed' then now() else confirmed_at end,
         cancelled_at=case when p_next_status='cancelled' then now() else cancelled_at end
+    ,delivery_address=case when v_patch ? 'delivery_address' then v_patch->'delivery_address' else delivery_address end,
+    payment_method=case when v_patch ? 'payment_method' then v_patch->>'payment_method' else payment_method end,
+    customer_id=case when v_patch ? 'customer_id' then nullif(v_patch->>'customer_id','')::uuid else customer_id end,
+    customer_snapshot=case when v_patch ? 'customer_snapshot' then v_patch->'customer_snapshot' else customer_snapshot end
     where id=p_order_id;
   return jsonb_build_object('ok',true,'status',p_next_status,'stock',v_stock);
 end;
 $$;
 
-revoke all on function public.admin_order_stock_transition_atomic_v1(uuid,text,text) from public, anon, authenticated;
+revoke all on function public.admin_order_stock_transition_atomic_v1(uuid,text,text,jsonb) from public, anon, authenticated;
 grant execute on function public.admin_order_stock_transition_atomic_v1(uuid,text,text) to service_role;
