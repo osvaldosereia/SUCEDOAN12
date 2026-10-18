@@ -5,7 +5,8 @@ const section=(a,b)=>{const i=src.indexOf(a),j=src.indexOf(b,i+a.length);assert.
 const manual=section('async function orderFiscalIssueV4(','async function orderFiscalRecoverBlingV1(').replace('async function orderFiscalIssueV4','async function');
 const automatic=section('async function autoIssueFiscalAfterSeparation(','async function runSeparationPostCompletionIntegrations(').replace('async function autoIssueFiscalAfterSeparation','async function');
 let calls=[],state={};
-const db={rpc:async()=>({data:{ready:true}})},hub=async a=>{calls.push(a);return {data:{accepted:true}}};
+let preflight={data:{ready:true}};
+const db={rpc:async()=>preflight},hub=async a=>{calls.push(a);return {data:{accepted:true}}};
 const orderFiscalStatusV4=async()=>({...state}),id=x=>x||null,tx=x=>String(x||'');
 const issue=new Function('db','hub','orderFiscalStatusV4','id','tx',`return (${manual})`)(db,hub,orderFiscalStatusV4,id,tx);
 const auto=new Function('db','hub','orderFiscalStatusV4',`return (${automatic})`)(db,hub,orderFiscalStatusV4);
@@ -28,4 +29,18 @@ state={authorized:false,can_issue:true,issue_enabled:true,hard_blockers:[],block
 assert.equal((await issue({id:'test-order',confirmation:'EMITIR_NFE'},{role:'viewer'})).error,'forbidden');
 assert.equal((await issue({id:'test-order',confirmation:'wrong'},{role:'owner'})).error,'fiscal_human_confirmation_required');
 assert.equal(calls.length,0);
+// Preflight failures must fail closed, even if the status endpoint says issuance is allowed.
+state={authorized:false,can_issue:true,issue_enabled:true,hard_blockers:[],blockers:[]};
+for(const blockedPreflight of [
+ {data:{ready:false,blockers:['stock_not_confirmed']}},
+ {error:{message:'database temporarily unavailable'}}
+]){
+ preflight=blockedPreflight;calls=[];
+ const m=await issue({id:'test-order',confirmation:'EMITIR_NFE'},{role:'owner'}).catch(e=>({thrown:e.message}));
+ const a=await auto('test-order');
+ assert.equal(a.attempted,false);
+ assert.equal(calls.length,0,'Hub invoked with failed preflight');
+ assert.ok(m.error||m.thrown,'manual issuance must reject preflight failure');
+}
+preflight={data:{ready:true}};
 console.log('Fiscal manual/automatic runtime guards: PASS (mocked Hub; no external writes)');
