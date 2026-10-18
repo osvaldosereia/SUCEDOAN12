@@ -42,5 +42,6 @@ assert.match(backendUpdate,/delivery_state_required/);
 assert.match(backendUpdate,/payment_method_required/);
 assert.match(backendUpdate,/order_operational_data_incomplete/);
 assert.match(backendUpdate,/transitionAllowed\(cur,next\)/);
-assert.match(backendUpdate,/reserve_vitrine_order_stock_v1/);
+assert.match(backendUpdate,/admin_order_stock_transition_atomic_v1/);
+assert.match(backendUpdate,/p_patch:atomicPatch/);
 console.log('Admin customer, address and payment contracts: PASS');
