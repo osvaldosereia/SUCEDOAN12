@@ -9,7 +9,7 @@ const modules=[
   'orders/read-model.js','components/today-cards.js','orders/time.js',
   'orders/search.js','orders/whatsapp-links.js','orders/contact-actions.js',
   'components/expiry-alert.js','components/ops-attention.js',
-  'components/print-queue-panel.js','basket-lot-image.js'
+  'components/print-queue-panel.js'
 ];
 const mainIndex=html.indexOf('<script>\n(()=>{');
 assert.ok(mainIndex>0,'main admin script not found');
@@ -39,6 +39,7 @@ for(const name of names)assert.ok(html.includes('window.'+name),'missing bridge 
 const orderedScripts=scripts.filter(src=>modules.some(module=>src.split('?')[0]==='/vitrine/admin/'+module));
 assert.deepEqual(orderedScripts.map(src=>src.split('?')[0]),modules.map(module=>'/vitrine/admin/'+module),'module dependency load order changed');
 const afterMain=['basket-guided-builder.js','basket-admin-section.js'];
+assert.equal(scripts.filter(src=>src.split('?')[0]==='/vitrine/admin/basket-lot-image.js').length,1,'basket lot image script must load once before main');
 const mainEnd=html.lastIndexOf('</script>');
 for(const module of afterMain){
   const url='/vitrine/admin/'+module;
