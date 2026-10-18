@@ -22,4 +22,8 @@ assert.match(cards,/data-today-filter="problems"/);
 assert.equal((cards.match(/class="ops-card /g)||[]).length,8);
 assert.match(cards,/data-today-issue="stock"/);
 assert.ok(!cards.includes('data-today-issue="payment"'));
+const escapeHtml=v=>String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+const guarded=ctx.window.DonaAntoniaAdminTodayCards.createTodayCards(escapeHtml,()=>0,()=>0);
+assert.match(guarded.renderTodayCards(),/Pedidos para confirmar/);
+assert.equal(guarded.renderTodayIssueBreakdown(),'');
 console.log('Admin today cards: PASS');
