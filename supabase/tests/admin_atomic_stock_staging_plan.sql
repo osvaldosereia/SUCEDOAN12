@@ -1,0 +1,20 @@
+-- Integration test plan; run ONLY in an isolated staging clone with fixtures.
+-- 1. Apply complete schema, extensions, views, triggers and current stock RPCs.
+-- 2. Apply admin_order_stock_transition_atomic_v1_DRAFT.sql.
+-- 3. Insert a fictitious created order and product with known stock, with
+--    required source, order_items, runtime authority and reservation dependencies.
+-- 4. Call atomic(created,confirmed, '{}'::jsonb) and assert:
+--      orders.status='confirmed'; exactly one reserved row per product;
+--      confirmed_at populated.
+-- 5. Repeat with expected='created'; assert stale_order_status and unchanged stock.
+-- 6. Two concurrent sessions confirm same order; assert only one succeeds.
+-- 7. Force insufficient_stock on another order; assert status remains created
+--    and no partial reservation rows persist.
+-- 8. Cancel a confirmed vitrine order; assert status cancelled and reservations
+--    released exactly once by the existing orders trigger.
+-- 9. Force trigger failure after stock reservation; assert all effects roll back.
+-- 10. Verify address/payment/customer patch and triggers on same status change.
+-- 11. Test manual_whatsapp and bling-authority paths separately.
+-- 12. Validate grants: anon/authenticated cannot execute; service_role can.
+-- 13. Validate print queue and Bling external actions in sandbox/mocked mode.
+-- No production data, real WhatsApp sends, or fiscal issuance.
