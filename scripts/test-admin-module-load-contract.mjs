@@ -42,7 +42,7 @@ assert.equal(orderedScripts.length,modules.length,'duplicate or missing module i
 assert.deepEqual(orderedScripts.map(src=>src.split('?')[0]),modules.map(module=>'/vitrine/admin/'+module),'module dependency load order changed');
 const afterMain=['basket-guided-builder.js','basket-admin-section.js'];
 assert.equal(scripts.filter(src=>src.split('?')[0]==='/vitrine/admin/basket-lot-image.js').length,1,'basket lot image script must load once before main');
-const mainEnd=html.lastIndexOf('</script>');
+const mainEnd=html.indexOf('</script>',mainIndex);
 for(const module of afterMain){
   const url='/vitrine/admin/'+module;
   const matches=scripts.filter(src=>src.split('?')[0]===url);
