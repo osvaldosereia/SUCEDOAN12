@@ -39,4 +39,12 @@ assert.equal(f.marketingCampaignSlug('  SEM ACENTOS  '),'sem-acentos');
 assert.equal(f.marketingSegmentOf({subcategory:'Beleza'}),'Beleza e cuidados');
 assert.equal(f.marketingSegmentOf({subsubcategory:'Cães'}),'Pet');
 assert.equal(f.marketingCampaignSlug('Promoção 100%'),'promocao-100');
+// Segment precedence is a commercial contract: a subcategory takes priority.
+assert.equal(f.marketingSegmentOf({subcategory:'Bebê',subsubcategory:'Biscoitos'}),'Bebê');
+assert.equal(f.marketingSegmentOf({subcategory:'Cabelos',subsubcategory:'Fraldas'}),'Bebê');
+assert.equal(f.marketingSegmentOf({subcategory:'Limpeza',subsubcategory:'Chocolates e doces'}),'Limpeza');
+assert.equal(f.marketingSegmentOf({subcategory:'Higiene pessoal'}),'Higiene pessoal');
+assert.equal(f.marketingSegmentOf({subcategory:'Pets',subsubcategory:'Cães'}),'Pet');
+assert.equal(f.marketingCampaignSlug('Ação & Coração'),'acao-coracao');
+assert.equal(f.marketingCampaignSlug('___'),'');
 console.log('Admin marketing helpers: PASS');
