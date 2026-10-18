@@ -13,7 +13,7 @@ new vm.Script(shared,{filename:'admin-secure-auth.js'});
 new vm.Script(picker,{filename:'montar/app.js'});
 assert.doesNotMatch(gateway,/auth\.admin\.generateLink|token_hash\s*:/,'admin gateway must not mint bearer proof anonymously');
 assert.match(gateway,/action==="request_login"/);
-assert.match(gateway,/action==="verify_login"/);
+assert.match(gateway,/action!=="verify_login"/);
 assert.match(gateway,/db\.auth\.getUser\(bearer\)/);
 assert.match(gateway,/eq\("is_active",true\)/);
 assert.match(gateway,/consume_public_rate_limit/);
