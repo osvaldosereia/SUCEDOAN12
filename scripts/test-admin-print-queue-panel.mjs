@@ -48,4 +48,11 @@ assert.equal(immutableJobs.length,1);
 assert.equal(immutableOrders[0].order_number,'321');
 assert.equal(readOnlyState.opsPrintQueue.jobs,immutableJobs);
 assert.equal(readOnlyState.orders,immutableOrders);
+// Loading and malformed queue payloads should show no jobs.
+readOnlyState.opsPrintQueue=null;
+assert.equal(readOnlyRender(),'');
+readOnlyState.opsPrintQueue={jobs:null};
+assert.equal(readOnlyRender(),'');
+readOnlyState.opsPrintQueue={jobs:'invalid'};
+assert.equal(readOnlyRender(),'');
 console.log('Admin print queue panel: PASS');
