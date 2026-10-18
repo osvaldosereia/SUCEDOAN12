@@ -23,7 +23,8 @@
   const MARKETING_BRANDS=[{key:'nivea',label:'NIVEA'},{key:'elseve',label:'Elseve'}];
   const MARKETING_SEGMENTS=[{key:'bebe',label:'Bebê'},{key:'cabelos',label:'Cabelos'},{key:'beleza',label:'Beleza e cuidados'},{key:'higiene',label:'Higiene pessoal'},{key:'limpeza',label:'Limpeza'},{key:'lavanderia',label:'Lavanderia'},{key:'pet',label:'Pet'},{key:'casa',label:'Casa'},{key:'doces-lanches',label:'Doces e lanches'}];
   function marketingSegmentOf(p){const sub=normalize(p?.subcategory||''),leaf=normalize(p?.subsubcategory||'');if(sub.includes('bebe')||leaf.includes('fralda')||leaf.includes('bebe'))return 'Bebê';if(sub==='cabelos')return 'Cabelos';if(sub.includes('beleza'))return 'Beleza e cuidados';if(sub.includes('higiene pessoal'))return 'Higiene pessoal';if(sub==='limpeza')return 'Limpeza';if(sub==='lavanderia')return 'Lavanderia';if(sub==='pets'||leaf.includes('pet')||leaf==='caes'||leaf==='gatos')return 'Pet';if(sub.includes('casa e utilidades'))return 'Casa';if(['biscoitos','chocolates e doces','balas e chicletes','salgadinhos e petiscos','bebidas','cereais e barras'].includes(leaf))return 'Doces e lanches';return 'Outros'}
-  function marketingCampaignSlug(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)}
+  function adminSlug(v){return normalize(v).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)}
+  function marketingCampaignSlug(v){return adminSlug(v)}
   const OPERATOR_KEY='da_operator_name_v1';
   function currentOperator(){return 'Operação'}
   function paintOperatorBadge(){
@@ -1045,7 +1046,7 @@
         '<label><span class="sub">Veículo</span><select id="deliveryPlanVehicle" style="width:100%;min-height:42px">'+smartDeliveryOptionHtml('vehicles',state.deliveryPlan.vehicle_id)+'</select></label>'+
       '</div></div>';
   }
-  function smartDeliverySlug(v){return normalize(v).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)}
+  function smartDeliverySlug(v){return adminSlug(v)}
   function smartDeliveryCatalogRows(kind){
     const rows=state.deliveryCatalog?.[kind]||[];
     if(!rows.length)return '<div class="history-empty">Nenhum cadastro ainda.</div>';
