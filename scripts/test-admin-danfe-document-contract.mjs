@@ -6,7 +6,9 @@ const between=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok
 const pdf=between(html,'  async function openDanfeForOrder(','  async function loadCurrentOrderFiscal(');
 const fiscal=between(edge,'async function orderFiscalStatusV4(','async function orderFiscalIssueV4(');
 for(const p of [/order_fiscal_document_pdf/,/atob\(String\(data\.base64\|\|''\)\)/,/fiscal_document_empty/,/new Blob\(\[bytes\],\{type:'application\/pdf'\}\)/,/URL\.createObjectURL/,/URL\.revokeObjectURL/,/w\.close\(\)/])assert.match(pdf,p);
-assert.match(pdf,/fiscal\.authorized!==true/);
+assert.match(pdf,/if\(fiscal\.authorized!==true&&gate\.authorized!==true\)/);
+assert.doesNotMatch(pdf,/&&\s*!fiscal\.bling_invoice_id\s*&&\s*!fiscal\.invoice_id/);
 assert.match(fiscal,/danfeAvailable=authorized&&Boolean/);
+assert.match(edge,/if\(fiscal\.authorized!==true\)return js\(r,\{ok:false,error:"fiscal_authorization_required_before_document"\},409\)/);
 assert.match(edge,/hub\("fiscal_document_pdf",\{source_order_id:oid\}\)/);
 console.log('Fiscal DANFE document download contract: PASS');
