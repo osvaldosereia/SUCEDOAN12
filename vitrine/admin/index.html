@@ -1459,6 +1459,7 @@
 <script src="/vitrine/admin/components/expiry-alert.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/components/ops-attention.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/components/print-queue-panel.js?v=refactor-20261018"></script>
+<script src="/vitrine/admin/orders/status-pill.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/basket-lot-image.js?v=marketing-stable-20261012"></script>
 <script>
 (()=>{
@@ -1656,12 +1657,7 @@
     }
   }
 
-  function statusPill(status){
-    const map={created:'Novo',storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Bling',processing:'Separando',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'};
-    const cls=status==='cancelled'?'danger':status==='created'?'warn':'';
-    return '<span class="pill '+cls+'">'+esc(map[status]||status||'—')+'</span>';
-  }
-
+  const {statusPill}=window.DonaAntoniaAdminOrderStatusPill.createOrderStatusPill(esc);
   const {cuiabaDayKey,deliveredToday,relativeAge}=window.DonaAntoniaAdminOrderTime;
   const {orderSearchMatch}=window.DonaAntoniaAdminOrderSearch.createOrderSearch(normalize);
   const {whatsappHref,whatsappMessageHref}=window.DonaAntoniaAdminWhatsappLinks;
