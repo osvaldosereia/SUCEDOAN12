@@ -1500,6 +1500,7 @@ async function orderFiscalIssueV4(p:any,auth:any){
     const after:any=await orderFiscalStatusV4(oid).catch(()=>before);
     return {
       error:h.error||"fiscal_issue_failed",status:h.status||409,
+      requires_reconciliation:/uncertain|timeout|network|unknown/i.test(String(h.error||""))||Number(h.status||0)>=500,
       detail:h.data?.detail||h.detail||h.data?.provider_error||h.data||null,
       provider_details:h.data?.provider_details||[],
       http_status:h.data?.http_status||null,
@@ -3791,13 +3792,17 @@ async function autoIssueFiscalAfterSeparation(oid:string){
   if(before.can_issue!==true)return {attempted:false,ok:false,error:"fiscal_dispatch_not_eligible",blockers:before.blockers||before.hard_blockers||[],fiscal:before};
   if(before.issue_enabled!==true)return {attempted:false,ok:false,error:"fiscal_auto_issue_not_enabled",fiscal:before};
 
-  const h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"});
-  if(h.error)return {attempted:true,ok:false,error:h.error||"fiscal_issue_failed",detail:h.detail||h.data||null,fiscal:before};
+  let h:any;
+  try{h=await hub("fiscal_dispatch_canary_human_execute",{source_order_id:oid,confirmation:"EMITIR_NFE"})}
+  catch(e){return {attempted:true,ok:false,error:"fiscal_issue_result_uncertain",requires_reconciliation:true,detail:String((e as Error)?.message||e),fiscal:before}}
+  if(h.error)return {attempted:true,ok:false,error:h.error||"fiscal_issue_failed",
+    requires_reconciliation:/uncertain|timeout|network|unknown/i.test(String(h.error||""))||Number(h.status||0)>=500,
+    detail:h.detail||h.data||null,fiscal:before};
 
   let after:any=null,reconcile:any=null;
   for(let attempt=1;attempt<=5;attempt++){
     try{reconcile=await hub("fiscal_dispatch_reconcile",{source_order_id:oid})}catch{}
-    after=await orderFiscalStatusV4(oid);
+    try{after=await orderFiscalStatusV4(oid)}catch(e){after={error:"fiscal_status_unavailable",detail:String((e as Error)?.message||e)}}
     if(after?.authorized===true||after?.stage==="authorized"){
       return {attempted:true,ok:true,authorized:true,stage:"authorized",attempts:attempt,result:h.data||null,reconcile:reconcile?.data||null,fiscal:after};
     }
