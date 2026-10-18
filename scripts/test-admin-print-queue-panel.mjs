@@ -19,4 +19,12 @@ assert.match(out,/Separação · #321/);
 assert.match(out,/Falhou/);
 assert.match(out,/Sem papel/);
 assert.match(out,/data-print-order="o1"/);
+
+state.orders=null;
+state.opsPrintQueue.jobs=[null,{status:'pending',entity_id:'missing'}];
+assert.match(render(),/Abrir pedido/);
+state.opsPrintQueue.jobs=Array.from({length:12},()=>({status:'pending',entity_id:'missing'}));
+assert.equal(render().split('data-print-order=').length-1,8);
+state.opsPrintQueue.jobs=[null,{status:'unknown'}];
+assert.equal(render(),'');
 console.log('Admin print queue panel: PASS');
