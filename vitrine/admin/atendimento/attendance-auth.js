@@ -24,20 +24,14 @@ function clearToken(expectedToken=''){
   if(expectedToken&&current&&current!==expectedToken)return false;
   sessionStorage.removeItem(TOKEN_KEY);return true;
 }
-async function issueAdminToken(){
-  const response=await fetch(AUTH_API,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',cache:'no-store'});
-  const data=await response.json().catch(()=>({}));
-  const token=String(data?.access_token||'').trim();
-  if(!response.ok||!data?.ok||!token)throw new Error(data?.error||'admin_auto_session_failed');
-  sessionStorage.setItem(TOKEN_KEY,token);
-  return token;
-}
+async function issueAdminToken(forceRefresh=false){return await window.DonaAntoniaSecureAuth.ensureToken({forceRefresh})}
+
 export async function ensureAttendanceToken({forceRefresh=false}={}){
   if(canonicalAuth)return await (await canonicalAuth).ensureAttendanceToken({forceRefresh});
   const existing=storedToken();
   if(!forceRefresh&&existing&&!tokenExpiresSoon(existing))return existing;
   if(refreshPromise)return await refreshPromise;
-  refreshPromise=(async()=>{try{return await issueAdminToken()}finally{refreshPromise=null}})();
+  refreshPromise=(async()=>{try{return await issueAdminToken(forceRefresh)}finally{refreshPromise=null}})();
   return await refreshPromise;
 }
 export async function attendanceAuthorizedFetch(input,options={}, {forceRefresh=false}={}){
