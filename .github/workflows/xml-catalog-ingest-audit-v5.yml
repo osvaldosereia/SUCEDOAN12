@@ -1,0 +1,23 @@
+name: XML Catalog Ingest Audit V5
+on:
+  push:
+    branches:
+      - 'agent/xml-catalog-ingest-audit-v5'
+  pull_request:
+    paths:
+      - 'supabase/functions/**/purchase-xml-v1/index.ts'
+      - 'supabase/migrations/**purchase_xml_ingest_error_audit_v5.sql'
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-xml-catalog-ingest-audit-v5.mjs'
+      - '.github/workflows/xml-catalog-ingest-audit-v5.yml'
+jobs:
+  offline-guards:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-xml-catalog-ingest-audit-v5.mjs
