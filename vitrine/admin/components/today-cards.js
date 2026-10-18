@@ -1,5 +1,5 @@
 // Componentes de leitura da visão Hoje. Dependências fornecidas pelo Admin.
-(function(global){
+(function(global){\n  // Read-only presentation module: receives data from the Admin controller.
   function createTodayCards(esc,todayCardCount,orderIssueCount){
   function renderTodayCards(){
     const cards=[
