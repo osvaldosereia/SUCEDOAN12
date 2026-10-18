@@ -55,4 +55,18 @@ readOnlyState.opsPrintQueue={jobs:null};
 assert.equal(readOnlyRender(),'');
 readOnlyState.opsPrintQueue={jobs:'invalid'};
 assert.equal(readOnlyRender(),'');
+// Attribute values must also be escaped, not only visible text.
+const attributeState={orders:[],opsPrintQueue:{jobs:[{status:'pending',entity_id:'x" onclick="alert(1)'}]}};
+const attributeRender=ctx.window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePanel(attributeState,escapeHtml,()=> '—').renderOpsPrintQueue;
+const attributeHtml=attributeRender();
+assert.ok(attributeHtml.includes('data-print-order="x&quot; onclick=&quot;alert(1)"'));
+assert.ok(!attributeHtml.includes('data-print-order="x" onclick='));
+// Status transitions must hide terminal jobs while retaining active jobs in source order.
+state.orders=[{id:'o1',order_number:'321'}];
+state.opsPrintQueue.jobs=[{status:'completed',entity_id:'done'},{status:'pending',entity_id:'o1'},{status:'cancelled',entity_id:'cancel'},{status:'failed',entity_id:'o1'}];
+const activeHtml=render();
+assert.equal(activeHtml.split('data-print-order=').length-1,2);
+assert.ok(activeHtml.indexOf('Aguardando')<activeHtml.indexOf('Falhou'));
+assert.ok(!activeHtml.includes('data-print-order="done"'));
+assert.ok(!activeHtml.includes('data-print-order="cancel"'));
 console.log('Admin print queue panel: PASS');
