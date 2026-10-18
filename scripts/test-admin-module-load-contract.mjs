@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 const scripts=[...html.matchAll(/<script\s+src="([^"]+)"/g)].map(m=>m[1]);
 const modules=[
@@ -47,5 +48,16 @@ for(const module of afterMain){
   const matches=scripts.filter(src=>src.split('?')[0]===url);
   assert.equal(matches.length,1,'exactly one post-main script expected: '+module);
   assert.ok(html.indexOf('<script src="'+matches[0]+'"></script>')>mainEnd,'post-main script moved before main: '+module);
+}
+// Execute every extracted bridge in the same order as the browser, before main.
+const sandbox={window:{},String,Number,Object,Array,Date,Math,Intl,URL,encodeURIComponent};
+vm.createContext(sandbox);
+for(const module of modules){
+  const source=fs.readFileSync(path.join('vitrine/admin',module),'utf8');
+  vm.runInContext(source,sandbox,{filename:module,timeout:1000});
+}
+for(const name of names){
+  assert.ok(sandbox.window[name],name+' not initialized');
+  assert.ok(Object.isFrozen(sandbox.window[name]),name+' export must be frozen');
 }
 console.log('Admin module load contract: PASS');
