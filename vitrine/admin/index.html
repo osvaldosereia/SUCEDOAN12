@@ -5787,8 +5787,10 @@
       state.purchaseBlingCompareLoaded=false;
       state.purchaseBlingBrowse={ok:false,documents:[],count:0};
     }finally{
-      state.purchaseBlingCompareLoading=false;
-      if($('#purchaseBody'))paintPurchases();
+      if(state.purchaseBlingCompareKey===key){
+        state.purchaseBlingCompareLoading=false;
+        if(state.tab==='purchases'&&$('#purchaseBody'))paintPurchases();
+      }
     }
   }
   function purchaseMaybeMoney(v){
@@ -8408,8 +8410,9 @@
       state.currentOrder=fresh;paintOrderDetail();loadOrders();
       toast('Histórico sincronizado');
     }catch(e){
+      if(state.currentOrder?.order?.id!==id)return;
       toast('Não consegui sincronizar agora');
-      if(btn){btn.disabled=false;btn.textContent='Tentar novamente'}
+      if(btn&&btn.isConnected){btn.disabled=false;btn.textContent='Tentar novamente'}
     }
   }
 
