@@ -3987,7 +3987,7 @@
         $('#editor').close();
         if(state.tab==='expiry')renderExpirations();else if(state.tab==='products')renderProducts($('#productSearch')?.value.trim()||'');
         const stage=saveStage==='stock'?'estoque':'oferta';
-        toast('Produto salvo, mas '+stage+' NÃO concluído. Reabra o produto para conferir. '+errorMessage(e.message));
+        toast('Produto salvo, mas a atualização de '+stage+' NÃO foi concluída. Reabra o produto para conferir. '+errorMessage(e.message));
         return;
       }
       toast(errorMessage(e.message));
