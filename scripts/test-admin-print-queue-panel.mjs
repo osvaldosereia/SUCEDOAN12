@@ -69,4 +69,12 @@ assert.equal(activeHtml.split('data-print-order=').length-1,2);
 assert.ok(activeHtml.indexOf('Aguardando')<activeHtml.indexOf('Falhou'));
 assert.ok(!activeHtml.includes('data-print-order="done"'));
 assert.ok(!activeHtml.includes('data-print-order="cancel"'));
+// A malformed order entry must not prevent resolving a subsequent matching order.
+state.orders=[null,{id:'o1',order_number:'321'}];
+state.opsPrintQueue.jobs=[{status:'claimed',entity_id:'o1'}];
+assert.match(render(),/Separação · #321/);
+assert.match(render(),/Em impressão/);
+// Queue with no active jobs must not render an empty section.
+state.opsPrintQueue.jobs=[{status:'completed',entity_id:'o1'},{status:'cancelled',entity_id:'o1'}];
+assert.equal(render(),'');
 console.log('Admin print queue panel: PASS');
