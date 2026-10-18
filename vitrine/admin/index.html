@@ -1662,9 +1662,9 @@
   const {cuiabaDayKey,deliveredToday,relativeAge}=window.DonaAntoniaAdminOrderTime;
   const {orderSearchMatch}=window.DonaAntoniaAdminOrderSearch.createOrderSearch(normalize);
   const {whatsappHref,whatsappMessageHref}=window.DonaAntoniaAdminWhatsappLinks;
-  const {orderMissingDataRequest,orderAddressRequestHref,mapsHrefFromAddress,orderContactActionsHtml}=window.DonaAntoniaAdminOrderContactActions.createOrderContactActions(orderProblemReasons,whatsappHref,whatsappMessageHref,orderDisplayCode,esc);
   const {sortOperationalOrders}=window.DonaAntoniaAdminOrderSorting;
   const {orderProblemReasons,isBacklogOrder,orderIssueMatch,orderIssueCount,orderOperationalPriority,orderNextAction,orderFilterMatch}=window.DonaAntoniaAdminOrderReadModel.createOrderReadModel(cuiabaDayKey,state);
+  const {orderMissingDataRequest,orderAddressRequestHref,mapsHrefFromAddress,orderContactActionsHtml}=window.DonaAntoniaAdminOrderContactActions.createOrderContactActions(orderProblemReasons,whatsappHref,whatsappMessageHref,orderDisplayCode,esc);
   function orderFilterCount(filter){
     if(filter==='problems')return state.orders.filter(o=>orderProblemReasons(o).length>0).length;
     return state.orders.filter(o=>orderFilterMatch(o,filter)).length;
