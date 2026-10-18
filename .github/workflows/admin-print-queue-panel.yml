@@ -40,6 +40,8 @@ on:
       - 'scripts/test-admin-inventory-balance-contract.mjs'
       - 'scripts/test-admin-stock-adjustment-contract.mjs'
       - 'supabase/functions/purchase-xml-v1/index.ts'
+      - 'scripts/test-admin-audit-consolidation-contract.mjs'
+      - 'docs/audits/**'
       - '.github/workflows/admin-print-queue-panel.yml'
   workflow_dispatch:
 permissions:
@@ -83,6 +85,7 @@ jobs:
       - run: node scripts/test-admin-fiscal-eligibility-issuance-contract.mjs
       - run: node scripts/test-admin-fiscal-uncertain-recovery-contract.mjs
       - run: node scripts/test-admin-danfe-document-contract.mjs
+      - run: node scripts/test-admin-audit-consolidation-contract.mjs
       - run: node scripts/test-admin-orders-clean-flow-v3.mjs
       - run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
       - run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
