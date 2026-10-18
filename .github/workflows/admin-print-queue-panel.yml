@@ -7,6 +7,7 @@ on:
       - 'scripts/test-admin-print-queue-panel.mjs'
       - 'scripts/test-admin-core-identifiers.mjs'
       - 'scripts/test-admin-core-errors.mjs'
+      - 'scripts/test-admin-printing-window.mjs'
       - '.github/workflows/admin-print-queue-panel.yml'
   workflow_dispatch:
 permissions:
@@ -22,6 +23,7 @@ jobs:
           node-version: '22'
       - run: node scripts/test-admin-core-identifiers.mjs
       - run: node scripts/test-admin-core-errors.mjs
+      - run: node scripts/test-admin-printing-window.mjs
       - run: node scripts/test-admin-print-queue-panel.mjs
       - run: node scripts/test-admin-today-operational-panels.mjs
       - run: node scripts/test-admin-order-contact-actions.mjs
