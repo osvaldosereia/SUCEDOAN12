@@ -10,7 +10,7 @@ const ui=between(html,'  async function executeCurrentOrderFiscalCanary(','  asy
 for(const p of [/preview_bling_invoice_eligibility_v1/,/order_fiscal_controls/,/fiscal_dispatch_preview/,/hard_blockers/,/generationAttempted/,/canIssue=/,/status==="ready"/,/!generationAttempted/,/canDispatch=/])assert.match(status,p);
 for(const p of [/auth\?\.role==="viewer"/,/EMITIR_NFE/,/ops2_fiscal_dispatch_preflight_v1/,/fiscal_human_confirmation_required/,/idempotent_replay:true/,/fiscal_dispatch_not_eligible/,/fiscal_dispatch_canary_human_execute/,/fiscal_dispatch_reconcile/])assert.match(issue,p);
 assert.match(issue,/before\.can_issue!==true/,'issue endpoint must respect unresolved attempts and disabled runtime gates');
-assert.ok(issue.indexOf('before.can_issue!==true')<issue.indexOf('const h=await hub("fiscal_dispatch_canary_human_execute"'),'fiscal eligibility must be checked before external write');
+assert.ok(issue.indexOf('before.can_issue!==true')<issue.indexOf('hub("fiscal_dispatch_canary_human_execute"'),'fiscal eligibility must be checked before external write');
 for(const p of [/ops2_fiscal_dispatch_preflight_v1/,/before\.authorized===true/,/before\.issue_enabled!==true/,/fiscal_dispatch_canary_human_execute/,/attempt<=5/,/stage:"processing"/])assert.match(auto,p);
 assert.match(auto,/before\.can_issue!==true/,'automatic issuance must respect uncertain-generation recovery guard');
 assert.ok(auto.indexOf('before.can_issue!==true')<auto.indexOf('const h=await hub("fiscal_dispatch_canary_human_execute"'),'automatic eligibility must precede external write');
