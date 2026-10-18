@@ -3,7 +3,14 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 const scripts=[...html.matchAll(/<script\s+src="([^"]+)"/g)].map(m=>m[1]);
-const modules=['core/formatters.js','core/identifiers.js','core/errors.js','components/printing.js','marketing/helpers.js'];
+const modules=[
+  'core/formatters.js','core/identifiers.js','core/errors.js',
+  'components/printing.js','marketing/helpers.js','orders/sorting.js',
+  'orders/read-model.js','components/today-cards.js','orders/time.js',
+  'orders/search.js','orders/whatsapp-links.js','orders/contact-actions.js',
+  'components/expiry-alert.js','components/ops-attention.js',
+  'components/print-queue-panel.js','basket-lot-image.js'
+];
 const mainIndex=html.indexOf('<script>\n(()=>{');
 assert.ok(mainIndex>0,'main admin script not found');
 for(const module of modules){
@@ -18,6 +25,25 @@ for(const src of scripts){
   const local=src.split('?')[0].slice(1);
   assert.ok(fs.existsSync(local),'missing local script '+local);
 }
-const names=['DonaAntoniaAdminFormatters','DonaAntoniaAdminIdentifiers','DonaAntoniaAdminErrors','DonaAntoniaAdminPrinting','DonaAntoniaAdminMarketingHelpers'];
+const names=[
+  'DonaAntoniaAdminFormatters','DonaAntoniaAdminIdentifiers',
+  'DonaAntoniaAdminErrors','DonaAntoniaAdminPrinting',
+  'DonaAntoniaAdminMarketingHelpers','DonaAntoniaAdminOrderSorting',
+  'DonaAntoniaAdminOrderReadModel','DonaAntoniaAdminTodayCards',
+  'DonaAntoniaAdminOrderTime','DonaAntoniaAdminOrderSearch',
+  'DonaAntoniaAdminWhatsappLinks','DonaAntoniaAdminOrderContactActions',
+  'DonaAntoniaAdminExpiryAlert','DonaAntoniaAdminOpsAttention',
+  'DonaAntoniaAdminPrintQueuePanel'
+];
 for(const name of names)assert.ok(html.includes('window.'+name),'missing bridge '+name);
+const orderedScripts=scripts.filter(src=>modules.some(module=>src.split('?')[0]==='/vitrine/admin/'+module));
+assert.deepEqual(orderedScripts.map(src=>src.split('?')[0]),modules.map(module=>'/vitrine/admin/'+module),'module dependency load order changed');
+const afterMain=['basket-guided-builder.js','basket-admin-section.js'];
+const mainEnd=html.lastIndexOf('</script>');
+for(const module of afterMain){
+  const url='/vitrine/admin/'+module;
+  const matches=scripts.filter(src=>src.split('?')[0]===url);
+  assert.equal(matches.length,1,'exactly one post-main script expected: '+module);
+  assert.ok(html.indexOf('<script src="'+matches[0]+'"></script>')>mainEnd,'post-main script moved before main: '+module);
+}
 console.log('Admin module load contract: PASS');
