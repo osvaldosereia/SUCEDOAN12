@@ -10,6 +10,9 @@ const complete=section(guard,'create or replace function public.ops2_set_lot_tra
 for(const p of [/for update/,/lot_tracking_requires_lot/,/lot_tracking_has_unquantified_lot/,/lot_tracking_bling_physical_missing/,/lot_tracking_physical_mismatch/,/abs\(coalesce\(v_tracked,0\)-coalesce\(v_bling_physical,0\)\)>0\.001/])assert.match(complete,p);
 assert.match(guard,/earliest_sellable_expiration/);
 assert.match(guard,/expiry_deactivation_candidate/);
+assert.match(edge,/async function fefoPreview\(pidRaw:any,qtyRaw:any\)/);
+assert.match(edge,/!Number\.isFinite\(qty\)\|\|qty<=0/);
+assert.match(edge,/invalid_fefo_request/);
 assert.match(edge,/product_fefo_preview/);
 assert.match(edge,/product_inventory_lots/);
 console.log('Admin lot and FEFO contract: PASS');
