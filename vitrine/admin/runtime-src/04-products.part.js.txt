@@ -1,156 +1,3 @@
-            toast(errorMessage(e.message));
-          }
-          if(item.zeroButton){
-            item.zeroButton.disabled=false;
-            item.zeroButton.textContent='Zerar estoque';
-            toast('Falha ao zerar estoque: '+errorMessage(e.message));
-          }
-        }finally{
-          if(item.zeroButton)stockZeroPending.delete(String(id));
-        }
-      }
-    }finally{
-      mobileProductStockBusy=false;
-      if(mobileProductStockQueue.size)processMobileProductStockQueue();
-    }
-  }
-  async function saveMobileProductActive(id,checked,input){
-    const product=state.products.find(p=>String(p.id)===String(id));if(!product)return;const previous=product.active!==false;product.active=checked;const label=document.querySelector('[data-mobile-product-active-label="'+CSS.escape(String(id))+'"]');if(label)label.textContent=checked?'ATIVO':'INATIVO';setMobileProductSaveState(id,'quick',true);
-    const operator=currentOperator()||requireOperator();if(!operator){input.checked=previous;product.active=previous;setMobileProductSaveState(id,'quick',false,'Operador necessário');return}
-    try{const data=await api('product_quick_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,active:checked,operator})});product.active=data.product?.active!==false;input.checked=product.active;if(label)label.textContent=product.active?'ATIVO':'INATIVO';setMobileProductSaveState(id,'quick',false)}catch(e){product.active=previous;input.checked=previous;if(label)label.textContent=previous?'ATIVO':'INATIVO';setMobileProductSaveState(id,'quick',false,errorMessage(e.message));toast(errorMessage(e.message))}
-  }
-  function bindMobileProductCards(host){
-    host.querySelectorAll('[data-mobile-product-field]').forEach(el=>{const event=el.tagName==='SELECT'||el.type==='date'?'change':'input';el.addEventListener(event,()=>scheduleMobileProductQuickSave(el.dataset.productId,el.dataset.mobileProductField,el.value))});
-    host.querySelectorAll('[data-mobile-product-active]').forEach(el=>el.onchange=()=>saveMobileProductActive(el.dataset.mobileProductActive,el.checked,el));
-    host.querySelectorAll('[data-open-product-basket]').forEach(el=>el.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const basketId=el.dataset.openProductBasket;if(window.DonaAntoniaBasketGuided?.open&&basketId)window.DonaAntoniaBasketGuided.open(basketId,{mode:'model'});else toast('O editor de Cestas/Kits não carregou. Atualize a página e tente novamente.')});
-  }
-
-  function productRow(p){
-    const classification=[categoryLabel(p.category),p.detailed_subcategory||p.subcategory].filter(Boolean).join(' › ');
-    const identity=[p.sku,p.gtin,p.packaging].filter(Boolean).join(' · ');
-    const expiredInactive=p.active===false&&p.deactivation_reason==='expired';
-    const statusTitle=p.active?'Clique para desativar':expiredInactive?'Vencido: corrija a validade antes de ativar':'Clique para ativar';
-    const desktopStatus=p.active?'Ativo':expiredInactive?'Vencido · inativo':'Inativo';
-    const price=(Number(p.sale_price_cents||0)/100).toFixed(2).replace('.',','),cost=(Number(p.cost_cents||0)/100).toFixed(2).replace('.',',');
-    const expiry=p.next_expiration_date||p.expiration_date||'';
-    const validity=p.lot_tracking_complete
-      ?'<div class="product-validity-summary"><span>Próxima validade</span><strong>'+esc(productExpiryLabel(p))+'</strong><small>'+esc(p.active_lot_count||0)+' lotes · editar em Lotes</small></div>'
-      :'<label class="product-inline-field"><span>Validade</span><input data-mobile-product-field="expiration" data-product-id="'+esc(p.id)+'" type="date" value="'+esc(expiry)+'"></label>';
-    return '<div class="list-row products-layout product-operational-row">'+
-      '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
-      '<div class="product-main"><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<span class="sub"><span class="pill '+(p.lot_tracking_complete?'':'warn')+'">'+(p.lot_tracking_complete?'Lotes controlados':'Validade simples')+'</span></span></div>'+
-      '<div class="product-quick-fields"><label class="product-inline-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label><label class="product-inline-field"><span>Custo</span><input data-mobile-product-field="cost" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(cost)+'"></label><span class="mobile-product-save-status saved product-save-inline" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span></div>'+
-      '<div class="product-stock-validity"><label class="product-inline-field"><span>Estoque total</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+validity+'<span class="product-stock-breakdown-inline">'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+' avulso · '+esc(fmtQty(p.basket_locked_quantity||0))+' em cestas/kits</span></div>'+
-      '<div class="product-operational-status"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(desktopStatus)+'</button>'+productKitLinks(p)+'</div>'+
-      '<div class="product-row-actions"><button class="product-action-btn product-zero-stock-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="product-action-btn" data-product-lots="'+esc(p.id)+'">Lotes</button><button class="product-action-btn" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="product-action-btn primary-action" data-edit-product="'+esc(p.id)+'">Editar completo</button></div></div>';
-  }
-
-  async function toggleProductActive(id,btn){
-    const product=state.products.find(p=>p.id===id);
-    if(!product)return;
-    const next=product.active===false;
-    const expired=Boolean(product.expiration_date&&String(product.expiration_date)<cuiabaDayKey(new Date()));
-    if(next&&expired){
-      toast('Produto vencido · corrija a validade antes de ativar');
-      openProductEditor(product);
-      return;
-    }
-    if(!next&&!confirm('Desativar "'+product.name+'"?\n\nEle sairá da vitrine e a validade deixará de entrar nos controles e ofertas automáticas enquanto estiver inativo.'))return;
-    const operator=requireOperator();if(!operator)return;
-    btn.disabled=true;
-    try{
-      const data=await api('product_save',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,
-        sale_price_cents:Number(product.sale_price_cents||0),stock_quantity:Number(product.stock_quantity||0),
-        expiration_date:product.expiration_date||null,
-        auto_expiry_offer_enabled:product.auto_expiry_offer_enabled===true,
-        category:product.category||'',subcategory:product.subcategory||'',packaging:product.packaging||'',
-        image_url:product.image_url||'',description:product.description||'',active:next,operator
-      })});
-      const saved=data.product;
-      if(next&&saved?.active===false&&saved?.deactivation_reason==='expired'){
-        toast('Produto vencido · permanece inativo');
-      }else{
-        toast(next?'Produto ativado':'Produto desativado · fora da vitrine e das validades');
-      }
-      await loadProducts($('#productSearch')?.value.trim()||'',false);
-    }catch(e){
-      toast(errorMessage(e.message));
-      btn.disabled=false;
-    }
-  }
-
-  async function openProductLotsEditor(p){
-    if(!p?.id)return;
-    $('#editorTitle').textContent='Lotes e validades · '+(p.name||'Produto');
-    $('#editorBody').innerHTML='<div class="loading">Carregando lotes…</div>';
-    $('#editorActions').innerHTML='<button class="secondary" id="closeLotsEditor">Fechar</button>';
-    $('#closeLotsEditor').onclick=()=>$('#editor').close();
-    $('#editor').showModal();
-    try{
-      const data=await api('product_lots',{id:p.id});
-      paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
-    }catch(e){
-      $('#editorBody').innerHTML='<div class="empty">Não consegui carregar os lotes.<br><small>'+esc(errorMessage(e.message))+'</small></div>';
-    }
-  }
-  function paintProductLotsEditor(p,lots,summary){
-    const complete=p?.lot_tracking_complete===true||summary?.lot_tracking_complete===true;
-    const physical=summary?.bling_physical_qty??p?.stock_quantity??0;
-    const tracked=summary?.tracked_physical_qty??lots.reduce((s,x)=>s+Number(x.quantity_on_hand||0),0);
-    const diff=Number(physical||0)-Number(tracked||0);
-    $('#editorBody').innerHTML=
-      '<div class="offer-note" style="margin-bottom:12px"><strong>'+(complete?'FEFO completo neste produto':'Migração progressiva')+'</strong><br>'+
-      (complete?'A separação pode usar os lotes deste produto pela validade mais próxima.':'Cadastre os lotes quando for conveniente. Só ative o FEFO quando a soma dos lotes bater com o estoque físico do Bling.')+'</div>'+
-      '<div class="product-stock-breakdown" style="margin-bottom:12px">'+
-        '<div class="product-stock-box"><small>Estoque físico / Bling</small><strong>'+esc(fmtQty(physical))+'</strong></div>'+
-        '<div class="product-stock-box"><small>Somado em lotes</small><strong>'+esc(fmtQty(tracked))+'</strong></div>'+
-        '<div class="product-stock-box"><small>Falta distribuir</small><strong>'+esc(fmtQty(Math.max(0,diff)))+'</strong></div>'+
-      '</div>'+
-      '<div class="panel" style="padding:12px;margin-bottom:12px">'+
-        '<strong>Adicionar ou ajustar lote</strong>'+
-        '<div class="purchase-price-grid" style="margin-top:10px">'+
-          '<div class="purchase-field"><label>Lote</label><input id="lotCode" placeholder="Opcional"></div>'+
-          '<div class="purchase-field"><label>Validade</label><input id="lotExpiry" type="date"></div>'+
-          '<div class="purchase-field"><label>Quantidade UN</label><input id="lotQty" type="number" min="0" step="0.001"></div>'+
-        '</div>'+
-        '<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="primary" id="saveProductLot" type="button">Salvar lote</button></div>'+
-      '</div>'+
-      '<div class="history-title"><div><strong>Lotes cadastrados</strong><span class="sub">Mais próxima primeiro.</span></div><b>'+esc(lots.length)+'</b></div>'+
-      '<div class="history-list">'+(lots.length?lots.map((l,i)=>'<div class="history-row"><div><span class="pill '+(i===0&&l.status==="active"?'warn':'')+'">'+esc(l.status||'')+'</span></div><div class="history-main"><strong>Validade '+esc(dateOnly(l.expiration_date))+'</strong><small>Lote '+esc(l.lot_code||'sem código')+' · '+esc(fmtQty(l.quantity_on_hand||0))+' UN'+(i===0&&l.status==="active"?' · sair primeiro quando FEFO estiver ativo':'')+'</small></div></div>').join(''):'<div class="history-empty">Nenhum lote cadastrado ainda.</div>')+'</div>'+
-      '<div class="bling-banner '+(complete?'':'')+'" style="margin-top:12px"><strong>'+(complete?'Controle por lotes ativo':'Ativar quando terminar este produto')+'</strong><small>'+(complete?'Este produto já está no modo FEFO.':'O botão só funciona quando todos os lotes têm quantidade e a soma fecha com o estoque físico do Bling.')+'</small><div class="bling-actions"><button class="primary" id="activateProductFefo" type="button" '+(complete?'disabled':'')+'>'+(complete?'FEFO ativo':'Ativar FEFO neste produto')+'</button></div></div>';
-    $('#saveProductLot').onclick=async()=>{
-      const code=$('#lotCode').value.trim(),exp=$('#lotExpiry').value,qty=Number(String($('#lotQty').value||'').replace(',','.'));
-      if(!exp){toast('Informe a validade');return}
-      if(!Number.isFinite(qty)||qty<0){toast('Informe uma quantidade válida');return}
-      const btn=$('#saveProductLot');btn.disabled=true;btn.textContent='Salvando…';
-      try{
-        const sourceRef='manual-ui:'+p.id+':'+(code||'sem-lote')+':'+exp;
-        const data=await api('product_lot_save',{},{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({product_id:p.id,lot_code:code||null,expiration_date:exp,quantity_on_hand:qty,source:'manual',source_ref:sourceRef,received_at:null,metadata:{source_ui:'product_editor'}})
-        });
-        toast('Lote salvo');
-        paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
-      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar lote'}
-    };
-    $('#activateProductFefo').onclick=async()=>{
-      if(complete)return;
-      const op=requireOperator();if(!op)return;
-      const btn=$('#activateProductFefo');btn.disabled=true;btn.textContent='Conferindo…';
-      try{
-        const data=await api('product_lot_tracking_complete',{},{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({product_id:p.id,complete:true,operator:op})
-        });
-        toast('FEFO ativado neste produto');
-        paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
-        await loadProducts($('#productSearch')?.value.trim()||'',false);
-      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Ativar FEFO neste produto'}
-    };
-  }
-
-  // PRODUCT_EDITOR_COMPLETE_V1
   async function openProductEditor(p=null,duplicate=false){
     const isDuplicate=Boolean(duplicate&&p?.id);
     const productEditor=$('#editor');
@@ -948,3 +795,266 @@
     }
 
     const rows=scan.rows||[];
+    const appliedRows=rows.filter(r=>r.review_state==='applied');
+    const confirmedRows=rows.filter(r=>r.review_state==='confirmed');
+    const errorRows=rows.filter(r=>r.review_state==='error');
+    const reviewRows=rows.filter(r=>!inventorySheetRowApproved(r)&&!['applied','confirmed','error'].includes(r.review_state));
+    const readyRows=rows.filter(r=>inventorySheetRowApproved(r)&&!['applied','confirmed','error'].includes(r.review_state));
+    const activeRows=rows.filter(r=>r.review_state!=='applied');
+    const allDone=rows.length>0&&appliedRows.length===rows.length;
+
+    let banner='';
+    if(allDone){
+      banner='<div style="border:1px solid #9bc8ad;background:#eef8f1;border-radius:14px;padding:16px;margin-bottom:10px">'+
+        '<strong style="display:block;font-size:18px">✓ Balanço concluído</strong>'+
+        '<small style="display:block;margin-top:5px">'+esc(rows.length)+'/'+esc(rows.length)+' produtos atualizados e verificados no Bling · '+esc(scan.batch_code)+' · Página '+esc(scan.page_number)+'/'+esc(scan.page_count)+'. Se notar algum erro, pode ler esta mesma folha novamente e aplicar a correção.</small>'+
+        '</div>';
+    }else{
+      const pieces=[];
+      if(appliedRows.length)pieces.push(appliedRows.length+' concluído(s)');
+      if(confirmedRows.length)pieces.push(confirmedRows.length+' aguardando Bling');
+      if(readyRows.length)pieces.push(readyRows.length+' pronto(s) para aplicar');
+      if(reviewRows.length)pieces.push(reviewRows.length+' para conferir');
+      if(errorRows.length)pieces.push(errorRows.length+' com erro');
+      banner='<div class="bling-banner" style="margin-bottom:10px"><strong>'+esc(scan.batch_code)+' · Página '+esc(scan.page_number)+'/'+esc(scan.page_count)+'</strong>'+
+        '<small>'+pieces.join(' · ')+' · '+appliedRows.length+'/'+rows.length+' finalizados</small></div>';
+    }
+
+    if(allDone){
+      host.innerHTML=banner+'<div class="history-empty"><strong>Nada mais precisa ser feito nesta leitura.</strong><br>Os produtos concluídos foram retirados da lista. Use “Ler esta folha novamente” somente se quiser fazer uma correção.</div>';
+    }else{
+      host.innerHTML=banner+
+        (appliedRows.length?'<div class="muted" style="margin:0 0 10px">Os '+esc(appliedRows.length)+' produto(s) já concluídos foram ocultados. Abaixo aparecem somente os que ainda exigem alguma ação.</div>':'')+
+        activeRows.map(r=>{
+          const needsConfirm=!inventorySheetRowApproved(r)&&!['applied','confirmed','error'].includes(r.review_state);
+          const locked=r.review_state==='confirmed';
+          const detail=[
+            'REF '+String(r.printed_index||'').padStart(4,'0'),
+            'EAN '+(r.gtin||'—'),
+            r.mark_kind==='local_ocr'?'OCR local':(r.mark_kind==='local_ocr+ai_fallback'?'OCR local + IA no campo duvidoso':(r.mark_kind==='page_ai_fallback'?'IA de segurança na folha inteira':'')),
+            r.review_state==='confirmed'?'Estoque já confirmado no envio; falta concluir a sincronização interna':'',
+            r.reason?String(r.reason).replaceAll('_',' '):'',
+            r.apply_error||''
+          ].filter(Boolean).join(' · ');
+          return '<div class="simple-row inventory-review-row" data-sheet-row="'+esc(r.result_id)+'">'+
+            '<div class="simple-main"><strong>'+esc(r.name)+'</strong><small>'+esc(detail)+'</small></div>'+
+            '<label class="inventory-field"><span>ESTOQUE</span><input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque" title="Estoque" placeholder="0" data-sheet-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'" '+(locked?'disabled':'')+'></label>'+
+            '<label class="inventory-field"><span>GÔNDOLA</span><input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola" title="Gôndola" placeholder="0" data-sheet-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'" '+(locked?'disabled':'')+'></label>'+
+            '<div style="display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:wrap"><span data-sheet-label="'+esc(r.result_id)+'">'+inventorySheetReviewLabel(r)+'</span><button class="secondary" type="button" data-sheet-confirm="'+esc(r.result_id)+'" '+(needsConfirm?'':'hidden')+' style="min-height:36px;padding:0 9px">Confirmar</button></div>'+
+          '</div>';
+        }).join('');
+    }
+
+    host.querySelectorAll('[data-sheet-qty]').forEach(el=>el.oninput=e=>{
+      const row=rows.find(x=>x.result_id===e.currentTarget.dataset.sheetQty);if(!row||row.review_state==='confirmed')return;
+      const raw=e.currentTarget.value;row.quantity=raw===''?null:Number(raw);row.user_edited=true;row.manual_confirmed=false;
+      inventorySheetQueueSyncScan(state.inventorySheetScan);
+      inventorySheetRefreshRowControls(row.result_id);
+    });
+    host.querySelectorAll('[data-sheet-gondola]').forEach(el=>el.oninput=e=>{
+      const row=rows.find(x=>x.result_id===e.currentTarget.dataset.sheetGondola);if(!row||row.review_state==='confirmed')return;
+      const raw=e.currentTarget.value;row.gondola=raw===''?null:Number(raw);row.user_edited=true;row.manual_confirmed=false;
+      inventorySheetQueueSyncScan(state.inventorySheetScan);
+      inventorySheetRefreshRowControls(row.result_id);
+    });
+    host.querySelectorAll('[data-sheet-confirm]').forEach(b=>b.onclick=()=>{
+      const row=rows.find(x=>x.result_id===b.dataset.sheetConfirm);if(!row)return;
+      if(!Number.isInteger(Number(row.quantity))||Number(row.quantity)<0){toast('Informe uma quantidade inteira válida');return}
+      if(!Number.isInteger(Number(row.gondola))||Number(row.gondola)<1||Number(row.gondola)>9999){toast('Informe um número de gôndola válido');return}
+      row.manual_confirmed=true;
+      inventorySheetQueueSyncScan(state.inventorySheetScan);
+      inventorySheetRefreshRowControls(row.result_id);
+    });
+
+    inventorySheetRefreshPhotoControls();
+  }
+
+  async function cancelOrRereadInventorySheet(){
+    const scan=state.inventorySheetScan;if(!scan||state.inventorySheetBusy)return;
+    const canCancel=!inventorySheetHasAppliedSideEffect(scan);
+    const scanId=scan.scan_id;
+    state.inventorySheetScan=null;
+    state.inventorySheetQueue=(state.inventorySheetQueue||[]).filter(x=>x.scan?.scan_id!==scanId);
+    paintInventorySheetQueue();paintInventorySheetPhoto();
+    const status=$('#inventorySheetPhotoStatus');
+    if(status)status.textContent=canCancel
+      ?'Leitura descartada. Tire uma nova foto da folha para corrigir.'
+      :'Leitura anterior preservada. Tire uma nova foto da mesma folha; a nova leitura poderá corrigir estoque e gôndola.';
+    const camera=$('#inventorySheetCamera');
+    if(camera){camera.value='';camera.click()}
+    if(canCancel&&scanId){
+      try{
+        await api('inventory_sheet_cancel_scan',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scan_id:scanId})
+        });
+        await loadInventorySheetPendingManual();
+      }catch(e){
+        toast('A nova leitura foi liberada, mas não consegui limpar a tentativa anterior.');
+      }
+    }
+  }
+
+
+  function inventorySheetErrorMessage(error){
+    const raw=String(error?.message||error||'').trim();
+    if(!raw)return 'Erro desconhecido ao processar a foto.';
+    const known=errorMessage(raw);
+    if(known!=='Não consegui salvar agora.')return known;
+    if(raw==='Failed to fetch')return 'Sem conexão com o serviço agora. Verifique a internet e tente novamente.';
+    if(raw.includes('OpenCV'))return 'O leitor de imagem não conseguiu iniciar neste celular. Recarregue a página e tente novamente.';
+    if(raw.includes('QR Code'))return raw;
+    if(raw.includes('quatro bordas'))return raw;
+    if(raw.includes('imagem'))return raw;
+    if(raw.includes('Leitor de QR'))return raw;
+    return raw.length<=180?raw:'Não consegui processar esta foto. Tente novamente com a folha inteira visível.';
+  }
+
+  function inventorySheetQueueBadge(status){
+    const map={
+      queued:['Aguardando',''],
+      processing:['Lendo','warn'],
+      ready:['Pronta',''],
+      review:['Conferir','warn'],
+      duplicate:['Já enviada','off'],
+      applying:['Aplicando','warn'],
+      submitted:['Aguardando Bling','warn'],
+      applied:['Concluída',''],
+      error:['Erro','danger']
+    };
+    const x=map[status]||[status||'—','off'];
+    return '<span class="pill '+x[1]+'">'+esc(x[0])+'</span>';
+  }
+
+  function inventorySheetQueueSummary(){
+    const rows=state.inventorySheetQueue||[];
+    const counts={};
+    rows.forEach(x=>counts[x.status]=(counts[x.status]||0)+1);
+    return {total:rows.length,ready:counts.ready||0,review:counts.review||0,duplicate:counts.duplicate||0,error:counts.error||0,applied:(counts.applied||0)+(counts.submitted||0)};
+  }
+
+  function paintInventorySheetQueue(){
+    const host=$('#inventorySheetUploadQueue');if(!host)return;
+    const rows=state.inventorySheetQueue||[];
+    if(!rows.length){
+      host.innerHTML='<div class="history-empty">Você pode selecionar várias fotos de uma vez, mesmo fora de ordem. Cada folha é identificada automaticamente pelo QR Code.</div>';
+    }else{
+      host.innerHTML=rows.map((x,index)=>{
+        const title=x.batch_code?x.batch_code+' · Página '+x.page_number+(x.page_count?'/'+x.page_count:''):(x.file_name||('Foto '+(index+1)));
+        const detail=x.status==='duplicate'
+          ?'Leitura antiga detectada. Você pode tirar uma nova foto desta mesma folha.'
+          :x.status==='error'
+            ?(x.error||'Não foi possível processar esta foto.')
+            :x.status==='review'
+              ?'Há números que precisam de conferência humana.'
+              :x.status==='ready'
+                ?'Todos os campos foram lidos e estão prontos para aplicar.'
+                :x.status==='processing'
+                  ?'Identificando QR, corrigindo a foto e lendo os números…'
+                  :x.status==='submitted'
+                    ?'Contagens registradas; falta concluir a sincronização com o Bling.'
+                    :x.status==='applied'
+                      ?'Concluída: estoque e gôndolas verificados. Nenhuma ação pendente.'
+                      :'';
+        return '<div class="simple-row inventory-upload-row">'+
+          '<div class="simple-main"><strong>'+esc(title)+'</strong><small>'+esc(detail)+'</small></div>'+
+          inventorySheetQueueBadge(x.status)+
+          (x.scan?'<button class="secondary" type="button" data-sheet-open="'+esc(x.id)+'" style="min-height:36px;padding:0 9px">'+(x.status==='review'?'Conferir':'Abrir')+'</button>':'<span></span>')+
+        '</div>';
+      }).join('');
+      host.querySelectorAll('[data-sheet-open]').forEach(b=>b.onclick=()=>{
+        const item=rows.find(x=>x.id===b.dataset.sheetOpen);if(!item?.scan)return;
+        state.inventorySheetScan=item.scan;paintInventorySheetPhoto();
+        $('#inventorySheetReview')?.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+    }
+    const s=inventorySheetQueueSummary();
+    const retry=$('#inventorySheetRetryErrors');
+    if(retry){
+      const retryable=rows.filter(x=>x.status==='error'&&x.file instanceof File).length;
+      retry.hidden=!s.error;
+      retry.disabled=state.inventorySheetBusy||!retryable;
+      retry.textContent=retryable?'Reenviar '+retryable+' foto(s) com erro':(s.error?'Fotos com erro precisam ser selecionadas novamente':'Reenviar fotos com erro');
+    }
+    const bulk=$('#inventorySheetApplyReady');
+    if(bulk){
+      bulk.disabled=state.inventorySheetBusy||!s.ready;
+      bulk.textContent=s.ready?'Aplicar '+s.ready+' folha(s) prontas':'Nenhuma folha pronta para aplicar';
+    }
+  }
+
+
+  function paintInventorySheetPendingManual(){
+    const host=$('#inventorySheetPendingManual');if(!host)return;
+    const rows=state.inventorySheetPendingManual||[],s=state.inventorySheetPendingSummary||{};
+    const badge=$('#inventorySheetPendingBadge');
+    if(badge){
+      badge.textContent=rows.length?rows.length+' pendência(s)':'Sem pendências';
+      badge.className='pill '+(rows.length?'warn':'');
+    }
+    if(!rows.length){
+      host.innerHTML='<div class="history-empty">Nenhum produto aguardando contagem manual. Todas as leituras recebidas foram resolvidas.</div>';
+      return;
+    }
+    host.innerHTML='<div class="bling-banner" style="margin-bottom:10px"><strong>'+esc(s.count||rows.length)+' produto(s) precisam de conferência manual</strong><small>'+
+      esc(s.quantity_missing||0)+' sem estoque legível · '+esc(s.gondola_missing||0)+' sem gôndola legível'+(s.apply_errors?' · '+esc(s.apply_errors)+' falha(s) de atualização':'')+
+      '</small></div>'+
+      rows.map(r=>{
+        const detail=[
+          r.batch_code?String(r.batch_code)+' · pág. '+r.page_number+(r.page_count?'/'+r.page_count:''):'',
+          r.printed_index?'REF '+String(r.printed_index).padStart(4,'0'):'',
+          r.gtin?'EAN '+r.gtin:'SEM EAN',
+          r.operator_label?'enviado por '+r.operator_label:'',
+          r.reason||''
+        ].filter(Boolean).join(' · ');
+        return '<div class="simple-row inventory-pending-row">'+
+          '<div class="simple-main"><strong>'+esc(r.name||'Produto')+'</strong><small>'+esc(detail)+'</small></div>'+
+          '<label class="inventory-field"><span>ESTOQUE</span><input type="number" min="0" step="1" inputmode="numeric" aria-label="Estoque manual" title="Estoque contado manualmente" placeholder="0" data-pending-qty="'+esc(r.result_id)+'" value="'+(r.quantity==null?'':esc(r.quantity))+'"></label>'+
+          '<label class="inventory-field"><span>GÔNDOLA</span><input type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="Gôndola manual" title="Gôndola conferida manualmente" placeholder="0" data-pending-gondola="'+esc(r.result_id)+'" value="'+(r.gondola==null?'':esc(r.gondola))+'"></label>'+
+          '<button class="primary" type="button" data-pending-resolve="'+esc(r.result_id)+'" style="min-height:40px;padding:0 10px">Resolver manualmente</button>'+
+        '</div>';
+      }).join('');
+    host.querySelectorAll('[data-pending-resolve]').forEach(btn=>btn.onclick=async()=>{
+      const row=rows.find(x=>String(x.result_id)===String(btn.dataset.pendingResolve));if(!row)return;
+      const qEl=host.querySelector('[data-pending-qty="'+CSS.escape(String(row.result_id))+'"]');
+      const gEl=host.querySelector('[data-pending-gondola="'+CSS.escape(String(row.result_id))+'"]');
+      const quantity=Number(qEl?.value),gondola=Number(gEl?.value);
+      if(!Number.isInteger(quantity)||quantity<0){toast('Faça a contagem manual e informe o estoque inteiro');return}
+      if(!Number.isInteger(gondola)||gondola<1||gondola>9999){toast('Confira manualmente e informe a gôndola');return}
+      const operator=requireOperator();if(!operator)return;
+      btn.disabled=true;btn.textContent='Salvando…';
+      try{
+        const data=await api('inventory_sheet_apply',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({scan_id:row.scan_id,operator,items:[{
+            result_id:row.result_id,quantity,gondola,manual_confirmed:true
+          }]})
+        });
+        const result=(data.rows||[])[0];
+        if(result?.review_state==='error'||result?.ok===false)throw new Error(result?.apply_error||result?.error||'manual_apply_failed');
+        toast(row.name+' · contagem manual registrada');
+        await loadInventorySheetPendingManual();
+        loadStockRecountQueue();loadOrderStockShortages();
+      }catch(e){
+        toast('Não consegui concluir manualmente: '+errorMessage(e.message));
+        btn.disabled=false;btn.textContent='Resolver manualmente';
+      }
+    });
+  }
+
+  async function loadInventorySheetPendingManual(){
+    const host=$('#inventorySheetPendingManual');
+    if(host)host.innerHTML='<div class="loading">Verificando pendências de leitura…</div>';
+    try{
+      const data=await api('inventory_sheet_pending_manual');
+      state.inventorySheetPendingManual=data.items||[];
+      state.inventorySheetPendingSummary={
+        count:Number(data.count||0),quantity_missing:Number(data.quantity_missing||0),
+        gondola_missing:Number(data.gondola_missing||0),apply_errors:Number(data.apply_errors||0)
+      };
+      paintInventorySheetPendingManual();
+    }catch(e){
+      if(host)host.innerHTML='<div class="history-empty">Não consegui carregar as pendências agora. <button class="text" id="retryInventoryPending" type="button">Tentar novamente</button></div>';
+      if($('#retryInventoryPending'))$('#retryInventoryPending').onclick=loadInventorySheetPendingManual;
+    }
+  }
+
