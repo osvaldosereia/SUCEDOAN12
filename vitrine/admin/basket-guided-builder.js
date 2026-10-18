@@ -14,21 +14,29 @@
   function toast(msg){const b=bridge();if(typeof b.toast==='function')b.toast(msg);else alert(msg)}
   function operator(){const b=bridge();return typeof b.operator==='function'?(b.operator()||'Operação'):'Operação'}
   async function token(){const b=bridge();if(typeof b.token!=='function')throw new Error('admin_bridge_unavailable');return await b.token()}
+  // Shared response handling for the guided basket and kit endpoints.
+  // Preserve endpoint-specific error codes and the attached response metadata.
+  async function readApiResponse(res,fallbackError){
+    const data=await res.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!res.ok||data?.ok===false){
+      const e=new Error(data?.error||fallbackError);
+      e.data=data;
+      e.status=res.status;
+      throw e;
+    }
+    return data;
+  }
   async function call(action,payload={}){
     const t=await token();
     const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify({action,...payload}),cache:'no-store'});
-    const data=await res.json().catch(()=>({ok:false,error:'invalid_response'}));
-    if(!res.ok||data?.ok===false){const e=new Error(data?.error||'guided_request_failed');e.data=data;e.status=res.status;throw e}
-    return data;
+    return readApiResponse(res,'guided_request_failed');
   }
   async function kitCall(action,payload={}){
     const t=await token();
     const q=new URLSearchParams({action});
     Object.entries(payload||{}).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')q.set(k,String(v))});
     const res=await fetch(KIT_API+'?'+q.toString(),{method:'GET',headers:{Authorization:'Bearer '+t},cache:'no-store'});
-    const data=await res.json().catch(()=>({ok:false,error:'invalid_response'}));
-    if(!res.ok||data?.ok===false){const e=new Error(data?.error||'kit_builder_request_failed');e.data=data;e.status=res.status;throw e}
-    return data;
+    return readApiResponse(res,'kit_builder_request_failed');
   }
 
   function ensureShell(){
