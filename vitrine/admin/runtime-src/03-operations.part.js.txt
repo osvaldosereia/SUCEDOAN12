@@ -1,0 +1,950 @@
+    if(b?.hub_enabled!==false&&domains.orders===false)issues.push('Envio de pedidos ao Bling está pausado');
+    const queueReview=Number(queue.review_required||0)+Number(queue.failed||0);
+    if(queueReview>0)issues.push(queueReview+' item(ns) da fila precisam de revisão');
+    const orderReview=Number(orderLinks.review_required||0);
+    if(orderReview>0)issues.push(orderReview+' pedido(s) precisam de revisão no Bling');
+    return [...new Set(issues)];
+  }
+  async function loadOperationalIntegrationAlert(){
+    const host=$('#integrationOperationalAlert');if(!host)return;
+    host.innerHTML='';
+    try{
+      const data=await api('bling_status');
+      state.bling=data.bling||{};
+      const issues=blingOperationalIssues(state.bling);
+      if(!issues.length)return;
+      host.innerHTML='<div class="operational-alert"><div><strong>Integração precisa de atenção</strong><small>'+issues.map(esc).join(' · ')+'</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }catch(e){
+      host.innerHTML='<div class="operational-alert"><div><strong>Não consegui verificar a integração</strong><small>Os pedidos continuam visíveis. Abra o diagnóstico para conferir o Bling.</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }
+  }
+
+  function financeSummaryCard(label,value,detail,kind=''){
+    return '<div class="bling-card '+esc(kind)+'"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong><span class="sub">'+esc(detail)+'</span></div>';
+  }
+  function financePriorityRow(r,today){
+    const isReceive=r.kind==='receivable';
+    const overdue=Boolean(r.due_date&&r.due_date<today);
+    const title=r.contact_name||r.document_number||r.origin_number||('Lançamento #'+String(r.id||''));
+    const detail=[r.document_number?'Doc. '+r.document_number:'',r.origin_number?'Origem '+r.origin_number:'',r.boleto_url?'Boleto emitido':'',r.pix_url?'PIX disponível':''].filter(Boolean).join(' · ');
+    return '<div class="closure-row">'+
+      '<div><strong class="'+(isReceive?'ok-text':'warn-text')+'">'+(isReceive?'Receber':'Pagar')+'</strong><span class="sub">'+(overdue?'<span class="danger-text">Vencido</span>':'Em aberto')+'</span></div>'+
+      '<div class="history-main"><strong>'+esc(title)+'</strong><small>'+esc(detail||'Sem observação')+'</small><div class="dispatch-actions" style="justify-content:flex-start;margin-top:6px">'+
+        '<button class="text" type="button" data-finance-detail="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Detalhes</button>'+
+        '<button class="text" type="button" data-finance-edit="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Editar</button>'+
+        '<button class="text" type="button" data-finance-settle="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Dar baixa</button>'+
+        (isReceive&&r.origin_id?'<button class="text" type="button" data-finance-boleto="'+esc(r.origin_id)+'">Boletos</button>':'')+
+      '</div></div>'+
+      '<div><strong>'+esc(dateOnly(r.due_date))+'</strong><span class="sub">'+(r.due_date===today?'Vence hoje':'Vencimento')+'</span></div>'+
+      '<strong>'+money(r.amount_cents)+'</strong>'+
+      '<span class="pill '+(overdue?'danger':'')+'">'+(r.boleto_url?'Boleto':r.pix_url?'PIX':'Aberto')+'</span>'+
+    '</div>';
+  }
+  function paintFinance(){
+    const host=$('#financeBody');if(!host)return;
+    const f=state.finance||{},rec=f.receivable||{},pay=f.payable||{},realized=f.realized_30d||{},today=f.window?.today||'';
+    const priorities=Array.isArray(f.priority)?f.priority:[];
+    const accounts=Array.isArray(f.financial_accounts)?f.financial_accounts:[];
+    host.innerHTML=
+      (f.truncated?'<div class="rule-notice warn"><strong>Volume alto de lançamentos</strong><div>O painel exibiu o limite seguro desta versão. Nenhum dado foi alterado.</div></div>':'')+
+      (realized.truncated?'<div class="rule-notice warn"><strong>Histórico de 30 dias parcial</strong><div>O volume de contas pagas/recebidas ultrapassou o limite seguro de leitura; os totais exibidos podem ser parciais.</div></div>':'')+
+      '<div class="bling-grid">'+
+        financeSummaryCard('A receber',money(rec.total_cents),String(rec.count||0)+' conta(s) em aberto')+
+        financeSummaryCard('A pagar',money(pay.total_cents),String(pay.count||0)+' conta(s) em aberto')+
+        financeSummaryCard('Saldo projetado',money(f.projected_cents),(Number(f.projected_cents||0)>=0?'Recebimentos acima dos pagamentos':'Pagamentos acima dos recebimentos'),Number(f.projected_cents||0)<0?'danger':'')+
+        financeSummaryCard('Recebido · 30 dias',money(realized.received_cents),String(realized.received_count||0)+' conta(s) recebida(s)')+
+        financeSummaryCard('Pago · 30 dias',money(realized.paid_cents),String(realized.paid_count||0)+' conta(s) paga(s)')+
+        financeSummaryCard('Líquido realizado · 30 dias',money(realized.net_cents),(Number(realized.net_cents||0)>=0?'Entradas acima das saídas':'Saídas acima das entradas'),Number(realized.net_cents||0)<0?'danger':'')+
+        financeSummaryCard('Vencidos a receber',money(rec.overdue_cents),String(rec.overdue_count||0)+' vencido(s)',Number(rec.overdue_count||0)>0?'warn':'')+
+        financeSummaryCard('Vencidos a pagar',money(pay.overdue_cents),String(pay.overdue_count||0)+' vencido(s)',Number(pay.overdue_count||0)>0?'danger':'')+
+        financeSummaryCard('Próximos 7 dias',money(Number(rec.next_7_cents||0)-Number(pay.next_7_cents||0)),String(rec.next_7_count||0)+' a receber · '+String(pay.next_7_count||0)+' a pagar')+
+        financeSummaryCard('Boletos',String(f.boleto_count||0),String(f.pix_count||0)+' conta(s) também com PIX')+
+        financeSummaryCard('Contas financeiras',String(accounts.length),f.financial_accounts_access?.ok?'Acesso confirmado':'Acesso parcial')+
+      '</div>'+
+      '<section class="panel"><div class="history-title dispatch-head"><div><strong>Prioridades financeiras</strong><span>vencidos primeiro, depois próximos vencimentos · somente leitura</span></div><b>'+priorities.length+'</b></div>'+
+        (priorities.length?priorities.map(r=>financePriorityRow(r,today)).join(''):'<div class="history-empty">Nenhuma conta em aberto no período consultado.</div>')+
+      '</section>'+
+      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Contas financeiras do Bling</strong><span>bancos, caixas e integrações disponíveis</span></div><b>'+accounts.length+'</b></div>'+
+        (accounts.length?'<div style="padding:12px 14px">'+accounts.map(a=>'<button class="pill" type="button" data-financial-account-detail="'+esc(a.id)+'" style="margin:3px">'+esc(a.description||('Conta #'+a.id))+' · '+esc(a.type||'tipo não informado')+'</button>').join('')+'</div>':'<div class="history-empty">Nenhuma conta financeira retornada.</div>')+
+      '</section>';
+    host.querySelectorAll('[data-finance-detail]').forEach(b=>b.onclick=()=>openFinanceDetail(b.dataset.financeKind,Number(b.dataset.financeDetail)));
+    host.querySelectorAll('[data-finance-edit]').forEach(b=>b.onclick=()=>openFinanceEditor(b.dataset.financeKind,Number(b.dataset.financeEdit)));
+    host.querySelectorAll('[data-finance-settle]').forEach(b=>b.onclick=()=>openFinanceSettlement(b.dataset.financeKind,Number(b.dataset.financeSettle)));
+    host.querySelectorAll('[data-finance-boleto]').forEach(b=>b.onclick=()=>openFinanceBoletos(Number(b.dataset.financeBoleto)));
+    host.querySelectorAll('[data-financial-account-detail]').forEach(b=>b.onclick=()=>openFinancialAccountDetail(Number(b.dataset.financialAccountDetail)));
+  }
+  function financeTokenPayload(token){
+    try{
+      const raw=String(token||'').split('.')[1]||'';
+      const pad=raw.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-raw.length%4)%4);
+      return JSON.parse(atob(pad));
+    }catch{return {}}
+  }
+  function financeSessionToken(){
+    const token=sessionStorage.getItem('da_finance_access_token_v1')||'';
+    if(!token)return '';
+    const exp=Number(financeTokenPayload(token)?.exp||0);
+    if(!exp||exp<=Math.floor(Date.now()/1000)+60){
+      sessionStorage.removeItem('da_finance_access_token_v1');
+      return '';
+    }
+    return token;
+  }
+  function clearFinanceSession(expectedToken=''){
+    const current=financeSessionToken();
+    if(expectedToken&&current&&current!==expectedToken)return false;
+    sessionStorage.removeItem('da_finance_access_token_v1');
+    state.financeCatalogs=null;
+    return true;
+  }
+  async function adminStepUp(){return await financeStepUp()}
+  async function financeStepUp(){
+    const existing=financeSessionToken();
+    if(existing)return existing;
+    if(state.financeAuthPromise)return await state.financeAuthPromise;
+    state.financeAuthPromise=(async()=>{
+      try{
+        const authRes=await fetch(FINANCE_AUTH_API,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
+          body:JSON.stringify({pin:'000000'}),
+          cache:'no-store'
+        });
+        const auth=await authRes.json().catch(()=>({}));
+        if(!authRes.ok||!auth?.ok)throw new Error(auth?.error||'admin_auto_auth_failed');
+        const verifyRes=await fetch(FINANCE_VERIFY_API,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
+          body:JSON.stringify({token_hash:auth.token_hash,type:auth.verification_type||'email'}),
+          cache:'no-store'
+        });
+        const verified=await verifyRes.json().catch(()=>({}));
+        const token=String(verified?.access_token||'').trim();
+        if(!verifyRes.ok||!token)throw new Error(verified?.msg||verified?.error_description||verified?.error||'admin_auto_session_failed');
+        sessionStorage.setItem('da_finance_access_token_v1',token);
+        return token;
+      }finally{
+        state.financeAuthPromise=null;
+      }
+    })();
+    return await state.financeAuthPromise;
+  }
+  async function financeApi(operation,payload={},retryAuth=true){
+    const token=await financeStepUp();
+    const u=new URL(API);u.searchParams.set('action','bling_finance_action');
+    const response=await fetch(u,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({operation,...payload}),
+      cache:'no-store'
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await financeApi(operation,payload,false);
+    }
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
+  async function loadFinanceCatalogs(force=false){
+    if(state.financeCatalogs&&!force)return state.financeCatalogs;
+    const data=await financeApi('catalogs');
+    state.financeCatalogs={
+      payment_methods:Array.isArray(data.payment_methods)?data.payment_methods:[],
+      categories:Array.isArray(data.categories)?data.categories:[],
+      financial_accounts:Array.isArray(data.financial_accounts)?data.financial_accounts:[],
+      truncated:Boolean(data.truncated)
+    };
+    return state.financeCatalogs;
+  }
+  function financeFieldValue(v){
+    return v==null?'':String(v);
+  }
+  function financeMoneyInput(v){
+    const n=Number(v);
+    return Number.isFinite(n)?n.toFixed(2).replace('.',','):'';
+  }
+  function financeSelectOptions(list,currentId,placeholder='Não informado'){
+    const current=Number(currentId||0);
+    const rows=(Array.isArray(list)?list:[]).filter(x=>Number(x?.id||0)>0);
+    const hasCurrent=current&&rows.some(x=>Number(x.id)===current);
+    const extra=current&&!hasCurrent?[{id:current,description:'Atual #'+current}]:[];
+    return '<option value="">'+esc(placeholder)+'</option>'+
+      [...extra,...rows].map(x=>'<option value="'+esc(x.id)+'" '+(Number(x.id)===current?'selected':'')+'>'+esc(x.description||x.name||('ID '+x.id))+'</option>').join('');
+  }
+  function financeCategoryRows(kind,catalogs){
+    return (catalogs?.categories||[]).filter(c=>{
+      const t=Number(c?.type||0);
+      return !t||t===3||(kind==='payable'&&t===1)||(kind==='receivable'&&t===2);
+    });
+  }
+  function financeCatalogDescription(area,id){
+    const n=Number(id||0);if(!n)return '';
+    const c=state.financeCatalogs||{};
+    const rows=area==='payment'?c.payment_methods:area==='account'?c.financial_accounts:c.categories;
+    return (rows||[]).find(x=>Number(x.id)===n)?.description||('#'+n);
+  }
+  function financeFormPayload(form){
+    const value=name=>form.querySelector('[name="'+name+'"]')?.value?.trim()||'';
+    const number=name=>{const raw=value(name).replace(/\./g,'').replace(',','.');const n=Number(raw);return Number.isFinite(n)&&n>0?n:null};
+    const payload={
+      vencimento:value('vencimento'),
+      valor:number('valor'),
+      contato_id:number('contato_id'),
+      forma_pagamento_id:number('forma_pagamento_id'),
+      dataEmissao:value('dataEmissao'),
+      numeroDocumento:value('numeroDocumento'),
+      competencia:value('competencia'),
+      historico:value('historico'),
+      portador_id:number('portador_id'),
+      categoria_id:number('categoria_id')
+    };
+    Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]===null)delete payload[k]});
+    return payload;
+  }
+  function financeExtractDetail(kind,account){
+    const a=account||{};
+    return {
+      vencimento:a.vencimento||'',
+      valor:a.valor??'',
+      contato_id:a.contato?.id||'',
+      contato_nome:a.contato?.nome||'',
+      forma_pagamento_id:a.formaPagamento?.id||'',
+      dataEmissao:a.dataEmissao||'',
+      numeroDocumento:a.numeroDocumento||'',
+      competencia:a.competencia||'',
+      historico:a.historico||'',
+      portador_id:a.portador?.id||a.contaContabil?.id||'',
+      categoria_id:a.categoria?.id||''
+    };
+  }
+  function financeOpenDialog(title,body,actions=''){
+    $('#editorTitle').textContent=title;
+    $('#editorBody').innerHTML=body;
+    $('#editorActions').innerHTML=actions||'<button class="secondary" id="financeClose" type="button">Fechar</button>';
+    if($('#financeClose'))$('#financeClose').onclick=()=>$('#editor').close();
+    if(!$('#editor').open)$('#editor').showModal();
+  }
+  function financeContactLabel(c){
+    const parts=[c?.name||'',c?.trade_name||'',c?.document||''].filter(Boolean);
+    return parts.join(' · ')||('Contato #'+String(c?.id||''));
+  }
+  function attachFinanceContactSearch(current={}){
+    const input=$('#financeContactSearch'),hidden=$('#financeContactId'),host=$('#financeContactResults');
+    if(!input||!hidden||!host)return;
+    hidden.value=financeFieldValue(current.contato_id);
+    if(current.contato_id){
+      state.financeSelectedContact={id:Number(current.contato_id),name:current.contato_nome||('Contato #'+current.contato_id)};
+      input.value=current.contato_nome||('Contato #'+current.contato_id);
+    }else state.financeSelectedContact=null;
+
+    input.oninput=()=>{
+      hidden.value='';
+      state.financeSelectedContact=null;
+      clearTimeout(state.financeContactSearchTimer);
+      const q=input.value.trim();
+      if(q.length<2){
+        host.innerHTML=q?'<small class="sub">Digite pelo menos 2 caracteres.</small>':'';
+        return;
+      }
+      host.innerHTML='<small class="sub">Buscando no Bling…</small>';
+      state.financeContactSearchTimer=setTimeout(async()=>{
+        try{
+          const data=await financeApi('contact_search',{query:q});
+          const contacts=Array.isArray(data.contacts)?data.contacts:[];
+          host.innerHTML=contacts.length
+            ?'<div class="panel" style="margin-top:6px;padding:6px">'+contacts.map(c=>'<button type="button" class="text" data-finance-contact-id="'+esc(c.id)+'" style="display:block;width:100%;text-align:left;padding:9px 8px">'+esc(financeContactLabel(c))+'</button>').join('')+'</div>'
+            :'<small class="sub">Nenhum contato encontrado.</small>';
+          host.querySelectorAll('[data-finance-contact-id]').forEach(btn=>btn.onclick=()=>{
+            const contact=contacts.find(c=>Number(c.id)===Number(btn.dataset.financeContactId));
+            if(!contact)return;
+            hidden.value=String(contact.id);
+            input.value=financeContactLabel(contact);
+            state.financeSelectedContact={id:Number(contact.id),name:financeContactLabel(contact)};
+            host.innerHTML='';
+          });
+        }catch(e){
+          host.innerHTML='<small class="danger-text">Não foi possível buscar contatos agora.</small>';
+        }
+      },320);
+    };
+  }
+  function financeActionErrorMessage(error){
+    const code=String(error?.message||error||'');
+    const map={
+      boleto_validation_failed:'Para usar boleto, informe histórico, selecione uma conta financeira apta, use vencimento de hoje em diante e mantenha o contato do Bling com e-mail e endereço completos.',
+      validation_failed:'Revise os campos obrigatórios antes de continuar.',
+      bling_finance_write_uncertain:'Resultado incerto. Não tente novamente sem revisar o lançamento no Bling.',
+      finance_owner_required:'Somente o proprietário pode operar o financeiro.',
+      finance_session_invalid:'A sessão financeira expirou. Tente novamente.'
+    };
+    return map[code]||code||'Não foi possível concluir a operação.';
+  }
+  async function openFinanceEditor(kind,id=0){
+    const isReceive=kind==='receivable';
+    let current={},catalogs={payment_methods:[],categories:[],financial_accounts:[]},catalogError=false;
+    financeOpenDialog('Carregando…','<div class="loading">Consultando o Bling…</div>');
+    try{
+      catalogs=await loadFinanceCatalogs();
+      if(id){
+        const detail=await financeApi('detail',{kind,id});
+        current=financeExtractDetail(kind,detail.account);
+      }
+    }catch(e){
+      if(id){financeOpenDialog('Financeiro','<div class="empty">Não consegui carregar esse lançamento.</div>');return}
+      catalogError=true;
+    }
+    const title=(id?'Editar ':'Novo ')+(isReceive?'conta a receber':'conta a pagar');
+    const today=cuiabaDayKey(new Date());
+    const categories=financeCategoryRows(kind,catalogs);
+    financeOpenDialog(title,
+      (catalogError?'<div class="rule-notice warn"><strong>Listas do Bling indisponíveis</strong><div>Tente novamente em instantes antes de salvar.</div></div>':'')+
+      (catalogs.truncated?'<div class="rule-notice warn"><strong>Lista grande</strong><div>Alguns cadastros podem não aparecer. Use a busca de contato e revise os dados antes de confirmar.</div></div>':'')+
+      '<form id="financeForm" class="form-grid">'+
+        '<label><span>Vencimento *</span><input name="vencimento" type="date" required value="'+esc(current.vencimento||today)+'"></label>'+
+        '<label><span>Valor *</span><input name="valor" inputmode="decimal" required value="'+esc(financeMoneyInput(current.valor))+'"></label>'+
+        '<label class="span-2"><span>Contato no Bling *</span><input id="financeContactSearch" type="search" autocomplete="off" placeholder="Digite nome, CPF/CNPJ, e-mail ou código" value="'+esc(current.contato_nome||'')+'"><input id="financeContactId" name="contato_id" type="hidden" value="'+esc(financeFieldValue(current.contato_id))+'"><div id="financeContactResults"></div></label>'+
+        '<label><span>Forma de pagamento</span><select id="financePaymentMethod" name="forma_pagamento_id">'+financeSelectOptions(catalogs.payment_methods,current.forma_pagamento_id,'Não informar')+'</select></label>'+
+        '<label><span>Conta financeira / portador</span><select id="financePortador" name="portador_id">'+financeSelectOptions(catalogs.financial_accounts,current.portador_id,'Não informar')+'</select></label>'+
+        '<label><span>Categoria</span><select name="categoria_id">'+financeSelectOptions(categories,current.categoria_id,'Não informar')+'</select></label>'+
+        '<label><span>Data de emissão</span><input name="dataEmissao" type="date" value="'+esc(current.dataEmissao||today)+'"></label>'+
+        '<label><span>Nº documento</span><input name="numeroDocumento" value="'+esc(current.numeroDocumento||'')+'"></label>'+
+        '<label><span>Competência</span><input name="competencia" type="date" value="'+esc(current.competencia||'')+'"></label>'+
+        '<label class="span-2"><span>Histórico</span><textarea id="financeHistory" name="historico">'+esc(current.historico||'')+'</textarea></label>'+
+        '<div class="span-2 rule-notice warn" id="financeBoletoNote" style="display:none"><strong>Boleto exige conferência extra</strong><div>O contato precisa ter e-mail e endereço completos no Bling, o vencimento não pode estar no passado, e deve existir uma conta financeira apta para boleto. Salvar a conta não emite o boleto: a emissão continua sendo feita no Bling.</div></div>'+
+      '</form>',
+      '<button class="secondary" id="financeCancel" type="button">Cancelar</button><button class="primary" id="financePreview" type="button">Revisar antes de salvar</button>'
+    );
+    attachFinanceContactSearch(current);
+    const paymentSelect=$('#financePaymentMethod'),portadorSelect=$('#financePortador'),historyField=$('#financeHistory'),dueField=$('#financeForm [name="vencimento"]'),boletoNote=$('#financeBoletoNote');
+    const syncBoletoUi=()=>{
+      const selected=(catalogs.payment_methods||[]).find(x=>Number(x.id)===Number(paymentSelect?.value||0));
+      const boleto=Number(selected?.type||0)===15;
+      if(boletoNote)boletoNote.style.display=boleto?'block':'none';
+      if(portadorSelect)portadorSelect.required=boleto;
+      if(historyField)historyField.required=boleto;
+      if(dueField){
+        if(boleto)dueField.min=today;
+        else dueField.removeAttribute('min');
+      }
+    };
+    if(paymentSelect)paymentSelect.onchange=syncBoletoUi;
+    syncBoletoUi();
+    $('#financeCancel').onclick=()=>$('#editor').close();
+    $('#financePreview').onclick=async()=>{
+      const form=$('#financeForm');
+      const payload=financeFormPayload(form);
+      if(!payload.contato_id){toast('Selecione um contato do Bling');return}
+      try{
+        const preview=await financeApi(id?'update_preview':'create_preview',{kind,id:id||undefined,payload});
+        openFinanceConfirmation(preview,id?'update_execute':'create_execute',{kind,id:id||undefined,payload});
+      }catch(e){toast(financeActionErrorMessage(e))}
+    };
+  }
+  function financePreviewHtml(preview){
+    const p=preview?.payload||{};
+    const contactId=Number(p.contato?.id||0);
+    const contactLabel=state.financeSelectedContact&&Number(state.financeSelectedContact.id)===contactId
+      ?state.financeSelectedContact.name
+      :(contactId?('Contato #'+contactId):'—');
+    const rows=[
+      ['Tipo',preview.kind==='receivable'?'Conta a receber':'Conta a pagar'],
+      ['Operação',preview.operation==='settle'?'Baixa':preview.operation==='update'?'Edição':'Criação'],
+      ['Vencimento',p.vencimento||'—'],
+      ['Valor',p.valor!=null?Number(p.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'],
+      ['Contato',contactLabel],
+      ['Forma de pagamento',p.formaPagamento?.id?financeCatalogDescription('payment',p.formaPagamento.id):'—'],
+      ['Conta financeira',p.portador?.id?financeCatalogDescription('account',p.portador.id):'—'],
+      ['Categoria',p.categoria?.id?financeCatalogDescription('category',p.categoria.id):'—'],
+      ['Data da baixa',p.data||'—']
+    ];
+    const boleto=preview?.boleto_policy?.is_boleto===true;
+    return '<div class="rule-notice warn"><strong>Confirmação obrigatória</strong><div>Confira os dados. Esta ação será enviada ao Bling somente após você digitar CONFIRMAR.</div></div>'+
+      (boleto?'<div class="rule-notice"><strong>Boleto preparado, não emitido</strong><div>Esta confirmação salva a conta a receber. A emissão do boleto é uma etapa separada no Bling e não será executada automaticamente por este Admin.</div></div>':'')+
+      '<div class="panel" style="padding:12px">'+rows.filter(x=>x[1]!=='—').map(x=>'<div class="history-title"><span>'+esc(x[0])+'</span><strong>'+esc(x[1])+'</strong></div>').join('')+'</div>'+
+      (preview.warning?'<div class="rule-notice"><strong>Atenção</strong><div>'+esc(preview.warning)+'</div></div>':'')+
+      '<label style="display:block;margin-top:12px"><span>Digite CONFIRMAR</span><input id="financeConfirmText" autocomplete="off"></label>';
+  }
+  function openFinanceConfirmation(preview,executeOperation,context){
+    const idempotencyKey=crypto.randomUUID();
+    financeOpenDialog('Confirmar operação financeira',financePreviewHtml(preview),
+      '<button class="secondary" id="financeBack" type="button">Voltar</button><button class="primary" id="financeExecute" type="button" disabled>Confirmar no Bling</button>'
+    );
+    const input=$('#financeConfirmText'),button=$('#financeExecute');
+    input.oninput=()=>button.disabled=input.value.trim()!=='CONFIRMAR';
+    $('#financeBack').onclick=()=>$('#editor').close();
+    button.onclick=async()=>{
+      if(input.value.trim()!=='CONFIRMAR')return;
+      button.disabled=true;button.textContent='Enviando…';
+      try{
+        await financeApi(executeOperation,{...context,confirmation:'CONFIRMAR',idempotency_key:idempotencyKey});
+        $('#editor').close();toast('Operação registrada no Bling');state.finance=null;await renderFinance();
+      }catch(e){
+        button.disabled=false;button.textContent='Confirmar no Bling';
+        toast(financeActionErrorMessage(e));
+      }
+    };
+  }
+  async function openFinanceSettlement(kind,id){
+    financeOpenDialog('Baixa financeira','<div class="loading">Consultando o lançamento…</div>');
+    try{
+      const catalogs=await loadFinanceCatalogs();
+      const detail=await financeApi('detail',{kind,id});
+      const a=financeExtractDetail(kind,detail.account);
+      const today=cuiabaDayKey(new Date());
+      const categories=financeCategoryRows(kind,catalogs);
+      financeOpenDialog(kind==='receivable'?'Registrar recebimento':'Registrar pagamento',
+        '<div class="rule-notice warn"><strong>Baixa manual</strong><div>Isso registra a baixa no Bling. Não movimenta banco, PIX ou cartão.</div></div>'+
+        '<form id="financeSettleForm" class="form-grid">'+
+          '<label><span>Data da baixa *</span><input name="data" type="date" required value="'+esc(today)+'"></label>'+
+          '<label><span>Valor recebido/pago</span><input name="valorRecebido" inputmode="decimal" value="'+esc(financeMoneyInput(detail.account?.valor))+'"></label>'+
+          '<label><span>Conta financeira / portador *</span><select name="portador_id" required>'+financeSelectOptions(catalogs.financial_accounts,a.portador_id,'Selecione')+'</select></label>'+
+          '<label><span>Categoria *</span><select name="categoria_id" required>'+financeSelectOptions(categories,a.categoria_id,'Selecione')+'</select></label>'+
+          '<label><span>Juros</span><input name="juros" inputmode="decimal"></label>'+
+          '<label><span>Desconto</span><input name="desconto" inputmode="decimal"></label>'+
+          '<label><span>Acréscimo</span><input name="acrescimo" inputmode="decimal"></label>'+
+          '<label><span>Tarifa</span><input name="tarifa" inputmode="decimal"></label>'+
+          '<label class="span-2"><span>Histórico</span><textarea name="historico">'+esc(a.historico||'')+'</textarea></label>'+
+        '</form>',
+        '<button class="secondary" id="financeCancel" type="button">Cancelar</button><button class="primary" id="financeSettlePreview" type="button">Revisar baixa</button>'
+      );
+      $('#financeCancel').onclick=()=>$('#editor').close();
+      $('#financeSettlePreview').onclick=async()=>{
+        const form=$('#financeSettleForm');
+        const get=name=>form.querySelector('[name="'+name+'"]')?.value?.trim()||'';
+        const decimal=name=>{const v=get(name).replace(/\./g,'').replace(',','.');const n=Number(v);return v!==''&&Number.isFinite(n)&&n>=0?n:undefined};
+        const portadorId=Number(get('portador_id'))||0,categoriaId=Number(get('categoria_id'))||0;
+        if(!portadorId||!categoriaId){toast('Selecione conta financeira e categoria');return}
+        const payload={
+          data:get('data'),usarDataVencimento:false,portador_id:portadorId,categoria_id:categoriaId,
+          historico:get('historico'),valorRecebido:decimal('valorRecebido'),juros:decimal('juros'),desconto:decimal('desconto'),acrescimo:decimal('acrescimo'),tarifa:decimal('tarifa')
+        };
+        Object.keys(payload).forEach(k=>payload[k]===undefined&&delete payload[k]);
+        try{
+          const preview=await financeApi('settle_preview',{kind,id,payload});
+          openFinanceConfirmation(preview,'settle_execute',{kind,id,payload});
+        }catch(e){toast(String(e?.message||'Não foi possível validar a baixa'))}
+      };
+    }catch(e){financeOpenDialog('Baixa financeira','<div class="empty">Não consegui carregar esse lançamento.</div>')}
+  }
+  async function openFinanceDetail(kind,id){
+    financeOpenDialog('Detalhes financeiros','<div class="loading">Consultando o Bling…</div>');
+    try{
+      const d=await financeApi('detail',{kind,id});
+      const a=d.account||{};
+      financeOpenDialog(kind==='receivable'?'Conta a receber':'Conta a pagar',
+        '<div class="panel" style="padding:14px">'+
+          '<div class="history-title"><span>ID</span><strong>'+esc(a.id||id)+'</strong></div>'+
+          '<div class="history-title"><span>Vencimento</span><strong>'+esc(dateOnly(a.vencimento))+'</strong></div>'+
+          '<div class="history-title"><span>Valor</span><strong>'+esc(Number(a.valor||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}))+'</strong></div>'+
+          '<div class="history-title"><span>Contato</span><strong>'+esc(a.contato?.nome||a.contato?.id||'—')+'</strong></div>'+
+          '<div class="history-title"><span>Documento</span><strong>'+esc(a.numeroDocumento||'—')+'</strong></div>'+
+          '<div class="history-title"><span>Histórico</span><strong>'+esc(a.historico||'—')+'</strong></div>'+
+        '</div>',
+        '<button class="secondary" id="financeClose" type="button">Fechar</button><button class="secondary" id="financeEditFromDetail" type="button">Editar</button><button class="primary" id="financeSettleFromDetail" type="button">Dar baixa</button>'
+      );
+      $('#financeClose').onclick=()=>$('#editor').close();
+      $('#financeEditFromDetail').onclick=()=>openFinanceEditor(kind,id);
+      $('#financeSettleFromDetail').onclick=()=>openFinanceSettlement(kind,id);
+    }catch(e){financeOpenDialog('Detalhes financeiros','<div class="empty">Não consegui carregar os detalhes.</div>')}
+  }
+  function financeBoletoStatusLabel(v){
+    return ({open:'Em aberto',received:'Recebido',partial:'Parcialmente recebido',returned:'Devolvido',partial_returned:'Parcialmente devolvido',cancelled:'Cancelado',unknown:'Situação não identificada'})[v]||v||'—';
+  }
+  async function openFinanceBoletos(originId){
+    financeOpenDialog('Boletos','<div class="loading">Consultando o Bling…</div>');
+    try{
+      const d=await financeApi('boletos',{kind:'receivable',origin_id:originId});
+      const rows=Array.isArray(d.boletos)?d.boletos:[],summary=d.summary||{};
+      financeOpenDialog('Boletos vinculados',
+        '<div class="rule-notice"><strong>Somente consulta</strong><div>Este Admin não emite nem cancela boletos. Emissão e cancelamento continuam no Bling.</div></div>'+
+        (rows.length?'<div class="panel" style="padding:14px">'+
+          (summary.total_cents?'<div class="history-title"><span>Total</span><strong>'+money(summary.total_cents)+'</strong></div>':'')+
+          rows.map((b,i)=>'<div class="history-title" style="align-items:flex-start"><div><strong>Boleto '+(i+1)+'</strong><span class="sub">'+esc(b.external_number?'Código '+b.external_number:'ID '+(b.id||'—'))+'</span></div><div style="text-align:right"><strong>'+money(b.amount_cents)+'</strong><span class="sub">'+esc(dateOnly(b.due_date))+' · '+esc(financeBoletoStatusLabel(b.status_label))+'</span></div></div>').join('')+
+        '</div>':'<div class="empty">Nenhum boleto retornado para essa origem.</div>')
+      );
+    }catch(e){financeOpenDialog('Boletos','<div class="empty">Não consegui consultar os boletos.</div>')}
+  }
+  async function openFinancialAccountDetail(id){
+    financeOpenDialog('Conta financeira','<div class="loading">Consultando o Bling…</div>');
+    try{
+      const d=await financeApi('financial_account_detail',{id});
+      const a=d.financial_account||{};
+      financeOpenDialog('Conta financeira do Bling',
+        '<div class="panel" style="padding:14px"><div class="history-title"><span>ID</span><strong>'+esc(a.id||id)+'</strong></div><div class="history-title"><span>Descrição</span><strong>'+esc(a.descricao||'—')+'</strong></div><div class="history-title"><span>Tipo</span><strong>'+esc(a.tipo||'—')+'</strong></div></div>'
+      );
+    }catch(e){financeOpenDialog('Conta financeira','<div class="empty">Não consegui carregar essa conta financeira.</div>')}
+  }
+
+  async function financeOverviewApi(token,retryAuth=true){
+    const u=new URL(API);u.searchParams.set('action','bling_finance_overview');
+    const response=await fetch(u,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:'{}',
+      cache:'no-store'
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(response.status===401&&retryAuth){
+      clearFinanceSession(token);
+      return await financeOverviewApi(await financeStepUp(),false);
+    }
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
+  async function renderFinance(){
+    let token='';
+    try{
+      token=await financeStepUp();
+    }catch(e){
+      if(String(e?.message||'')==='finance_auth_cancelled'){
+        toast('Financeiro continua bloqueado');
+        renderMore();
+        return;
+      }
+      toast(String(e?.message||'Não foi possível liberar o financeiro'));
+      renderMore();
+      return;
+    }
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Financeiro · Bling</h1><p>Área protegida. Bling é a fonte oficial; inclusões, edições e baixas exigem prévia e confirmação humana.</p></div><div class="dispatch-actions"><button class="secondary" id="newPayable" type="button">+ A pagar</button><button class="secondary" id="newReceivable" type="button">+ A receber</button><button class="secondary" id="lockFinance" type="button">Bloquear financeiro</button><button class="secondary" id="refreshFinance">Atualizar</button></div></div>'+
+      '<div class="rule-notice"><strong>Operação controlada</strong><div>Baixa apenas registra pagamento/recebimento no Bling. O sistema não faz transferência bancária e não cancela boletos automaticamente.</div></div>'+
+      '<div id="financeBody"><div class="loading">Consultando financeiro no Bling…</div></div>';
+    $('#refreshFinance').onclick=renderFinance;
+    $('#lockFinance').onclick=()=>{clearFinanceSession();toast('Financeiro bloqueado');renderMore()};
+    $('#newPayable').onclick=()=>openFinanceEditor('payable');
+    $('#newReceivable').onclick=()=>openFinanceEditor('receivable');
+    try{
+      const data=await financeOverviewApi(token);
+      state.finance=data.finance||{};
+      paintFinance();
+    }catch(e){
+      const scope=String(e?.message||'')==='bling_finance_scope_missing';
+      const auth=['finance_auth_required','finance_session_invalid','finance_owner_required'].includes(String(e?.message||''));
+      $('#financeBody').innerHTML='<div class="empty">'+(scope?'A conexão atual do Bling ainda não possui permissão para o módulo financeiro.':auth?'A sessão financeira expirou ou não tem permissão.':'Não consegui carregar o financeiro do Bling agora.')+' <button class="text" id="retryFinance">Tentar novamente</button></div>';
+      if($('#retryFinance'))$('#retryFinance').onclick=renderFinance;
+    }
+  }
+
+
+  async function renderBaskets(){
+    const host=$('#content');
+    if(!window.DonaAntoniaBasketAdmin?.render){
+      if(host)host.innerHTML='<div class="empty">O módulo de Cestas/Kits não carregou. <button class="text" id="retryBasketModule" type="button">Tentar novamente</button></div>';
+      $('#retryBasketModule')?.addEventListener('click',renderBaskets);
+      return;
+    }
+    return await window.DonaAntoniaBasketAdmin.render();
+  }
+
+  async function renderProducts(q=''){
+    disconnectProductScrollObserver();
+    productListGeneration++;
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Produtos</h1><p>Consulte por categoria, subcategoria, nome, EAN ou código.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="secondary" id="printInventorySheet" type="button">Imprimir balanço A4</button><button class="secondary" id="reconnectBlingProducts" type="button">Reconectar Bling</button><button class="primary" id="newProduct">+ Produto</button></div></div>'+
+      '<div class="toolbar product-toolbar">'+
+        '<input id="productSearch" type="search" placeholder="Buscar nome, EAN, código…">'+
+        '<select id="productCategory" aria-label="Categoria"><option value="">Todas as categorias</option></select>'+
+        '<select id="productSubcategory" aria-label="Subcategoria"><option value="">Todas as subcategorias</option></select>'+
+        '<select id="productActive" aria-label="Status"><option value="">Todos os status</option><option value="true">Ativos</option><option value="false">Inativos</option></select>'+
+        '<select id="productBasketKit" aria-label="Cestas e kits"><option value="">Todos os produtos</option><option value="true">Somente produtos de cestas/kits</option></select>'+
+        '<select id="productLotStatus" aria-label="Controle de validade"><option value="">Todos os controles de validade</option><option value="pending">Lotes/FEFO pendente · prioridade automática</option><option value="complete">Lotes/FEFO completo</option></select>'+
+        '<select id="productSort" aria-label="Ordenação"><option value="">Ordenação padrão</option><option value="name_asc">Nome A–Z</option><option value="name_desc">Nome Z–A</option><option value="updated_desc">Atualizados recentemente</option><option value="updated_asc">Não atualizados recentemente</option><option value="expiry_asc">Validade mais próxima</option><option value="expiry_desc">Validade mais distante</option><option value="expiry_expired">Somente produtos vencidos</option><option value="gondola_asc">Gôndola 1→30</option><option value="gondola_desc">Gôndola 30→1</option></select>'+
+        '<button class="secondary" id="productSearchBtn">Buscar</button>'+
+      '</div>'+
+      '<div class="panel" id="productsPanel"><div class="list-head products-layout"><span></span><span>Produto</span><span>Venda / custo</span><span>Estoque / validade</span><span>Status / kits</span><span>Ações</span></div><div id="productRows"><div class="loading">Carregando…</div></div><div class="more" id="productMore"></div></div>';
+    $('#newProduct').onclick=()=>openProductEditor();
+    $('#printInventorySheet').onclick=openInventoryPrintSelector;
+    $('#reconnectBlingProducts').onclick=reconnectBlingOauth;
+    $('#productSearch').value=q;
+    await loadProductFacets(state.productFilters.category,state.productFilters.active);
+    $('#productSearchBtn').onclick=()=>loadProducts($('#productSearch').value.trim(),false);
+    $('#productSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadProducts(e.currentTarget.value.trim(),false)}};
+    $('#productCategory').onchange=async e=>{
+      state.productFilters.category=e.currentTarget.value;
+      state.productFilters.subcategory='';
+      await loadProductFacets(state.productFilters.category,state.productFilters.active);
+      await loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productSubcategory').onchange=e=>{
+      state.productFilters.subcategory=e.currentTarget.value;
+      loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productActive').value=state.productFilters.active||'';
+    $('#productActive').onchange=async e=>{
+      state.productFilters.active=e.currentTarget.value;
+      await loadProductFacets(state.productFilters.category,state.productFilters.active);
+      await loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productBasketKit').value=state.productFilters.basketKit||'';
+    $('#productBasketKit').onchange=e=>{
+      state.productFilters.basketKit=e.currentTarget.value;
+      loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productLotStatus').value=state.productFilters.lotStatus||'';
+    $('#productLotStatus').onchange=e=>{
+      state.productFilters.lotStatus=e.currentTarget.value;
+      loadProducts($('#productSearch').value.trim(),false);
+    };
+    $('#productSort').value=state.productSort||'';
+    $('#productSort').onchange=e=>{state.productSort=e.currentTarget.value;loadProducts($('#productSearch').value.trim(),false)};
+    await loadProducts(q,false);
+  }
+
+  async function loadProductFacets(category='',active=state.productFilters.active||''){
+    try{
+      const data=await api('product_facets',{category,active});
+      state.productFacets=data;
+      const cat=$('#productCategory'),sub=$('#productSubcategory');
+      if(cat){
+        const current=state.productFilters.category;
+        cat.innerHTML='<option value="">Todas as categorias</option>'+(data.categories||[]).map(x=>'<option value="'+esc(x.value)+'" '+(x.value===current?'selected':'')+'>'+esc(x.label)+' ('+esc(x.count)+')</option>').join('');
+        cat.value=current;
+      }
+      if(sub){
+        const current=state.productFilters.subcategory;
+        sub.innerHTML='<option value="">Todas as subcategorias</option>'+(data.subcategories||[]).map(x=>'<option value="'+esc(x.value)+'" '+(x.value===current?'selected':'')+'>'+esc(x.label)+' ('+esc(x.count)+')</option>').join('');
+        sub.value=current;
+      }
+    }catch(e){toast('Não consegui carregar os filtros de produtos')}
+  }
+
+  // Paginação mobile: lotes de 6 e carregamento por aproximação do fim da lista.
+  let productScrollObserver=null,productListGeneration=0,productAppendLoading=false;
+  function disconnectProductScrollObserver(){
+    if(productScrollObserver){productScrollObserver.disconnect();productScrollObserver=null}
+  }
+  function bindProductListActions(root,mobile){
+    root.querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>openProductEditor(state.products.find(p=>String(p.id)===b.dataset.editProduct)));
+    if(!mobile){
+      root.querySelectorAll('[data-product-lots]').forEach(b=>b.onclick=()=>openProductLotsEditor(state.products.find(p=>String(p.id)===b.dataset.productLots)));
+      root.querySelectorAll('[data-duplicate-product]').forEach(b=>b.onclick=()=>openProductEditor(state.products.find(p=>String(p.id)===b.dataset.duplicateProduct),true));
+      root.querySelectorAll('[data-product-active]').forEach(b=>b.onclick=()=>toggleProductActive(b.dataset.productActive,b));
+    }
+    bindMobileProductCards(root);
+    root.querySelectorAll('[data-zero-product-stock]').forEach(b=>b.onclick=()=>zeroProductStock(b.dataset.zeroProductStock,b));
+  }
+  function watchNextProducts(q,mobile){
+    disconnectProductScrollObserver();
+    const more=$('#productMore');
+    if(!more)return;
+    if(state.productNext==null){more.innerHTML='';return}
+    if(mobile&&'IntersectionObserver' in window){
+      more.innerHTML='<div class="product-scroll-loader" role="status">Role para carregar mais produtos…</div>';
+      productScrollObserver=new IntersectionObserver(entries=>{
+        if(!entries.some(entry=>entry.isIntersecting)||productAppendLoading||state.productNext==null||state.tab!=='products')return;
+        disconnectProductScrollObserver();
+        loadProducts(q,true);
+      },{root:null,rootMargin:'0px 0px 280px 0px',threshold:0});
+      productScrollObserver.observe(more);
+    }else{
+      const limit=mobile?6:5;
+      more.innerHTML='<button class="secondary" id="moreProducts" type="button">Ver mais '+limit+'</button>';
+      $('#moreProducts').onclick=()=>loadProducts(q,true);
+    }
+  }
+  async function loadProducts(q='',append=false){
+    const host=$('#productRows'),more=$('#productMore');
+    if(!host||!more||state.tab!=='products')return;
+    if(append&&(productAppendLoading||state.productNext==null))return;
+    const generation=append?productListGeneration:++productListGeneration;
+    if(!append){disconnectProductScrollObserver();host.innerHTML='<div class="loading">Carregando…</div>';more.innerHTML=''}
+    else{productAppendLoading=true;disconnectProductScrollObserver();more.innerHTML='<div class="product-scroll-loader" role="status">Carregando mais produtos…</div>'}
+    try{
+      const mobile=isProductsMobile(),offset=append?state.productNext:0,limit=mobile?6:5;
+      const filters={...state.productFilters},sort=state.productSort||'';
+      const data=await api('products',{q,category:filters.category,subcategory:filters.subcategory,active:filters.active,basket_kit:filters.basketKit,lot_status:filters.lotStatus,sort,offset,limit});
+      if(generation!==productListGeneration||host!==$('#productRows')||state.tab!=='products')return;
+      const products=Array.isArray(data.products)?data.products:[];
+      state.products=append?[...state.products,...products]:products;
+      state.productNext=products.length?data.next_offset:null;
+      host.classList.toggle('mobile-product-grid',mobile);
+      const markup=products.map(mobile?productMobileCard:productRow).join('');
+      if(append){
+        const oldCount=host.children.length;
+        host.insertAdjacentHTML('beforeend',markup);
+        [...host.children].slice(oldCount).forEach(row=>bindProductListActions(row,mobile));
+      }else{
+        host.innerHTML=markup||'<div class="empty">Nenhum produto encontrado com esses filtros.</div>';
+        bindProductListActions(host,mobile);
+      }
+      watchNextProducts(q,mobile);
+    }catch(e){
+      if(generation!==productListGeneration||host!==$('#productRows')||state.tab!=='products')return;
+      disconnectProductScrollObserver();
+      if(append){
+        more.innerHTML='<button class="secondary" id="moreProducts" type="button">Tentar carregar mais produtos</button>';
+        $('#moreProducts').onclick=()=>loadProducts(q,true);
+      }else{
+        host.innerHTML='<div class="empty">Erro ao carregar produtos. <button class="text" id="retryProducts">Tentar novamente</button></div>';
+        more.innerHTML='';
+        $('#retryProducts').onclick=()=>loadProducts(q,false);
+      }
+    }finally{
+      if(append)productAppendLoading=false;
+    }
+  }
+
+  function inventoryPrintEscape(v){
+    return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function inventoryPrintCard(p){
+    const img=inventoryPrintEscape(p.image_url||'/img/logoantonia5.png');
+    return '<article class="count-card">'+
+      '<div class="card-ref">REF '+String(p.printed_index).padStart(4,'0')+'</div>'+
+      '<div class="product-photo"><img src="'+img+'" alt=""></div>'+
+      '<div class="product-name">'+inventoryPrintEscape(p.name||'')+'</div>'+
+      '<div class="product-ean">EAN '+inventoryPrintEscape(p.gtin||'SEM EAN')+'</div>'+
+      '<div class="write-pair">'+
+        '<div class="write-field"><b>ESTOQUE</b><span title="Escreva a quantidade em estoque"></span></div>'+
+        '<div class="write-field"><b>GÔNDOLA</b><span title="Escreva o número da gôndola"></span></div>'+
+      '</div>'+
+    '</article>';
+  }
+
+  function inventoryPrintSelectedFilters(){
+    const mode=document.querySelector('input[name="inventoryPrintMode"]:checked')?.value||'category';
+    const values=[...document.querySelectorAll(mode==='category'?'[data-print-category]:checked':'[data-print-gondola]:checked')].map(x=>x.value);
+    return mode==='category'
+      ? {active:'true',categories:values}
+      : {active:'true',gondolas:values};
+  }
+
+  function inventoryPrintSelectedLabel(){
+    const mode=document.querySelector('input[name="inventoryPrintMode"]:checked')?.value||'category';
+    const checked=[...document.querySelectorAll(mode==='category'?'[data-print-category]:checked':'[data-print-gondola]:checked')];
+    if(mode==='category')return checked.map(x=>x.dataset.label||categoryLabel(x.value)).join(', ');
+    return checked.map(x=>'Gôndola '+x.value).join(', ');
+  }
+
+  async function refreshInventoryPrintPreview(){
+    const summary=$('#inventoryPrintSummary'),go=$('#inventoryPrintGo');
+    if(!summary||!go)return;
+    const filters=inventoryPrintSelectedFilters();
+    const selected=(filters.categories||filters.gondolas||[]);
+    if(!selected.length){
+      summary.innerHTML='<strong>Selecione pelo menos uma opção.</strong><small>Você pode marcar uma ou várias.</small>';
+      go.disabled=true;go.textContent='Imprimir seleção';return;
+    }
+    summary.innerHTML='<strong>Calculando…</strong><small>Conferindo quantos produtos entrarão na impressão.</small>';
+    go.disabled=true;
+    try{
+      const data=await api('inventory_sheet_preview',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filters})
+      });
+      const count=Number(data.product_count||0),pages=Number(data.page_count||0);
+      summary.innerHTML='<strong>'+esc(count)+' produto'+(count===1?'':'s')+' · '+esc(pages)+' folha'+(pages===1?'':'s')+' A4</strong><small>'+esc(inventoryPrintSelectedLabel())+'</small>';
+      go.disabled=count<1;
+      go.textContent=count?('Imprimir '+pages+' folha'+(pages===1?'':'s')):'Imprimir seleção';
+    }catch(e){
+      summary.innerHTML='<strong>Não consegui calcular a impressão.</strong><small>'+esc(errorMessage(e.message))+'</small>';
+      go.disabled=true;
+    }
+  }
+
+  async function openInventoryPrintSelector(){
+    const editor=$('#editor');
+    $('#editorTitle').textContent='Imprimir balanço A4';
+    $('#editorBody').innerHTML='<div class="loading">Carregando categorias e gôndolas…</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button><button class="primary" id="inventoryPrintGo" disabled>Imprimir seleção</button>';
+    $('#cancelEditor').onclick=()=>editor.close();
+    editor.showModal();
+    try{
+      const options=await api('inventory_sheet_options');
+      const cats=options.categories||[],gondolas=options.gondolas||[];
+      const currentCategory=state.productFilters.category||'';
+      $('#editorBody').innerHTML=
+        '<div class="offer-note" style="margin-bottom:12px"><strong>Imprima somente o que vai contar agora.</strong><br>Escolha uma ou várias categorias, ou uma ou várias gôndolas. A prévia mostra quantas folhas serão geradas.</div>'+
+        '<div class="order-filters" style="margin-bottom:12px">'+
+          '<label class="filter-chip active" id="printModeCategoryLabel"><input type="radio" name="inventoryPrintMode" value="category" checked style="display:none">Por categoria</label>'+
+          '<label class="filter-chip" id="printModeGondolaLabel"><input type="radio" name="inventoryPrintMode" value="gondola" style="display:none">Por gôndola</label>'+
+        '</div>'+
+        '<div id="inventoryPrintCategoryChoices" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px">'+
+          (cats.length?cats.map(x=>'<label class="check" style="border:1px solid #ddd;border-radius:10px;padding:10px 12px;background:#fff"><input type="checkbox" data-print-category value="'+esc(x.value)+'" data-label="'+esc(categoryLabel(x.value))+'" '+(x.value===currentCategory?'checked':'')+'><span><strong>'+esc(categoryLabel(x.value))+'</strong><small>'+esc(x.count)+' produto(s) ativos para imprimir</small></span></label>').join(''):'<div class="history-empty">Nenhuma categoria com produto ativo.</div>')+
+        '</div>'+
+        '<div id="inventoryPrintGondolaChoices" style="display:none;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px">'+
+          (gondolas.length?gondolas.map(g=>'<label class="check" style="border:1px solid #ddd;border-radius:10px;padding:10px 12px;background:#fff"><input type="checkbox" data-print-gondola value="'+esc(g.value)+'"><span><strong>Gôndola '+esc(g.value)+'</strong><small>'+esc(g.count)+' produto(s) ativos para imprimir</small></span></label>').join(''):'<div class="history-empty">Nenhuma gôndola com produto ativo.</div>')+
+        '</div>'+
+        '<div class="bling-banner" id="inventoryPrintSummary" style="margin-top:14px"><strong>Selecione pelo menos uma opção.</strong><small>Você pode marcar uma ou várias.</small></div>';
+
+      const syncMode=()=>{
+        const mode=document.querySelector('input[name="inventoryPrintMode"]:checked')?.value||'category';
+        $('#inventoryPrintCategoryChoices').style.display=mode==='category'?'grid':'none';
+        $('#inventoryPrintGondolaChoices').style.display=mode==='gondola'?'grid':'none';
+        $('#printModeCategoryLabel').classList.toggle('active',mode==='category');
+        $('#printModeGondolaLabel').classList.toggle('active',mode==='gondola');
+        refreshInventoryPrintPreview();
+      };
+      document.querySelectorAll('input[name="inventoryPrintMode"]').forEach(x=>x.onchange=syncMode);
+      document.querySelectorAll('[data-print-category],[data-print-gondola]').forEach(x=>x.onchange=refreshInventoryPrintPreview);
+      $('#inventoryPrintGo').onclick=async()=>{
+        const filters=inventoryPrintSelectedFilters(),label=inventoryPrintSelectedLabel();
+        const selected=(filters.categories||filters.gondolas||[]);
+        if(!selected.length)return;
+        editor.close();
+        await printInventorySheet(filters,label);
+      };
+      await refreshInventoryPrintPreview();
+    }catch(e){
+      $('#editorBody').innerHTML='<div class="empty">Não consegui carregar as opções de impressão.<br><small>'+esc(errorMessage(e.message))+'</small></div>';
+    }
+  }
+
+
+  function inventorySheetQrPayload(batchCode,pageNumber){
+    return 'DA_BAL1|'+String(batchCode||'').toUpperCase()+'|'+String(Number(pageNumber||0));
+  }
+
+  async function inventorySheetQrDataUrl(payload){
+    await inventorySheetLoadScript('inventoryQrGenerator','https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js');
+    if(typeof window.qrcode!=='function')throw new Error('Gerador de QR não iniciou.');
+    const qr=window.qrcode(0,'M');qr.addData(payload);qr.make();
+    return qr.createDataURL(5,2);
+  }
+
+  async function printInventorySheet(filters,filterLabel){
+    const operator=requireOperator();if(!operator)return;
+    const w=window.open('','_blank');
+    if(!w){toast('Permita pop-ups para imprimir a folha de balanço');return}
+    w.document.write('<!doctype html><html><body style="font-family:Arial;padding:24px">Preparando folhas do balanço…</body></html>');
+    try{
+      const data=await api('inventory_sheet_create',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({filters:{active:'true',...(filters||{})},operator})
+      });
+      const batch=data.batch,items=data.items||[];
+      if(!batch||!items.length){w.close();toast('Nenhum produto encontrado na seleção');return}
+      const pages=[];
+      for(let page=1;page<=Number(batch.page_count||1);page++)pages.push(items.filter(x=>Number(x.page_number)===page));
+      const printedAt=new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+      const filterBits=filterLabel||'Produtos selecionados';
+      const qrImages=await Promise.all(pages.map((_,pageIndex)=>inventorySheetQrDataUrl(inventorySheetQrPayload(batch.batch_code,pageIndex+1))));
+      const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Balanço '+inventoryPrintEscape(batch.batch_code)+'</title>'+
+        '<style>'+
+        '@page{size:A4 portrait;margin:5mm}*{box-sizing:border-box}html,body{margin:0;padding:0;color:#111;font-family:Arial,Helvetica,sans-serif;background:#fff}'+
+        '.sheet-page{width:200mm;height:287mm;overflow:hidden;break-after:page;page-break-after:always;display:flex;flex-direction:column}.sheet-page:last-child{break-after:auto;page-break-after:auto}'+
+        '.sheet-head{height:18mm;flex:0 0 18mm;display:grid;grid-template-columns:1fr auto;gap:3mm;align-items:end;border-bottom:.35mm solid #111;padding:0 0 2mm;margin:0 0 2mm}.sheet-head h1{font-size:11pt;margin:0}.sheet-head p{margin:.8mm 0 0;font-size:6.5pt}.sheet-code-wrap{display:flex;align-items:center;justify-content:flex-end;gap:2mm}.sheet-qr{width:15mm;height:15mm;object-fit:contain;image-rendering:pixelated}.sheet-code{text-align:right;font-size:7.2pt;line-height:1.35;max-width:68mm}.sheet-code strong{display:block;font-size:9pt;letter-spacing:.4px}'+
+        '.count-sheet{height:265mm;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(5,minmax(0,1fr));gap:1.15mm;align-items:stretch}'+
+        '.count-card{position:relative;border:.3mm solid #222;border-radius:1mm;padding:.5mm;overflow:hidden;background:#fff;display:flex;flex-direction:column;min-width:0}.card-ref{position:absolute;top:.35mm;right:.55mm;font-size:5pt;font-weight:800;background:#fff;padding-left:.35mm}.product-photo{height:30mm;flex:0 0 30mm;display:flex;align-items:center;justify-content:center;margin-bottom:.1mm}.product-photo img{display:block;max-width:100%;max-height:30mm;object-fit:contain}.product-name{height:6.2mm;flex:0 0 6.2mm;overflow:hidden;font-weight:700;font-size:6pt;line-height:1.02;text-align:center}.product-ean{text-align:center;font-size:5.1pt;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.05mm}.write-pair{display:grid;grid-template-columns:1fr 1fr;gap:.6mm;margin-top:auto;padding-top:.15mm}.write-field{min-width:0}.write-field b{display:block;text-align:center;font-size:4.7pt;line-height:1;margin-bottom:.12mm;letter-spacing:.05px}.write-field span{display:block;height:8.4mm;border:.45mm solid #111;background:#fff}'+
+        '</style></head><body>'+
+        pages.map((rows,pageIndex)=>'<section class="sheet-page">'+
+          '<header class="sheet-head"><div><h1>Dona Antônia · Balanço físico</h1><p>Escreva a quantidade no quadro ESTOQUE e o número da localização no quadro GÔNDOLA. Fotografe a folha A4 inteira.</p></div>'+
+          '<div class="sheet-code-wrap"><img class="sheet-qr" src="'+inventoryPrintEscape(qrImages[pageIndex])+'" alt="QR da folha"><div class="sheet-code"><strong>'+inventoryPrintEscape(batch.batch_code)+'</strong><b>Página '+(pageIndex+1)+'/'+pages.length+'</b><br>'+inventoryPrintEscape(filterBits)+' · '+inventoryPrintEscape(printedAt)+'</div></div></header>'+
+          '<main class="count-sheet">'+rows.map(inventoryPrintCard).join('')+'</main>'+
+        '</section>').join('')+
+        '<script>async function ready(){const imgs=[...document.images];await Promise.race([Promise.all(imgs.map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=r;i.onerror=r}))),new Promise(r=>setTimeout(r,5000))]);setTimeout(()=>window.print(),200)}window.addEventListener("load",ready);<\/script>'+
+        '</body></html>';
+      w.document.open();w.document.write(html);w.document.close();
+      toast(batch.product_count+' produtos · '+batch.page_count+' folha(s) · '+batch.batch_code);
+    }catch(e){w.close();toast('Não consegui preparar a impressão: '+errorMessage(e.message))}
+  }
+
+  function categoryLabel(value){
+    const map={mercearia:'Mercearia',limpeza_lavanderia:'Limpeza e lavanderia',higiene_beleza:'Higiene e beleza',casa_pet:'Casa e pet'};
+    return map[value]||value||'Sem categoria';
+  }
+
+  const mobileProductQuickDrafts=new Map(),mobileProductQuickTimers=new Map(),mobileProductStockQueue=new Map(),mobileProductSaveStates=new Map();
+  let mobileProductStockBusy=false;
+  function isProductsMobile(){return window.matchMedia&&window.matchMedia('(max-width:640px)').matches}
+  function mobileProductPriceCents(v){let s=String(v??'').trim().replace(/R\$/gi,'').replace(/\s+/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=Number(s);return Number.isFinite(n)&&n>=0?Math.round(n*100):null}
+  function mobileProductSaveState(id){if(!mobileProductSaveStates.has(id))mobileProductSaveStates.set(id,{quick:false,stock:false,error:''});return mobileProductSaveStates.get(id)}
+  function paintMobileProductSaveStatus(id){const el=document.querySelector('[data-mobile-product-status="'+CSS.escape(String(id))+'"]');if(!el)return;const s=mobileProductSaveState(id);el.className='mobile-product-save-status '+(s.error?'error':(s.quick||s.stock?'saving':'saved'));el.textContent=s.error?'⚠ '+s.error:(s.stock?'Sincronizando estoque…':(s.quick?'Salvando…':'✓ Salvo'))}
+  function setMobileProductSaveState(id,key,value,error=''){const s=mobileProductSaveState(id);s[key]=value;if(error)s.error=error;else if(value)s.error='';paintMobileProductSaveStatus(id)}
+  function productLinkedKits(p){return Array.isArray(p?.linked_kits)?p.linked_kits:[]}
+  function productExpiryLabel(p){const d=p?.next_expiration_date||p?.expiration_date||null;return d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'Sem validade'}
+  function productKitLinks(p,compact=false){
+    const kits=productLinkedKits(p);if(!kits.length)return '<span class="product-no-kits">Sem kits</span>';
+    return '<details class="product-kit-menu '+(compact?'mobile-product-kit-count':'')+'"><summary>'+esc(kits.length)+' '+(kits.length===1?'cesta/kit':'cestas/kits')+'</summary><div class="product-kit-popover">'+kits.map(k=>k.basket_id?'<button type="button" class="product-kit-link" data-open-product-basket="'+esc(k.basket_id)+'">'+esc(k.name||'Cesta/Kit')+'</button>':'<span class="product-kit-link" aria-disabled="true">'+esc(k.name||'Cesta/Kit')+'</span>').join('')+'</div></details>';
+  }
+  function productMobileCard(p){
+    const price=(Number(p.sale_price_cents||0)/100).toFixed(2).replace('.',','),cost=(Number(p.cost_cents||0)/100).toFixed(2).replace('.',','),g=Number(p.gondola_number||0),identity=p.gtin||p.sku||'Sem EAN';
+    const gondolas='<option value="">—</option>'+Array.from({length:30},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(g===n?'selected':'')+'>'+n+'</option>').join('');
+    return '<article class="mobile-product-card" data-mobile-product-card="'+esc(p.id)+'">'+
+      '<div class="mobile-product-card-head"><img class="mobile-product-thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy"><div><div class="mobile-product-card-name">'+esc(p.name)+'</div><span class="mobile-product-card-id">'+esc(identity)+'</span></div></div>'+
+      '<label class="mobile-product-switch"><input type="checkbox" data-mobile-product-active="'+esc(p.id)+'" '+(p.active!==false?'checked':'')+'><span class="mobile-product-switch-track"><span class="mobile-product-switch-knob"></span></span><b data-mobile-product-active-label="'+esc(p.id)+'">'+(p.active!==false?'ATIVO':'INATIVO')+'</b></label>'+
+      '<div class="mobile-product-quick-grid">'+
+        '<label class="mobile-product-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label>'+
+        '<label class="mobile-product-field"><span>Custo</span><input data-mobile-product-field="cost" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(cost)+'"></label>'+
+        '<label class="mobile-product-field"><span>Estoque</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+
+        '<label class="mobile-product-field"><span>Gôndola</span><select data-mobile-product-field="gondola" data-product-id="'+esc(p.id)+'">'+gondolas+'</select></label>'+
+        '<label class="mobile-product-field full"><span>Validade</span><input data-mobile-product-field="expiration" data-product-id="'+esc(p.id)+'" type="date" value="'+esc(p.expiration_date||'')+'"></label>'+
+      '</div>'+productKitLinks(p,true)+'<div class="mobile-product-card-foot"><span class="mobile-product-save-status saved" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span><button class="mobile-product-detail mobile-product-zero-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="mobile-product-detail" type="button" data-edit-product="'+esc(p.id)+'">Detalhes</button></div></article>';
+  }
+  function scheduleMobileProductQuickSave(id,field,value){
+    const product=state.products.find(p=>String(p.id)===String(id));if(!product)return;let draft=mobileProductQuickDrafts.get(id)||{};
+    if(field==='price'){const cents=mobileProductPriceCents(value);if(cents===null){setMobileProductSaveState(id,'quick',false,'Preço inválido');return}draft.sale_price_cents=cents;product.sale_price_cents=cents;setMobileProductSaveState(id,'quick',true)}
+    else if(field==='cost'){const cents=mobileProductPriceCents(value);if(cents===null){setMobileProductSaveState(id,'quick',false,'Custo inválido');return}draft.cost_cents=cents;product.cost_cents=cents;setMobileProductSaveState(id,'quick',true)}
+    else if(field==='stock'){const qty=Number(String(value).replace(',','.'));if(!Number.isFinite(qty)||qty<0){setMobileProductSaveState(id,'stock',false,'Estoque inválido');return}draft.stock_quantity=qty;setMobileProductSaveState(id,'stock',true)}
+    else if(field==='gondola'){draft.gondola_number=value===''?null:Number(value);product.gondola_number=value===''?null:Number(value);setMobileProductSaveState(id,'quick',true)}
+    else if(field==='expiration'){draft.expiration_date=value||null;product.expiration_date=value||null;setMobileProductSaveState(id,'quick',true)}
+    mobileProductQuickDrafts.set(id,draft);clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.set(id,setTimeout(()=>flushMobileProductQuickSave(id),650));
+  }
+  async function flushMobileProductQuickSave(id){
+    clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.delete(id);const draft=mobileProductQuickDrafts.get(id);if(!draft)return;mobileProductQuickDrafts.delete(id);
+    const operator=currentOperator()||requireOperator();if(!operator){setMobileProductSaveState(id,'quick',false,'Operador necessário');setMobileProductSaveState(id,'stock',false,'Operador necessário');return}
+    const quick={};for(const k of ['sale_price_cents','cost_cents','gondola_number','expiration_date'])if(Object.prototype.hasOwnProperty.call(draft,k))quick[k]=draft[k];
+    if(Object.keys(quick).length){try{const data=await api('product_quick_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,...quick,operator})});const p=state.products.find(x=>String(x.id)===String(id));if(p&&data.product){p.sale_price_cents=data.product.sale_price_cents;p.cost_cents=data.product.cost_cents;p.gondola_number=data.product.gondola_number;p.expiration_date=data.product.expiration_date;p.active=data.product.active}setMobileProductSaveState(id,'quick',false)}catch(e){setMobileProductSaveState(id,'quick',false,errorMessage(e.message))}}
+    else setMobileProductSaveState(id,'quick',false);
+    if(Object.prototype.hasOwnProperty.call(draft,'stock_quantity')&&!stockZeroPending.has(String(id))){mobileProductStockQueue.set(id,{quantity:draft.stock_quantity,operator});processMobileProductStockQueue()}
+    if(mobileProductQuickDrafts.has(id)){clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.set(id,setTimeout(()=>flushMobileProductQuickSave(id),180))}
+  }
+  // Atalho de estoque: mesma operação oficial do editor, que valida o saldo no Bling.
+  const stockZeroPending=new Set();
+  function zeroProductStock(id,button){
+    const key=String(id),product=state.products.find(p=>String(p.id)===key);
+    if(!product||stockZeroPending.has(key))return;
+    const operator=requireOperator();
+    if(!operator)return;
+    stockZeroPending.add(key);
+    const draft=mobileProductQuickDrafts.get(id);
+    if(draft)delete draft.stock_quantity;
+    // Se já houver ajuste pendente, zero deve ser a última escrita.
+    mobileProductStockQueue.set(id,{quantity:0,operator,zeroButton:button});
+    button.disabled=true;
+    button.textContent='Zerando…';
+    processMobileProductStockQueue();
+  }
+  async function processMobileProductStockQueue(){
+    if(mobileProductStockBusy)return;
+    mobileProductStockBusy=true;
+    try{
+      while(mobileProductStockQueue.size){
+        const [id,item]=mobileProductStockQueue.entries().next().value;
+        mobileProductStockQueue.delete(id);
+        setMobileProductSaveState(id,'stock',true);
+        try{
+          const data=await api('product_stock_set',{},{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({product_id:id,stock_quantity:item.quantity,operator:item.operator})
+          });
+          if(data.verified!==true)throw new Error('stock_update_unverified');
+          const p=state.products.find(x=>String(x.id)===String(id));
+          if(p&&data.product){
+            p.stock_quantity=data.product.stock_quantity;
+            p.loose_stock_quantity=data.product.loose_stock_quantity;
+            p.basket_locked_quantity=data.product.basket_locked_quantity;
+          }
+          if(!item.zeroButton&&data.product){
+            const stockInput=document.querySelector('[data-mobile-product-field="stock"][data-product-id="'+CSS.escape(String(id))+'"]');
+            if(stockInput&&Number(String(stockInput.value).replace(',','.'))===Number(item.quantity))stockInput.value=fmtQty(data.product.stock_quantity);
+          }
+          if(item.zeroButton){
+            const stockInput=document.querySelector('[data-mobile-product-field="stock"][data-product-id="'+CSS.escape(String(id))+'"]');
+            if(stockInput)stockInput.value='0';
+            const stockRow=item.zeroButton.closest('.product-operational-row');
+            const breakdown=stockRow?.querySelector('.product-stock-breakdown-inline');
+            if(breakdown&&data.product)breakdown.textContent=fmtQty(data.product.loose_stock_quantity??0)+' avulso · '+fmtQty(data.product.basket_locked_quantity||0)+' em cestas/kits';
+            item.zeroButton.textContent='✓ Zerado';
+            toast('Estoque zerado e confirmado no Bling');
+          }
+          setMobileProductSaveState(id,'stock',false);
+        }catch(e){
+          setMobileProductSaveState(id,'stock',false,errorMessage(e.message));
+          if(!item.zeroButton){
+            const stockInput=document.querySelector('[data-mobile-product-field="stock"][data-product-id="'+CSS.escape(String(id))+'"]');
+            const current=state.products.find(x=>String(x.id)===String(id));
+            if(stockInput&&current&&!mobileProductQuickDrafts.has(id)&&!mobileProductStockQueue.has(id)&&Number(String(stockInput.value).replace(',','.'))===Number(item.quantity))stockInput.value=fmtQty(current.stock_quantity||0);
