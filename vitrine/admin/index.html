@@ -8210,14 +8210,18 @@
 
   async function loadCurrentOrderFiscal(repaint=true){
     const id=state.currentOrder?.order?.id;if(!id)return;
+    let fiscal;
     try{
-      state.currentOrderFiscal=await api('order_fiscal_status',{},{
+      fiscal=await api('order_fiscal_status',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
-      state.fiscalByOrder[id]=state.currentOrderFiscal;
+      state.fiscalByOrder[id]=fiscal;
     }catch(e){
-      state.currentOrderFiscal={error:String(e?.message||'fiscal_unavailable')};
+      fiscal={error:String(e?.message||'fiscal_unavailable')};
     }
+    // A resposta pode chegar depois que o operador abriu outro pedido.
+    if(state.currentOrder?.order?.id!==id)return;
+    state.currentOrderFiscal=fiscal;
     if(repaint)paintOrderDetail();
   }
 
