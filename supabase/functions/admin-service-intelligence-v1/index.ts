@@ -10100,6 +10100,8 @@ Deno.serve(async(req:Request)=>{
   }
 
   if(action==="vitrine_customer_lookup_phone"){
+    const auth=await vitrineAdminAuth(sb,req);
+    if(!auth.ok)return json({ok:false,error:auth.error},Number(auth.status||401));
     const rawPhone=clean(body?.phone,40);
     const suffix=vitrineDigits(body?.phone_suffix||rawPhone,8).slice(-8);
     if(!rawPhone&&suffix.length!==8)return json({ok:false,error:"phone_required"},400);
