@@ -34,4 +34,11 @@ assert.match(decodeURIComponent(both.href),/nome completo e seu endereço comple
 assert.equal(f.mapsHrefFromAddress({google_maps_url:'https://maps.app.goo.gl/abc'}),'https://maps.app.goo.gl/abc');
 assert.equal(f.mapsHrefFromAddress({google_maps_url:'https://www.google.com/maps/place/Teste'}),'https://www.google.com/maps/place/Teste');
 assert.equal(f.mapsHrefFromAddress({google_maps_url:'https://evil.example/maps'}),'');
+// Contact actions remain safe for incomplete snapshots and do not mutate the order.
+const snapshot=JSON.stringify(order);
+assert.equal(f.mapsHrefFromAddress(null),'');
+assert.equal(f.mapsHrefFromAddress('invalid'),'');
+assert.equal(f.orderAddressRequestHref({...order,problems:[]}), '');
+assert.equal(f.orderMissingDataRequest({...order,problems:['Cliente não identificado']}).label,'Pedir nome');
+assert.equal(JSON.stringify(order),snapshot);
 console.log('Admin order contact actions: PASS');
