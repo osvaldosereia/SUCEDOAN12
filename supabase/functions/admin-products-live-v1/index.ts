@@ -1623,12 +1623,12 @@ async function updateOrderCanonical(p:any){
     if(next==="out_for_delivery"&&cur==="ready"){const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).eq("status","returned_review").limit(1).maybeSingle();if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_review_open",status:409,delivery_return_case_id:ret.data.id};const h=await hub("fiscal_dispatch_gate",{source_order_id:oid});if(h.error)return {error:"fiscal_dispatch_gate_unavailable",status:h.status||503,detail:h.detail||null};if(h.data?.allowed!==true)return {error:"fiscal_dispatch_not_authorized",status:409,fiscal_dispatch_gate:h.data};const authority=await stockAuthority();if(authority==="bling"){const snap=await buildSnapshot(oid,"dispatch_physical_stock");const launch=await hub("ops2_launch_physical_stock",{payload:snap});if(launch.error)return {error:launch.error||"physical_stock_launch_failed",status:launch.status||409,detail:launch.detail||launch.data||null}}}
     if(next==="delivered"){if(cur!=="out_for_delivery")return {error:"order_not_in_delivery",status:409};const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).in("status",["returning","returned_review"]).limit(1).maybeSingle();if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_open",status:409,delivery_return_case_id:ret.data.id};const pay=await db.from("order_payment_settlements").select("id,status,source,expected_total_cents,captured_total_cents").eq("order_id",oid).in("status",["captured","synced","needs_review"]).limit(1).maybeSingle();if(pay.error)throw pay.error;if(!pay.data?.id||pay.data.source!=="delivery")return {error:"delivery_payment_required",status:409};const expected=Math.round(Number(o.total||0)*100);if(Number(pay.data.expected_total_cents)!==expected||Number(pay.data.captured_total_cents)!==expected)return {error:"delivery_payment_mismatch",status:409};patch.delivered_at=new Date().toISOString()}patch.status=next;
   }
-  const atomicStockTransition=next!==cur&&((next==="confirmed"&&cur==="created")||next==="cancelled");
+  const atomicStockTransition=next!==cur&&o.source!=="storefront_v2"&&((next==="confirmed"&&cur==="created")||next==="cancelled");
   let u:any;
   if(atomicStockTransition){
     const atomicPatch:any={...patch};delete atomicPatch.status;delete atomicPatch.updated_at;
     const r=await db.rpc("admin_order_stock_transition_atomic_v1",{
-      p_order_id:oid,p_expected_status:cur,p_next_status:next,p_patch:atomicPatch
+      p_order_id:oid,p_expected_status:o.status,p_next_status:next,p_patch:atomicPatch
     });
     if(r.error){const msg=String(r.error.message||"");if(msg.includes("stock_transition_failed:"))return {error:"stock_transition_failed",status:409,detail:msg};throw r.error}
     if(r.data?.ok!==true)return {error:String(r.data?.error||"atomic_stock_transition_failed"),status:409,...r.data};
