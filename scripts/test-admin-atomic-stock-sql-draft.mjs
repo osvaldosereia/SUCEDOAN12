@@ -10,4 +10,8 @@ for(const x of [
 ]) assert.match(sql,x);
 assert.ok(sql.indexOf('for update')<sql.indexOf('reserve_vitrine_order_stock_v1'));
 assert.ok(sql.indexOf('raise exception')<sql.indexOf('update public.orders'));
+assert.match(sql,/v_source <> 'vitrine'/);
+assert.match(sql,/deferred_to_existing_status_trigger/);
+assert.ok(sql.indexOf('v_source <>') < sql.indexOf('release_vitrine_order_stock_v1'));
+
 console.log('Atomic order stock SQL draft static contract: PASS (not a DB integration test)');
