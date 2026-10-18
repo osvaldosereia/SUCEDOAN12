@@ -8,7 +8,10 @@ const beforeWrite=balance.indexOf('const g=await ensureInventoryBalanceGondola(g
 const check=balance.indexOf('if(expiration){');
 assert.ok(check>=0&&check<beforeWrite,'lot validation must precede location write');
 for(const p of [/if\(lotId&&!active\.some/,/lot_not_found/,/if\(!lotId&&active\.length>1\)/,/lot_selection_required/])assert.match(balance.slice(0,beforeWrite),p);
-for(const p of [/reserve_vitrine_order_stock_v1/,/release_vitrine_order_stock_v1/,/patch\.status=next/,/db\.from\("orders"\)\.update\(patch\)/])assert.match(status,p);
-assert.ok(status.indexOf('reserve_vitrine_order_stock_v1')<status.indexOf('db.from("orders").update(patch)'));
-assert.ok(status.indexOf('release_vitrine_order_stock_v1')<status.indexOf('db.from("orders").update(patch)'));
+assert.match(status,/admin_order_stock_transition_atomic_v1/);
+assert.match(status,/p_expected_status:cur/);
+assert.match(status,/p_next_status:next/);
+assert.match(status,/db\.from\("orders"\)\.update\(patch\)/);
+assert.doesNotMatch(status,/db\.rpc\("reserve_vitrine_order_stock_v1"/);
+assert.doesNotMatch(status,/db\.rpc\("release_vitrine_order_stock_v1"/);
 console.log('Stock balance preflight and order stock transition contract: PASS');
