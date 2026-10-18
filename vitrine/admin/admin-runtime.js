@@ -43,10 +43,13 @@
     if(!response.ok||data.ok===false)throw new Error(data.error||fallbackError);
     return data;
   }
+  function appendAdminQueryParams(url,params){
+    Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)url.searchParams.set(k,String(v))});
+  }
   async function api(action,params={},options={},retryAuth=true){
     const token=await adminStepUp();
     const u=new URL(API);u.searchParams.set('action',action);
-    Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
+    appendAdminQueryParams(u,params);
     const response=await fetch(u,{...options,headers:{...(options.headers||{}),'Authorization':'Bearer '+token},cache:'no-store'});
     if(response.status===401&&retryAuth){
       clearFinanceSession(token);
@@ -101,7 +104,7 @@
   }
   async function storefrontApi(action,params={},options={}){
     const u=new URL(STOREFRONT_API);u.searchParams.set('action',action);
-    Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
+    appendAdminQueryParams(u,params);
     const response=await fetch(u,{...options,cache:'no-store'});
     return await readAdminServiceResponse(response,'storefront_error');
   }
