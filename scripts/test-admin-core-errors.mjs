@@ -18,4 +18,10 @@ assert.match(errorMessage('fiscal_document_not_authorized'),/autorização da NF
 assert.match(errorMessage('stale_order_version'),/Atualizei/);
 assert.equal(errorMessage('unrecognized_error'),'Não consegui salvar agora.');
 assert.equal(errorMessage(null),'Não consegui salvar agora.');
+assert.match(errorMessage('fiscal_operation_in_progress'),/Outra emissão fiscal/);
+assert.match(errorMessage('fiscal_generation_gate_closed'),/bloqueada/);
+assert.match(errorMessage('fiscal_human_confirmation_required'),/Confirme explicitamente/);
+assert.match(errorMessage('separation_incomplete'),/produtos pendentes/);
+assert.match(errorMessage('stock_reservation_released'),/reserva/);
+assert.match(errorMessage('bling_finance_scope_missing'),/Bling/);
 console.log('Admin core error messages: PASS');
