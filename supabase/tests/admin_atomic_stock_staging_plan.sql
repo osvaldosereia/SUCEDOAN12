@@ -23,6 +23,11 @@ INSERT INTO public.order_items(order_id,product_id,quantity) VALUES
 ('20000000-0000-0000-0000-000000000073','10000000-0000-0000-0000-000000000073',2),
 ('20000000-0000-0000-0000-000000000074','10000000-0000-0000-0000-000000000074',2),
 ('20000000-0000-0000-0000-000000000075','10000000-0000-0000-0000-000000000075',2);
+-- Real production Bling stock views require a matched product link, mirror, and deposit.
+INSERT INTO public.bling_hub_entity_links_v2(source_system,entity_type,source_id,bling_id,status,last_verified_at)
+VALUES('vitrine_qx','product','10000000-0000-0000-0000-000000000074',900074,'matched',now());
+INSERT INTO public.bling_stock_mirror_v2(product_id,physical_total,virtual_total,deposit_balances,observed_at,source_event_id,source_resource)
+VALUES('10000000-0000-0000-0000-000000000074',10,10,'{"1":{"physical":"10","virtual":"10"}}'::jsonb,now(),'fixture','stock');
 DO $r1$
 DECLARE r jsonb; v text;
 BEGIN
@@ -66,7 +71,7 @@ BEGIN
   IF r->>'ok' IS DISTINCT FROM 'true' OR (SELECT status FROM public.vitrine_stock_reservations WHERE order_id='20000000-0000-0000-0000-000000000075') IS DISTINCT FROM 'released' THEN RAISE EXCEPTION 'manual_cancel_release_failed %',r; END IF;
 
   -- Bling authority: reservation and consumption tracked, no local physical decrement.
-  UPDATE public.bling_hub_runtime_v2 SET metadata='{"ops2_stock_authority":"bling"}'::jsonb WHERE id=1;
+  UPDATE public.bling_hub_runtime_v2 SET metadata='{"ops2_stock_authority":"bling","selected_deposit_id":"1"}'::jsonb WHERE id=1;
   r:=public.admin_order_stock_transition_atomic_v1('20000000-0000-0000-0000-000000000074','created','confirmed');
   IF r->>'ok' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'bling_confirm_failed %',r; END IF;
   UPDATE public.orders SET status='processing' WHERE id='20000000-0000-0000-0000-000000000074';
