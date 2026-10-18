@@ -13,12 +13,13 @@ as $$
 declare
   v_current text;
   v_stock jsonb;
+  v_source text;
 begin
   if p_order_id is null or p_expected_status is null or p_next_status is null then
     return jsonb_build_object('ok',false,'error','invalid_arguments');
   end if;
 
-  select status into v_current
+  select status,source into v_current,v_source
   from public.orders where id=p_order_id for update;
   if not found then
     return jsonb_build_object('ok',false,'error','order_not_found');
@@ -38,8 +39,12 @@ begin
 
   if p_next_status='confirmed' then
     v_stock:=public.reserve_vitrine_order_stock_v1(p_order_id);
-  else
+  elsif v_source <> 'vitrine' then
+    -- The existing orders AFTER UPDATE trigger releases vitrine orders.
+    -- Other order sources still require explicit release in this transaction.
     v_stock:=public.release_vitrine_order_stock_v1(p_order_id);
+  else
+    v_stock:=jsonb_build_object('ok',true,'status','deferred_to_existing_status_trigger');
   end if;
   -- An exception, unlike RETURN, rolls back writes already made by the stock RPC.
   if coalesce((v_stock->>'ok')::boolean,false) is not true then
