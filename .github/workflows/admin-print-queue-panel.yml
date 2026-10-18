@@ -6,6 +6,7 @@ on:
       - 'vitrine/admin/components/print-queue-panel.js'
       - 'vitrine/admin/components/printing.js'
       - 'vitrine/admin/orders/read-model.js'
+      - 'vitrine/admin/orders/action-buttons.js'
       - 'vitrine/admin/orders/contact-actions.js'
       - 'vitrine/admin/orders/search.js'
       - 'vitrine/admin/orders/whatsapp-links.js'
@@ -16,6 +17,7 @@ on:
       - 'vitrine/admin/components/expiry-alert.js'
       - 'scripts/test-admin-print-queue-panel.mjs'
       - 'scripts/test-admin-order-read-model.mjs'
+      - 'scripts/test-admin-order-action-buttons.mjs'
       - 'scripts/test-admin-order-contact-actions.mjs'
       - 'scripts/test-admin-order-search.mjs'
       - 'scripts/test-admin-whatsapp-links.mjs'
@@ -61,6 +63,7 @@ jobs:
       - run: node scripts/test-admin-printing-window.mjs
       - run: node scripts/test-admin-print-queue-panel.mjs
       - run: node scripts/test-admin-today-operational-panels.mjs
+      - run: node scripts/test-admin-order-action-buttons.mjs
       - run: node scripts/test-admin-order-contact-actions.mjs
       - run: node scripts/test-admin-whatsapp-links.mjs
       - run: node scripts/test-admin-order-search.mjs
