@@ -27,4 +27,14 @@ state.opsPrintQueue.jobs=Array.from({length:12},()=>({status:'pending',entity_id
 assert.equal(render().split('data-print-order=').length-1,8);
 state.opsPrintQueue.jobs=[null,{status:'unknown'}];
 assert.equal(render(),'');
+// Verify HTML escaping at every data-driven rendering boundary.
+const escapeHtml=v=>String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+const secureState={orders:[{id:'x',order_number:'<script>bad</script>'}],opsPrintQueue:{jobs:[{status:'failed',entity_id:'x',printer_profile:'<img src=x>',last_error:'<b>erro</b>'}]}};
+const secureRender=ctx.window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePanel(secureState,escapeHtml,o=>o?.order_number||'—').renderOpsPrintQueue;
+const safeHtml=secureRender();
+assert.ok(safeHtml.includes('&lt;script&gt;bad&lt;/script&gt;'));
+assert.ok(safeHtml.includes('&lt;img src=x&gt;'));
+assert.ok(safeHtml.includes('&lt;b&gt;erro&lt;/b&gt;'));
+assert.ok(!safeHtml.includes('<script>'));
+assert.ok(!safeHtml.includes('<img src=x>'));
 console.log('Admin print queue panel: PASS');
