@@ -33,7 +33,7 @@
     function mapsHrefFromAddress(a){
       const data=a&&typeof a==='object'?a:{};
       const provided=String(data.google_maps_url||'').trim();
-      if(/^https:\/\/(?:www\.)?google\.(?:com|com\.br)\/maps/i.test(provided)||/^https:\/\/maps\.app\.goo\.gl\//i.test(provided))return provided;
+      if(/^https:\/\/(?:www\.)?google\.(?:com|com\.br)\/maps(?:\/|[?#]|$)/i.test(provided)||/^https:\/\/maps\.app\.goo\.gl(?:\/|[?#]|$)/i.test(provided))return provided;
       const parts=[data.street,data.number,data.district,data.city,data.state].filter(Boolean);
       return parts.length>=3?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(parts.join(', ')):'';
     }
