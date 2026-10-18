@@ -42,7 +42,7 @@
     };
     return reasons.includes(labels[key]||'');
   }
-  function orderIssueCount(key){return state.orders.filter(o=>orderIssueMatch(o,key)).length}
+  function orderIssueCount(key){return (Array.isArray(state.orders)?state.orders:[]).filter(o=>o&&orderIssueMatch(o,key)).length}
   function orderOperationalPriority(o){
     if(orderProblemReasons(o).length)return 0;
     if(isBacklogOrder(o))return 1;
@@ -66,6 +66,7 @@
   }
   function orderFilterMatch(o,filter){
     if(filter==='all')return true;
+    if(!o)return false;
     if(filter==='new')return o.status==='created';
     if(filter==='separate')return ['confirmed','processing'].includes(o.status);
     if(filter==='ready')return o.status==='ready';
