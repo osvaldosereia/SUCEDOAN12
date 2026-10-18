@@ -2612,16 +2612,22 @@
     }
     await Promise.all([worker(),worker(),worker()]);
   }
+  let closureRenderGeneration=0;
   async function renderClosure(){
+    const generation=++closureRenderGeneration;
     const content=$('#content');
+    const host=()=>$('#closureBody');
+    const isCurrent=()=>generation===closureRenderGeneration&&state.tab==='closure'&&content===$('#content')&&Boolean(host());
     content.innerHTML='<div class="page-head"><div><h1>Fechamento</h1><p>Entregas concluídas que precisam de recebimento, revisão fiscal ou conferência final.</p></div><button class="secondary" id="refreshClosure">Atualizar</button></div><div id="closureBody"><div class="loading">Carregando fechamento…</div></div>';
     $('#refreshClosure').onclick=()=>{state.fiscalByOrder={};renderClosure()};
     try{
       const data=await api('closure_orders');
+      if(!isCurrent())return;
       const delivered=data.orders||[];
       state.closureOrders=delivered;
       state.fiscalByOrder={...state.fiscalByOrder,...(data.fiscal_by_order||{})};
       await loadFiscalForOrders(delivered);
+      if(!isCurrent())return;
       delivered.sort((a,b)=>closurePriority(a)-closurePriority(b)||((Date.parse(b.delivered_at||0)||0)-(Date.parse(a.delivered_at||0)||0)));
       const paymentPending=delivered.filter(o=>closureBucket(o)==='payment');
       const fiscalPending=delivered.filter(o=>closureBucket(o)==='fiscal');
@@ -2638,6 +2644,7 @@
       document.querySelectorAll('[data-closure-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.closureOrder));
       document.querySelectorAll('[data-closure-payment]').forEach(b=>b.onclick=()=>confirmClosurePayment(b.dataset.closurePayment));
     }catch(e){
+      if(!isCurrent())return;
       $('#closureBody').innerHTML='<div class="empty">Não consegui carregar os fechamentos. <button class="text" id="retryClosure">Tentar novamente</button></div>';
       if($('#retryClosure'))$('#retryClosure').onclick=renderClosure;
     }
