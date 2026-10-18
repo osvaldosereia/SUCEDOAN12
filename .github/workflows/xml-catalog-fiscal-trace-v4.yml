@@ -1,0 +1,23 @@
+name: XML Catalog Fiscal Trace V4
+
+on:
+  pull_request:
+    paths:
+      - "scripts/test-xml-catalog-technical-evidence-v4.mjs"
+      - "supabase/functions/purchase-xml-v1/index.ts"
+      - "supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts"
+      - "supabase/migrations/20261009090000_purchase_xml_catalog_technical_evidence_v4.sql"
+      - "vitrine/admin/index.html"
+      - ".github/workflows/xml-catalog-fiscal-trace-v4.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test XML original evidence mapping and frontend
+        run: node scripts/test-xml-catalog-technical-evidence-v4.mjs
