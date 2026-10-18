@@ -52,6 +52,7 @@ jobs:
       - run: node scripts/test-admin-module-load-contract.mjs
       - run: node scripts/test-admin-manual-order-create-contract.mjs
       - run: node scripts/test-admin-customer-address-payment-contract.mjs
+      - run: node scripts/test-admin-confirmation-separation-print-contract.mjs
       - run: node scripts/test-admin-orders-clean-flow-v3.mjs
       - run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
       - run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
