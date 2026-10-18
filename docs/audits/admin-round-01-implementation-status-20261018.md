@@ -25,3 +25,10 @@ Criar staging equivalente sem dados reais, executar testes concorrentes e rollba
 - Cancelamento posterior: reserva mudou para `released`.
 - CI no commit `15eb3f65560278ede0670244be9d33c2fcfc3134`: 25/25 workflows com sucesso.
 - Limitação: esquema reduzido, sem os outros 20 triggers de orders e sem integração real de Bling/impressão/WhatsApp; não houve deploy da Edge Function. Homologação integral da operação ainda requer esses cenários.
+
+## Compatibilidade adicional — 18/10/2026
+- Inspecionados em produção (somente leitura) os gatilhos de confirmação, fiscal, pagamento, estoque, separação, WhatsApp, marketing, atendimento e entrega.
+- Migrada para staging a função real `ops3_enqueue_confirmed_storefront_v1` e criada sua tabela de fila de separação, usando esquema mínimo.
+- Teste com pedido fictício `received -> confirmed`: inserção na fila `customer_confirmed` passou; transação de fixture revertida.
+- Importante: a RPC administrativa suporta `created -> confirmed`, mas o gatilho de fila de vitrine só enfileira `received/storefront_received -> confirmed`; esses caminhos têm regras distintas e não devem ser confundidos.
+- Não foi possível afirmar paridade com todos os gatilhos, que dependem de subsistemas ainda ausentes no staging. Não há homologação ponta a ponta da Edge Function.
