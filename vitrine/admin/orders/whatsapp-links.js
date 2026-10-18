@@ -1,8 +1,7 @@
 // Links diretos de WhatsApp; comportamento e normalização originais.
 (function(global){
   function whatsappHref(value){
-    let d=String(value||'').replace(/\D/g,'');
-    if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;
+    const d=global.DonaAntoniaAdminIdentifiers.phoneDigits(value);
     return d.length>=12?'https://wa.me/'+d:'';
   }
   function whatsappMessageHref(value,message){

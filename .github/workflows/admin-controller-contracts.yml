@@ -26,6 +26,7 @@ jobs:
       - run: node scripts/test-admin-controller-contracts.mjs
       - run: node scripts/test-admin-async-races-and-partial-save.mjs
       - run: node scripts/test-admin-gateway-action-contract.mjs
+      - run: node scripts/test-admin-whatsapp-phone-contract.mjs
       - run: node scripts/test-admin-contact-and-print-queue.mjs
       - run: node scripts/test-admin-module-load-contract.mjs
       - run: node scripts/test-admin-orders-clean-flow-v3.mjs
