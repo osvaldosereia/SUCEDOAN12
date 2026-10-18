@@ -1454,6 +1454,7 @@
 <script src="/vitrine/admin/components/today-cards.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/orders/time.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/orders/search.js?v=refactor-20261018"></script>
+<script src="/vitrine/admin/orders/whatsapp-links.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/basket-lot-image.js?v=marketing-stable-20261012"></script>
 <script>
 (()=>{
@@ -1659,15 +1660,7 @@
 
   const {cuiabaDayKey,deliveredToday,relativeAge}=window.DonaAntoniaAdminOrderTime;
   const {orderSearchMatch}=window.DonaAntoniaAdminOrderSearch.createOrderSearch(normalize);
-  function whatsappHref(value){
-    let d=String(value||'').replace(/\D/g,'');
-    if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;
-    return d.length>=12?'https://wa.me/'+d:'';
-  }
-  function whatsappMessageHref(value,message){
-    const base=whatsappHref(value);
-    return base?base+'?text='+encodeURIComponent(String(message||'')):'';
-  }
+  const {whatsappHref,whatsappMessageHref}=window.DonaAntoniaAdminWhatsappLinks;
   function orderMissingDataRequest(o){
     const problems=orderProblemReasons(o);
     const needName=problems.includes('Cliente não identificado');

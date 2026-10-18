@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const source=fs.readFileSync('vitrine/admin/orders/whatsapp-links.js','utf8');
+assert.ok(html.includes('/vitrine/admin/orders/whatsapp-links.js?v=refactor-20261018'));
+assert.ok(html.includes('const {whatsappHref,whatsappMessageHref}=window.DonaAntoniaAdminWhatsappLinks;'));
+const ctx={window:{},String,encodeURIComponent};
+vm.runInNewContext(source,ctx);
+const f=ctx.window.DonaAntoniaAdminWhatsappLinks;
+assert.equal(f.whatsappHref('(65) 99999-1234'),'https://wa.me/5565999991234');
+assert.equal(f.whatsappHref('5565999991234'),'https://wa.me/5565999991234');
+assert.equal(f.whatsappHref('123'),'');
+assert.equal(f.whatsappMessageHref('123','Olá'),'');
+assert.equal(f.whatsappMessageHref('(65) 99999-1234','Olá, João!'),'https://wa.me/5565999991234?text=Ol%C3%A1%2C%20Jo%C3%A3o!');
+console.log('Admin WhatsApp links: PASS');
