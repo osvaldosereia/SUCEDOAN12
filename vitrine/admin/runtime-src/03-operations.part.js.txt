@@ -1,287 +1,3 @@
-    if(b?.hub_enabled!==false&&domains.orders===false)issues.push('Envio de pedidos ao Bling está pausado');
-    const queueReview=Number(queue.review_required||0)+Number(queue.failed||0);
-    if(queueReview>0)issues.push(queueReview+' item(ns) da fila precisam de revisão');
-    const orderReview=Number(orderLinks.review_required||0);
-    if(orderReview>0)issues.push(orderReview+' pedido(s) precisam de revisão no Bling');
-    return [...new Set(issues)];
-  }
-  async function loadOperationalIntegrationAlert(){
-    const host=$('#integrationOperationalAlert');if(!host)return;
-    host.innerHTML='';
-    try{
-      const data=await api('bling_status');
-      state.bling=data.bling||{};
-      const issues=blingOperationalIssues(state.bling);
-      if(!issues.length)return;
-      host.innerHTML='<div class="operational-alert"><div><strong>Integração precisa de atenção</strong><small>'+issues.map(esc).join(' · ')+'</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
-      $('#openIntegrationIssue').onclick=renderBling;
-    }catch(e){
-      host.innerHTML='<div class="operational-alert"><div><strong>Não consegui verificar a integração</strong><small>Os pedidos continuam visíveis. Abra o diagnóstico para conferir o Bling.</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
-      $('#openIntegrationIssue').onclick=renderBling;
-    }
-  }
-
-  function financeSummaryCard(label,value,detail,kind=''){
-    return '<div class="bling-card '+esc(kind)+'"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong><span class="sub">'+esc(detail)+'</span></div>';
-  }
-  function financePriorityRow(r,today){
-    const isReceive=r.kind==='receivable';
-    const overdue=Boolean(r.due_date&&r.due_date<today);
-    const title=r.contact_name||r.document_number||r.origin_number||('Lançamento #'+String(r.id||''));
-    const detail=[r.document_number?'Doc. '+r.document_number:'',r.origin_number?'Origem '+r.origin_number:'',r.boleto_url?'Boleto emitido':'',r.pix_url?'PIX disponível':''].filter(Boolean).join(' · ');
-    return '<div class="closure-row">'+
-      '<div><strong class="'+(isReceive?'ok-text':'warn-text')+'">'+(isReceive?'Receber':'Pagar')+'</strong><span class="sub">'+(overdue?'<span class="danger-text">Vencido</span>':'Em aberto')+'</span></div>'+
-      '<div class="history-main"><strong>'+esc(title)+'</strong><small>'+esc(detail||'Sem observação')+'</small><div class="dispatch-actions" style="justify-content:flex-start;margin-top:6px">'+
-        '<button class="text" type="button" data-finance-detail="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Detalhes</button>'+
-        '<button class="text" type="button" data-finance-edit="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Editar</button>'+
-        '<button class="text" type="button" data-finance-settle="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Dar baixa</button>'+
-        (isReceive&&r.origin_id?'<button class="text" type="button" data-finance-boleto="'+esc(r.origin_id)+'">Boletos</button>':'')+
-      '</div></div>'+
-      '<div><strong>'+esc(dateOnly(r.due_date))+'</strong><span class="sub">'+(r.due_date===today?'Vence hoje':'Vencimento')+'</span></div>'+
-      '<strong>'+money(r.amount_cents)+'</strong>'+
-      '<span class="pill '+(overdue?'danger':'')+'">'+(r.boleto_url?'Boleto':r.pix_url?'PIX':'Aberto')+'</span>'+
-    '</div>';
-  }
-  function paintFinance(){
-    const host=$('#financeBody');if(!host)return;
-    const f=state.finance||{},rec=f.receivable||{},pay=f.payable||{},realized=f.realized_30d||{},today=f.window?.today||'';
-    const priorities=Array.isArray(f.priority)?f.priority:[];
-    const accounts=Array.isArray(f.financial_accounts)?f.financial_accounts:[];
-    host.innerHTML=
-      (f.truncated?'<div class="rule-notice warn"><strong>Volume alto de lançamentos</strong><div>O painel exibiu o limite seguro desta versão. Nenhum dado foi alterado.</div></div>':'')+
-      (realized.truncated?'<div class="rule-notice warn"><strong>Histórico de 30 dias parcial</strong><div>O volume de contas pagas/recebidas ultrapassou o limite seguro de leitura; os totais exibidos podem ser parciais.</div></div>':'')+
-      '<div class="bling-grid">'+
-        financeSummaryCard('A receber',money(rec.total_cents),String(rec.count||0)+' conta(s) em aberto')+
-        financeSummaryCard('A pagar',money(pay.total_cents),String(pay.count||0)+' conta(s) em aberto')+
-        financeSummaryCard('Saldo projetado',money(f.projected_cents),(Number(f.projected_cents||0)>=0?'Recebimentos acima dos pagamentos':'Pagamentos acima dos recebimentos'),Number(f.projected_cents||0)<0?'danger':'')+
-        financeSummaryCard('Recebido · 30 dias',money(realized.received_cents),String(realized.received_count||0)+' conta(s) recebida(s)')+
-        financeSummaryCard('Pago · 30 dias',money(realized.paid_cents),String(realized.paid_count||0)+' conta(s) paga(s)')+
-        financeSummaryCard('Líquido realizado · 30 dias',money(realized.net_cents),(Number(realized.net_cents||0)>=0?'Entradas acima das saídas':'Saídas acima das entradas'),Number(realized.net_cents||0)<0?'danger':'')+
-        financeSummaryCard('Vencidos a receber',money(rec.overdue_cents),String(rec.overdue_count||0)+' vencido(s)',Number(rec.overdue_count||0)>0?'warn':'')+
-        financeSummaryCard('Vencidos a pagar',money(pay.overdue_cents),String(pay.overdue_count||0)+' vencido(s)',Number(pay.overdue_count||0)>0?'danger':'')+
-        financeSummaryCard('Próximos 7 dias',money(Number(rec.next_7_cents||0)-Number(pay.next_7_cents||0)),String(rec.next_7_count||0)+' a receber · '+String(pay.next_7_count||0)+' a pagar')+
-        financeSummaryCard('Boletos',String(f.boleto_count||0),String(f.pix_count||0)+' conta(s) também com PIX')+
-        financeSummaryCard('Contas financeiras',String(accounts.length),f.financial_accounts_access?.ok?'Acesso confirmado':'Acesso parcial')+
-      '</div>'+
-      '<section class="panel"><div class="history-title dispatch-head"><div><strong>Prioridades financeiras</strong><span>vencidos primeiro, depois próximos vencimentos · somente leitura</span></div><b>'+priorities.length+'</b></div>'+
-        (priorities.length?priorities.map(r=>financePriorityRow(r,today)).join(''):'<div class="history-empty">Nenhuma conta em aberto no período consultado.</div>')+
-      '</section>'+
-      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Contas financeiras do Bling</strong><span>bancos, caixas e integrações disponíveis</span></div><b>'+accounts.length+'</b></div>'+
-        (accounts.length?'<div style="padding:12px 14px">'+accounts.map(a=>'<button class="pill" type="button" data-financial-account-detail="'+esc(a.id)+'" style="margin:3px">'+esc(a.description||('Conta #'+a.id))+' · '+esc(a.type||'tipo não informado')+'</button>').join('')+'</div>':'<div class="history-empty">Nenhuma conta financeira retornada.</div>')+
-      '</section>';
-    host.querySelectorAll('[data-finance-detail]').forEach(b=>b.onclick=()=>openFinanceDetail(b.dataset.financeKind,Number(b.dataset.financeDetail)));
-    host.querySelectorAll('[data-finance-edit]').forEach(b=>b.onclick=()=>openFinanceEditor(b.dataset.financeKind,Number(b.dataset.financeEdit)));
-    host.querySelectorAll('[data-finance-settle]').forEach(b=>b.onclick=()=>openFinanceSettlement(b.dataset.financeKind,Number(b.dataset.financeSettle)));
-    host.querySelectorAll('[data-finance-boleto]').forEach(b=>b.onclick=()=>openFinanceBoletos(Number(b.dataset.financeBoleto)));
-    host.querySelectorAll('[data-financial-account-detail]').forEach(b=>b.onclick=()=>openFinancialAccountDetail(Number(b.dataset.financialAccountDetail)));
-  }
-  function financeTokenPayload(token){
-    try{
-      const raw=String(token||'').split('.')[1]||'';
-      const pad=raw.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-raw.length%4)%4);
-      return JSON.parse(atob(pad));
-    }catch{return {}}
-  }
-  function financeSessionToken(){
-    const token=sessionStorage.getItem('da_finance_access_token_v1')||'';
-    if(!token)return '';
-    const exp=Number(financeTokenPayload(token)?.exp||0);
-    if(!exp||exp<=Math.floor(Date.now()/1000)+60){
-      sessionStorage.removeItem('da_finance_access_token_v1');
-      return '';
-    }
-    return token;
-  }
-  function clearFinanceSession(expectedToken=''){
-    const current=financeSessionToken();
-    if(expectedToken&&current&&current!==expectedToken)return false;
-    sessionStorage.removeItem('da_finance_access_token_v1');
-    state.financeCatalogs=null;
-    return true;
-  }
-  async function adminStepUp(){return await financeStepUp()}
-  async function financeStepUp(){
-    const existing=financeSessionToken();
-    if(existing)return existing;
-    if(state.financeAuthPromise)return await state.financeAuthPromise;
-    state.financeAuthPromise=(async()=>{
-      try{
-        const authRes=await fetch(FINANCE_AUTH_API,{
-          method:'POST',
-          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
-          body:JSON.stringify({pin:'000000'}),
-          cache:'no-store'
-        });
-        const auth=await authRes.json().catch(()=>({}));
-        if(!authRes.ok||!auth?.ok)throw new Error(auth?.error||'admin_auto_auth_failed');
-        const verifyRes=await fetch(FINANCE_VERIFY_API,{
-          method:'POST',
-          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
-          body:JSON.stringify({token_hash:auth.token_hash,type:auth.verification_type||'email'}),
-          cache:'no-store'
-        });
-        const verified=await verifyRes.json().catch(()=>({}));
-        const token=String(verified?.access_token||'').trim();
-        if(!verifyRes.ok||!token)throw new Error(verified?.msg||verified?.error_description||verified?.error||'admin_auto_session_failed');
-        sessionStorage.setItem('da_finance_access_token_v1',token);
-        return token;
-      }finally{
-        state.financeAuthPromise=null;
-      }
-    })();
-    return await state.financeAuthPromise;
-  }
-  async function financeApi(operation,payload={},retryAuth=true){
-    const token=await financeStepUp();
-    const u=new URL(API);u.searchParams.set('action','bling_finance_action');
-    const response=await fetch(u,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({operation,...payload}),
-      cache:'no-store'
-    });
-    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
-    if(response.status===401&&retryAuth){
-      clearFinanceSession(token);
-      return await financeApi(operation,payload,false);
-    }
-    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
-    return data;
-  }
-  async function loadFinanceCatalogs(force=false){
-    if(state.financeCatalogs&&!force)return state.financeCatalogs;
-    const data=await financeApi('catalogs');
-    state.financeCatalogs={
-      payment_methods:Array.isArray(data.payment_methods)?data.payment_methods:[],
-      categories:Array.isArray(data.categories)?data.categories:[],
-      financial_accounts:Array.isArray(data.financial_accounts)?data.financial_accounts:[],
-      truncated:Boolean(data.truncated)
-    };
-    return state.financeCatalogs;
-  }
-  function financeFieldValue(v){
-    return v==null?'':String(v);
-  }
-  function financeMoneyInput(v){
-    const n=Number(v);
-    return Number.isFinite(n)?n.toFixed(2).replace('.',','):'';
-  }
-  function financeSelectOptions(list,currentId,placeholder='Não informado'){
-    const current=Number(currentId||0);
-    const rows=(Array.isArray(list)?list:[]).filter(x=>Number(x?.id||0)>0);
-    const hasCurrent=current&&rows.some(x=>Number(x.id)===current);
-    const extra=current&&!hasCurrent?[{id:current,description:'Atual #'+current}]:[];
-    return '<option value="">'+esc(placeholder)+'</option>'+
-      [...extra,...rows].map(x=>'<option value="'+esc(x.id)+'" '+(Number(x.id)===current?'selected':'')+'>'+esc(x.description||x.name||('ID '+x.id))+'</option>').join('');
-  }
-  function financeCategoryRows(kind,catalogs){
-    return (catalogs?.categories||[]).filter(c=>{
-      const t=Number(c?.type||0);
-      return !t||t===3||(kind==='payable'&&t===1)||(kind==='receivable'&&t===2);
-    });
-  }
-  function financeCatalogDescription(area,id){
-    const n=Number(id||0);if(!n)return '';
-    const c=state.financeCatalogs||{};
-    const rows=area==='payment'?c.payment_methods:area==='account'?c.financial_accounts:c.categories;
-    return (rows||[]).find(x=>Number(x.id)===n)?.description||('#'+n);
-  }
-  function financeFormPayload(form){
-    const value=name=>form.querySelector('[name="'+name+'"]')?.value?.trim()||'';
-    const number=name=>{const raw=value(name).replace(/\./g,'').replace(',','.');const n=Number(raw);return Number.isFinite(n)&&n>0?n:null};
-    const payload={
-      vencimento:value('vencimento'),
-      valor:number('valor'),
-      contato_id:number('contato_id'),
-      forma_pagamento_id:number('forma_pagamento_id'),
-      dataEmissao:value('dataEmissao'),
-      numeroDocumento:value('numeroDocumento'),
-      competencia:value('competencia'),
-      historico:value('historico'),
-      portador_id:number('portador_id'),
-      categoria_id:number('categoria_id')
-    };
-    Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]===null)delete payload[k]});
-    return payload;
-  }
-  function financeExtractDetail(kind,account){
-    const a=account||{};
-    return {
-      vencimento:a.vencimento||'',
-      valor:a.valor??'',
-      contato_id:a.contato?.id||'',
-      contato_nome:a.contato?.nome||'',
-      forma_pagamento_id:a.formaPagamento?.id||'',
-      dataEmissao:a.dataEmissao||'',
-      numeroDocumento:a.numeroDocumento||'',
-      competencia:a.competencia||'',
-      historico:a.historico||'',
-      portador_id:a.portador?.id||a.contaContabil?.id||'',
-      categoria_id:a.categoria?.id||''
-    };
-  }
-  function financeOpenDialog(title,body,actions=''){
-    $('#editorTitle').textContent=title;
-    $('#editorBody').innerHTML=body;
-    $('#editorActions').innerHTML=actions||'<button class="secondary" id="financeClose" type="button">Fechar</button>';
-    if($('#financeClose'))$('#financeClose').onclick=()=>$('#editor').close();
-    if(!$('#editor').open)$('#editor').showModal();
-  }
-  function financeContactLabel(c){
-    const parts=[c?.name||'',c?.trade_name||'',c?.document||''].filter(Boolean);
-    return parts.join(' · ')||('Contato #'+String(c?.id||''));
-  }
-  function attachFinanceContactSearch(current={}){
-    const input=$('#financeContactSearch'),hidden=$('#financeContactId'),host=$('#financeContactResults');
-    if(!input||!hidden||!host)return;
-    hidden.value=financeFieldValue(current.contato_id);
-    if(current.contato_id){
-      state.financeSelectedContact={id:Number(current.contato_id),name:current.contato_nome||('Contato #'+current.contato_id)};
-      input.value=current.contato_nome||('Contato #'+current.contato_id);
-    }else state.financeSelectedContact=null;
-
-    input.oninput=()=>{
-      hidden.value='';
-      state.financeSelectedContact=null;
-      clearTimeout(state.financeContactSearchTimer);
-      const q=input.value.trim();
-      if(q.length<2){
-        host.innerHTML=q?'<small class="sub">Digite pelo menos 2 caracteres.</small>':'';
-        return;
-      }
-      host.innerHTML='<small class="sub">Buscando no Bling…</small>';
-      state.financeContactSearchTimer=setTimeout(async()=>{
-        try{
-          const data=await financeApi('contact_search',{query:q});
-          const contacts=Array.isArray(data.contacts)?data.contacts:[];
-          host.innerHTML=contacts.length
-            ?'<div class="panel" style="margin-top:6px;padding:6px">'+contacts.map(c=>'<button type="button" class="text" data-finance-contact-id="'+esc(c.id)+'" style="display:block;width:100%;text-align:left;padding:9px 8px">'+esc(financeContactLabel(c))+'</button>').join('')+'</div>'
-            :'<small class="sub">Nenhum contato encontrado.</small>';
-          host.querySelectorAll('[data-finance-contact-id]').forEach(btn=>btn.onclick=()=>{
-            const contact=contacts.find(c=>Number(c.id)===Number(btn.dataset.financeContactId));
-            if(!contact)return;
-            hidden.value=String(contact.id);
-            input.value=financeContactLabel(contact);
-            state.financeSelectedContact={id:Number(contact.id),name:financeContactLabel(contact)};
-            host.innerHTML='';
-          });
-        }catch(e){
-          host.innerHTML='<small class="danger-text">Não foi possível buscar contatos agora.</small>';
-        }
-      },320);
-    };
-  }
-  function financeActionErrorMessage(error){
-    const code=String(error?.message||error||'');
-    const map={
-      boleto_validation_failed:'Para usar boleto, informe histórico, selecione uma conta financeira apta, use vencimento de hoje em diante e mantenha o contato do Bling com e-mail e endereço completos.',
-      validation_failed:'Revise os campos obrigatórios antes de continuar.',
-      bling_finance_write_uncertain:'Resultado incerto. Não tente novamente sem revisar o lançamento no Bling.',
-      finance_owner_required:'Somente o proprietário pode operar o financeiro.',
-      finance_session_invalid:'A sessão financeira expirou. Tente novamente.'
-    };
-    return map[code]||code||'Não foi possível concluir a operação.';
-  }
   async function openFinanceEditor(kind,id=0){
     const isReceive=kind==='receivable';
     let current={},catalogs={payment_methods:[],categories:[],financial_accounts:[]},catalogError=false;
@@ -948,3 +664,156 @@
             const stockInput=document.querySelector('[data-mobile-product-field="stock"][data-product-id="'+CSS.escape(String(id))+'"]');
             const current=state.products.find(x=>String(x.id)===String(id));
             if(stockInput&&current&&!mobileProductQuickDrafts.has(id)&&!mobileProductStockQueue.has(id)&&Number(String(stockInput.value).replace(',','.'))===Number(item.quantity))stockInput.value=fmtQty(current.stock_quantity||0);
+            toast(errorMessage(e.message));
+          }
+          if(item.zeroButton){
+            item.zeroButton.disabled=false;
+            item.zeroButton.textContent='Zerar estoque';
+            toast('Falha ao zerar estoque: '+errorMessage(e.message));
+          }
+        }finally{
+          if(item.zeroButton)stockZeroPending.delete(String(id));
+        }
+      }
+    }finally{
+      mobileProductStockBusy=false;
+      if(mobileProductStockQueue.size)processMobileProductStockQueue();
+    }
+  }
+  async function saveMobileProductActive(id,checked,input){
+    const product=state.products.find(p=>String(p.id)===String(id));if(!product)return;const previous=product.active!==false;product.active=checked;const label=document.querySelector('[data-mobile-product-active-label="'+CSS.escape(String(id))+'"]');if(label)label.textContent=checked?'ATIVO':'INATIVO';setMobileProductSaveState(id,'quick',true);
+    const operator=currentOperator()||requireOperator();if(!operator){input.checked=previous;product.active=previous;setMobileProductSaveState(id,'quick',false,'Operador necessário');return}
+    try{const data=await api('product_quick_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,active:checked,operator})});product.active=data.product?.active!==false;input.checked=product.active;if(label)label.textContent=product.active?'ATIVO':'INATIVO';setMobileProductSaveState(id,'quick',false)}catch(e){product.active=previous;input.checked=previous;if(label)label.textContent=previous?'ATIVO':'INATIVO';setMobileProductSaveState(id,'quick',false,errorMessage(e.message));toast(errorMessage(e.message))}
+  }
+  function bindMobileProductCards(host){
+    host.querySelectorAll('[data-mobile-product-field]').forEach(el=>{const event=el.tagName==='SELECT'||el.type==='date'?'change':'input';el.addEventListener(event,()=>scheduleMobileProductQuickSave(el.dataset.productId,el.dataset.mobileProductField,el.value))});
+    host.querySelectorAll('[data-mobile-product-active]').forEach(el=>el.onchange=()=>saveMobileProductActive(el.dataset.mobileProductActive,el.checked,el));
+    host.querySelectorAll('[data-open-product-basket]').forEach(el=>el.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const basketId=el.dataset.openProductBasket;if(window.DonaAntoniaBasketGuided?.open&&basketId)window.DonaAntoniaBasketGuided.open(basketId,{mode:'model'});else toast('O editor de Cestas/Kits não carregou. Atualize a página e tente novamente.')});
+  }
+
+  function productRow(p){
+    const classification=[categoryLabel(p.category),p.detailed_subcategory||p.subcategory].filter(Boolean).join(' › ');
+    const identity=[p.sku,p.gtin,p.packaging].filter(Boolean).join(' · ');
+    const expiredInactive=p.active===false&&p.deactivation_reason==='expired';
+    const statusTitle=p.active?'Clique para desativar':expiredInactive?'Vencido: corrija a validade antes de ativar':'Clique para ativar';
+    const desktopStatus=p.active?'Ativo':expiredInactive?'Vencido · inativo':'Inativo';
+    const price=(Number(p.sale_price_cents||0)/100).toFixed(2).replace('.',','),cost=(Number(p.cost_cents||0)/100).toFixed(2).replace('.',',');
+    const expiry=p.next_expiration_date||p.expiration_date||'';
+    const validity=p.lot_tracking_complete
+      ?'<div class="product-validity-summary"><span>Próxima validade</span><strong>'+esc(productExpiryLabel(p))+'</strong><small>'+esc(p.active_lot_count||0)+' lotes · editar em Lotes</small></div>'
+      :'<label class="product-inline-field"><span>Validade</span><input data-mobile-product-field="expiration" data-product-id="'+esc(p.id)+'" type="date" value="'+esc(expiry)+'"></label>';
+    return '<div class="list-row products-layout product-operational-row">'+
+      '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
+      '<div class="product-main"><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<span class="sub"><span class="pill '+(p.lot_tracking_complete?'':'warn')+'">'+(p.lot_tracking_complete?'Lotes controlados':'Validade simples')+'</span></span></div>'+
+      '<div class="product-quick-fields"><label class="product-inline-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label><label class="product-inline-field"><span>Custo</span><input data-mobile-product-field="cost" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(cost)+'"></label><span class="mobile-product-save-status saved product-save-inline" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span></div>'+
+      '<div class="product-stock-validity"><label class="product-inline-field"><span>Estoque total</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+validity+'<span class="product-stock-breakdown-inline">'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+' avulso · '+esc(fmtQty(p.basket_locked_quantity||0))+' em cestas/kits</span></div>'+
+      '<div class="product-operational-status"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(desktopStatus)+'</button>'+productKitLinks(p)+'</div>'+
+      '<div class="product-row-actions"><button class="product-action-btn product-zero-stock-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="product-action-btn" data-product-lots="'+esc(p.id)+'">Lotes</button><button class="product-action-btn" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="product-action-btn primary-action" data-edit-product="'+esc(p.id)+'">Editar completo</button></div></div>';
+  }
+
+  async function toggleProductActive(id,btn){
+    const product=state.products.find(p=>p.id===id);
+    if(!product)return;
+    const next=product.active===false;
+    const expired=Boolean(product.expiration_date&&String(product.expiration_date)<cuiabaDayKey(new Date()));
+    if(next&&expired){
+      toast('Produto vencido · corrija a validade antes de ativar');
+      openProductEditor(product);
+      return;
+    }
+    if(!next&&!confirm('Desativar "'+product.name+'"?\n\nEle sairá da vitrine e a validade deixará de entrar nos controles e ofertas automáticas enquanto estiver inativo.'))return;
+    const operator=requireOperator();if(!operator)return;
+    btn.disabled=true;
+    try{
+      const data=await api('product_save',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,
+        sale_price_cents:Number(product.sale_price_cents||0),stock_quantity:Number(product.stock_quantity||0),
+        expiration_date:product.expiration_date||null,
+        auto_expiry_offer_enabled:product.auto_expiry_offer_enabled===true,
+        category:product.category||'',subcategory:product.subcategory||'',packaging:product.packaging||'',
+        image_url:product.image_url||'',description:product.description||'',active:next,operator
+      })});
+      const saved=data.product;
+      if(next&&saved?.active===false&&saved?.deactivation_reason==='expired'){
+        toast('Produto vencido · permanece inativo');
+      }else{
+        toast(next?'Produto ativado':'Produto desativado · fora da vitrine e das validades');
+      }
+      await loadProducts($('#productSearch')?.value.trim()||'',false);
+    }catch(e){
+      toast(errorMessage(e.message));
+      btn.disabled=false;
+    }
+  }
+
+  async function openProductLotsEditor(p){
+    if(!p?.id)return;
+    $('#editorTitle').textContent='Lotes e validades · '+(p.name||'Produto');
+    $('#editorBody').innerHTML='<div class="loading">Carregando lotes…</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="closeLotsEditor">Fechar</button>';
+    $('#closeLotsEditor').onclick=()=>$('#editor').close();
+    $('#editor').showModal();
+    try{
+      const data=await api('product_lots',{id:p.id});
+      paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
+    }catch(e){
+      $('#editorBody').innerHTML='<div class="empty">Não consegui carregar os lotes.<br><small>'+esc(errorMessage(e.message))+'</small></div>';
+    }
+  }
+  function paintProductLotsEditor(p,lots,summary){
+    const complete=p?.lot_tracking_complete===true||summary?.lot_tracking_complete===true;
+    const physical=summary?.bling_physical_qty??p?.stock_quantity??0;
+    const tracked=summary?.tracked_physical_qty??lots.reduce((s,x)=>s+Number(x.quantity_on_hand||0),0);
+    const diff=Number(physical||0)-Number(tracked||0);
+    $('#editorBody').innerHTML=
+      '<div class="offer-note" style="margin-bottom:12px"><strong>'+(complete?'FEFO completo neste produto':'Migração progressiva')+'</strong><br>'+
+      (complete?'A separação pode usar os lotes deste produto pela validade mais próxima.':'Cadastre os lotes quando for conveniente. Só ative o FEFO quando a soma dos lotes bater com o estoque físico do Bling.')+'</div>'+
+      '<div class="product-stock-breakdown" style="margin-bottom:12px">'+
+        '<div class="product-stock-box"><small>Estoque físico / Bling</small><strong>'+esc(fmtQty(physical))+'</strong></div>'+
+        '<div class="product-stock-box"><small>Somado em lotes</small><strong>'+esc(fmtQty(tracked))+'</strong></div>'+
+        '<div class="product-stock-box"><small>Falta distribuir</small><strong>'+esc(fmtQty(Math.max(0,diff)))+'</strong></div>'+
+      '</div>'+
+      '<div class="panel" style="padding:12px;margin-bottom:12px">'+
+        '<strong>Adicionar ou ajustar lote</strong>'+
+        '<div class="purchase-price-grid" style="margin-top:10px">'+
+          '<div class="purchase-field"><label>Lote</label><input id="lotCode" placeholder="Opcional"></div>'+
+          '<div class="purchase-field"><label>Validade</label><input id="lotExpiry" type="date"></div>'+
+          '<div class="purchase-field"><label>Quantidade UN</label><input id="lotQty" type="number" min="0" step="0.001"></div>'+
+        '</div>'+
+        '<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="primary" id="saveProductLot" type="button">Salvar lote</button></div>'+
+      '</div>'+
+      '<div class="history-title"><div><strong>Lotes cadastrados</strong><span class="sub">Mais próxima primeiro.</span></div><b>'+esc(lots.length)+'</b></div>'+
+      '<div class="history-list">'+(lots.length?lots.map((l,i)=>'<div class="history-row"><div><span class="pill '+(i===0&&l.status==="active"?'warn':'')+'">'+esc(l.status||'')+'</span></div><div class="history-main"><strong>Validade '+esc(dateOnly(l.expiration_date))+'</strong><small>Lote '+esc(l.lot_code||'sem código')+' · '+esc(fmtQty(l.quantity_on_hand||0))+' UN'+(i===0&&l.status==="active"?' · sair primeiro quando FEFO estiver ativo':'')+'</small></div></div>').join(''):'<div class="history-empty">Nenhum lote cadastrado ainda.</div>')+'</div>'+
+      '<div class="bling-banner '+(complete?'':'')+'" style="margin-top:12px"><strong>'+(complete?'Controle por lotes ativo':'Ativar quando terminar este produto')+'</strong><small>'+(complete?'Este produto já está no modo FEFO.':'O botão só funciona quando todos os lotes têm quantidade e a soma fecha com o estoque físico do Bling.')+'</small><div class="bling-actions"><button class="primary" id="activateProductFefo" type="button" '+(complete?'disabled':'')+'>'+(complete?'FEFO ativo':'Ativar FEFO neste produto')+'</button></div></div>';
+    $('#saveProductLot').onclick=async()=>{
+      const code=$('#lotCode').value.trim(),exp=$('#lotExpiry').value,qty=Number(String($('#lotQty').value||'').replace(',','.'));
+      if(!exp){toast('Informe a validade');return}
+      if(!Number.isFinite(qty)||qty<0){toast('Informe uma quantidade válida');return}
+      const btn=$('#saveProductLot');btn.disabled=true;btn.textContent='Salvando…';
+      try{
+        const sourceRef='manual-ui:'+p.id+':'+(code||'sem-lote')+':'+exp;
+        const data=await api('product_lot_save',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:p.id,lot_code:code||null,expiration_date:exp,quantity_on_hand:qty,source:'manual',source_ref:sourceRef,received_at:null,metadata:{source_ui:'product_editor'}})
+        });
+        toast('Lote salvo');
+        paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar lote'}
+    };
+    $('#activateProductFefo').onclick=async()=>{
+      if(complete)return;
+      const op=requireOperator();if(!op)return;
+      const btn=$('#activateProductFefo');btn.disabled=true;btn.textContent='Conferindo…';
+      try{
+        const data=await api('product_lot_tracking_complete',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:p.id,complete:true,operator:op})
+        });
+        toast('FEFO ativado neste produto');
+        paintProductLotsEditor(data.product||p,data.lots||[],data.summary||null);
+        await loadProducts($('#productSearch')?.value.trim()||'',false);
+      }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Ativar FEFO neste produto'}
+    };
+  }
+
+  // PRODUCT_EDITOR_COMPLETE_V1
