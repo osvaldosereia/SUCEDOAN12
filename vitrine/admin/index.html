@@ -8198,7 +8198,7 @@
     const o=state.currentOrder?.order;if(!o)return;
     const fiscal=state.currentOrderFiscal||{};
     const gate=fiscal.dispatch_gate||{};
-    if(fiscal.authorized!==true&&gate.authorized!==true&&!fiscal.bling_invoice_id&&!fiscal.invoice_id){
+    if(fiscal.authorized!==true&&gate.authorized!==true){
       toast('A NF-e ainda não está autorizada');return;
     }
     return openDanfeForOrder(o.id,orderDisplayCode(o));
