@@ -5,7 +5,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 // magic-link token hash or an owner access token to an unauthenticated request.
 const ROOT="https://ssbesxgaijknwsjbsbcz.supabase.co";
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
-const REDIRECT="https://www.donaantonia.com.br/vitrine/admin/";
+const REDIRECT="https://donaantonia.com.br/vitrine/admin/";
 const headers=(origin:string)=>({
   "Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br",
   "Access-Control-Allow-Headers":"apikey,authorization,content-type",
