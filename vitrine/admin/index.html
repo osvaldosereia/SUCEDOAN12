@@ -1615,7 +1615,7 @@
     closeNavMenus();
     if(tab==='today')renderToday();
     if(tab==='attendance')renderAttendance();
-    if(tab==='ana')import('/vitrine/admin/ana/ana-admin.js?v=1').then(module=>module.mountAnaAdmin($('#content'))).catch(error=>{$('#content').innerHTML='<section class="panel"><h1>ANA</h1><p>Não foi possível abrir a gestão da ANA.</p></section>';console.error('admin_ana_load',error)});
+    if(tab==='ana')import('/vitrine/admin/ana/ana-admin.js?v=1').then(module=>{if(state.tab==='ana')return module.mountAnaAdmin($('#content'))}).catch(error=>{if(state.tab==='ana')$('#content').innerHTML='<section class="panel"><h1>ANA</h1><p>Não foi possível abrir a gestão da ANA.</p></section>';console.error('admin_ana_load',error)});
     if(tab==='products')renderProducts();
     if(tab==='baskets')renderBaskets();
     if(tab==='quotes')renderQuotes();
@@ -7689,12 +7689,20 @@
   }
   function bindOrderStatusTabs(){document.querySelectorAll('[data-order-status-tab]').forEach(b=>b.onclick=async()=>{state.orderStatusTab=b.dataset.orderStatusTab||'manual';paintOrderRows();if(state.orderStatusTab==='manual'){try{await loadManualPickQueue()}catch{}paintOrderRows()}})}
   async function renderOrders(){const content=$('#content');document.body.classList.add('orders-tab-active');content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Escolha manualmente quais pedidos confirmados devem aparecer em SEPARAR AGORA.</p></div></div><div id="orderStatusTabsTop">'+orderStatusTabsHtml('orders-status-desktop')+'</div><div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery||'')+'"></div><div id="orderRows" class="orders-v3-list"><div class="loading">Carregando pedidos…</div></div><div id="orderStatusTabsMobile">'+orderStatusTabsHtml('orders-status-mobile')+'</div>';bindOrderStatusTabs();$('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;paintOrderRows()};await loadOrders()}
+  let ordersLoadGeneration=0;
   async function loadOrders(){
+    const generation=++ordersLoadGeneration,host=$('#orderRows');
+    const isCurrent=()=>generation===ordersLoadGeneration&&state.tab==='orders'&&host===$('#orderRows');
     try{
-      const data=await api('orders');state.orders=Array.isArray(data.orders)?data.orders:[];try{await loadManualPickQueue()}catch{}paintOrderRows();
+      const data=await api('orders');
+      if(!isCurrent())return;
+      state.orders=Array.isArray(data.orders)?data.orders:[];
+      try{await loadManualPickQueue()}catch{}
+      if(!isCurrent())return;
+      paintOrderRows();
       const fiscalRows=state.orders.filter(o=>o.status==='ready').sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)).slice(0,8);
-      if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);paintOrderRows()}
-    }catch(e){const host=$('#orderRows');if(host)host.innerHTML='<div class="empty">Não consegui carregar os pedidos.</div>'}
+      if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);if(isCurrent())paintOrderRows()}
+    }catch(e){if(isCurrent())host.innerHTML='<div class="empty">Não consegui carregar os pedidos.</div>'}
   }
   async function refreshOrderSeparationBoard(){
     if(state.tab!=='orders'||document.hidden||!state.orders.length)return;
@@ -7966,9 +7974,31 @@
     const printUrl=new URL(url);printUrl.searchParams.set('print','1');
     window.open(printUrl.toString(),'_blank','noopener,noreferrer');
   }
+  let orderDetailLoadGeneration=0;
   async function openOrder(id){
-    $('#editorTitle').textContent='Pedido';$('#editorBody').innerHTML='<div class="loading">Carregando pedido…</div>';$('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>';$('#cancelEditor').onclick=()=>$('#editor').close();if(!$('#editor').open)$('#editor').showModal();
-    try{const data=await api('order',{id});state.currentOrder=data;state.currentOrderFiscal=null;try{if(['confirmed','processing','ready','out_for_delivery','delivered'].includes(data.order?.status)){const sep=await api('order_separation_get',{id});data.separation=sep.separation||sep}}catch{}if(['ready','out_for_delivery','delivered'].includes(data.order?.status))await loadCurrentOrderFiscal(false);paintOrderDetail()}catch(e){$('#editorBody').innerHTML='<div class="empty">Não consegui abrir este pedido.</div>'}
+    const generation=++orderDetailLoadGeneration;
+    const editor=$('#editor'),title=$('#editorTitle'),body=$('#editorBody');
+    title.textContent='Pedido';
+    body.innerHTML='<div class="loading">Carregando pedido…</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>';
+    $('#cancelEditor').onclick=()=>editor.close();
+    if(!editor.open)editor.showModal();
+    const isCurrent=()=>generation===orderDetailLoadGeneration&&editor.open&&title.textContent==='Pedido';
+    try{
+      const data=await api('order',{id});
+      if(!isCurrent())return;
+      state.currentOrder=data;
+      state.currentOrderFiscal=null;
+      if(['confirmed','processing','ready','out_for_delivery','delivered'].includes(data.order?.status)){
+        try{
+          const sep=await api('order_separation_get',{id});
+          if(!isCurrent())return;
+          data.separation=sep.separation||sep;
+        }catch(e){if(!isCurrent())return}
+      }
+      if(['ready','out_for_delivery','delivered'].includes(data.order?.status))await loadCurrentOrderFiscal(false);
+      if(isCurrent())paintOrderDetail();
+    }catch(e){if(isCurrent())body.innerHTML='<div class="empty">Não consegui abrir este pedido.</div>'}
   }
   function orderV3SeparationMap(){return new Map((state.currentOrder?.separation?.items||[]).map(x=>[String(x.order_item_id),String(x.state||'pending')]))}
   function orderV3DetailItemHtml(item,states){const st=states.get(String(item.id))||'',missing=st==='missing';const components=Array.isArray(item.components)?item.components:[];const componentHtml=components.length?'<div style="margin-top:7px">'+components.map(c=>{const cs=states.get(String(c.id))||'',cm=cs==='missing';return '<div class="muted" style="padding:3px 0">• '+esc(fmtQty(c.quantity))+' × '+esc(c.name_snapshot||'Produto')+(cm?'<span class="order-v3-missing">FALTOU</span>':'')+'</div>'}).join('')+'</div>':'';return '<div class="order-v3-item'+(missing?' missing':'')+'">'+(item.image_url?'<img src="'+esc(item.image_url)+'" alt="">':'<div class="order-v3-item-ph"></div>')+'<div><strong>'+esc(item.name_snapshot||'Produto')+'</strong>'+(missing?'<span class="order-v3-missing">FALTOU</span>':'')+'<small>Quantidade: '+esc(fmtQty(item.quantity||1))+'</small>'+componentHtml+'</div><strong>'+money(item.total_cents||Math.round(Number(item.line_total||0)*100))+'</strong></div>'}
@@ -8009,14 +8039,17 @@
   }
   async function loadCurrentOrderBlingPreview(repaint=true){
     const id=state.currentOrder?.order?.id;if(!id)return;
+    let preview;
     try{
-      state.currentOrderBlingPreview=await api('bling_preview_order_sync',{},{
+      preview=await api('bling_preview_order_sync',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
     }catch(e){
-      state.currentOrderBlingPreview={error:String(e?.message||'bling_preview_unavailable')};
+      preview={error:String(e?.message||'bling_preview_unavailable')};
     }
-    if(repaint&&state.currentOrder?.order?.id===id&&$('#editor')?.open)paintOrderDetail();
+    if(state.currentOrder?.order?.id!==id)return;
+    state.currentOrderBlingPreview=preview;
+    if(repaint&&$('#editor')?.open)paintOrderDetail();
   }
 
   function fiscalBlockReasonLabel(code){
