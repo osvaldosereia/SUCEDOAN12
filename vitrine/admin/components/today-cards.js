@@ -1,6 +1,6 @@
 // Componentes de leitura da visão Hoje. Dependências fornecidas pelo Admin.
 (function(global){
-  function createTodayCards(esc,todayCardCount,renderTodayIssueBreakdown,orderIssueCount){
+  function createTodayCards(esc,todayCardCount,orderIssueCount){
   function renderTodayCards(){
     const cards=[
       ['new','Novos','Pedidos para confirmar'],
