@@ -1,7 +1,7 @@
 // Alerta de validade da visão Hoje; implementação preservada.
 (function(global){
   function createExpiryAlert(state,esc){
-  function renderTodayExpiryAlert(){
+    function renderTodayExpiryAlert(){
     const data=state.expiryAlerts||{},s=data.summary||{},total=Number(s.total||0);
     if(!total)return '';
     const urgent=Number(s.due_today||0)+Number(s.days_1_7||0);

@@ -20,4 +20,31 @@ assert.equal(f.marketingCampaignSlug(' Promoção São João! '),'promocao-sao-j
 assert.equal(f.marketingCampaignSlug(''),'');
 assert.ok(f.MARKETING_BRANDS.length>=2);
 assert.ok(f.MARKETING_SEGMENTS.length>=9);
+// Keep the brand allowlist explicit; no unprepared brand should become active.
+assert.deepEqual(Array.from(f.MARKETING_BRANDS,x=>x.key),['nivea','elseve']);
+assert.equal(f.marketingSegmentOf({subcategory:'Cabelos'}),'Cabelos');
+assert.equal(f.marketingSegmentOf({subcategory:'Higiene pessoal'}),'Higiene pessoal');
+assert.equal(f.marketingSegmentOf({subcategory:'Limpeza'}),'Limpeza');
+assert.equal(f.marketingSegmentOf({subcategory:'Lavanderia'}),'Lavanderia');
+assert.equal(f.marketingSegmentOf({subcategory:'Casa e utilidades'}),'Casa');
+assert.equal(f.marketingSegmentOf({subsubcategory:'Fraldas'}),'Bebê');
+assert.equal(f.marketingSegmentOf({subsubcategory:'Biscoitos'}),'Doces e lanches');
+assert.equal(f.marketingCampaignSlug('A & B / 2026'),'a-b-2026');
+assert.equal(f.marketingCampaignSlug('a'.repeat(80)).length,60);
+// A missing category must remain in the neutral segment.
+assert.equal(f.marketingSegmentOf({}),'Outros');
+assert.equal(f.marketingSegmentOf(null),'Outros');
+assert.equal(f.marketingCampaignSlug('---'),'');
+assert.equal(f.marketingCampaignSlug('  SEM ACENTOS  '),'sem-acentos');
+assert.equal(f.marketingSegmentOf({subcategory:'Beleza'}),'Beleza e cuidados');
+assert.equal(f.marketingSegmentOf({subsubcategory:'Cães'}),'Pet');
+assert.equal(f.marketingCampaignSlug('Promoção 100%'),'promocao-100');
+// Segment precedence is a commercial contract: a subcategory takes priority.
+assert.equal(f.marketingSegmentOf({subcategory:'Bebê',subsubcategory:'Biscoitos'}),'Bebê');
+assert.equal(f.marketingSegmentOf({subcategory:'Cabelos',subsubcategory:'Fraldas'}),'Bebê');
+assert.equal(f.marketingSegmentOf({subcategory:'Limpeza',subsubcategory:'Chocolates e doces'}),'Limpeza');
+assert.equal(f.marketingSegmentOf({subcategory:'Higiene pessoal'}),'Higiene pessoal');
+assert.equal(f.marketingSegmentOf({subcategory:'Pets',subsubcategory:'Cães'}),'Pet');
+assert.equal(f.marketingCampaignSlug('Ação & Coração'),'acao-coracao');
+assert.equal(f.marketingCampaignSlug('___'),'');
 console.log('Admin marketing helpers: PASS');

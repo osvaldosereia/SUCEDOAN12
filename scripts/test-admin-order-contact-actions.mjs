@@ -8,8 +8,8 @@ assert.ok(html.indexOf('createOrderReadModel(cuiabaDayKey,state)')<html.indexOf(
 const ctx={window:{},String,Array,Object,encodeURIComponent};
 vm.runInNewContext(source,ctx);
 const issues=o=>o.problems||[];
-const wa=p=>'https://wa.me/'+p;
-const msg=(p,m)=>wa(p)+'?text='+encodeURIComponent(m);
+const wa=p=>p?'https://wa.me/'+p:'';
+const msg=(p,m)=>wa(p)?wa(p)+'?text='+encodeURIComponent(m):'';
 const f=ctx.window.DonaAntoniaAdminOrderContactActions.createOrderContactActions(issues,wa,msg,o=>o.order_number,v=>String(v));
 const order={order_number:'123',customer_name:'Ana Silva',whatsapp_phone_e164:'5565999999999',delivery_address_snapshot:{street:'Rua A',number:'1',district:'Centro',city:'Cuiabá'},problems:['Endereço incompleto']};
 const request=f.orderMissingDataRequest(order);
@@ -23,4 +23,29 @@ assert.match(f.mapsHrefFromAddress(order.delivery_address_snapshot),/google.com\
 assert.equal(f.mapsHrefFromAddress({street:'Rua A'}),'');
 assert.match(f.orderContactActionsHtml(order),/Pedir endereço/);
 assert.match(f.orderContactActionsHtml(order),/Abrir no Maps/);
+// Missing contact information must not produce a broken WhatsApp link.
+assert.equal(f.orderMissingDataRequest({...order,whatsapp_phone_e164:'',delivery_address_snapshot:{}}),null);
+assert.equal(f.orderContactActionsHtml({problems:[],delivery_address_snapshot:{}}),'');
+// Both missing name and address must request both pieces of information.
+const both=f.orderMissingDataRequest({...order,problems:['Cliente não identificado','Endereço incompleto']});
+assert.equal(both.label,'Pedir dados');
+assert.match(decodeURIComponent(both.href),/nome completo e seu endereço completo/);
+// Preserve explicit map links and reject unrelated map hosts.
+assert.equal(f.mapsHrefFromAddress({google_maps_url:'https://maps.app.goo.gl/abc'}),'https://maps.app.goo.gl/abc');
+assert.equal(f.mapsHrefFromAddress({google_maps_url:'https://www.google.com/maps/place/Teste'}),'https://www.google.com/maps/place/Teste');
+assert.equal(f.mapsHrefFromAddress({google_maps_url:'https://evil.example/maps'}),'');
+// Contact actions remain safe for incomplete snapshots and do not mutate the order.
+const snapshot=JSON.stringify(order);
+assert.equal(f.mapsHrefFromAddress(null),'');
+assert.equal(f.mapsHrefFromAddress('invalid'),'');
+assert.equal(f.orderAddressRequestHref({...order,problems:[]}), '');
+assert.equal(f.orderMissingDataRequest({...order,problems:['Cliente não identificado']}).label,'Pedir nome');
+assert.equal(JSON.stringify(order),snapshot);
+const escapeHtml=v=>String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+const safeActions=ctx.window.DonaAntoniaAdminOrderContactActions.createOrderContactActions(issues,wa,msg,o=>o.order_number,escapeHtml);
+const hostile={...order,customer_name:'"<img src=x>',delivery_address_snapshot:{...order.delivery_address_snapshot,google_maps_url:'https://www.google.com/maps/?q="test"'}};
+const safeContactHtml=safeActions.orderContactActionsHtml(hostile);
+assert.ok(safeContactHtml.includes('&quot;'));
+assert.ok(!safeContactHtml.includes('<img src=x>'));
+assert.ok(!safeContactHtml.includes('href="https://www.google.com/maps/?q="test"'));
 console.log('Admin order contact actions: PASS');

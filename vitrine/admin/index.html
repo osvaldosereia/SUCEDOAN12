@@ -1458,6 +1458,7 @@
 <script src="/vitrine/admin/orders/contact-actions.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/components/expiry-alert.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/components/ops-attention.js?v=refactor-20261018"></script>
+<script src="/vitrine/admin/components/print-queue-panel.js?v=refactor-20261018"></script>
 <script src="/vitrine/admin/basket-lot-image.js?v=marketing-stable-20261012"></script>
 <script>
 (()=>{
@@ -1702,15 +1703,7 @@
   }
 
   const {attentionTargetTab,renderOpsAttention}=window.DonaAntoniaAdminOpsAttention.createOpsAttention(state,esc);
-  function renderOpsPrintQueue(){
-    const q=state.opsPrintQueue||{},jobs=Array.isArray(q.jobs)?q.jobs:[];
-    if(!jobs.length)return '';
-    const active=jobs.filter(j=>['pending','failed','claimed'].includes(j.status));
-    if(!active.length)return '';
-    const label={pending:'Aguardando',failed:'Falhou',claimed:'Em impressão'};
-    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Fila de impressão</strong><span class="muted">a impressão automática ainda está em homologação</span></div><div style="padding:8px 14px 14px">'+active.slice(0,8).map(j=>'<div class="history-row" style="align-items:center"><span class="pill '+(j.status==='failed'?'danger':'')+'">'+esc(label[j.status]||j.status)+'</span><div class="history-main"><strong>Separação · #'+esc(orderDisplayCode(state.orders.find(o=>String(o.id)===String(j.entity_id))))+'</strong><small>'+esc(j.printer_profile||'85 mm')+(j.last_error?' · '+esc(j.last_error):'')+'</small></div><button class="quick-link" type="button" data-print-order="'+esc(j.entity_id)+'">Abrir pedido</button></div>').join('')+'</div></section>';
-  }
-
+  const {renderOpsPrintQueue}=window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePanel(state,esc,orderDisplayCode);
   function renderOpsTimeline(){
     const rows=Array.isArray(state.opsTimeline)?state.opsTimeline:[];
     if(!rows.length)return '';
@@ -7233,8 +7226,10 @@
 
   async function loadCustomerHistory(customerId,append=false){
     const offset=append?state.customerHistoryOffset:0;
+    const requestSeq=state.customerHistoryRequestSeq=(state.customerHistoryRequestSeq||0)+1;
     try{
       const data=await customerApi('vitrine_customer_history',{id:customerId,limit:20,offset});
+      if(requestSeq!==state.customerHistoryRequestSeq||state.customerProfile?.customer?.id!==customerId)return;
       if(!append){
         state.customerProfile={customer:data.customer,summary:data.summary,orders:data.orders||[],top_products:data.top_products||[],next_offset:data.pagination?.next_offset??null};
       }else{
@@ -7244,6 +7239,7 @@
       state.customerHistoryOffset=data.pagination?.next_offset??offset;
       paintCustomerProfile();
     }catch(e){
+      if(requestSeq!==state.customerHistoryRequestSeq||state.customerProfile?.customer?.id!==customerId)return;
       $('#editorBody').innerHTML='<div class="empty">Não consegui carregar o histórico deste cliente.<br><button class="text" id="retryCustomerHistory">Tentar novamente</button></div>';
       if($('#retryCustomerHistory'))$('#retryCustomerHistory').onclick=()=>loadCustomerHistory(customerId,false);
     }
