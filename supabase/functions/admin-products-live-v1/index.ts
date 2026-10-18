@@ -1064,7 +1064,8 @@ async function syncConfirmedOrderToBling(oid:string,operator="Operação"){
     return {attempted:true,ok:false,error:h.error,status:h.status||409,detail:h.data||h.detail||null,retry_queued:retryQueued,retry_job_id:retryJobId};
   }
   const blingId=Number(h.data?.bling_order_id||0)||null;
-  await db.from("orders").update({bling_order_id:blingId,bling_synced_at:now,sync_status:"sent_to_bling",updated_at:now}).eq("id",oid);
+  const saved=await db.from("orders").update({bling_order_id:blingId,bling_synced_at:now,sync_status:"sent_to_bling",updated_at:now}).eq("id",oid);
+  if(saved.error)return {attempted:true,ok:false,error:"bling_order_local_persistence_failed",status:503,bling_order_id:blingId,external_write_succeeded:true,reconciliation_required:true};
   try{
     const a=await db.from("ops_attention").select("id").eq("idempotency_key","ops2:order_bling_sync:"+oid).in("status",["open","acknowledged"]).maybeSingle();
     if(!a.error&&a.data?.id)await db.rpc("ops_resolve_attention_v1",{p_attention_id:a.data.id,p_resolution:"Pedido sincronizado e verificado no Bling.",p_resolution_ref:blingId?"bling-order:"+blingId:null});
