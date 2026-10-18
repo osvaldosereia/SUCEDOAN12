@@ -3270,9 +3270,12 @@
     await loadProducts(q,false);
   }
 
+  let productFacetsGeneration=0;
   async function loadProductFacets(category='',active=state.productFilters.active||''){
+    const generation=++productFacetsGeneration;
     try{
       const data=await api('product_facets',{category,active});
+      if(generation!==productFacetsGeneration||state.tab!=='products')return;
       state.productFacets=data;
       const cat=$('#productCategory'),sub=$('#productSubcategory');
       if(cat){
@@ -3285,7 +3288,7 @@
         sub.innerHTML='<option value="">Todas as subcategorias</option>'+(data.subcategories||[]).map(x=>'<option value="'+esc(x.value)+'" '+(x.value===current?'selected':'')+'>'+esc(x.label)+' ('+esc(x.count)+')</option>').join('');
         sub.value=current;
       }
-    }catch(e){toast('Não consegui carregar os filtros de produtos')}
+    }catch(e){if(generation===productFacetsGeneration&&state.tab==='products')toast('Não consegui carregar os filtros de produtos')}
   }
 
   // Paginação mobile: lotes de 6 e carregamento por aproximação do fim da lista.
@@ -5735,8 +5738,11 @@
       }catch(e){confirm.disabled=false;confirm.textContent='Já conferi hoje';toast(errorMessage(e?.message||e))}
     };
   }
+  let purchasesLoadGeneration=0;
   async function loadPurchases(){
-    const host=$('#purchaseBody');if(!host)return;
+    const host=$('#purchaseBody');if(!host||state.tab!=='purchases')return;
+    const generation=++purchasesLoadGeneration;
+    const isCurrent=()=>generation===purchasesLoadGeneration&&state.tab==='purchases'&&host===$('#purchaseBody');
     if(!purchaseCustomRangeReady()){host.innerHTML='<div class="empty">Escolha as duas datas do período personalizado e clique em Aplicar.</div>';return}
     host.innerHTML='<div class="loading">Carregando compras de '+esc(purchasePeriodLabel())+'…</div>';
     try{
@@ -5751,6 +5757,7 @@
       // Fast path: opening Compras/XML must not wait for Bling OAuth, pricing
       // configuration or the 31-day product queue. Advanced data loads on demand.
       const result=await purchaseApi('summary',filter);
+      if(!isCurrent())return;
       state.purchaseXml=result;
       if(!state.purchaseAdvancedLoaded){
         state.purchaseCatalogQueue={ok:true,items:[],counts:{}};
@@ -5758,6 +5765,7 @@
       // Daily reminder is best-effort and must not delay the note list.
       if(!state.purchaseBlingReceivedReview)state.purchaseBlingReceivedReview={ok:false};
       purchaseApi('bling_received_review_status',{}).then(value=>{
+        if(!isCurrent())return;
         state.purchaseBlingReceivedReview=value;
         paintBlingReceivedReview();
       }).catch(()=>{});
@@ -5767,6 +5775,7 @@
       paintBlingReceivedReview();
       paintPurchases();
     }catch(e){
+      if(!isCurrent())return;
       host.innerHTML='<div class="empty">Não consegui carregar Compras/XML. <button class="text" id="retryPurchases">Tentar novamente</button></div>';
       if($('#retryPurchases'))$('#retryPurchases').onclick=loadPurchases;
     }
@@ -7176,15 +7185,25 @@
     $('#customerSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadCustomers(e.currentTarget.value.trim())}};
     await loadCustomers(q);
   }
+  let customersLoadGeneration=0;
   async function loadCustomers(q=''){
-    const host=$('#customerRows');host.innerHTML='<div class="loading">Carregando…</div>';
+    const host=$('#customerRows');
+    if(!host||state.tab!=='customers')return;
+    const generation=++customersLoadGeneration;
+    host.innerHTML='<div class="loading">Carregando…</div>';
     try{
-      const data=await customerApi('vitrine_customers_list',{q,limit:120});state.customers=data.customers||[];
+      const data=await customerApi('vitrine_customers_list',{q,limit:120});
+      if(generation!==customersLoadGeneration||state.tab!=='customers'||host!==$('#customerRows'))return;
+      state.customers=Array.isArray(data.customers)?data.customers:[];
       host.innerHTML=state.customers.length?state.customers.map(customerRow).join(''):'<div class="empty">Nenhum cliente encontrado.</div>';
       host.querySelectorAll('[data-history-customer]').forEach(b=>b.onclick=()=>openCustomerProfile(state.customers.find(c=>c.id===b.dataset.historyCustomer)));
       host.querySelectorAll('[data-edit-customer]').forEach(b=>b.onclick=()=>openCustomerEditor(state.customers.find(c=>c.id===b.dataset.editCustomer)));
       host.querySelectorAll('[data-delete-customer]').forEach(b=>b.onclick=()=>{const c=state.customers.find(x=>x.id===b.dataset.deleteCustomer);deleteCustomer(c?.id||'',c?.display_name||'')});
-    }catch(e){host.innerHTML='<div class="empty">Erro ao carregar clientes. <button class="text" id="retryCustomers">Tentar novamente</button></div>';if($('#retryCustomers'))$('#retryCustomers').onclick=()=>loadCustomers(q)}
+     }catch(e){
+      if(generation!==customersLoadGeneration||state.tab!=='customers'||host!==$('#customerRows'))return;
+      host.innerHTML='<div class="empty">Erro ao carregar clientes. <button class="text" id="retryCustomers">Tentar novamente</button></div>';
+      if($('#retryCustomers'))$('#retryCustomers').onclick=()=>loadCustomers(q);
+    }
   }
   function customerRow(c){
     const a=c.address||{};const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ');
