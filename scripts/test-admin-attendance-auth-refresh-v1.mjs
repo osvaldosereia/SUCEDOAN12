@@ -14,9 +14,12 @@ assert.match(auth,/(?:tokenExpiresSoon|jwtExpiresSoon|expiresSoon)/,'JWT deve se
 assert.match(auth,/response\.status\s*===\s*401/,'401 deve disparar recuperação de sessão');
 assert.match(auth,/(?:forceRefresh|force\s*:\s*true)/,'401 deve forçar renovação do token');
 assert.match(auth,/JSON\.stringify\(params/,'POST deve enviar corpo JSON explicitamente');
-assert.match(auth,/sessionStorage\.setItem\([^,]+,\s*token\)/,'novo token deve ser persistido no sessionStorage');
-assert.match(bootstrap,/searchParams\.get\("exchange"\)\s*===\s*"1"/,'bootstrap deve ter modo de troca server-side opcional');
-assert.match(bootstrap,/auth\.verifyOtp/,'bootstrap deve trocar token hash por sessão somente no modo exchange');
+assert.match(auth,/DonaAntoniaSecureAuth/,'sessão administrada pelo módulo seguro');
+assert.doesNotMatch(bootstrap,/auth\.admin\.generateLink|token_hash:tokenHash/,'endpoint não pode divulgar credencial administrativa');
+assert.match(bootstrap,/request_login/,'login deve exigir solicitação explícita de e-mail');
+assert.match(bootstrap,/verify_login/,'login deve validar código de e-mail');
+assert.match(bootstrap,/auth\.getUser\(bearer\)/,'validação deve verificar JWT Supabase');
+assert.match(auth,/DonaAntoniaSecureAuth/,'cliente deve usar autenticação segura compartilhada');
 assert.match(app,/attendanceJsonApi/,'core do Atendimento deve usar o cliente compartilhado');
 assert.match(library,/attendanceJsonApi/,'Biblioteca deve usar o cliente compartilhado');
 assert.match(html,/attendance-app\.js\?v=[a-z0-9][a-z0-9-]+/,'core deve receber cache-bust explícito e atual');
