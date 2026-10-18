@@ -192,7 +192,6 @@ function renderTests(){
   ${isOwner()?'<div class="ana-sticky-actions"><span>Publicar exige todos os testes obrigatórios da revisão atual aprovados.</span><button class="ana-button primary" data-action="publish" '+(!latestComplete?'disabled':'')+'>Publicar versão testada</button></div>':''}`;
 }
 function render(){if(!state.host)return;const content=state.section==='overview'?renderOverview():state.section==='behavior'?renderBehavior():state.section==='knowledge'?renderKnowledge():state.section==='triggers'?renderTriggers():renderTests();state.host.innerHTML=`<link rel="stylesheet" href="/vitrine/admin/ana/ana-admin.css?v=1"><div class="ana-shell"><nav class="ana-tabs" aria-label="Gestão da ANA">${sections.map(([key,label])=>`<button class="${state.section===key?'active':''}" data-section="${key}" aria-current="${state.section===key?'page':'false'}">${label}</button>`).join('')}</nav>${state.dirty?'<div class="ana-unsaved" role="status">Há alterações não salvas no rascunho.</div>':''}<div class="ana-body">${content}</div></div>`;bind()}
-function markDirty(){state.dirty=true;render()}
 function readDraft(){
   const next=structuredClone(config());
   state.host.querySelectorAll('[data-behavior]').forEach(el=>{next.behavior[el.dataset.behavior]=el.type==='checkbox'?el.checked:el.value});
