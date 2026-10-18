@@ -8279,6 +8279,7 @@
       const data=await api('bling_preview_order_sync',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
+      if(state.currentOrder?.order?.id!==id)return;
       state.currentOrderBlingPreview=data;
       paintOrderDetail();
       toast(data.write_eligible?'Pedido apto para o fluxo Bling':'Prévia conferida · envio continua bloqueado');
@@ -8309,6 +8310,7 @@
       const data=await api('bling_create_order_customer',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
+      if(state.currentOrder?.order?.id!==id)return;
       state.currentOrderBlingPreview=data.preview||state.currentOrderBlingPreview;
       paintOrderDetail();
       const blockers=blingPreflightOperationalBlockers(state.currentOrderBlingPreview);
@@ -8327,8 +8329,9 @@
         preview=await api('bling_preview_order_sync',{},{
           method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
         });
+        if(state.currentOrder?.order?.id!==id)return;
         state.currentOrderBlingPreview=preview;
-      }catch{toast('Não consegui conferir os produtos agora');return}
+      }catch{if(state.currentOrder?.order?.id===id)toast('Não consegui conferir os produtos agora');return}
     }
     const missing=(preview.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
     if(!missing.length){toast('Nenhum produto precisa ser cadastrado no Bling');return}
@@ -8340,6 +8343,7 @@
       const data=await api('bling_create_order_products',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
+      if(state.currentOrder?.order?.id!==id)return;
       state.currentOrderBlingPreview=data.preview||state.currentOrderBlingPreview;
       paintOrderDetail();
       const remaining=(state.currentOrderBlingPreview?.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
@@ -8357,6 +8361,7 @@
       const data=await api('bling_reconcile_order_dependencies_readonly',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
+      if(state.currentOrder?.order?.id!==id)return;
       state.currentOrderBlingPreview=data.preview||null;
       const remaining=blingPreflightOperationalBlockers(state.currentOrderBlingPreview);
       paintOrderDetail();
@@ -8398,7 +8403,9 @@
       await api('history_sync_retry',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
-      const fresh=await api('order',{id});state.currentOrder=fresh;paintOrderDetail();loadOrders();
+      const fresh=await api('order',{id});
+      if(state.currentOrder?.order?.id!==id)return;
+      state.currentOrder=fresh;paintOrderDetail();loadOrders();
       toast('Histórico sincronizado');
     }catch(e){
       toast('Não consegui sincronizar agora');
