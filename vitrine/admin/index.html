@@ -1634,13 +1634,16 @@
   }
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 
+  let marketingLoadGeneration=0;
   async function renderMarketing(){
-    const content=$('#content');content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades, segmentação e links de campanha. Nenhum envio é feito por esta tela.</p></div><button class="secondary" type="button" id="refreshMarketing">Atualizar</button></div><div class="panel"><div class="loading" id="marketingLoading">Lendo ofertas ativas do catálogo…</div></div>';
+    const generation=++marketingLoadGeneration;
+    const content=$('#content');
+    const isCurrent=()=>generation===marketingLoadGeneration&&state.tab==='marketing'&&content===$('#content');content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades, segmentação e links de campanha. Nenhum envio é feito por esta tela.</p></div><button class="secondary" type="button" id="refreshMarketing">Atualizar</button></div><div class="panel"><div class="loading" id="marketingLoading">Lendo ofertas ativas do catálogo…</div></div>';
     if($('#refreshMarketing'))$('#refreshMarketing').onclick=renderMarketing;
-    try{const data=await storefrontApi('offers'),offers=Array.isArray(data.offers)?data.offers:[],groups=new Map();for(const p of offers){const name=marketingSegmentOf(p),x=groups.get(name)||{name,offers:0,stock:0,brands:new Set()};x.offers++;x.stock+=Number(p.stock_quantity||0);if(p.brand)x.brands.add(p.brand);groups.set(name,x)}const cards=[...groups.values()].sort((a,b)=>b.offers-a.offers).map(x=>'<div class="marketing-card"><h3>'+esc(x.name)+'</h3><p>Oportunidade baseada nas ofertas públicas ativas agora.</p><div class="marketing-kpis"><span>'+x.offers+' ofertas</span><span>'+fmtQty(x.stock)+' un. disponíveis</span>'+(x.brands.size?'<span>'+esc([...x.brands].slice(0,3).join(' · '))+'</span>':'')+'</div></div>').join('')||'<div class="empty">Nenhuma oferta ativa para montar radar agora.</div>';
+    try{const data=await storefrontApi('offers');if(!isCurrent())return;const offers=Array.isArray(data.offers)?data.offers:[],groups=new Map();for(const p of offers){const name=marketingSegmentOf(p),x=groups.get(name)||{name,offers:0,stock:0,brands:new Set()};x.offers++;x.stock+=Number(p.stock_quantity||0);if(p.brand)x.brands.add(p.brand);groups.set(name,x)}const cards=[...groups.values()].sort((a,b)=>b.offers-a.offers).map(x=>'<div class="marketing-card"><h3>'+esc(x.name)+'</h3><p>Oportunidade baseada nas ofertas públicas ativas agora.</p><div class="marketing-kpis"><span>'+x.offers+' ofertas</span><span>'+fmtQty(x.stock)+' un. disponíveis</span>'+(x.brands.size?'<span>'+esc([...x.brands].slice(0,3).join(' · '))+'</span>':'')+'</div></div>').join('')||'<div class="empty">Nenhuma oferta ativa para montar radar agora.</div>';
       content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Inteligência comercial sem disparo automático.</p></div><button class="secondary" type="button" id="refreshMarketing">Atualizar</button></div><section><div class="section-title" style="border-top:0;margin-top:0">Radar de Marketing</div><div class="marketing-grid">'+cards+'</div></section><section class="marketing-section"><div class="section-title">Segmentação</div><p class="muted">Os componentes automáticos das cestas não contam para afinidade de categoria ou marca. Só produtos avulsos alimentam os sinais do pedido.</p><div class="marketing-chip-list" style="margin-top:9px">'+MARKETING_SEGMENTS.map(x=>'<span class="marketing-chip">INT_'+esc(x.key.replace('-','_').toUpperCase())+'</span>').join('')+'</div><div class="section-title">Marcas autorizadas</div><div class="marketing-chip-list">'+MARKETING_BRANDS.map(x=>'<span class="marketing-chip">'+esc(x.label)+'</span>').join('')+'</div><p class="muted" style="margin-top:8px">A allowlist persistente já está preparada no banco. Enquanto o projeto está no limite de Edge Functions, esta versão usa a mesma lista fixa no site/Admin e não cria dependência de função nova.</p></section><section class="marketing-section"><div class="section-title">Links / Campanhas</div><div class="marketing-builder"><label><span>Canal</span><select id="mktChannel"><option value="0975">0975</option><option value="1018">1018</option></select></label><label><span>Destino</span><select id="mktTarget"><option value="offers">Ofertas</option>'+MARKETING_SEGMENTS.map(x=>'<option value="category:'+esc(x.key)+'">'+esc(x.label)+'</option>').join('')+'</select></label><label><span>Marca (opcional)</span><select id="mktBrand"><option value="">Nenhuma</option>'+MARKETING_BRANDS.map(x=>'<option value="'+esc(x.key)+'">'+esc(x.label)+'</option>').join('')+'</select></label><label style="grid-column:1/-1"><span>Nome da campanha (opcional)</span><input id="mktCampaign" placeholder="ex.: semana_bebe_out26"></label><div class="marketing-url"><input id="mktUrl" readonly><button class="primary" type="button" id="copyMktUrl">Copiar link</button></div></div></section><section class="marketing-section"><div class="section-title">Configuração</div><div class="panel" style="padding:12px"><strong>Prioridade atual de CTA pós-pedido</strong><p class="muted">Bebê → Cabelos → Beleza → Limpeza → Lavanderia → Pet → Ofertas para cesta.</p><p class="muted">O CTA só é sinalizado quando o cliente autorizou ofertas pelo WhatsApp.</p></div></section>';
       const updateLink=()=>{const channel=$('#mktChannel')?.value||'0975',target=$('#mktTarget')?.value||'offers',brand=$('#mktBrand')?.value||'',campaign=marketingCampaignSlug($('#mktCampaign')?.value||''),u=new URL('https://www.donaantonia.com.br/');u.searchParams.set('origem',channel);if(brand)u.searchParams.set('marca',brand);else if(target==='offers')u.searchParams.set('ofertas','1');else if(target.startsWith('category:'))u.searchParams.set('categoria',target.slice(9));if(campaign)u.searchParams.set('campanha',campaign);if($('#mktUrl'))$('#mktUrl').value=u.toString()};['mktChannel','mktTarget','mktBrand','mktCampaign'].forEach(id=>$('#'+id)?.addEventListener(id==='mktCampaign'?'input':'change',updateLink));$('#mktTarget')?.addEventListener('change',()=>{if($('#mktBrand'))$('#mktBrand').value='';updateLink()});$('#mktBrand')?.addEventListener('change',()=>updateLink());if($('#copyMktUrl'))$('#copyMktUrl').onclick=async()=>{updateLink();const value=$('#mktUrl')?.value||'';try{await navigator.clipboard.writeText(value);toast('Link copiado')}catch{const i=$('#mktUrl');i?.select();document.execCommand('copy');toast('Link copiado')}};if($('#refreshMarketing'))$('#refreshMarketing').onclick=renderMarketing;updateLink();
-    }catch(e){content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades.</p></div></div><div class="empty">Não consegui carregar as ofertas agora.<br><button class="text" id="retryMarketing">Tentar novamente</button></div>';if($('#retryMarketing'))$('#retryMarketing').onclick=renderMarketing}
+    }catch(e){if(!isCurrent())return;content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades.</p></div></div><div class="empty">Não consegui carregar as ofertas agora.<br><button class="text" id="retryMarketing">Tentar novamente</button></div>';if($('#retryMarketing'))$('#retryMarketing').onclick=renderMarketing}
   }
 
   async function renderQuotes(){
@@ -3930,7 +3933,7 @@
     const fiscalDraft=productFiscalDraft(formEl),fiscalOriginal=formEl.dataset.fiscalOriginal||'',fiscalChanged=JSON.stringify(fiscalDraft)!==fiscalOriginal;
     const operator=requireOperator();if(!operator)return;
     const requestedStock=Number(String(form.get('stock')||0).replace(',','.'))||0;
-    let productSaved=false,stockUpdateStarted=false;
+    let productSaved=false,saveStage='product';
     btn.disabled=true;btn.textContent='Salvando…';
     try{
       const autoExpiry=form.get('auto_expiry_offer_enabled')==='on';
@@ -3956,13 +3959,14 @@
       let stockResult=null;
       const currentEffective=Number(data.product?.stock_quantity??requestedStock);
       if(id&&Math.abs(currentEffective-requestedStock)>0.0001){
-        stockUpdateStarted=true;btn.textContent='Atualizando estoque no Bling…';
+        saveStage='stock';btn.textContent='Atualizando estoque no Bling…';
         stockResult=await api('product_stock_set',{},{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({product_id:data.product_id,stock_quantity:requestedStock,operator})
         });
       }
       if(!autoExpiry&&document.querySelector('#productForm [name="offer_active"]')){
+        saveStage='offer';
         await api('offer_save',{},{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({
@@ -3978,8 +3982,15 @@
       toast(stockResult?.verified===true?'Produto salvo · estoque '+fmtQty(requestedStock)+' confirmado no Bling':(duplicateFromId?'Produto duplicado e criado':'Produto salvo'));
       if(state.tab==='expiry')renderExpirations();else renderProducts($('#productSearch')?.value.trim()||'');
     }catch(e){
-      if(productSaved&&stockUpdateStarted)toast('Dados do produto salvos, mas estoque NÃO salvo: '+errorMessage(e.message));
-      else toast(errorMessage(e.message));
+      if(productSaved){
+        // Não repetir product_save no produto recém-criado quando uma etapa posterior falha.
+        $('#editor').close();
+        if(state.tab==='expiry')renderExpirations();else if(state.tab==='products')renderProducts($('#productSearch')?.value.trim()||'');
+        const stage=saveStage==='stock'?'estoque':'oferta';
+        toast('Produto salvo, mas '+stage+' NÃO concluído. Reabra o produto para conferir. '+errorMessage(e.message));
+        return;
+      }
+      toast(errorMessage(e.message));
       btn.disabled=false;btn.textContent='Salvar produto';
     }
   }
@@ -5792,7 +5803,7 @@
       state.purchaseAdvancedLoaded=false;
     }finally{
       state.purchaseAdvancedLoading=false;
-      if($('#purchaseBody'))paintPurchases();
+      if(state.tab==='purchases'&&$('#purchaseBody'))paintPurchases();
     }
   }
   async function loadPurchaseBlingComparison(){
@@ -8287,14 +8298,17 @@
     const btn=$('#confirmFiscalPayment');
     if(btn){btn.disabled=true;btn.textContent='Confirmando recebimento…'}
     try{
-      state.currentOrderFiscal=await api('order_fiscal_confirm_payment',{},{
+      const fiscal=await api('order_fiscal_confirm_payment',{},{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({id:o.id,payment_method:payment})
       });
-      state.fiscalByOrder[o.id]=state.currentOrderFiscal;
-      paintOrderDetail();
+      state.fiscalByOrder[o.id]=fiscal;
+      if(state.currentOrder?.order?.id===o.id){
+        state.currentOrderFiscal=fiscal;
+        paintOrderDetail();
+      }
       if(state.tab==='closure')renderClosure();
-      toast(state.currentOrderFiscal?.fiscal_status==='ready'?'Recebimento confirmado · fiscal pronto':'Recebimento confirmado');
+      toast(fiscal?.fiscal_status==='ready'?'Recebimento confirmado · fiscal pronto':'Recebimento confirmado');
     }catch(e){
       toast(errorMessage(e.message));
       if(btn){btn.disabled=false;btn.textContent='Confirmar '+amount+' recebido · '+payment}
