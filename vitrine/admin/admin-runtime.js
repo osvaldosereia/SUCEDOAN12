@@ -1591,13 +1591,11 @@
       body:JSON.stringify({operation,...payload}),
       cache:'no-store'
     });
-    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(response.status===401&&retryAuth){
       clearFinanceSession(token);
       return await financeApi(operation,payload,false);
     }
-    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
-    return data;
+    return await readAdminServiceResponse(response,'service_error');
   }
   async function loadFinanceCatalogs(force=false){
     if(state.financeCatalogs&&!force)return state.financeCatalogs;
@@ -1937,13 +1935,11 @@
       body:'{}',
       cache:'no-store'
     });
-    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(response.status===401&&retryAuth){
       clearFinanceSession(token);
       return await financeOverviewApi(await financeStepUp(),false);
     }
-    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
-    return data;
+    return await readAdminServiceResponse(response,'service_error');
   }
   async function renderFinance(){
     let token='';
