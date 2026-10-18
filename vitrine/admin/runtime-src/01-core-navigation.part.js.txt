@@ -37,6 +37,12 @@
   function requireOperator(){return 'Operação'}
   if($('#operatorBadge'))$('#operatorBadge').onclick=changeOperator;
   paintOperatorBadge();
+  // Consistent JSON/error handling for Admin service calls. Keep each endpoint's fallback code.
+  async function readAdminServiceResponse(response,fallbackError){
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||fallbackError);
+    return data;
+  }
   async function api(action,params={},options={},retryAuth=true){
     const token=await adminStepUp();
     const u=new URL(API);u.searchParams.set('action',action);
@@ -46,9 +52,7 @@
       clearFinanceSession(token);
       return await api(action,params,options,false);
     }
-    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
-    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
-    return data;
+    return await readAdminServiceResponse(response,'service_error');
   }
   async function productImageApi(event,payload=null,retryAuth=true){
     const token=await adminStepUp();
@@ -62,9 +66,7 @@
       clearFinanceSession(token);
       return await productImageApi(event,payload,false);
     }
-    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
-    if(!response.ok||data.ok===false)throw new Error(data.error||'product_image_service_error');
-    return data;
+    return await readAdminServiceResponse(response,'product_image_service_error');
   }
   function productImageStatusText(p){
     if(p?.image_ai_status==='completed')return 'Imagem padronizada pela IA'+(p.image_ai_processed_at?' · '+dateTime(p.image_ai_processed_at):'');
@@ -95,17 +97,13 @@
       clearFinanceSession(token);
       return await customerApi(action,payload,false);
     }
-    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
-    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
-    return data;
+    return await readAdminServiceResponse(response,'service_error');
   }
   async function storefrontApi(action,params={},options={}){
     const u=new URL(STOREFRONT_API);u.searchParams.set('action',action);
     Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
     const response=await fetch(u,{...options,cache:'no-store'});
-    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
-    if(!response.ok||data.ok===false)throw new Error(data.error||'storefront_error');
-    return data;
+    return await readAdminServiceResponse(response,'storefront_error');
   }
 
   const OAUTH_PARAMS=new URLSearchParams(location.search);
