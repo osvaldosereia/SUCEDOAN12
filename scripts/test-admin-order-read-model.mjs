@@ -60,4 +60,7 @@ assert.equal(f.orderFilterMatch({...good,status:'ready'},'ready'),true);
 assert.equal(f.orderFilterMatch({...good,status:'out_for_delivery'},'delivery'),true);
 assert.equal(f.orderFilterMatch({...good,status:'delivered'},'finalized'),true);
 assert.equal(f.orderFilterMatch({...good,status:'created'},'new'),true);
+const early=ctx.window.DonaAntoniaAdminOrderReadModel.createOrderReadModel(day,null);
+assert.equal(early.orderIssueCount('all'),0);
+assert.equal(early.orderFilterMatch(missing,'problems'),true);
 console.log('Admin order read model: PASS');
