@@ -98,6 +98,13 @@ for(const f of functions){
   f.reference_files=r?.files.size||0;
   f.review=f.references<=1?'manual_review_candidate':'unreviewed';
 }
+const tests=walk('scripts').filter(p=>/\btest-[^/]+\.mjs$/.test(p))
+  .map(p=>({path:rel(p),text:fs.readFileSync(p,'utf8')}));
+for(const f of functions){
+  const keyword=new RegExp('\\b'+f.name+'\\b');
+  f.test_reference_files=tests.filter(x=>keyword.test(x.text)).map(x=>x.path);
+  if(f.review==='manual_review_candidate'&&f.test_reference_files.length)f.review='test_only_or_indirect_use';
+}
 const byHash=new Map();
 for(const s of sources){
   const digest=crypto.createHash('sha256').update(s.text).digest('hex'),group=byHash.get(digest)||[];
@@ -113,9 +120,10 @@ for(const p of sql){
 const bySection=Object.fromEntries(sections.map(x=>[x,0]));
 for(const f of functions)bySection[f.section]=(bySection[f.section]||0)+1;
 const emptyCatch=sources.map(s=>({path:s.path,count:(s.text.match(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)||[]).length})).filter(x=>x.count);
-const suspects=functions.filter(x=>x.review==='manual_review_candidate');
+const suspects=functions.filter(x=>x.references<=1);
+const testOnly=suspects.filter(x=>x.test_reference_files.length);
 const summary={frontend_files:front.length,backend_files:edge.length,sql_files:sql.length,
- named_functions_and_arrows:functions.length,lexical_single_occurrence:suspects.length,
+ named_functions_and_arrows:functions.length,lexical_single_occurrence:suspects.length,lexical_single_occurrence_mentioned_by_tests:testOnly.length,
  identical_file_groups:identical.length,empty_catches:emptyCatch.reduce((n,x)=>n+x.count,0)};
 const result={method:'Static heuristic, not proof of runtime use or dead code',summary,sections:bySection,
  functions,suspects,identical_files:identical,empty_catches:emptyCatch,sql_definitions:sqlFunctions};
@@ -137,3 +145,4 @@ fs.writeFileSync(path.join(output,'summary.md'),lines.join('\n')+'\n');
 console.log('ADMIN INVENTORY '+JSON.stringify(summary));
 console.log('ADMIN SECTIONS '+JSON.stringify(bySection));
 console.log('ADMIN IDENTICAL '+identical.length);
+console.log('ADMIN SUSPECTS '+JSON.stringify(suspects.map(x=>({path:x.path,line:x.line,name:x.name,test_only:x.test_reference_files.length>0}))));
