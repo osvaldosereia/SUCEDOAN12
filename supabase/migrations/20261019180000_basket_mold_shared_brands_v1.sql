@@ -66,7 +66,18 @@ select 'cestas-completas', l.label, row_number() over (order by l.sort_order,l.l
 from labels l
 on conflict (scope,label) do nothing;
 
-with ranked as (
+with chosen as (
+  select pos.label,opt.product_id,min(coalesce(p.offer_price,p.price,0)) price
+  from public.basket_mold_positions pos
+  join public.basket_molds m on m.id=pos.mold_id
+  join public.basket_templates b on b.id=m.basket_id
+  join public.basket_categories c on c.id=b.category_id and c.slug='cestas-completas'
+  join public.basket_subcategories s on s.id=b.subcategory_id
+  join public.basket_mold_position_options opt on opt.position_id=pos.id
+  join public.products p on p.id=opt.product_id and p.is_active=true
+  where s.name in ('Econômica','Mini Completa','Pequena Completa','Média Completa','Grande Completa')
+  group by pos.label,opt.product_id
+), ranked as (
   select i.id shared_item_id, c.product_id,
          row_number() over (partition by i.id order by c.price,c.product_id) as option_order
   from public.basket_mold_shared_items i
