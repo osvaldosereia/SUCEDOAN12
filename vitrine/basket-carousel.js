@@ -51,18 +51,23 @@
 window.BasketCarousel={
   card(b,esc,money,basketName,index=99){
     const sizePhotos={
-      grande:'/site/img/CESTA-GRANDE-KOBLENZ.webp',
-      media:'/site/img/CESTA-MEDIA-BONINI.webp',
-      pequena:'/site/img/CESTA-PEQUENA-BONINI.webp',
-      mini:'/site/img/CESTA-MINI-KOBLENZ.webp',
+      grande:'/img/CESTA-GRANDE-ALVINO.webp',
+      media:'/img/CESTA-MEDIA-BONINI.webp',
+      pequena:'/img/CESTA-PEQUENA-BONINI.webp',
+      mini:'/img/CESTA-MINI-BONINI.webp',
       economica:'/img/cesta-basica-cuiaba-varzea-grande-economica.avif'
     };
+    const sizeKeyOf=value=>String(value??'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');
     const name=basketName(b.name),key=String(b.card_key||b.id);
-    const sizeCard=b.size_card===true;
-    const sizeClass=sizeCard?' basket-size-card basket-size-'+esc(b.size_key||''):'';
+    const sizeKey=sizeKeyOf(b.size_key||b.subcategory_name||b.name);
+    const hasSizePhoto=Object.prototype.hasOwnProperty.call(sizePhotos,sizeKey);
+    const sizeCard=b.size_card===true||hasSizePhoto;
+    const sizeClass=sizeCard?' basket-size-card basket-size-'+esc(sizeKey):'';
     const itemCount=Math.max(0,Math.floor(Number(b.total_item_count)||0));
     const itemSummary=sizeCard?'<div class="basket-card-item-total">'+itemCount+' itens</div>':'';
-    const imagePath=sizeCard?sizePhotos[String(b.size_key||'').toLocaleLowerCase('pt-BR')]||'':'';
+    const catalogImage=String(b.image_url||'').trim();
+    const safeCatalogImage=(catalogImage.startsWith('/')&&!catalogImage.startsWith('//'))||/^https:\/\//i.test(catalogImage)?catalogImage:'';
+    const imagePath=sizeCard?(safeCatalogImage||sizePhotos[sizeKey]||''):'';
     const imageAttrs=index===0?'src="'+esc(imagePath)+'" loading="eager" fetchpriority="high"':'data-basket-src="'+esc(imagePath)+'" loading="lazy"';
     const image=imagePath?'<div class="basket-size-card-photo"><img '+imageAttrs+' decoding="async" alt="Cesta '+esc(name)+'"></div>':'';
     const actionLabel=sizeCard?'Ver produtos':'Personalizar';
