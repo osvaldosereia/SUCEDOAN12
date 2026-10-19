@@ -105,8 +105,30 @@ function sync(){
   (state.draft.positions||[]).forEach((p,i)=>{p.label=q('[data-mold-position-label="'+i+'"]')?.value.trim()||'';p.quantity=Number(q('[data-mold-position-quantity="'+i+'"]')?.value||0);state.search[i]=q('[data-mold-product-search="'+i+'"]')?.value||state.search[i]||''});
 }
 
-async function loadList(){const r=await call('list');state.baskets=Array.isArray(r.baskets)?r.baskets:[];state.categories=Array.isArray(r.categories)?r.categories:[];state.subcategories=Array.isArray(r.subcategories)?r.subcategories:[]}
-async function openBasket(id){try{const r=await call('editor',{basket_id:id});state.draft=normalizeEditor(r.editor||{});state.search={};state.results={};state.conditionalSearch='';state.conditionalResults=[];render()}catch(e){toast(e.message)}}
+let moldEditorLoadGeneration=0;
+const moldPositionSearchRequests=new WeakMap();
+let moldConditionalSearchGeneration=0;
+async function loadList(){
+  const origin=state,r=await call('list');
+  if(state!==origin)return false;
+  state.baskets=Array.isArray(r.baskets)?r.baskets:[];
+  state.categories=Array.isArray(r.categories)?r.categories:[];
+  state.subcategories=Array.isArray(r.subcategories)?r.subcategories:[];
+  return true;
+}
+async function openBasket(id){
+  const origin=state,generation=++moldEditorLoadGeneration;
+  try{
+    const r=await call('editor',{basket_id:id});
+    if(state!==origin||generation!==moldEditorLoadGeneration)return;
+    state.draft=normalizeEditor(r.editor||{});
+    state.search={};state.results={};
+    state.conditionalSearch='';state.conditionalResults=[];
+    render();
+  }catch(e){
+    if(state===origin&&generation===moldEditorLoadGeneration)toast(e.message);
+  }
+}
 
 function addPosition(){sync();state.draft.positions.push({position_id:null,label:'',quantity:1,options:[]});render()}
 function removePosition(i){sync();state.draft.positions.splice(i,1);delete state.search[i];delete state.results[i];render()}
@@ -114,14 +136,39 @@ function removeOption(pi,oi){sync();state.draft.positions[pi]?.options.splice(oi
 function togglePreferred(pi,oi){sync();const option=state.draft.positions[pi]?.options?.[oi];if(!option)return;option.preferred=option.preferred!==true;render()}
 
 async function searchProducts(pi){
-  sync();const query=String(state.search[pi]||'').trim();
-  try{const r=await call('products',{q:query,limit:24}),used=new Set((state.draft.positions[pi]?.options||[]).map(x=>String(x.product_id)));state.results[pi]=(Array.isArray(r.products)?r.products:[]).filter(p=>!used.has(String(p.id)));render()}catch(e){toast(e.message)}
+  sync();
+  const origin=state,draft=state.draft,position=draft?.positions?.[pi];
+  if(!position)return;
+  const query=String(state.search[pi]||'').trim();
+  const generation=(moldPositionSearchRequests.get(position)||0)+1;
+  moldPositionSearchRequests.set(position,generation);
+  const isCurrent=()=>state===origin&&state.draft===draft&&state.draft.positions[pi]===position
+    &&moldPositionSearchRequests.get(position)===generation
+    &&String(state.root?.querySelector('[data-mold-product-search="'+pi+'"]')?.value??state.search[pi]??'').trim()===query;
+  try{
+    const r=await call('products',{q:query,limit:24});
+    if(!isCurrent())return;
+    const used=new Set((position.options||[]).map(x=>String(x.product_id)));
+    state.results[pi]=(Array.isArray(r.products)?r.products:[]).filter(p=>!used.has(String(p.id)));
+    render();
+  }catch(e){if(isCurrent())toast(e.message)}
 }
 
 async function searchConditionalProduct(){
-  sync();const query=String(state.conditionalSearch||'').trim();
-  if(!state.draft?.conditional_hidden_enabled)return;
-  try{const r=await call('products',{q:query,limit:24}),selected=String(state.draft.conditional_hidden_product_id||'');state.conditionalResults=(Array.isArray(r.products)?r.products:[]).filter(p=>String(p.id)!==selected);render()}catch(e){toast(e.message)}
+  sync();
+  const origin=state,draft=state.draft,query=String(state.conditionalSearch||'').trim();
+  const generation=++moldConditionalSearchGeneration;
+  if(!draft?.conditional_hidden_enabled)return;
+  const isCurrent=()=>state===origin&&state.draft===draft
+    &&generation===moldConditionalSearchGeneration&&state.draft.conditional_hidden_enabled
+    &&String(state.root?.querySelector('[data-mold-conditional-product-search]')?.value??state.conditionalSearch??'').trim()===query;
+  try{
+    const r=await call('products',{q:query,limit:24});
+    if(!isCurrent())return;
+    const selected=String(state.draft.conditional_hidden_product_id||'');
+    state.conditionalResults=(Array.isArray(r.products)?r.products:[]).filter(p=>String(p.id)!==selected);
+    render();
+  }catch(e){if(isCurrent())toast(e.message)}
 }
 
 function selectConditionalProduct(id){
@@ -181,11 +228,27 @@ function bind(){
 
 async function open(target){
   const root=typeof target==='string'?document.querySelector(target):target;if(!root)throw new Error('basket_mold_root_not_found');
-  state={root,baskets:[],categories:[],subcategories:[],draft:null,busy:false,search:{},results:{},conditionalSearch:'',conditionalResults:[]};root.innerHTML='<div class="bm-empty">Carregando Cestas Molde…</div>';
-  try{await loadList();render()}catch(e){root.innerHTML='<div class="bm-empty">Não foi possível carregar Cestas Molde.</div>';toast(e.message)}
+  ++moldEditorLoadGeneration;
+  ++moldConditionalSearchGeneration;
+  state={root,baskets:[],categories:[],subcategories:[],draft:null,busy:false,search:{},results:{},conditionalSearch:'',conditionalResults:[]};
+  const origin=state;
+  root.innerHTML='<div class="bm-empty">Carregando Cestas Molde…</div>';
+  try{
+    if(await loadList()&&state===origin)render();
+  }catch(e){
+    if(state!==origin)return;
+    root.innerHTML='<div class="bm-empty">Não foi possível carregar Cestas Molde.</div>';
+    toast(e.message);
+  }
 }
 
-async function refresh(){if(!state.root)return;const id=state.draft?.basket_id;await loadList();if(id){await openBasket(id);return}render()}
+async function refresh(){
+  if(!state.root)return;
+  const origin=state,id=state.draft?.basket_id;
+  if(!await loadList()||state!==origin)return;
+  if(id){await openBasket(id);return}
+  render();
+}
 
 window.DonaAntoniaBasketMolds={open,refresh,openBasket};
 })();
