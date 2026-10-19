@@ -113,8 +113,9 @@ function sync(){
   (state.draft.positions||[]).forEach((p,i)=>{p.quantity=Number(q('[data-mold-position-quantity="'+i+'"]')?.value??p.quantity??0)});
 }
 
-async function loadList(){const [r,c]=await Promise.all([call('list'),call('shared_items')]);state.baskets=Array.isArray(r.baskets)?r.baskets:[];state.categories=Array.isArray(r.categories)?r.categories:[];state.subcategories=Array.isArray(r.subcategories)?r.subcategories:[];state.catalog=Array.isArray(c.items)?c.items:[];if(!state.catalog.some(x=>String(x.id)===String(state.catalogFocus)))state.catalogFocus=state.catalog[0]?.id||'';state.catalogDraft=JSON.parse(JSON.stringify(state.catalog.find(x=>String(x.id)===String(state.catalogFocus))||null))}
+async function loadList(){const [r,c]=await Promise.all([call('list'),call('shared_items')]);state.categories=Array.isArray(r.categories)?r.categories:[];const complete=state.categories.find(x=>x.slug==='cestas-completas'||x.name==='Cestas Completas');state.baskets=(Array.isArray(r.baskets)?r.baskets:[]).filter(b=>String(b.category_id||'')===String(complete?.id||'not-found')||b.category_name==='Cestas Completas');state.subcategories=Array.isArray(r.subcategories)?r.subcategories:[];state.catalog=Array.isArray(c.items)?c.items:[];if(!state.catalog.some(x=>String(x.id)===String(state.catalogFocus)))state.catalogFocus=state.catalog[0]?.id||'';state.catalogDraft=JSON.parse(JSON.stringify(state.catalog.find(x=>String(x.id)===String(state.catalogFocus))||null))}
 async function openBasket(id){
+  if(!state.baskets.some(b=>String(b.id)===String(id))){toast('Esta cesta usa um molde independente. O editor compartilhado altera apenas as cinco cestas completas.');return;}
   try{const r=await call('editor',{basket_id:id}),loaded=normalizeEditor(r.editor||{}),byLabel=new Map(loaded.positions.map(p=>[p.label,p]));
     state.draft=loaded;
     state.draft.positions=state.catalog.map(item=>{const old=byLabel.get(item.label);return{position_id:old?.position_id||null,label:item.label,quantity:Number(old?.quantity||0),options:item.options||[]}});
