@@ -26,5 +26,5 @@ assert.ok(render({...o('created')},null).includes('Cancelar pedido'));
 const blocked=api.createOrderActionButtonsHtml({orderProblemReasons:()=>['address_missing'],orderNextAction:()=>'',esc:s=>String(s)});
 assert.ok(blocked(o('created'),null).includes('Corrija os dados antes de avançar'));
 assert.match(runtime,/DonaAntoniaAdminOrderActionButtons\.createOrderActionButtonsHtml/);
-assert.match(runtime,/orders\/action-buttons\.js/);
+assert.match(html,/orders\/action-buttons\.js/);
 console.log('Admin order action buttons extraction behavior: PASS');

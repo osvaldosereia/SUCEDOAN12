@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 
 const part=(a,b)=>{const i=html.indexOf(a),j=html.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,'section missing '+a);return html.slice(i,j)};
 const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return {promise,resolve}};

@@ -11,7 +11,7 @@ const b=runtime.indexOf('  async function purchaseConfirmMatch(',a);
 assert.ok(a>0&&b>a,'purchase matcher exists');
 const source=runtime.slice(a,b);
 assert.match(html,/purchase-xml-simple\.css\?v=xml-r(?:32|33)/);
-assert.match(html,/purchase-completed-items/);
+assert.match(combined,/purchase-completed-items/);
 assert.match(combined,/pending\.map\(purchaseItemCardHtml\)/);
 assert.match(combined,/finished\.map\(purchaseItemCardHtml\)/);
 assert.match(css,/#content \.purchase-item-card/);
