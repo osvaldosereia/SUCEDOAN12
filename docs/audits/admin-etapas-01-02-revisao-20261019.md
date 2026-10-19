@@ -19,6 +19,8 @@ Os fragmentos passaram de 19 para 17; `17-fiscal-danfe` e `18-order-editing` for
 - Consulta e mutação da fila manual são serializadas, impedindo que um snapshot anterior desfaça visualmente uma inclusão/retirada já concluída. A resposta atualiza dados sem pintar outra aba.
 - Falha no despacho preserva os campos ainda não salvos do formulário.
 - Testes do render fiscal real detectaram e permitiram corrigir duas colisões de nomes introduzidas na extração (`busy` e `feedback`), antes de publicar.
+- A confirmação manual do pedido foi transferida para `list-controller.js`, com portas explícitas para operador e prontidão do cliente. O botão só mostra `CONFIRMADO` após resposta de sucesso; falhas restauram o rótulo anterior, e cliques concorrentes para o mesmo pedido são bloqueados. O detalhe só é reaberto depois de confirmação bem-sucedida.
+- Revisão independente encontrou e corrigiu dois defeitos introduzidos nas extrações: o fluxo `?montar=1&separacao=...` usava a função privada antiga da fila (agora consulta a porta pública do controlador); e o cache fiscal não compartilhava a revisão entre leitura em lote e detalhe (agora ambos descartam respostas antigas usando a revisão por pedido). Foram acrescentadas regressões para os dois casos.
 
 ### Remoções com evidência de alcance
 
@@ -39,7 +41,7 @@ O teste de botões agora executa os providers reais de sessão, apresentação e
 
 ### Verificação e pendências
 
-Verificação local: 128 scripts `test-admin-*.mjs`, 5 `test-admin-*.py` e 5 `test-smart-delivery-*.mjs` passaram (138 ao todo), além de Cestas/lotes, gates e feedback da separação, estoque Bling, paridade, bootstrap, grafo e 10 pares de espelhos Edge. Foi corrigido um contrato anterior que ainda lia apenas o HTML inline. Revisão independente e CI do head publicado serão registradas ao final. As Etapas 1 e 2 continuam abertas. Além dos trechos restantes de Pedidos, persistem as fronteiras de Produtos/Cestas, Balanço e Compras/XML, a revisão manual integral das declarações e homologação externa de Edge/Bling/SEFAZ/impressão. A tabela histórica abaixo preserva as revisões anteriores; testes contratuais não equivalem a homologação operacional.
+Verificação local: 128 scripts `test-admin-*.mjs`, 5 `test-admin-*.py` e 5 `test-smart-delivery-*.mjs` passaram (138 ao todo); a rodada posterior adicionou cobertura de sucesso, falha e bloqueio de dados pendentes à confirmação de pedido e repetiu os 138 scripts com sucesso. Também passaram Cestas/lotes, gates e feedback da separação, estoque Bling, paridade, bootstrap, grafo e 10 pares de espelhos Edge. Foi corrigido um contrato anterior que ainda lia apenas o HTML inline e atualizado o contrato de entrega para acompanhar a função fina do controlador. Revisão independente e CI do head publicado serão registradas ao final. As Etapas 1 e 2 continuam abertas. Além dos trechos restantes de Pedidos, persistem as fronteiras de Produtos/Cestas, Balanço e Compras/XML, a revisão manual integral das declarações e homologação externa de Edge/Bling/SEFAZ/impressão. A tabela histórica abaixo preserva as revisões anteriores; testes contratuais não equivalem a homologação operacional.
 
 ---
 
