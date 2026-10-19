@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 
 const require=createRequire(import.meta.url);
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
 const orderVisualSource=fs.readFileSync('vitrine/admin/orders-visual-v1.js','utf8');
 const orderVisual=require('../vitrine/admin/orders-visual-v1.js');
