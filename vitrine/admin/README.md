@@ -10,7 +10,7 @@
 | `delivery/model.js` | Nenhum | Argumentos: gate fiscal, pagamentos e destinos/links de rota |
 | `closure/controller.js` | Pedidos do fechamento e geração de renderização | Portas `orders`, `navigation`, `ui`, `formatters`, `orderView` e abertura de pedido |
 | `customers/controller.js` | Perfil, paginação e geração de busca/histórico | Cache `customers.get/set`, `customerApi`, `navigation`, `ui`, formatadores e abertura de pedido |
-| `orders/fiscal-loader.js` | Fila, limite global de três chamadas e promessas em andamento por pedido/cache | `api` autenticada e `getCache`; não substitui respostas atualizadas pelo detalhe do pedido |
+| `orders/fiscal-loader.js` | Fila, limite global de três chamadas e promessas em andamento por pedido/cache | `api` autenticada e `getCache`; descarta jobs ainda não iniciados de cache aposentado e não substitui respostas atualizadas pelo detalhe do pedido |
 
 As factories não recebem o objeto `state` inteiro. Seus adaptadores estão nos fragmentos `00`, `02`, `04` e `14`. O cache de clientes permanece compartilhado por uma porta porque o editor de Pedidos usa as mesmas opções cadastrais. O cache fiscal também é compartilhado: trocar sua referência invalida escritas de leituras antigas.
 

@@ -41,4 +41,17 @@ const create=context.window.DonaAntoniaAdminFiscalLoader.create;
   await loader.load([{id:'a'}]);await loader.load([{id:'a'}]);
   assert.equal(cache.a.error,'fiscal offline');assert.equal(calls,1,'error is retained until explicit refresh, preserving the current retry contract');
 }
+
+
+{
+  let cache={};const requests=[];
+  const loader=create({getCache:()=>cache,api:(_a,_p,options)=>{const request=deferred();requests.push({id:JSON.parse(options.body).id,...request});return request.promise}});
+  const old=loader.load(Array.from({length:9},(_,index)=>({id:'old-'+index})));
+  cache={};const current=loader.load([{id:'current'}]);
+  requests.slice(0,3).forEach(request=>request.resolve({stage:'retired'}));
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(requests.map(request=>request.id),['old-0','old-1','old-2','current'],'retired queued requests must not delay the current cache');
+  requests[3].resolve({stage:'current'});await Promise.all([old,current]);
+  assert.equal(cache.current.stage,'current');
+}
 console.log('Admin shared fiscal loader: PASS');

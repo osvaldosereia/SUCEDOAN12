@@ -63,12 +63,14 @@
     if(!confirm('Confirmar recebimento de '+money(o.total_cents)+' via '+payment+'?\n\nPedido #'+orderDisplayCode(o)))return;
     const btn=document.querySelector('[data-closure-payment="'+CSS.escape(id)+'"]');
     if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
+    const generation=closureRenderGeneration,host=$('#closureBody');
     try{
-      orders.fiscal()[id]=await api('order_fiscal_confirm_payment',{},{
+      const result=await api('order_fiscal_confirm_payment',{},{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({id,payment_method:payment})
       });
-      renderClosure();
+      orders.fiscal()[id]=result;
+      if(navigation.currentTab()==='closure'&&generation===closureRenderGeneration&&host===$('#closureBody'))renderClosure();
       toast(orders.fiscal()[id]?.fiscal_status==='ready'?'Recebimento confirmado · fiscal pronto':'Recebimento confirmado');
     }catch(e){
       toast(errorMessage(e.message));

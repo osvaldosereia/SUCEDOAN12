@@ -14,7 +14,11 @@
       job.pending.delete(job.id);active--;job.done();drain();
     }
     function drain(){
-      while(active<3&&queue.length){active++;run(queue.shift())}
+      while(active<3&&queue.length){
+        const job=queue.shift();
+        if(getCache()!==job.cache||job.cache[job.id]!==job.initial){job.pending.delete(job.id);job.done();continue}
+        active++;run(job);
+      }
     }
     function request(row,cache){
       if(cache[row.id])return Promise.resolve();

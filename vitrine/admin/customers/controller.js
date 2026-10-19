@@ -211,14 +211,14 @@
     if(!id)return;
     const label=String(name||'este cliente').trim()||'este cliente';
     if(!confirm('Excluir definitivamente o cadastro de '+label+'?\n\nOs pedidos históricos serão mantidos, mas os dados de cadastro e contato serão apagados. Esta ação não pode ser desfeita.'))return;
-    const q=$('#customerSearch')?.value.trim()||'';
+    const q=$('#customerSearch')?.value.trim()||'',tab=navigation.currentTab(),form=$('#customerForm');
     try{
       await customerApi('vitrine_customer_delete',{id,customer_id:id});
-      if(fromEditor&&$('#editor')?.open)$('#editor').close();
+      if(fromEditor&&form===$('#customerForm')&&$('#editor')?.open)$('#editor').close();
       state.customerProfile=null;
       customers.set((customers.get()||[]).filter(c=>c.id!==id));
       toast('Cadastro do cliente excluído definitivamente');
-      await renderCustomers(q);
+      if(tab==='customers'&&navigation.currentTab()===tab)await renderCustomers(q);
     }catch(e){
       console.error('customer_delete_failed',e);
       toast('Não foi possível excluir o cadastro.');
@@ -229,7 +229,9 @@
     return [['active','Ativo'],['inactive','Inativo']].map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
   }
   async function saveCustomer(id,returnOrderId=''){
-    const f=new FormData($('#customerForm')),btn=$('#saveCustomer');btn.disabled=true;btn.textContent='Salvando…';
+    const form=$('#customerForm'),tab=navigation.currentTab();
+    const ownsEditor=()=>form===$('#customerForm')&&$('#editor')?.open;
+    const f=new FormData(form),btn=$('#saveCustomer');btn.disabled=true;btn.textContent='Salvando…';
     try{
       await customerApi('vitrine_customer_save',{
         id,
@@ -246,11 +248,12 @@
           state:f.get('state'),raw_text:f.get('raw_text')
         }
       });
-      $('#editor').close();
+      const current=ownsEditor();if(current)$('#editor').close();
       toast(returnOrderId?'Cliente salvo · sincronização com Bling enfileirada':'Cliente salvo na base oficial');
+      if(!current||navigation.currentTab()!==tab)return;
       if(returnOrderId)await openOrder(returnOrderId);
       else renderCustomers($('#customerSearch')?.value.trim()||'');
-    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar cliente'}
+    }catch(e){toast(errorMessage(e.message));if(ownsEditor()){btn.disabled=false;btn.textContent='Salvar cliente'}}
   }
 
 

@@ -39,4 +39,19 @@ function fixture(api){
   const leaving=f.controller.renderClosure();f.shared.tab='customers';f.nodes.delete('#closureBody');requests[2].reject(Error('offline'));
   await assert.doesNotReject(leaving);
 }
+
+
+{
+  const mutation=deferred();
+  const f=fixture(async action=>{
+    if(action==='order_fiscal_confirm_payment')return mutation.promise;
+    return {orders:[{id:'legacy',status:'delivered'}],fiscal_by_order:{legacy:{payment_status:'pending'}}};
+  });
+  await f.controller.renderClosure();
+  const confirming=f.ports.ui.document.querySelectorAll('[data-closure-payment]')[0].onclick();
+  f.shared.tab='customers';f.nodes.get('#content').innerHTML='<h1>Clientes atuais</h1>';
+  mutation.resolve({payment_status:'confirmed',fiscal_status:'ready'});await confirming;
+  assert.equal(f.nodes.get('#content').innerHTML,'<h1>Clientes atuais</h1>','late payment completion must not navigate back to closure');
+  assert.equal(f.shared.fiscal.legacy.payment_status,'confirmed','canonical completion still updates shared fiscal data');
+}
 console.log('Admin closure controller: PASS');
