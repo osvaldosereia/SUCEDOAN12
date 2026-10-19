@@ -5,6 +5,7 @@
     function orderSearchMatch(o,q){
       const needle=normalize(q??'');
       if(!needle)return true;
+      if(!o||typeof o!=='object')return false;
       const a=o?.delivery_address_snapshot||{};
       const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
       const haystack=[
