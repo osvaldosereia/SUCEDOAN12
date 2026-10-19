@@ -29,6 +29,10 @@ for(const name of ['separationItems','separationKitRefs']){
 for(const name of ['orderCustomerDataPendingReasons','isOrderCustomerDataPending']){
   assert.ok(inventory.functions.some(x=>x.path==='vitrine/admin/orders/customer-readiness.js'&&x.name===name),`missing extracted order readiness function ${name}`);
 }
+for(const name of ['deliveryMethodV3','deliveryMethodOptionsV3','orderV3PaymentOptions']){
+  assert.ok(inventory.functions.some(x=>x.path==='vitrine/admin/orders/payment-method.js'&&x.name===name),`missing extracted payment method function ${name}`);
+  assert.equal(runtime.some(x=>x.name===name),false,'payment method helper must not remain inside shared runtime scope');
+}
 const total=Object.values(inventory.sections).reduce((a,b)=>a+b,0);
 assert.equal(total,inventory.summary.named_functions_and_arrows,'section totals must match declaration count');
 const seen=new Set(runtime.map(x=>x.name));
