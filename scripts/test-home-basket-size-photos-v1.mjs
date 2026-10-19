@@ -24,6 +24,7 @@ const photos={
   mini:'/img/CESTA-MINI-BONINI.webp',
   economica:'/img/cesta-basica-cuiaba-varzea-grande-economica.avif'
 };
+const labels={grande:'Grande',media:'Média',pequena:'Pequena',mini:'Mini',economica:'Econômica'};
 const esc=value=>String(value??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
 const htmlFor=(size,index)=>context.window.BasketCarousel.card(
   {id:'basket-'+size,name:size,size_card:true,size_key:size,total_item_count:12,display_price_cents:10000},
