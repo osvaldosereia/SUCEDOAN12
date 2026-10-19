@@ -173,11 +173,13 @@ header small{display:none!important}
 .resolution-result button{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;gap:12px;min-height:88px;padding:9px 12px;border:1px solid #d8e7dd;border-radius:10px;background:#f4faf6;font-size:14px;line-height:1.4}
 .resolution-result img{display:block;width:76px;height:76px;object-fit:contain;border-radius:8px;background:#fff}
 .resolution-result .product-placeholder{width:76px;height:76px;display:grid;place-items:center;border-radius:8px;background:#e8f0ec;color:#61746a;font-size:11px;text-align:center}
-.photo-viewer{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:24px;background:rgba(9,23,17,.92)}
+.photo-viewer{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:16px;background:rgba(9,23,17,.66);backdrop-filter:blur(2px)}
 .photo-viewer[hidden]{display:none}
-.photo-viewer-content{display:grid;place-items:center;width:min(100%,1200px);min-height:120px;color:white;text-align:center}
-.photo-viewer img{display:block;max-width:100%;max-height:86dvh;object-fit:contain;border-radius:10px;background:white}
-.photo-viewer-close{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:48px;height:48px;border-radius:50%;background:#fff;color:#17242c;font-size:30px;line-height:1}
+.photo-viewer-content{position:relative;display:grid;place-items:center;gap:10px;width:min(92vw,460px);max-height:82dvh;min-height:150px;padding:18px;border:1px solid #dce6df;border-radius:14px;background:#fff;color:#34534a;text-align:center;box-shadow:0 16px 48px #0004}
+.photo-viewer img{display:block;width:auto;max-width:100%;max-height:min(62dvh,440px);object-fit:contain;border-radius:9px;background:#f4f7f5}
+.photo-viewer-close{position:fixed;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:42px;height:42px;border-radius:50%;background:#fff;color:#17242c;font-size:27px;line-height:1}
+#photoViewerAdd{min-height:40px;padding:8px 14px;background:#08704c;color:white}
+#photoViewerStatus{font-size:13px;line-height:1.4}
 @media(max-width:560px){
  .entry{grid-template-columns:minmax(0,1fr);gap:10px;padding:13px}
  .entry-left,.entry-right{grid-column:1}
@@ -256,7 +258,7 @@ header small{display:none!important}
 </main>
 <div id="photoViewer" class="photo-viewer" hidden role="dialog" aria-modal="true" aria-label="Foto salva do produto">
   <button id="photoViewerClose" class="photo-viewer-close" type="button" aria-label="Fechar foto">×</button>
-  <div class="photo-viewer-content"><img id="photoViewerImage" alt="Foto salva do produto" hidden><p id="photoViewerStatus" role="status">Carregando foto…</p></div>
+  <div class="photo-viewer-content"><img id="photoViewerImage" alt="Foto salva do produto" hidden><p id="photoViewerStatus" role="status">Carregando foto…</p><button id="photoViewerAdd" type="button" hidden>📷 Escolher ou tirar foto</button></div>
 </div>
 <script src="/vitrine/admin/leitura-ean/html5-qrcode.min.js?v=20261019b" defer></script>
 <script defer>
@@ -484,7 +486,7 @@ function paint(){
    '<div class="entry-meta">'+fmt(r.created_at)+'</div></div>'+
    '<div class="entry-right">'+status+(r.photo_path?'<div class="entry-meta">📷 Foto salva</div>':'')+
    '<div><button type="button" class="edit-btn" data-edit="'+esc(r.id)+'">Editar</button>'+
-   (r.sync_status==="not_found"&&!r.photo_path?'<button type="button" class="edit-btn" data-photo="'+esc(r.id)+'">📷 Foto</button>':'')+
+   (r.sync_status==="not_found"&&!r.photo_path?'<button type="button" class="edit-btn" data-photo="'+esc(r.id)+'">📷 Adicionar foto</button>':'')+
    (r.photo_path?'<button type="button" class="edit-btn" data-view-photo="'+esc(r.id)+'">Ver foto</button>':'')+
    '</div></div>'+
    (r.sync_status==="not_found"?
