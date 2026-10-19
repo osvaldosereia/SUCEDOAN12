@@ -11,7 +11,7 @@ const modules=[
   'orders/read-model.js','components/today-cards.js','orders/time.js',
   'orders/search.js','orders/whatsapp-links.js','orders/action-buttons.js','orders/contact-actions.js',
   'components/expiry-alert.js','components/ops-attention.js',
-  'components/print-queue-panel.js'
+  'components/print-queue-panel.js','orders/separation-model.js','orders/customer-readiness.js'
 ];
 const mainIndex=html.indexOf('<script src="/vitrine/admin/admin-runtime.js?');
 assert.ok(mainIndex>0,'external admin runtime script not found');
@@ -36,7 +36,7 @@ const names=[
   'DonaAntoniaAdminOrderTime','DonaAntoniaAdminOrderSearch',
   'DonaAntoniaAdminWhatsappLinks','DonaAntoniaAdminOrderActionButtons','DonaAntoniaAdminOrderContactActions',
   'DonaAntoniaAdminExpiryAlert','DonaAntoniaAdminOpsAttention',
-  'DonaAntoniaAdminPrintQueuePanel'
+  'DonaAntoniaAdminPrintQueuePanel','DonaAntoniaAdminSeparationModel','DonaAntoniaAdminCustomerReadiness'
 ];
 for(const name of names)assert.ok(runtime.includes('window.'+name),'missing bridge '+name);
 const orderedScripts=scripts.filter(src=>modules.some(module=>src.split('?')[0]==='/vitrine/admin/'+module));

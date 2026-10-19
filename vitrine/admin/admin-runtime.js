@@ -6053,17 +6053,7 @@
 
 
   function orderV3SearchMatch(o,q){const n=normalize(q||'');if(!n)return true;return normalize([o.order_number,o.customer_name,o.whatsapp_phone_e164,o.delivery_address_snapshot?.street,o.delivery_address_snapshot?.district].filter(Boolean).join(' ')) .includes(n)}
-  function orderCustomerDataPendingReasons(o){
-    const labels=['Cliente não identificado','Telefone pendente','Endereço incompleto','CPF/CNPJ pendente'];
-    const a=o?.delivery_address_snapshot||{},missing=(Array.isArray(o?.registration_missing_fields)?o.registration_missing_fields:[]).map(x=>normalize(String(x||'')));
-    const reasons=[];
-    if(!o?.customer_id)reasons.push(labels[0]);
-    if(!String(o?.whatsapp_phone_e164||a.phone||'').replace(/\D/g,''))reasons.push(labels[1]);
-    if(![a.street,a.number,a.city,a.state].every(v=>String(v||'').trim()))reasons.push(labels[2]);
-    if(o?.document_only_pending===true||missing.some(x=>x.includes('cpf')||x.includes('cnpj')||x.includes('document')))reasons.push(labels[3]);
-    return [...new Set(reasons)];
-  }
-  function orderCustomerDataPending(o){return orderCustomerDataPendingReasons(o).length>0}
+  const {orderCustomerDataPendingReasons,isOrderCustomerDataPending:orderCustomerDataPending}=window.DonaAntoniaAdminCustomerReadiness.create(normalize);
   function orderSeparationCompletedV4(o){const s=String(o?.status||''),summary=orderSeparationSummary(o),meta=summary?.completion_metadata||{};if(summary?.completed_at||summary?.phase==='completed'||meta?.operational_completion===true)return true;if(summary?.phase==='needs_attention'&&meta?.stock_applied===true)return true;if(['out_for_delivery','delivered'].includes(s))return true;const f=state.fiscalByOrder[o?.id]||(state.currentOrder?.order?.id===o?.id?state.currentOrderFiscal:null);return s==='ready'&&f?.readiness?.separation_completed===true}
   function orderV3Milestones(o){const s=String(o?.status||'');return {confirmed:['confirmed','processing','ready','out_for_delivery','delivered'].includes(s),separated:orderSeparationCompletedV4(o),dispatched:['out_for_delivery','delivered'].includes(s),delivered:s==='delivered',cancelled:s==='cancelled'}}
   function orderFiscalTagV4(o){
@@ -7198,41 +7188,7 @@
       'Endereço: '+esc(address);
   }
 
-  function separationItems(detail){
-    const map=new Map();
-    const add=(key,name,qty,image,gondola,shelf,gtin='',prefix='')=>{
-      const n=Number(qty||0);if(n<=0)return;
-      const k=String(key||name)+'|'+prefix;const old=map.get(k);
-      if(old)old.quantity+=n;
-      else map.set(k,{name:(prefix?prefix+' · ':'')+(name||'Produto'),quantity:n,image_url:image||'/img/logoantonia5.png',gondola_number:gondola??null,shelf_label:String(shelf||'').trim()||null,gtin:String(gtin||'').replace(/\D/g,'')});
-    };
-    for(const item of detail?.items||[]){
-      if(item?.item_kind==='basket'){
-        for(const c of item.components||[]){
-          const m=c?.metadata||{},loose=Number(m.loose_quantity??c.quantity??0),preassembled=Number(m.preassembled_units||0);
-          if(loose<=0)continue;
-          add(c.product_id||c.id||c.name_snapshot,c.name_snapshot,loose,c.image_url,c.gondola_number,c.shelf_label,c.gtin,preassembled>0?'EXTRA':'MONTAR');
-        }
-        continue;
-      }
-      add(item.product_id||item.id||item.name_snapshot,item.name_snapshot,item.quantity,item.image_url,item.gondola_number,item.shelf_label,item.gtin,'');
-    }
-    return [...map.values()].sort((a,b)=>{
-      const ga=Number.isFinite(Number(a.gondola_number))?Number(a.gondola_number):999999,gb=Number.isFinite(Number(b.gondola_number))?Number(b.gondola_number):999999;
-      return ga-gb||String(a.shelf_label||'').localeCompare(String(b.shelf_label||''),'pt-BR',{numeric:true})||String(a.name||'').localeCompare(String(b.name||''),'pt-BR');
-    });
-  }
-  function separationKitRefs(detail){
-    const out=[];
-    for(const plan of detail?.checkout_separation_plan||[]){
-      const qty=Number(plan?.quantity||1),food=plan?.food||{},hygiene=plan?.hygiene||{};
-      if(food.mode==='lot'){
-        const codes=[food.short_code,hygiene.mode==='lot'?hygiene.short_code:null].filter(Boolean).join(' + ');
-        out.push({label:'CESTA ORIGINAL · permanece original',code:codes||'LOTE',quantity:qty,basket:plan.basket_name||'Cesta'});
-      }
-    }
-    return out;
-  }
+  const {separationItems,separationKitRefs}=window.DonaAntoniaAdminSeparationModel;
   function separationTicketBody(detail){
     const o=detail.order,items=separationItems(detail),kitRefs=separationKitRefs(detail),groups=[];
     for(const item of items){

@@ -13,11 +13,21 @@ for(const [name,section] of [
   ['statusPill','Central'],['expeditionFiscalState','Expedição'],
   ['smartDeliverySlug','Entregador'],['clearFinanceSession','Financeiro'],
   ['purchaseCatalogFilteredItems','Compras/XML'],
-  ['manualSaleTotalCents','Pedidos'],['separationItems','Pedidos']
+  ['manualSaleTotalCents','Pedidos']
 ]){
   const entry=runtime.find(x=>x.name===name);
   assert.ok(entry,'missing runtime function '+name);
   assert.equal(entry.section,section,'incorrect fragment classification '+name);
+}
+const separationModel=inventory.functions.filter(x=>x.path==='vitrine/admin/orders/separation-model.js');
+for(const name of ['separationItems','separationKitRefs']){
+  const entry=separationModel.find(x=>x.name===name);
+  assert.ok(entry,'missing extracted separation model function '+name);
+  assert.equal(entry.section,'Pedidos');
+  assert.equal(runtime.some(x=>x.name===name),false,'pure model must not remain inside shared runtime scope');
+}
+for(const name of ['orderCustomerDataPendingReasons','isOrderCustomerDataPending']){
+  assert.ok(inventory.functions.some(x=>x.path==='vitrine/admin/orders/customer-readiness.js'&&x.name===name),`missing extracted order readiness function ${name}`);
 }
 const total=Object.values(inventory.sections).reduce((a,b)=>a+b,0);
 assert.equal(total,inventory.summary.named_functions_and_arrows,'section totals must match declaration count');

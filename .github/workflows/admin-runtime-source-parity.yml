@@ -10,6 +10,8 @@ on:
       - 'vitrine/admin/core/**'
       - 'vitrine/admin/orders/**'
       - 'vitrine/admin/components/**'
+      - 'scripts/test-admin-separation-model.mjs'
+      - 'scripts/test-admin-customer-readiness-model.mjs'
       - '.github/workflows/admin-runtime-source-parity.yml'
   workflow_dispatch:
 permissions:
@@ -32,6 +34,8 @@ jobs:
           retention-days: 14
       - run: node --check vitrine/admin/admin-runtime.js
       - run: node scripts/test-admin-module-load-contract.mjs
+      - run: node scripts/test-admin-separation-model.mjs
+      - run: node scripts/test-admin-customer-readiness-model.mjs
       - run: node scripts/test-admin-controller-contracts.mjs
       - run: node scripts/test-admin-async-races-and-partial-save.mjs
       - run: node scripts/test-admin-order-action-buttons.mjs
