@@ -52,6 +52,41 @@ button.full{width:100%;margin-top:12px;font-size:16px;min-height:50px}
 .empty{padding:20px 0;text-align:center;color:#64756c;font-size:13px}
 #more{width:100%;margin-top:9px}
 @media(max-width:420px){.fieldgrid{grid-template-columns:1fr}.card{padding:12px}video{height:205px}header strong{font-size:15px}button{font-size:13px}}
+
+/* Mobile: impedir largura intrínseca de controles, cards e grid de estourar o viewport. */
+html,body{width:100%;max-width:100%;margin:0;overflow-x:clip}
+header,header>div,main,.card{width:100%;max-width:100%;min-width:0}
+header>div{min-width:0}
+header>div>div{min-width:0;flex:1 1 auto}
+header strong,header small{overflow-wrap:anywhere}
+header a.back{flex:0 0 auto}
+main{grid-template-columns:minmax(0,1fr);box-sizing:border-box}
+.card{overflow:hidden}
+.row,.row>*{min-width:0;max-width:100%}
+.fieldgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.fieldgrid>label,.fieldgrid input{min-width:0;max-width:100%}
+#manual,#manual input{min-width:0;max-width:100%}
+#manual>button{flex:0 0 auto}
+#entryEditor{max-width:100%;min-width:0}
+#currentEan,.entry-code{overflow-wrap:anywhere;word-break:break-word}
+.scan-box{max-width:100%;width:100%;min-width:0}
+.scan-box video{max-width:100%;min-width:0}
+.counts{grid-template-columns:repeat(3,minmax(0,1fr));min-width:0}
+.count{min-width:0;overflow-wrap:anywhere}
+.filters{min-width:0;max-width:100%;width:100%;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.entry{min-width:0;max-width:100%}
+.entry-left{flex:1 1 0;min-width:0}
+.entry-right{flex:0 1 auto;max-width:49%;min-width:0}
+.tag{max-width:100%;overflow-wrap:anywhere}
+#torch{margin-top:8px;background:#f4ce64;color:#44350e}
+@media(max-width:420px){
+  .fieldgrid{grid-template-columns:minmax(0,1fr)}
+  .entry-code{font-size:15px}
+  .entry-right{max-width:44%}
+  .counts{gap:4px}
+  .count{padding:8px 3px}
+  .count small{font-size:10px}
+}
 </style>
 </head>
 <body>
@@ -61,6 +96,8 @@ button.full{width:100%;margin-top:12px;font-size:16px;min-height:50px}
   <div class="row between"><h1>Ler código de barras</h1><button class="primary" id="cameraButton" type="button">📷 Abrir câmera</button></div>
   <p class="note">Leia primeiro. O produto não será pesquisado agora. Após a leitura, informe a quantidade e, se quiser, a validade.</p>
   <div class="scan-box" id="cameraBox" hidden><video id="camera" playsinline muted autoplay aria-label="Leitor de código de barras"></video></div>
+  <button id="torch" type="button" hidden>🔦 Ligar lanterna</button>
+  <p class="note" id="cameraHelp" hidden>Use a câmera traseira, centralize as barras, afaste um pouco e mantenha a imagem nítida. A leitura é automática.</p>
   <div id="manual"><input id="eanInput" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="EAN / leitor USB ou Bluetooth" aria-label="EAN"/><button id="useEan" type="button">Usar</button></div>
   <form id="entryEditor" hidden>
     <div class="row between"><div><small id="editingLabel">EAN lido</small><div><strong id="currentEan"></strong></div></div><button type="button" id="cancelEdit">Cancelar</button></div>
@@ -231,54 +268,131 @@ function acceptDetection(result){
  codeDetected(result);
 }
 function stopCamera(){
- cancelAnimationFrame(scanLoopId);scanLoopId=0;
+ scanMode="";clearTimeout(scanLoopId);cancelAnimationFrame(scanLoopId);scanLoopId=0;
  if(scanReader){try{scanReader.reset()}catch{}scanReader=null}
  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
- $("camera").srcObject=null;$("cameraBox").hidden=true;scanMode="";
+ $("camera").pause();$("camera").srcObject=null;$("cameraBox").hidden=true;
+ $("cameraHelp").hidden=true;$("torch").hidden=true;$("torch").textContent="🔦 Ligar lanterna";
  $("cameraButton").textContent="📷 Abrir câmera";
 }
 async function loadZXing(){
- if(window.ZXing)return;
- await new Promise((resolve,reject)=>{
-  const script=document.createElement("script");
-  script.src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
-  script.onload=resolve;script.onerror=()=>reject(Error("Biblioteca de câmera indisponível."));document.head.appendChild(script);
- });
-}
-async function startCamera(){
- if(!navigator.mediaDevices?.getUserMedia)throw Error("Este navegador não permite câmera. Use HTTPS ou leitor externo.");
- $("cameraBox").hidden=false;
- if("BarcodeDetector" in window){
-  let available=await window.BarcodeDetector.getSupportedFormats().catch(()=>[]);
-  const formats=["ean_13","ean_8","upc_a","upc_e","code_128","itf"].filter(x=>available.includes(x));
-  if(formats.length){
-   const detector=new BarcodeDetector({formats});
-   cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false});
-   $("camera").srcObject=cameraStream;await $("camera").play();scanMode="native";
-   const loop=async()=>{
-    if(scanMode!=="native")return;
-    if(!paused&&!busy&&$("camera").readyState>=2)try{
-      const detections=await detector.detect($("camera"));
-      for(const d of detections){const value=normalizeEan(d.rawValue);if(value.length>=8&&value.length<=14){acceptDetection(value);break}}
-    }catch(e){console.debug("EAN detector",e)}
-    if(scanMode==="native")scanLoopId=requestAnimationFrame(loop);
-   };
-   scanLoopId=requestAnimationFrame(loop);return;
-  }
+ if(window.ZXing?.BrowserMultiFormatReader)return;
+ const urls=[
+  "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js",
+  "https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"
+ ];
+ for(const url of urls){
+  try{
+   await new Promise((resolve,reject)=>{
+    const script=document.createElement("script");let done=false;
+    const timeout=setTimeout(()=>finish(false),6000);
+    function finish(ok){
+     if(done)return;done=true;clearTimeout(timeout);
+     if(!ok){script.remove();reject(Error("Fonte indisponível"))}else resolve();
+    }
+    script.src=url;script.async=true;script.onload=()=>finish(true);script.onerror=()=>finish(false);
+    document.head.appendChild(script);
+   });
+   if(window.ZXing?.BrowserMultiFormatReader)return;
+  }catch(e){console.warn("Leitor ZXing: tentativa de carregamento falhou",e)}
  }
+ throw Error("Biblioteca de leitura indisponível. Verifique a conexão de internet.");
+}
+async function openRearCamera(){
+ const tries=[
+  {video:{facingMode:{exact:"environment"},width:{ideal:1920},height:{ideal:1080}},audio:false},
+  {video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false},
+  {video:true,audio:false}
+ ];
+ let error=null;
+ for(const constraints of tries){
+  try{return await navigator.mediaDevices.getUserMedia(constraints)}
+  catch(e){error=e;if(e.name==="NotAllowedError"||e.name==="SecurityError")break}
+ }
+ throw error||Error("Câmera indisponível.");
+}
+async function improveCameraFocus(stream){
+ const track=stream.getVideoTracks()[0];if(!track)return;
+ let cap={};try{cap=track.getCapabilities?.()||{}}catch{}
+ if(Array.isArray(cap.focusMode)&&cap.focusMode.includes("continuous")){
+  try{await track.applyConstraints({advanced:[{focusMode:"continuous"}]})}catch{}
+ }
+ $("torch").hidden=cap.torch!==true;
+ $("torch").onclick=async()=>{
+  if(!cameraStream)return;
+  const current=Boolean(track.getSettings?.().torch);
+  try{await track.applyConstraints({advanced:[{torch:!current}]});
+    $("torch").textContent=!current?"🔦 Desligar lanterna":"🔦 Ligar lanterna";
+  }catch{msg("A lanterna não está disponível neste celular.",true)}
+ };
+}
+async function enableNativeScanner(){
+ if(!("BarcodeDetector" in window))return false;
+ try{
+  const supported=await BarcodeDetector.getSupportedFormats();
+  const formats=["ean_13","ean_8","upc_a","upc_e","code_128","itf"].filter(x=>supported.includes(x));
+  if(!formats.length)return false;
+  const detector=new BarcodeDetector({formats});
+  // Usar o MESMO vídeo e câmera do leitor ZXing; não abrir a câmera duas vezes.
+  const nativeLoop=async()=>{
+   if(scanMode!=="active")return;
+   if(!paused&&!busy&&$("camera").readyState>=2){
+    try{
+     const detections=await detector.detect($("camera"));
+     for(const d of detections){
+      const value=normalizeEan(d.rawValue);
+      if(value.length>=8&&value.length<=14){acceptDetection(value);break}
+     }
+    }catch(e){console.debug("Detector nativo",e)}
+   }
+   if(scanMode==="active")scanLoopId=setTimeout(nativeLoop,800);
+  };
+  scanLoopId=setTimeout(nativeLoop,350);
+  return true;
+ }catch(e){console.warn("Detector nativo não disponível",e);return false}
+}
+async function enableZXingScanner(){
  await loadZXing();
  const hints=new Map();
  hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[
-  ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E,
-  ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.ITF
+  ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,
+  ZXing.BarcodeFormat.UPC_E,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.ITF
  ]);
- scanReader=new ZXing.BrowserMultiFormatReader(hints,250);scanMode="zxing";
- await scanReader.decodeFromVideoDevice(undefined,$("camera"),(result)=>{if(result)acceptDetection(result.getText())});
+ hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
+ scanReader=new ZXing.BrowserMultiFormatReader(hints,300);
+ scanReader.timeBetweenDecodingAttempts=180;
+ // A câmera já foi aberta como traseira acima. Reutilizar o stream, sem segunda permissão.
+ await scanReader.decodeFromStream(cameraStream,$("camera"),(result,error)=>{
+  if(result)acceptDetection(result.getText());
+  else if(error&&!(error instanceof ZXing.NotFoundException)&&!(error instanceof ZXing.ChecksumException)&&!(error instanceof ZXing.FormatException)){
+   console.debug("ZXing",error);
+  }
+ });
+}
+async function startCamera(){
+ if(!navigator.mediaDevices?.getUserMedia)throw Error("O navegador não permite câmera. Abra em HTTPS ou use um leitor externo.");
+ $("cameraBox").hidden=false;
+ cameraStream=await openRearCamera();
+ $("camera").srcObject=cameraStream;
+ await $("camera").play();
+ scanMode="active";
+ $("cameraHelp").hidden=false;
+ await improveCameraFocus(cameraStream);
+ // Dois decodificadores independentes sobre o mesmo stream: maior compatibilidade com EAN pequenos.
+ const nativeOk=await enableNativeScanner();
+ let zxingOk=false;
+ try{await enableZXingScanner();zxingOk=true}
+ catch(e){console.warn("ZXing indisponível",e);if(!nativeOk)throw e}
+ if(!zxingOk&&nativeOk)msg("Câmera ativa com detector do aparelho. Centralize o EAN.");
 }
 $("cameraButton").onclick=async()=>{
  if(scanMode){stopCamera();msg("Câmera desligada.");return}
- try{setBusy(true);msg("Iniciando a câmera…");await startCamera();$("cameraButton").textContent="■ Fechar câmera";msg("Aponte para o código de barras.")}
- catch(e){stopCamera();msg("Câmera: "+e.message+" Use também o campo EAN.",true)}
+ try{
+  setBusy(true);msg("Abrindo câmera traseira…");
+  await startCamera();
+  $("cameraButton").textContent="■ Fechar câmera";
+  if($("message").textContent.startsWith("Abrindo"))msg("Aponte a câmera para as barras. A leitura é automática.");
+ }catch(e){stopCamera();msg("Câmera: "+e.message+" Você também pode digitar o EAN.",true)}
  finally{setBusy(false)}
 };
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&scanMode)stopCamera()});
