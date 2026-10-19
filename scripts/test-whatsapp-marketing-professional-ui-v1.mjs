@@ -48,7 +48,7 @@ for(const action of ['post_sale','repurchase','campaigns'])assert.ok(overviewCar
 assert.ok(js.includes('data-marketing-overview-card="post_sale"'),'Pós-venda deve aparecer no painel');
 assert.ok(js.includes('data-marketing-overview-card="repurchase"'),'Reposição mensal deve aparecer no painel');
 assert.ok(js.includes("document.querySelector('[data-tab=\"orders\"]')"),'Pós-venda deve abrir pedidos e entregas');
-assert.ok(js.includes("openOverviewView(root,'strategy')"),'Reposição mensal deve abrir a estratégia');
+assert.ok(js.includes("openOverviewView(root,'repurchase')"),'Reposição mensal deve abrir a estratégia existente');
 assert.ok(js.includes("openOverviewView(root,'campaigns')"),'Campanhas deve abrir a área de campanhas');
 assert.ok(js.includes('Campanhas pausadas'),'o painel deve informar claramente que os envios ainda estão pausados');
 
