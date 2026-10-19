@@ -221,7 +221,7 @@ const KEY="sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8";
 const API=BASE+"/functions/v1/admin-ean-capture-v1";
 const $=(id)=>document.getElementById(id);
 let tokenPromise=null,cameraStream=null,cameraDetector=null,cameraRunning=false,cameraTimer=null,cameraChoice="",lastCameraEan="",lastCameraAt=0,scanMode="",scanner=null,torchOn=false;
-let paused=false,busy=false,editingId="",pendingId="",currentEan="",filter="all",offset=0,hasMore=false,rows=[],count=0,missingRecordId="",pendingPhotoFile=null;
+let paused=false,busy=false,editingId="",pendingId="",currentEan="",filter="all",offset=0,hasMore=false,rows=[],count=0,missingRecordId="",pendingPhotoFile=null,resolveRereadId="";
 const uuid=()=>crypto.randomUUID();
 const msg=(s,error=false)=>{$("message").textContent=s;$("message").classList.toggle("error",error)};
 const normalizeEan=(v)=>String(v||"").replace(/\D/g,"");
@@ -268,6 +268,7 @@ async function call(action,payload=null,retry=true){
 function setBusy(v){busy=v;for(const id of ["save","sync","more","useEan","cameraButton","takePhoto","nativePhoto","skipPhoto"]){const node=$(id);if(node)node.disabled=v}}
 function codeDetected(raw){
  const code=normalizeEan(raw);
+ if(resolveRereadId&&!busy&&!missingRecordId&&code.length>=8&&code.length<=14){const id=resolveRereadId;resolveRereadId="";resolveRow("repair_ean",id,{ean:code});return}
  if(paused||busy||missingRecordId||code.length<8||code.length>14)return;
  paused=true;
  currentEan=code;editingId="";pendingId=uuid();
@@ -454,9 +455,9 @@ function paint(){
 
 function openResolutionPanel(row,mode){
  const panel=$("entries").querySelector('[data-resolution-panel="'+row.id+'"]');if(!panel)return;
- panel.hidden=false;
+ panel.hidden=false;resolveRereadId=mode==="reread"?row.id:"";
  if(mode==="reread"){
-  panel.innerHTML='<form data-resolution-form="reread" data-id="'+esc(row.id)+'"><b>Corrigir o EAN lido</b><p class="resolution-help">Leia novamente com a câmera ou digite o código correto. A lista será sincronizada de novo.</p><input name="ean" inputmode="numeric" autocomplete="off" value="'+esc(row.ean)+'" aria-label="EAN corrigido" required><div class="row"><button class="primary" type="submit">Salvar EAN e conferir</button><button type="button" data-resolve-close>Cancelar</button></div></form>';
+  panel.innerHTML='<form data-resolution-form="reread" data-id="'+esc(row.id)+'"><b>Corrigir o EAN lido</b><p class="resolution-help">Leia novamente com a câmera ou o leitor. Também pode digitar o código correto. A lista será sincronizada de novo.</p><input name="ean" inputmode="numeric" autocomplete="off" value="'+esc(row.ean)+'" aria-label="EAN corrigido" required><div class="row"><button class="primary" type="submit">Salvar EAN e conferir</button><button type="button" data-resolve-close>Cancelar</button></div></form>';
   const input=panel.querySelector('input');input?.focus();input?.select();return;
  }
  if(mode==="search"){
@@ -483,7 +484,7 @@ $("entries").addEventListener("click",(event)=>{
  const open=event.target.closest("[data-resolve-open]");
  if(open){if(busy)return;const row=rows.find(x=>x.id===open.dataset.id);if(row)openResolutionPanel(row,open.dataset.resolveOpen);return}
  const close=event.target.closest("[data-resolve-close]");
- if(close){const panel=close.closest("[data-resolution-panel]");if(panel){panel.hidden=true;panel.innerHTML=""}return}
+ if(close){resolveRereadId="";const panel=close.closest("[data-resolution-panel]");if(panel){panel.hidden=true;panel.innerHTML=""}return}
  const choose=event.target.closest("[data-link-product]");
  if(choose){
   if(busy)return;const panel=choose.closest("[data-resolution-panel]"),id=choose.dataset.id,row=rows.find(x=>x.id===id);
@@ -526,7 +527,7 @@ $("entries").addEventListener("submit",async(event)=>{
  const id=form.dataset.id,kind=form.dataset.resolutionForm,fd=new FormData(form);
  if(kind==="reread"){
   const ean=normalizeEan(fd.get("ean"));if(ean.length<8||ean.length>14){msg("Informe um EAN válido com 8 a 14 números.",true);return}
-  await resolveRow("repair_ean",id,{ean});return;
+  resolveRereadId="";await resolveRow("repair_ean",id,{ean});return;
  }
  if(kind==="search"){
   const query=String(fd.get("query")||"").trim();if(query.length<2){msg("Digite pelo menos 2 caracteres para buscar.",true);return}
