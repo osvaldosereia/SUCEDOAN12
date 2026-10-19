@@ -152,6 +152,48 @@ header small{display:none!important}
 .resolution-result{border-top:1px solid #dce8e1;padding:7px 0;font-size:12px}.resolution-result:first-child{border-top:0}
 .resolution-result button{width:100%;text-align:left;background:#e5f1ea}.resolution-help{font-size:11px;color:#52665d;line-height:1.4;margin:4px 0}
 @media(max-width:480px){.resolution-actions{grid-template-columns:1fr 1fr}.entry-right{max-width:50%}}
+
+/* Cartões claros e arejados em telas grandes e pequenas. */
+#entries{display:grid;gap:9px}
+.entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px;padding:14px;border:1px solid #dce8e1;border-radius:12px;background:#fff;box-shadow:0 1px 3px #092c190d}
+.entry:first-child{border-top:1px solid #dce8e1}
+.entry-left{grid-column:1;min-width:0;flex:none}
+.entry-code{font-size:18px;line-height:1.25;letter-spacing:.02em;word-break:normal;overflow-wrap:anywhere}
+.entry-meta{font-size:13px;line-height:1.4;margin-top:6px}
+.entry-product-name{font-size:15px;line-height:1.35}
+.entry-right{grid-column:2;max-width:none;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;text-align:right}
+.entry-right>div{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.edit-btn{min-height:40px;padding:8px 12px;margin-top:0;font-size:13px}
+.resolution-actions,.resolution-panel{grid-column:1/-1;width:100%;min-width:0}
+.resolution-actions{grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-top:0}
+.resolution-actions button,.resolution-actions a{min-height:44px;padding:9px 10px;font-size:13px;line-height:1.25}
+.resolution-panel{margin-top:0;padding:14px}
+.resolution-panel .row{gap:8px}
+.resolution-result{padding:9px 0}
+.resolution-result button{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;gap:12px;min-height:88px;padding:9px 12px;border:1px solid #d8e7dd;border-radius:10px;background:#f4faf6;font-size:14px;line-height:1.4}
+.resolution-result img{display:block;width:76px;height:76px;object-fit:contain;border-radius:8px;background:#fff}
+.resolution-result .product-placeholder{width:76px;height:76px;display:grid;place-items:center;border-radius:8px;background:#e8f0ec;color:#61746a;font-size:11px;text-align:center}
+.photo-viewer{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:24px;background:rgba(9,23,17,.92)}
+.photo-viewer[hidden]{display:none}
+.photo-viewer-content{display:grid;place-items:center;width:min(100%,1200px);min-height:120px;color:white;text-align:center}
+.photo-viewer img{display:block;max-width:100%;max-height:86dvh;object-fit:contain;border-radius:10px;background:white}
+.photo-viewer-close{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:48px;height:48px;border-radius:50%;background:#fff;color:#17242c;font-size:30px;line-height:1}
+@media(max-width:560px){
+ .entry{grid-template-columns:minmax(0,1fr);gap:10px;padding:13px}
+ .entry-left,.entry-right{grid-column:1}
+ .entry-right{justify-content:flex-start;text-align:left}
+ .entry-right>div{justify-content:flex-start}
+ .entry-code{font-size:17px;white-space:normal}
+ .resolution-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .resolution-actions button,.resolution-actions a{min-height:46px;font-size:12px}
+ .resolution-result button{grid-template-columns:68px minmax(0,1fr);min-height:82px;padding:8px;gap:10px}
+ .resolution-result img,.resolution-result .product-placeholder{width:68px;height:68px}
+}
+@media(max-width:360px){
+ .resolution-actions{grid-template-columns:1fr}
+ .entry-right{gap:6px}
+ .photo-viewer{padding:12px}
+}
 </style>
 </head>
 <body>
@@ -209,9 +251,13 @@ header small{display:none!important}
     <button data-filter="not_found" type="button">⚠ Não encontrados</button>
   </div>
   <div id="entries"><div class="empty">Carregando registros…</div></div>
-  <button id="more" hidden type="button">Carregar mais</button>
+  <button id="more" hidden type="button">Ver mais</button>
 </section>
 </main>
+<div id="photoViewer" class="photo-viewer" hidden role="dialog" aria-modal="true" aria-label="Foto salva do produto">
+  <button id="photoViewerClose" class="photo-viewer-close" type="button" aria-label="Fechar foto">×</button>
+  <div class="photo-viewer-content"><img id="photoViewerImage" alt="Foto salva do produto" hidden><p id="photoViewerStatus" role="status">Carregando foto…</p></div>
+</div>
 <script src="/vitrine/admin/leitura-ean/html5-qrcode.min.js?v=20261019b" defer></script>
 <script defer>
 (()=>{
@@ -258,7 +304,7 @@ async function call(action,payload=null,retry=true){
   if(payload instanceof FormData)options.body=payload;
   else{options.headers["Content-Type"]="application/json";options.body=JSON.stringify(payload)}
  }
- if(action==="list"){url.searchParams.set("filter",filter);url.searchParams.set("offset",String(offset));url.searchParams.set("limit","60")}
+ if(action==="list"){url.searchParams.set("filter",filter);url.searchParams.set("offset",String(offset));url.searchParams.set("limit","5")}
  const res=await fetch(url,options);
  if(res.status===401&&retry){sessionStorage.removeItem("da_finance_access_token_v1");return call(action,payload,false)}
  const data=await res.json().catch(()=>({}));
@@ -494,13 +540,18 @@ $("entries").addEventListener("click",(event)=>{
  }
  const view=event.target.closest("[data-view-photo]");
  if(view){
+  const viewer=$("photoViewer"),image=$("photoViewerImage"),status=$("photoViewerStatus");
+  viewer.hidden=false;image.hidden=true;image.removeAttribute("src");status.textContent="Carregando foto…";
+  $("photoViewerClose").focus();
   (async()=>{try{
    const token=await auth(),url=new URL(API);
    url.searchParams.set("action","photo_url");url.searchParams.set("id",view.dataset.viewPhoto);
    const res=await fetch(url,{headers:{Authorization:"Bearer "+token,apikey:KEY},cache:"no-store"});
    const data=await res.json();if(!res.ok||!data.ok)throw Error(data.error||"foto_indisponivel");
-   window.open(data.url,"_blank","noopener,noreferrer");
-  }catch(e){msg("Foto indisponível: "+e.message,true)}})();return;
+   image.onload=()=>{image.hidden=false;status.textContent=""};
+   image.onerror=()=>{image.hidden=true;status.textContent="A foto não pôde ser carregada. Tente novamente."};
+   image.src=data.url;
+  }catch(e){status.textContent="Foto indisponível: "+e.message;msg("Foto indisponível: "+e.message,true)}})();return;
  }
  const photo=event.target.closest("[data-photo]");
  if(photo){
@@ -515,6 +566,9 @@ $("entries").addEventListener("click",(event)=>{
  $("quantity").value=r.quantity;$("expiry").value=r.expires_on||"";$("expiryField").hidden=!r.expires_on;$("toggleValidity").textContent=r.expires_on?"− Ocultar validade":"+ Validade (opcional)";
  $("entryEditor").hidden=false;$("quantity").focus({preventScroll:true});$("quantity").select();
 });
+$("photoViewerClose").addEventListener("click",()=>{$("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src")});
+$("photoViewer").addEventListener("click",(event)=>{if(event.target===$("photoViewer")){$("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src")}});
+document.addEventListener("keydown",(event)=>{if(event.key==="Escape"&&!$("photoViewer").hidden){$("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src")}});
 document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("click",async()=>{
  if(busy||missingRecordId)return;filter=btn.dataset.filter;
  document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===btn));
@@ -537,7 +591,7 @@ $("entries").addEventListener("submit",async(event)=>{
   try{
    const data=await call("search_products",{query});
    if(!data.rows?.length){results.innerHTML='<div class="resolution-result">Nenhum produto encontrado. Confira o nome ou use “Cadastrar inativo”.</div>';return}
-   results.innerHTML=data.rows.map(p=>'<div class="resolution-result"><button type="button" data-link-product="'+esc(p.id)+'" data-id="'+esc(id)+'"><b>'+esc(p.name)+'</b><br>'+esc(p.sku||"Sem SKU")+' · EAN '+esc(p.gtin||"—")+' · estoque '+esc(qtyBR(p.stock||0))+(p.is_active?'':' · INATIVO')+'</button></div>').join("");
+   results.innerHTML=data.rows.map(p=>'<div class="resolution-result"><button type="button" data-link-product="'+esc(p.id)+'" data-id="'+esc(id)+'">'+(p.image_url?'<img loading="lazy" decoding="async" src="'+esc(p.image_url)+'" alt="Foto de '+esc(p.name)+'" onerror="this.hidden=true">':'<span class="product-placeholder" aria-label="Produto sem foto">Sem foto</span>')+'<span><b>'+esc(p.name)+'</b><br>'+esc(p.sku||"Sem SKU")+' · EAN '+esc(p.gtin||"—")+' · estoque '+esc(qtyBR(p.stock||0))+(p.is_active?'':' · INATIVO')+'</span></button></div>').join("");
    msg(data.rows.length+" produto(s) encontrado(s). Selecione o correto para vincular.");
   }catch(e){results.innerHTML='<div class="resolution-result">Falha na busca: '+esc(e.message)+'</div>';msg("Falha ao buscar produtos.",true)}
   finally{setBusy(false)}
