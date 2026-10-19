@@ -192,4 +192,6 @@ fs.writeFileSync(path.join(output,'summary.md'),lines.join('\n')+'\n');
 console.log('ADMIN INVENTORY '+JSON.stringify(summary));
 console.log('ADMIN SECTIONS '+JSON.stringify(bySection));
 console.log('ADMIN IDENTICAL '+identical.length);
+console.log('ADMIN REPEATED NAMES '+JSON.stringify(sameFileNameCandidates));
+console.log('ADMIN EMPTY CATCH HOTSPOTS '+JSON.stringify(emptyCatch.toSorted((a,b)=>b.count-a.count).slice(0,12)));
 console.log('ADMIN SUSPECTS '+JSON.stringify(suspects.map(x=>({path:x.path,line:x.line,name:x.name,test_only:x.test_reference_files.length>0}))));
