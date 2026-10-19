@@ -29,6 +29,20 @@ assert.ok(sizeOrderStart>=0&&sizeOrderEnd>sizeOrderStart,'the public basket size
 const sizeOrderHelpers=storefront.slice(sizeOrderStart,sizeOrderEnd);
 const orderedSizes=vm.runInNewContext(`${sizeOrderHelpers};homeBasketSubcategories({slug:'cestas-completas',subcategories:[{name:'Mini'},{name:'Econômica'},{name:'Pequena'},{name:'Média'},{name:'Grande'},{name:'Outro tamanho'}]}).map(x=>x.name)`);
 assert.equal(JSON.stringify(orderedSizes),JSON.stringify(['Grande','Média','Pequena','Mini','Econômica']));
+const sizeSubcategories=['Grande','Média','Pequena','Mini','Econômica'].map((name,index)=>({id:String(index+1),name}));
+const sampleBaskets=sizeSubcategories.flatMap(sub=>[
+  {id:'legacy-'+sub.id,category_id:'cestas',subcategory_id:sub.id,name:'Legada',display_price_cents:1000},
+  {id:'mold-'+sub.id,category_id:'cestas',subcategory_id:sub.id,name:'Molde',display_price_cents:2000,mold_mode:true},
+  {id:'extra-'+sub.id,category_id:'cestas',subcategory_id:sub.id,name:'Outra',display_price_cents:3000}
+]);
+const oneCardPerSize=vm.runInNewContext(`${sizeOrderHelpers};homeBasketSizeCards(baskets,group).map(x=>({id:x.id,name:x.name}))`,{baskets:sampleBaskets,group:{id:'cestas',slug:'cestas-completas',subcategories:sizeSubcategories}});
+assert.equal(JSON.stringify(oneCardPerSize.map(x=>x.name)),JSON.stringify(['Grande','Média','Pequena','Mini','Econômica']));
+assert.equal(JSON.stringify(oneCardPerSize.map(x=>x.id)),JSON.stringify(['mold-1','mold-2','mold-3','mold-4','mold-5']));
+assert.match(storefront,/\\.basket-card-photo\\{display:none!important\\}/);
+assert.match(storefront,/\\.basket-grid\\{grid-template-columns:repeat\\(2,minmax\\(0,1fr)\\)!important;gap:10px/);
+assert.match(storefront,/@media\\(min-width:1024px\\)\\{\\.basket-grid\\{grid-template-columns:repeat\\(5,minmax\\(0,1fr)\\)!important/);
+assert.match(storefront,/basket-carousel\\.js\\?v=20261019-basket-types-v1/);
+
 assert.match(storefront,/data-mold-restore/);
 assert.match(storefront,/function restoreMoldItem\(/);
 assert.match(storefront,/querySelectorAll\('\[data-mold-restore\]'\)\.forEach/);
