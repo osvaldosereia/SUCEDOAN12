@@ -16,4 +16,6 @@ const input=[{id:'old',created_at:'2026-01-01T10:00:00Z'},{id:'new',created_at:'
 assert.equal(Array.from(sorter(input),x=>x.id).join(','),'new,middle,old');
 assert.equal(input[0].id,'old','original array must remain unchanged');
 assert.equal(sorter([]).length,0);
+assert.equal(sorter(null).length,0);
+assert.equal(Array.from(sorter([{id:'unknown'},{id:'known',created_at:'2026-01-01T00:00:00Z'}]),x=>x.id).join(','),'known,unknown');
 console.log('Admin order sorting extraction: PASS');
