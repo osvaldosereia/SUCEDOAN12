@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const worker=fs.readFileSync('supabase/functions/whatsapp-repurchase-worker-v1/index.ts','utf8');
 const migration=fs.readFileSync('supabase/migrations/20261019140000_marketing_repurchase_dispatch_v1.sql','utf8');
+const cadence=fs.readFileSync('supabase/migrations/20261019130000_marketing_repurchase_monthly_cadence_v1.sql','utf8');
 assert.match(worker,/marketing_campaign_worker_internal_key_v1/,'worker exige autenticação interna');
 assert.match(worker,/marketing_repurchase_claim_due_v1/,'worker usa fila transacional com claim');
 assert.match(worker,/marketing_repurchase_validate_dispatch_v1/,'worker revalida a elegibilidade imediatamente antes do envio');
@@ -13,7 +14,7 @@ assert.match(migration,/c\.marketing_opt_in is true/,'opt-in continua revalidado
 assert.match(worker,/templateVariables\(data\.template_components,data\.customer_name,data\.basket_name,data\.product_categories,data\.template_name\)/,'variáveis usam nome da cliente, cesta e categoria quando aplicável');
 assert.match(worker,/clean\(customerName,80\)\.split\(\/\\s\+\/\)\[0\]/,'mensagem usa o primeiro nome cadastrado da cliente');
 assert.match(migration,/'customer_name',coalesce\(nullif\(split_part\(btrim\(c\.name\),' ',1\),''\),'cliente'\)/,'fila fornece o nome cadastrado ao template');
-assert.match(migration,/template_name := 'recompradonaantonia30dias'\|\|right\(v_channel\.slug,4\)\|\|'v2'/,'fila seleciona a versão atualizada do template em cada canal');
+assert.match(cadence,/v_template_name := 'recompradonaantonia30dias'\|\|right\(v_channel\.slug,4\)\|\|'v2'/,'fila seleciona a versão atualizada do template em cada canal');
 assert.match(worker,/uncertain/,'envio incerto não pode ser repetido automaticamente');
 assert.match(migration,/enabled boolean not null default false/,'automação começa desligada');
 assert.match(migration,/t\.status='APPROVED' and t\.category='MARKETING'/,'somente template de Marketing aprovado entra na fila');
