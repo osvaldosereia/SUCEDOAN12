@@ -18,6 +18,11 @@ for(const [url,valid] of [
 ]){
   assert.equal(Boolean(contacts.mapsHrefFromAddress({google_maps_url:url})),valid,url);
 }
+const noProblems=load('vitrine/admin/orders/contact-actions.js','DonaAntoniaAdminOrderContactActions')
+  .createOrderContactActions(()=>undefined,()=>'',()=>'',()=>'',String);
+assert.equal(noProblems.orderMissingDataRequest(null),null);
+assert.equal(noProblems.orderAddressRequestHref(null),'');
+assert.equal(noProblems.orderContactActionsHtml(null),'');
 const panel=load('vitrine/admin/components/print-queue-panel.js','DonaAntoniaAdminPrintQueuePanel');
 const render=panel.createPrintQueuePanel({
   orders:[{id:1,public_code:'AB123'},{id:2,public_code:'CD456'}],
