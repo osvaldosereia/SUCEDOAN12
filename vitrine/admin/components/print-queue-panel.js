@@ -14,7 +14,7 @@
     function renderOpsPrintQueue(){
       const queue=state?.opsPrintQueue||{};
       const jobs=Array.isArray(queue.jobs)?queue.jobs:[];
-      const active=jobs.filter(j=>j&&Object.prototype.hasOwnProperty.call(labels,j.status)).slice(0,8);
+      const active=jobs.filter(j=>j&&typeof j==='object'&&Object.prototype.hasOwnProperty.call(labels,j.status)).slice(0,8);
       if(!active.length)return '';
       const orders=Array.isArray(state?.orders)?state.orders:[];
       const ordersById=new Map(orders.filter(o=>o&&o.id!=null).map(o=>[String(o.id),o]));
