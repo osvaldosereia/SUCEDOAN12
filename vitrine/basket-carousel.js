@@ -49,6 +49,18 @@
 })();
 
 window.BasketCarousel={
+  sizePhoto(b){
+  const raw=String(b?.size_key||b?.model_name||b?.name||'');
+  const size=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');
+  const brand=String(b?.brand||b?.name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');
+  const koblenz=brand.includes('koblenz');
+  if(size.includes('econom'))return '/img/cesta-basica-cuiaba-varzea-grande-economica.avif';
+  if(size.includes('mini'))return koblenz?'/img/CESTA-MINI-KOBLENZ.webp':'/img/CESTA-MINI-BONINI.webp';
+  if(size.includes('pequena'))return koblenz?'/img/CESTA-PEQUENA-KOBLENZ.webp':'/img/CESTA-PEQUENA-BONINI.webp';
+  if(size.includes('media'))return koblenz?'/img/CESTA-MEDIA-KOBLENZ.webp':'/img/CESTA-MEDIA-BONINI.webp';
+  if(size.includes('grande'))return koblenz?'/img/CESTA-GRANDE-KOBLENZ.webp':'/img/CESTA-GRANDE-ALVINO.webp';
+  return '';
+  },
   card(b,esc,money,basketName,index=99){
     const name=basketName(b.name),key=String(b.card_key||b.id);
     const sizeCard=b.size_card===true;
@@ -57,7 +69,10 @@ window.BasketCarousel={
     const itemSummary=sizeCard?'<div class="basket-card-item-total">'+itemCount+' itens</div>':'';
     const actionLabel=sizeCard?'Ver produtos':'Personalizar';
     const actionAria=sizeCard?'Ver produtos da cesta ':'Personalizar cesta ';
-    return '<article class="card basket-card'+sizeClass+'"><div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div>'+itemSummary+'<div class="price">'+money(b.display_price_cents)+'</div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="'+actionAria+esc(name)+'">'+actionLabel+'</button></div></article>';
+    const image=this.sizePhoto(b)||b.image_url||'/img/sem-foto.svg';
+    const priority=Number(index)===0;
+    const photo='<div class="basket-card-photo"><img alt="'+esc(name)+'" '+(priority?'fetchpriority="high" src="'+esc(image)+'"':'loading="lazy" decoding="async" data-basket-src="'+esc(image)+'"')+'></div>';
+    return '<article class="card basket-card'+sizeClass+'">'+photo+'<div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div>'+itemSummary+'<div class="price">'+money(b.display_price_cents)+'</div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="'+actionAria+esc(name)+'">'+actionLabel+'</button></div></article>';
   },
   prepareHome(host){
     const section=host?.closest?.('.section');if(!section)return;

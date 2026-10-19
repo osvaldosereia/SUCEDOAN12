@@ -18,6 +18,13 @@ try{
  assert.ok(!fetched.has('https://photos.test/p23.svg'));
  assert.equal(await page.locator('.basket-card').count(),9);
  assert.equal(await page.locator('.basket-card-photo img').count(),9);
+const sizePhotoUrls=await page.evaluate(()=>['grande','media','pequena','mini','economica'].map(size=>BasketCarousel.card({id:'size-'+size,name:size,size_card:true,size_key:size,display_price_cents:1},s=>s,x=>String(x),x=>x.name)));
+assert.ok(sizePhotoUrls[0].includes('data-basket-src="/img/CESTA-GRANDE-ALVINO.webp"'));
+assert.ok(sizePhotoUrls[1].includes('data-basket-src="/img/CESTA-MEDIA-BONINI.webp"'));
+assert.ok(sizePhotoUrls[2].includes('data-basket-src="/img/CESTA-PEQUENA-BONINI.webp"'));
+assert.ok(sizePhotoUrls[3].includes('data-basket-src="/img/CESTA-MINI-BONINI.webp"'));
+assert.ok(sizePhotoUrls[4].includes('data-basket-src="/img/cesta-basica-cuiaba-varzea-grande-economica.avif"'));
+
  assert.equal(await page.locator('.basket-product').count(),0,'um cartão mostra apenas a foto do primeiro produto');
  const mobile=await page.evaluate(()=>({cols:getComputedStyle(document.querySelector('#basketGrid')).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth>innerWidth}));
  assert.equal(mobile.cols,2);assert.equal(mobile.overflow,false);

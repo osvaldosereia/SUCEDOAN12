@@ -384,6 +384,10 @@
     .basket-item-mold-card .basket-option-grid.basket-option-carousel-track small{grid-column:2;grid-row:2;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .basket-item-mold-card .basket-option-grid.basket-option-carousel-track .basket-option-choice-price{grid-column:2;grid-row:3;font-size:10px;font-weight:900;color:var(--brand)}
     @media(max-width:600px){.basket-item-mold-card .basket-option-grid.basket-option-carousel-track>.basket-option-choice{flex-basis:min(68%,182px)}.basket-item-mold-card .checkout-copy .checkout-name{font-size:11px}}
+
+/* Basket photos: use the lightweight, size-matched repository images. */
+.basket-card .basket-card-photo{display:grid!important;place-items:center;width:auto;height:auto;aspect-ratio:1/1!important;margin:8px 8px 0!important;overflow:hidden;border-radius:12px;background:#f8faf8}
+.basket-card .basket-card-photo img{display:block;width:100%;height:100%;padding:2px;object-fit:contain}
 </style>
 </head>
 <body>
@@ -428,7 +432,7 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <script src="/vitrine/basket-carousel.js?v=20261019-basket-total-items-v1"></script>
+  <script src="/vitrine/basket-carousel.js?v=20261019-basket-size-photos-v1"></script>
   <script>
   (() => {
     'use strict';
