@@ -79,9 +79,15 @@ async function basketImageMap(lotIds:string[]){
   return map;
 }
 async function basketLotImage(lotId:string,hygieneId:string|null,fallback:string){const images=await basketImageMap([lotId]);return images.get(lotId+":"+(hygieneId||""))||fallback||""}
+function basketTotalItems(items:any[]){
+  return items.reduce((total,item)=>{
+    const quantity=Number(item?.quantity);
+    return Number.isFinite(quantity)&&quantity>0?total+quantity:total;
+  },0);
+}
 async function basketCarouselItems(baskets:any[]){
   const ids=[...new Set(baskets.flatMap((b:any)=>b.split_mode?[b.food_lot_id,...(b.uses_hygiene_kit&&b.hygiene_lot_id?[b.hygiene_lot_id]:[])]:[b.lot_id]).filter(Boolean))];
-  if(!ids.length)return baskets;
+  if(!ids.length)return baskets.map((b:any)=>({...b,carousel_items:[],total_item_count:0}));
   const {data,error}=await db.from("basket_stock_lot_items").select("lot_id,product_id,quantity_per_basket,position_order,product:products(name,image_url,packaging)").in("lot_id",ids).order("position_order");
   if(error)throw error;
   const byLot=new Map<string,any[]>();
@@ -96,7 +102,7 @@ async function basketCarouselItems(baskets:any[]){
       if(previous)previous.quantity+=quantity;
       else items.set(row.product_id,{product_id:row.product_id,name:p.name,image_url:p.image_url||"",packaging:p.packaging||"",quantity});
     }
-    return {...b,carousel_items:[...items.values()].slice(0,1)};
+    return {...b,carousel_items:[...items.values()].slice(0,1),total_item_count:basketTotalItems([...items.values()])};
   });
 }
 function basketCategoryFields(b:any){const c=Array.isArray(b?.category)?b.category[0]:b?.category;return {category_name:c?.name||null,category_slug:c?.slug||null};}
@@ -169,7 +175,7 @@ async function moldHomeCards(priorityOnly=false){
     for(const c of (data.compositions||[]).slice(0,1)){const items=Array.isArray(c.items)?c.items:[];if(items.length!==expected)continue;let productTotal=0,capacity=30;const carousel:any[]=[];let valid=true;
       for(const i of items){const qty=Number(i.quantity||0);if(!(qty>0)){valid=false;break}const candidates=(optionsByPosition.get(String(i.position_id))||[]).map((o:any)=>{const p=products.get(String(o.product_id)),stock=available.get(String(o.product_id))||0;return p?.is_active===true&&stock>=qty?{p,stock,price:moldEffectivePriceCents(p)}:null}).filter(Boolean) as any[];candidates.sort((a:any,b:any)=>a.price-b.price||String(a.p.name||"").localeCompare(String(b.p.name||""),"pt-BR"));const selected=candidates[0];if(!selected){valid=false;break}const p=selected.p,price=selected.price;productTotal+=Math.round(price*qty);capacity=Math.min(capacity,Math.max(0,Math.floor(selected.stock/qty)));carousel.push({position_id:i.position_id,label:i.label,product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||i.image_url||"",packaging:p.packaging||"",quantity:qty,stock_quantity:selected.stock,price_cents:price})}
       if(!valid||capacity<1)continue;const conditionalHidden=m.conditional_hidden_enabled===true&&m.conditional_hidden_product_id&&carousel.some((i:any)=>String(i.product_id)===String(m.conditional_hidden_product_id)&&Number(i.quantity||0)>0)?cents(m.conditional_hidden_adjustment||0):0;const total=Math.max(0,productTotal+cents(data.hidden_adjustment||0)+conditionalHidden),n=Number(c.number||1);
-      cards.push({id:String(b.id),card_key:String(b.id)+"@"+n,mold_mode:true,mold_id:String(m.id),composition_number:n,public_composition_count:Number(data.public_composition_count||1),name:String(sub.name||String(b.name).replace(/\s+Completa$/i,"")),model_name:String(sub.name||String(b.name).replace(/\s+Completa$/i,"")),display_price_cents:total,hidden_adjustment_cents:cents(data.hidden_adjustment||0),conditional_hidden_enabled:m.conditional_hidden_enabled===true,conditional_hidden_product_id:m.conditional_hidden_product_id||null,conditional_hidden_adjustment_cents:cents(m.conditional_hidden_adjustment||0),conditional_hidden_applied_cents:conditionalHidden,image_url:b.image_url||"",stock_quantity:capacity,category_id:cat.id,category_name:cat.name,category_slug:cat.slug,category_sort_order:Number(cat.sort_order||0),subcategory_id:sub.id,subcategory_name:sub.name,subcategory_sort_order:Number(sub.sort_order||0),carousel_items:carousel.slice(0,1)})
+      cards.push({id:String(b.id),card_key:String(b.id)+"@"+n,mold_mode:true,mold_id:String(m.id),composition_number:n,public_composition_count:Number(data.public_composition_count||1),name:String(sub.name||String(b.name).replace(/\s+Completa$/i,"")),model_name:String(sub.name||String(b.name).replace(/\s+Completa$/i,"")),display_price_cents:total,hidden_adjustment_cents:cents(data.hidden_adjustment||0),conditional_hidden_enabled:m.conditional_hidden_enabled===true,conditional_hidden_product_id:m.conditional_hidden_product_id||null,conditional_hidden_adjustment_cents:cents(m.conditional_hidden_adjustment||0),conditional_hidden_applied_cents:conditionalHidden,image_url:b.image_url||"",stock_quantity:capacity,category_id:cat.id,category_name:cat.name,category_slug:cat.slug,category_sort_order:Number(cat.sort_order||0),subcategory_id:sub.id,subcategory_name:sub.name,subcategory_sort_order:Number(sub.sort_order||0),total_item_count:basketTotalItems(carousel),carousel_items:carousel.slice(0,1)})
     }
   }
   cards.sort((a,b)=>a.category_sort_order-b.category_sort_order||a.subcategory_sort_order-b.subcategory_sort_order||a.composition_number-b.composition_number||String(a.id).localeCompare(String(b.id)));return cards;
