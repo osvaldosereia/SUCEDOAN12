@@ -4,6 +4,7 @@
     const {orderProblemReasons,orderNextAction,esc}=deps;
     return function orderActionButtonsHtml(o,dispatchGate){
       // Keep stock-consumption and fiscal gates explicit; button order is operationally significant.
+      if(!o||typeof o!=='object')return '';
       const consumed=o?.payment_method_snapshot?.stock_consumed===true;
       const problems=orderProblemReasons(o);
       const mustFix=problems.length>0&&['created','confirmed','ready','out_for_delivery'].includes(o?.status);
