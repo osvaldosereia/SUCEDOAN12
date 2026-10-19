@@ -23,7 +23,7 @@ Data: 19/10/2026. Base inicial: branch `fix/admin-fiscal-hardening-20261018`, HE
 | Entregador | Rotas, atribuição, conclusão, falha e retorno | Contratos de entrega, cancelamento, sincronização e ordem operacional passaram. Nenhum dado real foi alterado. |
 | Fechamento | Resumo e encerramento operacional | Revisado junto dos controladores de pedidos e finanças; contratos gerais do controlador passaram. Não foi detectada duplicação removível com segurança. |
 | Produtos | Busca, estoque, disponibilidade, ajuste e integração Bling | Contratos de produtos, estoque físico, ajuste e sincronização passaram. As ações de estoque permanecem sob os gates atuais. |
-| Cestas | Catálogo, composição, lotes, alternativas e valor oculto | Contratos de disponibilidade pública, composição e lotes passaram. Os valores ocultos e o modelo atual foram preservados. |
+| Cestas | Catálogo, composição, lotes, alternativas e valor oculto | Contratos de disponibilidade pública, composição e lotes passaram. O contrato estático da regra de lote agora lê o modelo de separação extraído. Os valores ocultos e o modelo atual foram preservados. |
 | Validades | Lotes, FEFO, vencidos e alertas | Contratos de FEFO e ciclo de vida passaram. Nenhuma regra de desconto ou descarte foi alterada. |
 | Orçamentos | Cotação, conversão e criação manual | Contratos de orçamento e criação de pedido passaram; a ligação atual pelo Atendimento standalone também foi verificada. |
 | Clientes | Endereço, pagamento, busca e histórico | Contratos de dados cadastrais e rastreabilidade do histórico passaram; as proteções existentes contra respostas assíncronas tardias foram mantidas. |
