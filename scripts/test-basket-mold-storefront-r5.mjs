@@ -73,4 +73,21 @@ assert.match(second,/<img src="\/oeste.webp" alt="Sabão em Pó Oeste 800 g">/);
 assert.match(second,/data-product-detail="oeste"/);
 assert.match(second,/data-product-id="oeste" role="option" aria-selected="true"/);
 
+
+const variants=Array.from({length:12},(_,i)=>({product_id:'product-'+i,name:'Marca '+i,image_url:'/test-'+i+'.webp',packaging:'1 kg',price_cents:1200-i*70,stock_quantity:100}));
+const unsortedItem={...sample,product_id:'product-11',alternatives:variants};
+const tenHtml=renderMoldRow(unsortedItem,0);
+assert.equal((tenHtml.match(/data-mold-option-choice="0"/g)||[]).length,10,'at most ten available options');
+assert.match(tenHtml,/class="basket-option-grid basket-option-carousel-track"/,'horizontal carousel track');
+assert.match(tenHtml,/data-mold-option-arrow="0"/,'previous and next arrows');
+assert.match(tenHtml,/data-mold-option-track="0"/,'preserve scroll offset on quote');
+const ids=[...tenHtml.matchAll(/data-product-id="(product-\d+)" role="option"/g)].map(m=>m[1]);
+assert.deepEqual(ids,Array.from({length:10},(_,i)=>'product-'+(11-i)),'ten alternatives must appear cheapest first');
+assert.match(tenHtml,/data-product-id="product-11" role="option" aria-selected="true"/,'the lowest-priced in-stock option is selected first');
+assert.doesNotMatch(tenHtml,/data-product-id="product-0" role="option"/,'the 11th and 12th expensive options are not visible');
+assert.match(root,/scroll-snap-type:x mandatory/,'carousel must support touch scroll snapping');
+assert.match(root,/carouselScroll=new Map/,'requoting must retain user carousel scroll position');
+assert.match(api,/publicAlts=alts\.slice\(0,10\)/,'API exposes the ten cheapest available options');
+assert.doesNotMatch(api,/randomized=alts\.slice/,'API must not randomize price ordering');
+
 console.log('basket mold storefront R5: PASS');
