@@ -41,7 +41,7 @@ const runtimeSections=fragmentPaths.map(p=>{
 const sections=['Central','Atendimento','ANA','Pedidos','Expedição','Entregador','Fechamento','Produtos','Cestas','Validades','Orçamentos','Clientes','Marketing','Compras/XML','Balanço','Gôndolas','Financeiro','Bling técnico','Infraestrutura compartilhada'];
 function domain(file,name,line){
   if(file==='vitrine/admin/admin-runtime.js'&&runtimeSections.length){
-    return runtimeSections.find(part=>line>=part.start&&line<=part.end)?.section||'Infraestrutura compartilhada';
+    return runtimeSections.find(part=>line>=part.start&&line<part.end)?.section||'Infraestrutura compartilhada';
   }
   if(file.includes('/atendimento/'))return 'Atendimento';
   if(file.includes('/ana/'))return 'ANA';
