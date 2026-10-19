@@ -48,6 +48,8 @@ assert.match(contacts.mapsHrefFromAddress({street:'Rua A',number:0,district:'Cen
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const e164=value=>String(value||'').replace(/\D/g,'');
 const wa=value=>e164(value).length>=12?'https://wa.me/'+e164(value):'';
+assert.equal(e164('+55 (65) 99999-9999'),'5565999999999');
+assert.equal(wa('+55 (65) 99999-9999'),'https://wa.me/5565999999999');
 const message=(value,body)=>wa(value)+'?text='+encodeURIComponent(body);
 const order={customer_name:'Maria Silva',public_code:'AB123',whatsapp_phone_e164:'5565999999999',
   delivery_address_snapshot:{street:'Rua A',number:'12',district:'Centro',city:'Cuiabá',state:'MT'}};
