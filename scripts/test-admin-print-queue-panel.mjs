@@ -27,9 +27,10 @@ assert.match(out,/data-print-order="o1"/);
 
 state.orders=null;
 state.opsPrintQueue.jobs=[null,{status:'pending',entity_id:'missing'}];
-assert.match(render(),/Abrir pedido/);
+assert.doesNotMatch(render(),/Abrir pedido/);
 state.opsPrintQueue.jobs=Array.from({length:12},()=>({status:'pending',entity_id:'missing'}));
-assert.equal(render().split('data-print-order=').length-1,8);
+assert.equal(render().split('history-row').length-1,8);
+assert.equal(render().split('data-print-order=').length-1,0);
 state.opsPrintQueue.jobs=[null,{status:'unknown'}];
 assert.equal(render(),'');
 // Verify HTML escaping at every data-driven rendering boundary.
@@ -61,7 +62,7 @@ assert.equal(readOnlyRender(),'');
 readOnlyState.opsPrintQueue={jobs:'invalid'};
 assert.equal(readOnlyRender(),'');
 // Attribute values must also be escaped, not only visible text.
-const attributeState={orders:[],opsPrintQueue:{jobs:[{status:'pending',entity_id:'x" onclick="alert(1)'}]}};
+const attributeState={orders:[{id:'x" onclick="alert(1)'}],opsPrintQueue:{jobs:[{status:'pending',entity_id:'x" onclick="alert(1)'}]}};
 const attributeRender=ctx.window.DonaAntoniaAdminPrintQueuePanel.createPrintQueuePanel(attributeState,escapeHtml,()=> '—').renderOpsPrintQueue;
 const attributeHtml=attributeRender();
 assert.ok(attributeHtml.includes('data-print-order="x&quot; onclick=&quot;alert(1)"'));
