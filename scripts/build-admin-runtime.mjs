@@ -29,7 +29,11 @@ const parts=[
 ];
 const dir=path.join(root,'vitrine/admin/runtime-parts');
 const output=path.join(root,'vitrine/admin/admin-runtime.js');
-const assembled=parts.map(name=>fs.readFileSync(path.join(dir,name),'utf8')).join('');
+const sourceParts=parts.map(name=>fs.readFileSync(path.join(dir,name),'utf8'));
+if(new Set(parts).size!==parts.length)throw new Error('Duplicate Admin runtime fragment');
+const present=fs.readdirSync(dir).filter(name=>name.endsWith('.part.js')).sort();
+if(JSON.stringify(present)!==JSON.stringify([...parts].sort()))throw new Error('Runtime source fragment list differs from directory');
+const assembled=sourceParts.join('');
 if(!assembled.startsWith('(()=>{')||!assembled.trimEnd().endsWith('})();'))throw new Error('Invalid Admin IIFE boundary');
 if(process.argv.includes('--write')){
   fs.writeFileSync(output,assembled);
