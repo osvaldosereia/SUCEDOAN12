@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-const html = fs.readFileSync('vitrine/admin/index.html', 'utf8');
+const html = fs.readFileSync('vitrine/admin/index.html', 'utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js', 'utf8');
 
 const required = [
   `'<div class="toolbar product-toolbar">'+`,

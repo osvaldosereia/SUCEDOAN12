@@ -1,6 +1,6 @@
 from pathlib import Path
 
-p=Path('vitrine/admin/index.html')
+p=Path('vitrine/admin/admin-runtime.js')
 s=p.read_text(encoding='utf-8')
 start=s.index('  async function renderToday(){')
 end=s.index('  function expeditionFiscalState(o){',start)

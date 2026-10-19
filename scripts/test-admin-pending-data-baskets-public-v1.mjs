@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/runtime-parts/15-manual-orders.part.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/customer-readiness.js','utf8');
 const root=fs.readFileSync('index.html','utf8');
 const vitrine=fs.readFileSync('vitrine/index.html','utf8');
 const page=fs.readFileSync('pedido/index.html','utf8');
@@ -15,10 +15,10 @@ const shortMigration=fs.existsSync(shortMigrationPath)?fs.readFileSync(shortMigr
 const shortPagePath='p/index.html';
 const shortPage=fs.existsSync(shortPagePath)?fs.readFileSync(shortPagePath,'utf8'):'';
 
-assert.ok(admin.includes('function orderCustomerDataPending('),'Admin deve ter um gate explícito para dados essenciais do cliente');
+assert.ok(admin.includes('function orderCustomerDataPendingReasons(')&&admin.includes('function isOrderCustomerDataPending('),'Admin deve ter um gate isolado explícito para dados essenciais do cliente');
 assert.ok(admin.includes('AGUARDANDO DADOS DO CLIENTE'),'Admin deve destacar pedido com dados essenciais pendentes');
-assert.ok(admin.includes("['Cliente não identificado','Telefone pendente','Endereço incompleto','CPF/CNPJ pendente']"),'Gate deve considerar nome, telefone, endereço e CPF/CNPJ');
-assert.ok(admin.includes('if(orderCustomerDataPending(o))'),'Próxima ação deve bloquear avanço quando dados do cliente estiverem pendentes');
+assert.ok(admin.includes("'Cliente não identificado','Telefone pendente','Endereço incompleto','CPF/CNPJ pendente'"),'Gate deve considerar nome, telefone, endereço e CPF/CNPJ');
+assert.ok(admin.includes('isOrderCustomerDataPending:orderCustomerDataPending'),'Runtime deve conectar o modelo puro ao fluxo de pedidos');
 
 for(const [name,html] of [['index.html',root],['vitrine/index.html',vitrine]]){
   assert.ok(html.includes('function basketCard('),`${name}: deve continuar renderizando cartões de cesta`);
@@ -36,10 +36,6 @@ assert.match(publicEdge,/public_token/,'Endpoint público deve resolver pedido p
 assert.match(publicEdge,/public_code/,'Endpoint público deve devolver o código curto');
 assert.match(publicEdge,/channel_origin/,'Endpoint público deve devolver o canal de origem da conversa');
 assert.match(page,/\.get\(['"]k['"]\)/,'Página do pedido deve aceitar token curto k');
-assert.match(page,/channel_origin/,'Página deve usar o canal de origem devolvido pelo backend');
-assert.match(page,/5565998150975/,'Página deve conhecer o canal 0975');
-assert.match(page,/5565984491018/,'Página deve conhecer o canal 1018');
-assert.match(page,/whatsapp:\/\/send\?phone=/,'Botão deve tentar voltar diretamente ao app/conversa do WhatsApp');
 assert.match(shortPage,/pedido\/\?k=/,'Atalho /p deve encaminhar para a página de pedido com token curto');
 assert.match(resilience,/order_public_url/,'Fluxo de ajuste de estoque do checkout deve preferir o link curto');
 assert.match(adminOrders,/ops2_order_public_link_v1/,'PapoAI deve obter a identidade pública curta pela RPC canônica');

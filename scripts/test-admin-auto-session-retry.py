@@ -1,6 +1,6 @@
 from pathlib import Path
 
-admin = Path('vitrine/admin/index.html').read_text(encoding='utf-8')
+admin = Path('vitrine/admin/admin-runtime.js').read_text(encoding='utf-8')
 quote = Path('orcamento/app-original.html').read_text(encoding='utf-8')
 
 checks = [

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-admin = Path('vitrine/admin/index.html').read_text(encoding='utf-8')
+admin = Path('vitrine/admin/admin-runtime.js').read_text(encoding='utf-8') + Path('vitrine/admin/orders/read-model.js').read_text(encoding='utf-8')
 
 if 'function isBacklogOrder(o)' not in admin:
     raise SystemExit('RED: isBacklogOrder is missing; Central and Pedidos will fail while rendering backlog filters')
