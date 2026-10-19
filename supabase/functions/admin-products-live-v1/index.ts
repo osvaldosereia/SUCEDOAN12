@@ -1328,7 +1328,7 @@ async function ordersList(options:any={}){
   const allowed=["new","separate","ready","delivered"];
   if(tab&&!allowed.includes(tab))throw new Error("invalid_order_board_tab");
   const offset=Math.max(0,Math.min(50000,Number(options?.offset)||0));
-  const limit=Math.max(1,Math.min(100,Number(options?.limit)||100));
+  const limit=Math.max(1,Math.min(50,Number(options?.limit)||50));
   let query=db.from("orders").select("*",{count:"exact"});
   if(!search){
     if(tab==="new")query=query.in("status",["created","storefront_received"]);
