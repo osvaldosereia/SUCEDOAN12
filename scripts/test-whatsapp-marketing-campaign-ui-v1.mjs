@@ -41,7 +41,7 @@ assert.match(source,/Gerar snapshot/,'UI deve congelar público por ação expl�
 assert.match(source,/Voltar para rascunho/,'campanha pronta deve exigir retorno explícito para editar');
 assert.match(source,/Pronta para revisão/,'ação de revisão deve existir');
 assert.match(source,/Preparar teste interno/,'preparação de teste interno deve existir');
-assert.match(source,/Nenhuma mensagem será enviada nesta fase/,'teste interno deve deixar claro que não envia');
+assert.match(source,/Envio somente após revisão e confirmação manual/,'envio manual deve exigir revisão e confirmação');
 assert.match(source,/Campanhas desligadas/,'banner de kill-switch deve permanecer visível');
 assert.match(source,/confirm\s*\(/,'transição administrativa deve exigir confirmação explícita');
 assert.match(source,/aria-busy/,'ações assíncronas devem informar estado ocupado');
@@ -52,3 +52,4 @@ assert.match(css,/@media/,'Campanhas deve ser responsivo');
 assert.match(css,/marketing-campaign/,'CSS deve pertencer ao módulo de Campanhas');
 
 console.log('PASS test-whatsapp-marketing-campaign-ui-v1');
+
