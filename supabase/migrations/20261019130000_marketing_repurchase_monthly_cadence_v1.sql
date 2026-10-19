@@ -19,7 +19,7 @@ declare
   v_reason text;
   v_interval_days integer := 30;
   v_interval_count integer := 0;
-  v_channel record;
+  v_channel public.whatsapp_accounts%rowtype;
   v_product_categories jsonb := '[]'::jsonb;
   v_template_name text := 'recompradonaantonia30dias';
 begin
