@@ -28,6 +28,8 @@ assert.doesNotMatch(ui,/data-mold-composition-count/);
 assert.match(ui,/public_composition_count:d.public_composition_count/);
 assert.match(ui,/Math.min\(6,Math.max\(1,Number\(e\?\.public_composition_count\|\|1\)\)\)/);
 assert.match(ui,/Cestas e quantidades/);
+assert.match(ui,/cestas-completas/);
+assert.match(ui,/state.baskets.some/);
 assert.match(ui,/Produtos e marcas/);
 assert.match(ui,/data-mold-shared-search/);
 assert.match(ui,/data-mold-shared-add/);
@@ -39,7 +41,7 @@ assert.match(ui,/data-mold-save/);
 assert.equal(/kit interno|kit base|assembly_kit/i.test(ui),false,'normal mold editor must not teach internal kits');
 
 const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
-assert.match(adminHtml,/basket-admin-section\.js\?v=basket-personalization-v1/);
+assert.match(adminHtml,/basket-admin-section\.js\?v=basket-personalization-v2/);
 const compositionSQL=fs.readFileSync('supabase/migrations/20261013122000_basket_mold_preferred_product_v1.sql','utf8');
 assert.match(compositionSQL,/metadata.*preferred/);
 assert.match(compositionSQL,/bool_or\(s\.is_preferred\)/);
