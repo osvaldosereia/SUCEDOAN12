@@ -30,6 +30,22 @@ const qty=(x:unknown)=>{
   const n=Number(x);
   return Number.isFinite(n)&&n>0&&n<=999999&&Math.round(n*1000)===n*1000?n:null;
 };
+async function withProductNames(rows:Record<string,unknown>[]){
+  const ids=[...new Set(rows.map(row=>String(row.matched_product_id||"")).filter(idOk))];
+  const names=new Map<string,string>();
+  if(ids.length){
+    const products=await db.from("products").select("id,name").in("id",ids);
+    if(products.error)throw products.error;
+    for(const product of products.data||[])names.set(String(product.id),String(product.name||""));
+  }
+  return rows.map(row=>({...row,product_name:names.get(String(row.matched_product_id||""))||null}));
+}
+async function withProductNamesOnRow(payload:Record<string,unknown>){
+  if(payload&&payload.row&&typeof payload.row==="object"&&!Array.isArray(payload.row)){
+    payload.row=(await withProductNames([payload.row as Record<string,unknown>]))[0];
+  }
+  return payload;
+}
 const validDate=(x:unknown)=>{
   if(x===null||x===undefined||x==="")return null;
   const s=String(x);
@@ -79,8 +95,9 @@ Deno.serve(async (r:Request)=>{
       if(filter!=="all")query=query.eq("sync_status",filter);
       const [records,stats]=await Promise.all([query,db.rpc("ean_capture_stats_v1")]);
       if(records.error||stats.error)throw records.error||stats.error;
-      return reply(r,{ok:true,rows:records.data||[],count:records.count||0,summary:stats.data||{},next_offset:offset+(records.data||[]).length,
-        has_more:offset+(records.data||[]).length<(records.count||0)});
+      const rows=await withProductNames(records.data||[]);
+      return reply(r,{ok:true,rows,count:records.count||0,summary:stats.data||{},next_offset:offset+rows.length,
+        has_more:offset+rows.length<(records.count||0)});
     }
     if(r.method!=="POST")return reply(r,{ok:false,error:"metodo_invalido"},405);
     if(action==="photo"){
@@ -146,7 +163,7 @@ Deno.serve(async (r:Request)=>{
       const synced=await db.rpc("ean_capture_sync_one_v1",{p_capture_id:input.id});
       if(synced.error)throw synced.error;
       if(synced.data?.ok!==true)return reply(r,{ok:false,error:synced.data?.error||"leitura_nao_encontrada"},404);
-      return reply(r,synced.data);
+      return reply(r,await withProductNamesOnRow(synced.data));
     }
     if(action==="add"){
       if(!eanOk(input.ean)||!idOk(input.client_entry_id)||qty(input.quantity)===null)
@@ -183,7 +200,7 @@ Deno.serve(async (r:Request)=>{
       const synced=await db.rpc("ean_capture_sync_one_v1",{p_capture_id:input.id});
       if(synced.error)throw synced.error;
       if(synced.data?.ok!==true)return reply(r,{ok:false,error:synced.data?.error||"leitura_nao_encontrada"},404);
-      return reply(r,synced.data);
+      return reply(r,await withProductNamesOnRow(synced.data));
     }
     if(action==="sync"){
       const synced=await db.rpc("ean_capture_sync_v1");
@@ -204,7 +221,7 @@ Deno.serve(async (r:Request)=>{
       });
       if(resolved.error)throw resolved.error;
       if(resolved.data?.ok!==true)return reply(r,{ok:false,error:resolved.data?.error||"resolucao_falhou"},409);
-      return reply(r,resolved.data);
+      return reply(r,await withProductNamesOnRow(resolved.data));
     }
 
     return reply(r,{ok:false,error:"acao_invalida"},404);

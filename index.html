@@ -974,8 +974,12 @@
     function bindMoldOptionMenus(){
       sheetBody.querySelectorAll('[data-mold-option-arrow]').forEach(btn=>btn.onclick=e=>{
         e.stopPropagation();const track=sheetBody.querySelector('[data-mold-option-track="'+btn.dataset.moldOptionArrow+'"]');
-        if(!track)return;const card=track.querySelector('.basket-option-choice'),step=(card?.getBoundingClientRect().width||178)+8;
-        track.scrollBy({left:Number(btn.dataset.direction||1)*step,behavior:'smooth'});
+        if(!track)return;
+        const card=track.querySelector('.basket-option-choice'),cardStep=(card?.getBoundingClientRect().width||178)+8;
+        const step=Math.max(cardStep,Math.round(track.clientWidth*.8));
+        const max=Math.max(0,track.scrollWidth-track.clientWidth);
+        const next=Math.max(0,Math.min(max,track.scrollLeft+Number(btn.dataset.direction||1)*step));
+        track.scrollTo({left:next,behavior:'smooth'});
       });
       sheetBody.querySelectorAll('[data-mold-option-track]').forEach(track=>track.addEventListener('keydown',e=>{
         if(e.target!==track||!['ArrowLeft','ArrowRight'].includes(e.key))return;
