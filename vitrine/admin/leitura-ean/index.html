@@ -43,6 +43,8 @@ button.full{width:100%;margin-top:12px;font-size:16px;min-height:50px}
 .entry{padding:12px 0;border-top:1px solid #e3ebe6;display:flex;justify-content:space-between;gap:8px}
 .entry:first-child{border-top:0}.entry-code{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .entry-meta{font-size:12px;color:#5d7066;margin-top:5px}.entry-product-name{font-size:13px;font-weight:750;color:#125638;margin-top:4px;overflow-wrap:anywhere}
+.entry-product-photo{display:block;width:132px;height:132px;margin-top:8px;padding:4px;border:1px solid #dce8e1;border-radius:10px;background:#fff;cursor:zoom-in}
+.entry-product-photo img{display:block;width:100%;height:100%;object-fit:contain}
 .entry-left{min-width:0}.entry-right{text-align:right;flex-shrink:0}
 .tag{display:inline-block;font-size:12px;font-weight:800;border-radius:7px;padding:5px 7px}
 .found{background:#def7e5;color:#136139}.not_found{background:#fff0e0;color:#a34b0e}.pending{background:#e9eef3;color:#465c67}
@@ -269,7 +271,7 @@ const KEY="sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8";
 const API=BASE+"/functions/v1/admin-ean-capture-v1";
 const $=(id)=>document.getElementById(id);
 let tokenPromise=null,cameraStream=null,cameraDetector=null,cameraRunning=false,cameraTimer=null,cameraChoice="",lastCameraEan="",lastCameraAt=0,scanMode="",scanner=null,torchOn=false;
-let paused=false,busy=false,editingId="",pendingId="",currentEan="",filter="all",offset=0,hasMore=false,rows=[],count=0,missingRecordId="",pendingPhotoFile=null,resolveRereadId="";
+let paused=false,busy=false,editingId="",pendingId="",currentEan="",filter="all",offset=0,hasMore=false,rows=[],count=0,missingRecordId="",pendingPhotoFile=null,resolveRereadId="",photoUploadMode=false;
 const uuid=()=>crypto.randomUUID();
 const msg=(s,error=false)=>{$("message").textContent=s;$("message").classList.toggle("error",error)};
 const normalizeEan=(v)=>String(v||"").replace(/\D/g,"");
@@ -279,6 +281,36 @@ const fmt=(v)=>v?new Date(v).toLocaleString("pt-BR",{day:"2-digit",month:"2-digi
 const esc=(s)=>String(s??"").replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function validToken(t){
  try{const data=JSON.parse(atob(String(t).split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));return Number(data.exp)>Date.now()/1000+60}catch{return false}
+}
+async function savedPhotoUrl(id){
+ const token=await auth(),url=new URL(API);url.searchParams.set("action","photo_url");url.searchParams.set("id",id);
+ const response=await fetch(url,{cache:"no-store",headers:{Authorization:"Bearer "+token,apikey:KEY}});
+ const body=await response.json().catch(()=>({}));
+ if(!response.ok||body.ok!==true||!body.url)throw Error(body.error||"foto_nao_encontrada");
+ return body.url;
+}
+function showProductPhoto(url,name){
+ const viewer=$("photoViewer"),image=$("photoViewerImage"),status=$("photoViewerStatus");
+ photoUploadMode=false;$("photoViewerAdd").hidden=true;image.hidden=true;status.hidden=false;status.textContent="Carregando foto…";viewer.hidden=false;
+ image.onload=()=>{status.hidden=true;image.hidden=false};image.onerror=()=>{image.hidden=true;status.hidden=false;status.textContent="Não foi possível abrir a foto do produto."};
+ image.alt=name||"Produto encontrado";image.src=url||"";
+}
+async function showSavedPhoto(id){
+ const viewer=$("photoViewer"),image=$("photoViewerImage"),status=$("photoViewerStatus");
+ photoUploadMode=false;$("photoViewerAdd").hidden=true;image.hidden=true;status.hidden=false;status.textContent="Carregando foto…";viewer.hidden=false;
+ try{const url=await savedPhotoUrl(id);image.onload=()=>{status.hidden=true;image.hidden=false};image.onerror=()=>{status.hidden=false;status.textContent="Não foi possível abrir a foto salva."};image.alt="Foto salva do produto";image.src=url}
+ catch(e){status.textContent="Não foi possível abrir a foto. "+String(e?.message||e)}
+}
+function openPhotoUploadViewer(row){
+ photoUploadMode=true;missingRecordId=row.id;paused=true;pendingPhotoFile=null;
+ $("photoViewerImage").hidden=true;$("photoViewerImage").removeAttribute("src");
+ $("photoViewerStatus").hidden=false;$("photoViewerStatus").textContent="EAN "+row.ean+" · escolha uma foto para anexar.";
+ $("photoViewerAdd").hidden=false;$("photoViewer").hidden=false;
+}
+function closePhotoViewer(){
+ $("photoViewer").hidden=true;const image=$("photoViewerImage");image.onload=null;image.onerror=null;image.removeAttribute("src");image.hidden=true;
+ $("photoViewerStatus").hidden=false;$("photoViewerAdd").hidden=true;
+ if(photoUploadMode){photoUploadMode=false;missingRecordId="";pendingPhotoFile=null;paused=false}
 }
 async function auth(){
  const stored=sessionStorage.getItem("da_finance_access_token_v1")||"";
@@ -441,8 +473,8 @@ async function uploadPhoto(file){
 
 $("takePhoto").onclick=async()=>{
  if(pendingPhotoFile){await uploadPhoto(pendingPhotoFile);return}
- const video=$("camera");
- if(!cameraRunning||video.readyState<2){$("productPhotoInput").click();return}
+ const video=scanner?$("cameraViewport").querySelector("video"):$("camera");
+ if(!cameraRunning||!video||video.readyState<2){$("productPhotoInput").click();return}
  const w=video.videoWidth||1280,height=video.videoHeight||720;
  const scale=Math.min(1,1600/Math.max(w,height));
  const canvas=document.createElement("canvas");
@@ -510,6 +542,7 @@ function paint(){
    :'<span class="tag pending">A sincronizar</span>';
   return '<article class="entry"><div class="entry-left"><div class="entry-code">'+esc(r.ean)+'</div>'+
     (r.sync_status==="found"&&r.product_name?'<div class="entry-product-name">'+esc(r.product_name)+'</div>':'')+
+    (r.sync_status==="found"&&r.product_image_url?'<button type="button" class="entry-product-photo" data-product-photo data-photo-url="'+esc(r.product_image_url)+'" data-product-name="'+esc(r.product_name||"Produto encontrado")+'" aria-label="Ampliar foto de '+esc(r.product_name||"produto encontrado")+'"><img loading="lazy" src="'+esc(r.product_image_url)+'" alt="'+esc(r.product_name||"Produto encontrado")+'"></button>':'')+
    '<div class="entry-meta">Quantidade: <b>'+qtyBR(r.quantity)+'</b> · '+dateBR(r.expires_on)+'</div>'+
    '<div class="entry-meta">'+fmt(r.created_at)+'</div></div>'+
    '<div class="entry-right">'+status+(r.photo_path?'<div class="entry-meta">📷 Foto salva</div>':'')+
@@ -573,6 +606,8 @@ $("entries").addEventListener("click",(event)=>{
   if(!row||!panel)return;const ncm=panel.querySelector('input[name="ncm"]')?.value||"";
   resolveRow("link_product",id,{product_id:choose.dataset.linkProduct,ncm});return;
  }
+ const productPhoto=event.target.closest("[data-product-photo]");
+ if(productPhoto){showProductPhoto(productPhoto.dataset.photoUrl,productPhoto.dataset.productName);return}
  const view=event.target.closest("[data-view-photo]");
  if(view){showSavedPhoto(view.dataset.viewPhoto);return}
  const photo=event.target.closest("[data-photo]");
@@ -588,7 +623,8 @@ $("entries").addEventListener("click",(event)=>{
  $("quantity").value=r.quantity;$("expiry").value=r.expires_on||"";$("expiryField").hidden=!r.expires_on;$("toggleValidity").textContent=r.expires_on?"− Ocultar validade":"+ Validade (opcional)";
  $("entryEditor").hidden=false;$("quantity").focus({preventScroll:true});$("quantity").select();
 });
-$("photoViewerClose").addEventListener("click",closePhotoViewer);
+$("photoViewerAdd").addEventListener("click",()=>$("productPhotoInput").click());
+ $("photoViewerClose").addEventListener("click",closePhotoViewer);
  $("photoViewer").addEventListener("click",(event)=>{if(event.target===$("photoViewer"))closePhotoViewer()});
  document.addEventListener("keydown",(event)=>{if(event.key==="Escape"&&!$("photoViewer").hidden)closePhotoViewer()});
  document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("click",async()=>{
@@ -656,6 +692,8 @@ function stopCamera(){
   for(const track of cameraStream.getTracks?.()||[])try{track.stop()}catch{}
   cameraStream=null;
  }
+ if(scanner){try{if(scanner.isScanning)scanner.stop().catch(()=>{});scanner.clear()}catch{}scanner=null}
+ const viewport=$("cameraViewport");if(viewport)viewport.replaceChildren();
  cameraDetector=null;
  const v=$("camera");if(v)try{v.pause();v.srcObject=null}catch{}
  $("cameraBox").hidden=true;
@@ -682,12 +720,26 @@ function playBalanceScanBeep(){
   if(ctx.state==="suspended")ctx.resume().then(fire).catch(()=>{});else fire();
  }catch{}
 }
+async function startHtml5Camera(deviceId=""){
+ if(!window.Html5Qrcode)throw Error("O leitor de câmera não carregou. Atualize a página e tente novamente.");
+ const viewport=$("cameraViewport");$("cameraBox").hidden=false;viewport.hidden=false;viewport.replaceChildren();
+ scanner=new Html5Qrcode("cameraViewport",scannerOptions(),false);
+ const camera=deviceId||{facingMode:"environment"};
+ await scanner.start(camera,{fps:12,qrbox:(w,h)=>({width:Math.max(220,Math.floor(w*.9)),height:Math.max(100,Math.floor(h*.48))})},decoded=>{
+  const raw=String(decoded||"").replace(/\D+/g,"");if(raw.length<8||raw.length>14)return;
+  const now=Date.now();if(raw!==lastCameraEan||now-lastCameraAt>2500){lastCameraEan=raw;lastCameraAt=now;codeDetected(raw)}
+ },()=>{});
+ cameraRunning=true;$("cameraButton").textContent="■ Fechar câmera";$("cameraHelp").hidden=false;scanMode="active";msg("Câmera ativa · aponte o código de barras para o quadro.");
+}
 async function startCamera(deviceId=""){
  unlockBalanceScanAudio();
  const status=$("message"),video=$("camera");if(!video)return;
  if(!navigator.mediaDevices?.getUserMedia){msg("Este navegador não liberou câmera. Use o EAN manual abaixo.",true);return}
- if(!("BarcodeDetector" in window)){msg("Leitura automática indisponível neste navegador. Abra com o mesmo navegador usado no Balanço.",true);return}
  stopCamera();
+ if(!("BarcodeDetector" in window)){
+  try{await startHtml5Camera(deviceId)}catch(e){stopCamera();msg("Não consegui abrir a câmera: "+String(e?.message||e)+". Verifique a permissão de câmera ou use EAN manual.",true)}
+  return;
+ }
  try{
   $("cameraBox").hidden=false;
   $("cameraViewport").hidden=true;
