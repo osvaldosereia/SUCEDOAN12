@@ -12,8 +12,9 @@ const modules=[
   'components/expiry-alert.js','components/ops-attention.js',
   'components/print-queue-panel.js'
 ];
-const mainIndex=html.indexOf('<script>\n(()=>{');
-assert.ok(mainIndex>0,'main admin script not found');
+const mainIndex=html.indexOf('<script src="/vitrine/admin/admin-runtime.js?');
+assert.ok(mainIndex>0,'external admin runtime script not found');
+assert.ok(fs.existsSync('vitrine/admin/admin-runtime.js'),'external runtime file missing');
 for(const module of modules){
   const url='/vitrine/admin/'+module;
   const matches=scripts.filter(s=>s.split('?')[0]===url);
