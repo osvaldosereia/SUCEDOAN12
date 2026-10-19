@@ -1,8 +1,9 @@
 import {attendanceAuthorizedFetch,attendanceJsonApi} from '../atendimento/attendance-auth.js?v=auth-refresh-v2';
 
 const AUDIENCE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-marketing-audiences-v1';
+const CAMPAIGN_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-marketing-campaigns-v1';
 const ADMIN_PUBLIC_KEY=['sb','publishable','tFXHtH0HCXZepVtwgKElIg','DxS76Gu8'].join('_');
-const CSS_URL='/vitrine/admin/marketing/audience-center.css?v=marketing-audience-v1';
+const CSS_URL='/vitrine/admin/marketing/audience-center.css?v=marketing-audience-v2';
 const reasonLabels={
   no_consent:'Sem consentimento',
   opted_out:'Pediu para não receber',
@@ -16,6 +17,9 @@ let overviewCache=null;
 let audienceBusy=false;
 let consentBusy=false;
 let activeRoot=null;
+let selectedAudience=new Map();
+let audienceOffset=0;
+const AUDIENCE_PAGE_SIZE=50;
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const fmtDate=value=>{if(!value)return '—';const date=new Date(value);return Number.isNaN(date.getTime())?'—':date.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})};
@@ -35,7 +39,7 @@ function navMarkup(active){
   const item=(key,label)=>`<button type="button" class="${key===active?'active':''}" data-marketing-view="${key}">${label}</button>`;
   return `<div class="marketing-template-subnav marketing-audience-nav" data-marketing-subnav>
     ${item('overview','Visão geral')}${item('templates','Templates Meta')}${item('audiences','Públicos')}${item('consents','Consentimentos')}
-    <span class="marketing-campaign-gate">Campanhas desligadas</span>
+    <span class="marketing-campaign-gate" data-marketing-runtime-status>Consultando envio…</span>
   </div>`;
 }
 
@@ -62,6 +66,10 @@ async function adminPost(action,body){
   const data=await response.json().catch(()=>({}));
   if(!response.ok||data?.ok===false){const error=new Error(data?.error||`marketing_${response.status}`);error.payload=data;throw error}
   return data;
+}
+
+async function loadRuntimeStatus(root){
+  try{const url=new URL(CAMPAIGN_API);url.searchParams.set('action','runtime_status');const response=await attendanceAuthorizedFetch(url,{method:'GET',headers:{apikey:ADMIN_PUBLIC_KEY},cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||'runtime_status_unavailable');const items=Array.isArray(data.items)?data.items:[],open=items.filter(item=>item.campaigns_enabled===true&&item.send_enabled===true&&item.outbound_provider==='meta'&&['canary','live'].includes(item.mode));const label=open.length?'Envio manual habilitado':'Envio pausado';root.querySelectorAll('[data-marketing-runtime-status]').forEach(node=>{node.textContent=label;node.title=open.length?'Canais habilitados: '+open.map(item=>item.channel).join(', '):'Os canais oficiais estão bloqueados pelo runtime.'})}catch{root.querySelectorAll('[data-marketing-runtime-status]').forEach(node=>{node.textContent='Estado do envio indisponível';node.title='Não foi possível consultar o runtime dos canais.'})}
 }
 
 async function loadOverview(force=false){
@@ -136,6 +144,8 @@ function renderAudienceResult(root,data){
   const panel=root.querySelector('[data-audience-result]');if(!panel)return;
   const reasonEntries=Object.entries(data?.exclusion_reasons||{}).filter(([,count])=>Number(count)>0);
   const items=Array.isArray(data?.items)?data.items:[];
+  const offset=Number(data?.offset||0),limit=Number(data?.limit||AUDIENCE_PAGE_SIZE),found=Number(data?.found_count||0);
+  const selectedNames=[...selectedAudience.values()].map(item=>esc(item.name||'Cliente')).join(', ');
   panel.innerHTML=`<div class="marketing-audience-result-head">
     <article class="marketing-audience-segment-total"><small>Clientes no público</small><strong>${Number(data?.found_count||0)}</strong><span>Resultado dos filtros comerciais aplicados.</span></article>
     <details class="marketing-audience-send-checks">
@@ -148,10 +158,23 @@ function renderAudienceResult(root,data){
       <p>Estas verificações são mantidas para a futura etapa de envio e não impedem montar, analisar ou salvar o público comercial.</p>
     </details>
   </div>
-  <div class="marketing-audience-table-wrap"><table class="marketing-audience-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Local</th><th>Compras</th><th>Última compra</th></tr></thead><tbody>
-    ${items.length?items.map(item=>`<tr><td><strong>${esc(item.name||'Cliente')}</strong></td><td>${esc(item.masked_phone||'—')}</td><td>${esc([item.city,item.neighborhood].filter(Boolean).join(' · ')||'—')}</td><td>${Number(item.order_count||0)}<small>${money(item.lifetime_value)}</small></td><td>${esc(fmtDate(item.last_purchase_at))}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhum cliente encontrado com estes filtros.</td></tr>'}
+  <div class="marketing-audience-selection-bar"><strong>${selectedAudience.size} contato(s) selecionado(s)</strong><button type="button" data-audience-clear-selection ${selectedAudience.size?'':'disabled'}>Limpar seleção</button><button type="button" class="primary" data-audience-create-campaign ${selectedAudience.size?'':'disabled'}>Criar campanha com os contatos selecionados</button></div>
+  ${selectedAudience.size?`<p class="marketing-audience-selected-preview"><b>Destinatários selecionados:</b> ${selectedNames}</p>`:''}
+  <div class="marketing-audience-table-wrap"><table class="marketing-audience-table"><thead><tr><th>Selecionar</th><th>Cliente</th><th>Telefone</th><th>Local</th><th>Compras</th><th>Última compra</th></tr></thead><tbody>
+    ${items.length?items.map(item=>{const id=String(item.customer_id||''),eligible=item.eligible===true,checked=selectedAudience.has(id);return `<tr class="${eligible?'':'ineligible'}"><td><input type="checkbox" data-audience-select-customer="${esc(id)}" aria-label="Selecionar ${esc(item.name||'cliente')}" ${eligible?'':'disabled'} ${checked?'checked':''}></td><td><strong>${esc(item.name||'Cliente')}</strong>${eligible?'':'<small>Não apto para envio</small>'}</td><td>${esc(item.masked_phone||'—')}</td><td>${esc([item.city,item.neighborhood].filter(Boolean).join(' · ')||'—')}</td><td>${Number(item.order_count||0)}<small>${money(item.lifetime_value)}</small></td><td>${esc(fmtDate(item.last_purchase_at))}</td></tr>`}).join(''):'<tr><td colspan="6" class="empty">Nenhum cliente encontrado com estes filtros.</td></tr>'}
   </tbody></table></div>
-  <p class="marketing-audience-note">As verificações de envio são aplicadas depois, na campanha. Aqui o foco é montar e analisar o público.</p>`;
+  <div class="marketing-audience-pagination"><span>${found?offset+1:0}–${Math.min(offset+items.length,found)} de ${found}</span><button type="button" data-audience-page-previous ${offset<=0?'disabled':''}>Anterior</button><button type="button" data-audience-page-next ${offset+items.length>=found||items.length<limit?'disabled':''}>Próxima</button></div>
+  <p class="marketing-audience-note">Apenas clientes aptos aparecem selecionáveis. O snapshot revisa novamente a elegibilidade antes da campanha.</p>`;
+  panel.querySelectorAll('[data-audience-select-customer]').forEach(input=>input.addEventListener('change',()=>{const item=items.find(row=>String(row.customer_id||'')===input.dataset.audienceSelectCustomer);if(!item||item.eligible!==true)return;if(input.checked){if(selectedAudience.size>=200){input.checked=false;root.querySelector('[data-audience-status]').textContent='O limite é 200 contatos por seleção. Crie a campanha em lotes menores.';return}selectedAudience.set(input.dataset.audienceSelectCustomer,{name:item.name||'Cliente'})}else selectedAudience.delete(input.dataset.audienceSelectCustomer);renderAudienceResult(root,data)}));
+  panel.querySelector('[data-audience-clear-selection]')?.addEventListener('click',()=>{selectedAudience.clear();renderAudienceResult(root,data)});
+  panel.querySelector('[data-audience-page-previous]')?.addEventListener('click',()=>loadAudiencePage(root,Math.max(0,offset-limit)));
+  panel.querySelector('[data-audience-page-next]')?.addEventListener('click',()=>loadAudiencePage(root,offset+limit));
+  panel.querySelector('[data-audience-create-campaign]')?.addEventListener('click',async()=>{if(!selectedAudience.size)return;const button=panel.querySelector('[data-audience-create-campaign]');setButtonBusy(button,true,'Abrindo campanha…');try{const entry=window.DAMarketingCampaignEntry;if(!entry?.openCampaigns)throw new Error('campaign_entry_unavailable');const filters={...collectFilters(root.querySelector('[data-audience-form]')),customer_ids:[...selectedAudience.keys()]};await entry.openCampaigns({filters})}catch(error){root.querySelector('[data-audience-status]').textContent=`Não foi possível abrir a campanha: ${String(error?.message||error)}`;setButtonBusy(button,false)}});
+}
+
+async function loadAudiencePage(root,offset){
+  const form=root.querySelector('[data-audience-form]'),status=root.querySelector('[data-audience-status]');if(!form)return;
+  try{audienceOffset=offset;status.textContent='Carregando contatos…';const data=await adminPost('preview',{filters:collectFilters(form),limit:AUDIENCE_PAGE_SIZE,offset});if(activeRoot!==root)return;renderAudienceResult(root,data);status.textContent=`Página carregada. ${selectedAudience.size} contato(s) selecionado(s).`}catch(error){if(activeRoot===root)status.textContent=`Não foi possível carregar os contatos: ${String(error?.message||error)}`}
 }
 
 function setButtonBusy(button,busy,label){
@@ -165,8 +188,9 @@ function setButtonBusy(button,busy,label){
 async function mountAudienceView(root=document.querySelector('#content')){
   if(!root)return;
   ensureCss();activeRoot=root;
+    selectedAudience=new Map();audienceOffset=0;
   root.innerHTML=`<div class="marketing-audience-center">
-    <div class="page-head"><div><h1>Marketing</h1><p>Monte públicos comerciais usando toda a sua base de clientes.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
+    <div class="page-head"><div><h1>Marketing</h1><p>Monte públicos comerciais usando toda a sua base de clientes.</p></div><span class="marketing-campaign-gate" data-marketing-runtime-status>Consultando envio…</span></div>
     ${navMarkup('audiences')}
     <section class="marketing-audience-section"><div class="marketing-audience-section-head"><div><h2>Públicos</h2><p>Filtre por perfil de compra, localização e atendimento. As verificações de envio são aplicadas depois, na campanha.</p></div></div>
       <div data-audience-overview class="marketing-audience-loading">Carregando visão geral…</div>
@@ -176,19 +200,20 @@ async function mountAudienceView(root=document.querySelector('#content')){
     </section>
   </div>`;
   bindNav(root);
+  void loadRuntimeStatus(root);
   try{
     const [overview,labels]=await Promise.all([loadOverview(),loadLabels()]);
     if(activeRoot!==root)return;
     root.querySelector('[data-audience-overview]').innerHTML=audienceOverviewCards(overview);
     root.querySelector('[data-audience-form-host]').innerHTML=audienceForm(labels);
     const form=root.querySelector('[data-audience-form]');
-    form.querySelector('[data-clear-filters]')?.addEventListener('click',()=>{form.reset();root.querySelector('[data-audience-result]').innerHTML='';root.querySelector('[data-audience-status]').textContent='Filtros limpos.'});
+    form.querySelector('[data-clear-filters]')?.addEventListener('click',()=>{form.reset();selectedAudience.clear();audienceOffset=0;root.querySelector('[data-audience-result]').innerHTML='';root.querySelector('[data-audience-status]').textContent='Filtros e seleção limpos.'});
     form.addEventListener('submit',async event=>{
       event.preventDefault();if(audienceBusy)return;
       const button=form.querySelector('[data-calculate-audience]'),status=root.querySelector('[data-audience-status]');
       try{
         audienceBusy=true;setButtonBusy(button,true,'Calculando…');status.textContent='Calculando público no servidor…';
-        const data=await adminPost('preview',{filters:collectFilters(form),limit:50,offset:0});
+        selectedAudience.clear();audienceOffset=0;const data=await adminPost('preview',{filters:collectFilters(form),limit:AUDIENCE_PAGE_SIZE,offset:0});
         if(activeRoot!==root)return;
         renderAudienceResult(root,data);status.textContent=`Cálculo concluído: ${Number(data.found_count||0)} cliente(s) encontrado(s).`;
       }catch(error){if(activeRoot===root)status.textContent=`Não foi possível calcular o público: ${String(error?.message||error)}`}
@@ -262,7 +287,7 @@ async function mountConsentView(root=document.querySelector('#content')){
   if(!root)return;
   ensureCss();activeRoot=root;
   root.innerHTML=`<div class="marketing-audience-center">
-    <div class="page-head"><div><h1>Marketing</h1><p>Consentimentos auditáveis e preferências de contato.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
+    <div class="page-head"><div><h1>Marketing</h1><p>Consentimentos auditáveis e preferências de contato.</p></div><span class="marketing-campaign-gate" data-marketing-runtime-status>Consultando envio…</span></div>
     ${navMarkup('consents')}
     <section class="marketing-audience-section"><div class="marketing-audience-section-head"><div><h2>Consentimentos</h2><p>Consulte o estado atual e o histórico antes de qualquer uso comercial.</p></div></div>
       <div data-consent-overview class="marketing-audience-loading">Carregando visão geral…</div>
@@ -271,6 +296,7 @@ async function mountConsentView(root=document.querySelector('#content')){
     </section>
   </div>`;
   bindNav(root);
+  void loadRuntimeStatus(root);
   try{const overview=await loadOverview();if(activeRoot===root)root.querySelector('[data-consent-overview]').innerHTML=consentOverviewCards(overview)}catch(error){if(activeRoot===root)root.querySelector('[data-consent-overview]').innerHTML=`<div class="marketing-audience-error">Não foi possível carregar: ${esc(error?.message||error)}</div>`}
   const input=root.querySelector('[data-consent-search]'),button=root.querySelector('[data-consent-search-button]'),status=root.querySelector('[data-consent-search-status]');
   const search=async()=>{
@@ -285,3 +311,4 @@ async function mountConsentView(root=document.querySelector('#content')){
 ensureCss();
 export {mountAudienceView,mountConsentView};
 window.DAMarketingAudienceCenter={mountAudienceView,mountConsentView};
+
