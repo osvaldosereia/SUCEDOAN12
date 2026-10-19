@@ -63,7 +63,7 @@ assert.equal(cartBefore.length,0,'an unpriced basket cannot enter the cart');
 
 // Customer-facing mold identity must always match the selected SKU, not the
 // descriptive mold label retained for inventory and basket administration.
-const displaySource=source('function moldSelectedProduct(','function changeMoldQty(');
+const displaySource=source('function moldOptionShortName(','function changeMoldQty(');
 const displayFns=new Function('esc','safeImage','money','remainingStock','formatQty',displaySource+'return {moldItemRow,moldSelectedProduct};')(
   x=>String(x),x=>x,x=>String(x),()=>10,x=>String(x)
 );
