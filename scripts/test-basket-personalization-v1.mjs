@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 
 const storefront=fs.readFileSync('vitrine/index.html','utf8');
 const admin=fs.readFileSync('vitrine/admin/basket-mold-admin.js','utf8');
@@ -15,6 +16,18 @@ assert.match(api,/data\.compositions\|\|\[\]\)\.slice\(0,1\)/);
 assert.match(api,/sub\.name\|\|String\(b\.name\)\.replace/);
 assert.match(storefront,/alternatives\|\|\[\]\)\.slice\(0,3\)/);
 assert.match(storefront,/safeImage\(a\.image_url\)/);
+assert.match(storefront,/Object\.assign\(item,\{product_id:alt\.product_id,name:alt\.name,sku:alt\.sku,gtin:alt\.gtin,image_url:alt\.image_url\|\|''/);
+assert.match(storefront,/\.sheet-scroll\{[^}]*flex:1 1 auto[^}]*min-height:0/);
+assert.match(storefront,/\.sheet-action\{[^}]*flex:0 0 auto/);
+assert.match(storefront,/safe-area-inset-bottom/);
+assert.match(storefront,/BASKET_SIZE_DISPLAY_ORDER\s*=\s*\['grande','media','pequena','mini','economica'\]/);
+assert.match(storefront,/function homeBasketSubcategories\(/);
+const sizeOrderStart=storefront.indexOf('const BASKET_SIZE_DISPLAY_ORDER=');
+const sizeOrderEnd=storefront.indexOf('function homeBasketGroupRecords(',sizeOrderStart);
+assert.ok(sizeOrderStart>=0&&sizeOrderEnd>sizeOrderStart,'the public basket size ordering helper exists');
+const sizeOrderHelpers=storefront.slice(sizeOrderStart,sizeOrderEnd);
+const orderedSizes=vm.runInNewContext(`${sizeOrderHelpers};homeBasketSubcategories({slug:'cestas-completas',subcategories:[{name:'Mini'},{name:'Econômica'},{name:'Pequena'},{name:'Média'},{name:'Grande'},{name:'Outro tamanho'}]}).map(x=>x.name)`);
+assert.equal(JSON.stringify(orderedSizes),JSON.stringify(['Grande','Média','Pequena','Mini','Econômica']));
 assert.match(storefront,/data-mold-restore/);
 assert.match(storefront,/function restoreMoldItem\(/);
 assert.match(storefront,/querySelectorAll\('\[data-mold-restore\]'\)\.forEach/);
