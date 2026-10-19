@@ -268,7 +268,7 @@ async function call(action,payload=null,retry=true){
 function setBusy(v){busy=v;for(const id of ["save","sync","more","useEan","cameraButton","takePhoto","nativePhoto","skipPhoto"]){const node=$(id);if(node)node.disabled=v}}
 function codeDetected(raw){
  const code=normalizeEan(raw);
- if(resolveRereadId&&!busy&&!missingRecordId&&code.length>=8&&code.length<=14){const id=resolveRereadId;resolveRereadId="";resolveRow("repair_ean",id,{ean:code});return}
+ if(resolveRereadId&&!paused&&!busy&&!missingRecordId&&code.length>=8&&code.length<=14){const id=resolveRereadId;resolveRereadId="";resolveRow("repair_ean",id,{ean:code});return}
  if(paused||busy||missingRecordId||code.length<8||code.length>14)return;
  paused=true;
  currentEan=code;editingId="";pendingId=uuid();
