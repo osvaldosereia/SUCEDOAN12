@@ -33,4 +33,10 @@ for(const site of inventory.empty_catch_sites){
   assert.ok(site.context.length<=160);
 
 }
+assert.equal(inventory.sql_redefinitions.length,inventory.summary.sql_redefined_names);
+for(const item of inventory.sql_redefinitions){
+  assert.ok(item.name&&item.definition_count>1);
+  assert.equal(item.locations.length,item.definition_count);
+  assert.ok(item.locations.every(x=>x.path.endsWith('.sql')&&x.line>0));
+}
 console.log('Admin function and domain inventory contracts: PASS');
