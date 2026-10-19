@@ -82,7 +82,9 @@ Deno.serve(async(req:Request)=>{
     let result:any;
     if(action==="list")result=await list(db);
     else if(action==="editor")result=await editor(db,input);
-    else if(action==="products")result=await products(db,input);\n    else if(action==="shared_items")result=await sharedItems(db);\n    else if(action==="shared_items_save")result=await sharedItemsSave(db,input);
+    else if(action==="products")result=await products(db,input);
+    else if(action==="shared_items")result=await sharedItems(db);
+    else if(action==="shared_items_save")result=await sharedItemsSave(db,input);
     else if(action==="save")result=await save(db,input);
     else if(action==="extras_editor")result=await extrasEditor(db,input);
     else if(action==="extras_save")result=await extrasSave(db,input);
