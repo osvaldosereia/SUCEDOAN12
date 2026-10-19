@@ -194,7 +194,7 @@ async function save(){
 
 function bind(){
   if(!state.root)return;
-  state.root.querySelectorAll('[data-mold-view]').forEach(x=>x.addEventListener('click',()=>{sync();state.view=x.dataset.moldView;render()}));
+  state.root.querySelectorAll('[data-mold-view]').forEach(x=>x.addEventListener('click',()=>{if(state.view==='baskets')sync();state.view=x.dataset.moldView;render()}));
   state.root.querySelectorAll('[data-mold-shared-item]').forEach(x=>x.addEventListener('click',()=>{state.catalogFocus=x.dataset.moldSharedItem;state.catalogDraft=JSON.parse(JSON.stringify(state.catalog.find(i=>String(i.id)===String(state.catalogFocus))||null));state.catalogResults=[];render()}));
   state.root.querySelector('[data-mold-shared-search-go]')?.addEventListener('click',searchSharedProducts);
   state.root.querySelector('[data-mold-shared-search]')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchSharedProducts()}});
