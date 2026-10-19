@@ -75,7 +75,7 @@ begin
     v_interval_count := 0;
   end if;
 
-  if not found or v_order.id is null then
+  if v_order.id is null then
     v_status := 'no_purchase';
     v_reason := 'no_confirmed_purchase';
     v_due := null;
