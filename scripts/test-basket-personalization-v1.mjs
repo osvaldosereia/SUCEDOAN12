@@ -59,7 +59,7 @@ assert.match(storefront,/data-b-restore/);
 assert.match(storefront,/function restoreBasketItem\(/);
 assert.match(gateway,/positions\.some/);
 assert.match(adminSection,/Produtos adicionais/);
-assert.match(fs.readFileSync('vitrine/admin/index.html','utf8'),/basket-admin-section.js\?v=basket-personalization-v2/);
+assert.match(fs.readFileSync('vitrine/admin/index.html','utf8'),/basket-admin-section.js\?v=basket-personalization-v3/);
 assert.match(extrasAdmin,/extras_save/);
 assert.match(extrasAdmin,/Até 3 marcas/i);
 assert.match(extrasMigration,/admin_save_basket_mold_optional_items_v1/);

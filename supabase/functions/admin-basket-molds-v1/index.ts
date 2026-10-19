@@ -40,6 +40,16 @@ async function list(db:any){const q=await db.rpc("admin_basket_mold_list_v1");if
 async function editor(db:any,input:any){const id=uuid(input?.basket_id||input?.id);if(!id)return {error:"basket_mold_basket_not_found",status:400,message:"Cesta não encontrada."};const q=await db.rpc("admin_basket_mold_editor_v1",{p_basket_id:id});if(q.error)return rpcError(q.error);return {editor:q.data}}
 async function products(db:any,input:any){const limit=integer(input?.limit??24,1,40)||24;const q=await db.rpc("admin_basket_mold_products_v1",{p_query:clean(input?.q,80)||null,p_limit:limit});if(q.error)return rpcError(q.error);return q.data||{products:[]}}
 async function sharedItems(db:any){const q=await db.rpc("admin_basket_mold_shared_items_v1");if(q.error)return rpcError(q.error);return q.data||{items:[]}}
+async function sharedItemSave(db:any,input:any){
+  const item=input?.item,options=item?.options;
+  if(!item||!Array.isArray(options)||options.length<1||options.length>40||!clean(item?.label,180)
+    ||(item.id&&!uuid(item.id))||options.some((o:any)=>!uuid(o?.product_id||o)))
+    return {error:"basket_mold_shared_item_invalid",status:400,message:"Informe o tipo de produto e suas alternativas válidas."};
+  const q=await db.rpc("admin_upsert_basket_mold_shared_item_v2",{p_item:{
+    id:item.id||null,label:clean(item.label,180),options:options.map((o:any)=>({product_id:uuid(o?.product_id||o)}))
+  }});
+  if(q.error)return rpcError(q.error);return q.data||{items:[]};
+}
 async function sharedItemsSave(db:any,input:any){
   const items=Array.isArray(input?.items)?input.items.slice(0,150):null;
   if(!items||items.some((x:any)=>!uuid(x?.id)||!Array.isArray(x?.options)||x.options.length<1||x.options.length>3||x.options.some((o:any)=>!uuid(o?.product_id||o))))return {error:"basket_mold_shared_item_invalid",status:400,message:"Cada produto comum deve ter de 1 a 3 marcas válidas."};
@@ -58,7 +68,7 @@ async function save(db:any,input:any){
   if(hidden===null)return {error:"basket_mold_hidden_adjustment_invalid",status:400,message:"Informe um valor oculto válido."};
   if(!count)return {error:"basket_mold_public_composition_count_invalid",status:400,message:"Escolha entre 1 e 6 composições públicas."};
   if(!positions?.length)return {error:"basket_mold_positions_required",status:400,message:"Adicione pelo menos uma posição ao molde."};
-  if(positions.some((position:any)=>Array.isArray(position?.options)&&position.options.length>3))return {error:"basket_mold_position_options_limit",status:400,message:"Cada item pode ter até 3 marcas."};
+  if(positions.some((position:any)=>Array.isArray(position?.options)&&position.options.length>40))return {error:"basket_mold_position_options_limit",status:400,message:"Cada item pode ter até 40 alternativas."};
   if(conditionalEnabled&&!conditionalProductId)return {error:"basket_mold_conditional_hidden_product_required",status:400,message:"Escolha o produto que ativa o acréscimo oculto."};
   if(conditionalEnabled&&(conditionalHidden===null||conditionalHidden<=0))return {error:"basket_mold_conditional_hidden_adjustment_required",status:400,message:"Informe um valor maior que zero para o acréscimo oculto por produto."};
   if(conditionalHidden!==null&&conditionalHidden<0)return {error:"basket_mold_conditional_hidden_adjustment_invalid",status:400,message:"Informe um valor válido para o acréscimo oculto por produto."};
@@ -85,6 +95,7 @@ Deno.serve(async(req:Request)=>{
     else if(action==="products")result=await products(db,input);
     else if(action==="shared_items")result=await sharedItems(db);
     else if(action==="shared_items_save")result=await sharedItemsSave(db,input);
+    else if(action==="shared_item_save")result=await sharedItemSave(db,input);
     else if(action==="save")result=await save(db,input);
     else if(action==="extras_editor")result=await extrasEditor(db,input);
     else if(action==="extras_save")result=await extrasSave(db,input);
