@@ -57,8 +57,6 @@
   }
   const openPrint=window.DonaAntoniaAdminPrinting.createOpenPrint(toast,esc);
 
-  const {orderDisplayCode,phoneDigits,formatPhone,formatCpf}=window.DonaAntoniaAdminIdentifiers;
-  const {errorMessage}=window.DonaAntoniaAdminErrors;
 
   const scanner={buffer:'',timer:null};
   document.addEventListener('keydown',e=>{

@@ -5,6 +5,7 @@ on:
       - 'vitrine/admin/admin-runtime.js'
       - 'vitrine/admin/runtime-parts/**'
       - 'scripts/build-admin-runtime.mjs'
+      - 'scripts/test-admin-runtime-bootstrap.mjs'
       - 'scripts/audit-admin-module-load-graph.mjs'
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/core/**'
@@ -35,6 +36,7 @@ jobs:
           path: artifacts/admin-module-load-graph.json
           retention-days: 14
       - run: node --check vitrine/admin/admin-runtime.js
+      - run: node scripts/test-admin-runtime-bootstrap.mjs
       - run: node scripts/test-admin-module-load-contract.mjs
       - run: node scripts/test-admin-separation-model.mjs
       - run: node scripts/test-admin-customer-readiness-model.mjs
