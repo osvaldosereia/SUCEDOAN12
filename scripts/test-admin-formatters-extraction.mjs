@@ -6,7 +6,7 @@ const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 const moduleSource=fs.readFileSync('vitrine/admin/core/formatters.js','utf8');
 const runtime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const moduleTag='<script src="/vitrine/admin/core/formatters.js?v=refactor-20261018"></script>';
-const mainTag='<script src="/vitrine/admin/admin-runtime.js?runtime-extraction-20261018"></script>';
+const mainTag='<script src="/vitrine/admin/admin-runtime.js?v=runtime-extraction-20261018"></script>';
 assert.ok(html.includes(moduleTag),'formatter module must be loaded');
 assert.ok(html.indexOf(moduleTag)<html.indexOf(mainTag),'formatter module must load before main IIFE');
 assert.ok(runtime.includes('const {esc,money,cents,fmtQty,dateTime,dateOnly,normalize}=window.DonaAntoniaAdminFormatters;'));
