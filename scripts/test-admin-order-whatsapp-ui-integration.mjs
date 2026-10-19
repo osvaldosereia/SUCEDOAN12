@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const adminApi=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const orderTransport=fs.readFileSync('supabase/functions/admin-orders-v1/index.ts','utf8');
 const vitrineGateway=fs.readFileSync('supabase/functions/admin-order-vitrine-send-v1/index.ts','utf8');
