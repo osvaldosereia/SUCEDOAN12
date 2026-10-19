@@ -13,10 +13,11 @@ assert.ok(style.includes(".basket-item-remove{min-height:48px")&&style.includes(
 assert.ok(style.includes(".basket-option-carousel-buttons button{min-width:48px;min-height:48px"),"carousel arrows have comfortable touch targets");
 assert.ok(style.includes("overflow-x:auto"),"the brand carousel remains horizontally scrollable");
 
-
-const optionRendererSource=html.slice(html.indexOf("function moldItemOptions("),html.indexOf("\\n    function moldExtraRow"));
-assert.ok(optionRendererSource.startsWith("function moldItemOptions("),"basket option renderer is present");
-const renderOptions=new Function("esc","money","safeImage","moldSelectedProduct","moldOptionShortName",optionRendererSource+"\\nreturn moldItemOptions;")(
+const rendererStart=html.indexOf("function moldItemOptions(");
+const rendererEnd=html.indexOf("function moldExtraRow(",rendererStart);
+assert.ok(rendererStart>=0&&rendererEnd>rendererStart,"basket option renderer is present");
+const optionRendererSource=html.slice(rendererStart,rendererEnd).trim();
+const renderOptions=new Function("esc","money","safeImage","moldSelectedProduct","moldOptionShortName",optionRendererSource+"; return moldItemOptions;")(
   value=>String(value??""),value=>String(value??""),value=>String(value??""),item=>item,value=>String(value??"")
 );
 const singleOption=renderOptions({name:"Arroz",product_id:"p1",alternatives:[{product_id:"p1",name:"Arroz",price_cents:100}]},0);
