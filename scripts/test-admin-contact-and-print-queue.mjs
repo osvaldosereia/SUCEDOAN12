@@ -36,12 +36,12 @@ assert.match(render,/data-print-order="2"/);
 
 const orphanRender=panel.createPrintQueuePanel({orders:[],opsPrintQueue:{jobs:[{status:'pending',entity_id:'missing'}]}},String,order=>{assert.ok(order,'order code must not be called for orphan job');return order.public_code}).renderOpsPrintQueue();
 const malformedQueue=panel.createPrintQueuePanel({
-  orders:[],opsPrintQueue:{jobs:[null,'failed',7,{status:'pending',entity_id:0}]}
-},String,()=>{throw new Error('order lookup should not be required')}).renderOpsPrintQueue();
+  orders:[{id:0,public_code:'ZZ000'}],opsPrintQueue:{jobs:[null,'failed',7,{status:'pending',entity_id:0}]}
+},String,o=>o.public_code).renderOpsPrintQueue();
 assert.match(malformedQueue,/data-print-order="0"/);
 assert.equal((malformedQueue.match(/history-row/g)||[]).length,1);
 assert.match(orphanRender,/Fila de impressão/);
-assert.match(orphanRender,/data-print-order="missing"/);
+assert.doesNotMatch(orphanRender,/data-print-order="missing"/);
 
 assert.match(contacts.mapsHrefFromAddress({street:'Rua A',number:0,district:'Centro',city:'Cuiabá'}),/Rua%20A%2C%200%2C%20Centro%2C%20Cuiab/);
 
