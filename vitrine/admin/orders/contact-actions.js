@@ -31,7 +31,7 @@
     }
     function orderAddressRequestHref(o){
       const problems=orderProblemReasons(o);
-      if(!problems.includes('Endereço incompleto'))return '';
+      if(!Array.isArray(problems)||!problems.includes('Endereço incompleto'))return '';
       return missingDataRequestForProblems(o,problems)?.href||'';
     }
     function mapsHrefFromAddress(a){
