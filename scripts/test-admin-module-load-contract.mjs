@@ -3,6 +3,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const runtime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const scripts=[...html.matchAll(/<script\s+src="([^"]+)"/g)].map(m=>m[1]);
 const modules=[
   'core/formatters.js','core/identifiers.js','core/errors.js',
@@ -37,7 +38,7 @@ const names=[
   'DonaAntoniaAdminExpiryAlert','DonaAntoniaAdminOpsAttention',
   'DonaAntoniaAdminPrintQueuePanel'
 ];
-for(const name of names)assert.ok(html.includes('window.'+name),'missing bridge '+name);
+for(const name of names)assert.ok(runtime.includes('window.'+name),'missing bridge '+name);
 const orderedScripts=scripts.filter(src=>modules.some(module=>src.split('?')[0]==='/vitrine/admin/'+module));
 assert.equal(orderedScripts.length,modules.length,'duplicate or missing module in dependency sequence');
 assert.deepEqual(orderedScripts.map(src=>src.split('?')[0]),modules.map(module=>'/vitrine/admin/'+module),'module dependency load order changed');
