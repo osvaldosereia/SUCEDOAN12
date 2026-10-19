@@ -168,14 +168,14 @@ function executionGateOpen(state){const runtime=state?.runtime||{};return runtim
 function progressCard(label,value,key){return `<article data-execution-count="${key}"><small>${label}</small><strong>${Number(value||0)}</strong></article>`}
 function executionPanelHtml(state,campaign){
   const status=state?.status||campaign?.status||'approved',runtime=state?.runtime||{},counts=state?.counts||{},gateOpen=executionGateOpen(state),scheduled=state?.scheduled_for||campaign?.scheduled_for||'';
-  const canSchedule=status==='approved',canPause=['scheduled','running'].includes(status),canResume=status==='paused',canCancel=['scheduled','running','paused'].includes(status);
+  const canPause=['scheduled','running'].includes(status),canResume=status==='paused',canCancel=['scheduled','running','paused'].includes(status);
   const gateLabel=gateOpen?(runtime.mode==='canary'?'Canário habilitado':'Campanhas habilitadas'):'Campanhas desligadas';
   const gateDetail=gateOpen?`Runtime ${esc(runtime.mode)} · envio controlado pelo backend.`:`Runtime ${esc(runtime.mode||'off')} · campaigns_enabled=${runtime.campaigns_enabled===true?'true':'false'}. Nenhuma mensagem pode iniciar.`;
   return `<div class="marketing-campaign-execution-head"><div><h4>Execução</h4><p>Status: <b>${esc(STATUS_LABELS[status]||status)}</b>${scheduled?` · ${esc(fmtDate(scheduled))}`:''}</p></div><span class="marketing-campaign-execution-gate ${gateOpen?'open':'closed'}">${esc(gateLabel)}</span></div>
     <p class="marketing-campaign-execution-gate-detail">${gateDetail}</p>
     <div class="marketing-campaign-execution-counts">${progressCard('Total',counts.total,'total')}${progressCard('Pendentes',counts.pending,'pending')}${progressCard('Pulados',counts.skipped,'skipped')}${progressCard('Aceitos',counts.accepted,'accepted')}${progressCard('Retry',counts.retry,'retry')}${progressCard('Incertos',counts.uncertain,'uncertain')}${progressCard('Falhas',counts.failed,'failed')}</div>
+    <p class="marketing-campaign-execution-gate-detail">O processador atual roda automaticamente a cada minuto. O limite de 10 vale por ciclo e não garante uma única rodada manual; iniciar campanhas fica bloqueado até existir controle de disparo único.</p>
     <div class="marketing-campaign-execution-controls">
-      ${canSchedule?`<label><span>Data e hora</span><input type="datetime-local" data-campaign-schedule-at value="${esc(localDateTimeValue(scheduled))}" ${gateOpen?'':'disabled'}></label><button type="button" data-campaign-schedule ${gateOpen?'':'disabled'}>Agendar</button><button type="button" class="primary" data-campaign-start-now ${gateOpen?'':'disabled'}>Enviar agora</button>`:''}
       ${canPause?'<button type="button" data-campaign-pause>Pausar</button>':''}
       ${canResume?`<button type="button" data-campaign-resume ${gateOpen?'':'disabled'}>Retomar</button>`:''}
       ${canCancel?'<button type="button" class="danger" data-campaign-cancel-execution>Cancelar execução</button>':''}
@@ -187,8 +187,6 @@ async function runExecutionAction(root,form,action,body,question,busyLabel){
 }
 function bindExecutionActions(root,form,state){
   const gateOpen=executionGateOpen(state),campaignId=currentCampaign?.id,revision=currentCampaign?.revision;if(!campaignId)return;
-  form.querySelector('[data-campaign-schedule]')?.addEventListener('click',()=>{if(!gateOpen)return;const value=form.querySelector('[data-campaign-schedule-at]')?.value;if(!value){notice(form,'Informe a data e hora do agendamento.','error');return}const date=new Date(value);if(Number.isNaN(date.getTime())){notice(form,'Data/hora inválida.','error');return}runExecutionAction(root,form,'schedule',{campaign_id:campaignId,expected_revision:revision,scheduled_for:date.toISOString()},'Confirmar o agendamento desta campanha?','Agendando…')});
-  form.querySelector('[data-campaign-start-now]')?.addEventListener('click',()=>{if(!gateOpen)return;runExecutionAction(root,form,'start_now',{campaign_id:campaignId,expected_revision:revision},'Confirmar início desta campanha agora?','Iniciando…')});
   form.querySelector('[data-campaign-pause]')?.addEventListener('click',()=>runExecutionAction(root,form,'pause',{campaign_id:campaignId,reason:'admin_marketing_ui'},'Pausar a execução desta campanha?','Pausando…'));
   form.querySelector('[data-campaign-resume]')?.addEventListener('click',()=>{if(!gateOpen)return;runExecutionAction(root,form,'resume',{campaign_id:campaignId},'Retomar a execução desta campanha?','Retomando…')});
   form.querySelector('[data-campaign-cancel-execution]')?.addEventListener('click',()=>runExecutionAction(root,form,'cancel_execution',{campaign_id:campaignId,reason:'admin_marketing_ui'},'Cancelar esta execução? Destinatários ainda não enviados serão pulados.','Cancelando…'));

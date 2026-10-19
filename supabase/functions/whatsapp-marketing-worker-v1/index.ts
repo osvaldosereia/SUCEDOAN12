@@ -10,7 +10,7 @@ const GRAPH_VERSION=Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"";
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 
 const DEFAULT_BATCH=10;
-const MAX_BATCH=25;
+const MAX_BATCH=10;
 const MAX_BODY_BYTES=4096;
 const INTERNAL_HEADER="x-dona-antonia-marketing-worker-key";
 const ALLOWED_BODY_FIELDS=new Set(["limit","tick_id"]);
