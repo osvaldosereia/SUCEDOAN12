@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-model.js','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-model.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-view.js','utf8');
 const hub=fs.readFileSync('supabase/functions/admin-service-intelligence-v1/index.ts','utf8');
 
 // A ordem local READY não basta: a UI só pode dizer SEPARADO quando a conclusão real existe.
