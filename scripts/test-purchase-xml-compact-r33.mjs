@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-const html=readFileSync('vitrine/admin/index.html','utf8');
+const html=readFileSync('vitrine/admin/index.html','utf8')+'\n'+readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const css=readFileSync('vitrine/admin/purchase-xml-simple.css','utf8');
 const api=readFileSync('supabase/functions/purchase-xml-v1/index.ts','utf8');
 function extract(name,next,asyncNext=false){
