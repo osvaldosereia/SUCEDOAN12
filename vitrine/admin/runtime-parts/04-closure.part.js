@@ -67,24 +67,6 @@
       if(btn){btn.disabled=false;btn.textContent='Confirmar recebimento'}
     }
   }
-  async function loadFiscalForOrders(rows){
-    const queue=(rows||[]).filter(o=>!state.fiscalByOrder[o.id]);
-    let cursor=0;
-    async function worker(){
-      while(cursor<queue.length){
-        const o=queue[cursor++];
-        if(state.fiscalByOrder[o.id])continue;
-        try{
-          state.fiscalByOrder[o.id]=await api('order_fiscal_status',{},{
-            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id})
-          });
-        }catch(e){
-          state.fiscalByOrder[o.id]={error:String(e?.message||'fiscal_unavailable')};
-        }
-      }
-    }
-    await Promise.all([worker(),worker(),worker()]);
-  }
   let closureRenderGeneration=0;
   async function renderClosure(){
     const generation=++closureRenderGeneration;
