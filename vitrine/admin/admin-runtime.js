@@ -6427,7 +6427,7 @@
     const tab=state.orderStatusTab||'new',search=String(state.orderQuery||'').trim(),offset=reset?0:Number(state.orderOffset||0);
     if(reset){state.orders=[];state.orderOffset=0;state.orderHasMore=false;const host=$('#orderRows');if(host)host.innerHTML='<div class="loading">Carregando pedidos…</div>'}
     try{
-      const data=await api('orders',{tab,offset,limit:100,...(search?{q:search}:{})});
+      const data=await api('orders',{tab,offset,limit:50,...(search?{q:search}:{})});
       if(tab!==(state.orderStatusTab||'new')||search!==String(state.orderQuery||'').trim())return;
       const page=Array.isArray(data.orders)?data.orders:[];
       state.orders=reset?page:[...state.orders,...page];
