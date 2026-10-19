@@ -26,7 +26,8 @@ assert.match(attentionHtml,/Conferir/);
 const panel=load('vitrine/admin/components/print-queue-panel.js','DonaAntoniaAdminPrintQueuePanel');
 const html=panel.createPrintQueuePanel({opsPrintQueue:{jobs:[{status:'pending',entity_id:'1',printer_profile:'85 mm'}]},orders:[]},String,()=> '—').renderOpsPrintQueue();
 assert.match(html,/Aguardando/);
-assert.match(html,/data-print-order="1"/);
+assert.doesNotMatch(html,/data-print-order="1"/);
+assert.match(html,/Separação/);
 const buttons=load('vitrine/admin/orders/action-buttons.js','DonaAntoniaAdminOrderActionButtons')
   .createOrderActionButtonsHtml({orderProblemReasons:()=>[],orderNextAction:()=> 'Conferir',esc:String});
 assert.match(buttons({status:'confirmed'},null),/startSeparation/);
