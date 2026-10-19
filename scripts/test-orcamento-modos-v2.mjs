@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const html = readFileSync(new URL('../orcamento/index.html', import.meta.url), 'utf8');
+const html = readFileSync(new URL('../orcamento/app-original.html', import.meta.url), 'utf8');
 const presets = JSON.parse(readFileSync(new URL('../orcamento/presets-bonini.json', import.meta.url), 'utf8'));
 
 const inlineScript = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
@@ -49,7 +49,7 @@ assert.match(html, /data-item-price=/, 'valor unitário do item deve continuar e
 assert.match(html, /data-item-total=/, 'total da linha deve ser editável');
 assert.match(html, /item\.name=e\.target\.value/, 'edição do nome deve atualizar o estado do orçamento');
 assert.match(html, /item\.code=e\.target\.value/, 'edição do código deve atualizar o estado do orçamento');
-assert.match(html, /parseMoney\(e\.target\.value\)\/Math\.max\(\.01,item\.quantity\)/, 'edição do total da linha deve recalcular o valor unitário');
+assert.match(html, /if\(total\)item\.unitPrice=Math\.max\(0,parseMoney\(e\.target\.value\)\)\/Math\.max\(\.01,item\.quantity\)/, 'edição do total da linha deve recalcular o valor unitário');
 assert.match(html, /id="payment" list="paymentOptions"/, 'forma de pagamento deve aceitar texto livre com sugestões');
 
 assert.match(html, /id="discountType"/, 'desconto deve permitir escolher entre reais e percentual');

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import assert from "node:assert/strict";
 
 const read=path=>fs.readFileSync(path,"utf8");
-const admin=read("vitrine/admin/index.html");
+const admin=read("vitrine/admin/runtime-parts/11-purchase-catalog.part.js");
 const sql=read("supabase/migrations/20261009071500_purchase_xml_catalog_details_v2.sql");
 const a=read("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts");
 const b=read("supabase/functions/purchase-xml-v1/index.ts");
@@ -46,5 +46,5 @@ assert.match(allowed,/id="xmlDetailLink"/);
 assert.match(src,/if\(!confirm\(msg\)\)return/);
 assert.match(src,/catalog_evidence_only:true/);
 assert.match(src,/String\(chosen\.name\|\|''\)\.trim\(\)/,"existing product name must be preserved");
-assert.match(src,/role!=='package'/,"outer packaging cannot silently count as single unit");
+assert.match(src,/role==='package'&&factor<=1/,"outer packaging must require a multi-unit conversion factor");
 console.log("PASS: 20+ XML candidate detail guards; legacy purchase and stock workflows preserved");

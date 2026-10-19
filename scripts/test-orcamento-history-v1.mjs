@@ -1,20 +1,22 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const quoteHtml=readFileSync(new URL('../orcamento/index.html', import.meta.url),'utf8');
+const quoteWrapper=readFileSync(new URL('../orcamento/index.html', import.meta.url),'utf8');
+const quoteHtml=readFileSync(new URL('../orcamento/app-original.html', import.meta.url),'utf8');
 const quoteEnhancements=readFileSync(new URL('../orcamento/enhancements-v2.js', import.meta.url),'utf8');
 const quoteEnhancementsCss=readFileSync(new URL('../orcamento/enhancements-v2.css', import.meta.url),'utf8');
 const adminHtml=readFileSync(new URL('../vitrine/admin/index.html', import.meta.url),'utf8');
 const api=readFileSync(new URL('../supabase/functions/admin-products-live-v1/index.ts', import.meta.url),'utf8');
 
 const quoteScript=quoteHtml.match(/<script>([\s\S]*?)<\/script>/)?.[1]||'';
-const adminScript=adminHtml.match(/<script>([\s\S]*?)<\/script>/)?.[1]||'';
+const adminScript=readFileSync(new URL('../vitrine/admin/admin-runtime.js', import.meta.url),'utf8');
 assert.doesNotThrow(()=>new Function(quoteScript),'JavaScript do editor de Orçamentos deve compilar');
 assert.doesNotThrow(()=>new Function(adminScript),'JavaScript do Vitrine/Admin deve compilar');
 assert.doesNotThrow(()=>new Function(quoteEnhancements),'JavaScript dos aprimoramentos de Orçamentos deve compilar');
 
-assert.match(adminHtml,/data-tab="quotes"[^>]*>Orçamentos/,'aba Orçamentos deve existir');
-assert.match(adminHtml,/\/orcamento\/\?embedded=1/,'Admin deve incorporar o editor em modo embedded');
+assert.match(adminHtml,/data-tab="quotes"/,'aba Orçamentos deve existir');
+assert.match(adminHtml,/>\s*<span>Orçamentos<\/span>/,'aba deve identificar Orçamentos');
+assert.match(readFileSync(new URL('../vitrine/admin/runtime-parts/00-bootstrap-navigation.part.js', import.meta.url),'utf8'),/\/orcamento\/\?embedded=1/,'Admin deve incorporar o editor em modo embedded');
 
 assert.match(quoteHtml,/id="saveCloudQuote"/,'ação de salvar no Supabase ausente');
 assert.match(quoteHtml,/id="quoteHistoryPanel"/,'painel de histórico ausente');
@@ -24,8 +26,8 @@ assert.match(quoteHtml,/currentQuoteId:state\.currentQuoteId/,'rascunho deve pre
 assert.match(quoteHtml,/adminPost\('quote_save'/,'editor deve persistir pelo gateway administrativo');
 assert.match(quoteHtml,/adminGet\('quotes'/,'editor deve listar histórico pelo gateway administrativo');
 assert.match(quoteHtml,/adminGet\('quote'/,'editor deve reabrir snapshot salvo');
-assert.match(quoteHtml,/enhancements-v2\.css/,'editor deve carregar o CSS de UX revisado');
-assert.match(quoteHtml,/enhancements-v2\.js/,'editor deve carregar o JS de UX revisado');
+assert.match(quoteWrapper,/enhancements-v2\.css/,'editor deve carregar o CSS de UX revisado');
+assert.match(quoteWrapper,/enhancements-v2\.js/,'editor deve carregar o JS de UX revisado');
 assert.match(quoteEnhancements,/generalMultiplier/,'multiplicador geral deve ser persistido no snapshot');
 assert.match(quoteEnhancements,/quoteGeneralMultiplier/,'controle de multiplicador geral ausente');
 assert.match(quoteEnhancements,/Alterações não salvas/,'editor deve sinalizar alterações pendentes');

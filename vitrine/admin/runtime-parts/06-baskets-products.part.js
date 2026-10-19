@@ -319,7 +319,7 @@
     return map[value]||value||'Sem categoria';
   }
 
-  const mobileProductQuickDrafts=new Map(),mobileProductQuickTimers=new Map(),mobileProductStockQueue=new Map(),mobileProductSaveStates=new Map();
+  const mobileProductQuickDrafts=new Map(),mobileProductQuickTimers=new Map(),mobileProductQuickBusy=new Set(),mobileProductStockQueue=new Map(),mobileProductSaveStates=new Map();
   let mobileProductStockBusy=false;
   function isProductsMobile(){return window.matchMedia&&window.matchMedia('(max-width:640px)').matches}
   function mobileProductPriceCents(v){let s=String(v??'').trim().replace(/R\$/gi,'').replace(/\s+/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=Number(s);return Number.isFinite(n)&&n>=0?Math.round(n*100):null}
@@ -356,10 +356,20 @@
     mobileProductQuickDrafts.set(id,draft);clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.set(id,setTimeout(()=>flushMobileProductQuickSave(id),650));
   }
   async function flushMobileProductQuickSave(id){
-    clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.delete(id);const draft=mobileProductQuickDrafts.get(id);if(!draft)return;mobileProductQuickDrafts.delete(id);
+    clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.delete(id);if(mobileProductQuickBusy.has(id))return;const draft=mobileProductQuickDrafts.get(id);if(!draft)return;mobileProductQuickDrafts.delete(id);
     const operator=currentOperator()||requireOperator();if(!operator){setMobileProductSaveState(id,'quick',false,'Operador necessário');setMobileProductSaveState(id,'stock',false,'Operador necessário');return}
     const quick={};for(const k of ['sale_price_cents','cost_cents','gondola_number','expiration_date'])if(Object.prototype.hasOwnProperty.call(draft,k))quick[k]=draft[k];
-    if(Object.keys(quick).length){try{const data=await api('product_quick_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,...quick,operator})});const p=state.products.find(x=>String(x.id)===String(id));if(p&&data.product){p.sale_price_cents=data.product.sale_price_cents;p.cost_cents=data.product.cost_cents;p.gondola_number=data.product.gondola_number;p.expiration_date=data.product.expiration_date;p.active=data.product.active}setMobileProductSaveState(id,'quick',false)}catch(e){setMobileProductSaveState(id,'quick',false,errorMessage(e.message))}}
+    if(Object.keys(quick).length){
+      mobileProductQuickBusy.add(id);
+      try{
+        const data=await api('product_quick_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,...quick,operator})});
+        const p=state.products.find(x=>String(x.id)===String(id)),pending=mobileProductQuickDrafts.get(id)||{};
+        if(p&&data.product){for(const k of ['sale_price_cents','cost_cents','gondola_number','expiration_date','active'])if(!Object.prototype.hasOwnProperty.call(pending,k))p[k]=data.product[k]}
+        const hasPendingQuick=Object.keys(pending).some(k=>k!=='stock_quantity');
+        setMobileProductSaveState(id,'quick',hasPendingQuick);
+      }catch(e){setMobileProductSaveState(id,'quick',false,errorMessage(e.message))}
+      finally{mobileProductQuickBusy.delete(id)}
+    }
     else setMobileProductSaveState(id,'quick',false);
     if(Object.prototype.hasOwnProperty.call(draft,'stock_quantity')&&!stockZeroPending.has(String(id))){mobileProductStockQueue.set(id,{quantity:draft.stock_quantity,operator});processMobileProductStockQueue()}
     if(mobileProductQuickDrafts.has(id)){clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.set(id,setTimeout(()=>flushMobileProductQuickSave(id),180))}

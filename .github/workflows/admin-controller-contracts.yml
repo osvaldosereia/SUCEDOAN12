@@ -12,6 +12,8 @@ on:
       - 'vitrine/admin/components/print-queue-panel.js'
       - 'scripts/test-admin-contact-and-print-queue.mjs'
       - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'vitrine/admin/runtime-parts/06-baskets-products.part.js'
+      - 'scripts/test-admin-mobile-product-quick-save-race.mjs'
       - 'supabase/functions/admin-orders-v1/index.ts'
       - 'scripts/test-admin-orders-outbox-finish-contract.mjs'
       - 'scripts/test-admin-async-races-and-partial-save.mjs'
@@ -35,6 +37,7 @@ jobs:
       - run: node scripts/test-admin-async-races-and-partial-save.mjs
       - run: node scripts/test-admin-delivery-sync-diagnostics.mjs
       - run: node scripts/test-admin-gateway-action-contract.mjs
+      - run: node scripts/test-admin-mobile-product-quick-save-race.mjs
       - run: node scripts/test-admin-orders-outbox-finish-contract.mjs
       - run: node scripts/test-admin-whatsapp-phone-contract.mjs
       - run: node scripts/test-admin-contact-and-print-queue.mjs

@@ -2,18 +2,19 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const admin=readFileSync(new URL('../vitrine/admin/index.html',import.meta.url),'utf8');
+const purchaseUi=readFileSync(new URL('../vitrine/admin/runtime-parts/11-purchase-catalog.part.js',import.meta.url),'utf8');
 const backends=[
   '../supabase/functions/purchase-xml-v1/index.ts',
   '../supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
 ].map(path=>readFileSync(new URL(path,import.meta.url),'utf8'));
 
-assert.match(admin,/Lotes internos desta entrada/,'Admin deve identificar explicitamente os lotes internos desta NF-e');
-assert.match(admin,/Validade desta entrada \(opcional\)/,'validade da entrada deve ser opcional');
-assert.match(admin,/FIFO/,'Admin deve explicar a ordem FIFO');
-assert.doesNotMatch(admin,/Sem controle de validade para este item/,'não deve exigir opt-out de validade');
-assert.doesNotMatch(admin,/\+ Outra validade/,'uma entrada XML deve usar o lote interno automático, não criar vários lotes manuais');
-assert.doesNotMatch(admin,/data-receipt-lot-qty/,'quantidade do lote vem da quantidade convertida da NF-e');
-assert.match(admin,/expiration_date:String\([^\n]+data-receipt-lot-exp/,'salvamento deve enviar somente a validade opcional por item');
+assert.match(purchaseUi,/Lotes desta entrada/,'Admin deve identificar explicitamente os lotes internos desta NF-e');
+assert.match(purchaseUi,/Validade \(opcional\)/,'validade da entrada deve ser opcional');
+assert.match(purchaseUi,/FIFO/,'Admin deve explicar a ordem FIFO');
+assert.doesNotMatch(purchaseUi,/Sem controle de validade para este item/,'não deve exigir opt-out de validade');
+assert.doesNotMatch(purchaseUi,/\+ Outra validade/,'uma entrada XML deve usar o lote interno automático, não criar vários lotes manuais');
+assert.doesNotMatch(purchaseUi,/data-receipt-lot-qty/,'quantidade do lote vem da quantidade convertida da NF-e');
+assert.match(purchaseUi,/expiration_date:String\([^\n]+data-receipt-lot-exp/,'salvamento deve enviar somente a validade opcional por item');
 
 for(const [i,src] of backends.entries()){
   assert.match(src,/inventory_lot_id/,'backend '+i+' deve usar inventory_lot_id');

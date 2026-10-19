@@ -7,7 +7,7 @@ const b=read("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/i
 const standalone=read("supabase/functions/purchase-xml-v1/index.ts");
 const x=read("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/xml-catalog-extractor.mjs");
 const xOther=read("supabase/functions/purchase-xml-v1/xml-catalog-extractor.mjs");
-const html=read("vitrine/admin/index.html");
+const html=read("vitrine/admin/runtime-parts/10-purchase-finance.part.js")+read("vitrine/admin/runtime-parts/11-purchase-catalog.part.js")+read("vitrine/admin/runtime-parts/12-xml-import.part.js");
 const sql=read("supabase/migrations/20261009051500_purchase_xml_catalog_observations_v1.sql");
 
 assert.equal(b,standalone,"Both purchase XML backend source copies must be identical");
@@ -48,10 +48,7 @@ assert.match(sql,/security_invoker=true/);
 assert.match(sql,/grant select on public\.purchase_xml_catalog_candidates_v1 to service_role/);
 assert.doesNotMatch(sql,/update\s+public\.products/i);
 assert.doesNotMatch(sql,/update\s+public\.purchase_stock/i);
-const start=html.indexOf("  // XML Catalog V1: lightweight");
-const end=html.indexOf("  function paintPurchases(){",start);
-assert.ok(start>=0&&end>start);
-const ui=html.slice(start,end);
+const ui=html;
 assert.ok(new Function(ui+"\nreturn typeof loadXmlCatalog==='function' && typeof xmlCatalogSectionHtml==='function'")());
 assert.match(ui,/if\(state\.xmlCatalogOpen\)await loadXmlCatalog\(\)/);
 assert.match(ui,/if\(!confirm\('Ler até 3 XMLs originais/);

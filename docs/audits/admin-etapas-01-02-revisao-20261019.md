@@ -33,6 +33,12 @@ Removidas 28 declarações antigas: `advanceCurrentOrder`, `applySelectedCustome
 
 Nesta revisão foram removidos mais três helpers privados sem chamadores: `openPurchaseDocument` (a interface já usa `togglePurchaseDocument`), `purchaseFinanceLabel` (nenhum renderer ativo o usava) e `inventorySheetImageData` (a leitura local atual da folha cria seu canvas diretamente). O processamento OCR/filas A4 continua preservado e testado; só saiu a conversão de imagem órfã. Contratos de Balanço, Pedido, fila manual e separação que liam somente o HTML inline passaram a ler os providers/runtime ativos.
 
+### Continuação — Produtos e contratos de Compras/XML, 19/10
+
+A leitura manual do autosave rápido de Produtos confirmou uma condição de corrida: uma segunda gravação do mesmo produto podia começar enquanto a primeira aguardava a rede; a resposta anterior podia sobrescrever o objeto local durante uma edição mais recente. `flushMobileProductQuickSave` agora serializa gravações rápidas por produto, mantém o rascunho mais novo e não aplica campos de resposta que já foram editados novamente. O caminho de estoque continua na fila oficial e seu gate de confirmação do Bling foi mantido. O teste `test-admin-mobile-product-quick-save-race.mjs` reproduz a sobreposição com respostas adiadas.
+
+Os contratos de Produtos e Compras/XML que falhavam no teste amplo ainda consultavam somente o `index.html`, embora os controladores ativos estejam nos fragmentos `06-baskets-products`, `10-purchase-finance`, `11-purchase-catalog` e `12-xml-import`. Atualizei esses verificadores para inspecionar as fontes carregadas, atualizei expectativas de paginação para a regra atual (cinco itens no desktop, seis no mobile) e alinhei um contrato à validação existente de embalagem (>1 unidade). Nenhuma regra de preço, lote, identidade fiscal ou recebimento mudou. O workflow Admin de regressão agora executa os contratos recuperados e a nova regressão de corrida.
+
 O teste de botões agora executa os providers reais de sessão, apresentação e fiscal. Os testes de corrida antigos que recortavam handlers removidos foram substituídos pelas factories ativas. Os contratos de backend, payloads, autorização fiscal, opções de pagamento, histórico e totais continuam verificados nas fontes atuais.
 
 ### Cobertura por seção nesta continuação
@@ -148,6 +154,14 @@ Não houve homologação ponta a ponta das Edge Functions modificadas, do Bling,
 - Inventário integral de funções e contratos de seção.
 - 116 scripts `test-admin-*.mjs` e 5 scripts `test-admin-*.py`, sem falhas após atualizar contratos defasados e cobrir a falha de recarga da Expedição.
 - Os 35 workflows do HEAD atualizado `77d7061`, incluindo o contrato corrigido de Cestas, concluíram sem falhas. A rodada anterior teve uma única falha no teste estático que ainda procurava a regra no runtime; o teste foi alinhado ao módulo extraído e passou na rodada seguinte. No head remoto `7b2da71`, os 38 workflows concluíram com sucesso, incluindo o workflow de Marketing atualizado; não houve falhas.
+
+### Continuação de Produtos, Clientes, Orçamentos, Atendimento e Compras/XML — 19/10
+
+Uma varredura de todos os `scripts/test-*.mjs` e `scripts/test-*.py` executou 401 testes JavaScript e 9 Python: **388/401 JavaScript e 9/9 Python passaram**. Os 13 testes restantes são testes E2E de navegador (cestas, builder e vitrine mobile) que não iniciam porque Chromium não está instalado neste executor; não são falhas de asserção da aplicação. O executor também passou paridade dos 17 fragmentos do runtime, carregamento de módulos, bootstrap integral, contrato do gateway (154 rotas/91 escritas) e `git diff --check`.
+
+Os contratos alterados nesta rodada foram executados diretamente e passaram: corrida de quick-save e edição rápida/lista de Produtos; editor de produto; identidade administrativa de Clientes; histórico, modos e integração de Orçamentos; fronteira de transporte Meta/Atendimento e desconexão do bridge legado; validações de recebimento Bling, lotes, catálogo e unidade de embalagem em Compras/XML; e o limite catalogado de substituição de cestas. Os verificadores que ainda liam apenas HTML antigo agora consultam os módulos ativos. A suíte ampla não teve falhas Python; os 13 limites de navegador devem ser repetidos em runner que possua Chromium.
+
+Esta execução corrige a corrida de gravações rápidas de Produtos descrita acima; os demais ajustes desta rodada atualizam contratos defasados e os caminhos de CI para os arquivos ativos. Não adiciona UI de substituição de cestas (o contrato atual é deliberadamente SQL-only), transporte PapoAI, chamadas externas ou regra comercial.
 
 ## Limite estrutural remanescente
 

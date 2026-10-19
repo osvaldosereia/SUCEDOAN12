@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/runtime-parts/06-baskets-products.part.js'
+      - 'vitrine/admin/runtime-parts/10-purchase-finance.part.js'
+      - 'vitrine/admin/runtime-parts/11-purchase-catalog.part.js'
+      - 'vitrine/admin/runtime-parts/12-xml-import.part.js'
       - 'vitrine/admin/components/print-queue-panel.js'
       - 'vitrine/admin/components/printing.js'
       - 'vitrine/admin/orders/read-model.js'
@@ -32,6 +36,16 @@ on:
       - 'scripts/test-admin-stock-physical-available-contract.mjs'
       - 'scripts/test-admin-stock-reservation-consumption-contract.mjs'
       - 'scripts/test-admin-lots-fefo-contract.mjs'
+      - 'scripts/test-admin-mobile-product-quick-save-race.mjs'
+      - 'scripts/test-mobile-products-quick-edit.mjs'
+      - 'scripts/test-products-operational-list.mjs'
+      - 'scripts/test-purchase-bling-review-v1.mjs'
+      - 'scripts/test-purchase-xml-internal-lot-ui.mjs'
+      - 'scripts/test-xml-catalog-details-v2.mjs'
+      - 'scripts/test-xml-catalog-identity-guards-v2.mjs'
+      - 'scripts/test-xml-catalog-recovery-v1.mjs'
+      - 'scripts/test-xml-unit-pack-review-r29.mjs'
+      - 'scripts/test-xml-unit-pack-ui-r29.mjs'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/functions/admin-service-intelligence-v1/index.ts'
       - 'supabase/migrations/20261005031000_basket_component_reservations_v1.sql'
@@ -83,6 +97,16 @@ jobs:
       - run: node scripts/test-admin-stock-physical-available-contract.mjs
       - run: node scripts/test-admin-stock-reservation-consumption-contract.mjs
       - run: node scripts/test-admin-lots-fefo-contract.mjs
+      - run: node scripts/test-admin-mobile-product-quick-save-race.mjs
+      - run: node scripts/test-mobile-products-quick-edit.mjs
+      - run: node scripts/test-products-operational-list.mjs
+      - run: node scripts/test-purchase-bling-review-v1.mjs
+      - run: node scripts/test-purchase-xml-internal-lot-ui.mjs
+      - run: node scripts/test-xml-catalog-details-v2.mjs
+      - run: node scripts/test-xml-catalog-identity-guards-v2.mjs
+      - run: node scripts/test-xml-catalog-recovery-v1.mjs
+      - run: node scripts/test-xml-unit-pack-review-r29.mjs
+      - run: node scripts/test-xml-unit-pack-ui-r29.mjs
       - run: node scripts/test-admin-inventory-receipt-contract.mjs
       - run: node scripts/test-admin-inventory-balance-contract.mjs
       - run: node scripts/test-admin-stock-adjustment-contract.mjs
