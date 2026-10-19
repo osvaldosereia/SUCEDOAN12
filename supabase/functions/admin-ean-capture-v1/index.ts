@@ -107,7 +107,8 @@ Deno.serve(async (r:Request)=>{
        .eq("id",recordId).eq("sync_status","not_found")
        .select("id,ean,quantity,expires_on,sync_status,matched_product_id,photo_path,photo_captured_at,created_at,updated_at,synced_at")
        .maybeSingle();
-      if(saved.error||!saved.data){        await db.storage.from(PHOTO_BUCKET).remove([path]).catch(()=>{});
+      if(saved.error||!saved.data){
+        await db.storage.from(PHOTO_BUCKET).remove([path]).catch(()=>{});
         if(saved.error)throw saved.error;
         return reply(r,{ok:false,error:"leitura_nao_encontrada_ou_sincronizada"},409);
       }
