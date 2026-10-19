@@ -73,7 +73,7 @@ begin
     and v_channel.slug in ('dona-antonia-0975','dona-antonia-1018')
     and v_channel.phone_e164 is not null
     and right(regexp_replace(v_channel.phone_e164,'\D','','g'),4)=right(v_channel.slug,4) then
-    v_template_name := 'recompradonaantonia30dias'||right(v_channel.slug,4);
+    v_template_name := 'recompradonaantonia30dias'||right(v_channel.slug,4)||'v2';
   end if;
 
   -- Estimate the median gap across up to the last four confirmed orders.
