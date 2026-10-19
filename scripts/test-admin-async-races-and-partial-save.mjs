@@ -4,19 +4,6 @@ const html=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 
 const part=(a,b)=>{const i=html.indexOf(a),j=html.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,'section missing '+a);return html.slice(i,j)};
 const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return {promise,resolve}};
-{
- const editor={open:false,showModal(){this.open=true},close(){this.open=false}};
- const dom={'#editor':editor,'#editorTitle':{textContent:''},'#editorBody':{innerHTML:''},'#editorActions':{innerHTML:''},'#cancelEditor':{}};
- const pending=new Map(),state={currentOrder:null,currentOrderFiscal:null};let paints=0;
- const api=(action,{id})=>{assert.equal(action,'order');const d=deferred();pending.set(id,d);return d.promise};
- const {openOrder}=new Function('state','api','$','paintOrderDetail','loadCurrentOrderFiscal',part('  let orderDetailLoadGeneration=0;','  function orderV3SeparationMap')+';return {openOrder}')(state,api,x=>dom[x],()=>paints++,async()=>{});
- const first=openOrder('first'),second=openOrder('second');
- pending.get('second').resolve({order:{id:'second',status:'created'}});await second;
- pending.get('first').resolve({order:{id:'first',status:'created'}});await first;
- assert.equal(state.currentOrder.order.id,'second');assert.equal(paints,1);
- const closed=openOrder('closed');editor.close();pending.get('closed').resolve({order:{id:'closed',status:'created'}});await closed;
- assert.equal(state.currentOrder.order.id,'second');assert.equal(paints,1);
-}
 // Customer list and modal races are now exercised via the public controller factory.
 {
  const host={innerHTML:''},state={tab:'purchases',purchaseFilter:{period:'this_month'},purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false};
@@ -29,16 +16,6 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
  const before=paint.length,later=loadPurchases();state.tab='customers';
  waits[2].resolve({documents:[{id:'wrong'}]});await later;
  assert.equal(state.purchaseXml.documents[0].id,'now');assert.equal(paint.length,before);
-}
-{
- const state={currentOrder:{order:{id:'old'}},currentOrderFiscal:null,currentOrderBlingPreview:null,fiscalByOrder:{}};
- let finishFiscal,finishPreview,paints=0;
- const api=action=>new Promise(resolve=>{if(action==='order_fiscal_status')finishFiscal=resolve;else if(action==='bling_preview_order_sync')finishPreview=resolve;else throw Error(action)});
- const loadFiscal=new Function('state','api','paintOrderDetail',part('  async function loadCurrentOrderFiscal(','  async function confirmCurrentOrderPayment')+';return loadCurrentOrderFiscal')(state,api,()=>paints++);
- const loadPreview=new Function('state','api','$','paintOrderDetail',part('  async function loadCurrentOrderBlingPreview(','  function fiscalBlockReasonLabel')+';return loadCurrentOrderBlingPreview')(state,api,()=>({open:true}),()=>paints++);
- const a=loadFiscal(),b=loadPreview();state.currentOrder={order:{id:'new'}};
- finishFiscal({ok:true});finishPreview({ok:true});await Promise.all([a,b]);
- assert.equal(state.currentOrderFiscal,null);assert.equal(state.currentOrderBlingPreview,null);assert.equal(state.fiscalByOrder.old.ok,true);assert.equal(paints,0);
 }
 {
  const start=html.indexOf('  async function saveProduct('),end=html.indexOf('\n  }\n',start);assert.ok(start>=0&&end>start);
@@ -55,35 +32,8 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
 }
 
 
-// Orders are also refreshed from the driver/expedition tab; their shared state
-// must update without attempting to repaint a non-existent orders table.
-{
- const state={tab:'driver',orders:[]},host={innerHTML:''};
- let painted=0,queue=0;
- const api=async()=>({orders:[{id:'driver-order',status:'confirmed'}]});
- const loadOrders=new Function('state','$','api','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
-  part('  let ordersLoadGeneration=0;','  async function refreshOrderSeparationBoard')+';return loadOrders')(
-    state,()=>null,api,async()=>queue++,()=>painted++,async()=>{});
- await loadOrders();
- assert.equal(state.orders[0].id,'driver-order');
- assert.equal(queue,1);
- assert.equal(painted,0);
-}
-// Two overlapping order-list refreshes must not restore an older dataset.
-{
- const state={tab:'orders',orders:[]},host={innerHTML:'',querySelectorAll:()=>[]};
- const pending=[];let paints=0;
- const api=()=>{const d=deferred();pending.push(d);return d.promise};
- const loadOrders=new Function('state','$','api','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
-  part('  let ordersLoadGeneration=0;','  async function refreshOrderSeparationBoard')+';return loadOrders')(
-    state,k=>k==='#orderRows'?host:null,api,async()=>{},()=>paints++,async()=>{});
- const old=loadOrders(),fresh=loadOrders();
- pending[1].resolve({orders:[{id:'fresh',status:'confirmed'}]});await fresh;
- pending[0].resolve({orders:[{id:'old',status:'confirmed'}]});await old;
- assert.equal(state.orders[0].id,'fresh');
- assert.equal(paints,1);
-}
-
+// Order list/detail/fiscal races are covered through their actual factories:
+// test-admin-order-{list,detail,fiscal}-controller.mjs and order-session.mjs.
 
 {
  const scenarios=[
@@ -91,29 +41,29 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
   ['resolveCurrentOrderBlingDependencies','  async function completeCurrentOrderCustomerDocument(','bling_reconcile_order_dependencies_readonly']
  ];
  for(const [name,next,action] of scenarios){
-  const state={currentOrder:{order:{id:'old'}},currentOrderBlingPreview:null};
+  const session={detail:{order:{id:'old'}},preview:null};
   const button={disabled:false,textContent:''};let finish,paints=0;
   const api=called=>{assert.equal(called,action);return new Promise(resolve=>finish=resolve)};
-  const fn=new Function('state','api',String.fromCharCode(36),'paintOrderDetail','toast','blingPreflightOperationalBlockers',
-    part('  async function '+name+'(',next)+';return '+name)(state,api,()=>button,()=>paints++,()=>{},()=>[]);
+  const fn=new Function('orderSession','api',String.fromCharCode(36),'paintOrderDetail','toast','blingPreflightOperationalBlockers',
+    part('  async function '+name+'(',next)+';return '+name)(session,api,()=>button,()=>paints++,()=>{},()=>[]);
   const pending=fn();
-  state.currentOrder={order:{id:'new'}};
+  session.detail={order:{id:'new'}};
   finish({preview:{id:'old'},write_eligible:true});
   await pending;
-  assert.equal(state.currentOrderBlingPreview,null);
+  assert.equal(session.preview,null);
   assert.equal(paints,0);
  }
 }
 {
- const state={currentOrder:{order:{id:'old'}}};let finish,paints=0,refreshes=0;
+ const session={detail:{order:{id:'old'}}};let finish,paints=0,refreshes=0;
  const api=action=>new Promise(resolve=>{if(action==='history_sync_retry')resolve({ok:true});else if(action==='order')finish=resolve;else throw Error(action)});
- const fn=new Function('state','api',String.fromCharCode(36),'paintOrderDetail','loadOrders','toast',
+ const fn=new Function('orderSession','api',String.fromCharCode(36),'paintOrderDetail','loadOrders','toast',
   part('  async function retryHistorySync(','  const renderOrderActionButtons')+';return retryHistorySync')(
-    state,api,()=>({disabled:false,textContent:''}),()=>paints++,()=>refreshes++,()=>{});
+    session,api,()=>({disabled:false,textContent:''}),()=>paints++,()=>refreshes++,()=>{});
  const pending=fn();await Promise.resolve();
- state.currentOrder={order:{id:'new'}};
+ session.detail={order:{id:'new'}};
  finish({order:{id:'old'}});await pending;
- assert.equal(state.currentOrder.order.id,'new');
+ assert.equal(session.detail.order.id,'new');
  assert.equal(paints,0);assert.equal(refreshes,0);
 }
 
@@ -136,16 +86,6 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
   state,()=>d.promise,String,k=>k==='#purchaseBody'?host:null,()=>paints++);
  const pending=fn();state.tab='customers';d.resolve({documents:[{id:'queue'}]});await pending;
  assert.equal(state.purchaseAdvancedLoaded,true);assert.equal(paints,0);
-}
-{
- const state={tab:'orders',orders:[{id:'a',status:'confirmed'}],orderStatusTab:'all'},d=deferred(),document={hidden:false};let paints=0;
- const src=part('  let ordersLoadGeneration=0;','  if(!window.__orderSeparationBoardTimer)');
- const {refreshOrderSeparationBoard,reload}=new Function('state','api','$','document','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
-  src+';return {refreshOrderSeparationBoard,reload:()=>++ordersLoadGeneration}')(
-  state,()=>d.promise,()=>null,document,async()=>{},()=>paints++,async()=>{});
- const pending=refreshOrderSeparationBoard();reload();
- d.resolve({board:[{order_id:'a',status:'ready'}]});await pending;
- assert.equal(state.orders[0].status,'confirmed');assert.equal(paints,0);
 }
 
 console.log('Admin async races and partial save: PASS');

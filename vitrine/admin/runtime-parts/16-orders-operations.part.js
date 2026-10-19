@@ -1,3 +1,8 @@
+  const orderList=window.DonaAntoniaAdminOrderList.create({
+    api,queueRequest:manualQueueRequest,
+    orders:{get:()=>state.orders,set:value=>{state.orders=value},loadFiscal:loadFiscalForOrders},
+    navigation:{currentTab:()=>state.tab},ui:{query:$,document,toast,errorMessage},view:{paint:paintOrderRows}
+  });
   function orderCardPhone(o){return formatPhone(o?.whatsapp_phone_e164||o?.delivery_address_snapshot?.phone||'')||'Telefone não informado'}
   function orderSeparationUrlFor(id){const url=new URL('/vitrine/admin/',location.origin);url.searchParams.set('separacao',String(id||''));return url.toString()}
   async function copyOrderSeparationLink(id,btn){const url=orderSeparationUrlFor(id);try{await navigator.clipboard.writeText(url)}catch{const input=document.createElement('textarea');input.value=url;input.style.position='fixed';input.style.opacity='0';document.body.appendChild(input);input.select();document.execCommand('copy');input.remove()}toast('Link da vitrine de separação copiado');if(btn){btn.textContent='LINK COPIADO';setTimeout(()=>{if(document.contains(btn))btn.textContent='COPIAR LINK SEPARAÇÃO'},1800)}}
@@ -31,9 +36,9 @@
     const separationLabel=m.separated?'VER SEPARAÇÃO':assigned?'CONTINUAR SEPARAÇÃO':'INICIAR SEPARAÇÃO';
     const primaryAction=m.confirmed&&!m.delivered&&!m.cancelled?'<button class="order-v3-action main '+(m.separated?'secondary-action':'primary')+'" type="button" data-v3-separation="'+esc(o.id)+'">'+separationLabel+'</button>':'';
     const supportTags=orderCardOperationalTags(o,m);
-    const manualSelected=state.manualQueueIds.has(String(o.id));
+    const manualSelected=orderList.state.manualQueueIds.has(String(o.id));
     const manualEligible=orderStatusTabKey(o)==='confirmed'&&o.status==='confirmed';
-    const manualQueueButton=(manualEligible||(manualSelected&&state.orderStatusTab==='manual'&&!m.separated))?'<button class="order-v3-action secondary-action" type="button" data-manual-queue-'+(manualSelected?'remove':'add')+'="'+esc(o.id)+'">'+(manualSelected?'RETIRAR DE SEPARAR AGORA':'SEPARAR AGORA')+'</button>':'';
+    const manualQueueButton=(manualEligible||(manualSelected&&orderList.state.orderStatusTab==='manual'&&!m.separated))?'<button class="order-v3-action secondary-action" type="button" data-manual-queue-'+(manualSelected?'remove':'add')+'="'+esc(o.id)+'">'+(manualSelected?'RETIRAR DE SEPARAR AGORA':'SEPARAR AGORA')+'</button>':'';
     return '<article class="order-v3-card'+cardClass+'"><div class="order-v3-topline"><span class="order-v3-stage '+esc(stage)+'">'+esc(stageLabel)+'</span><strong class="order-v3-money">'+money(o.total_cents||0)+'</strong></div><div class="order-v3-identity"><strong>#'+esc(orderDisplayCode(o))+' · '+esc(o.customer_name||'Sem cliente')+'</strong><small><span class="order-v3-phone">Tel. '+esc(orderCardPhone(o))+'</span><span>'+esc(dateTime(o.created_at))+'</span></small></div>'+(!m.confirmed&&!m.cancelled?'<div class="order-v3-do-not-build">NÃO MONTAR ESSE PEDIDO</div>':'')+progress+(supportTags?'<div class="order-v3-tags">'+supportTags+'</div>':'')+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions">'+primaryAction+manualQueueButton+'<button class="order-v3-action secondary-action" type="button" data-order-chat="'+esc(o.id)+'">💬 VER CONVERSA</button><button class="order-v3-action '+(primaryAction?'secondary-action':'primary')+'" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
   }
   const ORDER_STATUS_TABS=[
@@ -56,10 +61,10 @@
     if(m.confirmed)return 'confirmed';
     return 'received';
   }
-  function orderStatusTabMatch(o,key=state.orderStatusTab||'manual'){
+  function orderStatusTabMatch(o,key=orderList.state.orderStatusTab||'manual'){
     if(key==='manual'){
       const m=orderV3Milestones(o);
-      return state.manualQueueIds.has(String(o.id))&&m.confirmed&&!m.separated&&!m.delivered&&!m.cancelled&&o.status!=='out_for_delivery';
+      return orderList.state.manualQueueIds.has(String(o.id))&&m.confirmed&&!m.separated&&!m.delivered&&!m.cancelled&&o.status!=='out_for_delivery';
     }
     return key==='all'||orderStatusTabKey(o)===key;
   }
@@ -71,10 +76,10 @@
     return counts;
   }
   function orderStatusTabsHtml(extraClass=''){
-    const counts=orderStatusTabCounts(),active=state.orderStatusTab||'all';
+    const counts=orderStatusTabCounts(),active=orderList.state.orderStatusTab||'all';
     return '<div class="orders-status-tabs '+extraClass+'" role="tablist" aria-label="Filtrar pedidos por status">'+ORDER_STATUS_TABS.map(x=>'<button type="button" class="orders-status-tab'+(active===x.key?' active':'')+'" data-order-status-tab="'+x.key+'" role="tab" aria-selected="'+(active===x.key?'true':'false')+'">'+esc(x.label)+' <span class="count">'+Number(counts[x.key]||0)+'</span></button>').join('')+'</div>';
   }
-  async function manualQueueRpc(action,orderId=null){
+  async function manualQueueRequest(action,orderId=null){
     const token=await adminStepUp();
     const res=await fetch(BASKET_AUTO_RPC+'manual_pick_queue_action_v1',{
       method:'POST',headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY,'Authorization':'Bearer '+token},
@@ -82,67 +87,14 @@
     });
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!Array.isArray(data.order_ids))throw new Error(data.message||data.error||'manual_queue_unavailable');
-    state.manualQueueIds=new Set(data.order_ids.map(String));
-    state.manualQueueLoaded=true;state.manualQueueError=false;state.manualQueueLastSync=Date.now();
     return data;
   }
-  async function loadManualPickQueue(){
-    try{return await manualQueueRpc('list')}
-    catch(error){state.manualQueueError=true;state.manualQueueLoaded=false;throw error}
-  }
-  async function setManualPickQueue(orderId,enable,button){
-    if(button){button.disabled=true;button.textContent=enable?'ADICIONANDO…':'RETIRANDO…'}
-    try{
-      await manualQueueRpc(enable?'add':'remove',orderId);
-      toast(enable?'Pedido incluído em SEPARAR AGORA':'Pedido retirado de SEPARAR AGORA');
-    }catch(error){toast('Não foi possível atualizar a fila manual: '+errorMessage(error.message))}
-    finally{paintOrderRows()}
-  }
-  function bindOrderStatusTabs(){document.querySelectorAll('[data-order-status-tab]').forEach(b=>b.onclick=async()=>{state.orderStatusTab=b.dataset.orderStatusTab||'manual';paintOrderRows();if(state.orderStatusTab==='manual'){try{await loadManualPickQueue()}catch{}paintOrderRows()}})}
-  async function renderOrders(){const content=$('#content');document.body.classList.add('orders-tab-active');content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Escolha manualmente quais pedidos confirmados devem aparecer em SEPARAR AGORA.</p></div></div><div id="orderStatusTabsTop">'+orderStatusTabsHtml('orders-status-desktop')+'</div><div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery||'')+'"></div><div id="orderRows" class="orders-v3-list"><div class="loading">Carregando pedidos…</div></div><div id="orderStatusTabsMobile">'+orderStatusTabsHtml('orders-status-mobile')+'</div>';bindOrderStatusTabs();$('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;paintOrderRows()};await loadOrders()}
-  let ordersLoadGeneration=0;
-  async function loadOrders(){
-    const generation=++ordersLoadGeneration,host=$('#orderRows');
-    const isLatest=()=>generation===ordersLoadGeneration;
-    const canPaint=()=>isLatest()&&state.tab==='orders'&&host&&host===$('#orderRows');
-    try{
-      const data=await api('orders');
-      if(!isLatest())return;
-      state.orders=Array.isArray(data.orders)?data.orders:[];
-      try{await loadManualPickQueue()}catch{}
-      if(!isLatest())return;
-      if(canPaint())paintOrderRows();
-      const fiscalRows=state.orders.filter(o=>o.status==='ready').sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)).slice(0,8);
-      if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);if(canPaint())paintOrderRows()}
-    }catch(e){if(canPaint())host.innerHTML='<div class="empty">Não consegui carregar os pedidos.</div>'}
-  }
-  let orderBoardRefreshGeneration=0;
-  async function refreshOrderSeparationBoard(){
-    if(state.tab!=='orders'||document.hidden||!state.orders.length)return;
-    const generation=++orderBoardRefreshGeneration,ordersGeneration=ordersLoadGeneration;
-    const isCurrent=()=>generation===orderBoardRefreshGeneration&&ordersGeneration===ordersLoadGeneration&&state.tab==='orders'&&!document.hidden;
-    try{
-      const data=await api('order_separation_board');
-      if(!isCurrent())return;
-      const map=new Map((data.board||[]).map(x=>[String(x.order_id),x]));
-      let changed=false;
-      state.orders=state.orders.map(o=>{
-        const row=map.get(String(o.id));if(!row)return o;
-        const nextSummary=row.separation_summary||null,nextStatus=row.status||o.status;
-        if(nextStatus!==o.status||JSON.stringify(nextSummary)!==JSON.stringify(o.separation_summary||null))changed=true;
-        return {...o,status:nextStatus,separation_summary:nextSummary};
-      });
-      if(state.orderStatusTab==='manual'&&Date.now()-Number(state.manualQueueLastSync||0)>=15000){
-        const previous=[...state.manualQueueIds].sort().join(',');
-        try{
-          await loadManualPickQueue();
-          if(!isCurrent())return;
-          if(previous!==[...state.manualQueueIds].sort().join(','))changed=true;
-        }catch{}
-      }
-      if(changed&&isCurrent())paintOrderRows();
-    }catch{}
-  }
+  function loadManualPickQueue(){return orderList.loadManualPickQueue()}
+  function setManualPickQueue(orderId,enable,button){return orderList.setManualPickQueue(orderId,enable,button)}
+  function bindOrderStatusTabs(){document.querySelectorAll('[data-order-status-tab]').forEach(b=>b.onclick=async()=>{orderList.state.orderStatusTab=b.dataset.orderStatusTab||'manual';paintOrderRows();if(orderList.state.orderStatusTab==='manual'){try{await loadManualPickQueue()}catch{}paintOrderRows()}})}
+  async function renderOrders(){const content=$('#content');document.body.classList.add('orders-tab-active');content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Escolha manualmente quais pedidos confirmados devem aparecer em SEPARAR AGORA.</p></div></div><div id="orderStatusTabsTop">'+orderStatusTabsHtml('orders-status-desktop')+'</div><div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(orderList.state.orderQuery||'')+'"></div><div id="orderRows" class="orders-v3-list"><div class="loading">Carregando pedidos…</div></div><div id="orderStatusTabsMobile">'+orderStatusTabsHtml('orders-status-mobile')+'</div>';bindOrderStatusTabs();$('#orderSearch').oninput=e=>{orderList.state.orderQuery=e.target.value;paintOrderRows()};await loadOrders()}
+  function loadOrders(){return orderList.loadOrders()}
+  function refreshOrderSeparationBoard(){return orderList.refreshOrderSeparationBoard()}
   if(!window.__orderSeparationBoardTimer)window.__orderSeparationBoardTimer=setInterval(refreshOrderSeparationBoard,5000);
   if(!window.__orderSeparationBoardVisibilityBound){window.__orderSeparationBoardVisibilityBound=true;document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.tab==='orders')refreshOrderSeparationBoard()})}
   // O painel preserva a página e reusa integralmente o Atendimento existente.
@@ -179,14 +131,14 @@
   $('#orderChatClose').onclick=closeOrderChatSheet;
   $('#orderChatOverlay').onclick=closeOrderChatSheet;
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('#orderChatSheet').hidden){event.preventDefault();closeOrderChatSheet()}});
-  function paintOrderRows(){const host=$('#orderRows');if(!host)return;const rows=state.orders.filter(o=>orderV3SearchMatch(o,state.orderQuery)&&orderStatusTabMatch(o)).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">'+(state.orderStatusTab==='manual'?(state.manualQueueError?'Fila manual indisponível. Tente selecionar esta aba novamente.':'Nenhum pedido na fila. Em CONFIRMADOS, clique em SEPARAR AGORA no pedido desejado.'):'Nenhum pedido encontrado neste status.')+'</div>';const top=$('#orderStatusTabsTop'),mobile=$('#orderStatusTabsMobile');if(top)top.innerHTML=orderStatusTabsHtml('orders-status-desktop');if(mobile)mobile.innerHTML=orderStatusTabsHtml('orders-status-mobile');bindOrderStatusTabs();host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));host.querySelectorAll('[data-order-chat]').forEach(b=>b.onclick=()=>openOrderChatSheet(b.dataset.orderChat,b));host.querySelectorAll('[data-manual-queue-add],[data-manual-queue-remove]').forEach(b=>b.onclick=()=>setManualPickQueue(b.dataset.manualQueueAdd||b.dataset.manualQueueRemove,Boolean(b.dataset.manualQueueAdd),b));host.querySelectorAll('[data-copy-separation]').forEach(b=>b.onclick=()=>copyOrderSeparationLink(b.dataset.copySeparation,b));host.querySelectorAll('[data-v3-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.v3Confirm,b));host.querySelectorAll('[data-v3-separate],[data-v3-separation]').forEach(b=>b.onclick=()=>openOrderSeparationSheet(b.dataset.v3Separate||b.dataset.v3Separation));host.querySelectorAll('[data-v3-dispatch]').forEach(b=>b.onclick=()=>startOrderDispatchV4(b.dataset.v3Dispatch,b));host.querySelectorAll('[data-v3-deliver]').forEach(b=>b.onclick=()=>openOrderDeliveryConfirm(b.dataset.v3Deliver));host.querySelectorAll('[data-v3-delivery-fail]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.v3DeliveryFail,false))}
+  function paintOrderRows(){const host=$('#orderRows');if(!host)return;const rows=state.orders.filter(o=>orderV3SearchMatch(o,orderList.state.orderQuery)&&orderStatusTabMatch(o)).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">'+(orderList.state.orderStatusTab==='manual'?(orderList.state.manualQueueError?'Fila manual indisponível. Tente selecionar esta aba novamente.':'Nenhum pedido na fila. Em CONFIRMADOS, clique em SEPARAR AGORA no pedido desejado.'):'Nenhum pedido encontrado neste status.')+'</div>';const top=$('#orderStatusTabsTop'),mobile=$('#orderStatusTabsMobile');if(top)top.innerHTML=orderStatusTabsHtml('orders-status-desktop');if(mobile)mobile.innerHTML=orderStatusTabsHtml('orders-status-mobile');bindOrderStatusTabs();host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));host.querySelectorAll('[data-order-chat]').forEach(b=>b.onclick=()=>openOrderChatSheet(b.dataset.orderChat,b));host.querySelectorAll('[data-manual-queue-add],[data-manual-queue-remove]').forEach(b=>b.onclick=()=>setManualPickQueue(b.dataset.manualQueueAdd||b.dataset.manualQueueRemove,Boolean(b.dataset.manualQueueAdd),b));host.querySelectorAll('[data-copy-separation]').forEach(b=>b.onclick=()=>copyOrderSeparationLink(b.dataset.copySeparation,b));host.querySelectorAll('[data-v3-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.v3Confirm,b));host.querySelectorAll('[data-v3-separate],[data-v3-separation]').forEach(b=>b.onclick=()=>openOrderSeparationSheet(b.dataset.v3Separate||b.dataset.v3Separation));host.querySelectorAll('[data-v3-dispatch]').forEach(b=>b.onclick=()=>startOrderDispatchV4(b.dataset.v3Dispatch,b));host.querySelectorAll('[data-v3-deliver]').forEach(b=>b.onclick=()=>openOrderDeliveryConfirm(b.dataset.v3Deliver));host.querySelectorAll('[data-v3-delivery-fail]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.v3DeliveryFail,false))}
   async function startOrderDispatchV4(id,btn){
     const current=state.orders.find(o=>String(o.id)===String(id));
     if(!current||current.status!=='ready'){toast('Este pedido não está pronto para saída');return}
     const f=state.fiscalByOrder[id]||{};if(f.authorized!==true&&f.stage!=='authorized'){toast('A NF-e precisa estar autorizada antes da saída');return}
     if(!confirm('Confirmar que o pedido #'+orderDisplayCode(current)+' SAIU PARA ENTREGA?'))return;
     if(btn){btn.disabled=true;btn.textContent='REGISTRANDO SAÍDA…'}
-    try{await api('order_dispatch_start_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+id})});toast('Saída para entrega registrada');delete state.fiscalByOrder[id];await loadOrders();if(state.currentOrder?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
+    try{await api('order_dispatch_start_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+id})});toast('Saída para entrega registrada');delete state.fiscalByOrder[id];await loadOrders();if(orderSession.detail?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
   }
   async function quickConfirmOrder(id,btn){const current=state.orders.find(o=>String(o.id)===String(id));if(current&&orderCustomerDataPending(current)){toast('Complete os dados essenciais do cliente antes de confirmar');return}if(btn){btn.disabled=true;btn.textContent='CONFIRMANDO…'}try{await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'confirmed',operator:currentOperator()||'Operação'})});toast('Pedido confirmado');await loadOrders()}catch(e){toast(errorMessage(e.message))}finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='CONFIRMADO'}}}
   function closeOrderSeparationSheet(){document.querySelector('.orders-bottom-sheet-backdrop')?.remove()}
@@ -346,7 +298,7 @@
     }
   }
   const {deliveryMethodV3,deliveryMethodOptionsV3,orderV3PaymentOptions}=window.DonaAntoniaAdminOrderPaymentMethod.create(normalize);
-  async function openOrderDeliveryConfirm(id){let order=state.orders.find(o=>String(o.id)===String(id));if(!order){await loadOrders();order=state.orders.find(o=>String(o.id)===String(id))}if(order&&orderCustomerDataPending(order)){toast('Complete os dados essenciais do cliente antes da entrega');return}if(!order||order.status!=='out_for_delivery'||orderV3Milestones(order).delivered){toast('O pedido precisa ter SAÍDO PARA ENTREGA antes da confirmação');return}const planned=order.payment_method_snapshot?.label||order.payment_method_snapshot?.method||'A confirmar',method=deliveryMethodV3(order.payment_method_snapshot?.method||planned);const dlg=document.createElement('dialog');dlg.className='delivery-v3-dialog';dlg.innerHTML='<div class="delivery-v3-body"><h2>Confirmar entrega</h2><div class="muted">Pedido #'+esc(orderDisplayCode(order))+'</div><div class="delivery-v3-grid"><label><span>Forma prevista</span><input value="'+esc(planned)+'" readonly></label><label><span>Forma recebida</span><select id="deliveryV3Method">'+deliveryMethodOptionsV3(method)+'</select></label><label><span>Valor recebido</span><input value="'+esc(money(order.total_cents||0))+'" readonly></label></div></div><div class="delivery-v3-actions"><button class="delivery-v3-cancel" type="button">Cancelar</button><button class="delivery-v3-confirm" type="button">CONFIRMAR ENTREGA</button></div>';document.body.appendChild(dlg);const close=()=>{dlg.close();dlg.remove()};dlg.querySelector('.delivery-v3-cancel').onclick=close;dlg.querySelector('.delivery-v3-confirm').onclick=async()=>{const btn=dlg.querySelector('.delivery-v3-confirm');btn.disabled=true;btn.textContent='CONFIRMANDO…';try{await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,method:dlg.querySelector('#deliveryV3Method').value,amount_cents:Number(order.total_cents||0),operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+id})});toast('Entrega e recebimento confirmados');close();await loadOrders();if(state.currentOrder?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='CONFIRMAR ENTREGA'}};dlg.showModal()}
+  async function openOrderDeliveryConfirm(id){let order=state.orders.find(o=>String(o.id)===String(id));if(!order){await loadOrders();order=state.orders.find(o=>String(o.id)===String(id))}if(order&&orderCustomerDataPending(order)){toast('Complete os dados essenciais do cliente antes da entrega');return}if(!order||order.status!=='out_for_delivery'||orderV3Milestones(order).delivered){toast('O pedido precisa ter SAÍDO PARA ENTREGA antes da confirmação');return}const planned=order.payment_method_snapshot?.label||order.payment_method_snapshot?.method||'A confirmar',method=deliveryMethodV3(order.payment_method_snapshot?.method||planned);const dlg=document.createElement('dialog');dlg.className='delivery-v3-dialog';dlg.innerHTML='<div class="delivery-v3-body"><h2>Confirmar entrega</h2><div class="muted">Pedido #'+esc(orderDisplayCode(order))+'</div><div class="delivery-v3-grid"><label><span>Forma prevista</span><input value="'+esc(planned)+'" readonly></label><label><span>Forma recebida</span><select id="deliveryV3Method">'+deliveryMethodOptionsV3(method)+'</select></label><label><span>Valor recebido</span><input value="'+esc(money(order.total_cents||0))+'" readonly></label></div></div><div class="delivery-v3-actions"><button class="delivery-v3-cancel" type="button">Cancelar</button><button class="delivery-v3-confirm" type="button">CONFIRMAR ENTREGA</button></div>';document.body.appendChild(dlg);const close=()=>{dlg.close();dlg.remove()};dlg.querySelector('.delivery-v3-cancel').onclick=close;dlg.querySelector('.delivery-v3-confirm').onclick=async()=>{const btn=dlg.querySelector('.delivery-v3-confirm');btn.disabled=true;btn.textContent='CONFIRMANDO…';try{await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,method:dlg.querySelector('#deliveryV3Method').value,amount_cents:Number(order.total_cents||0),operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+id})});toast('Entrega e recebimento confirmados');close();await loadOrders();if(orderSession.detail?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='CONFIRMAR ENTREGA'}};dlg.showModal()}
   async function sendOrderCustomerVitrineV3(id,btn){const access=String(sessionStorage.getItem('da_finance_access_token_v1')||'').trim();if(!access){toast('Sua sessão do Admin expirou');return}if(btn){btn.disabled=true;btn.textContent='ENVIANDO…'}try{const response=await fetch('https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-order-vitrine-send-v1',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+access},body:JSON.stringify({order_id:id,request_id:(crypto.randomUUID?.()||String(Date.now())).replace(/[^A-Za-z0-9-]/g,'').slice(0,80)})}),data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||'vitrine_send_failed');toast('Vitrine enviada ao cliente pelo WhatsApp '+(String(data.channel_phone_e164||'').replace(/\D/g,'').endsWith('1018')?'1018':'0975'))}catch(e){toast(e.message==='conversation_not_found'||e.message==='channel_unavailable'?'Não encontrei com segurança a conversa 0975/1018 deste pedido.':errorMessage(e.message))}finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='VITRINE CLIENTE'}}}
   async function reopenOrderV3(id){if(!confirm('Reabrir este pedido para edição? A reserva será liberada.'))return;try{await api('order_reopen_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Operação'})});toast('Pedido reaberto para edição');await loadOrders();await openOrder(id)}catch(e){toast(errorMessage(e.message))}}
 
@@ -365,20 +317,20 @@
     if($('#generateOrderVitrine'))$('#generateOrderVitrine').onclick=generateCurrentOrderVitrine;
   }
   async function generateCurrentOrderVitrine(){
-    const id=state.currentOrder?.order?.id,btn=$('#generateOrderVitrine');if(!id||btn?.disabled)return;
+    const id=orderSession.detail?.order?.id,btn=$('#generateOrderVitrine');if(!id||btn?.disabled)return;
     if(btn){btn.disabled=true;btn.textContent='Gerando…'}
     try{
       const data=await api('order',{id});
-      if(state.currentOrder?.order?.id!==id)return;
+      if(orderSession.detail?.order?.id!==id)return;
       if(data.order?.id!==id||!publicOrderUrlFor(data.order))throw new Error('link_unavailable');
-      Object.assign(state.currentOrder.order,{public_order_url:data.order.public_order_url,public_order_code:data.order.public_order_code});
-      const panel=$('#orderPublicVitrinePanel');if(panel){panel.innerHTML=orderPublicVitrineHtml(state.currentOrder.order);bindCurrentOrderVitrine()}
+      Object.assign(orderSession.detail.order,{public_order_url:data.order.public_order_url,public_order_code:data.order.public_order_code});
+      const panel=$('#orderPublicVitrinePanel');if(panel){panel.innerHTML=orderPublicVitrineHtml(orderSession.detail.order);bindCurrentOrderVitrine()}
       toast('Vitrine do pedido disponível');
-    }catch{if(state.currentOrder?.order?.id===id)toast('Não consegui gerar a vitrine agora. Tente novamente.')}
+    }catch{if(orderSession.detail?.order?.id===id)toast('Não consegui gerar a vitrine agora. Tente novamente.')}
     finally{if(btn){btn.disabled=false;btn.textContent='Gerar vitrine'}}
   }
   async function copyCurrentOrderPublicLink(){
-    const url=publicOrderUrlFor(state.currentOrder?.order);if(!url)return;
+    const url=publicOrderUrlFor(orderSession.detail?.order);if(!url)return;
     try{await navigator.clipboard.writeText(url);toast('Link da vitrine copiado')}
     catch{
       const input=$('#orderPublicLink');input?.focus();input?.select();
@@ -387,52 +339,28 @@
     }
   }
   function openCurrentOrderVitrine(){
-    const url=publicOrderUrlFor(state.currentOrder?.order);if(url)window.open(url,'_blank','noopener,noreferrer');
+    const url=publicOrderUrlFor(orderSession.detail?.order);if(url)window.open(url,'_blank','noopener,noreferrer');
   }
   function printCurrentOrderVitrine(){
-    const url=publicOrderUrlFor(state.currentOrder?.order);if(!url)return;
+    const url=publicOrderUrlFor(orderSession.detail?.order);if(!url)return;
     const printUrl=new URL(url);printUrl.searchParams.set('print','1');
     window.open(printUrl.toString(),'_blank','noopener,noreferrer');
   }
-  let orderDetailLoadGeneration=0;
-  async function openOrder(id){
-    const generation=++orderDetailLoadGeneration;
-    const editor=$('#editor'),title=$('#editorTitle'),body=$('#editorBody');
-    title.textContent='Pedido';
-    body.innerHTML='<div class="loading">Carregando pedido…</div>';
-    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>';
-    $('#cancelEditor').onclick=()=>editor.close();
-    if(!editor.open)editor.showModal();
-    const isCurrent=()=>generation===orderDetailLoadGeneration&&editor.open&&title.textContent==='Pedido';
-    try{
-      const data=await api('order',{id});
-      if(!isCurrent())return;
-      state.currentOrder=data;
-      state.currentOrderFiscal=null;
-      if(['confirmed','processing','ready','out_for_delivery','delivered'].includes(data.order?.status)){
-        try{
-          const sep=await api('order_separation_get',{id});
-          if(!isCurrent())return;
-          data.separation=sep.separation||sep;
-        }catch(e){if(!isCurrent())return}
-      }
-      if(['ready','out_for_delivery','delivered'].includes(data.order?.status))await loadCurrentOrderFiscal(false);
-      if(isCurrent())paintOrderDetail();
-    }catch(e){if(isCurrent())body.innerHTML='<div class="empty">Não consegui abrir este pedido.</div>'}
-  }
-  function orderV3SeparationMap(){return new Map((state.currentOrder?.separation?.items||[]).map(x=>[String(x.order_item_id),String(x.state||'pending')]))}
+  function openOrder(id){return orderDetailController.openOrder(id)}
+  function saveOrderV3(){return orderDetailController.saveOrderV3()}
+  function cancelCurrentOrder(){return orderDetailController.cancelCurrentOrder()}
+  function orderV3SeparationMap(){return new Map((orderSession.detail?.separation?.items||[]).map(x=>[String(x.order_item_id),String(x.state||'pending')]))}
   function orderV3DetailItemHtml(item,states){const st=states.get(String(item.id))||'',missing=st==='missing';const components=Array.isArray(item.components)?item.components:[];const componentHtml=components.length?'<div style="margin-top:7px">'+components.map(c=>{const cs=states.get(String(c.id))||'',cm=cs==='missing';return '<div class="muted" style="padding:3px 0">• '+esc(fmtQty(c.quantity))+' × '+esc(c.name_snapshot||'Produto')+(cm?'<span class="order-v3-missing">FALTOU</span>':'')+'</div>'}).join('')+'</div>':'';return '<div class="order-v3-item'+(missing?' missing':'')+'">'+(item.image_url?'<img src="'+esc(item.image_url)+'" alt="">':'<div class="order-v3-item-ph"></div>')+'<div><strong>'+esc(item.name_snapshot||'Produto')+'</strong>'+(missing?'<span class="order-v3-missing">FALTOU</span>':'')+'<small>Quantidade: '+esc(fmtQty(item.quantity||1))+'</small>'+componentHtml+'</div><strong>'+money(item.total_cents||Math.round(Number(item.line_total||0)*100))+'</strong></div>'}
-  async function saveOrderV3(){const o=state.currentOrder?.order;if(!o||o.status==='delivered'||o.status==='cancelled')return;const btn=$('#saveOrder');if(btn){btn.disabled=true;btn.textContent='SALVANDO…'}try{await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,payment_method:$('#orderPayment')?.value||'',delivery_address:{customer_name:$('#orderDeliveryName')?.value||'',phone:$('#orderDeliveryPhone')?.value||'',postal_code:$('#orderDeliveryPostalCode')?.value||'',street:$('#orderDeliveryStreet')?.value||'',number:$('#orderDeliveryNumber')?.value||'',district:$('#orderDeliveryDistrict')?.value||'',complement:$('#orderDeliveryComplement')?.value||'',city:$('#orderDeliveryCity')?.value||'',state:$('#orderDeliveryState')?.value||'',raw_text:$('#orderDeliveryRawText')?.value||''},operator:currentOperator()||'Operação'})});toast('Dados do pedido atualizados');await openOrder(o.id);await loadOrders()}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Salvar dados'}}}
   function paintOrderDetail(){
-    const d=state.currentOrder,o=d.order,c=d.customer||{},delivery=o.delivery_address_snapshot||c.address||{},milestones=orderV3Milestones(o),states=orderV3SeparationMap(),sep=d.separation||{},completion=sep.completion||{},original=Number(sep.original_total??completion.original_total??o.total_cents/100??0),missing=Number(sep.missing_subtotal??completion.missing_subtotal??0),finalTotal=Number(sep.final_total??completion.final_total??o.total_cents/100??0),sepStarted=Boolean(completion?.prepared_at||completion?.completed_at)||(sep.items||[]).some(x=>String(x.state||'pending')!=='pending'),locked=milestones.confirmed,editable=!milestones.delivered&&!milestones.cancelled,customerPending=orderCustomerDataPending(o),customerPendingReasons=orderCustomerDataPendingReasons(o);
-    const fiscal=['ready','out_for_delivery','delivered'].includes(o.status)?'<div class="order-v3-section"><h3>Fiscal / NF-e</h3><div id="orderFiscalStatus">'+orderFiscalHtml(state.currentOrderFiscal,o)+'</div>'+fiscalCanaryActionHtml(state.currentOrderFiscal,o)+'<div class="print-actions">'+((state.currentOrderFiscal?.danfe_available===true)?'<button class="secondary" id="printDanfe" type="button">Imprimir DANFE</button>':'')+'</div></div>':'';
+    const d=orderSession.detail,o=d.order,c=d.customer||{},delivery=o.delivery_address_snapshot||c.address||{},milestones=orderV3Milestones(o),states=orderV3SeparationMap(),sep=d.separation||{},completion=sep.completion||{},original=Number(sep.original_total??completion.original_total??o.total_cents/100??0),missing=Number(sep.missing_subtotal??completion.missing_subtotal??0),finalTotal=Number(sep.final_total??completion.final_total??o.total_cents/100??0),sepStarted=Boolean(completion?.prepared_at||completion?.completed_at)||(sep.items||[]).some(x=>String(x.state||'pending')!=='pending'),locked=milestones.confirmed,editable=!milestones.delivered&&!milestones.cancelled,customerPending=orderCustomerDataPending(o),customerPendingReasons=orderCustomerDataPendingReasons(o);
+    const fiscal=['ready','out_for_delivery','delivered'].includes(o.status)?'<div class="order-v3-section"><h3>Fiscal / NF-e</h3><div id="orderFiscalStatus">'+orderFiscalHtml(orderSession.fiscal,o)+'</div>'+fiscalCanaryActionHtml(orderSession.fiscal,o)+'<div class="print-actions">'+((orderSession.fiscal?.danfe_available===true)?'<button class="secondary" id="printDanfe" type="button">Imprimir DANFE</button>':'')+'</div></div>':'';
     $('#editorBody').innerHTML=(customerPending?'<div class="rule-notice warn"><strong>AGUARDANDO DADOS DO CLIENTE</strong><div>'+esc(customerPendingReasons.join(' · '))+'</div></div>':'')+'<div class="order-v3-detail-head"><div><h2 style="margin:0">Pedido #'+esc(orderDisplayCode(o))+'</h2><div class="muted">'+esc(dateTime(o.created_at))+' · '+esc(o.customer_name||c.display_name||'Cliente')+'</div><div class="order-v3-tags">'+orderV3Tags(o)+'</div></div><div class="order-v3-total">'+separationMoney(missing>0?finalTotal:Number(o.total_cents||0)/100)+'</div></div>'+
       (missing>0?'<div class="order-v3-financial"><span>Total original: <strong>'+separationMoney(original)+'</strong></span><span class="discount">Abatimento por falta: <strong>− '+separationMoney(missing)+'</strong></span><span>Total final: <strong>'+separationMoney(finalTotal)+'</strong></span></div>':'')+
       '<div class="order-v3-section"><h3>Cliente e entrega</h3><div class="form-grid"><label class="span-2"><span>Nome</span><input id="orderDeliveryName" value="'+esc(delivery.customer_name||delivery.recipient_name||c.display_name||'')+'" '+(editable?'':'disabled')+'></label><label><span>Telefone / WhatsApp</span><input id="orderDeliveryPhone" value="'+esc(formatPhone(delivery.phone||c.phone||o.whatsapp_phone_e164||''))+'" '+(editable?'':'disabled')+'></label><label><span>Pagamento previsto</span><select id="orderPayment" '+(editable?'':'disabled')+'>'+orderV3PaymentOptions(o.payment_method_snapshot?.method||o.payment_method_snapshot?.label||'')+'</select></label><label class="span-2"><span>Rua / avenida</span><input id="orderDeliveryStreet" value="'+esc(delivery.street||'')+'" '+(editable?'':'disabled')+'></label><label><span>Número</span><input id="orderDeliveryNumber" value="'+esc(delivery.number||'')+'" '+(editable?'':'disabled')+'></label><label><span>Bairro</span><input id="orderDeliveryDistrict" value="'+esc(delivery.district||'')+'" '+(editable?'':'disabled')+'></label><label><span>Complemento</span><input id="orderDeliveryComplement" value="'+esc(delivery.complement||'')+'" '+(editable?'':'disabled')+'></label><label><span>CEP</span><input id="orderDeliveryPostalCode" value="'+esc(delivery.postal_code||'')+'" '+(editable?'':'disabled')+'></label><label><span>Cidade</span><input id="orderDeliveryCity" value="'+esc(delivery.city||'Cuiabá')+'" '+(editable?'':'disabled')+'></label><label><span>UF</span><input id="orderDeliveryState" maxlength="2" value="'+esc(delivery.state||'MT')+'" '+(editable?'':'disabled')+'></label><label class="span-2"><span>Referência</span><input id="orderDeliveryRawText" value="'+esc(delivery.raw_text||delivery.reference||'')+'" '+(editable?'':'disabled')+'></label></div></div>'+
       '<div class="order-v3-section"><h3>Itens</h3>'+(locked?'<div class="muted" style="margin-bottom:8px">Produtos e quantidades estão travados porque o pedido já foi confirmado.</div>':'')+'<div class="order-v3-items">'+(d.items||[]).map(i=>orderV3DetailItemHtml(i,states)).join('')+'</div></div>'+
       '<div class="order-v3-section"><h3>Atendimento</h3><div class="order-v3-ops"><button class="secondary" id="sendCustomerVitrineV3" type="button">VITRINE CLIENTE</button>'+(publicOrderUrlFor(o)?'<button class="secondary" id="openOrderVitrineV3" type="button">ABRIR VITRINE</button>':'')+'</div></div>'+
       '<div class="order-v3-section"><h3>Operação</h3><div class="order-v3-ops">'+(!milestones.confirmed&&!milestones.cancelled?'<button class="primary" id="confirmOrderV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>CONFIRMAR PEDIDO</button>':'')+(milestones.confirmed&&!milestones.delivered&&!milestones.cancelled?'<button class="secondary" id="openSeparationV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>ABRIR VITRINE SEPARAÇÃO</button>':'')+(o.status==='out_for_delivery'&&!milestones.delivered&&!milestones.cancelled?'<button class="primary" id="deliverOrderV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>CONFIRMAR ENTREGA</button><button class="secondary" id="deliveryFailedV4" type="button">ENTREGA NÃO CONCLUÍDA</button>':'')+(o.status==='confirmed'&&!sepStarted?'<button class="secondary" id="reopenOrderV3" type="button">REABRIR PEDIDO</button>':'')+(!milestones.delivered&&!milestones.cancelled?'<button class="text danger" id="cancelOrderV3" type="button">Cancelar pedido</button>':'')+'</div></div>'+fiscal;
-    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>'+(editable?'<button class="primary" id="saveOrder">Salvar dados</button>':'');$('#cancelEditor').onclick=()=>$('#editor').close();if($('#saveOrder'))$('#saveOrder').onclick=saveOrderV3;if($('#sendCustomerVitrineV3'))$('#sendCustomerVitrineV3').onclick=e=>sendOrderCustomerVitrineV3(o.id,e.currentTarget);if($('#openOrderVitrineV3'))$('#openOrderVitrineV3').onclick=openCurrentOrderVitrine;if($('#confirmOrderV3'))$('#confirmOrderV3').onclick=()=>quickConfirmOrder(o.id,$('#confirmOrderV3')).then(()=>openOrder(o.id));if($('#openSeparationV3'))$('#openSeparationV3').onclick=()=>{const id=o.id;$('#editor').close();openOrderSeparationSheet(id)};if($('#deliverOrderV3'))$('#deliverOrderV3').onclick=()=>openOrderDeliveryConfirm(o.id);if($('#deliveryFailedV4'))$('#deliveryFailedV4').onclick=()=>returnOrderToExpedition(o.id,true);if($('#startDispatchV4'))$('#startDispatchV4').onclick=startCurrentOrderDispatchV4;if($('#reopenOrderV3'))$('#reopenOrderV3').onclick=()=>reopenOrderV3(o.id);if($('#cancelOrderV3'))$('#cancelOrderV3').onclick=cancelCurrentOrder;if($('#executeFiscalCanary'))$('#executeFiscalCanary').onclick=executeCurrentOrderFiscalCanary;if($('#refreshFiscalCanary'))$('#refreshFiscalCanary').onclick=recheckCurrentOrderFiscal;if($('#recoverBlingOrder'))$('#recoverBlingOrder').onclick=recoverCurrentOrderBling;if($('#printDanfe'))$('#printDanfe').onclick=openCurrentDanfe;
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>'+(editable?'<button class="primary" id="saveOrder">Salvar dados</button>':'');$('#cancelEditor').onclick=()=>$('#editor').close();if($('#saveOrder'))$('#saveOrder').onclick=saveOrderV3;if($('#sendCustomerVitrineV3'))$('#sendCustomerVitrineV3').onclick=e=>sendOrderCustomerVitrineV3(o.id,e.currentTarget);if($('#openOrderVitrineV3'))$('#openOrderVitrineV3').onclick=openCurrentOrderVitrine;if($('#confirmOrderV3'))$('#confirmOrderV3').onclick=async()=>{const token=orderSession.capture();await quickConfirmOrder(o.id,$('#confirmOrderV3'));if(orderSession.isCurrent(token))await openOrder(o.id)};if($('#openSeparationV3'))$('#openSeparationV3').onclick=()=>{const id=o.id;$('#editor').close();openOrderSeparationSheet(id)};if($('#deliverOrderV3'))$('#deliverOrderV3').onclick=()=>openOrderDeliveryConfirm(o.id);if($('#deliveryFailedV4'))$('#deliveryFailedV4').onclick=()=>returnOrderToExpedition(o.id,true);if($('#startDispatchV4'))$('#startDispatchV4').onclick=startCurrentOrderDispatchV4;if($('#reopenOrderV3'))$('#reopenOrderV3').onclick=()=>reopenOrderV3(o.id);if($('#cancelOrderV3'))$('#cancelOrderV3').onclick=cancelCurrentOrder;if($('#executeFiscalCanary'))$('#executeFiscalCanary').onclick=executeCurrentOrderFiscalCanary;if($('#refreshFiscalCanary'))$('#refreshFiscalCanary').onclick=recheckCurrentOrderFiscal;if($('#recoverBlingOrder'))$('#recoverBlingOrder').onclick=recoverCurrentOrderBling;if($('#printDanfe'))$('#printDanfe').onclick=openCurrentDanfe;
   }
 
   function blingPreflightOperationalBlockers(p){
@@ -441,191 +369,22 @@
     const blockers=Array.isArray(p.write_blockers)&&p.write_blockers.length?p.write_blockers:(p.blockers||[]);
     return [...new Set(blockers)].filter(code=>!expected.has(code));
   }
-  async function loadCurrentOrderBlingPreview(repaint=true){
-    const id=state.currentOrder?.order?.id;if(!id)return;
-    let preview;
-    try{
-      preview=await api('bling_preview_order_sync',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
-      });
-    }catch(e){
-      preview={error:String(e?.message||'bling_preview_unavailable')};
-    }
-    if(state.currentOrder?.order?.id!==id)return;
-    state.currentOrderBlingPreview=preview;
-    if(repaint&&$('#editor')?.open)paintOrderDetail();
-  }
-
-  function fiscalBlockReasonLabel(code){
-    const map={
-      delivery_not_confirmed:'Aguardando confirmação da entrega',
-      payment_not_confirmed:'Aguardando confirmação do pagamento',
-      payment_review_required:'Pagamento precisa de revisão',
-      settled_amount_missing:'Valor recebido não informado',
-      settled_amount_mismatch:'Valor recebido diferente do pedido',
-      order_cancelled:'Pedido cancelado',
-      order_returned:'Pedido devolvido',
-      fiscal_control_missing:'Controle fiscal ainda não iniciado',
-      fiscal_subtotal_item_sum_mismatch:'A soma dos produtos não confere com o subtotal fiscal',
-      canonical_total_not_balanced:'O total do pedido não confere com subtotal, acréscimos e descontos',
-      bling_order_not_linked:'O pedido ainda não está vinculado à venda no Bling',
-      bling_order_not_verified:'A venda ainda não chegou ao status Verificado no Bling',
-      invoice_generation_failed:'O Bling recebeu a solicitação, mas não conseguiu gerar a NF-e',
-      fiscal_dispatch_preflight_failed:'A conferência fiscal encontrou dados inconsistentes',
-      fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão',
-      invoice_generation_recovery_required:'Tentativa anterior teve erro ou tempo de resposta excedido. A recuperação automática está verificando a nota antes de permitir novo envio.',
-      fiscal_status_unavailable:'Não foi possível consultar o retorno fiscal no Bling'
-    };
-    return map[code]||String(code||'').replaceAll('_',' ');
-  }
-  function fiscalDiagnosticHtml(f){
-    if(!f||f.authorized===true)return '';
-    const provider=f.provider||{},job=provider.job||{},readiness=f.readiness||{},raw=[
-      ...(Array.isArray(f.hard_blockers)?f.hard_blockers:[]),
-      ...(Array.isArray(f.blockers)?f.blockers:[]),
-      job.error_code,f.fiscal_block_reason
-    ].filter(Boolean),reasons=[...new Set(raw)].map(fiscalBlockReasonLabel);
-    const detail=job.error_detail||provider.error_detail||provider.detail||'';
-    const attempts=job.attempts!=null?Number(job.attempts):null;
-    const lines=[];
-    if(reasons.length)lines.push('<strong>Motivo identificado</strong><div>'+reasons.map(esc).join(' · ')+'</div>');
-    if(detail)lines.push('<div style="margin-top:6px">'+esc(detail)+'</div>');
-    if(readiness?.eligible===false&&readiness?.reason)lines.push('<div style="margin-top:6px">Pré-validação: '+esc(fiscalBlockReasonLabel(readiness.reason))+'</div>');
-    if(attempts!=null)lines.push('<div style="margin-top:6px">Tentativas registradas: '+attempts+'</div>');
-    const repair=f.fiscal_recovery||null,diagnosis=repair?.diagnostics||{};
-    const repairLabels={
-      started:'Verificação automática iniciada',
-      existing_invoice_reconciled:'NF-e existente encontrada e reconciliada',
-      existing_invoice_needs_authorization_or_review:'NF-e encontrada no Bling: aguarda autorização ou revisão',
-      generation_result_uncertain_manual_reconcile_required:'O Bling não confirmou a geração; nenhuma nova nota foi criada para evitar duplicidade',
-      unverified_ncm_requires_review:'NCM não possui documentação fiscal suficiente para correção automática',
-      proposed_ncm_not_in_official_active_catalog:'Código proposto não consta na tabela NCM vigente',
-      official_classif_unavailable:'Tabela oficial de NCM temporariamente indisponível',
-      official_classif_data_unrecognized:'Tabela oficial de NCM precisa ser validada antes da correção',
-      auto_invoice_authorized:'NF-e corrigida e autorizada automaticamente',
-      auto_invoice_authorization_pending:'NF-e enviada; aguardando retorno da SEFAZ',
-      auto_invoice_retry_failed:'Nova tentativa falhou; erro registrado',
-      fiscal_preflight_blocked:'A conferência fiscal ainda possui bloqueios',
-      unrecognized_fiscal_error:'Erro fiscal não reconhecido com segurança',
-      separation_not_completed:'Separação física ainda não foi concluída',
-      unable_to_identify_fiscal_products:'Não foi possível identificar inequivocamente o item fiscal',
-      ambiguous_product_name:'Há ambiguidade entre os nomes dos produtos; bloqueio preventivo'
-    };
-    if(repair){
-      const label=repairLabels[repair.stage]||String(repair.stage||'').replaceAll('_',' ');
-      lines.push('<div style="margin-top:8px"><strong>Recuperação automática</strong><div>'+esc(label)+'</div></div>');
-      const corrected=Array.isArray(diagnosis.corrected_products)?diagnosis.corrected_products.length:0;
-      if(corrected)lines.push('<div>'+corrected+' produto(s) com NCM corrigido e conferido no Bling.</div>');
-      if(Array.isArray(diagnosis.issues)&&diagnosis.issues.length)lines.push('<div>Itens para revisão: '+diagnosis.issues.length+'. Nenhum NCM será adivinhado.</div>');
-      if(repair.created_at)lines.push('<div class="muted">Última análise: '+esc(dateTime(repair.created_at))+'</div>');
-    }
-    if(!lines.length&&f.stage==='pending')lines.push('<strong>Aguardando retorno do Bling</strong><div>A solicitação fiscal ainda não trouxe NF-e nem erro específico.</div>');
-    return lines.length?'<div class="rule-notice warn" style="margin-top:8px">'+lines.join('')+'</div>':'';
-  }
-
-  function orderFiscalHtml(f,o){
-    if(!f)return '<div class="rule-notice"><strong>Carregando controle fiscal…</strong><div>Consultando a situação da NF-e.</div></div>';
-    if(f.error)return '<div class="rule-notice warn"><strong>NF-e INDISPONÍVEL</strong><div>A saída continua bloqueada até o controle fiscal voltar.</div></div>';
-    const blockers=Array.isArray(f.blockers)?f.blockers:[];
-    if(f.authorized===true||f.stage==='authorized')return '<div class="rule-notice"><strong>NF-e AUTORIZADA</strong><div>'+(f.invoice_number?'Nota '+esc(f.invoice_number)+' · ':'')+esc(f.sefaz_status||'Autorizada pela SEFAZ')+'</div></div>';
-    if(f.stage==='processing')return '<div class="rule-notice warn"><strong>NF-e EM PROCESSAMENTO</strong><div>Aguarde a autorização. Não repita a geração da nota.</div></div>';
-    if(f.stage==='rejected')return '<div class="rule-notice warn"><strong>NF-e REJEITADA</strong><div>'+esc(f.sefaz_status||blockers.map(fiscalBlockReasonLabel).join(' · ')||'Revise o retorno fiscal antes de tentar novamente.')+'</div></div>'+fiscalDiagnosticHtml(f);
-    if(f.stage==='blocked')return '<div class="rule-notice warn"><strong>NF-e BLOQUEADA</strong><div>'+esc(blockers.map(fiscalBlockReasonLabel).join(' · ')||'Existem requisitos pendentes para emissão.')+'</div></div>'+fiscalDiagnosticHtml(f);
-    return '<div class="rule-notice warn"><strong>NF-e PENDENTE</strong><div>A nota ainda não foi autorizada. Veja abaixo o retorno mais recente da integração.</div></div>'+fiscalDiagnosticHtml(f);
-  }
-  function fiscalCanaryActionHtml(f,o){
-    if(!o||!['ready','out_for_delivery','delivered'].includes(o.status))return '';
-    const busy=state.fiscalActionBusy===true,disabled=busy?' disabled':'';
-    const latest=state.fiscalActionByOrder?.[o.id]||'';
-    const feedback=latest?'<div class="rule-notice" role="status" style="margin-top:8px"><strong>Última consulta / tentativa</strong><div>'+esc(latest)+'</div></div>':'';
-    const check='<button class="secondary" id="refreshFiscalCanary" type="button"'+disabled+'>CONSULTAR BLING / NF-e</button>';
-    if(o.status!=='ready')return feedback+(o.status==='out_for_delivery'?'<div class="rule-notice"><strong>SAIU PARA ENTREGA</strong><div>NF-e deve estar autorizada antes da expedição.</div></div>':'')+'<div class="print-actions">'+check+'</div>';
-    if(f?.authorized===true||f?.stage==='authorized')return feedback+'<div class="print-actions"><button class="primary" id="startDispatchV4" type="button">SAIU PARA ENTREGA</button>'+check+'</div>';
-    const blockers=[...(f?.hard_blockers||[]),...(f?.blockers||[])].map(String);
-    const missingLink=blockers.some(x=>['bling_order_not_linked','bling_order_not_verified','external_order_key_missing'].includes(x));
-    const recover=missingLink?'<button class="primary" id="recoverBlingOrder" type="button"'+disabled+'>RECUPERAR VENDA NO BLING</button>':'';
-    const invoiceId=Number(f?.invoice_id||f?.bling_invoice_id||0);
-    const issue=f?.can_issue===true&&!missingLink?'<button class="primary" id="executeFiscalCanary" type="button"'+disabled+'>'+(invoiceId?'TENTAR AUTORIZAR NF-e':'TENTAR EMITIR NF-e')+'</button>':'';
-    const explanation=missingLink
-      ?'<div class="muted" style="margin-top:8px">Recupera a venda existente e confirma o status Verificado. Não cria uma segunda venda para o mesmo pedido.</div>'
-      :invoiceId?'<div class="muted" style="margin-top:8px">NF-e localizada no Bling. Consulte primeiro a situação antes de tentar autorizar; o sistema impede o reenvio quando a transmissão já está em andamento.</div>':'';
-    return feedback+explanation+'<div class="print-actions" style="margin-top:8px">'+recover+issue+check+'</div>';
-  }
-  async function recoverCurrentOrderBling(){
-    const o=state.currentOrder?.order;
-    if(!o||o.status!=='ready'||state.fiscalActionBusy)return;
-    if(!confirm('Recuperar a venda do pedido #'+orderDisplayCode(o)+' no Bling?\\n\\nSerá consultada a venda existente e atualizado seu vínculo e status, sem emitir NF-e nesta etapa.'))return;
-    state.fiscalActionBusy=true;paintOrderDetail();
-    try{
-      const result=await api('order_fiscal_recover_bling_v1',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:o.id,operator:currentOperator()||'Operação'})
-      });
-      state.fiscalActionByOrder??={};
-      state.fiscalActionByOrder[o.id]='Venda no Bling recuperada e confirmada como Verificado. '+(result.fiscal?.can_issue?'A NF-e está liberada para tentativa manual.':result.fiscal?.authorized?'NF-e já autorizada.':'Consulte a situação fiscal antes de prosseguir.');
-      state.currentOrderFiscal=result.fiscal||null;
-      toast('Venda recuperada no Bling · confira a NF-e');
-    }catch(e){
-      state.fiscalActionByOrder??={};
-      state.fiscalActionByOrder[o.id]='Falha na recuperação: '+fiscalBlockReasonLabel(e?.message||'bling_recovery_failed')+'. Os itens separados foram preservados.';
-      toast(state.fiscalActionByOrder[o.id]);
-    }finally{
-      state.fiscalActionBusy=false;
-      await loadCurrentOrderFiscal(false);
-      if(state.currentOrder?.order?.id===o.id)paintOrderDetail();
-    }
-  }
-  async function recheckCurrentOrderFiscal(){
-    const o=state.currentOrder?.order;
-    if(!o||state.fiscalActionBusy)return;
-    state.fiscalActionBusy=true;paintOrderDetail();
-    try{
-      const result=await api('order_fiscal_recheck_v1',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:o.id})
-      });
-      state.currentOrderFiscal=result.fiscal||null;
-      state.fiscalByOrder[o.id]=state.currentOrderFiscal;
-      const f=result.fiscal||{},reason=result.reconcile?.reason||'';
-      state.fiscalActionByOrder??={};
-      state.fiscalActionByOrder[o.id]=f.authorized?'Nota autorizada pela SEFAZ.'
-        :f.invoice_id?'Nota '+(f.invoice_number||f.invoice_id)+' encontrada; situação: '+(f.sefaz_status||f.stage||'pendente')+'.'
-        :reason==='invoice_not_found'?'Consulta concluída: nenhuma NF-e encontrada no Bling para esta venda.'
-        :reason==='fiscal_dispatch_not_eligible'?'Consulta concluída: ainda existe bloqueio de vínculo ou de verificação da venda.'
-        :'Consulta concluída: '+(f.stage||'pendente')+'. Nenhuma NF-e foi enviada nesta consulta.';
-      toast(state.fiscalActionByOrder[o.id]);
-    }catch(e){
-      state.fiscalActionByOrder??={};
-      state.fiscalActionByOrder[o.id]='Não foi possível consultar o Bling: '+fiscalBlockReasonLabel(e?.message||'fiscal_status_unavailable');
-      toast(state.fiscalActionByOrder[o.id]);
-    }finally{
-      state.fiscalActionBusy=false;
-      if(state.currentOrder?.order?.id===o.id)paintOrderDetail();
-    }
-  }
-  async function executeCurrentOrderFiscalCanary(){
-    const o=state.currentOrder?.order;if(!o||o.status!=='ready')return;
-    const f=state.currentOrderFiscal||{};if(f.can_issue!==true){toast('A NF-e ainda não está liberada para emissão');return}
-    if(!confirm('EMITIR NF-e do pedido #'+orderDisplayCode(o)+' agora?\n\nA emissão será enviada ao Bling/SEFAZ.'))return;
-    const btn=$('#executeFiscalCanary');if(btn){btn.disabled=true;btn.textContent='EMITINDO NF-e…'}
-    try{
-      const result=await api('order_fiscal_issue_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,confirmation:'EMITIR_NFE',operator:currentOperator()||'Operação'})});
-      state.currentOrderFiscal=result.fiscal||result;state.fiscalByOrder[o.id]=state.currentOrderFiscal;
-      toast(state.currentOrderFiscal?.authorized?'NF-e autorizada':state.currentOrderFiscal?.stage==='rejected'?'NF-e rejeitada · consulte a situação fiscal':result.requires_reconciliation?'Resultado da emissão ainda não confirmado · reconsulte antes de tentar novamente':'Solicitação enviada ao Bling · aguardando confirmação');
-      await loadCurrentOrderFiscal(true);
-    }catch(e){
-      try{await loadCurrentOrderFiscal(true)}catch{}
-      const current=state.currentOrderFiscal||{},job=current.provider?.job||{},reason=job.error_detail||job.error_code||e?.message||'fiscal_issue_failed';
-      const uncertain=(current.blockers||[]).includes('invoice_generation_recovery_required')
-        ||['generating','authorizing'].includes(String(job.status||''))
-        ||/uncertain|timeout|result.*unknown|resultado.*incerto/i.test(String(reason||''));
-      toast(current.authorized?'NF-e autorizada após reconciliação':uncertain?'Resultado fiscal incerto · reconsulte/reconcilie a NF-e antes de tentar outra emissão':'Emissão fiscal não confirmada · '+fiscalBlockReasonLabel(reason));
-    }
-  }
-  async function startCurrentOrderDispatchV4(){
-    const o=state.currentOrder?.order;if(!o||o.status!=='ready')return;
-    const f=state.currentOrderFiscal||{};if(f.authorized!==true&&f.stage!=='authorized'){toast('A NF-e precisa estar autorizada antes da saída');return}
-    if(!confirm('Confirmar que o pedido #'+orderDisplayCode(o)+' SAIU PARA ENTREGA?'))return;
-    const btn=$('#startDispatchV4');if(btn){btn.disabled=true;btn.textContent='REGISTRANDO SAÍDA…'}
-    try{await api('order_dispatch_start_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+o.id})});toast('Saída para entrega registrada');delete state.fiscalByOrder[o.id];await loadOrders();await openOrder(o.id)}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
-  }
+  const orderFiscalController=window.DonaAntoniaAdminOrderFiscal.create({
+    api,session:orderSession,cache:()=>state.fiscalByOrder,
+    ui:{query:$,confirm,toast,currentOperator},formatters:{esc,dateTime,money,errorMessage},orderView:{orderDisplayCode},
+    view:{paint:paintOrderDetail,open:openOrder,refreshList:loadOrders,currentTab:()=>state.tab,renderClosure,openDanfe:openDanfeForOrder}
+  });
+  function loadCurrentOrderFiscal(repaint=true){return orderFiscalController.loadCurrentOrderFiscal(repaint)}
+  function loadCurrentOrderBlingPreview(repaint=true){return orderFiscalController.loadCurrentOrderBlingPreview(repaint)}
+  function orderFiscalHtml(f,o){return orderFiscalController.orderFiscalHtml(f,o)}
+  function fiscalCanaryActionHtml(f,o){return orderFiscalController.fiscalCanaryActionHtml(f,o)}
+  function recoverCurrentOrderBling(){return orderFiscalController.recoverCurrentOrderBling()}
+  function recheckCurrentOrderFiscal(){return orderFiscalController.recheckCurrentOrderFiscal()}
+  function executeCurrentOrderFiscalCanary(){return orderFiscalController.executeCurrentOrderFiscalCanary()}
+  function startCurrentOrderDispatchV4(){return orderFiscalController.startCurrentOrderDispatchV4()}
+  function openCurrentDanfe(){return orderFiscalController.openCurrentDanfe()}
+  function fiscalBlockReasonLabel(code){return orderFiscalController.fiscalBlockReasonLabel(code)}
+  const orderDetailController=window.DonaAntoniaAdminOrderDetail.create({
+    api,session:orderSession,ui:{query:$,toast,confirm,prompt,currentOperator},errorMessage,
+    view:{paint:paintOrderDetail,refreshList:loadOrders,loadFiscal:loadCurrentOrderFiscal},editablePayload:currentOrderEditablePayload
+  });

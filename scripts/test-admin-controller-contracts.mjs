@@ -16,7 +16,7 @@ const critical={
   bootstrap:['start','setTab']
 };
 for(const [domain,names] of Object.entries(critical)){
-  for(const name of names)assert.ok(unique.has(name)||script.includes('const '+name+'=')||readModel.includes('function '+name+'('),'missing '+domain+' contract '+name);
+  for(const name of names)assert.ok(unique.has(name)||script.includes('const '+name+'=')||readModel.includes('function '+name+'(')||fs.readFileSync('vitrine/admin/orders/documents.js','utf8').includes('function '+name+'('),'missing '+domain+' contract '+name);
 }
 assert.match(controllerSource,/function orderProblemReasons\(o\)/);
 assert.match(controllerSource,/if\(o\?\.stock_readiness\?\.ok===false\)reasons\.push\('Estoque insuficiente'\)/);

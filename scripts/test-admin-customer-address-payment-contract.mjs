@@ -13,7 +13,7 @@ function section(source,begin,end){
 }
 const manual=section(admin,'  async function createManualSale(){','\n  const ORDER_SEPARATORS=');
 const customer=section(customerSource,'  async function saveCustomer(','\n    return Object.freeze(');
-const editOrder=section(admin,'  async function saveOrderV3(){','\n  function paintOrderDetail');
+const editOrder=fs.readFileSync('vitrine/admin/orders/detail-controller.js','utf8');
 const customerForm=section(customerSource,'  function openCustomerEditor(','\n  async function deleteCustomer(');
 const backendUpdate=section(backend,'async function updateOrderCanonical(','\nasync function ');
 const backendManual=section(backend,'async function createManualWhatsappOrder(','\nasync function ');
@@ -23,9 +23,12 @@ for(const key of ['display_name','phone','cpf','email','birthday_day','birthday_
 for(const key of ['display_name','phone','cpf','email','postal_code','street','number','city','state']){
   assert.ok(customerForm.includes('name=\\"'+key+'\\"')||customerForm.includes('name="'+key+'"'),'customer editor field missing: '+key);
 }
-for(const key of ['orderPayment','orderDeliveryName','orderDeliveryPhone','orderDeliveryPostalCode','orderDeliveryStreet','orderDeliveryNumber','orderDeliveryDistrict','orderDeliveryComplement','orderDeliveryCity','orderDeliveryState','orderDeliveryRawText']){
-  assert.ok(editOrder.includes("'#"+key+"'"),'order edit field missing: '+key);
+// Shared delivery reader and canonical save are exercised behaviorally as well.
+for(const key of ['Name','Phone','PostalCode','Street','Number','District','Complement','City','State','RawText']){
+  assert.ok(editOrder.includes("field('"+key+"')"),'order delivery field missing: '+key);
 }
+assert.match(editOrder,/payment_method:\$\('#orderPayment'\)/);
+assert.match(editOrder,/delivery_address:readDeliveryAddress\(\$\)/);
 assert.match(editOrder,/api\('order_update'/);
 assert.match(editOrder,/method:'POST'/);
 assert.match(manual,/customer_snapshot/);

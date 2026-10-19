@@ -18,7 +18,7 @@ on:
       - 'scripts/helpers/admin-delivery-fixture.mjs'
       - 'scripts/test-admin-delivery-controller.mjs'
       - 'scripts/test-admin-delivery-model.mjs'
-      - 'scripts/test-admin-order-fiscal-loader.mjs'
+      - 'scripts/test-admin-order-*.mjs'
       - 'vitrine/admin/orders/**'
       - 'vitrine/admin/components/**'
       - 'scripts/test-admin-separation-model.mjs'
@@ -57,6 +57,11 @@ jobs:
       - run: node scripts/test-admin-customer-controller.mjs
       - run: node scripts/test-admin-delivery-model.mjs
       - run: node scripts/test-admin-order-fiscal-loader.mjs
+      - run: node scripts/test-admin-order-session.mjs
+      - run: node scripts/test-admin-order-detail-controller.mjs
+      - run: node scripts/test-admin-order-fiscal-controller.mjs
+      - run: node scripts/test-admin-order-list-controller.mjs
+      - run: node scripts/test-admin-order-documents.mjs
       - run: node scripts/test-admin-controller-contracts.mjs
       - run: node scripts/test-admin-async-races-and-partial-save.mjs
       - run: node scripts/test-admin-order-action-buttons.mjs

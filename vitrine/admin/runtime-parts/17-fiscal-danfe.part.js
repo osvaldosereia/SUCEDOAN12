@@ -1,57 +1,6 @@
-  async function openDanfeForOrder(id,orderCode=''){
-    if(!id)return;
-    const w=window.open('','_blank','width=900,height=900');
-    if(!w){toast('Libere pop-ups para abrir o DANFE');return}
-    try{
-      w.document.open();
-      w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>DANFE</title></head><body style="font:16px system-ui;padding:30px;text-align:center"><strong>Carregando DANFE…</strong><p>Buscando o PDF oficial no Bling.</p></body></html>');
-      w.document.close();
-      const data=await api('order_fiscal_document_pdf',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
-      });
-      const raw=atob(String(data.base64||''));
-      if(!raw)throw new Error('fiscal_document_empty');
-      const bytes=new Uint8Array(raw.length);
-      for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
-      const blob=new Blob([bytes],{type:'application/pdf'});
-      const url=URL.createObjectURL(blob);
-      w.location.replace(url);
-      setTimeout(()=>URL.revokeObjectURL(url),120000);
-      toast('DANFE '+(data.invoice_number?data.invoice_number+' ':orderCode?'#'+orderCode+' ':'')+'aberto para impressão');
-    }catch(e){
-      try{w.close()}catch{}
-      toast(errorMessage(e?.message||'fiscal_document_download_failed'));
-    }
-  }
-  async function openCurrentDanfe(){
-    const o=state.currentOrder?.order;if(!o)return;
-    const fiscal=state.currentOrderFiscal||{};
-    const gate=fiscal.dispatch_gate||{};
-    if(fiscal.authorized!==true&&gate.authorized!==true){
-      toast('A NF-e ainda não está autorizada');return;
-    }
-    return openDanfeForOrder(o.id,orderDisplayCode(o));
-  }
-
-  async function loadCurrentOrderFiscal(repaint=true){
-    const id=state.currentOrder?.order?.id;if(!id)return;
-    let fiscal;
-    try{
-      fiscal=await api('order_fiscal_status',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
-      });
-      state.fiscalByOrder[id]=fiscal;
-    }catch(e){
-      fiscal={error:String(e?.message||'fiscal_unavailable')};
-    }
-    // A resposta pode chegar depois que o operador abriu outro pedido.
-    if(state.currentOrder?.order?.id!==id)return;
-    state.currentOrderFiscal=fiscal;
-    if(repaint)paintOrderDetail();
-  }
-
+  function openDanfeForOrder(id,orderCode=''){return orderDocuments.openDanfeForOrder(id,orderCode)}
   async function confirmCurrentOrderPayment(){
-    const o=state.currentOrder?.order;if(!o)return;
+    const o=orderSession.detail?.order;if(!o)return;
     if(o.status!=='delivered'){toast('Confirme a entrega antes do pagamento');return}
     const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
     const amount=money(o.total_cents);
@@ -65,8 +14,8 @@
         body:JSON.stringify({id:o.id,payment_method:payment})
       });
       state.fiscalByOrder[o.id]=fiscal;
-      if(state.currentOrder?.order?.id===o.id){
-        state.currentOrderFiscal=fiscal;
+      if(orderSession.detail?.order?.id===o.id){
+        orderSession.fiscal=fiscal;
         paintOrderDetail();
       }
       if(state.tab==='closure')renderClosure();
@@ -119,14 +68,14 @@
   }
 
   async function previewCurrentOrderBling(){
-    const id=state.currentOrder?.order?.id;if(!id)return;
+    const id=orderSession.detail?.order?.id;if(!id)return;
     const btn=$('#previewBlingOrder');if(btn){btn.disabled=true;btn.textContent='Verificando…'}
     try{
       const data=await api('bling_preview_order_sync',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
-      if(state.currentOrder?.order?.id!==id)return;
-      state.currentOrderBlingPreview=data;
+      if(orderSession.detail?.order?.id!==id)return;
+      orderSession.preview=data;
       paintOrderDetail();
       toast(data.write_eligible?'Pedido apto para o fluxo Bling':'Prévia conferida · envio continua bloqueado');
     }catch(e){
@@ -136,8 +85,8 @@
   }
 
   async function createCurrentOrderCustomerInBling(){
-    const id=state.currentOrder?.order?.id;if(!id)return;
-    const d=state.currentOrder||{},o=d.order||{},c=d.customer||{};
+    const id=orderSession.detail?.order?.id;if(!id)return;
+    const d=orderSession.detail||{},o=d.order||{},c=d.customer||{};
     const customerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
     let customer=state.customers.find(x=>x.id===customerId)||null;
     if(!customer&&customerId){
@@ -156,10 +105,10 @@
       const data=await api('bling_create_order_customer',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
-      if(state.currentOrder?.order?.id!==id)return;
-      state.currentOrderBlingPreview=data.preview||state.currentOrderBlingPreview;
+      if(orderSession.detail?.order?.id!==id)return;
+      orderSession.preview=data.preview||orderSession.preview;
       paintOrderDetail();
-      const blockers=blingPreflightOperationalBlockers(state.currentOrderBlingPreview);
+      const blockers=blingPreflightOperationalBlockers(orderSession.preview);
       toast(blockers.includes('customer_missing_bling_contact_id')?'Cadastro solicitado · vínculo ainda está processando':'Cliente vinculado ao Bling · pedido revalidado');
     }catch(e){
       toast(errorMessage(e.message));
@@ -168,16 +117,16 @@
   }
 
   async function createCurrentOrderProductsInBling(){
-    const id=state.currentOrder?.order?.id;if(!id)return;
-    let preview=state.currentOrderBlingPreview;
+    const id=orderSession.detail?.order?.id;if(!id)return;
+    let preview=orderSession.preview;
     if(!preview||preview.error){
       try{
         preview=await api('bling_preview_order_sync',{},{
           method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
         });
-        if(state.currentOrder?.order?.id!==id)return;
-        state.currentOrderBlingPreview=preview;
-      }catch{if(state.currentOrder?.order?.id===id)toast('Não consegui conferir os produtos agora');return}
+        if(orderSession.detail?.order?.id!==id)return;
+        orderSession.preview=preview;
+      }catch{if(orderSession.detail?.order?.id===id)toast('Não consegui conferir os produtos agora');return}
     }
     const missing=(preview.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
     if(!missing.length){toast('Nenhum produto precisa ser cadastrado no Bling');return}
@@ -189,10 +138,10 @@
       const data=await api('bling_create_order_products',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
-      if(state.currentOrder?.order?.id!==id)return;
-      state.currentOrderBlingPreview=data.preview||state.currentOrderBlingPreview;
+      if(orderSession.detail?.order?.id!==id)return;
+      orderSession.preview=data.preview||orderSession.preview;
       paintOrderDetail();
-      const remaining=(state.currentOrderBlingPreview?.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
+      const remaining=(orderSession.preview?.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
       toast(remaining.length?'Cadastro solicitado · ainda há produto(s) pendente(s)':'Produtos vinculados · pedido revalidado');
     }catch(e){
       toast(errorMessage(e.message));
@@ -201,15 +150,15 @@
   }
 
   async function resolveCurrentOrderBlingDependencies(){
-    const id=state.currentOrder?.order?.id;if(!id)return;
+    const id=orderSession.detail?.order?.id;if(!id)return;
     const btn=$('#resolveBlingDependencies');if(btn){btn.disabled=true;btn.textContent='Conferindo vínculos…'}
     try{
       const data=await api('bling_reconcile_order_dependencies_readonly',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
-      if(state.currentOrder?.order?.id!==id)return;
-      state.currentOrderBlingPreview=data.preview||null;
-      const remaining=blingPreflightOperationalBlockers(state.currentOrderBlingPreview);
+      if(orderSession.detail?.order?.id!==id)return;
+      orderSession.preview=data.preview||null;
+      const remaining=blingPreflightOperationalBlockers(orderSession.preview);
       paintOrderDetail();
       toast(remaining.length?'Vínculos conferidos · ainda há pendências':'Vínculos conferidos · pedido apto para separar');
     }catch(e){
@@ -218,8 +167,8 @@
     }
   }
   async function completeCurrentOrderCustomerDocument(){
-    const orderId=state.currentOrder?.order?.id;if(!orderId)return;
-    const d=state.currentOrder||{},o=d.order||{},c=d.customer||{};
+    const orderId=orderSession.detail?.order?.id;if(!orderId)return;
+    const d=orderSession.detail||{},o=d.order||{},c=d.customer||{};
     const customerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
     if(!customerId){focusOrderCustomerForBling();return}
     let customer=state.customers.find(x=>x.id===customerId)||null;
@@ -243,25 +192,25 @@
   }
 
   async function retryHistorySync(){
-    const id=state.currentOrder?.order?.id;if(!id)return;
+    const id=orderSession.detail?.order?.id;if(!id)return;
     const btn=$('#retryHistorySync');if(btn){btn.disabled=true;btn.textContent='Sincronizando…'}
     try{
       await api('history_sync_retry',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
       const fresh=await api('order',{id});
-      if(state.currentOrder?.order?.id!==id)return;
-      state.currentOrder=fresh;paintOrderDetail();loadOrders();
+      if(orderSession.detail?.order?.id!==id)return;
+      orderSession.detail=fresh;paintOrderDetail();loadOrders();
       toast('Histórico sincronizado');
     }catch(e){
-      if(state.currentOrder?.order?.id!==id)return;
+      if(orderSession.detail?.order?.id!==id)return;
       toast('Não consegui sincronizar agora');
       if(btn&&btn.isConnected){btn.disabled=false;btn.textContent='Tentar novamente'}
     }
   }
 
   const renderOrderActionButtons=window.DonaAntoniaAdminOrderActionButtons.createOrderActionButtonsHtml({orderProblemReasons,orderNextAction,esc});
-  function orderActionButtonsHtml(o){return renderOrderActionButtons(o,state.currentOrderFiscal?.dispatch_gate||null)}
+  function orderActionButtonsHtml(o){return renderOrderActionButtons(o,orderSession.fiscal?.dispatch_gate||null)}
   function openComponentReplacement(orderItemId,componentId,currentName){
     const host=$('#componentReplacementPanel');if(!host)return;
     state.componentReplacement={order_item_id:orderItemId,component_id:componentId,current_name:currentName||''};
@@ -292,7 +241,7 @@
     }
   }
   async function replaceComponentWithProduct(productId,btn){
-    const ctx=state.componentReplacement,o=state.currentOrder?.order;
+    const ctx=state.componentReplacement,o=orderSession.detail?.order;
     if(!ctx||!o)return;
     if(!confirm('Substituir este item da cesta pelo produto escolhido?\n\nO valor comercial da cesta permanecerá o mesmo.'))return;
     if(btn){btn.disabled=true;btn.textContent='Substituindo…'}
@@ -307,7 +256,7 @@
           replacement_product_id:productId
         })
       });
-      state.currentOrder=data.detail||await api('order',{id:o.id});
+      orderSession.detail=data.detail||await api('order',{id:o.id});
       state.componentReplacement=null;
       await loadCurrentOrderBlingPreview(false);
       paintOrderDetail();
