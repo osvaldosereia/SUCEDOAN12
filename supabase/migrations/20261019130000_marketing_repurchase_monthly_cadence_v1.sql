@@ -72,7 +72,7 @@ begin
   if v_channel.is_active is true
     and v_channel.slug in ('dona-antonia-0975','dona-antonia-1018')
     and v_channel.phone_e164 is not null
-    and right(regexp_replace(v_channel.phone_e164,'\\D','','g'),4)=right(v_channel.slug,4) then
+    and right(regexp_replace(v_channel.phone_e164,'\D','','g'),4)=right(v_channel.slug,4) then
     v_template_name := 'recompradonaantonia30dias'||right(v_channel.slug,4);
   end if;
 
@@ -121,7 +121,7 @@ begin
   elsif v_channel.is_active is distinct from true
     or v_channel.slug not in ('dona-antonia-0975','dona-antonia-1018')
     or v_channel.phone_e164 is null
-    or right(regexp_replace(coalesce(v_channel.phone_e164,''),'\\D','','g'),4)<>right(v_channel.slug,4) then
+    or right(regexp_replace(coalesce(v_channel.phone_e164,''),'\D','','g'),4)<>right(v_channel.slug,4) then
     v_status := 'not_eligible';
     v_reason := 'send_channel_missing';
     v_due := v_order.confirmed_at + make_interval(days=>v_interval_days);
