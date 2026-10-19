@@ -20,6 +20,7 @@ assert.match(storefront,/Object\.assign\(item,\{product_id:alt\.product_id,name:
 assert.match(storefront,/\.sheet-scroll\{[^}]*flex:1 1 auto[^}]*min-height:0/);
 assert.match(storefront,/\.sheet-action\{[^}]*flex:0 0 auto/);
 assert.match(storefront,/safe-area-inset-bottom/);
+assert.match(storefront,/@media\(max-width:759px\)\{\.basket-item-restore,\.basket-item-remove,\.basket-extra-add,\.basket-card \.add\{min-height:44px!important\}\}/);
 assert.match(storefront,/BASKET_SIZE_DISPLAY_ORDER\s*=\s*\['grande','media','pequena','mini','economica'\]/);
 assert.match(storefront,/function homeBasketSubcategories\(/);
 const sizeOrderStart=storefront.indexOf('const BASKET_SIZE_DISPLAY_ORDER=');
