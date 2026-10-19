@@ -24,4 +24,9 @@ assert.equal(total,inventory.summary.named_functions_and_arrows,'section totals 
 const seen=new Set(runtime.map(x=>x.name));
 assert.ok(seen.has('orderSearchMatch')===false,'external bridge must not be counted as runtime definition');
 assert.ok(inventory.priority_by_signals.remote_write>0);
+assert.equal(inventory.empty_catch_sites.length,inventory.summary.empty_catches);
+for(const site of inventory.empty_catch_sites){
+  assert.ok(site.path&&site.line>0&&site.section);
+  assert.equal(site.review,'manual_context_required');
+}
 console.log('Admin function and domain inventory contracts: PASS');
