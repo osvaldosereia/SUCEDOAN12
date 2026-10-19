@@ -31,7 +31,9 @@ assert.match(render,/data-print-order="2"/);
 
 const orphanRender=panel.createPrintQueuePanel({orders:[],opsPrintQueue:{jobs:[{status:'pending',entity_id:'missing'}]}},String,order=>{assert.ok(order,'order code must not be called for orphan job');return order.public_code}).renderOpsPrintQueue();
 assert.match(orphanRender,/Fila de impressão/);
-assert.match(orphanRender,/data-print-order="missing"/);
+assert.doesNotMatch(orphanRender,/data-print-order="missing"/);
+
+assert.match(contacts.mapsHrefFromAddress({street:'Rua A',number:0,district:'Centro',city:'Cuiabá'}),/Rua%20A%2C%200%2C%20Centro%2C%20Cuiab/);
 
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const e164=value=>String(value||'').replace(/\\D/g,'');
