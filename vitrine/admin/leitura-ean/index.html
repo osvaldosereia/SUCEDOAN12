@@ -142,6 +142,16 @@ header small{display:none!important}
 .scan-box.photo-mode .scan-frame{display:none}
 .scan-box.photo-mode video{object-fit:contain}
 @media(max-width:340px){.quantity-row{grid-template-columns:30px minmax(0,1fr) 30px 30px 30px;gap:3px}.quantity-row button{width:30px}}
+/* Ações da lista de EANs não encontrados */
+.resolution-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
+.resolution-actions button,.resolution-actions a{min-height:34px;padding:5px 7px;font-size:11px;text-align:center}
+.resolution-actions a{display:flex;align-items:center;justify-content:center;border-radius:8px;background:#e8f0ec;color:#114c36;text-decoration:none;font-weight:700}
+.resolution-panel{margin-top:7px;padding:9px;border:1px solid #b9d5c7;border-radius:9px;background:#f6fbf8;text-align:left}
+.resolution-panel[hidden]{display:none}.resolution-panel input{min-height:39px;margin:4px 0;font-size:14px}
+.resolution-panel .row{gap:5px}.resolution-panel button{min-height:36px;padding:6px 9px;font-size:12px}
+.resolution-result{border-top:1px solid #dce8e1;padding:7px 0;font-size:12px}.resolution-result:first-child{border-top:0}
+.resolution-result button{width:100%;text-align:left;background:#e5f1ea}.resolution-help{font-size:11px;color:#52665d;line-height:1.4;margin:4px 0}
+@media(max-width:480px){.resolution-actions{grid-template-columns:1fr 1fr}.entry-right{max-width:50%}}
 </style>
 </head>
 <body>
@@ -428,10 +438,58 @@ function paint(){
    '<div><button type="button" class="edit-btn" data-edit="'+esc(r.id)+'">Editar</button>'+
    (r.sync_status==="not_found"&&!r.photo_path?'<button type="button" class="edit-btn" data-photo="'+esc(r.id)+'">📷 Foto</button>':'')+
    (r.photo_path?'<button type="button" class="edit-btn" data-view-photo="'+esc(r.id)+'">Ver foto</button>':'')+
-   '</div></div></article>';
+   '</div></div>'+
+   (r.sync_status==="not_found"?
+    '<div class="resolution-actions">'+
+    '<button type="button" data-resolve-open="reread" data-id="'+esc(r.id)+'">↻ Corrigir / reler EAN</button>'+
+    '<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(r.ean)+'">🖼 Buscar imagem</a>'+
+    '<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q='+encodeURIComponent("NCM produto EAN "+r.ean)+'">🔎 Buscar NCM</a>'+
+    '<button type="button" data-resolve-open="search" data-id="'+esc(r.id)+'">🔗 Vincular produto</button>'+
+    '<button type="button" data-resolve-open="create" data-id="'+esc(r.id)+'">＋ Cadastrar inativo</button>'+
+    '</div><div class="resolution-panel" data-resolution-panel="'+esc(r.id)+'" hidden></div>'
+    :'')+
+   '</article>';
  }).join("");
 }
+
+function openResolutionPanel(row,mode){
+ const panel=$("entries").querySelector('[data-resolution-panel="'+row.id+'"]');if(!panel)return;
+ panel.hidden=false;
+ if(mode==="reread"){
+  panel.innerHTML='<form data-resolution-form="reread" data-id="'+esc(row.id)+'"><b>Corrigir o EAN lido</b><p class="resolution-help">Leia novamente com a câmera ou digite o código correto. A lista será sincronizada de novo.</p><input name="ean" inputmode="numeric" autocomplete="off" value="'+esc(row.ean)+'" aria-label="EAN corrigido" required><div class="row"><button class="primary" type="submit">Salvar EAN e conferir</button><button type="button" data-resolve-close>Cancelar</button></div></form>';
+  const input=panel.querySelector('input');input?.focus();input?.select();return;
+ }
+ if(mode==="search"){
+  panel.innerHTML='<form data-resolution-form="search" data-id="'+esc(row.id)+'"><b>Localizar no cadastro</b><p class="resolution-help">Busque por nome, marca, SKU ou EAN. Ao vincular, o EAN atual será salvo como alternativo e a quantidade lida será somada ao estoque.</p><input name="query" autocomplete="off" placeholder="Nome, marca, SKU ou EAN" required><label>NCM (opcional, 8 dígitos)<input name="ncm" inputmode="numeric" maxlength="10" placeholder="Ex.: 12345678"></label><div class="row"><button class="primary" type="submit">Buscar produtos</button><button type="button" data-resolve-close>Fechar</button></div><div data-search-results></div></form>';
+  panel.querySelector('input[name="query"]')?.focus();return;
+ }
+ if(mode==="create"){
+  panel.innerHTML='<form data-resolution-form="create" data-id="'+esc(row.id)+'"><b>Cadastrar produto inativo</b><p class="resolution-help">Será criado fora da venda no site, sem estoque. Nome obrigatório; NCM opcional.</p><label>Nome do produto<input name="name" maxlength="180" required placeholder="Ex.: Arroz 5 kg"></label><label>NCM (opcional, 8 dígitos)<input name="ncm" inputmode="numeric" maxlength="10" placeholder="Ex.: 10063021"></label><div class="row"><button class="primary" type="submit">Cadastrar inativo</button><button type="button" data-resolve-close>Cancelar</button></div></form>';
+  panel.querySelector('input[name="name"]')?.focus();
+ }
+}
+async function resolveRow(action,id,payload){
+ if(busy)return;setBusy(true);
+ try{
+  const data=await call(action,{id,...payload});
+  updateRowLocal(data.row,data.summary);
+  const text=action==="repair_ean"?(data.row.sync_status==="found"?"EAN corrigido e encontrado no cadastro.":"EAN corrigido; continua não encontrado.")
+   :action==="link_product"?"Produto vinculado, EAN alternativo salvo e estoque atualizado."
+   :"Produto cadastrado como inativo, com estoque zero.";
+  msg("✓ "+text);
+ }catch(e){msg("Não foi possível concluir: "+e.message,true)}finally{setBusy(false)}
+}
 $("entries").addEventListener("click",(event)=>{
+ const open=event.target.closest("[data-resolve-open]");
+ if(open){if(busy)return;const row=rows.find(x=>x.id===open.dataset.id);if(row)openResolutionPanel(row,open.dataset.resolveOpen);return}
+ const close=event.target.closest("[data-resolve-close]");
+ if(close){const panel=close.closest("[data-resolution-panel]");if(panel){panel.hidden=true;panel.innerHTML=""}return}
+ const choose=event.target.closest("[data-link-product]");
+ if(choose){
+  if(busy)return;const panel=choose.closest("[data-resolution-panel]"),id=choose.dataset.id,row=rows.find(x=>x.id===id);
+  if(!row||!panel)return;const ncm=panel.querySelector('input[name="ncm"]')?.value||"";
+  resolveRow("link_product",id,{product_id:choose.dataset.linkProduct,ncm});return;
+ }
  const view=event.target.closest("[data-view-photo]");
  if(view){
   (async()=>{try{
@@ -461,6 +519,35 @@ document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("cl
  try{setBusy(true);await load();msg("Lista filtrada.")}catch(e){msg(e.message,true)}finally{setBusy(false)}
 }));
 $("more").onclick=async()=>{if(busy)return;try{setBusy(true);await load(true)}catch(e){msg(e.message,true)}finally{setBusy(false)}};
+
+$("entries").addEventListener("submit",async(event)=>{
+ const form=event.target.closest("form[data-resolution-form]");if(!form)return;
+ event.preventDefault();if(busy)return;
+ const id=form.dataset.id,kind=form.dataset.resolutionForm,fd=new FormData(form);
+ if(kind==="reread"){
+  const ean=normalizeEan(fd.get("ean"));if(ean.length<8||ean.length>14){msg("Informe um EAN válido com 8 a 14 números.",true);return}
+  await resolveRow("repair_ean",id,{ean});return;
+ }
+ if(kind==="search"){
+  const query=String(fd.get("query")||"").trim();if(query.length<2){msg("Digite pelo menos 2 caracteres para buscar.",true);return}
+  const results=form.querySelector("[data-search-results]");
+  setBusy(true);msg("Buscando produtos no cadastro…");
+  try{
+   const data=await call("search_products",{query});
+   if(!data.rows?.length){results.innerHTML='<div class="resolution-result">Nenhum produto encontrado. Confira o nome ou use “Cadastrar inativo”.</div>';return}
+   results.innerHTML=data.rows.map(p=>'<div class="resolution-result"><button type="button" data-link-product="'+esc(p.id)+'" data-id="'+esc(id)+'"><b>'+esc(p.name)+'</b><br>'+esc(p.sku||"Sem SKU")+' · EAN '+esc(p.gtin||"—")+' · estoque '+esc(qtyBR(p.stock||0))+(p.is_active?'':' · INATIVO')+'</button></div>').join("");
+   msg(data.rows.length+" produto(s) encontrado(s). Selecione o correto para vincular.");
+  }catch(e){results.innerHTML='<div class="resolution-result">Falha na busca: '+esc(e.message)+'</div>';msg("Falha ao buscar produtos.",true)}
+  finally{setBusy(false)}
+  return;
+ }
+ if(kind==="create"){
+  const name=String(fd.get("name")||"").trim(),ncm=normalizeEan(fd.get("ncm"));
+  if(!name){msg("Informe o nome do produto.",true);return}
+  if(ncm&&ncm.length!==8){msg("O NCM deve ter 8 números.",true);return}
+  await resolveRow("create_inactive",id,{name,ncm:ncm||null});
+ }
+});
 $("sync").onclick=async()=>{
  if(busy||missingRecordId)return;setBusy(true);msg("Sincronizando os EANs com o cadastro…");
  try{const s=await call("sync",{});await load();msg("✓ Sincronizado: "+s.summary.found+" encontrado(s), "+s.summary.not_found+" não encontrado(s).")}
