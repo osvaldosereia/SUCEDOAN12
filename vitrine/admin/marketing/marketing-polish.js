@@ -2,10 +2,9 @@ const ROOT_SELECTOR='#content';
 const PRIMARY_MARKETING_VIEWS=['overview','strategy','templates','campaigns','audiences'];
 const PRIMARY_MARKETING_LABELS={overview:'Visão geral',strategy:'Estratégia',templates:'Templates',campaigns:'Campanhas',audiences:'Públicos'};
 const OVERVIEW_CARDS=[
-  {key:'campaigns',label:'Campanhas',description:'Crie, agende e acompanhe campanhas do WhatsApp.'},
-  {key:'templates',label:'Templates',description:'Gerencie os modelos aprovados usados nos envios.'},
-  {key:'customers',label:'Clientes',description:'Acesse a base de clientes usada nos públicos.'},
-  {key:'deliveries',label:'Entregas',description:'Acompanhe os pedidos que estão em rota de entrega.'}
+  {key:'post_sale',label:'Pós-venda',description:'Revise pedidos entregues e acompanhe retornos.'},
+  {key:'repurchase',label:'Reposição mensal',description:'Prepare ações para clientes que compram cesta todo mês.'},
+  {key:'campaigns',label:'Campanhas',description:'Crie, revise e acompanhe campanhas do WhatsApp.'}
 ];
 const ADVANCED_FILTERS=['brand','category','product_ids','last_purchase_after','last_purchase_before','inactive_days','min_order_count','max_order_count','min_lifetime_value','max_lifetime_value'];
 let scheduled=false;
@@ -102,7 +101,7 @@ function polishNav(root){
   if(!navAlreadyOrdered){
     for(const button of buttons)nav.insertBefore(button,anchor);
   }
-  setText(gate,'Envios desativados');
+  setText(gate,'Campanhas pausadas');
 }
 
 function removeDuplicateMarketingHeads(root){
@@ -187,10 +186,9 @@ function bindOverviewDashboard(root,dashboard){
   dashboard.querySelector('[data-overview-new-campaign]')?.addEventListener('click',()=>open('campaigns'));
   dashboard.querySelector('[data-overview-new-template]')?.addEventListener('click',()=>openOverviewView(root,'templates',{create:true}));
   dashboard.querySelector('[data-overview-recent-campaigns]')?.addEventListener('click',()=>open('campaigns'));
+  dashboard.querySelector('[data-marketing-overview-card="post_sale"]')?.addEventListener('click',()=>document.querySelector('[data-tab="orders"]')?.click());
+  dashboard.querySelector('[data-marketing-overview-card="repurchase"]')?.addEventListener('click',()=>openOverviewView(root,'strategy'));
   dashboard.querySelector('[data-marketing-overview-card="campaigns"]')?.addEventListener('click',()=>open('campaigns'));
-  dashboard.querySelector('[data-marketing-overview-card="templates"]')?.addEventListener('click',()=>open('templates'));
-  dashboard.querySelector('[data-marketing-overview-card="customers"]')?.addEventListener('click',()=>document.querySelector('[data-tab="customers"]')?.click());
-  dashboard.querySelector('[data-marketing-overview-card="deliveries"]')?.addEventListener('click',()=>document.querySelector('[data-tab="orders"]')?.click());
 }
 
 function ensureOverviewDashboard(root){
