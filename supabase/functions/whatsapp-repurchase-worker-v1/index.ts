@@ -25,7 +25,7 @@ async function readBody(req:Request){
   }catch{return {ok:false as const,error:"invalid_body"}}
 }
 function requestedLimit(value:unknown){const n=Number(value??10);return Number.isInteger(n)&&n>0?Math.min(n,25):10}
-function templateVariables(templateComponents:unknown,basketName:unknown,categories:unknown){
+function templateVariables(templateComponents:unknown,customerName:unknown,basketName:unknown,categories:unknown,templateName:unknown){
   const rows=Array.isArray(templateComponents)?templateComponents:[];
   const header=rows.find((x:any)=>String(x?.type||"").toUpperCase()==="HEADER");
   if(header&&/\{\{\s*\d+\s*\}\}/.test(String(header?.text||"")))throw Error("template_header_variables_not_supported");
@@ -36,7 +36,9 @@ function templateVariables(templateComponents:unknown,basketName:unknown,categor
   if(indexes.length===0)return [];
   if(indexes.length>2||indexes.some((n,i)=>n!==i+1))throw Error("template_variables_not_supported");
   const categoryList=Array.isArray(categories)?categories.map(x=>clean(x,32)).filter(Boolean).slice(0,3).join(", "):"";
-  const values=[clean(basketName,60)||"cesta básica",categoryList||"cesta básica"];
+  const secondaryValue=String(templateName||"").startsWith("ofertacategoria")?categoryList||"diversas categorias":clean(basketName,60)||"cesta básica";
+  const firstName=clean(customerName,80).split(/\s+/)[0]||"cliente";
+  const values=[firstName,secondaryValue];
   return [{type:"body",parameters:indexes.map(index=>({type:"text",text:values[index-1]}))}];
 }
 async function finish(id:string,status:string,providerId:string|null=null,error:string|null=null){
@@ -55,7 +57,7 @@ async function process(item:any){
     return {status:"suppressed"};
   }
   let components:unknown[];
-  try{components=templateVariables(data.template_components,data.basket_name,data.product_categories)}
+  try{components=templateVariables(data.template_components,data.customer_name,data.basket_name,data.product_categories,data.template_name)}
   catch(error){
     await finish(id,"failed",null,clean(error instanceof Error?error.message:error));
     return {status:"failed",error:"template_variables_not_supported"};
