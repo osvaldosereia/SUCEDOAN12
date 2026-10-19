@@ -423,33 +423,3 @@
       paintGondolas();toast('Produto removido da gôndola');
     }catch(e){toast(errorMessage(e.message))}
   }
-
-
-  function purchasePaymentSummary(d){
-    return d?.metadata?.payment_summary&&typeof d.metadata.payment_summary==='object'?d.metadata.payment_summary:{};
-  }
-  function purchasePaymentMethodsText(ps){
-    const labels=Array.isArray(ps?.method_labels)?ps.method_labels.filter(Boolean):[];
-    return labels.length?labels.join(' + '):'Forma de pagamento não identificada';
-  }
-  function purchasePaymentAtPurchaseHtml(d){
-    const ps=purchasePaymentSummary(d),settlement=d?.metadata?.settlement||{};
-    if(!ps?.paid_at_purchase_likely)return '';
-    const method=purchasePaymentMethodsText(ps),amount=purchaseMoney(ps.payment_total??d?.total_amount);
-    if(settlement?.verified){
-      return '<div class="purchase-safe" style="margin:10px 0 0"><strong>Pagamento baixado no Bling</strong><small>'+esc(method)+' · '+amount+(settlement.payment_date?' · baixa em '+esc(dateOnly(settlement.payment_date)):'')+(settlement.financial_account?.description?' · '+esc(settlement.financial_account.description):'')+'.</small></div>';
-    }
-    let guidance='A NF-e indica que o fornecedor provavelmente foi pago no ato da compra.';
-    if(ps.guidance==='credit_card')guidance+=' No Bling, confirme a baixa usando a conta financeira do cartão de crédito; a fatura do cartão deve ser controlada separadamente.';
-    else if(ps.guidance==='debit_card')guidance+=' No Bling, confirme a baixa usando a conta bancária/cartão de débito utilizado.';
-    else if(ps.guidance==='pix')guidance+=' No Bling, confirme a baixa na conta bancária de onde saiu o PIX.';
-    else if(ps.guidance==='cash')guidance+=' No Bling, confirme a baixa usando o caixa/dinheiro correspondente.';
-    else if(ps.guidance==='bank_transfer')guidance+=' No Bling, confirme a baixa na conta bancária utilizada.';
-    else guidance+=' Confirme a baixa na conta financeira correta do Bling.';
-    return '<div class="purchase-safe purchase-danger" style="margin:10px 0 0">'+
-      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+
-        '<strong>Pagamento informado na NF-e: '+esc(method)+'</strong>'+
-        '<small>'+amount+' · '+esc(guidance)+'</small>'+
-      '</div><div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-open-payables>Ver no Bling</button><button class="primary" type="button" data-purchase-settlement-preview>Preparar baixa</button></div></div>'+
-    '</div>';
-  }

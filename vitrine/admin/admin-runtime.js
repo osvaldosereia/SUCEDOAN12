@@ -3230,8 +3230,7 @@
       paintGondolas();toast('Produto removido da gôndola');
     }catch(e){toast(errorMessage(e.message))}
   }
-
-
+// XML payment summary helpers are shared by purchase finance and catalog rendering.
   function purchasePaymentSummary(d){
     return d?.metadata?.payment_summary&&typeof d.metadata.payment_summary==='object'?d.metadata.payment_summary:{};
   }
@@ -3260,6 +3259,7 @@
       '</div><div class="purchase-detail-actions"><button class="secondary" type="button" data-purchase-open-payables>Ver no Bling</button><button class="primary" type="button" data-purchase-settlement-preview>Preparar baixa</button></div></div>'+
     '</div>';
   }
+
   function purchaseFinanceReasonLabel(v){
     const map={
       reconciled_existing:'Financeiro já encontrado e confirmado no Bling.',

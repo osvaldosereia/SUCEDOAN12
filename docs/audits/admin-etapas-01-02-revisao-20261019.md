@@ -163,6 +163,8 @@ Os contratos alterados nesta rodada foram executados diretamente e passaram: cor
 
 Esta execução corrige a corrida de gravações rápidas de Produtos descrita acima; os demais ajustes desta rodada atualizam contratos defasados e os caminhos de CI para os arquivos ativos. Não adiciona UI de substituição de cestas (o contrato atual é deliberadamente SQL-only), transporte PapoAI, chamadas externas ou regra comercial.
 
+Na revisão estrutural seguinte, três helpers de resumo de pagamento do XML estavam no fim de `09-balance-gondolas.part.js`, embora sejam consumidos por Compras/Financeiro e Catálogo. Foram movidos para o início de `10-purchase-finance.part.js`, antes dos renderizadores consumidores; a ordem dos fragmentos não mudou. Os sete contratos de Compras/XML, o bootstrap, o grafo de scripts e a paridade do runtime passaram após a movimentação.
+
 ## Limite estrutural remanescente
 
 Após a rodada ampla, os 19 fragmentos restantes continuam concatenados dentro da IIFE; os controladores ainda não extraídos leem e escrevem o mesmo `state`, chamam `api`/DOM e dependem da sequência de inicialização. Nesta continuação, três modelos puros sem efeitos colaterais foram isolados e os contratos de carga foram ampliados. Uma conversão indiscriminada dos controladores restantes exigiria trocar seus contratos de estado, API, DOM e ciclo de vida; isso não foi tratado como remoção mecânica. O grafo síncrono e as dependências ainda existentes estão registrados em `admin-module-load-graph.json` quando o workflow executa.
