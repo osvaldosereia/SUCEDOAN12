@@ -161,14 +161,20 @@ for(const f of functions){
 const bySection=Object.fromEntries(sections.map(x=>[x,0]));
 for(const f of functions)bySection[f.section]=(bySection[f.section]||0)+1;
 const emptyCatch=sources.map(s=>({path:s.path,count:(s.text.match(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)||[]).length})).filter(x=>x.count);
+// Record exact locations for later contextual review; do not remove catches heuristically.
+const emptyCatchSites=sources.flatMap(source=>[...source.text.matchAll(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)].map(m=>({
+  path:source.path,line:lineOf(source.text,m.index),
+  section:domain(source.path,'',lineOf(source.text,m.index)),
+  review:'manual_context_required'
+})));
 const suspects=functions.filter(x=>x.references<=1);
 const testOnly=suspects.filter(x=>x.test_reference_files.length);
 const summary={frontend_files:front.length,backend_files:edge.length,sql_files:sql.length,
  named_functions_and_arrows:functions.length,lexical_single_occurrence:suspects.length,lexical_single_occurrence_mentioned_by_tests:testOnly.length,
  runtime_source_fragments:fragmentPaths.length,possible_same_name_same_file:sameFileNameCandidates.length,
- identical_file_groups:identical.length,empty_catches:emptyCatch.reduce((n,x)=>n+x.count,0)};
+ identical_file_groups:identical.length,empty_catches:emptyCatchSites.length};
 const result={method:'Static heuristic, not proof of runtime use or dead code',summary,sections:bySection,
- functions,suspects,identical_files:identical,empty_catches:emptyCatch,sql_definitions:sqlFunctions,
+ functions,suspects,identical_files:identical,empty_catches:emptyCatch,empty_catch_sites:emptyCatchSites,sql_definitions:sqlFunctions,
  same_file_repeated_names:sameFileNameCandidates,priority_by_signals:priorityBySignals};
 const output=process.argv[2]||'artifacts/admin-function-inventory';
 fs.mkdirSync(output,{recursive:true});
