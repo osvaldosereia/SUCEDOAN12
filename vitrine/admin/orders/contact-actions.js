@@ -2,8 +2,9 @@
 (function(global){
   function createOrderContactActions(orderProblemReasons,whatsappHref,whatsappMessageHref,orderDisplayCode,esc){
     function missingDataRequestForProblems(o,problems){
-      const needName=problems.includes('Cliente não identificado');
-      const needAddress=problems.includes('Endereço incompleto');
+      const reasons=Array.isArray(problems)?problems:[];
+      const needName=reasons.includes('Cliente não identificado');
+      const needAddress=reasons.includes('Endereço incompleto');
       if(!needName&&!needAddress)return null;
       const a=o?.delivery_address_snapshot||{};
       const phone=o?.whatsapp_phone_e164||a.phone||'';
