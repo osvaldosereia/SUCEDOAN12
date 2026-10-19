@@ -16,6 +16,8 @@ let overviewCache=null;
 let audienceBusy=false;
 let consentBusy=false;
 let activeRoot=null;
+let audienceMountGeneration=0;
+let consentDetailGeneration=0;
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const fmtDate=value=>{if(!value)return '—';const date=new Date(value);return Number.isNaN(date.getTime())?'—':date.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})};
@@ -164,6 +166,8 @@ function setButtonBusy(button,busy,label){
 
 async function mountAudienceView(root=document.querySelector('#content')){
   if(!root)return;
+  const generation=++audienceMountGeneration;
+  const isCurrent=()=>activeRoot===root&&generation===audienceMountGeneration&&!!root.querySelector('[data-audience-form-host]');
   ensureCss();activeRoot=root;
   root.innerHTML=`<div class="marketing-audience-center">
     <div class="page-head"><div><h1>Marketing</h1><p>Monte públicos comerciais usando toda a sua base de clientes.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
@@ -178,7 +182,7 @@ async function mountAudienceView(root=document.querySelector('#content')){
   bindNav(root);
   try{
     const [overview,labels]=await Promise.all([loadOverview(),loadLabels()]);
-    if(activeRoot!==root)return;
+    if(!isCurrent())return;
     root.querySelector('[data-audience-overview]').innerHTML=audienceOverviewCards(overview);
     root.querySelector('[data-audience-form-host]').innerHTML=audienceForm(labels);
     const form=root.querySelector('[data-audience-form]');
@@ -189,12 +193,12 @@ async function mountAudienceView(root=document.querySelector('#content')){
       try{
         audienceBusy=true;setButtonBusy(button,true,'Calculando…');status.textContent='Calculando público no servidor…';
         const data=await adminPost('preview',{filters:collectFilters(form),limit:50,offset:0});
-        if(activeRoot!==root)return;
+        if(!isCurrent())return;
         renderAudienceResult(root,data);status.textContent=`Cálculo concluído: ${Number(data.found_count||0)} cliente(s) encontrado(s).`;
-      }catch(error){if(activeRoot===root)status.textContent=`Não foi possível calcular o público: ${String(error?.message||error)}`}
-      finally{audienceBusy=false;if(activeRoot===root)setButtonBusy(button,false,'')}
+      }catch(error){if(isCurrent())status.textContent=`Não foi possível calcular o público: ${String(error?.message||error)}`}
+      finally{audienceBusy=false;if(isCurrent())setButtonBusy(button,false,'')}
     });
-  }catch(error){if(activeRoot===root)root.querySelector('[data-audience-overview]').innerHTML=`<div class="marketing-audience-error">Não foi possível carregar: ${esc(error?.message||error)}</div>`}
+  }catch(error){if(isCurrent())root.querySelector('[data-audience-overview]').innerHTML=`<div class="marketing-audience-error">Não foi possível carregar: ${esc(error?.message||error)}</div>`}
 }
 
 function consentSearchMarkup(){
@@ -243,9 +247,11 @@ function openConsentDialog(root,mode,customer){
 
 async function loadConsentDetail(root,customerId,force=false){
   const host=root.querySelector('[data-consent-detail]');if(!host)return;
+  const generation=++consentDetailGeneration;
+  const isCurrent=()=>activeRoot===root&&generation===consentDetailGeneration&&root.querySelector('[data-consent-detail]')===host;
   host.innerHTML='<div class="marketing-audience-loading">Carregando histórico…</div>';
   try{
-    const data=await apiGet('consent_history',{customer_id:customerId});if(activeRoot!==root)return;
+    const data=await apiGet('consent_history',{customer_id:customerId});if(!isCurrent())return;
     const customer=data.customer||{},items=Array.isArray(data.items)?data.items:[];
     host.innerHTML=`<section class="marketing-consent-detail"><div class="marketing-consent-detail-head"><div><h3>${esc(customer.name||'Cliente')}</h3><p>${esc(customer.phone_e164||'—')}</p></div><span class="marketing-audience-pill ${customer.consent_state==='opt_in'?'good':customer.consent_state==='opt_out'?'bad':'neutral'}">${esc(stateLabels[customer.consent_state]||customer.consent_state||'—')}</span></div>
       <div class="marketing-consent-meta"><span><small>Estado atual</small><strong>${esc(stateLabels[customer.consent_state]||'—')}</strong></span><span><small>Última atualização</small><strong>${esc(fmtDate(customer.marketing_consent_updated_at))}</strong></span></div>
@@ -255,11 +261,13 @@ async function loadConsentDetail(root,customerId,force=false){
     const model={id:customerId,...customer};
     host.querySelector('[data-record-opt-in]')?.addEventListener('click',()=>openConsentDialog(root,'opt_in',model));
     host.querySelector('[data-record-opt-out]')?.addEventListener('click',()=>openConsentDialog(root,'opt_out',model));
-  }catch(error){if(activeRoot===root)host.innerHTML=`<div class="marketing-audience-error">Não foi possível carregar o histórico: ${esc(error?.message||error)}</div>`}
+  }catch(error){if(isCurrent())host.innerHTML=`<div class="marketing-audience-error">Não foi possível carregar o histórico: ${esc(error?.message||error)}</div>`}
 }
 
 async function mountConsentView(root=document.querySelector('#content')){
   if(!root)return;
+  const generation=++audienceMountGeneration;
+  const isCurrent=()=>activeRoot===root&&generation===audienceMountGeneration&&!!root.querySelector('[data-consent-search]');
   ensureCss();activeRoot=root;
   root.innerHTML=`<div class="marketing-audience-center">
     <div class="page-head"><div><h1>Marketing</h1><p>Consentimentos auditáveis e preferências de contato.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
@@ -271,13 +279,13 @@ async function mountConsentView(root=document.querySelector('#content')){
     </section>
   </div>`;
   bindNav(root);
-  try{const overview=await loadOverview();if(activeRoot===root)root.querySelector('[data-consent-overview]').innerHTML=consentOverviewCards(overview)}catch(error){if(activeRoot===root)root.querySelector('[data-consent-overview]').innerHTML=`<div class="marketing-audience-error">Não foi possível carregar: ${esc(error?.message||error)}</div>`}
+  try{const overview=await loadOverview();if(isCurrent())root.querySelector('[data-consent-overview]').innerHTML=consentOverviewCards(overview)}catch(error){if(isCurrent())root.querySelector('[data-consent-overview]').innerHTML=`<div class="marketing-audience-error">Não foi possível carregar: ${esc(error?.message||error)}</div>`}
   const input=root.querySelector('[data-consent-search]'),button=root.querySelector('[data-consent-search-button]'),status=root.querySelector('[data-consent-search-status]');
   const search=async()=>{
     if(consentBusy)return;const query=String(input.value||'').trim();if(query.length<2){status.textContent='Digite pelo menos 2 caracteres.';return}
-    try{consentBusy=true;setButtonBusy(button,true,'Carregando…');status.textContent='Buscando clientes…';const data=await adminPost('preview',{filters:{search:query},limit:20,offset:0});if(activeRoot!==root)return;renderConsentSearchResults(root,data);status.textContent=`${Number(data.found_count||0)} cliente(s) encontrado(s).`}
-    catch(error){if(activeRoot===root)status.textContent=`Falha na busca: ${String(error?.message||error)}`}
-    finally{consentBusy=false;if(activeRoot===root)setButtonBusy(button,false,'')}
+    try{consentBusy=true;setButtonBusy(button,true,'Carregando…');status.textContent='Buscando clientes…';const data=await adminPost('preview',{filters:{search:query},limit:20,offset:0});if(!isCurrent())return;renderConsentSearchResults(root,data);status.textContent=`${Number(data.found_count||0)} cliente(s) encontrado(s).`}
+    catch(error){if(isCurrent())status.textContent=`Falha na busca: ${String(error?.message||error)}`}
+    finally{consentBusy=false;if(isCurrent())setButtonBusy(button,false,'')}
   };
   button.addEventListener('click',search);input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();search()}});
 }
