@@ -48,7 +48,7 @@ for (const file of files) {
     assert.match(html,/safeImage\(a\.image_url\)/);
     assert.doesNotMatch(html,/<select class="basket-item-option"/);
     assert.match(html,/\.basket-edit-list \.basket-item-card\s*\{[^}]*grid-template-columns:\s*86px\s+minmax\(0,1fr\)/s);
-    assert.match(html,/\\.basket-item-mold-card\\s*\\{[^}]*grid-template-columns:\\s*clamp\\(84px,15vw,110px\\)\\s+minmax\\(0,1fr\\)\\s+auto/s);
+    assert.match(html,/\.basket-item-mold-card\s*\{[^}]*grid-template-columns:\s*clamp\(84px,15vw,110px\)\s+minmax\(0,1fr\)\s+auto/s);
     assert.match(html,/@media\s*\(max-width:\s*760px\)[\s\S]*?\.basket-item-option\s*\{[^}]*grid-column:\s*1\s*\/\s*-1[^}]*grid-row:\s*3/s);
     assert.match(html,/\.sheet-inner\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/s);
     assert.match(html,/\.sheet-scroll\s*\{[^}]*min-height:\s*0/s);
