@@ -19,6 +19,7 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/audit-admin-functions.mjs artifacts/admin-function-inventory
+      - run: node scripts/test-admin-function-section-inventory.mjs artifacts/admin-function-inventory
       - uses: actions/upload-artifact@v4
         with:
           name: admin-function-inventory
