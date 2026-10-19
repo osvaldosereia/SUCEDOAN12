@@ -96,6 +96,7 @@ begin
     'whatsapp_account_id',d.whatsapp_account_id,
     'phone_number_id',a.phone_number_id,'to_phone_e164',d.to_phone_e164,
     'template_name',d.template_name,'language_code',d.language_code,
+    'customer_name',coalesce(nullif(split_part(btrim(c.name),' ',1),''),'cliente'),
     'template_components',t.components,
     'basket_name',coalesce(nullif(s.metadata->>'last_basket_name',''),'cesta básica'),
     'product_categories',coalesce(s.metadata->'last_product_categories','[]'::jsonb)
