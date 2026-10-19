@@ -2,7 +2,7 @@ from pathlib import Path
 
 site = Path('index.html').read_text(encoding='utf-8')
 site_copy = Path('vitrine/index.html').read_text(encoding='utf-8')
-admin = Path('vitrine/admin/index.html').read_text(encoding='utf-8')
+admin = Path('vitrine/admin/index.html').read_text(encoding='utf-8') + '\n' + Path('vitrine/admin/admin-runtime.js').read_text(encoding='utf-8')
 migration = Path('supabase/migrations/20260930_marketing_campaign_brand_rules_v1.sql').read_text(encoding='utf-8')
 
 required_site_markers = [
