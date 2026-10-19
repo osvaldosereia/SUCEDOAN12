@@ -28,5 +28,9 @@ assert.equal(inventory.empty_catch_sites.length,inventory.summary.empty_catches)
 for(const site of inventory.empty_catch_sites){
   assert.ok(site.path&&site.line>0&&site.section);
   assert.equal(site.review,'manual_context_required');
+  assert.ok(['integration','mutation','unknown_or_optional'].includes(site.risk_hint));
+  assert.equal(typeof site.context,'string');
+  assert.ok(site.context.length<=160);
+
 }
 console.log('Admin function and domain inventory contracts: PASS');
