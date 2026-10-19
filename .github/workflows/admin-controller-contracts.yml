@@ -16,6 +16,7 @@ on:
       - 'scripts/test-admin-orders-outbox-finish-contract.mjs'
       - 'scripts/test-admin-async-races-and-partial-save.mjs'
       - 'scripts/test-admin-gateway-action-contract.mjs'
+      - 'scripts/test-admin-delivery-sync-diagnostics.mjs'
       - 'scripts/test-admin-controller-contracts.mjs'
       - '.github/workflows/admin-controller-contracts.yml'
   workflow_dispatch:
@@ -32,6 +33,7 @@ jobs:
           node-version: '22'
       - run: node scripts/test-admin-controller-contracts.mjs
       - run: node scripts/test-admin-async-races-and-partial-save.mjs
+      - run: node scripts/test-admin-delivery-sync-diagnostics.mjs
       - run: node scripts/test-admin-gateway-action-contract.mjs
       - run: node scripts/test-admin-orders-outbox-finish-contract.mjs
       - run: node scripts/test-admin-whatsapp-phone-contract.mjs
