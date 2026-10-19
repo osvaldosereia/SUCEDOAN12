@@ -52,4 +52,8 @@ assert.ok(js.includes("openOverviewView(root,'strategy')"),'Reposição mensal d
 assert.ok(js.includes("openOverviewView(root,'campaigns')"),'Campanhas deve abrir a área de campanhas');
 assert.ok(js.includes('Campanhas pausadas'),'o painel deve informar claramente que os envios ainda estão pausados');
 
+assert.ok(js.includes("['overview','post_sale','repurchase','campaigns']"),'navegação principal deve ter quatro fluxos simples');
+assert.ok(js.includes('data-marketing-more-menu'),'funções administrativas secundárias devem ficar em Mais');
+assert.ok(js.includes('data-marketing-view="templates"'),'templates devem continuar acessíveis em Mais');
+assert.ok(js.includes('data-marketing-view="audiences"'),'públicos devem continuar acessíveis em Mais');
 console.log('marketing professional UI contract: ok');
