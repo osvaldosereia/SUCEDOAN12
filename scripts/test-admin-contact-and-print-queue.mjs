@@ -46,7 +46,7 @@ assert.doesNotMatch(orphanRender,/data-print-order="missing"/);
 assert.match(contacts.mapsHrefFromAddress({street:'Rua A',number:0,district:'Centro',city:'Cuiabá'}),/Rua%20A%2C%200%2C%20Centro%2C%20Cuiab/);
 
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const e164=value=>String(value||'').replace(/\\D/g,'');
+const e164=value=>String(value||'').replace(/\D/g,'');
 const wa=value=>e164(value).length>=12?'https://wa.me/'+e164(value):'';
 const message=(value,body)=>wa(value)+'?text='+encodeURIComponent(body);
 const order={customer_name:'Maria Silva',public_code:'AB123',whatsapp_phone_e164:'5565999999999',
@@ -81,7 +81,7 @@ for(const [problems,label,requestText] of [
   assert.equal(actions.orderAddressRequestHref(order),'');
   assert.equal(actions.mapsHrefFromAddress({street:'Rua A',city:'Cuiabá'}),'','incomplete location must not build map URL');
   const html=actions.orderContactActionsHtml({...order,delivery_address_snapshot:{google_maps_url:'https://evil.example/path'}});
-  assert.doesNotMatch(html,/evil\\.example/,'untrusted map URL must not enter HTML');
+  assert.doesNotMatch(html,/evil\.example/,'untrusted map URL must not enter HTML');
 }
 
 console.log('Admin contact links and print queue contracts: PASS');
