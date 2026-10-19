@@ -1,0 +1,27 @@
+name: Admin runtime source parity
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/admin-runtime.js'
+      - 'vitrine/admin/runtime-parts/**'
+      - 'scripts/build-admin-runtime.mjs'
+      - '.github/workflows/admin-runtime-source-parity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime-source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/build-admin-runtime.mjs --check
+      - run: node --check vitrine/admin/admin-runtime.js
+      - run: node scripts/test-admin-module-load-contract.mjs
+      - run: node scripts/test-admin-controller-contracts.mjs
+      - run: node scripts/test-admin-async-races-and-partial-save.mjs
+      - run: node scripts/test-admin-order-action-buttons.mjs
+      - run: node scripts/test-admin-contact-and-print-queue.mjs
