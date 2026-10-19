@@ -61,6 +61,30 @@ const addLegacyFn=new Function('state','toast',addLegacy+'return addBasketDraft;
 addLegacyFn();
 assert.equal(cartBefore.length,0,'an unpriced basket cannot enter the cart');
 
+// Customer-facing mold identity must always match the selected SKU, not the
+// descriptive mold label retained for inventory and basket administration.
+const displaySource=source('function moldOptionShortName(','function changeMoldQty(');
+const displayFns=new Function('esc','safeImage','money','remainingStock','formatQty',displaySource+'return {moldItemRow,moldSelectedProduct};')(
+  x=>String(x),x=>x,x=>String(x),()=>10,x=>String(x)
+);
+const wrongLabel='Sabão em Pó Lavagem Perfeita OMO 700 g';
+const brandedOptions=[
+  {product_id:'minuano',name:'Sabão em Pó Minuano 400 g',image_url:'/minuano.webp',packaging:'400 g',price_cents:522},
+  {product_id:'oeste',name:'Sabão em Pó Oeste 800 g',image_url:'/oeste.webp',packaging:'800 g',price_cents:599}
+];
+const moldRow={position_id:'pos1',label:wrongLabel,product_id:'minuano',name:wrongLabel,image_url:'/old-omo.webp',quantity:1,stock_quantity:10,alternatives:brandedOptions};
+const selectedHtml=displayFns.moldItemRow(moldRow,0);
+assert.match(selectedHtml,/<strong class="checkout-name">Sabão em Pó Minuano 400 g<\/strong>/);
+assert.match(selectedHtml,/<img src="\/minuano.webp" alt="Sabão em Pó Minuano 400 g">/);
+assert.match(selectedHtml,/data-product-detail="minuano"/);
+assert.doesNotMatch(selectedHtml,/<strong class="checkout-name">Sabão em Pó Lavagem Perfeita OMO 700 g<\/strong>/);
+assert.match(selectedHtml,/data-product-id="minuano" role="option" aria-selected="true"/);
+const changedHtml=displayFns.moldItemRow({...moldRow,product_id:'oeste'},0);
+assert.match(changedHtml,/<strong class="checkout-name">Sabão em Pó Oeste 800 g<\/strong>/);
+assert.match(changedHtml,/<img src="\/oeste.webp" alt="Sabão em Pó Oeste 800 g">/);
+assert.match(changedHtml,/data-product-detail="oeste"/);
+assert.match(changedHtml,/data-product-id="oeste" role="option" aria-selected="true"/);
+
 // Mold options: no second selection while the first is being re-quoted.
 const optionSource=source('async function changeMoldOption(','function addMoldBasketDraft(){');
 assert.match(optionSource,/if\(!d\|\|!item\|\|d\.optionPending\)return/);

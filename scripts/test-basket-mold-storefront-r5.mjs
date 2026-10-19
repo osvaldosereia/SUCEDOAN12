@@ -46,4 +46,31 @@ for(const [name,html] of [['root',root],['vitrine',vitrine]]){
   assert.match(html,/const previous=\{\.\.\.item\}[\s\S]*?if\(!ok\)Object\.assign\(item,previous\)/i,`${name} must roll back a mold option rejected during re-quote`);
 }
 
+
+const start=root.indexOf('function moldOptionShortName('),end=root.indexOf('function changeMoldQty(',start);
+assert.ok(start>0&&end>start,'public vitrine must synchronize title, image and selected product');
+const renderMoldRow=new Function('esc','safeImage','money','remainingStock','formatQty',root.slice(start,end)+'return moldItemRow;')(
+  x=>String(x),x=>x,x=>String(x),()=>10,x=>String(x)
+);
+const sample={
+  position_id:'p1',label:'Sabão em Pó Lavagem Perfeita OMO 700 g',
+  product_id:'minuano',name:'Sabão em Pó Lavagem Perfeita OMO 700 g',
+  image_url:'/old-omo.webp',quantity:1,stock_quantity:10,
+  alternatives:[
+    {product_id:'minuano',name:'Sabão em Pó Minuano 400 g',image_url:'/minuano.webp',packaging:'400 g',price_cents:522},
+    {product_id:'oeste',name:'Sabão em Pó Oeste 800 g',image_url:'/oeste.webp',packaging:'800 g',price_cents:599}
+  ]
+};
+const first=renderMoldRow(sample,0);
+assert.match(first,/<strong class="checkout-name">Sabão em Pó Minuano 400 g<\/strong>/);
+assert.match(first,/<img src="\/minuano.webp" alt="Sabão em Pó Minuano 400 g">/);
+assert.match(first,/data-product-detail="minuano"/);
+assert.match(first,/data-product-id="minuano" role="option" aria-selected="true"/);
+assert.doesNotMatch(first,/<strong class="checkout-name">Sabão em Pó Lavagem Perfeita OMO 700 g<\/strong>/);
+const second=renderMoldRow({...sample,product_id:'oeste'},0);
+assert.match(second,/<strong class="checkout-name">Sabão em Pó Oeste 800 g<\/strong>/);
+assert.match(second,/<img src="\/oeste.webp" alt="Sabão em Pó Oeste 800 g">/);
+assert.match(second,/data-product-detail="oeste"/);
+assert.match(second,/data-product-id="oeste" role="option" aria-selected="true"/);
+
 console.log('basket mold storefront R5: PASS');
