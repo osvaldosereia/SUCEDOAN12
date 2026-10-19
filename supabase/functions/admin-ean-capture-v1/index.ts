@@ -118,6 +118,36 @@ Deno.serve(async (r:Request)=>{
     }
     const input=await r.json().catch(()=>null);
     if(!input||typeof input!=="object"||Array.isArray(input))return reply(r,{ok:false,error:"dados_invalidos"},400);
+    if(action==="search_products"){
+      const raw=String(input.query||"").trim();
+      const term=raw.replace(/[^a-zA-Z0-9À-ÿ _-]/g," ").replace(/\s+/g," ").trim().slice(0,80);
+      if(term.length<2)return reply(r,{ok:false,error:"consulta_muito_curta"},400);
+      const pattern="%"+term+"%";
+      const found=await db.from("products")
+        .select("id,name,gtin,sku,stock,ncm,image_url,is_active,brand,packaging")
+        .eq("is_active",true)
+        .or("name.ilike."+pattern+",brand.ilike."+pattern+",sku.ilike."+pattern+",gtin.ilike."+pattern)
+        .order("name",{ascending:true}).limit(30);
+      if(found.error)throw found.error;
+      return reply(r,{ok:true,rows:found.data||[]});
+    }
+    if(action==="repair_ean"){
+      if(!idOk(input.id)||!eanOk(input.ean))return reply(r,{ok:false,error:"leitura_ou_ean_invalido"},400);
+      const existing=await db.from("ean_capture_records_v1").select("id,sync_status")
+        .eq("id",input.id).maybeSingle();
+      if(existing.error)throw existing.error;
+      if(!existing.data)return reply(r,{ok:false,error:"leitura_nao_encontrada"},404);
+      if(existing.data.sync_status!=="not_found")return reply(r,{ok:false,error:"leitura_nao_esta_na_fila"},409);
+      const edited=await db.from("ean_capture_records_v1").update({
+        ean:input.ean,matched_product_id:null,sync_status:"pending",synced_at:null,updated_at:new Date().toISOString()
+      }).eq("id",input.id).eq("sync_status","not_found").select("id").maybeSingle();
+      if(edited.error)throw edited.error;
+      if(!edited.data)return reply(r,{ok:false,error:"leitura_ja_alterada"},409);
+      const synced=await db.rpc("ean_capture_sync_one_v1",{p_capture_id:input.id});
+      if(synced.error)throw synced.error;
+      if(synced.data?.ok!==true)return reply(r,{ok:false,error:synced.data?.error||"leitura_nao_encontrada"},404);
+      return reply(r,synced.data);
+    }
     if(action==="add"){
       if(!eanOk(input.ean)||!idOk(input.client_entry_id)||qty(input.quantity)===null)
         return reply(r,{ok:false,error:"ean_quantidade_ou_id_invalido"},400);
@@ -160,6 +190,23 @@ Deno.serve(async (r:Request)=>{
       if(synced.error)throw synced.error;
       return reply(r,{ok:true,summary:synced.data});
     }
+    if(action==="link_product"||action==="create_inactive"){
+      if(!idOk(input.id))return reply(r,{ok:false,error:"leitura_invalida"},400);
+      const ncm=String(input.ncm||"").replace(/\D/g,"");
+      if(ncm&&ncm.length!==8)return reply(r,{ok:false,error:"ncm_invalido"},400);
+      if(action==="link_product"&&!idOk(input.product_id))return reply(r,{ok:false,error:"produto_invalido"},400);
+      const name=String(input.name||"").trim().slice(0,180);
+      if(action==="create_inactive"&&!name)return reply(r,{ok:false,error:"nome_obrigatorio"},400);
+      const resolved=await db.rpc("ean_capture_resolve_v1",{
+        p_capture_id:input.id,p_mode:action==="link_product"?"link":"create",
+        p_product_id:action==="link_product"?input.product_id:null,
+        p_name:action==="create_inactive"?name:null,p_ncm:ncm||null
+      });
+      if(resolved.error)throw resolved.error;
+      if(resolved.data?.ok!==true)return reply(r,{ok:false,error:resolved.data?.error||"resolucao_falhou"},409);
+      return reply(r,resolved.data);
+    }
+
     return reply(r,{ok:false,error:"acao_invalida"},404);
   }catch(e){
     if(String(e instanceof Error?e.message:e)==="data_invalida")return reply(r,{ok:false,error:"data_invalida"},400);
