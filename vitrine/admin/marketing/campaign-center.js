@@ -2,7 +2,7 @@ import {attendanceAuthorizedFetch,attendanceJsonApi} from '../atendimento/attend
 
 const CAMPAIGN_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-marketing-campaigns-v1';
 const ADMIN_PUBLIC_KEY=['sb','publishable','tFXHtH0HCXZepVtwgKElIg','DxS76Gu8'].join('_');
-const CSS_URL='/vitrine/admin/marketing/campaign-center.css?v=marketing-campaign-v2';
+const CSS_URL='/vitrine/admin/marketing/campaign-center.css?v=marketing-campaign-v3';
 const PREFILL_KEY='da_marketing_campaign_prefill_v1';
 const STATUS_LABELS={draft:'Rascunho',ready_for_review:'Pronta para revisão',approved:'Aprovada',scheduled:'Agendada',running:'Em execução',paused:'Pausada',completed:'Concluída',failed:'Falhou',cancelled:'Cancelada'};
 const EXECUTION_STATUSES=new Set(['approved','scheduled','running','paused','completed','failed','cancelled']);
@@ -50,10 +50,13 @@ function notice(root,text,tone='neutral'){const node=root?.querySelector?.('[dat
 
 function navMarkup(){
   const item=(key,label)=>`<button type="button" class="${key==='campaigns'?'active':''}" data-marketing-view="${key}">${label}</button>`;
-  return `<div class="marketing-template-subnav marketing-campaign-nav" data-marketing-subnav>${item('overview','Visão geral')}${item('templates','Templates Meta')}${item('audiences','Públicos')}${item('campaigns','Campanhas')}${item('consents','Consentimentos')}<span class="marketing-campaign-gate">Campanhas desligadas</span></div>`;
+  return `<div class="marketing-template-subnav marketing-campaign-nav" data-marketing-subnav>${item('overview','Visão geral')}${item('templates','Templates Meta')}${item('audiences','Públicos')}${item('campaigns','Campanhas')}${item('consents','Consentimentos')}<span class="marketing-campaign-gate" data-marketing-runtime-status>Consultando envio…</span></div>`;
+}
+async function loadRuntimeStatus(root){
+  try{const data=await apiGet('runtime_status'),items=Array.isArray(data.items)?data.items:[],open=items.filter(item=>item.campaigns_enabled===true&&item.send_enabled===true&&item.outbound_provider==='meta'&&['canary','live'].includes(item.mode)),label=open.length?'Envio manual habilitado':'Envio pausado';root.querySelectorAll('[data-marketing-runtime-status]').forEach(node=>{node.textContent=label;node.title=open.length?'Canais habilitados: '+open.map(item=>item.channel).join(', '):'Os canais oficiais estão bloqueados pelo runtime.'})}catch{root.querySelectorAll('[data-marketing-runtime-status]').forEach(node=>{node.textContent='Estado do envio indisponível';node.title='Não foi possível consultar o runtime dos canais.'})}
 }
 async function loadAudience(view,root){
-  const module=window.DAMarketingAudienceCenter||await import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1');
+  const module=window.DAMarketingAudienceCenter||await import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v2');
   return view==='audiences'?module.mountAudienceView(root):module.mountConsentView(root);
 }
 function bindNav(root){
@@ -108,14 +111,14 @@ function variableIndexes(template){return [...new Set([...templateBody(template)
 function renderVariableInputs(form,values={}){
   const host=form.querySelector('[data-campaign-variables]');if(!host)return;
   const template=editorTemplates.find(item=>item.id===form.elements.template_id?.value);const indexes=variableIndexes(template);
-  host.innerHTML=indexes.length?`<h4>Variáveis</h4><div class="marketing-campaign-variable-grid">${indexes.map(index=>`<label><span>{{${index}}}</span><input data-variable-index="${index}" value="${esc(values?.[index]??values?.[String(index)]??'')}"></label>`).join('')}</div>`:'<h4>Variáveis</h4><p class="marketing-campaign-note">Este template não possui variáveis no corpo.</p>';
+  host.innerHTML=indexes.length?`<h4>Variáveis</h4><div class="marketing-campaign-variable-grid">${indexes.map(index=>{const value=values?.[index]??values?.[String(index)]??'';const dynamic=objectLike(value)&&value.source==='customer_first_name';return `<fieldset class="marketing-campaign-variable" data-variable-field="${index}"><legend>{{${index}}}</legend><label><span>Preenchimento</span><select data-variable-mode="${index}"><option value="static" ${dynamic?'':'selected'}>Mesmo texto para todos</option><option value="customer_first_name" ${dynamic?'selected':''}>Primeiro nome de cada cliente</option></select></label><label data-variable-static-wrap="${index}" ${dynamic?'hidden':''}><span>Texto fixo</span><input data-variable-index="${index}" value="${esc(dynamic?'':value)}"></label><p class="marketing-campaign-note" data-variable-dynamic-note="${index}" ${dynamic?'':'hidden'}>Na prévia usamos “Maria”. Cada envio receberá o primeiro nome do cadastro; se faltar, usaremos “tudo bem”.</p></fieldset>`}).join('')}</div>`:'<h4>Variáveis</h4><p class="marketing-campaign-note">Este template não possui variáveis no corpo.</p>';
   renderPreview(form);
 }
-function collectVariables(form){const values={};form.querySelectorAll('[data-variable-index]').forEach(input=>{const value=String(input.value||'').trim();if(value)values[input.dataset.variableIndex]=value});return values}
+function collectVariables(form){const values={};form.querySelectorAll('[data-variable-mode]').forEach(mode=>{const index=mode.dataset.variableMode;if(mode.value==='customer_first_name')values[index]={source:'customer_first_name',fallback:'tudo bem'};else{const input=form.querySelector(`[data-variable-index="${index}"]`),value=String(input?.value||'').trim();if(value)values[index]=value}});return values}
 function renderPreview(form){
   const host=form.querySelector('[data-campaign-preview]');if(!host)return;
   const template=editorTemplates.find(item=>item.id===form.elements.template_id?.value);let body=templateBody(template)||'Selecione um template MARKETING aprovado.';const values=collectVariables(form);
-  for(const [index,value] of Object.entries(values))body=body.replaceAll(`{{${index}}}`,value);
+  for(const [index,value] of Object.entries(values))body=body.replaceAll(`{{${index}}}`,objectLike(value)&&value.source==='customer_first_name'?'Maria':value);
   host.innerHTML=`<h4>Prévia</h4><div class="marketing-campaign-preview-card"><strong>${esc(template?.name||'Template')}</strong><p>${esc(body).replace(/\n/g,'<br>')}</p></div>`;
 }
 function collectDeepLink(form){const slug=String(form.elements.deep_campaign?.value||'').trim(),category=String(form.elements.deep_category?.value||'').trim(),brand=String(form.elements.deep_brand?.value||'').trim();const value={};if(slug)value.campaign=slug;if(category)value.category=category;if(brand)value.brand=brand;return value}
@@ -132,7 +135,7 @@ function editorHtml(){
     <section data-campaign-execution class="marketing-campaign-execution" hidden></section>
     <div data-campaign-status class="marketing-campaign-status" role="status" aria-live="polite"></div>
     <div class="marketing-campaign-actions"><button type="button" data-campaign-close>Fechar</button><button type="submit" class="primary" data-campaign-save aria-busy="false">Salvar rascunho</button><button type="button" data-campaign-snapshot-button aria-busy="false" hidden>Gerar snapshot</button><button type="button" data-campaign-ready hidden>Pronta para revisão</button><button type="button" data-campaign-return-draft hidden>Voltar para rascunho</button><button type="button" data-campaign-approve hidden>Aprovar revisão</button><button type="button" data-campaign-internal-test hidden>Preparar teste interno</button></div>
-    <p class="marketing-campaign-safety">Campanhas desligadas — Nenhuma mensagem será enviada nesta fase.</p>
+    <p class="marketing-campaign-safety">Envio somente após revisão e confirmação manual.</p>
   </form>`;
 }
 
@@ -146,12 +149,18 @@ async function populateTemplates(form,accountId,selectedId='',variableValues={})
 }
 function snapshotHtml(snapshot){
   if(!snapshot)return '<h4>Resumo</h4><p>Nenhum snapshot criado para esta revisão.</p>';
-  return `<h4>Resumo</h4><div class="marketing-campaign-snapshot"><article><small>Clientes no público</small><strong>${Number(snapshot.found_count||0)}</strong></article><article><small>Verificações técnicas · aptos</small><strong>${Number(snapshot.eligible_count||0)}</strong></article><article><small>Com pendência técnica</small><strong>${Number(snapshot.excluded_count||0)}</strong></article><p>Versão do snapshot ${Number(snapshot.snapshot_version||1)} · Revisão ${Number(snapshot.campaign_revision||1)} · ${esc(fmtDate(snapshot.created_at))}</p></div>`;
+  return `<h4>Resumo</h4><div class="marketing-campaign-snapshot"><article><small>Clientes no público</small><strong>${Number(snapshot.found_count||0)}</strong></article><article><small>Verificações técnicas · aptos</small><strong>${Number(snapshot.eligible_count||0)}</strong></article><article><small>Com pendência técnica</small><strong>${Number(snapshot.excluded_count||0)}</strong></article><p>Versão do snapshot ${Number(snapshot.snapshot_version||1)} · Revisão ${Number(snapshot.campaign_revision||1)} · ${esc(fmtDate(snapshot.created_at))}</p></div><button type="button" data-snapshot-review ${snapshot.id?'':'disabled'}>Revisar destinatários aptos (${Number(snapshot.eligible_count||0)})</button><div data-snapshot-recipients hidden></div>`;
+}
+async function renderSnapshotRecipients(form,snapshotId,offset=0){
+  const host=form.querySelector('[data-snapshot-recipients]');if(!host)return;
+  host.hidden=false;host.innerHTML='<p>Carregando destinatários…</p>';
+  try{const data=await apiGet('snapshot_recipients',{snapshot_id:snapshotId,limit:50,offset});const items=Array.isArray(data.items)?data.items:[];host.innerHTML=items.length?`<p>${Number(data.found_count||0)} destinatário(s) apto(s); exibindo ${offset+1}–${Math.min(offset+items.length,Number(data.found_count||0))}.</p><ul class="marketing-campaign-recipient-list">${items.map(item=>`<li><strong>${esc(item.name||'Cliente')}</strong><span>${esc(item.masked_phone||'—')}</span></li>`).join('')}</ul><div class="marketing-campaign-recipient-pagination"><button type="button" data-recipient-previous ${offset<=0?'disabled':''}>Anterior</button><button type="button" data-recipient-next ${offset+items.length>=Number(data.found_count||0)?'disabled':''}>Próxima</button></div>`:'<p>Este snapshot não possui destinatários aptos.</p>';host.querySelector('[data-recipient-previous]')?.addEventListener('click',()=>renderSnapshotRecipients(form,snapshotId,Math.max(0,offset-50)));host.querySelector('[data-recipient-next]')?.addEventListener('click',()=>renderSnapshotRecipients(form,snapshotId,offset+50))}catch(error){host.innerHTML=`<p class="marketing-campaign-warning">Não foi possível carregar os destinatários: ${esc(error?.message||error)}</p>`}
 }
 function syncEditorState(form,campaign,snapshot){
   const status=campaign?.status||'draft',revision=Number(campaign?.revision||1);form.querySelector('[data-campaign-editor-title]').textContent=campaign?.name||'Novo rascunho';form.querySelector('[data-campaign-editor-meta]').textContent=`Revisão ${revision}`;const badge=form.querySelector('[data-campaign-editor-state]');badge.textContent=STATUS_LABELS[status]||status;badge.className=`marketing-campaign-state state-${status}`;
   const locked=status!=='draft';form.querySelectorAll('input,select').forEach(control=>control.disabled=locked);form.querySelector('[data-campaign-save]').hidden=locked;form.querySelector('[data-campaign-snapshot-button]').hidden=!campaign?.id||locked;form.querySelector('[data-campaign-ready]').hidden=!campaign?.id||locked||!snapshot;form.querySelector('[data-campaign-return-draft]').hidden=status!=='ready_for_review';form.querySelector('[data-campaign-approve]').hidden=status!=='ready_for_review';form.querySelector('[data-campaign-internal-test]').hidden=!campaign?.id;
   form.querySelector('[data-campaign-summary]').innerHTML=snapshotHtml(snapshot);
+  form.querySelector('[data-snapshot-review]')?.addEventListener('click',event=>{const host=form.querySelector('[data-snapshot-recipients]');if(!host.hidden){host.hidden=true;return}renderSnapshotRecipients(form,snapshot.id)});
   if(snapshot&&campaign&&snapshot.campaign_revision!==campaign.revision){form.querySelector('[data-campaign-summary]').insertAdjacentHTML('afterbegin','<div class="marketing-campaign-warning">A campanha mudou. Gere um novo snapshot para esta revisão.</div>')}
 }
 
@@ -201,6 +210,7 @@ async function openEditor(root,{detail=null,prefill=null}={}){
   form.elements.whatsapp_account_id.addEventListener('change',()=>populateTemplates(form,form.elements.whatsapp_account_id.value,'',{}));
   form.elements.template_id.addEventListener('change',()=>renderVariableInputs(form,{}));
   form.addEventListener('input',event=>{if(event.target.matches('[data-variable-index], [name="template_id"]'))renderPreview(form)});
+  form.addEventListener('change',event=>{if(!event.target.matches('[data-variable-mode]'))return;const index=event.target.dataset.variableMode,personalized=event.target.value==='customer_first_name';form.querySelector(`[data-variable-static-wrap="${index}"]`).hidden=personalized;form.querySelector(`[data-variable-dynamic-note="${index}"]`).hidden=!personalized;renderPreview(form)});
   form.querySelector('[data-campaign-close]').addEventListener('click',()=>{host.innerHTML='';currentCampaign=null});
   form.addEventListener('submit',async event=>{event.preventDefault();if(busy)return;const button=form.querySelector('[data-campaign-save]');try{busy=true;setBusy(button,true,'Salvando…');const filters=collectVisibleFilters(form),variable_values=collectVariables(form),deep_link=collectDeepLink(form);let response;if(currentCampaign?.id){response=await apiPost('update_draft',{campaign_id:currentCampaign.id,expected_revision:currentCampaign.revision,patch:{name:String(form.elements.name.value||'').trim(),whatsapp_account_id:form.elements.whatsapp_account_id.value,template_id:form.elements.template_id.value,filters,variable_values,deep_link}})}else{response=await apiPost('create',{name:String(form.elements.name.value||'').trim(),whatsapp_account_id:form.elements.whatsapp_account_id.value,template_id:form.elements.template_id.value,filters,variable_values,deep_link,idempotency_key:`admin-${crypto.randomUUID()}`})}await loadCampaigns();renderList(root);const id=response.campaign_id||currentCampaign?.id;await openCampaign(root,id);notice(root,'Rascunho salvo.','success')}catch(error){notice(form,`Não foi possível salvar: ${String(error?.message||error)}`,'error')}finally{busy=false;setBusy(button,false)}});
   form.querySelector('[data-campaign-snapshot-button]').addEventListener('click',async()=>{if(!currentCampaign?.id||busy)return;const button=form.querySelector('[data-campaign-snapshot-button]');try{busy=true;setBusy(button,true,'Congelando público…');await apiPost('create_snapshot',{campaign_id:currentCampaign.id,expected_revision:currentCampaign.revision,idempotency_key:`admin:${currentCampaign.id}:r${currentCampaign.revision}`});await openCampaign(root,currentCampaign.id);notice(root,'Snapshot criado para esta revisão.','success')}catch(error){notice(form,`Falha ao gerar snapshot: ${String(error?.message||error)}`,'error')}finally{busy=false;setBusy(button,false)}});
@@ -214,11 +224,13 @@ async function openCampaign(root,id){try{const detail=await apiGet('detail',{cam
 
 async function mountCampaignView(root=document.querySelector('#content'),options={}){
   if(!root)return;ensureCss();activeRoot=root;const prefill=options.prefill||parsePrefill();
-  root.innerHTML=`<div class="marketing-campaign-center"><div class="page-head"><div><h1>Marketing</h1><p>Crie, revise e acompanhe campanhas. O envio continua protegido por dois gates server-side.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>${navMarkup()}<section class="marketing-campaign-section"><div class="marketing-campaign-section-head"><div><h2>Campanhas</h2><p>Rascunhos, snapshots, revisão, agendamento e execução controlada.</p></div><button type="button" class="primary" data-new-campaign>Novo rascunho</button></div><div data-campaign-status class="marketing-campaign-status" role="status" aria-live="polite"></div><div data-campaign-list class="marketing-campaign-loading">Carregando campanhas…</div><div data-campaign-workspace></div></section></div>`;
+  root.innerHTML=`<div class="marketing-campaign-center"><div class="page-head"><div><h1>Marketing</h1><p>Crie, revise e acompanhe campanhas. O envio continua protegido por dois gates server-side.</p></div><span class="marketing-campaign-gate" data-marketing-runtime-status>Consultando envio…</span></div>${navMarkup()}<section class="marketing-campaign-section"><div class="marketing-campaign-section-head"><div><h2>Campanhas</h2><p>Rascunhos, snapshots, revisão, agendamento e execução controlada.</p></div><button type="button" class="primary" data-new-campaign>Novo rascunho</button></div><div data-campaign-status class="marketing-campaign-status" role="status" aria-live="polite"></div><div data-campaign-list class="marketing-campaign-loading">Carregando campanhas…</div><div data-campaign-workspace></div></section></div>`;
   bindNav(root);root.querySelector('[data-new-campaign]').addEventListener('click',()=>openEditor(root,{prefill:null}));
+  void loadRuntimeStatus(root);
   try{await Promise.all([loadAccounts(),loadCampaigns()]);if(activeRoot!==root)return;renderList(root);if(prefill)await openEditor(root,{prefill})}catch(error){if(activeRoot===root)root.querySelector('[data-campaign-list]').innerHTML=`<div class="marketing-campaign-error">Não foi possível carregar: ${esc(error?.message||error)}</div>`}
 }
 
 ensureCss();
 window.DAMarketingCampaignCenter={mountCampaignView};
 export {mountCampaignView};
+
