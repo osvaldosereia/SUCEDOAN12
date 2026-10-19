@@ -87,6 +87,17 @@ main{grid-template-columns:minmax(0,1fr);box-sizing:border-box}
   .count{padding:8px 3px}
   .count small{font-size:10px}
 }
+
+/* Scanner especializado: nenhuma sobreposição sobre as barras, nem corte por largura. */
+.scan-box::after{display:none!important}
+#cameraViewport{width:100%;max-width:100%;min-width:0;overflow:hidden;text-align:center}
+#cameraViewport video{max-width:100%!important;width:100%!important;max-height:350px!important;object-fit:contain!important}
+#cameraViewport img,#cameraViewport canvas,#cameraViewport>div{max-width:100%!important}
+#cameraTools{margin:8px 0}
+.camera-choice{flex:1 1 180px;min-width:0}
+.camera-choice select{display:block;width:100%;max-width:100%;margin-top:4px;border:1px solid #b6c7be;border-radius:8px;min-height:42px;padding:6px;background:#fff;color:#20322b}
+.photo-choice{display:inline-flex;align-items:center;border-radius:9px;min-height:38px;margin-top:8px;padding:8px 12px;background:#e4eee8;color:#114c36;cursor:pointer;font-size:13px}
+.photo-choice input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 </style>
 </head>
 <body>
@@ -95,9 +106,14 @@ main{grid-template-columns:minmax(0,1fr);box-sizing:border-box}
 <section class="card">
   <div class="row between"><h1>Ler código de barras</h1><button class="primary" id="cameraButton" type="button">📷 Abrir câmera</button></div>
   <p class="note">Leia primeiro. O produto não será pesquisado agora. Após a leitura, informe a quantidade e, se quiser, a validade.</p>
-  <div class="scan-box" id="cameraBox" hidden><video id="camera" playsinline muted autoplay aria-label="Leitor de código de barras"></video></div>
-  <button id="torch" type="button" hidden>🔦 Ligar lanterna</button>
-  <p class="note" id="cameraHelp" hidden>Use a câmera traseira, centralize as barras, afaste um pouco e mantenha a imagem nítida. A leitura é automática.</p>
+  <div class="scan-box" id="cameraBox" hidden><div id="cameraViewport" aria-label="Leitor de códigos de barras EAN"></div></div>
+  <div class="row" id="cameraTools" hidden><label class="camera-choice" id="cameraLabel" hidden>Câmera
+      <select id="cameraSelect" aria-label="Selecionar câmera traseira"></select>
+    </label><button id="torch" type="button" hidden>🔦 Ligar lanterna</button></div>
+  <p class="note" id="cameraHelp" hidden>Aponte a câmera para as barras e mantenha o código inteiro e nítido. A leitura é automática.</p>
+  <div class="row"><label class="photo-choice" for="barcodePhoto">📸 Ler foto do EAN
+    <input id="barcodePhoto" type="file" accept="image/*" capture="environment" aria-label="Fotografar código EAN">
+  </label></div>
   <div id="manual"><input id="eanInput" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="EAN / leitor USB ou Bluetooth" aria-label="EAN"/><button id="useEan" type="button">Usar</button></div>
   <form id="entryEditor" hidden>
     <div class="row between"><div><small id="editingLabel">EAN lido</small><div><strong id="currentEan"></strong></div></div><button type="button" id="cancelEdit">Cancelar</button></div>
@@ -127,14 +143,15 @@ main{grid-template-columns:minmax(0,1fr);box-sizing:border-box}
   <button id="more" hidden type="button">Carregar mais</button>
 </section>
 </main>
-<script>
+<script src="/vitrine/admin/leitura-ean/html5-qrcode.min.js?v=20261019b" defer></script>
+<script defer>
 (()=>{
 "use strict";
 const BASE="https://ssbesxgaijknwsjbsbcz.supabase.co";
 const KEY="sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8";
 const API=BASE+"/functions/v1/admin-ean-capture-v1";
 const $=(id)=>document.getElementById(id);
-let tokenPromise=null,cameraStream=null,scanReader=null,scanMode="",scanLoopId=0,lastDetection=0;
+let tokenPromise=null,scanner=null,scanMode="",cameraChoice="",lastDetection=0,torchOn=false;
 let paused=false,busy=false,editingId="",pendingId="",currentEan="",filter="all",offset=0,hasMore=false,rows=[],count=0;
 const uuid=()=>crypto.randomUUID();
 const msg=(s,error=false)=>{$("message").textContent=s;$("message").classList.toggle("error",error)};
@@ -267,136 +284,144 @@ function acceptDetection(result){
  const now=Date.now();if(now-lastDetection<850)return;lastDetection=now;
  codeDetected(result);
 }
-function stopCamera(){
- scanMode="";clearTimeout(scanLoopId);cancelAnimationFrame(scanLoopId);scanLoopId=0;
- if(scanReader){try{scanReader.reset()}catch{}scanReader=null}
- if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
- $("camera").pause();$("camera").srcObject=null;$("cameraBox").hidden=true;
- $("cameraHelp").hidden=true;$("torch").hidden=true;$("torch").textContent="🔦 Ligar lanterna";
+const supportedFormats=()=>{
+ const fmt=window.Html5QrcodeSupportedFormats;
+ if(!fmt)throw Error("Leitor não carregado. Atualize a página.");
+ return [fmt.EAN_13,fmt.EAN_8,fmt.UPC_A,fmt.UPC_E,fmt.CODE_128,fmt.ITF];
+};
+const scannerOptions=()=>({
+ formatsToSupport:supportedFormats(),
+ verbose:false,
+ useBarCodeDetectorIfSupported:false
+});
+async function stopCamera(){
+ const current=scanner;scanner=null;
+ scanMode="";torchOn=false;
  $("cameraButton").textContent="📷 Abrir câmera";
-}
-async function loadZXing(){
- if(window.ZXing?.BrowserMultiFormatReader)return;
- const urls=[
-  "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js",
-  "https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"
- ];
- for(const url of urls){
-  try{
-   await new Promise((resolve,reject)=>{
-    const script=document.createElement("script");let done=false;
-    const timeout=setTimeout(()=>finish(false),6000);
-    function finish(ok){
-     if(done)return;done=true;clearTimeout(timeout);
-     if(!ok){script.remove();reject(Error("Fonte indisponível"))}else resolve();
-    }
-    script.src=url;script.async=true;script.onload=()=>finish(true);script.onerror=()=>finish(false);
-    document.head.appendChild(script);
-   });
-   if(window.ZXing?.BrowserMultiFormatReader)return;
-  }catch(e){console.warn("Leitor ZXing: tentativa de carregamento falhou",e)}
+ $("cameraBox").hidden=true;$("cameraHelp").hidden=true;
+ $("cameraTools").hidden=true;$("torch").hidden=true;
+ $("torch").textContent="🔦 Ligar lanterna";
+ if(current){
+  try{await current.stop()}catch(e){console.debug("camera_stop",e)}
+  try{current.clear()}catch(e){console.debug("camera_clear",e)}
  }
- throw Error("Biblioteca de leitura indisponível. Verifique a conexão de internet.");
+ $("cameraViewport").replaceChildren();
 }
-async function openRearCamera(){
- const tries=[
-  {video:{facingMode:{exact:"environment"},width:{ideal:1920},height:{ideal:1080}},audio:false},
-  {video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false},
-  {video:true,audio:false}
- ];
- let error=null;
- for(const constraints of tries){
-  try{return await navigator.mediaDevices.getUserMedia(constraints)}
-  catch(e){error=e;if(e.name==="NotAllowedError"||e.name==="SecurityError")break}
- }
- throw error||Error("Câmera indisponível.");
-}
-async function improveCameraFocus(stream){
- const track=stream.getVideoTracks()[0];if(!track)return;
- let cap={};try{cap=track.getCapabilities?.()||{}}catch{}
- if(Array.isArray(cap.focusMode)&&cap.focusMode.includes("continuous")){
-  try{await track.applyConstraints({advanced:[{focusMode:"continuous"}]})}catch{}
- }
- $("torch").hidden=cap.torch!==true;
- $("torch").onclick=async()=>{
-  if(!cameraStream)return;
-  const current=Boolean(track.getSettings?.().torch);
-  try{await track.applyConstraints({advanced:[{torch:!current}]});
-    $("torch").textContent=!current?"🔦 Desligar lanterna":"🔦 Ligar lanterna";
-  }catch{msg("A lanterna não está disponível neste celular.",true)}
- };
-}
-async function enableNativeScanner(){
- if(!("BarcodeDetector" in window))return false;
+async function setupControls(){
+ if(scanMode!=="active"||!scanner)return;
  try{
-  const supported=await BarcodeDetector.getSupportedFormats();
-  const formats=["ean_13","ean_8","upc_a","upc_e","code_128","itf"].filter(x=>supported.includes(x));
-  if(!formats.length)return false;
-  const detector=new BarcodeDetector({formats});
-  // Usar o MESMO vídeo e câmera do leitor ZXing; não abrir a câmera duas vezes.
-  const nativeLoop=async()=>{
-   if(scanMode!=="active")return;
-   if(!paused&&!busy&&$("camera").readyState>=2){
-    try{
-     const detections=await detector.detect($("camera"));
-     for(const d of detections){
-      const value=normalizeEan(d.rawValue);
-      if(value.length>=8&&value.length<=14){acceptDetection(value);break}
-     }
-    }catch(e){console.debug("Detector nativo",e)}
-   }
-   if(scanMode==="active")scanLoopId=setTimeout(nativeLoop,800);
-  };
-  scanLoopId=setTimeout(nativeLoop,350);
-  return true;
- }catch(e){console.warn("Detector nativo não disponível",e);return false}
-}
-async function enableZXingScanner(){
- await loadZXing();
- const hints=new Map();
- hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[
-  ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,
-  ZXing.BarcodeFormat.UPC_E,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.ITF
- ]);
- hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
- scanReader=new ZXing.BrowserMultiFormatReader(hints,300);
- scanReader.timeBetweenDecodingAttempts=180;
- // A câmera já foi aberta como traseira acima. Reutilizar o stream, sem segunda permissão.
- await scanReader.decodeFromStream(cameraStream,$("camera"),(result,error)=>{
-  if(result)acceptDetection(result.getText());
-  else if(error&&!(error instanceof ZXing.NotFoundException)&&!(error instanceof ZXing.ChecksumException)&&!(error instanceof ZXing.FormatException)){
-   console.debug("ZXing",error);
+  const c=scanner.getRunningTrackCapabilities();
+  const focusModes=c.focusMode||[];
+  if(Array.isArray(focusModes)&&focusModes.includes("continuous")){
+   try{await scanner.applyVideoConstraints({advanced:[{focusMode:"continuous"}]})}catch{}
   }
- });
+  $("torch").hidden=c.torch!==true;
+  $("torch").onclick=async()=>{
+   if(scanMode!=="active"||!scanner)return;
+   try{
+    torchOn=!torchOn;
+    await scanner.applyVideoConstraints({advanced:[{torch:torchOn}]});
+    $("torch").textContent=torchOn?"🔦 Desligar lanterna":"🔦 Ligar lanterna";
+   }catch{torchOn=false;msg("Lanterna indisponível neste aparelho.",true)}
+  };
+ }catch{}
+ // Alguns celulares expõem a câmera de selfie antes da traseira.
+ try{
+  const cameras=await Html5Qrcode.getCameras();
+  if(scanMode!=="active"||!cameras?.length)return;
+  const select=$("cameraSelect");
+  const currentId=scanner.getRunningTrackSettings()?.deviceId||"";
+  select.replaceChildren();
+  cameras.forEach((cam,i)=>{
+   const opt=document.createElement("option");
+   opt.value=cam.id;opt.textContent=cam.label||("Câmera "+(i+1));
+   select.append(opt);
+  });
+  if(cameras.some(x=>x.id===currentId))select.value=currentId;
+  $("cameraLabel").hidden=cameras.length<2;
+  $("cameraTools").hidden=cameras.length<2&&$("torch").hidden;
+  select.onchange=async()=>{
+   if(busy)return;
+   cameraChoice=select.value;
+   setBusy(true);
+   try{await stopCamera();await startCamera(cameraChoice);msg("Câmera selecionada. Aponte para o EAN.");}
+   catch(e){await stopCamera();msg("Erro ao mudar câmera: "+e,true)}
+   finally{setBusy(false)}
+  };
+ }catch(e){console.debug("camera_list",e);$("cameraTools").hidden=$("torch").hidden}
+ if(!$("torch").hidden)$("cameraTools").hidden=false;
 }
-async function startCamera(){
- if(!navigator.mediaDevices?.getUserMedia)throw Error("O navegador não permite câmera. Abra em HTTPS ou use um leitor externo.");
+async function startCamera(cameraId=""){
+ if(!window.Html5Qrcode||!window.Html5QrcodeSupportedFormats)
+  throw Error("Biblioteca local de leitura não carregou. Atualize a página.");
+ if(!navigator.mediaDevices?.getUserMedia)
+  throw Error("Este navegador não permite a câmera. Abra pelo HTTPS no navegador do celular.");
+ // Sem qrbox: o decoder usa TODO o quadro, fundamental para códigos EAN compridos.
  $("cameraBox").hidden=false;
- cameraStream=await openRearCamera();
- $("camera").srcObject=cameraStream;
- await $("camera").play();
- scanMode="active";
- $("cameraHelp").hidden=false;
- await improveCameraFocus(cameraStream);
- // Dois decodificadores independentes sobre o mesmo stream: maior compatibilidade com EAN pequenos.
- const nativeOk=await enableNativeScanner();
- let zxingOk=false;
- try{await enableZXingScanner();zxingOk=true}
- catch(e){console.warn("ZXing indisponível",e);if(!nativeOk)throw e}
- if(!zxingOk&&nativeOk)msg("Câmera ativa com detector do aparelho. Centralize o EAN.");
+ const instance=new Html5Qrcode("cameraViewport",scannerOptions(),false);
+ scanner=instance;scanMode="starting";
+ const config={fps:12,aspectRatio:1.333333,disableFlip:true};
+ try{
+  await instance.start(cameraId?{deviceId:{exact:cameraId}}:{facingMode:"environment"},config,decoded=>{
+   if(scanner!==instance||scanMode!=="active")return;
+   const value=normalizeEan(decoded);
+   if(value.length>=8&&value.length<=14)acceptDetection(value);
+  },()=>{});
+  scanMode="active";
+  $("cameraHelp").hidden=false;
+  $("cameraButton").textContent="■ Fechar câmera";
+  msg("Câmera ativa. Centralize o EAN completo, sem cortar as barras.");
+  setupControls().catch(e=>console.debug("camera_tools",e));
+ }catch(e){
+  scanMode="";scanner=null;
+  try{await instance.stop()}catch{}
+  try{instance.clear()}catch{}
+  $("cameraBox").hidden=true;
+  throw e;
+ }
 }
 $("cameraButton").onclick=async()=>{
- if(scanMode){stopCamera();msg("Câmera desligada.");return}
+ if(busy)return;
+ if(scanMode){
+  setBusy(true);try{await stopCamera();msg("Câmera desligada.")}
+  finally{setBusy(false)}return;
+ }
  try{
-  setBusy(true);msg("Abrindo câmera traseira…");
-  await startCamera();
-  $("cameraButton").textContent="■ Fechar câmera";
-  if($("message").textContent.startsWith("Abrindo"))msg("Aponte a câmera para as barras. A leitura é automática.");
- }catch(e){stopCamera();msg("Câmera: "+e.message+" Você também pode digitar o EAN.",true)}
- finally{setBusy(false)}
+  setBusy(true);msg("Iniciando leitor EAN…");
+  await startCamera(cameraChoice);
+ }catch(e){
+  await stopCamera();
+  const m=String(e?.message||e);
+  msg("Câmera não abriu: "+(e?.name==="NotAllowedError"?"autorize o acesso nas configurações do navegador.":m),true);
+ }finally{setBusy(false)}
 };
-document.addEventListener("visibilitychange",()=>{if(document.hidden&&scanMode)stopCamera()});
-window.addEventListener("pagehide",stopCamera);
+$("barcodePhoto").addEventListener("change",async(event)=>{
+ const file=event.target.files?.[0];event.target.value="";
+ if(!file||busy)return;
+ if(!$("entryEditor").hidden){msg("Salve ou cancele o EAN atual antes de ler uma foto.",true);return}
+ setBusy(true);
+ try{
+  if(scanMode)await stopCamera();
+  if(!window.Html5Qrcode)throw Error("Biblioteca do leitor indisponível");
+  msg("Identificando barras na foto…");
+  $("cameraBox").hidden=false;
+  const instance=new Html5Qrcode("cameraViewport",scannerOptions(),false);
+  let decoded="";
+  try{decoded=await instance.scanFile(file,false)}
+  finally{try{instance.clear()}catch{}}
+  $("cameraViewport").replaceChildren();
+  $("cameraBox").hidden=true;
+  const ean=normalizeEan(decoded);
+  if(ean.length<8||ean.length>14)throw Error("Não foi encontrado EAN válido nesta foto.");
+  // Ignorar busy apenas nesta confirmação local; salvar continua independente.
+  setBusy(false);codeDetected(ean);
+ }catch(e){
+  $("cameraViewport").replaceChildren();$("cameraBox").hidden=true;
+  msg("Não consegui ler a foto: "+String(e.message||e)+". Aproxime e refaça.",true);
+ }finally{setBusy(false)}
+});
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&scanMode)stopCamera().catch(console.debug)});
+window.addEventListener("pagehide",()=>{stopCamera().catch(()=>{})});
 (async()=>{
  try{await load();msg("Pronto para começar a leitura.");}
  catch(e){$("entries").innerHTML='<div class="empty">Não foi possível carregar as leituras.</div>';msg("Falha ao conectar: "+e.message,true)}
