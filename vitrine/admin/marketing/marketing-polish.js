@@ -26,7 +26,7 @@ function marketingRoot(){
 function setText(node,value){if(node&&text(node)!==value)node.textContent=value}
 
 function activeView(root){
-  return root.querySelector('[data-marketing-subnav] :scope > [data-marketing-view].active')?.dataset?.marketingView||'overview';
+  return root.querySelector('[data-marketing-subnav] > [data-marketing-view].active')?.dataset?.marketingView||'overview';
 }
 
 function loadConsentModule(){
@@ -53,7 +53,7 @@ function ensureAdminMoreMenu(root,nav){
     more=document.createElement('details');
     more.className='marketing-admin-more';
     more.dataset.marketingMoreMenu='1';
-    more.innerHTML='<summary>Mais</summary><button type="button" data-marketing-view="strategy">Estratégia</button><button type="button" data-marketing-view="templates">Templates</button><button type="button" data-marketing-view="audiences">Públicos</button><button type="button" data-marketing-admin-consents>Consentimentos</button>';
+    more.innerHTML='<summary>Mais</summary><div class="marketing-admin-more-menu"><button type="button" data-marketing-view="strategy">Estratégia</button><button type="button" data-marketing-view="templates">Templates</button><button type="button" data-marketing-view="audiences">Públicos</button><button type="button" data-marketing-admin-consents>Consentimentos</button></div>';
     const gate=nav.querySelector('.marketing-campaign-gate');
     if(gate)nav.insertBefore(more,gate);else nav.appendChild(more);
     more.querySelectorAll('[data-marketing-view]').forEach(button=>button.addEventListener('click',()=>{
