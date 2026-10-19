@@ -63,13 +63,13 @@ const sample={
 };
 const first=renderMoldRow(sample,0);
 assert.match(first,/<strong class="checkout-name">Sabão em Pó Minuano 400 g<\/strong>/);
-assert.match(first,/<img\\b[^>]*src="\\/minuano.webp"[^>]*alt="Sabão em Pó Minuano 400 g">/);
+assert.match(first,/<img\b[^>]*src="\/minuano.webp"[^>]*alt="Sabão em Pó Minuano 400 g">/);
 assert.match(first,/data-product-detail="minuano"/);
 assert.match(first,/data-product-id="minuano" role="option" aria-selected="true"/);
 assert.doesNotMatch(first,/<strong class="checkout-name">Sabão em Pó Lavagem Perfeita OMO 700 g<\/strong>/);
 const second=renderMoldRow({...sample,product_id:'oeste'},0);
 assert.match(second,/<strong class="checkout-name">Sabão em Pó Oeste 800 g<\/strong>/);
-assert.match(second,/<img\\b[^>]*src="\\/oeste.webp"[^>]*alt="Sabão em Pó Oeste 800 g">/);
+assert.match(second,/<img\b[^>]*src="\/oeste.webp"[^>]*alt="Sabão em Pó Oeste 800 g">/);
 assert.match(second,/data-product-detail="oeste"/);
 assert.match(second,/data-product-id="oeste" role="option" aria-selected="true"/);
 
