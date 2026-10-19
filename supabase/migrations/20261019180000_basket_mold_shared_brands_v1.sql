@@ -67,7 +67,7 @@ from labels l
 on conflict (scope,label) do nothing;
 
 with chosen as (
-  select pos.label,opt.product_id,min(coalesce(p.offer_price,p.price,0)) price
+  select pos.label,opt.product_id,min(case when p.is_offer then coalesce(p.offer_price,p.price,0) else coalesce(p.price,0) end) price
   from public.basket_mold_positions pos
   join public.basket_molds m on m.id=pos.mold_id
   join public.basket_templates b on b.id=m.basket_id
