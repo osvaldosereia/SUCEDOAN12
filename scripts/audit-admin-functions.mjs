@@ -35,7 +35,7 @@ const runtimeSections=fragmentPaths.map(p=>{
   const basename=path.basename(p,'.part.js');
   const content=fs.readFileSync(p,'utf8');
   const start=runtimeStartLine;
-  runtimeStartLine+=(content.match(/\\n/g)||[]).length;
+  runtimeStartLine+=content.split('\n').length-1;
   return {start,end:runtimeStartLine,section:partitionDomains[basename]||'Infraestrutura compartilhada'};
 });
 const sections=['Central','Atendimento','ANA','Pedidos','Expedição','Entregador','Fechamento','Produtos','Cestas','Validades','Orçamentos','Clientes','Marketing','Compras/XML','Balanço','Gôndolas','Financeiro','Bling técnico','Infraestrutura compartilhada'];
@@ -142,6 +142,22 @@ for(const p of sql){
   for(const m of text.matchAll(/create\s+(?:or\s+replace\s+)?function\s+(?:(?:public|private|ops|auth)\.)?([A-Za-z_][\w]*)\s*\(/gi))
     sqlFunctions.push({path:rel(p),name:m[1],line:lineOf(text,m.index)});
 }
+// Technical review signals are ranked, never treated as proof of defects or dead code.
+const repeatedNames=new Map();
+for(const f of functions){
+  const key=f.path+'\0'+f.name;
+  const group=repeatedNames.get(key)||[];
+  group.push(f.line);repeatedNames.set(key,group);
+}
+const sameFileNameCandidates=[...repeatedNames].filter(([,lines])=>lines.length>1)
+  .map(([key,lines])=>({path:key.split('\0')[0],name:key.split('\0')[1],lines}));
+const priorityBySignals={};
+for(const f of functions){
+  const category=f.signals.data_write&&f.signals.external?'remote_write':
+    f.signals.data_write?'data_write':f.signals.external?'remote_read':f.signals.dom?'ui':'pure_or_internal';
+  f.review_priority=category;
+  priorityBySignals[category]=(priorityBySignals[category]||0)+1;
+}
 const bySection=Object.fromEntries(sections.map(x=>[x,0]));
 for(const f of functions)bySection[f.section]=(bySection[f.section]||0)+1;
 const emptyCatch=sources.map(s=>({path:s.path,count:(s.text.match(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)||[]).length})).filter(x=>x.count);
@@ -149,10 +165,11 @@ const suspects=functions.filter(x=>x.references<=1);
 const testOnly=suspects.filter(x=>x.test_reference_files.length);
 const summary={frontend_files:front.length,backend_files:edge.length,sql_files:sql.length,
  named_functions_and_arrows:functions.length,lexical_single_occurrence:suspects.length,lexical_single_occurrence_mentioned_by_tests:testOnly.length,
- runtime_source_fragments:fragmentPaths.length,
+ runtime_source_fragments:fragmentPaths.length,possible_same_name_same_file:sameFileNameCandidates.length,
  identical_file_groups:identical.length,empty_catches:emptyCatch.reduce((n,x)=>n+x.count,0)};
 const result={method:'Static heuristic, not proof of runtime use or dead code',summary,sections:bySection,
- functions,suspects,identical_files:identical,empty_catches:emptyCatch,sql_definitions:sqlFunctions};
+ functions,suspects,identical_files:identical,empty_catches:emptyCatch,sql_definitions:sqlFunctions,
+ same_file_repeated_names:sameFileNameCandidates,priority_by_signals:priorityBySignals};
 const output=process.argv[2]||'artifacts/admin-function-inventory';
 fs.mkdirSync(output,{recursive:true});
 fs.writeFileSync(path.join(output,'functions.json'),JSON.stringify(result,null,2)+'\n');
@@ -164,6 +181,10 @@ const lines=['# Vitrine Admin - inventario estatico','',
  ...Object.entries(bySection).map(x=>'| '+x[0]+' | '+x[1]+' |'),'',
  '## Copias byte-a-byte',
  ...identical.map(g=>'- '+g.join(' = ')),'',
+ '## Sinais técnicos de revisão por função (heurísticos)',
+ ...Object.entries(priorityBySignals).map(([category,count])=>'- '+category+': '+count),
+ '', '## Nomes declarados repetidamente no mesmo arquivo (não provam duplicação)',
+ ...sameFileNameCandidates.map(x=>'- '+x.path+' '+x.name+' ('+x.lines.join(', ')+')'),'',
  '## Candidatos a verificacao',
  ...suspects.map(x=>'- '+x.path+':'+x.line+' '+x.name),
  '','O JSON registra nome, caminho, linha, referencias, sinais de efeitos e definicoes SQL.'];
