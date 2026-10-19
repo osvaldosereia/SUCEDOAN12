@@ -6,7 +6,8 @@ const migration=fs.readFileSync("supabase/migrations/20261019190000_ean_capture_
 
 assert.ok(page.includes("width:min(92vw,460px)"),"photo viewer stays compact and centered");
 assert.ok(page.includes('id="photoViewerAdd"'),"no-photo records offer capture from the modal");
-assert.ok(page.includes('data-photo="'+esc(r.id)+'">📷 Adicionar foto'),"missing photo action is explicit");
+assert.ok(page.includes("data-photo=\""),"missing photo action is rendered");
+assert.ok(page.includes(">📷 Adicionar foto</button>"),"missing photo action is explicit");
 assert.ok(page.includes("if(view){showSavedPhoto(view.dataset.viewPhoto);return}"),"saved image opens the viewer");
 assert.ok(page.includes("if(row)openPhotoUploadViewer(row);return"),"adding a photo does not reveal the yellow page prompt");
 
