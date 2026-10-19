@@ -8,7 +8,7 @@ assert.ok(fs.existsSync(path),'manual sale workflow should have an isolated prov
 vm.runInContext(fs.readFileSync(path,'utf8'),context);
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve}};
 function fixture({api=async()=>({}),customerApi=async()=>({customers:[]})}={}){
-  const nodes=new Map(),values=new Map(),messages=[],calls=[];let sale={customer:null,cart:[{type:'product',id:'p',name:'Produto',qty:1,price_cents:7500}],baskets:[],basketConfig:null};
+  const nodes=new Map(),values=new Map(),messages=[],calls=[];let sale={customer:null,cart:[{type:'product',id:'p',name:'Produto',qty:1,price_cents:7500}],baskets:[],basketConfig:null},manualEditorCurrent=true;
   const node=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',disabled:false,onclick:null,onkeydown:null,close(){this.closed=true},showModal(){this.open=true},querySelectorAll:()=>[]});return nodes.get(id)};
   const query=id=>node(id);
   for(const [id,value] of Object.entries({'#manualName':'Ana','#manualPhone':'65999990000','#manualStreet':'Rua A','#manualNumber':'10','#manualDistrict':'Centro','#manualComplement':'Casa','#manualCity':'Cuiabá','#manualState':'MT','#manualPayment':'PIX','#manualCustomerSearch':'Ma','#manualItemSearch':''}))values.set(id,value);
@@ -16,10 +16,10 @@ function fixture({api=async()=>({}),customerApi=async()=>({customers:[]})}={}){
   const document={querySelectorAll:()=>[],contains:()=>true};
   const controller=context.window.DonaAntoniaAdminManualSale.create({
     sale:{get:()=>sale,set:value=>{sale=value}},api:async(...args)=>{calls.push(args);return api(...args)},customerApi,storefrontApi:async()=>({baskets:[]}),
-    orders:{render:async()=>{},open:async()=>{},selectNewFilter(){}},ui:{query,document,toast:m=>messages.push(m),errorMessage:String,currentOperator:()=> 'Operação'},
+    orders:{render:async()=>{},open:async()=>{},selectNewFilter(){}},ui:{query,document,toast:m=>messages.push(m),errorMessage:String,currentOperator:()=> 'Operação',isManualSaleEditor:()=>manualEditorCurrent},
     formatters:{esc:String,money:v=>'R$ '+v,formatPhone:String,formatCpf:String,fmtQty:String,normalize:x=>String(x||'').toLowerCase()}
   });
-  return {controller,nodes,values,messages,calls,get sale(){return sale},set sale(value){sale=value},query};
+  return {controller,nodes,values,messages,calls,get sale(){return sale},set sale(value){sale=value},get manualEditorCurrent(){return manualEditorCurrent},set manualEditorCurrent(value){manualEditorCurrent=value},query};
 }
 {
   const waits=[];const f=fixture({customerApi:()=>{const d=deferred();waits.push(d);return d.promise}});
@@ -46,7 +46,7 @@ function fixture({api=async()=>({}),customerApi=async()=>({customers:[]})}={}){
   let renders=0,opened='';const f=fixture({api:async(action,_params,options)=>{assert.equal(action,'manual_order_create');return {order_id:'order-1'}}});
   f.controller=context.window.DonaAntoniaAdminManualSale.create({
     sale:{get:()=>f.sale,set:value=>{f.sale=value}},api:async(...args)=>{f.calls.push(args);return {order_id:'order-1'}},customerApi:async()=>({customers:[]}),storefrontApi:async()=>({baskets:[]}),
-    orders:{render:async()=>{renders++},open:async id=>{opened=id},selectNewFilter(){}},ui:{query:f.query,document:{contains:()=>true},toast:m=>f.messages.push(m),errorMessage:String,currentOperator:()=> 'Operação'},
+    orders:{render:async()=>{renders++},open:async id=>{opened=id},selectNewFilter(){}},ui:{query:f.query,document:{contains:()=>true},toast:m=>f.messages.push(m),errorMessage:String,currentOperator:()=> 'Operação',isManualSaleEditor:()=>f.manualEditorCurrent},
     formatters:{esc:String,money:v=>'R$ '+v,formatPhone:String,formatCpf:String,fmtQty:String,normalize:x=>String(x||'').toLowerCase()}
   });
   await f.controller.createManualSale();
@@ -60,5 +60,19 @@ function fixture({api=async()=>({}),customerApi=async()=>({customers:[]})}={}){
   await f.controller.createManualSale();
   assert.equal(f.calls.length,1,'the same manual-sale draft must not submit twice');
   pending.resolve({order_id:'order-1'});await first;
+}
+{
+  const pending=deferred();let opened='',closed=0;const f=fixture({api:()=>pending.promise});
+  f.query('#editor').close=()=>{closed++};
+  const controller=context.window.DonaAntoniaAdminManualSale.create({
+    sale:{get:()=>f.sale,set:value=>{f.sale=value}},api:async(...args)=>{f.calls.push(args);return pending.promise},customerApi:async()=>({customers:[]}),storefrontApi:async()=>({baskets:[]}),
+    orders:{render:async()=>{},open:async id=>{opened=id},selectNewFilter(){}},ui:{query:f.query,document:{contains:()=>true},toast:m=>f.messages.push(m),errorMessage:String,currentOperator:()=> 'Operação',isManualSaleEditor:()=>f.manualEditorCurrent},
+    formatters:{esc:String,money:v=>'R$ '+v,formatPhone:String,formatCpf:String,fmtQty:String,normalize:x=>String(x||'').toLowerCase()}
+  });
+  const creating=controller.createManualSale();f.manualEditorCurrent=false;
+  pending.resolve({order_id:'order-2'});await creating;
+  assert.equal(closed,0,'a completed request must not close an editor that replaced the manual-sale dialog');
+  assert.equal(opened,'','a completed request must not replace the currently open order');
+  assert.ok(f.sale,'the late response must not clear the draft owned by another screen');
 }
 console.log('Admin manual sale controller and stale-search isolation: PASS');

@@ -1,7 +1,7 @@
 // Manual order creation and its customer/item/basket editing lifecycle.
 (function(global){
   function create({sale,api,customerApi,storefrontApi,orders,ui,formatters}){
-    const {query:$,document,toast,errorMessage,currentOperator}=ui;
+    const {query:$,document,toast,errorMessage,currentOperator,isManualSaleEditor}=ui;
     const {esc,money,formatPhone,formatCpf,fmtQty,normalize}=formatters;
     const {render:renderOrders,open:openOrder,selectNewFilter}=orders;
     const currentSale=()=>sale.get();
@@ -147,8 +147,9 @@
       const btn=$('#manualSaleCreate');creatingSales.add(saleAtStart);if(btn){btn.disabled=true;btn.textContent='Criando…'}
       try{
         const data=await api('manual_order_create',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,payment_method:payment,items,customer_snapshot,delivery:{},operator:currentOperator()||'Operação'})});
-        if(currentSale()===saleAtStart){$('#editor').close();sale.set(null);selectNewFilter()}
-        await renderOrders();if(currentSale()===null)await openOrder(data.order_id);toast('Pedido WhatsApp criado · aguardando confirmação');
+        const ownsEditor=currentSale()===saleAtStart&&isManualSaleEditor();
+        if(ownsEditor){$('#editor').close();sale.set(null);selectNewFilter()}
+        await renderOrders();if(ownsEditor)await openOrder(data.order_id);toast('Pedido WhatsApp criado · aguardando confirmação');
       }catch(e){toast(errorMessage(e.message));if(currentSale()===saleAtStart&&btn){btn.disabled=false;btn.textContent='Criar pedido'}}
       finally{creatingSales.delete(saleAtStart)}
     }
