@@ -27,7 +27,8 @@ function style(){
 @media(max-width:980px){.bm-grid,.bm-fields,.bm-position-top,.bm-cond-head{grid-template-columns:1fr}.bm-results{grid-template-columns:1fr}.bm-list{max-height:none}.bm-actions button{flex:1}}
 @media(max-width:650px){.bm-selected{grid-template-columns:38px minmax(0,1fr)}.bm-selected img{width:38px;height:38px}.bm-selected-actions{grid-column:1/-1;justify-content:flex-start}.bm-selected-actions button,.bm-selected-actions a{flex:0 0 auto}.bm-options{display:grid;grid-template-columns:minmax(0,1fr)}.bm-position{padding:8px}}
 `;
-  s.textContent+=`.bm-tabs{display:flex;gap:8px;flex-wrap:wrap}.bm-tabs button.active{background:#176b43;color:#fff;border-color:#176b43}.bm-shared-layout{display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr);gap:12px}.bm-shared-list{display:grid;gap:6px;max-height:70vh;overflow:auto}.bm-shared-item{text-align:left!important;min-height:54px!important}.bm-shared-item.active{border:2px solid #176b43;background:#f4faf6}.bm-shared-item small{display:block;color:#68736c;margin-top:3px}.bm-shared-options{display:grid;gap:7px;margin:10px 0}.bm-shared-option{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px;border:1px solid #dce5df;border-radius:10px}.bm-shared-option img{width:42px;height:42px;object-fit:contain;background:#fff;border-radius:7px}.bm-shared-option small{display:block;color:#68736c;font-size:10px}.bm-product-count{font-size:11px;color:#657169}@media(max-width:980px){.bm-shared-layout{grid-template-columns:1fr}}`;\n  document.head.appendChild(s);
+  s.textContent+=`.bm-tabs{display:flex;gap:8px;flex-wrap:wrap}.bm-tabs button.active{background:#176b43;color:#fff;border-color:#176b43}.bm-shared-layout{display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr);gap:12px}.bm-shared-list{display:grid;gap:6px;max-height:70vh;overflow:auto}.bm-shared-item{text-align:left!important;min-height:54px!important}.bm-shared-item.active{border:2px solid #176b43;background:#f4faf6}.bm-shared-item small{display:block;color:#68736c;margin-top:3px}.bm-shared-options{display:grid;gap:7px;margin:10px 0}.bm-shared-option{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px;border:1px solid #dce5df;border-radius:10px}.bm-shared-option img{width:42px;height:42px;object-fit:contain;background:#fff;border-radius:7px}.bm-shared-option small{display:block;color:#68736c;font-size:10px}.bm-product-count{font-size:11px;color:#657169}@media(max-width:980px){.bm-shared-layout{grid-template-columns:1fr}}`;
+  document.head.appendChild(s);
 }
 
 function normalizeEditor(e){
@@ -65,8 +66,8 @@ function resultHtml(p,pi){
 }
 
 function positionHtml(p,pi){
-  const results=state.results[pi]||[];
-  return'<article class="bm-position" data-mold-position="'+pi+'"><div class="bm-position-top"><label><span>Item da cesta · até 3 marcas</span><input data-mold-position-label="'+pi+'" value="'+esc(p.label||'')+'" placeholder="Ex.: Arroz 5 kg"></label><label><span>Quantidade</span><input data-mold-position-quantity="'+pi+'" type="number" min="0.001" max="999" step="0.001" value="'+esc(p.quantity||1)+'"></label><button type="button" class="danger" data-mold-remove-position="'+pi+'">Remover posição</button></div><div class="bm-options">'+((p.options||[]).map((o,oi)=>selectedOptionHtml(o,pi,oi)).join('')||'<span class="bm-status">Nenhum produto permitido ainda.</span>')+'</div><div class="bm-search"><input data-mold-product-search="'+pi+'" value="'+esc(state.search[pi]||'')+'" placeholder="Buscar produto por nome, código ou EAN"><button type="button" data-mold-product-search-go="'+pi+'">Buscar</button></div><div class="bm-results">'+results.map(r=>resultHtml(r,pi)).join('')+'</div></article>';
+  const item=state.catalog.find(x=>x.label===p.label),count=(item?.options||[]).length;
+  return '<article class="bm-position bm-quantity-row"><div><strong>'+esc(p.label||'Produto')+'</strong><div class="bm-product-count">'+count+' marca(s) compartilhada(s)</div></div><label><span>Quantidade (0 remove)</span><input data-mold-position-quantity="'+pi+'" type="number" min="0" max="999" step="0.001" value="'+esc(Number(p.quantity||0))+'"></label></article>';
 }
 
 function conditionalProductHtml(){
@@ -147,7 +148,12 @@ async function saveSharedCatalog(){
   catch(e){toast(e.message)}finally{state.busy=false;render()}
 }
 
-async function searchConditionalProduct(){function selectConditionalProduct(id){
+async function searchConditionalProduct(){
+  sync();const query=String(state.conditionalSearch||'').trim();if(!state.draft?.conditional_hidden_enabled)return;
+  try{const r=await call('products',{q:query,limit:24}),selected=String(state.draft.conditional_hidden_product_id||'');state.conditionalResults=(Array.isArray(r.products)?r.products:[]).filter(p=>String(p.id)!==selected);render()}catch(e){toast(e.message)}
+}
+
+function selectConditionalProduct(id){
   sync();const p=(state.conditionalResults||[]).find(x=>String(x.id)===String(id));if(!p)return;
   state.draft.conditional_hidden_product_id=p.id;
   state.draft.conditional_hidden_product={product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url,packaging:p.packaging};
@@ -171,22 +177,31 @@ async function save(){
   if(state.busy)return;sync();const d=state.draft;
   if(!d.name)return toast('Informe o nome da cesta.');
   if(!d.category_id)return toast('Escolha a categoria da cesta na vitrine.');
-  if(!d.subcategory_id)return toast('Escolha a subdivisão da cesta na vitrine.');
+  if(!d.subcategory_id)return toast('Escolha uma subdivisão da cesta na vitrine.');
+  const activePositions=d.positions.filter(p=>Number(p.quantity)>0);
+  if(!activePositions.length)return toast('Informe pelo menos um item com quantidade maior que zero.');
+  for(const p of d.positions)if(!Number.isFinite(Number(p.quantity))||Number(p.quantity)<0||Number(p.quantity)>999)return toast('Use quantidades entre zero e 999.');
+  for(const p of activePositions)if(!state.catalog.find(x=>x.label===p.label)?.options?.length)return toast('Configure ao menos uma marca para '+p.label+' na aba Produtos e marcas.');
   d.public_composition_count=1;
   if(d.conditional_hidden_enabled&&!d.conditional_hidden_product_id)return toast('Escolha o produto que ativa o acréscimo oculto.');
   if(d.conditional_hidden_enabled&&(!Number.isFinite(Number(d.conditional_hidden_adjustment))||Number(d.conditional_hidden_adjustment)<=0))return toast('Informe um valor maior que zero para o acréscimo oculto por produto.');
-  if(!d.positions.length)return toast('Adicione pelo menos uma posição.');
-  for(const p of d.positions){if(!p.label)return toast('Informe o nome de todas as posições.');if(!Number.isFinite(Number(p.quantity))||Number(p.quantity)<=0)return toast('Informe quantidades válidas.');if(!p.options.length)return toast('Selecione pelo menos um produto em cada posição.');if(p.options.length>3)return toast('Cada item pode ter até 3 marcas. Remova as opções excedentes antes de salvar.');}
   state.busy=true;render();
   try{
-    await call('save',{basket_id:d.basket_id,category_id:d.category_id,subcategory_id:d.subcategory_id,name:d.name,hidden_adjustment:Number(d.hidden_adjustment||0),conditional_hidden_enabled:d.conditional_hidden_enabled===true,conditional_hidden_product_id:d.conditional_hidden_product_id||null,conditional_hidden_adjustment:Number(d.conditional_hidden_adjustment||0),public_composition_count:Number(d.public_composition_count),positions:activePositions.map(p=>({label:p.label,quantity:Number(p.quantity),options:(state.catalog.find(x=>x.label===p.label)?.options||[]).map(o=>({product_id:o.product_id,metadata:{}}))})),operator:operator()});
+    await call('save',{basket_id:d.basket_id,category_id:d.category_id,subcategory_id:d.subcategory_id,name:d.name,hidden_adjustment:Number(d.hidden_adjustment||0),conditional_hidden_enabled:d.conditional_hidden_enabled===true,conditional_hidden_product_id:d.conditional_hidden_product_id||null,conditional_hidden_adjustment:Number(d.conditional_hidden_adjustment||0),public_composition_count:1,positions:activePositions.map(p=>({label:p.label,quantity:Number(p.quantity),options:(state.catalog.find(x=>x.label===p.label)?.options||[]).map(o=>({product_id:o.product_id,metadata:{}}))})),operator:operator()});
     const id=d.basket_id;await loadList();await openBasket(id);toast('Molde salvo.');
   }catch(e){toast(e.message)}finally{state.busy=false;render()}
 }
 
 function bind(){
   if(!state.root)return;
-  state.root.querySelectorAll('[data-mold-view]').forEach(x=>x.addEventListener('click',()=>{sync();state.view=x.dataset.moldView;render()}));\n  state.root.querySelectorAll('[data-mold-shared-item]').forEach(x=>x.addEventListener('click',()=>{state.catalogFocus=x.dataset.moldSharedItem;state.catalogDraft=JSON.parse(JSON.stringify(state.catalog.find(i=>String(i.id)===String(state.catalogFocus))||null));state.catalogResults=[];render()}));\n  state.root.querySelector('[data-mold-shared-search-go]')?.addEventListener('click',searchSharedProducts);\n  state.root.querySelector('[data-mold-shared-search]')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchSharedProducts()}});\n  state.root.querySelectorAll('[data-mold-shared-add]').forEach(x=>x.addEventListener('click',()=>addSharedOption(x.dataset.moldSharedAdd)));\n  state.root.querySelectorAll('[data-mold-shared-remove]').forEach(x=>x.addEventListener('click',()=>removeSharedOption(Number(x.dataset.moldSharedRemove))));\n  state.root.querySelector('[data-mold-shared-save]')?.addEventListener('click',saveSharedCatalog);\n  state.root.querySelector('[data-mold-category]')?.addEventListener('change',()=>{sync();state.draft.subcategory_id='';render()});
+  state.root.querySelectorAll('[data-mold-view]').forEach(x=>x.addEventListener('click',()=>{sync();state.view=x.dataset.moldView;render()}));
+  state.root.querySelectorAll('[data-mold-shared-item]').forEach(x=>x.addEventListener('click',()=>{state.catalogFocus=x.dataset.moldSharedItem;state.catalogDraft=JSON.parse(JSON.stringify(state.catalog.find(i=>String(i.id)===String(state.catalogFocus))||null));state.catalogResults=[];render()}));
+  state.root.querySelector('[data-mold-shared-search-go]')?.addEventListener('click',searchSharedProducts);
+  state.root.querySelector('[data-mold-shared-search]')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchSharedProducts()}});
+  state.root.querySelectorAll('[data-mold-shared-add]').forEach(x=>x.addEventListener('click',()=>addSharedOption(x.dataset.moldSharedAdd)));
+  state.root.querySelectorAll('[data-mold-shared-remove]').forEach(x=>x.addEventListener('click',()=>removeSharedOption(Number(x.dataset.moldSharedRemove))));
+  state.root.querySelector('[data-mold-shared-save]')?.addEventListener('click',saveSharedCatalog);
+  state.root.querySelector('[data-mold-category]')?.addEventListener('change',()=>{sync();state.draft.subcategory_id='';render()});
   state.root.querySelector('[data-mold-conditional-enabled]')?.addEventListener('change',()=>{sync();state.conditionalResults=[];render()});
   state.root.querySelector('[data-mold-conditional-product-search-go]')?.addEventListener('click',searchConditionalProduct);
   state.root.querySelector('[data-mold-conditional-product-search]')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchConditionalProduct()}});
