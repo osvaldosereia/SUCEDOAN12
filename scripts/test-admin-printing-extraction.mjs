@@ -9,6 +9,7 @@ assert.ok(html.includes(tag));
 assert.ok(html.indexOf(tag)<html.indexOf('<script src="/vitrine/admin/admin-runtime.js?'));
 assert.ok(runtime.includes('const openPrint=window.DonaAntoniaAdminPrinting.createOpenPrint(toast,esc);'));
 assert.equal(runtime.includes('  function openPrint(title,body,mode,existingWindow=null){'),false);
+assert.match(runtime,/ops_print_presented_failed/,'non-blocking print acknowledgement errors should remain visible');
 let written='',closed=false,opened=false,toastText='';
 const popup={document:{open(){opened=true},write(v){written+=v},close(){closed=true}}};
 const context={window:{open:()=>popup},Object};

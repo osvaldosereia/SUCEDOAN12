@@ -7250,7 +7250,7 @@
     return '<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>SEPARAÇÃO · Pedido #'+esc(orderDisplayCode(o))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+kitBlock+sections+'<div class="foot">'+kitRefs.length+' referência(s) pronta(s) · '+items.length+' produto(s) avulso(s) · '+esc(fmtQty(kitUnits+units))+' unidades/volumes</div>';
   }
   async function markPickingPresented(orderId){
-    try{await api('ops_print_presented',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})})}catch{}
+    try{await api('ops_print_presented',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})})}catch(error){console.warn('ops_print_presented_failed',String(error?.message||error))}
   }
   function printSeparationOnly(detail,existingWindow=null){
     const o=detail.order,w=existingWindow||window.open('','_blank','width=420,height=700');
