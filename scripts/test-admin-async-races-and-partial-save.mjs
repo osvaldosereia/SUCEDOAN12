@@ -128,8 +128,7 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
 {
  const state={componentReplacement:{component_id:'part-1'}},host={innerHTML:'',querySelectorAll:()=>[]},input={value:'first'},pending=new Map();
  const api=(_,{q})=>{const d=deferred();pending.set(q,d);return d.promise};
- const fn=new Function('state','
-,'api','esc','fmtQty','replaceComponentWithProduct',
+ const fn=new Function('state','$','api','esc','fmtQty','replaceComponentWithProduct',
   part('  let componentReplacementSearchGeneration=0;','  async function replaceComponentWithProduct')+';return searchComponentReplacement')(
   state,k=>k==='#componentReplacementSearch'?input:k==='#componentReplacementResults'?host:null,api,String,String,()=>{});
  const old=fn();input.value='second';const latest=fn();
@@ -140,8 +139,7 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
 }
 {
  const state={tab:'purchases',purchaseAdvancedLoading:false,purchaseAdvancedLoaded:false,purchaseAdvancedError:''},host={innerHTML:''},d=deferred();let paints=0;
- const fn=new Function('state','purchaseApi','purchaseXmlError','
-,'paintPurchases',
+ const fn=new Function('state','purchaseApi','purchaseXmlError','$','paintPurchases',
   part('  let purchaseAdvancedGeneration=0;','  async function loadPurchaseBlingComparison')+';return loadPurchaseAdvanced')(
   state,()=>d.promise,String,k=>k==='#purchaseBody'?host:null,()=>paints++);
  const pending=fn();state.tab='customers';d.resolve({documents:[{id:'queue'}]});await pending;
@@ -150,8 +148,7 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
 {
  const state={tab:'orders',orders:[{id:'a',status:'confirmed'}],orderStatusTab:'all'},d=deferred(),document={hidden:false};let paints=0;
  const src=part('  let ordersLoadGeneration=0;','  if(!window.__orderSeparationBoardTimer)');
- const {refreshOrderSeparationBoard,reload}=new Function('state','api','
-,'document','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
+ const {refreshOrderSeparationBoard,reload}=new Function('state','api','$','document','loadManualPickQueue','paintOrderRows','loadFiscalForOrders',
   src+';return {refreshOrderSeparationBoard,reload:()=>++ordersLoadGeneration}')(
   state,()=>d.promise,()=>null,document,async()=>{},()=>paints++,async()=>{});
  const pending=refreshOrderSeparationBoard();reload();
