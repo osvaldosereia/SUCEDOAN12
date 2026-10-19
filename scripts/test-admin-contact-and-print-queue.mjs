@@ -35,6 +35,11 @@ assert.match(render,/data-print-order="1"/);
 assert.match(render,/data-print-order="2"/);
 
 const orphanRender=panel.createPrintQueuePanel({orders:[],opsPrintQueue:{jobs:[{status:'pending',entity_id:'missing'}]}},String,order=>{assert.ok(order,'order code must not be called for orphan job');return order.public_code}).renderOpsPrintQueue();
+const malformedQueue=panel.createPrintQueuePanel({
+  orders:[],opsPrintQueue:{jobs:[null,'failed',7,{status:'pending',entity_id:0}]}
+},String,()=>{throw new Error('order lookup should not be required')}).renderOpsPrintQueue();
+assert.match(malformedQueue,/data-print-order="0"/);
+assert.equal((malformedQueue.match(/history-row/g)||[]).length,1);
 assert.match(orphanRender,/Fila de impressão/);
 assert.match(orphanRender,/data-print-order="missing"/);
 
