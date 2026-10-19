@@ -328,7 +328,7 @@ async function markMetaUncertain(outboxId:string,item:any,providerPayload:JsonRe
 Deno.serve(async(req:Request)=>{
   if(!U||!K)return respond({ok:false,error:"server_config"},500);
   const internalKey=req.headers.get("x-internal-key")||"",serviceRole=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
-  if(internalKey!==K&&internalKey!==serviceRole)return respond({ok:false,error:"forbidden"},403);
+  if(internalKey!==K&&(!serviceRole||internalKey!==serviceRole))return respond({ok:false,error:"forbidden"},403);
   if(req.method==="GET")return respond({ok:true,service:"admin-orders-v1",...(await providerReadiness())});
   if(req.method!=="POST")return respond({ok:false,error:"method_not_allowed"},405);
 
