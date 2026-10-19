@@ -162,11 +162,17 @@ const bySection=Object.fromEntries(sections.map(x=>[x,0]));
 for(const f of functions)bySection[f.section]=(bySection[f.section]||0)+1;
 const emptyCatch=sources.map(s=>({path:s.path,count:(s.text.match(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)||[]).length})).filter(x=>x.count);
 // Record exact locations for later contextual review; do not remove catches heuristically.
-const emptyCatchSites=sources.flatMap(source=>[...source.text.matchAll(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)].map(m=>({
-  path:source.path,line:lineOf(source.text,m.index),
-  section:domain(source.path,'',lineOf(source.text,m.index)),
-  review:'manual_context_required'
-})));
+const emptyCatchSites=sources.flatMap(source=>[...source.text.matchAll(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)].map(m=>{
+  const line=lineOf(source.text,m.index);
+  const prefix=source.text.slice(Math.max(0,m.index-240),m.index);
+  const surrounding=prefix.replace(/\s+/g,' ').trim();
+  const nearby=functions.filter(f=>f.path===source.path&&f.line<=line).at(-1);
+  const risk_hint=/\b(?:rpc|fetch|api|hub)\s*\(|\.rpc\s*\(/.test(prefix)?'integration':
+    /\b(?:save|update|insert|delete|sync|print|send|write)\w*\s*\(/i.test(prefix)?'mutation':'unknown_or_optional';
+  return {path:source.path,line,section:domain(source.path,'',line),
+    nearest_declaration:nearby?.name||null,risk_hint,context:surrounding.slice(-160),
+    review:'manual_context_required'};
+}));
 const suspects=functions.filter(x=>x.references<=1);
 const testOnly=suspects.filter(x=>x.test_reference_files.length);
 const summary={frontend_files:front.length,backend_files:edge.length,sql_files:sql.length,
@@ -191,6 +197,9 @@ const lines=['# Vitrine Admin - inventario estatico','',
  ...Object.entries(priorityBySignals).map(([category,count])=>'- '+category+': '+count),
  '', '## Nomes declarados repetidamente no mesmo arquivo (não provam duplicação)',
  ...sameFileNameCandidates.map(x=>'- '+x.path+' '+x.name+' ('+x.lines.join(', ')+')'),'',
+ '## Capturas de erro silenciosas (revisão contextual obrigatória)',
+ ...emptyCatchSites.map(x=>'- '+x.path+':'+x.line+' ['+x.section+'] '+x.risk_hint+' '+(x.nearest_declaration||'')),
+ '',
  '## Candidatos a verificacao',
  ...suspects.map(x=>'- '+x.path+':'+x.line+' '+x.name),
  '','O JSON registra nome, caminho, linha, referencias, sinais de efeitos e definicoes SQL.'];
