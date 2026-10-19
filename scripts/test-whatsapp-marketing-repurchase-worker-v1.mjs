@@ -8,7 +8,8 @@ assert.match(worker,/marketing_repurchase_claim_due_v1/,'worker usa fila transac
 assert.match(worker,/marketing_repurchase_validate_dispatch_v1/,'worker revalida a elegibilidade imediatamente antes do envio');
 assert.match(worker,/marketing_repurchase_finish_dispatch_v1/,'resultado do Meta deve ficar registrado na fila');
 assert.match(worker,/sendTemplateViaMeta/,'worker só envia pelo transporte oficial da Meta');
-assert.match(worker,/marketing_opt_in/,'opt-in continua exigido na revalidação do banco');
+assert.match(migration,/s\.marketing_opt_in is true/,'opt-in continua exigido na elegibilidade da fila');
+assert.match(migration,/c\.marketing_opt_in is true/,'opt-in continua revalidado no cadastro antes do envio');
 assert.match(worker,/templateVariables\(data\.template_components,data\.basket_name,data\.product_categories\)/,'variáveis usam cesta e categorias da última compra');
 assert.match(worker,/uncertain/,'envio incerto não pode ser repetido automaticamente');
 assert.match(migration,/enabled boolean not null default false/,'automação começa desligada');
