@@ -96,10 +96,10 @@
     .sheet{background:#fff;width:100%;max-height:min(88dvh,760px);border-radius:22px 22px 0 0;overflow:hidden;box-shadow:var(--shadow)}
     .sheet-inner{width:min(100%,720px);margin:auto;max-height:min(88dvh,760px);display:flex;flex-direction:column}
     .sheet-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}.sheet-head strong{font-size:18px;flex:1}.close{width:44px;height:44px;border:0;border-radius:50%;background:var(--soft);font-size:21px}
-    .sheet-scroll{padding:14px;overflow:auto;overscroll-behavior:contain}
+    .sheet-scroll{flex:1 1 auto;min-height:0;padding:14px;overflow:auto;overscroll-behavior:contain}
     .basket-hero{display:grid;grid-template-columns:100px 1fr;gap:14px;align-items:center;margin-bottom:14px}.basket-hero img{width:100px;height:100px;object-fit:contain;border:1px solid var(--line);border-radius:14px}.basket-hero h3{font-size:19px;margin:0 0 5px}.basket-total{font-size:22px;font-weight:950}
     .items{border-top:1px solid var(--line)}.item-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.item-row strong{font-size:13px}.qty{display:flex;align-items:center;gap:8px}.qty button{width:44px;height:44px;border:1px solid var(--line);background:#fff;border-radius:11px;font-size:18px;font-weight:900}.qty b{min-width:24px;text-align:center}
-    .sheet-action{padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#fff}.action-stack{display:grid;gap:8px}.primary,.secondary{width:100%;min-height:50px;border-radius:14px;font-weight:950;padding:12px}.primary{border:0;background:var(--brand);color:#fff}.secondary{border:1px solid var(--line);background:#fff;color:var(--ink)}
+    .sheet-action{flex:0 0 auto;padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#fff}.action-stack{display:grid;gap:8px}.primary,.secondary{width:100%;min-height:50px;border-radius:14px;font-weight:950;padding:12px}.primary{border:0;background:var(--brand);color:#fff}.secondary{border:1px solid var(--line);background:#fff;color:var(--ink)}
     .cart-list{display:grid;gap:11px}.cart-line{border:1px solid var(--line);border-radius:14px;padding:11px}.cart-line-top{display:flex;align-items:start;gap:10px}.cart-line-top>div:first-child{flex:1}.cart-line small{color:var(--muted)}.cart-controls{display:flex;align-items:center;justify-content:space-between;margin-top:8px}.remove{min-height:44px;border:0;background:transparent;color:#9a2231;font-weight:800;padding:8px 0}
     .composition{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:var(--soft);font-size:12px;color:#455148}.composition div+div{margin-top:4px}
     .checkout-title{margin:16px 0 8px;font-size:15px}
@@ -760,11 +760,19 @@
     // In particular, the priority Grande cards and their already-loaded images must survive
     // the transition from the priority response to the complete catalog.
     const homeSubgroupSignatures=new WeakMap();
+    const BASKET_SIZE_DISPLAY_ORDER=['grande','media','pequena','mini','economica'];
+    function homeBasketSubcategories(group){
+      const subcategories=Array.isArray(group?.subcategories)?group.subcategories:[];
+      if(String(group?.slug||'')!=='cestas-completas')return subcategories;
+      const byName=new Map();
+      for(const sub of subcategories){const key=String(sub?.name||'').trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(BASKET_SIZE_DISPLAY_ORDER.includes(key)&&!byName.has(key))byName.set(key,sub)}
+      return BASKET_SIZE_DISPLAY_ORDER.map(name=>byName.get(name)).filter(Boolean);
+    }
     function homeBasketGroupRecords(baskets,basketGroups){
       let imageIndex=0;
       return basketGroups.map(group=>({
         id:String(group.id),name:group.name,
-        subgroups:(group.subcategories||[]).map(sub=>{
+        subgroups:homeBasketSubcategories(group).map(sub=>{
           const items=baskets.filter(b=>String(b.category_id||'')===String(group.id)&&String(b.subcategory_id||'')===String(sub.id));
           const firstIndex=imageIndex;imageIndex+=items.length;
           return {
