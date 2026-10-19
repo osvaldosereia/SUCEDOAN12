@@ -5,6 +5,7 @@ on:
       - 'vitrine/admin/**'
       - 'supabase/functions/**'
       - 'scripts/audit-admin-functions.mjs'
+      - 'scripts/test-admin-edge-mirror-parity.mjs'
       - '.github/workflows/admin-full-function-inventory.yml'
   workflow_dispatch:
 permissions:
@@ -20,6 +21,7 @@ jobs:
           node-version: '22'
       - run: node scripts/audit-admin-functions.mjs artifacts/admin-function-inventory
       - run: node scripts/test-admin-function-section-inventory.mjs artifacts/admin-function-inventory
+      - run: node scripts/test-admin-edge-mirror-parity.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: admin-function-inventory
