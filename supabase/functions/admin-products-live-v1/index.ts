@@ -1600,6 +1600,15 @@ async function syncDeliveryStopBestEffort(orderId:string,status:string){
     console.error("delivery_stop_sync_failed",tx((error as Error)?.message||error,180));
   }
 }
+// Follow-up projection must not change the canonical order transition response.
+async function refreshPublicOrderSnapshotBestEffort(orderId:string){
+  try{
+    const result=await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:orderId});
+    if(result.error)console.error("order_public_snapshot_refresh_failed",tx(result.error.message,180));
+  }catch(error){
+    console.error("order_public_snapshot_refresh_failed",tx((error as Error)?.message||error,180));
+  }
+}
 async function rejectCriticalStatusBypass(p:any){
   const requested=p?.status!==undefined?uiStatus(p.status):"";
   if(requested==="out_for_delivery")return {
@@ -3775,7 +3784,7 @@ async function orderSeparationItemSet(p:any,auth:any){
       );
     }
   }
-  try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
+  await refreshPublicOrderSnapshotBestEffort(oid)
   try{await opsEvent("order.separation_item_recorded","Item da separação registrado no Supabase.","order",oid,{order_item_id:itemId,state:requested,separator_key:separator,bling_sync:blingSync,warning},assignmentQ.data?.separator_label||separator,"human","dona_antonia","order-separation-item:"+oid+":"+itemId+":"+requested+":"+String(q.data?.order_updated_at||""))}catch{}
   return {item:q.data,persisted:true,order_updated_at:orderUpdatedAt,bling_sync:blingSync,warning};
 }
@@ -3907,7 +3916,7 @@ async function orderSeparationComplete(p:any,auth:any){
     external_integrations_pending:true,
     physical_stock_launch_point:"dispatch"
   }});if(done.error)throw done.error;
-  try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
+  await refreshPublicOrderSnapshotBestEffort(oid)
 
   let customerNotification:any={attempted:true,ok:false};
   try{
@@ -3951,7 +3960,7 @@ async function completeDeliveryV3(p:any,auth:any){
   const q=await db.rpc("ops3_complete_delivery_v1",{p_order_id:oid,p_method:method,p_amount_cents:amount,p_operator_label:tx(p?.operator,80)||"Entrega",p_idempotency_key:tx(p?.idempotency_key,120)||("delivery-v3:"+oid)});
   if(q.error){const m=String(q.error.message||"");for(const code of ["invalid_payment_method","payment_total_mismatch","payment_already_captured","order_not_ready_for_delivery","separation_not_completed","delivery_return_open"]){if(m.includes(code))return {error:code,status:code.startsWith("invalid_")?400:409}}throw q.error}
   await syncDeliveryStopBestEffort(oid,"delivered")
-  try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
+  await refreshPublicOrderSnapshotBestEffort(oid)
 
   let bling_completion:any=null;
   try{
@@ -3987,7 +3996,7 @@ async function finalizeCapturedDeliveryV4(p:any,auth:any){
   const u=await db.from("orders").update({status:"delivered",delivered_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",oid).eq("status","out_for_delivery").select("id,updated_at").maybeSingle();
   if(u.error)throw u.error;if(!u.data?.id)return {error:"delivery_state_conflict",status:409};
   await syncDeliveryStopBestEffort(oid,"delivered")
-  try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
+  await refreshPublicOrderSnapshotBestEffort(oid)
   await opsEvent("order.status_changed","Pedido alterado de out_for_delivery para delivered.","order",oid,{from:"out_for_delivery",to:"delivered",canonical_action:"order_delivery_finalize_v4"},operator,"human","dona_antonia","delivery-finalize-v4:"+oid);
   let bling_completion:any=null;
   try{
