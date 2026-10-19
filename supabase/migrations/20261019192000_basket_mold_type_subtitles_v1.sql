@@ -41,7 +41,7 @@ begin
     from public.basket_mold_shared_items i where i.scope='cestas-completas'
   ),'[]'::jsonb));
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.admin_upsert_basket_mold_shared_item_v2(p_item jsonb)
@@ -134,7 +134,7 @@ begin
     where pos.label=v_label;
   return public.admin_basket_mold_shared_items_v1() || jsonb_build_object('item_id',v_id);
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.basket_mold_public_compositions_batch_v1(p_basket_ids uuid[])
