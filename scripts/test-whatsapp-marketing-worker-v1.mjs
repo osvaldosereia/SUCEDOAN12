@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {stripTypeScriptTypes} from 'node:module';
 import {sendTemplateViaMeta as sendTemplateViaMetaReal} from '../supabase/functions/_shared/whatsapp-meta-transport-v1.mjs';
+import {resolveMarketingTemplateVariables} from '../supabase/functions/_shared/marketing-template-variables-v1.mjs';
 
 const workerPath='supabase/functions/whatsapp-marketing-worker-v1/index.ts';
 const supportPath='supabase/migrations/20261005018000_marketing_campaign_worker_support_v1.sql';
@@ -98,7 +99,7 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
       if(name==='marketing_revalidate_dispatch_v1'){
         calls.revalidate.push(args);
         if(revalidate==='skip')return {data:{ok:false,error:'dispatch_skipped',skip_reason:'no_consent',dispatch_id:dispatchId},error:null};
-        return {data:{ok:true,dispatch_id:dispatchId,outbox_id:'30000000-0000-4000-8000-000000000003',whatsapp_account_id:accountId,to_phone_e164:toPhone,template_id:'40000000-0000-4000-8000-000000000004',template_name:'mktcatalogodonaantoniav1',language_code:'pt_BR',variable_values:{1:'Cliente',2:'Oferta'},mode},error:null};
+        return {data:{ok:true,dispatch_id:dispatchId,outbox_id:'30000000-0000-4000-8000-000000000003',whatsapp_account_id:accountId,to_phone_e164:toPhone,customer_name:'Maria Aparecida',template_id:'40000000-0000-4000-8000-000000000004',template_name:'mktcatalogodonaantoniav1',language_code:'pt_BR',variable_values:{1:{source:'customer_first_name',fallback:'tudo bem'},2:'Oferta'},mode},error:null};
       }
       if(name==='marketing_issue_tracking_links_v1'){
         calls.tracking.push(args);
@@ -120,7 +121,7 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
   };
 
   const env={SUPABASE_URL:'https://database.test',SUPABASE_SERVICE_ROLE_KEY:'service-role',META_WHATSAPP_ACCESS_TOKEN:'meta-token',META_WHATSAPP_GRAPH_VERSION:'v23.0'};
-  const sandbox={URL,Request,Response,console,Date,JSON,Math,Set,Array,Object,String,Number,Boolean,Promise,setTimeout,clearTimeout,createClient:()=>db,sendTemplateViaMeta,MetaTransportError,Deno:{env:{get:key=>env[key]},serve:fn=>handler=fn}};
+  const sandbox={URL,Request,Response,console,Date,JSON,Math,Set,Array,Object,String,Number,Boolean,Promise,setTimeout,clearTimeout,createClient:()=>db,sendTemplateViaMeta,MetaTransportError,resolveMarketingTemplateVariables,Deno:{env:{get:key=>env[key]},serve:fn=>handler=fn}};
   const runnable=source.replace(/^import .*;\r?\n/gm,'');
   vm.runInNewContext(stripTypeScriptTypes(runnable),sandbox);
   const invoke=async(body={limit:10})=>{
@@ -136,7 +137,7 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
   assert.equal(h.calls.accept.length,1,'sucesso deve aceitar WAMID pela RPC específica');
   assert.equal(h.calls.tracking.length,1,'worker deve consultar tracking antes do transporte');
   assert.equal(h.calls.accept[0].p_provider_message_id,'wamid.TEST_MARKETING');
-  assert.deepEqual(JSON.parse(JSON.stringify(h.calls.meta[0].components)),[{type:'body',parameters:[{type:'text',text:'Cliente'},{type:'text',text:'Oferta'}]}]);
+  assert.deepEqual(JSON.parse(JSON.stringify(h.calls.meta[0].components)),[{type:'body',parameters:[{type:'text',text:'Maria'},{type:'text',text:'Oferta'}]}]);
 }
 {
   const h=buildHarness({mode:'off'});await h.invoke();assert.equal(h.calls.meta.length,0,'mode off deve ser no-op');assert.equal(h.calls.claim.length,0,'mode off não deve claimar');
