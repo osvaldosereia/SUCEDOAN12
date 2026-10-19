@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');+'\n'+fs.readFileSync('vitrine/admin/styles/admin-main.css','utf8')
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const blingBridge=fs.readFileSync('supabase/functions/admin-service-intelligence-v1/index.ts','utf8');
 const migrationPath='supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql';
