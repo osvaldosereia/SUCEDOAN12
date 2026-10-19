@@ -2,8 +2,15 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
 const base=Deno.env.get("SUPABASE_URL")||"";
-const key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+const key=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(base,key,{auth:{persistSession:false,autoRefreshToken:false}});
+const PHOTO_BUCKET="ean-capture-unknown-photos";
+const sniffImage=(buf:Uint8Array)=>{
+ if(buf.length>=3&&buf[0]===255&&buf[1]===216&&buf[2]===255)return {contentType:"image/jpeg",ext:"jpg"};
+ if(buf.length>=8&&buf[0]===137&&buf[1]===80&&buf[2]===78&&buf[3]===71&&buf[4]===13&&buf[5]===10&&buf[6]===26&&buf[7]===10)return {contentType:"image/png",ext:"png"};
+ if(buf.length>=12&&String.fromCharCode(...buf.slice(0,4))==="RIFF"&&String.fromCharCode(...buf.slice(8,12))==="WEBP")return {contentType:"image/webp",ext:"webp"};
+ return null;
+};
 const origins=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const cors=(r:Request)=>{
   const o=r.headers.get("origin")||"";
@@ -51,13 +58,23 @@ Deno.serve(async (r:Request)=>{
     if(!actor)return reply(r,{ok:false,error:"sessao_admin_invalida"},401);
     const url=new URL(r.url);
     const action=url.searchParams.get("action")||(r.method==="GET"?"list":"add");
+    if(r.method==="GET"&&action==="photo_url"){
+      const rowId=url.searchParams.get("id")||"";
+      if(!idOk(rowId))return reply(r,{ok:false,error:"leitura_invalida"},400);
+      const selected=await db.from("ean_capture_records_v1").select("photo_path").eq("id",rowId).maybeSingle();
+      if(selected.error)throw selected.error;
+      if(!selected.data?.photo_path)return reply(r,{ok:false,error:"foto_nao_encontrada"},404);
+      const signed=await db.storage.from(PHOTO_BUCKET).createSignedUrl(selected.data.photo_path,120);
+      if(signed.error)throw signed.error;
+      return reply(r,{ok:true,url:signed.data.signedUrl});
+    }
     if(r.method==="GET"&&action==="list"){
       const limit=Math.max(1,Math.min(100,Number(url.searchParams.get("limit"))||60));
       const offset=Math.max(0,Math.min(2000000,Number(url.searchParams.get("offset"))||0));
       const filter=url.searchParams.get("filter")||"all";
       if(!["all","pending","found","not_found"].includes(filter))return reply(r,{ok:false,error:"filtro_invalido"},400);
       let query=db.from("ean_capture_records_v1")
-        .select("id,ean,quantity,expires_on,sync_status,matched_product_id,created_at,updated_at,synced_at",{count:"exact"})
+        .select("id,ean,quantity,expires_on,sync_status,matched_product_id,photo_path,photo_captured_at,created_at,updated_at,synced_at",{count:"exact"})
         .order("created_at",{ascending:false}).order("id",{ascending:false}).range(offset,offset+limit-1);
       if(filter!=="all")query=query.eq("sync_status",filter);
       const [records,stats]=await Promise.all([query,db.rpc("ean_capture_stats_v1")]);
@@ -66,6 +83,39 @@ Deno.serve(async (r:Request)=>{
         has_more:offset+(records.data||[]).length<(records.count||0)});
     }
     if(r.method!=="POST")return reply(r,{ok:false,error:"metodo_invalido"},405);
+    if(action==="photo"){
+      const form=await r.formData().catch(()=>null);
+      const recordId=String(form?.get("id")||"");
+      const file=form?.get("file");
+      if(!idOk(recordId)||!(file instanceof File)||file.size<80||file.size>5242880)
+        return reply(r,{ok:false,error:"foto_invalida_ate_5mb"},400);
+      const existing=await db.from("ean_capture_records_v1")
+        .select("id,sync_status,photo_path").eq("id",recordId).maybeSingle();
+      if(existing.error)throw existing.error;
+      if(!existing.data)return reply(r,{ok:false,error:"leitura_nao_encontrada"},404);
+      if(existing.data.sync_status!=="not_found")return reply(r,{ok:false,error:"foto_somente_para_ean_nao_encontrado"},409);
+      const bytes=new Uint8Array(await file.arrayBuffer());
+      const image=sniffImage(bytes);
+      if(!image)return reply(r,{ok:false,error:"formato_de_foto_invalido"},400);
+      const path=recordId+"/"+crypto.randomUUID()+"."+image.ext;
+      const uploaded=await db.storage.from(PHOTO_BUCKET).upload(path,bytes,{
+        contentType:image.contentType,upsert:false,cacheControl:"3600"
+      });
+      if(uploaded.error)throw uploaded.error;
+      const saved=await db.from("ean_capture_records_v1")
+       .update({photo_path:path,photo_captured_at:new Date().toISOString(),updated_at:new Date().toISOString()})
+       .eq("id",recordId).eq("sync_status","not_found")
+       .select("id,ean,quantity,expires_on,sync_status,matched_product_id,photo_path,photo_captured_at,created_at,updated_at,synced_at")
+       .maybeSingle();
+      if(saved.error||!saved.data){
+        await db.storage.from(PHOTO_BUCKET).remove([path]).catch(()=>{});
+        if(saved.error)throw saved.error;
+        return reply(r,{ok:false,error:"leitura_nao_encontrada_ou_sincronizada"},409);
+      }
+      if(existing.data.photo_path&&existing.data.photo_path!==path)
+       await db.storage.from(PHOTO_BUCKET).remove([existing.data.photo_path]).catch(()=>{});
+      return reply(r,{ok:true,row:saved.data});
+    }
     const input=await r.json().catch(()=>null);
     if(!input||typeof input!=="object"||Array.isArray(input))return reply(r,{ok:false,error:"dados_invalidos"},400);
     if(action==="add"){
@@ -97,6 +147,13 @@ Deno.serve(async (r:Request)=>{
       if(edited.error)throw edited.error;
       if(!edited.data)return reply(r,{ok:false,error:"leitura_nao_encontrada"},404);
       return reply(r,{ok:true,row:edited.data});
+    }
+    if(action==="sync_one"){
+      if(!idOk(input.id))return reply(r,{ok:false,error:"leitura_invalida"},400);
+      const synced=await db.rpc("ean_capture_sync_one_v1",{p_capture_id:input.id});
+      if(synced.error)throw synced.error;
+      if(synced.data?.ok!==true)return reply(r,{ok:false,error:synced.data?.error||"leitura_nao_encontrada"},404);
+      return reply(r,synced.data);
     }
     if(action==="sync"){
       const synced=await db.rpc("ean_capture_sync_v1");
