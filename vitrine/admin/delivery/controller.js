@@ -173,7 +173,7 @@
     const amount=Number(parts[0]?.amount_cents||0);
     if(!method||amount!==Number(o.total_cents||0))throw new Error('delivery_already_captured_requires_canonical_review');
     await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,method,amount_cents:amount,operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+o.id})});
-    const data=await api('orders');orders.set(data.orders||[]);paintExpeditionBody();
+    const data=await api('orders');orders.set(data.orders||[]);if(navigation.currentTab()==='driver')paintDriverQueue();else paintExpeditionBody();
   }
   async function captureDeliveryPaymentAndFinish(){
     const d=state.deliveryPaymentDraft;if(!d)return;
@@ -191,7 +191,7 @@
         await api('order_payment_capture',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,parts,operator})});
         await api('order_delivery_finalize_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,operator,idempotency_key:'delivery-finalize-v4:'+d.order.id})});
       }
-      const data=await api('orders');orders.set(data.orders||[]);paintExpeditionBody();
+      const data=await api('orders');orders.set(data.orders||[]);if(navigation.currentTab()==='driver')paintDriverQueue();else paintExpeditionBody();
       $('#editor').close();state.deliveryPaymentDraft=null;
       toast('Entrega e pagamento registrados');
     }catch(e){
@@ -582,6 +582,7 @@
       orders.set(data.orders||[]);paintDriverQueue();
     }catch(e){
       if(!isCurrent())return;
+      const toolbar=$('#driverRouteToolbar');if(toolbar)toolbar.innerHTML='';
       host.innerHTML='<div class="empty">Não consegui carregar as entregas. <button class="text" id="retryDriver">Tentar novamente</button></div>';
       if($('#retryDriver'))$('#retryDriver').onclick=loadDriverQueue;
     }

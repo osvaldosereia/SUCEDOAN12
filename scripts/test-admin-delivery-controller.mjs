@@ -60,4 +60,16 @@ const noRoutes=()=>({delivery:{runs:[],catalog:{regions:[],drivers:[],vehicles:[
   assert.match(fixture.nodes.get('#driverRouteToolbar').innerHTML,/New driver/);
   assert.ok(!fixture.nodes.get('#driverRouteToolbar').innerHTML.includes('Old driver'));
 }
+// Completing a delivery from the driver view must immediately remove its card.
+{
+  let delivered=false;
+  const fixture=deliveryFixture(async action=>{
+    if(action==='ops_delivery_runs')return {delivery:{runs:[]}};
+    if(action==='order_delivery_complete_v3'){delivered=true;return {ok:true}}
+    assert.equal(action,'orders');return {orders:[{id:'finish-me',status:delivered?'delivered':'out_for_delivery',total_cents:1200,payment_method_snapshot:{actual:{received:true,parts:[{method:'pix',amount_cents:1200}]}}}]};
+  },'driver');
+  await fixture.controller.renderDriver();
+  await fixture.nodes.get('#driverQueue').querySelectorAll('[data-driver-delivered]')[0].onclick();
+  assert.match(fixture.nodes.get('#driverQueue').innerHTML,/Nenhuma entrega em rota/,'completed driver delivery must repaint its current queue');
+}
 console.log('Admin delivery controller: PASS');
