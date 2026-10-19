@@ -12,12 +12,37 @@ function walk(dir){
     return e.isDirectory()?walk(rel(p)):e.isFile()?[p]:[];
   });
 }
-const front=walk('vitrine/admin').filter(p=>/\.(js|html)$/.test(p));
+const front=walk('vitrine/admin').filter(p=>/\.(js|html)$/.test(p)&&!p.includes('/runtime-parts/'));
 const edge=walk('supabase/functions').filter(p=>/\.(mjs|ts)$/.test(p));
 const sql=walk('supabase/migrations').concat(walk('supabase/sql')).filter(p=>/\.sql$/.test(p));
 const sources=[...front,...edge].map(p=>({path:rel(p),text:fs.readFileSync(p,'utf8')}));
+// Map the generated IIFE back to its ordered source-domain fragments.
+// Source fragments are not standalone programs and must never be double-counted.
+const partitionDomains={
+  '00-bootstrap-navigation':'Central','01-central':'Central','02-expedition':'Expedição',
+  '03-delivery':'Entregador','04-closure':'Fechamento','05-finance':'Financeiro',
+  '06-baskets-products':'Produtos','07-expiration-balance':'Validades',
+  '08-inventory-sheet':'Balanço','09-balance-gondolas':'Gôndolas',
+  '10-purchase-finance':'Compras/XML','11-purchase-catalog':'Compras/XML',
+  '12-xml-import':'Compras/XML','13-bling-integration':'Bling técnico',
+  '14-customer-profile':'Clientes','15-manual-orders':'Pedidos',
+  '16-orders-operations':'Pedidos','17-fiscal-danfe':'Pedidos',
+  '18-order-editing':'Pedidos','19-printing-startup':'Pedidos'
+};
+const fragmentPaths=walk('vitrine/admin/runtime-parts').filter(p=>p.endsWith('.part.js')).sort();
+let runtimeStartLine=1;
+const runtimeSections=fragmentPaths.map(p=>{
+  const basename=path.basename(p,'.part.js');
+  const content=fs.readFileSync(p,'utf8');
+  const start=runtimeStartLine;
+  runtimeStartLine+=(content.match(/\\n/g)||[]).length;
+  return {start,end:runtimeStartLine,section:partitionDomains[basename]||'Infraestrutura compartilhada'};
+});
 const sections=['Central','Atendimento','ANA','Pedidos','Expedição','Entregador','Fechamento','Produtos','Cestas','Validades','Orçamentos','Clientes','Marketing','Compras/XML','Balanço','Gôndolas','Financeiro','Bling técnico','Infraestrutura compartilhada'];
 function domain(file,name,line){
+  if(file==='vitrine/admin/admin-runtime.js'&&runtimeSections.length){
+    return runtimeSections.find(part=>line>=part.start&&line<=part.end)?.section||'Infraestrutura compartilhada';
+  }
   if(file.includes('/atendimento/'))return 'Atendimento';
   if(file.includes('/ana/'))return 'ANA';
   if(file.includes('/marketing/'))return 'Marketing';
@@ -124,6 +149,7 @@ const suspects=functions.filter(x=>x.references<=1);
 const testOnly=suspects.filter(x=>x.test_reference_files.length);
 const summary={frontend_files:front.length,backend_files:edge.length,sql_files:sql.length,
  named_functions_and_arrows:functions.length,lexical_single_occurrence:suspects.length,lexical_single_occurrence_mentioned_by_tests:testOnly.length,
+ runtime_source_fragments:fragmentPaths.length,
  identical_file_groups:identical.length,empty_catches:emptyCatch.reduce((n,x)=>n+x.count,0)};
 const result={method:'Static heuristic, not proof of runtime use or dead code',summary,sections:bySection,
  functions,suspects,identical_files:identical,empty_catches:emptyCatch,sql_definitions:sqlFunctions};
