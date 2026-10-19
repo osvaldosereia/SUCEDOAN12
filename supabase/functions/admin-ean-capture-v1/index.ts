@@ -32,13 +32,13 @@ const qty=(x:unknown)=>{
 };
 async function withProductNames(rows:Record<string,unknown>[]){
   const ids=[...new Set(rows.map(row=>String(row.matched_product_id||"")).filter(idOk))];
-  const names=new Map<string,string>();
+  const names=new Map<string,string>(),images=new Map<string,string>();
   if(ids.length){
-    const products=await db.from("products").select("id,name").in("id",ids);
+    const products=await db.from("products").select("id,name,image_url").in("id",ids);
     if(products.error)throw products.error;
-    for(const product of products.data||[])names.set(String(product.id),String(product.name||""));
+    for(const product of products.data||[]){names.set(String(product.id),String(product.name||""));if(product.image_url)images.set(String(product.id),String(product.image_url));}
   }
-  return rows.map(row=>({...row,product_name:names.get(String(row.matched_product_id||""))||null}));
+  return rows.map(row=>({...row,product_name:names.get(String(row.matched_product_id||""))||null,product_image_url:images.get(String(row.matched_product_id||""))||null}));
 }
 async function withProductNamesOnRow(payload:Record<string,unknown>){
   if(payload&&payload.row&&typeof payload.row==="object"&&!Array.isArray(payload.row)){
