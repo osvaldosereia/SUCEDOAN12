@@ -29,7 +29,7 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
 {
  const host={innerHTML:''},state={tab:'purchases',purchaseFilter:{period:'this_month'},purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false};
  const waits=[],paint=[];const api=action=>{if(action==='bling_received_review_status')return Promise.resolve({ok:true});assert.equal(action,'summary');const d=deferred();waits.push(d);return d.promise};
- const loadPurchases=new Function('state','$','purchaseCustomRangeReady','esc','purchasePeriodLabel','purchaseFilterPayload','purchaseApi','paintBlingReceivedReview','paintPurchases','queueMicrotask',part('  let purchasesLoadGeneration=0;','  async function loadPurchaseAdvanced')+';return loadPurchases')(state,x=>x==='#purchaseBody'?host:null,()=>true,x=>x,()=>'',()=>({period:'this_month'}),api,()=>paint.push('review'),()=>paint.push('list'),queueMicrotask);
+ const loadPurchases=new Function('state','$','purchaseCustomRangeReady','esc','purchasePeriodLabel','purchaseFilterPayload','purchaseApi','paintBlingReceivedReview','paintPurchases','queueMicrotask','let purchaseBlingCompareGeneration=0;\n'+part('  let purchasesLoadGeneration=0;','  async function loadPurchaseAdvanced')+';return loadPurchases')(state,x=>x==='#purchaseBody'?host:null,()=>true,x=>x,()=>'',()=>({period:'this_month'}),api,()=>paint.push('review'),()=>paint.push('list'),queueMicrotask);
  const old=loadPurchases(),now=loadPurchases();
  waits[1].resolve({documents:[{id:'now'}]});await now;
  waits[0].resolve({documents:[{id:'old'}]});await old;
