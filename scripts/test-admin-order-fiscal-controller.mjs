@@ -41,8 +41,17 @@ function fixture(api){
  assert.deepEqual(f.opened,[],'old dispatch completion must not reopen its order over B');
 }
 {
- const d=deferred(),f=fixture(()=>d.promise);const pending=f.controller.loadCurrentOrderBlingPreview();
- f.show('b');d.resolve({write_eligible:true});await pending;
- assert.equal(f.session.preview,null);assert.deepEqual(f.paints,[]);
+ const status=[],issue=deferred();const f=fixture(action=>{if(action==='order_fiscal_issue_v4')return issue.promise;const d=deferred();status.push(d);return d.promise});
+ const pending=f.controller.executeCurrentOrderFiscalCanary();issue.resolve({fiscal:{stage:'processing'}});
+ await new Promise(resolve=>setImmediate(resolve));
+ const latest=f.controller.loadCurrentOrderFiscal();status[1].resolve({authorized:true,stage:'authorized'});await latest;
+ status[0].resolve({stage:'blocked'});await pending;
+ assert.equal(f.session.fiscal.stage,'authorized','post-issue refresh must not overwrite a newer fiscal read');
+ assert.equal(f.cache.a.stage,'authorized');
+}
+{
+ const f=fixture(async()=>{throw Error('offline')});f.session.fiscal={authorized:true};
+ await f.controller.startCurrentOrderDispatchV4();
+ assert.deepEqual(f.paints,[],'failed dispatch must preserve unsaved editor fields');
 }
 console.log('Admin order fiscal isolation and duplicate mutations: PASS');

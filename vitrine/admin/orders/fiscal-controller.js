@@ -2,9 +2,9 @@
 (function(global){
   function create({api,session,cache,ui,formatters,orderView,view}){
     const {query:$,confirm,toast,currentOperator}=ui;
-    const {esc,dateTime,money,errorMessage}=formatters;
+    const {esc,dateTime,errorMessage}=formatters;
     const {orderDisplayCode}=orderView;
-    const busy=new Set(),feedback=new Map(),versions=new Map();
+    const busy=new Set(),feedbackByOrder=new Map(),versions=new Map();
     const post=(action,payload)=>api(action,{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     function publish(id,fiscal,token){
       versions.set(id,(versions.get(id)||0)+1);
@@ -20,6 +20,12 @@
       try{fiscal=await post('order_fiscal_status',{id})}
       catch(error){fiscal={error:String(error?.message||'fiscal_unavailable')}}
       if(versions.get(id)===version&&cache()===target&&target[id]===initial)target[id]=fiscal;
+      return cache()[id]!==initial&&cache()[id]!=null?cache()[id]:fiscal;
+    }
+    async function refreshFiscal(id,token){
+      const ticket=session.isCurrent(token)?session.request('fiscal'):null;
+      const fiscal=await readFiscal(id);
+      if(ticket&&session.accepts(ticket))session.fiscal=fiscal;
       return fiscal;
     }
     async function loadCurrentOrderFiscal(repaint=true){
@@ -30,20 +36,11 @@
       if(repaint)view.paint();
       return fiscal;
     }
-    async function loadCurrentOrderBlingPreview(repaint=true){
-      const id=session.detail?.order?.id;if(!id)return;
-      const ticket=session.request('preview');let preview;
-      try{preview=await post('bling_preview_order_sync',{id})}
-      catch(error){preview={error:String(error?.message||'bling_preview_unavailable')}}
-      if(!session.accepts(ticket))return;
-      session.preview=preview;
-      if(repaint)view.paint();
-    }
-    async function withOrder(action){
+    async function withOrder(action,{paintStart=true,paintEnd=true}={}){
       const order=session.detail?.order;if(!order||busy.has(String(order.id)))return;
-      const id=String(order.id),token=session.capture();busy.add(id);view.paint();
+      const id=String(order.id),token=session.capture();busy.add(id);if(paintStart)view.paint();
       try{return await action(order,token)}
-      finally{busy.delete(id);if(session.isCurrent(token))view.paint()}
+      finally{busy.delete(id);if(paintEnd&&session.isCurrent(token))view.paint()}
     }
     async function recoverCurrentOrderBling(){
       const order=session.detail?.order;
@@ -53,14 +50,13 @@
         try{
           const result=await post('order_fiscal_recover_bling_v1',{id:o.id,operator:currentOperator()||'Operação'});
           publish(o.id,result.fiscal||null,token);
-          feedback.set(String(o.id),'Venda no Bling recuperada e confirmada como Verificado. '+(result.fiscal?.can_issue?'A NF-e está liberada para tentativa manual.':result.fiscal?.authorized?'NF-e já autorizada.':'Consulte a situação fiscal antes de prosseguir.'));
+          feedbackByOrder.set(String(o.id),'Venda no Bling recuperada e confirmada como Verificado. '+(result.fiscal?.can_issue?'A NF-e está liberada para tentativa manual.':result.fiscal?.authorized?'NF-e já autorizada.':'Consulte a situação fiscal antes de prosseguir.'));
           toast('Venda recuperada no Bling · confira a NF-e');
         }catch(error){
-          feedback.set(String(o.id),'Falha na recuperação: '+fiscalBlockReasonLabel(error?.message||'bling_recovery_failed')+'. Os itens separados foram preservados.');
-          toast(feedback.get(String(o.id)));
+          feedbackByOrder.set(String(o.id),'Falha na recuperação: '+fiscalBlockReasonLabel(error?.message||'bling_recovery_failed')+'. Os itens separados foram preservados.');
+          toast(feedbackByOrder.get(String(o.id)));
         }finally{
-          const fiscal=await readFiscal(o.id);
-          if(session.isCurrent(token))session.fiscal=fiscal;
+          await refreshFiscal(o.id,token);
         }
       });
     }
@@ -69,15 +65,15 @@
         try{
           const result=await post('order_fiscal_recheck_v1',{id:o.id}),f=result.fiscal||{},reason=result.reconcile?.reason||'';
           publish(o.id,result.fiscal||null,token);
-          feedback.set(String(o.id),f.authorized?'Nota autorizada pela SEFAZ.'
+          feedbackByOrder.set(String(o.id),f.authorized?'Nota autorizada pela SEFAZ.'
             :f.invoice_id?'Nota '+(f.invoice_number||f.invoice_id)+' encontrada; situação: '+(f.sefaz_status||f.stage||'pendente')+'.'
             :reason==='invoice_not_found'?'Consulta concluída: nenhuma NF-e encontrada no Bling para esta venda.'
             :reason==='fiscal_dispatch_not_eligible'?'Consulta concluída: ainda existe bloqueio de vínculo ou de verificação da venda.'
             :'Consulta concluída: '+(f.stage||'pendente')+'. Nenhuma NF-e foi enviada nesta consulta.');
-          toast(feedback.get(String(o.id)));
+          toast(feedbackByOrder.get(String(o.id)));
         }catch(error){
-          feedback.set(String(o.id),'Não foi possível consultar o Bling: '+fiscalBlockReasonLabel(error?.message||'fiscal_status_unavailable'));
-          toast(feedback.get(String(o.id)));
+          feedbackByOrder.set(String(o.id),'Não foi possível consultar o Bling: '+fiscalBlockReasonLabel(error?.message||'fiscal_status_unavailable'));
+          toast(feedbackByOrder.get(String(o.id)));
         }
       });
     }
@@ -85,32 +81,34 @@
       const order=session.detail?.order;if(!order||order.status!=='ready'||busy.has(String(order.id)))return;
       if(session.fiscal?.can_issue!==true){toast('A NF-e ainda não está liberada para emissão');return}
       if(!confirm('EMITIR NF-e do pedido #'+orderDisplayCode(order)+' agora?\n\nA emissão será enviada ao Bling/SEFAZ.'))return;
+      const btn=$('#executeFiscalCanary');if(btn){btn.disabled=true;btn.textContent='EMITINDO NF-e…'}
       return withOrder(async(o,token)=>{
         try{
           const result=await post('order_fiscal_issue_v4',{id:o.id,confirmation:'EMITIR_NFE',operator:currentOperator()||'Operação'});
           const fiscal=result.fiscal||result;publish(o.id,fiscal,token);
           toast(fiscal?.authorized?'NF-e autorizada':fiscal?.stage==='rejected'?'NF-e rejeitada · consulte a situação fiscal':result.requires_reconciliation?'Resultado da emissão ainda não confirmado · reconsulte antes de tentar novamente':'Solicitação enviada ao Bling · aguardando confirmação');
-          const fresh=await readFiscal(o.id);if(session.isCurrent(token))session.fiscal=fresh;
+          await refreshFiscal(o.id,token);
         }catch(error){
-          const current=await readFiscal(o.id);if(session.isCurrent(token))session.fiscal=current;
+          const current=await refreshFiscal(o.id,token);
           const job=current.provider?.job||{},reason=job.error_detail||job.error_code||error?.message||'fiscal_issue_failed';
           const uncertain=(current.blockers||[]).includes('invoice_generation_recovery_required')||['generating','authorizing'].includes(String(job.status||''))||/uncertain|timeout|result.*unknown|resultado.*incerto/i.test(String(reason||''));
           toast(current.authorized?'NF-e autorizada após reconciliação':uncertain?'Resultado fiscal incerto · reconsulte/reconcilie a NF-e antes de tentar outra emissão':'Emissão fiscal não confirmada · '+fiscalBlockReasonLabel(reason));
         }
-      });
+      },{paintStart:false});
     }
     async function startCurrentOrderDispatchV4(){
       const order=session.detail?.order;if(!order||order.status!=='ready'||busy.has(String(order.id)))return;
       const fiscal=session.fiscal||{};
       if(fiscal.authorized!==true&&fiscal.stage!=='authorized'){toast('A NF-e precisa estar autorizada antes da saída');return}
       if(!confirm('Confirmar que o pedido #'+orderDisplayCode(order)+' SAIU PARA ENTREGA?'))return;
+      const btn=$('#startDispatchV4');if(btn){btn.disabled=true;btn.textContent='REGISTRANDO SAÍDA…'}
       return withOrder(async(o,token)=>{
         try{
           await post('order_dispatch_start_v4',{id:o.id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+o.id});
           toast('Saída para entrega registrada');delete cache()[o.id];
           await view.refreshList();if(session.isCurrent(token))await view.open(o.id);
-        }catch(error){toast(errorMessage(error.message))}
-      });
+        }catch(error){toast(errorMessage(error.message));if(session.isCurrent(token)&&btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
+      },{paintStart:false,paintEnd:false});
     }
     function openCurrentDanfe(){
       const o=session.detail?.order;if(!o)return;
@@ -197,8 +195,8 @@
   }
   function fiscalCanaryActionHtml(f,o){
     if(!o||!['ready','out_for_delivery','delivered'].includes(o.status))return '';
-    const busy=busy.has(String(o.id)),disabled=busy?' disabled':'';
-    const latest=feedback.get(String(o.id))||'';
+    const isBusy=busy.has(String(o.id)),disabled=isBusy?' disabled':'';
+    const latest=feedbackByOrder.get(String(o.id))||'';
     const feedback=latest?'<div class="rule-notice" role="status" style="margin-top:8px"><strong>Última consulta / tentativa</strong><div>'+esc(latest)+'</div></div>':'';
     const check='<button class="secondary" id="refreshFiscalCanary" type="button"'+disabled+'>CONSULTAR BLING / NF-e</button>';
     if(o.status!=='ready')return feedback+(o.status==='out_for_delivery'?'<div class="rule-notice"><strong>SAIU PARA ENTREGA</strong><div>NF-e deve estar autorizada antes da expedição.</div></div>':'')+'<div class="print-actions">'+check+'</div>';
@@ -213,7 +211,7 @@
       :invoiceId?'<div class="muted" style="margin-top:8px">NF-e localizada no Bling. Consulte primeiro a situação antes de tentar autorizar; o sistema impede o reenvio quando a transmissão já está em andamento.</div>':'';
     return feedback+explanation+'<div class="print-actions" style="margin-top:8px">'+recover+issue+check+'</div>';
   }
-    return Object.freeze({loadCurrentOrderFiscal,loadCurrentOrderBlingPreview,recoverCurrentOrderBling,recheckCurrentOrderFiscal,executeCurrentOrderFiscalCanary,startCurrentOrderDispatchV4,openCurrentDanfe,orderFiscalHtml,fiscalCanaryActionHtml,fiscalBlockReasonLabel});
+    return Object.freeze({loadCurrentOrderFiscal,recoverCurrentOrderBling,recheckCurrentOrderFiscal,executeCurrentOrderFiscalCanary,startCurrentOrderDispatchV4,openCurrentDanfe,orderFiscalHtml,fiscalCanaryActionHtml,fiscalBlockReasonLabel});
   }
   global.DonaAntoniaAdminOrderFiscal=Object.freeze({create});
 })(window);

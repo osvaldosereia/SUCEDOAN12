@@ -4,10 +4,24 @@
     const field=name=>query('#orderDelivery'+name)?.value||'';
     return {customer_name:field('Name'),phone:field('Phone'),postal_code:field('PostalCode'),street:field('Street'),number:field('Number'),district:field('District'),complement:field('Complement'),city:field('City'),state:field('State'),raw_text:field('RawText')};
   }
-  function create({api,session,ui,errorMessage,view,editablePayload}){
+  function create({api,session,ui,errorMessage,view,customers}){
     const {query:$,toast,confirm,prompt,currentOperator}=ui;
     const writes=new Set();
     const post=payload=>api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    function currentOrderEditablePayload(status){
+      const order=session.detail?.order||{};
+      const currentCustomer=session.detail?.customer||{};
+      const currentCustomerId=currentCustomer.source_customer_id||order.delivery_address_snapshot?.source_customer_id||order.customer_id||'';
+      const id=order.id;
+      const selectedId=$('#orderCustomer')?.value||'';
+      const selectedCustomer=customers.get().find(c=>c.id===selectedId)||null;
+      const payload={id,payment_method:$('#orderPayment')?.value||''};
+      if(selectedCustomer)payload.customer_snapshot=selectedCustomer;
+      else if(!currentCustomerId)payload.customer_snapshot=null;
+      if($('#orderDeliveryStreet'))payload.delivery_address=readDeliveryAddress($);
+      if(status)payload.status=status;
+      return payload;
+    }
     async function openOrder(id){
       const token=session.begin(id),editor=$('#editor'),title=$('#editorTitle'),body=$('#editorBody');
       title.textContent='Pedido';body.innerHTML='<div class="loading">Carregando pedido…</div>';
@@ -54,9 +68,19 @@
       const note=String(noteInput||'').trim();
       const message=linked?'Cancelar este pedido por "'+reason+'"?\n\nO estoque reservado será devolvido quando aplicável. Como o pedido já está vinculado ao Bling, qualquer situação que não puder ser atualizada automaticamente ficará registrada para revisão.':'Cancelar este pedido por "'+reason+'"? O estoque reservado será devolvido quando aplicável.';
       if(!confirm(message))return;
-      return update({...editablePayload('cancelled'),cancellation_reason:reason,cancellation_note:note},linked?'Pedido cancelado · Bling será conferido':'Pedido cancelado',$('#cancelOrderV3'));
+      return update({...currentOrderEditablePayload('cancelled'),cancellation_reason:reason,cancellation_note:note},linked?'Pedido cancelado · Bling será conferido':'Pedido cancelado',$('#cancelOrderV3'));
     }
-    return Object.freeze({openOrder,saveOrderV3,cancelCurrentOrder});
+    async function reopenOrderV3(id){
+      if(writes.has(String(id))||!confirm('Reabrir este pedido para edição? A reserva será liberada.'))return;
+      const token=session.capture();writes.add(String(id));
+      try{
+        await api('order_reopen_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Operação'})});
+        toast('Pedido reaberto');await view.refreshList();
+        if(session.isCurrent(token))await openOrder(id);
+      }catch(error){toast(errorMessage(error.message))}
+      finally{writes.delete(String(id))}
+    }
+    return Object.freeze({openOrder,saveOrderV3,cancelCurrentOrder,reopenOrderV3});
   }
   global.DonaAntoniaAdminOrderDetail=Object.freeze({create,readDeliveryAddress});
 })(window);

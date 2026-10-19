@@ -6,13 +6,11 @@ const sql=fs.readFileSync('supabase/sql/20260930191500_ops2_customer_registratio
 const between=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j)};
 const history=between(html,'  async function loadCustomerHistory(','\n  function paintCustomerProfile(');
 const order=between(html,'  async function openCustomerHistoryOrder(','\n  function paintCustomerHistoryOrder(');
-const retry=between(html,'  async function retryHistorySync(','\n  function orderActionButtonsHtml(');
 const customer=between(edge,'async function ensureOrderCustomer(','async function createOrderProducts(');
 for(const p of [/vitrine_customer_history/,/limit:20,offset/,/requestSeq===state\.customerHistoryRequestSeq/,/state\.customerProfile\?\.customer\?\.id===customerId/,/next_offset/,/paintCustomerProfile/])assert.match(history,p);
 assert.match(order,/vitrine_customer_order_detail/);
 assert.match(order,/customer_id:customerId,order_id:orderId/);
-assert.match(retry,/history_sync_retry/);
-assert.match(retry,/loadOrders\(\)/);
+assert.match(edge,/a==="history_sync_retry"/,'backend history retry is preserved after private dead UI handler removal');
 assert.match(customer,/customer_missing_bling_contact_id/);
 assert.match(customer,/ensure_customer_now/);
 assert.match(sql,/customer_id/i);

@@ -28,8 +28,4 @@ const html=panel.createPrintQueuePanel({opsPrintQueue:{jobs:[{status:'pending',e
 assert.match(html,/Aguardando/);
 assert.doesNotMatch(html,/data-print-order="1"/);
 assert.match(html,/Separação/);
-const buttons=load('vitrine/admin/orders/action-buttons.js','DonaAntoniaAdminOrderActionButtons')
-  .createOrderActionButtonsHtml({orderProblemReasons:()=>[],orderNextAction:()=> 'Conferir',esc:String});
-assert.match(buttons({status:'confirmed'},null),/startSeparation/);
-assert.match(buttons({status:'confirmed',payment_method_snapshot:{stock_consumed:true}},null),/Continuar separação/);
 console.log('Admin operational module defensive contracts: PASS');

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/fiscal-controller.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/detail-controller.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/documents.js','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/detail-view.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/fiscal-controller.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/detail-controller.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/documents.js','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const blingBridge=fs.readFileSync('supabase/functions/admin-service-intelligence-v1/index.ts','utf8');
 const migrationPath='supabase/migrations/20261005010000_orders_fiscal_flow_v4.sql';
@@ -74,10 +74,11 @@ assert.match(admin,/\.order-v3-tag\.warn\s*\{/,'Estado fiscal de atenção preci
 assert.match(admin,/\.order-v3-tag\.danger\s*\{/,'NF-e rejeitada precisa de estilo visual de perigo próprio');
 assert.match(admin,/\.order-v3-tag\.ok\s*\{/,'NF-e autorizada precisa de estilo visual de sucesso próprio');
 
-const detailStart=admin.indexOf('function paintOrderDetail(){');
-const detailEnd=admin.indexOf('\n  function blingPreflightOperationalBlockers',detailStart);
+const detailView=fs.readFileSync('vitrine/admin/orders/detail-view.js','utf8');
+const detailStart=detailView.indexOf('function paintOrderDetail(){');
+const detailEnd=detailView.indexOf('    return Object.freeze(',detailStart);
 assert.ok(detailStart>=0&&detailEnd>detailStart,'Teste precisa localizar o pedido aberto canônico');
-const detailBlock=admin.slice(detailStart,detailEnd);
+const detailBlock=detailView.slice(detailStart,detailEnd);
 assert.match(detailBlock,/\['ready','out_for_delivery','delivered'\]\.includes\(o\.status\)[\s\S]*orderFiscalHtml/,'Pedido aberto deve mostrar Fiscal / NF-e desde SEPARADO/ready');
 assert.doesNotMatch(detailBlock,/milestones\.separated&&!milestones\.delivered&&!milestones\.cancelled[\s\S]{0,240}deliverOrderV3/,'Pedido SEPARADO ainda não pode oferecer CONFIRMAR ENTREGA antes da saída');
 assert.match(detailBlock,/o\.status==='out_for_delivery'[\s\S]{0,420}deliverOrderV3/,'CONFIRMAR ENTREGA só deve aparecer depois de SAIU PARA ENTREGA');

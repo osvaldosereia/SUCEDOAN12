@@ -11,7 +11,7 @@
   const {esc,money,cents,fmtQty,dateTime,dateOnly,normalize}=window.DonaAntoniaAdminFormatters;
   const {orderDisplayCode,phoneDigits,formatPhone,formatCpf}=window.DonaAntoniaAdminIdentifiers;
   const {errorMessage}=window.DonaAntoniaAdminErrors;
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],orders:[],balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderFocusIssue:null,fiscalByOrder:{},closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],orders:[],balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null};
   const orderSession=window.DonaAntoniaAdminOrderSession.create({isOpen:()=>$('#editor')?.open&&$('#editorTitle')?.textContent==='Pedido'});
   const {load:loadFiscalForOrders}=window.DonaAntoniaAdminFiscalLoader.create({api,getCache:()=>state.fiscalByOrder});
   function toast(msg){
@@ -5392,7 +5392,7 @@
   const {deliveryMethodV3,deliveryMethodOptionsV3,orderV3PaymentOptions}=window.DonaAntoniaAdminOrderPaymentMethod.create(normalize);
   async function openOrderDeliveryConfirm(id){let order=state.orders.find(o=>String(o.id)===String(id));if(!order){await loadOrders();order=state.orders.find(o=>String(o.id)===String(id))}if(order&&orderCustomerDataPending(order)){toast('Complete os dados essenciais do cliente antes da entrega');return}if(!order||order.status!=='out_for_delivery'||orderV3Milestones(order).delivered){toast('O pedido precisa ter SAÍDO PARA ENTREGA antes da confirmação');return}const planned=order.payment_method_snapshot?.label||order.payment_method_snapshot?.method||'A confirmar',method=deliveryMethodV3(order.payment_method_snapshot?.method||planned);const dlg=document.createElement('dialog');dlg.className='delivery-v3-dialog';dlg.innerHTML='<div class="delivery-v3-body"><h2>Confirmar entrega</h2><div class="muted">Pedido #'+esc(orderDisplayCode(order))+'</div><div class="delivery-v3-grid"><label><span>Forma prevista</span><input value="'+esc(planned)+'" readonly></label><label><span>Forma recebida</span><select id="deliveryV3Method">'+deliveryMethodOptionsV3(method)+'</select></label><label><span>Valor recebido</span><input value="'+esc(money(order.total_cents||0))+'" readonly></label></div></div><div class="delivery-v3-actions"><button class="delivery-v3-cancel" type="button">Cancelar</button><button class="delivery-v3-confirm" type="button">CONFIRMAR ENTREGA</button></div>';document.body.appendChild(dlg);const close=()=>{dlg.close();dlg.remove()};dlg.querySelector('.delivery-v3-cancel').onclick=close;dlg.querySelector('.delivery-v3-confirm').onclick=async()=>{const btn=dlg.querySelector('.delivery-v3-confirm');btn.disabled=true;btn.textContent='CONFIRMANDO…';try{await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,method:dlg.querySelector('#deliveryV3Method').value,amount_cents:Number(order.total_cents||0),operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+id})});toast('Entrega e recebimento confirmados');close();await loadOrders();if(orderSession.detail?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='CONFIRMAR ENTREGA'}};dlg.showModal()}
   async function sendOrderCustomerVitrineV3(id,btn){const access=String(sessionStorage.getItem('da_finance_access_token_v1')||'').trim();if(!access){toast('Sua sessão do Admin expirou');return}if(btn){btn.disabled=true;btn.textContent='ENVIANDO…'}try{const response=await fetch('https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-order-vitrine-send-v1',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+access},body:JSON.stringify({order_id:id,request_id:(crypto.randomUUID?.()||String(Date.now())).replace(/[^A-Za-z0-9-]/g,'').slice(0,80)})}),data=await response.json().catch(()=>({}));if(!response.ok||data?.ok===false)throw new Error(data?.error||'vitrine_send_failed');toast('Vitrine enviada ao cliente pelo WhatsApp '+(String(data.channel_phone_e164||'').replace(/\D/g,'').endsWith('1018')?'1018':'0975'))}catch(e){toast(e.message==='conversation_not_found'||e.message==='channel_unavailable'?'Não encontrei com segurança a conversa 0975/1018 deste pedido.':errorMessage(e.message))}finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='VITRINE CLIENTE'}}}
-  async function reopenOrderV3(id){if(!confirm('Reabrir este pedido para edição? A reserva será liberada.'))return;try{await api('order_reopen_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Operação'})});toast('Pedido reaberto para edição');await loadOrders();await openOrder(id)}catch(e){toast(errorMessage(e.message))}}
+  function reopenOrderV3(id){return orderDetailController.reopenOrderV3(id)}
 
   function publicOrderUrlFor(o){const short=String(o?.public_order_url||'').trim();if(/^https:\/\/donaantonia\.com\.br\/p\/\?k=[a-f0-9]{16}$/i.test(short))return short;const id=String(o?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}
   function orderPublicVitrineHtml(o){
@@ -5441,33 +5441,14 @@
   function openOrder(id){return orderDetailController.openOrder(id)}
   function saveOrderV3(){return orderDetailController.saveOrderV3()}
   function cancelCurrentOrder(){return orderDetailController.cancelCurrentOrder()}
-  function orderV3SeparationMap(){return new Map((orderSession.detail?.separation?.items||[]).map(x=>[String(x.order_item_id),String(x.state||'pending')]))}
-  function orderV3DetailItemHtml(item,states){const st=states.get(String(item.id))||'',missing=st==='missing';const components=Array.isArray(item.components)?item.components:[];const componentHtml=components.length?'<div style="margin-top:7px">'+components.map(c=>{const cs=states.get(String(c.id))||'',cm=cs==='missing';return '<div class="muted" style="padding:3px 0">• '+esc(fmtQty(c.quantity))+' × '+esc(c.name_snapshot||'Produto')+(cm?'<span class="order-v3-missing">FALTOU</span>':'')+'</div>'}).join('')+'</div>':'';return '<div class="order-v3-item'+(missing?' missing':'')+'">'+(item.image_url?'<img src="'+esc(item.image_url)+'" alt="">':'<div class="order-v3-item-ph"></div>')+'<div><strong>'+esc(item.name_snapshot||'Produto')+'</strong>'+(missing?'<span class="order-v3-missing">FALTOU</span>':'')+'<small>Quantidade: '+esc(fmtQty(item.quantity||1))+'</small>'+componentHtml+'</div><strong>'+money(item.total_cents||Math.round(Number(item.line_total||0)*100))+'</strong></div>'}
-  function paintOrderDetail(){
-    const d=orderSession.detail,o=d.order,c=d.customer||{},delivery=o.delivery_address_snapshot||c.address||{},milestones=orderV3Milestones(o),states=orderV3SeparationMap(),sep=d.separation||{},completion=sep.completion||{},original=Number(sep.original_total??completion.original_total??o.total_cents/100??0),missing=Number(sep.missing_subtotal??completion.missing_subtotal??0),finalTotal=Number(sep.final_total??completion.final_total??o.total_cents/100??0),sepStarted=Boolean(completion?.prepared_at||completion?.completed_at)||(sep.items||[]).some(x=>String(x.state||'pending')!=='pending'),locked=milestones.confirmed,editable=!milestones.delivered&&!milestones.cancelled,customerPending=orderCustomerDataPending(o),customerPendingReasons=orderCustomerDataPendingReasons(o);
-    const fiscal=['ready','out_for_delivery','delivered'].includes(o.status)?'<div class="order-v3-section"><h3>Fiscal / NF-e</h3><div id="orderFiscalStatus">'+orderFiscalHtml(orderSession.fiscal,o)+'</div>'+fiscalCanaryActionHtml(orderSession.fiscal,o)+'<div class="print-actions">'+((orderSession.fiscal?.danfe_available===true)?'<button class="secondary" id="printDanfe" type="button">Imprimir DANFE</button>':'')+'</div></div>':'';
-    $('#editorBody').innerHTML=(customerPending?'<div class="rule-notice warn"><strong>AGUARDANDO DADOS DO CLIENTE</strong><div>'+esc(customerPendingReasons.join(' · '))+'</div></div>':'')+'<div class="order-v3-detail-head"><div><h2 style="margin:0">Pedido #'+esc(orderDisplayCode(o))+'</h2><div class="muted">'+esc(dateTime(o.created_at))+' · '+esc(o.customer_name||c.display_name||'Cliente')+'</div><div class="order-v3-tags">'+orderV3Tags(o)+'</div></div><div class="order-v3-total">'+separationMoney(missing>0?finalTotal:Number(o.total_cents||0)/100)+'</div></div>'+
-      (missing>0?'<div class="order-v3-financial"><span>Total original: <strong>'+separationMoney(original)+'</strong></span><span class="discount">Abatimento por falta: <strong>− '+separationMoney(missing)+'</strong></span><span>Total final: <strong>'+separationMoney(finalTotal)+'</strong></span></div>':'')+
-      '<div class="order-v3-section"><h3>Cliente e entrega</h3><div class="form-grid"><label class="span-2"><span>Nome</span><input id="orderDeliveryName" value="'+esc(delivery.customer_name||delivery.recipient_name||c.display_name||'')+'" '+(editable?'':'disabled')+'></label><label><span>Telefone / WhatsApp</span><input id="orderDeliveryPhone" value="'+esc(formatPhone(delivery.phone||c.phone||o.whatsapp_phone_e164||''))+'" '+(editable?'':'disabled')+'></label><label><span>Pagamento previsto</span><select id="orderPayment" '+(editable?'':'disabled')+'>'+orderV3PaymentOptions(o.payment_method_snapshot?.method||o.payment_method_snapshot?.label||'')+'</select></label><label class="span-2"><span>Rua / avenida</span><input id="orderDeliveryStreet" value="'+esc(delivery.street||'')+'" '+(editable?'':'disabled')+'></label><label><span>Número</span><input id="orderDeliveryNumber" value="'+esc(delivery.number||'')+'" '+(editable?'':'disabled')+'></label><label><span>Bairro</span><input id="orderDeliveryDistrict" value="'+esc(delivery.district||'')+'" '+(editable?'':'disabled')+'></label><label><span>Complemento</span><input id="orderDeliveryComplement" value="'+esc(delivery.complement||'')+'" '+(editable?'':'disabled')+'></label><label><span>CEP</span><input id="orderDeliveryPostalCode" value="'+esc(delivery.postal_code||'')+'" '+(editable?'':'disabled')+'></label><label><span>Cidade</span><input id="orderDeliveryCity" value="'+esc(delivery.city||'Cuiabá')+'" '+(editable?'':'disabled')+'></label><label><span>UF</span><input id="orderDeliveryState" maxlength="2" value="'+esc(delivery.state||'MT')+'" '+(editable?'':'disabled')+'></label><label class="span-2"><span>Referência</span><input id="orderDeliveryRawText" value="'+esc(delivery.raw_text||delivery.reference||'')+'" '+(editable?'':'disabled')+'></label></div></div>'+
-      '<div class="order-v3-section"><h3>Itens</h3>'+(locked?'<div class="muted" style="margin-bottom:8px">Produtos e quantidades estão travados porque o pedido já foi confirmado.</div>':'')+'<div class="order-v3-items">'+(d.items||[]).map(i=>orderV3DetailItemHtml(i,states)).join('')+'</div></div>'+
-      '<div class="order-v3-section"><h3>Atendimento</h3><div class="order-v3-ops"><button class="secondary" id="sendCustomerVitrineV3" type="button">VITRINE CLIENTE</button>'+(publicOrderUrlFor(o)?'<button class="secondary" id="openOrderVitrineV3" type="button">ABRIR VITRINE</button>':'')+'</div></div>'+
-      '<div class="order-v3-section"><h3>Operação</h3><div class="order-v3-ops">'+(!milestones.confirmed&&!milestones.cancelled?'<button class="primary" id="confirmOrderV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>CONFIRMAR PEDIDO</button>':'')+(milestones.confirmed&&!milestones.delivered&&!milestones.cancelled?'<button class="secondary" id="openSeparationV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>ABRIR VITRINE SEPARAÇÃO</button>':'')+(o.status==='out_for_delivery'&&!milestones.delivered&&!milestones.cancelled?'<button class="primary" id="deliverOrderV3" type="button" '+(customerPending?'disabled title="Complete os dados essenciais do cliente"':'')+'>CONFIRMAR ENTREGA</button><button class="secondary" id="deliveryFailedV4" type="button">ENTREGA NÃO CONCLUÍDA</button>':'')+(o.status==='confirmed'&&!sepStarted?'<button class="secondary" id="reopenOrderV3" type="button">REABRIR PEDIDO</button>':'')+(!milestones.delivered&&!milestones.cancelled?'<button class="text danger" id="cancelOrderV3" type="button">Cancelar pedido</button>':'')+'</div></div>'+fiscal;
-    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>'+(editable?'<button class="primary" id="saveOrder">Salvar dados</button>':'');$('#cancelEditor').onclick=()=>$('#editor').close();if($('#saveOrder'))$('#saveOrder').onclick=saveOrderV3;if($('#sendCustomerVitrineV3'))$('#sendCustomerVitrineV3').onclick=e=>sendOrderCustomerVitrineV3(o.id,e.currentTarget);if($('#openOrderVitrineV3'))$('#openOrderVitrineV3').onclick=openCurrentOrderVitrine;if($('#confirmOrderV3'))$('#confirmOrderV3').onclick=async()=>{const token=orderSession.capture();await quickConfirmOrder(o.id,$('#confirmOrderV3'));if(orderSession.isCurrent(token))await openOrder(o.id)};if($('#openSeparationV3'))$('#openSeparationV3').onclick=()=>{const id=o.id;$('#editor').close();openOrderSeparationSheet(id)};if($('#deliverOrderV3'))$('#deliverOrderV3').onclick=()=>openOrderDeliveryConfirm(o.id);if($('#deliveryFailedV4'))$('#deliveryFailedV4').onclick=()=>returnOrderToExpedition(o.id,true);if($('#startDispatchV4'))$('#startDispatchV4').onclick=startCurrentOrderDispatchV4;if($('#reopenOrderV3'))$('#reopenOrderV3').onclick=()=>reopenOrderV3(o.id);if($('#cancelOrderV3'))$('#cancelOrderV3').onclick=cancelCurrentOrder;if($('#executeFiscalCanary'))$('#executeFiscalCanary').onclick=executeCurrentOrderFiscalCanary;if($('#refreshFiscalCanary'))$('#refreshFiscalCanary').onclick=recheckCurrentOrderFiscal;if($('#recoverBlingOrder'))$('#recoverBlingOrder').onclick=recoverCurrentOrderBling;if($('#printDanfe'))$('#printDanfe').onclick=openCurrentDanfe;
-  }
-
-  function blingPreflightOperationalBlockers(p){
-    if(!p||p.error)return [];
-    const expected=new Set(['first_separation_required','stock_not_consumed']);
-    const blockers=Array.isArray(p.write_blockers)&&p.write_blockers.length?p.write_blockers:(p.blockers||[]);
-    return [...new Set(blockers)].filter(code=>!expected.has(code));
-  }
+  function paintOrderDetail(){return orderDetailView.paintOrderDetail()}
+  function openDanfeForOrder(id,orderCode=''){return orderDocuments.openDanfeForOrder(id,orderCode)}
   const orderFiscalController=window.DonaAntoniaAdminOrderFiscal.create({
     api,session:orderSession,cache:()=>state.fiscalByOrder,
     ui:{query:$,confirm,toast,currentOperator},formatters:{esc,dateTime,money,errorMessage},orderView:{orderDisplayCode},
     view:{paint:paintOrderDetail,open:openOrder,refreshList:loadOrders,currentTab:()=>state.tab,renderClosure,openDanfe:openDanfeForOrder}
   });
   function loadCurrentOrderFiscal(repaint=true){return orderFiscalController.loadCurrentOrderFiscal(repaint)}
-  function loadCurrentOrderBlingPreview(repaint=true){return orderFiscalController.loadCurrentOrderBlingPreview(repaint)}
   function orderFiscalHtml(f,o){return orderFiscalController.orderFiscalHtml(f,o)}
   function fiscalCanaryActionHtml(f,o){return orderFiscalController.fiscalCanaryActionHtml(f,o)}
   function recoverCurrentOrderBling(){return orderFiscalController.recoverCurrentOrderBling()}
@@ -5478,368 +5459,14 @@
   function fiscalBlockReasonLabel(code){return orderFiscalController.fiscalBlockReasonLabel(code)}
   const orderDetailController=window.DonaAntoniaAdminOrderDetail.create({
     api,session:orderSession,ui:{query:$,toast,confirm,prompt,currentOperator},errorMessage,
-    view:{paint:paintOrderDetail,refreshList:loadOrders,loadFiscal:loadCurrentOrderFiscal},editablePayload:currentOrderEditablePayload
+    view:{paint:paintOrderDetail,refreshList:loadOrders,loadFiscal:loadCurrentOrderFiscal},customers:{get:()=>state.customers}
   });
-  function openDanfeForOrder(id,orderCode=''){return orderDocuments.openDanfeForOrder(id,orderCode)}
-  async function confirmCurrentOrderPayment(){
-    const o=orderSession.detail?.order;if(!o)return;
-    if(o.status!=='delivered'){toast('Confirme a entrega antes do pagamento');return}
-    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
-    const amount=money(o.total_cents);
-    const ok=confirm('Confirmar recebimento de '+amount+' via '+payment+'?\n\nEsta ação registra o pagamento do pedido #'+orderDisplayCode(o)+'.');
-    if(!ok)return;
-    const btn=$('#confirmFiscalPayment');
-    if(btn){btn.disabled=true;btn.textContent='Confirmando recebimento…'}
-    try{
-      const fiscal=await api('order_fiscal_confirm_payment',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:o.id,payment_method:payment})
-      });
-      state.fiscalByOrder[o.id]=fiscal;
-      if(orderSession.detail?.order?.id===o.id){
-        orderSession.fiscal=fiscal;
-        paintOrderDetail();
-      }
-      if(state.tab==='closure')renderClosure();
-      toast(fiscal?.fiscal_status==='ready'?'Recebimento confirmado · fiscal pronto':'Recebimento confirmado');
-    }catch(e){
-      toast(errorMessage(e.message));
-      if(btn){btn.disabled=false;btn.textContent='Confirmar '+amount+' recebido · '+payment}
-    }
-  }
-
-  function blingOrderJobErrorLabel(code){
-    const map={
-      order_not_write_eligible:'Pedido ainda não estava apto para envio',
-      duplicate_external_order_key:'Foi encontrado mais de um pedido com a mesma chave no Bling',
-      order_creation_uncertain:'O resultado da criação precisa ser conferido',
-      bling_order_id_missing:'O Bling não retornou um identificador seguro',
-      post_create_order_mismatch:'O pedido criado no Bling não conferiu com o total local',
-      order_status_updates_disabled:'A situação foi atualizada no Admin, mas o aplicativo Bling ainda não tem permissão para alterar situações de pedidos',
-      order_status_mapping_not_approved:'A situação foi atualizada no Admin, mas o mapeamento de situações do Bling ainda não foi aprovado',
-      fiscal_dispatch_gate_unavailable:'Não consegui conferir o fiscal antes da saída. Tente novamente.',
-      fiscal_dispatch_not_authorized:'A saída está bloqueada até a autorização fiscal.',
-      customer_not_linked:'Cliente ainda não vinculado ao Bling',
-      unresolved_products:'Há produtos sem vínculo com o Bling'
-    };
-    return map[code]||'A sincronização foi interrompida com segurança.';
-  }
-
-  function blingOrderBlockerLabel(code){
-    const map={
-      first_separation_required:'A separação ainda não começou',
-      stock_not_consumed:'Estoque ainda não foi tratado na separação',
-      order_cancelled:'Pedido cancelado',
-      minimum_order_not_met:'Pedido abaixo do mínimo de R$ 75',
-      customer_not_linked:'Cliente ainda não vinculado',
-      customer_not_found:'Cliente não encontrado',
-      customer_missing_bling_contact_id:'Cliente ainda precisa ser vinculado ao Bling',
-      customer_document_required:'Informe um CPF válido no cadastro do cliente para vincular ao Bling',
-      customer_inactive:'Cliente inativo',
-      unresolved_products:'Há produto sem vínculo seguro com o Bling',
-      product_total_mismatch:'Subtotal dos produtos não confere',
-      commercial_delta_mismatch:'Diferença comercial não confere',
-      invalid_order_total:'Total do pedido inválido',
-      order_without_items:'Pedido sem itens',
-      delivery_street_required:'Rua de entrega ausente',
-      delivery_number_required:'Número de entrega ausente',
-      delivery_city_required:'Cidade de entrega ausente',
-      delivery_state_required:'UF de entrega ausente'
-    };
-    return map[code]||String(code||'').replaceAll('_',' ');
-  }
-
-  async function previewCurrentOrderBling(){
-    const id=orderSession.detail?.order?.id;if(!id)return;
-    const btn=$('#previewBlingOrder');if(btn){btn.disabled=true;btn.textContent='Verificando…'}
-    try{
-      const data=await api('bling_preview_order_sync',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
-      });
-      if(orderSession.detail?.order?.id!==id)return;
-      orderSession.preview=data;
-      paintOrderDetail();
-      toast(data.write_eligible?'Pedido apto para o fluxo Bling':'Prévia conferida · envio continua bloqueado');
-    }catch(e){
-      toast('Não consegui verificar a prévia do Bling agora');
-      if(btn){btn.disabled=false;btn.textContent='Verificar prévia Bling'}
-    }
-  }
-
-  async function createCurrentOrderCustomerInBling(){
-    const id=orderSession.detail?.order?.id;if(!id)return;
-    const d=orderSession.detail||{},o=d.order||{},c=d.customer||{};
-    const customerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
-    let customer=state.customers.find(x=>x.id===customerId)||null;
-    if(!customer&&customerId){
-      try{
-        const one=await customerApi('vitrine_customer_get',{id:customerId});
-        customer=one.customer||null;
-        if(customer)state.customers=[customer];
-      }catch{}
-    }
-    const name=customer?.display_name||o.delivery_address_snapshot?.customer_name||o.delivery_address_snapshot?.recipient_name||'Cliente';
-    const cpf=customer?.cpf||o.delivery_address_snapshot?.cpf||'';
-    if(!cpf){toast('Informe o CPF do cliente antes de cadastrar no Bling');return}
-    if(!confirm('Cadastrar este cliente no Bling?\n\n'+name+' · CPF '+formatCpf(cpf)+'\n\nO Hub confere o CPF antes de criar para evitar duplicidade.'))return;
-    const btn=$('#createBlingOrderCustomer');if(btn){btn.disabled=true;btn.textContent='Cadastrando…'}
-    try{
-      const data=await api('bling_create_order_customer',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
-      });
-      if(orderSession.detail?.order?.id!==id)return;
-      orderSession.preview=data.preview||orderSession.preview;
-      paintOrderDetail();
-      const blockers=blingPreflightOperationalBlockers(orderSession.preview);
-      toast(blockers.includes('customer_missing_bling_contact_id')?'Cadastro solicitado · vínculo ainda está processando':'Cliente vinculado ao Bling · pedido revalidado');
-    }catch(e){
-      toast(errorMessage(e.message));
-      if(btn){btn.disabled=false;btn.textContent='Cadastrar cliente no Bling'}
-    }
-  }
-
-  async function createCurrentOrderProductsInBling(){
-    const id=orderSession.detail?.order?.id;if(!id)return;
-    let preview=orderSession.preview;
-    if(!preview||preview.error){
-      try{
-        preview=await api('bling_preview_order_sync',{},{
-          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
-        });
-        if(orderSession.detail?.order?.id!==id)return;
-        orderSession.preview=preview;
-      }catch{if(orderSession.detail?.order?.id===id)toast('Não consegui conferir os produtos agora');return}
-    }
-    const missing=(preview.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
-    if(!missing.length){toast('Nenhum produto precisa ser cadastrado no Bling');return}
-    const names=missing.slice(0,5).map(x=>'• '+(x.name||x.sku||x.gtin||'Produto')).join('\n');
-    const extra=missing.length>5?'\n• +'+(missing.length-5)+' produto(s)':'';
-    if(!confirm('Cadastrar '+missing.length+' produto(s) ausente(s) no Bling?\n\n'+names+extra+'\n\nO Hub verifica GTIN/código antes de criar para evitar duplicidade.'))return;
-    const btn=$('#createBlingOrderProducts');if(btn){btn.disabled=true;btn.textContent='Cadastrando…'}
-    try{
-      const data=await api('bling_create_order_products',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
-      });
-      if(orderSession.detail?.order?.id!==id)return;
-      orderSession.preview=data.preview||orderSession.preview;
-      paintOrderDetail();
-      const remaining=(orderSession.preview?.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
-      toast(remaining.length?'Cadastro solicitado · ainda há produto(s) pendente(s)':'Produtos vinculados · pedido revalidado');
-    }catch(e){
-      toast(errorMessage(e.message));
-      if(btn){btn.disabled=false;btn.textContent='Cadastrar produtos no Bling'}
-    }
-  }
-
-  async function resolveCurrentOrderBlingDependencies(){
-    const id=orderSession.detail?.order?.id;if(!id)return;
-    const btn=$('#resolveBlingDependencies');if(btn){btn.disabled=true;btn.textContent='Conferindo vínculos…'}
-    try{
-      const data=await api('bling_reconcile_order_dependencies_readonly',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
-      });
-      if(orderSession.detail?.order?.id!==id)return;
-      orderSession.preview=data.preview||null;
-      const remaining=blingPreflightOperationalBlockers(orderSession.preview);
-      paintOrderDetail();
-      toast(remaining.length?'Vínculos conferidos · ainda há pendências':'Vínculos conferidos · pedido apto para separar');
-    }catch(e){
-      toast('Não consegui conferir os vínculos agora');
-      if(btn){btn.disabled=false;btn.textContent='Tentar resolver vínculos'}
-    }
-  }
-  async function completeCurrentOrderCustomerDocument(){
-    const orderId=orderSession.detail?.order?.id;if(!orderId)return;
-    const d=orderSession.detail||{},o=d.order||{},c=d.customer||{};
-    const customerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
-    if(!customerId){focusOrderCustomerForBling();return}
-    let customer=state.customers.find(x=>x.id===customerId)||null;
-    if(!customer){
-      try{
-        const one=await customerApi('vitrine_customer_get',{id:customerId});
-        customer=one.customer||null;
-        if(customer)state.customers=[customer];
-      }catch{}
-    }
-    if(!customer){toast('Não consegui abrir o cadastro do cliente agora');return}
-    openCustomerEditor(customer,orderId);
-  }
-
-  function focusOrderCustomerForBling(){
-    const input=$('#orderCustomerSearch');
-    if(!input)return;
-    input.focus();
-    input.scrollIntoView({behavior:'smooth',block:'center'});
-    toast('Localize e vincule o cliente correto');
-  }
-
-  async function retryHistorySync(){
-    const id=orderSession.detail?.order?.id;if(!id)return;
-    const btn=$('#retryHistorySync');if(btn){btn.disabled=true;btn.textContent='Sincronizando…'}
-    try{
-      await api('history_sync_retry',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
-      });
-      const fresh=await api('order',{id});
-      if(orderSession.detail?.order?.id!==id)return;
-      orderSession.detail=fresh;paintOrderDetail();loadOrders();
-      toast('Histórico sincronizado');
-    }catch(e){
-      if(orderSession.detail?.order?.id!==id)return;
-      toast('Não consegui sincronizar agora');
-      if(btn&&btn.isConnected){btn.disabled=false;btn.textContent='Tentar novamente'}
-    }
-  }
-
-  const renderOrderActionButtons=window.DonaAntoniaAdminOrderActionButtons.createOrderActionButtonsHtml({orderProblemReasons,orderNextAction,esc});
-  function orderActionButtonsHtml(o){return renderOrderActionButtons(o,orderSession.fiscal?.dispatch_gate||null)}
-  function openComponentReplacement(orderItemId,componentId,currentName){
-    const host=$('#componentReplacementPanel');if(!host)return;
-    state.componentReplacement={order_item_id:orderItemId,component_id:componentId,current_name:currentName||''};
-    host.innerHTML='<div class="replacement-panel"><strong>Substituir '+esc(currentName||'item da cesta')+'</strong><span class="sub">O valor da cesta não muda. Escolha um produto físico com estoque disponível.</span><div class="replacement-search"><input id="componentReplacementSearch" type="search" placeholder="Nome, EAN ou código"><button class="secondary" id="searchComponentReplacement" type="button">Buscar</button><button class="text" id="cancelComponentReplacement" type="button">Fechar</button></div><div class="replacement-results" id="componentReplacementResults"></div></div>';
-    $('#searchComponentReplacement').onclick=searchComponentReplacement;
-    $('#cancelComponentReplacement').onclick=()=>{state.componentReplacement=null;host.innerHTML=''};
-    $('#componentReplacementSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchComponentReplacement()}};
-    $('#componentReplacementSearch').focus();
-    host.scrollIntoView({behavior:'smooth',block:'center'});
-  }
-  let componentReplacementSearchGeneration=0;
-  async function searchComponentReplacement(){
-    const generation=++componentReplacementSearchGeneration;
-    const ctx=state.componentReplacement;if(!ctx)return;
-    const q=String($('#componentReplacementSearch')?.value||'').trim();
-    const host=$('#componentReplacementResults');if(!host)return;
-    if(q.length<2){host.innerHTML='<div class="sub">Digite pelo menos 2 caracteres.</div>';return}
-    host.innerHTML='<div class="loading">Buscando produtos…</div>';
-    try{
-      const data=await api('products',{q,limit:12});
-      if(generation!==componentReplacementSearchGeneration||state.componentReplacement!==ctx||host!==$('#componentReplacementResults'))return;
-      const rows=(data.products||[]).filter(p=>p.active!==false&&Number(p.stock_quantity||0)>0);
-      host.innerHTML=rows.length?rows.map(p=>'<div class="replacement-option"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.gtin||p.sku||'Sem código')+' · estoque físico '+esc(fmtQty(p.stock_quantity||0))+'</small></div><button class="secondary" type="button" data-replacement-product="'+esc(p.id)+'">Usar</button></div>').join(''):'<div class="sub">Nenhum produto ativo com estoque encontrado.</div>';
-      host.querySelectorAll('[data-replacement-product]').forEach(b=>b.onclick=()=>replaceComponentWithProduct(b.dataset.replacementProduct,b));
-    }catch(e){
-      if(generation===componentReplacementSearchGeneration&&state.componentReplacement===ctx&&host===$('#componentReplacementResults'))
-        host.innerHTML='<div class="sub">Não consegui buscar agora. Tente novamente.</div>';
-    }
-  }
-  async function replaceComponentWithProduct(productId,btn){
-    const ctx=state.componentReplacement,o=orderSession.detail?.order;
-    if(!ctx||!o)return;
-    if(!confirm('Substituir este item da cesta pelo produto escolhido?\n\nO valor comercial da cesta permanecerá o mesmo.'))return;
-    if(btn){btn.disabled=true;btn.textContent='Substituindo…'}
-    try{
-      await persistCurrentOrder();
-      const data=await api('order_component_replace',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          order_id:o.id,
-          order_item_id:ctx.order_item_id,
-          component_id:ctx.component_id,
-          replacement_product_id:productId
-        })
-      });
-      orderSession.detail=data.detail||await api('order',{id:o.id});
-      state.componentReplacement=null;
-      await loadCurrentOrderBlingPreview(false);
-      paintOrderDetail();
-      loadOrders();
-      toast('Item da cesta substituído · valor mantido');
-    }catch(e){
-      toast(errorMessage(e.message));
-      if(btn){btn.disabled=false;btn.textContent='Usar'}
-    }
-  }
-
-  function customerOptions(current){
-    return state.customers.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===current?'selected':'')+'>'+esc(c.display_name||'Sem nome')+(c.phone?' · '+esc(formatPhone(c.phone)):'')+(c.cpf?' · CPF '+esc(formatCpf(c.cpf)):'')+'</option>').join('');
-  }
-  function setOrderDeliveryField(id,value){
-    const el=$(id);if(el)el.value=value??'';
-  }
-  function applySelectedCustomerToDelivery(){
-    const id=$('#orderCustomer')?.value||'';
-    const customer=state.customers.find(c=>c.id===id);
-    if(!customer)return;
-    const a=customer.address||{};
-    setOrderDeliveryField('#orderDeliveryName',customer.display_name||'');
-    setOrderDeliveryField('#orderDeliveryPhone',formatPhone(customer.phone||''));
-    setOrderDeliveryField('#orderDeliveryPostalCode',a.postal_code||'');
-    setOrderDeliveryField('#orderDeliveryStreet',a.street||'');
-    setOrderDeliveryField('#orderDeliveryNumber',a.number||'');
-    setOrderDeliveryField('#orderDeliveryDistrict',a.district||'');
-    setOrderDeliveryField('#orderDeliveryComplement',a.complement||'');
-    setOrderDeliveryField('#orderDeliveryCity',a.city||'Cuiabá');
-    setOrderDeliveryField('#orderDeliveryState',a.state||'MT');
-    setOrderDeliveryField('#orderDeliveryRawText',a.raw_text||'');
-    toast('Dados de entrega preenchidos pelo cliente selecionado');
-  }
-  function mergeOrderCustomerResults(rows,currentId){
-    const current=state.customers.find(c=>c.id===currentId)||null;
-    const map=new Map();
-    if(current)map.set(current.id,current);
-    for(const c of rows||[])if(c?.id)map.set(c.id,c);
-    state.customers=[...map.values()];
-  }
-  function scheduleOrderCustomerSearch(value){
-    clearTimeout(state.orderCustomerSearchTimer);
-    const q=String(value||'').trim();
-    const hint=$('#orderCustomerSearchHint');
-    if(q.length<2){
-      if(hint)hint.textContent='Digite pelo menos 2 caracteres. A busca consulta a base oficial.';
-      return;
-    }
-    if(hint)hint.textContent='Buscando…';
-    state.orderCustomerSearchTimer=setTimeout(()=>searchOrderCustomers(q),250);
-  }
-  async function searchOrderCustomers(q){
-    const select=$('#orderCustomer');if(!select)return;
-    const selectedId=select.value;
-    const hint=$('#orderCustomerSearchHint');
-    try{
-      const data=await customerApi('vitrine_customers_list',{q,limit:30});
-      mergeOrderCustomerResults(data.customers||[],selectedId);
-      select.innerHTML='<option value="">Sem cliente vinculado</option>'+customerOptions(selectedId);
-      if(selectedId)select.value=selectedId;
-      if(hint)hint.textContent=(data.customers||[]).length+' cliente(s) encontrado(s). Selecione acima.';
-    }catch(e){
-      if(hint)hint.textContent='Não consegui buscar agora. Tente novamente.';
-    }
-  }
-  function canonicalOrderPayment(value){
-    const raw=String(value||'').trim(),key=normalize(raw);
-    const map={pix:'pix',dinheiro:'cash',cash:'cash','cartao de credito':'credit_card',credit:'credit_card',credit_card:'credit_card','cartao alimentacao':'food_card','cartao alimentacao/refeicao':'food_card',food_card:'food_card','cartao refeicao':'meal_card',meal_card:'meal_card'};
-    return map[key]||map[raw]||'';
-  }
-  function paymentOptions(current){
-    const selected=canonicalOrderPayment(current);
-    const standard=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição']];
-    return standard.map(([value,label])=>'<option value="'+value+'" '+(value===selected?'selected':'')+'>'+esc(label)+'</option>').join('');
-  }
-  function currentOrderEditablePayload(status){
-    const order=orderSession.detail?.order||{};
-    const currentCustomer=orderSession.detail?.customer||{};
-    const currentCustomerId=currentCustomer.source_customer_id||order.delivery_address_snapshot?.source_customer_id||order.customer_id||'';
-    const id=order.id;
-    const selectedId=$('#orderCustomer')?.value||'';
-    const selectedCustomer=state.customers.find(c=>c.id===selectedId)||null;
-    const payload={id,payment_method:$('#orderPayment')?.value||''};
-    if(selectedCustomer)payload.customer_snapshot=selectedCustomer;
-    else if(!currentCustomerId)payload.customer_snapshot=null;
-    if($('#orderDeliveryStreet'))payload.delivery_address=window.DonaAntoniaAdminOrderDetail.readDeliveryAddress($);
-    if(status)payload.status=status;
-    return payload;
-  }
-  async function persistCurrentOrder(status,extra={}){
-    const payload={...currentOrderEditablePayload(status),...(extra&&typeof extra==='object'?extra:{})};
-    await api('order_update',{},{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
-    });
-    const fresh=await api('order',{id:payload.id});orderSession.detail=fresh;
-    await loadCurrentOrderFiscal(false);
-    await loadCurrentOrderBlingPreview(false);
-    return fresh;
-  }
+  const orderDetailView=window.DonaAntoniaAdminOrderDetailView.create({
+    session:orderSession,query:$,formatters:{esc,fmtQty,money,dateTime,formatPhone},
+    model:{orderV3Milestones,orderCustomerDataPending,orderCustomerDataPendingReasons,orderV3Tags,orderV3PaymentOptions,orderDisplayCode,separationMoney,publicOrderUrlFor},
+    fiscal:{orderFiscalHtml,fiscalCanaryActionHtml},
+    actions:{saveOrderV3,sendOrderCustomerVitrineV3,openCurrentOrderVitrine,quickConfirmOrder,openOrder,openOrderSeparationSheet,openOrderDeliveryConfirm,returnOrderToExpedition,startCurrentOrderDispatchV4,reopenOrderV3,cancelCurrentOrder,executeCurrentOrderFiscalCanary,recheckCurrentOrderFiscal,recoverCurrentOrderBling,openCurrentDanfe}
+  });
   const openPrint=window.DonaAntoniaAdminPrinting.createOpenPrint(toast,esc);
 
 

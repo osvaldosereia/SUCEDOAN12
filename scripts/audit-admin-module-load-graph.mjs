@@ -21,10 +21,10 @@ const expectedPreloads=[
  'core/formatters.js','core/identifiers.js','core/errors.js',
  'components/printing.js','marketing/helpers.js','orders/sorting.js',
  'orders/read-model.js','components/today-cards.js','orders/time.js',
- 'orders/search.js','orders/whatsapp-links.js','orders/action-buttons.js',
+ 'orders/search.js','orders/whatsapp-links.js',
  'orders/contact-actions.js','components/expiry-alert.js',
  'components/ops-attention.js','components/print-queue-panel.js',
- 'basket-lot-image.js','orders/separation-model.js','orders/customer-readiness.js','orders/payment-method.js','orders/session.js','orders/list-controller.js','orders/documents.js','orders/detail-controller.js','orders/fiscal-controller.js','orders/fiscal-loader.js','delivery/model.js','delivery/controller.js','closure/controller.js','customers/controller.js'
+ 'basket-lot-image.js','orders/separation-model.js','orders/customer-readiness.js','orders/payment-method.js','orders/session.js','orders/list-controller.js','orders/documents.js','orders/detail-view.js','orders/detail-controller.js','orders/fiscal-controller.js','orders/fiscal-loader.js','delivery/model.js','delivery/controller.js','closure/controller.js','customers/controller.js'
 ].map(s=>'vitrine/admin/'+s);
 if(JSON.stringify(paths.slice(0,runtimeIndex))!==JSON.stringify(expectedPreloads))
  throw new Error('Admin provider order drift before runtime initialization');

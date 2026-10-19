@@ -12,7 +12,7 @@ function fixture(api){
  session.begin('a');session.detail={order:{id:'a',status:'created'}};
  const paints=[],messages=[],refreshes=[];
  const controller=context.window.DonaAntoniaAdminOrderDetail.create({api,session,ui:{query:q,toast:m=>messages.push(m),confirm:()=>true,prompt:()=> '1',currentOperator:()=> 'Operação'},
- errorMessage:String,view:{paint:()=>paints.push(session.detail.order.id),refreshList:async()=>refreshes.push('list'),loadFiscal:async()=>{}},editablePayload:status=>({id:session.detail.order.id,payment_method:'pix',status})});
+ errorMessage:String,view:{paint:()=>paints.push(session.detail.order.id),refreshList:async()=>refreshes.push('list'),loadFiscal:async()=>{}},customers:{get:()=>[]}});
  return {...dom,session,controller,paints,messages,refreshes};
 }
 {
@@ -38,5 +38,12 @@ function fixture(api){
  const pending=f.controller.cancelCurrentOrder();assert.equal(payloads[0].status,'cancelled');assert.equal(payloads[0].cancellation_reason,'Cliente desistiu');
  f.query('#editorTitle').textContent='Produto';f.query('#editorBody').innerHTML='Product editor';d.resolve({ok:true});await pending;
  assert.equal(f.query('#editorBody').innerHTML,'Product editor');assert.deepEqual(f.paints,[]);
+}
+{
+ const d=deferred(),f=fixture(async action=>action==='order_reopen_v3'?d.promise:{});
+ const pending=f.controller.reopenOrderV3('a');
+ f.session.begin('b');f.session.detail={order:{id:'b',status:'created'}};
+ d.resolve({ok:true});await pending;
+ assert.equal(f.session.detail.order.id,'b');assert.deepEqual(f.paints,[]);assert.deepEqual(f.refreshes,['list']);
 }
 console.log('Admin order detail and editing ownership: PASS');

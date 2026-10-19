@@ -22,8 +22,6 @@ const parts=[
   "14-customer-profile.part.js",
   "15-manual-orders.part.js",
   "16-orders-operations.part.js",
-  "17-fiscal-danfe.part.js",
-  "18-order-editing.part.js",
   "19-printing-startup.part.js"
 ];
 const dir=path.join(root,'vitrine/admin/runtime-parts');

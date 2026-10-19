@@ -105,10 +105,11 @@ assert.ok(!publicPage.includes('completeSeparation'),'Vitrine do cliente é some
 assert.ok(!publicView.includes('complete_separation'),'Endpoint público não pode aceitar conclusão operacional de separação');
 assert.match(publicView,/req\.method!=="GET"|req\.method != "GET"/,'Endpoint público V3 deve ser somente leitura');
 
-const detailStart=admin.indexOf('function paintOrderDetail');
+const detailView=fs.readFileSync('vitrine/admin/orders/detail-view.js','utf8');
+const detailStart=detailView.indexOf('function paintOrderDetail');
 assert.ok(detailStart>=0,'Pedido aberto precisa continuar no Admin canônico');
-const detailEnd=admin.indexOf('\n  function ',detailStart+30);
-const detailBlock=admin.slice(detailStart,detailEnd>detailStart?detailEnd:admin.length);
+const detailEnd=detailView.indexOf('    return Object.freeze(',detailStart+30);
+const detailBlock=detailView.slice(detailStart,detailEnd>detailStart?detailEnd:detailView.length);
 assert.match(detailBlock,/VITRINE CLIENTE/i,'Vitrine Cliente deve ficar dentro do pedido aberto');
 assert.match(detailBlock,/REABRIR PEDIDO/i,'Pedido confirmado ainda não separado deve poder ser reaberto com segurança');
 assert.ok(!detailBlock.includes('Diagnóstico da integração'),'Pedido aberto não deve expor diagnóstico ERP/Bling no fluxo normal');

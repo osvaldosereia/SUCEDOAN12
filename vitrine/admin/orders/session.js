@@ -1,11 +1,11 @@
 // Owns the order editor snapshot and the lifetime of its asynchronous work.
 (function(global){
   function create({isOpen}){
-    let generation=0,id=null,detail=null,fiscal=null,preview=null;
+    let generation=0,id=null,detail=null,fiscal=null;
     const requests=new Map();
     function invalidate(){generation++;requests.clear()}
     function begin(orderId){
-      invalidate();id=String(orderId);detail=null;fiscal=null;preview=null;
+      invalidate();id=String(orderId);detail=null;fiscal=null;
       return capture();
     }
     function capture(){return Object.freeze({generation,id})}
@@ -23,8 +23,7 @@
         if(next!=null&&String(next)!==id)begin(next);
         detail=value;
       },
-      get fiscal(){return fiscal},set fiscal(value){fiscal=value},
-      get preview(){return preview},set preview(value){preview=value}
+      get fiscal(){return fiscal},set fiscal(value){fiscal=value}
     });
   }
   global.DonaAntoniaAdminOrderSession=Object.freeze({create});

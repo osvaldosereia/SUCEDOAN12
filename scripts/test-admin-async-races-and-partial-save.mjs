@@ -36,50 +36,6 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
 // test-admin-order-{list,detail,fiscal}-controller.mjs and order-session.mjs.
 
 {
- const scenarios=[
-  ['previewCurrentOrderBling','  async function createCurrentOrderCustomerInBling(','bling_preview_order_sync'],
-  ['resolveCurrentOrderBlingDependencies','  async function completeCurrentOrderCustomerDocument(','bling_reconcile_order_dependencies_readonly']
- ];
- for(const [name,next,action] of scenarios){
-  const session={detail:{order:{id:'old'}},preview:null};
-  const button={disabled:false,textContent:''};let finish,paints=0;
-  const api=called=>{assert.equal(called,action);return new Promise(resolve=>finish=resolve)};
-  const fn=new Function('orderSession','api',String.fromCharCode(36),'paintOrderDetail','toast','blingPreflightOperationalBlockers',
-    part('  async function '+name+'(',next)+';return '+name)(session,api,()=>button,()=>paints++,()=>{},()=>[]);
-  const pending=fn();
-  session.detail={order:{id:'new'}};
-  finish({preview:{id:'old'},write_eligible:true});
-  await pending;
-  assert.equal(session.preview,null);
-  assert.equal(paints,0);
- }
-}
-{
- const session={detail:{order:{id:'old'}}};let finish,paints=0,refreshes=0;
- const api=action=>new Promise(resolve=>{if(action==='history_sync_retry')resolve({ok:true});else if(action==='order')finish=resolve;else throw Error(action)});
- const fn=new Function('orderSession','api',String.fromCharCode(36),'paintOrderDetail','loadOrders','toast',
-  part('  async function retryHistorySync(','  const renderOrderActionButtons')+';return retryHistorySync')(
-    session,api,()=>({disabled:false,textContent:''}),()=>paints++,()=>refreshes++,()=>{});
- const pending=fn();await Promise.resolve();
- session.detail={order:{id:'new'}};
- finish({order:{id:'old'}});await pending;
- assert.equal(session.detail.order.id,'new');
- assert.equal(paints,0);assert.equal(refreshes,0);
-}
-
-{
- const state={componentReplacement:{component_id:'part-1'}},host={innerHTML:'',querySelectorAll:()=>[]},input={value:'first'},pending=new Map();
- const api=(_,{q})=>{const d=deferred();pending.set(q,d);return d.promise};
- const fn=new Function('state','$','api','esc','fmtQty','replaceComponentWithProduct',
-  part('  let componentReplacementSearchGeneration=0;','  async function replaceComponentWithProduct')+';return searchComponentReplacement')(
-  state,k=>k==='#componentReplacementSearch'?input:k==='#componentReplacementResults'?host:null,api,String,String,()=>{});
- const old=fn();input.value='second';const latest=fn();
- pending.get('second').resolve({products:[{id:'2',name:'Second',stock_quantity:2}]});await latest;
- const result=host.innerHTML;
- pending.get('first').resolve({products:[{id:'1',name:'First',stock_quantity:2}]});await old;
- assert.equal(host.innerHTML,result);assert.ok(result.includes('Second'));assert.ok(!result.includes('First'));
-}
-{
  const state={tab:'purchases',purchaseAdvancedLoading:false,purchaseAdvancedLoaded:false,purchaseAdvancedError:''},host={innerHTML:''},d=deferred();let paints=0;
  const fn=new Function('state','purchaseApi','purchaseXmlError','$','paintPurchases',
   part('  let purchaseAdvancedGeneration=0;','  async function loadPurchaseBlingComparison')+';return loadPurchaseAdvanced')(

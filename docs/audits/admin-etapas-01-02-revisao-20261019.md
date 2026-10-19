@@ -1,5 +1,49 @@
 # Vitrine Admin — revisão das Etapas 1 e 2
 
+## Continuação — núcleo de Pedidos, 19/10
+
+Base desta continuação: `693f61fd9050cbdc6ead6817e32b0757764db51a`, no PR #1126 em draft. Nenhum merge, deploy, escrita remota ou migration aplicada.
+
+### Código efetivamente reorganizado
+
+Foram extraídos `orders/session.js`, `list-controller.js`, `detail-controller.js`, `detail-view.js`, `fiscal-controller.js` e `documents.js`. Lista/fila, sessão do editor, gravações, apresentação, fiscal e impressão têm dependências explícitas. A leitura do endereço é única para salvar e cancelar. O estado geral perdeu o pedido atual, fiscal do editor, prévia antiga, filtros/fila da lista e estado do editor legado.
+
+Os fragmentos passaram de 19 para 17; `17-fiscal-danfe` e `18-order-editing` foram eliminados depois de mover as responsabilidades ativas. São 33 scripts síncronos, 28 dependências diretas resolvidas, 5.576 linhas e 449.465 caracteres no runtime (antes: 6.365 linhas e 507.152 caracteres). Os callbacks preservam a inicialização antes de `start()`.
+
+### Correções confirmadas
+
+- Salvar, cancelar, reabrir, consultar, recuperar e emitir fiscal não substituem o pedido/modal que assumiu o editor enquanto a operação estava pendente.
+- A atualização após emissão ou recuperação consulta o ID original, inclusive depois de abrir outro pedido.
+- Emissão, recuperação, reconsulta e despacho do detalhe têm bloqueio por pedido contra execução concorrente no mesmo controlador; gravações do editor e alterações da fila também descartam repetição em andamento.
+- Consultas fiscais fora de ordem e a leitura pós-emissão respeitam a revisão mais recente e o cache compartilhado.
+- Consulta e mutação da fila manual são serializadas, impedindo que um snapshot anterior desfaça visualmente uma inclusão/retirada já concluída. A resposta atualiza dados sem pintar outra aba.
+- Falha no despacho preserva os campos ainda não salvos do formulário.
+- Testes do render fiscal real detectaram e permitiram corrigir duas colisões de nomes introduzidas na extração (`busy` e `feedback`), antes de publicar.
+
+### Remoções com evidência de alcance
+
+A revisão partiu dos bindings reais de `paintOrderDetail`, lista, navegação, bootstrap e da única interface pública da IIFE (`DonaAntoniaAdminBridge`). As funções abaixo eram privadas e não tinham chamador nesses caminhos. Referências como `$('#retryHistorySync')` eram seletores dentro do próprio handler, sem criação de botão nem binding. Os helpers internos só eram alcançáveis a partir dessas mesmas entradas mortas; não foi usado o contador heurístico como prova isolada.
+
+Removidas 28 declarações antigas: `advanceCurrentOrder`, `applySelectedCustomerToDelivery`, `blingOrderBlockerLabel`, `blingOrderJobErrorLabel`, `blingPreflightOperationalBlockers`, `canonicalOrderPayment`, `completeCurrentOrderCustomerDocument`, `confirmCurrentOrderPayment`, `createCurrentOrderCustomerInBling`, `createCurrentOrderProductsInBling`, `customerOptions`, `customerSummary`, `focusOrderCustomerForBling`, `loadCurrentOrderBlingPreview`, `mergeOrderCustomerResults`, `openComponentReplacement`, `paymentOptions`, `persistCurrentOrder`, `previewCurrentOrderBling`, `replaceComponentWithProduct`, `resolveCurrentOrderBlingDependencies`, `retryHistorySync`, `saveOrder`, `scheduleOrderCustomerSearch`, `searchComponentReplacement`, `searchOrderCustomers`, `setOrderDeliveryField` e `startSeparationFlow`. Esta última ainda referenciava `validateBlingBeforeSeparation`, inexistente. Também saiu o provider legado `orders/action-buttons.js`, sem consumidor operacional.
+
+O teste de botões agora executa os providers reais de sessão, apresentação e fiscal. Os testes de corrida antigos que recortavam handlers removidos foram substituídos pelas factories ativas. Os contratos de backend, payloads, autorização fiscal, opções de pagamento, histórico e totais continuam verificados nas fontes atuais.
+
+### Cobertura por seção nesta continuação
+
+| Área | Resultado efetivo |
+|---|---|
+| Pedidos | Refatoração de lista/fila, sessão, detalhe, edição, cancelamento, reabertura, fiscal e documentos; correções acima e testes comportamentais. Criação manual, cards/chat e separação continuam pendentes de extração. |
+| Expedição, Entregador e Fechamento | Adaptadores do pedido aberto atualizados para a sessão; contratos e testes locais continuam na suíte. Não houve operação real. |
+| Clientes | Cache passa explicitamente ao editor; contratos de histórico conservam o endpoint de repetição no backend. O handler privado antigo sem botão foi removido. |
+| Central, Atendimento, ANA, Produtos, Cestas, Validades, Orçamentos, Marketing, Compras/XML, Balanço, Gôndolas, Financeiro e Bling técnico | Cobertura de regressão da suíte existente; a auditoria manual desta continuação concentrou-se em Pedidos. Não se declara nova revisão integral dessas áreas. |
+
+### Verificação e pendências
+
+Verificação local: 128 scripts `test-admin-*.mjs`, 5 `test-admin-*.py` e 5 `test-smart-delivery-*.mjs` passaram (138 ao todo), além de Cestas/lotes, gates e feedback da separação, estoque Bling, paridade, bootstrap, grafo e 10 pares de espelhos Edge. Foi corrigido um contrato anterior que ainda lia apenas o HTML inline. Revisão independente e CI do head publicado serão registradas ao final. As Etapas 1 e 2 continuam abertas. Além dos trechos restantes de Pedidos, persistem as fronteiras de Produtos/Cestas, Balanço e Compras/XML, a revisão manual integral das declarações e homologação externa de Edge/Bling/SEFAZ/impressão. A tabela histórica abaixo preserva as revisões anteriores; testes contratuais não equivalem a homologação operacional.
+
+---
+
+
 Data: 19/10/2026. Base inicial: branch `fix/admin-fiscal-hardening-20261018`, HEAD `50602328c6a14f325b763f04218d44b469d5d7de`, PR draft #1126.
 
 ## Rodada ampla — base `119f413`

@@ -9,7 +9,7 @@ on:
       - 'fix/separation-completion-feedback-v4-*'
       - 'fix/separation-stock-gate-v1-*'
     paths:
-      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/**'
       - 'pedido/index.html'
       - 'p/index.html'
       - 'supabase/functions/admin-products-live-v1/index.ts'
@@ -24,7 +24,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/**'
       - 'pedido/index.html'
       - 'p/index.html'
       - 'supabase/functions/admin-products-live-v1/index.ts'

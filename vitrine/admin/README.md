@@ -10,19 +10,35 @@
 | `delivery/model.js` | Nenhum | Argumentos: gate fiscal, pagamentos e destinos/links de rota |
 | `closure/controller.js` | Pedidos do fechamento e geração de renderização | Portas `orders`, `navigation`, `ui`, `formatters`, `orderView` e abertura de pedido |
 | `customers/controller.js` | Perfil, paginação e geração de busca/histórico | Cache `customers.get/set`, `customerApi`, `navigation`, `ui`, formatadores e abertura de pedido |
+| `orders/session.js` | Snapshot do pedido, fiscal e geração da sessão; revisão de consultas | `isOpen`; tokens invalidam respostas após outro pedido assumir o editor |
+| `orders/list-controller.js` | Filtros, fila manual, serialização de RPCs e gerações de carga/poll | `orders.get/set/loadFiscal`, `queueRequest`, navegação, UI e pintura |
+| `orders/detail-controller.js` | Escritas em andamento por pedido e ciclo de abertura/salvamento/cancelamento/reabertura | Sessão, API, cache de clientes, leitura dos campos e callbacks de pintura/recarga |
+| `orders/detail-view.js` | Nenhum | Snapshot da sessão, modelos de leitura, renderização fiscal e ações; não consulta APIs |
+| `orders/fiscal-controller.js` | Operações ocupadas e mensagens por pedido, revisão das consultas fiscais | Sessão, cache fiscal, API, confirmação e callbacks do detalhe/lista/DANFE |
+| `orders/documents.js` | Nenhum | API de PDF oficial, pop-up, formatadores, modelo de separação e `openPrint` |
 | `orders/fiscal-loader.js` | Fila, limite global de três chamadas e promessas em andamento por pedido/cache | `api` autenticada e `getCache`; descarta jobs ainda não iniciados de cache aposentado e não substitui respostas atualizadas pelo detalhe do pedido |
 
-As factories não recebem o objeto `state` inteiro. Seus adaptadores estão nos fragmentos `00`, `02`, `04` e `14`. O cache de clientes permanece compartilhado por uma porta porque o editor de Pedidos usa as mesmas opções cadastrais. O cache fiscal também é compartilhado: trocar sua referência invalida escritas de leituras antigas.
+As factories não recebem o objeto `state` inteiro. Seus adaptadores estão nos fragmentos `00`, `02`, `04`, `14`, `16` e `19`. O cache de clientes permanece compartilhado por uma porta porque o editor de Pedidos usa as mesmas opções cadastrais. O cache fiscal também é compartilhado: trocar sua referência invalida escritas de leituras antigas.
 
 As telas descartam respostas quando uma nova carga ou outra tela/modal já assumiu o destino. As operações mutáveis mantêm seus endpoints e payloads canônicos. A UI de rotas distingue falha de consulta de ausência de rotas; despacho comum continua sob os gates fiscais existentes.
 
 ## Runtime restante
 
-Os 19 arquivos de `runtime-parts/` são fragmentos ordenados da IIFE, não scripts independentes. A lista de origem está em `scripts/build-admin-runtime.mjs`; edite o fragmento e regenere com:
+Os 17 arquivos de `runtime-parts/` são fragmentos ordenados da IIFE, não scripts independentes. A lista de origem está em `scripts/build-admin-runtime.mjs`; edite o fragmento e regenere com:
 
 ```sh
 node scripts/build-admin-runtime.mjs --write
 node scripts/build-admin-runtime.mjs --check
 ```
 
-Os controladores restantes de produtos/cestas, balanço, compras/XML, fiscal e edição de pedidos ainda compartilham estado, API e DOM. A extração dessas fronteiras continua pendente; a separação já feita não equivale à conclusão integral das Etapas 1 e 2.
+Os controladores restantes de produtos/cestas, balanço e compras/XML ainda compartilham estado, API e DOM. Em Pedidos, a criação manual, o modelo operacional de cards, o chat e o bottom sheet de separação ainda ficam na IIFE; lista, sessão, editor, fiscal, apresentação do detalhe e documentos já têm fronteiras explícitas. A extração dessas fronteiras continua pendente; a separação já feita não equivale à conclusão integral das Etapas 1 e 2.
+
+## Contratos de Pedidos
+
+A sessão é criada no bootstrap. Os callbacks de lista, detalhe, fiscal e impressão são funções de ligação; suas factories só são executadas antes de `start()`, depois dos providers. Nenhuma função recebe o estado geral do aplicativo.
+
+Salvar, cancelar e reabrir capturam o pedido e a geração do editor antes do POST. A lista pode ser atualizada após a gravação, mas a conclusão só reabre/repinta a mesma sessão. Operações fiscais usam bloqueio por pedido; a atualização posterior sempre consulta o ID de origem. Revisões de leitura impedem que uma resposta anterior substitua uma consulta ou mutação mais recente. O cache fiscal compartilhado também recebe resultados de pedidos que já não estão abertos.
+
+A fila manual serializa consultas e alterações pelo contrato `manual_pick_queue_action_v1`; cliques repetidos no mesmo pedido durante uma alteração são descartados. O polling não substitui uma carga completa iniciada depois dele.
+
+O editor privado anterior não tinha ligação com eventos, navegação ou `DonaAntoniaAdminBridge`. Seus handlers e auxiliares foram removidos, assim como a prévia compartilhada e o gerador de botões legado. Não foram removidos endpoints de backend, migrations históricas ou os fluxos canônicos de separação, atendimento e pagamento.
