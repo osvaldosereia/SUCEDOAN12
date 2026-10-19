@@ -19,6 +19,7 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/build-admin-runtime.mjs --check
+      - run: node scripts/audit-admin-module-load-graph.mjs
       - run: node --check vitrine/admin/admin-runtime.js
       - run: node scripts/test-admin-module-load-contract.mjs
       - run: node scripts/test-admin-controller-contracts.mjs
