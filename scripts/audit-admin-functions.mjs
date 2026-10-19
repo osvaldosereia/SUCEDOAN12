@@ -188,11 +188,17 @@ const bySection=Object.fromEntries(sections.map(x=>[x,0]));
 for(const f of functions)bySection[f.section]=(bySection[f.section]||0)+1;
 const emptyCatch=sources.map(s=>({path:s.path,count:(s.text.match(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)||[]).length})).filter(x=>x.count);
 // Record exact locations for later contextual review; do not remove catches heuristically.
+const declarationsByPath=new Map();
+for(const declaration of functions){
+  const entries=declarationsByPath.get(declaration.path)||[];
+  entries.push(declaration);
+  declarationsByPath.set(declaration.path,entries);
+}
 const emptyCatchSites=sources.flatMap(source=>[...source.text.matchAll(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)].map(m=>{
   const line=lineOf(source.text,m.index);
   const prefix=source.text.slice(Math.max(0,m.index-240),m.index);
   const surrounding=prefix.replace(/\s+/g,' ').trim();
-  const nearby=functions.filter(f=>f.path===source.path&&f.line<=line).at(-1);
+  const nearby=declarationsByPath.get(source.path)?.filter(f=>f.line<=line).at(-1);
   const risk_hint=/\b(?:rpc|fetch|api|hub)\s*\(|\.rpc\s*\(/.test(prefix)?'integration':
     /\b(?:save|update|insert|delete|sync|print|send|write)\w*\s*\(/i.test(prefix)?'mutation':'unknown_or_optional';
   return {path:source.path,line,section:domain(source.path,'',line),
