@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const begin=admin.indexOf('  async function createManualSale(){');
 const end=admin.indexOf('\n  const ORDER_SEPARATORS=',begin);
