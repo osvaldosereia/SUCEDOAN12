@@ -38,7 +38,7 @@ grant select, insert, update, delete on table public.basket_mold_shared_item_opt
 -- Migra os rótulos existentes e as três opções de menor preço atuais, sem tocar nas quantidades.
 with eligible as (
   select pos.label, pos.sort_order, opt.product_id,
-         coalesce(p.offer_price, p.price, 0) as price,
+         case when p.is_offer then coalesce(p.offer_price, p.price, 0) else coalesce(p.price, 0) end as price,
          row_number() over (
            partition by pos.label, opt.product_id
            order by pos.sort_order, pos.id
