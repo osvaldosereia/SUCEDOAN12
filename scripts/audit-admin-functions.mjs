@@ -85,7 +85,22 @@ function domain(file,name,line){
   if(/product/.test(file))return 'Produtos';
   return 'Infraestrutura compartilhada';
 }
-const lineOf=(text,index)=>text.slice(0,index).split('\n').length;
+const newlinePositions=new Map();
+function lineOf(text,index){
+  let positions=newlinePositions.get(text);
+  if(!positions){
+    positions=[];
+    for(let i=text.indexOf('\n');i!==-1;i=text.indexOf('\n',i+1))positions.push(i);
+    newlinePositions.set(text,positions);
+  }
+  let low=0,high=positions.length;
+  while(low<high){
+    const middle=(low+high)>>>1;
+    if(positions[middle]<index)low=middle+1;
+    else high=middle;
+  }
+  return low+1;
+}
 const functions=[];
 const functionRe=/\b(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/g;
 const arrowRe=/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^\n=]+)?=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/g;
