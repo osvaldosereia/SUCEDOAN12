@@ -235,10 +235,11 @@ async function load(showLoading=true){
   state.dirty=false;
   render();
 }
+let anaHistoryGeneration=0;
 async function loadHistory(){
-  const host=state.host,section=state.section;
+  const host=state.host,section=state.section,generation=++anaHistoryGeneration;
   const data=await api('admin_history');
-  if(state.host!==host)return;
+  if(generation!==anaHistoryGeneration||state.host!==host)return;
   state.history=data.history||[];
   state.metrics=data.metrics||null;
   state.versions=data.versions||state.versions;
