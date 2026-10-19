@@ -5,7 +5,7 @@ Data: 19/10/2026. Base inicial: branch `fix/admin-fiscal-hardening-20261018`, HE
 ## Resultado desta continuação
 
 - O runtime continua sendo montado de 20 fragmentos na ordem atual. Foram extraídos para módulos puros os modelos de composição para impressão de separação, completude cadastral do cliente e conciliação/renderização das formas de pagamento. Os três são carregados antes do runtime, publicados por interfaces congeladas e testados sem DOM ou chamadas remotas.
-- A extração reduziu o escopo lexical compartilhado em sete funções e consolidou o gerador duplicado de `<option>`; a sequência clássica passou a 23 scripts e 19 dependências de runtime verificadas.
+- A extração reduziu o escopo lexical compartilhado em sete funções e consolidou o gerador duplicado de `<option>`. Quatro módulos de Marketing agora compartilham o helper defensivo para fechar `<dialog>`, em vez de manter quatro implementações idênticas. A sequência clássica passou a 23 scripts e 19 dependências de runtime verificadas.
 - Corrigida a ordenação de itens sem gôndola na lista de separação. `Number(null)` era `0`, apesar do sentinela `999999` usado para itens sem posição; agora esses itens ficam ao final.
 - Atualizados contratos que ainda descreviam o runtime inline, o Atendimento embutido, a fila v3 ou a API de atendimento antiga. Os testes agora verificam os arquivos e rotas usados pela branch.
 - Corrigida uma falha silenciosa pós-expedição: se o despacho era concluído mas a recarga falhava, a lista antiga podia continuar habilitada. A tela agora marca os dados como obsoletos, bloqueia ações até a recarga e informa o operador.
@@ -27,7 +27,7 @@ Data: 19/10/2026. Base inicial: branch `fix/admin-fiscal-hardening-20261018`, HE
 | Validades | Lotes, FEFO, vencidos e alertas | Contratos de FEFO e ciclo de vida passaram. Nenhuma regra de desconto ou descarte foi alterada. |
 | Orçamentos | Cotação, conversão e criação manual | Contratos de orçamento e criação de pedido passaram; a ligação atual pelo Atendimento standalone também foi verificada. |
 | Clientes | Endereço, pagamento, busca e histórico | Contratos de dados cadastrais e rastreabilidade do histórico passaram; as proteções existentes contra respostas assíncronas tardias foram mantidas. |
-| Marketing | Segmentação, campanhas, agendamento e visualizações | Suítes de campanhas, helpers e corridas de atualização passaram. Não houve alteração de consentimento ou disparos. |
+| Marketing | Segmentação, campanhas, agendamento, visualizações e diálogos | Suítes de campanhas, helpers e corridas de atualização passaram. Quatro cópias idênticas do fechamento de diálogos foram substituídas por `marketing/dialog.js`, com teste para fechamento normal e `close()` lançando. O workflow de helpers agora cobre mudanças nesses módulos. Não houve alteração de consentimento ou disparos. |
 | Compras/XML | Importação, catálogo, recebimento e fiscal | Contratos de recebimento, identidade fiscal e paridade dos espelhos Edge passaram. Não foram criadas nem aplicadas migrations. |
 | Balanço | Folha, leitura, aplicação, concorrência e gravações | Contratos de balanço e leitura passaram. Escritas reais ou testes em banco não foram executados nesta continuação. |
 | Gôndolas | Cadastro, associação e leitura de código | Contratos operacionais e de inventário passaram. Nenhum cadastro foi alterado. |
@@ -48,6 +48,8 @@ O projeto Supabase consultado foi `ssbesxgaijknwsjbsbcz` (ativo). A listagem con
 
 Os advisors de produção retornaram avisos que exigem decisão de segurança fora desta alteração de branch: 3 funções com `search_path` mutável, 36 funções `SECURITY DEFINER` executáveis por `authenticated` e proteção de senha vazada desativada. Também há avisos INFO de 217 tabelas com RLS sem policy e 74 FKs sem índice cobridor. Esses achados foram apenas lidos; permissões, migrations, configuração Auth e dados de produção não foram modificados.
 
+Na continuação de 19/10, os advisors foram consultados também no staging `trglbjtbkdkyqocufusw` (DONA-ANTONIA-2-STAGING), sem escrita: 22 tabelas com RLS sem policy (INFO), proteção de senha vazada desabilitada (WARN), 18 FKs sem índice cobridor, um índice reportado como não usado e estratégia fixa de conexões do Auth (INFO). São avisos do ambiente de staging, distintos dos achados previamente registrados para produção; nenhum schema, policy, índice ou configuração foi alterado.
+
 Não houve homologação ponta a ponta das Edge Functions modificadas, do Bling, WhatsApp/Meta, SEFAZ, impressão física ou leitura/escrita em pedidos reais. A validação existente de SQL atômico em staging continua separada dessas integrações.
 
 ## Verificações executadas
@@ -58,10 +60,11 @@ Não houve homologação ponta a ponta das Edge Functions modificadas, do Bling,
 - `node scripts/test-admin-separation-model.mjs`
 - `node scripts/test-admin-customer-readiness-model.mjs`
 - `node scripts/test-admin-order-payment-method-model.mjs`
+- `node scripts/test-admin-marketing-dialog-helper.mjs`
 - `node scripts/test-admin-expedition-stale-refresh.mjs`
 - Inventário integral de funções e contratos de seção.
 - 116 scripts `test-admin-*.mjs` e 5 scripts `test-admin-*.py`, sem falhas após atualizar contratos defasados e cobrir a falha de recarga da Expedição.
-- Os 35 workflows do HEAD atualizado `77d7061`, incluindo o contrato corrigido de Cestas, concluíram sem falhas. A rodada anterior teve uma única falha no teste estático que ainda procurava a regra no runtime; o teste foi alinhado ao módulo extraído e passou na rodada seguinte.
+- Os 35 workflows do HEAD atualizado `77d7061`, incluindo o contrato corrigido de Cestas, concluíram sem falhas. A rodada anterior teve uma única falha no teste estático que ainda procurava a regra no runtime; o teste foi alinhado ao módulo extraído e passou na rodada seguinte. No head remoto atual `eef4827`, os 35 workflows também concluíram com sucesso. A extração do helper de diálogo nesta continuação adiciona uma condição nova de execução ao workflow de Marketing; a rodada da CI para esse novo commit ainda ficará pendente de publicação da branch.
 
 ## Limite estrutural remanescente
 
