@@ -390,39 +390,48 @@ async function promptMissingPhoto(row){
  msg("EAN salvo, mas não cadastrado. Fotografe a embalagem.");
 }
 async function compressProductPhoto(file){
- const limit=4*1024*1024;
+ const limit=100*1024;
  let source=null,release=()=>{};
  try{if(typeof createImageBitmap==="function"){source=await createImageBitmap(file);release=()=>source?.close?.()}}catch{}
  if(!source){
   const objectUrl=URL.createObjectURL(file),image=new Image();
   try{await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error("imagem_invalida"));image.src=objectUrl});source=image}
-  catch(error){URL.revokeObjectURL(objectUrl);if(file.size<=limit)return file;throw error}
+  catch(error){URL.revokeObjectURL(objectUrl);throw error}
   release=()=>URL.revokeObjectURL(objectUrl);
  }
  try{
+  const attempts=[[1600,.82],[1440,.80],[1280,.78],[1120,.76],[1024,.74],[960,.72],[896,.70],[832,.68],[768,.66],[704,.64],[640,.62],[576,.60],[512,.58],[448,.56],[384,.54],[320,.52]];
   let best=null;
-  for(const [maxEdge,quality] of [[1440,.80],[1280,.72],[1024,.64]]){
+  for(const [maxEdge,quality] of attempts){
    const scale=Math.min(1,maxEdge/Math.max(source.width,source.height));
    const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(source.width*scale));canvas.height=Math.max(1,Math.round(source.height*scale));
    const context=canvas.getContext("2d",{alpha:false});if(!context)throw Error("canvas_indisponivel");
    context.drawImage(source,0,0,canvas.width,canvas.height);
-   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));canvas.width=1;canvas.height=1;
+   let blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/webp",quality));
+   if(!blob||blob.type!=="image/webp")blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));
+   canvas.width=1;canvas.height=1;
    if(blob&&(!best||blob.size<best.size))best=blob;
-   if(blob&&blob.size<=limit)return new File([blob],"produto.jpg",{type:"image/jpeg",lastModified:Date.now()});
+   if(blob&&blob.size<=limit){
+    const isWebp=blob.type==="image/webp";
+    return new File([blob],isWebp?"produto.webp":"produto.jpg",{type:isWebp?"image/webp":"image/jpeg",lastModified:Date.now()});
+   }
   }
-  if(best&&best.size<=limit)return new File([best],"produto.jpg",{type:"image/jpeg",lastModified:Date.now()});
-  throw Error("foto_acima_de_4mb_apos_compactar");
+  if(best&&best.size<=limit){
+   const isWebp=best.type==="image/webp";
+   return new File([best],isWebp?"produto.webp":"produto.jpg",{type:isWebp?"image/webp":"image/jpeg",lastModified:Date.now()});
+  }
+  throw Error("foto_nao_cabe_em_100kb");
  }finally{release()}
 }
 async function uploadPhoto(file){
  if(!missingRecordId||!file||busy)return;
- const recordId=missingRecordId;setBusy(true);msg("Compactando e salvando a foto…");
+ const recordId=missingRecordId;setBusy(true);msg("Compactando a foto para até 100 KB…");
  try{
   pendingPhotoFile=await compressProductPhoto(file);
-  const form=new FormData();form.append("id",recordId);form.append("file",pendingPhotoFile,"produto.jpg");
+  const form=new FormData();form.append("id",recordId);form.append("file",pendingPhotoFile,pendingPhotoFile.name);
   const result=await call("photo",form);
   updateRowLocal(result.row,null);photoReset();
-  msg("✓ Foto compactada e vinculada ao EAN.");
+  msg("✓ Foto compactada para até 100 KB e vinculada ao EAN.");
   if(!$("photoViewer").hidden)await showSavedPhoto(recordId);
  }catch(e){
   $("takePhoto").textContent="↻ Reenviar foto";$("photoViewerStatus").textContent="Não foi possível compactar ou salvar. "+e.message;
