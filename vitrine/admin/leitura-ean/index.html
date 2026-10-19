@@ -537,41 +537,21 @@ function openResolutionPanel(row,mode){
   panel.querySelector('input[name="name"]')?.focus();
  }
 }
+function syncFilterButtons(){document.querySelectorAll("[data-filter]").forEach(button=>button.classList.toggle("active",button.dataset.filter===filter))}
 async function resolveRow(action,id,payload){
  if(busy)return;setBusy(true);
  try{
   const data=await call(action,{id,...payload});
-  updateRowLocal(data.row,data.summary);
+  const moved=action==="link_product"||action==="create_inactive";
+  if(moved){
+   filter="found";syncFilterButtons();
+   try{await load()}catch{updateRowLocal(data.row,data.summary)}
+  }else updateRowLocal(data.row,data.summary);
   const text=action==="repair_ean"?(data.row.sync_status==="found"?"EAN corrigido e encontrado no cadastro.":"EAN corrigido; continua não encontrado.")
-   :action==="link_product"?"Produto vinculado, EAN alternativo salvo e estoque atualizado."
-   :"Produto cadastrado como inativo, com estoque zero.";
+   :action==="link_product"?"Produto vinculado, EAN alternativo salvo e estoque atualizado. Agora está em Produtos encontrados."
+   :"Produto cadastrado como inativo, com estoque zero. Agora está em Produtos encontrados.";
   msg("✓ "+text);
  }catch(e){msg("Não foi possível concluir: "+e.message,true)}finally{setBusy(false)}
-}
-async function showSavedPhoto(id){
- const viewer=$("photoViewer"),image=$("photoViewerImage"),status=$("photoViewerStatus");
- viewer.hidden=false;image.hidden=true;image.removeAttribute("src");$("photoViewerAdd").hidden=true;status.textContent="Carregando foto…";
- $("photoViewerClose").focus();
- try{
-  const token=await auth(),url=new URL(API);url.searchParams.set("action","photo_url");url.searchParams.set("id",id);
-  const res=await fetch(url,{headers:{Authorization:"Bearer "+token,apikey:KEY},cache:"no-store"});
-  const data=await res.json();if(!res.ok||!data.ok)throw Error(data.error||"foto_indisponivel");
-  image.onload=()=>{image.hidden=false;status.textContent=""};
-  image.onerror=()=>{image.hidden=true;status.textContent="A foto não pôde ser carregada. Tente novamente."};
-  image.src=data.url;
- }catch(e){status.textContent="Foto indisponível: "+e.message;msg("Foto indisponível: "+e.message,true)}
-}
-function openPhotoUploadViewer(row){
- missingRecordId=row.id;paused=true;pendingPhotoFile=null;
- const viewer=$("photoViewer"),image=$("photoViewerImage");
- image.hidden=true;image.removeAttribute("src");
- $("photoViewerStatus").textContent="Este registro ainda não tem foto salva. Escolha uma imagem ou tire uma foto; ela será compactada antes do envio.";
- $("photoViewerAdd").hidden=false;viewer.hidden=false;$("photoViewerClose").focus();
-}
-$("photoViewerAdd").addEventListener("click",()=>{if(!busy&&missingRecordId)$("productPhotoInput").click()});
-function closePhotoViewer(){
- $("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src");$("photoViewerImage").hidden=true;$("photoViewerAdd").hidden=true;
- if(missingRecordId){missingRecordId="";pendingPhotoFile=null;paused=false}
 }
 $("entries").addEventListener("click",(event)=>{
  const open=event.target.closest("[data-resolve-open]");
