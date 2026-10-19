@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
+import {resolveMarketingTemplateVariables} from "../_shared/marketing-template-variables-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -60,8 +61,8 @@ function requestedLimit(value:unknown){
   const n=Number(value??DEFAULT_BATCH);if(!Number.isInteger(n)||n<1)return DEFAULT_BATCH;return Math.min(n,MAX_BATCH);
 }
 
-function bodyComponents(templateComponents:unknown,variableValues:unknown,trackingLinks:any[]=[]){
-  const vars=(variableValues&&typeof variableValues==="object"&&!Array.isArray(variableValues))?{...(variableValues as Record<string,unknown>)}:{};
+function bodyComponents(templateComponents:unknown,variableValues:unknown,trackingLinks:any[]=[],customerName=""){
+  const vars=resolveMarketingTemplateVariables(variableValues,customerName);
   const components=Array.isArray(templateComponents)?templateComponents:[];
   const body=components.find((item:any)=>String(item?.type||"").toUpperCase()==="BODY");
   const required=[...new Set([...String(body?.text||"").matchAll(/\{\{(\d+)\}\}/g)].map(match=>Number(match[1])).filter(Number.isInteger))].sort((a,b)=>a-b);
@@ -98,8 +99,8 @@ function carouselTrackingComponent(templateComponents:unknown,trackingLinks:any[
   };
 }
 
-function messageComponents(templateComponents:unknown,variableValues:unknown,trackingLinks:any[]=[],trackingRequired=false){
-  const output=bodyComponents(templateComponents,variableValues,trackingLinks);
+function messageComponents(templateComponents:unknown,variableValues:unknown,trackingLinks:any[]=[],trackingRequired=false,customerName=""){
+  const output=bodyComponents(templateComponents,variableValues,trackingLinks,customerName);
   const carousel=carouselTrackingComponent(templateComponents,trackingLinks,trackingRequired);
   if(carousel)output.push(carousel);
   return output;
@@ -160,7 +161,7 @@ async function processDispatch(item:any,mode:string,account:any,canaryPhones:Set
   const strategyTracked=tracking.data?.strategy_tracked===true;
 
   let components:any[];
-  try{components=messageComponents(data.template_components,data.variable_values,tracking_links,strategyTracked)}
+  try{components=messageComponents(data.template_components,data.variable_values,tracking_links,strategyTracked,data.customer_name)}
   catch(error){await finish(dispatchId,"failed",text(error instanceof Error?error.message:error,500),null);return {status:"failed",error:"template_variables_invalid"}}
 
   try{
@@ -222,3 +223,4 @@ Deno.serve(async(req:Request)=>{
     return json({ok:false,error:"worker_internal_error"},500);
   }
 });
+
