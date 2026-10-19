@@ -211,7 +211,7 @@ const KEY="sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8";
 const API=BASE+"/functions/v1/admin-ean-capture-v1";
 const $=(id)=>document.getElementById(id);
 let tokenPromise=null,cameraStream=null,cameraDetector=null,cameraRunning=false,cameraTimer=null,cameraChoice="",lastCameraEan="",lastCameraAt=0,scanMode="",scanner=null,torchOn=false;
-let paused=false,busy=false,editingId="",pendingId="",currentEan="",filter="all",offset=0,hasMore=false,rows=[],count=0;
+let paused=false,busy=false,editingId="",pendingId="",currentEan="",filter="all",offset=0,hasMore=false,rows=[],count=0,missingRecordId="",pendingPhotoFile=null;
 const uuid=()=>crypto.randomUUID();
 const msg=(s,error=false)=>{$("message").textContent=s;$("message").classList.toggle("error",error)};
 const normalizeEan=(v)=>String(v||"").replace(/\D/g,"");
@@ -243,7 +243,11 @@ async function call(action,payload=null,retry=true){
  const token=await auth();
  const url=new URL(API);url.searchParams.set("action",action);
  let options={cache:"no-store",headers:{Authorization:"Bearer "+token,apikey:KEY}};
- if(payload){options.method="POST";options.headers["Content-Type"]="application/json";options.body=JSON.stringify(payload)}
+ if(payload){
+  options.method="POST";
+  if(payload instanceof FormData)options.body=payload;
+  else{options.headers["Content-Type"]="application/json";options.body=JSON.stringify(payload)}
+ }
  if(action==="list"){url.searchParams.set("filter",filter);url.searchParams.set("offset",String(offset));url.searchParams.set("limit","60")}
  const res=await fetch(url,options);
  if(res.status===401&&retry){sessionStorage.removeItem("da_finance_access_token_v1");return call(action,payload,false)}
@@ -251,26 +255,34 @@ async function call(action,payload=null,retry=true){
  if(!res.ok||data.ok!==true)throw Error(data.error||"Falha de comunicação com o servidor.");
  return data;
 }
-function setBusy(v){busy=v;$("save").disabled=v;$("sync").disabled=v;$("more").disabled=v;$("useEan").disabled=v;$("cameraButton").disabled=v}
+function setBusy(v){busy=v;for(const id of ["save","sync","more","useEan","cameraButton","takePhoto","nativePhoto","skipPhoto"]){const node=$(id);if(node)node.disabled=v}}
 function codeDetected(raw){
  const code=normalizeEan(raw);
- if(paused||busy||code.length<8||code.length>14)return;
+ if(paused||busy||missingRecordId||code.length<8||code.length>14)return;
  paused=true;
  currentEan=code;editingId="";pendingId=uuid();
  $("currentEan").textContent=code;
  $("editingLabel").textContent="EAN lido";
- $("quantity").value="1";$("expiry").value="";
+ $("quantity").value="1";$("expiry").value="";$("expiryField").hidden=true;$("toggleValidity").textContent="+ Validade (opcional)";
  $("entryEditor").hidden=false;$("eanInput").value="";
  msg("EAN lido. Informe a quantidade e salve.");
  if(navigator.vibrate)navigator.vibrate(70);
  playBalanceScanBeep();
- $("quantity").focus({preventScroll:true});
- $("entryEditor").scrollIntoView({behavior:"smooth",block:"nearest"});
+ $("quantity").focus({preventScroll:true});$("quantity").select();
 }
 function cancel(){
  editingId="";currentEan="";pendingId="";paused=false;$("entryEditor").hidden=true;
- if(!cameraRunning)$("eanInput").focus();
+ if(!cameraRunning){$("alternativeInput").open=true;$("eanInput").focus()}
 }
+$("qtyMinus").onclick=()=>{$("quantity").value=String(Math.max(1,Number($("quantity").value||1)-1))};
+$("qtyPlus").onclick=()=>{$("quantity").value=String(Math.max(1,Number($("quantity").value||1)+1))};
+$("qtyFive").onclick=()=>{$("quantity").value="5"};
+$("qtyTen").onclick=()=>{$("quantity").value="10"};
+$("toggleValidity").onclick=()=>{
+ $("expiryField").hidden=!$("expiryField").hidden;
+ $("toggleValidity").textContent=$("expiryField").hidden?"+ Validade (opcional)":"− Ocultar validade";
+ if(!$("expiryField").hidden)$("expiry").focus({preventScroll:true});
+};
 function addManual(){
  const code=normalizeEan($("eanInput").value);
  if(!/^\d{8,14}$/.test(code)){msg("Informe um EAN numérico entre 8 e 14 dígitos.",true);return}
@@ -302,9 +314,7 @@ async function load(append=false){
  rows=append?rows.concat(data.rows||[]):data.rows||[];
  offset=data.next_offset||rows.length;count=data.count||0;hasMore=Boolean(data.has_more);
  const s=data.summary||{};
- $("countAll").textContent=s.total??0;
- $("countFound").textContent=s.found??0;
- $("countUnknown").textContent=s.not_found??0;
+ setCounts(s);
  paint();$("more").hidden=!hasMore;
 }
 function paint(){
@@ -317,25 +327,45 @@ function paint(){
   return '<article class="entry"><div class="entry-left"><div class="entry-code">'+esc(r.ean)+'</div>'+
    '<div class="entry-meta">Quantidade: <b>'+qtyBR(r.quantity)+'</b> · '+dateBR(r.expires_on)+'</div>'+
    '<div class="entry-meta">'+fmt(r.created_at)+'</div></div>'+
-   '<div class="entry-right">'+status+'<div><button type="button" class="edit-btn" data-edit="'+esc(r.id)+'">Editar</button></div></div></article>';
+   '<div class="entry-right">'+status+(r.photo_path?'<div class="entry-meta">📷 Foto salva</div>':'')+
+   '<div><button type="button" class="edit-btn" data-edit="'+esc(r.id)+'">Editar</button>'+
+   (r.sync_status==="not_found"&&!r.photo_path?'<button type="button" class="edit-btn" data-photo="'+esc(r.id)+'">📷 Foto</button>':'')+
+   (r.photo_path?'<button type="button" class="edit-btn" data-view-photo="'+esc(r.id)+'">Ver foto</button>':'')+
+   '</div></div></article>';
  }).join("");
 }
 $("entries").addEventListener("click",(event)=>{
- const btn=event.target.closest("[data-edit]");if(!btn||busy)return;
+ const view=event.target.closest("[data-view-photo]");
+ if(view){
+  (async()=>{try{
+   const token=await auth(),url=new URL(API);
+   url.searchParams.set("action","photo_url");url.searchParams.set("id",view.dataset.viewPhoto);
+   const res=await fetch(url,{headers:{Authorization:"Bearer "+token,apikey:KEY},cache:"no-store"});
+   const data=await res.json();if(!res.ok||!data.ok)throw Error(data.error||"foto_indisponivel");
+   window.open(data.url,"_blank","noopener,noreferrer");
+  }catch(e){msg("Foto indisponível: "+e.message,true)}})();return;
+ }
+ const photo=event.target.closest("[data-photo]");
+ if(photo){
+  if(busy||missingRecordId)return;
+  const row=rows.find(x=>x.id===photo.dataset.photo);
+  if(row)promptMissingPhoto(row);return;
+ }
+ const btn=event.target.closest("[data-edit]");if(!btn||busy||missingRecordId)return;
  const r=rows.find(x=>x.id===btn.dataset.edit);if(!r)return;
  paused=true;editingId=r.id;pendingId="";currentEan=r.ean;
  $("editingLabel").textContent="Editar leitura salva";$("currentEan").textContent=r.ean;
- $("quantity").value=r.quantity;$("expiry").value=r.expires_on||"";
- $("entryEditor").hidden=false;$("entryEditor").scrollIntoView({behavior:"smooth",block:"center"});$("quantity").focus();
+ $("quantity").value=r.quantity;$("expiry").value=r.expires_on||"";$("expiryField").hidden=!r.expires_on;$("toggleValidity").textContent=r.expires_on?"− Ocultar validade":"+ Validade (opcional)";
+ $("entryEditor").hidden=false;$("quantity").focus({preventScroll:true});$("quantity").select();
 });
 document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("click",async()=>{
- if(busy)return;filter=btn.dataset.filter;
+ if(busy||missingRecordId)return;filter=btn.dataset.filter;
  document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===btn));
  try{setBusy(true);await load();msg("Lista filtrada.")}catch(e){msg(e.message,true)}finally{setBusy(false)}
 }));
 $("more").onclick=async()=>{if(busy)return;try{setBusy(true);await load(true)}catch(e){msg(e.message,true)}finally{setBusy(false)}};
 $("sync").onclick=async()=>{
- if(busy)return;setBusy(true);msg("Sincronizando os EANs com o cadastro…");
+ if(busy||missingRecordId)return;setBusy(true);msg("Sincronizando os EANs com o cadastro…");
  try{const s=await call("sync",{});await load();msg("✓ Sincronizado: "+s.summary.found+" encontrado(s), "+s.summary.not_found+" não encontrado(s).")}
  catch(e){msg("Não foi possível sincronizar: "+e.message,true)}finally{setBusy(false)}
 };
