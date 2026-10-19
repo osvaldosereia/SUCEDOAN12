@@ -366,6 +366,13 @@
     .basket-card.basket-size-economica{background:#fff9df!important;border-color:#efe6c5!important}
     .basket-card.basket-size-card .basket-card-title{text-align:center;text-transform:uppercase;font-size:14px!important;font-weight:850;letter-spacing:.01em}
     .basket-card-item-total{align-self:center;max-width:100%;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.68);color:#174b35;font-size:12px;font-weight:750;line-height:1.2;text-align:center;white-space:nowrap}
+    .basket-size-card-photo{height:clamp(105px,13vw,155px);padding:8px 12px 0;box-sizing:border-box;display:flex;align-items:center;justify-content:center}
+    .basket-size-card-photo img{display:block;width:100%;height:100%;object-fit:contain;border-radius:10px}
+    .basket-size-card .basket-card-info{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto auto auto auto!important;row-gap:6px}
+    .basket-size-card .basket-card-title{grid-column:1;grid-row:1!important;padding:8px 6px 0}
+    .basket-size-card .basket-card-item-total{grid-column:1;grid-row:2}
+    .basket-size-card .price{grid-column:1;grid-row:3!important;margin:2px 0!important}
+    .basket-size-card .add{grid-column:1;grid-row:4!important;width:100%;margin:4px 0 0!important}
     @media(min-width:760px) and (max-width:1023px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}}
     @media(min-width:1024px){.basket-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important}.basket-card .basket-card-info{padding:15px 13px!important}.basket-card .basket-card-title{font-size:17px!important}.basket-card .price{font-size:20px!important}}
 
@@ -428,7 +435,7 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <script src="/vitrine/basket-carousel.js?v=20261019-basket-total-items-v1"></script>
+  <script src="/vitrine/basket-carousel.js?v=20261019-basket-size-photos-v1"></script>
   <script>
   (() => {
     'use strict';

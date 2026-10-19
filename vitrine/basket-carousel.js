@@ -50,14 +50,24 @@
 
 window.BasketCarousel={
   card(b,esc,money,basketName,index=99){
+    const sizePhotos={
+      grande:'/site/img/CESTA-GRANDE-KOBLENZ.webp',
+      media:'/site/img/CESTA-MEDIA-BONINI.webp',
+      pequena:'/site/img/CESTA-PEQUENA-BONINI.webp',
+      mini:'/site/img/CESTA-MINI-KOBLENZ.webp',
+      economica:'/img/cesta-basica-cuiaba-varzea-grande-economica.avif'
+    };
     const name=basketName(b.name),key=String(b.card_key||b.id);
     const sizeCard=b.size_card===true;
     const sizeClass=sizeCard?' basket-size-card basket-size-'+esc(b.size_key||''):'';
     const itemCount=Math.max(0,Math.floor(Number(b.total_item_count)||0));
     const itemSummary=sizeCard?'<div class="basket-card-item-total">'+itemCount+' itens</div>':'';
+    const imagePath=sizeCard?sizePhotos[String(b.size_key||'').toLocaleLowerCase('pt-BR')]||'':'';
+    const imageAttrs=index===0?'src="'+esc(imagePath)+'" loading="eager" fetchpriority="high"':'data-basket-src="'+esc(imagePath)+'" loading="lazy"';
+    const image=imagePath?'<div class="basket-size-card-photo"><img '+imageAttrs+' decoding="async" alt="Cesta '+esc(name)+'"></div>':'';
     const actionLabel=sizeCard?'Ver produtos':'Personalizar';
     const actionAria=sizeCard?'Ver produtos da cesta ':'Personalizar cesta ';
-    return '<article class="card basket-card'+sizeClass+'"><div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div>'+itemSummary+'<div class="price">'+money(b.display_price_cents)+'</div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="'+actionAria+esc(name)+'">'+actionLabel+'</button></div></article>';
+    return '<article class="card basket-card'+sizeClass+'">'+image+'<div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div>'+itemSummary+'<div class="price">'+money(b.display_price_cents)+'</div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="'+actionAria+esc(name)+'">'+actionLabel+'</button></div></article>';
   },
   prepareHome(host){
     const section=host?.closest?.('.section');if(!section)return;
