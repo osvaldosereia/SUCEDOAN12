@@ -12,6 +12,7 @@ assert.match(migration,/s\.marketing_opt_in is true/,'opt-in continua exigido na
 assert.match(migration,/c\.marketing_opt_in is true/,'opt-in continua revalidado no cadastro antes do envio');
 assert.match(worker,/templateVariables\(data\.template_components,data\.customer_name,data\.basket_name,data\.product_categories,data\.template_name\)/,'variáveis usam nome da cliente, cesta e categoria quando aplicável');
 assert.match(worker,/clean\(customerName,80\)\.split\(\/\\s\+\/\)\[0\]/,'mensagem usa o primeiro nome cadastrado da cliente');
+assert.match(migration,/'customer_name',coalesce\(nullif\(split_part\(btrim\(c\.name\),' ',1\),''\),'cliente'\)/,'fila fornece o nome cadastrado ao template');
 assert.match(migration,/template_name := 'recompradonaantonia30dias'\|\|right\(v_channel\.slug,4\)\|\|'v2'/,'fila seleciona a versão atualizada do template em cada canal');
 assert.match(worker,/uncertain/,'envio incerto não pode ser repetido automaticamente');
 assert.match(migration,/enabled boolean not null default false/,'automação começa desligada');
