@@ -1,5 +1,7 @@
 begin;
 
+alter table public.marketing_repurchase_state_v1 alter column send_channel_e164 drop not null;
+
 -- Replenishment is a monthly journey. Use the customer's purchase cadence when
 -- there is enough clean history, with a conservative 30-day default.
 create or replace function public.marketing_repurchase_recalc_v1(p_customer_id uuid)
@@ -17,6 +19,9 @@ declare
   v_reason text;
   v_interval_days integer := 30;
   v_interval_count integer := 0;
+  v_channel record;
+  v_product_categories jsonb := '[]'::jsonb;
+  v_template_name text := 'recompradonaantonia30dias';
 begin
   if p_customer_id is null then
     return jsonb_build_object('ok',false,'error','customer_required');
@@ -35,7 +40,7 @@ begin
   from public.marketing_repurchase_state_v1
   where customer_id = p_customer_id;
 
-  select o.id,o.order_number,o.confirmed_at
+  select o.id,o.order_number,o.confirmed_at,o.whatsapp_account_id,o.basket_id,o.basket_name_snapshot
     into v_order
   from public.orders o
   where o.customer_id = p_customer_id
@@ -44,6 +49,31 @@ begin
     and o.cancelled_at is null
   order by o.confirmed_at desc, o.updated_at desc, o.id desc
   limit 1;
+
+  if v_order.id is not null and v_order.whatsapp_account_id is not null then
+    select a.id,a.slug,a.phone_e164,a.is_active
+      into v_channel
+    from public.whatsapp_accounts a
+    where a.id=v_order.whatsapp_account_id;
+  end if;
+
+  if v_order.id is not null then
+    select coalesce(jsonb_agg(category order by category),'[]'::jsonb)
+      into v_product_categories
+    from (
+      select distinct nullif(btrim(coalesce(p.category,oi.metadata->>'category','')),'') as category
+      from public.order_items oi
+      left join public.products p on p.id=oi.product_id
+      where oi.order_id=v_order.id
+    ) categories
+    where category is not null;
+  end if;
+
+  if v_channel.is_active is true
+    and v_channel.slug in ('dona-antonia-0975','dona-antonia-1018')
+    and v_channel.phone_e164 is not null then
+    v_template_name := 'recompradonaantonia30dias'||right(v_channel.slug,4);
+  end if;
 
   -- Estimate the median gap across up to the last four confirmed orders.
   -- Ignore implausibly short/long gaps; clamp learned cadence to 21–45 days.
@@ -87,6 +117,12 @@ begin
     v_status := 'not_eligible';
     v_reason := 'phone_missing';
     v_due := v_order.confirmed_at + make_interval(days=>v_interval_days);
+  elsif v_channel.is_active is distinct from true
+    or v_channel.slug not in ('dona-antonia-0975','dona-antonia-1018')
+    or v_channel.phone_e164 is null then
+    v_status := 'not_eligible';
+    v_reason := 'send_channel_missing';
+    v_due := v_order.confirmed_at + make_interval(days=>v_interval_days);
   elsif v_existing.last_sent_order_id is not null and v_existing.last_sent_order_id = v_order.id then
     v_status := 'sent';
     v_reason := null;
@@ -107,12 +143,16 @@ begin
     case when v_order.order_number is null then null else v_order.order_number end,
     case when v_order.confirmed_at is null then null else v_order.confirmed_at end,
     v_due,v_status,coalesce(v_customer.marketing_opt_in,false),v_customer.primary_whatsapp_e164,
-    '+5565998150975','recompradonaantonia30dias',v_existing.last_sent_at,v_existing.last_sent_order_id,
+    v_channel.phone_e164,v_template_name,v_existing.last_sent_at,v_existing.last_sent_order_id,
     v_reason,
     jsonb_build_object(
       'purchase_source','canonical_orders',
       'purchase_channels',jsonb_build_array('0975','1018'),
       'delay_days',v_interval_days,
+      'last_basket_id',v_order.basket_id,
+      'last_basket_name',v_order.basket_name_snapshot,
+      'last_product_categories',v_product_categories,
+      'send_account_slug',v_channel.slug,
       'cadence_source',case when v_interval_count=0 then 'monthly_default' else 'purchase_history' end,
       'observed_intervals',v_interval_count
     ),
@@ -140,8 +180,8 @@ begin
     'last_purchase_at',case when v_order.confirmed_at is null then null else v_order.confirmed_at end,
     'due_at',v_due,
     'delay_days',v_interval_days,
-    'send_channel_e164','+5565998150975',
-    'template_name','recompradonaantonia30dias'
+    'send_channel_e164',v_channel.phone_e164,
+    'template_name',v_template_name
   );
 end
 $$;
