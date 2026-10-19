@@ -5,7 +5,7 @@ const segment=source.slice(source.indexOf('async function claim('),source.indexO
 assert.ok(segment.length>1000,'cannot locate order WhatsApp outbox error paths');
 assert.match(segment,/async function finishFailureSafely\(/);
 assert.match(segment,/console\.error\("order_whatsapp_outbox_finish_failed"/);
-assert.equal((segment.match(/await finishFailureSafely\(/g)||[]).length,6,'all six outbox error paths must use centralized finalization');
+assert.equal((source.match(/await finishFailureSafely\(/g)||[]).length,6,'all six outbox error paths must use centralized finalization');
 assert.doesNotMatch(segment,/try\s*\{\s*await finish\([^}]*\}\s*catch\s*\{\s*\}/,'silent outbox persistence failure');
 assert.match(source,/ops2_finish_whatsapp_outbox_v1/,'canonical outbox RPC still required');
 assert.match(source,/ops2_accept_order_whatsapp_meta_v1/,'canonical Meta acceptance RPC must remain');
