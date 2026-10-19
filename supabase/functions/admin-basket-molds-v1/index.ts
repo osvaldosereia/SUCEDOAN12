@@ -46,7 +46,7 @@ async function sharedItemSave(db:any,input:any){
     ||(item.id&&!uuid(item.id))||options.some((o:any)=>!uuid(o?.product_id||o)))
     return {error:"basket_mold_shared_item_invalid",status:400,message:"Informe o tipo de produto e suas alternativas válidas."};
   const q=await db.rpc("admin_upsert_basket_mold_shared_item_v2",{p_item:{
-    id:item.id||null,label:clean(item.label,180),options:options.map((o:any)=>({product_id:uuid(o?.product_id||o)}))
+    id:item.id||null,label:clean(item.label,180),subtitle:clean(item.subtitle,80),options:options.map((o:any)=>({product_id:uuid(o?.product_id||o)}))
   }});
   if(q.error)return rpcError(q.error);return q.data||{items:[]};
 }
