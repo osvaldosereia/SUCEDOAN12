@@ -40,7 +40,7 @@ assert.match(ui,/data-mold-selected-product/);
 assert.match(ui,/preferred:o\.metadata\?\.preferred===true/);
 assert.match(ui,/metadata:\{\.\.\.\(o\.metadata\|\|\{\}\),preferred:o\.preferred===true\}/);
 assert.match(ui,/editar_produto/);
-const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
+const adminHtml=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 assert.match(adminHtml,/params\.get\('editar_produto'\)/);
 assert.match(adminHtml,/uuid\.test\(directProductId\)/);
 assert.match(adminHtml,/openProductEditor\(\{id:directProductId\}\)/);
