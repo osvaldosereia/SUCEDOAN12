@@ -38,7 +38,7 @@ assert.equal(/kit interno|kit base|assembly_kit/i.test(ui),false,'normal mold ed
 assert.doesNotMatch(ui,/data-mold-prefer-option/);
 assert.match(ui,/data-mold-selected-product/);
 assert.match(ui,/preferred:o\.metadata\?\.preferred===true/);
-assert.match(ui,/metadata:\{\.\.\.\(o\.metadata\|\|\{\}\)\}/);
+assert.match(ui,/positions:activePositions\.map/);
 assert.match(ui,/editar_produto/);
 const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
 assert.match(adminHtml,/basket-admin-section\.js\?v=basket-personalization-v1/);
@@ -57,7 +57,7 @@ assert.match(multiPreferredSQL,/count\(\*\) filter \(where s\.is_preferred\)/);
 assert.match(multiPreferredSQL,/\(\(sl\.composition_number - 1\) % r\.preferred_count\) \+ 1/);
 assert.match(multiPreferredSQL,/when c\.is_preferred then 'preferred_in_stock'/);
 assert.match(multiPreferredSQL,/where greatest\(0, coalesce\(s\.loose_sellable_stock/);
-assert.match(section,/20261019-basket-personalization-v1/);
+assert.match(section,/20261019-shared-brands-v1/);
 assert.match(section,/Produtos adicionais/);
 
 // Gateway forwards the logged-in admin JWT and never loads a privileged server key.
@@ -65,8 +65,8 @@ assert.match(api,/SUPABASE_ANON_KEY/);
 assert.equal(/SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEYS/.test(api),false,'mold gateway must not load privileged database secrets');
 assert.match(api,/Authorization/);
 assert.match(api,/const MUTATIONS=new Set\(\[[^\]]*["']save["']/s);
-for(const action of ['list','editor','products','save'])assert.match(api,new RegExp(`action===?["']${action}["']`));
-for(const rpc of ['admin_basket_mold_list_v1','admin_basket_mold_editor_v1','admin_basket_mold_products_v1','admin_save_basket_mold_v3'])assert.match(api,new RegExp(rpc));
+for(const action of ['list','editor','products','shared_items','shared_items_save','save'])assert.match(api,new RegExp(`action===?["']${action}["']`));
+for(const rpc of ['admin_basket_mold_list_v1','admin_basket_mold_editor_v1','admin_basket_mold_products_v1','admin_basket_mold_shared_items_v1','admin_save_basket_mold_shared_items_v1','admin_save_basket_mold_v3'])assert.match(api,new RegExp(rpc));
 
 // Public wrappers are SECURITY DEFINER but authorize auth.uid() against admin_users before touching protected tables.
 for(const fn of ['admin_basket_mold_list_v1','admin_basket_mold_editor_v1','admin_basket_mold_products_v1','admin_save_basket_mold_v1'])assert.match(sql,new RegExp(`create or replace function public\\.${fn}\\s*\\(`,'i'));
@@ -82,5 +82,5 @@ assert.match(sql,/public\.ops2_loose_sellable_stock_v1/i);
 assert.match(sql,/revoke all on function public\.admin_save_basket_mold_v1\([^;]+from public,\s*anon/is);
 assert.match(sql,/grant execute on function public\.admin_save_basket_mold_v1\([^;]+to authenticated/is);
 
-console.log('basket mold admin v1: PASS');
+const sharedSQL=fs.readFileSync('supabase/migrations/20261019180000_basket_mold_shared_brands_v1.sql','utf8');\nassert.match(sharedSQL,/basket_mold_shared_items/);\nassert.match(sharedSQL,/admin_save_basket_mold_shared_items_v1/);\nassert.match(sharedSQL,/row_number\(\) over \(partition by i\.id order by c\.price/);\nassert.match(sharedSQL,/option_order<=3/);\nassert.match(ui,/Quantidade \(0 remove\)/);\nconsole.log('basket mold admin shared brands v1: PASS');
 
