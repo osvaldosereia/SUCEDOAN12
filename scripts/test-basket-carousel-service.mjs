@@ -32,6 +32,27 @@ assert.doesNotMatch(rendered,/no total/);
 assert.match(rendered,/Ver produtos/);
 assert.match(rendered,/basket-size-grande/);
 assert.doesNotMatch(rendered,/Personalizar/);
+const sizePhotos={
+  grande:'/site/img/CESTA-GRANDE-KOBLENZ.webp',
+  media:'/site/img/CESTA-MEDIA-BONINI.webp',
+  pequena:'/site/img/CESTA-PEQUENA-BONINI.webp',
+  mini:'/site/img/CESTA-MINI-KOBLENZ.webp',
+  economica:'/img/cesta-basica-cuiaba-varzea-grande-economica.avif'
+};
+let photoBytes=0;
+for(const [size,path] of Object.entries(sizePhotos)){
+  const card=context.window.BasketCarousel.card({id:'basket-'+size,name:size,size_card:true,size_key:size,total_item_count:12,display_price_cents:1234},String,String,x=>x,0);
+  assert.match(card,new RegExp('src="'+path.replaceAll('/','\\/').replaceAll('.','\\.')+'"'),size+' card shows the matching photo');
+  assert.match(card,new RegExp('alt="Cesta '+size+'"'),size+' photo has descriptive alt text');
+  const bytes=fs.statSync(path.slice(1)).size;photoBytes+=bytes;
+  assert.ok(bytes<100_000,size+' photo stays below 100 KB');
+}
+const lazyPhoto=context.window.BasketCarousel.card({id:'basket-media',name:'Média',size_card:true,size_key:'media',display_price_cents:1234},String,String,x=>x,2);
+assert.match(lazyPhoto,/data-basket-src="\\/site\\/img\\/CESTA-MEDIA-BONINI\\.webp"/,'non-priority basket photos use deferred loading');
+assert.match(lazyPhoto,/loading="lazy"/,'non-priority basket photos keep native lazy loading');
+assert.ok(photoBytes<350_000,'all five basket photos stay under 350 KB total');
+assert.match(root,/basket-size-card-photo/,'home page styles the basket size photos');
+assert.match(root,/basket-carousel\\.js\\?v=20261019-basket-size-photos-v1/,'home page refreshes the carousel asset cache');
 assert.match(home,/basket_commercial_catalog_v1/);assert.match(home,/public_name/);assert.match(home,/sale_price/);assert.match(home,/public_available/);
 assert.match(detail,/basket_commercial_catalog_v1/);assert.match(detail,/splitLotItems/);assert.match(detail,/basket_stock_lot_items/);
 assert.match(quote,/basket_commercial_catalog_v1/);assert.match(quote,/let total=Number\(c\.sale_price\|\|0\)/);
