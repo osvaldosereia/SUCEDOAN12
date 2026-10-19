@@ -173,11 +173,13 @@ header small{display:none!important}
 .resolution-result button{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;gap:12px;min-height:88px;padding:9px 12px;border:1px solid #d8e7dd;border-radius:10px;background:#f4faf6;font-size:14px;line-height:1.4}
 .resolution-result img{display:block;width:76px;height:76px;object-fit:contain;border-radius:8px;background:#fff}
 .resolution-result .product-placeholder{width:76px;height:76px;display:grid;place-items:center;border-radius:8px;background:#e8f0ec;color:#61746a;font-size:11px;text-align:center}
-.photo-viewer{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:24px;background:rgba(9,23,17,.92)}
+.photo-viewer{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:16px;background:rgba(9,23,17,.66);backdrop-filter:blur(2px)}
 .photo-viewer[hidden]{display:none}
-.photo-viewer-content{display:grid;place-items:center;width:min(100%,1200px);min-height:120px;color:white;text-align:center}
-.photo-viewer img{display:block;max-width:100%;max-height:86dvh;object-fit:contain;border-radius:10px;background:white}
-.photo-viewer-close{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:48px;height:48px;border-radius:50%;background:#fff;color:#17242c;font-size:30px;line-height:1}
+.photo-viewer-content{position:relative;display:grid;place-items:center;gap:10px;width:min(92vw,460px);max-height:82dvh;min-height:150px;padding:18px;border:1px solid #dce6df;border-radius:14px;background:#fff;color:#34534a;text-align:center;box-shadow:0 16px 48px #0004}
+.photo-viewer img{display:block;width:auto;max-width:100%;max-height:min(62dvh,440px);object-fit:contain;border-radius:9px;background:#f4f7f5}
+.photo-viewer-close{position:fixed;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:42px;height:42px;border-radius:50%;background:#fff;color:#17242c;font-size:27px;line-height:1}
+#photoViewerAdd{min-height:40px;padding:8px 14px;background:#08704c;color:white}
+#photoViewerStatus{font-size:13px;line-height:1.4}
 @media(max-width:560px){
  .entry{grid-template-columns:minmax(0,1fr);gap:10px;padding:13px}
  .entry-left,.entry-right{grid-column:1}
@@ -256,7 +258,7 @@ header small{display:none!important}
 </main>
 <div id="photoViewer" class="photo-viewer" hidden role="dialog" aria-modal="true" aria-label="Foto salva do produto">
   <button id="photoViewerClose" class="photo-viewer-close" type="button" aria-label="Fechar foto">×</button>
-  <div class="photo-viewer-content"><img id="photoViewerImage" alt="Foto salva do produto" hidden><p id="photoViewerStatus" role="status">Carregando foto…</p></div>
+  <div class="photo-viewer-content"><img id="photoViewerImage" alt="Foto salva do produto" hidden><p id="photoViewerStatus" role="status">Carregando foto…</p><button id="photoViewerAdd" type="button" hidden>📷 Escolher ou tirar foto</button></div>
 </div>
 <script src="/vitrine/admin/leitura-ean/html5-qrcode.min.js?v=20261019b" defer></script>
 <script defer>
@@ -387,20 +389,47 @@ async function promptMissingPhoto(row){
  $("missingPhoto").scrollIntoView({behavior:"smooth",block:"nearest"});
  msg("EAN salvo, mas não cadastrado. Fotografe a embalagem.");
 }
+async function compressProductPhoto(file){
+ const limit=4*1024*1024;
+ let source=null,release=()=>{};
+ try{if(typeof createImageBitmap==="function"){source=await createImageBitmap(file);release=()=>source?.close?.()}}catch{}
+ if(!source){
+  const objectUrl=URL.createObjectURL(file),image=new Image();
+  try{await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error("imagem_invalida"));image.src=objectUrl});source=image}
+  catch(error){URL.revokeObjectURL(objectUrl);if(file.size<=limit)return file;throw error}
+  release=()=>URL.revokeObjectURL(objectUrl);
+ }
+ try{
+  let best=null;
+  for(const [maxEdge,quality] of [[1440,.80],[1280,.72],[1024,.64]]){
+   const scale=Math.min(1,maxEdge/Math.max(source.width,source.height));
+   const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(source.width*scale));canvas.height=Math.max(1,Math.round(source.height*scale));
+   const context=canvas.getContext("2d",{alpha:false});if(!context)throw Error("canvas_indisponivel");
+   context.drawImage(source,0,0,canvas.width,canvas.height);
+   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));canvas.width=1;canvas.height=1;
+   if(blob&&(!best||blob.size<best.size))best=blob;
+   if(blob&&blob.size<=limit)return new File([blob],"produto.jpg",{type:"image/jpeg",lastModified:Date.now()});
+  }
+  if(best&&best.size<=limit)return new File([best],"produto.jpg",{type:"image/jpeg",lastModified:Date.now()});
+  throw Error("foto_acima_de_4mb_apos_compactar");
+ }finally{release()}
+}
 async function uploadPhoto(file){
  if(!missingRecordId||!file||busy)return;
- pendingPhotoFile=file;setBusy(true);msg("Salvando a foto no Supabase…");
+ const recordId=missingRecordId;setBusy(true);msg("Compactando e salvando a foto…");
  try{
-  const form=new FormData();form.append("id",missingRecordId);form.append("file",file,"produto.jpg");
+  pendingPhotoFile=await compressProductPhoto(file);
+  const form=new FormData();form.append("id",recordId);form.append("file",pendingPhotoFile,"produto.jpg");
   const result=await call("photo",form);
-  updateRowLocal(result.row,null);
-  photoReset();
-  msg("✓ Foto vinculada ao EAN. Pode continuar lendo.");
+  updateRowLocal(result.row,null);photoReset();
+  msg("✓ Foto compactada e vinculada ao EAN.");
+  if(!$("photoViewer").hidden)await showSavedPhoto(recordId);
  }catch(e){
-  $("takePhoto").textContent="↻ Reenviar foto";
-  msg("A foto ainda não foi salva: "+e.message+". Toque para reenviar.",true);
+  $("takePhoto").textContent="↻ Reenviar foto";$("photoViewerStatus").textContent="Não foi possível compactar ou salvar. "+e.message;
+  msg("A foto não foi salva: "+e.message+". Tente novamente.",true);
  }finally{setBusy(false)}
 }
+
 $("takePhoto").onclick=async()=>{
  if(pendingPhotoFile){await uploadPhoto(pendingPhotoFile);return}
  const video=$("camera");
@@ -417,15 +446,7 @@ $("takePhoto").onclick=async()=>{
 $("nativePhoto").onclick=()=>$("productPhotoInput").click();
 $("productPhotoInput").addEventListener("change",async e=>{
  const file=e.currentTarget.files?.[0];e.currentTarget.value="";
- if(!file)return;
- // Fotos grandes são reduzidas para armazenamento e envio rápidos.
- try{
-  const bitmap=await createImageBitmap(file),scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
-  const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-  canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
-  const compressed=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",0.82));
-  await uploadPhoto(compressed||file);
- }catch{await uploadPhoto(file)}
+ if(file)await uploadPhoto(file);
 });
 $("skipPhoto").onclick=()=>{
  if(busy)return;
@@ -484,7 +505,7 @@ function paint(){
    '<div class="entry-meta">'+fmt(r.created_at)+'</div></div>'+
    '<div class="entry-right">'+status+(r.photo_path?'<div class="entry-meta">📷 Foto salva</div>':'')+
    '<div><button type="button" class="edit-btn" data-edit="'+esc(r.id)+'">Editar</button>'+
-   (r.sync_status==="not_found"&&!r.photo_path?'<button type="button" class="edit-btn" data-photo="'+esc(r.id)+'">📷 Foto</button>':'')+
+   (r.sync_status==="not_found"&&!r.photo_path?'<button type="button" class="edit-btn" data-photo="'+esc(r.id)+'">📷 Adicionar foto</button>':'')+
    (r.photo_path?'<button type="button" class="edit-btn" data-view-photo="'+esc(r.id)+'">Ver foto</button>':'')+
    '</div></div>'+
    (r.sync_status==="not_found"?
@@ -516,14 +537,19 @@ function openResolutionPanel(row,mode){
   panel.querySelector('input[name="name"]')?.focus();
  }
 }
+function syncFilterButtons(){document.querySelectorAll("[data-filter]").forEach(button=>button.classList.toggle("active",button.dataset.filter===filter))}
 async function resolveRow(action,id,payload){
  if(busy)return;setBusy(true);
  try{
   const data=await call(action,{id,...payload});
-  updateRowLocal(data.row,data.summary);
+  const moved=action==="link_product"||action==="create_inactive";
+  if(moved){
+   filter="found";syncFilterButtons();
+   try{await load()}catch{updateRowLocal(data.row,data.summary)}
+  }else updateRowLocal(data.row,data.summary);
   const text=action==="repair_ean"?(data.row.sync_status==="found"?"EAN corrigido e encontrado no cadastro.":"EAN corrigido; continua não encontrado.")
-   :action==="link_product"?"Produto vinculado, EAN alternativo salvo e estoque atualizado."
-   :"Produto cadastrado como inativo, com estoque zero.";
+   :action==="link_product"?"Produto vinculado, EAN alternativo salvo e estoque atualizado. Agora está em Produtos encontrados."
+   :"Produto cadastrado como inativo, com estoque zero. Agora está em Produtos encontrados.";
   msg("✓ "+text);
  }catch(e){msg("Não foi possível concluir: "+e.message,true)}finally{setBusy(false)}
 }
@@ -539,25 +565,12 @@ $("entries").addEventListener("click",(event)=>{
   resolveRow("link_product",id,{product_id:choose.dataset.linkProduct,ncm});return;
  }
  const view=event.target.closest("[data-view-photo]");
- if(view){
-  const viewer=$("photoViewer"),image=$("photoViewerImage"),status=$("photoViewerStatus");
-  viewer.hidden=false;image.hidden=true;image.removeAttribute("src");status.textContent="Carregando foto…";
-  $("photoViewerClose").focus();
-  (async()=>{try{
-   const token=await auth(),url=new URL(API);
-   url.searchParams.set("action","photo_url");url.searchParams.set("id",view.dataset.viewPhoto);
-   const res=await fetch(url,{headers:{Authorization:"Bearer "+token,apikey:KEY},cache:"no-store"});
-   const data=await res.json();if(!res.ok||!data.ok)throw Error(data.error||"foto_indisponivel");
-   image.onload=()=>{image.hidden=false;status.textContent=""};
-   image.onerror=()=>{image.hidden=true;status.textContent="A foto não pôde ser carregada. Tente novamente."};
-   image.src=data.url;
-  }catch(e){status.textContent="Foto indisponível: "+e.message;msg("Foto indisponível: "+e.message,true)}})();return;
- }
+ if(view){showSavedPhoto(view.dataset.viewPhoto);return}
  const photo=event.target.closest("[data-photo]");
  if(photo){
   if(busy||missingRecordId)return;
   const row=rows.find(x=>x.id===photo.dataset.photo);
-  if(row)promptMissingPhoto(row);return;
+  if(row)openPhotoUploadViewer(row);return;
  }
  const btn=event.target.closest("[data-edit]");if(!btn||busy||missingRecordId)return;
  const r=rows.find(x=>x.id===btn.dataset.edit);if(!r)return;
@@ -566,10 +579,10 @@ $("entries").addEventListener("click",(event)=>{
  $("quantity").value=r.quantity;$("expiry").value=r.expires_on||"";$("expiryField").hidden=!r.expires_on;$("toggleValidity").textContent=r.expires_on?"− Ocultar validade":"+ Validade (opcional)";
  $("entryEditor").hidden=false;$("quantity").focus({preventScroll:true});$("quantity").select();
 });
-$("photoViewerClose").addEventListener("click",()=>{$("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src")});
-$("photoViewer").addEventListener("click",(event)=>{if(event.target===$("photoViewer")){$("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src")}});
-document.addEventListener("keydown",(event)=>{if(event.key==="Escape"&&!$("photoViewer").hidden){$("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src")}});
-document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("click",async()=>{
+$("photoViewerClose").addEventListener("click",closePhotoViewer);
+ $("photoViewer").addEventListener("click",(event)=>{if(event.target===$("photoViewer"))closePhotoViewer()});
+ document.addEventListener("keydown",(event)=>{if(event.key==="Escape"&&!$("photoViewer").hidden)closePhotoViewer()});
+ document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("click",async()=>{
  if(busy||missingRecordId)return;filter=btn.dataset.filter;
  document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===btn));
  try{setBusy(true);await load();msg("Lista filtrada.")}catch(e){msg(e.message,true)}finally{setBusy(false)}
