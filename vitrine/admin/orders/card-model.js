@@ -1,6 +1,6 @@
 // Lifecycle and labels shared by order cards, filters and the open-order view.
 (function(global){
-  const SEPARATORS=[{key:'jose',label:'José'},{key:'claudio',label:'Cláudio'},{key:'jovenil',label:'Jovenil'},{key:'kelly',label:'Kelly'}];
+  const SEPARATORS=Object.freeze([{key:'jose',label:'José'},{key:'claudio',label:'Cláudio'},{key:'jovenil',label:'Jovenil'},{key:'kelly',label:'Kelly'}].map(Object.freeze));
   function create({normalize,escapeHtml,customerReadiness,cachedFiscalForOrder,detailFiscalForOrder}){
     const {isPending:orderCustomerDataPending,reasons:orderCustomerDataPendingReasons}=customerReadiness;
     const esc=escapeHtml;
@@ -50,7 +50,7 @@
       if(orderCustomerDataPending(order))tags.push('<span class="order-v3-tag neutral" title="'+esc(orderCustomerDataPendingReasons(order).join(' · '))+'">DADOS DO CLIENTE PENDENTES</span>');
       return tags.join('');
     }
-    return Object.freeze({separatorLabel,orderSeparationSummary,orderV3SearchMatch,orderSeparationCompletedV4,orderV3Milestones,orderFiscalTagV4,orderV3Tags,orderCardOperationalTags});
+    return Object.freeze({separators:SEPARATORS,separatorLabel,orderSeparationSummary,orderV3SearchMatch,orderSeparationCompletedV4,orderV3Milestones,orderFiscalTagV4,orderV3Tags,orderCardOperationalTags});
   }
   global.DonaAntoniaAdminOrderCardModel=Object.freeze({create});
 })(window);

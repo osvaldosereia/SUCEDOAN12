@@ -18,7 +18,7 @@
 | `orders/documents.js` | Nenhum | API de PDF oficial, pop-up, formatadores, modelo de separação e `openPrint` |
 | `orders/fiscal-loader.js` | Fila, limite global de três chamadas e promessas em andamento por pedido/cache | `api` autenticada e `getCache`; descarta jobs ainda não iniciados de cache aposentado e não substitui respostas atualizadas pelo detalhe do pedido |
 | `orders/manual-sale.js` | Rascunho de criação manual, buscas de cliente/item, configuração de cesta e envio do pedido | Portas `sale`, APIs, `orders`, UI e formatadores; respostas antigas de busca não substituem a consulta mais nova e envios concorrentes do mesmo rascunho são bloqueados |
-| `orders/card-model.js` | Marcos do ciclo de vida, prontidão da separação, etiquetas fiscais/operacionais, busca e nome de separador | Funções de normalização/escape, prontidão cadastral e leituras fiscais por pedido/cache/sessão |
+| `orders/card-model.js` | Marcos do ciclo de vida, prontidão da separação, etiquetas fiscais/operacionais, busca e lista imutável de separadores | Funções de normalização/escape, prontidão cadastral e leituras fiscais por pedido/cache/sessão; lista injetada no fragmento operacional de separação |
 
 As factories não recebem o objeto `state` inteiro. Seus adaptadores estão nos fragmentos `00`, `02`, `04`, `14`, `16` e `19`. O cache de clientes permanece compartilhado por uma porta porque o editor de Pedidos usa as mesmas opções cadastrais. O cache fiscal também é compartilhado: trocar sua referência invalida escritas de leituras antigas.
 

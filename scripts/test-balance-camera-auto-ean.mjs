@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 
 const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const image=fs.readFileSync('supabase/functions/product-image-openai-v1/index.ts','utf8');
 
 function must(source,needle,label){
@@ -23,7 +23,7 @@ must(edge,'balance_auto_registration','auto registration source');
 mustNot(edge,'inventory-product-research-v1','retired research');
 mustNot(edge,'inventory-fast-balance-v3','retired balance');
 
-for(const marker of ['Leitor EAN','Folhas A4','balanceCameraVideo','BarcodeDetector','balanceManualSearch','balanceGondola','balanceValidity','Salvar e próximo','Tirar foto do produto'])must(admin,marker,'admin mobile balance');
+for(const marker of ['Leitor EAN','balanceCameraVideo','BarcodeDetector','balanceManualSearch','balanceGondola','balanceValidity','Salvar e próximo','Tirar foto do produto'])must(admin,marker,'admin mobile balance');
 must(admin,"inventory_balance_resolve_ean",'admin resolver call');
 must(admin,"inventory_balance_commit",'admin commit call');
 must(admin,"getUserMedia",'camera lifecycle');

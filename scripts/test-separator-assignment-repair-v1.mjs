@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
 
-const admin=readFileSync('vitrine/admin/index.html','utf8');
+const admin=readFileSync('vitrine/admin/index.html','utf8')+'\n'+readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+readFileSync('vitrine/admin/orders/card-model.js','utf8')+'\n'+readFileSync('vitrine/admin/runtime-parts/16-orders-operations.part.js','utf8');
 const backend=readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const migration=readFileSync('supabase/sql/20261008_fix_separator_claudio_legacy_check_v1.sql','utf8');
 

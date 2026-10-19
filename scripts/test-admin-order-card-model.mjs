@@ -47,6 +47,10 @@ assert.match(model.orderV3Tags({status:'created'}),/RECEBIDO/);
 assert.match(model.orderCardOperationalTags({status:'confirmed'}),/MONTAR PARA ENTREGAR HOJE/);
 assert.match(model.orderCardOperationalTags({status:'ready',separation_summary:{completed_at:'yes',phase:'needs_attention'}}),/INTEGRAÇÃO PENDENTE/);
 assert.equal(model.separatorLabel('JOSE'),'José');
+assert.deepEqual(JSON.parse(JSON.stringify(model.separators)),[
+  {key:'jose',label:'José'},{key:'claudio',label:'Cláudio'},
+  {key:'jovenil',label:'Jovenil'},{key:'kelly',label:'Kelly'}
+]);
 assert.equal(model.orderV3SearchMatch({order_number:42,customer_name:'Ana',delivery_address_snapshot:{district:'Centro'}},'centro'),true);
 assert.equal(model.orderV3SearchMatch({order_number:42,customer_name:'Ana'},'maria'),false);
 console.log('Admin order card lifecycle and fiscal labels: PASS');

@@ -4920,7 +4920,7 @@
     cachedFiscalForOrder:o=>state.fiscalByOrder[o?.id]||null,
     detailFiscalForOrder:o=>orderSession.detail?.order?.id===o?.id?orderSession.fiscal:null
   });
-  const {separatorLabel,orderSeparationSummary,orderV3SearchMatch,orderSeparationCompletedV4,orderV3Milestones,orderFiscalTagV4,orderV3Tags,orderCardOperationalTags}=orderCardModel;
+  const {separators:ORDER_SEPARATORS,separatorLabel,orderSeparationSummary,orderV3SearchMatch,orderSeparationCompletedV4,orderV3Milestones,orderFiscalTagV4,orderV3Tags,orderCardOperationalTags}=orderCardModel;
   const orderList=window.DonaAntoniaAdminOrderList.create({
     api,queueRequest:manualQueueRequest,
     orders:{get:()=>state.orders,set:value=>{state.orders=value},loadFiscal:loadFiscalForOrders,isCustomerPending:orderCustomerDataPending},

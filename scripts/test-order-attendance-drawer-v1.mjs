@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {Script,runInNewContext} from 'node:vm';
 
 const file=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const admin=file('vitrine/admin/index.html');
+const admin=file('vitrine/admin/index.html')+'\n'+file('vitrine/admin/admin-runtime.js');
 const attendance=file('vitrine/admin/atendimento/attendance-app.js');
 const page=file('vitrine/admin/atendimento/index.html');
 const css=file('vitrine/admin/atendimento/attendance.css');
@@ -20,8 +20,8 @@ assert.match(admin,/\.order-chat-sheet\[hidden\]/,'closed drawer must be absent 
 assert.match(admin,/iframe id="orderChatFrame"/,'drawer reuses existing Attendance app');
 assert.match(admin,/embedded:'order'/,'drawer must request order-specific view');
 assert.match(admin,/sheet\.hidden=true/,'drawer must clean up after closing');
-assert.match(page,/attendance-app\.js\?v=order-drawer-v1/,'chat app must have updated cache key');
-assert.match(page,/attendance\.css\?v=order-drawer-v1/,'chat CSS must have updated cache key');
+assert.match(page,/attendance-app\.js\?v=attendance-direct-confirm-v1/,'chat app must have the current cache key');
+assert.match(page,/attendance\.css\?v=attendance-direct-confirm-v1/,'chat CSS must have the current cache key');
 assert.match(css,/body\.order-embedded \.conversation-pane/,'embedded chat must be visible');
 assert.match(css,/body\.order-embedded \.mobile-chat-back/,'mobile back button must not hide the embedded chat');
 
