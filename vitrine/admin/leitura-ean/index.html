@@ -389,20 +389,47 @@ async function promptMissingPhoto(row){
  $("missingPhoto").scrollIntoView({behavior:"smooth",block:"nearest"});
  msg("EAN salvo, mas não cadastrado. Fotografe a embalagem.");
 }
+async function compressProductPhoto(file){
+ const limit=4*1024*1024;
+ let source=null,release=()=>{};
+ try{if(typeof createImageBitmap==="function"){source=await createImageBitmap(file);release=()=>source?.close?.()}}catch{}
+ if(!source){
+  const objectUrl=URL.createObjectURL(file),image=new Image();
+  try{await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error("imagem_invalida"));image.src=objectUrl});source=image}
+  catch(error){URL.revokeObjectURL(objectUrl);if(file.size<=limit)return file;throw error}
+  release=()=>URL.revokeObjectURL(objectUrl);
+ }
+ try{
+  let best=null;
+  for(const [maxEdge,quality] of [[1440,.80],[1280,.72],[1024,.64]]){
+   const scale=Math.min(1,maxEdge/Math.max(source.width,source.height));
+   const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(source.width*scale));canvas.height=Math.max(1,Math.round(source.height*scale));
+   const context=canvas.getContext("2d",{alpha:false});if(!context)throw Error("canvas_indisponivel");
+   context.drawImage(source,0,0,canvas.width,canvas.height);
+   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));canvas.width=1;canvas.height=1;
+   if(blob&&(!best||blob.size<best.size))best=blob;
+   if(blob&&blob.size<=limit)return new File([blob],"produto.jpg",{type:"image/jpeg",lastModified:Date.now()});
+  }
+  if(best&&best.size<=limit)return new File([best],"produto.jpg",{type:"image/jpeg",lastModified:Date.now()});
+  throw Error("foto_acima_de_4mb_apos_compactar");
+ }finally{release()}
+}
 async function uploadPhoto(file){
  if(!missingRecordId||!file||busy)return;
- pendingPhotoFile=file;setBusy(true);msg("Salvando a foto no Supabase…");
+ const recordId=missingRecordId;setBusy(true);msg("Compactando e salvando a foto…");
  try{
-  const form=new FormData();form.append("id",missingRecordId);form.append("file",file,"produto.jpg");
+  pendingPhotoFile=await compressProductPhoto(file);
+  const form=new FormData();form.append("id",recordId);form.append("file",pendingPhotoFile,"produto.jpg");
   const result=await call("photo",form);
-  updateRowLocal(result.row,null);
-  photoReset();
-  msg("✓ Foto vinculada ao EAN. Pode continuar lendo.");
+  updateRowLocal(result.row,null);photoReset();
+  msg("✓ Foto compactada e vinculada ao EAN.");
+  if(!$("photoViewer").hidden)await showSavedPhoto(recordId);
  }catch(e){
-  $("takePhoto").textContent="↻ Reenviar foto";
-  msg("A foto ainda não foi salva: "+e.message+". Toque para reenviar.",true);
+  $("takePhoto").textContent="↻ Reenviar foto";$("photoViewerStatus").textContent="Não foi possível compactar ou salvar. "+e.message;
+  msg("A foto não foi salva: "+e.message+". Tente novamente.",true);
  }finally{setBusy(false)}
 }
+
 $("takePhoto").onclick=async()=>{
  if(pendingPhotoFile){await uploadPhoto(pendingPhotoFile);return}
  const video=$("camera");
@@ -419,15 +446,7 @@ $("takePhoto").onclick=async()=>{
 $("nativePhoto").onclick=()=>$("productPhotoInput").click();
 $("productPhotoInput").addEventListener("change",async e=>{
  const file=e.currentTarget.files?.[0];e.currentTarget.value="";
- if(!file)return;
- // Fotos grandes são reduzidas para armazenamento e envio rápidos.
- try{
-  const bitmap=await createImageBitmap(file),scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
-  const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-  canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
-  const compressed=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",0.82));
-  await uploadPhoto(compressed||file);
- }catch{await uploadPhoto(file)}
+ if(file)await uploadPhoto(file);
 });
 $("skipPhoto").onclick=()=>{
  if(busy)return;
