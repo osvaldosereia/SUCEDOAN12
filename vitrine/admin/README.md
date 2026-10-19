@@ -12,6 +12,7 @@
 | `customers/controller.js` | Perfil, paginação e geração de busca/histórico | Cache `customers.get/set`, `customerApi`, `navigation`, `ui`, formatadores e abertura de pedido |
 | `orders/session.js` | Snapshot do pedido, fiscal e geração da sessão; revisão de consultas | `isOpen`; tokens invalidam respostas após outro pedido assumir o editor |
 | `orders/list-controller.js` | Filtros, fila manual, serialização de RPCs e gerações de carga/poll | `orders.get/set/loadFiscal`, `queueRequest`, navegação, UI e pintura |
+| `orders/list-view.js` | Abas, contagens, busca, ordenação e vínculo dos botões da lista | Pedidos, estado dos filtros, modelo de card e callbacks explícitos de ação |
 | `orders/detail-controller.js` | Escritas em andamento por pedido e ciclo de abertura/salvamento/cancelamento/reabertura | Sessão, API, cache de clientes, leitura dos campos e callbacks de pintura/recarga |
 | `orders/detail-view.js` | Nenhum | Snapshot da sessão, modelos de leitura, renderização fiscal e ações; não consulta APIs |
 | `orders/fiscal-controller.js` | Operações ocupadas e mensagens por pedido, revisão das consultas fiscais | Sessão, cache fiscal, API, confirmação e callbacks do detalhe/lista/DANFE |
@@ -19,6 +20,7 @@
 | `orders/fiscal-loader.js` | Fila, limite global de três chamadas e promessas em andamento por pedido/cache | `api` autenticada e `getCache`; descarta jobs ainda não iniciados de cache aposentado e não substitui respostas atualizadas pelo detalhe do pedido |
 | `orders/manual-sale.js` | Rascunho de criação manual, buscas de cliente/item, configuração de cesta e envio do pedido | Portas `sale`, APIs, `orders`, UI e formatadores; respostas antigas de busca não substituem a consulta mais nova e envios concorrentes do mesmo rascunho são bloqueados |
 | `orders/card-model.js` | Marcos do ciclo de vida, prontidão da separação, etiquetas fiscais/operacionais, busca e lista imutável de separadores | Funções de normalização/escape, prontidão cadastral e leituras fiscais por pedido/cache/sessão; lista injetada no fragmento operacional de separação |
+| `orders/card-view.js` | HTML dos cards de pedido, progresso e controles visíveis | Modelo do card, prontidão cadastral, estado da fila manual, formatadores e classe de status |
 
 As factories não recebem o objeto `state` inteiro. Seus adaptadores estão nos fragmentos `00`, `02`, `04`, `14`, `16` e `19`. O cache de clientes permanece compartilhado por uma porta porque o editor de Pedidos usa as mesmas opções cadastrais. O cache fiscal também é compartilhado: trocar sua referência invalida escritas de leituras antigas.
 
@@ -33,7 +35,7 @@ node scripts/build-admin-runtime.mjs --write
 node scripts/build-admin-runtime.mjs --check
 ```
 
-Os controladores restantes de produtos/cestas, balanço e compras/XML ainda compartilham estado, API e DOM. Em Pedidos, a montagem/ações dos cards, o chat e o bottom sheet de separação ainda ficam na IIFE; o modelo de leitura dos cards, lista, sessão, criação manual, editor, fiscal, apresentação do detalhe e documentos já têm fronteiras explícitas. A extração dessas fronteiras continua pendente; a separação já feita não equivale à conclusão integral das Etapas 1 e 2.
+Os controladores restantes de produtos/cestas, balanço e compras/XML ainda compartilham estado, API e DOM. Em Pedidos, o chat e o bottom sheet de separação ainda ficam na IIFE; modelo e HTML dos cards, filtros, apresentação/abas da lista, sessão, criação manual, editor, fiscal, detalhe e documentos já têm fronteiras explícitas. As demais extrações e a revisão integral continuam pendentes; estas separações não equivalem à conclusão integral das Etapas 1 e 2.
 
 ## Contratos de Pedidos
 

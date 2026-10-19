@@ -168,3 +168,11 @@ Na revisão estrutural seguinte, três helpers de resumo de pagamento do XML est
 ## Limite estrutural remanescente
 
 Após a rodada ampla, os 19 fragmentos restantes continuam concatenados dentro da IIFE; os controladores ainda não extraídos leem e escrevem o mesmo `state`, chamam `api`/DOM e dependem da sequência de inicialização. Nesta continuação, três modelos puros sem efeitos colaterais foram isolados e os contratos de carga foram ampliados. Uma conversão indiscriminada dos controladores restantes exigiria trocar seus contratos de estado, API, DOM e ciclo de vida; isso não foi tratado como remoção mecânica. O grafo síncrono e as dependências ainda existentes estão registrados em `admin-module-load-graph.json` quando o workflow executa.
+
+### Continuação — lista e cards de Pedidos, 19/10
+
+A apresentação da seção Pedidos foi dividida em providers de lista e card, mantendo as regras de status e ações nos modelos/controladores existentes. `orders/list-view.js` passou a compor abas/contagens, busca, ordenação, mensagens vazias e associação dos botões aos callbacks explícitos. `orders/card-view.js` recebe os formatadores, prontidão cadastral, estado da fila manual, classificação e modelo fiscal para renderizar os mesmos cards. O fragmento 16 agora apenas compõe esses providers.
+
+A ordem síncrona dos providers foi atualizada na página e nos verificadores de grafo/carga; o runtime foi regenerado pelo builder oficial. Os contratos verificam filtragem/ordenação, estado da fila manual, nove ações da lista, progresso e estados fiscais dos cards, bootstrap, grafo de dependências e paridade do runtime. Os testes `test-order-manual-queue-v1.mjs` e `test-admin-orders-clean-flow-v3.mjs` foram alinhados para ler os providers ativos.
+
+Sem mudança de payloads, endpoints, regras comerciais, banco, Supabase, atendimento/WhatsApp ou integrações externas. Permanecem abertas as extrações dos controladores de Produtos/Cestas, Balanço e Compras/XML, o chat e bottom sheet de separação em Pedidos, a revisão manual integral das declarações e homologação integrada de Edge/Bling/SEFAZ/impressão.

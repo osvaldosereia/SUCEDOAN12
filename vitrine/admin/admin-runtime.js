@@ -4931,6 +4931,9 @@
     detailFiscalForOrder:o=>orderSession.detail?.order?.id===o?.id?orderSession.fiscal:null
   });
   const {separators:ORDER_SEPARATORS,separatorLabel,orderSeparationSummary,orderV3SearchMatch,orderSeparationCompletedV4,orderV3Milestones,orderFiscalTagV4,orderV3Tags,orderCardOperationalTags}=orderCardModel;
+  let orderView=null,orderCardView=null;
+  function paintOrderRows(){return orderView?.paintRows()}
+  function renderOrders(){return orderView?.renderOrders()}
   const orderList=window.DonaAntoniaAdminOrderList.create({
     api,queueRequest:manualQueueRequest,
     orders:{get:()=>state.orders,set:value=>{state.orders=value},loadFiscal:loadFiscalForOrders,isCustomerPending:orderCustomerDataPending},
@@ -4939,51 +4942,8 @@
   function orderCardPhone(o){return formatPhone(o?.whatsapp_phone_e164||o?.delivery_address_snapshot?.phone||'')||'Telefone não informado'}
   function orderSeparationUrlFor(id){const url=new URL('/vitrine/admin/',location.origin);url.searchParams.set('separacao',String(id||''));return url.toString()}
   async function copyOrderSeparationLink(id,btn){const url=orderSeparationUrlFor(id);try{await navigator.clipboard.writeText(url)}catch{const input=document.createElement('textarea');input.value=url;input.style.position='fixed';input.style.opacity='0';document.body.appendChild(input);input.select();document.execCommand('copy');input.remove()}toast('Link da vitrine de separação copiado');if(btn){btn.textContent='LINK COPIADO';setTimeout(()=>{if(document.contains(btn))btn.textContent='COPIAR LINK SEPARAÇÃO'},1800)}}
-  function orderRow(o){
-    const m=orderV3Milestones(o),f=state.fiscalByOrder[o.id]||null,sep=orderSeparationSummary(o),assignment=sep.assignment||{},counts=sep.counts||{},assigned=Boolean(assignment.separator_key),separator=assignment.separator_label||separatorLabel(assignment.separator_key),separatedCount=Number(counts.separated||0),missingCount=Number(counts.missing||0),checked=separatedCount+missingCount,totalItems=Number(counts.total||0),pendingCount=Math.max(0,Number(counts.pending??(totalItems-checked))||0),missingValue=Number(sep.missing_subtotal||counts.missing_subtotal||0),progressPct=totalItems>0?Math.max(0,Math.min(100,Math.round((checked/totalItems)*100))):0;
-    let stage='received',stageLabel='RECEBIDO';
-    if(m.cancelled){stage='cancelled';stageLabel='CANCELADO'}
-    else if(m.delivered){stage='done';stageLabel='ENTREGUE'}
-    else if(o.status==='out_for_delivery'){stage='delivery';stageLabel='SAIU PARA ENTREGA'}
-    else if(m.separated){stage='separated';stageLabel='PEDIDO JÁ SEPARADO'}
-    else if(assigned&&m.confirmed){stage='separating';stageLabel='EM SEPARAÇÃO · '+separator.toUpperCase()}
-    else if(m.confirmed){stage='waiting';stageLabel='AGUARDANDO SEPARAÇÃO'}
-    const cardClass=['waiting','separating','separated','delivery','done'].includes(stage)?' '+stage:'';
-    let progress='';
-    if(m.confirmed&&totalItems>0&&!m.delivered&&!m.cancelled){
-      const progressTitle=m.separated?'Separação concluída':assigned?'Separação em andamento':'Itens para separar';
-      progress='<div class="order-v3-progress"><div class="order-v3-progress-head"><span>'+esc(progressTitle)+'</span><strong>'+checked+' de '+totalItems+' itens</strong></div><div class="order-v3-progress-bar" aria-label="Progresso da separação" aria-valuemin="0" aria-valuemax="'+totalItems+'" aria-valuenow="'+checked+'"><i style="width:'+progressPct+'%"></i></div><div class="order-v3-progress-foot"><span class="ok">'+separatedCount+' separado'+(separatedCount===1?'':'s')+'</span><span>'+pendingCount+' pendente'+(pendingCount===1?'':'s')+'</span>'+(missingCount?'<span class="missing">'+missingCount+' faltou'+(missingCount===1?'':'aram')+(missingValue>0?' · − '+esc(separationMoney(missingValue)):'')+'</span>':'')+(assigned&&assignment.assigned_at&&!m.separated?'<span>Iniciado '+esc(dateTime(assignment.assigned_at))+'</span>':'')+'</div></div>';
-    }
-    let controls='';
-    if(orderCustomerDataPending(o)){
-      controls='<button class="order-v3-control" type="button" disabled title="'+esc(orderCustomerDataPendingReasons(o).join(' · '))+'">AGUARDANDO DADOS DO CLIENTE</button>';
-    }else if(!m.confirmed&&!m.cancelled){
-      controls='<button class="order-v3-control" type="button" data-v3-confirm="'+esc(o.id)+'">CONFIRMAR PEDIDO</button>';
-    }else if(o.status==='ready'&&!m.cancelled){
-      if(f?.authorized===true||f?.stage==='authorized')controls='<button class="order-v3-control" type="button" data-v3-dispatch="'+esc(o.id)+'">SAIU PARA ENTREGA</button>';
-      else if(f)controls='<button class="order-v3-control" type="button" data-open-order="'+esc(o.id)+'">'+(f.stage==='blocked'||f.stage==='rejected'?'REVISAR NF-e':'ACOMPANHAR NF-e')+'</button>';
-      else controls='<button class="order-v3-control" type="button" disabled>NF-e automática…</button>';
-    }else if(o.status==='out_for_delivery'&&!m.delivered&&!m.cancelled){
-      controls='<button class="order-v3-control" type="button" data-v3-deliver="'+esc(o.id)+'">ENTREGUE</button><button class="order-v3-control" type="button" data-v3-delivery-fail="'+esc(o.id)+'">NÃO ENTREGUE</button>';
-    }
-    const separationLabel=m.separated?'VER SEPARAÇÃO':assigned?'CONTINUAR SEPARAÇÃO':'INICIAR SEPARAÇÃO';
-    const primaryAction=m.confirmed&&!m.delivered&&!m.cancelled?'<button class="order-v3-action main '+(m.separated?'secondary-action':'primary')+'" type="button" data-v3-separation="'+esc(o.id)+'">'+separationLabel+'</button>':'';
-    const supportTags=orderCardOperationalTags(o,m);
-    const manualSelected=orderList.state.manualQueueIds.has(String(o.id));
-    const manualEligible=orderStatusTabKey(o)==='confirmed'&&o.status==='confirmed';
-    const manualQueueButton=(manualEligible||(manualSelected&&orderList.state.orderStatusTab==='manual'&&!m.separated))?'<button class="order-v3-action secondary-action" type="button" data-manual-queue-'+(manualSelected?'remove':'add')+'="'+esc(o.id)+'">'+(manualSelected?'RETIRAR DE SEPARAR AGORA':'SEPARAR AGORA')+'</button>':'';
-    return '<article class="order-v3-card'+cardClass+'"><div class="order-v3-topline"><span class="order-v3-stage '+esc(stage)+'">'+esc(stageLabel)+'</span><strong class="order-v3-money">'+money(o.total_cents||0)+'</strong></div><div class="order-v3-identity"><strong>#'+esc(orderDisplayCode(o))+' · '+esc(o.customer_name||'Sem cliente')+'</strong><small><span class="order-v3-phone">Tel. '+esc(orderCardPhone(o))+'</span><span>'+esc(dateTime(o.created_at))+'</span></small></div>'+(!m.confirmed&&!m.cancelled?'<div class="order-v3-do-not-build">NÃO MONTAR ESSE PEDIDO</div>':'')+progress+(supportTags?'<div class="order-v3-tags">'+supportTags+'</div>':'')+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions">'+primaryAction+manualQueueButton+'<button class="order-v3-action secondary-action" type="button" data-order-chat="'+esc(o.id)+'">💬 VER CONVERSA</button><button class="order-v3-action '+(primaryAction?'secondary-action':'primary')+'" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
-  }
-  const ORDER_STATUS_TABS=[
-    {key:'manual',label:'SEPARAR AGORA'},
-    {key:'received',label:'Recebidos'},
-    {key:'confirmed',label:'Confirmados'},
-    {key:'separating',label:'Em separação'},
-    {key:'separated',label:'Separados'},
-    {key:'delivery',label:'Em entrega'},
-    {key:'delivered',label:'Entregues'},
-    {key:'cancelled',label:'Cancelados'}
-  ];
+  function orderRow(o){return orderCardView?.render(o)||''}
+
   function orderStatusTabKey(o){
     const m=orderV3Milestones(o),sep=orderSeparationSummary(o),assigned=Boolean(sep?.assignment?.separator_key);
     if(m.cancelled)return 'cancelled';
@@ -5001,17 +4961,21 @@
     }
     return key==='all'||orderStatusTabKey(o)===key;
   }
-  function orderStatusTabCounts(){
-    const counts=Object.fromEntries(ORDER_STATUS_TABS.map(x=>[x.key,0]));
-    counts.all=state.orders.length;
-    state.orders.forEach(o=>{const key=orderStatusTabKey(o);if(Object.prototype.hasOwnProperty.call(counts,key))counts[key]++});
-    counts.manual=state.orders.filter(o=>orderStatusTabMatch(o,'manual')).length;
-    return counts;
-  }
-  function orderStatusTabsHtml(extraClass=''){
-    const counts=orderStatusTabCounts(),active=orderList.state.orderStatusTab||'all';
-    return '<div class="orders-status-tabs '+extraClass+'" role="tablist" aria-label="Filtrar pedidos por status">'+ORDER_STATUS_TABS.map(x=>'<button type="button" class="orders-status-tab'+(active===x.key?' active':'')+'" data-order-status-tab="'+x.key+'" role="tab" aria-selected="'+(active===x.key?'true':'false')+'">'+esc(x.label)+' <span class="count">'+Number(counts[x.key]||0)+'</span></button>').join('')+'</div>';
-  }
+  orderCardView=window.DonaAntoniaAdminOrderCardView.create({
+    escapeHtml:esc,money,dateTime,orderDisplayCode,separationMoney,orderCardPhone,
+    cardModel:window.DonaAntoniaAdminOrderCardModel,customerReadiness:window.DonaAntoniaAdminCustomerReadiness,
+    listState:orderList.state,statusKey:orderStatusTabKey,fiscalByOrder:id=>state.fiscalByOrder[id]
+  });
+  orderView=window.DonaAntoniaAdminOrderListView.create({
+    query:$,document,getOrders:()=>state.orders,listState:orderList.state,escapeHtml:esc,
+    statusKey:orderStatusTabKey,searchMatch:orderV3SearchMatch,statusMatch:orderStatusTabMatch,renderRow:orderRow,
+    loadManualQueue:loadManualPickQueue,loadOrders,
+    actions:{
+      openOrder,openOrderChat:openOrderChatSheet,manualQueue:setManualPickQueue,copySeparation:copyOrderSeparationLink,
+      confirmOrder:quickConfirmOrder,separate:openOrderSeparationSheet,dispatch:startOrderDispatchV4,
+      deliver:openOrderDeliveryConfirm,deliveryFail:id=>returnOrderToExpedition(id,false)
+    }
+  });
   async function manualQueueRequest(action,orderId=null){
     const token=await adminStepUp();
     const res=await fetch(BASKET_AUTO_RPC+'manual_pick_queue_action_v1',{
@@ -5024,8 +4988,6 @@
   }
   function loadManualPickQueue(){return orderList.loadManualPickQueue()}
   function setManualPickQueue(orderId,enable,button){return orderList.setManualPickQueue(orderId,enable,button)}
-  function bindOrderStatusTabs(){document.querySelectorAll('[data-order-status-tab]').forEach(b=>b.onclick=async()=>{orderList.state.orderStatusTab=b.dataset.orderStatusTab||'manual';paintOrderRows();if(orderList.state.orderStatusTab==='manual'){try{await loadManualPickQueue()}catch{}paintOrderRows()}})}
-  async function renderOrders(){const content=$('#content');document.body.classList.add('orders-tab-active');content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Escolha manualmente quais pedidos confirmados devem aparecer em SEPARAR AGORA.</p></div></div><div id="orderStatusTabsTop">'+orderStatusTabsHtml('orders-status-desktop')+'</div><div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(orderList.state.orderQuery||'')+'"></div><div id="orderRows" class="orders-v3-list"><div class="loading">Carregando pedidos…</div></div><div id="orderStatusTabsMobile">'+orderStatusTabsHtml('orders-status-mobile')+'</div>';bindOrderStatusTabs();$('#orderSearch').oninput=e=>{orderList.state.orderQuery=e.target.value;paintOrderRows()};await loadOrders()}
   function loadOrders(){return orderList.loadOrders()}
   function refreshOrderSeparationBoard(){return orderList.refreshOrderSeparationBoard()}
   if(!window.__orderSeparationBoardTimer)window.__orderSeparationBoardTimer=setInterval(refreshOrderSeparationBoard,5000);
@@ -5064,7 +5026,6 @@
   $('#orderChatClose').onclick=closeOrderChatSheet;
   $('#orderChatOverlay').onclick=closeOrderChatSheet;
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('#orderChatSheet').hidden){event.preventDefault();closeOrderChatSheet()}});
-  function paintOrderRows(){const host=$('#orderRows');if(!host)return;const rows=state.orders.filter(o=>orderV3SearchMatch(o,orderList.state.orderQuery)&&orderStatusTabMatch(o)).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">'+(orderList.state.orderStatusTab==='manual'?(orderList.state.manualQueueError?'Fila manual indisponível. Tente selecionar esta aba novamente.':'Nenhum pedido na fila. Em CONFIRMADOS, clique em SEPARAR AGORA no pedido desejado.'):'Nenhum pedido encontrado neste status.')+'</div>';const top=$('#orderStatusTabsTop'),mobile=$('#orderStatusTabsMobile');if(top)top.innerHTML=orderStatusTabsHtml('orders-status-desktop');if(mobile)mobile.innerHTML=orderStatusTabsHtml('orders-status-mobile');bindOrderStatusTabs();host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));host.querySelectorAll('[data-order-chat]').forEach(b=>b.onclick=()=>openOrderChatSheet(b.dataset.orderChat,b));host.querySelectorAll('[data-manual-queue-add],[data-manual-queue-remove]').forEach(b=>b.onclick=()=>setManualPickQueue(b.dataset.manualQueueAdd||b.dataset.manualQueueRemove,Boolean(b.dataset.manualQueueAdd),b));host.querySelectorAll('[data-copy-separation]').forEach(b=>b.onclick=()=>copyOrderSeparationLink(b.dataset.copySeparation,b));host.querySelectorAll('[data-v3-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.v3Confirm,b));host.querySelectorAll('[data-v3-separate],[data-v3-separation]').forEach(b=>b.onclick=()=>openOrderSeparationSheet(b.dataset.v3Separate||b.dataset.v3Separation));host.querySelectorAll('[data-v3-dispatch]').forEach(b=>b.onclick=()=>startOrderDispatchV4(b.dataset.v3Dispatch,b));host.querySelectorAll('[data-v3-deliver]').forEach(b=>b.onclick=()=>openOrderDeliveryConfirm(b.dataset.v3Deliver));host.querySelectorAll('[data-v3-delivery-fail]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.v3DeliveryFail,false))}
   async function startOrderDispatchV4(id,btn){
     const current=state.orders.find(o=>String(o.id)===String(id));
     if(!current||current.status!=='ready'){toast('Este pedido não está pronto para saída');return}

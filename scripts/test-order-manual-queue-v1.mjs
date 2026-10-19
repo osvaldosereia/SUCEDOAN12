@@ -2,13 +2,15 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
 
-const html=readFileSync('vitrine/admin/index.html','utf8')+'\n'+readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+readFileSync('vitrine/admin/orders/list-controller.js','utf8');
+const html=readFileSync('vitrine/admin/index.html','utf8')+'\n'+readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+readFileSync('vitrine/admin/orders/list-controller.js','utf8')+'\n'+readFileSync('vitrine/admin/orders/card-view.js','utf8');
+const part=readFileSync('vitrine/admin/runtime-parts/16-orders-operations.part.js','utf8');
+const listView=readFileSync('vitrine/admin/orders/list-view.js','utf8');
 const sql=readFileSync('supabase/sql/20261008_order_manual_separation_queue_v1.sql','utf8');
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
 for(const [i,source] of scripts.entries())new Script(source,{filename:'admin-inline-'+i+'.js'});
 
 assert.match(html,/orderStatusTab:'manual'/);
-assert.match(html,/const ORDER_STATUS_TABS=\[\s*\{key:'manual',label:'SEPARAR AGORA'\}/);
+assert.match(listView,/\{key:'manual',label:'SEPARAR AGORA'\}/);
 assert.doesNotMatch(html,/\{key:'all',label:'Todos'\}/);
 assert.ok(html.includes("data-manual-queue-'+(manualSelected?'remove':'add')"),'manual queue action attached to cards');
 assert.match(html,/manualQueueRpc\(enable\?'add':'remove',orderId\)/);
@@ -24,15 +26,15 @@ assert.doesNotMatch(sql,/create\s+trigger\b/i);
 assert.doesNotMatch(sql,/update\s+public\.orders\b/i);
 assert.doesNotMatch(sql,/update\s+public\.order_items\b/i);
 
-const begin=html.indexOf('function orderStatusTabMatch(');
-const end=html.indexOf('function orderStatusTabCounts()',begin);
+const begin=part.indexOf('function orderStatusTabKey(');
+const end=part.indexOf('  orderCardView=window.',begin);
 assert.ok(begin!==-1&&end>begin);
-const funcBody=html.slice(begin,end);
-const makeMatch=new Function('orderList','orderV3Milestones','orderStatusTabKey',funcBody+';return orderStatusTabMatch;');
+const funcBody=part.slice(begin,end);
+const makeMatch=new Function('orderList','orderV3Milestones','orderSeparationSummary',funcBody+';return orderStatusTabMatch;');
 const state={orderStatusTab:'manual',manualQueueIds:new Set()};
 const milestones=o=>({confirmed:o.confirmed,separated:o.separated,delivered:o.delivered,cancelled:o.cancelled});
 const key=o=>o.confirmed?'confirmed':'received';
-const match=makeMatch({state},milestones,key);
+const match=makeMatch({state},milestones,()=>({}));
 const order={id:'order-1',status:'confirmed',confirmed:true,separated:false,delivered:false,cancelled:false};
 assert.equal(match(order),false,'nenhum pedido entra automaticamente');
 state.manualQueueIds.add('order-1');

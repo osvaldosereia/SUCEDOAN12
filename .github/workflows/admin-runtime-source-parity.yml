@@ -61,6 +61,8 @@ jobs:
       - run: node scripts/test-admin-order-detail-controller.mjs
       - run: node scripts/test-admin-order-fiscal-controller.mjs
       - run: node scripts/test-admin-order-list-controller.mjs
+      - run: node scripts/test-admin-order-card-view.mjs
+      - run: node scripts/test-admin-order-list-view.mjs
       - run: node scripts/test-admin-order-documents.mjs
       - run: node scripts/test-admin-controller-contracts.mjs
       - run: node scripts/test-admin-async-races-and-partial-save.mjs
