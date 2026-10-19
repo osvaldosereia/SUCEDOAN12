@@ -20,7 +20,7 @@ const sources=[...front,...edge].map(p=>({path:rel(p),text:fs.readFileSync(p,'ut
 // Source fragments are not standalone programs and must never be double-counted.
 const partitionDomains={
   '00-bootstrap-navigation':'Central','01-central':'Central','02-expedition':'Expedição',
-  '03-delivery':'Entregador','04-closure':'Fechamento','05-finance':'Financeiro',
+  '04-closure-bridge':'Fechamento','05-finance':'Financeiro',
   '06-baskets-products':'Produtos','07-expiration-balance':'Validades',
   '08-inventory-sheet':'Balanço','09-balance-gondolas':'Gôndolas',
   '10-purchase-finance':'Compras/XML','11-purchase-catalog':'Compras/XML',
@@ -48,6 +48,7 @@ function domain(file,name,line){
   if(file.includes('/marketing/'))return 'Marketing';
   if(/basket|kit-builder/i.test(file))return 'Cestas';
   if(file.includes('/orders/'))return 'Pedidos';
+  if(file.includes('/closure/'))return 'Fechamento';
   if(file.includes('/delivery/'))return /expedition|dispatch/i.test(name)?'Expedição':'Entregador';
   if(/closure|closing|closeout/i.test(name))return 'Fechamento';
   if(/driver|vehicle|smartDelivery|deliveryStop|deliveryRun/i.test(name))return 'Entregador';

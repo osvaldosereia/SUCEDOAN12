@@ -138,7 +138,6 @@
         ]);
         state.orders=data.orders||[];
         if(closureData){
-          state.closureOrders=closureData.orders||[];
           state.closurePendingCount=Number(closureData.pending_count||0);
           state.fiscalByOrder={...state.fiscalByOrder,...(closureData.fiscal_by_order||{})};
         }else state.closurePendingCount=0;

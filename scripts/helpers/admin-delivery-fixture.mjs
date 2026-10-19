@@ -1,23 +1,13 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {adminDomFixture} from './admin-dom-fixture.mjs';
 
 export function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject}}
 export function deliveryFixture(api,tab='expedition'){
-  const nodes=new Map(),messages=[],writes=[];
-  function node(id){
-    let html='';const children=new Set();
-    const value={id,value:'',disabled:false,textContent:'',querySelectorAll:()=>[],focus(){},close(){},showModal(){}};
-    Object.defineProperty(value,'innerHTML',{get:()=>html,set:text=>{
-      for(const child of children)nodes.delete(child);children.clear();html=text;
-      for(const [,key] of String(text).matchAll(/\bid="([^"]+)"/g)){const selector='#'+key;nodes.set(selector,node(key));children.add(selector)}
-    }});
-    return value;
-  }
-  nodes.set('#content',node('content'));
-  for(const id of ['editor','editorTitle','editorBody','editorActions'])nodes.set('#'+id,node(id));
+  const {nodes,document}=adminDomFixture(),messages=[],writes=[];
   const shared={orders:[],fiscal:{},tab,detail:null};
-  const document={querySelectorAll:()=>[]},window={};
+  const window={};
   const context={window,document,console,URL,URLSearchParams,setTimeout,clearTimeout};
   vm.createContext(context);
   for(const file of ['model.js','controller.js']){
@@ -35,5 +25,5 @@ export function deliveryFixture(api,tab='expedition'){
     orderView:{orderDisplayCode:order=>order.id,relativeAge:()=>'',statusPill:String,whatsappHref:()=>'',mapsHrefFromAddress:()=>'',orderSearchMatch:()=>true,deliveredToday:()=>false}
   };
   const controller=context.window.DonaAntoniaAdminDelivery.create(ports);
-  return {controller,shared,nodes,messages,writes,model:context.window.DonaAntoniaAdminDeliveryModel};
+  return {controller,shared,nodes,messages,writes,ports,model:context.window.DonaAntoniaAdminDeliveryModel};
 }

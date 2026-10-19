@@ -1,3 +1,31 @@
+  function blingOperationalIssues(b){
+    const issues=[];
+    const cred=b?.credentials||{},domains=b?.domains||{},queue=b?.hub_queue||{},orderLinks=b?.order_links||{};
+    if(cred.ready===false)issues.push('Credenciais do Bling precisam de atenção');
+    if(b?.hub_enabled===false)issues.push('Integração direta com o Bling está pausada');
+    if(b?.hub_enabled!==false&&domains.orders===false)issues.push('Envio de pedidos ao Bling está pausado');
+    const queueReview=Number(queue.review_required||0)+Number(queue.failed||0);
+    if(queueReview>0)issues.push(queueReview+' item(ns) da fila precisam de revisão');
+    const orderReview=Number(orderLinks.review_required||0);
+    if(orderReview>0)issues.push(orderReview+' pedido(s) precisam de revisão no Bling');
+    return [...new Set(issues)];
+  }
+  async function loadOperationalIntegrationAlert(){
+    const host=$('#integrationOperationalAlert');if(!host)return;
+    host.innerHTML='';
+    try{
+      const data=await api('bling_status');
+      state.bling=data.bling||{};
+      const issues=blingOperationalIssues(state.bling);
+      if(!issues.length)return;
+      host.innerHTML='<div class="operational-alert"><div><strong>Integração precisa de atenção</strong><small>'+issues.map(esc).join(' · ')+'</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }catch(e){
+      host.innerHTML='<div class="operational-alert"><div><strong>Não consegui verificar a integração</strong><small>Os pedidos continuam visíveis. Abra o diagnóstico para conferir o Bling.</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }
+  }
+
   function renderOpsShadowReadiness(){
     const s=state.opsShadow;if(!s)return '';
     const total=Number(s.total||0),ready=Number(s.erp_ready||0),blocked=Number(s.blocked||0);

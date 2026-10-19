@@ -1,3 +1,74 @@
+  function financeSummaryCard(label,value,detail,kind=''){
+    return '<div class="bling-card '+esc(kind)+'"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong><span class="sub">'+esc(detail)+'</span></div>';
+  }
+  function financePriorityRow(r,today){
+    const isReceive=r.kind==='receivable';
+    const overdue=Boolean(r.due_date&&r.due_date<today);
+    const title=r.contact_name||r.document_number||r.origin_number||('Lançamento #'+String(r.id||''));
+    const detail=[r.document_number?'Doc. '+r.document_number:'',r.origin_number?'Origem '+r.origin_number:'',r.boleto_url?'Boleto emitido':'',r.pix_url?'PIX disponível':''].filter(Boolean).join(' · ');
+    return '<div class="closure-row">'+
+      '<div><strong class="'+(isReceive?'ok-text':'warn-text')+'">'+(isReceive?'Receber':'Pagar')+'</strong><span class="sub">'+(overdue?'<span class="danger-text">Vencido</span>':'Em aberto')+'</span></div>'+
+      '<div class="history-main"><strong>'+esc(title)+'</strong><small>'+esc(detail||'Sem observação')+'</small><div class="dispatch-actions" style="justify-content:flex-start;margin-top:6px">'+
+        '<button class="text" type="button" data-finance-detail="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Detalhes</button>'+
+        '<button class="text" type="button" data-finance-edit="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Editar</button>'+
+        '<button class="text" type="button" data-finance-settle="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Dar baixa</button>'+
+        (isReceive&&r.origin_id?'<button class="text" type="button" data-finance-boleto="'+esc(r.origin_id)+'">Boletos</button>':'')+
+      '</div></div>'+
+      '<div><strong>'+esc(dateOnly(r.due_date))+'</strong><span class="sub">'+(r.due_date===today?'Vence hoje':'Vencimento')+'</span></div>'+
+      '<strong>'+money(r.amount_cents)+'</strong>'+
+      '<span class="pill '+(overdue?'danger':'')+'">'+(r.boleto_url?'Boleto':r.pix_url?'PIX':'Aberto')+'</span>'+
+    '</div>';
+  }
+  function paintFinance(){
+    const host=$('#financeBody');if(!host)return;
+    const f=state.finance||{},rec=f.receivable||{},pay=f.payable||{},realized=f.realized_30d||{},today=f.window?.today||'';
+    const priorities=Array.isArray(f.priority)?f.priority:[];
+    const accounts=Array.isArray(f.financial_accounts)?f.financial_accounts:[];
+    host.innerHTML=
+      (f.truncated?'<div class="rule-notice warn"><strong>Volume alto de lançamentos</strong><div>O painel exibiu o limite seguro desta versão. Nenhum dado foi alterado.</div></div>':'')+
+      (realized.truncated?'<div class="rule-notice warn"><strong>Histórico de 30 dias parcial</strong><div>O volume de contas pagas/recebidas ultrapassou o limite seguro de leitura; os totais exibidos podem ser parciais.</div></div>':'')+
+      '<div class="bling-grid">'+
+        financeSummaryCard('A receber',money(rec.total_cents),String(rec.count||0)+' conta(s) em aberto')+
+        financeSummaryCard('A pagar',money(pay.total_cents),String(pay.count||0)+' conta(s) em aberto')+
+        financeSummaryCard('Saldo projetado',money(f.projected_cents),(Number(f.projected_cents||0)>=0?'Recebimentos acima dos pagamentos':'Pagamentos acima dos recebimentos'),Number(f.projected_cents||0)<0?'danger':'')+
+        financeSummaryCard('Recebido · 30 dias',money(realized.received_cents),String(realized.received_count||0)+' conta(s) recebida(s)')+
+        financeSummaryCard('Pago · 30 dias',money(realized.paid_cents),String(realized.paid_count||0)+' conta(s) paga(s)')+
+        financeSummaryCard('Líquido realizado · 30 dias',money(realized.net_cents),(Number(realized.net_cents||0)>=0?'Entradas acima das saídas':'Saídas acima das entradas'),Number(realized.net_cents||0)<0?'danger':'')+
+        financeSummaryCard('Vencidos a receber',money(rec.overdue_cents),String(rec.overdue_count||0)+' vencido(s)',Number(rec.overdue_count||0)>0?'warn':'')+
+        financeSummaryCard('Vencidos a pagar',money(pay.overdue_cents),String(pay.overdue_count||0)+' vencido(s)',Number(pay.overdue_count||0)>0?'danger':'')+
+        financeSummaryCard('Próximos 7 dias',money(Number(rec.next_7_cents||0)-Number(pay.next_7_cents||0)),String(rec.next_7_count||0)+' a receber · '+String(pay.next_7_count||0)+' a pagar')+
+        financeSummaryCard('Boletos',String(f.boleto_count||0),String(f.pix_count||0)+' conta(s) também com PIX')+
+        financeSummaryCard('Contas financeiras',String(accounts.length),f.financial_accounts_access?.ok?'Acesso confirmado':'Acesso parcial')+
+      '</div>'+
+      '<section class="panel"><div class="history-title dispatch-head"><div><strong>Prioridades financeiras</strong><span>vencidos primeiro, depois próximos vencimentos · somente leitura</span></div><b>'+priorities.length+'</b></div>'+
+        (priorities.length?priorities.map(r=>financePriorityRow(r,today)).join(''):'<div class="history-empty">Nenhuma conta em aberto no período consultado.</div>')+
+      '</section>'+
+      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Contas financeiras do Bling</strong><span>bancos, caixas e integrações disponíveis</span></div><b>'+accounts.length+'</b></div>'+
+        (accounts.length?'<div style="padding:12px 14px">'+accounts.map(a=>'<button class="pill" type="button" data-financial-account-detail="'+esc(a.id)+'" style="margin:3px">'+esc(a.description||('Conta #'+a.id))+' · '+esc(a.type||'tipo não informado')+'</button>').join('')+'</div>':'<div class="history-empty">Nenhuma conta financeira retornada.</div>')+
+      '</section>';
+    host.querySelectorAll('[data-finance-detail]').forEach(b=>b.onclick=()=>openFinanceDetail(b.dataset.financeKind,Number(b.dataset.financeDetail)));
+    host.querySelectorAll('[data-finance-edit]').forEach(b=>b.onclick=()=>openFinanceEditor(b.dataset.financeKind,Number(b.dataset.financeEdit)));
+    host.querySelectorAll('[data-finance-settle]').forEach(b=>b.onclick=()=>openFinanceSettlement(b.dataset.financeKind,Number(b.dataset.financeSettle)));
+    host.querySelectorAll('[data-finance-boleto]').forEach(b=>b.onclick=()=>openFinanceBoletos(Number(b.dataset.financeBoleto)));
+    host.querySelectorAll('[data-financial-account-detail]').forEach(b=>b.onclick=()=>openFinancialAccountDetail(Number(b.dataset.financialAccountDetail)));
+  }
+  function financeTokenPayload(token){
+    try{
+      const raw=String(token||'').split('.')[1]||'';
+      const pad=raw.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-raw.length%4)%4);
+      return JSON.parse(atob(pad));
+    }catch{return {}}
+  }
+  function financeSessionToken(){
+    const token=sessionStorage.getItem('da_finance_access_token_v1')||'';
+    if(!token)return '';
+    const exp=Number(financeTokenPayload(token)?.exp||0);
+    if(!exp||exp<=Math.floor(Date.now()/1000)+60){
+      sessionStorage.removeItem('da_finance_access_token_v1');
+      return '';
+    }
+    return token;
+  }
   function clearFinanceSession(expectedToken=''){
     const current=financeSessionToken();
     if(expectedToken&&current&&current!==expectedToken)return false;

@@ -11,7 +11,7 @@
   const {esc,money,cents,fmtQty,dateTime,dateOnly,normalize}=window.DonaAntoniaAdminFormatters;
   const {orderDisplayCode,phoneDigits,formatPhone,formatCpf}=window.DonaAntoniaAdminIdentifiers;
   const {errorMessage}=window.DonaAntoniaAdminErrors;
-  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null};
+  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null};
   const {load:loadFiscalForOrders}=window.DonaAntoniaAdminFiscalLoader.create({api,getCache:()=>state.fiscalByOrder});
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
@@ -344,7 +344,6 @@
         ]);
         state.orders=data.orders||[];
         if(closureData){
-          state.closureOrders=closureData.orders||[];
           state.closurePendingCount=Number(closureData.pending_count||0);
           state.fiscalByOrder={...state.fiscalByOrder,...(closureData.fiscal_by_order||{})};
         }else state.closurePendingCount=0;
@@ -436,141 +435,13 @@
     formatters:{esc,money,dateTime,normalize,formatPhone,errorMessage},
     orderView:{orderDisplayCode,relativeAge,statusPill,whatsappHref,mapsHrefFromAddress,orderSearchMatch,deliveredToday}
   });
-  function fiscalClosureLabel(f,o){
-    const actual=o?.payment_method_snapshot?.actual||null;
-    if(!f||f.error)return actual?.received
-      ? {title:'Recebido · revisar Bling',detail:'Pagamento real registrado; controle fiscal indisponível',kind:'warn'}
-      : {title:'Verificar',detail:'Controle fiscal indisponível',kind:'warn'};
-    if(f.payment_status!=='confirmed'){
-      if(actual?.received){
-        const parts=actualPaymentText(o)||money(actual.captured_total_cents||o?.total_cents||0);
-        return {title:'Recebido · Bling pendente',detail:parts,kind:'warn'};
-      }
-      return {title:'Pagamento pendente',detail:'Confirmar recebimento legado',kind:'warn'};
-    }
-    if(f.fiscal_status==='issued'||f.bling_invoice_id)return {title:'Concluído',detail:f.bling_invoice_number?'NF-e '+f.bling_invoice_number:'Fiscal concluído',kind:'ok'};
-    if(f.fiscal_status==='review_required')return {title:'Precisa de revisão',detail:f.fiscal_block_reason?fiscalBlockReasonLabel(f.fiscal_block_reason):'Revisar fiscal',kind:'warn'};
-    if(f.fiscal_status==='ready')return {title:'Fiscal pronto',detail:f.config?.send_enabled?'Pronto para emissão':'Emissão permanece desligada',kind:'ok'};
-    return {title:'Fiscal bloqueado',detail:f.fiscal_block_reason?fiscalBlockReasonLabel(f.fiscal_block_reason):'Aguardando requisitos',kind:'warn'};
-  }
-  function closureBucket(o){
-    const f=state.fiscalByOrder[o.id],actual=o?.payment_method_snapshot?.actual||null;
-    if(!f||f.error)return 'fiscal';
-    if(f.payment_status!=='confirmed')return actual?.received?'fiscal':'payment';
-    if(f.fiscal_status==='issued'||f.bling_invoice_id)return 'complete';
-    return 'fiscal';
-  }
-  function closurePriority(o){
-    const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f,o);
-    if(label.title==='Pagamento pendente')return 0;
-    if(label.title==='Precisa de revisão'||label.title==='Verificar')return 1;
-    if(label.title==='Fiscal pronto'||label.title==='Fiscal bloqueado')return 2;
-    return 3;
-  }
-  function closureRow(o){
-    const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f,o);
-    const cls=label.kind==='ok'?'ok-text':'warn-text';
-    const actual=o?.payment_method_snapshot?.actual||null;
-    const canConfirmPayment=o.status==='delivered'&&!actual?.received&&f&&!f.error&&f.payment_status!=='confirmed';
-    return '<div class="closure-row">'+
-      '<div><strong>#'+esc(orderDisplayCode(o))+'</strong><span class="sub">'+esc(dateTime(o.delivered_at))+'</span></div>'+
-      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(actualPaymentText(o)||(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado'))+'</small></div>'+
-      '<strong>'+money(o.total_cents)+'</strong>'+
-      '<div class="closure-status"><strong class="'+cls+'">'+esc(label.title)+'</strong><small>'+esc(label.detail)+'</small></div>'+
-      '<div class="dispatch-actions">'+
-        (canConfirmPayment?'<button class="quick-link primary-link" type="button" data-closure-payment="'+esc(o.id)+'">Confirmar recebimento</button>':'')+
-        '<button class="text" type="button" data-closure-order="'+esc(o.id)+'">Abrir</button>'+
-      '</div>'+
-    '</div>';
-  }
-  async function confirmClosurePayment(id){
-    const o=state.closureOrders.find(x=>x.id===id)||state.orders.find(x=>x.id===id);
-    const f=state.fiscalByOrder[id];
-    if(!o||o.status!=='delivered'||o.payment_method_snapshot?.actual?.received||!f||f.error||f.payment_status==='confirmed'){
-      toast(o?.payment_method_snapshot?.actual?.received?'O pagamento real já foi registrado; falta conciliar com o Bling.':'Este recebimento não está mais pendente');return;
-    }
-    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
-    if(!confirm('Confirmar recebimento de '+money(o.total_cents)+' via '+payment+'?\n\nPedido #'+orderDisplayCode(o)))return;
-    const btn=document.querySelector('[data-closure-payment="'+CSS.escape(id)+'"]');
-    if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
-    try{
-      state.fiscalByOrder[id]=await api('order_fiscal_confirm_payment',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id,payment_method:payment})
-      });
-      renderClosure();
-      toast(state.fiscalByOrder[id]?.fiscal_status==='ready'?'Recebimento confirmado · fiscal pronto':'Recebimento confirmado');
-    }catch(e){
-      toast(errorMessage(e.message));
-      if(btn){btn.disabled=false;btn.textContent='Confirmar recebimento'}
-    }
-  }
-  let closureRenderGeneration=0;
-  async function renderClosure(){
-    const generation=++closureRenderGeneration;
-    const content=$('#content');
-    const host=()=>$('#closureBody');
-    const isCurrent=()=>generation===closureRenderGeneration&&state.tab==='closure'&&content===$('#content')&&Boolean(host());
-    content.innerHTML='<div class="page-head"><div><h1>Fechamento</h1><p>Entregas concluídas que precisam de recebimento, revisão fiscal ou conferência final.</p></div><button class="secondary" id="refreshClosure">Atualizar</button></div><div id="closureBody"><div class="loading">Carregando fechamento…</div></div>';
-    $('#refreshClosure').onclick=()=>{state.fiscalByOrder={};renderClosure()};
-    try{
-      const data=await api('closure_orders');
-      if(!isCurrent())return;
-      const delivered=data.orders||[];
-      state.closureOrders=delivered;
-      state.fiscalByOrder={...state.fiscalByOrder,...(data.fiscal_by_order||{})};
-      await loadFiscalForOrders(delivered);
-      if(!isCurrent())return;
-      delivered.sort((a,b)=>closurePriority(a)-closurePriority(b)||((Date.parse(b.delivered_at||0)||0)-(Date.parse(a.delivered_at||0)||0)));
-      const paymentPending=delivered.filter(o=>closureBucket(o)==='payment');
-      const fiscalPending=delivered.filter(o=>closureBucket(o)==='fiscal');
-      const complete=delivered.filter(o=>closureBucket(o)==='complete');
-      $('#closureBody').innerHTML='<div class="ops-cards">'+
-        '<div class="ops-card warn"><small>Recebimento legado</small><strong>'+paymentPending.length+'</strong><span>Entregas antigas sem captura real</span></div>'+
-        '<div class="ops-card warn"><small>Fiscal / revisão</small><strong>'+fiscalPending.length+'</strong><span>Pagamento já tratado · revisar fiscal</span></div>'+
-        '<div class="ops-card"><small>Concluídos</small><strong>'+complete.length+'</strong><span>Fechamento encerrado</span></div>'+
-      '</div><div class="closure-grid">'+
-        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Recebimento legado</strong><span>somente pedidos sem captura do pagamento real</span></div><b>'+paymentPending.length+'</b></div>'+(paymentPending.length?paymentPending.map(closureRow).join(''):'<div class="history-empty">Nenhum recebimento pendente.</div>')+'</section>'+
-        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Fiscal / revisão</strong><span>pagamento real registrado ou confirmado; falta conciliar/revisar o fiscal</span></div><b>'+fiscalPending.length+'</b></div>'+(fiscalPending.length?fiscalPending.map(closureRow).join(''):'<div class="history-empty">Nenhuma revisão fiscal pendente.</div>')+'</section>'+
-        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Concluídos recentes</strong><span>pagamento e fiscal conferidos</span></div><b>'+complete.length+'</b></div>'+(complete.length?complete.slice(0,10).map(closureRow).join(''):'<div class="history-empty">Nenhum fechamento concluído recente.</div>')+'</section>'+
-      '</div>';
-      document.querySelectorAll('[data-closure-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.closureOrder));
-      document.querySelectorAll('[data-closure-payment]').forEach(b=>b.onclick=()=>confirmClosurePayment(b.dataset.closurePayment));
-    }catch(e){
-      if(!isCurrent())return;
-      $('#closureBody').innerHTML='<div class="empty">Não consegui carregar os fechamentos. <button class="text" id="retryClosure">Tentar novamente</button></div>';
-      if($('#retryClosure'))$('#retryClosure').onclick=renderClosure;
-    }
-  }
-
-  function blingOperationalIssues(b){
-    const issues=[];
-    const cred=b?.credentials||{},domains=b?.domains||{},queue=b?.hub_queue||{},orderLinks=b?.order_links||{};
-    if(cred.ready===false)issues.push('Credenciais do Bling precisam de atenção');
-    if(b?.hub_enabled===false)issues.push('Integração direta com o Bling está pausada');
-    if(b?.hub_enabled!==false&&domains.orders===false)issues.push('Envio de pedidos ao Bling está pausado');
-    const queueReview=Number(queue.review_required||0)+Number(queue.failed||0);
-    if(queueReview>0)issues.push(queueReview+' item(ns) da fila precisam de revisão');
-    const orderReview=Number(orderLinks.review_required||0);
-    if(orderReview>0)issues.push(orderReview+' pedido(s) precisam de revisão no Bling');
-    return [...new Set(issues)];
-  }
-  async function loadOperationalIntegrationAlert(){
-    const host=$('#integrationOperationalAlert');if(!host)return;
-    host.innerHTML='';
-    try{
-      const data=await api('bling_status');
-      state.bling=data.bling||{};
-      const issues=blingOperationalIssues(state.bling);
-      if(!issues.length)return;
-      host.innerHTML='<div class="operational-alert"><div><strong>Integração precisa de atenção</strong><small>'+issues.map(esc).join(' · ')+'</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
-      $('#openIntegrationIssue').onclick=renderBling;
-    }catch(e){
-      host.innerHTML='<div class="operational-alert"><div><strong>Não consegui verificar a integração</strong><small>Os pedidos continuam visíveis. Abra o diagnóstico para conferir o Bling.</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
-      $('#openIntegrationIssue').onclick=renderBling;
-    }
-  }
-
+  const {renderClosure}=window.DonaAntoniaAdminClosure.create({
+    api,
+    orders:{get:()=>state.orders,fiscal:()=>state.fiscalByOrder,mergeFiscal:rows=>{state.fiscalByOrder={...state.fiscalByOrder,...rows}},clearFiscal:()=>{state.fiscalByOrder={}},loadFiscal:loadFiscalForOrders},
+    navigation:{currentTab:()=>state.tab},
+    ui:{query:$,document,CSS,confirm,toast},formatters:{esc,money,dateTime,errorMessage},
+    orderView:{orderDisplayCode,actualPaymentText,fiscalBlockReasonLabel},openOrder
+  });
   function financeSummaryCard(label,value,detail,kind=''){
     return '<div class="bling-card '+esc(kind)+'"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong><span class="sub">'+esc(detail)+'</span></div>';
   }
@@ -4898,6 +4769,34 @@
   async function loadOpsShadowReadiness(){
     try{const data=await api('ops_shadow_readiness');state.opsShadow=data.readiness||{};return state.opsShadow}catch{state.opsShadow=null;return null}
   }
+  function blingOperationalIssues(b){
+    const issues=[];
+    const cred=b?.credentials||{},domains=b?.domains||{},queue=b?.hub_queue||{},orderLinks=b?.order_links||{};
+    if(cred.ready===false)issues.push('Credenciais do Bling precisam de atenção');
+    if(b?.hub_enabled===false)issues.push('Integração direta com o Bling está pausada');
+    if(b?.hub_enabled!==false&&domains.orders===false)issues.push('Envio de pedidos ao Bling está pausado');
+    const queueReview=Number(queue.review_required||0)+Number(queue.failed||0);
+    if(queueReview>0)issues.push(queueReview+' item(ns) da fila precisam de revisão');
+    const orderReview=Number(orderLinks.review_required||0);
+    if(orderReview>0)issues.push(orderReview+' pedido(s) precisam de revisão no Bling');
+    return [...new Set(issues)];
+  }
+  async function loadOperationalIntegrationAlert(){
+    const host=$('#integrationOperationalAlert');if(!host)return;
+    host.innerHTML='';
+    try{
+      const data=await api('bling_status');
+      state.bling=data.bling||{};
+      const issues=blingOperationalIssues(state.bling);
+      if(!issues.length)return;
+      host.innerHTML='<div class="operational-alert"><div><strong>Integração precisa de atenção</strong><small>'+issues.map(esc).join(' · ')+'</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }catch(e){
+      host.innerHTML='<div class="operational-alert"><div><strong>Não consegui verificar a integração</strong><small>Os pedidos continuam visíveis. Abra o diagnóstico para conferir o Bling.</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }
+  }
+
   function renderOpsShadowReadiness(){
     const s=state.opsShadow;if(!s)return '';
     const total=Number(s.total||0),ready=Number(s.erp_ready||0),blocked=Number(s.blocked||0);
