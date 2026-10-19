@@ -1,8 +1,7 @@
 // Contatos de pedidos, solicitação de dados e mapa: funções originais.
 (function(global){
   function createOrderContactActions(orderProblemReasons,whatsappHref,whatsappMessageHref,orderDisplayCode,esc){
-    function orderMissingDataRequest(o){
-      const problems=orderProblemReasons(o);
+    function missingDataRequestForProblems(o,problems){
       const needName=problems.includes('Cliente não identificado');
       const needAddress=problems.includes('Endereço incompleto');
       if(!needName&&!needAddress)return null;
@@ -26,9 +25,13 @@
       const message=greeting+' Para concluirmos seu pedido #'+orderDisplayCode(o)+' da Dona Antônia, '+request+(needAddress?' Se preferir, envie sua localização pelo WhatsApp.':'');
       return {href:whatsappMessageHref(phone,message),label};
     }
+    function orderMissingDataRequest(o){
+      return missingDataRequestForProblems(o,orderProblemReasons(o));
+    }
     function orderAddressRequestHref(o){
-      const request=orderMissingDataRequest(o);
-      return request&&orderProblemReasons(o).includes('Endereço incompleto')?request.href:'';
+      const problems=orderProblemReasons(o);
+      if(!problems.includes('Endereço incompleto'))return '';
+      return missingDataRequestForProblems(o,problems)?.href||'';
     }
     function mapsHrefFromAddress(a){
       const data=a&&typeof a==='object'?a:{};
@@ -40,7 +43,8 @@
     function orderContactActionsHtml(o,c={}){
       const a=o?.delivery_address_snapshot||c?.address||{};
       const phone=c?.phone||o?.whatsapp_phone_e164||a.phone||'';
-      const wa=whatsappHref(phone),maps=mapsHrefFromAddress(a),dataRequest=orderMissingDataRequest(o);
+      const wa=whatsappHref(phone),maps=mapsHrefFromAddress(a);
+      const dataRequest=missingDataRequestForProblems(o,orderProblemReasons(o));
       if(!wa&&!maps&&!dataRequest)return '';
       return '<div class="dispatch-actions" style="justify-content:flex-start;margin-top:10px">'+
         (dataRequest?'<a class="quick-link primary-link" href="'+esc(dataRequest.href)+'" target="_blank" rel="noopener">'+esc(dataRequest.label)+'</a>':'')+
