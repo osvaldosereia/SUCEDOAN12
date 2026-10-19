@@ -7,7 +7,7 @@ const html=fs.readFileSync(path.join(root,'vitrine/admin/index.html'),'utf8');
 const tags=[...html.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/g)];
 const scripts=tags.map(m=>({tag:m[0],url:m[1],path:m[1].split('?')[0].replace(/^\//,'')}));
 const admin=scripts.filter(s=>s.path.startsWith('vitrine/admin/'));
-if(admin.length!==33)throw new Error('Expected 33 ordered Admin classic scripts; got '+admin.length);
+if(admin.length!==34)throw new Error('Expected 34 ordered Admin classic scripts; got '+admin.length);
 const paths=admin.map(s=>s.path);
 if(new Set(paths).size!==paths.length)throw new Error('Duplicate Admin script include');
 for(const item of admin){
@@ -16,7 +16,7 @@ for(const item of admin){
 }
 const runtime='vitrine/admin/admin-runtime.js';
 const runtimeIndex=paths.indexOf(runtime);
-if(runtimeIndex<0||runtimeIndex!==30)throw new Error('Admin runtime load position changed');
+if(runtimeIndex<0||runtimeIndex!==31)throw new Error('Admin runtime load position changed');
 const expectedPreloads=[
  'core/formatters.js','core/identifiers.js','core/errors.js',
  'components/printing.js','marketing/helpers.js','orders/sorting.js',
@@ -24,7 +24,7 @@ const expectedPreloads=[
  'orders/search.js','orders/whatsapp-links.js',
  'orders/contact-actions.js','components/expiry-alert.js',
  'components/ops-attention.js','components/print-queue-panel.js',
- 'basket-lot-image.js','orders/separation-model.js','orders/customer-readiness.js','orders/payment-method.js','orders/session.js','orders/list-controller.js','orders/documents.js','orders/detail-view.js','orders/detail-controller.js','orders/fiscal-controller.js','orders/fiscal-loader.js','delivery/model.js','delivery/controller.js','closure/controller.js','customers/controller.js'
+ 'basket-lot-image.js','orders/separation-model.js','orders/customer-readiness.js','orders/payment-method.js','orders/session.js','orders/list-controller.js','orders/documents.js','orders/detail-view.js','orders/detail-controller.js','orders/fiscal-controller.js','orders/fiscal-loader.js','orders/manual-sale.js','delivery/model.js','delivery/controller.js','closure/controller.js','customers/controller.js'
 ].map(s=>'vitrine/admin/'+s);
 if(JSON.stringify(paths.slice(0,runtimeIndex))!==JSON.stringify(expectedPreloads))
  throw new Error('Admin provider order drift before runtime initialization');

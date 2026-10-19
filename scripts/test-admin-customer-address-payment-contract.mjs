@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const admin=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
+const manualSource=fs.readFileSync('vitrine/admin/orders/manual-sale.js','utf8');
 const customerSource=fs.readFileSync('vitrine/admin/customers/controller.js','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 function section(source,begin,end){
@@ -11,7 +12,7 @@ function section(source,begin,end){
   assert.ok(stop>start,'missing end for '+begin);
   return source.slice(start,stop);
 }
-const manual=section(admin,'  async function createManualSale(){','\n  const ORDER_SEPARATORS=');
+const manual=section(manualSource,'  async function createManualSale(){','\n    return Object.freeze(');
 const customer=section(customerSource,'  async function saveCustomer(','\n    return Object.freeze(');
 const editOrder=fs.readFileSync('vitrine/admin/orders/detail-controller.js','utf8');
 const customerForm=section(customerSource,'  function openCustomerEditor(','\n  async function deleteCustomer(');

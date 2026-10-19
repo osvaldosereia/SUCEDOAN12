@@ -6,9 +6,9 @@ Base desta continuação: `693f61fd9050cbdc6ead6817e32b0757764db51a`, no PR #112
 
 ### Código efetivamente reorganizado
 
-Foram extraídos `orders/session.js`, `list-controller.js`, `detail-controller.js`, `detail-view.js`, `fiscal-controller.js` e `documents.js`. Lista/fila, sessão do editor, gravações, apresentação, fiscal e impressão têm dependências explícitas. A leitura do endereço é única para salvar e cancelar. O estado geral perdeu o pedido atual, fiscal do editor, prévia antiga, filtros/fila da lista e estado do editor legado.
+Foram extraídos `orders/session.js`, `list-controller.js`, `detail-controller.js`, `detail-view.js`, `fiscal-controller.js`, `fiscal-loader.js`, `documents.js` e `manual-sale.js`. Lista/fila, sessão do editor, gravações, apresentação, fiscal, impressão e criação manual têm dependências explícitas. A leitura do endereço é única para salvar e cancelar. O estado geral perdeu o pedido atual, fiscal do editor, prévia antiga, filtros/fila da lista e estado do editor legado.
 
-Os fragmentos passaram de 19 para 17; `17-fiscal-danfe` e `18-order-editing` foram eliminados depois de mover as responsabilidades ativas. São 33 scripts síncronos, 28 dependências diretas resolvidas, 5.576 linhas e 449.465 caracteres no runtime (antes: 6.365 linhas e 507.152 caracteres). Os callbacks preservam a inicialização antes de `start()`.
+Os fragmentos passaram de 19 para 17; `17-fiscal-danfe` e `18-order-editing` foram eliminados depois de mover as responsabilidades ativas. São 34 scripts síncronos, 29 dependências diretas resolvidas, 5.459 linhas e 435.252 caracteres no runtime (antes: 6.365 linhas e 507.152 caracteres). Os callbacks preservam a inicialização antes de `start()`.
 
 ### Correções confirmadas
 
@@ -21,6 +21,7 @@ Os fragmentos passaram de 19 para 17; `17-fiscal-danfe` e `18-order-editing` for
 - Testes do render fiscal real detectaram e permitiram corrigir duas colisões de nomes introduzidas na extração (`busy` e `feedback`), antes de publicar.
 - A confirmação manual do pedido foi transferida para `list-controller.js`, com portas explícitas para operador e prontidão do cliente. O botão só mostra `CONFIRMADO` após resposta de sucesso; falhas restauram o rótulo anterior, e cliques concorrentes para o mesmo pedido são bloqueados. O detalhe só é reaberto depois de confirmação bem-sucedida.
 - Revisão independente encontrou e corrigiu dois defeitos introduzidos nas extrações: o fluxo `?montar=1&separacao=...` usava a função privada antiga da fila (agora consulta a porta pública do controlador); e o cache fiscal não compartilhava a revisão entre leitura em lote e detalhe (agora ambos descartam respostas antigas usando a revisão por pedido). Foram acrescentadas regressões para os dois casos.
+- A criação manual e suas buscas/configuração de cesta saíram do fragmento principal para `orders/manual-sale.js`, que usa portas explícitas para rascunho, API, UI e navegação. Leituras antigas de cliente, produto ou cesta não repintam a consulta mais recente, e o mesmo rascunho não pode enviar duas criações concorrentes. O payload `manual_order_create`, mínimo de R$ 75, endereço e pagamento continuam cobertos por testes.
 
 ### Remoções com evidência de alcance
 
@@ -34,14 +35,14 @@ O teste de botões agora executa os providers reais de sessão, apresentação e
 
 | Área | Resultado efetivo |
 |---|---|
-| Pedidos | Refatoração de lista/fila, sessão, detalhe, edição, cancelamento, reabertura, fiscal e documentos; correções acima e testes comportamentais. Criação manual, cards/chat e separação continuam pendentes de extração. |
+| Pedidos | Refatoração de lista/fila, sessão, criação manual, detalhe, edição, cancelamento, reabertura, fiscal e documentos; correções acima e testes comportamentais. Cards/chat e bottom sheet de separação continuam pendentes de extração. |
 | Expedição, Entregador e Fechamento | Adaptadores do pedido aberto atualizados para a sessão; contratos e testes locais continuam na suíte. Não houve operação real. |
 | Clientes | Cache passa explicitamente ao editor; contratos de histórico conservam o endpoint de repetição no backend. O handler privado antigo sem botão foi removido. |
 | Central, Atendimento, ANA, Produtos, Cestas, Validades, Orçamentos, Marketing, Compras/XML, Balanço, Gôndolas, Financeiro e Bling técnico | Cobertura de regressão da suíte existente; a auditoria manual desta continuação concentrou-se em Pedidos. Não se declara nova revisão integral dessas áreas. |
 
 ### Verificação e pendências
 
-Verificação local: 128 scripts `test-admin-*.mjs`, 5 `test-admin-*.py` e 5 `test-smart-delivery-*.mjs` passaram (138 ao todo); a rodada posterior adicionou cobertura de sucesso, falha e bloqueio de dados pendentes à confirmação de pedido e repetiu os 138 scripts com sucesso. Também passaram Cestas/lotes, gates e feedback da separação, estoque Bling, paridade, bootstrap, grafo e 10 pares de espelhos Edge. Foi corrigido um contrato anterior que ainda lia apenas o HTML inline e atualizado o contrato de entrega para acompanhar a função fina do controlador. Revisão independente e CI do head publicado serão registradas ao final. As Etapas 1 e 2 continuam abertas. Além dos trechos restantes de Pedidos, persistem as fronteiras de Produtos/Cestas, Balanço e Compras/XML, a revisão manual integral das declarações e homologação externa de Edge/Bling/SEFAZ/impressão. A tabela histórica abaixo preserva as revisões anteriores; testes contratuais não equivalem a homologação operacional.
+Verificação local: 129 scripts `test-admin-*.mjs`, 5 `test-admin-*.py` e 5 `test-smart-delivery-*.mjs` passaram (139 ao todo), incluindo as novas regressões da confirmação, do scheduler fiscal compartilhado, do bootstrap de Montar e da criação manual. Também passaram Cestas/lotes, gates e feedback da separação, estoque Bling, paridade, bootstrap, grafo e 10 pares de espelhos Edge. Foram atualizados contratos que ainda liam somente HTML inline ou dependiam do nome antigo dos handlers. No head remoto anterior, 34 verificações do GitHub passaram; cinco falhas tinham origem no teste fiscal estático que procurava um texto na fonte antiga, corrigido para consultar o controller extraído; CI do novo head será conferido antes da entrega. As Etapas 1 e 2 continuam abertas. Além dos trechos restantes de Pedidos, persistem as fronteiras de Produtos/Cestas, Balanço e Compras/XML, a revisão manual integral das declarações e homologação externa de Edge/Bling/SEFAZ/impressão. A tabela histórica abaixo preserva as revisões anteriores; testes contratuais não equivalem a homologação operacional.
 
 ---
 
