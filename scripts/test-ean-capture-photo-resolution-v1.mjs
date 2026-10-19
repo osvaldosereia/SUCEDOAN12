@@ -17,8 +17,11 @@ assert.ok(uploadStart>=0&&uploadEnd>uploadStart,"upload handler exists");
 const upload=page.slice(uploadStart,uploadEnd);
 assert.ok(upload.indexOf("compressProductPhoto(file)")>=0,"all photo sources pass through compression");
 assert.ok(upload.indexOf("compressProductPhoto(file)")<upload.indexOf('form.append("file"'),"compression happens before upload");
-assert.ok(page.includes("for(const [maxEdge,quality] of [[1440,.80],[1280,.72],[1024,.64]])"),"large mobile images get progressively resized and recompressed");
-assert.ok(page.includes("const limit=4*1024*1024"),"upload stays below the storage limit with headroom");
+assert.ok(page.includes("const attempts=[[1600,.82],[1440,.80],[1280,.78],[1120,.76],[1024,.74],[960,.72],[896,.70],[832,.68],[768,.66],[704,.64],[640,.62],[576,.60],[512,.58],[448,.56],[384,.54],[320,.52]]"),"large mobile images get progressively resized and recompressed");
+assert.ok(page.includes("const limit=100*1024"),"compressed image is capped at 100 KB");
+assert.ok(page.includes('canvas.toBlob(resolve,"image/webp",quality)'),"WebP is tried first for compact output");
+assert.ok(page.includes('blob.size<=limit'),"upload only returns files within the byte limit");
+assert.ok(page.includes('msg("Compactando a foto para até 100 KB…")'),"user sees the compression target");
 
 const resolveStart=page.indexOf("async function resolveRow(action,id,payload){");
 const resolveEnd=page.indexOf('\n$("entries").addEventListener("click"',resolveStart);
