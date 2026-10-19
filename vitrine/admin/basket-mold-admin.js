@@ -67,7 +67,7 @@ function resultHtml(p,pi){
 
 function positionHtml(p,pi){
   const item=state.catalog.find(x=>x.label===p.label),count=(item?.options||[]).length;
-  return '<article class="bm-position bm-quantity-row"><div><strong>'+esc(p.label||'Produto')+'</strong><div class="bm-product-count">'+count+' marca(s) compartilhada(s)</div></div><label><span>Quantidade (0 remove)</span><input data-mold-position-quantity="'+pi+'" type="number" min="0" max="999" step="0.001" value="'+esc(Number(p.quantity||0))+'"></label></article>';
+  return '<article class="bm-position bm-quantity-row"><div><strong>'+esc(p.label||'Produto')+'</strong><div class="bm-product-count">'+count+' alternativa(s)</div><button type="button" class="soft" data-mold-position-toggle="'+pi+'">'+(Number(p.quantity)>0?'Remover desta cesta':'Incluir nesta cesta')+'</button></div><label><span>Quantidade (0 remove)</span><input data-mold-position-quantity="'+pi+'" type="number" min="0" max="999" step="0.001" value="'+esc(Number(p.quantity||0))+'"></label></article>';
 }
 
 function conditionalProductHtml(){
@@ -88,10 +88,12 @@ function editorHtml(){
 
 function sharedCatalogHtml(){
   const d=state.catalogDraft;
-  const list=state.catalog.map(i=>'<button type="button" class="bm-shared-item '+(String(i.id)===String(state.catalogFocus)?'active':'')+'" data-mold-shared-item="'+esc(i.id)+'"><strong>'+esc(i.label)+'</strong><small>'+(i.options||[]).length+' marca(s) selecionada(s)</small></button>').join('');
+  const createForm='<div class="bm-search"><input data-mold-new-label placeholder="Novo tipo: exemplo Milho verde 260 g"><button type="button" data-mold-new-item class="primary">Adicionar tipo</button></div>';
+  const unsaved=d&&!d.id?'<button type="button" class="bm-shared-item active" data-mold-shared-item="__new__"><strong>'+esc(d.label)+'</strong><small>Ainda não salvo</small></button>':'';
+  const list=state.catalog.map(i=>'<button type="button" class="bm-shared-item '+(String(i.id)===String(state.catalogFocus)?'active':'')+'" data-mold-shared-item="'+esc(i.id)+'"><strong>'+esc(i.label)+'</strong><small>'+(i.options||[]).length+' marca(s) selecionada(s)</small></button>').join('')+unsaved;
   const selected=(d?.options||[]).map((o,i)=>'<div class="bm-shared-option"><img src="'+esc(o.image_url||'/img/sem-foto.svg')+'" alt=""><span><strong>'+esc(o.name||'Produto')+'</strong><small>'+esc([o.brand,o.sku,o.gtin].filter(Boolean).join(' · '))+'</small></span><button type="button" class="danger" data-mold-shared-remove="'+i+'">Remover</button></div>').join('');
   const results=(state.catalogResults||[]).map(p=>'<button type="button" class="bm-result" data-mold-shared-add="'+esc(p.id)+'"><img src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt=""><span><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc([p.brand,p.sku,p.gtin,p.packaging].filter(Boolean).join(' · '))+'</small></span><span>Adicionar</span></button>').join('');
-  return '<div class="bm-note">Escolha de uma vez até três marcas para cada tipo de produto. A lista é compartilhada pelas cestas Econômica, Mini, Pequena, Média e Grande; no site a opção de menor preço aparece primeiro.</div><div class="bm-shared-layout"><aside class="bm-panel"><strong>Produtos compartilhados ('+state.catalog.length+')</strong><div class="bm-shared-list">'+(list||'<div class="bm-empty">Nenhum item cadastrado.</div>')+'</div></aside><main class="bm-panel">'+(d?'<h3>'+esc(d.label)+'</h3><div class="bm-product-count">'+(d.options||[]).length+' de 3 marcas selecionadas</div><div class="bm-shared-options">'+(selected||'<div class="bm-empty">Selecione ao menos uma marca.</div>')+'</div><div class="bm-search"><input data-mold-shared-search value="'+esc(state.catalogSearch)+'" placeholder="Buscar produto por nome, código ou EAN"><button type="button" data-mold-shared-search-go>Buscar</button></div><div class="bm-results">'+results+'</div><div class="bm-actions"><button type="button" class="primary" data-mold-shared-save '+(state.busy?'disabled':'')+'>Salvar lista de marcas</button></div>':'<div class="bm-empty">Selecione um produto.</div>')+'</main></div>';
+  return '<div class="bm-note">Cadastre até 40 alternativas por tipo. No site aparecem até 3 opções disponíveis: a mais barata e outras duas sorteadas.</div>'+createForm+'<div class="bm-shared-layout"><aside class="bm-panel"><strong>Produtos compartilhados ('+state.catalog.length+')</strong><div class="bm-shared-list">'+(list||'<div class="bm-empty">Nenhum item cadastrado.</div>')+'</div></aside><main class="bm-panel">'+(d?'<h3>'+esc(d.label)+'</h3><div class="bm-product-count">'+(d.options||[]).length+' alternativa(s) cadastrada(s)</div><div class="bm-shared-options">'+(selected||'<div class="bm-empty">Selecione ao menos uma marca.</div>')+'</div><div class="bm-search"><input data-mold-shared-search value="'+esc(state.catalogSearch)+'" placeholder="Buscar produto por nome, código ou EAN"><button type="button" data-mold-shared-search-go>Buscar</button></div><div class="bm-results">'+results+'</div><div class="bm-actions"><button type="button" class="primary" data-mold-shared-save '+(state.busy?'disabled':'')+'>Salvar lista de marcas</button></div>':'<div class="bm-empty">Selecione um produto.</div>')+'</main></div>';
 }
 function render(){
   if(!state.root)return;style();
@@ -109,7 +111,7 @@ function sync(){
   state.draft.conditional_hidden_enabled=q('[data-mold-conditional-enabled]')?.checked===true;
   state.draft.conditional_hidden_adjustment=Number(q('[data-mold-conditional-hidden-adjustment]')?.value||state.draft.conditional_hidden_adjustment||0);
   state.conditionalSearch=q('[data-mold-conditional-product-search]')?.value||state.conditionalSearch||'';
-  state.draft.public_composition_count=1;
+  // Preserve the existing number of public compositions.
   (state.draft.positions||[]).forEach((p,i)=>{p.quantity=Number(q('[data-mold-position-quantity="'+i+'"]')?.value??p.quantity??0)});
 }
 
@@ -138,15 +140,29 @@ async function searchSharedProducts(){
 }
 function addSharedOption(id){
   const p=state.catalogResults.find(x=>String(x.id)===String(id));if(!p||!state.catalogDraft)return;
-  if(state.catalogDraft.options.length>=3)return toast('Cada tipo de produto pode ter até 3 marcas.');
+  if(state.catalogDraft.options.length>=40)return toast('Cada tipo de produto pode ter até 40 alternativas.');
   state.catalogDraft.options.push({product_id:p.id,name:p.name,brand:p.brand,sku:p.sku,gtin:p.gtin,image_url:p.image_url,price:p.price,offer_price:p.offer_price,is_offer:p.is_offer});
   state.catalogResults=state.catalogResults.filter(x=>String(x.id)!==String(id));render();
 }
 function removeSharedOption(i){if(!state.catalogDraft)return;if(state.catalogDraft.options.length<=1)return toast('Mantenha ao menos uma marca selecionada.');state.catalogDraft.options.splice(i,1);render()}
+function createSharedItem(){
+  const label=String(state.root?.querySelector('[data-mold-new-label]')?.value||'').trim();
+  if(!label)return toast('Informe o nome do novo tipo de produto.');
+  if(state.catalog.some(i=>i.label.toLocaleLowerCase('pt-BR')===label.toLocaleLowerCase('pt-BR')))return toast('Esse tipo já existe na lista.');
+  state.catalogDraft={id:null,label,options:[]};state.catalogFocus='__new__';state.catalogSearch='';state.catalogResults=[];render();
+}
 async function saveSharedCatalog(){
-  if(state.busy)return;state.busy=true;render();
-  try{const items=state.catalog.map(i=>{const d=String(i.id)===String(state.catalogFocus)?state.catalogDraft:i;return{id:i.id,label:i.label,options:(d?.options||[]).map(o=>({product_id:o.product_id}))}});const r=await call('shared_items_save',{items});state.catalog=Array.isArray(r.items)?r.items:[];state.catalogDraft=JSON.parse(JSON.stringify(state.catalog.find(i=>String(i.id)===String(state.catalogFocus))||null));state.catalogResults=[];toast('Lista compartilhada de marcas salva.')}
-  catch(e){toast(e.message)}finally{state.busy=false;render()}
+  if(state.busy)return;
+  const d=state.catalogDraft;
+  if(!d||!d.options?.length)return toast('Selecione pelo menos um produto antes de salvar.');
+  state.busy=true;render();
+  try{
+    const r=await call('shared_item_save',{item:{id:d.id||null,label:d.label,options:d.options.map(o=>({product_id:o.product_id}))}});
+    state.catalog=Array.isArray(r.items)?r.items:[];
+    state.catalogFocus=String(r.item_id||d.id||'');
+    state.catalogDraft=JSON.parse(JSON.stringify(state.catalog.find(i=>String(i.id)===state.catalogFocus)||null));
+    state.catalogResults=[];toast('Lista de marcas atualizada em todas as cestas.');
+  }catch(e){toast(e.message)}finally{state.busy=false;render()}
 }
 
 async function searchConditionalProduct(){
@@ -196,7 +212,9 @@ async function save(){
 function bind(){
   if(!state.root)return;
   state.root.querySelectorAll('[data-mold-view]').forEach(x=>x.addEventListener('click',()=>{if(state.view==='baskets')sync();state.view=x.dataset.moldView;render()}));
-  state.root.querySelectorAll('[data-mold-shared-item]').forEach(x=>x.addEventListener('click',()=>{state.catalogFocus=x.dataset.moldSharedItem;state.catalogDraft=JSON.parse(JSON.stringify(state.catalog.find(i=>String(i.id)===String(state.catalogFocus))||null));state.catalogResults=[];render()}));
+  state.root.querySelectorAll('[data-mold-shared-item]').forEach(x=>x.addEventListener('click',()=>{if(x.dataset.moldSharedItem==='__new__')return;state.catalogFocus=x.dataset.moldSharedItem;state.catalogDraft=JSON.parse(JSON.stringify(state.catalog.find(i=>String(i.id)===String(state.catalogFocus))||null));state.catalogResults=[];render()}));
+  state.root.querySelector('[data-mold-new-item]')?.addEventListener('click',createSharedItem);
+  state.root.querySelector('[data-mold-new-label]')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();createSharedItem()}});
   state.root.querySelector('[data-mold-shared-search-go]')?.addEventListener('click',searchSharedProducts);
   state.root.querySelector('[data-mold-shared-search]')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchSharedProducts()}});
   state.root.querySelectorAll('[data-mold-shared-add]').forEach(x=>x.addEventListener('click',()=>addSharedOption(x.dataset.moldSharedAdd)));
@@ -209,6 +227,7 @@ function bind(){
   state.root.querySelectorAll('[data-mold-conditional-product-option]').forEach(x=>x.addEventListener('click',()=>selectConditionalProduct(x.dataset.moldConditionalProductOption)));
   state.root.querySelector('[data-mold-conditional-product-clear]')?.addEventListener('click',clearConditionalProduct);
   state.root.querySelectorAll('[data-mold-basket-card]').forEach(x=>x.addEventListener('click',()=>openBasket(x.dataset.moldBasketCard)));
+  state.root.querySelectorAll('[data-mold-position-toggle]').forEach(x=>x.addEventListener('click',()=>{sync();const p=state.draft?.positions?.[Number(x.dataset.moldPositionToggle)];if(!p)return;p.quantity=Number(p.quantity)>0?0:1;render()}));
   state.root.querySelector('[data-mold-add-position]')?.addEventListener('click',addPosition);
   state.root.querySelectorAll('[data-mold-remove-position]').forEach(x=>x.addEventListener('click',()=>removePosition(Number(x.dataset.moldRemovePosition))));
   state.root.querySelectorAll('[data-mold-remove-option]').forEach(x=>x.addEventListener('click',()=>removeOption(Number(x.dataset.moldRemoveOption),Number(x.dataset.optionIndex))));
