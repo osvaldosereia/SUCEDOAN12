@@ -355,6 +355,14 @@
     .basket-card .basket-card-title{min-height:0!important;margin:0!important;padding:0!important;font-size:15px!important;font-weight:850;line-height:1.2!important;text-transform:none;overflow-wrap:anywhere}
     .basket-card .price{margin:0!important;color:var(--brand);font-size:18px!important;font-weight:950;line-height:1.2!important;white-space:nowrap}
     .basket-card .add{width:100%!important;min-height:44px!important;margin:auto 0 0!important;padding:9px 8px!important;border-radius:10px;font-size:12px!important;line-height:1.15;white-space:nowrap}
+    .basket-card.basket-size-card{border-color:#eadfe3}
+    .basket-card.basket-size-grande{background:#fff0f3!important;border-color:#f2dce3!important}
+    .basket-card.basket-size-media{background:#fff1e7!important;border-color:#f1e1d3!important}
+    .basket-card.basket-size-pequena{background:#eef7e9!important;border-color:#dce9d6!important}
+    .basket-card.basket-size-mini{background:#f3efff!important;border-color:#e2dcf2!important}
+    .basket-card.basket-size-economica{background:#fff9df!important;border-color:#efe6c5!important}
+    .basket-card.basket-size-card .basket-card-title{text-align:center;text-transform:uppercase;font-size:14px!important;font-weight:850;letter-spacing:.01em}
+    .basket-card-item-total{align-self:center;max-width:100%;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.68);color:#174b35;font-size:12px;font-weight:750;line-height:1.2;text-align:center;white-space:nowrap}
     @media(min-width:760px) and (max-width:1023px){.basket-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}}
     @media(min-width:1024px){.basket-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important}.basket-card .basket-card-info{padding:15px 13px!important}.basket-card .basket-card-title{font-size:17px!important}.basket-card .price{font-size:20px!important}}
 </style>
@@ -784,7 +792,8 @@
       return homeBasketSubcategories(group).flatMap(sub=>{
         const candidates=baskets.filter(b=>String(b.category_id||'')===String(group.id)&&String(b.subcategory_id||'')===String(sub.id));
         candidates.sort((a,b)=>Number(b.mold_mode===true)-Number(a.mold_mode===true)||Number(a.display_price_cents||0)-Number(b.display_price_cents||0));
-        return candidates[0]?[{...candidates[0],name:sub.name,model_name:sub.name}]:[];
+        const sizeKey=String(sub.name||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLocaleLowerCase('pt-BR');
+        return candidates[0]?[{...candidates[0],name:sub.name,model_name:sub.name,size_card:true,size_key:sizeKey}]:[];
       });
     }
     function homeBasketGroupRecords(baskets,basketGroups){

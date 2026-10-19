@@ -51,7 +51,13 @@
 window.BasketCarousel={
   card(b,esc,money,basketName,index=99){
     const name=basketName(b.name),key=String(b.card_key||b.id);
-    return '<article class="card basket-card"><div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div><div class="price">'+money(b.display_price_cents)+'</div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="Personalizar cesta '+esc(name)+'">Personalizar</button></div></article>';
+    const sizeCard=b.size_card===true;
+    const sizeClass=sizeCard?' basket-size-card basket-size-'+esc(b.size_key||''):'';
+    const itemCount=Math.max(0,Math.floor(Number(b.total_item_count)||0));
+    const itemSummary=sizeCard?'<div class="basket-card-item-total">'+itemCount+' itens no total</div>':'';
+    const actionLabel=sizeCard?'Ver produtos':'Personalizar';
+    const actionAria=sizeCard?'Ver produtos da cesta ':'Personalizar cesta ';
+    return '<article class="card basket-card'+sizeClass+'"><div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div>'+itemSummary+'<div class="price">'+money(b.display_price_cents)+'</div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="'+actionAria+esc(name)+'">'+actionLabel+'</button></div></article>';
   },
   prepareHome(host){
     const section=host?.closest?.('.section');if(!section)return;
