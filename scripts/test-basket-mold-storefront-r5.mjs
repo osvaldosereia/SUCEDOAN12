@@ -47,7 +47,7 @@ for(const [name,html] of [['root',root],['vitrine',vitrine]]){
 }
 
 
-const start=root.indexOf('function moldSelectedProduct('),end=root.indexOf('function changeMoldQty(',start);
+const start=root.indexOf('function moldOptionShortName('),end=root.indexOf('function changeMoldQty(',start);
 assert.ok(start>0&&end>start,'public vitrine must synchronize title, image and selected product');
 const renderMoldRow=new Function('esc','safeImage','money','remainingStock','formatQty',root.slice(start,end)+'return moldItemRow;')(
   x=>String(x),x=>x,x=>String(x),()=>10,x=>String(x)
