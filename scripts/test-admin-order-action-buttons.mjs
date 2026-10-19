@@ -8,6 +8,7 @@ const sandbox={window:{}};vm.createContext(sandbox);vm.runInContext(source,sandb
 const api=sandbox.window.DonaAntoniaAdminOrderActionButtons;
 assert.ok(Object.isFrozen(api));
 const render=api.createOrderActionButtonsHtml({orderProblemReasons:()=>[],orderNextAction:()=> 'Próxima etapa',esc:s=>String(s)});
+assert.equal(render(null,null),'');
 const o=status=>({status,payment_method_snapshot:{}});
 const cases=[
   ['created','advanceOrder','data-next="confirmed"'],
