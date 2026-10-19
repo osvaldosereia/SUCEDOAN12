@@ -105,14 +105,51 @@ main{grid-template-columns:minmax(0,1fr);box-sizing:border-box}
 .camera-choice select{display:block;width:100%;max-width:100%;margin-top:4px;border:1px solid #b6c7be;border-radius:8px;min-height:42px;padding:6px;background:#fff;color:#20322b}
 .photo-choice{display:inline-flex;align-items:center;border-radius:9px;min-height:38px;margin-top:8px;padding:8px 12px;background:#e4eee8;color:#114c36;cursor:pointer;font-size:13px}
 .photo-choice input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+
+/* Leitura intensiva no mobile: sem rolagem horizontal nem campos desnecessários. */
+main{gap:7px;padding:8px}
+.card{padding:9px!important;border-radius:10px}
+h1{font-size:16px}h2{font-size:15px}
+header{padding-top:7px;padding-bottom:7px}
+header small{display:none!important}
+.card>.row:first-child button{min-height:36px;padding:5px 9px}
+.note{margin-top:3px!important;font-size:11px!important}
+#alternativeInput{margin-top:5px;font-size:12px;color:#0b6348}
+#alternativeInput summary{padding:6px 2px;cursor:pointer;font-weight:700}
+#manual{margin-top:5px}
+#entryEditor{padding:8px;margin-top:6px;border-width:1px}
+#entryEditor strong{font-size:18px}
+#entryEditor .row button{min-height:30px;padding:3px 8px}
+.quantity-row{display:grid;grid-template-columns:36px minmax(0,1fr) 36px 36px 36px;gap:5px;align-items:end;margin-top:6px}
+.quantity-row label{min-width:0;font-size:11px}
+.quantity-row input{margin-top:2px;min-width:0;min-height:41px;padding:5px;text-align:center;font-size:20px}
+.quantity-row button{width:36px;min-height:41px;padding:0;font-size:18px}
+.quantity-row #qtyFive,.quantity-row #qtyTen{font-size:13px}
+.validity-toggle{min-height:30px;background:transparent;color:#125941;padding:3px 0;font-size:12px}
+#expiryField input{margin-top:4px;min-height:41px}
+#entryEditor button.full{min-height:46px;margin-top:5px;font-size:16px}
+#message{min-height:16px;font-size:11px;margin-top:4px}
+.counts{margin:5px 0;gap:4px}.count{padding:5px 2px}.count b{font-size:17px}.count small{font-size:10px}
+.filters{padding:2px 0 5px}.filters button{min-height:31px;padding:6px 7px;font-size:11px}
+.entry{padding:6px 0}.entry-code{font-size:14px}.entry-meta{margin-top:1px;font-size:11px}
+.tag{font-size:10px;padding:3px 5px}.edit-btn{min-height:27px;padding:3px 7px}
+.photo-prompt{margin-top:7px;background:#fff7ee;border:1px solid #e8a362;border-radius:9px;padding:9px}
+.photo-prompt strong{display:block;color:#91430c;font-size:14px}
+.photo-prompt small{display:block;font-size:12px;color:#654327}
+.photo-prompt p{font-size:12px;line-height:1.3;margin:4px 0}
+.photo-prompt button{flex:1 1 auto;min-height:39px;padding:5px 9px;font-size:12px}
+.scan-box.photo-mode{height:280px!important;max-height:45dvh}
+.scan-box.photo-mode .scan-frame{display:none}
+.scan-box.photo-mode video{object-fit:contain}
+@media(max-width:340px){.quantity-row{grid-template-columns:30px minmax(0,1fr) 30px 30px 30px;gap:3px}.quantity-row button{width:30px}}
 </style>
 </head>
 <body>
 <header><div><div><strong>Dona Antônia · Leitura EAN</strong><small>Registro rápido de produtos · Mobile</small></div><a class="back" href="/vitrine/admin/">← Admin</a></div></header>
 <main>
 <section class="card">
-  <div class="row between"><h1>Ler código de barras</h1><button class="primary" id="cameraButton" type="button">📷 Abrir câmera</button></div>
-  <p class="note">Leia primeiro. O produto não será pesquisado agora. Após a leitura, informe a quantidade e, se quiser, a validade.</p>
+  <div class="row between"><h1>Leitura rápida</h1><button class="primary" id="cameraButton" type="button">📷 Abrir câmera</button></div>
+  <p class="note">Leia → quantidade → salvar. O próximo EAN já fica pronto.</p>
   <div class="scan-box" id="cameraBox" hidden>
     <video id="camera" playsinline muted autoplay aria-label="Câmera do leitor EAN"></video>
     <div class="scan-frame" aria-hidden="true"></div>
@@ -122,23 +159,34 @@ main{grid-template-columns:minmax(0,1fr);box-sizing:border-box}
       <select id="cameraSelect" aria-label="Selecionar câmera traseira"></select>
     </label><button id="torch" type="button" hidden>🔦 Ligar lanterna</button></div>
   <p class="note" id="cameraHelp" hidden>Aponte a câmera para as barras e mantenha o código inteiro e nítido. A leitura é automática.</p>
-  <div class="row"><label class="photo-choice" for="barcodePhoto">📸 Ler foto do EAN
-    <input id="barcodePhoto" type="file" accept="image/*" capture="environment" aria-label="Fotografar código EAN">
-  </label></div>
-  <div id="manual"><input id="eanInput" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="EAN / leitor USB ou Bluetooth" aria-label="EAN"/><button id="useEan" type="button">Usar</button></div>
+  <details id="alternativeInput"><summary>Digitar EAN / fotografar código</summary>
+    <div id="manual"><input id="eanInput" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="EAN / leitor" aria-label="EAN"/><button id="useEan" type="button">Usar</button></div>
+    <label class="photo-choice" for="barcodePhoto">📸 Ler foto do código <input id="barcodePhoto" type="file" accept="image/*" capture="environment" aria-label="Fotografar código EAN"></label>
+  </details>
   <form id="entryEditor" hidden>
     <div class="row between"><div><small id="editingLabel">EAN lido</small><div><strong id="currentEan"></strong></div></div><button type="button" id="cancelEdit">Cancelar</button></div>
-    <div class="fieldgrid">
+    <div class="quantity-row">
+      <button type="button" id="qtyMinus">−</button>
       <label>Quantidade <input id="quantity" type="number" inputmode="decimal" min=".001" max="999999" step=".001" value="1" required></label>
-      <label>Validade (opcional) <input id="expiry" type="date"></label>
+      <button type="button" id="qtyPlus">+</button>
+      <button type="button" id="qtyFive">5</button>
+      <button type="button" id="qtyTen">10</button>
     </div>
-    <button class="primary full" id="save" type="submit">✓ Salvar leitura</button>
+    <button type="button" id="toggleValidity" class="validity-toggle">+ Validade (opcional)</button>
+    <label id="expiryField" hidden>Validade <input id="expiry" type="date"></label>
+    <button class="primary full" id="save" type="submit">✓ Salvar e próximo</button>
   </form>
+  <section id="missingPhoto" class="photo-prompt" hidden>
+    <strong>⚠ EAN não encontrado</strong><small id="missingEan"></small>
+    <p>Fotografe a embalagem para armazenar o produto não cadastrado.</p>
+    <div class="row"><button id="takePhoto" class="primary" type="button">📷 Fotografar e salvar</button><button id="nativePhoto" type="button">Câmera do celular</button><button id="skipPhoto" type="button">Depois</button></div>
+    <input id="productPhotoInput" type="file" accept="image/*" capture="environment" hidden>
+  </section>
   <div id="message" role="status" aria-live="polite">Conectando ao Supabase…</div>
 </section>
 <section class="card">
   <div class="row between"><h2>Leituras salvas</h2><button class="blue" id="sync" type="button">↻ Sincronizar EANs</button></div>
-  <p class="note">A sincronização identifica os itens no banco; não modifica o cadastro, a vitrine ou o estoque.</p>
+  <p class="note">Cada EAN é verificado ao salvar. O botão abaixo confere toda a lista novamente.</p>
   <div class="counts">
     <div class="count"><b id="countAll">–</b><small>Registros</small></div>
     <div class="count"><b id="countFound">–</b><small>✓ Encontrados</small></div>
