@@ -64,7 +64,7 @@ Não houve homologação ponta a ponta das Edge Functions modificadas, do Bling,
 - `node scripts/test-admin-expedition-stale-refresh.mjs`
 - Inventário integral de funções e contratos de seção.
 - 116 scripts `test-admin-*.mjs` e 5 scripts `test-admin-*.py`, sem falhas após atualizar contratos defasados e cobrir a falha de recarga da Expedição.
-- Os 35 workflows do HEAD atualizado `77d7061`, incluindo o contrato corrigido de Cestas, concluíram sem falhas. A rodada anterior teve uma única falha no teste estático que ainda procurava a regra no runtime; o teste foi alinhado ao módulo extraído e passou na rodada seguinte. No head remoto atual `eef4827`, os 35 workflows também concluíram com sucesso. A extração do helper de diálogo nesta continuação adiciona uma condição nova de execução ao workflow de Marketing; a rodada da CI para esse novo commit ainda ficará pendente de publicação da branch.
+- Os 35 workflows do HEAD atualizado `77d7061`, incluindo o contrato corrigido de Cestas, concluíram sem falhas. A rodada anterior teve uma única falha no teste estático que ainda procurava a regra no runtime; o teste foi alinhado ao módulo extraído e passou na rodada seguinte. No head remoto `7b2da71`, os 38 workflows concluíram com sucesso, incluindo o workflow de Marketing atualizado; não houve falhas.
 
 ## Limite estrutural remanescente
 
