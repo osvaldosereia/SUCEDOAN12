@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 const source=fs.readFileSync('vitrine/admin/orders/action-buttons.js','utf8');
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const runtime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const sandbox={window:{}};vm.createContext(sandbox);vm.runInContext(source,sandbox);
 const api=sandbox.window.DonaAntoniaAdminOrderActionButtons;
 assert.ok(Object.isFrozen(api));
@@ -24,6 +25,6 @@ assert.ok(render({...o('confirmed'),payment_method_snapshot:{stock_consumed:true
 assert.ok(render({...o('created')},null).includes('Cancelar pedido'));
 const blocked=api.createOrderActionButtonsHtml({orderProblemReasons:()=>['address_missing'],orderNextAction:()=>'',esc:s=>String(s)});
 assert.ok(blocked(o('created'),null).includes('Corrija os dados antes de avançar'));
-assert.match(html,/DonaAntoniaAdminOrderActionButtons\.createOrderActionButtonsHtml/);
-assert.match(html,/orders\/action-buttons\.js/);
+assert.match(runtime,/DonaAntoniaAdminOrderActionButtons\.createOrderActionButtonsHtml/);
+assert.match(runtime,/orders\/action-buttons\.js/);
 console.log('Admin order action buttons extraction behavior: PASS');

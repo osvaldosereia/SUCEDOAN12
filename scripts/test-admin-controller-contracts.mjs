@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
-const script=html.slice(html.indexOf('<script>\n(()=>{')+8,html.lastIndexOf('</script>'));
+const script=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const readModel=fs.readFileSync('vitrine/admin/orders/read-model.js','utf8');
 const controllerSource=script+'\n'+readModel;
 const functions=[...script.matchAll(/^\s{2,4}(?:async )?function ([A-Za-z_$][\w$]*)\(/gm)].map(m=>m[1]);
@@ -16,7 +16,7 @@ const critical={
   bootstrap:['start','setTab']
 };
 for(const [domain,names] of Object.entries(critical)){
-  for(const name of names)assert.ok(unique.has(name)||html.includes('const '+name+'=')||readModel.includes('function '+name+'('),'missing '+domain+' contract '+name);
+  for(const name of names)assert.ok(unique.has(name)||script.includes('const '+name+'=')||readModel.includes('function '+name+'('),'missing '+domain+' contract '+name);
 }
 assert.match(controllerSource,/function orderProblemReasons\(o\)/);
 assert.match(controllerSource,/if\(o\?\.stock_readiness\?\.ok===false\)reasons\.push\('Estoque insuficiente'\)/);
