@@ -30,6 +30,15 @@ detail={order:{id:'detail-1'},fiscal:{readiness:{separation_completed:true}}};
 assert.equal(model.orderV3Milestones({id:'detail-1',status:'ready'}).separated,true,'open detail readiness remains a fallback');
 detail=null;
 
+for(const status of ['created','storefront_received','received'])assert.equal(model.orderListBucketKey({status}),'new',status+' orders are new');
+assert.equal(model.orderListBucketKey({status:'confirmed'}),'separate');
+assert.equal(model.orderListBucketKey({status:'processing',separation_summary:{assignment:{separator_key:'jose'}}}),'separate');
+assert.equal(model.orderListBucketKey({status:'ready'}),'separate','READY alone is not proof of completed separation');
+assert.equal(model.orderListBucketKey({status:'ready',separation_summary:{completed_at:'2026-10-19T10:00:00Z'}}),'ready');
+assert.equal(model.orderListBucketKey({status:'out_for_delivery'}),'ready');
+assert.equal(model.orderListBucketKey({status:'delivered'}),'delivered');
+assert.equal(model.orderListBucketKey({status:'cancelled'}),'cancelled');
+
 const fiscalOrder={id:'f1',status:'ready'};
 assert.match(model.orderV3Tags(fiscalOrder),/NF-e…/);
 fiscalByOrder.f1={authorized:true,stage:'authorized'};

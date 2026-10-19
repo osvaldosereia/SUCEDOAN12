@@ -1,6 +1,6 @@
 // Order card markup. Status and readiness decisions stay in the shared card model.
 (function(global){
-  function create({escapeHtml,money,dateTime,orderDisplayCode,separationMoney,orderCardPhone,cardModel,customerReadiness,listState,statusKey,fiscalByOrder}){
+  function create({escapeHtml,money,dateTime,orderDisplayCode,separationMoney,orderCardPhone,cardModel,customerReadiness,fiscalByOrder}){
     const esc=escapeHtml;
     const {orderV3Milestones,orderSeparationSummary,separatorLabel,orderCardOperationalTags}=cardModel;
     const {isOrderCustomerDataPending:orderCustomerDataPending,orderCustomerDataPendingReasons}=customerReadiness;
@@ -33,10 +33,8 @@
       }
       const separationLabel=milestones.separated?'VER SEPARAÇÃO':assigned?'CONTINUAR SEPARAÇÃO':'INICIAR SEPARAÇÃO';
       const primaryAction=milestones.confirmed&&!milestones.delivered&&!milestones.cancelled?'<button class="order-v3-action main '+(milestones.separated?'secondary-action':'primary')+'" type="button" data-v3-separation="'+esc(order.id)+'">'+separationLabel+'</button>':'';
-      const supportTags=orderCardOperationalTags(order,milestones),manualSelected=listState.manualQueueIds.has(String(order.id));
-      const manualEligible=statusKey(order)==='confirmed'&&order.status==='confirmed';
-      const manualQueueButton=(manualEligible||(manualSelected&&listState.orderStatusTab==='manual'&&!milestones.separated))?'<button class="order-v3-action secondary-action" type="button" data-manual-queue-'+(manualSelected?'remove':'add')+'="'+esc(order.id)+'">'+(manualSelected?'RETIRAR DE SEPARAR AGORA':'SEPARAR AGORA')+'</button>':'';
-      return '<article class="order-v3-card'+cardClass+'"><div class="order-v3-topline"><span class="order-v3-stage '+esc(stage)+'">'+esc(stageLabel)+'</span><strong class="order-v3-money">'+money(order.total_cents||0)+'</strong></div><div class="order-v3-identity"><strong>#'+esc(orderDisplayCode(order))+' · '+esc(order.customer_name||'Sem cliente')+'</strong><small><span class="order-v3-phone">Tel. '+esc(orderCardPhone(order))+'</span><span>'+esc(dateTime(order.created_at))+'</span></small></div>'+(!milestones.confirmed&&!milestones.cancelled?'<div class="order-v3-do-not-build">NÃO MONTAR ESSE PEDIDO</div>':'')+progress+(supportTags?'<div class="order-v3-tags">'+supportTags+'</div>':'')+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions">'+primaryAction+manualQueueButton+'<button class="order-v3-action secondary-action" type="button" data-order-chat="'+esc(order.id)+'">💬 VER CONVERSA</button><button class="order-v3-action '+(primaryAction?'secondary-action':'primary')+'" type="button" data-open-order="'+esc(order.id)+'">ABRIR PEDIDO</button></div></article>';
+      const supportTags=orderCardOperationalTags(order,milestones);
+      return '<article class="order-v3-card'+cardClass+'"><div class="order-v3-topline"><span class="order-v3-stage '+esc(stage)+'">'+esc(stageLabel)+'</span><strong class="order-v3-money">'+money(order.total_cents||0)+'</strong></div><div class="order-v3-identity"><strong>#'+esc(orderDisplayCode(order))+' · '+esc(order.customer_name||'Sem cliente')+'</strong><small><span class="order-v3-phone">Tel. '+esc(orderCardPhone(order))+'</span><span>'+esc(dateTime(order.created_at))+'</span></small></div>'+(!milestones.confirmed&&!milestones.cancelled?'<div class="order-v3-do-not-build">NÃO MONTAR ESSE PEDIDO</div>':'')+progress+(supportTags?'<div class="order-v3-tags">'+supportTags+'</div>':'')+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions">'+primaryAction+'<button class="order-v3-action secondary-action" type="button" data-order-chat="'+esc(order.id)+'">💬 VER CONVERSA</button><button class="order-v3-action '+(primaryAction?'secondary-action':'primary')+'" type="button" data-open-order="'+esc(order.id)+'">ABRIR PEDIDO</button></div></article>';
     }
     return Object.freeze({render});
   }

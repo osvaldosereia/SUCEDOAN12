@@ -8,7 +8,7 @@ vm.runInContext(fs.readFileSync('vitrine/admin/orders/list-view.js','utf8'),cont
 
 function button(dataset={}){return {dataset,onclick:null,disabled:false,textContent:'',focus(){}}}
 function fixture(){
-  const calls=[], tabs=[button({orderStatusTab:'manual'}),button({orderStatusTab:'confirmed'})];
+  const calls=[], tabs=['new','separate','ready','delivered'].map(orderStatusTab=>button({orderStatusTab}));
   const actions={
     openOrder:id=>calls.push(['open',id]),
     openOrderChat:(id,el)=>calls.push(['chat',id,el]),
@@ -39,16 +39,17 @@ function fixture(){
   let orders=[
     {id:'old',status:'confirmed',created_at:'2026-01-01',customer_name:'Ana'},
     {id:'new',status:'confirmed',created_at:'2026-01-03',customer_name:'Beto'},
-    {id:'received',status:'created',created_at:'2026-01-02',customer_name:'Caio'}
+    {id:'received',status:'created',created_at:'2026-01-02',customer_name:'Caio'},
+    {id:'cancelled',status:'cancelled',created_at:'2026-01-04',customer_name:'Dora'}
   ];
-  const listState={orderQuery:'',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueError:false};
+  const listState={orderQuery:'',orderStatusTab:'new',manualQueueIds:new Set(),manualQueueError:false};
   let loadCalls=0,queueCalls=0;
   const view=context.window.DonaAntoniaAdminOrderListView.create({
     query:selector=>map[selector]||null,document,getOrders:()=>orders,listState,
     escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'),
-    statusKey:order=>order.status==='confirmed'?'confirmed':'received',
+    statusKey:order=>({created:'new',confirmed:'separate',ready:'ready',out_for_delivery:'ready',delivered:'delivered',cancelled:'cancelled'}[order.status]||'new'),
     searchMatch:(order,query)=>!query||order.customer_name.toLowerCase().includes(query.toLowerCase()),
-    statusMatch:(order,key)=>key==='manual'?listState.manualQueueIds.has(order.id):key==='all'||(key==='confirmed'?order.status==='confirmed':order.status!=='confirmed'),
+    statusMatch:(order,key)=>({new:['created'],separate:['confirmed','processing'],ready:['ready','out_for_delivery'],delivered:['delivered']})[key]?.includes(order.status)||false,
     renderRow:order=>`<article>${order.id}</article>`,actions,
     loadManualQueue:async()=>{queueCalls++;listState.manualQueueIds=new Set(['new'])},
     loadOrders:async()=>{loadCalls++}
@@ -59,33 +60,39 @@ function fixture(){
 {
   const f=fixture();
   const counts=f.view.statusTabCounts();
-  assert.equal(counts.all,3);
-  assert.equal(counts.confirmed,2);
-  assert.equal(counts.manual,0);
+  assert.equal(counts.new,1);
+  assert.equal(counts.separate,2);
+  assert.equal(counts.ready,0);
+  assert.equal(counts.delivered,0);
   assert.match(f.view.statusTabsHtml('desktop'),/aria-label="Filtrar pedidos por status"/);
-  assert.match(f.view.statusTabsHtml('desktop'),/class="orders-status-tab active" data-order-status-tab="manual"/);
-  f.listState.orderStatusTab='confirmed';
-  assert.match(f.view.statusTabsHtml('desktop'),/data-order-status-tab="confirmed" role="tab" aria-selected="true"/);
+  assert.equal((f.view.statusTabsHtml('desktop').match(/data-order-status-tab=/g)||[]).length,4);
+  assert.match(f.view.statusTabsHtml('desktop'),/class="orders-status-tab active" data-order-status-tab="new"/);
+  f.listState.orderStatusTab='separate';
+  assert.match(f.view.statusTabsHtml('desktop'),/data-order-status-tab="separate" role="tab" aria-selected="true"/);
 }
 
 {
   const f=fixture();
+  f.listState.orderQuery='do';
+  f.listState.orderStatusTab='new';
+  f.view.paintRows();
+  assert.equal(f.host.innerHTML,'<article>cancelled</article>');
   f.listState.orderQuery='be';
-  f.listState.orderStatusTab='confirmed';
   f.view.paintRows();
   assert.equal(f.host.innerHTML,'<article>new</article>');
   f.listState.orderQuery='';
-  f.listState.orderStatusTab='manual';
-  f.listState.manualQueueError=true;
+  f.listState.orderStatusTab='new';
   f.view.paintRows();
-  assert.match(f.host.innerHTML,/Fila manual indisponível/);
+  assert.equal(f.host.innerHTML,'<article>received</article>');
 }
 
 {
   const f=fixture();
   f.view.paintRows();
+  const queueButton=f.host.querySelectorAll('[data-manual-queue-add],[data-manual-queue-remove]')[0];
+  assert.equal(queueButton.onclick,null,'order board no longer binds manual queue actions');
   for(const selector of Object.keys({
-    '[data-open-order]':1,'[data-order-chat]':1,'[data-manual-queue-add],[data-manual-queue-remove]':1,
+    '[data-open-order]':1,'[data-order-chat]':1,
     '[data-copy-separation]':1,'[data-v3-confirm]':1,'[data-v3-separate],[data-v3-separation]':1,
     '[data-v3-dispatch]':1,'[data-v3-deliver]':1,'[data-v3-delivery-fail]':1
   })){
@@ -93,18 +100,17 @@ function fixture(){
     assert.equal(typeof el.onclick,'function',`${selector} is bound`);
     el.onclick();
   }
-  assert.deepEqual(f.calls.map(call=>call[0]),['open','chat','queue','copy','confirm','separate','dispatch','deliver','delivery-fail']);
-  assert.deepEqual(f.calls[2].slice(1,3),['o1',true]);
-  assert.deepEqual(f.calls[5],['separate','o1']);
+  assert.deepEqual(f.calls.map(call=>call[0]),['open','chat','copy','confirm','separate','dispatch','deliver','delivery-fail']);
+  assert.deepEqual(f.calls[4],['separate','o1']);
 }
 
 {
   const f=fixture();
   f.view.bindStatusTabs();
   await f.tabs[0].onclick();
-  assert.equal(f.listState.orderStatusTab,'manual');
-  assert.equal(f.queueCalls,1);
-  assert.equal(f.host.innerHTML,'<article>new</article>');
+  assert.equal(f.listState.orderStatusTab,'new');
+  assert.equal(f.queueCalls,0);
+  assert.equal(f.host.innerHTML,'<article>received</article>');
 }
 
 {
@@ -112,9 +118,9 @@ function fixture(){
   await f.view.renderOrders();
   assert.equal(f.loadCalls,1);
   assert.equal(f.body.classList.values.has('orders-tab-active'),true);
-  assert.match(f.content.innerHTML,/Escolha manualmente/);
+  assert.match(f.content.innerHTML,/Acompanhe os pedidos/);
   assert.equal(typeof f.search.oninput,'function');
-  f.listState.orderStatusTab='received';
+  f.listState.orderStatusTab='new';
   f.search.oninput({target:{value:'ca'}});
   assert.equal(f.listState.orderQuery,'ca');
   assert.equal(f.host.innerHTML,'<article>received</article>');

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-model.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/runtime-parts/16-orders-operations.part.js','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-model.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-view.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/runtime-parts/16-orders-operations.part.js','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const publicPage=fs.readFileSync('pedido/index.html','utf8');
 const migration=fs.readFileSync('supabase/migrations/20261007120000_order_separation_team_auto_fiscal_v4.sql','utf8');

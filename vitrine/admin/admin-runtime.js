@@ -4883,33 +4883,22 @@
   function orderRow(o){return orderCardView?.render(o)||''}
 
   function orderStatusTabKey(o){
-    const m=orderV3Milestones(o),sep=orderSeparationSummary(o),assigned=Boolean(sep?.assignment?.separator_key);
-    if(m.cancelled)return 'cancelled';
-    if(m.delivered)return 'delivered';
-    if(o?.status==='out_for_delivery')return 'delivery';
-    if(m.separated)return 'separated';
-    if(assigned&&m.confirmed)return 'separating';
-    if(m.confirmed)return 'confirmed';
-    return 'received';
+    return orderCardModel.orderListBucketKey(o);
   }
-  function orderStatusTabMatch(o,key=orderList.state.orderStatusTab||'manual'){
-    if(key==='manual'){
-      const m=orderV3Milestones(o);
-      return orderList.state.manualQueueIds.has(String(o.id))&&m.confirmed&&!m.separated&&!m.delivered&&!m.cancelled&&o.status!=='out_for_delivery';
-    }
-    return key==='all'||orderStatusTabKey(o)===key;
+  function orderStatusTabMatch(o,key=orderList.state.orderStatusTab||'new'){
+    return ['new','separate','ready','delivered'].includes(key)&&orderStatusTabKey(o)===key;
   }
   orderCardView=window.DonaAntoniaAdminOrderCardView.create({
     escapeHtml:esc,money,dateTime,orderDisplayCode,separationMoney,orderCardPhone,
     cardModel:window.DonaAntoniaAdminOrderCardModel,customerReadiness:window.DonaAntoniaAdminCustomerReadiness,
-    listState:orderList.state,statusKey:orderStatusTabKey,fiscalByOrder:id=>state.fiscalByOrder[id]
+    fiscalByOrder:id=>state.fiscalByOrder[id]
   });
   orderView=window.DonaAntoniaAdminOrderListView.create({
     query:$,document,getOrders:()=>state.orders,listState:orderList.state,escapeHtml:esc,
     statusKey:orderStatusTabKey,searchMatch:orderV3SearchMatch,statusMatch:orderStatusTabMatch,renderRow:orderRow,
-    loadManualQueue:loadManualPickQueue,loadOrders,
+    loadOrders,
     actions:{
-      openOrder,openOrderChat:openOrderChatSheet,manualQueue:setManualPickQueue,copySeparation:copyOrderSeparationLink,
+      openOrder,openOrderChat:openOrderChatSheet,copySeparation:copyOrderSeparationLink,
       confirmOrder:quickConfirmOrder,separate:openOrderSeparationSheet,dispatch:startOrderDispatchV4,
       deliver:openOrderDeliveryConfirm,deliveryFail:id=>returnOrderToExpedition(id,false)
     }

@@ -13,14 +13,12 @@ const model=context.window.DonaAntoniaAdminOrderCardModel.create({
   customerReadiness:{isPending:readiness.isOrderCustomerDataPending,reasons:readiness.orderCustomerDataPendingReasons},
   cachedFiscalForOrder:order=>fiscal[order?.id]||null,detailFiscalForOrder:()=>null
 });
-const listState={manualQueueIds:new Set(),orderStatusTab:'manual'};
 const card=context.window.DonaAntoniaAdminOrderCardView.create({
   escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),
   money:value=>`R$ ${(Number(value||0)/100).toFixed(2)}`,
   dateTime:value=>value||'sem data',orderDisplayCode:order=>order.order_number||order.id,
   separationMoney:value=>`R$ ${Number(value).toFixed(2)}`,orderCardPhone:()=>'(65) 99999-0000',
-  cardModel:model,customerReadiness:readiness,listState,
-  statusKey:order=>order.status==='confirmed'?'confirmed':'received',fiscalByOrder:id=>fiscal[id]||null
+  cardModel:model,customerReadiness:readiness,fiscalByOrder:id=>fiscal[id]||null
 });
 
 {
@@ -48,9 +46,7 @@ const card=context.window.DonaAntoniaAdminOrderCardView.create({
   assert.match(html,/CONTINUAR SEPARAÇÃO/);
   assert.match(html,/data-order-chat="c1"/);
   assert.match(html,/data-open-order="c1"/);
-  assert.match(html,/data-manual-queue-add="c1"/);
-  listState.manualQueueIds.add('c1');
-  assert.match(card.render(order),/data-manual-queue-remove="c1"/);
+  assert.doesNotMatch(html,/data-manual-queue-(?:add|remove)/,'confirmed orders enter Separar agora without manual queue controls');
 }
 
 {

@@ -12,6 +12,16 @@ function fixture(api,queueRequest=async()=>({order_ids:[]}),isCustomerPending=()
  return {controller,host,get rows(){return rows},set rows(v){rows=v},get paints(){return paints},leave:()=>tab='customers'};
 }
 {
+ const initial=fixture(async()=>({orders:[]}));
+ assert.equal(initial.controller.state.orderStatusTab,'new','the order board opens on Novo');
+}
+{
+ let queueCalls=0;const f=fixture(async()=>({orders:[{id:'o1',status:'confirmed'}]}),async()=>{queueCalls++;return {order_ids:[]}});
+ await f.controller.loadOrders();
+ assert.equal(queueCalls,0,'loading the order board does not request manual queue membership');
+ assert.equal(f.paints,1);
+}
+{
  const waits=[];const f=fixture(()=>{const d=deferred();waits.push(d);return d.promise});
  const a=f.controller.loadOrders(),b=f.controller.loadOrders();
  waits[1].resolve({orders:[{id:'fresh',status:'confirmed'}]});await b;

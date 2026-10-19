@@ -16,6 +16,14 @@
       return status==='ready'&&fiscalForOrder(order)?.readiness?.separation_completed===true;
     }
     function orderV3Milestones(order){const status=String(order?.status||'');return {confirmed:['confirmed','processing','ready','out_for_delivery','delivered'].includes(status),separated:orderSeparationCompletedV4(order),dispatched:['out_for_delivery','delivered'].includes(status),delivered:status==='delivered',cancelled:status==='cancelled'}}
+    function orderListBucketKey(order){
+      const milestones=orderV3Milestones(order);
+      if(milestones.cancelled)return 'cancelled';
+      if(milestones.delivered)return 'delivered';
+      if(milestones.separated)return 'ready';
+      if(milestones.confirmed)return 'separate';
+      return 'new';
+    }
     function orderFiscalTagV4(order){
       const fiscal=cachedFiscalForOrder(order);
       if(order?.status==='ready'){
@@ -50,7 +58,7 @@
       if(orderCustomerDataPending(order))tags.push('<span class="order-v3-tag neutral" title="'+esc(orderCustomerDataPendingReasons(order).join(' · '))+'">DADOS DO CLIENTE PENDENTES</span>');
       return tags.join('');
     }
-    return Object.freeze({separators:SEPARATORS,separatorLabel,orderSeparationSummary,orderV3SearchMatch,orderSeparationCompletedV4,orderV3Milestones,orderFiscalTagV4,orderV3Tags,orderCardOperationalTags});
+    return Object.freeze({separators:SEPARATORS,separatorLabel,orderSeparationSummary,orderV3SearchMatch,orderSeparationCompletedV4,orderV3Milestones,orderListBucketKey,orderFiscalTagV4,orderV3Tags,orderCardOperationalTags});
   }
   global.DonaAntoniaAdminOrderCardModel=Object.freeze({create});
 })(window);

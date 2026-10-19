@@ -2,7 +2,7 @@
 (function(global){
   function create({api,queueRequest,orders,navigation,ui,view}){
     const {query:$,document,toast,errorMessage,currentOperator=()=>''}=ui;
-    const state={orderQuery:'',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,manualQueueLastSync:0};
+    const state={orderQuery:'',orderStatusTab:'new',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,manualQueueLastSync:0};
     let ordersLoadGeneration=0,orderBoardRefreshGeneration=0,queueTail=Promise.resolve(),queueRead=null;
     const mutations=new Set(),confirmations=new Set();
     function viewToken(){return $('#orderRows')}
@@ -37,7 +37,6 @@
       try{
         const data=await api('orders');if(!isLatest())return;
         orders.set(Array.isArray(data.orders)?data.orders:[]);
-        try{await loadManualPickQueue()}catch{}
         if(!isLatest())return;
         if(canPaint(host))view.paint();
         const fiscalRows=orders.get().filter(o=>o.status==='ready').sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)).slice(0,8);
@@ -75,13 +74,6 @@
           if(nextStatus!==o.status||JSON.stringify(nextSummary)!==JSON.stringify(o.separation_summary||null))changed=true;
           return {...o,status:nextStatus,separation_summary:nextSummary};
         }));
-        if(state.orderStatusTab==='manual'&&Date.now()-Number(state.manualQueueLastSync||0)>=15000){
-          const previous=[...state.manualQueueIds].sort().join(',');
-          try{
-            await loadManualPickQueue();if(!isCurrent())return;
-            if(previous!==[...state.manualQueueIds].sort().join(','))changed=true;
-          }catch{}
-        }
         if(changed&&isCurrent())view.paint();
       }catch{} // Polling is best effort; explicit list refresh reports failures.
     }
