@@ -3,7 +3,7 @@
 
   const MODULES={
     taxonomy:{label:'Categorias da vitrine',description:'Crie categorias e subdivisões, controle a ordem e escolha quais seções ficam ativas.',src:'/vitrine/admin/basket-category-admin.js?v=20261006-1',global:'DonaAntoniaBasketTaxonomy'},
-    molds:{label:'Cestas Molde',description:'Selecione as marcas uma vez para os itens compartilhados e ajuste apenas as quantidades em cada cesta.',src:'/vitrine/admin/basket-mold-admin.js?v=20261019-shared-brands-v1',global:'DonaAntoniaBasketMolds'},
+    molds:{label:'Cestas Molde',description:'Selecione as marcas uma vez para os itens compartilhados e ajuste apenas as quantidades em cada cesta.',src:'/vitrine/admin/basket-mold-admin.js?v=20261019-shared-brands-v2',global:'DonaAntoniaBasketMolds'},
     extras:{label:'Produtos adicionais',description:'Configure produtos opcionais que o cliente pode acrescentar depois de personalizar a cesta.',src:'/vitrine/admin/basket-mold-extras-admin.js?v=20261019-1',global:'DonaAntoniaBasketExtras'},
     kits:{label:'Criador de Kits',description:'Ferramenta técnica para manutenção das receitas reutilizáveis existentes.',src:'/vitrine/admin/kit-builder.js?v=basket-products-v1',global:'DonaAntoniaKitBuilder'},
     store:{label:'Operação anterior',description:'Ferramenta técnica para receitas, reservas e montagens do modelo anterior.',src:'/vitrine/admin/store-baskets-builder.js?v=component-edit-v1',global:'DonaAntoniaStoreBaskets'}

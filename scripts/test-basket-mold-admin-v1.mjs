@@ -25,7 +25,8 @@ assert.match(section,/DonaAntoniaBasketMolds/);
 assert.match(ui,/data-mold-name/);
 assert.match(ui,/data-mold-hidden-adjustment/);
 assert.doesNotMatch(ui,/data-mold-composition-count/);
-assert.match(ui,/public_composition_count:1/);
+assert.match(ui,/public_composition_count:d.public_composition_count/);
+assert.match(ui,/Math.min\(6,Math.max\(1,Number\(e\?\.public_composition_count\|\|1\)\)\)/);
 assert.match(ui,/Cestas e quantidades/);
 assert.match(ui,/Produtos e marcas/);
 assert.match(ui,/data-mold-shared-search/);
@@ -54,7 +55,7 @@ assert.match(multiPreferredSQL,/count\(\*\) filter \(where s\.is_preferred\)/);
 assert.match(multiPreferredSQL,/\(\(sl\.composition_number - 1\) % r\.preferred_count\) \+ 1/);
 assert.match(multiPreferredSQL,/when c\.is_preferred then 'preferred_in_stock'/);
 assert.match(multiPreferredSQL,/where greatest\(0, coalesce\(s\.loose_sellable_stock/);
-assert.match(section,/20261019-shared-brands-v1/);
+assert.match(section,/20261019-shared-brands-v2/);
 assert.match(section,/Produtos adicionais/);
 
 // Gateway forwards the logged-in admin JWT and never loads a privileged server key.
@@ -85,5 +86,8 @@ assert.match(sharedSQL,/admin_save_basket_mold_shared_items_v1/);
 assert.match(sharedSQL,/row_number\(\) over \(partition by i\.id order by c\.price/);
 assert.match(sharedSQL,/option_order<=3/);
 assert.match(ui,/Quantidade \(0 remove\)/);
-console.log('basket mold admin shared brands v1: PASS');
+const completeSQL=fs.readFileSync('supabase/migrations/20261019190000_basket_mold_shared_brands_all_sizes_and_price_v2.sql','utf8');
+assert.match(completeSQL,/basket_shared_registry_incomplete/);
+assert.match(completeSQL,/lowest_price_in_stock/);
+console.log('basket mold admin shared brands v2: PASS');
 
