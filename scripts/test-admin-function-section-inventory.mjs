@@ -12,12 +12,21 @@ const delivery=inventory.functions.filter(x=>x.path.startsWith('vitrine/admin/de
 assert.ok(runtime.length+delivery.length+inventory.functions.filter(x=>x.path.startsWith('vitrine/admin/orders/')).length>400,'incomplete runtime and extracted delivery inventory');
 for(const [name,section] of [
   ['statusPill','Central'],['clearFinanceSession','Financeiro'],
-  ['purchaseCatalogFilteredItems','Compras/XML'],
-  ['manualSaleTotalCents','Pedidos']
+  ['purchaseCatalogFilteredItems','Compras/XML']
 ]){
   const entry=runtime.find(x=>x.name===name);
   assert.ok(entry,'missing runtime function '+name);
   assert.equal(entry.section,section,'incorrect fragment classification '+name);
+}
+for(const name of ['manualSaleTotalCents','createManualSale']){
+  const entry=inventory.functions.find(x=>x.path==='vitrine/admin/orders/manual-sale.js'&&x.name===name);
+  assert.ok(entry,'missing extracted manual order function '+name);
+  assert.equal(entry.section,'Pedidos');
+  assert.equal(runtime.some(x=>x.name===name),false,'manual-sale function must not remain in shared runtime scope');
+}
+for(const name of ['orderV3Milestones','orderCardOperationalTags']){
+  assert.ok(inventory.functions.some(x=>x.path==='vitrine/admin/orders/card-model.js'&&x.name===name),`missing extracted order card model function ${name}`);
+  assert.equal(runtime.some(x=>x.name===name),false,'card model function must not remain in shared runtime scope');
 }
 for(const [name,section] of [['expeditionFiscalState','Expedição'],['smartDeliverySlug','Entregador']]){
   assert.ok(delivery.some(x=>x.name===name&&x.section===section),'missing extracted delivery function '+name);
