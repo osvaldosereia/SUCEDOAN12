@@ -1587,8 +1587,18 @@ async function orderDispatchStartV4(p:any,auth:any){
   const key=tx(p?.idempotency_key,160)||("dispatch-v4:"+oid);
   const q=await db.rpc("ops4_start_dispatch_v1",{p_order_id:oid,p_operator_label:operator,p_idempotency_key:key});
   if(q.error)return {error:tx(q.error.message,260)||"dispatch_start_failed",status:409,detail:q.error.details||null,fiscal,physical_stock};
-  try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"out_for_delivery"})}catch{}
+  await syncDeliveryStopBestEffort(oid,"out_for_delivery")
   return {dispatch:q.data,fiscal,physical_stock};
+}
+// Non-critical integration: preserve order status even if the auxiliary delivery
+// projection cannot be updated, but never hide RPC/transport failures.
+async function syncDeliveryStopBestEffort(orderId:string,status:string){
+  try{
+    const result=await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:orderId,p_order_status:status});
+    if(result.error)console.error("delivery_stop_sync_failed",tx(result.error.message,180));
+  }catch(error){
+    console.error("delivery_stop_sync_failed",tx((error as Error)?.message||error,180));
+  }
 }
 async function rejectCriticalStatusBypass(p:any){
   const requested=p?.status!==undefined?uiStatus(p.status):"";
@@ -1648,7 +1658,7 @@ async function updateOrderCanonical(p:any){
     if(!u.data)return {error:"stale_order_status",status:409};
   }
   if(next&&next!==cur)await opsEvent("order.status_changed","Pedido alterado de "+cur+" para "+next+".","order",oid,{from:cur,to:next,source:o.source||null},tx(p?.operator,80)||"Operação","human","dona_antonia","order-status:"+oid+":"+next+":"+String(u.data.updated_at));
-  if(next&&next!==cur&&["ready","out_for_delivery","delivered","cancelled"].includes(next)){try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:next})}catch{}}
+  if(next&&next!==cur&&["ready","out_for_delivery","delivered","cancelled"].includes(next)){await syncDeliveryStopBestEffort(oid,next)}
 
   let print_queued:null|boolean=null,bling_sync:any=null,bling_completion:any=null;
   if(next==="confirmed"&&cur==="created"){
@@ -3885,7 +3895,7 @@ async function orderSeparationComplete(p:any,auth:any){
 
   const oq=await db.from("orders").select("id,status,updated_at").eq("id",oid).maybeSingle();if(oq.error)throw oq.error;
   if(uiStatus(oq.data?.status)!=="ready"){await markSeparationNeedsAttention(oid,"stock_applied","ready_transition_failed",oq.data);return {error:"ready_transition_failed",status:409,recovery_scheduled:true}}
-  try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"ready"})}catch{}
+  await syncDeliveryStopBestEffort(oid,"ready")
 
   const operator=tx(assignmentQ.data?.separator_label,80)||tx(p?.operator,80)||"Separação";
   const done=await db.rpc("ops2_mark_order_separation_completion_v2",{p_order_id:oid,p_phase:"completed",p_metadata:{
@@ -3940,7 +3950,7 @@ async function completeDeliveryV3(p:any,auth:any){
   const method=tx(p?.method,40).toLowerCase(),amount=Math.round(Number(p?.amount_cents||0));
   const q=await db.rpc("ops3_complete_delivery_v1",{p_order_id:oid,p_method:method,p_amount_cents:amount,p_operator_label:tx(p?.operator,80)||"Entrega",p_idempotency_key:tx(p?.idempotency_key,120)||("delivery-v3:"+oid)});
   if(q.error){const m=String(q.error.message||"");for(const code of ["invalid_payment_method","payment_total_mismatch","payment_already_captured","order_not_ready_for_delivery","separation_not_completed","delivery_return_open"]){if(m.includes(code))return {error:code,status:code.startsWith("invalid_")?400:409}}throw q.error}
-  try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"delivered"})}catch{}
+  await syncDeliveryStopBestEffort(oid,"delivered")
   try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
 
   let bling_completion:any=null;
@@ -3976,7 +3986,7 @@ async function finalizeCapturedDeliveryV4(p:any,auth:any){
   if(Number(pay.data.expected_total_cents)!==expected||Number(pay.data.captured_total_cents)!==expected)return {error:"delivery_payment_mismatch",status:409};
   const u=await db.from("orders").update({status:"delivered",delivered_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",oid).eq("status","out_for_delivery").select("id,updated_at").maybeSingle();
   if(u.error)throw u.error;if(!u.data?.id)return {error:"delivery_state_conflict",status:409};
-  try{await db.rpc("ops_sync_delivery_stop_v1",{p_order_id:oid,p_order_status:"delivered"})}catch{}
+  await syncDeliveryStopBestEffort(oid,"delivered")
   try{await db.rpc("ops2_refresh_order_public_snapshot_v1",{p_order_id:oid})}catch{}
   await opsEvent("order.status_changed","Pedido alterado de out_for_delivery para delivered.","order",oid,{from:"out_for_delivery",to:"delivered",canonical_action:"order_delivery_finalize_v4"},operator,"human","dona_antonia","delivery-finalize-v4:"+oid);
   let bling_completion:any=null;
