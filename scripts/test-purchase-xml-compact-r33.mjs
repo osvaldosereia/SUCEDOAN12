@@ -86,4 +86,50 @@ assert.match(api,/lot_expiration_date:exp\|\|null/);
   assert.deepEqual(calls,['catalog_queue','browse_bling'],'Bling loads only after explicit comparison');
 }
 
+
+{
+  // Switching periods while a Bling comparison is pending must not leave the
+  // spinner locked or let the old period overwrite the new result.
+  const begin=html.indexOf('  let purchasesLoadGeneration=0;');
+  const advancedStart=html.indexOf('  let purchaseAdvancedGeneration=0;',begin);
+  const compareStart=html.indexOf('  async function loadPurchaseBlingComparison()',advancedStart);
+  const stop=html.indexOf('  function purchaseMaybeMoney(',compareStart);
+  assert.ok(begin>0&&advancedStart>begin&&compareStart>advancedStart&&stop>compareStart);
+  const host={innerHTML:''},pending=[];
+  const state={
+    tab:'purchases',purchaseFilter:{period:'old'},
+    purchaseAdvancedOpen:false,purchaseBlingCompareOpen:false,
+    purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,
+    purchaseBlingCompareKey:'',purchaseBlingReceivedReview:{ok:false}
+  };
+  const purchaseApi=async(action)=>{
+    if(action==='summary')return {documents:[]};
+    if(action==='bling_received_review_status')return {ok:true};
+    if(action==='browse_bling')return new Promise(resolve=>pending.push(resolve));
+    throw new Error('Unexpected API action: '+action);
+  };
+  const {loadPurchases,loadPurchaseBlingComparison}=new Function(
+    'state','$','purchaseCustomRangeReady','esc','purchasePeriodLabel',
+    'purchaseFilterPayload','purchaseApi','paintBlingReceivedReview',
+    'paintPurchases','queueMicrotask','purchaseXmlError',
+    html.slice(begin,stop)+';return {loadPurchases,loadPurchaseBlingComparison};'
+  )(state,key=>key==='#purchaseBody'?host:null,()=>true,String,()=>state.purchaseFilter.period,
+    ()=>({...state.purchaseFilter}),purchaseApi,()=>{},()=>{},queueMicrotask,String);
+  await loadPurchases();
+  const old=loadPurchaseBlingComparison();
+  assert.equal(pending.length,1);
+  state.purchaseFilter.period='new';
+  state.purchaseBlingCompareOpen=true;
+  await loadPurchases();
+  assert.equal(pending.length,2,'changing filters starts a new comparison even when the old request is pending');
+  pending[0]({documents:[{id:'stale'}]});
+  await old;
+  assert.equal(state.purchaseBlingCompareLoading,true,'stale completion must not stop the current request spinner');
+  pending[1]({documents:[{id:'current'}]});
+  await Promise.resolve();
+  assert.equal(state.purchaseBlingBrowse.documents[0].id,'current');
+  assert.equal(state.purchaseBlingCompareLoaded,true);
+  assert.equal(state.purchaseBlingCompareLoading,false);
+}
+
 console.log('PASS R33: JS parsing, lightweight initial load, safe identity linking, compact cards, optional lot expiration and single invoice editor');
