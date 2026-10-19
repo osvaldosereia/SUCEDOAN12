@@ -63,7 +63,7 @@ assert.match(api,/lot_expiration_date:exp\|\|null/);
 }
 // Advanced index and Bling comparison have independent loading paths.
 {
-  const start=html.indexOf('  async function loadPurchaseAdvanced()');
+  const start=html.indexOf('  let purchaseAdvancedGeneration=0;');
   const comparison=html.indexOf('  async function loadPurchaseBlingComparison()',start);
   const stop=html.indexOf('  function purchaseMaybeMoney(',comparison);
   assert.ok(start>0&&comparison>start&&stop>comparison);
