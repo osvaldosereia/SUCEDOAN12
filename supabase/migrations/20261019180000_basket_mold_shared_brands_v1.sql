@@ -219,7 +219,7 @@ $function$;
 
 revoke all on function public.admin_basket_mold_shared_items_v1() from public,anon,authenticated;
 revoke all on function public.admin_save_basket_mold_shared_items_v1(jsonb) from public,anon,authenticated;
-grant execute on function public.admin_basket_mold_shared_items_v1() to service_role;
-grant execute on function public.admin_save_basket_mold_shared_items_v1(jsonb) to service_role;
+grant execute on function public.admin_basket_mold_shared_items_v1() to authenticated, service_role;
+grant execute on function public.admin_save_basket_mold_shared_items_v1(jsonb) to authenticated, service_role;
 notify pgrst,'reload schema';
 commit;
