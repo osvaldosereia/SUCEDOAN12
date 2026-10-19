@@ -140,4 +140,36 @@ assert.match(sql,/grant execute on function public\.admin_save_basket_mold_v1\([
   assert.deepEqual(state.conditionalResults.map(x=>x.id),['current'],'conditional picker ignores stale queries');
 }
 
+
+{
+  // Saving a draft is durable, but an operator who selected another basket
+  // before the request completes must not be redirected to the old editor.
+  const start=ui.indexOf('async function save(){');
+  const stop=ui.indexOf('function bind(){',start);
+  assert.ok(start>0&&stop>start);
+  let resolveSave,editors=0,lists=0;
+  const messages=[];
+  const draft={basket_id:'previous',category_id:'category',subcategory_id:'subcategory',
+    name:'Cesta',public_composition_count:2,conditional_hidden_enabled:false,
+    positions:[{label:'Produto',quantity:1,options:[{product_id:'sku'}]}]};
+  const state={busy:false,draft};
+  const controller=new Function('state','sync','call','render','loadList','openBasket','toast','operator',
+    'let moldEditorLoadGeneration=0;'+ui.slice(start,stop)+
+    ';return {save,navigate:()=>++moldEditorLoadGeneration};')(
+      state,()=>{},action=>{
+        assert.equal(action,'save');
+        return new Promise(resolve=>resolveSave=resolve);
+      },()=>{},async()=>{lists++;return true},async()=>{editors++},
+      message=>messages.push(message),()=>'Teste');
+  const submitted=controller.save();
+  assert.equal(state.busy,true);
+  controller.navigate();
+  resolveSave({ok:true});
+  await submitted;
+  assert.equal(lists,0,'stale save must not refresh a different basket');
+  assert.equal(editors,0,'stale save must not reopen the previous editor');
+  assert.equal(state.busy,false);
+  assert.ok(!messages.includes('Molde salvo.'),'old editor completion has no misleading success notice');
+}
+
 console.log('basket mold admin v1: PASS');
