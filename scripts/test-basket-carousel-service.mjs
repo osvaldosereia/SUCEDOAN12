@@ -34,8 +34,8 @@ assert.match(rendered,/basket-size-grande/);
 assert.doesNotMatch(rendered,/Personalizar/);
 const sizePhotos={
   grande:'/img/CESTA-GRANDE-ALVINO.webp',
-  media:'/site/img/CESTA-MEDIA-BONINI.webp',
-  pequena:'/site/img/CESTA-PEQUENA-BONINI.webp',
+  media:'/img/CESTA-MEDIA-BONINI.webp',
+  pequena:'/img/CESTA-PEQUENA-BONINI.webp',
   mini:'/img/CESTA-MINI-BONINI.webp',
   economica:'/img/cesta-basica-cuiaba-varzea-grande-economica.avif'
 };
