@@ -425,11 +425,6 @@
   }
 
 
-  function purchaseFinanceLabel(v){
-    const map={blocked_personal:'CPF · fora do financeiro',pending_company_match:'Aguardando fornecedor',eligible:'Elegível',posted:'Conta no Bling',review:'Financeiro pendente',not_applicable:'Não aplicável'};
-    const cls=v==='posted'?'':v==='blocked_personal'?'off':v==='review'||v==='pending_company_match'?'warn':'';
-    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
-  }
   function purchasePaymentSummary(d){
     return d?.metadata?.payment_summary&&typeof d.metadata.payment_summary==='object'?d.metadata.payment_summary:{};
   }

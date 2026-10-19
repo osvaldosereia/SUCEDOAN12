@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 function must(cond,msg){if(!cond)throw new Error(msg)}
 must(html.includes('INVENTORY_SCRIPT_TIMEOUT_MS'),'missing external-script timeout');
 must(html.includes('INVENTORY_SHEET_READ_TIMEOUT_MS'),'missing per-photo read timeout');

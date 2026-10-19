@@ -8,7 +8,7 @@ Base desta continuação: `693f61fd9050cbdc6ead6817e32b0757764db51a`, no PR #112
 
 Foram extraídos `orders/session.js`, `list-controller.js`, `detail-controller.js`, `detail-view.js`, `fiscal-controller.js`, `fiscal-loader.js`, `documents.js`, `manual-sale.js` e `card-model.js`. Lista/fila, sessão do editor, gravações, apresentação, fiscal, impressão, criação manual e leitura de marcos/etiquetas dos cards têm dependências explícitas. A leitura do endereço é única para salvar e cancelar. O estado geral perdeu o pedido atual, fiscal do editor, prévia antiga, filtros/fila da lista e estado do editor legado.
 
-Os fragmentos passaram de 19 para 17; `17-fiscal-danfe` e `18-order-editing` foram eliminados depois de mover as responsabilidades ativas. São 35 scripts síncronos, 30 dependências diretas resolvidas, 5.438 linhas e 434.268 bytes no runtime (antes: 6.365 linhas e 507.152 bytes). Os callbacks preservam a inicialização antes de `start()`.
+Os fragmentos passaram de 19 para 17; `17-fiscal-danfe` e `18-order-editing` foram eliminados depois de mover as responsabilidades ativas. São 35 scripts síncronos, 30 dependências diretas resolvidas, 5.407 linhas e 432.332 bytes no runtime (antes: 6.365 linhas e 507.152 bytes). Os callbacks preservam a inicialização antes de `start()`.
 
 ### Correções confirmadas
 
@@ -30,6 +30,8 @@ A revisão partiu dos bindings reais de `paintOrderDetail`, lista, navegação, 
 
 Removidas 28 declarações antigas: `advanceCurrentOrder`, `applySelectedCustomerToDelivery`, `blingOrderBlockerLabel`, `blingOrderJobErrorLabel`, `blingPreflightOperationalBlockers`, `canonicalOrderPayment`, `completeCurrentOrderCustomerDocument`, `confirmCurrentOrderPayment`, `createCurrentOrderCustomerInBling`, `createCurrentOrderProductsInBling`, `customerOptions`, `customerSummary`, `focusOrderCustomerForBling`, `loadCurrentOrderBlingPreview`, `mergeOrderCustomerResults`, `openComponentReplacement`, `paymentOptions`, `persistCurrentOrder`, `previewCurrentOrderBling`, `replaceComponentWithProduct`, `resolveCurrentOrderBlingDependencies`, `retryHistorySync`, `saveOrder`, `scheduleOrderCustomerSearch`, `searchComponentReplacement`, `searchOrderCustomers`, `setOrderDeliveryField` e `startSeparationFlow`. Esta última ainda referenciava `validateBlingBeforeSeparation`, inexistente. Também saiu o provider legado `orders/action-buttons.js`, sem consumidor operacional.
 
+Nesta revisão foram removidos mais três helpers privados sem chamadores: `openPurchaseDocument` (a interface já usa `togglePurchaseDocument`), `purchaseFinanceLabel` (nenhum renderer ativo o usava) e `inventorySheetImageData` (a leitura local atual da folha cria seu canvas diretamente). O processamento OCR/filas A4 continua preservado e testado; só saiu a conversão de imagem órfã. Dois testes estáticos de Balanço, que ainda liam exclusivamente o HTML inline depois da extração do runtime, passaram a validar o bundle real.
+
 O teste de botões agora executa os providers reais de sessão, apresentação e fiscal. Os testes de corrida antigos que recortavam handlers removidos foram substituídos pelas factories ativas. Os contratos de backend, payloads, autorização fiscal, opções de pagamento, histórico e totais continuam verificados nas fontes atuais.
 
 ### Cobertura por seção nesta continuação
@@ -43,7 +45,7 @@ O teste de botões agora executa os providers reais de sessão, apresentação e
 
 ### Verificação e pendências
 
-Verificação local desta rodada: 130 scripts `test-admin-*.mjs`, 5 `test-admin-*.py` e 5 `test-smart-delivery-*.mjs` passaram (140 no total). Também passaram os testes do modelo dos cards, feedback da separação, paridade, bootstrap, grafo e contratos de carga. No head remoto anterior, 34 verificações do GitHub passaram; cinco falhas tinham origem no teste fiscal estático que procurava um texto na fonte antiga, corrigido para consultar o controller extraído. As Etapas 1 e 2 continuam abertas. Além dos trechos restantes de Pedidos, persistem as fronteiras de Produtos/Cestas, Balanço e Compras/XML, a revisão manual integral das declarações e homologação externa de Edge/Bling/SEFAZ/impressão. A tabela histórica abaixo preserva as revisões anteriores; testes contratuais não equivalem a homologação operacional.
+Verificação local desta rodada: 130 scripts `test-admin-*.mjs`, 5 `test-admin-*.py` e 5 `test-smart-delivery-*.mjs` passaram (140 no total), junto dos contratos específicos de Balanço A4/mobile-only e Compras/XML. Também passaram os testes do modelo dos cards, feedback da separação, inventário de funções, 10 pares de espelhos Edge, paridade, bootstrap, grafo e contratos de carga. No primeiro head remoto desta rodada, o CI apontou que o teste de inventário ainda exigia funções extraídas no bundle antigo; o contrato foi corrigido para validar os providers, sem descartar funções do inventário. O CI do head mais recente permanece sob verificação. As Etapas 1 e 2 continuam abertas. Além dos trechos restantes de Pedidos, persistem as fronteiras de Produtos/Cestas, Balanço e Compras/XML, a revisão manual integral das declarações e homologação externa de Edge/Bling/SEFAZ/impressão. A tabela histórica abaixo preserva as revisões anteriores; testes contratuais não equivalem a homologação operacional.
 
 ---
 

@@ -200,7 +200,6 @@
       await loadPurchases();
     }catch(e){toast(errorMessage(e.message))}
   }
-  async function openPurchaseDocument(id){return togglePurchaseDocument(id,true)}
   async function downloadPurchaseXml(id){
     try{const r=await purchaseApi('xml_url',{id});if(r.url)window.open(r.url,'_blank','noopener')}catch(e){toast(errorMessage(e.message))}
   }

@@ -170,31 +170,6 @@
       paintBalance();
     }catch{}
   }
-  async function inventorySheetImageData(file){
-    if(!file||!String(file.type||'').startsWith('image/'))throw new Error('Selecione uma foto da folha A4.');
-    let bitmap=null,img=null,src='';
-    try{bitmap=await createImageBitmap(file,{imageOrientation:'from-image'})}catch{}
-    if(!bitmap){
-      src=URL.createObjectURL(file);
-      img=await new Promise((resolve,reject)=>{const el=new Image();el.onload=()=>resolve(el);el.onerror=reject;el.src=src});
-    }
-    const sw=bitmap?.width||img.naturalWidth,sh=bitmap?.height||img.naturalHeight;
-    if(!sw||!sh){if(src)URL.revokeObjectURL(src);throw new Error('Não consegui abrir a foto.')}
-    const encode=(maxSide,quality)=>{
-      const scale=Math.min(1,maxSide/Math.max(sw,sh)),w=Math.max(1,Math.round(sw*scale)),h=Math.max(1,Math.round(sh*scale));
-      const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
-      const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(bitmap||img,0,0,w,h);
-      return canvas.toDataURL('image/jpeg',quality);
-    };
-    let data=encode(3200,.90);
-    if(data.length>10500000)data=encode(2700,.85);
-    if(data.length>12500000)data=encode(2300,.82);
-    bitmap?.close?.();if(src)URL.revokeObjectURL(src);
-    if(data.length>14000000)throw new Error('A foto ficou grande demais. Tente novamente um pouco mais distante.');
-    return data;
-  }
-
-
   let inventorySheetCvPromise=null,inventorySheetTesseractPromise=null;
 
   const INVENTORY_SCRIPT_TIMEOUT_MS=6500;

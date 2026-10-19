@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const checks=[
   [!html.includes('id=\"balanceTabA4\"'),'Folhas A4 ainda aparece no Balanço'],
   [!html.includes("state.balanceSubtab=tab==='a4'?'a4':'scanner'"),'setBalanceSubtab ainda permite A4'],
