@@ -8,12 +8,12 @@ const campaigns=fs.readFileSync('vitrine/admin/marketing/campaign-center.js','ut
 const entry=fs.readFileSync('vitrine/admin/marketing/campaign-entry.js','utf8');
 const all=[polish,templates,audiences,campaigns,entry].join('\n');
 
-assert.match(polish,/const PRIMARY_MARKETING_VIEWS=\['overview','strategy','templates','campaigns','audiences'\]/,'ordem principal deve ser Visão geral, Estratégia, Templates, Campanhas, Públicos');
+assert.match(polish,/const PRIMARY_MARKETING_VIEWS=\['overview','post_sale','repurchase','campaigns'\]/,'navegação principal deve priorizar os quatro fluxos');
 assert.match(polish,/overview:\s*'Visão geral'/,'shell deve nomear Visão geral');
-assert.match(polish,/strategy:\s*'Estratégia'/,'shell deve nomear Estratégia');
-assert.match(polish,/templates:\s*'Templates'/,'shell deve nomear Templates');
+assert.match(polish,/data-marketing-view="strategy">Estratégia/,'Estratégia deve continuar acessível em Mais');
+assert.match(polish,/data-marketing-view="templates">Templates/,'Templates deve continuar acessível em Mais');
 assert.match(polish,/campaigns:\s*'Campanhas'/,'shell deve nomear Campanhas');
-assert.match(polish,/audiences:\s*'Públicos'/,'shell deve nomear Públicos');
+assert.match(polish,/data-marketing-view="audiences">Públicos/,'Públicos deve continuar acessível em Mais');
 assert.doesNotMatch(polish,/consents:\s*'Consentimentos'/,'Consentimentos não deve permanecer no mapa das abas principais');
 assert.match(polish,/PRIMARY_MARKETING_VIEWS\.includes\(view\)/,'shell deve remover views que não fazem parte da navegação principal');
 assert.match(polish,/button\.remove\(\)/,'shell deve remover aba secundária criada por submódulos antigos');
@@ -21,7 +21,7 @@ assert.match(polish,/button\.dataset\.marketingView\s*=\s*view/,'shell deve cria
 assert.match(polish,/strategy-center\.js\?v=marketing-strategy-v1/,'aba Estratégia deve carregar o módulo dedicado');
 assert.match(polish,/data-marketing-admin-consents/,'Consentimentos deve permanecer acessível como ação administrativa secundária');
 
-assert.match(polish,/setText\((?:gate|nav\.querySelector\('\.marketing-campaign-gate'\)),'Envios desativados'\)/,'status operacional deve ser único e simples');
+assert.match(polish,/setText\(gate,'Campanhas pausadas'\)/,'status operacional deve informar que campanhas estão pausadas');
 assert.match(polish,/removeDuplicateMarketingHeads/,'shell deve remover cabeçalhos Marketing duplicados');
 assert.match(polish,/removeDuplicateGateBadges/,'shell deve remover badges operacionais duplicados');
 
