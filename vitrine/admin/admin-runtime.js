@@ -1278,63 +1278,19 @@
     return map[value]||value||'Sem categoria';
   }
 
-  const mobileProductQuickDrafts=new Map(),mobileProductQuickTimers=new Map(),mobileProductQuickBusy=new Set(),mobileProductStockQueue=new Map(),mobileProductSaveStates=new Map();
+  const mobileProductStockQueue=new Map(),mobileProductSaveStates=new Map(),stockZeroPending=new Set();
   let mobileProductStockBusy=false;
   function isProductsMobile(){return window.matchMedia&&window.matchMedia('(max-width:640px)').matches}
-  function mobileProductPriceCents(v){let s=String(v??'').trim().replace(/R\$/gi,'').replace(/\s+/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=Number(s);return Number.isFinite(n)&&n>=0?Math.round(n*100):null}
   function mobileProductSaveState(id){if(!mobileProductSaveStates.has(id))mobileProductSaveStates.set(id,{quick:false,stock:false,error:''});return mobileProductSaveStates.get(id)}
   function paintMobileProductSaveStatus(id){const el=document.querySelector('[data-mobile-product-status="'+CSS.escape(String(id))+'"]');if(!el)return;const s=mobileProductSaveState(id);el.className='mobile-product-save-status '+(s.error?'error':(s.quick||s.stock?'saving':'saved'));el.textContent=s.error?'⚠ '+s.error:(s.stock?'Sincronizando estoque…':(s.quick?'Salvando…':'✓ Salvo'))}
   function setMobileProductSaveState(id,key,value,error=''){const s=mobileProductSaveState(id);s[key]=value;if(error)s.error=error;else if(value)s.error='';paintMobileProductSaveStatus(id)}
-  function productLinkedKits(p){return Array.isArray(p?.linked_kits)?p.linked_kits:[]}
-  function productExpiryLabel(p){const d=p?.next_expiration_date||p?.expiration_date||null;return d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'Sem validade'}
-  function productKitLinks(p,compact=false){
-    const kits=productLinkedKits(p);if(!kits.length)return '<span class="product-no-kits">Sem kits</span>';
-    return '<details class="product-kit-menu '+(compact?'mobile-product-kit-count':'')+'"><summary>'+esc(kits.length)+' '+(kits.length===1?'cesta/kit':'cestas/kits')+'</summary><div class="product-kit-popover">'+kits.map(k=>k.basket_id?'<button type="button" class="product-kit-link" data-open-product-basket="'+esc(k.basket_id)+'">'+esc(k.name||'Cesta/Kit')+'</button>':'<span class="product-kit-link" aria-disabled="true">'+esc(k.name||'Cesta/Kit')+'</span>').join('')+'</div></details>';
-  }
-  function productMobileCard(p){
-    const price=(Number(p.sale_price_cents||0)/100).toFixed(2).replace('.',','),cost=(Number(p.cost_cents||0)/100).toFixed(2).replace('.',','),g=Number(p.gondola_number||0),identity=p.gtin||p.sku||'Sem EAN';
-    const gondolas='<option value="">—</option>'+Array.from({length:30},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(g===n?'selected':'')+'>'+n+'</option>').join('');
-    return '<article class="mobile-product-card" data-mobile-product-card="'+esc(p.id)+'">'+
-      '<div class="mobile-product-card-head"><img class="mobile-product-thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy"><div><div class="mobile-product-card-name">'+esc(p.name)+'</div><span class="mobile-product-card-id">'+esc(identity)+'</span></div></div>'+
-      '<label class="mobile-product-switch"><input type="checkbox" data-mobile-product-active="'+esc(p.id)+'" '+(p.active!==false?'checked':'')+'><span class="mobile-product-switch-track"><span class="mobile-product-switch-knob"></span></span><b data-mobile-product-active-label="'+esc(p.id)+'">'+(p.active!==false?'ATIVO':'INATIVO')+'</b></label>'+
-      '<div class="mobile-product-quick-grid">'+
-        '<label class="mobile-product-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label>'+
-        '<label class="mobile-product-field"><span>Custo</span><input data-mobile-product-field="cost" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(cost)+'"></label>'+
-        '<label class="mobile-product-field"><span>Estoque</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+
-        '<label class="mobile-product-field"><span>Gôndola</span><select data-mobile-product-field="gondola" data-product-id="'+esc(p.id)+'">'+gondolas+'</select></label>'+
-        '<label class="mobile-product-field full"><span>Validade</span><input data-mobile-product-field="expiration" data-product-id="'+esc(p.id)+'" type="date" value="'+esc(p.expiration_date||'')+'"></label>'+
-      '</div>'+productKitLinks(p,true)+'<div class="mobile-product-card-foot"><span class="mobile-product-save-status saved" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span><button class="mobile-product-detail mobile-product-zero-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="mobile-product-detail" type="button" data-edit-product="'+esc(p.id)+'">Detalhes</button></div></article>';
-  }
-  function scheduleMobileProductQuickSave(id,field,value){
-    const product=state.products.find(p=>String(p.id)===String(id));if(!product)return;let draft=mobileProductQuickDrafts.get(id)||{};
-    if(field==='price'){const cents=mobileProductPriceCents(value);if(cents===null){setMobileProductSaveState(id,'quick',false,'Preço inválido');return}draft.sale_price_cents=cents;product.sale_price_cents=cents;setMobileProductSaveState(id,'quick',true)}
-    else if(field==='cost'){const cents=mobileProductPriceCents(value);if(cents===null){setMobileProductSaveState(id,'quick',false,'Custo inválido');return}draft.cost_cents=cents;product.cost_cents=cents;setMobileProductSaveState(id,'quick',true)}
-    else if(field==='stock'){const qty=Number(String(value).replace(',','.'));if(!Number.isFinite(qty)||qty<0){setMobileProductSaveState(id,'stock',false,'Estoque inválido');return}draft.stock_quantity=qty;setMobileProductSaveState(id,'stock',true)}
-    else if(field==='gondola'){draft.gondola_number=value===''?null:Number(value);product.gondola_number=value===''?null:Number(value);setMobileProductSaveState(id,'quick',true)}
-    else if(field==='expiration'){draft.expiration_date=value||null;product.expiration_date=value||null;setMobileProductSaveState(id,'quick',true)}
-    mobileProductQuickDrafts.set(id,draft);clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.set(id,setTimeout(()=>flushMobileProductQuickSave(id),650));
-  }
-  async function flushMobileProductQuickSave(id){
-    clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.delete(id);if(mobileProductQuickBusy.has(id))return;const draft=mobileProductQuickDrafts.get(id);if(!draft)return;mobileProductQuickDrafts.delete(id);
-    const operator=currentOperator()||requireOperator();if(!operator){setMobileProductSaveState(id,'quick',false,'Operador necessário');setMobileProductSaveState(id,'stock',false,'Operador necessário');return}
-    const quick={};for(const k of ['sale_price_cents','cost_cents','gondola_number','expiration_date'])if(Object.prototype.hasOwnProperty.call(draft,k))quick[k]=draft[k];
-    if(Object.keys(quick).length){
-      mobileProductQuickBusy.add(id);
-      try{
-        const data=await api('product_quick_save',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,...quick,operator})});
-        const p=state.products.find(x=>String(x.id)===String(id)),pending=mobileProductQuickDrafts.get(id)||{};
-        if(p&&data.product){for(const k of ['sale_price_cents','cost_cents','gondola_number','expiration_date','active'])if(!Object.prototype.hasOwnProperty.call(pending,k))p[k]=data.product[k]}
-        const hasPendingQuick=Object.keys(pending).some(k=>k!=='stock_quantity');
-        setMobileProductSaveState(id,'quick',hasPendingQuick);
-      }catch(e){setMobileProductSaveState(id,'quick',false,errorMessage(e.message))}
-      finally{mobileProductQuickBusy.delete(id)}
-    }
-    else setMobileProductSaveState(id,'quick',false);
-    if(Object.prototype.hasOwnProperty.call(draft,'stock_quantity')&&!stockZeroPending.has(String(id))){mobileProductStockQueue.set(id,{quantity:draft.stock_quantity,operator});processMobileProductStockQueue()}
-    if(mobileProductQuickDrafts.has(id)){clearTimeout(mobileProductQuickTimers.get(id));mobileProductQuickTimers.set(id,setTimeout(()=>flushMobileProductQuickSave(id),180))}
-  }
+  const productListView=window.DonaAntoniaAdminProductListView.create({escapeHtml:esc,formatQuantity:fmtQty,categoryLabel});
+  const productKitLinks=productListView.kitLinks,productExpiryLabel=productListView.expiryLabel,productMobileCard=productListView.mobileCard;
+  const mobileProductQuickSave=window.DonaAntoniaAdminMobileProductQuickSave.create({products:()=>state.products,api,currentOperator,requireOperator,setSaveState:setMobileProductSaveState,errorMessage,timers:{set:(fn,delay)=>setTimeout(fn,delay),clear:id=>clearTimeout(id)},stockQueue:mobileProductStockQueue,stockZeroPending,processStockQueue:()=>processMobileProductStockQueue()});
+  const mobileProductQuickDrafts=mobileProductQuickSave.state.drafts;
+  function scheduleMobileProductQuickSave(id,field,value){return mobileProductQuickSave.schedule(id,field,value)}
+  function flushMobileProductQuickSave(id){return mobileProductQuickSave.flush(id)}
   // Atalho de estoque: mesma operação oficial do editor, que valida o saldo no Bling.
-  const stockZeroPending=new Set();
   function zeroProductStock(id,button){
     const key=String(id),product=state.products.find(p=>String(p.id)===key);
     if(!product||stockZeroPending.has(key))return;
@@ -1416,25 +1372,7 @@
     host.querySelectorAll('[data-open-product-basket]').forEach(el=>el.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const basketId=el.dataset.openProductBasket;if(window.DonaAntoniaBasketGuided?.open&&basketId)window.DonaAntoniaBasketGuided.open(basketId,{mode:'model'});else toast('O editor de Cestas/Kits não carregou. Atualize a página e tente novamente.')});
   }
 
-  function productRow(p){
-    const classification=[categoryLabel(p.category),p.detailed_subcategory||p.subcategory].filter(Boolean).join(' › ');
-    const identity=[p.sku,p.gtin,p.packaging].filter(Boolean).join(' · ');
-    const expiredInactive=p.active===false&&p.deactivation_reason==='expired';
-    const statusTitle=p.active?'Clique para desativar':expiredInactive?'Vencido: corrija a validade antes de ativar':'Clique para ativar';
-    const desktopStatus=p.active?'Ativo':expiredInactive?'Vencido · inativo':'Inativo';
-    const price=(Number(p.sale_price_cents||0)/100).toFixed(2).replace('.',','),cost=(Number(p.cost_cents||0)/100).toFixed(2).replace('.',',');
-    const expiry=p.next_expiration_date||p.expiration_date||'';
-    const validity=p.lot_tracking_complete
-      ?'<div class="product-validity-summary"><span>Próxima validade</span><strong>'+esc(productExpiryLabel(p))+'</strong><small>'+esc(p.active_lot_count||0)+' lotes · editar em Lotes</small></div>'
-      :'<label class="product-inline-field"><span>Validade</span><input data-mobile-product-field="expiration" data-product-id="'+esc(p.id)+'" type="date" value="'+esc(expiry)+'"></label>';
-    return '<div class="list-row products-layout product-operational-row">'+
-      '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
-      '<div class="product-main"><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<span class="sub"><span class="pill '+(p.lot_tracking_complete?'':'warn')+'">'+(p.lot_tracking_complete?'Lotes controlados':'Validade simples')+'</span></span></div>'+
-      '<div class="product-quick-fields"><label class="product-inline-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label><label class="product-inline-field"><span>Custo</span><input data-mobile-product-field="cost" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(cost)+'"></label><span class="mobile-product-save-status saved product-save-inline" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span></div>'+
-      '<div class="product-stock-validity"><label class="product-inline-field"><span>Estoque total</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+validity+'<span class="product-stock-breakdown-inline">'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+' avulso · '+esc(fmtQty(p.basket_locked_quantity||0))+' em cestas/kits</span></div>'+
-      '<div class="product-operational-status"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(desktopStatus)+'</button>'+productKitLinks(p)+'</div>'+
-      '<div class="product-row-actions"><button class="product-action-btn product-zero-stock-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="product-action-btn" data-product-lots="'+esc(p.id)+'">Lotes</button><button class="product-action-btn" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="product-action-btn primary-action" data-edit-product="'+esc(p.id)+'">Editar completo</button></div></div>';
-  }
+  function productRow(p){return productListView.row(p)}
 
   async function toggleProductActive(id,btn){
     const product=state.products.find(p=>p.id===id);

@@ -11,7 +11,7 @@ const modules=[
   'orders/read-model.js','components/today-cards.js','orders/time.js',
   'orders/search.js','orders/whatsapp-links.js','orders/contact-actions.js',
   'components/expiry-alert.js','components/ops-attention.js',
-  'components/print-queue-panel.js','orders/separation-model.js','orders/customer-readiness.js','orders/card-model.js','orders/card-view.js','orders/separation-view.js','orders/payment-method.js','orders/session.js','orders/list-controller.js','orders/list-view.js','orders/documents.js','orders/detail-view.js','orders/detail-controller.js','orders/fiscal-controller.js','orders/fiscal-loader.js','orders/manual-sale.js','delivery/model.js','delivery/controller.js','closure/controller.js','customers/controller.js'
+  'components/print-queue-panel.js','orders/separation-model.js','orders/customer-readiness.js','orders/card-model.js','orders/card-view.js','orders/separation-view.js','products/list-view.js','products/mobile-quick-save.js','orders/payment-method.js','orders/session.js','orders/list-controller.js','orders/list-view.js','orders/documents.js','orders/detail-view.js','orders/detail-controller.js','orders/fiscal-controller.js','orders/fiscal-loader.js','orders/manual-sale.js','delivery/model.js','delivery/controller.js','closure/controller.js','customers/controller.js'
 ];
 const mainIndex=html.indexOf('<script src="/vitrine/admin/admin-runtime.js?');
 assert.ok(mainIndex>0,'external admin runtime script not found');
@@ -36,7 +36,7 @@ const names=[
   'DonaAntoniaAdminOrderTime','DonaAntoniaAdminOrderSearch',
   'DonaAntoniaAdminWhatsappLinks','DonaAntoniaAdminOrderContactActions','DonaAntoniaAdminOrderCardModel','DonaAntoniaAdminOrderCardView','DonaAntoniaAdminOrderListView','DonaAntoniaAdminManualSale',
   'DonaAntoniaAdminExpiryAlert','DonaAntoniaAdminOpsAttention',
-  'DonaAntoniaAdminPrintQueuePanel','DonaAntoniaAdminSeparationModel','DonaAntoniaAdminCustomerReadiness','DonaAntoniaAdminOrderSeparationView','DonaAntoniaAdminOrderPaymentMethod','DonaAntoniaAdminOrderSession','DonaAntoniaAdminOrderList','DonaAntoniaAdminOrderDocuments','DonaAntoniaAdminOrderDetailView','DonaAntoniaAdminOrderDetail','DonaAntoniaAdminOrderFiscal','DonaAntoniaAdminFiscalLoader','DonaAntoniaAdminDelivery','DonaAntoniaAdminClosure','DonaAntoniaAdminCustomers'
+  'DonaAntoniaAdminPrintQueuePanel','DonaAntoniaAdminSeparationModel','DonaAntoniaAdminCustomerReadiness','DonaAntoniaAdminOrderSeparationView','DonaAntoniaAdminProductListView','DonaAntoniaAdminMobileProductQuickSave','DonaAntoniaAdminOrderPaymentMethod','DonaAntoniaAdminOrderSession','DonaAntoniaAdminOrderList','DonaAntoniaAdminOrderDocuments','DonaAntoniaAdminOrderDetailView','DonaAntoniaAdminOrderDetail','DonaAntoniaAdminOrderFiscal','DonaAntoniaAdminFiscalLoader','DonaAntoniaAdminDelivery','DonaAntoniaAdminClosure','DonaAntoniaAdminCustomers'
 ];
 for(const name of names)assert.ok(runtime.includes('window.'+name),'missing bridge '+name);
 const orderedScripts=scripts.filter(src=>modules.some(module=>src.split('?')[0]==='/vitrine/admin/'+module));

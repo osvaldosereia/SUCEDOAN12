@@ -22,6 +22,8 @@
 | `orders/card-model.js` | Marcos do ciclo de vida, prontidão da separação, etiquetas fiscais/operacionais, busca e lista imutável de separadores | Funções de normalização/escape, prontidão cadastral e leituras fiscais por pedido/cache/sessão; lista injetada no fragmento operacional de separação |
 | `orders/card-view.js` | HTML dos cards de pedido, progresso e controles visíveis | Modelo do card, prontidão cadastral, estado da fila manual, formatadores e classe de status |
 | `orders/separation-view.js` | Estrutura do bottom sheet de separação e delegação dos cliques nos itens | `document`, escape de HTML e callbacks de fechamento/marcação; gravação, atribuição e conclusão permanecem no fragmento 16 |
+| `products/mobile-quick-save.js` | Rascunhos, debounce e serialização do autosave rápido mobile de preço, custo, gôndola, validade e estoque | Lista de produtos, API, operador, status visível e fila oficial de estoque/Bling |
+| `products/list-view.js` | Linhas desktop, cards mobile e links de cestas/kits dos produtos | Escape de HTML, formatação de quantidade e rótulo de categoria |
 
 As factories não recebem o objeto `state` inteiro. Seus adaptadores estão nos fragmentos `00`, `02`, `04`, `14`, `16` e `19`. O cache de clientes permanece compartilhado por uma porta porque o editor de Pedidos usa as mesmas opções cadastrais. O cache fiscal também é compartilhado: trocar sua referência invalida escritas de leituras antigas.
 
@@ -36,7 +38,7 @@ node scripts/build-admin-runtime.mjs --write
 node scripts/build-admin-runtime.mjs --check
 ```
 
-Os controladores restantes de produtos/cestas, balanço e compras/XML ainda compartilham estado, API e DOM. Em Pedidos, o chat e o controlador/renderer dos itens do bottom sheet de separação ainda ficam na IIFE; a estrutura inicial e a delegação de eventos do sheet já têm provider próprio. Modelo e HTML dos cards, filtros, apresentação/abas da lista, sessão, criação manual, editor, fiscal, detalhe e documentos já têm fronteiras explícitas. As demais extrações e a revisão integral continuam pendentes; estas separações não equivalem à conclusão integral das Etapas 1 e 2.
+Os controladores restantes de produtos/cestas, balanço e compras/XML ainda compartilham estado, API e DOM. Em Produtos, cards mobile/desktop e autosave rápido já têm providers; edição completa, ativação, lotes e filas de estoque continuam no runtime. Em Pedidos, o chat e o controlador/renderer dos itens do bottom sheet de separação ainda ficam na IIFE; a estrutura inicial e a delegação de eventos do sheet já têm provider próprio. Modelo e HTML dos cards de pedidos, filtros, apresentação/abas da lista, sessão, criação manual, editor, fiscal, detalhe e documentos já têm fronteiras explícitas. As demais extrações e a revisão integral continuam pendentes; estas separações não equivalem à conclusão integral das Etapas 1 e 2.
 
 ## Contratos de Pedidos
 

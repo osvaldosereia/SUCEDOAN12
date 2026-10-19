@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/runtime-parts/15-manual-orders.part.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/customer-readiness.js','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/runtime-parts/15-manual-orders.part.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/customer-readiness.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-view.js','utf8');
 const root=fs.readFileSync('index.html','utf8');
 const vitrine=fs.readFileSync('vitrine/index.html','utf8');
 const page=fs.readFileSync('pedido/index.html','utf8');

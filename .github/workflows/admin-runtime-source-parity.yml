@@ -12,6 +12,7 @@ on:
       - 'vitrine/admin/delivery/**'
       - 'vitrine/admin/closure/**'
       - 'vitrine/admin/customers/**'
+      - 'vitrine/admin/products/**'
       - 'scripts/helpers/admin-dom-fixture.mjs'
       - 'scripts/test-admin-customer-controller.mjs'
       - 'scripts/test-admin-closure-controller.mjs'
@@ -19,6 +20,8 @@ on:
       - 'scripts/test-admin-delivery-controller.mjs'
       - 'scripts/test-admin-delivery-model.mjs'
       - 'scripts/test-admin-order-*.mjs'
+      - 'scripts/test-admin-mobile-product-quick-save-race.mjs'
+      - 'scripts/test-admin-product-list-view.mjs'
       - 'vitrine/admin/orders/**'
       - 'vitrine/admin/components/**'
       - 'scripts/test-admin-separation-model.mjs'
@@ -64,6 +67,8 @@ jobs:
       - run: node scripts/test-admin-order-card-view.mjs
       - run: node scripts/test-admin-order-separation-view.mjs
       - run: node scripts/test-admin-order-list-view.mjs
+      - run: node scripts/test-admin-mobile-product-quick-save-race.mjs
+      - run: node scripts/test-admin-product-list-view.mjs
       - run: node scripts/test-admin-order-documents.mjs
       - run: node scripts/test-admin-controller-contracts.mjs
       - run: node scripts/test-admin-async-races-and-partial-save.mjs

@@ -180,3 +180,9 @@ Sem mudança de payloads, endpoints, regras comerciais, banco, Supabase, atendim
 ### Continuação — casca visual da separação, 19/10
 
 A estrutura inicial do bottom sheet de separação e seu roteamento delegado de fechamento/marcação foram movidos para `orders/separation-view.js`. O provider recebe `document`, escape de HTML e callbacks explícitos; as consultas, gravações, troca de responsável e conclusão continuam no controlador do fragmento 16. O contrato de carga e o workflow de paridade passaram a executar teste próprio da casca e do encaminhamento dos eventos. Não houve alteração de integração, payload ou regra de separação. O chat de pedidos permaneceu fora desta edição.
+
+### Continuação — autosave mobile de Produtos, 19/10
+
+O estado local de rascunhos, debounce e serialização do autosave rápido saiu do fragmento 06 para `products/mobile-quick-save.js`, com portas explícitas para produtos, API, operador, status e fila oficial de estoque. A regressão existente foi atualizada para carregar o controller ativo e continua reproduzindo duas gravações concorrentes: a primeira resposta não sobrescreve o rascunho mais recente. Estoque continua seguindo a fila existente que aplica seus gates de Bling. A alteração é apenas de fronteira estrutural; não muda endpoints nem payloads.
+
+Os renderizadores mobile/desktop de Produtos e a apresentação dos kits vinculados também foram movidos para `products/list-view.js`. O provider recebe apenas formatadores e escape de HTML; bindings, estado e operações permanecem no runtime. O teste cobre os campos de edição rápida, estoque avulso/em cestas, links de kits e escape de conteúdo do produto.
