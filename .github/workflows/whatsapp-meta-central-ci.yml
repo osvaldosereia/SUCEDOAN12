@@ -15,6 +15,7 @@ on:
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
       - 'supabase/functions/admin-marketing-audiences-v1/**'
       - 'supabase/functions/admin-marketing-campaigns-v1/**'
+      - 'supabase/functions/admin-order-delivery-comms-v1/**'
       - 'vitrine/admin/index.html'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/migrations/20261007202921_smart_delivery_admin_runtime_v1.sql'
@@ -47,6 +48,9 @@ on:
       - 'supabase/migrations/20261005018000_marketing_campaign_worker_support_v1.sql'
       - 'supabase/migrations/20261005021000_marketing_campaign_worker_cron_v1.sql'
       - 'supabase/migrations/20261005024000_marketing_campaign_execution_controls_v1.sql'
+      - 'supabase/migrations/20261019130000_marketing_repurchase_monthly_cadence_v1.sql'
+      - 'supabase/migrations/20261019140000_marketing_repurchase_dispatch_v1.sql'
+      - 'supabase/functions/whatsapp-repurchase-worker-v1/**'
       - 'supabase/sql/20261006_marketing_security_hardening_v1.sql'
       - 'scripts/test-attendance-*.mjs'
       - 'scripts/test-whatsapp-ana-*.mjs'
@@ -63,6 +67,9 @@ on:
       - 'scripts/test-whatsapp-meta-*.mjs'
       - 'scripts/test-whatsapp-marketing-*.mjs'
       - 'scripts/test-marketing-security-hardening-v1.mjs'
+      - 'scripts/test-marketing-repurchase-monthly-cadence-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-repurchase-worker-v1.mjs'
+      - 'scripts/test-admin-order-delivery-comms-v1.mjs'
       - 'scripts/test-admin-marketing-*.mjs'
       - '.github/workflows/whatsapp-meta-central-ci.yml'
   workflow_dispatch:
@@ -87,6 +94,10 @@ jobs:
       - {name: Marketing Meta template admin UI contract, run: 'node scripts/test-whatsapp-marketing-template-admin-v1.mjs'}
       - {name: Marketing consent ledger contract, run: 'node scripts/test-whatsapp-marketing-consent-ledger-v1.mjs'}
       - {name: Marketing security hardening contract, run: 'node scripts/test-marketing-security-hardening-v1.mjs'}
+      - {name: Marketing monthly repurchase cadence contract, run: 'node scripts/test-marketing-repurchase-monthly-cadence-v1.mjs'}
+      - {name: Marketing repurchase Meta worker contract, run: 'node scripts/test-whatsapp-marketing-repurchase-worker-v1.mjs'}
+      - {name: Marketing repurchase worker TypeScript syntax, run: 'node --experimental-strip-types --check supabase/functions/whatsapp-repurchase-worker-v1/index.ts'}
+      - {name: Post-delivery experience follow-up contract, run: 'node scripts/test-admin-order-delivery-comms-v1.mjs'}
       - {name: Marketing audience preview contract, run: 'node scripts/test-whatsapp-marketing-audience-preview-v1.mjs'}
       - {name: Marketing audience shared core contract, run: 'node scripts/test-whatsapp-marketing-audience-core-v2.mjs'}
       - {name: Marketing campaign drafts contract, run: 'node scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'}

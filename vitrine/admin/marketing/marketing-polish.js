@@ -1,11 +1,10 @@
 const ROOT_SELECTOR='#content';
-const PRIMARY_MARKETING_VIEWS=['overview','strategy','templates','campaigns','audiences'];
-const PRIMARY_MARKETING_LABELS={overview:'Visão geral',strategy:'Estratégia',templates:'Templates',campaigns:'Campanhas',audiences:'Públicos'};
+const PRIMARY_MARKETING_VIEWS=['overview','post_sale','repurchase','campaigns'];
+const PRIMARY_MARKETING_LABELS={overview:'Visão geral',post_sale:'Pós-venda',repurchase:'Reposição mensal',campaigns:'Campanhas'};
 const OVERVIEW_CARDS=[
-  {key:'campaigns',label:'Campanhas',description:'Crie, agende e acompanhe campanhas do WhatsApp.'},
-  {key:'templates',label:'Templates',description:'Gerencie os modelos aprovados usados nos envios.'},
-  {key:'customers',label:'Clientes',description:'Acesse a base de clientes usada nos públicos.'},
-  {key:'deliveries',label:'Entregas',description:'Acompanhe os pedidos que estão em rota de entrega.'}
+  {key:'post_sale',label:'Pós-venda',description:'Revise pedidos entregues e acompanhe retornos.'},
+  {key:'repurchase',label:'Reposição mensal',description:'Prepare ações para clientes que compram cesta todo mês.'},
+  {key:'campaigns',label:'Campanhas',description:'Crie, revise e acompanhe campanhas do WhatsApp.'}
 ];
 const ADVANCED_FILTERS=['brand','category','product_ids','last_purchase_after','last_purchase_before','inactive_days','min_order_count','max_order_count','min_lifetime_value','max_lifetime_value'];
 let scheduled=false;
@@ -27,7 +26,7 @@ function marketingRoot(){
 function setText(node,value){if(node&&text(node)!==value)node.textContent=value}
 
 function activeView(root){
-  return root.querySelector('[data-marketing-subnav] [data-marketing-view].active')?.dataset?.marketingView||'overview';
+  return root.querySelector('[data-marketing-subnav] > [data-marketing-view].active')?.dataset?.marketingView||'overview';
 }
 
 function loadConsentModule(){
@@ -48,15 +47,19 @@ function loadRecentCampaignModule(){
   return recentCampaignModulePromise;
 }
 
-function ensureAdminConsentsAction(root,nav){
-  let more=nav.querySelector('[data-marketing-admin-more]');
+function ensureAdminMoreMenu(root,nav){
+  let more=nav.querySelector('[data-marketing-more-menu]');
   if(!more){
     more=document.createElement('details');
     more.className='marketing-admin-more';
-    more.dataset.marketingAdminMore='1';
-    more.innerHTML='<summary>Mais</summary><button type="button" data-marketing-admin-consents>Consentimentos</button>';
+    more.dataset.marketingMoreMenu='1';
+    more.innerHTML='<summary>Mais</summary><div class="marketing-admin-more-menu"><button type="button" data-marketing-view="strategy">Estratégia</button><button type="button" data-marketing-view="templates">Templates</button><button type="button" data-marketing-view="audiences">Públicos</button><button type="button" data-marketing-admin-consents>Consentimentos</button></div>';
     const gate=nav.querySelector('.marketing-campaign-gate');
     if(gate)nav.insertBefore(more,gate);else nav.appendChild(more);
+    more.querySelectorAll('[data-marketing-view]').forEach(button=>button.addEventListener('click',()=>{
+      more.open=false;
+      openOverviewView(root,button.dataset.marketingView);
+    }));
     more.querySelector('[data-marketing-admin-consents]')?.addEventListener('click',async()=>{
       try{
         const module=await loadConsentModule();
@@ -70,7 +73,7 @@ function ensureAdminConsentsAction(root,nav){
 function ensurePrimaryViewButtons(root,nav){
   const gate=nav.querySelector('.marketing-campaign-gate');
   for(const view of PRIMARY_MARKETING_VIEWS){
-    if(nav.querySelector(`[data-marketing-view="${view}"]`))continue;
+    if(nav.querySelector(`:scope > [data-marketing-view="${view}"]`))continue;
     const button=document.createElement('button');
     button.type='button';
     button.dataset.marketingView=view;
@@ -84,25 +87,24 @@ function polishNav(root){
   const nav=root.querySelector('[data-marketing-subnav]');
   if(!nav)return;
   ensurePrimaryViewButtons(root,nav);
-  nav.querySelectorAll('[data-marketing-view]').forEach(button=>{
+  ensureAdminMoreMenu(root,nav);
+  nav.querySelectorAll(':scope > [data-marketing-view]').forEach(button=>{
     const view=String(button.dataset.marketingView||'');
     if(!PRIMARY_MARKETING_VIEWS.includes(view)){button.remove();return}
     setText(button,PRIMARY_MARKETING_LABELS[view]);
     if(button.classList.contains('active')){if(button.getAttribute('aria-current')!=='page')button.setAttribute('aria-current','page')}else if(button.hasAttribute('aria-current'))button.removeAttribute('aria-current');
   });
-  ensureAdminConsentsAction(root,nav);
+  removeDuplicateGateBadges(root);
   const gate=nav.querySelector('.marketing-campaign-gate');
-  const more=nav.querySelector('[data-marketing-admin-more]');
-  const buttons=PRIMARY_MARKETING_VIEWS.map(view=>nav.querySelector(`[data-marketing-view="${view}"]`)).filter(Boolean);
+  const more=nav.querySelector('[data-marketing-more-menu]');
+  const buttons=PRIMARY_MARKETING_VIEWS.map(view=>nav.querySelector(`:scope > [data-marketing-view="${view}"]`)).filter(Boolean);
   const anchor=more||gate||null;
   const children=[...nav.children];
   const anchorIndex=anchor?children.indexOf(anchor):children.length;
   const startIndex=anchorIndex-buttons.length;
   const navAlreadyOrdered=startIndex>=0&&buttons.every((button,index)=>children[startIndex+index]===button);
-  if(!navAlreadyOrdered){
-    for(const button of buttons)nav.insertBefore(button,anchor);
-  }
-  setText(gate,'Envios desativados');
+  if(!navAlreadyOrdered){for(const button of buttons)nav.insertBefore(button,anchor)}
+  setText(gate,'Campanhas pausadas');
 }
 
 function removeDuplicateMarketingHeads(root){
@@ -120,6 +122,8 @@ function removeDuplicateGateBadges(root){
 async function openOverviewView(root,view,{create=false}={}){
   try{
     if(view==='overview')return document.querySelector('[data-tab="marketing"]')?.click();
+    if(view==='post_sale')return document.querySelector('[data-tab="orders"]')?.click();
+    if(view==='repurchase')view='strategy';
     if(view==='strategy'){
       const module=window.DAMarketingStrategyCenter||await import('/vitrine/admin/marketing/strategy-center.js?v=marketing-strategy-v1');
       return module?.mountStrategyView?.(root);
@@ -185,12 +189,11 @@ async function loadOverviewRecentCampaigns(root,dashboard){
 function bindOverviewDashboard(root,dashboard){
   const open=view=>openOverviewView(root,view);
   dashboard.querySelector('[data-overview-new-campaign]')?.addEventListener('click',()=>open('campaigns'));
-  dashboard.querySelector('[data-overview-new-template]')?.addEventListener('click',()=>openOverviewView(root,'templates',{create:true}));
+  
   dashboard.querySelector('[data-overview-recent-campaigns]')?.addEventListener('click',()=>open('campaigns'));
+  dashboard.querySelector('[data-marketing-overview-card="post_sale"]')?.addEventListener('click',()=>document.querySelector('[data-tab="orders"]')?.click());
+  dashboard.querySelector('[data-marketing-overview-card="repurchase"]')?.addEventListener('click',()=>openOverviewView(root,'repurchase'));
   dashboard.querySelector('[data-marketing-overview-card="campaigns"]')?.addEventListener('click',()=>open('campaigns'));
-  dashboard.querySelector('[data-marketing-overview-card="templates"]')?.addEventListener('click',()=>open('templates'));
-  dashboard.querySelector('[data-marketing-overview-card="customers"]')?.addEventListener('click',()=>document.querySelector('[data-tab="customers"]')?.click());
-  dashboard.querySelector('[data-marketing-overview-card="deliveries"]')?.addEventListener('click',()=>document.querySelector('[data-tab="orders"]')?.click());
 }
 
 function ensureOverviewDashboard(root){

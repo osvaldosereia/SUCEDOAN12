@@ -39,4 +39,21 @@ assert.match(css,/box-shadow:/,'cartões devem ter profundidade visual sutil');
 assert.match(css,/max-width:\s*1480px/,'Marketing deve usar largura profissional consistente');
 assert.match(css,/@media\(max-width:760px\)/,'layout deve ter tratamento mobile');
 
+
+
+const cardStart=js.indexOf('const OVERVIEW_CARDS=[');
+const cardEnd=js.indexOf('];',cardStart);
+const overviewCards=js.slice(cardStart,cardEnd);
+for(const action of ['post_sale','repurchase','campaigns'])assert.ok(overviewCards.includes(`key:'${action}'`),`painel inicial deve priorizar ${action}`);
+assert.ok(js.includes('data-marketing-overview-card="post_sale"'),'Pós-venda deve aparecer no painel');
+assert.ok(js.includes('data-marketing-overview-card="repurchase"'),'Reposição mensal deve aparecer no painel');
+assert.ok(js.includes("document.querySelector('[data-tab=\"orders\"]')"),'Pós-venda deve abrir pedidos e entregas');
+assert.ok(js.includes("openOverviewView(root,'repurchase')"),'Reposição mensal deve abrir a estratégia existente');
+assert.ok(js.includes("openOverviewView(root,'campaigns')"),'Campanhas deve abrir a área de campanhas');
+assert.ok(js.includes('Campanhas pausadas'),'o painel deve informar claramente que os envios ainda estão pausados');
+
+assert.ok(js.includes("['overview','post_sale','repurchase','campaigns']"),'navegação principal deve ter quatro fluxos simples');
+assert.ok(js.includes('data-marketing-more-menu'),'funções administrativas secundárias devem ficar em Mais');
+assert.ok(js.includes('data-marketing-view="templates"'),'templates devem continuar acessíveis em Mais');
+assert.ok(js.includes('data-marketing-view="audiences"'),'públicos devem continuar acessíveis em Mais');
 console.log('marketing professional UI contract: ok');

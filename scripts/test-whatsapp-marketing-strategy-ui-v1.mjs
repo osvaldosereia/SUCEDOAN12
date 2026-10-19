@@ -10,8 +10,9 @@ const source=fs.readFileSync(jsPath,'utf8');
 const css=fs.readFileSync(cssPath,'utf8');
 const polish=fs.readFileSync(polishPath,'utf8');
 
-assert.match(polish,/PRIMARY_MARKETING_VIEWS=\[[^\]]*'overview'[^\]]*'strategy'[^\]]*'templates'[^\]]*'campaigns'[^\]]*'audiences'/,'Estratégia deve ficar entre Visão geral e Templates');
-assert.match(polish,/strategy:'Estratégia'/,'nav deve usar o rótulo Estratégia');
+assert.match(polish,/PRIMARY_MARKETING_VIEWS=\['overview','post_sale','repurchase','campaigns'\]/,'abas principais devem priorizar os fluxos operacionais');
+assert.match(polish,/data-marketing-view="strategy">Estratégia/,'Estratégia deve ficar acessível no menu Mais');
+assert.match(polish,/data-marketing-view="strategy">Estratégia/,'menu secundário deve usar o rótulo Estratégia');
 assert.match(polish,/view==='strategy'[\s\S]{0,500}strategy-center\.js/,'Estratégia deve carregar módulo lazy ao abrir a aba');
 assert.doesNotMatch(polish,/import\s+[^;]*strategy-center\.js/,'strategy-center não deve ser import estático no shell');
 
