@@ -43,7 +43,7 @@ function normalizeEditor(e){
     conditional_hidden_product_id:e?.conditional_hidden_product_id||cp?.product_id||'',
     conditional_hidden_adjustment:Number(e?.conditional_hidden_adjustment||0),
     conditional_hidden_product:cp?{product_id:cp.product_id||cp.id,name:cp.name||'Produto',sku:cp.sku||'',gtin:cp.gtin||'',image_url:cp.image_url||'',packaging:cp.packaging||''}:null,
-    public_composition_count:1,
+    public_composition_count:Math.min(6,Math.max(1,Number(e?.public_composition_count||1))),
     positions:(Array.isArray(e?.positions)?e.positions:[]).map(p=>({
       position_id:p.position_id||null,label:p.label||'',quantity:Number(p.quantity||1),
       options:(Array.isArray(p.options)?p.options:[]).map(o=>({product_id:o.product_id||o.id,name:o.name||'Produto',sku:o.sku||'',gtin:o.gtin||'',image_url:o.image_url||'',loose_sellable_stock:Number(o.loose_sellable_stock||0),metadata:o.metadata&&typeof o.metadata==='object'?{...o.metadata}:{},preferred:o.metadata?.preferred===true}))
@@ -182,12 +182,12 @@ async function save(){
   if(!activePositions.length)return toast('Informe pelo menos um item com quantidade maior que zero.');
   for(const p of d.positions)if(!Number.isFinite(Number(p.quantity))||Number(p.quantity)<0||Number(p.quantity)>999)return toast('Use quantidades entre zero e 999.');
   for(const p of activePositions)if(!state.catalog.find(x=>x.label===p.label)?.options?.length)return toast('Configure ao menos uma marca para '+p.label+' na aba Produtos e marcas.');
-  d.public_composition_count=1;
+  d.public_composition_count=Math.min(6,Math.max(1,Number(d.public_composition_count||1)));
   if(d.conditional_hidden_enabled&&!d.conditional_hidden_product_id)return toast('Escolha o produto que ativa o acréscimo oculto.');
   if(d.conditional_hidden_enabled&&(!Number.isFinite(Number(d.conditional_hidden_adjustment))||Number(d.conditional_hidden_adjustment)<=0))return toast('Informe um valor maior que zero para o acréscimo oculto por produto.');
   state.busy=true;render();
   try{
-    await call('save',{basket_id:d.basket_id,category_id:d.category_id,subcategory_id:d.subcategory_id,name:d.name,hidden_adjustment:Number(d.hidden_adjustment||0),conditional_hidden_enabled:d.conditional_hidden_enabled===true,conditional_hidden_product_id:d.conditional_hidden_product_id||null,conditional_hidden_adjustment:Number(d.conditional_hidden_adjustment||0),public_composition_count:1,positions:activePositions.map(p=>({label:p.label,quantity:Number(p.quantity),options:(state.catalog.find(x=>x.label===p.label)?.options||[]).map(o=>({product_id:o.product_id,metadata:{}}))})),operator:operator()});
+    await call('save',{basket_id:d.basket_id,category_id:d.category_id,subcategory_id:d.subcategory_id,name:d.name,hidden_adjustment:Number(d.hidden_adjustment||0),conditional_hidden_enabled:d.conditional_hidden_enabled===true,conditional_hidden_product_id:d.conditional_hidden_product_id||null,conditional_hidden_adjustment:Number(d.conditional_hidden_adjustment||0),public_composition_count:d.public_composition_count,positions:activePositions.map(p=>({label:p.label,quantity:Number(p.quantity),options:(state.catalog.find(x=>x.label===p.label)?.options||[]).map(o=>({product_id:o.product_id,metadata:{}}))})),operator:operator()});
     const id=d.basket_id;await loadList();await openBasket(id);toast('Molde salvo.');
   }catch(e){toast(e.message)}finally{state.busy=false;render()}
 }
