@@ -60,7 +60,7 @@ assert.match(backend,/channel_or_account_required/);
 assert.match(backend,/\.eq\("slug","dona-antonia-"\+channel\)/,'backend only accepts the two official channels');
 assert.match(backend,/const auth=await adminAuth\(req\)/,'all list and sync reads remain authenticated');
 assert.match(bootstrap,/meta-template-stable-v1/,'force new stable template module');
-assert.match(bootstrap,/marketing-campaign-stable-v1/,'force new stable campaign module');
+assert.match(bootstrap,/marketing-campaign-entry-v2/,'force new stable campaign module');
 assert.match(admin,/basket-lot-image\.js\?v=marketing-stable-20261012/,'force browser to load fixed marketing');
 for(const route of ['overview','strategy','templates','campaigns','audiences'])
  assert.match(polish,new RegExp(route),'retain '+route+' navigation');
