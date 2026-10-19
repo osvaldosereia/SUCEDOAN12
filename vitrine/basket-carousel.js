@@ -48,22 +48,21 @@
   window.DAMarketingTracking={get tracking_token(){return trackingToken},syncMarketingContext};
 })();
 
-const SIZE_CARD_PHOTOS=Object.freeze({
-  grande:'/site/img/CESTA-GRANDE-KOBLENZ.webp',
-  media:'/site/img/CESTA-MEDIA-BONINI.webp',
-  pequena:'/site/img/CESTA-PEQUENA-BONINI.webp',
-  mini:'/site/img/CESTA-MINI-KOBLENZ.webp',
-  economica:'/img/cesta-basica-cuiaba-varzea-grande-economica.avif'
-});
-
 window.BasketCarousel={
   card(b,esc,money,basketName,index=99){
+    const sizePhotos={
+      grande:'/site/img/CESTA-GRANDE-KOBLENZ.webp',
+      media:'/site/img/CESTA-MEDIA-BONINI.webp',
+      pequena:'/site/img/CESTA-PEQUENA-BONINI.webp',
+      mini:'/site/img/CESTA-MINI-KOBLENZ.webp',
+      economica:'/img/cesta-basica-cuiaba-varzea-grande-economica.avif'
+    };
     const name=basketName(b.name),key=String(b.card_key||b.id);
     const sizeCard=b.size_card===true;
     const sizeClass=sizeCard?' basket-size-card basket-size-'+esc(b.size_key||''):'';
     const itemCount=Math.max(0,Math.floor(Number(b.total_item_count)||0));
     const itemSummary=sizeCard?'<div class="basket-card-item-total">'+itemCount+' itens</div>':'';
-    const imagePath=sizeCard?SIZE_CARD_PHOTOS[String(b.size_key||'').toLocaleLowerCase('pt-BR')]||'':'';
+    const imagePath=sizeCard?sizePhotos[String(b.size_key||'').toLocaleLowerCase('pt-BR')]||'':'';
     const imageAttrs=index===0?'src="'+esc(imagePath)+'" loading="eager" fetchpriority="high"':'data-basket-src="'+esc(imagePath)+'" loading="lazy"';
     const image=imagePath?'<div class="basket-size-card-photo"><img '+imageAttrs+' decoding="async" alt="Cesta '+esc(name)+'"></div>':'';
     const actionLabel=sizeCard?'Ver produtos':'Personalizar';
