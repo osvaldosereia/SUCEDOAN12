@@ -106,11 +106,47 @@ async function campaignDetail(campaignId:string){
   return {status:rpcStatus(data),data};
 }
 
+function maskPhone(value:unknown){
+  const digits=String(value??"").replace(/\D/g,"");
+  return digits.length<4?"—":"••••••"+digits.slice(-4);
+}
+async function snapshotRecipients(snapshotId:string,limit:number,offset:number){
+  const snapshot=await db.from("marketing_campaign_snapshots_v1").select("id,eligible_count").eq("id",snapshotId).maybeSingle();
+  if(snapshot.error)throw snapshot.error;
+  if(!snapshot.data)return {status:404,data:{ok:false,error:"snapshot_not_found"}};
+  const result=await db.from("marketing_campaign_snapshot_recipients_v1")
+    .select("customer_id,phone_e164,eligible_at_snapshot")
+    .eq("snapshot_id",snapshotId).eq("eligible_at_snapshot",true)
+    .order("customer_id",{ascending:true}).range(offset,offset+limit-1);
+  if(result.error)throw result.error;
+  const rows=result.data||[],ids=rows.map((row:any)=>row.customer_id).filter(Boolean);
+  const customers=ids.length?await db.from("customers").select("id,name").in("id",ids):{data:[],error:null};
+  if(customers.error)throw customers.error;
+  const names=new Map((customers.data||[]).map((row:any)=>[String(row.id),String(row.name||"Cliente")]));
+  return {status:200,data:{ok:true,snapshot_id:snapshotId,found_count:Number(snapshot.data.eligible_count||0),limit,offset,items:rows.map((row:any)=>({customer_id:row.customer_id,name:names.get(String(row.customer_id))||"Cliente",masked_phone:maskPhone(row.phone_e164)}))}};
+}
+
 async function executionStatus(campaignId:string){
   const result=await db.rpc("marketing_campaign_execution_status_v1",{p_campaign_id:campaignId});
   if(result.error)throw result.error;
   const data=result.data||{ok:false,error:"campaign_not_found"};
   return {status:rpcStatus(data),data};
+}
+
+async function runtimeStatus(){
+  const accounts=await db.from("whatsapp_accounts").select("id,phone_e164,is_active").eq("is_active",true);
+  if(accounts.error)throw accounts.error;
+  const official=(accounts.data||[]).map((row:any)=>({id:String(row.id),channel:channelByPhone(row.phone_e164)})).filter((row:any)=>row.channel);
+  const ids=official.map((row:any)=>row.id);
+  if(!ids.length)return {ok:true,items:[]};
+  const [channels,executions]=await Promise.all([
+    db.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,campaigns_enabled,send_enabled,outbound_provider").in("whatsapp_account_id",ids),
+    db.from("marketing_campaign_execution_runtime_v1").select("whatsapp_account_id,mode").in("whatsapp_account_id",ids),
+  ]);
+  if(channels.error)throw channels.error;if(executions.error)throw executions.error;
+  const channelMap=new Map((channels.data||[]).map((row:any)=>[String(row.whatsapp_account_id),row]));
+  const modeMap=new Map((executions.data||[]).map((row:any)=>[String(row.whatsapp_account_id),String(row.mode||"off")]));
+  return {ok:true,items:official.map((account:any)=>{const row=channelMap.get(account.id)||{};const mode=modeMap.get(account.id)||"off";return {channel:account.channel,mode,campaigns_enabled:row.campaigns_enabled===true,send_enabled:row.send_enabled===true,outbound_provider:row.outbound_provider||null}})};
 }
 
 async function options(accountId:string){
@@ -226,6 +262,8 @@ Deno.serve(async(req:Request)=>{
       if(action==="detail"){const id=validUuid(url.searchParams.get("campaign_id"));if(!id)return json(req,{ok:false,error:"invalid_campaign_id"},400);const result=await campaignDetail(id);return json(req,result.data,result.status)}
       if(action==="options"){const id=validUuid(url.searchParams.get("whatsapp_account_id"));if(!id)return json(req,{ok:false,error:"invalid_account_id"},400);const result=await options(id);return json(req,result.data,result.status)}
       if(action==="execution_status"){const id=validUuid(url.searchParams.get("campaign_id"));if(!id)return json(req,{ok:false,error:"invalid_campaign_id"},400);const result=await executionStatus(id);return json(req,result.data,result.status)}
+      if(action==="snapshot_recipients"){const id=validUuid(url.searchParams.get("snapshot_id")),limit=Number(url.searchParams.get("limit")||50),offset=Number(url.searchParams.get("offset")||0);if(!id||!Number.isInteger(limit)||limit<1||limit>100||!Number.isInteger(offset)||offset<0)return json(req,{ok:false,error:"invalid_pagination"},400);const result=await snapshotRecipients(id,limit,offset);return json(req,result.data,result.status)}
+      if(action==="runtime_status")return json(req,await runtimeStatus());
       return json(req,{ok:false,error:"action_not_allowed"},404);
     }
     const parsed=await readJsonBody(req);if(!parsed.ok)return json(req,{ok:false,error:parsed.error},parsed.error==="payload_too_large"?413:400);
@@ -247,3 +285,4 @@ Deno.serve(async(req:Request)=>{
     return json(req,{ok:false,error:"internal_error"},500);
   }
 });
+
