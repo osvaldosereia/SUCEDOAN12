@@ -1339,9 +1339,11 @@ async function ordersList(options:any={}){
     const q=search.replace(/ +/g,"%");
     query=query.or("order_number.ilike.%"+q+"%,phone_e164.ilike.%"+q+"%,customer_snapshot->>name.ilike.%"+q+"%,delivery_address->>street.ilike.%"+q+"%,delivery_address->>district.ilike.%"+q+"%");
   }
-  const page=await query.order("created_at",{ascending:false}).range(offset,offset+limit-1);
+  const [page,counts]=await Promise.all([
+    query.order("created_at",{ascending:false}).range(offset,offset+limit-1),
+    offset===0?orderBoardCounts():Promise.resolve(null)
+  ]);
   if(page.error)throw page.error;
-  const counts=offset===0?await orderBoardCounts():null;
   return {orders:await mapOrders(page.data||[]),total:Number(page.count||0),has_more:offset+(page.data||[]).length<Number(page.count||0),counts};
 }
 async function orderDetailCanonical(orderId:any){
