@@ -17,15 +17,7 @@ const deferred=()=>{let resolve;const promise=new Promise(ok=>resolve=ok);return
  const closed=openOrder('closed');editor.close();pending.get('closed').resolve({order:{id:'closed',status:'created'}});await closed;
  assert.equal(state.currentOrder.order.id,'second');assert.equal(paints,1);
 }
-{
- const host={innerHTML:'',querySelectorAll:()=>[]},state={tab:'customers',customers:[]},pending=new Map();
- const api=(_,{q})=>{const d=deferred();pending.set(q,d);return d.promise};
- const loadCustomers=new Function('state','customerApi','$','customerRow',part('  let customersLoadGeneration=0;','  function customerRow')+';return loadCustomers')(state,api,x=>x==='#customerRows'?host:null,x=>x.name);
- const one=loadCustomers('older'),two=loadCustomers('newer');
- pending.get('newer').resolve({customers:[{name:'newer'}]});await two;
- pending.get('older').resolve({customers:[{name:'older'}]});await one;
- assert.equal(state.customers[0].name,'newer');assert.equal(host.innerHTML,'newer');
-}
+// Customer list and modal races are now exercised via the public controller factory.
 {
  const host={innerHTML:''},state={tab:'purchases',purchaseFilter:{period:'this_month'},purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false};
  const waits=[],paint=[];const api=action=>{if(action==='bling_received_review_status')return Promise.resolve({ok:true});assert.equal(action,'summary');const d=deferred();waits.push(d);return d.promise};

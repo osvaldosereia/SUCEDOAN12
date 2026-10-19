@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const admin=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
+const customerSource=fs.readFileSync('vitrine/admin/customers/controller.js','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 function section(source,begin,end){
   const start=source.indexOf(begin);
@@ -11,9 +12,9 @@ function section(source,begin,end){
   return source.slice(start,stop);
 }
 const manual=section(admin,'  async function createManualSale(){','\n  const ORDER_SEPARATORS=');
-const customer=section(admin,'  async function saveCustomer(','\n\n  function manualSaleTotalCents');
+const customer=section(customerSource,'  async function saveCustomer(','\n    return Object.freeze(');
 const editOrder=section(admin,'  async function saveOrderV3(){','\n  function paintOrderDetail');
-const customerForm=section(admin,'  function openCustomerEditor(','\n  async function deleteCustomer(');
+const customerForm=section(customerSource,'  function openCustomerEditor(','\n  async function deleteCustomer(');
 const backendUpdate=section(backend,'async function updateOrderCanonical(','\nasync function ');
 const backendManual=section(backend,'async function createManualWhatsappOrder(','\nasync function ');
 for(const key of ['display_name','phone','cpf','email','birthday_day','birthday_month','postal_code','street','number','district','complement','city','state','raw_text']){

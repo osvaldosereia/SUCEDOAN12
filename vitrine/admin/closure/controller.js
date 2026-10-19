@@ -1,7 +1,7 @@
 // Closure owns its fetched rows and render lifecycle; fiscal reads use a shared port.
 (function(global){
   function create({api,orders,navigation,ui,formatters,orderView,openOrder}){
-    const {$,document,CSS,confirm,toast}={...ui,$:ui.query};
+    const {query:$,document,CSS,confirm,toast}=ui;
     const {esc,money,dateTime,errorMessage}=formatters;
     const {orderDisplayCode,actualPaymentText,fiscalBlockReasonLabel}=orderView;
     const {loadFiscal:loadFiscalForOrders}=orders;

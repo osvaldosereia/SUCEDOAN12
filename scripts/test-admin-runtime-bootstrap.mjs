@@ -14,7 +14,7 @@ const location={search:'?montar=1',pathname:'/vitrine/admin/',hash:'',replace:ur
 const sandbox={
   window:{addEventListener(){},matchMedia:()=>({matches:false})},
   document:{querySelector:selector=>nodes.get(selector)||null,querySelectorAll:()=>[],addEventListener(){},createElement:()=>({dataset:{}}),head:{appendChild(){}}},
-  CSS:{escape:String},confirm:()=>assert.fail('unexpected confirmation during bootstrap'),prompt:()=>assert.fail('unexpected prompt during bootstrap'),location,history:{replaceState(){}},URL,URLSearchParams,console:{...console,warn:()=>{}},setTimeout,clearTimeout,setInterval:()=>1,clearInterval(){},
+  FormData,CSS:{escape:String},confirm:()=>assert.fail('unexpected confirmation during bootstrap'),prompt:()=>assert.fail('unexpected prompt during bootstrap'),location,history:{replaceState(){}},URL,URLSearchParams,console:{...console,warn:()=>{}},setTimeout,clearTimeout,setInterval:()=>1,clearInterval(){},
   fetch:()=>{throw new Error('bootstrap must not make external requests in this fixture')}
 };
 vm.createContext(sandbox);

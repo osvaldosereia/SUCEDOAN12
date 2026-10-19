@@ -11,6 +11,9 @@ on:
       - 'vitrine/admin/core/**'
       - 'vitrine/admin/delivery/**'
       - 'vitrine/admin/closure/**'
+      - 'vitrine/admin/customers/**'
+      - 'scripts/helpers/admin-dom-fixture.mjs'
+      - 'scripts/test-admin-customer-controller.mjs'
       - 'scripts/test-admin-closure-controller.mjs'
       - 'scripts/helpers/admin-delivery-fixture.mjs'
       - 'scripts/test-admin-delivery-controller.mjs'
@@ -51,6 +54,7 @@ jobs:
       - run: node scripts/test-admin-expedition-stale-refresh.mjs
       - run: node scripts/test-admin-delivery-controller.mjs
       - run: node scripts/test-admin-closure-controller.mjs
+      - run: node scripts/test-admin-customer-controller.mjs
       - run: node scripts/test-admin-delivery-model.mjs
       - run: node scripts/test-admin-order-fiscal-loader.mjs
       - run: node scripts/test-admin-controller-contracts.mjs

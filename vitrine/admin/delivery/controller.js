@@ -2,7 +2,7 @@
 // Shared order data is accessed only through the explicit ports supplied at composition.
 (function(global){
   function create({api,orders,detail,navigation,ui,formatters,orderView}){
-  const {$,document,window,confirm,prompt,toast,currentOperator,requireOperator}={...ui,$:ui.query};
+  const {query:$,document,window,confirm,prompt,toast,currentOperator,requireOperator}=ui;
   const {esc,money,dateTime,normalize,formatPhone,errorMessage}=formatters;
   const {orderDisplayCode,relativeAge,statusPill,whatsappHref,mapsHrefFromAddress,orderSearchMatch,deliveredToday}=orderView;
   const {loadFiscal:loadCurrentOrderFiscal,paint:paintOrderDetail,refreshList:loadOrders,open:openOrder,openDanfe:openDanfeForOrder}=detail;
