@@ -1,0 +1,66 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const context={window:{}};vm.createContext(context);
+for(const file of ['session','fiscal-loader','fiscal-controller'])vm.runInContext(fs.readFileSync('vitrine/admin/orders/'+file+'.js','utf8'),context);
+const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject}};
+function fixture(api){
+ const revisions=new Map(),begin=id=>{const key=String(id),next=(revisions.get(key)||0)+1;revisions.set(key,next);return next},reads={begin,isCurrent(id,revision){return revisions.get(String(id))===revision},invalidate:begin};
+ const session=context.window.DonaAntoniaAdminOrderSession.create({isOpen:()=>true});
+ const show=id=>{session.begin(id);session.detail={order:{id,status:'ready'}};session.fiscal={can_issue:true}};show('a');
+ const cache={},paints=[],opened=[],messages=[];
+ const controller=context.window.DonaAntoniaAdminOrderFiscal.create({api,session,cache:()=>cache,reads,
+ ui:{query:()=>null,confirm:()=>true,toast:m=>messages.push(m),currentOperator:()=> 'Operação'},
+ formatters:{esc:String,dateTime:String,money:String,errorMessage:String},orderView:{orderDisplayCode:o=>o.id},
+ view:{paint:()=>paints.push(session.detail.order.id),open:id=>opened.push(id),refreshList:async()=>{},currentTab:()=> 'orders',renderClosure:()=>{},openDanfe:()=>{}}});
+ return {session,show,cache,paints,opened,messages,controller,reads};
+}
+{
+ const requests=[],f=fixture(()=>{const d=deferred();requests.push(d);return d.promise});
+ const loader=context.window.DonaAntoniaAdminFiscalLoader.create({api:()=>{const d=deferred();requests.push(d);return d.promise},getCache:()=>f.cache,reads:f.reads});
+ const batch=loader.load([{id:'a'}]);const detail=f.controller.loadCurrentOrderFiscal();
+ requests[0].resolve({stage:'blocked'});await batch;requests[1].resolve({stage:'authorized',authorized:true});await detail;
+ assert.equal(f.cache.a.stage,'authorized','older list response must not overwrite later detail read');
+ assert.equal(f.session.fiscal.stage,'authorized','newer detail response must remain the editor state');
+}
+{
+ const d=deferred(),calls=[];const f=fixture(async(action,params,options)=>{calls.push([action,JSON.parse(options.body)]);return d.promise});
+ const pending=f.controller.recheckCurrentOrderFiscal();f.show('b');d.resolve({fiscal:{stage:'authorized',authorized:true}});await pending;
+ assert.equal(f.session.fiscal.can_issue,true,'old reconciliation must not replace order B fiscal');
+ assert.equal(f.cache.a.authorized,true);assert.deepEqual(f.paints,['a']);
+}
+{
+ const waits=[];const f=fixture(()=>{const d=deferred();waits.push(d);return d.promise});
+ const first=f.controller.loadCurrentOrderFiscal(),last=f.controller.loadCurrentOrderFiscal();
+ waits[1].resolve({stage:'authorized'});await last;waits[0].resolve({stage:'blocked'});await first;
+ assert.equal(f.session.fiscal.stage,'authorized');assert.equal(f.cache.a.stage,'authorized');
+}
+{
+ const d=deferred(),calls=[];const f=fixture(async(action,params,options)=>{const payload=JSON.parse(options.body);calls.push([action,payload]);if(action==='order_fiscal_issue_v4')return d.promise;return {stage:'authorized',authorized:true}});
+ const first=f.controller.executeCurrentOrderFiscalCanary(),duplicate=f.controller.executeCurrentOrderFiscalCanary();
+ assert.equal(calls.length,1,'duplicate issue must not send another mutation');
+ f.show('b');d.resolve({fiscal:{stage:'authorized',authorized:true}});await Promise.all([first,duplicate]);
+ assert.equal(f.session.detail.order.id,'b');assert.equal(f.session.fiscal.can_issue,true);
+ assert.ok(calls.every(([,body])=>body.id==='a'),'refresh after issue must query original order');
+ assert.equal(calls[0][1].confirmation,'EMITIR_NFE');
+}
+{
+ const d=deferred();const f=fixture(async action=>action==='order_dispatch_start_v4'?d.promise:{});f.session.fiscal={authorized:true};
+ const pending=f.controller.startCurrentOrderDispatchV4();f.show('b');d.resolve({ok:true});await pending;
+ assert.deepEqual(f.opened,[],'old dispatch completion must not reopen its order over B');
+}
+{
+ const status=[],issue=deferred();const f=fixture(action=>{if(action==='order_fiscal_issue_v4')return issue.promise;const d=deferred();status.push(d);return d.promise});
+ const pending=f.controller.executeCurrentOrderFiscalCanary();issue.resolve({fiscal:{stage:'processing'}});
+ await new Promise(resolve=>setImmediate(resolve));
+ const latest=f.controller.loadCurrentOrderFiscal();status[1].resolve({authorized:true,stage:'authorized'});await latest;
+ status[0].resolve({stage:'blocked'});await pending;
+ assert.equal(f.session.fiscal.stage,'authorized','post-issue refresh must not overwrite a newer fiscal read');
+ assert.equal(f.cache.a.stage,'authorized');
+}
+{
+ const f=fixture(async()=>{throw Error('offline')});f.session.fiscal={authorized:true};
+ await f.controller.startCurrentOrderDispatchV4();
+ assert.deepEqual(f.paints,[],'failed dispatch must preserve unsaved editor fields');
+}
+console.log('Admin order fiscal isolation and duplicate mutations: PASS');

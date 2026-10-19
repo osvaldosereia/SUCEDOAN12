@@ -19,7 +19,7 @@ assert.match(history,/metrics=\{window_days:7/);
 
 const ui=fs.readFileSync('vitrine/admin/ana/ana-admin.js','utf8');
 assert.match(ui,/metrics:null/,'metrics must not load with initial ANA state');
-assert.match(ui,/async function loadHistory\(\).*state\.metrics=data\.metrics\|\|null/,'metrics must load only through admin_history');
+assert.match(ui,/async function loadHistory\(\)[\s\S]*?state\.metrics=data\.metrics\|\|null/,'metrics must load only through admin_history');
 assert.match(ui,/Carregadas somente quando você clicar em “Atualizar histórico”/);
 assert.match(ui,/Resumo operacional sem conteúdo de conversa ou identificação de cliente/);
 assert.match(ui,/Automações acionadas/);

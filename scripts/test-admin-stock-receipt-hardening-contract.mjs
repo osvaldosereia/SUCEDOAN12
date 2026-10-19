@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const edge=fs.readFileSync('supabase/functions/purchase-xml-v1/index.ts','utf8');
+const sql=fs.readFileSync('supabase/migrations/20261004035120_purchase_xml_fifo_lots_receipt_v1.sql','utf8');
+const admin=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
+const between=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j)};
+const activate=between(sql,'create or replace function public.activate_purchase_xml_inventory_lots_v1(','create or replace function public.purchase_xml_activate_inventory_lots_trigger_v1()');
+for(const p of [/purchase_xml_items/,/inventory_lot_id/,/local_product_stock_mutated',false/,/revoke all on function public.activate_purchase_xml_inventory_lots_v1/])assert.match(activate,p);
+const materialize=between(edge,'async function materializeReceiptLots(','async function ');
+assert.match(materialize,/activate_purchase_xml_inventory_lots_v1/);
+const balance=between(admin,'async function commitInventoryBalance(','async function stockRecountQueue(');
+assert.match(balance,/ops_apply_stock_recount_result_v1|bal\(\{product_id:pid,quantity,operator\}\)/);
+assert.match(balance,/setProductStockOfficial/);
+console.log('Stock XML receipt and inventory adjustment contract: PASS');

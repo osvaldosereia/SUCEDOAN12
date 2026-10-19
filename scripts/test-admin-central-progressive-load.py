@@ -1,10 +1,9 @@
 from pathlib import Path
 
-p=Path('vitrine/admin/index.html')
+p=Path('vitrine/admin/runtime-parts/01-central.part.js')
 s=p.read_text(encoding='utf-8')
 start=s.index('  async function renderToday(){')
-end=s.index('  function expeditionFiscalState(o){',start)
-block=s[start:end]
+block=s[start:]
 
 assert 'CENTRAL_LAZY_ON_DEMAND_V1' in block, 'Central precisa usar carregamento sob demanda por clique'
 assert 'data-central-shortcut="orders"' in block, 'Central deve manter atalho simples para Pedidos'

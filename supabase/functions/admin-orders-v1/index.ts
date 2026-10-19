@@ -310,6 +310,11 @@ async function finish(outboxId:string,status:"accepted"|"sent"|"retry"|"failed"|
   if(r.error||r.data?.ok!==true)throw new Error(`finish_failed: ${text(r.error?.message||r.data?.error)}`);
   return r.data;
 }
+// Non-blocking error-path persistence: preserve the response while surfacing DB failures.
+async function finishFailureSafely(outboxId:string,status:"retry"|"failed",reason:string,retrySeconds:number){
+  try{await finish(outboxId,status,null,reason,retrySeconds)}
+  catch(error){console.error("order_whatsapp_outbox_finish_failed",text((error as Error)?.message||error,180))}
+}
 async function markMetaUncertain(outboxId:string,item:any,providerPayload:JsonRecord,metaRequest:JsonRecord,providerMessageId:string|null,errorCode:string){
   const code=`meta_send_uncertain:${text(errorCode,180)||"unknown"}`;
   const updated=await db.from("ops2_whatsapp_outbox_v1").update({
@@ -323,7 +328,7 @@ async function markMetaUncertain(outboxId:string,item:any,providerPayload:JsonRe
 Deno.serve(async(req:Request)=>{
   if(!U||!K)return respond({ok:false,error:"server_config"},500);
   const internalKey=req.headers.get("x-internal-key")||"",serviceRole=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
-  if(internalKey!==K&&internalKey!==serviceRole)return respond({ok:false,error:"forbidden"},403);
+  if(internalKey!==K&&(!serviceRole||internalKey!==serviceRole))return respond({ok:false,error:"forbidden"},403);
   if(req.method==="GET")return respond({ok:true,service:"admin-orders-v1",...(await providerReadiness())});
   if(req.method!=="POST")return respond({ok:false,error:"method_not_allowed"},405);
 
@@ -346,13 +351,13 @@ Deno.serve(async(req:Request)=>{
   try{account=await metaAccountForItem(item,channel)}catch(error){
     const errorText=text((error as Error)?.message||error,300);
     const nextStatus=scope==="checkout_auto"?"retry":"failed";
-    try{await finish(outboxId,nextStatus,null,errorText,300)}catch{}
+    await finishFailureSafely(outboxId,nextStatus,errorText,300)
     return respond({ok:false,error:"meta_transport_not_configured",status:nextStatus,channel_origin:channel,outbox_id:outboxId},503);
   }
   if(!account){
     const errorText=`meta_transport_not_configured_${channel}`;
     const nextStatus=scope==="checkout_auto"?"retry":"failed";
-    try{await finish(outboxId,nextStatus,null,errorText,300)}catch{}
+    await finishFailureSafely(outboxId,nextStatus,errorText,300)
     return respond({ok:false,error:"meta_transport_not_configured",status:nextStatus,channel_origin:channel,recipient_kind:item.recipient_kind||null,outbox_id:outboxId},503);
   }
 
@@ -362,13 +367,13 @@ Deno.serve(async(req:Request)=>{
   }catch(error){
     const errorText=text((error as Error)?.message||error,300);
     const nextStatus=scope==="checkout_auto"?"retry":"failed";
-    try{await finish(outboxId,nextStatus,null,errorText,scope==="checkout_auto"?30:0)}catch{}
+    await finishFailureSafely(outboxId,nextStatus,errorText,scope==="checkout_auto"?30:0)
     return respond({ok:false,error:"order_details_unavailable",status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:422);
   }
   if(details.itemCount===0){
     const errorText="order_items_not_ready";
     const nextStatus=scope==="checkout_auto"?"retry":"failed";
-    try{await finish(outboxId,nextStatus,null,errorText,scope==="checkout_auto"?30:0)}catch{}
+    await finishFailureSafely(outboxId,nextStatus,errorText,scope==="checkout_auto"?30:0)
     return respond({ok:false,error:errorText,status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:422);
   }
 
@@ -381,7 +386,7 @@ Deno.serve(async(req:Request)=>{
   const publicOrderUrl=text(publicOrderLink?.public_url,300);
   if(!/^[A-Z]{2}[0-9]{3}$/.test(publicOrderCode)||!publicOrderUrl){
     const nextStatus=scope==="checkout_auto"?"retry":"failed";
-    try{await finish(outboxId,nextStatus,null,"public_order_identity_missing",scope==="checkout_auto"?30:0)}catch{}
+    await finishFailureSafely(outboxId,nextStatus,"public_order_identity_missing",scope==="checkout_auto"?30:0)
     return respond({ok:false,error:"public_order_identity_missing",status:nextStatus,outbox_id:outboxId,dispatch_scope:scope},scope==="checkout_auto"?503:409);
   }
 
@@ -554,7 +559,7 @@ Deno.serve(async(req:Request)=>{
     throw new Error("provider_attempt_loop_exhausted");
   }catch(error){
     const errorText=text((error as Error)?.message||error,300);
-    try{await finish(outboxId,"failed",null,`provider_internal_failure:${errorText}`,0)}catch{}
+    await finishFailureSafely(outboxId,"failed",`provider_internal_failure:${errorText}`,0)
     return respond({ok:false,error:"provider_internal_failure",status:"failed",outbox_id:outboxId,recipient_kind:item.recipient_kind,dispatch_scope:scope},500);
   }
 });

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const gateway=readFileSync(new URL('../supabase/functions/admin-products-live-v1/index.ts',import.meta.url),'utf8');
 const hub=readFileSync(new URL('../supabase/functions/admin-service-intelligence-v1/index.ts',import.meta.url),'utf8');
-const ui=readFileSync(new URL('../vitrine/admin/index.html',import.meta.url),'utf8');
+const ui=readFileSync(new URL('../vitrine/admin/index.html',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../vitrine/admin/admin-runtime.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../vitrine/admin/orders/fiscal-controller.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../vitrine/admin/orders/detail-view.js',import.meta.url),'utf8');
 
 for(const action of ['order_fiscal_recover_bling_v1','order_fiscal_recheck_v1']){
   assert.ok(gateway.includes(`a==="${action}"`),`route missing: ${action}`);

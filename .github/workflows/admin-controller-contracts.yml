@@ -3,6 +3,22 @@ on:
   pull_request:
     paths:
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/orders/contact-actions.js'
+      - 'vitrine/admin/orders/search.js'
+      - 'vitrine/admin/orders/sorting.js'
+      - 'vitrine/admin/orders/**'
+      - 'vitrine/admin/components/ops-attention.js'
+      - 'scripts/test-admin-operational-module-defenses.mjs'
+      - 'vitrine/admin/components/print-queue-panel.js'
+      - 'scripts/test-admin-contact-and-print-queue.mjs'
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'vitrine/admin/runtime-parts/06-baskets-products.part.js'
+      - 'scripts/test-admin-mobile-product-quick-save-race.mjs'
+      - 'supabase/functions/admin-orders-v1/index.ts'
+      - 'scripts/test-admin-orders-outbox-finish-contract.mjs'
+      - 'scripts/test-admin-async-races-and-partial-save.mjs'
+      - 'scripts/test-admin-gateway-action-contract.mjs'
+      - 'scripts/test-admin-delivery-sync-diagnostics.mjs'
       - 'scripts/test-admin-controller-contracts.mjs'
       - '.github/workflows/admin-controller-contracts.yml'
   workflow_dispatch:
@@ -18,6 +34,14 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/test-admin-controller-contracts.mjs
+      - run: node scripts/test-admin-async-races-and-partial-save.mjs
+      - run: node scripts/test-admin-delivery-sync-diagnostics.mjs
+      - run: node scripts/test-admin-gateway-action-contract.mjs
+      - run: node scripts/test-admin-mobile-product-quick-save-race.mjs
+      - run: node scripts/test-admin-orders-outbox-finish-contract.mjs
+      - run: node scripts/test-admin-whatsapp-phone-contract.mjs
+      - run: node scripts/test-admin-contact-and-print-queue.mjs
+      - run: node scripts/test-admin-operational-module-defenses.mjs
       - run: node scripts/test-admin-module-load-contract.mjs
       - run: node scripts/test-admin-orders-clean-flow-v3.mjs
       - run: node scripts/test-admin-orders-fiscal-flow-v4.mjs

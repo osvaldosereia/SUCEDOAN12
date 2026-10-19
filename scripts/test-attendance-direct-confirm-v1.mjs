@@ -6,7 +6,8 @@ const app=fs.readFileSync('vitrine/admin/atendimento/attendance-app.js','utf8');
 const page=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
 const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const atomicStockSql=fs.readFileSync('supabase/sql/admin_order_stock_transition_atomic_v1_DRAFT.sql','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 
 assert.match(app,/adminLink\('orders',\{pedido:order\.id\}\)/,'order cards deep-link with canonical pedido param');
 assert.match(app,/adminLink\('orders',\{pedido:current\.id\}\)/,'overview deep-links to same order');
@@ -24,7 +25,9 @@ assert.match(page,/attendance-app\.js\?v=attendance-direct-confirm-v1/,'fresh JS
 assert.match(page,/attendance\.css\?v=attendance-direct-confirm-v1/,'fresh CSS asset');
 assert.match(backend,/if\(!transitionAllowed\(cur,next\)\)/,'canonical server validates transitions');
 assert.match(backend,/order_operational_data_incomplete/,'canonical server validates delivery and payment');
-assert.match(backend,/reserve_vitrine_order_stock_v1/,'confirmation uses canonical stock reservation');
+assert.match(backend,/db\.rpc\("admin_order_stock_transition_atomic_v1"/,'confirmation delegates atomic status and stock transition to the SQL contract');
+assert.match(atomicStockSql,/v_stock:=public\.reserve_vitrine_order_stock_v1\(p_order_id\)/,'atomic confirmation reserves stock inside the transaction');
+assert.match(atomicStockSql,/p_expected_status in \('created','storefront_received'\) and p_next_status='confirmed'/,'atomic transition accepts the storefront compatibility status');
 
 const parsedApp=app.replace(/^import[^\n]*\n/gm,'');
 new vm.Script(parsedApp,{filename:'attendance-app.js'});

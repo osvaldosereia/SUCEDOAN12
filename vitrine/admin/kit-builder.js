@@ -411,7 +411,7 @@
       card.querySelector('[data-kit-inline-edit]')?.addEventListener('click',()=>card.classList.toggle('editing'));
       card.querySelector('[data-kit-inline-save]')?.addEventListener('click',async()=>{
         const button=card.querySelector('[data-kit-inline-save]');if(button)button.disabled=true;
-        try{await saveProductInline(p,{cost:card.querySelector('[data-kit-edit-cost]')?.value,price:card.querySelector('[data-kit-edit-price]')?.value,stock:card.querySelector('[data-kit-edit-stock]')?.value});renderWorkspace()}catch{}finally{if(button)button.disabled=false}
+        try{await saveProductInline(p,{cost:card.querySelector('[data-kit-edit-cost]')?.value,price:card.querySelector('[data-kit-edit-price]')?.value,stock:card.querySelector('[data-kit-edit-stock]')?.value});renderWorkspace()}catch(error){console.warn('kit_builder_edit_failed',String(error?.message||error))}finally{if(button)button.disabled=false}
       });
     });
 

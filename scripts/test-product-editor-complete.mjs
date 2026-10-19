@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const html=readFileSync(new URL('../vitrine/admin/index.html', import.meta.url),'utf8');
+const html=readFileSync(new URL('../vitrine/admin/runtime-parts/06-baskets-products.part.js', import.meta.url),'utf8');
 const edge=readFileSync(new URL('../supabase/functions/admin-products-live-v1/index.ts', import.meta.url),'utf8');
 
 const requiredEditorFields=[
@@ -24,7 +24,7 @@ assert.match(html,/fiscalDraft/,'editor deve montar rascunho fiscal separado');
 assert.match(html,/fiscalChanged/,'editor só deve enviar bloco fiscal quando houver alteração');
 assert.match(html,/fiscalOriginal/,'editor deve guardar a referência fiscal originalmente carregada');
 assert.match(html,/api\('product_stock_set'/,'estoque deve continuar pelo fluxo oficial do Bling');
-assert.match(html,/const limit=5;/,'listagem deve continuar leve, 5 produtos por vez');
+assert.match(html,/const limit=mobile\?6:5;/,'listagem deve manter cinco produtos no desktop e paginação móvel atual');
 
 assert.match(edge,/"product_detail"/,'backend precisa expor product_detail');
 assert.match(edge,/async function productDetail\(/,'backend precisa carregar detalhe completo sob demanda');

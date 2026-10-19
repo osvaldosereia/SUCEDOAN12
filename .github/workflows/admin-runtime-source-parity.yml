@@ -1,0 +1,76 @@
+name: Admin runtime source parity
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/admin-runtime.js'
+      - 'vitrine/admin/runtime-parts/**'
+      - 'scripts/build-admin-runtime.mjs'
+      - 'scripts/test-admin-runtime-bootstrap.mjs'
+      - 'scripts/audit-admin-module-load-graph.mjs'
+      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/core/**'
+      - 'vitrine/admin/delivery/**'
+      - 'vitrine/admin/closure/**'
+      - 'vitrine/admin/customers/**'
+      - 'vitrine/admin/products/**'
+      - 'scripts/helpers/admin-dom-fixture.mjs'
+      - 'scripts/test-admin-customer-controller.mjs'
+      - 'scripts/test-admin-closure-controller.mjs'
+      - 'scripts/helpers/admin-delivery-fixture.mjs'
+      - 'scripts/test-admin-delivery-controller.mjs'
+      - 'scripts/test-admin-delivery-model.mjs'
+      - 'scripts/test-admin-order-*.mjs'
+      - 'scripts/test-admin-mobile-product-quick-save-race.mjs'
+      - 'scripts/test-admin-product-list-view.mjs'
+      - 'vitrine/admin/orders/**'
+      - 'vitrine/admin/components/**'
+      - 'scripts/test-admin-separation-model.mjs'
+      - 'scripts/test-admin-customer-readiness-model.mjs'
+      - 'scripts/test-admin-order-payment-method-model.mjs'
+      - 'scripts/test-admin-expedition-stale-refresh.mjs'
+      - '.github/workflows/admin-runtime-source-parity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime-source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/build-admin-runtime.mjs --check
+      - run: node scripts/audit-admin-module-load-graph.mjs artifacts/admin-module-load-graph.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: admin-module-load-graph
+          path: artifacts/admin-module-load-graph.json
+          retention-days: 14
+      - run: node --check vitrine/admin/admin-runtime.js
+      - run: node scripts/test-admin-runtime-bootstrap.mjs
+      - run: node scripts/test-admin-module-load-contract.mjs
+      - run: node scripts/test-admin-separation-model.mjs
+      - run: node scripts/test-admin-customer-readiness-model.mjs
+      - run: node scripts/test-admin-order-payment-method-model.mjs
+      - run: node scripts/test-admin-expedition-stale-refresh.mjs
+      - run: node scripts/test-admin-delivery-controller.mjs
+      - run: node scripts/test-admin-closure-controller.mjs
+      - run: node scripts/test-admin-customer-controller.mjs
+      - run: node scripts/test-admin-delivery-model.mjs
+      - run: node scripts/test-admin-order-fiscal-loader.mjs
+      - run: node scripts/test-admin-order-session.mjs
+      - run: node scripts/test-admin-order-detail-controller.mjs
+      - run: node scripts/test-admin-order-fiscal-controller.mjs
+      - run: node scripts/test-admin-order-list-controller.mjs
+      - run: node scripts/test-admin-order-card-view.mjs
+      - run: node scripts/test-admin-order-separation-view.mjs
+      - run: node scripts/test-admin-order-list-view.mjs
+      - run: node scripts/test-admin-mobile-product-quick-save-race.mjs
+      - run: node scripts/test-admin-product-list-view.mjs
+      - run: node scripts/test-admin-order-documents.mjs
+      - run: node scripts/test-admin-controller-contracts.mjs
+      - run: node scripts/test-admin-async-races-and-partial-save.mjs
+      - run: node scripts/test-admin-order-action-buttons.mjs
+      - run: node scripts/test-admin-contact-and-print-queue.mjs

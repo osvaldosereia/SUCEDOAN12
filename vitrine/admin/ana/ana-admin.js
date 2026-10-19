@@ -192,7 +192,6 @@ function renderTests(){
   ${isOwner()?'<div class="ana-sticky-actions"><span>Publicar exige todos os testes obrigatórios da revisão atual aprovados.</span><button class="ana-button primary" data-action="publish" '+(!latestComplete?'disabled':'')+'>Publicar versão testada</button></div>':''}`;
 }
 function render(){if(!state.host)return;const content=state.section==='overview'?renderOverview():state.section==='behavior'?renderBehavior():state.section==='knowledge'?renderKnowledge():state.section==='triggers'?renderTriggers():renderTests();state.host.innerHTML=`<link rel="stylesheet" href="/vitrine/admin/ana/ana-admin.css?v=1"><div class="ana-shell"><nav class="ana-tabs" aria-label="Gestão da ANA">${sections.map(([key,label])=>`<button class="${state.section===key?'active':''}" data-section="${key}" aria-current="${state.section===key?'page':'false'}">${label}</button>`).join('')}</nav>${state.dirty?'<div class="ana-unsaved" role="status">Há alterações não salvas no rascunho.</div>':''}<div class="ana-body">${content}</div></div>`;bind()}
-function markDirty(){state.dirty=true;render()}
 function readDraft(){
   const next=structuredClone(config());
   state.host.querySelectorAll('[data-behavior]').forEach(el=>{next.behavior[el.dataset.behavior]=el.type==='checkbox'?el.checked:el.value});
@@ -218,8 +217,36 @@ function readDraft(){
   return next;
 }
 async function saveDraft(){const configuration=readDraft();const result=await api('admin_save_draft',{configuration,expected_revision:state.revision,note:'Rascunho ANA salvo'});state.draft={configuration,revision:result.revision};state.revision=result.revision;state.dirty=false;state.lastTest=null;await load(false);state.section='overview';render()}
-async function load(showLoading=true){if(showLoading)state.host.innerHTML='<div class="ana-loading">Carregando gestão da ANA…</div>';const data=await api('admin_load');state.role=data.role||'viewer';state.draft=data.draft||null;state.active=data.active||null;state.revision=Number(data.draft?.revision||0);state.channels=data.channels||[];state.labels=data.labels||[];state.versions=data.versions||[];state.testRuns=data.test_runs||[];state.events=data.events||[];state.dirty=false;render()}
-async function loadHistory(){const data=await api('admin_history');state.history=data.history||[];state.metrics=data.metrics||null;state.versions=data.versions||state.versions;state.testRuns=data.test_runs||state.testRuns;state.section='tests';render()}
+let anaLoadGeneration=0;
+async function load(showLoading=true){
+  const host=state.host,generation=++anaLoadGeneration;
+  if(showLoading)host.innerHTML='<div class="ana-loading">Carregando gestão da ANA…</div>';
+  const data=await api('admin_load');
+  if(generation!==anaLoadGeneration||state.host!==host)return;
+  state.role=data.role||'viewer';
+  state.draft=data.draft||null;
+  state.active=data.active||null;
+  state.revision=Number(data.draft?.revision||0);
+  state.channels=data.channels||[];
+  state.labels=data.labels||[];
+  state.versions=data.versions||[];
+  state.testRuns=data.test_runs||[];
+  state.events=data.events||[];
+  state.dirty=false;
+  render();
+}
+let anaHistoryGeneration=0;
+async function loadHistory(){
+  const host=state.host,section=state.section,generation=++anaHistoryGeneration;
+  const data=await api('admin_history');
+  if(generation!==anaHistoryGeneration||state.host!==host)return;
+  state.history=data.history||[];
+  state.metrics=data.metrics||null;
+  state.versions=data.versions||state.versions;
+  state.testRuns=data.test_runs||state.testRuns;
+  // Background completion must not move an operator away from another section.
+  if(state.section===section){state.section='tests';render()}
+}
 function applyKnowledgeFilters(){
   const query=state.host.querySelector('#anaKnowledgeSearch')?.value||'';
   const category=state.host.querySelector('#anaKnowledgeCategory')?.value||'all';
@@ -292,4 +319,4 @@ function bind(){
   state.host.querySelectorAll('[data-remove-trigger]').forEach(button=>button.onclick=()=>{const next=readDraft();next.triggers.splice(Number(button.dataset.removeTrigger),1);state.draft.configuration=next;state.dirty=true;render()});
   state.host.querySelectorAll('[data-rollback]').forEach(button=>button.onclick=async()=>{if(!confirm('Restaurar esta versão e torná-la ativa?'))return;try{await api('admin_rollback',{version_id:Number(button.dataset.rollback),note:'Restauração pela área ANA'});await load()}catch(error){alert(error.message)}});
 }
-export async function mountAnaAdmin(host){state.host=host;try{await load()}catch(error){host.innerHTML=`<section class="ana-card ana-error"><h1>ANA</h1><p>Não foi possível carregar a gestão: ${esc(error.message)}</p><button class="ana-button primary" id="anaRetry">Tentar novamente</button></section>`;host.querySelector('#anaRetry').onclick=()=>mountAnaAdmin(host)}}
+export async function mountAnaAdmin(host){state.host=host;try{await load()}catch(error){if(state.host!==host)return;host.innerHTML=`<section class="ana-card ana-error"><h1>ANA</h1><p>Não foi possível carregar a gestão: ${esc(error.message)}</p><button class="ana-button primary" id="anaRetry">Tentar novamente</button></section>`;host.querySelector('#anaRetry').onclick=()=>mountAnaAdmin(host)}}

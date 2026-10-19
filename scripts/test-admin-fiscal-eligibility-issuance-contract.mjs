@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/fiscal-controller.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/detail-controller.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/documents.js','utf8');
 const between=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j)};
 const status=between(edge,'async function orderFiscalStatusV4(','async function orderFiscalIssueV4(');
 const issue=between(edge,'async function orderFiscalIssueV4(','async function orderFiscalRecoverBlingV1(');
@@ -9,6 +9,13 @@ const auto=between(edge,'async function autoIssueFiscalAfterSeparation(','async 
 const ui=between(html,'  async function executeCurrentOrderFiscalCanary(','  async function startCurrentOrderDispatchV4(');
 for(const p of [/preview_bling_invoice_eligibility_v1/,/order_fiscal_controls/,/fiscal_dispatch_preview/,/hard_blockers/,/generationAttempted/,/canIssue=/,/status==="ready"/,/!generationAttempted/,/canDispatch=/])assert.match(status,p);
 for(const p of [/auth\?\.role==="viewer"/,/EMITIR_NFE/,/ops2_fiscal_dispatch_preflight_v1/,/fiscal_human_confirmation_required/,/idempotent_replay:true/,/fiscal_dispatch_not_eligible/,/fiscal_dispatch_canary_human_execute/,/fiscal_dispatch_reconcile/])assert.match(issue,p);
-for(const p of [/ops2_fiscal_dispatch_preflight_v1/,/before\.authorized===true/,/before\.issue_enabled!==true/,/fiscal_dispatch_canary_human_execute/,/attempt<=5/,/stage:"processing"/])assert.match(auto,p);
-for(const p of [/f\.can_issue!==true/,/confirm\(/,/order_fiscal_issue_v4/,/confirmation:'EMITIR_NFE'/,/loadCurrentOrderFiscal\(true\)/])assert.match(ui,p);
+assert.match(issue,/before\.can_issue!==true/,'issue endpoint must respect unresolved attempts and disabled runtime gates');
+assert.ok(issue.indexOf('before.can_issue!==true')<issue.indexOf('hub("fiscal_dispatch_canary_human_execute"'),'fiscal eligibility must be checked before external write');
+for(const p of [/ops2_fiscal_dispatch_preflight_v1/,/before\.authorized===true/,/before\.issue_enabled!==true/,/fiscal_dispatch_canary_human_execute/,/attempt<=5/,/stage:"unknown"/])assert.match(auto,p);
+assert.match(auto,/before\.can_issue!==true/,'automatic issuance must respect uncertain-generation recovery guard');
+assert.ok(auto.indexOf('before.can_issue!==true')<auto.indexOf('hub("fiscal_dispatch_canary_human_execute"'),'automatic eligibility must precede external write');
+for(const p of [/session\.fiscal\?\.can_issue!==true/,/confirm\(/,/order_fiscal_issue_v4/,/confirmation:'EMITIR_NFE'/,/refreshFiscal\(o\.id,token\)/])assert.match(ui,p);
+// Legacy direct-canary action must not bypass the guarded, reconciliable V4 endpoint.
+assert.match(edge,/a==="order_fiscal_dispatch_canary_execute"\)\{const x:any=await orderFiscalIssueV4\(p,auth\)/);
+assert.doesNotMatch(edge,/a==="order_fiscal_dispatch_canary_execute"[\s\S]{0,500}const h=await hub\("fiscal_dispatch_canary_human_execute"/);
 console.log('Admin fiscal eligibility and issuance contract: PASS');

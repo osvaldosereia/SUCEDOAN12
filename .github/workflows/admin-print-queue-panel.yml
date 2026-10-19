@@ -3,9 +3,14 @@ on:
   pull_request:
     paths:
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/runtime-parts/06-baskets-products.part.js'
+      - 'vitrine/admin/runtime-parts/10-purchase-finance.part.js'
+      - 'vitrine/admin/runtime-parts/11-purchase-catalog.part.js'
+      - 'vitrine/admin/runtime-parts/12-xml-import.part.js'
       - 'vitrine/admin/components/print-queue-panel.js'
       - 'vitrine/admin/components/printing.js'
       - 'vitrine/admin/orders/read-model.js'
+      - 'vitrine/admin/orders/**'
       - 'vitrine/admin/orders/contact-actions.js'
       - 'vitrine/admin/orders/search.js'
       - 'vitrine/admin/orders/whatsapp-links.js'
@@ -16,6 +21,7 @@ on:
       - 'vitrine/admin/components/expiry-alert.js'
       - 'scripts/test-admin-print-queue-panel.mjs'
       - 'scripts/test-admin-order-read-model.mjs'
+      - 'scripts/test-admin-order-action-buttons.mjs'
       - 'scripts/test-admin-order-contact-actions.mjs'
       - 'scripts/test-admin-order-search.mjs'
       - 'scripts/test-admin-whatsapp-links.mjs'
@@ -30,7 +36,18 @@ on:
       - 'scripts/test-admin-stock-physical-available-contract.mjs'
       - 'scripts/test-admin-stock-reservation-consumption-contract.mjs'
       - 'scripts/test-admin-lots-fefo-contract.mjs'
+      - 'scripts/test-admin-mobile-product-quick-save-race.mjs'
+      - 'scripts/test-mobile-products-quick-edit.mjs'
+      - 'scripts/test-products-operational-list.mjs'
+      - 'scripts/test-purchase-bling-review-v1.mjs'
+      - 'scripts/test-purchase-xml-internal-lot-ui.mjs'
+      - 'scripts/test-xml-catalog-details-v2.mjs'
+      - 'scripts/test-xml-catalog-identity-guards-v2.mjs'
+      - 'scripts/test-xml-catalog-recovery-v1.mjs'
+      - 'scripts/test-xml-unit-pack-review-r29.mjs'
+      - 'scripts/test-xml-unit-pack-ui-r29.mjs'
       - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/index.ts'
       - 'supabase/migrations/20261005031000_basket_component_reservations_v1.sql'
       - 'supabase/sql/20260928_ops2_r1_live_stock_reservations.sql'
       - 'supabase/sql/20260928_ops2_r1_reservation_horizon.sql'
@@ -39,8 +56,11 @@ on:
       - 'scripts/test-admin-inventory-receipt-contract.mjs'
       - 'scripts/test-admin-inventory-balance-contract.mjs'
       - 'scripts/test-admin-stock-adjustment-contract.mjs'
+      - 'scripts/test-admin-transactional-baseline-contract.mjs'
       - 'supabase/functions/purchase-xml-v1/index.ts'
       - 'scripts/test-admin-audit-consolidation-contract.mjs'
+      - 'scripts/test-admin-fiscal-runtime-guards.mjs'
+      - 'scripts/test-admin-bling-fiscal-r2-concurrency-runtime.mjs'
       - 'docs/audits/**'
       - '.github/workflows/admin-print-queue-panel.yml'
   workflow_dispatch:
@@ -61,6 +81,7 @@ jobs:
       - run: node scripts/test-admin-printing-window.mjs
       - run: node scripts/test-admin-print-queue-panel.mjs
       - run: node scripts/test-admin-today-operational-panels.mjs
+      - run: node scripts/test-admin-order-action-buttons.mjs
       - run: node scripts/test-admin-order-contact-actions.mjs
       - run: node scripts/test-admin-whatsapp-links.mjs
       - run: node scripts/test-admin-order-search.mjs
@@ -76,13 +97,30 @@ jobs:
       - run: node scripts/test-admin-stock-physical-available-contract.mjs
       - run: node scripts/test-admin-stock-reservation-consumption-contract.mjs
       - run: node scripts/test-admin-lots-fefo-contract.mjs
+      - run: node scripts/test-admin-mobile-product-quick-save-race.mjs
+      - run: node scripts/test-mobile-products-quick-edit.mjs
+      - run: node scripts/test-products-operational-list.mjs
+      - run: node scripts/test-purchase-bling-review-v1.mjs
+      - run: node scripts/test-purchase-xml-internal-lot-ui.mjs
+      - run: node scripts/test-xml-catalog-details-v2.mjs
+      - run: node scripts/test-xml-catalog-identity-guards-v2.mjs
+      - run: node scripts/test-xml-catalog-recovery-v1.mjs
+      - run: node scripts/test-xml-unit-pack-review-r29.mjs
+      - run: node scripts/test-xml-unit-pack-ui-r29.mjs
       - run: node scripts/test-admin-inventory-receipt-contract.mjs
       - run: node scripts/test-admin-inventory-balance-contract.mjs
       - run: node scripts/test-admin-stock-adjustment-contract.mjs
+      - run: node scripts/test-admin-transactional-baseline-contract.mjs
+      - run: node scripts/test-admin-atomic-stock-sql-draft.mjs
+      - run: node scripts/test-admin-stock-hardening-contract.mjs
+      - run: node scripts/test-admin-stock-receipt-hardening-contract.mjs
       - run: node scripts/test-admin-bling-integration-contract.mjs
       - run: node scripts/test-admin-whatsapp-attendance-contract.mjs
       - run: node scripts/test-admin-customer-history-traceability-contract.mjs
+      - run: node scripts/test-admin-integrations-hardening-contract.mjs
       - run: node scripts/test-admin-fiscal-eligibility-issuance-contract.mjs
+      - run: node scripts/test-admin-fiscal-runtime-guards.mjs
+      - run: node scripts/test-admin-bling-fiscal-r2-concurrency-runtime.mjs
       - run: node scripts/test-admin-fiscal-uncertain-recovery-contract.mjs
       - run: node scripts/test-admin-danfe-document-contract.mjs
       - run: node scripts/test-admin-audit-consolidation-contract.mjs

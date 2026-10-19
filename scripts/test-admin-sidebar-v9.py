@@ -1,7 +1,7 @@
 from pathlib import Path
 import re
 
-html = Path('vitrine/admin/index.html').read_text(encoding='utf-8')
+html = Path('vitrine/admin/index.html').read_text(encoding='utf-8') + Path('vitrine/admin/admin-runtime.js').read_text(encoding='utf-8')
 
 assert 'ADMIN_SIDEBAR_V9' in html, 'missing v9 sidebar stylesheet marker'
 assert 'Admin Navigation V6.1' not in html, 'legacy V6 navigation CSS still present'
@@ -19,7 +19,7 @@ for forbidden in ('tabs admin-nav', 'nav-submenu', 'nav-group-toggle', ' hidden'
     assert forbidden not in nav, f'legacy navigation token remains: {forbidden}'
 
 expected = [
-    'today','orders','separation','expedition','driver','closure',
+    'today','orders','expedition','driver','closure',
     'products','baskets','expiry','quotes','customers','marketing',
     'purchases','balance','gondolas','finance','bling'
 ]

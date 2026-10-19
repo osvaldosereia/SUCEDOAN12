@@ -1,3 +1,4 @@
+import {closeMarketingDialog} from './dialog.js';
 import {attendanceAuthorizedFetch,attendanceJsonApi} from '../atendimento/attendance-auth.js?v=auth-refresh-v2';
 
 const TEMPLATE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-templates-v1';
@@ -29,14 +30,13 @@ async function loadAccounts(){
   return accountsCache;
 }
 
-function closeDialog(dialog){try{dialog.close()}catch{}dialog.remove()}
 
 function shellDialog(title,body){
   const dialog=document.createElement('dialog');
   dialog.className='marketing-template-dialog marketing-simple-dialog';
   dialog.innerHTML=`<div class="marketing-template-dialog-head"><strong>${esc(title)}</strong><button type="button" aria-label="Fechar" data-simple-close>×</button></div><div class="marketing-template-dialog-body">${body}</div>`;
-  dialog.querySelector('[data-simple-close]')?.addEventListener('click',()=>closeDialog(dialog));
-  dialog.addEventListener('cancel',event=>{event.preventDefault();closeDialog(dialog)});
+  dialog.querySelector('[data-simple-close]')?.addEventListener('click',()=>closeMarketingDialog(dialog));
+  dialog.addEventListener('cancel',event=>{event.preventDefault();closeMarketingDialog(dialog)});
   document.body.appendChild(dialog);dialog.showModal();return dialog;
 }
 
@@ -48,16 +48,16 @@ function openTemplateTypePicker(){
   const dialog=shellDialog('Novo modelo de mensagem',typePickerHtml());
   dialog.querySelectorAll('[data-template-type]').forEach(button=>button.addEventListener('click',()=>{
     const type=String(button.dataset.templateType||'');
-    closeDialog(dialog);
+    closeMarketingDialog(dialog);
     if(type==='quick_reply'){
       const info=shellDialog('Resposta rápida','<p>As respostas rápidas ficam disponíveis no Atendimento. Esta opção não cria template Meta.</p><div class="marketing-template-dialog-actions"><button type="button" class="primary" data-simple-close-action>Entendi</button></div>');
-      info.querySelector('[data-simple-close-action]')?.addEventListener('click',()=>closeDialog(info));
+      info.querySelector('[data-simple-close-action]')?.addEventListener('click',()=>closeMarketingDialog(info));
       return;
     }
     if(type==='carousel'){
       if(window.DAMarketingCarouselEditor?.open)return window.DAMarketingCarouselEditor.open();
       const info=shellDialog('Carrossel','<p>O editor visual de Carrossel usa de 2 a 10 cartões. Ele será aberto aqui quando o módulo estiver disponível.</p><div class="marketing-template-dialog-actions"><button type="button" class="primary" data-simple-close-action>Fechar</button></div>');
-      info.querySelector('[data-simple-close-action]')?.addEventListener('click',()=>closeDialog(info));
+      info.querySelector('[data-simple-close-action]')?.addEventListener('click',()=>closeMarketingDialog(info));
       return;
     }
     openSimpleTemplateEditor(type);
@@ -96,7 +96,7 @@ async function openSimpleTemplateEditor(type='campaign'){
   const accounts=await loadAccounts().catch(()=>[]);
   const select=form.elements.account_id;
   select.innerHTML='<option value="">Selecione</option>'+accounts.map(account=>`<option value="${esc(account.id)}">${esc(channelByPhone(account.phone_e164))} · ${esc(account.display_name||'WhatsApp')}</option>`).join('');
-  form.querySelector('[data-simple-cancel]')?.addEventListener('click',()=>closeDialog(dialog));
+  form.querySelector('[data-simple-cancel]')?.addEventListener('click',()=>closeMarketingDialog(dialog));
   form.addEventListener('submit',event=>submitSimpleTemplate(event,dialog));
   return dialog;
 }
@@ -133,7 +133,7 @@ async function submitSimpleTemplate(event,dialog){
   try{
     await adminPost('create',{account_id:accountId,draft});
     status.textContent='Modelo salvo. Atualizando a lista…';
-    closeDialog(dialog);
+    closeMarketingDialog(dialog);
     await window.DAMarketingTemplateCenter?.mountTemplateView?.(document.querySelector('#content'));
   }catch(error){status.textContent=`Não foi possível salvar: ${String(error?.message||error)}`}
   finally{if(button.isConnected){button.disabled=false;button.setAttribute('aria-busy','false');button.textContent='Salvar modelo'}}

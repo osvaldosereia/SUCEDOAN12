@@ -4,6 +4,12 @@ on:
     paths:
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/marketing/helpers.js'
+      - 'vitrine/admin/marketing/dialog.js'
+      - 'vitrine/admin/marketing/campaign-simple-ui.js'
+      - 'vitrine/admin/marketing/template-type-picker.js'
+      - 'vitrine/admin/marketing/campaign-report.js'
+      - 'vitrine/admin/marketing/template-carousel-editor.js'
+      - 'scripts/test-admin-marketing-dialog-helper.mjs'
       - 'scripts/test-admin-marketing-helpers.mjs'
       - '.github/workflows/admin-marketing-helpers.yml'
   workflow_dispatch:
@@ -23,6 +29,7 @@ jobs:
       - run: node scripts/test-admin-errors-extraction.mjs
       - run: node scripts/test-admin-printing-extraction.mjs
       - run: node scripts/test-admin-marketing-helpers.mjs
+      - run: node scripts/test-admin-marketing-dialog-helper.mjs
       - run: node scripts/test-admin-orders-clean-flow-v3.mjs
       - run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
       - run: node scripts/test-admin-order-whatsapp-ui-integration.mjs

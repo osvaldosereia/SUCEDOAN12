@@ -6,7 +6,7 @@ const page=readFileSync('montar/index.html','utf8');
 const script=readFileSync('montar/app.js','utf8');
 const css=readFileSync('montar/styles.css','utf8');
 const migration=readFileSync('supabase/sql/20261008_montar_manual_queue_feed_v1.sql','utf8');
-const admin=readFileSync('vitrine/admin/index.html','utf8');
+const admin=readFileSync('vitrine/admin/index.html','utf8')+'\n'+readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+readFileSync('vitrine/admin/orders/card-model.js','utf8');
 new vm.Script(script,{filename:'montar/app.js'});
 
 assert.match(page,/<title>Separação de pedidos \| Dona Antônia<\/title>/);
@@ -34,7 +34,7 @@ assert.match(migration,/revoke all on function .* from public,anon/);
 assert.doesNotMatch(migration,/\b(create trigger|update public\.orders|insert into public\.orders)\b/i);
 
 
-assert.match(admin,/await manualQueueRpc\('list'\)/,'validar fila manual na entrada do Admin');
+assert.match(admin,/await loadManualPickQueue\(\)/,'validar fila manual pela porta pública na entrada do Admin');
 assert.match(admin,/if\(orderCustomerDataPending\(selectedOrder\)\)/,'respeitar checagem existente de dados do cliente');
 assert.match(admin,/state\.orders=\[selectedOrder\]/,'a vitrine acessa somente o pedido selecionado');
 assert.match(admin,/await openOrderSeparationSheet\(sharedSeparationId\)/,'abrir vitrine de separacao existente');

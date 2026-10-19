@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
 const uiPath='vitrine/admin/basket-guided-builder.js';
 assert.equal(fs.existsSync(uiPath),true,'guided compatibility UI module must exist');

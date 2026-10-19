@@ -22,8 +22,8 @@ assert.doesNotMatch(sql,/order\s+by[\s\S]{0,180}human_required/i,'modo humano n�
 for(const role of ['public','anon','authenticated'])assert.match(sql,new RegExp(`revoke\\s+all\\s+on\\s+function\\s+public\\.ops2_admin_attendance_queue_v2[^;]*from\\s+${role}`,'i'));
 assert.match(sql,/grant\s+execute\s+on\s+function\s+public\.ops2_admin_attendance_queue_v2[^;]*to\s+service_role/i);
 
-assert.match(api,/ops2_admin_attendance_queue_v3/,'gateway deve usar a fila v3, que preserva a cronologia da v2 e acrescenta etiquetas');
+assert.match(api,/ops2_admin_attendance_queue_v4/,'gateway deve usar a fila v4, que preserva a cronologia e acrescenta vínculo de cliente');
 assert.doesNotMatch(api,/p_filter\s*:/,'gateway não deve enviar filtro legado');
 assert.doesNotMatch(api,/attendanceFilter\s*\(/,'gateway não deve normalizar filtro legado');
 
-console.log('OK · base cronológica da fila v2 permanece preservada e gateway evoluiu para v3 com etiquetas.');
+console.log('OK · base cronológica da fila v2 permanece preservada e gateway usa v4 com vínculo de cliente.');

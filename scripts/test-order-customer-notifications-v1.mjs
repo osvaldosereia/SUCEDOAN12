@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 // Contrato canônico do código público e das notificações Utility do pedido.
 const transport=fs.readFileSync('supabase/functions/admin-orders-v1/index.ts','utf8');
 const adminApi=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/core/identifiers.js','utf8');
 const vitrineGateway=fs.readFileSync('supabase/functions/admin-order-vitrine-send-v1/index.ts','utf8');
 
 const migrationPath='supabase/migrations/20261005_order_separation_customer_notify_v1.sql';

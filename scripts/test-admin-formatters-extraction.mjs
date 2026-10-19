@@ -4,13 +4,14 @@ import assert from 'node:assert/strict';
 
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 const moduleSource=fs.readFileSync('vitrine/admin/core/formatters.js','utf8');
+const runtime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const moduleTag='<script src="/vitrine/admin/core/formatters.js?v=refactor-20261018"></script>';
-const mainTag='<script>\n(()=>{';
+const mainTag='<script src="/vitrine/admin/admin-runtime.js?';
 assert.ok(html.includes(moduleTag),'formatter module must be loaded');
 assert.ok(html.indexOf(moduleTag)<html.indexOf(mainTag),'formatter module must load before main IIFE');
-assert.ok(html.includes('const {esc,money,cents,fmtQty,dateTime,dateOnly,normalize}=window.DonaAntoniaAdminFormatters;'));
+assert.ok(runtime.includes('const {esc,money,cents,fmtQty,dateTime,dateOnly,normalize}=window.DonaAntoniaAdminFormatters;'));
 for(const name of ['esc','money','cents','fmtQty','dateTime','dateOnly','normalize']){
-  assert.equal(new RegExp('^  const '+name+'=', 'm').test(html),false,name+' must not remain as an original top-level declaration');
+  assert.equal(new RegExp('^  const '+name+'=', 'm').test(runtime),false,name+' must not remain as an original top-level declaration');
 }
 const context={window:{},Number,Date,String,Object};
 vm.runInNewContext(moduleSource,context);

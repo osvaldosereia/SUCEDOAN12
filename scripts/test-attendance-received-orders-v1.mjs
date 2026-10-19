@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const migration=fs.readFileSync('supabase/migrations/20261012184500_attendance_received_order_priority_v1.sql','utf8');
 const app=fs.readFileSync('vitrine/admin/atendimento/attendance-app.js','utf8');
 const page=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
 
 assert.match(migration,/o\.status='storefront_received'/,'use the exact status of Recebidos');

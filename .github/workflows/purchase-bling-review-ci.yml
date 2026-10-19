@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/runtime-parts/10-purchase-finance.part.js'
       - 'supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts'
       - 'supabase/functions/purchase-xml-v1/index.ts'
       - 'supabase/migrations/20261012190000_purchase_bling_received_review_v1.sql'

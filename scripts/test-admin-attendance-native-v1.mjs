@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const page=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
 const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
 

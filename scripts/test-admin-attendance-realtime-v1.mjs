@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const html=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
-const js=fs.readFileSync('vitrine/admin/atendimento/attendance.js','utf8');
+const js=fs.readFileSync('vitrine/admin/atendimento/attendance-app.js','utf8');
 const api=fs.readFileSync('supabase/functions/admin-whatsapp-ops-v1/index.ts','utf8');
 const sqlPath='supabase/sql/20261001_admin_attendance_marketing_optout_v1.sql';
 
@@ -17,7 +17,7 @@ assert.match(html,/id="quickRepliesMenu"[^>]*hidden/,'respostas rápidas devem a
 assert.match(html,/id="followUpPanel"[^>]*hidden/,'retorno deve usar painel discreto');
 assert.match(html,/id="optOutBtn"[^>]*disabled/,'opt-out deve nascer bloqueado até haver cliente vinculado');
 
-assert.match(js,/const\s+QUEUE_REFRESH_MS\s*=\s*15000/,'fallback deve atualizar no máximo a cada 15 segundos');
+assert.match(js,/const\s+REFRESH_MS\s*=\s*15000/,'fallback deve atualizar no máximo a cada 15 segundos');
 assert.match(js,/document\.addEventListener\(['"]visibilitychange['"]/,'refresh deve reagir à visibilidade da aba');
 assert.match(js,/document\.hidden/,'refresh deve pausar quando a aba não está visível');
 assert.match(js,/api\(['"]issue_catalog['"]/,'catálogo deve usar o gateway seguro');
@@ -25,8 +25,8 @@ assert.match(js,/api\(['"]follow_up['"]/,'lembrete deve usar o estado canônico'
 assert.match(js,/api\(['"]marketing_opt_out['"]/,'opt-out deve usar gateway autenticado');
 assert.match(js,/api\(['"]quick_replies['"]/,'respostas rápidas devem vir da configuração canônica do backend');
 assert.doesNotMatch(js,/const\s+QUICK_REPLIES\s*=/,'respostas rápidas não devem voltar a ficar hardcoded');
-assert.match(js,/emitParent\(['"]open_quote['"]/,'orçamento deve reaproveitar ferramenta do Admin');
-assert.match(js,/emitParent\(['"]new_sale['"]/,'nova venda deve reaproveitar ferramenta do Admin');
+assert.match(js,/location\.assign\(adminLink\(['"]quotes['"]\s*,\s*\{customer_id:id,source:['"]attendance['"]\}\)\)/,'orçamento deve abrir a seção existente do Admin');
+assert.match(js,/location\.assign\(adminLink\(['"]quotes['"]\s*,\s*\{customer_id:id,source:['"]attendance['"],new_sale:['"]1['"]\}\)\)/,'nova venda deve abrir a seção existente do Admin');
 assert.doesNotMatch(js,/supabase\.channel|postgres_changes/i,'Atendimento não deve abrir assinatura direta às tabelas protegidas');
 
 assert.ok(fs.existsSync(sqlPath),'RPC estreita de opt-out deve existir');

@@ -40,7 +40,7 @@ assert.match(ui,/data-mold-selected-product/);
 assert.match(ui,/preferred:o\.metadata\?\.preferred===true/);
 assert.match(ui,/metadata:\{\.\.\.\(o\.metadata\|\|\{\}\),preferred:o\.preferred===true\}/);
 assert.match(ui,/editar_produto/);
-const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
+const adminHtml=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 assert.match(adminHtml,/params\.get\('editar_produto'\)/);
 assert.match(adminHtml,/uuid\.test\(directProductId\)/);
 assert.match(adminHtml,/openProductEditor\(\{id:directProductId\}\)/);
@@ -83,5 +83,93 @@ assert.match(sql,/public\.save_basket_mold_v1\s*\(/i);
 assert.match(sql,/public\.ops2_loose_sellable_stock_v1/i);
 assert.match(sql,/revoke all on function public\.admin_save_basket_mold_v1\([^;]+from public,\s*anon/is);
 assert.match(sql,/grant execute on function public\.admin_save_basket_mold_v1\([^;]+to authenticated/is);
+
+
+{
+  // The running editor must never be replaced by a late response to a
+  // previously selected basket or a product search for another position.
+  const start=ui.indexOf('let moldEditorLoadGeneration=0;');
+  const end=ui.indexOf('function selectConditionalProduct(',start);
+  assert.ok(start>0&&end>start,'mold async controller isolation boundaries');
+  const deferred=()=>{let resolve;const promise=new Promise(done=>resolve=done);return {promise,resolve}};
+  const pending=new Map(),call=(action,params={})=>{
+    const key=action+':'+String(params.basket_id??params.q??'');
+    const d=deferred();pending.set(key,d);return d.promise;
+  };
+  const state={root:{querySelector:()=>null},draft:null,baskets:[],
+    search:{},results:{},conditionalSearch:'',conditionalResults:[]};
+  let paints=0;
+  const {openBasket,searchProducts,searchConditionalProduct}=new Function(
+    'state','call','normalizeEditor','render','toast','sync',
+    ui.slice(start,end)+';return {openBasket,searchProducts,searchConditionalProduct};'
+  )(state,call,value=>value,()=>paints++,error=>{throw Error(error)},()=>{});
+  const older=openBasket('old'),newer=openBasket('new');
+  pending.get('editor:new').resolve({editor:{basket_id:'new',positions:[{options:[]}]}});
+  await newer;
+  pending.get('editor:old').resolve({editor:{basket_id:'old',positions:[]}});
+  await older;
+  assert.equal(state.draft.basket_id,'new','late editor response must not replace the selected basket');
+  assert.equal(paints,1);
+
+  state.search[0]='first';
+  const oldSearch=searchProducts(0);
+  state.search[0]='second';
+  const newSearch=searchProducts(0);
+  pending.get('products:second').resolve({products:[{id:'recent'}]});
+  await newSearch;
+  pending.get('products:first').resolve({products:[{id:'stale'}]});
+  await oldSearch;
+  assert.deepEqual(state.results[0].map(x=>x.id),['recent'],'latest product query wins');
+
+  state.search[0]='reindexed';
+  const oldPosition=searchProducts(0);
+  state.draft.positions[0]={options:[]};
+  pending.get('products:reindexed').resolve({products:[{id:'wrong-position'}]});
+  await oldPosition;
+  assert.deepEqual(state.results[0].map(x=>x.id),['recent'],'removed position cannot be repainted');
+
+  state.draft.conditional_hidden_enabled=true;
+  state.conditionalSearch='conditional-first';
+  const oldConditional=searchConditionalProduct();
+  state.conditionalSearch='conditional-latest';
+  const newConditional=searchConditionalProduct();
+  pending.get('products:conditional-latest').resolve({products:[{id:'current'}]});
+  await newConditional;
+  pending.get('products:conditional-first').resolve({products:[{id:'stale'}]});
+  await oldConditional;
+  assert.deepEqual(state.conditionalResults.map(x=>x.id),['current'],'conditional picker ignores stale queries');
+}
+
+
+{
+  // Saving a draft is durable, but an operator who selected another basket
+  // before the request completes must not be redirected to the old editor.
+  const start=ui.indexOf('async function save(){');
+  const stop=ui.indexOf('function bind(){',start);
+  assert.ok(start>0&&stop>start);
+  let resolveSave,editors=0,lists=0;
+  const messages=[];
+  const draft={basket_id:'previous',category_id:'category',subcategory_id:'subcategory',
+    name:'Cesta',public_composition_count:2,conditional_hidden_enabled:false,
+    positions:[{label:'Produto',quantity:1,options:[{product_id:'sku'}]}]};
+  const state={busy:false,draft};
+  const controller=new Function('state','sync','call','render','loadList','openBasket','toast','operator',
+    'let moldEditorLoadGeneration=0;'+ui.slice(start,stop)+
+    ';return {save,navigate:()=>++moldEditorLoadGeneration};')(
+      state,()=>{},action=>{
+        assert.equal(action,'save');
+        return new Promise(resolve=>resolveSave=resolve);
+      },()=>{},async()=>{lists++;return true},async()=>{editors++},
+      message=>messages.push(message),()=>'Teste');
+  const submitted=controller.save();
+  assert.equal(state.busy,true);
+  controller.navigate();
+  resolveSave({ok:true});
+  await submitted;
+  assert.equal(lists,0,'stale save must not refresh a different basket');
+  assert.equal(editors,0,'stale save must not reopen the previous editor');
+  assert.equal(state.busy,false);
+  assert.ok(!messages.includes('Molde salvo.'),'old editor completion has no misleading success notice');
+}
 
 console.log('basket mold admin v1: PASS');

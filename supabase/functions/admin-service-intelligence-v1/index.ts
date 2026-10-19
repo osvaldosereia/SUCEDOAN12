@@ -5,7 +5,7 @@ import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
 import { inspectBlingNfeR2, isFiscalRecoveryNewOrderR2 } from "./_shared/fiscal-r2-nfe-inspector.mjs";
 
-const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
+// Shared HTTP response and input-normalization utilities.\nconst CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
 const clean=(v:unknown,max=2000)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80))?clean(v,80):"";
@@ -4941,9 +4941,17 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
     if(before.matches.length===1){
       invoiceId=Number(before.match?.id||0)||null;
     }else{
-      await sb.from("dispatch_fiscal_jobs").update({
+      // Persist an exclusive claim before the irreversible provider POST.
+      // A concurrent request must reconcile, never issue a second generation.
+      const generateClaim=await sb.from("dispatch_fiscal_jobs").update({
         status:"generating",attempts:1,updated_at:new Date().toISOString()
-      }).eq("id",job.id);
+      }).eq("id",job.id).eq("status","held").eq("attempts",0)
+        .select("id").maybeSingle();
+      if(generateClaim.error)throw generateClaim.error;
+      if(!generateClaim.data){
+        return {ok:false,error:"fiscal_generation_claim_conflict",status:409,
+          requires_reconciliation:true,external_write:false};
+      }
 
       const generated=await blingHubPostOnce(
         sb,token,
@@ -5059,9 +5067,17 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
     };
   }
 
-  await sb.from("dispatch_fiscal_jobs").update({
+  // Claim authorization exactly once. Concurrent requests and uncertain
+  // authorizations must reconcile the existing invoice rather than POST again.
+  const authorizeClaim=await sb.from("dispatch_fiscal_jobs").update({
     status:"authorizing",external_side_effect:true,updated_at:new Date().toISOString()
-  }).eq("id",job.id);
+  }).eq("id",job.id).in("status",["held","generated"])
+    .select("id").maybeSingle();
+  if(authorizeClaim.error)throw authorizeClaim.error;
+  if(!authorizeClaim.data){
+    return {ok:false,error:"fiscal_authorization_claim_conflict",status:409,
+      requires_reconciliation:true,external_write:false};
+  }
 
   const sent=await blingHubPostOnce(
     sb,token,

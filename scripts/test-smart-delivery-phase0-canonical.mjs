@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-const admin = fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin = ['vitrine/admin/index.html','vitrine/admin/admin-runtime.js','vitrine/admin/delivery/controller.js'].map(path=>fs.readFileSync(path,'utf8')).join('\n');
 const edge = fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 
 const must = (ok,msg)=>{ if(!ok) throw new Error(msg); };

@@ -105,8 +105,30 @@ function sync(){
   (state.draft.positions||[]).forEach((p,i)=>{p.label=q('[data-mold-position-label="'+i+'"]')?.value.trim()||'';p.quantity=Number(q('[data-mold-position-quantity="'+i+'"]')?.value||0);state.search[i]=q('[data-mold-product-search="'+i+'"]')?.value||state.search[i]||''});
 }
 
-async function loadList(){const r=await call('list');state.baskets=Array.isArray(r.baskets)?r.baskets:[];state.categories=Array.isArray(r.categories)?r.categories:[];state.subcategories=Array.isArray(r.subcategories)?r.subcategories:[]}
-async function openBasket(id){try{const r=await call('editor',{basket_id:id});state.draft=normalizeEditor(r.editor||{});state.search={};state.results={};state.conditionalSearch='';state.conditionalResults=[];render()}catch(e){toast(e.message)}}
+let moldEditorLoadGeneration=0;
+const moldPositionSearchRequests=new WeakMap();
+let moldConditionalSearchGeneration=0;
+async function loadList(){
+  const origin=state,r=await call('list');
+  if(state!==origin)return false;
+  state.baskets=Array.isArray(r.baskets)?r.baskets:[];
+  state.categories=Array.isArray(r.categories)?r.categories:[];
+  state.subcategories=Array.isArray(r.subcategories)?r.subcategories:[];
+  return true;
+}
+async function openBasket(id){
+  const origin=state,generation=++moldEditorLoadGeneration;
+  try{
+    const r=await call('editor',{basket_id:id});
+    if(state!==origin||generation!==moldEditorLoadGeneration)return;
+    state.draft=normalizeEditor(r.editor||{});
+    state.search={};state.results={};
+    state.conditionalSearch='';state.conditionalResults=[];
+    render();
+  }catch(e){
+    if(state===origin&&generation===moldEditorLoadGeneration)toast(e.message);
+  }
+}
 
 function addPosition(){sync();state.draft.positions.push({position_id:null,label:'',quantity:1,options:[]});render()}
 function removePosition(i){sync();state.draft.positions.splice(i,1);delete state.search[i];delete state.results[i];render()}
@@ -114,14 +136,39 @@ function removeOption(pi,oi){sync();state.draft.positions[pi]?.options.splice(oi
 function togglePreferred(pi,oi){sync();const option=state.draft.positions[pi]?.options?.[oi];if(!option)return;option.preferred=option.preferred!==true;render()}
 
 async function searchProducts(pi){
-  sync();const query=String(state.search[pi]||'').trim();
-  try{const r=await call('products',{q:query,limit:24}),used=new Set((state.draft.positions[pi]?.options||[]).map(x=>String(x.product_id)));state.results[pi]=(Array.isArray(r.products)?r.products:[]).filter(p=>!used.has(String(p.id)));render()}catch(e){toast(e.message)}
+  sync();
+  const origin=state,draft=state.draft,position=draft?.positions?.[pi];
+  if(!position)return;
+  const query=String(state.search[pi]||'').trim();
+  const generation=(moldPositionSearchRequests.get(position)||0)+1;
+  moldPositionSearchRequests.set(position,generation);
+  const isCurrent=()=>state===origin&&state.draft===draft&&state.draft.positions[pi]===position
+    &&moldPositionSearchRequests.get(position)===generation
+    &&String(state.root?.querySelector('[data-mold-product-search="'+pi+'"]')?.value??state.search[pi]??'').trim()===query;
+  try{
+    const r=await call('products',{q:query,limit:24});
+    if(!isCurrent())return;
+    const used=new Set((position.options||[]).map(x=>String(x.product_id)));
+    state.results[pi]=(Array.isArray(r.products)?r.products:[]).filter(p=>!used.has(String(p.id)));
+    render();
+  }catch(e){if(isCurrent())toast(e.message)}
 }
 
 async function searchConditionalProduct(){
-  sync();const query=String(state.conditionalSearch||'').trim();
-  if(!state.draft?.conditional_hidden_enabled)return;
-  try{const r=await call('products',{q:query,limit:24}),selected=String(state.draft.conditional_hidden_product_id||'');state.conditionalResults=(Array.isArray(r.products)?r.products:[]).filter(p=>String(p.id)!==selected);render()}catch(e){toast(e.message)}
+  sync();
+  const origin=state,draft=state.draft,query=String(state.conditionalSearch||'').trim();
+  const generation=++moldConditionalSearchGeneration;
+  if(!draft?.conditional_hidden_enabled)return;
+  const isCurrent=()=>state===origin&&state.draft===draft
+    &&generation===moldConditionalSearchGeneration&&state.draft.conditional_hidden_enabled
+    &&String(state.root?.querySelector('[data-mold-conditional-product-search]')?.value??state.conditionalSearch??'').trim()===query;
+  try{
+    const r=await call('products',{q:query,limit:24});
+    if(!isCurrent())return;
+    const selected=String(state.draft.conditional_hidden_product_id||'');
+    state.conditionalResults=(Array.isArray(r.products)?r.products:[]).filter(p=>String(p.id)!==selected);
+    render();
+  }catch(e){if(isCurrent())toast(e.message)}
 }
 
 function selectConditionalProduct(id){
@@ -144,7 +191,7 @@ function addOption(pi,id){
 }
 
 async function save(){
-  if(state.busy)return;sync();const d=state.draft;
+  if(state.busy)return;sync();const origin=state,editorGeneration=moldEditorLoadGeneration,d=state.draft;
   if(!d.name)return toast('Informe o nome da cesta.');
   if(!d.category_id)return toast('Escolha a categoria da cesta na vitrine.');
   if(!d.subcategory_id)return toast('Escolha a subdivisão da cesta na vitrine.');
@@ -156,8 +203,18 @@ async function save(){
   state.busy=true;render();
   try{
     await call('save',{basket_id:d.basket_id,category_id:d.category_id,subcategory_id:d.subcategory_id,name:d.name,hidden_adjustment:Number(d.hidden_adjustment||0),conditional_hidden_enabled:d.conditional_hidden_enabled===true,conditional_hidden_product_id:d.conditional_hidden_product_id||null,conditional_hidden_adjustment:Number(d.conditional_hidden_adjustment||0),public_composition_count:Number(d.public_composition_count),positions:d.positions.map(p=>({label:p.label,quantity:Number(p.quantity),options:p.options.map(o=>({product_id:o.product_id,metadata:{...(o.metadata||{}),preferred:o.preferred===true}}))})),operator:operator()});
-    const id=d.basket_id;await loadList();await openBasket(id);toast('Molde salvo.');
-  }catch(e){toast(e.message)}finally{state.busy=false;render()}
+    // Persist the submitted draft, but do not re-open it over another basket
+    // selected while this save request was pending.
+    if(state!==origin||moldEditorLoadGeneration!==editorGeneration)return;
+    const id=d.basket_id;
+    if(!await loadList()||state!==origin||moldEditorLoadGeneration!==editorGeneration)return;
+    await openBasket(id);
+    if(state===origin&&String(state.draft?.basket_id||'')===String(id))toast('Molde salvo.');
+  }catch(e){
+    if(state===origin&&moldEditorLoadGeneration===editorGeneration)toast(e.message);
+  }finally{
+    if(state===origin){state.busy=false;render()}
+  }
 }
 
 function bind(){
@@ -181,11 +238,27 @@ function bind(){
 
 async function open(target){
   const root=typeof target==='string'?document.querySelector(target):target;if(!root)throw new Error('basket_mold_root_not_found');
-  state={root,baskets:[],categories:[],subcategories:[],draft:null,busy:false,search:{},results:{},conditionalSearch:'',conditionalResults:[]};root.innerHTML='<div class="bm-empty">Carregando Cestas Molde…</div>';
-  try{await loadList();render()}catch(e){root.innerHTML='<div class="bm-empty">Não foi possível carregar Cestas Molde.</div>';toast(e.message)}
+  ++moldEditorLoadGeneration;
+  ++moldConditionalSearchGeneration;
+  state={root,baskets:[],categories:[],subcategories:[],draft:null,busy:false,search:{},results:{},conditionalSearch:'',conditionalResults:[]};
+  const origin=state;
+  root.innerHTML='<div class="bm-empty">Carregando Cestas Molde…</div>';
+  try{
+    if(await loadList()&&state===origin)render();
+  }catch(e){
+    if(state!==origin)return;
+    root.innerHTML='<div class="bm-empty">Não foi possível carregar Cestas Molde.</div>';
+    toast(e.message);
+  }
 }
 
-async function refresh(){if(!state.root)return;const id=state.draft?.basket_id;await loadList();if(id){await openBasket(id);return}render()}
+async function refresh(){
+  if(!state.root)return;
+  const origin=state,id=state.draft?.basket_id;
+  if(!await loadList()||state!==origin)return;
+  if(id){await openBasket(id);return}
+  render();
+}
 
 window.DonaAntoniaBasketMolds={open,refresh,openBasket};
 })();

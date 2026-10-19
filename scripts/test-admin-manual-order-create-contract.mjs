@@ -1,15 +1,14 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
+const controller=fs.readFileSync('vitrine/admin/orders/manual-sale.js','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
-const begin=admin.indexOf('  async function createManualSale(){');
-const end=admin.indexOf('\n  const ORDER_SEPARATORS=',begin);
-assert.ok(begin>0&&end>begin,'manual order controller must exist');
-const controller=admin.slice(begin,end);
-assert.match(controller,/if\(!state\.manualSale\)return/);
+assert.ok(admin.includes('DonaAntoniaAdminManualSale.create('),'runtime must compose the extracted manual sale controller');
+assert.match(controller,/async function createManualSale\(\)/,'manual order controller must exist');
+assert.match(controller,/if\(!saleAtStart\|\|creatingSales\.has\(saleAtStart\)\)return/);
 assert.match(controller,/if\(!name\|\|!phone\|\|!street\|\|!number\|\|!city\|\|uf\.length!==2\)/);
-assert.match(controller,/if\(!state\.manualSale\.cart\.length\)/);
+assert.match(controller,/if\(!saleAtStart\.cart\.length\)/);
 assert.match(controller,/manualSaleTotalCents\(\)<7500/);
 assert.match(controller,/api\('manual_order_create'/);
 assert.match(controller,/method:'POST'/);

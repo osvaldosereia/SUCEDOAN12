@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
+const webhook=fs.readFileSync('supabase/functions/whatsapp-meta-webhook-v1/index.ts','utf8');
+const html=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/customers/controller.js','utf8');
+const between=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j)};
+const bling=between(edge,'async function syncConfirmedOrderToBling(','async function recoverPendingEanVerified(');
+for(const p of [/ops2_ensure_order_state/,/retry_queued/,/idempotency_key:"ops2:live-order-state-retry:"/,/const saved=await db\.from\("orders"\)\.update/,/if\(saved\.error\)return/,/bling_order_local_persistence_failed/,/external_write_succeeded:true/,/reconciliation_required:true/])assert.match(bling,p);
+assert.ok(bling.indexOf('if(saved.error)return')<bling.indexOf('await opsEvent("order.bling_synced"'),'must not report success if local persistence fails');
+const send=between(edge,'async function orderWhatsappSend(','async function orderRegistrationLinkIssue(');
+for(const p of [/ops2_enqueue_admin_order_whatsapp_v1/,/dispatchOrderWhatsapp/,/status_snapshot/,/delivery_ok/])assert.match(send,p);
+const status=between(webhook,'async function persistStatus(','async function persistTemplateEvent(');
+for(const p of [/whatsapp_ingest_event_v1/,/whatsapp_record_status_v1/,/whatsapp_webhook_events_v1/,/duplicate:/,/pendingReason:/])assert.match(status,p);
+const history=between(html,'  async function loadCustomerHistory(','  function paintCustomerProfile(');
+for(const p of [/customerHistoryRequestSeq/,/requestSeq===state\.customerHistoryRequestSeq/,/state\.customerProfile\?\.customer\?\.id===customerId/,/next_offset/])assert.match(history,p);
+console.log('Bling, WhatsApp and customer traceability hardening contract: PASS');

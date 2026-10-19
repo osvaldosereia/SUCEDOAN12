@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin = fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin = fs.readFileSync('vitrine/admin/customers/controller.js','utf8');
 const edge = fs.readFileSync('supabase/functions/admin-service-intelligence-v1/index.ts','utf8');
 const sql = fs.readFileSync('supabase/sql/20261003_customer_identity_admin_phone_fix.sql','utf8');
 const emailFix = fs.readFileSync('supabase/sql/20261003_customer_admin_email_generated_fix.sql','utf8');

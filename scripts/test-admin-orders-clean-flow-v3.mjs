@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-model.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-view.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/detail-view.js','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const publicView=fs.readFileSync('supabase/functions/order-public-view-v1/index.ts','utf8');
 const publicPage=fs.readFileSync('pedido/index.html','utf8');
@@ -55,7 +55,8 @@ const completeEnd=backend.indexOf('\nasync function ',completeStart+20);
 const completeBlock=backend.slice(completeStart,completeEnd>completeStart?completeEnd:backend.length);
 assert.ok(!completeBlock.includes('status:"out_for_delivery"'),'Concluir separação não pode mover automaticamente para entrega');
 assert.match(completeBlock,/status:"ready"/,'Concluir separação deve terminar no marco interno ready/separado');
-assert.match(completeBlock,/ops2_refresh_order_public_snapshot_v1/,'Conclusão precisa atualizar a vitrine pública');
+assert.match(completeBlock,/await refreshPublicOrderSnapshotBestEffort\(oid\)/,'Conclusão precisa atualizar a vitrine pública');
+assert.match(backend,/async function refreshPublicOrderSnapshotBestEffort\([\s\S]*?ops2_refresh_order_public_snapshot_v1/,'O helper deve chamar a RPC canônica de atualização da vitrine');
 assert.match(backend,/runSeparationPostCompletionIntegrations/,'Integrações externas devem ocorrer depois da conclusão operacional');
 assert.match(backend,/target_key:"verified"/,'Pós-conclusão precisa manter a sincronização Verificado no Bling');
 assert.doesNotMatch(completeBlock,/ops2_launch_physical_stock/,'Conclusão da separação não pode fazer baixa física no Bling; isso pertence à saída para entrega');
@@ -104,10 +105,11 @@ assert.ok(!publicPage.includes('completeSeparation'),'Vitrine do cliente é some
 assert.ok(!publicView.includes('complete_separation'),'Endpoint público não pode aceitar conclusão operacional de separação');
 assert.match(publicView,/req\.method!=="GET"|req\.method != "GET"/,'Endpoint público V3 deve ser somente leitura');
 
-const detailStart=admin.indexOf('function paintOrderDetail');
+const detailView=fs.readFileSync('vitrine/admin/orders/detail-view.js','utf8');
+const detailStart=detailView.indexOf('function paintOrderDetail');
 assert.ok(detailStart>=0,'Pedido aberto precisa continuar no Admin canônico');
-const detailEnd=admin.indexOf('\n  function ',detailStart+30);
-const detailBlock=admin.slice(detailStart,detailEnd>detailStart?detailEnd:admin.length);
+const detailEnd=detailView.indexOf('    return Object.freeze(',detailStart+30);
+const detailBlock=detailView.slice(detailStart,detailEnd>detailStart?detailEnd:detailView.length);
 assert.match(detailBlock,/VITRINE CLIENTE/i,'Vitrine Cliente deve ficar dentro do pedido aberto');
 assert.match(detailBlock,/REABRIR PEDIDO/i,'Pedido confirmado ainda não separado deve poder ser reaberto com segurança');
 assert.ok(!detailBlock.includes('Diagnóstico da integração'),'Pedido aberto não deve expor diagnóstico ERP/Bling no fluxo normal');

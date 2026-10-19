@@ -3,7 +3,7 @@ import {readFileSync} from "node:fs";
 
 const original=readFileSync("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts","utf8");
 const twin=readFileSync("supabase/functions/purchase-xml-v1/index.ts","utf8");
-const admin=readFileSync("vitrine/admin/index.html","utf8");
+const admin=readFileSync("vitrine/admin/runtime-parts/10-purchase-finance.part.js","utf8");
 const migration=readFileSync("supabase/migrations/20261012190000_purchase_bling_received_review_v1.sql","utf8");
 assert.equal(original,twin,"Two purchase XML backends must be identical");
 const a=original.indexOf("async function blingReceivedReviewStatus(");

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-model.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/orders/card-view.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/runtime-parts/16-orders-operations.part.js','utf8');
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const publicPage=fs.readFileSync('pedido/index.html','utf8');
 const migration=fs.readFileSync('supabase/migrations/20261007120000_order_separation_team_auto_fiscal_v4.sql','utf8');
@@ -27,7 +27,8 @@ const packagingEnd=admin.indexOf('\n  async function completeOrderSeparation',pa
 const packagingBlock=admin.slice(packagingStart,packagingEnd);
 assert.match(packagingBlock,/orderDisplayCode\(current\)/,'Aviso deve reutilizar o código humano canônico do pedido');
 assert.doesNotMatch(packagingBlock,/current\?\.order_number|result\.order_number|replace\(\/\^DA-/,'Aviso não pode derivar número do identificador técnico');
-assert.match(packagingBlock,/if\(!display\)/,'Sem código original, deve falhar com segurança em vez de inventar número');
+assert.match(packagingBlock,/if\(!display&&!pickerMode\)/,'Sem código original, deve falhar com segurança em vez de inventar número; picker pode exibir fallback explícito');
+assert.match(packagingBlock,/display\|\|'NÚMERO NÃO DISPONÍVEL'/,'Picker sem código usa placeholder explícito, nunca um ID técnico');
 assert.match(admin,/back\.dataset\.orderUpdatedAt/);
 assert.match(admin,/bling_approval_pending/);
 assert.match(admin,/orderCardPhone/);

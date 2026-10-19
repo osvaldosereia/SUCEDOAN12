@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 const read=(p)=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
 const a=read("supabase/functions/purchase-xml-v1/index.ts");
 const b=read("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts");
-const ui=read("vitrine/admin/index.html");
+const ui=read("vitrine/admin/runtime-parts/11-purchase-catalog.part.js");
 const migration=read("supabase/migrations/20261009071500_purchase_xml_catalog_details_v2.sql");
 assert.equal(a,b,"Duplicated XML backends must stay byte-identical");
 const start=a.indexOf("async function resolvePurchaseItemIdentity(");

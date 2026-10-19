@@ -1,6 +1,6 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
-const html=readFileSync('vitrine/admin/index.html','utf8');
+const html=readFileSync('vitrine/admin/runtime-parts/11-purchase-catalog.part.js','utf8');
 const start=html.indexOf('  function xmlCatalogDetailMarkup(){');
 const end=html.indexOf('  function bindXmlCatalog(){',start);
 assert(start>=0&&end>start,'catalog detail UI must be present');

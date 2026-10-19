@@ -3,6 +3,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const runtime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const scripts=[...html.matchAll(/<script\s+src="([^"]+)"/g)].map(m=>m[1]);
 const modules=[
   'core/formatters.js','core/identifiers.js','core/errors.js',
@@ -10,10 +11,11 @@ const modules=[
   'orders/read-model.js','components/today-cards.js','orders/time.js',
   'orders/search.js','orders/whatsapp-links.js','orders/contact-actions.js',
   'components/expiry-alert.js','components/ops-attention.js',
-  'components/print-queue-panel.js'
+  'components/print-queue-panel.js','orders/separation-model.js','orders/customer-readiness.js','orders/card-model.js','orders/card-view.js','orders/separation-view.js','products/list-view.js','products/mobile-quick-save.js','orders/payment-method.js','orders/session.js','orders/list-controller.js','orders/list-view.js','orders/documents.js','orders/detail-view.js','orders/detail-controller.js','orders/fiscal-controller.js','orders/fiscal-loader.js','orders/manual-sale.js','delivery/model.js','delivery/controller.js','closure/controller.js','customers/controller.js'
 ];
-const mainIndex=html.indexOf('<script>\n(()=>{');
-assert.ok(mainIndex>0,'main admin script not found');
+const mainIndex=html.indexOf('<script src="/vitrine/admin/admin-runtime.js?');
+assert.ok(mainIndex>0,'external admin runtime script not found');
+assert.ok(fs.existsSync('vitrine/admin/admin-runtime.js'),'external runtime file missing');
 for(const module of modules){
   const url='/vitrine/admin/'+module;
   const matches=scripts.filter(s=>s.split('?')[0]===url);
@@ -32,11 +34,11 @@ const names=[
   'DonaAntoniaAdminMarketingHelpers','DonaAntoniaAdminOrderSorting',
   'DonaAntoniaAdminOrderReadModel','DonaAntoniaAdminTodayCards',
   'DonaAntoniaAdminOrderTime','DonaAntoniaAdminOrderSearch',
-  'DonaAntoniaAdminWhatsappLinks','DonaAntoniaAdminOrderContactActions',
+  'DonaAntoniaAdminWhatsappLinks','DonaAntoniaAdminOrderContactActions','DonaAntoniaAdminOrderCardModel','DonaAntoniaAdminOrderCardView','DonaAntoniaAdminOrderListView','DonaAntoniaAdminManualSale',
   'DonaAntoniaAdminExpiryAlert','DonaAntoniaAdminOpsAttention',
-  'DonaAntoniaAdminPrintQueuePanel'
+  'DonaAntoniaAdminPrintQueuePanel','DonaAntoniaAdminSeparationModel','DonaAntoniaAdminCustomerReadiness','DonaAntoniaAdminOrderSeparationView','DonaAntoniaAdminProductListView','DonaAntoniaAdminMobileProductQuickSave','DonaAntoniaAdminOrderPaymentMethod','DonaAntoniaAdminOrderSession','DonaAntoniaAdminOrderList','DonaAntoniaAdminOrderDocuments','DonaAntoniaAdminOrderDetailView','DonaAntoniaAdminOrderDetail','DonaAntoniaAdminOrderFiscal','DonaAntoniaAdminFiscalLoader','DonaAntoniaAdminDelivery','DonaAntoniaAdminClosure','DonaAntoniaAdminCustomers'
 ];
-for(const name of names)assert.ok(html.includes('window.'+name),'missing bridge '+name);
+for(const name of names)assert.ok(runtime.includes('window.'+name),'missing bridge '+name);
 const orderedScripts=scripts.filter(src=>modules.some(module=>src.split('?')[0]==='/vitrine/admin/'+module));
 assert.equal(orderedScripts.length,modules.length,'duplicate or missing module in dependency sequence');
 assert.deepEqual(orderedScripts.map(src=>src.split('?')[0]),modules.map(module=>'/vitrine/admin/'+module),'module dependency load order changed');

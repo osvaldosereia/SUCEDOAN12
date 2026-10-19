@@ -2,15 +2,18 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
 
-const html=readFileSync('vitrine/admin/index.html','utf8');
+const html=readFileSync('vitrine/admin/index.html','utf8')+'\n'+readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+readFileSync('vitrine/admin/orders/list-controller.js','utf8')+'\n'+readFileSync('vitrine/admin/orders/card-view.js','utf8');
+const part=readFileSync('vitrine/admin/runtime-parts/16-orders-operations.part.js','utf8');
+const listView=readFileSync('vitrine/admin/orders/list-view.js','utf8');
 const sql=readFileSync('supabase/sql/20261008_order_manual_separation_queue_v1.sql','utf8');
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
 for(const [i,source] of scripts.entries())new Script(source,{filename:'admin-inline-'+i+'.js'});
 
-assert.match(html,/orderStatusTab:'manual'/);
-assert.match(html,/const ORDER_STATUS_TABS=\[\s*\{key:'manual',label:'SEPARAR AGORA'\}/);
-assert.doesNotMatch(html,/\{key:'all',label:'Todos'\}/);
-assert.ok(html.includes("data-manual-queue-'+(manualSelected?'remove':'add')"),'manual queue action attached to cards');
+assert.match(html,/orderStatusTab:'new'/);
+assert.deepEqual([...listView.matchAll(/\{key:'([^']+)',label:'([^']+)'\}/g)].map(([,key,label])=>[key,label]),[
+  ['new','Novo'],['separate','Separar agora'],['ready','Pronto para entrega'],['delivered','Entregue']
+]);
+assert.doesNotMatch(html,/data-manual-queue-(?:add|remove)/,'manual selection controls are no longer part of the order board');
 assert.match(html,/manualQueueRpc\(enable\?'add':'remove',orderId\)/);
 assert.match(html,/data-v3-separation/);
 assert.match(html,/function openOrderSeparationSheet\(id\)/);
@@ -24,26 +27,21 @@ assert.doesNotMatch(sql,/create\s+trigger\b/i);
 assert.doesNotMatch(sql,/update\s+public\.orders\b/i);
 assert.doesNotMatch(sql,/update\s+public\.order_items\b/i);
 
-const begin=html.indexOf('function orderStatusTabMatch(');
-const end=html.indexOf('function orderStatusTabCounts()',begin);
+const begin=part.indexOf('function orderStatusTabKey(');
+const end=part.indexOf('  orderCardView=window.',begin);
 assert.ok(begin!==-1&&end>begin);
-const funcBody=html.slice(begin,end);
-const makeMatch=new Function('state','orderV3Milestones','orderStatusTabKey',funcBody+';return orderStatusTabMatch;');
-const state={orderStatusTab:'manual',manualQueueIds:new Set()};
-const milestones=o=>({confirmed:o.confirmed,separated:o.separated,delivered:o.delivered,cancelled:o.cancelled});
-const key=o=>o.confirmed?'confirmed':'received';
-const match=makeMatch(state,milestones,key);
+const funcBody=part.slice(begin,end);
+const makeMatch=new Function('orderList','orderCardModel',funcBody+';return orderStatusTabMatch;');
+const state={orderStatusTab:'separate'};
+const key=o=>o.cancelled?'cancelled':o.delivered?'delivered':o.separated?'ready':o.confirmed?'separate':'new';
+const match=makeMatch({state},{orderListBucketKey:key});
 const order={id:'order-1',status:'confirmed',confirmed:true,separated:false,delivered:false,cancelled:false};
-assert.equal(match(order),false,'nenhum pedido entra automaticamente');
-state.manualQueueIds.add('order-1');
-assert.equal(match(order),true,'pedido adicionado manualmente aparece');
-assert.equal(match({...order,separated:true}),false,'pedido ja separado sai da fila visual');
-assert.equal(match({...order,delivered:true}),false,'pedido entregue nao fica na fila visual');
-assert.equal(match({...order,cancelled:true}),false,'pedido cancelado nao fica na fila visual');
-assert.equal(match({...order,status:'out_for_delivery'}),false,'entrega nao fica na fila visual');
-assert.equal(match({...order,id:'order-2'}),false,'outro pedido confirmado nao entra na fila');
-assert.equal(match(order,'confirmed'),true,'filtro Confirmados original e preservado');
-state.manualQueueIds.delete('order-1');
-assert.equal(match(order),false,'retirada manual e respeitada');
+assert.equal(match(order),true,'todo pedido confirmado aparece em Separar agora sem inclusão manual');
+assert.equal(match({...order,id:'order-2'}),true,'outros pedidos confirmados também aparecem em Separar agora');
+assert.equal(match({...order,separated:true},'separate'),false,'pedido separado sai de Separar agora');
+assert.equal(match({...order,separated:true},'ready'),true,'pedido separado entra em Pronto para entrega');
+assert.equal(match({...order,delivered:true},'delivered'),true,'entrega confirmada entra em Entregue');
+assert.equal(match({...order,cancelled:true},'separate'),false,'cancelado não entra em etapa operacional');
+assert.equal(match(order,'new'),false,'pedido confirmado não aparece em Novo');
 
-console.log('PASS: aba manual, inclusao explicita, isolamento operacional, RPC seguro, sintaxe JS e filtros.');
+console.log('PASS: quatro etapas, confirmação automática na lista, fila manual fora da UI e RPC seguro.');

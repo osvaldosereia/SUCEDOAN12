@@ -3,12 +3,13 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 const source=fs.readFileSync('vitrine/admin/core/identifiers.js','utf8');
+const runtime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const tag='<script src="/vitrine/admin/core/identifiers.js?v=refactor-20261018"></script>';
 assert.ok(html.includes(tag));
-assert.ok(html.indexOf(tag)<html.indexOf('<script>\n(()=>{'));
-assert.ok(html.includes('const {orderDisplayCode,phoneDigits,formatPhone,formatCpf}=window.DonaAntoniaAdminIdentifiers;'));
+assert.ok(html.indexOf(tag)<html.indexOf('<script src="/vitrine/admin/admin-runtime.js?'));
+assert.ok(runtime.includes('const {orderDisplayCode,phoneDigits,formatPhone,formatCpf}=window.DonaAntoniaAdminIdentifiers;'));
 for(const name of ['orderDisplayCode','phoneDigits','formatPhone','formatCpf']){
-  assert.equal(new RegExp('^  function '+name+'\\(', 'm').test(html),false);
+  assert.equal(new RegExp('^  function '+name+'\\(', 'm').test(runtime),false);
 }
 const context={window:{},String,Object};
 vm.runInNewContext(source,context);

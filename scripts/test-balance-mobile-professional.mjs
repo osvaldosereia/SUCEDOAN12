@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-const s=fs.readFileSync('vitrine/admin/index.html','utf8');
+const s=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const checks=[
  ['camera compacta mobile', /@media\(max-width:640px\)[\s\S]*?\.balance-camera-view\{height:136px;min-height:0/],
  ['sem botao ligar camera', !s.includes('balanceCameraStart')],
