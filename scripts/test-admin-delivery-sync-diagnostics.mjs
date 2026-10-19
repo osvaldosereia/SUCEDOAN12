@@ -23,4 +23,6 @@ assert.match(refresh,/result\.error/);
 assert.match(refresh,/order_public_snapshot_refresh_failed/);
 assert.equal((source.match(/await refreshPublicOrderSnapshotBestEffort\(oid\)/g)||[]).length,4);
 assert.doesNotMatch(source,/try\{await db\.rpc\("ops2_refresh_order_public_snapshot_v1"[^}]*\}\)\}catch\{\}/);
+assert.match(source,/order_link_status_lookup_failed/,'Bling order-link lookup failures should be observable');
+assert.match(source,/order_public_link_lookup_failed/,'public link lookup failures should be observable');
 console.log('Admin order delivery projection diagnostics contract: PASS');
