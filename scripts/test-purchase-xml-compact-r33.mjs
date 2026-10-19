@@ -126,7 +126,7 @@ assert.match(api,/lot_expiration_date:exp\|\|null/);
   await old;
   assert.equal(state.purchaseBlingCompareLoading,true,'stale completion must not stop the current request spinner');
   pending[1]({documents:[{id:'current'}]});
-  await Promise.resolve();
+  await new Promise(resolve=>setImmediate(resolve));
   assert.equal(state.purchaseBlingBrowse.documents[0].id,'current');
   assert.equal(state.purchaseBlingCompareLoaded,true);
   assert.equal(state.purchaseBlingCompareLoading,false);
