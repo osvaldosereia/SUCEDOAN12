@@ -2,17 +2,26 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const context={window:{}};vm.createContext(context);
-for(const file of ['session','fiscal-controller'])vm.runInContext(fs.readFileSync('vitrine/admin/orders/'+file+'.js','utf8'),context);
+for(const file of ['session','fiscal-loader','fiscal-controller'])vm.runInContext(fs.readFileSync('vitrine/admin/orders/'+file+'.js','utf8'),context);
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject}};
 function fixture(api){
+ const revisions=new Map(),begin=id=>{const key=String(id),next=(revisions.get(key)||0)+1;revisions.set(key,next);return next},reads={begin,isCurrent(id,revision){return revisions.get(String(id))===revision},invalidate:begin};
  const session=context.window.DonaAntoniaAdminOrderSession.create({isOpen:()=>true});
  const show=id=>{session.begin(id);session.detail={order:{id,status:'ready'}};session.fiscal={can_issue:true}};show('a');
  const cache={},paints=[],opened=[],messages=[];
- const controller=context.window.DonaAntoniaAdminOrderFiscal.create({api,session,cache:()=>cache,
+ const controller=context.window.DonaAntoniaAdminOrderFiscal.create({api,session,cache:()=>cache,reads,
  ui:{query:()=>null,confirm:()=>true,toast:m=>messages.push(m),currentOperator:()=> 'Operação'},
  formatters:{esc:String,dateTime:String,money:String,errorMessage:String},orderView:{orderDisplayCode:o=>o.id},
  view:{paint:()=>paints.push(session.detail.order.id),open:id=>opened.push(id),refreshList:async()=>{},currentTab:()=> 'orders',renderClosure:()=>{},openDanfe:()=>{}}});
- return {session,show,cache,paints,opened,messages,controller};
+ return {session,show,cache,paints,opened,messages,controller,reads};
+}
+{
+ const requests=[],f=fixture(()=>{const d=deferred();requests.push(d);return d.promise});
+ const loader=context.window.DonaAntoniaAdminFiscalLoader.create({api:()=>{const d=deferred();requests.push(d);return d.promise},getCache:()=>f.cache,reads:f.reads});
+ const batch=loader.load([{id:'a'}]);const detail=f.controller.loadCurrentOrderFiscal();
+ requests[0].resolve({stage:'blocked'});await batch;requests[1].resolve({stage:'authorized',authorized:true});await detail;
+ assert.equal(f.cache.a.stage,'authorized','older list response must not overwrite later detail read');
+ assert.equal(f.session.fiscal.stage,'authorized','newer detail response must remain the editor state');
 }
 {
  const d=deferred(),calls=[];const f=fixture(async(action,params,options)=>{calls.push([action,JSON.parse(options.body)]);return d.promise});

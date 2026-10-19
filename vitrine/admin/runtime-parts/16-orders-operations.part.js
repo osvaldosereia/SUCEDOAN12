@@ -1,7 +1,7 @@
   const orderList=window.DonaAntoniaAdminOrderList.create({
     api,queueRequest:manualQueueRequest,
-    orders:{get:()=>state.orders,set:value=>{state.orders=value},loadFiscal:loadFiscalForOrders},
-    navigation:{currentTab:()=>state.tab},ui:{query:$,document,toast,errorMessage},view:{paint:paintOrderRows}
+    orders:{get:()=>state.orders,set:value=>{state.orders=value},loadFiscal:loadFiscalForOrders,isCustomerPending:orderCustomerDataPending},
+    navigation:{currentTab:()=>state.tab},ui:{query:$,document,toast,errorMessage,currentOperator},view:{paint:paintOrderRows}
   });
   function orderCardPhone(o){return formatPhone(o?.whatsapp_phone_e164||o?.delivery_address_snapshot?.phone||'')||'Telefone não informado'}
   function orderSeparationUrlFor(id){const url=new URL('/vitrine/admin/',location.origin);url.searchParams.set('separacao',String(id||''));return url.toString()}
@@ -140,7 +140,7 @@
     if(btn){btn.disabled=true;btn.textContent='REGISTRANDO SAÍDA…'}
     try{await api('order_dispatch_start_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+id})});toast('Saída para entrega registrada');delete state.fiscalByOrder[id];await loadOrders();if(orderSession.detail?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
   }
-  async function quickConfirmOrder(id,btn){const current=state.orders.find(o=>String(o.id)===String(id));if(current&&orderCustomerDataPending(current)){toast('Complete os dados essenciais do cliente antes de confirmar');return}if(btn){btn.disabled=true;btn.textContent='CONFIRMANDO…'}try{await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'confirmed',operator:currentOperator()||'Operação'})});toast('Pedido confirmado');await loadOrders()}catch(e){toast(errorMessage(e.message))}finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='CONFIRMADO'}}}
+  function quickConfirmOrder(id,btn){return orderList.confirmOrder(id,btn)}
   function closeOrderSeparationSheet(){document.querySelector('.orders-bottom-sheet-backdrop')?.remove()}
   function separationMoney(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
   async function openOrderSeparationSheet(id){const order=state.orders.find(o=>String(o.id)===String(id));if(order&&orderCustomerDataPending(order)){toast('Complete os dados essenciais do cliente antes da separação');return}if(order&&!orderV3Milestones(order).confirmed){toast('Confirme o pedido antes de iniciar a separação');return}const originalPublicCode=orderDisplayCode(order);closeOrderSeparationSheet();const back=document.createElement('div');back.className='orders-bottom-sheet-backdrop';back.innerHTML='<section class="orders-bottom-sheet" role="dialog" aria-modal="true"><header class="orders-sheet-head"><div><h2>Separação do pedido'+(originalPublicCode==='—'?'':' #'+esc(originalPublicCode))+'</h2><p>Marque cada produto como SEPARADO ou FALTOU.</p></div><button class="orders-sheet-close" type="button" aria-label="Fechar">×</button></header><div class="orders-sheet-body"><div class="loading">Carregando produtos…</div></div><footer class="orders-sheet-foot" hidden></footer></section>';document.body.appendChild(back);back.querySelector('.orders-sheet-close').onclick=closeOrderSeparationSheet;back.onclick=e=>{if(e.target===back){closeOrderSeparationSheet();return}const button=e.target.closest?.('[data-separation-state]');if(!button||button.disabled||back.dataset.separationBusy==='1'||!back.contains(button))return;e.preventDefault();setOrderSeparationItem(id,button.dataset.orderItem,button.dataset.separationState,back.dataset.orderUpdatedAt||'',back.dataset.separatorKey||'',back,button)};await loadOrderSeparationSheet(id,back)}
@@ -352,7 +352,7 @@
   function paintOrderDetail(){return orderDetailView.paintOrderDetail()}
   function openDanfeForOrder(id,orderCode=''){return orderDocuments.openDanfeForOrder(id,orderCode)}
   const orderFiscalController=window.DonaAntoniaAdminOrderFiscal.create({
-    api,session:orderSession,cache:()=>state.fiscalByOrder,
+    api,session:orderSession,cache:()=>state.fiscalByOrder,reads:fiscalReads,
     ui:{query:$,confirm,toast,currentOperator},formatters:{esc,dateTime,money,errorMessage},orderView:{orderDisplayCode},
     view:{paint:paintOrderDetail,open:openOrder,refreshList:loadOrders,currentTab:()=>state.tab,renderClosure,openDanfe:openDanfeForOrder}
   });

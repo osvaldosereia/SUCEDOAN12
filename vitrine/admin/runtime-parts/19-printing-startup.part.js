@@ -46,8 +46,8 @@
       if(!uuid.test(sharedSeparationId)){location.replace('/montar/?erro=pedido_invalido');return}
       try{
         // Verify current membership server-side. Do not show other Admin orders.
-        const allowed=await manualQueueRpc('list');
-        if(!Array.isArray(allowed.order_ids)||!allowed.order_ids.some(x=>String(x)===sharedSeparationId)){
+        await loadManualPickQueue();
+        if(!orderList.state.manualQueueIds.has(String(sharedSeparationId))){
           location.replace('/montar/?erro=pedido_indisponivel');return;
         }
         // Load only this one order, preserving the exact customer/status checks used by

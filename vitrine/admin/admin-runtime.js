@@ -13,7 +13,13 @@
   const {errorMessage}=window.DonaAntoniaAdminErrors;
   const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderFocusIssue:null,fiscalByOrder:{},closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],orders:[],balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null};
   const orderSession=window.DonaAntoniaAdminOrderSession.create({isOpen:()=>$('#editor')?.open&&$('#editorTitle')?.textContent==='Pedido'});
-  const {load:loadFiscalForOrders}=window.DonaAntoniaAdminFiscalLoader.create({api,getCache:()=>state.fiscalByOrder});
+  const fiscalReadRevisions=new Map();
+  const fiscalReads=Object.freeze({
+    begin(id){const key=String(id),revision=(fiscalReadRevisions.get(key)||0)+1;fiscalReadRevisions.set(key,revision);return revision},
+    isCurrent(id,revision){return fiscalReadRevisions.get(String(id))===revision},
+    invalidate(id){const key=String(id),revision=(fiscalReadRevisions.get(key)||0)+1;fiscalReadRevisions.set(key,revision);return revision}
+  });
+  const {load:loadFiscalForOrders}=window.DonaAntoniaAdminFiscalLoader.create({api,getCache:()=>state.fiscalByOrder,reads:fiscalReads});
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -5092,8 +5098,8 @@
   function orderCardOperationalTags(o,m=orderV3Milestones(o)){const tags=[],sep=orderSeparationSummary(o);if(m.confirmed&&!m.separated&&!m.delivered&&!m.cancelled)tags.push('<span class="order-v3-tag ok">MONTAR PARA ENTREGAR HOJE</span>');if(m.separated&&sep?.phase==='needs_attention')tags.push('<span class="order-v3-tag warn">INTEGRAÇÃO PENDENTE</span>');const fiscalTag=orderFiscalTagV4(o);if(fiscalTag)tags.push(fiscalTag);if(orderCustomerDataPending(o))tags.push('<span class="order-v3-tag neutral" title="'+esc(orderCustomerDataPendingReasons(o).join(' · '))+'">DADOS DO CLIENTE PENDENTES</span>');return tags.join('')}
   const orderList=window.DonaAntoniaAdminOrderList.create({
     api,queueRequest:manualQueueRequest,
-    orders:{get:()=>state.orders,set:value=>{state.orders=value},loadFiscal:loadFiscalForOrders},
-    navigation:{currentTab:()=>state.tab},ui:{query:$,document,toast,errorMessage},view:{paint:paintOrderRows}
+    orders:{get:()=>state.orders,set:value=>{state.orders=value},loadFiscal:loadFiscalForOrders,isCustomerPending:orderCustomerDataPending},
+    navigation:{currentTab:()=>state.tab},ui:{query:$,document,toast,errorMessage,currentOperator},view:{paint:paintOrderRows}
   });
   function orderCardPhone(o){return formatPhone(o?.whatsapp_phone_e164||o?.delivery_address_snapshot?.phone||'')||'Telefone não informado'}
   function orderSeparationUrlFor(id){const url=new URL('/vitrine/admin/',location.origin);url.searchParams.set('separacao',String(id||''));return url.toString()}
@@ -5232,7 +5238,7 @@
     if(btn){btn.disabled=true;btn.textContent='REGISTRANDO SAÍDA…'}
     try{await api('order_dispatch_start_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Expedição',idempotency_key:'dispatch-v4:'+id})});toast('Saída para entrega registrada');delete state.fiscalByOrder[id];await loadOrders();if(orderSession.detail?.order?.id===id)await openOrder(id)}catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='SAIU PARA ENTREGA'}}
   }
-  async function quickConfirmOrder(id,btn){const current=state.orders.find(o=>String(o.id)===String(id));if(current&&orderCustomerDataPending(current)){toast('Complete os dados essenciais do cliente antes de confirmar');return}if(btn){btn.disabled=true;btn.textContent='CONFIRMANDO…'}try{await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'confirmed',operator:currentOperator()||'Operação'})});toast('Pedido confirmado');await loadOrders()}catch(e){toast(errorMessage(e.message))}finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='CONFIRMADO'}}}
+  function quickConfirmOrder(id,btn){return orderList.confirmOrder(id,btn)}
   function closeOrderSeparationSheet(){document.querySelector('.orders-bottom-sheet-backdrop')?.remove()}
   function separationMoney(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
   async function openOrderSeparationSheet(id){const order=state.orders.find(o=>String(o.id)===String(id));if(order&&orderCustomerDataPending(order)){toast('Complete os dados essenciais do cliente antes da separação');return}if(order&&!orderV3Milestones(order).confirmed){toast('Confirme o pedido antes de iniciar a separação');return}const originalPublicCode=orderDisplayCode(order);closeOrderSeparationSheet();const back=document.createElement('div');back.className='orders-bottom-sheet-backdrop';back.innerHTML='<section class="orders-bottom-sheet" role="dialog" aria-modal="true"><header class="orders-sheet-head"><div><h2>Separação do pedido'+(originalPublicCode==='—'?'':' #'+esc(originalPublicCode))+'</h2><p>Marque cada produto como SEPARADO ou FALTOU.</p></div><button class="orders-sheet-close" type="button" aria-label="Fechar">×</button></header><div class="orders-sheet-body"><div class="loading">Carregando produtos…</div></div><footer class="orders-sheet-foot" hidden></footer></section>';document.body.appendChild(back);back.querySelector('.orders-sheet-close').onclick=closeOrderSeparationSheet;back.onclick=e=>{if(e.target===back){closeOrderSeparationSheet();return}const button=e.target.closest?.('[data-separation-state]');if(!button||button.disabled||back.dataset.separationBusy==='1'||!back.contains(button))return;e.preventDefault();setOrderSeparationItem(id,button.dataset.orderItem,button.dataset.separationState,back.dataset.orderUpdatedAt||'',back.dataset.separatorKey||'',back,button)};await loadOrderSeparationSheet(id,back)}
@@ -5444,7 +5450,7 @@
   function paintOrderDetail(){return orderDetailView.paintOrderDetail()}
   function openDanfeForOrder(id,orderCode=''){return orderDocuments.openDanfeForOrder(id,orderCode)}
   const orderFiscalController=window.DonaAntoniaAdminOrderFiscal.create({
-    api,session:orderSession,cache:()=>state.fiscalByOrder,
+    api,session:orderSession,cache:()=>state.fiscalByOrder,reads:fiscalReads,
     ui:{query:$,confirm,toast,currentOperator},formatters:{esc,dateTime,money,errorMessage},orderView:{orderDisplayCode},
     view:{paint:paintOrderDetail,open:openOrder,refreshList:loadOrders,currentTab:()=>state.tab,renderClosure,openDanfe:openDanfeForOrder}
   });
@@ -5515,8 +5521,8 @@
       if(!uuid.test(sharedSeparationId)){location.replace('/montar/?erro=pedido_invalido');return}
       try{
         // Verify current membership server-side. Do not show other Admin orders.
-        const allowed=await manualQueueRpc('list');
-        if(!Array.isArray(allowed.order_ids)||!allowed.order_ids.some(x=>String(x)===sharedSeparationId)){
+        await loadManualPickQueue();
+        if(!orderList.state.manualQueueIds.has(String(sharedSeparationId))){
           location.replace('/montar/?erro=pedido_indisponivel');return;
         }
         // Load only this one order, preserving the exact customer/status checks used by

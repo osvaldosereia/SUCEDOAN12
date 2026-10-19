@@ -1,7 +1,10 @@
 // Shared fiscal read scheduler. A batch must not replace a newer order detail.
 (function(global){
-  function create({api,getCache}){
+  function create({api,getCache,reads}){
     const inFlight=new WeakMap(),queue=[];
+    const localRevisions=new Map();
+    const beginRead=reads?.begin||((id)=>{const key=String(id),next=(localRevisions.get(key)||0)+1;localRevisions.set(key,next);return next});
+    const isCurrentRead=reads?.isCurrent||((id,revision)=>localRevisions.get(String(id))===revision);
     let active=0;
     async function run(job){
       let value;
@@ -10,13 +13,13 @@
           method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:job.id})
         });
       }catch(error){value={error:String(error?.message||'fiscal_unavailable')}}
-      if(getCache()===job.cache&&job.cache[job.id]===job.initial)job.cache[job.id]=value;
+      if(isCurrentRead(job.id,job.revision)&&getCache()===job.cache&&job.cache[job.id]===job.initial)job.cache[job.id]=value;
       job.pending.delete(job.id);active--;job.done();drain();
     }
     function drain(){
       while(active<3&&queue.length){
         const job=queue.shift();
-        if(getCache()!==job.cache||job.cache[job.id]!==job.initial){job.pending.delete(job.id);job.done();continue}
+        if(!isCurrentRead(job.id,job.revision)||getCache()!==job.cache||job.cache[job.id]!==job.initial){job.pending.delete(job.id);job.done();continue}
         active++;run(job);
       }
     }
@@ -25,9 +28,9 @@
       let pending=inFlight.get(cache);
       if(!pending){pending=new Map();inFlight.set(cache,pending)}
       if(pending.has(row.id))return pending.get(row.id);
-      let done;const promise=new Promise(resolve=>{done=resolve});
+      const revision=beginRead(row.id);let done;const promise=new Promise(resolve=>{done=resolve});
       pending.set(row.id,promise);
-      queue.push({id:row.id,cache,initial:cache[row.id],pending,done});drain();
+      queue.push({id:row.id,cache,initial:cache[row.id],revision,pending,done});drain();
       return promise;
     }
     async function load(rows){

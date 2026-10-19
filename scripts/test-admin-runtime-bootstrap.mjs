@@ -3,6 +3,10 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const startup=fs.readFileSync('vitrine/admin/runtime-parts/19-printing-startup.part.js','utf8');
+assert.match(startup,/await loadManualPickQueue\(\)/,'Montar must use the public order-list queue port');
+assert.match(startup,/orderList\.state\.manualQueueIds\.has\(String\(sharedSeparationId\)\)/,'Montar must authorize only queue membership returned by its controller');
+assert.doesNotMatch(startup,/manualQueueRpc\(/,'Montar cannot call the list controller private queue function');
 const nodes=new Map();
 for(const [,id] of html.matchAll(/\bid="([^"]+)"/g))nodes.set('#'+id,{
   onclick:null,innerHTML:'',dataset:{},

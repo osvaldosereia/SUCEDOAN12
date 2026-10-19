@@ -21,8 +21,8 @@
     if($('#saveOrder'))$('#saveOrder').onclick=saveOrderV3;
     if($('#sendCustomerVitrineV3'))$('#sendCustomerVitrineV3').onclick=e=>sendOrderCustomerVitrineV3(o.id,e.currentTarget);
     if($('#openOrderVitrineV3'))$('#openOrderVitrineV3').onclick=openCurrentOrderVitrine;
-    if($('#confirmOrderV3'))$('#confirmOrderV3').onclick=async()=>{const token=session.capture();await quickConfirmOrder(o.id,$('#confirmOrderV3'));
-    if(session.isCurrent(token))await openOrder(o.id)};
+    if($('#confirmOrderV3'))$('#confirmOrderV3').onclick=async()=>{const token=session.capture();
+    if(await quickConfirmOrder(o.id,$('#confirmOrderV3'))&&session.isCurrent(token))await openOrder(o.id)};
     if($('#openSeparationV3'))$('#openSeparationV3').onclick=()=>{const id=o.id;$('#editor').close();openOrderSeparationSheet(id)};
     if($('#deliverOrderV3'))$('#deliverOrderV3').onclick=()=>openOrderDeliveryConfirm(o.id);
     if($('#deliveryFailedV4'))$('#deliveryFailedV4').onclick=()=>returnOrderToExpedition(o.id,true);

@@ -4,10 +4,10 @@ import vm from 'node:vm';
 const context={window:{}};vm.createContext(context);vm.runInContext(fs.readFileSync('vitrine/admin/orders/list-controller.js','utf8'),context);
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve}};
 const tick=()=>new Promise(r=>setImmediate(r));
-function fixture(api,queueRequest=async()=>({order_ids:[]})){
+function fixture(api,queueRequest=async()=>({order_ids:[]}),isCustomerPending=()=>false){
  let rows=[],tab='orders',paints=0;const host={innerHTML:''};
  const controller=context.window.DonaAntoniaAdminOrderList.create({api,queueRequest,
- orders:{get:()=>rows,set:value=>rows=value,loadFiscal:async()=>{}},navigation:{currentTab:()=>tab},
+ orders:{get:()=>rows,set:value=>rows=value,loadFiscal:async()=>{},isCustomerPending},navigation:{currentTab:()=>tab},
  ui:{query:key=>key==='#orderRows'?host:null,document:{hidden:false},toast(){},errorMessage:String},view:{paint:()=>paints++}});
  return {controller,host,get rows(){return rows},set rows(v){rows=v},get paints(){return paints},leave:()=>tab='customers'};
 }
@@ -40,5 +40,23 @@ function fixture(api,queueRequest=async()=>({order_ids:[]})){
  const old=f.controller.refreshOrderSeparationBoard();await f.controller.loadOrders();
  d.resolve({board:[{order_id:'a',status:'ready'}]});await old;
  assert.equal(f.rows[0].status,'confirmed','poll started before reload must not overwrite it');
+}
+{
+ const f=fixture(async action=>{if(action==='order_update')throw Error('temporary_failure');return {orders:[]}});
+ f.rows=[{id:'a',status:'created'}];const button={disabled:false,textContent:'CONFIRMAR PEDIDO'};
+ const ok=await f.controller.confirmOrder('a',button);
+ assert.equal(ok,false);assert.equal(button.textContent,'CONFIRMAR PEDIDO');assert.equal(button.disabled,false);
+}
+{
+ const requests=[],f=fixture(async(action,params,options)=>{requests.push([action,params,options&&JSON.parse(options.body)]);return action==='order_update'?{ok:true}:{orders:[{id:'a',status:'confirmed'}]}});
+ f.rows=[{id:'a',status:'created'}];const button={disabled:false,textContent:'CONFIRMAR PEDIDO'};
+ assert.equal(await f.controller.confirmOrder('a',button),true);
+ assert.equal(JSON.stringify(requests[0]),JSON.stringify(['order_update',{}, {id:'a',status:'confirmed',operator:'Operação'}]));
+ assert.deepEqual(f.rows,[{id:'a',status:'confirmed'}]);assert.equal(button.textContent,'CONFIRMADO');
+}
+{
+ let calls=0;const f=fixture(async()=>{calls++;return {orders:[]}},undefined,()=>true);
+ f.rows=[{id:'a',status:'created'}];
+ assert.equal(await f.controller.confirmOrder('a'),false);assert.equal(calls,0);
 }
 console.log('Admin order list and manual queue concurrency: PASS');

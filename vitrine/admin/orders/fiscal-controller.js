@@ -1,13 +1,16 @@
 // Fiscal reads and mutations belong to the captured order, never the next editor.
 (function(global){
-  function create({api,session,cache,ui,formatters,orderView,view}){
+  function create({api,session,cache,reads,ui,formatters,orderView,view}){
     const {query:$,confirm,toast,currentOperator}=ui;
     const {esc,dateTime,errorMessage}=formatters;
     const {orderDisplayCode}=orderView;
-    const busy=new Set(),feedbackByOrder=new Map(),versions=new Map();
+    const busy=new Set(),feedbackByOrder=new Map(),localRevisions=new Map();
+    const beginRead=reads?.begin||((id)=>{const key=String(id),next=(localRevisions.get(key)||0)+1;localRevisions.set(key,next);return next});
+    const isCurrentRead=reads?.isCurrent||((id,revision)=>localRevisions.get(String(id))===revision);
+    const invalidateReads=reads?.invalidate||beginRead;
     const post=(action,payload)=>api(action,{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     function publish(id,fiscal,token){
-      versions.set(id,(versions.get(id)||0)+1);
+      invalidateReads(id);
       cache()[id]=fiscal;
       if(session.isCurrent(token)){
         session.request('fiscal'); // Invalidate a read started before this mutation.
@@ -15,11 +18,11 @@
       }
     }
     async function readFiscal(id){
-      const target=cache(),initial=target[id],version=(versions.get(id)||0)+1;versions.set(id,version);
+      const target=cache(),initial=target[id],revision=beginRead(id);
       let fiscal;
       try{fiscal=await post('order_fiscal_status',{id})}
       catch(error){fiscal={error:String(error?.message||'fiscal_unavailable')}}
-      if(versions.get(id)===version&&cache()===target&&target[id]===initial)target[id]=fiscal;
+      if(isCurrentRead(id,revision)&&cache()===target&&target[id]===initial)target[id]=fiscal;
       return cache()[id]!==initial&&cache()[id]!=null?cache()[id]:fiscal;
     }
     async function refreshFiscal(id,token){

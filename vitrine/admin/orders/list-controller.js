@@ -1,10 +1,10 @@
 // Shared order data, list refresh lifetime and serialized manual picking queue.
 (function(global){
   function create({api,queueRequest,orders,navigation,ui,view}){
-    const {query:$,document,toast,errorMessage}=ui;
+    const {query:$,document,toast,errorMessage,currentOperator=()=>''}=ui;
     const state={orderQuery:'',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,manualQueueLastSync:0};
     let ordersLoadGeneration=0,orderBoardRefreshGeneration=0,queueTail=Promise.resolve(),queueRead=null;
-    const mutations=new Set();
+    const mutations=new Set(),confirmations=new Set();
     function viewToken(){return $('#orderRows')}
     function canPaint(host){return navigation.currentTab()==='orders'&&host&&host===$('#orderRows')}
     function manualQueueRpc(action,orderId=null){
@@ -44,6 +44,24 @@
         if(fiscalRows.length){await orders.loadFiscal(fiscalRows);if(isLatest()&&canPaint(host))view.paint()}
       }catch(error){if(isLatest()&&canPaint(host))host.innerHTML='<div class="empty">Não consegui carregar os pedidos.</div>'}
     }
+    async function confirmOrder(id,button){
+      const key=String(id);if(confirmations.has(key))return false;
+      const current=orders.get().find(row=>String(row.id)===key);
+      if(current&&orders.isCustomerPending?.(current)){
+        toast('Complete os dados essenciais do cliente antes de confirmar');return false;
+      }
+      const previousLabel=button?.textContent||'CONFIRMAR PEDIDO';confirmations.add(key);
+      if(button){button.disabled=true;button.textContent='CONFIRMANDO…'}
+      let confirmed=false;
+      try{
+        await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'confirmed',operator:currentOperator()||'Operação'})});
+        confirmed=true;toast('Pedido confirmado');await loadOrders();return true;
+      }catch(error){toast(errorMessage(error.message));return false}
+      finally{
+        confirmations.delete(key);
+        if(button&&(!document.contains||document.contains(button))){button.disabled=false;button.textContent=confirmed?'CONFIRMADO':previousLabel}
+      }
+    }
     async function refreshOrderSeparationBoard(){
       if(navigation.currentTab()!=='orders'||document.hidden||!orders.get().length)return;
       const generation=++orderBoardRefreshGeneration,ordersGeneration=ordersLoadGeneration,host=viewToken();
@@ -67,7 +85,7 @@
         if(changed&&isCurrent())view.paint();
       }catch{} // Polling is best effort; explicit list refresh reports failures.
     }
-    return Object.freeze({state,loadOrders,loadManualPickQueue,setManualPickQueue,refreshOrderSeparationBoard});
+    return Object.freeze({state,loadOrders,confirmOrder,loadManualPickQueue,setManualPickQueue,refreshOrderSeparationBoard});
   }
   global.DonaAntoniaAdminOrderList=Object.freeze({create});
 })(window);

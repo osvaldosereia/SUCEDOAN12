@@ -19,7 +19,7 @@ const payment=between(api,'async function captureDeliveryPayment(','\nfunction o
 const finish=between(api,'async function finalizeCapturedDeliveryV4(','\nasync function ');
 const cancel=between(html,'  async function cancelCurrentOrder(){','    return Object.freeze({openOrder,saveOrderV3');
 const delivery=between(html,'  async function captureDeliveryPaymentAndFinish(){','\n  async function confirmDeliveryFromExpedition');
-const uiDispatch=between(html,'  async function startOrderDispatchV4(','\n  async function quickConfirmOrder');
+const uiDispatch=between(html,'  async function startOrderDispatchV4(','\n  function quickConfirmOrder');
 const uiReturn=between(html,'  async function returnOrderToExpedition(','\n  async function confirmPhysicalDeliveryReturn');
 for(const pattern of [/orderFiscalStatusV4/,/fiscal\.authorized!==true/,/delivery_return_open/,/ops4_start_dispatch_v1/,/p_idempotency_key:key/])assert.match(dispatch,pattern);
 assert.match(bypass,/canonical_dispatch_required/);
