@@ -15,6 +15,7 @@ on:
       - 'supabase/functions/admin-whatsapp-templates-v1/**'
       - 'supabase/functions/admin-marketing-audiences-v1/**'
       - 'supabase/functions/admin-marketing-campaigns-v1/**'
+      - 'supabase/functions/admin-order-delivery-comms-v1/**'
       - 'vitrine/admin/index.html'
       - 'supabase/functions/admin-products-live-v1/index.ts'
       - 'supabase/migrations/20261007202921_smart_delivery_admin_runtime_v1.sql'
@@ -65,6 +66,7 @@ on:
       - 'scripts/test-whatsapp-marketing-*.mjs'
       - 'scripts/test-marketing-security-hardening-v1.mjs'
       - 'scripts/test-marketing-repurchase-monthly-cadence-v1.mjs'
+      - 'scripts/test-admin-order-delivery-comms-v1.mjs'
       - 'scripts/test-admin-marketing-*.mjs'
       - '.github/workflows/whatsapp-meta-central-ci.yml'
   workflow_dispatch:
@@ -90,6 +92,7 @@ jobs:
       - {name: Marketing consent ledger contract, run: 'node scripts/test-whatsapp-marketing-consent-ledger-v1.mjs'}
       - {name: Marketing security hardening contract, run: 'node scripts/test-marketing-security-hardening-v1.mjs'}
       - {name: Marketing monthly repurchase cadence contract, run: 'node scripts/test-marketing-repurchase-monthly-cadence-v1.mjs'}
+      - {name: Post-delivery experience follow-up contract, run: 'node scripts/test-admin-order-delivery-comms-v1.mjs'}
       - {name: Marketing audience preview contract, run: 'node scripts/test-whatsapp-marketing-audience-preview-v1.mjs'}
       - {name: Marketing audience shared core contract, run: 'node scripts/test-whatsapp-marketing-audience-core-v2.mjs'}
       - {name: Marketing campaign drafts contract, run: 'node scripts/test-whatsapp-marketing-campaign-drafts-v1.mjs'}
