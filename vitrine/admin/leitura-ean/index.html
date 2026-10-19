@@ -42,7 +42,7 @@ button.full{width:100%;margin-top:12px;font-size:16px;min-height:50px}
 .filters button.active{background:#08704c;color:white}
 .entry{padding:12px 0;border-top:1px solid #e3ebe6;display:flex;justify-content:space-between;gap:8px}
 .entry:first-child{border-top:0}.entry-code{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.entry-meta{font-size:12px;color:#5d7066;margin-top:5px}
+.entry-meta{font-size:12px;color:#5d7066;margin-top:5px}.entry-product-name{font-size:13px;font-weight:750;color:#125638;margin-top:4px;overflow-wrap:anywhere}
 .entry-left{min-width:0}.entry-right{text-align:right;flex-shrink:0}
 .tag{display:inline-block;font-size:12px;font-weight:800;border-radius:7px;padding:5px 7px}
 .found{background:#def7e5;color:#136139}.not_found{background:#fff0e0;color:#a34b0e}.pending{background:#e9eef3;color:#465c67}
@@ -313,7 +313,7 @@ function updateRowLocal(row,summary){
  if(!row)return;
  setCounts(summary);
  const index=rows.findIndex(x=>x.id===row.id),visible=filter==="all"||row.sync_status===filter;
- if(index>=0){rows.splice(index,1);if(!visible)offset=Math.max(0,offset-1)}
+ if(index>=0){row={...rows[index],...row,product_name:row.product_name||rows[index].product_name};rows.splice(index,1);if(!visible)offset=Math.max(0,offset-1)}
  if(visible){rows.unshift(row);if(index<0)offset++;rows=rows.slice(0,60)}
  if(summary){
   const totals={all:summary.total,found:summary.found,not_found:summary.not_found,pending:summary.pending};
@@ -433,6 +433,7 @@ function paint(){
    :r.sync_status==="not_found"?'<span class="tag not_found">⚠ Não encontrado</span>'
    :'<span class="tag pending">A sincronizar</span>';
   return '<article class="entry"><div class="entry-left"><div class="entry-code">'+esc(r.ean)+'</div>'+
+    (r.sync_status==="found"&&r.product_name?'<div class="entry-product-name">'+esc(r.product_name)+'</div>':'')+
    '<div class="entry-meta">Quantidade: <b>'+qtyBR(r.quantity)+'</b> · '+dateBR(r.expires_on)+'</div>'+
    '<div class="entry-meta">'+fmt(r.created_at)+'</div></div>'+
    '<div class="entry-right">'+status+(r.photo_path?'<div class="entry-meta">📷 Foto salva</div>':'')+
