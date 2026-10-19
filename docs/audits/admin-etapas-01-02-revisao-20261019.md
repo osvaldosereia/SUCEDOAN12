@@ -61,7 +61,7 @@ Não houve homologação ponta a ponta das Edge Functions modificadas, do Bling,
 - `node scripts/test-admin-expedition-stale-refresh.mjs`
 - Inventário integral de funções e contratos de seção.
 - 116 scripts `test-admin-*.mjs` e 5 scripts `test-admin-*.py`, sem falhas após atualizar contratos defasados e cobrir a falha de recarga da Expedição.
-- 35 workflows do HEAD original do PR #1126, todos concluídos com sucesso antes desta continuação. O novo commit precisa de uma rodada própria de CI no GitHub.
+- Os 35 workflows do HEAD atualizado `77d7061`, incluindo o contrato corrigido de Cestas, concluíram sem falhas. A rodada anterior teve uma única falha no teste estático que ainda procurava a regra no runtime; o teste foi alinhado ao módulo extraído e passou na rodada seguinte.
 
 ## Limite estrutural remanescente
 
