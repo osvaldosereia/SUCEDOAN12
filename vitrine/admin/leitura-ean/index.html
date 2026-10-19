@@ -529,6 +529,31 @@ async function resolveRow(action,id,payload){
   msg("✓ "+text);
  }catch(e){msg("Não foi possível concluir: "+e.message,true)}finally{setBusy(false)}
 }
+async function showSavedPhoto(id){
+ const viewer=$("photoViewer"),image=$("photoViewerImage"),status=$("photoViewerStatus");
+ viewer.hidden=false;image.hidden=true;image.removeAttribute("src");$("photoViewerAdd").hidden=true;status.textContent="Carregando foto…";
+ $("photoViewerClose").focus();
+ try{
+  const token=await auth(),url=new URL(API);url.searchParams.set("action","photo_url");url.searchParams.set("id",id);
+  const res=await fetch(url,{headers:{Authorization:"Bearer "+token,apikey:KEY},cache:"no-store"});
+  const data=await res.json();if(!res.ok||!data.ok)throw Error(data.error||"foto_indisponivel");
+  image.onload=()=>{image.hidden=false;status.textContent=""};
+  image.onerror=()=>{image.hidden=true;status.textContent="A foto não pôde ser carregada. Tente novamente."};
+  image.src=data.url;
+ }catch(e){status.textContent="Foto indisponível: "+e.message;msg("Foto indisponível: "+e.message,true)}
+}
+function openPhotoUploadViewer(row){
+ missingRecordId=row.id;paused=true;pendingPhotoFile=null;
+ const viewer=$("photoViewer"),image=$("photoViewerImage");
+ image.hidden=true;image.removeAttribute("src");
+ $("photoViewerStatus").textContent="Este registro ainda não tem foto salva. Escolha uma imagem ou tire uma foto; ela será compactada antes do envio.";
+ $("photoViewerAdd").hidden=false;viewer.hidden=false;$("photoViewerClose").focus();
+}
+$("photoViewerAdd").addEventListener("click",()=>{if(!busy&&missingRecordId)$("productPhotoInput").click()});
+function closePhotoViewer(){
+ $("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src");$("photoViewerImage").hidden=true;$("photoViewerAdd").hidden=true;
+ if(missingRecordId){missingRecordId="";pendingPhotoFile=null;paused=false}
+}
 $("entries").addEventListener("click",(event)=>{
  const open=event.target.closest("[data-resolve-open]");
  if(open){if(busy)return;const row=rows.find(x=>x.id===open.dataset.id);if(row)openResolutionPanel(row,open.dataset.resolveOpen);return}
@@ -541,25 +566,12 @@ $("entries").addEventListener("click",(event)=>{
   resolveRow("link_product",id,{product_id:choose.dataset.linkProduct,ncm});return;
  }
  const view=event.target.closest("[data-view-photo]");
- if(view){
-  const viewer=$("photoViewer"),image=$("photoViewerImage"),status=$("photoViewerStatus");
-  viewer.hidden=false;image.hidden=true;image.removeAttribute("src");status.textContent="Carregando foto…";
-  $("photoViewerClose").focus();
-  (async()=>{try{
-   const token=await auth(),url=new URL(API);
-   url.searchParams.set("action","photo_url");url.searchParams.set("id",view.dataset.viewPhoto);
-   const res=await fetch(url,{headers:{Authorization:"Bearer "+token,apikey:KEY},cache:"no-store"});
-   const data=await res.json();if(!res.ok||!data.ok)throw Error(data.error||"foto_indisponivel");
-   image.onload=()=>{image.hidden=false;status.textContent=""};
-   image.onerror=()=>{image.hidden=true;status.textContent="A foto não pôde ser carregada. Tente novamente."};
-   image.src=data.url;
-  }catch(e){status.textContent="Foto indisponível: "+e.message;msg("Foto indisponível: "+e.message,true)}})();return;
- }
+ if(view){showSavedPhoto(view.dataset.viewPhoto);return}
  const photo=event.target.closest("[data-photo]");
  if(photo){
   if(busy||missingRecordId)return;
   const row=rows.find(x=>x.id===photo.dataset.photo);
-  if(row)promptMissingPhoto(row);return;
+  if(row)openPhotoUploadViewer(row);return;
  }
  const btn=event.target.closest("[data-edit]");if(!btn||busy||missingRecordId)return;
  const r=rows.find(x=>x.id===btn.dataset.edit);if(!r)return;
@@ -568,10 +580,10 @@ $("entries").addEventListener("click",(event)=>{
  $("quantity").value=r.quantity;$("expiry").value=r.expires_on||"";$("expiryField").hidden=!r.expires_on;$("toggleValidity").textContent=r.expires_on?"− Ocultar validade":"+ Validade (opcional)";
  $("entryEditor").hidden=false;$("quantity").focus({preventScroll:true});$("quantity").select();
 });
-$("photoViewerClose").addEventListener("click",()=>{$("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src")});
-$("photoViewer").addEventListener("click",(event)=>{if(event.target===$("photoViewer")){$("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src")}});
-document.addEventListener("keydown",(event)=>{if(event.key==="Escape"&&!$("photoViewer").hidden){$("photoViewer").hidden=true;$("photoViewerImage").removeAttribute("src")}});
-document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("click",async()=>{
+$("photoViewerClose").addEventListener("click",closePhotoViewer);
+ $("photoViewer").addEventListener("click",(event)=>{if(event.target===$("photoViewer"))closePhotoViewer()});
+ document.addEventListener("keydown",(event)=>{if(event.key==="Escape"&&!$("photoViewer").hidden)closePhotoViewer()});
+ document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("click",async()=>{
  if(busy||missingRecordId)return;filter=btn.dataset.filter;
  document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===btn));
  try{setBusy(true);await load();msg("Lista filtrada.")}catch(e){msg(e.message,true)}finally{setBusy(false)}
