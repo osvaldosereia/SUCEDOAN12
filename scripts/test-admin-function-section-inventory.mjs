@@ -3,21 +3,25 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 const dir=process.argv[2]||'artifacts/admin-function-inventory';
 const inventory=JSON.parse(fs.readFileSync(path.join(dir,'functions.json'),'utf8'));
-assert.equal(inventory.summary.runtime_source_fragments,20,'expected 20 source fragments');
+assert.equal(inventory.summary.runtime_source_fragments,19,'expected 19 source fragments after delivery extraction');
 assert.ok(inventory.summary.named_functions_and_arrows>2000,'missing source declarations');
 assert.ok(inventory.summary.sql_files>300,'SQL migrations not inventoried');
 assert.equal(inventory.summary.possible_same_name_same_file,inventory.same_file_repeated_names.length);
 const runtime=inventory.functions.filter(x=>x.path==='vitrine/admin/admin-runtime.js');
-assert.ok(runtime.length>400,'incomplete runtime inventory');
+const delivery=inventory.functions.filter(x=>x.path.startsWith('vitrine/admin/delivery/'));
+assert.ok(runtime.length+delivery.length>400,'incomplete runtime and extracted delivery inventory');
 for(const [name,section] of [
-  ['statusPill','Central'],['expeditionFiscalState','Expedição'],
-  ['smartDeliverySlug','Entregador'],['clearFinanceSession','Financeiro'],
+  ['statusPill','Central'],['clearFinanceSession','Financeiro'],
   ['purchaseCatalogFilteredItems','Compras/XML'],
   ['manualSaleTotalCents','Pedidos']
 ]){
   const entry=runtime.find(x=>x.name===name);
   assert.ok(entry,'missing runtime function '+name);
   assert.equal(entry.section,section,'incorrect fragment classification '+name);
+}
+for(const [name,section] of [['expeditionFiscalState','Expedição'],['smartDeliverySlug','Entregador']]){
+  assert.ok(delivery.some(x=>x.name===name&&x.section===section),'missing extracted delivery function '+name);
+  assert.equal(runtime.some(x=>x.name===name),false,'delivery function must not remain in runtime');
 }
 const separationModel=inventory.functions.filter(x=>x.path==='vitrine/admin/orders/separation-model.js');
 for(const name of ['separationItems','separationKitRefs']){

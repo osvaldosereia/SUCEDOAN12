@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-const html=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
+const html=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/delivery/controller.js','utf8')+'\n'+fs.readFileSync('vitrine/admin/delivery/model.js','utf8');
 const must=(v,m)=>{if(!v)throw new Error(m)};
 
 must(html.includes("deliveryCatalog:{regions:[],drivers:[],vehicles:[]}"),'Smart Delivery catalog state missing');

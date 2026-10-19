@@ -9,7 +9,6 @@ const parts=[
   "00-bootstrap-navigation.part.js",
   "01-central.part.js",
   "02-expedition.part.js",
-  "03-delivery.part.js",
   "04-closure.part.js",
   "05-finance.part.js",
   "06-baskets-products.part.js",

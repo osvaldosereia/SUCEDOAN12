@@ -48,6 +48,7 @@ function domain(file,name,line){
   if(file.includes('/marketing/'))return 'Marketing';
   if(/basket|kit-builder/i.test(file))return 'Cestas';
   if(file.includes('/orders/'))return 'Pedidos';
+  if(file.includes('/delivery/'))return /expedition|dispatch/i.test(name)?'Expedição':'Entregador';
   if(/closure|closing|closeout/i.test(name))return 'Fechamento';
   if(/driver|vehicle|smartDelivery|deliveryStop|deliveryRun/i.test(name))return 'Entregador';
   if(/expedition|separation|picking/i.test(name))return 'Expedição';

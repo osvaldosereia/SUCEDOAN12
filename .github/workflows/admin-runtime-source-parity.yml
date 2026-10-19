@@ -9,6 +9,10 @@ on:
       - 'scripts/audit-admin-module-load-graph.mjs'
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/core/**'
+      - 'vitrine/admin/delivery/**'
+      - 'scripts/helpers/admin-delivery-fixture.mjs'
+      - 'scripts/test-admin-delivery-controller.mjs'
+      - 'scripts/test-admin-delivery-model.mjs'
       - 'vitrine/admin/orders/**'
       - 'vitrine/admin/components/**'
       - 'scripts/test-admin-separation-model.mjs'
@@ -42,6 +46,8 @@ jobs:
       - run: node scripts/test-admin-customer-readiness-model.mjs
       - run: node scripts/test-admin-order-payment-method-model.mjs
       - run: node scripts/test-admin-expedition-stale-refresh.mjs
+      - run: node scripts/test-admin-delivery-controller.mjs
+      - run: node scripts/test-admin-delivery-model.mjs
       - run: node scripts/test-admin-controller-contracts.mjs
       - run: node scripts/test-admin-async-races-and-partial-save.mjs
       - run: node scripts/test-admin-order-action-buttons.mjs
