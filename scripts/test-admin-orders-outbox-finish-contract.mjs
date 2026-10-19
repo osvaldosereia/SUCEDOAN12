@@ -9,4 +9,10 @@ assert.equal((source.match(/await finishFailureSafely\(/g)||[]).length,6,'all si
 assert.doesNotMatch(segment,/try\s*\{\s*await finish\([^}]*\}\s*catch\s*\{\s*\}/,'silent outbox persistence failure');
 assert.match(source,/ops2_finish_whatsapp_outbox_v1/,'canonical outbox RPC still required');
 assert.match(source,/ops2_accept_order_whatsapp_meta_v1/,'canonical Meta acceptance RPC must remain');
+assert.match(source,/internalKey!==K&&\(!serviceRole\|\|internalKey!==serviceRole\)/,'legacy service role key may not authorize empty headers');
+const authorized=(provided,primary,legacy)=>provided===primary||(Boolean(legacy)&&provided===legacy);
+assert.equal(authorized('', 'secret', ''),false);
+assert.equal(authorized('secret', 'secret', ''),true);
+assert.equal(authorized('legacy', 'secret', 'legacy'),true);
+assert.equal(authorized('invalid', 'secret', 'legacy'),false);
 console.log('Admin order outbox failure visibility contract: PASS');
