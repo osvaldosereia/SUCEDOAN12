@@ -191,7 +191,7 @@ function addOption(pi,id){
 }
 
 async function save(){
-  if(state.busy)return;sync();const d=state.draft;
+  if(state.busy)return;sync();const origin=state,editorGeneration=moldEditorLoadGeneration,d=state.draft;
   if(!d.name)return toast('Informe o nome da cesta.');
   if(!d.category_id)return toast('Escolha a categoria da cesta na vitrine.');
   if(!d.subcategory_id)return toast('Escolha a subdivisão da cesta na vitrine.');
@@ -203,8 +203,18 @@ async function save(){
   state.busy=true;render();
   try{
     await call('save',{basket_id:d.basket_id,category_id:d.category_id,subcategory_id:d.subcategory_id,name:d.name,hidden_adjustment:Number(d.hidden_adjustment||0),conditional_hidden_enabled:d.conditional_hidden_enabled===true,conditional_hidden_product_id:d.conditional_hidden_product_id||null,conditional_hidden_adjustment:Number(d.conditional_hidden_adjustment||0),public_composition_count:Number(d.public_composition_count),positions:d.positions.map(p=>({label:p.label,quantity:Number(p.quantity),options:p.options.map(o=>({product_id:o.product_id,metadata:{...(o.metadata||{}),preferred:o.preferred===true}}))})),operator:operator()});
-    const id=d.basket_id;await loadList();await openBasket(id);toast('Molde salvo.');
-  }catch(e){toast(e.message)}finally{state.busy=false;render()}
+    // Persist the submitted draft, but do not re-open it over another basket
+    // selected while this save request was pending.
+    if(state!==origin||moldEditorLoadGeneration!==editorGeneration)return;
+    const id=d.basket_id;
+    if(!await loadList()||state!==origin||moldEditorLoadGeneration!==editorGeneration)return;
+    await openBasket(id);
+    if(state===origin&&String(state.draft?.basket_id||'')===String(id))toast('Molde salvo.');
+  }catch(e){
+    if(state===origin&&moldEditorLoadGeneration===editorGeneration)toast(e.message);
+  }finally{
+    if(state===origin){state.busy=false;render()}
+  }
 }
 
 function bind(){
