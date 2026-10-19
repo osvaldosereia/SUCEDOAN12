@@ -2,7 +2,39 @@
 
 Data: 19/10/2026. Base inicial: branch `fix/admin-fiscal-hardening-20261018`, HEAD `50602328c6a14f325b763f04218d44b469d5d7de`, PR draft #1126.
 
-## Resultado desta continuação
+## Rodada ampla — base `119f413`
+
+Nesta rodada foram feitas alterações de código em quatro áreas operacionais e no serviço fiscal compartilhado, sem escrita remota, deploy, merge ou alteração de regras comerciais.
+
+- **Inicialização:** o bootstrap executado em VM reproduziu `ReferenceError: Cannot access 'orderDisplayCode' before initialization` no head da branch. Identificadores e catálogo de erros agora são inicializados antes dos consumidores. O novo teste carrega a sequência real de providers e executa a IIFE sem chamadas externas.
+- **Expedição/Entregador:** cerca de 640 linhas saíram da IIFE para `delivery/controller.js`, com busca, seleção, rascunho de pagamento, rotas, catálogo, atribuição, veículo e obsolescência privados. O controlador recebe portas de pedidos, detalhe, navegação, UI e formatação; não recebe o `state` inteiro. Regras puras de fiscal, valores e destinos estão em `delivery/model.js`.
+- **Fechamento:** lista e ciclo de renderização privados em `closure/controller.js`; removida a cópia de `closureOrders` que a Central mantinha sem outra leitura. Helpers financeiros e de diagnóstico Bling foram movidos para os fragmentos de seus domínios, sem antecipar efeitos de inicialização.
+- **Clientes:** listagem, perfil, histórico e formulário saíram do fragmento de Bling e do perfil para `customers/controller.js`. Perfil/paginação são privados; o cache de clientes continua compartilhado por `get/set` porque Pedidos usa os mesmos cadastros.
+- **Leitura fiscal:** `orders/fiscal-loader.js` impõe limite global de três consultas, compartilha promessas da mesma consulta, descarta trabalhos ainda não iniciados de um cache aposentado e impede que respostas antigas sobrescrevam um status atualizado pelo detalhe do pedido ou escrevam num cache já substituído.
+- **Carga e contratos:** 19 fragmentos restantes, 28 scripts clássicos e 23 dependências diretas do runtime verificadas. O runtime passou de 7.353 para 6.365 linhas (591.597 para 507.152 caracteres). As interfaces e os estados pertencentes a cada módulo estão em `vitrine/admin/README.md`.
+
+### Defeitos reproduzidos e corrigidos
+
+1. TDZ de identificador no bootstrap da branch.
+2. Cargas antigas de Expedição/Entregador substituindo dados mais recentes ou escrevendo em uma tela já removida.
+3. Falha de atualização do Entregador sem tratamento pelo botão de refresh; agora há retorno de erro e os controles antigos da rota são removidos.
+4. Falha na consulta de rotas apresentada como lista vazia; agora a falha é informada e preparar uma rota exige uma recarga válida. O despacho comum mantém os gates fiscais atuais.
+5. Latitude/longitude nulas ou vazias convertidas em `0,0`; o destino agora recorre ao endereço. Coordenadas zero reais continuam válidas.
+6. Resposta fiscal atrasada sobrescrevendo atualização mais recente do pedido; consulta concorrente duplicada do mesmo pedido.
+7. Card do Entregador permanecendo na fila depois da confirmação da entrega porque apenas a Expedição era repintada.
+8. Histórico/detalhe de compra atrasados substituindo o formulário novo de edição do cliente; a resposta agora exige que o mesmo conteúdo de modal ainda esteja ativo.
+9. Confirmação de recebimento no Fechamento substituindo outra tela aberta enquanto o POST estava pendente. O cache recebe o resultado, mas a pintura exige a mesma view.
+10. Gravação/exclusão de cliente pendente fechando outro modal ou substituindo outra página ao concluir. A conclusão agora respeita a propriedade do formulário e a aba atual.
+
+Os endpoints e payloads canônicos de saída, entrega, pagamento simples/dividido, retorno, revisão e cliente foram preservados. Os testes estáticos foram alinhados às fontes extraídas; testes novos exercitam as factories e seus eventos sem dados reais.
+
+### Verificação e retomada
+
+A rodada local cobre 123 scripts `test-admin-*.mjs`, 5 scripts `test-admin-*.py` e 5 scripts `test-smart-delivery-*.mjs`, além dos contratos de Cestas, paridade do runtime, carregamento e espelhos Edge. Os 133 scripts passaram, assim como Cestas, paridade, bootstrap completo, grafo, módulos e os 10 pares espelhados Edge. A revisão independente confirmou o defeito de conclusão de recebimento (preexistente) e uma espera desnecessária por jobs fiscais já invalidados (introduzida no novo scheduler); ambos foram corrigidos com regressões RED→GREEN. A revisão não identificou regressão Critical/Important introduzida. A CI é consultada após publicar o novo head. Pagamento dividido com falha parcial e integrações externas ainda não receberam homologação ponta a ponta.
+
+A Etapa 1 ainda não está integralmente concluída: Pedidos/fiscal/edição, produtos/cestas, balanço e compras/XML ainda têm controladores dentro da IIFE. A Etapa 2 também continua aberta: a revisão manual de todas as declarações e a homologação ponta a ponta de integrações externas não foram concluídas. Retomar pelas fronteiras de estado desses controladores; não repetir as extrações acima nem tratar cobertura contratual como auditoria manual integral.
+
+## Resultado da continuação anterior
 
 - O runtime continua sendo montado de 20 fragmentos na ordem atual. Foram extraídos para módulos puros os modelos de composição para impressão de separação, completude cadastral do cliente e conciliação/renderização das formas de pagamento. Os três são carregados antes do runtime, publicados por interfaces congeladas e testados sem DOM ou chamadas remotas.
 - A extração reduziu o escopo lexical compartilhado em sete funções e consolidou o gerador duplicado de `<option>`. Quatro módulos de Marketing agora compartilham o helper defensivo para fechar `<dialog>`, em vez de manter quatro implementações idênticas. A sequência clássica passou a 23 scripts e 19 dependências de runtime verificadas.
@@ -68,4 +100,4 @@ Não houve homologação ponta a ponta das Edge Functions modificadas, do Bling,
 
 ## Limite estrutural remanescente
 
-Os vinte fragmentos continuam concatenados dentro da IIFE porque fluxos operacionais ainda leem e escrevem o mesmo `state`, chamam `api`/DOM e dependem da sequência de inicialização. Nesta continuação, três modelos puros sem efeitos colaterais foram isolados e os contratos de carga foram ampliados. Uma conversão indiscriminada dos controladores restantes exigiria trocar seus contratos de estado, API, DOM e ciclo de vida; isso não foi tratado como remoção mecânica. O grafo síncrono e as dependências ainda existentes estão registrados em `admin-module-load-graph.json` quando o workflow executa.
+Após a rodada ampla, os 19 fragmentos restantes continuam concatenados dentro da IIFE; os controladores ainda não extraídos leem e escrevem o mesmo `state`, chamam `api`/DOM e dependem da sequência de inicialização. Nesta continuação, três modelos puros sem efeitos colaterais foram isolados e os contratos de carga foram ampliados. Uma conversão indiscriminada dos controladores restantes exigiria trocar seus contratos de estado, API, DOM e ciclo de vida; isso não foi tratado como remoção mecânica. O grafo síncrono e as dependências ainda existentes estão registrados em `admin-module-load-graph.json` quando o workflow executa.
