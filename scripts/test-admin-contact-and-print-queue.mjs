@@ -28,4 +28,44 @@ assert.match(render,/CD456/);
 assert.doesNotMatch(render,/data-print-order="3"/);
 assert.match(render,/data-print-order="1"/);
 assert.match(render,/data-print-order="2"/);
+
+const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const e164=value=>String(value||'').replace(/\\D/g,'');
+const wa=value=>e164(value).length>=12?'https://wa.me/'+e164(value):'';
+const message=(value,body)=>wa(value)+'?text='+encodeURIComponent(body);
+const order={customer_name:'Maria Silva',public_code:'AB123',whatsapp_phone_e164:'5565999999999',
+  delivery_address_snapshot:{street:'Rua A',number:'12',district:'Centro',city:'Cuiabá',state:'MT'}};
+for(const [problems,label,requestText] of [
+  [['Cliente não identificado'],'Pedir nome','nome completo'],
+  [['Endereço incompleto'],'Pedir endereço','endereço completo'],
+  [['Cliente não identificado','Endereço incompleto'],'Pedir dados','nome completo e seu endereço completo']
+]){
+  let evaluations=0;
+  const actions=load('vitrine/admin/orders/contact-actions.js','DonaAntoniaAdminOrderContactActions')
+    .createOrderContactActions(()=>{evaluations++;return problems},wa,message,o=>o.public_code,escapeHtml);
+  const request=actions.orderMissingDataRequest(order);
+  assert.equal(request.label,label);
+  assert.ok(decodeURIComponent(request.href).includes(requestText));
+  assert.ok(decodeURIComponent(request.href).includes('AB123'));
+  assert.equal(evaluations,1,'one diagnosis for direct request');
+  evaluations=0;
+  const address=actions.orderAddressRequestHref(order);
+  assert.equal(address,problems.includes('Endereço incompleto')?request.href:'');
+  assert.equal(evaluations,1,'address link must not recompute problems');
+  evaluations=0;
+  const html=actions.orderContactActionsHtml(order);
+  assert.match(html,/WhatsApp/);
+  assert.match(html,/Abrir no Maps/);
+  assert.equal(evaluations,1,'contact HTML must reuse one diagnosis');
+}
+{
+  const actions=load('vitrine/admin/orders/contact-actions.js','DonaAntoniaAdminOrderContactActions')
+    .createOrderContactActions(()=>[],wa,message,o=>o.public_code,escapeHtml);
+  assert.equal(actions.orderMissingDataRequest(order),null);
+  assert.equal(actions.orderAddressRequestHref(order),'');
+  assert.equal(actions.mapsHrefFromAddress({street:'Rua A',city:'Cuiabá'}),'','incomplete location must not build map URL');
+  const html=actions.orderContactActionsHtml({...order,delivery_address_snapshot:{google_maps_url:'https://evil.example/path'}});
+  assert.doesNotMatch(html,/evil\\.example/,'untrusted map URL must not enter HTML');
+}
+
 console.log('Admin contact links and print queue contracts: PASS');
