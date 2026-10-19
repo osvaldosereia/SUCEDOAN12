@@ -1,16 +1,19 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const runtime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
+const admin=html+'\n'+runtime;
 const api=fs.readFileSync('supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts','utf8');
 const style=fs.readFileSync('vitrine/admin/purchase-xml-simple.css','utf8');
 const section=(start,end)=>admin.slice(admin.indexOf(start),admin.indexOf(end,start.length+admin.indexOf(start)));
 function must(s,needle){assert.ok(s.includes(needle),'Missing contract: '+needle)}
 
 // Syntax of all inline browser scripts (including the main Admin bundle)
-const scripts=[...admin.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
+const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
   .map(x=>x[1]).filter(Boolean);
 scripts.forEach((source,i)=>{try{new Function(source)}catch(e){throw Error('Inline script '+(i+1)+': '+e.message)}});
-console.log('Inline Admin JavaScript syntax OK: '+scripts.length+' scripts.');
+new Function(runtime);
+console.log('Inline Admin and external runtime JavaScript syntax OK: '+scripts.length+' inline scripts.');
 
 const note=section('function renderPurchaseDocumentInline(id,data){','async function togglePurchaseDocument(');
 const card=section('function purchaseItemCardHtml(x){','function purchaseXmlError(e){');
