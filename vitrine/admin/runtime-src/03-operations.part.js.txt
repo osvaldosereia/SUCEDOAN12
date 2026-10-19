@@ -263,6 +263,7 @@
         '<select id="productCategory" aria-label="Categoria"><option value="">Todas as categorias</option></select>'+
         '<select id="productSubcategory" aria-label="Subcategoria"><option value="">Todas as subcategorias</option></select>'+
         '<select id="productActive" aria-label="Status"><option value="">Todos os status</option><option value="true">Ativos</option><option value="false">Inativos</option></select>'+
+        '<select id="productSource" aria-label="Origem"><option value="">Todas as origens</option><option value="ean_capture_admin">Cadastrados pelo leitor EAN</option></select>'+
         '<select id="productBasketKit" aria-label="Cestas e kits"><option value="">Todos os produtos</option><option value="true">Somente produtos de cestas/kits</option></select>'+
         '<select id="productLotStatus" aria-label="Controle de validade"><option value="">Todos os controles de validade</option><option value="pending">Lotes/FEFO pendente · prioridade automática</option><option value="complete">Lotes/FEFO completo</option></select>'+
         '<select id="productSort" aria-label="Ordenação"><option value="">Ordenação padrão</option><option value="name_asc">Nome A–Z</option><option value="name_desc">Nome Z–A</option><option value="updated_desc">Atualizados recentemente</option><option value="updated_asc">Não atualizados recentemente</option><option value="expiry_asc">Validade mais próxima</option><option value="expiry_desc">Validade mais distante</option><option value="expiry_expired">Somente produtos vencidos</option><option value="gondola_asc">Gôndola 1→30</option><option value="gondola_desc">Gôndola 30→1</option></select>'+
@@ -286,6 +287,8 @@
       state.productFilters.subcategory=e.currentTarget.value;
       loadProducts($('#productSearch').value.trim(),false);
     };
+    $('#productSource').value=state.productFilters.sourceSystem||'';
+    $('#productSource').onchange=e=>{state.productFilters.sourceSystem=e.currentTarget.value;loadProducts($('#productSearch').value.trim(),false)};
     $('#productActive').value=state.productFilters.active||'';
     $('#productActive').onchange=async e=>{
       state.productFilters.active=e.currentTarget.value;
@@ -369,7 +372,7 @@
     try{
       const mobile=isProductsMobile(),offset=append?state.productNext:0,limit=mobile?6:5;
       const filters={...state.productFilters},sort=state.productSort||'';
-      const data=await api('products',{q,category:filters.category,subcategory:filters.subcategory,active:filters.active,basket_kit:filters.basketKit,lot_status:filters.lotStatus,sort,offset,limit});
+      const data=await api('products',{q,category:filters.category,subcategory:filters.subcategory,active:filters.active,source_system:filters.sourceSystem,basket_kit:filters.basketKit,lot_status:filters.lotStatus,sort,offset,limit});
       if(generation!==productListGeneration||host!==$('#productRows')||state.tab!=='products')return;
       const products=Array.isArray(data.products)?data.products:[];
       state.products=append?[...state.products,...products]:products;
