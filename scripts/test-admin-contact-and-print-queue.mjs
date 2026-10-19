@@ -29,6 +29,10 @@ assert.doesNotMatch(render,/data-print-order="3"/);
 assert.match(render,/data-print-order="1"/);
 assert.match(render,/data-print-order="2"/);
 
+const orphanRender=panel.createPrintQueuePanel({orders:[],opsPrintQueue:{jobs:[{status:'pending',entity_id:'missing'}]}},String,order=>{assert.ok(order,'order code must not be called for orphan job');return order.public_code}).renderOpsPrintQueue();
+assert.match(orphanRender,/Fila de impressão/);
+assert.match(orphanRender,/data-print-order="missing"/);
+
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const e164=value=>String(value||'').replace(/\\D/g,'');
 const wa=value=>e164(value).length>=12?'https://wa.me/'+e164(value):'';
