@@ -26,20 +26,17 @@ assert.match(ui,/data-mold-name/);
 assert.match(ui,/data-mold-hidden-adjustment/);
 assert.doesNotMatch(ui,/data-mold-composition-count/);
 assert.match(ui,/public_composition_count:1/);
-assert.match(ui,/data-mold-add-position/);
-assert.match(ui,/data-mold-position-label/);
+assert.match(ui,/Cestas e quantidades/);
+assert.match(ui,/Produtos e marcas/);
+assert.match(ui,/data-mold-shared-search/);
+assert.match(ui,/data-mold-shared-add/);
+assert.match(ui,/data-mold-shared-remove/);
 assert.match(ui,/data-mold-position-quantity/);
-assert.match(ui,/data-mold-product-search/);
-assert.match(ui,/data-mold-product-option/);
+assert.match(ui,/positions:activePositions\.map/);
+assert.match(ui,/Quantidade \(0 remove\)/);
 assert.match(ui,/data-mold-save/);
 assert.equal(/kit interno|kit base|assembly_kit/i.test(ui),false,'normal mold editor must not teach internal kits');
 
-// Preferred option is saved as position-option metadata and never requires a schema change.
-assert.doesNotMatch(ui,/data-mold-prefer-option/);
-assert.match(ui,/data-mold-selected-product/);
-assert.match(ui,/preferred:o\.metadata\?\.preferred===true/);
-assert.match(ui,/positions:activePositions\.map/);
-assert.match(ui,/editar_produto/);
 const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
 assert.match(adminHtml,/basket-admin-section\.js\?v=basket-personalization-v1/);
 const compositionSQL=fs.readFileSync('supabase/migrations/20261013122000_basket_mold_preferred_product_v1.sql','utf8');
@@ -82,5 +79,11 @@ assert.match(sql,/public\.ops2_loose_sellable_stock_v1/i);
 assert.match(sql,/revoke all on function public\.admin_save_basket_mold_v1\([^;]+from public,\s*anon/is);
 assert.match(sql,/grant execute on function public\.admin_save_basket_mold_v1\([^;]+to authenticated/is);
 
-const sharedSQL=fs.readFileSync('supabase/migrations/20261019180000_basket_mold_shared_brands_v1.sql','utf8');\nassert.match(sharedSQL,/basket_mold_shared_items/);\nassert.match(sharedSQL,/admin_save_basket_mold_shared_items_v1/);\nassert.match(sharedSQL,/row_number\(\) over \(partition by i\.id order by c\.price/);\nassert.match(sharedSQL,/option_order<=3/);\nassert.match(ui,/Quantidade \(0 remove\)/);\nconsole.log('basket mold admin shared brands v1: PASS');
+const sharedSQL=fs.readFileSync('supabase/migrations/20261019180000_basket_mold_shared_brands_v1.sql','utf8');
+assert.match(sharedSQL,/basket_mold_shared_items/);
+assert.match(sharedSQL,/admin_save_basket_mold_shared_items_v1/);
+assert.match(sharedSQL,/row_number\(\) over \(partition by i\.id order by c\.price/);
+assert.match(sharedSQL,/option_order<=3/);
+assert.match(ui,/Quantidade \(0 remove\)/);
+console.log('basket mold admin shared brands v1: PASS');
 
