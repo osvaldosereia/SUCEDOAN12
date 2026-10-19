@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const sql=fs.readFileSync('supabase/sql/20260930191500_ops2_customer_registration_single_source_and_bling_sync_v2.sql','utf8');
 const between=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j)};

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const api=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 function between(source,startToken,endToken){
   const start=source.indexOf(startToken);

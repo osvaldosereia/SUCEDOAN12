@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const between=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j)};
 const status=between(edge,'async function orderFiscalStatusV4(','async function orderFiscalIssueV4(');
 const issue=between(edge,'async function orderFiscalIssueV4(','async function orderFiscalRecoverBlingV1(');

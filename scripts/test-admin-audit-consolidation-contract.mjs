@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const workflow=fs.readFileSync('.github/workflows/admin-print-queue-panel.yml','utf8');
 const audit=fs.readFileSync('docs/audits/admin-danfe-fiscal-documents-round-18-20261018.md','utf8');
