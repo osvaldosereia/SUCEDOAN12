@@ -142,6 +142,17 @@ for(const p of sql){
   for(const m of text.matchAll(/create\s+(?:or\s+replace\s+)?function\s+(?:(?:public|private|ops|auth)\.)?([A-Za-z_][\w]*)\s*\(/gi))
     sqlFunctions.push({path:rel(p),name:m[1],line:lineOf(text,m.index)});
 }
+// SQL migration history intentionally repeats CREATE OR REPLACE; distinguish
+// historical redefinitions from duplicate frontend declarations.
+const sqlByName=new Map();
+for(const entry of sqlFunctions){
+  const group=sqlByName.get(entry.name)||[];
+  group.push(entry);sqlByName.set(entry.name,group);
+}
+const sqlRedefinitions=[...sqlByName].filter(([,items])=>items.length>1)
+  .map(([name,items])=>({name,definition_count:items.length,
+    locations:items.map(({path,line})=>({path,line}))}))
+  .sort((a,b)=>b.definition_count-a.definition_count||a.name.localeCompare(b.name));
 // Technical review signals are ranked, never treated as proof of defects or dead code.
 const repeatedNames=new Map();
 for(const f of functions){
@@ -178,10 +189,10 @@ const testOnly=suspects.filter(x=>x.test_reference_files.length);
 const summary={frontend_files:front.length,backend_files:edge.length,sql_files:sql.length,
  named_functions_and_arrows:functions.length,lexical_single_occurrence:suspects.length,lexical_single_occurrence_mentioned_by_tests:testOnly.length,
  runtime_source_fragments:fragmentPaths.length,possible_same_name_same_file:sameFileNameCandidates.length,
- identical_file_groups:identical.length,empty_catches:emptyCatchSites.length};
+ identical_file_groups:identical.length,sql_redefined_names:sqlRedefinitions.length,empty_catches:emptyCatchSites.length};
 const result={method:'Static heuristic, not proof of runtime use or dead code',summary,sections:bySection,
  functions,suspects,identical_files:identical,empty_catches:emptyCatch,empty_catch_sites:emptyCatchSites,sql_definitions:sqlFunctions,
- same_file_repeated_names:sameFileNameCandidates,priority_by_signals:priorityBySignals};
+ same_file_repeated_names:sameFileNameCandidates,sql_redefinitions:sqlRedefinitions,priority_by_signals:priorityBySignals};
 const output=process.argv[2]||'artifacts/admin-function-inventory';
 fs.mkdirSync(output,{recursive:true});
 fs.writeFileSync(path.join(output,'functions.json'),JSON.stringify(result,null,2)+'\n');
@@ -199,6 +210,9 @@ const lines=['# Vitrine Admin - inventario estatico','',
  ...sameFileNameCandidates.map(x=>'- '+x.path+' '+x.name+' ('+x.lines.join(', ')+')'),'',
  '## Capturas de erro silenciosas (revisão contextual obrigatória)',
  ...emptyCatchSites.map(x=>'- '+x.path+':'+x.line+' ['+x.section+'] '+x.risk_hint+' '+(x.nearest_declaration||'')),
+ '',
+ '## Funções SQL redefinidas em migrações (histórico, não duplicação comprovada)',
+ ...sqlRedefinitions.map(x=>'- '+x.name+' ('+x.definition_count+' definições)'),
  '',
  '## Candidatos a verificacao',
  ...suspects.map(x=>'- '+x.path+':'+x.line+' '+x.name),
