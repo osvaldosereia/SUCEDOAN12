@@ -1323,7 +1323,7 @@ async function orderBoardCounts(){
   return Object.fromEntries(pairs);
 }
 async function ordersList(options:any={}){
-  const tab=tx(options?.tab,20),search=String(options?.search||"").replace(/[^\\p{L}\\p{N}\\s._-]/gu," ").trim().slice(0,80);
+  const tab=tx(options?.tab,20),search=String(options?.search||"").replace(/[^A-Za-z0-9À-ÿ ._-]/g," ").trim().slice(0,80);
   if(!tab&&!search){const rows:any[]=[];for(let pos=0;pos<5000;pos+=1000){const q=await db.from("orders").select("*").order("created_at",{ascending:false}).range(pos,pos+999);if(q.error)throw q.error;rows.push(...(q.data||[]));if((q.data||[]).length<1000)break}return await mapOrders(rows)}
   const allowed=["new","separate","ready","delivered"];
   if(tab&&!allowed.includes(tab))throw new Error("invalid_order_board_tab");
@@ -1336,12 +1336,12 @@ async function ordersList(options:any={}){
     else if(tab==="ready")query=query.in("status",["ready","out_for_delivery"]);
     else if(tab==="delivered")query=query.eq("status","delivered");
   }else{
-    const q=search.replace(/\\s+/g,"%");
+    const q=search.replace(/ +/g,"%");
     query=query.or("order_number.ilike.%"+q+"%,phone_e164.ilike.%"+q+"%,customer_snapshot->>name.ilike.%"+q+"%,delivery_address->>street.ilike.%"+q+"%,delivery_address->>district.ilike.%"+q+"%");
   }
   const page=await query.order("created_at",{ascending:false}).range(offset,offset+limit-1);
   if(page.error)throw page.error;
-  const counts=await orderBoardCounts();
+  const counts=offset===0?await orderBoardCounts():null;
   return {orders:await mapOrders(page.data||[]),total:Number(page.count||0),has_more:offset+(page.data||[]).length<Number(page.count||0),counts};
 }
 async function orderDetailCanonical(orderId:any){
