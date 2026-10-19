@@ -6,7 +6,8 @@
       // Keep stock-consumption and fiscal gates explicit; button order is operationally significant.
       if(!o||typeof o!=='object')return '';
       const consumed=o?.payment_method_snapshot?.stock_consumed===true;
-      const problems=orderProblemReasons(o);
+      const reportedProblems=orderProblemReasons(o);
+      const problems=Array.isArray(reportedProblems)?reportedProblems:[];
       const mustFix=problems.length>0&&['created','confirmed','ready','out_for_delivery'].includes(o?.status);
       const fiscalDispatchBlocked=o?.status==='ready'&&dispatchGate?.enforced===true&&dispatchGate?.allowed!==true;
       let primary='';
