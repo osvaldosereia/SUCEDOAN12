@@ -13,6 +13,7 @@ on:
       - 'scripts/test-admin-separation-model.mjs'
       - 'scripts/test-admin-customer-readiness-model.mjs'
       - 'scripts/test-admin-order-payment-method-model.mjs'
+      - 'scripts/test-admin-expedition-stale-refresh.mjs'
       - '.github/workflows/admin-runtime-source-parity.yml'
   workflow_dispatch:
 permissions:
@@ -38,6 +39,7 @@ jobs:
       - run: node scripts/test-admin-separation-model.mjs
       - run: node scripts/test-admin-customer-readiness-model.mjs
       - run: node scripts/test-admin-order-payment-method-model.mjs
+      - run: node scripts/test-admin-expedition-stale-refresh.mjs
       - run: node scripts/test-admin-controller-contracts.mjs
       - run: node scripts/test-admin-async-races-and-partial-save.mjs
       - run: node scripts/test-admin-order-action-buttons.mjs

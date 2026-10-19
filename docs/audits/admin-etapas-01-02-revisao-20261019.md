@@ -8,7 +8,8 @@ Data: 19/10/2026. Base inicial: branch `fix/admin-fiscal-hardening-20261018`, HE
 - A extração reduziu o escopo lexical compartilhado em sete funções e consolidou o gerador duplicado de `<option>`; a sequência clássica passou a 23 scripts e 19 dependências de runtime verificadas.
 - Corrigida a ordenação de itens sem gôndola na lista de separação. `Number(null)` era `0`, apesar do sentinela `999999` usado para itens sem posição; agora esses itens ficam ao final.
 - Atualizados contratos que ainda descreviam o runtime inline, o Atendimento embutido, a fila v3 ou a API de atendimento antiga. Os testes agora verificam os arquivos e rotas usados pela branch.
-- Nenhuma regra comercial, endpoint de produção, dado, migration aplicada, interface de negócio ou fluxo externo foi alterado.
+- Corrigida uma falha silenciosa pós-expedição: se o despacho era concluído mas a recarga falhava, a lista antiga podia continuar habilitada. A tela agora marca os dados como obsoletos, bloqueia ações até a recarga e informa o operador.
+- Nenhuma regra comercial, endpoint de produção, dado, migration aplicada ou fluxo externo foi alterado.
 
 ## Revisão por seção
 
@@ -18,7 +19,7 @@ Data: 19/10/2026. Base inicial: branch `fix/admin-fiscal-hardening-20261018`, HE
 | Atendimento | Página standalone, API autenticada, fila v4, etiquetas, mídia, envio e atualização | Contratos locais passaram após alinhar testes à implementação atual. Envio continua desabilitado na interface; respostas rápidas são de leitura; localização recebida usa fallback sem mapa. Não implementei esses comportamentos nesta tarefa. |
 | ANA | Módulo carregado sob demanda, autenticação e contratos de operações | Suíte `test-admin-ana-section-v1.mjs` e testes de Edge/integração passaram. Sem mudança de fluxo. |
 | Pedidos | Criação, cliente, transições, impressão, fiscal, edição, pagamento e leitura pública | Contratos de pedido, fiscal, cliente e impressão passaram. Regras puras de completude cadastral, itens de separação e formas de pagamento foram extraídas e testadas isoladamente; a renderização duplicada das opções de pagamento foi centralizada. |
-| Expedição | Conferência, fila, autorização fiscal e despacho | Contratos de confirmação/separação e gates operacionais passaram. Não foi feita homologação externa. |
+| Expedição | Conferência, fila, autorização fiscal, despacho e atualização após despacho | Contratos de confirmação/separação e gates operacionais passaram. Falha de recarga após despacho agora bloqueia a lista obsoleta; coberta por teste de regressão. Não foi feita homologação externa. |
 | Entregador | Rotas, atribuição, conclusão, falha e retorno | Contratos de entrega, cancelamento, sincronização e ordem operacional passaram. Nenhum dado real foi alterado. |
 | Fechamento | Resumo e encerramento operacional | Revisado junto dos controladores de pedidos e finanças; contratos gerais do controlador passaram. Não foi detectada duplicação removível com segurança. |
 | Produtos | Busca, estoque, disponibilidade, ajuste e integração Bling | Contratos de produtos, estoque físico, ajuste e sincronização passaram. As ações de estoque permanecem sob os gates atuais. |
@@ -57,8 +58,9 @@ Não houve homologação ponta a ponta das Edge Functions modificadas, do Bling,
 - `node scripts/test-admin-separation-model.mjs`
 - `node scripts/test-admin-customer-readiness-model.mjs`
 - `node scripts/test-admin-order-payment-method-model.mjs`
+- `node scripts/test-admin-expedition-stale-refresh.mjs`
 - Inventário integral de funções e contratos de seção.
-- 115 scripts `test-admin-*.mjs` e 5 scripts `test-admin-*.py`, sem falhas após atualizar contratos defasados.
+- 116 scripts `test-admin-*.mjs` e 5 scripts `test-admin-*.py`, sem falhas após atualizar contratos defasados e cobrir a falha de recarga da Expedição.
 - 35 workflows do HEAD original do PR #1126, todos concluídos com sucesso antes desta continuação. O novo commit precisa de uma rodada própria de CI no GitHub.
 
 ## Limite estrutural remanescente

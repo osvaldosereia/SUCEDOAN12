@@ -927,13 +927,15 @@
         state.expeditionSelected=state.expeditionSelected.filter(id=>id!==o.id);
       }catch(e){failed.push('#'+orderDisplayCode(o))}
     }
-    try{const data=await api('orders');state.orders=data.orders||[]}catch{}
+    let refreshFailed=false;
+    try{const data=await api('orders');state.orders=data.orders||[];state.expeditionDataStale=false}catch{state.expeditionDataStale=true;refreshFailed=true}
     paintExpeditionBody();
-    if(failed.length)toast(ok+' atualizado(s) · '+failed.length+' precisa(m) revisão');
-    else toast(ok+' pedido(s) saíram para entrega');
+    const result=failed.length?ok+' atualizado(s) · '+failed.length+' precisa(m) revisão':ok+' pedido(s) saíram para entrega';
+    toast(refreshFailed?result+' · A lista pode estar desatualizada; atualize antes de continuar.':result);
   }
   function paintExpeditionBody(){
     const host=$('#expeditionBody');if(!host)return;
+    if(state.expeditionDataStale){host.innerHTML='<div class="empty">A lista de pedidos está desatualizada. Atualize antes de continuar.<br><button class="text" id="retryExpeditionRefresh" type="button">Atualizar expedição</button></div>';$('#retryExpeditionRefresh').onclick=renderExpedition;return}
     const visible=state.orders.filter(o=>orderSearchMatch(o,state.expeditionQuery));
     const ready=visible.filter(o=>o.status==='ready');
     const dispatchableReady=ready.filter(fiscalAuthorizedForDispatch);
@@ -1052,6 +1054,7 @@
     $('#clearExpeditionSearch').onclick=()=>{state.expeditionQuery='';$('#expeditionSearch').value='';paintExpeditionBody()};
     try{
       const [data]=await Promise.all([api('orders'),loadDeliveryRuns()]);state.orders=data.orders||[];
+      state.expeditionDataStale=false;
       const readyRows=state.orders.filter(o=>o.status==='ready');
       await loadFiscalForOrders(readyRows);
       paintExpeditionBody();
