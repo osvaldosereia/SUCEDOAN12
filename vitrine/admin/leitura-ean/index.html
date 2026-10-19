@@ -292,21 +292,118 @@ function addManual(){
 $("useEan").onclick=addManual;
 $("eanInput").addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();addManual()}});
 $("cancelEdit").onclick=cancel;
+function setCounts(s){
+ if(!s)return;
+ $("countAll").textContent=s.total??0;
+ $("countFound").textContent=s.found??0;
+ $("countUnknown").textContent=s.not_found??0;
+}
+function updateRowLocal(row,summary){
+ if(!row)return;
+ setCounts(summary);
+ const index=rows.findIndex(x=>x.id===row.id),visible=filter==="all"||row.sync_status===filter;
+ if(index>=0){rows.splice(index,1);if(!visible)offset=Math.max(0,offset-1)}
+ if(visible){rows.unshift(row);if(index<0)offset++;rows=rows.slice(0,60)}
+ if(summary){
+  const totals={all:summary.total,found:summary.found,not_found:summary.not_found,pending:summary.pending};
+  count=Number(totals[filter]??count);
+ }
+ hasMore=offset<count;paint();$("more").hidden=!hasMore;
+}
+function photoReset(){
+ missingRecordId="";pendingPhotoFile=null;paused=false;
+ $("missingPhoto").hidden=true;$("cameraBox").classList.remove("photo-mode");
+ msg("Pronto para o próximo EAN.");
+}
+async function promptMissingPhoto(row){
+ if(!row||!row.id)return;
+ missingRecordId=row.id;paused=true;pendingPhotoFile=null;
+ $("missingEan").textContent="EAN "+row.ean;
+ $("missingPhoto").hidden=false;
+ $("takePhoto").textContent=cameraRunning?"📷 Fotografar e salvar":"📷 Abrir câmera para foto";
+ $("cameraBox").classList.toggle("photo-mode",cameraRunning);
+ if(!cameraRunning){
+  try{await startCamera(cameraChoice)}catch{}
+  $("cameraBox").classList.toggle("photo-mode",cameraRunning);
+  $("takePhoto").textContent=cameraRunning?"📷 Fotografar e salvar":"📷 Câmera do celular";
+ }
+ $("missingPhoto").scrollIntoView({behavior:"smooth",block:"nearest"});
+ msg("EAN salvo, mas não cadastrado. Fotografe a embalagem.");
+}
+async function uploadPhoto(file){
+ if(!missingRecordId||!file||busy)return;
+ pendingPhotoFile=file;setBusy(true);msg("Salvando a foto no Supabase…");
+ try{
+  const form=new FormData();form.append("id",missingRecordId);form.append("file",file,"produto.jpg");
+  const result=await call("photo",form);
+  updateRowLocal(result.row,null);
+  photoReset();
+  msg("✓ Foto vinculada ao EAN. Pode continuar lendo.");
+ }catch(e){
+  $("takePhoto").textContent="↻ Reenviar foto";
+  msg("A foto ainda não foi salva: "+e.message+". Toque para reenviar.",true);
+ }finally{setBusy(false)}
+}
+$("takePhoto").onclick=async()=>{
+ if(pendingPhotoFile){await uploadPhoto(pendingPhotoFile);return}
+ const video=$("camera");
+ if(!cameraRunning||video.readyState<2){$("productPhotoInput").click();return}
+ const w=video.videoWidth||1280,height=video.videoHeight||720;
+ const scale=Math.min(1,1600/Math.max(w,height));
+ const canvas=document.createElement("canvas");
+ canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(height*scale));
+ canvas.getContext("2d").drawImage(video,0,0,canvas.width,canvas.height);
+ const file=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",0.82));
+ if(!file){msg("Não foi possível capturar a imagem. Use a câmera do celular.",true);return}
+ await uploadPhoto(file);
+};
+$("nativePhoto").onclick=()=>$("productPhotoInput").click();
+$("productPhotoInput").addEventListener("change",async e=>{
+ const file=e.currentTarget.files?.[0];e.currentTarget.value="";
+ if(!file)return;
+ // Fotos grandes são reduzidas para armazenamento e envio rápidos.
+ try{
+  const bitmap=await createImageBitmap(file),scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
+  const compressed=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",0.82));
+  await uploadPhoto(compressed||file);
+ }catch{await uploadPhoto(file)}
+});
+$("skipPhoto").onclick=()=>{
+ if(busy)return;
+ photoReset();
+ msg("Leitura salva sem foto. O EAN não encontrado continua na lista.");
+};
 $("entryEditor").addEventListener("submit",async(event)=>{
- event.preventDefault();if(busy)return;
+ event.preventDefault();if(busy||missingRecordId)return;
  const n=Number($("quantity").value);
- if(!Number.isFinite(n)||n<=0||n>999999||Math.round(n*1000)!==n*1000){msg("Quantidade inválida. Use até três casas decimais.",true);return}
+ if(!Number.isFinite(n)||n<=0||n>999999||Math.round(n*1000)!==n*1000){
+  msg("Quantidade inválida. Use até três casas decimais.",true);return;
+ }
  if(!editingId&&!pendingId)pendingId=uuid();
  const editing=Boolean(editingId);
- const payload=editing?{id:editingId,quantity:n,expires_on:$("expiry").value||null}
-  :{client_entry_id:pendingId,ean:currentEan,quantity:n,expires_on:$("expiry").value||null};
- setBusy(true);msg("Salvando no Supabase…");
+ const payload=editing?{id:editingId,quantity:n,expires_on:$("expiry").value||null}:
+  {client_entry_id:pendingId,ean:currentEan,quantity:n,expires_on:$("expiry").value||null};
+ setBusy(true);msg("Salvando e verificando o EAN…");
+ let saved=null;
  try{
-  await call(editing?"edit":"add",payload);
-  cancel();offset=0;await load(false);
-  msg(editing?"Registro atualizado.":"✓ Leitura salva. Pode ler o próximo EAN.");
- }catch(e){msg("Não foi salvo: "+e.message+". Tente novamente.",true)}
- finally{setBusy(false)}
+  const result=await call(editing?"edit":"add",payload);
+  saved=result.row;
+  const resolved=await call("sync_one",{id:saved.id});
+  updateRowLocal(resolved.row,resolved.summary);
+  cancel();
+  if(resolved.row.sync_status==="not_found"&&!resolved.row.photo_path){
+   setBusy(false);await promptMissingPhoto(resolved.row);
+  }else{
+   msg(resolved.row.sync_status==="found"?"✓ Encontrado e salvo. Próximo EAN.":"✓ Salvo. Próximo EAN.");
+  }
+ }catch(e){
+  if(saved){
+   updateRowLocal(saved,null);cancel();
+   msg("EAN salvo, mas sincronização pendente: "+e.message+". Use Sincronizar.",true);
+  }else msg("Não foi salvo: "+e.message+". Tente novamente.",true);
+ }finally{setBusy(false)}
 });
 async function load(append=false){
  if(!append){offset=0;rows=[]}
