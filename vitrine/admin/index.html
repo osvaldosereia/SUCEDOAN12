@@ -5724,6 +5724,9 @@
       const filter=purchaseFilterPayload();
       const filterKey=JSON.stringify(filter);
       if(state.purchaseBlingCompareKey!==filterKey){
+        // Cancel an in-flight comparison for the previous period before starting another.
+        ++purchaseBlingCompareGeneration;
+        state.purchaseBlingCompareLoading=false;
         state.purchaseBlingCompareKey=filterKey;
         state.purchaseBlingCompareLoaded=false;
         state.purchaseBlingCompareError='';
@@ -5745,7 +5748,10 @@
         paintBlingReceivedReview();
       }).catch(()=>{});
       if(state.purchaseAdvancedOpen&&!state.purchaseAdvancedLoaded&&!state.purchaseAdvancedLoading){
-        queueMicrotask(()=>loadPurchaseAdvanced());
+        queueMicrotask(()=>{if(isCurrent())loadPurchaseAdvanced()});
+      }
+      if(state.purchaseBlingCompareOpen&&!state.purchaseBlingCompareLoaded&&!state.purchaseBlingCompareLoading&&!state.purchaseBlingCompareError){
+        queueMicrotask(()=>{if(isCurrent())loadPurchaseBlingComparison()});
       }
       paintBlingReceivedReview();
       paintPurchases();
@@ -5777,24 +5783,27 @@
       }
     }
   }
+  let purchaseBlingCompareGeneration=0;
   async function loadPurchaseBlingComparison(){
-    if(state.purchaseBlingCompareLoading||state.purchaseBlingCompareLoaded)return;
     const filter=purchaseFilterPayload(), key=JSON.stringify(filter);
+    if(state.purchaseBlingCompareKey===key&&(state.purchaseBlingCompareLoading||state.purchaseBlingCompareLoaded))return;
+    const generation=++purchaseBlingCompareGeneration;
     state.purchaseBlingCompareKey=key;
     state.purchaseBlingCompareLoading=true;
     state.purchaseBlingCompareError='';
+    const isCurrent=()=>generation===purchaseBlingCompareGeneration&&state.purchaseBlingCompareKey===key;
     try{
       const result=await purchaseApi('browse_bling',filter);
-      if(state.purchaseBlingCompareKey!==key)return;
+      if(!isCurrent())return;
       state.purchaseBlingBrowse=result;
       state.purchaseBlingCompareLoaded=true;
     }catch(e){
-      if(state.purchaseBlingCompareKey!==key)return;
+      if(!isCurrent())return;
       state.purchaseBlingCompareError=purchaseXmlError(e);
       state.purchaseBlingCompareLoaded=false;
       state.purchaseBlingBrowse={ok:false,documents:[],count:0};
     }finally{
-      if(state.purchaseBlingCompareKey===key){
+      if(isCurrent()){
         state.purchaseBlingCompareLoading=false;
         if(state.tab==='purchases'&&$('#purchaseBody'))paintPurchases();
       }
