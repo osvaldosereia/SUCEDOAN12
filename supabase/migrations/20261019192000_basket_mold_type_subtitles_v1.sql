@@ -236,5 +236,4 @@ select coalesce(jsonb_agg(jsonb_build_object(
   ), '[]'::jsonb)
 ) order by m.basket_id), '[]'::jsonb)
 from mold m;
-$function$
-
+$function$;
