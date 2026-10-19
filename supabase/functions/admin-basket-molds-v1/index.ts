@@ -20,7 +20,7 @@ function dbFor(req:Request){
 
 function rpcError(error:any){
   const detail=clean(error?.message||error,1000);
-  const known=["admin_not_authorized","basket_mold_name_invalid","basket_mold_basket_not_found","basket_mold_public_composition_count_invalid","basket_mold_positions_required","basket_mold_position_label_required","basket_mold_position_quantity_invalid","basket_mold_position_options_required","basket_mold_product_invalid","basket_mold_product_not_found","basket_mold_duplicate_option","basket_category_invalid","basket_subcategory_invalid","basket_mold_conditional_hidden_product_required","basket_mold_conditional_hidden_product_invalid","basket_mold_conditional_hidden_adjustment_invalid","basket_mold_conditional_hidden_adjustment_required"];
+  const known=["admin_not_authorized","basket_mold_name_invalid","basket_mold_basket_not_found","basket_mold_public_composition_count_invalid","basket_mold_positions_required","basket_mold_position_label_required","basket_mold_position_quantity_invalid","basket_mold_position_options_required","basket_mold_position_options_limit","basket_mold_product_invalid","basket_mold_product_not_found","basket_mold_duplicate_option","basket_category_invalid","basket_subcategory_invalid","basket_mold_conditional_hidden_product_required","basket_mold_conditional_hidden_product_invalid","basket_mold_conditional_hidden_adjustment_invalid","basket_mold_conditional_hidden_adjustment_required","basket_mold_optional_items_invalid","basket_mold_optional_label_invalid","basket_mold_optional_options_limit","basket_mold_optional_product_invalid"];
   const code=known.find(x=>detail.includes(x))||"basket_mold_operation_failed";
   if(code==="admin_not_authorized")return {error:code,status:403,message:"Usuário sem permissão para Cestas Molde."};
   if(code==="basket_mold_basket_not_found")return {error:code,status:404,message:"Cesta não encontrada."};
@@ -30,6 +30,8 @@ function rpcError(error:any){
   if(code==="basket_mold_conditional_hidden_product_required")return {error:code,status:400,message:"Escolha o produto que ativa o acréscimo oculto."};
   if(code==="basket_mold_conditional_hidden_product_invalid")return {error:code,status:400,message:"O produto escolhido para o acréscimo não é válido."};
   if(code==="basket_mold_conditional_hidden_adjustment_required"||code==="basket_mold_conditional_hidden_adjustment_invalid")return {error:code,status:400,message:"Informe um valor válido para o acréscimo oculto por produto."};
+  if(code==="basket_mold_optional_options_limit")return {error:code,status:400,message:"Cada produto adicional deve ter de 1 a 3 marcas."};
+  if(code.startsWith("basket_mold_optional_"))return {error:code,status:400,message:"Revise os produtos adicionais e suas marcas."};
   if(code==="basket_mold_operation_failed")return {error:code,status:500,message:"Não foi possível concluir a operação de Cestas Molde."};
   return {error:code,status:400,message:"Revise os dados do molde antes de salvar."};
 }
@@ -37,6 +39,8 @@ function rpcError(error:any){
 async function list(db:any){const q=await db.rpc("admin_basket_mold_list_v1");if(q.error)return rpcError(q.error);return q.data||{baskets:[]}}
 async function editor(db:any,input:any){const id=uuid(input?.basket_id||input?.id);if(!id)return {error:"basket_mold_basket_not_found",status:400,message:"Cesta não encontrada."};const q=await db.rpc("admin_basket_mold_editor_v1",{p_basket_id:id});if(q.error)return rpcError(q.error);return {editor:q.data}}
 async function products(db:any,input:any){const limit=integer(input?.limit??24,1,40)||24;const q=await db.rpc("admin_basket_mold_products_v1",{p_query:clean(input?.q,80)||null,p_limit:limit});if(q.error)return rpcError(q.error);return q.data||{products:[]}}
+async function extrasEditor(db:any,input:any){const id=uuid(input?.basket_id||input?.id);if(!id)return {error:"basket_mold_basket_not_found",status:400,message:"Cesta não encontrada."};const q=await db.rpc("admin_basket_mold_optional_items_editor_v1",{p_basket_id:id});if(q.error)return rpcError(q.error);return {extras_editor:q.data}}
+async function extrasSave(db:any,input:any){const id=uuid(input?.basket_id),items=Array.isArray(input?.items)?input.items:null;if(!id)return {error:"basket_mold_basket_not_found",status:400,message:"Cesta não encontrada."};if(!items||items.length>40)return {error:"basket_mold_optional_items_invalid",status:400,message:"Revise os produtos adicionais."};if(items.some((x:any)=>!Array.isArray(x?.options)||x.options.length<1||x.options.length>3))return {error:"basket_mold_optional_options_limit",status:400,message:"Cada produto adicional deve ter de 1 a 3 marcas."};const q=await db.rpc("admin_save_basket_mold_optional_items_v1",{p_basket_id:id,p_items:items.map((x:any)=>({id:clean(x?.id,64),label:clean(x?.label,120),options:x.options.map((o:any)=>uuid(o?.product_id||o))}))});if(q.error)return rpcError(q.error);return {items:q.data?.items||[]}}
 async function save(db:any,input:any){
   const id=uuid(input?.basket_id),categoryId=uuid(input?.category_id),subcategoryId=uuid(input?.subcategory_id),name=clean(input?.name,180),hidden=finite(input?.hidden_adjustment),count=integer(input?.public_composition_count,1,6),positions=Array.isArray(input?.positions)?input.positions.slice(0,80):null;
   const conditionalEnabled=bool(input?.conditional_hidden_enabled),conditionalProductId=uuid(input?.conditional_hidden_product_id),conditionalHidden=finite(input?.conditional_hidden_adjustment);
@@ -47,6 +51,7 @@ async function save(db:any,input:any){
   if(hidden===null)return {error:"basket_mold_hidden_adjustment_invalid",status:400,message:"Informe um valor oculto válido."};
   if(!count)return {error:"basket_mold_public_composition_count_invalid",status:400,message:"Escolha entre 1 e 6 composições públicas."};
   if(!positions?.length)return {error:"basket_mold_positions_required",status:400,message:"Adicione pelo menos uma posição ao molde."};
+  if(positions.some((position:any)=>Array.isArray(position?.options)&&position.options.length>3))return {error:"basket_mold_position_options_limit",status:400,message:"Cada item pode ter até 3 marcas."};
   if(conditionalEnabled&&!conditionalProductId)return {error:"basket_mold_conditional_hidden_product_required",status:400,message:"Escolha o produto que ativa o acréscimo oculto."};
   if(conditionalEnabled&&(conditionalHidden===null||conditionalHidden<=0))return {error:"basket_mold_conditional_hidden_adjustment_required",status:400,message:"Informe um valor maior que zero para o acréscimo oculto por produto."};
   if(conditionalHidden!==null&&conditionalHidden<0)return {error:"basket_mold_conditional_hidden_adjustment_invalid",status:400,message:"Informe um valor válido para o acréscimo oculto por produto."};
@@ -72,8 +77,11 @@ Deno.serve(async(req:Request)=>{
     else if(action==="editor")result=await editor(db,input);
     else if(action==="products")result=await products(db,input);
     else if(action==="save")result=await save(db,input);
+    else if(action==="extras_editor")result=await extrasEditor(db,input);
+    else if(action==="extras_save")result=await extrasSave(db,input);
     else return json(req,{ok:false,error:"action_invalid"},400);
     if(result?.error)return json(req,{ok:false,...result},Number(result.status||400));
     return json(req,{ok:true,...result});
   }catch(error){console.error("admin-basket-molds-v1",error);return json(req,{ok:false,error:"internal_error",message:"Falha interna em Cestas Molde."},500)}
 });
+

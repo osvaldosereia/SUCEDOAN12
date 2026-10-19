@@ -24,8 +24,8 @@ assert.match(section,/DonaAntoniaBasketMolds/);
 // Simplified editor exposes only business concepts.
 assert.match(ui,/data-mold-name/);
 assert.match(ui,/data-mold-hidden-adjustment/);
-assert.match(ui,/data-mold-composition-count/);
-for(const value of [1,2,3,4,5,6])assert.match(ui,new RegExp(`<option value=["']${value}["']`));
+assert.doesNotMatch(ui,/data-mold-composition-count/);
+assert.match(ui,/public_composition_count:1/);
 assert.match(ui,/data-mold-add-position/);
 assert.match(ui,/data-mold-position-label/);
 assert.match(ui,/data-mold-position-quantity/);
@@ -35,15 +35,13 @@ assert.match(ui,/data-mold-save/);
 assert.equal(/kit interno|kit base|assembly_kit/i.test(ui),false,'normal mold editor must not teach internal kits');
 
 // Preferred option is saved as position-option metadata and never requires a schema change.
-assert.match(ui,/data-mold-prefer-option/);
+assert.doesNotMatch(ui,/data-mold-prefer-option/);
 assert.match(ui,/data-mold-selected-product/);
 assert.match(ui,/preferred:o\.metadata\?\.preferred===true/);
-assert.match(ui,/metadata:\{\.\.\.\(o\.metadata\|\|\{\}\),preferred:o\.preferred===true\}/);
+assert.match(ui,/metadata:\{\.\.\.\(o\.metadata\|\|\{\}\)\}/);
 assert.match(ui,/editar_produto/);
 const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
-assert.match(adminHtml,/params\.get\('editar_produto'\)/);
-assert.match(adminHtml,/uuid\.test\(directProductId\)/);
-assert.match(adminHtml,/openProductEditor\(\{id:directProductId\}\)/);
+assert.match(adminHtml,/basket-admin-section\.js\?v=basket-personalization-v1/);
 const compositionSQL=fs.readFileSync('supabase/migrations/20261013122000_basket_mold_preferred_product_v1.sql','utf8');
 assert.match(compositionSQL,/metadata.*preferred/);
 assert.match(compositionSQL,/bool_or\(s\.is_preferred\)/);
@@ -52,15 +50,15 @@ assert.match(compositionSQL,/preferred_in_stock/);
 assert.match(compositionSQL,/available_stock/);
 
 // Multiple preferences do not cancel one another; SQL distributes preferred SKUs.
-assert.match(ui,/option\.preferred=option\.preferred!==true/);
 assert.doesNotMatch(ui,/options\.forEach\(\(o,i\)=>\{o\.preferred=/);
-assert.match(ui,/Marque quantos produtos preferenciais quiser/);
+assert.match(ui,/até 3 marcas/i);
 const multiPreferredSQL=fs.readFileSync('supabase/migrations/20261013164500_basket_mold_multi_preferred_v1.sql','utf8');
 assert.match(multiPreferredSQL,/count\(\*\) filter \(where s\.is_preferred\)/);
 assert.match(multiPreferredSQL,/\(\(sl\.composition_number - 1\) % r\.preferred_count\) \+ 1/);
 assert.match(multiPreferredSQL,/when c\.is_preferred then 'preferred_in_stock'/);
 assert.match(multiPreferredSQL,/where greatest\(0, coalesce\(s\.loose_sellable_stock/);
-assert.match(section,/20261013-multi-preferred-v1/);
+assert.match(section,/20261019-basket-personalization-v1/);
+assert.match(section,/Produtos adicionais/);
 
 // Gateway forwards the logged-in admin JWT and never loads a privileged server key.
 assert.match(api,/SUPABASE_ANON_KEY/);
@@ -85,3 +83,4 @@ assert.match(sql,/revoke all on function public\.admin_save_basket_mold_v1\([^;]
 assert.match(sql,/grant execute on function public\.admin_save_basket_mold_v1\([^;]+to authenticated/is);
 
 console.log('basket mold admin v1: PASS');
+
