@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b6348">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Leitura EAN · Dona Antônia</title>
+<style>
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17242c;background:#f3f6f5;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;padding-bottom:env(safe-area-inset-bottom)}
+header{position:sticky;top:0;background:#0b6348;color:white;z-index:10;padding:12px max(14px,env(safe-area-inset-left));box-shadow:0 2px 8px #0002}
+header>div{max-width:960px;margin:auto;display:flex;gap:12px;align-items:center;justify-content:space-between}
+header strong{font-size:17px}header small{display:block;font-size:11px;opacity:.85}a.back{color:#fff;text-decoration:none;border:1px solid #ffffff80;border-radius:9px;padding:8px 10px;font-size:13px}
+main{max-width:960px;margin:0 auto;padding:12px;display:grid;gap:12px}
+.card{background:white;border-radius:13px;padding:15px;box-shadow:0 1px 5px #092c1917;border:1px solid #dce6df}
+h1,h2,p{margin:0}h1{font-size:20px}h2{font-size:17px}p.note{color:#52665d;font-size:12px;line-height:1.45;margin-top:5px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+button{cursor:pointer;min-height:42px;border:0;border-radius:9px;background:#e4eee8;color:#114c36;padding:8px 13px;font-size:14px;font-weight:700}
+button.primary{background:#08704c;color:#fff}button.blue{background:#165e9e;color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+label{display:block;font-size:13px;font-weight:700;color:#405348}
+input{font:inherit;min-height:46px;width:100%;padding:10px 12px;border:1px solid #b6c7be;border-radius:9px;background:#fff;color:#182c22}
+input:focus{outline:2px solid #25886a;outline-offset:1px}
+input[type=number]{font-size:20px;font-weight:700}
+input[type=date]{font-size:16px}
+.scan-box{overflow:hidden;border-radius:11px;background:#0f2021;position:relative}
+video{display:block;width:100%;height:230px;object-fit:cover}
+.scan-box::after{content:"";position:absolute;inset:31% 9%;border:2px solid #61f0ae;border-radius:12px;box-shadow:0 0 0 500px #0003;pointer-events:none}
+.scan-box[hidden], [hidden]{display:none!important}
+#entryEditor{border:2px solid #08704c;border-radius:12px;padding:12px;margin-top:12px;background:#f6fff9}
+#entryEditor strong{font-size:21px;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.fieldgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:10px}
+.fieldgrid label input{margin-top:5px}
+button.full{width:100%;margin-top:12px;font-size:16px;min-height:50px}
+#manual{display:flex;gap:7px;margin-top:10px}#manual input{flex:1;min-width:0;font-variant-numeric:tabular-nums}
+.counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:12px 0}
+.count{border:1px solid #dbe9df;background:#f6faf8;padding:9px 5px;border-radius:9px;text-align:center}
+.count b{display:block;font-size:21px}.count small{font-size:11px;color:#587066}
+.filters{display:flex;gap:6px;overflow-x:auto;padding:3px 0 8px}
+.filters button{white-space:nowrap;font-size:12px;min-height:37px;padding:8px 10px;background:#e5ece8}
+.filters button.active{background:#08704c;color:white}
+.entry{padding:12px 0;border-top:1px solid #e3ebe6;display:flex;justify-content:space-between;gap:8px}
+.entry:first-child{border-top:0}.entry-code{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.entry-meta{font-size:12px;color:#5d7066;margin-top:5px}
+.entry-left{min-width:0}.entry-right{text-align:right;flex-shrink:0}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:7px;padding:5px 7px}
+.found{background:#def7e5;color:#136139}.not_found{background:#fff0e0;color:#a34b0e}.pending{background:#e9eef3;color:#465c67}
+.edit-btn{font-size:12px;min-height:32px;padding:5px 9px;margin-top:7px}
+#message{font-size:13px;color:#34534a;min-height:18px;margin-top:8px}
+#message.error{color:#a32b22}
+.empty{padding:20px 0;text-align:center;color:#64756c;font-size:13px}
+#more{width:100%;margin-top:9px}
+@media(max-width:420px){.fieldgrid{grid-template-columns:1fr}.card{padding:12px}video{height:205px}header strong{font-size:15px}button{font-size:13px}}
+</style>
+</head>
+<body>
+<header><div><div><strong>Dona Antônia · Leitura EAN</strong><small>Registro rápido de produtos · Mobile</small></div><a class="back" href="/vitrine/admin/">← Admin</a></div></header>
+<main>
+<section class="card">
+  <div class="row between"><h1>Ler código de barras</h1><button class="primary" id="cameraButton" type="button">📷 Abrir câmera</button></div>
+  <p class="note">Leia primeiro. O produto não será pesquisado agora. Após a leitura, informe a quantidade e, se quiser, a validade.</p>
+  <div class="scan-box" id="cameraBox" hidden><video id="camera" playsinline muted autoplay aria-label="Leitor de código de barras"></video></div>
+  <div id="manual"><input id="eanInput" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="EAN / leitor USB ou Bluetooth" aria-label="EAN"/><button id="useEan" type="button">Usar</button></div>
+  <form id="entryEditor" hidden>
+    <div class="row between"><div><small id="editingLabel">EAN lido</small><div><strong id="currentEan"></strong></div></div><button type="button" id="cancelEdit">Cancelar</button></div>
+    <div class="fieldgrid">
+      <label>Quantidade <input id="quantity" type="number" inputmode="decimal" min=".001" max="999999" step=".001" value="1" required></label>
+      <label>Validade (opcional) <input id="expiry" type="date"></label>
+    </div>
+    <button class="primary full" id="save" type="submit">✓ Salvar leitura</button>
+  </form>
+  <div id="message" role="status" aria-live="polite">Conectando ao Supabase…</div>
+</section>
+<section class="card">
+  <div class="row between"><h2>Leituras salvas</h2><button class="blue" id="sync" type="button">↻ Sincronizar EANs</button></div>
+  <p class="note">A sincronização identifica os itens no banco; não modifica o cadastro, a vitrine ou o estoque.</p>
+  <div class="counts">
+    <div class="count"><b id="countAll">–</b><small>Registros</small></div>
+    <div class="count"><b id="countFound">–</b><small>✓ Encontrados</small></div>
+    <div class="count"><b id="countUnknown">–</b><small>Não encontrados</small></div>
+  </div>
+  <div class="filters" aria-label="Filtrar leituras">
+    <button class="active" data-filter="all" type="button">Todos</button>
+    <button data-filter="pending" type="button">Pendentes</button>
+    <button data-filter="found" type="button">✓ Encontrados</button>
+    <button data-filter="not_found" type="button">⚠ Não encontrados</button>
+  </div>
+  <div id="entries"><div class="empty">Carregando registros…</div></div>
+  <button id="more" hidden type="button">Carregar mais</button>
+</section>
+</main>
+<script>
+(()=>{
+"use strict";
+const BASE="https://ssbesxgaijknwsjbsbcz.supabase.co";
+const KEY="sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8";
+const API=BASE+"/functions/v1/admin-ean-capture-v1";
+const $=(id)=>document.getElementById(id);
+let tokenPromise=null,cameraStream=null,scanReader=null,scanMode="",scanLoopId=0,lastDetection=0;
+let paused=false,busy=false,editingId="",pendingId="",currentEan="",filter="all",offset=0,hasMore=false,rows=[],count=0;
+const uuid=()=>crypto.randomUUID();
+const msg=(s,error=false)=>{$("message").textContent=s;$("message").classList.toggle("error",error)};
+const normalizeEan=(v)=>String(v||"").replace(/\D/g,"");
+const dateBR=(v)=>v?String(v).slice(8,10)+"/"+String(v).slice(5,7)+"/"+String(v).slice(0,4):"Sem validade";
+const qtyBR=(n)=>Number(n).toLocaleString("pt-BR",{maximumFractionDigits:3});
+const fmt=(v)=>v?new Date(v).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
+const esc=(s)=>String(s??"").replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function validToken(t){
+ try{const data=JSON.parse(atob(String(t).split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));return Number(data.exp)>Date.now()/1000+60}catch{return false}
+}
+async function auth(){
+ const stored=sessionStorage.getItem("da_finance_access_token_v1")||"";
+ if(validToken(stored))return stored;
+ if(tokenPromise)return tokenPromise;
+ tokenPromise=(async()=>{
+  const response=await fetch(BASE+"/functions/v1/admin-pin-auth-v1",{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY},body:JSON.stringify({pin:"000000"}),cache:"no-store"});
+  const body=await response.json().catch(()=>({}));
+  if(!response.ok||body.ok!==true||!body.token_hash)throw Error("Não foi possível autenticar no Admin.");
+  const verification=await fetch(BASE+"/auth/v1/verify",{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY},
+   body:JSON.stringify({token_hash:body.token_hash,type:body.verification_type||"email"}),cache:"no-store"});
+  const data=await verification.json().catch(()=>({}));
+  if(!verification.ok||!data.access_token)throw Error("Falha na sessão administrativa.");
+  sessionStorage.setItem("da_finance_access_token_v1",data.access_token);
+  return data.access_token;
+ })();
+ try{return await tokenPromise}finally{tokenPromise=null}
+}
+async function call(action,payload=null,retry=true){
+ const token=await auth();
+ const url=new URL(API);url.searchParams.set("action",action);
+ let options={cache:"no-store",headers:{Authorization:"Bearer "+token,apikey:KEY}};
+ if(payload){options.method="POST";options.headers["Content-Type"]="application/json";options.body=JSON.stringify(payload)}
+ if(action==="list"){url.searchParams.set("filter",filter);url.searchParams.set("offset",String(offset));url.searchParams.set("limit","60")}
+ const res=await fetch(url,options);
+ if(res.status===401&&retry){sessionStorage.removeItem("da_finance_access_token_v1");return call(action,payload,false)}
+ const data=await res.json().catch(()=>({}));
+ if(!res.ok||data.ok!==true)throw Error(data.error||"Falha de comunicação com o servidor.");
+ return data;
+}
+function setBusy(v){busy=v;$("save").disabled=v;$("sync").disabled=v;$("more").disabled=v;$("useEan").disabled=v;$("cameraButton").disabled=v}
+function codeDetected(raw){
+ const code=normalizeEan(raw);
+ if(paused||busy||code.length<8||code.length>14)return;
+ paused=true;
+ currentEan=code;editingId="";pendingId=uuid();
+ $("currentEan").textContent=code;
+ $("editingLabel").textContent="EAN lido";
+ $("quantity").value="1";$("expiry").value="";
+ $("entryEditor").hidden=false;$("eanInput").value="";
+ msg("EAN lido. Informe a quantidade e salve.");
+ if(navigator.vibrate)navigator.vibrate(70);
+ $("quantity").focus({preventScroll:true});
+ $("entryEditor").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function cancel(){
+ editingId="";currentEan="";pendingId="";paused=false;$("entryEditor").hidden=true;
+ if(!cameraStream&&!scanReader)$("eanInput").focus();
+}
+function addManual(){
+ const code=normalizeEan($("eanInput").value);
+ if(!/^\d{8,14}$/.test(code)){msg("Informe um EAN numérico entre 8 e 14 dígitos.",true);return}
+ if($("entryEditor").hidden===false){msg("Salve ou cancele a leitura atual antes de continuar.",true);return}
+ codeDetected(code);
+}
+$("useEan").onclick=addManual;
+$("eanInput").addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();addManual()}});
+$("cancelEdit").onclick=cancel;
+$("entryEditor").addEventListener("submit",async(event)=>{
+ event.preventDefault();if(busy)return;
+ const n=Number($("quantity").value);
+ if(!Number.isFinite(n)||n<=0||n>999999||Math.round(n*1000)!==n*1000){msg("Quantidade inválida. Use até três casas decimais.",true);return}
+ if(!editingId&&!pendingId)pendingId=uuid();
+ const editing=Boolean(editingId);
+ const payload=editing?{id:editingId,quantity:n,expires_on:$("expiry").value||null}
+  :{client_entry_id:pendingId,ean:currentEan,quantity:n,expires_on:$("expiry").value||null};
+ setBusy(true);msg("Salvando no Supabase…");
+ try{
+  await call(editing?"edit":"add",payload);
+  cancel();offset=0;await load(false);
+  msg(editing?"Registro atualizado.":"✓ Leitura salva. Pode ler o próximo EAN.");
+ }catch(e){msg("Não foi salvo: "+e.message+". Tente novamente.",true)}
+ finally{setBusy(false)}
+});
+async function load(append=false){
+ if(!append){offset=0;rows=[]}
+ const data=await call("list");
+ rows=append?rows.concat(data.rows||[]):data.rows||[];
+ offset=data.next_offset||rows.length;count=data.count||0;hasMore=Boolean(data.has_more);
+ const s=data.summary||{};
+ $("countAll").textContent=s.total??0;
+ $("countFound").textContent=s.found??0;
+ $("countUnknown").textContent=s.not_found??0;
+ paint();$("more").hidden=!hasMore;
+}
+function paint(){
+ const list=$("entries");
+ if(!rows.length){list.innerHTML='<div class="empty">'+(filter==="all"?"Nenhuma leitura salva ainda.":"Nenhuma leitura neste filtro.")+'</div>';return}
+ list.innerHTML=rows.map(r=>{
+  const status=r.sync_status==="found"?'<span class="tag found">✓ Encontrado</span>'
+   :r.sync_status==="not_found"?'<span class="tag not_found">⚠ Não encontrado</span>'
+   :'<span class="tag pending">A sincronizar</span>';
+  return '<article class="entry"><div class="entry-left"><div class="entry-code">'+esc(r.ean)+'</div>'+
+   '<div class="entry-meta">Quantidade: <b>'+qtyBR(r.quantity)+'</b> · '+dateBR(r.expires_on)+'</div>'+
+   '<div class="entry-meta">'+fmt(r.created_at)+'</div></div>'+
+   '<div class="entry-right">'+status+'<div><button type="button" class="edit-btn" data-edit="'+esc(r.id)+'">Editar</button></div></div></article>';
+ }).join("");
+}
+$("entries").addEventListener("click",(event)=>{
+ const btn=event.target.closest("[data-edit]");if(!btn||busy)return;
+ const r=rows.find(x=>x.id===btn.dataset.edit);if(!r)return;
+ paused=true;editingId=r.id;pendingId="";currentEan=r.ean;
+ $("editingLabel").textContent="Editar leitura salva";$("currentEan").textContent=r.ean;
+ $("quantity").value=r.quantity;$("expiry").value=r.expires_on||"";
+ $("entryEditor").hidden=false;$("entryEditor").scrollIntoView({behavior:"smooth",block:"center"});$("quantity").focus();
+});
+document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("click",async()=>{
+ if(busy)return;filter=btn.dataset.filter;
+ document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===btn));
+ try{setBusy(true);await load();msg("Lista filtrada.")}catch(e){msg(e.message,true)}finally{setBusy(false)}
+}));
+$("more").onclick=async()=>{if(busy)return;try{setBusy(true);await load(true)}catch(e){msg(e.message,true)}finally{setBusy(false)}};
+$("sync").onclick=async()=>{
+ if(busy)return;setBusy(true);msg("Sincronizando os EANs com o cadastro…");
+ try{const s=await call("sync",{});await load();msg("✓ Sincronizado: "+s.summary.found+" encontrado(s), "+s.summary.not_found+" não encontrado(s).")}
+ catch(e){msg("Não foi possível sincronizar: "+e.message,true)}finally{setBusy(false)}
+};
+function acceptDetection(result){
+ if(paused||busy)return;
+ const now=Date.now();if(now-lastDetection<850)return;lastDetection=now;
+ codeDetected(result);
+}
+function stopCamera(){
+ cancelAnimationFrame(scanLoopId);scanLoopId=0;
+ if(scanReader){try{scanReader.reset()}catch{}scanReader=null}
+ if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
+ $("camera").srcObject=null;$("cameraBox").hidden=true;scanMode="";
+ $("cameraButton").textContent="📷 Abrir câmera";
+}
+async function loadZXing(){
+ if(window.ZXing)return;
+ await new Promise((resolve,reject)=>{
+  const script=document.createElement("script");
+  script.src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
+  script.onload=resolve;script.onerror=()=>reject(Error("Biblioteca de câmera indisponível."));document.head.appendChild(script);
+ });
+}
+async function startCamera(){
+ if(!navigator.mediaDevices?.getUserMedia)throw Error("Este navegador não permite câmera. Use HTTPS ou leitor externo.");
+ $("cameraBox").hidden=false;
+ if("BarcodeDetector" in window){
+  let available=await window.BarcodeDetector.getSupportedFormats().catch(()=>[]);
+  const formats=["ean_13","ean_8","upc_a","upc_e","code_128","itf"].filter(x=>available.includes(x));
+  if(formats.length){
+   const detector=new BarcodeDetector({formats});
+   cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false});
+   $("camera").srcObject=cameraStream;await $("camera").play();scanMode="native";
+   const loop=async()=>{
+    if(scanMode!=="native")return;
+    if(!paused&&!busy&&$("camera").readyState>=2)try{
+      const detections=await detector.detect($("camera"));
+      for(const d of detections){const value=normalizeEan(d.rawValue);if(value.length>=8&&value.length<=14){acceptDetection(value);break}}
+    }catch(e){console.debug("EAN detector",e)}
+    if(scanMode==="native")scanLoopId=requestAnimationFrame(loop);
+   };
+   scanLoopId=requestAnimationFrame(loop);return;
+  }
+ }
+ await loadZXing();
+ const hints=new Map();
+ hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[
+  ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E,
+  ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.ITF
+ ]);
+ scanReader=new ZXing.BrowserMultiFormatReader(hints,250);scanMode="zxing";
+ await scanReader.decodeFromVideoDevice(undefined,$("camera"),(result)=>{if(result)acceptDetection(result.getText())});
+}
+$("cameraButton").onclick=async()=>{
+ if(scanMode){stopCamera();msg("Câmera desligada.");return}
+ try{setBusy(true);msg("Iniciando a câmera…");await startCamera();$("cameraButton").textContent="■ Fechar câmera";msg("Aponte para o código de barras.")}
+ catch(e){stopCamera();msg("Câmera: "+e.message+" Use também o campo EAN.",true)}
+ finally{setBusy(false)}
+};
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&scanMode)stopCamera()});
+window.addEventListener("pagehide",stopCamera);
+(async()=>{
+ try{await load();msg("Pronto para começar a leitura.");}
+ catch(e){$("entries").innerHTML='<div class="empty">Não foi possível carregar as leituras.</div>';msg("Falha ao conectar: "+e.message,true)}
+})();
+})();
+</script>
+</body>
+</html>
