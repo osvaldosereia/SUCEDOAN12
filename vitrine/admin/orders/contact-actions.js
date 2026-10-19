@@ -37,7 +37,7 @@
       const data=a&&typeof a==='object'?a:{};
       const provided=String(data.google_maps_url||'').trim();
       if(/^https:\/\/(?:www\.)?google\.(?:com|com\.br)\/maps(?:\/|[?#]|$)/i.test(provided)||/^https:\/\/maps\.app\.goo\.gl(?:\/|[?#]|$)/i.test(provided))return provided;
-      const parts=[data.street,data.number,data.district,data.city,data.state].filter(Boolean);
+      const parts=[data.street,data.number,data.district,data.city,data.state].filter(value=>value!==null&&value!==undefined&&String(value).trim()!=='');
       return parts.length>=3?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(parts.join(', ')):'';
     }
     function orderContactActionsHtml(o,c={}){
