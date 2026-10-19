@@ -2,7 +2,7 @@
 (function(global){
   // Ordena uma cópia, preservando a lista original.
   function sortOperationalOrders(rows){
-    return [...rows].sort((a,b)=>{
+    return [...(Array.isArray(rows)?rows:[])].sort((a,b)=>{
       const at=Date.parse(a?.created_at||0)||0;
       const bt=Date.parse(b?.created_at||0)||0;
       return bt-at;

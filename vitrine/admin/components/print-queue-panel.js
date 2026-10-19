@@ -4,7 +4,7 @@
     const labels={pending:'Aguardando',failed:'Falhou',claimed:'Em impressão'};
     function renderJob(job,ordersById){
       const order=ordersById.get(String(job.entity_id));
-      const status='<span class="pill '+(job.status==='failed'?'danger':'')+'">'+esc(labels[job.status])+'</span>';
+      const status='<span class="pill '+(job.status==='failed'?'danger':'')+'">'+esc(labels[job.status]||job.status||'—')+'</span>';
       const details='<div class="history-main"><strong>Separação · #'+esc(orderDisplayCode(order))+'</strong><small>'+
         esc(job.printer_profile||'85 mm')+(job.last_error?' · '+esc(job.last_error):'')+'</small></div>';
       const hasOrderId=job.entity_id!==null&&job.entity_id!==undefined&&String(job.entity_id).trim()!=='';
