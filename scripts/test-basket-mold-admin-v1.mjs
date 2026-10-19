@@ -41,7 +41,7 @@ assert.match(ui,/data-mold-save/);
 assert.equal(/kit interno|kit base|assembly_kit/i.test(ui),false,'normal mold editor must not teach internal kits');
 
 const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
-assert.match(adminHtml,/basket-admin-section\.js\?v=basket-personalization-v2/);
+assert.match(adminHtml,/basket-admin-section\.js\?v=basket-personalization-v3/);
 const compositionSQL=fs.readFileSync('supabase/migrations/20261013122000_basket_mold_preferred_product_v1.sql','utf8');
 assert.match(compositionSQL,/metadata.*preferred/);
 assert.match(compositionSQL,/bool_or\(s\.is_preferred\)/);
@@ -51,13 +51,16 @@ assert.match(compositionSQL,/available_stock/);
 
 // Multiple preferences do not cancel one another; SQL distributes preferred SKUs.
 assert.doesNotMatch(ui,/options\.forEach\(\(o,i\)=>\{o\.preferred=/);
-assert.match(ui,/até 3 marcas/i);
+assert.match(ui,/até 40 alternativas/i);
+assert.match(ui,/data-mold-new-item/);
+assert.match(ui,/data-mold-position-toggle/);
+assert.match(ui,/shared_item_save/);
 const multiPreferredSQL=fs.readFileSync('supabase/migrations/20261013164500_basket_mold_multi_preferred_v1.sql','utf8');
 assert.match(multiPreferredSQL,/count\(\*\) filter \(where s\.is_preferred\)/);
 assert.match(multiPreferredSQL,/\(\(sl\.composition_number - 1\) % r\.preferred_count\) \+ 1/);
 assert.match(multiPreferredSQL,/when c\.is_preferred then 'preferred_in_stock'/);
 assert.match(multiPreferredSQL,/where greatest\(0, coalesce\(s\.loose_sellable_stock/);
-assert.match(section,/20261019-shared-brands-v2/);
+assert.match(section,/20261019-shared-brands-v3/);
 assert.match(section,/Produtos adicionais/);
 
 // Gateway forwards the logged-in admin JWT and never loads a privileged server key.
@@ -65,7 +68,7 @@ assert.match(api,/SUPABASE_ANON_KEY/);
 assert.equal(/SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEYS/.test(api),false,'mold gateway must not load privileged database secrets');
 assert.match(api,/Authorization/);
 assert.match(api,/const MUTATIONS=new Set\(\[[^\]]*["']save["']/s);
-for(const action of ['list','editor','products','shared_items','shared_items_save','save'])assert.match(api,new RegExp(`action===?["']${action}["']`));
+for(const action of ['list','editor','products','shared_items','shared_items_save','shared_item_save','save'])assert.match(api,new RegExp(`action===?["']${action}["']`));
 for(const rpc of ['admin_basket_mold_list_v1','admin_basket_mold_editor_v1','admin_basket_mold_products_v1','admin_basket_mold_shared_items_v1','admin_save_basket_mold_shared_items_v1','admin_save_basket_mold_v3'])assert.match(api,new RegExp(rpc));
 
 // Public wrappers are SECURITY DEFINER but authorize auth.uid() against admin_users before touching protected tables.
@@ -91,5 +94,12 @@ assert.match(ui,/Quantidade \(0 remove\)/);
 const completeSQL=fs.readFileSync('supabase/migrations/20261019190000_basket_mold_shared_brands_all_sizes_and_price_v2.sql','utf8');
 assert.match(completeSQL,/basket_shared_registry_incomplete/);
 assert.match(completeSQL,/lowest_price_in_stock/);
-console.log('basket mold admin shared brands v2: PASS');
+const v3sql=fs.readFileSync('supabase/migrations/20261019194500_basket_mold_shared_item_variations_v3.sql','utf8');
+assert.match(v3sql,/admin_upsert_basket_mold_shared_item_v2/);
+assert.match(v3sql,/sort_order between 0 and 39/);
+assert.match(v3sql,/coalesce\(v_limit,3\)/);
+const storefrontV3=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
+assert.match(storefrontV3,/randomized=alts\.slice\(1\)/);
+assert.match(storefrontV3,/selected=alts\.find/);
+console.log('basket mold admin shared brands v3: PASS');
 
