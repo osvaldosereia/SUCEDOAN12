@@ -3,6 +3,8 @@ from pathlib import Path
 site = Path('index.html').read_text(encoding='utf-8')
 site_copy = Path('vitrine/index.html').read_text(encoding='utf-8')
 admin = Path('vitrine/admin/index.html').read_text(encoding='utf-8')
+admin_runtime = Path('vitrine/admin/admin-runtime.js').read_text(encoding='utf-8')
+admin_sources = admin + '\n' + admin_runtime
 migration = Path('supabase/migrations/20260930_marketing_campaign_brand_rules_v1.sql').read_text(encoding='utf-8')
 
 required_site_markers = [
@@ -55,7 +57,7 @@ for unsupported_cta in ["'HIGIENE'", "'CASA'", "'DOCES_LANCHES'"]:
 
 required_admin_markers = [
     "data-tab=\"marketing\"",
-    "function renderMarketing()",
+    "async function renderMarketing()",
     "Radar de Marketing",
     "Segmentação",
     "Links / Campanhas",
@@ -63,12 +65,12 @@ required_admin_markers = [
     "MARKETING_BRANDS",
 ]
 for marker in required_admin_markers:
-    assert marker in admin, f'missing admin marker: {marker}'
-admin_brand_block = admin[admin.index('const MARKETING_BRANDS='):admin.index('const MARKETING_SEGMENTS=')]
+    assert marker in admin_sources, f'missing admin marker: {marker}'
+admin_brand_block = admin_runtime[admin_runtime.index('const MARKETING_BRANDS='):admin_runtime.index('const MARKETING_SEGMENTS=')]
 assert "nivea" in admin_brand_block and "elseve" in admin_brand_block
 for unsupported in ["seda", "monange", "lola-cosmetics", "skala", "dove", "omo", "ype", "downy"]:
     assert unsupported not in admin_brand_block, f'unsupported active PapoAI brand in admin contract: {unsupported}'
-assert 'Bebê → Cabelos → Beleza → Limpeza → Lavanderia → Pet → Ofertas para cesta.' in admin
+assert 'Bebê → Cabelos → Beleza → Limpeza → Lavanderia → Pet → Ofertas para cesta.' in admin_sources
 
 for marker in ["create table if not exists public.marketing_campaign_brand_rules_v1", "enable row level security"]:
     assert marker.lower() in migration.lower(), f'missing migration marker: {marker}'
