@@ -60,7 +60,7 @@ begin
     raise exception 'checkout stock gate changed; refusing to patch';
   end if;
 
-  v_definition:=replace(v_definition,'  v_current_demand numeric;','  v_current_demand numeric;\n  v_mold_component_demand numeric;');
+  v_definition:=replace(v_definition,'  v_current_demand numeric;', '  v_current_demand numeric;'||chr(10)||'  v_mold_component_demand numeric;');
   v_definition:=replace(v_definition,v_old,v_new);
   execute v_definition;
 end;
