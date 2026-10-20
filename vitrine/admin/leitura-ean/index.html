@@ -631,7 +631,12 @@ async function runCosmosResearch(id){
    openResolutionPanel(updated,"create");
    msg("Dados encontrados no Cosmos. Confira a sugestão e cadastre apenas se estiver correta.");
   }else msg("O Cosmos não localizou produto para este EAN.");
- }catch(e){msg("Não foi possível pesquisar no Cosmos: "+e.message,true)}
+ }catch(e){
+  if(["leitura_nao_esta_na_fila","leitura_nao_encontrada"].includes(e.message)){
+   try{await load()}catch{}
+   msg("Esta leitura mudou em outra sessão. A fila foi atualizada; consulte o status atual.");
+  }else msg("Não foi possível pesquisar no Cosmos: "+e.message,true);
+ }
  finally{setBusy(false)}
 }
 function syncFilterButtons(){document.querySelectorAll("[data-filter]").forEach(button=>button.classList.toggle("active",button.dataset.filter===filter))}
