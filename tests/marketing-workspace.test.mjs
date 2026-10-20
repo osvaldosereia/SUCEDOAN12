@@ -9,6 +9,7 @@ const postSale=readFileSync(new URL('../vitrine/admin/marketing/post-sale-center
 const campaignEntry=readFileSync(new URL('../vitrine/admin/marketing/campaign-entry.js',import.meta.url),'utf8');
 const worker=readFileSync(new URL('../supabase/functions/whatsapp-marketing-worker-v1/index.ts',import.meta.url),'utf8');
 const orders=readFileSync(new URL('../vitrine/admin/runtime-src/08-orders-detail.part.js.txt',import.meta.url),'utf8');
+const adminIndex=readFileSync(new URL('../vitrine/admin/index.html',import.meta.url),'utf8');
 const audienceApi=readFileSync(new URL('../supabase/functions/admin-marketing-audiences-v1/index.ts',import.meta.url),'utf8');
 const overviewPath=new URL('../vitrine/admin/marketing/marketing-overview-data.js',import.meta.url);
 const overview=existsSync(overviewPath)?readFileSync(overviewPath,'utf8'):'';
@@ -23,6 +24,8 @@ test('Pós-venda opens its own view instead of redirecting to Orders',()=>{
 test('Marketing coordinator invalidates cached view code after navigation changes',()=>{
   assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v2/);
   assert.match(campaignEntry,/marketing-polish\.css\?v=marketing-polish-v2/);
+  assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v2/);
+  assert.match(adminIndex,/admin-runtime\.js\?v=marketing-workspace-v2/);
 });
 
 test('overview New template action opens the Meta template creator',()=>{
