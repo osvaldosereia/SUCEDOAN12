@@ -15,6 +15,15 @@ const adminProducts=readFileSync(new URL('../supabase/functions/admin-products-l
 const overviewPath=new URL('../vitrine/admin/marketing/marketing-overview-data.js',import.meta.url);
 const overview=existsSync(overviewPath)?readFileSync(overviewPath,'utf8'):'';
 
+test('Marketing keeps advanced subviews active after normalizing the subnavigation',()=>{
+  assert.match(polish,/function activeView\\(root\\)\\{\\s*return root\\.querySelector\\('\\[data-marketing-subnav\\] \\[data-marketing-view\\]\\.active'\\)/);
+  assert.match(polish,/const currentView=activeView\\(root\\)[\\s\\S]{0,700}const active=button\\.dataset\\.marketingView===currentView;[\\s\\S]{0,120}classList\\.toggle\\('active',active\\)/);
+});
+
+test('Marketing reuses an existing Mais menu instead of rendering a duplicate',()=>{
+  assert.match(polish,/let more=nav\\.querySelector\\('\\[data-marketing-more-menu\\],\\.marketing-admin-more'\\)/);
+});
+
 test('orders API permits the public API key header from the storefront origin',()=>{
   assert.match(adminProducts,/\"Access-Control-Allow-Headers\":\"content-type,authorization,apikey\"/);
 });
