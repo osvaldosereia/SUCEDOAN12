@@ -40,7 +40,8 @@ assert.ok(resolveStart>=0&&resolveEnd>resolveStart,"resolution handler exists");
 const resolve=page.slice(resolveStart,resolveEnd);
 assert.ok(resolve.includes('action==="link_product"||action==="create_inactive"'),"linking and inactive creation share the found transition");
 assert.ok(resolve.includes('filter="found";syncFilterButtons()'),"resolved products switch to the found filter");
-assert.ok(resolve.includes("await load()"),"found list reloads from the server");
+assert.ok(resolve.includes("updateRowLocal(data.row,data.summary)"),"successful resolution updates the row from the mutation response");
+assert.ok(!resolve.includes("await load()"),"successful resolution does not block on a second list request");
 assert.ok(migration.includes("sync_status='found'"),"resolved EANs are stored as found");
 
 const inlineStart=page.indexOf("<script defer>\n");
