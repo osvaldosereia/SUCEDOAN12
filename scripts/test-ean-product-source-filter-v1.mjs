@@ -14,6 +14,7 @@ assert.ok(api.includes('u.searchParams.get("source_system")'),"products API read
 assert.ok(api.includes('db.from("ean_capture_records_v1")'),"EAN source filter reads scanner history");
 assert.ok(api.includes("matched_product_id"),"EAN scanner history includes linked products");
 assert.ok(api.includes("__ean_capture_placeholder"),"unresolved scanner reads are returned");
+assert.ok(api.includes("captures.filter((c:any)=>c.matched_product_id)"),"resolved reads suppress stale unresolved duplicates");
 assert.ok(source.includes("eanCapturePlaceholderDesktopRow"),"desktop list renders unresolved scanner reads");
 assert.ok(source.includes("eanCapturePlaceholderMobileCard"),"mobile list renders unresolved scanner reads");
 assert.ok(source.includes("Passaram pelo leitor EAN"),"source segment label includes all read statuses");
