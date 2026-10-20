@@ -848,7 +848,7 @@
     function homeCategorySection(categories){
       const icons=['<path d="M3 4h3l3 13h11l3-10H7M10 22h.01M20 22h.01"/>','<path d="M9 3h9v4l-4 2v3l4 4v8H6v-8l4-4V8H7V5h2z"/>','<path d="M10 3h9M14 3v6M9 9h10v15H9zM7 13h12"/>','<path d="M3 12 14 3l11 9M7 10v15h14V10M12 25v-8h4v8"/>'];
       const buttons=categories.map((c,i)=>'<button type="button" class="home-category-button" data-category="'+esc(c.key)+'" data-category-label="'+esc(c.label)+'" aria-label="Ver categoria '+esc(c.label)+'"><span class="home-category-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(icons[i]||icons[0])+'</svg></span><span class="home-category-label">'+esc(c.label)+'</span><span class="home-category-arrow" aria-hidden="true">›</span></button>').join('');
-      return section('Compre por categoria','Escolha uma categoria para encontrar seus produtos.','<div class="home-category-grid">'+buttons+'</div>','homeCategoryButtons');
+      return section('Compre por categoria','Escolha uma categoria para encontrar seus produtos.','<div class="home-category-grid">'+buttons+'<button type="button" class="home-category-button" data-ean-catalog aria-label="Ver produtos lidos pelo EAN"><span class="home-category-icon"><strong>EAN</strong></span><span class="home-category-label">Produtos lidos pelo EAN</span><span class="home-category-arrow" aria-hidden="true">›</span></button></div>','homeCategoryButtons');
     }
     function homeIntro(categories){
       const icons=['<path d="M3 4h3l3 13h11l3-10H7M10 22h.01M20 22h.01"/>','<path d="M9 3h9v4l-4 2v3l4 4v8H6v-8l4-4V8H7V5h2z"/>','<path d="M10 3h9M14 3v6M9 9h10v15H9zM7 13h12"/>','<path d="M3 12 14 3l11 9M7 10v15h14V10M12 25v-8h4v8"/>'];
@@ -862,7 +862,7 @@
       // Build the same outer shell used by renderHome: preserve hero and shortcuts
       // when the first priority response arrives instead of painting them twice.
       content.innerHTML=homeIntro(categories)+'<div id="basketSections">'+section('Escolha suas Cestas e Kits','Escolha uma opção para conferir.','<p class="home-loading-status" role="status" aria-live="polite">Preparando suas cestas…</p><div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>')+'</div>'+homeCategorySection(categories);
-      bindHomeIntro();
+      bindHomeIntro();content.querySelectorAll('[data-ean-catalog]').forEach(btn=>btn.onclick=renderEanProducts);
     }
     function basketCategoryControls(categories,active){
       const list=Array.isArray(categories)?categories:[];if(!list.length)return '';
@@ -959,6 +959,7 @@
         renderNav();$('#globalSearchInput').value='';
         content.innerHTML=homeIntro(categories)+'<div id="basketSections"></div>'+remainingBasketMarkup+homeCategorySection(categories);
         content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));
+        content.querySelectorAll('[data-ean-catalog]').forEach(btn=>btn.onclick=renderEanProducts);
         bindHomeIntro();
       }
       const host=content.querySelector('#basketSections');
