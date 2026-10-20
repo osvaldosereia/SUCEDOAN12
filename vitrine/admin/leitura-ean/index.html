@@ -154,6 +154,9 @@ header small{display:none!important}
 .resolution-panel .row{gap:5px}.resolution-panel button{min-height:36px;padding:6px 9px;font-size:12px}
 .resolution-result{border-top:1px solid #dce8e1;padding:7px 0;font-size:12px}.resolution-result:first-child{border-top:0}
 .resolution-result button{width:100%;text-align:left;background:#e5f1ea}.resolution-help{font-size:11px;color:#52665d;line-height:1.4;margin:4px 0}
+.cosmos-review{grid-column:1/-1;margin-top:8px;padding:10px;border:1px solid #b9d5c7;border-radius:9px;background:#f6fbf8;font-size:12px;line-height:1.45}
+.cosmos-review-main{display:flex;gap:9px;align-items:flex-start;margin-top:6px}.cosmos-review-main img,.cosmos-form-image{width:82px;height:82px;object-fit:contain;background:white;border:1px solid #dce8e1;border-radius:7px}
+.cosmos-image-choice{display:flex;gap:9px;align-items:center;margin:8px 0}.cosmos-image-choice label{display:flex;gap:7px;align-items:center}.cosmos-image-choice input{width:auto;min-height:18px}
 @media(max-width:480px){.resolution-actions{grid-template-columns:1fr 1fr}.entry-right{max-width:50%}}
 
 /* Cartões claros e arejados em telas grandes e pequenas. */
@@ -347,7 +350,7 @@ async function call(action,payload=null,retry=true){
  if(!res.ok||data.ok!==true)throw Error(data.error||"Falha de comunicação com o servidor.");
  return data;
 }
-function setBusy(v){busy=v;for(const id of ["save","sync","more","useEan","cameraButton","takePhoto","nativePhoto","skipPhoto"]){const node=$(id);if(node)node.disabled=v}}
+function setBusy(v){busy=v;for(const id of ["save","sync","more","useEan","cameraButton","takePhoto","nativePhoto","skipPhoto"]){const node=$(id);if(node)node.disabled=v}document.querySelectorAll("[data-cosmos-research]").forEach(node=>node.disabled=v)}
 function codeDetected(raw){
  const code=normalizeEan(raw);
  if(resolveRereadId&&!paused&&!busy&&!missingRecordId&&code.length>=8&&code.length<=14){const id=resolveRereadId;resolveRereadId="";resolveRow("repair_ean",id,{ean:code});return}
@@ -538,6 +541,22 @@ async function load(append=false){
  setCounts(s);
  paint();$("more").hidden=!hasMore;
 }
+function cosmosReviewHtml(research){
+ if(!research)return "";
+ if(research.status==="not_found")return '<div class="cosmos-review"><b>Cosmos:</b> Nenhum produto localizado para este EAN.</div>';
+ if(research.status!=="review")return '<div class="cosmos-review"><b>Cosmos:</b> Pesquisa com status '+esc(research.status||"indisponível")+'. Tente novamente mais tarde.</div>';
+ const p=research.proposal||{};
+ const fields=[
+  p.brand?'<div><b>Marca:</b> '+esc(p.brand)+'</div>':"",
+  p.ncm_candidate?'<div><b>NCM:</b> '+esc(p.ncm_candidate)+'</div>':"",
+  p.cest_candidate?'<div><b>CEST:</b> '+esc(p.cest_candidate)+'</div>':"",
+  p.gpc_description?'<div><b>Categoria Cosmos:</b> '+esc(p.gpc_description)+'</div>':""
+ ].join("");
+ const image=p.thumbnail_source?'<img loading="lazy" src="'+esc(p.thumbnail_source)+'" alt="Miniatura do Cosmos" onerror="this.hidden=true">':"";
+ return '<div class="cosmos-review"><b>Sugestão do Cosmos · confira antes de cadastrar</b>'+
+  '<div class="cosmos-review-main">'+image+'<div><div><b>Descrição:</b> '+esc(p.description||"Sem descrição")+'</div>'+fields+
+  '<div class="resolution-help">NCM e CEST são sugestões da fonte e devem ser conferidos antes de usar.</div></div></div></div>';
+}
 function paint(){
  const list=$("entries");
  if(!rows.length){list.innerHTML='<div class="empty">'+(filter==="all"?"Nenhuma leitura salva ainda.":"Nenhuma leitura neste filtro.")+'</div>';return}
@@ -561,9 +580,10 @@ function paint(){
     '<button type="button" data-resolve-open="reread" data-id="'+esc(r.id)+'">↻ Corrigir / reler EAN</button>'+
     '<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(r.ean)+'">🖼 Buscar imagem</a>'+
     '<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q='+encodeURIComponent("NCM produto EAN "+r.ean)+'">🔎 Buscar NCM</a>'+
+    '<button type="button" data-cosmos-research="'+esc(r.id)+'">🌐 Pesquisar Cosmos</button>'+
     '<button type="button" data-resolve-open="search" data-id="'+esc(r.id)+'">🔗 Vincular produto</button>'+
     '<button type="button" data-resolve-open="create" data-id="'+esc(r.id)+'">＋ Cadastrar inativo</button>'+
-    '</div><div class="resolution-panel" data-resolution-panel="'+esc(r.id)+'" hidden></div>'
+    '</div>'+cosmosReviewHtml(r.cosmos_research)+'<div class="resolution-panel" data-resolution-panel="'+esc(r.id)+'" hidden></div>'
     :'')+
    '</article>';
  }).join("");
@@ -581,9 +601,38 @@ function openResolutionPanel(row,mode){
   panel.querySelector('input[name="query"]')?.focus();return;
  }
  if(mode==="create"){
-  panel.innerHTML='<form data-resolution-form="create" data-id="'+esc(row.id)+'"><b>Cadastrar produto inativo</b><p class="resolution-help">Será criado fora da venda no site, sem estoque. Nome obrigatório; NCM opcional.</p><label>Nome do produto<input name="name" maxlength="180" required placeholder="Ex.: Arroz 5 kg"></label><label>NCM (opcional, 8 dígitos)<input name="ncm" inputmode="numeric" maxlength="10" placeholder="Ex.: 10063021"></label><div class="row"><button class="primary" type="submit">Cadastrar inativo</button><button type="button" data-resolve-close>Cancelar</button></div></form>';
+  const p=row.cosmos_research?.status==="review"?row.cosmos_research.proposal||{}:{};
+  const name=String(p.description||"").trim(),ncm=String(p.ncm_candidate||"");
+  const cest=String(p.cest_candidate||""),brand=String(p.brand||""),category=String(p.gpc_description||"");
+  const description=String(p.description||"");
+  const image=p.thumbnail_source?'<img class="cosmos-form-image" src="'+esc(p.thumbnail_source)+'" alt="Miniatura sugerida pelo Cosmos">':"";
+  panel.innerHTML='<form data-resolution-form="create" data-id="'+esc(row.id)+'"><b>Cadastrar produto inativo</b>'+
+   '<p class="resolution-help">O produto ficará inativo e com estoque zero. Confira os dados fiscais e comerciais antes de cadastrar.</p>'+
+   '<label>Nome do produto<input name="name" maxlength="180" required value="'+esc(name)+'" placeholder="Ex.: Arroz 5 kg"></label>'+
+   '<label>NCM (8 dígitos)<input name="ncm" inputmode="numeric" maxlength="8" value="'+esc(ncm)+'" placeholder="Ex.: 10063021"></label>'+
+   '<label>CEST (7 dígitos, se aplicável)<input name="cest" inputmode="numeric" maxlength="7" value="'+esc(cest)+'" placeholder="Opcional"></label>'+
+   '<label>Marca<input name="brand" maxlength="100" value="'+esc(brand)+'"></label>'+
+   '<label>Categoria<input name="category" maxlength="160" value="'+esc(category)+'"></label>'+
+   '<label>Descrição<input name="description" maxlength="1000" value="'+esc(description)+'"></label>'+
+   (image?'<div class="cosmos-image-choice">'+image+'<label><input type="checkbox" name="use_image" value="yes"> Usar a miniatura do Cosmos como imagem do produto</label></div>':'')+
+   '<div class="row"><button class="primary" type="submit">Cadastrar inativo</button><button type="button" data-resolve-close>Cancelar</button></div></form>';
   panel.querySelector('input[name="name"]')?.focus();
  }
+}
+async function runCosmosResearch(id){
+ if(busy)return;
+ const row=rows.find(x=>x.id===id);if(!row)return;
+ setBusy(true);msg("Consultando o Cosmos pelo EAN…");
+ try{
+  const data=await call("cosmos_research",{id});
+  const updated={...row,cosmos_research:data.research};
+  updateRowLocal(updated,null);
+  if(data.research?.status==="review"){
+   openResolutionPanel(updated,"create");
+   msg("Dados encontrados no Cosmos. Confira a sugestão e cadastre apenas se estiver correta.");
+  }else msg("O Cosmos não localizou produto para este EAN.");
+ }catch(e){msg("Não foi possível pesquisar no Cosmos: "+e.message,true)}
+ finally{setBusy(false)}
 }
 function syncFilterButtons(){document.querySelectorAll("[data-filter]").forEach(button=>button.classList.toggle("active",button.dataset.filter===filter))}
 async function resolveRow(action,id,payload){
@@ -602,6 +651,8 @@ async function resolveRow(action,id,payload){
  }catch(e){msg("Não foi possível concluir: "+e.message,true)}finally{setBusy(false)}
 }
 $("entries").addEventListener("click",async(event)=>{
+ const cosmos=event.target.closest("[data-cosmos-research]");
+ if(cosmos){await runCosmosResearch(cosmos.dataset.cosmosResearch);return}
  const open=event.target.closest("[data-resolve-open]");
  if(open){if(busy)return;const row=rows.find(x=>x.id===open.dataset.id);if(row)openResolutionPanel(row,open.dataset.resolveOpen);return}
  const close=event.target.closest("[data-resolve-close]");
@@ -671,10 +722,19 @@ $("entries").addEventListener("submit",async(event)=>{
   return;
  }
  if(kind==="create"){
-  const name=String(fd.get("name")||"").trim(),ncm=normalizeEan(fd.get("ncm"));
+  const name=String(fd.get("name")||"").trim(),ncm=normalizeEan(fd.get("ncm")),cest=normalizeEan(fd.get("cest"));
   if(!name){msg("Informe o nome do produto.",true);return}
   if(ncm&&ncm.length!==8){msg("O NCM deve ter 8 números.",true);return}
-  await resolveRow("create_inactive",id,{name,ncm:ncm||null});
+  if(cest&&cest.length!==7){msg("O CEST deve ter 7 números.",true);return}
+  const research=rows.find(x=>x.id===id)?.cosmos_research,p=research?.proposal||{};
+  const attributes={
+   brand:String(fd.get("brand")||"").trim(),category:String(fd.get("category")||"").trim(),
+   description:String(fd.get("description")||"").trim(),cest:cest||null,gpc:p.gpc_code||"",
+   net_weight_raw:p.net_weight_raw,gross_weight_raw:p.gross_weight_raw,
+   researched_at:research?.researched_at||null,
+   image_url:fd.get("use_image")==="yes"?p.thumbnail_source:null
+  };
+  await resolveRow("create_inactive",id,{name,ncm:ncm||null,attributes});
  }
 });
 $("sync").onclick=async()=>{
