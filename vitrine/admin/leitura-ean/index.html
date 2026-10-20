@@ -665,8 +665,8 @@ async function resolveRow(action,id,payload){
    updateRowLocal(data.row,data.summary);
   }else updateRowLocal(data.row,data.summary);
   const text=action==="repair_ean"?(data.row.sync_status==="found"?"EAN corrigido e encontrado no cadastro.":"EAN corrigido; continua não encontrado.")
-   :action==="link_product"?"Produto vinculado, EAN alternativo salvo e estoque atualizado. Agora está em Produtos encontrados."
-   :"Produto cadastrado como inativo, com estoque zero. Agora está em Produtos encontrados.";
+   :action==="link_product"?"Produto vinculado. Estoque definido pela quantidade da lista Ler EAN ("+qtyBR(data.row.quantity)+"). Agora está em Produtos encontrados."
+   :"Produto cadastrado como inativo. Estoque definido pela quantidade da lista Ler EAN ("+qtyBR(data.row.quantity)+"). Agora está em Produtos encontrados.";
   msg("✓ "+text);
  }catch(e){msg("Não foi possível concluir: "+e.message,true)}finally{setBusy(false)}
 }
