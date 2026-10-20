@@ -98,6 +98,6 @@ test('monthly replenishment uses cadence states, offers recalculation, and never
 });
 
 test('template center exposes the mount function to dynamically imported navigation modules',()=>{
-  assert.match(template,/async function mountTemplateView\\(/);
-  assert.match(template,/export \\{mountTemplateView\\}/);
+  assert.match(template,/async function mountTemplateView\(/);
+  assert.match(template,/export \{mountTemplateView\}/);
 });
