@@ -12,6 +12,7 @@ const campaignEntry=readFileSync(new URL('../vitrine/admin/marketing/campaign-en
 const worker=readFileSync(new URL('../supabase/functions/whatsapp-marketing-worker-v1/index.ts',import.meta.url),'utf8');
 const orders=readFileSync(new URL('../vitrine/admin/runtime-src/08-orders-detail.part.js.txt',import.meta.url),'utf8');
 const adminIndex=readFileSync(new URL('../vitrine/admin/index.html',import.meta.url),'utf8');
+const basketLotImage=readFileSync(new URL('../vitrine/admin/basket-lot-image.js',import.meta.url),'utf8');
 const audienceApi=readFileSync(new URL('../supabase/functions/admin-marketing-audiences-v1/index.ts',import.meta.url),'utf8');
 const adminProducts=readFileSync(new URL('../supabase/functions/admin-products-live-v1/index.ts',import.meta.url),'utf8');
 const overviewPath=new URL('../vitrine/admin/marketing/marketing-overview-data.js',import.meta.url);
@@ -38,14 +39,14 @@ test('Pós-venda opens its own view instead of redirecting to Orders',()=>{
 });
 
 test('Marketing coordinator invalidates cached view code after navigation changes',()=>{
-  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v3/);
+  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v4/);
   assert.match(campaignEntry,/marketing-polish\.css\?v=marketing-polish-v2/);
-  assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v2/);
+  assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v3/);
   assert.match(adminIndex,/admin-runtime\.js\?v=marketing-workspace-v2/);
 });
 
 test('Marketing campaign-entry cache key is current in every secondary navigation module',()=>{
-  for(const source of [postSale,repurchase,strategy,polish])assert.match(source,/campaign-entry\.js\?v=marketing-campaign-entry-v5/);
+  for(const source of [postSale,repurchase,strategy,polish])assert.match(source,/campaign-entry\.js\?v=marketing-campaign-entry-v6/);
   assert.doesNotMatch([postSale,repurchase,strategy,polish].join('\n'),/campaign-entry\.js\?v=marketing-campaign-entry-v4/);
 });
 
@@ -97,7 +98,7 @@ test('monthly replenishment uses cadence states, offers recalculation, and never
   assert.doesNotMatch(audienceApi,/marketing_repurchase_runtime_v1[\s\S]{0,80}update\(/);
 });
 
-test('template center exposes the mount function to dynamically imported navigation modules',()=>{
+test('Marketing refreshes the template view and all parent module cache keys',()=>{\n  assert.match(basketLotImage,/template-center\\.js\\?v=marketing-template-center-v2/);\n  assert.match(basketLotImage,/campaign-entry\\.js\\?v=marketing-campaign-entry-v6/);\n  assert.match(campaignEntry,/marketing-polish\\.js\\?v=marketing-polish-v4/);\n  assert.match(polish,/post-sale-center\\.js\\?v=marketing-post-sale-v2/);\n  assert.match(polish,/repurchase-center\\.js\\?v=marketing-repurchase-v2/);\n  assert.match(adminIndex,/basket-lot-image\\.js\\?v=marketing-workspace-v3/);\n});\n\ntest('template center exposes the mount function to dynamically imported navigation modules',()=>{
   assert.match(template,/async function mountTemplateView\(/);
   assert.match(template,/export \{mountTemplateView\}/);
 });
