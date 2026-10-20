@@ -14,3 +14,11 @@
 - Reconfirmei `HEAD` e worktree isolado; não alterei o checkout original. Reexecutei a validação de diff sem erros.
 - Tentei abrir o Admin local com Playwright, bloqueando todo tráfego externo para impedir chamadas de produção. Não foi possível iniciar o navegador: o ambiente não tem executável Chromium instalado; não tentei baixar ou instalar dependências. O servidor local temporário foi encerrado.
 - Estado do banco permanece sem alterações nesta tentativa; smoke visual precisa ser executado em um navegador disponível ou num runner com Chromium antes de afirmar validação de UX.
+
+## Complemento 13:10 Cuiabá — contrato da aba Marketing e revisão remota
+
+- Revalidei a base de `main` em `8f3d5b22af144b2fb21fc8b1784c58f720a14a53`; as mudanças recentes de EAN não alteram os arquivos Marketing desta PR. Branch isolado `agent/marketing-image-bank-20261020`; worktree original com mudanças pré-existentes permanece intocado.
+- Reproduzi falha do workflow `WhatsApp Meta Central CI`: o teste legado procurava `renderMarketing()` e constantes somente em `vitrine/admin/index.html`, mas a implementação atual está em `vitrine/admin/admin-runtime.js` e é `async function renderMarketing()`. Ajustei apenas `scripts/test-marketing-intelligence-contract.py` para validar o módulo correto; o teste passou localmente (`marketing intelligence contract OK`) e `git diff --check` passou.
+- Commit local de correção `81b98e496a5a888d7ed1a70699a64a2ef9dfbaf6`. Pelo conector GitHub, a mesma correção está no branch remoto da PR #1192, commit `de74d1c9790fc0cd834f1791ffc20ba56adf2c0c`; PR segue aberta, draft e mergeable, sem merge/deploy. Workflows do novo SHA iniciaram e ainda estavam `in_progress` no último polling.
+- A verificação de pedidos/separação também falhou por contrato de botões neutros em `scripts/test-admin-orders-clean-flow-v3.mjs`, fora do escopo Marketing; mantida sem alterações.
+- Próxima etapa: recolher conclusão dos workflows do SHA `de74d1c...`; se o teste de Marketing ficar verde, manter PR draft até smoke visual ser validado em Chromium. Resolver falha fora de escopo e gates Meta separadamente. Sem alterações no Supabase, sem submissões Meta e sem mensagens/campanhas enviadas.
