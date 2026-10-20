@@ -52,7 +52,7 @@ assert.ok(lazyPhoto.includes('data-basket-src="'+sizePhotos.media+'"'),'non-prio
 assert.match(lazyPhoto,/loading="lazy"/,'non-priority basket photos keep native lazy loading');
 assert.ok(photoBytes<350_000,'all five basket photos stay under 350 KB total');
 assert.match(root,/basket-size-card-photo/,'home page styles the basket size photos');
-assert.ok(root.includes('basket-carousel.js?v=20261019-basket-size-photos-v2'),'home page refreshes the carousel asset cache');
+assert.ok(root.includes('basket-carousel.js?v=20261020-progressive-baskets-v1'),'home page refreshes the carousel asset cache');
 assert.match(home,/basket_commercial_catalog_v1/);assert.match(home,/public_name/);assert.match(home,/sale_price/);assert.match(home,/public_available/);
 assert.match(detail,/basket_commercial_catalog_v1/);assert.match(detail,/splitLotItems/);assert.match(detail,/basket_stock_lot_items/);
 assert.match(quote,/basket_commercial_catalog_v1/);assert.match(quote,/let total=Number\(c\.sale_price\|\|0\)/);
