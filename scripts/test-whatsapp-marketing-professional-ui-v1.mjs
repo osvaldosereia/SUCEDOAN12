@@ -50,7 +50,7 @@ assert.ok(js.includes('data-marketing-overview-card="repurchase"'),'Reposição 
 assert.match(js,/if\(view==='post_sale'\)[\s\S]{0,240}mountPostSaleView/,'Pós-venda deve abrir o módulo dedicado');
 assert.ok(js.includes("openOverviewView(root,'repurchase')"),'Reposição mensal deve abrir a estratégia existente');
 assert.ok(js.includes("openOverviewView(root,'campaigns')"),'Campanhas deve abrir a área de campanhas');
-assert.ok(js.includes('Runtime habilitado'),'o painel deve refletir o estado de execução carregado');
+assert.ok(js.includes('data-marketing-overview-stats'),'o painel deve carregar os indicadores operacionais');
 
 assert.ok(js.includes("['overview','post_sale','repurchase','templates','campaigns']"),'navegação principal deve incluir Templates Meta');
 assert.ok(js.includes('data-marketing-more-menu'),'funções administrativas secundárias devem ficar em Mais');
