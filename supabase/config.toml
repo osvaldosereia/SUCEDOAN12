@@ -44,6 +44,10 @@ verify_jwt = true
 
 [functions.whatsapp-order-outbound-v1]
 verify_jwt = true
+[functions.whatsapp-marketing-worker-v1]
+# O worker valida uma chave interna em constant time antes de ler o corpo;
+# o tick pg_net também usa essa autenticação server-side, sem JWT de usuário.
+verify_jwt = false
 [functions.papoai-order-signals-v1]
 verify_jwt = false
 

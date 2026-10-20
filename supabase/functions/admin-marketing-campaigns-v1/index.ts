@@ -18,6 +18,7 @@ const SCHEDULE_FIELDS=new Set(["campaign_id","expected_revision","scheduled_for"
 const PAUSE_FIELDS=new Set(["campaign_id","reason"]);
 const RESUME_FIELDS=new Set(["campaign_id","scheduled_for"]);
 const CANCEL_EXECUTION_FIELDS=new Set(["campaign_id","reason"]);
+const MANUAL_BATCH_FIELDS=new Set(["campaign_id","expected_revision","idempotency_key"]);
 const ALLOWED_TRANSITIONS=new Set(["draft","ready_for_review","approved","scheduled","running","paused","completed","failed","cancelled"]);
 
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {
@@ -237,6 +238,30 @@ async function cancelExecution(body:Record<string,unknown>){
   if(result.error)throw result.error;const data=result.data||{ok:false,error:"cancel_failed"};return {status:rpcStatus(data),data};
 }
 
+async function sendManualBatch(body:Record<string,unknown>){
+  if(!onlyKeys(body,MANUAL_BATCH_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
+  const campaignId=validUuid(body.campaign_id),revision=Number(body.expected_revision),idempotencyKey=clean(body.idempotency_key,180);
+  if(!campaignId||!Number.isInteger(revision)||revision<1||!idempotencyKey)return {status:400,data:{ok:false,error:"invalid_payload"}};
+  const begun=await db.rpc("marketing_begin_manual_campaign_batch_v1",{
+    p_campaign_id:campaignId,p_expected_revision:revision,p_idempotency_key:idempotencyKey,p_limit:10,
+  });
+  if(begun.error)throw begun.error;
+  const batch=begun.data||{ok:false,error:"manual_batch_start_failed"};
+  if(batch.ok!==true)return {status:rpcStatus(batch),data:batch};
+  if(batch.status!=="processing")return {status:200,data:{...batch,processed:0,results:[]}};
+  if(batch.worker_started_at)return {status:409,data:{ok:false,error:"manual_batch_already_processing",batch_id:batch.batch_id}};
+  if(Number(batch.claimed_count||0)===0)return {status:200,data:{...batch,processed:0,results:[]}};
+  const keyResult=await db.rpc("marketing_campaign_worker_internal_key_v1");
+  if(keyResult.error||typeof keyResult.data!=="string"||!keyResult.data)return {status:503,data:{ok:false,error:"worker_auth_unavailable",batch_id:batch.batch_id}};
+  const response=await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-marketing-worker-v1`,{
+    method:"POST",headers:{"Content-Type":"application/json","x-dona-antonia-marketing-worker-key":keyResult.data},
+    body:JSON.stringify({manual_batch_id:batch.batch_id}),signal:AbortSignal.timeout(120000),
+  });
+  const worker=await response.json().catch(()=>({ok:false,error:"worker_invalid_response"}));
+  if(!response.ok||worker?.ok!==true)return {status:502,data:{ok:false,error:"manual_batch_processing_failed",batch_id:batch.batch_id,batch_status:batch.status,worker_error:clean(worker?.error,120)||"worker_unavailable"}};
+  return {status:200,data:{...batch,...worker}};
+}
+
 async function prepareInternalTest(body:Record<string,unknown>){
   if(!onlyKeys(body,INTERNAL_TEST_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
   const campaignId=validUuid(body.campaign_id),revision=Number(body.expected_revision);
@@ -278,6 +303,7 @@ Deno.serve(async(req:Request)=>{
     else if(action==="pause")result=await pauseCampaign(parsed.body);
     else if(action==="resume")result=await resumeCampaign(parsed.body);
     else if(action==="cancel_execution")result=await cancelExecution(parsed.body);
+    else if(action==="send_manual_batch")result=await sendManualBatch(parsed.body);
     else return json(req,{ok:false,error:"action_not_allowed"},404);
     return json(req,result.data,result.status);
   }catch(error){

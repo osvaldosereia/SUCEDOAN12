@@ -13,7 +13,7 @@ const DEFAULT_BATCH=10;
 const MAX_BATCH=10;
 const MAX_BODY_BYTES=4096;
 const INTERNAL_HEADER="x-dona-antonia-marketing-worker-key";
-const ALLOWED_BODY_FIELDS=new Set(["limit","tick_id"]);
+const ALLOWED_BODY_FIELDS=new Set(["limit","tick_id","manual_batch_id"]);
 const TRACKING_MEDIA_HOSTS=new Set([
   "donaantonia.com.br","www.donaantonia.com.br","ssbesxgaijknwsjbsbcz.supabase.co",
   "firebasestorage.googleapis.com","storage.googleapis.com",
@@ -53,6 +53,7 @@ async function readBody(req:Request){
     const body=JSON.parse(raw);
     if(!body||typeof body!=="object"||Array.isArray(body))return {ok:false as const,error:"invalid_json_body"};
     if(Object.keys(body).some(key=>!ALLOWED_BODY_FIELDS.has(key)))return {ok:false as const,error:"fields_not_allowed"};
+    if(body.manual_batch_id!==undefined&&(!/^[0-9a-f-]{36}$/i.test(String(body.manual_batch_id))||Object.keys(body).some(key=>key!=="manual_batch_id")))return {ok:false as const,error:"invalid_manual_batch"};
     return {ok:true as const,body:body as Record<string,unknown>};
   }catch{return {ok:false as const,error:"invalid_json_body"}}
 }
@@ -194,11 +195,32 @@ async function processDispatch(item:any,mode:string,account:any,canaryPhones:Set
   }
 }
 
+async function processManualBatch(batchId:string){
+  if(!META_TOKEN||!/^v\d+\.\d+$/.test(GRAPH_VERSION))return json({ok:false,error:"meta_transport_not_configured"},503);
+  const acquired=await db.rpc("marketing_acquire_manual_campaign_batch_v1",{p_batch_id:batchId});
+  if(acquired.error||acquired.data?.ok!==true)return json({ok:false,error:acquired.data?.error||"manual_batch_acquire_failed"},409);
+  const accountId=String(acquired.data.whatsapp_account_id||"");
+  const runtimes=await loadExecutionRows();
+  const runtime=runtimes.find((row:any)=>String(row.whatsapp_account_id)===accountId);
+  const mode=String(runtime?.mode||"off");
+  const account=mode==="off"?null:await loadRunnableAccount(accountId);
+  if(!account)return json({ok:false,error:"campaigns_disabled"},409);
+  const items=Array.isArray(acquired.data.items)?acquired.data.items:[];
+  if(items.length>MAX_BATCH)return json({ok:false,error:"manual_batch_limit_exceeded"},409);
+  const canaryPhones=await officialCanaryPhones();
+  const results:any[]=[];
+  for(const item of items)results.push(await processDispatch(item,mode,account,canaryPhones));
+  const finished=await db.rpc("marketing_finish_manual_campaign_batch_v1",{p_batch_id:batchId});
+  if(finished.error||finished.data?.ok!==true)return json({ok:false,error:finished.data?.error||"manual_batch_finalize_failed",processed:results.length,results},409);
+  return json({ok:true,mode,batch_id:batchId,claimed:items.length,processed:results.length,results,...finished.data});
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
   if(!SUPABASE_URL||!SERVICE_KEY)return json({ok:false,error:"server_config"},500);
   if(!(await authenticate(req)))return json({ok:false,error:"worker_auth_failed"},401);
   const parsed=await readBody(req);if(!parsed.ok)return json({ok:false,error:parsed.error},parsed.error==="payload_too_large"?413:400);
+  if(parsed.body.manual_batch_id)return processManualBatch(String(parsed.body.manual_batch_id));
   const limit=requestedLimit(parsed.body.limit);
 
   try{

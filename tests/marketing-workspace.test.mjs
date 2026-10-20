@@ -37,7 +37,8 @@ test('campaign composer does not expose scheduled sends',()=>{
   assert.doesNotMatch(campaign,/data-campaign-schedule-at/);
   assert.doesNotMatch(campaign,/apiPost\('schedule'/);
   assert.doesNotMatch(campaign,/data-campaign-start-now/);
-  assert.match(campaign,/controle de disparo único/);
+  assert.match(campaign,/outro lote exige um novo clique/);
+  assert.match(campaign,/data-campaign-send-manual-batch/);
   assert.match(worker,/const DEFAULT_BATCH=10;\s*const MAX_BATCH=10;/);
 });
 

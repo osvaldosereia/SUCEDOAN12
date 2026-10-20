@@ -13,8 +13,9 @@ for(const [status,label] of Object.entries({scheduled:'Agendada',running:'Em exe
 }
 assert.doesNotMatch(source,/type=["']datetime-local["']/i,'agendamento futuro não deve estar disponível');
 assert.doesNotMatch(source,/data-campaign-schedule|runExecutionAction\([^\n]*["']schedule["']/i,'agendamento futuro deve permanecer removido');
-assert.doesNotMatch(source,/data-campaign-start-now|runExecutionAction\([^\n]*["']start_now["']/i,'início fica bloqueado até haver processamento manual de ciclo único');
-assert.match(source,/processador atual roda automaticamente a cada minuto/i,'UI deve explicar o cron recorrente que impede início manual seguro');
+assert.match(source,/data-campaign-send-manual-batch/i,'UI deve oferecer envio manual em lote');
+assert.match(source,/até 10 contatos/i,'UI deve informar o limite do lote');
+assert.match(source,/outro lote exige um novo clique/i,'UI deve deixar claro que cada lote exige confirmação própria');
 assert.match(source,/data-campaign-pause/i,'botão Pausar deve existir');
 assert.match(source,/data-campaign-resume/i,'botão Retomar deve existir');
 assert.match(source,/data-campaign-cancel-execution/i,'botão Cancelar deve existir');
