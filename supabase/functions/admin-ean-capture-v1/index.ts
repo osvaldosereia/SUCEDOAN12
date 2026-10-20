@@ -40,6 +40,133 @@ async function withProductNames(rows:Record<string,unknown>[]){
   }
   return rows.map(row=>({...row,product_name:names.get(String(row.matched_product_id||""))||null,product_image_url:images.get(String(row.matched_product_id||""))||null}));
 }
+async function withCosmosResearch(rows){
+  const ids=[...new Set(rows.map(row=>String(row.id||"")).filter(idOk))];
+  if(!ids.length)return rows;
+  const result=await db.from("cosmos_ean_capture_research_v1")
+    .select("capture_id,gtin,status,proposal,response_summary,last_http_status,last_error,researched_at,attempted_at")
+    .in("capture_id",ids);
+  if(result.error)throw result.error;
+  const byId=new Map((result.data||[]).map(item=>[String(item.capture_id),item]));
+  return rows.map(row=>{
+    const research=byId.get(String(row.id));
+    if(!research||String(research.gtin)!==String(row.ean))return row;
+    return {...row,cosmos_research:{
+      gtin:research.gtin,status:research.status,proposal:research.proposal||{},
+      summary:research.response_summary||{},http_status:research.last_http_status,
+      error:research.last_error,researched_at:research.researched_at,attempted_at:research.attempted_at
+    }};
+  });
+}
+const cosmosClean=(value,max=250)=>String(value??"").replace(/[\x00-\x1f\x7f]/g," ").trim().slice(0,max);
+const cosmosDigits=(value)=>String(value??"").replace(/\D/g,"");
+function cosmosCest(item){
+  const raw=item?.cest??item?.cests?.[0]??item?.tax?.cest??null;
+  const value=raw&&typeof raw==="object"?(raw.code??raw.value??raw.number??""):raw;
+  const digits=cosmosDigits(value);
+  return /^\d{7}$/.test(digits)?digits:null;
+}
+function cosmosCandidate(item,gtin){
+  const exact=cosmosDigits(item?.gtin)===gtin;
+  const image=typeof item?.thumbnail==="string"?item.thumbnail:"";
+  let imageUrl=null;
+  try{const u=new URL(image);if(u.protocol==="https:"&&u.hostname==="cdn-cosmos.bluesoft.com.br")imageUrl=u.toString().slice(0,500)}catch{}
+  const ncm=cosmosDigits(item?.ncm?.code??item?.ncm);
+  const gpc=item?.gpc&&typeof item.gpc==="object"?item.gpc:{};
+  const weight=(value)=>Number.isFinite(Number(value))&&Number(value)>0?Number(value):null;
+  return {exact,proposal:{
+    description:cosmosClean(item?.description,250)||null,
+    brand:cosmosClean(item?.brand?.name??item?.brand,100)||null,
+    gpc_code:cosmosClean(gpc.code,40)||null,
+    gpc_description:cosmosClean(gpc.description,160)||null,
+    ncm_candidate:/^\d{8}$/.test(ncm)?ncm:null,
+    cest_candidate:cosmosCest(item),
+    net_weight_raw:weight(item?.net_weight),
+    gross_weight_raw:weight(item?.gross_weight),
+    thumbnail_source:imageUrl
+  }};
+}
+async function researchCosmosForCapture(captureId,actorId){
+  const capture=await db.from("ean_capture_records_v1").select("id,ean,sync_status")
+    .eq("id",captureId).maybeSingle();
+  if(capture.error)throw capture.error;
+  if(!capture.data)return {error:"leitura_nao_encontrada",status:404};
+  if(capture.data.sync_status!=="not_found")return {error:"leitura_nao_esta_na_fila",status:409};
+  const gtin=String(capture.data.ean||"");
+  const existing=await db.from("cosmos_ean_capture_research_v1")
+    .select("gtin,status,proposal,response_summary,last_http_status,last_error,researched_at,attempted_at")
+    .eq("capture_id",captureId).maybeSingle();
+  if(existing.error)throw existing.error;
+  const cached=existing.data;
+  if(cached&&cached.gtin===gtin&&["review","not_found"].includes(cached.status)
+     &&cached.researched_at&&Date.now()-new Date(cached.researched_at).getTime()<30*24*60*60*1000)
+    return {research:{gtin,status:cached.status,proposal:cached.proposal||{},summary:cached.response_summary||{},
+      http_status:cached.last_http_status,error:cached.last_error,researched_at:cached.researched_at,cached:true}};
+  if(cached&&cached.gtin===gtin&&cached.status==="researching"&&cached.attempted_at
+     &&Date.now()-new Date(cached.attempted_at).getTime()<3*60*1000)
+    return {error:"pesquisa_em_andamento",status:409};
+  if(cached&&cached.gtin===gtin&&cached.status==="error"&&cached.attempted_at
+     &&Date.now()-new Date(cached.attempted_at).getTime()<5*60*1000)
+    return {error:"aguarde_5_minutos_antes_de_tentar_novamente",status:429};
+  const token=Deno.env.get("COSMOS_API_TOKEN")||"";
+  const userAgent=Deno.env.get("COSMOS_USER_AGENT")||"";
+  if(!token||!userAgent)return {error:"credenciais_cosmos_nao_configuradas",status:503};
+  const config=await db.from("cosmos_research_config").select("daily_limit").eq("id",true).maybeSingle();
+  if(config.error)throw config.error;
+  const dailyLimit=Math.max(1,Math.min(90,Number(config.data?.daily_limit)||25));
+  const dayStart=new Date();dayStart.setUTCHours(0,0,0,0);
+  const used=await db.from("cosmos_ean_capture_research_v1").select("id",{count:"exact",head:true})
+    .gte("attempted_at",dayStart.toISOString());
+  if(used.error)throw used.error;
+  if((used.count||0)>=dailyLimit)return {error:"limite_diario_cosmos_atingido",status:429};
+  const attemptedAt=new Date().toISOString();
+  const queued=await db.from("cosmos_ean_capture_research_v1").upsert({
+    capture_id:captureId,gtin,status:"researching",proposal:{},response_summary:{source:"cosmos"},
+    last_http_status:null,last_error:null,attempted_at:attemptedAt,researched_at:null,
+    researched_by:actorId,updated_at:attemptedAt
+  },{onConflict:"capture_id"});
+  if(queued.error)throw queued.error;
+  const finish=async(status,httpStatus,proposal={},summary={},error=null)=>{
+    const now=new Date().toISOString();
+    const saved=await db.from("cosmos_ean_capture_research_v1").update({
+      gtin,status,proposal,response_summary:summary,last_http_status:httpStatus,last_error:error,
+      researched_at:["review","not_found"].includes(status)?now:null,updated_at:now
+    }).eq("capture_id",captureId).eq("gtin",gtin);
+    if(saved.error)throw saved.error;
+    return {gtin,status,proposal,summary,http_status:httpStatus,error,researched_at:["review","not_found"].includes(status)?now:null};
+  };
+  try{
+    const response=await fetch("https://cosmos.bluesoft.com.br/api/gtins/"+encodeURIComponent(gtin)+".json",{
+      method:"GET",headers:{"X-Cosmos-Token":token,"User-Agent":userAgent,"Accept":"application/json"},
+      signal:AbortSignal.timeout(10000)
+    });
+    if(response.status===404){
+      const research=await finish("not_found",404,{}, {source:"cosmos",gtin});
+      return {research};
+    }
+    if(response.status===429){
+      await finish("error",429,{}, {source:"cosmos",gtin},"quota_or_throttle");
+      return {error:"limite_ou_frequencia_cosmos",status:429};
+    }
+    if(!response.ok){
+      await finish("error",response.status,{}, {source:"cosmos",gtin},"http_"+response.status);
+      return {error:response.status===401||response.status===403?"credencial_cosmos_negada":"falha_cosmos_http_"+response.status,status:502};
+    }
+    const payload=await response.json();
+    const candidate=cosmosCandidate(payload,gtin);
+    if(!candidate.exact){
+      await finish("error",200,{}, {source:"cosmos",gtin},"gtin_divergente");
+      return {error:"gtin_divergente_na_resposta_cosmos",status:502};
+    }
+    const research=await finish("review",200,candidate.proposal,{
+      source:"cosmos",gtin,observed_at:new Date().toISOString(),review_required:true
+    });
+    return {research};
+  }catch(error){
+    await finish("error",0,{}, {source:"cosmos",gtin},error instanceof Error?error.name:"network_error");
+    return {error:"falha_de_rede_cosmos",status:502};
+  }
+}
 async function withProductNamesOnRow(payload:Record<string,unknown>){
   if(payload&&payload.row&&typeof payload.row==="object"&&!Array.isArray(payload.row)){
     payload.row=(await withProductNames([payload.row as Record<string,unknown>]))[0];
@@ -95,7 +222,8 @@ Deno.serve(async (r:Request)=>{
       if(filter!=="all")query=query.eq("sync_status",filter);
       const [records,stats]=await Promise.all([query,db.rpc("ean_capture_stats_v1")]);
       if(records.error||stats.error)throw records.error||stats.error;
-      const rows=await withProductNames(records.data||[]);
+      const named=await withProductNames(records.data||[]);
+      const rows=await withCosmosResearch(named);
       return reply(r,{ok:true,rows,count:records.count||0,summary:stats.data||{},next_offset:offset+rows.length,
         has_more:offset+rows.length<(records.count||0)});
     }
@@ -225,6 +353,12 @@ Deno.serve(async (r:Request)=>{
       if(synced.error)throw synced.error;
       return reply(r,{ok:true,summary:synced.data});
     }
+    if(action==="cosmos_research"){
+      if(!idOk(input.id))return reply(r,{ok:false,error:"leitura_invalida"},400);
+      const result=await researchCosmosForCapture(input.id,actor.id);
+      if(result.error)return reply(r,{ok:false,error:result.error},result.status||400);
+      return reply(r,{ok:true,research:result.research});
+    }
     if(action==="link_product"||action==="create_inactive"){
       if(!idOk(input.id))return reply(r,{ok:false,error:"leitura_invalida"},400);
       const ncm=String(input.ncm||"").replace(/\D/g,"");
@@ -232,10 +366,25 @@ Deno.serve(async (r:Request)=>{
       if(action==="link_product"&&!idOk(input.product_id))return reply(r,{ok:false,error:"produto_invalido"},400);
       const name=String(input.name||"").trim().slice(0,180);
       if(action==="create_inactive"&&!name)return reply(r,{ok:false,error:"nome_obrigatorio"},400);
-      const resolved=await db.rpc("ean_capture_resolve_v1",{
+      const rawAttrs=input.attributes&&typeof input.attributes==="object"&&!Array.isArray(input.attributes)?input.attributes:{};
+      const img=String(rawAttrs.image_url||"");
+      let imageUrl=null;try{const u=new URL(img);if(u.protocol==="https:"&&u.hostname==="cdn-cosmos.bluesoft.com.br")imageUrl=u.toString()}catch{}
+      const cest=String(rawAttrs.cest||"").replace(/\D/g,"");
+      if(cest&&cest.length!==7)return reply(r,{ok:false,error:"cest_invalido"},400);
+      const attrs={
+        brand:String(rawAttrs.brand||"").trim().slice(0,100)||null,
+        category:String(rawAttrs.category||"").trim().slice(0,160)||null,
+        description:String(rawAttrs.description||"").trim().slice(0,1000)||null,
+        cest:cest||null,gpc:String(rawAttrs.gpc||"").trim().slice(0,40)||null,
+        net_weight_raw:Number.isFinite(Number(rawAttrs.net_weight_raw))?Number(rawAttrs.net_weight_raw):null,
+        gross_weight_raw:Number.isFinite(Number(rawAttrs.gross_weight_raw))?Number(rawAttrs.gross_weight_raw):null,
+        researched_at:String(rawAttrs.researched_at||"").slice(0,60)||null,
+        image_url:imageUrl
+      };
+      const resolved=await db.rpc("ean_capture_resolve_v2",{
         p_capture_id:input.id,p_mode:action==="link_product"?"link":"create",
         p_product_id:action==="link_product"?input.product_id:null,
-        p_name:action==="create_inactive"?name:null,p_ncm:ncm||null
+        p_name:action==="create_inactive"?name:null,p_ncm:ncm||null,p_attributes:attrs
       });
       if(resolved.error)throw resolved.error;
       if(resolved.data?.ok!==true)return reply(r,{ok:false,error:resolved.data?.error||"resolucao_falhou"},409);
