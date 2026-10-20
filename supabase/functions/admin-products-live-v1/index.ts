@@ -369,7 +369,7 @@ async function products(u:URL){
       const g:any=linkedById.get(String(p.id)),latest=g?.latest||{};
       return {...p,__ean_capture_count:g?.records?.length||0,__ean_capture_last_at:latest.created_at||null,__ean_capture_quantity:Number(latest.quantity||0)};
     });
-    const linkedEans=new Set(linkedGroups.map((g:any)=>String(g.ean||"")).filter(Boolean));
+    const linkedEans=new Set(captures.filter((c:any)=>c.matched_product_id).map((c:any)=>dg(c.ean,30)).filter(Boolean));
     const placeholders=[...groups.values()].filter((g:any)=>(!g.product_id||!existingProductIds.has(String(g.product_id)))&&g.ean&&!linkedEans.has(String(g.ean))).filter((g:any)=>{
       if(act||cat||sub||basketKit||lotStatus)return false;
       const searchedEan=dg(qv,30);
