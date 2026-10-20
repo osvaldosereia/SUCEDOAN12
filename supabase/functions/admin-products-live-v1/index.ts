@@ -325,13 +325,95 @@ async function products(u:URL){
   const qv=tx(u.searchParams.get("q"),100).replace(/[,%()]/g," "),cat=tx(u.searchParams.get("category"),120),sub=tx(u.searchParams.get("subcategory"),120),act=tx(u.searchParams.get("active"),12),sourceSystem=tx(u.searchParams.get("source_system"),40)==="ean_capture_admin"?"ean_capture_admin":"",basketKit=tx(u.searchParams.get("basket_kit"),12)==="true",lotStatus=tx(u.searchParams.get("lot_status"),20),sort=productSortKey(u.searchParams.get("sort"));
   let rows:any[]=[];
   const today=new Intl.DateTimeFormat("sv-SE",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-  const manual=Boolean(cat||sourceSystem||basketKit||lotStatus||sort==="gondola_asc"||sort==="gondola_desc");
+  if(sourceSystem){
+    const captures:any[]=[];
+    for(let pos=0;pos<100000;pos+=1000){
+      const r=await db.from("ean_capture_records_v1").select("id,ean,quantity,sync_status,matched_product_id,created_at,updated_at").order("created_at",{ascending:false}).range(pos,pos+999);
+      if(r.error)throw r.error;
+      captures.push(...(r.data||[]));
+      if((r.data||[]).length<1000)break;
+    }
+    const groups=new Map<string,any>();
+    for(const c of captures){
+      const ean=dg(c.ean,30),productId=String(c.matched_product_id||"");
+      const key=productId?"product:"+productId:"ean:"+(ean||String(c.id));
+      let g=groups.get(key);
+      if(!g){g={product_id:productId||null,ean,records:[],latest:c};groups.set(key,g)}
+      g.records.push(c);
+      if(Date.parse(String(c.created_at||""))>Date.parse(String(g.latest?.created_at||"")))g.latest=c;
+    }
+    const linkedGroups=[...groups.values()].filter((g:any)=>g.product_id);
+    const productIds=linkedGroups.map((g:any)=>g.product_id);
+    const productRows:any[]=[];
+    for(let i=0;i<productIds.length;i+=100){
+      let q=filterProductsByValidity(db.from("products").select("*").in("id",productIds.slice(i,i+100)).order("id"),sort,today);
+      if(sub)q=q.eq("subcategory",sub);
+      if(act==="true")q=q.eq("is_active",true);
+      if(act==="false")q=q.eq("is_active",false);
+      if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
+      const r=await q;if(r.error)throw r.error;productRows.push(...(r.data||[]));
+    }
+    const wanted=cat?inventorySheetCanonicalCategory(cat):"";
+    const memberIds=(basketKit||lotStatus==="pending")?await basketKitProductIds():null;
+    const linkedById=new Map(linkedGroups.map((g:any)=>[String(g.product_id),g]));
+    const filteredProducts=productRows.filter((p:any)=>{
+      const category=inventorySheetCanonicalCategory(p.sales_category||p.storefront_category||p.category);
+      if(wanted&&category!==wanted)return false;
+      if(basketKit&&memberIds&&!memberIds.has(String(p.id)))return false;
+      const complete=meta(p.metadata).lot_tracking_complete===true||meta(p.metadata).lot_tracking_complete==="true";
+      if(lotStatus==="complete"&&!complete)return false;
+      if(lotStatus==="pending"&&complete)return false;
+      return true;
+    }).map((p:any)=>{
+      const g:any=linkedById.get(String(p.id)),latest=g?.latest||{};
+      return {...p,__ean_capture_count:g?.records?.length||0,__ean_capture_last_at:latest.created_at||null,__ean_capture_quantity:Number(latest.quantity||0)};
+    });
+    const placeholders=[...groups.values()].filter((g:any)=>!g.product_id&&g.ean).filter((g:any)=>{
+      if(act||cat||sub||basketKit||lotStatus)return false;
+      const searchedEan=dg(qv,30);
+      if(qv&&(!searchedEan||!g.ean.includes(searchedEan)))return false;
+      return true;
+    }).map((g:any)=>({
+      id:"ean-capture-"+g.ean,
+      name:"EAN aguardando cadastro",
+      gtin:g.ean,
+      source_system:"ean_capture_admin",
+      active:false,
+      stock_quantity:Number(g.latest?.quantity||0),
+      __ean_capture_placeholder:true,
+      __ean_capture_count:g.records.length,
+      __ean_capture_last_at:g.latest?.created_at||null,
+      __ean_capture_quantity:Number(g.latest?.quantity||0),
+      __ean_capture_status:String(g.latest?.sync_status||"not_found")
+    }));
+    const filtered:any[]=[...filteredProducts,...placeholders];
+    const sortName=(x:any)=>String(x.name||x.gtin||"").toLocaleLowerCase("pt-BR");
+    const timeOf=(x:any,key:string)=>{const n=Date.parse(String(x.__ean_capture_last_at||x[key]||""));return Number.isFinite(n)?n:0};
+    filtered.sort((a:any,b:any)=>{
+      if(sort==="created_desc")return timeOf(b,"created_at")-timeOf(a,"created_at");
+      if(sort==="created_asc")return timeOf(a,"created_at")-timeOf(b,"created_at");
+      if(sort==="updated_desc")return timeOf(b,"updated_at")-timeOf(a,"updated_at");
+      if(sort==="updated_asc")return timeOf(a,"updated_at")-timeOf(b,"updated_at");
+      if(sort==="name_desc")return sortName(b).localeCompare(sortName(a),"pt-BR");
+      return sortName(a).localeCompare(sortName(b),"pt-BR");
+    });
+    rows=filtered.slice(off,off+lim);
+    const linked=rows.filter((x:any)=>!x.__ean_capture_placeholder);
+    const [sm,om]=await Promise.all([stockBreakdownMap(linked.map((x:any)=>x.id)),productOperationalMetaMap(linked.map((x:any)=>x.id))]);
+    const products=rows.map((x:any)=>{
+      if(x.__ean_capture_placeholder)return x;
+      const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};
+      return {...mp({...x,stock:s.effective_stock??0,__stock_breakdown:s,__ops_meta:o}),__ean_capture_count:x.__ean_capture_count,__ean_capture_last_at:x.__ean_capture_last_at,__ean_capture_quantity:x.__ean_capture_quantity};
+    });
+    return {products,next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
+  }
+  const manual=Boolean(cat||basketKit||lotStatus||sort==="gondola_asc"||sort==="gondola_desc");
   if(manual){
     const memberIds=(basketKit||lotStatus==="pending")?await basketKitProductIds():null;
     const all:any[]=[];
     for(let pos=0;pos<10000;pos+=1000){
       let q=filterProductsByValidity(db.from("products").select("*").order("id").range(pos,pos+999),sort,today);
-      if(sub)q=q.eq("subcategory",sub);if(act==="true")q=q.eq("is_active",true);if(act==="false")q=q.eq("is_active",false);if(sourceSystem)q=q.eq("source_system",sourceSystem);
+      if(sub)q=q.eq("subcategory",sub);if(act==="true")q=q.eq("is_active",true);if(act==="false")q=q.eq("is_active",false);
       if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
       const r=await q;if(r.error)throw r.error;all.push(...(r.data||[]));if((r.data||[]).length<1000)break;
     }
@@ -352,7 +434,7 @@ async function products(u:URL){
   else if(sort==="expiry_asc")q=q.order("validity_date",{ascending:true,nullsFirst:false}).order("name");
   else if(sort==="expiry_desc"||sort==="expiry_expired")q=q.order("validity_date",{ascending:false,nullsFirst:false}).order("name");
   else q=q.order("name",{ascending:sort!=="name_desc"});
-  q=q.range(off,off+lim-1);if(sub)q=q.eq("subcategory",sub);if(act==="true")q=q.eq("is_active",true);if(act==="false")q=q.eq("is_active",false);if(sourceSystem)q=q.eq("source_system",sourceSystem);
+  q=q.range(off,off+lim-1);if(sub)q=q.eq("subcategory",sub);if(act==="true")q=q.eq("is_active",true);if(act==="false")q=q.eq("is_active",false);
   if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
   const r=await q;if(r.error)throw r.error;rows=r.data||[];const [sm,om]=await Promise.all([stockBreakdownMap(rows.map((x:any)=>x.id)),productOperationalMetaMap(rows.map((x:any)=>x.id))]);
   return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s,__ops_meta:o})}),next_offset:rows.length===lim?off+lim:null};
