@@ -6,6 +6,7 @@ const admin=fs.readFileSync('vitrine/admin/basket-mold-extras-admin.js','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-basket-molds-v1/index.ts','utf8');
 const storefront=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 const ui=fs.readFileSync('vitrine/index.html','utf8');
+const root=fs.readFileSync('index.html','utf8');
 
 assert.match(migration,/create table if not exists public\.basket_extra_themes/);
 assert.match(migration,/create table if not exists public\.basket_extra_theme_products/);
@@ -27,6 +28,7 @@ assert.match(storefront,/loose_sellable_stock|moldAvailableStockMap/);
 assert.match(storefront,/is_active===true&&available>0/);
 assert.match(storefront,/products:t\.items/);
 
+assert.equal(ui,root,'the public root and vitrine pages must stay mirrored');
 assert.match(ui,/data-extra-theme-toggle/);
 assert.match(ui,/data-extra-product-add/);
 assert.match(ui,/basket-extra-products/);
