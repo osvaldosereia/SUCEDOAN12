@@ -20,7 +20,7 @@ assert.ok(edgeFunction.includes('if(eanChanged)Object.assign(patch,{ean:input.ea
 assert.ok(page.includes("async function startHtml5Camera(deviceId="),"camera works without BarcodeDetector using the bundled reader");
 assert.ok(page.includes("await scanner.start(camera")&&page.includes('facingMode:"environment"'),"fallback starts the rear camera");
 assert.ok(page.includes("function showProductPhoto(url,name){"),"found product photos can open in the centered viewer");
-assert.ok(page.includes("data-product-photo="),"found products with an image expose an enlarge action");
+assert.ok(page.includes('data-product-photo data-photo-url='),"found products with an image expose an enlarge action");
 
 const uploadStart=page.indexOf("async function uploadPhoto(file){");
 const uploadEnd=page.indexOf('\n$("takePhoto").onclick',uploadStart);
