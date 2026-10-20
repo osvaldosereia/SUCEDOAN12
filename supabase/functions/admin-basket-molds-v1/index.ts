@@ -20,9 +20,12 @@ function dbFor(req:Request){
 
 function rpcError(error:any){
   const detail=clean(error?.message||error,1000);
-  const known=["admin_not_authorized","basket_mold_name_invalid","basket_mold_basket_not_found","basket_mold_public_composition_count_invalid","basket_mold_positions_required","basket_mold_position_label_required","basket_mold_position_quantity_invalid","basket_mold_position_options_required","basket_mold_position_options_limit","basket_mold_product_invalid","basket_mold_product_not_found","basket_mold_duplicate_option","basket_category_invalid","basket_subcategory_invalid","basket_mold_conditional_hidden_product_required","basket_mold_conditional_hidden_product_invalid","basket_mold_conditional_hidden_adjustment_invalid","basket_mold_conditional_hidden_adjustment_required","basket_mold_optional_items_invalid","basket_mold_optional_label_invalid","basket_mold_optional_options_limit","basket_mold_optional_product_invalid","basket_mold_shared_items_invalid","basket_mold_shared_item_invalid","basket_mold_shared_item_not_found","basket_mold_shared_product_invalid"];
+  const known=["admin_not_authorized","basket_mold_name_invalid","basket_mold_basket_not_found","basket_mold_public_composition_count_invalid","basket_mold_positions_required","basket_mold_position_label_required","basket_mold_position_quantity_invalid","basket_mold_position_options_required","basket_mold_position_options_limit","basket_mold_product_invalid","basket_mold_product_not_found","basket_mold_duplicate_option","basket_category_invalid","basket_subcategory_invalid","basket_mold_conditional_hidden_product_required","basket_mold_conditional_hidden_product_invalid","basket_mold_conditional_hidden_adjustment_invalid","basket_mold_conditional_hidden_adjustment_required","basket_mold_optional_items_invalid","basket_mold_optional_label_invalid","basket_mold_optional_options_limit","basket_mold_optional_product_invalid","basket_mold_shared_items_invalid","basket_mold_shared_item_invalid","basket_mold_shared_item_not_found","basket_mold_shared_product_invalid","basket_extra_themes_invalid","basket_extra_theme_name_invalid","basket_extra_theme_id_invalid","basket_extra_theme_products_invalid","basket_extra_theme_product_invalid","basket_extra_theme_product_duplicate","basket_extra_theme_product_not_found"];
   const code=known.find(x=>detail.includes(x))||"basket_mold_operation_failed";
   if(code==="admin_not_authorized")return {error:code,status:403,message:"Usuário sem permissão para Cestas Molde."};
+  if(code==="basket_extra_themes_invalid")return {error:code,status:400,message:"Revise os temas e produtos selecionados."};
+  if(code==="basket_extra_theme_name_invalid")return {error:code,status:400,message:"Informe um nome válido para cada tema."};
+  if(code==="basket_extra_theme_product_not_found")return {error:code,status:404,message:"Um dos produtos selecionados não existe mais."};
   if(code==="basket_mold_basket_not_found")return {error:code,status:404,message:"Cesta não encontrada."};
   if(code==="basket_mold_duplicate_option")return {error:code,status:409,message:"O mesmo produto não pode aparecer duas vezes na mesma posição."};
   if(code==="basket_category_invalid")return {error:code,status:400,message:"Escolha uma das categorias disponíveis para a vitrine."};
@@ -58,6 +61,14 @@ async function sharedItemsSave(db:any,input:any){
 }
 async function extrasEditor(db:any,input:any){const id=uuid(input?.basket_id||input?.id);if(!id)return {error:"basket_mold_basket_not_found",status:400,message:"Cesta não encontrada."};const q=await db.rpc("admin_basket_mold_optional_items_editor_v1",{p_basket_id:id});if(q.error)return rpcError(q.error);return {extras_editor:q.data}}
 async function extrasSave(db:any,input:any){const id=uuid(input?.basket_id),items=Array.isArray(input?.items)?input.items:null;if(!id)return {error:"basket_mold_basket_not_found",status:400,message:"Cesta não encontrada."};if(!items||items.length>40)return {error:"basket_mold_optional_items_invalid",status:400,message:"Revise os produtos adicionais."};if(items.some((x:any)=>!Array.isArray(x?.options)||x.options.length<1||x.options.length>3))return {error:"basket_mold_optional_options_limit",status:400,message:"Cada produto adicional deve ter de 1 a 3 marcas."};const q=await db.rpc("admin_save_basket_mold_optional_items_v1",{p_basket_id:id,p_items:items.map((x:any)=>({id:clean(x?.id,64),label:clean(x?.label,120),options:x.options.map((o:any)=>uuid(o?.product_id||o))}))});if(q.error)return rpcError(q.error);return {items:q.data?.items||[]}}
+async function extraThemesEditor(db:any){const q=await db.rpc("admin_basket_extra_themes_editor_v1");if(q.error)return rpcError(q.error);return q.data||{themes:[]}}
+async function extraThemesSave(db:any,input:any){
+  const themes=Array.isArray(input?.themes)?input.themes:null;
+  if(!themes||themes.some((t:any)=>!uuid(t?.id)||!Array.isArray(t?.products)||t.products.some((p:any)=>!uuid(p?.product_id||p))))
+    return {error:"basket_extra_themes_invalid",status:400,message:"Revise os temas e produtos selecionados."};
+  const q=await db.rpc("admin_save_basket_extra_themes_v1",{p_themes:themes.map((t:any)=>({id:uuid(t.id),name:clean(t.name,80),products:t.products.map((p:any)=>({product_id:uuid(p?.product_id||p)}))}))});
+  if(q.error)return rpcError(q.error);return q.data||{themes:[]};
+}
 async function save(db:any,input:any){
   const id=uuid(input?.basket_id),categoryId=uuid(input?.category_id),subcategoryId=uuid(input?.subcategory_id),name=clean(input?.name,180),hidden=finite(input?.hidden_adjustment),count=integer(input?.public_composition_count,1,6),positions=Array.isArray(input?.positions)?input.positions.slice(0,80):null;
   const conditionalEnabled=bool(input?.conditional_hidden_enabled),conditionalProductId=uuid(input?.conditional_hidden_product_id),conditionalHidden=finite(input?.conditional_hidden_adjustment);
@@ -99,6 +110,8 @@ Deno.serve(async(req:Request)=>{
     else if(action==="save")result=await save(db,input);
     else if(action==="extras_editor")result=await extrasEditor(db,input);
     else if(action==="extras_save")result=await extrasSave(db,input);
+    else if(action==="extra_themes_editor")result=await extraThemesEditor(db);
+    else if(action==="extra_themes_save")result=await extraThemesSave(db,input);
     else return json(req,{ok:false,error:"action_invalid"},400);
     if(result?.error)return json(req,{ok:false,...result},Number(result.status||400));
     return json(req,{ok:true,...result});

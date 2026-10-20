@@ -120,6 +120,21 @@ async function moldAvailableStockMap(productIds:string[]){
 }
 function moldEffectivePriceCents(p:any){const n=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0?Number(p.offer_price):Number(p?.price||0);return cents(n)}
 async function moldProductsMap(ids:string[]){const clean=[...new Set(ids.filter(Boolean))],out=new Map<string,any>();if(!clean.length)return out;const q=await db.from("products").select("id,name,sku,gtin,image_url,packaging,price,offer_price,is_offer,is_active").in("id",clean);if(q.error)throw q.error;for(const p of q.data||[])out.set(String(p.id),p);return out}
+async function publicBasketExtras(legacyExtras:any[]=[]){
+  const themeQ=await db.from("basket_extra_themes").select("id,name,sort_order,basket_extra_theme_products(product_id,sort_order)").order("sort_order").order("created_at");
+  if(themeQ.error)throw themeQ.error;
+  const themeRows=(themeQ.data||[]).map((t:any)=>({...t,items:Array.isArray(t.basket_extra_theme_products)?t.basket_extra_theme_products.slice().sort((a:any,b:any)=>Number(a.sort_order||0)-Number(b.sort_order||0)):[]}));
+  const ids=[...new Set([...themeRows.flatMap((t:any)=>t.items.map((x:any)=>uid(x.product_id)).filter(Boolean)),...legacyExtras.flatMap((x:any)=>Array.isArray(x?.product_ids)?x.product_ids.map((id:any)=>uid(id)).filter(Boolean):[])])];
+  const [products,stock]=await Promise.all([moldProductsMap(ids),moldAvailableStockMap(ids)]);
+  const toProduct=(id:any)=>{
+    const p=products.get(String(id)),available=stock.get(String(id))||0;
+    return p?.is_active===true&&available>0?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:available,price_cents:moldEffectivePriceCents(p)}:null;
+  };
+  return [
+    ...themeRows.map((t:any)=>({id:String(t.id),label:String(t.name||"Produtos extras"),products:t.items.map((x:any)=>toProduct(x.product_id)).filter(Boolean)})),
+    ...legacyExtras.map((x:any,index:number)=>({id:String(x?.id||"legacy-"+index),label:String(x?.label||"Produto adicional"),products:(Array.isArray(x?.product_ids)?x.product_ids:[]).map((id:any)=>toProduct(id)).filter(Boolean)}))
+  ].filter((x:any)=>x.products.length>0);
+}
 async function moldPublicCompositions(basketIds:string[]){
   const ids=[...new Set(basketIds.filter(Boolean))],out=new Map<string,any>(),now=Date.now();
   const missing:string[]=[];
@@ -201,7 +216,8 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
       publicAlts.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
     }
     if(!selected){if(selections)throw new Error("basket_mold_option_invalid");return null}productTotal+=Math.round(Number(selected.price_cents)*qty);capacity=Math.min(capacity,Math.floor(Number(selected.stock_quantity||0)/qty));items.push({position_id:pid,label:pos.label,product_id:selected.product_id,name:selected.name,sku:selected.sku,gtin:selected.gtin,image_url:selected.image_url,packaging:selected.packaging,stock_quantity:selected.stock_quantity,base_quantity:qty,quantity:qty,alternatives:publicAlts})}
-  const configuredExtras=Array.isArray(mold.metadata?.optional_items)?mold.metadata.optional_items:[],extraProductIds=configuredExtras.flatMap((x:any)=>Array.isArray(x?.product_ids)?x.product_ids.map((id:any)=>uid(id)).filter(Boolean):[]),[extraProducts,extraStock]=await Promise.all([moldProductsMap(extraProductIds),moldAvailableStockMap(extraProductIds)]),extras=configuredExtras.map((x:any,index:number)=>{const alternatives=(Array.isArray(x?.product_ids)?x.product_ids:[]).map((id:any)=>{const p=extraProducts.get(String(id)),stock=extraStock.get(String(id))||0;return p?.is_active===true&&stock>0?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(p)}:null}).filter(Boolean) as any[];alternatives.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));return {id:String(x?.id||index),label:String(x?.label||"Produto adicional"),alternatives:alternatives.slice(0,3)}}).filter((x:any)=>x.alternatives.length>0);
+  const legacyExtras=Array.isArray(mold.metadata?.optional_items)?mold.metadata.optional_items:[];
+  const extras=await publicBasketExtras(legacyExtras);
   if(capacity<1)return null;const conditionalHidden=mold.conditional_hidden_enabled===true&&mold.conditional_hidden_product_id&&items.some((i:any)=>String(i.product_id)===String(mold.conditional_hidden_product_id)&&Number(i.quantity||i.base_quantity||0)>0)?cents(mold.conditional_hidden_adjustment||0):0;return {basket:{id:basket.id,name:String(basket.name).replace(/\s+Completa$/i,""),image_url:basket.image_url||"",mold_mode:true,mold_id:mold.id,composition_number:compositionNumber,public_composition_count:Number(mold.public_composition_count||1),hidden_adjustment_cents:cents(mold.hidden_adjustment||0),conditional_hidden_enabled:mold.conditional_hidden_enabled===true,conditional_hidden_product_id:mold.conditional_hidden_product_id||null,conditional_hidden_adjustment_cents:cents(mold.conditional_hidden_adjustment||0),conditional_hidden_applied_cents:conditionalHidden,display_price_cents:Math.max(0,productTotal+cents(mold.hidden_adjustment||0)+conditionalHidden),stock_quantity:capacity},items,extras};
 }
 async function moldQuote(payload:any){const id=uid(payload?.basket_id),n=Math.trunc(Number(payload?.composition_number||1));if(!id)return {error:"invalid_basket",status:400};try{const d=await moldDetail(id,n,Array.isArray(payload?.items)?payload.items:[]);if(!d)return {error:"basket_mold_unavailable",status:409};return {ok:true,total_cents:d.basket.display_price_cents,basket:d.basket,items:d.items,extras:d.extras}}catch(e:any){const code=txt(e?.message,100);return {error:["basket_mold_option_invalid","basket_mold_component_invalid"].includes(code)?code:"basket_mold_unavailable",status:409}}
@@ -410,13 +426,14 @@ async function basket(id:string){
   const {data:c,error}=await db.from("basket_commercial_catalog_v1").select("*").eq("source_kind","basket").eq("commercial_id",id).maybeSingle();
   if(error)throw error;if(!c||c.model_active!==true||c.category_active!==true||!c.public_lot_id||Number(c.public_available||0)<=0)return null;
   const mainLot=String(c.public_lot_id),linked=c.linked_lot_id?String(c.linked_lot_id):"",split=String(c.public_lot_kind||"")==="food"||Boolean(linked);
+  const extras=await publicBasketExtras();
   if(split){
     const food=await splitLotItems(mainLot,"food"),hygiene=linked?await splitLotItems(linked,"hygiene"):[];
     return {basket:{id:c.commercial_id,name:c.public_name||c.model_name,category_name:c.category_name||null,category_slug:c.category_slug||null,
       display_price_cents:cents(c.sale_price),image_url:await basketLotImage(mainLot,linked||null,c.image_url||""),
       split_mode:true,stock_quantity:Number(c.public_available||0),availability_reason:c.availability_reason||"available",
       food_lot_id:mainLot,food_lot_code:c.public_lot_code||"",food_lot_quantity:Number(c.public_available||0),
-      hygiene_lot_id:linked||null,hygiene_lot_code:"",hygiene_lot_quantity:Number(c.linked_available||0),uses_hygiene_kit:Boolean(linked)},items:[...food,...hygiene]};
+      hygiene_lot_id:linked||null,hygiene_lot_code:"",hygiene_lot_quantity:Number(c.linked_available||0),uses_hygiene_kit:Boolean(linked)},items:[...food,...hygiene],extras};
   }
   const {data:items,error:ie}=await db.from("basket_stock_lot_items")
     .select("id,product_id,quantity_per_basket,position_order,source_template_item_id,product:products(id,name,image_url,packaging,is_active,price),rule:basket_template_items(id,removable,quantity_editable,min_quantity,max_quantity,remove_unit_delta,add_unit_delta)")
@@ -431,7 +448,7 @@ async function basket(id:string){
       quantity_editable:rule?.quantity_editable!==false,min_quantity:Number(rule?.min_quantity??0),max_quantity:Math.max(base,configuredMax),
       remove_unit_delta:rule?.remove_unit_delta==null?null:Number(rule.remove_unit_delta),add_unit_delta:rule?.add_unit_delta==null?null:Number(rule.add_unit_delta),
       regular_price:Number(product?.price||0),template_item_id:i.source_template_item_id||null,component_group:"legacy",preassembled:true
-    }})};
+    }}),extras};
 }
 function groupChanged(items:any[],group:string){
   return items.filter(x=>x.component_group===group).some(x=>Number(x.quantity||0)!==Number(x.base_quantity||0));
