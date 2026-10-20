@@ -1256,6 +1256,28 @@
     function scheduleWhatsAppReturn(url,delayMs=0){return setTimeout(()=>{try{window.location.assign(url)}catch{}},Math.max(0,Number(delayMs)||0))}
     function orderPublicUrl(saved){const short=String(saved?.order_public_url||'').trim();if(/^https:\/\/donaantonia\.com\.br\/p\/\?k=[a-f0-9]{16}$/i.test(short))return short;const id=String(saved?.order_id||saved?.id||'').trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)?'https://donaantonia.com.br/pedido/?o='+encodeURIComponent(id):''}
     function renderOrderSuccess(saved){const orderNumber=saved?.order_public_code?String(saved.order_public_code).slice(0,5):(saved?.order_number?String(saved.order_number).slice(0,80):'Pedido'),detailUrl=orderPublicUrl(saved),whatsappUrl='https://wa.me/'+resolveWhatsappDestination();$('#sheetTitle').textContent='Pedido recebido';$('#sheetBody').innerHTML='<div class="rule-notice"><strong>'+esc(orderNumber)+'</strong><div style="margin-top:6px">Seu pedido foi registrado. A confirmação também será enviada ao seu WhatsApp com um link para conferir tudo.</div></div><div class="action-stack">'+(detailUrl?'<a class="primary order-summary-link" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="'+esc(detailUrl)+'">Ver meu pedido</a>':'')+'<a class="wa-fallback" href="'+esc(whatsappUrl)+'">Falar com a Dona Antônia</a><button type="button" class="secondary" id="backToStore">Voltar à vitrine</button></div>';$('#backToStore').onclick=closeSheet}
+    async function validateMoldCartBeforeCheckout(){
+      const invalidCodes=new Set(['basket_mold_unavailable','basket_mold_not_configured','basket_mold_component_invalid','basket_mold_option_invalid','basket_mold_composition_invalid']);
+      const basketItems=state.cart.filter(item=>item.type==='basket_mold');
+      const unavailable=[];
+      for(const item of basketItems){
+        try{
+          await api('basket_mold_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:item.id,composition_number:Number(item.composition_number||1),items:(item.components||[]).map(component=>({position_id:component.position_id,product_id:component.product_id}))})});
+        }catch(error){
+          if(!invalidCodes.has(error?.message))throw error;
+          unavailable.push(item);
+        }
+      }
+      if(!unavailable.length)return true;
+      const unavailableSet=new Set(unavailable);
+      state.cart=state.cart.filter(item=>!unavailableSet.has(item));
+      saveCart();paintCart();
+      const count=unavailable.length;
+      toast(count===1
+        ?'Uma cesta do seu carrinho não está mais disponível e foi removida. Confira o novo total e, se quiser, escolha uma cesta atualizada na vitrine. Seus outros itens continuam salvos.'
+        :count+' cestas do seu carrinho não estão mais disponíveis e foram removidas. Confira o novo total e, se quiser, escolha cestas atualizadas na vitrine. Seus outros itens continuam salvos.');
+      return false;
+    }
     async function sendWhatsApp(){
       if(state.orderSubmitting)return;
       if(checkoutHasPendingQuotes()){toast('Recalcule as cestas antes de finalizar o pedido.');updateCheckoutSubmitState();return}
@@ -1267,6 +1289,7 @@
       state.orderSubmitting=true;updateCheckoutSubmitState();
       let saved=null;
       try{
+        if(!(await validateMoldCartBeforeCheckout())){state.orderSubmitting=false;updateCheckoutSubmitState();return}
         saved=await api('submit_order',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payment_method:selected?.value||'',whatsapp_phone:checkoutPhone,delivery_date:state.checkoutDeliveryDate||'',whatsapp_origin:state.whatsappOrigin,marketing_context:state.marketingContext||null,items:state.cart.map(item=>({type:item.type,id:item.id,qty:Number(item.qty||1),composition_number:item.type==='basket_mold'?Number(item.composition_number||1):null,lot_id:item.type==='basket'?(item.lot_id||null):null,split_mode:item.type==='basket'&&item.split_mode===true,food_lot_id:item.type==='basket'?(item.food_lot_id||null):null,hygiene_lot_id:item.type==='basket'?(item.hygiene_lot_id||null):null,components:['basket','basket_mold'].includes(item.type)?(item.components||[]):[]}))})})
       }catch(e){
         state.orderSubmitting=false;updateCheckoutSubmitState();
