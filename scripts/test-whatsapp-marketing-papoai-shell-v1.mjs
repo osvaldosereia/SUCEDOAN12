@@ -8,7 +8,7 @@ const campaigns=fs.readFileSync('vitrine/admin/marketing/campaign-center.js','ut
 const entry=fs.readFileSync('vitrine/admin/marketing/campaign-entry.js','utf8');
 const all=[polish,templates,audiences,campaigns,entry].join('\n');
 
-assert.match(polish,/const PRIMARY_MARKETING_VIEWS=\['overview','post_sale','repurchase','campaigns'\]/,'navegação principal deve priorizar os quatro fluxos');
+assert.match(polish,/const PRIMARY_MARKETING_VIEWS=\['overview','post_sale','repurchase','templates','campaigns'\]/,'navegação principal deve priorizar os fluxos');
 assert.match(polish,/overview:\s*'Visão geral'/,'shell deve nomear Visão geral');
 assert.match(polish,/data-marketing-view="strategy">Estratégia/,'Estratégia deve continuar acessível em Mais');
 assert.match(polish,/data-marketing-view="templates">Templates/,'Templates deve continuar acessível em Mais');
