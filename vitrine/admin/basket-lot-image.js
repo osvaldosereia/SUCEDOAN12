@@ -107,7 +107,7 @@ window.BasketLotImage={
     link.dataset.daMarketingTemplateCenter='1';
     document.head.appendChild(link);
   }
-  import('/vitrine/admin/marketing/template-center.js?v=meta-template-stable-v1').catch(error=>console.warn('marketing-template-center-load',String(error?.message||error).slice(0,160)));
-  import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v4').catch(error=>console.warn('marketing-campaign-entry-load',String(error?.message||error).slice(0,160)));
+  import('/vitrine/admin/marketing/template-center.js?v=marketing-template-center-v2').catch(error=>console.warn('marketing-template-center-load',String(error?.message||error).slice(0,160)));
+  import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v6').catch(error=>console.warn('marketing-campaign-entry-load',String(error?.message||error).slice(0,160)));
 })();
 
