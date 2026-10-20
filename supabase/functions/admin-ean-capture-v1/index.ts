@@ -66,24 +66,28 @@ function cosmosCest(item){
   const digits=cosmosDigits(value);
   return /^\d{7}$/.test(digits)?digits:null;
 }
-function cosmosCandidate(item,gtin){
-  const exact=cosmosDigits(item?.gtin)===gtin;
-  const image=typeof item?.thumbnail==="string"?item.thumbnail:"";
-  let imageUrl=null;
-  try{const u=new URL(image);if(u.protocol==="https:"&&u.hostname==="cdn-cosmos.bluesoft.com.br")imageUrl=u.toString().slice(0,500)}catch{}
-  const ncm=cosmosDigits(item?.ncm?.code??item?.ncm);
-  const gpc=item?.gpc&&typeof item.gpc==="object"?item.gpc:{};
-  const weight=(value)=>Number.isFinite(Number(value))&&Number(value)>0?Number(value):null;
+function oscbCandidate(item,gtin){
+  const exact=cosmosDigits(item?.ean??item?.gtin)===gtin;
+  const ncmValue=item?.ncm?.code??item?.ncm?.codigo??item?.ncm;
+  const ncm=cosmosDigits(ncmValue);
+  const cestValue=item?.cest?.code??item?.cest?.codigo??item?.cest??null;
+  const cestDigits=cosmosDigits(cestValue);
+  const positive=(value)=>Number.isFinite(Number(value))&&Number(value)>0?Number(value):null;
   return {exact,proposal:{
-    description:cosmosClean(item?.description,250)||null,
-    brand:cosmosClean(item?.brand?.name??item?.brand,100)||null,
-    gpc_code:cosmosClean(gpc.code,40)||null,
-    gpc_description:cosmosClean(gpc.description,160)||null,
-    ncm_candidate:/^\d{8}$/.test(ncm)?ncm:null,
-    cest_candidate:cosmosCest(item),
-    net_weight_raw:weight(item?.net_weight),
-    gross_weight_raw:weight(item?.gross_weight),
-    thumbnail_source:imageUrl
+    description:cosmosClean(item?.nome??item?.description??item?.descricao,250)||null,
+    brand:cosmosClean(item?.marca??item?.brand,100)||null,
+    gpc_code:null,
+    gpc_description:cosmosClean(item?.categoria??item?.category,160)||null,
+    category:cosmosClean(item?.categoria??item?.category,160)||null,
+    ncm_candidate:/^\\d{8}$/.test(ncm)?ncm:null,
+    cest_candidate:/^\\d{7}$/.test(cestDigits)?cestDigits:null,
+    unit:cosmosClean(item?.unid_abr??item?.unit,24)||null,
+    unit_description:cosmosClean(item?.unid_desc??item?.unit_description,80)||null,
+    packaging:cosmosClean(item?.embalagem??item?.packaging,100)||null,
+    manufacturer:cosmosClean(item?.fabricante??item?.manufacturer,120)||null,
+    net_weight_raw:positive(item?.peso_liquido??item?.net_weight),
+    gross_weight_raw:positive(item?.peso_bruto??item?.gross_weight),
+    thumbnail_source:null
   }};
 }
 async function researchCosmosForCapture(captureId,actorId){
@@ -108,12 +112,12 @@ async function researchCosmosForCapture(captureId,actorId){
   if(cached&&cached.gtin===gtin&&cached.status==="error"&&cached.attempted_at
      &&Date.now()-new Date(cached.attempted_at).getTime()<5*60*1000)
     return {error:"aguarde_5_minutos_antes_de_tentar_novamente",status:429};
-  const token=Deno.env.get("COSMOS_API_TOKEN")||"";
-  const userAgent=Deno.env.get("COSMOS_USER_AGENT")||"";
-  if(!token||!userAgent)return {error:"credenciais_cosmos_nao_configuradas",status:503};
+  const username=Deno.env.get("OSCBR_USERNAME")||"";
+  const password=Deno.env.get("OSCBR_PASSWORD")||"";
+  if(!username||!password)return {error:"credenciais_oscb_nao_configuradas",status:503};
   const config=await db.from("cosmos_research_config").select("daily_limit").eq("id",true).maybeSingle();
   if(config.error)throw config.error;
-  const dailyLimit=Math.max(1,Math.min(90,Number(config.data?.daily_limit)||25));
+  const dailyLimit=Math.max(1,Math.min(20,Number(config.data?.daily_limit)||20));
   const dayStart=new Date();dayStart.setUTCHours(0,0,0,0);
   const used=await db.from("cosmos_ean_capture_research_v1").select("id",{count:"exact",head:true})
     .gte("attempted_at",dayStart.toISOString());
@@ -139,30 +143,64 @@ async function researchCosmosForCapture(captureId,actorId){
     return {gtin,status,proposal,summary,http_status:httpStatus,error,researched_at:["review","not_found"].includes(status)?now:null};
   };
   try{
-    const response=await fetch("https://cosmos.bluesoft.com.br/api/gtins/"+encodeURIComponent(gtin)+".json",{
-      method:"GET",headers:{"X-Cosmos-Token":token,"User-Agent":userAgent,"Accept":"application/json"},
+    const credentialBytes=new TextEncoder().encode(username+":"+password);
+    let credentialBinary="";
+    for(const byte of credentialBytes)credentialBinary+=String.fromCharCode(byte);
+    const authResponse=await fetch("https://gtin.rscsistemas.com.br/api/v3/oauth/token",{
+      method:"POST",
+      headers:{
+        "Authorization":"Basic "+btoa(credentialBinary),
+        "Accept":"application/json",
+        "User-Agent":"DonaAntoniaVitrine/1.0"
+      },
+      signal:AbortSignal.timeout(10000)
+    });
+    if(authResponse.status===429){
+      await finish("error",429,{}, {source:"oscb",gtin},"auth_rate_limit");
+      return {error:"limite_ou_frequencia_oscb",status:429};
+    }
+    if(!authResponse.ok){
+      await finish("error",authResponse.status,{}, {source:"oscb",gtin},
+        authResponse.status===401||authResponse.status===403?"invalid_credentials":"auth_http_"+authResponse.status);
+      return {error:authResponse.status===401||authResponse.status===403
+        ?"credencial_oscb_negada":"falha_autenticacao_oscb",status:502};
+    }
+    const authPayload=await authResponse.json();
+    const accessToken=String(authPayload?.access_token||authPayload?.token||"");
+    if(!accessToken){
+      await finish("error",200,{}, {source:"oscb",gtin},"access_token_missing");
+      return {error:"resposta_autenticacao_oscb_invalida",status:502};
+    }
+    const response=await fetch("https://gtin.rscsistemas.com.br/api/v3/gtin/"+encodeURIComponent(gtin),{
+      method:"GET",
+      headers:{
+        "Authorization":"Bearer "+accessToken,
+        "Accept":"application/json",
+        "User-Agent":"DonaAntoniaVitrine/1.0"
+      },
       signal:AbortSignal.timeout(10000)
     });
     if(response.status===404){
-      const research=await finish("not_found",404,{}, {source:"cosmos",gtin});
+      const research=await finish("not_found",404,{}, {source:"oscb",gtin});
       return {research};
     }
     if(response.status===429){
-      await finish("error",429,{}, {source:"cosmos",gtin},"quota_or_throttle");
-      return {error:"limite_ou_frequencia_cosmos",status:429};
+      await finish("error",429,{}, {source:"oscb",gtin},"quota_or_throttle");
+      return {error:"limite_ou_frequencia_oscb",status:429};
     }
     if(!response.ok){
-      await finish("error",response.status,{}, {source:"cosmos",gtin},"http_"+response.status);
-      return {error:response.status===401||response.status===403?"credencial_cosmos_negada":"falha_cosmos_http_"+response.status,status:502};
+      await finish("error",response.status,{}, {source:"oscb",gtin},"http_"+response.status);
+      return {error:response.status===401||response.status===403
+        ?"credencial_oscb_negada":"falha_oscb_http_"+response.status,status:502};
     }
     const payload=await response.json();
-    const candidate=cosmosCandidate(payload,gtin);
+    const candidate=oscbCandidate(payload,gtin);
     if(!candidate.exact){
-      await finish("error",200,{}, {source:"cosmos",gtin},"gtin_divergente");
-      return {error:"gtin_divergente_na_resposta_cosmos",status:502};
+      await finish("error",200,{}, {source:"oscb",gtin},"gtin_divergente");
+      return {error:"gtin_divergente_na_resposta_oscb",status:502};
     }
     const research=await finish("review",200,candidate.proposal,{
-      source:"cosmos",gtin,observed_at:new Date().toISOString(),review_required:true
+      source:"oscb",gtin,observed_at:new Date().toISOString(),review_required:true
     });
     return {research};
   }catch(error){
