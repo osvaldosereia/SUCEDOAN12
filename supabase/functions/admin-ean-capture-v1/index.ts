@@ -193,6 +193,7 @@ async function researchCosmosForCapture(captureId,actorId){
     if(attemptId){const attempt=await db.from("oscb_gtin_research_attempts_v1").update({outcome:status,http_status:httpStatus}).eq("id",attemptId);if(attempt.error)throw attempt.error;}
     return {gtin,status,proposal,summary,http_status:httpStatus,error,researched_at:["review","not_found"].includes(status)?now:null};
   };
+  let upstreamStage="oauth";
   try{
     const credentialBytes=new TextEncoder().encode(username+":"+password);
     let credentialBinary="";
@@ -222,6 +223,7 @@ async function researchCosmosForCapture(captureId,actorId){
       await finish("error",200,{}, {source:"oscb",gtin},"access_token_missing");
       return {error:"resposta_autenticacao_oscb_invalida",status:502};
     }
+    upstreamStage="gtin";
     const response=await fetch("https://gtin.rscsistemas.com.br/api/v3/gtin/"+encodeURIComponent(gtin),{
       method:"GET",
       headers:{
@@ -255,7 +257,10 @@ async function researchCosmosForCapture(captureId,actorId){
     });
     return {research};
   }catch(error){
-    await finish("error",0,{}, {source:"oscb",gtin},error instanceof Error?error.name:"network_error");
+    const errName=error instanceof Error?error.name:"network_error";
+    const errMessage=error instanceof Error?error.message:"unknown_error";
+    console.error("[oscb] upstream request failed",{stage:upstreamStage,name:errName,message:errMessage.slice(0,240)});
+    await finish("error",0,{}, {source:"oscb",gtin},errName);
     return {error:"falha_de_rede_oscb",status:502};
   }
 }
@@ -302,6 +307,22 @@ Deno.serve(async (r:Request)=>{
       const signed=await db.storage.from(PHOTO_BUCKET).createSignedUrl(selected.data.photo_path,120);
       if(signed.error)throw signed.error;
       return reply(r,{ok:true,url:signed.data.signedUrl});
+    }
+    if(r.method==="GET"&&action==="product_research"){
+      const selected=await db.from("oscb_product_research_v1")
+        .select("product_id,gtin,status,proposal,response_summary,last_http_status,last_error,attempts,researched_at,updated_at",{count:"exact"})
+        .eq("review_state","pending").in("status",["review","not_found","error"])
+        .order("updated_at",{ascending:false}).limit(1000);
+      if(selected.error)throw selected.error;
+      const terminal=(selected.data||[]).filter((item:any)=>item.status!=="error"||Number(item.attempts||0)>=3);
+      const ids=[...new Set(terminal.map((item:any)=>String(item.product_id)).filter(idOk))];
+      const products=ids.length?await db.from("products")
+        .select("id,name,gtin,ncm,brand,category,unit,packaging,image_url,created_at,updated_at")
+        .in("id",ids):{data:[],error:null};
+      if(products.error)throw products.error;
+      const byId=new Map((products.data||[]).map((item:any)=>[String(item.id),item]));
+      const items=terminal.map((item:any)=>({...item,product:byId.get(String(item.product_id))||null}));
+      return reply(r,{ok:true,count:items.length,items});
     }
     if(r.method==="GET"&&action==="list"){
       const limit=Math.max(1,Math.min(100,Number(url.searchParams.get("limit"))||60));
@@ -355,6 +376,24 @@ Deno.serve(async (r:Request)=>{
     }
     const input=await r.json().catch(()=>null);
     if(!input||typeof input!=="object"||Array.isArray(input))return reply(r,{ok:false,error:"dados_invalidos"},400);
+    if(action==="product_review_mark"){
+      const productId=String(input.product_id||"");
+      if(!idOk(productId))return reply(r,{ok:false,error:"produto_invalido"},400);
+      const current=await db.from("oscb_product_research_v1")
+        .select("status,attempts,review_state").eq("product_id",productId).maybeSingle();
+      if(current.error)throw current.error;
+      if(!current.data)return reply(r,{ok:false,error:"sugestao_nao_encontrada"},404);
+      if(current.data.review_state!=="pending")return reply(r,{ok:false,error:"revisao_ja_concluida"},409);
+      if(!["review","not_found"].includes(String(current.data.status))&&
+        !(current.data.status==="error"&&Number(current.data.attempts||0)>=3))
+        return reply(r,{ok:false,error:"pesquisa_ainda_nao_terminal"},409);
+      const saved=await db.from("oscb_product_research_v1").update({
+        review_state:"reviewed",reviewed_at:new Date().toISOString(),reviewed_by:actor.id,updated_at:new Date().toISOString()
+      }).eq("product_id",productId).eq("review_state","pending").select("product_id").maybeSingle();
+      if(saved.error)throw saved.error;
+      if(!saved.data)return reply(r,{ok:false,error:"revisao_ja_concluida"},409);
+      return reply(r,{ok:true,product_id:productId});
+    }
     if(action==="search_products"){
       const raw=String(input.query||"").trim();
       const term=raw.replace(/[^a-zA-Z0-9À-ÿ _-]/g," ").replace(/\s+/g," ").trim().slice(0,80);
