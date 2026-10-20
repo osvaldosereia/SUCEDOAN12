@@ -593,7 +593,7 @@ async function resolveRow(action,id,payload){
   const moved=action==="link_product"||action==="create_inactive";
   if(moved){
    filter="found";syncFilterButtons();
-   try{await load()}catch{updateRowLocal(data.row,data.summary)}
+   updateRowLocal(data.row,data.summary);
   }else updateRowLocal(data.row,data.summary);
   const text=action==="repair_ean"?(data.row.sync_status==="found"?"EAN corrigido e encontrado no cadastro.":"EAN corrigido; continua não encontrado.")
    :action==="link_product"?"Produto vinculado, EAN alternativo salvo e estoque atualizado. Agora está em Produtos encontrados."
