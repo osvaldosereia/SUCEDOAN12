@@ -543,23 +543,23 @@ async function load(append=false){
 }
 function cosmosReviewHtml(research){
  if(!research)return "";
- if(research.status==="not_found")return '<div class="cosmos-review"><b>Cosmos:</b> Nenhum produto localizado para este EAN.</div>';
+ if(research.status==="not_found")return '<div class="cosmos-review"><b>OSCBR:</b> Nenhum produto localizado. Esta consulta foi encerrada para evitar gasto repetido da franquia.</div>';
  if(research.status!=="review"){
-  if(research.status==="error"&&research.http_status===429)return '<div class="cosmos-review"><b>Cosmos:</b> Limite de consultas atingido (HTTP 429). Aguarde a liberação da franquia antes de tentar novamente.</div>';
-  if(research.status==="error"&&(research.http_status===401||research.http_status===403))return '<div class="cosmos-review"><b>Cosmos:</b> A credencial foi recusada. Confira o token configurado no Supabase.</div>';
-  return '<div class="cosmos-review"><b>Cosmos:</b> Pesquisa com status '+esc(research.status||"indisponível")+'. Tente novamente mais tarde.</div>';
+  if(research.status==="error"&&research.http_status===429)return '<div class="cosmos-review"><b>OSCBR:</b> Limite de consultas atingido (HTTP 429). Aguarde a liberação da franquia antes de tentar novamente.</div>';
+  if(research.status==="error"&&(research.http_status===401||research.http_status===403))return '<div class="cosmos-review"><b>OSCBR:</b> A credencial foi recusada. Confira o usuário e a senha configurados no Supabase.</div>';
+  return '<div class="cosmos-review"><b>OSCBR:</b> Pesquisa com status '+esc(research.status||"indisponível")+'. Tente novamente mais tarde.</div>';
  }
  const p=research.proposal||{};
  const fields=[
   p.brand?'<div><b>Marca:</b> '+esc(p.brand)+'</div>':"",
   p.ncm_candidate?'<div><b>NCM:</b> '+esc(p.ncm_candidate)+'</div>':"",
   p.cest_candidate?'<div><b>CEST:</b> '+esc(p.cest_candidate)+'</div>':"",
-  p.gpc_description?'<div><b>Categoria Cosmos:</b> '+esc(p.gpc_description)+'</div>':""
+  p.gpc_description?'<div><b>Categoria OSCBR:</b> '+esc(p.gpc_description)+'</div>':""
  ].join("");
- const image=p.thumbnail_source?'<img loading="lazy" src="'+esc(p.thumbnail_source)+'" alt="Miniatura do Cosmos" onerror="this.hidden=true">':"";
- return '<div class="cosmos-review"><b>Sugestão do Cosmos · confira antes de cadastrar</b>'+
+ const image=p.thumbnail_source?'<img loading="lazy" src="'+esc(p.thumbnail_source)+'" alt="Miniatura da OSCBR" onerror="this.hidden=true">':"";
+ return '<div class="cosmos-review"><b>Sugestão da OSCBR · confira antes de cadastrar</b>'+
   '<div class="cosmos-review-main">'+image+'<div><div><b>Descrição:</b> '+esc(p.description||"Sem descrição")+'</div>'+fields+
-  '<div class="resolution-help">NCM e CEST são sugestões da fonte e devem ser conferidos antes de usar.</div></div></div></div>';
+  '<div class="resolution-help">NCM e CEST são sugestões da fonte e devem ser conferidos antes de usar. O resultado fica salvo e não será consultado novamente para este EAN.</div></div></div></div>';
 }
 function paint(){
  const list=$("entries");
@@ -584,7 +584,7 @@ function paint(){
     '<button type="button" data-resolve-open="reread" data-id="'+esc(r.id)+'">↻ Corrigir / reler EAN</button>'+
     '<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(r.ean)+'">🖼 Buscar imagem</a>'+
     '<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q='+encodeURIComponent("NCM produto EAN "+r.ean)+'">🔎 Buscar NCM</a>'+
-    '<button type="button" data-cosmos-research="'+esc(r.id)+'">🌐 Pesquisar Cosmos</button>'+
+    ((!r.cosmos_research||!['review','not_found'].includes(r.cosmos_research.status))?'<button type="button" data-cosmos-research="'+esc(r.id)+'">🌐 Consultar OSCBR (manual)</button>':'')+
     '<button type="button" data-resolve-open="search" data-id="'+esc(r.id)+'">🔗 Vincular produto</button>'+
     '<button type="button" data-resolve-open="create" data-id="'+esc(r.id)+'">＋ Cadastrar inativo</button>'+
     '</div>'+cosmosReviewHtml(r.cosmos_research)+'<div class="resolution-panel" data-resolution-panel="'+esc(r.id)+'" hidden></div>'
@@ -609,7 +609,7 @@ function openResolutionPanel(row,mode){
   const name=String(p.description||"").trim(),ncm=String(p.ncm_candidate||"");
   const cest=String(p.cest_candidate||""),brand=String(p.brand||""),category=String(p.gpc_description||"");
   const description=String(p.description||"");
-  const image=p.thumbnail_source?'<img class="cosmos-form-image" src="'+esc(p.thumbnail_source)+'" alt="Miniatura sugerida pelo Cosmos">':"";
+  const image=p.thumbnail_source?'<img class="cosmos-form-image" src="'+esc(p.thumbnail_source)+'" alt="Miniatura sugerida pela OSCBR">':"";
   panel.innerHTML='<form data-resolution-form="create" data-id="'+esc(row.id)+'"><b>Cadastrar produto inativo</b>'+
    '<p class="resolution-help">O produto ficará inativo e com estoque zero. Confira os dados fiscais e comerciais antes de cadastrar.</p>'+
    '<label>Nome do produto<input name="name" maxlength="180" required value="'+esc(name)+'" placeholder="Ex.: Arroz 5 kg"></label>'+
@@ -618,7 +618,7 @@ function openResolutionPanel(row,mode){
    '<label>Marca<input name="brand" maxlength="100" value="'+esc(brand)+'"></label>'+
    '<label>Categoria<input name="category" maxlength="160" value="'+esc(category)+'"></label>'+
    '<label>Descrição<input name="description" maxlength="1000" value="'+esc(description)+'"></label>'+
-   (image?'<div class="cosmos-image-choice">'+image+'<label><input type="checkbox" name="use_image" value="yes"> Usar a miniatura do Cosmos como imagem do produto</label></div>':'')+
+   (image?'<div class="cosmos-image-choice">'+image+'<label><input type="checkbox" name="use_image" value="yes"> Usar a miniatura da OSCBR como imagem do produto</label></div>':'')+
    '<div class="row"><button class="primary" type="submit">Cadastrar inativo</button><button type="button" data-resolve-close>Cancelar</button></div></form>';
   panel.querySelector('input[name="name"]')?.focus();
  }
@@ -626,22 +626,22 @@ function openResolutionPanel(row,mode){
 async function runCosmosResearch(id){
  if(busy)return;
  const row=rows.find(x=>x.id===id);if(!row)return;
- setBusy(true);msg("Consultando o Cosmos pelo EAN…");
+ setBusy(true);msg("Consultando a OSCBR pelo EAN…");
  try{
   const data=await call("cosmos_research",{id});
   const updated={...row,cosmos_research:data.research};
   updateRowLocal(updated,null);
   if(data.research?.status==="review"){
    openResolutionPanel(updated,"create");
-   msg("Dados encontrados no Cosmos. Confira a sugestão e cadastre apenas se estiver correta.");
-  }else msg("O Cosmos não localizou produto para este EAN.");
+   msg("Dados encontrados na OSCBR. Confira a sugestão e cadastre apenas se estiver correta.");
+  }else msg("A OSCBR não localizou produto para este EAN.");
  }catch(e){
   if(["leitura_nao_esta_na_fila","leitura_nao_encontrada"].includes(e.message)){
    try{await load()}catch{}
    msg("Esta leitura mudou em outra sessão. A fila foi atualizada; consulte o status atual.");
-  }else if(["limite_ou_frequencia_cosmos","limite_diario_cosmos_atingido"].includes(e.message)){
-   msg("O Cosmos limitou as consultas. Aguarde a liberação da franquia antes de tentar novamente.",true);
-  }else msg("Não foi possível pesquisar no Cosmos: "+e.message,true);
+  }else if(["limite_ou_frequencia_oscb","limite_diario_oscb_atingido"].includes(e.message)){
+   msg("A OSCBR limitou as consultas. Aguarde a liberação da franquia antes de tentar novamente.",true);
+  }else msg("Não foi possível pesquisar na OSCBR: "+e.message,true);
  }
  finally{setBusy(false)}
 }
