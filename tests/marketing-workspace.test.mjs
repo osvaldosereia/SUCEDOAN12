@@ -6,6 +6,7 @@ const polish=readFileSync(new URL('../vitrine/admin/marketing/marketing-polish.j
 const template=readFileSync(new URL('../vitrine/admin/marketing/template-center.js',import.meta.url),'utf8');
 const campaign=readFileSync(new URL('../vitrine/admin/marketing/campaign-center.js',import.meta.url),'utf8');
 const postSale=readFileSync(new URL('../vitrine/admin/marketing/post-sale-center.js',import.meta.url),'utf8');
+const campaignEntry=readFileSync(new URL('../vitrine/admin/marketing/campaign-entry.js',import.meta.url),'utf8');
 const worker=readFileSync(new URL('../supabase/functions/whatsapp-marketing-worker-v1/index.ts',import.meta.url),'utf8');
 const orders=readFileSync(new URL('../vitrine/admin/runtime-src/08-orders-detail.part.js.txt',import.meta.url),'utf8');
 const audienceApi=readFileSync(new URL('../supabase/functions/admin-marketing-audiences-v1/index.ts',import.meta.url),'utf8');
@@ -17,6 +18,11 @@ test('Pós-venda opens its own view instead of redirecting to Orders',()=>{
   assert.match(polish,/if\(view==='post_sale'\)\{[\s\S]{0,180}loadPostSaleModule\(\)[\s\S]{0,120}mountPostSaleView/);
   assert.doesNotMatch(polish,/if\(view==='post_sale'\)return document\.querySelector\('\[data-tab="orders"\]'\)/);
   assert.match(polish,/data-marketing-overview-card="post_sale"[^\n]*open\('post_sale'\)/);
+});
+
+test('Marketing coordinator invalidates cached view code after navigation changes',()=>{
+  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v2/);
+  assert.match(campaignEntry,/marketing-polish\.css\?v=marketing-polish-v2/);
 });
 
 test('overview New template action opens the Meta template creator',()=>{
