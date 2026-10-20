@@ -159,7 +159,7 @@ async function openOverviewView(root,view,{create=false}={}){
       return module?.mountStrategyView?.(root);
     }
     if(view==='campaigns'){
-      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v6');
+      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v7');
       return entry?.openCampaigns?.();
     }
     if(view==='templates'){
