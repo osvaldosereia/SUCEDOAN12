@@ -51,13 +51,13 @@ function loadRecentCampaignModule(){
 
 function loadPostSaleModule(){
   if(window.DAMarketingPostSale?.mountPostSaleView)return Promise.resolve(window.DAMarketingPostSale);
-  if(!postSaleModulePromise)postSaleModulePromise=import('/vitrine/admin/marketing/post-sale-center.js?v=marketing-post-sale-v1');
+  if(!postSaleModulePromise)postSaleModulePromise=import('/vitrine/admin/marketing/post-sale-center.js?v=marketing-post-sale-v2');
   return postSaleModulePromise;
 }
 
 function loadRepurchaseModule(){
   if(window.DAMarketingRepurchase?.mountRepurchaseView)return Promise.resolve(window.DAMarketingRepurchase);
-  if(!repurchaseModulePromise)repurchaseModulePromise=import('/vitrine/admin/marketing/repurchase-center.js?v=marketing-repurchase-v1');
+  if(!repurchaseModulePromise)repurchaseModulePromise=import('/vitrine/admin/marketing/repurchase-center.js?v=marketing-repurchase-v2');
   return repurchaseModulePromise;
 }
 
@@ -151,15 +151,15 @@ async function openOverviewView(root,view,{create=false}={}){
       return module?.mountRepurchaseView?.(root);
     }
     if(view==='strategy'){
-      const module=window.DAMarketingStrategyCenter||await import('/vitrine/admin/marketing/strategy-center.js?v=marketing-strategy-v1');
+      const module=window.DAMarketingStrategyCenter||await import('/vitrine/admin/marketing/strategy-center.js?v=marketing-strategy-v2');
       return module?.mountStrategyView?.(root);
     }
     if(view==='campaigns'){
-      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v5');
+      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v6');
       return entry?.openCampaigns?.();
     }
     if(view==='templates'){
-      const module=window.DAMarketingTemplateCenter||await import('/vitrine/admin/marketing/template-center.js?v=meta-template-stable-v1');
+      const module=window.DAMarketingTemplateCenter||await import('/vitrine/admin/marketing/template-center.js?v=marketing-template-center-v2');
       await module?.mountTemplateView?.(root);
       if(create)queueMicrotask(()=>root.querySelector('[data-template-create]')?.click());
       return;
