@@ -14,7 +14,7 @@ assert.ok(style.includes(".basket-option-carousel-buttons button{min-width:48px;
 assert.ok(style.includes("overflow-x:auto"),"the brand carousel remains horizontally scrollable");
 
 const rendererStart=html.indexOf("function moldItemOptions(");
-const rendererEnd=html.indexOf("function moldExtraRow(",rendererStart);
+const rendererEnd=html.indexOf("function moldExtraThemeRow(",rendererStart);
 assert.ok(rendererStart>=0&&rendererEnd>rendererStart,"basket option renderer is present");
 const optionRendererSource=html.slice(rendererStart,rendererEnd).trim();
 const renderOptions=new Function("esc","money","safeImage","moldSelectedProduct","moldOptionShortName",optionRendererSource+"; return moldItemOptions;")(
