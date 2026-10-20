@@ -18,7 +18,7 @@ assert.match(campaignList,/async function loadRecentCampaigns/,'lista de campanh
 assert.match(campaignList,/export \{enhanceCampaignList,loadRecentCampaigns\}/,'helper de campanhas recentes deve ser exportado explicitamente');
 assert.match(polish,/data-marketing-overview-actions/,'overview deve ter ações principais próprias');
 assert.match(polish,/Nova campanha/,'overview deve oferecer CTA para nova campanha');
-assert.match(polish,/data-marketing-view="templates"/,'templates devem continuar acessíveis no menu Mais');
+assert.match(polish,/templates:'Templates Meta'/,'Templates Meta deve permanecer na navegação principal');
 assert.match(polish,/Radar de Marketing|marketing-section/,'polish deve reconhecer o conteúdo legado para retirá-lo do primeiro nível');
 
 assert.match(css,/\.marketing-overview-kpis\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'desktop deve mostrar quatro cards em linha quando houver espaço');
