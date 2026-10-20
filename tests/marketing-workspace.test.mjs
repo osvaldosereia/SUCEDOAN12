@@ -5,6 +5,8 @@ import {readFileSync,existsSync} from 'node:fs';
 const polish=readFileSync(new URL('../vitrine/admin/marketing/marketing-polish.js',import.meta.url),'utf8');
 const template=readFileSync(new URL('../vitrine/admin/marketing/template-center.js',import.meta.url),'utf8');
 const campaign=readFileSync(new URL('../vitrine/admin/marketing/campaign-center.js',import.meta.url),'utf8');
+const repurchase=readFileSync(new URL('../vitrine/admin/marketing/repurchase-center.js',import.meta.url),'utf8');
+const strategy=readFileSync(new URL('../vitrine/admin/marketing/strategy-center.js',import.meta.url),'utf8');
 const postSale=readFileSync(new URL('../vitrine/admin/marketing/post-sale-center.js',import.meta.url),'utf8');
 const campaignEntry=readFileSync(new URL('../vitrine/admin/marketing/campaign-entry.js',import.meta.url),'utf8');
 const worker=readFileSync(new URL('../supabase/functions/whatsapp-marketing-worker-v1/index.ts',import.meta.url),'utf8');
@@ -36,10 +38,15 @@ test('Pós-venda opens its own view instead of redirecting to Orders',()=>{
 });
 
 test('Marketing coordinator invalidates cached view code after navigation changes',()=>{
-  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v2/);
+  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v3/);
   assert.match(campaignEntry,/marketing-polish\.css\?v=marketing-polish-v2/);
   assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v2/);
   assert.match(adminIndex,/admin-runtime\.js\?v=marketing-workspace-v2/);
+});
+
+test('Marketing campaign-entry cache key is current in every secondary navigation module',()=>{
+  for(const source of [postSale,repurchase,strategy,polish])assert.match(source,/campaign-entry\.js\?v=marketing-campaign-entry-v5/);
+  assert.doesNotMatch([postSale,repurchase,strategy,polish].join('\n'),/campaign-entry\.js\?v=marketing-campaign-entry-v4/);
 });
 
 test('overview New template action opens the Meta template creator',()=>{
