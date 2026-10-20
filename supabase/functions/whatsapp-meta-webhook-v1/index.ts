@@ -240,7 +240,7 @@ async function enqueueAnaForInbound(message: any, ingestResult: any) {
 
 async function applyMarketingOptOut(message: any, ingestResult: any) {
   if (message?.event_type !== "message.received" || message?.message?.direction !== "inbound") return null;
-  if (!["text", "button", "interactive"].includes(String(message?.message?.type || ""))) return null;
+  if (!["text", "button", "interactive"].includes(String(message?.message?.message_type || ""))) return null;
 
   // Read the persisted message. For a retried Meta callback, resolve it by its
   // WAMID so a transient database failure cannot lose the opt-out event.
