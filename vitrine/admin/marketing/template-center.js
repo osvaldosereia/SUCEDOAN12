@@ -368,3 +368,5 @@ observer.observe(document.documentElement,{subtree:true,childList:true});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 
 window.DAMarketingTemplateCenter={mount,mountTemplateView};
+
+export {mountTemplateView};
