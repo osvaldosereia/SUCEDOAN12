@@ -106,8 +106,5 @@ revoke all on public.oscb_gtin_research_attempts_v1 from public, anon, authentic
 grant select, insert, update, delete on public.oscb_gtin_research_cache_v1 to service_role;
 grant select, insert, update, delete on public.oscb_gtin_research_attempts_v1 to service_role;
 
--- Leave the automation switch off. Manual, deduplicated queries have a
--- conservative ceiling of 45/day, reserving five of the visible Bronze quota.
-update public.cosmos_research_config
-   set daily_limit=45,updated_at=now()
- where id=true;
+-- Leave the automation switch off. The runtime applies a conservative ceiling
+-- of 45/day, reserving five of the visible Bronze quota.
