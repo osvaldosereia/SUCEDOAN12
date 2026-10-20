@@ -9,7 +9,7 @@ function ensureMarketingPolish(){
   if(!document.querySelector('link[data-da-marketing-polish]')){
     const link=document.createElement('link');link.rel='stylesheet';link.href='/vitrine/admin/marketing/marketing-polish.css?v=marketing-polish-v2';link.dataset.daMarketingPolish='1';document.head.appendChild(link);
   }
-  if(!marketingPolishPromise)marketingPolishPromise=import('/vitrine/admin/marketing/marketing-polish.js?v=marketing-polish-v6').catch(error=>{console.warn('marketing-polish-load',String(error?.message||error).slice(0,160));return null});
+  if(!marketingPolishPromise)marketingPolishPromise=import('/vitrine/admin/marketing/marketing-polish.js?v=marketing-polish-image-bank-v1').catch(error=>{console.warn('marketing-polish-load',String(error?.message||error).slice(0,160));return null});
   return marketingPolishPromise;
 }
 function ensureCampaignSimple(){if(!campaignSimplePromise)campaignSimplePromise=import('/vitrine/admin/marketing/campaign-simple-ui.js?v=marketing-campaign-simple-v2').catch(error=>{console.warn('marketing-campaign-simple-load',String(error?.message||error).slice(0,160));return null});return campaignSimplePromise}

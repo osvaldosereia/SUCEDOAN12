@@ -39,7 +39,7 @@ function loadConsentModule(){
 
 function loadTemplateSimpleModule(){
   if(window.DAMarketingTemplateSimple?.enhanceTemplateCenter)return Promise.resolve(window.DAMarketingTemplateSimple);
-  if(!templateSimpleModulePromise)templateSimpleModulePromise=import('/vitrine/admin/marketing/template-type-picker.js?v=marketing-template-stable-v1');
+  if(!templateSimpleModulePromise)templateSimpleModulePromise=import('/vitrine/admin/marketing/template-type-picker.js?v=marketing-image-bank-v1');
   return templateSimpleModulePromise;
 }
 
@@ -163,7 +163,7 @@ async function openOverviewView(root,view,{create=false}={}){
       return entry?.openCampaigns?.();
     }
     if(view==='templates'){
-      const module=window.DAMarketingTemplateCenter||await import('/vitrine/admin/marketing/template-center.js?v=marketing-template-center-v2');
+      const module=window.DAMarketingTemplateCenter||await import('/vitrine/admin/marketing/template-center.js?v=marketing-image-bank-v1');
       await module?.mountTemplateView?.(root);
       if(create)queueMicrotask(()=>root.querySelector('[data-template-create]')?.click());
       return;
