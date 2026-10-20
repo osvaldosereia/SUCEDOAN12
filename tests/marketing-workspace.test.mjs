@@ -96,3 +96,8 @@ test('monthly replenishment uses cadence states, offers recalculation, and never
   assert.match(audienceApi,/marketing_repurchase_state_v1/);
   assert.doesNotMatch(audienceApi,/marketing_repurchase_runtime_v1[\s\S]{0,80}update\(/);
 });
+
+test('template center exposes the mount function to dynamically imported navigation modules',()=>{
+  assert.match(template,/async function mountTemplateView\\(/);
+  assert.match(template,/export \\{mountTemplateView\\}/);
+});
