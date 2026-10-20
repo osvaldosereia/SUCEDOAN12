@@ -134,7 +134,7 @@ async function openMarketingView(root,view){
   if(view==='overview')return document.querySelector('[data-tab="marketing"]')?.click();
   if(view==='post_sale')return mountPostSaleView(root);
   if(view==='repurchase')return import('/vitrine/admin/marketing/repurchase-center.js?v=marketing-repurchase-v1').then(module=>module.mountRepurchaseView(root));
-  if(view==='campaigns')return (await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v4')).openCampaigns();
+  if(view==='campaigns')return (await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v5')).openCampaigns();
   if(view==='templates')return (await import('/vitrine/admin/marketing/template-center.js?v=meta-template-stable-v1')).mountTemplateView(root);
   if(view==='strategy')return (await import('/vitrine/admin/marketing/strategy-center.js?v=marketing-strategy-v1')).mountStrategyView(root);
   if(view==='audiences')return (await import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1')).mountAudienceView(root);
