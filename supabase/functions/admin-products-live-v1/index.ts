@@ -61,7 +61,7 @@ function mp(p:any){
     image_ai_error:p.image_ai_error||null,image_ai_validation:p.image_ai_validation||null,
     expiration_date:p.validity_date||null,next_expiration_date:o.next_expiration_date||p.validity_date||null,active_lot_count:Number(o.active_lot_count||0),linked_kits:Array.isArray(o.linked_kits)?o.linked_kits:[],auto_expiry_offer_enabled:m.auto_expiry_offer_enabled===true,
     lot_tracking_complete:m.lot_tracking_complete===true||m.lot_tracking_complete==="true",
-    deactivation_reason:m.deactivation_reason||null,deactivated_at:m.deactivated_at||null,updated_at:p.updated_at,
+    deactivation_reason:m.deactivation_reason||null,deactivated_at:m.deactivated_at||null,created_at:p.created_at,updated_at:p.updated_at,
     packaging:p.packaging||"",subcategory:p.subcategory||"",detailed_subcategory:p.subsubcategory||"",
     category:p.sales_category||p.storefront_category||p.category||"",
     gondola_number:p.gondola&&/^\d+$/.test(String(p.gondola))?Number(p.gondola):null,shelf_label:p.shelf||null,offer:offer(p)
@@ -288,7 +288,7 @@ async function productOperationalMetaMap(ids:string[]){
   return out;
 }
 function productSortKey(v:any){
-  const x=tx(v,30);return new Set(["name_asc","name_desc","updated_desc","updated_asc","expiry_asc","expiry_desc","expiry_expired","gondola_asc","gondola_desc"]).has(x)?x:"";
+  const x=tx(v,30);return new Set(["name_asc","name_desc","created_desc","updated_desc","updated_asc","expiry_asc","expiry_desc","expiry_expired","gondola_asc","gondola_desc"]).has(x)?x:"";
 }
 function filterProductsByValidity(q:any,sort:string,today:string){
   // Use the local business date; products expiring today are NOT expired.
@@ -303,6 +303,9 @@ function productRowsSort(rows:any[],sort:string,lotStatus:string,memberIds:Set<s
       const aa=memberIds?.has(String(a.id))?0:1,bb=memberIds?.has(String(b.id))?0:1;if(aa!==bb)return aa-bb;
       const ad=dt(a.validity_date)||"9999-12-31",bd=dt(b.validity_date)||"9999-12-31";if(ad!==bd)return ad.localeCompare(bd);
       if((a.is_active!==false)!==(b.is_active!==false))return a.is_active!==false?-1:1;
+    }
+    if(sort==="created_desc"){
+      const av=String(a.created_at||""),bv=String(b.created_at||"");if(av!==bv)return bv.localeCompare(av);
     }
     if(sort==="updated_desc"||sort==="updated_asc"){
       const av=String(a.updated_at||""),bv=String(b.updated_at||"");if(av!==bv)return sort==="updated_desc"?bv.localeCompare(av):av.localeCompare(bv);
@@ -343,7 +346,8 @@ async function products(u:URL){
     return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s,__ops_meta:o})}),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
   }
   let q=filterProductsByValidity(db.from("products").select("*"),sort,today);
-  if(sort==="updated_desc")q=q.order("updated_at",{ascending:false}).order("name");
+  if(sort==="created_desc")q=q.order("created_at",{ascending:false}).order("name");
+  else if(sort==="updated_desc")q=q.order("updated_at",{ascending:false}).order("name");
   else if(sort==="updated_asc")q=q.order("updated_at",{ascending:true}).order("name");
   else if(sort==="expiry_asc")q=q.order("validity_date",{ascending:true,nullsFirst:false}).order("name");
   else if(sort==="expiry_desc"||sort==="expiry_expired")q=q.order("validity_date",{ascending:false,nullsFirst:false}).order("name");

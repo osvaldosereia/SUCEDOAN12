@@ -2000,7 +2000,7 @@
         '<select id="productSource" aria-label="Origem"><option value="">Todas as origens</option><option value="ean_capture_admin">Cadastrados pelo leitor EAN</option></select>'+
         '<select id="productBasketKit" aria-label="Cestas e kits"><option value="">Todos os produtos</option><option value="true">Somente produtos de cestas/kits</option></select>'+
         '<select id="productLotStatus" aria-label="Controle de validade"><option value="">Todos os controles de validade</option><option value="pending">Lotes/FEFO pendente · prioridade automática</option><option value="complete">Lotes/FEFO completo</option></select>'+
-        '<select id="productSort" aria-label="Ordenação"><option value="">Ordenação padrão</option><option value="name_asc">Nome A–Z</option><option value="name_desc">Nome Z–A</option><option value="updated_desc">Atualizados recentemente</option><option value="updated_asc">Não atualizados recentemente</option><option value="expiry_asc">Validade mais próxima</option><option value="expiry_desc">Validade mais distante</option><option value="expiry_expired">Somente produtos vencidos</option><option value="gondola_asc">Gôndola 1→30</option><option value="gondola_desc">Gôndola 30→1</option></select>'+
+        '<select id="productSort" aria-label="Ordenação"><option value="">Ordenação padrão</option><option value="name_asc">Nome A–Z</option><option value="name_desc">Nome Z–A</option><option value="created_desc">Cadastros mais recentes</option><option value="updated_desc">Atualizados recentemente</option><option value="updated_asc">Não atualizados recentemente</option><option value="expiry_asc">Validade mais próxima</option><option value="expiry_desc">Validade mais distante</option><option value="expiry_expired">Somente produtos vencidos</option><option value="gondola_asc">Gôndola 1→30</option><option value="gondola_desc">Gôndola 30→1</option></select>'+
         '<button class="secondary" id="productSearchBtn">Buscar</button>'+
       '</div>'+
       '<div class="panel" id="productsPanel"><div class="list-head products-layout"><span></span><span>Produto</span><span>Venda / custo</span><span>Estoque / validade</span><span>Status / kits</span><span>Ações</span></div><div id="productRows"><div class="loading">Carregando…</div></div><div class="more" id="productMore"></div></div>';
@@ -2313,9 +2313,10 @@
   }
   function productMobileCard(p){
     const price=(Number(p.sale_price_cents||0)/100).toFixed(2).replace('.',','),cost=(Number(p.cost_cents||0)/100).toFixed(2).replace('.',','),g=Number(p.gondola_number||0),identity=p.gtin||p.sku||'Sem EAN';
+    const recentLabel=state.productSort==='created_desc'&&p.created_at?'<span class="mobile-product-card-id">Cadastro: '+esc(dateTime(p.created_at))+'</span>':'';
     const gondolas='<option value="">—</option>'+Array.from({length:30},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(g===n?'selected':'')+'>'+n+'</option>').join('');
     return '<article class="mobile-product-card" data-mobile-product-card="'+esc(p.id)+'">'+
-      '<div class="mobile-product-card-head"><img class="mobile-product-thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy"><div><div class="mobile-product-card-name">'+esc(p.name)+'</div><span class="mobile-product-card-id">'+esc(identity)+'</span></div></div>'+
+      '<div class="mobile-product-card-head"><img class="mobile-product-thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy"><div><div class="mobile-product-card-name">'+esc(p.name)+'</div><span class="mobile-product-card-id">'+esc(identity)+'</span>'+recentLabel+'</div></div>'+
       '<label class="mobile-product-switch"><input type="checkbox" data-mobile-product-active="'+esc(p.id)+'" '+(p.active!==false?'checked':'')+'><span class="mobile-product-switch-track"><span class="mobile-product-switch-knob"></span></span><b data-mobile-product-active-label="'+esc(p.id)+'">'+(p.active!==false?'ATIVO':'INATIVO')+'</b></label>'+
       '<div class="mobile-product-quick-grid">'+
         '<label class="mobile-product-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label>'+
@@ -2428,6 +2429,7 @@
 
   function productRow(p){
     const classification=[categoryLabel(p.category),p.detailed_subcategory||p.subcategory].filter(Boolean).join(' › ');
+    const recentLabel=state.productSort==='created_desc'&&p.created_at?'<span class="sub product-created-label">Cadastro: '+esc(dateTime(p.created_at))+'</span>':'';
     const identity=[p.sku,p.gtin,p.packaging].filter(Boolean).join(' · ');
     const expiredInactive=p.active===false&&p.deactivation_reason==='expired';
     const statusTitle=p.active?'Clique para desativar':expiredInactive?'Vencido: corrija a validade antes de ativar':'Clique para ativar';
@@ -2439,7 +2441,7 @@
       :'<label class="product-inline-field"><span>Validade</span><input data-mobile-product-field="expiration" data-product-id="'+esc(p.id)+'" type="date" value="'+esc(expiry)+'"></label>';
     return '<div class="list-row products-layout product-operational-row">'+
       '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
-      '<div class="product-main"><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<span class="sub"><span class="pill '+(p.lot_tracking_complete?'':'warn')+'">'+(p.lot_tracking_complete?'Lotes controlados':'Validade simples')+'</span></span></div>'+
+      '<div class="product-main"><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+recentLabel+'<span class="sub"><span class="pill '+(p.lot_tracking_complete?'':'warn')+'">'+(p.lot_tracking_complete?'Lotes controlados':'Validade simples')+'</span></span></div>'+
       '<div class="product-quick-fields"><label class="product-inline-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label><label class="product-inline-field"><span>Custo</span><input data-mobile-product-field="cost" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(cost)+'"></label><span class="mobile-product-save-status saved product-save-inline" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span></div>'+
       '<div class="product-stock-validity"><label class="product-inline-field"><span>Estoque total</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+validity+'<span class="product-stock-breakdown-inline">'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+' avulso · '+esc(fmtQty(p.basket_locked_quantity||0))+' em cestas/kits</span></div>'+
       '<div class="product-operational-status"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(desktopStatus)+'</button>'+productKitLinks(p)+'</div>'+
