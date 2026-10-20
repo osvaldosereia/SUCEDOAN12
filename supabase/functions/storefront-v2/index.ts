@@ -145,12 +145,14 @@ async function publicBasketExtras(legacyExtras:any[]=[],themeId:string){
 }
 async function basketExtraProducts(basketId:string,themeId:string){
   const id=uid(basketId),theme=txt(themeId,100);if(!id||!theme)return {error:"invalid_basket_extra_request",status:400};
-  const [basketQ,moldQ]=await Promise.all([
+  const [basketQ,moldQ,legacyQ]=await Promise.all([
     db.from("basket_templates").select("id,is_active").eq("id",id).maybeSingle(),
-    db.from("basket_molds").select("metadata").eq("basket_id",id).maybeSingle()
+    db.from("basket_molds").select("metadata").eq("basket_id",id).maybeSingle(),
+    db.from("basket_commercial_catalog_v1").select("commercial_id,model_active,category_active,public_lot_id,public_available").eq("source_kind","basket").eq("commercial_id",id).maybeSingle()
   ]);
-  if(basketQ.error)throw basketQ.error;if(moldQ.error)throw moldQ.error;
-  if(!basketQ.data||basketQ.data.is_active!==true)return {error:"basket_not_found",status:404};
+  if(basketQ.error)throw basketQ.error;if(moldQ.error)throw moldQ.error;if(legacyQ.error)throw legacyQ.error;
+  const visibleTemplate=basketQ.data?.is_active===true,visibleLegacy=legacyQ.data?.model_active===true&&legacyQ.data?.category_active===true&&Boolean(legacyQ.data?.public_lot_id)&&Number(legacyQ.data?.public_available||0)>0;
+  if(!visibleTemplate&&!visibleLegacy)return {error:"basket_not_found",status:404};
   const legacy=Array.isArray(moldQ.data?.metadata?.optional_items)?moldQ.data.metadata.optional_items:[];
   return {ok:true,extras:await publicBasketExtras(legacy,theme)};
 }
