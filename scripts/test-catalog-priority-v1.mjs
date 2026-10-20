@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const ui = fs.readFileSync(new URL('./ean.html', import.meta.url), 'utf8');
-const ean = fs.readFileSync(new URL('./ean.ts', import.meta.url), 'utf8');
-const products = fs.readFileSync(new URL('./products.ts', import.meta.url), 'utf8');
-const admin = fs.readFileSync(new URL('./admin-runtime.js', import.meta.url), 'utf8');
-const migration = fs.readFileSync(new URL('./oscb_gtin_research_cache_v1.sql', import.meta.url), 'utf8');
+const root = new URL('../', import.meta.url);
+const ui = fs.readFileSync(new URL('vitrine/admin/leitura-ean/index.html', root), 'utf8');
+const ean = fs.readFileSync(new URL('supabase/functions/admin-ean-capture-v1/index.ts', root), 'utf8');
+const products = fs.readFileSync(new URL('supabase/functions/admin-products-live-v1/index.ts', root), 'utf8');
+const admin = fs.readFileSync(new URL('vitrine/admin/admin-runtime.js', root), 'utf8');
+const migration = fs.readFileSync(new URL('supabase/migrations/20261021100000_oscb_gtin_research_cache_v1.sql', root), 'utf8');
 
 assert.match(admin, /<option value="created_desc">Cadastros mais recentes<\/option>/,
   'admin should offer a creation-date sort distinct from last updated');
