@@ -544,7 +544,11 @@ async function load(append=false){
 function cosmosReviewHtml(research){
  if(!research)return "";
  if(research.status==="not_found")return '<div class="cosmos-review"><b>Cosmos:</b> Nenhum produto localizado para este EAN.</div>';
- if(research.status!=="review")return '<div class="cosmos-review"><b>Cosmos:</b> Pesquisa com status '+esc(research.status||"indisponível")+'. Tente novamente mais tarde.</div>';
+ if(research.status!=="review"){
+  if(research.status==="error"&&research.http_status===429)return '<div class="cosmos-review"><b>Cosmos:</b> Limite de consultas atingido (HTTP 429). Aguarde a liberação da franquia antes de tentar novamente.</div>';
+  if(research.status==="error"&&(research.http_status===401||research.http_status===403))return '<div class="cosmos-review"><b>Cosmos:</b> A credencial foi recusada. Confira o token configurado no Supabase.</div>';
+  return '<div class="cosmos-review"><b>Cosmos:</b> Pesquisa com status '+esc(research.status||"indisponível")+'. Tente novamente mais tarde.</div>';
+ }
  const p=research.proposal||{};
  const fields=[
   p.brand?'<div><b>Marca:</b> '+esc(p.brand)+'</div>':"",
@@ -635,6 +639,8 @@ async function runCosmosResearch(id){
   if(["leitura_nao_esta_na_fila","leitura_nao_encontrada"].includes(e.message)){
    try{await load()}catch{}
    msg("Esta leitura mudou em outra sessão. A fila foi atualizada; consulte o status atual.");
+  }else if(["limite_ou_frequencia_cosmos","limite_diario_cosmos_atingido"].includes(e.message)){
+   msg("O Cosmos limitou as consultas. Aguarde a liberação da franquia antes de tentar novamente.",true);
   }else msg("Não foi possível pesquisar no Cosmos: "+e.message,true);
  }
  finally{setBusy(false)}
