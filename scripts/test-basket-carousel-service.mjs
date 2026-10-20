@@ -57,4 +57,14 @@ assert.match(home,/basket_commercial_catalog_v1/);assert.match(home,/public_name
 assert.match(detail,/basket_commercial_catalog_v1/);assert.match(detail,/splitLotItems/);assert.match(detail,/basket_stock_lot_items/);
 assert.match(quote,/basket_commercial_catalog_v1/);assert.match(quote,/let total=Number\(c\.sale_price\|\|0\)/);
 assert.doesNotMatch(home,/basket_split_availability_v1|basket_current_lot_v1/);
+// The public basket detail stays small: optional extras are fetched only after opening a theme.
+const moldDetail=source.slice(source.indexOf('async function moldDetail('),source.indexOf('async function moldQuote('));
+assert.doesNotMatch(detail,/publicBasketExtras\(/,'opening a legacy basket must not fetch optional product records');
+assert.doesNotMatch(moldDetail,/publicBasketExtras\(/,'opening a mold basket must not fetch optional product records');
+assert.match(source,/async function basketExtraProducts\(/,'extra products have a dedicated on-demand loader');
+assert.match(source,/action===["']basket_extra_products["']/,'the public API exposes the on-demand extras action');
+assert.match(root,/basket_extra_products/,'opening an extra theme requests its products');
+assert.match(root,/BASKET_INITIAL_RENDER_COUNT/,'basket editor renders a small initial batch');
+assert.match(root,/basket-progressive-sentinel/,'basket editor has a scroll sentinel for subsequent batches');
+assert.match(carousel,/A partir de:/,'basket cards label the displayed amount as a starting price');
 console.log('Basket carousel service: canonical lot name/price, composition and stock source passed');
