@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
 
 const polish=readFileSync(new URL('../vitrine/admin/marketing/marketing-polish.js',import.meta.url),'utf8');
 const template=readFileSync(new URL('../vitrine/admin/marketing/template-center.js',import.meta.url),'utf8');
@@ -112,6 +113,12 @@ test('Marketing refreshes the template view and all parent module cache keys',()
   assert.match(polish,/post-sale-center\.js\?v=marketing-post-sale-v2/);
   assert.match(polish,/repurchase-center\.js\?v=marketing-repurchase-v2/);
   assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v4/);
+});
+
+test('Marketing Strategy module parses as an ES module',()=>{
+  const path=new URL('../vitrine/admin/marketing/strategy-center.js',import.meta.url);
+  const result=spawnSync(process.execPath,['--check','--input-type=module'],{input:readFileSync(path,'utf8'),encoding:'utf8'});
+  assert.equal(result.status,0,result.stderr||result.stdout);
 });
 
 test('template center exposes the mount function to dynamically imported navigation modules',()=>{
