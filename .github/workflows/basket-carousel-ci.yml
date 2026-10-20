@@ -9,6 +9,7 @@ on:
       - 'supabase/sql/2026100*_basket_*.sql'
       - 'supabase/migrations/2026100*_basket_*.sql'
       - 'scripts/test-basket-carousel-*.mjs'
+      - 'scripts/test-basket-extra-carousel-scroll.mjs'
       - 'scripts/test-basket-storefront-*.mjs'
       - 'scripts/test-basket-unified-*.mjs'
       - 'scripts/test-home-basket-size-photos-v1.mjs'
@@ -41,6 +42,10 @@ jobs:
       - run: node scripts/test-home-basket-size-photos-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-carousel-service.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
+      - name: Verify extra product carousels scroll independently
+        run: node scripts/test-basket-extra-carousel-scroll.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-order-engine.mjs
       - run: node scripts/test-basket-carousel-browser.mjs

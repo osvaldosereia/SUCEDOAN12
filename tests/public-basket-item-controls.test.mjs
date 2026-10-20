@@ -54,4 +54,12 @@ for (const file of files) {
     assert.match(html,/\.sheet-scroll\s*\{[^}]*min-height:\s*0/s);
     assert.match(html,/\.basket-hero-compact\s*\{[^}]*grid-template-columns:\s*1fr/s);
   });
+
+test('optional product carousel stays inside the basket modal and scrolls horizontally', () => {
+  const html = readFileSync(new URL('../vitrine/index.html', import.meta.url), 'utf8');
+  assert.match(html, /\.basket-extras\{[^}]*grid-template-columns:minmax\(0,1fr\)/, 'the extras grid must not size itself to the full product row');
+  assert.match(html, /\.basket-extra-theme\{[^}]*min-width:0/, 'theme cards must be allowed to shrink inside the modal');
+  assert.match(html, /\.basket-extra-products\{[^}]*width:100%;min-width:0;max-width:100%;[^}]*overflow-x:auto/, 'the product row must be constrained and horizontally scrollable');
+  assert.match(html, /\.basket-extra-product\{[^}]*flex:0 0 150px/, 'product cards must remain fixed-width carousel items');
+});
 }
