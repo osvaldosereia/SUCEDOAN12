@@ -10,6 +10,8 @@ const migration = fs.readFileSync(new URL('supabase/migrations/20261021100000_os
 
 assert.match(admin, /<option value="created_desc">Cadastros mais recentes<\/option>/,
   'admin should offer a creation-date sort distinct from last updated');
+assert.match(admin, /productSort:'created_desc'/,
+  'the product catalog should open with recent registrations first');
 assert.match(products, /"created_desc"/,
   'products API should accept the creation-date sort');
 assert.match(products, /sort==="created_desc"\)q=q\.order\("created_at",\{ascending:false\}\)/,
