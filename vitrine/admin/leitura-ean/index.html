@@ -121,6 +121,7 @@ header small{display:none!important}
 #manual{margin-top:5px}
 #entryEditor{padding:8px;margin-top:6px;border-width:1px}
 #entryEditor strong{font-size:18px}
+#eanValue{min-height:40px;padding:5px 8px;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.5px}
 #entryEditor .row button{min-height:30px;padding:3px 8px}
 .quantity-row{display:grid;grid-template-columns:36px minmax(0,1fr) 36px 36px 36px;gap:5px;align-items:end;margin-top:6px}
 .quantity-row label{min-width:0;font-size:11px}
@@ -166,6 +167,7 @@ header small{display:none!important}
 .entry-right{grid-column:2;max-width:none;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;text-align:right}
 .entry-right>div{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .edit-btn{min-height:40px;padding:8px 12px;margin-top:0;font-size:13px}
+.delete-btn{background:#fde8e7;color:#9d241e}
 .resolution-actions,.resolution-panel{grid-column:1/-1;width:100%;min-width:0}
 .resolution-actions{grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-top:0}
 .resolution-actions button,.resolution-actions a{min-height:44px;padding:9px 10px;font-size:13px;line-height:1.25}
@@ -220,7 +222,7 @@ header small{display:none!important}
     <label class="photo-choice" for="barcodePhoto">📸 Ler foto do código <input id="barcodePhoto" type="file" accept="image/*" capture="environment" aria-label="Fotografar código EAN"></label>
   </details>
   <form id="entryEditor" hidden>
-    <div class="row between"><div><small id="editingLabel">EAN lido</small><div><strong id="currentEan"></strong></div></div><button type="button" id="cancelEdit">Cancelar</button></div>
+    <div class="row between"><div><small id="editingLabel">EAN lido</small><div><input id="eanValue" type="text" inputmode="numeric" autocomplete="off" maxlength="14" aria-label="EAN da leitura" required></div></div><button type="button" id="cancelEdit">Cancelar</button></div>
     <div class="quantity-row">
       <button type="button" id="qtyMinus">−</button>
       <label>Quantidade <input id="quantity" type="number" inputmode="decimal" min=".001" max="999999" step=".001" value="1" required></label>
@@ -352,7 +354,7 @@ function codeDetected(raw){
  if(paused||busy||missingRecordId||code.length<8||code.length>14)return;
  paused=true;
  currentEan=code;editingId="";pendingId=uuid();
- $("currentEan").textContent=code;
+ $("eanValue").value=code;
  $("editingLabel").textContent="EAN lido";
  $("quantity").value="1";$("expiry").value="";$("expiryField").hidden=true;$("toggleValidity").textContent="+ Validade (opcional)";
  $("entryEditor").hidden=false;$("eanInput").value="";
@@ -496,14 +498,17 @@ $("skipPhoto").onclick=()=>{
 };
 $("entryEditor").addEventListener("submit",async(event)=>{
  event.preventDefault();if(busy||missingRecordId)return;
+ const ean=normalizeEan($("eanValue").value);
+ if(!/^\d{8,14}$/.test(ean)){msg("Informe um EAN numérico entre 8 e 14 dígitos.",true);return}
+ $("eanValue").value=ean;currentEan=ean;
  const n=Number($("quantity").value);
  if(!Number.isFinite(n)||n<=0||n>999999||Math.round(n*1000)!==n*1000){
   msg("Quantidade inválida. Use até três casas decimais.",true);return;
  }
  if(!editingId&&!pendingId)pendingId=uuid();
  const editing=Boolean(editingId);
- const payload=editing?{id:editingId,quantity:n,expires_on:$("expiry").value||null}:
-  {client_entry_id:pendingId,ean:currentEan,quantity:n,expires_on:$("expiry").value||null};
+ const payload=editing?{id:editingId,ean,quantity:n,expires_on:$("expiry").value||null}:
+  {client_entry_id:pendingId,ean,quantity:n,expires_on:$("expiry").value||null};
  setBusy(true);msg("Salvando e verificando o EAN…");
  let saved=null;
  try{
@@ -547,6 +552,7 @@ function paint(){
    '<div class="entry-meta">'+fmt(r.created_at)+'</div></div>'+
    '<div class="entry-right">'+status+(r.photo_path?'<div class="entry-meta">📷 Foto salva</div>':'')+
    '<div><button type="button" class="edit-btn" data-edit="'+esc(r.id)+'">Editar</button>'+
+   '<button type="button" class="edit-btn delete-btn" data-delete="'+esc(r.id)+'">Excluir</button>'+
    (r.sync_status==="not_found"&&!r.photo_path?'<button type="button" class="edit-btn" data-photo="'+esc(r.id)+'">📷 Adicionar foto</button>':'')+
    (r.photo_path?'<button type="button" class="edit-btn" data-view-photo="'+esc(r.id)+'">Ver foto</button>':'')+
    '</div></div>'+
@@ -595,7 +601,7 @@ async function resolveRow(action,id,payload){
   msg("✓ "+text);
  }catch(e){msg("Não foi possível concluir: "+e.message,true)}finally{setBusy(false)}
 }
-$("entries").addEventListener("click",(event)=>{
+$("entries").addEventListener("click",async(event)=>{
  const open=event.target.closest("[data-resolve-open]");
  if(open){if(busy)return;const row=rows.find(x=>x.id===open.dataset.id);if(row)openResolutionPanel(row,open.dataset.resolveOpen);return}
  const close=event.target.closest("[data-resolve-close]");
@@ -616,10 +622,19 @@ $("entries").addEventListener("click",(event)=>{
   const row=rows.find(x=>x.id===photo.dataset.photo);
   if(row)openPhotoUploadViewer(row);return;
  }
+ const remove=event.target.closest("[data-delete]");
+ if(remove){
+  if(busy||missingRecordId)return;const row=rows.find(x=>x.id===remove.dataset.delete);if(!row)return;
+  if(!window.confirm("Excluir a leitura do EAN "+row.ean+"?"))return;
+  setBusy(true);msg("Excluindo leitura…");
+  try{await call("delete",{id:row.id});await load();msg("Leitura excluída.");}
+  catch(e){msg("Não foi possível excluir: "+e.message,true)}finally{setBusy(false)}
+  return;
+ }
  const btn=event.target.closest("[data-edit]");if(!btn||busy||missingRecordId)return;
  const r=rows.find(x=>x.id===btn.dataset.edit);if(!r)return;
  paused=true;editingId=r.id;pendingId="";currentEan=r.ean;
- $("editingLabel").textContent="Editar leitura salva";$("currentEan").textContent=r.ean;
+ $("editingLabel").textContent="Editar leitura salva";$("eanValue").value=r.ean;
  $("quantity").value=r.quantity;$("expiry").value=r.expires_on||"";$("expiryField").hidden=!r.expires_on;$("toggleValidity").textContent=r.expires_on?"− Ocultar validade":"+ Validade (opcional)";
  $("entryEditor").hidden=false;$("quantity").focus({preventScroll:true});$("quantity").select();
 });

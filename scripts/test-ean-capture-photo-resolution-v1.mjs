@@ -2,6 +2,7 @@ import fs from "node:fs";
 import assert from "node:assert/strict";
 
 const page=fs.readFileSync("vitrine/admin/leitura-ean/index.html","utf8");
+const edgeFunction=fs.readFileSync("supabase/functions/admin-ean-capture-v1/index.ts","utf8");
 const migration=fs.readFileSync("supabase/migrations/20261019190000_ean_capture_resolution_v1.sql","utf8");
 
 assert.ok(page.includes("width:min(92vw,460px)"),"photo viewer stays compact and centered");
@@ -10,10 +11,16 @@ assert.ok(page.includes("data-photo=\""),"missing photo action is rendered");
 assert.ok(page.includes(">📷 Adicionar foto</button>"),"missing photo action is explicit");
 assert.ok(page.includes("if(view){showSavedPhoto(view.dataset.viewPhoto);return}"),"saved image opens the viewer");
 assert.ok(page.includes("if(row)openPhotoUploadViewer(row);return"),"adding a photo does not reveal the yellow page prompt");
+assert.ok(page.includes('id="eanValue"'),"saved readings expose an editable EAN field");
+assert.ok(page.includes("ean,quantity:n,expires_on"),"editing a reading sends the new EAN to the server");
+assert.ok(page.includes('data-delete="'),"each saved reading exposes a delete action");
+assert.ok(page.includes('call("delete",{id:row.id})'),"delete action reaches the protected API");
+assert.ok(edgeFunction.includes('if(action==="delete")'),"API implements authenticated deletion");
+assert.ok(edgeFunction.includes('if(eanChanged)Object.assign(patch,{ean:input.ean,matched_product_id:null,sync_status:"pending",synced_at:null'),"changing an EAN clears the old match and queues a fresh sync");
 assert.ok(page.includes("async function startHtml5Camera(deviceId="),"camera works without BarcodeDetector using the bundled reader");
 assert.ok(page.includes("await scanner.start(camera")&&page.includes('facingMode:"environment"'),"fallback starts the rear camera");
 assert.ok(page.includes("function showProductPhoto(url,name){"),"found product photos can open in the centered viewer");
-assert.ok(page.includes("data-product-photo="),"found products with an image expose an enlarge action");
+assert.ok(page.includes('data-product-photo data-photo-url='),"found products with an image expose an enlarge action");
 
 const uploadStart=page.indexOf("async function uploadPhoto(file){");
 const uploadEnd=page.indexOf('\n$("takePhoto").onclick',uploadStart);
@@ -40,4 +47,4 @@ const inlineStart=page.indexOf("<script defer>\n");
 const inlineEnd=page.indexOf("</script>",inlineStart);
 assert.ok(inlineStart>=0&&inlineEnd>inlineStart,"inline app script exists");
 new Function(page.slice(inlineStart+"<script defer>\n".length,inlineEnd));
-console.log("EAN photo modal, compression, and found-list transition: PASS");
+console.log("EAN photo modal, edit, delete, compression, and found-list transition: PASS");

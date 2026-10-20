@@ -186,14 +186,32 @@ Deno.serve(async (r:Request)=>{
       return reply(r,{ok:true,row:record},201);
     }
     if(action==="edit"){
-      if(!idOk(input.id)||qty(input.quantity)===null)return reply(r,{ok:false,error:"quantidade_invalida"},400);
+      if(!idOk(input.id)||qty(input.quantity)===null||(input.ean!==undefined&&!eanOk(input.ean)))
+        return reply(r,{ok:false,error:"quantidade_ou_ean_invalido"},400);
       const expires=validDate(input.expires_on);
-      const edited=await db.from("ean_capture_records_v1").update({
-        quantity:qty(input.quantity),expires_on:expires,updated_at:new Date().toISOString()
-      }).eq("id",input.id).select("id,ean,quantity,expires_on,sync_status,created_at").maybeSingle();
+      const existing=await db.from("ean_capture_records_v1").select("id,ean,photo_path").eq("id",input.id).maybeSingle();
+      if(existing.error)throw existing.error;
+      if(!existing.data)return reply(r,{ok:false,error:"leitura_nao_encontrada"},404);
+      const eanChanged=input.ean!==undefined&&input.ean!==existing.data.ean;
+      const patch={quantity:qty(input.quantity),expires_on:expires,updated_at:new Date().toISOString()};
+      if(eanChanged)Object.assign(patch,{ean:input.ean,matched_product_id:null,sync_status:"pending",synced_at:null,photo_path:null,photo_captured_at:null});
+      const edited=await db.from("ean_capture_records_v1").update(patch).eq("id",input.id).eq("ean",existing.data.ean)
+        .select("id,ean,quantity,expires_on,sync_status,matched_product_id,photo_path,photo_captured_at,created_at,updated_at,synced_at").maybeSingle();
       if(edited.error)throw edited.error;
-      if(!edited.data)return reply(r,{ok:false,error:"leitura_nao_encontrada"},404);
+      if(!edited.data)return reply(r,{ok:false,error:"leitura_ja_alterada"},409);
+      if(eanChanged&&existing.data.photo_path)await db.storage.from(PHOTO_BUCKET).remove([existing.data.photo_path]).catch(()=>{});
       return reply(r,{ok:true,row:edited.data});
+    }
+    if(action==="delete"){
+      if(!idOk(input.id))return reply(r,{ok:false,error:"leitura_invalida"},400);
+      const existing=await db.from("ean_capture_records_v1").select("id,photo_path").eq("id",input.id).maybeSingle();
+      if(existing.error)throw existing.error;
+      if(!existing.data)return reply(r,{ok:false,error:"leitura_nao_encontrada"},404);
+      const deleted=await db.from("ean_capture_records_v1").delete().eq("id",input.id).select("id").maybeSingle();
+      if(deleted.error)throw deleted.error;
+      if(!deleted.data)return reply(r,{ok:false,error:"leitura_ja_removida"},409);
+      if(existing.data.photo_path)await db.storage.from(PHOTO_BUCKET).remove([existing.data.photo_path]).catch(()=>{});
+      return reply(r,{ok:true,deleted_id:input.id});
     }
     if(action==="sync_one"){
       if(!idOk(input.id))return reply(r,{ok:false,error:"leitura_invalida"},400);
