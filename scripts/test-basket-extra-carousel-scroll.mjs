@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
-const source = fs.readFileSync('vitrine/index.html', 'utf8');
+const source = fs.readFileSync(process.env.STOREFRONT_PATH || 'vitrine/index.html', 'utf8');
 const css = source.match(/<style>([\s\S]*?)<\/style>/)?.[1];
 assert.ok(css, 'expected storefront CSS');
 
