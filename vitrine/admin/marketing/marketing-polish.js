@@ -70,19 +70,22 @@ function ensureAdminMoreMenu(root,nav){
     more.innerHTML='<summary>Mais</summary><div class="marketing-admin-more-menu"><button type="button" data-marketing-view="strategy">Estratégia</button><button type="button" data-marketing-view="audiences">Públicos</button><button type="button" data-marketing-view="consents" data-marketing-admin-consents>Consentimentos</button></div>';
     const gate=nav.querySelector('.marketing-campaign-gate');
     if(gate)nav.insertBefore(more,gate);else nav.appendChild(more);
-    more.querySelectorAll('[data-marketing-view]').forEach(button=>button.addEventListener('click',()=>{
-      more.open=false;
-      openOverviewView(root,button.dataset.marketingView);
-    }));
-    more.querySelector('[data-marketing-admin-consents]')?.addEventListener('click',async()=>{
-      try{
-        const module=await loadConsentModule();
-        more.open=false;
-        await module.mountConsentView(root);
-      }catch(error){console.warn('marketing-consents-load',String(error?.message||error).slice(0,160))}
-    });
   }
   more.dataset.marketingMoreMenu='1';
+}
+
+function bindMarketingMoreMenu(root,nav){
+  if(nav.dataset.marketingMoreNavigationBound==='1')return;
+  nav.dataset.marketingMoreNavigationBound='1';
+  nav.addEventListener('click',event=>{
+    const button=event.target?.closest?.('.marketing-admin-more [data-marketing-view]');
+    if(!button||!nav.contains(button))return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const more=button.closest('.marketing-admin-more');
+    if(more)more.open=false;
+    openOverviewView(root,button.dataset.marketingView);
+  },true);
 }
 
 function ensurePrimaryViewButtons(root,nav){
@@ -104,6 +107,7 @@ function polishNav(root){
   const currentView=activeView(root);
   ensurePrimaryViewButtons(root,nav);
   ensureAdminMoreMenu(root,nav);
+  bindMarketingMoreMenu(root,nav);
   nav.querySelectorAll(':scope > [data-marketing-view]').forEach(button=>{
     const view=String(button.dataset.marketingView||'');
     if(!PRIMARY_MARKETING_VIEWS.includes(view)){button.remove();return}
@@ -155,7 +159,7 @@ async function openOverviewView(root,view,{create=false}={}){
       return module?.mountStrategyView?.(root);
     }
     if(view==='campaigns'){
-      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v6');
+      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v7');
       return entry?.openCampaigns?.();
     }
     if(view==='templates'){
@@ -167,6 +171,10 @@ async function openOverviewView(root,view,{create=false}={}){
     if(view==='audiences'){
       const module=window.DAMarketingAudienceCenter||await import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1');
       return module?.mountAudienceView?.(root);
+    }
+    if(view==='consents'){
+      const module=await loadConsentModule();
+      return module?.mountConsentView?.(root);
     }
   }catch(error){console.warn('marketing-overview-open',String(error?.message||error).slice(0,160))}
 }
