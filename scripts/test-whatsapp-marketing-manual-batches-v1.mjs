@@ -5,12 +5,14 @@ const migrationPath='supabase/migrations/20261019210000_marketing_campaign_manua
 const workerPath='supabase/functions/whatsapp-marketing-worker-v1/index.ts';
 const adminPath='supabase/functions/admin-marketing-campaigns-v1/index.ts';
 const uiPath='vitrine/admin/marketing/campaign-center.js';
+const entryPath='vitrine/admin/marketing/campaign-entry.js';
 const configPath='supabase/config.toml';
 assert.equal(fs.existsSync(migrationPath),true,'migration de lote manual deve existir');
 const sql=fs.readFileSync(migrationPath,'utf8');
 const worker=fs.readFileSync(workerPath,'utf8');
 const admin=fs.readFileSync(adminPath,'utf8');
 const ui=fs.readFileSync(uiPath,'utf8');
+const entry=fs.readFileSync(entryPath,'utf8');
 const config=fs.readFileSync(configPath,'utf8');
 
 for(const fn of ['marketing_begin_manual_campaign_batch_v1','marketing_acquire_manual_campaign_batch_v1','marketing_finish_manual_campaign_batch_v1']){
@@ -34,6 +36,8 @@ assert.match(admin,/marketing_begin_manual_campaign_batch_v1/i,'Admin deve inici
 assert.match(admin,/whatsapp-marketing-worker-v1/i,'Admin deve invocar worker apenas server-side');
 assert.match(ui,/data-campaign-send-manual-batch/i,'UI deve mostrar controle de lote explícito');
 assert.match(ui,/10\s*(?:contatos|destinatários)/i,'UI deve informar limite por clique');
+assert.match(ui,/marketing-campaign-v4/i,'UI deve invalidar cache do módulo alterado');
+assert.match(entry,/campaign-center\.js\?v=marketing-campaign-v4/i,'entrada deve carregar a versão nova do centro');
 assert.match(ui,/confirm\(/i,'UI deve pedir confirmação explícita antes do envio');
 assert.doesNotMatch(ui,/telefone|phone_number_id|to_phone_e164/i,'browser não pode receber telefone operacional');
 

@@ -2,7 +2,7 @@ import {attendanceAuthorizedFetch,attendanceJsonApi} from '../atendimento/attend
 
 const CAMPAIGN_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-marketing-campaigns-v1';
 const ADMIN_PUBLIC_KEY=['sb','publishable','tFXHtH0HCXZepVtwgKElIg','DxS76Gu8'].join('_');
-const CSS_URL='/vitrine/admin/marketing/campaign-center.css?v=marketing-campaign-v3';
+const CSS_URL='/vitrine/admin/marketing/campaign-center.css?v=marketing-campaign-v4';
 const PREFILL_KEY='da_marketing_campaign_prefill_v1';
 const STATUS_LABELS={draft:'Rascunho',ready_for_review:'Pronta para revisão',approved:'Aprovada',scheduled:'Agendada',running:'Em execução',paused:'Pausada',completed:'Concluída',failed:'Falhou',cancelled:'Cancelada'};
 const EXECUTION_STATUSES=new Set(['approved','scheduled','running','paused','completed','failed','cancelled']);

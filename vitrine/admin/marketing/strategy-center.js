@@ -38,7 +38,7 @@ function navMarkup(){const item=(key,label)=>`<button type="button" class="${key
 async function openMarketingView(view,root){
   if(view==='overview')return document.querySelector('[data-tab="marketing"]')?.click();if(view==='strategy')return;
   if(view==='templates'){const module=window.DAMarketingTemplateCenter||await import('/vitrine/admin/marketing/template-center.js?v=marketing-template-v1');return module?.mountTemplateView?.(root)}
-  if(view==='campaigns'){const module=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-v1');return module?.openCampaigns?.()}
+  if(view==='campaigns'){const module=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v4');return module?.openCampaigns?.()}
   if(view==='audiences'){const module=window.DAMarketingAudienceCenter||await import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1');return module?.mountAudienceView?.(root)}
 }
 function bindNav(root){root.querySelectorAll('[data-marketing-view]').forEach(button=>button.addEventListener('click',()=>openMarketingView(button.dataset.marketingView,root).catch(error=>console.warn('marketing-strategy-nav',String(error?.message||error).slice(0,160)))))}
