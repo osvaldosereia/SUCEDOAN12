@@ -16,7 +16,7 @@ assert.match(entrySource,/marketing-polish\.css/,'bootstrap deve carregar CSS co
 assert.match(entrySource,/marketing-polish\.js/,'bootstrap deve carregar enhancer compartilhado de Marketing');
 
 for(const text of ['Templates','Públicos','Campanhas','Consentimentos'])assert.ok(js.includes(text),`navegação deve manter ${text}`);
-assert.ok(js.includes('Envios desativados'),'gate deve usar texto curto e operacional');
+assert.ok(js.includes('Estado do envio em Campanhas'),'gate deve encaminhar o estado real do envio à área de campanhas');
 assert.ok(js.includes('Atualizar público'),'Públicos deve usar CTA curto');
 assert.ok(js.includes('Mais filtros'),'Públicos deve recolher filtros avançados sob texto simples');
 assert.ok(js.includes('Modelos oficiais do WhatsApp usados nas campanhas'),'Templates deve ter descrição simples');
@@ -47,13 +47,13 @@ const overviewCards=js.slice(cardStart,cardEnd);
 for(const action of ['post_sale','repurchase','campaigns'])assert.ok(overviewCards.includes(`key:'${action}'`),`painel inicial deve priorizar ${action}`);
 assert.ok(js.includes('data-marketing-overview-card="post_sale"'),'Pós-venda deve aparecer no painel');
 assert.ok(js.includes('data-marketing-overview-card="repurchase"'),'Reposição mensal deve aparecer no painel');
-assert.ok(js.includes("document.querySelector('[data-tab=\"orders\"]')"),'Pós-venda deve abrir pedidos e entregas');
+assert.match(js,/if\(view==='post_sale'\)[\s\S]{0,240}mountPostSaleView/,'Pós-venda deve abrir o módulo dedicado');
 assert.ok(js.includes("openOverviewView(root,'repurchase')"),'Reposição mensal deve abrir a estratégia existente');
 assert.ok(js.includes("openOverviewView(root,'campaigns')"),'Campanhas deve abrir a área de campanhas');
-assert.ok(js.includes('Campanhas pausadas'),'o painel deve informar claramente que os envios ainda estão pausados');
+assert.ok(js.includes('Runtime habilitado'),'o painel deve refletir o estado de execução carregado');
 
-assert.ok(js.includes("['overview','post_sale','repurchase','campaigns']"),'navegação principal deve ter quatro fluxos simples');
+assert.ok(js.includes("['overview','post_sale','repurchase','templates','campaigns']"),'navegação principal deve incluir Templates Meta');
 assert.ok(js.includes('data-marketing-more-menu'),'funções administrativas secundárias devem ficar em Mais');
-assert.ok(js.includes('data-marketing-view="templates"'),'templates devem continuar acessíveis em Mais');
+assert.ok(js.includes('data-marketing-view="templates"'),'Templates Meta deve ter aba própria no menu principal');
 assert.ok(js.includes('data-marketing-view="audiences"'),'públicos devem continuar acessíveis em Mais');
 console.log('marketing professional UI contract: ok');
