@@ -47,15 +47,23 @@ try {
     assert.ok(layout.themes.every(([client, scrollWidth]) => scrollWidth <= client + 1), 'theme cards must stay inside extras section: ' + JSON.stringify(layout));
     assert.ok(layout.tracks.every(([client, scrollWidth]) => scrollWidth > client), 'each individual product row must have its own horizontal scroll: ' + JSON.stringify(layout));
   }
+  const before = await page.evaluate(() => ({
+    first: document.querySelectorAll('.basket-extra-products')[0].scrollLeft,
+    second: document.querySelectorAll('.basket-extra-products')[1].scrollLeft,
+    modal: document.querySelector('.sheet-scroll').scrollLeft
+  }));
   await page.evaluate(() => {
-    const [first, second] = document.querySelectorAll('.basket-extra-products');
-    first.scrollLeft = 120;
-    window.carouselCheck = [first.scrollLeft, second.scrollLeft, document.querySelector('.sheet-scroll').scrollLeft];
+    const first = document.querySelectorAll('.basket-extra-products')[0];
+    first.scrollLeft = first.scrollWidth;
   });
-  const positions = await page.evaluate(() => window.carouselCheck);
-  assert.ok(positions[0] > 0, 'first category must scroll');
-  assert.equal(positions[1], 0, 'scrolling one category must not move the next category');
-  assert.equal(positions[2], 0, 'scrolling a category must not move the modal content');
+  const after = await page.evaluate(() => ({
+    first: document.querySelectorAll('.basket-extra-products')[0].scrollLeft,
+    second: document.querySelectorAll('.basket-extra-products')[1].scrollLeft,
+    modal: document.querySelector('.sheet-scroll').scrollLeft
+  }));
+  assert.ok(after.first > before.first + 100, 'first category must scroll');
+  assert.equal(after.second, before.second, 'scrolling one category must not move the next category');
+  assert.equal(after.modal, before.modal, 'scrolling a category must not move the modal content');
   console.log('PASS: extra product carousels scroll independently at 320px, 390px and 1363px; page, modal and theme cards stay constrained');
 } finally {
   await browser.close();
